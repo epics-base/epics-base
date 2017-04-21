@@ -8,8 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      $Revision-Id$
- *
  *      Author  W. Eric Norum
  *              norume@aps.anl.gov
  *              630 252 4793
@@ -17,6 +15,9 @@
 
 #include <stdexcept>
 #include <string.h>
+
+#include <stdlib.h>
+#include <stdio.h>
 
 #define epicsExportSharedSymbols
 #include "epicsMessageQueue.h"

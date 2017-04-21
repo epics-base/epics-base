@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* module_types.h */
-/* base/include $Revision-Id$ */
 /*
  * 	Author:      Bob Dalesio
  * 	Date:        12-07-88

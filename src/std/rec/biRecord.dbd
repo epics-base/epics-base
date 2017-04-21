@@ -3,47 +3,46 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 recordtype(bi) {
 	include "dbCommon.dbd" 
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
-		promptgroup(GUI_INPUTS)
+		promptgroup("40 - Input")
 		interest(1)
 	}
 	field(VAL,DBF_ENUM) {
 		prompt("Current Value")
-		promptgroup(GUI_INPUTS)
+		promptgroup("40 - Input")
 		asl(ASL0)
 		pp(TRUE)
 	}
 	field(ZSV,DBF_MENU) {
 		prompt("Zero Error Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(OSV,DBF_MENU) {
 		prompt("One Error Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(COSV,DBF_MENU) {
 		prompt("Change of State Svr")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(ZNAM,DBF_STRING) {
 		prompt("Zero Name")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		pp(TRUE)
 		interest(1)
 		size(26)
@@ -51,7 +50,7 @@ recordtype(bi) {
 	}
 	field(ONAM,DBF_STRING) {
 		prompt("One Name")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		pp(TRUE)
 		interest(1)
 		size(26)
@@ -83,7 +82,7 @@ recordtype(bi) {
 	}
 	field(SIOL,DBF_INLINK) {
 		prompt("Sim Input Specifctn")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SVAL,DBF_ULONG) {
@@ -91,7 +90,7 @@ recordtype(bi) {
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {
@@ -101,7 +100,7 @@ recordtype(bi) {
 	}
 	field(SIMS,DBF_MENU) {
 		prompt("Sim mode Alarm Svrty")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(2)
 		menu(menuAlarmSevr)
 	}

@@ -1,7 +1,5 @@
 # CONFIG.Common.linux-xscale_be
 #
-# This file is maintained by the build community.
-#
 # Definitions for linux-xscale_be (big-endian) target builds.
 # This target has been tested with the MOXA UC-7408-LX Plus.
 

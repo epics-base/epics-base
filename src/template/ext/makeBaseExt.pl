@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 
 # Authors: Ralph Lange, Marty Kraimer, Andrew Johnson and Janet Anderson
-# $Revision-Id$
 
 use Cwd;
 use Getopt::Std;

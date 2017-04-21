@@ -1,8 +1,5 @@
 # CONFIG.Common.linux-686
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for linux-686 target builds
 # Sites may override these definitions in CONFIG_SITE.Common.linux-686
 #-------------------------------------------------------

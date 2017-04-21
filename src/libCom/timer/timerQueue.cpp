@@ -7,7 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *
  *      Author  Jeffrey O. Hill
  *              johill@lanl.gov
  *              505 665 1831

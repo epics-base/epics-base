@@ -13,9 +13,6 @@
 /*
  * Author: Jim Kowalkowski
  * Date: 2/96
- *
- * $Revision-Id$
- *
  */
 
 /* This is the file the user sets up for a given architecture */

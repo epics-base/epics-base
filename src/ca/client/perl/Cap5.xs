@@ -1138,6 +1138,20 @@ void CA_add_exception_event(const char *class, SV *sub) {
 static
 SV * printf_sub = NULL;
 
+#ifndef va_copy
+#  ifdef __GNUC__
+#    define va_copy(d, s) __va_copy(d, s)
+#  else
+#    define va_copy(d, s) ((d) = (s))
+/* The above macro is NOT PORTABLE but works on Windows when
+ * stdarg.h doesn't provide va_copy(). Some architectures need
+ *   define va_copy(d, s) ((*d) = (*s))
+ * while others may be even more complicated, but hopefully the
+ * system stdarg.h header defines va_copy() in those cases.
+ */
+#  endif
+#endif
+
 static
 int printf_handler(const char *format, va_list args) {
     if (! printf_sub)
@@ -1152,11 +1166,7 @@ int printf_handler(const char *format, va_list args) {
         ENTER;
         SAVETMPS;
 
-#ifdef __GNUC__
-        __va_copy(argcopy, args);
-#else
         va_copy(argcopy, args);
-#endif
 
         printf_str = NEWSV(0, strlen(format) + 32);
         sv_vsetpvf(printf_str, format, &argcopy);

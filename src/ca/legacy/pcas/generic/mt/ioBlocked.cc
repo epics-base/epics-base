@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-// $Revision-Id$
 // Author: Jeff Hill
 // This file implements a IO blocked list NOOP for multi-threaded systems
 //

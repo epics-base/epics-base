@@ -13,9 +13,6 @@
 /*
  * Author:	Jim Kowalkowski
  * Date:	3/97
- *
- * $Revision-Id$
- *
  */
 
 // inline gddBounds::gddBounds(aitIndex c) { start=0; count=c; }

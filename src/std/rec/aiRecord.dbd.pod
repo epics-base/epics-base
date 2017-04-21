@@ -217,24 +217,24 @@ monitoring functionality.
     include "dbCommon.dbd" 
     field(VAL,DBF_DOUBLE) {
         prompt("Current EGU Value")
-        promptgroup(GUI_INPUTS)
+        promptgroup("40 - Input")
         asl(ASL0)
         pp(TRUE)
     }
     field(INP,DBF_INLINK) {
         prompt("Input Specification")
-        promptgroup(GUI_INPUTS)
+        promptgroup("40 - Input")
         interest(1)
     }
     field(PREC,DBF_SHORT) {
         prompt("Display Precision")
-        promptgroup(GUI_DISPLAY)
+        promptgroup("80 - Display")
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(LINR,DBF_MENU) {
         prompt("Linearization")
-        promptgroup(GUI_CONVERT)
+        promptgroup("60 - Convert")
         special(SPC_LINCONV)
         pp(TRUE)
         interest(1)
@@ -242,133 +242,133 @@ monitoring functionality.
     }
     field(EGUF,DBF_DOUBLE) {
         prompt("Engineer Units Full")
-        promptgroup(GUI_CONVERT)
+        promptgroup("60 - Convert")
         special(SPC_LINCONV)
         pp(TRUE)
         interest(1)
     }
     field(EGUL,DBF_DOUBLE) {
         prompt("Engineer Units Low")
-        promptgroup(GUI_CONVERT)
+        promptgroup("60 - Convert")
         special(SPC_LINCONV)
         pp(TRUE)
         interest(1)
     }
     field(EGU,DBF_STRING) {
         prompt("Engineering Units")
-        promptgroup(GUI_DISPLAY)
+        promptgroup("80 - Display")
         interest(1)
         size(16)
-		prop(YES)
+        prop(YES)
     }
     field(HOPR,DBF_DOUBLE) {
         prompt("High Operating Range")
-        promptgroup(GUI_DISPLAY)
+        promptgroup("80 - Display")
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(LOPR,DBF_DOUBLE) {
         prompt("Low Operating Range")
-        promptgroup(GUI_DISPLAY)
+        promptgroup("80 - Display")
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(AOFF,DBF_DOUBLE) {
         prompt("Adjustment Offset")
-        promptgroup(GUI_CONVERT)
+        promptgroup("60 - Convert")
         pp(TRUE)
         interest(1)
     }
     field(ASLO,DBF_DOUBLE) {
         prompt("Adjustment Slope")
-        promptgroup(GUI_CONVERT)
+        promptgroup("60 - Convert")
         pp(TRUE)
         interest(1)
         initial("1")
     }
     field(SMOO,DBF_DOUBLE) {
         prompt("Smoothing")
-        promptgroup(GUI_CONVERT)
+        promptgroup("60 - Convert")
         interest(1)
     }
     field(HIHI,DBF_DOUBLE) {
         prompt("Hihi Alarm Limit")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(LOLO,DBF_DOUBLE) {
         prompt("Lolo Alarm Limit")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(HIGH,DBF_DOUBLE) {
         prompt("High Alarm Limit")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(LOW,DBF_DOUBLE) {
         prompt("Low Alarm Limit")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(HHSV,DBF_MENU) {
         prompt("Hihi Severity")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
         menu(menuAlarmSevr)
     }
     field(LLSV,DBF_MENU) {
         prompt("Lolo Severity")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
         menu(menuAlarmSevr)
     }
     field(HSV,DBF_MENU) {
         prompt("High Severity")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
         menu(menuAlarmSevr)
     }
     field(LSV,DBF_MENU) {
         prompt("Low Severity")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
         menu(menuAlarmSevr)
     }
     field(HYST,DBF_DOUBLE) {
         prompt("Alarm Deadband")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         interest(1)
     }
     field(AFTC,DBF_DOUBLE) {
         prompt("Alarm Filter Time Constant")
-        promptgroup(GUI_ALARMS)
+        promptgroup("70 - Alarm")
         interest(1)
     }
     field(ADEL,DBF_DOUBLE) {
         prompt("Archive Deadband")
-        promptgroup(GUI_DISPLAY)
+        promptgroup("80 - Display")
         interest(1)
     }
     field(MDEL,DBF_DOUBLE) {
         prompt("Monitor Deadband")
-        promptgroup(GUI_DISPLAY)
+        promptgroup("80 - Display")
         interest(1)
     }
     field(LALM,DBF_DOUBLE) {
@@ -393,14 +393,14 @@ monitoring functionality.
     }
     field(ESLO,DBF_DOUBLE) {
         prompt("Raw to EGU Slope")
-        promptgroup(GUI_CONVERT)
+        promptgroup("60 - Convert")
         pp(TRUE)
         interest(2)
         initial("1")
     }
     field(EOFF,DBF_DOUBLE) {
         prompt("Raw to EGU Offset")
-        promptgroup(GUI_CONVERT)
+        promptgroup("60 - Convert")
         pp(TRUE)
         interest(2)
     }
@@ -469,7 +469,7 @@ simulation mode.
 
     field(SIOL,DBF_INLINK) {
         prompt("Sim. Input Specification")
-        promptgroup(GUI_INPUTS)
+        promptgroup("90 - Simulate")
         interest(1)
     }
     field(SVAL,DBF_DOUBLE) {
@@ -477,7 +477,7 @@ simulation mode.
     }
     field(SIML,DBF_INLINK) {
         prompt("Sim. Mode Location")
-        promptgroup(GUI_INPUTS)
+        promptgroup("90 - Simulate")
         interest(1)
     }
     field(SIMM,DBF_MENU) {
@@ -487,7 +487,7 @@ simulation mode.
     }
     field(SIMS,DBF_MENU) {
         prompt("Simulation Mode Severity")
-        promptgroup(GUI_INPUTS)
+        promptgroup("90 - Simulate")
         interest(2)
         menu(menuAlarmSevr)
     }
@@ -610,7 +610,7 @@ values that the C<read_ai()> routine can put in the RVAL field.
 When RVAL is set to I<RVAL_max> the VAL field will be set to EGUF, and when RVAL
 is set to I<RVAL_min> the VAL field will become EGUL.
 
-The fomulae to use are:
+The formulae to use are:
 
 =over
 

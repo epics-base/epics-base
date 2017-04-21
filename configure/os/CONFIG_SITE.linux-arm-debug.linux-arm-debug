@@ -1,7 +1,5 @@
 # CONFIG_SITE.linux-arm-debug.linux-arm-debug
 #
-# $Revision-Id$
-#
 # Site specific overrides for linux-arm-debug host and target builds
 #-------------------------------------------------------
 

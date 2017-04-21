@@ -1,7 +1,5 @@
 # CONFIG.linux-ppc.Common
 #
-# This file is maintained by the build community.
-#
 # Definitions for linux-ppc host builds
 # Sites may override these definitions in CONFIG_SITE.linux-ppc.Common
 #-------------------------------------------------------

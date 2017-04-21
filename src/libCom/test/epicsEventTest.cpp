@@ -250,5 +250,12 @@ MAIN(epicsEventTest)
     eventWaitTest();
     eventWakeupTest();
 
+    free(name);
+    free(id);
+    epicsRingPointerDelete(pinfo->ring);
+    epicsMutexDestroy(pinfo->lockRing);
+    epicsEventDestroy(event);
+    free(pinfo);
+
     return testDone();
 }

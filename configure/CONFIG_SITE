@@ -6,8 +6,7 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
-#
-#  $Revision-Id$
+
 #
 #  CONFIG_SITE  - Global site configuration file
 #
@@ -117,6 +116,13 @@ CROSS_COMPILER_TARGET_ARCHS=
 #  set CROSS_COMPILER_TARGET_ARCHS in the appropriate
 #  configure/os/CONFIG_SITE.<host>.Common files instead.
 CROSS_COMPILER_HOST_ARCHS=
+
+#  The 'make runtests' and 'make tapfiles' build targets normally only run
+#  self-tests for the EPICS_HOST_ARCH architecture. If the host can execute
+#  the self-test programs for any other cross-built architectures such as
+#  a -debug architecture, those architectures can be named here.
+#
+CROSS_COMPILER_RUNTEST_ARCHS=
 
 # Build shared libraries (DLLs on Windows).
 #  Must be either YES or NO.  Definitions in the target-specific

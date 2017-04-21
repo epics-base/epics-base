@@ -5,7 +5,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Revision-Id$
+/*
  * Author: Andrew Johnson
  *
  * Test for the unit test module...

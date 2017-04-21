@@ -10,8 +10,6 @@
 /*
  * unixFileName.h
  * Author: Jeff Hill
- *
- *
  */
 #ifndef unixFileNameH
 #define unixFileNameH

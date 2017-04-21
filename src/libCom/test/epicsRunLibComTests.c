@@ -24,7 +24,6 @@ int epicsEllTest(void);
 int epicsEnvTest(void);
 int epicsErrlogTest(void);
 int epicsEventTest(void);
-int epicsExceptionTest(void);
 int epicsExitTest(void);
 int epicsMathTest(void);
 int epicsMessageQueueTest(void);
@@ -44,8 +43,12 @@ int epicsThreadPrivateTest(void);
 int epicsThreadTest(void);
 int epicsTimerTest(void);
 int epicsTimeTest(void);
+#ifdef __rtems__
+int epicsTimeZoneTest(void);
+#endif
 int epicsTypesTest(void);
 int epicsInlineTest(void);
+int ipAddrToAsciiTest(void);
 int macDefExpandTest(void);
 int macLibTest(void);
 int ringBytesTest(void);
@@ -77,7 +80,7 @@ void epicsRunLibComTests(void)
     runTest(epicsEnvTest);
     runTest(epicsErrlogTest);
     runTest(epicsEventTest);
-    runTest(epicsExceptionTest);
+    runTest(epicsInlineTest);
     runTest(epicsMathTest);
     runTest(epicsMessageQueueTest);
     runTest(epicsMMIOTest);
@@ -94,8 +97,11 @@ void epicsRunLibComTests(void)
     runTest(epicsThreadPriorityTest);
     runTest(epicsThreadPrivateTest);
     runTest(epicsTimeTest);
+#ifdef __rtems__
+    runTest(epicsTimeZoneTest);
+#endif
     runTest(epicsTypesTest);
-    runTest(epicsInlineTest);
+    runTest(ipAddrToAsciiTest);
     runTest(macDefExpandTest);
     runTest(macLibTest);
     runTest(ringBytesTest);

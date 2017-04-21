@@ -9,7 +9,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-
+/* dbAccess.c */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -107,7 +107,7 @@ void dbSpcAsRegisterCallback(SPC_ASCALLBACK func)
 long dbPutSpecial(DBADDR *paddr,int pass)
 {
     long int	(*pspecial)()=NULL;
-    struct rset	*prset;
+    rset        *prset;
     dbCommon 	*precord = paddr->precord;
     long	status=0;
     long	special=paddr->special;
@@ -139,7 +139,7 @@ long dbPutSpecial(DBADDR *paddr,int pass)
 }
 
 static void get_enum_strs(DBADDR *paddr, char **ppbuffer,
-	struct rset *prset,long	*options)
+    rset *prset,long	*options)
 {
 	short		field_type=paddr->field_type;
 	dbFldDes	*pdbFldDes = paddr->pfldDes;
@@ -199,7 +199,7 @@ choice_common:
 }
 
 static void get_graphics(DBADDR *paddr, char **ppbuffer,
-	struct rset *prset,long	*options)
+    rset *prset,long	*options)
 {
 	struct			dbr_grDouble grd;
 	int			got_data=FALSE;
@@ -239,7 +239,7 @@ static void get_graphics(DBADDR *paddr, char **ppbuffer,
 }
 
 static void get_control(DBADDR *paddr, char **ppbuffer,
-	struct rset *prset,long	*options)
+    rset *prset,long	*options)
 {
 	struct dbr_ctrlDouble	ctrld;
 	int			got_data=FALSE;
@@ -279,7 +279,7 @@ static void get_control(DBADDR *paddr, char **ppbuffer,
 }
 
 static void get_alarm(DBADDR *paddr, char **ppbuffer,
-    struct rset *prset, long *options)
+    rset *prset, long *options)
 {
     char *pbuffer = *ppbuffer;
     struct dbr_alDouble ald = {epicsNAN, epicsNAN, epicsNAN, epicsNAN};
@@ -324,7 +324,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         void *pflin)
 {
 	db_field_log	*pfl= (db_field_log *)pflin;
-	struct rset	*prset;
+    rset	*prset;
         short		field_type;
 	dbCommon	*pcommon;
 	char		*pbuffer = *poriginal;
@@ -364,7 +364,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
 	    memset(pbuffer, '\0', dbr_precision_size);
 	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE)
 	    &&  prset && prset->get_precision ){
-		(*prset->get_precision)(paddr,pbuffer);
+                (*prset->get_precision)(paddr,(long *)pbuffer);
 	    } else {
 		*options ^= DBR_PRECISION; /*Turn off DBR_PRECISION*/
 	    }
@@ -393,7 +393,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
 	*poriginal = pbuffer;
 }
 
-struct rset * dbGetRset(const struct dbAddr *paddr)
+rset * dbGetRset(const struct dbAddr *paddr)
 {
 	struct dbFldDes *pfldDes = paddr->pfldDes;
 
@@ -402,19 +402,29 @@ struct rset * dbGetRset(const struct dbAddr *paddr)
 }
 
 long dbPutAttribute(
-    const char *recordTypename,const char *name,const char*value)
+    const char *recordTypename, const char *name, const char *value)
 {
-	DBENTRY		dbEntry;
-	DBENTRY		*pdbEntry = &dbEntry;
-	long		status=0;
+    DBENTRY dbEntry;
+    DBENTRY *pdbEntry = &dbEntry;
+    long status = 0;
 
-        if(!pdbbase) return(S_db_notFound);
-	dbInitEntry(pdbbase,pdbEntry);
-	status = dbFindRecordType(pdbEntry,recordTypename);
-	if(!status) status = dbPutRecordAttribute(pdbEntry,name,value);
-	dbFinishEntry(pdbEntry);
-	if(status) errMessage(status,"dbPutAttribute failure");
-	return(status);
+    if (!pdbbase)
+        return S_db_notFound;
+    if (!name) {
+        status = S_db_badField;
+        goto done;
+    }
+    if (!value)
+        value = "";
+    dbInitEntry(pdbbase, pdbEntry);
+    status = dbFindRecordType(pdbEntry, recordTypename);
+    if (!status)
+        status = dbPutRecordAttribute(pdbEntry, name, value);
+    dbFinishEntry(pdbEntry);
+done:
+    if (status)
+        errMessage(status, "dbPutAttribute failure");
+    return status;
 }
 
 int dbIsValueField(const struct dbFldDes *pdbFldDes)
@@ -457,7 +467,7 @@ long dbScanPassive(dbCommon *pfrom, dbCommon *pto)
  */
 long dbProcess(dbCommon *precord)
 {
-    struct rset *prset = precord->rset;
+    rset *prset = precord->rset;
     dbRecordType *pdbRecordType = precord->rdes;
     unsigned char tpro = precord->tpro;
     char context[40] = "";
@@ -636,7 +646,7 @@ long dbNameToAddr(const char *pname, DBADDR *paddr)
     paddr->dbr_field_type = mapDBFToDBR[dbfType];
 
     if (paddr->special == SPC_DBADDR) {
-        struct rset *prset = dbGetRset(paddr);
+        rset *prset = dbGetRset(paddr);
 
         /* Let record type modify paddr */
         if (prset && prset->cvt_dbaddr) {
@@ -728,28 +738,34 @@ static long getLinkValue(DBADDR *paddr, short dbrType,
 {
     dbCommon *precord = paddr->precord;
     dbFldDes *pfldDes = paddr->pfldDes;
+    /* size of pbuf storage in bytes, including space for trailing nil */
     int maxlen;
     DBENTRY dbEntry;
     long status;
+    long nReq = nRequest ? *nRequest : 1;
+
+    /* dbFindRecord() below will always succeed as we have a
+     * valid DBADDR, so no point to check again.
+     * Request for zero elements always succeeds
+     */
+    if(!nReq)
+        return 0;
 
     switch (dbrType) {
     case DBR_STRING:
-        maxlen = MAX_STRING_SIZE - 1;
-        if (nRequest && *nRequest > 1) *nRequest = 1;
+        maxlen = MAX_STRING_SIZE;
+        nReq = 1;
         break;
 
     case DBR_DOUBLE:    /* Needed for dbCa links */
-        if (nRequest && *nRequest) *nRequest = 1;
+        if (nRequest) *nRequest = 1;
         *(double *)pbuf = epicsNAN;
         return 0;
 
     case DBR_CHAR:
     case DBR_UCHAR:
-            if (nRequest && *nRequest > 0) {
-            maxlen = *nRequest - 1;
-            break;
-        }
-        /* else fall through ... */
+        maxlen = nReq;
+        break;
     default:
         return S_db_badDbrtype;
     }
@@ -758,10 +774,13 @@ static long getLinkValue(DBADDR *paddr, short dbrType,
     status = dbFindRecord(&dbEntry, precord->name);
     if (!status) status = dbFindField(&dbEntry, pfldDes->name);
     if (!status) {
-        char *rtnString = dbGetString(&dbEntry);
+        const char *rtnString = dbGetString(&dbEntry);
 
-        strncpy(pbuf, rtnString, --maxlen);
-        pbuf[maxlen] = 0;
+        strncpy(pbuf, rtnString, maxlen-1);
+        pbuf[maxlen-1] = 0;
+        if(dbrType!=DBR_STRING)
+            nReq = strlen(pbuf)+1;
+        if(nRequest) *nRequest = nReq;
     }
     dbFinishEntry(&dbEntry);
     return status;
@@ -771,28 +790,31 @@ static long getAttrValue(DBADDR *paddr, short dbrType,
         char *pbuf, long *nRequest)
 {
     int maxlen;
+    long nReq = nRequest ? *nRequest : 1;
 
     if (!paddr->pfield) return S_db_badField;
 
     switch (dbrType) {
     case DBR_STRING:
-        maxlen = MAX_STRING_SIZE - 1;
-        if (nRequest && *nRequest > 1) *nRequest = 1;
+        maxlen = MAX_STRING_SIZE;
+        nReq = 1;
         break;
 
     case DBR_CHAR:
     case DBR_UCHAR:
-            if (nRequest && *nRequest > 0) {
-            maxlen = *nRequest - 1;
-            break;
-        }
+        maxlen = nReq;
+        break;
+
         /* else fall through ... */
     default:
         return S_db_badDbrtype;
     }
 
-    strncpy(pbuf, paddr->pfield, --maxlen);
-    pbuf[maxlen] = 0;
+    strncpy(pbuf, paddr->pfield, maxlen-1);
+    pbuf[maxlen-1] = 0;
+    if(dbrType!=DBR_STRING)
+        nReq = strlen(pbuf)+1;
+    if(nRequest) *nRequest = nReq;
     return 0;
 }
 
@@ -816,7 +838,7 @@ long dbGet(DBADDR *paddr, short dbrType,
     db_field_log *pfl = (db_field_log *)pflin;
     short field_type;
     long capacity, no_elements, offset;
-    struct rset *prset;
+    rset *prset;
     long status = 0;
 
     if (options && *options)
@@ -919,6 +941,15 @@ long dbGet(DBADDR *paddr, short dbrType,
             else
                 localAddr.pfield = (char *)  pfl->u.r.field;
             status = convert(&localAddr, pbuf, n, capacity, offset);
+        }
+
+        if(!status && dbrType==DBF_CHAR && nRequest &&
+                paddr->pfldDes && paddr->pfldDes->field_type==DBF_STRING)
+        {
+            /* long string ensure nil and truncate to actual length */
+            long nReq = *nRequest;
+            pbuf[nReq-1] = '\0';
+            *nRequest = strlen(pbuf)+1;
         }
     }
 done:
@@ -1203,7 +1234,7 @@ long dbPut(DBADDR *paddr, short dbrType,
     long no_elements  = paddr->no_elements;
     long special      = paddr->special;
     void *pfieldsave  = paddr->pfield;
-    struct rset *prset = dbGetRset(paddr);
+    rset *prset = dbGetRset(paddr);
     long status = 0;
     long offset;
     dbFldDes *pfldDes;

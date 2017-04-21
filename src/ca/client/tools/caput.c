@@ -56,7 +56,7 @@ static epicsEventId epId;
 
 void usage (void)
 {
-    fprintf (stderr, "\nUsage: caput [options] <PV name> <PV value>\n"
+    fprintf (stderr, "\nUsage: caput [options] <PV name> <PV value> ...\n"
     "       caput -a [options] <PV name> <no of values> <PV value> ...\n\n"
     "  -h: Help: Print this message\n"
     "Channel Access options:\n"
@@ -71,9 +71,11 @@ void usage (void)
     "  -n: Force interpretation of values as numbers\n"
     "  -s: Force interpretation of values as strings\n"
     "Arrays:\n"
+    "  Default: Put scalar\n"
+    "      Value format: all value arguments concatenated with spaces\n"
+    "  -S: Put string as an array of chars (long string)\n"
     "  -a: Put array\n"
-    "      Value format: number of requested values, then list of values\n"
-    "  -S: Put string as an array of char (long string)\n"
+    "      Value format: number of values, then list of values\n"
     "Alternate output field separator:\n"
     "  -F <ofs>: Use <ofs> as an alternate output field separator\n"
     "\nExample: caput my_channel 1.2\n"
@@ -492,14 +494,13 @@ int main (int argc, char *argv[])
     } else {                    /* Not an ENUM */
 
         if (charArrAsStr) {
-            count = len;
             dbrType = DBR_CHAR;
-            ebuf = calloc(strlen(cbuf)+1, sizeof(char));
+            ebuf = calloc(len, sizeof(char));
             if(!ebuf) {
                 fprintf(stderr, "Memory allocation failed\n");
                 return 1;
             }
-            epicsStrnRawFromEscaped(ebuf, strlen(cbuf)+1, cbuf, strlen(cbuf));
+            count = epicsStrnRawFromEscaped(ebuf, len, cbuf, len-1) + 1;
         } else {
             for (i = 0; i < count; ++i) {
                 epicsStrnRawFromEscaped(sbuf[i], sizeof(EpicsStr), *(argv+optind+i), sizeof(EpicsStr));

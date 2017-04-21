@@ -10,9 +10,6 @@
 /*
  * Author: Jim Kowalkowski
  * Date: 2/96
- *
- * $Revision-Id$
- *
  */
 
 #include <limits.h>

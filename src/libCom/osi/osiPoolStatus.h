@@ -11,8 +11,6 @@
 #define INC_osiPoolStatus_H
 
 /*
- * $Revision-Id$
- *
  * Author: Jeff Hill
  *
  * Functions which interrogate the state of the system wide pool

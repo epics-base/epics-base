@@ -1,8 +1,5 @@
 # CONFIG.darwin-x86.darwin-x86-debug
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for darwin-x86 host - darwin-x86-debug target build with debug compiler flags
 # Sites may override these definitions in CONFIG_SITE.darwin-x86.darwin-x86-debug
 #-------------------------------------------------------

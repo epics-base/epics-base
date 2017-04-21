@@ -1,5 +1,3 @@
-
-
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -10,8 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      $Revision-Id$
- *
  *      Author  Jeffrey O. Hill
  *              johill@lanl.gov
  *              505 665 1831
@@ -21,6 +17,8 @@
 #define casCtxh
 
 #include "caHdrLargeArray.h"
+
+class casStrmClient;
 
 class casCtx {
 public:
@@ -45,6 +43,7 @@ private:
 	casChannelI * pChannel;
 	casPVI * pPV;
 	unsigned nAsyncIO; // checks for improper use of async io
+    friend class casStrmClient;
 };
 
 inline const caHdrLargeArray * casCtx::getMsg() const 

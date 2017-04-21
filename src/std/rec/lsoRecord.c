@@ -40,8 +40,9 @@
 static void monitor(lsoRecord *);
 static long writeValue(lsoRecord *);
 
-static long init_record(lsoRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct lsoRecord *prec = (struct lsoRecord *)pcommon;
     lsodset *pdset;
 
     if (pass == 0) {
@@ -91,8 +92,9 @@ static long init_record(lsoRecord *prec, int pass)
     return 0;
 }
 
-static long process(lsoRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct lsoRecord *prec = (struct lsoRecord *)pcommon;
     int pact = prec->pact;
     lsodset *pdset = (lsodset *) prec->dset;
     long status = 0;
@@ -200,9 +202,10 @@ static long put_array_info(DBADDR *paddr, long nNew)
 {
     lsoRecord *prec = (lsoRecord *) paddr->precord;
 
-    if (nNew == prec->sizv)
-        --nNew;             /* truncated string */
-    prec->val[nNew] = 0;    /* ensure data is terminated */
+    if (nNew >= prec->sizv)
+        nNew = prec->sizv - 1; /* truncated string */
+    if (paddr->field_type == DBF_CHAR)
+        prec->val[nNew] = 0;   /* ensure data is terminated */
 
     return 0;
 }

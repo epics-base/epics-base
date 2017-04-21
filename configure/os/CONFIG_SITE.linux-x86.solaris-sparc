@@ -1,8 +1,5 @@
 # CONFIG_SITE.linux-x86.solaris-sparc
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Site specific definitions for linux-x86 host - solaris-sparc target builds
 #-------------------------------------------------------
 

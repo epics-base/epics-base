@@ -1,11 +1,10 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * RTEMS osdSock.h
- *	$Revision-Id$
  *      Author: W. Eric Norum
  *              eric@cls.usask.ca
  *              (306) 966-6055
@@ -36,7 +35,7 @@ int select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, str
 #ifdef __cplusplus
 }
 #endif
- 
+
 typedef int                     SOCKET;
 #define INVALID_SOCKET          (-1)
 #define SOCKERRNO               errno
@@ -50,6 +49,7 @@ typedef socklen_t osiSocklen_t;
 #define SOCK_ENOBUFS ENOBUFS
 #define SOCK_ECONNRESET ECONNRESET
 #define SOCK_ETIMEDOUT ETIMEDOUT
+#define SOCK_EACCES EACCES
 #define SOCK_EADDRINUSE EADDRINUSE
 #define SOCK_EADDRNOTAVAIL EADDRNOTAVAIL
 #define SOCK_ECONNREFUSED ECONNREFUSED
@@ -76,7 +76,7 @@ typedef socklen_t osiSocklen_t;
 
 #ifndef INADDR_NONE
 #   define INADDR_NONE (0xffffffff)
-#endif 
+#endif
 
 /*
  * For shutdown()

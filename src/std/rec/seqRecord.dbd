@@ -20,7 +20,7 @@ recordtype(seq) {
     }
     field(SELM,DBF_MENU) {
         prompt("Select Mechanism")
-        promptgroup(GUI_INPUTS)
+        promptgroup("30 - Action")
         interest(1)
         menu(seqSELM)
     }
@@ -31,16 +31,18 @@ recordtype(seq) {
     }
     field(SELL,DBF_INLINK) {
         prompt("Link Selection Loc")
-        promptgroup(GUI_INPUTS)
+        promptgroup("30 - Action")
         interest(1)
     }
     field(OFFS,DBF_SHORT) {
         prompt("Offset for Specified")
+        promptgroup("30 - Action")
         interest(1)
         initial("0")
     }
     field(SHFT,DBF_SHORT) {
         prompt("Shift for Mask mode")
+        promptgroup("30 - Action")
         interest(1)
         initial("-1")
     }
@@ -50,17 +52,17 @@ recordtype(seq) {
     }
     field(PREC,DBF_SHORT) {
         prompt("Display Precision")
-        promptgroup(GUI_DISPLAY)
+        promptgroup("80 - Display")
         interest(1)
     }
     field(DLY0,DBF_DOUBLE) {
         prompt("Delay 0")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DOL0,DBF_INLINK) {
         prompt("Input link 0")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DO0,DBF_DOUBLE) {
@@ -69,17 +71,17 @@ recordtype(seq) {
     }
     field(LNK0,DBF_OUTLINK) {
         prompt("Output Link 0")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DLY1,DBF_DOUBLE) {
         prompt("Delay 1")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DOL1,DBF_INLINK) {
         prompt("Input link1")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DO1,DBF_DOUBLE) {
@@ -88,17 +90,17 @@ recordtype(seq) {
     }
     field(LNK1,DBF_OUTLINK) {
         prompt("Output Link 1")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DLY2,DBF_DOUBLE) {
         prompt("Delay 2")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DOL2,DBF_INLINK) {
         prompt("Input link 2")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DO2,DBF_DOUBLE) {
@@ -107,17 +109,17 @@ recordtype(seq) {
     }
     field(LNK2,DBF_OUTLINK) {
         prompt("Output Link 2")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DLY3,DBF_DOUBLE) {
         prompt("Delay 3")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DOL3,DBF_INLINK) {
         prompt("Input link 3")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DO3,DBF_DOUBLE) {
@@ -126,17 +128,17 @@ recordtype(seq) {
     }
     field(LNK3,DBF_OUTLINK) {
         prompt("Output Link 3")
-        promptgroup(GUI_SEQ1)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DLY4,DBF_DOUBLE) {
         prompt("Delay 4")
-        promptgroup(GUI_SEQ2)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DOL4,DBF_INLINK) {
         prompt("Input link 4")
-        promptgroup(GUI_SEQ2)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DO4,DBF_DOUBLE) {
@@ -145,17 +147,17 @@ recordtype(seq) {
     }
     field(LNK4,DBF_OUTLINK) {
         prompt("Output Link 4")
-        promptgroup(GUI_SEQ2)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DLY5,DBF_DOUBLE) {
         prompt("Delay 5")
-        promptgroup(GUI_SEQ2)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DOL5,DBF_INLINK) {
         prompt("Input link 5")
-        promptgroup(GUI_SEQ2)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DO5,DBF_DOUBLE) {
@@ -164,17 +166,17 @@ recordtype(seq) {
     }
     field(LNK5,DBF_OUTLINK) {
         prompt("Output Link 5")
-        promptgroup(GUI_SEQ2)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DLY6,DBF_DOUBLE) {
         prompt("Delay 6")
-        promptgroup(GUI_SEQ2)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DOL6,DBF_INLINK) {
         prompt("Input link 6")
-        promptgroup(GUI_SEQ2)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DO6,DBF_DOUBLE) {
@@ -183,17 +185,17 @@ recordtype(seq) {
     }
     field(LNK6,DBF_OUTLINK) {
         prompt("Output Link 6")
-        promptgroup(GUI_SEQ2)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DLY7,DBF_DOUBLE) {
         prompt("Delay 7")
-        promptgroup(GUI_SEQ3)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DOL7,DBF_INLINK) {
         prompt("Input link 7")
-        promptgroup(GUI_SEQ3)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DO7,DBF_DOUBLE) {
@@ -202,17 +204,17 @@ recordtype(seq) {
     }
     field(LNK7,DBF_OUTLINK) {
         prompt("Output Link 7")
-        promptgroup(GUI_SEQ3)
+        promptgroup("41 - Link 0-7")
         interest(1)
     }
     field(DLY8,DBF_DOUBLE) {
         prompt("Delay 8")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOL8,DBF_INLINK) {
         prompt("Input link 8")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DO8,DBF_DOUBLE) {
@@ -221,17 +223,17 @@ recordtype(seq) {
     }
     field(LNK8,DBF_OUTLINK) {
         prompt("Output Link 8")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DLY9,DBF_DOUBLE) {
         prompt("Delay 9")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOL9,DBF_INLINK) {
         prompt("Input link 9")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DO9,DBF_DOUBLE) {
@@ -240,17 +242,17 @@ recordtype(seq) {
     }
     field(LNK9,DBF_OUTLINK) {
         prompt("Output Link 9")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DLYA,DBF_DOUBLE) {
         prompt("Delay 10")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOLA,DBF_INLINK) {
         prompt("Input link 10")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOA,DBF_DOUBLE) {
@@ -259,17 +261,17 @@ recordtype(seq) {
     }
     field(LNKA,DBF_OUTLINK) {
         prompt("Output Link 10")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DLYB,DBF_DOUBLE) {
         prompt("Delay 11")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOLB,DBF_INLINK) {
         prompt("Input link 11")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOB,DBF_DOUBLE) {
@@ -278,17 +280,17 @@ recordtype(seq) {
     }
     field(LNKB,DBF_OUTLINK) {
         prompt("Output Link 11")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DLYC,DBF_DOUBLE) {
         prompt("Delay 12")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOLC,DBF_INLINK) {
         prompt("Input link 12")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOC,DBF_DOUBLE) {
@@ -297,17 +299,17 @@ recordtype(seq) {
     }
     field(LNKC,DBF_OUTLINK) {
         prompt("Output Link 12")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DLYD,DBF_DOUBLE) {
         prompt("Delay 13")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOLD,DBF_INLINK) {
         prompt("Input link 13")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOD,DBF_DOUBLE) {
@@ -316,17 +318,17 @@ recordtype(seq) {
     }
     field(LNKD,DBF_OUTLINK) {
         prompt("Output Link 13")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DLYE,DBF_DOUBLE) {
         prompt("Delay 14")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOLE,DBF_INLINK) {
         prompt("Input link 14")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOE,DBF_DOUBLE) {
@@ -335,17 +337,17 @@ recordtype(seq) {
     }
     field(LNKE,DBF_OUTLINK) {
         prompt("Output Link 14")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DLYF,DBF_DOUBLE) {
         prompt("Delay 15")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOLF,DBF_INLINK) {
         prompt("Input link 15")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
     field(DOF,DBF_DOUBLE) {
@@ -354,7 +356,7 @@ recordtype(seq) {
     }
     field(LNKF,DBF_OUTLINK) {
         prompt("Output Link 15")
-        promptgroup(GUI_SEQ3)
+        promptgroup("42 - Link 8-F")
         interest(1)
     }
 }

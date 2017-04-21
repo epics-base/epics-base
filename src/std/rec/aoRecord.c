@@ -6,7 +6,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Revision-Id$ */
 
 /* aoRecord.c - Record Support Routines for Analog Output records */
 /*
@@ -47,15 +46,15 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(aoRecord *prec, int pass);
-static long process(aoRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 static long get_units(DBADDR *, char *);
-static long get_precision(DBADDR *, long *);
+static long get_precision(const DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -102,9 +101,10 @@ static void convert(aoRecord *, double);
 static void monitor(aoRecord *);
 static long writeValue(aoRecord *);
 
-static long init_record(aoRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
-    struct aodset *pdset;
+    struct aoRecord *prec = (struct aoRecord *)pcommon;
+    struct aodset  *pdset;
     double 	eoff = prec->eoff, eslo = prec->eslo;
     double	value;
 
@@ -170,9 +170,10 @@ static long init_record(aoRecord *prec, int pass)
     return(0);
 }
 
-static long process(aoRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-	struct aodset	*pdset = (struct aodset *)(prec->dset);
+    struct aoRecord *prec = (struct aoRecord *)pcommon;
+    struct aodset  *pdset = (struct aodset *)(prec->dset);
 	long		 status=0;
 	unsigned char    pact=prec->pact;
 	double		value;
@@ -290,7 +291,7 @@ static long get_units(DBADDR * paddr,char *units)
     return(0);
 }
 
-static long get_precision(DBADDR *paddr,long *precision)
+static long get_precision(const DBADDR *paddr,long *precision)
 {
     aoRecord	*prec=(aoRecord *)paddr->precord;
 

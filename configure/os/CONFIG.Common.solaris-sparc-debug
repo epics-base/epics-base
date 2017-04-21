@@ -1,8 +1,5 @@
 # CONFIG.Common.solaris-sparc-debug
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for solaris-sparc with debug compiler flags
 # Sites may override these definitions in CONFIG_SITE.Common.solaris-sparc-debug
 #-------------------------------------------------------

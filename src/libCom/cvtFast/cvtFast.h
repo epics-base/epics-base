@@ -7,7 +7,7 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Revision-Id$
+/*
  * Very efficient routines to convert numbers to strings
  *
  *      Author: Bob Dalesio wrote cvtFloatToString (called FF_TO_STR)

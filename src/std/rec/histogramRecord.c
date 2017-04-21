@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* histogramRecord.c - Record Support Routines for Histogram records */
 /*
  *      Author:      Janet Anderson
@@ -48,15 +46,15 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(histogramRecord *, int);
-static long process(histogramRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
 #define  put_array_info NULL
 static long get_units(DBADDR *, char *);
-static long get_precision(DBADDR *paddr,long *precision);
+static long get_precision(const DBADDR *paddr,long *precision);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -164,8 +162,9 @@ static long wdogInit(histogramRecord *prec)
     return 0;
 }
 
-static long init_record(histogramRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct histogramRecord *prec = (struct histogramRecord *)pcommon;
     struct histogramdset *pdset;
 
     if (pass == 0) {
@@ -209,9 +208,10 @@ static long init_record(histogramRecord *prec, int pass)
     return 0;
 }
 
-static long process(histogramRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-    struct histogramdset *pdset = (struct histogramdset *) prec->dset;
+    struct histogramRecord *prec = (struct histogramRecord *)pcommon;
+    struct histogramdset  *pdset = (struct histogramdset *) prec->dset;
     int pact = prec->pact;
     long status;
 
@@ -412,7 +412,7 @@ static long get_units(DBADDR *paddr, char *units)
     return 0;
 }
 
-static long get_precision(DBADDR *paddr,long *precision)
+static long get_precision(const DBADDR *paddr,long *precision)
 {
     histogramRecord *prec = (histogramRecord *) paddr->precord;
 

@@ -1,8 +1,5 @@
 # CONFIG.linux-386.Common
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for linux-386 host builds
 # Sites may override these definitions in CONFIG_SITE.linux-386.Common
 #-------------------------------------------------------

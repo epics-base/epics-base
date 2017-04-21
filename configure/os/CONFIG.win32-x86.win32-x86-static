@@ -1,14 +1,16 @@
 # CONFIG.win32-x86.win32-x86-static
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
-# Definitions for win32-x86-static target archs when host arch is win32-x86
-# Sites may override these definitions in CONFIG_SITE.win32-x86.win32-x86-static
+# Definitions for win32-x86 host - win32-x86-static target build
+# Override these definitions in CONFIG_SITE.win32-x86.win32-x86-static
 #-------------------------------------------------------
 
+#Include definitions common to win32-x86 builds
 include $(CONFIG)/os/CONFIG.win32-x86.win32-x86
+-include $(CONFIG)/os/CONFIG_SITE.win32-x86.win32-x86
 
+# Override CONFIG.CrossCommon settings:
 BUILD_CLASS = HOST
+
+# Override CONFIG_SITE settings:
 SHARED_LIBRARIES = NO
 STATIC_BUILD = YES

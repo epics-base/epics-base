@@ -13,9 +13,6 @@
 /*
  * Author: Jim Kowalkowski
  * Date: 2/96
- *
- * $Revision-Id$
- *
  */
 
 // Still need to handle to network byte order stuff.

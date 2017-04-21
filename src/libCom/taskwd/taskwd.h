@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* General purpose task watchdog */
 /*
  *      Original Author:        Marty Kraimer

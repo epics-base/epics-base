@@ -11,8 +11,6 @@
 #define INC_osiProcess_H
 
 /* 
- * $Revision-Id$
- * 
  * Operating System Independent Interface to Process Environment
  *
  * Author: Jeff Hill

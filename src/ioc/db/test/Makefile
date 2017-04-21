@@ -155,6 +155,13 @@ recGblCheckDeadbandTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += recGblCheckDeadbandTest.c
 TESTS += recGblCheckDeadbandTest
 
+TESTPROD_HOST += testPutGetTest
+testPutGetTest_SRCS += dbPutGetTest.c
+testPutGetTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbPutGetTest.db
+TESTFILES += ../dbPutGetTest.db
+TESTS += testPutGetTest
+
 # This runs all the test programs in a known working order:
 testHarness_SRCS += epicsRunDbTests.c
 

@@ -1,8 +1,5 @@
 # CONFIG.Common.vxWorks-ppc604-debug
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for vxWorks-ppc604-debug target archs
 # Sites may override these definitions in CONFIG_SITE.Common.vxWorks-ppc604-debug
 #-------------------------------------------------------

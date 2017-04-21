@@ -7,7 +7,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Revision-Id$ */
 
 /* Author:  Marty Kraimer Date:    26JAN2000 */
 
@@ -99,7 +98,7 @@ MAIN(callbackTest)
 {
     myPvt *pcbt[NCALLBACKS];
     epicsTimeStamp start;
-    int i, j;
+    int i, j, slowups, faults;
     /* Statistics: min/max/sum/sum^2/n for each priority */
     double setupError[NUM_CALLBACK_PRIORITIES][5];
     double timeError[NUM_CALLBACK_PRIORITIES][5];
@@ -109,7 +108,7 @@ MAIN(callbackTest)
         for (j = 0; j < 5; j++)
             setupError[i][j] = timeError[i][j] = defaultError[j];
 
-    testPlan(NCALLBACKS * 2 + 1);
+    testPlan(4);
 
     callbackInit();
     epicsThreadSleep(1.0);
@@ -135,7 +134,7 @@ MAIN(callbackTest)
     pcbt[NCALLBACKS-1]->delay = TEST_DELAY(NCALLBACKS) + 1.0;
     pcbt[NCALLBACKS-1]->pass = 0;
 
-    testOk1(epicsTimeGetCurrent(&start)==epicsTimeOK);
+    testOk(epicsTimeGetCurrent(&start)==epicsTimeOK, "Time-of-day clock Ok");
 
     for (i = 0; i < NCALLBACKS ; i++) {
         callbackRequest(&pcbt[i]->cb1);
@@ -144,28 +143,43 @@ MAIN(callbackTest)
     testDiag("Waiting %.02f sec", pcbt[NCALLBACKS-1]->delay);
 
     epicsEventWait(finished);
-    
+    slowups = 0;
+    faults = 0;
+
     for (i = 0; i < NCALLBACKS ; i++) {
         if(pcbt[i]->resultFail || pcbt[i]->pass!=2)
-            testFail("pass = %d for delay = %f", pcbt[i]->pass, pcbt[i]->delay);
+            testDiag("callback setup fault #%d: pass = %d for delay = %.02f",
+                ++faults, pcbt[i]->pass, pcbt[i]->delay);
         else {
             double delta = epicsTimeDiffInSeconds(&pcbt[i]->pass1Time, &start);
-            testOk(fabs(delta) < 0.05, "callback %.02f setup time |%f| < 0.05",
+
+            if (fabs(delta) >= 0.05) {
+                slowups++;
+                testDiag("callback %.02f setup time |%f| >= 0.05 seconds",
                     pcbt[i]->delay, delta);
+            }
             updateStats(setupError[i%NUM_CALLBACK_PRIORITIES], delta);
         }
     }
+    testOk(faults == 0, "%d faults during callback setup", faults);
+    testOk(slowups <= 1, "%d slowups during callback setup", slowups);
 
+    slowups = 0;
     for (i = 0; i < NCALLBACKS ; i++) {
         double delta, error;
+
         if(pcbt[i]->resultFail || pcbt[i]->pass!=2)
             continue;
         delta = epicsTimeDiffInSeconds(&pcbt[i]->pass2Time, &pcbt[i]->pass1Time);
         error = delta - pcbt[i]->delay;
-        testOk(fabs(error) < 0.05, "delay %.02f seconds, callback time error |%.04f| < 0.05",
+        if (fabs(error) >= 0.05) {
+            slowups++;
+            testDiag("delay %.02f seconds, delay error |%.04f| >= 0.05",
                 pcbt[i]->delay, error);
+        }
         updateStats(timeError[i%NUM_CALLBACK_PRIORITIES], error);
     }
+    testOk(slowups < 5, "%d slowups during callbacks", slowups);
 
     testDiag("Setup time statistics");
     printStats(setupError[0], "LOW");

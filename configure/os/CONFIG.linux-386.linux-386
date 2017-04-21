@@ -1,7 +1,5 @@
 #  CONFIG.linux-386.linux-386
 #
-# $Revision-Id$
-#
 # Definitions for linux-386 host - linux-386 target builds
 # Sites may override these definitions in CONFIG_SITE.linux-386.linux-386
 #-------------------------------------------------------

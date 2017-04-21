@@ -1,8 +1,5 @@
 # CONFIG.Common.vxWorks-mpc8540-debug
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for vxWorks-mpc8540-debug target archs
 # Sites may override these definitions in CONFIG_SITE.Common.vxWorks-mpc8540-debug
 #-------------------------------------------------------

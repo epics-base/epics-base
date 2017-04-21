@@ -5,10 +5,8 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
-#
-# $Revision-Id$
 #
 # Convert configure/RELEASE file(s) into something else.
 #
@@ -77,7 +75,7 @@ my @apps   = ('TOP');   # Records the order of definitions in RELEASE file
 my $relfile = "$top/configure/RELEASE";
 die "Can't find $relfile" unless (-f $relfile);
 readReleaseFiles($relfile, \%macros, \@apps, $arch);
-expandRelease(\%macros, \@apps);
+expandRelease(\%macros);
 
 
 # This is a perl switch statement:
@@ -123,19 +121,21 @@ sub dllPath {
     unlink $outfile;
     open(OUT, ">$outfile") or die "$! creating $outfile";
     print OUT "\@ECHO OFF\n";
-    print OUT "PATH \%PATH\%;", join(';', binDirs()), "\n";
+    # This SET syntax is essential for supporting embedded spaces and '&'
+    # characters in both the PATH variable and the new directory components
+    print OUT "SET \"PATH=", join(';', binDirs(), '%PATH%'), "\"\n";
     close OUT;
 }
 
 sub relPaths {
     unlink $outfile;
     open(OUT, ">$outfile") or die "$! creating $outfile";
-    print OUT "export PATH=\$PATH:",
-        join(':', map {m/\s/ ? "\"$_\"" : $_ } binDirs()), "\n";
+    print OUT "export PATH=\"", join(':', binDirs(), '$PATH'), "\"\n";
     close OUT;
 }
 
 sub binDirs {
+    die "Architecture not set (use -a option)\n" unless ($arch);
     my @includes = grep !m/^ (RULES | TEMPLATE_TOP) $/x, @apps;
     my @path;
     foreach my $app (@includes) {
@@ -154,22 +154,21 @@ sub binDirs {
 sub cdCommands {
     die "Architecture not set (use -a option)" unless ($arch);
     my @includes = grep !m/^(RULES | TEMPLATE_TOP)$/x, @apps;
-    
+
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
-    
+
     my $startup = $cwd;
     $startup =~ s/^$root/$iocroot/o if ($opt_t);
     $startup =~ s/([\\"])/\\$1/g; # escape back-slashes and double-quotes
-    
+
     print OUT "startup = \"$startup\"\n";
-    
+
     my $ioc = $cwd;
     $ioc =~ s/^.*\///;  # iocname is last component of directory name
-    
-    print OUT "putenv(\"ARCH=$arch\")\n";
+
     print OUT "putenv(\"IOC=$ioc\")\n";
-    
+
     foreach my $app (@includes) {
         my $iocpath = my $path = $macros{$app};
         $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
@@ -190,18 +189,16 @@ sub cdCommands {
 # Include parentheses anyway in case CEXP users want to use this.
 #
 sub envPaths {
-    die "Architecture not set (use -a option)" unless ($arch);
     my @includes = grep !m/^ (RULES | TEMPLATE_TOP) $/x, @apps;
-    
+
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
-    
+
     my $ioc = $cwd;
     $ioc =~ s/^.*\///;  # iocname is last component of directory name
-    
-    print OUT "epicsEnvSet(\"ARCH\",\"$arch\")\n";
+
     print OUT "epicsEnvSet(\"IOC\",\"$ioc\")\n";
-    
+
     foreach my $app (@includes) {
         my $iocpath = my $path = $macros{$app};
         $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
@@ -219,16 +216,16 @@ sub checkRelease {
     delete $macros{RULES};
     delete $macros{TOP};
     delete $macros{TEMPLATE_TOP};
-    
+
     while (my ($app, $path) = each %macros) {
         my %check = (TOP => $path);
         my @order = ();
         my $relfile = "$path/configure/RELEASE";
         readReleaseFiles($relfile, \%check, \@order, $arch);
-        expandRelease(\%check, \@order);
+        expandRelease(\%check);
         delete $check{TOP};
         delete $check{EPICS_HOST_ARCH};
-        
+
         while (my ($parent, $ppath) = each %check) {
             if (exists $macros{$parent} &&
                 AbsPath($macros{$parent}) ne AbsPath($ppath)) {
@@ -242,7 +239,34 @@ sub checkRelease {
             }
         }
     }
-    print "\n" if ($status);
+
+    my @modules = grep(!m/^(RULES|TOP|TEMPLATE_TOP)$/, @apps);
+    my $app = shift @modules;
+    my $latest = AbsPath($macros{$app});
+    my %paths = ($latest => $app);
+    foreach $app (@modules) {
+        my $path = AbsPath($macros{$app});
+        if ($path ne $latest && exists $paths{$path}) {
+            my $prev = $paths{$path};
+            print "\n" unless ($status);
+            print "This application's RELEASE file(s) define\n";
+            print "\t$app = $macros{$app}\n";
+            print "after but not adjacent to\n\t$prev = $macros{$prev}\n";
+            print "both of which resolve to $path\n"
+                if $path ne $macros{$app} || $path ne $macros{$prev};
+            $status = 2;
+        }
+        $paths{$path} = $app;
+        $latest = $path;
+    }
+    if ($status == 2) {
+        print "Module definitions that share paths must be grouped together.\n";
+        print "Either remove a definition, or move it to a line immediately\n";
+        print "above or below the other(s).\n";
+        print "Any non-module definitions belong in configure/CONFIG_SITE.\n";
+        $status = 1;
+    }
+
+    print "\n" if $status;
     exit $status;
 }
-

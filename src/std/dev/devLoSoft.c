@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devLoSoft.c */
-/* base/src/dev $Revision-Id$ */
 /*
  *      Author:		Janet Anderson
  *      Date:   	09-23-91

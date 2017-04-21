@@ -1,8 +1,5 @@
 # CONFIG.Common.vxWorks-68040lc-debug
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for vxWorks-68040lc-debug target archs
 # Sites may override these definitions in CONFIG_SITE.Common.vxWorks-68040lc-debug
 #-------------------------------------------------------

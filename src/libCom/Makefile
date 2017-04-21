@@ -50,13 +50,17 @@ Com_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
 Com_RCS = Com.rc
 
+ifeq ($(T_A),$(EPICS_HOST_ARCH))
+  # Antelope & flex are needed to finish libCom
+  DELAY_INSTALL_LIBS = YES
+endif
+
 include $(TOP)/configure/RULES
 
 include $(LIBCOM)/as/RULES
 include $(LIBCOM)/env/RULES
 include $(LIBCOM)/error/RULES
 include $(LIBCOM)/flex/RULES
-include $(LIBCOM)/log/RULES
 include $(LIBCOM)/misc/RULES
 include $(LIBCOM)/osi/RULES
 

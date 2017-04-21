@@ -22,7 +22,3 @@ GNU_LDLIBS_YES =
 
 # Link with winsock2
 OP_SYS_LDLIBS = -lws2_32
-
-# Use static compiler-support libraries
-OP_SYS_LDFLAGS += -static-libgcc -static-libstdc++
-# There is no compiler flag for static libwinpthread

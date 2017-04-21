@@ -6,8 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Revision-Id$
- *
+/*
  *      Current Author:         Marty Kraimer
  *      Date:                   03-19-92
  */
@@ -19,6 +18,7 @@
 #include "dbFldTypes.h"
 #include "ellLib.h"
 #include "dbDefs.h"
+#include "recSup.h"
 
 typedef struct dbMenu {
 	ELLNODE		node;
@@ -141,25 +141,25 @@ typedef struct dbVariableDef {
 }dbVariableDef;
 
 typedef struct dbRecordType {
-	ELLNODE		node;
-	ELLLIST		attributeList;	/*LIST head of attributes*/
-	ELLLIST		recList;	/*LIST head of sorted dbRecordNodes*/
-	ELLLIST		devList;	/*List of associated device support*/
-	ELLLIST		cdefList;	/*LIST of Cdef text items*/
-	char		*name;
-	short		no_fields;	/* number of fields defined	*/
-	short		no_prompt;	/* number of fields to configure*/
-	short		no_links;	/* number of links		*/
-	short		no_aliases;	/* number of aliases in recList */
-	short		*link_ind;	/* addr of array of ind in papFldDes*/
-	char		**papsortFldName;/* ptr to array of ptr to fld names*/
-	short		*sortFldInd;	/* addr of array of ind in papFldDes*/
-	dbFldDes	*pvalFldDes;	/*pointer dbFldDes for VAL field*/
-	short		indvalFlddes;	/*ind in papFldDes*/
-	dbFldDes 	**papFldDes;	/* ptr to array of ptr to fldDes*/
-	/*The following are only available on run time system*/
-	struct	rset	*prset;
-	int		rec_size;	/*record size in bytes          */
+    ELLNODE		node;
+    ELLLIST		attributeList;	/*LIST head of attributes*/
+    ELLLIST		recList;	/*LIST head of sorted dbRecordNodes*/
+    ELLLIST		devList;	/*List of associated device support*/
+    ELLLIST		cdefList;	/*LIST of Cdef text items*/
+    char		*name;
+    short		no_fields;	/* number of fields defined	*/
+    short		no_prompt;	/* number of fields to configure*/
+    short		no_links;	/* number of links		*/
+    short		no_aliases;	/* number of aliases in recList */
+    short		*link_ind;	/* addr of array of ind in papFldDes*/
+    char		**papsortFldName;/* ptr to array of ptr to fld names*/
+    short		*sortFldInd;	/* addr of array of ind in papFldDes*/
+    dbFldDes	*pvalFldDes;	/*pointer dbFldDes for VAL field*/
+    short		indvalFlddes;	/*ind in papFldDes*/
+    dbFldDes 	**papFldDes;	/* ptr to array of ptr to fldDes*/
+    /*The following are only available on run time system*/
+    rset        *prset;
+    int		rec_size;	/*record size in bytes          */
 }dbRecordType;
 
 struct dbPvd;           /* Contents private to dbPvdLib code */
@@ -174,8 +174,9 @@ typedef struct dbBase {
 	ELLLIST		functionList;
 	ELLLIST		variableList;
 	ELLLIST		bptList;
-	ELLLIST         filterList;
-	void		*pathPvt;
+    ELLLIST         filterList;
+    ELLLIST         guiGroupList;
+    void		*pathPvt;
 	struct dbPvd	*ppvd;
 	struct gphPvt	*pgpHash;
 	short		ignoreMissingMenus;

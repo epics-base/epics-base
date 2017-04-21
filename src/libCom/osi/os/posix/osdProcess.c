@@ -9,8 +9,6 @@
 \*************************************************************************/
 
 /* 
- * $Revision-Id$
- * 
  * Operating System Dependent Implementation of osiProcess.h
  *
  * Author: Jeff Hill

@@ -1,4 +1,4 @@
-# $Revision-Id$
+# Makefile in extensions/configure directory
 
 TOP=..
 

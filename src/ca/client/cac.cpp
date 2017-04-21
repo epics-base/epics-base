@@ -149,9 +149,9 @@ cac::cac (
     iiuExistenceCount ( 0u ),
     cacShutdownInProgress ( false )
 {
-	if ( ! osiSockAttach () ) {
-        throwWithLocation ( caErrorCode (ECA_INTERNAL) );
-	}
+    if ( ! osiSockAttach () ) {
+        throwWithLocation ( udpiiu :: noSocket () );
+    }
 
     try {
 	    long status;
@@ -332,6 +332,12 @@ cac::~cac ()
     this->timerQueue.release ();
 
     this->ipToAEngine.release ();
+
+    // clean-up the list of un-notified msg objects
+    while ( msgForMultiplyDefinedPV * msg = this->msgMultiPVList.get() ) {
+        msg->~msgForMultiplyDefinedPV ();
+        this->mdpvFreeList.release ( msg );
+    }
 
     errlogFlush ();
 
@@ -606,6 +612,8 @@ void cac::transferChanToVirtCircuit (
             msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
                 msgForMultiplyDefinedPV ( this->ipToAEngine,
                     *this, pChan->pName ( guard ), acc );
+            // cac keeps a list of these objects for proper clean-up in ~cac
+            this->msgMultiPVList.add ( *pMsg );
             // It is possible for the ioInitiate call below to
             // call the callback directly if queue quota is exceeded.
             // This callback takes the callback lock and therefore we
@@ -627,11 +635,13 @@ void cac::transferChanToVirtCircuit (
     // must occur before moving to new iiu
     pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse (
         guard, *pChan, currentTime );
-    piiu->installChannel (
-        guard, *pChan, sid, typeCode, count );
+    if ( piiu ) {
+        piiu->installChannel (
+            guard, *pChan, sid, typeCode, count );
 
-    if ( newIIU ) {
-        piiu->start ( guard );
+        if ( newIIU ) {
+            piiu->start ( guard );
+        }
     }
 }
 
@@ -1296,7 +1306,11 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
         callbackManager mgr ( this->notify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->exception ( mgr.cbGuard, guard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
+
+        // remove from the list under lock
+        this->msgMultiPVList.remove ( mfmdpv );
     }
+    // delete msg object
     mfmdpv.~msgForMultiplyDefinedPV ();
     this->mdpvFreeList.release ( & mfmdpv );
 }

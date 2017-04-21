@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -9,12 +8,8 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-// $Revision-Id$
-//
 // casOSD.h - Channel Access Server OS dependent wrapper
 // 
-//
-//
 
 #ifndef casIntfOSh
 #define casIntfOSh 

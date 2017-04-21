@@ -6,8 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Revision-Id$
- *
+/*
  * Implementation of core macro substitution library (macLib)
  *
  * The implementation is fairly unsophisticated and linked lists are
@@ -868,9 +867,9 @@ static void refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
         if ( !refentry->visited ) {
             /* reference is good, use it */
             if ( !handle->dirty ) {
-                /* copy the already-expanded value, and its error status! */
+                /* copy the already-expanded value, merge any error status */
                 cpy2val( refentry->value, &v, valend );
-                entry->error = refentry->error;
+                entry->error = entry->error || refentry->error;
             } else {
                 /* translate raw value */
                 const char *rv = refentry->rawval;

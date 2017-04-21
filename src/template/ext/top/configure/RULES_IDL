@@ -1,4 +1,4 @@
-# $Revision-Id$
+# extensions/configure/RULES_IDL
 
 ifdef T_A
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)

@@ -5,8 +5,6 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Id$
-
 package EPICS::Readfile;
 require 5.000;
 require Exporter;

@@ -8,27 +8,11 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *	$Revision-Id$
- *	@(#)veclist.c	1.10
- *
  *	list fuctions attached to the interrupt vector table
  *
  *	Created 28Mar89	Jeffrey O. Hill
  *	johill@lanl.gov
  *	(505) 665 1831
- *
- */
-
-/*
- * 
- *	makefile
- *
- *
- * V5VW = /.../vx/v502b
- *
- * veclist.o:
- *	cc68k -c -DCPU_FAMILY=MC680X0 -I$(V5VW)/h veclist.c
- * 
  *
  */
 
@@ -40,9 +24,6 @@
 #include "iv.h"
 #include "ctype.h"
 #include "sysSymTbl.h"
-
-static const char sccsID[] = 
-	"@(#) $Revision-Id$";
 
 /*
  *

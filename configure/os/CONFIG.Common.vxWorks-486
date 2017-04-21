@@ -1,8 +1,5 @@
 # CONFIG.Common.vxWorks-486
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for vxWorks-486 target archs
 # Sites may override these definitions in CONFIG_SITE.Common.vxWorks-486
 #-------------------------------------------------------

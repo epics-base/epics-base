@@ -1,6 +1,5 @@
 # CONFIG.Common.darwin-ppcx86
 #
-# $Revision-Id$
 # This file is maintained by the build community.
 #
 # Definitions for Darwin universal PowerPC + x86 target builds

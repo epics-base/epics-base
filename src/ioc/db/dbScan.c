@@ -159,8 +159,11 @@ void scanStop(void)
     interruptAccept = FALSE;
 
     for (i = 0; i < nPeriodic; i++) {
-        papPeriodic[i]->scanCtl = ctlExit;
-        epicsEventSignal(papPeriodic[i]->loopEvent);
+        periodic_scan_list *ppsl = papPeriodic[i];
+
+        if (!ppsl) continue;
+        ppsl->scanCtl = ctlExit;
+        epicsEventSignal(ppsl->loopEvent);
         epicsEventWait(startStopEvent);
     }
 
@@ -205,16 +208,24 @@ void scanRun(void)
     interruptAccept = TRUE;
     scanCtl = ctlRun;
 
-    for (i = 0; i < nPeriodic; i++)
-        papPeriodic[i]->scanCtl = ctlRun;
+    for (i = 0; i < nPeriodic; i++) {
+        periodic_scan_list *ppsl = papPeriodic[i];
+
+        if (!ppsl) continue;
+        ppsl->scanCtl = ctlRun;
+    }
 }
 
 void scanPause(void)
 {
     int i;
 
-    for (i = nPeriodic - 1; i >= 0; --i)
-        papPeriodic[i]->scanCtl = ctlPause;
+    for (i = nPeriodic - 1; i >= 0; --i) {
+        periodic_scan_list *ppsl = papPeriodic[i];
+
+        if (!ppsl) continue;
+        ppsl->scanCtl = ctlPause;
+    }
 
     scanCtl = ctlPause;
     interruptAccept = FALSE;
@@ -286,9 +297,11 @@ void scanAdd(struct dbCommon *precord)
         }
         addToList(precord, &piosh->iosl[prio].scan_list);
     } else if (scan >= SCAN_1ST_PERIODIC) {
-        addToList(precord, &papPeriodic[scan - SCAN_1ST_PERIODIC]->scan_list);
+        periodic_scan_list *ppsl = papPeriodic[scan - SCAN_1ST_PERIODIC];
+
+        if (ppsl)
+            addToList(precord, &ppsl->scan_list);
     }
-    return;
 }
 
 void scanDelete(struct dbCommon *precord)
@@ -352,28 +365,48 @@ void scanDelete(struct dbCommon *precord)
         }
         deleteFromList(precord, &piosh->iosl[prio].scan_list);
     } else if (scan >= SCAN_1ST_PERIODIC) {
-        deleteFromList(precord, &papPeriodic[scan - SCAN_1ST_PERIODIC]->scan_list);
+        periodic_scan_list *ppsl = papPeriodic[scan - SCAN_1ST_PERIODIC];
+
+        if (ppsl)
+            deleteFromList(precord, &ppsl->scan_list);
     }
-    return;
 }
 
 double scanPeriod(int scan) {
+    periodic_scan_list *ppsl;
+
     scan -= SCAN_1ST_PERIODIC;
     if (scan < 0 || scan >= nPeriodic)
         return 0.0;
-    return papPeriodic[scan]->period;
+    ppsl = papPeriodic[scan];
+    return ppsl ? ppsl->period : 0.0;
 }
-
-int scanppl(double period)      /* print periodic list */
+
+int scanppl(double period)      /* print periodic scan list(s) */
 {
-    periodic_scan_list *ppsl;
+    dbMenu *pmenu = dbFindMenu(pdbbase, "menuScan");
     char message[80];
     int i;
 
+    if (!pmenu || !papPeriodic) {
+        printf("scanppl: dbScan subsystem not initialized\n");
+        return -1;
+    }
+
     for (i = 0; i < nPeriodic; i++) {
-        ppsl = papPeriodic[i];
-        if (ppsl == NULL) continue;
-        if (period > 0.0 && (fabs(period - ppsl->period) >.05)) continue;
+        periodic_scan_list *ppsl = papPeriodic[i];
+
+        if (!ppsl) {
+            const char *choice = pmenu->papChoiceValue[i + SCAN_1ST_PERIODIC];
+
+            printf("Periodic scan list for SCAN = '%s' not initialized\n",
+                choice);
+            continue;
+        }
+        if (period > 0.0 &&
+            (fabs(period - ppsl->period) > 0.05))
+            continue;
+
         sprintf(message, "Records with SCAN = '%s' (%lu over-runs):",
             ppsl->name, ppsl->overruns);
         printList(&ppsl->scan_list, message);
@@ -741,7 +774,7 @@ static void periodicTask(void *arg)
             if (++overruns >= 10 &&
                 epicsTimeDiffInSeconds(&now, &reported) > report_delay) {
                 errlogPrintf("\ndbScan warning from '%s' scan thread:\n"
-                    "\tScan processing averages %.2f seconds (%.2f .. %.2f).\n"
+                    "\tScan processing averages %.3f seconds (%.3f .. %.3f).\n"
                     "\tOver-runs have now happened %u times in a row.\n"
                     "\tTo fix this, move some records to a slower scan rate.\n",
                     ppsl->name, ppsl->period + overtime / overruns,
@@ -788,12 +821,8 @@ static void initPeriodic(void)
         char *unit;
         int status = epicsParseDouble(choice, &number, &unit);
 
-        ppsl->scan_list.lock = epicsMutexMustCreate();
-        ellInit(&ppsl->scan_list.list);
-        ppsl->name = choice;
-        if (status || number == 0) {
+        if (status || number <= 0) {
             errlogPrintf("initPeriodic: Bad menuScan choice '%s'\n", choice);
-            ppsl->period = i;
         }
         else if (!*unit ||
                  !epicsStrCaseCmp(unit, "second") ||
@@ -814,16 +843,24 @@ static void initPeriodic(void)
         }
         else {
             errlogPrintf("initPeriodic: Bad menuScan choice '%s'\n", choice);
-            ppsl->period = i;
         }
+        if (ppsl->period == 0) {
+            free(ppsl);
+            continue;
+        }
+
+        ppsl->scan_list.lock = epicsMutexMustCreate();
+        ellInit(&ppsl->scan_list.list);
+        ppsl->name = choice;
+        ppsl->scanCtl = ctlPause;
+        ppsl->loopEvent = epicsEventMustCreate(epicsEventEmpty);
+
         number = ppsl->period / quantum;
         if ((ppsl->period < 2 * quantum) ||
             (number / floor(number) > 1.1)) {
             errlogPrintf("initPeriodic: Scan rate '%s' is not achievable.\n",
                 choice);
         }
-        ppsl->scanCtl = ctlPause;
-        ppsl->loopEvent = epicsEventMustCreate(epicsEventEmpty);
 
         papPeriodic[i] = ppsl;
     }
@@ -835,6 +872,8 @@ static void deletePeriodic(void)
 
     for (i = 0; i < nPeriodic; i++) {
         periodic_scan_list *ppsl = papPeriodic[i];
+
+        if (!ppsl) continue;
         ellFree(&ppsl->scan_list.list);
         epicsEventDestroy(ppsl->loopEvent);
         epicsMutexDestroy(ppsl->scan_list.lock);
@@ -847,10 +886,11 @@ static void deletePeriodic(void)
 
 static void spawnPeriodic(int ind)
 {
-    periodic_scan_list *ppsl;
+    periodic_scan_list *ppsl = papPeriodic[ind];
     char taskName[20];
 
-    ppsl = papPeriodic[ind];
+    if (!ppsl) return;
+
     sprintf(taskName, "scan-%g", ppsl->period);
     periodicTaskId[ind] = epicsThreadCreate(
         taskName, epicsThreadPriorityScanLow + ind,
@@ -989,13 +1029,13 @@ static void addToList(struct dbCommon *precord, scan_list *psl)
         pse->precord = precord;
     }
     pse->pscan_list = psl;
-    ptemp = (scan_element *)ellFirst(&psl->list);
+    ptemp = (scan_element *)ellLast(&psl->list);
     while (ptemp) {
-        if (ptemp->precord->phas > precord->phas) {
-            ellInsert(&psl->list, ellPrevious(&ptemp->node), &pse->node);
+        if (ptemp->precord->phas <= precord->phas) {
+            ellInsert(&psl->list, &ptemp->node, &pse->node);
             break;
         }
-        ptemp = (scan_element *)ellNext(&ptemp->node);
+        ptemp = (scan_element *)ellPrevious(&ptemp->node);
     }
     if (ptemp == NULL) ellAdd(&psl->list, (void *)pse);
     psl->modified = TRUE;

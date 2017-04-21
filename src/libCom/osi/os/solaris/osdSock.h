@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -39,7 +39,7 @@ typedef int osiSockIoctl_t;
 
 #if SOLARIS > 6 || defined ( _SOCKLEN_T )
     typedef uint32_t osiSocklen_t;
-#else 
+#else
     typedef int osiSocklen_t;
 #endif
 
@@ -51,6 +51,7 @@ typedef int osiSockIoctl_t;
 #define SOCK_ENOBUFS ENOBUFS
 #define SOCK_ECONNRESET ECONNRESET
 #define SOCK_ETIMEDOUT ETIMEDOUT
+#define SOCK_EACCES EACCES
 #define SOCK_EADDRINUSE EADDRINUSE
 #define SOCK_EADDRNOTAVAIL EADDRNOTAVAIL
 #define SOCK_ECONNREFUSED ECONNREFUSED
@@ -80,9 +81,8 @@ typedef int osiSockIoctl_t;
 
 #ifndef INADDR_NONE
 #   define INADDR_NONE (0xffffffff)
-#endif 
+#endif
 
 #define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
 
 #endif /*osdSockH*/
-

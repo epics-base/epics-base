@@ -7,11 +7,11 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Revision-Id$
+/*
  * errSymLib.c
  *      Author:          Marty Kraimer
  *      Date:            6-1-90
- * errMessage.c - Handle error messages 
+ *
  ***************************************************************************
  * This must ultimately be replaced by a facility that allows remote
  * nodes access to the error messages. A message handling communication

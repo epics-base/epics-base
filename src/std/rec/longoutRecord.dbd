@@ -3,136 +3,135 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 recordtype(longout) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_LONG) {
 		prompt("Desired Output")
-                promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		asl(ASL0)
 		pp(TRUE)
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(DOL,DBF_INLINK) {
 		prompt("Desired Output Loc")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("40 - Input")
 		interest(1)
 	}
 	field(OMSL,DBF_MENU) {
 		prompt("Output Mode Select")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 		menu(menuOmsl)
 	}
 	field(EGU,DBF_STRING) {
-		prompt("Units name")
-		promptgroup(GUI_DISPLAY)
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
 		interest(1)
 		size(16)
 		prop(YES)
 	}
 	field(DRVH,DBF_LONG) {
 		prompt("Drive High Limit")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("30 - Action")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(DRVL,DBF_LONG) {
 		prompt("Drive Low Limit")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("30 - Action")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HOPR,DBF_LONG) {
 		prompt("High Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(LOPR,DBF_LONG) {
 		prompt("Low Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(HIHI,DBF_LONG) {
 		prompt("Hihi Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOLO,DBF_LONG) {
 		prompt("Lolo Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HIGH,DBF_LONG) {
 		prompt("High Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOW,DBF_LONG) {
 		prompt("Low Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(LLSV,DBF_MENU) {
 		prompt("Lolo Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(HSV,DBF_MENU) {
 		prompt("High Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(LSV,DBF_MENU) {
 		prompt("Low Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(HYST,DBF_LONG) {
 		prompt("Alarm Deadband")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		interest(1)
 	}
 	field(ADEL,DBF_LONG) {
 		prompt("Archive Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(MDEL,DBF_LONG) {
 		prompt("Monitor Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(LALM,DBF_LONG) {
@@ -152,12 +151,12 @@ recordtype(longout) {
 	}
 	field(SIOL,DBF_OUTLINK) {
 		prompt("Sim Output Specifctn")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {
@@ -167,19 +166,19 @@ recordtype(longout) {
 	}
 	field(SIMS,DBF_MENU) {
 		prompt("Sim mode Alarm Svrty")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(2)
 		menu(menuAlarmSevr)
 	}
 	field(IVOA,DBF_MENU) {
 		prompt("INVALID output action")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(2)
 		menu(menuIvoa)
 	}
 	field(IVOV,DBF_LONG) {
 		prompt("INVALID output value")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(2)
 	}
 }

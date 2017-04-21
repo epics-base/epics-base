@@ -8,8 +8,6 @@
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-# $Revision-Id$
-#
 # Find and delete cvs .#* and editor backup *~
 # files from all dirs of the directory tree.
 

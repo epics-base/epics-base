@@ -6,8 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Revision-Id$
- *
+/*
  *      Author: Marty Kraimer
  *      Date:   06-08-93
  */
@@ -81,6 +80,10 @@ epicsShareFunc long dbReadDatabaseFP(DBBASE **ppdbbase,
     FILE *fp, const char *path, const char *substitutions);
 epicsShareFunc long dbPath(DBBASE *pdbbase, const char *path);
 epicsShareFunc long dbAddPath(DBBASE *pdbbase, const char *path);
+epicsShareFunc char * dbGetPromptGroupNameFromKey(DBBASE *pdbbase,
+    const short key);
+epicsShareFunc short dbGetPromptGroupKeyFromName(DBBASE *pdbbase,
+    const char *name);
 epicsShareFunc long dbWriteRecord(DBBASE *ppdbbase,
     const char *filename, const char *precordTypename, int level);
 epicsShareFunc long dbWriteRecordFP(DBBASE *ppdbbase,
@@ -144,8 +147,6 @@ epicsShareFunc long dbNextRecord(DBENTRY *pdbentry);
 epicsShareFunc int  dbGetNRecords(DBENTRY *pdbentry);
 epicsShareFunc int  dbGetNAliases(DBENTRY *pdbentry);
 epicsShareFunc char * dbGetRecordName(DBENTRY *pdbentry);
-epicsShareFunc long dbRenameRecord(DBENTRY *pdbentry,
-    const char *newName);
 epicsShareFunc long dbCopyRecord(DBENTRY *pdbentry,
     const char *newRecordName, int overWriteOK);
 

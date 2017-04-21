@@ -509,7 +509,7 @@ dbChannel * dbChannelCreate(const char *name)
     paddr->dbr_field_type = mapDBFToDBR[dbfType];
 
     if (paddr->special == SPC_DBADDR) {
-        struct rset *prset = dbGetRset(paddr);
+        rset *prset = dbGetRset(paddr);
 
         /* Let record type modify paddr */
         if (prset && prset->cvt_dbaddr) {

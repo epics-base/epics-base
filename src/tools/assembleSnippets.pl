@@ -5,8 +5,6 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Id$
-
 use strict;
 use warnings;
 

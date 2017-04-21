@@ -61,33 +61,33 @@ recordtype(aSub) {
 	}
 	field(INAM,DBF_STRING) {
 		prompt("Initialize Subr. Name")
-		promptgroup(GUI_SUB)
+		promptgroup("30 - Action")
 		special(SPC_NOMOD)
 		interest(1)
 		size(41)
 	}
 	field(LFLG,DBF_MENU) {
 		prompt("Subr. Input Enable")
-		promptgroup(GUI_SUB)
+		promptgroup("30 - Action")
 		interest(1)
 		menu(aSubLFLG)
 	}
 	field(SUBL,DBF_INLINK) {
 		prompt("Subroutine Name Link")
-		promptgroup(GUI_SUB)
+		promptgroup("30 - Action")
 		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(SNAM,DBF_STRING) {
 		prompt("Process Subr. Name")
-		promptgroup(GUI_SUB)
+		promptgroup("30 - Action")
 		special(SPC_MOD)
 		interest(1)
 		size(41)
 	}
 	field(ONAM,DBF_STRING) {
 		prompt("Old Subr. Name")
-		promptgroup(GUI_SUB)
+		promptgroup("30 - Action")
 		special(SPC_NOMOD)
 		interest(3)
 		size(41)
@@ -107,127 +107,127 @@ recordtype(aSub) {
 	}
 	field(BRSV,DBF_MENU) {
 		prompt("Bad Return Severity")
-		promptgroup(GUI_SUB)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(EFLG,DBF_MENU) {
 		prompt("Output Event Flag")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 		menu(aSubEFLG)
 		initial("1")
 	}
 	field(INPA,DBF_INLINK) {
 		prompt("Input Link A")
-		promptgroup(GUI_INPUTS)
+		promptgroup("41 - Input A-G")
 		interest(1)
 	}
 	field(INPB,DBF_INLINK) {
 		prompt("Input Link B")
-		promptgroup(GUI_INPUTS)
+		promptgroup("41 - Input A-G")
 		interest(1)
 	}
 	field(INPC,DBF_INLINK) {
 		prompt("Input Link C")
-		promptgroup(GUI_INPUTS)
+		promptgroup("41 - Input A-G")
 		interest(1)
 	}
 	field(INPD,DBF_INLINK) {
 		prompt("Input Link D")
-		promptgroup(GUI_INPUTS)
+		promptgroup("41 - Input A-G")
 		interest(1)
 	}
 	field(INPE,DBF_INLINK) {
 		prompt("Input Link E")
-		promptgroup(GUI_INPUTS)
+		promptgroup("41 - Input A-G")
 		interest(1)
 	}
 	field(INPF,DBF_INLINK) {
 		prompt("Input Link F")
-		promptgroup(GUI_INPUTS)
+		promptgroup("41 - Input A-G")
 		interest(1)
 	}
 	field(INPG,DBF_INLINK) {
 		prompt("Input Link G")
-		promptgroup(GUI_INPUTS)
+		promptgroup("41 - Input A-G")
 		interest(1)
 	}
 	field(INPH,DBF_INLINK) {
 		prompt("Input Link H")
-		promptgroup(GUI_INPUTS)
+		promptgroup("42 - Input H-N")
 		interest(1)
 	}
 	field(INPI,DBF_INLINK) {
 		prompt("Input Link I")
-		promptgroup(GUI_INPUTS)
+		promptgroup("42 - Input H-N")
 		interest(1)
 	}
 	field(INPJ,DBF_INLINK) {
 		prompt("Input Link J")
-		promptgroup(GUI_INPUTS)
+		promptgroup("42 - Input H-N")
 		interest(1)
 	}
 	field(INPK,DBF_INLINK) {
 		prompt("Input Link K")
-		promptgroup(GUI_INPUTS)
+		promptgroup("42 - Input H-N")
 		interest(1)
 	}
 	field(INPL,DBF_INLINK) {
 		prompt("Input Link L")
-		promptgroup(GUI_INPUTS)
+		promptgroup("42 - Input H-N")
 		interest(1)
 	}
 	field(INPM,DBF_INLINK) {
 		prompt("Input Link M")
-		promptgroup(GUI_INPUTS)
+		promptgroup("42 - Input H-N")
 		interest(1)
 	}
 	field(INPN,DBF_INLINK) {
 		prompt("Input Link N")
-		promptgroup(GUI_INPUTS)
+		promptgroup("42 - Input H-N")
 		interest(1)
 	}
 	field(INPO,DBF_INLINK) {
 		prompt("Input Link O")
-		promptgroup(GUI_INPUTS)
+		promptgroup("43 - Input O-U")
 		interest(1)
 	}
 	field(INPP,DBF_INLINK) {
 		prompt("Input Link P")
-		promptgroup(GUI_INPUTS)
+		promptgroup("43 - Input O-U")
 		interest(1)
 	}
 	field(INPQ,DBF_INLINK) {
 		prompt("Input Link Q")
-		promptgroup(GUI_INPUTS)
+		promptgroup("43 - Input O-U")
 		interest(1)
 	}
 	field(INPR,DBF_INLINK) {
 		prompt("Input Link R")
-		promptgroup(GUI_INPUTS)
+		promptgroup("43 - Input O-U")
 		interest(1)
 	}
 	field(INPS,DBF_INLINK) {
 		prompt("Input Link S")
-		promptgroup(GUI_INPUTS)
+		promptgroup("43 - Input O-U")
 		interest(1)
 	}
 	field(INPT,DBF_INLINK) {
 		prompt("Input Link T")
-		promptgroup(GUI_INPUTS)
+		promptgroup("43 - Input O-U")
 		interest(1)
 	}
 	field(INPU,DBF_INLINK) {
 		prompt("Input Link U")
-		promptgroup(GUI_INPUTS)
+		promptgroup("43 - Input O-U")
 		interest(1)
 	}
 
@@ -451,7 +451,7 @@ recordtype(aSub) {
 	}
 	field(FTA,DBF_MENU) {
 		prompt("Type of A")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -459,7 +459,7 @@ recordtype(aSub) {
 	}
 	field(FTB,DBF_MENU) {
 		prompt("Type of B")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -467,7 +467,7 @@ recordtype(aSub) {
 	}
 	field(FTC,DBF_MENU) {
 		prompt("Type of C")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -475,7 +475,7 @@ recordtype(aSub) {
 	}
 	field(FTD,DBF_MENU) {
 		prompt("Type of D")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -483,7 +483,7 @@ recordtype(aSub) {
 	}
 	field(FTE,DBF_MENU) {
 		prompt("Type of E")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -491,7 +491,7 @@ recordtype(aSub) {
 	}
 	field(FTF,DBF_MENU) {
 		prompt("Type of F")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -499,7 +499,7 @@ recordtype(aSub) {
 	}
 	field(FTG,DBF_MENU) {
 		prompt("Type of G")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -507,7 +507,7 @@ recordtype(aSub) {
 	}
 	field(FTH,DBF_MENU) {
 		prompt("Type of H")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -515,7 +515,7 @@ recordtype(aSub) {
 	}
 	field(FTI,DBF_MENU) {
 		prompt("Type of I")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -523,7 +523,7 @@ recordtype(aSub) {
 	}
 	field(FTJ,DBF_MENU) {
 		prompt("Type of J")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -531,7 +531,7 @@ recordtype(aSub) {
 	}
 	field(FTK,DBF_MENU) {
 		prompt("Type of K")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -539,7 +539,7 @@ recordtype(aSub) {
 	}
 	field(FTL,DBF_MENU) {
 		prompt("Type of L")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -547,7 +547,7 @@ recordtype(aSub) {
 	}
 	field(FTM,DBF_MENU) {
 		prompt("Type of M")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -555,7 +555,7 @@ recordtype(aSub) {
 	}
 	field(FTN,DBF_MENU) {
 		prompt("Type of N")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -563,7 +563,7 @@ recordtype(aSub) {
 	}
 	field(FTO,DBF_MENU) {
 		prompt("Type of O")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -571,7 +571,7 @@ recordtype(aSub) {
 	}
 	field(FTP,DBF_MENU) {
 		prompt("Type of P")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -579,7 +579,7 @@ recordtype(aSub) {
 	}
 	field(FTQ,DBF_MENU) {
 		prompt("Type of Q")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -587,7 +587,7 @@ recordtype(aSub) {
 	}
 	field(FTR,DBF_MENU) {
 		prompt("Type of R")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -595,7 +595,7 @@ recordtype(aSub) {
 	}
 	field(FTS,DBF_MENU) {
 		prompt("Type of S")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -603,7 +603,7 @@ recordtype(aSub) {
 	}
 	field(FTT,DBF_MENU) {
 		prompt("Type of T")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -611,7 +611,7 @@ recordtype(aSub) {
 	}
 	field(FTU,DBF_MENU) {
 		prompt("Type of U")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -619,401 +619,380 @@ recordtype(aSub) {
 	}
 	field(NOA,DBF_ULONG) {
 		prompt("Max. elements in A")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOB,DBF_ULONG) {
 		prompt("Max. elements in B")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOC,DBF_ULONG) {
 		prompt("Max. elements in C")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOD,DBF_ULONG) {
 		prompt("Max. elements in D")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOE,DBF_ULONG) {
 		prompt("Max. elements in E")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOF,DBF_ULONG) {
 		prompt("Max. elements in F")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOG,DBF_ULONG) {
 		prompt("Max. elements in G")
-		promptgroup(GUI_WAVE)
+		promptgroup("41 - Input A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOH,DBF_ULONG) {
 		prompt("Max. elements in H")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOI,DBF_ULONG) {
 		prompt("Max. elements in I")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOJ,DBF_ULONG) {
 		prompt("Max. elements in J")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOK,DBF_ULONG) {
 		prompt("Max. elements in K")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOL,DBF_ULONG) {
 		prompt("Max. elements in L")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOM,DBF_ULONG) {
 		prompt("Max. elements in M")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NON,DBF_ULONG) {
 		prompt("Max. elements in N")
-		promptgroup(GUI_WAVE)
+		promptgroup("42 - Input H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOO,DBF_ULONG) {
 		prompt("Max. elements in O")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOP,DBF_ULONG) {
 		prompt("Max. elements in P")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOQ,DBF_ULONG) {
 		prompt("Max. elements in Q")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOR,DBF_ULONG) {
 		prompt("Max. elements in R")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOS,DBF_ULONG) {
 		prompt("Max. elements in S")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOT,DBF_ULONG) {
 		prompt("Max. elements in T")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOU,DBF_ULONG) {
 		prompt("Max. elements in U")
-		promptgroup(GUI_WAVE)
+		promptgroup("43 - Input O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NEA,DBF_ULONG) {
 		prompt("Num. elements in A")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEB,DBF_ULONG) {
 		prompt("Num. elements in B")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEC,DBF_ULONG) {
 		prompt("Num. elements in C")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NED,DBF_ULONG) {
 		prompt("Num. elements in D")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEE,DBF_ULONG) {
 		prompt("Num. elements in E")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEF,DBF_ULONG) {
 		prompt("Num. elements in F")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEG,DBF_ULONG) {
 		prompt("Num. elements in G")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEH,DBF_ULONG) {
 		prompt("Num. elements in H")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEI,DBF_ULONG) {
 		prompt("Num. elements in I")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEJ,DBF_ULONG) {
 		prompt("Num. elements in J")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEK,DBF_ULONG) {
 		prompt("Num. elements in K")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEL,DBF_ULONG) {
 		prompt("Num. elements in L")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEM,DBF_ULONG) {
 		prompt("Num. elements in M")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEN,DBF_ULONG) {
 		prompt("Num. elements in N")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEO,DBF_ULONG) {
 		prompt("Num. elements in O")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEP,DBF_ULONG) {
 		prompt("Num. elements in P")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEQ,DBF_ULONG) {
 		prompt("Num. elements in Q")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NER,DBF_ULONG) {
 		prompt("Num. elements in R")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NES,DBF_ULONG) {
 		prompt("Num. elements in S")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NET,DBF_ULONG) {
 		prompt("Num. elements in T")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEU,DBF_ULONG) {
 		prompt("Num. elements in U")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(OUTA,DBF_OUTLINK) {
 		prompt("Output Link A")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("51 - Output A-G")
 		interest(1)
 	}
 	field(OUTB,DBF_OUTLINK) {
 		prompt("Output Link B")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("51 - Output A-G")
 		interest(1)
 	}
 	field(OUTC,DBF_OUTLINK) {
 		prompt("Output Link C")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("51 - Output A-G")
 		interest(1)
 	}
 	field(OUTD,DBF_OUTLINK) {
 		prompt("Output Link D")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("51 - Output A-G")
 		interest(1)
 	}
 	field(OUTE,DBF_OUTLINK) {
 		prompt("Output Link E")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("51 - Output A-G")
 		interest(1)
 	}
 	field(OUTF,DBF_OUTLINK) {
 		prompt("Output Link F")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("51 - Output A-G")
 		interest(1)
 	}
 	field(OUTG,DBF_OUTLINK) {
 		prompt("Output Link G")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("51 - Output A-G")
 		interest(1)
 	}
 	field(OUTH,DBF_OUTLINK) {
 		prompt("Output Link H")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("52 - Output H-N")
 		interest(1)
 	}
 	field(OUTI,DBF_OUTLINK) {
 		prompt("Output Link I")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("52 - Output H-N")
 		interest(1)
 	}
 	field(OUTJ,DBF_OUTLINK) {
 		prompt("Output Link J")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("52 - Output H-N")
 		interest(1)
 	}
 	field(OUTK,DBF_OUTLINK) {
 		prompt("Output Link K")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("52 - Output H-N")
 		interest(1)
 	}
 	field(OUTL,DBF_OUTLINK) {
 		prompt("Output Link L")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("52 - Output H-N")
 		interest(1)
 	}
 	field(OUTM,DBF_OUTLINK) {
 		prompt("Output Link M")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("52 - Output H-N")
 		interest(1)
 	}
 	field(OUTN,DBF_OUTLINK) {
 		prompt("Output Link N")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("52 - Output H-N")
 		interest(1)
 	}
 	field(OUTO,DBF_OUTLINK) {
 		prompt("Output Link O")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("53 - Output O-U")
 		interest(1)
 	}
 	field(OUTP,DBF_OUTLINK) {
 		prompt("Output Link P")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("53 - Output O-U")
 		interest(1)
 	}
 	field(OUTQ,DBF_OUTLINK) {
 		prompt("Output Link Q")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("53 - Output O-U")
 		interest(1)
 	}
 	field(OUTR,DBF_OUTLINK) {
 		prompt("Output Link R")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("53 - Output O-U")
 		interest(1)
 	}
 	field(OUTS,DBF_OUTLINK) {
 		prompt("Output Link S")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("53 - Output O-U")
 		interest(1)
 	}
 	field(OUTT,DBF_OUTLINK) {
 		prompt("Output Link T")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("53 - Output O-U")
 		interest(1)
 	}
 	field(OUTU,DBF_OUTLINK) {
 		prompt("Output Link U")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("53 - Output O-U")
 		interest(1)
 	}
 
@@ -1384,7 +1363,7 @@ recordtype(aSub) {
 	}
 	field(FTVA,DBF_MENU) {
 		prompt("Type of VALA")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1392,7 +1371,7 @@ recordtype(aSub) {
 	}
 	field(FTVB,DBF_MENU) {
 		prompt("Type of VALB")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1400,7 +1379,7 @@ recordtype(aSub) {
 	}
 	field(FTVC,DBF_MENU) {
 		prompt("Type of VALC")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1408,7 +1387,7 @@ recordtype(aSub) {
 	}
 	field(FTVD,DBF_MENU) {
 		prompt("Type of VALD")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1416,7 +1395,7 @@ recordtype(aSub) {
 	}
 	field(FTVE,DBF_MENU) {
 		prompt("Type of VALE")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1424,7 +1403,7 @@ recordtype(aSub) {
 	}
 	field(FTVF,DBF_MENU) {
 		prompt("Type of VALF")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1432,7 +1411,7 @@ recordtype(aSub) {
 	}
 	field(FTVG,DBF_MENU) {
 		prompt("Type of VALG")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1440,7 +1419,7 @@ recordtype(aSub) {
 	}
 	field(FTVH,DBF_MENU) {
 		prompt("Type of VALH")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1448,7 +1427,7 @@ recordtype(aSub) {
 	}
 	field(FTVI,DBF_MENU) {
 		prompt("Type of VALI")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1456,7 +1435,7 @@ recordtype(aSub) {
 	}
 	field(FTVJ,DBF_MENU) {
 		prompt("Type of VALJ")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1464,7 +1443,7 @@ recordtype(aSub) {
 	}
 	field(FTVK,DBF_MENU) {
 		prompt("Type of VALK")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1472,7 +1451,7 @@ recordtype(aSub) {
 	}
 	field(FTVL,DBF_MENU) {
 		prompt("Type of VALL")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1480,7 +1459,7 @@ recordtype(aSub) {
 	}
 	field(FTVM,DBF_MENU) {
 		prompt("Type of VALM")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1488,7 +1467,7 @@ recordtype(aSub) {
 	}
 	field(FTVN,DBF_MENU) {
 		prompt("Type of VALN")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1496,7 +1475,7 @@ recordtype(aSub) {
 	}
 	field(FTVO,DBF_MENU) {
 		prompt("Type of VALO")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1504,7 +1483,7 @@ recordtype(aSub) {
 	}
 	field(FTVP,DBF_MENU) {
 		prompt("Type of VALP")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1512,7 +1491,7 @@ recordtype(aSub) {
 	}
 	field(FTVQ,DBF_MENU) {
 		prompt("Type of VALQ")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1520,7 +1499,7 @@ recordtype(aSub) {
 	}
 	field(FTVR,DBF_MENU) {
 		prompt("Type of VALR")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1528,7 +1507,7 @@ recordtype(aSub) {
 	}
 	field(FTVS,DBF_MENU) {
 		prompt("Type of VALS")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1536,7 +1515,7 @@ recordtype(aSub) {
 	}
 	field(FTVT,DBF_MENU) {
 		prompt("Type of VALT")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1544,7 +1523,7 @@ recordtype(aSub) {
 	}
 	field(FTVU,DBF_MENU) {
 		prompt("Type of VALU")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("DOUBLE")
@@ -1552,147 +1531,147 @@ recordtype(aSub) {
 	}
 	field(NOVA,DBF_ULONG) {
 		prompt("Max. elements in VALA")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVB,DBF_ULONG) {
 		prompt("Max. elements in VALB")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVC,DBF_ULONG) {
 		prompt("Max. elements in VALC")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVD,DBF_ULONG) {
 		prompt("Max. elements in VALD")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVE,DBF_ULONG) {
 		prompt("Max. elements in VALE")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVF,DBF_ULONG) {
 		prompt("Max. elements in VALF")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVG,DBF_ULONG) {
 		prompt("Max. elements in VALG")
-		promptgroup(GUI_WAVE)
+		promptgroup("51 - Output A-G")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVH,DBF_ULONG) {
 		prompt("Max. elements in VAlH")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVI,DBF_ULONG) {
 		prompt("Max. elements in VALI")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVJ,DBF_ULONG) {
 		prompt("Max. elements in VALJ")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVK,DBF_ULONG) {
 		prompt("Max. elements in VALK")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVL,DBF_ULONG) {
 		prompt("Max. elements in VALL")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVM,DBF_ULONG) {
 		prompt("Max. elements in VALM")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVN,DBF_ULONG) {
 		prompt("Max. elements in VALN")
-		promptgroup(GUI_WAVE)
+		promptgroup("52 - Output H-N")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVO,DBF_ULONG) {
 		prompt("Max. elements in VALO")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVP,DBF_ULONG) {
 		prompt("Max. elements in VALP")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVQ,DBF_ULONG) {
 		prompt("Max. elements in VALQ")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVR,DBF_ULONG) {
 		prompt("Max. elements in VALR")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVS,DBF_ULONG) {
 		prompt("Max. elements in VALS")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVT,DBF_ULONG) {
 		prompt("Max. elements in VALT")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(NOVU,DBF_ULONG) {
 		prompt("Max. elements in VALU")
-		promptgroup(GUI_WAVE)
+		promptgroup("53 - Output O-U")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")

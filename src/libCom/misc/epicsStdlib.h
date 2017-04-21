@@ -70,12 +70,12 @@ epicsShareFunc int
 /* These macros return 1 if successful, 0 on failure.
  * This is analagous to the return value from sscanf()
  */
-#define epicsScanLong(str, to, base) !epicsParseLong(str, to, base, NULL)
-#define epicsScanULong(str, to, base) !epicsParseULong(str, to, base, NULL)
-#define epicsScanLLong(str, to, base) !epicsParseLLong(str, to, base, NULL)
-#define epicsScanULLong(str, to, base) !epicsParseULLong(str, to, base, NULL)
-#define epicsScanFloat(str, to) !epicsParseFloat(str, to, NULL)
-#define epicsScanDouble(str, to) !epicsParseDouble(str, to, NULL)
+#define epicsScanLong(str, to, base) (!epicsParseLong(str, to, base, NULL))
+#define epicsScanULong(str, to, base) (!epicsParseULong(str, to, base, NULL))
+#define epicsScanLLong(str, to, base) (!epicsParseLLong(str, to, base, NULL))
+#define epicsScanULLong(str, to, base) (!epicsParseULLong(str, to, base, NULL))
+#define epicsScanFloat(str, to) (!epicsParseFloat(str, to, NULL))
+#define epicsScanDouble(str, to) (!epicsParseDouble(str, to, NULL))
 
 #ifdef __cplusplus
 }

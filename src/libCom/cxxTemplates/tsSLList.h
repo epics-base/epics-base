@@ -8,8 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      $Revision-Id$
- *
  *      type safe singly linked list templates
  *
  *      Author  Jeffrey O. Hill

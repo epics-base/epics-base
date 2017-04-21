@@ -7,11 +7,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*
- * $Revision-Id$
- *
- */
-
 #ifndef INC_osdTime_H
 #define INC_osdTime_H
 

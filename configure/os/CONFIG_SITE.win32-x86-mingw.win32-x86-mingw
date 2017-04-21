@@ -1,7 +1,5 @@
 # CONFIG_SITE.win32-x86-mingw.win32-x86-mingw
 #
-# $Revision-Id$
-#
 # Site Specific definitions for win32-x86-mingw target
 
 # The MinGW bin directory must be in your path.

@@ -7,7 +7,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbAccessDefs.h	*/
-/* $Revision-Id$ */
 
 #ifndef INCdbAccessDefsh
 #define INCdbAccessDefsh
@@ -21,6 +20,7 @@
 #include "epicsTime.h"
 #include "dbBase.h"
 #include "dbAddr.h"
+#include "recSup.h"
 
 #ifdef INCLdb_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -204,7 +204,7 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_bufFull    (M_dbAccess|68) /*Buffer full*/
 
 epicsShareFunc long dbPutSpecial(struct dbAddr *paddr,int pass);
-epicsShareFunc struct rset * dbGetRset(const struct dbAddr *paddr);
+epicsShareFunc rset * dbGetRset(const struct dbAddr *paddr);
 epicsShareFunc long dbPutAttribute(
     const char *recordTypename,const char *name,const char*value);
 epicsShareFunc int dbIsValueField(const struct dbFldDes *pdbFldDes);

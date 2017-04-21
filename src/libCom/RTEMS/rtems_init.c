@@ -2,11 +2,10 @@
 * Copyright (c) 2002 The University of Saskatchewan
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * RTEMS startup task for EPICS
- *  $Revision-Id$
  *      Author: W. Eric Norum
  *              eric.norum@usask.ca
  *              (306) 966-5394
@@ -288,27 +287,27 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             mount_point[l] = '\0';
             argv[1] = rtems_bsdnet_bootp_cmdline;
             /*
-             * Its probably common to embed the mount point in the server 
+             * Its probably common to embed the mount point in the server
              * name so, when this is occurring, dont clobber the mount point
              * by appending the first node from the command path. This allows
-             * the mount point to be a different path then the server's mount 
+             * the mount point to be a different path then the server's mount
              * path.
              *
-             * This allows for example a line similar to as follows the DHCP 
+             * This allows for example a line similar to as follows the DHCP
              * configuration file.
              *
              * server-name "159.233@192.168.0.123:/vol/vol0/bootRTEMS";
              */
             if ( server_name ) {
                 const size_t allocSize = strlen ( server_name ) + 2;
-                char * const pServerName = mustMalloc( allocSize, 
+                char * const pServerName = mustMalloc( allocSize,
                                                         "NFS mount paths");
-                char * const pServerPath = mustMalloc ( allocSize, 
+                char * const pServerPath = mustMalloc ( allocSize,
                                                         "NFS mount paths");
-                const int scanfStatus = sscanf ( 
-                                          server_name, 
-                                          "%[^:] : / %s",  
-                                          pServerName, 
+                const int scanfStatus = sscanf (
+                                          server_name,
+                                          "%[^:] : / %s",
+                                          pServerName,
                                           pServerPath + 1u );
                 if ( scanfStatus ==  2 ) {
                     pServerPath[0u]= '/';
@@ -536,7 +535,7 @@ exitHandler(void)
 rtems_task
 Init (rtems_task_argument ignored)
 {
-    int                 i;
+    int                 result;
     char               *argv[3]         = { NULL, NULL, NULL };
     char               *cp;
     rtems_task_priority newpri;
@@ -574,6 +573,12 @@ Init (rtems_task_argument ignored)
     initConsole ();
     putenv ("TERM=xterm");
     putenv ("IOCSH_HISTSIZE=20");
+
+    /*
+     * Display some OS information
+     */
+    printf("\n***** RTEMS Version: %s *****\n",
+        rtems_get_version_string());
 
     /*
      * Start network
@@ -656,8 +661,8 @@ Init (rtems_task_argument ignored)
     atexit(exitHandler);
     errlogFlush();
     printf ("***** Starting EPICS application *****\n");
-    i = main ((sizeof argv / sizeof argv[0]) - 1, argv);
+    result = main ((sizeof argv / sizeof argv[0]) - 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
-    epicsExit(0);
+    epicsExit(result);
 }

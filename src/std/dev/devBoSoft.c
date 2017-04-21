@@ -7,8 +7,6 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* devBoSoft.c */
-/* base/src/dev $Revision-Id$ */
 
 /* devBoSoft.c - Device Support Routines for  Soft Binary Output*/
 /*

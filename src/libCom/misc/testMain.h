@@ -4,7 +4,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Revision-Id$ */
 
 #ifndef INC_testMain_H
 #define INC_testMain_H

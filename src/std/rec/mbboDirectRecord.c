@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* mbboDirectRecord.c - Record Support for mbboDirect records */
 /*
  *      Original Author: Bob Dalesio
@@ -44,8 +42,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(mbboDirectRecord *, int);
-static long process(mbboDirectRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -98,8 +96,9 @@ static long writeValue(mbboDirectRecord *);
 
 #define NUM_BITS 16
 
-static long init_record(mbboDirectRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct mbboDirectRecord *prec = (struct mbboDirectRecord *)pcommon;
     struct mbbodset *pdset = (struct mbbodset *) prec->dset;
     long status = 0;
 
@@ -159,8 +158,9 @@ static long init_record(mbboDirectRecord *prec, int pass)
     return status;
 }
 
-static long process(mbboDirectRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct mbboDirectRecord *prec = (struct mbboDirectRecord *)pcommon;
     struct mbbodset *pdset = (struct mbbodset *)(prec->dset);
     long status = 0;
     int pact = prec->pact;

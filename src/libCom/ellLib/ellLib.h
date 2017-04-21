@@ -6,9 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-
 /*
- *
  *      Author: John Winans (ANL)
  *              Andrew Johnson <anj@aps.anl.gov>
  */
@@ -58,6 +56,8 @@ epicsShareFunc void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
 epicsShareFunc ELLNODE * ellNth (ELLLIST *pList, int nodeNum);
 epicsShareFunc ELLNODE * ellNStep (ELLNODE *pNode, int nStep);
 epicsShareFunc int  ellFind (ELLLIST *pList, ELLNODE *pNode);
+typedef int (*pListCmp)(const ELLNODE* A, const ELLNODE* B);
+epicsShareFunc void ellSortStable(ELLLIST *pList, pListCmp);
 epicsShareFunc void ellFree2 (ELLLIST *pList, FREEFUNC freeFunc);
 epicsShareFunc void ellVerify (ELLLIST *pList);
 

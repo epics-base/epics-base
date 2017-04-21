@@ -1,6 +1,4 @@
 # CONFIG_SITE.linux-x86_64.UnixCommon
-$
-# $Revision-Id$
 #
 # Site Specific configure override definitions
 # Only the local epics system manager should modify this file

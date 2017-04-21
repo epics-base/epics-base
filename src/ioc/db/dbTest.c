@@ -7,7 +7,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Revision-Id$ */
 /* database access test subroutines */
 
 #include <stddef.h>

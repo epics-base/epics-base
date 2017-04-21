@@ -30,7 +30,7 @@ print "Building $opt_o from $infile\n" unless $opt_q;
 open my $VARS, '<', $infile
     or die "$tool: Can't open $infile: $!\n";
 
-my ($ver, $rev, $mod, $patch, $snapshot, $commit_date);
+my ($ver, $rev, $mod, $patch, $snapshot);
 while (<$VARS>) {
     chomp;
     next if m/^\s*#/;   # Skip comments
@@ -39,16 +39,16 @@ while (<$VARS>) {
     if (m/^EPICS_MODIFICATION\s*=\s*(\d+)/)         { $mod = $1; }
     if (m/^EPICS_PATCH_LEVEL\s*=\s*(\d+)/)          { $patch = $1; }
     if (m/^EPICS_DEV_SNAPSHOT\s*=\s*([-\w]*)/)      { $snapshot = $1; }
-    if (m/^COMMIT_DATE\s*=\s*"\\(.*)"/)             { $commit_date = $1; }
 }
 close $VARS;
 
 map {
     die "$tool: Variable missing from $infile" unless defined $_;
-} $ver, $rev, $mod, $patch, $snapshot, $commit_date;
+} $ver, $rev, $mod, $patch, $snapshot;
 
 my $ver_str = "$ver.$rev.$mod";
 $ver_str .= ".$patch" if $patch > 0;
+my $ver_short = $ver_str;
 $ver_str .= $snapshot if $snapshot ne '';
 $ver_str .= "-$opt_v" if $opt_v;
 
@@ -71,10 +71,15 @@ print $OUT <<"END";
 #define EPICS_PATCH_LEVEL    $patch
 #define EPICS_DEV_SNAPSHOT   "$snapshot"
 #define EPICS_SITE_VERSION   "$opt_v"
-#define EPICS_VERSION_STRING "EPICS $ver_str"
-#define epicsReleaseVersion  "EPICS R$ver_str $commit_date"
 
-#define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
+#define EPICS_VERSION_SHORT  "$ver_short"
+#define EPICS_VERSION_FULL   "$ver_str"
+#define EPICS_VERSION_STRING "EPICS $ver_str"
+#define epicsReleaseVersion  "EPICS R$ver_str"
+
+#ifndef VERSION_INT
+#  define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
+#endif
 #define EPICS_VERSION_INT VERSION_INT($ver, $rev, $mod, $patch)
 
 #endif /* INC_${obase}_H */

@@ -115,5 +115,9 @@ MAIN(ringBytesTest)
     testOk(n==1, "ring get %d", 1);
     check(ring, RINGSIZE);
 
+    epicsRingBytesDelete(ring);
+    epicsEventDestroy(consumerEvent);
+    free(pinfo);
+
     return testDone();
 }

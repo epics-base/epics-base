@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- *      $Revision-Id$
- *
  *      Author  W. Eric Norum
  */
 #include <stdio.h>

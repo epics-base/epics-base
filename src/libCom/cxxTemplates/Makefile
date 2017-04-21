@@ -12,12 +12,9 @@ INC += resourceLib.h
 INC += tsDLList.h
 INC += tsSLList.h
 INC += tsMinMax.h
-INC += tsBTree.h
 INC += tsFreeList.h
 INC += epicsSingleton.h
 INC += epicsGuard.h
-INC += epicsOnce.h
 Com_SRCS += resourceLib.cpp
-Com_SRCS += epicsOnce.cpp
 Com_SRCS += epicsSingletonMutex.cpp
 

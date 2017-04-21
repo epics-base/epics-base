@@ -4,9 +4,8 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
-# $Revision-Id$
 #
 #	Rules for making things specified in Makefile
 #
@@ -106,16 +105,20 @@ endif
 PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
 
 #---------------------------------------------------------------
-#   Generate a test specification if any tests are defined.
+#   Test specifications and test result files
 #
 ifneq (,$(strip $(TESTS)))
 TARGETS += testspec
 endif
 
+# Enable testing if this host can run tests on the current target
+ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
+RUNTESTS_ENABLED = YES
 TAPFILES += $(TESTSCRIPTS:.t=.tap)
+endif
 
 #---------------------------------------------------------------
-#   Libraries 
+#   Libraries
 #
 
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) $(TESTLIBNAME) \
@@ -126,16 +129,16 @@ LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) $(TESTLIBNAME) \
 
 #	Main targets
 
-install: buildInstall 
+install: buildInstall
 
-buildInstall : build 
+buildInstall: build
 
 # Allows rebuild to work with parallel builds option, -j.
 install: $(patsubst rebuild,clean,$(filter rebuild,$(MAKECMDGOALS)))
 
 rebuild: clean install
 
-build : inc 
+build: inc
 
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODNAME) \
 	$(TARGETS) $(TESTSCRIPTS) $(INSTALL_LIB_INSTALLS)
@@ -170,7 +173,13 @@ endif
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) $@
 
-$(PRODNAME): $(INSTALL_LIB_INSTALLS)
+# Install LIB_INSTALLS libraries before linking executables
+$(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIB_INSTALLS)
+
+# Install built libraries too, unless Makefile says to wait
+ifneq ($(DELAY_INSTALL_LIBS),YES)
+$(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIBS) $(INSTALL_DLLSTUB_LIBS)
+endif
 
 # RELEASE file consistency checking
 checkRelease:
@@ -179,7 +188,7 @@ warnRelease:
 	-$(CONVERTRELEASE) checkRelease
 noCheckRelease:
 ifeq ($(EPICS_HOST_ARCH),$(T_A))
-	@echo "Warning: RELEASE file consistency checks have been disabled"
+	$(info Warning: RELEASE file consistency checks have been disabled)
 endif
 
 #---------------------------------------------------------------
@@ -270,13 +279,17 @@ endif # RANLIB
 $(SHRLIBNAME) $(DLLSTUB_LIBNAME) $(TESTSHRLIBNAME) $(TESTDLLSTUB_LIBNAME): \
     $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
 
-$(DLLSTUB_LIBNAME): $(SHRLIBNAME);
+# Stub library timestamps may be earlier than the DLL itself.
+# This order-only prerequisite resolves any related problems.
+# The $(LINK.shrlib) command must build both library files if
+# the target requires a separate stub library file.
+$(DLLSTUB_LIBNAME): | $(SHRLIBNAME);
 $(SHRLIBNAME): $(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
 	@$(RM) $@
 	$(LINK.shrlib)
 	$(MT_DLL_COMMAND)
 
-$(TESTDLLSTUB_LIBNAME): $(TESTSHRLIBNAME);
+$(TESTDLLSTUB_LIBNAME): | $(TESTSHRLIBNAME);
 $(TESTSHRLIBNAME): $(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
 	@$(RM) $@
 	$(LINK.shrlib)
@@ -319,7 +332,9 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 # Automated testing
 
 runtests: $(TESTSCRIPTS)
+ifdef RUNTESTS_ENABLED
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
+endif
 
 testspec: $(TESTSCRIPTS)
 	@$(RM) $@
@@ -333,7 +348,9 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 
 # A .tap file is the output from running the associated test script
 %.tap: %.t
+ifdef RUNTESTS_ENABLED
 	-$(PERL) $< -tap > $@
+endif
 
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt

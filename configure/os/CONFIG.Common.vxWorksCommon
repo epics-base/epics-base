@@ -1,7 +1,5 @@
 # CONFIG.Common.vxWorksCommon
 #
-# $Revision-Id$
-#
 # Definitions for vxWorks target archs
 # Override these definitions in CONFIG_SITE.Common.vxWorksCommon
 # or CONFIG_SITE.<host>.vxWorksCommon

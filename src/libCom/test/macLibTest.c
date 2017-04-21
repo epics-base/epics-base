@@ -6,9 +6,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*
- * $Revision-Id$
- */
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -68,7 +65,7 @@ static void ovcheck(void)
 
 MAIN(macLibTest)
 {
-    testPlan(89);
+    testPlan(91);
 
     if (macCreateHandle(&h, NULL))
         testAbort("macCreateHandle() failed");
@@ -205,6 +202,9 @@ MAIN(macLibTest)
         /* STR1 = "VAL1" */
         /* STR2 = "VAL2" */
     check("${FOO}", " VAL2");
+
+    check("$(FOO)$(FOO1)", "!VAL2$(FOO1,undefined)");
+    check("$(FOO1)$(FOO)", "!$(FOO1,undefined)VAL2");
 
     macPutValue(h, "BAR","${FOO}");
         /* FOO = "${BAR}" */

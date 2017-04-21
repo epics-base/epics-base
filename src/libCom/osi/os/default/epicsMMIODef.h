@@ -90,15 +90,23 @@ nat_iowrite32(volatile void* addr, epicsUInt32 val)
  *@{
  */
 
-#define bswap16(value) ((epicsUInt16) (  \
-        (((epicsUInt16)(value) & 0x00ff) << 8)    |       \
-        (((epicsUInt16)(value) & 0xff00) >> 8)))
+static EPICS_ALWAYS_INLINE
+epicsUInt16
+bswap16(epicsUInt16 value)
+{
+    return (((epicsUInt16)(value) & 0x00ff) << 8)    |
+           (((epicsUInt16)(value) & 0xff00) >> 8);
+}
 
-#define bswap32(value) (  \
-        (((epicsUInt32)(value) & 0x000000ff) << 24)   |                \
-        (((epicsUInt32)(value) & 0x0000ff00) << 8)    |                \
-        (((epicsUInt32)(value) & 0x00ff0000) >> 8)    |                \
-        (((epicsUInt32)(value) & 0xff000000) >> 24))
+static EPICS_ALWAYS_INLINE
+epicsUInt32
+bswap32(epicsUInt32 value)
+{
+    return (((epicsUInt32)(value) & 0x000000ff) << 24)   |
+           (((epicsUInt32)(value) & 0x0000ff00) << 8)    |
+           (((epicsUInt32)(value) & 0x00ff0000) >> 8)    |
+           (((epicsUInt32)(value) & 0xff000000) >> 24);
+}
 
 #  define be_ioread16(A)    nat_ioread16(A)
 #  define be_ioread32(A)    nat_ioread32(A)

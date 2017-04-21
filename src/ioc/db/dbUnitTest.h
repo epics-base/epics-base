@@ -55,6 +55,23 @@ epicsShareFunc long testdbVPutField(const char* pv, short dbrType, va_list ap);
 epicsShareFunc void testdbGetFieldEqual(const char* pv, short dbrType, ...);
 epicsShareFunc void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
 
+/**
+ * @param pv PV name string
+ * @param dbfType One of the DBF_* macros from dbAccess.h
+ * @param nRequest Number of elements to request from pv
+ * @param pbufcnt  Number of elements pointed to be pbuf
+ * @param pbuf     Expected value buffer
+ *
+ * Execute dbGet() of nRequest elements and compare the result with
+ * pbuf (pbufcnt is an element count).
+ * Element size is derived from dbfType.
+ *
+ * nRequest > pbufcnt will detect truncation.
+ * nRequest < pbufcnt always fails.
+ * nRequest ==pbufcnt checks prefix (actual may be longer than expected)
+ */
+epicsShareFunc void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long pbufcnt, const void *pbuf);
+
 epicsShareFunc dbCommon* testdbRecordPtr(const char* pv);
 
 typedef struct testMonitor testMonitor;

@@ -9,16 +9,6 @@
 \*************************************************************************/
 
 /*  
- *  $Revision-Id$
- *
- *                              
- *                    L O S  A L A M O S
- *              Los Alamos National Laboratory
- *               Los Alamos, New Mexico 87545
- *                                  
- *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
  *	Author Jeffrey O. Hill
  *	johill@lanl.gov
  */
@@ -54,6 +44,10 @@ public:
     static ipAddrToAsciiEngine & allocate ();
 protected:
     virtual ~ipAddrToAsciiEngine () = 0;
+public:
+#ifdef EPICS_PRIVATE_API
+    static void cleanup();
+#endif
 };
 
 #endif // ifdef ipAddrToAsciiAsynchronous_h

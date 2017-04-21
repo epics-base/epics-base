@@ -1,3 +1,5 @@
+# devSoft.dbd
+
 device(aai,CONSTANT,devAaiSoft,"Soft Channel")
 device(aao,CONSTANT,devAaoSoft,"Soft Channel")
 device(ai,CONSTANT,devAiSoft,"Soft Channel")
@@ -57,6 +59,9 @@ device(stringin,INST_IO,devSiGeneralTime,"General Time")
 device(lso,INST_IO,devLsoStdio,"stdio")
 device(printf,INST_IO,devPrintfStdio,"stdio")
 device(stringout,INST_IO,devSoStdio,"stdio")
+
+device(lsi,INST_IO,devLsiEnviron,"getenv")
+device(stringin,INST_IO,devSiEnviron,"getenv")
 
 device(bi, INST_IO, devBiDbState, "Db State")
 device(bo, INST_IO, devBoDbState, "Db State")

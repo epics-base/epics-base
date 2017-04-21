@@ -8,8 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      $Revision-Id$
- *
  *      Author  W. Eric Norum
  *              norume@aps.anl.gov
  *              630 252 4793
@@ -27,8 +25,6 @@
 typedef struct epicsMessageQueueOSD *epicsMessageQueueId;
 
 #ifdef __cplusplus
-
-#include "locationException.h"
 
 class epicsShareClass epicsMessageQueue {
 public:

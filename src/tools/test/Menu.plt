@@ -25,8 +25,9 @@ ok !$menu->legal_choice('Choice 3'), 'Third choice not legal';
 is_deeply $menu->choice(2), undef, 'Third choice undefined';
 
 like $menu->toDeclaration, qr/ ^
-    \s* typedef \s+ enum \s+ {
-    \s+     ch1 \s+ \/\* [^*]* \*\/,
-    \s+     ch2 \s+ \/\* [^*]* \*\/,
-    \s+     test_NUM_CHOICES ,?
-    \s+ } \s+ test; \s* $ /x, 'C declaration';
+    \s* typedef \s+ enum \s+ \{ \s* \n
+    \s*     ch1 \s+ \/\* [^*]* \*\/, \s* \n
+    \s*     ch2 \s+ \/\* [^*]* \*\/ \s* \n
+    \s* \} \s* test \s* ; \s* \n
+    \s* \# \s* define \s+ test_NUM_CHOICES \s+ 2 \s* \n
+    \s* $ /x, 'C declaration';

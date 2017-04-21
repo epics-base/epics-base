@@ -1,8 +1,5 @@
 # CONFIG_SITE.cygwin-x86.cygwin-x86
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Site override definitions for cygwin-x86 host - cygwin-x86 target builds
 #-------------------------------------------------------
  

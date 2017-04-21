@@ -6,8 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Revision-Id$
- *
+/*
  *      Author  Marty Kraimer
  */
 
@@ -88,7 +87,7 @@ MAIN(epicsStringTest)
     char *s;
     int status;
 
-    testPlan(402);
+    testPlan(406);
 
     testChars();
 
@@ -122,6 +121,11 @@ MAIN(epicsStringTest)
     testOk1(epicsStrHash(abcd, 0) != epicsStrHash("bacd", 0));
     testOk1(epicsStrHash(abcd, 0) == epicsMemHash(abcde, 4, 0));
     testOk1(epicsStrHash(abcd, 0) != epicsMemHash("abcd\0", 5, 0));
+
+    testOk1(epicsStrnLen("abcd", 5)==4);
+    testOk1(epicsStrnLen("abcd", 4)==4);
+    testOk1(epicsStrnLen("abcd", 3)==3);
+    testOk1(epicsStrnLen("abcd", 0)==0);
 
     testGlob();
 

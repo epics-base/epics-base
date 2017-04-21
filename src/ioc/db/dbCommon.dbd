@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 	%#include "epicsTypes.h"
 	%#include "link.h"
@@ -15,59 +15,59 @@
 	}
 	field(DESC,DBF_STRING) {
 		prompt("Descriptor")
-		promptgroup(GUI_COMMON)
+		promptgroup("10 - Common")
 		size(41)
 	}
 	field(ASG,DBF_STRING) {
 		prompt("Access Security Group")
-		promptgroup(GUI_COMMON)
+		promptgroup("10 - Common")
 		special(SPC_AS)
 		size(29)
 	}
 	field(SCAN,DBF_MENU) {
 		prompt("Scan Mechanism")
-		promptgroup(GUI_SCAN)
+		promptgroup("20 - Scan")
 		special(SPC_SCAN)
 		interest(1)
 		menu(menuScan)
 	}
 	field(PINI,DBF_MENU) {
 		prompt("Process at iocInit")
-		promptgroup(GUI_SCAN)
+		promptgroup("20 - Scan")
 		interest(1)
 		menu(menuPini)
 	}
 	field(PHAS,DBF_SHORT) {
 		prompt("Scan Phase")
-		promptgroup(GUI_SCAN)
+		promptgroup("20 - Scan")
 		special(SPC_SCAN)
 		interest(1)
 	}
 	field(EVNT,DBF_STRING) {
 		prompt("Event Name")
-		promptgroup(GUI_SCAN)
+		promptgroup("20 - Scan")
 		special(SPC_SCAN)
 		size(40)
 		interest(1)
 	}
 	field(TSE,DBF_SHORT) {
 		prompt("Time Stamp Event")
-		promptgroup(GUI_SCAN)
+		promptgroup("20 - Scan")
 		interest(1)
 	}
 	field(TSEL,DBF_INLINK) {
 		prompt("Time Stamp Link")
-		promptgroup(GUI_SCAN)
+		promptgroup("20 - Scan")
 		interest(1)
 	}
 	field(DTYP,DBF_DEVICE) {
 		prompt("Device Type")
-		promptgroup(GUI_LINKS)
+		promptgroup("10 - Common")
 		interest(1)
 	}
 	field(DISV,DBF_SHORT) {
 		prompt("Disable Value")
-		promptgroup(GUI_SCAN)
+		promptgroup("20 - Scan")
 		initial("1")
 	}
 	field(DISA,DBF_SHORT) {
@@ -75,7 +75,7 @@
 	}
 	field(SDIS,DBF_INLINK) {
 		prompt("Scanning Disable")
-		promptgroup(GUI_SCAN)
+		promptgroup("20 - Scan")
 		interest(1)
 	}
 	%#include "epicsMutex.h"
@@ -137,7 +137,7 @@
 	}
 	field(ACKT,DBF_MENU) {
 		prompt("Alarm Ack Transient")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		special(SPC_NOMOD)
 		interest(2)
 		menu(menuYesNo)
@@ -145,7 +145,7 @@
 	}
 	field(DISS,DBF_MENU) {
 		prompt("Disable Alarm Sevrty")
-		promptgroup(GUI_SCAN)
+		promptgroup("70 - Alarm")
 		interest(1)
 		menu(menuAlarmSevr)
 	}
@@ -197,7 +197,7 @@
 		prompt("Address of RSET")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct rset         *rset")
+        extra("struct typed_rset   *rset")
 	}
 	field(DSET,DBF_NOACCESS) {
 		prompt("DSET address")
@@ -225,7 +225,7 @@
 	}
 	field(PRIO,DBF_MENU) {
 		prompt("Scheduling Priority")
-		promptgroup(GUI_SCAN)
+		promptgroup("20 - Scan")
 		special(SPC_SCAN)
 		interest(1)
 		menu(menuPriority)
@@ -241,14 +241,14 @@
 	}
 	field(UDF,DBF_UCHAR) {
 		prompt("Undefined")
-		promptgroup(GUI_COMMON)
+		promptgroup("10 - Common")
 		pp(TRUE)
 		interest(1)
 		initial("1")
 	}
 	field(UDFS,DBF_MENU) {
 		prompt("Undefined Alarm Sevrty")
-		promptgroup(GUI_COMMON)
+		promptgroup("70 - Alarm")
 		interest(1)
 		menu(menuAlarmSevr)
 		initial("INVALID")
@@ -262,6 +262,6 @@
 	}
 	field(FLNK,DBF_FWDLINK) {
 		prompt("Forward Process Link")
-		promptgroup(GUI_LINKS)
+		promptgroup("20 - Scan")
 		interest(1)
 	}

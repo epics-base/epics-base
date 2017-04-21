@@ -388,14 +388,12 @@ caStatus casStrmClient::echoAction ( epicsGuard < casClientMutex > & )
 //
 // casStrmClient::verifyRequest()
 //
-caStatus casStrmClient::verifyRequest ( casChannelI * & pChan )
+caStatus casStrmClient::verifyRequest (casChannelI * & pChan , bool allowdyn)
 {
-    const caHdrLargeArray * mp = this->ctx.getMsg();
-
     //
     // channel exists for this resource id ?
     //
-    chronIntId tmpId ( mp->m_cid );
+    chronIntId tmpId ( ctx.msg.m_cid );
     pChan = this->chanTable.lookup ( tmpId );
     if ( ! pChan ) {
         return ECA_BADCHID;
@@ -404,14 +402,15 @@ caStatus casStrmClient::verifyRequest ( casChannelI * & pChan )
     //
     // data type out of range ?
     //
-    if ( mp->m_dataType > ((unsigned)LAST_BUFFER_TYPE) ) {
+    if ( ctx.msg.m_dataType > ((unsigned)LAST_BUFFER_TYPE) ) {
         return ECA_BADTYPE;
     }
 
     //
     // element count out of range ?
     //
-    if ( mp->m_count > pChan->getPVI().nativeCount() || mp->m_count == 0u ) {
+    if ( ctx.msg.m_count > pChan->getMaxElem() ||
+         ( !allowdyn && ctx.msg.m_count == 0u ) ) {
         return ECA_BADCOUNT;
     }
 
@@ -444,7 +443,7 @@ caStatus casStrmClient::readAction ( epicsGuard < casClientMutex > & guard )
     casChannelI * pChan;
 
     {
-        caStatus status = this->verifyRequest ( pChan );
+        caStatus status = this->verifyRequest ( pChan, CA_V413 ( this->minor_version_number ) );
         if ( status != ECA_NORMAL ) {
             if ( pChan ) {
                 return this->sendErr ( guard, mp, pChan->getCID(), 
@@ -531,11 +530,15 @@ caStatus casStrmClient::readResponse ( epicsGuard < casClientMutex > & guard,
             pChan->getCID(), status, ECA_GETFAIL );
     }
 
+    ca_uint32_t count = (msg.m_count == 0) ?
+                            (ca_uint32_t)desc.getDataSizeElements() :
+                             msg.m_count;
+
     void * pPayload;
     {
-        unsigned payloadSize = dbr_size_n ( msg.m_dataType, msg.m_count );
+        unsigned payloadSize = dbr_size_n ( msg.m_dataType, count );
         caStatus localStatus = this->out.copyInHeader ( msg.m_cmmd, payloadSize,
-            msg.m_dataType, msg.m_count, pChan->getCID (), 
+            msg.m_dataType, count, pChan->getCID (),
             msg.m_available, & pPayload );
         if ( localStatus ) {
             if ( localStatus==S_cas_hugeRequest ) {
@@ -551,21 +554,21 @@ caStatus casStrmClient::readResponse ( epicsGuard < casClientMutex > & guard,
     // (places the data in network format)
     //
     int mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr(
-        pPayload, msg.m_count, desc, pChan->enumStringTable() );
+        pPayload, count, desc, pChan->enumStringTable() );
     if ( mapDBRStatus < 0 ) {
         desc.dump ();
         errPrintf ( S_cas_badBounds, __FILE__, __LINE__, "- get with PV=%s type=%u count=%u",
-                pChan->getPVI().getName(), msg.m_dataType, msg.m_count );
+                pChan->getPVI().getName(), msg.m_dataType, count );
         return this->sendErrWithEpicsStatus ( 
             guard, & msg, pChan->getCID(), S_cas_badBounds, ECA_GETFAIL );
     }
     int cacStatus = caNetConvert ( 
-        msg.m_dataType, pPayload, pPayload, true, msg.m_count );
+        msg.m_dataType, pPayload, pPayload, true, count );
     if ( cacStatus != ECA_NORMAL ) {
         return this->sendErrWithEpicsStatus ( 
             guard, & msg, pChan->getCID(), S_cas_internal, cacStatus );
     }
-    if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
+    if ( msg.m_dataType == DBR_STRING && count == 1u ) {
         unsigned reducedPayloadSize = strlen ( static_cast < char * > ( pPayload ) ) + 1u;
         this->out.commitMsg ( reducedPayloadSize );
     }
@@ -585,7 +588,7 @@ caStatus casStrmClient::readNotifyAction ( epicsGuard < casClientMutex > & guard
     casChannelI * pChan;
 
     {
-        caStatus status = this->verifyRequest ( pChan );
+        caStatus status = this->verifyRequest ( pChan, CA_V413 ( this->minor_version_number ) );
         if ( status != ECA_NORMAL ) {
             return this->readNotifyFailureResponse ( guard, * mp, status );
         }
@@ -656,11 +659,15 @@ caStatus casStrmClient::readNotifyResponse ( epicsGuard < casClientMutex > & gua
         return ecaStatus;
     }
 
+    ca_uint32_t count = (msg.m_count == 0) ?
+                            (ca_uint32_t)desc.getDataSizeElements() :
+                             msg.m_count;
+
     void *pPayload;
     {
-        unsigned size = dbr_size_n ( msg.m_dataType, msg.m_count );
+        unsigned size = dbr_size_n ( msg.m_dataType, count );
         caStatus status = this->out.copyInHeader ( msg.m_cmmd, size,
-                    msg.m_dataType, msg.m_count, ECA_NORMAL, 
+                    msg.m_dataType, count, ECA_NORMAL,
                     msg.m_available, & pPayload );
         if ( status ) {
             if ( status == S_cas_hugeRequest ) {
@@ -675,23 +682,23 @@ caStatus casStrmClient::readNotifyResponse ( epicsGuard < casClientMutex > & gua
     // convert gdd to db_access type
     //
     int mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr ( pPayload, 
-        msg.m_count, desc, pChan->enumStringTable() );
+        count, desc, pChan->enumStringTable() );
     if ( mapDBRStatus < 0 ) {
         desc.dump();
         errPrintf ( S_cas_badBounds, __FILE__, __LINE__, 
             "- get notify with PV=%s type=%u count=%u",
-            pChan->getPVI().getName(), msg.m_dataType, msg.m_count );
+            pChan->getPVI().getName(), msg.m_dataType, count );
         return this->readNotifyFailureResponse ( guard, msg, ECA_NOCONVERT );
     }
 
     int cacStatus = caNetConvert ( 
-        msg.m_dataType, pPayload, pPayload, true, msg.m_count );
+        msg.m_dataType, pPayload, pPayload, true, count );
     if ( cacStatus != ECA_NORMAL ) {
         return this->sendErrWithEpicsStatus ( 
             guard, & msg, pChan->getCID(), S_cas_internal, cacStatus );
     }
 
-    if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
+    if ( msg.m_dataType == DBR_STRING && count == 1u ) {
         unsigned reducedPayloadSize = strlen ( static_cast < char * > ( pPayload ) ) + 1u;
         this->out.commitMsg ( reducedPayloadSize );
     }
@@ -727,8 +734,8 @@ caStatus casStrmClient::readNotifyFailureResponse (
 // to be more efficent if it discovers that the source has less data 
 // than the destination)
 //
-caStatus convertContainerMemberToAtomic ( gdd & dd, 
-         aitUint32 appType, aitUint32 elemCount )
+caStatus convertContainerMemberToAtomic ( gdd & dd,
+         aitUint32 appType, aitUint32 requestedCount, aitUint32 nativeCount )
 {
     gdd * pVal;
     if ( dd.isContainer() ) {
@@ -755,13 +762,13 @@ caStatus convertContainerMemberToAtomic ( gdd & dd,
         return S_cas_badType;
     }
 
-    if ( elemCount <= 1 ) {
+    if ( nativeCount <= 1 ) {
         return S_cas_success;
     }
         
     // convert to atomic
     gddBounds bds;
-    bds.setSize ( elemCount );
+    bds.setSize ( requestedCount );
     bds.setFirst ( 0u );
     pVal->setDimension ( 1u, & bds );
     return S_cas_success;
@@ -770,9 +777,9 @@ caStatus convertContainerMemberToAtomic ( gdd & dd,
 //
 // createDBRDD ()
 //
-static caStatus createDBRDD ( unsigned dbrType, 
-                             unsigned elemCount, gdd * & pDD )
-{   
+static caStatus createDBRDD ( unsigned dbrType,
+        unsigned requestedCount, unsigned nativeCount, gdd * & pDD )
+{
     /*
      * DBR type has already been checked, but it is possible
      * that "gddDbrToAit" will not track with changes in
@@ -799,7 +806,7 @@ static caStatus createDBRDD ( unsigned dbrType,
 
     // fix the value element count
     caStatus status = convertContainerMemberToAtomic ( 
-        *pDescRet, gddAppType_value, elemCount );
+        *pDescRet, gddAppType_value, requestedCount, nativeCount );
     if ( status != S_cas_success ) {
         pDescRet->unreference ();
         return status;
@@ -849,11 +856,27 @@ caStatus casStrmClient::monitorResponse (
     casChannelI & chan, const caHdrLargeArray & msg, 
     const gdd & desc, const caStatus completionStatus )
 {
+    aitUint32 elementCount = 0;
+    if (desc.isContainer()) {
+        aitUint32 index;
+        int gdds = gddApplicationTypeTable::app_table.mapAppToIndex
+            ( desc.applicationType(), gddAppType_value, index );
+        if ( gdds ) {
+            return S_cas_badType;
+        }
+        elementCount = desc.getDD(index)->getDataSizeElements();
+    } else {
+        elementCount = desc.getDataSizeElements();
+    }
+    ca_uint32_t count = (msg.m_count == 0) ?
+                            (ca_uint32_t)elementCount :
+                             msg.m_count;
+
     void * pPayload = 0;
     {
-        ca_uint32_t size = dbr_size_n ( msg.m_dataType, msg.m_count );
+        ca_uint32_t size = dbr_size_n ( msg.m_dataType, count );
         caStatus status = out.copyInHeader ( msg.m_cmmd, size,
-            msg.m_dataType, msg.m_count, ECA_NORMAL, 
+            msg.m_dataType, count, ECA_NORMAL,
             msg.m_available, & pPayload );
         if ( status ) {
             if ( status == S_cas_hugeRequest ) {
@@ -871,7 +894,8 @@ caStatus casStrmClient::monitorResponse (
 
     gdd * pDBRDD = 0;
     if ( completionStatus == S_cas_success ) {
-        caStatus status = createDBRDD ( msg.m_dataType, msg.m_count, pDBRDD );
+        caStatus status = createDBRDD ( msg.m_dataType, count,
+                chan.getMaxElem(), pDBRDD );
         if ( status != S_cas_success ) {
             caStatus ecaStatus;
             if ( status == S_cas_badType ) {
@@ -892,7 +916,7 @@ caStatus casStrmClient::monitorResponse (
                 pDBRDD->unreference ();
                 errPrintf ( S_cas_noConvert, __FILE__, __LINE__,
         "no conversion between event app type=%d and DBR type=%d Element count=%d",
-                    desc.applicationType (), msg.m_dataType, msg.m_count);
+                    desc.applicationType (), msg.m_dataType, count);
                 return monitorFailureResponse ( guard, msg, ECA_NOCONVERT );
             }
         }
@@ -915,14 +939,14 @@ caStatus casStrmClient::monitorResponse (
     }
 
     int mapDBRStatus = gddMapDbr[msg.m_dataType].conv_dbr ( 
-        pPayload, msg.m_count, *pDBRDD, chan.enumStringTable() );
+        pPayload, count, *pDBRDD, chan.enumStringTable() );
     if ( mapDBRStatus < 0 ) {
         pDBRDD->unreference ();
         return monitorFailureResponse ( guard, msg, ECA_NOCONVERT );
     }
 
     int cacStatus = caNetConvert ( 
-        msg.m_dataType, pPayload, pPayload, true, msg.m_count );
+        msg.m_dataType, pPayload, pPayload, true, count );
     if ( cacStatus != ECA_NORMAL ) {
         pDBRDD->unreference ();
         return this->sendErrWithEpicsStatus ( 
@@ -932,7 +956,7 @@ caStatus casStrmClient::monitorResponse (
     //
     // force string message size to be the true size 
     //
-    if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
+    if ( msg.m_dataType == DBR_STRING && count == 1u ) {
         ca_uint32_t reducedPayloadSize = strlen ( static_cast < char * > ( pPayload ) ) + 1u;
         this->out.commitMsg ( reducedPayloadSize );
     }
@@ -1842,7 +1866,7 @@ caStatus casStrmClient::privateCreateChanResponse (
     // the protocol buffer.
     //
     assert ( nativeTypeDBR <= 0xffff );
-    aitIndex nativeCount = chan.getPVI().nativeCount();
+    aitIndex nativeCount = chan.getMaxElem();
     assert ( nativeCount <= 0xffffffff );
     assert ( hdr.m_cid == chan.getCID() );
     status = this->out.copyInHeader ( CA_PROTO_CREATE_CHAN, 0,
@@ -1940,7 +1964,7 @@ caStatus casStrmClient::eventAddAction (
 
     casChannelI *pciu;
     {
-        caStatus status = casStrmClient::verifyRequest ( pciu );
+        caStatus status = casStrmClient::verifyRequest ( pciu, CA_V413 ( this->minor_version_number ) );
         if ( status != ECA_NORMAL ) {
             if ( pciu ) {
                 return this->sendErr ( guard, mp, 
@@ -2601,8 +2625,8 @@ caStatus casStrmClient::read ()
 
     {
         gdd * pDD = 0;
-        caStatus status = createDBRDD ( pHdr->m_dataType, 
-            pHdr->m_count, pDD );
+        caStatus status = createDBRDD ( pHdr->m_dataType, pHdr->m_count,
+                this->ctx.getChannel()->getMaxElem(), pDD );
         if ( status != S_cas_success ) {
             return status;
         }
@@ -2749,6 +2773,7 @@ caStatus casStrmClient::sendErr ( epicsGuard <casClientMutex> &,
         else {
             stringSize = 1u + (unsigned) status;
         }
+        va_end ( args );
     }
     else {
         stringSize = 0u;

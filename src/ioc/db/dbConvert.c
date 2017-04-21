@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbConvert.c */
 /*
@@ -582,7 +582,7 @@ static long getCharFloat(
     }
     return 0;
 }
- 
+
 static long getCharDouble(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -783,7 +783,7 @@ static long getUcharFloat(
     }
     return 0;
 }
- 
+
 static long getUcharDouble(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -984,7 +984,7 @@ static long getShortFloat(
     }
     return 0;
 }
- 
+
 static long getShortDouble(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -1184,7 +1184,7 @@ static long getUshortFloat(
     }
     return 0;
 }
- 
+
 static long getUshortDouble(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -1385,7 +1385,7 @@ static long getLongFloat(
     }
     return 0;
 }
- 
+
 static long getLongDouble(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -1586,7 +1586,7 @@ static long getUlongFloat(
     }
     return 0;
 }
- 
+
 static long getUlongDouble(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -1636,8 +1636,8 @@ static long getFloatString(
     char *pbuffer = (char *) pto;
     float *psrc = (float *) paddr->pfield;
     long status = 0;
-    int precision = 6;
-    struct rset *prset = 0;
+    long precision = 6;
+    rset *prset = 0;
 
     if (paddr) prset = dbGetRset(paddr);
     if (prset && (prset->get_precision))
@@ -1799,7 +1799,7 @@ static long getFloatFloat(
     COPYNOCONVERT(sizeof(float), paddr->pfield, pto, nRequest, no_elements, offset);
     return 0;
 }
- 
+
 static long getFloatDouble(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -1848,9 +1848,9 @@ static long getDoubleString(
 {
     char *pbuffer = (char *) pto;
     double *psrc = (double *) paddr->pfield;
-    long        status = 0;
-    int         precision = 6;
-    struct rset *prset = 0;
+    long status = 0;
+    long precision = 6;
+    rset *prset = 0;
 
     if (paddr) prset = dbGetRset(paddr);
     if (prset && (prset->get_precision))
@@ -2019,7 +2019,7 @@ static long getDoubleFloat(
     }
     return 0;
 }
- 
+
 static long getDoubleDouble(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -2061,7 +2061,7 @@ static long getEnumString(
     void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *) pto;
-    struct rset *prset;
+    rset *prset;
     long        status;
 
     if ((prset=dbGetRset(paddr)) && (prset->get_enum_str))
@@ -2217,7 +2217,7 @@ static long getEnumFloat(
     }
     return 0;
 }
- 
+
 static long getEnumDouble(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -2602,7 +2602,7 @@ static long putStringEnum(
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *) pfrom;
-    struct rset         *prset;
+    rset         *prset;
     epicsEnum16 *pfield = (epicsEnum16*) paddr->pfield;
     long                status;
     unsigned int        nchoices,ind;
@@ -2874,7 +2874,7 @@ static long putCharFloat(
     }
     return 0;
 }
- 
+
 static long putCharDouble(
     dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -3077,7 +3077,7 @@ static long putUcharFloat(
     }
     return 0;
 }
- 
+
 static long putUcharDouble(
     dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -3280,7 +3280,7 @@ static long putShortFloat(
     }
     return 0;
 }
- 
+
 static long putShortDouble(
     dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -3483,7 +3483,7 @@ static long putUshortFloat(
     }
     return 0;
 }
- 
+
 static long putUshortDouble(
     dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -3686,7 +3686,7 @@ static long putLongFloat(
     }
     return 0;
 }
- 
+
 static long putLongDouble(
     dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -3889,7 +3889,7 @@ static long putUlongFloat(
     }
     return 0;
 }
- 
+
 static long putUlongDouble(
     dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -3937,13 +3937,12 @@ static long putFloatString(
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *) pfrom;
-    char        *pdest = (char *) paddr->pfield;
-    long        status = 0;
-    int         precision = 6;
-    struct rset *prset = 0;
+    char *pdest = (char *) paddr->pfield;
+    long status = 0;
+    long precision = 6;
+    rset *prset = dbGetRset(paddr);
     short size = paddr->field_size;
 
-    if (paddr) prset = dbGetRset(paddr);
     if (prset && (prset->get_precision))
         status = (*prset->get_precision)(paddr,&precision);
     if (nRequest==1 && offset==0) {
@@ -4103,7 +4102,7 @@ static long putFloatFloat(
     COPYNOCONVERT(sizeof(float), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return 0;
 }
- 
+
 static long putFloatDouble(
     dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -4151,13 +4150,12 @@ static long putDoubleString(
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *) pfrom;
-    char        *pdest = (char *) paddr->pfield;
-    long        status = 0;
-    int         precision = 6;
-    struct rset *prset = 0;
+    char *pdest = (char *) paddr->pfield;
+    long status = 0;
+    long precision = 6;
+    rset *prset = dbGetRset(paddr);
     short size = paddr->field_size;
 
-    if (paddr) prset = dbGetRset(paddr);
     if (prset && (prset->get_precision))
         status = (*prset->get_precision)(paddr,&precision);
     if (nRequest==1 && offset==0) {
@@ -4324,7 +4322,7 @@ static long putDoubleFloat(
     }
     return 0;
 }
- 
+
 static long putDoubleDouble(
     dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
@@ -4533,7 +4531,7 @@ static long putEnumFloat(
     }
     return 0;
 }
- 
+
 static long putEnumDouble(
     dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)

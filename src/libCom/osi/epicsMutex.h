@@ -22,11 +22,14 @@ typedef enum {
 #ifdef __cplusplus
 
 #include "compilerDependencies.h"
+#include "epicsGuard.h"
 
 #define newEpicsMutex new epicsMutex(__FILE__,__LINE__)
 
 class epicsShareClass epicsMutex {
 public:
+    typedef epicsGuard<epicsMutex> guard_t;
+    typedef epicsGuard<epicsMutex> release_t;
     class mutexCreateFailed; /* exception payload */
     class invalidMutex; /* exception payload */
     epicsMutex ();
@@ -44,6 +47,8 @@ private:
 
 class epicsShareClass epicsDeadlockDetectMutex {
 public:
+    typedef epicsGuard<epicsDeadlockDetectMutex> guard_t;
+    typedef epicsGuard<epicsDeadlockDetectMutex> release_t;
     typedef unsigned hierarchyLevel_t;
     epicsDeadlockDetectMutex ( unsigned hierarchyLevel_t );
     ~epicsDeadlockDetectMutex ();

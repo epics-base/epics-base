@@ -3,7 +3,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Revision-Id$ */
 /*
  *   Original Author:	Sheng Peng, ORNL / SNS Project
  *   Date:		07/2004

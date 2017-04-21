@@ -8,8 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      $Revision-Id$
- *
  *      Author  Jeffrey O. Hill
  *              johill@lanl.gov
  *              505 665 1831
@@ -35,8 +33,7 @@
 // include a version string for POSIX systems
 static const char pVersionCAS[] = 
     "@(#) " EPICS_VERSION_STRING 
-    ", CA Portable Server Library " 
-    "$Date$";
+    ", CA Portable Server Library ";
 
 caServerI::caServerI ( caServer & tool ) :
     adapter (tool),

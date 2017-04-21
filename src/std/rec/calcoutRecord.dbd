@@ -34,7 +34,7 @@ recordtype(calcout) {
 	}
 	field(VAL,DBF_DOUBLE) {
 		prompt("Result")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		asl(ASL0)
 	}
 	field(PVAL,DBF_DOUBLE) {
@@ -42,7 +42,7 @@ recordtype(calcout) {
 	}
 	field(CALC,DBF_STRING) {
 		prompt("Calculation")
-		promptgroup(GUI_CALC)
+		promptgroup("30 - Action")
 		special(SPC_CALC)
 		pp(TRUE)
 		size(80)
@@ -55,79 +55,79 @@ recordtype(calcout) {
 	field(INPA,DBF_INLINK) {
 		prompt("Input A")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPB,DBF_INLINK) {
 		prompt("Input B")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPC,DBF_INLINK) {
 		prompt("Input C")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPD,DBF_INLINK) {
 		prompt("Input D")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPE,DBF_INLINK) {
 		prompt("Input E")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPF,DBF_INLINK) {
 		prompt("Input F")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPG,DBF_INLINK) {
 		prompt("Input G")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPH,DBF_INLINK) {
 		prompt("Input H")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPI,DBF_INLINK) {
 		prompt("Input I")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPJ,DBF_INLINK) {
 		prompt("Input J")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPK,DBF_INLINK) {
 		prompt("Input K")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPL,DBF_INLINK) {
 		prompt("Input L")
 		special(SPC_MOD)
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
 		special(SPC_MOD)
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(INAV,DBF_MENU) {
@@ -222,13 +222,13 @@ recordtype(calcout) {
 	}
 	field(OOPT,DBF_MENU) {
 		prompt("Output Execute Opt")
-		promptgroup(GUI_CALC)
+		promptgroup("50 - Output")
 		interest(1)
 		menu(calcoutOOPT)
 	}
 	field(ODLY,DBF_DOUBLE) {
 		prompt("Output Execute Delay")
-		promptgroup(GUI_ALARMS)
+		promptgroup("50 - Output")
 		asl(ASL0)
 		interest(1)
 	}
@@ -239,13 +239,13 @@ recordtype(calcout) {
 	}
 	field(DOPT,DBF_MENU) {
 		prompt("Output Data Opt")
-		promptgroup(GUI_CALC)
+		promptgroup("30 - Action")
 		interest(1)
 		menu(calcoutDOPT)
 	}
 	field(OCAL,DBF_STRING) {
 		prompt("Output Calculation")
-		promptgroup(GUI_CALC)
+		promptgroup("30 - Action")
 		special(SPC_CALC)
 		pp(TRUE)
 		size(80)
@@ -257,7 +257,7 @@ recordtype(calcout) {
 	}
 	field(OEVT,DBF_STRING) {
 		prompt("Event To Issue")
-		promptgroup(GUI_CLOCK)
+		promptgroup("30 - Action")
 		special(SPC_MOD)
 		asl(ASL0)
 		size(40)
@@ -271,71 +271,71 @@ recordtype(calcout) {
 	}
 	field(IVOA,DBF_MENU) {
 		prompt("INVALID output action")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(2)
 		menu(menuIvoa)
 	}
 	field(IVOV,DBF_DOUBLE) {
 		prompt("INVALID output value")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(2)
 	}
 	field(EGU,DBF_STRING) {
-		prompt("Units Name")
-		promptgroup(GUI_DISPLAY)
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
 		interest(1)
 		size(16)
 		prop(YES)
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Rng")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -343,7 +343,7 @@ recordtype(calcout) {
 	}
 	field(LLSV,DBF_MENU) {
 		prompt("Lolo Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -351,7 +351,7 @@ recordtype(calcout) {
 	}
 	field(HSV,DBF_MENU) {
 		prompt("High Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -359,7 +359,7 @@ recordtype(calcout) {
 	}
 	field(LSV,DBF_MENU) {
 		prompt("Low Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -367,17 +367,17 @@ recordtype(calcout) {
 	}
 	field(HYST,DBF_DOUBLE) {
 		prompt("Alarm Deadband")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		interest(1)
 	}
 	field(ADEL,DBF_DOUBLE) {
 		prompt("Archive Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(MDEL,DBF_DOUBLE) {
 		prompt("Monitor Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(A,DBF_DOUBLE) {

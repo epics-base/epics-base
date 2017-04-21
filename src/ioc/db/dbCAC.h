@@ -8,16 +8,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- *  $Revision-Id$
- *
- *
- *                    L O S  A L A M O S
- *              Los Alamos National Laboratory
- *               Los Alamos, New Mexico 87545
- *
- *  Copyright, 1986, The Regents of the University of California.
- *
- *
  *	Author Jeffrey O. Hill
  *	johill@lanl.gov
  *	505 665 1831
@@ -36,12 +26,13 @@
 
 #include "stdlib.h"
 
+#include <memory> // std::auto_ptr
+
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "resourceLib.h"
 #include "cacIO.h"
 #include "compilerDependencies.h"
-#include "epicsMemory.h"
 
 #ifdef dbCACh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -203,7 +194,7 @@ private:
     epicsMutex & mutex;
     epicsMutex & cbMutex;
     cacContextNotify & notify;
-    epics_auto_ptr < cacContext > pNetContext;
+    std::auto_ptr < cacContext > pNetContext;
     char * pStateNotifyCache;
     bool isolated;
 

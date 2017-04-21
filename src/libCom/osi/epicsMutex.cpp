@@ -7,7 +7,7 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* epicsMutex.c */
+/* epicsMutex.cpp */
 /*	Author: Marty Kraimer and Jeff Hill	Date: 03APR01	*/
 
 /*

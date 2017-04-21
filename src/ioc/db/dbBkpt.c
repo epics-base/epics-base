@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbBkpt.c */
-/* base/src/db $Revision-Id$ */
 /*
  *      Author:          Matthew Needes
  *      Date:            8-30-93

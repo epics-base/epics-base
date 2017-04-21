@@ -8,7 +8,6 @@
 
 /*
  * Dummy version -- use if application does not provide its own version
- *  $Revision-Id$
  */
 #include "epicsRtemsInitHooks.h"
 

@@ -1,8 +1,5 @@
 # CONFIG.Common.vxWorks-mpc8548
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for vxWorks-mpc8548 target archs
 # Sites may override these definitions in CONFIG_SITE.Common.vxWorks-mpc8548
 #-------------------------------------------------------

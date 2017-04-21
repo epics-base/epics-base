@@ -8,8 +8,6 @@
 \*************************************************************************/
 /* libmain - flex run-time support library "main" function */
 
-/* $Revision-Id$ */
-
 extern int yylex();
 
 int main(int argc, char *argv[])

@@ -1,8 +1,5 @@
 # CONFIG.darwinCommon.darwinCommon
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Common definitions for darwin builds
 # Sites may override these definitions in CONFIG_SITE.darwinCommon.darwinCommon
 #-------------------------------------------------------

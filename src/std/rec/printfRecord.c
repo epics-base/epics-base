@@ -292,8 +292,9 @@ static void doPrintf(printfRecord *prec)
 }
 
 
-static long init_record(printfRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct printfRecord *prec = (struct printfRecord *)pcommon;
     printfdset *pdset;
 
     if (pass == 0) {
@@ -327,8 +328,9 @@ static long init_record(printfRecord *prec, int pass)
     return 0;
 }
 
-static long process(printfRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct printfRecord *prec = (struct printfRecord *)pcommon;
     int pact = prec->pact;
     printfdset *pdset;
     long status = 0;

@@ -11,6 +11,7 @@ TOP=../../..
 include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
+PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
 
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c
@@ -98,6 +99,7 @@ TESTS += epicsTimeTest
 
 TESTPROD_HOST += epicsTimeZoneTest
 epicsTimeZoneTest_SRCS += epicsTimeZoneTest.c
+libComTestHarness_SRCS_RTEMS += epicsTimeZoneTest.c
 TESTS += epicsTimeZoneTest
 
 TESTPROD_HOST += epicsThreadTest
@@ -170,11 +172,6 @@ epicsAtomicTest_SRCS += epicsAtomicTest.cpp
 testHarness_SRCS += epicsAtomicTest.cpp
 TESTS += epicsAtomicTest
 
-TESTPROD_HOST += epicsExceptionTest
-epicsExceptionTest_SRCS += epicsExceptionTest.cpp
-testHarness_SRCS += epicsExceptionTest.cpp
-TESTS += epicsExceptionTest
-
 TESTPROD_HOST += macDefExpandTest
 macDefExpandTest_SRCS += macDefExpandTest.c
 testHarness_SRCS += macDefExpandTest.c
@@ -208,6 +205,10 @@ epicsStackTraceTest_SRCS += epicsStackTraceTest.c
 testHarness_SRCS += epicsStackTraceTest.c
 TESTS += epicsStackTraceTest
 
+TESTPROD_HOST += ipAddrToAsciiTest
+ipAddrToAsciiTest_SRCS += ipAddrToAsciiTest.cpp
+testHarness_SRCS += ipAddrToAsciiTest.cpp
+TESTS += ipAddrToAsciiTest
 
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c

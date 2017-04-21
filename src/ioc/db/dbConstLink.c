@@ -77,6 +77,8 @@ static long dbConstLoadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
 
     if (!pstr)
         return S_db_badField;
+    if (!size)
+        return 0;
     len = strlen(pstr);
 
     /* FIXME This handles the common case, but not the general one... */
@@ -85,11 +87,11 @@ static long dbConstLoadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
         pstr += 2;
         len -= 4;
     }
-    if (--size > len) size = len;
+    if (len+1 > size) len = size-1;
 
-    strncpy(pbuffer, pstr, size);
-    pbuffer[size] = 0;
-    *plen = (epicsUInt32) strlen(pbuffer) + 1;
+    memcpy(pbuffer, pstr, len);
+    pbuffer[len] = 0;
+    *plen = len+1;
     return 0;
 }
 

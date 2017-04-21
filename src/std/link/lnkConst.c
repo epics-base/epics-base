@@ -212,7 +212,11 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
     case s0:
         clink->nElems = 1;
         clink->type = sc40;
-        clink->value.scalar_string = epicsStrnDup(val, len);
+        clink->value.scalar_string = malloc(len+1);
+        if(!clink->value.scalar_string)
+            return jlif_stop;
+        strncpy(clink->value.scalar_string, val, len);
+        clink->value.scalar_string[len] = '\0';
         break;
 
     case a0:
@@ -225,8 +229,13 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
         if (!vec)
             break;
 
-        vec[clink->nElems++] = epicsStrnDup(val, len);
+        vec[clink->nElems] = malloc(len+1);
+        if(!vec[clink->nElems])
+            return jlif_stop;
+        strncpy(vec[clink->nElems], val, len);
+        vec[clink->nElems][len] = '\0';
         clink->value.pstrings = vec;
+        clink->nElems++;
         break;
 
     case af64:

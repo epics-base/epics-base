@@ -191,7 +191,13 @@ static jlif_result lnkCalc_string(jlink *pjlink, const char *val, size_t len)
         return jlif_stop;
     }
 
-    inbuf = epicsStrnDup(val, len);
+    inbuf = malloc(len+1);
+    if(!inbuf) {
+        errlogPrintf("lnkCalc: Out of memory\n");
+        return jlif_stop;
+    }
+    memcpy(inbuf, val, len);
+    inbuf[len] = '\0';
 
     if (clink->pstate == ps_major) {
         clink->major = inbuf;

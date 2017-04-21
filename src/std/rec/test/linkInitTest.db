@@ -1,0 +1,23 @@
+
+record(lsi, "longstr1") {
+  field(SIZV, "100")
+  field(INP, ["!----------------------------------------------!"])
+}
+
+record(lsi, "longstr2") {
+  field(SIZV, "100")
+  field(INP, {const: ["!----------------------------------------------!"]})
+}
+
+record(lsi, "longstr3") {
+  field(SIZV, "100")
+  field(INP, {const: "!----------------------------------------------!"})
+}
+
+record(ai, "emptylink" ) {
+  field(INP, {calc: {expr:"0"}})
+}
+
+record(ai, "emptylink1" ) {
+  field(INP, {calc: {expr:"1"}})
+}

@@ -39,6 +39,13 @@ testHarness_SRCS += linkRetargetLinkTest.c
 TESTFILES += ../linkRetargetLink.db
 TESTS += linkRetargetLinkTest
 
+TESTPROD_HOST += linkInitTest
+linkInitTest_SRCS += linkInitTest.c
+linkInitTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += linkInitTest.c
+TESTFILES += ../linkInitTest.db
+TESTS += linkInitTest
+
 TESTPROD_HOST += compressTest
 compressTest_SRCS += compressTest.c
 compressTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp

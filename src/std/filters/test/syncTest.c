@@ -140,7 +140,7 @@ MAIN(syncTest)
     int i;
     dbEventCtx evtctx;
 
-    testPlan(0);
+    testPlan(139);
 
     dbChannelInit();
     evtctx = db_init_events();

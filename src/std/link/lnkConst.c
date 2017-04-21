@@ -225,9 +225,6 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
         if (!vec)
             break;
 
-        if (len >= MAX_STRING_SIZE)
-            len = MAX_STRING_SIZE - 1;
-
         vec[clink->nElems++] = epicsStrnDup(val, len);
         clink->value.pstrings = vec;
         break;

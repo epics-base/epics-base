@@ -36,7 +36,7 @@
 
 typedef long (*FASTCONVERT)();
 
-typedef struct clink {
+typedef struct const_link {
     jlink jlink;        /* embedded object */
     int nElems;
     enum {s0, si32, sf64, sc40, a0, ai32, af64, ac40} type;
@@ -49,7 +49,7 @@ typedef struct clink {
         epicsFloat64 *pdoubles;     /* af64 */
         char **pstrings;            /* ac40 */
     } value;
-} clink;
+} const_link;
 
 static lset lnkConst_lset;
 
@@ -58,7 +58,7 @@ static lset lnkConst_lset;
 
 static jlink* lnkConst_alloc(short dbfType)
 {
-    clink *clink = calloc(1, sizeof(struct clink));
+    const_link *clink = calloc(1, sizeof(*clink));
 
     IFDEBUG(10)
         printf("lnkConst_alloc()\n");
@@ -75,10 +75,10 @@ static jlink* lnkConst_alloc(short dbfType)
 
 static void lnkConst_free(jlink *pjlink)
 {
-    clink *clink = CONTAINER(pjlink, struct clink, jlink);
+    const_link *clink = CONTAINER(pjlink, const_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkConst_free(const@%p) type=%d\n", pjlink, pvt->type);
+        printf("lnkConst_free(const@%p) type=%d\n", pjlink, clink->type);
 
     switch (clink->type) {
         int i;
@@ -102,7 +102,7 @@ static void lnkConst_free(jlink *pjlink)
 
 static jlif_result lnkConst_integer(jlink *pjlink, long num)
 {
-    clink *clink = CONTAINER(pjlink, struct clink, jlink);
+    const_link *clink = CONTAINER(pjlink, const_link, jlink);
 
     IFDEBUG(10)
         printf("lnkConst_integer(const@%p, %ld)\n", pjlink, num);
@@ -155,7 +155,7 @@ static jlif_result lnkConst_boolean(jlink *pjlink, int val) {
 
 static jlif_result lnkConst_double(jlink *pjlink, double num)
 {
-    clink *clink = CONTAINER(pjlink, struct clink, jlink);
+    const_link *clink = CONTAINER(pjlink, const_link, jlink);
 
     IFDEBUG(10)
         printf("lnkConst_double(const@%p, %g)\n", pjlink, num);
@@ -205,7 +205,7 @@ static jlif_result lnkConst_double(jlink *pjlink, double num)
 
 static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
 {
-    clink *clink = CONTAINER(pjlink, struct clink, jlink);
+    const_link *clink = CONTAINER(pjlink, const_link, jlink);
 
     IFDEBUG(10)
         printf("lnkConst_string(const@%p, \"%.*s\")\n", clink, (int) len, val);
@@ -257,7 +257,7 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
 
 static jlif_result lnkConst_start_array(jlink *pjlink)
 {
-    clink *clink = CONTAINER(pjlink, struct clink, jlink);
+    const_link *clink = CONTAINER(pjlink, const_link, jlink);
 
     IFDEBUG(10)
         printf("lnkConst_start_array(const@%p)\n", pjlink);
@@ -305,7 +305,7 @@ static struct lset* lnkConst_get_lset(const jlink *pjlink)
 
 static void lnkConst_report(const jlink *pjlink, int level, int indent)
 {
-    clink *clink = CONTAINER(pjlink, struct clink, jlink);
+    const_link *clink = CONTAINER(pjlink, const_link, jlink);
     const char * const type_names[4] = {
         "bug", "integer", "double", "string"
     };
@@ -375,7 +375,7 @@ static void lnkConst_report(const jlink *pjlink, int level, int indent)
 
 static void lnkConst_remove(struct dbLocker *locker, struct link *plink)
 {
-    clink *clink = CONTAINER(plink->value.json.jlink, struct clink, jlink);
+    const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
 
     IFDEBUG(10)
         printf("lnkConst_remove(const@%p)\n", clink);
@@ -385,7 +385,7 @@ static void lnkConst_remove(struct dbLocker *locker, struct link *plink)
 
 static long lnkConst_loadScalar(struct link *plink, short dbrType, void *pbuffer)
 {
-    clink *clink = CONTAINER(plink->value.json.jlink, struct clink, jlink);
+    const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
     long status;
 
     IFDEBUG(10)
@@ -434,7 +434,7 @@ static long lnkConst_loadScalar(struct link *plink, short dbrType, void *pbuffer
 static long lnkConst_loadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
     epicsUInt32 *plen)
 {
-    clink *clink = CONTAINER(plink->value.json.jlink, struct clink, jlink);
+    const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
     const char *pstr;
 
     IFDEBUG(10)
@@ -465,7 +465,7 @@ static long lnkConst_loadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
 static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         long *pnReq)
 {
-    clink *clink = CONTAINER(plink->value.json.jlink, struct clink, jlink);
+    const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
     short dbrSize = dbValueSize(dbrType);
     char *pdest = pbuffer;
     int nElems = clink->nElems;

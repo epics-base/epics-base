@@ -19,9 +19,10 @@
 #define CALCPERFORM_NARGS 12
 #define CALCPERFORM_STACK 80
 
-#define INFIX_TO_POSTFIX_SIZE(n) (n*21/6)
+#define INFIX_TO_POSTFIX_SIZE(n) ((n)*21/6)
 /* The above expression is an estimate of the maximum postfix buffer
- * size needed for a given infix expression buffer.  The actual size
+ * size needed for a given infix expression buffer (the argument must count
+ * the trailing nil byte in the input expression string). The actual size
  * needed is never larger than this value, although it is actually a
  * few bytes smaller for some sizes.
  *

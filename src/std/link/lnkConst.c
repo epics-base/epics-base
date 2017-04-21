@@ -114,7 +114,7 @@ static jlif_result lnkConst_integer(jlink *pjlink, long num)
 
     case a0:
         clink->type = ai32;
-        /* fall thorough */
+        /* fall through */
     case ai32:
         nElems = clink->nElems + 1;
         buf = realloc(clink->value.pmem, nElems * sizeof(epicsInt32));
@@ -134,7 +134,7 @@ static jlif_result lnkConst_integer(jlink *pjlink, long num)
 
     case ac40:
         errlogPrintf("lnkConst: Mixed data types in array\n");
-        /* FIXME ??? */
+        /* fall through */
     default:
         return jlif_stop;
     }
@@ -167,7 +167,7 @@ static jlif_result lnkConst_double(jlink *pjlink, double num)
 
     case a0:
         clink->type = af64;
-        /* fall thorough */
+        /* fall through */
     case af64:
         nElems = clink->nElems + 1;
         f64buf = realloc(clink->value.pmem, nElems * sizeof(epicsFloat64));
@@ -190,7 +190,7 @@ static jlif_result lnkConst_double(jlink *pjlink, double num)
 
     case ac40:
         errlogPrintf("lnkConst: Mixed data types in array\n");
-        /* FIXME ??? */
+        /* fall through */
     default:
         return jlif_stop;
     }

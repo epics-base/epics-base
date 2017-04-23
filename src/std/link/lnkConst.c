@@ -43,7 +43,7 @@ typedef struct const_link {
     union {
         epicsInt32 scalar_integer;  /* si32 */
         epicsFloat64 scalar_double; /* sf64 */
-        char * scalar_string;       /* s0 and sc40 */
+        char *scalar_string;        /* sc40 */
         void *pmem;
         epicsInt32 *pintegers;      /* ai32 */
         epicsFloat64 *pdoubles;     /* af64 */
@@ -86,12 +86,12 @@ static void lnkConst_free(jlink *pjlink)
         for (i=0; i<clink->nElems; i++)
             free(clink->value.pstrings[i]);
         /* fall through */
-    case s0:
     case sc40:
     case ai32:
     case af64:
         free(clink->value.pmem);
         break;
+    case s0:
     case a0:
     case si32:
     case sf64:
@@ -103,16 +103,15 @@ static void lnkConst_free(jlink *pjlink)
 static jlif_result lnkConst_integer(jlink *pjlink, long num)
 {
     const_link *clink = CONTAINER(pjlink, const_link, jlink);
+    int newElems = clink->nElems + 1;
 
     IFDEBUG(10)
         printf("lnkConst_integer(const@%p, %ld)\n", pjlink, num);
 
     switch (clink->type) {
         void *buf;
-        int nElems;
 
     case s0:
-        clink->nElems = 1;
         clink->type = si32;
         clink->value.scalar_integer = num;
         break;
@@ -121,20 +120,21 @@ static jlif_result lnkConst_integer(jlink *pjlink, long num)
         clink->type = ai32;
         /* fall through */
     case ai32:
-        nElems = clink->nElems + 1;
-        buf = realloc(clink->value.pmem, nElems * sizeof(epicsInt32));
-        if (!buf) return jlif_stop;
+        buf = realloc(clink->value.pmem, newElems * sizeof(epicsInt32));
+        if (!buf)
+            return jlif_stop;
+
         clink->value.pmem = buf;
         clink->value.pintegers[clink->nElems] = num;
-        clink->nElems = nElems;
         break;
 
     case af64:
-        nElems = clink->nElems + 1;
-        buf = realloc(clink->value.pmem, nElems * sizeof(epicsFloat64));
-        if (!buf) return jlif_stop;
+        buf = realloc(clink->value.pmem, newElems * sizeof(epicsFloat64));
+        if (!buf)
+            return jlif_stop;
+
         clink->value.pmem = buf;
-        clink->value.pdoubles[clink->nElems++] = num;
+        clink->value.pdoubles[clink->nElems] = num;
         break;
 
     case ac40:
@@ -143,6 +143,8 @@ static jlif_result lnkConst_integer(jlink *pjlink, long num)
     default:
         return jlif_stop;
     }
+
+    clink->nElems = newElems;
     return jlif_continue;
 }
 
@@ -156,16 +158,16 @@ static jlif_result lnkConst_boolean(jlink *pjlink, int val) {
 static jlif_result lnkConst_double(jlink *pjlink, double num)
 {
     const_link *clink = CONTAINER(pjlink, const_link, jlink);
+    int newElems = clink->nElems + 1;
 
     IFDEBUG(10)
         printf("lnkConst_double(const@%p, %g)\n", pjlink, num);
 
     switch (clink->type) {
         epicsFloat64 *f64buf;
-        int nElems, i;
+        int i;
 
     case s0:
-        clink->nElems = 1;
         clink->type = sf64;
         clink->value.scalar_double = num;
         break;
@@ -174,23 +176,26 @@ static jlif_result lnkConst_double(jlink *pjlink, double num)
         clink->type = af64;
         /* fall through */
     case af64:
-        nElems = clink->nElems + 1;
-        f64buf = realloc(clink->value.pmem, nElems * sizeof(epicsFloat64));
-        if (!f64buf) return jlif_stop;
+        f64buf = realloc(clink->value.pmem, newElems * sizeof(epicsFloat64));
+        if (!f64buf)
+            return jlif_stop;
+
+        f64buf[clink->nElems] = num;
         clink->value.pdoubles = f64buf;
-        clink->value.pdoubles[clink->nElems++] = num;
         break;
 
     case ai32: /* promote earlier ai32 values to af64 */
-        f64buf = calloc(clink->nElems + 1, sizeof(epicsFloat64));
-        if (!f64buf) return jlif_stop;
+        f64buf = calloc(newElems, sizeof(epicsFloat64));
+        if (!f64buf)
+            return jlif_stop;
+
         for (i = 0; i < clink->nElems; i++) {
             f64buf[i] = clink->value.pintegers[i];
         }
-        f64buf[clink->nElems++] = num;
         free(clink->value.pmem);
-        clink->value.pdoubles = f64buf;
+        f64buf[clink->nElems] = num;
         clink->type = af64;
+        clink->value.pdoubles = f64buf;
         break;
 
     case ac40:
@@ -200,48 +205,47 @@ static jlif_result lnkConst_double(jlink *pjlink, double num)
         return jlif_stop;
     }
 
+    clink->nElems = newElems;
     return jlif_continue;
 }
 
 static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
 {
     const_link *clink = CONTAINER(pjlink, const_link, jlink);
+    int newElems = clink->nElems + 1;
 
     IFDEBUG(10)
         printf("lnkConst_string(const@%p, \"%.*s\")\n", clink, (int) len, val);
 
     switch (clink->type) {
-        char **vec;
-        int nElems;
+        char **vec, *str;
 
     case s0:
-        clink->nElems = 1;
-        clink->type = sc40;
-        free(clink->value.scalar_string);
-        clink->value.scalar_string = malloc(len+1);
-        if(!clink->value.scalar_string)
+        str = malloc(len+1);
+        if (!str)
             return jlif_stop;
-        strncpy(clink->value.scalar_string, val, len);
-        clink->value.scalar_string[len] = '\0';
+
+        strncpy(str, val, len);
+        str[len] = '\0';
+        clink->type = sc40;
+        clink->value.scalar_string = str;
         break;
 
     case a0:
         clink->type = ac40;
         /* fall thorough */
     case ac40:
-        nElems = clink->nElems + 1;
-
-        vec = realloc(clink->value.pmem, nElems * sizeof(char *));
+        vec = realloc(clink->value.pmem, newElems * sizeof(char *));
         if (!vec)
             return jlif_stop;
-
-        vec[clink->nElems] = malloc(len+1);
-        if(!vec[clink->nElems])
+        str = malloc(len+1);
+        if (!str)
             return jlif_stop;
-        strncpy(vec[clink->nElems], val, len);
-        vec[clink->nElems][len] = '\0';
+
+        strncpy(str, val, len);
+        str[len] = '\0';
+        vec[clink->nElems] = str;
         clink->value.pstrings = vec;
-        clink->nElems++;
         break;
 
     case af64:
@@ -252,6 +256,7 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
         return jlif_stop;
     }
 
+    clink->nElems = newElems;
     return jlif_continue;
 }
 

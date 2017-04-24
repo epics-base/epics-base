@@ -21,3 +21,13 @@ record(ai, "emptylink" ) {
 record(ai, "emptylink1" ) {
   field(INP, {calc: {expr:"1"}})
 }
+
+record(printf, "printf1") {
+  field(SIZV, "100")
+  field(INP0, ["Test string, exactly 40 characters long"])
+}
+record(printf, "printf2") {
+  field(SIZV, "100")
+  field(INP0, ["Longer test string, more that 40 characters long"])
+}
+

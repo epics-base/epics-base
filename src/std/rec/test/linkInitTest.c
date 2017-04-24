@@ -95,10 +95,63 @@ static void testCalcInit()
     testdbCleanup();
 }
 
+static void testPrintfInit()
+{
+    testDiag("testPrintfInit");
+
+    testdbPrepare();
+
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("linkInitTest.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    {
+        const char buf1[] = "Test string, exactly 40 characters long";
+        const char buf2[] = "Longer test string, more that 40 characters long";
+        const char buf2t[] = "Longer test string, more that 40 charac";
+
+        /* The FMT field is pp(TRUE), so this put triggers processing */
+        testdbPutFieldOk("printf1.FMT", DBF_STRING, "%s");
+        testdbGetArrFieldEqual("printf1.VAL$", DBF_CHAR, NELEMENTS(buf1)+2,
+            NELEMENTS(buf1), buf1);
+        testdbGetFieldEqual("printf1.VAL", DBR_STRING, buf1);
+
+        testdbPutFieldOk("printf1.FMT", DBF_STRING, "%ls");
+        testdbGetArrFieldEqual("printf1.VAL$", DBF_CHAR, NELEMENTS(buf1)+2,
+            NELEMENTS(buf1), buf1);
+        testdbGetFieldEqual("printf1.VAL", DBR_STRING, buf1);
+
+        testdbPutFieldOk("printf2.FMT", DBF_STRING, "%s");
+        testdbGetArrFieldEqual("printf2.VAL$", DBF_CHAR, NELEMENTS(buf2)+2,
+            NELEMENTS(buf2t), buf2t);
+        testdbGetFieldEqual("printf2.VAL", DBR_STRING, buf2t);
+
+        testdbPutFieldOk("printf2.FMT", DBF_STRING, "%ls");
+        testdbGetArrFieldEqual("printf2.VAL$", DBF_CHAR, NELEMENTS(buf2)+2,
+            NELEMENTS(buf2), buf2);
+        testdbGetFieldEqual("printf2.VAL", DBR_STRING, buf2t);
+
+        testdbPutFieldOk("printf2.FMT", DBF_STRING, "%.39ls");
+        testdbGetArrFieldEqual("printf2.VAL$", DBF_CHAR, NELEMENTS(buf2)+2,
+            NELEMENTS(buf2t), buf2t);
+    }
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+}
+
 MAIN(linkInitTest)
 {
-    testPlan(16);
+    testPlan(30);
     testLongStringInit();
     testCalcInit();
+    testPrintfInit();
     return testDone();
 }

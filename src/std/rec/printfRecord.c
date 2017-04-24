@@ -203,9 +203,10 @@ static void doPrintf(printfRecord *prec)
                     }
                     break;
 
-                case 's':   /* FIXME: const strings are now supported */
-                    if (flags & F_LONG && !dbLinkIsConstant(plink)) {
+                case 's':
+                    if (flags & F_LONG) {
                         long n = vspace + 1;
+                        long status;
 
                         if (precision && n > precision)
                             n = precision + 1;
@@ -213,7 +214,14 @@ static void doPrintf(printfRecord *prec)
                              * characters to be printed from the string.
                              * It does not limit the field width however.
                              */
-                        if (dbGetLink(plink++, DBR_CHAR, pval, 0, &n))
+                        if (dbLinkIsConstant(plink)) {
+                            epicsUInt32 len = n;
+                            status = dbLoadLinkLS(plink++, pval, n, &len);
+                            n = len;
+                        }
+                        else
+                            status = dbGetLink(plink++, DBR_CHAR, pval, 0, &n);
+                        if (status)
                             flags |= F_BADLNK;
                         else {
                             int padding;

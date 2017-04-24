@@ -73,26 +73,11 @@ static long dbConstLoadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
     epicsUInt32 *plen)
 {
     const char *pstr = plink->value.constantStr;
-    size_t len;
 
     if (!pstr)
         return S_db_badField;
-    if (!size)
-        return 0;
-    len = strlen(pstr);
 
-    /* FIXME This handles the common case, but not the general one... */
-    if (pstr[0] == '[' && pstr[1] == '"' &&
-        pstr[len-2] == '"' && pstr[len-1] == ']') {
-        pstr += 2;
-        len -= 4;
-    }
-    if (len+1 > size) len = size-1;
-
-    memcpy(pbuffer, pstr, len);
-    pbuffer[len] = 0;
-    *plen = len+1;
-    return 0;
+    return dbLSConvertJSON(pstr, pbuffer, size, plen);
 }
 
 static long dbConstLoadArray(struct link *plink, short dbrType, void *pbuffer,

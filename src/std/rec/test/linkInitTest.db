@@ -1,4 +1,3 @@
-
 record(lsi, "longstr1") {
   field(SIZV, "100")
   field(INP, ["!----------------------------------------------!"])
@@ -12,6 +11,10 @@ record(lsi, "longstr2") {
 record(lsi, "longstr3") {
   field(SIZV, "100")
   field(INP, {const: "!----------------------------------------------!"})
+}
+
+record(stringin, "longstr4") {
+  field(INP, ["One","Two","Three","Four"])
 }
 
 record(ai, "emptylink" ) {

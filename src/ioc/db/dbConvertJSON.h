@@ -18,7 +18,8 @@ extern "C" {
 /* This name should probably be changed to inclue "array" */
 epicsShareFunc long dbPutConvertJSON(const char *json, short dbrType,
     void *pdest, long *psize);
-
+epicsShareFunc long dbLSConvertJSON(const char *json, char *pdest,
+    epicsUInt32 size, epicsUInt32 *plen);
 #ifdef __cplusplus
 }
 #endif

@@ -53,6 +53,8 @@ static void testLongStringInit()
         testdbGetFieldEqual("longstr3.VAL", DBR_STRING, "!--------------------------------------");
     }
 
+    testdbGetFieldEqual("longstr4.VAL", DBR_STRING, "One");
+
     testIocShutdownOk();
 
     testdbCleanup();
@@ -149,7 +151,7 @@ static void testPrintfInit()
 
 MAIN(linkInitTest)
 {
-    testPlan(30);
+    testPlan(31);
     testLongStringInit();
     testCalcInit();
     testPrintfInit();

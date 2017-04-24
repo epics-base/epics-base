@@ -6,6 +6,9 @@
 \*************************************************************************/
 //	Author: Andrew Johnson
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "epicsUnitTest.h"
 #include "epicsTypes.h"
 #include "epicsMath.h"
@@ -20,17 +23,23 @@ double doCalc(const char *expr) {
     double args[CALCPERFORM_NARGS] = {
 	1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
     };
-    char rpn[MAX_POSTFIX_SIZE];
+    char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
     double result = 0.0;
     result /= result;  /* Start as NaN */
-    
+
+    if(!rpn) {
+        testAbort("postfix: %s no memory", expr);
+        return epicsNAN;
+    }
+
     if (postfix(expr, rpn, &err)) {
 	testDiag("postfix: %s in expression '%s'", calcErrorStr(err), expr);
     } else
 	if (calcPerform(args, &result, rpn) && finite(result)) {
 	    testDiag("calcPerform: error evaluating '%s'", expr);
 	}
+    free(rpn);
     return result;
 }
 
@@ -40,10 +49,15 @@ void testCalc(const char *expr, double expected) {
     double args[CALCPERFORM_NARGS] = {
         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
     };
-    char rpn[MAX_POSTFIX_SIZE];
+    char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
     double result = 0.0;
     result /= result;  /* Start as NaN */
+
+    if(!rpn) {
+        testFail("postfix: %s no memory", expr);
+        return;
+    }
 
     if (postfix(expr, rpn, &err)) {
         testDiag("postfix: %s in expression '%s'", calcErrorStr(err), expr);
@@ -63,6 +77,7 @@ void testCalc(const char *expr, double expected) {
         testDiag("Expected result is %g, actually got %g", expected, result);
         calcExprDump(rpn);
     }
+    free(rpn);
 }
 
 void testUInt32Calc(const char *expr, epicsUInt32 expected) {
@@ -71,11 +86,16 @@ void testUInt32Calc(const char *expr, epicsUInt32 expected) {
     double args[CALCPERFORM_NARGS] = {
         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
     };
-    char rpn[MAX_POSTFIX_SIZE];
+    char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
     epicsUInt32 uresult;
     double result = 0.0;
     result /= result;  /* Start as NaN */
+
+    if(!rpn) {
+        testFail("postfix: %s no memory", expr);
+        return;
+    }
 
     if (postfix(expr, rpn, &err)) {
         testDiag("postfix: %s in expression '%s'", calcErrorStr(err), expr);
@@ -91,38 +111,50 @@ void testUInt32Calc(const char *expr, epicsUInt32 expected) {
                  expected, expected, uresult, uresult);
         calcExprDump(rpn);
     }
+    free(rpn);
 }
 
 void testArgs(const char *expr, unsigned long einp, unsigned long eout) {
-    char rpn[MAX_POSTFIX_SIZE];
+    char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err = 0;
     unsigned long vinp, vout;
 
+    if(!rpn) {
+        testFail("postfix: %s no memory", expr);
+        return;
+    }
+
     if (postfix(expr, rpn, &err)) {
-	testFail("postfix: %s in expression '%s'", calcErrorStr(err), expr);
-	return;
+        testFail("postfix: %s in expression '%s'", calcErrorStr(err), expr);
+        return;
     }
     if (calcArgUsage(rpn, &vinp, &vout)) {
-	testFail("calcArgUsage returned error for '%s'", expr);
-	return;
+        testFail("calcArgUsage returned error for '%s'", expr);
+        return;
     }
     if (!testOk(vinp == einp && vout == eout, "Args for '%s'", expr)) {
-	testDiag("Expected (%lx, %lx) got (%lx, %lx)", einp, eout, vinp, vout);
+        testDiag("Expected (%lx, %lx) got (%lx, %lx)", einp, eout, vinp, vout);
     }
+    free(rpn);
 }
 
 void testBadExpr(const char *expr, short expected_err) {
     /* Parse an invalid expression, test against expected error code */
-    char rpn[MAX_POSTFIX_SIZE];
+    char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err = 0;
+
+    if(!rpn) {
+        testFail("postfix: %s no memory", expr);
+        return;
+    }
 
     postfix(expr, rpn, &err);
     if (!testOk(err == expected_err, "Bad expression '%s'", expr)) {
-	testDiag("Expected '%s', actually got '%s'",
-	    calcErrorStr(expected_err), calcErrorStr(err));
-	calcExprDump(rpn);
+        testDiag("Expected '%s', actually got '%s'",
+                 calcErrorStr(expected_err), calcErrorStr(err));
+        calcExprDump(rpn);
     }
-    return;
+    free(rpn);
 }
 
 /* Test an expression that is also valid C code */

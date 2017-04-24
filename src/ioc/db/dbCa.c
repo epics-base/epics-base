@@ -144,7 +144,6 @@ static void addAction(caLink *pca, short link_action)
         if (++removesOutstanding >= removesOutstandingWarning) {
             errlogPrintf("dbCa::addAction pausing, %d channels to clear\n",
                 removesOutstanding);
-            printLinks(pca);
         }
         while (removesOutstanding >= removesOutstandingWarning) {
             epicsMutexUnlock(workListLock);

@@ -24,7 +24,7 @@
 
     DBE_ARCHIVE (DBE_LOG)
     Trigger an event when an archive significant change in the channel's
-    valuue occurs. Relies on the archiver monitor deadband field under DCT.
+    value occurs. Relies on the archiver monitor deadband field under DCT.
 
     DBE_ALARM
     Trigger an event when the alarm state changes

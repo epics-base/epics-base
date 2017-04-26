@@ -1,8 +1,11 @@
-=head1 JSON Links
+=head1 Extensible Links
 
-JSON Links are an extensible mechanism for adding new kinds of database link,
-using JSON for the link address.
-The following link types are available in this release:
+The extensible link mechanism allows new kinds of record links to be created,
+using JSON for the link address syntax.
+The IOC continues to support the older link types that do not use JSON to
+specify their link addresses.
+
+The following additional link types are available in this release:
 
 =over
 
@@ -12,14 +15,16 @@ The following link types are available in this release:
 
 =back
 
-=head2 Using Links
+=head2 Using JSON Links
 
-...
-
-When setting a record link field to a JSON link, the link specification must
-appear inside a pair of braces C< {} > expressed as a JSON (L<JavaScript Object
-Notation|http://www.json.org/>) object, which allows link parameters to be
-defined as needed by the particular link type.
+When setting a record link field to a JSON link address, the link specification
+must appear inside a pair of braces C< {} > expressed as a JSON (L<JavaScript
+Object Notation|http://www.json.org/>) object, which allows link parameters to
+be defined as needed by the particular link type. When link fields are set from
+an IOC database file at initialization time, the field definitions may take
+advantage of a "relaxed JSON" syntax that reduces the number of double-quote
+characters required and maintains backwards compatibility with the older
+database file syntax.
 
 
 =head2 Link Type Reference
@@ -36,12 +41,12 @@ support the use of constant links by calling C<recGblInitConstantLink()> at
 record initialization, which results in the constant value being loaded into the
 target field at that time.
 
-Note that for most record types (the C<printf> and C<calcout> records are
-exceptions) it is pointless to set an input link to a constant link at runtime
-since the link initialization that loads the field value usually only happens
-when a record is initialized. A constant link that is embedded inside another
-input link type such as a calculation link should be OK though since the link
-initialization will take place when the record's field gets set.
+Note that for most record types (the C<printf> and C<calcout> records are the
+main exceptions) it is pointless to set an input link to a constant link at
+runtime since the link initialization that loads the field value usually only
+happens when a record is initialized. A constant link that is embedded inside
+another input link type such as a calculation link should be OK though since the
+link initialization will take place when the record's field gets set.
 
 =head4 Parameters
 
@@ -76,13 +81,13 @@ evaluated by the EPICS Calc engine, and up to 12 inputs can be provided.
 
 =head4 Parameters
 
-The link value is a map with the following keys:
+The link address is a JSON map with the following keys:
 
 =over
 
 =item expr
 
-The primary expression to be evaluated, provided as a string.
+The primary expression to be evaluated, given as a string.
 
 =item major
 
@@ -113,6 +118,6 @@ result should be displayed. Equivalent to the C<PREC> field of a record.
 
 =head4 Example
 
- {calc: {expr:"A*B", args:[{db:"record.VAL"}, 1.5]}}
+ {calc: {expr:"A*B", args:[{db:"record.VAL"}, 1.5], prec:3}}
 
 =cut

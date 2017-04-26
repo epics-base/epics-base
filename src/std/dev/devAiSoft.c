@@ -56,42 +56,48 @@ static long init_record(aiRecord *prec)
     return 0;
 }
 
-static long readLocked(struct link *pinp, void *dummy)
-{
-    aiRecord *prec = (aiRecord *) pinp->precord;
+struct aivt {
     double val;
-    long status = dbGetLink(pinp, DBR_DOUBLE, &val, 0, 0);
+    epicsTimeStamp *ptime;
+};
 
-    if (status) return status;
+static long readLocked(struct link *pinp, void *vvt)
+{
+    struct aivt *pvt = (struct aivt *) vvt;
+    long status = dbGetLink(pinp, DBR_DOUBLE, &pvt->val, 0, 0);
 
-    /* Apply smoothing algorithm */
-    if (prec->smoo != 0.0 && prec->dpvt && finite(prec->val))
-        prec->val = val * (1.00 - prec->smoo) + (prec->val * prec->smoo);
-    else
-        prec->val = val;
+    if (!status && pvt->ptime)
+        dbGetTimeStamp(pinp, pvt->ptime);
 
-    prec->udf = FALSE;
-    prec->dpvt = &devAiSoft;        /* Any non-zero value */
-
-    if (dbLinkIsConstant(&prec->tsel) &&
-        prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(pinp, &prec->time);
-
-    return 0;
+    return status;
 }
 
 static long read_ai(aiRecord *prec)
 {
     long status;
+    struct aivt vt;
 
     if (dbLinkIsConstant(&prec->inp))
         return 2;
 
-    status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
-    if (status == S_db_noLSET)
-        status = readLocked(&prec->inp, NULL);
+    vt.ptime = (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime) ? &prec->time : NULL;
 
-    if (status)
+    status = dbLinkDoLocked(&prec->inp, readLocked, &vt);
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, &vt);
+
+    if (!status) {
+        /* Apply smoothing algorithm */
+        if (prec->smoo != 0.0 && prec->dpvt && finite(prec->val))
+            prec->val = vt.val * (1.0 - prec->smoo) + (prec->val * prec->smoo);
+        else
+            prec->val = vt.val;
+
+        prec->udf = FALSE;
+        prec->dpvt = &devAiSoft;        /* Any non-zero value */
+    }
+    else
         prec->dpvt = NULL;
 
     return 2;

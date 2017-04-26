@@ -51,6 +51,7 @@ static long init_record(stringinRecord *prec)
 {
     if (recGblInitConstantLink(&prec->inp, DBF_STRING, prec->val))
         prec->udf = FALSE;
+
     return 0;
 }
 
@@ -59,13 +60,12 @@ static long readLocked(struct link *pinp, void *dummy)
     stringinRecord *prec = (stringinRecord *) pinp->precord;
     long status = dbGetLink(pinp, DBR_STRING, prec->val, 0, 0);
 
-    if (!status) {
-        if (!dbLinkIsConstant(pinp))
-            prec->udf = FALSE;
-        if (dbLinkIsConstant(&prec->tsel) &&
-            prec->tse == epicsTimeEventDeviceTime)
-            dbGetTimeStamp(pinp, &prec->time);
-    }
+    if (status) return status;
+
+    if (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime)
+        dbGetTimeStamp(pinp, &prec->time);
+
     return status;
 }
 
@@ -75,6 +75,9 @@ static long read_stringin(stringinRecord *prec)
 
     if (status == S_db_noLSET)
         status = readLocked(&prec->inp, NULL);
+
+    if (!status && !dbLinkIsConstant(&prec->inp))
+        prec->udf = FALSE;
 
     return status;
 }

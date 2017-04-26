@@ -60,14 +60,15 @@ static long init_record(mbbiRecord *prec)
 static long readLocked(struct link *pinp, void *dummy)
 {
     mbbiRecord *prec = (mbbiRecord *) pinp->precord;
+    long status = dbGetLink(pinp, DBR_LONG, &prec->rval, 0, 0);
 
-    if (!dbGetLink(pinp, DBR_LONG, &prec->rval, 0, 0)) {
-        prec->rval &= prec->mask;
-        if (dbLinkIsConstant(&prec->tsel) &&
-            prec->tse == epicsTimeEventDeviceTime)
-            dbGetTimeStamp(pinp, &prec->time);
-    }
-    return 0;
+    if (status) return status;
+
+    if (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime)
+        dbGetTimeStamp(pinp, &prec->time);
+
+    return status;
 }
 
 static long read_mbbi(mbbiRecord *prec)
@@ -76,6 +77,9 @@ static long read_mbbi(mbbiRecord *prec)
 
     if (status == S_db_noLSET)
         status = readLocked(&prec->inp, NULL);
+
+    if (!status)
+        prec->rval &= prec->mask;
 
     return status;
 }

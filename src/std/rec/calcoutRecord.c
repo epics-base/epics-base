@@ -172,10 +172,10 @@ static long init_record(struct dbCommon *pcommon, int pass)
             recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
         }
 
-        if (dbLinkIsConstant(plink) > 0) {
+        if (dbLinkIsConstant(plink)) {
             *plinkValid = calcoutINAV_CON;
         }
-        else if (dbLinkIsVolatile(plink) > 0) {
+        else if (dbLinkIsVolatile(plink)) {
             int conn = dbIsLinkConnected(plink);
 
             if (conn)
@@ -366,10 +366,11 @@ static long special(DBADDR *paddr, int after)
 
         if (fieldIndex != calcoutRecordOUT)
             recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
-        if (dbLinkIsConstant(plink) > 0) {
+
+        if (dbLinkIsConstant(plink)) {
             db_post_events(prec, pvalue, DBE_VALUE);
             *plinkValid = calcoutINAV_CON;
-        } else if (dbLinkIsVolatile(plink) > 0) {
+        } else if (dbLinkIsVolatile(plink)) {
             int conn = dbIsLinkConnected(plink);
 
             if (conn)
@@ -734,7 +735,7 @@ static void checkLinks(calcoutRecord *prec)
     plinkValid = &prec->inav;
 
     for (i = 0; i<CALCPERFORM_NARGS+1; i++, plink++, plinkValid++) {
-        if (dbLinkIsVolatile(plink) == 1) {
+        if (dbLinkIsVolatile(plink)) {
             caLink = 1;
             stat = dbIsLinkConnected(plink);
             if (!stat && (*plinkValid == calcoutINAV_EXT_NC)) {

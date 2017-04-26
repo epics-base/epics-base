@@ -190,20 +190,14 @@ int dbLinkIsConstant(const struct link *plink)
 {
     lset *plset = plink->lset;
 
-    if (plset)
-        return plset->isConstant;
-
-    return -1;
+    return !plset || plset->isConstant;
 }
 
 int dbLinkIsVolatile(const struct link *plink)
 {
     lset *plset = plink->lset;
 
-    if (plset)
-        return plset->isVolatile;
-
-    return -1;
+    return plset && plset->isVolatile;
 }
 
 long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)

@@ -89,8 +89,8 @@ epicsShareFunc void dbLinkOpen(struct link *plink);
 epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct link *plink);
 
 epicsShareFunc int dbLinkIsDefined(const struct link *plink);  /* 0 or 1 */
-epicsShareFunc int dbLinkIsConstant(const struct link *plink); /* -1, 0 or 1 */
-epicsShareFunc int dbLinkIsVolatile(const struct link *plink); /* -1, 0 or 1 */
+epicsShareFunc int dbLinkIsConstant(const struct link *plink); /* 0 or 1 */
+epicsShareFunc int dbLinkIsVolatile(const struct link *plink); /* 0 or 1 */
 
 epicsShareFunc long dbLoadLink(struct link *plink, short dbrType,
         void *pbuffer);
@@ -98,7 +98,7 @@ epicsShareFunc long dbLoadLinkArray(struct link *, short dbrType, void *pbuffer,
         long *pnRequest);
 
 epicsShareFunc long dbGetNelements(const struct link *plink, long *nelements);
-epicsShareFunc int dbIsLinkConnected(const struct link *plink);
+epicsShareFunc int dbIsLinkConnected(const struct link *plink); /* 0 or 1 */
 epicsShareFunc int dbGetLinkDBFtype(const struct link *plink);
 epicsShareFunc long dbGetLink(struct link *, short dbrType, void *pbuffer,
         long *options, long *nRequest);

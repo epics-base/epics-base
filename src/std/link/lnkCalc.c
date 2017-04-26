@@ -466,7 +466,7 @@ static int lnkCalc_isConn(const struct link *plink)
     for (i = 0; i < clink->nArgs; i++) {
         struct link *child = &clink->inp[i];
 
-        if (dbLinkIsVolatile(child) > 0 &&
+        if (dbLinkIsVolatile(child) &&
             !dbIsLinkConnected(child))
             connected = 0;
     }

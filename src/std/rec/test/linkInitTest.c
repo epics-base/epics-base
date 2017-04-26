@@ -4,9 +4,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-
-#define EPICS_DBCA_PRIVATE_API
-
 #include <string.h>
 
 #include "dbAccess.h"
@@ -19,21 +16,23 @@
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
-static void testLongStringInit()
+static void startTestIoc(const char *dbfile)
 {
-    testDiag("testLongStringInit");
-
     testdbPrepare();
-
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
-
     recTestIoc_registerRecordDeviceDriver(pdbbase);
-
-    testdbReadDatabase("linkInitTest.db", NULL, NULL);
+    testdbReadDatabase(dbfile, NULL, NULL);
 
     eltc(0);
     testIocInitOk();
     eltc(1);
+}
+
+static void testLongStringInit()
+{
+    testDiag("testLongStringInit");
+
+    startTestIoc("linkInitTest.db");
 
     {
         const char buf[] = "!----------------------------------------------!";
@@ -64,17 +63,7 @@ static void testCalcInit()
 {
     testDiag("testCalcInit");
 
-    testdbPrepare();
-
-    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
-
-    recTestIoc_registerRecordDeviceDriver(pdbbase);
-
-    testdbReadDatabase("linkInitTest.db", NULL, NULL);
-
-    eltc(0);
-    testIocInitOk();
-    eltc(1);
+    startTestIoc("linkInitTest.db");
 
     testdbGetFieldEqual("emptylink.VAL", DBR_DOUBLE, 0.0);
     testdbGetFieldEqual("emptylink.SEVR", DBR_LONG, INVALID_ALARM);
@@ -97,21 +86,11 @@ static void testCalcInit()
     testdbCleanup();
 }
 
-static void testPrintfInit()
+static void testPrintfStrings()
 {
-    testDiag("testPrintfInit");
+    testDiag("testPrintfStrings");
 
-    testdbPrepare();
-
-    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
-
-    recTestIoc_registerRecordDeviceDriver(pdbbase);
-
-    testdbReadDatabase("linkInitTest.db", NULL, NULL);
-
-    eltc(0);
-    testIocInitOk();
-    eltc(1);
+    startTestIoc("linkInitTest.db");
 
     {
         const char buf1[] = "Test string, exactly 40 characters long";
@@ -149,11 +128,85 @@ static void testPrintfInit()
     testdbCleanup();
 }
 
+static void testArrayInputs()
+{
+    epicsInt32 oneToTwelve[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+
+    testDiag("testArrayInputs");
+
+    startTestIoc("linkInitTest.db");
+
+    testdbGetFieldEqual("aai1.NORD", DBR_LONG, 10);
+    testdbGetFieldEqual("aai1.UDF", DBR_UCHAR, 0);
+    testdbGetFieldEqual("sa1.NORD", DBR_LONG, 10);
+    testdbGetFieldEqual("sa1.UDF", DBR_UCHAR, 0);
+    testdbGetFieldEqual("sa2.NORD", DBR_LONG, 0);
+    testdbGetFieldEqual("sa2.UDF", DBR_UCHAR, 1);
+    testdbGetFieldEqual("wf1.NORD", DBR_LONG, 10);
+    testdbGetFieldEqual("wf1.UDF", DBR_UCHAR, 0);
+
+    testdbGetArrFieldEqual("aai1.VAL", DBF_LONG, 12, 10, &oneToTwelve[0]);
+    testdbGetArrFieldEqual("sa1.VAL", DBF_LONG, 12, 10, &oneToTwelve[2]);
+    testdbGetArrFieldEqual("sa2.VAL", DBF_LONG, 10, 0, NULL);
+    testdbGetArrFieldEqual("wf1.VAL", DBF_LONG, 12, 10, &oneToTwelve[0]);
+
+    testdbPutFieldOk("sa1.INDX", DBF_LONG, 3);
+    testdbGetArrFieldEqual("sa1.VAL", DBF_LONG, 12, 9, &oneToTwelve[3]);
+
+    testdbPutFieldOk("sa1.NELM", DBF_LONG, 3);
+    testdbGetArrFieldEqual("sa1.VAL", DBF_LONG, 12, 3, &oneToTwelve[3]);
+
+    testdbPutFieldOk("sa2.VAL", DBF_LONG, 1);
+    testdbGetArrFieldEqual("sa2.VAL", DBF_LONG, 10, 1, &oneToTwelve[0]);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
+static void testEventRecord()
+{
+    testMonitor *countmon;
+
+    testDiag("testEventRecord");
+
+    startTestIoc("linkInitTest.db");
+    countmon = testMonitorCreate("count1.VAL", DBR_LONG, 0);
+
+    testdbGetFieldEqual("ev1.VAL", DBR_STRING, "soft event 1");
+    testdbGetFieldEqual("ev1.UDF", DBR_UCHAR, 0);
+    testdbGetFieldEqual("ev2.VAL", DBR_STRING, "");
+    testdbGetFieldEqual("ev2.UDF", DBR_UCHAR, 1);
+    testdbGetFieldEqual("count1.VAL", DBR_LONG, 0);
+
+    testdbPutFieldOk("ev1.PROC", DBF_UCHAR, 1);
+    testMonitorWait(countmon);
+    testdbGetFieldEqual("count1.VAL", DBR_LONG, 1);
+
+    testdbPutFieldOk("ev2.PROC", DBF_UCHAR, 1);
+    testMonitorWait(countmon);
+    testdbGetFieldEqual("ev2.UDF", DBR_UCHAR, 0);
+    testdbGetFieldEqual("count1.VAL", DBR_LONG, 2);
+
+    testdbPutFieldOk("count1.EVNT", DBF_STRING, "Tock");
+    testdbPutFieldOk("ev2.PROC", DBF_UCHAR, 1);
+    testMonitorWait(countmon);
+    testdbGetFieldEqual("count1.VAL", DBR_LONG, 3);
+
+    testMonitorDestroy(countmon);
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
+
 MAIN(linkInitTest)
 {
-    testPlan(31);
+    testPlan(62);
+
     testLongStringInit();
     testCalcInit();
-    testPrintfInit();
+    testPrintfStrings();
+    testArrayInputs();
+    testEventRecord();
+
     return testDone();
 }

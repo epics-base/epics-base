@@ -29,8 +29,9 @@ static long readLocked(struct link *pinp, void *dummy)
     lsiRecord *prec = (lsiRecord *) pinp->precord;
     long status = dbGetLinkLS(pinp, prec->val, prec->sizv, &prec->len);
 
-    if (!status &&
-        dbLinkIsConstant(&prec->tsel) &&
+    if (status) return status;
+
+    if (dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(pinp, &prec->time);
 

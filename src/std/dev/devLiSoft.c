@@ -58,10 +58,12 @@ static long readLocked(struct link *pinp, void *dummy)
     longinRecord *prec = (longinRecord *) pinp->precord;
     long status = dbGetLink(pinp, DBR_LONG, &prec->val, 0, 0);
 
-    if (!status &&
-        dbLinkIsConstant(&prec->tsel) &&
+    if (status) return status;
+
+    if (dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(pinp, &prec->time);
+
     return status;
 }
 

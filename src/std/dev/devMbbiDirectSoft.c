@@ -56,13 +56,15 @@ static long init_record(mbbiDirectRecord *prec)
 static long readLocked(struct link *pinp, void *dummy)
 {
     mbbiDirectRecord *prec = (mbbiDirectRecord *) pinp->precord;
+    long status = dbGetLink(pinp, DBR_USHORT, &prec->val, 0, 0);
 
-    if (!dbGetLink(pinp, DBR_USHORT, &prec->val, 0, 0)) {
-        prec->udf = FALSE;
-        if (dbLinkIsConstant(&prec->tsel) &&
-            prec->tse == epicsTimeEventDeviceTime)
-            dbGetTimeStamp(pinp, &prec->time);
-    }
+    if (status) return status;
+
+    prec->udf = FALSE;
+    if (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime)
+        dbGetTimeStamp(pinp, &prec->time);
+
     return 2;
 }
 

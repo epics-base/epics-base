@@ -65,7 +65,7 @@ static long readLocked(struct link *pinp, void *dummy)
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(pinp, &prec->time);
 
-    return 0;
+    return status;
 }
 
 static long read_ai(aiRecord *prec)

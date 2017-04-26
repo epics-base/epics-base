@@ -48,19 +48,22 @@ epicsExportAddress(dset, devBiSoftRaw);
 static long init_record(biRecord *prec)
 {
     recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
+
     return 0;
 }
 
 static long readLocked(struct link *pinp, void *dummy)
 {
     biRecord *prec = (biRecord *) pinp->precord;
+    long status = dbGetLink(pinp, DBR_ULONG, &prec->rval, 0, 0);
 
-    if (!dbGetLink(pinp, DBR_ULONG, &prec->rval, 0, 0) &&
-        dbLinkIsConstant(&prec->tsel) &&
+    if (status) return status;
+
+    if (dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(pinp, &prec->time);
 
-    return 0;
+    return status;
 }
 
 static long read_bi(biRecord *prec)

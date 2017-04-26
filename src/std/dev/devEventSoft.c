@@ -47,38 +47,50 @@ epicsExportAddress(dset, devEventSoft);
 
 static long init_record(eventRecord *prec)
 {
-    if (recGblInitConstantLink(&prec->inp, DBF_STRING, &prec->val))
+    if (recGblInitConstantLink(&prec->inp, DBF_STRING, prec->val))
         prec->udf = FALSE;
+
     return 0;
 }
 
-static long readLocked(struct link *pinp, void *dummy)
-{
-    eventRecord *prec = (eventRecord *) pinp->precord;
-    long status;
+struct eventvt {
     char newEvent[MAX_STRING_SIZE];
+    epicsTimeStamp *ptime;
+};
 
-    if (!dbLinkIsConstant(pinp)) {
-        status = dbGetLink(pinp, DBR_STRING, newEvent, 0, 0);
-        if (status) return status;
-        if (strcmp(newEvent, prec->val) != 0) {
-            strcpy(prec->val, newEvent);
-            prec->epvt = eventNameToHandle(prec->val);
-        }
-    }
-    prec->udf = FALSE;
-    if (dbLinkIsConstant(&prec->tsel) &&
-        prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(pinp, &prec->time);
-    return 0;
+static long readLocked(struct link *pinp, void *vvt)
+{
+    struct eventvt *pvt = (struct eventvt *) vvt;
+    long status = dbGetLink(pinp, DBR_STRING, pvt->newEvent, 0, 0);
+
+    if (!status && pvt->ptime)
+        dbGetTimeStamp(pinp, pvt->ptime);
+
+    return status;
 }
 
 static long read_event(eventRecord *prec)
 {
-    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+    long status;
+    struct eventvt vt;
 
+    if (dbLinkIsConstant(&prec->inp))
+        return 0;
+
+    vt.ptime = (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime) ? &prec->time : NULL;
+
+    status = dbLinkDoLocked(&prec->inp, readLocked, &vt);
     if (status == S_db_noLSET)
-        status = readLocked(&prec->inp, NULL);
+        status = readLocked(&prec->inp, &vt);
+
+    if (!status) {
+        if (strcmp(vt.newEvent, prec->val) != 0) {
+            strcpy(prec->val, vt.newEvent);
+            prec->epvt = eventNameToHandle(prec->val);
+        }
+        prec->udf = FALSE;
+    }
 
     return status;
 }

@@ -21,6 +21,26 @@
 
 -->
 
+<h3>Lookup-tables using the subArrray record</h3>
+
+<p>The subArray record can now be used as a lookup-table from a constant array
+specified in its INP field. For example:</p>
+
+<pre>
+record(subArray, "powers-of-2") {
+  field(FTVL, "LONG")
+  field(MALM, 12)
+  field(INP, [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048])
+  field(INDX, 0)
+  field(NELM, 1)
+}
+</pre>
+
+<p>The INDX field selects which power of 2 to set the VAL field to. In previous
+releases the INP field would have to have been pointed to a separate waveform
+record that was initialized with the array values somehow at initialization
+time.</p>
+
 <h3>Synchronized Timestamps with TSEL=-2</h3>
 
 <p>Most Soft Channel input device support routines have supported fetching the

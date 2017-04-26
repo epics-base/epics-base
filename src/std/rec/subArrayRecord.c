@@ -108,6 +108,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
         prec->bptr = callocMustSucceed(prec->malm, dbValueSize(prec->ftvl),
             "subArrayRecord calloc failed");
         prec->nord = 0;
+        if (prec->nelm > prec->malm)
+            prec->nelm = prec->malm;
         return 0;
     }
 

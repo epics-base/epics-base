@@ -45,61 +45,86 @@ struct {
 };
 epicsExportAddress(dset, devSASoft);
 
-static long init_record(subArrayRecord *prec)
+static void subset(subArrayRecord *prec, long nRequest)
 {
-    long nelm = prec->nelm;
-    long status = dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nelm);
+    long ecount = nRequest - prec->indx;
 
-    if (!status && nelm > 0) {
-        prec->nord = nelm;
-        prec->udf = FALSE;
-    }
-    else
-        prec->nord = 0;
-    return status;
-}
-
-static long readLocked(struct link *pinp, void *dummy)
-{
-    subArrayRecord *prec = (subArrayRecord *) pinp->precord;
-    long nRequest = prec->indx + prec->nelm;
-    long ecount;
-
-    if (nRequest > prec->malm)
-        nRequest = prec->malm;
-
-    if (dbLinkIsConstant(pinp))
-        nRequest = prec->nord;
-    else
-        dbGetLink(pinp, prec->ftvl, prec->bptr, 0, &nRequest);
-
-    ecount = nRequest - prec->indx;
     if (ecount > 0) {
         int esize = dbValueSize(prec->ftvl);
 
         if (ecount > prec->nelm)
             ecount = prec->nelm;
+
         memmove(prec->bptr, (char *)prec->bptr + prec->indx * esize,
                 ecount * esize);
     } else
         ecount = 0;
 
     prec->nord = ecount;
+    prec->udf = FALSE;
+}
 
-    if (nRequest > 0 &&
-        dbLinkIsConstant(&prec->tsel) &&
-        prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(pinp, &prec->time);
+static long init_record(subArrayRecord *prec)
+{
+    long nRequest = prec->indx + prec->nelm;
+    long status;
 
-    return 0;
+    if (nRequest > prec->malm)
+        nRequest = prec->malm;
+
+    status = dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nRequest);
+
+    if (!status && nRequest > 0)
+        subset(prec, nRequest);
+
+    return status;
+}
+
+struct sart {
+    long nRequest;
+    epicsTimeStamp *ptime;
+};
+
+static long readLocked(struct link *pinp, void *vrt)
+{
+    subArrayRecord *prec = (subArrayRecord *) pinp->precord;
+    struct sart *prt = (struct sart *) vrt;
+    long status = dbGetLink(pinp, prec->ftvl, prec->bptr, 0, &prt->nRequest);
+
+    if (!status && prt->ptime)
+        dbGetTimeStamp(pinp, prt->ptime);
+
+    return status;
 }
 
 static long read_sa(subArrayRecord *prec)
 {
-    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+    long status;
+    struct sart rt;
 
-    if (status == S_db_noLSET)
-        status = readLocked(&prec->inp, NULL);
+    rt.nRequest = prec->indx + prec->nelm;
+    if (rt.nRequest > prec->malm)
+        rt.nRequest = prec->malm;
+
+    rt.ptime = (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime) ? &prec->time : NULL;
+
+    if (dbLinkIsConstant(&prec->inp)) {
+        status = dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &rt.nRequest);
+        if (status == S_db_badField) { /* INP was empty */
+            rt.nRequest = prec->nord;
+            status = 0;
+        }
+    }
+    else {
+        status = dbLinkDoLocked(&prec->inp, readLocked, &rt);
+
+        if (status == S_db_noLSET)
+            status = readLocked(&prec->inp, &rt);
+    }
+
+    if (!status && rt.nRequest > 0)
+        subset(prec, rt.nRequest);
 
     return status;
 }

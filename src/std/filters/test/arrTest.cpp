@@ -29,8 +29,8 @@
 #include "envDefs.h"
 #include "dbStaticLib.h"
 #include "dbmf.h"
+#include "errlog.h"
 #include "registry.h"
-#include "subRecord.h"
 #include "dbAddr.h"
 #include "dbAccess.h"
 #include "asDbLib.h"
@@ -38,14 +38,14 @@
 #include "iocsh.h"
 #include "dbChannel.h"
 #include "epicsUnitTest.h"
+#include "dbUnitTest.h"
 #include "testMain.h"
 #include "osiFileName.h"
 
 #include "arrRecord.h"
 
 extern "C" {
-    int arrTest_registerRecordDeviceDriver(struct dbBase *pdbbase);
-    epicsShareExtern void (*pvar_func_arrInitialize)(void);
+    void filterTest_registerRecordDeviceDriver(struct dbBase *);
 }
 
 #define CA_SERVER_PORT "65535"
@@ -53,12 +53,6 @@ extern "C" {
 #define PATTERN 0x55
 
 const char *server_port = CA_SERVER_PORT;
-
-extern "C" {
-static void exitSubroutine(subRecord *precord) {
-    epicsExit((precord->a == 0.0) ? EXIT_SUCCESS : EXIT_FAILURE);
-}
-}
 
 static int fl_equals_array(short type, const db_field_log *pfl1, void *p2) {
     for (int i = 0; i < pfl1->no_elements; i++) {
@@ -298,23 +292,9 @@ static void check(short dbr_type) {
     TEST5B(3, -8, -4, "both sides from-end");
 }
 
-static dbEventCtx evtctx;
-
-extern "C" {
-static void arrTestCleanup(void* junk)
-{
-    dbFreeBase(pdbbase);
-    registryFree();
-    pdbbase=0;
-
-    db_close_events(evtctx);
-
-    dbmfFreeChunks();
-}
-}
-
 MAIN(arrTest)
 {
+    dbEventCtx evtctx;
     const chFilterPlugin *plug;
     char arr[] = "arr";
 
@@ -324,32 +304,33 @@ MAIN(arrTest)
 
     epicsEnvSet("EPICS_CA_SERVER_PORT", server_port);
 
-    if (dbReadDatabase(&pdbbase, "arrTest.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description not loaded");
+    testdbPrepare();
 
-    (*pvar_func_arrInitialize)();
-    arrTest_registerRecordDeviceDriver(pdbbase);
-    registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
+    testdbReadDatabase("filterTest.dbd", NULL, NULL);
 
-    if (dbReadDatabase(&pdbbase, "arrTest.db",
-            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database not loaded");
+    filterTest_registerRecordDeviceDriver(pdbbase);
 
-    epicsAtExit(&arrTestCleanup,NULL);
+    testdbReadDatabase("arrTest.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
 
     /* Start the IOC */
 
-    iocInit();
     evtctx = db_init_events();
-    epicsThreadSleep(0.2);
 
     testOk(!!(plug = dbFindFilter(arr, strlen(arr))), "plugin arr registered correctly");
 
     check(DBR_LONG);
     check(DBR_DOUBLE);
     check(DBR_STRING);
+
+    db_close_events(evtctx);
+
+    testIocShutdownOk();
+
+    testdbCleanup();
 
     return testDone();
 }

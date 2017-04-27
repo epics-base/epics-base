@@ -35,6 +35,7 @@ typedef struct jlink {
     struct jlif *pif;       /* Link methods */
     struct jlink *parent;   /* NULL for top-level links */
     int parseDepth;         /* Used by parser, unused afterwards */
+    unsigned debug:1;       /* set by caller of jlif operations to request debug output to console */
     /* Link types extend or embed this structure for private storage */
 } jlink;
 
@@ -112,7 +113,7 @@ typedef struct jlif {
 } jlif;
 
 epicsShareFunc long dbJLinkParse(const char *json, size_t len, short dbfType,
-    jlink **ppjlink);
+    jlink **ppjlink, unsigned opts);
 epicsShareFunc long dbJLinkInit(struct link *plink);
 
 epicsShareFunc void dbJLinkFree(jlink *);

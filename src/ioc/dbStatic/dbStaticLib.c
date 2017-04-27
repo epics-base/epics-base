@@ -2175,7 +2175,7 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
         if(!plink->text)
             continue;
 
-        if(dbParseLink(plink->text, pflddes->field_type, &link_info)!=0) {
+        if(dbParseLink(plink->text, pflddes->field_type, &link_info, 0)!=0) {
             /* This was already parsed once when ->text was set.
              * Any syntax error messages were printed at that time.
              */
@@ -2204,7 +2204,7 @@ void dbFreeLinkInfo(dbLinkInfo *pinfo)
     pinfo->target = NULL;
 }
 
-long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
+long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, unsigned opts)
 {
     char *pstr;
     size_t len;
@@ -2240,7 +2240,7 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 
     /* Check for braces => JSON */
     if (*str == '{' && str[len-1] == '}') {
-        if (dbJLinkParse(str, len, ftype, &pinfo->jlink))
+        if (dbJLinkParse(str, len, ftype, &pinfo->jlink, opts))
             goto fail;
 
         pinfo->ltype = JSON_LINK;
@@ -2573,8 +2573,19 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
     case DBF_FWDLINK: {
             dbLinkInfo link_info;
             DBLINK *plink = (DBLINK *)pfield;
+            DBENTRY infoentry;
+            unsigned opts = 0;
 
-            status = dbParseLink(pstring, pflddes->field_type, &link_info);
+            if(pdbentry->precnode && ellCount(&pdbentry->precnode->infoList)) {
+                dbCopyEntryContents(pdbentry, &infoentry);
+
+                if(dbFindInfo(&infoentry, "linkDebug")==0 && epicsStrCaseCmp(dbGetInfoString(&infoentry), "YES")==0)
+                    opts |= LINK_DEBUG;
+
+                dbFinishEntry(&infoentry);
+            }
+
+            status = dbParseLink(pstring, pflddes->field_type, &link_info, opts);
             if (status) break;
 
             if (plink->type==CONSTANT && plink->value.constantStr==NULL) {

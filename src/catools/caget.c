@@ -541,11 +541,11 @@ int main (int argc, char *argv[])
     for (n = 0; optind < argc; n++, optind++)
         pvs[n].name = argv[optind] ;       /* Copy PV names from command line */
 
-    connect_pvs(pvs, nPvs);
+    result = connect_pvs(pvs, nPvs);
 
                                 /* Read and print data */
-
-    result = caget(pvs, nPvs, request, format, type, count);
+    if (!result)
+        result = caget(pvs, nPvs, request, format, type, count);
 
                                 /* Shut down Channel Access */
     ca_context_destroy();

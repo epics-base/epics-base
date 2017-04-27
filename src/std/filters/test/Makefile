@@ -50,7 +50,6 @@ testHarness_SRCS += arrTest.cpp
 TESTFILES += ../arrTest.db
 TESTS += arrTest
 
-TARGETS += $(COMMON_DIR)/syncTest.dbd
 TESTPROD_HOST += syncTest
 syncTest_SRCS += syncTest.c
 syncTest_SRCS += filterTest_registerRecordDeviceDriver.cpp

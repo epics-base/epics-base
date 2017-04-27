@@ -76,6 +76,12 @@ typedef struct {
 } clientPvt;
 
 static
+void testEqInt_(int lhs, int rhs, const char *LHS, const char *RHS)
+{
+    testOk(lhs==rhs, "%s (%d) == %s (%d)", LHS, lhs, RHS, rhs);
+}
+#define testEqInt(L, R) testEqInt_(L, R, #L, #R);
+static
 void logClient(void* raw, const char* msg)
 {
     clientPvt *pvt = raw;
@@ -146,7 +152,7 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("%s", pvt.expect);
     errlogFlush();
 
-    testOk1(pvt.count == 1);
+    testEqInt(pvt.count, 1);
 
     errlogAddListener(&logClient, &pvt2);
 
@@ -156,8 +162,8 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("%s", pvt.expect);
     errlogFlush();
 
-    testOk1(pvt.count == 2);
-    testOk1(pvt2.count == 1);
+    testEqInt(pvt.count, 2);
+    testEqInt(pvt2.count, 1);
 
     /* Removes the first listener, but the second remains */
     errlogRemoveListener(&logClient);
@@ -168,8 +174,8 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("%s", pvt2.expect);
     errlogFlush();
 
-    testOk1(pvt.count == 2);
-    testOk1(pvt2.count == 2);
+    testEqInt(pvt.count, 2);
+    testEqInt(pvt2.count, 2);
 
     /* Remove the second listener */
     errlogRemoveListener(&logClient);
@@ -177,8 +183,8 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("Something different");
     errlogFlush();
 
-    testOk1(pvt.count == 2);
-    testOk1(pvt2.count == 2);
+    testEqInt(pvt.count, 2);
+    testEqInt(pvt2.count, 2);
 
     /* Re-add one listener */
     errlogAddListener(&logClient, &pvt);
@@ -191,7 +197,7 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("%s", longmsg);
     errlogFlush();
 
-    testOk1(pvt.count == 3);
+    testEqInt(pvt.count, 3);
 
     pvt.expect = NULL;
 
@@ -204,12 +210,12 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("%s", longmsg);
     epicsThreadSleep(0.1);
 
-    testOk1(pvt.count == 3);
+    testEqInt(pvt.count, 3);
 
     epicsEventSignal(pvt.jammer);
     errlogFlush();
 
-    testOk1(pvt.count == 4);
+    testEqInt(pvt.count, 4);
 
     testDiag("Find buffer capacity (%u theoretical)",LOGBUFSIZE);
 
@@ -262,7 +268,7 @@ MAIN(epicsErrlogTest)
     }
     epicsThreadSleep(0.1); /* should really be a second Event */
 
-    testOk1(pvt.count == 0);
+    testEqInt(pvt.count, 0);
 
     /* Extract the first 2 messages, 2*(sizeof(msgNode) + 128) bytes */
     pvt.jam = -2;
@@ -270,7 +276,7 @@ MAIN(epicsErrlogTest)
     epicsThreadSleep(0.1);
 
     testDiag("Drained %u messages", pvt.count);
-    testOk1(pvt.count == 2);
+    testEqInt(pvt.count, 2);
 
     /* The buffer has space for 1 more message: sizeof(msgNode) + 256 bytes */
     errlogPrintfNoConsole("%s", msg); /* Use up that space */
@@ -278,13 +284,13 @@ MAIN(epicsErrlogTest)
     testDiag("Overflow the buffer");
     errlogPrintfNoConsole("%s", msg);
 
-    testOk1(pvt.count == 2);
+    testEqInt(pvt.count, 2);
 
     epicsEventSignal(pvt.jammer); /* Empty */
     errlogFlush();
 
     testDiag("Logged %u messages", pvt.count);
-    testOk1(pvt.count == N+1);
+    testEqInt(pvt.count, N+1);
 
     /* Clean up */
     errlogRemoveListener(&logClient);

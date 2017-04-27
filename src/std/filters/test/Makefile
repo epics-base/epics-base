@@ -18,48 +18,42 @@ Recs_LIBS += dbCore Com
 
 PROD_LIBS = Recs dbRecStd dbCore ca Com
 
-TARGETS += $(COMMON_DIR)/tsTest.dbd
-DBDDEPENDS_FILES += tsTest.dbd$(DEP)
-tsTest_DBD += xRecord.dbd
+DBDDEPENDS_FILES += filterTest.dbd$(DEP)
+TARGETS += $(COMMON_DIR)/filterTest.dbd
+filterTest_DBD += menuGlobal.dbd
+filterTest_DBD += menuConvert.dbd
+filterTest_DBD += menuScan.dbd
+filterTest_DBD += filters.dbd
+filterTest_DBD += xRecord.dbd
+filterTest_DBD += arrRecord.dbd
+TESTFILES += $(COMMON_DIR)/filterTest.dbd
+
+testHarness_SRCS += filterTest_registerRecordDeviceDriver.cpp
+
 TESTPROD_HOST += tsTest
 tsTest_SRCS += tsTest.c
-tsTest_SRCS += tsTest_registerRecordDeviceDriver.cpp
+tsTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += tsTest.c
-testHarness_SRCS += tsTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/tsTest.dbd ../xRecord.db
+TESTFILES += ../xRecord.db
 TESTS += tsTest
 
-TARGETS += $(COMMON_DIR)/dbndTest.dbd
-DBDDEPENDS_FILES += dbndTest.dbd$(DEP)
-dbndTest_DBD += xRecord.dbd
 TESTPROD_HOST += dbndTest
 dbndTest_SRCS += dbndTest.c
-dbndTest_SRCS += dbndTest_registerRecordDeviceDriver.cpp
+dbndTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbndTest.c
-testHarness_SRCS += dbndTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/dbndTest.dbd
 TESTS += dbndTest
 
-TARGETS += $(COMMON_DIR)/arrTest.dbd
-DBDDEPENDS_FILES += arrTest.dbd$(DEP)
-arrTest_DBD += arrRecord.dbd
 TESTPROD_HOST += arrTest
 arrTest_SRCS += arrTest.cpp
-arrTest_SRCS += arrTest_registerRecordDeviceDriver.cpp
+arrTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += arrTest.cpp
-testHarness_SRCS += arrTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/arrTest.dbd ../arrTest.db
+TESTFILES += ../arrTest.db
 TESTS += arrTest
 
-TARGETS += $(COMMON_DIR)/syncTest.dbd
-DBDDEPENDS_FILES += syncTest.dbd$(DEP)
-syncTest_DBD += xRecord.dbd
 TESTPROD_HOST += syncTest
 syncTest_SRCS += syncTest.c
-syncTest_SRCS += syncTest_registerRecordDeviceDriver.cpp
+syncTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += syncTest.c
-testHarness_SRCS += syncTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/syncTest.dbd
 TESTS += syncTest
 
 # epicsRunFilterTests runs all the test programs in a known working order.

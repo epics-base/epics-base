@@ -48,6 +48,7 @@ extern struct ca_client_context * dbCaClientContext;
 
 #ifdef EPICS_DBCA_PRIVATE_API
 epicsShareFunc void dbCaSync(void);
+epicsShareFunc unsigned long dbCaGetUpdateCount(struct link *plink);
 #endif
 
 /* These macros are for backwards compatibility */

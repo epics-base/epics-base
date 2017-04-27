@@ -29,6 +29,7 @@
 #endif
 
 #define epicsExportSharedSymbols
+#include "cantProceed.h"
 #include "epicsMutex.h"
 #include "ellLib.h"
 #include "dbmf.h"
@@ -114,7 +115,7 @@ void* dbmfMalloc(size_t size)
         pmem = (char *)malloc(nbytesTotal);
         if(!pmem) {
             epicsMutexUnlock(pdbmfPvt->lock);
-            printf("dbmfMalloc malloc failed\n");
+            cantProceed("dbmfMalloc malloc failed\n");
             return(NULL);
         }
         pchunkNode = (chunkNode *)(pmem + pdbmfPvt->chunkSize);
@@ -140,7 +141,7 @@ void* dbmfMalloc(size_t size)
         pmem = malloc(sizeof(itemHeader) + 2*REDZONE + size);
         if(!pmem) {
             epicsMutexUnlock(pdbmfPvt->lock);
-            printf("dbmfMalloc malloc failed\n");
+            cantProceed("dbmfMalloc malloc failed\n");
             return(NULL);
         }
         pdbmfPvt->nAlloc++;

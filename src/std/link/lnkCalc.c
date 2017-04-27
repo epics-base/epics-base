@@ -6,7 +6,11 @@
 \*************************************************************************/
 /* lnkCalc.c */
 
-/* TODO:
+/*  Current usage
+ *      {calc:{expr:"A", args:[{...}, ...]}}
+ *  First link in 'args' is 'A', second is 'B', and so forth.
+ *
+ *  TODO:
  *    Support setting individual input links instead of the args list.
  *      {calc:{expr:"K", K:{...}}}
  */

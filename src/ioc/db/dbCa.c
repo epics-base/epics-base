@@ -227,6 +227,22 @@ void dbCaSync(void)
     epicsEventDestroy(wake);
 }
 
+epicsShareFunc unsigned long dbCaGetUpdateCount(struct link *plink)
+{
+    caLink *pca = (caLink *)plink->value.pv_link.pvt;
+    unsigned long ret;
+
+    if (!pca) return (unsigned long)-1;
+
+    epicsMutexMustLock(pca->lock);
+
+    ret = pca->nUpdate;
+
+    epicsMutexUnlock(pca->lock);
+
+    return ret;
+}
+
 void dbCaCallbackProcess(void *userPvt)
 {
     struct link *plink = (struct link *)userPvt;
@@ -805,6 +821,7 @@ static void eventCallback(struct event_handler_args arg)
     epicsMutexMustLock(pca->lock);
     plink = pca->plink;
     if (!plink) goto done;
+    pca->nUpdate++;
     monitor = pca->monitor;
     userPvt = pca->userPvt;
     precord = plink->precord;

@@ -211,10 +211,11 @@ int main (int argc, char *argv[])
     for (n = 0; optind < argc; n++, optind++)
         pvs[n].name = argv[optind] ;       /* Copy PV names from command line */
 
-    connect_pvs(pvs, nPvs);
+    result = connect_pvs(pvs, nPvs);
 
                                 /* Print data */
-    result = cainfo(pvs, nPvs);
+    if (!result)
+        result = cainfo(pvs, nPvs);
 
                                 /* Shut down Channel Access */
     ca_context_destroy();

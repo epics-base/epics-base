@@ -15,7 +15,9 @@
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
 #include "chfPlugin.h"
+#include "errlog.h"
 #include "epicsUnitTest.h"
+#include "dbUnitTest.h"
 #include "registry.h"
 #include "dbmf.h"
 #include "epicsTime.h"
@@ -24,8 +26,7 @@
 
 #define PATTERN 0x55
 
-void tsTest_registerRecordDeviceDriver(struct dbBase *);
-epicsShareExtern void (*pvar_func_tsInitialize)(void);
+void filterTest_registerRecordDeviceDriver(struct dbBase *);
 
 static db_field_log fl;
 
@@ -56,20 +57,19 @@ MAIN(tsTest)
 
     testPlan(12);
 
-    dbChannelInit();
+    testdbPrepare();
+
+    testdbReadDatabase("filterTest.dbd", NULL, NULL);
+
+    filterTest_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("xRecord.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
     evtctx = db_init_events();
-
-    if (dbReadDatabase(&pdbbase, "tsTest.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'tsTest.dbd' not found");
-
-    (*pvar_func_tsInitialize)();       /* manually initialize plugin */
-    tsTest_registerRecordDeviceDriver(pdbbase);
-
-    if (dbReadDatabase(&pdbbase, "xRecord.db",
-            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database 'xRecord.db' not found");
 
     testOk(!!(plug = dbFindFilter(ts, strlen(ts))), "plugin ts registered correctly");
 
@@ -108,13 +108,12 @@ MAIN(tsTest)
         "ts filter sets time stamp to \"now\"");
 
     dbChannelDelete(pch);
-    dbFreeBase(pdbbase);
-    registryFree();
-    pdbbase=0;
 
     db_close_events(evtctx);
 
-    dbmfFreeChunks();
+    testIocShutdownOk();
+
+    testdbCleanup();
 
     return testDone();
 }

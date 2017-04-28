@@ -170,9 +170,10 @@ static long special(DBADDR *paddr, int after)
     subRecord *prec = (subRecord *)paddr->precord;
 
     if (!after) {
-        if (prec->snam[0] == 0 && prec->pact)
+        if (prec->snam[0] == 0 && prec->pact) {
             prec->pact = FALSE;
             prec->rpro = FALSE;
+        }
         return 0;
     }
 

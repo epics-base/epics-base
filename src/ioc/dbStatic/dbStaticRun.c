@@ -25,7 +25,7 @@
 
 #define epicsExportSharedSymbols
 #include "dbBase.h"
-#include "dbCommon.h"
+#include "dbCommonPvt.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "devSup.h"
@@ -69,6 +69,7 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes		*pflddes;
     int			i;
+    dbCommonPvt *ppvt;
     dbCommon		*precord;
     char		*pfield;
     
@@ -85,8 +86,9 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
                     precordName, pdbRecordType->name, pdbRecordType->rec_size);
         return(S_dbLib_noRecSup);
     }
-    precord = dbCalloc(1, pdbRecordType->rec_size);
-    precord->rnde = precnode;
+    ppvt = dbCalloc(1, offsetof(dbCommonPvt, common) + pdbRecordType->rec_size);
+    precord = &ppvt->common;
+    ppvt->node = precnode;
     precnode->precord = precord;
     pflddes = pdbRecordType->papFldDes[0];
     if(!pflddes) {
@@ -171,7 +173,7 @@ long dbFreeRecord(DBENTRY *pdbentry)
     if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(!precnode->precord) return(S_dbLib_recNotFound);
-    free(precnode->precord);
+    free(CONTAINER(precnode->precord, dbCommonPvt, common));
     precnode->precord = NULL;
     return(0);
 }

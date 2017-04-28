@@ -42,7 +42,7 @@
 #include "dbBase.h"
 #include "dbBkpt.h"
 #include "dbCa.h"
-#include "dbCommon.h"
+#include "dbCommonPvt.h"
 #include "dbConvertFast.h"
 #include "dbConvert.h"
 #include "dbEvent.h"
@@ -685,9 +685,10 @@ finish:
 void dbInitEntryFromChannel(struct dbAddr *paddr, DBENTRY *pdbentry)
 {
     struct dbCommon *prec = paddr->precord;
+    dbCommonPvt *ppvt = CONTAINER(prec, dbCommonPvt, common);
     pdbentry->pdbbase = pdbbase;
     pdbentry->precordType = prec->rdes;
-    pdbentry->precnode = prec->rnde;
+    pdbentry->precnode = ppvt->node;
     pdbentry->pflddes = paddr->pfldDes;
     pdbentry->pinfonode = NULL;
     pdbentry->pfield = paddr->pfield;

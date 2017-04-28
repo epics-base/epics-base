@@ -155,7 +155,7 @@ TESTS += recGblCheckDeadbandTest
 TESTPROD_HOST += testPutGetTest
 testPutGetTest_SRCS += dbPutGetTest.c
 testPutGetTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
-testHarness_SRCS += dbPutGetTest.db
+testHarness_SRCS += dbPutGetTest.c
 TESTFILES += ../dbPutGetTest.db
 TESTS += testPutGetTest
 

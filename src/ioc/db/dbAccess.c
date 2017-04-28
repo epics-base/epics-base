@@ -682,6 +682,19 @@ finish:
     return status;
 }
 
+void dbInitEntryFromChannel(struct dbAddr *paddr, DBENTRY *pdbentry)
+{
+    struct dbCommon *prec = paddr->precord;
+    pdbentry->pdbbase = pdbbase;
+    pdbentry->precordType = prec->rdes;
+    pdbentry->precnode = prec->rnde;
+    pdbentry->pflddes = paddr->pfldDes;
+    pdbentry->pinfonode = NULL;
+    pdbentry->pfield = paddr->pfield;
+    pdbentry->indfield = -1; /* invalid */
+    pdbentry->message = NULL;
+}
+
 long dbValueSize(short dbr_type)
 {
     /* sizes for value associated with each DBR request type */

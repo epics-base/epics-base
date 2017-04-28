@@ -56,7 +56,9 @@ typedef struct{
     char         *message;
     short        indfield;
 } DBENTRY;
-
+
+struct dbAddr;
+
 /*dbDumpFldDes is obsolete. It is only provided for compatibility*/
 #define dbDumpFldDes dbDumpField
 
@@ -67,6 +69,11 @@ epicsShareFunc DBENTRY * dbAllocEntry(DBBASE *pdbbase);
 epicsShareFunc void dbFreeEntry(DBENTRY *pdbentry);
 epicsShareFunc void dbInitEntry(DBBASE *pdbbase,
     DBENTRY *pdbentry);
+/** Initialize DBENTRY from a valid dbAddr*.
+ * Constant time equivalent of dbInitEntry() then dbFindRecord()
+ * except that DBENTRY::indfield is not set
+ */
+epicsShareFunc void dbInitEntryFromChannel(struct dbAddr *paddr, DBENTRY *pdbentry);
 epicsShareFunc void dbFinishEntry(DBENTRY *pdbentry);
 epicsShareFunc DBENTRY * dbCopyEntry(DBENTRY *pdbentry);
 epicsShareFunc void dbCopyEntryContents(DBENTRY *pfrom,

@@ -217,6 +217,12 @@
 		interest(4)
 		extra("struct dbRecordType *rdes")
 	}
+	field(RNDE,DBF_NOACCESS) {
+		prompt("Address of dbRecordNode")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("struct dbRecordNode *rnde")
+	}
 	field(LSET,DBF_NOACCESS) {
 		prompt("Lock Set")
 		special(SPC_NOMOD)

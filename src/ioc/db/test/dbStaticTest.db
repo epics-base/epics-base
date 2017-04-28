@@ -1,0 +1,4 @@
+
+record(x, "testrec") {
+    info("A", "B")
+}

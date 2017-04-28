@@ -79,8 +79,14 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
         epicsPrintf("dbAllocRecord(%s) with %s rec_size = 0\n",
                     precordName, pdbRecordType->name);
         return(S_dbLib_noRecSup);
+    } else if(pdbRecordType->rec_size<sizeof(*precord)) {
+        printf("\t*** Recordtype %s must include \"dbCommon.dbd\"\n", pdbRecordType->name);
+        epicsPrintf("dbAllocRecord(%s) with %s rec_size = %d\n",
+                    precordName, pdbRecordType->name, pdbRecordType->rec_size);
+        return(S_dbLib_noRecSup);
     }
     precord = dbCalloc(1, pdbRecordType->rec_size);
+    precord->rnde = precnode;
     precnode->precord = precord;
     pflddes = pdbRecordType->papFldDes[0];
     if(!pflddes) {

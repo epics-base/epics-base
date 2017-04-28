@@ -36,6 +36,7 @@ static ELLLIST testEvtList; /* holds testMonitor::node */
 struct testMonitor {
     ELLNODE node;
     dbEventSubscription sub;
+    dbChannel *chan;
     epicsEventId event;
     unsigned count;
 };
@@ -322,7 +323,7 @@ testMonitor* testMonitorCreate(const char* pvname, unsigned mask, unsigned opt)
 
     mon->event = epicsEventMustCreate(epicsEventEmpty);
 
-    chan = dbChannelCreate(pvname);
+    chan = mon->chan = dbChannelCreate(pvname);
     if(!chan)
         testAbort("testMonitorCreate - dbChannelCreate(\"%s\") fails", pvname);
     if(!!(status=dbChannelOpen(chan)))
@@ -352,6 +353,8 @@ void testMonitorDestroy(testMonitor *mon)
     epicsMutexUnlock(testEvtLock);
 
     db_cancel_event(mon->sub);
+
+    dbChannelDelete(mon->chan);
 
     epicsEventDestroy(mon->event);
 

@@ -38,17 +38,7 @@
 
 typedef long (*FASTCONVERT)();
 
-/* Change 'undef' to 'define' to turn on debug statements: */
-#undef DEBUG_LINK
-
-#ifdef DEBUG_LINK
-    int lnkCalcDebug = 10;
-#   define IFDEBUG(n) \
-        if (lnkCalcDebug >= n) /* block or statement */
-#else
-#   define IFDEBUG(n) \
-        if(0) /* Compiler will elide the block or statement */
-#endif
+#define IFDEBUG(n) if(clink->jlink.debug)
 
 typedef struct calc_link {
     jlink jlink;        /* embedded object */
@@ -348,6 +338,8 @@ static void lnkCalc_end_child(jlink *parent, jlink *child)
 
 static struct lset* lnkCalc_get_lset(const jlink *pjlink)
 {
+    calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
+
     IFDEBUG(10)
         printf("lnkCalc_get_lset(calc@%p)\n", pjlink);
 
@@ -480,6 +472,9 @@ static int lnkCalc_isConn(const struct link *plink)
 
 static int lnkCalc_getDBFtype(const struct link *plink)
 {
+    calc_link *clink = CONTAINER(plink->value.json.jlink,
+        struct calc_link, jlink);
+
     IFDEBUG(10) {
         calc_link *clink = CONTAINER(plink->value.json.jlink,
             struct calc_link, jlink);
@@ -492,6 +487,9 @@ static int lnkCalc_getDBFtype(const struct link *plink)
 
 static long lnkCalc_getElements(const struct link *plink, long *nelements)
 {
+    calc_link *clink = CONTAINER(plink->value.json.jlink,
+        struct calc_link, jlink);
+
     IFDEBUG(10) {
         calc_link *clink = CONTAINER(plink->value.json.jlink,
             struct calc_link, jlink);

@@ -22,17 +22,7 @@
 #include "epicsExport.h"
 
 
-/* Change 'undef' to 'define' to turn on debug statements: */
-#undef DEBUG_LINK
-
-#ifdef DEBUG_LINK
-    int lnkConstDebug = 10;
-#   define IFDEBUG(n) \
-        if (lnkConstDebug >= n) /* block or statement */
-#else
-#   define IFDEBUG(n) \
-        if(0) /* Compiler will elide the block or statement */
-#endif
+#define IFDEBUG(n) if(clink->jlink.debug)
 
 typedef long (*FASTCONVERT)();
 
@@ -148,7 +138,9 @@ static jlif_result lnkConst_integer(jlink *pjlink, long num)
     return jlif_continue;
 }
 
-static jlif_result lnkConst_boolean(jlink *pjlink, int val) {
+static jlif_result lnkConst_boolean(jlink *pjlink, int val)
+{
+    const_link *clink = CONTAINER(pjlink, const_link, jlink);
     IFDEBUG(10)
         printf("lnkConst_boolean(const@%p, %d)\n", pjlink, val);
 
@@ -278,6 +270,8 @@ static jlif_result lnkConst_start_array(jlink *pjlink)
 
 static jlif_result lnkConst_end_array(jlink *pjlink)
 {
+    const_link *clink = CONTAINER(pjlink, const_link, jlink);
+
     IFDEBUG(10)
         printf("lnkConst_end_array(const@%p)\n", pjlink);
 
@@ -286,6 +280,8 @@ static jlif_result lnkConst_end_array(jlink *pjlink)
 
 static struct lset* lnkConst_get_lset(const jlink *pjlink)
 {
+    const_link *clink = CONTAINER(pjlink, const_link, jlink);
+
     IFDEBUG(10)
         printf("lnkConst_get_lset(const@%p)\n", pjlink);
 
@@ -538,6 +534,8 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
 
 static long lnkConst_getNelements(const struct link *plink, long *nelements)
 {
+    const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
+
     IFDEBUG(10)
         printf("lnkConst_getNelements(const@%p, (%ld))\n",
             plink->value.json.jlink, *nelements);
@@ -549,6 +547,8 @@ static long lnkConst_getNelements(const struct link *plink, long *nelements)
 static long lnkConst_getValue(struct link *plink, short dbrType, void *pbuffer,
         long *pnRequest)
 {
+    const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
+
     IFDEBUG(10)
         printf("lnkConst_getValue(const@%p, %d, %p, ... (%ld))\n",
             plink->value.json.jlink, dbrType, pbuffer, *pnRequest);

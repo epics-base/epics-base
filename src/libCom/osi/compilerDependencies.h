@@ -62,4 +62,13 @@
 #   define EPICS_UNUSED
 #endif
 
+#ifndef EPICS_FUNCTION
+#if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)) || (defined(__cplusplus) && __cplusplus>=201103L)
+#  define EPICS_FUNCTION __func__
+#else
+/* Expands to a 'const char*' which describes the name of the current function scope */
+#  define EPICS_FUNCTION ("<unknown function>")
+#endif
+#endif
+
 #endif  /* ifndef compilerDependencies_h */

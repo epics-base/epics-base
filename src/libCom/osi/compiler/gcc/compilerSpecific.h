@@ -29,6 +29,9 @@
 #else
 #  define EPICS_ALWAYS_INLINE __inline__
 #endif
+
+/* Expands to a 'const char*' which describes the name of the current function scope */
+#define EPICS_FUNCTION __PRETTY_FUNCTION__
  
 #ifdef __cplusplus
 

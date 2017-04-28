@@ -2579,8 +2579,10 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
             if(pdbentry->precnode && ellCount(&pdbentry->precnode->infoList)) {
                 dbCopyEntryContents(pdbentry, &infoentry);
 
-                if(dbFindInfo(&infoentry, "linkDebug")==0 && epicsStrCaseCmp(dbGetInfoString(&infoentry), "YES")==0)
-                    opts |= LINK_DEBUG;
+                if(dbFindInfo(&infoentry, "lsetDebug")==0 && epicsStrCaseCmp(dbGetInfoString(&infoentry), "YES")==0)
+                    opts |= LINK_DEBUG_LSET;
+                if(dbFindInfo(&infoentry, "jlinkDebug")==0 && epicsStrCaseCmp(dbGetInfoString(&infoentry), "YES")==0)
+                    opts |= LINK_DEBUG_JPARSE;
 
                 dbFinishEntry(&infoentry);
             }

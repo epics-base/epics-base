@@ -59,7 +59,8 @@ typedef struct dbLinkInfo {
 
 long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec);
 
-#define LINK_DEBUG 1
+#define LINK_DEBUG_LSET 1
+#define LINK_DEBUG_JPARSE 2
 
 /* Parse link string.  no record locks needed.
  * on success caller must free pinfo->target

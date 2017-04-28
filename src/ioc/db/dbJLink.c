@@ -26,7 +26,7 @@
 #include "dbStaticLib.h"
 #include "link.h"
 
-#define IFDEBUG(n) if(parser->debug)
+#define IFDEBUG(n) if(parser->parse_debug)
 
 typedef struct parseContext {
     jlink *pjlink;
@@ -34,7 +34,8 @@ typedef struct parseContext {
     short dbfType;
     short jsonDepth;
     unsigned key_is_link:1;
-    unsigned debug:1;
+    unsigned parse_debug:1;
+    unsigned lset_debug:1;
 } parseContext;
 
 #define CALL_OR_STOP(routine) !(routine) ? jlif_stop : (routine)
@@ -250,7 +251,7 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
     pjlink->pif = pjlif;
     pjlink->parent = NULL;
     pjlink->parseDepth = 0;
-    pjlink->debug = !!parser->debug;
+    pjlink->debug = !!parser->lset_debug;
 
     if (parser->pjlink) {
         /* We're starting a child link, save its parent */
@@ -350,7 +351,8 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
     parser->dbfType = dbfType;
     parser->jsonDepth = 0;
     parser->key_is_link = 0;
-    parser->debug = !!(opts&LINK_DEBUG);
+    parser->parse_debug = !!(opts&LINK_DEBUG_JPARSE);
+    parser->lset_debug = !!(opts&LINK_DEBUG_LSET);
 
     IFDEBUG(10)
         printf("dbJLinkInit(\"%.*s\", %d, %p)\n",

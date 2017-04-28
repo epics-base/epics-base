@@ -55,6 +55,8 @@ epicsShareFunc long testdbVPutField(const char* pv, short dbrType, va_list ap);
 epicsShareFunc void testdbGetFieldEqual(const char* pv, short dbrType, ...);
 epicsShareFunc void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
 
+epicsShareFunc void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long count, const void *pbuf);
+
 /**
  * @param pv PV name string
  * @param dbfType One of the DBF_* macros from dbAccess.h

@@ -227,6 +227,21 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     }
 }
 
+void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long count, const void *pbuf)
+{
+    DBADDR addr;
+    long status;
+
+    if (dbNameToAddr(pv, &addr)) {
+        testFail("Missing PV \"%s\"", pv);
+        return;
+    }
+
+    status = dbPutField(&addr, dbrType, pbuf, count);
+
+    testOk(status==0, "dbPutField(\"%s\", dbr=%d, count=%lu, ...) -> %ld", pv, dbrType, count, status);
+}
+
 void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long cnt, const void *pbufraw)
 {
     DBADDR addr;

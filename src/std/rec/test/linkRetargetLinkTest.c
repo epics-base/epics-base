@@ -73,10 +73,14 @@ static void testRetargetJLink(void)
     testDiag("In testRetargetJLink");
 
     testdbGetFieldEqual("rec:j1", DBF_DOUBLE, 10.0);
-    /* without [] */
-    testLongStrEq("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":{\"const\":5}}}");
+    /* minimal args */
+    testLongStrEq("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":5}}");
 
     /* with [] */
+    testPutLongStr("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":[7]}}");
+    testdbPutFieldOk("rec:j1.PROC", DBF_LONG, 1);
+
+    /* with const */
     testPutLongStr("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":[{\"const\":7}]}}");
     testdbPutFieldOk("rec:j1.PROC", DBF_LONG, 1);
 
@@ -86,7 +90,7 @@ static void testRetargetJLink(void)
 
 MAIN(linkRetargetLinkTest)
 {
-    testPlan(16);
+    testPlan(18);
 
     testdbPrepare();
 

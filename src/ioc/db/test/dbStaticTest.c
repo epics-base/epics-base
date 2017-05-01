@@ -44,7 +44,7 @@ static void testAddr2Entry(void)
     if(dbNameToAddr("testrec.VAL", &addr))
         testAbort("no addr for testrec.VAL");
 
-    dbInitEntryFromChannel(&addr, &entry2);
+    dbInitEntryFromAddr(&addr, &entry2);
 
     testOk1(entry.pdbbase==entry2.pdbbase);
     testOk1(entry.precordType==entry2.precordType);

@@ -73,7 +73,7 @@ epicsShareFunc void dbInitEntry(DBBASE *pdbbase,
  * Constant time equivalent of dbInitEntry() then dbFindRecord()
  * except that DBENTRY::indfield is not set
  */
-epicsShareFunc void dbInitEntryFromChannel(struct dbAddr *paddr, DBENTRY *pdbentry);
+epicsShareFunc void dbInitEntryFromAddr(struct dbAddr *paddr, DBENTRY *pdbentry);
 epicsShareFunc void dbFinishEntry(DBENTRY *pdbentry);
 epicsShareFunc DBENTRY * dbCopyEntry(DBENTRY *pdbentry);
 epicsShareFunc void dbCopyEntryContents(DBENTRY *pfrom,

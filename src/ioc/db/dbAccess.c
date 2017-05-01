@@ -682,7 +682,7 @@ finish:
     return status;
 }
 
-void dbInitEntryFromChannel(struct dbAddr *paddr, DBENTRY *pdbentry)
+void dbInitEntryFromAddr(struct dbAddr *paddr, DBENTRY *pdbentry)
 {
     struct dbCommon *prec = paddr->precord;
     dbCommonPvt *ppvt = CONTAINER(prec, dbCommonPvt, common);

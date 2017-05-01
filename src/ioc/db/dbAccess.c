@@ -686,14 +686,27 @@ void dbInitEntryFromAddr(struct dbAddr *paddr, DBENTRY *pdbentry)
 {
     struct dbCommon *prec = paddr->precord;
     dbCommonPvt *ppvt = CONTAINER(prec, dbCommonPvt, common);
+
+    memset((char *)pdbentry,'\0',sizeof(DBENTRY));
+
     pdbentry->pdbbase = pdbbase;
     pdbentry->precordType = prec->rdes;
     pdbentry->precnode = ppvt->node;
     pdbentry->pflddes = paddr->pfldDes;
-    pdbentry->pinfonode = NULL;
     pdbentry->pfield = paddr->pfield;
     pdbentry->indfield = -1; /* invalid */
-    pdbentry->message = NULL;
+}
+
+void dbInitEntryFromRecord(struct dbCommon *prec, DBENTRY *pdbentry)
+{
+    dbCommonPvt *ppvt = CONTAINER(prec, dbCommonPvt, common);
+
+    memset((char *)pdbentry,'\0',sizeof(DBENTRY));
+
+    pdbentry->pdbbase = pdbbase;
+    pdbentry->precordType = prec->rdes;
+    pdbentry->precnode = ppvt->node;
+    pdbentry->indfield = -1; /* invalid */
 }
 
 long dbValueSize(short dbr_type)

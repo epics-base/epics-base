@@ -21,6 +21,17 @@
 
 -->
 
+<h3>Channel Access "modernization"</h3>
+
+<p>Drop support for CA clients advertising protocol versions less than 4.</p>
+
+<p>This effects clients from Base older than 3.12.0-beta1.
+Newer clients will continue to be able to connect to older servers.
+Older clients will be ignored by newer servers.</p>
+
+<p>This allows removal of UDP echo and similar protocol features which
+are not compatible with secure protocol design practice.</p>
+
 <h3>Echoless comments in iocsh</h3>
 
 <p>The way comments are parsed by the iocsh interpreter has changed. The

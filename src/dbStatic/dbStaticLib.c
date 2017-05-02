@@ -578,8 +578,6 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
     dbRecordType	*pdbRecordType;
     dbRecordType	*pdbRecordTypeNext;
     dbFldDes	*	pdbFldDes;
-    dbRecordNode 	*pdbRecordNode;
-    dbRecordNode 	*pdbRecordNodeNext;
     dbRecordAttribute	*pAttribute;
     dbRecordAttribute	*pAttributeNext;
     devSup		*pdevSup;
@@ -594,19 +592,21 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
     brkTable		*pbrkTableNext;
     int			i;
     DBENTRY		dbentry;
-    
+    long status;
 
     dbInitEntry(pdbbase,&dbentry);
-    pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    while(pdbRecordType) {
-        pdbRecordNode = (dbRecordNode *)ellFirst(&pdbRecordType->recList);
-        while(pdbRecordNode) {
-            pdbRecordNodeNext = (dbRecordNode *)ellNext(&pdbRecordNode->node);
-            if(!dbFindRecord(&dbentry,pdbRecordNode->recordname))
-                dbDeleteRecord(&dbentry);
-            pdbRecordNode = pdbRecordNodeNext;
+    status = dbFirstRecordType(&dbentry);
+    while(!status) {
+        /* dbDeleteRecord() will remove alias or real record node.
+         * For real record nodes, also removes the nodes of all aliases.
+         * This complicates safe traversal, so we re-start iteration
+         * from the first record after each call.
+         */
+        while((status = dbFirstRecord(&dbentry))==0) {
+            dbDeleteRecord(&dbentry);
         }
-        pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node);
+        assert(status==S_dbLib_recNotFound);
+        status = dbNextRecordType(&dbentry);
     }
     dbFinishEntry(&dbentry);
     pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);

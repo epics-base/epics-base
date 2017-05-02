@@ -338,6 +338,16 @@ caStatus casStrmClient::versionAction ( epicsGuard < casClientMutex > & )
         return S_cas_badProtocol;
     }
 
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        if ( this->getCAS().getDebugLevel() > 3u ) {
+            char pHostName[64u];
+            this->hostName ( pHostName, sizeof ( pHostName ) );
+            printf ( "\"%s\" is too old\n",
+                pHostName );
+        }
+        return S_cas_badProtocol;
+    }
+
     double tmp = mp->m_dataType - CA_PROTO_PRIORITY_MIN;
     tmp *= epicsThreadPriorityCAServerHigh - epicsThreadPriorityCAServerLow;
     tmp /= CA_PROTO_PRIORITY_MAX - CA_PROTO_PRIORITY_MIN;
@@ -1243,6 +1253,14 @@ caStatus casStrmClient :: searchResponse (
     const pvExistReturn & retVal )
 {    
     if ( retVal.getStatus() != pverExistsHere ) {
+        if (msg.m_dataType == DOREPLY ) {
+            long status = this->out.copyInHeader ( CA_PROTO_NOT_FOUND, 0,
+                msg.m_dataType, msg.m_count, msg.m_cid, msg.m_available, 0 );
+
+            if ( status == S_cas_success ) {
+                this->out.commitMsg ();
+            }
+        }
         return S_cas_success;
     }
     
@@ -1338,6 +1356,16 @@ caStatus casStrmClient :: searchAction ( epicsGuard < casClientMutex > & guard )
     const char              *pChanName = static_cast <char * > ( this->ctx.getData() );
     caStatus                status;
 
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        if ( this->getCAS().getDebugLevel() > 3u ) {
+            char pHostName[64u];
+            this->hostName ( pHostName, sizeof ( pHostName ) );
+            printf ( "\"%s\" is searching for \"%s\" but is too old\n",
+                pHostName, pChanName );
+        }
+        return S_cas_badProtocol;
+    }
+
     //
     // check the sanity of the message
     //
@@ -1407,11 +1435,8 @@ caStatus casStrmClient :: searchAction ( epicsGuard < casClientMutex > & guard )
         //
         switch ( pver.getStatus() ) {
         case pverExistsHere:
-            status = this->searchResponse ( guard, *mp, pver );
-            break;
-
         case pverDoesNotExistHere:
-            status = S_cas_success;
+            status = this->searchResponse ( guard, *mp, pver );
             break;
 
         case pverAsyncCompletion:

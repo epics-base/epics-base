@@ -6,7 +6,7 @@
 /** Base internal additional information for every record
  */
 typedef struct dbCommonPvt {
-    struct dbRecordNode *node;
+    struct dbRecordNode *recnode;
 
     struct dbCommon common;
 } dbCommonPvt;

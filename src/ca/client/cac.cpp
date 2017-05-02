@@ -55,14 +55,6 @@ static const char pVersionCAC[] =
     "@(#) " EPICS_VERSION_STRING
     ", CA Client Library " __DATE__;
 
-// when set, respect EPICS_CA_MAX_ARRAY_BYTES
-// when clear, ignore it
-extern "C" {
-epicsShareExtern int caLimitArray;
-int caLimitArray;
-epicsExportAddress(int, caLimitArray);
-}
-
 // TCP response dispatch table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =
 {
@@ -226,6 +218,10 @@ cac::cac (
         if ( ! this->tcpSmallRecvBufFreeList ) {
             throw std::bad_alloc ();
         }
+
+        int caLimitArray;
+        if(envGetBoolConfigParam(&EPICS_CA_AUTO_MAX_ARRAY_BYTES, &caLimitArray))
+            caLimitArray = 0;
 
         if(caLimitArray) {
             freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );

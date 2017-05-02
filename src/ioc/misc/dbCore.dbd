@@ -22,6 +22,3 @@ variable(callbackParallelThreadsDefault,int)
 
 # Real-time operation
 variable(dbThreadRealtimeLock,int)
-
-# RSRV and dbCa (all local ca contexts)
-variable(caLimitArray, int)

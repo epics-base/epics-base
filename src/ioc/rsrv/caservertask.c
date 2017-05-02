@@ -34,9 +34,6 @@
 #include "taskwd.h"
 #include "cantProceed.h"
 
-// defined in cac.cpp
-epicsShareExtern int caLimitArray;
-
 #include "epicsExport.h"
 
 #define epicsExportSharedSymbols
@@ -472,6 +469,7 @@ int rsrv_init (void)
     long maxBytesAsALong;
     long status;
     SOCKET *socks;
+    int caLimitArray;
 
     clientQlock = epicsMutexMustCreate();
 
@@ -530,6 +528,10 @@ int rsrv_init (void)
             rsrvSizeofLargeBufTCP = maxBytes;
         }
     }
+
+    if(envGetBoolConfigParam(&EPICS_CA_AUTO_MAX_ARRAY_BYTES, &caLimitArray))
+        caLimitArray = 0;
+
     if (caLimitArray)
         freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
     else

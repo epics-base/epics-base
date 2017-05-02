@@ -651,6 +651,7 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
             ellDelete(&pdbRecordType->attributeList,&pAttribute->node);
             free((void *)pAttribute->name);
             free((void *)pAttribute->pdbFldDes);
+            free(pAttribute);
             pAttribute = pAttributeNext;
         }
         pdbRecordTypeNext = (dbRecordType *)ellNext(&pdbRecordType->node);

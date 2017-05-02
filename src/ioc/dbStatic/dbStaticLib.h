@@ -71,12 +71,12 @@ epicsShareFunc void dbFreeEntry(DBENTRY *pdbentry);
 epicsShareFunc void dbInitEntry(DBBASE *pdbbase,
     DBENTRY *pdbentry);
 /** Initialize DBENTRY from a valid dbAddr*.
- * Constant time equivalent of dbInitEntry() then dbFindRecord()
+ * Constant time equivalent of dbInitEntry() then dbFindRecord(), and finally dbFollowAlias()
  * except that DBENTRY::indfield is not set
  */
 epicsShareFunc void dbInitEntryFromAddr(struct dbAddr *paddr, DBENTRY *pdbentry);
 /** Initialize DBENTRY from a valid record (dbCommon*).
- * Constant time equivalent of dbInitEntry() then dbFindRecord()
+ * Constant time equivalent of dbInitEntry() then dbFindRecord(), and finally dbFollowAlias()
  * when no field is specified (pflddes and pfield are NULL).
  * except that DBENTRY::indfield is not set.
  */
@@ -170,6 +170,8 @@ epicsShareFunc int dbIsVisibleRecord(DBENTRY *pdbentry);
 epicsShareFunc long dbCreateAlias(DBENTRY *pdbentry,
     const char *paliasName);
 epicsShareFunc int dbIsAlias(DBENTRY *pdbentry);
+/* Follow alias to actual record */
+epicsShareFunc int dbFollowAlias(DBENTRY *pdbentry);
 epicsShareFunc long dbDeleteAliases(DBENTRY *pdbentry);
 
 epicsShareFunc long dbFindFieldPart(DBENTRY *pdbentry,

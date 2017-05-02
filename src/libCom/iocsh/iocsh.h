@@ -68,7 +68,7 @@ epicsShareFunc void epicsShareAPI iocshRegister(
     const iocshFuncDef *piocshFuncDef, iocshCallFunc func);
 epicsShareFunc void epicsShareAPI iocshRegisterVariable (
     const iocshVarDef *piocshVarDef);
-epicsShareFunc const iocshCmdDef * epicsShareAPI iocshFind(
+epicsShareFunc const iocshCmdDef * epicsShareAPI iocshFindCommand(
     const char* name);
 epicsShareFunc const iocshVarDef * epicsShareAPI iocshFindVariable(
     const char* name);

@@ -149,7 +149,7 @@ void epicsShareAPI iocshRegister (const iocshFuncDef *piocshFuncDef,
 /*
  * Retrieves a previously registered function with the given name.
  */
-const iocshCmdDef * epicsShareAPI iocshFind(const char *name)
+const iocshCmdDef * epicsShareAPI iocshFindCommand(const char *name)
 {
     return (iocshCmdDef *) registryFind(iocshCmdID, name);
 }

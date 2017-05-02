@@ -89,6 +89,7 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
     ppvt = dbCalloc(1, offsetof(dbCommonPvt, common) + pdbRecordType->rec_size);
     precord = &ppvt->common;
     ppvt->node = precnode;
+    precord->rdes = pdbRecordType;
     precnode->precord = precord;
     pflddes = pdbRecordType->papFldDes[0];
     if(!pflddes) {

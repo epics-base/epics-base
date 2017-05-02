@@ -17,6 +17,7 @@
 
 #include "cantProceed.h"
 #include "cvtFast.h"
+#include "epicsAssert.h"
 #include "dbDefs.h"
 #include "dbmf.h"
 #include "ellLib.h"

@@ -94,8 +94,6 @@ void doSingle(workerPriv *p)
     dbScanUnlock(prec);
 }
 
-static volatile int bitbucket;
-
 static
 void doMulti(workerPriv *p)
 {

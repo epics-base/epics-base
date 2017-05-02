@@ -18,6 +18,7 @@
 #define DBFLDTYPES_GBLSOURCE
 #define GUIGROUPS_GBLSOURCE
 #define SPECIAL_GBLSOURCE
+#include "epicsAssert.h"
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "errlog.h"

@@ -426,8 +426,6 @@ void dbFreeBase(dbBase *pdbbase)
     dbRecordType	*pdbRecordType;
     dbRecordType	*pdbRecordTypeNext;
     dbFldDes	*	pdbFldDes;
-    dbRecordNode 	*pdbRecordNode;
-    dbRecordNode 	*pdbRecordNodeNext;
     dbRecordAttribute	*pAttribute;
     dbRecordAttribute	*pAttributeNext;
     devSup		*pdevSup;
@@ -446,134 +444,136 @@ void dbFreeBase(dbBase *pdbbase)
     dbGuiGroup      *pguiGroupNext;
     int			i;
     DBENTRY		dbentry;
-
+    long status;
 
     dbInitEntry(pdbbase,&dbentry);
-    pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    while(pdbRecordType) {
-	pdbRecordNode = (dbRecordNode *)ellFirst(&pdbRecordType->recList);
-	while(pdbRecordNode) {
-	    pdbRecordNodeNext = (dbRecordNode *)ellNext(&pdbRecordNode->node);
-	    if(!dbFindRecord(&dbentry,pdbRecordNode->recordname))
-		dbDeleteRecord(&dbentry);
-	    pdbRecordNode = pdbRecordNodeNext;
-	}
-	pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node);
+    status = dbFirstRecordType(&dbentry);
+    while(!status) {
+        /* dbDeleteRecord() will remove alias or real record node.
+         * For real record nodes, also removes the nodes of all aliases.
+         * This complicates safe traversal, so we re-start iteration
+         * from the first record after each call.
+         */
+        while((status = dbFirstRecord(&dbentry))==0) {
+            dbDeleteRecord(&dbentry);
+        }
+        assert(status==S_dbLib_recNotFound);
+        status = dbNextRecordType(&dbentry);
     }
     dbFinishEntry(&dbentry);
     pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     while(pdbRecordType) {
-	for(i=0; i<pdbRecordType->no_fields; i++) {
-	    pdbFldDes = pdbRecordType->papFldDes[i];
-	    free((void *)pdbFldDes->prompt);
-	    free((void *)pdbFldDes->name);
-	    free((void *)pdbFldDes->extra);
-	    free((void *)pdbFldDes->initial);
-	    if(pdbFldDes->field_type==DBF_DEVICE && pdbFldDes->ftPvt) {
-		dbDeviceMenu *pdbDeviceMenu;
+        for(i=0; i<pdbRecordType->no_fields; i++) {
+            pdbFldDes = pdbRecordType->papFldDes[i];
+            free((void *)pdbFldDes->prompt);
+            free((void *)pdbFldDes->name);
+            free((void *)pdbFldDes->extra);
+            free((void *)pdbFldDes->initial);
+            if(pdbFldDes->field_type==DBF_DEVICE && pdbFldDes->ftPvt) {
+                dbDeviceMenu *pdbDeviceMenu;
 
-		pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
-		free((void *)pdbDeviceMenu->papChoice);
-		free((void *)pdbDeviceMenu);
-		pdbFldDes->ftPvt=0;
-	    }
-	    free((void *)pdbFldDes);
-	}
-	pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
-	while(pdevSup) {
-	    pdevSupNext = (devSup *)ellNext(&pdevSup->node);
-	    ellDelete(&pdbRecordType->devList,&pdevSup->node);
-	    free((void *)pdevSup->name);
-	    free((void *)pdevSup->choice);
-	    free((void *)pdevSup);
-	    pdevSup = pdevSupNext;
-	}
-	ptext = (dbText *)ellFirst(&pdbRecordType->cdefList);
-	while(ptext) {
-	    ptextNext = (dbText *)ellNext(&ptext->node);
-	    ellDelete(&pdbRecordType->cdefList,&ptext->node);
-	    free((void *)ptext->text);
-	    free((void *)ptext);
-	    ptext = ptextNext;
-	}
-	pAttribute =
-	    (dbRecordAttribute *)ellFirst(&pdbRecordType->attributeList);
-	while(pAttribute) {
-	    pAttributeNext = (dbRecordAttribute *)ellNext(&pAttribute->node);
-	    ellDelete(&pdbRecordType->attributeList,&pAttribute->node);
-	    free((void *)pAttribute->name);
-	    free((void *)pAttribute->pdbFldDes);
-	    free(pAttribute);
-	    pAttribute = pAttributeNext;
-	}
-	pdbRecordTypeNext = (dbRecordType *)ellNext(&pdbRecordType->node);
-	gphDelete(pdbbase->pgpHash,pdbRecordType->name,&pdbbase->recordTypeList);
-	ellDelete(&pdbbase->recordTypeList,&pdbRecordType->node);
-	free((void *)pdbRecordType->name);
-	free((void *)pdbRecordType->link_ind);
-	free((void *)pdbRecordType->papsortFldName);
-	free((void *)pdbRecordType->sortFldInd);
-	free((void *)pdbRecordType->papFldDes);
-	free((void *)pdbRecordType);
-	pdbRecordType = pdbRecordTypeNext;
+                pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
+                free((void *)pdbDeviceMenu->papChoice);
+                free((void *)pdbDeviceMenu);
+                pdbFldDes->ftPvt=0;
+            }
+            free((void *)pdbFldDes);
+        }
+        pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
+        while(pdevSup) {
+            pdevSupNext = (devSup *)ellNext(&pdevSup->node);
+            ellDelete(&pdbRecordType->devList,&pdevSup->node);
+            free((void *)pdevSup->name);
+            free((void *)pdevSup->choice);
+            free((void *)pdevSup);
+            pdevSup = pdevSupNext;
+        }
+        ptext = (dbText *)ellFirst(&pdbRecordType->cdefList);
+        while(ptext) {
+            ptextNext = (dbText *)ellNext(&ptext->node);
+            ellDelete(&pdbRecordType->cdefList,&ptext->node);
+            free((void *)ptext->text);
+            free((void *)ptext);
+            ptext = ptextNext;
+        }
+        pAttribute =
+                (dbRecordAttribute *)ellFirst(&pdbRecordType->attributeList);
+        while(pAttribute) {
+            pAttributeNext = (dbRecordAttribute *)ellNext(&pAttribute->node);
+            ellDelete(&pdbRecordType->attributeList,&pAttribute->node);
+            free((void *)pAttribute->name);
+            free((void *)pAttribute->pdbFldDes);
+            free(pAttribute);
+            pAttribute = pAttributeNext;
+        }
+        pdbRecordTypeNext = (dbRecordType *)ellNext(&pdbRecordType->node);
+        gphDelete(pdbbase->pgpHash,pdbRecordType->name,&pdbbase->recordTypeList);
+        ellDelete(&pdbbase->recordTypeList,&pdbRecordType->node);
+        free((void *)pdbRecordType->name);
+        free((void *)pdbRecordType->link_ind);
+        free((void *)pdbRecordType->papsortFldName);
+        free((void *)pdbRecordType->sortFldInd);
+        free((void *)pdbRecordType->papFldDes);
+        free((void *)pdbRecordType);
+        pdbRecordType = pdbRecordTypeNext;
     }
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
-	pdbMenuNext = (dbMenu *)ellNext(&pdbMenu->node);
-	gphDelete(pdbbase->pgpHash,pdbMenu->name,&pdbbase->menuList);
-	ellDelete(&pdbbase->menuList,&pdbMenu->node);
-	for(i=0; i< pdbMenu->nChoice; i++) {
-	    free((void *)pdbMenu->papChoiceName[i]);
-	    free((void *)pdbMenu->papChoiceValue[i]);
-	}
-	free((void *)pdbMenu->papChoiceName);
-	free((void *)pdbMenu->papChoiceValue);
-	free((void *)pdbMenu ->name);
-	free((void *)pdbMenu);
-	pdbMenu = pdbMenuNext;
+        pdbMenuNext = (dbMenu *)ellNext(&pdbMenu->node);
+        gphDelete(pdbbase->pgpHash,pdbMenu->name,&pdbbase->menuList);
+        ellDelete(&pdbbase->menuList,&pdbMenu->node);
+        for(i=0; i< pdbMenu->nChoice; i++) {
+            free((void *)pdbMenu->papChoiceName[i]);
+            free((void *)pdbMenu->papChoiceValue[i]);
+        }
+        free((void *)pdbMenu->papChoiceName);
+        free((void *)pdbMenu->papChoiceValue);
+        free((void *)pdbMenu ->name);
+        free((void *)pdbMenu);
+        pdbMenu = pdbMenuNext;
     }
     pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList);
     while(pdrvSup) {
-	pdrvSupNext = (drvSup *)ellNext(&pdrvSup->node);
-	ellDelete(&pdbbase->drvList,&pdrvSup->node);
-	free((void *)pdrvSup->name);
-	free((void *)pdrvSup);
-	pdrvSup = pdrvSupNext;
+        pdrvSupNext = (drvSup *)ellNext(&pdrvSup->node);
+        ellDelete(&pdbbase->drvList,&pdrvSup->node);
+        free((void *)pdrvSup->name);
+        free((void *)pdrvSup);
+        pdrvSup = pdrvSupNext;
     }
     ptext = (dbText *)ellFirst(&pdbbase->registrarList);
     while(ptext) {
-	ptextNext = (dbText *)ellNext(&ptext->node);
-	ellDelete(&pdbbase->registrarList,&ptext->node);
-	free((void *)ptext->text);
-	free((void *)ptext);
-	ptext = ptextNext;
+        ptextNext = (dbText *)ellNext(&ptext->node);
+        ellDelete(&pdbbase->registrarList,&ptext->node);
+        free((void *)ptext->text);
+        free((void *)ptext);
+        ptext = ptextNext;
     }
     ptext = (dbText *)ellFirst(&pdbbase->functionList);
     while(ptext) {
-	ptextNext = (dbText *)ellNext(&ptext->node);
-	ellDelete(&pdbbase->functionList,&ptext->node);
-	free((void *)ptext->text);
-	free((void *)ptext);
-	ptext = ptextNext;
+        ptextNext = (dbText *)ellNext(&ptext->node);
+        ellDelete(&pdbbase->functionList,&ptext->node);
+        free((void *)ptext->text);
+        free((void *)ptext);
+        ptext = ptextNext;
     }
     pvar = (dbVariableDef *)ellFirst(&pdbbase->variableList);
     while(pvar) {
-	pvarNext = (dbVariableDef *)ellNext(&pvar->node);
-	ellDelete(&pdbbase->variableList,&pvar->node);
-	free((void *)pvar->name);
+        pvarNext = (dbVariableDef *)ellNext(&pvar->node);
+        ellDelete(&pdbbase->variableList,&pvar->node);
+        free((void *)pvar->name);
         free((void *)pvar->type);
-	free((void *)pvar);
-	pvar = pvarNext;
+        free((void *)pvar);
+        pvar = pvarNext;
     }
     pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
     while(pbrkTable) {
-	pbrkTableNext = (brkTable *)ellNext(&pbrkTable->node);
-	gphDelete(pdbbase->pgpHash,pbrkTable->name,&pdbbase->bptList);
-	ellDelete(&pdbbase->bptList,&pbrkTable->node);
-	free(pbrkTable->name);
-	free((void *)pbrkTable->paBrkInt);
-	free((void *)pbrkTable);
-	pbrkTable = pbrkTableNext;
+        pbrkTableNext = (brkTable *)ellNext(&pbrkTable->node);
+        gphDelete(pdbbase->pgpHash,pbrkTable->name,&pdbbase->bptList);
+        ellDelete(&pdbbase->bptList,&pbrkTable->node);
+        free(pbrkTable->name);
+        free((void *)pbrkTable->paBrkInt);
+        free((void *)pbrkTable);
+        pbrkTable = pbrkTableNext;
     }
     pfilt = (chFilterPlugin *)ellFirst(&pdbbase->filterList);
     while(pfilt) {

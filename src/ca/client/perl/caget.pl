@@ -20,13 +20,16 @@ $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 HELP_MESSAGE() unless getopts('0:ac:d:e:f:F:g:hnsStw:');
 HELP_MESSAGE() if $opt_h;
 
-die "caget: -c option takes a positive number\n"
+die "caget.pl: -c option takes a positive number\n"
     unless looks_like_number($opt_c) && $opt_c >= 0;
 
-die "No pv name specified. ('caget -h' gives help.)\n"
+die "No pv name specified. ('caget.pl -h' gives help.)\n"
     unless @ARGV;
 
-my @chans = map { CA->new($_); } @ARGV;
+my @chans = map { CA->new($_); } grep { $_ ne '' } @ARGV;
+
+die "caget.pl: Please provide at least one non-empty pv name\n"
+    unless @chans;
 
 eval { CA->pend_io($opt_w); };
 if ($@) {

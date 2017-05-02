@@ -44,12 +44,15 @@ epicsShareFunc void epicsAssert (const char *pFile, const unsigned line,
 
 
 /* Compile-time checks */
+#if __cplusplus>=201103L
+#define STATIC_ASSERT(expr) static_assert(expr, #expr)
+#else
 #define STATIC_JOIN(x, y) STATIC_JOIN2(x, y)
 #define STATIC_JOIN2(x, y) x ## y
 #define STATIC_ASSERT(expr) \
     typedef int STATIC_JOIN(static_assert_failed_at_line_, __LINE__) \
     [ (expr) ? 1 : -1 ] EPICS_UNUSED
-
+#endif
 
 #ifdef __cplusplus
 }

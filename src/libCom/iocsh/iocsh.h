@@ -59,10 +59,19 @@ typedef struct iocshFuncDef {
 
 typedef void (*iocshCallFunc)(const iocshArgBuf *argBuf);
 
+typedef struct iocshCmdDef {
+    iocshFuncDef const   *pFuncDef;
+    iocshCallFunc         func;
+}iocshCmdDef;
+
 epicsShareFunc void epicsShareAPI iocshRegister(
     const iocshFuncDef *piocshFuncDef, iocshCallFunc func);
 epicsShareFunc void epicsShareAPI iocshRegisterVariable (
     const iocshVarDef *piocshVarDef);
+epicsShareFunc const iocshCmdDef * epicsShareAPI iocshFindCommand(
+    const char* name);
+epicsShareFunc const iocshVarDef * epicsShareAPI iocshFindVariable(
+    const char* name);
 
 /* iocshFree frees storage used by iocshRegister*/
 /* This should only be called when iocsh is no longer needed*/

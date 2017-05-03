@@ -22,6 +22,9 @@ static void testEntry(const char *pv)
     testOk1(entry.precnode && strcmp(((dbCommon*)entry.precnode->precord)->name, "testrec")==0);
     testOk1(entry.pflddes && strcmp(entry.pflddes->name, "VAL")==0);
 
+    /* all tested PVs are either a record with aliases, or an alias */
+    testOk1(entry.precnode && ((entry.precnode->flags&DBRN_FLAGS_ISALIAS) ^ (entry.precnode->flags&DBRN_FLAGS_HASALIAS)));
+
     testOk1(dbFollowAlias(&entry)==0);
 
     testOk1(dbFindInfo(&entry, "A")==0 && strcmp(dbGetInfoString(&entry), "B")==0);
@@ -114,7 +117,7 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbStaticTest)
 {
-    testPlan(192);
+    testPlan(200);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);

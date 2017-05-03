@@ -34,6 +34,8 @@
 #include "taskwd.h"
 #include "cantProceed.h"
 
+#include "epicsExport.h"
+
 #define epicsExportSharedSymbols
 #include "dbChannel.h"
 #include "dbCommon.h"
@@ -318,6 +320,22 @@ void rsrv_build_addr_lists(void)
             }
         }
 #endif
+
+#ifdef IP_MULTICAST_TTL
+    {
+        int ttl;
+        long val;
+        if(envGetLongConfigParam(&EPICS_CA_MCAST_TTL, &val))
+            val =1;
+        ttl = val;
+        if ( setsockopt(beaconSocket, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof(ttl))) {
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString (
+                sockErrBuf, sizeof ( sockErrBuf ) );
+            errlogPrintf("rsrv: failed to set mcast ttl %d\n", ttl);
+        }
+    }
+#endif
     }
 
     /* populate the interface address list (default is empty) */
@@ -467,6 +485,7 @@ int rsrv_init (void)
     long maxBytesAsALong;
     long status;
     SOCKET *socks;
+    int autoMaxBytes;
 
     clientQlock = epicsMutexMustCreate();
 
@@ -525,7 +544,14 @@ int rsrv_init (void)
             rsrvSizeofLargeBufTCP = maxBytes;
         }
     }
-    freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
+
+    if(envGetBoolConfigParam(&EPICS_CA_AUTO_ARRAY_BYTES, &autoMaxBytes))
+        autoMaxBytes = 1;
+
+    if (!autoMaxBytes)
+        freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
+    else
+        rsrvLargeBufFreeListTCP = NULL;
     pCaBucket = bucketCreate(CAS_HASH_TABLE_SIZE);
     if (!pCaBucket)
         cantProceed("RSRV failed to allocate ID lookup table\n");
@@ -1012,8 +1038,10 @@ void casr (unsigned level)
                     freeListItemsAvail (rsrvEventFreeList);
         bytes_reserved += MAX_TCP *
                     freeListItemsAvail ( rsrvSmallBufFreeListTCP );
-        bytes_reserved += rsrvSizeofLargeBufTCP *
-                    freeListItemsAvail ( rsrvLargeBufFreeListTCP );
+        if(rsrvLargeBufFreeListTCP) {
+            bytes_reserved += rsrvSizeofLargeBufTCP *
+                        freeListItemsAvail ( rsrvLargeBufFreeListTCP );
+        }
         bytes_reserved += rsrvSizeOfPutNotify ( 0 ) *
                     freeListItemsAvail ( rsrvPutNotifyFreeList );
         printf( "Free-lists total %u bytes, comprising\n",
@@ -1026,7 +1054,7 @@ void casr (unsigned level)
         printf( "    %u small (%u byte) buffers, %u jumbo (%u byte) buffers\n",
             (unsigned int) freeListItemsAvail ( rsrvSmallBufFreeListTCP ),
             MAX_TCP,
-            (unsigned int) freeListItemsAvail ( rsrvLargeBufFreeListTCP ),
+            (unsigned int)(rsrvLargeBufFreeListTCP ? freeListItemsAvail ( rsrvLargeBufFreeListTCP ) : -1),
             rsrvSizeofLargeBufTCP );
         printf( "Server resource id table:\n");
         LOCK_CLIENTQ;
@@ -1058,7 +1086,10 @@ void destroy_client ( struct client *client )
                 freeListFree ( rsrvSmallBufFreeListTCP,  client->send.buf );
             }
             else if ( client->send.type == mbtLargeTCP ) {
-                freeListFree ( rsrvLargeBufFreeListTCP,  client->send.buf );
+                if(rsrvLargeBufFreeListTCP)
+                    freeListFree ( rsrvLargeBufFreeListTCP,  client->send.buf );
+                else
+                    free(client->send.buf);
             }
             else {
                 errlogPrintf ( "CAS: Corrupt send buffer free list type code=%u during client cleanup?\n",
@@ -1070,7 +1101,10 @@ void destroy_client ( struct client *client )
                 freeListFree ( rsrvSmallBufFreeListTCP,  client->recv.buf );
             }
             else if ( client->recv.type == mbtLargeTCP ) {
-                freeListFree ( rsrvLargeBufFreeListTCP,  client->recv.buf );
+                if(rsrvLargeBufFreeListTCP)
+                    freeListFree ( rsrvLargeBufFreeListTCP,  client->recv.buf );
+                else
+                    free(client->recv.buf);
             }
             else {
                 errlogPrintf ( "CAS: Corrupt recv buffer free list type code=%u during client cleanup?\n",
@@ -1301,43 +1335,84 @@ void casAttachThreadToClient ( struct client *pClient )
     taskwdInsert ( pClient->tid, NULL, NULL );
 }
 
+static
+void casExpandBuffer ( struct message_buffer *buf, ca_uint32_t size, int sendbuf )
+{
+    char *newbuf = NULL;
+    unsigned newsize;
+    enum messageBufferType newtype;
+
+    assert (size > MAX_TCP);
+
+    if ( size <= buf->maxstk || buf->type == mbtUDP ) return;
+
+    /* try to alloc new buffer */
+    if (size <= MAX_TCP) {
+        return; /* shouldn't happen */
+
+    } else if(!rsrvLargeBufFreeListTCP) {
+        // round up to multiple of 4K
+        size = ((size-1)|0xfff)+1;
+
+        if (buf->type==mbtLargeTCP)
+            newbuf = realloc (buf->buf, size);
+        else
+            newbuf = malloc (size);
+        newtype = mbtLargeTCP;
+        newsize = size;
+
+    } else if (size <= rsrvSizeofLargeBufTCP) {
+        newbuf = freeListCalloc ( rsrvLargeBufFreeListTCP );
+        newsize = rsrvSizeofLargeBufTCP;
+        newtype = mbtLargeTCP;
+    }
+
+    if (newbuf) {
+        /* copy existing buffer */
+        if (sendbuf) {
+            /* send buffer uses [0, stk) */
+            if (!rsrvLargeBufFreeListTCP && buf->type==mbtLargeTCP) {
+                /* realloc already copied */
+            } else {
+                memcpy ( newbuf, buf->buf, buf->stk );
+            }
+        } else {
+            /* recv buffer uses [stk, cnt) */
+            unsigned used;
+            assert ( buf->cnt >= buf->stk );
+            used = buf->cnt - buf->stk;
+
+            /* buf->buf may be the same as newbuf if realloc() used */
+            memmove ( newbuf, &buf->buf[buf->stk], used );
+
+            buf->cnt = used;
+            buf->stk = 0;
+
+        }
+
+        /* free existing buffer */
+        if(buf->type==mbtSmallTCP) {
+            freeListFree ( rsrvSmallBufFreeListTCP,  buf->buf );
+        } else if(buf->type==mbtLargeTCP) {
+            freeListFree ( rsrvLargeBufFreeListTCP,  buf->buf );
+        } else {
+            /* realloc() already free()'d if necessary */
+        }
+
+        buf->buf = newbuf;
+        buf->type = newtype;
+        buf->maxstk = newsize;
+    }
+}
+
 void casExpandSendBuffer ( struct client *pClient, ca_uint32_t size )
 {
-    if ( pClient->send.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP
-            && size <= rsrvSizeofLargeBufTCP ) {
-        int spaceAvailOnFreeList = freeListItemsAvail ( rsrvLargeBufFreeListTCP ) > 0;
-        if ( osiSufficentSpaceInPool(rsrvSizeofLargeBufTCP) || spaceAvailOnFreeList ) {
-            char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
-            if ( pNewBuf ) {
-                memcpy ( pNewBuf, pClient->send.buf, pClient->send.stk );
-                freeListFree ( rsrvSmallBufFreeListTCP,  pClient->send.buf );
-                pClient->send.buf = pNewBuf;
-                pClient->send.maxstk = rsrvSizeofLargeBufTCP;
-                pClient->send.type = mbtLargeTCP;
-            }
-        }
-    }
+    casExpandBuffer (&pClient->send, size, 1);
 }
 
 void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size )
 {
-    if ( pClient->recv.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP
-            && size <= rsrvSizeofLargeBufTCP) {
-        int spaceAvailOnFreeList = freeListItemsAvail ( rsrvLargeBufFreeListTCP ) > 0;
-        if ( osiSufficentSpaceInPool(rsrvSizeofLargeBufTCP) || spaceAvailOnFreeList ) {
-            char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
-            if ( pNewBuf ) {
-                assert ( pClient->recv.cnt >= pClient->recv.stk );
-                memcpy ( pNewBuf, &pClient->recv.buf[pClient->recv.stk], pClient->recv.cnt - pClient->recv.stk );
-                freeListFree ( rsrvSmallBufFreeListTCP,  pClient->recv.buf );
-                pClient->recv.buf = pNewBuf;
-                pClient->recv.cnt = pClient->recv.cnt - pClient->recv.stk;
-                pClient->recv.stk = 0u;
-                pClient->recv.maxstk = rsrvSizeofLargeBufTCP;
-                pClient->recv.type = mbtLargeTCP;
-            }
-        }
-    }
+    casExpandBuffer (&pClient->recv, size, 0);
 }
 
 /*

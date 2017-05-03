@@ -191,6 +191,22 @@ udpiiu::udpiiu (
     }
 #endif
 
+#ifdef IP_MULTICAST_TTL
+    {
+        int ttl;
+        long val;
+        if(envGetLongConfigParam(&EPICS_CA_MCAST_TTL, &val))
+            val =1;
+        ttl = val;
+        if ( setsockopt(this->sock, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof(ttl))) {
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString (
+                sockErrBuf, sizeof ( sockErrBuf ) );
+            errlogPrintf("CAC: failed to set mcast ttl %d\n", ttl);
+        }
+    }
+#endif
+
     int boolValue = true;
     int status = setsockopt ( this->sock, SOL_SOCKET, SO_BROADCAST, 
                 (char *) &boolValue, sizeof ( boolValue ) );

@@ -13,6 +13,8 @@
 #include <string.h>
 #include <math.h>
 
+#define EPICS_DBCA_PRIVATE_API
+
 #include "epicsString.h"
 #include "dbUnitTest.h"
 #include "epicsThread.h"
@@ -42,50 +44,11 @@ epicsShareExtern short epicsShareAPI ca_field_type (chid chan);
 
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
-static epicsEventId waitEvent;
-static unsigned waitCounter;
-
 static
-void waitCB(void *unused)
+void waitForUpdateN(DBLINK *plink, unsigned long n)
 {
-    if(waitEvent)
-        epicsEventMustTrigger(waitEvent);
-    waitCounter++; /* TODO: atomic */
-}
-
-static
-void startWait(DBLINK *plink)
-{
-    caLink *pca = plink->value.pv_link.pvt;
-
-    assert(!waitEvent);
-    waitEvent = epicsEventMustCreate(epicsEventEmpty);
-
-    assert(pca);
-    epicsMutexMustLock(pca->lock);
-    assert(!pca->monitor && !pca->userPvt);
-    pca->monitor = &waitCB;
-    epicsMutexUnlock(pca->lock);
-    testDiag("Preparing to wait on pca=%p", pca);
-}
-
-static
-void waitForUpdate(DBLINK *plink)
-{
-    caLink *pca = plink->value.pv_link.pvt;
-
-    assert(pca);
-
-    testDiag("Waiting on pca=%p", pca);
-    epicsEventMustWait(waitEvent);
-
-    epicsMutexMustLock(pca->lock);
-    pca->monitor = NULL;
-    pca->userPvt = NULL;
-    epicsMutexUnlock(pca->lock);
-
-    epicsEventDestroy(waitEvent);
-    waitEvent = NULL;
+    while(dbCaGetUpdateCount(plink)<n)
+        epicsThreadSleep(0.01);
 }
 
 static
@@ -93,18 +56,13 @@ void putLink(DBLINK *plink, short dbr, const void*buf, long nReq)
 {
     long ret;
 
-    waitEvent = epicsEventMustCreate(epicsEventEmpty);
-
-    ret = dbCaPutLinkCallback(plink, dbr, buf, nReq,
-                              &waitCB, NULL);
+    ret = dbPutLink(plink, dbr, buf, nReq);
     if(ret) {
         testFail("putLink fails %ld\n", ret);
     } else {
-        epicsEventMustWait(waitEvent);
         testPass("putLink ok\n");
+        dbCaSync();
     }
-    epicsEventDestroy(waitEvent);
-    waitEvent = NULL;
 }
 
 static void testNativeLink(void)
@@ -136,14 +94,14 @@ static void testNativeLink(void)
 
     testOk1(psrclnk->type==CA_LINK);
 
-    startWait(psrclnk);
+    waitForUpdateN(psrclnk, 1);
 
     dbScanLock((dbCommon*)ptarg);
     ptarg->val = 42;
     db_post_events(ptarg, &ptarg->val, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
     dbScanUnlock((dbCommon*)ptarg);
 
-    waitForUpdate(psrclnk);
+    waitForUpdateN(psrclnk, 2);
 
     dbScanLock((dbCommon*)psrc);
     /* local CA_LINK connects immediately */
@@ -200,14 +158,14 @@ static void testStringLink(void)
 
     testOk1(psrclnk->type==CA_LINK);
 
-    startWait(psrclnk);
+    waitForUpdateN(psrclnk, 1);
 
     dbScanLock((dbCommon*)ptarg);
     strcpy(ptarg->desc, "hello");
     db_post_events(ptarg, &ptarg->desc, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
     dbScanUnlock((dbCommon*)ptarg);
 
-    waitForUpdate(psrclnk);
+    waitForUpdateN(psrclnk, 2);
 
     dbScanLock((dbCommon*)psrc);
     /* local CA_LINK connects immediately */
@@ -231,9 +189,13 @@ static void testStringLink(void)
     testdbCleanup();
 }
 
+static epicsEventId waitEvent;
+static unsigned waitCounter;
+
 static void wasproc(xRecord *prec)
 {
-    waitCB(NULL);
+    waitCounter++;
+    epicsEventTrigger(waitEvent);
 }
 
 static void testCP(void)
@@ -262,6 +224,7 @@ static void testCP(void)
     eltc(0);
     testIocInitOk();
     eltc(1);
+    dbCaSync();
 
     epicsEventMustWait(waitEvent);
 
@@ -380,6 +343,8 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     testIocInitOk();
     eltc(1);
 
+    waitForUpdateN(psrclnk, 1);
+
     bufsrc = psrc->bptr;
     buftarg= ptarg->bptr;
 
@@ -393,15 +358,13 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
 
     tmpbuf = callocMustSucceed(num_max, sizeof(*tmpbuf), "tmpbuf");
 
-    startWait(psrclnk);
-
     dbScanLock((dbCommon*)ptarg);
     fillArray(buftarg, ptarg->nelm, 1);
     ptarg->nord = ptarg->nelm;
     db_post_events(ptarg, ptarg->bptr, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
     dbScanUnlock((dbCommon*)ptarg);
 
-    waitForUpdate(psrclnk);
+    waitForUpdateN(psrclnk, 2);
 
     dbScanLock((dbCommon*)psrc);
     testDiag("fetch source.INP into source.BPTR");
@@ -471,7 +434,8 @@ static void softarr(arrRecord *prec)
         if(nReq>0)
             testDiag("%s.VAL[0] - %f", prec->name, *(double*)prec->bptr);
     }
-    waitCB(NULL);
+    waitCounter++;
+    epicsEventTrigger(waitEvent);
 }
 
 static void testreTargetTypeChange(void)

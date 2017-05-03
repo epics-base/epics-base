@@ -36,15 +36,15 @@ static void processCallback(CALLBACK *arg);
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(seqRecord *prec, int pass);
-static long process(seqRecord *prec);
+static long init_record(struct dbCommon *prec, int pass);
+static long process(struct dbCommon *prec);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 static long get_units(DBADDR *, char *);
-static long get_precision(dbAddr *paddr, long *);
+static long get_precision(const DBADDR *paddr, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -101,8 +101,9 @@ typedef struct seqRecPvt {
 } seqRecPvt;
 
 
-static long init_record(seqRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct seqRecord *prec = (struct seqRecord *)pcommon;
     int index;
     linkGrp *grp;
     seqRecPvt *pseqRecPvt;
@@ -130,8 +131,9 @@ static long init_record(seqRecord *prec, int pass)
     return 0;
 }
 
-static long process(seqRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct seqRecord *prec = (struct seqRecord *)pcommon;
     seqRecPvt *pcb = (seqRecPvt *) prec->dpvt;
     linkGrp *pgrp;
     epicsUInt16 lmask;
@@ -206,7 +208,7 @@ static void processNextLink(seqRecord *prec)
 
     if (pgrp == NULL) {
         /* None left, finish up. */
-        prec->rset->process(prec);
+        prec->rset->process((dbCommon *)prec);
         return;
     }
 
@@ -297,7 +299,7 @@ static long get_units(DBADDR *paddr, char *units)
     return 0;
 }
 
-static long get_precision(dbAddr *paddr, long *pprecision)
+static long get_precision(const DBADDR *paddr, long *pprecision)
 {
     seqRecord *prec = (seqRecord *) paddr->precord;
     int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);

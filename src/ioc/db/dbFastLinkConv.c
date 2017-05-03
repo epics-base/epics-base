@@ -260,7 +260,7 @@ static long cvt_st_e(
     epicsEnum16 *to,
     const dbAddr *paddr)
 {
-    struct rset *prset = dbGetRset(paddr);
+    rset *prset = dbGetRset(paddr);
     long status = S_db_noRSET;
     struct dbr_enumStrs enumStrs;
 
@@ -1044,7 +1044,7 @@ static long cvt_f_st(
      char *to,
      const dbAddr *paddr)
  {
-   struct rset *prset = 0;
+   rset *prset = 0;
    long status = 0;
    long precision = 6;
 
@@ -1139,7 +1139,7 @@ static long cvt_d_st(
      char *to,
      const dbAddr *paddr)
  {
-   struct rset *prset = 0;
+   rset *prset = 0;
    long status = 0;
    long precision = 6;
 
@@ -1313,7 +1313,7 @@ static long cvt_e_st_get(
      char *to,
      const dbAddr *paddr)
  {
-   struct rset *prset = 0;
+   rset *prset = 0;
    long status;
 
    if(paddr) prset = dbGetRset(paddr);

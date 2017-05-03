@@ -44,15 +44,15 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(subArrayRecord *prec, int pass);
-static long process(subArrayRecord *prec);
+static long init_record(struct dbCommon *prec, int pass);
+static long process(struct dbCommon *prec);
 #define special NULL
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *paddr);
 static long get_array_info(DBADDR *paddr, long *no_elements, long *offset);
 static long put_array_info(DBADDR *paddr, long nNew);
 static long get_units(DBADDR *paddr, char *units);
-static long get_precision(DBADDR *paddr, long *precision);
+static long get_precision(const DBADDR *paddr, long *precision);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -95,9 +95,9 @@ static void monitor(subArrayRecord *prec);
 static long readValue(subArrayRecord *prec);
 
 
-
-static long init_record(subArrayRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct subArrayRecord *prec = (struct subArrayRecord *)pcommon;
     struct sadset *pdset;
 
     if (pass==0){
@@ -129,8 +129,9 @@ static long init_record(subArrayRecord *prec, int pass)
     return 0;
 }
 
-static long process(subArrayRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct subArrayRecord *prec = (struct subArrayRecord *)pcommon;
     struct sadset *pdset = (struct sadset *)(prec->dset);
     long           status;
     unsigned char  pact=prec->pact;
@@ -216,7 +217,7 @@ static long get_units(DBADDR *paddr, char *units)
     return 0;
 }
 
-static long get_precision(DBADDR *paddr, long *precision)
+static long get_precision(const DBADDR *paddr, long *precision)
 {
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 

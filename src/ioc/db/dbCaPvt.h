@@ -90,6 +90,7 @@ typedef struct caLink
     /* The following are for dbcar*/
     unsigned long	nDisconnect;
     unsigned long	nNoWrite; /*only modified by dbCaPutLink*/
+    unsigned long   nUpdate;
 }caLink;
 
 #endif /* INC_dbCaPvt_H */

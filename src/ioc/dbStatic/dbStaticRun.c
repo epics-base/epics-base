@@ -25,7 +25,7 @@
 
 #include "epicsExport.h" /* #define epicsExportSharedSymbols */
 #include "dbBase.h"
-#include "dbCommon.h"
+#include "dbCommonPvt.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "devSup.h"
@@ -72,92 +72,101 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes		*pflddes;
     int			i;
+    dbCommonPvt *ppvt;
     dbCommon		*precord;
     char		*pfield;
     
     if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(pdbRecordType->rec_size == 0) {
-	printf("\t*** Did you run x_RegisterRecordDeviceDriver(pdbbase) yet? ***\n");
-	epicsPrintf("dbAllocRecord(%s) with %s rec_size = 0\n",
-	    precordName, pdbRecordType->name);
-	return(S_dbLib_noRecSup);
+        printf("\t*** Did you run x_RegisterRecordDeviceDriver(pdbbase) yet? ***\n");
+        epicsPrintf("dbAllocRecord(%s) with %s rec_size = 0\n",
+                    precordName, pdbRecordType->name);
+        return(S_dbLib_noRecSup);
+    } else if(pdbRecordType->rec_size<sizeof(*precord)) {
+        printf("\t*** Recordtype %s must include \"dbCommon.dbd\"\n", pdbRecordType->name);
+        epicsPrintf("dbAllocRecord(%s) with %s rec_size = %d\n",
+                    precordName, pdbRecordType->name, pdbRecordType->rec_size);
+        return(S_dbLib_noRecSup);
     }
-    precord = dbCalloc(1, pdbRecordType->rec_size);
+    ppvt = dbCalloc(1, offsetof(dbCommonPvt, common) + pdbRecordType->rec_size);
+    precord = &ppvt->common;
+    ppvt->recnode = precnode;
+    precord->rdes = pdbRecordType;
     precnode->precord = precord;
     pflddes = pdbRecordType->papFldDes[0];
     if(!pflddes) {
-	epicsPrintf("dbAllocRecord pflddes for NAME not found\n");
-	return(S_dbLib_flddesNotFound);
+        epicsPrintf("dbAllocRecord pflddes for NAME not found\n");
+        return(S_dbLib_flddesNotFound);
     }
     assert(pflddes->offset == 0);
     assert(pflddes->size == sizeof(precord->name));
     if(strlen(precordName) >= sizeof(precord->name)) {
-	epicsPrintf("dbAllocRecord: NAME(%s) too long\n",precordName);
-	return(S_dbLib_nameLength);
+        epicsPrintf("dbAllocRecord: NAME(%s) too long\n",precordName);
+        return(S_dbLib_nameLength);
     }
     strcpy(precord->name, precordName);
     for(i=1; i<pdbRecordType->no_fields; i++) {
 
-	pflddes = pdbRecordType->papFldDes[i];
-	if(!pflddes) continue;
-	pfield = (char*)precord + pflddes->offset;
-	pdbentry->pfield = (void *)pfield;
-	pdbentry->pflddes = pflddes;
-	pdbentry->indfield = i;
-	switch(pflddes->field_type) {
-	case DBF_STRING:
-	    if(pflddes->initial)  {
-		if(strlen(pflddes->initial) >= pflddes->size) {
-		    epicsPrintf("initial size > size for %s.%s\n",
-			pdbRecordType->name,pflddes->name);
-		} else {
-		    strcpy(pfield,pflddes->initial);
-		}
-	    }
-	    break;
-	case DBF_CHAR:
-	case DBF_UCHAR:
-	case DBF_SHORT:
-	case DBF_USHORT:
-	case DBF_LONG:
-	case DBF_ULONG:
+        pflddes = pdbRecordType->papFldDes[i];
+        if(!pflddes) continue;
+        pfield = (char*)precord + pflddes->offset;
+        pdbentry->pfield = (void *)pfield;
+        pdbentry->pflddes = pflddes;
+        pdbentry->indfield = i;
+        switch(pflddes->field_type) {
+        case DBF_STRING:
+            if(pflddes->initial)  {
+                if(strlen(pflddes->initial) >= pflddes->size) {
+                    epicsPrintf("initial size > size for %s.%s\n",
+                                pdbRecordType->name,pflddes->name);
+                } else {
+                    strcpy(pfield,pflddes->initial);
+                }
+            }
+            break;
+        case DBF_CHAR:
+        case DBF_UCHAR:
+        case DBF_SHORT:
+        case DBF_USHORT:
+        case DBF_LONG:
+        case DBF_ULONG:
 	case DBF_INT64:
 	case DBF_UINT64:
-	case DBF_FLOAT:
-	case DBF_DOUBLE:
-	case DBF_ENUM:
-	case DBF_MENU:
-	    if(pflddes->initial) {
-		long status;
+        case DBF_FLOAT:
+        case DBF_DOUBLE:
+        case DBF_ENUM:
+        case DBF_MENU:
+            if(pflddes->initial) {
+                long status;
 
-		status = dbPutStringNum(pdbentry,pflddes->initial);
-		if(status)
-		    epicsPrintf("Error initializing %s.%s initial %s\n",
-			pdbRecordType->name,pflddes->name,pflddes->initial);
-	    }
-	    break;
-	case DBF_DEVICE:
-	    if(!pflddes->ftPvt) dbGetDeviceMenu(pdbentry);
-	    break;
-	case DBF_INLINK:
-	case DBF_OUTLINK:
-	case DBF_FWDLINK: {
-		DBLINK *plink = (DBLINK *)pfield;
+                status = dbPutStringNum(pdbentry,pflddes->initial);
+                if(status)
+                    epicsPrintf("Error initializing %s.%s initial %s\n",
+                                pdbRecordType->name,pflddes->name,pflddes->initial);
+            }
+            break;
+        case DBF_DEVICE:
+            if(!pflddes->ftPvt) dbGetDeviceMenu(pdbentry);
+            break;
+        case DBF_INLINK:
+        case DBF_OUTLINK:
+        case DBF_FWDLINK: {
+            DBLINK *plink = (DBLINK *)pfield;
 
-		plink->type = CONSTANT;
-		if(pflddes->initial) {
-		    plink->text =
-			dbCalloc(strlen(pflddes->initial)+1,sizeof(char));
-		    strcpy(plink->text,pflddes->initial);
-		}
-	    }
-	    break;
-	case DBF_NOACCESS:
-	    break;
-	default:
-	    epicsPrintf("dbAllocRecord: Illegal field type\n");
-	}
+            plink->type = CONSTANT;
+            if(pflddes->initial) {
+                plink->text =
+                        dbCalloc(strlen(pflddes->initial)+1,sizeof(char));
+                strcpy(plink->text,pflddes->initial);
+            }
+        }
+            break;
+        case DBF_NOACCESS:
+            break;
+        default:
+            epicsPrintf("dbAllocRecord: Illegal field type\n");
+        }
     }
     return(0);
 }
@@ -170,7 +179,7 @@ long dbFreeRecord(DBENTRY *pdbentry)
     if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(!precnode->precord) return(S_dbLib_recNotFound);
-    free(precnode->precord);
+    free(CONTAINER(precnode->precord, dbCommonPvt, common));
     precnode->precord = NULL;
     return(0);
 }

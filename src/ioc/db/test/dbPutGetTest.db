@@ -33,3 +33,9 @@ record(x, "recoverwrite") {
 record(x, "recmax") {
     field(DISA, "0xffffffff")
 }
+
+record(x, "lnktarget") {}
+
+record(x, "lnktest") {
+    field(INP, "lnktarget NPP NMS")
+}

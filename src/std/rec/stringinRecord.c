@@ -40,8 +40,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(stringinRecord *, int);
-static long process(stringinRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -90,8 +90,9 @@ static void monitor(stringinRecord *);
 static long readValue(stringinRecord *);
 
 
-static long init_record(stringinRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct stringinRecord *prec = (struct stringinRecord *)pcommon;
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
     struct stringindset *pdset;
     long status;
@@ -125,9 +126,10 @@ static long init_record(stringinRecord *prec, int pass)
 
 /*
  */
-static long process(stringinRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-	struct stringindset	*pdset = (struct stringindset *)(prec->dset);
+    struct stringinRecord *prec = (struct stringinRecord *)pcommon;
+    struct stringindset  *pdset = (struct stringindset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
 

@@ -53,7 +53,6 @@ LIBSRCS += outBuf.cc
 LIBSRCS += casCtx.cc 
 LIBSRCS += casEventMask.cc
 LIBSRCS += ioBlocked.cc
-LIBSRCS += casBufferFactory.cc
 LIBSRCS += pvExistReturn.cc
 LIBSRCS += pvAttachReturn.cc
 LIBSRCS += caNetAddr.cc

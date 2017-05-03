@@ -197,7 +197,7 @@ void cast_server(void *pParm)
             client->recv.stk = 0ul;
             epicsTimeGetCurrent(&client->time_at_last_recv);
 
-            client->minor_version_number = 0;
+            client->minor_version_number = CA_UKN_MINOR_VERSION;
             client->seqNoOfReq = 0;
 
             /*
@@ -247,7 +247,7 @@ void cast_server(void *pParm)
                     epicsPrintf ("CAS: message received at %s\n", buf);
                 }
             }
-            else {
+            else if (CASDEBUG>0){
                 char buf[40];
 
                 ipAddrToDottedIP (&client->addr, buf, sizeof(buf));

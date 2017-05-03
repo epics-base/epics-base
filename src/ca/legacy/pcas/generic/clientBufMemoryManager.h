@@ -16,22 +16,6 @@
 typedef unsigned bufSizeT;
 static const unsigned bufSizeT_MAX = UINT_MAX;
 
-class casBufferFactory {
-public:
-    casBufferFactory ();
-    ~casBufferFactory ();
-    unsigned smallBufferSize () const;
-    char * newSmallBuffer ();
-    void destroySmallBuffer ( char * pBuf );
-    unsigned largeBufferSize () const;
-    char * newLargeBuffer ();
-    void destroyLargeBuffer ( char * pBuf );
-private:
-    void * smallBufFreeList; 
-    void * largeBufFreeList; 
-    unsigned largeBufferSizePriv;
-};
-
 struct casBufferParm {
     char * pBuf;
     bufSizeT bufSize;
@@ -39,11 +23,15 @@ struct casBufferParm {
 
 class clientBufMemoryManager {
 public:
+    clientBufMemoryManager();
+    ~clientBufMemoryManager();
+
+    //! @throws std::bad_alloc on failure
     casBufferParm allocate ( bufSizeT newMinSize );
     void release ( char * pBuf, bufSizeT bufSize );
-    bufSizeT maxSize () const;
 private:
-    casBufferFactory bufferFactory;
+
+    void * smallBufFreeList;
 };
 
 #endif // clientBufMemoryManagerh

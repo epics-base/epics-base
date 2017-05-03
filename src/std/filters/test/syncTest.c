@@ -19,8 +19,10 @@
 #include "dbChannel.h"
 #include "registry.h"
 #include "chfPlugin.h"
+#include "errlog.h"
 #include "dbmf.h"
 #include "epicsUnitTest.h"
+#include "dbUnitTest.h"
 #include "epicsTime.h"
 #include "dbState.h"
 #include "testMain.h"
@@ -28,8 +30,7 @@
 
 #define PATTERN 0x55
 
-void syncTest_registerRecordDeviceDriver(struct dbBase *);
-epicsShareExtern void (*pvar_func_syncInitialize)(void);
+void filterTest_registerRecordDeviceDriver(struct dbBase *);
 
 static db_field_log fl;
 static dbStateId red;
@@ -140,22 +141,21 @@ MAIN(syncTest)
     int i;
     dbEventCtx evtctx;
 
-    testPlan(0);
+    testPlan(139);
 
-    dbChannelInit();
+    testdbPrepare();
+
+    testdbReadDatabase("filterTest.dbd", NULL, NULL);
+
+    filterTest_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("xRecord.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
     evtctx = db_init_events();
-
-    if (dbReadDatabase(&pdbbase, "syncTest.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'syncTest.dbd' not found");
-
-    (*pvar_func_syncInitialize)();       /* manually initialize plugin */
-    syncTest_registerRecordDeviceDriver(pdbbase);
-
-    if (dbReadDatabase(&pdbbase, "xRecord.db",
-            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database 'xRecord.db' not found");
 
     testOk(!!(plug = dbFindFilter(myname, strlen(myname))), "plugin %s registered correctly", myname);
     testOk(!!(red = dbStateCreate("red")), "state 'red' created successfully");
@@ -367,13 +367,12 @@ MAIN(syncTest)
     db_delete_field_log(pfl[9]);
 
     dbChannelDelete(pch);
-    dbFreeBase(pdbbase);
-    registryFree();
-    pdbbase=0;
 
     db_close_events(evtctx);
 
-    dbmfFreeChunks();
+    testIocShutdownOk();
+
+    testdbCleanup();
 
     return testDone();
 }

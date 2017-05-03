@@ -17,8 +17,10 @@
 #include "db_field_log.h"
 #include "dbCommon.h"
 #include "registry.h"
+#include "errlog.h"
 #include "chfPlugin.h"
 #include "epicsUnitTest.h"
+#include "dbUnitTest.h"
 #include "epicsTime.h"
 #include "dbmf.h"
 #include "testMain.h"
@@ -26,8 +28,7 @@
 
 #define PATTERN 0x55
 
-void dbndTest_registerRecordDeviceDriver(struct dbBase *);
-epicsShareExtern void (*pvar_func_dbndInitialize)(void);
+void filterTest_registerRecordDeviceDriver(struct dbBase *);
 
 static db_field_log fl;
 
@@ -115,20 +116,19 @@ MAIN(dbndTest)
 
     testPlan(59);
 
-    dbChannelInit();
+    testdbPrepare();
+
+    testdbReadDatabase("filterTest.dbd", NULL, NULL);
+
+    filterTest_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("xRecord.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
     evtctx = db_init_events();
-
-    if (dbReadDatabase(&pdbbase, "dbndTest.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'dbndTest.dbd' not found");
-
-    (*pvar_func_dbndInitialize)();       /* manually initialize plugin */
-    dbndTest_registerRecordDeviceDriver(pdbbase);
-
-    if (dbReadDatabase(&pdbbase, "xRecord.db",
-            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database 'xRecord.db' not found");
 
     testOk(!!(plug = dbFindFilter(dbnd, strlen(dbnd))), "plugin dbnd registered correctly");
 
@@ -274,13 +274,12 @@ MAIN(dbndTest)
     mustPassOnce(pch, pfl2, "rel", 50., 7);
 
     dbChannelDelete(pch);
-    dbFreeBase(pdbbase);
-    registryFree();
-    pdbbase=0;
 
     db_close_events(evtctx);
 
-    dbmfFreeChunks();
+    testIocShutdownOk();
+
+    testdbCleanup();
 
     return testDone();
 }

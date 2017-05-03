@@ -20,14 +20,17 @@ $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 HELP_MESSAGE() unless getopts('0:c:e:f:F:g:hm:nsSw:');
 HELP_MESSAGE() if $opt_h;
 
-die "caget: -c option takes a positive number\n"
+die "camonitor.pl: -c option takes a positive number\n"
     unless looks_like_number($opt_c) && $opt_c >= 0;
 
-die "No pv name specified. ('camonitor -h' gives help.)\n"
+die "No pv name specified. ('camonitor.pl -h' gives help.)\n"
     unless @ARGV;
 
 my %monitors;
-my @chans = map { CA->new($_, \&conn_callback); } @ARGV;
+my @chans = map { CA->new($_, \&conn_callback); } grep { $_ ne '' } @ARGV;
+
+die "camonitor.pl: Please provide at least one non-empty pv name\n"
+    unless @chans;
 
 my $fmt = ($opt_F eq ' ') ? "%-30s %s\n" : "%s$opt_F%s\n";
 

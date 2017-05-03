@@ -41,8 +41,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(eventRecord *, int);
-static long process(eventRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -91,8 +91,9 @@ static void monitor(eventRecord *);
 static long readValue(eventRecord *);
 
 
-static long init_record(eventRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct eventRecord *prec = (struct eventRecord *)pcommon;
     struct eventdset *pdset;
     long status=0;
 
@@ -113,9 +114,10 @@ static long init_record(eventRecord *prec, int pass)
     return(status);
 }
 
-static long process(eventRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-	struct eventdset	*pdset = (struct eventdset *)(prec->dset);
+    struct eventRecord *prec = (struct eventRecord *)pcommon;
+    struct eventdset  *pdset = (struct eventdset *)(prec->dset);
 	long		 status=0;
 	unsigned char    pact=prec->pact;
 

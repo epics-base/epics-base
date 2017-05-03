@@ -735,7 +735,7 @@ static long getFloatString(const dbAddr *paddr,
     char *pdst = (char *) pto;
     long status = 0;
     long precision = 6;
-    struct rset *prset = 0;
+    rset *prset = 0;
 
     if (paddr)
         prset = dbGetRset(paddr);
@@ -774,9 +774,9 @@ static long getDoubleString(const dbAddr *paddr,
 {
     epicsFloat64 *psrc = (epicsFloat64 *) paddr->pfield;
     char *pdst = (char *) pto;
-    long        status = 0;
-    long        precision = 6;
-    struct rset *prset = 0;
+    long status = 0;
+    long precision = 6;
+    rset *prset = 0;
 
     if (paddr)
         prset = dbGetRset(paddr);
@@ -834,7 +834,7 @@ static long getEnumString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
     char *pdst = (char *) pto;
-    struct rset *prset;
+    rset *prset;
     long        status;
 
     prset = dbGetRset(paddr);
@@ -1150,7 +1150,7 @@ static long putStringEnum(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
     epicsEnum16 *pfield = paddr->pfield;
-    struct rset *prset = dbGetRset(paddr);
+    rset *prset = dbGetRset(paddr);
     long status = S_db_noRSET;
     struct dbr_enumStrs enumStrs;
 
@@ -1559,10 +1559,10 @@ static long putFloatString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsFloat32 *psrc = (const epicsFloat32 *) pfrom;
-    char        *pdst = (char *) paddr->pfield;
-    long        status = 0;
-    long        precision = 6;
-    struct rset *prset = 0;
+    char *pdst = (char *) paddr->pfield;
+    long status = 0;
+    long precision = 6;
+    rset *prset = 0;
     short size = paddr->field_size;
 
     if (paddr)
@@ -1601,10 +1601,10 @@ static long putDoubleString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsFloat64 *psrc = (const epicsFloat64 *) pfrom;
-    char        *pdst = (char *) paddr->pfield;
-    long        status = 0;
-    long        precision = 6;
-    struct rset *prset = 0;
+    char *pdst = (char *) paddr->pfield;
+    long status = 0;
+    long precision = 6;
+    rset *prset = 0;
     short size = paddr->field_size;
 
     if (paddr)

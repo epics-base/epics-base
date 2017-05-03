@@ -38,7 +38,7 @@
 #define report NULL
 #define initialize NULL
 #define init_record NULL
-static long process(stateRecord *);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -77,8 +77,9 @@ epicsExportAddress(rset,stateRSET);
 
 static void monitor(stateRecord *);
 
-static long process(stateRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct stateRecord *prec = (struct stateRecord *)pcommon;
 
 	prec->udf = FALSE;
         prec->pact=TRUE;

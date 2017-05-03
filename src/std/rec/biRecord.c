@@ -41,8 +41,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(biRecord *, int);
-static long process(biRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -50,9 +50,9 @@ static long process(biRecord *);
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
-static long get_enum_str(DBADDR *, char *);
-static long get_enum_strs(DBADDR *, struct dbr_enumStrs *);
-static long put_enum_str(DBADDR *, char *);
+static long get_enum_str(const DBADDR *, char *);
+static long get_enum_strs(const DBADDR *, struct dbr_enumStrs *);
+static long put_enum_str(const DBADDR *, const char *);
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -89,8 +89,9 @@ static void checkAlarms(biRecord *);
 static void monitor(biRecord *);
 static long readValue(biRecord *);
 
-static long init_record(biRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct biRecord *prec = (struct biRecord *)pcommon;
     struct bidset *pdset;
     long status;
 
@@ -116,9 +117,10 @@ static long init_record(biRecord *prec, int pass)
     return(0);
 }
 
-static long process(biRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-	struct bidset	*pdset = (struct bidset *)(prec->dset);
+    struct biRecord *prec = (struct biRecord *)pcommon;
+    struct bidset  *pdset = (struct bidset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
 
@@ -151,7 +153,7 @@ static long process(biRecord *prec)
 	return(status);
 }
 
-static long get_enum_str(DBADDR *paddr, char *pstring)
+static long get_enum_str(const DBADDR *paddr, char *pstring)
 {
     biRecord	*prec=(biRecord *)paddr->precord;
     int                 index;
@@ -173,7 +175,7 @@ static long get_enum_str(DBADDR *paddr, char *pstring)
     return(0);
 }
 
-static long get_enum_strs(DBADDR *paddr,struct dbr_enumStrs *pes)
+static long get_enum_strs(const DBADDR *paddr,struct dbr_enumStrs *pes)
 {
     biRecord	*prec=(biRecord *)paddr->precord;
 
@@ -186,7 +188,7 @@ static long get_enum_strs(DBADDR *paddr,struct dbr_enumStrs *pes)
     return(0);
 }
 
-static long put_enum_str(DBADDR *paddr, char *pstring)
+static long put_enum_str(const DBADDR *paddr, const char *pstring)
 {
     biRecord     *prec=(biRecord *)paddr->precord;
 

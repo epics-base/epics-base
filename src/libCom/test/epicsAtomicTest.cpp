@@ -406,6 +406,7 @@ MAIN ( epicsAtomicTest )
 {
 
     testPlan ( 50 );
+    testDiag("In %s", EPICS_FUNCTION);
     testClassify ();
     testBasic();
 #if defined(__rtems__)

@@ -13,6 +13,9 @@
  *              505 665 1831
  */
 
+#include <stdexcept>
+#include <new>
+
 #include <stdio.h>
 #include <string.h>
 
@@ -155,11 +158,17 @@ bufSizeT inBuf::popCtx ( const inBufCtx &ctx )
     }
 }
 
-void inBuf::expandBuffer ()
+void inBuf::expandBuffer (bufSizeT needed)
 {
-    bufSizeT max = this->memMgr.maxSize();
-    if ( this->bufSize <  max ) {
-        casBufferParm bufParm = this->memMgr.allocate ( max );
+    if (needed > bufSize) {
+        casBufferParm bufParm;
+        try {
+            bufParm = this->memMgr.allocate ( needed );
+        } catch (std::bad_alloc& e) {
+            // caller must check that buffer size has expended
+            return;
+        }
+
         bufSizeT unprocessedBytes = this->bytesPresent ();
         memcpy ( bufParm.pBuf, &this->pBuf[this->nextReadIndex], unprocessedBytes );
         this->bytesInBuffer = unprocessedBytes;
@@ -170,7 +179,7 @@ void inBuf::expandBuffer ()
     }
 }
 
-unsigned inBuf::bufferSize () const
+bufSizeT inBuf::bufferSize() const
 {
     return this->bufSize;
 }

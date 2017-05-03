@@ -204,7 +204,7 @@ static void hookPass1(initHookState state)
         testFail("missing rec1");
         testSkip(3, "missing record");
     } else {
-        struct rset *prset = dbGetRset(&addr);
+        rset *prset = dbGetRset(&addr);
         dbfType ftype = addr.field_type;
         long count=-1, offset=-1, maxcount = addr.no_elements;
         testOk1(prset && prset->get_array_info && prset->put_array_info);

@@ -32,6 +32,7 @@
 #include "envDefs.h"
 #include "locationException.h"
 #include "errlog.h"
+#include "epicsExport.h"
 
 #define epicsExportSharedSymbols
 #include "addrList.h"
@@ -218,9 +219,15 @@ cac::cac (
             throw std::bad_alloc ();
         }
 
-        freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
-        if ( ! this->tcpLargeRecvBufFreeList ) {
-            throw std::bad_alloc ();
+        int autoMaxBytes;
+        if(envGetBoolConfigParam(&EPICS_CA_AUTO_ARRAY_BYTES, &autoMaxBytes))
+            autoMaxBytes = 1;
+
+        if(!autoMaxBytes) {
+            freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
+            if ( ! this->tcpLargeRecvBufFreeList ) {
+                throw std::bad_alloc ();
+            }
         }
         unsigned bufsPerArray = this->maxRecvBytesTCP / comBuf::capacityBytes ();
         if ( bufsPerArray > 1u ) {
@@ -231,9 +238,7 @@ cac::cac (
     catch ( ... ) {
         osiSockRelease ();
         delete [] this->pUserName;
-        if ( this->tcpSmallRecvBufFreeList ) {
-            freeListCleanup ( this->tcpSmallRecvBufFreeList );
-        }
+        freeListCleanup ( this->tcpSmallRecvBufFreeList );
         if ( this->tcpLargeRecvBufFreeList ) {
             freeListCleanup ( this->tcpLargeRecvBufFreeList );
         }
@@ -318,7 +323,9 @@ cac::~cac ()
     }
 
     freeListCleanup ( this->tcpSmallRecvBufFreeList );
-    freeListCleanup ( this->tcpLargeRecvBufFreeList );
+    if ( this->tcpLargeRecvBufFreeList ) {
+        freeListCleanup ( this->tcpLargeRecvBufFreeList );
+    }
 
     delete [] this->pUserName;
 
@@ -635,11 +642,13 @@ void cac::transferChanToVirtCircuit (
     // must occur before moving to new iiu
     pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse (
         guard, *pChan, currentTime );
-    piiu->installChannel (
-        guard, *pChan, sid, typeCode, count );
+    if ( piiu ) {
+        piiu->installChannel (
+            guard, *pChan, sid, typeCode, count );
 
-    if ( newIIU ) {
-        piiu->start ( guard );
+        if ( newIIU ) {
+            piiu->start ( guard );
+        }
     }
 }
 
@@ -1304,9 +1313,11 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
         callbackManager mgr ( this->notify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->exception ( mgr.cbGuard, guard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
+
+        // remove from the list under lock
+        this->msgMultiPVList.remove ( mfmdpv );
     }
-    // remove from the list and delete msg object
-    this->msgMultiPVList.remove ( mfmdpv );
+    // delete msg object
     mfmdpv.~msgForMultiplyDefinedPV ();
     this->mdpvFreeList.release ( & mfmdpv );
 }

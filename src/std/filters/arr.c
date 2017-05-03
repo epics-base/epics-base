@@ -94,7 +94,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
 {
     myStruct *my = (myStruct*) pvt;
     struct dbCommon *prec;
-    struct rset *prset;
+    rset *prset;
     long start = my->start;
     long end = my->end;
     long nTarget = 0;

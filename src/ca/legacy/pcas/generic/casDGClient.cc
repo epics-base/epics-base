@@ -51,7 +51,7 @@ casDGClient::pCASMsgHandler const casDGClient::msgHandlers[] =
     & casDGClient::uknownMessageAction,
     & casDGClient::uknownMessageAction,
     & casDGClient::uknownMessageAction,
-    & casDGClient::echoAction,
+    & casDGClient::uknownMessageAction,
     & casDGClient::uknownMessageAction,
 
     & casDGClient::uknownMessageAction,
@@ -111,11 +111,13 @@ caStatus casDGClient::uknownMessageAction ()
 {
     const caHdrLargeArray * mp = this->ctx.getMsg();
 
-    char pHostName[64u];
-    this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
+    if ( this->getCAS().getDebugLevel() > 3u ) {
+        char pHostName[64u];
+        this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
 
-    caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(),
-        "bad request code=%u in DG\n", mp->m_cmmd );
+        caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(),
+                             "bad request code=%u in DG\n", mp->m_cmmd );
+    }
 
     return S_cas_badProtocol;
 }
@@ -128,6 +130,16 @@ caStatus casDGClient::searchAction()
     const caHdrLargeArray   *mp = this->ctx.getMsg();
     const char              *pChanName = static_cast <char * > ( this->ctx.getData() );
     caStatus                status;
+
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        if ( this->getCAS().getDebugLevel() > 3u ) {
+            char pHostName[64u];
+            this->hostName ( pHostName, sizeof ( pHostName ) );
+            printf ( "\"%s\" is searching for \"%s\" but is too old\n",
+                pHostName, pChanName );
+        }
+        return S_cas_badProtocol;
+    }
 
     //
     // check the sanity of the message
@@ -362,6 +374,15 @@ caStatus casDGClient::versionAction ()
 {
     const caHdrLargeArray * mp = this->ctx.getMsg();
 
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        if ( this->getCAS().getDebugLevel() > 3u ) {
+            char pHostName[64u];
+            this->hostName ( pHostName, sizeof ( pHostName ) );
+            printf ( "\"%s\" is too old\n",
+                pHostName );
+        }
+        return S_cas_badProtocol;
+    }
     if ( mp->m_count != 0 ) {
         this->minor_version_number = static_cast <ca_uint16_t> ( mp->m_count );
         if ( CA_V411 ( mp->m_count ) ) {

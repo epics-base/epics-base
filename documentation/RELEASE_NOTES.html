@@ -60,6 +60,36 @@ Access without their least significant bits being truncated. The EPICS V4
 pvAccess network protocol <em>can</em> transport 64-bit data types however, and
 a future release of the pvaSrv module will connect this ability to the IOC.</p>
 
+<h3>Add EPICS_CA_MCAST_TTL</h3>
+
+<p>Add option EPICS_CA_MCAST_TTL to set the Time To Live (TTL) of any IP multi-cast
+CA search or beacon packets sent.</p>
+
+<h3>EPICS_CA_MAX_ARRAY_BYTES is optional</h3>
+
+<p>
+A new configuration environment variable EPICS_CA_AUTO_ARRAY_BYTES is used by libca and RSRV
+(CA clients and IOC CA server).
+The default EPICS_CA_AUTO_ARRAY_BYTES=YES removes the limitation of EPICS_CA_MAX_ARRAY_BYTES
+and always attempts to allocate sufficient for a request.
+The value of EPICS_CA_MAX_ARRAY_BYTES is ignored.</>
+
+<p>Explicitly setting EPICS_CA_AUTO_ARRAY_BYTES=NO continues to honor EPICS_CA_AUTO_ARRAY_BYTES
+as in previous releases.</p>
+
+<p>The PCAS server (used by cagateway) now always acts as if EPICS_CA_AUTO_ARRAY_BYTES=YES were
+set.</p>
+
+<h3>Channel Access "modernization"</h3>
+
+<p>Drop support for CA clients advertising protocol versions less than 4.</p>
+
+<p>This effects clients from Base older than 3.12.0-beta1.
+Newer clients will continue to be able to connect to older servers.
+Older clients will be ignored by newer servers.</p>
+
+<p>This allows removal of UDP echo and similar protocol features which
+are not compatible with secure protocol design practice.</p>
 
 <h3>Echoless comments in iocsh</h3>
 
@@ -67,6 +97,56 @@ a future release of the pvaSrv module will connect this ability to the IOC.</p>
 interpreter can be selectively disabled from echoing comments coming from
 a script by starting those lines with '#-' rather than just '#'.</p>
 
+
+<h3>Typed record support methods</h3>
+
+<p>The table of record support functions (rset methods for short) no longer
+has entries of type <tt>RECSUPFUN</tt> (which says: any number and type of
+arguments). Instead, rset methods are now typed by default. The
+<tt>RECSUPFUN</tt> typedef has been deprecated and casts to it as well as
+using the untyped <tt>struct rset</tt> will create compilation warnings.</p>
+
+<p>Existing code (e.g. external record supports) will generate such
+warnings when compiled against this version of Base, but it will work
+without changes.</p>
+
+<p>For a conversion period, the new typed rset definitions are activated
+by defining <tt>USE_TYPED_RSET</tt>, preferably by setting
+<tt>USR_CPPFLAGS += -DUSE_TYPED_RSET</tt> inside a Makefile.
+After activating the new typed rset in this way and making the following
+changes, the result should still compile and work properly against older
+versions of Base.</p>
+
+<p>The first parameter of <tt>init_record</tt> and <tt>process</tt> has been
+changed to <tt>struct dbCommon *</tt>. Record types that use
+<tt>void*</tt> here should be changed to use <tt>struct dbCommon*</tt>, and
+cast the argument to their own <tt>xxxRecord *</tt>.</p>
+
+<p>When compiled against this release, compiler warnings about incompatible
+types for the method pointers should be taken seriously. When compiled
+against older versions of base, such warnings are unavoidable.</p>
+
+<p>Record types written in C++ need to take more drastic measures because of
+the stricter type checking in C++. To remain compatible with older versions
+of base you need something like:</p>
+
+<blockquote><pre>
+#include "epicsVersion.h"
+#ifdef VERSION_INT
+#if EPICS_VERSION_INT < VERSION_INT(3,16,0,2)
+#define RECSUPFUN_CAST (RECSUPFUN)
+#else
+#define RECSUPFUN_CAST
+#endif
+#else
+#define RECSUPFUN_CAST (RECSUPFUN)
+#endif
+</pre></blockquote>
+
+<p>and then replace <tt>(RECSUPFUN)</tt> with <tt>RECSUPFUN_CAST</tt>
+when initializing the rset.
+Further changes might be needed, e.g. to adapt <tt>const</tt>-ness of
+method parameters.</p>
 
 <hr>
 
@@ -183,10 +263,15 @@ of its CALLBACK objects.</p>
 
 <!-- Insert inherited items immediately below here ... -->
 
-
 <h2 align="center">Changes from the 3.14 branch since 3.15.5</h2>
 
 <!-- Insert inherited items immediately below here ... -->
+
+<h3>Fix DNS related crash on exit</h3>
+
+<p>The attempt to fix DNS related delays for short lived CLI programs (eg. caget)
+in lp:1527636 introduced a bug which cased these short lived clients to crash on exit.
+This bug should now be fixed.</p>
 
 <h3>Server bind issue on Windows</h3>
 

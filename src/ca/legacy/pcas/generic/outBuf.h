@@ -122,7 +122,7 @@ private:
 	bufSizeT stack;
     unsigned ctxRecursCount;
 
-    void expandBuffer ();
+    void expandBuffer (bufSizeT needed);
 
 	outBuf ( const outBuf & );
 	outBuf & operator = ( const outBuf & );

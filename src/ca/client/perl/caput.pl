@@ -17,11 +17,13 @@ $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 HELP_MESSAGE() unless getopts('achlnsStw:');
 HELP_MESSAGE() if $opt_h;
 
-die "No pv name specified. ('caput -h' gives help.)\n"
+die "No pv name specified. ('caput.pl -h' gives help.)\n"
     unless @ARGV;
 my $pv = shift;
+die "caput.pl: Empty pv name given.\n"
+    unless $pv ne '';
 
-die "No value specified. ('caput -h' gives help.)\n"
+die "No value specified. ('caput.pl -h' gives help.)\n"
     unless @ARGV;
 
 my $chan = CA->new($pv);

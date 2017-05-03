@@ -3071,7 +3071,7 @@ void dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
 	printf("\n");
 	printf("indvalFlddes %d name %s\n",pdbRecordType->indvalFlddes,
 	    pdbRecordType->pvalFldDes->name);
-	printf("struct rset * %p rec_size %d\n",
+    printf("rset * %p rec_size %d\n",
 	    (void *)pdbRecordType->prset,pdbRecordType->rec_size);
 	if(recordTypeName) break;
     }

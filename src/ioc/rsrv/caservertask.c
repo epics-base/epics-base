@@ -320,6 +320,22 @@ void rsrv_build_addr_lists(void)
             }
         }
 #endif
+
+#ifdef IP_MULTICAST_TTL
+    {
+        int ttl;
+        long val;
+        if(envGetLongConfigParam(&EPICS_CA_MCAST_TTL, &val))
+            val =1;
+        ttl = val;
+        if ( setsockopt(beaconSocket, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof(ttl))) {
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString (
+                sockErrBuf, sizeof ( sockErrBuf ) );
+            errlogPrintf("rsrv: failed to set mcast ttl %d\n", ttl);
+        }
+    }
+#endif
     }
 
     /* populate the interface address list (default is empty) */

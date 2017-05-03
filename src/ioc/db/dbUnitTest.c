@@ -130,6 +130,8 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
     OP(DBR_USHORT, int, uInt16);
     OP(DBR_LONG, int, int32);
     OP(DBR_ULONG, unsigned int, uInt32);
+    OP(DBR_INT64, long long, int64);
+    OP(DBR_UINT64, unsigned long long, uInt64);
     OP(DBR_FLOAT, double, float32);
     OP(DBR_DOUBLE, double, float64);
     OP(DBR_ENUM, int, enum16);
@@ -218,10 +220,14 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     OP(DBR_USHORT, int, uInt16, "%d");
     OP(DBR_LONG, int, int32, "%d");
     OP(DBR_ULONG, unsigned int, uInt32, "%u");
+    OP(DBR_INT64, long long, int64, "%lld");
+    OP(DBR_UINT64, unsigned long long, uInt64, "%llu");
     OP(DBR_FLOAT, double, float32, "%e");
     OP(DBR_DOUBLE, double, float64, "%e");
     OP(DBR_ENUM, int, enum16, "%d");
 #undef OP
+    default:
+        testFail("dbGetField(\"%s\", %d) -> unsupported dbf", pv, dbrType);
     }
 }
 
@@ -278,6 +284,8 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
             OP(DBR_USHORT, unsigned short, "%u");
             OP(DBR_LONG, int, "%d");
             OP(DBR_ULONG, unsigned int, "%u");
+            OP(DBR_INT64, long long, "%lld");
+            OP(DBR_UINT64, unsigned long long, "%llu");
             OP(DBR_FLOAT, float, "%e");
             OP(DBR_DOUBLE, double, "%e");
             OP(DBR_ENUM, int, "%d");

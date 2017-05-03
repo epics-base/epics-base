@@ -219,11 +219,11 @@ cac::cac (
             throw std::bad_alloc ();
         }
 
-        int caLimitArray;
-        if(envGetBoolConfigParam(&EPICS_CA_AUTO_MAX_ARRAY_BYTES, &caLimitArray))
-            caLimitArray = 0;
+        int autoMaxBytes;
+        if(envGetBoolConfigParam(&EPICS_CA_AUTO_ARRAY_BYTES, &autoMaxBytes))
+            autoMaxBytes = 1;
 
-        if(caLimitArray) {
+        if(!autoMaxBytes) {
             freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
             if ( ! this->tcpLargeRecvBufFreeList ) {
                 throw std::bad_alloc ();

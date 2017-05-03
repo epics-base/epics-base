@@ -29,14 +29,17 @@ CA search or beacon packets sent.</p>
 <h3>EPICS_CA_MAX_ARRAY_BYTES is optional</h3>
 
 <p>
-With this change libca, RSRV, and PCAS no longer need to use EPICS_CA_MAX_ARRAY_BYTES
-to set a maximum allocation size.
-The large array free-list is replaced with individual allocations
-when a send/receiver buffer larger than 16KB is needed.
-Add new configuration parameter EPICS_CA_AUTO_MAX_ARRAY_BYTES which defaults to NO.
-libca and RSRV respect EPICS_CA_AUTO_MAX_ARRAY_BYTES=YES.
-PCAS ignores EPICS_CA_AUTO_MAX_ARRAY_BYTES=YES, and thus now ignores EPICS_CA_MAX_ARRAY_BYTES entirely.
-</p>
+A new configuration environment variable EPICS_CA_AUTO_ARRAY_BYTES is used by libca and RSRV
+(CA clients and IOC CA server).
+The default EPICS_CA_AUTO_ARRAY_BYTES=YES removes the limitation of EPICS_CA_MAX_ARRAY_BYTES
+and always attempts to allocate sufficient for a request.
+The value of EPICS_CA_MAX_ARRAY_BYTES is ignored.</>
+
+<p>Explicitly setting EPICS_CA_AUTO_ARRAY_BYTES=NO continues to honor EPICS_CA_AUTO_ARRAY_BYTES
+as in previous releases.</p>
+
+<p>The PCAS server (used by cagateway) now always acts as if EPICS_CA_AUTO_ARRAY_BYTES=YES were
+set.</p>
 
 <h3>Channel Access "modernization"</h3>
 

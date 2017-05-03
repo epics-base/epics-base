@@ -315,6 +315,11 @@ is used.</p>
       <td>16384</td>
     </tr>
     <tr>
+      <td>EPICS_CA_AUTO_ARRAY_BYTES</td>
+      <td>i &gt;= YES</td>
+      <td>YES</td>
+    </tr>
+    <tr>
       <td>EPICS_CA_MAX_SEARCH_PERIOD</td>
       <td>r &gt; 60 seconds</td>
       <td>300</td>
@@ -753,6 +758,11 @@ transfered. The CA libraries maintains a free list of 16384 byte network
 buffers that are used for ordinary communication. If EPICS_CA_MAX_ARRAY_BYTES
 is larger than 16384 then a second free list of larger data buffers is
 established and used only after a client send its first large array request.</p>
+
+<p>Beginning with R3.16.1, EPICS_CA_AUTO_ARRAY_BYTES=YES (the default) will ignore
+EPICS_CA_MAX_ARRAY_BYTES and attempt to allocate sufficient buffer space
+as needed.  Setting EPICS_CA_AUTO_ARRAY_BYTES=NO will continue to respect
+EPICS_CA_MAX_ARRAY_BYTES.</p>
 
 <p>The CA client library uses EPICS_CA_MAX_ARRAY_BYTES to determines the
 maximum array that it will send or receive. Likewise, the CA server uses

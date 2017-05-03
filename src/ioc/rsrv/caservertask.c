@@ -485,7 +485,7 @@ int rsrv_init (void)
     long maxBytesAsALong;
     long status;
     SOCKET *socks;
-    int caLimitArray;
+    int autoMaxBytes;
 
     clientQlock = epicsMutexMustCreate();
 
@@ -545,10 +545,10 @@ int rsrv_init (void)
         }
     }
 
-    if(envGetBoolConfigParam(&EPICS_CA_AUTO_MAX_ARRAY_BYTES, &caLimitArray))
-        caLimitArray = 0;
+    if(envGetBoolConfigParam(&EPICS_CA_AUTO_ARRAY_BYTES, &autoMaxBytes))
+        autoMaxBytes = 1;
 
-    if (caLimitArray)
+    if (!autoMaxBytes)
         freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
     else
         rsrvLargeBufFreeListTCP = NULL;

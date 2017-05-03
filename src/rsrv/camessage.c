@@ -737,6 +737,10 @@ static int read_notify_action ( caHdrLargeArray *mp, void *pPayload, struct clie
     struct channel_in_use *pciu;
     struct event_ext evext;
 
+    if ( INVALID_DB_REQ(mp->m_dataType) ) {
+        return RSRV_ERROR;
+    }
+
     pciu = MPTOPCIU ( mp );
     if ( !pciu ) {
         logBadId ( client, mp, pPayload );
@@ -1844,6 +1848,10 @@ static int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client 
     int spaceAvailOnFreeList;
     struct channel_in_use *pciu;
     struct event_ext *pevext;
+
+    if ( INVALID_DB_REQ(mp->m_dataType) ) {
+        return RSRV_ERROR;
+    }
 
     pciu = MPTOPCIU ( mp );
     if ( ! pciu ) {

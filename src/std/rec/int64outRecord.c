@@ -39,8 +39,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(int64outRecord *, int);
-static long process(int64outRecord *);
+static long init_record(dbCommon *, int);
+static long process(dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -92,8 +92,9 @@ static long writeValue(int64outRecord *prec);
 static void convert(int64outRecord *prec, epicsInt64 value);
 
 
-static long init_record(int64outRecord *prec, int pass)
+static long init_record(dbCommon *pcom, int pass)
 {
+    int64outRecord *prec = (int64outRecord*)pcom;
     struct int64outdset *pdset;
     long status=0;
 
@@ -123,8 +124,9 @@ static long init_record(int64outRecord *prec, int pass)
     return(0);
 }
 
-static long process(int64outRecord *prec)
+static long process(dbCommon *pcom)
 {
+    int64outRecord *prec = (int64outRecord*)pcom;
 	struct int64outdset	*pdset = (struct int64outdset *)(prec->dset);
 	long		 status=0;
 	epicsInt64	 value;

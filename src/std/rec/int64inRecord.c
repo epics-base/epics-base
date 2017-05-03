@@ -42,8 +42,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(int64inRecord *, int);
-static long process(int64inRecord *);
+static long init_record(dbCommon *, int);
+static long process(dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -94,8 +94,9 @@ static void monitor(int64inRecord *prec);
 static long readValue(int64inRecord *prec);
 
 
-static long init_record(int64inRecord *prec, int pass)
+static long init_record(dbCommon *pcom, int pass)
 {
+    int64inRecord *prec = (int64inRecord*)pcom;
     struct int64indset *pdset;
     long status;
 
@@ -129,8 +130,9 @@ static long init_record(int64inRecord *prec, int pass)
     return(0);
 }
 
-static long process(int64inRecord *prec)
+static long process(dbCommon *pcom)
 {
+    int64inRecord *prec = (int64inRecord*)pcom;
 	struct int64indset	*pdset = (struct int64indset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;

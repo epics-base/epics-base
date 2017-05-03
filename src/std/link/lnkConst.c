@@ -90,13 +90,13 @@ static void lnkConst_free(jlink *pjlink)
     free(clink);
 }
 
-static jlif_result lnkConst_integer(jlink *pjlink, long num)
+static jlif_result lnkConst_integer(jlink *pjlink, long long num)
 {
     const_link *clink = CONTAINER(pjlink, const_link, jlink);
     int newElems = clink->nElems + 1;
 
     IFDEBUG(10)
-        printf("lnkConst_integer(const@%p, %ld)\n", pjlink, num);
+        printf("lnkConst_integer(const@%p, %lld)\n", pjlink, num);
 
     switch (clink->type) {
         void *buf;

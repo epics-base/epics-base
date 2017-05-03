@@ -62,7 +62,7 @@ typedef struct jlif {
     jlif_result (*parse_boolean)(jlink *, int val);
         /* Optional, parser saw a boolean value */
 
-    jlif_result (*parse_integer)(jlink *, long num);
+    jlif_result (*parse_integer)(jlink *, long long num);
         /* Optional, parser saw an integer value */
 
     jlif_result (*parse_double)(jlink *, double num);

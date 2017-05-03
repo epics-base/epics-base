@@ -187,7 +187,7 @@ void z_free(jlink *pj)
 }
 
 static
-jlif_result z_int(jlink *pj, long num)
+jlif_result z_int(jlink *pj, long long num)
 {
     zpriv *priv = CONTAINER(pj, zpriv, base);
 

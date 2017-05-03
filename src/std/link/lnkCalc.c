@@ -109,12 +109,12 @@ static void lnkCalc_free(jlink *pjlink)
     free(clink);
 }
 
-static jlif_result lnkCalc_integer(jlink *pjlink, long num)
+static jlif_result lnkCalc_integer(jlink *pjlink, long long num)
 {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_integer(calc@%p, %ld)\n", clink, num);
+        printf("lnkCalc_integer(calc@%p, %lld)\n", clink, num);
 
     if (clink->pstate == ps_prec) {
         clink->prec = num;
@@ -123,7 +123,7 @@ static jlif_result lnkCalc_integer(jlink *pjlink, long num)
 
     if (clink->pstate != ps_args) {
         return jlif_stop;
-        errlogPrintf("lnkCalc: Unexpected integer %ld\n", num);
+        errlogPrintf("lnkCalc: Unexpected integer %lld\n", num);
     }
 
     if (clink->nArgs == CALCPERFORM_NARGS) {

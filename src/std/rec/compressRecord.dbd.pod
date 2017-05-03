@@ -97,7 +97,7 @@ recordtype(compress) {
 	}
  	field(BALG,DBF_MENU) {
 		prompt("Buffering Algorithm")
-		promptgroup(GUI_ALARMS)
+		promptgroup("30 - Action")
 		special(SPC_RESET)
 		interest(1)
 		menu(bufferingALG)

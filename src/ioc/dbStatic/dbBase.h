@@ -109,7 +109,7 @@ typedef struct dbRecordNode {
 	char		*recordname;
 	ELLLIST		infoList;	/*LIST head of info nodes*/
 	int		flags;
-    struct dbRecordNode *aliasedRecord; /* NULL unless flags|DBRN_FLAGS_ISALIAS */
+    struct dbRecordNode *aliasedRecnode; /* NULL unless flags|DBRN_FLAGS_ISALIAS */
 }dbRecordNode;
 
 /*dbRecordAttribute is for "psuedo" fields */

@@ -1655,7 +1655,7 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     if (!precordType) return S_dbLib_recordTypeNotFound;
     /* alias of alias still references actual record */
     while(precnode && (precnode->flags&DBRN_FLAGS_ISALIAS))
-        precnode = precnode->aliasedRecord;
+        precnode = precnode->aliasedRecnode;
     if (!precnode) return S_dbLib_recNotFound;
     zeroDbentry(pdbentry);
     if (!dbFindRecord(pdbentry, alias)) return S_dbLib_recExists;
@@ -1665,7 +1665,7 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     pnewnode = dbCalloc(1, sizeof(dbRecordNode));
     pnewnode->recordname = epicsStrDup(alias);
     pnewnode->precord = precnode->precord;
-    pnewnode->aliasedRecord = precnode;
+    pnewnode->aliasedRecnode = precnode;
     pnewnode->flags = DBRN_FLAGS_ISALIAS;
     precnode->flags |= DBRN_FLAGS_HASALIAS;
     ellInit(&pnewnode->infoList);
@@ -1681,8 +1681,8 @@ int dbFollowAlias(DBENTRY *pdbentry)
 {
     if(!pdbentry->precnode)
         return S_dbLib_recNotFound;
-    if(pdbentry->precnode->aliasedRecord)
-        pdbentry->precnode = pdbentry->precnode->aliasedRecord;
+    if(pdbentry->precnode->aliasedRecnode)
+        pdbentry->precnode = pdbentry->precnode->aliasedRecnode;
     return 0;
 }
 

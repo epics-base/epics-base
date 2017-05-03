@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* int64inRecord.c - Record Support Routines for int64in records */
 /*
  *      Original Author: Janet Anderson

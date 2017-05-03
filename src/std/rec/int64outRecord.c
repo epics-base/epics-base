@@ -7,7 +7,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Revision-Id$ */
 /*
  * Original Author: Janet Anderson
  * Date:	9/23/91

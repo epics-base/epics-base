@@ -42,7 +42,7 @@
 #include "dbBase.h"
 #include "dbBkpt.h"
 #include "dbCa.h"
-#include "dbCommon.h"
+#include "dbCommonPvt.h"
 #include "dbConvertFast.h"
 #include "dbConvert.h"
 #include "dbEvent.h"
@@ -680,6 +680,33 @@ long dbNameToAddr(const char *pname, DBADDR *paddr)
 finish:
     dbFinishEntry(&dbEntry);
     return status;
+}
+
+void dbInitEntryFromAddr(struct dbAddr *paddr, DBENTRY *pdbentry)
+{
+    struct dbCommon *prec = paddr->precord;
+    dbCommonPvt *ppvt = CONTAINER(prec, dbCommonPvt, common);
+
+    memset((char *)pdbentry,'\0',sizeof(DBENTRY));
+
+    pdbentry->pdbbase = pdbbase;
+    pdbentry->precordType = prec->rdes;
+    pdbentry->precnode = ppvt->recnode;
+    pdbentry->pflddes = paddr->pfldDes;
+    pdbentry->pfield = paddr->pfield;
+    pdbentry->indfield = -1; /* invalid */
+}
+
+void dbInitEntryFromRecord(struct dbCommon *prec, DBENTRY *pdbentry)
+{
+    dbCommonPvt *ppvt = CONTAINER(prec, dbCommonPvt, common);
+
+    memset((char *)pdbentry,'\0',sizeof(DBENTRY));
+
+    pdbentry->pdbbase = pdbbase;
+    pdbentry->precordType = prec->rdes;
+    pdbentry->precnode = ppvt->recnode;
+    pdbentry->indfield = -1; /* invalid */
 }
 
 long dbValueSize(short dbr_type)

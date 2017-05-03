@@ -493,7 +493,6 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
     if (!prset) return;         /* unlikely */
 
     precord->rset = prset;
-    precord->rdes = pdbRecordType;
     precord->mlok = epicsMutexMustCreate();
     ellInit(&precord->mlis);
 

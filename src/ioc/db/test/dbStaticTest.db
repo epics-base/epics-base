@@ -1,0 +1,8 @@
+
+record(x, "testrec") {
+    info("A", "B")
+    alias("testalias")
+}
+
+alias("testrec", "testalias2")
+alias("testalias2", "testalias3")

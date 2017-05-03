@@ -159,6 +159,13 @@ testHarness_SRCS += dbPutGetTest.c
 TESTFILES += ../dbPutGetTest.db
 TESTS += testPutGetTest
 
+TESTPROD_HOST += dbStaticTest
+dbStaticTest_SRCS += dbStaticTest.c
+dbStaticTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbStaticTest.c
+TESTFILES += ../dbStaticTest.db
+TESTS += dbStaticTest
+
 # This runs all the test programs in a known working order:
 testHarness_SRCS += epicsRunDbTests.c
 

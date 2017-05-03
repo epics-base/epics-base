@@ -114,7 +114,7 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbStaticTest)
 {
-    testPlan(156);
+    testPlan(192);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -125,6 +125,10 @@ MAIN(dbStaticTest)
     testEntry("testalias.VAL");
     testEntry("testalias2.VAL");
     testEntry("testalias3.VAL");
+    testAddr2Entry("testrec.VAL");
+    testAddr2Entry("testalias.VAL");
+    testAddr2Entry("testalias2.VAL");
+    testAddr2Entry("testalias3.VAL");
     testRec2Entry("testrec");
     testRec2Entry("testalias");
     testRec2Entry("testalias2");

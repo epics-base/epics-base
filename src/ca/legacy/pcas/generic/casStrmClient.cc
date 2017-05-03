@@ -205,7 +205,7 @@ caStatus casStrmClient :: processMsg ()
                 if ( bytesLeft < msgSize ) {
                     status = S_cas_success;
                     if ( msgSize > this->in.bufferSize() ) {
-                        this->in.expandBuffer ();
+                        this->in.expandBuffer (msgSize);
                         // msg to large - set up message drain
                         if ( msgSize > this->in.bufferSize() ) {
                             caServerI::dumpMsg ( this->pHostName, this->pUserName, & msgTmp, 0, 

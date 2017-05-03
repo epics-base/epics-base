@@ -82,8 +82,8 @@ public:
     //
     const inBufCtx pushCtx ( bufSizeT headerSize, bufSizeT bodySize );
 	bufSizeT popCtx ( const inBufCtx & ); // returns actual size
-    unsigned bufferSize () const;
-    void expandBuffer ();
+    bufSizeT bufferSize () const;
+    void expandBuffer (bufSizeT needed);
 private:
     class inBufClient & client;
     class clientBufMemoryManager & memMgr;

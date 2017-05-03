@@ -51,6 +51,7 @@
 class netWriteNotifyIO;
 class netReadNotifyIO;
 class netSubscription;
+class tcpiiu;
 
 // used to control access to cac's recycle routines which
 // should only be indirectly invoked by CAC when its lock
@@ -193,12 +194,6 @@ public:
         const char *pformat, va_list args ) const;
     double connectionTimeout ( epicsGuard < epicsMutex > & );
 
-    // buffer management
-    char * allocateSmallBufferTCP ();
-    void releaseSmallBufferTCP ( char * );
-    unsigned largeBufferSizeTCP () const;
-    char * allocateLargeBufferTCP ();
-    void releaseLargeBufferTCP ( char * );
     unsigned maxContiguousFrames ( epicsGuard < epicsMutex > & ) const;
 
     // misc
@@ -355,6 +350,8 @@ private:
 
 	cac ( const cac & );
 	cac & operator = ( const cac & );
+
+    friend class tcpiiu;
 };
 
 inline const char * cac::userNamePointer () const
@@ -383,35 +380,6 @@ inline int cac :: varArgsPrintFormated (
 inline void cac::attachToClientCtx ()
 {
     this->notify.attachToClientCtx ();
-}
-
-inline char * cac::allocateSmallBufferTCP ()
-{
-    // this locks internally
-    return ( char * ) freeListMalloc ( this->tcpSmallRecvBufFreeList );
-}
-
-inline void cac::releaseSmallBufferTCP ( char *pBuf )
-{
-    // this locks internally
-    freeListFree ( this->tcpSmallRecvBufFreeList, pBuf );
-}
-
-inline unsigned cac::largeBufferSizeTCP () const
-{
-    return this->maxRecvBytesTCP;
-}
-
-inline char * cac::allocateLargeBufferTCP ()
-{
-    // this locks internally
-    return ( char * ) freeListMalloc ( this->tcpLargeRecvBufFreeList );
-}
-
-inline void cac::releaseLargeBufferTCP ( char *pBuf )
-{
-    // this locks internally
-    freeListFree ( this->tcpLargeRecvBufFreeList, pBuf );
 }
 
 inline unsigned cac::beaconAnomaliesSinceProgramStart (

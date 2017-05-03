@@ -48,6 +48,7 @@ epicsShareExtern const ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
 epicsShareExtern const ENV_PARAM EPICS_CA_REPEATER_PORT;
 epicsShareExtern const ENV_PARAM EPICS_CA_SERVER_PORT;
 epicsShareExtern const ENV_PARAM EPICS_CA_MAX_ARRAY_BYTES;
+epicsShareExtern const ENV_PARAM EPICS_CA_AUTO_MAX_ARRAY_BYTES;
 epicsShareExtern const ENV_PARAM EPICS_CA_MAX_SEARCH_PERIOD;
 epicsShareExtern const ENV_PARAM EPICS_CA_NAME_SERVERS;
 epicsShareExtern const ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;

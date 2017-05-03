@@ -1198,6 +1198,8 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
 {
     int status;
     struct channel_in_use *pciu;
+    struct dbChannel *dbch;
+    char *pName = (char *) pPayload;
 
     /*
      * The available field is used (abused)
@@ -1209,9 +1211,6 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
 
     if (!CA_V44(client->minor_version_number))
         return RSRV_ERROR; /* shouldn't actually get here due to VSUPPORTED test in camessage() */
-
-    struct dbChannel *dbch;
-    char *pName = (char *) pPayload;
 
     /*
      * check the sanity of the message

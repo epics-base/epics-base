@@ -1,69 +1,38 @@
 #*************************************************************************
-# Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2014 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution.
+# in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-=title 64bit Integer Output Record (int64out)
+=title 64bit Integer Input Record (int64in)
 
-This record type is normally used to send an integer value of up to 64 bits
-to an output device.
-The record supports alarm, drive, graphics and control limits.
+This record type is normally used to obtain an integer value of up to 64 bits
+from a hardware input.
+The record supports alarm limits, alarm filtering, graphics and control
+limits.
 
 =head2 Parameter Fields
 
 The record-specific fields are described below.
 
-=recordtype int64out
+=recordtype int64in
 
 =cut
 
-recordtype(int64out) {
+recordtype(int64in) {
 
-=head3 Output Value Determination
-
-These fields control how the record determines the value to be output when it
-gets processed:
-
-=fields OMSL, DOL, DRVH, DRVL, VAL
-
-The following steps are performed in order during record processing.
-
-=head4 Fetch Value
-
-The OMSL menu field is used to determine whether the DOL link field
-should be used during processing or not:
-
-=over
-
-=item *
-If OMSL is C<supervisory> the DOL link field is not used.
-The new output value is taken from the VAL field, which may have been set from
-elsewhere.
-
-=item *
-If OMSL is C<closed_loop> the DOL link field is used to obtain a value.
-
-=back
-
-=head4 Drive Limits
-
-The output value is clipped to the range DRVL to DRVH inclusive, provided
-that DRVH > DRVL.
-The result is copied into the VAL field.
-
-=head3 Output Specification
+=head3 Input Specification
 
 These fields control where the record will read data from when it is processed:
 
-=fields DTYP, OUT
+=fields DTYP, INP
 
 The DTYP field selects which device support layer should be responsible for
-writing output data.
-The int64out device support layers provided by EPICS Base are documented in the
+providing input data to the record.
+The int64in device support layers provided by EPICS Base are documented in the
 L<Device Support> section.
 External support modules may provide additional device support for this record
 type.
@@ -71,10 +40,10 @@ If not set explicitly, the DTYP value defaults to the first device support that
 is loaded for the record type, which will usually be the C<Soft Channel> support
 that comes with Base.
 
-The OUT link field contains a database or channel access link or provides
+The INP link field contains a database or channel access link or provides
 hardware address information that the device support uses to determine where the
-output data should be sent to.
-The format for the OUT field value depends on the device support layer that is
+input data should come from.
+The format for the INP field value depends on the device support layer that is
 selected by the DTYP field.
 See L<Address Specification|...> for a description of the various hardware
 address formats supported.
@@ -104,17 +73,22 @@ HIHI, HIGH, LOW, and LOLO fields.
 =head3 Alarm Limits
 
 The user configures limit alarms by putting numerical values into the HIHI,
-HIGH, LOW and LOLO fields, and by setting the associated alarm severities
-in the corresponding HHSV, HSV, LSV and LLSV menu fields.
+HIGH, LOW and LOLO fields, and by setting the associated alarm severity in the
+corresponding HHSV, HSV, LSV and LLSV menu fields.
 
 The HYST field controls hysteresis to prevent alarm chattering from an input
 signal that is close to one of the limits and suffers from significant readout
 noise.
 
-The LALM field is used by the record at run-time to implement the alarm limit
-hysteresis functionality.
+The AFTC field sets the time constant on a low-pass filter that delays the
+reporting of limit alarms until the signal has been within the alarm range for
+that number of seconds (the default AFTC value of zero retains the previous
+behavior).
 
-=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, LALM
+The LALM field is used by the record at run-time to implement the alarm limit
+functionality.
+
+=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, AFTC, LALM
 
 =head3 Monitor Parameters
 
@@ -138,46 +112,21 @@ monitoring deadband functionality.
 
     include "dbCommon.dbd"
     field(VAL,DBF_INT64) {
-        prompt("Desired Output")
-        promptgroup(GUI_OUTPUT)
+        prompt("Current value")
+        promptgroup(GUI_INPUTS)
         asl(ASL0)
         pp(TRUE)
     }
-    field(OUT,DBF_OUTLINK) {
-        prompt("Output Specification")
-        promptgroup(GUI_OUTPUT)
+    field(INP,DBF_INLINK) {
+        prompt("Input Specification")
+        promptgroup(GUI_INPUTS)
         interest(1)
-    }
-    field(DOL,DBF_INLINK) {
-        prompt("Desired Output Loc")
-        promptgroup(GUI_OUTPUT)
-        interest(1)
-    }
-    field(OMSL,DBF_MENU) {
-        prompt("Output Mode Select")
-        promptgroup(GUI_OUTPUT)
-        interest(1)
-        menu(menuOmsl)
     }
     field(EGU,DBF_STRING) {
         prompt("Units name")
         promptgroup(GUI_DISPLAY)
         interest(1)
         size(16)
-        prop(YES)
-    }
-    field(DRVH,DBF_INT64) {
-        prompt("Drive High Limit")
-        promptgroup(GUI_OUTPUT)
-        pp(TRUE)
-        interest(1)
-        prop(YES)
-    }
-    field(DRVL,DBF_INT64) {
-        prompt("Drive Low Limit")
-        promptgroup(GUI_OUTPUT)
-        pp(TRUE)
-        interest(1)
         prop(YES)
     }
     field(HOPR,DBF_INT64) {
@@ -253,6 +202,16 @@ monitoring deadband functionality.
         promptgroup(GUI_ALARMS)
         interest(1)
     }
+    field(AFTC, DBF_DOUBLE) {
+        prompt("Alarm Filter Time Constant")
+        promptgroup(GUI_ALARMS)
+        interest(1)
+    }
+    field(AFVL, DBF_DOUBLE) {
+        prompt("Alarm Filter Value")
+        special(SPC_NOMOD)
+        interest(3)
+    }
     field(ADEL,DBF_INT64) {
         prompt("Archive Deadband")
         promptgroup(GUI_DISPLAY)
@@ -282,32 +241,36 @@ monitoring deadband functionality.
 =head3 Simulation Mode
 
 The record provides several fields to support simulation of absent hardware.
-If the SIML field is set it is used to read a value into the SIMM field,
-which controls whether simulation is used or not:
+If the SIML field is set it is used to read a value into the SIMM field, which
+controls whether simulation is used or not:
 
 =over
 
 =item *
-SIMM must be zero (C<NO>) for the record to write a value to the device
+SIMM must be zero (C<NO>) for the record to request a value from the device
 support.
 
 =item *
-If SIMM is C<YES> and the SIOL link field is set, the value in engineering
-units is written using the link.
+If SIMM is C<YES> and the SIOL link field is set, a simulated value in
+engineering units is read using the link into the SVAL field, from where it will
+subsequently be copied into the VAL field.
 
 =back
 
 The SIMS field can be set to give the record an alarm severity while it is in
 simulation mode.
 
-=fields SIML, SIMM, SIOL, SIMS
+=fields SIML, SIMM, SIOL, SVAL, SIMS
 
 =cut
 
-    field(SIOL,DBF_OUTLINK) {
-        prompt("Sim Output Specifctn")
+    field(SIOL,DBF_INLINK) {
+        prompt("Sim Input Specifctn")
         promptgroup(GUI_INPUTS)
         interest(1)
+    }
+    field(SVAL,DBF_INT64) {
+        prompt("Simulation Value")
     }
     field(SIML,DBF_INLINK) {
         prompt("Sim Mode Location")
@@ -325,43 +288,6 @@ simulation mode.
         interest(2)
         menu(menuAlarmSevr)
     }
-
-=head3 Invalid Alarm Output Action
-
-Whenever an output record is put into INVALID alarm severity, IVOA specifies
-the action to take.
-
-=over
-
-=item C<Continue normally> (default)
-
-Write the value. Same as if severity is lower than INVALID.
-
-=item C<Don't drive outputs>
-
-Do not write value.
-
-=item C<Set output to IVOV>
-
-Set VAL to IVOV, then write the value.
-
-=back
-
-=fields IVOA, IVOV
-
-=cut
-
-    field(IVOA,DBF_MENU) {
-        prompt("INVALID output action")
-        promptgroup(GUI_OUTPUT)
-        interest(2)
-        menu(menuIvoa)
-    }
-    field(IVOV,DBF_INT64) {
-        prompt("INVALID output value")
-        promptgroup(GUI_OUTPUT)
-        interest(2)
-    }
 }
 
 =head2 Record Support
@@ -377,15 +303,12 @@ collect properties from the record for the complex DBR data structures.
 =head4 init_record
 
 This routine first initializes the simulation mode mechanism by setting SIMM
-if SIML is a constant.
+if SIML is a constant, and setting SVAL if SIOL is a constant.
 
 It then checks if the device support and the device support's
-C<write_int64out> routine are defined.
+C<read_int64in> routine are defined.
 If either one does not exist, an error message is issued
 and processing is terminated.
-
-If DOL is a constant, then VAL is initialized with its value and UDF is
-set to FALSE.
 
 If device support includes C<init_record>, it is called.
 
@@ -405,45 +328,56 @@ Routine C<process> implements the following algorithm:
 =item 1.
 
 Check to see that the appropriate device support module and its
-C<write_int64out> routine are defined.
+C<read_int64in> routine are defined.
 If either one does not exist, an error message is issued and processing is
 terminated with the PACT field set to TRUE, effectively blocking the record
 to avoid error storms.
 
 =item 2.
 
-Check PACT. If PACT is FALSE, do the following:
+Determine the value:
+
+If PACT is TRUE, call the device support C<read_int64in> routine and return.
+
+If PACT is FALSE, read the value, honoring simulation mode:
 
 =over
 
-=item * Determine value, honoring closed loop mode:
-if DOL is not a CONSTANT and OMSL is CLOSED_LOOP then get value from DOL
-setting UDF to FALSE in case of success, else use the VAL field.
+=item * Get SIMM by reading the SIML link.
 
-=item * Call C<convert>:
-if drive limits are defined then force value to be within those limits.
+=item * If SIMM is C<NO>,
+call the device support C<read_int64in> routine and return.
+
+=item * If SIMM is C<YES>,
+read the simulated value into SVAL using the SIOL link,
+then copy the value into VAL and set UDF to 0 on success.
+
+=item * Raise an alarm for other values of SIMM.
+
+=item * Set the record to the severity configured in SIMS.
 
 =back
 
 =item 3.
+
+If PACT has been changed to TRUE, the device support signals asynchronous
+processing: its C<read_int64in> output routine has started, but not
+completed reading the new value.
+In this case, the processing routine merely returns, leaving PACT TRUE.
+
+=item 4.
+
+Set PACT to TRUE. Get the processing time stamp. Set UDF to 0 if reading
+the value was successful.
+
+=item 5.
 
 Check UDF and level alarms: This routine checks to see if the record is
 undefined (UDF is TRUE) or if the new VAL causes the alarm status
 and severity to change. In the latter case, NSEV, NSTA and LALM are set.
 It also honors the alarm hysteresis factor (HYST): the value must change
 by at least HYST between level alarm status and severity changes.
-
-=item 4.
-
-Check severity and write the new value. See L<Invalid Alarm Output Action>
-for details on how invalid alarms affect output records.
-
-=item 5.
-
-If PACT has been changed to TRUE, the device support signals asynchronous
-processing: its C<write_int64out> output routine has started, but not
-completed writing the new value.
-In this case, the processing routine merely returns, leaving PACT TRUE.
+If AFTC is set, alarm level filtering is applied.
 
 =item 6.
 
@@ -456,8 +390,6 @@ changed.
 
 =item * Archive and value change monitors are posted if ADEL and MDEL
 conditions (see L<Monitor Parameters>) are met.
-
-=item * NSEV and NSTA are reset to 0.
 
 =back
 
@@ -478,13 +410,13 @@ defines the following members:
      long number;
      long (*report)(int level);
      long (*init)(int after);
-     long (*init_record)(int64outRecord *prec);
-     long (*get_ioint_info)(int cmd, int64outRecord *prec, IOSCANPVT *piosl);
-     long (*write_int64out)(int64outRecord *prec);
- } int64outdset;
+     long (*init_record)(int64inRecord *prec);
+     long (*get_ioint_info)(int cmd, int64inRecord *prec, IOSCANPVT *piosl);
+     long (*read_int64in)(int64inRecord *prec);
+ } int64indset;
 
 The module must set C<number> to at least 5, and provide a pointer to its
-C<write_int64out()> routine; the other function pointers may be C<NULL> if their
+C<read_int64in()> routine; the other function pointers may be C<NULL> if their
 associated functionality is not required for this support layer.
 Most device supports also provide an C<init_record()> routine to configure the
 record instance and connect it to the hardware or driver support layer.
@@ -511,16 +443,16 @@ the integer parameter C<after> set to 0.
 The second call happens after all of the C<init_record()> calls have been made,
 with C<after> set to 1.
 
-=head4 long init_record(int64outRecord *prec)
+=head4 long init_record(int64inRecord *prec)
 
 This optional routine is called by the record initialization code for each
-int64out record instance that has its DTYP field set to use this device support.
-It is normally used to check that the OUT address is the expected type and that
-it points to a valid device, to allocate any record-specific buffer space and
-other memory, and to connect any communication channels needed for the
-C<write_int64out()> routine to work properly.
+int64in record instance that has its DTYP field set to use this device support.
+It is normally used to check that the INP address is the expected type and that
+it points to a valid device; to allocate any record-specific buffer space and
+other memory; and to connect any communication channels needed for the
+C<read_int64in()> routine to work properly.
 
-=head4 long get_ioint_info(int cmd, int64outRecord *prec, IOSCANPVT *piosl)
+=head4 long get_ioint_info(int cmd, int64inRecord *prec, IOSCANPVT *piosl)
 
 This optional routine is called whenever the record's SCAN field is being
 changed to or from the value C<I/O Intr> to find out which I/O Interrupt Scan
@@ -549,21 +481,21 @@ thread.
 The C<scanIoRequest()> routine is safe to call from an interrupt service routine
 on embedded architectures (vxWorks and RTEMS).
 
-=head4 long write_int64out(int64outRecord *prec)
+=head4 long read_int64in(int64inRecord *prec)
 
-This essential routine is called when the record wants to write a new value
-to the addressed device.
-It is responsible for performing (or at least initiating) a write operation,
-using the value from the record's VAL field.
+This essential routine is called when the record wants a new value from the
+addressed device.
+It is responsible for performing (or at least initiating) a read operation, and
+(eventually) returning its value to the record.
 
-If the device may take more than a few microseconds to accept the new value,
+If the device may take more than a few microseconds to return the new value,
 this routine must never block (busy-wait), but use the asynchronous
 processing mechanism.
 In that case it signals the asynchronous operation by setting the record's
 PACT field to TRUE before it returns, having arranged for the record's
-C<process()> routine to be called later once the write operation is over.
-When that happens, the C<write_int64out()> routine will be called again with
-PACT still set to TRUE; it should then set it to FALSE to indicate the write
+C<process()> routine to be called later once the read operation is finished.
+When that happens, the C<read_int64in()> routine will be called again with
+PACT still set to TRUE; it should then set it to FALSE to indicate the read
 has completed, and return.
 
 A return value of zero indicates success, any other value indicates that an
@@ -578,19 +510,19 @@ error occurred.
 =head2 Device Support For Soft Records
 
 Two soft device support modules, Soft Channel and Soft Callback Channel, are
-provided for output records not related to actual hardware devices. The
-OUT link type must be either a CONSTANT, DB_LINK, or CA_LINK.
+provided for input records not related to actual hardware devices. The
+INP link type must be either a CONSTANT, DB_LINK, or CA_LINK.
 
 =head3 Soft Channel
 
-This module writes the current value using the record's VAL field.
+This module reads the value using the record's INP link.
 
-C<write_int64out> calls C<dbPutLink> to write the current value.
+C<read_int64in> calls C<dbGetLink> to read the value.
 
 =head3 Soft Callback Channel
 
-This module is like the previous except that it writes the current value
+This module is like the previous except that it reads the value
 using asynchronous processing that will not complete until an asynchronous
-processing of the target record has completed.
+processing of the INP target record has completed.
 
 =cut

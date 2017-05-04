@@ -18,9 +18,15 @@ static void testEntry(const char *pv)
     testOk1(dbFindRecord(&entry, pv)==0);
 
     testDiag("precordType=%p precnode=%p", entry.precordType, entry.precnode);
-    testOk1(entry.precordType && strcmp(entry.precordType->name, "x")==0);
-    testOk1(entry.precnode && strcmp(((dbCommon*)entry.precnode->precord)->name, "testrec")==0);
-    testOk1(entry.pflddes && strcmp(entry.pflddes->name, "VAL")==0);
+    testOk(entry.precordType &&
+        strcmp(entry.precordType->name, "x")==0,
+        "Record type is '%s' ('x')", entry.precordType->name);
+    testOk(entry.precnode &&
+        strcmp(((dbCommon*)entry.precnode->precord)->name, "testrec")==0,
+        "Record name is '%s' ('testrec')", ((dbCommon*)entry.precnode->precord)->name);
+    testOk(entry.pflddes &&
+        strcmp(entry.pflddes->name, "VAL")==0,
+        "Field name is '%s' ('VAL')", entry.pflddes->name);
 
     /* all tested PVs are either a record with aliases, or an alias */
     testOk(entry.precnode &&
@@ -30,7 +36,9 @@ static void testEntry(const char *pv)
 
     testOk1(dbFollowAlias(&entry)==0);
 
-    testOk1(dbFindInfo(&entry, "A")==0 && strcmp(dbGetInfoString(&entry), "B")==0);
+    testOk(dbFindInfo(&entry, "A")==0 &&
+        strcmp(dbGetInfoString(&entry), "B")==0,
+        "Info item is set");
 
     dbFinishEntry(&entry);
 }
@@ -67,7 +75,7 @@ static void testAddr2Entry(const char *pv)
     testOk1(!entry2.pinfonode);
     testOk1(!entry2.message);
 
-    testOk1(memcmp(&entry, &entry2, sizeof(entry))==0);
+    testOk(memcmp(&entry, &entry2, sizeof(entry))==0, "dbEntries identical");
 
     dbFinishEntry(&entry);
     dbFinishEntry(&entry2);
@@ -104,7 +112,7 @@ static void testRec2Entry(const char *recname)
     testOk1(!entry2.pinfonode);
     testOk1(!entry2.message);
 
-    testOk1(memcmp(&entry, &entry2, sizeof(entry))==0);
+    testOk(memcmp(&entry, &entry2, sizeof(entry))==0, "dbEntries identical");
 
     dbFinishEntry(&entry);
     dbFinishEntry(&entry2);

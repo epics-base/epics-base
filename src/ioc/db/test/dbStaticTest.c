@@ -63,12 +63,9 @@ static void testAddr2Entry(const char *pv)
     testOk1(entry.pflddes==entry2.pflddes);
     testOk1(entry.precnode==entry2.precnode);
     testOk1(entry.pfield==entry2.pfield);
-    testOk1(entry2.indfield==-1);
+    testOk1(entry.indfield==entry2.indfield);
     testOk1(!entry2.pinfonode);
     testOk1(!entry2.message);
-
-    /* no way to look this up, so not set */
-    entry.indfield = -1;
 
     testOk1(memcmp(&entry, &entry2, sizeof(entry))==0);
 
@@ -103,12 +100,9 @@ static void testRec2Entry(const char *recname)
     testOk1(entry.pflddes==entry2.pflddes);
     testOk1(entry.precnode==entry2.precnode);
     testOk1(entry.pfield==entry2.pfield);
-    testOk1(entry2.indfield==-1);
+    testOk1(entry.indfield==entry2.indfield);
     testOk1(!entry2.pinfonode);
     testOk1(!entry2.message);
-
-    /* no way to look this up, so not set */
-    entry.indfield = -1;
 
     testOk1(memcmp(&entry, &entry2, sizeof(entry))==0);
 

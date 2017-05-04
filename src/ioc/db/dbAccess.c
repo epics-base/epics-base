@@ -694,7 +694,7 @@ void dbInitEntryFromAddr(struct dbAddr *paddr, DBENTRY *pdbentry)
     pdbentry->precnode = ppvt->recnode;
     pdbentry->pflddes = paddr->pfldDes;
     pdbentry->pfield = paddr->pfield;
-    pdbentry->indfield = -1; /* invalid */
+    pdbentry->indfield = paddr->pfldDes->indRecordType;
 }
 
 void dbInitEntryFromRecord(struct dbCommon *prec, DBENTRY *pdbentry)
@@ -706,7 +706,6 @@ void dbInitEntryFromRecord(struct dbCommon *prec, DBENTRY *pdbentry)
     pdbentry->pdbbase = pdbbase;
     pdbentry->precordType = prec->rdes;
     pdbentry->precnode = ppvt->recnode;
-    pdbentry->indfield = -1; /* invalid */
 }
 
 long dbValueSize(short dbr_type)

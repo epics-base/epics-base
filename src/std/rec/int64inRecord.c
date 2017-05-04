@@ -94,9 +94,9 @@ static void monitor(int64inRecord *prec);
 static long readValue(int64inRecord *prec);
 
 
-static long init_record(dbCommon *pcom, int pass)
+static long init_record(dbCommon *pcommon, int pass)
 {
-    int64inRecord *prec = (int64inRecord*)pcom;
+    int64inRecord *prec = (int64inRecord*)pcommon;
     struct int64indset *pdset;
     long status;
 
@@ -130,9 +130,9 @@ static long init_record(dbCommon *pcom, int pass)
     return(0);
 }
 
-static long process(dbCommon *pcom)
+static long process(dbCommon *pcommon)
 {
-    int64inRecord *prec = (int64inRecord*)pcom;
+    int64inRecord *prec = (int64inRecord*)pcommon;
 	struct int64indset	*pdset = (struct int64indset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;

@@ -92,9 +92,9 @@ static long writeValue(int64outRecord *prec);
 static void convert(int64outRecord *prec, epicsInt64 value);
 
 
-static long init_record(dbCommon *pcom, int pass)
+static long init_record(dbCommon *pcommon, int pass)
 {
-    int64outRecord *prec = (int64outRecord*)pcom;
+    int64outRecord *prec = (int64outRecord*)pcommon;
     struct int64outdset *pdset;
     long status=0;
 
@@ -124,9 +124,9 @@ static long init_record(dbCommon *pcom, int pass)
     return(0);
 }
 
-static long process(dbCommon *pcom)
+static long process(dbCommon *pcommon)
 {
-    int64outRecord *prec = (int64outRecord*)pcom;
+    int64outRecord *prec = (int64outRecord*)pcommon;
 	struct int64outdset	*pdset = (struct int64outdset *)(prec->dset);
 	long		 status=0;
 	epicsInt64	 value;

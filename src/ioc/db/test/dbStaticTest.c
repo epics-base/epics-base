@@ -23,7 +23,10 @@ static void testEntry(const char *pv)
     testOk1(entry.pflddes && strcmp(entry.pflddes->name, "VAL")==0);
 
     /* all tested PVs are either a record with aliases, or an alias */
-    testOk1(entry.precnode && ((entry.precnode->flags&DBRN_FLAGS_ISALIAS) ^ (entry.precnode->flags&DBRN_FLAGS_HASALIAS)));
+    testOk(entry.precnode &&
+        (!(entry.precnode->flags & DBRN_FLAGS_ISALIAS) ^
+         !(entry.precnode->flags & DBRN_FLAGS_HASALIAS)),
+        "Recnode flags %d", entry.precnode->flags);
 
     testOk1(dbFollowAlias(&entry)==0);
 

@@ -44,18 +44,18 @@ void testint64AfterInit(void)
 
     /* check dbGet/PutField and DB links */
 
-    testdbGetFieldEqual("in64", DBF_UINT64, 0llu);
-    testdbGetFieldEqual("out64", DBF_UINT64, 0x12345678abcdef00llu);
+    testdbGetFieldEqual("in64", DBF_UINT64, 0ULL);
+    testdbGetFieldEqual("out64", DBF_UINT64, 0x12345678abcdef00ULL);
 
     testdbPutFieldOk("out64.PROC", DBF_LONG, 1);
 
-    testdbGetFieldEqual("in64", DBF_UINT64, 0x12345678abcdef00llu);
+    testdbGetFieldEqual("in64", DBF_UINT64, 0x12345678abcdef00ULL);
 
-    testdbPutFieldOk("out64.VAL", DBF_UINT64, 0x22345678abcdef00llu);
+    testdbPutFieldOk("out64.VAL", DBF_UINT64, 0x22345678abcdef00ULL);
 
     testdbPutFieldOk("in64.PROC", DBF_LONG, 1);
 
-    testdbGetFieldEqual("in64", DBF_UINT64, 0x22345678abcdef00llu);
+    testdbGetFieldEqual("in64", DBF_UINT64, 0x22345678abcdef00ULL);
 }
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);

@@ -25,6 +25,7 @@
 #include "dbDefs.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
+#include "dbLink.h"
 #include "dbScan.h"
 #include "cantProceed.h"
 #include "epicsMath.h"
@@ -99,15 +100,15 @@ typedef struct calcoutDSET {
 }calcoutDSET;
 
 
-/* To provide feedback to the user as to the connection status of the 
+/* To provide feedback to the user as to the connection status of the
  * links (.INxV and .OUTV), the following algorithm has been implemented ...
  *
- * A new PV_LINK [either in init() or special()] is searched for using
- * dbNameToAddr. If local, it is so indicated. If not, a checkLinkCb
- * callback is scheduled to check the connectivity later using 
- * dbCaIsLinkConnected(). Anytime there are unconnected CA_LINKs, another
+ * A new PV_LINK is checked [in both init() and special()] to see if the
+ * target is local -- if so it is marked as such. If not, a checkLinkCb
+ * callback is scheduled to check the connection status later by calling
+ * dbIsLinkConnected(). Anytime there are unconnected CA_LINKs, another
  * callback is scheduled. Once all connections are established, the CA_LINKs
- * are checked whenever the record processes. 
+ * are checked whenever the record processes.
  *
  */
 
@@ -142,42 +143,57 @@ static long init_record(struct dbCommon *pcommon, int pass)
     epicsEnum16 *plinkValid;
     short error_number;
     calcoutDSET *pcalcoutDSET;
-
-    DBADDR     dbaddr;
-    DBADDR     *pAddr = &dbaddr;
     rpvtStruct *prpvt;
 
     if (pass == 0) {
         prec->rpvt = (rpvtStruct *) callocMustSucceed(1, sizeof(rpvtStruct), "calcoutRecord");
         return 0;
     }
+
     if (!(pcalcoutDSET = (calcoutDSET *)prec->dset)) {
         recGblRecordError(S_dev_noDSET, (void *)prec, "calcout:init_record");
         return S_dev_noDSET;
     }
+
     /* must have write defined */
     if ((pcalcoutDSET->number < 5) || (pcalcoutDSET->write ==NULL)) {
         recGblRecordError(S_dev_missingSup, (void *)prec, "calcout:init_record");
         return S_dev_missingSup;
     }
+
     prpvt = prec->rpvt;
     plink = &prec->inpa;
     pvalue = &prec->a;
     plinkValid = &prec->inav;
+
     for (i = 0; i <= CALCPERFORM_NARGS; i++, plink++, pvalue++, plinkValid++) {
-        if (plink->type == CONSTANT) {
-            /* Don't InitConstantLink the .OUT link */
-            if (i < CALCPERFORM_NARGS) {
-                recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
-            }
+        /* Don't InitConstantLink the .OUT link */
+        if (i < CALCPERFORM_NARGS) {
+            recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
+        }
+
+        if (dbLinkIsConstant(plink)) {
             *plinkValid = calcoutINAV_CON;
-        } else if (!dbNameToAddr(plink->value.pv_link.pvname, pAddr)) {
-            /* PV resides on this ioc */
+        }
+        else if (dbLinkIsVolatile(plink)) {
+            int conn = dbIsLinkConnected(plink);
+
+            if (conn)
+                *plinkValid = calcoutINAV_EXT;
+            else {
+                /* Monitor for connection */
+                *plinkValid = calcoutINAV_EXT_NC;
+                 prpvt->caLinkStat = CA_LINKS_NOT_OK;
+            }
+        }
+        else {
+            /* PV must reside on this ioc */
             *plinkValid = calcoutINAV_LOC;
-        } else {
-            /* pv is not on this ioc. Callback later for connection stat */
-            *plinkValid = calcoutINAV_EXT_NC;
-             prpvt->caLinkStat = CA_LINKS_NOT_OK;
+
+            if (!dbIsLinkConnected(plink)) {
+                errlogPrintf("calcout: %s.INP%c in no-vo disco state\n",
+                    prec->name, i+'A');
+            }
         }
     }
 
@@ -300,8 +316,6 @@ static long special(DBADDR *paddr, int after)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
     rpvtStruct  *prpvt = prec->rpvt;
-    DBADDR      dbaddr;
-    DBADDR      *pAddr = &dbaddr;
     short       error_number;
     int         fieldIndex = dbGetFieldIndex(paddr);
     int         lnkIndex;
@@ -349,23 +363,36 @@ static long special(DBADDR *paddr, int after)
         plink   = &prec->inpa + lnkIndex;
         pvalue  = &prec->a    + lnkIndex;
         plinkValid = &prec->inav + lnkIndex;
-        if (plink->type == CONSTANT) {
-            if (fieldIndex != calcoutRecordOUT) {
-                recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
-                db_post_events(prec, pvalue, DBE_VALUE);
-            }
+
+        if (fieldIndex != calcoutRecordOUT)
+            recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
+
+        if (dbLinkIsConstant(plink)) {
+            db_post_events(prec, pvalue, DBE_VALUE);
             *plinkValid = calcoutINAV_CON;
-        } else if (!dbNameToAddr(plink->value.pv_link.pvname, pAddr)) {
-            /* if the PV resides on this ioc */
+        } else if (dbLinkIsVolatile(plink)) {
+            int conn = dbIsLinkConnected(plink);
+
+            if (conn)
+                *plinkValid = calcoutINAV_EXT;
+            else {
+                /* Monitor for connection */
+                *plinkValid = calcoutINAV_EXT_NC;
+                /* DO_CALLBACK, if not already scheduled */
+                if (!prpvt->cbScheduled) {
+                    callbackRequestDelayed(&prpvt->checkLinkCb, .5);
+                    prpvt->cbScheduled = 1;
+                    prpvt->caLinkStat = CA_LINKS_NOT_OK;
+                }
+            }
+        }
+        else {
+            /* PV must reside on this ioc */
             *plinkValid = calcoutINAV_LOC;
-        } else {
-            /* pv is not on this ioc. Callback later for connection stat */
-            *plinkValid = calcoutINAV_EXT_NC;
-            /* DO_CALLBACK, if not already scheduled */
-            if (!prpvt->cbScheduled) {
-                callbackRequestDelayed(&prpvt->checkLinkCb, .5);
-                prpvt->cbScheduled = 1;
-                prpvt->caLinkStat = CA_LINKS_NOT_OK;
+
+            if (!dbIsLinkConnected(plink)) {
+                errlogPrintf("calcout: %s.INP%c in no-vo diso state\n",
+                    prec->name, lnkIndex);
             }
         }
         db_post_events(prec, plinkValid, DBE_VALUE);
@@ -708,9 +735,9 @@ static void checkLinks(calcoutRecord *prec)
     plinkValid = &prec->inav;
 
     for (i = 0; i<CALCPERFORM_NARGS+1; i++, plink++, plinkValid++) {
-        if (plink->type == CA_LINK) {
+        if (dbLinkIsVolatile(plink)) {
             caLink = 1;
-            stat = dbCaIsLinkConnected(plink);
+            stat = dbIsLinkConnected(plink);
             if (!stat && (*plinkValid == calcoutINAV_EXT_NC)) {
                 caLinkNc = 1;
             }

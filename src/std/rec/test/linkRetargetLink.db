@@ -15,3 +15,11 @@ record(stringout, "rec:link2") {
   field(VAL, "rec:src2 CP")
   field(OUT, "rec:ai.INP CA")
 }
+
+record(ai, "rec:j1") {
+  field(INP, {calc:{
+                expr:"A+5",
+                args:5
+             }})
+  field(PINI, "YES")
+}

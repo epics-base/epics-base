@@ -36,27 +36,36 @@ char *dbRecordName(DBENTRY *pdbentry);
 char *dbGetStringNum(DBENTRY *pdbentry);
 long dbPutStringNum(DBENTRY *pdbentry,const char *pstring);
 
+struct jlink;
+
 typedef struct dbLinkInfo {
     short ltype;
 
     /* full link string for CONSTANT and PV_LINK,
-     * parm string for HW links*/
+     * parm string for HW links, JSON for JSON_LINK
+     */
     char *target;
 
     /* for PV_LINK */
     short modifiers;
 
-    /* HW links */
+    /* for HW links */
     char hwid[6]; /* one extra element for a nil */
     int  hwnums[5];
+
+    /* for JSON_LINK */
+    struct jlink *jlink;
 } dbLinkInfo;
 
 long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec);
 
+#define LINK_DEBUG_LSET 1
+#define LINK_DEBUG_JPARSE 2
+
 /* Parse link string.  no record locks needed.
  * on success caller must free pinfo->target
  */
-epicsShareFunc long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo);
+epicsShareFunc long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, unsigned opts);
 /* Check if link type allow the parsed link value pinfo
  * to be assigned to the given link.
  * Record containing plink must be locked.
@@ -68,6 +77,8 @@ long dbCanSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup);
  * Unconditionally takes ownership of pinfo->target
  */
 long dbSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *dset);
+/* Free dbLinkInfo storage */
+epicsShareFunc void dbFreeLinkInfo(dbLinkInfo *pinfo);
 
 /* The following is for path */
 typedef struct dbPathNode {

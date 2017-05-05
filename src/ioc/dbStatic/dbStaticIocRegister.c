@@ -86,6 +86,14 @@ static void dbDumpDriverCallFunc(const iocshArgBuf *args)
     dbDumpDriver(*iocshPpdbbase);
 }
 
+/* dbDumpLink */
+static const iocshArg * const dbDumpLinkArgs[] = { &argPdbbase};
+static const iocshFuncDef dbDumpLinkFuncDef = {"dbDumpLink",1,dbDumpLinkArgs};
+static void dbDumpLinkCallFunc(const iocshArgBuf *args)
+{
+    dbDumpLink(*iocshPpdbbase);
+}
+
 /* dbDumpRegistrar */
 static const iocshArg * const dbDumpRegistrarArgs[] = { &argPdbbase};
 static const iocshFuncDef dbDumpRegistrarFuncDef = {"dbDumpRegistrar",1,dbDumpRegistrarArgs};
@@ -160,6 +168,7 @@ void dbStaticIocRegister(void)
     iocshRegister(&dbDumpFieldFuncDef, dbDumpFieldCallFunc);
     iocshRegister(&dbDumpDeviceFuncDef, dbDumpDeviceCallFunc);
     iocshRegister(&dbDumpDriverFuncDef, dbDumpDriverCallFunc);
+    iocshRegister(&dbDumpLinkFuncDef, dbDumpLinkCallFunc);
     iocshRegister(&dbDumpRegistrarFuncDef,dbDumpRegistrarCallFunc);
     iocshRegister(&dbDumpFunctionFuncDef, dbDumpFunctionCallFunc);
     iocshRegister(&dbDumpVariableFuncDef, dbDumpVariableCallFunc);

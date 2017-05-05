@@ -41,7 +41,6 @@
 #include "dbAddr.h"
 #include "dbBase.h"
 #include "dbBkpt.h"
-#include "dbCa.h"
 #include "dbCommonPvt.h"
 #include "dbConvertFast.h"
 #include "dbConvert.h"
@@ -668,7 +667,7 @@ long dbNameToAddr(const char *pname, DBADDR *paddr)
             paddr->dbr_field_type = DBR_CHAR;
         } else if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
             /* Clients see a char array, but keep original dbfType */
-            paddr->no_elements = PVNAME_STRINGSZ + 12;
+            paddr->no_elements = PVLINK_STRINGSZ;
             paddr->field_size = 1;
             paddr->dbr_field_type = DBR_CHAR;
         } else {
@@ -1033,7 +1032,7 @@ static long dbPutFieldLink(DBADDR *paddr,
         return S_db_badDbrtype;
     }
 
-    status = dbParseLink(pstring, pfldDes->field_type, &link_info);
+    status = dbParseLink(pstring, pfldDes->field_type, &link_info, 0);
     if (status)
         return status;
 
@@ -1106,23 +1105,12 @@ static long dbPutFieldLink(DBADDR *paddr,
         }
     }
 
-    switch (plink->type) { /* Old link type */
-    case DB_LINK:
-    case CA_LINK:
-    case CONSTANT:
-        dbRemoveLink(&locker, plink);   /* link type becomes PV_LINK */
-        break;
-
-    case PV_LINK:
-    case MACRO_LINK:
-        break;  /* should never get here */
-
-    default: /* Hardware address */
-        if (!isDevLink) {
-            status = S_db_badHWaddr;
-            goto restoreScan;
-        }
-        break;
+    if (dbLinkIsDefined(plink)) {
+        dbRemoveLink(&locker, plink);   /* Clear out old link */
+    }
+    else if (!isDevLink) {
+        status = S_db_badHWaddr;
+        goto restoreScan;
     }
 
     if (special) status = dbPutSpecial(paddr, 0);
@@ -1155,6 +1143,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     switch (plink->type) { /* New link type */
     case PV_LINK:
     case CONSTANT:
+    case JSON_LINK:
         dbAddLink(&locker, plink, pfldDes->field_type, pdbaddr);
         break;
 

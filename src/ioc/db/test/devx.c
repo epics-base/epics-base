@@ -141,17 +141,13 @@ epicsExportAddress(dset, devxScanIO);
 /* basic DTYP="Soft Channel" */
 static long xsoft_init_record(xRecord *prec)
 {
-    if(prec->inp.type==CONSTANT)
-        recGblInitConstantLink(&prec->inp, DBF_LONG, &prec->val);
+    recGblInitConstantLink(&prec->inp, DBF_LONG, &prec->val);
     return 0;
 }
 
 static long xsoft_read(xRecord *prec)
 {
-    if(prec->inp.type==CONSTANT)
-        return 0;
-    dbGetLink(&prec->inp, DBR_DOUBLE, &prec->val, NULL, NULL);
-    return 0;
+    return dbGetLink(&prec->inp, DBR_LONG, &prec->val, NULL, NULL);
 }
 
 static struct xdset devxSoft = {

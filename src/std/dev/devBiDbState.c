@@ -66,10 +66,6 @@ static long read_bi(biRecord *prec)
         prec->udf = FALSE;
     }
 
-    if (prec->tsel.type == CONSTANT &&
-        prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(&prec->inp, &prec->time);
-
     return 2;
 }
 

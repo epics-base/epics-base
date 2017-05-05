@@ -131,44 +131,40 @@ static void myCallbackFunc(CALLBACK *arg)
 static long init_record(struct dbCommon *pcommon,int pass)
 {
     struct boRecord *prec = (struct boRecord *)pcommon;
-    struct bodset *pdset;
-    long status=0;
+    struct bodset *pdset = (struct bodset *) prec->dset;
+    unsigned short ival = 0;
+    long status = 0;
     myCallback *pcallback;
 
-    if (pass==0) return(0);
+    if (pass == 0)
+        return 0;
 
-    /* bo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (prec->siml.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+
+    if (!pdset) {
+        recGblRecordError(S_dev_noDSET, prec, "bo: init_record");
+        return S_dev_noDSET;
     }
 
-    if(!(pdset = (struct bodset *)(prec->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)prec,"bo: init_record");
-	return(S_dev_noDSET);
-    }
     /* must have  write_bo functions defined */
-    if( (pdset->number < 5) || (pdset->write_bo == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)prec,"bo: init_record");
-	return(S_dev_missingSup);
+    if ((pdset->number < 5) || (pdset->write_bo == NULL)) {
+        recGblRecordError(S_dev_missingSup, prec, "bo: init_record");
+        return S_dev_missingSup;
     }
+
     /* get the initial value */
-    if (prec->dol.type == CONSTANT) {
-	unsigned short ival = 0;
-
-	if(recGblInitConstantLink(&prec->dol,DBF_USHORT,&ival)) {
-	    if (ival  == 0)  prec->val = 0;
-	    else  prec->val = 1;
-	    prec->udf = FALSE;
-	}
+    if (recGblInitConstantLink(&prec->dol, DBF_USHORT, &ival)) {
+        prec->val = !!ival;
+        prec->udf = FALSE;
     }
 
-    pcallback = (myCallback *)(calloc(1,sizeof(myCallback)));
-    prec->rpvt = (void *)pcallback;
-    callbackSetCallback(myCallbackFunc,&pcallback->callback);
-    callbackSetUser(pcallback,&pcallback->callback);
-    pcallback->precord = (struct dbCommon *)prec;
+    pcallback = (myCallback *) calloc(1, sizeof(myCallback));
+    prec->rpvt = pcallback;
+    callbackSetCallback(myCallbackFunc, &pcallback->callback);
+    callbackSetUser(pcallback, &pcallback->callback);
+    pcallback->precord = (struct dbCommon *) prec;
 
-    if( pdset->init_record ) {
+    if (pdset->init_record) {
 	status=(*pdset->init_record)(prec);
 	if(status==0) {
 		if(prec->rval==0) prec->val = 0;
@@ -203,7 +199,8 @@ static long process(struct dbCommon *pcommon)
 		return(S_dev_missingSup);
 	}
         if (!prec->pact) {
-		if ((prec->dol.type != CONSTANT) && (prec->omsl == menuOmslclosed_loop)){
+                if (!dbLinkIsConstant(&prec->dol) &&
+                    prec->omsl == menuOmslclosed_loop) {
 			unsigned short val;
 
 			prec->pact = TRUE;

@@ -52,19 +52,8 @@ epicsExportAddress(dset,devAaoSoft);
 
 static long init_record(aaoRecord *prec)
 {
-    /* OUT must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (prec->out.type) {
-    case CONSTANT:
+    if (dbLinkIsConstant(&prec->out)) {
         prec->nord = 0;
-        break;
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-	break;
-    default :
-	recGblRecordError(S_db_badField, prec,
-		"devAaoSoft (init_record) Illegal OUT field");
-	return(S_db_badField);
     }
     return 0;
 }

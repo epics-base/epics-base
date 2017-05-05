@@ -63,6 +63,10 @@ epicsShareFunc void db_flush_extra_labor_event (dbEventCtx);
 epicsShareFunc int db_post_extra_labor (dbEventCtx ctx);
 epicsShareFunc void db_event_change_priority ( dbEventCtx ctx, unsigned epicsPriority );
 
+#ifdef EPICS_PRIVATE_API
+epicsShareFunc void db_cleanup_events(void);
+#endif
+
 typedef void EVENTFUNC (void *user_arg, struct dbChannel *chan,
 	int eventsRemaining, struct db_field_log *pfl);
 

@@ -192,11 +192,9 @@ static void errRawCopy ( long statusToDecode, char *pBuf, unsigned bufLength )
         assert ( nChar < bufLength );
     }
 }
-
-/****************************************************************
- * errSymLookup
- ***************************************************************/
-void epicsShareAPI errSymLookup (long status, char * pBuf, unsigned bufLength)
+
+static
+const char* errSymLookupInternal(long status)
 {
     unsigned modNum;
     unsigned hashInd;
@@ -211,9 +209,7 @@ void epicsShareAPI errSymLookup (long status, char * pBuf, unsigned bufLength)
     if ( modNum <= 500 ) {
         const char * pStr = strerror ((int) status);
         if ( pStr ) {
-            strncpy(pBuf, pStr,bufLength);
-            pBuf[bufLength-1] = '\0';
-            return;
+            return pStr;
         }
     }
     else {
@@ -222,17 +218,35 @@ void epicsShareAPI errSymLookup (long status, char * pBuf, unsigned bufLength)
         pNextNode = *phashnode;
         while(pNextNode) {
             if(pNextNode->errNum==status){
-                strncpy(pBuf, pNextNode->message, bufLength);
-                pBuf[bufLength-1] = '\0';
-                return;
+                return pNextNode->message;
             }
             phashnode = &pNextNode->hashnode;
             pNextNode = *phashnode;
         }
     }
+    return NULL;
+}
+
+const char* errSymMsg(long status)
+{
+    const char* msg = errSymLookupInternal(status);
+    return msg ? msg : "<Unknown code>";
+}
+
+/****************************************************************
+ * errSymLookup
+ ***************************************************************/
+void epicsShareAPI errSymLookup (long status, char * pBuf, unsigned bufLength)
+{
+    const char* msg = errSymLookupInternal(status);
+    if(msg) {
+        strncpy(pBuf, msg, bufLength);
+        pBuf[bufLength-1] = '\0';
+        return;
+    }
     errRawCopy(status, pBuf, bufLength);
 }
-
+
 /****************************************************************
  * errSymDump
  ***************************************************************/

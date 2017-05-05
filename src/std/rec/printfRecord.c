@@ -46,7 +46,7 @@
     VALTYPE val; \
     int ok; \
 \
-    if (plink->type == CONSTANT) \
+    if (dbLinkIsConstant(plink)) \
         ok = recGblInitConstantLink(plink++, DBRTYPE, &val); \
     else \
         ok = ! dbGetLink(plink++, DBRTYPE, &val, 0, 0); \
@@ -113,7 +113,7 @@ static void doPrintf(printfRecord *prec)
                         epicsInt16 i;
                         int ok;
 
-                        if (plink->type == CONSTANT)
+                        if (dbLinkIsConstant(plink))
                             ok = recGblInitConstantLink(plink++, DBR_SHORT, &i);
                         else
                             ok = ! dbGetLink(plink++, DBR_SHORT, &i, 0, 0);
@@ -204,8 +204,9 @@ static void doPrintf(printfRecord *prec)
                     break;
 
                 case 's':
-                    if (flags & F_LONG && plink->type != CONSTANT) {
+                    if (flags & F_LONG) {
                         long n = vspace + 1;
+                        long status;
 
                         if (precision && n > precision)
                             n = precision + 1;
@@ -213,7 +214,14 @@ static void doPrintf(printfRecord *prec)
                              * characters to be printed from the string.
                              * It does not limit the field width however.
                              */
-                        if (dbGetLink(plink++, DBR_CHAR, pval, 0, &n))
+                        if (dbLinkIsConstant(plink)) {
+                            epicsUInt32 len = n;
+                            status = dbLoadLinkLS(plink++, pval, n, &len);
+                            n = len;
+                        }
+                        else
+                            status = dbGetLink(plink++, DBR_CHAR, pval, 0, &n);
+                        if (status)
                             flags |= F_BADLNK;
                         else {
                             int padding;
@@ -252,7 +260,7 @@ static void doPrintf(printfRecord *prec)
                         char val[MAX_STRING_SIZE];
                         int ok;
 
-                        if (plink->type == CONSTANT)
+                        if (dbLinkIsConstant(plink))
                             ok = recGblInitConstantLink(plink++, DBR_STRING, val);
                         else
                             ok = ! dbGetLink(plink++, DBR_STRING, val, 0, 0);

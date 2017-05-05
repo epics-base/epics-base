@@ -67,6 +67,7 @@
 #include "recSup.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
+#include "registryJLinks.h"
 #include "registryRecordType.h"
 #include "rsrv.h"
 
@@ -654,18 +655,14 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
             pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
         DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 
-        if (plink->type == CA_LINK) {
+        if (plink->type == CA_LINK ||
+            plink->type == JSON_LINK ||
+            (plink->type == DB_LINK && iocBuildMode == buildIsolated)) {
             if (!locked) {
                 dbScanLock(precord);
                 locked = 1;
             }
-            dbCaRemoveLink(NULL, plink);
-
-        } else if (iocBuildMode==buildIsolated && plink->type == DB_LINK) {
-            /* free link, but don't split lockset like dbDbRemoveLink() */
-            free(plink->value.pv_link.pvt);
-            plink->type = PV_LINK;
-            plink->lset = NULL;
+            dbRemoveLink(NULL, plink);
         }
     }
 

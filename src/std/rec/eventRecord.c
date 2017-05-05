@@ -99,18 +99,14 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     if (pass==0) return(0);
 
-    if (prec->siml.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    }
-
-    if (prec->siol.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siol,DBF_STRING,&prec->sval);
-    }
-
-    prec->epvt = eventNameToHandle(prec->val);
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitConstantLink(&prec->siol, DBF_STRING, &prec->sval);
 
     if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) ) 
 		status=(*pdset->init_record)(prec);
+
+    prec->epvt = eventNameToHandle(prec->val);
+
     return(status);
 }
 

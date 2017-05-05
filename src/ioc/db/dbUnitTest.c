@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+#define EPICS_PRIVATE_API
+
 #include "dbmf.h"
 #include "epicsUnitTest.h"
 #include "osiFileName.h"
@@ -36,6 +38,7 @@ static ELLLIST testEvtList; /* holds testMonitor::node */
 struct testMonitor {
     ELLNODE node;
     dbEventSubscription sub;
+    dbChannel *chan;
     epicsEventId event;
     unsigned count;
 };
@@ -89,6 +92,7 @@ void testIocShutdownOk(void)
 void testdbCleanup(void)
 {
     dbFreeBase(pdbbase);
+    db_cleanup_events();
     initHookFree();
     registryFree();
     pdbbase = NULL;
@@ -106,8 +110,8 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
     DBADDR addr;
     union anybuf pod;
 
-    if(dbNameToAddr(pv, &addr)) {
-        testFail("Missing PV %s", pv);
+    if (dbNameToAddr(pv, &addr)) {
+        testFail("Missing PV \"%s\"", pv);
         return S_dbLib_recNotFound;
     }
 
@@ -152,7 +156,7 @@ void testdbPutFieldOk(const char* pv, short dbrType, ...)
     ret = testdbVPutField(pv, dbrType, ap);
     va_end(ap);
 
-    testOk(ret==0, "dbPutField(%s, %d, ...) == %ld", pv, dbrType, ret);
+    testOk(ret==0, "dbPutField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, ret, errSymMsg(ret));
 }
 
 void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
@@ -164,10 +168,8 @@ void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
     ret = testdbVPutField(pv, dbrType, ap);
     va_end(ap);
 
-    if(ret==status)
-        testPass("dbPutField(\"%s\", %d, ...) == %ld", pv, dbrType, status);
-    else
-        testFail("dbPutField(\"%s\", %d, ...) != %ld (%ld)", pv, dbrType, status, ret);
+    testOk(ret==status, "dbPutField(\"%s\", %d, ...) -> %#lx (%s) == %#lx (%s)",
+           pv, dbrType, status, errSymMsg(status), ret, errSymMsg(ret));
 }
 
 void testdbGetFieldEqual(const char* pv, short dbrType, ...)
@@ -187,13 +189,13 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     long status;
 
     if(dbNameToAddr(pv, &addr)) {
-        testFail("Missing PV %s", pv);
+        testFail("Missing PV \"%s\"", pv);
         return;
     }
 
     status = dbGetField(&addr, dbrType, pod.bytes, NULL, &nReq, NULL);
-    if(status) {
-        testFail("dbGetField(\"%s\",%d,...) returns %ld", pv, dbrType, status);
+    if (status) {
+        testFail("dbGetField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, status, errSymMsg(status));
         return;
     } else if(nReq==0) {
         testFail("dbGetField(\"%s\", %d, ...) -> zero length", pv, dbrType);
@@ -223,6 +225,21 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     OP(DBR_ENUM, int, enum16, "%d");
 #undef OP
     }
+}
+
+void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long count, const void *pbuf)
+{
+    DBADDR addr;
+    long status;
+
+    if (dbNameToAddr(pv, &addr)) {
+        testFail("Missing PV \"%s\"", pv);
+        return;
+    }
+
+    status = dbPutField(&addr, dbrType, pbuf, count);
+
+    testOk(status==0, "dbPutField(\"%s\", dbr=%d, count=%lu, ...) -> %ld", pv, dbrType, count, status);
 }
 
 void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long cnt, const void *pbufraw)
@@ -295,8 +312,8 @@ dbCommon* testdbRecordPtr(const char* pv)
 {
     DBADDR addr;
 
-    if(dbNameToAddr(pv, &addr))
-        testAbort("Missing record %s", pv);
+    if (dbNameToAddr(pv, &addr))
+        testAbort("Missing record \"%s\"", pv);
 
     return addr.precord;
 }
@@ -324,7 +341,7 @@ testMonitor* testMonitorCreate(const char* pvname, unsigned mask, unsigned opt)
 
     mon->event = epicsEventMustCreate(epicsEventEmpty);
 
-    chan = dbChannelCreate(pvname);
+    chan = mon->chan = dbChannelCreate(pvname);
     if(!chan)
         testAbort("testMonitorCreate - dbChannelCreate(\"%s\") fails", pvname);
     if(!!(status=dbChannelOpen(chan)))
@@ -354,6 +371,8 @@ void testMonitorDestroy(testMonitor *mon)
     epicsMutexUnlock(testEvtLock);
 
     db_cancel_event(mon->sub);
+
+    dbChannelDelete(mon->chan);
 
     epicsEventDestroy(mon->event);
 

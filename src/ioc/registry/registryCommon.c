@@ -19,6 +19,7 @@
 #include "registryCommon.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
+#include "registryJLinks.h"
 
 
 void registerRecordTypes(DBBASE *pbase, int nRecordTypes,
@@ -71,6 +72,18 @@ void registerDrivers(DBBASE *pbase, int nDrivers,
         if (!registryDriverSupportAdd(driverSupportNames[i], drvsl[i])) {
             errlogPrintf("registryDriverSupportAdd failed %s\n",
                 driverSupportNames[i]);
+            continue;
+        }
+    }
+}
+
+void registerJLinks(DBBASE *pbase, int nLinks, jlif * const *jlifsl)
+{
+    int i;
+    for (i = 0; i < nLinks; i++) {
+        if (!registryJLinkAdd(pbase, jlifsl[i])) {
+            errlogPrintf("registryJLinkAdd failed %s\n",
+                jlifsl[i]->name);
             continue;
         }
     }

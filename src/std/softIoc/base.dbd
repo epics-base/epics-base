@@ -14,6 +14,9 @@ include "stdRecords.dbd"
 # Channel filters & plugins
 include "filters.dbd"
 
+# Link types
+include "links.dbd"
+
 # Standard device support
 include "devSoft.dbd"
 

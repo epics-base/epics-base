@@ -52,6 +52,304 @@ Older clients will be ignored by newer servers.</p>
 <p>This allows removal of UDP echo and similar protocol features which
 are not compatible with secure protocol design practice.</p>
 
+<h3>Lookup-tables using the subArrray record</h3>
+
+<p>The subArray record can now be used as a lookup-table from a constant array
+specified in its INP field. For example:</p>
+
+<pre>
+record(subArray, "powers-of-2") {
+  field(FTVL, "LONG")
+  field(MALM, 12)
+  field(INP, [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048])
+  field(INDX, 0)
+  field(NELM, 1)
+}
+</pre>
+
+<p>The INDX field selects which power of 2 to set the VAL field to. In previous
+releases the INP field would have to have been pointed to a separate waveform
+record that was initialized with the array values somehow at initialization
+time.</p>
+
+<h3>Synchronized Timestamps with TSEL=-2</h3>
+
+<p>Most Soft Channel input device support routines have supported fetching the
+timestamp through the INP link along with the input data. However before now
+there was no guarantee that the timestamp provided by a CA link came from the
+same update as the data, since the two were read from the CA input buffer at
+separate times without maintaining a lock on that buffer in between. This
+shortcoming could be fixed as a result of the new link support code, which
+allows code using a link to pass a subroutine to the link type which will be run
+with the link locked. The subroutine may make multiple requests for metadata
+from the link, but must not block.</p>
+
+
+<h3>Extensible Link Types</h3>
+
+<blockquote>
+
+<p>A major new feature introduced with this release of EPICS Base is an
+Extensible Link Type mechanism, also known as Link Support or JSON Link Types.
+This addition permits new kinds of link I/O to be added to an IOC in a similar
+manner to the other extension points already supported (e.g. record, device and
+driver support).</p>
+
+<p>A new link type must implement two related APIs, one for parsing the JSON
+string which provides the link address and the other which implements the link
+operations that get called at run-time to perform I/O. The link type is built
+into the IOC by providing a new <tt>link</tt> entry in a DBD file.</p>
+
+
+<h4>New Link Types Added</h4>
+
+<p>This release contains two new JSON link types, <tt>const</tt> and
+<tt>calc</tt>:</p>
+
+<ul>
+
+<li>The <tt>const</tt> link type is almost equivalent to the old CONSTANT link
+type with the updates described below to accept arrays and strings, except that
+there is no need to wrap a scalar string constant inside array brackets since a
+constant string will never be confused with a PV name.</li>
+
+<li>The <tt>calc</tt> link type allows CALC expressions to be used to combine
+values from other JSON links to produce its value. Until additional JSON link
+types are created though, the <tt>calc</tt> link type has little practical
+utility as it can currently only fetch inputs from other <tt>calc</tt> links or
+from <tt>const</tt> links.</li>
+
+</ul>
+
+<pre>
+  field(INP, {calc:{expr:"A+B+1",
+                    args:[5,         # A
+                          {const:6}] # B
+             }})
+</pre>
+
+<p>The new link types are documented in a
+<a href="links.html">separate</a><!-- href for the EPICS website -->
+<a href="../html/links.html">document</a><!-- href for install tree -->
+.</p>
+
+
+<h4>Device Support Addressing using <tt>JSON_LINK</tt></h3>
+
+<p>The API to allow device support to use JSON addresses is currently
+incomplete; developers are advised not to try creating device support that
+specifies a <tt>JSON_LINK</tt> address type.</p>
+
+
+<h4>Support Routine Modifications for Extensible Link Types</h4>
+
+<p>For link fields in external record types and soft device support to be able
+to use the new link types properly, various changes are required to utilize the
+new Link Support API as defined in the dbLink.h header file and outlined below.
+The existing built-in Database and Channel Access link types have been altered
+to implement the link APIs, so will work properly after these conversions:</p>
+
+<ul>
+
+<li>Make all calls to <tt>recGblInitConstantLink()</tt> unconditional on the
+link type, i.e. change this code:
+
+<pre>
+    if (prec->siml.type == CONSTANT) {
+        recGblInitConstantLink(&amp;prec->siml, DBF_USHORT, &amp;prec->simm);
+    }
+</pre>
+
+into this:
+
+<pre>
+    recGblInitConstantLink(&amp;prec->siml, DBF_USHORT, &amp;prec->simm);
+</pre>
+
+Note that <tt>recGblInitConstantLink()</tt> still returns TRUE if the field was
+successfully initialized from the link (implying the link is constant).<br />
+This change will work properly with all Base releases currently in use.</li>
+
+<li>Code that needs to identify a constant link should be modified to use the
+new routine <tt>dbLinkIsConstant()</tt> instead, which returns TRUE for constant
+or undefined links, FALSE for links whose <tt>dbGetLink()</tt> routine may
+return different values on different calls. For example this:
+
+<pre>
+    if (prec->dol.type != CONSTANT)
+</pre>
+
+should become this:
+
+<pre>
+    if (!dbLinkIsConstant(&amp;prec->dol))
+</pre>
+
+When the converted software is also required to build against older versions of
+Base, this macro definition may be useful:
+
+<pre>
+#define dbLinkIsConstant(lnk) ((lnk)->type == CONSTANT)
+</pre>
+</li>
+
+<li>Any code that calls dbCa routines directly, or that explicitly checks if a
+link has been resolved as a CA link using code such as
+
+<pre>
+    if (prec->inp.type == CA_LINK)
+</pre>
+
+will still compile and run, but will only work properly with the old CA link
+type. To operate with the new extensible link types such code must be modified
+to use the new generic routines defined in dbLink.h and should never attempt to
+examine or modify data inside the link. After conversion the above line would
+probably become:
+
+<pre>
+    if (dbLinkIsVolatile(&amp;prec->inp))
+</pre>
+
+A volatile link is one like a Channel Access link which may disconnect and
+reconnect without notice at runtime. Database links and constant links are not
+volatile; unless their link address is changed they will always remain in the
+same state they started in. For compatibility when building against older
+versions of Base, this macro definition may be useful:
+
+<pre>
+#define dbLinkIsVolatile(lnk) ((lnk)->type == CA_LINK)
+</pre>
+</li>
+
+<li>The current connection state of a volatile link can be found using the
+routine <tt>dbIsLinkConnected()</tt> which will only return TRUE for a volatile
+link that is currently connected. Code using the older dbCa API returning this
+information used to look like this:
+
+<pre>
+    stat = dbCaIsLinkConnected(plink);
+</pre>
+
+which should become:
+<pre>
+    stat = dbIsLinkConnected(plink);
+</pre>
+
+Similar changes should be made for calls to the other dbCa routines.</li>
+
+
+<li>A full example can be found by looking at the changes to the calcout record
+type, which has been modified in this release to use the new dbLink generic
+API.</li>
+
+</ul>
+
+</blockquote>
+
+
+<h3>Constant Link Values</h3>
+
+<p>Previously a constant link (i.e. a link that did not point to another PV,
+either locally or over Channel Access) was only able to provide a single numeric
+value to a record initialization; any string given in a link field that was not
+recognized as a number was treated as a PV name. In this release, constant links
+can be expressed using JSON array syntax and may provide array initialization of
+values containing integers, doubles or strings. An array containing a single
+string value can also be used to initialize scalar strings, so the stringin,
+stringout, lsi (long string input), lso (long string output), printf, waveform,
+subArray and aai (analog array input) record types and/or their soft device
+supports have been modified to support this.</p>
+
+<p>Some examples of constant array and string initialized records are:</p>
+
+<pre>
+  record(stringin, "const:string") {
+    field(INP, ["Not-a-PV-name"])
+  }
+  record(waveform, "const:longs") {
+    field(FTVL, LONG)
+    field(NELM, 10)
+    field(INP, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  }
+  record(aai, "const:doubles") {
+    field(FTVL, DOUBLE)
+    field(NELM, 10)
+    field(INP, [0, 1, 1.6e-19, 2.718, 3.141593])
+  }
+  record(aSub, "select") {
+    field(FTA, STRING)
+    field(NOA, 4)
+    field(INPA, ["Zero", "One", "Two", "Three"])
+    field(FTB, SHORT)
+    field(NOB, 1)
+    field(FTVA, STRING)
+    field(NOVA, 1)
+    field(SNAM, "select_asub")
+  }
+</pre>
+
+<p>Reminder: Link initialization with constant values normally only occurs at
+record initialization time. The calcout and printf record types are the only
+exceptions in the Base record types to this rule, so it is generally not useful
+to change a const link value after iocInit.</p>
+
+
+<h3>Database Parsing of "Relaxed JSON" Values</h3>
+
+<p>A database file can now provide a "relaxed JSON" value for a database field
+value or an info tag. Only a few field types can currently accept such values,
+but the capability is now available for use in other places in the future. When
+writing to a JSON-capable field at run-time however, only strictly compliant
+JSON may be used (the dbStaticLib parser rewrites relaxed JSON values into
+strict JSON before passing them to the datase for interpretation, where the
+strict rules must be followed).</p>
+
+<p>"Relaxed JSON" was developed to maximize compatibility with the previous
+database parser rules and reduce the number of double-quotes that would be
+needed for strict JSON syntax. The parser does accept strict JSON too though,
+which should be used when machine-generating database files. The differences
+are:</p>
+
+<ul>
+
+<li>Strings containing only the characters <tt><b>a-z A-Z 0-9 _ - + .</b></tt>
+do not have to be enclosed in double-quote characters.</li>
+
+<li>The above rule applies to map keys as well as to regular string values.</li>
+
+<li>The JSON keywords <tt>null</tt>, <tt>true</tt> and <tt>false</tt> (all
+lower-case) will be recognized as keywords, so they must be quoted to use any of
+these single words as a string.</li>
+
+<li>Comments may be used, introduced as usual by the <tt><b>#</b></tt>
+character and extending to the end of the line.</li>
+
+</ul>
+
+<p>A JSON field or info value is only enclosed in quotes when the value being
+provided is a single string, and even here the quotes can be omitted in some
+cases as described above. The following shows both correct and incorrect
+excerpts from a database file:</p>
+
+<pre>
+    record(ai, math:pi) {
+        field(INP, {const: 3.14159265358979})   # Correct
+        field(SIOL, "{const: 3.142857}")        # Wrong
+
+        info(autosave, {            # White-space and comments are allowed
+            fields:[DESC, SIMM],
+            pass0:[VAL]
+        })                          # Correct
+    }
+</pre>
+
+<p>Note that the record, field and info-tag names do <em>not</em> accept JSON
+values, so they follows the older bareword rules for quoting where the colon
+<tt><b>:</b></tt> and several additional characters are legal in a bareword
+string. Only the value (after the comma) is parsed as JSON. The autosave module
+has not been modified to accept JSON syntax, the above is only an example of
+how JSON might be used.</p>
+
 <h3>Echoless comments in iocsh</h3>
 
 <p>The way comments are parsed by the iocsh interpreter has changed. The

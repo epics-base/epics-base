@@ -52,6 +52,7 @@ extern "C" {
 #define M_time          (529 <<16) /*epicsTime*/
 
 epicsShareFunc void epicsShareAPI errSymLookup(long status, char *pBuf, unsigned bufLength);
+epicsShareFunc const char* errSymMsg(long status);
 epicsShareFunc void epicsShareAPI errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);
 epicsShareFunc void epicsShareAPI errSymTestPrint(long errNum);
 epicsShareFunc int epicsShareAPI errSymBld(void);

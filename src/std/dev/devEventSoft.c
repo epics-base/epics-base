@@ -47,40 +47,50 @@ epicsExportAddress(dset, devEventSoft);
 
 static long init_record(eventRecord *prec)
 {
-    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
-    switch (prec->inp.type) {
-    case CONSTANT:
-        if (recGblInitConstantLink(&prec->inp, DBF_STRING, &prec->val))
-            prec->udf = FALSE;
-        break;
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-        break;
-    default:
-        recGblRecordError(S_db_badField, (void *)prec,
-            "devEventSoft (init_record) Illegal INP field");
-        return S_db_badField;
-    }
+    if (recGblInitConstantLink(&prec->inp, DBF_STRING, prec->val))
+        prec->udf = FALSE;
+
     return 0;
+}
+
+struct eventvt {
+    char newEvent[MAX_STRING_SIZE];
+    epicsTimeStamp *ptime;
+};
+
+static long readLocked(struct link *pinp, void *vvt)
+{
+    struct eventvt *pvt = (struct eventvt *) vvt;
+    long status = dbGetLink(pinp, DBR_STRING, pvt->newEvent, 0, 0);
+
+    if (!status && pvt->ptime)
+        dbGetTimeStamp(pinp, pvt->ptime);
+
+    return status;
 }
 
 static long read_event(eventRecord *prec)
 {
     long status;
-    char newEvent[MAX_STRING_SIZE];
+    struct eventvt vt;
 
-    if (prec->inp.type != CONSTANT) {
-        status = dbGetLink(&prec->inp, DBR_STRING, newEvent, 0, 0);
-        if (status) return status;
-        if (strcmp(newEvent, prec->val) != 0) {
-            strcpy(prec->val, newEvent);
+    if (dbLinkIsConstant(&prec->inp))
+        return 0;
+
+    vt.ptime = (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime) ? &prec->time : NULL;
+
+    status = dbLinkDoLocked(&prec->inp, readLocked, &vt);
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, &vt);
+
+    if (!status) {
+        if (strcmp(vt.newEvent, prec->val) != 0) {
+            strcpy(prec->val, vt.newEvent);
             prec->epvt = eventNameToHandle(prec->val);
         }
+        prec->udf = FALSE;
     }
-    prec->udf = FALSE;
-    if (prec->tsel.type == CONSTANT &&
-        prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(&prec->inp, &prec->time);
-    return 0;
+
+    return status;
 }

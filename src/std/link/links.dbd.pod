@@ -1,0 +1,123 @@
+=head1 Extensible Links
+
+The extensible link mechanism allows new kinds of record links to be created,
+using JSON for the link address syntax.
+The IOC continues to support the older link types that do not use JSON to
+specify their link addresses.
+
+The following additional link types are available in this release:
+
+=over
+
+=item * L<Constant|/"Constant Link const">
+
+=item * L<Calc|/"Calculation Link calc">
+
+=back
+
+=head2 Using JSON Links
+
+When setting a record link field to a JSON link address, the link specification
+must appear inside a pair of braces C< {} > expressed as a JSON (L<JavaScript
+Object Notation|http://www.json.org/>) object, which allows link parameters to
+be defined as needed by the particular link type. When link fields are set from
+an IOC database file at initialization time, the field definitions may take
+advantage of a "relaxed JSON" syntax that reduces the number of double-quote
+characters required and maintains backwards compatibility with the older
+database file syntax.
+
+
+=head2 Link Type Reference
+
+=cut
+
+link(const, lnkConstIf)
+
+=head3 Constant Link C<"const">
+
+Constant links provide one or more values at link initalization time, but do not
+return any data when their C<getValue()> routine is called. Most record types
+support the use of constant links by calling C<recGblInitConstantLink()> at
+record initialization, which results in the constant value being loaded into the
+target field at that time.
+
+Note that for most record types (the C<printf> and C<calcout> records are the
+main exceptions) it is pointless to set an input link to a constant link at
+runtime since the link initialization that loads the field value usually only
+happens when a record is initialized. A constant link that is embedded inside
+another input link type such as a calculation link should be OK though since the
+link initialization will take place when the record's field gets set.
+
+=head4 Parameters
+
+A const link takes a parameter which may be an integer, double or string, or an
+array of those types. If an array contains both integers and double values the
+integers will be promoted to doubles. Mixing strings and numbers in an array
+results in an error.
+
+=head4 Examples
+
+ {const: 3.14159265358979}
+ {const: "Pi"}
+ {const: [1, 2.718281828459, 3.14159265358979]}
+ {const: ["One", "e", "Pi"]}
+
+The JSON syntax does not support Infinity or NaN values when parsing numbers,
+but (for scalars) it is possible to provide these in a string which will be
+converted to the desired double value at initialization, for example:
+
+ field(INP, {const:"Inf"})
+
+=cut
+
+link(calc, lnkCalcIf)
+
+=head3 Calculation Link C<"calc">
+
+Calculation links can perform simple mathematical expressions on scalar
+(double-precision floating-point) values obtained from other link types and
+return a single double-precision floating-point result. The expressions are
+evaluated by the EPICS Calc engine, and up to 12 inputs can be provided.
+
+=head4 Parameters
+
+The link address is a JSON map with the following keys:
+
+=over
+
+=item expr
+
+The primary expression to be evaluated, given as a string.
+
+=item major
+
+An optional expression that returns non-zero to raise a major alarm.
+
+=item minor
+
+An optional expression that returns non-zero to raise a minor alarm.
+
+=item args
+
+A JSON list of up to 12 input arguments for the expression, which are assigned
+to the inputs C<A>, C<B>, C<C>, ... C<L>. Each input argument may be either a
+numeric literal or an embedded JSON link inside C<{}> braces. The same input
+values are provided to the two alarm expressions as to the primary expression.
+
+=item units
+
+An optional string specifying the engineering units for the result of the
+expression. Equivalent to the C<EGU> field of a record.
+
+=item prec
+
+An optional integer specifying the numeric precision with which the calculation
+result should be displayed. Equivalent to the C<PREC> field of a record.
+
+=back
+
+=head4 Example
+
+ {calc: {expr:"A*B", args:[{db:"record.VAL"}, 1.5], prec:3}}
+
+=cut

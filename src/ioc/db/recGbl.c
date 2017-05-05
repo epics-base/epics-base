@@ -17,6 +17,7 @@
 #include <string.h>
 #include <limits.h>
 
+#include "alarm.h"
 #include "dbDefs.h"
 #include "epicsMath.h"
 #include "epicsPrint.h"
@@ -30,7 +31,6 @@
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
-#include "dbCa.h"
 #include "dbCommon.h"
 #include "dbEvent.h"
 #include "db_field_log.h"
@@ -214,7 +214,27 @@ int recGblSetSevr(void *precord, epicsEnum16 new_stat, epicsEnum16 new_sevr)
     }
     return FALSE;
 }
-
+
+void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
+    epicsEnum16 sevr)
+{
+    switch (msMode) {
+    case pvlOptNMS:
+	break;
+    case pvlOptMSI:
+        if (sevr < INVALID_ALARM)
+	    break;
+	/* Fall through */
+    case pvlOptMS:
+	recGblSetSevr(precord, LINK_ALARM, sevr);
+	break;
+    case pvlOptMSS:
+        recGblSetSevr(precord, stat, sevr);
+	break;
+    }
+}
+
+
 void recGblFwdLink(void *precord)
 {
     dbCommon *pdbc = precord;
@@ -236,7 +256,7 @@ void recGblGetTimeStamp(void *pvoid)
     dbCommon* prec = (dbCommon*)pvoid;
     struct link *plink = &prec->tsel;
 
-    if (plink->type != CONSTANT) {
+    if (!dbLinkIsConstant(plink)) {
         struct pv_link *ppv_link = &plink->value.pv_link;
 
         if (ppv_link->pvlMask & pvlOptTSELisTime) {

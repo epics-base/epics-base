@@ -182,6 +182,7 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_badChoice 	(M_dbAccess|13) /*Illegal choice*/
 #define S_db_badField 	(M_dbAccess|15) /*Illegal field value*/
 #define S_db_lsetLogic 	(M_dbAccess|17) /*Logic error generating lock sets*/
+#define S_db_noLSET     (M_dbAccess|21) /*No link support table or entry*/
 #define S_db_noRSET 	(M_dbAccess|31) /*missing record support entry table*/
 #define S_db_noSupport 	(M_dbAccess|33) /*RSET or DSXT routine not defined*/
 #define S_db_BadSub 	(M_dbAccess|35) /*Subroutine not found*/

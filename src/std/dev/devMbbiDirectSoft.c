@@ -47,32 +47,33 @@ epicsExportAddress(dset, devMbbiDirectSoft);
 
 static long init_record(mbbiDirectRecord *prec)
 {
-    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
-    switch (prec->inp.type) {
-    case CONSTANT:
-        if (recGblInitConstantLink(&prec->inp, DBF_ENUM, &prec->val))
-            prec->udf = FALSE;
-        break;
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-        break;
-    default:
-        recGblRecordError(S_db_badField, (void *)prec,
-            "devMbbiDirectSoft (init_record) Illegal INP field");
-        return S_db_badField;
-    }
+    if (recGblInitConstantLink(&prec->inp, DBF_ENUM, &prec->val))
+        prec->udf = FALSE;
+
     return 0;
+}
+
+static long readLocked(struct link *pinp, void *dummy)
+{
+    mbbiDirectRecord *prec = (mbbiDirectRecord *) pinp->precord;
+    long status = dbGetLink(pinp, DBR_USHORT, &prec->val, 0, 0);
+
+    if (status) return status;
+
+    prec->udf = FALSE;
+    if (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime)
+        dbGetTimeStamp(pinp, &prec->time);
+
+    return 2;
 }
 
 static long read_mbbi(mbbiDirectRecord *prec)
 {
-    if (!dbGetLink(&prec->inp, DBR_USHORT, &prec->val, 0, 0)) {
-        if (prec->inp.type != CONSTANT)
-            prec->udf = FALSE;
-        if (prec->tsel.type == CONSTANT &&
-            prec->tse == epicsTimeEventDeviceTime)
-            dbGetTimeStamp(&prec->inp, &prec->time);
-    }
-    return 2;
+    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, NULL);
+
+    return status;
 }

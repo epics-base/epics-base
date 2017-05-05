@@ -99,9 +99,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     plink = &prec->inpa;
     pvalue = &prec->a;
     for (i = 0; i < CALCPERFORM_NARGS; i++, plink++, pvalue++) {
-        if (plink->type == CONSTANT) {
-            recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
-        }
+        recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
     }
     if (postfix(prec->calc, prec->rpcl, &error_number)) {
         recGblRecordError(S_db_badField, (void *)prec,

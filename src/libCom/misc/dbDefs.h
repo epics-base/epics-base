@@ -59,6 +59,10 @@
 #define PVNAME_STRINGSZ 61
 #define PVNAME_SZ (PVNAME_STRINGSZ - 1)
 
+/* Buffer size for the string representation of a DBF_*LINK field */
+#define PVLINK_STRINGSZ 1024
+
+/* dbAccess enums/menus can have up to this many choices */
 #define DB_MAX_CHOICES 30
 
 #endif /* INC_dbDefs_H */

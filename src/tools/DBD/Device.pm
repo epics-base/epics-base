@@ -5,6 +5,7 @@ use DBD::Base;
 my %link_types = (
     CONSTANT  => qr/$RXnum/o,
     PV_LINK   => qr/$RXname \s+ [.NPCAMS ]*/ox,
+    JSON_LINK => qr/\{ .* \}/ox,
     VME_IO    => qr/\# (?: \s* [CS] \s* $RXintx)* \s* (?: @ .*)?/ox,
     CAMAC_IO  => qr/\# (?: \s* [BCNAF] \s* $RXintx)* \s* (?: @ .*)?/ox,
     RF_IO     => qr/\# (?: \s* [RMDE] \s* $RXintx)*/ox,

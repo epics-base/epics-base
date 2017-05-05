@@ -109,10 +109,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     struct aSubRecord *prec = (struct aSubRecord *)pcommon;
     STATIC_ASSERT(sizeof(prec->onam)==sizeof(prec->snam));
     GENFUNCPTR     pfunc;
-    long           status;
     int            i;
 
-    status = 0;
     if (pass == 0) {
         /* Allocate memory for arrays */
         initFields(&prec->fta,  &prec->noa,  &prec->nea,  NULL,
@@ -123,64 +121,18 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* Initialize the Subroutine Name Link */
-    switch (prec->subl.type) {
-    case CONSTANT:
-        recGblInitConstantLink(&prec->subl, DBF_STRING, prec->snam);
-        break;
-
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-        break;
-
-    default:
-        recGblRecordError(S_db_badField, (void *)prec,
-            "aSubRecord(init_record) Bad SUBL link type");
-        return S_db_badField;
-    }
+    recGblInitConstantLink(&prec->subl, DBF_STRING, prec->snam);
 
     /* Initialize Input Links */
     for (i = 0; i < NUM_ARGS; i++) {
         struct link *plink = &(&prec->inpa)[i];
-        switch (plink->type) {
-        case CONSTANT:
-            if ((&prec->noa)[i] < 2)
-                recGblInitConstantLink(plink, (&prec->fta)[i], (&prec->a)[i]);
-            break;
+        short dbr = (&prec->fta)[i];
+        long n = (&prec->noa)[i];
 
-        case PV_LINK:
-        case CA_LINK:
-        case DB_LINK:
-            break;
-
-        default:
-            recGblRecordError(S_db_badField, (void *)prec,
-                "aSubRecord(init_record) Illegal INPUT LINK");
-            status = S_db_badField;
-            break;
-        }
+        dbLoadLinkArray(plink, dbr, (&prec->a)[i], &n);
+        if (n > 0)
+            (&prec->nea)[i] = n;
     }
-
-    if (status)
-        return status;
-
-    /* Initialize Output Links */
-    for (i = 0; i < NUM_ARGS; i++) {
-        switch ((&prec->outa)[i].type) {
-        case CONSTANT:
-        case PV_LINK:
-        case CA_LINK:
-        case DB_LINK:
-            break;
-
-        default:
-            recGblRecordError(S_db_badField, (void *)prec,
-                "aSubRecord(init_record) Illegal OUTPUT LINK");
-            status = S_db_badField;
-        }
-    }
-    if (status)
-        return status;
 
     /* Call the user initialization routine if there is one */
     if (prec->inam[0] != 0) {

@@ -29,6 +29,7 @@ long link_test_noop(void *junk)
     static dset devxLTest ## LTYPE = {4, NULL, &link_test_init, &link_test_noop, &link_test_noop}; \
     epicsExportAddress(dset, devxLTest ## LTYPE);
 
+DEFDSET(JSON_LINK)
 DEFDSET(VME_IO)
 DEFDSET(CAMAC_IO)
 DEFDSET(AB_IO)

@@ -47,33 +47,39 @@ epicsExportAddress(dset, devMbbiSoftRaw);
 
 static long init_record(mbbiRecord *prec)
 {
-    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
-    switch (prec->inp.type) {
-    case CONSTANT:
-        recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
-        break;
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-        break;
-    default:
-        recGblRecordError(S_db_badField, (void *)prec,
-            "devMbbiSoftRaw (init_record) Illegal INP field");
-        return S_db_badField;
-    }
-    /*to preserve old functionality*/
-    if (prec->nobt == 0) prec->mask = 0xffffffff;
+    recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
+
+    /* Preserve old functionality*/
+    if (prec->nobt == 0)
+        prec->mask = 0xffffffff;
+
     prec->mask <<= prec->shft;
     return 0;
 }
 
+static long readLocked(struct link *pinp, void *dummy)
+{
+    mbbiRecord *prec = (mbbiRecord *) pinp->precord;
+    long status = dbGetLink(pinp, DBR_LONG, &prec->rval, 0, 0);
+
+    if (status) return status;
+
+    if (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime)
+        dbGetTimeStamp(pinp, &prec->time);
+
+    return status;
+}
+
 static long read_mbbi(mbbiRecord *prec)
 {
-    if (!dbGetLink(&prec->inp, DBR_LONG, &prec->rval, 0, 0)) {
+    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, NULL);
+
+    if (!status)
         prec->rval &= prec->mask;
-        if (prec->tsel.type == CONSTANT &&
-            prec->tse == epicsTimeEventDeviceTime)
-            dbGetTimeStamp(&prec->inp, &prec->time);
-    }
-    return 0;
+
+    return status;
 }

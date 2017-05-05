@@ -27,24 +27,7 @@ static void testRetarget(void)
 {
     testMonitor *lnkmon, *valmon;
 
-    testdbPrepare();
-
-    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
-
-    recTestIoc_registerRecordDeviceDriver(pdbbase);
-
-    testdbReadDatabase("linkRetargetLink.db", NULL, NULL);
-
-    eltc(0);
-    testIocInitOk();
-    eltc(1);
-    /* wait for local CA links to be connected or dbPutField() will fail */
-    /* wait for initial CA_CONNECT actions to be processed.
-     * Assume that local CA links deliver callbacks synchronously
-     * eg. that ca_create_channel() will invoke the connection callback
-     *     before returning.
-     */
-    dbCaSync();
+    testDiag("In testRetarget");
 
     lnkmon = testMonitorCreate("rec:ai.INP", DBE_VALUE, 0);
     valmon = testMonitorCreate("rec:ai", DBE_VALUE, 0);
@@ -80,15 +63,60 @@ static void testRetarget(void)
 
     testMonitorDestroy(lnkmon);
     testMonitorDestroy(valmon);
+}
 
-    testIocShutdownOk();
+#define testLongStrEq(PV, VAL) testdbGetArrFieldEqual(PV, DBF_CHAR, sizeof(VAL)+2, sizeof(VAL), VAL)
+#define testPutLongStr(PV, VAL) testdbPutArrFieldOk(PV, DBF_CHAR, sizeof(VAL), VAL);
 
-    testdbCleanup();
+static void testRetargetJLink(void)
+{
+    testDiag("In testRetargetJLink");
+
+    testdbGetFieldEqual("rec:j1", DBF_DOUBLE, 10.0);
+    /* minimal args */
+    testLongStrEq("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":5}}");
+
+    /* with [] */
+    testPutLongStr("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":[7]}}");
+    testdbPutFieldOk("rec:j1.PROC", DBF_LONG, 1);
+
+    /* with const */
+    testPutLongStr("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":[{\"const\":7}]}}");
+    testdbPutFieldOk("rec:j1.PROC", DBF_LONG, 1);
+
+    testdbGetFieldEqual("rec:j1", DBF_DOUBLE, 12.0);
+    testLongStrEq("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":[{\"const\":7}]}}");
 }
 
 MAIN(linkRetargetLinkTest)
 {
-    testPlan(10);
+    testPlan(18);
+
+    testdbPrepare();
+
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("linkRetargetLink.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+    /* wait for local CA links to be connected or dbPutField() will fail */
+    /* wait for initial CA_CONNECT actions to be processed.
+     * Assume that local CA links deliver callbacks synchronously
+     * eg. that ca_create_channel() will invoke the connection callback
+     *     before returning.
+     */
+    dbCaSync();
+
     testRetarget();
+    testRetargetJLink();
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+
     return testDone();
 }

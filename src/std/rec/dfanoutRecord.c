@@ -94,13 +94,16 @@ static void push_values(dfanoutRecord *);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct dfanoutRecord *prec = (struct dfanoutRecord *)pcommon;
-    if (pass==0) return(0);
+    if (pass==0)
+        return 0;
 
-    recGblInitConstantLink(&prec->sell,DBF_USHORT,&prec->seln);
+    recGblInitConstantLink(&prec->sell, DBF_USHORT, &prec->seln);
+
     /* get the initial value dol is a constant*/
-    if(recGblInitConstantLink(&prec->dol,DBF_DOUBLE,&prec->val))
-	    prec->udf = isnan(prec->val);
-    return(0);
+    if (recGblInitConstantLink(&prec->dol, DBF_DOUBLE, &prec->val))
+        prec->udf = isnan(prec->val);
+
+    return 0;
 }
 
 static long process(struct dbCommon *pcommon)
@@ -108,11 +111,11 @@ static long process(struct dbCommon *pcommon)
     struct dfanoutRecord *prec = (struct dfanoutRecord *)pcommon;
     long status=0;
 
-    if (!prec->pact
-    && (prec->dol.type != CONSTANT)
-    && (prec->omsl == menuOmslclosed_loop)){
-	status = dbGetLink(&(prec->dol),DBR_DOUBLE,&(prec->val),0,0);
-	if(prec->dol.type!=CONSTANT && RTN_SUCCESS(status))
+    if (!prec->pact &&
+        !dbLinkIsConstant(&prec->dol) &&
+        prec->omsl == menuOmslclosed_loop) {
+        status = dbGetLink(&prec->dol, DBR_DOUBLE, &prec->val, 0, 0);
+        if (!dbLinkIsConstant(&prec->dol) && !status)
             prec->udf = isnan(prec->val);
     }
     prec->pact = TRUE;

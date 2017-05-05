@@ -77,6 +77,7 @@ static short findOrAddGuiGroup(const char *name);
 static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring);
 static void dbDriver(char *name);
+static void dbLinkType(char *name, char *jlif_name);
 static void dbRegistrar(char *name);
 static void dbFunction(char *name);
 static void dbVariable(char *name, char *type);
@@ -815,6 +816,26 @@ static void dbDriver(char *name)
     ellAdd(&pdbbase->drvList,&pdrvSup->node);
 }
 
+static void dbLinkType(char *name, char *jlif_name)
+{
+    linkSup *pLinkSup;
+    GPHENTRY *pgphentry;
+
+    pgphentry = gphFind(pdbbase->pgpHash, name, &pdbbase->linkList);
+    if (pgphentry) {
+	return;
+    }
+    pLinkSup = dbCalloc(1,sizeof(linkSup));
+    pLinkSup->name = epicsStrDup(name);
+    pLinkSup->jlif_name = epicsStrDup(jlif_name);
+    pgphentry = gphAdd(pdbbase->pgpHash, pLinkSup->name, &pdbbase->linkList);
+    if (!pgphentry) {
+	yyerrorAbort("gphAdd failed");
+    } 
+    pgphentry->userPvt = pLinkSup;
+    ellAdd(&pdbbase->linkList, &pLinkSup->node);
+}
+
 static void dbRegistrar(char *name)
 {
     dbText	*ptext;
@@ -1057,7 +1078,12 @@ static void dbRecordField(char *name,char *value)
 	yyerror(NULL);
 	return;
     }
-    dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
+    if (*value == '"') {
+	/* jsonSTRING values still have their quotes */
+        value++;
+	value[strlen(value) - 1] = 0;
+    }
+    dbTranslateEscape(value, value);    /* in-place; safe & legal */
     status = dbPutString(pdbentry,value);
     if(status) {
 	epicsPrintf("Can't set \"%s.%s\" to \"%s\"\n",
@@ -1076,6 +1102,12 @@ static void dbRecordInfo(char *name, char *value)
     if(duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
+    if (*value == '"') {
+	/* jsonSTRING values still have their quotes */
+        value++;
+	value[strlen(value) - 1] = 0;
+    }
+    dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutInfo(pdbentry,name,value);
     if(status) {
 	epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\"\n",

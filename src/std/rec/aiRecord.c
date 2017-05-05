@@ -110,15 +110,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     if (pass==0) return(0);
 
-    /* ai.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (prec->siml.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    }
-
-    /* ai.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (prec->siol.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siol,DBF_DOUBLE,&prec->sval);
-    }
+    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
+    recGblInitConstantLink(&prec->siol,DBF_DOUBLE,&prec->sval);
 
     if(!(pdset = (aidset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"ai: init_record");

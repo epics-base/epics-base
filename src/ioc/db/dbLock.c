@@ -190,6 +190,8 @@ void dbScanLock(dbCommon *precord)
     lockRecord * const lr = precord->lset;
     lockSet *ls;
 
+    assert(lr);
+
     ls = dbLockGetRef(lr);
     assert(epicsAtomicGetIntT(&ls->refcount)>0);
 

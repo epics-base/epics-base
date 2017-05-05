@@ -1,3 +1,4 @@
+device(x, JSON_LINK, devxLTestJSON_LINK, "Unit Test JSON_LINK")
 device(x, VME_IO, devxLTestVME_IO, "Unit Test VME_IO")
 device(x, CAMAC_IO, devxLTestCAMAC_IO, "Unit Test CAMAC_IO")
 device(x, AB_IO, devxLTestAB_IO, "Unit Test AB_IO")

@@ -3,6 +3,10 @@ record(x, "x2") {}
 record(x, "x3") {}
 record(x, "x4") {}
 
+record(x, "rJSON_LINK") {
+  field(DTYP, "Unit Test JSON_LINK")
+  field(INP, {x:true})
+}
 record(x, "rVME_IO") {
   field(DTYP, "Unit Test VME_IO")
   field(INP, "#C100 S101 @parm VME_IO")

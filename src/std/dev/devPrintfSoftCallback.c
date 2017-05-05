@@ -30,18 +30,13 @@ static long write_string(printfRecord *prec)
         len = 1;
     }
 
-    if (plink->type != CA_LINK)
-        return dbPutLink(plink, dtyp, prec->val, len);
+    status = dbPutLinkAsync(plink, dtyp, prec->val, len);
+    if (!status)
+        prec->pact = TRUE;
+    else if (status == S_db_noLSET)
+        status = dbPutLink(plink, dtyp, prec->val, len);
 
-    status = dbCaPutLinkCallback(plink, dtyp, prec->val, len,
-        dbCaCallbackProcess, plink);
-    if (status) {
-        recGblSetSevr(prec, LINK_ALARM, INVALID_ALARM);
-        return status;
-    }
-
-    prec->pact = TRUE;
-    return 0;
+    return status;
 }
 
 printfdset devPrintfSoftCallback = {

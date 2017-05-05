@@ -49,6 +49,7 @@
 #include "dbLock.h"
 #include "dbScan.h"
 #include "link.h"
+#include "recGbl.h"
 #include "recSup.h"
 
 /* defined in dbContext.cpp
@@ -246,11 +247,8 @@ epicsShareFunc unsigned long dbCaGetUpdateCount(struct link *plink)
 void dbCaCallbackProcess(void *userPvt)
 {
     struct link *plink = (struct link *)userPvt;
-    dbCommon *pdbCommon = plink->precord;
 
-    dbScanLock(pdbCommon);
-    pdbCommon->rset->process(pdbCommon);
-    dbScanUnlock(pdbCommon);
+    dbLinkAsyncComplete(plink);
 }
 
 void dbCaShutdown(void)
@@ -354,8 +352,8 @@ void dbCaRemoveLink(struct dbLocker *locker, struct link *plink)
     addAction(pca, CA_CLEAR_CHANNEL);
 }
 
-long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
-    epicsEnum16 *pstat, epicsEnum16 *psevr, long *nelements)
+long dbCaGetLink(struct link *plink, short dbrType, void *pdest,
+    long *nelements)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
     long   status = 0;
@@ -427,13 +425,23 @@ long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         aConvert(&dbAddr, pdest, ntoget, ntoget, 0);
     }
 done:
-    if (pstat) *pstat = pca->stat;
-    if (psevr) *psevr = pca->sevr;
-    if (link_action) addAction(pca, link_action);
+    if (link_action)
+        addAction(pca, link_action);
+    if (!status)
+        recGblInheritSevr(plink->value.pv_link.pvlMask & pvlOptMsMode,
+            plink->precord, pca->stat, pca->sevr);
     epicsMutexUnlock(pca->lock);
+
     return status;
 }
 
+static long dbCaPutAsync(struct link *plink,short dbrType,
+    const void *pbuffer,long nRequest)
+{
+    return dbCaPutLinkCallback(plink, dbrType, pbuffer, nRequest,
+        dbCaCallbackProcess, plink);
+}
+
 long dbCaPutLinkCallback(struct link *plink,short dbrType,
     const void *pbuffer,long nRequest,dbCaCallback callback,void *userPvt)
 {
@@ -690,6 +698,17 @@ static long getUnits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
+static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
+{
+    caLink *pca;
+    long status;
+
+    pcaGetCheck
+    status = rtn(plink, priv);
+    epicsMutexUnlock(pca->lock);
+    return status;
+}
+
 static void scanComplete(void *raw, dbCommon *prec)
 {
     caLink *pca = raw;
@@ -723,15 +742,17 @@ static void scanLinkOnce(dbCommon *prec, caLink *pca) {
 }
 
 static lset dbCa_lset = {
-    dbCaRemoveLink,
+    0, 1, /* not Constant, Volatile */
+    NULL, dbCaRemoveLink,
+    NULL, NULL, NULL,
     isConnected,
     getDBFtype, getElements,
     dbCaGetLink,
     getControlLimits, getGraphicLimits, getAlarmLimits,
     getPrecision, getUnits,
     getAlarm, getTimeStamp,
-    dbCaPutLink,
-    scanForward
+    dbCaPutLink, dbCaPutAsync,
+    scanForward, doLocked
 };
 
 static void connectionCallback(struct connection_handler_args arg)

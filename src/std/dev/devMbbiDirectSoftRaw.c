@@ -47,22 +47,12 @@ epicsExportAddress(dset, devMbbiDirectSoftRaw);
 
 static long init_record(mbbiDirectRecord *prec)
 {
-    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
-    switch (prec->inp.type) {
-    case CONSTANT:
-        recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
-        break;
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-        break;
-    default:
-        recGblRecordError(S_db_badField, (void *)prec,
-            "devMbbiDirectSoftRaw (init_record) Illegal INP field");
-        return S_db_badField;
-    }
-    /*to preserve old functionality*/
-    if (prec->nobt == 0) prec->mask = 0xffffffff;
+    recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
+
+    /* Preserve old functionality */
+    if (prec->nobt == 0)
+        prec->mask = 0xffffffff;
+
     prec->mask <<= prec->shft;
     return 0;
 }
@@ -71,7 +61,7 @@ static long read_mbbi(mbbiDirectRecord *prec)
 {
     if (!dbGetLink(&prec->inp, DBR_LONG, &prec->rval, 0, 0)) {
         prec->rval &= prec->mask;
-        if (prec->tsel.type == CONSTANT &&
+        if (dbLinkIsConstant(&prec->tsel) &&
             prec->tse == epicsTimeEventDeviceTime)
             dbGetTimeStamp(&prec->inp, &prec->time);
     }

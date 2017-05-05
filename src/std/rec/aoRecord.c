@@ -110,20 +110,15 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     if (pass==0) return(0);
 
-    /* ao.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (prec->siml.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    }
+    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
 
     if(!(pdset = (struct aodset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"ao: init_record");
 	return(S_dev_noDSET);
     }
     /* get the initial value if dol is a constant*/
-    if (prec->dol.type == CONSTANT) {
-	if(recGblInitConstantLink(&prec->dol,DBF_DOUBLE,&prec->val))
-	    prec->udf = isnan(prec->val);
-    }
+    if (recGblInitConstantLink(&prec->dol,DBF_DOUBLE,&prec->val))
+        prec->udf = isnan(prec->val);
 
     /* must have write_ao function defined */
     if ((pdset->number < 6) || (pdset->write_ao ==NULL)) {
@@ -191,8 +186,8 @@ static long process(struct dbCommon *pcommon)
 
 	/* fetch value and convert*/
 	if (prec->pact == FALSE) {
-                if ((prec->dol.type != CONSTANT)
-                && (prec->omsl == menuOmslclosed_loop)) {
+                if (!dbLinkIsConstant(&prec->dol) &&
+                    prec->omsl == menuOmslclosed_loop) {
                     status = fetch_value(prec, &value);
                 }
                 else {

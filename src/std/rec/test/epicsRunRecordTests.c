@@ -17,6 +17,7 @@ int compressTest(void);
 int arrayOpTest(void);
 int asTest(void);
 int linkRetargetLinkTest(void);
+int linkInitTest(void);
 
 void epicsRunRecordTests(void)
 {
@@ -31,6 +32,8 @@ void epicsRunRecordTests(void)
     runTest(asTest);
 
     runTest(linkRetargetLinkTest);
+
+    runTest(linkInitTest);
 
     epicsExit(0);   /* Trigger test harness */
 }

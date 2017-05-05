@@ -531,7 +531,7 @@ dbChannel * dbChannelCreate(const char *name)
                 paddr->dbr_field_type = DBR_CHAR;
             } else if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
                 /* Clients see a char array, but keep original dbfType */
-                paddr->no_elements = PVNAME_STRINGSZ + 12;
+                paddr->no_elements = PVLINK_STRINGSZ;
                 paddr->field_size = 1;
                 paddr->dbr_field_type = DBR_CHAR;
             } else {

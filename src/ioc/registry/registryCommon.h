@@ -12,6 +12,7 @@
 
 #include "dbStaticLib.h"
 #include "devSup.h"
+#include "dbJLink.h"
 #include "registryRecordType.h"
 #include "shareLib.h"
 
@@ -28,6 +29,8 @@ epicsShareFunc void registerDevices(
 epicsShareFunc void registerDrivers(
     DBBASE *pbase, int nDrivers,
     const char * const *driverSupportNames, struct drvet * const *drvsl);
+epicsShareFunc void registerJLinks(
+    DBBASE *pbase, int nDrivers, jlif * const *jlifsl);
 
 #ifdef __cplusplus
 }

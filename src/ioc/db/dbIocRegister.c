@@ -16,6 +16,7 @@
 #include "dbCaTest.h"
 #include "dbEvent.h"
 #include "dbIocRegister.h"
+#include "dbJLink.h"
 #include "dbLock.h"
 #include "dbNotify.h"
 #include "dbScan.h"
@@ -107,6 +108,16 @@ static const iocshFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs};
 static void dbcarCallFunc(const iocshArgBuf *args)
 {
     dbcar(args[0].sval,args[1].ival);
+}
+
+/* dbjlr */
+static const iocshArg dbjlrArg0 = { "record name",iocshArgString};
+static const iocshArg dbjlrArg1 = { "level",iocshArgInt};
+static const iocshArg * const dbjlrArgs[2] = {&dbjlrArg0,&dbjlrArg1};
+static const iocshFuncDef dbjlrFuncDef = {"dbjlr",2,dbjlrArgs};
+static void dbjlrCallFunc(const iocshArgBuf *args)
+{
+    dbjlr(args[0].sval,args[1].ival);
 }
 
 /* dbel */
@@ -395,6 +406,7 @@ void dbIocRegister(void)
     iocshRegister(&dbsrFuncDef,dbsrCallFunc);
     iocshRegister(&dbcarFuncDef,dbcarCallFunc);
     iocshRegister(&dbelFuncDef,dbelCallFunc);
+    iocshRegister(&dbjlrFuncDef,dbjlrCallFunc);
 
     iocshRegister(&dbLoadDatabaseFuncDef,dbLoadDatabaseCallFunc);
     iocshRegister(&dbLoadRecordsFuncDef,dbLoadRecordsCallFunc);

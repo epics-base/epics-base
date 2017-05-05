@@ -62,7 +62,7 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(recMiscTest)
 {
-    testPlan(0);
+    testPlan(10);
 
     testdbPrepare();
 

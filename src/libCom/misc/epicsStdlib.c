@@ -256,7 +256,7 @@ epicsParseInt32(const char *str, epicsInt32 *to, int base, char **units)
         return S_stdlib_overflow;
 #endif
 
-    *to = value;
+    *to = (epicsInt32) value;
     return 0;
 }
 
@@ -274,7 +274,7 @@ epicsParseUInt32(const char *str, epicsUInt32 *to, int base, char **units)
         return S_stdlib_overflow;
 #endif
 
-    *to = value;
+    *to = (epicsUInt32) value;
     return 0;
 }
 
@@ -292,7 +292,7 @@ epicsParseInt64(const char *str, epicsInt64 *to, int base, char **units)
     if (status)
         return status;
 
-    *to = value;
+    *to = (epicsInt64) value;
     return 0;
 }
 
@@ -310,7 +310,7 @@ epicsParseUInt64(const char *str, epicsUInt64 *to, int base, char **units)
     if (status)
         return status;
 
-    *to = value;
+    *to = (epicsUInt64) value;
     return 0;
 }
 

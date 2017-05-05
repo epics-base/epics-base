@@ -38,6 +38,8 @@ epicsShareFunc void testdbCleanup(void);
  *
  * int for DBR_UCHAR, DBR_CHAR, DBR_USHORT, DBR_SHORT, DBR_LONG
  * unsigned int for DBR_ULONG
+ * long long for DBF_INT64
+ * unsigned long long for DBF_UINT64
  * double for DBR_FLOAT and DBR_DOUBLE
  * const char* for DBR_STRING
  *

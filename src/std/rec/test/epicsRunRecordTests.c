@@ -14,6 +14,7 @@
 
 int analogMonitorTest(void);
 int compressTest(void);
+int recMiscTest(void);
 int arrayOpTest(void);
 int asTest(void);
 int linkRetargetLinkTest(void);
@@ -26,6 +27,8 @@ void epicsRunRecordTests(void)
     runTest(analogMonitorTest);
 
     runTest(compressTest);
+
+    runTest(recMiscTest);
 
     runTest(arrayOpTest);
 

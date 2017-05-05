@@ -82,6 +82,8 @@ typedef union epics_any {
     epicsEnum16     enum16;
     epicsInt32      int32;
     epicsUInt32     uInt32;
+    epicsInt64      int64;
+    epicsUInt64     uInt64;
     epicsFloat32    float32;
     epicsFloat64    float64;
     epicsString     string;

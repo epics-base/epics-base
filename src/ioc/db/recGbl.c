@@ -120,6 +120,8 @@ void recGblGetPrec(const struct dbAddr *paddr, long *precision)
     case DBF_USHORT:
     case DBF_LONG:
     case DBF_ULONG:
+    case DBF_INT64:
+    case DBF_UINT64:
         *precision = 0;
         break;
 
@@ -345,7 +347,15 @@ static void getMaxRangeValues(short field_type, double *pupper_limit,
         *plower_limit = -2147483648.0;
         break;
     case DBF_ULONG:
-        *pupper_limit = (double) 0xffffffffU;
+        *pupper_limit = 4294967295.0;
+        *plower_limit = 0.0;
+        break;
+    case DBF_INT64:
+        *pupper_limit = 9223372036854775808.0;
+        *plower_limit = -9223372036854775808.0;
+        break;
+    case DBF_UINT64:
+        *pupper_limit = 18446744073709551615.0;
         *plower_limit = 0.0;
         break;
     case DBF_FLOAT:

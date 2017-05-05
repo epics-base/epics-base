@@ -177,6 +177,11 @@ macDefExpandTest_SRCS += macDefExpandTest.c
 testHarness_SRCS += macDefExpandTest.c
 TESTS += macDefExpandTest
 
+TESTPROD_HOST += cvtFastTest
+cvtFastTest_SRCS += cvtFastTest.cpp
+testHarness_SRCS += cvtFastTest.cpp
+TESTS += cvtFastTest
+
 TESTPROD_HOST += macLibTest
 macLibTest_SRCS += macLibTest.c
 testHarness_SRCS += macLibTest.c

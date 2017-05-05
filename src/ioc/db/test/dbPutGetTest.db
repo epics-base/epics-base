@@ -11,7 +11,7 @@ record(x, "recempty") {
 
 record(x, "recoverwrite") {
 # first with non-default values
-#    field(DTYP, "Scan I/O")
+    field(DTYP, "Scan I/O")
     field(DESC, "hello")
     field(PHAS, "2")
     field(TSE , "5")

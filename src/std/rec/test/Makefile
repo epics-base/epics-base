@@ -32,6 +32,13 @@ testHarness_SRCS += arrayOpTest.c
 TESTFILES += ../arrayOpTest.db
 TESTS += arrayOpTest
 
+TESTPROD_HOST += recMiscTest
+recMiscTest_SRCS += recMiscTest.c
+recMiscTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += recMiscTest.c
+TESTFILES += ../recMiscTest.db
+TESTS += recMiscTest
+
 TESTPROD_HOST += linkRetargetLinkTest
 linkRetargetLinkTest_SRCS += linkRetargetLinkTest.c
 linkRetargetLinkTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp

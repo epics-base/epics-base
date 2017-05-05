@@ -1,0 +1,528 @@
+#*************************************************************************
+# Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+=title 64bit Integer Input Record (int64in)
+
+This record type is normally used to obtain an integer value of up to 64 bits
+from a hardware input.
+The record supports alarm limits, alarm filtering, graphics and control
+limits.
+
+=head2 Parameter Fields
+
+The record-specific fields are described below.
+
+=recordtype int64in
+
+=cut
+
+recordtype(int64in) {
+
+=head3 Input Specification
+
+These fields control where the record will read data from when it is processed:
+
+=fields DTYP, INP
+
+The DTYP field selects which device support layer should be responsible for
+providing input data to the record.
+The int64in device support layers provided by EPICS Base are documented in the
+L<Device Support> section.
+External support modules may provide additional device support for this record
+type.
+If not set explicitly, the DTYP value defaults to the first device support that
+is loaded for the record type, which will usually be the C<Soft Channel> support
+that comes with Base.
+
+The INP link field contains a database or channel access link or provides
+hardware address information that the device support uses to determine where the
+input data should come from.
+The format for the INP field value depends on the device support layer that is
+selected by the DTYP field.
+See L<Address Specification|...> for a description of the various hardware
+address formats supported.
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator.
+They do not affect the functioning of the record.
+
+=over
+
+=item *
+DESC is a string that is usually used to briefly describe the record.
+
+=item *
+EGU is a string of up to 16 characters naming the engineering units
+that the VAL field represents.
+
+=item *
+The HOPR and LOPR fields set the upper and lower display limits for the VAL,
+HIHI, HIGH, LOW, and LOLO fields.
+
+=back
+
+=fields DESC, EGU, HOPR, LOPR
+
+=head3 Alarm Limits
+
+The user configures limit alarms by putting numerical values into the HIHI,
+HIGH, LOW and LOLO fields, and by setting the associated alarm severity in the
+corresponding HHSV, HSV, LSV and LLSV menu fields.
+
+The HYST field controls hysteresis to prevent alarm chattering from an input
+signal that is close to one of the limits and suffers from significant readout
+noise.
+
+The AFTC field sets the time constant on a low-pass filter that delays the
+reporting of limit alarms until the signal has been within the alarm range for
+that number of seconds (the default AFTC value of zero retains the previous
+behavior).
+
+The LALM field is used by the record at run-time to implement the alarm limit
+functionality.
+
+=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, AFTC, LALM
+
+=head3 Monitor Parameters
+
+These parameters are used to determine when to send monitors placed on the VAL
+field.
+The monitors are sent when the current value exceeds the last transmitted value
+by the appropriate deadband.
+If these fields are set to zero, a monitor will be triggered every time the
+value changes; if set to -1, a monitor will be sent every time the record is
+processed.
+
+The ADEL field sets the deadband for archive monitors (C<DBE_LOG> events), while
+the MDEL field controls value monitors (C<DBE_VALUE> events).
+
+The remaining fields are used by the record at run-time to implement the record
+monitoring deadband functionality.
+
+=fields ADEL, MDEL, ALST, MLST
+
+=cut
+
+    include "dbCommon.dbd"
+    field(VAL,DBF_INT64) {
+        prompt("Current value")
+        promptgroup("40 - Input")
+        asl(ASL0)
+        pp(TRUE)
+    }
+    field(INP,DBF_INLINK) {
+        prompt("Input Specification")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(EGU,DBF_STRING) {
+        prompt("Units name")
+        promptgroup("80 - Display")
+        interest(1)
+        size(16)
+        prop(YES)
+    }
+    field(HOPR,DBF_INT64) {
+        prompt("High Operating Range")
+        promptgroup("80 - Display")
+        interest(1)
+        prop(YES)
+    }
+    field(LOPR,DBF_INT64) {
+        prompt("Low Operating Range")
+        promptgroup("80 - Display")
+        interest(1)
+        prop(YES)
+    }
+    field(HIHI,DBF_INT64) {
+        prompt("Hihi Alarm Limit")
+        promptgroup("70 - Alarm")
+        pp(TRUE)
+        interest(1)
+        prop(YES)
+    }
+    field(LOLO,DBF_INT64) {
+        prompt("Lolo Alarm Limit")
+        promptgroup("70 - Alarm")
+        pp(TRUE)
+        interest(1)
+        prop(YES)
+    }
+    field(HIGH,DBF_INT64) {
+        prompt("High Alarm Limit")
+        promptgroup("70 - Alarm")
+        pp(TRUE)
+        interest(1)
+        prop(YES)
+    }
+    field(LOW,DBF_INT64) {
+        prompt("Low Alarm Limit")
+        promptgroup("70 - Alarm")
+        pp(TRUE)
+        interest(1)
+        prop(YES)
+    }
+    field(HHSV,DBF_MENU) {
+        prompt("Hihi Severity")
+        promptgroup("70 - Alarm")
+        pp(TRUE)
+        interest(1)
+        menu(menuAlarmSevr)
+    }
+    field(LLSV,DBF_MENU) {
+        prompt("Lolo Severity")
+        promptgroup("70 - Alarm")
+        pp(TRUE)
+        interest(1)
+        menu(menuAlarmSevr)
+    }
+    field(HSV,DBF_MENU) {
+        prompt("High Severity")
+        promptgroup("70 - Alarm")
+        pp(TRUE)
+        interest(1)
+        menu(menuAlarmSevr)
+    }
+    field(LSV,DBF_MENU) {
+        prompt("Low Severity")
+        promptgroup("70 - Alarm")
+        pp(TRUE)
+        interest(1)
+        menu(menuAlarmSevr)
+    }
+    field(HYST,DBF_INT64) {
+        prompt("Alarm Deadband")
+        promptgroup("70 - Alarm")
+        interest(1)
+    }
+    field(AFTC, DBF_DOUBLE) {
+        prompt("Alarm Filter Time Constant")
+        promptgroup("70 - Alarm")
+        interest(1)
+    }
+    field(AFVL, DBF_DOUBLE) {
+        prompt("Alarm Filter Value")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(ADEL,DBF_INT64) {
+        prompt("Archive Deadband")
+        promptgroup("80 - Display")
+        interest(1)
+    }
+    field(MDEL,DBF_INT64) {
+        prompt("Monitor Deadband")
+        promptgroup("80 - Display")
+        interest(1)
+    }
+    field(LALM,DBF_INT64) {
+        prompt("Last Value Alarmed")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(ALST,DBF_INT64) {
+        prompt("Last Value Archived")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(MLST,DBF_INT64) {
+        prompt("Last Val Monitored")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+
+=head3 Simulation Mode
+
+The record provides several fields to support simulation of absent hardware.
+If the SIML field is set it is used to read a value into the SIMM field, which
+controls whether simulation is used or not:
+
+=over
+
+=item *
+SIMM must be zero (C<NO>) for the record to request a value from the device
+support.
+
+=item *
+If SIMM is C<YES> and the SIOL link field is set, a simulated value in
+engineering units is read using the link into the SVAL field, from where it will
+subsequently be copied into the VAL field.
+
+=back
+
+The SIMS field can be set to give the record an alarm severity while it is in
+simulation mode.
+
+=fields SIML, SIMM, SIOL, SVAL, SIMS
+
+=cut
+
+    field(SIOL,DBF_INLINK) {
+        prompt("Sim Input Specifctn")
+        promptgroup("90 - Simulate")
+        interest(1)
+    }
+    field(SVAL,DBF_INT64) {
+        prompt("Simulation Value")
+    }
+    field(SIML,DBF_INLINK) {
+        prompt("Sim Mode Location")
+        promptgroup("90 - Simulate")
+        interest(1)
+    }
+    field(SIMM,DBF_MENU) {
+        prompt("Simulation Mode")
+        interest(1)
+        menu(menuYesNo)
+    }
+    field(SIMS,DBF_MENU) {
+        prompt("Sim mode Alarm Svrty")
+        promptgroup("90 - Simulate")
+        interest(2)
+        menu(menuAlarmSevr)
+    }
+}
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+The following are the record support routines that would be of interest
+to an application developer.
+Other routines are the C<get_units>, C<get_graphic_double>,
+C<get_alarm_double> and C<get_control_double> routines, which are used to
+collect properties from the record for the complex DBR data structures.
+
+=head4 init_record
+
+This routine first initializes the simulation mode mechanism by setting SIMM
+if SIML is a constant, and setting SVAL if SIOL is a constant.
+
+It then checks if the device support and the device support's
+C<read_int64in> routine are defined.
+If either one does not exist, an error message is issued
+and processing is terminated.
+
+If device support includes C<init_record>, it is called.
+
+Finally, the deadband mechanisms for monitors and level alarms are
+initialized.
+
+=head4 process
+
+See next section.
+
+=head3 Record Processing
+
+Routine C<process> implements the following algorithm:
+
+=over
+
+=item 1.
+
+Check to see that the appropriate device support module and its
+C<read_int64in> routine are defined.
+If either one does not exist, an error message is issued and processing is
+terminated with the PACT field set to TRUE, effectively blocking the record
+to avoid error storms.
+
+=item 2.
+
+Determine the value:
+
+If PACT is TRUE, call the device support C<read_int64in> routine and return.
+
+If PACT is FALSE, read the value, honoring simulation mode:
+
+=over
+
+=item * Get SIMM by reading the SIML link.
+
+=item * If SIMM is C<NO>,
+call the device support C<read_int64in> routine and return.
+
+=item * If SIMM is C<YES>,
+read the simulated value into SVAL using the SIOL link,
+then copy the value into VAL and set UDF to 0 on success.
+
+=item * Raise an alarm for other values of SIMM.
+
+=item * Set the record to the severity configured in SIMS.
+
+=back
+
+=item 3.
+
+If PACT has been changed to TRUE, the device support signals asynchronous
+processing: its C<read_int64in> output routine has started, but not
+completed reading the new value.
+In this case, the processing routine merely returns, leaving PACT TRUE.
+
+=item 4.
+
+Set PACT to TRUE. Get the processing time stamp. Set UDF to 0 if reading
+the value was successful.
+
+=item 5.
+
+Check UDF and level alarms: This routine checks to see if the record is
+undefined (UDF is TRUE) or if the new VAL causes the alarm status
+and severity to change. In the latter case, NSEV, NSTA and LALM are set.
+It also honors the alarm hysteresis factor (HYST): the value must change
+by at least HYST between level alarm status and severity changes.
+If AFTC is set, alarm level filtering is applied.
+
+=item 6.
+
+Check to see if monitors should be invoked:
+
+=over
+
+=item * Alarm monitors are posted if the alarm status or severity have
+changed.
+
+=item * Archive and value change monitors are posted if ADEL and MDEL
+conditions (see L<Monitor Parameters>) are met.
+
+=back
+
+=item 7.
+
+Scan (process) forward link if necessary, set PACT to FALSE, and return.
+
+=back
+
+=head2 Device Support
+
+=head3 Device Support Interface
+
+The record requires device support to provide an entry table (dset) which
+defines the following members:
+
+ typedef struct {
+     long number;
+     long (*report)(int level);
+     long (*init)(int after);
+     long (*init_record)(int64inRecord *prec);
+     long (*get_ioint_info)(int cmd, int64inRecord *prec, IOSCANPVT *piosl);
+     long (*read_int64in)(int64inRecord *prec);
+ } int64indset;
+
+The module must set C<number> to at least 5, and provide a pointer to its
+C<read_int64in()> routine; the other function pointers may be C<NULL> if their
+associated functionality is not required for this support layer.
+Most device supports also provide an C<init_record()> routine to configure the
+record instance and connect it to the hardware or driver support layer.
+
+The individual routines are described below.
+
+=head3 Device Support Routines
+
+=head4 long report(int level)
+
+This optional routine is called by the IOC command C<dbior> and is passed the
+report level that was requested by the user.
+It should print a report on the state of the device support to stdout.
+The C<level> parameter may be used to output increasingly more detailed
+information at higher levels, or to select different types of information with
+different levels.
+Level zero should print no more than a small summary.
+
+=head4 long init(int after)
+
+This optional routine is called twice at IOC initialization time.
+The first call happens before any of the C<init_record()> calls are made, with
+the integer parameter C<after> set to 0.
+The second call happens after all of the C<init_record()> calls have been made,
+with C<after> set to 1.
+
+=head4 long init_record(int64inRecord *prec)
+
+This optional routine is called by the record initialization code for each
+int64in record instance that has its DTYP field set to use this device support.
+It is normally used to check that the INP address is the expected type and that
+it points to a valid device; to allocate any record-specific buffer space and
+other memory; and to connect any communication channels needed for the
+C<read_int64in()> routine to work properly.
+
+=head4 long get_ioint_info(int cmd, int64inRecord *prec, IOSCANPVT *piosl)
+
+This optional routine is called whenever the record's SCAN field is being
+changed to or from the value C<I/O Intr> to find out which I/O Interrupt Scan
+list the record should be added to or deleted from.
+If this routine is not provided, it will not be possible to set the SCAN field
+to the value C<I/O Intr> at all.
+
+The C<cmd> parameter is zero when the record is being added to the scan list,
+and one when it is being removed from the list.
+The routine must determine which interrupt source the record should be connected
+to, which it indicates by the scan list that it points the location at C<*piosl>
+to before returning.
+It can prevent the SCAN field from being changed at all by returning a non-zero
+value to its caller.
+
+In most cases the device support will create the I/O Interrupt Scan lists that
+it returns for itself, by calling C<void scanIoInit(IOSCANPVT *piosl)> once for
+each separate interrupt source.
+That routine allocates memory and inializes the list, then passes back a pointer
+to the new list in the location at C<*piosl>.
+
+When the device support receives notification that the interrupt has occurred,
+it announces that to the IOC by calling C<void scanIoRequest(IOSCANPVT iosl)>
+which will arrange for the appropriate records to be processed in a suitable
+thread.
+The C<scanIoRequest()> routine is safe to call from an interrupt service routine
+on embedded architectures (vxWorks and RTEMS).
+
+=head4 long read_int64in(int64inRecord *prec)
+
+This essential routine is called when the record wants a new value from the
+addressed device.
+It is responsible for performing (or at least initiating) a read operation, and
+(eventually) returning its value to the record.
+
+If the device may take more than a few microseconds to return the new value,
+this routine must never block (busy-wait), but use the asynchronous
+processing mechanism.
+In that case it signals the asynchronous operation by setting the record's
+PACT field to TRUE before it returns, having arranged for the record's
+C<process()> routine to be called later once the read operation is finished.
+When that happens, the C<read_int64in()> routine will be called again with
+PACT still set to TRUE; it should then set it to FALSE to indicate the read
+has completed, and return.
+
+A return value of zero indicates success, any other value indicates that an
+error occurred.
+
+=head3 Extended Device Support
+
+...
+
+=cut
+
+=head2 Device Support For Soft Records
+
+Two soft device support modules, Soft Channel and Soft Callback Channel, are
+provided for input records not related to actual hardware devices. The
+INP link type must be either a CONSTANT, DB_LINK, or CA_LINK.
+
+=head3 Soft Channel
+
+This module reads the value using the record's INP link.
+
+C<read_int64in> calls C<dbGetLink> to read the value.
+
+=head3 Soft Callback Channel
+
+This module is like the previous except that it reads the value
+using asynchronous processing that will not complete until an asynchronous
+processing of the INP target record has completed.
+
+=cut

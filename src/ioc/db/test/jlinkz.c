@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <epicsExport.h>
 #include <dbAccess.h>
 #include <link.h>
 #include <alarm.h>
@@ -21,6 +20,8 @@
 #define epicsExportSharedSymbols
 
 #include "jlinkz.h"
+
+#include <epicsExport.h>
 
 int numzalloc;
 

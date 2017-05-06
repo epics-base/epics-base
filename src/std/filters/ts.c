@@ -59,11 +59,6 @@ static chfPluginIf pif = {
 
 static void tsInitialize(void)
 {
-    static int firstTime = 1;
-
-    if(!firstTime) return;
-    firstTime = 0;
-
     chfPluginRegister("ts", &pif, NULL);
 }
 

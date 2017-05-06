@@ -177,16 +177,13 @@ static chfPluginIf pif = {
 
 static void syncShutdown(void* ignore)
 {
-    freeListCleanup(myStructFreeList);
+    if(myStructFreeList)
+        freeListCleanup(myStructFreeList);
+    myStructFreeList = NULL;
 }
 
 static void syncInitialize(void)
 {
-    static int firstTime = 1;
-
-    if (!firstTime) return;
-    firstTime = 0;
-
     if (!myStructFreeList)
         freeListInitPvt(&myStructFreeList, sizeof(myStruct), 64);
 

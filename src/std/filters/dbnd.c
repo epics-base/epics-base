@@ -124,16 +124,13 @@ static chfPluginIf pif = {
 
 static void dbndShutdown(void* ignore)
 {
-    freeListCleanup(myStructFreeList);
+    if(myStructFreeList)
+        freeListCleanup(myStructFreeList);
+    myStructFreeList = NULL;
 }
 
 static void dbndInitialize(void)
 {
-    static int firstTime = 1;
-
-    if (!firstTime) return;
-    firstTime = 0;
-
     if (!myStructFreeList)
         freeListInitPvt(&myStructFreeList, sizeof(myStruct), 64);
 

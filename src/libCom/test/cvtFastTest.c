@@ -21,16 +21,14 @@
 
 #define tryIString(typ, lit, siz) \
     len = cvt##typ##ToString(lit, buf); \
-    if (!testOk(len == siz, "cvt"#typ"ToString(" #lit ") == " #siz)) \
-        testDiag("length returned was %u", (unsigned) len); \
+    testOk(len == siz, "cvt"#typ"ToString(" #lit ") == " #siz " (%u) -> \"%s\"", (unsigned)len, buf); \
     status = epicsParse##typ(buf, &val_##typ, 10, NULL); \
     testOk(!status, "epicsParse"#typ"('%s') OK", buf); \
     testOk(val_##typ == lit, #lit " => '%s'", buf);
 
 #define tryFString(typ, lit, prec, siz) \
     len = cvt##typ##ToString(lit, buf, prec); \
-    if (!testOk(len == siz, "cvt"#typ"ToString(" #lit ", %d) == " #siz, prec)) \
-        testDiag("length returned was %u", (unsigned) len); \
+    testOk(len == siz, "cvt"#typ"ToString(" #lit ", %d) == " #siz " (%u) -> \"%s\"", prec, (unsigned)len, buf); \
     status = epicsParse##typ(buf, &val_##typ, NULL); \
     testOk(!status, "epicsParse"#typ"('%s') OK", buf); \
     testOk(fabs(val_##typ - lit) < 0.5 * pow(10, -prec), #lit " => '%s'", buf);

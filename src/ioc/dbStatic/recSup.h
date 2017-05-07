@@ -65,24 +65,24 @@ typedef struct typed_rset rset;
 typedef long (*RECSUPFUN) () EPICS_DEPRECATED;      /* ptr to record support function*/
 
 struct rset {	/* record support entry table */
-    long		number;		/*number of support routines	*/
-    RECSUPFUN	report;		/*print report			*/
-    RECSUPFUN	init;		/*init support			*/
-    RECSUPFUN	init_record;	/*init record			*/
-    RECSUPFUN	process;	/*process record		*/
-    RECSUPFUN	special;	/*special processing		*/
-    RECSUPFUN	get_value;	/*no longer used		*/
-    RECSUPFUN	cvt_dbaddr;	/*cvt  dbAddr			*/
-    RECSUPFUN	get_array_info;
-    RECSUPFUN	put_array_info;
-    RECSUPFUN	get_units;
-    RECSUPFUN	get_precision;
-    RECSUPFUN	get_enum_str;	/*get string from enum item*/
-    RECSUPFUN	get_enum_strs;	/*get all enum strings		*/
-    RECSUPFUN	put_enum_str;	/*put string from enum item*/
-    RECSUPFUN	get_graphic_double;
-    RECSUPFUN	get_control_double;
-    RECSUPFUN	get_alarm_double;
+    long number;            /*number of support routines	*/
+    long (*report)();       /*print report			*/
+    long (*init)();         /*init support			*/
+    long (*init_record)();  /*init record			*/
+    long (*process)();      /*process record		*/
+    long (*special)();      /*special processing		*/
+    long (*get_value)();    /*no longer used		*/
+    long (*cvt_dbaddr)();   /*cvt  dbAddr			*/
+    long (*get_array_info)();
+    long (*put_array_info)();
+    long (*get_units)();
+    long (*get_precision)();
+    long (*get_enum_str)(); /*get string from enum item*/
+    long (*get_enum_strs)();/*get all enum strings		*/
+    long (*put_enum_str)(); /*put string from enum item*/
+    long (*get_graphic_double)();
+    long (*get_control_double)();
+    long (*get_alarm_double)();
 } EPICS_DEPRECATED;
 
 typedef struct rset rset EPICS_DEPRECATED;

@@ -20,6 +20,4 @@ define MUNCH_CMD
 	rm -f rtems.gz
 endef
 
-OP_SYS_LDLIBS += -lbspExt
-
 include $(CONFIG)/os/CONFIG.Common.RTEMS

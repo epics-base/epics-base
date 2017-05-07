@@ -128,7 +128,7 @@ MOD_SYS_LDFLAGS += $(CPU_CFLAGS) -Wl,-r -nostdlib
 
 # Do not link against libraries which are part of the Generic Image
 GESYS_LIBS += -lgcc
-GESYS_LIBS += -lc -lm -lrtemscpu -lrtemsbsp -lrtems++ -lbspExt
+GESYS_LIBS += -lc -lm -lrtemscpu -lrtemsbsp -lrtems++
 GESYS_LIBS += -lcexp -ltecla_r -lspencer_regexp -lpmelf -lpmbfd
 GESYS_LIBS += -lnfs -ltelnetd -lrtems-gdb-stub
 

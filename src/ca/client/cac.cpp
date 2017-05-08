@@ -265,9 +265,14 @@ cac::cac (
         tcpiiu * piiu = NULL;
         SearchDestTCP * pdst = new SearchDestTCP ( *this, pNode->addr );
         this->registerSearchDest ( guard, * pdst );
+        /* Initially assume that servers listed in EPICS_CA_NAME_SERVERS support at least minor
+         * version 11.  This causes tcpiiu to send the user and host name authentication
+         * messages.  When the actual Version message is received from the server it will
+         * be overwrite this assumption.
+         */
         bool newIIU = findOrCreateVirtCircuit (
             guard, pNode->addr, cacChannel::priorityDefault,
-            piiu, CA_UKN_MINOR_VERSION, pdst );
+            piiu, 11, pdst );
         free ( pNode );
         if ( newIIU ) {
             piiu->start ( guard );

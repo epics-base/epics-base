@@ -63,7 +63,9 @@ print $out (<< "END");
 /* Generated from $file */
 
 #include <string.h>
-
+#ifndef USE_TYPED_RSET
+#  define USE_TYPED_RSET
+#endif
 #include "compilerDependencies.h"
 #include "epicsStdlib.h"
 #include "iocsh.h"

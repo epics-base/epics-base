@@ -89,7 +89,7 @@ the final release version.</p>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Set the Feature Freeze date, by which time all Bazaar commits for
+      <td>Set the Feature Freeze date, by which time all Git commits for
         enhancements and new functionality should have been completed. After
         this date, commits should only be made to fix problems that show up
         during testing.</td>
@@ -131,7 +131,7 @@ the final release version.</p>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Tag the module in Bazaar, using these tag conventions:
+      <td>Tag the module in Git using these tag conventions:
         <ul>
           <li>
             <tt>R3.16.1-pre<i>n</i></tt>
@@ -143,8 +143,8 @@ the final release version.</p>
             </li>
         </ul>
         <blockquote><tt>
-          cd ~/base/mirror-3.16<br />
-          bzr tag R3.16.1-rc1
+          cd ~/base-3.16<br />
+          git tag -m 'ANJ: Tagged for 3.16.1-rc1' R3.16.1-rc1
           </tt></blockquote>
         </td>
       </tr>
@@ -154,12 +154,11 @@ the final release version.</p>
       <td>Export the tagged version into a tarfile. Note that this command
         generates a gzipped tarfile directly from the repository:
         <blockquote><tt>
-          cd ~/base<br />
-          bzr export
-            --root=base-3.16.1-rc1
-            -r tag:R3.16.1-rc1
-            base-3.16.1-rc1.tar.gz
-            mirror-3.16
+          cd ~/base-3.16<br />
+          git archive
+            --prefix=base-3.16.1-rc1
+            -o base-3.16.1-rc1.tar.gz
+            3.16.1-rc1
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
@@ -272,10 +271,10 @@ the final release version.</p>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Tag the module in Bazaar:
+      <td>Tag the module in Git:
         <blockquote><tt>
           cd ~/base/mirror-3.16<br />
-          bzr tag R3.16.1</i>
+          git tag -m 'ANJ: Tagged for 3.16.1' R3.16.1</i>
           </tt></blockquote>
         </td>
       </tr>
@@ -285,12 +284,11 @@ the final release version.</p>
       <td>Export the tagged version into a tarfile. Note that this command
         generates a gzipped tarfile directly from the repository:
         <blockquote><tt>
-          cd ~/base<br />
-          bzr export
-            --root=base-3.16.1
-            -r tag:R3.16.1
-            base-3.16.1.tar.gz
-            mirror-3.16
+          cd ~/base-3.16<br />
+          git archive
+            --prefix=base-3.16.1
+            -o base-3.16.1.tar.gz
+            3.16.1
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>

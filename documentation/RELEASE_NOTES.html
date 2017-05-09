@@ -58,27 +58,51 @@ integer types, so the new field types are presented to the CA server as
 (0x10_0000_0000_0000 = 4503599627370496) cannot be transported over Channel
 Access without their least significant bits being truncated. The EPICS V4
 pvAccess network protocol <em>can</em> transport 64-bit data types however, and
-a future release of the pvaSrv module will connect this ability to the IOC.</p>
+a future release of the pvaSrv module will connect this ability to the fields of
+the IOC.</p>
+
+<p>Additional 64-bit support will be provided in later release. For instance the
+JSON parser for the new Link Support feature only handles integers up to
+32&nbsp;bits wide, so constant array initializer values cannot hold larger
+values in this release.</p>
+
 
 <h3>Add EPICS_CA_MCAST_TTL</h3>
 
-<p>Add option EPICS_CA_MCAST_TTL to set the Time To Live (TTL) of any IP multi-cast
-CA search or beacon packets sent.</p>
+<p>A new environment parameter EPICS_CA_MCAST_TTL is used to set the Time To
+Live (TTL) value of any IP multi-cast CA search or beacon packets sent.</p>
+
 
 <h3>EPICS_CA_MAX_ARRAY_BYTES is optional</h3>
 
-<p>
-A new configuration environment variable EPICS_CA_AUTO_ARRAY_BYTES is used by libca and RSRV
-(CA clients and IOC CA server).
-The default EPICS_CA_AUTO_ARRAY_BYTES=YES removes the limitation of EPICS_CA_MAX_ARRAY_BYTES
-and always attempts to allocate sufficient for a request.
-The value of EPICS_CA_MAX_ARRAY_BYTES is ignored.</>
+<p>A new environment parameter EPICS_CA_AUTO_ARRAY_BYTES is now used by libca
+and RSRV (CA clients and the IOC CA server). The default is equivalent to
+setting EPICS_CA_AUTO_ARRAY_BYTES=YES which removes the need to set
+EPICS_CA_MAX_ARRAY_BYTES and always attempts to allocate sufficiently large
+network buffers to transfer large arrays properly over the network. In this case
+the value of the EPICS_CA_MAX_ARRAY_BYTES parameter is ignored.</p>
 
-<p>Explicitly setting EPICS_CA_AUTO_ARRAY_BYTES=NO continues to honor EPICS_CA_AUTO_ARRAY_BYTES
-as in previous releases.</p>
+<p>Explicitly setting EPICS_CA_AUTO_ARRAY_BYTES=NO will continue to honor the
+buffer setting in EPICS_CA_AUTO_ARRAY_BYTES as in previous releases.</p>
 
-<p>The PCAS server (used by cagateway) now always acts as if EPICS_CA_AUTO_ARRAY_BYTES=YES were
-set.</p>
+<p>The default setting for EPICS_CA_AUTO_ARRAY_BYTES can be changed by
+adding the line</p>
+
+<blockquote><pre>
+EPICS_CA_AUTO_ARRAY_BYTES=NO
+</pre></blockquote>
+
+<p>to the configure/CONFIG_SITE_ENV file before building Base. Sites that wish
+to override this only for specific IOC architectures can create new files for
+each architecture named configure/os/CONFIG_SITE_ENV.&lt;target-arch&gt; with
+the above setting in before building Base. The configuration can also be
+explicitly changed by setting the environment variable in the IOC's startup
+script, anywhere above the <tt>iocInit</tt> line.</p>
+
+<p>The PCAS server (used by the PV Gateway and other CA servers) now always
+behaves as if EPICS_CA_AUTO_ARRAY_BYTES is set to YES (it ignores the
+configuration parameter and environment variable).</p>
+
 
 <h3>Channel Access "modernization"</h3>
 
@@ -90,6 +114,7 @@ Older clients will be ignored by newer servers.</p>
 
 <p>This allows removal of UDP echo and similar protocol features which
 are not compatible with secure protocol design practice.</p>
+
 
 <h3>Lookup-tables using the subArrray record</h3>
 
@@ -426,24 +451,24 @@ against older versions of base, such warnings are unavoidable.</p>
 
 <p>Record types written in C++ need to take more drastic measures because of
 the stricter type checking in C++. To remain compatible with older versions
-of base you need something like:</p>
+of base you will need to use something like:</p>
 
 <blockquote><pre>
 #include "epicsVersion.h"
 #ifdef VERSION_INT
-#if EPICS_VERSION_INT < VERSION_INT(3,16,0,2)
-#define RECSUPFUN_CAST (RECSUPFUN)
+#  if EPICS_VERSION_INT < VERSION_INT(3,16,0,2)
+#    define RECSUPFUN_CAST (RECSUPFUN)
+#  else
+#    define RECSUPFUN_CAST
+#  endif
 #else
-#define RECSUPFUN_CAST
-#endif
-#else
-#define RECSUPFUN_CAST (RECSUPFUN)
+#  define RECSUPFUN_CAST (RECSUPFUN)
 #endif
 </pre></blockquote>
 
 <p>and then replace <tt>(RECSUPFUN)</tt> with <tt>RECSUPFUN_CAST</tt>
 when initializing the rset.
-Further changes might be needed, e.g. to adapt <tt>const</tt>-ness of
+Further changes might also be needed, e.g. to adapt <tt>const</tt>-ness of
 method parameters.</p>
 
 <hr>

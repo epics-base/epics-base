@@ -316,7 +316,7 @@ is used.</p>
     </tr>
     <tr>
       <td>EPICS_CA_AUTO_ARRAY_BYTES</td>
-      <td>i &gt;= YES</td>
+      <td>{YES, NO}</td>
       <td>YES</td>
     </tr>
     <tr>
@@ -756,6 +756,12 @@ in the variable EPICS_TS_MIN_WEST.</p>
 
 <h3><a name="Configurin1">Configuring the Maximum Array Size</a></h3>
 
+<p>From version R3.16.1, the default setting of EPICS_CA_AUTO_ARRAY_BYTES=YES
+will cause the software to ignore EPICS_CA_MAX_ARRAY_BYTES and attempt to
+allocate network buffer space as needed by the particular client connection
+using malloc. Setting EPICS_CA_AUTO_ARRAY_BYTES=NO will configure the software
+to respect the EPICS_CA_MAX_ARRAY_BYTES setting as described below instead.</p>
+
 <p>Starting with version R3.14 the environment variable
 EPICS_CA_MAX_ARRAY_BYTES determines the size of the largest array that may pass
 through CA. Prior to this version only arrays smaller than 16k bytes could be
@@ -763,11 +769,6 @@ transfered. The CA libraries maintains a free list of 16384 byte network
 buffers that are used for ordinary communication. If EPICS_CA_MAX_ARRAY_BYTES
 is larger than 16384 then a second free list of larger data buffers is
 established and used only after a client send its first large array request.</p>
-
-<p>Beginning with R3.16.1, EPICS_CA_AUTO_ARRAY_BYTES=YES (the default) will ignore
-EPICS_CA_MAX_ARRAY_BYTES and attempt to allocate sufficient buffer space
-as needed.  Setting EPICS_CA_AUTO_ARRAY_BYTES=NO will continue to respect
-EPICS_CA_MAX_ARRAY_BYTES.</p>
 
 <p>The CA client library uses EPICS_CA_MAX_ARRAY_BYTES to determines the
 maximum array that it will send or receive. Likewise, the CA server uses
@@ -783,11 +784,7 @@ array larger than EPICS_CA_MAX_ARRAY_BYTES it will return ECA_TOLARGE.</p>
 by multiplying the number of elements by the size of a single element, but
 neglect to add additional bytes for the compound data types (for example
 DBR_GR_DOUBLE) commonly used by the more sophisticated client side
-applications. <em>Based on this confusion, one could arrive at the conclusion
-that EPICS_CA_MAX_ARRAY_BYTES might have been better named
-EPICS_CA_MAX_DATUM_BYTES, or that the software should be changed internally to
-round the users request up by the size of the maximum scalar datum (nothing has
-been done to address this issue so far).</em></p>
+applications.</p>
 
 <h3><a name="Configurin2">Configuring a CA Server</a></h3>
 

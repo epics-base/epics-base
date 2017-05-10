@@ -112,5 +112,7 @@ cl
 echo [INFO] EPICS_HOST_ARCH: %EPICS_HOST_ARCH%
 echo [INFO] Make version
 %MAKE% --version
+echo [INFO] Perl version
+perl --version
 
 %MAKE% %MAKEARGS% %*

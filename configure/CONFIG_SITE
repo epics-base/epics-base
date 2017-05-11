@@ -175,3 +175,5 @@ GCC_PIPE = NO
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
 LINKER_USE_RPATH = YES
 
+# Overrides for the settings above may appear in a CONFIG_SITE.local file
+-include $(CONFIG)/CONFIG_SITE.local

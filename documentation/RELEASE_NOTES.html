@@ -586,6 +586,15 @@ of its CALLBACK objects.</p>
 
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Support for CONFIG_SITE.local in Base</h3>
+
+<p>This feature is mostly meant for use by developers; configuration
+settings that would normally appear in Base/configure/CONFIG_SITE can now
+be put in a locally created base/configure/CONFIG_SITE.local file instead
+of having go modify or replace the original. A new .gitignore pattern
+tells git to ignore all configure/*.local files.</p>
+
+
 <h2 align="center">Changes from the 3.14 branch since 3.15.5</h2>
 
 <!-- Insert inherited items immediately below here ... -->

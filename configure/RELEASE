@@ -1,18 +1,19 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
-# RELEASE: Define location of external EPICS products
 
+#
+# RELEASE: Define the location of external EPICS products
+#
+
+# The version of this file in Base should normally be empty.
+#
 # Define INSTALL_LOCATION in CONFIG_SITE
-
-# VX_DIR definition now in os/CONFIG_SITE.Common.vxWorksCommon
-# RTEMS_BASE (and RTEMS_VERSION) now in os/CONFIG_SITE.Common.RTEMS
 
 # NB: Settings in RELEASE files can be overridden in files named
 #   RELEASE.$(EPICS_HOST_ARCH).Common

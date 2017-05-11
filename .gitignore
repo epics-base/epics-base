@@ -6,6 +6,7 @@
 /html/
 /include/
 /templates/
+/configure/*.local
 O.*/
 /QtC-*
 *.orig

@@ -29,6 +29,7 @@ PERL_SCRIPTS += makeTestfile.pl
 PERL_SCRIPTS += mkmf.pl
 PERL_SCRIPTS += munch.pl
 PERL_SCRIPTS += replaceVAR.pl
+PERL_SCRIPTS += tap-to-junit-xml.pl
 PERL_SCRIPTS += useManifestTool.pl
 
 include $(TOP)/configure/RULES

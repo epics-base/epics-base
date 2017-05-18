@@ -66,6 +66,7 @@ DBTOMENUH                  = $(call PATH_FILTER, $(TOOLS)/dbToMenuH$(HOSTEXE))
 REGISTERRECORDDEVICEDRIVER = $(PERL) $(TOOLS)/registerRecordDeviceDriver.pl
 CONVERTRELEASE             = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FULLPATHNAME               = $(PERL) $(TOOLS)/fullPathName.pl
+TAPTOJUNIT                 = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
 
 #-------------------------------------------------------
 # tools for installing libraries and products

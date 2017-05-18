@@ -115,6 +115,7 @@ endif
 ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
 RUNTESTS_ENABLED = YES
 TAPFILES += $(TESTSCRIPTS:.t=.tap)
+JUNITFILES += $(TAPFILES:.tap=.xml)
 endif
 
 #---------------------------------------------------------------
@@ -165,7 +166,7 @@ build_clean:
 	$(INC) $(TARGETS) $(TDS) $(CLEANS) \
 	*.out MakefileInclude *.manifest *.exp \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) \
-	$(TESTSCRIPTS) $(TAPFILES)
+	$(TESTSCRIPTS) $(TAPFILES) $(JUNITFILES)
 ifdef RES
 	@$(RM) *$(RES)
 endif
@@ -345,12 +346,16 @@ testspec: $(TESTSCRIPTS)
 	$(if $(TESTSPEC_$(OS_CLASS)), @echo "Harness: $(TESTSPEC_$(OS_CLASS))" >> $@)
 
 tapfiles: $(TESTSCRIPTS) $(TAPFILES)
+junitfiles: $(JUNITFILES)
 
 # A .tap file is the output from running the associated test script
 %.tap: %.t
 ifdef RUNTESTS_ENABLED
 	-$(PERL) $< -tap > $@
 endif
+
+%.xml: %.tap
+	$(TAPTOJUNIT) --puretap --output $@ --input $< $*
 
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt
@@ -496,7 +501,8 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: $(COMMON_INC)
 
 .PHONY: all host inc build install clean rebuild buildInstall build_clean
-.PHONY: runtests tapfiles checkRelease warnRelease noCheckRelease
+.PHONY: runtests tapfiles junitfiles
+.PHONY: checkRelease warnRelease noCheckRelease
 
 endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD

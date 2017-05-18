@@ -57,6 +57,7 @@ help:
 	@echo "                      Cannot be used within an O.<arch> dir"
 	@echo "     rebuild        - Same as clean install"
 	@echo "     archclean      - Removes O.<arch> dirs but not O.Common dir"
+	@echo "     runtests       - Run self-tests, summarize results"
 	@echo "\"Partial\" build targets supported by Makefiles:"
 	@echo "     host           - Builds and installs $(EPICS_HOST_ARCH) only."
 	@echo "     inc$(DIVIDER)<arch>     - Installs <arch> only header files."

@@ -14,7 +14,7 @@ ACTIONS += build
 ACTIONS += install
 ACTIONS += buildInstall
 ACTIONS += browse
-ACTIONS += runtests tapfiles junitfiles
+ACTIONS += runtests tapfiles clean-tests test-results junitfiles
 #ACTIONS += rebuild
 
 actionArchTargets = $(foreach action, $(ACTIONS), \

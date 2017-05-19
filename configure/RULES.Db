@@ -134,7 +134,7 @@ ACTIONS += build
 ACTIONS += install
 ACTIONS += buildInstall
 ACTIONS += browse
-ACTIONS += runtests tapfiles junitfiles
+ACTIONS += runtests tapfiles clean-tests test-results junitfiles
 
 actionArchTargets = $(foreach x, $(ACTIONS),\ $(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))
 
@@ -150,6 +150,7 @@ buildInstall : build
 rebuild: clean install
 
 .PHONY: all inc build install clean rebuild buildInstall
+.PHONY: runtests tapfiles clean-tests test-results junitfiles
 
 $(actionArchTargets) $(BUILD_ARCHS):install
 $(cleanArchTargets):clean

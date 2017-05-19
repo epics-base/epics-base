@@ -1,0 +1,86 @@
+# AppVeyor configuration for EPICS Base
+
+# Ralph Lange <ralph.lange@gmx.de>
+# Copyright (c) 2016-2017 ITER Organization
+
+# Version format
+version: base-{branch}-{build}
+
+#---------------------------------#
+#       repository cloning        #
+#---------------------------------#
+
+# Called at very beginning, before repo cloning
+init:
+  # Set autocrlf to make batch files work
+  - git config --global core.autocrlf true
+
+# Set clone depth (do not fetch complete history)
+clone_depth: 2
+
+# Skipping commits affecting only specific files
+skip_commits:
+  files:
+    - 'documentation/*'
+    - 'templates/*'
+    - '**/*.html'
+    - '**/*.md'
+
+#---------------------------------#
+#   build matrix configuration    #
+#---------------------------------#
+
+# Build Configurations: dll/static, regular/debug
+configuration:
+  - dynamic
+  - static
+  - dynamic-debug
+  - static-debug
+
+# Environment variables: compiler toolchain
+environment:
+  matrix:
+  - TOOLCHAIN: 9.0
+  - TOOLCHAIN: 10.0
+  - TOOLCHAIN: 11.0
+  - TOOLCHAIN: 12.0
+  - TOOLCHAIN: 14.0
+  - TOOLCHAIN: cygwin
+  - TOOLCHAIN: mingw
+
+# Platform: architecture
+platform:
+  - x86
+  - x64
+
+# Matrix configuration: allow specific failing jobs
+matrix:
+  exclude:
+  # VS Express installs don't have the 64 bit compiler
+  - platform: x64
+    TOOLCHAIN: 9.0
+  - platform: x64
+    TOOLCHAIN: 10.0
+
+#---------------------------------#
+#     building & testing          #
+#---------------------------------#
+
+install:
+  - cmd: ci/appveyor-prepare.bat
+
+build_script:
+  - cmd: ci/appveyor-make.bat
+
+test_script:
+  - cmd: ci/appveyor-make.bat runtests
+
+#---------------------------------#
+#         notifications           #
+#---------------------------------#
+
+notifications:
+
+  - provider: Slack
+    incoming_webhook:
+      secure: RYOm3FIUYeZGjWKaeTVKwq+C3fzK54AKwbmAoECED45mex3lN+8HmrC845a6mg9xPUJ/ND51RopWVaKDD9/UzaM0SO195RQLKqUTIUafiuM=

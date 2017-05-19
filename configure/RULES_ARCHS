@@ -14,7 +14,7 @@ ACTIONS = inc
 ACTIONS += build
 ACTIONS += install
 ACTIONS += buildInstall
-ACTIONS += runtests tapfiles junitfiles
+ACTIONS += runtests tapfiles clean-tests test-results junitfiles
 
 actionArchTargets = $(foreach action, $(ACTIONS), \
     $(addprefix $(action)$(DIVIDER), $(BUILD_ARCHS)))

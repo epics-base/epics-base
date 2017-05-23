@@ -107,7 +107,7 @@ static int chf_boolean(void * ctx, int boolVal)
     return result;
 }
 
-static int chf_integer(void * ctx, long integerVal)
+static int chf_integer(void * ctx, long long integerVal)
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
@@ -132,7 +132,7 @@ static int chf_double(void * ctx, double doubleVal)
 }
 
 static int chf_string(void * ctx, const unsigned char * stringVal,
-        unsigned int stringLen)
+        size_t stringLen)
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
@@ -159,7 +159,7 @@ static int chf_start_map(void * ctx)
 }
 
 static int chf_map_key(void * ctx, const unsigned char * key,
-        unsigned int stringLen)
+        size_t stringLen)
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
@@ -243,15 +243,12 @@ static const yajl_callbacks chf_callbacks =
     { chf_null, chf_boolean, chf_integer, chf_double, NULL, chf_string,
       chf_start_map, chf_map_key, chf_end_map, chf_start_array, chf_end_array };
 
-static const yajl_parser_config chf_config =
-    { 0, 1 }; /* allowComments = NO , checkUTF8 = YES */
-
-static void * chf_malloc(void *ctx, unsigned int sz)
+static void * chf_malloc(void *ctx, size_t sz)
 {
     return malloc(sz);
 }
 
-static void * chf_realloc(void *ctx, void *ptr, unsigned int sz)
+static void * chf_realloc(void *ctx, void *ptr, size_t sz)
 {
     return realloc(ptr, sz);
 }
@@ -261,14 +258,14 @@ static void chf_free(void *ctx, void *ptr)
     free(ptr);
 }
 
-static const yajl_alloc_funcs chf_alloc =
+static yajl_alloc_funcs chf_alloc =
     { chf_malloc, chf_realloc, chf_free };
 
 static long chf_parse(dbChannel *chan, const char **pjson)
 {
     parseContext parser =
         { chan, NULL, 0 };
-    yajl_handle yh = yajl_alloc(&chf_callbacks, &chf_config, &chf_alloc, &parser);
+    yajl_handle yh = yajl_alloc(&chf_callbacks, &chf_alloc, &parser);
     const char *json = *pjson;
     size_t jlen = strlen(json);
     yajl_status ys;
@@ -277,9 +274,7 @@ static long chf_parse(dbChannel *chan, const char **pjson)
     if (!yh)
         return S_db_noMemory;
 
-    ys = yajl_parse(yh, (const unsigned char *) json, (unsigned int) jlen);
-    if (ys == yajl_status_insufficient_data)
-        ys = yajl_parse_complete(yh);
+    ys = yajl_parse(yh, (const unsigned char *) json, jlen);
 
     switch (ys) {
     case yajl_status_ok:
@@ -290,7 +285,7 @@ static long chf_parse(dbChannel *chan, const char **pjson)
     case yajl_status_error: {
         unsigned char *err;
 
-        err = yajl_get_error(yh, 1, (const unsigned char *) json, (unsigned int) jlen);
+        err = yajl_get_error(yh, 1, (const unsigned char *) json, jlen);
         printf("dbChannelCreate: %s\n", err);
         yajl_free_error(yh, err);
     } /* fall through */

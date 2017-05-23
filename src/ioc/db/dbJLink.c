@@ -112,12 +112,12 @@ static int dbjl_boolean(void *ctx, int val) {
         CALL_OR_STOP(pjlink->pif->parse_boolean)(pjlink, val));
 }
 
-static int dbjl_integer(void *ctx, long num) {
+static int dbjl_integer(void *ctx, long long num) {
     parseContext *parser = (parseContext *) ctx;
     jlink *pjlink = parser->pjlink;
 
     IFDEBUG(10)
-        printf("dbjl_integer(%s@%p, %ld)\n",
+        printf("dbjl_integer(%s@%p, %lld)\n",
             pjlink->pif->name, pjlink, num);
 
     assert(pjlink);
@@ -138,13 +138,13 @@ static int dbjl_double(void *ctx, double num) {
         CALL_OR_STOP(pjlink->pif->parse_double)(pjlink, num));
 }
 
-static int dbjl_string(void *ctx, const unsigned char *val, unsigned len) {
+static int dbjl_string(void *ctx, const unsigned char *val, size_t len) {
     parseContext *parser = (parseContext *) ctx;
     jlink *pjlink = parser->pjlink;
 
     IFDEBUG(10)
         printf("dbjl_string(%s@%p, \"%.*s\")\n",
-            pjlink->pif->name, pjlink, len, val);
+            pjlink->pif->name, pjlink, (int) len, val);
 
     assert(pjlink);
     return dbjl_value(parser,
@@ -190,7 +190,7 @@ static int dbjl_start_map(void *ctx) {
     return dbjl_return(parser, result);
 }
 
-static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
+static int dbjl_map_key(void *ctx, const unsigned char *key, size_t len) {
     parseContext *parser = (parseContext *) ctx;
     jlink *pjlink = parser->pjlink;
     char *link_name;
@@ -200,13 +200,13 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
     if (!parser->key_is_link) {
         if (!pjlink) {
             errlogPrintf("dbJLinkInit: Illegal second link key '%.*s'\n",
-                len, key);
+                (int) len, key);
             return dbjl_return(parser, jlif_stop);
         }
 
         IFDEBUG(10) {
             printf("dbjl_map_key(%s@%p, \"%.*s\")\t",
-                pjlink->pif->name, pjlink, len, key);
+                pjlink->pif->name, pjlink, (int) len, key);
             printf("    jsonDepth=%d, parseDepth=%d, key_is_link=%d\n",
                 parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->key_is_link);
         }
@@ -218,7 +218,7 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
     }
 
     IFDEBUG(10) {
-        printf("dbjl_map_key(NULL, \"%.*s\")\t", len, key);
+        printf("dbjl_map_key(NULL, \"%.*s\")\t", (int) len, key);
         printf("    jsonDepth=%d, parseDepth=00, key_is_link=%d\n",
             parser->jsonDepth, parser->key_is_link);
     }
@@ -334,9 +334,6 @@ static yajl_callbacks dbjl_callbacks = {
     dbjl_start_map, dbjl_map_key, dbjl_end_map, dbjl_start_array, dbjl_end_array
 };
 
-static const yajl_parser_config dbjl_config =
-    { 0, 0 }; /* allowComments = NO, checkUTF8 = NO */
-
 long dbJLinkParse(const char *json, size_t jlen, short dbfType,
     jlink **ppjlink, unsigned opts)
 {
@@ -363,13 +360,11 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
             parser->jsonDepth, parser->key_is_link);
 
     yajl_set_default_alloc_funcs(&dbjl_allocs);
-    yh = yajl_alloc(&dbjl_callbacks, &dbjl_config, &dbjl_allocs, parser);
+    yh = yajl_alloc(&dbjl_callbacks, &dbjl_allocs, parser);
     if (!yh)
         return S_db_noMemory;
 
-    ys = yajl_parse(yh, (const unsigned char *) json, (unsigned) jlen);
-    if (ys == yajl_status_insufficient_data)
-        ys = yajl_parse_complete(yh);
+    ys = yajl_parse(yh, (const unsigned char *) json, jlen);
 
     switch (ys) {
         unsigned char *err;
@@ -381,7 +376,7 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
         break;
 
     case yajl_status_error:
-        err = yajl_get_error(yh, 1, (const unsigned char *) json, (unsigned) jlen);
+        err = yajl_get_error(yh, 1, (const unsigned char *) json, jlen);
         errlogPrintf("dbJLinkInit: %s\n", err);
         yajl_free_error(yh, err);
         dbJLinkFree(parser->pjlink);

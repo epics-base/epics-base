@@ -37,20 +37,20 @@ static int dbcj_boolean(void *ctx, int val) {
     return 0;    /* Illegal */
 }
 
-static int dbcj_integer(void *ctx, long num) {
+static int dbcj_integer(void *ctx, long long num) {
     parseContext *parser = (parseContext *) ctx;
-    epicsInt32 val32 = num;
-    FASTCONVERT conv = dbFastPutConvertRoutine[DBF_LONG][parser->dbrType];
+    epicsInt64 val64 = num;
+    FASTCONVERT conv = dbFastPutConvertRoutine[DBF_INT64][parser->dbrType];
 
     if (parser->elems > 0) {
-        conv(&val32, parser->pdest, NULL);
+        conv(&val64, parser->pdest, NULL);
         parser->pdest += parser->dbrSize;
         parser->elems--;
     }
     return 1;
 }
 
-static int dblsj_integer(void *ctx, long num) {
+static int dblsj_integer(void *ctx, long long num) {
     return 0;    /* Illegal */
 }
 
@@ -70,7 +70,7 @@ static int dblsj_double(void *ctx, double num) {
     return 0;    /* Illegal */
 }
 
-static int dbcj_string(void *ctx, const unsigned char *val, unsigned int len) {
+static int dbcj_string(void *ctx, const unsigned char *val, size_t len) {
     parseContext *parser = (parseContext *) ctx;
     char *pdest = parser->pdest;
 
@@ -93,7 +93,7 @@ static int dbcj_string(void *ctx, const unsigned char *val, unsigned int len) {
     return 1;
 }
 
-static int dblsj_string(void *ctx, const unsigned char *val, unsigned int len) {
+static int dblsj_string(void *ctx, const unsigned char *val, size_t len) {
     parseContext *parser = (parseContext *) ctx;
     char *pdest = parser->pdest;
 
@@ -118,7 +118,7 @@ static int dbcj_start_map(void *ctx) {
     return 0;    /* Illegal */
 }
 
-static int dbcj_map_key(void *ctx, const unsigned char *key, unsigned int len) {
+static int dbcj_map_key(void *ctx, const unsigned char *key, size_t len) {
     return 0;    /* Illegal */
 }
 
@@ -149,9 +149,6 @@ static yajl_callbacks dbcj_callbacks = {
     dbcj_start_array, dbcj_end_array
 };
 
-static const yajl_parser_config dbcj_config =
-    { 0, 0 }; /* allowComments = NO, checkUTF8 = NO */
-
 long dbPutConvertJSON(const char *json, short dbrType,
     void *pdest, long *pnRequest)
 {
@@ -169,13 +166,11 @@ long dbPutConvertJSON(const char *json, short dbrType,
     parser->elems = *pnRequest;
 
     yajl_set_default_alloc_funcs(&dbcj_alloc);
-    yh = yajl_alloc(&dbcj_callbacks, &dbcj_config, &dbcj_alloc, parser);
+    yh = yajl_alloc(&dbcj_callbacks, &dbcj_alloc, parser);
     if (!yh)
         return S_db_noMemory;
 
-    ys = yajl_parse(yh, (const unsigned char *) json, (unsigned int) jlen);
-    if (ys == yajl_status_insufficient_data)
-        ys = yajl_parse_complete(yh);
+    ys = yajl_parse(yh, (const unsigned char *) json, jlen);
 
     switch (ys) {
     case yajl_status_ok:
@@ -185,7 +180,7 @@ long dbPutConvertJSON(const char *json, short dbrType,
 
     case yajl_status_error: {
         unsigned char *err = yajl_get_error(yh, 1,
-            (const unsigned char *) json, (unsigned int) jlen);
+            (const unsigned char *) json, jlen);
         fprintf(stderr, "dbConvertJSON: %s\n", err);
         yajl_free_error(yh, err);
         }
@@ -227,13 +222,11 @@ long dbLSConvertJSON(const char *json, char *pdest, epicsUInt32 size,
     parser->elems = 1;
 
     yajl_set_default_alloc_funcs(&dbcj_alloc);
-    yh = yajl_alloc(&dblsj_callbacks, &dbcj_config, &dbcj_alloc, parser);
+    yh = yajl_alloc(&dblsj_callbacks, &dbcj_alloc, parser);
     if (!yh)
         return S_db_noMemory;
 
-    ys = yajl_parse(yh, (const unsigned char *) json, (unsigned int) jlen);
-    if (ys == yajl_status_insufficient_data)
-        ys = yajl_parse_complete(yh);
+    ys = yajl_parse(yh, (const unsigned char *) json, jlen);
 
     switch (ys) {
     case yajl_status_ok:
@@ -243,7 +236,7 @@ long dbLSConvertJSON(const char *json, char *pdest, epicsUInt32 size,
 
     case yajl_status_error: {
         unsigned char *err = yajl_get_error(yh, 1,
-            (const unsigned char *) json, (unsigned int) jlen);
+            (const unsigned char *) json, jlen);
         fprintf(stderr, "dbLoadLS_JSON: %s\n", err);
         yajl_free_error(yh, err);
         }

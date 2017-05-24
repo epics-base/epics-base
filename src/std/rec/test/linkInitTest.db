@@ -64,6 +64,19 @@ record(waveform, "wf2") {
   field(INP, {const:[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]})
 }
 
+record(longin, "li1") {
+  field(INP, 1)
+}
+record(int64in, "i64i1") {
+  field(INP, 1)
+}
+record(longin, "li2") {
+  field(INP, {const:1})
+}
+record(int64in, "i64i2") {
+  field(INP, {const:1})
+}
+
 record(longin, "count1" ) {
   field(INP, {calc: {expr:"VAL+1"}})
   field(SCAN, "Event")

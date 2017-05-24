@@ -165,6 +165,13 @@ static void testArrayInputs()
     testdbPutFieldOk("sa2.VAL", DBF_LONG, 1);
     testdbGetArrFieldEqual("sa2.VAL", DBF_LONG, 10, 1, &oneToTwelve[0]);
 
+    testDiag("testScalarInputs");
+
+    testdbGetFieldEqual("li1", DBR_LONG, 1);
+    testdbGetFieldEqual("i64i1", DBR_LONG, 1);
+    testdbGetFieldEqual("li2", DBR_LONG, 1);
+    testdbGetFieldEqual("i64i2", DBR_INT64, 1);
+
     testIocShutdownOk();
     testdbCleanup();
 }
@@ -206,7 +213,7 @@ static void testEventRecord()
 
 MAIN(linkInitTest)
 {
-    testPlan(68);
+    testPlan(72);
 
     testLongStringInit();
     testCalcInit();

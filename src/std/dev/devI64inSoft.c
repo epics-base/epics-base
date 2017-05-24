@@ -47,32 +47,32 @@ epicsExportAddress(dset, devI64inSoft);
 
 static long init_record(int64inRecord *prec)
 {
-    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
-    switch (prec->inp.type) {
-    case CONSTANT:
-        if (recGblInitConstantLink(&prec->inp, DBF_INT64, &prec->val))
-            prec->udf = FALSE;
-        break;
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-        break;
-    default:
-        recGblRecordError(S_db_badField, (void *)prec,
-            "devI64inSoft (init_record) Illegal INP field");
-        return S_db_badField;
-    }
+    if (recGblInitConstantLink(&prec->inp, DBF_INT64, &prec->val))
+        prec->udf = FALSE;
+
     return 0;
+}
+
+static long readLocked(struct link *pinp, void *dummy)
+{
+    int64inRecord *prec = (int64inRecord *) pinp->precord;
+    long status = dbGetLink(&prec->inp, DBR_INT64, &prec->val, 0, 0);
+
+    if (status) return status;
+
+    if (dbLinkIsConstant(&prec->tsel) &&
+        prec->tse == epicsTimeEventDeviceTime)
+        dbGetTimeStamp(pinp, &prec->time);
+
+    return status;
 }
 
 static long read_int64in(int64inRecord *prec)
 {
-    long status;
+    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
 
-    status = dbGetLink(&prec->inp, DBR_INT64, &prec->val, 0, 0);
-    if (!status &&
-        prec->tsel.type == CONSTANT &&
-        prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(&prec->inp, &prec->time);
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, NULL);
+
     return status;
 }

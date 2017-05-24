@@ -168,9 +168,9 @@ static void testArrayInputs()
     testDiag("testScalarInputs");
 
     testdbGetFieldEqual("li1", DBR_LONG, 1);
-    testdbGetFieldEqual("i64i1", DBR_LONG, 1);
+    testdbGetFieldEqual("i64i1", DBR_INT64, 1LL);
     testdbGetFieldEqual("li2", DBR_LONG, 1);
-    testdbGetFieldEqual("i64i2", DBR_INT64, 1);
+    testdbGetFieldEqual("i64i2", DBR_INT64, 1LL);
 
     testIocShutdownOk();
     testdbCleanup();

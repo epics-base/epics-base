@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -53,7 +53,12 @@ epicsExportAddress(dset,devAaiSoft);
 
 static long init_record(aaiRecord *prec)
 {
-    if (prec->inp.type == CONSTANT) {
+    DBLINK *plink = &prec->inp;
+
+    /* This is pass 0, link hasn't been initialized yet */
+    dbInitLink(plink, DBF_INLINK);
+
+    if (dbLinkIsConstant(plink)) {
         long nRequest = prec->nelm;
         long status;
 
@@ -63,10 +68,7 @@ static long init_record(aaiRecord *prec)
                 "devAaiSoft: buffer calloc failed");
         }
 
-        /* This is pass 0 so link hasn't been initialized either */
-        dbConstInitLink(&prec->inp);
-
-        status = dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nRequest);
+        status = dbLoadLinkArray(plink, prec->ftvl, prec->bptr, &nRequest);
         if (!status && nRequest > 0) {
             prec->nord = nRequest;
             prec->udf = FALSE;

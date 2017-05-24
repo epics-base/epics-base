@@ -73,6 +73,12 @@ void dbInitLink(struct link *plink, short dbfType)
 {
     struct dbCommon *precord = plink->precord;
 
+    /* Only initialize link once */
+    if (plink->flags & DBLINK_FLAG_INITIALIZED)
+        return;
+    else
+        plink->flags |= DBLINK_FLAG_INITIALIZED;
+
     if (plink->type == CONSTANT) {
         dbConstInitLink(plink);
         return;

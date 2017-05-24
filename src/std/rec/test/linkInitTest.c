@@ -138,17 +138,23 @@ static void testArrayInputs()
 
     testdbGetFieldEqual("aai1.NORD", DBR_LONG, 10);
     testdbGetFieldEqual("aai1.UDF", DBR_UCHAR, 0);
+    testdbGetFieldEqual("aai2.NORD", DBR_LONG, 10);
+    testdbGetFieldEqual("aai2.UDF", DBR_UCHAR, 0);
     testdbGetFieldEqual("sa1.NORD", DBR_LONG, 10);
     testdbGetFieldEqual("sa1.UDF", DBR_UCHAR, 0);
     testdbGetFieldEqual("sa2.NORD", DBR_LONG, 0);
     testdbGetFieldEqual("sa2.UDF", DBR_UCHAR, 1);
     testdbGetFieldEqual("wf1.NORD", DBR_LONG, 10);
     testdbGetFieldEqual("wf1.UDF", DBR_UCHAR, 0);
+    testdbGetFieldEqual("wf2.NORD", DBR_LONG, 10);
+    testdbGetFieldEqual("wf2.UDF", DBR_UCHAR, 0);
 
     testdbGetArrFieldEqual("aai1.VAL", DBF_LONG, 12, 10, &oneToTwelve[0]);
+    testdbGetArrFieldEqual("aai2.VAL", DBF_LONG, 12, 10, &oneToTwelve[0]);
     testdbGetArrFieldEqual("sa1.VAL", DBF_LONG, 12, 10, &oneToTwelve[2]);
     testdbGetArrFieldEqual("sa2.VAL", DBF_LONG, 10, 0, NULL);
     testdbGetArrFieldEqual("wf1.VAL", DBF_LONG, 12, 10, &oneToTwelve[0]);
+    testdbGetArrFieldEqual("wf2.VAL", DBF_LONG, 12, 10, &oneToTwelve[0]);
 
     testdbPutFieldOk("sa1.INDX", DBF_LONG, 3);
     testdbGetArrFieldEqual("sa1.VAL", DBF_LONG, 12, 9, &oneToTwelve[3]);
@@ -200,7 +206,7 @@ static void testEventRecord()
 
 MAIN(linkInitTest)
 {
-    testPlan(62);
+    testPlan(68);
 
     testLongStringInit();
     testCalcInit();

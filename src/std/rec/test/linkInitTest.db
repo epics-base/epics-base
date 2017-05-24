@@ -31,10 +31,15 @@ record(printf, "printf2") {
   field(INP0, ["Longer test string, more that 40 characters long"])
 }
 
-record(waveform, "aai1") {
+record(aai, "aai1") {
   field(NELM, 10)
   field(FTVL, "LONG")
   field(INP, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+}
+record(aai, "aai2") {
+  field(NELM, 10)
+  field(FTVL, "LONG")
+  field(INP, {const:[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]})
 }
 record(subArray, "sa1") {
   field(FTVL, "LONG")
@@ -52,6 +57,11 @@ record(waveform, "wf1") {
   field(NELM, 10)
   field(FTVL, "LONG")
   field(INP, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+}
+record(waveform, "wf2") {
+  field(NELM, 10)
+  field(FTVL, "LONG")
+  field(INP, {const:[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]})
 }
 
 record(longin, "count1" ) {

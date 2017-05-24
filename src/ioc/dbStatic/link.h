@@ -69,6 +69,8 @@ epicsShareExtern maplinkType pamaplinkType[];
 #define pvlOptOutString  0x400	/*Output as string*/
 #define pvlOptTSELisTime 0x800	/*Field TSEL is getting timeStamp*/
 
+/* DBLINK Flag bits */
+#define DBLINK_FLAG_INITIALIZED    1 /* dbInitLink() called */
 
 struct macro_link {
     char *macroStr;

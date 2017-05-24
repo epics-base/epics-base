@@ -210,16 +210,34 @@ static void testEventRecord()
     testdbCleanup();
 }
 
+void testInt64Inputs(void)
+{
+    testDiag("testInt64Inputs");
+
+    startTestIoc("linkInitTest.db");
+
+    testdbGetFieldEqual("i1.VAL", DBR_INT64, 1234567890123456789LL);
+    testdbGetFieldEqual("i2.VAL", DBR_INT64, 1234567890123456789LL);
+    testdbGetFieldEqual("i3.VAL", DBR_INT64, 1234567890123456789LL);
+
+    testdbGetFieldEqual("i4.NORD", DBR_LONG, 1);
+    testdbGetFieldEqual("i4.VAL", DBR_INT64, 1234567890123456789LL);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
 
 MAIN(linkInitTest)
 {
-    testPlan(72);
+    testPlan(77);
 
     testLongStringInit();
     testCalcInit();
     testPrintfStrings();
     testArrayInputs();
     testEventRecord();
+    testInt64Inputs();
 
     return testDone();
 }

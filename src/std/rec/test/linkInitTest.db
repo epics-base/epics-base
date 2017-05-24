@@ -88,3 +88,19 @@ record(event, "ev1") {
 record(event, "ev2") {
   field(INP, "count1.EVNT")
 }
+
+record(int64in, "i1") {
+  field(INP, [1234567890123456789,0])
+}
+record(int64in, "i2") {
+  field(INP, {const:1234567890123456789})
+}
+record(int64in, "i3") {
+  field(INP, 1234567890123456789)
+}
+record(waveform, "i4") {
+  field(NELM, 1)
+  field(FTVL, "INT64")
+  field(INP, [1234567890123456789,0])
+}
+

@@ -29,13 +29,13 @@ typedef long (*FASTCONVERT)();
 typedef struct const_link {
     jlink jlink;        /* embedded object */
     int nElems;
-    enum {s0, si32, sf64, sc40, a0, ai32, af64, ac40} type;
+    enum {s0, si64, sf64, sc40, a0, ai64, af64, ac40} type;
     union {
-        epicsInt32 scalar_integer;  /* si32 */
+        epicsInt64 scalar_integer;  /* si64 */
         epicsFloat64 scalar_double; /* sf64 */
         char *scalar_string;        /* sc40 */
         void *pmem;
-        epicsInt32 *pintegers;      /* ai32 */
+        epicsInt64 *pintegers;      /* ai64 */
         epicsFloat64 *pdoubles;     /* af64 */
         char **pstrings;            /* ac40 */
     } value;
@@ -77,13 +77,13 @@ static void lnkConst_free(jlink *pjlink)
             free(clink->value.pstrings[i]);
         /* fall through */
     case sc40:
-    case ai32:
+    case ai64:
     case af64:
         free(clink->value.pmem);
         break;
     case s0:
     case a0:
-    case si32:
+    case si64:
     case sf64:
         break;
     }
@@ -102,15 +102,15 @@ static jlif_result lnkConst_integer(jlink *pjlink, long long num)
         void *buf;
 
     case s0:
-        clink->type = si32;
+        clink->type = si64;
         clink->value.scalar_integer = num;
         break;
 
     case a0:
-        clink->type = ai32;
+        clink->type = ai64;
         /* fall through */
-    case ai32:
-        buf = realloc(clink->value.pmem, newElems * sizeof(epicsInt32));
+    case ai64:
+        buf = realloc(clink->value.pmem, newElems * sizeof(epicsInt64));
         if (!buf)
             return jlif_stop;
 
@@ -176,7 +176,7 @@ static jlif_result lnkConst_double(jlink *pjlink, double num)
         clink->value.pdoubles = f64buf;
         break;
 
-    case ai32: /* promote earlier ai32 values to af64 */
+    case ai64: /* promote earlier ai64 values to af64 */
         f64buf = calloc(newElems, sizeof(epicsFloat64));
         if (!f64buf)
             return jlif_stop;
@@ -241,7 +241,7 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
         break;
 
     case af64:
-    case ai32:
+    case ai64:
         errlogPrintf("lnkConst: Mixed data types in array\n");
         /* fall thorough */
     default:
@@ -328,10 +328,10 @@ static void lnkConst_report(const jlink *pjlink, int level, int indent)
             int i;
 
             switch (clink->type) {
-            case ai32:
-                printf("\n%*s[%d", indent+2, "", clink->value.pintegers[0]);
+            case ai64:
+                printf("\n%*s[%lld", indent+2, "", clink->value.pintegers[0]);
                 for (i = 1; i < clink->nElems; i++) {
-                    printf(", %d", clink->value.pintegers[i]);
+                    printf(", %lld", clink->value.pintegers[i]);
                 }
                 break;
             case af64:
@@ -357,8 +357,8 @@ static void lnkConst_report(const jlink *pjlink, int level, int indent)
     printf("%*s'const': %s", indent, "", dtype);
 
     switch (clink->type) {
-    case si32:
-        printf(" %d\n", clink->value.scalar_integer);
+    case si64:
+        printf(" %lld\n", clink->value.scalar_integer);
         return;
     case sf64:
         printf(" %g\n", clink->value.scalar_double);
@@ -394,8 +394,8 @@ static long lnkConst_loadScalar(struct link *plink, short dbrType, void *pbuffer
             clink, dbrType, pbuffer);
 
     switch (clink->type) {
-    case si32:
-        status = dbFastPutConvertRoutine[DBF_LONG][dbrType]
+    case si64:
+        status = dbFastPutConvertRoutine[DBF_INT64][dbrType]
             (&clink->value.scalar_integer, pbuffer, NULL);
         break;
 
@@ -409,8 +409,8 @@ static long lnkConst_loadScalar(struct link *plink, short dbrType, void *pbuffer
             (clink->value.scalar_string, pbuffer, NULL);
         break;
 
-    case ai32:
-        status = dbFastPutConvertRoutine[DBF_LONG][dbrType]
+    case ai64:
+        status = dbFastPutConvertRoutine[DBF_INT64][dbrType]
             (clink->value.pintegers, pbuffer, NULL);
         break;
 
@@ -483,8 +483,8 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
     switch (clink->type) {
         int i;
 
-    case si32:
-        status = dbFastPutConvertRoutine[DBF_LONG][dbrType]
+    case si64:
+        status = dbFastPutConvertRoutine[DBF_INT64][dbrType]
             (&clink->value.scalar_integer, pdest, NULL);
         break;
 
@@ -498,8 +498,8 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
             (clink->value.scalar_string, pbuffer, NULL);
         break;
 
-    case ai32:
-        conv = dbFastPutConvertRoutine[DBF_LONG][dbrType];
+    case ai64:
+        conv = dbFastPutConvertRoutine[DBF_INT64][dbrType];
         for (i = 0; i < nElems; i++) {
             conv(&clink->value.pintegers[i], pdest, NULL);
             pdest += dbrSize;

@@ -565,11 +565,9 @@ void dbLockCleanupRecords(dbBase *pdbbase)
 
     forEachRecord(NULL, pdbbase, &freeLockRecord);
     if(ellCount(&lockSetsActive)) {
-        errlogMessage("Warning: dbLockCleanupRecords() leaking lockSets\n");
+        printf("Warning: dbLockCleanupRecords() leaking lockSets\n");
         dblsr(NULL,2);
     }
-
-    assert(ellCount(&lockSetsActive)==0);
 
 #ifndef LOCKSET_NOFREE
     while((cur=ellGet(&lockSetsFree))!=NULL) {

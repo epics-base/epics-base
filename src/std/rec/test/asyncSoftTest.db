@@ -1,0 +1,188 @@
+record(ai, "ai0") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, "async")
+  field(FLNK, "done")
+}
+record(bi, "bi0") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, "async")
+  field(FLNK, "done")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64in, "ii0") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, "async")
+  field(FLNK, "done")
+}
+record(longin, "li0") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, "async")
+  field(FLNK, "done")
+}
+record(mbbiDirect, "di0") {
+  field(DTYP, "Async Soft Channel")
+  field(NOBT, 4)
+  field(INP, "async")
+  field(FLNK, "done")
+}
+record(mbbi, "mi0") {
+  field(DTYP, "Async Soft Channel")
+  field(NOBT, 4)
+  field(INP, "async")
+  field(FLNK, "done")
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(stringin, "si0") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, "async")
+  field(FLNK, "done")
+}
+
+record(ai, "ai1") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, {const:9})
+  field(FLNK, "done")
+}
+record(bi, "bi1") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, {const:1})
+  field(FLNK, "done")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64in, "ii1") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, {const:9})
+  field(FLNK, "done")
+}
+record(longin, "li1") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, {const:9})
+  field(FLNK, "done")
+}
+record(mbbiDirect, "di1") {
+  field(DTYP, "Async Soft Channel")
+  field(NOBT, 4)
+  field(INP, {const:9})
+  field(FLNK, "done")
+}
+record(mbbi, "mi1") {
+  field(DTYP, "Async Soft Channel")
+  field(NOBT, 4)
+  field(INP, {const:9})
+  field(FLNK, "done")
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(stringin, "si1") {
+  field(DTYP, "Async Soft Channel")
+  field(INP, {const:"9"})
+  field(FLNK, "done")
+}
+
+record(sub, "async") {
+  field(INPA, "startCounter PP")
+  field(SNAM, "asyncSubr")
+}
+record(calc, "startCounter") {
+  field(CALC, "VAL+1")
+}
+record(sub, "done") {
+  field(INPA, "doneCounter PP")
+  field(SNAM, "doneSubr")
+}
+record(calc, "doneCounter") {
+  field(CALC, "VAL+1")
+}
+
+record(ao, "ao1") {
+  field(DTYP, "Async Soft Channel")
+  field(OUT, "async.PROC CA")
+  field(FLNK, "done")
+}
+record(bo, "bo1") {
+  field(DTYP, "Async Soft Channel")
+  field(OUT, "async.PROC CA")
+  field(FLNK, "done")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64out, "io1") {
+  field(DTYP, "Async Soft Channel")
+  field(OUT, "async.PROC CA")
+  field(FLNK, "done")
+}
+record(longout, "lo1") {
+  field(DTYP, "Async Soft Channel")
+  field(OUT, "async.PROC CA")
+  field(FLNK, "done")
+}
+record(mbboDirect, "do1") {
+  field(DTYP, "Async Soft Channel")
+  field(NOBT, 4)
+  field(OUT, "async.PROC CA")
+  field(FLNK, "done")
+}
+record(mbbo, "mo1") {
+  field(DTYP, "Async Soft Channel")
+  field(NOBT, 4)
+  field(OUT, "async.PROC CA")
+  field(FLNK, "done")
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lso, "lso1") {
+  field(DTYP, "Async Soft Channel")
+  field(OUT, "async.PROC CA")
+  field(FLNK, "done")
+  field(SIZV, 40)
+}
+record(stringout, "so1") {
+  field(DTYP, "Async Soft Channel")
+  field(OUT, "async.PROC CA")
+  field(FLNK, "done")
+}

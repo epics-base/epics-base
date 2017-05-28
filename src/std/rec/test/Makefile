@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 TOP=../../../..
 
@@ -59,6 +59,13 @@ compressTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += compressTest.c
 TESTFILES += ../compressTest.db
 TESTS += compressTest
+
+TESTPROD_HOST += asyncSoftTest
+asyncSoftTest_SRCS += asyncSoftTest.c
+asyncSoftTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += asyncSoftTest.c
+TESTFILES += ../asyncSoftTest.db
+TESTS += asyncSoftTest
 
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)

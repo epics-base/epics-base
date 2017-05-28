@@ -19,6 +19,7 @@ int arrayOpTest(void);
 int asTest(void);
 int linkRetargetLinkTest(void);
 int linkInitTest(void);
+int asyncSoftTest(void);
 
 void epicsRunRecordTests(void)
 {
@@ -37,6 +38,8 @@ void epicsRunRecordTests(void)
     runTest(linkRetargetLinkTest);
 
     runTest(linkInitTest);
+
+    runTest(asyncSoftTest);
 
     epicsExit(0);   /* Trigger test harness */
 }

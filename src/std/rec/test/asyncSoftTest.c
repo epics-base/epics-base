@@ -160,7 +160,7 @@ MAIN(asyncSoftTest)
 {
     dbCommon *async;
 
-    testPlan(0);
+    testPlan(128);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);

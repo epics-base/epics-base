@@ -156,7 +156,7 @@ void testAsyncOutputs(dbCommon *async)
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
-MAIN(recMiscTest)
+MAIN(asyncSoftTest)
 {
     dbCommon *async;
 

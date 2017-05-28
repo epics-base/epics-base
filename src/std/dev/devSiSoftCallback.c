@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* devSiSoftCallback.c */
 /*
@@ -80,10 +80,11 @@ static long add_record(dbCommon *pcommon)
     devPvt *pdevPvt;
     processNotify *ppn;
 
-    if (plink->type == CONSTANT) return 0;
+    if (dbLinkIsDefined(plink) && dbLinkIsConstant(plink))
+        return 0;
 
     if (plink->type != PV_LINK) {
-	long status = S_db_badField;
+        long status = S_db_badField;
 
         recGblRecordError(status, (void *)prec,
             "devSiSoftCallback (add_record) Illegal INP field");
@@ -92,7 +93,7 @@ static long add_record(dbCommon *pcommon)
 
     pdevPvt = calloc(1, sizeof(*pdevPvt));
     if (!pdevPvt) {
-	long status = S_db_noMemory;
+        long status = S_db_noMemory;
 
         recGblRecordError(status, (void *)prec,
             "devSiSoftCallback (add_record) out of memory, calloc() failed");
@@ -102,7 +103,7 @@ static long add_record(dbCommon *pcommon)
 
     chan = dbChannelCreate(plink->value.pv_link.pvname);
     if (!chan) {
-	long status = S_db_notFound;
+        long status = S_db_notFound;
 
         recGblRecordError(status, (void *)prec,
             "devSiSoftCallback (add_record) linked record not found");
@@ -129,7 +130,9 @@ static long del_record(dbCommon *pcommon) {
     DBLINK *plink = &prec->inp;
     devPvt *pdevPvt = (devPvt *)prec->dpvt;
 
-    if (plink->type == CONSTANT) return 0;
+    if (dbLinkIsDefined(plink) && dbLinkIsConstant(plink))
+        return 0;
+
     assert(plink->type == PN_LINK);
 
     dbNotifyCancel(&pdevPvt->pn);
@@ -152,21 +155,9 @@ static long init(int pass)
 
 static long init_record(stringinRecord *prec)
 {
-    /* INP must be CONSTANT or PN_LINK */
-    switch (prec->inp.type) {
-    case CONSTANT:
-        if (recGblInitConstantLink(&prec->inp, DBR_STRING, &prec->val))
-            prec->udf = FALSE;
-        break;
-    case PN_LINK:
-        /* Handled by add_record */
-        break;
-    default:
-        recGblRecordError(S_db_badField, (void *)prec,
-            "devSiSoftCallback (init_record) Illegal INP field");
-        prec->pact = TRUE;
-        return S_db_badField;
-    }
+    if (recGblInitConstantLink(&prec->inp, DBR_STRING, &prec->val))
+        prec->udf = FALSE;
+
     return 0;
 }
 
@@ -187,6 +178,7 @@ static long read_si(stringinRecord *prec)
         recGblSetSevr(prec, READ_ALARM, INVALID_ALARM);
         return pdevPvt->status;
     }
+
     strncpy(prec->val, pdevPvt->buffer.value, MAX_STRING_SIZE);
     prec->val[MAX_STRING_SIZE-1] = 0;
     prec->udf = FALSE;
@@ -207,9 +199,10 @@ static long read_si(stringinRecord *prec)
             break;
     }
 
-    if (prec->tsel.type == CONSTANT &&
+    if (dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         prec->time = pdevPvt->buffer.time;
+
     return 0;
 }
 

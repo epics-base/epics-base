@@ -28,19 +28,19 @@
 /* Create the dset for devI64outSoftCallback */
 static long write_int64out(int64outRecord *prec);
 struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_int64out;
+    long		number;
+    DEVSUPFUN	report;
+    DEVSUPFUN	init;
+    DEVSUPFUN	init_record;
+    DEVSUPFUN	get_ioint_info;
+    DEVSUPFUN	write_int64out;
 } devI64outSoftCallback = {
-	5,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	write_int64out
+    5,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    write_int64out
 };
 epicsExportAddress(dset, devI64outSoftCallback);
 
@@ -52,18 +52,11 @@ static long write_int64out(int64outRecord *prec)
     if (prec->pact)
         return 0;
 
-    if (plink->type != CA_LINK) {
+    status = dbPutLinkAsync(plink, DBR_INT64, &prec->val, 1);
+    if (!status)
+        prec->pact = TRUE;
+    else if (status == S_db_noLSET)
         status = dbPutLink(plink, DBR_INT64, &prec->val, 1);
-        return status;
-    }
 
-    status = dbCaPutLinkCallback(plink, DBR_INT64, &prec->val, 1,
-        dbCaCallbackProcess, plink);
-    if (status) {
-        recGblSetSevr(prec, LINK_ALARM, INVALID_ALARM);
-        return status;
-    }
-
-    prec->pact = TRUE;
-    return 0;
+    return status;
 }

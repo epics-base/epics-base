@@ -41,7 +41,7 @@ typedef struct devPvt {
     struct {
         DBRstatus
         DBRtime
-        epicsInt32 value;
+        epicsInt64 value;
     } buffer;
 } devPvt;
 

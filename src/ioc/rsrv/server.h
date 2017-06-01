@@ -167,7 +167,7 @@ enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 /*  NOTE: external used so they remember the state across loads */
 #ifdef  GLBLSOURCE
 #   define GLBLTYPE
-#   define GLBLTYPE_INIT(A)
+#   define GLBLTYPE_INIT(A) = A
 #else
 #   define GLBLTYPE extern
 #   define GLBLTYPE_INIT(A)
@@ -185,8 +185,7 @@ enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 
 GLBLTYPE int                CASDEBUG;
 GLBLTYPE unsigned short     ca_server_port, ca_udp_port, ca_beacon_port;
-GLBLTYPE ELLLIST            clientQ; /* (TCP clients) locked by clientQlock */
-GLBLTYPE ELLLIST            clientQudp; /* locked by clientQlock */
+GLBLTYPE ELLLIST            clientQ             GLBLTYPE_INIT(ELLLIST_INIT);
 GLBLTYPE ELLLIST            servers; /* rsrv_iface_config::node, read-only after rsrv_init() */
 GLBLTYPE ELLLIST            beaconAddrList;
 GLBLTYPE SOCKET             beaconSocket;

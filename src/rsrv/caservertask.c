@@ -241,7 +241,6 @@ int rsrv_init (void)
 
     clientQlock = epicsMutexMustCreate();
 
-    ellInit ( &clientQ );
     freeListInitPvt ( &rsrvClientFreeList, sizeof(struct client), 8 );
     freeListInitPvt ( &rsrvChanFreeList, sizeof(struct channel_in_use), 512 );
     freeListInitPvt ( &rsrvEventFreeList, sizeof(struct event_ext), 512 );
@@ -951,16 +950,22 @@ struct client *create_tcp_client ( SOCKET sock )
 
 void casStatsFetch ( unsigned *pChanCount, unsigned *pCircuitCount )
 {
-	LOCK_CLIENTQ;
+    if ( ! clientQlock ) {
+        *pCircuitCount = 0;
+        *pChanCount = 0;
+        return;
+    }
+
+    LOCK_CLIENTQ;
     {
         int circuitCount = ellCount ( &clientQ );
         if ( circuitCount < 0 ) {
-	        *pCircuitCount = 0;
+            *pCircuitCount = 0;
         }
         else {
-	        *pCircuitCount = (unsigned) circuitCount;
+            *pCircuitCount = (unsigned) circuitCount;
         }
         *pChanCount = rsrvChannelCount;
     }
-	UNLOCK_CLIENTQ;
+    UNLOCK_CLIENTQ;
 }

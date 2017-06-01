@@ -470,7 +470,6 @@ int rsrv_init (void)
 
     clientQlock = epicsMutexMustCreate();
 
-    ellInit ( &clientQ );
     freeListInitPvt ( &rsrvClientFreeList, sizeof(struct client), 8 );
     freeListInitPvt ( &rsrvChanFreeList, sizeof(struct channel_in_use), 512 );
     freeListInitPvt ( &rsrvEventFreeList, sizeof(struct event_ext), 512 );

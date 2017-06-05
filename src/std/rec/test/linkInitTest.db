@@ -90,10 +90,10 @@ record(event, "ev2") {
 }
 
 record(int64in, "i1") {
-  field(INP, [1234567890123456789,0])
+  field(INP, [1234567890123456789,])
 }
 record(int64in, "i2") {
-  field(INP, {const:1234567890123456789})
+  field(INP, {const:1234567890123456789,})
 }
 record(int64in, "i3") {
   field(INP, 1234567890123456789)
@@ -101,6 +101,6 @@ record(int64in, "i3") {
 record(waveform, "i4") {
   field(NELM, 1)
   field(FTVL, "INT64")
-  field(INP, [1234567890123456789,0])
+  field(INP, [1234567890123456789,])
 }
 

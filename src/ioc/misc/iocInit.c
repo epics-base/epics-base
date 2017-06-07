@@ -6,7 +6,7 @@
 * Copyright (c) 2013 Helmholtz-Zentrum Berlin
 *     für Materialien und Energie GmbH.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      Original Author: Marty Kraimer
@@ -53,6 +53,7 @@
 #include "dbLock.h"
 #include "dbNotify.h"
 #include "dbScan.h"
+#include "dbServer.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "devSup.h"
@@ -69,7 +70,6 @@
 #include "registryDriverSupport.h"
 #include "registryJLinks.h"
 #include "registryRecordType.h"
-#include "rsrv.h"
 
 static enum {
     iocVirgin, iocBuilding, iocBuilt, iocRunning, iocPaused, iocStopped
@@ -203,8 +203,7 @@ int iocBuild(void)
     status = iocBuild_2();
     if (status) return status;
 
-    /* Start CA server threads */
-    rsrv_init();
+    dbInitServers();
 
     status = iocBuild_3();
 
@@ -247,7 +246,8 @@ int iocRun(void)
     if (iocState == iocBuilt)
         initHookAnnounce(initHookAfterInterruptAccept);
 
-    rsrv_run();
+    dbRunServers();
+
     initHookAnnounce(initHookAfterCaServerRunning);
     if (iocState == iocBuilt)
         initHookAnnounce(initHookAtEnd);
@@ -268,7 +268,7 @@ int iocPause(void)
     }
     initHookAnnounce(initHookAtIocPause);
 
-    rsrv_pause();
+    dbPauseServers();
     initHookAnnounce(initHookAfterCaServerPaused);
 
     dbCaPause();
@@ -421,7 +421,7 @@ static void initRecSup(void)
 static void initDevSup(void)
 {
     dbRecordType *pdbRecordType;
-    
+
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;
          pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {

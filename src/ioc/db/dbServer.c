@@ -56,3 +56,19 @@ int dbServerClient(char *pBuf, size_t bufSize)
     return -1;
 }
 
+#define STARTSTOP(routine, method) \
+void routine(void) \
+{ \
+    dbServer *psrv = (dbServer *)ellFirst(&serverList); \
+\
+    while (psrv) { \
+        if (psrv->method) \
+            psrv->method(); \
+        psrv = (dbServer *)ellNext(&psrv->node); \
+    } \
+}
+
+STARTSTOP(dbInitServers, init)
+STARTSTOP(dbRunServers, run)
+STARTSTOP(dbPauseServers, pause)
+STARTSTOP(dbStopServers, stop)

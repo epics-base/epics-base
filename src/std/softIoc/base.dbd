@@ -26,3 +26,5 @@ include "asSub.dbd"
 # IOC Core variables
 include "dbCore.dbd"
 
+# RSRV server
+include "rsrv.dbd"

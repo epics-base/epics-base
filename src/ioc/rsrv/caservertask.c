@@ -469,18 +469,11 @@ void rsrv_build_addr_lists(void)
     }
 }
 
-static dbServer rsrv_server = {
-    ELLNODE_INIT,
-    "rsrv",
-    casr,
-    casStatsFetch,
-    casClientInitiatingCurrentThread
-};
-
 /*
  * rsrv_init ()
  */
-int rsrv_init (void)
+static
+void rsrv_init (void)
 {
     long maxBytesAsALong;
     long status;
@@ -498,8 +491,6 @@ int rsrv_init (void)
     epicsSignalInstallSigPipeIgnore ();
 
     rsrvCurrentClient = epicsThreadPrivateCreate ();
-
-    dbRegisterServer(&rsrv_server);
 
     if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
         ca_server_port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT,
@@ -768,26 +759,22 @@ int rsrv_init (void)
             &rsrv_online_notify_task, NULL);
 
     epicsEventMustWait(beacon_startStopEvent);
-
-    return RSRV_OK;
 }
 
-int rsrv_run (void)
+static
+void rsrv_run (void)
 {
     castcp_ctl = ctlRun;
     casudp_ctl = ctlRun;
     beacon_ctl = ctlRun;
-
-    return RSRV_OK;
 }
 
-int rsrv_pause (void)
+static
+void rsrv_pause (void)
 {
     beacon_ctl = ctlPause;
     casudp_ctl = ctlPause;
     castcp_ctl = ctlPause;
-
-    return RSRV_OK;
 }
 
 static unsigned countChanListBytes (
@@ -1550,4 +1537,21 @@ void casStatsFetch ( unsigned *pChanCount, unsigned *pCircuitCount )
         *pChanCount = rsrvChannelCount;
     }
     UNLOCK_CLIENTQ;
+}
+
+
+static dbServer rsrv_server = {
+    ELLNODE_INIT,
+    "rsrv",
+    casr,
+    casStatsFetch,
+    casClientInitiatingCurrentThread,
+    rsrv_init,
+    rsrv_run,
+    rsrv_pause
+};
+
+void rsrv_register_server(void)
+{
+    dbRegisterServer(&rsrv_server);
 }

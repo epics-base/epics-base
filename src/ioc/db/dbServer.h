@@ -36,6 +36,12 @@ typedef struct dbServer {
     /* Get identity of client initiating the calling thread */
     /* Must return 0 (OK), or -1 (ERROR) from unknown threads */
     int (* client) (char *pBuf, size_t bufSize);
+
+    /* Start/stop methods */
+    void (* init) (void);
+    void (* run) (void);
+    void (* pause) (void);
+    void (* stop) (void);
 } dbServer;
 
 
@@ -50,6 +56,11 @@ epicsShareFunc void dbRegisterServer(dbServer *psrv);
 epicsShareFunc void dbsr(unsigned level);
 
 epicsShareFunc int dbServerClient(char *pBuf, size_t bufSize);
+
+epicsShareFunc void dbInitServers(void);
+epicsShareFunc void dbRunServers(void);
+epicsShareFunc void dbPauseServers(void);
+epicsShareFunc void dbStopServers(void);
 
 #ifdef __cplusplus
 }

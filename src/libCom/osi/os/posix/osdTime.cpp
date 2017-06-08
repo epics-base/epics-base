@@ -90,8 +90,8 @@ extern "C" epicsShareFunc void
     struct timespec wait;
     int status;
 
-    if(timeout<0.0) timeout = 0.0;
-    else if(timeout>3600.0) timeout = 3600.0;
+    if (timeout < 0.0)
+        timeout = 0.0;
 #ifdef CLOCK_REALTIME
     status = clock_gettime(CLOCK_REALTIME, wakeTime);
 #else

@@ -69,10 +69,8 @@ convertDoubleToWakeTime(double timeout, struct timespec *wakeTime)
 
     clock_get_time(host_clock, &now);
 
-    if (timeout<0.0)
+    if (timeout < 0.0)
         timeout = 0.0;
-    else if(timeout>3600.0)
-        timeout = 3600.0;
 
     wait.tv_sec  = static_cast< long >(timeout);
     wait.tv_nsec = static_cast< long >((timeout - (double)wait.tv_sec) * 1e9);

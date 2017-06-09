@@ -107,7 +107,7 @@ extern "C" epicsShareFunc void
         perror("convertDoubleToWakeTime");
         cantProceed("convertDoubleToWakeTime");
     }
-    wait.tv_sec  = static_cast< long >(timeout);
+    wait.tv_sec  = static_cast< time_t >(timeout);
     wait.tv_nsec = static_cast< long >((timeout - (double)wait.tv_sec) * 1e9);
     wakeTime->tv_sec  += wait.tv_sec;
     wakeTime->tv_nsec += wait.tv_nsec;

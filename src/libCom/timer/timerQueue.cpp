@@ -21,6 +21,7 @@
 #include "errlog.h"
 
 const double timerQueue :: exceptMsgMinPeriod = 60.0 * 5.0; // seconds
+const double timerQueue :: maxDelay = 60 * 60 * 24 * 365242.5; // ~1000 years
 
 epicsTimerQueue::~epicsTimerQueue () {}
 
@@ -57,7 +58,7 @@ void timerQueue ::
         }
     }
     catch ( ... ) {
-        delay = DBL_MAX;
+        delay = maxDelay;
         strcpy ( date, "UKN DATE" );
     }
     if ( delay >= exceptMsgMinPeriod ) {
@@ -91,7 +92,7 @@ double timerQueue::process ( const epicsTime & currentTime )
             return delay;
         }
         else {
-            return DBL_MAX;
+            return maxDelay;
         }
     }
 
@@ -116,14 +117,14 @@ double timerQueue::process ( const epicsTime & currentTime )
         }
     }
     else {
-        return DBL_MAX;
+        return maxDelay;
     }
 
 #   ifdef DEBUG
         unsigned N = 0u;
 #   endif
 
-    double delay = DBL_MAX;
+    double delay = maxDelay;
     while ( true ) {
         epicsTimerNotify *pTmpNotify = this->pExpireTmr->pNotify;
         this->pExpireTmr->pNotify = 0;
@@ -194,7 +195,7 @@ double timerQueue::process ( const epicsTime & currentTime )
         }
         else {
             this->processThread = 0;
-            delay = DBL_MAX;
+            delay = maxDelay;
             break;
         }
     }

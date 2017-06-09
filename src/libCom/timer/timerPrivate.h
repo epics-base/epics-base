@@ -107,7 +107,8 @@ private:
     epicsTime exceptMsgTimeStamp;
     bool cancelPending;
     static const double exceptMsgMinPeriod;
-    void printExceptMsg ( const char * pName, 
+    static const double maxDelay;
+    void printExceptMsg ( const char * pName,
                 const type_info & type );
 	timerQueue ( const timerQueue & );
     timerQueue & operator = ( const timerQueue & );

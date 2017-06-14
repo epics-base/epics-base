@@ -113,7 +113,7 @@ epicsShareFunc void fdManager::process (double delay)
 
     if ( ioPending ) {
         struct timeval tv;
-        tv.tv_sec = static_cast<long> ( minDelay );
+        tv.tv_sec = static_cast<time_t> ( minDelay );
         tv.tv_usec = static_cast<long> ( (minDelay-tv.tv_sec) * uSecPerSec );
 
         fd_set * pReadSet = & this->fdSetsPtr[fdrRead];

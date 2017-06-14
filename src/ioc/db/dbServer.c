@@ -10,8 +10,10 @@
  */
 
 #include <stddef.h>
+#include <string.h>
 
 #include "ellLib.h"
+#include "envDefs.h"
 #include "epicsStdio.h"
 
 #define epicsExportSharedSymbols
@@ -22,6 +24,23 @@ static ELLLIST serverList = ELLLIST_INIT;
 
 void dbRegisterServer(dbServer *psrv)
 {
+    const char * ignore = envGetConfigParamPtr(&EPICS_IOC_IGNORE_SERVERS);
+
+    if (!psrv || !psrv->name)
+        return;
+
+    if (strchr(psrv->name, ' ')) {
+        fprintf(stderr, "dbRegisterServer: Bad server name '%s'\n",
+            psrv->name);
+        return;
+    }
+
+    if (ignore && strstr(ignore, psrv->name)) {
+        fprintf(stderr, "dbRegisterServer: Ignoring '%s', per environment\n",
+            psrv->name);
+        return;
+    }
+
     if (ellNext(&psrv->node)) {
         fprintf(stderr, "dbRegisterServer: '%s' registered twice?\n",
             psrv->name);

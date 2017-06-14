@@ -25,6 +25,8 @@ extern "C" {
 
 typedef struct dbServer {
     ELLNODE node;
+
+    /* A short server identifier, printable, no spaces */
     const char *name;
 
     /* Print level-dependent status report to stdout */

@@ -73,16 +73,16 @@ ifdef T_A
   #
   -include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).$(T_A)
 
+  #  Site specific target and host-target definitions and overrides
+  #
+  -include $(CONFIG)/os/CONFIG_SITE.Common.$(T_A)
+  -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
+
   #  RELEASE file specific definitions
   #
   ifneq ($(CONFIG),$(TOP)/configure)
     -include $(CONFIG)/CONFIG_APP_INCLUDE
   endif
-
-  #  Site specific target and host-target definitions
-  #
-  -include $(CONFIG)/os/CONFIG_SITE.Common.$(T_A)
-  -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 
 endif # ifdef T_A
 

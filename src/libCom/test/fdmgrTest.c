@@ -74,13 +74,13 @@ void testTimer (fdctx *pfdm, double delay)
 
     epicsTimeGetCurrent (&begin);
     cbs.done = 0;
-    tmo.tv_sec = (unsigned long) delay;
+    tmo.tv_sec = (time_t) delay;
     tmo.tv_usec = (unsigned long) ((delay - tmo.tv_sec) * uSecPerSec);
     aid = fdmgr_add_timeout (pfdm, &tmo, alarmCB, &cbs);
     verify (aid!=fdmgrNoAlarm);
 
     while (!cbs.done) {
-        tmo.tv_sec = (unsigned long) delay;
+        tmo.tv_sec = (time_t) delay;
         tmo.tv_usec = (unsigned long) ((delay - tmo.tv_sec) * uSecPerSec);
         status = fdmgr_pend_event (pfdm, &tmo);
         verify (status==0);

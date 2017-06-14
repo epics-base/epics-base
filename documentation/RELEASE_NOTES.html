@@ -13,6 +13,16 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Extend maximum Posix epicsEventWaitWithTimeout() delay</h3>
+
+<p>The Posix implementation of epicsEventWaitWithTimeout() was limiting the
+timeout delay to at most 60 minutes (3600.0 seconds). This has been changed to
+10 years; significantly longer maximum delays cause problems on systems where
+<tt>time_t</tt> is still a signed 32-bit integer so cannot represent absolute
+time-stamps after 2038-01-19. Our assumption is that such 32-bit systems will
+have been retired before the year 2028, but some additional tests have been
+added to the epicsTimeTest program to detect and fail if this assumption is
+violated.</p>
 
 <h3>New test-related make targets</h3>
 

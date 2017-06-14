@@ -48,7 +48,7 @@ MAIN(epicsTimeTest)
     const int wasteTime = 100000;
     const int nTimes = 10;
 
-    testPlan(15 + nTimes * 19);
+    testPlan(17 + nTimes * 19);
 
     try {
         const epicsTimeStamp epochTS = {0, 0};
@@ -214,6 +214,36 @@ MAIN(epicsTimeTest)
         struct timespec ts = begin;
         epicsTime beginTS = ts;
         testOk1(beginTS + diff == now);
+    }
+
+    epicsTime ten_years_hence;
+    try {
+        now = epicsTime::getCurrent();
+        ten_years_hence = now + 60 * 60 * 24 * 3652.5;
+        testPass("epicsTime can represent 10 years hence");
+    }
+    catch ( ... ) {
+        testFail("epicsTime exception for value 10 years hence");
+    }
+
+    try {
+        /* This test exists because in libCom/osi/os/posix/osdTime.cpp
+         * the convertDoubleToWakeTime() routine limits the timeout delay
+         * to 10 years. libCom/timer/timerQueue.cpp returns DBL_MAX for
+         * queues with no timers present, and convertDoubleToWakeTime()
+         * has to return an absolute Posix timestamp. On 2028-01-19 any
+         * systems that still implement time_t as a signed 32-bit integer
+         * will be unable to represent that timestamp, so this will fail.
+         */
+        time_t_wrapper os_time_t = ten_years_hence;
+        epicsTime then = os_time_t; // No fractional seconds
+        double delta = ten_years_hence - then;
+
+        testOk(delta >= 0 && delta < 1.0,
+            "OS time_t can represent 10 years hence");
+    }
+    catch ( ... ) {
+        testFail("OS time_t conversion exception for value 10 years hence");
     }
 
     return testDone();

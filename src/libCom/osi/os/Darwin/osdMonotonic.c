@@ -1,10 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2015 Michael Davidsaver
+* Copyright (c) 2017 Michael Davidsaver
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#include <kern/clock.h>
+#include <mach/mach.h>
 #include <mach/mach_time.h>
 
 #define epicsExportSharedSymbols
@@ -14,19 +14,21 @@
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
+/* see https://developer.apple.com/library/content/qa/qa1398/_index.html */
+static mach_timebase_info_data_t tbinfo;
+
 void osdMonotonicInit(void)
 {
-    /* no-op */
+    (void)mach_timebase_info(&tbinfo);
 }
 
 epicsUInt64 epicsMonotonicResolution(void)
 {
-    return 1; /* TODO, how to find ? */
+    return 1e-9 * tbinfo.numer / tbinfo.denom;
 }
 
 epicsUInt64 epicsMonotonicGet(void)
 {
     uint64_t val = mach_absolute_time(), ret;
-    absolutetime_to_nanoseconds(val, &ret);
-    return ret;
+    return val * tbinfo.numer / tbinfo.denom;
 }

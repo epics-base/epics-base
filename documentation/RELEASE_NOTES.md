@@ -1,4 +1,4 @@
-# EPICS 7.0 Release Notes
+# EPICS 7.0 Release Notes    {#releasenotes}
 
 These release notes describe changes that have been made since the previous
 release of this series of EPICS Base. **Note that changes which were merged up

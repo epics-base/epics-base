@@ -1,0 +1,16 @@
+/**
+@mainpage EPICS Base
+
+Documentation index
+
+@ul
+@li @ref releasenotes
+@li @ref install
+@li @ref recordrefmanual
+@li <a href="CAref.html">Channel Access Reference Manual</a>
+@li <a href="filters.html">Server Side Filters Reference</a>
+@li <a href="msi.html">msi: Macro Substitution and Include Tool</a>
+@li <a href="links.html">JSON Link Types</a>
+@li <a href="CA.html">Perl 5 Interface to Channel Access</a>
+
+*/

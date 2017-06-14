@@ -1,4 +1,4 @@
-# Record Reference Documentation
+# Record Reference Documentation  {#recordrefmanual}
 
 The following documentation for the record types and menus include with Base was
 converted from the old EPICS Wiki pages and updated. This list only includes the

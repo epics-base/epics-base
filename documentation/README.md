@@ -1,4 +1,4 @@
-# Installation Instructions
+# Installation Instructions {#install}
 
 ## EPICS Base Release 7.0.3.1
 

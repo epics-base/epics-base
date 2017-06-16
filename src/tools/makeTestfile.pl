@@ -23,10 +23,6 @@ use strict;
 
 my ($target, $exe) = @ARGV;
 
-# Use system on Windows, exec doesn't work the same there and
-# GNUmake thinks the test has finished as soon as Perl exits.
-my $exec = $^O eq 'MSWin32' ? "system('./$exe') == 0" : "exec './$exe'";
-
 open(my $OUT, '>', $target) or die "Can't create $target: $!\n";
 
 print $OUT <<EOF;
@@ -37,7 +33,15 @@ use Cwd 'abs_path';
 
 \$ENV{HARNESS_ACTIVE} = 1 if scalar \@ARGV && shift eq '-tap';
 \$ENV{TOP} = abs_path(\$ENV{TOP}) if exists \$ENV{TOP};
-$exec or die "Can't run $exe: \$!\\n";
+
+if (\$^O eq 'MSWin32') {
+    # Use system on Windows, exec doesn't work the same there and
+    # GNUmake thinks the test has finished as soon as Perl exits.
+    system('./$exe') == 0 or die "Can't run $exe: \$!\\n";
+}
+else {
+    exec './$exe' or die "Can't run $exe: \$!\\n";
+}
 EOF
 
 close $OUT or die "Can't close $target: $!\n";

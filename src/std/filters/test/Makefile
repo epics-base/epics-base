@@ -14,7 +14,7 @@ TESTLIBRARY = Recs
 
 Recs_SRCS += xRecord.c
 Recs_SRCS += arrRecord.c
-Recs_LIBS += dbCore Com
+Recs_LIBS += dbCore ca Com
 
 PROD_LIBS = Recs dbRecStd dbCore ca Com
 

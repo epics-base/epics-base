@@ -81,14 +81,14 @@ static void sprint_long (char *ret, dbr_long_t val, IntFormatT outType)
     }
     else {
         const char *fmt[4] = { /* Order must match the enum IntFormatT */
-            "%ld"   /* dec */,
-            "0"     /* bin, val is 0 */,
-            "0o%lo" /* oct */,
-            "0x%lX" /* hex */
+            "%d"   /* dec */,
+            "0"    /* bin and val is 0 */,
+            "0o%o" /* oct */,
+            "0x%X" /* hex */
         };
 
-        /* Formats have long modifier, pass value as a long */
-        sprintf(ret, fmt[outType], (long) val);
+        /* dbr_long_t is actually an int on all supported platforms */
+        sprintf(ret, fmt[outType], (int) val);
     }
 }
 

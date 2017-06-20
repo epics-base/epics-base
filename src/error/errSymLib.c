@@ -32,12 +32,10 @@
 #define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "epicsAssert.h"
-#include "dbDefs.h"
 #include "errMdef.h"
 #include "errSymTbl.h"
 #include "ellLib.h"
 #include "errlog.h"
-
 
 static unsigned short errhash(long errNum);
 
@@ -53,7 +51,7 @@ typedef struct errnumnode {
 
 static ELLLIST errnumlist = ELLLIST_INIT;
 static ERRNUMNODE **hashtable;
-static int initialized = FALSE;
+static int initialized = 0;
 extern ERRSYMTAB_ID errSymTbl;
 
 /****************************************************************
@@ -103,7 +101,7 @@ int epicsShareAPI errSymBld(void)
 	*phashnode = perrNumNode;
 	perrNumNode = (ERRNUMNODE *) ellNext((ELLNODE *) perrNumNode);
     }
-    initialized = TRUE;
+    initialized = 1;
     return(0);
 }
 

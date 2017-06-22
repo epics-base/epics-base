@@ -17,22 +17,24 @@ sub readReleaseFiles {
     $Rmacros->{'EPICS_HOST_ARCH'} = $hostarch if $hostarch;
 
     return unless (-e $relfile);
-    &readRelease($relfile, $Rmacros, $Rapps);
+
+    my %done;
+    &readRelease($relfile, $Rmacros, $Rapps, \%done);
 
     if ($hostarch) {
         my $hrelfile = "$relfile.$hostarch";
-        &readRelease($hrelfile, $Rmacros, $Rapps) if (-e $hrelfile);
+        &readRelease($hrelfile, $Rmacros, $Rapps, \%done) if (-e $hrelfile);
         $hrelfile .= '.Common';
-        &readRelease($hrelfile, $Rmacros, $Rapps) if (-e $hrelfile);
+        &readRelease($hrelfile, $Rmacros, $Rapps, \%done) if (-e $hrelfile);
     }
 
     if ($arch) {
         my $crelfile = "$relfile.Common.$arch";
-        &readRelease($crelfile, $Rmacros, $Rapps) if (-e $crelfile);
+        &readRelease($crelfile, $Rmacros, $Rapps, \%done) if (-e $crelfile);
 
         if ($hostarch) {
             my $arelfile = "$relfile.$hostarch.$arch";
-            &readRelease($arelfile, $Rmacros, $Rapps) if (-e $arelfile);
+            &readRelease($arelfile, $Rmacros, $Rapps, \%done) if (-e $arelfile);
         }
     }
 }
@@ -41,10 +43,16 @@ sub readReleaseFiles {
 # Parse a configure/RELEASE* file and anything it includes
 #
 sub readRelease {
-    my ($file, $Rmacros, $Rapps) = @_;
-    # $Rmacros is a reference to a hash, $Rapps a ref to an array
+    my ($file, $Rmacros, $Rapps, $Rdone) = @_;
+    # $Rmacros and $Rdone are hash-refs, $Rapps an array-ref
+
+    if (exists $Rdone->{$file}) {
+        die "Release.pm: Recursive loop found in RELEASE files,\n" .
+            "discovered in $file\n";
+    }
 
     open(my $IN, '<', $file) or croak "Can't open $file: $!\n";
+    $Rdone->{$file}++;
     while (<$IN>) {
         chomp;
         s/ \r $//x;             # Shouldn't need this, but sometimes...
@@ -69,7 +77,7 @@ sub readRelease {
         my ($op, $path) = m/^ \s* (-? include) \s+ (.*)/x;
         $path = expandMacros($path, $Rmacros);
         if (-e $path) {
-            &readRelease($path, $Rmacros, $Rapps);
+            &readRelease($path, $Rmacros, $Rapps, $Rdone);
         } elsif ($op eq "include") {
             carp "EPICS/Release.pm: Include file '$path' not found\n";
         }

@@ -13,10 +13,23 @@
 #include <waveformRecord.h>
 
 /*
- * Test the some identified regressions
+ * Tests for specific regressions
  */
 
 void regressTest_registerRecordDeviceDriver(struct dbBase *);
+
+static
+void startRegressTestIoc(const char *dbfile)
+{
+    testdbPrepare();
+    testdbReadDatabase("regressTest.dbd", NULL, NULL);
+    regressTest_registerRecordDeviceDriver(pdbbase);
+    testdbReadDatabase(dbfile, NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+}
 
 /*
  * https://bugs.launchpad.net/epics-base/+bug/1577108
@@ -28,20 +41,10 @@ void testArrayLength1(void)
     calcoutRecord  *precco;
     double *pbuf;
 
-    testdbPrepare();
-
-    testdbReadDatabase("regressTest.dbd", NULL, NULL);
-
-    regressTest_registerRecordDeviceDriver(pdbbase);
-
-    testdbReadDatabase("regressArray1.db", NULL, NULL);
+    startRegressTestIoc("regressArray1.db");
 
     precwf = (waveformRecord*)testdbRecordPtr("wf");
     precco = (calcoutRecord*)testdbRecordPtr("co");
-
-    eltc(0);
-    testIocInitOk();
-    eltc(1);
 
     dbScanLock((dbCommon*)precwf);
     pbuf = (double*)precwf->bptr;
@@ -65,9 +68,37 @@ void testArrayLength1(void)
     testdbCleanup();
 }
 
+/*
+ * https://bugs.launchpad.net/epics-base/+bug/1699445
+ */
+static
+void testHexConstantLinks(void)
+{
+    startRegressTestIoc("regressHex.db");
+
+    testdbGetFieldEqual("ai1", DBR_LONG, 0x10);
+    testdbGetFieldEqual("li1", DBR_LONG, 0x10);
+    testdbGetFieldEqual("mi1", DBR_LONG, 0x10);
+    testTodoBegin("Needs JSON5 for hex arrays");
+    testdbGetFieldEqual("as1.A", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.B", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.C", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.D", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.E", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.F", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.G", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.H", DBR_LONG, 0x10);
+    testTodoEnd();
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
+
 MAIN(regressTest)
 {
-    testPlan(5);
+    testPlan(16);
     testArrayLength1();
+    testHexConstantLinks();
     return testDone();
 }

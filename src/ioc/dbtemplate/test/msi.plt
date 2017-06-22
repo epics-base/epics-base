@@ -39,7 +39,7 @@ do {
     unlink $out;
     msi("-I.. -o $out ../t1-template.txt");
     $result = slurp($out);
-    print "# file from '$msi $args' empty, retrying\n"
+    print "# msi output file empty, retrying\n"
         if $result eq '';
 } while ($result eq '') && (--$count > 0);
 ok($result, slurp('../t1-result.txt'));

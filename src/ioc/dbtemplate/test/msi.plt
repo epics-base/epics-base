@@ -33,9 +33,16 @@ ok(msi('-S../t6-substitute.txt ../t6-template.txt'), slurp('../t6-result.txt'));
 
 # Output option -o
 my $out = 't7-output.txt';
-unlink $out;
-msi("-I.. -o $out ../t1-template.txt");
-ok(slurp($out), slurp('../t1-result.txt'));
+my $count = 5; # Try up to 5 times...
+my $result;
+do {
+    unlink $out;
+    msi("-I.. -o $out ../t1-template.txt");
+    $result = slurp($out);
+    print "# msi output file empty, retrying\n"
+        if $result eq '';
+} while ($result eq '') && (--$count > 0);
+ok($result, slurp('../t1-result.txt'));
 
 # Dependency generation, include/substitute model
 ok(msi('-I.. -D -o t8.txt ../t1-template.txt'), slurp('../t8-result.txt'));

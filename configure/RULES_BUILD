@@ -348,7 +348,7 @@ testspec: $(TESTSCRIPTS)
 test-results: tapfiles
 ifneq ($(TAPFILES),)
 ifdef RUNTESTS_ENABLED
-	prove --failures --ext .tap --exec cat --color $(TAPFILES)
+	prove --failures --ext .tap --exec "$(CAT)" --color $(TAPFILES)
 endif
 endif
 

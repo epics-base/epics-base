@@ -215,6 +215,10 @@ ipAddrToAsciiTest_SRCS += ipAddrToAsciiTest.cpp
 testHarness_SRCS += ipAddrToAsciiTest.cpp
 TESTS += ipAddrToAsciiTest
 
+TESTPROD_HOST += yajl_test
+yajl_test_SRCS += yajl_test.c
+TESTS += yajlTest
+
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c
 

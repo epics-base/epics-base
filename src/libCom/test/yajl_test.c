@@ -251,7 +251,7 @@ main(int argc, char ** argv)
         rd = fread((void *) fileData, 1, bufSize, file);
 
         if (rd == 0) {
-            if (!feof(stdin)) {
+            if (!feof(file)) {
                 fprintf(stderr, "error reading from '%s'\n", fileName);
             }
             break;

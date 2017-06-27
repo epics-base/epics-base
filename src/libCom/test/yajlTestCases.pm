@@ -3001,6 +3001,29 @@ sub cases {
       ]
     },
     {
+      name => "trailing_commas",
+      opts => [],
+      input => [
+        "{\"array\":[1,2,],\"map\":{\"a\":1,},}",
+        ""
+      ],
+      gives => [
+        "map open '{'",
+        "key: 'array'",
+        "array open '['",
+        "integer: 1",
+        "integer: 2",
+        "array close ']'",
+        "key: 'map'",
+        "map open '{'",
+        "key: 'a'",
+        "integer: 1",
+        "map close '}'",
+        "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "true",
       opts => [],
       input => [

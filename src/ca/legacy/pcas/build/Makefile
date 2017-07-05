@@ -72,6 +72,10 @@ LIBSRCS += casDGIntfIO.cc
 LIBSRCS += casStreamIO.cc
 LIBSRCS += ipIgnoreEntry.cc
 
+USR_CXXFLAGS_Linux = -fno-strict-aliasing
+USR_CXXFLAGS_RTEMS = -fno-strict-aliasing
+USR_CXXFLAGS_vxWorks = -fno-strict-aliasing
+
 # There is a bug in some vxWorks compilers that these work around:
 ifeq ($(VX_GNU_VERSION), 4.1.2)
   casStreamOS_CXXFLAGS_vxWorks-ppc604_altivec = -O0

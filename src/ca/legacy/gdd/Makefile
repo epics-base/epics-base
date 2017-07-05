@@ -68,6 +68,7 @@ CLEANS += $(COMMON_DIR)/aitConvertGenerated.cc
 
 USR_CXXFLAGS_Linux = -fno-strict-aliasing
 USR_CXXFLAGS_RTEMS = -fno-strict-aliasing
+USR_CXXFLAGS_vxWorks = -fno-strict-aliasing
 
 ifeq ($(T_A),$(EPICS_HOST_ARCH))
   # genApps and aitGen are needed to finish libgdd

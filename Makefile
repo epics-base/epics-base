@@ -10,9 +10,6 @@
 TOP = .
 include $(TOP)/configure/CONFIG
 
-# Bootstrap resolution: tools not installed yet
-#TOOLS = $(TOP)/src/tools
-
 DIRS += configure src
 src_DEPEND_DIRS = configure
 

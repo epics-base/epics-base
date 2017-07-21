@@ -465,6 +465,7 @@ ifneq (,$(strip $(LOADABLE_SHRLIB_VERSION)))
 endif # LOADABLE_SHRLIB_VERSION
 endif # LOADABLE_SHRLIB_SUFFIX
 
+ifneq ($(INSTALL_CONFIGS),)
 $(INSTALL_CONFIG)/%: %
 	$(ECHO) "Installing config file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
@@ -472,6 +473,7 @@ $(INSTALL_CONFIG)/%: %
 $(INSTALL_CONFIG)/%: ../%
 	$(ECHO) "Installing config file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+endif
 
 $(INSTALL_INCLUDE)/% : $(COMMON_DIR)/%
 	$(ECHO) "Installing generated generic include file $@"

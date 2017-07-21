@@ -20,12 +20,11 @@ endif
 #---------------------------------------------------------------
 # EPICS Base Ioc libraries 
 
-EPICS_BASE_IOC_LIBS += dbRecStd dbCore ca Com 
+EPICS_BASE_IOC_LIBS += dbRecStd dbCore ca Com
 
 #---------------------------------------------------------------
 # EPICS Base Host libraries 
 
-EPICS_BASE_HOST_LIBS += cas gdd
 EPICS_BASE_HOST_LIBS += ca Com
 
 #---------------------------------------------------------------

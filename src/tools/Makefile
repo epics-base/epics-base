@@ -8,9 +8,6 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-# Bootstrap resolution: tools not installed yet
-TOOLS = $(TOP)/src/tools
-
 PERL_MODULES += DBD.pm
 PERL_MODULES += DBD/Base.pm
 PERL_MODULES += DBD/Breaktable.pm

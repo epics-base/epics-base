@@ -15,4 +15,4 @@ $(COMMON_DIR)/stdRecords.dbd: $(STDDIR)/rec/Makefile $(STDDIR)/rec/RULES
 
 # This is a target-specific variable
 $(COMMON_DIR)/stdRecords.dbd: DBDCAT_COMMAND = \
-    $(PERL) $(TOOLS)/makeIncludeDbd.pl $(stdRecords_DBD) $(@F)
+    $(PERL) $(INSTALL_HOST_BIN)/makeIncludeDbd.pl $(stdRecords_DBD) $(@F)

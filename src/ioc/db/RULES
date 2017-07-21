@@ -24,4 +24,4 @@ $(COMMON_DIR)/menuGlobal.dbd: $(IOCDIR)/db/Makefile $(IOCDIR)/db/RULES
 
 # This is a target-specific variable
 $(COMMON_DIR)/menuGlobal.dbd: DBDCAT_COMMAND = \
-    $(PERL) $(TOOLS)/makeIncludeDbd.pl $(menuGlobal_DBD) $(@F)
+    $(PERL) $(INSTALL_HOST_BIN)/makeIncludeDbd.pl $(menuGlobal_DBD) $(@F)

@@ -91,7 +91,7 @@ MAIN(dbServerTest)
     char *theName = "The One";
     int status;
 
-    testPlan(0);
+    testPlan(8);
 
     testDiag("Registering dbServer 'one'");
     dbRegisterServer(&one);

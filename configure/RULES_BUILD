@@ -147,14 +147,13 @@ build: inc
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TARGETS) $(TESTSCRIPTS) $(INSTALL_LIB_INSTALLS)
 
-inc : $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS)
+inc: $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS)
 
-buildInstall : \
+buildInstall: \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) $(INSTALL_MUNCHS) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) \
+	$(INSTALL_HTMLS) $(INSTALL_DOCS) \
 	$(INSTALL_OBJS) \
-	$(INSTALL_DOCS) \
-	$(INSTALL_HTMLS) \
 	$(INSTALL_TEMPLATE) \
 	$(INSTALL_BIN_INSTALLS)
 
@@ -214,7 +213,7 @@ $(TESTPRODNAME) $(PRODNAME): %$(EXE): | $(INSTALL_LIB)
 	$(LINK.cpp)
 	$(MT_EXE_COMMAND)
 
-%_ctdt$(OBJ) : %_ctdt.c
+%_ctdt$(OBJ): %_ctdt.c
 	@$(RM) $@
 	$(COMPILE.ctdt) $<
 
@@ -232,9 +231,9 @@ $(TESTPRODNAME) $(PRODNAME): %$(EXE): | $(INSTALL_LIB)
 
 # Cancel GNUMake's built-in rules, which don't have our _INC
 # dependencies so could get used in some circumstances (gdd)
-%.o : %.c
-%.o : %.cc
-%.o : %.cpp
+%.o: %.c
+%.o: %.cc
+%.o: %.cpp
 
 # Include files are order-only prerequisites for compilation:
 %$(OBJ): %.c | $(COMMON_INC) $(INSTALL_INC)
@@ -268,7 +267,7 @@ YACCOPT ?= $($*_YACCOPT)
 
 # must be a separate rule since when not using '-d' the
 # prefix for .h will be different then .c
-%.h : %.c %.y
+%.h: %.c %.y
 
 %.c: %.l
 	@$(RM) $@
@@ -421,14 +420,14 @@ endif
 # Install rules for BIN_INSTALLS and LIB_INSTALLS
 
 define  BIN_INSTALLS_template
-$$(INSTALL_BIN)/$$(notdir $(1)) : $(1)
+$$(INSTALL_BIN)/$$(notdir $(1)): $(1)
 	$(ECHO) "Installing $$(<F)"
 	@$$(INSTALL) -d -m $$(BIN_PERMISSIONS) $$^ $$(INSTALL_BIN)
 endef
 $(foreach file, $(BIN_INSTALLS), $(eval $(call BIN_INSTALLS_template, $(file))))
 
 define  LIB_INSTALLS_template
-$$(INSTALL_LIB)/$$(notdir $(1)) : $(1)
+$$(INSTALL_LIB)/$$(notdir $(1)): $(1)
 	$(ECHO) "Installing $$(<F)"
 	@$$(INSTALL) -d -m $$(LIB_PERMISSIONS) $$^ $$(INSTALL_LIB)
 endef
@@ -504,19 +503,19 @@ $(INSTALL_CONFIG)/%: ../%
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 endif
 
-$(INSTALL_INCLUDE)/% : $(COMMON_DIR)/%
+$(INSTALL_INCLUDE)/%: $(COMMON_DIR)/%
 	$(ECHO) "Installing generated generic include file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
-$(INSTALL_INCLUDE)/% : %
+$(INSTALL_INCLUDE)/%: %
 	$(ECHO) "Installing generic include file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
-$(INSTALL_INCLUDE)/os/$(OS_CLASS)/% : %
+$(INSTALL_INCLUDE)/os/$(OS_CLASS)/%: %
 	$(ECHO) "Installing OS dependent include file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
-$(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS)/% : %
+$(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS)/%: %
 	$(ECHO) "Installing compiler dependent include file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 

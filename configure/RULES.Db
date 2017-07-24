@@ -167,7 +167,7 @@ all: install
 
 install: buildInstall
 
-buildInstall : build
+buildInstall: build
 
 rebuild: clean install
 
@@ -196,21 +196,21 @@ endif
 #---------------------------------------------------------------
 # build dependancies, clean rule
 
-inc : $(COMMON_INC) $(INSTALL_INC)
+inc: $(COMMON_INC) $(INSTALL_INC)
 
-build : $(COMMON_DBDS) $(COMMON_DBS) $(COMMON_DBDCATS) \
+build: $(COMMON_DBDS) $(COMMON_DBS) $(COMMON_DBDCATS) \
 	$(INSTALL_DBDS) $(INSTALL_DBS) \
 	$(DBDDEPENDS_FILES) $(TARGETS) \
 	$(INSTALL_DB_INSTALLS) $(INSTALL_DBD_INSTALLS)
 
 clean: db_clean
 
-db_clean : 
+db_clean:
 	@$(RM) $(COMMONS) $(DBDDEPENDS_FILES)
 	@$(RM) *_registerRecordDeviceDriver.cpp
 	@$(RM) $(TARGETS)
 
-.PHONY : db_clean
+.PHONY: db_clean
 
 realclean: clean
 
@@ -389,7 +389,7 @@ $(COMMON_DIR)/%.dbd: ../%Include.dbd
 
 # Make DBDCAT file x depend on x_DBD source files
 define  DBDCAT_template
-$$(COMMON_DIR)/$(1).dbd : ../Makefile $$(foreach file, $$($(1)_DBD),$$(DBDCAT_SOURCE) )
+$$(COMMON_DIR)/$(1).dbd: ../Makefile $$(foreach file, $$($(1)_DBD),$$(DBDCAT_SOURCE) )
 endef
 $(foreach name,$(subst .dbd,,$(DBDCAT)), $(eval $(call DBDCAT_template,$(name))))
 
@@ -418,7 +418,7 @@ $(INSTALL_DBD)/%: ../%
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 define  DBD_INSTALLS_template
-$$(INSTALL_DBD)/$$(notdir $(1)) : $(1)
+$$(INSTALL_DBD)/$$(notdir $(1)): $(1)
 	$(ECHO) "Installing $$@"
 	@$$(INSTALL) -d -m $$(INSTALL_PERMISSIONS) $$^ $$(INSTALL_DBD)
 endef
@@ -460,7 +460,7 @@ $(COMMON_DIR)/%.html: ../%.pl
 #---------------------------------------------------------------
 # DB files
 
-$(COMMON_DIR)/%.db: $(COMMON_DIR)/%.edf 
+$(COMMON_DIR)/%.db: $(COMMON_DIR)/%.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $*.VAR $<
 	@$(REPLACEVAR) < $*.VAR > $@
 	@$(RM) $*.VAR
@@ -514,7 +514,7 @@ $(INSTALL_DB)/%.db: $(COMMON_DIR)/%.db
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 define  DB_INSTALLS_template
-$$(INSTALL_DB)/$$(notdir $(1)) : $(1)
+$$(INSTALL_DB)/$$(notdir $(1)): $(1)
 	$(ECHO) "Installing $$@"
 	@$$(INSTALL) -d -m $$(INSTALL_PERMISSIONS) $$^ $$(INSTALL_DB)
 endef
@@ -539,4 +539,3 @@ $(foreach file, $(DB_INSTALLS), $(eval $(call DB_INSTALLS_template, $(file))))
 	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOCS_APPL_TOP)
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp
-

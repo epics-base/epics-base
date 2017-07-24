@@ -75,7 +75,7 @@ HTMLS_DIR ?= .
 #	First target
 
 all: install
-ifeq ($(EPICS_HOST_ARCH),$T_A)
+ifeq ($(EPICS_HOST_ARCH),$(T_A))
 host: install
 else
 # Do nothing

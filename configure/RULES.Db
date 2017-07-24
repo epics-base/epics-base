@@ -161,7 +161,7 @@ actionArchTargets = $(foreach action, $(ACTIONS), \
     $(foreach arch, $(BUILD_ARCHS), $(action)$(DIVIDER)$(arch)))
 cleanArchTargets = $(foreach arch, $(BUILD_ARCHS), clean$(DIVIDER)$(arch))
 
--include $(TOP)/configure/CONFIG_APP_INCLUDE
+include $(CONFIG)/CONFIG_APP_INCLUDE
 
 all: install
 

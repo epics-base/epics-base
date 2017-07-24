@@ -16,6 +16,10 @@
  * the dbServer interface provides allow the IOC to start, pause and stop
  * the servers together, and to provide status and debugging information
  * to the IOC user/developer through a common set of commands.
+ *
+ * @todo Should dbRegisterServer() return an error status value?
+ * No API is provided yet for calling stats() methods.
+ * Nothing in the IOC calls dbStopServers(), not sure where it should go.
  */
 
 #ifndef INC_dbServer_H

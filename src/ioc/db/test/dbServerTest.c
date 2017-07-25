@@ -13,6 +13,7 @@
 
 #include "dbServer.h"
 
+#include <envDefs.h>
 #include <epicsUnitTest.h>
 #include <testMain.h>
 
@@ -73,17 +74,36 @@ void oneStop(void)
 }
 
 dbServer one = {
-    ELLNODE_INIT,
-    "one",
+    ELLNODE_INIT, "one",
     oneReport, oneStats, oneClient,
     oneInit, oneRun, onePause, oneStop
 };
 
+
+/* Server layer for testing NULL methods */
+
 dbServer no_routines = {
-    ELLNODE_INIT,
-    "no-routines",
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL
+    ELLNODE_INIT, "no-routines",
+    NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL
 };
+
+
+/* Server layer which should be disabled */
+
+int disInitialized = 0;
+
+void disInit(void)
+{
+    disInitialized = 1;
+}
+
+dbServer disabled = {
+    ELLNODE_INIT, "disabled",
+    NULL, NULL, NULL,
+    disInit, NULL, NULL, NULL
+};
+
 
 MAIN(dbServerTest)
 {
@@ -91,7 +111,7 @@ MAIN(dbServerTest)
     char *theName = "The One";
     int status;
 
-    testPlan(8);
+    testPlan(9);
 
     testDiag("Registering dbServer 'one'");
     dbRegisterServer(&one);
@@ -100,8 +120,13 @@ MAIN(dbServerTest)
     testDiag("Registering dbServer 'no-routines'");
     dbRegisterServer(&no_routines);
 
+    epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none disabled nonexistent");
+    testDiag("Registering dbServer 'disabled'");
+    dbRegisterServer(&disabled);
+
     dbInitServers();
     testOk(oneState == INIT_CALLED, "dbInitServers");
+    testOk(disInitialized == 0, "Disabled server not initialized");
 
     dbRunServers();
     testOk(oneState == RUN_CALLED, "dbRunServers");

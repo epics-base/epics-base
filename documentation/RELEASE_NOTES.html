@@ -17,6 +17,19 @@
 
 -->
 
+<h3>Extend the dbServer API with init/run/pause/stop methods</h3>
+
+<p>This change permits the IOC to be built that omits the CA server (RSRV) by
+removing its registrar entry which is now provided in the new <tt>rsrv.dbd</tt>
+file. Other server layers can be built into the IOC (alongside RSRV or in place
+of it) by registering them in a similar manner. The dbServer API is documented
+with Doxygen comments in the header file.</p>
+
+<p>Specific IOC server layers can be disabled at runtime by adding their name to
+the environment variable EPICS_IOC_IGNORE_SERVERS (separated by spaces if more
+than one should be ignored).</p>
+
+
 <h2 align="center">Changes made between 3.16.0.1 and 3.16.1</h2>
 
 <h3>IOC Database Support for 64-bit integers</h3>

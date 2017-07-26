@@ -1392,7 +1392,7 @@ void casExpandBuffer ( struct message_buffer *buf, ca_uint32_t size, int sendbuf
         /* free existing buffer */
         if(buf->type==mbtSmallTCP) {
             freeListFree ( rsrvSmallBufFreeListTCP,  buf->buf );
-        } else if(buf->type==mbtLargeTCP) {
+        } else if(rsrvLargeBufFreeListTCP && buf->type==mbtLargeTCP) {
             freeListFree ( rsrvLargeBufFreeListTCP,  buf->buf );
         } else {
             /* realloc() already free()'d if necessary */

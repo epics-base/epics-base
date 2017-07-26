@@ -25,7 +25,6 @@ vpath %.html $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.skel.static $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.y $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.l $(USR_VPATH) $(ALL_SRC_DIRS)
-vpath %.pl $(USR_VPATH) $(ALL_SRC_DIRS)
 
 #---------------------------------------------------------------
 

@@ -324,16 +324,16 @@ fail:
 
 epicsShareFunc void db_cleanup_events(void)
 {
-    freeListCleanup(dbevEventUserFreeList);
+    if(dbevEventUserFreeList) freeListCleanup(dbevEventUserFreeList);
     dbevEventUserFreeList = NULL;
 
-    freeListCleanup(dbevEventQueueFreeList);
+    if(dbevEventQueueFreeList) freeListCleanup(dbevEventQueueFreeList);
     dbevEventQueueFreeList = NULL;
 
-    freeListCleanup(dbevEventSubscriptionFreeList);
+    if(dbevEventSubscriptionFreeList) freeListCleanup(dbevEventSubscriptionFreeList);
     dbevEventSubscriptionFreeList = NULL;
 
-    freeListCleanup(dbevFieldLogFreeList);
+    if(dbevFieldLogFreeList) freeListCleanup(dbevFieldLogFreeList);
     dbevFieldLogFreeList = NULL;
 }
 

@@ -1,8 +1,0 @@
-#
-# Definitions for freebsd host builds
-# Sites may override these definitions in CONFIG_SITE.freebsd-x86_64.Common
-#-------------------------------------------------------
-
-# Include definitions common to unix hosts
-include $(CONFIG)/os/CONFIG.UnixCommon.Common
-

@@ -1,9 +1,0 @@
-#  CONFIG.linux-486.linux-486
-#
-# Definitions for linux-486 host - linux-486 target builds
-# Sites may override these definitions in CONFIG_SITE.linux-486.linux-486
-#-------------------------------------------------------
-
-# Include linux-x86 compiler definitions
-include $(CONFIG)/os/CONFIG.linux-x86.linux-x86
-

@@ -1,9 +1,0 @@
-#  CONFIG.linux-x86_64.linux-x86_64
-#
-# Definitions for linux-x86_64 host - linux-x86_64 target builds
-# Sites may override these definitions in CONFIG_SITE.linux-x86_64.linux-x86_64
-#-------------------------------------------------------
-
-# Include common gnu compiler definitions
-include $(CONFIG)/os/CONFIG.linux-x86.linux-x86
-

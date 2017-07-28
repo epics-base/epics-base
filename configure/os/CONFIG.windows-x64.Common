@@ -1,9 +1,0 @@
-# CONFIG.windows-x64.Common
-#
-# Definitions for windows-x64 host arch
-# Override these definitions in CONFIG_SITE.windows-x64.Common
-#-------------------------------------------------------
-
-#Include definitions common to win32-x86 hosts
-include $(CONFIG)/os/CONFIG.win32-x86.Common
-

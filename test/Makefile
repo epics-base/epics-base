@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -7,23 +7,15 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-TOP = ../..
+TOP = ..
 include $(TOP)/configure/CONFIG
 
-STDDIR=$(TOP)/src/std
+DIRS += ioc/db
+DIRS += ioc/dbtemplate
 
-LIBRARY_IOC += dbRecStd
-dbRecStd_LIBS = dbCore ca Com
+DIRS += std/rec
+DIRS += std/filters
 
-dbRecStd_RCS += dbRecStd.rc
+DIRS += tools
 
-include $(STDDIR)/rec/Makefile
-include $(STDDIR)/dev/Makefile
-include $(STDDIR)/filters/Makefile
-include $(STDDIR)/link/Makefile
-include $(STDDIR)/softIoc/Makefile
-
-include $(TOP)/configure/RULES
-
-include $(STDDIR)/rec/RULES
-include $(STDDIR)/softIoc/RULES
+include $(TOP)/configure/RULES_TOP

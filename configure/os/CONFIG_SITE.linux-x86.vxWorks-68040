@@ -1,6 +1,0 @@
-# CONFIG_SITE.linux-x86.vxWorks-68040
-#
-# Site specific definitions for linux-x86 host -  vxWorks-68040 target builds
-# Only the local epics system manager should modify this file
-#-------------------------------------------------------
-

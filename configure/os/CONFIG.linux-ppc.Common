@@ -1,9 +1,0 @@
-# CONFIG.linux-ppc.Common
-#
-# Definitions for linux-ppc host builds
-# Sites may override these definitions in CONFIG_SITE.linux-ppc.Common
-#-------------------------------------------------------
-
-#Include definitions common to unix hosts
-include $(CONFIG)/os/CONFIG.UnixCommon.Common
-

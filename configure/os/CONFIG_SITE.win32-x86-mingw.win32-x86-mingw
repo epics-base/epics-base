@@ -1,9 +1,0 @@
-# CONFIG_SITE.win32-x86-mingw.win32-x86-mingw
-#
-# Site Specific definitions for win32-x86-mingw target
-
-# The MinGW bin directory must be in your path.
-
-# Set the compiler prefix for your MinGW installation
-#CMPLR_PREFIX = i686-w64-mingw32-
-#CMPLR_PREFIX = i586-mingw32msvc-

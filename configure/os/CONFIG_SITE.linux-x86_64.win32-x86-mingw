@@ -1,8 +1,0 @@
-# CONFIG_SITE.linux-x86_64.win32-x86-mingw
-#
-# Configuration for linux-x86_64 host win32-x86-mingw target builds
-#-------------------------------------------------------
-
-# Inherit from the linux-x86 host architecture
-include $(CONFIG)/os/CONFIG_SITE.linux-x86.win32-x86-mingw
-

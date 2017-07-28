@@ -1,5 +1,0 @@
-#
-# Site Specific definitions for the vxWorks-mpc8540 target
-#
-# Only the local epics system manager should modify this file
-#-------------------------------------------------------

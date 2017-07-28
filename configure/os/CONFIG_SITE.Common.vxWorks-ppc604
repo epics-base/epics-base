@@ -1,6 +1,0 @@
-#
-# Site Specific definitions for the vxWorks-ppc604 target
-#
-# Only the local epics system manager should modify this file
-#-------------------------------------------------------
-

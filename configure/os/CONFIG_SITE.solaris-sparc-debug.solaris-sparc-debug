@@ -1,8 +1,0 @@
-include $(CONFIG)/os/CONFIG_SITE.Common.solaris-sparc
-
-#Prepares the object code to collect data for profiling with prof. 
-#PROFILE=YES
-
-#Compiles for profiling with the gprof profiler.
-#GPROF=YES
-

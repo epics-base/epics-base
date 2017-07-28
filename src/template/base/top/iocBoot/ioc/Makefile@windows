@@ -1,5 +1,0 @@
-TOP = ../..
-include $(TOP)/configure/CONFIG
-ARCH = _ARCH_
-TARGETS = envPaths dllPath.bat
-include $(TOP)/configure/RULES.ioc

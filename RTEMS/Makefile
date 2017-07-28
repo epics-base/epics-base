@@ -7,19 +7,19 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-TOP = .
+TOP = ..
 include $(TOP)/configure/CONFIG
 
-# Bootstrap resolution: tools not installed yet
-#TOOLS = $(TOP)/src/tools
+INC += epicsRtemsInitHooks.h
 
-DIRS += configure src
-src_DEPEND_DIRS = configure
+rtemsCom_SRCS += rtems_init.c
+rtemsCom_SRCS += rtems_config.c
+rtemsCom_SRCS += rtems_netconfig.c
+rtemsCom_SRCS += rtems_util.c
+rtemsCom_SRCS += setBootConfigFromNVRAM.c
+rtemsCom_SRCS += epicsRtemsInitHookPre.c
+rtemsCom_SRCS += epicsRtemsInitHookPost.c
 
-DIRS += RTEMS
-RTEMS_DEPEND_DIRS = src
+LIBRARY_RTEMS = rtemsCom
 
-DIRS += test
-test_DEPEND_DIRS = RTEMS
-
-include $(TOP)/configure/RULES_TOP
+include $(TOP)/configure/RULES

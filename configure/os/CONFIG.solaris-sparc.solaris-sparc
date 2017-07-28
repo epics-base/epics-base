@@ -1,9 +1,0 @@
-# CONFIG.solaris-sparc.solaris-sparc
-#
-# Definitions for solaris-sparc host - solaris-sparc target build
-# Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc
-#-------------------------------------------------------
-
-include $(CONFIG)/os/CONFIG.solarisCommon.solarisCommon
-
-SHRLIB_CFLAGS = -xcode=pic32

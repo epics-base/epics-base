@@ -1,8 +1,0 @@
-# CONFIG.windows-x64-mingw.windows-x64-mingw
-#
-# Definitions for windows-x64-mingw target archs
-# Sites may override these definitions in CONFIG_SITE.windows-x64-mingw.windows-x64-mingw
-#-------------------------------------------------------
-
-# Include common gnu compiler definitions
-include $(CONFIG)/os/CONFIG.win32-x86-mingw.win32-x86-mingw

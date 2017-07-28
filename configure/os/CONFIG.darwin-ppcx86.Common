@@ -1,8 +1,0 @@
-# CONFIG.darwin-ppcx86.Common
-#
-# Definitions for Darwin universal PowerPC + x86 host builds
-# Sites may override these definitions in CONFIG_SITE.darwin-ppcx86.Common
-#-------------------------------------------------------
-
-#Include definitions common to unix hosts
-include $(CONFIG)/os/CONFIG.UnixCommon.Common

@@ -1,7 +1,0 @@
-# CONFIG_SITE.linux-x86_64.linux-arm
-#
-# Site specific settings for linux-x86_64 host - linux-arm target builds
-#-------------------------------------------------------
-
-# Inherit setting from linux-x86
-include $(CONFIG)/os/CONFIG_SITE.linux-x86.linux-arm

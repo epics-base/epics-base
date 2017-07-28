@@ -1,8 +1,0 @@
-# CONFIG.win32-x86-static.Common
-#
-# Definitions for win32-x86-static host archs
-# Sites may override these definitions in CONFIG_SITE.win32-x86-static.Common
-#-------------------------------------------------------
-
-include  $(CONFIG)/os/CONFIG.win32-x86.Common
-

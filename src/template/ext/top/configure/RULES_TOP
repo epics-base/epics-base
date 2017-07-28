@@ -1,4 +1,0 @@
-# extensions/configure/RULES_TOP
-
-include $(CONFIG)/RULES_TOP
-

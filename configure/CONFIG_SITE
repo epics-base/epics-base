@@ -1,178 +1,42 @@
-#*************************************************************************
-# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
-#     National Laboratory.
-# Copyright (c) 2002 The Regents of the University of California, as
-#     Operator of Los Alamos National Laboratory.
-# EPICS BASE is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution.
-#*************************************************************************
+# CONFIG_SITE
 
+# Make any application-specific changes to the EPICS build
+#   configuration variables in this file.
 #
-#  CONFIG_SITE  - Global site configuration file
-#
+# Host/target specific settings can be specified in files named
+#   CONFIG_SITE.$(EPICS_HOST_ARCH).Common
+#   CONFIG_SITE.Common.$(T_A)
+#   CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 
-#  The host architecture performing the build, in the form
-#       <operating system>-<architecture>[-<toolset>]
-#
-#  Currently Supporting:
-#	cygwin-x86             (cygwin compiler used for host builds)
-#	cygwin-x86_64          (cygwin compiler used for host builds)
-#	darwin-ppc             (PowerPC based Apple running OSX)
-#	darwin-ppcx86          (Universal binaries for both CPUs)
-#	darwin-x86             (Intel based Apple running OSX)
-#	freebsd-x86            (GNU compiler used for host builds)
-#	freebsd-x86_64         (GNU compiler used for host builds)
-#	linux-arm              (GNU compiler used for host builds)
-#	linux-ppc              (GNU compiler used for host builds)
-#	linux-ppc64            (GNU compiler used for host builds)
-#	linux-x86              (GNU compiler used for host builds)
-#	linux-x86_64           (GNU compiler used for host builds)
-#	solaris-sparc          (Sun compiler used for host builds)
-#	solaris-sparc-gnu      (GNU compiler used for host builds)
-#	solaris-sparc64        (Sun compiler used for host builds)
-#	solaris-sparc64-gnu    (GNU compiler used for host builds)
-#	solaris-x86            (Sun compiler used for host builds)
-#	solaris-x86-gnu        (GNU compiler used for host builds)
-#	solaris-x86_64         (Sun compiler used for host builds)
-#	solaris-x86_64-gnu     (GNU compiler used for host builds)
-#	win32-x86              (MS Visual C++ compiler used for host builds)
-#	win32-x86-mingw        (MinGW compiler used for host builds)
-#	win32-x86-static       (MS Visual C++ compiler used for host builds)
-#	windows-x64            (MS Visual C++ compiler used for host builds)
-#	windows-x64-mingw      (MinGW compiler used for host builds)
-#	windows-x64-static     (MS Visual C++ compiler used for host builds)
+# CHECK_RELEASE controls the consistency checking of the support
+#   applications pointed to by the RELEASE* files.
+# Normally CHECK_RELEASE should be set to YES.
+# Set CHECK_RELEASE to NO to disable checking completely.
+# Set CHECK_RELEASE to WARN to perform consistency checking but
+#   continue building even if conflicts are found.
+CHECK_RELEASE = YES
 
-#  Debugging builds:
-#	linux-arm-debug        (GNU compiler used for host builds)
-#	linux-x86-debug        (GNU compiler with -g option for host builds)
-#	linux-x86_64-debug     (GNU compiler with -g option for host builds)
-#	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
-#	win32-x86-debug        (MS Visual C++ compiler with debug option for host builds)
-#	windows-x64-debug      (MS Visual C++ compiler with debug option for host builds)
+# Set this when you only want to compile this application
+#   for a subset of the cross-compiled target architectures
+#   that Base is built for.
+#CROSS_COMPILER_TARGET_ARCHS = vxWorks-ppc32
 
+# To install files into a location other than $(TOP) define
+#   INSTALL_LOCATION here.
+#INSTALL_LOCATION=</absolute/path/to/install/top>
 
-#  EPICS_HOST_ARCH is a required environment variable
-#  Do not set EPICS_HOST_ARCH in this file. 
-#  Use base/startup files to set EPICS_HOST_ARCH or 
-#  provide EPICS_HOST_ARCH on the GNU make command line.
+# Set this when the IOC and build host use different paths
+#   to the install location. This may be needed to boot from
+#   a Microsoft FTP server say, or on some NFS configurations.
+#IOCS_APPL_TOP = </IOC's/absolute/path/to/install/top>
 
-#  The cross-compiler architectures to build EPICS for
-#
-#  Currently Supporting:
+# For application debugging purposes, override the HOST_OPT and/
+#   or CROSS_OPT settings from base/configure/CONFIG_SITE
+#HOST_OPT = NO
+#CROSS_OPT = NO
 
-#       ios-arm                 (darwin-x86 host)
-#       ios-386                 (darwin-x86 host)
-#       linux-386               (linux-x86 host)
-#       linux-486               (linux-x86 host)
-#       linux-586               (linux-x86 host)
-#       linux-686               (linux-x86 host)
-#       linux-arm               (linux-x86 or -x86_64 host)
-#       linux-arm_eb            (linux-x86 host)
-#       linux-arm_el            (linux-x86 host)
-#       linux-athlon            (linux-x86 host)
-#       linux-cris              (Axis GNU crosscompiler on linux-x86 host)
-#       linux-cris_v10          (Axis GNU crosscompiler on linux-x86 host)
-#       linux-cris_v32          (Axis GNU crosscompiler on linux-x86 host)
-#       linux-microblaze
-#       linux-xscale_be
-#       vxWorks-486
-#       vxWorks-68040
-#       vxWorks-68040lc
-#       vxWorks-68060
-#       vxWorks-pentium
-#       vxWorks-ppc32           (32-bit PowerPC CPUs with full FPU)
-#       vxWorks-ppc32sf         (32-bit PowerPC CPUs without FPU)
-#       vxWorks-ppc603
-#       vxWorks-ppc603_long
-#       vxWorks-ppc604
-#       vxWorks-ppc604_long
-#       vxWorks-ppc604_altivec
-#       vxWorks-mpc8540
-#       vxWorks-mpc8548
-#       RTEMS-at91rm9200ek
-#       RTEMS-beatnik
-#       RTEMS-gen68360
-#       RTEMS-mcp750
-#       RTEMS-mvme167
-#       RTEMS-mvme2100
-#       RTEMS-mvme2700
-#       RTEMS-mvme3100
-#       RTEMS-mvme5500
-#       RTEMS-pc386
-#       RTEMS-psim
-#       RTEMS-uC5282
-#       win32-x86-mingw         (linux-x86 or -x86_64 host)
-#
-
-# Which target architectures to cross-compile for.
-#  Definitions in configure/os/CONFIG_SITE.<host>.Common
-#  may override this setting.
-CROSS_COMPILER_TARGET_ARCHS=
-#CROSS_COMPILER_TARGET_ARCHS=vxWorks-ppc32
-
-# If only some of your host architectures can compile the
-#  above CROSS_COMPILER_TARGET_ARCHS specify those host
-#  architectures here.  If the combination is complicated,
-#  set CROSS_COMPILER_TARGET_ARCHS in the appropriate
-#  configure/os/CONFIG_SITE.<host>.Common files instead.
-CROSS_COMPILER_HOST_ARCHS=
-
-#  The 'runtests', 'tapfiles' and 'junitfiles' make targets normally only run
-#  self-tests for the EPICS_HOST_ARCH architecture. If the host can execute
-#  the self-test programs for any other cross-built architectures such as
-#  a -debug architecture, those architectures must be named in this variable:
-CROSS_COMPILER_RUNTEST_ARCHS=
-
-# Build shared libraries (DLLs on Windows).
-#  Must be either YES or NO.  Definitions in the target-specific
-#  os/CONFIG.Common.<target> and os/CONFIG_SITE.Common.<target> files may
-#  override this setting.  On Windows only these combinations are valid:
-#    SHARED_LIBRARIES = YES and STATIC_BUILD = NO
-#    SHARED_LIBRARIES = NO  and STATIC_BUILD = YES
-SHARED_LIBRARIES=YES
-
-# Build client objects statically.
-#  Must be either YES or NO.
-STATIC_BUILD=NO
-
-# Host build optimization.
-#  Must be either YES or NO.
-HOST_OPT=YES
-
-# Cross build optimization.
-#  Must be either YES or NO.
-CROSS_OPT=YES
-
-# Generate verbose compiler warnings for host builds.
-#  Must be either YES or NO.
-HOST_WARN=YES
-
-# Generate verbose compiler warnings for cross-compiled builds.
-#  Must be either YES or NO.
-CROSS_WARN=YES
-
-# Installation directory, if you want Base to be installed into a
-#  different location then uncomment and set this.
-#INSTALL_LOCATION=<fullpathname>
-
-# Use POSIX thread priority scheduling (if available).
-#  Must be either YES or NO
-USE_POSIX_THREAD_PRIORITY_SCHEDULING = YES
-
-# Site version number, if set will append '-' and this string to the
-#  EPICS version number string that is reported by many tools.
-EPICS_SITE_VERSION =
-
-# For GNU compiler, use pipes rather than temporary files for
-#  communication between the various stages of compilation.
-#  Must be either YES or NO
-GCC_PIPE = NO
-
-# Set RPATH when linking executables and libraries.
-#  Must be either YES or NO.  If you set this to NO you must also provide a
-#  way for Base executables to find their shared libraries when they are
-#  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
-LINKER_USE_RPATH = YES
-
-# Overrides for the settings above may appear in a CONFIG_SITE.local file
--include $(CONFIG)/CONFIG_SITE.local
+# These allow developers to override the CONFIG_SITE variable
+# settings without having to modify the configure/CONFIG_SITE
+# file itself.
+-include $(TOP)/../CONFIG_SITE.local
+-include $(TOP)/configure/CONFIG_SITE.local

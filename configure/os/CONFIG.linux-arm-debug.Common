@@ -1,9 +1,0 @@
-# CONFIG.linux-arm-debug.Common
-#
-# Definitions for linux-arm-debug host builds
-# Override these settings in CONFIG_SITE.linux-arm-debug.Common
-#-------------------------------------------------------
-
-#Include definitions common to linux-arm hosts
-include $(CONFIG)/os/CONFIG.linux-arm.Common
-

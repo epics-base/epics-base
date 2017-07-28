@@ -1,9 +1,0 @@
-# CONFIG.linux-x86_64.windows-x64-mingw
-#
-# Definitions for linux-x86_64 host windows-x64-mingw target builds
-# Override these definitions in CONFIG_SITE.linux-x86_64.windows-x64-mingw
-#-------------------------------------------------------
-
-# Settings as for the linux-x86 host architecture
-include $(CONFIG)/os/CONFIG.linux-x86.windows-x64-mingw
-

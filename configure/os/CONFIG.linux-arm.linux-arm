@@ -1,8 +1,0 @@
-# CONFIG.linux-arm.linux-arm
-#
-# Definitions for native linux-arm builds
-# Sites may override these definitions in CONFIG_SITE.linux-arm.linux-arm
-#-------------------------------------------------------
-
-# Include common gnu compiler definitions
-include $(CONFIG)/CONFIG.gnuCommon

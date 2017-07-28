@@ -1,8 +1,0 @@
-# CONFIG_SITE.darwin-x86.Common
-#
-# Site override definitions for darwin-x86 host builds
-#-------------------------------------------------------
-
-# Uncomment the following line to cross-compile the
-# iOS device (arm) and simulator (x86) binaries
-#CROSS_COMPILER_TARGET_ARCHS = ios-arm ios-x86

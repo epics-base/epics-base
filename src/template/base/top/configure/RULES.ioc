@@ -1,2 +1,0 @@
-#RULES.ioc
-include $(CONFIG)/RULES.ioc

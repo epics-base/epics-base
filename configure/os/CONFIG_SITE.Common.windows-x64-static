@@ -1,8 +1,0 @@
-# CONFIG_SITE.Common.windows-x64-static
-#
-# Site-specific settings for the windows-x64-static target
-
-# Whole-program optimization doesn't work with Visual Studio 2010 when
-# building static binaries. Newer versions of Visual Studio than 2010
-# may work though, comment out or set this to YES to try.
-OPT_WHOLE_PROGRAM = NO

@@ -1,7 +1,0 @@
-# CONFIG_SITE.linux-x86.solaris-sparc
-#
-# Site specific definitions for linux-x86 host - solaris-sparc target builds
-#-------------------------------------------------------
-
-#GNU_DIR = /home/phoebus/JBA/gnu-solaris2
-

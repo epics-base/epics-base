@@ -1,9 +1,0 @@
-# CONFIG.win32-x86-debug.Common
-#
-# Definitions for win32-x86-debug host arch
-# Override these definitions in CONFIG_SITE.win32-x86-debug.Common
-#-------------------------------------------------------
-
-#Include definitions common to win32-x86 hosts
-include $(CONFIG)/os/CONFIG.win32-x86.Common
-

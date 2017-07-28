@@ -1,117 +1,28 @@
-#*************************************************************************
-# Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
-#     National Laboratory.
-# Copyright (c) 2002 The Regents of the University of California, as
-#     Operator of Los Alamos National Laboratory.
-# EPICS BASE is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution.
-#*************************************************************************
-
+# CONFIG - Load build configuration data
 #
-#  Common build definitions
-#
+# Do not make changes to this file!
 
-ifneq ($(wildcard $(TOP)/configure/CONFIG_BASE_VERSION),)
-  EPICS_BASE = $(INSTALL_LOCATION)
-  CONFIG = $(TOP)/configure
-  BASE_TOP=YES
-else
-  CONFIG ?= $(EPICS_BASE)/configure
-endif
+# Allow user to override where the build rules come from
+RULES = $(EPICS_BASE)
 
-# Provide a default if the user hasn't set EPICS_HOST_ARCH
-ifeq ($(origin EPICS_HOST_ARCH), undefined)
-  # NB: We use a simply expanded variable here for performance:
-  EPICS_HOST_ARCH := $(shell $(CONFIG)/../startup/EpicsHostArch.pl)
-endif
-#
-
--include $(CONFIG)/RELEASE
--include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH)
--include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH).Common
+# RELEASE files point to other application tops
+include $(TOP)/configure/RELEASE
+-include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).Common
 ifdef T_A
-  -include $(CONFIG)/RELEASE.Common.$(T_A)
-  -include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+-include $(TOP)/configure/RELEASE.Common.$(T_A)
+-include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 endif
 
-include $(CONFIG)/CONFIG_COMMON
-include $(CONFIG)/CONFIG_FILE_TYPE
+CONFIG = $(RULES)/configure
+include $(CONFIG)/CONFIG
 
-#  Base-specific build options
-#
-include $(CONFIG)/CONFIG_BASE
+# Override the Base definition:
+INSTALL_LOCATION = $(TOP)
 
-#  Site-specific build options
-#
-include $(CONFIG)/CONFIG_SITE
-
-#  Version numbering
-#
-include $(CONFIG)/CONFIG_BASE_VERSION
-
-#  Host architecture specific definitions
-#
-include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).Common
--include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
-
-RELEASE_TOPS := $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops)
-
-
+# CONFIG_SITE files contain other build configuration settings
+include $(TOP)/configure/CONFIG_SITE
+-include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
 ifdef T_A
-
-  #  Cross compile specific definitions
-  #
-  ifneq ($(EPICS_HOST_ARCH),$(T_A))
-    include $(CONFIG)/CONFIG.CrossCommon
-  endif
-
-  #  Target architecture specific definitions
-  #
-  -include $(CONFIG)/os/CONFIG.Common.$(T_A)
-
-  #  Host-Target architecture specific definitions
-  #
-  -include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).$(T_A)
-
-  #  Site specific target and host-target definitions and overrides
-  #
-  -include $(CONFIG)/os/CONFIG_SITE.Common.$(T_A)
-  -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
-
-  #  RELEASE file specific definitions
-  #
-  ifneq ($(CONFIG),$(TOP)/configure)
-    -include $(CONFIG)/CONFIG_APP_INCLUDE
-  endif
-
-endif # ifdef T_A
-
-
-# Include <top>/cfg/CONFIG* definitions from tops defined in RELEASE* files
-#
-ifneq ($(CONFIG),$(TOP)/configure)
-  RELEASE_TOPS_REVERSE := $(shell \
-      $(PERL) -e '$$,=" ";print reverse @ARGV' $(RELEASE_TOPS))
-  RELEASE_CFG_CONFIGS = $(foreach top, $(RELEASE_TOPS_REVERSE), \
-      $(wildcard $($(top))/cfg/CONFIG*))
-  ifneq ($(RELEASE_CFG_CONFIGS),)
-    include $(RELEASE_CFG_CONFIGS)
-  endif
+ -include $(TOP)/configure/CONFIG_SITE.Common.$(T_A)
+ -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 endif
-
-# Include $(INSTALL_CFG)/CONFIG* definitions
-#
-TOP_CFG_CONFIGS = $(wildcard $(INSTALL_CFG)/CONFIG*)
-ifneq ($(TOP_CFG_CONFIGS),)
-  include $(TOP_CFG_CONFIGS)
-endif
-
-#  User specific definitions
-#
--include $(HOME)/configure/CONFIG_USER
--include $(HOME)/configure/CONFIG_USER.$(EPICS_HOST_ARCH)
-ifdef T_A
-  -include $(HOME)/configure/CONFIG_USER.Common.$(T_A)
-  -include $(HOME)/configure/CONFIG_USER.$(EPICS_HOST_ARCH).$(T_A)
-endif
-

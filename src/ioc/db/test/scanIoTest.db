@@ -1,6 +1,0 @@
-record(x, "g$(GROUP)m$(MEMBER)") {
-  field(DTYP, "Scan I/O")
-  field(INP , "@$(GROUP) $(MEMBER)")
-  field(SCAN, "I/O Intr")
-  field(PRIO, "$(PRIO)")
-}

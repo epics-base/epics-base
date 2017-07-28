@@ -1,7 +1,0 @@
-# CONFIG_SITE.linux-x86.linux-arm-debug
-#
-# Site specific settings for linux-x86 host - linux-arm-debug target builds
-#-------------------------------------------------------
-
-# Inherit settings from linux-arm
-include $(CONFIG)/os/CONFIG_SITE.linux-x86.linux-arm

@@ -1,9 +1,0 @@
-# CONFIG.solaris-x86.solaris-x86
-#
-# Definitions for solaris-x86 host - solaris-x86 target builds
-# Sites may override these definitions in CONFIG_SITE.solaris-x86.solaris-x86
-#-------------------------------------------------------
-
-include $(CONFIG)/os/CONFIG.solarisCommon.solarisCommon
-
-SHRLIB_CFLAGS = -KPIC

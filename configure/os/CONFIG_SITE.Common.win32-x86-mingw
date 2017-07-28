@@ -1,7 +1,0 @@
-# CONFIG_SITE.Common.win32-x86-mingw
-#
-# Site Specific definitions for win32-x86-mingw target
-
-# If readline is available uncomment the following line
-# to enable command-line editing and history support
-#COMMANDLINE_LIBRARY = READLINE

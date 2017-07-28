@@ -1,8 +1,0 @@
-#  CONFIG.linux-386.linux-386
-#
-# Definitions for linux-386 host - linux-386 target builds
-# Sites may override these definitions in CONFIG_SITE.linux-386.linux-386
-#-------------------------------------------------------
-
-# Include linux-x86 compiler definitions
-include $(CONFIG)/os/CONFIG.linux-x86.linux-x86

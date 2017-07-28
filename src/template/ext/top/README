@@ -1,5 +1,0 @@
-Notes:
-
-Each time you add a new extension in the src directory you
-must add the extension directory name to src/Makefile.
-

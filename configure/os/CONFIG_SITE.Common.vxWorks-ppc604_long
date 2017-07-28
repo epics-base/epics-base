@@ -1,9 +1,0 @@
-#
-# Site Specific definitions for the vxWorks-ppc604_long target
-#
-# Only the local epics system manager should modify this file
-#-------------------------------------------------------
-
-# Inherit the settings from vxWorks-ppc604
--include $(CONFIG)/os/CONFIG_SITE.Common.vxWorks-ppc604
-

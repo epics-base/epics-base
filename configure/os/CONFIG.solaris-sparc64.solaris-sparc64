@@ -1,8 +1,0 @@
-# CONFIG.solaris-sparc64.solaris-sparc64
-#
-# Definitions for solaris-sparc64 compiler host - solaris-sparc64 compiler target builds
-# Sites may override these definitions in CONFIG_SITE.solaris-sparc64.solaris-sparc64
-#-------------------------------------------------------
-
-# Include common gnu compiler definitions
-include $(CONFIG)/os/CONFIG.solaris-sparc.solaris-sparc

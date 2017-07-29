@@ -54,6 +54,11 @@ void dbsr(unsigned level)
 {
     dbServer *psrv = (dbServer *)ellFirst(&serverList);
 
+    if (!psrv) {
+        printf("No server layers registered with IOC\n");
+        return;
+    }
+
     while (psrv) {
         printf("Server '%s':\n", psrv->name);
         if (psrv->report)

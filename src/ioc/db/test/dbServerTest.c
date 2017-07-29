@@ -113,6 +113,9 @@ MAIN(dbServerTest)
 
     testPlan(9);
 
+    /* Prove that we handle substring names properly */
+    epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none ones");
+
     testDiag("Registering dbServer 'one'");
     dbRegisterServer(&one);
     testOk1(oneState == NOTHING_CALLED);
@@ -120,7 +123,7 @@ MAIN(dbServerTest)
     testDiag("Registering dbServer 'no-routines'");
     dbRegisterServer(&no_routines);
 
-    epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none disabled nonexistent");
+    epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "disabled nonexistent");
     testDiag("Registering dbServer 'disabled'");
     dbRegisterServer(&disabled);
 

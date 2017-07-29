@@ -35,10 +35,20 @@ void dbRegisterServer(dbServer *psrv)
         return;
     }
 
-    if (ignore && strstr(ignore, psrv->name)) {
-        fprintf(stderr, "dbRegisterServer: Ignoring '%s', per environment\n",
-            psrv->name);
-        return;
+    if (ignore) {
+        size_t len = strlen(psrv->name);
+        const char *found;
+        while ((found = strstr(ignore, psrv->name))) {
+            /* Make sure the name isn't just a substring */
+            if ((found == ignore || (found > ignore && found[-1] == ' ')) &&
+                (found[len] == 0 || found[len] == ' ')) {
+                    fprintf(stderr, "dbRegisterServer: Ignoring '%s', per environment\n",
+                        psrv->name);
+                    return;
+                }
+            /* It was, try again further down */
+            ignore = found + len;
+        }
     }
 
     if (ellNext(&psrv->node)) {

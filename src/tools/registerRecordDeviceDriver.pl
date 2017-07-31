@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+
 #*************************************************************************
 # Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
@@ -12,6 +13,7 @@ use strict;
 
 use FindBin qw($Bin);
 use lib "$Bin/../../lib/perl";
+use databaseModuleDirs;
 
 use DBD;
 use DBD::Parser;

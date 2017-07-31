@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #*************************************************************************
 # Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
@@ -9,6 +9,7 @@
 
 use FindBin qw($Bin);
 use lib "$Bin/../../lib/perl";
+use databaseModuleDirs;
 
 use EPICS::Getopts;
 use File::Basename;

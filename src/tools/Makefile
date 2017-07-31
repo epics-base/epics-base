@@ -24,6 +24,8 @@ PERL_MODULES += DBD/Record.pm
 PERL_MODULES += DBD/Registrar.pm
 PERL_MODULES += DBD/Variable.pm
 
+PERL_MODULES += databaseModuleDirs.pm
+
 PERL_SCRIPTS += makeIncludeDbd.pl
 
 PERL_SCRIPTS += dbdToMenuH.pl

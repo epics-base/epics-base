@@ -23,3 +23,6 @@ TESTS += Variable
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
+
+# Create local copy else out-of-tree installs break the scripts
+$(TESTSCRIPTS_HOST) : $(COMMON_DIR)/databaseModuleDirs.pm

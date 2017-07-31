@@ -1,6 +1,7 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
-use lib '../..';
+use lib '../O.Common';
+use databaseModuleDirs;
 
 use Test::More tests => 17;
 

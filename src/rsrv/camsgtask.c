@@ -137,6 +137,9 @@ void camsgtask ( void *pParm )
         }
         else {
             char buf[64];
+
+            /* flush any queued messages before shutdown */
+            cas_send_bs_msg(client, 1);
             
             client->recv.cnt = 0ul;
             

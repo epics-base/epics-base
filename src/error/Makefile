@@ -13,7 +13,6 @@ INC += epicsPrint.h
 INC += errMdef.h
 INC += errSymTbl.h
 INC += errlog.h
-INC += error.h
 
 Com_SRCS += errlog.c
 Com_SRCS += errSymLib.c

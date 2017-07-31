@@ -1,10 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2014 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* Error Handling definitions */
 /*
@@ -12,56 +12,36 @@
  *      Date:            6-1-90
  */
 
-#ifndef INCerrMdefh
-#define INCerrMdefh
-
-#include "shareLib.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef INC_errMdef_H
+#define INC_errMdef_H
 
 #define RTN_SUCCESS(STATUS) ((STATUS)==0)
 
-#define M_dbAccess	(501 <<16) /*Database Access Routines */
-#define M_drvSup	(503 <<16) /*Driver Support*/
-#define M_devSup	(504 <<16) /*Device Support*/
-#define M_recSup	(505 <<16) /*Record Support*/
-#define M_recType	(506 <<16) /*Record Type*/
-#define M_record	(507 <<16) /*Database Records*/
-#define M_ar		(508 <<16) /*Archiver; see arDefs.h*/
-#define M_ts            (509 <<16) /*Time Stamp Routines; see tsDefs.h*/
-#define M_arAcc         (510 <<16) /*Archive Access Library Routines*/
-#define M_bf            (511 <<16) /*Block File Routines; see bfDefs.h*/
-#define M_syd           (512 <<16) /*Sync Data Routines; see sydDefs.h*/
-#define M_ppr           (513 <<16) /*Portable Plot Routines; see pprPlotDefs.h*/
-#define M_env           (514 <<16) /*Environment Routines; see envDefs.h*/
-#define M_gen           (515 <<16) /*General Purpose Routines; see genDefs.h*/
-#define	M_gpib		(516 <<16) /*Gpib driver & device support; see drvGpibInterface.h*/
-#define	M_bitbus	(517 <<16) /*Bitbus driver & device support; see drvBitBusInterface.h*/
-#define M_dbLib         (519 <<16) /*Static Database Access */
-#define M_epvxi		(520 <<16) /*VXI Driver*/
-#define M_devLib	(521 <<16) /*Device Resource Registration*/
-#define M_asLib		(522 <<16) /*Access Security		*/
-#define M_cas		(523 <<16) /*CA server*/
-#define M_casApp	(524 <<16) /*CA server application*/
-#define M_bucket	(525 <<16) /*Bucket Hash*/
-#define M_gddFuncTbl	(526 <<16) /*gdd jump table*/
-#define M_stdlib        (527 <<16) /*EPICS Standard library*/
-#define M_pool          (528 <<16) /*Thread pool*/
-#define M_time          (529 <<16) /*epicsTime*/
+/* Module numbers start above 500 for compatibility with vxWorks errnoLib */
 
-epicsShareFunc void epicsShareAPI errSymLookup(long status, char *pBuf, unsigned bufLength);
-epicsShareFunc const char* errSymMsg(long status);
-epicsShareFunc void epicsShareAPI errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);
-epicsShareFunc void epicsShareAPI errSymTestPrint(long errNum);
-epicsShareFunc int epicsShareAPI errSymBld(void);
-epicsShareFunc int epicsShareAPI errSymbolAdd (long errNum,char *name);
-epicsShareFunc void epicsShareAPI errSymDump(void);
-epicsShareFunc void epicsShareAPI tstErrSymFind(void);
+/* FIXME: M_xxx values could be declared as integer variables and set
+ * at runtime from registration routines; the S_xxx definitions would
+ * still work with that change, with careful initialization.
+ */
 
-#ifdef __cplusplus
-}
-#endif
+/* libCom */
+#define M_asLib         (501 << 16) /* Access Security */
+#define M_bucket        (502 << 16) /* Bucket Hash */
+#define M_devLib        (503 << 16) /* Hardware RegisterAccess */
+#define M_stdlib        (504 << 16) /* EPICS Standard library */
+#define M_pool          (505 << 16) /* Thread pool */
+#define M_time          (506 << 16) /* epicsTime */
 
-#endif /*INCerrMdefh*/
+/* ioc */
+#define M_dbAccess      (511 << 16) /* Database Access Routines */
+#define M_dbLib         (512 << 16) /* Static Database Access */
+#define M_drvSup        (513 << 16) /* Driver Support */
+#define M_devSup        (514 << 16) /* Device Support */
+#define M_recSup        (515 << 16) /* Record Support */
+
+/* cas */
+#define M_cas           (521 << 16) /* CA server */
+#define M_gddFuncTbl    (522 << 16) /* gdd jump table */
+#define M_casApp        (523 << 16) /* CA server application */
+
+#endif /*INC_errMdef_H*/

@@ -28,7 +28,7 @@
 #include "epicsEvent.h"
 #include "epicsInterrupt.h"
 #include "errMdef.h"
-#include "error.h"
+#include "errSymTbl.h"
 #include "ellLib.h"
 #include "errlog.h"
 #include "epicsStdio.h"
@@ -103,7 +103,7 @@ static int tvsnPrint(char *str, size_t size, const char *format, va_list ap)
     return nchar;
 }
 
-epicsShareFunc int errlogPrintf(const char *pFormat, ...)
+int errlogPrintf(const char *pFormat, ...)
 {
     va_list pvar;
     char *pbuffer;
@@ -142,8 +142,7 @@ epicsShareFunc int errlogPrintf(const char *pFormat, ...)
     return nchar;
 }
 
-epicsShareFunc int errlogVprintf(
-    const char *pFormat,va_list pvar)
+int errlogVprintf(const char *pFormat,va_list pvar)
 {
     int nchar;
     char *pbuffer;
@@ -179,13 +178,13 @@ epicsShareFunc int errlogVprintf(
     return nchar;
 }
 
-epicsShareFunc int epicsShareAPI errlogMessage(const char *message)
+int errlogMessage(const char *message)
 {
     errlogPrintf("%s", message);
     return 0;
 }
 
-epicsShareFunc int errlogPrintfNoConsole( const char *pFormat, ...)
+int errlogPrintfNoConsole(const char *pFormat, ...)
 {
     va_list pvar;
     int nchar;
@@ -203,8 +202,7 @@ epicsShareFunc int errlogPrintfNoConsole( const char *pFormat, ...)
     return nchar;
 }
 
-epicsShareFunc int errlogVprintfNoConsole(
-    const char *pFormat,va_list pvar)
+int errlogVprintfNoConsole(const char *pFormat, va_list pvar)
 {
     int nchar;
     char *pbuffer;
@@ -229,8 +227,7 @@ epicsShareFunc int errlogVprintfNoConsole(
 }
 
 
-epicsShareFunc int errlogSevPrintf(
-    const errlogSevEnum severity,const char *pFormat, ...)
+int errlogSevPrintf(errlogSevEnum severity, const char *pFormat, ...)
 {
     va_list pvar;
     int nchar;
@@ -263,8 +260,7 @@ epicsShareFunc int errlogSevPrintf(
     return nchar;
 }
 
-epicsShareFunc int errlogSevVprintf(
-    const errlogSevEnum severity,const char *pFormat,va_list pvar)
+int errlogSevVprintf(errlogSevEnum severity, const char *pFormat, va_list pvar)
 {
     char *pnext;
     int nchar;
@@ -299,8 +295,7 @@ epicsShareFunc int errlogSevVprintf(
 }
 
 
-epicsShareFunc char * epicsShareAPI errlogGetSevEnumString(
-    const errlogSevEnum severity)
+const char * errlogGetSevEnumString(errlogSevEnum severity)
 {
     errlogInit(0);
     if (severity > 3)
@@ -308,21 +303,19 @@ epicsShareFunc char * epicsShareAPI errlogGetSevEnumString(
     return errlogSevEnumString[severity];
 }
 
-epicsShareFunc void epicsShareAPI errlogSetSevToLog(
-    const errlogSevEnum severity)
+void errlogSetSevToLog(errlogSevEnum severity)
 {
     errlogInit(0);
     pvtData.sevToLog = severity;
 }
 
-epicsShareFunc errlogSevEnum epicsShareAPI errlogGetSevToLog(void)
+errlogSevEnum errlogGetSevToLog(void)
 {
     errlogInit(0);
     return pvtData.sevToLog;
 }
 
-epicsShareFunc void epicsShareAPI errlogAddListener(
-    errlogListener listener, void *pPrivate)
+void errlogAddListener(errlogListener listener, void *pPrivate)
 {
     listenerNode *plistenerNode;
 
@@ -339,8 +332,7 @@ epicsShareFunc void epicsShareAPI errlogAddListener(
     epicsMutexUnlock(pvtData.listenerLock);
 }
 
-epicsShareFunc int epicsShareAPI errlogRemoveListeners(
-    errlogListener listener, void *pPrivate)
+int errlogRemoveListeners(errlogListener listener, void *pPrivate)
 {
     listenerNode *plistenerNode;
     int count = 0;
@@ -374,7 +366,7 @@ epicsShareFunc int epicsShareAPI errlogRemoveListeners(
     return count;
 }
 
-epicsShareFunc int epicsShareAPI eltc(int yesno)
+int eltc(int yesno)
 {
     errlogInit(0);
     errlogFlush();
@@ -382,15 +374,15 @@ epicsShareFunc int epicsShareAPI eltc(int yesno)
     return 0;
 }
 
-epicsShareFunc int errlogSetConsole(FILE *stream)
+int errlogSetConsole(FILE *stream)
 {
     errlogInit(0);
     pvtData.console = stream;
     return 0;
 }
 
-epicsShareFunc void errPrintf(long status, const char *pFileName, 
-    int lineno, const char *pformat, ...)
+void errPrintf(long status, const char *pFileName, int lineno,
+    const char *pformat, ...)
 {
     va_list pvar;
     char    *pnext;
@@ -506,7 +498,7 @@ static void errlogInitPvt(void *arg)
 }
 
 
-epicsShareFunc int epicsShareAPI errlogInit2(int bufsize, int maxMsgSize)
+int errlogInit2(int bufsize, int maxMsgSize)
 {
     static epicsThreadOnceId errlogOnceFlag = EPICS_THREAD_ONCE_INIT;
     struct initArgs config;
@@ -530,12 +522,12 @@ epicsShareFunc int epicsShareAPI errlogInit2(int bufsize, int maxMsgSize)
     return 0;
 }
 
-epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
+int errlogInit(int bufsize)
 {
     return errlogInit2(bufsize, MAX_MESSAGE_SIZE);
 }
 
-epicsShareFunc void epicsShareAPI errlogFlush(void)
+void errlogFlush(void)
 {
     int count;
 
@@ -598,7 +590,7 @@ static void errlogThread(void)
 }
 
 
-static msgNode *msgbufGetNode(void)
+static msgNode * msgbufGetNode(void)
 {
     char *pbuffer = pvtData.pbuffer;
     char *pnextFree;
@@ -631,7 +623,7 @@ static msgNode *msgbufGetNode(void)
     return pnextSend;
 }
 
-static char *msgbufGetFree(int noConsoleMessage)
+static char * msgbufGetFree(int noConsoleMessage)
 {
     msgNode *pnextSend;
 

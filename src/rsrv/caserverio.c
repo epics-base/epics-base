@@ -37,6 +37,9 @@
  *  cas_send_bs_msg()
  *
  *  (channel access server send message)
+ *
+ *
+ * Set lock_needed=1 unless SEND_LOCK() is held by caller
  */
 void cas_send_bs_msg ( struct client *pclient, int lock_needed )
 {

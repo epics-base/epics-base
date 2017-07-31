@@ -11,7 +11,7 @@ TOP = ../../..
 include $(TOP)/configure/CONFIG
 
 # Allow access to private headers in db/
-USR_CPPFLAGS = -I ../..
+USR_CPPFLAGS = -I $(TOP)/src/ioc/db
 
 TESTLIBRARY = dbTestIoc
 

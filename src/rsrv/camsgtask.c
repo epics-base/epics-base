@@ -46,19 +46,6 @@ void camsgtask ( void *pParm )
 
     casAttachThreadToClient ( client );
 
-    /* 
-     * send the server's minor version number to the client 
-     */
-    status = cas_copy_in_header ( client, CA_PROTO_VERSION, 0, 
-        0, CA_MINOR_PROTOCOL_REVISION, 0, 0, 0 );
-    if ( status != ECA_NORMAL ) {
-        LOCK_CLIENTQ;
-        ellDelete ( &clientQ, &client->node );
-        UNLOCK_CLIENTQ;
-        destroy_tcp_client ( client );
-        return;
-    }
-
     while (castcp_ctl == ctlRun && !client->disconnect) {
 
         /*

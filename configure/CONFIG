@@ -15,12 +15,16 @@ endif
 
 CONFIG = $(RULES)/configure
 include $(CONFIG)/CONFIG
+include $(TOP)/configure/CONFIG_DATABASE_VERSION
 
 # Override the Base definition:
 INSTALL_LOCATION = $(TOP)
 
 # Use new RSET definition
 BASE_CPPFLAGS += -DUSE_TYPED_RSET
+
+# Shared library ABI version.
+SHRLIB_VERSION = $(EPICS_DATABASE_MAJOR_VERSION).$(EPICS_DATABASE_MINOR_VERSION).$(EPICS_DATABASE_MAINTENANCE_VERSION)
 
 # Set path for local tools
 MAKEBPT                    = $(INSTALL_HOST_BIN)/makeBpt$(HOSTEXE)

@@ -7,16 +7,9 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-TOP = .
+TOP = ..
 include $(TOP)/configure/CONFIG
 
-# Bootstrap resolution: tools not installed yet
-TOOLS = $(TOP)/src/tools
-
-DIRS += configure src
-src_DEPEND_DIRS = configure
-
-DIRS += test
-test_DEPEND_DIRS = src
+DIRS += tools
 
 include $(TOP)/configure/RULES_TOP

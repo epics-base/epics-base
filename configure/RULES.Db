@@ -428,30 +428,30 @@ $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 #---------------------------------------------------------------
 # HTML files
 
-$(COMMON_DIR)/%.html: %.dbd.pod $(TOOLS)/dbdToHtml.pl
+$(COMMON_DIR)/%.html: %.dbd.pod
 	@$(RM) $(notdir $@)
-	$(PERL) $(TOOLS)/dbdToHtml.pl $(DBDFLAGS) -o $(notdir $@) $<
+	$(DBDTOHTML) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.html: %.pod $(TOOLS)/podToHtml.pl
+$(COMMON_DIR)/%.html: %.pod
 	@$(RM) $(notdir $@)
-	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
+	$(PODTOHTML) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.html: %.pm $(TOOLS)/podToHtml.pl
+$(COMMON_DIR)/%.html: %.pm
 	@$(RM) $(notdir $@)
-	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
+	$(PODTOHTML) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.html: ../%.pm $(TOOLS)/podToHtml.pl
+$(COMMON_DIR)/%.html: ../%.pm
 	@$(RM) $(notdir $@)
-	$(PERL) $(TOOLS)/podToHtml.pl -s -o $(notdir $@) $<
+	$(PODTOHTML) -s -o $(notdir $@) $<
 	@$(MKDIR) $(dir $@)
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.html: ../%.pl $(TOOLS)/podToHtml.pl
+$(COMMON_DIR)/%.html: ../%.pl
 	@$(RM) $(notdir $@)
-	$(PERL) $(TOOLS)/podToHtml.pl -s -o $(notdir $@) $<
+	$(PODTOHTML) -s -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 .PRECIOUS: $(COMMON_DIR)/%.html %.html

@@ -1,5 +1,0 @@
-
-ca:ai_2000 myIOC.myLAB.org 22000
-ca:ai_2001 1.1.1.1 22000
-ca:ao_2000 myIOC
-ca:ao_2001 1.1.1.1

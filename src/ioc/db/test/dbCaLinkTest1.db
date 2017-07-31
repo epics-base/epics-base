@@ -1,5 +1,0 @@
-record(x, "target") {}
-
-record(x, "source") {
-  field(LNK, "$(TARGET)")
-}

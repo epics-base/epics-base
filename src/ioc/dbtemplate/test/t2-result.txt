@@ -1,6 +1,0 @@
-a = va1-a  b = def-b  c = def-c  d = $(d,undefined)
-a = va2-a  b = va2-b  c = def-c  d = $(d,undefined)
-a = va3-a  b = va3-b  c = va3-c  d = $(d,undefined)
-a = va4-a  b = va4-b  c = def-c  d = $(d,undefined)
-a = va5-a  b = def-b  c = def-c  d = $(d,undefined)
-a = pt3-a  b = pt3-b  c = pt3-c  d = $(d,undefined)

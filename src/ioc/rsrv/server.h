@@ -63,8 +63,10 @@ typedef struct caHdrLargeArray {
 enum messageBufferType { mbtUDP, mbtSmallTCP, mbtLargeTCP };
 struct message_buffer {
   char                      *buf;
+  /*! points to first filled byte in buffer */
   unsigned                  stk;
   unsigned                  maxstk;
+  /*! points to first unused byte in buffer (after filled bytes) */
   unsigned                  cnt;
   enum messageBufferType    type;
 };
@@ -73,7 +75,9 @@ extern epicsThreadPrivateId rsrvCurrentClient;
 
 typedef struct client {
   ELLNODE               node;
+  /*! guarded by SEND_LOCK()  aka. client::lock */
   struct message_buffer send;
+  /*! accessed by receive thread w/o locks cf. camsgtask() */
   struct message_buffer recv;
   epicsMutexId          lock;
   epicsMutexId          putNotifyLock;

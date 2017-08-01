@@ -9,6 +9,9 @@ variable(atExitDebug,int)
 # Access security subroutines
 variable(asCaDebug,int)
 
+# CA server debug flag (very verbose) range[0,5]
+variable(CASDEBUG,int)
+
 # Static database access variables
 variable(dbRecordsOnceOnly,int)
 variable(dbRecordsAbcSorted,int)

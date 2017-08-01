@@ -80,6 +80,10 @@ static int callbackIsInit;
 static char *threadNamePrefix[NUM_CALLBACK_PRIORITIES] = {
     "cbLow", "cbMedium", "cbHigh"
 };
+#define FULL_MSG(name) "callbackRequest: " name " ring buffer full\n"
+static char *fullMessage[NUM_CALLBACK_PRIORITIES] = {
+    FULL_MSG("cbLow"), FULL_MSG("cbMedium"), FULL_MSG("cbHigh")
+};
 static unsigned int threadPriority[NUM_CALLBACK_PRIORITIES] = {
     epicsThreadPriorityScanLow - 1,
     epicsThreadPriorityScanLow + 4,
@@ -283,11 +287,7 @@ int callbackRequest(CALLBACK *pcallback)
     pushOK = epicsRingPointerPush(mySet->queue, pcallback);
 
     if (!pushOK) {
-        char msg[48] = "callbackRequest: ";
-
-        strcat(msg, threadNamePrefix[priority]);
-        strcat(msg, " ring buffer full\n");
-        epicsInterruptContextMessage(msg);
+        epicsInterruptContextMessage(fullMessage[priority]);
         mySet->queueOverflow = TRUE;
         return S_db_bufFull;
     }

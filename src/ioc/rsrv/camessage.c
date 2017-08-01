@@ -226,10 +226,10 @@ va_list                 args
     /*
      * add their context string into the protocol
      */
-    localStatus = epicsVsnprintf ( pMsgString, maxDiagLen, pformat, args );
+    localStatus = epicsVsnprintf ( pMsgString, maxDiagLen - size, pformat, args );
     if ( localStatus >= 1 ) {
         unsigned diagLen = ( unsigned ) localStatus;
-        if ( diagLen < maxDiagLen ) {
+        if ( diagLen < maxDiagLen - size ) {
             size += (ca_uint32_t) (diagLen + 1u);
         }
         else {
@@ -237,7 +237,7 @@ va_list                 args
                 "caserver: vsend_err: epicsVsnprintf detected "
                 "error message truncation, pFormat = \"%s\"\n",
                 pformat );
-            size += maxDiagLen;
+            size = maxDiagLen;
             pMsgString [ maxDiagLen - 1 ] = '\0';
         }
     }
@@ -2447,8 +2447,10 @@ int camessage ( struct client *client )
                 /* log and error for too old clients, but keep the connection open to avoid a
                  * re-connect loop.
                  */
+                SEND_LOCK(client);
                 send_err ( &msg, ECA_DEFUNCT, client,
                     "CAS: Client version %u too old", client->minor_version_number );
+                SEND_UNLOCK(client);
                 log_header ( "CAS: Client version too old",
                     client, &msg, 0, nmsg );
                 client->recvBytesToDrain = msgsize - bytes_left;
@@ -2467,8 +2469,10 @@ int camessage ( struct client *client )
          */
         if ( msgsize & 0x7 ) {
             if (client->proto==IPPROTO_TCP) {
+                SEND_LOCK(client);
                 send_err ( &msg, ECA_INTERNAL, client,
                     "CAS: Missaligned protocol rejected" );
+                SEND_UNLOCK(client);
                 log_header ( "CAS: Missaligned protocol rejected",
                     client, &msg, 0, nmsg );
             }
@@ -2486,9 +2490,11 @@ int camessage ( struct client *client )
             casExpandRecvBuffer ( client, msgsize );
             if ( msgsize > client->recv.maxstk ) {
                 if (client->proto==IPPROTO_TCP) {
+                    SEND_LOCK(client);
                     send_err ( &msg, ECA_TOLARGE, client,
                         "CAS: Server unable to load large request message. Max bytes=%lu",
                         rsrvSizeofLargeBufTCP );
+                    SEND_UNLOCK(client);
                     log_header ( "CAS: server unable to load large request message",
                         client, &msg, 0, nmsg );
                 }

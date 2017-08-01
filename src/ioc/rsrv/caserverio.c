@@ -37,10 +37,17 @@
  *  cas_send_bs_msg()
  *
  *  (channel access server send message)
+ *
+ *
+ * Set lock_needed=1 unless SEND_LOCK() is held by caller
  */
 void cas_send_bs_msg ( struct client *pclient, int lock_needed )
 {
     int status;
+
+    if ( lock_needed ) {
+        SEND_LOCK ( pclient );
+    }
 
     if ( CASDEBUG > 2 && pclient->send.stk ) {
         errlogPrintf ( "CAS: Sending a message of %d bytes\n", pclient->send.stk );
@@ -52,11 +59,9 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
                 pclient->sock, (unsigned) pclient->addr.sin_addr.s_addr );
         }
         pclient->send.stk = 0u;
+        if(lock_needed)
+            SEND_UNLOCK(pclient);
         return;
-    }
-
-    if ( lock_needed ) {
-        SEND_LOCK ( pclient );
     }
 
     while ( pclient->send.stk && ! pclient->disconnect ) {

@@ -41,17 +41,18 @@
 void camsgtask ( void *pParm )
 {
     struct client *client = (struct client *) pParm;
-    int nchars;
-    int status;
 
     casAttachThreadToClient ( client );
 
     while (castcp_ctl == ctlRun && !client->disconnect) {
+        osiSockIoctl_t check_nchars;
+        long nchars;
+        int status;
 
         /*
          * allow message to batch up if more are comming
          */
-        status = socket_ioctl (client->sock, FIONREAD, &nchars);
+        status = socket_ioctl (client->sock, FIONREAD, &check_nchars);
         if (status < 0) {
             char sockErrBuf[64];
 
@@ -61,7 +62,7 @@ void camsgtask ( void *pParm )
                 sockErrBuf);
             cas_send_bs_msg(client, TRUE);
         }
-        else if (nchars == 0){
+        else if (check_nchars == 0){
             cas_send_bs_msg(client, TRUE);
         }
 

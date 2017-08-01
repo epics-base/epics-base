@@ -20,8 +20,8 @@ include $(CONFIG)/CONFIG
 INSTALL_LOCATION = $(TOP)
 
 # Set location of locally generated tools
-EYACC = $(INSTALL_HOST_BIN)/antelope$(HOSTEXE)
-ELEX = $(INSTALL_HOST_BIN)/e_flex$(HOSTEXE) -S$(INSTALL_INCLUDE)/flex.skel.static
+EYACC = $(abspath $(INSTALL_HOST_BIN))/antelope$(HOSTEXE)
+ELEX = $(abspath $(INSTALL_HOST_BIN))/e_flex$(HOSTEXE) -S$(INSTALL_INCLUDE)/flex.skel.static
 
 # CONFIG_SITE files contain other build configuration settings
 include $(TOP)/configure/CONFIG_SITE

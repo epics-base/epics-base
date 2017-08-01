@@ -21,6 +21,8 @@ INC += valgrind/valgrind.h
 INC += libComVersion.h
 INC += libComVersionNum.h
 
+PERL_MODULES += libcomModuleDirs.pm
+
 include $(LIBCOM)/as/Makefile
 include $(LIBCOM)/bucketLib/Makefile
 include $(LIBCOM)/calc/Makefile

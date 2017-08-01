@@ -1,4 +1,5 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
+
 #*************************************************************************
 # Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
@@ -14,9 +15,9 @@
 use strict;
 
 # This program is never installed, so it can't use FindBin to get
-# the path to the lib/perl directory.  However it can load the
-# EPICS:: modules directly from the src/tools directory instead:
-use lib '../../tools';
+# the path to the lib/perl directory.
+use lib '../O.Common';
+use libcomModuleDirs;
 
 use Getopt::Std;
 use File::Basename;

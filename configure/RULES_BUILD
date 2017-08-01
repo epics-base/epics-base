@@ -329,6 +329,12 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 	$(LINK.mod)
 
 #---------------------------------------------------------------
+# Generate Perl include path module
+%ModuleDirs.pm: $(wildcard $(TOP)/configure/RELEASE*)
+	@$(MKDIR) $(dir $@)
+	$(CONVERTRELEASE) -T $(TOP) $@
+
+#---------------------------------------------------------------
 # Automated testing
 
 runtests: $(TESTSCRIPTS)

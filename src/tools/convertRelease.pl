@@ -83,6 +83,7 @@ for ($outfile) {
     m/releaseTops/       and do { releaseTops();         last; };
     m/dllPath\.bat/      and do { dllPath();             last; };
     m/relPaths\.sh/      and do { relPaths();            last; };
+    m/ModuleDirs\.pm/    and do { moduleDirs();          last; };
     m/cdCommands/        and do { cdCommands();          last; };
     m/envPaths/          and do { envPaths();            last; };
     m/checkRelease/      and do { checkRelease();        last; };
@@ -99,6 +100,7 @@ Usage: convertRelease.pl [-a arch] [-T top] [-t ioctop] outfile
         releaseTops - lists the module names defined in RELEASE*s
         dllPath.bat - path changes for cmd.exe to find Windows DLLs
         relPaths.sh - path changes for bash to add RELEASE bin dir's
+        *ModuleDirs.pm - generate a perl module adding lib/perl paths
         cdCommands - generate cd path strings for vxWorks IOCs
         envPaths - generate epicsEnvSet commands for other IOCs
         checkRelease - checks consistency with support modules
@@ -145,6 +147,19 @@ sub binDirs {
         push @path, LocalPath($path);
     }
     return @path;
+}
+
+sub moduleDirs {
+    my @deps = grep !m/^ (TOP | RULES | TEMPLATE_TOP) $/x, @apps;
+    my @dirs = grep {-d $_}
+        map { AbsPath("$macros{$_}/lib/perl") } @deps;
+    unlink $outfile;
+    open(OUT, ">$outfile") or die "$! creating $outfile";
+    print OUT "# This is a generated file, do not edit!\n\n",
+        "use lib qw(\n",
+        map { "    $_\n"; } @dirs;
+    print OUT ");\n\n1;\n";
+    close OUT;
 }
 
 #

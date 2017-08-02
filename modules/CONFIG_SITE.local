@@ -1,0 +1,5 @@
+# FIXME: for a non-local install of the bundle, this has to be changes for the submodules
+INSTALL_LOCATION = $(TOP)/../..
+
+# Do not install configuration from base submodules
+CONFIG_INSTALLS =

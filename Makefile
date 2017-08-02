@@ -19,4 +19,7 @@ src_DEPEND_DIRS = configure
 DIRS += test
 test_DEPEND_DIRS = src
 
+DIRS += modules
+modules_DEPEND_DIRS = src
+
 include $(TOP)/configure/RULES_TOP

@@ -36,8 +36,8 @@ REGISTERRECORDDEVICEDRIVER = $(PERL) $(INSTALL_HOST_BIN)/registerRecordDeviceDri
 
 # Set path for tools from libcom for unbundled build
 ifdef EPICS_LIBCOM
-EYACC = $(EPICS_LIBCOM_HOST_BIN)/antelope$(HOSTEXE)
-ELEX = $(EPICS_LIBCOM_HOST_BIN)/e_flex$(HOSTEXE) -S$(EPICS_LIBCOM)/include/flex.skel.static
+EYACC = $(abspath $(EPICS_LIBCOM_HOST_BIN))/antelope$(HOSTEXE)
+ELEX = $(abspath $(EPICS_LIBCOM_HOST_BIN))/e_flex$(HOSTEXE) -S$(EPICS_LIBCOM)/include/flex.skel.static
 endif
 
 # CONFIG_SITE files contain other build configuration settings

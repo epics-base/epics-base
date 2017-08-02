@@ -30,6 +30,7 @@
 #include "dbUnitTest.h"
 #include "initHooks.h"
 #include "iocInit.h"
+#include "errSymTbl.h"
 
 static dbEventCtx testEvtCtx;
 static epicsMutexId testEvtLock;

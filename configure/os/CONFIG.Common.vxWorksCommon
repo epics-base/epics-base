@@ -106,20 +106,10 @@ GNU_DIR_6 = $(WIND_BASE)/gnu/$(VX_GNU_VERSION)-vxworks-$(VXWORKS_VERSION)/$(WIND
 GNU_DIR = $(GNU_DIR_$(VXWORKS_MAJOR_VERSION))
 
 #--------------------------------------------------
-# Wind River moved nm out of GNU_BIN in some versions
+# This finds nm on any supported VxWorks version
 
-WORKBENCH_BIN = $(WIND_BASE)/workbench-$(WORKBENCH_VERSION)/$(WIND_HOST_TYPE)/bin
-UTILITIES_BIN = $(WIND_BASE)/utilities-$(UTILITIES_VERSION)/$(WIND_HOST_TYPE)/bin
-
-NM_DIR_6.4 = $(WORKBENCH_BIN)
-NM_DIR_6.5 = $(WORKBENCH_BIN)
-NM_DIR_6.6 = $(WORKBENCH_BIN)
-NM_DIR_6.7 = $(GNU_BIN)
-NM_DIR_6.8 = $(UTILITIES_BIN)
-NM_DIR_6.9 = $(UTILITIES_BIN)
-NM_DIR = $(firstword $(NM_DIR_$(VXWORKS_VERSION)) $(GNU_BIN))
-
-NM = $(NM_DIR)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
+NMPROG = $(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
+NM = $(firstword $(wildcard $(WIND_BASE)/*/$(WIND_HOST_TYPE)/bin/$(NMPROG)))
 
 #--------------------------------------------------
 # A linker script is essential for munching from vxWorks 6.6 onwards
@@ -132,6 +122,7 @@ MUNCH_LDFLAGS = $(MUNCH_LDFLAGS_$(VXWORKS_MAJOR_VERSION))
 #--------------------------------------------------
 # These are required by some of the Wind River tools
 export WIND_BASE
+export WIND_HOME = $(WIND_BASE)
 export WIND_HOST_TYPE
 export TOOL_FAMILY = GNU
 
@@ -179,6 +170,8 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 
 #--------------------------------------------------
 # Link definitions
+CROSS_LDFLAGS =
+#
 LINK.cpp = $(LD) -o $@ $(STATIC_LDFLAGS) $(PRODDIR_LDFLAGS) $(LDFLAGS)
 LINK.cpp += $(PROD_LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS)
 

@@ -182,6 +182,8 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 
 #--------------------------------------------------
 # Link definitions
+CROSS_LDFLAGS =
+#
 LINK.cpp = $(LD) -o $@ $(STATIC_LDFLAGS) $(PRODDIR_LDFLAGS) $(LDFLAGS)
 LINK.cpp += $(PROD_LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS)
 

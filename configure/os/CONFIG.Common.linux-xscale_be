@@ -15,5 +15,14 @@ ARCH_CLASS = xscale
 ifeq ($(BUILD_CLASS),CROSS)
     VALID_BUILDS = Ioc
     GNU_TARGET = xscale_be
-    CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
+    CMPLR_PREFIX = $(GNU_TARGET:%=%-)
+
+    # Configure for readline if requested
+    OP_SYS_INCLUDES += $(READLINE_DIR:%=-I%/include)
+    READLINE_LDFLAGS = $(READLINE_DIR:%=-L%/lib)
+    RUNTIME_LDFLAGS_READLINE_YES_NO = $(READLINE_DIR:%=-Wl,-rpath,%/lib)
+    RUNTIME_LDFLAGS += \
+        $(RUNTIME_LDFLAGS_READLINE_$(LINKER_USE_RPATH)_$(STATIC_BUILD))
+    SHRLIBDIR_LDFLAGS += $(READLINE_LDFLAGS)
+    PRODDIR_LDFLAGS += $(READLINE_LDFLAGS)
 endif

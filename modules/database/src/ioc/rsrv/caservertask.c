@@ -312,8 +312,7 @@ void rsrv_build_addr_lists(void)
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
                             sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf("CAS: failed to set mcast loopback: %s\n",
-                    sockErrBuf);
+                errlogPrintf("rsrv: failed to set mcast loopback: %s (%d)\n", sockErrBuf, errno);
             }
         }
 #endif

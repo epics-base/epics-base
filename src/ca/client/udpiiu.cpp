@@ -165,7 +165,7 @@ udpiiu::udpiiu (
 
 #ifdef IP_ADD_MEMBERSHIP
     {
-        int flag = 1;
+        osiSockOptMcastLoop_t flag = 1;
         if ( setsockopt ( this->sock, IPPROTO_IP, IP_MULTICAST_LOOP,
                           (char *) &flag, sizeof ( flag ) ) == -1 ) {
             char sockErrBuf[64];

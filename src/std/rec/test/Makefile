@@ -101,7 +101,7 @@ regressTest_DBD += base.dbd
 TESTPROD_HOST += regressTest
 regressTest_SRCS += regressTest.c
 regressTest_SRCS += regressTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db
+TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db ../regressHex.db ../regressLinkMS.db
 TESTS += regressTest
 
 # epicsRunRecordTests runs all the test programs in a known working order.

@@ -1,10 +1,4 @@
 # CONFIG_SITE.Common.linux-xscale_be
 #
-# Site specific definitions for linux-xscale_be target builds.
+# Site specific definitions for all linux-xscale_be target builds.
 #-------------------------------------------------------
-
-# Set GNU_DIR to point to directory containing the tool-chain
-
-# APS:
-GNU_DIR = /usr/local/vw/xscale_be
-

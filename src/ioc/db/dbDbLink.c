@@ -167,7 +167,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         ppv_link->lastGetdbrType = dbrType;
     }
 
-    if (!status)
+    if (!status && precord != paddr->precord)
         recGblInheritSevr(plink->value.pv_link.pvlMask & pvlOptMsMode,
             plink->precord, paddr->precord->stat, paddr->precord->sevr);
     return status;

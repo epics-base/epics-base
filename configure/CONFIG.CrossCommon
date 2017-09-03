@@ -17,14 +17,14 @@ BUILD_CLASS = CROSS
 #   ifdef CROSS    looks better than  ifeq ($(BUILD_CLASS),CROSS)
 CROSS = YES
 
-GNU_TARGET_INCLUDE_DIR = $(GNU_TARGET:%= $(GNU_DIR)/%/include)
-GNU_TARGET_LIB_DIR = $(GNU_TARGET:%= $(GNU_DIR)/%/lib)
+GNU_TARGET_INCLUDE_DIR = $(wildcard $(GNU_TARGET:%=$(GNU_DIR)/%/include))
+GNU_TARGET_LIB_DIR = $(wildcard $(GNU_TARGET:%=$(GNU_DIR)/%/lib))
 
-CROSS_INCLUDES = $(addprefix -I,$(GNU_TARGET_INCLUDE_DIR))
-CROSS_LDFLAGS = $(addprefix -L,$(GNU_TARGET_LIB_DIR))
+CROSS_INCLUDES = $(GNU_TARGET_INCLUDE_DIR:%=-I%)
+CROSS_LDFLAGS = $(GNU_TARGET_LIB_DIR:%=-L%)
 
-CMPLR_PREFIX_CROSS=$(addsuffix -,$(GNU_TARGET))
-CMPLR_PREFIX=$(CMPLR_PREFIX_$(BUILD_CLASS))
+CMPLR_PREFIX_CROSS = $(addsuffix -,$(GNU_TARGET))
+CMPLR_PREFIX = $(CMPLR_PREFIX_$(BUILD_CLASS))
 
 # Cross builds usually use the gnu compiler
 include $(CONFIG)/CONFIG.gnuCommon

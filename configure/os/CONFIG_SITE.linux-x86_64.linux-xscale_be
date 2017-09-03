@@ -1,0 +1,7 @@
+# CONFIG_SITE.linux-x86_64.linux-xscale_be
+#
+# Site specific settings for linux-x86_64 host - linux-xscale_be target
+#-------------------------------------------------------
+
+# Inherit setting from linux-x86
+include $(CONFIG)/os/CONFIG_SITE.linux-x86.linux-xscale_be

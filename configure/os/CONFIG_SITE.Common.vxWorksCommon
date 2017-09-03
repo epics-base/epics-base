@@ -20,18 +20,6 @@ VXWORKS_VERSION = 6.9
 
 # WIND_BASE is where you installed the Wind River software.
 
+#WIND_BASE = /usr/local/vw/tornado22-$(ARCH_CLASS)
 WIND_BASE = /usr/local/vw/vxWorks-$(VXWORKS_VERSION)
 #WIND_BASE = /ade/vxWorks/$(VXWORKS_VERSION)
-
-
-# WorkBench Version number, if you're using vxWorks 6.x
-
-#WORKBENCH_VERSION = 2.6
-#WORKBENCH_VERSION = 3.0
-#WORKBENCH_VERSION = 3.2
-WORKBENCH_VERSION = 3.3
-
-
-# Utilities Version number, required from vxWorks 6.8 and later
-
-UTILITIES_VERSION = 1.0

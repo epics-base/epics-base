@@ -213,7 +213,7 @@ static long dbConstGetNelements(const struct link *plink, long *nelements)
 }
 
 static long dbConstGetLink(struct link *plink, short dbrType, void *pbuffer,
-        epicsEnum16 *pstat, epicsEnum16 *psevr, long *pnRequest)
+        long *pnRequest)
 {
     if (pnRequest)
         *pnRequest = 0;
@@ -291,7 +291,7 @@ static long dbDbGetElements(const struct link *plink, long *nelements)
 }
 
 static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
-        epicsEnum16 *pstat, epicsEnum16 *psevr, long *pnRequest)
+        long *pnRequest)
 {
     struct pv_link *ppv_link = &plink->value.pv_link;
     DBADDR *paddr = ppv_link->pvt;
@@ -308,8 +308,6 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         if (status)
             return status;
     }
-    *pstat = paddr->precord->stat;
-    *psevr = paddr->precord->sevr;
 
     if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
         status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
@@ -330,6 +328,9 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         }
         ppv_link->lastGetdbrType = dbrType;
     }
+    if (!status && precord != paddr->precord)
+        inherit_severity(ppv_link, precord,
+            paddr->precord->stat, paddr->precord->sevr);
     return status;
 }
 
@@ -639,14 +640,15 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
 
     switch (plink->type) {
     case CONSTANT:
-        status = dbConstGetLink(plink, dbrType, pbuffer, &stat, &sevr,
-                pnRequest);
+        status = dbConstGetLink(plink, dbrType, pbuffer, pnRequest);
         break;
     case DB_LINK:
-        status = dbDbGetValue(plink, dbrType, pbuffer, &stat, &sevr, pnRequest);
+        status = dbDbGetValue(plink, dbrType, pbuffer, pnRequest);
         break;
     case CA_LINK:
         status = dbCaGetLink(plink, dbrType, pbuffer, &stat, &sevr, pnRequest);
+        if (!status)
+            inherit_severity(&plink->value.pv_link, precord, stat, sevr);
         break;
     default:
         cantProceed("dbGetLinkValue: Illegal link type %d\n", plink->type);
@@ -654,8 +656,6 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
     }
     if (status) {
         recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
-    } else {
-        inherit_severity(&plink->value.pv_link, precord, stat, sevr);
     }
     return status;
 }

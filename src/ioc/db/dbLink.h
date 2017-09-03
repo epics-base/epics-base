@@ -34,7 +34,7 @@ typedef struct lset {
     int (*getDBFtype)(const struct link *plink);
     long (*getElements)(const struct link *plink, long *nelements);
     long (*getValue)(struct link *plink, short dbrType, void *pbuffer,
-            epicsEnum16 *pstat, epicsEnum16 *psevr,	long *pnRequest);
+            long *pnRequest);
     long (*getControlLimits)(const struct link *plink, double *lo, double *hi);
     long (*getGraphicLimits)(const struct link *plink, double *lo, double *hi);
     long (*getAlarmLimits)(const struct link *plink, double *lolo, double *lo,

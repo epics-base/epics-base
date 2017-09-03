@@ -92,11 +92,41 @@ void testHexConstantLinks(void)
     testdbCleanup();
 }
 
+static
+void testLinkMS(void)
+{
+    startRegressTestIoc("regressLinkMS.db");
+
+    testdbPutFieldOk("alarm", DBF_DOUBLE, 0.5);
+    testdbGetFieldEqual("latch", DBR_DOUBLE, 0.5);
+    testdbGetFieldEqual("latch.SEVR", DBR_LONG, 0);
+
+    testdbPutFieldOk("alarm", DBF_DOUBLE, 1.5);
+    testdbGetFieldEqual("latch", DBR_DOUBLE, 1.5);
+    testdbGetFieldEqual("latch.SEVR", DBR_LONG, 1);
+
+    testdbPutFieldOk("alarm", DBF_DOUBLE, 0.5);
+    testdbGetFieldEqual("latch", DBR_DOUBLE, 0.5);
+    testdbGetFieldEqual("latch.SEVR", DBR_LONG, 0);
+
+    testdbPutFieldOk("alarm", DBF_DOUBLE, 2.5);
+    testdbGetFieldEqual("latch", DBR_DOUBLE, 2.5);
+    testdbGetFieldEqual("latch.SEVR", DBR_LONG, 2);
+
+    testdbPutFieldOk("alarm", DBF_DOUBLE, 0.5);
+    testdbGetFieldEqual("latch", DBR_DOUBLE, 0.5);
+    testdbGetFieldEqual("latch.SEVR", DBR_LONG, 0);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
 
 MAIN(regressTest)
 {
-    testPlan(16);
+    testPlan(31);
     testArrayLength1();
     testHexConstantLinks();
+    testLinkMS();
     return testDone();
 }

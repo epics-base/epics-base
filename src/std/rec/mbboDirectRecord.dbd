@@ -38,6 +38,72 @@ recordtype(mbboDirect) {
         promptgroup("50 - Output")
         interest(1)
     }
+    field(RVAL,DBF_ULONG) {
+        prompt("Raw Value")
+        special(SPC_NOMOD)
+        pp(TRUE)
+    }
+    field(ORAW,DBF_ULONG) {
+        prompt("Prev Raw Value")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(RBV,DBF_ULONG) {
+        prompt("Readback Value")
+        special(SPC_NOMOD)
+    }
+    field(ORBV,DBF_ULONG) {
+        prompt("Prev Readback Value")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(MASK,DBF_ULONG) {
+        prompt("Hardware Mask")
+        special(SPC_NOMOD)
+        interest(1)
+    }
+    field(MLST,DBF_ULONG) {
+        prompt("Last Value Monitored")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(SHFT,DBF_ULONG) {
+        prompt("Shift")
+        promptgroup("50 - Output")
+        interest(1)
+    }
+    field(SIOL,DBF_OUTLINK) {
+        prompt("Sim Output Specifctn")
+        promptgroup("90 - Simulate")
+        interest(1)
+    }
+    field(SIML,DBF_INLINK) {
+        prompt("Sim Mode Location")
+        promptgroup("90 - Simulate")
+        interest(1)
+    }
+    field(SIMM,DBF_MENU) {
+        prompt("Simulation Mode")
+        interest(1)
+        menu(menuYesNo)
+    }
+    field(SIMS,DBF_MENU) {
+        prompt("Sim mode Alarm Svrty")
+        promptgroup("90 - Simulate")
+        interest(2)
+        menu(menuAlarmSevr)
+    }
+    field(IVOA,DBF_MENU) {
+        prompt("INVALID outpt action")
+        promptgroup("50 - Output")
+        interest(2)
+        menu(menuIvoa)
+    }
+    field(IVOV,DBF_USHORT) {
+        prompt("INVALID output value")
+        promptgroup("50 - Output")
+        interest(2)
+    }
     field(B0,DBF_UCHAR) {
         prompt("Bit 0")
         promptgroup("51 - Output 0-7")
@@ -149,71 +215,5 @@ recordtype(mbboDirect) {
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
-    }
-    field(RVAL,DBF_ULONG) {
-        prompt("Raw Value")
-        special(SPC_NOMOD)
-        pp(TRUE)
-    }
-    field(ORAW,DBF_ULONG) {
-        prompt("Prev Raw Value")
-        special(SPC_NOMOD)
-        interest(3)
-    }
-    field(RBV,DBF_ULONG) {
-        prompt("Readback Value")
-        special(SPC_NOMOD)
-    }
-    field(ORBV,DBF_ULONG) {
-        prompt("Prev Readback Value")
-        special(SPC_NOMOD)
-        interest(3)
-    }
-    field(MASK,DBF_ULONG) {
-        prompt("Hardware Mask")
-        special(SPC_NOMOD)
-        interest(1)
-    }
-    field(MLST,DBF_ULONG) {
-        prompt("Last Value Monitored")
-        special(SPC_NOMOD)
-        interest(3)
-    }
-    field(SHFT,DBF_ULONG) {
-        prompt("Shift")
-        promptgroup("50 - Output")
-        interest(1)
-    }
-    field(SIOL,DBF_OUTLINK) {
-        prompt("Sim Output Specifctn")
-        promptgroup("90 - Simulate")
-        interest(1)
-    }
-    field(SIML,DBF_INLINK) {
-        prompt("Sim Mode Location")
-        promptgroup("90 - Simulate")
-        interest(1)
-    }
-    field(SIMM,DBF_MENU) {
-        prompt("Simulation Mode")
-        interest(1)
-        menu(menuYesNo)
-    }
-    field(SIMS,DBF_MENU) {
-        prompt("Sim mode Alarm Svrty")
-        promptgroup("90 - Simulate")
-        interest(2)
-        menu(menuAlarmSevr)
-    }
-    field(IVOA,DBF_MENU) {
-        prompt("INVALID outpt action")
-        promptgroup("50 - Output")
-        interest(2)
-        menu(menuIvoa)
-    }
-    field(IVOV,DBF_USHORT) {
-        prompt("INVALID output value")
-        promptgroup("50 - Output")
-        interest(2)
     }
 }

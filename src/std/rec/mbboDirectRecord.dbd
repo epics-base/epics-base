@@ -96,56 +96,56 @@ recordtype(mbboDirect) {
     }
     field(B8,DBF_UCHAR) {
         prompt("Bit 8")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-F")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(B9,DBF_UCHAR) {
         prompt("Bit 9")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-F")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BA,DBF_UCHAR) {
         prompt("Bit 10")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-F")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BB,DBF_UCHAR) {
         prompt("Bit 11")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-F")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BC,DBF_UCHAR) {
         prompt("Bit 12")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-F")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BD,DBF_UCHAR) {
         prompt("Bit 13")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-F")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BE,DBF_UCHAR) {
         prompt("Bit 14")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-F")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BF,DBF_UCHAR) {
         prompt("Bit 15")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-F")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)

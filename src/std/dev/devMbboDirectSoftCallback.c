@@ -29,11 +29,11 @@ static long write_mbbo(mbboDirectRecord *prec)
     if (prec->pact)
         return 0;
 
-    status = dbPutLinkAsync(plink, DBR_USHORT, &prec->val, 1);
+    status = dbPutLinkAsync(plink, DBR_LONG, &prec->val, 1);
     if (!status)
         prec->pact = TRUE;
     else if (status == S_db_noLSET)
-        status = dbPutLink(plink, DBR_USHORT, &prec->val, 1);
+        status = dbPutLink(plink, DBR_LONG, &prec->val, 1);
 
     return status;
 }

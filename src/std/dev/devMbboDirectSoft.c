@@ -21,7 +21,7 @@
 
 static long write_mbbo(mbboDirectRecord	*prec)
 {
-    dbPutLink(&prec->out, DBR_USHORT, &prec->val, 1);
+    dbPutLink(&prec->out, DBR_LONG, &prec->val, 1);
     return 0;
 }
 

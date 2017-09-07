@@ -41,7 +41,7 @@ typedef struct devPvt {
     struct {
         DBRstatus
         DBRtime
-        epicsUInt16 value;
+        epicsUInt32 value;
     } buffer;
 } devPvt;
 
@@ -58,7 +58,7 @@ static void getCallback(processNotify *ppn, notifyGetType type)
     }
 
     assert(type == getFieldType);
-    pdevPvt->status = dbChannelGetField(ppn->chan, DBR_USHORT,
+    pdevPvt->status = dbChannelGetField(ppn->chan, DBR_LONG,
         &pdevPvt->buffer, &pdevPvt->options, &no_elements, 0);
 }
 
@@ -153,7 +153,7 @@ static long init(int pass)
 
 static long init_record(mbbiDirectRecord *prec)
 {
-    if (recGblInitConstantLink(&prec->inp, DBR_ENUM, &prec->val))
+    if (recGblInitConstantLink(&prec->inp, DBR_LONG, &prec->val))
         prec->udf = FALSE;
 
     return 0;

@@ -1,0 +1,227 @@
+# Group 0 are input records with INP being a DB link to 'source'.
+# Processing them reads that value.
+
+record(longin, "source") {}
+
+record(ai, "ai0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+}
+record(bi, "bi0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64in, "ii0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+}
+record(longin, "li0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+}
+record(mbbiDirect, "di0") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, "source")
+}
+record(mbbi, "mi0") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, "source")
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lsi, "lsi0") {
+  field(DTYP, "Soft Channel")
+  field(SIZV, 40)
+  field(INP, "source")
+}
+record(stringin, "si0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+}
+
+# Group 1 are input records with INP being a non-zero constant.
+# Processing them succeeds but does not change VAL.
+
+record(ai, "ai1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:9})
+}
+record(bi, "bi1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:1})
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64in, "ii1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:9})
+}
+record(longin, "li1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:9})
+}
+record(mbbiDirect, "di1") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, {const:9})
+}
+record(mbbi, "mi1") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, {const:9})
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lsi, "lsi1") {
+  field(DTYP, "Soft Channel")
+  field(SIZV, 40)
+  field(INP, {const:"9"})
+}
+record(stringin, "si1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:"9"})
+}
+
+
+# Group 2 are output records with OUT being a DB link to 'dest' with PP.
+# Putting a value to them writes that value to 'dest'.
+
+record(sub, "dest") {
+  field(SNAM, "destSubr")
+}
+
+record(ao, "ao0") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+}
+record(bo, "bo0") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64out, "io0") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+}
+record(longout, "lo0") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+}
+record(mbboDirect, "do0") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(OUT, "dest PP")
+}
+record(mbbo, "mo0") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(OUT, "dest PP")
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lso, "lso0") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+  field(SIZV, 40)
+}
+record(stringout, "so0") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+}
+
+
+# Group 3 are output records with OUT being empty (a constant link).
+# Putting a value to them must succeed.
+
+record(ao, "ao1") {
+  field(DTYP, "Soft Channel")
+}
+record(bo, "bo1") {
+  field(DTYP, "Soft Channel")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64out, "io1") {
+  field(DTYP, "Soft Channel")
+}
+record(longout, "lo1") {
+  field(DTYP, "Soft Channel")
+}
+record(mbboDirect, "do1") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+}
+record(mbbo, "mo1") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lso, "lso1") {
+  field(DTYP, "Soft Channel")
+  field(SIZV, 40)
+}
+record(stringout, "so1") {
+  field(DTYP, "Soft Channel")
+}

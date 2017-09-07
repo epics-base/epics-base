@@ -558,6 +558,12 @@ static long lnkConst_getValue(struct link *plink, short dbrType, void *pbuffer,
     return 0;
 }
 
+static long lnkConst_putValue(struct link *plink, short dbrType,
+            const void *pbuffer, long nRequest)
+{
+    return 0;
+}
+
 
 /************************* Interface Tables *************************/
 
@@ -569,7 +575,7 @@ static lset lnkConst_lset = {
     NULL, NULL, NULL,
     NULL, NULL,
     NULL, NULL,
-    NULL, NULL,
+    lnkConst_putValue, NULL,
     NULL, NULL
 };
 

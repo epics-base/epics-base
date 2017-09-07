@@ -211,6 +211,12 @@ static long dbConstGetValue(struct link *plink, short dbrType, void *pbuffer,
     return 0;
 }
 
+static long dbConstPutValue(struct link *plink, short dbrType,
+            const void *pbuffer, long nRequest)
+{
+    return 0;
+}
+
 static lset dbConst_lset = {
     1, 0, /* Constant, not Volatile */
     NULL, NULL,
@@ -223,6 +229,6 @@ static lset dbConst_lset = {
     NULL, NULL, NULL,
     NULL, NULL,
     NULL, NULL,
-    NULL, NULL,
+    dbConstPutValue, NULL,
     NULL, NULL
 };

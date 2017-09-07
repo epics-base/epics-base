@@ -67,6 +67,13 @@ testHarness_SRCS += asyncSoftTest.c
 TESTFILES += ../asyncSoftTest.db
 TESTS += asyncSoftTest
 
+TESTPROD_HOST += softTest
+softTest_SRCS += softTest.c
+softTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += softTest.c
+TESTFILES += ../softTest.db
+TESTS += softTest
+
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
 asTestIoc_DBD += base.dbd

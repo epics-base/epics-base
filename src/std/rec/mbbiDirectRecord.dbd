@@ -124,32 +124,32 @@ recordtype(mbbiDirect) {
         interest(1)
     }
     field(BA,DBF_UCHAR) {
-        prompt("Bit A")
+        prompt("Bit 10")
         pp(TRUE)
         interest(1)
     }
     field(BB,DBF_UCHAR) {
-        prompt("Bit B")
+        prompt("Bit 11")
         pp(TRUE)
         interest(1)
     }
     field(BC,DBF_UCHAR) {
-        prompt("Bit C")
+        prompt("Bit 12")
         pp(TRUE)
         interest(1)
     }
     field(BD,DBF_UCHAR) {
-        prompt("Bit D")
+        prompt("Bit 13")
         pp(TRUE)
         interest(1)
     }
     field(BE,DBF_UCHAR) {
-        prompt("Bit E")
+        prompt("Bit 14")
         pp(TRUE)
         interest(1)
     }
     field(BF,DBF_UCHAR) {
-        prompt("Bit F")
+        prompt("Bit 15")
         pp(TRUE)
         interest(1)
     }

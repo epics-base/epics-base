@@ -67,7 +67,7 @@ recordtype(mbboDirect) {
         special(SPC_NOMOD)
         interest(3)
     }
-    field(SHFT,DBF_ULONG) {
+    field(SHFT,DBF_USHORT) {
         prompt("Shift")
         promptgroup("50 - Output")
         interest(1)

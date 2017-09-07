@@ -2746,7 +2746,7 @@ time.</p>
 </dl>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Optional address of the user's callback function to be run when the
+    <dd>Optional pointer to the user's callback function to be run when the
       connection state changes. Casual users of channel access may decide to
       set this field to null or 0 if they do not need to have a callback
       function run in response to each connection state change event.
@@ -2921,7 +2921,7 @@ but they do not cause the record to be processed.</p>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>address of <a href="#User">user supplied callback function</a> to be
+    <dd>Pointer to a <a href="#User">user supplied callback function</a> to be
       run when the requested operation completes</dd>
 </dl>
 <dl>
@@ -3029,7 +3029,7 @@ when a CA get request is initiated.</p>
 </dl>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Address of <a href="#User">user supplied callback function</a> to be
+    <dd>Pointer to a <a href="#User">user supplied callback function</a> to be
       run when the requested operation completes.</dd>
 </dl>
 <dl>
@@ -3130,8 +3130,8 @@ indicating the current state of the channel.</p>
     <dd>channel identifier</dd>
 </dl>
 <dl>
-  <dt><code>USRERFUNC</code></dt>
-    <dd>The address of <a href="#User">user supplied callback function</a> to
+  <dt><code>USERFUNC</code></dt>
+    <dd>Pointer to a <a href="#User">user supplied callback function</a> to
       be invoked with each subscription update.</dd>
 </dl>
 <dl>
@@ -3429,7 +3429,7 @@ field should not be used.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Address of user callback function to be executed when an exceptions
+    <dd>Pointer to a user callback function to be executed when exceptions
       occur. Passing a null value causes the default exception handler to be
       reinstalled. The following structure is passed by value to the user's
       callback function. Currently, the <code>op</code> field can be one of
@@ -3564,7 +3564,7 @@ default handler uses fprintf to send messages to 'stderr'.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>The address of a user supplied callback handler to be invoked when CA
+    <dd>A pointer to a user supplied callback handler to be invoked when CA
       prints diagnostic messages. Installing a null pointer will cause the
       default callback handler to be reinstalled.</dd>
 </dl>
@@ -3612,7 +3612,7 @@ specified channel.</p>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>Address of user supplied callback function. A null pointer uninstalls
+    <dd>Pointer to a user supplied callback function. A null pointer uninstalls
       the current handler. The following arguments are passed <em>by value</em>
       to the supplied callback handler. 
       <pre>typedef struct ca_access_rights {

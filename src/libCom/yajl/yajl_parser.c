@@ -30,6 +30,11 @@
 #include "yajl_encode.h"
 #include "yajl_bytestack.h"
 
+#ifndef LLONG_MAX
+#define LLONG_MAX     0x7FFFFFFFFFFFFFFFLL
+#define LLONG_MIN     (-0x7FFFFFFFFFFFFFFFLL - 1)
+#endif
+
 #define MAX_VALUE_TO_MULTIPLY ((LLONG_MAX / 10) + (LLONG_MAX % 10))
 
  /* same semantics as strtol */

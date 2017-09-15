@@ -9,9 +9,10 @@
 
 #include "iocsh.h"
 
-#include "epicsExport.h"
 #define epicsExportSharedSymbols
 #include "rsrv.h"
+
+#include "epicsExport.h"
 
 /* casr */
 static const iocshArg casrArg0 = { "level",iocshArgInt};

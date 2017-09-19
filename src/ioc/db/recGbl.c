@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* recGbl.c */
 /*
@@ -259,38 +259,18 @@ void recGblGetTimeStamp(void *pvoid)
     struct link *plink = &prec->tsel;
 
     if (!dbLinkIsConstant(plink)) {
-        struct pv_link *ppv_link = &plink->value.pv_link;
-
-        if (ppv_link->pvlMask & pvlOptTSELisTime) {
+        if (plink->flags & DBLINK_FLAG_TSELisTIME) {
             if (dbGetTimeStamp(plink, &prec->time))
-                errlogPrintf("recGblGetTimeStamp: dbGetTimeStamp failed, %s.TSEL = %s\n",
-                    prec->name, ppv_link->pvname);
+                errlogPrintf("recGblGetTimeStamp: dbGetTimeStamp failed for %s.TSEL",
+                    prec->name);
             return;
         }
-        dbGetLink(&prec->tsel, DBR_SHORT, &prec->tse, 0, 0);
+        dbGetLink(plink, DBR_SHORT, &prec->tse, 0, 0);
     }
     if (prec->tse != epicsTimeEventDeviceTime) {
         if (epicsTimeGetEvent(&prec->time, prec->tse))
             errlogPrintf("recGblGetTimeStamp: epicsTimeGetEvent failed, %s.TSE = %d\n",
                 prec->name, prec->tse);
-    }
-}
-
-void recGblTSELwasModified(struct link *plink)
-{
-    struct pv_link *ppv_link = &plink->value.pv_link;
-    char *pfieldname;
-
-    if (plink->type != PV_LINK) {
-        errlogPrintf("recGblTSELwasModified called for non PV_LINK\n");
-        return;
-    }
-    /*If pvname ends in .TIME then just ask for VAL*/
-    /*Note that the VAL value will not be used*/
-    pfieldname = strstr(ppv_link->pvname, ".TIME");
-    if (pfieldname) {
-        *pfieldname = 0;
-        ppv_link->pvlMask |= pvlOptTSELisTime;
     }
 }
 

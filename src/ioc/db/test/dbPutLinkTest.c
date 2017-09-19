@@ -565,7 +565,7 @@ void testJLink(void)
     testIocInitOk();
     eltc(1);
 
-    testNumZ(3);
+    testNumZ(6);
 
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
     testdbPutFieldOk("j2.PROC", DBF_LONG, 1);
@@ -576,13 +576,16 @@ void testJLink(void)
     testdbGetFieldEqual("j2.VAL", DBF_LONG, 2);
     testdbGetFieldEqual("j3.VAL", DBF_LONG, 3);
 
-    testNumZ(3);
+    testNumZ(6);
 
     testdbPutFieldOk("j1.INP", DBF_STRING, "{\"z\":{\"good\":4}}");
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
 
-    testNumZ(3);
+    testdbPutFieldOk("j2.TSEL", DBF_STRING, "{\"z\":{\"good\":0}}");
+    testdbPutFieldOk("j2.PROC", DBF_LONG, 1);
+
+    testNumZ(7);
 
     testdbPutFieldFail(S_dbLib_badField, "j1.INP", DBF_STRING, "{\"z\":{\"fail\":5}}");
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
@@ -590,7 +593,13 @@ void testJLink(void)
     /* put failure in parsing stage doesn't modify link */
     testdbGetFieldEqual("j1.INP", DBF_STRING, "{\"z\":{\"good\":4}}");
 
-    testNumZ(3);
+    testNumZ(7);
+
+    /* Check SDIS using a JSON link prevents processing */
+    testdbPutFieldOk("j1.SDIS", DBF_STRING, "{\"z\":{\"good\":1}}");
+    testdbPutFieldOk("j1.INP", DBF_STRING, "{\"z\":{\"good\":1}}");
+    testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
 
     testIocShutdownOk();
 
@@ -601,7 +610,7 @@ void testJLink(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(301);
+    testPlan(307);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

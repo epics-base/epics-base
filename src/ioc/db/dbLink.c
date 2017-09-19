@@ -66,6 +66,26 @@ static const char * link_field_name(const struct link *plink)
     return "????";
 }
 
+/* Special TSEL handler for PV links */
+/* FIXME: Generalize for new link types... */
+static void TSEL_modified(struct link *plink)
+{
+    struct pv_link *ppv_link;
+    char *pfieldname;
+
+    if (plink->type != PV_LINK) {
+        errlogPrintf("dbLink::TSEL_modified called for non PV_LINK\n");
+        return;
+    }
+    /* If pvname contains .TIME truncate it to point to VAL instead */
+    ppv_link = &plink->value.pv_link;
+    pfieldname = strstr(ppv_link->pvname, ".TIME");
+    if (pfieldname) {
+        *pfieldname = 0;
+        plink->flags |= DBLINK_FLAG_TSELisTIME;
+    }
+}
+
 
 /***************************** Generic Link API *****************************/
 
@@ -93,7 +113,7 @@ void dbInitLink(struct link *plink, short dbfType)
         return;
 
     if (plink == &precord->tsel)
-        recGblTSELwasModified(plink);
+        TSEL_modified(plink);
 
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
         /* Make it a DB link if possible */
@@ -127,6 +147,9 @@ void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
 {
     struct dbCommon *precord = plink->precord;
 
+    /* Clear old TSELisTIME flag */
+    plink->flags &= ~DBLINK_FLAG_TSELisTIME;
+
     if (plink->type == CONSTANT) {
         dbConstAddLink(plink);
         return;
@@ -145,7 +168,7 @@ void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
         return;
 
     if (plink == &precord->tsel)
-        recGblTSELwasModified(plink);
+        TSEL_modified(plink);
 
     if (ptarget) {
         /* It's a DB link */
@@ -470,4 +493,3 @@ long dbPutLinkLS(struct link *plink, char *pbuffer, epicsUInt32 len)
 
     return dbPutLink(plink, DBR_STRING, pbuffer, 1);
 }
-

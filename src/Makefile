@@ -9,6 +9,7 @@
 
 TOP = ..
 include $(TOP)/configure/CONFIG
+include $(TOP)/configure/CONFIG_LIBCOM_VERSION
 
 # Uncomment this to remove the (benign) valgrind helper stubs
 #USR_CFLAGS += -DNVALGRIND
@@ -16,6 +17,9 @@ include $(TOP)/configure/CONFIG
 LIBCOM = $(TOP)/src
 
 INC += valgrind/valgrind.h
+
+INC += libComVersion.h
+INC += libComVersionNum.h
 
 include $(LIBCOM)/as/Makefile
 include $(LIBCOM)/bucketLib/Makefile
@@ -55,6 +59,16 @@ ifeq ($(T_A),$(EPICS_HOST_ARCH))
   DELAY_INSTALL_LIBS = YES
 endif
 
+EXPANDVARS += EPICS_LIBCOM_MAJOR_VERSION
+EXPANDVARS += EPICS_LIBCOM_MINOR_VERSION
+EXPANDVARS += EPICS_LIBCOM_MAINTENANCE_VERSION
+EXPANDVARS += EPICS_LIBCOM_DEVELOPMENT_FLAG
+
+EXPANDFLAGS += $(foreach var,$(EXPANDVARS),-D$(var)="$(strip $($(var)))")
+
+# shared library ABI version.
+SHRLIB_VERSION = $(EPICS_LIBCOM_MAJOR_VERSION).$(EPICS_LIBCOM_MINOR_VERSION).$(EPICS_LIBCOM_MAINTENANCE_VERSION)
+
 include $(TOP)/configure/RULES
 
 include $(LIBCOM)/as/RULES
@@ -63,3 +77,8 @@ include $(LIBCOM)/error/RULES
 include $(LIBCOM)/flex/RULES
 include $(LIBCOM)/misc/RULES
 include $(LIBCOM)/osi/RULES
+
+# Can't use EXPAND as generated headers must appear
+# in O.Common, but EXPAND emits rules for O.$(T_A)
+../O.Common/libComVersionNum.h: ../libComVersionNum.h@
+	$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@

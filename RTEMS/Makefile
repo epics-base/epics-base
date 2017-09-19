@@ -9,6 +9,7 @@
 
 TOP = ..
 include $(TOP)/configure/CONFIG
+include $(TOP)/configure/CONFIG_LIBCOM_VERSION
 
 INC += epicsRtemsInitHooks.h
 
@@ -21,5 +22,8 @@ rtemsCom_SRCS += epicsRtemsInitHookPre.c
 rtemsCom_SRCS += epicsRtemsInitHookPost.c
 
 LIBRARY_RTEMS = rtemsCom
+
+# shared library ABI version.
+SHRLIB_VERSION = $(EPICS_LIBCOM_MAJOR_VERSION).$(EPICS_LIBCOM_MINOR_VERSION).$(EPICS_LIBCOM_MAINTENANCE_VERSION)
 
 include $(TOP)/configure/RULES

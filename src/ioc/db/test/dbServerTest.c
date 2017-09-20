@@ -120,6 +120,9 @@ MAIN(dbServerTest)
     dbRegisterServer(&one);
     testOk1(oneState == NOTHING_CALLED);
 
+    testDiag("Expect double-registration warning for 'one':");
+    dbRegisterServer(&one);
+
     testDiag("Registering dbServer 'no-routines'");
     dbRegisterServer(&no_routines);
 

@@ -51,7 +51,7 @@ void dbRegisterServer(dbServer *psrv)
         }
     }
 
-    if (ellNext(&psrv->node)) {
+    if (ellNext(&psrv->node) || ellLast(&serverList) == &psrv->node) {
         fprintf(stderr, "dbRegisterServer: '%s' registered twice?\n",
             psrv->name);
         return;

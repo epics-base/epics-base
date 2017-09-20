@@ -130,8 +130,7 @@ EXPANDVARS += EPICS_CA_DEVELOPMENT_FLAG
 EXPANDFLAGS += $(foreach var,$(EXPANDVARS),-D$(var)="$(strip $($(var)))")
 
 # shared library ABI version.
-SHRLIB_VERSION = $(EPICS_CA_MAJOR_VERSION).$(EPICS_CA_MINOR_VERSION).$(EPICS_CA_MAINTENANCE_VERSION)
-
+SHRLIB_VERSION = 4.13.1
 
 include $(TOP)/configure/RULES
 

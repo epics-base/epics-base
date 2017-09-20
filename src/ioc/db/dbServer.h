@@ -17,8 +17,7 @@
  * the servers together, and to provide status and debugging information
  * to the IOC user/developer through a common set of commands.
  *
- * @todo Should dbRegisterServer() return an error status value?
- * No API is provided yet for calling stats() methods.
+ * @todo No API is provided yet for calling stats() methods.
  * Nothing in the IOC calls dbStopServers(), not sure where it should go.
  */
 
@@ -118,7 +117,7 @@ typedef struct dbServer {
  * This should only be called once for each server layer.
  * @param psrv Server information structure for the server
  */
-epicsShareFunc void dbRegisterServer(dbServer *psrv);
+epicsShareFunc int dbRegisterServer(dbServer *psrv);
 
 /** @brief Print dbServer Reports.
 *

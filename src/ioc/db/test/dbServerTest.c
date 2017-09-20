@@ -104,6 +104,12 @@ dbServer disabled = {
     disInit, NULL, NULL, NULL
 };
 
+dbServer illegal = {
+    ELLNODE_INIT, "bad name",
+    NULL, NULL, NULL,
+    disInit, NULL, NULL, NULL
+};
+
 
 MAIN(dbServerTest)
 {
@@ -111,24 +117,24 @@ MAIN(dbServerTest)
     char *theName = "The One";
     int status;
 
-    testPlan(9);
+    testPlan(14);
 
     /* Prove that we handle substring names properly */
     epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none ones");
 
     testDiag("Registering dbServer 'one'");
-    dbRegisterServer(&one);
+    testOk(dbRegisterServer(&one) == 0, "Registered 'one'");
     testOk1(oneState == NOTHING_CALLED);
 
-    testDiag("Expect double-registration warning for 'one':");
-    dbRegisterServer(&one);
+    testOk(dbRegisterServer(&one) != 0, "Duplicate registration rejected");
+    testOk(dbRegisterServer(&illegal) != 0, "Illegal registration rejected");
 
     testDiag("Registering dbServer 'no-routines'");
-    dbRegisterServer(&no_routines);
+    testOk(dbRegisterServer(&no_routines) == 0, "Registered 'no-routines'");
 
     epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "disabled nonexistent");
     testDiag("Registering dbServer 'disabled'");
-    dbRegisterServer(&disabled);
+    testOk(dbRegisterServer(&disabled) == 0, "Registration accepted");
 
     dbInitServers();
     testOk(oneState == INIT_CALLED, "dbInitServers");
@@ -143,6 +149,7 @@ MAIN(dbServerTest)
     dbStopServers();
     testOk(oneState == STOP_CALLED, "dbStopServers");
 
+    testDiag("Printing server report");
     dbsr(0);
     testOk(oneState == REPORT_CALLED, "dbsr");
 

@@ -22,17 +22,17 @@
 static ELLLIST serverList = ELLLIST_INIT;
 
 
-void dbRegisterServer(dbServer *psrv)
+int dbRegisterServer(dbServer *psrv)
 {
     const char * ignore = envGetConfigParamPtr(&EPICS_IOC_IGNORE_SERVERS);
 
     if (!psrv || !psrv->name)
-        return;
+        return -1;
 
     if (strchr(psrv->name, ' ')) {
         fprintf(stderr, "dbRegisterServer: Bad server name '%s'\n",
             psrv->name);
-        return;
+        return -1;
     }
 
     if (ignore) {
@@ -44,7 +44,7 @@ void dbRegisterServer(dbServer *psrv)
                 (found[len] == 0 || found[len] == ' ')) {
                     fprintf(stderr, "dbRegisterServer: Ignoring '%s', per environment\n",
                         psrv->name);
-                    return;
+                    return 0;
                 }
             /* It was, try again further down */
             ignore = found + len;
@@ -54,10 +54,11 @@ void dbRegisterServer(dbServer *psrv)
     if (ellNext(&psrv->node) || ellLast(&serverList) == &psrv->node) {
         fprintf(stderr, "dbRegisterServer: '%s' registered twice?\n",
             psrv->name);
-        return;
+        return -1;
     }
 
     ellAdd(&serverList, &psrv->node);
+    return 0;
 }
 
 void dbsr(unsigned level)

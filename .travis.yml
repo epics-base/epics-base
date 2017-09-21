@@ -17,10 +17,10 @@ script:
  - ./.ci/travis-build.sh
 env:
 - BRCORE=master BRLIBCOM=master BRCA=master
-- CMPLR=clang BRCORE=master BRLIBCOM=master BRCA=master
-- USR_CXXFLAGS=-std=c++11 BRCORE=master BRLIBCOM=master BRCA=master
-- CMPLR=clang USR_CXXFLAGS=-std=c++11 BRCORE=master BRLIBCOM=master BRCA=master
-- WINE=32 TEST=NO STATIC=YES BRCORE=master BRLIBCOM=master BRCA=master
-- WINE=32 TEST=NO STATIC=NO BRCORE=master BRLIBCOM=master BRCA=master
-- RTEMS=4.10 TEST=NO BRCORE=master BRLIBCOM=master BRCA=master
-- RTEMS=4.9 TEST=NO BRCORE=master BRLIBCOM=master BRCA=master
+- CMPLR=clang
+- USR_CXXFLAGS=-std=c++11
+- CMPLR=clang USR_CXXFLAGS=-std=c++11
+- WINE=32 TEST=NO STATIC=YES
+- WINE=32 TEST=NO STATIC=NO
+- RTEMS=4.10 TEST=NO
+- RTEMS=4.9 TEST=NO

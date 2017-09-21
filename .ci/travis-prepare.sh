@@ -18,10 +18,10 @@ cd "$MODULE" && \
 git log -n1 )
 }
 
-git clone --quiet --depth 5 --branch core/"$BRCORE" https://github.com/${REPOBASE:-epics-base}/epics-base.git epics-base
+git clone --quiet --depth 5 --branch core/"${BRCORE:-master}" https://github.com/${REPOBASE:-epics-base}/epics-base.git epics-base
 ( cd epics-base && git log -n1 )
-add_base_module libcom "$BRLIBCOM"
-add_base_module ca "$BRCA"
+add_base_module libcom "${BRLIBCOM:-master}"
+add_base_module ca "${BRCA:-master}"
 
 EPICS_HOST_ARCH=`sh epics-base/startup/EpicsHostArch`
 

@@ -11,6 +11,7 @@ use strict;
 
 use FindBin qw($Bin);
 use lib "$Bin/../../lib/perl";
+use caModuleDirs;
 
 use Getopt::Std;
 use EPICS::Path;

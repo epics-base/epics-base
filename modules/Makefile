@@ -11,18 +11,21 @@ TOP = ..
 include $(TOP)/configure/CONFIG
 
 # Submodules for bundle build
-SUBMODULES += libcom ca database
+SUBMODULES += libcom
 
+SUBMODULES += ca
 ca_DEPEND_DIRS = libcom
+
+SUBMODULES += database
 database_DEPEND_DIRS = ca
 
+SUBMODULES += pvData
+pvData_DEPEND_DIRS = libcom
+
+SUBMODULES += pvAccess
+pvAccess_DEPEND_DIRS = pvData
+
 # Add any checked-out submodules to DIRS
-define SUBMODULE_template
-ifneq ($(wildcard $1/Makefile),)
-DIRS += $1
-endif
-endef
-$(foreach mod, $(SUBMODULES), \
-    $(eval $(call SUBMODULE_template,$(strip $(mod)))))
+DIRS += $(subst /,,$(dir $(wildcard $(addsuffix /Makefile, $(SUBMODULES)))))
 
 include $(TOP)/configure/RULES_DIRS

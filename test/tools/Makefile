@@ -13,7 +13,6 @@ TESTS += DBD
 TESTS += Device
 TESTS += Driver
 TESTS += Function
-TESTS += macLib
 TESTS += Menu
 TESTS += Recfield
 TESTS += Recordtype

@@ -12,3 +12,5 @@ INC += macLib.h
 Com_SRCS += macCore.c
 Com_SRCS += macEnv.c
 Com_SRCS += macUtil.c
+
+PERL_MODULES += EPICS/macLib.pm

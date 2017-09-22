@@ -149,10 +149,8 @@ sub binDirs {
     return @path;
 }
 
-# FIXME: Instead of using TOP/lib/perl, this should use INSTALL_LOCATION/lib/perl
-#        to cover cases with remote installation location
 sub moduleDirs {
-    my @deps = grep !m/^ (RULES | TEMPLATE_TOP) $/x, @apps;
+    my @deps = grep !m/^ (TOP | RULES | TEMPLATE_TOP) $/x, @apps;
     my @dirs = grep {-d $_}
         map { AbsPath("$macros{$_}/lib/perl") } @deps;
     unlink $outfile;

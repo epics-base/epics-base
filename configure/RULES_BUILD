@@ -380,7 +380,7 @@ endif
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt
 	@$(RM) $@
-	$(CP) $< $@
+	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -a $(T_A) $< $@
 
 # Test programs (.t files) must be written in Perl.
 # Generate a perl program to exec the real test binary.

@@ -19,7 +19,7 @@ sub mksnip {
 }
 
 sub assemble {
-    my @cmd = ( 'perl', '../../../src/tools/assembleSnippets.pl', '-o', "out$$" );
+    my @cmd = ( 'perl', '@TOP@/bin/@ARCH@/assembleSnippets.pl', '-o', "out$$" );
     push @cmd, @_;
     system(@cmd);
     open(my $fh, '<', "out$$") or die "can't open out$$ : $!";

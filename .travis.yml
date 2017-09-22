@@ -16,11 +16,11 @@ install:
 script:
  - ./.ci/travis-build.sh
 env:
- - BRCORE=master
- - BRCORE=master CMPLR=clang
- - BRCORE=master USR_CXXFLAGS=-std=c++11
- - BRCORE=master USR_CXXFLAGS=-std=c++11 CMPLR=clang
- - BRCORE=master WINE=32 TEST=NO STATIC=YES
- - BRCORE=master WINE=32 TEST=NO STATIC=NO
- - BRCORE=master RTEMS=4.10 TEST=NO
- - BRCORE=master RTEMS=4.9 TEST=NO
+- BRCORE=master
+- CMPLR=clang
+- USR_CXXFLAGS=-std=c++11
+- CMPLR=clang USR_CXXFLAGS=-std=c++11
+- WINE=32 TEST=NO STATIC=YES
+- WINE=32 TEST=NO STATIC=NO
+- RTEMS=4.10 TEST=NO
+- RTEMS=4.9 TEST=NO

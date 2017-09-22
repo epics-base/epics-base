@@ -1,12 +1,11 @@
 # RELEASE - Location of external support modules
 #
 # IF YOU MAKE ANY CHANGES to this file you must subsequently
-# do a "gnumake rebuild" in this application's top level
-# directory.
+# do a "make rebuild" in this application's top level directory.
 #
 # The build process does not check dependencies against files
 # that are outside this application, thus you should do a
-# "gnumake rebuild" in the top level directory after EPICS_BASE
+# "make rebuild" in the top level directory after EPICS_BASE
 # or any other external module pointed to below is rebuilt.
 #
 # Host- or target-specific settings can be given in files named
@@ -26,14 +25,11 @@
 #MODULES = /path/to/modules
 #MYMODULE = $(MODULES)/my-module
 
-# If using the sequencer, point SNCSEQ at its top directory:
-#SNCSEQ = $(MODULES)/seq-ver
+# If building modules individually, set these:
+#EPICS_LIBCOM = $(MODULES)/libcom-7.0
+#EPICS_CORE = $(MODULES)/core-7.0
 
-# EPICS_BASE should appear last so earlier modules can override stuff:
-#EPICS_BASE = /home/user/epics-base-3.16
-
-# Set RULES here if you want to use build rules from somewhere
-# other than EPICS_BASE:
+# Set RULES here if you want to use build rules from elsewhere:
 #RULES = $(MODULES)/build-rules
 
 # These allow developers to override the RELEASE variable settings

@@ -16,7 +16,6 @@ PERL_MODULES += EPICS/Path.pm
 PERL_MODULES += EPICS/Release.pm
 PERL_MODULES += EPICS/Readfile.pm
 PERL_MODULES += EPICS/Getopts.pm
-PERL_MODULES += EPICS/macLib.pm
 
 PERL_SCRIPTS += assembleSnippets.pl
 PERL_SCRIPTS += convertRelease.pl

@@ -18,11 +18,4 @@ TESTS += msi
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
-TARGETS_HOST += msi-copy$(EXE)
-TARGETS += $(TARGETS_$(BUILD_CLASS))
-
 include $(TOP)/configure/RULES
-
-msi-copy$(EXE): $(INSTALL_BIN)/msi$(EXE)
-	@$(RM) $@
-	$(CP) $< $@

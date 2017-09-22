@@ -63,8 +63,8 @@ sub slurp {
 
 sub msi {
     my ($args) = @_;
-    my $exe = ($^O eq 'MSWin32') || ($^O eq 'cygwin') ? '.exe' : '';
-    my $msi = "./msi-copy$exe";
+    my $msi = '@TOP@/bin/@ARCH@/msi';
+    $msi .= '.exe' if ($^O eq 'MSWin32') || ($^O eq 'cygwin');
     my $result;
     if ($args =~ m/-o / && $args !~ m/-D/) {
         # An empty result is expected

@@ -27,8 +27,9 @@
 # Time service:
 # EPICS_TIMEZONE
 #	Local timezone info for vxWorks and RTEMS.  The format is
-#	    <name>::<minutesWest>:<start daylight>:<end daylight>
-#	where the start and end are mmddhh - that is month,day,hour
+#	    <name>::<minutesWest>:<startDST>:<endDST>
+#	where <name> is only used by strftime() for %Z conversions,
+#	and <startDST> and <endDST> are mmddhh - that is month,day,hour
 #	e.g. for ANL in 2018: EPICS_TIMEZONE=CUS::360:031102:110402
 #	The future dates below assume the rules don't get changed;
 #	see http://www.timeanddate.com/time/dst/2018.html to check.

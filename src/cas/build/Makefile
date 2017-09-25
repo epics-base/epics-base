@@ -74,10 +74,9 @@ LIBSRCS += casStreamIO.cc
 LIBSRCS += ipIgnoreEntry.cc
 
 # There is a bug in some vxWorks compilers that these work around:
-ifeq ($(VX_GNU_VERSION), 4.1.2)
-  casStreamOS_CXXFLAGS_vxWorks-ppc604_altivec = -O0
-  casStreamOS_CXXFLAGS_vxWorks-ppc604_long = -O0
-  casStreamOS_CXXFLAGS_vxWorks-ppc604 = -O0
+ifeq ($(VXWORKS_VERSION)$(filter -mcpu=604,$(ARCH_DEP_CFLAGS)), 6.6-mcpu=604)
+  casDGIntfOS_CXXFLAGS = -fno-inline
+  casStreamOS_CXXFLAGS = -fno-inline
 endif
 
 LIBSRCS_vxWorks += templateInstances.cpp

@@ -23,7 +23,9 @@ SUBMODULES += pvData
 pvData_DEPEND_DIRS = libcom
 
 SUBMODULES += pvAccess
-pvAccess_DEPEND_DIRS = pvData
+pvAccess_DEPEND_DIRS = pvData ca
+# FIXME: dependency needed for the pvAccessIOC library
+pvAccess_DEPEND_DIRS += database
 
 # Add any checked-out submodules to DIRS
 DIRS += $(subst /,,$(dir $(wildcard $(addsuffix /Makefile, $(SUBMODULES)))))

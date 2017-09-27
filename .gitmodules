@@ -18,3 +18,15 @@
     path = modules/pvAccess
     url = https://github.com/epics-base/pvAccessCPP
     branch = master
+[submodule "modules/normativeTypes"]
+    path = modules/normativeTypes
+    url = https://github.com/epics-base/normativeTypesCPP
+    branch = master
+[submodule "modules/pvaClient"]
+    path = modules/pvaClient
+    url = https://github.com/epics-base/pvaClientCPP
+    branch = master
+[submodule "modules/pvDatabase"]
+    path = modules/pvDatabase
+    url = https://github.com/epics-base/pvDatabaseCPP
+    branch = master

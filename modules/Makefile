@@ -27,6 +27,15 @@ pvAccess_DEPEND_DIRS = pvData ca
 # FIXME: dependency needed for the pvAccessIOC library
 pvAccess_DEPEND_DIRS += database
 
+SUBMODULES += normativeTypes
+normativeTypes_DEPEND_DIRS = pvData
+
+SUBMODULES += pvaClient
+pvaClient_DEPEND_DIRS = pvAccess normativeTypes
+
+SUBMODULES += pvDatabase
+pvDatabase_DEPEND_DIRS = pvAccess
+
 # Add any checked-out submodules to DIRS
 DIRS += $(subst /,,$(dir $(wildcard $(addsuffix /Makefile, $(SUBMODULES)))))
 

@@ -20,9 +20,25 @@
 #include <stddef.h>
 #include <shareLib.h>
 
+#include <epicsVersion.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif    
+
+/** YAJL API history in brief
+ *
+ * Originally macro not defined
+ *   YAJL 1.0.12
+ *   Bundled with EPICS Base 3.15.0.1
+ *
+ * YAJL 2.1.0
+ *   Changes argument type for yajl_integer() from 'int' to 'long long'
+ *   Changes argument type for yajl_string() and yajl_map_key() from 'unsigned' to 'size_t'
+ *   Replacement of struct yajl_parser_config with yajl_config()
+ *   Replacement of yajl_parse_complete() with yajl_complete_parse()
+ */
+#define EPICS_YAJL_VERSION VERSION_INT(2,1,0,0)
 
 #define YAJL_MAX_DEPTH 128
 

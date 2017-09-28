@@ -38,3 +38,9 @@ then
 fi
 
 cd "$CURDIR"
+
+cat <<EOF >> epics-base/configure/CONFIG_SITE
+USR_CPPFLAGS += $USR_CPPFLAGS
+USR_CFLAGS += $USR_CFLAGS
+USR_CXXFLAGS += $USR_CXXFLAGS
+EOF

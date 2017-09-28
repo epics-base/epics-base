@@ -30,3 +30,11 @@
     path = modules/pvDatabase
     url = https://github.com/epics-base/pvDatabaseCPP
     branch = master
+[submodule "modules/pva2pva"]
+    path = modules/pva2pva
+    url = https://github.com/epics-base/pva2pva
+    branch = master
+[submodule "modules/example"]
+    path = modules/example
+    url = https://github.com/epics-base/exampleCPP
+    branch = master

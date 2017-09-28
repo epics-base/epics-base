@@ -36,6 +36,12 @@ pvaClient_DEPEND_DIRS = pvAccess normativeTypes
 SUBMODULES += pvDatabase
 pvDatabase_DEPEND_DIRS = pvAccess
 
+SUBMODULES += pva2pva
+pva2pva_DEPEND_DIRS = pvAccess
+
+SUBMODULES += example
+example_DEPEND_DIRS = pva2pva pvaClient
+
 # Add any checked-out submodules to DIRS
 DIRS += $(subst /,,$(dir $(wildcard $(addsuffix /Makefile, $(SUBMODULES)))))
 

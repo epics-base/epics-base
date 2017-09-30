@@ -12,6 +12,9 @@ variable(asCaDebug,int)
 # CA server debug flag (very verbose) range[0,5]
 variable(CASDEBUG,int)
 
+# Link parsing debug
+variable(dbJLinkDebug,int)
+
 # Static database access variables
 variable(dbRecordsOnceOnly,int)
 variable(dbRecordsAbcSorted,int)

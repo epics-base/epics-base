@@ -25,8 +25,10 @@
 #include "dbLock.h"
 #include "dbStaticLib.h"
 #include "link.h"
+#include "epicsExport.h"
 
-int dbJLinkDebug = 0;
+epicsShareDef int dbJLinkDebug = 0;
+epicsExportAddress(int, dbJLinkDebug);
 
 #define IFDEBUG(n) if (dbJLinkDebug >= (n))
 

@@ -26,7 +26,9 @@
 #include "dbStaticLib.h"
 #include "link.h"
 
-#define IFDEBUG(n) if(parser->parse_debug)
+int dbJLinkDebug = 0;
+
+#define IFDEBUG(n) if (dbJLinkDebug >= (n))
 
 typedef struct parseContext {
     jlink *pjlink;
@@ -34,7 +36,6 @@ typedef struct parseContext {
     short dbfType;
     short jsonDepth;
     unsigned key_is_link:1;
-    unsigned parse_debug:1;
     unsigned lset_debug:1;
 } parseContext;
 
@@ -59,6 +60,9 @@ static int dbjl_return(parseContext *parser, jlif_result result) {
         pjlink->pif->free_jlink(pjlink);
     }
 
+    IFDEBUG(10)
+        printf("    returning %d %s\n", result,
+            result == jlif_stop ? "*** STOP ***" : "Continue");
     return result;
 }
 
@@ -352,7 +356,6 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
     parser->dbfType = dbfType;
     parser->jsonDepth = 0;
     parser->key_is_link = 0;
-    parser->parse_debug = !!(opts&LINK_DEBUG_JPARSE);
     parser->lset_debug = !!(opts&LINK_DEBUG_LSET);
 
     IFDEBUG(10)
@@ -369,8 +372,14 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
         return S_db_noMemory;
 
     ys = yajl_parse(yh, (const unsigned char *) json, jlen);
-    if (ys == yajl_status_ok)
+    IFDEBUG(10)
+        printf("dbJLinkInit: yajl_parse() returned %d\n", ys);
+
+    if (ys == yajl_status_ok) {
         ys = yajl_complete_parse(yh);
+        IFDEBUG(10)
+            printf("dbJLinkInit: yajl_complete_parse() returned %d\n", ys);
+    }
 
     switch (ys) {
         unsigned char *err;
@@ -382,6 +391,9 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
         break;
 
     case yajl_status_error:
+        IFDEBUG(10)
+            printf("    jsonDepth=%d, product=%p, pjlink=%p\n",
+                parser->jsonDepth, parser->product, parser->pjlink);
         err = yajl_get_error(yh, 1, (const unsigned char *) json, jlen);
         errlogPrintf("dbJLinkInit: %s\n", err);
         yajl_free_error(yh, err);

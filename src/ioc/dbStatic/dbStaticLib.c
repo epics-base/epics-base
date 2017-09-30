@@ -2613,8 +2613,6 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
 
                 if(dbFindInfo(&infoentry, "base:lsetDebug")==0 && epicsStrCaseCmp(dbGetInfoString(&infoentry), "YES")==0)
                     opts |= LINK_DEBUG_LSET;
-                if(dbFindInfo(&infoentry, "base:jlinkDebug")==0 && epicsStrCaseCmp(dbGetInfoString(&infoentry), "YES")==0)
-                    opts |= LINK_DEBUG_JPARSE;
 
                 dbFinishEntry(&infoentry);
             }

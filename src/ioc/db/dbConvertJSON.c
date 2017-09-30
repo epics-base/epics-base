@@ -171,6 +171,8 @@ long dbPutConvertJSON(const char *json, short dbrType,
         return S_db_noMemory;
 
     ys = yajl_parse(yh, (const unsigned char *) json, jlen);
+    if (ys == yajl_status_ok)
+        ys = yajl_complete_parse(yh);
 
     switch (ys) {
     case yajl_status_ok:

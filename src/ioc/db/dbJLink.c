@@ -365,6 +365,8 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
         return S_db_noMemory;
 
     ys = yajl_parse(yh, (const unsigned char *) json, jlen);
+    if (ys == yajl_status_ok)
+        ys = yajl_complete_parse(yh);
 
     switch (ys) {
         unsigned char *err;
@@ -380,6 +382,7 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
         errlogPrintf("dbJLinkInit: %s\n", err);
         yajl_free_error(yh, err);
         dbJLinkFree(parser->pjlink);
+        dbJLinkFree(parser->product);
         /* fall through */
     default:
         status = S_db_badField;

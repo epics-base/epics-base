@@ -267,7 +267,7 @@ static long chf_parse(dbChannel *chan, const char **pjson)
         { chan, NULL, 0 };
     yajl_handle yh = yajl_alloc(&chf_callbacks, &chf_alloc, &parser);
     const char *json = *pjson;
-    size_t jlen = strlen(json);
+    size_t jlen = strlen(json), ylen;
     yajl_status ys;
     long status;
 
@@ -275,11 +275,15 @@ static long chf_parse(dbChannel *chan, const char **pjson)
         return S_db_noMemory;
 
     ys = yajl_parse(yh, (const unsigned char *) json, jlen);
+    ylen = yajl_get_bytes_consumed(yh);
+
+    if (ys == yajl_status_ok)
+        ys = yajl_complete_parse(yh);
 
     switch (ys) {
     case yajl_status_ok:
+        *pjson += ylen;
         status = 0;
-        *pjson += yajl_get_bytes_consumed(yh);
         break;
 
     case yajl_status_error: {

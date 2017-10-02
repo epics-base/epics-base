@@ -10,6 +10,8 @@
 TOP = ..
 include $(TOP)/configure/CONFIG
 
+inc: RELEASE.local
+
 # Submodules for bundle build
 SUBMODULES += libcom
 
@@ -46,3 +48,8 @@ example_DEPEND_DIRS = pva2pva pvaClient
 DIRS += $(subst /,,$(dir $(wildcard $(addsuffix /Makefile, $(SUBMODULES)))))
 
 include $(TOP)/configure/RULES_DIRS
+
+RELEASE.local:
+	@echo "EPICS_BASE = $(dir $(abspath $(lastword $(MAKEFILE_LIST))/..))" > $@
+realclean:
+	$(RM) RELEASE.local

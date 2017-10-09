@@ -78,8 +78,13 @@ sub parseCommon {
         m/\G \s* /oxgc;
 
         # Extract POD
-        if (m/\G ( = [a-zA-Z] .* ) \n/oxgc) {
-            $obj->add_pod($1, &parsePod);
+        if (m/\G ( = [a-zA-Z] )/xgc) {
+	    # The above regex was split from the one below for performance.
+	    # Using m/\G ( = [a-zA-Z] .* ) \n/ is slow in Perl 5.20 and later.
+	    my $directive = $1;
+	    m/\G ( .* ) \n/xgc;
+	    $directive .= $1;
+            $obj->add_pod($directive, &parsePod);
         }
         elsif (m/\G \# /oxgc) {
             if (m/\G \# ! BEGIN \{ ( [^}]* ) \} ! \# \# \n/oxgc) {

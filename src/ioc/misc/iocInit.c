@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <limits.h>
 
-#include "dbBase.h"
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "envDefs.h"

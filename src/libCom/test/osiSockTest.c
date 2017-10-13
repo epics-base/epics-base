@@ -23,7 +23,7 @@ void udpBroadcast(SOCKET s, int put)
     testOk(status >= 0, "setsockopt BROADCAST := %d", put);
 
     status = getsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)&flag, &len);
-    testOk(status >= 0 && len == sizeof(flag) && flag == put,
+    testOk(status >= 0 && len == sizeof(flag) && !flag == !put,
         "getsockopt BROADCAST => %d", flag);
 }
 
@@ -38,7 +38,7 @@ void multiCastLoop(SOCKET s, int put)
     testOk(status >= 0, "setsockopt MULTICAST_LOOP := %d", put);
 
     status = getsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&flag, &len);
-    testOk(status >= 0 && len == sizeof(flag) && flag == put,
+    testOk(status >= 0 && len == sizeof(flag) && !flag == !put,
         "getsockopt MULTICAST_LOOP => %d", (int) flag);
 }
 

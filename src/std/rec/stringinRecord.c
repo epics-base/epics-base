@@ -23,6 +23,7 @@
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbFldTypes.h"
@@ -30,6 +31,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "special.h"
 #include "menuYesNo.h"
 
 #define GEN_SIZE_OFFSET
@@ -42,7 +44,7 @@
 #define initialize NULL
 static long init_record(struct dbCommon *, int);
 static long process(struct dbCommon *);
-#define special NULL
+static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -96,10 +98,9 @@ static long init_record(struct dbCommon *pcommon, int pass)
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
     struct stringindset *pdset = (struct stringindset *) prec->dset;
 
-    if (pass==0)
-        return 0;
+    if (pass == 0) return 0;
 
-    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_STRING, prec->sval);
 
     if (!pdset) {
@@ -141,9 +142,9 @@ static long process(struct dbCommon *pcommon)
 	status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && prec->pact ) return(0);
-	prec->pact = TRUE;
 
-	recGblGetTimeStamp(prec);
+    prec->pact = TRUE;
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
 	/* check event list */
 	monitor(prec);
@@ -154,6 +155,26 @@ static long process(struct dbCommon *pcommon)
 	return(status);
 }
 
+static long special(DBADDR *paddr, int after)
+{
+    stringinRecord *prec = (stringinRecord *)(paddr->precord);
+    int     special_type = paddr->special;
+
+    switch(special_type) {
+    case(SPC_MOD):
+        if (dbGetFieldIndex(paddr) == stringinRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return(0);
+        }
+    default:
+        recGblDbaddrError(S_db_badChoice, paddr, "stringin: special");
+        return(S_db_badChoice);
+    }
+}
+
 static void monitor(stringinRecord *prec)
 {
     int monitor_mask = recGblResetAlarms(prec);
@@ -174,35 +195,44 @@ static void monitor(stringinRecord *prec)
 
 static long readValue(stringinRecord *prec)
 {
-	long		status;
-        struct stringindset 	*pdset = (struct stringindset *) (prec->dset);
+    struct stringindset *pdset = (struct stringindset *) prec->dset;
+    long status = 0;
 
-	if (prec->pact == TRUE){
-		status=(*pdset->read_stringin)(prec);
-		return(status);
-	}
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
-	status=dbGetLink(&(prec->siml),DBR_USHORT, &(prec->simm),0,0);
-	if (status)
-		return(status);
+    switch (prec->simm) {
+    case menuYesNoNO:
+        status = pdset->read_stringin(prec);
+        break;
 
-	if (prec->simm == menuYesNoNO){
-		status=(*pdset->read_stringin)(prec);
-		return(status);
-	}
-	if (prec->simm == menuYesNoYES){
-		status=dbGetLink(&(prec->siol),DBR_STRING,
-			prec->sval,0,0);
-		if (status==0) {
-			strcpy(prec->val,prec->sval);
-			prec->udf=FALSE;
-		}
-	} else {
-		status=-1;
-		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-		return(status);
-	}
-        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
+    case menuYesNoYES: {
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbGetLink(&prec->siol, DBR_STRING, prec->sval, 0, 0);
+            if (status == 0) {
+                strcpy(prec->val, prec->sval);
+                prec->udf = FALSE;
+            }
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
+    }
 
-	return(status);
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
+
+    return status;
 }

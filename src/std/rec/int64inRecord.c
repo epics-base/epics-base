@@ -23,6 +23,7 @@
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbFldTypes.h"
@@ -30,6 +31,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "special.h"
 #include "menuYesNo.h"
 
 #define GEN_SIZE_OFFSET
@@ -44,7 +46,7 @@
 #define initialize NULL
 static long init_record(dbCommon *, int);
 static long process(dbCommon *);
-#define special NULL
+static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -100,17 +102,11 @@ static long init_record(dbCommon *pcommon, int pass)
     struct int64indset *pdset;
     long status;
 
-    if (pass==0) return(0);
+    if (pass == 0) return 0;
 
-    /* int64in.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (prec->siml.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    }
-
-    /* int64in.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (prec->siol.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siol,DBF_LONG,&prec->sval);
-    }
+    /* int64in.siml and .siol must be a CONSTANT or a PV_LINK or a DB_LINK */
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+    recGblInitConstantLink(&prec->siol, DBF_INT64, &prec->sval);
 
     if(!(pdset = (struct int64indset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"int64in: init_record");
@@ -150,8 +146,9 @@ static long process(dbCommon *pcommon)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
 
-	recGblGetTimeStamp(prec);
-	if (status==0) prec->udf = FALSE;
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
+
+    if (status==0) prec->udf = FALSE;
 
 	/* check for alarms */
 	checkAlarms(prec, &timeLast);
@@ -163,7 +160,27 @@ static long process(dbCommon *pcommon)
 	prec->pact=FALSE;
 	return(status);
 }
-
+
+static long special(DBADDR *paddr, int after)
+{
+    int64inRecord *prec = (int64inRecord *)(paddr->precord);
+    int    special_type = paddr->special;
+
+    switch(special_type) {
+    case(SPC_MOD):
+        if (dbGetFieldIndex(paddr) == int64inRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return(0);
+        }
+    default:
+        recGblDbaddrError(S_db_badChoice, paddr, "int64in: special");
+        return(S_db_badChoice);
+    }
+}
+
 #define indexof(field) int64inRecord##field
 
 static long get_units(DBADDR *paddr,char *units)
@@ -381,36 +398,44 @@ static void monitor(int64inRecord *prec)
 
 static long readValue(int64inRecord *prec)
 {
-	long status;
-        struct int64indset *pdset = (struct int64indset *) (prec->dset);
+    struct int64indset *pdset = (struct int64indset *) prec->dset;
+    long status = 0;
 
-	if (prec->pact == TRUE){
-		status=(*pdset->read_int64in)(prec);
-		return(status);
-	}
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
-	status=dbGetLink(&(prec->siml),DBR_USHORT, &(prec->simm),0,0);
-	if (status)
-		return(status);
+    switch (prec->simm) {
+    case menuYesNoNO:
+        status = pdset->read_int64in(prec);
+        break;
 
-	if (prec->simm == menuYesNoNO){
-		status=(*pdset->read_int64in)(prec);
-		return(status);
-	}
-	if (prec->simm == menuYesNoYES){
-		status=dbGetLink(&(prec->siol),DBR_LONG,
-			&(prec->sval),0,0);
+    case menuYesNoYES: {
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbGetLink(&prec->siol, DBR_INT64, &prec->sval, 0, 0);
+            if (status == 0) {
+                prec->val = prec->sval;
+                prec->udf = FALSE;
+            }
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
+    }
 
-		if (status==0) {
-			prec->val=prec->sval;
-			prec->udf=FALSE;
-		}
-	} else {
-		status=-1;
-		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-		return(status);
-	}
-        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
 
-	return(status);
+    return status;
 }

@@ -89,24 +89,51 @@ recordtype(lso) {
         menu(menuPost)
     }
     field(SIML,DBF_INLINK) {
-        prompt("Sim Mode link")
+        prompt("Simulation Mode link")
         promptgroup("90 - Simulate")
         interest(1)
     }
     field(SIMM,DBF_MENU) {
         prompt("Simulation Mode")
+        special(SPC_MOD)
         interest(1)
         menu(menuYesNo)
     }
     field(SIMS,DBF_MENU) {
-        prompt("Sim mode Alarm Svrty")
+        prompt("Simulation Mode Severity")
         promptgroup("90 - Simulate")
         interest(2)
         menu(menuAlarmSevr)
     }
     field(SIOL,DBF_OUTLINK) {
-        prompt("Sim Output Specifctn")
+        prompt("Simulation Output Link")
         promptgroup("90 - Simulate")
         interest(1)
+    }
+    field(OLDSIMM,DBF_MENU) {
+        prompt("Prev. Simulation Mode")
+        special(SPC_NOMOD)
+        interest(4)
+        menu(menuSimm)
+    }
+    field(SSCN,DBF_MENU) {
+        prompt("Sim. Mode Scan")
+        promptgroup("90 - Simulate")
+        interest(1)
+        menu(menuScan)
+        initial("65535")
+    }
+    field(SDLY,DBF_DOUBLE) {
+        prompt("Sim. Mode Async Delay")
+        promptgroup("90 - Simulate")
+        interest(2)
+        initial("-1.0")
+    }
+    %#include "callback.h"
+    field(SIMPVT,DBF_NOACCESS) {
+        prompt("Sim. Mode Private")
+        special(SPC_NOMOD)
+        interest(4)
+        extra("CALLBACK            *simpvt")
     }
 }

@@ -182,7 +182,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     wdogInit(prec);
 
-    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_DOUBLE, &prec->sval);
 
     /* must have device support defined */
@@ -228,7 +228,7 @@ static long process(struct dbCommon *pcommon)
         return 0;
     prec->pact = TRUE;
 
-    recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
     if (status == 0)
         add_count(prec);
@@ -245,6 +245,14 @@ static long process(struct dbCommon *pcommon)
 static long special(DBADDR *paddr, int after)
 {
     histogramRecord *prec = (histogramRecord *) paddr->precord;
+
+    if (paddr->special == SPC_MOD && dbGetFieldIndex(paddr) == histogramRecordSIMM) {
+        if (!after)
+            recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+        else
+            recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+        return 0;
+    }
 
     if (!after)
         return 0;
@@ -373,33 +381,44 @@ static long clear_histogram(histogramRecord *prec)
 static long readValue(histogramRecord *prec)
 {
     struct histogramdset *pdset = (struct histogramdset *) prec->dset;
-    long status;
+    long status = 0;
 
-    if (prec->pact) {
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
+
+    switch (prec->simm) {
+    case menuYesNoNO:
         status = pdset->read_histogram(prec);
-        return status;
+        break;
+
+    case menuYesNoYES: {
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbGetLink(&prec->siol, DBR_DOUBLE, &prec->sval, 0, 0);
+            if (status == 0) {
+                prec->sgnl = prec->sval;
+                prec->udf = FALSE;
+            }
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
     }
 
-    status = dbGetLink(&prec->siml, DBR_USHORT, &prec->simm, 0, 0);
-    if (status)
-        return(status);
-
-    if (prec->simm == menuYesNoNO) {
-        status = pdset->read_histogram(prec);
-        return status;
-    }
-    if (prec->simm == menuYesNoYES) {
-        status = dbGetLink(&prec->siol,DBR_DOUBLE, &prec->sval, 0, 0);
-        if (status == 0)
-            prec->sgnl = prec->sval;
-    }
-    else {
-        status = -1;
+    default:
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
-        return status;
+        status = -1;
     }
 
-    recGblSetSevr(prec, SIMM_ALARM, prec->sims);
     return status;
 }
 

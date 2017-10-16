@@ -23,6 +23,7 @@
 #include "epicsPrint.h"
 #include "epicsString.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbFldTypes.h"
@@ -31,6 +32,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "special.h"
 #include "cantProceed.h"
 #include "menuYesNo.h"
 
@@ -44,7 +46,7 @@
 #define initialize NULL
 static long init_record(struct dbCommon *, int);
 static long process(struct dbCommon *);
-#define special NULL
+static long special(DBADDR *, int);
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
@@ -95,7 +97,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     struct waveformRecord *prec = (struct waveformRecord *)pcommon;
     struct wfdset *pdset;
 
-    if (pass==0){
+    if (pass == 0){
         if (prec->nelm <= 0)
             prec->nelm = 1;
         if (prec->ftvl > DBF_ENUM)
@@ -110,7 +112,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return 0;
     }
 
-    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
     /* must have dset defined */
     if (!(pdset = (struct wfdset *)(prec->dset))) {
@@ -144,9 +146,9 @@ static long process(struct dbCommon *pcommon)
     readValue(prec); /* read the new value */
     if (!pact && prec->pact) return 0;
 
-    prec->pact = TRUE;
     prec->udf = FALSE;
-    recGblGetTimeStamp(prec);
+    prec->pact = TRUE;
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
     monitor(prec);
 
@@ -155,6 +157,26 @@ static long process(struct dbCommon *pcommon)
 
     prec->pact=FALSE;
     return 0;
+}
+
+static long special(DBADDR *paddr, int after)
+{
+    waveformRecord *prec = (waveformRecord *)(paddr->precord);
+    int     special_type = paddr->special;
+
+    switch(special_type) {
+    case(SPC_MOD):
+        if (dbGetFieldIndex(paddr) == waveformRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return(0);
+        }
+    default:
+        recGblDbaddrError(S_db_badChoice, paddr, "waveform: special");
+        return(S_db_badChoice);
+    }
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
@@ -304,43 +326,53 @@ static void monitor(waveformRecord *prec)
 
 static long readValue(waveformRecord *prec)
 {
-    long          status;
     struct wfdset *pdset = (struct wfdset *) prec->dset;
+    long status = 0;
 
-    if (prec->pact == TRUE){
-        return (*pdset->read_wf)(prec);
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
     }
 
-    status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
-    if (status)
-        return status;
-
-    if (prec->simm == menuYesNoNO){
+    switch (prec->simm) {
+    case menuYesNoNO: {
         epicsUInt32 nord = prec->nord;
 
-        status = (*pdset->read_wf)(prec);
+        status = pdset->read_wf(prec);
         if (nord != prec->nord)
             db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
-        return status;
+        break;
     }
 
-    if (prec->simm == menuYesNoYES){
+    case menuYesNoYES: {
         long nRequest = prec->nelm;
 
-        status = dbGetLink(&prec->siol, prec->ftvl, prec->bptr, 0, &nRequest);
-        /* nord set only for db links: needed for old db_access */
-        if (!dbLinkIsConstant(&prec->siol)) {
-            prec->nord = nRequest;
-            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
-            if (status == 0)
-                prec->udf=FALSE;
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbGetLink(&prec->siol, prec->ftvl, prec->bptr, 0, &nRequest);
+            if (status == 0) prec->udf = FALSE;
+            /* nord set only for db links: needed for old db_access */
+            if (!dbLinkIsConstant(&prec->siol)) {
+                prec->nord = nRequest;
+                db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+            }
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
         }
-    } else {
-        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
-        return -1;
+        break;
     }
-    recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
 
     return status;
 }
-

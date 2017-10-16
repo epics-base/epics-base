@@ -1,0 +1,15 @@
+# Array type records
+# Regular simulation mode and simm:SCAN tests
+record($(TYPE), "$(TYPE)") {
+  field(SSCN,"Event")
+  field(FTVL,"SHORT")
+  field(NELM,"2")
+}
+record($(TYPE), "$(TYPE):simval") {
+  field(FTVL,"SHORT")
+  field(NELM,"2")
+}
+record(bo, "$(TYPE):simmode") {
+  field(ZNAM,"off")
+  field(ONAM,"on")
+}

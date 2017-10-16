@@ -1,0 +1,16 @@
+# no info
+record(ai, "ai-0") {
+}
+# only scan
+record(ai, "ai-1") {
+  field(SSCN,"2 second")
+}
+# only delay
+record(ai, "ai-2") {
+  field(SDLY,".234")
+}
+# scan and delay
+record(ai, "ai-3") {
+  field(SSCN,"5 second")
+  field(SDLY,".345")
+}

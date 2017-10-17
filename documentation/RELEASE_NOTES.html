@@ -17,6 +17,18 @@
 
 -->
 
+<h2 align="center">Changes made between 3.16.1 and 3.16.2</h2>
+
+<h3>Simulation mode improvements</h3>
+
+<p>Records that support simulation mode have two new fields, <tt>SSCN</tt>
+(Simulation Scan Mode) and <tt>SDLY</tt> (Simulation Delay).
+<tt>SSCN</tt> sets the scan mechanism to be used while the record is in
+simulation mode. This is especially useful for I/O scanned records, for which
+simulation mode was not working at all. Setting <tt>SDLY</tt> to a positive
+value makes the record process asynchronously in simulation mode, with the
+second stage processing happening after the specified time (in seconds).</p>
+
 <h2 align="center">Changes made between 3.16.0.1 and 3.16.1</h2>
 
 <h3>IOC Database Support for 64-bit integers</h3>

@@ -2,7 +2,7 @@
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* lnkCalc.c */
 
@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "alarm.h"
 #include "dbDefs.h"
@@ -26,6 +27,7 @@
 #include "epicsString.h"
 #include "epicsTypes.h"
 #include "dbAccessDefs.h"
+#include "dbCommon.h"
 #include "dbConvertFast.h"
 #include "dbLink.h"
 #include "dbJLink.h"
@@ -49,6 +51,7 @@ typedef struct calc_link {
         ps_args,
         ps_prec,
         ps_units,
+        ps_time,
         ps_error
     } pstate;
     epicsEnum16 stat;
@@ -61,6 +64,7 @@ typedef struct calc_link {
     char *post_major;
     char *post_minor;
     char *units;
+    short tinp;
     struct link inp[CALCPERFORM_NARGS];
     double arg[CALCPERFORM_NARGS];
     double val;
@@ -81,6 +85,7 @@ static jlink* lnkCalc_alloc(short dbfType)
     clink->nArgs = 0;
     clink->pstate = ps_init;
     clink->prec = 15;   /* standard value for a double */
+    clink->tinp = -1;
 
     IFDEBUG(10)
         printf("lnkCalc_alloc -> calc@%p\n", clink);
@@ -174,6 +179,16 @@ static jlif_result lnkCalc_string(jlink *pjlink, const char *val, size_t len)
         return jlif_continue;
     }
 
+    if (clink->pstate == ps_time) {
+        char tinp;
+        if (len != 1 || (tinp = toupper(val[0])) < 'A' || tinp > 'L') {
+            errlogPrintf("lnkCalc: Bad 'time' parameter \"%.*s\"\n", (int) len, val);
+            return jlif_stop;
+        }
+        clink->tinp = tinp - 'A';
+        return jlif_continue;
+    }
+
     if (clink->pstate < ps_expr || clink->pstate > ps_minor) {
         errlogPrintf("lnkCalc: Unexpected string \"%.*s\"\n", (int) len, val);
         return jlif_stop;
@@ -247,6 +262,8 @@ static jlif_result lnkCalc_map_key(jlink *pjlink, const char *key, size_t len)
             clink->pstate = ps_args;
         else if (!strncmp(key, "prec", len))
             clink->pstate = ps_prec;
+        else if (!strncmp(key, "time", len))
+            clink->pstate = ps_time;
         else {
             errlogPrintf("lnkCalc: Unknown key \"%.4s\"\n", key);
             return jlif_stop;
@@ -370,6 +387,10 @@ static void lnkCalc_report(const jlink *pjlink, int level, int indent)
         if (clink->post_minor)
             printf("%*s  Minor expression: \"%s\"\n", indent, "",
                 clink->minor);
+
+        if (clink->tinp >= 0 && clink->tinp < clink->nArgs)
+            printf("%*s Timestamp input \"%c\"\n", indent, "",
+                clink->tinp + 'A');
 
         for (i = 0; i < clink->nArgs; i++) {
             struct link *plink = &clink->inp[i];
@@ -502,11 +523,30 @@ static long lnkCalc_getElements(const struct link *plink, long *nelements)
     return 0;
 }
 
+/* Get value and timestamp atomically for link indicated by time */
+struct lcvt {
+    double *pval;
+    epicsTimeStamp *ptime;
+};
+
+static long readLocked(struct link *pinp, void *vvt)
+{
+    struct lcvt *pvt = (struct lcvt *) vvt;
+    long nReq = 1;
+    long status = dbGetLink(pinp, DBR_DOUBLE, pvt->pval, NULL, &nReq);
+
+    if (!status && pvt->ptime)
+        dbGetTimeStamp(pinp, pvt->ptime);
+
+    return status;
+}
+
 static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
     long *pnRequest)
 {
     calc_link *clink = CONTAINER(plink->value.json.jlink,
         struct calc_link, jlink);
+    dbCommon *prec = plink->precord;
     int i;
     long status;
     FASTCONVERT conv = dbFastPutConvertRoutine[DBR_DOUBLE][dbrType];
@@ -515,12 +555,22 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         printf("lnkCalc_getValue(calc@%p, %d, ...)\n",
             clink, dbrType);
 
+    /* Any link errors will trigger a LINK/INVALID alarm in the child link */
     for (i = 0; i < clink->nArgs; i++) {
         struct link *child = &clink->inp[i];
         long nReq = 1;
 
-        dbGetLink(child, DBR_DOUBLE, &clink->arg[i], NULL, &nReq);
-        /* Any errors have already triggered a LINK/INVALID alarm */
+        if (i == clink->tinp &&
+            dbLinkIsConstant(&prec->tsel) &&
+            prec->tse == epicsTimeEventDeviceTime) {
+            struct lcvt vt = {&clink->arg[i], &prec->time};
+
+            status = dbLinkDoLocked(child, readLocked, &vt);
+            if (status == S_db_noLSET)
+                status = readLocked(child, &vt);
+        }
+        else
+            dbGetLink(child, DBR_DOUBLE, &clink->arg[i], NULL, &nReq);
     }
     clink->stat = 0;
     clink->sevr = 0;
@@ -545,7 +595,7 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         if (!status && alval) {
             clink->stat = LINK_ALARM;
             clink->sevr = MAJOR_ALARM;
-            recGblSetSevr(plink->precord, clink->stat, clink->sevr);
+            recGblSetSevr(prec, clink->stat, clink->sevr);
         }
     }
 
@@ -556,7 +606,7 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         if (!status && alval) {
             clink->stat = LINK_ALARM;
             clink->sevr = MINOR_ALARM;
-            recGblSetSevr(plink->precord, clink->stat, clink->sevr);
+            recGblSetSevr(prec, clink->stat, clink->sevr);
         }
     }
 
@@ -639,4 +689,3 @@ static jlif lnkCalcIf = {
     lnkCalc_report, lnkCalc_map_children
 };
 epicsExportAddress(jlif, lnkCalcIf);
-

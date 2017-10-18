@@ -20,13 +20,17 @@
 #include "dbServer.h"
 
 static ELLLIST serverList = ELLLIST_INIT;
-
+static enum { registering, initialized, running, paused, stopped }
+    state = registering;
+static char *stateNames[] = {
+    "registering", "initialized", "running", "paused", "stopped"
+};
 
 int dbRegisterServer(dbServer *psrv)
 {
     const char * ignore = envGetConfigParamPtr(&EPICS_IOC_IGNORE_SERVERS);
 
-    if (!psrv || !psrv->name)
+    if (!psrv || !psrv->name || state != registering)
         return -1;
 
     if (strchr(psrv->name, ' ')) {
@@ -70,6 +74,8 @@ void dbsr(unsigned level)
         return;
     }
 
+    printf("Server state: %s\n", stateNames[state]);
+
     while (psrv) {
         printf("Server '%s':\n", psrv->name);
         if (psrv->report)
@@ -91,7 +97,7 @@ int dbServerClient(char *pBuf, size_t bufSize)
     return -1;
 }
 
-#define STARTSTOP(routine, method) \
+#define STARTSTOP(routine, method, newState) \
 void routine(void) \
 { \
     dbServer *psrv = (dbServer *)ellFirst(&serverList); \
@@ -101,9 +107,10 @@ void routine(void) \
             psrv->method(); \
         psrv = (dbServer *)ellNext(&psrv->node); \
     } \
+    state = newState; \
 }
 
-STARTSTOP(dbInitServers, init)
-STARTSTOP(dbRunServers, run)
-STARTSTOP(dbPauseServers, pause)
-STARTSTOP(dbStopServers, stop)
+STARTSTOP(dbInitServers, init, initialized)
+STARTSTOP(dbRunServers, run, running)
+STARTSTOP(dbPauseServers, pause, paused)
+STARTSTOP(dbStopServers, stop, stopped)

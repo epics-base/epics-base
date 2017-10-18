@@ -75,7 +75,7 @@ static enum {
     iocVirgin, iocBuilding, iocBuilt, iocRunning, iocPaused, iocStopped
 } iocState = iocVirgin;
 static enum {
-    buildRSRV, buildIsolated
+    buildServers, buildIsolated
 } iocBuildMode;
 
 /* define forward references*/
@@ -210,7 +210,7 @@ int iocBuild(void)
     if (dbThreadRealtimeLock)
         epicsThreadRealtimeLock();
 
-    if (!status) iocBuildMode = buildRSRV;
+    if (!status) iocBuildMode = buildServers;
     return status;
 }
 
@@ -246,9 +246,11 @@ int iocRun(void)
     if (iocState == iocBuilt)
         initHookAnnounce(initHookAfterInterruptAccept);
 
-    dbRunServers();
+    if (iocBuildMode == buildServers) {
+        dbRunServers();
+        initHookAnnounce(initHookAfterCaServerRunning);
+    }
 
-    initHookAnnounce(initHookAfterCaServerRunning);
     if (iocState == iocBuilt)
         initHookAnnounce(initHookAtEnd);
 
@@ -268,8 +270,10 @@ int iocPause(void)
     }
     initHookAnnounce(initHookAtIocPause);
 
-    dbPauseServers();
-    initHookAnnounce(initHookAfterCaServerPaused);
+    if (iocBuildMode == buildServers) {
+        dbPauseServers();
+        initHookAnnounce(initHookAfterCaServerPaused);
+    }
 
     dbCaPause();
     scanPause();
@@ -702,27 +706,37 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
 
 int iocShutdown(void)
 {
-    if (iocState == iocVirgin || iocState == iocStopped) return 0;
+    if (iocState == iocVirgin || iocState == iocStopped)
+        return 0;
+
     iterateRecords(doCloseLinks, NULL);
-    if (iocBuildMode==buildIsolated) {
+
+    if (iocBuildMode == buildIsolated) {
         /* stop and "join" threads */
         scanStop();
         callbackStop();
     }
+    else
+        dbStopServers();
+
     dbCaShutdown(); /* must be before dbFreeRecord and dbChannelExit */
-    if (iocBuildMode==buildIsolated) {
+
+    if (iocBuildMode == buildIsolated) {
         /* free resources */
         scanCleanup();
         callbackCleanup();
+
         iterateRecords(doFreeRecord, NULL);
         dbLockCleanupRecords(pdbbase);
+
         asShutdown();
         dbChannelExit();
         dbProcessNotifyExit();
         iocshFree();
     }
+
     iocState = iocStopped;
-    iocBuildMode = buildRSRV;
+    iocBuildMode = buildServers;
     return 0;
 }
 

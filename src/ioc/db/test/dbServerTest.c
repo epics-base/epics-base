@@ -110,6 +110,12 @@ dbServer illegal = {
     disInit, NULL, NULL, NULL
 };
 
+dbServer toolate = {
+    ELLNODE_INIT, "toolate",
+    NULL, NULL, NULL,
+    disInit, NULL, NULL, NULL
+};
+
 
 MAIN(dbServerTest)
 {
@@ -117,7 +123,7 @@ MAIN(dbServerTest)
     char *theName = "The One";
     int status;
 
-    testPlan(14);
+    testPlan(18);
 
     /* Prove that we handle substring names properly */
     epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none ones");
@@ -139,15 +145,19 @@ MAIN(dbServerTest)
     dbInitServers();
     testOk(oneState == INIT_CALLED, "dbInitServers");
     testOk(disInitialized == 0, "Disabled server not initialized");
+    testOk(dbRegisterServer(&toolate) != 0, "No registration while active");
 
     dbRunServers();
     testOk(oneState == RUN_CALLED, "dbRunServers");
+    testOk(dbUnregisterServer(&one) != 0, "No unregistration while active");
 
     dbPauseServers();
     testOk(oneState == PAUSE_CALLED, "dbPauseServers");
 
     dbStopServers();
     testOk(oneState == STOP_CALLED, "dbStopServers");
+    testOk(dbUnregisterServer(&toolate) != 0, "No unregistration if not reg'ed");
+    testOk(dbUnregisterServer(&no_routines) == 0, "Unregistered 'no-routines'");
 
     testDiag("Printing server report");
     dbsr(0);

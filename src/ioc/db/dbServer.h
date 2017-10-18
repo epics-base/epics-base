@@ -119,6 +119,13 @@ typedef struct dbServer {
  */
 epicsShareFunc int dbRegisterServer(dbServer *psrv);
 
+/** @brief Unregister a server layer
+ *
+ * This should only be called when the servers are inactive.
+ * @param psrv Server information structure for the server
+ */
+epicsShareFunc int dbUnregisterServer(dbServer *psrv);
+
 /** @brief Print dbServer Reports.
 *
  * Calls the report methods of all registered servers.

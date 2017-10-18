@@ -65,6 +65,21 @@ int dbRegisterServer(dbServer *psrv)
     return 0;
 }
 
+int dbUnregisterServer(dbServer *psrv)
+{
+    if (state != registering && state != stopped) {
+        fprintf(stderr, "dbUnregisterServer: Servers still active!\n");
+        return -1;
+    }
+    if (ellFind(&serverList, &psrv->node) < 0) {
+        fprintf(stderr, "dbUnregisterServer: '%s' not registered.\n",
+            psrv->name);
+        return -1;
+    }
+    ellDelete(&serverList, &psrv->node);
+    return 0;
+}
+
 void dbsr(unsigned level)
 {
     dbServer *psrv = (dbServer *)ellFirst(&serverList);

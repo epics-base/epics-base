@@ -19,7 +19,7 @@
 
 <h3>Extend the dbServer API with init/run/pause/stop methods</h3>
 
-<p>This change permits the IOC to be built that omits the CA server (RSRV) by
+<p>This change permits IOCs to be built that omit the CA server (RSRV) by
 removing its registrar entry which is now provided in the new <tt>rsrv.dbd</tt>
 file. Other server layers can be built into the IOC (alongside RSRV or in place
 of it) by registering them in a similar manner. The dbServer API is documented

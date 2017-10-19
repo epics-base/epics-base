@@ -123,7 +123,7 @@ MAIN(dbServerTest)
     char *theName = "The One";
     int status;
 
-    testPlan(18);
+    testPlan(20);
 
     /* Prove that we handle substring names properly */
     epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none ones");
@@ -137,6 +137,8 @@ MAIN(dbServerTest)
 
     testDiag("Registering dbServer 'no-routines'");
     testOk(dbRegisterServer(&no_routines) == 0, "Registered 'no-routines'");
+    testOk(dbUnregisterServer(&no_routines) == 0, "'no-routines' unreg'd");
+    testOk(dbRegisterServer(&no_routines) == 0, "Re-registered 'no-routines'");
 
     epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "disabled nonexistent");
     testDiag("Registering dbServer 'disabled'");
@@ -156,8 +158,8 @@ MAIN(dbServerTest)
 
     dbStopServers();
     testOk(oneState == STOP_CALLED, "dbStopServers");
-    testOk(dbUnregisterServer(&toolate) != 0, "No unregistration if not reg'ed");
-    testOk(dbUnregisterServer(&no_routines) == 0, "Unregistered 'no-routines'");
+    testOk(dbUnregisterServer(&toolate) != 0, "No unreg' if not reg'ed");
+    testOk(dbUnregisterServer(&no_routines) != 0, "No unreg' of 'no-routines'");
 
     testDiag("Printing server report");
     dbsr(0);

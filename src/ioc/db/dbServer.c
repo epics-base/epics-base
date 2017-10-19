@@ -76,6 +76,12 @@ int dbUnregisterServer(dbServer *psrv)
             psrv->name);
         return -1;
     }
+    if (state == stopped && psrv->stop == NULL) {
+        fprintf(stderr, "dbUnregisterServer: '%s' has no stop() method.\n",
+            psrv->name);
+        return -1;
+    }
+
     ellDelete(&serverList, &psrv->node);
     return 0;
 }

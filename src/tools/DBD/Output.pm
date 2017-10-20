@@ -60,7 +60,7 @@ sub OutputRecordtypes {
                 $field->name, $field->dbf_type;
             while (my ($attr, $val) = each %{$field->attributes}) {
                 $val = "\"$val\""
-                    if $val !~ m/^$RXname$/ox
+                    if $val !~ m/^$RXname$/x
                        || $attr eq 'prompt'
                        || $attr eq 'initial';
                 printf $out "        %s(%s)\n", $attr, $val;

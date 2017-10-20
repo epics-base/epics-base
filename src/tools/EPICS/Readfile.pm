@@ -79,13 +79,13 @@ sub splitPath {
     return @path;
 }
 
-my $RXstr = qr/ " (?: [^"] | \\" )* "/ox;
-my $RXnam = qr/[a-zA-Z0-9_\-:.[\]<>;]+/o;
-my $string = qr/ ( $RXnam | $RXstr ) /ox;
+my $RXstr = qr/ " (?: [^"] | \\" )* "/x;
+my $RXnam = qr/ [a-zA-Z0-9_\-:.[\]<>;]+ /x;
+my $string = qr/ ( $RXnam | $RXstr ) /x;
 
 sub unquote {
     my ($s) = @_;
-    $s =~ s/^"(.*)"$/$1/o;
+    $s =~ s/^"(.*)"$/$1/;
     return $s;
 }
 
@@ -147,17 +147,17 @@ sub Readfile {
     my @input = split /\n/, $input;
     my @output;
     foreach (@input) {
-        if (m/^ \s* include \s+ $string /ox) {
+        if (m/^ \s* include \s+ $string /x) {
             $arg = unquote($1);
             print " include $arg\n" if $debug;
             push @output, "##! include \"$arg\"";
             push @output, Readfile($arg, $macros, $Rpath);
-        } elsif (m/^ \s* addpath \s+ $string /ox) {
+        } elsif (m/^ \s* addpath \s+ $string /x) {
             $arg = unquote($1);
             print " addpath $arg\n" if $debug;
             push @output, "##! addpath \"$arg\"";
             push @{$Rpath}, splitPath($arg);
-        } elsif (m/^ \s* path \s+ $string /ox) {
+        } elsif (m/^ \s* path \s+ $string /x) {
             $arg = unquote($1);
             print " path $arg\n" if $debug;
             push @output, "##! path \"$arg\"";

@@ -176,7 +176,7 @@ void cast_server(void *pParm)
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
-                epicsPrintf ("CAS: UDP recv error (errno=%s)\n",
+                epicsPrintf ("CAS: UDP recv error: %s\n",
                         sockErrBuf);
                 epicsThreadSleep(1.0);
             }

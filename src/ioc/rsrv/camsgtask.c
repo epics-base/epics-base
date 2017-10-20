@@ -59,7 +59,7 @@ void camsgtask ( void *pParm )
 
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAS: ioctl error - %s\n",
+            errlogPrintf("CAS: FIONREAD error: %s\n",
                 sockErrBuf);
             cas_send_bs_msg(client, TRUE);
         }

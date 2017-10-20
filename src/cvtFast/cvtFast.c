@@ -457,7 +457,7 @@ size_t
 }
 
 size_t
-    cvtInt32OctalString(epicsInt32 val, char *pdest)
+    cvtInt32ToOctalString(epicsInt32 val, char *pdest)
 {
     if (val == 0) {
         *pdest++ = '0';

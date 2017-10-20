@@ -16,15 +16,16 @@ our @EXPORT = qw(&pushContext &popContext &dieContext &warnContext &is_reserved
 
 
 our $RXident = qr/ [a-zA-Z] [a-zA-Z0-9_]* /x;
-our $RXname =  qr/ [a-zA-Z0-9_\-:.\[\]<>;]+ /x;
+our $RXnchr =  qr/ [a-zA-Z0-9_\-:.\[\]<>;] /x;
+our $RXname =  qr/ $RXnchr+ (?: [{}] $RXnchr+ )* /x;
 our $RXhex =   qr/ (?: 0 [xX] [0-9A-Fa-f]+ ) /x;
 our $RXoct =   qr/ 0 [0-7]* /x;
-our $RXdqs =   qr/ " (?: [^"] | \\" )* " /x;
 our $RXuint =  qr/ [0-9]+ /x;
 our $RXint =   qr/ -? $RXuint /x;
 our $RXuintx = qr/ ( $RXhex | $RXoct | $RXuint ) /x;
 our $RXintx =  qr/ ( $RXhex | $RXoct | $RXint ) /x;
 our $RXnum =   qr/ -? (?: [0-9]+ | [0-9]* \. [0-9]+ ) (?: [eE] [-+]? [0-9]+ )? /x;
+our $RXdqs =   qr/ " (?> \\. | [^"\\] )* " /x;
 our $RXstr =   qr/ ( $RXname | $RXnum | $RXdqs ) /x;
 
 our @context;
@@ -93,7 +94,7 @@ sub escapeCcomment {
 
 sub escapeCstring {
     ($_) = @_;
-    # How to do this?
+    # FIXME: How to do this?
     return $_;
 }
 

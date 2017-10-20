@@ -8,6 +8,8 @@
 TOP = ../..
 include $(TOP)/configure/CONFIG
 
+
+TESTS += Base
 TESTS += Breaktable
 TESTS += DBD
 TESTS += Device

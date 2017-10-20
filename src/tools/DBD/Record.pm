@@ -36,7 +36,7 @@ sub identifier {
     if ($macrosOk) {
         # FIXME - Check name with macro
     }
-    elsif ($id !~ m/^$RXname$/o) {
+    elsif ($id !~ m/^$RXname$/) {
         my @message;
         push @message, "A $what should contain only letters, digits and these",
             "special characters: _ - : . [ ] < > ;" unless $warned++;

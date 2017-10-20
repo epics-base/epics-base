@@ -149,7 +149,7 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
     return dbPutField(&addr, dbrType, pod.bytes, 1);
 }
 
-void testdbPutFieldOk(const char* pv, short dbrType, ...)
+void testdbPutFieldOk(const char* pv, int dbrType, ...)
 {
     long ret;
     va_list ap;
@@ -161,7 +161,7 @@ void testdbPutFieldOk(const char* pv, short dbrType, ...)
     testOk(ret==0, "dbPutField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, ret, errSymMsg(ret));
 }
 
-void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
+void testdbPutFieldFail(long status, const char* pv, int dbrType, ...)
 {
     long ret;
     va_list ap;
@@ -174,7 +174,7 @@ void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
            pv, dbrType, status, errSymMsg(status), ret, errSymMsg(ret));
 }
 
-void testdbGetFieldEqual(const char* pv, short dbrType, ...)
+void testdbGetFieldEqual(const char* pv, int dbrType, ...)
 {
     va_list ap;
 

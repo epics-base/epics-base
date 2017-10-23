@@ -6,15 +6,6 @@ die() {
   exit 1
 }
 
-ticker() {
-  while true
-  do
-    sleep 60
-    date -R
-    [ -r "$1" ] && tail -n10 "$1"
-  done
-}
-
 CACHEKEY=1
 
 EPICS_HOST_ARCH=`sh startup/EpicsHostArch`

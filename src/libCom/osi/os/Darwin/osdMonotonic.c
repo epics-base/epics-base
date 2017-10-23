@@ -29,6 +29,6 @@ epicsUInt64 epicsMonotonicResolution(void)
 
 epicsUInt64 epicsMonotonicGet(void)
 {
-    uint64_t val = mach_absolute_time(), ret;
+    uint64_t val = mach_absolute_time();
     return val * tbinfo.numer / tbinfo.denom;
 }

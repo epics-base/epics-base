@@ -22,6 +22,7 @@
 struct dbCommon;
 struct devSup;
 struct ioscan_head; /* aka IOSCANPVT */
+struct link; /* aka DBLINK */
 
 #ifdef __cplusplus
 extern "C" {
@@ -111,6 +112,12 @@ typedef struct dsxt {   /* device support extension table */
     long (*del_record)(struct dbCommon *precord);
     /* Recordtypes are *not* allowed to extend this table */
 } dsxt;
+
+/** Fetch INP or OUT link (or NULL if record type has neither).
+ *
+ * Recommended for use in device support init_record()
+ */
+epicsShareFunc struct link* dbGetDevLink(struct dbCommon* prec);
 
 epicsShareExtern dsxt devSoft_DSXT;  /* Allow anything table */
 

@@ -709,6 +709,18 @@ void dbInitEntryFromRecord(struct dbCommon *prec, DBENTRY *pdbentry)
     pdbentry->precnode = ppvt->recnode;
 }
 
+struct link* dbGetDevLink(struct dbCommon* prec)
+{
+    DBLINK *plink = 0;
+    DBENTRY entry;
+    dbInitEntryFromRecord(prec, &entry);
+    if(dbFindField(&entry, "INP")==0 || dbFindField(&entry, "OUT")==0) {
+        plink = (DBLINK*)entry.pfield;
+    }
+    dbFinishEntry(&entry);
+    return plink;
+}
+
 long dbValueSize(short dbr_type)
 {
     /* sizes for value associated with each DBR request type */

@@ -16,6 +16,7 @@
 #include "epicsThread.h"
 #include "iocInit.h"
 #include "dbBase.h"
+#include "dbDefs.h"
 #include "link.h"
 #include "dbAccess.h"
 #include "registry.h"
@@ -608,9 +609,81 @@ void testJLink(void)
     testdbCleanup();
 }
 
+static
+void testTSEL(void)
+{
+    dbCommon *rec[2];
+    dbLocker *locker;
+
+    testDiag("Test TSEL link to .TIME");
+
+    testdbPrepare();
+
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("dbPutLinkTest.db", NULL, NULL);
+
+    rec[0] = testdbRecordPtr("time:one");
+    rec[1] = testdbRecordPtr("time:two");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    locker = dbLockerAlloc(rec, NELEMENTS(rec), 0);
+    if(!locker)
+        testAbort("dbLockerAlloc() fails");
+
+    testdbPutFieldOk("time:one.PROC", DBF_LONG, 1);
+
+    /* wait a bit so that we would get different timestamps */
+    epicsThreadSleep(0.001);
+
+    testdbPutFieldOk("time:two.PROC", DBF_LONG, 1);
+
+#define COMPARE(MSG, C, TS1, TS2) testOk((C)^((TS1)->secPastEpoch == (TS2)->secPastEpoch && (TS1)->nsec == (TS2)->nsec), \
+    MSG " %u:%u == %u:%u", (unsigned)(TS1)->secPastEpoch, (unsigned)(TS1)->nsec, \
+            (unsigned)(TS2)->secPastEpoch, (unsigned)(TS2)->nsec)
+
+    testDiag("Check initially connected TSEL link");
+    dbScanLockMany(locker);
+    COMPARE("first", 0, &rec[0]->time, &rec[1]->time);
+    testOk1(rec[1]->tsel.flags & DBLINK_FLAG_TSELisTIME);
+    dbScanUnlockMany(locker);
+
+    testdbPutFieldOk("time:two.TSEL", DBF_STRING, "");
+
+    testdbPutFieldOk("time:two.PROC", DBF_LONG, 1);
+
+    testDiag("Check no TSEL link");
+    dbScanLockMany(locker);
+    COMPARE("second", 1, &rec[0]->time, &rec[1]->time);
+    testOk1(!(rec[1]->tsel.flags & DBLINK_FLAG_TSELisTIME));
+    dbScanUnlockMany(locker);
+
+    testdbPutFieldOk("time:two.TSEL", DBF_STRING, "time:one.TIME");
+
+    testdbPutFieldOk("time:two.PROC", DBF_LONG, 1);
+
+    testDiag("Check re-connected TSEL link");
+    dbScanLockMany(locker);
+    COMPARE("third", 0, &rec[0]->time, &rec[1]->time);
+    testOk1(rec[1]->tsel.flags & DBLINK_FLAG_TSELisTIME);
+    dbScanUnlockMany(locker);
+
+    dbLockerFree(locker);
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+#undef COMPARE
+}
+
 MAIN(dbPutLinkTest)
 {
-    testPlan(307);
+    testPlan(319);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();
@@ -619,5 +692,6 @@ MAIN(dbPutLinkTest)
     testLinkInitFail();
     testLinkFail();
     testJLink();
+    testTSEL();
     return testDone();
 }

@@ -17,6 +17,16 @@
 
 -->
 
+<h3>Typed Device and Driver Support callbacks</h3>
+
+<p>Two new structures (<tt>typed_dset</tt> and <tt>typed_drvet</tt>) are added
+for use instead of <tt>dset</tt> and <tt>drvet</tt>.
+The existing structures are not changed.
+See comments in devSup.h for usage information.</p>
+
+<p>A helper function <tt>DBLINK* dbGetDevLink(dbCommon*)</tt> is added to fetch
+a pointer to the INP or OUT field of a record.</p>
+
 <h3>Restore use of ledlib for VxWorks command editing</h3>
 
 <p>The epicsReadline refactoring work described below unfortunately disabled the

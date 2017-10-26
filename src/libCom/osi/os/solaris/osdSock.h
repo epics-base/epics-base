@@ -42,7 +42,7 @@ typedef int osiSockIoctl_t;
 #else
     typedef int osiSocklen_t;
 #endif
-typedef int osiSockOptMcastLoop_t;
+typedef char osiSockOptMcastLoop_t;
 
 #define DOES_NOT_ACCEPT_ZERO_LENGTH_UDP
 

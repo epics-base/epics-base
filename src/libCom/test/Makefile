@@ -210,6 +210,11 @@ ipAddrToAsciiTest_SRCS += ipAddrToAsciiTest.cpp
 testHarness_SRCS += ipAddrToAsciiTest.cpp
 TESTS += ipAddrToAsciiTest
 
+TESTPROD_HOST += osiSockTest
+osiSockTest_SRCS += osiSockTest.c
+testHarness_SRCS += osiSockTest.c
+TESTS += osiSockTest
+
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c
 
@@ -254,4 +259,3 @@ cvtFastPerform_SRCS += cvtFastPerform.cpp
 testHarness_SRCS += cvtFastPerform.cpp
 
 include $(TOP)/configure/RULES
-

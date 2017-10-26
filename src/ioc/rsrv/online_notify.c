@@ -87,8 +87,8 @@ void rsrv_online_notify_task(void *pParm)
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                 ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
-                errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
-                    __FILE__, buf, sockErrBuf);
+                errlogPrintf ( "CAS: CA beacon send to %s error: %s\n",
+                    buf, sockErrBuf);
             }
             else {
                 assert (status == sizeof(msg));

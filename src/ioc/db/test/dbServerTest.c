@@ -123,7 +123,7 @@ MAIN(dbServerTest)
     char *theName = "The One";
     int status;
 
-    testPlan(20);
+    testPlan(24);
 
     /* Prove that we handle substring names properly */
     epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none ones");
@@ -144,6 +144,7 @@ MAIN(dbServerTest)
     testDiag("Registering dbServer 'disabled'");
     testOk(dbRegisterServer(&disabled) == 0, "Registration accepted");
 
+    testDiag("Changing server state");
     dbInitServers();
     testOk(oneState == INIT_CALLED, "dbInitServers");
     testOk(disInitialized == 0, "Disabled server not initialized");
@@ -153,29 +154,37 @@ MAIN(dbServerTest)
     testOk(oneState == RUN_CALLED, "dbRunServers");
     testOk(dbUnregisterServer(&one) != 0, "No unregistration while active");
 
-    dbPauseServers();
-    testOk(oneState == PAUSE_CALLED, "dbPauseServers");
-
-    dbStopServers();
-    testOk(oneState == STOP_CALLED, "dbStopServers");
-    testOk(dbUnregisterServer(&toolate) != 0, "No unreg' if not reg'ed");
-    testOk(dbUnregisterServer(&no_routines) != 0, "No unreg' of 'no-routines'");
-
-    testDiag("Printing server report");
+    testDiag("Checking server methods called");
     dbsr(0);
-    testOk(oneState == REPORT_CALLED, "dbsr");
+    testOk(oneState == REPORT_CALLED, "dbsr called report()");
 
     oneSim = NULL;
     name[0] = 0;
     status = dbServerClient(name, sizeof(name));
+    testOk(oneState == CLIENT_CALLED_UNKNOWN, "Client unknown");
     testOk(status == -1 && name[0] == 0,
         "dbServerClient mismatch");
 
     oneSim = theName;
     name[0] = 0;
     status = dbServerClient(name, sizeof(name));
+    testOk(oneState == CLIENT_CALLED_KNOWN, "Client known");
     testOk(status == 0 && strcmp(name, theName) == 0,
         "dbServerClient match");
+
+    dbPauseServers();
+    testOk(oneState == PAUSE_CALLED, "dbPauseServers");
+
+    dbsr(0);
+    testOk(oneState != REPORT_CALLED, "No call to report() when paused");
+
+    status = dbServerClient(name, sizeof(name));
+    testOk(oneState != CLIENT_CALLED_KNOWN, "No call to client() when paused");
+
+    dbStopServers();
+    testOk(oneState == STOP_CALLED, "dbStopServers");
+    testOk(dbUnregisterServer(&toolate) != 0, "No unreg' if not reg'ed");
+    testOk(dbUnregisterServer(&no_routines) != 0, "No unreg' of 'no-routines'");
 
     return testDone();
 }

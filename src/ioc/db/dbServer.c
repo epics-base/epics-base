@@ -98,8 +98,8 @@ void dbsr(unsigned level)
     printf("Server state: %s\n", stateNames[state]);
 
     while (psrv) {
-        printf("Server '%s':\n", psrv->name);
-        if (psrv->report)
+        printf("Server '%s'\n", psrv->name);
+        if (state == running && psrv->report)
             psrv->report(level);
         psrv = (dbServer *)ellNext(&psrv->node);
     }
@@ -108,6 +108,9 @@ void dbsr(unsigned level)
 int dbServerClient(char *pBuf, size_t bufSize)
 {
     dbServer *psrv = (dbServer *)ellFirst(&serverList);
+
+    if (state != running)
+        return -1;
 
     while (psrv) {
         if (psrv->client &&

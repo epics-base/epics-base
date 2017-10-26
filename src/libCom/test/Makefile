@@ -12,6 +12,7 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
 PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
+PROD_SYS_LIBS_solaris += socket nsl
 
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c
@@ -48,8 +49,6 @@ TESTS += epicsMathTest
 
 TESTPROD_HOST += epicsMMIOTest
 epicsMMIOTest_SRCS += epicsMMIOTest.c
-epicsMMIOTest_SYS_LIBS_solaris = socket
-epicsMMIOTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsMMIOTest.c
 TESTS += epicsMMIOTest
 
@@ -65,8 +64,6 @@ TESTS += epicsEnvTest
 
 TESTPROD_HOST += epicsErrlogTest
 epicsErrlogTest_SRCS += epicsErrlogTest.c
-epicsErrlogTest_SYS_LIBS_solaris = socket
-epicsErrlogTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsErrlogTest.c
 TESTS += epicsErrlogTest
 
@@ -82,8 +79,6 @@ TESTS += epicsStdlibTest
 
 TESTPROD_HOST += epicsSockResolveTest
 epicsSockResolveTest_SRCS += epicsSockResolveTest.c
-epicsSockResolveTest_SYS_LIBS_solaris = socket
-epicsSockResolveTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsSockResolveTest.c
 TESTS += epicsSockResolveTest
 
@@ -190,9 +185,6 @@ TESTS += taskwdTest
 TESTPROD_HOST += blockingSockTest
 blockingSockTest_SRCS += blockingSockTest.cpp
 testHarness_SRCS += blockingSockTest.cpp
-# needed when its an object library build
-blockingSockTest_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
-blockingSockTest_SYS_LIBS_solaris = socket
 TESTS += blockingSockTest
 
 TESTPROD_HOST += epicsMessageQueueTest

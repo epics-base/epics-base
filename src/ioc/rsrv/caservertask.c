@@ -73,7 +73,7 @@ static void req_server (void *pParm)
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        errlogPrintf ( "CAS: Listen error %s\n",
+        errlogPrintf ( "CAS: Listen error: %s\n",
             sockErrBuf );
         epicsSocketDestroy (IOC_sock);
         epicsThreadSuspendSelf ();
@@ -95,7 +95,7 @@ static void req_server (void *pParm)
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAS: Client accept error was \"%s\"\n",
+            errlogPrintf("CAS: Client accept error: %s\n",
                 sockErrBuf );
             epicsThreadSleep(15.0);
             continue;
@@ -140,7 +140,7 @@ int tryBind(SOCKET sock, const osiSockAddr* addr, const char *name)
         {
             epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ( "CAS: %s bind error: \"%s\"\n",
+            errlogPrintf ( "CAS: %s bind error: %s\n",
                            name, sockErrBuf );
             epicsThreadSuspendSelf ();
         }
@@ -205,7 +205,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                         char sockErrBuf[64];
                         epicsSocketConvertErrnoToString (
                             sockErrBuf, sizeof ( sockErrBuf ) );
-                        errlogPrintf ( "CAS: getsockname error was \"%s\"\n",
+                        errlogPrintf ( "CAS: getsockname error: %s\n",
                             sockErrBuf );
                         epicsThreadSuspendSelf ();
                         ok = 0;
@@ -244,7 +244,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
-                    cantProceed( "CAS: Socket bind %s error was %s\n",
+                    cantProceed( "CAS: Socket bind %s error: %s\n",
                         name, sockErrBuf );
                 }
                 ok = 0;
@@ -310,13 +310,14 @@ void rsrv_build_addr_lists(void)
         }
 #ifdef IP_ADD_MEMBERSHIP
         {
-            int flag = 1;
+            osiSockOptMcastLoop_t flag = 1;
             if (setsockopt(beaconSocket, IPPROTO_IP, IP_MULTICAST_LOOP,
                            (char *)&flag, sizeof(flag))<0) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
                             sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf("rsrv: failed to set mcast loopback\n");
+                errlogPrintf("CAS: failed to set mcast loopback: %s\n",
+                    sockErrBuf);
             }
         }
 #endif
@@ -665,7 +666,7 @@ int rsrv_init (void)
                         epicsSocketConvertErrnoToString (
                             sockErrBuf, sizeof ( sockErrBuf ) );
                         ipAddrToDottedIP (&temp, name, sizeof(name));
-                        fprintf(stderr, "CAS: Socket mcast join %s to %s failed with \"%s\"\n",
+                        errlogPrintf("CAS: Socket mcast join %s to %s failed: %s\n",
                             ifaceName, name, sockErrBuf );
                     }
                 }

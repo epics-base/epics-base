@@ -19,7 +19,8 @@ record(ai, "emptylink" ) {
   field(INP, {calc: {expr:"0"}})
 }
 record(ai, "emptylink1" ) {
-  field(INP, {calc: {expr:"1"}})
+  field(INP, {calc: {expr:"A", args:[1], time:"a"}})
+  field(TSEL, -2)
 }
 
 record(printf, "printf1") {

@@ -1940,7 +1940,7 @@ char * dbGetString(DBENTRY *pdbentry)
 	    else ppind=0;
             dbMsgPrint(pdbentry, "%s%s%s%s",
                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
-                   (pvlMask & pvlOptTSELisTime) ? ".TIME" : "",
+                   (plink->flags & DBLINK_FLAG_TSELisTIME) ? ".TIME" : "",
                    ppstring[ppind],
                    msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
 	    break;

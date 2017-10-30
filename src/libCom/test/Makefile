@@ -212,10 +212,12 @@ osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
+ifneq ($(OS_CLASS),$(WIN32))
+# This test can only be run on a build host, and is broken on Windows
 TESTPROD_HOST += yajl_test
 yajl_test_SRCS += yajl_test.c
-# Can only be run on the build host
 TESTS += yajlTest
+endif
 
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c

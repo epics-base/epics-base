@@ -212,6 +212,11 @@ osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
+TESTPROD_HOST += yajl_test
+yajl_test_SRCS += yajl_test.c
+# Can only be run on the build host
+TESTS += yajlTest
+
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c
 

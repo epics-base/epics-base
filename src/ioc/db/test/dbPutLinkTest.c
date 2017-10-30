@@ -589,9 +589,10 @@ void testJLink(void)
     testNumZ(7);
 
     testdbPutFieldFail(S_dbLib_badField, "j1.INP", DBF_STRING, "{\"z\":{\"fail\":5}}");
+    testdbPutFieldFail(S_dbLib_badField, "j1.INP", DBF_STRING, "{\"z\":{\"good\":6}");
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
-    /* put failure in parsing stage doesn't modify link */
+    /* put failures in parsing stage don't modify link */
     testdbGetFieldEqual("j1.INP", DBF_STRING, "{\"z\":{\"good\":4}}");
 
     testNumZ(7);
@@ -683,7 +684,7 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(319);
+    testPlan(320);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

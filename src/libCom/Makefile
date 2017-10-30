@@ -63,4 +63,5 @@ include $(LIBCOM)/error/RULES
 include $(LIBCOM)/flex/RULES
 include $(LIBCOM)/misc/RULES
 include $(LIBCOM)/osi/RULES
+include $(LIBCOM)/yajl/RULES
 

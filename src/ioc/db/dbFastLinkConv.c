@@ -949,7 +949,7 @@ static long cvt_q_d(
 
 /* Convert Int64 to Enumerated */
 static long cvt_q_e(
-     epicsInt32 *from,
+     epicsInt64 *from,
      epicsEnum16 *to,
      const dbAddr *paddr)
  { *to=*from; return(0); }

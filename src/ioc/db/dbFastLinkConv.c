@@ -920,18 +920,14 @@ static long cvt_q_q(
      epicsInt64 *from,
      epicsInt64 *to,
      const dbAddr *paddr)
- {
-
-  *to=*from; return(0); }
+ { *to=*from; return(0); }
 
 /* Convert Int64 to UInt64 */
 static long cvt_q_uq(
      epicsInt64 *from,
      epicsUInt64 *to,
      const dbAddr *paddr)
- {
-
-  *to=*from; return(0); }
+ { *to=*from; return(0); }
 
 /* Convert Int64 to Float */
 static long cvt_q_f(

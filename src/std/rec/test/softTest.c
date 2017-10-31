@@ -24,23 +24,26 @@ void checkDtyp(const char *rec)
     strcpy(dtyp, rec);
     strcat(dtyp, ".DTYP");
 
-    testdbGetFieldEqual(dtyp, DBF_LONG, 0); /* Soft Channel = 0 */
+    testdbGetFieldEqual(dtyp, DBR_LONG, 0);
+    testdbGetFieldEqual(dtyp, DBR_STRING, "Soft Channel");
 }
 
 static
-void checkInput(const char *rec, int value)
+void doProcess(const char *rec)
 {
     char proc[16];
-
-    testDiag("Checking record '%s'", rec);
 
     strcpy(proc, rec);
     strcat(proc, ".PROC");
 
-    testdbPutFieldOk(proc, DBF_CHAR, 1);
-
-    testdbGetFieldEqual(rec, DBF_LONG, value);
+    testdbPutFieldOk(proc, DBR_CHAR, 1);
 }
+
+/* Group 0 are all soft-channel input records with INP being a DB link
+ * to the PV 'source'. Their VAL fields all start out with the default
+ * value for the type, i.e. 0 or an empty string. Triggering record
+ * processing should read the integer value from the 'source' PV.
+ */
 
 static
 void testGroup0(void)
@@ -52,18 +55,27 @@ void testGroup0(void)
 
     testDiag("============ Starting %s ============", EPICS_FUNCTION);
 
-    testdbPutFieldOk("source", DBF_LONG, 1);
+    testdbPutFieldOk("source", DBR_LONG, 1);
     for (rec = records; *rec; rec++) {
-        checkInput(*rec, 1);
+        if (strcmp(*rec, "lsi0") != 0)
+            testdbGetFieldEqual(*rec, DBR_LONG, 0);
         checkDtyp(*rec);
+        doProcess(*rec);
+        testdbGetFieldEqual(*rec, DBR_LONG, 1);
     }
 
-    testdbPutFieldOk("source", DBF_LONG, 0);
+    testdbPutFieldOk("source", DBR_LONG, 0);
     for (rec = records; *rec; rec++) {
-        checkInput(*rec, 0);
+        doProcess(*rec);
+        testdbGetFieldEqual(*rec, DBR_LONG, 0);
     }
 }
 
+/* Group 1 are all soft-channel input records with INP being a non-zero
+ * "const" JSON-link, 9 for most records, 1 for the binary. Their VAL
+ * fields should all be initialized to that constant value. Triggering
+ * record processing should succeed, but shouldn't change VAL.
+ */
 static
 void testGroup1(void)
 {
@@ -77,10 +89,39 @@ void testGroup1(void)
     testDiag("============ Starting %s ============", EPICS_FUNCTION);
 
     for (rec = records; *rec; rec++) {
-        checkInput(*rec, init);
-        init = 9;   /* remainder initialize to 9 */
+        testdbGetFieldEqual(*rec, DBR_LONG, init);
+        doProcess(*rec);
+        testdbGetFieldEqual(*rec, DBR_LONG, init);
+        init = 9;   /* other records initialize to 9 */
     }
 }
+
+/* Group 2 are all soft-channel input records with INP being a CONSTANT
+ * link with value 9 for most records, 1 for the binary. Their VAL
+ * fields should all be initialized to that constant value. Triggering
+ * record processing should succeed, but shouldn't change VAL.
+ */
+static
+void testGroup2(void)
+{
+    const char ** rec;
+    const char * records[] = {
+        "bi2",
+        "ai2", "di2", "ii2", "li2", "mi2", NULL
+    };
+    int init = 1;   /* bi1 initializes to 1 */
+
+    testDiag("============ Starting %s ============", EPICS_FUNCTION);
+
+    for (rec = records; *rec; rec++) {
+        testdbGetFieldEqual(*rec, DBR_LONG, init);
+        doProcess(*rec);
+        testdbGetFieldEqual(*rec, DBR_LONG, init);
+        init = 9;   /* other records initialize to 9 */
+    }
+}
+
+
 
 int dest;
 
@@ -96,13 +137,17 @@ void checkOutput(const char *rec, int value)
 {
     testDiag("Checking record '%s'", rec);
 
-    testdbPutFieldOk(rec, DBF_LONG, value);
+    testdbPutFieldOk(rec, DBR_LONG, value);
 
     testOk(dest == value, "value %d output -> %d", value, dest);
 }
 
+/* Group 3 are all soft-channel output records with OUT being a DB link
+ * to the PV 'dest' with PP. Putting a value to the record writes that
+ * value to 'dest' and processes it.
+ */
 static
-void testGroup2(void)
+void testGroup3(void)
 {
     const char ** rec;
     const char * records[] = {
@@ -124,8 +169,11 @@ void testGroup2(void)
     checkOutput("do0.B0", 0);
 }
 
+/* Group 4 are all soft-channel output records with OUT being empty
+ * (i.e. a CONSTANT link). Putting a value to the record must succeed.
+ */
 static
-void testGroup3(void)
+void testGroup4(void)
 {
     const char ** rec;
     const char * records[] = {
@@ -143,7 +191,7 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(softTest)
 {
-    testPlan(114);
+    testPlan(163);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -161,6 +209,7 @@ MAIN(softTest)
     testGroup1();
     testGroup2();
     testGroup3();
+    testGroup4();
 
     testIocShutdownOk();
     testdbCleanup();

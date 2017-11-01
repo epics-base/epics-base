@@ -79,6 +79,7 @@ include $(LIBCOM)/error/RULES
 include $(LIBCOM)/flex/RULES
 include $(LIBCOM)/misc/RULES
 include $(LIBCOM)/osi/RULES
+include $(LIBCOM)/yajl/RULES
 
 # Can't use EXPAND as generated headers must appear
 # in O.Common, but EXPAND emits rules for O.$(T_A)

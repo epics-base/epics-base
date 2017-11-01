@@ -16,7 +16,10 @@ src_DEPEND_DIRS = configure
 DIRS += RTEMS
 RTEMS_DEPEND_DIRS = src
 
+DIRS += vxWorks
+vxWorks_DEPEND_DIRS = src
+
 DIRS += test
-test_DEPEND_DIRS = RTEMS
+test_DEPEND_DIRS = RTEMS vxWorks
 
 include $(TOP)/configure/RULES_TOP

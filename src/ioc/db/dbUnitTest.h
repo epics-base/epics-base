@@ -48,13 +48,13 @@ epicsShareFunc void testdbCleanup(void);
  * testdbPutFieldOk("pvname", DBF_FLOAT, (double)4.1);
  * testdbPutFieldOk("pvname", DBF_STRING, "hello world");
  */
-epicsShareFunc void testdbPutFieldOk(const char* pv, short dbrType, ...);
+epicsShareFunc void testdbPutFieldOk(const char* pv, int dbrType, ...);
 /* Tests for put failure */
-epicsShareFunc void testdbPutFieldFail(long status, const char* pv, short dbrType, ...);
+epicsShareFunc void testdbPutFieldFail(long status, const char* pv, int dbrType, ...);
 
 epicsShareFunc long testdbVPutField(const char* pv, short dbrType, va_list ap);
 
-epicsShareFunc void testdbGetFieldEqual(const char* pv, short dbrType, ...);
+epicsShareFunc void testdbGetFieldEqual(const char* pv, int dbrType, ...);
 epicsShareFunc void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
 
 epicsShareFunc void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long count, const void *pbuf);

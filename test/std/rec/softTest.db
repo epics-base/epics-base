@@ -1,5 +1,7 @@
-# Group 0 are input records with INP being a DB link to 'source'.
-# Processing them reads that value.
+# Group 0 are all soft-channel input records with INP being a DB link
+# to the PV 'source'. Their VAL fields all start out with the default
+# value for the type, i.e. 0 or an empty string. Triggering record
+# processing should read the integer value from the 'source' PV.
 
 record(longin, "source") {}
 
@@ -57,8 +59,11 @@ record(stringin, "si0") {
   field(INP, "source")
 }
 
-# Group 1 are input records with INP being a non-zero constant.
-# Processing them succeeds but does not change VAL.
+
+# Group 1 are all soft-channel input records with INP being a non-zero
+# "const" JSON-link, 9 for most records, 1 for the binary. Their VAL
+# fields should all be initialized to that constant value. Triggering
+# record processing should succeed, but shouldn't change VAL.
 
 record(ai, "ai1") {
   field(DTYP, "Soft Channel")
@@ -115,8 +120,60 @@ record(stringin, "si1") {
 }
 
 
-# Group 2 are output records with OUT being a DB link to 'dest' with PP.
-# Putting a value to them writes that value to 'dest'.
+# Group 2 are all soft-channel input records with INP being a CONSTANT
+# link with value 9 for most records, 1 for the binary. Their VAL
+# fields should all be initialized to that constant value. Triggering
+# record processing should succeed, but shouldn't change VAL.
+
+record(ai, "ai2") {
+  field(DTYP, "Soft Channel")
+  field(INP, 9)
+}
+record(bi, "bi2") {
+  field(DTYP, "Soft Channel")
+  field(INP, 1)
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64in, "ii2") {
+  field(DTYP, "Soft Channel")
+  field(INP, 9)
+}
+record(longin, "li2") {
+  field(DTYP, "Soft Channel")
+  field(INP, 9)
+}
+record(mbbiDirect, "di2") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, 9)
+}
+record(mbbi, "mi2") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, 9)
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+
+
+# Group 3 are all soft-channel output records with OUT being a DB link
+# to the PV 'dest' with PP. Putting a value to the record writes that
+# value to 'dest' and processes it.
 
 record(sub, "dest") {
   field(SNAM, "destSubr")
@@ -177,8 +234,8 @@ record(stringout, "so0") {
 }
 
 
-# Group 3 are output records with OUT being empty (a constant link).
-# Putting a value to them must succeed.
+# Group 4 are all soft-channel output records with OUT being empty
+# (i.e. a CONSTANT link). Putting a value to the record must succeed.
 
 record(ao, "ao1") {
   field(DTYP, "Soft Channel")

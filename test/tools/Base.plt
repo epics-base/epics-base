@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use lib '../..';
+use lib '@TOP@/lib/perl';
 
 use Test::More tests => 127;
 

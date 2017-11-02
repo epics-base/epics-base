@@ -23,6 +23,7 @@
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbFldTypes.h"
@@ -30,6 +31,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "special.h"
 #include "menuOmsl.h"
 #include "menuIvoa.h"
 #include "menuYesNo.h"
@@ -44,7 +46,7 @@
 #define initialize NULL
 static long init_record(struct dbCommon *, int);
 static long process(struct dbCommon *);
-#define special NULL
+static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -98,10 +100,9 @@ static long init_record(struct dbCommon *pcommon, int pass)
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
     struct stringoutdset *pdset = (struct stringoutdset *) prec->dset;
 
-    if (pass==0)
-        return 0;
+    if (pass == 0) return 0;
 
-    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
     if (!pdset) {
         recGblRecordError(S_dev_noDSET, prec, "stringout: init_record");
@@ -179,13 +180,34 @@ static long process(struct dbCommon *pcommon)
 	if ( !pact && prec->pact ) return(0);
 
 	prec->pact = TRUE;
-	recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, NULL);
+
 	monitor(prec);
 	recGblFwdLink(prec);
 	prec->pact=FALSE;
 	return(status);
 }
-
+
+static long special(DBADDR *paddr, int after)
+{
+    stringoutRecord *prec = (stringoutRecord *)(paddr->precord);
+    int      special_type = paddr->special;
+
+    switch(special_type) {
+    case(SPC_MOD):
+        if (dbGetFieldIndex(paddr) == stringoutRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return 0;
+        }
+    default:
+        recGblDbaddrError(S_db_badChoice, paddr, "stringout: special");
+        return(S_db_badChoice);
+    }
+}
+
 static void monitor(stringoutRecord *prec)
 {
     int monitor_mask = recGblResetAlarms(prec);
@@ -206,32 +228,40 @@ static void monitor(stringoutRecord *prec)
 
 static long writeValue(stringoutRecord *prec)
 {
-	long		status;
-        struct stringoutdset 	*pdset = (struct stringoutdset *) (prec->dset);
+    struct stringoutdset *pdset = (struct stringoutdset *) prec->dset;
+    long status = 0;
 
-	if (prec->pact == TRUE){
-		status=(*pdset->write_stringout)(prec);
-		return(status);
-	}
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
-	status=dbGetLink(&(prec->siml),DBR_USHORT,
-		&(prec->simm),0,0);
-	if (status)
-		return(status);
+    switch (prec->simm) {
+    case menuYesNoNO:
+        status = pdset->write_stringout(prec);
+        break;
 
-	if (prec->simm == menuYesNoNO){
-		status=(*pdset->write_stringout)(prec);
-		return(status);
-	}
-	if (prec->simm == menuYesNoYES){
-		status=dbPutLink(&prec->siol,DBR_STRING,
-			prec->val,1);
-	} else {
-		status=-1;
-		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-		return(status);
-	}
-        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
+    case menuYesNoYES: {
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbPutLink(&prec->siol, DBR_STRING, &prec->val, 1);
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
+    }
 
-	return(status);
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
+
+    return status;
 }

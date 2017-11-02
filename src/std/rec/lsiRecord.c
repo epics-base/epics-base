@@ -18,6 +18,7 @@
 #include "dbDefs.h"
 #include "errlog.h"
 #include "alarm.h"
+#include "callback.h"
 #include "cantProceed.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -56,7 +57,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return 0;
     }
 
-    dbLoadLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
     pdset = (lsidset *) prec->dset;
     if (!pdset) {
@@ -104,7 +105,7 @@ static long process(struct dbCommon *pcommon)
         return 0;
 
     prec->pact = TRUE;
-    recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
     monitor(prec);
 
@@ -171,6 +172,15 @@ static long put_array_info(DBADDR *paddr, long nNew)
 static long special(DBADDR *paddr, int after)
 {
     lsiRecord *prec = (lsiRecord *) paddr->precord;
+    int special_type = paddr->special;
+
+    if (special_type == SPC_MOD && dbGetFieldIndex(paddr) == lsiRecordSIMM) {
+        if (!after)
+            recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+        else
+            recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+        return 0;
+    }
 
     if (!after)
         return 0;
@@ -211,40 +221,46 @@ static void monitor(lsiRecord *prec)
 
 static long readValue(lsiRecord *prec)
 {
-    long status;
-    lsidset *pdset = (lsidset *) prec->dset;
+    struct lsidset *pdset = (struct lsidset *) prec->dset;
+    long status = 0;
 
-    if (prec->pact)
-        goto read;
-
-    status = dbGetLink(&prec->siml, DBR_USHORT, &prec->simm, 0, 0);
-    if (status)
-        return status;
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
     switch (prec->simm) {
     case menuYesNoNO:
-read:
         status = pdset->read_string(prec);
         break;
 
-    case menuYesNoYES:
+    case menuYesNoYES: {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        status = dbGetLinkLS(&prec->siol, prec->val, prec->sizv, &prec->len);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbGetLinkLS(&prec->siol, prec->val, prec->sizv, &prec->len);
+            if (status == 0) prec->udf = FALSE;
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
         break;
+    }
 
     default:
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
         status = -1;
     }
 
-    if (!status)
-        prec->udf = FALSE;
-
     return status;
 }
 
-
-/* Create Record Support Entry Table*/
+/* Create Record Support Entry Table */
 
 #define report NULL
 #define initialize NULL

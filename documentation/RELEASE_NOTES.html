@@ -17,6 +17,18 @@
 
 -->
 
+<h3>Simulation mode improvements</h3>
+
+<p>Records that support simulation mode have two new fields, <tt>SSCN</tt>
+(Simulation Scan Mode) and <tt>SDLY</tt> (Simulation Delay). <tt>SSCN</tt> is a
+menu field that provides an alternate value for the <tt>SCAN</tt> field to be
+used while the record is in simulation mode. This is especially useful for I/O
+scanned records, for which simulation mode was not working at all. Setting
+<tt>SDLY</tt> to a positive value makes the record process asynchronously in
+simulation mode, with the second stage processing happening after the specified
+time (in seconds).</p>
+
+
 <h3>Extend the dbServer API with init/run/pause/stop methods</h3>
 
 <p>This change permits IOCs to be built that omit the CA server (RSRV) by

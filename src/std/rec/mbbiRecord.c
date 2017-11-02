@@ -22,6 +22,7 @@
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbFldTypes.h"
@@ -46,7 +47,7 @@
 #define initialize NULL
 static long init_record(struct dbCommon *, int);
 static long process(struct dbCommon *);
-static long  special(DBADDR *, int);
+static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -117,8 +118,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     struct mbbidset  *pdset = (struct mbbidset *) prec->dset;
     long status = 0;
 
-    if (pass == 0)
-        return 0;
+    if (pass == 0) return 0;
 
     pdset = (struct mbbidset *) prec->dset;
     if (!pdset) {
@@ -131,7 +131,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return S_dev_missingSup;
     }
 
-    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
 
     /* Initialize MASK if the user set NOBT instead */
@@ -172,7 +172,7 @@ static long process(struct dbCommon *pcommon)
         return 0;
 
     prec->pact = TRUE;
-    recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
     if (status == 0) {
         /* Convert RVAL to VAL */
@@ -215,20 +215,25 @@ static long special(DBADDR *paddr, int after)
     mbbiRecord *prec = (mbbiRecord *) paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
 
-    if (!after)
-        return 0;
-
     switch (paddr->special) {
     case SPC_MOD:
-        init_common(prec);
         if (fieldIndex >= mbbiRecordZRST && fieldIndex <= mbbiRecordFFST) {
             int event = DBE_PROPERTY;
 
+            if (!after) return 0;
+            init_common(prec);
             if (prec->val == fieldIndex - mbbiRecordZRST)
                 event |= DBE_VALUE | DBE_LOG;
             db_post_events(prec, &prec->val, event);
+            return 0;
         }
-        return 0;
+        if (fieldIndex == mbbiRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return 0;
+        }
     default:
         recGblDbaddrError(S_db_badChoice, paddr, "mbbi: special");
         return S_db_badChoice;
@@ -372,42 +377,49 @@ static void monitor(mbbiRecord *prec)
 static long readValue(mbbiRecord *prec)
 {
     struct mbbidset *pdset = (struct mbbidset *) prec->dset;
-    long status;
+    long status = 0;
 
-    if (prec->pact)
-        return pdset->read_mbbi(prec);
-
-    status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
-    if (status)
-        return status;
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
     switch (prec->simm) {
     case menuSimmNO:
-        return pdset->read_mbbi(prec);
+        status = pdset->read_mbbi(prec);
+        break;
 
     case menuSimmYES:
-        status = dbGetLink(&prec->siol, DBR_ULONG, &prec->sval, 0, 0);
-        if (status == 0) {
-            prec->val = prec->sval;
-            prec->udf = FALSE;
+    case menuSimmRAW: {
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbGetLink(&prec->siol, DBR_ULONG, &prec->sval, 0, 0);
+            if (status == 0) {
+                if (prec->simm == menuSimmYES) {
+                    prec->val = prec->sval;
+                    status = 2;   /* Don't convert */
+                } else {
+                    prec->rval = prec->sval;
+                }
+                prec->udf = FALSE;
+            }
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
         }
-        status = 2;   /* Don't convert */
         break;
-
-    case menuSimmRAW:
-        status = dbGetLink(&prec->siol, DBR_ULONG, &prec->sval, 0, 0);
-        if (status == 0) {
-            prec->rval = prec->sval;
-            prec->udf  = FALSE;
-        }
-        status = 0;   /* Convert RVAL */
-        break;
+    }
 
     default:
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
-        return -1;
+        status = -1;
     }
 
-    recGblSetSevr(prec, SIMM_ALARM, prec->sims);
     return status;
 }

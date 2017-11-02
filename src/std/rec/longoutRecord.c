@@ -20,6 +20,7 @@
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbFldTypes.h"
@@ -27,6 +28,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "special.h"
 #include "menuYesNo.h"
 #include "menuIvoa.h"
 #include "menuOmsl.h"
@@ -41,7 +43,7 @@
 #define initialize NULL
 static long init_record(struct dbCommon *, int);
 static long process(struct dbCommon *);
-#define special NULL
+static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -96,10 +98,9 @@ static long init_record(struct dbCommon *pcommon, int pass)
     struct longoutRecord *prec = (struct longoutRecord *)pcommon;
     struct longoutdset *pdset = (struct longoutdset *) prec->dset;
 
-    if (pass==0)
-        return 0;
+    if (pass == 0) return 0;
 
-    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
     if (!pdset) {
         recGblRecordError(S_dev_noDSET, prec, "longout: init_record");
@@ -183,7 +184,7 @@ static long process(struct dbCommon *pcommon)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
 
-	recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, NULL);
 
 	/* check event list */
 	monitor(prec);
@@ -195,6 +196,26 @@ static long process(struct dbCommon *pcommon)
 	return(status);
 }
 
+static long special(DBADDR *paddr, int after)
+{
+    longoutRecord *prec = (longoutRecord *)(paddr->precord);
+    int    special_type = paddr->special;
+
+    switch(special_type) {
+    case(SPC_MOD):
+        if (dbGetFieldIndex(paddr) == longoutRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return(0);
+        }
+    default:
+        recGblDbaddrError(S_db_badChoice, paddr, "longout: special");
+        return(S_db_badChoice);
+    }
+}
+
 #define indexof(field) longoutRecord##field
 
 static long get_units(DBADDR *paddr,char *units)
@@ -358,32 +379,42 @@ static void monitor(longoutRecord *prec)
 
 static long writeValue(longoutRecord *prec)
 {
-	long status;
-        struct longoutdset *pdset = (struct longoutdset *) (prec->dset);
+    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
+    long status = 0;
 
-	if (prec->pact == TRUE){
-		status=(*pdset->write_longout)(prec);
-		return(status);
-	}
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
-	status=dbGetLink(&(prec->siml),DBR_USHORT,&(prec->simm),0,0);
-	if (!RTN_SUCCESS(status))
-		return(status);
+    switch (prec->simm) {
+    case menuYesNoNO:
+        status = pdset->write_longout(prec);
+        break;
 
-	if (prec->simm == menuYesNoNO){
-		status=(*pdset->write_longout)(prec);
-		return(status);
-	}
-	if (prec->simm == menuYesNoYES){
-		status=dbPutLink(&prec->siol,DBR_LONG,&prec->val,1);
-	} else {
-		status=-1;
-		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-		return(status);
-	}
-        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
+    case menuYesNoYES: {
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbPutLink(&prec->siol, DBR_LONG, &prec->val, 1);
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
+    }
 
-	return(status);
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
+
+    return status;
 }
 
 static void convert(longoutRecord *prec, epicsInt32 value)

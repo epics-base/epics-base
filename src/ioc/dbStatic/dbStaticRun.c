@@ -483,7 +483,7 @@ long dbPutStringNum(DBENTRY *pdbentry, const char *pstring)
                     return status;
 
                 index = dbGetNMenuChoices(pdbentry);
-                if (value > index && index > 0)
+                if (value > index && index > 0 && value < USHRT_MAX)
                     return S_dbLib_badField;
 
                 *field = value;

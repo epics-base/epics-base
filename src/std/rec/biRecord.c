@@ -23,6 +23,7 @@
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbFldTypes.h"
 #include "dbEvent.h"
@@ -43,7 +44,7 @@
 #define initialize NULL
 static long init_record(struct dbCommon *, int);
 static long process(struct dbCommon *);
-#define special NULL
+static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -95,10 +96,11 @@ static long init_record(struct dbCommon *pcommon, int pass)
     struct bidset *pdset;
     long status;
 
-    if (pass==0) return(0);
+    if (pass == 0) return 0;
 
-    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    recGblInitConstantLink(&prec->siol,DBF_USHORT,&prec->sval);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+    recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
+
     if(!(pdset = (struct bidset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"bi: init_record");
 	return(S_dev_noDSET);
@@ -135,8 +137,9 @@ static long process(struct dbCommon *pcommon)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
 
-	recGblGetTimeStamp(prec);
-	if(status==0) { /* convert rval to val */
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
+
+    if(status==0) { /* convert rval to val */
 		if(prec->rval==0) prec->val =0;
 		else prec->val = 1;
 		prec->udf = FALSE;
@@ -153,6 +156,26 @@ static long process(struct dbCommon *pcommon)
 	return(status);
 }
 
+static long special(DBADDR *paddr, int after)
+{
+    biRecord    *prec = (biRecord *)(paddr->precord);
+    int          special_type = paddr->special;
+
+    switch(special_type) {
+    case(SPC_MOD):
+        if (dbGetFieldIndex(paddr) == biRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return(0);
+        }
+    default:
+        recGblDbaddrError(S_db_badChoice, paddr, "bi: special");
+        return(S_db_badChoice);
+    }
+}
+
 static long get_enum_str(const DBADDR *paddr, char *pstring)
 {
     biRecord	*prec=(biRecord *)paddr->precord;
@@ -252,43 +275,50 @@ static void monitor(biRecord *prec)
 
 static long readValue(biRecord *prec)
 {
-	long		status;
-        struct bidset 	*pdset = (struct bidset *) (prec->dset);
+    struct bidset *pdset = (struct bidset *)prec->dset;
+    long status = 0;
 
-	if (prec->pact == TRUE){
-		status=(*pdset->read_bi)(prec);
-		return(status);
-	}
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
-	status = dbGetLink(&(prec->siml),DBR_USHORT, &(prec->simm),0,0);
-	if (status)
-		return(status);
+    switch (prec->simm) {
+    case menuSimmNO:
+        status = pdset->read_bi(prec);
+        break;
 
-	if (prec->simm == menuSimmNO){
-		status=(*pdset->read_bi)(prec);
-		return(status);
-	}
-	if (prec->simm == menuSimmYES){
-		status=dbGetLink(&(prec->siol),DBR_ULONG,&(prec->sval),0,0);
-		if (status==0){
-			prec->val=(unsigned short)prec->sval;
-			prec->udf=FALSE;
-		}
-                status=2; /* dont convert */
-	}
-	else if (prec->simm == menuSimmRAW){
-		status=dbGetLink(&(prec->siol),DBR_ULONG,&(prec->sval),0,0);
-		if (status==0){
-			prec->rval=prec->sval;
-			prec->udf=FALSE;
-		}
-		status=0; /* convert since we've written RVAL */
-	} else {
-		status=-1;
-		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-		return(status);
-	}
-	recGblSetSevr(prec,SIMM_ALARM,prec->sims);
+    case menuSimmYES:
+    case menuSimmRAW: {
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbGetLink(&prec->siol, DBR_ULONG, &prec->sval, 0, 0);
+            if (status == 0) {
+                if (prec->simm == menuSimmYES) {
+                    prec->val = prec->sval;
+                    status = 2;   /* Don't convert */
+                } else {
+                    prec->rval = (unsigned short) prec->sval;
+                }
+                prec->udf = FALSE;
+            }
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
+    }
 
-	return(status);
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
+
+    return status;
 }

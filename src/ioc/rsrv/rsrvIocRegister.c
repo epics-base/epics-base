@@ -10,9 +10,10 @@
 #include "osiSock.h"
 #include "iocsh.h"
 
-#include "epicsExport.h"
+#define epicsExportSharedSymbols
 #include "rsrv.h"
 #include "server.h"
+#include "epicsExport.h"
 
 
 /* casr */

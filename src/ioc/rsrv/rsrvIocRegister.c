@@ -4,18 +4,16 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include "osiSock.h"
 #include "iocsh.h"
 
-#define epicsExportSharedSymbols
+#include "epicsExport.h"
 #include "rsrv.h"
 #include "server.h"
-#include "rsrvIocRegister.h"
 
-#include "epicsExport.h"
 
 /* casr */
 static const iocshArg casrArg0 = { "level",iocshArgInt};
@@ -26,9 +24,12 @@ static void casrCallFunc(const iocshArgBuf *args)
     casr(args[0].ival);
 }
 
-void rsrvIocRegister(void)
+static
+void rsrvRegistrar(void)
 {
+    rsrv_register_server();
     iocshRegister(&casrFuncDef,casrCallFunc);
 }
 
 epicsExportAddress(int, CASDEBUG);
+epicsExportRegistrar(rsrvRegistrar);

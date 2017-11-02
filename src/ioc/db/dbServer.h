@@ -5,8 +5,20 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*
- *  Author: Andrew Johnson <anj@aps.anl.gov>
+/**
+ * @file dbServer.h
+ * @author Andrew Johnson <anj@aps.anl.gov>
+ *
+ * @brief The IOC's interface to the server layers that publish its PVs.
+ *
+ * All server layers which publish IOC record data should initialize a
+ * dbServer structure and register it with the IOC. The methods that
+ * the dbServer interface provides allow the IOC to start, pause and stop
+ * the servers together, and to provide status and debugging information
+ * to the IOC user/developer through a common set of commands.
+ *
+ * @todo No API is provided yet for calling stats() methods.
+ * Nothing in the IOC calls dbStopServers(), not sure where it should go.
  */
 
 #ifndef INC_dbServer_H
@@ -21,35 +33,140 @@
 extern "C" {
 #endif
 
-/* Server information structure */
+/** @brief Server information structure.
+ *
+ * Every server layer should initialize and register an instance of this
+ * structure with the IOC by passing it to the dbRegisterServer() routine.
+ *
+ * All methods in this struct are optional; use @c NULL if a server is
+ * unable to support a particular operation (or if it hasn't been
+ * implemented yet).
+ */
 
 typedef struct dbServer {
+    /** @brief Linked list node; initialize to @c ELLNODE_INIT */
     ELLNODE node;
+
+    /** @brief A short server identifier; printable, with no spaces */
     const char *name;
 
-    /* Print level-dependent status report to stdout */
+    /** @brief Print level-dependent status report to stdout.
+     *
+     * @param level Interest level, specifies how much detail to print.
+     */
     void (* report) (unsigned level);
 
-    /* Get number of channels and clients connected */
+    /** @brief Get number of channels and clients currently connected.
+     *
+     * @param channels NULL or pointer for returning channel count.
+     * @param clients NULL or pointer for returning client count.
+     */
     void (* stats) (unsigned *channels, unsigned *clients);
 
-    /* Get identity of client initiating the calling thread */
-    /* Must return 0 (OK), or -1 (ERROR) from unknown threads */
+    /** @brief Get identity of client initiating the calling thread.
+     *
+     * Must fill in the buffer with the client's identity when called from a
+     *  thread that belongs to this server layer. For other threads, the
+     *  method should do nothing, just return -1.
+     * @param pBuf Buffer for client identity string.
+     * @param bufSize Number of chars available in pBuf.
+     * @return -1 means calling thread is not owned by this server.
+     *  0 means the thread was recognized and pBuf has been filled in.
+     */
     int (* client) (char *pBuf, size_t bufSize);
+
+    /** @name Control Methods
+     * These control methods for the server will be called by routines
+     * related to iocInit for all registered servers in turn when the IOC
+     * is being initialized, run, paused and stopped respectively.
+     *
+     * @{
+     */
+
+    /** @brief Server init method.
+     *
+     *  Called for all registered servers by dbInitServers().
+     */
+    void (* init) (void);
+
+    /** @brief Server run method.
+     *
+     *  Called for all registered servers by dbRunServers().
+     */
+    void (* run) (void);
+
+    /** @brief Server pause method.
+     *
+     *  Called for all registered servers by dbPauseServers().
+     */
+    void (* pause) (void);
+
+    /** @brief Server stop method.
+     *
+     *  Called for all registered servers by dbStopServers().
+     */
+    void (* stop) (void);
+
+    /** @}
+     */
 } dbServer;
 
 
-epicsShareFunc void dbRegisterServer(dbServer *psrv);
-
-/* Extra routines could be added if/when needed:
+/** @brief Register a server layer with the IOC
  *
- * epicsShareFunc const dbServer* dbFindServer(const char *name);
- * epicsShareFunc void dbIterateServers(srvIterFunc func, void *user);
+ * This should only be called once for each server layer.
+ * @param psrv Server information structure for the server
  */
+epicsShareFunc int dbRegisterServer(dbServer *psrv);
 
+/** @brief Unregister a server layer
+ *
+ * This should only be called when the servers are inactive.
+ * @param psrv Server information structure for the server
+ */
+epicsShareFunc int dbUnregisterServer(dbServer *psrv);
+
+/** @brief Print dbServer Reports.
+*
+ * Calls the report methods of all registered servers.
+ * This routine is provided as an IOC Shell command.
+ * @param level Interest level, specifies how much detail to print.
+ */
 epicsShareFunc void dbsr(unsigned level);
 
+/** @brief Query servers for client's identity.
+ *
+ * This routine is called by code that wants to identify who (or what)
+ *  is responsible for the thread which is currently running. Setting
+ *  the @c TPRO field of a record is one way to trigger this; the identity
+ *  of the calling thread is printed along with the record name whenever
+ *  the record is subsequently processed.
+ */
 epicsShareFunc int dbServerClient(char *pBuf, size_t bufSize);
+
+/** @brief Initialize all registered servers.
+ *
+ * Calls all dbServer::init() methods.
+ */
+epicsShareFunc void dbInitServers(void);
+
+/** @brief Run all registered servers.
+ *
+ * Calls all dbServer::run() methods.
+ */
+epicsShareFunc void dbRunServers(void);
+
+/** @brief Pause all registered servers.
+ *
+ * Calls all dbServer::pause() methods.
+ */
+epicsShareFunc void dbPauseServers(void);
+
+/** @brief Stop all registered servers.
+ *
+ * Calls all dbServer::stop() methods.
+ */
+epicsShareFunc void dbStopServers(void);
 
 #ifdef __cplusplus
 }

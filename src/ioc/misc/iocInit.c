@@ -6,7 +6,7 @@
 * Copyright (c) 2013 Helmholtz-Zentrum Berlin
 *     für Materialien und Energie GmbH.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      Original Author: Marty Kraimer
@@ -52,6 +52,7 @@
 #include "dbLock.h"
 #include "dbNotify.h"
 #include "dbScan.h"
+#include "dbServer.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "devSup.h"
@@ -68,13 +69,12 @@
 #include "registryDriverSupport.h"
 #include "registryJLinks.h"
 #include "registryRecordType.h"
-#include "rsrv.h"
 
 static enum {
     iocVirgin, iocBuilding, iocBuilt, iocRunning, iocPaused, iocStopped
 } iocState = iocVirgin;
 static enum {
-    buildRSRV, buildIsolated
+    buildServers, buildIsolated
 } iocBuildMode;
 
 /* define forward references*/
@@ -202,15 +202,14 @@ int iocBuild(void)
     status = iocBuild_2();
     if (status) return status;
 
-    /* Start CA server threads */
-    rsrv_init();
+    dbInitServers();
 
     status = iocBuild_3();
 
     if (dbThreadRealtimeLock)
         epicsThreadRealtimeLock();
 
-    if (!status) iocBuildMode = buildRSRV;
+    if (!status) iocBuildMode = buildServers;
     return status;
 }
 
@@ -246,8 +245,11 @@ int iocRun(void)
     if (iocState == iocBuilt)
         initHookAnnounce(initHookAfterInterruptAccept);
 
-    rsrv_run();
-    initHookAnnounce(initHookAfterCaServerRunning);
+    if (iocBuildMode == buildServers) {
+        dbRunServers();
+        initHookAnnounce(initHookAfterCaServerRunning);
+    }
+
     if (iocState == iocBuilt)
         initHookAnnounce(initHookAtEnd);
 
@@ -267,8 +269,10 @@ int iocPause(void)
     }
     initHookAnnounce(initHookAtIocPause);
 
-    rsrv_pause();
-    initHookAnnounce(initHookAfterCaServerPaused);
+    if (iocBuildMode == buildServers) {
+        dbPauseServers();
+        initHookAnnounce(initHookAfterCaServerPaused);
+    }
 
     dbCaPause();
     scanPause();
@@ -420,7 +424,7 @@ static void initRecSup(void)
 static void initDevSup(void)
 {
     dbRecordType *pdbRecordType;
-    
+
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;
          pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
@@ -701,27 +705,37 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
 
 int iocShutdown(void)
 {
-    if (iocState == iocVirgin || iocState == iocStopped) return 0;
+    if (iocState == iocVirgin || iocState == iocStopped)
+        return 0;
+
     iterateRecords(doCloseLinks, NULL);
-    if (iocBuildMode==buildIsolated) {
+
+    if (iocBuildMode == buildIsolated) {
         /* stop and "join" threads */
         scanStop();
         callbackStop();
     }
+    else
+        dbStopServers();
+
     dbCaShutdown(); /* must be before dbFreeRecord and dbChannelExit */
-    if (iocBuildMode==buildIsolated) {
+
+    if (iocBuildMode == buildIsolated) {
         /* free resources */
         scanCleanup();
         callbackCleanup();
+
         iterateRecords(doFreeRecord, NULL);
         dbLockCleanupRecords(pdbbase);
+
         asShutdown();
         dbChannelExit();
         dbProcessNotifyExit();
         iocshFree();
     }
+
     iocState = iocStopped;
-    iocBuildMode = buildRSRV;
+    iocBuildMode = buildServers;
     return 0;
 }
 

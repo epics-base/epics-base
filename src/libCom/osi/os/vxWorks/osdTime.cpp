@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <taskLib.h>
 
+#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "epicsTime.h"
 #include "osiNTPTime.h"
 #include "osiClockTime.h"
@@ -63,6 +64,7 @@ static int timeRegister(void)
     } else {
         ClockTime_Init(CLOCKTIME_NOSYNC);
     }
+    osdMonotonicInit();
     return 1;
 }
 static int done = timeRegister();

@@ -15,6 +15,7 @@
 #include <mach/mach.h>
 #include <mach/clock.h>
 
+#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "osiSock.h"
 
 #define epicsExportSharedSymbols
@@ -45,6 +46,8 @@ static int timeRegister(void)
 
     generalTimeCurrentTpRegister("MachTime", \
         LAST_RESORT_PRIORITY, osdTimeGetCurrent);
+
+    osdMonotonicInit();
     return 1;
 }
 static int done = timeRegister();

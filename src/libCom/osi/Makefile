@@ -119,6 +119,7 @@ Com_SRCS += osdMutex.c
 Com_SRCS += osdSpin.c
 Com_SRCS += osdEvent.c
 Com_SRCS += osdTime.cpp
+Com_SRCS += osdMonotonic.c
 Com_SRCS += osdProcess.c
 Com_SRCS += osdNetIntf.c
 Com_SRCS += osdMessageQueue.c

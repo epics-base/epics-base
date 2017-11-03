@@ -52,4 +52,4 @@ include $(TOP)/configure/RULES_DIRS
 RELEASE.base:
 	@echo "EPICS_BASE = $(dir $(abspath $(lastword $(MAKEFILE_LIST))/..))" > $@
 realclean:
-        $(RM) RELEASE.base
+	$(RM) RELEASE.base

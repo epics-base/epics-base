@@ -10,7 +10,7 @@
 TOP = ..
 include $(TOP)/configure/CONFIG
 
-inc: RELEASE.local
+inc: RELEASE.base
 
 # Submodules for bundle build
 SUBMODULES += libcom
@@ -49,7 +49,7 @@ DIRS += $(subst /,,$(dir $(wildcard $(addsuffix /Makefile, $(SUBMODULES)))))
 
 include $(TOP)/configure/RULES_DIRS
 
-RELEASE.local:
+RELEASE.base:
 	@echo "EPICS_BASE = $(dir $(abspath $(lastword $(MAKEFILE_LIST))/..))" > $@
 realclean:
-	$(RM) RELEASE.local
+        $(RM) RELEASE.base

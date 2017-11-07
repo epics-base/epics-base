@@ -2651,6 +2651,184 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
     return(status);
 }
 
+char * dbVerify(DBENTRY *pdbentry, const char *pstring)
+{
+    dbFldDes *pflddes = pdbentry->pflddes;
+    char *message = getpMessage(pdbentry);
+    long status;
+    union {
+        epicsInt8    i8;
+        epicsUInt8   u8;
+        epicsInt16   i16;
+        epicsUInt16  u16;
+        epicsInt32   i32;
+        epicsUInt32  u32;
+        epicsInt64   i64;
+        epicsUInt64  u64;
+        epicsFloat32 f32;
+        epicsFloat64 f64;
+    } val;
+
+    if (!pflddes) {
+        strcpy(message, "fldDes not found");
+        return message;
+    }
+
+    if (strstr(pstring,"$(") || strstr(pstring,"${"))
+        return NULL;
+
+    switch (pflddes->field_type) {
+    case DBF_STRING:
+    {
+        size_t length = strlen(pstring);
+
+        if (length >= pflddes->size) {
+            sprintf(message, "String too long, max %d characters",
+                pflddes->size - 1);
+            return message;
+        }
+
+        if (pflddes->special == SPC_CALC) {
+            char  rpcl[RPCL_LEN];
+            short err;
+
+            status = postfix(pstring, rpcl, &err);
+            if (status)  {
+                sprintf(message,"%s in CALC expression '%s'",
+                        calcErrorStr(err), pstring);
+                return message;
+            }
+        }
+
+        return NULL;
+    }
+
+    case DBF_CHAR:
+        status = epicsParseInt8(pstring, &val.i8, 0, NULL);
+        break;
+
+    case DBF_UCHAR:
+        status = epicsParseUInt8(pstring, &val.u8, 0, NULL);
+        break;
+
+    case DBF_SHORT:
+        status = epicsParseInt16(pstring, &val.i16, 0, NULL);
+        break;
+
+    case DBF_ENUM:
+    case DBF_USHORT:
+        status = epicsParseUInt16(pstring, &val.u16, 0, NULL);
+        break;
+
+    case DBF_LONG:
+        status = epicsParseInt32(pstring, &val.i32, 0, NULL);
+        break;
+
+    case DBF_ULONG:
+        status = epicsParseUInt32(pstring, &val.u32, 0, NULL);
+        break;
+
+    case DBF_INT64:
+        status = epicsParseInt64(pstring, &val.i64, 0, NULL);
+        break;
+
+    case DBF_UINT64:
+        status = epicsParseUInt64(pstring, &val.u64, 0, NULL);
+        break;
+
+    case DBF_FLOAT:
+        status = epicsParseFloat32(pstring, &val.f32, NULL);
+        break;
+
+    case DBF_DOUBLE:
+        status = epicsParseFloat64(pstring, &val.f64, NULL);
+        break;
+
+    case DBF_MENU:
+        {
+            dbMenu *pdbMenu = (dbMenu *)pflddes->ftPvt;
+            int i;
+
+            if (!pdbMenu)
+                return NULL;
+
+            for (i = 0; i < pdbMenu->nChoice; i++) {
+                const char *pchoice = pdbMenu->papChoiceValue[i];
+
+                if (!pchoice)
+                    continue;
+
+                if (strcmp(pchoice, pstring) == 0) {
+                    return NULL;
+                }
+            }
+        }
+        strcpy(message, "Not a valid menu choice");
+        return message;
+
+    case DBF_DEVICE:
+        {
+            dbDeviceMenu *pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+            int i;
+
+            if (!pdbDeviceMenu || pdbDeviceMenu->nChoice == 0)
+                return NULL;
+
+            for (i = 0; i < pdbDeviceMenu->nChoice; i++) {
+                const char *pchoice = pdbDeviceMenu->papChoice[i];
+
+                if (!pchoice)
+                    continue;
+
+                if (strcmp(pchoice, pstring) == 0) {
+                    return NULL;
+                }
+            }
+        }
+        strcpy(message, "Not a valid device type");
+        return message;
+
+    case DBF_INLINK:
+    case DBF_OUTLINK:
+    case DBF_FWDLINK:
+        return NULL;
+
+    default:
+        strcpy(message, "Not a valid field type");
+        return message;
+    }
+
+    switch (status) {
+    case 0:
+        message = NULL;
+        break;
+
+    case S_stdlib_noConversion:
+        strcpy(message, "Not a valid integer");
+        break;
+
+    case S_stdlib_badBase:
+        strcpy(message, "Internal error (badBase)");
+        break;
+
+    case S_stdlib_overflow:
+        strcpy(message, "Number too large for field type");
+        break;
+
+    case S_stdlib_underflow:
+        strcpy(message, "Number too small for field type");
+        break;
+
+    case S_stdlib_extraneous:
+        strcpy(message, "Extraneous characters after number");
+        break;
+
+    default:
+        strcpy(message, "Unknown numeric conversion error");
+    }
+    return message;
+}
+
 long dbFirstInfo(DBENTRY *pdbentry)
 {
     dbRecordNode *precnode = pdbentry->precnode;

@@ -15,6 +15,7 @@
 #include <stdio.h>
 
 #define epicsExportSharedSymbols
+#include "epicsAtomic.h"
 #include "timerPrivate.h"
 #include "errlog.h"
 
@@ -46,7 +47,7 @@ timerQueueActive ::
     _refMgr ( refMgr ), queue ( *this ), thread ( *this, "timerQueue", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ), priority ),
     sleepQuantum ( epicsThreadSleepQuantum() ), okToShare ( okToShareIn ), 
-    exitFlag ( false ), terminateFlag ( false )
+    exitFlag ( 0 ), terminateFlag ( false )
 {
 }
 
@@ -59,7 +60,7 @@ timerQueueActive::~timerQueueActive ()
 {
     this->terminateFlag = true;
     this->rescheduleEvent.signal ();
-    while ( ! this->exitFlag ) {
+    while ( !  epics::atomic::get(this->exitFlag) ) {
         this->exitEvent.wait ( 1.0 );
     }
     // in case other threads are waiting here also
@@ -87,7 +88,7 @@ void timerQueueActive :: _printLastChanceExceptionMessage (
 
 void timerQueueActive :: run ()
 {
-    this->exitFlag = false;
+    epics::atomic::set(this->exitFlag, 0);
     while ( ! this->terminateFlag ) {
         try {
             double delay = this->queue.process ( epicsTime::getCurrent() );
@@ -105,7 +106,7 @@ void timerQueueActive :: run ()
             epicsThreadSleep ( 10.0 );
         }
     }
-    this->exitFlag = true; 
+    epics::atomic::set(this->exitFlag, 1);
     this->exitEvent.signal (); // no access to queue after exitEvent signal
 }
 
@@ -143,7 +144,7 @@ void timerQueueActive::show ( unsigned int level ) const
         printf ( "exit event\n" );
         this->exitEvent.show ( level - 1u );
         printf ( "exitFlag = %c, terminateFlag = %c\n",
-            this->exitFlag ? 'T' : 'F',
+            epics::atomic::get(this->exitFlag) ? 'T' : 'F',
             this->terminateFlag ? 'T' : 'F' );
     }
 }

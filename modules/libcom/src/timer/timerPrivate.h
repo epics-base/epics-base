@@ -147,7 +147,7 @@ private:
     epicsThread thread;
     const double sleepQuantum;
     bool okToShare;
-    bool exitFlag;
+    int exitFlag; // use atomic ops
     bool terminateFlag;
     void run ();
     void reschedule ();

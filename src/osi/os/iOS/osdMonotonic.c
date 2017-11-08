@@ -4,7 +4,8 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#import <mach/mach_time.h>
+#include <mach/mach.h>
+#include <mach/mach_time.h>
 
 #define epicsExportSharedSymbols
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
@@ -13,19 +14,21 @@
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
+/* see https://developer.apple.com/library/content/qa/qa1398/_index.html */
+static mach_timebase_info_data_t tbinfo;
+
 void osdMonotonicInit(void)
 {
-    /* no-op */
+    (void)mach_timebase_info(&tbinfo);
 }
 
 epicsUInt64 epicsMonotonicResolution(void)
 {
-    return 1; /* TODO, how to find ? */
+    return 1e-9 * tbinfo.numer / tbinfo.denom;
 }
 
 epicsUInt64 epicsMonotonicGet(void)
 {
-    uint64_t val = mach_absolute_time(), ret;
-    absolutetime_to_nanoseconds(val, &ret);
-    return ret;
+    uint64_t val = mach_absolute_time();
+    return val * tbinfo.numer / tbinfo.denom;
 }

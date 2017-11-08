@@ -55,7 +55,7 @@ typedef struct cbQueueSet {
     epicsRingPointerId queue;
     int queueOverflow;
     int queueOverflows;
-    int shutdown;
+    int shutdown; // use atomic
     int threadsConfigured;
     int threadsRunning;
 } cbQueueSet;
@@ -71,12 +71,15 @@ epicsExportAddress(int,callbackParallelThreadsDefault);
 /* Timer for Delayed Requests */
 static epicsTimerQueueId timerQueue;
 
-/* Shutdown handling */
-enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
-static volatile enum ctl cbCtl;
-static epicsEventId startStopEvent;
+enum cbState_t {
+    cbInit,  /* before callbackInit() and after callbackCleanup() */
+    cbRun,   /* after callbackInit() and before callbackStop() */
+    cbStop,  /* after callbackStop() and before callbackCleanup() */
+};
 
-static int callbackIsInit;
+static int cbState; // holdscbState_t, use atomic ops
+
+static epicsEventId startStopEvent;
 
 /* Static data */
 static char *threadNamePrefix[NUM_CALLBACK_PRIORITIES] = {
@@ -96,7 +99,7 @@ static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0, 1, 2};
 
 int callbackSetQueueSize(int size)
 {
-    if (callbackIsInit) {
+    if (epicsAtomicGetIntT(&cbState)!=cbInit) {
         fprintf(stderr, "Callback system already initialized\n");
         return -1;
     }
@@ -107,7 +110,7 @@ int callbackSetQueueSize(int size)
 int callbackQueueStatus(const int reset, callbackQueueStats *result)
 {
     int ret;
-    if (!callbackIsInit) return -1;
+    if (epicsAtomicGetIntT(&cbState)==cbInit) return -1;
     if (result) {
         int prio;
         result->size = callbackQueueSize;
@@ -151,7 +154,7 @@ void callbackQueueShow(const int reset)
 
 int callbackParallelThreads(int count, const char *prio)
 {
-    if (callbackIsInit) {
+    if (epicsAtomicGetIntT(&cbState)!=cbInit) {
         fprintf(stderr, "Callback system already initialized\n");
         return -1;
     }
@@ -207,7 +210,7 @@ static void callbackTask(void *arg)
     taskwdInsert(0, NULL, NULL);
     epicsEventSignal(startStopEvent);
 
-    while(!mySet->shutdown) {
+    while(!epicsAtomicGetIntT(&mySet->shutdown)) {
         void *ptr;
         if (epicsRingPointerIsEmpty(mySet->queue))
             epicsEventMustWait(mySet->semWakeUp);
@@ -230,11 +233,10 @@ void callbackStop(void)
 {
     int i;
 
-    if (cbCtl == ctlExit) return;
-    cbCtl = ctlExit;
+    if (epicsAtomicCmpAndSwapIntT(&cbState, cbRun, cbStop)!=cbRun) return;
 
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
-        callbackQueue[i].shutdown = 1;
+        epicsAtomicSetIntT(&callbackQueue[i].shutdown, 1);
         epicsEventSignal(callbackQueue[i].semWakeUp);
     }
 
@@ -252,6 +254,10 @@ void callbackCleanup(void)
 {
     int i;
 
+    if(epicsAtomicCmpAndSwapIntT(&cbState, cbStop, cbInit)!=cbStop) {
+        fprintf(stderr, "callbackCleanup() but not stopped\n");
+    }
+
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
         cbQueueSet *mySet = &callbackQueue[i];
 
@@ -261,7 +267,6 @@ void callbackCleanup(void)
     }
 
     epicsTimerQueueRelease(timerQueue);
-    callbackIsInit = 0;
     memset(callbackQueue, 0, sizeof(callbackQueue));
 }
 
@@ -271,15 +276,14 @@ void callbackInit(void)
     int j;
     char threadName[32];
 
-    if (callbackIsInit) {
-        errlogMessage("Warning: callbackInit called again before callbackCleanup\n");
+    if (epicsAtomicCmpAndSwapIntT(&cbState, cbInit, cbRun)!=cbInit) {
+        fprintf(stderr, "Warning: callbackInit called again before callbackCleanup\n");
         return;
     }
-    callbackIsInit = 1;
 
     if(!startStopEvent)
         startStopEvent = epicsEventMustCreate(epicsEventEmpty);
-    cbCtl = ctlRun;
+
     timerQueue = epicsTimerQueueAllocate(0, epicsThreadPriorityScanHigh);
 
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {

@@ -31,6 +31,7 @@
 // EPICS
 //
 #define epicsExportSharedSymbols
+#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 #include "epicsTimer.h"
@@ -106,6 +107,8 @@ static int timeRegister(void)
     generalTimeCurrentTpRegister("PerfCounter", 150, osdTimeGetCurrent);
 
     pCurrentTime->startPLL ();
+
+    osdMonotonicInit();
     return 1;
 }
 static int done = timeRegister();

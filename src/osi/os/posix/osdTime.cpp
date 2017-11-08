@@ -13,6 +13,7 @@
 #include <string.h>
 #include <errno.h>
 
+#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "osiSock.h"
 
 #define epicsExportSharedSymbols
@@ -56,6 +57,8 @@ int clock_settime(clockid_t clock, const timespec *tp)
 static int timeRegister(void)
 {
     TIME_INIT;
+
+    osdMonotonicInit();
     return 1;
 }
 static int done = timeRegister();

@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include <epicsStdio.h>
 #include <rtems.h>
 #include <errno.h>
@@ -37,6 +38,8 @@ void osdTimeRegister(void)
     /* Init NTP first so it can be used to sync ClockTime */
     NTPTime_Init(100);
     ClockTime_Init(CLOCKTIME_SYNC);
+
+    osdMonotonicInit();
 }
 
 int osdNTPGet(struct timespec *ts)

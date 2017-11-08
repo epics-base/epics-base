@@ -38,12 +38,53 @@ static const unsigned uSecPerSec = 1000u * mSecPerSec;
 static const unsigned nSecPerSec = 1000u * uSecPerSec;
 static const double precisionEPICS = 1.0 / nSecPerSec;
 
+static void crossCheck(double delay)
+{
+    double mindelta = 2*epicsMonotonicResolution()*1e-9,
+            tres = epicsThreadSleepQuantum();
+    epicsUInt64 A = epicsMonotonicGet();
+    epicsThreadSleep(delay);
+    epicsUInt64 B = epicsMonotonicGet();
+
+    double actual = (B-A)*1e-9, percent;
+
+    if(mindelta<tres*2)
+        mindelta = tres*2;
+    if(delay<mindelta)
+        delay = mindelta;
+
+    percent = (delay-actual)/delay*100.0;
+
+    testOk(fabs(percent)<1000.0, "crossCheck(%f) actual %f (%f %%)",
+           delay, actual, percent);
+}
+
+static void testMonotonic()
+{
+    crossCheck(2.1); /* greater than 2 so that seconds value is different */
+    crossCheck(0.1);
+    crossCheck(0.01);
+    crossCheck(0.001);
+    crossCheck(epicsThreadSleepQuantum());
+
+    testDiag("Resolution %u ns", (unsigned)epicsMonotonicResolution());
+
+    epicsUInt64 A = epicsMonotonicGet();
+    epicsThreadSleep(0.0);
+    epicsUInt64 B = epicsMonotonicGet();
+    testDiag("epicsThreadSleep(0.0) Delta %u ns", (unsigned)(B-A));
+
+    A = epicsMonotonicGet();
+    B = epicsMonotonicGet();
+    testDiag("Small Delta %u ns", (unsigned)(B-A));
+}
+
 MAIN(epicsTimeTest)
 {
     const int wasteTime = 100000;
     const int nTimes = 10;
 
-    testPlan(17 + nTimes * 19);
+    testPlan(22 + nTimes * 19);
 
     try {
         const epicsTimeStamp epochTS = {0, 0};
@@ -240,6 +281,8 @@ MAIN(epicsTimeTest)
     catch ( ... ) {
         testFail("OS time_t conversion exception for value 10 years hence");
     }
+
+    testMonotonic();
 
     return testDone();
 }

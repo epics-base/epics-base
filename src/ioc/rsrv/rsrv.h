@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -27,9 +27,7 @@
 extern "C" {
 #endif
 
-epicsShareFunc int rsrv_init(void);
-epicsShareFunc int rsrv_run(void);
-epicsShareFunc int rsrv_pause(void);
+epicsShareFunc void rsrv_register_server(void);
 
 epicsShareFunc void casr (unsigned level);
 epicsShareFunc int casClientInitiatingCurrentThread (

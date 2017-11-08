@@ -24,6 +24,7 @@
 #include "errlog.h"
 #include "epicsMath.h"
 #include "alarm.h"
+#include "callback.h"
 #include "cvtTable.h"
 #include "dbAccess.h"
 #include "dbScan.h"
@@ -96,22 +97,21 @@ typedef struct aidset { /* analog input dset */
 	DEVSUPFUN	special_linconv;
 }aidset;
 
-
 static void checkAlarms(aiRecord *prec, epicsTimeStamp *lastTime);
 static void convert(aiRecord *prec);
 static void monitor(aiRecord *prec);
 static long readValue(aiRecord *prec);
-
+
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct aiRecord *prec = (struct aiRecord *)pcommon;
     aidset	*pdset;
     double	eoff = prec->eoff, eslo = prec->eslo;
 
-    if (pass==0) return(0);
+    if (pass == 0) return 0;
 
-    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    recGblInitConstantLink(&prec->siol,DBF_DOUBLE,&prec->sval);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+    recGblInitConstantLink(&prec->siol, DBF_DOUBLE, &prec->sval);
 
     if(!(pdset = (aidset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"ai: init_record");
@@ -147,8 +147,8 @@ static long process(struct dbCommon *pcommon)
 {
     struct aiRecord *prec = (struct aiRecord *)pcommon;
     aidset		*pdset = (aidset *)(prec->dset);
-	long		 status;
-	unsigned char    pact=prec->pact;
+    long		 status;
+    unsigned char    pact=prec->pact;
         epicsTimeStamp	 timeLast;
 
 	if( (pdset==NULL) || (pdset->read_ai==NULL) ) {
@@ -163,9 +163,12 @@ static long process(struct dbCommon *pcommon)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
 
-	recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
+
 	if (status==0) convert(prec);
 	else if (status==2) status=0;
+
+    if (status == 0) prec->udf = isnan(prec->val);
 
 	/* check for alarms */
 	checkAlarms(prec,&timeLast);
@@ -187,27 +190,35 @@ static long special(DBADDR *paddr,int after)
 
     switch(special_type) {
     case(SPC_LINCONV):
-	if(pdset->number<6) {
-	    recGblDbaddrError(S_db_noMod,paddr,"ai: special");
-	    return(S_db_noMod);
-	}
-	prec->init=TRUE;
-	if ((prec->linr == menuConvertLINEAR) && pdset->special_linconv) {
-	    double eoff = prec->eoff;
-	    double eslo = prec->eslo;
-	    long status;
-	    prec->eoff = prec->egul;
-	    status = (*pdset->special_linconv)(prec,after);
-	    if (eoff != prec->eoff)
-		db_post_events(prec, &prec->eoff, DBE_VALUE|DBE_LOG);
-	    if (eslo != prec->eslo)
-		db_post_events(prec, &prec->eslo, DBE_VALUE|DBE_LOG);
-	    return(status);
-	}
-	return(0);
+        if(pdset->number<6) {
+            recGblDbaddrError(S_db_noMod,paddr,"ai: special");
+            return(S_db_noMod);
+        }
+        prec->init=TRUE;
+        if ((prec->linr == menuConvertLINEAR) && pdset->special_linconv) {
+            double eoff = prec->eoff;
+            double eslo = prec->eslo;
+            long status;
+            prec->eoff = prec->egul;
+            status = (*pdset->special_linconv)(prec,after);
+            if (eoff != prec->eoff)
+                db_post_events(prec, &prec->eoff, DBE_VALUE|DBE_LOG);
+            if (eslo != prec->eslo)
+                db_post_events(prec, &prec->eslo, DBE_VALUE|DBE_LOG);
+            return(status);
+        }
+        return(0);
+    case(SPC_MOD):
+        if (dbGetFieldIndex(paddr) == aiRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return(0);
+        }
     default:
-	recGblDbaddrError(S_db_badChoice,paddr,"ai: special");
-	return(S_db_badChoice);
+        recGblDbaddrError(S_db_badChoice,paddr,"ai: special");
+        return(S_db_badChoice);
     }
 }
 
@@ -442,7 +453,6 @@ static void convert(aiRecord *prec)
 	}else{
 	    prec->val = val;
 	}
-	prec->udf = isnan(prec->val);
 	return;
 }
 
@@ -469,46 +479,50 @@ static void monitor(aiRecord *prec)
 
 static long readValue(aiRecord *prec)
 {
-	long		status;
-        aidset 	*pdset = (aidset *) (prec->dset);
+    aidset *pdset = (aidset *)prec->dset;
+    long status = 0;
 
-	if (prec->pact == TRUE){
-		status=(*pdset->read_ai)(prec);
-		return(status);
-	}
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
-	status = dbGetLink(&(prec->siml),DBR_USHORT,&(prec->simm),0,0);
+    switch (prec->simm) {
+    case menuSimmNO:
+        status = pdset->read_ai(prec);
+        break;
 
-	if (status)
-		return(status);
+    case menuSimmYES:
+    case menuSimmRAW: {
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbGetLink(&prec->siol, DBR_DOUBLE, &prec->sval, 0, 0);
+            if (status == 0) {
+                if (prec->simm == menuSimmYES) {
+                    prec->val = prec->sval;
+                    status = 2; /* don't convert */
+                } else {
+                    prec->rval = (long)floor(prec->sval);
+                    status = 0; /* convert RVAL */
+                }
+            }
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
+    }
 
-	if (prec->simm == menuSimmNO){
-		status=(*pdset->read_ai)(prec);
-		return(status);
-	}
-	if (prec->simm == menuSimmYES){
-		status = dbGetLink(&(prec->siol),DBR_DOUBLE,&(prec->sval),0,0);
-		if (status==0){
-			 prec->val=prec->sval;
-			 prec->udf=isnan(prec->val);
-		}
-                status=2; /* dont convert */
-	}
-	else if (prec->simm == menuSimmRAW){
-		status = dbGetLink(&(prec->siol),DBR_DOUBLE,&(prec->sval),0,0);
-		if (status==0) {
-			prec->udf=isnan(prec->sval);
-			if (!prec->udf) {
-				prec->rval=(long)floor(prec->sval);
-			}
-		}
-		status=0; /* convert since we've written RVAL */
-	} else {
-		status=-1;
-		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-		return(status);
-	}
-        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
 
-	return(status);
+    return status;
 }

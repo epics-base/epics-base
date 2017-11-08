@@ -94,6 +94,11 @@ dbStateTest_SRCS += dbStateTest.c
 testHarness_SRCS += dbStateTest.c
 TESTS += dbStateTest
 
+TESTPROD_HOST += dbServerTest
+dbServerTest_SRCS += dbServerTest.c
+testHarness_SRCS += dbServerTest.c
+TESTS += dbServerTest
+
 TESTPROD_HOST += dbCaStatsTest
 dbCaStatsTest_SRCS += dbCaStatsTest.c
 dbCaStatsTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp

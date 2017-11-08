@@ -182,6 +182,8 @@ epicsShareFunc int dbFoundField(DBENTRY *pdbentry);
 epicsShareFunc char * dbGetString(DBENTRY *pdbentry);
 epicsShareFunc long dbPutString(DBENTRY *pdbentry,
     const char *pstring);
+epicsShareFunc char * dbVerify(DBENTRY *pdbentry,
+    const char *pstring);
 epicsShareFunc int  dbIsDefaultValue(DBENTRY *pdbentry);
 
 epicsShareFunc long dbFirstInfo(DBENTRY *pdbentry);

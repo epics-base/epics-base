@@ -19,6 +19,7 @@
 #include "dbDefs.h"
 #include "errlog.h"
 #include "alarm.h"
+#include "callback.h"
 #include "cantProceed.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -60,7 +61,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return 0;
     }
 
-    dbLoadLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
     pdset = (lsodset *) prec->dset;
     if (!pdset) {
@@ -146,7 +147,7 @@ static long process(struct dbCommon *pcommon)
         return status;
 
     prec->pact = TRUE;
-    recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, NULL);
 
     monitor(prec);
 
@@ -213,6 +214,15 @@ static long put_array_info(DBADDR *paddr, long nNew)
 static long special(DBADDR *paddr, int after)
 {
     lsoRecord *prec = (lsoRecord *) paddr->precord;
+    int special_type = paddr->special;
+
+    if (special_type == SPC_MOD && dbGetFieldIndex(paddr) == lsoRecordSIMM) {
+        if (!after)
+            recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+        else
+            recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+        return 0;
+    }
 
     if (!after)
         return 0;
@@ -253,26 +263,35 @@ static void monitor(lsoRecord *prec)
 
 static long writeValue(lsoRecord *prec)
 {
-    long status;
     lsodset *pdset = (lsodset *) prec->dset;
+    long status = 0;
 
-    if (prec->pact)
-        goto write;
-
-    status = dbGetLink(&prec->siml, DBR_USHORT, &prec->simm, 0, 0);
-    if (status)
-        return(status);
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
     switch (prec->simm) {
     case menuYesNoNO:
-write:
         status = pdset->write_string(prec);
         break;
 
-    case menuYesNoYES:
+    case menuYesNoYES: {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        status = dbPutLink(&prec->siol,DBR_STRING, prec->val,1);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbPutLinkLS(&prec->siol, prec->val, prec->len);
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
         break;
+    }
 
     default:
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);

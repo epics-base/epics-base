@@ -63,8 +63,17 @@ epicsShareFunc void recGblInheritSevr(int msMode, void *precord, epicsEnum16 sta
     epicsEnum16 sevr);
 epicsShareFunc void recGblFwdLink(void *precord);
 epicsShareFunc void recGblGetTimeStamp(void *precord);
+epicsShareFunc void recGblGetTimeStampSimm(void *prec, const epicsEnum16 simm, struct link *siol);
 epicsShareFunc void recGblCheckDeadband(epicsFloat64 *poldval, const epicsFloat64 newval,
     const epicsFloat64 deadband, unsigned *monitor_mask, const unsigned add_mask);
+epicsShareFunc void recGblSaveSimm(const epicsEnum16 sscn,
+    epicsEnum16 *poldsimm, const epicsEnum16 simm);
+epicsShareFunc void recGblCheckSimm(struct dbCommon *prec, epicsEnum16 *psscn,
+    const epicsEnum16 oldsimm, const epicsEnum16 simm);
+epicsShareFunc void recGblInitSimm(struct dbCommon *prec, epicsEnum16 *psscn,
+    epicsEnum16 *poldsimm, epicsEnum16 *psimm, struct link *psiml);
+epicsShareFunc long recGblGetSimm(struct dbCommon *prec, epicsEnum16 *psscn,
+    epicsEnum16 *poldsimm, epicsEnum16 *psimm, struct link *psiml);
 
 #ifdef __cplusplus
 }

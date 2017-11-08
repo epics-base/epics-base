@@ -31,6 +31,7 @@
 #include "epicsPrint.h"
 #include "epicsString.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbFldTypes.h"
@@ -40,6 +41,7 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "cantProceed.h"
+#include "special.h"
 #include "menuYesNo.h"
 
 #define GEN_SIZE_OFFSET
@@ -52,7 +54,7 @@
 #define initialize NULL
 static long init_record(struct dbCommon *, int);
 static long process(struct dbCommon *);
-#define special NULL
+static long special(DBADDR *, int);
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
@@ -141,8 +143,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return 0;
     }
     
-    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+
     /* must have read_aai function defined */
     if (pdset->number < 5 || pdset->read_aai == NULL) {
         recGblRecordError(S_dev_missingSup, prec, "aai: init_record");
@@ -169,7 +171,7 @@ static long process(struct dbCommon *pcommon)
     prec->pact = TRUE;
 
     prec->udf = FALSE;
-    recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
     monitor(prec);
     /* process the forward scan link record */
@@ -177,6 +179,26 @@ static long process(struct dbCommon *pcommon)
 
     prec->pact = FALSE;
     return status;
+}
+
+static long special(DBADDR *paddr, int after)
+{
+    aaiRecord   *prec = (aaiRecord *)(paddr->precord);
+    int          special_type = paddr->special;
+
+    switch(special_type) {
+    case(SPC_MOD):
+        if (dbGetFieldIndex(paddr) == aaiRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return(0);
+        }
+    default:
+        recGblDbaddrError(S_db_badChoice, paddr, "aai: special");
+        return(S_db_badChoice);
+    }
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
@@ -313,35 +335,49 @@ static void monitor(aaiRecord *prec)
 
 static long readValue(aaiRecord *prec)
 {
-    long status;
-    struct aaidset *pdset = (struct aaidset *)prec->dset;
+    struct aaidset *pdset = (struct aaidset *) prec->dset;
+    long status = 0;
 
-    if (prec->pact == TRUE){
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
+
+    switch (prec->simm) {
+    case menuYesNoNO:
         status = pdset->read_aai(prec);
-        return status;
-    }
+        break;
 
-    status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
-    if (status)
-        return status;
-
-    if (prec->simm == menuYesNoNO){
-        return pdset->read_aai(prec);
-    }
-    
-    if (prec->simm == menuYesNoYES){
-        /* Device suport is responsible for buffer
-           which might be read-only so we may not be
-           allowed to call dbGetLink on it.
-           Maybe also device support has an advanced
-           simulation mode.
-           Thus call device now.
-        */
+    case menuYesNoYES: {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        return pdset->read_aai(prec);
+        if (prec->pact || (prec->sdly < 0.)) {
+            /* Device suport is responsible for buffer
+               which might be read-only so we may not be
+               allowed to call dbGetLink on it.
+               Maybe also device support has an advanced
+               simulation mode.
+               Thus call device now.
+
+               Reading through SIOL is handled in Soft Channel Device Support
+             */
+            status = pdset->read_aai(prec);
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
     }
 
-    recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
-    return -1;
-}
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
 
+    return status;
+}

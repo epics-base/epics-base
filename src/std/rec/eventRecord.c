@@ -22,6 +22,7 @@
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbScan.h"
@@ -97,9 +98,9 @@ static long init_record(struct dbCommon *pcommon, int pass)
     struct eventdset *pdset;
     long status=0;
 
-    if (pass==0) return(0);
+    if (pass == 0) return 0;
 
-    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_STRING, &prec->sval);
 
     if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) ) 
@@ -125,7 +126,7 @@ static long process(struct dbCommon *pcommon)
  
 	postEvent(prec->epvt);
 
-	recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
 	/* check event list */
 	monitor(prec);
@@ -142,10 +143,20 @@ static long special(DBADDR *paddr, int after)
 {
     eventRecord *prec = (eventRecord *)paddr->precord;
 
+    if (dbGetFieldIndex(paddr) == eventRecordSIMM) {
+        if (!after)
+            recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+        else
+            recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+        return 0;
+    }
+
     if (!after) return 0;
+
     if (dbGetFieldIndex(paddr) == eventRecordVAL) {
         prec->epvt = eventNameToHandle(prec->val);
     }
+
     return 0;
 }
 
@@ -162,39 +173,47 @@ static void monitor(eventRecord *prec)
 
 static long readValue(eventRecord *prec)
 {
-        long            status;
-        struct eventdset   *pdset = (struct eventdset *) (prec->dset);
+    struct eventdset *pdset = (struct eventdset *) prec->dset;
+    long status = 0;
 
-        if (prec->pact == TRUE){
-                status=(*pdset->read_event)(prec);
-                return(status);
-        }
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
-        status=dbGetLink(&(prec->siml),DBR_USHORT,&(prec->simm),0,0);
+    switch (prec->simm) {
+    case menuYesNoNO:
+        status = pdset->read_event(prec);
+        break;
 
-        if (status)
-                return(status);
-
-        if (prec->simm == menuYesNoNO){
-                status=(*pdset->read_event)(prec);
-                return(status);
-        }
-        if (prec->simm == menuYesNoYES){
-                status=dbGetLink(&(prec->siol),DBR_STRING,
-			&(prec->sval),0,0);
-                if (status==0) {
-                        if (strcmp(prec->sval, prec->val) != 0) {
-                                strcpy(prec->val, prec->sval);
-                                prec->epvt = eventNameToHandle(prec->val);
-                        }
-                        prec->udf=FALSE;
+    case menuYesNoYES: {
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbGetLink(&prec->siol, DBR_STRING, &prec->sval, 0, 0);
+            if (status == 0) {
+                if (strcmp(prec->sval, prec->val) != 0) {
+                    strcpy(prec->val, prec->sval);
+                    prec->epvt = eventNameToHandle(prec->val);
                 }
-        } else {
-                status=-1;
-                recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-                return(status);
+                prec->udf = FALSE;
+            }
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
         }
-        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
+        break;
+    }
 
-        return(status);
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
+
+    return status;
 }

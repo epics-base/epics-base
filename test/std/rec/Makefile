@@ -104,6 +104,19 @@ regressTest_SRCS += regressTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db ../regressHex.db ../regressLinkMS.db
 TESTS += regressTest
 
+TARGETS += $(COMMON_DIR)/simmTest.dbd
+TARGETS += $(COMMON_DIR)/simmTest.db
+DBDDEPENDS_FILES += simmTest.dbd$(DEP)
+DBDDEPENDS_FILES += simmTest.db$(DEP)
+simmTest_DBD += base.dbd
+TESTPROD_HOST += simmTest
+simmTest_SRCS += simmTest.c
+simmTest_SRCS += simmTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += simmTest.c
+testHarness_SRCS += simmTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/simmTest.dbd $(COMMON_DIR)/simmTest.db
+TESTS += simmTest
+
 # epicsRunRecordTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunRecordTests.c
 

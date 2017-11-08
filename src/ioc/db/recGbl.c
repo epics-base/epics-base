@@ -29,9 +29,11 @@
 
 #define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
+#include "dbStaticLib.h"
 #include "dbAddr.h"
 #include "dbBase.h"
 #include "dbCommon.h"
+#include "menuSimm.h"
 #include "dbEvent.h"
 #include "db_field_log.h"
 #include "dbFldTypes.h"
@@ -255,7 +257,12 @@ void recGblFwdLink(void *precord)
 
 void recGblGetTimeStamp(void *pvoid)
 {
-    dbCommon* prec = (dbCommon*)pvoid;
+    recGblGetTimeStampSimm(pvoid, menuSimmNO, 0);
+}
+
+void recGblGetTimeStampSimm(void *pvoid, const epicsEnum16 simm, struct link *siol)
+{
+    dbCommon *prec = (dbCommon *)pvoid;
     struct link *plink = &prec->tsel;
 
     if (!dbLinkIsConstant(plink)) {
@@ -269,8 +276,22 @@ void recGblGetTimeStamp(void *pvoid)
     }
     if (prec->tse != epicsTimeEventDeviceTime) {
         if (epicsTimeGetEvent(&prec->time, prec->tse))
-            errlogPrintf("recGblGetTimeStamp: epicsTimeGetEvent failed, %s.TSE = %d\n",
-                prec->name, prec->tse);
+            errlogPrintf("recGblGetTimeStampSimm: epicsTimeGetEvent failed, %s.TSE = %d\n",
+                         prec->name, prec->tse);
+    } else {
+        if (simm != menuSimmNO) {
+            if (siol && !dbLinkIsConstant(siol)) {
+                if (dbGetTimeStamp(siol, &prec->time))
+                    errlogPrintf("recGblGetTimeStampSimm: dbGetTimeStamp (sim mode) failed, %s.SIOL = %s\n",
+                        prec->name, siol->value.pv_link.pvname);
+                return;
+            } else {
+                if (epicsTimeGetCurrent(&prec->time))
+                    errlogPrintf("recGblGetTimeStampSimm: epicsTimeGetCurrent (sim mode) failed for %s.\n",
+                        prec->name);
+                return;
+            }
+        }
     }
 }
 
@@ -348,4 +369,42 @@ static void getMaxRangeValues(short field_type, double *pupper_limit,
         break;
     }
     return;
+}
+
+void recGblSaveSimm(const epicsEnum16 sscn,
+    epicsEnum16 *poldsimm, const epicsEnum16 simm) {
+    if (sscn == USHRT_MAX) return;
+    *poldsimm = simm;
+}
+
+void recGblCheckSimm(struct dbCommon *pcommon, epicsEnum16 *psscn,
+    const epicsEnum16 oldsimm, const epicsEnum16 simm) {
+    if (*psscn == USHRT_MAX) return;
+    if (simm != oldsimm) {
+        epicsUInt16 scan = pcommon->scan;
+        scanDelete(pcommon);
+        pcommon->scan = *psscn;
+        scanAdd(pcommon);
+        *psscn = scan;
+    }
+}
+
+void recGblInitSimm(struct dbCommon *pcommon, epicsEnum16 *psscn,
+    epicsEnum16 *poldsimm, epicsEnum16 *psimm, struct link *psiml) {
+    if (dbLinkIsConstant(psiml)) {
+        recGblSaveSimm(*psscn, poldsimm, *psimm);
+        dbLoadLink(psiml, DBF_USHORT, psimm);
+        recGblCheckSimm(pcommon, psscn, *poldsimm, *psimm);
+    }
+}
+
+long recGblGetSimm(struct dbCommon *pcommon, epicsEnum16 *psscn,
+    epicsEnum16 *poldsimm, epicsEnum16 *psimm, struct link *psiml) {
+    long status;
+
+    recGblSaveSimm(*psscn, poldsimm, *psimm);
+    status = dbGetLink(psiml, DBR_USHORT, psimm, 0, 0);
+    if (status) return status;
+    recGblCheckSimm(pcommon, psscn, *poldsimm, *psimm);
+    return 0;
 }

@@ -118,11 +118,76 @@ static void testRec2Entry(const char *recname)
     dbFinishEntry(&entry2);
 }
 
+static void verify(DBENTRY *pentry, const char *put, const char *exp)
+{
+    const char *msg;
+    int result;
+
+    msg = dbVerify(pentry, put);
+    result = (!msg && !exp) || (msg && exp && strcmp(msg, exp) == 0);
+
+    if (!testOk(result, "dbVerify('%s.%s', '%s') => '%s'",
+        (char *) pentry->precnode->precord, pentry->pflddes->name,
+        put, msg ? msg : "OK"))
+        testDiag("Expected => '%s'", exp ? exp : "OK");
+}
+
+static void testDbVerify(const char *record)
+{
+    DBENTRY entry;
+
+    testDiag("# # # # # # # testDbVerify('%s') # # # # # # # #", record);
+
+    dbInitEntry(pdbbase, &entry);
+    if (dbFindRecord(&entry, record) != 0)
+        testAbort("Can't find record '%s'", record);
+
+    dbFindField(&entry, "UDF");
+    verify(&entry, "0", NULL);
+    verify(&entry, "255", NULL);
+    verify(&entry, "256", "Number too large for field type");
+    verify(&entry, "0x100", "Number too large for field type");
+
+    dbFindField(&entry, "PHAS");
+    verify(&entry, "0", NULL);
+    verify(&entry, "-32768", NULL);
+    verify(&entry, "-32769", "Number too large for field type");
+    verify(&entry, "0x7fff", NULL);
+    verify(&entry, "32768", "Number too large for field type");
+
+    dbFindField(&entry, "VAL");
+    verify(&entry, "0", NULL);
+    verify(&entry, "-123456789", NULL);
+    verify(&entry, "123456789", NULL);
+    verify(&entry, "0x1234FEDC", NULL);
+    verify(&entry, "0x100000000", "Number too large for field type");
+    verify(&entry, "1.2345", "Extraneous characters after number");
+
+    dbFindField(&entry, "DESC");
+    verify(&entry, "", NULL);
+    verify(&entry, "abcdefghijklmnopqrstuvwxyz", NULL);
+    verify(&entry, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
+        "String too long, max 40 characters");
+
+    dbFindField(&entry, "DTYP");
+    verify(&entry, "Soft Channel", NULL);
+    verify(&entry, "zzzz", "Not a valid device type");
+
+    dbFindField(&entry, "SCAN");
+    verify(&entry, "1 second", NULL);
+    verify(&entry, "zzzz", "Not a valid menu choice");
+
+    dbFindField(&entry, "FLNK");
+    verify(&entry, "Anything works here!", NULL);
+
+    dbFinishEntry(&entry);
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbStaticTest)
 {
-    testPlan(200);
+    testPlan(223);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -158,6 +223,8 @@ MAIN(dbStaticTest)
     testRec2Entry("testalias");
     testRec2Entry("testalias2");
     testRec2Entry("testalias3");
+
+    testDbVerify("testrec");
 
     testIocShutdownOk();
 

@@ -31,6 +31,7 @@
 #include "epicsPrint.h"
 #include "epicsString.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbFldTypes.h"
@@ -39,6 +40,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "special.h"
 #include "cantProceed.h"
 #include "menuYesNo.h"
 
@@ -52,7 +54,7 @@
 #define initialize NULL
 static long init_record(struct dbCommon *, int);
 static long process(struct dbCommon *);
-#define special NULL
+static long special(DBADDR *, int);
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
@@ -141,7 +143,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return 0;
     }
 
-    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
     /* must have write_aao function defined */
     if (pdset->number < 5 || pdset->write_aao == NULL) {
@@ -169,7 +171,7 @@ static long process(struct dbCommon *pcommon)
     prec->pact = TRUE;
 
     prec->udf = FALSE;
-    recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, NULL);
 
     monitor(prec);
     /* process the forward scan link record */
@@ -177,6 +179,26 @@ static long process(struct dbCommon *pcommon)
 
     prec->pact = FALSE;
     return status;
+}
+
+static long special(DBADDR *paddr, int after)
+{
+    aaoRecord   *prec = (aaoRecord *)(paddr->precord);
+    int          special_type = paddr->special;
+
+    switch(special_type) {
+    case(SPC_MOD):
+        if (dbGetFieldIndex(paddr) == aaoRecordSIMM) {
+            if (!after)
+                recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+            else
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+            return(0);
+        }
+    default:
+        recGblDbaddrError(S_db_badChoice, paddr, "aao: special");
+        return(S_db_badChoice);
+    }
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
@@ -313,33 +335,49 @@ static void monitor(aaoRecord *prec)
 
 static long writeValue(aaoRecord *prec)
 {
-    long status;
-    struct aaodset *pdset = (struct aaodset *)prec->dset;
+    struct aaodset *pdset = (struct aaodset *) prec->dset;
+    long status = 0;
 
-    if (prec->pact == TRUE) {
-        /* no asyn allowed, pact true means do not process */
-        return 0;
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
     }
 
-    status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
-    if (status)
-        return status;
+    switch (prec->simm) {
+    case menuYesNoNO:
+        status = pdset->write_aao(prec);
+        break;
 
-    if (prec->simm == menuYesNoNO) {
-        return pdset->write_aao(prec);
-    }
-    if (prec->simm == menuYesNoYES) {
-        /* Device suport is responsible for buffer
-           which might be write-only so we may not be
-           allowed to call dbPutLink on it.
-           Maybe also device support has an advanced
-           simulation mode.
-           Thus call device now.
-        */
+    case menuYesNoYES: {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        return pdset->write_aao(prec);
-    }
-    recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
-    return -1;
-}
+        if (prec->pact || (prec->sdly < 0.)) {
+            /* Device suport is responsible for buffer
+               which might be write-only so we may not be
+               allowed to call dbPutLink on it.
+               Maybe also device support has an advanced
+               simulation mode.
+               Thus call device now.
 
+               Writing through SIOL is handled in Soft Channel Device Support
+            */
+            status = pdset->write_aao(prec);
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
+    }
+
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        status = -1;
+    }
+
+    return status;
+}

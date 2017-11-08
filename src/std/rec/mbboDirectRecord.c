@@ -22,6 +22,7 @@
 #include "dbDefs.h"
 #include "errlog.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
 #include "dbFldTypes.h"
@@ -102,8 +103,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     struct mbbodset *pdset = (struct mbbodset *) prec->dset;
     long status = 0;
 
-    if (pass == 0)
-        return 0;
+    if (pass == 0) return 0;
 
     if (!pdset) {
         recGblRecordError(S_dev_noDSET, prec, "mbboDirect: init_record");
@@ -115,7 +115,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return S_dev_missingSup;
     }
 
-    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+
     if (recGblInitConstantLink(&prec->dol, DBF_USHORT, &prec->val))
         prec->udf = FALSE;
 
@@ -232,7 +233,8 @@ CONTINUE:
         return 0;
 
     prec->pact = TRUE;
-    recGblGetTimeStamp(prec);
+    recGblGetTimeStampSimm(prec, prec->simm, NULL);
+
     monitor(prec);
 
     /* Wrap up */
@@ -244,6 +246,15 @@ CONTINUE:
 static long special(DBADDR *paddr, int after)
 {
     mbboDirectRecord *prec = (mbboDirectRecord *) paddr->precord;
+    int fieldIndex = dbGetFieldIndex(paddr);
+
+    if (paddr->special == SPC_MOD && fieldIndex == mbboDirectRecordSIMM) {
+        if (!after)
+            recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
+        else
+            recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
+        return 0;
+    }
 
     if (!after)
         return 0;
@@ -335,26 +346,40 @@ static void convert(mbboDirectRecord *prec)
 
 static long writeValue(mbboDirectRecord *prec)
 {
-    long status;
     struct mbbodset *pdset = (struct mbbodset *) prec->dset;
+    long status = 0;
 
-    if (prec->pact)
-        return pdset->write_mbbo(prec);
-
-    status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
-    if (status)
-        return status;
+    if (!prec->pact) {
+        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
+        if (status) return status;
+    }
 
     switch (prec->simm) {
     case menuYesNoNO:
-        return pdset->write_mbbo(prec);
+        status = pdset->write_mbbo(prec);
+        break;
 
-    case menuYesNoYES:
+    case menuYesNoYES: {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        return dbPutLink(&prec->siol, DBR_USHORT, &prec->val, 1);
+        if (prec->pact || (prec->sdly < 0.)) {
+            status = dbPutLink(&prec->siol, DBR_USHORT, &prec->val, 1);
+            prec->pact = FALSE;
+        } else { /* !prec->pact && delay >= 0. */
+            CALLBACK *pvt = prec->simpvt;
+            if (!pvt) {
+                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                prec->simpvt = pvt;
+            }
+            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            prec->pact = TRUE;
+        }
+        break;
+    }
 
     default:
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
-        return -1;
+        status = -1;
     }
+
+    return status;
 }

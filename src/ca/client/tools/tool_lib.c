@@ -414,6 +414,12 @@ char *dbr2str (const void *value, unsigned type)
     ptsNewS = &((struct TYPE *)value)->stamp;                           \
     ptsNewC = &tsNow;                                                   \
                                                                         \
+    if (!tsInitS)                                                       \
+    {                                                                   \
+        tsFirst = *ptsNewS;                                             \
+        tsInitS = 1;                                                    \
+    }                                                                   \
+                                                                        \
     switch (tsType) {                                                   \
     case relative:                                                      \
         ptsRefC = &tsStart;                                             \
@@ -505,12 +511,6 @@ void print_time_val_sts (pv* pv, unsigned long reqElems)
 
     epicsTimeGetCurrent(&tsNow);
     epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr, &tsNow);
-
-    if (!tsInitS)
-    {
-        tsFirst = tsNow;
-        tsInitS = 1;
-    }
 
     if (pv->nElems <= 1 && fieldSeparator == ' ') printf("%-30s", pv->name);
     else                                            printf("%s", pv->name);

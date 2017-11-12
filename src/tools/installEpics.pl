@@ -52,9 +52,9 @@ unless (-d $install_dir || -l $install_dir) {
 foreach my $source (@ARGV) {
     die "$tool: No such file '$source'" unless -f $source;
 
-    my $basename = basename($source);
-    my $target   = "$install_dir/$basename";
-    my $temp     = "$target.$$";
+    my $name   = basename($source);
+    my $temp   = "$install_dir/TEMP.$name.$$";
+    my $target = "$install_dir/$name";
 
     if (-f $target) {
         next if -M $target < -M $source and -C $target < -C $source;
@@ -64,8 +64,10 @@ foreach my $source (@ARGV) {
     }
 
     # Using copy + rename fixes problems with parallel builds
-    copy($source, $temp) or die "$tool: Copy failed: $!\n";
-    rename $temp, $target or die "$tool: Rename failed: $!\n";
+    copy($source, $temp) or die "$tool: Copy failed: $!\n" .
+        "$tool:\t$source -> $temp\n";
+    rename $temp, $target or die "$tool: Rename failed: $!\n" .
+        "$tool:\t$temp -> $target\n";
 
     # chmod 0555 <read-only> DOES work on Win32, but the above
     # chmod 0777 fails to install a newer version on top.
@@ -79,7 +81,7 @@ sub Usage {
     print << "END";
 Usage: $tool [OPTIONS]... SRCS... DEST
   -d        Create non-existing directories
-  -h        Print usage
+  -h        Print usage and exit
   -m mode   Octal permissions for installed files ($omode by default)
   -q        Install quietly
   SRCS      Source files to be installed

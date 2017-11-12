@@ -33,6 +33,7 @@ DBTORECORDTYPEH            = $(PERL) $(INSTALL_HOST_BIN)/dbdToRecordtypeH.pl
 DBTOMENUH                  = $(PERL) $(INSTALL_HOST_BIN)/dbdToMenuH.pl
 DBDTOHTML                  = $(PERL) $(INSTALL_HOST_BIN)/dbdToHtml.pl
 REGISTERRECORDDEVICEDRIVER = $(PERL) $(INSTALL_HOST_BIN)/registerRecordDeviceDriver.pl
+MSI3_15                    = $(INSTALL_HOST_BIN)/msi$(HOSTEXE)
 
 # Set path for tools from libcom for unbundled build
 ifdef EPICS_LIBCOM

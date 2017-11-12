@@ -26,7 +26,7 @@
 #MYMODULE = $(MODULES)/my-module
 
 # If building modules individually, set these:
-#EPICS_CORE = $(MODULES)/core-7.0
+#EPICS_BASE = $(MODULES)/core-7.0
 
 # Set RULES here if you want to use build rules from elsewhere:
 #RULES = $(MODULES)/build-rules

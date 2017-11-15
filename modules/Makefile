@@ -1,8 +1,4 @@
 #*************************************************************************
-# Copyright (c) 2017 The University of Chicago, as Operator of Argonne
-#     National Laboratory.
-# Copyright (c) 2017 The Regents of the University of California, as
-#     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
@@ -23,9 +19,7 @@ SUBMODULES += pvData
 pvData_DEPEND_DIRS = libcom
 
 SUBMODULES += pvAccess
-pvAccess_DEPEND_DIRS = pvData ca
-# FIXME: dependency needed for the pvAccessIOC library
-pvAccess_DEPEND_DIRS += database
+pvAccess_DEPEND_DIRS = pvData database
 
 SUBMODULES += normativeTypes
 normativeTypes_DEPEND_DIRS = pvData

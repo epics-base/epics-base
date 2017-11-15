@@ -46,6 +46,6 @@ all host $(DIRS) $(ARCHS) $(ACTIONS) $(dirActionTargets) $(dirArchTargets) \
     $(dirActionArchTargets) $(actionArchTargets): | RELEASE.local
 
 RELEASE.local:
-	@echo "EPICS_BASE = $(abspath $(INSTALL_LOCATION))"> $@
+	@echo EPICS_BASE = $(abspath $(INSTALL_LOCATION))> $@
 realclean:
 	$(RM) RELEASE.local

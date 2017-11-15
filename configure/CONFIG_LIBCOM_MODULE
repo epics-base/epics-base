@@ -1,0 +1,25 @@
+#*************************************************************************
+# Copyright (c) 2017 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+# Set EPICS_LIBCOM if necessary
+ifndef EPICS_LIBCOM
+  EPICS_LIBCOM = $(if $(BUILDING_LIBCOM),$(INSTALL_LOCATION),$(EPICS_BASE))
+
+  # Paths to tools built here
+  EPICS_LIBCOM_HOST_BIN ?= $(EPICS_LIBCOM)/bin/$(EPICS_HOST_ARCH)
+endif
+
+# Set location of locally generated tools
+YACC = $(abspath $(EPICS_LIBCOM_HOST_BIN))/antelope$(HOSTEXE)
+LEX = $(abspath $(EPICS_LIBCOM_HOST_BIN))/e_flex$(HOSTEXE) \
+        -S$(EPICS_LIBCOM)/include/flex.skel.static
+
+# Default stack size for osiThread
+OSITHREAD_USE_DEFAULT_STACK = NO
+OSITHREAD_DEFAULT_STACK_FLAGS_YES = -DOSITHREAD_USE_DEFAULT_STACK
+
+BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_STACK))

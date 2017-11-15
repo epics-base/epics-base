@@ -1,4 +1,0 @@
-# Fallback / bootstrap
-EPICS_BASE = $(TOP)/../..
-
--include RELEASE.base

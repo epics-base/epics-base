@@ -1,5 +1,10 @@
-# FIXME: for a non-local install of the bundle, this has to be changes for the submodules
-INSTALL_LOCATION = $(TOP)/../..
+#*************************************************************************
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
 
-# Do not install configuration from base submodules
+# When building submodules, this should always be true:
+INSTALL_LOCATION = $(EPICS_BASE)
+
+# Stop submodules from installing their configuration files:
 CONFIG_INSTALLS =

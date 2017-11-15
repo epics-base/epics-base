@@ -7,7 +7,7 @@
 /include/
 /templates/
 /configure/*.local
-/modules/RELEASE.base
+/modules/RELEASE.local
 O.*/
 /QtC-*
 *.orig

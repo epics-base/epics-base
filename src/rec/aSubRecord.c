@@ -208,10 +208,12 @@ static long init_record(aSubRecord *prec, int pass)
     strcpy(prec->onam, prec->snam);
     prec->oval = prec->val;
     for (i = 0; i < NUM_ARGS; i++) {
-        (&prec->onva)[i] = (&prec->nova)[i];
-        memcpy((&prec->ovla)[i],
-               (&prec->vala)[i],
-               (&prec->nova)[i]);
+        epicsUInt32 nev = (&prec->neva)[i];
+
+        (&prec->onva)[i] = nev;
+        if (nev)
+            memcpy((&prec->ovla)[i], (&prec->vala)[i],
+                dbValueSize((&prec->ftva)[i]) * nev);
     }
     return 0;
 }

@@ -117,6 +117,8 @@ static char *EVENT_PEND_NAME = "eventTask";
 
 static struct evSubscrip canceledEvent;
 
+static epicsMutexId stopSync;
+
 static unsigned short ringSpace ( const struct event_que *pevq )
 {
     if ( pevq->evque[pevq->putix] == EVENTQEMPTY ) {
@@ -258,6 +260,10 @@ dbEventCtx db_init_events (void)
 {
     struct event_user * evUser;
 
+    if (!stopSync) {
+        stopSync = epicsMutexMustCreate();
+    }
+
     if (!dbevEventUserFreeList) {
         freeListInitPvt(&dbevEventUserFreeList,
             sizeof(struct event_user),8);
@@ -321,6 +327,8 @@ fail:
     return NULL;
 }
 
+
+    /* intentionally leak stopSync to avoid possible shutdown races */
 /*
  *  DB_CLOSE_EVENTS()
  *
@@ -356,10 +364,14 @@ void db_close_events (dbEventCtx ctx)
 
     epicsMutexUnlock ( evUser->lock );
 
+    epicsMutexMustLock (stopSync);
+
     epicsEventDestroy(evUser->pexitsem);
     epicsEventDestroy(evUser->ppendsem);
     epicsEventDestroy(evUser->pflush_sem);
     epicsMutexDestroy(evUser->lock);
+
+    epicsMutexUnlock (stopSync);
 
     freeListFree(dbevEventUserFreeList, evUser);
 }
@@ -1043,7 +1055,14 @@ static void event_task (void *pParm)
 
     taskwdRemove(epicsThreadGetIdSelf());
 
+    /* use stopSync to ensure pexitsem is not destroy'd
+     * until epicsEventSignal() has returned.
+     */
+    epicsMutexMustLock (stopSync);
+
     epicsEventSignal(evUser->pexitsem);
+
+    epicsMutexUnlock(stopSync);
 
     return;
 }

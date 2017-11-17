@@ -4,6 +4,11 @@
 #
 set -e
 
+die() {
+  echo "$1" >&2
+  exit 1
+}
+
 TOPREV="$1"
 FINALTAR="$2"
 PREFIX="$3"
@@ -23,7 +28,12 @@ EOF
 fi
 
 [ "$FINALTAR" ] || FINALTAR="$TOPREV.tar.gz"
-[ "PREFIX" ] || PREFIX="$TOPREV/"
+[ "$PREFIX" ] || PREFIX="$TOPREV/"
+
+case "$PREFIX" in
+*/) ;;
+*)  die "Prefix must end with '/'";;
+esac
 
 # temporary directory w/ automatic cleanup
 TDIR=`mktemp -d`
@@ -51,17 +61,15 @@ done
 
 # make a list of files copied and filter out undesirables
 
-(cd "$TDIR"/tar && find .) > "$TDIR"/list.1
+(cd "$TDIR"/tar && find . -not -type d -mindepth 1) > "$TDIR"/list.1
 
 sed \
--e '/.*ci$/d' \
--e '/.*ci\//d' \
--e '/.*jenkins$/d' \
--e '/.*jenkins\//d' \
+-e '/ci\//d' \
+-e '/jenkins/d' \
 -e '/\.git/d' \
--e '/\.project/d' \
--e '/.*\.travis\.yml$/d' \
--e '/.*\.appveyor\.yml$/d' \
+-e '/\.project$/d' \
+-e '/\.travis\.yml$/d' \
+-e '/\.appveyor\.yml$/d' \
 "$TDIR"/list.1 > "$TDIR"/list.2
 
 if ! diff -u "$TDIR"/list.1 "$TDIR"/list.2
@@ -69,9 +77,17 @@ then
   echo "Warning: prohibited files being ignored"
 fi
 
+# together with "-mindepth 1" this avoids leading ./ in tar filenames
+sed -i -e 's|^\./||' "$TDIR"/list.2
+
 # Use the filtered list to build the final tar
 #  The -a option chooses compression automatically based on output file name.
 
 tar -C "$TDIR"/tar --files-from="$TDIR"/list.2 -caf "$FINALTAR"
+
+tar -taf "$FINALTAR" > "$TDIR"/list.3
+
+# make sure we haven't picked up anything extra
+diff -u "$TDIR"/list.2 "$TDIR"/list.3
 
 echo "Wrote $FINALTAR"

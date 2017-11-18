@@ -38,6 +38,17 @@ $(foreach target, $(PROD) $(TESTPROD), \
 
 #-----------------------------------------------------------------------
 
+# These must be done before PROD2_template
+define TESTLIBRARY_template
+$(1)_DIR = .
+TESTBUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
+endef
+
+$(foreach target, $(TESTLIBRARY), \
+    $(eval $(call TESTLIBRARY_template,$(strip $(target)))))
+
+#-----------------------------------------------------------------------
+
 define TARGET2_template
 $(1)_LDLIBS += $$($(1)_LIBS)
 $(1)_LDLIBS += $$(if $$(strip $$($(1)_LIBS_$(OS_CLASS))), \
@@ -120,16 +131,6 @@ endef
 
 $(foreach target, $(LIBRARY), \
     $(eval $(call LIBRARY2_template,$(strip $(target)))))
-
-#-----------------------------------------------------------------------
-
-define LIBRARY3_template
-$(1)_DIR = .
-TESTBUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
-endef
-
-$(foreach target, $(TESTLIBRARY), \
-    $(eval $(call LIBRARY3_template,$(strip $(target)))))
 
 #-----------------------------------------------------------------------
 

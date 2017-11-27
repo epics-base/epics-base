@@ -44,6 +44,7 @@ INC_vxWorks += boost/smart_ptr/detail/sp_counted_impl.hpp
 INC_vxWorks += boost/smart_ptr/detail/sp_has_sync.hpp
 INC_vxWorks += boost/smart_ptr/detail/spinlock.hpp
 INC_vxWorks += boost/smart_ptr/detail/spinlock_pool.hpp
+INC_vxWorks += boost/smart_ptr/detail/spinlock_pt.hpp
 INC_vxWorks += boost/smart_ptr/detail/spinlock_sync.hpp
 INC_vxWorks += boost/smart_ptr/detail/sp_nullptr_t.hpp
 INC_vxWorks += boost/smart_ptr/detail/yield_k.hpp

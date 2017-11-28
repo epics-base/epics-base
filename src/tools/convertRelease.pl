@@ -231,10 +231,10 @@ sub checkRelease {
                 AbsPath($macros{$parent}) ne AbsPath($ppath)) {
                 print "\n" unless ($status);
                 print "Definition of $parent conflicts with $app support.\n";
-                print "In this application a RELEASE file defines\n";
-                print "\t$parent = $macros{$parent}\n";
-                print "but $app at $path defines\n";
-                print "\t$parent = $ppath\n";
+                print "In this application or module, a RELEASE file\n";
+                print "conflicts with $app at $path\n";
+                print "  This application: $parent = $macros{$parent}\n";
+                print "  $app: $parent = $ppath\n";
                 $status = 1;
             }
         }

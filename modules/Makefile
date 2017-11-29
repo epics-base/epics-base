@@ -36,8 +36,11 @@ pva2pva_DEPEND_DIRS = pvAccess
 SUBMODULES += example
 example_DEPEND_DIRS = pva2pva pvaClient
 
-# Add any checked-out submodules to DIRS
-DIRS += $(subst /,,$(dir $(wildcard $(addsuffix /Makefile, $(SUBMODULES)))))
+# Allow sites to add extra submodules
+-include Makefile.local
+
+# Add only checked-out submodules to DIRS
+DIRS += $(subst /Makefile,,$(wildcard $(addsuffix /Makefile, $(SUBMODULES))))
 
 include $(TOP)/configure/RULES_DIRS
 

@@ -52,7 +52,7 @@ my (@syms, %vals, %msgs);
 while (<>) {
     chomp;
     next unless m/^ \s* \# \s* define \s+ ([SM]_[A-Za-z0-9_]+)
-        \s++ (.*?) \s* \/ \* \s*+ (.*?) \s* \* \/ \s* $/x;
+        \s+ (.*?) \s* \/ \* \s* (.*?) \s* \* \/ \s* $/x;
     push @syms, $1;
     $vals{$1} = $2;
     $msgs{$1} = $3;

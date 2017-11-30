@@ -1,0 +1,6 @@
+# siml target doesn't exist
+record(ao, "ao-0") {
+  field(SIML, "non-exist")
+  field(HIGH, "1.5")
+  field(HSV,  "MINOR")
+}

@@ -13,6 +13,7 @@
 #include <epicsTime.h>
 #include <epicsThread.h>
 #include <errlog.h>
+#include <alarm.h>
 
 #include "recSup.h"
 #include "aiRecord.h"
@@ -136,6 +137,38 @@ void testSimmSetup(void)
     precai = (aiRecord*)testdbRecordPtr("ai-3");
     testOk(precai->sscn == 4, "ai-3.SSCN = %u == 4 (5 second)", precai->sscn);
     testOk(precai->sdly == 0.345, "ai-3.SDLY = %g == 0.345", precai->sdly);
+}
+
+/*
+ * Invalid SIML link sets LINK/NO_ALARM if in NO_ALARM
+ */
+static
+void testSimlFail(void)
+{
+    aoRecord *precao;
+
+    testDiag("##### Behavior for failing SIML #####");
+
+    precao = (aoRecord*)testdbRecordPtr("ao-0");
+    /* before anything: UDF INVALID */
+    testOk(precao->stat == UDF_ALARM, "ao-0.STAT = %u [%s] == %u [UDF]",
+           precao->stat, epicsAlarmConditionStrings[precao->stat], UDF_ALARM);
+    testOk(precao->sevr == INVALID_ALARM, "ao-0.SEVR = %u [%s] == %u [INVALID]",
+           precao->sevr, epicsAlarmSeverityStrings[precao->sevr], INVALID_ALARM);
+
+    /* legal value: LINK NO_ALARM */
+    testdbPutFieldOk("ao-0.VAL", DBR_DOUBLE, 1.0);
+    testOk(precao->stat == LINK_ALARM, "ao-0.STAT = %u [%s] == %u [LINK]",
+    precao->stat, epicsAlarmConditionStrings[precao->stat], LINK_ALARM);
+    testOk(precao->sevr == NO_ALARM, "ao-0.SEVR = %u [%s] == %u [NO_ALARM]",
+           precao->sevr, epicsAlarmSeverityStrings[precao->sevr], NO_ALARM);
+
+    /* HIGH/MINOR overrides */
+    testdbPutFieldOk("ao-0.VAL", DBR_DOUBLE, 2.0);
+    testOk(precao->stat == HIGH_ALARM, "ao-0.STAT = %u [%s] == %u [HIGH]",
+    precao->stat, epicsAlarmConditionStrings[precao->stat], HIGH_ALARM);
+    testOk(precao->sevr == MINOR_ALARM, "ao-0.SEVR = %u [%s] == %u [MINOR]",
+           precao->sevr, epicsAlarmSeverityStrings[precao->sevr], MINOR_ALARM);
 }
 
 /*
@@ -402,7 +435,7 @@ void testSimmDelay(const char *name,
     testdbPutFieldOk(namePROC, DBR_LONG, 0);
     testdbGetFieldEqual(namePACT, DBR_USHORT, 1);
     epicsTimeGetCurrent(&now);
-    epicsThreadSleep(1.5*delay);
+    epicsThreadSleep(1.75*delay);
     testdbGetFieldEqual(namePACT, DBR_USHORT, 0);
     testOk(epicsTimeLessThan(&now, mytime), "time stamp taken from second pass processing");
 
@@ -456,10 +489,11 @@ void testAllRecTypes(void)
 
 MAIN(simmTest)
 {
-    testPlan(0);
+    testPlan(1176);
     startSimmTestIoc("simmTest.db");
 
     testSimmSetup();
+    testSimlFail();
     testAllRecTypes();
 
     testIocShutdownOk();

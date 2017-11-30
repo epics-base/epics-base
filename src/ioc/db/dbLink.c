@@ -297,7 +297,7 @@ long dbTryGetLink(struct link *plink, short dbrType, void *pbuffer,
     lset *plset = plink->lset;
 
     if (!plset || !plset->getValue)
-        return -1;
+        return S_db_noLSET;
 
     return plset->getValue(plink, dbrType, pbuffer, pnRequest);
 }
@@ -314,8 +314,11 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
     }
 
     status = dbTryGetLink(plink, dbrType, pbuffer, pnRequest);
+    if (status == S_db_noLSET)
+        return -1;
     if (status)
         recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+
     return status;
 }
 

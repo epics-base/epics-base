@@ -291,22 +291,29 @@ long dbGetNelements(const struct link *plink, long *nelements)
     return plset->getElements(plink, nelements);
 }
 
-long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
-        long *poptions, long *pnRequest)
+long dbTryGetLink(struct link *plink, short dbrType, void *pbuffer,
+                  long *poptions, long *pnRequest)
 {
-    struct dbCommon *precord = plink->precord;
     lset *plset = plink->lset;
-    long status;
 
     if (poptions && *poptions) {
-        printf("dbGetLink: Use of poptions no longer supported\n");
+        printf("dbTryGetLink: Use of poptions no longer supported\n");
         *poptions = 0;
     }
 
     if (!plset || !plset->getValue)
         return -1;
 
-    status = plset->getValue(plink, dbrType, pbuffer, pnRequest);
+    return plset->getValue(plink, dbrType, pbuffer, pnRequest);
+}
+
+long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
+        long *poptions, long *pnRequest)
+{
+    struct dbCommon *precord = plink->precord;
+    long status;
+
+    status = dbTryGetLink(plink, dbrType, pbuffer, poptions, pnRequest);
     if (status)
         recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
     return status;

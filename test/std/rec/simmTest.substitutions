@@ -27,4 +27,6 @@ file "simmTestHistogram.template" {
 }
 file "simmSetup.db" {
 {}
+file "simmSimlFail.db" {
+{}
 }

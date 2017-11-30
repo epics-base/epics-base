@@ -291,11 +291,21 @@ long dbGetNelements(const struct link *plink, long *nelements)
     return plset->getElements(plink, nelements);
 }
 
+long dbTryGetLink(struct link *plink, short dbrType, void *pbuffer,
+        long *pnRequest)
+{
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getValue)
+        return S_db_noLSET;
+
+    return plset->getValue(plink, dbrType, pbuffer, pnRequest);
+}
+
 long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
         long *poptions, long *pnRequest)
 {
     struct dbCommon *precord = plink->precord;
-    lset *plset = plink->lset;
     long status;
 
     if (poptions && *poptions) {
@@ -303,12 +313,12 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
         *poptions = 0;
     }
 
-    if (!plset || !plset->getValue)
+    status = dbTryGetLink(plink, dbrType, pbuffer, pnRequest);
+    if (status == S_db_noLSET)
         return -1;
-
-    status = plset->getValue(plink, dbrType, pbuffer, pnRequest);
     if (status)
         recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+
     return status;
 }
 

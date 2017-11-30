@@ -17,12 +17,23 @@
 
 -->
 
+<h3>Changed SIML failure behavior</h3>
+
+<p>A failure when fetching the simulation mode through <tt>SIML</tt> will not
+put the record into INVALID alarm state anymore. Instead, as long as the
+record's current alarm severity (<tt>SEVR</tt>)is NO_ALARM, its alarm status
+(<tt>STAT</tt>) will be set to LINK_ALARM without increasing the severity. This
+allows clients to get some notification of a failing or bad <tt>SIML</tt> link
+without otherwise affecting record processing.</p>
+
+
 <h3>dbVerify() has been restored to dbStaticLib</h3>
 
 <p>This routine was removed in Base-3.16.1 but has been reimplemented in this
 release by special request. Note that the error message strings that it returns
 when verification fails have changed, but are still designed for display to the
 user.</p>
+
 
 <h3>Simulation mode improvements</h3>
 

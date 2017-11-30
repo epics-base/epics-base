@@ -403,7 +403,7 @@ long recGblGetSimm(struct dbCommon *pcommon, epicsEnum16 *psscn,
     long status;
 
     recGblSaveSimm(*psscn, poldsimm, *psimm);
-    status = dbTryGetLink(psiml, DBR_USHORT, psimm, 0, 0);
+    status = dbTryGetLink(psiml, DBR_USHORT, psimm, 0);
     if (status && !pcommon->nsev) pcommon->nsta = LINK_ALARM;
     recGblCheckSimm(pcommon, psscn, *poldsimm, *psimm);
     return 0;

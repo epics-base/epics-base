@@ -101,7 +101,7 @@ epicsShareFunc long dbGetNelements(const struct link *plink, long *nelements);
 epicsShareFunc int dbIsLinkConnected(const struct link *plink); /* 0 or 1 */
 epicsShareFunc int dbGetLinkDBFtype(const struct link *plink);
 epicsShareFunc long dbTryGetLink(struct link *, short dbrType, void *pbuffer,
-        long *options, long *nRequest);
+        long *nRequest);
 epicsShareFunc long dbGetLink(struct link *, short dbrType, void *pbuffer,
         long *options, long *nRequest);
 epicsShareFunc long dbGetControlLimits(const struct link *plink, double *low,

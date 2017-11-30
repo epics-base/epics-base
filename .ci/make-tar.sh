@@ -41,7 +41,7 @@ trap 'rm -rf "$TDIR"' EXIT INT QUIT TERM
 
 mkdir "$TDIR"/tar
 
-echo "Export revision $TOPREV as $FINALTAR with prefix $PREFIX"
+echo "Exporting revision $TOPREV as $FINALTAR with prefix $PREFIX"
 
 # Use git-archive to copy files at the given revision into our temp. dir.
 # Respects 'export-exclude' in .gitattributes files.
@@ -55,39 +55,43 @@ git archive --prefix=$PREFIX $TOPREV | tar -C "$TDIR"/tar -x
 git ls-tree -r $TOPREV | awk '/^[0-9]+ commit / {print $3, $4}' | \
 while read HASH MODDIR
 do
-    echo "visit $HASH $MODDIR"
-    (cd $MODDIR && git archive --prefix=${PREFIX}${MODDIR}/ $HASH) | tar -C "$TDIR"/tar -x
+    echo "Visiting $HASH $MODDIR"
+    git -C $MODDIR archive --prefix=${PREFIX}${MODDIR}/ $HASH | tar -C "$TDIR"/tar -x
 done
 
 # make a list of files copied and filter out undesirables
 
-(cd "$TDIR"/tar && find . -not -type d -mindepth 1) > "$TDIR"/list.1
+(cd "$TDIR"/tar && find . -mindepth 1 -not -type d) > "$TDIR"/list.1
 
+# Remove leading ./ from filenames
+sed -i -e 's|^\./||' "$TDIR"/list.1
+
+# Exclude files
 sed \
--e '/ci\//d' \
--e '/jenkins/d' \
--e '/\.git/d' \
--e '/\.project$/d' \
--e '/\.travis\.yml$/d' \
--e '/\.appveyor\.yml$/d' \
-"$TDIR"/list.1 > "$TDIR"/list.2
+  -e '/\/\.\?ci\//d' \
+  -e '/\/jenkins\//d' \
+  -e '/\/\.git/d' \
+  -e '/\/\.project$/d' \
+  -e '/\/\.travis\.yml$/d' \
+  -e '/\/\.appveyor\.yml$/d' \
+  "$TDIR"/list.1 > "$TDIR"/list.2
 
-if ! diff -u "$TDIR"/list.1 "$TDIR"/list.2
+if ! diff -U 0 "$TDIR"/list.1 "$TDIR"/list.2
 then
-  echo "Warning: prohibited files being ignored"
+    echo "Excluding the files shown above"
 fi
-
-# together with "-mindepth 1" this avoids leading ./ in tar filenames
-sed -i -e 's|^\./||' "$TDIR"/list.2
 
 # Use the filtered list to build the final tar
 #  The -a option chooses compression automatically based on output file name.
 
 tar -C "$TDIR"/tar --files-from="$TDIR"/list.2 -caf "$FINALTAR"
 
+echo "Wrote $FINALTAR"
+
 tar -taf "$FINALTAR" > "$TDIR"/list.3
 
 # make sure we haven't picked up anything extra
-diff -u "$TDIR"/list.2 "$TDIR"/list.3
-
-echo "Wrote $FINALTAR"
+if ! diff -u "$TDIR"/list.2 "$TDIR"/list.3
+then
+    echo "Oops! Tarfile diff against plan shown above"
+fi

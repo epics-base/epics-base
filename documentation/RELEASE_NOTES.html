@@ -60,6 +60,25 @@ the environment variable EPICS_IOC_IGNORE_SERVERS (separated by spaces if more
 than one should be ignored).</p>
 
 
+<h3>Grand source-code reorganization</h3>
+
+<p>EPICS 7.0.1 contains the IOC Database, RSRV server and the Channel Access
+client code from EPICS Base 3.16.1 along with all the original record types and
+soft device support, but GDD and the Portable Channel Access Server have been
+unbundled and are now available separately. In their place we have brought in
+the more recently written EPICS V4 C++ libraries (collectively referred to as
+the PVA modules). The directory tree for EPICS is somewhat larger as a result,
+and the original structure of the Base directories has been split into 4
+separate Git repositories. External modules should build against this new
+structure with little or no changes needed, except that some allowance may be
+needed for the merging of the V4 modules.</p>
+
+<p>There should be rather more description and documantation of these changes
+than is currently available, but as developers we generally much prefer to write
+code than documentation. Send questions to the tech-talk mailing list and we'll
+be happy to try and answer them!</p>
+
+
 <h2 align="center">Changes from the 3.16 branch since 3.16.1</h2>
 
 <!-- Insert inherited items immediately below here ... -->

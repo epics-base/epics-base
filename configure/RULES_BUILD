@@ -170,7 +170,7 @@ ifdef RES
 	@$(RM) *$(RES)
 endif
 
-$(DIRECTORY_TARGETS) :
+$(MKDIR_TARGETS) :
 	$(MKDIR) $@
 
 # Install LIB_INSTALLS libraries before linking executables

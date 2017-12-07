@@ -44,11 +44,12 @@ DIRS += $(subst /Makefile,,$(wildcard $(addsuffix /Makefile, $(SUBMODULES))))
 
 include $(TOP)/configure/RULES_DIRS
 
-# Ensure that RELEASE.local exists before doing anything else
+# Ensure that RELEASE.<host>.local exists before doing anything else
 all host $(DIRS) $(ARCHS) $(ACTIONS) $(dirActionTargets) $(dirArchTargets) \
-    $(dirActionArchTargets) $(actionArchTargets): | RELEASE.local
+    $(dirActionArchTargets) $(actionArchTargets): \
+    | RELEASE.$(EPICS_HOST_ARCH).local
 
-RELEASE.local:
+RELEASE.$(EPICS_HOST_ARCH).local:
 	@echo EPICS_BASE = $(abspath $(INSTALL_LOCATION))> $@
 realclean:
-	$(RM) RELEASE.local
+	$(RM) RELEASE.$(EPICS_HOST_ARCH).local

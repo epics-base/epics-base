@@ -35,7 +35,7 @@ fi
 install -d "$HOME/configure"
 cd "$HOME/configure"
 
-cat << EOF > RULES_USER
+cat <<'EOF' > RULES_USER
 SHOW_MAKEFILES = $(MAKEFILE_LIST:%=show-makefile.%)
 show-makefiles: $(SHOW_MAKEFILES)
 

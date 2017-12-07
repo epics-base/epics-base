@@ -7,8 +7,8 @@
 
 # This is a Makefile fragment, see src/libCom/Makefile.
 
-envData.c: $(LIBCOM)/env/envDefs.h $(LIBCOM)/env/bldEnvData.pl \
-    libcomModuleDirs.pm $(CONFIG)/CONFIG_ENV $(CONFIG)/CONFIG_SITE_ENV \
+envData.c: $(LIBCOM)/env/envDefs.h $(TOOLS)/bldEnvData.pl \
+    $(CONFIG)/CONFIG_ENV $(CONFIG)/CONFIG_SITE_ENV \
     $(wildcard $(CONFIG)/os/CONFIG_SITE_ENV.$(T_A))
-	$(PERL) $(LIBCOM)/env/bldEnvData.pl $(QUIET_FLAG) -t $(T_A) \
+	$(PERL) $(TOOLS)/bldEnvData.pl $(QUIET_FLAG) -t $(T_A) \
 		-c $(CMPLR_CLASS) -s $(OS_CLASS) $(CONFIG)

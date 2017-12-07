@@ -13,10 +13,10 @@
 
 use strict;
 
-# This program is never installed. It uses lib '.' for the path to
-# libcomModuleDirs.pm which then sets the path to the EPICS modules.
-use lib '.';
+use FindBin qw($Bin);
+use lib ($Bin, "$Bin/../../lib/perl");
 use libcomModuleDirs;
+no lib $Bin;
 
 use Getopt::Std;
 use File::Basename;

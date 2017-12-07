@@ -129,6 +129,15 @@ EOF
   EXTRA=RTEMS_QEMU_FIXUPS=YES
 fi
 
-make -C epics-base $EXTRA
+make -C epics-base configure src
+
+make -C epics-base/modules RELEASE.$EPICS_HOST_ARCH.local
 
 cat epics-base/modules/RELEASE.$EPICS_HOST_ARCH.local
+cat epics-base/modules/CONFIG_SITE.local
+
+ls epics-base/modules/libcom/configure
+cat epics-base/modules/libcom/configure/RELEASE
+
+make -C epics-base/modules/libcom
+

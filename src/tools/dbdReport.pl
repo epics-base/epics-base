@@ -8,8 +8,9 @@
 #*************************************************************************
 
 use FindBin qw($Bin);
-use lib "$Bin/../../lib/perl";
+use lib ($Bin, "$Bin/../../lib/perl");
 use databaseModuleDirs;
+no lib $Bin;
 
 use DBD;
 use DBD::Parser;
@@ -64,4 +65,3 @@ if (%recordtypes) {
 my @records = sort keys %{$dbd->records};
 print wrap("Records: ", "\t", join(', ', @records)), "\n"
         if @records;
-

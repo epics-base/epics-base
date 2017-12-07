@@ -8,8 +8,9 @@
 #*************************************************************************
 
 use FindBin qw($Bin);
-use lib "$Bin/../../lib/perl";
+use lib ($Bin, "$Bin/../../lib/perl");
 use databaseModuleDirs;
+no lib $Bin;
 
 use EPICS::Getopts;
 use File::Basename;
@@ -168,7 +169,7 @@ sub newtables {
         "\n};\n\n";
     print OUTFILE "static const ${rn}FieldIndex ${rn}RecordLinkFieldIndices[] = {\n",
         join(",\n", map {
-                "    ${rn}Record" . $_->name; 
+                "    ${rn}Record" . $_->name;
             } grep {
                 $_->dbf_type =~ m/^DBF_(IN|OUT|FWD)LINK/;
             } $rtyp->fields),
@@ -209,7 +210,7 @@ sub newtables {
         print OUTFILE "    dbRegisterMenu(pbase, \&${name}MenuMetaData);\n";
     }
     print OUTFILE map {
-            "    ${rn}FieldMetaData[${rn}Record" . 
+            "    ${rn}FieldMetaData[${rn}Record" .
             $_->name .
             "].typDat.pmenu = \n".
             "        \&" .
@@ -219,7 +220,7 @@ sub newtables {
     print OUTFILE map {
                 "    ${rn}FieldMetaData[${rn}Record" .
                 $_->name .
-            "].typDat.base = CT_HEX;\n"; 
+            "].typDat.base = CT_HEX;\n";
             } grep {
                 $_->attribute('base') eq 'HEX';
             } $rtyp->fields;

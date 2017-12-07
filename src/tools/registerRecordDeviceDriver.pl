@@ -6,14 +6,15 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 use strict;
 
 use FindBin qw($Bin);
-use lib "$Bin/../../lib/perl";
+use lib ($Bin, "$Bin/../../lib/perl");
 use databaseModuleDirs;
+no lib $Bin;
 
 use DBD;
 use DBD::Parser;

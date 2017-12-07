@@ -24,7 +24,7 @@ PERL_MODULES += DBD/Record.pm
 PERL_MODULES += DBD/Registrar.pm
 PERL_MODULES += DBD/Variable.pm
 
-PERL_MODULES += databaseModuleDirs.pm
+PERL_SCRIPTS += databaseModuleDirs.pm
 
 PERL_SCRIPTS += makeIncludeDbd.pl
 

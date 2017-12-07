@@ -8,8 +8,9 @@
 #*************************************************************************
 
 use FindBin qw($Bin);
-use lib "$Bin/../../lib/perl";
+use lib ($Bin, "$Bin/../../lib/perl");
 use databaseModuleDirs;
+no lib $Bin;
 
 use EPICS::Getopts;
 use File::Basename;

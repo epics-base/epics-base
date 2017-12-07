@@ -32,6 +32,24 @@ then
   fi
 fi
 
+install -d "$HOME/configure"
+cd "$HOME/configure"
+
+cat << EOF > RULES_USER
+SHOW_MAKEFILES = $(MAKEFILE_LIST:%=show-makefile.%)
+show-makefiles: $(SHOW_MAKEFILES)
+
+# The sort prevents warnings about duplicate targets:
+$(sort $(SHOW_MAKEFILES)): show-makefile.%:
+	@echo "    $(@:show-makefile.%=%)"
+
+PRINT_Var = $(@:PRINT.%=%)
+PRINT.%:
+	@echo "$(PRINT_Var) = '$($(PRINT_Var))'"
+
+.PHONY: show-makefiles show-makefile.% PRINT.%
+EOF
+
 cd "$CURDIR"
 
 cat << EOF > configure/RELEASE.local
@@ -130,14 +148,15 @@ EOF
 fi
 
 make -C epics-base configure src
-
 make -C epics-base/modules RELEASE.$EPICS_HOST_ARCH.local
 
-cat epics-base/modules/RELEASE.$EPICS_HOST_ARCH.local
-cat epics-base/modules/CONFIG_SITE.local
+cd epics-base/modules/libcom
 
-ls epics-base/modules/libcom/configure
-cat epics-base/modules/libcom/configure/RELEASE
+tail -5 configure/RELEASE
 
-make -C epics-base/modules/libcom
+cat ../RELEASE.$EPICS_HOST_ARCH.local
+cat ../CONFIG_SITE.local
 
+make --debug=v PRINT.EPICS_BASE
+
+make

@@ -129,4 +129,6 @@ EOF
   EXTRA=RTEMS_QEMU_FIXUPS=YES
 fi
 
-make -j2 -C epics-base $EXTRA
+make -C epics-base $EXTRA
+
+cat epics-base/modules/RELEASE.$EPICS_HOST_ARCH.local

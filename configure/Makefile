@@ -10,5 +10,6 @@ TARGETS = $(CONFIG_TARGETS)
 CONFIGS += $(subst ../,,$(wildcard $(CONFIG_INSTALLS)))
 
 CFG += CONFIG_CA_MODULE
+CFG += CONFIG_CA_VERSION
 
 include $(TOP)/configure/RULES

@@ -71,7 +71,7 @@ git clone --quiet --depth 5 --branch core/"${BRCORE:-master}" https://github.com
 ( cd epics-base && git log -n1 )
 add_base_module libcom "${BRLIBCOM:-master}"
 
-EPICS_HOST_ARCH=`sh epics-base/startup/EpicsHostArch`
+export EPICS_HOST_ARCH=`sh epics-base/startup/EpicsHostArch`
 
 # requires wine and g++-mingw-w64-i686
 if [ "$WINE" = "32" ]

@@ -32,6 +32,24 @@ then
   fi
 fi
 
+install -d "$HOME/configure"
+cd "$HOME/configure"
+
+cat <<'EOF' > RULES_USER
+SHOW_MAKEFILES = $(MAKEFILE_LIST:%=show-makefile.%)
+show-makefiles: $(SHOW_MAKEFILES)
+
+# The sort prevents warnings about duplicate targets:
+$(sort $(SHOW_MAKEFILES)): show-makefile.%:
+	@echo "    $(@:show-makefile.%=%)"
+
+PRINT_Var = $(@:PRINT.%=%)
+PRINT.%:
+	@echo "$(PRINT_Var) = '$($(PRINT_Var))'"
+
+.PHONY: show-makefiles show-makefile.% PRINT.%
+EOF
+
 cd "$CURDIR"
 
 cat << EOF > configure/RELEASE.local
@@ -53,7 +71,7 @@ git clone --quiet --depth 5 --branch core/"${BRCORE:-master}" https://github.com
 ( cd epics-base && git log -n1 )
 add_base_module libcom "${BRLIBCOM:-master}"
 
-EPICS_HOST_ARCH=`sh epics-base/startup/EpicsHostArch`
+export EPICS_HOST_ARCH=`sh epics-base/startup/EpicsHostArch`
 
 # requires wine and g++-mingw-w64-i686
 if [ "$WINE" = "32" ]
@@ -129,4 +147,16 @@ EOF
   EXTRA=RTEMS_QEMU_FIXUPS=YES
 fi
 
-make -j2 -C epics-base $EXTRA
+make -C epics-base configure src
+make -C epics-base/modules RELEASE.$EPICS_HOST_ARCH.local
+
+cd epics-base/modules/libcom
+
+tail -5 configure/RELEASE
+
+cat ../RELEASE.$EPICS_HOST_ARCH.local
+cat ../CONFIG_SITE.local
+
+make --debug=v PRINT.EPICS_BASE
+
+make

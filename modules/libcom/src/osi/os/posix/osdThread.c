@@ -422,9 +422,24 @@ void epicsThreadRealtimeLock(void)
         int status = mlockall(MCL_CURRENT | MCL_FUTURE);
 
         if (status) {
-            fprintf(stderr, "epicsThreadRealtimeLock "
-                "Warning: Unable to lock the virtual address space.\n"
-                "VM page faults may harm real-time performance.\n");
+            const int err = errno;
+            switch(err) {
+#ifdef __linux__
+            case ENOMEM:
+                fprintf(stderr, "epicsThreadRealtimeLock "
+                        "Warning: unable to lock memory.  RLIMIT_MEMLOCK is too small or missing CAP_IPC_LOCK\n");
+                break;
+            case EPERM:
+                fprintf(stderr, "epicsThreadRealtimeLock "
+                                "Warning: unable to lock memory.  missing CAP_IPC_LOCK\n");
+                break;
+#endif
+            default:
+                fprintf(stderr, "epicsThreadRealtimeLock "
+                                "Warning: Unable to lock the virtual address space.\n"
+                                "VM page faults may harm real-time performance. errno=%d\n",
+                        err);
+            }
         }
     }
 #endif

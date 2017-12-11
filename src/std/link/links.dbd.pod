@@ -13,6 +13,8 @@ The following additional link types are available in this release:
 
 =item * L<Calc|/"Calculation Link calc">
 
+=item * L<dbState|/"dbState Link state">
+
 =back
 
 =head2 Using JSON Links
@@ -127,5 +129,32 @@ atomically with the value of the input argument.
 =head4 Example
 
  {calc: {expr:"A*B", args:[{db:"record.VAL"}, 1.5], prec:3}}
+
+=cut
+
+link(state, lnkStateIf)
+
+=head3 dbState Link C<"state">
+
+A dbState link is one that reads or writes a boolean value from/to a named
+global flag as implemented by the dbState facility in C<dbstate.h>.
+
+The value of the named flag is read or written at the time of the link I/O
+operation. The boolean flag data is represented as a C<DBF_LONG> that can only
+hold the values zero or one; putting any non-zero numeric value to a link sets
+the boolean flag value, putting a zero value clears it.
+
+These dbState flags can be accessed from the IOC Shell with various dbState
+commands, and are also used by the C<"sync"> Channel-Access server-side filter
+mechanism.
+
+=head4 Parameters
+
+The link address must be a string providing the name of the dbState object,
+which will be created when the link is initialized if it doesn't already exist.
+
+=head4 Example
+
+ {state:"redBeam"}
 
 =cut

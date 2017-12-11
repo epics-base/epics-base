@@ -496,12 +496,8 @@ static int lnkCalc_getDBFtype(const struct link *plink)
     calc_link *clink = CONTAINER(plink->value.json.jlink,
         struct calc_link, jlink);
 
-    IFDEBUG(10) {
-        calc_link *clink = CONTAINER(plink->value.json.jlink,
-            struct calc_link, jlink);
-
+    IFDEBUG(10)
         printf("lnkCalc_getDBFtype(calc@%p)\n", clink);
-    }
 
     return DBF_DOUBLE;
 }
@@ -511,13 +507,9 @@ static long lnkCalc_getElements(const struct link *plink, long *nelements)
     calc_link *clink = CONTAINER(plink->value.json.jlink,
         struct calc_link, jlink);
 
-    IFDEBUG(10) {
-        calc_link *clink = CONTAINER(plink->value.json.jlink,
-            struct calc_link, jlink);
-
+    IFDEBUG(10)
         printf("lnkCalc_getElements(calc@%p, (%ld))\n",
             clink, *nelements);
-    }
 
     *nelements = 1;
     return 0;

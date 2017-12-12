@@ -137,12 +137,18 @@ link(state, lnkStateIf)
 =head3 dbState Link C<"state">
 
 A dbState link is one that reads or writes a boolean value from/to a named
-global flag as implemented by the dbState facility in C<dbstate.h>.
+global flag as implemented by the dbState facility in C<dbstate.h>. The link
+type can invert the sense of the dbState flag if desired.
 
 The value of the named flag is read or written at the time of the link I/O
-operation. The boolean flag data is represented as a C<DBF_LONG> that can only
-hold the values zero or one; putting any non-zero numeric value to a link sets
-the boolean flag value, putting a zero value clears it.
+operation. When reading a flag, the value returned by the link will be zero or
+one converted to the requested data type. When writing to a flag the boolean
+value of the data written is determined in the originating data type. All
+strings are regarded as true other than C<""> and C<"0"> which are both false.
+
+A link can be configured to invert the sense of the flag data by putting an
+exclamation mark C<!> before the first character of the flag's name in the link
+address.
 
 These dbState flags can be accessed from the IOC Shell with various dbState
 commands, and are also used by the C<"sync"> Channel-Access server-side filter
@@ -150,11 +156,14 @@ mechanism.
 
 =head4 Parameters
 
-The link address must be a string providing the name of the dbState object,
-which will be created when the link is initialized if it doesn't already exist.
+The link address must be a string providing the name of the dbState object, with
+an optional leading C<!> charater to indicate the flag's value should be
+inverted. The dbState object will be created when the link is initialized if it
+doesn't already exist.
 
-=head4 Example
+=head4 Examples
 
  {state:"redBeam"}
+ {state:"!simEnable"}
 
 =cut

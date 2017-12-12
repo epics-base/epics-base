@@ -40,7 +40,8 @@ typedef long (*FASTCONVERT)();
 typedef struct state_link {
     jlink jlink;        /* embedded object */
     char *name;
-    int val;
+    short val;
+    short invert;
     dbStateId state;
 } state_link;
 
@@ -58,6 +59,7 @@ static jlink* lnkState_alloc(short dbfType)
 
     slink->name = NULL;
     slink->state = NULL;
+    slink->invert = 0;
     slink->val = 0;
 
     IFDEBUG(10)
@@ -84,6 +86,11 @@ static jlif_result lnkState_string(jlink *pjlink, const char *val, size_t len)
     IFDEBUG(10)
         printf("lnkState_string(state@%p, \"%.*s\")\n", slink, (int) len, val);
 
+    if (len > 1 && val[0] == '!') {
+        slink->invert = 1;
+        val++; len--;
+    }
+
     slink->name = epicsStrnDup(val, len);
     return jlif_continue;
 }
@@ -105,8 +112,8 @@ static void lnkState_report(const jlink *pjlink, int level, int indent)
     IFDEBUG(10)
         printf("lnkState_report(state@%p)\n", slink);
 
-    printf("%*s'state': \"%s\" = %d\n", indent, "",
-        slink->name, slink->val);
+    printf("%*s'state': \"%s\" = %s%s\n", indent, "",
+        slink->name, slink->invert ? "! " : "", slink->val ? "TRUE" : "FALSE");
 }
 
 /*************************** lset Routines **************************/
@@ -155,7 +162,7 @@ static int lnkState_getDBFtype(const struct link *plink)
     IFDEBUG(10)
         printf("lnkState_getDBFtype(state@%p)\n", slink);
 
-    return DBF_LONG;
+    return DBF_SHORT;
 }
 
 static long lnkState_getElements(const struct link *plink, long *nelements)
@@ -177,13 +184,15 @@ static long lnkState_getValue(struct link *plink, short dbrType, void *pbuffer,
     state_link *slink = CONTAINER(plink->value.json.jlink,
         struct state_link, jlink);
     long status;
-    FASTCONVERT conv = dbFastPutConvertRoutine[DBR_LONG][dbrType];
+    short flag;
+    FASTCONVERT conv = dbFastPutConvertRoutine[DBR_SHORT][dbrType];
 
     IFDEBUG(10)
         printf("lnkState_getValue(state@%p, %d, ...)\n",
             slink, dbrType);
 
-    slink->val = dbStateGet(slink->state);
+    flag = dbStateGet(slink->state);
+    slink->val = slink->invert ^ flag;
     status = conv(&slink->val, pbuffer, NULL);
 
     return status;
@@ -194,20 +203,59 @@ static long lnkState_putValue(struct link *plink, short dbrType,
 {
     state_link *slink = CONTAINER(plink->value.json.jlink,
         struct state_link, jlink);
-    long status;
-    FASTCONVERT conv = dbFastPutConvertRoutine[dbrType][DBR_LONG];
+    short val;
+    const char *pstr;
 
     IFDEBUG(10)
-        printf("lnkState_getValue(state@%p, %d, ...)\n",
+        printf("lnkState_putValue(state@%p, %d, ...)\n",
             slink, dbrType);
 
     if (nRequest == 0)
         return 0;
 
-    status = conv(pbuffer, &slink->val, NULL);
-    (slink->val ? dbStateSet : dbStateClear)(slink->state);
+    switch(dbrType) {
+    case DBR_CHAR:
+    case DBR_UCHAR:
+        val = !! *(const epicsInt8 *) pbuffer;
+        break;
 
-    return status;
+    case DBR_SHORT:
+    case DBR_USHORT:
+        val = !! *(const epicsInt16 *) pbuffer;
+        break;
+
+    case DBR_LONG:
+    case DBR_ULONG:
+        val = !! *(const epicsInt32 *) pbuffer;
+        break;
+
+    case DBR_INT64:
+    case DBR_UINT64:
+        val = !! *(const epicsInt64 *) pbuffer;
+        break;
+
+    case DBR_FLOAT:
+        val = !! *(const epicsFloat32 *) pbuffer;
+        break;
+
+    case DBR_DOUBLE:
+        val = !! *(const epicsFloat64 *) pbuffer;
+        break;
+
+    case DBR_STRING:    /* Only "" and "0" are FALSE */
+        pstr = (const char *) pbuffer;
+        val = (pstr[0] != 0) && ((pstr[0] != '0') || (pstr[1] != 0));
+        break;
+
+    default:
+        return S_db_badDbrtype;
+    }
+    slink->val = val;
+
+    val ^= slink->invert;
+    (val ? dbStateSet : dbStateClear)(slink->state);
+
+    return 0;
 }
 
 /************************* Interface Tables *************************/

@@ -15,7 +15,7 @@
 /* must be last include */
 #include "epicsExport.h"
 
-const char const version[] = _APPNAME_VERSION;
+const char version[] = _APPNAME_VERSION;
 
 static long read_string(lsiRecord *prec)
 {

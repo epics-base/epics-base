@@ -11,6 +11,7 @@ TEMPLATES += top/iocApp/src/_APPNAME_Main.cpp
 
 TEMPLATES += top/exampleApp/Makefile
 TEMPLATES += top/exampleApp/Db/Makefile
+TEMPLATES += top/exampleApp/Db/circle.db
 TEMPLATES += top/exampleApp/Db/dbExample1.db
 TEMPLATES += top/exampleApp/Db/dbExample2.db
 TEMPLATES += top/exampleApp/Db/_APPNAME_Version.db

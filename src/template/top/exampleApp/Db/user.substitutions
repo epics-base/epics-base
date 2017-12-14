@@ -1,5 +1,9 @@
 # Example substitutions file
 
+file "db/circle.db" {
+    { user = "_USER_" }
+}
+
 file "db/dbExample1.db" {
     { user = "_USER_" }
 }

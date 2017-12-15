@@ -1,6 +1,6 @@
                            Installation Instructions
 
-                           EPICS Base Release 3.16.1
+                           EPICS Base Release 7.0.1.1
 
    --------------------------------------------------------------------------
 
@@ -225,13 +225,13 @@
        required path and other environment variables.
 
        EPICS_HOST_ARCH
-       Before you can build or use EPICS R3.15, the environment variable
-       EPICS_HOST_ARCH must be defined. A perl script EpicsHostArch.pl in the
-       base/startup directory has been provided to help set EPICS_HOST_ARCH.
-       You should have EPICS_HOST_ARCH set to your host operating system
-       followed by a dash and then your host architecture, e.g.
-       solaris-sparc. If you are not using the OS vendor's c/c++ compiler for
-       host builds, you will need another dash followed by the alternate
+       Before you can build or use EPICS Base, the environment variable
+       EPICS_HOST_ARCH should be defined. A perl script EpicsHostArch.pl in
+       the base/startup directory has been provided to help set
+       EPICS_HOST_ARCH. You should have EPICS_HOST_ARCH set to your host
+       operating system followed by a dash and then your CPU architecture,
+       e.g. linux-x86_64. If you are not using the OS vendor's c/c++ compiler
+       for host builds, you will need another dash followed by the alternate
        compiler name (e.g. "-gnu" for GNU c/c++ compilers on a solaris host
        or "-mingw" for MinGW c/c++ compilers on a WIN32 host). See
        configure/CONFIG_SITE for a list of supported EPICS_HOST_ARCH values.
@@ -250,7 +250,7 @@
        solaris systems you need uname in your path.
 
        LD_LIBRARY_PATH
-       R3.15 shared libraries and executables normally contain the full path
+       EPICS shared libraries and executables normally contain the full path
        to any libraries they require. However, if you move the EPICS files or
        directories from their build-time location then in order for the
        shared libraries to be found at runtime LD_LIBRARY_PATH must include
@@ -313,7 +313,7 @@
      script will create a sample application that can be built and then
      executed to try out this release of base.
 
-     Instructions for building and executing the 3.15 example application can
+     Instructions for building and executing the example IOC application can
      be found in the section "Example Application" of Chapter 2, "Getting
      Started", in the "IOC Application Developer's Guide" for this release.
      The "Example IOC Application" section briefly explains how to create and

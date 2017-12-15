@@ -18,22 +18,33 @@ then
    cat <<EOF >&2
 usage: $0 [rev] [outfile.tar.gz] [prefix/]
 
-  "<rev>" may be any git revision spec. (tag, branch, or commit id).
+  <rev> may be any git revision spec. (tag, branch, or commit id).
 
   Output file may be .tar.gz, .tar.bz2, or any extension supported by "tar -a".
-  If output file name is omitted, then "<rev>.tar.gz" is the default.
-  If prefix is omitted, then the default is "<rev>/".
+  If output file name is omitted, "base-<rev>.tar.gz" will be used.
+  If <prefix> is omitted, the default prefix is "base-<rev>/".
 EOF
    exit 1
 fi
 
-[ "$FINALTAR" ] || FINALTAR="$TOPREV.tar.gz"
-[ "$PREFIX" ] || PREFIX="$TOPREV/"
+[ "$FINALTAR" ] || FINALTAR="base-$TOPREV.tar.gz"
+[ "$PREFIX" ] || PREFIX="base-$TOPREV/"
 
 case "$PREFIX" in
 */) ;;
 *)  die "Prefix must end with '/'";;
 esac
+
+# Check for both <tag> and R<tag>
+if ! [ `git tag -l $TOPREV` ]
+then
+  if [ `git tag -l R$TOPREV` ]
+  then
+    TOPREV="R$TOPREV"
+  else
+    die "No tags exist '$TOPREV' or 'R$TOPREV'"
+  fi
+fi
 
 # temporary directory w/ automatic cleanup
 TDIR=`mktemp -d`

@@ -18,8 +18,8 @@ use POSIX qw(strftime);
 
 use strict;
 
-# RFC 8601 date+time w/ zone (eg "2014-08-29T09:42:47-0700")
-my $tfmt = '%Y-%m-%dT%H:%M:%S';
+# RFC 8601 date+time w/ zone (eg "2014-08-29T09:42-0700")
+my $tfmt = '%Y-%m-%dT%H:%M';
 $tfmt .= '%z' unless $^O eq 'MSWin32'; # %z returns zone name on Windows
 my $now = strftime($tfmt, localtime);
 

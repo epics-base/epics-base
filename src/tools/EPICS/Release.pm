@@ -5,8 +5,6 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-use Carp;
-
 #
 # Parse all relevent configure/RELEASE* files and includes
 #
@@ -51,7 +49,7 @@ sub readRelease {
             "discovered in $file\n";
     }
 
-    open(my $IN, '<', $file) or croak "Can't open $file: $!\n";
+    open(my $IN, '<', $file) or die "Can't open $file: $!\n";
     $Ractive->{$file}++;
     while (<$IN>) {
         chomp;
@@ -79,7 +77,7 @@ sub readRelease {
         if (-e $path) {
             &readRelease($path, $Rmacros, $Rapps, $Ractive);
         } elsif ($op eq "include") {
-            carp "EPICS/Release.pm: Include file '$path' not found\n";
+            warn "EPICS/Release.pm: Include file '$path' not found\n";
         }
     }
     $Ractive->{$file}--;
@@ -109,9 +107,9 @@ sub expandRelease {
 
     while (my ($macro, $val) = each %$Rmacros) {
         while (my ($pre,$var,$post) = $val =~ m/ (.*) \$\( (\w+) \) (.*) /x) {
-            carp "EPICS/Release.pm: Undefined macro \$($var) used\n"
+            warn "EPICS/Release.pm: Undefined macro \$($var) used\n"
                 unless exists $Rmacros->{$var};
-            croak "EPICS/Release.pm: Circular definition of macro $macro\n"
+            die "EPICS/Release.pm: Circular definition of macro $macro\n"
                 if $macro eq $var;
             $val = $pre . $Rmacros->{$var} . $post;
             $Rmacros->{$macro} = $val;

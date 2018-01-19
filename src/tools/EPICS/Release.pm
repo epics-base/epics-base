@@ -99,17 +99,18 @@ sub expandMacros {
 }
 
 #
-# Expand all (possibly nested) macros in dictionary
+# Expand all (possibly nested) macros in a dictionary
 #
 sub expandRelease {
-    my ($Rmacros) = @_;
+    my ($Rmacros, $warn) = @_;
     # $Rmacros is a reference to a hash
+    $warn = '' unless defined $warn;
 
     while (my ($macro, $val) = each %$Rmacros) {
         while (my ($pre,$var,$post) = $val =~ m/ (.*) \$\( (\w+) \) (.*) /x) {
-            warn "EPICS/Release.pm: Undefined macro \$($var) used\n"
+            warn "EPICS/Release.pm: Undefined macro \$($var) used $warn\n"
                 unless exists $Rmacros->{$var};
-            die "EPICS/Release.pm: Circular definition of macro $macro\n"
+            die "EPICS/Release.pm: Circular definition of macro $var $warn\n"
                 if $macro eq $var;
             $val = $pre . $Rmacros->{$var} . $post;
             $Rmacros->{$macro} = $val;

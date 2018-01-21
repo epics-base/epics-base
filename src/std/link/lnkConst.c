@@ -2,7 +2,7 @@
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* lnkConst.c */
 
@@ -22,7 +22,10 @@
 #include "epicsExport.h"
 
 
-#define IFDEBUG(n) if (clink->jlink.debug)
+int lnkConst_debug;
+epicsExportAddress(int, lnkConst_debug);
+
+#define IFDEBUG(n) if (lnkConst_debug >= (n))
 
 typedef long (*FASTCONVERT)();
 
@@ -48,10 +51,21 @@ static lset lnkConst_lset;
 
 static jlink* lnkConst_alloc(short dbfType)
 {
-    const_link *clink = calloc(1, sizeof(*clink));
+    const_link *clink;
 
     IFDEBUG(10)
-        printf("lnkConst_alloc()\n");
+        printf("lnkConst_alloc(%d)\n", dbfType);
+
+    if (dbfType != DBF_INLINK) {
+        errlogPrintf("lnkConst: Only works with input links\n");
+        return NULL;
+    }
+
+    clink = calloc(1, sizeof(*clink));
+    if (!clink) {
+        errlogPrintf("lnkConst: calloc() failed.\n");
+        return NULL;
+    }
 
     clink->type = s0;
     clink->nElems = 0;
@@ -146,7 +160,6 @@ static jlif_result lnkConst_integer(jlink *pjlink, long long num)
 
 static jlif_result lnkConst_boolean(jlink *pjlink, int val)
 {
-    const_link *clink = CONTAINER(pjlink, const_link, jlink);
     IFDEBUG(10)
         printf("lnkConst_boolean(const@%p, %d)\n", pjlink, val);
 
@@ -276,8 +289,6 @@ static jlif_result lnkConst_start_array(jlink *pjlink)
 
 static jlif_result lnkConst_end_array(jlink *pjlink)
 {
-    const_link *clink = CONTAINER(pjlink, const_link, jlink);
-
     IFDEBUG(10)
         printf("lnkConst_end_array(const@%p)\n", pjlink);
 
@@ -286,8 +297,6 @@ static jlif_result lnkConst_end_array(jlink *pjlink)
 
 static struct lset* lnkConst_get_lset(const jlink *pjlink)
 {
-    const_link *clink = CONTAINER(pjlink, const_link, jlink);
-
     IFDEBUG(10)
         printf("lnkConst_get_lset(const@%p)\n", pjlink);
 
@@ -629,4 +638,3 @@ static jlif lnkConstIf = {
     lnkConst_report, NULL
 };
 epicsExportAddress(jlif, lnkConstIf);
-

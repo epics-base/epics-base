@@ -33,15 +33,17 @@ database file syntax.
 
 =cut
 
+
 link(const, lnkConstIf)
+variable(lnkConst_debug, int)
 
 =head3 Constant Link C<"const">
 
-Constant links provide one or more values at link initalization time, but do not
-return any data when their C<getValue()> routine is called. Most record types
-support the use of constant links by calling C<recGblInitConstantLink()> at
-record initialization, which results in the constant value being loaded into the
-target field at that time.
+Constant links are input links that provide literal values at link initalization
+time, but do not return any data when their C<getValue()> routine is called.
+Most record types support the use of constant links on their input links by
+calling C<recGblInitConstantLink()> at record initialization, which results in
+the constant value being loaded into the target field at that time.
 
 Note that for most record types (the C<printf> and C<calcout> records are the
 main exceptions) it is pointless to set an input link to a constant link at
@@ -72,14 +74,16 @@ converted to the desired double value at initialization, for example:
 
 =cut
 
+
 link(calc, lnkCalcIf)
+variable(lnkCalc_debug, int)
 
 =head3 Calculation Link C<"calc">
 
-Calculation links can perform simple mathematical expressions on scalar
-(double-precision floating-point) values obtained from other link types and
-return a single double-precision floating-point result. The expressions are
-evaluated by the EPICS Calc engine, and up to 12 inputs can be provided.
+Calculation links are input links that can evaluate mathematical expressions on
+scalar (double- precision floating-point) values obtained from child links, and
+return a double-precision floating-point result. The expressions are evaluated
+by the EPICS Calc engine, and up to 12 inputs can be provided.
 
 =head4 Parameters
 
@@ -132,13 +136,15 @@ atomically with the value of the input argument.
 
 =cut
 
+
 link(state, lnkStateIf)
+variable(lnkState_debug, int)
 
 =head3 dbState Link C<"state">
 
-A dbState link is one that reads or writes a boolean value from/to a named
-global flag as implemented by the dbState facility in C<dbstate.h>. The link
-type can invert the sense of the dbState flag if desired.
+A dbState link is one that gets or puts a boolean value from/to a named global
+flag as implemented by the dbState facility in C<dbstate.h>. The link type can
+invert the sense of the dbState flag during the get or put if desired.
 
 The value of the named flag is read or written at the time of the link I/O
 operation. When reading a flag, the value returned by the link will be zero or
@@ -156,10 +162,10 @@ mechanism.
 
 =head4 Parameters
 
-The link address must be a string providing the name of the dbState object, with
-an optional leading C<!> charater to indicate the flag's value should be
-inverted. The dbState object will be created when the link is initialized if it
-doesn't already exist.
+The link takes a single parameter which must be a string, providing the name of
+the dbState object, with an optional leading C<!> character to indicate that the
+flag's value should be inverted. The dbState object will be created when the
+link is initialized if it doesn't already exist.
 
 =head4 Examples
 

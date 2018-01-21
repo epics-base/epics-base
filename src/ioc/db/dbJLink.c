@@ -2,7 +2,7 @@
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbJLink.c */
 
@@ -241,24 +241,28 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, size_t len) {
         return dbjl_return(parser, jlif_stop);
     }
 
-    dbmfFree(link_name);
-
     pjlink = pjlif->alloc_jlink(parser->dbfType);
     if (!pjlink) {
-        errlogPrintf("dbJLinkInit: Out of memory\n");
+        errlogPrintf("dbJLinkInit: Link type '%s' allocation failed. \n",
+            link_name);
+        dbmfFree(link_name);
         return dbjl_return(parser, jlif_stop);
     }
+
     pjlink->pif = pjlif;
-    pjlink->parent = NULL;
     pjlink->parseDepth = 0;
     pjlink->debug = !!parser->lset_debug;
-
     if (parser->pjlink) {
         /* We're starting a child link, save its parent */
         pjlink->parent = parser->pjlink;
     }
+    else
+        pjlink->parent = NULL;
+
     parser->pjlink = pjlink;
     parser->key_is_link = 0;
+
+    dbmfFree(link_name);
 
     IFDEBUG(8)
         printf("dbjl_map_key: New %s@%p\n", pjlink ? pjlink->pif->name : "", pjlink);

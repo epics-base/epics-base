@@ -35,7 +35,10 @@
 
 typedef long (*FASTCONVERT)();
 
-#define IFDEBUG(n) if(slink->jlink.debug)
+int lnkState_debug;
+epicsExportAddress(int, lnkState_debug);
+
+#define IFDEBUG(n) if (lnkState_debug >= (n))
 
 typedef struct state_link {
     jlink jlink;        /* embedded object */
@@ -52,10 +55,21 @@ static lset lnkState_lset;
 
 static jlink* lnkState_alloc(short dbfType)
 {
-    state_link *slink = calloc(1, sizeof(struct state_link));
+    state_link *slink;
 
     IFDEBUG(10)
-        printf("lnkState_alloc()\n");
+        printf("lnkState_alloc(%d)\n", dbfType);
+
+    if (dbfType == DBF_FWDLINK) {
+        errlogPrintf("lnkState: DBF_FWDLINK not supported\n");
+        return NULL;
+    }
+
+    slink = calloc(1, sizeof(struct state_link));
+    if (!slink) {
+        errlogPrintf("lnkState: calloc() failed.\n");
+        return NULL;
+    }
 
     slink->name = NULL;
     slink->state = NULL;
@@ -97,8 +111,6 @@ static jlif_result lnkState_string(jlink *pjlink, const char *val, size_t len)
 
 static struct lset* lnkState_get_lset(const jlink *pjlink)
 {
-    state_link *slink = CONTAINER(pjlink, struct state_link, jlink);
-
     IFDEBUG(10)
         printf("lnkState_get_lset(state@%p)\n", pjlink);
 

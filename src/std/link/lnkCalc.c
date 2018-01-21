@@ -40,7 +40,10 @@
 
 typedef long (*FASTCONVERT)();
 
-#define IFDEBUG(n) if(clink->jlink.debug)
+int lnkCalc_debug;
+epicsExportAddress(int, lnkCalc_debug);
+
+#define IFDEBUG(n) if (lnkCalc_debug >= (n))
 
 typedef struct calc_link {
     jlink jlink;        /* embedded object */
@@ -77,10 +80,21 @@ static lset lnkCalc_lset;
 
 static jlink* lnkCalc_alloc(short dbfType)
 {
-    calc_link *clink = calloc(1, sizeof(struct calc_link));
+    calc_link *clink;
 
     IFDEBUG(10)
-        printf("lnkCalc_alloc()\n");
+        printf("lnkCalc_alloc(%d)\n", dbfType);
+
+    if (dbfType != DBF_INLINK) {
+        errlogPrintf("lnkCalc: Only works with input links\n");
+        return NULL;
+    }
+
+    clink = calloc(1, sizeof(struct calc_link));
+    if (!clink) {
+        errlogPrintf("lnkCalc: calloc() failed.\n");
+        return NULL;
+    }
 
     clink->nArgs = 0;
     clink->pstate = ps_init;
@@ -355,8 +369,6 @@ static void lnkCalc_end_child(jlink *parent, jlink *child)
 
 static struct lset* lnkCalc_get_lset(const jlink *pjlink)
 {
-    calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
-
     IFDEBUG(10)
         printf("lnkCalc_get_lset(calc@%p)\n", pjlink);
 

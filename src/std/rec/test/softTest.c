@@ -11,6 +11,7 @@
 #include "dbStaticLib.h"
 #include "dbTest.h"
 #include "dbUnitTest.h"
+#include "epicsThread.h"
 #include "errlog.h"
 #include "registryFunction.h"
 #include "subRecord.h"
@@ -39,10 +40,10 @@ void doProcess(const char *rec)
     testdbPutFieldOk(proc, DBR_CHAR, 1);
 }
 
-/* Group 0 are all soft-channel input records with INP being a DB link
+/* Group 0 are soft-channel input records with INP being a DB or CA link
  * to the PV 'source'. Their VAL fields all start out with the default
  * value for the type, i.e. 0 or an empty string. Triggering record
- * processing should read the integer value from the 'source' PV.
+ * processing reads the value from the 'source' PV.
  */
 
 static
@@ -50,14 +51,22 @@ void testGroup0(void)
 {
     const char ** rec;
     const char * records[] = {
-        "ai0", "bi0", "di0", "ii0", "li0", "lsi0", "mi0", "si0", NULL
+        "ai0", "bi0", "di0", "ii0", "li0", "lsi0", "mi0", "si0",
+        "ai0c", "bi0c", "di0c", "ii0c", "li0c", "lsi0c", "mi0c", "si0c",
+        NULL
     };
 
     testDiag("============ Starting %s ============", EPICS_FUNCTION);
 
     testdbPutFieldOk("source", DBR_LONG, 1);
+    /* The above put sends CA monitors to all of the CA links, but
+     * doesn't trigger record processing (the links are not CP/CPP).
+     * How could we wait until all of those monitors have arrived,
+     * instead of just waiting for an arbitrary time period?
+     */
+    epicsThreadSleep(1.0);  /* FIXME: Wait here? */
     for (rec = records; *rec; rec++) {
-        if (strcmp(*rec, "lsi0") != 0)
+        if (strncmp(*rec, "lsi0", 4) != 0)
             testdbGetFieldEqual(*rec, DBR_LONG, 0);
         checkDtyp(*rec);
         doProcess(*rec);
@@ -65,6 +74,7 @@ void testGroup0(void)
     }
 
     testdbPutFieldOk("source", DBR_LONG, 0);
+    epicsThreadSleep(1.0);  /* FIXME: Wait here as above */
     for (rec = records; *rec; rec++) {
         doProcess(*rec);
         testdbGetFieldEqual(*rec, DBR_LONG, 0);
@@ -129,6 +139,7 @@ static
 long destSubr(subRecord *prec)
 {
     dest = prec->val;
+    prec->val = -1;
     return 0;
 }
 
@@ -138,20 +149,25 @@ void checkOutput(const char *rec, int value)
     testDiag("Checking record '%s'", rec);
 
     testdbPutFieldOk(rec, DBR_LONG, value);
-
+    /* Even with a local CA link, the dest record gets processed in
+     * the context of this thread (i.e. immediately). TPRO confirms.
+     */
     testOk(dest == value, "value %d output -> %d", value, dest);
 }
 
-/* Group 3 are all soft-channel output records with OUT being a DB link
- * to the PV 'dest' with PP. Putting a value to the record writes that
- * value to 'dest' and processes it.
+/* Group 3 are all soft-channel output records with OUT being a DB or
+ * local CA link to the subRecord 'dest'; DB links have the PP flag,
+ * for CA links the VAL field is marked PP. Putting a value to the
+ * output record writes that value to 'dest'.
  */
 static
 void testGroup3(void)
 {
     const char ** rec;
     const char * records[] = {
-        "ao0", "bo0", "io0", "lo0", "lso0", "mo0", "so0", NULL,
+        "ao3", "bo3", "io3", "lo3", "lso3", "mo3", "so3",
+        "ao3c", "bo3c", "io3c", "lo3c", "lso3c", "mo3c", "so3c",
+        NULL,
     };
 
     testDiag("============ Starting %s ============", EPICS_FUNCTION);
@@ -160,13 +176,16 @@ void testGroup3(void)
         checkOutput(*rec, 1);
         checkDtyp(*rec);
     }
-    checkOutput("do0.B0", 1);
-    checkDtyp("do0");
+    checkOutput("do3.B0", 1);
+    checkDtyp("do3");
+    checkOutput("do3c.B0", 1);
+    checkDtyp("do3c");
 
     for (rec = records; *rec; rec++) {
         checkOutput(*rec, 0);
     }
-    checkOutput("do0.B0", 0);
+    checkOutput("do3.B0", 0);
+    checkOutput("do3c.B0", 0);
 }
 
 /* Group 4 are all soft-channel output records with OUT being empty
@@ -177,7 +196,7 @@ void testGroup4(void)
 {
     const char ** rec;
     const char * records[] = {
-        "ao1", "bo1", "do1.B0", "io1", "lo1", "lso1", "mo1", "so1", NULL,
+        "ao4", "bo4", "do4.B0", "io4", "lo4", "lso4", "mo4", "so4", NULL,
     };
 
     testDiag("============ Starting %s ============", EPICS_FUNCTION);
@@ -189,9 +208,10 @@ void testGroup4(void)
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
+
 MAIN(softTest)
 {
-    testPlan(163);
+    testPlan(266);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);

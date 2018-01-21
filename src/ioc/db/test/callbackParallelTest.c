@@ -34,6 +34,8 @@
  *
  * Two time intervals are measured.  The time to queue and run each of
  * the immediate callbacks, and the actual delay of the delayed callback.
+ *
+ * Slow callbacks no longer fail the test, they just emit a diagnostic.
  */
 
 #define NCALLBACKS 169
@@ -108,7 +110,7 @@ MAIN(callbackParallelTest)
         for (j = 0; j < 5; j++)
             setupError[i][j] = timeError[i][j] = defaultError[j];
 
-    testPlan(4);
+    testPlan(2);
 
     testDiag("Starting %d parallel callback threads", noCpus);
 
@@ -165,7 +167,8 @@ MAIN(callbackParallelTest)
         }
     }
     testOk(faults == 0, "%d faults during callback setup", faults);
-    testOk(slowups <= 1, "%d slowups during callback setup", slowups);
+    if (slowups)
+        testDiag("%d slowups during callback setup", slowups);
 
     slowups = 0;
     for (i = 0; i < NCALLBACKS ; i++) {
@@ -182,7 +185,8 @@ MAIN(callbackParallelTest)
         }
         updateStats(timeError[i%NUM_CALLBACK_PRIORITIES], error);
     }
-    testOk(slowups < 5, "%d slowups during callbacks", slowups);
+    if (slowups)
+        testDiag("%d slowups during callback setup", slowups);
 
     testDiag("Setup time statistics");
     printStats(setupError[0], "LOW");

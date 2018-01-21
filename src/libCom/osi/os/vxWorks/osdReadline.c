@@ -33,7 +33,7 @@ struct osdContext {
 static void
 osdReadlineBegin(struct readlineContext *context)
 {
-    struct osdContext osd = malloc(sizeof *osd);
+    struct osdContext *osd = malloc(sizeof *osd);
 
     if (osd != NULL) {
         osd->ledId = (LED_ID) ERROR;

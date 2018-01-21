@@ -1,6 +1,6 @@
 :: Universal build script for AppVeyor (https://ci.appveyor.com/)
 :: Environment:
-::     TOOLCHAIN      -  toolchain version   [9.0/10.0/11.0/12.0/14.0/cygwin/mingw]
+::     TOOLCHAIN      -  toolchain version   [10.0/11.0/12.0/14.0/2017/cygwin/mingw]
 ::     CONFIGURATION  -  determines EPICS build   [dynamic/static]
 ::     PLATFORM       -  architecture   [x86/x64]
 ::
@@ -57,10 +57,22 @@ if "%TOOLCHAIN%"=="mingw" (
 )
 
 set "VSINSTALL=C:\Program Files (x86)\Microsoft Visual Studio %TOOLCHAIN%"
+if not exist "%VSINSTALL%\" set "VSINSTALL=C:\Program Files (x86)\Microsoft Visual Studio\%TOOLCHAIN%\Community"
+if not exist "%VSINSTALL%\" goto MSMissing
+
 set "MAKE=C:\tools\make"
+
+echo [INFO] APPVEYOR_BUILD_WORKER_IMAGE=%APPVEYOR_BUILD_WORKER_IMAGE%
 
 if "%OS%"=="64BIT" (
     set EPICS_HOST_ARCH=windows-x64%ST%
+    :: VS 2017
+    if exist "%VSINSTALL%\VC\Auxiliary\Build\vcvars64.bat" (
+        call "%VSINSTALL%\VC\Auxiliary\Build\vcvars64.bat"
+        where cl
+        if !ERRORLEVEL! NEQ 0 goto MSMissing
+        goto MSFound
+    )
     if exist "%VSINSTALL%\VC\vcvarsall.bat" (
         call "%VSINSTALL%\VC\vcvarsall.bat" amd64
         where cl
@@ -79,12 +91,19 @@ if "%OS%"=="64BIT" (
     )
 ) else (
     set EPICS_HOST_ARCH=win32-x86%ST%
+    :: VS 2017
+    if exist "%VSINSTALL%\VC\Auxiliary\Build\vcvars32.bat" (
+        call "%VSINSTALL%\VC\Auxiliary\Build\vcvars32.bat"
+        where cl
+        if !ERRORLEVEL! NEQ 0 goto MSMissing
+        goto MSFound
+    )
     if exist "%VSINSTALL%\VC\vcvarsall.bat" (
         call "%VSINSTALL%\VC\vcvarsall.bat" x86
         where cl
         if !ERRORLEVEL! NEQ 0 goto MSMissing
         goto MSFound
-    )    
+    )
     if exist "%VSINSTALL%\VC\bin\vcvars32.bat" (
         call "%VSINSTALL%\VC\bin\vcvars32.bat"
         where cl

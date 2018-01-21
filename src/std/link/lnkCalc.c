@@ -26,6 +26,7 @@
 #include "epicsAssert.h"
 #include "epicsString.h"
 #include "epicsTypes.h"
+#include "epicsTime.h"
 #include "dbAccessDefs.h"
 #include "dbCommon.h"
 #include "dbConvertFast.h"
@@ -70,6 +71,7 @@ typedef struct calc_link {
     short tinp;
     struct link inp[CALCPERFORM_NARGS];
     double arg[CALCPERFORM_NARGS];
+    epicsTimeStamp time;
     double val;
 } calc_link;
 
@@ -400,9 +402,13 @@ static void lnkCalc_report(const jlink *pjlink, int level, int indent)
             printf("%*s  Minor expression: \"%s\"\n", indent, "",
                 clink->minor);
 
-        if (clink->tinp >= 0 && clink->tinp < clink->nArgs)
-            printf("%*s Timestamp input \"%c\"\n", indent, "",
-                clink->tinp + 'A');
+        if (clink->tinp >= 0) {
+            char timeStr[40];
+            epicsTimeToStrftime(timeStr, 40, "%Y-%m-%d %H:%M:%S.%09f",
+                &clink->time);
+            printf("%*s  Timestamp input %c: %s\n", indent, "",
+                clink->tinp + 'A', timeStr);
+        }
 
         for (i = 0; i < clink->nArgs; i++) {
             struct link *plink = &clink->inp[i];
@@ -564,14 +570,17 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         struct link *child = &clink->inp[i];
         long nReq = 1;
 
-        if (i == clink->tinp &&
-            dbLinkIsConstant(&prec->tsel) &&
-            prec->tse == epicsTimeEventDeviceTime) {
-            struct lcvt vt = {&clink->arg[i], &prec->time};
+        if (i == clink->tinp) {
+            struct lcvt vt = {&clink->arg[i], &clink->time};
 
             status = dbLinkDoLocked(child, readLocked, &vt);
             if (status == S_db_noLSET)
                 status = readLocked(child, &vt);
+
+            if (dbLinkIsConstant(&prec->tsel) &&
+                prec->tse == epicsTimeEventDeviceTime) {
+                prec->time = clink->time;
+            }
         }
         else
             dbGetLink(child, DBR_DOUBLE, &clink->arg[i], NULL, &nReq);
@@ -663,6 +672,22 @@ static long lnkCalc_getAlarm(const struct link *plink, epicsEnum16 *status,
     return 0;
 }
 
+static long lnkCalc_getTimestamp(const struct link *plink, epicsTimeStamp *pstamp)
+{
+    calc_link *clink = CONTAINER(plink->value.json.jlink,
+        struct calc_link, jlink);
+
+    IFDEBUG(10)
+        printf("lnkCalc_getTimestamp(calc@%p)\n", clink);
+
+    if (clink->tinp >= 0) {
+        *pstamp = clink->time;
+        return 0;
+    }
+
+    return -1;
+}
+
 static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
 {
     return rtn(plink, priv);
@@ -679,7 +704,7 @@ static lset lnkCalc_lset = {
     lnkCalc_getValue,
     NULL, NULL, NULL,
     lnkCalc_getPrecision, lnkCalc_getUnits,
-    lnkCalc_getAlarm, NULL,
+    lnkCalc_getAlarm, lnkCalc_getTimestamp,
     NULL, NULL,
     NULL, doLocked
 };

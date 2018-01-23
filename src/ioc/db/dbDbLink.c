@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define EPICS_PRIVATE_API
+
 #include "alarm.h"
 #include "cantProceed.h"
 #include "cvtFast.h"
@@ -43,16 +45,80 @@
 #include "dbNotify.h"
 #include "dbScan.h"
 #include "dbStaticLib.h"
+#include "dbServer.h"
 #include "devSup.h"
 #include "link.h"
 #include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
+#include "dbDbLink.h"
 
 /***************************** Database Links *****************************/
 
 /* Forward definition */
 static lset dbDb_lset;
+
+/* call before each call of dbProcess() (also dbScanPassive())
+ *
+ * PUTF - This flag is set in dbPutField() prior to calling dbProcess().
+ *        It is normally cleared at the end of processing in recGblFwdLink().
+ *        It may also be cleared in dbProcess() if DISA==DISV (scan disabled),
+ *        or by this function.
+ *        If PUTF==1 before a call to dbProcess(prec), then afterwards
+ *        PACT | !PUTF must be true.
+ *
+ * RPRO - Set by dbPutField() or this function when the record to be processed
+ *        is found to be busy (PACT==1).
+ *        Cleared in recGblFwdLink() when a record is scheduled for re-processing,
+ *        or DISA==DISV.
+ */
+static
+void propPUTF(struct link *plink)
+{
+    struct pv_link *ppv_link = &plink->value.pv_link;
+    DBADDR *paddr = ppv_link->pvt;
+    dbCommon *psrc = plink->precord,
+             *pdst = paddr->precord;
+
+    dbDbLinkPUTF(psrc, pdst);
+}
+
+void dbDbLinkPUTF(dbCommon *psrc, dbCommon *pdst)
+{
+    char context[40] = "";
+    int trace = *dbLockSetAddrTrace(psrc);
+
+    if (trace && dbServerClient(context, sizeof(context))) {
+        /* No client, use thread name */
+        strncpy(context, epicsThreadGetNameSelf(), sizeof(context));
+        context[sizeof(context) - 1] = 0;
+    }
+
+    if(!pdst->pact) {
+        /* normal propagation of PUTF from src to target */
+        if(trace)
+            printf("%s: %s -> %s prop PUTF=%u\n", context, psrc->name, pdst->name, psrc->putf);
+
+        assert(!pdst->putf);
+        pdst->putf = psrc->putf;
+    } else if(psrc->putf) {
+        /* found a busy async record,
+         * we were originally triggered by a dbPutField()
+         * so queue for reprocessing on completion,
+         * but only this one time.
+         */
+        if(trace)
+            printf("%s: %s -> %s prop RPRO=1\n", context, psrc->name, pdst->name);
+        pdst->putf = FALSE;
+        pdst->rpro = TRUE;
+    } else {
+        /* busy async record, but not originally triggered
+         * by dbPutField().  Do nothing.
+         */
+        if(trace)
+            printf("%s: %s -> %s prop DROP\n", context, psrc->name, pdst->name);
+    }
+}
 
 long dbDbInitLink(struct link *plink, short dbfType)
 {
@@ -138,11 +204,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
 
     /* scan passive records if link is process passive  */
     if (ppv_link->pvlMask & pvlOptPP) {
-        unsigned char pact = precord->pact;
-
-        precord->pact = TRUE;
         status = dbScanPassive(precord, paddr->precord);
-        precord->pact = pact;
         if (status)
             return status;
     }
@@ -312,20 +374,18 @@ static long dbDbPutValue(struct link *plink, short dbrType,
 
     if (paddr->pfield == (void *) &pdest->proc ||
             (ppv_link->pvlMask & pvlOptPP && pdest->scan == 0)) {
-        /* if dbPutField caused asyn record to process */
-        /* ask for reprocessing*/
-        if (pdest->putf) {
-            pdest->rpro = TRUE;
-        } else { /* process dest record with source's PACT true */
-            unsigned char pact;
+        epicsUInt8 pact_save = psrce->pact;
 
-            if (psrce && psrce->ppn)
-                dbNotifyAdd(psrce, pdest);
-            pact = psrce->pact;
-            psrce->pact = TRUE;
-            status = dbProcess(pdest);
-            psrce->pact = pact;
-        }
+        psrce->pact = 1;
+
+        if (psrce && psrce->ppn)
+            dbNotifyAdd(psrce, pdest);
+
+        propPUTF(plink);
+
+        status = dbProcess(pdest);
+
+        psrce->pact = pact_save;
     }
     return status;
 }

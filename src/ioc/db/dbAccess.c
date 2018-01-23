@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define EPICS_PRIVATE_API
+
 #include "alarm.h"
 #include "cantProceed.h"
 #include "cvtFast.h"
@@ -49,6 +51,7 @@
 #include "dbFldTypes.h"
 #include "dbFldTypes.h"
 #include "dbLink.h"
+#include "dbDbLink.h" /* for dbDbLinkPUTF() */
 #include "dbLockPvt.h"
 #include "dbNotify.h"
 #include "dbScan.h"
@@ -449,13 +452,26 @@ int dbGetFieldIndex(const struct dbAddr *paddr)
  */
 long dbScanPassive(dbCommon *pfrom, dbCommon *pto)
 {
+    long status;
+    epicsUInt8 pact_save;
+
     /* if not passive just return success */
     if (pto->scan != 0)
         return 0;
 
+    pact_save = pfrom->pact;
+    pfrom->pact = 1;
+
+    dbDbLinkPUTF(pfrom, pto);
+
     if (pfrom && pfrom->ppn)
         dbNotifyAdd(pfrom,pto);
-    return dbProcess(pto);
+
+    status = dbProcess(pto);
+
+    pfrom->pact = pact_save;
+
+    return status;
 }
 
 /*
@@ -523,7 +539,7 @@ long dbProcess(dbCommon *precord)
         unsigned short monitor_mask;
 
         if (*ptrace)
-            printf("%s: Active %s\n", context, precord->name);
+            printf("%s: Active%s %s\n", context, precord->rpro ? " Q" : "", precord->name);
 
         /* raise scan alarm after MAX_LOCK times */
         if ((precord->stat == SCAN_ALARM) ||
@@ -1210,7 +1226,7 @@ long dbPutField(DBADDR *paddr, short dbrType,
              dbrType < DBR_PUT_ACKT)) {
             if (precord->pact) {
                 if (precord->tpro)
-                    printf("%s: Active %s\n",
+                    printf("%s: Active Q %s\n",
                         epicsThreadGetNameSelf(), precord->name);
                 precord->rpro = TRUE;
             } else {

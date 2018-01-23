@@ -23,10 +23,15 @@ extern "C" {
 
 struct link;
 struct dbLocker;
+struct dbCommon;
 
 epicsShareFunc long dbDbInitLink(struct link *plink, short dbfType);
 epicsShareFunc void dbDbAddLink(struct dbLocker *locker, struct link *plink,
     short dbfType, DBADDR *ptarget);
+
+#ifdef EPICS_PRIVATE_API
+void dbDbLinkPUTF(dbCommon *psrc, dbCommon *pdst);
+#endif
 
 #ifdef __cplusplus
 }

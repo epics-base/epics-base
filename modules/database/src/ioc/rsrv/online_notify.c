@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <cantProceed.h>
 
 #include "addrList.h"
 #include "dbDefs.h"
@@ -45,6 +46,7 @@ void rsrv_online_notify_task(void *pParm)
     caHdr                       msg;
     int                         status;
     ca_uint32_t                 beaconCounter = 0;
+    int *lastError;
     
     taskwdInsert (epicsThreadGetIdSelf(),NULL,NULL);
     
@@ -70,29 +72,45 @@ void rsrv_online_notify_task(void *pParm)
     msg.m_count = htons (ca_server_port);
     msg.m_dataType = htons (CA_MINOR_PROTOCOL_REVISION);
 
+    /* beaconAddrList should not change after rsrv_init(), which then starts this thread */
+    lastError = callocMustSucceed(ellCount(&beaconAddrList), sizeof(*lastError), "rsrv_online_notify_task lastError");
 
     epicsEventSignal(beacon_startStopEvent);
 
     while (TRUE) {
         ELLNODE *cur;
+        unsigned i;
 
         /* send beacon to each interface */
-        for(cur=ellFirst(&beaconAddrList); cur; cur=ellNext(cur))
+        for(i=0, cur=ellFirst(&beaconAddrList); cur; i++, cur=ellNext(cur))
         {
             osiSockAddrNode *pAddr = CONTAINER(cur, osiSockAddrNode, node);
             status = sendto (beaconSocket, (char *)&msg, sizeof(msg), 0,
                              &pAddr->addr.sa, sizeof(pAddr->addr));
             if (status < 0) {
-                char sockErrBuf[64];
-                char sockDipBuf[22];
+                int err = SOCKERRNO;
+                if(err != lastError[i]) {
+                    char sockErrBuf[64];
+                    char sockDipBuf[22];
 
-                epicsSocketConvertErrnoToString(sockErrBuf, sizeof(sockErrBuf));
-                ipAddrToDottedIP(&pAddr->addr.ia, sockDipBuf, sizeof(sockDipBuf));
-                errlogPrintf ( "CAS: CA beacon send to %s error: %s\n",
-                    sockDipBuf, sockErrBuf);
+                    epicsSocketConvertErrorToString(sockErrBuf, sizeof(sockErrBuf), err);
+                    ipAddrToDottedIP(&pAddr->addr.ia, sockDipBuf, sizeof(sockDipBuf));
+                    errlogPrintf ( "CAS: CA beacon send to %s error: %s\n",
+                        sockDipBuf, sockErrBuf);
+
+                    lastError[i] = err;
+                }
             }
             else {
                 assert (status == sizeof(msg));
+                if(lastError[i]) {
+                    char sockDipBuf[22];
+
+                    ipAddrToDottedIP(&pAddr->addr.ia, sockDipBuf, sizeof(sockDipBuf));
+                    errlogPrintf ( "CAS: CA beacon send to %s ok\n",
+                        sockDipBuf);
+                }
+                lastError[i] = 0;
             }
         }
 
@@ -111,6 +129,8 @@ void rsrv_online_notify_task(void *pParm)
             delay = 0.02; /* Restart beacon timing if paused */
         }
     }
+
+    free(lastError);
 }
 
 

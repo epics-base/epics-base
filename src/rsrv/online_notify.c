@@ -72,7 +72,7 @@ void rsrv_online_notify_task(void *pParm)
     char                        * pStr;
     int                         autoBeaconAddr;
     ELLLIST                     autoAddrList;
-    char                        buf[16];
+    char                        buf[22];
     unsigned                    priorityOfUDP;
     epicsThreadBooleanStatus    tbs;
     epicsThreadId               tid;

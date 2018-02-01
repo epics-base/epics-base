@@ -142,6 +142,17 @@ STATIC_LDLIBS_NO=
 STATIC_LDFLAGS=
 RANLIB=
 
+#
+# option needed for parallel builds with Visual Studio 2015 onward
+#
+# -FS Force Synchronous PDB Writes
+ifneq ($(VisualStudioVersion),)
+  OPT_CXXFLAGS_NO += -FS
+  OPT_CFLAGS_NO += -FS
+endif
+
+
+#
 # add -profile here to run the ms profiler
 # -LTCG whole program optimization
 # -incremental:no full linking

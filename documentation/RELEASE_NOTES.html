@@ -7,7 +7,8 @@
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Release 7.0.1.1</h1>
+
+<h1 align="center">EPICS Release 7.0.2.x</h1>
 
 <!-- Insert new items immediately below this template ...
 
@@ -16,6 +17,8 @@
 <p>Description</p>
 
 -->
+
+<h1 align="center">EPICS Release 7.0.1.1</h1>
 
 <h3>Changed SIML failure behavior</h3>
 
@@ -83,6 +86,61 @@ be happy to try and answer them!</p>
 
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Restore use of ledlib for VxWorks command editing</h3>
+
+<p>The epicsReadline refactoring work described below unfortunately disabled the
+VxWorks implementation of the osdReadline.c API that uses ledlib for command
+editing and history. This functionality has now been restored, see Launchpad
+<a href="https://bugs.launchpad.net/bugs/1741578">bug #1741578</a>.</p>
+
+<h3>Constant link types</h3>
+
+<p>Constant links can now hold 64-bit integer values, either as scalars or
+arrays. Only base 10 is supported by the JSON parser though, the JSON standard
+doesn't allow for hexadecimal numbers.</p>
+
+<h3>Upgraded the YAJL JSON Library</h3>
+
+<p>The third-party YAJL library that has been included in libCom for several
+years has been upgraded to version 2.1.0 and several bugs fixed. This has an
+updated API, requiring any code that uses it to parse its own JSON files to be
+modified to match. The changes are mainly that it uses <tt>size_t</tt> instead
+<tt>unsigned int</tt> for string lengths, but it also uses <tt>long long</tt>
+instead of <tt>long</tt> for JSON integer values, which was the main motivation
+for the upgrade.</p>
+
+<p>The self-tests that YAJL comes with have been imported and are now run as an
+EPICS Unit Test program, and the JSON syntax accepted by the parser was extended
+to permit trailing commas in both arrays and maps. The difference between the
+old and new YAJL APIs can be detected at compile time by looking for the macro
+<tt>EPICS_YAJL_VERSION</tt> which is defined in the yajl_common.h header file
+along with a brief description of the API changes.</p>
+
+<h3>Timestamp support for the calc link type</h3>
+
+<p>A new optional parameter can be given when specifying a calc JSON link. The
+<tt>time</tt> parameter is a string containing a single letter <tt>A..L</tt>
+that selects one of the input links to be used for the timestamp of calculation
+if requested. The timestamp will be fetched atomically with the value from the
+chosen input link (providing that input link type supports the readLocked()
+method).</p>
+
+<h3>Silence errors from puts to constant link types</h3>
+
+<p>A soft channel output record with the OUT link unset uses the CONSTANT link
+type. The new link type code was causing some soft channel device supports to
+return an error status from the write method of that link type, which would
+cause a ca_put() operation to such a record to generate an exception. This has
+been silenced by giving the constant link types a dummy putValue method. A new
+test program has been added to prevent regressions of this behaviour.</p>
+
+<h3>RSRV expanding large buffer causes crash</h3>
+
+<p>In the 3.16.1 release a crash can occur in the IOC's RSRV server when a large
+array is made even larger; the previous array buffer was not being released
+correctly. See Launchpad
+<a href="https://bugs.launchpad.net/epics-base/+bug/1706703">bug
+#1706703</a>.</p>
 
 
 <h2 align="center">Changes made between 3.16.0.1 and 3.16.1</h2>

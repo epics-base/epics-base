@@ -237,7 +237,7 @@ sub checkRelease {
         my @order = ();
         my $relfile = "$path/configure/RELEASE";
         readReleaseFiles($relfile, \%check, \@order, $arch);
-        expandRelease(\%check);
+        expandRelease(\%check, "while checking module\n\t$app = $path");
         delete $check{TOP};
         delete $check{EPICS_HOST_ARCH};
 

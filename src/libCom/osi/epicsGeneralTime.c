@@ -270,7 +270,7 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
                     }
                 }
             } else {
-                if (epicsTimeGreaterThanEqual(pDest,
+                if (epicsTimeGreaterThanEqual(&ts,
                         &gtPvt.eventTime[eventNumber])) {
                     *pDest = ts;
                     gtPvt.eventTime[eventNumber] = ts;
@@ -281,7 +281,6 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
                     key = epicsInterruptLock();
                     gtPvt.ErrorCounts++;
                     epicsInterruptUnlock(key);
-                }
 
                     IFDEBUG(10) {
                         char last[40], buff[40];
@@ -293,6 +292,7 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
                             "    %s, using %s instead\n",
                             ptp->name, buff, last);
                     }
+                }
             }
             break;
         }

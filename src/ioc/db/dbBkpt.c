@@ -410,7 +410,7 @@ long dbd(const char *record_name)
 
   precord = addr.precord;
 
-  if (! precord->bkpt & BKPT_ON_MASK) {
+  if (!(precord->bkpt & BKPT_ON_MASK)) {
       printf("   BKPT> No breakpoint set in this record\n");
       return(S_db_bkptNotSet);
   }

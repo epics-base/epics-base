@@ -552,10 +552,10 @@ long dblsr(char *recordname,int level)
             printf(" Not Locked\n");
         } else {
             printf(" thread %p",plockSet->thread_id);
-            if(! plockSet->precord || !plockSet->precord->name)
-            printf(" NULL record or record name\n");
+            if(! plockSet->precord)
+                printf(" NULL record\n");
             else
-            printf(" record %s\n",plockSet->precord->name);
+                printf(" record %s\n",plockSet->precord->name);
         }
         if(level==0) { if(recordname) break; continue; }
         for(plockRecord = (lockRecord *)ellFirst(&plockSet->lockRecordList);

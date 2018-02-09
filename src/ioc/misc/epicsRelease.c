@@ -17,9 +17,6 @@
 #define epicsExportSharedSymbols
 #include "epicsRelease.h"
 
-static const char id[] EPICS_UNUSED =
-    "@(#) " EPICS_VERSION_STRING ", Misc. Utilities Library" __DATE__;
-
 epicsShareFunc int coreRelease(void)
 {
     printf ( "############################################################################\n" );

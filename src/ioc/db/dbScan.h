@@ -50,7 +50,7 @@ epicsShareFunc void scanCleanup(void);
 
 epicsShareFunc EVENTPVT eventNameToHandle(const char* event);
 epicsShareFunc void postEvent(EVENTPVT epvt);
-epicsShareFunc void post_event(int event) EPICS_DEPRECATED;
+epicsShareFunc void post_event(int event);
 epicsShareFunc void scanAdd(struct dbCommon *);
 epicsShareFunc void scanDelete(struct dbCommon *);
 epicsShareFunc double scanPeriod(int scan);

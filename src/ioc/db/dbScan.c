@@ -27,6 +27,7 @@
 #include "epicsEvent.h"
 #include "epicsExit.h"
 #include "epicsInterrupt.h"
+#include "epicsMath.h"
 #include "epicsMutex.h"
 #include "epicsPrint.h"
 #include "epicsRingPointer.h"
@@ -412,10 +413,11 @@ int scanpel(const char* eventname)   /* print event list */
 
     for (pel = pevent_list[0]; pel; pel = pel->next) {
         if (!eventname || epicsStrGlobMatch(pel->eventname, eventname) == 0) {
+            printf("Event \"%s\"\n", pel->eventname);
             for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-                if (ellCount(&pel->scan_list[prio].list) == 0) continue;
                 sprintf(message, "Event \"%.*s\" Priority %s",
-                    sizeof(message)-25, pel->eventname, priorityName[prio]);
+                    (int)(sizeof(message)-25), pel->eventname, priorityName[prio]);
+                sprintf(message, " Priority %s", priorityName[prio]);
                 printList(&pel->scan_list[prio], message);
             }
         }
@@ -466,15 +468,14 @@ event_list *eventNameToHandle(const char *eventname)
     int prio;
     event_list *pel;
     static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
-    char* p;
     double eventnumber;
     size_t namelength;
 
     if (!eventname) return NULL;
-    while (isblank(eventname[0])) eventname++;
+    while (isspace((unsigned char)eventname[0])) eventname++;
     if (!eventname[0]) return NULL;
     namelength = strlen(eventname);
-    while (isblank(eventname[namelength-1])) namelength--;
+    while (isspace((unsigned char)eventname[namelength-1])) namelength--;
 
     /* Backward compatibility with numeric events:
        Treat any string that represents a double with an
@@ -482,13 +483,17 @@ event_list *eventNameToHandle(const char *eventname)
        because it is most probably a conversion from double
        like from a calc record.
     */
-    if (epicsParseDouble(eventname, &eventnumber, &p) == 0 &&
-        eventnumber >= 0 && eventnumber < 256 && *p == 0)
+    if (epicsParseDouble(eventname, &eventnumber, NULL) == 0)
     {
-        if (eventnumber < 1)
-            return NULL; /* 0 is no event */
-        if ((pel = pevent_list[(int)eventnumber]) != NULL)
-            return pel;
+        if (!finite(eventnumber))
+            return NULL; /* Inf and NaN are no events */
+        if (eventnumber >= 0 && eventnumber < 256)
+        {
+            if (eventnumber < 1)
+                return NULL; /* 0 is no event */
+            if ((pel = pevent_list[(int)eventnumber]) != NULL)
+                return pel;
+        }
     }
     else 
         eventnumber = 0; /* not a numeric event */
@@ -530,7 +535,6 @@ void postEvent(event_list *pel)
 
     if (scanCtl != ctlRun) return;
     if (!pel) return;
-    printf("postEvent %p \"%s\"\n", pel, pel->eventname);
     for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
         if (ellCount(&pel->scan_list[prio].list) >0)
             callbackRequest(&pel->callback[prio]);

@@ -29,11 +29,28 @@ be put in a locally created base/configure/CONFIG_SITE.local file instead
 of having go modify or replace the original. A new .gitignore pattern
 tells git to ignore all configure/*.local files.</p>
 
+<h3>Fix problem with numeric soft events</h3>
+<p>Changing from numeric to named soft events introduced an incompatibility
+when a numeric event is converted from a DOUBLE, e.g. from a calc record.
+To make named events backward compatible to numeric events, the logic has
+changed as follows:</p>
+<ul><li>Leading and trailing spaces are strippd from the event name
+    <li>Empty event names are no events
+    <li>If the event name can be converted to double:
+    <ul><li>If the double is not finite (inf or nan) it is no event.
+        <li>If the double truncated to integer is between 1 and 255
+            it is a numeric event. Its name is changed to the decimal
+            integer representation.
+        <li>If the double truncated to integer is 0 it is no event.
+    </ul>
+    <li>All other cases are named events
+</ul>
+<p>Also <code>scanpel</code> has been modified to accept a glob pattern for
+filtering and to show events with no connected records as well.</p>
 
 <h2 align="center">Changes from the 3.14 branch since 3.15.5</h2>
 
 <!-- Insert inherited items immediately below here ... -->
-
 <h3>Extend maximum Posix epicsEventWaitWithTimeout() delay</h3>
 
 <p>The Posix implementation of epicsEventWaitWithTimeout() was limiting the

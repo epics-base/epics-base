@@ -3,3 +3,14 @@ record(calc, "c$(N)") {
   field(EVNT, "$(EVENT)")
   field(CALC, "VAL+1")
 }
+record(dfanout, "eventnum") {
+  field(OUTA, "e1 PP")
+  field(FLNK, "e2")
+}
+record(event, "e1") {
+}
+record(event, "e2") {
+  field(INP,  "eventnum")
+}
+record(event, "e3") {
+}

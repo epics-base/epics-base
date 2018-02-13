@@ -35,14 +35,15 @@ const struct {char* name; int num;} events[] = {
     {"-NAN",          0},
     {"-inf",          0},
     {"inf",           0},
-    {"info 1",       -1},
-    {"   info 1  ",  -1},
-    {"-0.9",         -2},
     {"2",             2},
     {"2.000000",      2},
     {"2.5",           2},
     {" 2.5  ",        2},
     {"+0x02",         2},
+    {"3",             3},
+    {"info 1",       -1},
+    {"   info 1  ",  -1},
+    {"-0.9",         -2},
     {"-2",           -3},
     {"-2.000000",    -4},
     {"-2.5",         -5},
@@ -51,12 +52,13 @@ const struct {char* name; int num;} events[] = {
 
 MAIN(scanEventTest)
 {
-    unsigned int i;
+    int i, e;
     int aliases[512] ;
     int expected_count[512];
     #define INDX(i) 256-events[i].num
+    #define MAXEV 5
     
-    testPlan(NELEMENTS(events)*2);
+    testPlan(NELEMENTS(events)*2+(MAXEV+1)*5);
     
     memset(aliases, 0, sizeof(aliases));
     memset(expected_count, 0, sizeof(expected_count));
@@ -75,6 +77,7 @@ MAIN(scanEventTest)
             testAbort("Error reading test database 'scanEventTest.db'");
     }
     testIocInitOk();
+    testDiag("Test if eventNameToHandle() strips spaces and handles numeric events");
     for (i = 0; i < NELEMENTS(events); i++) {
         EVENTPVT pev = eventNameToHandle(events[i].name);
         /* test that some names are not events (num=0) */
@@ -103,13 +106,30 @@ MAIN(scanEventTest)
                  }
             }
         }
-        post_event(events[i].num);
+        post_event(events[i].num); /* triggers numeric events only */
         postEvent(pev);
     }
+    
+    testDiag("Check calculated numeric events (backward compatibility)");
+    for (e = 0; e <= MAXEV; e++) {
+        testdbPutFieldOk("eventnum", DBR_LONG, e);
+        testdbGetFieldEqual("e1", DBR_LONG, e);
+        testdbGetFieldEqual("e2", DBR_LONG, e);
+        testdbPutFieldOk("e3", DBR_LONG, e);
+        testdbPutFieldOk("e3.PROC", DBR_LONG, 1);
+        if (e != 0)
+            for (i = 0; i < NELEMENTS(events); i++)
+                if (events[i].num == e) {
+                    expected_count[INDX(i)]+=3; /* +1 for eventnum->e1, +1 for e2<-eventnum, +1 for e3 */
+                    break;
+                }
+    }
+    
+    testDiag("Check if events have been processed the expected number of times");
     for (i = 0; i < NELEMENTS(events); i++) {
         char pvname[100];
         sprintf(pvname, "c%d", i);
-        testDiag("Check if %s (event \"%s\") has processed %d times", pvname, events[i].name, expected_count[INDX(i)]);
+        testDiag("Event \"%s\" expected %d times", events[i].name, expected_count[INDX(i)]);
         testdbGetFieldEqual(pvname, DBR_LONG, expected_count[INDX(i)]);
     }
 

@@ -3,7 +3,3 @@ record(calc, "c$(N)") {
   field(EVNT, "$(EVENT)")
   field(CALC, "VAL+1")
 }
-record(event, "e$(N)") {
-  field(SCAN, "Event")
-  field(VAL, "$(EVENT)")
-}

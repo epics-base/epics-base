@@ -138,6 +138,19 @@ testHarness_SRCS += dbPutGetTest.db
 TESTFILES += ../dbPutGetTest.db
 TESTS += testPutGetTest
 
+TARGETS += $(COMMON_DIR)/scanEventTest.dbd
+DBDDEPENDS_FILES += scanEventTest.dbd$(DEP)
+scanEventTest_DBD += menuGlobal.dbd
+scanEventTest_DBD += menuConvert.dbd
+scanEventTest_DBD += menuScan.dbd
+scanEventTest_DBD += eventRecord.dbd
+scanEventTest_DBD += calcRecord.dbd
+TESTPROD_HOST += scanEventTest
+scanEventTest_SRCS += scanEventTest.c
+scanEventTest_SRCS += scanEventTest_registerRecordDeviceDriver.cpp
+scanEventTest_LIBS = dbRecStd
+TESTS += scanEventTest
+
 # This runs all the test programs in a known working order:
 testHarness_SRCS += epicsRunDbTests.c
 

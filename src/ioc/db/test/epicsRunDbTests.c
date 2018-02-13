@@ -29,6 +29,7 @@ int testDbChannel(void);
 int chfPluginTest(void);
 int arrShorthandTest(void);
 int recGblCheckDeadbandTest(void);
+int scanEventTest(void);
 
 void epicsRunDbTests(void)
 {
@@ -47,6 +48,7 @@ void epicsRunDbTests(void)
     runTest(arrShorthandTest);
     runTest(recGblCheckDeadbandTest);
     runTest(chfPluginTest);
+    runTest(scanEventTest);
 
     dbmfFreeChunks();
 

@@ -415,8 +415,7 @@ int scanpel(const char* eventname)   /* print event list */
         if (!eventname || epicsStrGlobMatch(pel->eventname, eventname)) {
             printf("Event \"%s\"\n", pel->eventname);
             for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-                sprintf(message, "Event \"%.*s\" Priority %s",
-                    (int)(sizeof(message)-25), pel->eventname, priorityName[prio]);
+                if (ellCount(&pel->scan_list[prio].list) == 0) continue;
                 sprintf(message, " Priority %s", priorityName[prio]);
                 printList(&pel->scan_list[prio], message);
             }

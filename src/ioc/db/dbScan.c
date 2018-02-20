@@ -467,7 +467,7 @@ event_list *eventNameToHandle(const char *eventname)
     int prio;
     event_list *pel;
     static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
-    double eventnumber;
+    double eventnumber = 0;
     size_t namelength;
 
     if (!eventname) return NULL;
@@ -493,9 +493,9 @@ event_list *eventNameToHandle(const char *eventname)
             if ((pel = pevent_list[(int)eventnumber]) != NULL)
                 return pel;
         }
+        else 
+            eventnumber = 0; /* not a numeric event between 1 and 255 */
     }
-    else 
-        eventnumber = 0; /* not a numeric event */
 
     epicsThreadOnce(&onceId, eventOnce, NULL);
     epicsMutexMustLock(event_lock);

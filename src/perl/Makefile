@@ -37,11 +37,7 @@ ifeq ($(T_A),$(EPICS_HOST_ARCH))                 # No cross-builds (wrong Perl!)
 ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),) # Doesn't build on WIN32
   LOADABLE_LIBRARY_HOST = Cap5
 
-  PERL_SCRIPTS += cainfo.pl
-  PERL_SCRIPTS += caput.pl
-  PERL_SCRIPTS += caget.pl
   PERL_SCRIPTS += capr.pl
-  PERL_SCRIPTS += camonitor.pl
 
   PERL_MODULES += CA.pm
   PERL_MODULES += $(PERL_ARCHPATH)/$(LOADABLE_SHRLIB_PREFIX)Cap5$(LOADABLE_SHRLIB_SUFFIX)

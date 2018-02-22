@@ -4,6 +4,8 @@ include $(TOP)/configure/CONFIG
 #----------------------------------------
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 
+PERL_SCRIPTS += _APPNAME_ModuleDirs.pm
+
 PERL_SCRIPTS += cainfo.pl
 PERL_SCRIPTS += caput.pl
 PERL_SCRIPTS += caget.pl

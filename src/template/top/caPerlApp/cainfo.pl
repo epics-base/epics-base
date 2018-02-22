@@ -2,8 +2,11 @@
 
 use strict;
 
+# This construct sets @INC to search lib/perl of all RELEASE entries
 use FindBin qw($Bin);
-use lib "$Bin/../../lib/perl";
+use lib ($Bin, "$Bin/../../lib/perl");
+use _APPNAME_ModuleDirs;
+no lib $Bin;
 
 use Getopt::Std;
 use CA;

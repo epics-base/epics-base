@@ -651,7 +651,7 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
             inherit_severity(&plink->value.pv_link, precord, stat, sevr);
         break;
     default:
-        cantProceed("dbGetLinkValue: Illegal link type %d\n", plink->type);
+        printf("dbGetLinkValue: Illegal link type %d\n", plink->type);
         status = -1;
     }
     if (status) {
@@ -755,7 +755,7 @@ long dbPutLink(struct link *plink, short dbrType, const void *pbuffer,
         status = dbCaPutLink(plink, dbrType, pbuffer, nRequest);
         break;
     default:
-        cantProceed("dbPutLinkValue: Illegal link type %d\n", plink->type);
+        printf("dbPutLinkValue: Illegal link type %d\n", plink->type);
         status = -1;
     }
     if (status) {
@@ -836,4 +836,3 @@ long dbPutLinkLS(struct link *plink, char *pbuffer, epicsUInt32 len)
 
     return dbPutLink(plink, DBR_STRING, pbuffer, 1);
 }
-

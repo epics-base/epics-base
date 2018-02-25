@@ -309,6 +309,11 @@ long dbgf(const char *pname)
     if (nameToAddr(pname, &addr))
         return -1;
 
+    if (addr.precord->lset == NULL) {
+        printf("dbgf only works after iocInit\n");
+        return -1;
+    }
+
     no_elements = MIN(addr.no_elements, sizeof(buffer)/addr.field_size);
     if (addr.dbr_field_type == DBR_ENUM) {
         long status = dbGetField(&addr, DBR_STRING, pbuffer,
@@ -344,6 +349,11 @@ long dbpf(const char *pname,const char *pvalue)
 
     if (nameToAddr(pname, &addr))
         return -1;
+
+    if (addr.precord->lset == NULL) {
+        printf("dbpf only works after iocInit\n");
+        return -1;
+    }
 
     if (addr.no_elements > 1 &&
         (addr.dbr_field_type == DBR_CHAR || addr.dbr_field_type == DBR_UCHAR)) {
@@ -399,6 +409,11 @@ long dbtr(const char *pname)
     if (nameToAddr(pname, &addr))
         return -1;
 
+    if (addr.precord->lset == NULL) {
+        printf("dbtr only works after iocInit\n");
+        return -1;
+    }
+
     precord = (struct dbCommon*)addr.precord;
     if (precord->pact) {
         printf("record active\n");
@@ -437,6 +452,11 @@ long dbtgf(const char *pname)
 
     if (nameToAddr(pname, &addr))
         return -1;
+
+    if (addr.precord->lset == NULL) {
+        printf("dbtgf only works after iocInit\n");
+        return -1;
+    }
 
     /* try all options first */
     req_options = 0xffffffff;
@@ -533,6 +553,11 @@ long dbtpf(const char *pname, const char *pvalue)
     }
     if (nameToAddr(pname, &addr))
         return -1;
+
+    if (addr.precord->lset == NULL) {
+        printf("dbtpf only works after iocInit\n");
+        return -1;
+    }
 
     for (put_type = DBR_STRING; put_type <= DBF_ENUM; put_type++) {
         union {
@@ -795,7 +820,7 @@ static void printBuffer(
 
             printf("no_strs = %u:\n",
                 pdbr_enumStrs->no_str);
-            for (i = 0; i < pdbr_enumStrs->no_str; i++) 
+            for (i = 0; i < pdbr_enumStrs->no_str; i++)
                 printf("\t\"%s\"\n", pdbr_enumStrs->strs[i]);
         }
         else {

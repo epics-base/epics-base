@@ -1069,6 +1069,7 @@ static void dbRecordInfo(char *name, char *value)
     if(duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
+    dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutInfo(pdbentry,name,value);
     if(status) {
 	epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\"\n",

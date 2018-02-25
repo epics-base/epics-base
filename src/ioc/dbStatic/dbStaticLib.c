@@ -851,10 +851,14 @@ long dbWriteRecordFP(
 		status=dbNextField(pdbentry,dctonly);
 	    }
 	    status = dbFirstInfo(pdbentry);
-	    while(!status) {
-		fprintf(fp,"\tinfo(\"%s\",\"%s\")\n",
-			dbGetInfoName(pdbentry), dbGetInfoString(pdbentry));
-		status=dbNextInfo(pdbentry);
+	    while (!status) {
+		const char *pinfostr = dbGetInfoString(pdbentry);
+
+		fprintf(fp, "\tinfo(\"%s\",\"",
+		    dbGetInfoName(pdbentry));
+		epicsStrPrintEscaped(fp, pinfostr, strlen(pinfostr));
+		fprintf(fp, "\")\n");
+		status = dbNextInfo(pdbentry);
 	    }
 	    fprintf(fp,"}\n");
 	    status = dbNextRecord(pdbentry);

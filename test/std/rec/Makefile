@@ -97,6 +97,7 @@ TESTFILES += $(COMMON_DIR)/analogMonitorTest.dbd ../analogMonitorTest.db
 TESTS += analogMonitorTest
 
 TARGETS += $(COMMON_DIR)/regressTest.dbd
+DBDDEPENDS_FILES += regressTest.dbd$(DEP)
 regressTest_DBD += base.dbd
 TESTPROD_HOST += regressTest
 regressTest_SRCS += regressTest.c

@@ -80,6 +80,7 @@ sed -i -e 's|^\./||' "$TDIR"/list.1
 # Exclude files
 sed \
   -e '/\/\.\?ci\//d' \
+  -e '/\/\.tools\//d' \
   -e '/\/jenkins\//d' \
   -e '/\/\.git/d' \
   -e '/\/\.project$/d' \

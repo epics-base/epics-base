@@ -14,6 +14,7 @@
 
 int analogMonitorTest(void);
 int arrayOpTest(void);
+int scanEventTest(void);
 
 void epicsRunRecordTests(void)
 {
@@ -22,6 +23,7 @@ void epicsRunRecordTests(void)
     runTest(analogMonitorTest);
 
     runTest(arrayOpTest);
+    runTest(scanEventTest);
 
     epicsExit(0);   /* Trigger test harness */
 }

@@ -37,6 +37,15 @@ testHarness_SRCS += analogMonitorTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/analogMonitorTest.dbd ../analogMonitorTest.db
 TESTS += analogMonitorTest
 
+TARGETS += $(COMMON_DIR)/scanEventTest.dbd
+DBDDEPENDS_FILES += scanEventTest.dbd$(DEP)
+scanEventTest_DBD += base.dbd
+TESTPROD_HOST += scanEventTest
+scanEventTest_SRCS += scanEventTest.c
+scanEventTest_SRCS += scanEventTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/scanEventTest.dbd ../scanEventTest.db
+TESTS += scanEventTest
+
 TARGETS += $(COMMON_DIR)/regressTest.dbd
 DBDDEPENDS_FILES += regressTest.dbd$(DEP)
 regressTest_DBD += base.dbd

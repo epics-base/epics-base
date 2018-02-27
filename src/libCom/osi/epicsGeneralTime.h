@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#define NUM_TIME_EVENTS 256
+#define NUM_TIME_EVENTS 599
 /* Time Events are numbered 0 through (NUM_TIME_EVENTS-1) */
 
 epicsShareFunc void generalTime_Init(void);

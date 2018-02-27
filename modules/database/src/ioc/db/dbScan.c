@@ -27,6 +27,7 @@
 #include "ellLib.h"
 #include "epicsAtomic.h"
 #include "epicsEvent.h"
+#include "epicsGeneralTime.h"
 #include "epicsMutex.h"
 #include "epicsPrint.h"
 #include "epicsRingBytes.h"
@@ -114,7 +115,7 @@ typedef struct event_list {
     struct event_list   *next;
     char                eventname[1]; /* actually arbitrary size */
 } event_list;
-static event_list * volatile pevent_list[256];
+static event_list * volatile pevent_list[NUM_TIME_EVENTS];
 static epicsMutexId event_lock;
 
 /* IO_EVENT*/
@@ -546,7 +547,7 @@ void postEvent(event_list *pel)
 /* backward compatibility */
 void post_event(int event)
 {
-    if (event <= 0 || event > 255) return;
+    if (event <= 0 || event >= NUM_TIME_EVENTS) return;
     postEvent(pevent_list[event]);
 }
 

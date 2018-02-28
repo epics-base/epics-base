@@ -22,6 +22,9 @@
 #include <signal.h>
 #include <sched.h>
 #include <unistd.h>
+#ifdef SHOW_LINUX_PIDS
+#include <sys/syscall.h>
+#endif
 
 #if defined(_POSIX_MEMLOCK) && _POSIX_MEMLOCK > 0
 #include <sys/mman.h>
@@ -367,6 +370,9 @@ static void once(void)
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
     pthreadInfo = init_threadInfo("_main_",0,epicsThreadGetStackSize(epicsThreadStackSmall),0,0);
+#ifdef SHOW_LINUX_PIDS
+    pthreadInfo->lwpId=syscall(SYS_gettid);
+#endif
     assert(pthreadInfo!=NULL);
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
     checkStatusOnceQuit(status,"pthread_setspecific","epicsThreadInit");
@@ -398,6 +404,9 @@ static void * start_routine(void *arg)
     pthreadInfo->isOnThreadList = 1;
     status = pthread_mutex_unlock(&listLock);
     checkStatusQuit(status,"pthread_mutex_unlock","start_routine");
+#ifdef SHOW_LINUX_PIDS
+    pthreadInfo->lwpId = syscall(SYS_gettid);
+#endif
     osdThreadHooksRun(pthreadInfo);
 
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);

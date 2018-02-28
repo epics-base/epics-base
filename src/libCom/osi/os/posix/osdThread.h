@@ -34,6 +34,9 @@ typedef struct epicsThreadOSD {
     int                isRealTimeScheduled;
     int                isOnThreadList;
     unsigned int       osiPriority;
+#ifdef SHOW_LINUX_PIDS
+    pid_t              lwpId;
+#endif
     char               name[1];     /* actually larger */
 } epicsThreadOSD;
 

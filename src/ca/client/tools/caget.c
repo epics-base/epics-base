@@ -159,6 +159,8 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
 
     for (n = 0; n < nPvs; n++) {
         unsigned long nElems;
+        if ( pvs[n].chid == 0 )
+            continue;
 
                                 /* Set up pvs structure */
                                 /* -------------------- */

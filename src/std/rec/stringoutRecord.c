@@ -95,6 +95,7 @@ static long writeValue(stringoutRecord *);
 static long init_record(stringoutRecord *prec, int pass)
 {
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
+    STATIC_ASSERT(sizeof(prec->ivov)==sizeof(prec->val));
     struct stringoutdset *pdset;
     long status=0;
 
@@ -121,7 +122,7 @@ static long init_record(stringoutRecord *prec, int pass)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(prec))) return(status);
     }
-    strcpy(prec->oval,prec->val);
+    strncpy(prec->oval, prec->val, sizeof(prec->val));
     return(0);
 }
 
@@ -159,7 +160,7 @@ static long process(stringoutRecord *prec)
                         break;
                     case (menuIvoaSet_output_to_IVOV) :
                         if(prec->pact == FALSE){
-                                strcpy(prec->val,prec->ivov);
+                            strncpy(prec->val, prec->ivov, sizeof(prec->val));
                         }
                         status=writeValue(prec); /* write the new value */
                         break;

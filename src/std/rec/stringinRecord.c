@@ -93,6 +93,7 @@ static long readValue(stringinRecord *);
 static long init_record(stringinRecord *prec, int pass)
 {
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
+    STATIC_ASSERT(sizeof(prec->sval)==sizeof(prec->val));
     struct stringindset *pdset;
     long status;
 
@@ -119,7 +120,7 @@ static long init_record(stringinRecord *prec, int pass)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(prec))) return(status);
     }
-    strcpy(prec->oval,prec->val);
+    strncpy(prec->oval, prec->val, sizeof(prec->val));
     return(0);
 }
 
@@ -193,7 +194,7 @@ static long readValue(stringinRecord *prec)
 		status=dbGetLink(&(prec->siol),DBR_STRING,
 			prec->sval,0,0);
 		if (status==0) {
-			strcpy(prec->val,prec->sval);
+			strncpy(prec->val, prec->sval, sizeof(prec->val));
 			prec->udf=FALSE;
 		}
 	} else {

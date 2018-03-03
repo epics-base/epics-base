@@ -170,8 +170,9 @@ ifdef RES
 	@$(RM) *$(RES)
 endif
 
-$(DIRECTORY_TARGETS) :
-	$(MKDIR) -p $@
+# Sort mkdir targets to remove duplicates & make parents first
+$(DIRECTORY_TARGETS):
+	$(MKDIR) $(sort $@)
 
 # Install LIB_INSTALLS libraries before linking executables
 $(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIB_INSTALLS)

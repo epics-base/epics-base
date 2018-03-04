@@ -8,7 +8,7 @@
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -419,7 +419,7 @@ int main (int argc, char *argv[])
         if (argc > optind+1) {
             for (i = optind + 1; i < argc; i++) {
                 strcat(cbuf, " ");
-                strcat(cbuf, argv[i]); 
+                strcat(cbuf, argv[i]);
             }
         }
 
@@ -530,6 +530,11 @@ int main (int argc, char *argv[])
         /* Use standard put with defined timeout */
         result = ca_array_put (dbrType, count, pvs[0].chid, pbuf);
     }
+    if (result != ECA_NORMAL) {
+        fprintf(stderr, "Error from put operation: %s\n", ca_message(result));
+        return 1;
+    }
+
     result = ca_pend_io(caTimeout);
     if (result == ECA_TIMEOUT) {
         fprintf(stderr, "Write operation timed out: Data was not written.\n");
@@ -545,7 +550,7 @@ int main (int argc, char *argv[])
     }
 
     if (result != ECA_NORMAL) {
-        fprintf(stderr, "Error occured writing data.\n");
+        fprintf(stderr, "Error occured writing data: %s\n", ca_message(result));
         return 1;
     }
 

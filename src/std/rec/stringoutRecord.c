@@ -96,6 +96,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct stringoutRecord *prec = (struct stringoutRecord *)pcommon;
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
+    STATIC_ASSERT(sizeof(prec->ivov)==sizeof(prec->val));
     struct stringoutdset *pdset = (struct stringoutdset *) prec->dset;
 
     if (pass==0)
@@ -125,7 +126,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
             return status;
     }
 
-    strcpy(prec->oval, prec->val);
+    strncpy(prec->oval, prec->val, sizeof(prec->val));
     return 0;
 }
 
@@ -164,7 +165,7 @@ static long process(struct dbCommon *pcommon)
                         break;
                     case (menuIvoaSet_output_to_IVOV) :
                         if(prec->pact == FALSE){
-                                strcpy(prec->val,prec->ivov);
+                            strncpy(prec->val, prec->ivov, sizeof(prec->val));
                         }
                         status=writeValue(prec); /* write the new value */
                         break;

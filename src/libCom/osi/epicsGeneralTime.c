@@ -231,8 +231,8 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
     IFDEBUG(2)
         printf("generalTimeGetEventPriority(eventNum=%d)\n", eventNumber);
 
-    if ((eventNumber < 0 || eventNumber >= NUM_TIME_EVENTS) &&
-        (eventNumber != epicsTimeEventBestTime))
+	STATIC_ASSERT ( epicsTimeEventBestTime == -1 );
+    if (eventNumber < epicsTimeEventBestTime)
         return S_time_badEvent;
 
     epicsMutexMustLock(gtPvt.eventListLock);
@@ -245,7 +245,9 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
             if (pPrio)
                 *pPrio = ptp->priority;
 
-            if (eventNumber == epicsTimeEventBestTime) {
+            if (eventNumber >= NUM_TIME_EVENTS) {
+                *pDest = ts;
+            } else if (eventNumber == epicsTimeEventBestTime) {
                 if (epicsTimeGreaterThanEqual(&ts,
                         &gtPvt.lastProvidedBestTime)) {
                     *pDest = ts;

@@ -51,8 +51,11 @@ static char *pNullString = "";
 #define messagesize	276
 #define RPCL_LEN INFIX_TO_POSTFIX_SIZE(80)
 
-/* must be long enough to hold 32-bit signed integer in base 10 */
-STATIC_ASSERT(messagesize>=11);
+/* Must be big enough to hold a 64-bit integer in base 10, but in
+ * the future when fields hold large JSON objects this fixed size
+ * allocation will probably have to become variable sized.
+ */
+STATIC_ASSERT(messagesize >= 21);
 
 static char *ppstring[5]={" NPP"," PP"," CA"," CP"," CPP"};
 static char *msstring[4]={" NMS"," MS"," MSI"," MSS"};
@@ -208,11 +211,13 @@ static void zeroDbentry(DBENTRY *pdbentry)
 static char *getpMessage(DBENTRY *pdbentry)
 {
     char *msg = pdbentry->message;
+
     if (!msg) {
         msg = dbCalloc(1, messagesize);
         pdbentry->message = msg;
     }
-    *msg = '\0';
+    else
+        *msg = '\0';
     return msg;
 }
 
@@ -222,6 +227,17 @@ void dbMsgCpy(DBENTRY *pdbentry, const char *msg)
     getpMessage(pdbentry);
     strncpy(pdbentry->message, msg, messagesize-1);
     pdbentry->message[messagesize-1] = '\0';
+}
+
+static
+void dbMsgNCpy(DBENTRY *pdbentry, const char *msg, size_t len)
+{
+    getpMessage(pdbentry);
+    if (len >= messagesize)
+        len = messagesize-1;            /* FIXME: Quietly truncates */
+
+    strncpy(pdbentry->message, msg, len);
+    pdbentry->message[len] = '\0';
 }
 
 static
@@ -1888,7 +1904,8 @@ char * dbGetString(DBENTRY *pdbentry)
 
     switch (pflddes->field_type) {
     case DBF_STRING:
-        dbMsgCpy(pdbentry, (char *)pfield);
+        /* Protect against a missing nil-terminator */
+        dbMsgNCpy(pdbentry, (char *)pfield, pflddes->size);
         break;
     case DBF_CHAR:
     case DBF_UCHAR:

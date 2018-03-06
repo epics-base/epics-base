@@ -59,12 +59,10 @@ typedef struct dbLinkInfo {
 
 long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec);
 
-#define LINK_DEBUG_LSET 1
-
 /* Parse link string.  no record locks needed.
  * on success caller must free pinfo->target
  */
-epicsShareFunc long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, unsigned opts);
+epicsShareFunc long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo);
 /* Check if link type allow the parsed link value pinfo
  * to be assigned to the given link.
  * Record containing plink must be locked.

@@ -2,7 +2,7 @@
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbJLink.h */
 
@@ -35,7 +35,6 @@ typedef struct jlink {
     struct jlif *pif;       /* Link methods */
     struct jlink *parent;   /* NULL for top-level links */
     int parseDepth;         /* Used by parser, unused afterwards */
-    unsigned debug:1;       /* set by caller of jlif operations to request debug output to console */
     /* Link types extend or embed this structure for private storage */
 } jlink;
 
@@ -98,7 +97,7 @@ typedef struct jlif {
     void (*report)(const jlink *, int level, int indent);
         /* Optional, print status information about this link instance, then
          * if (level > 0) print a link identifier (at indent+2) and call
-         *     dbJLinkReport(child, level-1, indent+4) 
+         *     dbJLinkReport(child, level-1, indent+4)
          * for each child.
          */
 
@@ -113,7 +112,7 @@ typedef struct jlif {
 } jlif;
 
 epicsShareFunc long dbJLinkParse(const char *json, size_t len, short dbfType,
-    jlink **ppjlink, unsigned opts);
+    jlink **ppjlink);
 epicsShareFunc long dbJLinkInit(struct link *plink);
 
 epicsShareFunc void dbJLinkFree(jlink *);
@@ -130,4 +129,3 @@ epicsShareFunc long dbJLinkMapAll(char *recname, jlink_map_fn rtn, void *ctx);
 #endif
 
 #endif /* INC_dbJLink_H */
-

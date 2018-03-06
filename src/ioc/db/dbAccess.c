@@ -1036,7 +1036,7 @@ static long dbPutFieldLink(DBADDR *paddr,
         return S_db_badDbrtype;
     }
 
-    status = dbParseLink(pstring, pfldDes->field_type, &link_info, 0);
+    status = dbParseLink(pstring, pfldDes->field_type, &link_info);
     if (status)
         return status;
 
@@ -1343,4 +1343,3 @@ done:
     paddr->pfield = pfieldsave;
     return status;
 }
-

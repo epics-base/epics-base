@@ -38,7 +38,6 @@ typedef struct parseContext {
     short dbfType;
     short jsonDepth;
     unsigned key_is_link:1;
-    unsigned lset_debug:1;
 } parseContext;
 
 #define CALL_OR_STOP(routine) !(routine) ? jlif_stop : (routine)
@@ -87,7 +86,6 @@ static int dbjl_value(parseContext *parser, jlif_result result) {
     } else if (parent->pif->end_child) {
         parent->pif->end_child(parent, pjlink);
     }
-    pjlink->debug = 0;
 
     parser->pjlink = parent;
 
@@ -257,7 +255,7 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, size_t len) {
 
     pjlink->pif = pjlif;
     pjlink->parseDepth = 0;
-    pjlink->debug = !!parser->lset_debug;
+
     if (parser->pjlink) {
         /* We're starting a child link, save its parent */
         pjlink->parent = parser->pjlink;
@@ -345,7 +343,7 @@ static yajl_callbacks dbjl_callbacks = {
 };
 
 long dbJLinkParse(const char *json, size_t jlen, short dbfType,
-    jlink **ppjlink, unsigned opts)
+    jlink **ppjlink)
 {
     parseContext context, *parser = &context;
     yajl_alloc_funcs dbjl_allocs;
@@ -358,7 +356,6 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
     parser->dbfType = dbfType;
     parser->jsonDepth = 0;
     parser->key_is_link = 0;
-    parser->lset_debug = !!(opts&LINK_DEBUG_LSET);
 
     IFDEBUG(10)
         printf("dbJLinkInit(\"%.*s\", %d, %p)\n",

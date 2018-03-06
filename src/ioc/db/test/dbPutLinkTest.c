@@ -87,7 +87,7 @@ static void testLinkParse(void)
     for (;td->str; td++) {
         int i, N;
         testDiag("Parsing \"%s\"", td->str);
-        testOk(dbParseLink(td->str, DBF_INLINK, &info, 0) == 0, "Parser returned OK");
+        testOk(dbParseLink(td->str, DBF_INLINK, &info) == 0, "Parser returned OK");
         if (!testOk(info.ltype == td->info.ltype, "Link type value"))
             testDiag("Expected %d, got %d", td->info.ltype, info.ltype);
         if (td->info.target)
@@ -147,7 +147,7 @@ static void testLinkFailParse(void)
     eltc(1);
 
     for(;*td; td++) {
-        testOk(dbParseLink(*td, DBF_INLINK, &info, 0) == S_dbLib_badField,
+        testOk(dbParseLink(*td, DBF_INLINK, &info) == S_dbLib_badField,
             "dbParseLink correctly rejected \"%s\"", *td);
     }
 

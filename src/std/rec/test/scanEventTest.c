@@ -14,6 +14,7 @@
 #include "dbUnitTest.h"
 #include "testMain.h"
 #include "osiFileName.h"
+#include "epicsThread.h"
 #include "dbScan.h"
 
 void scanEventTest_registerRecordDeviceDriver(struct dbBase *);
@@ -24,23 +25,22 @@ void scanEventTest_registerRecordDeviceDriver(struct dbBase *);
     num < 0 is string event (use same unique number for aliases)
 */
 const struct {char* name; int num;} events[] = {
+/* No events */
+    {NULL,            0},
     {"",              0},
     {"       ",       0},
     {"0",             0},
     {"0.000000",      0},
     {"-0.00000",      0},
     {"0.9",           0},
-    {"nan",           0},
-    {"NaN",           0},
-    {"-NAN",          0},
-    {"-inf",          0},
-    {"inf",           0},
+/* Numeric events */
     {"2",             2},
     {"2.000000",      2},
     {"2.5",           2},
     {" 2.5  ",        2},
     {"+0x02",         2},
     {"3",             3},
+/* Named events */
     {"info 1",       -1},
     {"   info 1  ",  -1},
     {"-0.9",         -2},
@@ -48,6 +48,11 @@ const struct {char* name; int num;} events[] = {
     {"-2.000000",    -4},
     {"-2.5",         -5},
     {" -2.5  ",      -5},
+    {"nan",          -6},
+    {"NaN",          -7},
+    {"-NAN",         -8},
+    {"-inf",         -9},
+    {"inf",         -10},
 };
 
 MAIN(scanEventTest)
@@ -117,14 +122,14 @@ MAIN(scanEventTest)
         testdbGetFieldEqual("e2", DBR_LONG, e);
         testdbPutFieldOk("e3", DBR_LONG, e);
         testdbPutFieldOk("e3.PROC", DBR_LONG, 1);
-        if (e != 0)
-            for (i = 0; i < NELEMENTS(events); i++)
-                if (events[i].num == e) {
-                    expected_count[INDX(i)]+=3; /* +1 for eventnum->e1, +1 for e2<-eventnum, +1 for e3 */
-                    break;
-                }
+        for (i = 0; i < NELEMENTS(events); i++)
+            if (e > 0 && e < 256 && events[i].num == e) { /* numeric events */
+                expected_count[INDX(i)]+=3; /* +1 for eventnum->e1, +1 for e2<-eventnum, +1 for e3 */
+                break;
+            }
     }
-    
+    /* Allow records to finish processing */
+    epicsThreadSleep(0.1);
     testDiag("Check if events have been processed the expected number of times");
     for (i = 0; i < NELEMENTS(events); i++) {
         char pvname[100];

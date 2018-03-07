@@ -27,7 +27,6 @@
 #include "epicsEvent.h"
 #include "epicsExit.h"
 #include "epicsInterrupt.h"
-#include "epicsMath.h"
 #include "epicsMutex.h"
 #include "epicsPrint.h"
 #include "epicsRingPointer.h"
@@ -484,8 +483,6 @@ event_list *eventNameToHandle(const char *eventname)
     */
     if (epicsParseDouble(eventname, &eventnumber, NULL) == 0)
     {
-        if (!finite(eventnumber))
-            return NULL; /* Inf and NaN are no events */
         if (eventnumber >= 0 && eventnumber < 256)
         {
             if (eventnumber < 1)
@@ -493,7 +490,7 @@ event_list *eventNameToHandle(const char *eventname)
             if ((pel = pevent_list[(int)eventnumber]) != NULL)
                 return pel;
         }
-        else 
+        else
             eventnumber = 0; /* not a numeric event between 1 and 255 */
     }
 

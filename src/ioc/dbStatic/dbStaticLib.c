@@ -1928,6 +1928,8 @@ char * dbGetString(DBENTRY *pdbentry)
 	case CONSTANT:
 	    if (plink->value.constantStr) {
 		dbMsgCpy(pdbentry, plink->value.constantStr);
+	    } else if (plink->text) {
+		dbMsgCpy(pdbentry, plink->text);
 	    } else {
 		dbMsgCpy(pdbentry, "");
 	    }
@@ -2028,7 +2030,13 @@ char * dbGetString(DBENTRY *pdbentry)
 
 	    switch(plink->type) {
 	    case CONSTANT:
-		dbMsgCpy(pdbentry, "0");
+		if (plink->value.constantStr) {
+		    dbMsgCpy(pdbentry, plink->value.constantStr);
+		} else if (plink->text) {
+		    dbMsgCpy(pdbentry, plink->text);
+		} else {
+		    dbMsgCpy(pdbentry, "");
+		}
 		break;
 	    case MACRO_LINK:
 		if (plink->value.macro_link.macroStr) {

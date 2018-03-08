@@ -142,6 +142,12 @@ static long process(struct dbCommon *pcommon)
 		prec->udf = FALSE;
 	}
 	else if(status==2) status=0;
+
+        if ( prec->tpro >= 2 )
+                printf( "%s: Process %s, val %s\n",
+                        epicsThreadGetNameSelf(), prec->name,
+                        ( prec->val ? prec->onam : prec->znam ) );
+
 	/* check for alarms */
 	checkAlarms(prec);
 	/* check event list */

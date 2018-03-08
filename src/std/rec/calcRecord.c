@@ -125,6 +125,11 @@ static long process(struct dbCommon *pcommon)
 
     timeLast = prec->time;
     recGblGetTimeStamp(prec);
+    
+    if ( prec->tpro >= 2 )
+        printf( "%s: Process %s, val %f\n",
+                epicsThreadGetNameSelf(), prec->name, prec->val );
+
     /* check for alarms */
     checkAlarms(prec, &timeLast);
     /* check event list */

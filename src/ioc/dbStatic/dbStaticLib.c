@@ -1635,19 +1635,22 @@ int dbIsVisibleRecord(DBENTRY *pdbentry)
 
 long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    dbRecordNode	*pnewnode;
-    PVDENTRY    	*ppvd;
-    ELLLIST     	*preclist = NULL;
+    dbRecordType *precordType = pdbentry->precordType;
+    dbRecordNode *precnode = pdbentry->precnode;
+    dbRecordNode *pnewnode;
+    DBENTRY tempEntry;
+    PVDENTRY *ppvd;
 
-    if (!precordType) return S_dbLib_recordTypeNotFound;
-    if (!precnode) return S_dbLib_recNotFound;
-    zeroDbentry(pdbentry);
-    if (!dbFindRecord(pdbentry, alias)) return S_dbLib_recExists;
-    zeroDbentry(pdbentry);
-    pdbentry->precordType = precordType;
-    preclist = &precordType->recList;
+    if (!precordType)
+        return S_dbLib_recordTypeNotFound;
+    if (!precnode)
+        return S_dbLib_recNotFound;
+
+    dbInitEntry(pdbentry->pdbbase, &tempEntry);
+    if (!dbFindRecord(&tempEntry, alias))
+        return S_dbLib_recExists;
+    dbFinishEntry(&tempEntry);
+
     pnewnode = dbCalloc(1, sizeof(dbRecordNode));
     pnewnode->recordname = epicsStrDup(alias);
     pnewnode->precord = precnode->precord;
@@ -1655,11 +1658,16 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     if (!(precnode->flags & DBRN_FLAGS_ISALIAS))
         precnode->flags |= DBRN_FLAGS_HASALIAS;
     ellInit(&pnewnode->infoList);
-    ellAdd(preclist, &pnewnode->node);
+
+    ellAdd(&precordType->recList, &pnewnode->node);
     precordType->no_aliases++;
-    pdbentry->precnode = pnewnode;
+
     ppvd = dbPvdAdd(pdbentry->pdbbase, precordType, pnewnode);
-    if (!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
+    if (!ppvd) {
+        errMessage(-1, "dbCreateAlias: Add to PVD failed");
+        return -1;
+    }
+
     return 0;
 }
 

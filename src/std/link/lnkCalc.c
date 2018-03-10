@@ -6,13 +6,9 @@
 \*************************************************************************/
 /* lnkCalc.c */
 
-/*  Current usage
- *      {calc:{expr:"A", args:[{...}, ...]}}
+/*  Usage
+ *      {calc:{expr:"A*B", args:[{...}, ...], units:"mm"}}
  *  First link in 'args' is 'A', second is 'B', and so forth.
- *
- *  TODO:
- *    Support setting individual input links instead of the args list.
- *      {calc:{expr:"K", K:{...}}}
  */
 
 #include <string.h>
@@ -49,10 +45,11 @@ epicsExportAddress(int, lnkCalc_debug);
 typedef struct calc_link {
     jlink jlink;        /* embedded object */
     int nArgs;
+    short dbfType;
     enum {
         ps_init,
         ps_expr, ps_major, ps_minor,
-        ps_args,
+        ps_args, ps_out,
         ps_prec,
         ps_units,
         ps_time,
@@ -70,6 +67,7 @@ typedef struct calc_link {
     char *units;
     short tinp;
     struct link inp[CALCPERFORM_NARGS];
+    struct link out;
     double arg[CALCPERFORM_NARGS];
     epicsTimeStamp time;
     double val;
@@ -87,8 +85,8 @@ static jlink* lnkCalc_alloc(short dbfType)
     IFDEBUG(10)
         printf("lnkCalc_alloc(%d)\n", dbfType);
 
-    if (dbfType != DBF_INLINK) {
-        errlogPrintf("lnkCalc: Only works with input links\n");
+    if (dbfType == DBF_FWDLINK) {
+        errlogPrintf("lnkCalc: No support for forward links\n");
         return NULL;
     }
 
@@ -99,6 +97,7 @@ static jlink* lnkCalc_alloc(short dbfType)
     }
 
     clink->nArgs = 0;
+    clink->dbfType = dbfType;
     clink->pstate = ps_init;
     clink->prec = 15;   /* standard value for a double */
     clink->tinp = -1;
@@ -119,6 +118,8 @@ static void lnkCalc_free(jlink *pjlink)
 
     for (i = 0; i < clink->nArgs; i++)
         dbJLinkFree(clink->inp[i].value.json.jlink);
+
+    dbJLinkFree(clink->out.value.json.jlink);
 
     free(clink->expr);
     free(clink->major);
@@ -253,7 +254,7 @@ static jlif_key_result lnkCalc_start_map(jlink *pjlink)
     IFDEBUG(10)
         printf("lnkCalc_start_map(calc@%p)\n", clink);
 
-    if (clink->pstate == ps_args)
+    if (clink->pstate == ps_args || clink->pstate == ps_out)
         return jlif_key_child_link;
 
     if (clink->pstate != ps_init) {
@@ -271,7 +272,21 @@ static jlif_result lnkCalc_map_key(jlink *pjlink, const char *key, size_t len)
     IFDEBUG(10)
         printf("lnkCalc_map_key(calc@%p, \"%.*s\")\n", pjlink, (int) len, key);
 
-    if (len == 4) {
+    /* FIXME: These errors messages are wrong when a key is duplicated.
+     * The key is known, we just don't allow it more than once.
+     */
+
+    if (len == 3) {
+        if (!strncmp(key, "out", len) &&
+            clink->dbfType == DBF_OUTLINK &&
+            clink->out.type == 0)
+            clink->pstate = ps_out;
+        else {
+            errlogPrintf("lnkCalc: Unknown key \"%.3s\"\n", key);
+            return jlif_stop;
+        }
+    }
+    else if (len == 4) {
         if (!strncmp(key, "expr", len) && !clink->post_expr)
             clink->pstate = ps_expr;
         else if (!strncmp(key, "args", len) && !clink->nArgs)
@@ -314,8 +329,14 @@ static jlif_result lnkCalc_end_map(jlink *pjlink)
 
     if (clink->pstate == ps_error)
         return jlif_stop;
-    else if (!clink->post_expr) {
-        errlogPrintf("lnkCalc: no expression ('expr' key)\n");
+    else if (clink->dbfType == DBF_INLINK &&
+        !clink->post_expr) {
+        errlogPrintf("lnkCalc: No expression ('expr' key)\n");
+        return jlif_stop;
+    }
+    else if (clink->dbfType == DBF_OUTLINK &&
+        clink->out.type != JSON_LINK) {
+        errlogPrintf("lnkCalc: No output link ('out' key)\n");
         return jlif_stop;
     }
 
@@ -355,15 +376,27 @@ static void lnkCalc_end_child(jlink *parent, jlink *child)
     calc_link *clink = CONTAINER(parent, struct calc_link, jlink);
     struct link *plink;
 
-    if (clink->nArgs == CALCPERFORM_NARGS) {
-        dbJLinkFree(child);
-        errlogPrintf("lnkCalc: Too many input args, limit is %d\n",
-            CALCPERFORM_NARGS);
+    if (clink->pstate == ps_args) {
+        if (clink->nArgs == CALCPERFORM_NARGS) {
+            errlogPrintf("lnkCalc: Too many input args, limit is %d\n",
+                CALCPERFORM_NARGS);
+            goto errOut;
+        }
+
+        plink = &clink->inp[clink->nArgs++];
+    }
+    else if (clink->pstate == ps_out) {
+        plink = &clink->out;
+    }
+    else {
+        errlogPrintf("lnkCalc: Unexpected child link, parser state = %d\n",
+            clink->pstate);
+errOut:
         clink->pstate = ps_error;
+        dbJLinkFree(child);
         return;
     }
 
-    plink = &clink->inp[clink->nArgs++];
     plink->type = JSON_LINK;
     plink->value.json.string = NULL;
     plink->value.json.jlink = child;
@@ -421,6 +454,12 @@ static void lnkCalc_report(const jlink *pjlink, int level, int indent)
             if (child)
                 dbJLinkReport(child, level - 1, indent + 4);
         }
+
+        if (clink->out.type == JSON_LINK) {
+            printf("%*s  Output:\n", indent, "");
+
+            dbJLinkReport(clink->out.value.json.jlink, level - 1, indent + 4);
+        }
     }
 }
 
@@ -438,6 +477,10 @@ long lnkCalc_map_children(jlink *pjlink, jlink_map_fn rtn, void *ctx)
 
         if (status)
             return status;
+    }
+
+    if (clink->out.type == JSON_LINK) {
+        return dbJLinkMapChildren(&clink->out, rtn, ctx);
     }
     return 0;
 }
@@ -460,6 +503,10 @@ static void lnkCalc_open(struct link *plink)
         dbJLinkInit(child);
         dbLoadLink(child, DBR_DOUBLE, &clink->arg[i]);
     }
+
+    if (clink->out.type == JSON_LINK) {
+        dbJLinkInit(&clink->out);
+    }
 }
 
 static void lnkCalc_remove(struct dbLocker *locker, struct link *plink)
@@ -475,6 +522,10 @@ static void lnkCalc_remove(struct dbLocker *locker, struct link *plink)
         struct link *child = &clink->inp[i];
 
         dbRemoveLink(locker, child);
+    }
+
+    if (clink->out.type == JSON_LINK) {
+        dbRemoveLink(locker, &clink->out);
     }
 
     free(clink->expr);
@@ -500,6 +551,14 @@ static int lnkCalc_isConn(const struct link *plink)
 
     for (i = 0; i < clink->nArgs; i++) {
         struct link *child = &clink->inp[i];
+
+        if (dbLinkIsVolatile(child) &&
+            !dbIsLinkConnected(child))
+            connected = 0;
+    }
+
+    if (clink->out.type == JSON_LINK) {
+        struct link *child = &clink->out;
 
         if (dbLinkIsVolatile(child) &&
             !dbIsLinkConnected(child))
@@ -626,6 +685,77 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
     return status;
 }
 
+static long lnkCalc_putValue(struct link *plink, short dbrType,
+    const void *pbuffer, long nRequest)
+{
+    calc_link *clink = CONTAINER(plink->value.json.jlink,
+        struct calc_link, jlink);
+    dbCommon *prec = plink->precord;
+    int i;
+    long status;
+    FASTCONVERT conv = dbFastGetConvertRoutine[dbrType][DBR_DOUBLE];
+
+    IFDEBUG(10)
+        printf("lnkCalc_putValue(calc@%p, %d, ...)\n", clink, dbrType);
+
+    /* Any link errors will trigger a LINK/INVALID alarm in the child link */
+    for (i = 0; i < clink->nArgs; i++) {
+        struct link *child = &clink->inp[i];
+        long nReq = 1;
+
+        if (i == clink->tinp) {
+            struct lcvt vt = {&clink->arg[i], &clink->time};
+
+            status = dbLinkDoLocked(child, readLocked, &vt);
+            if (status == S_db_noLSET)
+                status = readLocked(child, &vt);
+
+            if (dbLinkIsConstant(&prec->tsel) &&
+                prec->tse == epicsTimeEventDeviceTime) {
+                prec->time = clink->time;
+            }
+        }
+        else
+            dbGetLink(child, DBR_DOUBLE, &clink->arg[i], NULL, &nReq);
+    }
+    clink->stat = 0;
+    clink->sevr = 0;
+
+    /* Get the value being output as VAL */
+    status = conv(pbuffer, &clink->val, NULL);
+
+    if (!status && clink->post_expr)
+        status = calcPerform(clink->arg, &clink->val, clink->post_expr);
+
+    if (!status && clink->post_major) {
+        double alval = clink->val;
+
+        status = calcPerform(clink->arg, &alval, clink->post_major);
+        if (!status && alval) {
+            clink->stat = LINK_ALARM;
+            clink->sevr = MAJOR_ALARM;
+            recGblSetSevr(prec, clink->stat, clink->sevr);
+        }
+    }
+
+    if (!status && clink->post_minor) {
+        double alval = clink->val;
+
+        status = calcPerform(clink->arg, &alval, clink->post_minor);
+        if (!status && alval) {
+            clink->stat = LINK_ALARM;
+            clink->sevr = MINOR_ALARM;
+            recGblSetSevr(prec, clink->stat, clink->sevr);
+        }
+    }
+
+    if (!status) {
+        status = dbPutLink(&clink->out, DBR_DOUBLE, &clink->val, 1);
+    }
+
+    return status;
+}
+
 static long lnkCalc_getPrecision(const struct link *plink, short *precision)
 {
     calc_link *clink = CONTAINER(plink->value.json.jlink,
@@ -705,7 +835,7 @@ static lset lnkCalc_lset = {
     NULL, NULL, NULL,
     lnkCalc_getPrecision, lnkCalc_getUnits,
     lnkCalc_getAlarm, lnkCalc_getTimestamp,
-    NULL, NULL,
+    lnkCalc_putValue, NULL,
     NULL, doLocked
 };
 

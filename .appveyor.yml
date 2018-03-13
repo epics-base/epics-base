@@ -16,7 +16,7 @@ init:
   - git config --global core.autocrlf true
 
 # Set clone depth (do not fetch complete history)
-clone_depth: 10
+clone_depth: 50
 
 # Skipping commits affecting only specific files
 skip_commits:

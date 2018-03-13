@@ -71,7 +71,7 @@ TESTSPEC_vxWorks = filterTestHarness.munch; epicsRunFilterTests
 TESTSPEC_RTEMS = filterTestHarness.boot; epicsRunFilterTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
-ifeq ($(T_A),RTEMS-pc386)
+ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
 TESTPROD_RTEMS = $(TESTPROD_HOST)
 TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
 endif

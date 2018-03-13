@@ -72,6 +72,7 @@ RTEMS_BASE=/home/travis/.cache/rtems${RTEMS}-i386
 EOF
   cat << EOF >> configure/CONFIG_SITE
 CROSS_COMPILER_TARGET_ARCHS+=RTEMS-pc386
+CROSS_COMPILER_RUNTEST_ARCHS+=RTEMS-pc386
 EOF
 
   # find local qemu-system-i386

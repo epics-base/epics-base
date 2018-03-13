@@ -235,7 +235,7 @@ TESTSPEC_vxWorks = libComTestHarness.munch; epicsRunLibComTests
 TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
-ifeq ($(T_A),RTEMS-pc386)
+ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
 TESTPROD_RTEMS = $(TESTPROD_HOST)
 TESTSCRIPTS_RTEMS += $(filter-out epicsUnitTestTest.t, $(TESTS:%=%.t))
 endif

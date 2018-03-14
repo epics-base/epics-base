@@ -301,6 +301,20 @@ $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 
 .PRECIOUS: $(COMMON_DBDS) $(COMMON_DIR)/%Include.dbd
 
+##################################################### HTML files
+
+$(COMMON_DIR)/%.html: %.pm $(TOOLS)/podToHtml.pl
+	@$(RM) $(notdir $@)
+	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/%.html: ../%.pm $(TOOLS)/podToHtml.pl
+	@$(RM) $(notdir $@)
+	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+.PRECIOUS: $(COMMON_DIR)/%.html %.html
+
 ##################################################### DB files
 
 $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf 

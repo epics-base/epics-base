@@ -39,6 +39,8 @@ PERL_SCRIPTS += tap-to-junit-xml.pl
 PERL_SCRIPTS += useManifestTool.pl
 PERL_SCRIPTS += genVersionHeader.pl
 
+PERL_SCRIPTS += makeRPath.py
+
 HTMLS = style.css
 HTMLS += EPICS/Getopts.html
 HTMLS += EPICS/Path.html

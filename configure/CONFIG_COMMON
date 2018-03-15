@@ -38,6 +38,8 @@ BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 # otherwise override this in os/CONFIG_SITE.<host_arch>.Common
 PERL = perl -CSD
 
+PYTHON = python
+
 #-------------------------------------------------------
 # Check configure/RELEASE file for consistency
 CHECK_RELEASE_YES = checkRelease

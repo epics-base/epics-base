@@ -44,6 +44,8 @@ FULLPATHNAME     = $(PERL) $(TOOLS)/fullPathName.pl
 TAPTOJUNIT       = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
 GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG) $(QUESTION_FLAG)
 
+MAKERPATH = $(PYTHON) $(TOOLS)/makeRPath.py
+
 #---------------------------------------------------------------
 # tools for installing libraries and products
 INSTALL = $(PERL) $(TOOLS)/installEpics.pl $(QUIET_FLAG)

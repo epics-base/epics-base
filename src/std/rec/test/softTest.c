@@ -12,6 +12,7 @@
 #include "dbTest.h"
 #include "dbUnitTest.h"
 #include "epicsThread.h"
+#include "epicsEvent.h"
 #include "errlog.h"
 #include "registryFunction.h"
 #include "subRecord.h"
@@ -134,24 +135,25 @@ void testGroup2(void)
 
 
 int dest;
+epicsEventId destEvent;
 
 static
 long destSubr(subRecord *prec)
 {
     dest = prec->val;
     prec->val = -1;
+    epicsEventMustTrigger(destEvent);
     return 0;
 }
 
 static
-void checkOutput(const char *rec, int value)
+void checkOutput3(const char *rec, int value)
 {
     testDiag("Checking record '%s'", rec);
 
     testdbPutFieldOk(rec, DBR_LONG, value);
-    /* Even with a local CA link, the dest record gets processed in
-     * the context of this thread (i.e. immediately). TPRO confirms.
-     */
+
+    epicsEventMustWait(destEvent);
     testOk(dest == value, "value %d output -> %d", value, dest);
 }
 
@@ -170,22 +172,33 @@ void testGroup3(void)
         NULL,
     };
 
+    destEvent = epicsEventMustCreate(epicsEventEmpty);
+
     testDiag("============ Starting %s ============", EPICS_FUNCTION);
 
     for (rec = records; *rec; rec++) {
-        checkOutput(*rec, 1);
+        checkOutput3(*rec, 1);
         checkDtyp(*rec);
     }
-    checkOutput("do3.B0", 1);
+    checkOutput3("do3.B0", 1);
     checkDtyp("do3");
-    checkOutput("do3c.B0", 1);
+    checkOutput3("do3c.B0", 1);
     checkDtyp("do3c");
 
     for (rec = records; *rec; rec++) {
-        checkOutput(*rec, 0);
+        checkOutput3(*rec, 0);
     }
-    checkOutput("do3.B0", 0);
-    checkOutput("do3c.B0", 0);
+    checkOutput3("do3.B0", 0);
+    checkOutput3("do3c.B0", 0);
+}
+
+
+static
+void checkOutput4(const char *rec, int value)
+{
+    testDiag("Checking record '%s'", rec);
+
+    testdbPutFieldOk(rec, DBR_LONG, value);
 }
 
 /* Group 4 are all soft-channel output records with OUT being empty
@@ -202,7 +215,7 @@ void testGroup4(void)
     testDiag("============ Starting %s ============", EPICS_FUNCTION);
 
     for (rec = records; *rec; rec++) {
-        checkOutput(*rec, 0);
+        checkOutput4(*rec, 0);
     }
 }
 
@@ -211,7 +224,7 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(softTest)
 {
-    testPlan(266);
+    testPlan(258);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);

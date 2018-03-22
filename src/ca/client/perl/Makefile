@@ -58,7 +58,7 @@ Cap5_LIBS = ca Com
 Cap5_INCLUDES = -I$(shell $(PERL) ../perlConfig.pl archlib)/CORE
 Cap5_CFLAGS = $(shell $(PERL) ../perlConfig.pl ccflags)
 
-CLEANS += Cap5.c pod2htmd.tmp pod2htmi.tmp
+CLEANS += Cap5.c
 
 include $(TOP)/configure/RULES
 

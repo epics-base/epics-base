@@ -51,8 +51,11 @@ static char *pNullString = "";
 #define messagesize	276
 #define RPCL_LEN INFIX_TO_POSTFIX_SIZE(80)
 
-/* must be long enough to hold 32-bit signed integer in base 10 */
-STATIC_ASSERT(messagesize>=11);
+/* Must be big enough to hold a 64-bit integer in base 10, but in
+ * the future when fields hold large JSON objects this fixed size
+ * allocation will probably have to become variable sized.
+ */
+STATIC_ASSERT(messagesize >= 21);
 
 static char *ppstring[5]={" NPP"," PP"," CA"," CP"," CPP"};
 static char *msstring[4]={" NMS"," MS"," MSI"," MSS"};
@@ -208,11 +211,13 @@ static void zeroDbentry(DBENTRY *pdbentry)
 static char *getpMessage(DBENTRY *pdbentry)
 {
     char *msg = pdbentry->message;
+
     if (!msg) {
         msg = dbCalloc(1, messagesize);
         pdbentry->message = msg;
     }
-    *msg = '\0';
+    else
+        *msg = '\0';
     return msg;
 }
 
@@ -222,6 +227,17 @@ void dbMsgCpy(DBENTRY *pdbentry, const char *msg)
     getpMessage(pdbentry);
     strncpy(pdbentry->message, msg, messagesize-1);
     pdbentry->message[messagesize-1] = '\0';
+}
+
+static
+void dbMsgNCpy(DBENTRY *pdbentry, const char *msg, size_t len)
+{
+    getpMessage(pdbentry);
+    if (len >= messagesize)
+        len = messagesize-1;            /* FIXME: Quietly truncates */
+
+    strncpy(pdbentry->message, msg, len);
+    pdbentry->message[len] = '\0';
 }
 
 static
@@ -1678,21 +1694,27 @@ int dbIsVisibleRecord(DBENTRY *pdbentry)
 
 long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    dbRecordNode	*pnewnode;
-    PVDENTRY    	*ppvd;
-    ELLLIST     	*preclist = NULL;
-    if (!precordType) return S_dbLib_recordTypeNotFound;
+    dbRecordType *precordType = pdbentry->precordType;
+    dbRecordNode *precnode = pdbentry->precnode;
+    dbRecordNode *pnewnode;
+    DBENTRY tempEntry;
+    PVDENTRY *ppvd;
+
+    if (!precordType)
+        return S_dbLib_recordTypeNotFound;
+
     /* alias of alias still references actual record */
-    while(precnode && (precnode->flags&DBRN_FLAGS_ISALIAS))
+    while (precnode && (precnode->flags & DBRN_FLAGS_ISALIAS))
         precnode = precnode->aliasedRecnode;
-    if (!precnode) return S_dbLib_recNotFound;
-    zeroDbentry(pdbentry);
-    if (!dbFindRecord(pdbentry, alias)) return S_dbLib_recExists;
-    zeroDbentry(pdbentry);
-    pdbentry->precordType = precordType;
-    preclist = &precordType->recList;
+
+    if (!precnode)
+        return S_dbLib_recNotFound;
+
+    dbInitEntry(pdbentry->pdbbase, &tempEntry);
+    if (!dbFindRecord(&tempEntry, alias))
+        return S_dbLib_recExists;
+    dbFinishEntry(&tempEntry);
+
     pnewnode = dbCalloc(1, sizeof(dbRecordNode));
     pnewnode->recordname = epicsStrDup(alias);
     pnewnode->precord = precnode->precord;
@@ -1700,11 +1722,16 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     pnewnode->flags = DBRN_FLAGS_ISALIAS;
     precnode->flags |= DBRN_FLAGS_HASALIAS;
     ellInit(&pnewnode->infoList);
-    ellAdd(preclist, &pnewnode->node);
+
+    ellAdd(&precordType->recList, &pnewnode->node);
     precordType->no_aliases++;
-    pdbentry->precnode = pnewnode;
+
     ppvd = dbPvdAdd(pdbentry->pdbbase, precordType, pnewnode);
-    if (!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
+    if (!ppvd) {
+        errMessage(-1, "dbCreateAlias: Add to PVD failed");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1888,7 +1915,8 @@ char * dbGetString(DBENTRY *pdbentry)
 
     switch (pflddes->field_type) {
     case DBF_STRING:
-        dbMsgCpy(pdbentry, (char *)pfield);
+        /* Protect against a missing nil-terminator */
+        dbMsgNCpy(pdbentry, (char *)pfield, pflddes->size);
         break;
     case DBF_CHAR:
     case DBF_UCHAR:
@@ -1911,6 +1939,8 @@ char * dbGetString(DBENTRY *pdbentry)
 	case CONSTANT:
 	    if (plink->value.constantStr) {
 		dbMsgCpy(pdbentry, plink->value.constantStr);
+	    } else if (plink->text) {
+		dbMsgCpy(pdbentry, plink->text);
 	    } else {
 		dbMsgCpy(pdbentry, "");
 	    }
@@ -2011,7 +2041,13 @@ char * dbGetString(DBENTRY *pdbentry)
 
 	    switch(plink->type) {
 	    case CONSTANT:
-		dbMsgCpy(pdbentry, "0");
+		if (plink->value.constantStr) {
+		    dbMsgCpy(pdbentry, plink->value.constantStr);
+		} else if (plink->text) {
+		    dbMsgCpy(pdbentry, plink->text);
+		} else {
+		    dbMsgCpy(pdbentry, "");
+		}
 		break;
 	    case MACRO_LINK:
 		if (plink->value.macro_link.macroStr) {

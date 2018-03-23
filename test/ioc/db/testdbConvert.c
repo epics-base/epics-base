@@ -38,7 +38,7 @@ static void testBasicGet(void)
 
         getter(&addr, scratch, 1, s_input_len, 0);
 
-        testOk1(scratch[0]==s_input[0]);
+        testOk1(scratch[0]==s_input[0] && scratch[1]==0);
 
         memset(scratch, 0x42, sizeof(s_input));
     }
@@ -128,7 +128,7 @@ static void testBasicPut(void)
 
         putter(&addr, s_input, 1, s_input_len, 0);
 
-        testOk1(scratch[0]==s_input[0]);
+        testOk1(scratch[0]==s_input[0] && scratch[1]==0);
 
         memset(scratch, 0x42, sizeof(s_input));
     }

@@ -390,7 +390,7 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
     {
         caStatus = ECA_ALLOCMEM;
     }
-    catch ( cacChannel::msgBodyCacheTooSmall ) {
+    catch ( cacChannel::msgBodyCacheTooSmall & ) {
         caStatus = ECA_TOLARGE;
     }
     catch ( ... )

@@ -9,7 +9,6 @@ RTEMS_TARGET_CPU = m68k
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 
 MUNCH_SUFFIX = .boot
-MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $@
 endef

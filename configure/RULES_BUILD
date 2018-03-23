@@ -102,6 +102,7 @@ endif
 #   Products and Object libraries
 #
 PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
+TESTPRODTARGETS += $(TESTPRODNAME) $(TESTMUNCHNAME)
 
 #---------------------------------------------------------------
 #   Test specifications and test result files
@@ -140,7 +141,7 @@ rebuild: clean install
 
 build: inc
 
-build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODNAME) \
+build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TARGETS) $(TESTSCRIPTS) $(INSTALL_LIB_INSTALLS)
 
 inc : $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS)
@@ -158,20 +159,21 @@ clean: build_clean
 
 build_clean:
 	$(ECHO) "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) \
+	@$(RM) *.i *$(OBJ) *.a \
 	$(LIBNAME) $(TESTLIBNAME) $(SHRLIBNAME) $(TESTSHRLIBNAME) \
 	$(DLLSTUB_LIBNAME) $(TESTDLLSTUB_LIBNAME) \
 	$(LOADABLE_SHRLIBNAME) \
 	$(INC) $(TARGETS) $(TDS) $(CLEANS) \
 	*.out MakefileInclude *.manifest *.exp \
-	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) \
+	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TESTSCRIPTS) $(TAPFILES) $(JUNITFILES)
 ifdef RES
 	@$(RM) *$(RES)
 endif
 
-$(DIRECTORY_TARGETS) :
-	$(MKDIR) $@
+# Sort mkdir targets to remove duplicates & make parents first
+$(DIRECTORY_TARGETS):
+	$(MKDIR) $(sort $@)
 
 # Install LIB_INSTALLS libraries before linking executables
 $(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIB_INSTALLS)
@@ -318,6 +320,10 @@ $(LOADABLE_SHRLIBNAME): $(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX):
 	$(PERL) $(TOOLS)/munch.pl -o $@ $<
 
 $(MUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
+	@$(RM) $@
+	$(MUNCH_CMD)
+
+$(TESTMUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
 	@$(RM) $@
 	$(MUNCH_CMD)
 

@@ -137,6 +137,13 @@ LINK.mod = $(CCC) -o $@ $(PRODDIR_LDFLAGS) $(MOD_LDFLAGS)
 LINK.mod += $(PROD_LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(MOD_LDLIBS)
 
 #--------------------------------------------------
+# Here munching means creating a bootable object binary
+ifdef MUNCH_SUFFIX
+  MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
+  TESTMUNCHNAME = $(TESTPRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
+endif
+
+#--------------------------------------------------
 # RTEMS has neither shared libraries nor dynamic loading
 STATIC_BUILD=YES
 SHARED_LIBRARIES=NO

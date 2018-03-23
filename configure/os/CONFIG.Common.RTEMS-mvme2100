@@ -13,7 +13,6 @@ ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
 OP_SYS_LDLIBS += -lbspExt
 
 MUNCH_SUFFIX = .boot
-MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems
 	gzip -f9 rtems

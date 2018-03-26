@@ -79,16 +79,20 @@ CPP = cl -nologo -C -E
 
 # Configure OS vendor C++ compiler
 #
-# __STDC__=0 gives us both:
-# 1) define STDC for code (pretend ANSI conformance)
-# 2) set it to 0 to use MS C "extensions" (open for _open etc.)
-# because MS uses:   if __STDC__ ... disable many nice things
-#
 # -EHsc - generate code for exceptions
 # -GR - generate code for run time type identification
 #
 CCC = cl -EHsc -GR
-CODE_CPPFLAGS += -nologo -D__STDC__=0
+
+# Other compiler flags, used for CPP, C and C++
+#
+# -FC - Show absolute path of source file in diagnostics
+# -D__STDC__=0 gives us both:
+#   1) define STDC for code (pretend ANSI conformance)
+#   2) set it to 0 to use MS C "extensions" (open for _open etc.)
+#   because MS uses:   if __STDC__ ... disable many nice things
+#
+CODE_CPPFLAGS += -nologo -FC -D__STDC__=0
 CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 
 

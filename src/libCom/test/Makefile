@@ -224,11 +224,13 @@ osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
+ifeq ($(BUILD_CLASS),HOST)
 ifneq ($(OS_CLASS),WIN32)
 # This test can only be run on a build host, and is broken on Windows
 TESTPROD_HOST += yajl_test
 yajl_test_SRCS += yajl_test.c
 TESTS += yajlTest
+endif
 endif
 
 # The testHarness runs all the test programs in a known working order.

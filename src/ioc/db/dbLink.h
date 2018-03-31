@@ -31,8 +31,8 @@ typedef long (*dbLinkUserCallback)(struct link *plink, void *priv);
 
 typedef struct lset {
     /* Characteristics of the link type */
-    const unsigned isConstant:1;
-    const unsigned isVolatile:1;
+    const unsigned isConstant:1;    /* 1 means value doesn't change */
+    const unsigned isVolatile:1;    /* 0 means link always connected */
 
     /* Activation */
     void (*openLink)(struct link *plink);

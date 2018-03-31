@@ -155,17 +155,6 @@ static void lnkState_remove(struct dbLocker *locker, struct link *plink)
     plink->value.json.jlink = NULL;
 }
 
-static int lnkState_isConn(const struct link *plink)
-{
-    state_link *slink = CONTAINER(plink->value.json.jlink,
-        struct state_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkState_isConn(state@%p)\n", slink);
-
-    return !! slink->state;
-}
-
 static int lnkState_getDBFtype(const struct link *plink)
 {
     state_link *slink = CONTAINER(plink->value.json.jlink,
@@ -273,10 +262,10 @@ static long lnkState_putValue(struct link *plink, short dbrType,
 /************************* Interface Tables *************************/
 
 static lset lnkState_lset = {
-    0, 1, /* not Constant, Volatile */
+    0, 0, /* not constant, always connected */
     lnkState_open, lnkState_remove,
     NULL, NULL, NULL,
-    lnkState_isConn, lnkState_getDBFtype, lnkState_getElements,
+    NULL, lnkState_getDBFtype, lnkState_getElements,
     lnkState_getValue,
     NULL, NULL, NULL,
     NULL, NULL,

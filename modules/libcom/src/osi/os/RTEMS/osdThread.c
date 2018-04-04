@@ -148,6 +148,13 @@ epicsThreadGetStackSize (epicsThreadStackSizeClass size)
     return stackSize;
 }
 
+static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, 5000};
+
+void epicsThreadOptsDefaults(epicsThreadOpts *opts)
+{
+    *opts = opts_default;
+}
+
 /*
  * Ensure integrity of task variable list
  */
@@ -263,13 +270,17 @@ void epicsThreadRealtimeLock(void)
  * Create and start a new thread
  */
 epicsThreadId
-epicsThreadCreate (const char *name,
-    unsigned int priority, unsigned int stackSize,
-    EPICSTHREADFUNC funptr,void *parm)
+epicsThreadCreateOpt (
+    const char * name,
+    EPICSTHREADFUNC funptr, void * parm, const epicsThreadOpts *opts )
 {
     rtems_id tid;
     rtems_status_code sc;
     char c[4];
+    unsigned stackSize;
+
+    if(!opts) opts = &opts_default;
+    stackSize = opts->stackSize;
 
     if (!initialized) epicsThreadInit();
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
@@ -279,7 +290,7 @@ epicsThreadCreate (const char *name,
     }
     strncpy (c, name, sizeof c);
     sc = rtems_task_create (rtems_build_name (c[0], c[1], c[2], c[3]),
-         epicsThreadGetOssPriorityValue (priority),
+         epicsThreadGetOssPriorityValue (opts->priority),
          stackSize,
          RTEMS_PREEMPT|RTEMS_NO_TIMESLICE|RTEMS_NO_ASR|RTEMS_INTERRUPT_LEVEL(0),
          RTEMS_FLOATING_POINT|RTEMS_LOCAL,

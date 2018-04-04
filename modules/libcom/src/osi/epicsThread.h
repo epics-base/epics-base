@@ -65,6 +65,22 @@ epicsShareFunc void epicsThreadRealtimeLock(void);
 
 epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
 
+typedef struct epicsThreadOpts {
+    /** Thread priority in OSI range (cf. epicsThreadPriority*) */
+    unsigned int priority;
+    /** Thread stack size, as returned by epicsThreadGetStackSize().
+     *
+     * @warning Do not pass enum epicsThreadStackSizeClass directly!
+     */
+    unsigned int stackSize;
+} epicsThreadOpts;
+
+epicsShareFunc void epicsThreadOptsDefaults(epicsThreadOpts *opts);
+
+epicsShareFunc epicsThreadId epicsThreadCreateOpt (
+    const char * name,
+    EPICSTHREADFUNC funptr, void * parm,
+    const epicsThreadOpts *opts );
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (
     const char * name, unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void * parm );

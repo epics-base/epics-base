@@ -430,15 +430,22 @@ void epicsThreadRealtimeLock(void)
 #endif
 }
 
-epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
-{
 #if defined (OSITHREAD_USE_DEFAULT_STACK)
-    return 0;
+#define STACK_SIZE(f) (0)
 #elif defined(_POSIX_THREAD_ATTR_STACKSIZE) && _POSIX_THREAD_ATTR_STACKSIZE > 0
     #define STACK_SIZE(f) (f * 0x10000 * sizeof(void *))
     static const unsigned stackSizeTable[epicsThreadStackBig+1] = {
         STACK_SIZE(1), STACK_SIZE(2), STACK_SIZE(4)
     };
+#else
+#define STACK_SIZE(f) (0)
+#endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
+
+epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
+{
+#if defined (OSITHREAD_USE_DEFAULT_STACK)
+    return 0;
+#elif defined(_POSIX_THREAD_ATTR_STACKSIZE) && _POSIX_THREAD_ATTR_STACKSIZE > 0
     if (stackSizeClass<epicsThreadStackSmall) {
         errlogPrintf("epicsThreadGetStackSize illegal argument (too small)");
         return stackSizeTable[epicsThreadStackBig];
@@ -453,6 +460,13 @@ epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize (epicsThreadSt
 #else
     return 0;
 #endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
+}
+
+static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, STACK_SIZE(1)};
+
+void epicsThreadOptsDefaults(epicsThreadOpts *opts)
+{
+    *opts = opts_default;
 }
 
 epicsShareFunc void epicsShareAPI epicsThreadOnce(epicsThreadOnceId *id, void (*func)(void *), void *arg)
@@ -496,19 +510,22 @@ epicsShareFunc void epicsShareAPI epicsThreadOnce(epicsThreadOnceId *id, void (*
     checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnce");
 }
 
-epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate(const char *name,
-    unsigned int priority, unsigned int stackSize,
-    EPICSTHREADFUNC funptr,void *parm)
+epicsThreadId
+epicsThreadCreateOpt (
+    const char * name,
+    EPICSTHREADFUNC funptr, void * parm, const epicsThreadOpts *opts )
 {
     epicsThreadOSD *pthreadInfo;
     int status;
     sigset_t blockAllSig, oldSig;
 
+    if(!opts) opts = &opts_default;
+
     epicsThreadInit();
     assert(pcommonAttr);
     sigfillset(&blockAllSig);
     pthread_sigmask(SIG_SETMASK,&blockAllSig,&oldSig);
-    pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
+    pthreadInfo = init_threadInfo(name,opts->priority,opts->stackSize,funptr,parm);
     if(pthreadInfo==0) return 0;
     pthreadInfo->isEpicsThread = 1;
     setSchedulingPolicy(pthreadInfo,SCHED_FIFO);
@@ -518,7 +535,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate(const char *name,
     if(status==EPERM){
         /* Try again without SCHED_FIFO*/
         free_threadInfo(pthreadInfo);
-        pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
+        pthreadInfo = init_threadInfo(name,opts->priority,opts->stackSize,funptr,parm);
         if(pthreadInfo==0) return 0;
         pthreadInfo->isEpicsThread = 1;
         status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,

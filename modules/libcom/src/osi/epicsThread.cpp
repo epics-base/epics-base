@@ -31,6 +31,17 @@
 
 using namespace std;
 
+epicsThreadId epicsShareAPI epicsThreadCreate (
+    const char * name, unsigned int priority, unsigned int stackSize,
+    EPICSTHREADFUNC funptr,void * parm )
+{
+    epicsThreadOpts opts;
+    opts.priority = priority;
+    opts.stackSize = stackSize;
+
+    return epicsThreadCreateOpt(name, funptr, parm, &opts);
+}
+
 epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::run () {}
 void epicsThreadRunable::show ( unsigned int ) const {}

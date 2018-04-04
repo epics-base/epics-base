@@ -464,6 +464,13 @@ epicsShareFunc unsigned int epicsShareAPI
     return stackSizeTable[stackSizeClass];
 }
 
+static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, STACK_SIZE(1)};
+
+void epicsThreadOptsDefaults(epicsThreadOpts *opts)
+{
+    *opts = opts_default;
+}
+
 void epicsThreadCleanupWIN32 ()
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
@@ -579,8 +586,10 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
 /*
  * epicsThreadCreate ()
  */
-epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
-    unsigned int priority, unsigned int stackSize, EPICSTHREADFUNC pFunc,void *pParm)
+epicsThreadId epicsThreadCreateOpt (
+    const char * pName,
+    EPICSTHREADFUNC pFunc, void * pParm,
+    const epicsThreadOpts *opts )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParmWIN32;
@@ -592,18 +601,20 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
         return NULL;
     }
 
+    if(!opts) opts = &opts_default;
+
     pParmWIN32 = epicsThreadParmCreate ( pName );
     if ( pParmWIN32 == 0 ) {
         return ( epicsThreadId ) pParmWIN32;
     }
     pParmWIN32->funptr = pFunc;
     pParmWIN32->parm = pParm;
-    pParmWIN32->epicsPriority = priority;
+    pParmWIN32->epicsPriority = opts->priority;
 
     {
         unsigned threadId;
         pParmWIN32->handle = (HANDLE) _beginthreadex ( 
-            0, stackSize, epicsWin32ThreadEntry, 
+            0, opts->stackSize, epicsWin32ThreadEntry,
             pParmWIN32, 
             CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION, 
             & threadId );
@@ -615,7 +626,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
         pParmWIN32->id = ( DWORD ) threadId ;
     }
 
-    osdPriority = epicsThreadGetOsdPriorityValue (priority);
+    osdPriority = epicsThreadGetOsdPriorityValue (opts->priority);
     bstat = SetThreadPriority ( pParmWIN32->handle, osdPriority );
     if (!bstat) {
         CloseHandle ( pParmWIN32->handle ); 

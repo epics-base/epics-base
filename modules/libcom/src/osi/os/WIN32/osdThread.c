@@ -464,7 +464,7 @@ epicsShareFunc unsigned int epicsShareAPI
     return stackSizeTable[stackSizeClass];
 }
 
-static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, STACK_SIZE(1)};
+static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, STACK_SIZE(1), 0};
 
 void epicsThreadOptsDefaults(epicsThreadOpts *opts)
 {
@@ -650,6 +650,8 @@ epicsThreadId epicsThreadCreateOpt (
 
     return ( epicsThreadId ) pParmWIN32;
 }
+
+void epicsThreadJoin(epicsThreadId id) {}
 
 /*
  * epicsThreadSuspendSelf ()

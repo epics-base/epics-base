@@ -148,7 +148,7 @@ epicsThreadGetStackSize (epicsThreadStackSizeClass size)
     return stackSize;
 }
 
-static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, 5000};
+static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, 5000, 0};
 
 void epicsThreadOptsDefaults(epicsThreadOpts *opts)
 {
@@ -315,6 +315,8 @@ threadMustCreate (const char *name,
         cantProceed(0);
     return tid;
 }
+
+void epicsThreadJoin(epicsThreadId id) {}
 
 void
 epicsThreadSuspendSelf (void)

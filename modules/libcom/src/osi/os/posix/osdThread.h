@@ -16,12 +16,16 @@
 #include "ellLib.h"
 #include "epicsEvent.h"
 
+/* This target supports joining threads */
+#define EPICS_THREAD_CAN_JOIN (1)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct epicsThreadOSD {
     ELLNODE            node;
+    int                refcnt;
     pthread_t          tid;
     pthread_attr_t     attr;
     struct sched_param schedParam;
@@ -34,6 +38,7 @@ typedef struct epicsThreadOSD {
     int                isRealTimeScheduled;
     int                isOnThreadList;
     unsigned int       osiPriority;
+    int                joinable;
     char               name[1];     /* actually larger */
 } epicsThreadOSD;
 

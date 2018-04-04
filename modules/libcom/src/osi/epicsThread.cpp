@@ -38,6 +38,7 @@ epicsThreadId epicsShareAPI epicsThreadCreate (
     epicsThreadOpts opts;
     opts.priority = priority;
     opts.stackSize = stackSize;
+    opts.joinable = 0;
 
     return epicsThreadCreateOpt(name, funptr, parm, &opts);
 }

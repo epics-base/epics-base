@@ -73,6 +73,8 @@ typedef struct epicsThreadOpts {
      * @warning Do not pass enum epicsThreadStackSizeClass directly!
      */
     unsigned int stackSize;
+    /** Should thread be joinable? (default (0) is not joinable). */
+    unsigned int joinable;
 } epicsThreadOpts;
 
 epicsShareFunc void epicsThreadOptsDefaults(epicsThreadOpts *opts);
@@ -86,7 +88,8 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (
     EPICSTHREADFUNC funptr,void * parm );
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadMustCreate (
     const char * name, unsigned int priority, unsigned int stackSize,
-    EPICSTHREADFUNC funptr,void * parm ); 
+    EPICSTHREADFUNC funptr,void * parm );
+epicsShareFunc void epicsThreadJoin(epicsThreadId id);
 epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf(void);
 epicsShareFunc void epicsShareAPI epicsThreadResume(epicsThreadId id);
 epicsShareFunc unsigned int epicsShareAPI epicsThreadGetPriority(

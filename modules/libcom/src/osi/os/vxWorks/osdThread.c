@@ -133,7 +133,7 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
     return stackSizeTable[stackSizeClass];
 }
 
-static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, 4000*ARCH_STACK_FACTOR};
+static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, 4000*ARCH_STACK_FACTOR, 0};
 
 void epicsThreadOptsDefaults(epicsThreadOpts *opts)
 {
@@ -222,6 +222,8 @@ epicsThreadCreateOpt (
     }
     return((epicsThreadId)tid);
 }
+
+void epicsThreadJoin(epicsThreadId id) {}
 
 void epicsThreadSuspendSelf()
 {

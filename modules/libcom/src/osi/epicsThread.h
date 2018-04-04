@@ -197,6 +197,7 @@ private:
     bool begin;
     bool cancel;
     bool terminated;
+    bool joined;
 
     bool beginWait () throw ();
     epicsThread ( const epicsThread & );

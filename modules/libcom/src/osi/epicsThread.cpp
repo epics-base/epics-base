@@ -153,6 +153,10 @@ bool epicsThread::exitWait ( const double delay ) throw ()
             if ( this->pThreadDestroyed ) {
                 *this->pThreadDestroyed = true;
             }
+            if(!joined) {
+                epicsThreadJoin(this->id);
+                joined = true;
+            }
             return true;
         }
         epicsTime exitWaitBegin = epicsTime::getCurrent ();
@@ -165,6 +169,10 @@ bool epicsThread::exitWait ( const double delay ) throw ()
             this->exitEvent.wait ( delay - exitWaitElapsed );
             epicsTime current = epicsTime::getCurrent ();
             exitWaitElapsed = current - exitWaitBegin;
+        }
+        if(!joined) {
+            epicsThreadJoin(this->id);
+            joined = true;
         }
     }
     catch ( std :: exception & except ) {
@@ -190,10 +198,18 @@ epicsThread::epicsThread (
         unsigned stackSize, unsigned priority ) :
     runable ( runableIn ), id ( 0 ), pThreadDestroyed ( 0 ),
     begin ( false ), cancel ( false ), terminated ( false )
+  , joined(false)
 {
-    this->id = epicsThreadCreate (
-        pName, priority, stackSize, epicsThreadCallEntryPoint,
-        static_cast < void * > ( this ) );
+    epicsThreadOpts opts;
+    epicsThreadOptsDefaults(&opts);
+    opts.stackSize = stackSize;
+    opts.priority = priority;
+    opts.joinable = 1;
+
+    this->id = epicsThreadCreateOpt(
+        pName, epicsThreadCallEntryPoint,
+        static_cast < void * > ( this ),
+        &opts);
     if ( ! this->id ) {
         throw unableToCreateThread ();
     }

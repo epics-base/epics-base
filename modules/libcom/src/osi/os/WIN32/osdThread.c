@@ -32,6 +32,7 @@
 #include "epicsAssert.h"
 #include "ellLib.h"
 #include "epicsExit.h"
+#include "epicsAtomic.h"
 
 epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
 
@@ -46,6 +47,7 @@ typedef struct win32ThreadGlobal {
 
 typedef struct epicsThreadOSD {
     ELLNODE node;
+    int refcnt;
     HANDLE handle;
     EPICSTHREADFUNC funptr;
     void * parm;
@@ -53,6 +55,7 @@ typedef struct epicsThreadOSD {
     DWORD id;
     unsigned epicsPriority;
     char isSuspended;
+    char joinable;
 } win32ThreadParam;
 
 typedef struct epicsThreadPrivateOSD {
@@ -238,6 +241,8 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
     }
 
     if ( pParm ) {
+        if(epicsAtomicDecrIntT(&pParm->refcnt) > 0) return;
+
         /* fprintf ( stderr, "thread %s is exiting\n", pParm->pName ); */
         EnterCriticalSection ( & pGbl->mutex );
         ellDelete ( & pGbl->threadList, & pParm->node );
@@ -533,6 +538,7 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
         pParmWIN32->pName = (char *) ( pParmWIN32 + 1 );
         strcpy ( pParmWIN32->pName, pName );
         pParmWIN32->isSuspended = 0;
+        epicsAtomicIncrIntT(&pParmWIN32->refcnt);
     }
     return pParmWIN32;
 }
@@ -648,10 +654,39 @@ epicsThreadId epicsThreadCreateOpt (
         return NULL;
     }
 
+    if(opts->joinable) {
+        pParmWIN32->joinable = 1;
+        epicsAtomicIncrIntT(&pParmWIN32->refcnt);
+    }
+
     return ( epicsThreadId ) pParmWIN32;
 }
 
-void epicsThreadJoin(epicsThreadId id) {}
+void epicsThreadJoin(epicsThreadId id)
+{
+    win32ThreadParam * pParmWIN32 = id;
+
+    if(!id) {
+        /* no-op */
+    } else if(!pParmWIN32->joinable) {
+        /* try to error nicely, however in all likelyhood de-ref of
+         * 'pParmWIN32' has already crashed us as we are racing thread exit,
+         * which free's 'pParmWIN32'.
+         */
+        cantProceed("%s join not enabled for thread.\n", pParmWIN32->pName);
+
+    } else if(epicsThreadGetIdSelf() != id) {
+        DWORD status = WaitForSingleObject(pParmWIN32->handle, INFINITE);
+        if(status != WAIT_OBJECT_0) {
+            /* TODO: signal error? */
+        }
+
+        epicsParmCleanupWIN32(pParmWIN32);
+    } else {
+        /* join self silently does nothing */
+        epicsParmCleanupWIN32(pParmWIN32);
+    }
+}
 
 /*
  * epicsThreadSuspendSelf ()

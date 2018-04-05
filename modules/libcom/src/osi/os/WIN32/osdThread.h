@@ -11,7 +11,7 @@
 #ifndef osdThreadh
 #define osdThreadh
 
-/* This target does not support joining threads */
-#define EPICS_THREAD_CAN_JOIN (0)
+/* This target supports joining threads */
+#define EPICS_THREAD_CAN_JOIN (1)
 
 #endif /* osdThreadh */

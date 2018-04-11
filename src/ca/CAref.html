@@ -2674,6 +2674,14 @@ automatically released by the system when the process exits and
 vxWorks or RTEMS no cleanup occurs unless the application calls
 <code>ca_context_destroy()</code>.</p>
 
+<p>Note: This operation blocks until any user callbacks for any channel
+created in the current context have run to completion. If callbacks take a
+lock (mutex) then it is the user's responsibility to ensure that this lock
+is not held when <code>ca_clear_context()</code> is called, otherwise a
+deadlock may ensue. (See also <code><a
+href="#ca_clear_channel">ca_clear_channel</a>()</code> and <code><a
+href="#ca_clear_event">ca_clear_subscription</a>()</code>.)</p>
+
 <h4>Returns</h4>
 
 <p>ECA_NORMAL - Normal successful completion</p>
@@ -2818,6 +2826,12 @@ efficiently sent over the network in one message.</p>
 <p>Clearing a channel does not cause its disconnect handler to be called, but
 clearing a channel does shutdown and reclaim any channel state change event
 subscriptions (monitors) registered with the channel.</p>
+
+<p>Note: This operation blocks until any user callbacks for this channel
+have run to completion. If callbacks take a lock (mutex) then it is the
+user's responsibility to ensure that this lock is not held when
+<code>ca_clear_channel()</code> is called, otherwise a deadlock may ensue.
+(See also <code><a href="#ca_clear_event">ca_clear_subscription</a>()</code>.)</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -3199,6 +3213,13 @@ int ca_clear_subscription ( evid EVID );</pre>
 and not forwarded to the server until one of <code>ca_flush_io()</code>, <code>ca_pend_io()</code>,
 <code>ca_pend_event()</code>, or <code>ca_sg_block()</code> are called. This allows several requests to be
 efficiently sent together in one message.</p>
+
+<p>Note: This operation blocks until any user callbacks for this channel
+have run to completion. If callbacks take a lock (mutex) then it is the
+user's responsibility to ensure that this lock is not held when
+<code>ca_clear_subscription()</code> is called, otherwise a deadlock may
+ensue. (See also <code><a
+href="#ca_clear_channel">ca_clear_channel</a>()</code>.)</p>
 
 <h4>Arguments</h4>
 <dl>

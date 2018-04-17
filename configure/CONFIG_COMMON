@@ -82,7 +82,7 @@ IOCS_APPL_TOP               = $(shell $(FULLPATHNAME) $(INSTALL_LOCATION))
 #-------------------------------------------------------
 # Make echo output - suppress echoing if make's '-s' flag is set
 NOP = :
-ECHO = @$(if $(findstring s,$(patsubst T_A=%,,$(MAKEFLAGS))),$(NOP),echo)
+ECHO = @$(if $(findstring s,$(MFLAGS)),$(NOP),echo)
 
 #-------------------------------------------------------
 ifdef T_A

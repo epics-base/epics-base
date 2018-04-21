@@ -154,8 +154,11 @@ bool epicsThread::exitWait ( const double delay ) throw ()
                 *this->pThreadDestroyed = true;
             }
             if(!joined) {
+                {
+                    epicsGuard < epicsMutex > guard ( this->mutex );
+                    joined = true;
+                }
                 epicsThreadJoin(this->id);
-                joined = true;
             }
             return true;
         }
@@ -170,9 +173,11 @@ bool epicsThread::exitWait ( const double delay ) throw ()
             epicsTime current = epicsTime::getCurrent ();
             exitWaitElapsed = current - exitWaitBegin;
         }
-        if(!joined) {
-            epicsThreadJoin(this->id);
+        if(this->terminated && !joined) {
             joined = true;
+
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            epicsThreadJoin(this->id);
         }
     }
     catch ( std :: exception & except ) {

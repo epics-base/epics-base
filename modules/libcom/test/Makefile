@@ -232,6 +232,11 @@ osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
+TESTPROD_HOST += testexecname
+testexecname_SRCS += testexecname.c
+# no point in including in testHarness.  Not implemented for RTEMS/vxWorks.
+TESTS += testexecname
+
 ifeq ($(BUILD_CLASS),HOST)
 ifneq ($(OS_CLASS),WIN32)
 # This test can only be run on a build host, and is broken on Windows

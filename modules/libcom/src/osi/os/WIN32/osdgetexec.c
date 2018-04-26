@@ -1,17 +1,16 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
+#include <windows.h>
 
 #define epicsExportSharedSymbols
 #include <osiFileName.h>
 
 char *epicsGetExecName(void)
 {
-    size_t max = PATH_MAX;
+    size_t max = 128;
     char *ret = NULL;
-    ssize_t n;
+    DWORD n;
 
     while(1) {
         char *temp = realloc(ret, max);
@@ -23,13 +22,12 @@ char *epicsGetExecName(void)
         }
         ret = temp;
 
-        n = readlink("/proc/self/exe", ret, max);
-        if(n == -1) {
+        n = GetModuleFileName(NULL, ret, max);
+        if(n == 0) {
             free(ret);
             ret = NULL;
             break;
         } else if(n < max) {
-            /* readlink() never adds a nil */
             ret[n] = '\0';
             break;
         }
@@ -44,7 +42,7 @@ char *epicsGetExecDir(void)
 {
     char *ret = epicsGetExecName();
     if(ret) {
-        char *sep = strrchr(ret, '/');
+        char *sep = strrchr(ret, '\\');
         if(sep) {
             /* nil the charactor after the / */
             sep[1] = '\0';

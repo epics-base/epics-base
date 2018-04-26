@@ -23,7 +23,7 @@ char *epicsGetExecName(void)
         }
         ret = temp;
 
-        n = readlink("/proc/self/exe", ret, max);
+        n = readlink("/proc/curproc/file", ret, max);
         if(n == -1) {
             free(ret);
             ret = NULL;
@@ -35,6 +35,20 @@ char *epicsGetExecName(void)
         }
 
         max += 64;
+    }
+
+    if(!ret) {
+        int mib[4];
+        mib[0] = CTL_KERN;
+        mib[1] = KERN_PROC;
+        mib[2] = KERN_PROC_PATHNAME;
+        mib[3] = -1;
+
+        ret = malloc(max);
+        if(ret) {
+            sysctl(mib, 4, ret, &cb, NULL, 0);
+            /* TODO: error check */
+        }
     }
 
     return ret;

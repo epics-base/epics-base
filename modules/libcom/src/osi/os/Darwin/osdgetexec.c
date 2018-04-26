@@ -1,17 +1,16 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
+
+#include <mach-o/dyld.h>
 
 #define epicsExportSharedSymbols
 #include <osiFileName.h>
 
 char *epicsGetExecName(void)
 {
-    size_t max = PATH_MAX;
+    uint32_t max = 64u;
     char *ret = NULL;
-    ssize_t n;
 
     while(1) {
         char *temp = realloc(ret, max);
@@ -23,19 +22,16 @@ char *epicsGetExecName(void)
         }
         ret = temp;
 
-        n = readlink("/proc/self/exe", ret, max);
-        if(n == -1) {
-            free(ret);
-            ret = NULL;
-            break;
-        } else if(n < max) {
-            /* readlink() never adds a nil */
-            ret[n] = '\0';
+        /* cf. "man 3 dyld" */
+        if(_NSGetExecutablePath(ret, &max)==0) {
+            /* max left unchanged */
+            ret[max-1] = '\0';
             break;
         }
-
-        max += 64;
+        /* max has been updated with required size */
     }
+
+    /* TODO: _NSGetExecutablePath() doesn't follow symlinks */
 
     return ret;
 }

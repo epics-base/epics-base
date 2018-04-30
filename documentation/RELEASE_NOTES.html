@@ -107,6 +107,27 @@ preprocessor macro):</p>
 #endif
 </pre></blockquote>
 
+<p>If the code uses the old db_access.h types (probably because it's calling
+Channel Access APIs) then it will have to test against the EPICS version number
+instead, like this:</p>
+
+<blockquote><pre>
+#include &lt;epicsVersion.h&gt;
+
+#ifndef VERSION_INT
+#  define VERSION_INT(V,R,M,P) ( ((V)&lt;&lt;24) | ((R)&lt;&lt;16) | ((M)&lt;&lt;8) | (P))
+#endif
+#ifndef EPICS_VERSION_INT
+#  define EPICS_VERSION_INT VERSION_INT(EPICS_VERSION, EPICS_REVISION, EPICS_MODIFICATION, EPICS_PATCH_LEVEL)
+#endif
+
+#if EPICS_VERSION_INT &gt;= VERSION_INT(3,16,1,0)
+    /* Code where Base has INT64 support */
+#else
+    /* Code for older versions */
+#endif
+</pre></blockquote>
+
 <p>Channel Access does not (and probably never will) directly support 64-bit
 integer types, so the new field types are presented to the CA server as
 <tt>DBF_DOUBLE</tt> values. This means that field values larger than 2^52

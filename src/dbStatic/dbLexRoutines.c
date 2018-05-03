@@ -974,6 +974,12 @@ static void dbRecordField(char *name,char *value)
 	yyerror(NULL);
 	return;
     }
+    if (pdbentry->indfield == 0) {
+        epicsPrintf("Can't set \"NAME\" field of record \"%s\"\n",
+                    dbGetRecordName(pdbentry));
+        yyerror(NULL);
+        return;
+    }
     dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutString(pdbentry,value);
     if(status) {

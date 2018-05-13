@@ -16,6 +16,14 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Fix problem with numeric soft events</h3>
+<p>Changing from numeric to named soft events introduced an incompatibility
+when a numeric event 1-255 is converted from a DOUBLE, e.g. from a calc record.
+The <tt>post_event()</tt> API is not marked deprecated any more.
+
+<p>Also <code>scanpel</code> has been modified to accept a glob pattern for
+event name filtering and to show events with no connected records as well.</p>
+
 <h3>Add osiSockOptMcastLoop_t and osiSockTest</h3>
 
 <p>Added a new OS-independent typedef for multicast socket options, and a test

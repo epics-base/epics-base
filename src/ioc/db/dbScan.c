@@ -6,7 +6,7 @@
 * Copyright (c) 2013 Helmholtz-Zentrum Berlin
 *     für Materialien und Energie GmbH.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbScan.c */
 /* tasks and subroutines to scan the database */
@@ -502,9 +502,10 @@ event_list *eventNameToHandle(const char *eventname)
             break;
     }
     if (pel == NULL) {
-        pel = dbCalloc(1, sizeof(event_list) + namelength);
-        if (eventnumber > 0)
-        {
+        pel = calloc(1, sizeof(event_list) + namelength);
+        if (!pel)
+            goto done;
+        if (eventnumber > 0) {
             /* backward compatibility: make all numeric events look like integers */
             sprintf(pel->eventname, "%i", (int)eventnumber);
             pevent_list[(int)eventnumber] = pel;
@@ -521,6 +522,7 @@ event_list *eventNameToHandle(const char *eventname)
         pel->next=pevent_list[0];
         pevent_list[0]=pel;
     }
+done:
     epicsMutexUnlock(event_lock);
     return pel;
 }

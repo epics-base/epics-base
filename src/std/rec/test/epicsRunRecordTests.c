@@ -23,6 +23,7 @@ void epicsRunRecordTests(void)
     runTest(analogMonitorTest);
 
     runTest(arrayOpTest);
+
     runTest(scanEventTest);
 
     epicsExit(0);   /* Trigger test harness */

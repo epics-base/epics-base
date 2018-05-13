@@ -1036,23 +1036,29 @@ static void dbRecordHead(char *recordType, char *name, int visible)
 
 static void dbRecordField(char *name,char *value)
 {
-    DBENTRY		*pdbentry;
-    tempListNode	*ptempListNode;
-    long		status;
+    DBENTRY *pdbentry;
+    tempListNode *ptempListNode;
+    long status;
 
-    if(duplicate) return;
+    if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
-    if(status) {
-	epicsPrintf("Record \"%s\" does not have a field \"%s\"\n", 
-                    dbGetRecordName(pdbentry), name);
-	yyerror(NULL);
-	return;
+    if (status) {
+        epicsPrintf("Record \"%s\" does not have a field \"%s\"\n",
+            dbGetRecordName(pdbentry), name);
+        yyerror(NULL);
+        return;
+    }
+    if (pdbentry->indfield == 0) {
+        epicsPrintf("Can't set \"NAME\" field of record \"%s\"\n",
+            dbGetRecordName(pdbentry));
+        yyerror(NULL);
+        return;
     }
     dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutString(pdbentry,value);
-    if(status) {
+    if (status) {
 	epicsPrintf("Can't set \"%s.%s\" to \"%s\"\n",
                     dbGetRecordName(pdbentry), name, value);
 	yyerror(NULL);
@@ -1062,34 +1068,34 @@ static void dbRecordField(char *name,char *value)
 
 static void dbRecordInfo(char *name, char *value)
 {
-    DBENTRY		*pdbentry;
-    tempListNode	*ptempListNode;
-    long		status;
+    DBENTRY *pdbentry;
+    tempListNode *ptempListNode;
+    long status;
 
-    if(duplicate) return;
+    if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
     dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutInfo(pdbentry,name,value);
-    if(status) {
-	epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\"\n",
+    if (status) {
+        epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\"\n",
                     dbGetRecordName(pdbentry), name, value);
-	yyerror(NULL);
-	return;
+        yyerror(NULL);
+        return;
     }
 }
 
 static void dbRecordAlias(char *name)
 {
-    DBENTRY		*pdbentry;
-    tempListNode	*ptempListNode;
-    long		status;
+    DBENTRY *pdbentry;
+    tempListNode *ptempListNode;
+    long status;
 
-    if(duplicate) return;
+    if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
     status = dbCreateAlias(pdbentry, name);
-    if(status) {
+    if (status) {
         epicsPrintf("Can't create alias \"%s\" for \"%s\"\n",
                     name, dbGetRecordName(pdbentry));
         yyerror(NULL);
@@ -1099,15 +1105,16 @@ static void dbRecordAlias(char *name)
 
 static void dbAlias(char *name, char *alias)
 {
-    DBENTRY	dbEntry;
-    DBENTRY	*pdbEntry = &dbEntry;
+    DBENTRY dbEntry;
+    DBENTRY *pdbEntry = &dbEntry;
 
     dbInitEntry(pdbbase, pdbEntry);
     if (dbFindRecord(pdbEntry, name)) {
         epicsPrintf("Alias \"%s\" refers to unknown record \"%s\"\n",
                     alias, name);
         yyerror(NULL);
-    } else if (dbCreateAlias(pdbEntry, alias)) {
+    }
+    else if (dbCreateAlias(pdbEntry, alias)) {
         epicsPrintf("Can't create alias \"%s\" referring to \"%s\"\n",
                     alias, name);
         yyerror(NULL);
@@ -1117,14 +1124,14 @@ static void dbAlias(char *name, char *alias)
 
 static void dbRecordBody(void)
 {
-    DBENTRY	*pdbentry;
+    DBENTRY *pdbentry;
 
-    if(duplicate) {
-	duplicate = FALSE;
-	return;
+    if (duplicate) {
+        duplicate = FALSE;
+        return;
     }
     pdbentry = (DBENTRY *)popFirstTemp();
-    if(ellCount(&tempList))
-	yyerrorAbort("dbRecordBody: tempList not empty");
+    if (ellCount(&tempList))
+        yyerrorAbort("dbRecordBody: tempList not empty");
     dbFreeEntry(pdbentry);
 }

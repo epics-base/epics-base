@@ -16,6 +16,7 @@
 #include "epicsUnitTest.h"
 #include "osiFileName.h"
 #include "registry.h"
+#include "epicsThread.h"
 
 #define epicsExportSharedSymbols
 #include "dbAccess.h"
@@ -267,4 +268,27 @@ dbCommon* testdbRecordPtr(const char* pv)
         testAbort("Missing record %s", pv);
 
     return addr.precord;
+}
+
+static
+epicsMutexId test_global;
+
+static
+epicsThreadOnceId test_global_once = EPICS_THREAD_ONCE_INIT;
+
+static
+void test_global_init(void* ignored)
+{
+    test_global = epicsMutexMustCreate();
+}
+
+void testGlobalLock(void)
+{
+    epicsThreadOnce(&test_global_once, &test_global_init, NULL);
+    epicsMutexMustLock(test_global);
+}
+
+void testGlobalUnlock(void)
+{
+    epicsMutexUnlock(test_global);
 }

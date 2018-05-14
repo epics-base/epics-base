@@ -126,7 +126,7 @@ MAIN(scanEventTest)
             }
     }
     /* Allow records to finish processing */
-    epicsThreadSleep(0.1);
+    testSyncCallback();
     testDiag("Check if events have been processed the expected number of times");
     for (i = 0; i < NELEMENTS(events); i++) {
         char pvname[100];

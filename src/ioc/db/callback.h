@@ -42,7 +42,9 @@ typedef struct callbackPvt {
 	int		priority;
 	void		*user; /*for use by callback user*/
         void            *timer; /*for use by callback itself*/
-}CALLBACK;
+}epicsCallback;
+
+typedef epicsCallback CALLBACK;
 
 typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 

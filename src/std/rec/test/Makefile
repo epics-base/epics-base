@@ -105,6 +105,15 @@ regressTest_SRCS += regressTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db ../regressHex.db ../regressLinkMS.db
 TESTS += regressTest
 
+TARGETS += $(COMMON_DIR)/asyncproctest.dbd
+DBDDEPENDS_FILES += asyncproctest.dbd$(DEP)
+asyncproctest_DBD += base.dbd
+TESTPROD_HOST += asyncproctest
+asyncproctest_SRCS += asyncproctest.c
+asyncproctest_SRCS += asyncproctest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/asyncproctest.dbd ../asyncproctest.db
+#TESTS += asyncproctest # full of races...
+
 # epicsRunRecordTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunRecordTests.c
 

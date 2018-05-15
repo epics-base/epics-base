@@ -1,0 +1,33 @@
+
+# simple case
+# stand alone async record
+record(calcout, "chain1") {
+    field(CALC, "A:=A+1;B")
+    field(ODLY, "0.1")
+    field(TPRO, "$(TPRO=)")
+}
+
+
+# original problem case
+# async record chained after syncronous record
+record(calcout, "chain2:1") {
+    field(CALC, "A:=A+1;B")
+    # DOLY=0 synchronous
+    field(OUT , "chain2:2.B PP")
+    field(TPRO, "$(TPRO=)")
+}
+
+record(calcout, "chain2:2") {
+    field(CALC, "A:=A+1;B")
+    field(ODLY, "0.1")
+    field(TPRO, "$(TPRO=)")
+}
+
+# ANJ's error case
+# async record FLNK's to itself
+record(calcout, "chain3") {
+    field(CALC, "A:=A+1;B")
+    field(ODLY, "0.1")
+    field(FLNK, "chain3")
+    field(TPRO, "$(TPRO=)")
+}

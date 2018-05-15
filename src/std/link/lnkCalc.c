@@ -254,8 +254,10 @@ static jlif_key_result lnkCalc_start_map(jlink *pjlink)
     IFDEBUG(10)
         printf("lnkCalc_start_map(calc@%p)\n", clink);
 
-    if (clink->pstate == ps_args || clink->pstate == ps_out)
-        return jlif_key_child_link;
+    if (clink->pstate == ps_args)
+        return jlif_key_child_inlink;
+    if (clink->pstate == ps_out)
+        return jlif_key_child_outlink;
 
     if (clink->pstate != ps_init) {
         errlogPrintf("lnkCalc: Unexpected map\n");
@@ -463,7 +465,7 @@ static void lnkCalc_report(const jlink *pjlink, int level, int indent)
     }
 }
 
-long lnkCalc_map_children(jlink *pjlink, jlink_map_fn rtn, void *ctx)
+static long lnkCalc_map_children(jlink *pjlink, jlink_map_fn rtn, void *ctx)
 {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
     int i;

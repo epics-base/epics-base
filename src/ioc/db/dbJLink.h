@@ -24,7 +24,7 @@ typedef enum {
 typedef enum {
     jlif_key_stop = jlif_stop,
     jlif_key_continue = jlif_continue,
-    jlif_key_child_link
+    jlif_key_child_inlink, jlif_key_child_outlink, jlif_key_child_fwdlink
 } jlif_key_result;
 
 struct link;
@@ -71,8 +71,9 @@ typedef struct jlif {
         /* Optional, parser saw a string value */
 
     jlif_key_result (*parse_start_map)(jlink *);
-        /* Optional, parser saw an open-brace '{'. Return jlif_key_child_link
-         * to expect a child link next (extra key/value pairs may follow).
+        /* Optional, parser saw an open-brace '{'. Return jlif_key_child_inlink,
+         * jlif_key_child_outlink, or jlif_key_child_fwdlink to expect a child
+         * link next (extra key/value pairs may follow)
          */
 
     jlif_result (*parse_map_key)(jlink *, const char *key, size_t len);

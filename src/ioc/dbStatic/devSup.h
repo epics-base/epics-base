@@ -24,22 +24,6 @@ struct devSup;
 struct ioscan_head; /* aka IOSCANPVT */
 struct link; /* aka DBLINK */
 
-#ifdef __cplusplus
-extern "C" {
-    typedef long (*DEVSUPFUN)(void *);	/* ptr to device support function*/
-#else
-    typedef long (*DEVSUPFUN)();	/* ptr to device support function*/
-#endif
-
-typedef struct dset {   /* device support entry table */
-    long	number;		/*number of support routines*/
-    DEVSUPFUN	report;		/*print report*/
-    DEVSUPFUN	init;		/*init support layer*/
-    DEVSUPFUN	init_record;	/*init device for particular record*/
-    DEVSUPFUN	get_ioint_info;	/* get io interrupt information*/
-    /*other functions are record dependent*/
-} dset;
-
 /** Type safe alternative to 'struct dset'
  *
  * Recommended usage
@@ -112,6 +96,28 @@ typedef struct dsxt {   /* device support extension table */
     long (*del_record)(struct dbCommon *precord);
     /* Recordtypes are *not* allowed to extend this table */
 } dsxt;
+
+#ifdef __cplusplus
+extern "C" {
+    typedef long (*DEVSUPFUN)(void *);	/* ptr to device support function*/
+#else
+    typedef long (*DEVSUPFUN)();	/* ptr to device support function*/
+#endif
+
+#ifndef USE_TYPED_DSET
+
+typedef struct dset {   /* device support entry table */
+    long	number;		/*number of support routines*/
+    DEVSUPFUN	report;		/*print report*/
+    DEVSUPFUN	init;		/*init support layer*/
+    DEVSUPFUN	init_record;	/*init device for particular record*/
+    DEVSUPFUN	get_ioint_info;	/* get io interrupt information*/
+    /*other functions are record dependent*/
+} dset;
+
+#else
+typedef typed_dset dset;
+#endif /* USE_TYPED_DSET */
 
 /** Fetch INP or OUT link (or NULL if record type has neither).
  *

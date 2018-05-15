@@ -47,7 +47,7 @@ epicsExportAddress(dset, devMbbiDirectSoft);
 
 static long init_record(mbbiDirectRecord *prec)
 {
-    if (recGblInitConstantLink(&prec->inp, DBR_LONG, &prec->val))
+    if (recGblInitConstantLink(&prec->inp, DBR_ULONG, &prec->val))
         prec->udf = FALSE;
 
     return 0;
@@ -56,7 +56,7 @@ static long init_record(mbbiDirectRecord *prec)
 static long readLocked(struct link *pinp, void *dummy)
 {
     mbbiDirectRecord *prec = (mbbiDirectRecord *) pinp->precord;
-    long status = dbGetLink(pinp, DBR_LONG, &prec->val, 0, 0);
+    long status = dbGetLink(pinp, DBR_ULONG, &prec->val, 0, 0);
 
     if (status) return status;
 

@@ -59,7 +59,7 @@ static long init_record(mbbiDirectRecord *prec)
 
 static long read_mbbi(mbbiDirectRecord *prec)
 {
-    if (!dbGetLink(&prec->inp, DBR_LONG, &prec->rval, 0, 0)) {
+    if (!dbGetLink(&prec->inp, DBR_ULONG, &prec->rval, 0, 0)) {
         prec->rval &= prec->mask;
         if (dbLinkIsConstant(&prec->tsel) &&
             prec->tse == epicsTimeEventDeviceTime)

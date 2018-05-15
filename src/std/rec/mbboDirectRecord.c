@@ -351,7 +351,7 @@ static long writeValue(mbboDirectRecord *prec)
 
     case menuYesNoYES:
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        return dbPutLink(&prec->siol, DBR_USHORT, &prec->val, 1);
+        return dbPutLink(&prec->siol, DBR_ULONG, &prec->val, 1);
 
     default:
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);

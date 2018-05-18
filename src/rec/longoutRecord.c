@@ -19,6 +19,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsMath.h"
 #include "alarm.h"
 #include "dbAccess.h"
 #include "dbEvent.h"

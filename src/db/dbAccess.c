@@ -297,10 +297,10 @@ static void get_alarm(DBADDR *paddr, char **ppbuffer,
     if (*options & DBR_AL_LONG) {
         struct dbr_alLong *pal = (struct dbr_alLong*) pbuffer;
 
-        pal->upper_alarm_limit   = isfinite(ald.upper_alarm_limit) ? (epicsInt32) ald.upper_alarm_limit : 0;
-        pal->upper_warning_limit = isfinite(ald.upper_warning_limit) ? (epicsInt32) ald.upper_warning_limit : 0;
-        pal->lower_warning_limit = isfinite(ald.lower_warning_limit) ? (epicsInt32) ald.lower_warning_limit : 0;
-        pal->lower_alarm_limit   = isfinite(ald.lower_alarm_limit) ? (epicsInt32) ald.lower_alarm_limit : 0;
+        pal->upper_alarm_limit   = finite(ald.upper_alarm_limit) ? (epicsInt32) ald.upper_alarm_limit : 0;
+        pal->upper_warning_limit = finite(ald.upper_warning_limit) ? (epicsInt32) ald.upper_warning_limit : 0;
+        pal->lower_warning_limit = finite(ald.lower_warning_limit) ? (epicsInt32) ald.lower_warning_limit : 0;
+        pal->lower_alarm_limit   = finite(ald.lower_alarm_limit) ? (epicsInt32) ald.lower_alarm_limit : 0;
 
         if (no_data)
             *options ^= DBR_AL_LONG; /*Turn off option*/

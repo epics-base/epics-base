@@ -116,6 +116,13 @@ regressTest_SRCS += regressTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db ../regressHex.db ../regressLinkMS.db
 TESTS += regressTest
 
+TESTPROD_HOST += mbbioDirectTest
+mbbioDirectTest_SRCS += mbbioDirectTest.c
+mbbioDirectTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += mbbioDirectTest.c
+TESTFILES += ../mbbioDirectTest.db
+TESTS += mbbioDirectTest
+
 # epicsRunRecordTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunRecordTests.c
 

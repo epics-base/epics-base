@@ -9,6 +9,8 @@
 <body lang="en">
 <h1 align="center">EPICS Base Release 3.16.2</h1>
 
+<h2 align="center">Changes made between 3.16.1 and 3.16.2</h2>
+
 <!-- Insert new items immediately below this template ...
 
 <h3>Title...</h3>
@@ -16,6 +18,16 @@
 <p>Description</p>
 
 -->
+
+<h3>Record types mbbiDirect and mbboDirect extended to 32 bit</h3>
+
+<p>The VAL fields of mbbiDirect and mbboDirect records have
+been extended from <tt>DBF_USHORT</tt> (16 bit) to <tt>DBF_LONG</tt> (32 bit).
+New bit fields <tt>B10</tt>...<tt>B1F</tt> have been added.</p>
+
+<p>Device support which accesses the bit fields can test if the macro
+<tt>mbbiDirectRecord1BF</tt> or <tt>mbboDirectRecord1BF</tt> is
+defined. Device support which only accesses RVAL needs no modification.</p>
 
 <h3>Restore use of ledlib for VxWorks command editing</h3>
 

@@ -307,15 +307,15 @@ to implement the link APIs, so will work properly after these conversions:</p>
 link type, i.e. change this code:
 
 <pre>
-    if (prec->siml.type == CONSTANT) {
-        recGblInitConstantLink(&amp;prec->siml, DBF_USHORT, &amp;prec->simm);
+    if (prec-&gt;siml.type == CONSTANT) {
+        recGblInitConstantLink(&amp;prec-&gt;siml, DBF_USHORT, &amp;prec-&gt;simm);
     }
 </pre>
 
 into this:
 
 <pre>
-    recGblInitConstantLink(&amp;prec->siml, DBF_USHORT, &amp;prec->simm);
+    recGblInitConstantLink(&amp;prec-&gt;siml, DBF_USHORT, &amp;prec-&gt;simm);
 </pre>
 
 Note that <tt>recGblInitConstantLink()</tt> still returns TRUE if the field was
@@ -328,20 +328,20 @@ or undefined links, FALSE for links whose <tt>dbGetLink()</tt> routine may
 return different values on different calls. For example this:
 
 <pre>
-    if (prec->dol.type != CONSTANT)
+    if (prec-&gt;dol.type != CONSTANT)
 </pre>
 
 should become this:
 
 <pre>
-    if (!dbLinkIsConstant(&amp;prec->dol))
+    if (!dbLinkIsConstant(&amp;prec-&gt;dol))
 </pre>
 
 When the converted software is also required to build against older versions of
 Base, this macro definition may be useful:
 
 <pre>
-#define dbLinkIsConstant(lnk) ((lnk)->type == CONSTANT)
+#define dbLinkIsConstant(lnk) ((lnk)-&gt;type == CONSTANT)
 </pre>
 </li>
 
@@ -349,7 +349,7 @@ Base, this macro definition may be useful:
 link has been resolved as a CA link using code such as
 
 <pre>
-    if (prec->inp.type == CA_LINK)
+    if (prec-&gt;inp.type == CA_LINK)
 </pre>
 
 will still compile and run, but will only work properly with the old CA link
@@ -359,7 +359,7 @@ examine or modify data inside the link. After conversion the above line would
 probably become:
 
 <pre>
-    if (dbLinkIsVolatile(&amp;prec->inp))
+    if (dbLinkIsVolatile(&amp;prec-&gt;inp))
 </pre>
 
 A volatile link is one like a Channel Access link which may disconnect and
@@ -369,7 +369,7 @@ same state they started in. For compatibility when building against older
 versions of Base, this macro definition may be useful:
 
 <pre>
-#define dbLinkIsVolatile(lnk) ((lnk)->type == CA_LINK)
+#define dbLinkIsVolatile(lnk) ((lnk)-&gt;type == CA_LINK)
 </pre>
 </li>
 

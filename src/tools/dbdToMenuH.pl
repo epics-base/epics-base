@@ -19,7 +19,7 @@ use EPICS::Readfile;
 
 my $tool = 'dbdToMenuH.pl';
 
-use vars qw($opt_D @opt_I $opt_o $opt_s);
+our ($opt_D, @opt_I, $opt_o, $opt_s);
 getopts('DI@o:') or
     die "Usage: $tool: [-D] [-I dir] [-o menu.h] menu.dbd [menu.h]\n";
 

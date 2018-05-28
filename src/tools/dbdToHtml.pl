@@ -43,7 +43,7 @@ BEGIN {
 
 my $tool = 'dbdToHtml';
 
-use vars qw($opt_D @opt_I $opt_o);
+our ($opt_D, @opt_I, $opt_o);
 getopts('DI@o:') or
     die "Usage: $tool [-D] [-I dir] [-o file.html] file.dbd.pod\n";
 

@@ -98,6 +98,65 @@ epicsShareFunc void testMonitorWait(testMonitor*);
  */
 epicsShareFunc unsigned testMonitorCount(testMonitor*, unsigned reset);
 
+/** Synchronize the shared callback queues.
+ *
+ * Block until all callback queue jobs which were queued, or running,
+ * have completed.
+ */
+epicsShareFunc void testSyncCallback(void);
+
+/** Global mutex for use by test code.
+ *
+ * This utility mutex is intended to be used to avoid races in situations
+ * where some other syncronization primitive is being destroyed (epicsEvent,
+ * epicsMutex, ...).
+ *
+ * For example.  The following has a subtle race where the event may be
+ * destroyed (free()'d) before the call to epicsEventMustSignal() has
+ * returned.  On some targets this leads to a use after free() error.
+ *
+ @code
+ epicsEventId evt;
+ void thread1() {
+   evt = epicsEventMustCreate(...);
+   // spawn thread2()
+   epicsEventMustWait(evt);
+   epicsEventDestroy(evt);
+ }
+ // ...
+ void thread2() {
+   epicsEventMustSignal(evt);
+ }
+ @endcode
+ *
+ * One way to avoid this race is to use a global mutex to ensure
+ * that epicsEventMustSignal() has returned before destroying
+ * the event.
+ *
+ @code
+ epicsEventId evt;
+ void thread1() {
+   evt = epicsEventMustCreate(...);
+   // spawn thread2()
+   epicsEventMustWait(evt);
+   testGlobalLock();   // <-- added
+   epicsEventDestroy(evt);
+   testGlobalUnlock(); // <-- added
+ }
+ // ...
+ void thread2() {
+   testGlobalLock();   // <-- added
+   epicsEventMustSignal(evt);
+   testGlobalUnlock(); // <-- added
+ }
+ @endcode
+ *
+ * This must be a global mutex to avoid simply shifting the race
+ * from the event to a locally allocated mutex.
+ */
+epicsShareFunc void testGlobalLock(void);
+epicsShareFunc void testGlobalUnlock(void);
+
 #ifdef __cplusplus
 }
 #endif

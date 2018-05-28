@@ -24,8 +24,7 @@ use lib ("$Bin/../../lib/perl", $Bin);
 use EPICS::Path;
 use EPICS::Release;
 
-use vars qw($arch $top $iocroot $root);
-
+our ($arch, $top, $iocroot, $root);
 our ($opt_a, $opt_t, $opt_T);
 
 getopts('a:t:T:') or HELP_MESSAGE();

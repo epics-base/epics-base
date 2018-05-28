@@ -65,21 +65,18 @@ MAIN(scanEventTest)
 
     testPlan(NELEMENTS(events)*2+(MAXEV+1)*5);
 
+    testdbPrepare();
+
     memset(aliases, 0, sizeof(aliases));
     memset(expected_count, 0, sizeof(expected_count));
 
-    if (dbReadDatabase(&pdbbase, "scanEventTest.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'scanEventTest.dbd' not found");
+    testdbReadDatabase("scanEventTest.dbd", NULL, NULL);
 
     scanEventTest_registerRecordDeviceDriver(pdbbase);
     for (i = 0; i < NELEMENTS(events); i++) {
         char substitutions[256];
         sprintf(substitutions, "N=%d,EVENT=%s", i, events[i].name);
-        if (dbReadDatabase(&pdbbase, "scanEventTest.db",
-                "." OSI_PATH_LIST_SEPARATOR "..", substitutions))
-            testAbort("Error reading test database 'scanEventTest.db'");
+        testdbReadDatabase("scanEventTest.db", NULL, substitutions);
     }
     testIocInitOk();
     testDiag("Test if eventNameToHandle() strips spaces and handles numeric events");
@@ -129,7 +126,7 @@ MAIN(scanEventTest)
             }
     }
     /* Allow records to finish processing */
-    epicsThreadSleep(0.1);
+    testSyncCallback();
     testDiag("Check if events have been processed the expected number of times");
     for (i = 0; i < NELEMENTS(events); i++) {
         char pvname[100];
@@ -137,6 +134,10 @@ MAIN(scanEventTest)
         testDiag("Event \"%s\" expected %d times", events[i].name, expected_count[INDX(i)]);
         testdbGetFieldEqual(pvname, DBR_LONG, expected_count[INDX(i)]);
     }
+
+    testIocShutdownOk();
+
+    testdbCleanup();
 
     return testDone();
 }

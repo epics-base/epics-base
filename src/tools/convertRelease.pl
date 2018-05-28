@@ -21,8 +21,7 @@ use Getopt::Std;
 use EPICS::Path;
 use EPICS::Release;
 
-use vars qw($arch $top $iocroot $root);
-
+our ($arch, $top, $iocroot, $root);
 our ($opt_a, $opt_t, $opt_T);
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;

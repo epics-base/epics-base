@@ -19,7 +19,7 @@ use EPICS::Readfile;
 
 my $tool = 'dbdToRecordtypeH.pl';
 
-use vars qw($opt_D @opt_I $opt_o $opt_s);
+our ($opt_D, @opt_I, $opt_o, $opt_s);
 getopts('DI@o:s') or
     die "Usage: $tool [-D] [-I dir] [-o xRecord.h] xRecord.dbd [xRecord.h]\n";
 

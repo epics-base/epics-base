@@ -198,8 +198,8 @@ static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 
 static void checkAlarms(xxxRecord *prec)
 {
-	double		val;
-	float		hyst, lalm, hihi, high, low, lolo;
+    double		val, hyst, lalm;
+    float		hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(prec->udf == TRUE ){

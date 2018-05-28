@@ -19,6 +19,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsMath.h"
 #include "alarm.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -256,15 +257,17 @@ static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
     longoutRecord    *prec=(longoutRecord *)paddr->precord;
 
-    if(dbGetFieldIndex(paddr) == indexof(VAL)) {
-         pad->upper_alarm_limit = prec->hihi;
-         pad->upper_warning_limit = prec->high;
-         pad->lower_warning_limit = prec->low;
-         pad->lower_alarm_limit = prec->lolo;
-    } else recGblGetAlarmDouble(paddr,pad);
-    return(0);
+    if (dbGetFieldIndex(paddr) == indexof(VAL)) {
+         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
+         pad->upper_warning_limit = prec->hsv ? prec->high : epicsNAN;
+         pad->lower_warning_limit = prec->lsv ? prec->low : epicsNAN;
+         pad->lower_alarm_limit = prec->llsv ? prec->lolo : epicsNAN;
+    }
+    else
+        recGblGetAlarmDouble(paddr,pad);
+    return 0;
 }
-
+
 static void checkAlarms(longoutRecord *prec)
 {
     epicsInt32 val, hyst, lalm;

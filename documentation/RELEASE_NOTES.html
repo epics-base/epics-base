@@ -42,6 +42,43 @@ tells git to ignore all configure/*.local files.</p>
 
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Fixes for Launchpad bugs</h3>
+
+<p>The following launchpad bugs have fixes included:</p>
+
+<ul>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1747091">
+    lp: #1747091</a>, epicsTimeGetEvent() / generalTime bug</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1743076">
+    lp: #1743076</a>, Segfault in ca_attach_context() during exits</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1751380">
+    lp: #1751380</a>, Deadlock in ca_clear_subscription()</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1597809">
+    lp: #1597809</a>, Setting NAME field in DB file may break IOC</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1770292">
+    lp: #1770292</a>, get_alarm_double() inconsistent across record types</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1771298">
+    lp: #1771298</a>, Conversion of NaN to integer relies on undefined
+    behavior</li>
+</ul>
+
+<h3>Updated VxWorks Timezone settings</h3>
+
+<p>Removed the settings for 2017; fixed the hour of the change for MET.</p>
+
+<h3>Fixed camonitor server side relative timestamps bug</h3>
+
+<p>Initialize the first time-stamp from the first monitor, not the client-side
+current time in this configuration.</p>
+
+<h3>Build changes for MSVC</h3>
+
+<p>Windows builds using Visual Studio 2015 and later now use the <tt>-FS</tt>
+compiler option to allow parallel builds to work properly.</p>
+
+<p>We now give the <tt>-FC</tt> option to tell the compiler to print absolute
+paths for source files in diagnostic messages.</p>
+
 <h3>Extend maximum Posix epicsEventWaitWithTimeout() delay</h3>
 
 <p>The Posix implementation of epicsEventWaitWithTimeout() was limiting the

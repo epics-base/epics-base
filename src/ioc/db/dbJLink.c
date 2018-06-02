@@ -215,6 +215,7 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, size_t len) {
     char *link_name;
     linkSup *linkSup;
     jlif *pjlif;
+    jlink *child;
 
     if (parser->dbfType == 0) {
         if (!pjlink) {
@@ -260,31 +261,35 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, size_t len) {
         return dbjl_return(parser, jlif_stop);
     }
 
-    pjlink = pjlif->alloc_jlink(parser->dbfType);
-    if (!pjlink) {
+    child = pjlif->alloc_jlink(parser->dbfType);
+    if (!child) {
         errlogPrintf("dbJLinkInit: Link type '%s' allocation failed. \n",
             link_name);
         dbmfFree(link_name);
         return dbjl_return(parser, jlif_stop);
     }
 
-    pjlink->pif = pjlif;
-    pjlink->parseDepth = 0;
+    child->pif = pjlif;
+    child->parseDepth = 0;
+    child->debug = 0;
 
     if (parser->pjlink) {
         /* We're starting a child link, save its parent */
-        pjlink->parent = parser->pjlink;
+        child->parent = pjlink;
+
+        if (pjlink->pif->start_child)
+            pjlink->pif->start_child(pjlink, child);
     }
     else
-        pjlink->parent = NULL;
+        child->parent = NULL;
 
-    parser->pjlink = pjlink;
+    parser->pjlink = child;
     parser->dbfType = 0;
 
     dbmfFree(link_name);
 
     IFDEBUG(8)
-        printf("dbjl_map_key: New %s@%p\n", pjlink ? pjlink->pif->name : "", pjlink);
+        printf("dbjl_map_key: New %s@%p\n", child ? child->pif->name : "", child);
 
     return jlif_continue;
 }

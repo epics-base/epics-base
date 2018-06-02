@@ -847,6 +847,6 @@ static jlif lnkCalcIf = {
     lnkCalc_start_map, lnkCalc_map_key, lnkCalc_end_map,
     lnkCalc_start_array, lnkCalc_end_array,
     lnkCalc_end_child, lnkCalc_get_lset,
-    lnkCalc_report, lnkCalc_map_children
+    lnkCalc_report, lnkCalc_map_children, NULL
 };
 epicsExportAddress(jlif, lnkCalcIf);

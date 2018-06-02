@@ -631,6 +631,6 @@ static jlif lnkConstIf = {
     NULL, NULL, NULL,
     lnkConst_start_array, lnkConst_end_array,
     NULL, lnkConst_get_lset,
-    lnkConst_report, NULL
+    lnkConst_report, NULL, NULL
 };
 epicsExportAddress(jlif, lnkConstIf);

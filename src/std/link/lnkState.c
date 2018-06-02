@@ -280,6 +280,6 @@ static jlif lnkStateIf = {
     NULL, NULL, NULL,
     NULL, NULL,
     NULL, lnkState_get_lset,
-    lnkState_report, NULL
+    lnkState_report, NULL, NULL
 };
 epicsExportAddress(jlif, lnkStateIf);

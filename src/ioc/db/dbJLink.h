@@ -90,7 +90,8 @@ typedef struct jlif {
 
     void (*end_child)(jlink *parent, jlink *child);
         /* Optional, called with pointer to the new child link after
-         * parse_start_map() returned jlif_key_child_link */
+         * the child link has finished parsing successfully
+         */
 
     struct lset* (*get_lset)(const jlink *);
         /* Required, return lset for this link instance */
@@ -106,6 +107,12 @@ typedef struct jlif {
         /* Optional, call dbJLinkMapChildren() on all embedded links.
          * Stop immediately and return status if non-zero.
          */
+
+     void (*start_child)(jlink *parent, jlink *child);
+         /* Optional, called with pointer to the new child link after
+          * parse_start_map() returned a jlif_key_child_link value and
+          * the child link has been allocated (but not parsed yet)
+          */
 
     /* Link types must NOT extend this table with their own routines,
      * this space is reserved for extensions to the jlink interface.

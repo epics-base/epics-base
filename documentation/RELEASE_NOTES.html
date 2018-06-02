@@ -17,6 +17,38 @@
 
 -->
 
+<h3>Link type enhancements</h3>
+
+<p>This release adds three new link types: "state", "debug" and "trace". The
+"state" link type gets and puts boolean values from/to the dbState library that
+was added in the 3.15.1 release. The "debug" link type sets the
+<code>jlink::debug</code> flag in its child link, while the "trace" link type
+also causes the arguments and return values for all calls to the child link's
+jlif and lset routines to be printed on stdout. The debug flag can no longer be
+set using an info tag. The addition of the "trace" link type has allowed over
+200 lines of conditional diagnostic printf() calls to be removed from the other
+link types.</p>
+
+<p>The "calc" link type can now be used for output links as well as input links.
+This allows modification of the output value and even combining it with values
+from other input links. See the separate JSON Link types document for
+details.</p>
+
+<p>A new <code>start_child()</code> method was added to the end of the jlif
+interface table.</p>
+
+<p>The <code>lset</code> methods have now been properly documented in the
+dbLink.h header file using Doxygen annotations, although we do not run Doxygen
+on the source tree yet to generate API documentation.</p>
+
+<p>Link types that utilize child links must now indicate whether the child will
+be used for input, output or forward linking by the return value from its
+<code>parse_start_map()</code> method. The <code>jlif_key_result</code> enum now
+contains 3 values <code>jlif_key_child_inlink</code>,
+<code>jlif_key_child_outlink</code> and <code>jlif_key_child_fwdlink</code>
+instead of the single <code>jlif_key_child_link</code> that was previously used
+for this.</p>
+
 <h3>Restore use of ledlib for VxWorks command editing</h3>
 
 <p>The epicsReadline refactoring work described below unfortunately disabled the

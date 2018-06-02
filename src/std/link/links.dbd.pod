@@ -39,7 +39,6 @@ database file syntax.
 
 
 link(const, lnkConstIf)
-variable(lnkConst_debug, int)
 
 =head3 Constant Link C<"const">
 
@@ -80,7 +79,6 @@ converted to the desired double value at initialization, for example:
 
 
 link(calc, lnkCalcIf)
-variable(lnkCalc_debug, int)
 
 =head3 Calculation Link C<"calc">
 
@@ -169,7 +167,6 @@ atomically with the value of the input argument.
 
 
 link(state, lnkStateIf)
-variable(lnkState_debug, int)
 
 =head3 dbState Link C<"state">
 

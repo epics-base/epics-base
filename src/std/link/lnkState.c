@@ -35,11 +35,6 @@
 
 typedef long (*FASTCONVERT)();
 
-int lnkState_debug;
-epicsExportAddress(int, lnkState_debug);
-
-#define IFDEBUG(n) if (lnkState_debug >= (n))
-
 typedef struct state_link {
     jlink jlink;        /* embedded object */
     char *name;
@@ -57,9 +52,6 @@ static jlink* lnkState_alloc(short dbfType)
 {
     state_link *slink;
 
-    IFDEBUG(10)
-        printf("lnkState_alloc(%d)\n", dbfType);
-
     if (dbfType == DBF_FWDLINK) {
         errlogPrintf("lnkState: DBF_FWDLINK not supported\n");
         return NULL;
@@ -76,18 +68,12 @@ static jlink* lnkState_alloc(short dbfType)
     slink->invert = 0;
     slink->val = 0;
 
-    IFDEBUG(10)
-        printf("lnkState_alloc -> state@%p\n", slink);
-
     return &slink->jlink;
 }
 
 static void lnkState_free(jlink *pjlink)
 {
     state_link *slink = CONTAINER(pjlink, struct state_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkState_free(state@%p)\n", slink);
 
     free(slink->name);
     free(slink);
@@ -96,9 +82,6 @@ static void lnkState_free(jlink *pjlink)
 static jlif_result lnkState_string(jlink *pjlink, const char *val, size_t len)
 {
     state_link *slink = CONTAINER(pjlink, struct state_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkState_string(state@%p, \"%.*s\")\n", slink, (int) len, val);
 
     if (len > 1 && val[0] == '!') {
         slink->invert = 1;
@@ -111,18 +94,12 @@ static jlif_result lnkState_string(jlink *pjlink, const char *val, size_t len)
 
 static struct lset* lnkState_get_lset(const jlink *pjlink)
 {
-    IFDEBUG(10)
-        printf("lnkState_get_lset(state@%p)\n", pjlink);
-
     return &lnkState_lset;
 }
 
 static void lnkState_report(const jlink *pjlink, int level, int indent)
 {
     state_link *slink = CONTAINER(pjlink, struct state_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkState_report(state@%p)\n", slink);
 
     printf("%*s'state': \"%s\" = %s%s\n", indent, "",
         slink->name, slink->invert ? "! " : "", slink->val ? "TRUE" : "FALSE");
@@ -135,9 +112,6 @@ static void lnkState_open(struct link *plink)
     state_link *slink = CONTAINER(plink->value.json.jlink,
         struct state_link, jlink);
 
-    IFDEBUG(10)
-        printf("lnkState_open(state@%p)\n", slink);
-
     slink->state = dbStateCreate(slink->name);
 }
 
@@ -145,9 +119,6 @@ static void lnkState_remove(struct dbLocker *locker, struct link *plink)
 {
     state_link *slink = CONTAINER(plink->value.json.jlink,
         struct state_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkState_remove(state@%p)\n", slink);
 
     free(slink->name);
     free(slink);
@@ -157,24 +128,11 @@ static void lnkState_remove(struct dbLocker *locker, struct link *plink)
 
 static int lnkState_getDBFtype(const struct link *plink)
 {
-    state_link *slink = CONTAINER(plink->value.json.jlink,
-        struct state_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkState_getDBFtype(state@%p)\n", slink);
-
     return DBF_SHORT;
 }
 
 static long lnkState_getElements(const struct link *plink, long *nelements)
 {
-    state_link *slink = CONTAINER(plink->value.json.jlink,
-        struct state_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkState_getElements(state@%p, (%ld))\n",
-            slink, *nelements);
-
     *nelements = 1;
     return 0;
 }
@@ -184,19 +142,10 @@ static long lnkState_getValue(struct link *plink, short dbrType, void *pbuffer,
 {
     state_link *slink = CONTAINER(plink->value.json.jlink,
         struct state_link, jlink);
-    long status;
-    short flag;
     FASTCONVERT conv = dbFastPutConvertRoutine[DBR_SHORT][dbrType];
 
-    IFDEBUG(10)
-        printf("lnkState_getValue(state@%p, %d, ...)\n",
-            slink, dbrType);
-
-    flag = dbStateGet(slink->state);
-    slink->val = slink->invert ^ flag;
-    status = conv(&slink->val, pbuffer, NULL);
-
-    return status;
+    slink->val = slink->invert ^ dbStateGet(slink->state);
+    return conv(&slink->val, pbuffer, NULL);
 }
 
 static long lnkState_putValue(struct link *plink, short dbrType,
@@ -206,10 +155,6 @@ static long lnkState_putValue(struct link *plink, short dbrType,
         struct state_link, jlink);
     short val;
     const char *pstr;
-
-    IFDEBUG(10)
-        printf("lnkState_putValue(state@%p, %d, ...)\n",
-            slink, dbrType);
 
     if (nRequest == 0)
         return 0;

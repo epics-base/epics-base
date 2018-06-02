@@ -39,6 +39,19 @@ typedef struct parseContext {
     short jsonDepth;
 } parseContext;
 
+epicsShareDef const char *jlif_result_name[2] = {
+    "jlif_stop",
+    "jlif_continue",
+};
+
+epicsShareDef const char *jlif_key_result_name[5] = {
+    "jlif_key_stop",
+    "jlif_key_continue",
+    "jlif_key_child_inlink",
+    "jlif_key_child_outlink",
+    "jlif_key_child_fwdlink"
+};
+
 #define CALL_OR_STOP(routine) !(routine) ? jlif_stop : (routine)
 
 static int dbjl_return(parseContext *parser, jlif_result result) {
@@ -423,6 +436,11 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
     }
 
     yajl_free(yh);
+
+    IFDEBUG(10)
+        printf("dbJLinkInit: returning status=0x%lx\n\n",
+            status);
+
     return status;
 }
 

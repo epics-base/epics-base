@@ -39,6 +39,7 @@ typedef struct jlink {
     struct jlif *pif;       /* Link methods */
     struct jlink *parent;   /* NULL for top-level links */
     int parseDepth;         /* Used by parser, unused afterwards */
+    unsigned debug:1;       /* Set to request debug output to console */
     /* Link types extend or embed this structure for private storage */
 } jlink;
 

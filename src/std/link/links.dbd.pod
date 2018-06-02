@@ -15,6 +15,10 @@ The following additional link types are available in this release:
 
 =item * L<dbState|/"dbState Link state">
 
+=item * L<Debug|/"Debug Link debug">
+
+=item * L<Trace|/"Trace Link trace">
+
 =back
 
 =head2 Using JSON Links
@@ -198,5 +202,37 @@ link is initialized if it doesn't already exist.
 
  {state:"redBeam"}
  {state:"!simEnable"}
+
+=cut
+
+
+link(debug, lnkDebugIf)
+variable(lnkDebug_debug, int)
+
+=head3 Debug Link C<"debug">
+
+The debug link type exists to enable debugging of other link types; it provides
+no functionality itself other than to turn on the debug flag for the child link
+that is its only parameter and pass all link operations down to that link.
+
+=head4 Example
+
+ {debug:{state:"redBeam"}}
+
+=cut
+
+
+link(trace, lnkTraceIf)
+
+=head3 Trace Link C<"trace">
+
+The trace link type is a relative of the debug link type that also traces the
+operation of its child link. At creation it turns on the debug flag of its child
+link, then it prints the method arguments and return values of all link
+operations before / after passing control down to the child link.
+
+=head4 Example
+
+ {trace:{state:"redBeam"}}
 
 =cut

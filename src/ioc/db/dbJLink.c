@@ -207,7 +207,8 @@ static int dbjl_start_map(void *ctx) {
         parser->dbfType = DBF_FWDLINK;
         result = jlif_continue;
         break;
-    case jlif_continue:
+    case jlif_key_stop:
+    case jlif_key_continue:
         break;
     default:
         errlogPrintf("dbJLinkInit: Bad return %d from '%s'::parse_start_map()\n",
@@ -446,13 +447,14 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
 
 long dbJLinkInit(struct link *plink)
 {
-    jlink *pjlink;
-
     assert(plink);
-    pjlink = plink->value.json.jlink;
 
-    if (pjlink)
-        plink->lset = pjlink->pif->get_lset(pjlink);
+    if (plink->type == JSON_LINK) {
+        jlink *pjlink = plink->value.json.jlink;
+
+        if (pjlink)
+            plink->lset = pjlink->pif->get_lset(pjlink);
+    }
 
     dbLinkOpen(plink);
     return 0;

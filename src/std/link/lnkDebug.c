@@ -684,10 +684,10 @@ static long delegate_getAlarm(const struct link *plink, epicsEnum16 *stat,
         if (res == 0)
             printf("    Got:%s%s%s%s\n",
                 stat ? " Status = " : "",
-                stat && (*stat < ALARM_NSEV) ?
+                stat && (*stat < ALARM_NSTATUS) ?
                     epicsAlarmConditionStrings[*stat] : "Bad-status",
                 sevr ? " Severity = " : "",
-                sevr && (*sevr < ALARM_NSTATUS) ?
+                sevr && (*sevr < ALARM_NSEV) ?
                     epicsAlarmSeverityStrings[*sevr] : "Bad-severity"
             );
     }

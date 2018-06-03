@@ -600,7 +600,7 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         }
     }
 
-    if (!status && clink->post_minor) {
+    if (!status && !clink->sevr && clink->post_minor) {
         double alval = clink->val;
 
         status = calcPerform(clink->arg, &alval, clink->post_minor);
@@ -664,7 +664,7 @@ static long lnkCalc_putValue(struct link *plink, short dbrType,
         }
     }
 
-    if (!status && clink->post_minor) {
+    if (!status && !clink->sevr && clink->post_minor) {
         double alval = clink->val;
 
         status = calcPerform(clink->arg, &alval, clink->post_minor);

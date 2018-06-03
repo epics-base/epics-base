@@ -346,6 +346,7 @@ static void delegate_openLink(struct link *plink)
         printf("Link trace: Calling %s::openLink(%p = jlink %p)\n",
             dlink->child_jlif->name, clink, clink->value.json.jlink);
 
+    clink->precord = plink->precord;
     clset->openLink(clink);
 
     if (dlink->trace)

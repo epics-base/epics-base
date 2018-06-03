@@ -60,7 +60,7 @@ static void testState()
 
         dbStateSet(red);
         status = dbGetLink(pinp, DBF_SHORT, &i16, NULL, NULL);
-        testOk(!status, "dbGetLink succeeded");
+        testOk(!status, "dbGetLink succeeded (status = %ld)", status);
         testOk(i16, "Got TRUE");
 
         testdbPutFieldOk("io.INPUT", DBF_STRING, "{\"state\":\"!red\"}");
@@ -68,7 +68,7 @@ static void testState()
             testDiag("Link was set to '%s'", pinp->value.json.string);
 
         status = dbGetLink(pinp, DBF_SHORT, &i16, NULL, NULL);
-        testOk(!status, "dbGetLink succeeded");
+        testOk(!status, "dbGetLink succeeded (status = %ld)", status);
         testOk(!i16, "Got FALSE");
 
         testdbPutFieldOk("io.OUTPUT", DBF_STRING, "{\"state\":\"red\"}");
@@ -77,32 +77,32 @@ static void testState()
 
         i16 = 0;
         status = dbPutLink(pout, DBF_SHORT, &i16, 1);
-        testOk(!status, "dbPutLink %d succeeded", i16);
+        testOk(!status, "dbPutLink %d succeeded (status = %ld)", i16, status);
         testOk(!dbStateGet(red), "state was cleared");
 
         i16 = 0x8000;
         status = dbPutLink(pout, DBF_SHORT, &i16, 1);
-        testOk(!status, "dbPutLink 0x%hx succeeded", i16);
+        testOk(!status, "dbPutLink 0x%hx succeeded (status = %ld)", i16, status);
         testOk(dbStateGet(red), "state was set");
     }
 
     status = dbPutLink(pout, DBF_STRING, "", 1);
-    testOk(!status, "dbPutLink '' succeeded");
+    testOk(!status, "dbPutLink '' succeeded (status = %ld)", status);
     testOk(!dbStateGet(red), "state was cleared");
 
     status = dbPutLink(pout, DBF_STRING, "FALSE", 1); /* Not really... */
-    testOk(!status, "dbPutLink 'FALSE' succeeded");
+    testOk(!status, "dbPutLink 'FALSE' succeeded (status = %ld)", status);
     testOk(dbStateGet(red), "state was set");
 
     status = dbPutLink(pout, DBF_STRING, "0", 1);
-    testOk(!status, "dbPutLink '0' succeeded");
+    testOk(!status, "dbPutLink '0' succeeded (status = %ld)", status);
     testOk(!dbStateGet(red), "state was cleared");
 
     {
         epicsFloat64 f64 = 0.1;
 
         status = dbPutLink(pout, DBF_DOUBLE, &f64, 1);
-        testOk(!status, "dbPutLink %g succeeded", f64);
+        testOk(!status, "dbPutLink %g succeeded (status = %ld)", f64, status);
         testOk(dbStateGet(red), "state was set");
 
         testdbPutFieldOk("io.OUTPUT", DBF_STRING, "{\"state\":\"!red\"}");
@@ -110,7 +110,7 @@ static void testState()
             testDiag("Link was set to '%s'", pout->value.json.string);
 
         status = dbPutLink(pout, DBF_DOUBLE, &f64, 1);
-        testOk(!status, "dbPutLink %g succeeded", f64);
+        testOk(!status, "dbPutLink %g succeeded (status = %ld)", f64, status);
         testOk(!dbStateGet(red), "state was cleared");
     }
 

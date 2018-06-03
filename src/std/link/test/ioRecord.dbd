@@ -1,0 +1,14 @@
+# This is a soft record type with both input and output links
+
+recordtype(io) {
+  include "dbCommon.dbd"
+  field(VAL, DBF_LONG) {
+    prompt("Value")
+  }
+  field(INPUT, DBF_INLINK) {
+    prompt("Input Link")
+  }
+  field(OUTPUT, DBF_OUTLINK) {
+    prompt("Output Link")
+  }
+}

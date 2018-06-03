@@ -21,6 +21,7 @@ void epicsRunLinkTests(void)
     testHarness();
 
     runTest(lnkStateTest);
+    runTest(lnkCalcTest);
 
     dbmfFreeChunks();
 

@@ -23,6 +23,7 @@ linkTest_DBD += menuScan.dbd
 linkTest_DBD += links.dbd
 linkTest_DBD += ioRecord.dbd
 TESTFILES += $(COMMON_DIR)/linkTest.dbd
+TESTFILES += ../ioRecord.db
 
 testHarness_SRCS += linkTest_registerRecordDeviceDriver.cpp
 
@@ -30,8 +31,13 @@ TESTPROD_HOST += lnkStateTest
 lnkStateTest_SRCS += lnkStateTest.c
 lnkStateTest_SRCS += linkTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += lnkStateTest.c
-TESTFILES += ../ioRecord.db
 TESTS += lnkStateTest
+
+TESTPROD_HOST += lnkCalcTest
+lnkCalcTest_SRCS += lnkCalcTest.c
+lnkCalcTest_SRCS += linkTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += lnkCalcTest.c
+TESTS += lnkCalcTest
 
 # epicsRunLinkTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLinkTests.c

@@ -122,7 +122,7 @@ static void testState()
 
 MAIN(lnkStateTest)
 {
-    testPlan(0);
+    testPlan(28);
 
     testState();
 

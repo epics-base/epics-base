@@ -882,7 +882,7 @@ static jlif_key_result lnkDebug_start_map(jlink *pjlink)
     case DBF_FWDLINK:
         return jlif_key_child_outlink;
     }
-    return jlif_stop;
+    return jlif_key_stop;
 }
 
 static jlif_result lnkDebug_end_map(jlink *pjlink)

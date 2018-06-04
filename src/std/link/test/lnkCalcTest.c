@@ -91,7 +91,7 @@ static void testCalc()
         status = dbGetLink(pinp, DBF_DOUBLE, &f64, NULL, NULL);
         testOk(!status, "dbGetLink succeeded (status = %ld)", status);
         testOk(f64 == 0.0, "Got zero (%g)", f64);
-        testOk(recGblResetAlarms(pio) && DBE_ALARM, "Record alarm was raised");
+        testOk(recGblResetAlarms(pio) & DBE_ALARM, "Record alarm was raised");
         status = dbGetAlarm(pinp, &stat, &sevr);
         testOk(!status, "dbGetAlarm succeeded (status = %ld)", status);
         testOk(stat == LINK_ALARM, "Alarm status = LINK (%d)", stat);
@@ -100,7 +100,7 @@ static void testCalc()
         dbStateClear(major);
         status = dbGetLink(pinp, DBF_DOUBLE, &f64, NULL, NULL);
         testOk(!status, "dbGetLink succeeded (status = %ld)", status);
-        testOk(recGblResetAlarms(pio) && DBE_ALARM, "Record alarm was raised");
+        testOk(recGblResetAlarms(pio) & DBE_ALARM, "Record alarm was raised");
         status = dbGetAlarm(pinp, &stat, &sevr);
         testOk(!status, "dbGetAlarm succeeded (status = %ld)", status);
         testOk(stat == LINK_ALARM, "Alarm status = LINK (%d)", stat);

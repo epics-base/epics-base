@@ -83,20 +83,22 @@ static void req_server (void *pParm)
 
     while (TRUE) {
         SOCKET clientSock;
-        struct sockaddr     sockAddr;
+        osiSockAddr         sockAddr;
         osiSocklen_t        addLen = sizeof(sockAddr);
 
         while (castcp_ctl == ctlPause) {
             epicsThreadSleep(0.1);
         }
 
-        clientSock = epicsSocketAccept ( IOC_sock, &sockAddr, &addLen );
-        if ( clientSock == INVALID_SOCKET ) {
+        clientSock = epicsSocketAccept ( IOC_sock, &sockAddr.sa, &addLen );
+        if ( clientSock == INVALID_SOCKET ||
+             sockAddr.sa.sa_family != AF_INET ||
+             addLen < sizeof(sockAddr.ia) ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAS: Client accept error: %s\n",
-                sockErrBuf );
+            errlogPrintf("CAS: Client accept error: %s (%d)\n",
+                sockErrBuf, (int)addLen );
             epicsThreadSleep(15.0);
             continue;
         }
@@ -105,7 +107,7 @@ static void req_server (void *pParm)
             struct client *pClient;
 
             /* socket passed in is closed if unsuccessful here */
-            pClient = create_tcp_client ( clientSock );
+            pClient = create_tcp_client ( clientSock, &sockAddr );
             if ( ! pClient ) {
                 epicsThreadSleep ( 15.0 );
                 continue;
@@ -1405,12 +1407,11 @@ void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size )
 /*
  *  create_tcp_client ()
  */
-struct client *create_tcp_client ( SOCKET sock )
+struct client *create_tcp_client (SOCKET sock , const osiSockAddr *peerAddr)
 {
     int                     status;
     struct client           *client;
     int                     intTrue = TRUE;
-    osiSocklen_t            addrSize;
     unsigned                priorityOfEvents;
 
     /* socket passed in is destroyed here if unsuccessful */
@@ -1418,6 +1419,8 @@ struct client *create_tcp_client ( SOCKET sock )
     if ( ! client ) {
         return NULL;
     }
+
+    client->addr = peerAddr->ia;
 
     /*
      * see TCP(4P) this seems to make unsolicited single events much
@@ -1469,15 +1472,6 @@ struct client *create_tcp_client ( SOCKET sock )
         return NULL;
     }
 #endif
-
-    addrSize = sizeof ( client->addr );
-    status = getpeername ( sock, (struct sockaddr *)&client->addr,
-                    &addrSize );
-    if ( status < 0 ) {
-        epicsPrintf ("CAS: peer address fetch failed\n");
-        destroy_tcp_client (client);
-        return NULL;
-    }
 
     client->evuser = (struct event_user *) db_init_events ();
     if ( ! client->evuser ) {

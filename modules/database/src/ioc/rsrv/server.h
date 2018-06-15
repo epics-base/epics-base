@@ -230,7 +230,7 @@ void rsrv_online_notify_task (void *);
 void cast_server (void *);
 struct client *create_client ( SOCKET sock, int proto );
 void destroy_client ( struct client * );
-struct client *create_tcp_client ( SOCKET sock );
+struct client *create_tcp_client ( SOCKET sock, const osiSockAddr* peerAddr );
 void destroy_tcp_client ( struct client * );
 void casAttachThreadToClient ( struct client * );
 int camessage ( struct client *client );

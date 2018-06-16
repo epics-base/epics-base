@@ -1421,6 +1421,20 @@ struct client *create_tcp_client (SOCKET sock , const osiSockAddr *peerAddr)
     }
 
     client->addr = peerAddr->ia;
+    if(asUseIP) {
+        epicsUInt32 ip = ntohl(client->addr.sin_addr.s_addr);
+        client->pHostName = malloc(24);
+        if(!client->pHostName) {
+            destroy_client ( client );
+            return NULL;
+        }
+        epicsSnprintf(client->pHostName, 24,
+                      "%u.%u.%u.%u",
+                      (ip>>24)&0xff,
+                      (ip>>16)&0xff,
+                      (ip>>8)&0xff,
+                      (ip>>0)&0xff);
+    }
 
     /*
      * see TCP(4P) this seems to make unsolicited single events much

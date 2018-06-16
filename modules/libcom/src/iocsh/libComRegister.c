@@ -12,6 +12,7 @@
 
 #define epicsExportSharedSymbols
 #include "iocsh.h"
+#include "asLib.h"
 #include "epicsStdioRedirect.h"
 #include "epicsString.h"
 #include "epicsTime.h"
@@ -392,6 +393,8 @@ static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
     installLastResortEventProvider();
 }
 
+static iocshVarDef asUseIPDef = {"asUseIP", iocshArgInt, 0};
+
 void epicsShareAPI libComRegister(void)
 {
     iocshRegister(&dateFuncDef, dateCallFunc);
@@ -424,4 +427,7 @@ void epicsShareAPI libComRegister(void)
     
     iocshRegister(&generalTimeReportFuncDef,generalTimeReportCallFunc);
     iocshRegister(&installLastResortEventProviderFuncDef, installLastResortEventProviderCallFunc);
+
+    asUseIPDef.pval = &asUseIP;
+    iocshRegisterVariable(&asUseIPDef);
 }

@@ -15,6 +15,8 @@
 #include <ctype.h>
 
 #define epicsExportSharedSymbols
+#include "osiSock.h"
+#include "epicsTypes.h"
 #include "epicsStdio.h"
 #include "dbDefs.h"
 #include "epicsThread.h"
@@ -26,6 +28,8 @@
 #include "macLib.h"
 #include "postfix.h"
 #include "asLib.h"
+
+int asUseIP;
 
 static epicsMutexId asLock;
 #define LOCK epicsMutexMustLock(asLock)
@@ -1206,11 +1210,29 @@ static long asHagAddHost(HAG *phag,const char *host)
     int     len, i;
 
     if (!phag) return 0;
-    len = strlen(host);
-    phagname = asCalloc(1, sizeof(HAGNAME) + len + 1);
-    phagname->host = (char *)(phagname + 1);
-    for (i = 0; i < len; i++) {
-        phagname->host[i] = (char)tolower((int)host[i]);
+    if(!asUseIP) {
+        len = strlen(host);
+        phagname = asCalloc(1, sizeof(HAGNAME) + len + 1);
+        phagname->host = (char *)(phagname + 1);
+        for (i = 0; i < len; i++) {
+            phagname->host[i] = (char)tolower((int)host[i]);
+        }
+    } else {
+        struct sockaddr_in addr;
+        epicsUInt32 ip;
+        if(aToIPAddr(host, 0, &addr)) {
+            errlogPrintf("Unable to resolve host '%s'\n", host);
+            return S_asLib_noHag;
+        }
+        ip = ntohl(addr.sin_addr.s_addr);
+        phagname = asCalloc(1, sizeof(HAGNAME) + 24);
+        phagname->host = (char *)(phagname + 1);
+        epicsSnprintf(phagname->host, 24,
+                      "%u.%u.%u.%u",
+                      (ip>>24)&0xff,
+                      (ip>>16)&0xff,
+                      (ip>>8)&0xff,
+                      (ip>>0)&0xff);
     }
     ellAdd(&phag->list, &phagname->node);
     return 0;

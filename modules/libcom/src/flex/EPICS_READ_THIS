@@ -1,0 +1,32 @@
+This is a version of the BSD flex that has had its skeleton file munged in
+order to force it to build lex programs that have all their functions and 
+variables defined as static.
+
+The file flex.skel.static is simply a copy of flex.skel that has been altered
+to make all the components into static variables.
+
+In order to be able to actually use the lex files produced by this flavor of
+flex, you must #include them into your C programs.  Otherwise they will
+be uncallable (all functions are static).  This is typical of lex programs
+that are used by yacc programs anyway.
+
+The scan.c file is actually the output of scan.l.DISTRIB when run through
+itself, using the regular flex.skel skeleton with the -i option.
+
+To regenerate scan.c, make sure you have a build of a working e_flex binary
+somewhere, then in this directory (not an O.<arch> build directory):
+
+% mv scan.l.DISTRIB scan.l
+% /path/to/e_flex -Sflex.skel -8 -i scan.l
+% mv lex.yy.c scan.c
+% make
+
+Then use the new binary to make sure it can build itself:
+
+% O.<arch>/e_flex -Sflex.skel -8 -i scan.l
+% mv lex.yy.c scan.c
+% make
+
+If that succeeds, don't forget to rename scan.l back again:
+
+% mv scan.l scan.l.DISTRIB

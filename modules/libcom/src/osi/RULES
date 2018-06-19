@@ -1,0 +1,15 @@
+#*************************************************************************
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+# This is a Makefile fragment, see src/libCom/Makefile.
+
+# Ensure epicsVersion.h gets built first
+osdAssert$(DEP): $(COMMON_DIR)/epicsVersion.h
+epicsTime$(DEP): $(COMMON_DIR)/epicsVersion.h
+osdNetIntf$(DEP): $(COMMON_DIR)/epicsVersion.h
+osdSock$(DEP): $(COMMON_DIR)/epicsVersion.h
+

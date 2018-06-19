@@ -1,0 +1,177 @@
+1. Macro substitution library
+-----------------------------
+
+This library could be used directly by applications which need to
+support macro substitution. It will be implemented on all platforms.
+
+1.1 Core library
+----------------
+
+The core library provides a minimal set of basic operations. Some
+utility routines, described later, use core routines to provide a more
+convenient interface for some purposes.
+
+a) long macCreateHandle( MAC_HANDLE **handle, char *pairs[] );
+   void macSuppressWarning(MAC_HANDLE *handle,int falseTrue);
+
+   Creates a new macro substitution context and returns an opaque handle
+   to that context. An application can, if it desires, have several
+   active contexts, although most will not.
+
+   If desired, an initial set of macro definitions may be loaded
+   ("pairs" is set to NULL to avoid this). The definitions are in the
+   "standard" pairs format, as described under macParseDefns().
+
+   Note that MAC_HANDLE is a typedef for the context structure. The
+   opaque handle is of type "MAC_HANDLE *", which is a pointer to the
+   context structure. The memory for this context is allocated by this
+   routine.
+
+   macSuppressWarning can be called to suppress the marning message
+   when macExpandString cant expand a macro. A non zero value will
+   suppress the messages.
+
+
+c) long macGetValue ( MAC_HANDLE *handle, char *name,
+                      char *value, long maxlen );
+
+   Returns up to maxlen characters of the value of macro "name". "value"
+   will be zero-terminated if the length of the value is less than
+   maxlen. The function value will be the number of characters copied to
+   "value" (see below for behavior if the macro is undefined). If maxlen
+   is zero, no characters will be copied to "value" (which can be NULL)
+   and the call can be used to check whether the macro is defined. Note
+   that truncation of the value is therefore not reported. Is this a
+   problem?
+
+   If the macro is undefined, the macro reference will be returned in
+   the value string (if permitted by maxlen) and the function value will
+   be _minus_ the number of characters copied. Note that treatment of
+   maxlen is intended to be consistent with what people are used to with
+   strncpy().
+
+   If the value contains macro references then the references will be
+   expanded recursively. This expansion will detect a direct or indirect
+   self reference.
+
+   Macro references begin with a "$" immediately followed by either a
+   "(" or a "{" character. The macro name comes next, and may optionally
+   be succeeded by an "=" and a default value, which will be returned if
+   the named macro is undefined at the moment of expansion. The reference
+   is terminated by the matching ")" or "}" character.
+
+d) long macPutValue( MAC_HANDLE *handle, char *name, char *value );
+
+   Sets the value of the macro "name". If "value" is NULL, it undefines
+   all instances of "name" at all scoping levels (it's not an error if
+   "name" is not defined in this case). Macros referenced by "value"
+   need not be defined at this point.
+
+   The function returns the length of the value string.
+
+e) long macDeleteHandle( MAC_HANDLE *handle );
+
+   Marks a handle invalid, and frees all storage associated with it.
+
+   Note that this does not free any strings into which macro values have
+   been returned. Macro values are always returned into strings which
+   were pre-allocated by the caller.
+
+f) long macPushScope( MAC_HANDLE *handle );
+
+   Marks the start of a new scoping level such that all definitions made
+   up until the next macPopScope() call will be lost on macPopScope()
+   and those current at macPushScope() will be re-instated.
+
+g) long macPopScope( MAC_HANDLE *handle );
+
+   See macPushScope.
+
+h) Error handling
+
+   These routines conform to 0 (=OK) for success, -1 (=ERROR) for
+   failure, and small positive values for extra info. I contravened this
+   for macGetValue() and macExpandString() because I felt that it was
+   worth returning information both on success / failure and on value
+   length.
+
+   Errors and warnings are reported using errlogPrintf().
+
+
+
+1.2 Utility library
+-------------------
+
+These are convenience functions. If other useful functions emerge during
+implementation, the list may grow.
+
+a) macParseDefns( MAC_HANDLE  *handle, char *defns, char **pairs[] );
+
+   This takes a set of macro definitions in "a=xxx,b=yyy" format and
+   converts them into an array of pointers to character strings which
+   are, in order, "first name", "first value", "second name", "second
+   value" etc. The array is terminated with two NULL pointers and all
+   storage is allocated contiguously so that it can be freed with a
+   single call to free().
+
+   This routine is independent of any handle and provides a generally
+   useful service which may be used elsewhere. Any macro references in
+   values are not expanded at this point since the referenced macros may
+   be defined or redefined before the macro actually has to be
+   translated.
+
+   Shell-style escapes and quotes are supported, as are things like
+   "A=B,B=$(C$(A)),CA=CA,CB=CB" (sets B to "CB"). White space is
+   significant within values but ignored elsewhere (i.e. surrounding "="
+   and "," characters).
+
+   Probably noone will ever want to, but the special meanings of "$",
+   "{", "}", "(", ")", "=" and "," can all be changed via macPutXxxx()
+   calls.  This routine does not have a handle argument, so they must be
+   changed globally for it to use the new definitions. Should it have a
+   handle argument? This makes it more of a pain to use but guarantees
+   that there will be no conflicts. I think it should really.
+
+   The function value is the number of definitions encountered, or -1 if
+   the supplied string is invalid.
+
+b) long macInstallMacros( MAC_HANDLE *handle, char *pairs[] );
+
+   This takes an array of pairs as defined above and installs them as
+   definitions by calling macPutValue(). The pairs array is terminated
+   by a NULL pointer.
+
+   The function value is the number of macros defined.
+
+c) long macExpandString( MAC_HANDLE *handle, char *src,
+                         char *dest, long maxlen );
+
+   This operates on a string which may contain macro references. It
+   parses the string looking for such references and passes them to
+   macGetValue() for translation. It returns the expanded string in the
+   supplied argument.
+
+   The function value is similar to that of macGetValue(). Its absolute
+   value is the number of characters copied. If negative, at least one
+   undefined macro has been left unexpanded.
+
+d) char *macEnvExpand( char *src );
+
+   This operates on a string which may contain macros defined by
+   environment variables. It parses the string looking for such
+   references and passes them to macGetValue() for translation. It uses
+   malloc() to allocate space for the expanded string and returns a
+   pointer to this null-terminated string. It returns NULL if the source
+   string contains any undefined references.
+
+e) char *macDefExpand( char *src, MAC_HANDLE *macros );
+
+   This operates in the same manner as macEnvExpand, but takes an 
+   optional macro handle that can contain a set of macro definitions. 
+   These macros are appended to the set of macros from environment 
+   variables when expanding the string. 
+
+f) long macReportMacros( MAC_HANDLE *handle );
+
+   This reports details of current definitions to standard output, and is
+   intended purely for debugging purposes.

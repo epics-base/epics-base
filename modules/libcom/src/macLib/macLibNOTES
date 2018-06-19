@@ -1,0 +1,158 @@
+# Test input file for macTest filter, doubling as notes on usage of the
+# macro library. Some special strings at start of line are supported:
+#
+# 1. '#' indicates a comment and is ignored
+#
+# 2. '%set' is followed by "a=b, c=d" style macro definitions which are
+#    passed through macParseDefs() and macInstallMacros()
+#
+# 3. '%push' pushes a scoping level by calling macPushScope()
+#
+# 4. '%pop' pops a scoping level by calling macPopScope()
+#
+# 5. '%report' reports macro definitions by calling macReportMacros()
+#
+# 6. all other lines are expanded by callins macExpandString()
+#
+introduction
+------------
+
+See the README file for the library specification and see the header
+comments of macCore.c (the core library) for notes on what has been
+implemented.
+
+This file contains tutorial information and examples. It's the
+best documentation that there is.
+
+
+simple examples
+---------------
+
+To define the a, b, c and d macros to be 1, 2, 3 and 4 (note optional
+white space is ignored around '=' and ',' characters):
+
+%set a=1, b=2, c = 3 , d = 4
+
+These macros can be dereferenced using '$(xxx)' or '${xxx}' notation:
+a = $(a), b = $(b), c = ${c}, d = ${d}.
+
+Macro values can reference other macros in an arbitrarily complex way.
+The only current restrictions are that a macro name or value cannot
+exceed 256 characters in length. This restriction could fairly easily
+be lifted.
+
+Here's an example:
+
+%set x = ${$(y$(z))}
+
+If this is expanded now: $(x), it won't work because the other macros
+aren't defined yet. So:
+
+%set cash=lucre, ywork=cash, z=work
+
+Now expansion yields "$(x)" (work -> ywork -> cash -> lucre).
+
+One can inadvertently set up circular references. For example:
+
+%set mac1=$(mac2), mac2=$(mac3), mac3=$(mac1)
+
+An attempt to dereference mac1 gives $(mac1). When a macro expansion
+fails, the translation that failed is replaced with the text that could
+not be expanded.
+
+You can get a report of current macro definitions by doing
+%report
+
+The '*' character in the first column indicates a problem expanding that
+macro. We'll get rid of these problem macros:
+%set mac1, mac2, mac3
+
+You can also push a new scoping level by doing
+%push
+
+and pop back to it by doing
+%pop
+
+For example:
+%set level = 0
+%push
+%set level = 1
+%push
+%set level = 2
+%push
+%set level = 3
+%report
+Level is $(level)
+%pop
+Level is $(level)
+%pop
+Level is $(level)
+%pop
+Level is $(level)
+%pop
+(That last error was deliberate)
+
+
+quote and escape handling
+-------------------------
+
+Both single and double quotes are supported, as are escapes. Some of the
+implications are quite subtle and some of the design choices made may not
+meet with universal approval. The basic idea is that a string in which
+macro references have been expanded should look like the source string
+apart from the where macros have been expanded. This implies that quote
+and escape characters should not be removed from the string.
+
+Single and double quotes are different in that (as in most shells),
+macros are substituted within double quotes but not within single
+quotes. Back quotes are not special characters. Missing quotes at the
+end of a string are automatically and quietly supplied.
+
+We've already seen some examples but what happens here: $(x)?
+Should not that have been expanded? Why wasn't it? The answer is given
+later on. As a clue, this is: $(x). This isn't: $(x)!
+
+Characters may be escaped by preceding them with a \ (back slash).
+Escapes work even within quotes, which is more like C than most shells.
+Thus, '\'' works, and it doesn't with the C shell.
+
+Quotes and escapes can also be used in "a=b, c=d" style assignments
+but they are not part of macro names. For example:
+
+%set \= = equal, \' = quote
+
+defines macros called "=" and "'", not "\=" and "\'". To reference
+these macros, "$(=)" ('$(=)') works because "=" is not special in
+this context. However the quote must be escaped because quotes are
+always special, as in "$(\')" ('$(\')').
+
+
+miscellaneous notes
+-------------------
+
+In the "a=b, c=d" strings that are parsed by macParseDefns(), a macro
+can be set to an empty value by putting nothing after the equals
+sign, as in
+
+%set empty =
+resulting in empty = "$(empty)". Omitting the equal sign gives the
+macro a NULL rather than empty value (with the result that the macro
+is deleted since this is how macPutValue() interprets a NULL value), so
+
+%set empty
+deletes the empty macro, as can be seen when we try to de-reference
+it: $(empty).
+
+The only special characters in these "a=b, c=d" strings are "=", ","
+and white space surrounding these characters (plus quotes and escapes
+of course). This means that
+
+%set fred 2
+actually sets a macro called "fred 2" to a NULL value (i.e. it deletes
+it if it existed). This is probably wrong and the space should be
+taken as an implicit '='. However, to do this and still to support
+ignored white space around '=' and ',' characters is a bigger change
+than I am prepared to make at present.
+
+What was the problem expanding "$(x)" before? It was single quotes
+from words like "wasn't"! Is this a problem or a feature?

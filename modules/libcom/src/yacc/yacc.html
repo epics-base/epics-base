@@ -1,0 +1,135 @@
+/*************************************************************************\
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
+<HTML>
+<BODY>
+<PRE>
+<!-- Manpage converted by man2html 3.0.1 -->
+
+</PRE>
+<H2>NAME</H2><PRE>
+     Yacc - an <B>LALR(1)</B> parser generator
+
+
+</PRE>
+<H2>SYNOPSIS</H2><PRE>
+     yacc [ -dlrtv ] [ -b <I>file</I>_<I>prefix</I>  ]  [  -p  <I>symbol</I>_<I>prefix</I>  ]
+     <I>filename</I>
+
+
+</PRE>
+<H2>DESCRIPTION</H2><PRE>
+     <I>Yacc</I> reads the grammar specification in  the  file  <I>filename</I>
+     and  generates  an <B>LR(1)</B> parser for it.  The parsers consist
+     of a set of <B>LALR(1)</B> parsing  tables  and  a  driver  routine
+     written in the C programming language.  <I>Yacc</I> normally writes
+     the parse tables and the driver routine to the file <I>y</I>.<I>tab</I>.<I>c</I>.
+
+     The following options are available:
+
+          -b <I>file</I>_<I>prefix</I>
+               The -b option changes the prefix prepended to  the
+               output   file  names  to  the  string  denoted  by
+               <I>file</I>_<I>prefix</I>.  The default prefix is the  character
+               <I>y</I>.
+
+          -d   The -d option causes the header file <I>y</I>.<I>tab</I>.<I>h</I> to be
+               written.
+
+          -l   If the -l  option  is  not  specified,  <I>yacc</I>  will
+               insert  #line  directives  in  the generated code.
+               The #line directives let  the  C  compiler  relate
+               errors  in the generated code to the user's origi-
+               nal code.  If the -l  option  is  specified,  <I>yacc</I>
+               will  not  insert  the  #line  directives.   #line
+               directives specified by the user will be retained.
+
+          -p <I>symbol</I>_<I>prefix</I>
+               The -p option  changes  the  prefix  prepended  to
+               yacc-generated  symbols  to  the string denoted by
+               <I>symbol</I>_<I>prefix</I>.  The default prefix is  the  string
+               <I>yy</I>.
+
+          -r   The -r option  causes  <I>yacc</I>  to  produce  separate
+               files for code and tables.  The code file is named
+               <I>y</I>.<I>code</I>.<I>c</I>, and the tables file is named <I>y</I>.<I>tab</I>.<I>c</I>.
+
+          -t   The -t option changes the preprocessor  directives
+               generated  by  <I>yacc</I>  so  that debugging statements
+               will be incorporated in the compiled code.
+
+          -v   The -v option causes a human-readable  description
+               of  the generated parser to be written to the file
+               <I>y</I>.<I>output</I>.
+
+
+     If the  environment  variable  TMPDIR  is  set,  the  string
+     denoted  by TMPDIR will be used as the name of the directory
+     where the temporary files are created.
+
+
+</PRE>
+<H2>FILES</H2><PRE>
+     <I>y</I>.<I>code</I>.<I>c</I>
+     <I>y</I>.<I>tab</I>.<I>c</I>
+     <I>y</I>.<I>tab</I>.<I>h</I>
+     <I>y</I>.<I>output</I>
+     /<I>tmp</I>/<I>yacc</I>.<I>aXXXXXX</I>
+     /<I>tmp</I>/<I>yacc</I>.<I>tXXXXXX</I>
+     /<I>tmp</I>/<I>yacc</I>.<I>uXXXXXX</I>
+
+
+</PRE>
+<H2>DIAGNOSTICS</H2><PRE>
+     If there are rules that are never  reduced,  the  number  of
+     such  rules is reported on standard error.  If there are any
+     <B>LALR(1)</B> conflicts, the number of conflicts  is  reported  on
+     standard error.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</PRE>
+<HR>
+<ADDRESS>
+Man(1) output converted with
+<a href="http://www.oac.uci.edu/indiv/ehood/man2html.html">man2html</a>
+</ADDRESS>
+</BODY>
+</HTML>

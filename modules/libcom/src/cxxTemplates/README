@@ -1,0 +1,35 @@
+
+C++ templates:
+tsSLList.h - type safe single linked list template
+tsDLList.h - type safe double linked list template
+resourceLib.h - hash table template
+tsFreeeList.h - free list allocator / deallocator
+
+the test subdir contains examples
+
+Since I am using templates the linked lists are type safe
+(no casting of pointers ala ellList and dllList). 
+Also, the node class in embedded in the item on the
+list (more efficient use of pool).
+
+The file resourceLib.h provides a core hashing library 
+"resTable <itemClass, idClass>" where "itemClass" objects
+are stored in the hash table and "idClass" is the data type
+of the key for the hash table. The identifier class provides
+the hash alg. I have provided simple string "stringId" and 
+unsigned integer "uintId" key types in resourceLib.h. It
+is easy to implement a new key class.
+
+There are examples under cxxTemplate/test. The list/hashing
+templates all depend on a particular inheritance hierarchy.
+If the inheritance hierarchy is wrong nothing will compile.
+For instance, in tsDLList.h the template data type "T"
+must derive from tsDLNode<T>. Likewise, in tsSLList.h
+"T" must derive from tsSLNode<T>. Likewise, in resourceLib.h
+class "T" (the type stored in the hash table) must derive 
+from class "ID" (the hash table key type) and also derive from
+tsSLNode<T>.
+
+
+
+

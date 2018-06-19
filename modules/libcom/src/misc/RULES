@@ -1,0 +1,18 @@
+#*************************************************************************
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+# This is a Makefile fragment, see src/libCom/Makefile.
+
+MAKEVERSION = $(LIBCOM)/misc/makeEpicsVersion.pl
+MAKEVERSION_FLAGS = -o $(notdir $@) $(QUIET_FLAG)
+MAKEVERSION_FLAGS += $(if $(EPICS_SITE_VERSION),-v "$(EPICS_SITE_VERSION)")
+
+$(COMMON_DIR)/epicsVersion.h: $(CONFIG)/CONFIG_BASE_VERSION \
+	$(CONFIG)/CONFIG_SITE $(MAKEVERSION)
+	@$(RM) $(notdir $@)
+	$(PERL) $(MAKEVERSION) $(MAKEVERSION_FLAGS) $<
+	@$(MV) $(notdir $@) $@

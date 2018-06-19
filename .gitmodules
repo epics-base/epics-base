@@ -1,15 +1,3 @@
-[submodule "modules/libcom"]
-    path = modules/libcom
-    url = ./
-    branch = libcom/master
-[submodule "modules/database"]
-    path = modules/database
-    url = ./
-    branch = database/master
-[submodule "modules/ca"]
-    path = modules/ca
-    url = ./
-    branch = ca/master
 [submodule "modules/pvData"]
     path = modules/pvData
     url = https://github.com/epics-base/pvDataCPP

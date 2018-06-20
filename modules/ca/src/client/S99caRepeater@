@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# System-V init script for the EPICS CA Repeater.
+#
+
+INSTALL_BIN=@INSTALL_BIN@
+
+# To change the default values for the EPICS environment parameters,
+# uncomment and modify the relevant lines below. These are the only
+# EPICS environment variables that the CA Repeater makes use of.
+
+# EPICS_CA_REPEATER_PORT="5065" export EPICS_CA_REPEATER_PORT
+
+if [ $1 = "start" ]; then
+    if [ -x $INSTALL_BIN/caRepeater ]; then
+        echo "Starting EPICS CA Repeater "
+        $INSTALL_BIN/caRepeater &
+    fi
+else
+    if [ $1 = "stop" ]; then
+        pid=`ps -e | sed -ne '/caRepeat/s/^ *\([1-9][0-9]*\).*$/\1/p'`
+        if [ "${pid}" != "" ]; then
+            echo "Stopping EPICS CA Repeater "
+            kill ${pid}
+        fi
+    fi
+fi
+

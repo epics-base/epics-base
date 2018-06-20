@@ -1,0 +1,38 @@
+
+Potential upgrades to Channel Access
+
+o generalized access to abstract data
+o use multicast for broadcasting and ax the repeater
+o improve client API
+o improve security
+o name service (wildcard queries)
+o PV name prefix (for all PVs)
+o client access to process passive and for maximize severity
+o detect name conflicts at boot time
+o multi priority connections (quality of service)
+o reduce protocol overhead
+o compressed protocol
+
+
+o If there is a beacon anomaly then this indicates that
+the server is _not_ available. Perhaps we should only
+reset the search timer interval when we see a beacon 
+anomaly transition into a sure steady beacon.
+
+o make certain that a monitor callback canceling itself
+does not deadlock.
+
+o the free list library does not now cause exceptions to
+occur (it uses new ( nothrow )), and therefore we should
+change the new handlers to be nothrow also if this is 
+the design goal.
+
+o test the library when an IOC is running low on memory.
+
+o The new CA interface should be multi-threaded by default.
+We should continue to support a single-threaded interface,
+but this would should be restricted so that it always
+runs with preemptive callback disable and no threads
+may join in. Alternatively, the new CA interface could
+be 100% preemptive multi-threaded and the old interface
+could be layered on this.

@@ -1,0 +1,10 @@
+record(arr, "target") {
+  field(FTVL, "$(TFTVL=$(FTVL=))")
+  field(NELM, "$(TNELM=$(NELM=))")
+}
+
+record(arr, "source") {
+  field(INP, "$(TARGET)")
+  field(FTVL, "$(SFTVL=$(FTVL=))")
+  field(NELM, "$(SNELM=$(NELM=))")
+}

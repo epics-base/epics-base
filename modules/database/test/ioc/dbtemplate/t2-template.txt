@@ -1,0 +1,1 @@
+a = $(a=def-a)  b = $(b=def-b)  c = $(c=def-c)  d = $(d,undef)

@@ -1,0 +1,9 @@
+record(waveform, "wfrec") {
+    field(NELM, "10")
+    field(FTVL, "LONG")
+    field(INP, [1, 2, 3])
+}
+record(waveform, "wfrec1") {
+    field(NELM, "1")
+    field(FTVL, "LONG")
+}

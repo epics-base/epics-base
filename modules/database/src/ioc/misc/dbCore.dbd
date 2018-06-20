@@ -1,0 +1,28 @@
+# dbCore.dbd
+#
+# This file provides iocsh access to variables that control some lesser-used
+# and debugging features of the IOC database code.
+
+# show epicsAtExit callbacks as they are run
+variable(atExitDebug,int)
+
+# Access security subroutines
+variable(asCaDebug,int)
+
+# CA server debug flag (very verbose) range[0,5]
+variable(CASDEBUG,int)
+
+# Static database access variables
+variable(dbRecordsOnceOnly,int)
+variable(dbRecordsAbcSorted,int)
+variable(dbBptNotMonotonic,int)
+variable(dbQuietMacroWarnings,int)
+variable(dbConvertStrict,int)
+
+# dbLoadTemplate settings
+variable(dbTemplateMaxVars,int)
+# Default number of parallel callback threads
+variable(callbackParallelThreadsDefault,int)
+
+# Real-time operation
+variable(dbThreadRealtimeLock,int)

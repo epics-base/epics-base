@@ -1,0 +1,1 @@
+#include "../sncExample.stt"

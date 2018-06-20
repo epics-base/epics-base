@@ -1,0 +1,24 @@
+record(x, "reca") {
+}
+
+record(x, "recb") {
+    field(SDIS, "recc")
+}
+
+record(x, "recc") {
+    field(SDIS, "recc")
+}
+
+record(x, "recd") {
+    field(SDIS, "rece")
+}
+
+record(x, "rece") {
+    field(SDIS, "recf")
+}
+
+record(x, "recf") {
+}
+
+record(x, "recg") {
+}

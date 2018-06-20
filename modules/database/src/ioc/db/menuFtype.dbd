@@ -1,0 +1,22 @@
+#*************************************************************************
+# Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+menu(menuFtype) {
+	choice(menuFtypeSTRING,"STRING")
+	choice(menuFtypeCHAR,"CHAR")
+	choice(menuFtypeUCHAR,"UCHAR")
+	choice(menuFtypeSHORT,"SHORT")
+	choice(menuFtypeUSHORT,"USHORT")
+	choice(menuFtypeLONG,"LONG")
+	choice(menuFtypeULONG,"ULONG")
+	choice(menuFtypeINT64,"INT64")
+	choice(menuFtypeUINT64,"UINT64")
+	choice(menuFtypeFLOAT,"FLOAT")
+	choice(menuFtypeDOUBLE,"DOUBLE")
+	choice(menuFtypeENUM,"ENUM")
+}

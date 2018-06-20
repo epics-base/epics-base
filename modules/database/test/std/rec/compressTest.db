@@ -1,0 +1,7 @@
+record(ai, "val") {}
+record(compress, "comp") {
+  field(INP, "val NPP")
+  field(ALG, "$(ALG)")
+  field(BALG,"$(BALG)")
+  field(NSAM,"$(NSAM)")
+}

@@ -1,0 +1,41 @@
+
+record(x, "recempty") {
+# empty string is the same "0" for numeric fields
+    field(DTYP, "")
+    field(DESC, "")
+    field(PHAS, "")
+    field(TSE , "")
+    field(DISA, "")
+    field(DISV, "")
+}
+
+record(x, "recoverwrite") {
+# first with non-default values
+    field(DTYP, "Scan I/O")
+    field(DESC, "hello")
+    field(PHAS, "2")
+    field(TSE , "5")
+    field(DISA, "6")
+    field(DISV, "7")
+}
+
+record(x, "recoverwrite") {
+# now restore default values
+    field(DTYP, "")
+    field(DESC, "")
+    field(PHAS, "")
+    field(TSE , "")
+    field(TSEL, "")
+    field(DISA, "")
+    field(DISV, "")
+}
+
+record(x, "recmax") {
+    field(DISA, "0xffffffff")
+}
+
+record(x, "lnktarget") {}
+
+record(x, "lnktest") {
+    field(INP, "lnktarget NPP NMS")
+}

@@ -1,0 +1,393 @@
+# Group 0 are all soft-channel input records with INP being a DB link
+# to the PV 'source'. Their VAL fields all start out with the default
+# value for the type, i.e. 0 or an empty string. Triggering record
+# processing should read the integer value from the 'source' PV.
+
+record(longin, "source") {}
+
+record(ai, "ai0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+}
+record(bi, "bi0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64in, "ii0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+}
+record(longin, "li0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+}
+record(mbbiDirect, "di0") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, "source")
+}
+record(mbbi, "mi0") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, "source")
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lsi, "lsi0") {
+  field(DTYP, "Soft Channel")
+  field(SIZV, 40)
+  field(INP, "source")
+}
+record(stringin, "si0") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source")
+}
+
+record(ai, "ai0c") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source CA")
+}
+record(bi, "bi0c") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source CA")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64in, "ii0c") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source CA")
+}
+record(longin, "li0c") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source CA")
+}
+record(mbbiDirect, "di0c") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, "source CA")
+}
+record(mbbi, "mi0c") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, "source CA")
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lsi, "lsi0c") {
+  field(DTYP, "Soft Channel")
+  field(SIZV, 40)
+  field(INP, "source CA")
+}
+record(stringin, "si0c") {
+  field(DTYP, "Soft Channel")
+  field(INP, "source CA")
+}
+
+
+# Group 1 are all soft-channel input records with INP being a non-zero
+# "const" JSON-link, 9 for most records, 1 for the binary. Their VAL
+# fields should all be initialized to that constant value. Triggering
+# record processing should succeed, but shouldn't change VAL.
+
+record(ai, "ai1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:9})
+}
+record(bi, "bi1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:1})
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64in, "ii1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:9})
+}
+record(longin, "li1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:9})
+}
+record(mbbiDirect, "di1") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, {const:9})
+}
+record(mbbi, "mi1") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, {const:9})
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lsi, "lsi1") {
+  field(DTYP, "Soft Channel")
+  field(SIZV, 40)
+  field(INP, {const:"9"})
+}
+record(stringin, "si1") {
+  field(DTYP, "Soft Channel")
+  field(INP, {const:"9"})
+}
+
+
+# Group 2 are all soft-channel input records with INP being a CONSTANT
+# link with value 9 for most records, 1 for the binary. Their VAL
+# fields should all be initialized to that constant value. Triggering
+# record processing should succeed, but shouldn't change VAL.
+
+record(ai, "ai2") {
+  field(DTYP, "Soft Channel")
+  field(INP, 9)
+}
+record(bi, "bi2") {
+  field(DTYP, "Soft Channel")
+  field(INP, 1)
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64in, "ii2") {
+  field(DTYP, "Soft Channel")
+  field(INP, 9)
+}
+record(longin, "li2") {
+  field(DTYP, "Soft Channel")
+  field(INP, 9)
+}
+record(mbbiDirect, "di2") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, 9)
+}
+record(mbbi, "mi2") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(INP, 9)
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+
+
+# Group 3 are all soft-channel output records with OUT being a DB or
+# CA link to the PV 'dest' with PP. Putting a value to the record
+# under test writes the value to 'dest' and processes it.
+
+record(sub, "dest") {
+  field(SNAM, "destSubr")
+  field(VAL, -1)
+}
+
+record(ao, "ao3") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+}
+record(bo, "bo3") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64out, "io3") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+}
+record(longout, "lo3") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+}
+record(mbboDirect, "do3") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(OUT, "dest PP")
+}
+record(mbbo, "mo3") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(OUT, "dest PP")
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lso, "lso3") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+  field(SIZV, 40)
+}
+record(stringout, "so3") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest PP")
+}
+
+record(ao, "ao3c") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest CA")
+}
+record(bo, "bo3c") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest CA")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64out, "io3c") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest CA")
+}
+record(longout, "lo3c") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest CA")
+}
+record(mbboDirect, "do3c") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(OUT, "dest CA")
+}
+record(mbbo, "mo3c") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(OUT, "dest CA")
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lso, "lso3c") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest CA")
+  field(SIZV, 40)
+}
+record(stringout, "so3c") {
+  field(DTYP, "Soft Channel")
+  field(OUT, "dest CA")
+}
+
+
+# Group 4 are all soft-channel output records with OUT being empty
+# (i.e. a CONSTANT link). Putting a value to the record must succeed.
+
+record(ao, "ao4") {
+  field(DTYP, "Soft Channel")
+}
+record(bo, "bo4") {
+  field(DTYP, "Soft Channel")
+  field(ZNAM, "Zero")
+  field(ONAM, "One")
+}
+record(int64out, "io4") {
+  field(DTYP, "Soft Channel")
+}
+record(longout, "lo4") {
+  field(DTYP, "Soft Channel")
+}
+record(mbboDirect, "do4") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+}
+record(mbbo, "mo4") {
+  field(DTYP, "Soft Channel")
+  field(NOBT, 4)
+  field(ZRST, "Zero")
+  field(ONST, "One")
+  field(TWST, "Two")
+  field(THST, "Three")
+  field(FRST, "Four")
+  field(FVST, "Five")
+  field(SXST, "Six")
+  field(SVST, "Seven")
+  field(EIST, "Eight")
+  field(NIST, "Nine")
+  field(TEST, "Ten")
+  field(ELST, "Eleven")
+  field(TWST, "Twelve")
+  field(TTST, "Thirteen")
+  field(FTST, "Fourteen")
+  field(FFST, "Fifteen")
+}
+record(lso, "lso4") {
+  field(DTYP, "Soft Channel")
+  field(SIZV, 40)
+}
+record(stringout, "so4") {
+  field(DTYP, "Soft Channel")
+}

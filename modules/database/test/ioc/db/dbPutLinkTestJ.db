@@ -1,0 +1,16 @@
+
+record(x, "j1") {
+  field(INP, {z:{good:1}})
+  field(TSEL, {z:{good:0}})
+  field(SDIS, {z:{good:0}})
+  field(FLNK, {z:{good:0}})
+}
+
+record(x, "j2") {
+  field(INP, {z:{good:2}})
+  field(TSEL, "j1.TIME")
+}
+
+record(x, "j3") {
+  field(INP, {z:{good:3}})
+}

@@ -1,0 +1,10 @@
+# Regular simulation mode and simm:SCAN tests
+record($(TYPE), "$(TYPE)") {
+  field(SSCN,"Event")
+}
+record($(TYPE), "$(TYPE):simval") {
+}
+record(bo, "$(TYPE):simmode") {
+  field(ZNAM,"off")
+  field(ONAM,"on")
+}

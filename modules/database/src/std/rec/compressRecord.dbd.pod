@@ -1,0 +1,199 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+=title Compress Record (compress)
+
+The data compression record is used to collect and compress data from arrays.
+When the INP field references a data array field, it immediately compresses the
+entire array into an element of an array using one of several algorithms,
+overwriting the previous element. If the INP field obtains its value from a
+scalar-value field, the compression record will collect a new sample each time
+the record is processed and add it to the compressed data array as a circular
+buffer.
+
+The INP link can also specify a constant; however, if this is the case, the
+compression algorithms are ignored, and the record support routines merely
+return after checking the FLNK field.
+
+=head2 Record-specific Menus
+
+=head3 Menu compressALG
+
+The ALG field which uses this menu controls the compression algorithm used by
+the record.
+
+=menu compressALG
+
+=head3 Menu bufferingALG
+
+The BALG field which uses this menu controls whether new values are inserted at
+the beginning or the end of the VAL array.
+
+=menu bufferingALG
+
+
+=head2 Parameter Fields
+
+The record-specific fields are described below.
+
+=recordtype compress
+
+...
+
+=cut
+
+menu(compressALG) {
+	choice(compressALG_N_to_1_Low_Value,"N to 1 Low Value")
+	choice(compressALG_N_to_1_High_Value,"N to 1 High Value")
+	choice(compressALG_N_to_1_Average,"N to 1 Average")
+	choice(compressALG_Average,"Average")
+	choice(compressALG_Circular_Buffer,"Circular Buffer")
+	choice(compressALG_N_to_1_Median,"N to 1 Median")
+}
+menu(bufferingALG) {
+	choice(bufferingALG_FIFO, "FIFO Buffer")
+	choice(bufferingALG_LIFO, "LIFO Buffer")
+}
+recordtype(compress) {
+
+=fields VAL
+
+=cut
+
+	include "dbCommon.dbd" 
+	field(VAL,DBF_NOACCESS) {
+		prompt("Value")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		pp(TRUE)
+		extra("void *		val")
+		#=type DOUBLE[]
+		#=read Yes
+		#=write Yes
+	}
+	field(INP,DBF_INLINK) {
+		prompt("Input Specification")
+		promptgroup("40 - Input")
+		interest(1)
+	}
+	field(RES,DBF_SHORT) {
+		prompt("Reset")
+		asl(ASL0)
+		special(SPC_RESET)
+		interest(3)
+	}
+	field(ALG,DBF_MENU) {
+		prompt("Compression Algorithm")
+		promptgroup("30 - Action")
+		special(SPC_RESET)
+		interest(1)
+		menu(compressALG)
+	}
+ 	field(BALG,DBF_MENU) {
+		prompt("Buffering Algorithm")
+		promptgroup("30 - Action")
+		special(SPC_RESET)
+		interest(1)
+		menu(bufferingALG)
+	}
+	field(NSAM,DBF_ULONG) {
+		prompt("Number of Values")
+		promptgroup("30 - Action")
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(N,DBF_ULONG) {
+		prompt("N to 1 Compression")
+		promptgroup("30 - Action")
+		special(SPC_RESET)
+		interest(1)
+		initial("1")
+	}
+	field(IHIL,DBF_DOUBLE) {
+		prompt("Init High Interest Lim")
+		promptgroup("30 - Action")
+		interest(1)
+	}
+	field(ILIL,DBF_DOUBLE) {
+		prompt("Init Low Interest Lim")
+		promptgroup("30 - Action")
+		interest(1)
+	}
+	field(HOPR,DBF_DOUBLE) {
+		prompt("High Operating Range")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(LOPR,DBF_DOUBLE) {
+		prompt("Low Operating Range")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
+		interest(1)
+		size(16)
+		prop(YES)
+	}
+	field(OFF,DBF_ULONG) {
+		prompt("Offset")
+		special(SPC_NOMOD)
+	}
+	field(NUSE,DBF_ULONG) {
+		prompt("Number Used")
+		special(SPC_NOMOD)
+	}
+	field(OUSE,DBF_ULONG) {
+		prompt("Old Number Used")
+		special(SPC_NOMOD)
+	}
+	field(BPTR,DBF_NOACCESS) {
+		prompt("Buffer Pointer")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("double		*bptr")
+	}
+	field(SPTR,DBF_NOACCESS) {
+		prompt("Summing Buffer Ptr")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("double		*sptr")
+	}
+	field(WPTR,DBF_NOACCESS) {
+		prompt("Working Buffer Ptr")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("double		*wptr")
+	}
+	field(INPN,DBF_LONG) {
+		prompt("Number of elements in Working Buffer")
+		special(SPC_NOMOD)
+		interest(4)
+	}
+	field(CVB,DBF_DOUBLE) {
+		prompt("Compress Value Buffer")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(INX,DBF_ULONG) {
+		prompt("Compressed Array Inx")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+}

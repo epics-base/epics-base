@@ -1,0 +1,1 @@
+device(lsi,INST_IO,dev_CSAFEAPPNAME_Version,"_APPNAME_ version")

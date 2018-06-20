@@ -1,0 +1,2 @@
+device(x, CONSTANT, devxSoft, "Soft Channel")
+device(x, INST_IO , devxScanIO, "Scan I/O")

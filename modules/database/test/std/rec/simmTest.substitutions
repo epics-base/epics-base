@@ -1,0 +1,32 @@
+file "simmTestSimple.template" {
+{ TYPE="ai" }
+{ TYPE="ao" }
+{ TYPE="bi" }
+{ TYPE="bo" }
+{ TYPE="mbbi" }
+{ TYPE="mbbo" }
+{ TYPE="mbbiDirect" }
+{ TYPE="mbboDirect" }
+{ TYPE="longin" }
+{ TYPE="longout" }
+{ TYPE="int64in" }
+{ TYPE="int64out" }
+{ TYPE="stringin" }
+{ TYPE="stringout" }
+{ TYPE="lsi" }
+{ TYPE="lso" }
+{ TYPE="event" }
+}
+file "simmTestArray.template" {
+{ TYPE="aai" }
+{ TYPE="aao" }
+{ TYPE="waveform" }
+}
+file "simmTestHistogram.template" {
+{ TYPE="histogram" }
+}
+file "simmSetup.db" {
+{}
+file "simmSimlFail.db" {
+{}
+}

@@ -1,0 +1,42 @@
+include "menuGlobal.dbd"
+include "menuConvert.dbd"
+include "menuScan.dbd"
+recordtype(arr) {
+  include "dbCommon.dbd"
+  field(VAL, DBF_NOACCESS) {
+    prompt("Value")
+    special(SPC_DBADDR)
+    pp(TRUE)
+    extra("void *val")
+  }
+  field(NELM, DBF_ULONG) {
+    prompt("Number of Elements")
+    special(SPC_NOMOD)
+    initial("1")
+  }
+  field(FTVL, DBF_MENU) {
+    prompt("Field Type of Value")
+    special(SPC_NOMOD)
+    menu(menuFtype)
+  }
+  field(NORD, DBF_ULONG) {
+    prompt("Number elements read")
+    special(SPC_NOMOD)
+  }
+  field(OFF, DBF_ULONG) {
+    prompt("Offset into array")
+  }
+  field(BPTR, DBF_NOACCESS) {
+    prompt("Buffer Pointer")
+    special(SPC_NOMOD)
+    extra("void *bptr")
+  }
+  field(INP, DBF_INLINK) {
+    prompt("Input Link")
+  }
+  field(CLBK, DBF_NOACCESS) {
+    prompt("Processing callback")
+    special(SPC_NOMOD)
+    extra("void (*clbk)(struct arrRecord*)")
+  }
+}

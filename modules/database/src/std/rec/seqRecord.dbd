@@ -1,0 +1,365 @@
+#*************************************************************************
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+menu(seqSELM) {
+    choice(seqSELM_All,"All")
+    choice(seqSELM_Specified,"Specified")
+    choice(seqSELM_Mask,"Mask")
+}
+recordtype(seq) {
+    include "dbCommon.dbd" 
+    field(VAL,DBF_LONG) {
+        prompt("Used to trigger")
+        asl(ASL0)
+        pp(TRUE)
+    }
+    field(SELM,DBF_MENU) {
+        prompt("Select Mechanism")
+        promptgroup("30 - Action")
+        interest(1)
+        menu(seqSELM)
+    }
+    field(SELN,DBF_USHORT) {
+        prompt("Link Selection")
+        interest(1)
+        initial("1")
+    }
+    field(SELL,DBF_INLINK) {
+        prompt("Link Selection Loc")
+        promptgroup("30 - Action")
+        interest(1)
+    }
+    field(OFFS,DBF_SHORT) {
+        prompt("Offset for Specified")
+        promptgroup("30 - Action")
+        interest(1)
+        initial("0")
+    }
+    field(SHFT,DBF_SHORT) {
+        prompt("Shift for Mask mode")
+        promptgroup("30 - Action")
+        interest(1)
+        initial("-1")
+    }
+    field(OLDN,DBF_USHORT) {
+        prompt("Old Selection")
+        interest(4)
+    }
+    field(PREC,DBF_SHORT) {
+        prompt("Display Precision")
+        promptgroup("80 - Display")
+        interest(1)
+    }
+    field(DLY0,DBF_DOUBLE) {
+        prompt("Delay 0")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL0,DBF_INLINK) {
+        prompt("Input link 0")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO0,DBF_DOUBLE) {
+        prompt("Value 0")
+        interest(1)
+    }
+    field(LNK0,DBF_OUTLINK) {
+        prompt("Output Link 0")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY1,DBF_DOUBLE) {
+        prompt("Delay 1")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL1,DBF_INLINK) {
+        prompt("Input link1")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO1,DBF_DOUBLE) {
+        prompt("Value 1")
+        interest(1)
+    }
+    field(LNK1,DBF_OUTLINK) {
+        prompt("Output Link 1")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY2,DBF_DOUBLE) {
+        prompt("Delay 2")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL2,DBF_INLINK) {
+        prompt("Input link 2")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO2,DBF_DOUBLE) {
+        prompt("Value 2")
+        interest(1)
+    }
+    field(LNK2,DBF_OUTLINK) {
+        prompt("Output Link 2")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY3,DBF_DOUBLE) {
+        prompt("Delay 3")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL3,DBF_INLINK) {
+        prompt("Input link 3")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO3,DBF_DOUBLE) {
+        prompt("Value 3")
+        interest(1)
+    }
+    field(LNK3,DBF_OUTLINK) {
+        prompt("Output Link 3")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY4,DBF_DOUBLE) {
+        prompt("Delay 4")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL4,DBF_INLINK) {
+        prompt("Input link 4")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO4,DBF_DOUBLE) {
+        prompt("Value 4")
+        interest(1)
+    }
+    field(LNK4,DBF_OUTLINK) {
+        prompt("Output Link 4")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY5,DBF_DOUBLE) {
+        prompt("Delay 5")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL5,DBF_INLINK) {
+        prompt("Input link 5")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO5,DBF_DOUBLE) {
+        prompt("Value 5")
+        interest(1)
+    }
+    field(LNK5,DBF_OUTLINK) {
+        prompt("Output Link 5")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY6,DBF_DOUBLE) {
+        prompt("Delay 6")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL6,DBF_INLINK) {
+        prompt("Input link 6")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO6,DBF_DOUBLE) {
+        prompt("Value 6")
+        interest(1)
+    }
+    field(LNK6,DBF_OUTLINK) {
+        prompt("Output Link 6")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY7,DBF_DOUBLE) {
+        prompt("Delay 7")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL7,DBF_INLINK) {
+        prompt("Input link 7")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO7,DBF_DOUBLE) {
+        prompt("Value 7")
+        interest(1)
+    }
+    field(LNK7,DBF_OUTLINK) {
+        prompt("Output Link 7")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY8,DBF_DOUBLE) {
+        prompt("Delay 8")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOL8,DBF_INLINK) {
+        prompt("Input link 8")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DO8,DBF_DOUBLE) {
+        prompt("Value 8")
+        interest(1)
+    }
+    field(LNK8,DBF_OUTLINK) {
+        prompt("Output Link 8")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLY9,DBF_DOUBLE) {
+        prompt("Delay 9")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOL9,DBF_INLINK) {
+        prompt("Input link 9")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DO9,DBF_DOUBLE) {
+        prompt("Value 9")
+        interest(1)
+    }
+    field(LNK9,DBF_OUTLINK) {
+        prompt("Output Link 9")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYA,DBF_DOUBLE) {
+        prompt("Delay 10")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLA,DBF_INLINK) {
+        prompt("Input link 10")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOA,DBF_DOUBLE) {
+        prompt("Value 10")
+        interest(1)
+    }
+    field(LNKA,DBF_OUTLINK) {
+        prompt("Output Link 10")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYB,DBF_DOUBLE) {
+        prompt("Delay 11")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLB,DBF_INLINK) {
+        prompt("Input link 11")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOB,DBF_DOUBLE) {
+        prompt("Value 11")
+        interest(1)
+    }
+    field(LNKB,DBF_OUTLINK) {
+        prompt("Output Link 11")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYC,DBF_DOUBLE) {
+        prompt("Delay 12")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLC,DBF_INLINK) {
+        prompt("Input link 12")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOC,DBF_DOUBLE) {
+        prompt("Value 12")
+        interest(1)
+    }
+    field(LNKC,DBF_OUTLINK) {
+        prompt("Output Link 12")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYD,DBF_DOUBLE) {
+        prompt("Delay 13")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLD,DBF_INLINK) {
+        prompt("Input link 13")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOD,DBF_DOUBLE) {
+        prompt("Value 13")
+        interest(1)
+    }
+    field(LNKD,DBF_OUTLINK) {
+        prompt("Output Link 13")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYE,DBF_DOUBLE) {
+        prompt("Delay 14")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLE,DBF_INLINK) {
+        prompt("Input link 14")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOE,DBF_DOUBLE) {
+        prompt("Value 14")
+        interest(1)
+    }
+    field(LNKE,DBF_OUTLINK) {
+        prompt("Output Link 14")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYF,DBF_DOUBLE) {
+        prompt("Delay 15")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLF,DBF_INLINK) {
+        prompt("Input link 15")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOF,DBF_DOUBLE) {
+        prompt("Value 15")
+        interest(1)
+    }
+    field(LNKF,DBF_OUTLINK) {
+        prompt("Output Link 15")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+}
+
+variable(seqDLYprecision, int)
+variable(seqDLYlimit, double)

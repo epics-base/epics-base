@@ -1,0 +1,109 @@
+#*************************************************************************
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+recordtype(printf) {
+    include "dbCommon.dbd"
+    %#include "devSup.h"
+    %
+    %/* Declare Device Support Entry Table */
+    %typedef struct printfdset {
+    %    long number;
+    %    DEVSUPFUN report;
+    %    DEVSUPFUN init;
+    %    DEVSUPFUN init_record;
+    %    DEVSUPFUN get_ioint_info;
+    %    DEVSUPFUN write_string;
+    %} printfdset;
+    %
+    field(VAL,DBF_NOACCESS) {
+        prompt("Result")
+        asl(ASL0)
+        pp(TRUE)
+        special(SPC_DBADDR)
+        extra("char *val")
+    }
+    field(SIZV,DBF_USHORT) {
+        prompt("Size of VAL buffer")
+        promptgroup("30 - Action")
+        special(SPC_NOMOD)
+        interest(1)
+        initial("41")
+    }
+    field(LEN,DBF_ULONG) {
+        prompt("Length of VAL")
+        special(SPC_NOMOD)
+    }
+    field(OUT,DBF_OUTLINK) {
+        prompt("Output Specification")
+        promptgroup("50 - Output")
+        interest(1)
+    }
+    field(FMT,DBF_STRING) {
+        prompt("Format String")
+        promptgroup("30 - Action")
+        pp(TRUE)
+        size(81)
+    }
+    field(IVLS,DBF_STRING) {
+        prompt("Invalid Link String")
+        promptgroup("30 - Action")
+        size(16)
+        initial("LNK")
+    }
+    field(INP0,DBF_INLINK) {
+        prompt("Input 0")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP1,DBF_INLINK) {
+        prompt("Input 1")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP2,DBF_INLINK) {
+        prompt("Input 2")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP3,DBF_INLINK) {
+        prompt("Input 3")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP4,DBF_INLINK) {
+        prompt("Input 4")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP5,DBF_INLINK) {
+        prompt("Input 5")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP6,DBF_INLINK) {
+        prompt("Input 6")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP7,DBF_INLINK) {
+        prompt("Input 7")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP8,DBF_INLINK) {
+        prompt("Input 8")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP9,DBF_INLINK) {
+        prompt("Input 9")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    %/* Number of INPx fields defined */
+    %#define PRINTF_NLINKS 10
+}

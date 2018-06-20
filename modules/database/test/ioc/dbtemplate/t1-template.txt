@@ -1,0 +1,14 @@
+This is t1-template.txt
+
+With $(a) & ${b}:
+include "t1-include.txt"
+
+substitute "a=aaa,b=bbb"
+On defining a=$(a) & b=${b}:
+include "t1-include.txt"
+
+substitute "a=\"aa\""
+On setting a=$(a):
+include "t1-include.txt"
+
+End of t1-template.txt

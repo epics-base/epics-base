@@ -1,0 +1,2 @@
+t8.txt: ../t1-template.txt \
+ ../t1-include.txt

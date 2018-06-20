@@ -1,0 +1,2 @@
+include "xxxRecord.dbd"
+device(xxx,CONSTANT,devXxxSoft,"SoftChannel")

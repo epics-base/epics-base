@@ -1,0 +1,445 @@
+<!DOCTYPE html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body>
+
+<h1>msi: Macro Substitution and Include Tool</h1>
+
+<h2>Introduction</h2>
+
+<p>msi is a general purpose macro substitution/include tool. It accepts as input
+an ascii template file. It looks for lines containing two reserved command
+names: <tt>include</tt> and <tt>substitute</tt>. It also looks for and performs
+substitutions on macros of the form $(var) and ${var}. It uses the macLib
+routines from EPICS Base to perform the substitutions, so it also accepts the
+default value and value definition syntax that macLib implements.</p>
+
+<p>msi also allows substitutions to be specified via a separate substitution
+file. This substitution file allows the same format as the substitution files
+accepted by the EPICS IOC's dbLoadTemplate command.</p>
+
+<h2>Command Syntax:</h2>
+
+<pre>msi -V -g -D -o<i>outfile</i> -I<i>dir</i> -M<i>subs</i> -S<i>subfile</i> <i>template</i></pre>
+
+<p>All parameters are optional. The -o, -I, -M, and -S switches may be
+separated from their associated value string by spaces if desired. Output will
+be written to stdout unless the -o option is given.</p>
+
+<p>Switches have the following meanings:</p>
+
+<dl>
+  <dt><tt>-V</tt></dt>
+    <dd>Verbose warnings; if this parameter is specified then any undefined
+    macro discovered in the template file which does not have an associated
+    default value is considered an error. An error message is generated, and
+    when msi terminates it will do so with an exit status of 2.</dd>
+
+  <dt><tt>-g</tt></dt>
+    <dd>When this flag is given all macros defined in a substitution file will
+    have global scope and thus their values will persist until a new value is
+    given for this macro. This flag is provided for backwards compatibility as
+    this was the behavior of previous versions of msi, but it does not follow
+    common scoping rules and is discouraged.</dd>
+
+  <dt><tt>-D</tt></dt>
+    <dd>Output dependency information suitable for including by a Makefile to
+    stdout instead of performing the macro substitutions. The <tt>-o</tt> option
+    must be given to specify the target name for the dependency rules. Other
+    options should be given exactly as will be used in the macro substitution
+    process.</dd>
+
+  <dt><tt>-o</tt> <i>file</i></dt>
+    <dd>Output will be written to the specifed file rather than to the standard
+    output.</dd>
+
+  <dt><tt>-I</tt> <i>dir</i></dt>
+    <dd>This parameter, which may be repeated or contain a colon-separated (or
+    semi-colon separated on Windows) list of directory paths, specifies a search
+    path for include commands. For example:
+
+    <blockquote>
+    <pre>msi -I /home/mrk/examples:. -I.. template</pre>
+    </blockquote>
+
+    specifies that all named files should be searched for in the following
+    locations in the order given:
+
+    <ol>
+      <li><tt>/home/mrk/examples</tt></li>
+      <li><tt>.</tt> (the current directory)</li>
+      <li><tt>..</tt> (the parent of the current directory)</li>
+    </ol>
+  </dd>
+
+  <dt><tt>-M</tt> <i>substitutions</i></dt>
+    <dd>This parameter specifies macro values for the template instance.
+    Multiple macro values can be specified in one substitution parameter, or in
+    multiple <tt>-M</tt> parameters. For example:
+
+    <blockquote>
+    <pre>msi -M "a=aval,b=bval" -Mc=cval template</pre>
+    </blockquote>
+
+    specifies that in the template file each occurrence of:
+
+    <dl>
+      <dd><tt>$(a)</tt> or <tt>${a}</tt> is replaced by <tt>aval</tt></dd>
+      <dd><tt>$(b)</tt> or <tt>${b}</tt> is replaced by <tt>bval</tt></dd>
+      <dd><tt>$(c)</tt> or <tt>${c}</tt> is replaced by <tt>cval</tt></dd>
+    </dl>
+  </dd>
+
+  <dt><tt>-S</tt> <i>subfile</i></dt>
+    <dd>The substitution file. See below for format.</dd>
+
+  <dt><i>template</i></dt>
+    <dd> The input file. If no file is specified then input is taken from
+    stdin, i.e. msi can be used as a filter. See below for a description of
+    commands that can be embedded in the template file.</dd>
+</dl>
+
+<p>It is not possible to display usage by just typing <tt>msi</tt> since
+executing the command with no arguments is a valid command. To show usage
+specify an illegal switch, e.g.</p>
+
+<blockquote>
+<pre>msi -help</pre>
+</blockquote>
+
+<h2>Exit Status</h2>
+
+<dl>
+  <dt>0<dd>Success.
+  <dt>1<dd>Can't open/create file, or other I/O error.
+  <dt>2<dd>Undefined macros encountered with the <tt>-V</tt> option specified.
+</dl>
+
+<h2>Template File Format</h2>
+
+<p>This file contains the text to be read and written to the output after macro
+substitution is performed. If no file is given then input is read from stdin.
+Variable instances to be substituted by macro values are expressed in the
+template using the syntax <tt>$(</tt><i>name</i><tt>)</tt> or
+<tt>${</tt><i>name</i><tt>}</tt>. The template can also provide default values
+to be used when a macro has not been given a value, using the syntax
+<tt>$(</tt><i>name</i><tt>=</tt><i>default</i><tt>)</tt> or
+<tt>${</tt><i>name</i><tt>=</tt><i>default</i><tt>}</tt>.</p>
+
+<p>For example, using the command</p>
+
+<blockquote>
+<pre>msi -M name=Marty template</pre>
+</blockquote>
+
+<p>where the file template contains</p>
+
+<blockquote>
+<pre>My name is $(name)
+My age is $(age=none of your business)</pre>
+</blockquote>
+
+<p>results in this output:</p>
+
+<blockquote>
+<pre>My name is Marty
+My age is none of your business</pre>
+</blockquote>
+
+<p>Macro variables and their default values can be expressed in terms of other
+macros if necessary, to almost any level of complexity. Recursive definitions
+will generate warning messages on stderr and result in undefined output.</p>
+
+<p>The template file is read and processed one line at a time, where the
+maximum length of a line before and/or after macro expansion is 1023 characters
+&mdash; longer input or output lines will cause msi to fail. Within the context
+of a single line, macro expansion does not occur when the variable instance
+appears inside a single-quoted string, or where the dollar sign <tt>$</tt> is
+preceded by a back-slash character <tt>\</tt>, but as with the standard Unix
+shells, variables inside double quoted strings are expanded properly.</p>
+
+<p>However neither back-slash characters nor quotes of either variety are
+removed when generating the output file, so depending on what is being output
+the single quote behaviour may not be useful and may even be a hinderance. It
+cannot be disabled in the current version of msi.</p>
+
+<h3>Template file commands</h3>
+
+<p>In addition to the regular text and variable instances described above, the
+template file may also contain commands which allow the insertion of other
+template files and the ability to set macro values inside the template file
+itself. These commands are:</p>
+
+<blockquote>
+<pre>include "file"
+substitute "var=value,var=value,..."</pre>
+</blockquote>
+
+<p>Lines containing commands must be in one of these forms:</p>
+
+<ul>
+  <li><tt>include "</tt><i>filename</i><tt>"</tt></li>
+  <li><tt>substitute "</tt><i>name1=value1, name2=value2, ...</i><tt>"</tt></li>
+</ul>
+
+<p>White space is allowed before and after the command verb, and after the
+quoted string. If embedded quotes are needed, the backslash character
+<tt>\</tt> can be used as an escape character. For example</p>
+
+<blockquote>
+<pre>substitute "a=\"val\""</pre>
+</blockquote>
+
+<p>specifies that (unless <tt>a</tt> is subsequently redefined) wherever a
+<tt>$(a)</tt> macro appears in the template below this point, the text
+<tt>"val"</tt> (including the double quote characters) will appear in the
+output instead.</p>
+
+<p>If a line does match either syntax above it is just passed to macLib for
+processing without any notification. Thus the input line:</p>
+
+<blockquote>
+<pre>include "myfile" #include file</pre>
+</blockquote>
+
+<p>would just be passed to macLib, i.e. it would <em>not</em> be considered an
+include command.</p>
+
+<p>As an example of these commands, let the Unix command be:</p>
+
+<blockquote>
+<pre>msi template</pre>
+</blockquote>
+
+<p>and file includeFile contain:</p>
+
+<blockquote>
+<pre>first name is ${first}
+family name is ${family}</pre>
+</blockquote>
+
+<p>and template is</p>
+
+<blockquote>
+<pre>substitute "first=Marty,family=Kraimer"
+include "includeFile"
+substitute "first=Irma,family=Kraimer"
+include "includeFile"</pre>
+</blockquote>
+
+<p>then the following is written to the output.</p>
+
+<blockquote>
+<pre>first name is Marty
+family name is Kraimer
+first name is Irma
+family name is Kraimer</pre>
+</blockquote>
+
+<p>Note that the IOC's <tt>dbLoadTemplate</tt> command does not support the
+<tt>substitute</tt> syntax in template files, although the <tt>include</tt>
+syntax is supported.</p>
+
+<h2>Substitution File Format</h2>
+
+<p>The optional substitution file has three formats: regular, pattern, and
+dbTemplate format. We will discuss each separately.</p>
+
+<h3>Regular format</h3>
+
+<blockquote>
+<pre>global {gbl_var1=gbl_val1, gbl_var2=gbl_val2, ...}
+{var1=set1_val1, var2=set1_val2, ...}
+{var2=set2_val2, var1=set2_val1, ...}
+global {gbl_var1=gbl_val3, gbl_var2=gbl_val4, ...}
+{var1=set3_val1, var2=set3_val2, ...}
+{var2=set4_val2, var1=set4_val1, ...}</pre>
+</blockquote>
+
+<p>The template file is output with macro substitutions performed once for each
+set of braces containing macro replacement values.</p> 
+
+<h3>Pattern format</h3>
+
+<blockquote>
+<pre>global {gbl_var1=gbl_val1, gbl_var2=gbl_val2, ...}
+pattern {var1, var2, ...}
+{set1_val1, set1_val2, ...}
+{set2_val1, set2_val2, ...}
+pattern {var2, var1, ...}
+global {gbl_var1=gbl_val3, gbl_var2=gbl_val4, ...}
+{set3_val2, set3_val1, ...}
+{set4_val2, set4_val2, ...}</pre>
+</blockquote>
+
+<p>This produces the same result as the regular format example above.</p>
+
+<h3>dbLoadTemplate Format</h3>
+
+<p>This format is an extension of the format accepted by the EPICS IOC command
+<tt>dbLoadTemplate</tt>, and allows templates to be expanded on the host rather
+by using dbLoadTemplate at IOC boot time.</p>
+
+<blockquote>
+<pre>global {gbl_var1=gbl_val1, gbl_var2=gbl_val2, ...}
+file templatefile {
+    <i>pattern format or regular format</i>
+}
+file "${WHERE}/template2" {
+    <i>pattern format or regular format</i>
+}</pre>
+</blockquote>
+
+<p>For the dbTemplate format, the template filename does not have to be given
+on the command line, and is usually specified in the substitutions file
+instead. If a template filename is given on the command line it will override
+the filenames listed in the substitutions files.</p>
+
+<h3>Syntax for all formats</h3>
+
+<p>A comment line may appear anywhere in a substitution file, and will be
+ignored. A comment line is any line beginning with the character <tt>#</tt>,
+which must be the very first character on the line.</p>
+
+<p>Global definitions may supplement or override the macro values supplied on
+the command-line using the <tt>-M</tt> switch, and set default values that will
+survive for the remainder of the file unless another global definition of the
+same macro changes it.</p>
+
+<p>For definitions within braces given in any of the file formats, a separator
+must be given between items. A separator is either a comma, or one or more of
+the standard white space characters (space, formfeed, newline, carriage return,
+tab or vertical tab).</p>
+
+<p>Each item within braces can be an alphanumeric token, or a double-quoted
+string. A back-slash character <tt>\</tt> can be used to escape a quote
+character needed inside a quoted string. These three sets of substitutions are
+all equivalent:</p>
+
+<blockquote>
+<pre>{a=aa b=bb c="\"cc\""}
+{b="bb",a=aa,c="\"cc\""}
+{
+    c="\"cc\""
+    b=bb
+    a="aa"
+}</pre>
+</blockquote>
+
+<p>Within a substitutions file, the file name may appear inside double quotation
+marks; these are required if the name contains certain characters or environment
+variable macros of the form ${ENV_VAR} or $(ENV_VAR), which will be expanded
+before the file is opened.</p>
+
+<h3>Regular substitution example</h3>
+
+<p>Let the command be:</p>
+
+<blockquote>
+<pre>msi -S substitute template</pre>
+</blockquote>
+
+<p>The file <tt>template</tt> contains</p>
+
+<blockquote>
+<pre>first name is ${first}
+family name is ${family}</pre>
+</blockquote>
+
+<p> and the file <tt>substitute</tt> is</p>
+
+<blockquote>
+<pre>global {family=Kraimer}
+{first=Marty}
+{first=Irma}</pre>
+</blockquote>
+
+<p>The following is the output produced:</p>
+
+<blockquote>
+<pre>first name is Marty
+family name is Kraimer
+first name is Irma
+family name is Kraimer</pre>
+</blockquote>
+
+<h3>Pattern substitution example</h3>
+
+<p>Let the command be:</p>
+
+<blockquote>
+<pre>msi -S pattern template</pre>
+</blockquote>
+
+<p>The file <tt>pattern</tt> contains</p>
+
+<blockquote>
+<pre>pattern {first,last}
+{Marty,Kraimer}
+{Irma,Kraimer}</pre>
+</blockquote>
+
+<p>and <tt>template</tt> is the same as the previous example:</p>
+
+<blockquote>
+<pre>first name is ${first}
+family name is ${family}</pre>
+</blockquote>
+
+<p>This is the output:</p>
+
+<blockquote>
+<pre>first name is Marty
+family name is Kraimer
+first name is Irma
+family name is Kraimer</pre>
+</blockquote>
+
+<h3>dbTemplate example</h3>
+Let the command be
+
+<blockquote>
+<pre>msi -S xxx.substitutions</pre>
+</blockquote>
+
+<tt>xxx.substitutions</tt> is
+
+<blockquote>
+<pre>file template {
+pattern {first,last}
+{Marty,Kraimer}
+{Irma,Kraimer}
+pattern {last,first}
+{Smith,Bill}
+{Smith,Mary}
+}
+file template {
+{first=Marty,last=Kraimer}
+{first=Irma,last=Kraimer}
+}</pre>
+</blockquote>
+<tt>template</tt> is the same as in the previous example..
+
+<p>The following is written to the output</p>
+
+<blockquote>
+<pre>first name is Marty
+family name is Kraimer
+first name is Irma
+family name is Kraimer
+first name is Bill
+last name is Smith
+first name is Mary
+last name is Smith
+first name is Marty
+family name is Kraimer
+first name is Irma
+family name is Kraimer</pre>
+</blockquote>
+
+</body>
+</html>

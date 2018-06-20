@@ -1,0 +1,6 @@
+# provide definitions such as
+#include "xxxRecord.dbd"
+#device(xxx,CONSTANT,devXxxSoft,"SoftChannel")
+#driver(myDriver)
+#registrar(myRegistrar)
+#variable(myVariable)

@@ -1,0 +1,25 @@
+record(ai, "rec:ai") {
+  field(INP, "0")
+}
+record(ai, "rec:src1") {
+  field(VAL, "1")
+}
+record(ai, "rec:src2") {
+  field(VAL, "2")
+}
+record(stringout, "rec:link1") {
+  field(VAL, "rec:src1")
+  field(OUT, "rec:ai.INP CA")
+}
+record(stringout, "rec:link2") {
+  field(VAL, "rec:src2 CP")
+  field(OUT, "rec:ai.INP CA")
+}
+
+record(ai, "rec:j1") {
+  field(INP, {calc:{
+                expr:"A+5",
+                args:5
+             }})
+  field(PINI, "YES")
+}

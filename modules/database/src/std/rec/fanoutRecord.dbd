@@ -1,0 +1,129 @@
+#*************************************************************************
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+menu(fanoutSELM) {
+	choice(fanoutSELM_All,"All")
+	choice(fanoutSELM_Specified,"Specified")
+	choice(fanoutSELM_Mask,"Mask")
+}
+recordtype(fanout) {
+	include "dbCommon.dbd" 
+	field(VAL,DBF_LONG) {
+		prompt("Used to trigger")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(SELM,DBF_MENU) {
+		prompt("Select Mechanism")
+		promptgroup("30 - Action")
+		interest(1)
+		menu(fanoutSELM)
+	}
+	field(SELN,DBF_USHORT) {
+		prompt("Link Selection")
+		interest(1)
+		initial("1")
+	}
+	field(SELL,DBF_INLINK) {
+		prompt("Link Selection Loc")
+		promptgroup("30 - Action")
+		interest(1)
+	}
+	field(OFFS,DBF_SHORT) {
+		prompt("Offset for Specified")
+                promptgroup("30 - Action")
+                interest(1)
+		initial("0")
+	}
+	field(SHFT,DBF_SHORT) {
+		prompt("Shift for Mask mode")
+                promptgroup("30 - Action")
+                interest(1)
+		initial("-1")
+	}
+	field(LNK0,DBF_FWDLINK) {
+		prompt("Forward Link 0")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK1,DBF_FWDLINK) {
+		prompt("Forward Link 1")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK2,DBF_FWDLINK) {
+		prompt("Forward Link 2")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK3,DBF_FWDLINK) {
+		prompt("Forward Link 3")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK4,DBF_FWDLINK) {
+		prompt("Forward Link 4")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK5,DBF_FWDLINK) {
+		prompt("Forward Link 5")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK6,DBF_FWDLINK) {
+		prompt("Forward Link 6")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK7,DBF_FWDLINK) {
+		prompt("Forward Link 7")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK8,DBF_FWDLINK) {
+		prompt("Forward Link 8")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNK9,DBF_FWDLINK) {
+		prompt("Forward Link 9")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKA,DBF_FWDLINK) {
+		prompt("Forward Link 10")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKB,DBF_FWDLINK) {
+		prompt("Forward Link 11")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKC,DBF_FWDLINK) {
+		prompt("Forward Link 12")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKD,DBF_FWDLINK) {
+		prompt("Forward Link 13")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKE,DBF_FWDLINK) {
+		prompt("Forward Link 14")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKF,DBF_FWDLINK) {
+		prompt("Forward Link 15")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+}

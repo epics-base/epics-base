@@ -1,0 +1,8 @@
+# This is a combined minimal DBD and DB file
+
+recordtype(x) {
+  include "dbCommon.dbd"
+  field(VAL, DBF_LONG) {
+    prompt("Value")
+  }
+}

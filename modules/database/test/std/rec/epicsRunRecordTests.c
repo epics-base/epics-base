@@ -21,6 +21,8 @@ int linkRetargetLinkTest(void);
 int linkInitTest(void);
 int asyncSoftTest(void);
 int simmTest(void);
+int mbbioDirectTest(void);
+int scanEventTest(void);
 
 void epicsRunRecordTests(void)
 {
@@ -43,6 +45,10 @@ void epicsRunRecordTests(void)
     runTest(asyncSoftTest);
 
     runTest(simmTest);
+
+    runTest(mbbioDirectTest);
+
+    runTest(scanEventTest);
 
     epicsExit(0);   /* Trigger test harness */
 }

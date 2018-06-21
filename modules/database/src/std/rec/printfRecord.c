@@ -34,12 +34,13 @@
 
 
 /* Flag bits */
-#define F_CHAR   1
-#define F_SHORT  2
-#define F_LONG   4
-#define F_LEFT   8
-#define F_BADFMT 0x10
-#define F_BADLNK 0x20
+#define F_CHAR      1
+#define F_SHORT     2
+#define F_LONG      4
+#define F_LONGLONG  8
+#define F_LEFT   0x10
+#define F_BADFMT 0x40
+#define F_BADLNK 0x80
 #define F_BAD (F_BADFMT | F_BADLNK)
 
 #define GET_PRINT(VALTYPE, DBRTYPE) \
@@ -129,13 +130,20 @@ static void doPrintf(printfRecord *prec)
                         flags |= F_BADLNK;
                     break;
                 case 'h':
-                    if (flags & F_SHORT)
+		    if (flags & (F_LONGLONG | F_LONG | F_CHAR))
+                        flags |= F_BADFMT;
+                    else if (flags & F_SHORT)
                         flags = (flags & ~F_SHORT) | F_CHAR;
                     else
                         flags |= F_SHORT;
                     break;
                 case 'l':
-                    flags |= F_LONG;
+		    if (flags & (F_LONGLONG | F_SHORT | F_CHAR))
+                        flags |= F_BADFMT;
+		    else if (flags & F_LONG)
+                        flags = (flags & ~F_LONG) | F_LONGLONG;
+		    else
+                        flags |= F_LONG;
                     break;
                 default:
                     if (strchr("diouxXeEfFgGcs%", ch) == NULL)
@@ -175,6 +183,9 @@ static void doPrintf(printfRecord *prec)
                     else if (flags & F_SHORT) {
                         GET_PRINT(epicsInt16, DBR_SHORT);
                     }
+                    else if (flags & F_LONGLONG) {
+                        GET_PRINT(epicsInt64, DBR_INT64);
+                    }
                     else { /* F_LONG has no real effect */
                         GET_PRINT(epicsInt32, DBR_LONG);
                     }
@@ -186,6 +197,9 @@ static void doPrintf(printfRecord *prec)
                     }
                     else if (flags & F_SHORT) {
                         GET_PRINT(epicsUInt16, DBR_USHORT);
+                    }
+                    else if (flags & F_LONGLONG) {
+                        GET_PRINT(epicsUInt64, DBR_UINT64);
                     }
                     else { /* F_LONG has no real effect */
                         GET_PRINT(epicsUInt32, DBR_ULONG);

@@ -45,6 +45,7 @@
 #include "epicsExport.h"
 #include "link.h"
 #include "recSup.h"
+#include "dbUnitTest.h" /* for testSyncCallback() */
 
 
 static int callbackQueueSize = 2000;
@@ -351,4 +352,87 @@ void callbackRequestProcessCallbackDelayed(CALLBACK *pcallback,
 {
     callbackSetProcess(pcallback, Priority, pRec);
     callbackRequestDelayed(pcallback, seconds);
+}
+
+/* Sync. process of testSyncCallback()
+ *
+ * 1. For each priority, make a call to callbackRequest() for each worker.
+ * 2. Wait until all callbacks are concurrently being executed
+ * 3. Last worker to begin executing signals success and begins waking up other workers
+ * 4. Last worker to wake signals testSyncCallback() to complete
+ */
+typedef struct {
+    epicsEventId wait_phase2, wait_phase4;
+    int nphase2, nphase3;
+    epicsCallback cb;
+} sync_helper;
+
+static void sync_callback(epicsCallback *cb)
+{
+    sync_helper *helper;
+    callbackGetUser(helper, cb);
+
+    testGlobalLock();
+
+    assert(helper->nphase2 > 0);
+    if(--helper->nphase2!=0) {
+        /* we are _not_ the last to start. */
+        testGlobalUnlock();
+        epicsEventMustWait(helper->wait_phase2);
+        testGlobalLock();
+    }
+
+    /* we are either the last to start, or have been
+     * woken by the same and must pass the wakeup along
+     */
+    epicsEventMustTrigger(helper->wait_phase2);
+
+    assert(helper->nphase2 == 0);
+    assert(helper->nphase3 > 0);
+
+    if(--helper->nphase3==0) {
+        /* we are the last to wake up.  wake up testSyncCallback() */
+        epicsEventMustTrigger(helper->wait_phase4);
+    }
+
+    testGlobalUnlock();
+}
+
+void testSyncCallback(void)
+{
+    sync_helper helper[NUM_CALLBACK_PRIORITIES];
+    unsigned i;
+
+    testDiag("Begin testSyncCallback()");
+
+    for(i=0; i<NUM_CALLBACK_PRIORITIES; i++) {
+        helper[i].wait_phase2 = epicsEventMustCreate(epicsEventEmpty);
+        helper[i].wait_phase4 = epicsEventMustCreate(epicsEventEmpty);
+
+        /* no real need to lock here, but do so anyway so that valgrind can establish
+         * the locking requirements for sync_helper.
+         */
+        testGlobalLock();
+        helper[i].nphase2 = helper[i].nphase3 = callbackQueue[i].threadsRunning;
+        testGlobalUnlock();
+
+        callbackSetUser(&helper[i], &helper[i].cb);
+        callbackSetPriority(i, &helper[i].cb);
+        callbackSetCallback(sync_callback, &helper[i].cb);
+
+        callbackRequest(&helper[i].cb);
+    }
+
+    for(i=0; i<NUM_CALLBACK_PRIORITIES; i++) {
+        epicsEventMustWait(helper[i].wait_phase4);
+    }
+
+    for(i=0; i<NUM_CALLBACK_PRIORITIES; i++) {
+        testGlobalLock();
+        epicsEventDestroy(helper[i].wait_phase2);
+        epicsEventDestroy(helper[i].wait_phase4);
+        testGlobalUnlock();
+    }
+
+    testDiag("Complete testSyncCallback()");
 }

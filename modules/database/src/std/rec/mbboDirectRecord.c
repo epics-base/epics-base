@@ -95,7 +95,7 @@ static void convert(mbboDirectRecord *);
 static void monitor(mbboDirectRecord *);
 static long writeValue(mbboDirectRecord *);
 
-#define NUM_BITS 16
+#define NUM_BITS 32
 
 static long init_record(struct dbCommon *pcommon, int pass)
 {
@@ -117,7 +117,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
-    if (recGblInitConstantLink(&prec->dol, DBF_USHORT, &prec->val))
+    if (recGblInitConstantLink(&prec->dol, DBF_ULONG, &prec->val))
         prec->udf = FALSE;
 
     /* Initialize MASK if the user set NOBT instead */
@@ -142,8 +142,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     if (!prec->udf &&
         prec->omsl == menuOmslsupervisory) {
-        /* Set initial B0 - BF from VAL */
-        epicsUInt16 val = prec->val;
+        /* Set initial B0 - B1F from VAL */
+        epicsUInt32 val = prec->val;
         epicsUInt8 *pBn = &prec->b0;
         int i;
 
@@ -175,9 +175,9 @@ static long process(struct dbCommon *pcommon)
     if (!pact) {
         if (!dbLinkIsConstant(&prec->dol) &&
             prec->omsl == menuOmslclosed_loop) {
-            epicsUInt16 val;
+            epicsUInt32 val;
 
-            if (dbGetLink(&prec->dol, DBR_USHORT, &val, 0, 0)) {
+            if (dbGetLink(&prec->dol, DBR_ULONG, &val, 0, 0)) {
                 recGblSetSevr(prec, LINK_ALARM, INVALID_ALARM);
                 goto CONTINUE;
             }
@@ -185,11 +185,11 @@ static long process(struct dbCommon *pcommon)
         }
         else if (prec->omsl == menuOmslsupervisory) {
             epicsUInt8 *pBn = &prec->b0;
-            epicsUInt16 val = 0;
-            epicsUInt16 bit = 1;
+            epicsUInt32 val = 0;
+            epicsUInt32 bit = 1;
             int i;
 
-            /* Construct VAL from B0 - BF */
+            /* Construct VAL from B0 - B1F */
             for (i = 0; i < NUM_BITS; i++, bit <<= 1)
                 if (*pBn++)
                     val |= bit;
@@ -264,7 +264,7 @@ static long special(DBADDR *paddr, int after)
         if (prec->omsl == menuOmslsupervisory) {
             /* Adjust VAL corresponding to the bit changed */
             epicsUInt8 *pBn = (epicsUInt8 *) paddr->pfield;
-            int bit = 1 << (pBn - &prec->b0);
+            epicsUInt32 bit = 1 << (pBn - &prec->b0);
 
             if (*pBn)
                 prec->val |= bit;
@@ -278,9 +278,9 @@ static long special(DBADDR *paddr, int after)
 
     case SPC_RESET: /* OMSL field modified */
         if (prec->omsl == menuOmslclosed_loop) {
-            /* Construct VAL from B0 - BF */
+            /* Construct VAL from B0 - B1F */
             epicsUInt8 *pBn = &prec->b0;
-            epicsUInt16 val = 0, bit = 1;
+            epicsUInt32 val = 0, bit = 1;
             int i;
 
             for (i = 0; i < NUM_BITS; i++, bit <<= 1)
@@ -289,8 +289,8 @@ static long special(DBADDR *paddr, int after)
             prec->val = val;
         }
         else if (prec->omsl == menuOmslsupervisory) {
-            /* Set B0 - BF from VAL and post monitors */
-            epicsUInt16 val = prec->val;
+            /* Set B0 - B1F from VAL and post monitors */
+            epicsUInt32 val = prec->val;
             epicsUInt8 *pBn = &prec->b0;
             int i;
 
@@ -362,7 +362,7 @@ static long writeValue(mbboDirectRecord *prec)
     case menuYesNoYES: {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
         if (prec->pact || (prec->sdly < 0.)) {
-            status = dbPutLink(&prec->siol, DBR_USHORT, &prec->val, 1);
+            status = dbPutLink(&prec->siol, DBR_ULONG, &prec->val, 1);
             prec->pact = FALSE;
         } else { /* !prec->pact && delay >= 0. */
             CALLBACK *pvt = prec->simpvt;

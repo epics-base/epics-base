@@ -10,6 +10,8 @@
 
 <h1 align="center">EPICS Release 7.0.2.x</h1>
 
+<h2 align="center">Changes made between 3.16.1 and 3.16.2</h2>
+
 <!-- Insert new items immediately below this template ...
 
 <h3>Title...</h3>
@@ -85,6 +87,16 @@ be happy to try and answer them!</p>
 <h2 align="center">Changes from the 3.16 branch since 3.16.1</h2>
 
 <!-- Insert inherited items immediately below here ... -->
+
+<h3>Record types mbbiDirect and mbboDirect extended to 32 bit</h3>
+
+<p>The VAL fields of mbbiDirect and mbboDirect records have
+been extended from <tt>DBF_USHORT</tt> (16 bit) to <tt>DBF_LONG</tt> (32 bit).
+New bit fields <tt>B10</tt>...<tt>B1F</tt> have been added.</p>
+
+<p>Device support which accesses the bit fields can test if the macro
+<tt>mbbiDirectRecord1BF</tt> or <tt>mbboDirectRecord1BF</tt> is
+defined. Device support which only accesses RVAL needs no modification.</p>
 
 <h3>Restore use of ledlib for VxWorks command editing</h3>
 
@@ -170,6 +182,27 @@ preprocessor macro):</p>
 
 <blockquote><pre>
 #ifdef DBR_INT64
+    /* Code where Base has INT64 support */
+#else
+    /* Code for older versions */
+#endif
+</pre></blockquote>
+
+<p>If the code uses the old db_access.h types (probably because it's calling
+Channel Access APIs) then it will have to test against the EPICS version number
+instead, like this:</p>
+
+<blockquote><pre>
+#include &lt;epicsVersion.h&gt;
+
+#ifndef VERSION_INT
+#  define VERSION_INT(V,R,M,P) ( ((V)&lt;&lt;24) | ((R)&lt;&lt;16) | ((M)&lt;&lt;8) | (P))
+#endif
+#ifndef EPICS_VERSION_INT
+#  define EPICS_VERSION_INT VERSION_INT(EPICS_VERSION, EPICS_REVISION, EPICS_MODIFICATION, EPICS_PATCH_LEVEL)
+#endif
+
+#if EPICS_VERSION_INT &gt;= VERSION_INT(3,16,1,0)
     /* Code where Base has INT64 support */
 #else
     /* Code for older versions */
@@ -343,15 +376,15 @@ to implement the link APIs, so will work properly after these conversions:</p>
 link type, i.e. change this code:
 
 <pre>
-    if (prec->siml.type == CONSTANT) {
-        recGblInitConstantLink(&amp;prec->siml, DBF_USHORT, &amp;prec->simm);
+    if (prec-&gt;siml.type == CONSTANT) {
+        recGblInitConstantLink(&amp;prec-&gt;siml, DBF_USHORT, &amp;prec-&gt;simm);
     }
 </pre>
 
 into this:
 
 <pre>
-    recGblInitConstantLink(&amp;prec->siml, DBF_USHORT, &amp;prec->simm);
+    recGblInitConstantLink(&amp;prec-&gt;siml, DBF_USHORT, &amp;prec-&gt;simm);
 </pre>
 
 Note that <tt>recGblInitConstantLink()</tt> still returns TRUE if the field was
@@ -364,20 +397,20 @@ or undefined links, FALSE for links whose <tt>dbGetLink()</tt> routine may
 return different values on different calls. For example this:
 
 <pre>
-    if (prec->dol.type != CONSTANT)
+    if (prec-&gt;dol.type != CONSTANT)
 </pre>
 
 should become this:
 
 <pre>
-    if (!dbLinkIsConstant(&amp;prec->dol))
+    if (!dbLinkIsConstant(&amp;prec-&gt;dol))
 </pre>
 
 When the converted software is also required to build against older versions of
 Base, this macro definition may be useful:
 
 <pre>
-#define dbLinkIsConstant(lnk) ((lnk)->type == CONSTANT)
+#define dbLinkIsConstant(lnk) ((lnk)-&gt;type == CONSTANT)
 </pre>
 </li>
 
@@ -385,7 +418,7 @@ Base, this macro definition may be useful:
 link has been resolved as a CA link using code such as
 
 <pre>
-    if (prec->inp.type == CA_LINK)
+    if (prec-&gt;inp.type == CA_LINK)
 </pre>
 
 will still compile and run, but will only work properly with the old CA link
@@ -395,7 +428,7 @@ examine or modify data inside the link. After conversion the above line would
 probably become:
 
 <pre>
-    if (dbLinkIsVolatile(&amp;prec->inp))
+    if (dbLinkIsVolatile(&amp;prec-&gt;inp))
 </pre>
 
 A volatile link is one like a Channel Access link which may disconnect and
@@ -405,7 +438,7 @@ same state they started in. For compatibility when building against older
 versions of Base, this macro definition may be useful:
 
 <pre>
-#define dbLinkIsVolatile(lnk) ((lnk)->type == CA_LINK)
+#define dbLinkIsVolatile(lnk) ((lnk)-&gt;type == CA_LINK)
 </pre>
 </li>
 
@@ -710,6 +743,14 @@ of its CALLBACK objects.</p>
 
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Fix problem with numeric soft events</h3>
+<p>Changing from numeric to named soft events introduced an incompatibility
+when a numeric event 1-255 is converted from a DOUBLE, e.g. from a calc record.
+The <tt>post_event()</tt> API is not marked deprecated any more.
+
+<p>Also <code>scanpel</code> has been modified to accept a glob pattern for
+event name filtering and to show events with no connected records as well.</p>
+
 <h3>Add osiSockOptMcastLoop_t and osiSockTest</h3>
 
 <p>Added a new OS-independent typedef for multicast socket options, and a test
@@ -727,6 +768,43 @@ tells git to ignore all configure/*.local files.</p>
 <h2 align="center">Changes from the 3.14 branch since 3.15.5</h2>
 
 <!-- Insert inherited items immediately below here ... -->
+
+<h3>Fixes for Launchpad bugs</h3>
+
+<p>The following launchpad bugs have fixes included:</p>
+
+<ul>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1747091">
+    lp: #1747091</a>, epicsTimeGetEvent() / generalTime bug</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1743076">
+    lp: #1743076</a>, Segfault in ca_attach_context() during exits</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1751380">
+    lp: #1751380</a>, Deadlock in ca_clear_subscription()</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1597809">
+    lp: #1597809</a>, Setting NAME field in DB file may break IOC</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1770292">
+    lp: #1770292</a>, get_alarm_double() inconsistent across record types</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1771298">
+    lp: #1771298</a>, Conversion of NaN to integer relies on undefined
+    behavior</li>
+</ul>
+
+<h3>Updated VxWorks Timezone settings</h3>
+
+<p>Removed the settings for 2017; fixed the hour of the change for MET.</p>
+
+<h3>Fixed camonitor server side relative timestamps bug</h3>
+
+<p>Initialize the first time-stamp from the first monitor, not the client-side
+current time in this configuration.</p>
+
+<h3>Build changes for MSVC</h3>
+
+<p>Windows builds using Visual Studio 2015 and later now use the <tt>-FS</tt>
+compiler option to allow parallel builds to work properly.</p>
+
+<p>We now give the <tt>-FC</tt> option to tell the compiler to print absolute
+paths for source files in diagnostic messages.</p>
 
 <h3>Extend maximum Posix epicsEventWaitWithTimeout() delay</h3>
 

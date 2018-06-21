@@ -1,0 +1,47 @@
+record(bo, "sim") {
+  field(ZNAM, "off")
+  field(ONAM, "simulation")  
+}
+
+record(mbboDirect, "do1") {
+  field(DOL, "$(INIT=0)")
+  field(DTYP, "Soft Channel")
+  field(OUT, "val1 PP")
+  field(SIOL, "sim1 PP")
+  field(SIML, "sim")
+  field(PINI, "YES")
+}
+record(ao, "val1") {
+  field(FLNK, "di1")
+}
+record(longout, "sim1") {
+  field(FLNK, "di1")
+}
+record(mbbiDirect, "di1") {
+  field(DTYP, "Soft Channel")
+  field(INP, "val1")
+  field(SIOL, "sim1 PP")
+  field(SIML, "sim")
+}
+
+
+record(mbboDirect, "do2") {
+  field(DOL, "$(INIT=0)")
+  field(DTYP, "Raw Soft Channel")
+  field(OUT, "val2 PP")
+  field(SIOL, "sim2 PP")
+  field(SIML, "sim")
+  field(PINI, "YES")
+}
+record(ao, "val2") {
+  field(FLNK, "di2")
+}
+record(longout, "sim2") {
+  field(FLNK, "di2")
+}
+record(mbbiDirect, "di2") {
+  field(DTYP, "Raw Soft Channel")
+  field(INP, "val2")
+  field(SIML, "sim")
+  field(SIOL, "sim2")
+}

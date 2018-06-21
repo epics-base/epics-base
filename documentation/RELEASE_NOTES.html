@@ -10,8 +10,6 @@
 
 <h1 align="center">EPICS Release 7.0.2.x</h1>
 
-<h2 align="center">Changes made between 3.16.1 and 3.16.2</h2>
-
 <!-- Insert new items immediately below this template ...
 
 <h3>Title...</h3>
@@ -19,6 +17,17 @@
 <p>Description</p>
 
 -->
+
+<h3>Git Branches Recombined</h3>
+
+<p>The four separate Git branches <tt>core/master</tt>, <tt>libcom/master</tt>,
+<tt>ca/master</tt> and <tt>database/master</tt> have been recombined into one
+branch called <tt>7.0</tt>. Keeping these as 4 separate branches in the same
+repository made it impossible to create merge requests that contained changes in
+more than one of these modules. The layout of the source files has not changed
+at all however, so the source code for libcom, ca and the database are still
+found separately under the module subdirectory.</p>
+
 
 <h1 align="center">EPICS Release 7.0.1.1</h1>
 

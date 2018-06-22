@@ -14,7 +14,7 @@ REM  Installers should modify these definitions as appropriate.
 REM  This file configures the PATH variable from scratch.
 
 REM ======================================================
-REM    ====== REQUIRED ENVIRONMENT VARIABLES FOLLOW ======
+REM   ====== REQUIRED ENVIRONMENT VARIABLES FOLLOW =====
 REM ======================================================
 
 REM ======================================================
@@ -34,18 +34,18 @@ set PATH=C:\Strawberry\c\bin;%PATH%
 REM ======================================================
 REM   --------------- Visual C++ -----------------------
 REM ======================================================
-REM --  win32-x86 ---
+REM --  windows-x64 ---
 
 REM   ----- Visual Studio 2010 -----
-REM call "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" x86
+REM call "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" x64
 
 REM   ----- Visual Studio 2015 -----
-call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
 
 REM ======================================================
 REM   --------------- EPICS Base -----------------------
 REM ======================================================
-set EPICS_HOST_ARCH=win32-x86
+set EPICS_HOST_ARCH=windows-x64
 set PATH=%PATH%;G:\epics\base\bin\%EPICS_HOST_ARCH%
 
 REM ======================================================

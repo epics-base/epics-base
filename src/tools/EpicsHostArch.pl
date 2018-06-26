@@ -19,7 +19,7 @@ $suffix="";
 $suffix="-".$ARGV[0] if ($ARGV[0] ne "");
 
 $EpicsHostArch = GetEpicsHostArch();
-print "$EpicsHostArch$suffix";
+print "$EpicsHostArch$suffix\n";
 
 sub GetEpicsHostArch { # no args
     $arch=$Config{'archname'};

@@ -13,6 +13,27 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Cleanup of startup directory</h3>
+
+<p>The files in the startup directory have not been maintained in recent years
+and have grown crufty (technical term). This release includes the following
+updates to these files:</p>
+
+<ul>
+<li>The <tt>EpicsHostArch.pl</tt> script has been moved into <tt>src/tools</tt>
+from where it gets installed into <tt>lib/perl</tt>. The build system has been
+adjusted to look for it in both places if the <tt>EPICS_HOST_ARCH</tt>
+environment variable has not been set at build-time. Sites that may have used
+this to set <tt>EPICS_HOST_ARCH</tt> as part of their standard environment may
+need to adjust their scripts when they upgrade to this release.</li>
+
+<li>The existing <tt>win32.bat</tt> file has been cleaned up and a new
+<tt>windows.bat</tt> file added for 64-bit targets. The contents of these files
+should be seen as examples, don't uncomment or install parts for software that
+you don't explicitly know that you need.</li>
+
+</ul>
+
 <h3>Fixes for Launchpad bugs</h3>
 
 <p>The following launchpad bugs have fixes included:</p>

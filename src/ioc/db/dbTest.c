@@ -42,12 +42,13 @@
 #include "special.h"
 
 #define MAXLINE 80
+#define MAXMESS 128
 struct msgBuff {    /* line output structure */
     char            out_buff[MAXLINE + 1];
     char           *pNext;
     char           *pLast;
     char           *pNexTab;
-    char            message[128];
+    char            message[MAXMESS];
 };
 typedef struct msgBuff TAB_BUFFER;
 
@@ -1149,7 +1150,7 @@ static int dbpr_report(
                             break;
                         }
                     }
-                sprintf(pmsg,"%-4s: %s %s", pfield_name,
+                epicsSnprintf(pmsg, MAXMESS, "%-4s: %s %s", pfield_name,
                     type, dbGetString(pdbentry));
                 dbpr_msgOut(pMsgBuff, tab_size);
             }

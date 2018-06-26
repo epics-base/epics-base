@@ -21,8 +21,11 @@ endif
 
 # Provide a default if the user hasn't set EPICS_HOST_ARCH
 ifeq ($(origin EPICS_HOST_ARCH), undefined)
+  # Bootstrapping ...
+  EHA = $(firstword $(wildcard $(EPICS_BASE)/lib/perl/EpicsHostArch.pl \
+        $(TOP)/src/tools/EpicsHostArch.pl))
   # NB: We use a simply expanded variable here for performance:
-  EPICS_HOST_ARCH := $(shell $(CONFIG)/../startup/EpicsHostArch.pl)
+  export EPICS_HOST_ARCH := $(shell perl $(EHA))
 endif
 #
 

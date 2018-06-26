@@ -1129,7 +1129,7 @@ static int dbpr_report(
         case DBF_DEVICE:
             status = dbFindField(pdbentry,pfield_name);
             pfield_value = dbGetString(pdbentry);
-            sprintf(pmsg, "%s: %s", pfield_name,
+            sprintf(pmsg, "%-4s: %s", pfield_name,
                 (pfield_value ? pfield_value : "<nil>"));
             dbpr_msgOut(pMsgBuff, tab_size);
             break;
@@ -1139,19 +1139,18 @@ static int dbpr_report(
         case DBF_FWDLINK: {
                 DBLINK  *plink = (DBLINK *)pfield;
                 int     ind;
+                const char *type = "LINK";
 
                 status = dbFindField(pdbentry,pfield_name);
-                for (ind=0; ind<LINK_NTYPES; ind++) {
-                    if (pamaplinkType[ind].value == plink->type)
-                        break;
-                }
-                if (ind>=LINK_NTYPES) {
-                    sprintf(pmsg,"%s: Illegal Link Type", pfield_name);
-                }
-                else {
-                    sprintf(pmsg,"%s:%s %s", pfield_name,
-                        pamaplinkType[ind].strvalue,dbGetString(pdbentry));
-                }
+                if (!plink->text)
+                    for (ind=0; ind<LINK_NTYPES; ind++) {
+                        if (pamaplinkType[ind].value == plink->type) {
+                            type = pamaplinkType[ind].strvalue;
+                            break;
+                        }
+                    }
+                sprintf(pmsg,"%-4s: %s %s", pfield_name,
+                    type, dbGetString(pdbentry));
                 dbpr_msgOut(pMsgBuff, tab_size);
             }
             break;
@@ -1162,13 +1161,21 @@ static int dbpr_report(
                 char time_buf[40];
                 epicsTimeToStrftime(time_buf, 40, "%Y-%m-%d %H:%M:%S.%09f",
                     &paddr->precord->time);
-                sprintf(pmsg, "%s: %s", pfield_name, time_buf);
+                sprintf(pmsg, "%-4s: %s", pfield_name, time_buf);
                 dbpr_msgOut(pMsgBuff, tab_size);
             }
             else if (pdbFldDes->size == sizeof(void *) &&
                 strchr(pdbFldDes->extra, '*')) {
-                /* Special for pointers, needed on little-endian CPUs */
-                sprintf(pmsg, "%s: %p", pfield_name, *(void **)pfield);
+                /* Special for pointers */
+                sprintf(pmsg, "%-4s: PTR %p", pfield_name, *(void **)pfield);
+                dbpr_msgOut(pMsgBuff, tab_size);
+            }
+            else if (pdbFldDes->size == sizeof(ELLLIST) &&
+                !strncmp(pdbFldDes->extra, "ELLLIST", 7)) {
+                /* Special for linked lists */
+                ELLLIST *plist = (ELLLIST *)pfield;
+                sprintf(pmsg, "%-4s: ELL %d [%p .. %p]", pfield_name,
+                    ellCount(plist), ellFirst(plist), ellLast(plist));
                 dbpr_msgOut(pMsgBuff, tab_size);
             }
             else { /* just print field as hex bytes */
@@ -1184,7 +1191,7 @@ static int dbpr_report(
                         value = (unsigned int)*pchar;
                         sprintf(ptemp_buf, "%02x ", value);
                 }
-                sprintf(pmsg, "%s: %s", pfield_name,temp_buf);
+                sprintf(pmsg, "%-4s: %s", pfield_name,temp_buf);
                 dbpr_msgOut(pMsgBuff, tab_size);
             }
             break;

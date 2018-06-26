@@ -964,7 +964,7 @@ static void printBuffer(
                     int chunk = (len > MAXLINE - 5) ? MAXLINE - 5 : len;
 
                     sprintf(pmsg, "\"%.*s\"", chunk, (char *)pbuffer + i);
-                    len -= chunk;
+                    len -= chunk; i += chunk;
                     if (len > 0)
                         strcat(pmsg, " +");
                     dbpr_msgOut(pMsgBuff, tab_size);

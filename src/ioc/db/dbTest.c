@@ -41,12 +41,13 @@
 #include "special.h"
 
 #define MAXLINE 80
+#define MAXMESS 128
 struct msgBuff {    /* line output structure */
     char            out_buff[MAXLINE + 1];
     char           *pNext;
     char           *pLast;
     char           *pNexTab;
-    char            message[128];
+    char            message[MAXMESS];
 };
 typedef struct msgBuff TAB_BUFFER;
 
@@ -1205,7 +1206,7 @@ static int dbpr_report(
                     sprintf(pmsg,"%s: Illegal Link Type", pfield_name);
                 }
                 else {
-                    sprintf(pmsg,"%s:%s %s", pfield_name,
+                    epicsSnprintf(pmsg, MAXMESS, "%s:%s %s", pfield_name,
                         pamaplinkType[ind].strvalue,dbGetString(pdbentry));
                 }
                 dbpr_msgOut(pMsgBuff, tab_size);

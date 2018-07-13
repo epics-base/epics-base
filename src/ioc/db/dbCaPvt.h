@@ -80,6 +80,8 @@ typedef struct caLink
     char		*pgetString;
     void		*pputNative;
     char		*pputString;
+    evid		evidNative;
+    evid		evidString;
     char		gotInNative;
     char		gotInString;
     char		gotOutNative;

@@ -41,17 +41,67 @@ BEGIN {
     }
 }
 
-my $tool = 'dbdToHtml';
+use Pod::Usage;
 
-our ($opt_D, @opt_I, $opt_o);
-getopts('DI@o:') or
-    die "Usage: $tool [-D] [-I dir] [-o file.html] file.dbd.pod\n";
+=head1 NAME
+
+dbdToHtml.pl - Convert DBD file with POD to HTML
+
+=head1 SYNOPSIS
+
+B<dbdToHtml.pl> [B<-h>] [B<-D>] [B<-I> dir] [B<-o> file] file.dbd.pod
+
+=head1 DESCRIPTION
+
+Generates HTML documentation from a B<.dbd.pod> file.
+
+=head1 OPTIONS
+
+B<dbdToHtml.pl> understands the following options:
+
+=over 4
+
+=item B<-h>
+
+Help, display usage information.
+
+=item B<-H>
+
+Conversion help, display information about converting reference documentation
+from the EPICS Wiki into a B<.dbd.pod> file for use with this tool.
+
+=item B<-D>
+
+Instead of creating the output file as described, read the input file(s) and
+print a B<Makefile> dependency rule for the output file(s) to stdout.
+
+=item B<-o> file
+
+Name of the output file to be created.
+
+=back
+
+If no output filename is set, the file created will be named after the input
+file, removing any directory components in the path and replacing any
+B<.dbd.pod> file extension with B<.html>.
+
+=cut
+
+our ($opt_h, $opt_H, $opt_D, @opt_I, $opt_o);
+
+my $tool = 'dbdToHtml.pl';
+
+getopts('hHDI@o:') or
+    pod2usage(2);
+pod2usage(-verbose => 2) if $opt_H;
+pod2usage(1) if $opt_h;
+pod2usage("$tool: No input file given.\n") if @ARGV != 1;
 
 my $dbd = DBD->new();
 
 my $infile = shift @ARGV;
 $infile =~ m/\.dbd.pod$/ or
-    die "$tool: Input file '$infile' must have '.dbd.pod' extension\n";
+    pod2usage("$tool: Input file '$infile' must have '.dbd.pod' extension.\n");
 
 ParseDBD($dbd, Readfile($infile, 0, \@opt_I));
 
@@ -243,3 +293,87 @@ sub DBD::Recfield::writable {
     return $fld->dbf_type eq "DBF_NOACCESS" ? 'No' : 'Yes';
 }
 
+=pod
+
+=head1 Converting Wiki Record Reference to POD
+
+If you open the src/std/rec/aiRecord.dbd.pod file in your favourite plain text
+editor you'll see what input was required to generate the aiRecord.html file.
+The text markup language we're using is a standard called POD (Plain Old
+Documentation) which is used by Perl developers, but you don't need to know Perl
+at all to be able to use it.
+
+When we add POD markup to a record type, we rename its *Record.dbd file to
+.dbd.pod in the src/std/rec directory; no other changes are needed for the build
+system to find it by its new name. The POD content is effectively just a new
+kind of comment that appears in .dbd.pod files, which the formatter knows how to
+convert into HTML. The build also generates a plain *Record.dbd file from this
+same input file by stripping out all of the POD markup.
+
+Documentation for Perl's POD markup standard can be found online at
+L<https://perldoc.perl.org/perlpod.html> or you may be able to type 'perldoc
+perlpod' into a Linux command-line to see the same text. We added a few POD
+keywords of our own to handle the table generation, and I'll cover those briefly
+below.
+
+POD text can appear almost anywhere in a dbd.pod file. It always starts with a
+line "=[keyword] [additional text...]" where [keyword] is "title", "head1"
+through "head4" etc.. The POD text ends with a line "=cut". There must be a
+blank line above every POD line, and in many cases below it as well.
+
+The POD keywords we have added are "title", "recordtype", "menu", "fields",
+"type", "read" and "write". The last 3 are less common but are used in some of
+the other record types such as the waveform and aSub records.
+
+The most interesting of our new keywords is "fields", which takes a list of
+record field names on the same line after the keyword and generates an HTML
+Table describing those fields based on the field description found in the DBD
+parts. In the ai documentation the first such table covers the DTYP and INP
+fields, so the line
+
+    =fields DTYP, INP
+
+generates all this in the output:
+
+    <blockquote><table border="1">
+    <tr>
+    <th>Field</th><th>Summary</th><th>Type</th><th>DCT</th>
+    <th>Default</th><th>Read</th><th>Write</th><th>CA PP</th>
+    </tr>
+    <tr>
+    <td class="cell">DTYP</td><td class="cell">Device Type</td>
+    <td class="cell">DEVICE</td>
+    <td class="cell">Yes</td>
+    <td class="cell">&nbsp;</td>
+    <td class="cell">Yes</td>
+    <td class="cell">Yes</td>
+    <td class="cell">No</td>
+    </tr>
+    <tr>
+    <td class="cell">INP</td>
+    <td class="cell">Input Specification</td>
+    <td class="cell">INLINK</td>
+    <td class="cell">Yes</td>
+    <td class="cell">&nbsp;</td>
+    <td class="cell">Yes</td>
+    <td class="cell">Yes</td>
+    <td class="cell">No</td>
+    </tr>
+    </table></blockquote>
+
+Note that the "=fields" line must appear inside the DBD's declaration of the
+record type, i.e. after the line
+
+    recordtype(ai) {
+
+The "type", "read" and "write" POD keywords are used inside an individual record
+field declaration and provide information for the "Type", "Read" and "Write"
+columns of the field's table output for fields where this information is
+normally supplied by the record support code. Usage examples for these keywords
+can be found in the aai and aSub record types.
+
+If you look at the L<aoRecord.dbd.pod> file you'll see that the POD there starts
+by documenting a record-specific menu definition. The "menu" keyword generates a
+table that lists all the choices found in the named menu.
+
+=cut

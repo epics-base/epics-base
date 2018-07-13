@@ -61,13 +61,14 @@ PERL_SCRIPTS += podRemove.pl
 PERL_SCRIPTS += registerRecordDeviceDriver.pl
 
 HTMLS = style.css
+HTMLS += dbdToHtml.html
 HTMLS += EPICS/Getopts.html
 HTMLS += EPICS/Path.html
 HTMLS += EPICS/Readfile.html
 HTMLS += fullPathName.html
+HTMLS += munch.html
 HTMLS += podToHtml.html
 HTMLS += podRemove.html
-HTMLS += munch.html
 
 # Build Package Config Files
 

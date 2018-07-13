@@ -682,7 +682,16 @@ of its CALLBACK objects.</p>
 
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>HOWTO: Converting Wiki Record Reference to POD</h3>
+
+<p>Some documentation has been added to the <tt>dbdToHtml.pl</tt> script
+explaining how Perl POD (Plain Old Documentation) markup can be added to
+<tt>.dbd</tt> files to generate HTML documentation for the record types. To see
+these instructions, run <tt>perl&nbsp;bin/&lt;host&gt;/dbdToHtml.pl&nbsp;-H</tt>
+or <tt>perldoc&nbsp;bin/&lt;host&gt;/dbdToHtml.pl</tt>.</p>
+
 <h3>Fix problem with numeric soft events</h3>
+
 <p>Changing from numeric to named soft events introduced an incompatibility
 when a numeric event 1-255 is converted from a DOUBLE, e.g. from a calc record.
 The <tt>post_event()</tt> API is not marked deprecated any more.

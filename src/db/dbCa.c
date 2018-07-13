@@ -591,11 +591,16 @@ static void connectionCallback(struct connection_handler_args arg)
     if (pca->gotFirstConnection) {
         if (pca->nelements != ca_element_count(arg.chid) ||
             pca->dbrType != ca_field_type(arg.chid)) {
-            /* BUG: We have no way to clear any old subscription with the
-             *      originally chosen data type/size.  That will continue
-             *      to send us data and will result in an assert() fail.
-             */
-            /* Let next dbCaGetLink and/or dbCaPutLink determine options */
+            /* Size or type changed, clear everything and let the next call
+               to dbCaGetLink() and/or dbCaPutLink() reset everything */
+            if (pca->evidNative) {
+                ca_clear_event(pca->evidNative);
+                pca->evidNative = 0;
+            }
+            if (pca->evidString) {
+                ca_clear_event(pca->evidString);
+                pca->evidString = 0;
+            }
             plink->value.pv_link.pvlMask &=
                 ~(pvlOptInpNative | pvlOptInpString |
                   pvlOptOutNative | pvlOptOutString);
@@ -969,7 +974,8 @@ static void dbCaTask(void *arg)
                 status = ca_add_array_event(
                     ca_field_type(pca->chid)+DBR_TIME_STRING,
                     ca_element_count(pca->chid),
-                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0, 0);
+                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0,
+                    &pca->evidNative);
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",
                         ca_message(status));
@@ -981,7 +987,8 @@ static void dbCaTask(void *arg)
                 pca->pgetString = dbCalloc(1, MAX_STRING_SIZE);
                 epicsMutexUnlock(pca->lock);
                 status = ca_add_array_event(DBR_TIME_STRING, 1,
-                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0, 0);
+                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0,
+                    &pca->evidString);
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",
                         ca_message(status));

@@ -391,7 +391,7 @@ MAIN(epicsCalcTest)
     testExpr(isnan(0.));
     testExpr(isnan(Inf));
     testExpr(isnan(-Inf));
-    testExpr(isnan(NaN));
+    testExpr(!!isnan(NaN));     // As above
     testCalc("isnan(0,1,2)", 0);
     testCalc("isnan(0,1,NaN)", 1);
     testCalc("isnan(0,NaN,2)", 1);

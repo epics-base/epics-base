@@ -41,6 +41,8 @@ HTMLS += EPICS/Path.html
 HTMLS += EPICS/Readfile.html
 HTMLS += fullPathName.html
 HTMLS += munch.html
+HTMLS += podToHtml.html
+HTMLS += podRemove.html
 
 # Build Package Config Files
 

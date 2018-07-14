@@ -35,4 +35,6 @@ PERL_SCRIPTS += dbExpand.pl
 PERL_SCRIPTS += dbdToHtml.pl
 PERL_SCRIPTS += registerRecordDeviceDriver.pl
 
+HTMLS += dbdToHtml.html
+
 include $(TOP)/configure/RULES

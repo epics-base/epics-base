@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 #
 #  CONFIG_COMMON
@@ -163,13 +163,13 @@ TESTSHRLIBNAME = $(TESTSHRLIBNAME_$(SHARED_LIBRARIES))
 #--------------------------------------------------
 # obj files
 
-TARGET_OBJS =  $($*_OBJLIBS) $($*_LDOBJS) $(addsuffix $(OBJ),$(basename $($*_OBJS) $($*_SRCS)))
+TARGET_OBJS =  $($*_LDOBJS) $(addsuffix $(OBJ),$(basename $($*_OBJS) $($*_SRCS)))
 
 PRODUCT_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(USR_OBJS) $(PROD_OBJS)))
-PROD_LD_OBJS = $(USR_OBJLIBS) $(PROD_OBJLIBS) $(TARGET_OBJS) $(PRODUCT_OBJS)
+PROD_LD_OBJS = $(TARGET_OBJS) $(PRODUCT_OBJS)
 
 LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(LIB_SRCS) $(LIBSRCS) $(USR_OBJS) $(LIB_OBJS)))
-LIBRARY_LD_OBJS = $(USR_OBJLIBS) $(LIB_OBJLIBS) $(TARGET_OBJS) $(LIBRARY_OBJS)
+LIBRARY_LD_OBJS = $(TARGET_OBJS) $(LIBRARY_OBJS)
 
 #--------------------------------------------------
 # Windows resource files
@@ -261,7 +261,7 @@ LIBRARY_SRCS=$(basename $(foreach lib,$(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRA
 LIBRARY_SRC_CFLAGS=$($(patsubst $*,SHRLIB,$(findstring $*,$(LIBRARY_SRCS)))_CFLAGS)
 
 #--------------------------------------------------
-# prefix, suffix, and ldflags for loadable shared libraries 
+# prefix, suffix, and ldflags for loadable shared libraries
 TARGET_LIB_LDFLAGS=$($(patsubst $*,LOADABLE_,$(findstring $*,$(LOADABLE_LIBRARY)))SHRLIB_LDFLAGS)
 LOADABLE_SHRLIB_PREFIX=$(SHRLIB_PREFIX)
 LOADABLE_SHRLIB_SUFFIX=$(SHRLIB_SUFFIX)
@@ -459,5 +459,5 @@ COMMON_INC += $(filter $(COMMON_DIR)/%, $(foreach file, $(INC), \
 SOURCE_INC = $(wildcard $(file) $(SOURCE_INC_bbb) )
 SOURCE_INC_bbb = $(foreach dir, $(ALL_SRC_DIRS), $(SOURCE_INC_aaa)  )
 SOURCE_INC_aaa = $(addsuffix /$(file), $(dir) )
- 
+
 endif

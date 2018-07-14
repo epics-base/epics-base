@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 #
 #	check for add-on CFLAGS and CXXFLAGS
@@ -37,9 +37,6 @@
 #    PROD_LIBS     libs needed by PROD and TESTPROD
 #    LIB_LIBS      libs needed by shared LIBRARY
 #    SHRLIB_LIBS   libs needed by shared LIBRARY
-#    USR_OBJLIBS   R3.13 vxWorks object libs needed building libraries and prods
-#    PROD_OBJLIBS  R3.13 vxWorks object    libs needed for building prods
-#    LIB_OBJLIBS   R3.13 vxWorks object libs needed for building libraries
 #    USR_SYS_LIBS  system libs needed building libraries and prods
 #    PROD_SYS_LIBS system libs needed for building prods
 #    LIB_SYS_LIBS  system libs needed for building libraries
@@ -270,30 +267,6 @@ OBJS_HOST+=$(subst -nil-,,$(OBJS_HOST_$(OS_CLASS)))
 else
 ifneq (,$(strip $(OBJS_HOST_DEFAULT)))
 OBJS_HOST+=$(OBJS_HOST_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(PROD_OBJLIBS_$(OS_CLASS))),)
-PROD_OBJLIBS+=$(subst -nil-,,$(PROD_OBJLIBS_$(OS_CLASS)))
-else
-ifdef PROD_OBJLIBS_DEFAULT
-PROD_OBJLIBS+=$(PROD_OBJLIBS_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(LIB_OBJLIBS_$(OS_CLASS))),)
-LIB_OBJLIBS+=$(subst -nil-,,$(LIB_OBJLIBS_$(OS_CLASS)))
-else
-ifdef LIB_OBJLIBS_DEFAULT
-LIB_OBJLIBS+=$(LIB_OBJLIBS_DEFAULT)
-endif
-endif
-
-ifneq ($(strip $(USR_OBJLIBS_$(OS_CLASS))),)
-USR_OBJLIBS+=$(subst -nil-,,$(USR_OBJLIBS_$(OS_CLASS)))
-else
-ifdef USR_OBJLIBS_DEFAULT
-USR_OBJLIBS+=$(USR_OBJLIBS_DEFAULT)
 endif
 endif
 
@@ -581,4 +554,3 @@ ifdef LIB_RCS_DEFAULT
 LIB_RCS+=$(LIB_RCS_DEFAULT)
 endif
 endif
-

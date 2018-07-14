@@ -20,7 +20,7 @@ $(1)_$(2) += $$(if $$(strip $$($(1)_$(2)_$$(OS_CLASS))), \
              $$($(1)_$(2)_DEFAULT))
 endef
 
-$(foreach type, SRCS RCS OBJS LDFLAGS OBJLIBS LDOBJS SYS_LIBS , \
+$(foreach type, SRCS RCS OBJS LDFLAGS LDOBJS SYS_LIBS , \
 $(foreach target, $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRARY) , \
     $(eval $(call TARGET_template,$(strip $(target)),$(type)))))
 
@@ -152,4 +152,3 @@ $(foreach target, $(LOADABLE_LIBRARY), \
     $(eval $(call LOADABLE_LIBRARY_template,$(strip $(target)))))
 
 #-----------------------------------------------------------------------
-

@@ -2716,6 +2716,32 @@ long dbNextInfo(DBENTRY *pdbentry)
     return (pinfo ? 0 : S_dbLib_infoNotFound);
 }
 
+long dbNextMatchingInfo(DBENTRY *pdbentry, const char *pattern)
+{
+    long status;
+
+    if (!pdbentry->precordType)
+    {
+        status = dbFirstRecordType(pdbentry);
+        goto first;
+    }
+    while(1) {
+        status = dbNextInfo(pdbentry);
+        while (status) {
+            status = dbNextRecord(pdbentry);
+            while (status) {
+                status = dbNextRecordType(pdbentry);
+first:
+                if (status) return status;
+                status = dbFirstRecord(pdbentry);
+            }
+            status = dbFirstInfo(pdbentry); 
+        }
+        if (!pattern || !*pattern) return 0;
+        if (epicsStrGlobMatch(dbGetInfoName(pdbentry), pattern)) return 0;
+    }
+}
+
 long dbFindInfo(DBENTRY *pdbentry,const char *name)
 {
     dbRecordNode *precnode = pdbentry->precnode;

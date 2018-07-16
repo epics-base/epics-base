@@ -1,7 +1,7 @@
 
 record(x, "testrec") {
-    info("A", "B")
     alias("testalias")
+    info("A", "B")
 }
 
 alias("testrec", "testalias2")

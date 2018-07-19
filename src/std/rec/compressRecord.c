@@ -120,13 +120,13 @@ static void put_value(compressRecord *prec, double *psource, int n)
         nuse = nsam;
 
     while (n--) {
-        /* for LIFO, decrement before */
+        /* for LIFO, pre-decrement modulo nsam */
         if (!fifo)
-            offset = (offset - 1) % nsam;
+            offset = (offset + nsam - 1) % nsam;
 
         prec->bptr[offset] = *psource++;
 
-        /* for FIFO, increment after */
+        /* for FIFO, post-increment modulo nsam */
         if (fifo)
             offset = (offset + 1) % nsam;
     }

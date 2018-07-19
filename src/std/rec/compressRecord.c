@@ -424,15 +424,15 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
     compressRecord *prec = (compressRecord *) paddr->precord;
     epicsUInt32 off = prec->off;
     epicsUInt32 nuse = prec->nuse;
-    epicsUInt32 nsam = prec->nsam;
 
-    *no_elements = nuse;
     if (prec->balg == bufferingALG_FIFO) {
-        *offset = (off - nuse) % nsam;
-    } else {
-        *offset = off;
+        epicsUInt32 nsam = prec->nsam;
+
+        off = (off + nsam - nuse) % nsam;
     }
 
+    *no_elements = nuse;
+    *offset = off;
     return 0;
 }
 

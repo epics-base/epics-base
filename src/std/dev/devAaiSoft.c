@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -71,13 +71,18 @@ static long init_record(aaiRecord *prec)
 
 static long read_aai(aaiRecord *prec)
 {
+    epicsUInt32 nord = prec->nord;
     long nRequest = prec->nelm;
 
     dbGetLink(prec->simm == menuYesNoYES ? &prec->siol : &prec->inp,
         prec->ftvl, prec->bptr, 0, &nRequest);
+
     if (nRequest > 0) {
         prec->nord = nRequest;
-        prec->udf=FALSE;
+        if (nord != prec->nord)
+            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+
+        prec->udf = FALSE;
         if (prec->tsel.type == CONSTANT &&
             prec->tse == epicsTimeEventDeviceTime)
             dbGetTimeStamp(&prec->inp, &prec->time);

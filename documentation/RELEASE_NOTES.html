@@ -16,6 +16,14 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>All array records now post monitors on their array-length fields</h3>
+
+<p>The waveform record has been posting monitors on its NORD field since Base
+3.15.0.1; we finally got around to doing the equivalent in all the other
+built-in record types, which even required modifying device support in some
+cases. This fixes <a href="https://bugs.launchpad.net/epics-base/+bug/1730727">
+Launchpad bug #1730727</a>.</p>
+
 <h3>HOWTO: Converting Wiki Record Reference to POD</h3>
 
 <p>Some documentation has been added to the <tt>dbdToHtml.pl</tt> script

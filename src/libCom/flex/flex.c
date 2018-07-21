@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* flex - tool to generate fast lexical analyzers */
 
@@ -14,7 +14,7 @@
  *
  * This code is derived from software contributed to Berkeley by
  * Vern Paxson.
- * 
+ *
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
@@ -494,6 +494,13 @@ void flexinit(int argc, char **argv)
 		case 'n':
 		    /* stupid do-nothing deprecated option */
 		    break;
+
+		case 'o':
+		    if ( i != 1 )
+			flexerror( "-o flag must be given separately" );
+
+		    outfile = arg + i + 1;
+		    goto get_next_arg;
 
 		case 'p':
 		    performance_report = true;

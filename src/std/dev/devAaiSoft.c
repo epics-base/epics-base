@@ -22,6 +22,7 @@
 #include "alarm.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
+#include "dbEvent.h"
 #include "recGbl.h"
 #include "devSup.h"
 #include "cantProceed.h"

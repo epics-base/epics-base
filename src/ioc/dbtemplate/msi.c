@@ -22,6 +22,7 @@
 #include <errlog.h>
 #include <epicsString.h>
 #include <osiFileName.h>
+#include <osiUnistd.h>
 
 #define MAX_BUFFER_SIZE 4096
 #define MAX_DEPS 1024
@@ -49,6 +50,7 @@ static char *substituteGetGlobalReplacements(subInfo *pvt);
 
 /* Forward references to local routines */
 static void usageExit(int status);
+static void abortExit(int status);
 static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval);
 static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *templateName);
 
@@ -182,7 +184,16 @@ void usageExit(int status)
     exit(status);
 }
 
-static void addMacroReplacements(MAC_HANDLE *macPvt,char *pval)
+void abortExit(int status)
+{
+    if (outFile) {
+        fclose(stdout);
+        unlink(outFile);
+    }
+    exit(status);
+}
+
+static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval)
 {
     char **pairs;
     long status;
@@ -268,7 +279,7 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
             default:
                 fprintf(stderr,"msi: Logic error in makeSubstitutions\n");
                 inputErrPrint(inputPvt);
-                exit(1);
+                abortExit(1);
             }
             free(copy);
             expand = 0;
@@ -447,7 +458,7 @@ static void inputOpenFile(inputData *pinputData,char *filename)
     if(!fp) {
         fprintf(stderr,"msi: Can't open file '%s'\n",filename);
         inputErrPrint(pinputData);
-        exit(1);
+        abortExit(1);
     }
     pinputFile = calloc(1,sizeof(inputFile));
     if(ppathNode) {
@@ -592,7 +603,7 @@ static void substituteOpen(subInfo **ppvt,char *substitutionName)
     fp = fopen(substitutionName,"r");
     if(!fp) {
         fprintf(stderr,"msi: Can't open file '%s'\n",substitutionName);
-        exit(1);
+        abortExit(1);
     }
     psubFile->substitutionName = substitutionName;
     psubFile->fp = fp;
@@ -627,7 +638,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
         psubInfo->isFile = 1;
         if(subGetNextToken(psubFile)!=tokenString) {
             subFileErrPrint(psubFile,"Parse error, expecting filename");
-            exit(1);
+            abortExit(1);
         }
         freePattern(psubInfo);
         free(psubInfo->filename);
@@ -641,25 +652,29 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
         while(subGetNextToken(psubFile)==tokenSeparater);
         if(psubFile->token!=tokenLBrace) {
             subFileErrPrint(psubFile,"Parse error, expecting {");
-            exit(1);
+            abortExit(1);
         }
         subGetNextToken(psubFile);
     }
     *filename = psubInfo->filename;
     while(psubFile->token==tokenSeparater) subGetNextToken(psubFile);
     if(psubFile->token==tokenLBrace) return(1);
-    if(psubFile->token==tokenRBrace) return(1);
-    if(psubFile->token!=tokenString
-    || strcmp(psubFile->string,"pattern")!=0) {
-        subFileErrPrint(psubFile,"Parse error, expecting pattern");
-        exit(1);
+    if (psubFile->token == tokenRBrace) {
+        subFileErrPrint(psubFile, "Parse error, unexpected '}'");
+        abortExit(1);
+    }
+
+    if (psubFile->token != tokenString ||
+        strcmp(psubFile->string, "pattern") != 0) {
+        subFileErrPrint(psubFile, "Parse error, expecting 'pattern'");
+        abortExit(1);
     }
     freePattern(psubInfo);
     psubInfo->isPattern = 1;
     while(subGetNextToken(psubFile)==tokenSeparater);
     if(psubFile->token!=tokenLBrace) {
         subFileErrPrint(psubFile,"Parse error, expecting {");
-        exit(1);
+        abortExit(1);
     }
     while(1) {
         while(subGetNextToken(psubFile)==tokenSeparater);
@@ -670,7 +685,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
     }
     if(psubFile->token!=tokenRBrace) {
         subFileErrPrint(psubFile,"Parse error, expecting }");
-        exit(1);
+        abortExit(1);
     }
     subGetNextToken(psubFile);
     return(1);
@@ -707,9 +722,13 @@ static char *substituteGetGlobalReplacements(subInfo *psubInfo)
             case tokenString:
                 catMacroReplacements(psubInfo,psubFile->string);
                 break;
-            default:
-                subFileErrPrint(psubFile,"Parse error, illegal token");
-                exit(1);
+
+            case tokenLBrace:
+                subFileErrPrint(psubFile, "Parse error, unexpected '{'");
+                abortExit(1);
+            case tokenEOF:
+                subFileErrPrint(psubFile, "Parse error, incomplete file?");
+                abortExit(1);
         }
     }
 }
@@ -744,7 +763,7 @@ static char *substituteGetReplacements(subInfo *psubInfo)
             }
             if(psubFile->token!=tokenString) {
                 subFileErrPrint(psubFile,"Parse error, illegal token");
-                exit(-1);
+                abortExit(1);
             }
             if(gotFirstPattern) catMacroReplacements(psubInfo,",");
             gotFirstPattern = 1;
@@ -772,9 +791,13 @@ static char *substituteGetReplacements(subInfo *psubInfo)
             case tokenString:
                 catMacroReplacements(psubInfo,psubFile->string);
                 break;
-            default:
-                subFileErrPrint(psubFile,"Parse error, illegal token");
-                exit(1);
+
+            case tokenLBrace:
+                subFileErrPrint(psubFile, "Parse error, unexpected '{'");
+                abortExit(1);
+            case tokenEOF:
+                subFileErrPrint(psubFile, "Parse error, incomplete file?");
+                abortExit(1);
         }
     }
 }
@@ -842,7 +865,7 @@ static tokenType subGetNextToken(subFile *psubFile)
         while(*p!='"') {
             if(*p==0 || *p=='\n') {
                 subFileErrPrint(psubFile,"Strings must be on single line\n");
-                exit(1);
+                abortExit(1);
             }
             /*allow  escape for imbeded quote*/
             if((*p=='\\') && *(p+1)=='"') {
@@ -881,7 +904,7 @@ static void catMacroReplacements(subInfo *psubInfo,const char *value)
         if(!newbuf) {
             fprintf(stderr,"calloc failed for size %lu\n",
 	        (unsigned long) newsize);
-            exit(1);
+            abortExit(1);
         }
         if(psubInfo->macroReplacements) {
             memcpy(newbuf,psubInfo->macroReplacements,psubInfo->curLength);

@@ -16,6 +16,15 @@ Base-3.15 series or to EPICS 7.</p>
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Prevent illegal alarm severities</h3>
+
+<p>A check has been added to <tt>recGblResetAlarms()</tt> that prevents records
+from getting an alarm severity higher than INVALID_ALARM. It is still possible
+for a field like HSV to get set to a value that is not a legal alarm severity,
+but the core IOC code should never copy such a value into a record's SEVR or
+ACKS fields. With this fix the record's alarm severity will be limited to
+INVALID_ALARM.</p>
+
 <h3>Fixes for Launchpad bugs</h3>
 
 <p>The following launchpad bugs have fixes included:</p>

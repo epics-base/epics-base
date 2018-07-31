@@ -185,7 +185,7 @@ endif
 
 # RELEASE file consistency checking
 checkRelease:
-	$(CONVERTRELEASE) checkRelease
+	+$(CONVERTRELEASE) checkRelease
 warnRelease:
 	-$(CONVERTRELEASE) checkRelease
 noCheckRelease:

@@ -1,7 +1,6 @@
 # CONFIG_SITE.Common.linux-microblaze
 #
-# Site specific definitions for linux-microblaze target builds.
-#-------------------------------------------------------
+# Site-specific settings for the linux-microblaze target
 
 # The gnu tools for cross compiling for MicroBlaze (little endian)
 # on Linux can be downloaded from the Xilinx git server:
@@ -12,3 +11,21 @@
 
 GNU_DIR = /usr/local/vw/microblaze-2.0/microblazeel-unknown-linux-gnu
 
+
+# Use GNU Readline if the header file is installed
+COMMANDLINE_LIBRARY = $(strip $(if $(wildcard \
+    $(GNU_DIR)/include/readline/readline.h), READLINE, EPICS))
+
+# If libreadline needs additional libraries to be linked with it, try
+# uncommenting each of the lines below in turn, starting with the top
+# one and working downwards, until the build succeeds. Do a 'make rebuild'
+# from the top of the Base tree after changing this setting.
+
+# Needs -lncurses:
+#COMMANDLINE_LIBRARY = READLINE_NCURSES
+
+# Needs -lcurses:
+#COMMANDLINE_LIBRARY = READLINE_CURSES
+
+# Readline is broken or you don't want use it:
+#COMMANDLINE_LIBRARY = EPICS

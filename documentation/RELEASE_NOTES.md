@@ -6,7 +6,16 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
-### Replace EPICS_TIMEZONE with EPICS_TZ
+### GNU Readline detection on Linux
+
+Most Linux architectures should now configure themselves automatically to use
+the GNU Readline library if its main header file can be found in the expected
+place, and not try to use Readline if the header file isn't present. For older
+Linux architectures where libncurses or libcurses must also be linked with, the
+manual configuration of the `COMMANDLINE_LIBRARY` variable in the appropriate
+`configure/os/CONFIG_SITE.Common.<arch>` file will still be necessary.
+
+### Replace `EPICS_TIMEZONE` with `EPICS_TZ`
 
 The `EPICS_TIMEZONE` environment parameter provided time-zone information for
 the IOC's locale in the old ANSI format expected by VxWorks for its `TIMEZONE`
@@ -25,7 +34,7 @@ Larry Hoff in 2009; it is unforunate that it has taken 10 years for them to be
 integrated into Base.
 
 The default value for the `EPICS_TZ` environment parameter is set in the Base
-configure/CONFIG_SITE_ENV file, which contains example settings for most EPICS
+`configure/CONFIG_SITE_ENV` file, which contains example settings for most EPICS
 sites that use VxWorks, and a link to a page describing the Posix TZ format for
 any locations that I missed.
 

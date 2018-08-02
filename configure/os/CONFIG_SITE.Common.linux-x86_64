@@ -1,9 +1,8 @@
 # CONFIG_SITE.Common.linux-x86_64
 #
-# Site Specific definitions for linux-x86_64 target
-# Only the local epics system manager should modify this file
+# Site-specific settings for the linux-x86_64 target
 
-# NOTE for SHARED_LIBRARIES: In most cases if this is set to YES the
+# NOTE: In most cases if SHARED_LIBRARIES is set to YES the
 # shared libraries will be found automatically.  However if the .so
 # files are installed at a different path to their compile-time path
 # then in order to be found at runtime do one of these:
@@ -15,20 +14,24 @@
 # c) Add the runtime path to /etc/ld.so.conf and run ldconfig
 #    to inform the system of the shared library location.
 
-# Depending on your version of Linux you'll want one of the following
-# lines to enable command-line editing and history in iocsh.  If you're
-# not sure which, start with the top one and work downwards until the
-# build doesn't fail to link the readline library.  If none of them work,
-# comment them all out to build without readline support.
 
-# No other libraries needed (recent Fedora, Ubuntu etc.):
-COMMANDLINE_LIBRARY = READLINE
+# Use GNU Readline if the header file is installed
+COMMANDLINE_LIBRARY = $(strip $(if $(wildcard \
+    $(GNU_DIR)/include/readline/readline.h), READLINE, EPICS))
+
+# If libreadline needs additional libraries to be linked with it, try
+# uncommenting each of the lines below in turn, starting with the top
+# one and working downwards, until the build succeeds. Do a 'make rebuild'
+# from the top of the Base tree after changing this setting.
 
 # Needs -lncurses (RHEL 5 etc.):
 #COMMANDLINE_LIBRARY = READLINE_NCURSES
 
 # Needs -lcurses (older versions)
 #COMMANDLINE_LIBRARY = READLINE_CURSES
+
+# Readline is broken or you don't want use it:
+#COMMANDLINE_LIBRARY = EPICS
 
 
 # Uncomment the followings lines to build with CLANG instead of GCC.
@@ -37,14 +40,6 @@ COMMANDLINE_LIBRARY = READLINE
 #CMPLR_CLASS = clang
 #CC          = clang
 #CCC         = clang++
-
-
-# It makes sense to include debugging symbols even in optimized builds
-# in case you want to attach gdb to the process or examine a core-dump.
-# This does cost disk space, but not memory as debug symbols are not
-# loaded into RAM when the binary is loaded.
-OPT_CFLAGS_YES += -g
-OPT_CXXFLAGS_YES += -g
 
 
 # Tune GNU compiler output for a specific 64-bit cpu-type

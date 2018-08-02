@@ -1,4 +1,23 @@
 # CONFIG_SITE.Common.linux-xscale_be
 #
-# Site specific definitions for all linux-xscale_be target builds.
-#-------------------------------------------------------
+# Site-specific settings for the linux-xscale_be target
+
+
+# Use GNU Readline if the header file is installed
+COMMANDLINE_LIBRARY = $(strip $(if $(wildcard \
+    $(firstword $(READLINE_DIR) $(GNU_DIR))/include/readline/readline.h), \
+  READLINE, EPICS))
+
+# If libreadline needs additional libraries to be linked with it, try
+# uncommenting each of the lines below in turn, starting with the top
+# one and working downwards, until the build succeeds. Do a 'make rebuild'
+# from the top of the Base tree after changing this setting.
+
+# Needs -lncurses:
+#COMMANDLINE_LIBRARY = READLINE_NCURSES
+
+# Needs -lcurses:
+#COMMANDLINE_LIBRARY = READLINE_CURSES
+
+# Readline is broken or you don't want use it:
+#COMMANDLINE_LIBRARY = EPICS

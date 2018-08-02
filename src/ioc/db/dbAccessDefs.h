@@ -34,6 +34,7 @@ extern "C" {
 
 epicsShareExtern struct dbBase *pdbbase;
 epicsShareExtern volatile int interruptAccept;
+epicsShareExtern int dbAccessDebugPUTF;
 
 /*  The database field and request types are defined in dbFldTypes.h*/
 /* Data Base Request Options	*/

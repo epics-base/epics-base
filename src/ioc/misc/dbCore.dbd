@@ -19,8 +19,12 @@ variable(dbBptNotMonotonic,int)
 variable(dbQuietMacroWarnings,int)
 variable(dbConvertStrict,int)
 
+# PUTF/RPRO tracing; set TPRO on records to trace
+variable(dbAccessDebugPUTF,int)
+
 # dbLoadTemplate settings
 variable(dbTemplateMaxVars,int)
+
 # Default number of parallel callback threads
 variable(callbackParallelThreadsDefault,int)
 

@@ -17,6 +17,21 @@
 
 -->
 
+<h3>Propagate PUTF across Asynchronous record processing</h3>
+
+<p>The IOC contains a mechanism involving the PUTF and RPRO fields of each
+record to ensure that if a record is busy when it receives a put to one of its
+fields, the record will be processed again to ensure that the new field value
+has been correctly acted on. Until now that mechanism only worked if the put was
+to the asynchronous record itself, so puts that were chained from some other
+record via a DB link did not cause reprocessing.</p>
+
+<p>In this release the mechanism has been extended to propagate the PUTF state
+across DB links until all downstream records have been reprocessed. Some
+additional information about the record state can be shown by setting the TPRO
+field of an upstream record, and even more trace data is displayed if the
+debugging variable <tt>dbAccessDebugPUTF</tt> is set in addition to TPRO.</p>
+
 <h3>Restore use of ledlib for VxWorks command editing</h3>
 
 <p>The epicsReadline refactoring work described below unfortunately disabled the

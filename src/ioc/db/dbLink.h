@@ -81,6 +81,8 @@ typedef struct lset {
 #define dbGetSevr(link, sevr) \
     dbGetAlarm(link, NULL, sevr)
 
+epicsShareFunc const char * dbLinkFieldName(const struct link *plink);
+
 epicsShareFunc void dbInitLink(struct link *plink, short dbfType);
 epicsShareFunc void dbAddLink(struct dbLocker *locker, struct link *plink,
         short dbfType, DBADDR *ptarget);

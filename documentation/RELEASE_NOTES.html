@@ -97,6 +97,14 @@ be happy to try and answer them!</p>
 
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Finding info fields</h3>
+
+<p>A new iocsh command <code>dbli</code> lists the info fields defined in the
+database, and can take a glob pattern to limit output to specific info names.
+The newly added dbStaticLib function <code>dbNextMatchingInfo()</code> iterates
+through the info fields defined in the current record, and is used to implement
+the new command.</p>
+
 <h3>Output from <tt>dbpr</tt> command enhanced</h3>
 
 <p>The "DataBase Print Record" command <tt>dbpr</tt> now generates slightly

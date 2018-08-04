@@ -25,6 +25,8 @@ epicsShareFunc long dbl(
 epicsShareFunc long dbnr(int verbose);
 /* list aliases */
 epicsShareFunc long dbla(const char *pmask);
+/* list infos */
+epicsShareFunc long dbli(const char *patern);
 /*list records with mask*/
 epicsShareFunc long dbgrep(const char *pmask);
 /*get field value*/

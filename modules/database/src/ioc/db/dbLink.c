@@ -49,7 +49,7 @@
 #include "special.h"
 
 /* How to identify links in error messages */
-static const char * link_field_name(const struct link *plink)
+const char * dbLinkFieldName(const struct link *plink)
 {
     const struct dbCommon *precord = plink->precord;
     const dbRecordType *pdbRecordType = precord->rdes;
@@ -136,7 +136,7 @@ void dbInitLink(struct link *plink, short dbfType)
             errlogPrintf("Forward-link uses Channel Access "
                 "without pointing to PROC field\n"
                 "    %s.%s => %s\n",
-                precord->name, link_field_name(plink),
+                precord->name, dbLinkFieldName(plink),
                 plink->value.pv_link.pvname);
         }
     }

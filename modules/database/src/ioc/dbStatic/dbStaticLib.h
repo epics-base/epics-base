@@ -190,6 +190,8 @@ epicsShareFunc long dbFirstInfo(DBENTRY *pdbentry);
 epicsShareFunc long dbNextInfo(DBENTRY *pdbentry);
 epicsShareFunc long dbFindInfo(DBENTRY *pdbentry,
     const char *name);
+epicsShareFunc long dbNextMatchingInfo(DBENTRY *pdbentry,
+    const char *pattern);
 epicsShareFunc long dbDeleteInfo(DBENTRY *pdbentry);
 epicsShareFunc const char * dbGetInfoName(DBENTRY *pdbentry);
 epicsShareFunc const char * dbGetInfoString(DBENTRY *pdbentry);

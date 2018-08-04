@@ -152,6 +152,12 @@ static const iocshArg * const dbnrArgs[1] = {&dbnrArg0};
 static const iocshFuncDef dbnrFuncDef = {"dbnr",1,dbnrArgs};
 static void dbnrCallFunc(const iocshArgBuf *args) { dbnr(args[0].ival);}
 
+/* dbli */
+static const iocshArg dbliArg0 = { "pattern",iocshArgString};
+static const iocshArg * const dbliArgs[1] = {&dbliArg0};
+static const iocshFuncDef dbliFuncDef = {"dbli",1,dbliArgs};
+static void dbliCallFunc(const iocshArgBuf *args) { dbli(args[0].sval);}
+
 /* dbla */
 static const iocshArg dblaArg0 = { "pattern",iocshArgString};
 static const iocshArg * const dblaArgs[1] = {&dblaArg0};
@@ -415,6 +421,7 @@ void dbIocRegister(void)
     iocshRegister(&dblFuncDef,dblCallFunc);
     iocshRegister(&dbnrFuncDef,dbnrCallFunc);
     iocshRegister(&dblaFuncDef,dblaCallFunc);
+    iocshRegister(&dbliFuncDef,dbliCallFunc);
     iocshRegister(&dbgrepFuncDef,dbgrepCallFunc);
     iocshRegister(&dbgfFuncDef,dbgfCallFunc);
     iocshRegister(&dbpfFuncDef,dbpfCallFunc);

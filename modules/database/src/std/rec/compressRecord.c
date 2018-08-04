@@ -120,13 +120,13 @@ static void put_value(compressRecord *prec, double *psource, int n)
         nuse = nsam;
 
     while (n--) {
-        /* for LIFO, decrement before */
+        /* for LIFO, pre-decrement modulo nsam */
         if (!fifo)
-            offset = (offset - 1) % nsam;
+            offset = (offset + nsam - 1) % nsam;
 
         prec->bptr[offset] = *psource++;
 
-        /* for FIFO, increment after */
+        /* for FIFO, post-increment modulo nsam */
         if (fifo)
             offset = (offset + 1) % nsam;
     }
@@ -424,15 +424,15 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
     compressRecord *prec = (compressRecord *) paddr->precord;
     epicsUInt32 off = prec->off;
     epicsUInt32 nuse = prec->nuse;
-    epicsUInt32 nsam = prec->nsam;
 
-    *no_elements = nuse;
     if (prec->balg == bufferingALG_FIFO) {
-        *offset = (off - nuse) % nsam;
-    } else {
-        *offset = off;
+        epicsUInt32 nsam = prec->nsam;
+
+        off = (off + nsam - nuse) % nsam;
     }
 
+    *no_elements = nuse;
+    *offset = off;
     return 0;
 }
 

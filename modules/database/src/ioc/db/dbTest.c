@@ -258,7 +258,30 @@ long dbla(const char *pmask)
     dbFinishEntry(pdbentry);
     return 0;
 }
+
+long dbli(const char *pattern)
+{
+    DBENTRY dbentry;
+    void* ptr;
 
+    if (!pdbbase) {
+        printf("No database loaded\n");
+        return 0;
+    }
+
+    dbInitEntry(pdbbase, &dbentry);
+    while (dbNextMatchingInfo(&dbentry, pattern) == 0)
+    {
+        printf("%s info(%s, \"%s\"", dbGetRecordName(&dbentry),
+            dbGetInfoName(&dbentry), dbGetInfoString(&dbentry));
+        if ((ptr = dbGetInfoPointer(&dbentry)) != NULL)
+            printf(", %p", ptr);
+        printf(")\n");
+    }
+    dbFinishEntry(&dbentry);
+    return 0;
+}
+
 long dbgrep(const char *pmask)
 {
     DBENTRY dbentry;

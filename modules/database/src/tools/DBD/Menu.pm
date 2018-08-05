@@ -1,6 +1,8 @@
 package DBD::Menu;
 use DBD::Base;
-@ISA = qw(DBD::Base);
+our @ISA = qw(DBD::Base);
+
+use strict;
 
 sub init {
     my ($this, $name) = @_;
@@ -14,7 +16,7 @@ sub init {
 sub add_choice {
     my ($this, $name, $value) = @_;
     $name = $this->identifier($name, "Choice name");
-    foreach $pair ($this->choices) {
+    foreach my $pair ($this->choices) {
         dieContext("Duplicate menu choice name '$name'")
             if ($pair->[0] eq $name);
         dieContext("Duplicate menu choice string '$value'")

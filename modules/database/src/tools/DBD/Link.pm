@@ -1,6 +1,8 @@
 package DBD::Link;
 use DBD::Base;
-@ISA = qw(DBD::Base);
+our @ISA = qw(DBD::Base);
+
+use strict;
 
 sub init {
     my ($this, $name, $jlif) = @_;

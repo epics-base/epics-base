@@ -1,6 +1,8 @@
 package DBD::Variable;
 use DBD::Base;
-@ISA = qw(DBD::Base);
+our @ISA = qw(DBD::Base);
+
+use strict;
 
 my %valid_types = (
     # C type name => corresponding iocshArg type identifier

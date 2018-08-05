@@ -1,8 +1,9 @@
 package DBD::Breaktable;
 use DBD::Base;
-@ISA = qw(DBD::Base);
+our @ISA = qw(DBD::Base);
 
 use Carp;
+use strict;
 
 sub init {
     my ($this, $name) = @_;

@@ -11,6 +11,8 @@
 use FindBin qw($Bin);
 use lib ("$Bin/../../lib/perl");
 
+use strict;
+
 use EPICS::Getopts;
 use File::Basename;
 use DBD;
@@ -57,7 +59,9 @@ if ($opt_D) {
     print map { "$_:\n" } @uniqfiles;
 } else {
     open OUTFILE, ">$outfile" or die "$tool: Can't open $outfile: $!\n";
-    print OUTFILE "/* $outbase generated from $inbase */\n\n",
+    print OUTFILE "/** \@file $outbase\n",
+        " * \@brief Declarations generated from $inbase\n",
+        " */\n\n",
         "#ifndef $guard_name\n",
         "#define $guard_name\n\n";
     my $menus = $dbd->menus;

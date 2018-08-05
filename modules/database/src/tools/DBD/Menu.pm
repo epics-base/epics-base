@@ -67,13 +67,16 @@ sub toDeclaration {
     my $name = $this->name;
     my $macro_name = "${name}_NUM_CHOICES";
     my @choices = map {
-        sprintf "    %-31s /* %s */", @{$_}[0], escapeCcomment(@{$_}[1]);
+        sprintf "    %-31s /**< \@brief State string \"%s\" */",
+            @{$_}[0], escapeCcomment(@{$_}[1]);
     } $this->choices;
     my $num = scalar @choices;
     return "#ifndef $macro_name\n" .
+           "/** \@brief Enumerated type from menu $name */\n" .
            "typedef enum {\n" .
                join(",\n", @choices) .
            "\n} $name;\n" .
+           "/** \@brief Number of states defined for menu $name */\n" .
            "#define $macro_name $num\n" .
            "#endif\n\n";
 }

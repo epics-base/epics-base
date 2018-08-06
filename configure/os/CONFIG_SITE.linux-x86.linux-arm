@@ -8,7 +8,8 @@ GNU_TARGET = arm-xilinx-linux-gnueabi
 
 # Set GNU tools install path
 # Examples are installations at the APS:
-GNU_DIR = /usr/local/vw/zynq-2011.09
+#GNU_DIR = /usr/local/vw/zynq-2011.09
+GNU_DIR = /usr/local/vw/zynq-2016.1/gnu/arm/lin
 #GNU_DIR = /usr/local/Xilinx/SDK/2016.3/gnu/arm/lin
 #GNU_DIR = /APSshare/XilinxSDK/2015.4/gnu/arm/lin
 

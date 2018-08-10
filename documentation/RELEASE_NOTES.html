@@ -20,15 +20,27 @@ and have grown crufty (technical term). This release includes the following
 updates to these files:</p>
 
 <ul>
-<li>The <tt>EpicsHostArch</tt> script has been removed.
-<tt>EpicsHostArch.pl</tt> should be used instead.</li>
 
-<li>The <tt>EpicsHostArch.pl</tt> script has been moved into <tt>src/tools</tt>
-from where it gets installed into <tt>lib/perl</tt>. The build system has been
-adjusted to look for it in both places if the <tt>EPICS_HOST_ARCH</tt>
-environment variable has not been set at build-time. Sites that may have used
-this to set <tt>EPICS_HOST_ARCH</tt> as part of their standard environment may
-need to adjust their scripts when they upgrade to this release.</li>
+<li>The Perl <tt>EpicsHostArch.pl</tt> script has been rewritten, and support
+for a few previously missing host architectures has been added to it.</li>
+
+<li>The <tt>EpicsHostArch.pl</tt> script has also been moved into the standard
+<tt>src/tools</tt> directory, from where it will be installed into
+<tt>lib/perl</tt>. In this new location it is no longer executable, so it must
+be run by the <tt>perl</tt> executable.</li>
+
+<li>The build system has been adjusted to look for <tt>EpicsHostArch.pl</tt> in
+both places if the <tt>EPICS_HOST_ARCH</tt> environment variable has not been
+set at build-time.</li>
+
+<li>Sites that used the original Perl script to set <tt>EPICS_HOST_ARCH</tt> as
+part of their standard environment will need to adjust their scripts when they
+upgrade to this release.</li>
+
+<li>The <tt>EpicsHostArch</tt> shell script has been replaced with a wrapper
+routine that calls the Perl <tt>EpicsHostArch.pl</tt> script. Sites that rely on
+this script to set <tt>EPICS_HOST_ARCH</tt> should consider switching to the
+Perl script instead.</li>
 
 <li>The <tt>Site.cshrc</tt> and <tt>Site.profile</tt> files have been renamed to
 <tt>unix.csh</tt> and <tt>unix.sh</tt>, respectively.</li>

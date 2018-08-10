@@ -90,3 +90,15 @@ epicsShareFunc int epicsShareAPI epicsRingPointerIsFull(epicsRingPointerId id)
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     return((pvoidPointer->isFull()) ? 1 : 0);
 }
+
+epicsShareFunc int epicsShareAPI epicsRingPointerGetHighWaterMark(epicsRingPointerIdConst id)
+{
+    voidPointer const *pvoidPointer = reinterpret_cast<voidPointer const*>(id);
+    return(pvoidPointer->getHighWaterMark());
+}
+
+epicsShareFunc void epicsShareAPI epicsRingPointerResetHighWaterMark(epicsRingPointerId id)
+{
+    voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
+    pvoidPointer->resetHighWaterMark();
+}

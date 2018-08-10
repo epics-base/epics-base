@@ -54,6 +54,7 @@ typedef struct cbQueueSet {
     epicsEventId semWakeUp;
     epicsRingPointerId queue;
     int queueOverflow;
+    int queueOverflows;
     int shutdown;
     int threadsConfigured;
     int threadsRunning;
@@ -99,8 +100,53 @@ int callbackSetQueueSize(int size)
         fprintf(stderr, "Callback system already initialized\n");
         return -1;
     }
-    callbackQueueSize = size;
+    epicsAtomicSetIntT(&callbackQueueSize, size);
     return 0;
+}
+
+int callbackQueueStatus(const int reset, callbackQueueStats *result)
+{
+    if (!callbackIsInit) return -1;
+    int ret;
+    if (result) {
+        result->size = epicsAtomicGetIntT(&callbackQueueSize);
+        int prio;
+        for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+            epicsRingPointerId qId = callbackQueue[prio].queue;
+            result->numUsed[prio] = epicsRingPointerGetUsed(qId);
+            result->maxUsed[prio] = epicsRingPointerGetHighWaterMark(qId);
+            result->numOverflow[prio] = epicsAtomicGetIntT(&callbackQueue[prio].queueOverflows);
+        }
+        ret = 0;
+    } else {
+        ret = -2;
+    }
+    if (reset) {
+        int prio;
+        for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+            epicsRingPointerResetHighWaterMark(callbackQueue[prio].queue);
+        }
+    }
+    return ret;
+}
+
+void callbackQueuePrintStatus(const int reset)
+{
+    callbackQueueStats stats;
+    if (callbackQueueStatus(reset, &stats) == -1) {
+        fprintf(stderr, "Callback system not initialized, yet. Please run "
+            "iocInit before using this command.\n");
+        return;
+    }
+
+    printf("PRIORITY  HIGH-WATER MARK  ITEMS IN Q  Q SIZE  %% USED  Q OVERFLOWS\n");
+    int prio;
+    for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+        double qusage = 100.0 * stats.numUsed[prio] / stats.size;
+        printf("%8s  %15d  %10d  %6d  %6.1f  %11d\n", threadNamePrefix[prio],
+               stats.maxUsed[prio], stats.numUsed[prio], stats.size,
+               qusage, stats.numOverflow[prio]);
+    }
 }
 
 int callbackParallelThreads(int count, const char *prio)
@@ -240,7 +286,7 @@ void callbackInit(void)
         epicsThreadId tid;
 
         callbackQueue[i].semWakeUp = epicsEventMustCreate(epicsEventEmpty);
-        callbackQueue[i].queue = epicsRingPointerLockedCreate(callbackQueueSize);
+        callbackQueue[i].queue = epicsRingPointerLockedCreate(epicsAtomicGetIntT(&callbackQueueSize));
         if (callbackQueue[i].queue == 0)
             cantProceed("epicsRingPointerLockedCreate failed for %s\n",
                 threadNamePrefix[i]);
@@ -290,6 +336,7 @@ int callbackRequest(CALLBACK *pcallback)
     if (!pushOK) {
         epicsInterruptContextMessage(fullMessage[priority]);
         mySet->queueOverflow = TRUE;
+        epicsAtomicIncrIntT(&mySet->queueOverflows);
         return S_db_bufFull;
     }
     epicsEventSignal(mySet->semWakeUp);

@@ -16,13 +16,24 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Warning indicators in msi (and macLib) output</h3>
+
+<p>The libCom macro expansion library has been modified so that when the
+SUPPRESS_WARNINGS flag is set it will no longer include any <tt>,undefined</tt>
+or <tt>,recursive</tt> indicators in its output when undefined or recursive
+macros are encountered. These indicators were harmless when the output was fed
+into an IOC along with a definition for the macro, but when the <tt>msi</tt>
+tool was used to generate other kinds of files they caused problems. If the
+<tt>msi -V</tt> flag is used the markers will still be present in the output
+whenever the appropriate condition is seen.</p>
+
 <h3>Improvements to msi</h3>
 
 <p>In addition to fixing its response to discovering parsing errors in its
-  substitution input file (reported as Launchpad
-  <a href="https://bugs.launchpad.net/epics-base/+bug/1503661">bug #1503661</a>)
-  so it now deletes the incomplete output file, the msi program has been cleaned
-  up a little bit internally.</p>
+substitution input file (reported as Launchpad
+<a href="https://bugs.launchpad.net/epics-base/+bug/1503661">bug #1503661</a>)
+so it now deletes the incomplete output file, the msi program has been cleaned
+up a little bit internally.</p>
 
 <h3>All array records now post monitors on their array-length fields</h3>
 

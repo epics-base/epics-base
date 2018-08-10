@@ -65,11 +65,11 @@ static void ovcheck(void)
 
 MAIN(macLibTest)
 {
-    testPlan(91);
+    testPlan(93);
 
     if (macCreateHandle(&h, NULL))
         testAbort("macCreateHandle() failed");
-    macSuppressWarning(h, TRUE);
+    eltc(0);
 
     check("FOO", " FOO");
 
@@ -214,6 +214,10 @@ MAIN(macLibTest)
     check("${FOO=GRIBBLE,BAR=${FOO}}", "!$(BAR,recursive)");
     check("${FOO,FOO=${FOO}}", "!$(FOO,recursive)");
     check("${FOO=GRIBBLE,FOO=${FOO}}", "!$(FOO,recursive)");
+
+    macSuppressWarning(h, TRUE);
+    check("$(CRUX)", "!$(CRUX)");
+    check("${FOO}", "!$(BAR)");
 
     ovcheck();
 

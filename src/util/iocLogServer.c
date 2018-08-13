@@ -347,11 +347,6 @@ static int openLogFile (struct ioc_log_server *pserver)
 {
 	enum TF_RETURN ret;
 
-	if (ioc_log_file_limit==0u) {
-		pserver->poutfile = stderr;
-		return IOCLS_ERROR;
-	}
-
 	if (pserver->poutfile && pserver->poutfile != stderr){
 		fclose (pserver->poutfile);
 		pserver->poutfile = NULL;
@@ -627,7 +622,7 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
 				strlen(pclient->ascii_time) + nchar + 3u;
 		assert (nTotChar <= INT_MAX);
 		ntci = (int) nTotChar;
-		if ( pclient->pserver->filePos+ntci >= pclient->pserver->max_file_size ) {
+		if ( pclient->pserver->max_file_size && pclient->pserver->filePos+ntci >= pclient->pserver->max_file_size ) {
 			if ( pclient->pserver->max_file_size >= pclient->pserver->filePos ) {
 				unsigned nPadChar;
 				/*
@@ -771,7 +766,7 @@ static int getConfig(void)
 			&EPICS_IOC_LOG_FILE_LIMIT, 
 			&ioc_log_file_limit);
 	if(status>=0){
-		if (ioc_log_file_limit<=0) {
+		if (ioc_log_file_limit < 0) {
 			envFailureNotify (&EPICS_IOC_LOG_FILE_LIMIT);
 			return IOCLS_ERROR;
 		}

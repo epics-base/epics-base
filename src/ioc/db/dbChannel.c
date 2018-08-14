@@ -21,6 +21,7 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 #include "epicsString.h"
+#include "epicsStdio.h"
 #include "errlog.h"
 #include "freeList.h"
 #include "gpHash.h"

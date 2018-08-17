@@ -48,8 +48,10 @@ static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 /* Forward references */
 
 static int ClockTimeGetCurrent(epicsTimeStamp *pDest);
-static void ClockTimeSync(void *dummy);
 
+#if defined(vxWorks) || defined(__rtems__)
+static void ClockTimeSync(void *dummy);
+#endif
 
 /* ClockTime_Report iocsh command */
 static const iocshArg ReportArg0 = { "interest_level", iocshArgArgv};
@@ -77,12 +79,14 @@ static void ClockTime_InitOnce(void *psync)
     ClockTimePvt.lock        = epicsMutexCreate();
     ClockTimePvt.ClockTimeSyncInterval = 1.0;   /* First sync */
 
+#if defined(vxWorks) || defined(__rtems__)
     if (ClockTimePvt.synchronize) {
         /* Start the sync thread */
         epicsThreadCreate("ClockTimeSync", epicsThreadPriorityHigh,
             epicsThreadGetStackSize(epicsThreadStackSmall),
             ClockTimeSync, NULL);
     }
+#endif
 
     epicsAtExit(ClockTime_Shutdown, NULL);
 
@@ -113,6 +117,7 @@ void ClockTime_Shutdown(void *dummy)
 
 /* Synchronization thread */
 
+#if defined(vxWorks) || defined(__rtems__)
 static void ClockTimeSync(void *dummy)
 {
     taskwdInsert(0, NULL, NULL);
@@ -148,6 +153,7 @@ static void ClockTimeSync(void *dummy)
     ClockTimePvt.synchronized = 0;
     taskwdRemove(0);
 }
+#endif
 
 
 /* Time Provider Routine */

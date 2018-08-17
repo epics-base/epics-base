@@ -26,6 +26,7 @@ LIB_SRCS += miscIocRegister.c
 LIB_SRCS += dlload.c
 LIB_SRCS += iocshRegisterCommon.c
 
+miscIocRegister_CFLAGS_iOS = -DSYSTEM_UNAVAILABLE
 
 LIBRARY_IOC = miscIoc
 

@@ -16,6 +16,13 @@ Base-3.15 series or to EPICS 7.</p>
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Recent Apple XCode Build Issues</h3>
+
+<p>The latest version of XCode will not compile calls to <tt>system()</tt> or
+<tt>clock_settime()</tt> for iOS targets. There were several places in Base
+where these were being compiled, although there were probably never called. The
+code has now been modified to permit iOS builds to complete again.</p>
+
 <h3>Prevent illegal alarm severities</h3>
 
 <p>A check has been added to <tt>recGblResetAlarms()</tt> that prevents records

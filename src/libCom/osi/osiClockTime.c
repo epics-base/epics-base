@@ -159,6 +159,7 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
     /* If a Hi-Res clock is available and works, use it */
     #ifdef CLOCK_REALTIME_HR
         clock_gettime(CLOCK_REALTIME_HR, &clockNow) &&
+        /* Note: Uses the lo-res clock below if the above call fails */
     #endif
     clock_gettime(CLOCK_REALTIME, &clockNow);
 
@@ -166,9 +167,15 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
         clockNow.tv_sec < POSIX_TIME_AT_EPICS_EPOCH) {
         clockNow.tv_sec = POSIX_TIME_AT_EPICS_EPOCH + 86400;
         clockNow.tv_nsec = 0;
+
+#if defined(vxWorks) || defined(__rtems__)
         clock_settime(CLOCK_REALTIME, &clockNow);
         errlogPrintf("WARNING: OS Clock time was read before being set.\n"
             "Using 1990-01-02 00:00:00.000000 UTC\n");
+#else
+        errlogPrintf("WARNING: OS Clock pre-dates the EPICS epoch!\n"
+            "Using 1990-01-02 00:00:00.000000 UTC\n");
+#endif
     }
 
     epicsTimeFromTimespec(pDest, &clockNow);

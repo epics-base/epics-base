@@ -90,8 +90,12 @@ static void testLinkParse(void)
         testOk(dbParseLink(td->str, DBF_INLINK, &info, 0) == 0, "Parser returned OK");
         if (!testOk(info.ltype == td->info.ltype, "Link type value"))
             testDiag("Expected %d, got %d", td->info.ltype, info.ltype);
-        if (td->info.target)
+        if (td->info.target && info.target)
             testStrcmp(0, info.target, td->info.target);
+        else if(!!td->info.target ^ !!info.target)
+            testFail("info target NULL mis-match %s %s", info.target, td->info.target);
+        else
+            testPass("info target NULL as expected");
         if (info.ltype == td->info.ltype) {
             switch (info.ltype) {
             case PV_LINK:

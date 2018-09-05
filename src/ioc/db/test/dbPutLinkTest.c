@@ -60,7 +60,9 @@ static const struct testParseDataT {
     TEST_PV_LINK(" world MSICP", "world", pvlOptMSI|pvlOptCP),
 
     {"#C14 S145 @testing", {VME_IO, "testing", 0, "CS", {14, 145}}},
+    {"#C14 S145", {VME_IO, "", 0, "CS", {14, 145}}},
     {"#B11 C12 N13 A14 F15 @cparam", {CAMAC_IO, "cparam", 0, "BCNAF", {11, 12, 13, 14, 15}}},
+    {"#B11 C12 N13 A14 F15", {CAMAC_IO, "", 0, "BCNAF", {11, 12, 13, 14, 15}}},
     {" #B111 C112 N113 @cparam", {CAMAC_IO, "cparam", 0, "BCN", {111, 112, 113}}},
     {" @hello world ", {INST_IO, "hello world", 0, "", /*{}*/}},
     {" {\"x\":true} ", {JSON_LINK, "{\"x\":true}", 0, "", /*{}*/}},
@@ -129,7 +131,6 @@ static const char *testParseFailData[] = {
     "#A0 B @",
     "#A0 B C @",
     "#R1 M2 D3 E4 @oops", /* RF_IO has no parm */
-    "#C1 S2", /* VME_IO needs parm */
     NULL
 };
 
@@ -688,7 +689,7 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(320);
+    testPlan(334);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

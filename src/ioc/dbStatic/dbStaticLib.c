@@ -2353,9 +2353,13 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, unsigned opts)
         else if (strcmp(pinfo->hwid, "VS")==0)    pinfo->ltype = VXI_IO;
         else goto fail;
 
-        if (parm && pinfo->ltype != RF_IO) {
-            /* move parm string to beginning of buffer */
-            memmove(pinfo->target, parm, len + 1);
+        if (pinfo->ltype != RF_IO) {
+            if (!parm) {
+                pinfo->target[0] = '\0';
+            } else {
+                /* move parm string to beginning of buffer */
+                memmove(pinfo->target, parm, len + 1);
+            }
         } else if (!parm && pinfo->ltype == RF_IO) {
             /* RF_IO, the string isn't needed at all */
             free(pinfo->target);

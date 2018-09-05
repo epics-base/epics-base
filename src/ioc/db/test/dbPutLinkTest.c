@@ -485,6 +485,13 @@ static void testLinkInitFail(void)
     testOk1(plink->type == INST_IO);
     testOk1(plink->value.instio.string != NULL);
 
+    testdbGetFieldEqual("eINST_IO2.INP", DBR_STRING, "@");
+
+    prec = (xRecord *) testdbRecordPtr("eINST_IO2");
+    plink = &prec->inp;
+    testOk1(plink->type == INST_IO);
+    testOk1(plink->value.instio.string != NULL);
+
     testIocShutdownOk();
 
     testdbCleanup();
@@ -689,7 +696,7 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(334);
+    testPlan(337);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

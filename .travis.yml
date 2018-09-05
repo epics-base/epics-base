@@ -25,6 +25,7 @@ addons:
     - flex
     - texinfo
     - install-info
+    - qemu-system-x86
 cache:
   directories:
    - $HOME/.cache

@@ -16,6 +16,45 @@ Base-3.15 series or to EPICS 7.</p>
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Cleanup of startup directory</h3>
+
+<p>The files in the startup directory have not been maintained in recent years
+and have grown crufty (technical term). This release includes the following
+updates to these files:</p>
+
+<ul>
+
+<li>The Perl <tt>EpicsHostArch.pl</tt> script has been rewritten, and support
+for a few previously missing host architectures has been added to it.</li>
+
+<li>The <tt>EpicsHostArch.pl</tt> script has also been moved into the standard
+<tt>src/tools</tt> directory, from where it will be installed into
+<tt>lib/perl</tt>. In this new location it is no longer executable, so it must
+be run by the <tt>perl</tt> executable.</li>
+
+<li>The build system has been adjusted to look for <tt>EpicsHostArch.pl</tt> in
+both places if the <tt>EPICS_HOST_ARCH</tt> environment variable has not been
+set at build-time.</li>
+
+<li>Sites that used the original Perl script to set <tt>EPICS_HOST_ARCH</tt> as
+part of their standard environment will need to adjust their scripts when they
+upgrade to this release.</li>
+
+<li>The <tt>EpicsHostArch</tt> shell script has been replaced with a wrapper
+routine that calls the Perl <tt>EpicsHostArch.pl</tt> script. Sites that rely on
+this script to set <tt>EPICS_HOST_ARCH</tt> should consider switching to the
+Perl script instead.</li>
+
+<li>The <tt>Site.cshrc</tt> and <tt>Site.profile</tt> files have been renamed to
+<tt>unix.csh</tt> and <tt>unix.sh</tt>, respectively.</li>
+
+<li>The existing <tt>win32.bat</tt> file has been cleaned up and a new
+<tt>windows.bat</tt> file added for 64-bit targets. The contents of these files
+should be seen as examples, don't uncomment or install parts for software that
+you don't explicitly know that you need.</li>
+
+</ul>
+
 <h3>Recent Apple XCode Build Issues</h3>
 
 <p>The latest version of XCode will not compile calls to <tt>system()</tt> or

@@ -16,6 +16,9 @@ PERL_MODULES += EPICS/Path.pm
 PERL_MODULES += EPICS/Release.pm
 PERL_MODULES += EPICS/Getopts.pm
 
+# This goes into lib/perl, not bin/<host>
+PERL_MODULES += EpicsHostArch.pl
+
 PERL_SCRIPTS += convertRelease.pl
 PERL_SCRIPTS += cvsclean.pl
 PERL_SCRIPTS += dos2unix.pl

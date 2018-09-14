@@ -16,6 +16,18 @@ Base-3.15 series or to EPICS 7.</p>
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Fix broken <tt>EPICS_IOC_LOG_FILE_LIMIT=0</tt> setting</h3>
+
+<p>The Application Developers' Guide says this is allowed and disables the
+limit on the log-file, but it hasn't actually worked for some time (if ever).
+Note that the iocLogServer will be removed from newer Base release sometime
+soon as its functionality can be implemented by other dedicated log servers
+such as logstash or syslog-ng.</p>
+
+<p>Fixes <a href="https://bugs.launchpad.net/bugs/1786858">lp:1786858</a>
+and part of <a href="https://bugs.launchpad.net/bugs/1786966">lp:1786966</a>.
+</p>
+
 <h3>Cleanup of startup directory</h3>
 
 <p>The files in the startup directory have not been maintained in recent years

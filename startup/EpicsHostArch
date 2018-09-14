@@ -11,10 +11,10 @@ EHA=EpicsHostArch.pl
 cd "$(dirname "$0")/.."
 
 # Perl script will be installed into lib/perl
-[[ -f lib/perl/$EHA ]] && exec perl lib/perl/$EHA $*
+[ -f lib/perl/$EHA ] && exec perl lib/perl/$EHA $*
 
 # If Base hasn't been built yet, use the source Luke
-[[ -f src/tools/$EHA ]] && exec perl src/tools/$EHA $*
+[ -f src/tools/$EHA ] && exec perl src/tools/$EHA $*
 
 # Die with an error message
 echo "$0: Can't find $EHA" >&2

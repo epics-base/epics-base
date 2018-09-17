@@ -27,7 +27,7 @@ ifeq ($(origin EPICS_HOST_ARCH), undefined)
         $(TOP)/src/tools/EpicsHostArch.pl))
   # NB: We use a simply expanded variable here for performance:
   export EPICS_HOST_ARCH := $(shell perl $(EHA))
-  undefine EHA
+  EHA :=
 endif
 
 -include $(CONFIG)/os/CONFIG_COMPAT

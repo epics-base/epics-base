@@ -273,16 +273,6 @@ static long special(DBADDR *paddr, int after)
 
     switch (paddr->special) {
     case SPC_MOD:
-        if (fieldIndex >= mbboRecordZRST && fieldIndex <= mbboRecordFFST) {
-            int event = DBE_PROPERTY;
-
-            if (!after) return 0;
-            init_common(prec);
-            if (prec->val == fieldIndex - mbboRecordZRST)
-                event |= DBE_VALUE | DBE_LOG;
-            db_post_events(prec, &prec->val, event);
-            return 0;
-        }
         if (fieldIndex == mbboRecordSIMM) {
             if (!after)
                 recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
@@ -290,6 +280,20 @@ static long special(DBADDR *paddr, int after)
                 recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
             return 0;
         }
+
+        if (!after)
+            return 0;
+        init_common(prec);
+        /* Note: ZRVL..FFVL are also SPC_MOD */
+        if (fieldIndex >= mbboRecordZRST && fieldIndex <= mbboRecordFFST) {
+            int event = DBE_PROPERTY;
+
+            if (prec->val == fieldIndex - mbboRecordZRST)
+                event |= DBE_VALUE | DBE_LOG;
+            db_post_events(prec, &prec->val, event);
+        }
+        return 0;
+
     default:
         recGblDbaddrError(S_db_badChoice, paddr, "mbbo: special");
         return S_db_badChoice;

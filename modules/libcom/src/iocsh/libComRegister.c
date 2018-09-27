@@ -66,6 +66,17 @@ static void echoCallFunc(const iocshArgBuf *args)
     printf("%s\n", str);
 }
 
+#ifdef vxWorks
+void echo(char* str)
+{
+    if (str)
+        dbTranslateEscape(str, str);
+    else
+        str = "";
+    printf("%s\n", str);
+}
+#endif
+
 /* chdir */
 static const iocshArg chdirArg0 = { "directory name",iocshArgString};
 static const iocshArg * const chdirArgs[1] = {&chdirArg0};
@@ -117,6 +128,13 @@ static void epicsParamShowCallFunc(const iocshArgBuf *args)
     epicsPrtEnvParams ();
 }
 
+#ifdef vxWorks
+void epicsParamShow()
+{
+    epicsPrtEnvParams ();
+}
+#endif
+
 /* epicsPrtEnvParams */
 static const iocshFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,0};
 static void epicsPrtEnvParamsCallFunc(const iocshArgBuf *args)
@@ -155,6 +173,13 @@ static void iocLogDisableCallFunc(const iocshArgBuf *args)
 {
     iocLogDisable = args[0].ival;
 }
+
+#ifdef vxWorks
+void setIocLogDisable(int val)
+{
+    iocLogDisable = val;
+}
+#endif
 
 /* iocLogShow */
 static const iocshArg iocLogShowArg0 = {"level",iocshArgInt};
@@ -204,6 +229,13 @@ static void errlogCallFunc(const iocshArgBuf *args)
 {
     errlogPrintfNoConsole("%s\n", args[0].sval);
 }
+
+#ifdef vxWorks
+void errlog(const char *message)
+{
+    errlogPrintfNoConsole("%s\n", message);
+}
+#endif
 
 /* iocLogPrefix */
 static const iocshArg iocLogPrefixArg0 = { "prefix",iocshArgString};

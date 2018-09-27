@@ -49,6 +49,11 @@ dbStateId dbStateCreate(const char *name)
 {
     dbStateId id;
 
+    if (!name)
+    {
+        printf("Usage: dbStateCreate (\"name\")\n");
+        return NULL;
+    }
     if ((id = dbStateFind(name)))
         return id;
 

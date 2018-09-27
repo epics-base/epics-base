@@ -23,3 +23,12 @@ static void dlloadRegistar(void) {
     iocshRegister(&dlloadFuncDef, dlloadCallFunc);
 }
 epicsExportRegistrar(dlloadRegistar);
+
+#ifdef vxWorks
+void dlload(const char* name)
+{
+    if (!epicsLoadLibrary(name)) {
+        printf("epicsLoadLibrary failed: %s\n", epicsLoadError());
+    }
+}
+#endif

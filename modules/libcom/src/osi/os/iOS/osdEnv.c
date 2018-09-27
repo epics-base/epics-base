@@ -32,6 +32,11 @@
  */
 epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value)
 {
+    if (!name) {
+        printf ("Usage: epicsEnvSet (\"name\", \"value\")\n");
+        return;
+    }
+
     iocshEnvClear(name);
     setenv(name, value, 1);
 }

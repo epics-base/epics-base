@@ -36,11 +36,7 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *val
 {
     char *cp;
 
-    if (!name) {
-        printf ("Usage: epicsEnvSet (\"name\", \"value\")\n");
-        return;
-    }
-
+    if (!name) return;
     iocshEnvClear(name);
     
 	cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");

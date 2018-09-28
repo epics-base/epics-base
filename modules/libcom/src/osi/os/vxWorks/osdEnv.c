@@ -38,7 +38,7 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *val
     char *cp;
 
     if (!name) {
-        printf ("Usage: epicsEnvSet (\"name\", \"value\")\n");
+        printf ("Usage: epicsEnvSet \"name\", \"value\"\n");
         return;
     }
 

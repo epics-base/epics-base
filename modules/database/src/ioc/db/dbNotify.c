@@ -597,7 +597,7 @@ long dbtpn(char *pname, char *pvalue)
     processNotify *ppn=NULL;
 
     if (!pname) {
-        printf("Usage: dbtpn (\"name\", \"value\")\n");
+        printf("Usage: dbtpn \"name\", \"value\"\n");
         return -1;
     }
     chan = dbChannelCreate(pname);

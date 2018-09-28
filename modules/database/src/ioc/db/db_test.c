@@ -41,7 +41,7 @@ int gft(const char *pname)
     int i;
 
     if (!pname) {
-        printf("Usage: gft (\"name\")\n");
+        printf("Usage: gft \"pv_name\"\n");
         return -1;
     }
     chan = dbChannel_create(pname);
@@ -99,7 +99,7 @@ int pft(const char *pname, const char *pvalue)
     double doublevalue;
 
     if (!pname || !pvalue) {
-        printf("Usage: pft (\"name\", \"value\")\n");
+        printf("Usage: pft \"pv_name\", \"value\"\n");
         return -1;
     }
     chan = dbChannel_create(pname);
@@ -232,7 +232,7 @@ int tpn(const char *pname, const char *pvalue)
     processNotify *ppn = NULL;
 
     if (!pname || !pvalue) {
-        printf("Usage: tpn (\"name\", \"value\")\n");
+        printf("Usage: tpn \"pv_name\", \"value\"\n");
         return -1;
     }
     chan = dbChannel_create(pname);

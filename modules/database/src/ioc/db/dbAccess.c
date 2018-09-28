@@ -755,7 +755,7 @@ long dbBufferSize(short dbr_type, long options, long no_elements)
 int dbLoadDatabase(const char *file, const char *path, const char *subs)
 {
     if (!file) {
-        printf("Usage: dbLoadDatabase (\"file\", \"path\", \"subs\")\n");
+        printf("Usage: dbLoadDatabase \"file\", \"path\", \"subs\"\n");
         return -1;
     }
     return dbReadDatabase(&pdbbase, file, path, subs);
@@ -766,7 +766,7 @@ int dbLoadRecords(const char* file, const char* subs)
     int status;
 
     if (!file) {
-        printf("Usage: dbLoadRecords (\"file\", \"subs\")\n");
+        printf("Usage: dbLoadRecords \"file\", \"subs\"\n");
         return -1;
     }
     status = dbReadDatabase(&pdbbase, file, 0, subs);

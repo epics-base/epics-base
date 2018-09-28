@@ -284,7 +284,7 @@ long dbb(const char *record_name)
   *  Convert name to address
   */
   if (!record_name) {
-      printf("Usage: dbb (\"record_name\")\n");
+      printf("Usage: dbb \"record_name\"\n");
       return -1;
   }
   status = dbNameToAddr(record_name, &addr);
@@ -408,7 +408,7 @@ long dbd(const char *record_name)
   *  Convert name to address
   */
   if (!record_name) {
-      printf("Usage: dbd (\"record_name\")\n");
+      printf("Usage: dbd \"record_name\"\n");
       return -1;
   }
   status = dbNameToAddr(record_name, &addr);
@@ -855,7 +855,7 @@ long dbap(const char *record_name)
   *  Convert name to address
   */
   if (!record_name) {
-      printf("Usage: dbap (\"record_name\")\n");
+      printf("Usage: dbap \"record_name\"\n");
       return -1;
   }
   status = dbNameToAddr(record_name, &addr);

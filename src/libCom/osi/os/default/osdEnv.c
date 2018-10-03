@@ -64,7 +64,7 @@ epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name)
 {
     iocshEnvClear(name);
     if (getenv(name) != NULL)
-        putenv(name);
+        putenv((char*)name);
 }
 
 /*

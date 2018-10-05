@@ -91,7 +91,7 @@ relevent roles unless the Release Manager designates otherwise:</p>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Set the Feature Freeze date, by which time all Bazaar commits for
+      <td>Set the Feature Freeze date, by which time all Git commits for
         enhancements and new functionality should have been completed. After
         this date, commits should only be made to fix problems that show up
         during testing.</td>
@@ -133,7 +133,7 @@ relevent roles unless the Release Manager designates otherwise:</p>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Tag the module in Bazaar, using these tag conventions:
+      <td>Tag the module in Git, using these tag conventions:
         <ul>
           <li>
             <tt>R3.15.6-pre1</tt>
@@ -145,23 +145,20 @@ relevent roles unless the Release Manager designates otherwise:</p>
             </li>
         </ul>
         <blockquote><tt>
-          cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.6-rc1
+          cd base-3.15<br />
+          git tag -m 'RL: Tagged for 3.15.6-rc1' R3.15.6-rc1
           </tt></blockquote>
         </td>
       </tr>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Export the tagged version into a tarfile. Note that this command
-        generates a gzipped tarfile directly from the repository:
+      <td>Export the tagged version into a tarfile. The <tt>make-tar.sh</tt>
+        script generates a gzipped tarfile directly from the tag, excluding the
+        files and directories that are only used for continuous integration:
         <blockquote><tt>
-          cd ~/base<br />
-          bzr export
-            --root=base-3.15.6-rc1
-            -r tag:R3.15.6-rc1
-            base-3.15.6-rc1.tar.gz
-            mirror-3.15
+          cd base-3.15<br />
+          git archive --prefix=base-3.15.6-rc1/ R3.15.6-rc1 --output=base-3.15.6-rc1.tar.gz
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
@@ -274,10 +271,10 @@ relevent roles unless the Release Manager designates otherwise:</p>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Tag the module in Bazaar:
+      <td>Tag the module in Git:
         <blockquote><tt>
-          cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.6</i>
+          cd base-3.15<br />
+          git tag -m 'RL: Tagged for 3.15.6' R3.15.6
           </tt></blockquote>
         </td>
       </tr>
@@ -287,12 +284,8 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Export the tagged version into a tarfile. Note that this command
         generates a gzipped tarfile directly from the repository:
         <blockquote><tt>
-          cd ~/base<br />
-          bzr export
-            --root=base-3.15.6
-            -r tag:R3.15.6
-            base-3.15.6.tar.gz
-            mirror-3.15
+          cd base-3.15<br />
+          git archive --prefix=base-3.15.6/ R3.15.6 --output=base-3.15.6.tar.gz
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>

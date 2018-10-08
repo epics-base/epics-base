@@ -91,6 +91,7 @@ epicsShareFunc int epicsShareAPI epicsStdoutPutchar(int c);
 }
 
 /* Also pull functions into the std namespace (see lp:1786927) */
+#if !defined(__GNUC__) || (__GNUC__ > 2)
 namespace std {
 using ::epicsGetStdin;
 using ::epicsGetStdout;
@@ -99,6 +100,7 @@ using ::epicsStdoutPrintf;
 using ::epicsStdoutPuts;
 using ::epicsStdoutPutchar;
 }
+#endif /* __GNUC__ > 2 */
 
 #endif /* __cplusplus */
 

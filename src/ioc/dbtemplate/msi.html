@@ -34,10 +34,10 @@ be written to stdout unless the -o option is given.</p>
 
 <dl>
   <dt><tt>-V</tt></dt>
-    <dd>Verbose warnings; if this parameter is specified then any undefined
-    macro discovered in the template file which does not have an associated
-    default value is considered an error. An error message is generated, and
-    when msi terminates it will do so with an exit status of 2.</dd>
+    <dd>Verbose warnings; if this parameter is specified then any undefined or
+    recursive macros discovered in the template will be considered an error and
+    will be marked in the output file. An error message will be shown, and when
+    msi terminates it will do so with an exit status of 2.</dd>
 
   <dt><tt>-g</tt></dt>
     <dd>When this flag is given all macros defined in a substitution file will

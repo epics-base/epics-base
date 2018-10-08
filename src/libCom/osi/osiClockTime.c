@@ -41,16 +41,18 @@ static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
 
 #ifdef CLOCK_REALTIME
-/* This code is not used on systems without Posix CLOCK_REALTIME such
- * as Darwin, but the only way to detect that is from the OS headers,
- * so the Makefile can't exclude building this file on those systems.
+/* This code is not used on systems without Posix CLOCK_REALTIME,
+ * but the only way to detect that is from the OS headers, so the
+ * Makefile can't exclude compiling this file on those systems.
  */
 
 /* Forward references */
 
 static int ClockTimeGetCurrent(epicsTimeStamp *pDest);
-static void ClockTimeSync(void *dummy);
 
+#if defined(vxWorks) || defined(__rtems__)
+static void ClockTimeSync(void *dummy);
+#endif
 
 /* ClockTime_Report iocsh command */
 static const iocshArg ReportArg0 = { "interest_level", iocshArgArgv};
@@ -98,12 +100,18 @@ void ClockTime_Init(int synchronize)
 
     if (synchronize == CLOCKTIME_SYNC) {
         if (ClockTimePvt.synchronize == CLOCKTIME_NOSYNC) {
+            
+#if defined(vxWorks) || defined(__rtems__)
             /* Start synchronizing */
             ClockTimePvt.synchronize = synchronize;
 
             epicsThreadCreate("ClockTimeSync", epicsThreadPriorityHigh,
                 epicsThreadGetStackSize(epicsThreadStackSmall),
                 ClockTimeSync, NULL);
+#else
+            errlogPrintf("Clock synchronization must be performed by the OS\n");
+#endif
+
         }
         else {
             /* No change, sync thread should already be running */
@@ -139,6 +147,7 @@ void ClockTime_GetProgramStart(epicsTimeStamp *pDest)
 
 /* Synchronization thread */
 
+#if defined(vxWorks) || defined(__rtems__)
 static void ClockTimeSync(void *dummy)
 {
     taskwdInsert(0, NULL, NULL);
@@ -177,6 +186,7 @@ static void ClockTimeSync(void *dummy)
     ClockTimePvt.synchronized = 0;
     taskwdRemove(0);
 }
+#endif
 
 
 /* Time Provider Routine */
@@ -188,6 +198,7 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
     /* If a Hi-Res clock is available and works, use it */
     #ifdef CLOCK_REALTIME_HR
         clock_gettime(CLOCK_REALTIME_HR, &clockNow) &&
+        /* Note: Uses the lo-res clock below if the above call fails */
     #endif
     clock_gettime(CLOCK_REALTIME, &clockNow);
 
@@ -195,9 +206,15 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
         clockNow.tv_sec < POSIX_TIME_AT_EPICS_EPOCH) {
         clockNow.tv_sec = POSIX_TIME_AT_EPICS_EPOCH + 86400;
         clockNow.tv_nsec = 0;
+
+#if defined(vxWorks) || defined(__rtems__)
         clock_settime(CLOCK_REALTIME, &clockNow);
         errlogPrintf("WARNING: OS Clock time was read before being set.\n"
             "Using 1990-01-02 00:00:00.000000 UTC\n");
+#else
+        errlogPrintf("WARNING: OS Clock pre-dates the EPICS epoch!\n"
+            "Using 1990-01-02 00:00:00.000000 UTC\n");
+#endif
     }
 
     epicsTimeFromTimespec(pDest, &clockNow);

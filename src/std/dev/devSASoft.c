@@ -4,7 +4,7 @@
 * Copyright (c) 2002 Lawrence Berkeley Laboratory,The Control Systems
 *     Group, Systems Engineering Department
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -19,6 +19,7 @@
 #include "alarm.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
+#include "dbEvent.h"
 #include "recGbl.h"
 #include "devSup.h"
 #include "subArrayRecord.h"
@@ -67,6 +68,7 @@ static long init_record(subArrayRecord *prec)
 static long read_sa(subArrayRecord *prec)
 {
     long nRequest = prec->indx + prec->nelm;
+    epicsUInt32 nord = prec->nord;
     long ecount;
 
     if (nRequest > prec->malm)
@@ -89,6 +91,8 @@ static long read_sa(subArrayRecord *prec)
         ecount = 0;
 
     prec->nord = ecount;
+    if (nord != prec->nord)
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
 
     if (nRequest > 0 &&
         prec->tsel.type == CONSTANT &&

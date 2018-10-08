@@ -1,5 +1,4 @@
-eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
-    if $running_under_some_shell;
+#!/usr/bin/env perl
 #*************************************************************************
 # Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.

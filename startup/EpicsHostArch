@@ -1,84 +1,21 @@
 #!/bin/sh
-#*************************************************************************
-# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
-#     National Laboratory.
-# Copyright (c) 2002 The Regents of the University of California, as
-#     Operator of Los Alamos National Laboratory.
-# EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
-#*************************************************************************
-#
-# EpicsHostArch - returns the Epics host architecture suitable
-#                 for assigning to the EPICS_HOST_ARCH variable
+# Script to find and run the Perl EpicsHostArch.pl script.
 
-if [ "x${1}" != "x" ]
-then
-    suffix="-"${1}
-else
-    suffix=""
-fi
+# This script is provided for backwards-compatibility only and may be
+# dropped from future releases of Base. Please adjust callers to run
+# the Perl version directly as this startup directory isn't copied to
+# INSTALL_LOCATION by the EPICS build system.
 
-sysname=`uname`
+EHA=EpicsHostArch.pl
 
-case $sysname in
-    Linux )
-        os=linux
-        cpu=`uname -m`
-        case $cpu in
-            i386 | i486 | i586 | i686 )
-                cpu=x86 ;;
-            x86_64 )
-                ;; # $cpu is correct
-            armv6l | armv7l )
-                cpu=arm ;;
-        esac
-        echo ${os}-${cpu}${suffix}
-        ;;
-    Darwin )
-        os=darwin
-        cpu=`uname -m`
-        case $cpu in
-            "Power Macintosh")
-                cpu=ppc ;;
-            i386 | x86_64 )
-                cpu=x86 ;;
-        esac
-        echo ${os}-${cpu}${suffix}
-        ;;
-    SunOS )
-        version=`uname -r | sed '1s/^\([0-9]*\).*$/\1/'`
-        if [ ${version} -ge 5 ]; then
-            os=solaris
-        else
-            os=sun4
-        fi
-        cpu=`uname -m`
-        case $cpu in
-        sun4*)
-            cpu=sparc
-            ;;
-        i86pc)
-            cpu=x86
-            ;;
-        esac
-        echo ${os}-${cpu}${suffix}
-        ;;
-    * )
-        sysname=`uname -o`
-        case $sysname in
-           Cygwin )
-                os=cygwin
-                cpu=`uname -m`
-                case $cpu in i386 | i486 | i586 | i686 )
-                        cpu=x86
-                    ;;
-                esac
-                echo ${os}-${cpu}${suffix}
-                ;;
-           * )
-                echo unsupported
-                ;;
-        esac
-        ;;
-esac
+cd "$(dirname "$0")/.."
 
+# Perl script will be installed into lib/perl
+[ -f lib/perl/$EHA ] && exec perl lib/perl/$EHA "$@"
+
+# If Base hasn't been built yet, use the source Luke
+[ -f src/tools/$EHA ] && exec perl src/tools/$EHA "$@"
+
+# Die with an error message
+echo "$0: Can't find $EHA" >&2
+exit 1

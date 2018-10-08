@@ -256,15 +256,13 @@ YACCOPT ?= $($*_YACCOPT)
 	$(MV) $*.tab.c $*.c
 	$(if $(findstring -d, $(YACCOPT)),$(MV) $*.tab.h $*.h,)
 
-# must be a seperate rule since when not using '-d' the
+# must be a separate rule since when not using '-d' the
 # prefix for .h will be different then .c
 %.h : %.c %.y
 
 %.c: %.l
-	@$(RM) $*.yy.c
-	$(LEX) $(LEXOPT) -t $< > $*.yy.c
 	@$(RM) $@
-	$(MV) $*.yy.c $@
+	$(LEX) $(LEXOPT) -o$@ $<
 
 #---------------------------------------------------------------
 # Libraries, shared/DLL and stubs

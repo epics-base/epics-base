@@ -26,3 +26,4 @@ dbCore_SRCS += miscIocRegister.c
 dbCore_SRCS += dlload.c
 dbCore_SRCS += iocshRegisterCommon.c
 
+miscIocRegister_CFLAGS_iOS = -DSYSTEM_UNAVAILABLE

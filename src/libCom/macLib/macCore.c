@@ -902,11 +902,16 @@ static void refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
         }
     }
 
-    /* Bad reference, insert $(name,errval) */
+    /* Bad reference, insert either $(name,<error>) or $(name) */
     if ( v < valend ) *v++ = '$';
     if ( v < valend ) *v++ = '(';
     cpy2val( refname, &v, valend );
-    cpy2val( errval, &v, valend );
+    if (handle->flags & FLAG_SUPPRESS_WARNINGS) {
+        if ( v < valend ) *v++ = ')';
+        *v = '\0';
+    }
+    else
+        cpy2val( errval, &v, valend );
 
 cleanup:
     if (pop) {

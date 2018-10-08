@@ -644,6 +644,11 @@ caStatus casDGClient::processDG ()
         if ( status != S_cas_success ) {
             break;
         }
+
+        if ( this->in.bytesPresent () > 0 && dgInBytesConsumed == 0 && status == S_cas_success ) {
+            this->in.removeMsg ( this->in.bytesPresent() );
+        }
+
     }
     return status;
 }

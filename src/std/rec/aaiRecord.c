@@ -2,7 +2,7 @@
 * Copyright (c) 2002 Southeastern Universities Research Association, as
 *     Operator of Thomas Jefferson National Accelerator Facility.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* recAai.c */
 
@@ -11,7 +11,7 @@
  *      Original Author: Dave Barker
  *
  *      C  E  B  A  F
- *     
+ *
  *      Continuous Electron Beam Accelerator Facility
  *      Newport News, Virginia, USA.
  *
@@ -139,12 +139,12 @@ static long init_record(aaiRecord *prec, int pass)
         }
         return 0;
     }
-    
+
     /* SIML must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (prec->siml.type == CONSTANT) {
         recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
-    
+
     /* must have read_aai function defined */
     if (pdset->number < 5 || pdset->read_aai == NULL) {
         recGblRecordError(S_dev_missingSup, prec, "aai: init_record");
@@ -204,10 +204,14 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 static long put_array_info(DBADDR *paddr, long nNew)
 {
     aaiRecord *prec = (aaiRecord *)paddr->precord;
+    epicsUInt32 nord = prec->nord;
 
     prec->nord = nNew;
     if (prec->nord > prec->nelm)
         prec->nord = prec->nelm;
+
+    if (nord != prec->nord)
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     return 0;
 }
 
@@ -220,7 +224,7 @@ static long get_units(DBADDR *paddr, char *units)
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
             if (prec->ftvl == DBF_STRING || prec->ftvl == DBF_ENUM)
-                break; 
+                break;
         case indexof(HOPR):
         case indexof(LOPR):
             strncpy(units,prec->egu,DB_UNITS_SIZE);
@@ -314,12 +318,11 @@ static void monitor(aaiRecord *prec)
 
 static long readValue(aaiRecord *prec)
 {
-    long status;
     struct aaidset *pdset = (struct aaidset *)prec->dset;
+    long status;
 
     if (prec->pact == TRUE){
-        status = pdset->read_aai(prec);
-        return status;
+        return pdset->read_aai(prec);
     }
 
     status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
@@ -327,10 +330,16 @@ static long readValue(aaiRecord *prec)
         return status;
 
     if (prec->simm == menuYesNoNO){
-        return pdset->read_aai(prec);
+        epicsUInt32 nord = prec->nord;
+
+        status = pdset->read_aai(prec);
+        if (nord != prec->nord)
+            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+        return status;
     }
-    
+
     if (prec->simm == menuYesNoYES){
+        epicsUInt32 nord = prec->nord;
         /* Device suport is responsible for buffer
            which might be read-only so we may not be
            allowed to call dbGetLink on it.
@@ -339,10 +348,13 @@ static long readValue(aaiRecord *prec)
            Thus call device now.
         */
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        return pdset->read_aai(prec);
+
+        status = pdset->read_aai(prec);
+        if (nord != prec->nord)
+            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+        return status;
     }
 
     recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
     return -1;
 }
-

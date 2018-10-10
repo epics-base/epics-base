@@ -7,6 +7,9 @@
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
 
+vpath CONFIG% $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
+vpath RULES% $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
+
 # Include <top>/configure/RULES_BUILD from tops defined in RELEASE* files
 #
 RELEASE_RULES_BUILDS = $(foreach top, $(RELEASE_TOPS), \

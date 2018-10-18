@@ -123,6 +123,15 @@ testHarness_SRCS += mbbioDirectTest.c
 TESTFILES += ../mbbioDirectTest.db
 TESTS += mbbioDirectTest
 
+TARGETS += $(COMMON_DIR)/asyncproctest.dbd
+DBDDEPENDS_FILES += asyncproctest.dbd$(DEP)
+asyncproctest_DBD += base.dbd
+TESTPROD_HOST += asyncproctest
+asyncproctest_SRCS += asyncproctest.c
+asyncproctest_SRCS += asyncproctest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/asyncproctest.dbd ../asyncproctest.db
+TESTS += asyncproctest
+
 # epicsRunRecordTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunRecordTests.c
 

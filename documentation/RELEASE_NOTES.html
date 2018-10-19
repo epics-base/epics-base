@@ -700,10 +700,44 @@ the stdout stream, making it hard to parse.</p>
 callback.h header and removed the need for dbScan.c to reach into the internals
 of its CALLBACK objects.</p>
 
-
-<h2 align="center">Changes from the 3.15 branch since 3.15.5</h2>
+<h2 align="center">Changes from the 3.15 branch since 3.15.6</h2>
 
 <!-- Insert inherited items immediately below here ... -->
+
+
+<h2 align="center">Changes made between 3.15.5 and 3.15.6</h2>
+
+<h3>Unsetting environment variables</h3>
+
+<p>The new command <code>epicsEnvUnset <i>varname</i></code> can be used to
+unset an environment variable.</p>
+
+<h3>Warning indicators in msi (and macLib) output</h3>
+
+<p>The libCom macro expansion library has been modified so that when the
+SUPPRESS_WARNINGS flag is set it will no longer include any <tt>,undefined</tt>
+or <tt>,recursive</tt> indicators in its output when undefined or recursive
+macros are encountered. These indicators were harmless when the output was fed
+into an IOC along with a definition for the macro, but when the <tt>msi</tt>
+tool was used to generate other kinds of files they caused problems. If the
+<tt>msi -V</tt> flag is used the markers will still be present in the output
+whenever the appropriate condition is seen.</p>
+
+<h3>Improvements to msi</h3>
+
+<p>In addition to fixing its response to discovering parsing errors in its
+substitution input file (reported as Launchpad
+<a href="https://bugs.launchpad.net/epics-base/+bug/1503661">bug #1503661</a>)
+so it now deletes the incomplete output file, the msi program has been cleaned
+up a little bit internally.</p>
+
+<h3>All array records now post monitors on their array-length fields</h3>
+
+<p>The waveform record has been posting monitors on its NORD field since Base
+3.15.0.1; we finally got around to doing the equivalent in all the other
+built-in record types, which even required modifying device support in some
+cases. This fixes <a href="https://bugs.launchpad.net/epics-base/+bug/1730727">
+Launchpad bug #1730727</a>.</p>
 
 <h3>HOWTO: Converting Wiki Record Reference to POD</h3>
 
@@ -736,15 +770,84 @@ of having go modify or replace the original. A new .gitignore pattern
 tells git to ignore all configure/*.local files.</p>
 
 
-<h2 align="center">Changes from the 3.14 branch since 3.15.5</h2>
+<h2 align="center">Changes from the 3.14 branch between 3.15.5 and 3.15.6</h2>
 
-<!-- Insert inherited items immediately below here ... -->
+<h3>Fix broken <tt>EPICS_IOC_LOG_FILE_LIMIT=0</tt> setting</h3>
+
+<p>The Application Developers' Guide says this is allowed and disables the
+limit on the log-file, but it hasn't actually worked for some time (if ever).
+Note that the iocLogServer will be removed from newer Base release sometime
+soon as its functionality can be implemented by other dedicated log servers
+such as logstash or syslog-ng.</p>
+
+<p>Fixes <a href="https://bugs.launchpad.net/bugs/1786858">lp:1786858</a>
+and part of <a href="https://bugs.launchpad.net/bugs/1786966">lp:1786966</a>.
+</p>
+
+<h3>Cleanup of startup directory</h3>
+
+<p>The files in the startup directory have not been maintained in recent years
+and have grown crufty (technical term). This release includes the following
+updates to these files:</p>
+
+<ul>
+
+<li>The Perl <tt>EpicsHostArch.pl</tt> script has been rewritten, and support
+for a few previously missing host architectures has been added to it.</li>
+
+<li>The <tt>EpicsHostArch.pl</tt> script has also been moved into the standard
+<tt>src/tools</tt> directory, from where it will be installed into
+<tt>lib/perl</tt>. In this new location it is no longer executable, so it must
+be run by the <tt>perl</tt> executable.</li>
+
+<li>The build system has been adjusted to look for <tt>EpicsHostArch.pl</tt> in
+both places if the <tt>EPICS_HOST_ARCH</tt> environment variable has not been
+set at build-time.</li>
+
+<li>Sites that used the original Perl script to set <tt>EPICS_HOST_ARCH</tt> as
+part of their standard environment will need to adjust their scripts when they
+upgrade to this release.</li>
+
+<li>The <tt>EpicsHostArch</tt> shell script has been replaced with a wrapper
+routine that calls the Perl <tt>EpicsHostArch.pl</tt> script. Sites that rely on
+this script to set <tt>EPICS_HOST_ARCH</tt> should consider switching to the
+Perl script instead.</li>
+
+<li>The <tt>Site.cshrc</tt> and <tt>Site.profile</tt> files have been renamed to
+<tt>unix.csh</tt> and <tt>unix.sh</tt>, respectively.</li>
+
+<li>The existing <tt>win32.bat</tt> file has been cleaned up and a new
+<tt>windows.bat</tt> file added for 64-bit targets. The contents of these files
+should be seen as examples, don't uncomment or install parts for software that
+you don't explicitly know that you need.</li>
+
+</ul>
+
+<h3>Recent Apple XCode Build Issues</h3>
+
+<p>The latest version of XCode will not compile calls to <tt>system()</tt> or
+<tt>clock_settime()</tt> for iOS targets. There were several places in Base
+where these were being compiled, although there were probably never called. The
+code has now been modified to permit iOS builds to complete again.</p>
+
+<h3>Prevent illegal alarm severities</h3>
+
+<p>A check has been added to <tt>recGblResetAlarms()</tt> that prevents records
+from getting an alarm severity higher than INVALID_ALARM. It is still possible
+for a field like HSV to get set to a value that is not a legal alarm severity,
+but the core IOC code should never copy such a value into a record's SEVR or
+ACKS fields. With this fix the record's alarm severity will be limited to
+INVALID_ALARM.</p>
 
 <h3>Fixes for Launchpad bugs</h3>
 
 <p>The following launchpad bugs have fixes included:</p>
 
 <ul>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1786320">
+    lp: #1786320</a>, dbCa subscribes twice to ENUM</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/541221">
+    lp: #541221</a>, 'assert (pca->pgetNative)' failed in ../dbCa.c</li>
 <li><a href="https://bugs.launchpad.net/epics-base/+bug/1747091">
     lp: #1747091</a>, epicsTimeGetEvent() / generalTime bug</li>
 <li><a href="https://bugs.launchpad.net/epics-base/+bug/1743076">

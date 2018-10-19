@@ -3,13 +3,13 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-
 /* osdEnv.c */
 /*
  * Author: Eric Norum
  *   Date: May 7, 2001
  *
  * Routines to modify/display environment variables and EPICS parameters
+ *
  */
 
 #include <string.h>
@@ -20,30 +20,51 @@
 
 #define epicsExportSharedSymbols
 #include "epicsStdio.h"
-#include <errlog.h>
-#include <cantProceed.h>
-#include <envDefs.h>
-#include <osiUnistd.h>
+#include "errlog.h"
+#include "cantProceed.h"
+#include "envDefs.h"
+#include "osiUnistd.h"
 #include "epicsFindSymbol.h"
-#include <iocsh.h>
+#include "iocsh.h"
 
 /*
  * Set the value of an environment variable
+ * Leaks memory, but the assumption is that this routine won't be
+ * called often enough for the leak to be a problem.
  */
 epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value)
 {
+    char *cp;
+
     iocshEnvClear(name);
-    setenv(name, value, 1);
+    
+	cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
+	strcpy (cp, name);
+	strcat (cp, "=");
+	strcat (cp, value);
+	if (putenv (cp) < 0) {
+		errPrintf(
+                -1L,
+                __FILE__,
+                __LINE__,
+                "Failed to set environment parameter \"%s\" to \"%s\": %s\n",
+                name,
+                value,
+                strerror (errno));
+        free (cp);
+	}
 }
 
 /*
  * Unset an environment variable
+ * Using putenv with a an existing name plus "=" (without value) deletes
  */
 
 epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name)
 {
     iocshEnvClear(name);
-    unsetenv(name);
+    if (getenv(name) != NULL)
+        epicsEnvSet((char*)name, "");
 }
 
 /*

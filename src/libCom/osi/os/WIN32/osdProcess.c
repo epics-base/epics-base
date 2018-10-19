@@ -19,13 +19,13 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #define STRICT
 #include <windows.h>
 
 #define epicsExportSharedSymbols
 #include "osiProcess.h"
-#include "errlog.h"
 
 epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, unsigned bufSizeIn)
 {
@@ -94,16 +94,11 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
             pFmtArgs[1] = (char *) pBaseExecutableName;
             pFmtArgs[2] = errStrMsgBuf;
             pFmtArgs[3] = "Changes may be required in your \"path\" environment variable.";
-            pFmtArgs[4] = "PATH = ";
-            pFmtArgs[5] = getenv ("path");
-            if ( pFmtArgs[5] == NULL ) {
-                pFmtArgs[5] = "<empty string>";
-            }
             
             W32status = FormatMessage( 
                 FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_STRING | 
                     FORMAT_MESSAGE_ARGUMENT_ARRAY | 80,
-                "%1 \"%2\". %3 %4 %5 \"%6\"",
+                "%1 \"%2\". %3 %4",
                 0,
                 MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
                 (LPTSTR) &complteMsgBuf,
@@ -111,24 +106,20 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
                 pFmtArgs 
             );
             if (W32status) {
-                /* Display the string. */
-                MessageBox (NULL, complteMsgBuf, "Configuration Problem", 
-                	MB_OK | MB_ICONINFORMATION);
+                fprintf (stderr, "%s\n", (char *) complteMsgBuf);
                 LocalFree (complteMsgBuf);
             }
             else {
-                /* Display the string. */
-                MessageBox (NULL, errStrMsgBuf, "Failed to start executable", 
-                    MB_OK | MB_ICONINFORMATION);
+                fprintf (stderr, "%s\n", (char *) errStrMsgBuf);
             }
             
             /* Free the buffer. */
             LocalFree (errStrMsgBuf);
         }
         else {
-            errlogPrintf ("!!WARNING!!\n");
-            errlogPrintf ("Unable to locate executable \"%s\".\n", pBaseExecutableName);
-            errlogPrintf ("You may need to modify your \"path\" environment variable.\n");
+            fprintf (stderr, "!!WARNING!!\n");
+            fprintf (stderr, "Unable to locate executable \"%s\".\n", pBaseExecutableName);
+            fprintf (stderr, "You may need to modify your \"path\" environment variable.\n");
         }
         return osiSpawnDetachedProcessFail;
     }

@@ -17,7 +17,7 @@ ticker() {
 
 CACHEKEY=1
 
-EPICS_HOST_ARCH=`sh startup/EpicsHostArch`
+EPICS_HOST_ARCH=`perl src/tools/EpicsHostArch.pl`
 
 [ -e configure/os/CONFIG_SITE.Common.linux-x86 ] || die "Wrong location: $PWD"
 

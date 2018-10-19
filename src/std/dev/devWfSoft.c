@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -81,6 +81,7 @@ static long read_wf(waveformRecord *prec)
 {
     long status;
     struct wfrt rt;
+    epicsUInt32 nord = prec->nord;
 
     rt.nRequest = prec->nelm;
     rt.ptime = (dbLinkIsConstant(&prec->tsel) &&
@@ -93,6 +94,8 @@ static long read_wf(waveformRecord *prec)
     if (!status && rt.nRequest > 0) {
         prec->nord = rt.nRequest;
         prec->udf = FALSE;
+        if (nord != prec->nord)
+            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     }
 
     return status;

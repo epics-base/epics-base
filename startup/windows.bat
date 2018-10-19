@@ -57,7 +57,7 @@ set _visual_studio_home=C:\Program Files (x86)\Microsoft Visual Studio 14.0
 
 rem The EPICS host architecture specification for EPICS_HOST_ARCH
 rem (<os>-<arch>[-<toolset>] as defined in configure/CONFIG_SITE).
-set _epics_host_arch=win32-x86
+set _epics_host_arch=windows-x64
 
 rem The install location of EPICS Base (pathname).  If nonempty and
 rem _auto_path_append is yes, it will be used to add the host architecture
@@ -82,7 +82,7 @@ set "PATH=%PATH%;%_strawberry_perl_home%\perl\bin"
 :after_add_strawberry_perl
 
 rem Set the environment for Microsoft Visual Studio
-call "%_visual_studio_home%\VC\vcvarsall.bat" x86
+call "%_visual_studio_home%\VC\vcvarsall.bat" x64
 
 rem Set the EPICS host architecture specification
 set "EPICS_HOST_ARCH=%_epics_host_arch%"

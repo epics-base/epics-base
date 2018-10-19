@@ -62,6 +62,11 @@ epicsEnvTest_SRCS += epicsEnvTest.c
 testHarness_SRCS += epicsEnvTest.c
 TESTS += epicsEnvTest
 
+TESTPROD_HOST += epicsEnvUnsetTest
+epicsEnvUnsetTest_SRCS += epicsEnvUnsetTest.c
+testHarness_SRCS += epicsEnvUnsetTest.c
+TESTS += epicsEnvUnsetTest
+
 TESTPROD_HOST += epicsErrlogTest
 epicsErrlogTest_SRCS += epicsErrlogTest.c
 testHarness_SRCS += epicsErrlogTest.c

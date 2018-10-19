@@ -23,7 +23,7 @@ ifneq ($(RELEASE_CFG_RULES),)
   include $(RELEASE_CFG_RULES)
 endif
 
-# If this is not BASE then include <TOP>/configure/RULES_BUILD
+# If this is not BASE then include <top>/configure/RULES_BUILD
 #
 ifeq ($(wildcard $(TOP)/configure/CONFIG_BASE_VERSION),)
 TOP_RULES_BUILDS = $(wildcard $(TOP)/configure/RULES_BUILD)

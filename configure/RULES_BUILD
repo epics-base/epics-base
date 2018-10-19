@@ -6,11 +6,12 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
+
+# RULES_BUILD
+
+# Rules for making things specified in a Makefile
 #
-#	Rules for making things specified in Makefile
-#
-#	we are in O.$(T_A), but most sources are elsewhere
-#
+# CWD is O.$(T_A), but most sources are elsewhere
 
 ifndef BASE_RULES_BUILD
 BASE_RULES_BUILD=1

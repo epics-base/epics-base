@@ -80,9 +80,9 @@ else
 host:
 endif
 
--include $(CONFIG)/RULES_FILE_TYPE
+include $(CONFIG)/RULES_FILE_TYPE
 
--include $(CONFIG)/RULES.Db
+include $(CONFIG)/RULES.Db
 
 #---------------------------------------------------------------
 # Include defines and rules for prod, library and test* targets
@@ -522,7 +522,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
--include $(CONFIG)/RULES_EXPAND
+include $(CONFIG)/RULES_EXPAND
 
 .PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)

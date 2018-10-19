@@ -530,5 +530,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PHONY: runtests tapfiles clean-tests test-results junitfiles
 .PHONY: checkRelease warnRelease noCheckRelease FORCE
 
+include $(CONFIG)/RULES_COMMON
+
 endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD

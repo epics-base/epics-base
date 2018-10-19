@@ -67,7 +67,3 @@ file_type_clean:
 	@$(RM) $(foreach type, $(FILE_TYPE), $($(type)))
 
 .PHONY : file_type_clean
-
-#  User specific rules
-#
--include $(HOME)/configure/RULES_USER

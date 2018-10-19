@@ -19,6 +19,22 @@
 
 -->
 
+<h3>GNUmake targets for debugging</h3>
+
+<p>Some additional build rules have been added to help debug configuration
+problems with the build system. Run <tt>make show-makefiles</tt> to get a sorted
+list of all the files that the build system includes when building in the
+current directory.</p>
+
+<p>A new pattern rule for <tt>PRINT.%</tt> can be used to show the value of any
+GNUmake variable for the current build directory (make sure you are in the right
+directory though, many variables are only set when inside the
+<tt>O.<i>arch</i></tt> build directory). For example <tt>make PRINT.T_A</tt>
+will display the build target architecture name from inside a
+<tt>O.<i>arch</i></tt> directory but the variable will be empty from an
+application top or src directory. <tt>make PRINT.EPICS_BASE</tt> will show the
+path to Base from any EPICS application directory though.</p>
+
 <h3>Propagate PUTF across Asynchronous record processing</h3>
 
 <p>The IOC contains a mechanism involving the PUTF and RPRO fields of each

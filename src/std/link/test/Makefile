@@ -57,3 +57,4 @@ include $(TOP)/configure/RULES
 
 ioRecord$(DEP): $(COMMON_DIR)/ioRecord.h
 lnkStateTest$(DEP): $(COMMON_DIR)/ioRecord.h
+lnkCalcTest$(DEP): $(COMMON_DIR)/ioRecord.h

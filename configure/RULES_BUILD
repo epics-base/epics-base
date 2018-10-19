@@ -533,5 +533,7 @@ include $(CONFIG)/RULES_EXPAND
 
 include $(CONFIG)/RULES_COMMON
 
+else
+    $(warning RULES_BUILD included more than once. \
+        Use 'make show-makefiles' to work out why.)
 endif # BASE_RULES_BUILD
-#	EOF RULES_BUILD

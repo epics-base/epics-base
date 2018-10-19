@@ -7,9 +7,11 @@
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# Include <top>/configure/RULES_BUILD from tops defined in RELEASE* files
+# Include <top>/configure/RULES_BUILD from tops defined in RELEASE* files,
+# excluding EPICS_BASE
 #
-RELEASE_RULES_BUILDS = $(foreach top, $(RELEASE_TOPS), \
+RELEASE_RULES_BUILDS = $(foreach top, \
+    $(filter-out EPICS_BASE, $(RELEASE_TOPS)), \
     $(wildcard $($(top))/configure/RULES_BUILD))
 ifneq ($(RELEASE_RULES_BUILDS),)
   include $(RELEASE_RULES_BUILDS)

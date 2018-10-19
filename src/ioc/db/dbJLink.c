@@ -2,7 +2,7 @@
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbJLink.c */
 
@@ -25,18 +25,32 @@
 #include "dbLock.h"
 #include "dbStaticLib.h"
 #include "link.h"
+#include "epicsExport.h"
 
-#define IFDEBUG(n) if(parser->parse_debug)
+epicsShareDef int dbJLinkDebug = 0;
+epicsExportAddress(int, dbJLinkDebug);
+
+#define IFDEBUG(n) if (dbJLinkDebug >= (n))
 
 typedef struct parseContext {
     jlink *pjlink;
     jlink *product;
     short dbfType;
     short jsonDepth;
-    unsigned key_is_link:1;
-    unsigned parse_debug:1;
-    unsigned lset_debug:1;
 } parseContext;
+
+epicsShareDef const char *jlif_result_name[2] = {
+    "jlif_stop",
+    "jlif_continue",
+};
+
+epicsShareDef const char *jlif_key_result_name[5] = {
+    "jlif_key_stop",
+    "jlif_key_continue",
+    "jlif_key_child_inlink",
+    "jlif_key_child_outlink",
+    "jlif_key_child_fwdlink"
+};
 
 #define CALL_OR_STOP(routine) !(routine) ? jlif_stop : (routine)
 
@@ -45,8 +59,8 @@ static int dbjl_return(parseContext *parser, jlif_result result) {
 
     IFDEBUG(10) {
         printf("dbjl_return(%s@%p, %d)\t", pjlink ? pjlink->pif->name : "", pjlink, result);
-        printf("    jsonDepth=%d, parseDepth=%d, key_is_link=%d\n",
-            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->key_is_link);
+        printf("    jsonDepth=%d, parseDepth=%d, dbfType=%d\n",
+            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->dbfType);
     }
 
     if (result == jlif_stop && pjlink) {
@@ -59,6 +73,9 @@ static int dbjl_return(parseContext *parser, jlif_result result) {
         pjlink->pif->free_jlink(pjlink);
     }
 
+    IFDEBUG(10)
+        printf("    returning %d %s\n", result,
+            result == jlif_stop ? "*** STOP ***" : "Continue");
     return result;
 }
 
@@ -68,8 +85,8 @@ static int dbjl_value(parseContext *parser, jlif_result result) {
 
     IFDEBUG(10) {
         printf("dbjl_value(%s@%p, %d)\t", pjlink ? pjlink->pif->name : "", pjlink, result);
-        printf("    jsonDepth=%d, parseDepth=%d, key_is_link=%d\n",
-            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->key_is_link);
+        printf("    jsonDepth=%d, parseDepth=%d, dbfType=%d\n",
+            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->dbfType);
     }
 
     if (result == jlif_stop || pjlink->parseDepth > 0)
@@ -81,7 +98,6 @@ static int dbjl_value(parseContext *parser, jlif_result result) {
     } else if (parent->pif->end_child) {
         parent->pif->end_child(parent, pjlink);
     }
-    pjlink->debug = 0;
 
     parser->pjlink = parent;
 
@@ -159,29 +175,46 @@ static int dbjl_start_map(void *ctx) {
     if (!pjlink) {
         IFDEBUG(10) {
             printf("dbjl_start_map(NULL)\t");
-            printf("    jsonDepth=%d, parseDepth=00, key_is_link=%d\n",
-                parser->jsonDepth, parser->key_is_link);
+            printf("    jsonDepth=%d, parseDepth=00, dbfType=%d\n",
+                parser->jsonDepth, parser->dbfType);
         }
 
         assert(parser->jsonDepth == 0);
         parser->jsonDepth++;
-        parser->key_is_link = 1;
         return jlif_continue; /* Opening '{' */
     }
 
     IFDEBUG(10) {
         printf("dbjl_start_map(%s@%p)\t", pjlink ? pjlink->pif->name : "", pjlink);
-        printf("    jsonDepth=%d, parseDepth=%d, key_is_link=%d\n",
-            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->key_is_link);
+        printf("    jsonDepth=%d, parseDepth=%d, dbfType=%d\n",
+            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->dbfType);
     }
 
     pjlink->parseDepth++;
     parser->jsonDepth++;
 
     result = CALL_OR_STOP(pjlink->pif->parse_start_map)(pjlink);
-    if (result == jlif_key_child_link) {
-        parser->key_is_link = 1;
+    switch (result) {
+    case jlif_key_child_inlink:
+        parser->dbfType = DBF_INLINK;
         result = jlif_continue;
+        break;
+    case jlif_key_child_outlink:
+        parser->dbfType = DBF_OUTLINK;
+        result = jlif_continue;
+        break;
+    case jlif_key_child_fwdlink:
+        parser->dbfType = DBF_FWDLINK;
+        result = jlif_continue;
+        break;
+    case jlif_key_stop:
+    case jlif_key_continue:
+        break;
+    default:
+        errlogPrintf("dbJLinkInit: Bad return %d from '%s'::parse_start_map()\n",
+            result, pjlink->pif->name);
+        result = jlif_stop;
+        break;
     }
 
     IFDEBUG(10)
@@ -196,8 +229,9 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, size_t len) {
     char *link_name;
     linkSup *linkSup;
     jlif *pjlif;
+    jlink *child;
 
-    if (!parser->key_is_link) {
+    if (parser->dbfType == 0) {
         if (!pjlink) {
             errlogPrintf("dbJLinkInit: Illegal second link key '%.*s'\n",
                 (int) len, key);
@@ -207,8 +241,8 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, size_t len) {
         IFDEBUG(10) {
             printf("dbjl_map_key(%s@%p, \"%.*s\")\t",
                 pjlink->pif->name, pjlink, (int) len, key);
-            printf("    jsonDepth=%d, parseDepth=%d, key_is_link=%d\n",
-                parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->key_is_link);
+            printf("    jsonDepth=%d, parseDepth=%d, dbfType=%d\n",
+                parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->dbfType);
         }
 
         assert(pjlink->parseDepth > 0);
@@ -219,8 +253,8 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, size_t len) {
 
     IFDEBUG(10) {
         printf("dbjl_map_key(NULL, \"%.*s\")\t", (int) len, key);
-        printf("    jsonDepth=%d, parseDepth=00, key_is_link=%d\n",
-            parser->jsonDepth, parser->key_is_link);
+        printf("    jsonDepth=%d, parseDepth=00, dbfType=%d\n",
+            parser->jsonDepth, parser->dbfType);
     }
 
     link_name = dbmfStrndup((const char *) key, len);
@@ -241,27 +275,35 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, size_t len) {
         return dbjl_return(parser, jlif_stop);
     }
 
-    dbmfFree(link_name);
-
-    pjlink = pjlif->alloc_jlink(parser->dbfType);
-    if (!pjlink) {
-        errlogPrintf("dbJLinkInit: Out of memory\n");
+    child = pjlif->alloc_jlink(parser->dbfType);
+    if (!child) {
+        errlogPrintf("dbJLinkInit: Link type '%s' allocation failed. \n",
+            link_name);
+        dbmfFree(link_name);
         return dbjl_return(parser, jlif_stop);
     }
-    pjlink->pif = pjlif;
-    pjlink->parent = NULL;
-    pjlink->parseDepth = 0;
-    pjlink->debug = !!parser->lset_debug;
+
+    child->pif = pjlif;
+    child->parseDepth = 0;
+    child->debug = 0;
 
     if (parser->pjlink) {
         /* We're starting a child link, save its parent */
-        pjlink->parent = parser->pjlink;
+        child->parent = pjlink;
+
+        if (pjlink->pif->start_child)
+            pjlink->pif->start_child(pjlink, child);
     }
-    parser->pjlink = pjlink;
-    parser->key_is_link = 0;
+    else
+        child->parent = NULL;
+
+    parser->pjlink = child;
+    parser->dbfType = 0;
+
+    dbmfFree(link_name);
 
     IFDEBUG(8)
-        printf("dbjl_map_key: New %s@%p\n", pjlink ? pjlink->pif->name : "", pjlink);
+        printf("dbjl_map_key: New %s@%p\n", child ? child->pif->name : "", child);
 
     return jlif_continue;
 }
@@ -274,9 +316,9 @@ static int dbjl_end_map(void *ctx) {
     IFDEBUG(10) {
         printf("dbjl_end_map(%s@%p)\t",
             pjlink ? pjlink->pif->name : "NULL", pjlink);
-        printf("    jsonDepth=%d, parseDepth=%d, key_is_link=%d\n",
+        printf("    jsonDepth=%d, parseDepth=%d, dbfType=%d\n",
             parser->jsonDepth, pjlink ? pjlink->parseDepth : 0,
-            parser->key_is_link);
+            parser->dbfType);
     }
 
     parser->jsonDepth--;
@@ -298,8 +340,8 @@ static int dbjl_start_array(void *ctx) {
 
     IFDEBUG(10) {
         printf("dbjl_start_array(%s@%p)\t", pjlink ? pjlink->pif->name : "", pjlink);
-        printf("    jsonDepth=%d, parseDepth=%d, key_is_link=%d\n",
-            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->key_is_link);
+        printf("    jsonDepth=%d, parseDepth=%d, dbfType=%d\n",
+            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->dbfType);
     }
 
     assert(pjlink);
@@ -316,8 +358,8 @@ static int dbjl_end_array(void *ctx) {
 
     IFDEBUG(10) {
         printf("dbjl_end_array(%s@%p)\t", pjlink ? pjlink->pif->name : "", pjlink);
-        printf("    jsonDepth=%d, parseDepth=%d, key_is_link=%d\n",
-            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->key_is_link);
+        printf("    jsonDepth=%d, parseDepth=%d, dbfType=%d\n",
+            parser->jsonDepth, pjlink ? pjlink->parseDepth : 0, parser->dbfType);
     }
 
     assert(pjlink);
@@ -335,7 +377,7 @@ static yajl_callbacks dbjl_callbacks = {
 };
 
 long dbJLinkParse(const char *json, size_t jlen, short dbfType,
-    jlink **ppjlink, unsigned opts)
+    jlink **ppjlink)
 {
     parseContext context, *parser = &context;
     yajl_alloc_funcs dbjl_allocs;
@@ -347,17 +389,14 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
     parser->product = NULL;
     parser->dbfType = dbfType;
     parser->jsonDepth = 0;
-    parser->key_is_link = 0;
-    parser->parse_debug = !!(opts&LINK_DEBUG_JPARSE);
-    parser->lset_debug = !!(opts&LINK_DEBUG_LSET);
 
     IFDEBUG(10)
         printf("dbJLinkInit(\"%.*s\", %d, %p)\n",
             (int) jlen, json, dbfType, ppjlink);
 
     IFDEBUG(10)
-        printf("dbJLinkInit: jsonDepth=%d, key_is_link=%d\n",
-            parser->jsonDepth, parser->key_is_link);
+        printf("dbJLinkInit: jsonDepth=%d, dbfType=%d\n",
+            parser->jsonDepth, parser->dbfType);
 
     yajl_set_default_alloc_funcs(&dbjl_allocs);
     yh = yajl_alloc(&dbjl_callbacks, &dbjl_allocs, parser);
@@ -365,8 +404,14 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
         return S_db_noMemory;
 
     ys = yajl_parse(yh, (const unsigned char *) json, jlen);
-    if (ys == yajl_status_ok)
+    IFDEBUG(10)
+        printf("dbJLinkInit: yajl_parse() returned %d\n", ys);
+
+    if (ys == yajl_status_ok) {
         ys = yajl_complete_parse(yh);
+        IFDEBUG(10)
+            printf("dbJLinkInit: yajl_complete_parse() returned %d\n", ys);
+    }
 
     switch (ys) {
         unsigned char *err;
@@ -378,6 +423,9 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
         break;
 
     case yajl_status_error:
+        IFDEBUG(10)
+            printf("    jsonDepth=%d, product=%p, pjlink=%p\n",
+                parser->jsonDepth, parser->product, parser->pjlink);
         err = yajl_get_error(yh, 1, (const unsigned char *) json, jlen);
         errlogPrintf("dbJLinkInit: %s\n", err);
         yajl_free_error(yh, err);
@@ -389,18 +437,24 @@ long dbJLinkParse(const char *json, size_t jlen, short dbfType,
     }
 
     yajl_free(yh);
+
+    IFDEBUG(10)
+        printf("dbJLinkInit: returning status=0x%lx\n\n",
+            status);
+
     return status;
 }
 
 long dbJLinkInit(struct link *plink)
 {
-    jlink *pjlink;
-
     assert(plink);
-    pjlink = plink->value.json.jlink;
 
-    if (pjlink)
-        plink->lset = pjlink->pif->get_lset(pjlink);
+    if (plink->type == JSON_LINK) {
+        jlink *pjlink = plink->value.json.jlink;
+
+        if (pjlink)
+            plink->lset = pjlink->pif->get_lset(pjlink);
+    }
 
     dbLinkOpen(plink);
     return 0;

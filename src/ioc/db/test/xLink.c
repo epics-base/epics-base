@@ -2,7 +2,7 @@
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* xLink.c */
 
@@ -82,7 +82,6 @@ static jlif xlinkIf = {
     NULL, NULL, NULL,
     NULL, NULL,
     NULL, xlink_get_lset,
-    NULL, NULL
+    NULL, NULL, NULL
 };
 epicsExportAddress(jlif, xlinkIf);
-

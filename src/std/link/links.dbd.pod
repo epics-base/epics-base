@@ -13,6 +13,12 @@ The following additional link types are available in this release:
 
 =item * L<Calc|/"Calculation Link calc">
 
+=item * L<dbState|/"dbState Link state">
+
+=item * L<Debug|/"Debug Link debug">
+
+=item * L<Trace|/"Trace Link trace">
+
 =back
 
 =head2 Using JSON Links
@@ -31,15 +37,16 @@ database file syntax.
 
 =cut
 
+
 link(const, lnkConstIf)
 
 =head3 Constant Link C<"const">
 
-Constant links provide one or more values at link initalization time, but do not
-return any data when their C<getValue()> routine is called. Most record types
-support the use of constant links by calling C<recGblInitConstantLink()> at
-record initialization, which results in the constant value being loaded into the
-target field at that time.
+Constant links are input links that provide literal values at link initalization
+time, but do not return any data when their C<getValue()> routine is called.
+Most record types support the use of constant links on their input links by
+calling C<recGblInitConstantLink()> at record initialization, which results in
+the constant value being loaded into the target field at that time.
 
 Note that for most record types (the C<printf> and C<calcout> records are the
 main exceptions) it is pointless to set an input link to a constant link at
@@ -70,14 +77,35 @@ converted to the desired double value at initialization, for example:
 
 =cut
 
+
 link(calc, lnkCalcIf)
 
 =head3 Calculation Link C<"calc">
 
-Calculation links can perform simple mathematical expressions on scalar
-(double-precision floating-point) values obtained from other link types and
-return a single double-precision floating-point result. The expressions are
-evaluated by the EPICS Calc engine, and up to 12 inputs can be provided.
+A calculation link is an input link that can evaluate mathematical expressions
+on scalar (double-precision floating-point) values obtained from up to 12 child
+input links, and returns a double-precision floating-point result. The
+expression is evaluated by the EPICS Calc engine, and the result is returned as
+the value of the link.
+
+Two additional expressions may also be provided and are evaluated to determine
+whether the record owning the link should be placed in alarm state. In both
+cases the result of the main calculation is available to these expressions as
+C<VAL> (attempts to assign to C<VAL> inside either expression will have no
+lasting effect). If the C<major> expression evaluates to a non-zero value the
+record will be placed in C<LINK/MAJOR> alarm. If not and the C<minor> expression
+evaluates to non-zero the record will be placed in C<LINK/MINOR> alarm state.
+
+A calculation link can also be an output link, with the scalar output value
+being converted to a double and provided to the expression as C<VAL>. Up to 12
+additional input links can also be read and provided to the expression as above.
+The result of the calculation is forwarded to a child output link specified in
+the link's C<out> parameter.
+
+For an output link the main expression is actually optional; if not provided the
+converted value will be forwarded to the output link unchanged. The two alarm
+expressions may still be used to put the output link into alarm state as
+described above.
 
 =head4 Parameters
 
@@ -88,6 +116,7 @@ The link address is a JSON map with the following keys:
 =item expr
 
 The primary expression to be evaluated, given as a string.
+This is optional for output links, required for input links.
 
 =item major
 
@@ -103,6 +132,12 @@ A JSON list of up to 12 input arguments for the expression, which are assigned
 to the inputs C<A>, C<B>, C<C>, ... C<L>. Each input argument may be either a
 numeric literal or an embedded JSON link inside C<{}> braces. The same input
 values are provided to the two alarm expressions as to the primary expression.
+
+=item out
+
+A JSON link inside C<{}> braces which specifies the destination of C<putValue>
+operations after any expressions have been evaluated.
+This key is required for output links, not used by input links.
 
 =item units
 
@@ -127,5 +162,74 @@ atomically with the value of the input argument.
 =head4 Example
 
  {calc: {expr:"A*B", args:[{db:"record.VAL"}, 1.5], prec:3}}
+
+=cut
+
+
+link(state, lnkStateIf)
+
+=head3 dbState Link C<"state">
+
+A dbState link is one that gets or puts a boolean value from/to a named global
+flag as implemented by the dbState facility in C<dbstate.h>. The link type can
+invert the sense of the dbState flag during the get or put if desired.
+
+The value of the named flag is read or written at the time of the link I/O
+operation. When reading a flag, the value returned by the link will be zero or
+one converted to the requested data type. When writing to a flag the boolean
+value of the data written is determined in the originating data type. All
+strings are regarded as true other than C<""> and C<"0"> which are both false.
+
+A link can be configured to invert the sense of the flag data by putting an
+exclamation mark C<!> before the first character of the flag's name in the link
+address.
+
+These dbState flags can be accessed from the IOC Shell with various dbState
+commands, and are also used by the C<"sync"> Channel-Access server-side filter
+mechanism.
+
+=head4 Parameters
+
+The link takes a single parameter which must be a string, providing the name of
+the dbState object, with an optional leading C<!> character to indicate that the
+flag's value should be inverted. The dbState object will be created when the
+link is initialized if it doesn't already exist.
+
+=head4 Examples
+
+ {state:"redBeam"}
+ {state:"!simEnable"}
+
+=cut
+
+
+link(debug, lnkDebugIf)
+variable(lnkDebug_debug, int)
+
+=head3 Debug Link C<"debug">
+
+The debug link type exists to enable debugging of other link types; it provides
+no functionality itself other than to turn on the debug flag for the child link
+that is its only parameter and pass all link operations down to that link.
+
+=head4 Example
+
+ {debug:{state:"redBeam"}}
+
+=cut
+
+
+link(trace, lnkTraceIf)
+
+=head3 Trace Link C<"trace">
+
+The trace link type is a relative of the debug link type that also traces the
+operation of its child link. At creation it turns on the debug flag of its child
+link, then it prints the method arguments and return values of all link
+operations before / after passing control down to the child link.
+
+=head4 Example
+
+ {trace:{state:"redBeam"}}
 
 =cut

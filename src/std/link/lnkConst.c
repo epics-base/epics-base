@@ -2,7 +2,7 @@
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* lnkConst.c */
 
@@ -21,8 +21,6 @@
 #include "dbJLink.h"
 #include "epicsExport.h"
 
-
-#define IFDEBUG(n) if (clink->jlink.debug)
 
 typedef long (*FASTCONVERT)();
 
@@ -48,17 +46,22 @@ static lset lnkConst_lset;
 
 static jlink* lnkConst_alloc(short dbfType)
 {
-    const_link *clink = calloc(1, sizeof(*clink));
+    const_link *clink;
 
-    IFDEBUG(10)
-        printf("lnkConst_alloc()\n");
+    if (dbfType != DBF_INLINK) {
+        errlogPrintf("lnkConst: Only works with input links\n");
+        return NULL;
+    }
+
+    clink = calloc(1, sizeof(*clink));
+    if (!clink) {
+        errlogPrintf("lnkConst: calloc() failed.\n");
+        return NULL;
+    }
 
     clink->type = s0;
     clink->nElems = 0;
     clink->value.pmem = NULL;
-
-    IFDEBUG(10)
-        printf("lnkConst_alloc -> const@%p\n", clink);
 
     return &clink->jlink;
 }
@@ -66,9 +69,6 @@ static jlink* lnkConst_alloc(short dbfType)
 static void lnkConst_free(jlink *pjlink)
 {
     const_link *clink = CONTAINER(pjlink, const_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkConst_free(const@%p) type=%d\n", pjlink, clink->type);
 
     switch (clink->type) {
         int i;
@@ -95,16 +95,13 @@ static jlif_result lnkConst_integer(jlink *pjlink, long long num)
     const_link *clink = CONTAINER(pjlink, const_link, jlink);
     int newElems = clink->nElems + 1;
 
-    IFDEBUG(10)
-        printf("lnkConst_integer(const@%p, %lld)\n", pjlink, num);
-
     switch (clink->type) {
         void *buf;
 
     case s0:
         clink->type = si64;
         clink->value.scalar_integer = num;
-        IFDEBUG(12)
+        if (pjlink->debug)
             printf("   si64 := %lld\n", num);
         break;
 
@@ -118,7 +115,7 @@ static jlif_result lnkConst_integer(jlink *pjlink, long long num)
 
         clink->value.pmem = buf;
         clink->value.pintegers[clink->nElems] = num;
-        IFDEBUG(12)
+        if (pjlink->debug)
             printf("   ai64 += %lld\n", num);
         break;
 
@@ -129,7 +126,7 @@ static jlif_result lnkConst_integer(jlink *pjlink, long long num)
 
         clink->value.pmem = buf;
         clink->value.pdoubles[clink->nElems] = num;
-        IFDEBUG(12)
+        if (pjlink->debug)
             printf("   af64 += %lld\n", num);
         break;
 
@@ -146,10 +143,6 @@ static jlif_result lnkConst_integer(jlink *pjlink, long long num)
 
 static jlif_result lnkConst_boolean(jlink *pjlink, int val)
 {
-    const_link *clink = CONTAINER(pjlink, const_link, jlink);
-    IFDEBUG(10)
-        printf("lnkConst_boolean(const@%p, %d)\n", pjlink, val);
-
     return lnkConst_integer(pjlink, val);
 }
 
@@ -157,9 +150,6 @@ static jlif_result lnkConst_double(jlink *pjlink, double num)
 {
     const_link *clink = CONTAINER(pjlink, const_link, jlink);
     int newElems = clink->nElems + 1;
-
-    IFDEBUG(10)
-        printf("lnkConst_double(const@%p, %g)\n", pjlink, num);
 
     switch (clink->type) {
         epicsFloat64 *f64buf;
@@ -212,9 +202,6 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
     const_link *clink = CONTAINER(pjlink, const_link, jlink);
     int newElems = clink->nElems + 1;
 
-    IFDEBUG(10)
-        printf("lnkConst_string(const@%p, \"%.*s\")\n", clink, (int) len, val);
-
     switch (clink->type) {
         char **vec, *str;
 
@@ -262,9 +249,6 @@ static jlif_result lnkConst_start_array(jlink *pjlink)
 {
     const_link *clink = CONTAINER(pjlink, const_link, jlink);
 
-    IFDEBUG(10)
-        printf("lnkConst_start_array(const@%p)\n", pjlink);
-
     if (clink->type != s0) {
         errlogPrintf("lnkConst: Embedded array value\n");
         return jlif_stop;
@@ -276,21 +260,11 @@ static jlif_result lnkConst_start_array(jlink *pjlink)
 
 static jlif_result lnkConst_end_array(jlink *pjlink)
 {
-    const_link *clink = CONTAINER(pjlink, const_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkConst_end_array(const@%p)\n", pjlink);
-
     return jlif_continue;
 }
 
 static struct lset* lnkConst_get_lset(const jlink *pjlink)
 {
-    const_link *clink = CONTAINER(pjlink, const_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkConst_get_lset(const@%p)\n", pjlink);
-
     return &lnkConst_lset;
 }
 
@@ -317,9 +291,6 @@ static void lnkConst_report(const jlink *pjlink, int level, int indent)
         "bug", "integer", "double", "string"
     };
     const char * const dtype = type_names[clink->type & 3];
-
-    IFDEBUG(10)
-        printf("lnkConst_report(const@%p)\n", clink);
 
     if (clink->type > a0) {
         const char * const plural = clink->nElems > 1 ? "s" : "";
@@ -382,11 +353,6 @@ static void lnkConst_report(const jlink *pjlink, int level, int indent)
 
 static void lnkConst_remove(struct dbLocker *locker, struct link *plink)
 {
-    const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkConst_remove(const@%p)\n", clink);
-
     lnkConst_free(plink->value.json.jlink);
 }
 
@@ -395,55 +361,51 @@ static long lnkConst_loadScalar(struct link *plink, short dbrType, void *pbuffer
     const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
     long status;
 
-    IFDEBUG(10)
-        printf("lnkConst_loadScalar(const@%p, %d, %p)\n",
-            clink, dbrType, pbuffer);
-
     switch (clink->type) {
     case si64:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   si64 %lld\n", clink->value.scalar_integer);
         status = dbFastPutConvertRoutine[DBF_INT64][dbrType]
             (&clink->value.scalar_integer, pbuffer, NULL);
         break;
 
     case sf64:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   sf64 %g\n", clink->value.scalar_double);
         status = dbFastPutConvertRoutine[DBF_DOUBLE][dbrType]
             (&clink->value.scalar_double, pbuffer, NULL);
         break;
 
     case sc40:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   sc40 '%s'\n", clink->value.scalar_string);
         status = dbFastPutConvertRoutine[DBF_STRING][dbrType]
             (clink->value.scalar_string, pbuffer, NULL);
         break;
 
     case ai64:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   ai64 [%lld, ...]\n", clink->value.pintegers[0]);
         status = dbFastPutConvertRoutine[DBF_INT64][dbrType]
             (clink->value.pintegers, pbuffer, NULL);
         break;
 
     case af64:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   af64 [%g, ...]\n", clink->value.pdoubles[0]);
         status = dbFastPutConvertRoutine[DBF_DOUBLE][dbrType]
             (clink->value.pdoubles, pbuffer, NULL);
         break;
 
     case ac40:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   ac40 ['%s', ...]\n", clink->value.pstrings[0]);
         status = dbFastPutConvertRoutine[DBF_STRING][dbrType]
             (clink->value.pstrings[0], pbuffer, NULL);
         break;
 
     default:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   Bad type %d\n", clink->type);
         status = S_db_badField;
         break;
@@ -458,27 +420,23 @@ static long lnkConst_loadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
     const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
     const char *pstr;
 
-    IFDEBUG(10)
-        printf("lnkConst_loadLS(const@%p, %p, %d, %d)\n",
-            clink, pbuffer, size, *plen);
-
     if(!size) return 0;
 
     switch (clink->type) {
     case sc40:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   sc40 '%s'\n", clink->value.scalar_string);
         pstr = clink->value.scalar_string;
         break;
 
     case ac40:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   ac40 ['%s', ...]\n", clink->value.pstrings[0]);
         pstr = clink->value.pstrings[0];
         break;
 
     default:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   Bad type %d\n", clink->type);
         return S_db_badField;
     }
@@ -499,10 +457,6 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
     FASTCONVERT conv;
     long status;
 
-    IFDEBUG(10)
-        printf("lnkConst_loadArray(const@%p, %d, %p, (%ld))\n",
-            clink, dbrType, pbuffer, *pnReq);
-
     if (nElems > *pnReq)
         nElems = *pnReq;
 
@@ -510,28 +464,28 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         int i;
 
     case si64:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   si64 %lld\n", clink->value.scalar_integer);
         status = dbFastPutConvertRoutine[DBF_INT64][dbrType]
             (&clink->value.scalar_integer, pdest, NULL);
         break;
 
     case sf64:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   sf64 %g\n", clink->value.scalar_double);
         status = dbFastPutConvertRoutine[DBF_DOUBLE][dbrType]
             (&clink->value.scalar_double, pdest, NULL);
         break;
 
     case sc40:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   sc40 '%s'\n", clink->value.scalar_string);
         status = dbFastPutConvertRoutine[DBF_STRING][dbrType]
             (clink->value.scalar_string, pbuffer, NULL);
         break;
 
     case ai64:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   ai64 [%lld, ...]\n", clink->value.pintegers[0]);
         conv = dbFastPutConvertRoutine[DBF_INT64][dbrType];
         for (i = 0; i < nElems; i++) {
@@ -542,7 +496,7 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         break;
 
     case af64:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   af64 [%g, ...]\n", clink->value.pdoubles[0]);
         conv = dbFastPutConvertRoutine[DBF_DOUBLE][dbrType];
         for (i = 0; i < nElems; i++) {
@@ -553,7 +507,7 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         break;
 
     case ac40:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   ac40 ['%s', ...]\n", clink->value.pstrings[0]);
         conv = dbFastPutConvertRoutine[DBF_STRING][dbrType];
         for (i = 0; i < nElems; i++) {
@@ -564,7 +518,7 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         break;
 
     default:
-        IFDEBUG(12)
+        if (clink->jlink.debug)
             printf("   Bad type %d\n", clink->type);
         status = S_db_badField;
     }
@@ -574,12 +528,6 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
 
 static long lnkConst_getNelements(const struct link *plink, long *nelements)
 {
-    const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkConst_getNelements(const@%p, (%ld))\n",
-            plink->value.json.jlink, *nelements);
-
     *nelements = 0;
     return 0;
 }
@@ -587,13 +535,6 @@ static long lnkConst_getNelements(const struct link *plink, long *nelements)
 static long lnkConst_getValue(struct link *plink, short dbrType, void *pbuffer,
         long *pnRequest)
 {
-    const_link *clink = CONTAINER(plink->value.json.jlink, const_link, jlink);
-
-    IFDEBUG(10)
-        printf("lnkConst_getValue(const@%p, %d, %p, ... (%ld))\n",
-            plink->value.json.jlink, dbrType, pbuffer,
-            pnRequest ? *pnRequest : 0);
-
     if (pnRequest)
         *pnRequest = 0;
     return 0;
@@ -626,7 +567,6 @@ static jlif lnkConstIf = {
     NULL, NULL, NULL,
     lnkConst_start_array, lnkConst_end_array,
     NULL, lnkConst_get_lset,
-    lnkConst_report, NULL
+    lnkConst_report, NULL, NULL
 };
 epicsExportAddress(jlif, lnkConstIf);
-

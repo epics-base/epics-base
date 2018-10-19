@@ -66,15 +66,18 @@ release also includes additional protection against buffer overflows while
 printing long links in <tt>dbpr</tt>, and corrects the output of long strings
 from the <tt>dbgf</tt> command.</p>
 
-<h3>Record types mbbiDirect and mbboDirect extended to 32 bit</h3>
+<h3>Record types mbbiDirect and mbboDirect upgraded to 32 bit</h3>
 
-<p>The VAL fields of mbbiDirect and mbboDirect records have
-been extended from <tt>DBF_USHORT</tt> (16 bit) to <tt>DBF_LONG</tt> (32 bit).
-New bit fields <tt>B10</tt>...<tt>B1F</tt> have been added.</p>
+<p>The VAL fields and related fields of these records are now <tt>DBF_LONG</tt>.
+(Not <tt>DBF_ULONG</tt> in order to prevent Channel Access from promoting them
+to <tt>DBF_DOUBLE</tt>.) Additional bit fields <tt>B10</tt>...<tt>B1F</tt> have
+been added.</p>
 
-<p>Device support which accesses the bit fields can test if the macro
-<tt>mbbiDirectRecord1BF</tt> or <tt>mbboDirectRecord1BF</tt> is
-defined. Device support which only accesses RVAL needs no modification.</p>
+<p>Device support that accesses <tt>VAL</tt> or the bit fields directly (most
+don't) and aims for compatibility with old and new versions of these records
+should use at least 32 bit integer types to avoid bit loss. The number of bit
+fields can be calculated using <code>8&nbsp;*&nbsp;sizeof(prec->val)</code>
+which is correct in both versions.</p>
 
 <h3>Restore use of ledlib for VxWorks command editing</h3>
 

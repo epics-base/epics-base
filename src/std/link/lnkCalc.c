@@ -175,7 +175,8 @@ static jlif_result lnkCalc_string(jlink *pjlink, const char *val, size_t len)
 
     if (clink->pstate == ps_time) {
         char tinp;
-        if (len != 1 || (tinp = toupper(val[0])) < 'A' || tinp > 'L') {
+
+        if (len != 1 || (tinp = toupper((int) val[0])) < 'A' || tinp > 'L') {
             errlogPrintf("lnkCalc: Bad 'time' parameter \"%.*s\"\n", (int) len, val);
             return jlif_stop;
         }

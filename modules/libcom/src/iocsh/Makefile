@@ -9,8 +9,10 @@
 
 SRC_DIRS += $(LIBCOM)/iocsh
 INC += iocsh.h
+INC += initHooks.h
 INC += registry.h
 INC += libComRegister.h
 Com_SRCS += iocsh.cpp
+Com_SRCS += initHooks.c
 Com_SRCS += registry.c
 Com_SRCS += libComRegister.c

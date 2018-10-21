@@ -15,6 +15,10 @@ CVSCLEAN = $(call FIND_TOOL,cvsclean.pl)
 cvsclean:
 	$(PERL) $(CVSCLEAN)
 
+DEPCLEAN = $(call FIND_TOOL,depclean.pl)
+depclean:
+	$(PERL) $(DEPCLEAN)
+
 realuninstall: uninstallDirs
 	$(RMDIR) $(INSTALL_LOCATION_BIN)
 	$(RMDIR) $(INSTALL_LOCATION_LIB)
@@ -73,12 +77,14 @@ help:
 	@echo "     uninstall      - Remove install directories created by this hostarch."
 	@echo "     realuninstall  - Removes ALL install dirs"
 	@echo "     distclean      - Same as realclean cvsclean realuninstall."
+	@echo "     depclean       - Removes all .d files from O.<arch> directories."
 	@echo "     cvsclean       - Removes cvs .#* files in all dirs of directory tree"
 	@echo "     help           - Prints this list of valid make targets "
 	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
-.PHONY: cleandirs distclean cvsclean realuninstall archuninstall uninstallDirs
+.PHONY: cleandirs distclean cvsclean depclean
+.PHONY: realuninstall archuninstall uninstallDirs
 .PHONY: uninstall help
 
 # Include <top>/cfg/TOP_RULES* files from tops defined in RELEASE* files

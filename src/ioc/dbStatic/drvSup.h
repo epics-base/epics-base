@@ -6,7 +6,10 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* drvSup.h	Driver Support	*/
+/** @file drvSup.h
+ *
+ * @brief Driver support routines.
+ */
 
 /*
  *      Author:          Marty Kraimer
@@ -18,6 +21,7 @@
 
 #include "errMdef.h"
 
+/** Driver entry table */
 typedef struct typed_drvet {
     /** Number of function pointers which follow.  Must be >=2 */
     long number;
@@ -25,23 +29,28 @@ typedef struct typed_drvet {
     long (*report)(int lvl);
     /** Called during iocInit() */
     long (*init)(void);
-    /*other functions are device dependent*/
+    /* Any further functions are driver-specific */
 } typed_drvet;
 
-typedef long (*DRVSUPFUN) ();	/* ptr to driver support function for use with plain/untyped drvet */
+#ifdef USE_TYPED_DRVET
 
-#ifndef USE_TYPED_DRVET
-
-typedef struct drvet {	/* driver entry table */
-	long		number;		/*number of support routines*/
-	DRVSUPFUN	report;		/*print report*/
-	DRVSUPFUN	init;		/*init support*/
-	/*other functions are device dependent*/
-}drvet;
-#define DRVETNUMBER ( (sizeof(struct drvet) -sizeof(long))/sizeof(DRVSUPFUN) )
+typedef typed_drvet drvet;
 
 #else
-typedef typed_drvet drvet;
+
+/* These interfaces may eventually get deprecated */
+
+typedef long (*DRVSUPFUN) ();	/* ptr to driver support function */
+
+typedef struct drvet {  /* driver entry table */
+    long number;        /* number of support routines */
+    DRVSUPFUN report;   /* print report */
+    DRVSUPFUN init;     /* init support */
+    /* Any further functions are driver-specific */
+} drvet;
+
+#define DRVETNUMBER ( (sizeof(struct drvet) -sizeof(long))/sizeof(DRVSUPFUN) )
+
 #endif /* USE_TYPED_DRVET */
 
 #define S_drv_noDrvSup   (M_drvSup| 1) /*SDR_DRVSUP: Driver support missing*/

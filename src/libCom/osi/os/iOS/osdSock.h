@@ -33,6 +33,7 @@ typedef int                     SOCKET;
 typedef int osiSockIoctl_t;
 typedef socklen_t osiSocklen_t;
 typedef int osiSockOptMcastLoop_t;
+typedef unsigned char osiSockOptMcastTTL_t;
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
 

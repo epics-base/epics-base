@@ -43,6 +43,7 @@ typedef int osiSockIoctl_t;
     typedef int osiSocklen_t;
 #endif
 typedef char osiSockOptMcastLoop_t;
+typedef unsigned char osiSockOptMcastTTL_t;
 
 #define DOES_NOT_ACCEPT_ZERO_LENGTH_UDP
 

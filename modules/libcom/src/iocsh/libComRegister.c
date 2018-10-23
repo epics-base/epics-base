@@ -27,6 +27,7 @@
 #include "libComRegister.h"
 
 
+/* date */
 void date(const char *format)
 {
     epicsTimeStamp now;
@@ -42,7 +43,6 @@ void date(const char *format)
     puts(nowText);
 }
 
-/* date */
 static const iocshArg dateArg0 = { "format",iocshArgString};
 static const iocshArg * const dateArgs[] = {&dateArg0};
 static const iocshFuncDef dateFuncDef = {"date", 1, dateArgs};
@@ -52,13 +52,8 @@ static void dateCallFunc (const iocshArgBuf *args)
 }
 
 /* echo */
-static const iocshArg echoArg0 = { "string",iocshArgString};
-static const iocshArg * const echoArgs[1] = {&echoArg0};
-static const iocshFuncDef echoFuncDef = {"echo",1,echoArgs};
-static void echoCallFunc(const iocshArgBuf *args)
+IOCSH_STATIC_FUNC void echo(char* str)
 {
-    char *str = args[0].sval;
-
     if (str)
         dbTranslateEscape(str, str); /* in-place is safe */
     else
@@ -66,16 +61,13 @@ static void echoCallFunc(const iocshArgBuf *args)
     printf("%s\n", str);
 }
 
-#ifdef vxWorks
-void echo(char* str)
+static const iocshArg echoArg0 = { "string",iocshArgString};
+static const iocshArg * const echoArgs[1] = {&echoArg0};
+static const iocshFuncDef echoFuncDef = {"echo",1,echoArgs};
+static void echoCallFunc(const iocshArgBuf *args)
 {
-    if (str)
-        dbTranslateEscape(str, str);
-    else
-        str = "";
-    printf("%s\n", str);
+    echo(args[0].sval);
 }
-#endif
 
 /* chdir */
 static const iocshArg chdirArg0 = { "directory name",iocshArgString};
@@ -122,18 +114,16 @@ static void epicsEnvSetCallFunc(const iocshArgBuf *args)
 }
 
 /* epicsParamShow */
-static const iocshFuncDef epicsParamShowFuncDef = {"epicsParamShow",0,NULL};
-static void epicsParamShowCallFunc(const iocshArgBuf *args)
+IOCSH_STATIC_FUNC void epicsParamShow()
 {
     epicsPrtEnvParams ();
 }
 
-#ifdef vxWorks
-void epicsParamShow()
+static const iocshFuncDef epicsParamShowFuncDef = {"epicsParamShow",0,NULL};
+static void epicsParamShowCallFunc(const iocshArgBuf *args)
 {
-    epicsPrtEnvParams ();
+    epicsParamShow ();
 }
-#endif
 
 /* epicsPrtEnvParams */
 static const iocshFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,0};
@@ -166,20 +156,18 @@ static void iocLogInitCallFunc(const iocshArgBuf *args)
 }
 
 /* iocLogDisable */
+IOCSH_STATIC_FUNC void setIocLogDisable(int val)
+{
+    iocLogDisable = val;
+}
+
 static const iocshArg iocLogDisableArg0 = {"(0,1)=>(false,true)",iocshArgInt};
 static const iocshArg * const iocLogDisableArgs[1] = {&iocLogDisableArg0};
 static const iocshFuncDef iocLogDisableFuncDef = {"setIocLogDisable",1,iocLogDisableArgs};
 static void iocLogDisableCallFunc(const iocshArgBuf *args)
 {
-    iocLogDisable = args[0].ival;
+    setIocLogDisable(args[0].ival);
 }
-
-#ifdef vxWorks
-void setIocLogDisable(int val)
-{
-    iocLogDisable = val;
-}
-#endif
 
 /* iocLogShow */
 static const iocshArg iocLogShowArg0 = {"level",iocshArgInt};
@@ -222,20 +210,18 @@ static void errlogInit2CallFunc(const iocshArgBuf *args)
 }
 
 /* errlog */
+IOCSH_STATIC_FUNC void errlog(const char *message)
+{
+    errlogPrintfNoConsole("%s\n", message);
+}
+
 static const iocshArg errlogArg0 = { "message",iocshArgString};
 static const iocshArg * const errlogArgs[1] = {&errlogArg0};
 static const iocshFuncDef errlogFuncDef = {"errlog",1,errlogArgs};
 static void errlogCallFunc(const iocshArgBuf *args)
 {
-    errlogPrintfNoConsole("%s\n", args[0].sval);
+    errlog(args[0].sval);
 }
-
-#ifdef vxWorks
-void errlog(const char *message)
-{
-    errlogPrintfNoConsole("%s\n", message);
-}
-#endif
 
 /* iocLogPrefix */
 static const iocshArg iocLogPrefixArg0 = { "prefix",iocshArgString};

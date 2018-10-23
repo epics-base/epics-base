@@ -14,7 +14,14 @@
 #define INCiocshH
 
 #include <stdio.h>
+#include "compilerDependencies.h"
 #include "shareLib.h"
+
+#if defined(vxWorks) || defined(__rtems__)
+#define IOCSH_STATIC_FUNC
+#else
+#define IOCSH_STATIC_FUNC static EPICS_ALWAYS_INLINE
+#endif
 
 #ifdef __cplusplus
 extern "C" {

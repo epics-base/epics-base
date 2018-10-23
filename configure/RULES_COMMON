@@ -8,12 +8,14 @@
 # These rules show the set of Makefiles, config files and
 # rules files loaded by GNUmake.
 
-SHOW_MAKEFILES = $(MAKEFILE_LIST:%=show-makefile.%)
+# Protect against filenames containing colons (Windows)
+SAFE_MAKEFILES = $(subst :,__colon__,$(MAKEFILE_LIST))
+SHOW_MAKEFILES = $(SAFE_MAKEFILES:%=show-makefile.%)
 show-makefiles: $(SHOW_MAKEFILES)
 
 # The sort prevents warnings about duplicate targets:
 $(sort $(SHOW_MAKEFILES)): show-makefile.%:
-	@echo "    $(@:show-makefile.%=%)"
+	@echo "    $(subst __colon__,:,$(@:show-makefile.%=%))"
 
 .PHONY: show-makefiles show-makefile.%
 
@@ -23,7 +25,7 @@ $(sort $(SHOW_MAKEFILES)): show-makefile.%:
 
 PRINT_Var = $(@:PRINT.%=%)
 PRINT.%:
-	@echo "$(PRINT_Var) = '$($(PRINT_Var))'"
+	@echo $(PRINT_Var) = '$($(PRINT_Var))'
 
 .PHONY: PRINT PRINT.%
 

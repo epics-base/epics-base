@@ -88,7 +88,7 @@ typedef struct typed_dset {
         // init_record() routine calls
         scanIoInit(&pvt->drvlist);
      ...
-     long my_get_ioint_info(int detach, struct dbCommon *prec, IOCSCANPVT* pscan) {
+     static long get_ioint_info(int detach, struct dbCommon *prec, IOCSCANPVT* pscan) {
         if(prec->dpvt)
             *pscan = &((mypvt*)prec->dpvt)->drvlist;
      @endcode

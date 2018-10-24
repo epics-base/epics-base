@@ -27,41 +27,37 @@
 # Time service:
 # EPICS_TIMEZONE
 #	Local timezone info for vxWorks and RTEMS.  The format is
-#	    <name>::<minutesWest>:<start daylight>:<end daylight>
-#	where the start and end are mmddhh - that is month,day,hour
+#	    <name>::<minutesWest>:<startDST>:<endDST>
+#	where <name> is only used by strftime() for %Z conversions,
+#	and <startDST> and <endDST> are mmddhh - that is month,day,hour
 #	e.g. for ANL in 2018: EPICS_TIMEZONE=CUS::360:031102:110402
 #	The future dates below assume the rules don't get changed;
 #	see http://www.timeanddate.com/time/dst/2018.html to check.
 #
-#	DST for 2017  US: Mar 12 - Nov 05
-#	              EU: Mar 26 - Oct 29
-EPICS_TIMEZONE = CUS::360:031202:110502
-#EPICS_TIMEZONE = MET::-60:032602:102902
-#
 #	DST for 2018  US: Mar 11 - Nov 04
 #	              EU: Mar 25 - Oct 28
-#EPICS_TIMEZONE = CUS::360:031102:110402
-#EPICS_TIMEZONE = MET::-60:032502:102802
+EPICS_TIMEZONE = CUS::360:031102:110402
+#EPICS_TIMEZONE = MET::-60:032502:102803
 #
 #	DST for 2019  US: Mar 10 - Nov 03
 #	              EU: Mar 31 - Oct 27
 #EPICS_TIMEZONE = CUS::360:031002:110302
-#EPICS_TIMEZONE = MET::-60:033102:102702
+#EPICS_TIMEZONE = MET::-60:033102:102703
 #
 #	DST for 2020  US: Mar 08 - Nov 01
 #	              EU: Mar 29 - Oct 25
 #EPICS_TIMEZONE = CUS::360:030802:110102
-#EPICS_TIMEZONE = MET::-60:032902:102502
+#EPICS_TIMEZONE = MET::-60:032902:102503
 #
 #	DST for 2021  US: Mar 14 - Nov 07
 #	              EU: Mar 28 - Oct 31
 #EPICS_TIMEZONE = CUS::360:031402:110702
-#EPICS_TIMEZONE = MET::-60:032802:103102
+#EPICS_TIMEZONE = MET::-60:032802:103103
 #
 #	DST for 2022  US: Mar 13 - Nov 06
 #	              EU: Mar 27 - Oct 30
 #EPICS_TIMEZONE = CUS::360:031302:110602
-#EPICS_TIMEZONE = MET::-60:032702:103002
+#EPICS_TIMEZONE = MET::-60:032702:103003
 
 # EPICS_TS_NTP_INET
 #	NTP time server ip address for VxWorks and RTEMS.

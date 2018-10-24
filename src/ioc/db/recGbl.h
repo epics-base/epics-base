@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* recGbl.h */
 /*	Record Global
@@ -63,7 +63,6 @@ epicsShareFunc void recGblInheritSevr(int msMode, void *precord, epicsEnum16 sta
     epicsEnum16 sevr);
 epicsShareFunc void recGblFwdLink(void *precord);
 epicsShareFunc void recGblGetTimeStamp(void *precord);
-epicsShareFunc void recGblTSELwasModified(struct link *plink);
 epicsShareFunc void recGblCheckDeadband(epicsFloat64 *poldval, const epicsFloat64 newval,
     const epicsFloat64 deadband, unsigned *monitor_mask, const unsigned add_mask);
 

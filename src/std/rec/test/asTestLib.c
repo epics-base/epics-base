@@ -109,11 +109,7 @@ static void hookPass0(initHookState state)
         else
             testFail("Wrong link type: %d", (int)prec->out.type);
 
-        /* note that dbGetString() reads an empty string before links are initialized
-         * should probably be considered a bug, but has been the case for so long
-         * we call it a 'feature'.
-         */
-        checkGetString(&entry, "");
+        checkGetString(&entry, "rec0.DISV");
 
         testOk1(dbPutString(&entry, "rec0.SEVR")==0);
     } else{

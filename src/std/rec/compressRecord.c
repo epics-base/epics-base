@@ -4,12 +4,12 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
  *      Original Author: Bob Dalesio
- *      Date:            7-14-89 
+ *      Date:            7-14-89
  */
 
 #include <stddef.h>
@@ -120,13 +120,13 @@ static void put_value(compressRecord *prec, double *psource, int n)
         nuse = nsam;
 
     while (n--) {
-        /* for LIFO, decrement before */
+        /* for LIFO, pre-decrement modulo nsam */
         if (!fifo)
-            offset = (offset - 1) % nsam;
+            offset = (offset + nsam - 1) % nsam;
 
         prec->bptr[offset] = *psource++;
 
-        /* for FIFO, increment after */
+        /* for FIFO, post-increment modulo nsam */
         if (fifo)
             offset = (offset + 1) % nsam;
     }
@@ -424,27 +424,31 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
     compressRecord *prec = (compressRecord *) paddr->precord;
     epicsUInt32 off = prec->off;
     epicsUInt32 nuse = prec->nuse;
-    epicsUInt32 nsam = prec->nsam;
 
-    *no_elements = nuse;
     if (prec->balg == bufferingALG_FIFO) {
-        *offset = (off - nuse) % nsam;
-    } else {
-        *offset = off;
+        epicsUInt32 nsam = prec->nsam;
+
+        off = (off + nsam - nuse) % nsam;
     }
 
+    *no_elements = nuse;
+    *offset = off;
     return 0;
 }
 
 static long put_array_info(DBADDR *paddr, long nNew)
 {
     compressRecord *prec = (compressRecord *) paddr->precord;
+    epicsUInt32 nuse = prec->nuse;
 
     if (prec->balg == bufferingALG_FIFO)
         prec->off = (prec->off + nNew) % prec->nsam;
     prec->nuse += nNew;
     if (prec->nuse > prec->nsam)
         prec->nuse = prec->nsam;
+
+    if (nuse != prec->nuse)
+        db_post_events(prec, &prec->nuse, DBE_VALUE | DBE_LOG);
     return 0;
 }
 

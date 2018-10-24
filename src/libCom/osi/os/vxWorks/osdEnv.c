@@ -52,6 +52,25 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *val
 }
 
 /*
+ * Unset an environment variable
+ * Basically destroy the name of that variable because vxWorks does not
+ * support to really unset an environment variable.
+ */
+
+epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name)
+{
+    char* var;
+
+    if (!name) return;
+    iocshEnvClear(name);
+    var = getenv(name);
+    if (!var) return;
+    var -= strlen(name);
+    var --;
+    *var = 0;
+}
+
+/*
  * Show the value of the specified, or all, environment variables
  */
 epicsShareFunc void epicsShareAPI epicsEnvShow (const char *name)

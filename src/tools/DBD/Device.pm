@@ -3,17 +3,17 @@ use DBD::Base;
 @ISA = qw(DBD::Base);
 
 my %link_types = (
-    CONSTANT  => qr/$RXnum/o,
-    PV_LINK   => qr/$RXname \s+ [.NPCAMS ]*/ox,
-    JSON_LINK => qr/\{ .* \}/ox,
-    VME_IO    => qr/\# (?: \s* [CS] \s* $RXintx)* \s* (?: @ .*)?/ox,
-    CAMAC_IO  => qr/\# (?: \s* [BCNAF] \s* $RXintx)* \s* (?: @ .*)?/ox,
-    RF_IO     => qr/\# (?: \s* [RMDE] \s* $RXintx)*/ox,
-    AB_IO     => qr/\# (?: \s* [LACS] \s* $RXintx)* \s* (?: @ .*)?/ox,
-    GPIB_IO   => qr/\# (?: \s* [LA] \s* $RXintx)* \s* (?: @ .*)?/ox,
-    BITBUS_IO => qr/\# (?: \s* [LNPS] \s* $RXuintx)* \s* (?: @ .*)?/ox,
-    BBGPIB_IO => qr/\# (?: \s* [LBG] \s* $RXuintx)* \s* (?: @ .*)?/ox,
-    VXI_IO    => qr/\# (?: \s* [VCS] \s* $RXintx)* \s* (?: @ .*)?/ox,
+    CONSTANT  => qr/$RXnum/,
+    PV_LINK   => qr/$RXname \s+ [.NPCAMS ]*/x,
+    JSON_LINK => qr/\{ .* \}/x,
+    VME_IO    => qr/\# (?: \s* [CS] \s* $RXintx)* \s* (?: @ .*)?/x,
+    CAMAC_IO  => qr/\# (?: \s* [BCNAF] \s* $RXintx)* \s* (?: @ .*)?/x,
+    RF_IO     => qr/\# (?: \s* [RMDE] \s* $RXintx)*/x,
+    AB_IO     => qr/\# (?: \s* [LACS] \s* $RXintx)* \s* (?: @ .*)?/x,
+    GPIB_IO   => qr/\# (?: \s* [LA] \s* $RXintx)* \s* (?: @ .*)?/x,
+    BITBUS_IO => qr/\# (?: \s* [LNPS] \s* $RXuintx)* \s* (?: @ .*)?/x,
+    BBGPIB_IO => qr/\# (?: \s* [LBG] \s* $RXuintx)* \s* (?: @ .*)?/x,
+    VXI_IO    => qr/\# (?: \s* [VCS] \s* $RXintx)* \s* (?: @ .*)?/x,
     INST_IO   => qr/@.*/
 );
 

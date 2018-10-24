@@ -6,11 +6,12 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
+
+# RULES_BUILD
+
+# Rules for making things specified in a Makefile
 #
-#	Rules for making things specified in Makefile
-#
-#	we are in O.$(T_A), but most sources are elsewhere
-#
+# CWD is O.$(T_A), but most sources are elsewhere
 
 ifndef BASE_RULES_BUILD
 BASE_RULES_BUILD=1
@@ -79,9 +80,9 @@ else
 host:
 endif
 
--include $(CONFIG)/RULES_FILE_TYPE
+include $(CONFIG)/RULES_FILE_TYPE
 
--include $(CONFIG)/RULES.Db
+include $(CONFIG)/RULES.Db
 
 #---------------------------------------------------------------
 # Include defines and rules for prod, library and test* targets
@@ -102,6 +103,7 @@ endif
 #   Products and Object libraries
 #
 PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
+TESTPRODTARGETS += $(TESTPRODNAME) $(TESTMUNCHNAME)
 
 #---------------------------------------------------------------
 #   Test specifications and test result files
@@ -140,7 +142,7 @@ rebuild: clean install
 
 build: inc
 
-build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODNAME) \
+build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TARGETS) $(TESTSCRIPTS) $(INSTALL_LIB_INSTALLS)
 
 inc : $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS)
@@ -158,20 +160,21 @@ clean: build_clean
 
 build_clean:
 	$(ECHO) "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) \
+	@$(RM) *.i *$(OBJ) *.a \
 	$(LIBNAME) $(TESTLIBNAME) $(SHRLIBNAME) $(TESTSHRLIBNAME) \
 	$(DLLSTUB_LIBNAME) $(TESTDLLSTUB_LIBNAME) \
 	$(LOADABLE_SHRLIBNAME) \
 	$(INC) $(TARGETS) $(TDS) $(CLEANS) \
 	*.out MakefileInclude *.manifest *.exp \
-	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) \
+	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TESTSCRIPTS) $(TAPFILES) $(JUNITFILES)
 ifdef RES
 	@$(RM) *$(RES)
 endif
 
-$(DIRECTORY_TARGETS) :
-	$(MKDIR) $@
+# Sort mkdir targets to remove duplicates & make parents first
+$(DIRECTORY_TARGETS):
+	$(MKDIR) $(sort $@)
 
 # Install LIB_INSTALLS libraries before linking executables
 $(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIB_INSTALLS)
@@ -254,15 +257,13 @@ YACCOPT ?= $($*_YACCOPT)
 	$(MV) $*.tab.c $*.c
 	$(if $(findstring -d, $(YACCOPT)),$(MV) $*.tab.h $*.h,)
 
-# must be a seperate rule since when not using '-d' the
+# must be a separate rule since when not using '-d' the
 # prefix for .h will be different then .c
 %.h : %.c %.y
 
 %.c: %.l
-	@$(RM) $*.yy.c
-	$(LEX) $(LEXOPT) -t $< > $*.yy.c
 	@$(RM) $@
-	$(MV) $*.yy.c $@
+	$(LEX) $(LEXOPT) -o$@ $<
 
 #---------------------------------------------------------------
 # Libraries, shared/DLL and stubs
@@ -318,6 +319,10 @@ $(LOADABLE_SHRLIBNAME): $(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX):
 	$(PERL) $(TOOLS)/munch.pl -o $@ $<
 
 $(MUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
+	@$(RM) $@
+	$(MUNCH_CMD)
+
+$(TESTMUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
 	@$(RM) $@
 	$(MUNCH_CMD)
 
@@ -517,7 +522,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
--include $(CONFIG)/RULES_EXPAND
+include $(CONFIG)/RULES_EXPAND
 
 .PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)
@@ -526,5 +531,9 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PHONY: runtests tapfiles clean-tests test-results junitfiles
 .PHONY: checkRelease warnRelease noCheckRelease FORCE
 
+include $(CONFIG)/RULES_COMMON
+
+else
+    $(warning RULES_BUILD included more than once. \
+        Use 'make show-makefiles' to work out why.)
 endif # BASE_RULES_BUILD
-#	EOF RULES_BUILD

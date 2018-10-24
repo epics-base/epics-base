@@ -45,7 +45,6 @@ void rsrv_online_notify_task(void *pParm)
     caHdr                       msg;
     int                         status;
     ca_uint32_t                 beaconCounter = 0;
-    char                        buf[16];
     
     taskwdInsert (epicsThreadGetIdSelf(),NULL,NULL);
     
@@ -85,10 +84,12 @@ void rsrv_online_notify_task(void *pParm)
                              &pAddr->addr.sa, sizeof(pAddr->addr));
             if (status < 0) {
                 char sockErrBuf[64];
-                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
-                errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
-                    __FILE__, buf, sockErrBuf);
+                char sockDipBuf[22];
+
+                epicsSocketConvertErrnoToString(sockErrBuf, sizeof(sockErrBuf));
+                ipAddrToDottedIP(&pAddr->addr.ia, sockDipBuf, sizeof(sockDipBuf));
+                errlogPrintf ( "CAS: CA beacon send to %s error: %s\n",
+                    sockDipBuf, sockErrBuf);
             }
             else {
                 assert (status == sizeof(msg));

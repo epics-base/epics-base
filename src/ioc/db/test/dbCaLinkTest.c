@@ -29,6 +29,7 @@
 
 /* Declarations from cadef.h and db_access.h which we can't include here */
 typedef void * chid;
+typedef void * evid;
 epicsShareExtern const unsigned short dbr_value_size[];
 epicsShareExtern short epicsShareAPI ca_field_type (chid chan);
 #define MAX_UNITS_SIZE		8

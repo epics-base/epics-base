@@ -127,21 +127,10 @@ const char * ca_message_text []
 
 static epicsThreadOnceId caClientContextIdOnce = EPICS_THREAD_ONCE_INIT;
 
-extern "C" void ca_client_exit_handler (void *)
-{
-    if ( caClientContextId ) {
-        epicsThreadPrivateDelete ( caClientContextId );
-        caClientContextId = 0;
-    }
-}
-
 // runs once only for each process
 extern "C" void ca_init_client_context ( void * )
 {
     caClientContextId = epicsThreadPrivateCreate ();
-    if ( caClientContextId ) {
-        epicsAtExit ( ca_client_exit_handler,0 );
-    }
 }
 
 /*

@@ -238,9 +238,11 @@ MAIN(ringPointerTest)
 
     testPlan(37);
     testSingle();
-    epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityScanLow);
+    if (prio)
+        epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityScanLow);
     testPair(0);
     testPair(1);
-    epicsThreadSetPriority(epicsThreadGetIdSelf(), prio);
+    if (prio)
+        epicsThreadSetPriority(epicsThreadGetIdSelf(), prio);
     return testDone();
 }

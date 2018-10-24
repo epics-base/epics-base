@@ -51,8 +51,11 @@ static char *pNullString = "";
 #define messagesize	276
 #define RPCL_LEN INFIX_TO_POSTFIX_SIZE(80)
 
-/* must be long enough to hold 32-bit signed integer in base 10 */
-STATIC_ASSERT(messagesize>=11);
+/* Must be big enough to hold a 64-bit integer in base 10, but in
+ * the future when fields hold large JSON objects this fixed size
+ * allocation will probably have to become variable sized.
+ */
+STATIC_ASSERT(messagesize >= 21);
 
 static char *ppstring[5]={" NPP"," PP"," CA"," CP"," CPP"};
 static char *msstring[4]={" NMS"," MS"," MSI"," MSS"};
@@ -208,11 +211,13 @@ static void zeroDbentry(DBENTRY *pdbentry)
 static char *getpMessage(DBENTRY *pdbentry)
 {
     char *msg = pdbentry->message;
+
     if (!msg) {
         msg = dbCalloc(1, messagesize);
         pdbentry->message = msg;
     }
-    *msg = '\0';
+    else
+        *msg = '\0';
     return msg;
 }
 
@@ -222,6 +227,17 @@ void dbMsgCpy(DBENTRY *pdbentry, const char *msg)
     getpMessage(pdbentry);
     strncpy(pdbentry->message, msg, messagesize-1);
     pdbentry->message[messagesize-1] = '\0';
+}
+
+static
+void dbMsgNCpy(DBENTRY *pdbentry, const char *msg, size_t len)
+{
+    getpMessage(pdbentry);
+    if (len >= messagesize)
+        len = messagesize-1;            /* FIXME: Quietly truncates */
+
+    strncpy(pdbentry->message, msg, len);
+    pdbentry->message[len] = '\0';
 }
 
 static
@@ -879,10 +895,14 @@ long dbWriteRecordFP(
 		status=dbNextField(pdbentry,dctonly);
 	    }
 	    status = dbFirstInfo(pdbentry);
-	    while(!status) {
-		fprintf(fp,"\tinfo(\"%s\",\"%s\")\n",
-			dbGetInfoName(pdbentry), dbGetInfoString(pdbentry));
-		status=dbNextInfo(pdbentry);
+	    while (!status) {
+		const char *pinfostr = dbGetInfoString(pdbentry);
+
+		fprintf(fp, "\tinfo(\"%s\",\"",
+		    dbGetInfoName(pdbentry));
+		epicsStrPrintEscaped(fp, pinfostr, strlen(pinfostr));
+		fprintf(fp, "\")\n");
+		status = dbNextInfo(pdbentry);
 	    }
 	    fprintf(fp,"}\n");
 	    status = dbNextRecord(pdbentry);
@@ -1674,21 +1694,27 @@ int dbIsVisibleRecord(DBENTRY *pdbentry)
 
 long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    dbRecordNode	*pnewnode;
-    PVDENTRY    	*ppvd;
-    ELLLIST     	*preclist = NULL;
-    if (!precordType) return S_dbLib_recordTypeNotFound;
+    dbRecordType *precordType = pdbentry->precordType;
+    dbRecordNode *precnode = pdbentry->precnode;
+    dbRecordNode *pnewnode;
+    DBENTRY tempEntry;
+    PVDENTRY *ppvd;
+
+    if (!precordType)
+        return S_dbLib_recordTypeNotFound;
+
     /* alias of alias still references actual record */
-    while(precnode && (precnode->flags&DBRN_FLAGS_ISALIAS))
+    while (precnode && (precnode->flags & DBRN_FLAGS_ISALIAS))
         precnode = precnode->aliasedRecnode;
-    if (!precnode) return S_dbLib_recNotFound;
-    zeroDbentry(pdbentry);
-    if (!dbFindRecord(pdbentry, alias)) return S_dbLib_recExists;
-    zeroDbentry(pdbentry);
-    pdbentry->precordType = precordType;
-    preclist = &precordType->recList;
+
+    if (!precnode)
+        return S_dbLib_recNotFound;
+
+    dbInitEntry(pdbentry->pdbbase, &tempEntry);
+    if (!dbFindRecord(&tempEntry, alias))
+        return S_dbLib_recExists;
+    dbFinishEntry(&tempEntry);
+
     pnewnode = dbCalloc(1, sizeof(dbRecordNode));
     pnewnode->recordname = epicsStrDup(alias);
     pnewnode->precord = precnode->precord;
@@ -1696,11 +1722,16 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     pnewnode->flags = DBRN_FLAGS_ISALIAS;
     precnode->flags |= DBRN_FLAGS_HASALIAS;
     ellInit(&pnewnode->infoList);
-    ellAdd(preclist, &pnewnode->node);
+
+    ellAdd(&precordType->recList, &pnewnode->node);
     precordType->no_aliases++;
-    pdbentry->precnode = pnewnode;
+
     ppvd = dbPvdAdd(pdbentry->pdbbase, precordType, pnewnode);
-    if (!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
+    if (!ppvd) {
+        errMessage(-1, "dbCreateAlias: Add to PVD failed");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1884,7 +1915,8 @@ char * dbGetString(DBENTRY *pdbentry)
 
     switch (pflddes->field_type) {
     case DBF_STRING:
-        dbMsgCpy(pdbentry, (char *)pfield);
+        /* Protect against a missing nil-terminator */
+        dbMsgNCpy(pdbentry, (char *)pfield, pflddes->size);
         break;
     case DBF_CHAR:
     case DBF_UCHAR:
@@ -1907,6 +1939,8 @@ char * dbGetString(DBENTRY *pdbentry)
 	case CONSTANT:
 	    if (plink->value.constantStr) {
 		dbMsgCpy(pdbentry, plink->value.constantStr);
+	    } else if (plink->text) {
+		dbMsgCpy(pdbentry, plink->text);
 	    } else {
 		dbMsgCpy(pdbentry, "");
 	    }
@@ -1940,7 +1974,7 @@ char * dbGetString(DBENTRY *pdbentry)
 	    else ppind=0;
             dbMsgPrint(pdbentry, "%s%s%s%s",
                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
-                   (pvlMask & pvlOptTSELisTime) ? ".TIME" : "",
+                   (plink->flags & DBLINK_FLAG_TSELisTIME) ? ".TIME" : "",
                    ppstring[ppind],
                    msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
 	    break;
@@ -2007,7 +2041,13 @@ char * dbGetString(DBENTRY *pdbentry)
 
 	    switch(plink->type) {
 	    case CONSTANT:
-		dbMsgCpy(pdbentry, "0");
+		if (plink->value.constantStr) {
+		    dbMsgCpy(pdbentry, plink->value.constantStr);
+		} else if (plink->text) {
+		    dbMsgCpy(pdbentry, plink->text);
+		} else {
+		    dbMsgCpy(pdbentry, "");
+		}
 		break;
 	    case MACRO_LINK:
 		if (plink->value.macro_link.macroStr) {
@@ -2201,7 +2241,7 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
         if(!plink->text)
             continue;
 
-        if(dbParseLink(plink->text, pflddes->field_type, &link_info, 0)!=0) {
+        if(dbParseLink(plink->text, pflddes->field_type, &link_info)!=0) {
             /* This was already parsed once when ->text was set.
              * Any syntax error messages were printed at that time.
              */
@@ -2230,7 +2270,7 @@ void dbFreeLinkInfo(dbLinkInfo *pinfo)
     pinfo->target = NULL;
 }
 
-long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, unsigned opts)
+long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 {
     char *pstr;
     size_t len;
@@ -2266,7 +2306,7 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, unsigned opts)
 
     /* Check for braces => JSON */
     if (*str == '{' && str[len-1] == '}') {
-        if (dbJLinkParse(str, len, ftype, &pinfo->jlink, opts))
+        if (dbJLinkParse(str, len, ftype, &pinfo->jlink))
             goto fail;
 
         pinfo->ltype = JSON_LINK;
@@ -2313,9 +2353,13 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, unsigned opts)
         else if (strcmp(pinfo->hwid, "VS")==0)    pinfo->ltype = VXI_IO;
         else goto fail;
 
-        if (parm && pinfo->ltype != RF_IO) {
-            /* move parm string to beginning of buffer */
-            memmove(pinfo->target, parm, len + 1);
+        if (pinfo->ltype != RF_IO) {
+            if (!parm) {
+                pinfo->target[0] = '\0';
+            } else {
+                /* move parm string to beginning of buffer */
+                memmove(pinfo->target, parm, len + 1);
+            }
         } else if (!parm && pinfo->ltype == RF_IO) {
             /* RF_IO, the string isn't needed at all */
             free(pinfo->target);
@@ -2601,21 +2645,8 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
     case DBF_FWDLINK: {
             dbLinkInfo link_info;
             DBLINK *plink = (DBLINK *)pfield;
-            DBENTRY infoentry;
-            unsigned opts = 0;
 
-            if(pdbentry->precnode && ellCount(&pdbentry->precnode->infoList)) {
-                dbCopyEntryContents(pdbentry, &infoentry);
-
-                if(dbFindInfo(&infoentry, "base:lsetDebug")==0 && epicsStrCaseCmp(dbGetInfoString(&infoentry), "YES")==0)
-                    opts |= LINK_DEBUG_LSET;
-                if(dbFindInfo(&infoentry, "base:jlinkDebug")==0 && epicsStrCaseCmp(dbGetInfoString(&infoentry), "YES")==0)
-                    opts |= LINK_DEBUG_JPARSE;
-
-                dbFinishEntry(&infoentry);
-            }
-
-            status = dbParseLink(pstring, pflddes->field_type, &link_info, opts);
+            status = dbParseLink(pstring, pflddes->field_type, &link_info);
             if (status) break;
 
             if (plink->type==CONSTANT && plink->value.constantStr==NULL) {
@@ -2674,6 +2705,32 @@ long dbNextInfo(DBENTRY *pdbentry)
     pinfo = (dbInfoNode *)ellNext(&pinfo->node);
     pdbentry->pinfonode = pinfo;
     return (pinfo ? 0 : S_dbLib_infoNotFound);
+}
+
+long dbNextMatchingInfo(DBENTRY *pdbentry, const char *pattern)
+{
+    long status;
+
+    if (!pdbentry->precordType)
+    {
+        status = dbFirstRecordType(pdbentry);
+        goto first;
+    }
+    while(1) {
+        status = dbNextInfo(pdbentry);
+        while (status) {
+            status = dbNextRecord(pdbentry);
+            while (status) {
+                status = dbNextRecordType(pdbentry);
+first:
+                if (status) return status;
+                status = dbFirstRecord(pdbentry);
+            }
+            status = dbFirstInfo(pdbentry); 
+        }
+        if (!pattern || !*pattern) return 0;
+        if (epicsStrGlobMatch(dbGetInfoName(pdbentry), pattern)) return 0;
+    }
 }
 
 long dbFindInfo(DBENTRY *pdbentry,const char *name)

@@ -24,8 +24,7 @@ use lib ("$Bin/../../lib/perl", $Bin);
 use EPICS::Path;
 use EPICS::Release;
 
-use vars qw($arch $top $iocroot $root);
-
+our ($arch, $top, $iocroot, $root);
 our ($opt_a, $opt_t, $opt_T);
 
 getopts('a:t:T:') or HELP_MESSAGE();
@@ -222,7 +221,7 @@ sub checkRelease {
         my @order = ();
         my $relfile = "$path/configure/RELEASE";
         readReleaseFiles($relfile, \%check, \@order, $arch);
-        expandRelease(\%check);
+        expandRelease(\%check, "while checking module\n\t$app = $path");
         delete $check{TOP};
         delete $check{EPICS_HOST_ARCH};
 
@@ -231,10 +230,10 @@ sub checkRelease {
                 AbsPath($macros{$parent}) ne AbsPath($ppath)) {
                 print "\n" unless ($status);
                 print "Definition of $parent conflicts with $app support.\n";
-                print "In this application a RELEASE file defines\n";
-                print "\t$parent = $macros{$parent}\n";
-                print "but $app at $path defines\n";
-                print "\t$parent = $ppath\n";
+                print "In this application or module, a RELEASE file\n";
+                print "conflicts with $app at $path\n";
+                print "  Here: $parent = $macros{$parent}\n";
+                print "  $app: $parent = $ppath\n";
                 $status = 1;
             }
         }

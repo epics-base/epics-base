@@ -19,7 +19,8 @@ record(ai, "emptylink" ) {
   field(INP, {calc: {expr:"0"}})
 }
 record(ai, "emptylink1" ) {
-  field(INP, {calc: {expr:"1"}})
+  field(INP, {calc: {expr:"A", args:[1], time:"a"}})
+  field(TSEL, -2)
 }
 
 record(printf, "printf1") {
@@ -88,3 +89,19 @@ record(event, "ev1") {
 record(event, "ev2") {
   field(INP, "count1.EVNT")
 }
+
+record(int64in, "i1") {
+  field(INP, [1234567890123456789,])
+}
+record(int64in, "i2") {
+  field(INP, {const:1234567890123456789,})
+}
+record(int64in, "i3") {
+  field(INP, 1234567890123456789)
+}
+record(waveform, "i4") {
+  field(NELM, 1)
+  field(FTVL, "INT64")
+  field(INP, [1234567890123456789,])
+}
+

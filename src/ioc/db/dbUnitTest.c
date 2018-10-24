@@ -20,6 +20,7 @@
 #include "osiUnistd.h"
 #include "registry.h"
 #include "epicsEvent.h"
+#include "epicsThread.h"
 
 #define epicsExportSharedSymbols
 #include "dbAccess.h"
@@ -149,7 +150,7 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
     return dbPutField(&addr, dbrType, pod.bytes, 1);
 }
 
-void testdbPutFieldOk(const char* pv, short dbrType, ...)
+void testdbPutFieldOk(const char* pv, int dbrType, ...)
 {
     long ret;
     va_list ap;
@@ -161,7 +162,7 @@ void testdbPutFieldOk(const char* pv, short dbrType, ...)
     testOk(ret==0, "dbPutField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, ret, errSymMsg(ret));
 }
 
-void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
+void testdbPutFieldFail(long status, const char* pv, int dbrType, ...)
 {
     long ret;
     va_list ap;
@@ -174,7 +175,7 @@ void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
            pv, dbrType, status, errSymMsg(status), ret, errSymMsg(ret));
 }
 
-void testdbGetFieldEqual(const char* pv, short dbrType, ...)
+void testdbGetFieldEqual(const char* pv, int dbrType, ...)
 {
     va_list ap;
 
@@ -412,5 +413,28 @@ unsigned testMonitorCount(testMonitor *mon, unsigned reset)
     }
     epicsMutexUnlock(testEvtLock);
     return count;
+}
+
+static
+epicsMutexId test_global;
+
+static
+epicsThreadOnceId test_global_once = EPICS_THREAD_ONCE_INIT;
+
+static
+void test_global_init(void* ignored)
+{
+    test_global = epicsMutexMustCreate();
+}
+
+void testGlobalLock(void)
+{
+    epicsThreadOnce(&test_global_once, &test_global_init, NULL);
+    epicsMutexMustLock(test_global);
+}
+
+void testGlobalUnlock(void)
+{
+    epicsMutexUnlock(test_global);
 }
 

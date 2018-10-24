@@ -47,3 +47,8 @@ record(x, "rVXI_IO2") {
   field(DTYP, "Unit Test VXI_IO")
   field(INP, "#V81 S82 @parm2 VXI_IO")
 }
+
+record(x, "time:one") {}
+record(x, "time:two") {
+    field(TSEL, "time:one.TIME")
+}

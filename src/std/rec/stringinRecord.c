@@ -94,6 +94,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct stringinRecord *prec = (struct stringinRecord *)pcommon;
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
+    STATIC_ASSERT(sizeof(prec->sval)==sizeof(prec->val));
     struct stringindset *pdset = (struct stringindset *) prec->dset;
 
     if (pass==0)
@@ -119,7 +120,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
         if (status)
             return status;
     }
-    strcpy(prec->oval, prec->val);
+
+    strncpy(prec->oval, prec->val, sizeof(prec->val));
     return 0;
 }
 
@@ -194,7 +196,7 @@ static long readValue(stringinRecord *prec)
 		status=dbGetLink(&(prec->siol),DBR_STRING,
 			prec->sval,0,0);
 		if (status==0) {
-			strcpy(prec->val,prec->sval);
+			strncpy(prec->val, prec->sval, sizeof(prec->val));
 			prec->udf=FALSE;
 		}
 	} else {

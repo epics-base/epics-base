@@ -6,7 +6,7 @@
 * Copyright (c) 2013 Helmholtz-Zentrum Berlin
 *     für Materialien und Energie GmbH.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbScan.c */
 /* tasks and subroutines to scan the database */
@@ -109,8 +109,8 @@ static char *priorityName[NUM_CALLBACK_PRIORITIES] = {
 typedef struct event_list {
     CALLBACK            callback[NUM_CALLBACK_PRIORITIES];
     scan_list           scan_list[NUM_CALLBACK_PRIORITIES];
-    struct event_list *next;
-    char                event_name[MAX_STRING_SIZE];
+    struct event_list   *next;
+    char                eventname[1]; /* actually arbitrary size */
 } event_list;
 static event_list * volatile pevent_list[256];
 static epicsMutexId event_lock;
@@ -247,11 +247,6 @@ void scanAdd(struct dbCommon *precord)
         event_list *pel;
 
         eventname = precord->evnt;
-        if (strlen(eventname) >= MAX_STRING_SIZE) {
-            recGblRecordError(S_db_badField, (void *)precord,
-                "scanAdd: too long EVNT value");
-            return;
-        }
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
             recGblRecordError(-1, (void *)precord,
@@ -315,24 +310,17 @@ void scanDelete(struct dbCommon *precord)
         recGblRecordError(-1, (void *)precord,
             "scanDelete detected illegal SCAN value");
     } else if (scan == menuScanEvent) {
-        char* eventname;
         int prio;
         event_list *pel;
         scan_list *psl = 0;
 
-        eventname = precord->evnt;
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
             recGblRecordError(-1, (void *)precord,
                 "scanDelete detected illegal PRIO field");
             return;
         }
-        do /* multithreading: make sure pel is consistent */
-            pel = pevent_list[0];
-        while (pel != pevent_list[0]);
-        for (; pel; pel=pel->next) {
-            if (strcmp(pel->event_name, eventname) == 0) break;
-        }
+        pel = eventNameToHandle(precord->evnt);
         if (pel && (psl = &pel->scan_list[prio]))
             deleteFromList(precord, psl);
     } else if (scan == menuScanI_O_Intr) {
@@ -420,14 +408,12 @@ int scanpel(const char* eventname)   /* print event list */
     int prio;
     event_list *pel;
 
-    do /* multithreading: make sure pel is consistent */
-        pel = pevent_list[0];
-    while (pel != pevent_list[0]);
-    for (; pel; pel = pel->next) {
-        if (!eventname || strcmp(pel->event_name, eventname) == 0) {
+    for (pel = pevent_list[0]; pel; pel = pel->next) {
+        if (!eventname || epicsStrGlobMatch(pel->eventname, eventname)) {
+            printf("Event \"%s\"\n", pel->eventname);
             for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
                 if (ellCount(&pel->scan_list[prio].list) == 0) continue;
-                sprintf(message, "Event \"%s\" Priority %s", pel->event_name, priorityName[prio]);
+                sprintf(message, " Priority %s", priorityName[prio]);
                 printList(&pel->scan_list[prio], message);
             }
         }
@@ -478,20 +464,52 @@ event_list *eventNameToHandle(const char *eventname)
     int prio;
     event_list *pel;
     static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
+    double eventnumber = 0;
+    size_t namelength;
 
-    if (!eventname || eventname[0] == 0)
-        return NULL;
+    if (!eventname) return NULL;
+    while (isspace((int) eventname[0])) eventname++;
+    if (!eventname[0]) return NULL;
+    namelength = strlen(eventname);
+    while (isspace((int) eventname[namelength-1])) namelength--;
+
+    /* Backward compatibility with numeric events:
+       Treat any string that represents a double with an
+       integer part between 0 and 255 the same as the integer
+       because it is most probably a conversion from double
+       like from a calc record.
+    */
+    if (epicsParseDouble(eventname, &eventnumber, NULL) == 0)
+    {
+        if (eventnumber >= 0 && eventnumber < 256)
+        {
+            if (eventnumber < 1)
+                return NULL; /* 0 is no event */
+            if ((pel = pevent_list[(int)eventnumber]) != NULL)
+                return pel;
+        }
+        else
+            eventnumber = 0; /* not a numeric event between 1 and 255 */
+    }
 
     epicsThreadOnce(&onceId, eventOnce, NULL);
     epicsMutexMustLock(event_lock);
     for (pel = pevent_list[0]; pel; pel=pel->next) {
-        if (strcmp(pel->event_name, eventname) == 0) break;
+        if (strncmp(pel->eventname, eventname, namelength) == 0
+            && pel->eventname[namelength] == 0)
+            break;
     }
     if (pel == NULL) {
-        pel = calloc(1, sizeof(event_list));
+        pel = calloc(1, sizeof(event_list) + namelength);
         if (!pel)
             goto done;
-        strcpy(pel->event_name, eventname);
+        if (eventnumber > 0) {
+            /* backward compatibility: make all numeric events look like integers */
+            sprintf(pel->eventname, "%i", (int)eventnumber);
+            pevent_list[(int)eventnumber] = pel;
+        }
+        else
+            strncpy(pel->eventname, eventname, namelength);
         for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
             callbackSetUser(&pel->scan_list[prio], &pel->callback[prio]);
             callbackSetPriority(prio, &pel->callback[prio]);
@@ -501,12 +519,6 @@ event_list *eventNameToHandle(const char *eventname)
         }
         pel->next=pevent_list[0];
         pevent_list[0]=pel;
-        { /* backward compatibility */
-            char* p;
-            long e = strtol(eventname, &p, 0);
-            if (*p == 0 && e > 0 && e <= 255)
-                pevent_list[e] = pel;
-        }
     }
 done:
     epicsMutexUnlock(event_lock);
@@ -528,13 +540,8 @@ void postEvent(event_list *pel)
 /* backward compatibility */
 void post_event(int event)
 {
-    event_list* pel;
-
     if (event <= 0 || event > 255) return;
-    do { /* multithreading: make sure pel is consistent */
-        pel = pevent_list[event];
-    } while (pel != pevent_list[event]);
-    postEvent(pel);
+    postEvent(pevent_list[event]);
 }
 
 static void ioscanOnce(void *arg)

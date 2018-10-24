@@ -5,8 +5,6 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-use Carp;
-
 #
 # Parse all relevent configure/RELEASE* files and includes
 #
@@ -43,16 +41,16 @@ sub readReleaseFiles {
 # Parse a configure/RELEASE* file and anything it includes
 #
 sub readRelease {
-    my ($file, $Rmacros, $Rapps, $Rdone) = @_;
-    # $Rmacros and $Rdone are hash-refs, $Rapps an array-ref
+    my ($file, $Rmacros, $Rapps, $Ractive) = @_;
+    # $Rmacros and $Ractive are hash-refs, $Rapps an array-ref
 
-    if (exists $Rdone->{$file}) {
+    if ($Ractive->{$file} > 0) {
         die "Release.pm: Recursive loop found in RELEASE files,\n" .
             "discovered in $file\n";
     }
 
-    open(my $IN, '<', $file) or croak "Can't open $file: $!\n";
-    $Rdone->{$file}++;
+    open(my $IN, '<', $file) or die "Can't open $file: $!\n";
+    $Ractive->{$file}++;
     while (<$IN>) {
         chomp;
         s/ \r $//x;             # Shouldn't need this, but sometimes...
@@ -77,11 +75,12 @@ sub readRelease {
         my ($op, $path) = m/^ \s* (-? include) \s+ (.*)/x;
         $path = expandMacros($path, $Rmacros);
         if (-e $path) {
-            &readRelease($path, $Rmacros, $Rapps, $Rdone);
+            &readRelease($path, $Rmacros, $Rapps, $Ractive);
         } elsif ($op eq "include") {
-            carp "EPICS/Release.pm: Include file '$path' not found\n";
+            warn "EPICS/Release.pm: Include file '$path' not found\n";
         }
     }
+    $Ractive->{$file}--;
     close $IN;
 }
 
@@ -100,17 +99,18 @@ sub expandMacros {
 }
 
 #
-# Expand all (possibly nested) macros in dictionary
+# Expand all (possibly nested) macros in a dictionary
 #
 sub expandRelease {
-    my ($Rmacros) = @_;
+    my ($Rmacros, $warn) = @_;
     # $Rmacros is a reference to a hash
+    $warn = '' unless defined $warn;
 
     while (my ($macro, $val) = each %$Rmacros) {
         while (my ($pre,$var,$post) = $val =~ m/ (.*) \$\( (\w+) \) (.*) /x) {
-            carp "EPICS/Release.pm: Undefined macro \$($var) used\n"
+            warn "EPICS/Release.pm: Undefined macro \$($var) used $warn\n"
                 unless exists $Rmacros->{$var};
-            croak "EPICS/Release.pm: Circular definition of macro $macro\n"
+            die "EPICS/Release.pm: Circular definition of macro $var $warn\n"
                 if $macro eq $var;
             $val = $pre . $Rmacros->{$var} . $post;
             $Rmacros->{$macro} = $val;

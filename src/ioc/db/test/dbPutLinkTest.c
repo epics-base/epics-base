@@ -16,6 +16,7 @@
 #include "epicsThread.h"
 #include "iocInit.h"
 #include "dbBase.h"
+#include "dbDefs.h"
 #include "link.h"
 #include "dbAccess.h"
 #include "registry.h"
@@ -59,7 +60,9 @@ static const struct testParseDataT {
     TEST_PV_LINK(" world MSICP", "world", pvlOptMSI|pvlOptCP),
 
     {"#C14 S145 @testing", {VME_IO, "testing", 0, "CS", {14, 145}}},
+    {"#C14 S145", {VME_IO, "", 0, "CS", {14, 145}}},
     {"#B11 C12 N13 A14 F15 @cparam", {CAMAC_IO, "cparam", 0, "BCNAF", {11, 12, 13, 14, 15}}},
+    {"#B11 C12 N13 A14 F15", {CAMAC_IO, "", 0, "BCNAF", {11, 12, 13, 14, 15}}},
     {" #B111 C112 N113 @cparam", {CAMAC_IO, "cparam", 0, "BCN", {111, 112, 113}}},
     {" @hello world ", {INST_IO, "hello world", 0, "", /*{}*/}},
     {" {\"x\":true} ", {JSON_LINK, "{\"x\":true}", 0, "", /*{}*/}},
@@ -86,11 +89,15 @@ static void testLinkParse(void)
     for (;td->str; td++) {
         int i, N;
         testDiag("Parsing \"%s\"", td->str);
-        testOk(dbParseLink(td->str, DBF_INLINK, &info, 0) == 0, "Parser returned OK");
+        testOk(dbParseLink(td->str, DBF_INLINK, &info) == 0, "Parser returned OK");
         if (!testOk(info.ltype == td->info.ltype, "Link type value"))
             testDiag("Expected %d, got %d", td->info.ltype, info.ltype);
-        if (td->info.target)
+        if (td->info.target && info.target)
             testStrcmp(0, info.target, td->info.target);
+        else if(!!td->info.target ^ !!info.target)
+            testFail("info target NULL mis-match %s %s", info.target, td->info.target);
+        else
+            testPass("info target NULL as expected");
         if (info.ltype == td->info.ltype) {
             switch (info.ltype) {
             case PV_LINK:
@@ -124,7 +131,6 @@ static const char *testParseFailData[] = {
     "#A0 B @",
     "#A0 B C @",
     "#R1 M2 D3 E4 @oops", /* RF_IO has no parm */
-    "#C1 S2", /* VME_IO needs parm */
     NULL
 };
 
@@ -146,7 +152,7 @@ static void testLinkFailParse(void)
     eltc(1);
 
     for(;*td; td++) {
-        testOk(dbParseLink(*td, DBF_INLINK, &info, 0) == S_dbLib_badField,
+        testOk(dbParseLink(*td, DBF_INLINK, &info) == S_dbLib_badField,
             "dbParseLink correctly rejected \"%s\"", *td);
     }
 
@@ -479,6 +485,13 @@ static void testLinkInitFail(void)
     testOk1(plink->type == INST_IO);
     testOk1(plink->value.instio.string != NULL);
 
+    testdbGetFieldEqual("eINST_IO2.INP", DBR_STRING, "@");
+
+    prec = (xRecord *) testdbRecordPtr("eINST_IO2");
+    plink = &prec->inp;
+    testOk1(plink->type == INST_IO);
+    testOk1(plink->value.instio.string != NULL);
+
     testIocShutdownOk();
 
     testdbCleanup();
@@ -565,7 +578,7 @@ void testJLink(void)
     testIocInitOk();
     eltc(1);
 
-    testNumZ(3);
+    testNumZ(6);
 
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
     testdbPutFieldOk("j2.PROC", DBF_LONG, 1);
@@ -576,21 +589,31 @@ void testJLink(void)
     testdbGetFieldEqual("j2.VAL", DBF_LONG, 2);
     testdbGetFieldEqual("j3.VAL", DBF_LONG, 3);
 
-    testNumZ(3);
+    testNumZ(6);
 
     testdbPutFieldOk("j1.INP", DBF_STRING, "{\"z\":{\"good\":4}}");
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
 
-    testNumZ(3);
+    testdbPutFieldOk("j2.TSEL", DBF_STRING, "{\"z\":{\"good\":0}}");
+    testdbPutFieldOk("j2.PROC", DBF_LONG, 1);
+
+    testNumZ(7);
 
     testdbPutFieldFail(S_dbLib_badField, "j1.INP", DBF_STRING, "{\"z\":{\"fail\":5}}");
+    testdbPutFieldFail(S_dbLib_badField, "j1.INP", DBF_STRING, "{\"z\":{\"good\":6}");
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
-    /* put failure in parsing stage doesn't modify link */
+    /* put failures in parsing stage don't modify link */
     testdbGetFieldEqual("j1.INP", DBF_STRING, "{\"z\":{\"good\":4}}");
 
-    testNumZ(3);
+    testNumZ(7);
+
+    /* Check SDIS using a JSON link prevents processing */
+    testdbPutFieldOk("j1.SDIS", DBF_STRING, "{\"z\":{\"good\":1}}");
+    testdbPutFieldOk("j1.INP", DBF_STRING, "{\"z\":{\"good\":1}}");
+    testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
 
     testIocShutdownOk();
 
@@ -599,9 +622,81 @@ void testJLink(void)
     testdbCleanup();
 }
 
+static
+void testTSEL(void)
+{
+    dbCommon *rec[2];
+    dbLocker *locker;
+
+    testDiag("Test TSEL link to .TIME");
+
+    testdbPrepare();
+
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("dbPutLinkTest.db", NULL, NULL);
+
+    rec[0] = testdbRecordPtr("time:one");
+    rec[1] = testdbRecordPtr("time:two");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    locker = dbLockerAlloc(rec, NELEMENTS(rec), 0);
+    if(!locker)
+        testAbort("dbLockerAlloc() fails");
+
+    testdbPutFieldOk("time:one.PROC", DBF_LONG, 1);
+
+    /* wait a bit so that we would get different timestamps */
+    epicsThreadSleep(0.001);
+
+    testdbPutFieldOk("time:two.PROC", DBF_LONG, 1);
+
+#define COMPARE(MSG, C, TS1, TS2) testOk((C)^((TS1)->secPastEpoch == (TS2)->secPastEpoch && (TS1)->nsec == (TS2)->nsec), \
+    MSG " %u:%u == %u:%u", (unsigned)(TS1)->secPastEpoch, (unsigned)(TS1)->nsec, \
+            (unsigned)(TS2)->secPastEpoch, (unsigned)(TS2)->nsec)
+
+    testDiag("Check initially connected TSEL link");
+    dbScanLockMany(locker);
+    COMPARE("first", 0, &rec[0]->time, &rec[1]->time);
+    testOk1(rec[1]->tsel.flags & DBLINK_FLAG_TSELisTIME);
+    dbScanUnlockMany(locker);
+
+    testdbPutFieldOk("time:two.TSEL", DBF_STRING, "");
+
+    testdbPutFieldOk("time:two.PROC", DBF_LONG, 1);
+
+    testDiag("Check no TSEL link");
+    dbScanLockMany(locker);
+    COMPARE("second", 1, &rec[0]->time, &rec[1]->time);
+    testOk1(!(rec[1]->tsel.flags & DBLINK_FLAG_TSELisTIME));
+    dbScanUnlockMany(locker);
+
+    testdbPutFieldOk("time:two.TSEL", DBF_STRING, "time:one.TIME");
+
+    testdbPutFieldOk("time:two.PROC", DBF_LONG, 1);
+
+    testDiag("Check re-connected TSEL link");
+    dbScanLockMany(locker);
+    COMPARE("third", 0, &rec[0]->time, &rec[1]->time);
+    testOk1(rec[1]->tsel.flags & DBLINK_FLAG_TSELisTIME);
+    dbScanUnlockMany(locker);
+
+    dbLockerFree(locker);
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+#undef COMPARE
+}
+
 MAIN(dbPutLinkTest)
 {
-    testPlan(301);
+    testPlan(337);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();
@@ -610,5 +705,6 @@ MAIN(dbPutLinkTest)
     testLinkInitFail();
     testLinkFail();
     testJLink();
+    testTSEL();
     return testDone();
 }

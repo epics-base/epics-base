@@ -8,7 +8,7 @@
 #*************************************************************************
 recordtype(mbboDirect) {
     include "dbCommon.dbd" 
-    field(VAL,DBF_USHORT) {
+    field(VAL,DBF_LONG) {
         prompt("Word")
         promptgroup("50 - Output")
         asl(ASL0)
@@ -37,6 +37,72 @@ recordtype(mbboDirect) {
         prompt("Output Specification")
         promptgroup("50 - Output")
         interest(1)
+    }
+    field(RVAL,DBF_ULONG) {
+        prompt("Raw Value")
+        special(SPC_NOMOD)
+        pp(TRUE)
+    }
+    field(ORAW,DBF_ULONG) {
+        prompt("Prev Raw Value")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(RBV,DBF_ULONG) {
+        prompt("Readback Value")
+        special(SPC_NOMOD)
+    }
+    field(ORBV,DBF_ULONG) {
+        prompt("Prev Readback Value")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(MASK,DBF_ULONG) {
+        prompt("Hardware Mask")
+        special(SPC_NOMOD)
+        interest(1)
+    }
+    field(MLST,DBF_LONG) {
+        prompt("Last Value Monitored")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(SHFT,DBF_USHORT) {
+        prompt("Shift")
+        promptgroup("50 - Output")
+        interest(1)
+    }
+    field(SIOL,DBF_OUTLINK) {
+        prompt("Sim Output Specifctn")
+        promptgroup("90 - Simulate")
+        interest(1)
+    }
+    field(SIML,DBF_INLINK) {
+        prompt("Sim Mode Location")
+        promptgroup("90 - Simulate")
+        interest(1)
+    }
+    field(SIMM,DBF_MENU) {
+        prompt("Simulation Mode")
+        interest(1)
+        menu(menuYesNo)
+    }
+    field(SIMS,DBF_MENU) {
+        prompt("Sim mode Alarm Svrty")
+        promptgroup("90 - Simulate")
+        interest(2)
+        menu(menuAlarmSevr)
+    }
+    field(IVOA,DBF_MENU) {
+        prompt("INVALID outpt action")
+        promptgroup("50 - Output")
+        interest(2)
+        menu(menuIvoa)
+    }
+    field(IVOV,DBF_LONG) {
+        prompt("INVALID output value")
+        promptgroup("50 - Output")
+        interest(2)
     }
     field(B0,DBF_UCHAR) {
         prompt("Bit 0")
@@ -96,124 +162,170 @@ recordtype(mbboDirect) {
     }
     field(B8,DBF_UCHAR) {
         prompt("Bit 8")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-15")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(B9,DBF_UCHAR) {
         prompt("Bit 9")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-15")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BA,DBF_UCHAR) {
         prompt("Bit 10")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-15")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BB,DBF_UCHAR) {
         prompt("Bit 11")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-15")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BC,DBF_UCHAR) {
         prompt("Bit 12")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-15")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BD,DBF_UCHAR) {
         prompt("Bit 13")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-15")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BE,DBF_UCHAR) {
         prompt("Bit 14")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-15")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
     field(BF,DBF_UCHAR) {
         prompt("Bit 15")
-        promptgroup("52 - Output 9-F")
+        promptgroup("52 - Output 8-15")
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
     }
-    field(RVAL,DBF_ULONG) {
-        prompt("Raw Value")
-        special(SPC_NOMOD)
+    field(B10,DBF_UCHAR) {
+        prompt("Bit 16")
+        promptgroup("53 - Output 16-23")
+        special(SPC_MOD)
         pp(TRUE)
-    }
-    field(ORAW,DBF_ULONG) {
-        prompt("Prev Raw Value")
-        special(SPC_NOMOD)
-        interest(3)
-    }
-    field(RBV,DBF_ULONG) {
-        prompt("Readback Value")
-        special(SPC_NOMOD)
-    }
-    field(ORBV,DBF_ULONG) {
-        prompt("Prev Readback Value")
-        special(SPC_NOMOD)
-        interest(3)
-    }
-    field(MASK,DBF_ULONG) {
-        prompt("Hardware Mask")
-        special(SPC_NOMOD)
         interest(1)
     }
-    field(MLST,DBF_ULONG) {
-        prompt("Last Value Monitored")
-        special(SPC_NOMOD)
-        interest(3)
-    }
-    field(SHFT,DBF_ULONG) {
-        prompt("Shift")
-        promptgroup("50 - Output")
+    field(B11,DBF_UCHAR) {
+        prompt("Bit 17")
+        promptgroup("53 - Output 16-23")
+        special(SPC_MOD)
+        pp(TRUE)
         interest(1)
     }
-    field(SIOL,DBF_OUTLINK) {
-        prompt("Sim Output Specifctn")
-        promptgroup("90 - Simulate")
+    field(B12,DBF_UCHAR) {
+        prompt("Bit 18")
+        promptgroup("53 - Output 16-23")
+        special(SPC_MOD)
+        pp(TRUE)
         interest(1)
     }
-    field(SIML,DBF_INLINK) {
-        prompt("Sim Mode Location")
-        promptgroup("90 - Simulate")
+    field(B13,DBF_UCHAR) {
+        prompt("Bit 19")
+        promptgroup("53 - Output 16-23")
+        special(SPC_MOD)
+        pp(TRUE)
         interest(1)
     }
-    field(SIMM,DBF_MENU) {
-        prompt("Simulation Mode")
+    field(B14,DBF_UCHAR) {
+        prompt("Bit 20")
+        promptgroup("53 - Output 16-23")
+        special(SPC_MOD)
+        pp(TRUE)
         interest(1)
-        menu(menuYesNo)
     }
-    field(SIMS,DBF_MENU) {
-        prompt("Sim mode Alarm Svrty")
-        promptgroup("90 - Simulate")
-        interest(2)
-        menu(menuAlarmSevr)
+    field(B15,DBF_UCHAR) {
+        prompt("Bit 21")
+        promptgroup("53 - Output 16-23")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
     }
-    field(IVOA,DBF_MENU) {
-        prompt("INVALID outpt action")
-        promptgroup("50 - Output")
-        interest(2)
-        menu(menuIvoa)
+    field(B16,DBF_UCHAR) {
+        prompt("Bit 22")
+        promptgroup("53 - Output 16-23")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
     }
-    field(IVOV,DBF_USHORT) {
-        prompt("INVALID output value")
-        promptgroup("50 - Output")
-        interest(2)
+    field(B17,DBF_UCHAR) {
+        prompt("Bit 23")
+        promptgroup("53 - Output 16-23")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B18,DBF_UCHAR) {
+        prompt("Bit 24")
+        promptgroup("54 - Output 24-31")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B19,DBF_UCHAR) {
+        prompt("Bit 25")
+        promptgroup("54 - Output 24-31")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1A,DBF_UCHAR) {
+        prompt("Bit 26")
+        promptgroup("54 - Output 24-31")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1B,DBF_UCHAR) {
+        prompt("Bit 27")
+        promptgroup("54 - Output 24-31")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1C,DBF_UCHAR) {
+        prompt("Bit 28")
+        promptgroup("54 - Output 24-31")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1D,DBF_UCHAR) {
+        prompt("Bit 29")
+        promptgroup("54 - Output 24-31")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1E,DBF_UCHAR) {
+        prompt("Bit 30")
+        promptgroup("54 - Output 24-31")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1F,DBF_UCHAR) {
+        prompt("Bit 31")
+        promptgroup("54 - Output 24-31")
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
     }
 }

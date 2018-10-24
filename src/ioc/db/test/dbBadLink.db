@@ -14,3 +14,8 @@ record(x, "eINST_IO") {
   field(DTYP, "Unit Test INST_IO")
   field(INP, "hello")
 }
+
+record(x, "eINST_IO2") {
+  field(DTYP, "Unit Test INST_IO")
+  field(INP, "RL @no")
+}

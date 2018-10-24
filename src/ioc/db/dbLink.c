@@ -49,7 +49,7 @@
 #include "special.h"
 
 /* How to identify links in error messages */
-static const char * link_field_name(const struct link *plink)
+const char * dbLinkFieldName(const struct link *plink)
 {
     const struct dbCommon *precord = plink->precord;
     const dbRecordType *pdbRecordType = precord->rdes;
@@ -64,6 +64,26 @@ static const char * link_field_name(const struct link *plink)
             return pdbFldDes->name;
     }
     return "????";
+}
+
+/* Special TSEL handler for PV links */
+/* FIXME: Generalize for new link types... */
+static void TSEL_modified(struct link *plink)
+{
+    struct pv_link *ppv_link;
+    char *pfieldname;
+
+    if (plink->type != PV_LINK) {
+        errlogPrintf("dbLink::TSEL_modified called for non PV_LINK\n");
+        return;
+    }
+    /* If pvname contains .TIME truncate it to point to VAL instead */
+    ppv_link = &plink->value.pv_link;
+    pfieldname = strstr(ppv_link->pvname, ".TIME");
+    if (pfieldname) {
+        *pfieldname = 0;
+        plink->flags |= DBLINK_FLAG_TSELisTIME;
+    }
 }
 
 
@@ -93,7 +113,7 @@ void dbInitLink(struct link *plink, short dbfType)
         return;
 
     if (plink == &precord->tsel)
-        recGblTSELwasModified(plink);
+        TSEL_modified(plink);
 
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
         /* Make it a DB link if possible */
@@ -116,7 +136,7 @@ void dbInitLink(struct link *plink, short dbfType)
             errlogPrintf("Forward-link uses Channel Access "
                 "without pointing to PROC field\n"
                 "    %s.%s => %s\n",
-                precord->name, link_field_name(plink),
+                precord->name, dbLinkFieldName(plink),
                 plink->value.pv_link.pvname);
         }
     }
@@ -126,6 +146,9 @@ void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
     DBADDR *ptarget)
 {
     struct dbCommon *precord = plink->precord;
+
+    /* Clear old TSELisTIME flag */
+    plink->flags &= ~DBLINK_FLAG_TSELisTIME;
 
     if (plink->type == CONSTANT) {
         dbConstAddLink(plink);
@@ -145,7 +168,7 @@ void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
         return;
 
     if (plink == &precord->tsel)
-        recGblTSELwasModified(plink);
+        TSEL_modified(plink);
 
     if (ptarget) {
         /* It's a DB link */
@@ -242,8 +265,19 @@ int dbIsLinkConnected(const struct link *plink)
 {
     lset *plset = plink->lset;
 
-    if (!plset || !plset->isConnected)
+    if (!plset)
         return FALSE;
+    if (!plset->isVolatile)
+        return TRUE;
+
+    if (!plset->isConnected) {
+        struct dbCommon *precord = plink->precord;
+
+        errlogPrintf("dbLink: Link type for '%s.%s' is volatile but has no"
+            " lset::isConnected() method\n",
+            precord->name, dbLinkFieldName(plink));
+        return FALSE;
+    }
 
     return plset->isConnected(plink);
 }
@@ -470,4 +504,3 @@ long dbPutLinkLS(struct link *plink, char *pbuffer, epicsUInt32 len)
 
     return dbPutLink(plink, DBR_STRING, pbuffer, 1);
 }
-

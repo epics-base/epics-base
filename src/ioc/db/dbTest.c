@@ -42,12 +42,13 @@
 #include "special.h"
 
 #define MAXLINE 80
+#define MAXMESS 128
 struct msgBuff {    /* line output structure */
     char            out_buff[MAXLINE + 1];
     char           *pNext;
     char           *pLast;
     char           *pNexTab;
-    char            message[128];
+    char            message[MAXMESS];
 };
 typedef struct msgBuff TAB_BUFFER;
 
@@ -257,7 +258,30 @@ long dbla(const char *pmask)
     dbFinishEntry(pdbentry);
     return 0;
 }
+
+long dbli(const char *pattern)
+{
+    DBENTRY dbentry;
+    void* ptr;
 
+    if (!pdbbase) {
+        printf("No database loaded\n");
+        return 0;
+    }
+
+    dbInitEntry(pdbbase, &dbentry);
+    while (dbNextMatchingInfo(&dbentry, pattern) == 0)
+    {
+        printf("%s info(%s, \"%s\"", dbGetRecordName(&dbentry),
+            dbGetInfoName(&dbentry), dbGetInfoString(&dbentry));
+        if ((ptr = dbGetInfoPointer(&dbentry)) != NULL)
+            printf(", %p", ptr);
+        printf(")\n");
+    }
+    dbFinishEntry(&dbentry);
+    return 0;
+}
+
 long dbgrep(const char *pmask)
 {
     DBENTRY dbentry;
@@ -309,6 +333,11 @@ long dbgf(const char *pname)
     if (nameToAddr(pname, &addr))
         return -1;
 
+    if (addr.precord->lset == NULL) {
+        printf("dbgf only works after iocInit\n");
+        return -1;
+    }
+
     no_elements = MIN(addr.no_elements, sizeof(buffer)/addr.field_size);
     if (addr.dbr_field_type == DBR_ENUM) {
         long status = dbGetField(&addr, DBR_STRING, pbuffer,
@@ -344,6 +373,11 @@ long dbpf(const char *pname,const char *pvalue)
 
     if (nameToAddr(pname, &addr))
         return -1;
+
+    if (addr.precord->lset == NULL) {
+        printf("dbpf only works after iocInit\n");
+        return -1;
+    }
 
     if (addr.no_elements > 1 &&
         (addr.dbr_field_type == DBR_CHAR || addr.dbr_field_type == DBR_UCHAR)) {
@@ -399,6 +433,11 @@ long dbtr(const char *pname)
     if (nameToAddr(pname, &addr))
         return -1;
 
+    if (addr.precord->lset == NULL) {
+        printf("dbtr only works after iocInit\n");
+        return -1;
+    }
+
     precord = (struct dbCommon*)addr.precord;
     if (precord->pact) {
         printf("record active\n");
@@ -437,6 +476,11 @@ long dbtgf(const char *pname)
 
     if (nameToAddr(pname, &addr))
         return -1;
+
+    if (addr.precord->lset == NULL) {
+        printf("dbtgf only works after iocInit\n");
+        return -1;
+    }
 
     /* try all options first */
     req_options = 0xffffffff;
@@ -533,6 +577,11 @@ long dbtpf(const char *pname, const char *pvalue)
     }
     if (nameToAddr(pname, &addr))
         return -1;
+
+    if (addr.precord->lset == NULL) {
+        printf("dbtpf only works after iocInit\n");
+        return -1;
+    }
 
     for (put_type = DBR_STRING; put_type <= DBF_ENUM; put_type++) {
         union {
@@ -795,7 +844,7 @@ static void printBuffer(
 
             printf("no_strs = %u:\n",
                 pdbr_enumStrs->no_str);
-            for (i = 0; i < pdbr_enumStrs->no_str; i++) 
+            for (i = 0; i < pdbr_enumStrs->no_str; i++)
                 printf("\t\"%s\"\n", pdbr_enumStrs->strs[i]);
         }
         else {
@@ -938,7 +987,7 @@ static void printBuffer(
                     int chunk = (len > MAXLINE - 5) ? MAXLINE - 5 : len;
 
                     sprintf(pmsg, "\"%.*s\"", chunk, (char *)pbuffer + i);
-                    len -= chunk;
+                    len -= chunk; i += chunk;
                     if (len > 0)
                         strcat(pmsg, " +");
                     dbpr_msgOut(pMsgBuff, tab_size);
@@ -1104,7 +1153,7 @@ static int dbpr_report(
         case DBF_DEVICE:
             status = dbFindField(pdbentry,pfield_name);
             pfield_value = dbGetString(pdbentry);
-            sprintf(pmsg, "%s: %s", pfield_name,
+            sprintf(pmsg, "%-4s: %s", pfield_name,
                 (pfield_value ? pfield_value : "<nil>"));
             dbpr_msgOut(pMsgBuff, tab_size);
             break;
@@ -1114,19 +1163,18 @@ static int dbpr_report(
         case DBF_FWDLINK: {
                 DBLINK  *plink = (DBLINK *)pfield;
                 int     ind;
+                const char *type = "LINK";
 
                 status = dbFindField(pdbentry,pfield_name);
-                for (ind=0; ind<LINK_NTYPES; ind++) {
-                    if (pamaplinkType[ind].value == plink->type)
-                        break;
-                }
-                if (ind>=LINK_NTYPES) {
-                    sprintf(pmsg,"%s: Illegal Link Type", pfield_name);
-                }
-                else {
-                    sprintf(pmsg,"%s:%s %s", pfield_name,
-                        pamaplinkType[ind].strvalue,dbGetString(pdbentry));
-                }
+                if (!plink->text)
+                    for (ind=0; ind<LINK_NTYPES; ind++) {
+                        if (pamaplinkType[ind].value == plink->type) {
+                            type = pamaplinkType[ind].strvalue;
+                            break;
+                        }
+                    }
+                epicsSnprintf(pmsg, MAXMESS, "%-4s: %s %s", pfield_name,
+                    type, dbGetString(pdbentry));
                 dbpr_msgOut(pMsgBuff, tab_size);
             }
             break;
@@ -1137,13 +1185,21 @@ static int dbpr_report(
                 char time_buf[40];
                 epicsTimeToStrftime(time_buf, 40, "%Y-%m-%d %H:%M:%S.%09f",
                     &paddr->precord->time);
-                sprintf(pmsg, "%s: %s", pfield_name, time_buf);
+                sprintf(pmsg, "%-4s: %s", pfield_name, time_buf);
                 dbpr_msgOut(pMsgBuff, tab_size);
             }
             else if (pdbFldDes->size == sizeof(void *) &&
                 strchr(pdbFldDes->extra, '*')) {
-                /* Special for pointers, needed on little-endian CPUs */
-                sprintf(pmsg, "%s: %p", pfield_name, *(void **)pfield);
+                /* Special for pointers */
+                sprintf(pmsg, "%-4s: PTR %p", pfield_name, *(void **)pfield);
+                dbpr_msgOut(pMsgBuff, tab_size);
+            }
+            else if (pdbFldDes->size == sizeof(ELLLIST) &&
+                !strncmp(pdbFldDes->extra, "ELLLIST", 7)) {
+                /* Special for linked lists */
+                ELLLIST *plist = (ELLLIST *)pfield;
+                sprintf(pmsg, "%-4s: ELL %d [%p .. %p]", pfield_name,
+                    ellCount(plist), ellFirst(plist), ellLast(plist));
                 dbpr_msgOut(pMsgBuff, tab_size);
             }
             else { /* just print field as hex bytes */
@@ -1159,7 +1215,7 @@ static int dbpr_report(
                         value = (unsigned int)*pchar;
                         sprintf(ptemp_buf, "%02x ", value);
                 }
-                sprintf(pmsg, "%s: %s", pfield_name,temp_buf);
+                sprintf(pmsg, "%-4s: %s", pfield_name,temp_buf);
                 dbpr_msgOut(pMsgBuff, tab_size);
             }
             break;

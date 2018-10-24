@@ -23,6 +23,7 @@
 #include "dbDefs.h"
 #include "dbAccess.h"
 #include "dbConstLink.h"
+#include "dbEvent.h"
 #include "recGbl.h"
 #include "devSup.h"
 #include "cantProceed.h"
@@ -96,11 +97,15 @@ static long readLocked(struct link *pinp, void *dummy)
 
 static long read_aai(aaiRecord *prec)
 {
+    epicsUInt32 nord = prec->nord;
     struct link *pinp = prec->simm == menuYesNoYES ? &prec->siol : &prec->inp;
     long status = dbLinkDoLocked(pinp, readLocked, NULL);
 
     if (status == S_db_noLSET)
         status = readLocked(pinp, NULL);
+
+    if (!status && nord != prec->nord)
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
 
     return status;
 }

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      Author  Jeffrey O. Hill
@@ -26,33 +26,39 @@
 #include "casAsyncIOI.h"
 #include "casMonitor.h"
 
-casPVI::casPVI ( casPV & intf ) : 
-	pCAS ( NULL ), pPV ( & intf ), nMonAttached ( 0u ), 
+
+// Use casErrMessage instead of errMessage to show PV name
+#define casErrMessage(S, PM) \
+         errPrintf(S, __FILE__, __LINE__, ", %s, %s", getName(), PM)
+
+casPVI::casPVI ( casPV & intf ) :
+	pCAS ( NULL ), pPV ( & intf ), nMonAttached ( 0u ),
         nIOAttached ( 0u ), deletePending ( false ) {}
 
 casPVI::~casPVI ()
 {
-	//
-	// all channels should have been destroyed 
-    // (otherwise the server tool is yanking the 
+    //
+    // all channels should have been destroyed
+    // (otherwise the server tool is yanking the
     // PV out from under the server)
-	//
-	casVerify ( this->chanList.count() == 0u );
+    //
+    casVerify ( this->chanList.count() == 0u );
 
-	//
-	// all outstanding IO should have been deleted
-	// when we destroyed the channels
-	//
-	casVerify ( this->nIOAttached == 0u );
+    //
+    // all outstanding IO should have been deleted
+    // when we destroyed the channels
+    //
+    casVerify ( this->nIOAttached == 0u );
     if ( this->nIOAttached ) {
-        errlogPrintf ( "The number of IO objected attached is %u\n", this->nIOAttached );
+        errlogPrintf ( "%u IO objects still attached in destructor\n",
+            this->nIOAttached );
     }
 
-	//
-	// all monitors should have been deleted
-	// when we destroyed the channels
-	//
-	casVerify ( this->nMonAttached == 0u );
+    //
+    // all monitors should have been deleted
+    // when we destroyed the channels
+    //
+    casVerify ( this->nMonAttached == 0u );
 
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
@@ -139,26 +145,26 @@ caStatus casPVI::attachToServer ( caServerI & cas )
 caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    
+
     //
     // create a gdd with the "enum string table" application type
     //
     //	gddArray(int app, aitEnum prim, int dimen, ...);
     gdd * pTmp = new gddScalar ( gddAppType_enums );
     if ( pTmp == NULL ) {
-        errMessage ( S_cas_noMemory, 
+        casErrMessage ( S_cas_noMemory,
             "unable to create gdd for read of application type \"enums\" string"
             " conversion table for enumerated PV" );
         return S_cas_noMemory;
     }
 
-    caStatus status = convertContainerMemberToAtomic ( *pTmp, 
+    caStatus status = convertContainerMemberToAtomic ( *pTmp,
          gddAppType_enums, MAX_ENUM_STATES );
     if ( status != S_cas_success ) {
         pTmp->unreference ();
-        errMessage ( status, 
-            "unable to to config gdd for read of application type \"enums\" string"
-            " conversion table for enumerated PV");
+        casErrMessage ( status,
+            "unable to config gdd for read of application type \"enums\" string"
+            " conversion table for enumerated PV" );
         return status;
     }
 
@@ -169,12 +175,11 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
     if ( status == S_cas_success ) {
         updateEnumStringTableAsyncCompletion ( *pTmp );
 	}
-    else if ( status != S_casApp_asyncCompletion && 
+    else if ( status != S_casApp_asyncCompletion &&
                 status != S_casApp_postponeAsyncIO ) {
-        errPrintf ( status, __FILE__, __LINE__,
-            "- unable to read application type \"enums\" "
-            " (string conversion table) from enumerated native type PV \"%s\"", 
-            this->getName() );
+        casErrMessage ( status,
+            "unable to read application type \"enums\" "
+            " (string conversion table) from enumerated native type PV" );
     }
 
     pTmp->unreference ();
@@ -185,40 +190,39 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
 void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    
+
     if ( resp.isContainer() ) {
-        errMessage ( S_cas_badType, 
-            "application type \"enums\" string conversion table for"
-            " enumerated PV was a container (expected vector of strings)" );
+        casErrMessage ( S_cas_badType,
+            "Invalid \"enums\" string conversion table for"
+            " enumerated PV (container instead of vector of strings)" );
         return;
     }
-    
+
     if  ( resp.dimension() == 0 ) {
         if ( resp.primitiveType() == aitEnumString ) {
             aitString *pStr = (aitString *) resp.dataVoid ();
             if ( ! this->enumStrTbl.setString ( 0, pStr->string() ) ) {
-                errMessage ( S_cas_noMemory, 
+                casErrMessage ( S_cas_noMemory,
                     "no memory to set enumerated PV string cache" );
             }
         }
         else if ( resp.primitiveType() == aitEnumFixedString ) {
             aitFixedString *pStr = (aitFixedString *) resp.dataVoid ();
             if ( ! this->enumStrTbl.setString ( 0, pStr->fixed_string ) ) {
-                errMessage ( S_cas_noMemory, 
+                casErrMessage ( S_cas_noMemory,
                     "no memory to set enumerated PV string cache" );
             }
         }
         else {
-            errPrintf ( S_cas_badType, __FILE__, __LINE__,
+            casErrMessage ( S_cas_badType,
                 "application type \"enums\" string conversion"
-                " table for enumerated PV \"%s\" isnt a string type?",
-                getName() );
+                " table for enumerated PV isnt a string type?" );
         }
     }
     else if ( resp.dimension() == 1 ) {
         gddStatus gdd_status;
         aitIndex index, first, count;
-        
+
         gdd_status = resp.getBound ( 0, first, count );
         assert ( gdd_status == 0 );
 
@@ -232,7 +236,7 @@ void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
             aitString *pStr = (aitString *) resp.dataVoid ();
             for ( index = 0; index<count; index++ ) {
                 if ( ! this->enumStrTbl.setString ( index, pStr[index].string() ) ) {
-                    errMessage ( S_cas_noMemory, 
+                    casErrMessage ( S_cas_noMemory,
                         "no memory to set enumerated PV string cache" );
                 }
             }
@@ -241,19 +245,18 @@ void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
             aitFixedString *pStr = (aitFixedString *) resp.dataVoid ();
             for ( index = 0; index < count; index++ ) {
                 if ( ! this->enumStrTbl.setString ( index, pStr[index].fixed_string ) ) {
-                    errMessage ( S_cas_noMemory, 
+                    casErrMessage ( S_cas_noMemory,
                         "no memory to set enumerated PV string cache" );
                 }
             }
         }
         else {
-            errMessage ( S_cas_badType, 
-                "application type \"enums\" string conversion"
-                " table for enumerated PV isnt a string type?" );
+            casErrMessage( S_cas_badType,
+                "bad \"enums\" string conversion table for enumerated PV" );
         }
     }
     else {
-        errMessage ( S_cas_badType, 
+        casErrMessage ( S_cas_badType,
             "application type \"enums\" string conversion table"
             " for enumerated PV was multi-dimensional"
             " (expected vector of strings)" );
@@ -287,7 +290,7 @@ void casPVI::postEvent ( const casEventMask & select, const gdd & event )
 	}
 }
 
-caStatus casPVI::installMonitor ( 
+caStatus casPVI::installMonitor (
     casMonitor & mon, tsDLList < casMonitor > & monitorList )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -303,14 +306,14 @@ caStatus casPVI::installMonitor (
     }
 }
 
-casMonitor * casPVI::removeMonitor ( 
+casMonitor * casPVI::removeMonitor (
     tsDLList < casMonitor > & list, ca_uint32_t clientIdIn )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     casMonitor * pMon = 0;
 	//
 	// (it is reasonable to do a linear search here because
-	// sane clients will require only one or two monitors 
+	// sane clients will require only one or two monitors
 	// per channel)
 	//
 	tsDLIter < casMonitor > iter = list.firstIter ();
@@ -359,9 +362,9 @@ void casPVI::installChannel ( chanIntfForPV & chan )
     epicsGuard < epicsMutex > guard ( this->mutex );
 	this->chanList.add ( chan );
 }
- 
-void casPVI::removeChannel ( 
-    chanIntfForPV & chan, tsDLList < casMonitor > & src, 
+
+void casPVI::removeChannel (
+    chanIntfForPV & chan, tsDLList < casMonitor > & src,
     tsDLList < casMonitor > & dest )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -380,8 +383,8 @@ void casPVI::clearOutstandingReads ( tsDLList < casAsyncIOI > & ioList )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 
-    // cancel any pending asynchronous IO 
-	tsDLIter < casAsyncIOI > iterIO = 
+    // cancel any pending asynchronous IO
+	tsDLIter < casAsyncIOI > iterIO =
         ioList.firstIter ();
 	while ( iterIO.valid () ) {
 		tsDLIter < casAsyncIOI > tmp = iterIO;
@@ -407,7 +410,7 @@ void casPVI::destroyAllIO ( tsDLList < casAsyncIOI > & ioList )
 	}
 }
 
-void casPVI::installIO ( 
+void casPVI::installIO (
     tsDLList < casAsyncIOI > & ioList, casAsyncIOI & io )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -416,7 +419,7 @@ void casPVI::installIO (
     this->nIOAttached++;
 }
 
-void casPVI::uninstallIO ( 
+void casPVI::uninstallIO (
     tsDLList < casAsyncIOI > & ioList, casAsyncIOI & io )
 {
     {
@@ -517,8 +520,8 @@ aitEnum casPVI::bestExternalType () const
     }
 }
 
-// CA only does 1D arrays for now 
-aitIndex casPVI::nativeCount () 
+// CA only does 1D arrays for now
+aitIndex casPVI::nativeCount ()
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     if ( this->pPV ) {
@@ -542,4 +545,3 @@ const char * casPVI::getName () const
         return "<disconnected>";
     }
 }
-

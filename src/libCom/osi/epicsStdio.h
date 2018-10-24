@@ -34,20 +34,22 @@ extern "C" {
 
 /* Make printf, puts and putchar use *our* version of stdout */
 
-#ifdef printf
-#  undef printf
-#endif /* printf */
-#define printf epicsStdoutPrintf
+#ifndef epicsStdioStdPrintfEtc
+#  ifdef printf
+#    undef printf
+#  endif
+#  define printf epicsStdoutPrintf
 
-#ifdef puts
-#  undef puts
-#endif /* puts */
-#define puts epicsStdoutPuts
+#  ifdef puts
+#    undef puts
+#  endif
+#  define puts epicsStdoutPuts
 
-#ifdef putchar
-#  undef putchar
-#endif /* putchar */
-#define putchar epicsStdoutPutchar
+#  ifdef putchar
+#    undef putchar
+#  endif
+#  define putchar epicsStdoutPutchar
+#endif
 
 epicsShareFunc int epicsShareAPI epicsSnprintf(
     char *str, size_t size, const char *format, ...) EPICS_PRINTF_STYLE(3,4);
@@ -87,6 +89,19 @@ epicsShareFunc int epicsShareAPI epicsStdoutPutchar(int c);
 
 #ifdef  __cplusplus
 }
-#endif
+
+/* Also pull functions into the std namespace (see lp:1786927) */
+#if !defined(__GNUC__) || (__GNUC__ > 2)
+namespace std {
+using ::epicsGetStdin;
+using ::epicsGetStdout;
+using ::epicsGetStderr;
+using ::epicsStdoutPrintf;
+using ::epicsStdoutPuts;
+using ::epicsStdoutPutchar;
+}
+#endif /* __GNUC__ > 2 */
+
+#endif /* __cplusplus */
 
 #endif /* epicsStdioh */

@@ -8,7 +8,7 @@ die() {
 
 CACHEKEY=1
 
-EPICS_HOST_ARCH=`sh startup/EpicsHostArch`
+EPICS_HOST_ARCH=`perl src/tools/EpicsHostArch.pl`
 
 [ -e configure/os/CONFIG_SITE.Common.linux-x86 ] || die "Wrong location: $PWD"
 
@@ -76,5 +76,5 @@ make -j2 $EXTRA
 if [ "$TEST" != "NO" ]
 then
    make tapfiles
-   find . -name '*.tap' -print0 | xargs -0 -n1 prove -e cat -f
+   make -s test-results
 fi

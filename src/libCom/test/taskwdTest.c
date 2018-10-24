@@ -10,6 +10,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "taskwd.h"
 #include "errlog.h"
@@ -17,50 +18,78 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
+/* This is a unique prefix used for the names of the test threads */
+#define baseName "testTask"
 
 void monInsert(void *usr, epicsThreadId tid)
 {
-    testPass("monInsert(tid=%p)", (void *)tid);
+    char tname[32];
+
+    epicsThreadGetName(tid, tname, sizeof(tname));
+    if (strncmp(tname, baseName, strlen(baseName)) == 0)
+        testPass("monInsert(thread='%s')", tname);
+    else
+        testDiag("monInsert(thread='%s')", tname);
 }
 
 void monNotify(void *usr, epicsThreadId tid, int suspended)
 {
-    testPass("monNotify(tid=%p, suspended=%d)", (void *)tid, suspended);
+    char tname[32];
+
+    epicsThreadGetName(tid, tname, sizeof(tname));
+    testPass("monNotify(thread='%s', suspended=%d)", tname, suspended);
     epicsThreadResume(tid);
 }
 
 void monRemove(void *usr, epicsThreadId tid)
 {
-    testPass("monRemove(tid=%p)", (void *)tid);
+    char tname[32];
+
+    epicsThreadGetName(tid, tname, sizeof(tname));
+    if (strncmp(tname, baseName, strlen(baseName)) == 0)
+        testPass("monRemove(thread='%s')", tname);
+    else
+        testDiag("monRemove(thread='%s')", tname);
 }
 
 taskwdMonitor monFuncs = {monInsert, monNotify, monRemove};
 
 void anyNotify(void *usr, epicsThreadId tid)
 {
-    testPass("anyNotify(tid=%p)", (void *)tid);
+    char tname[32];
+
+    epicsThreadGetName(tid, tname, sizeof(tname));
+    if (strncmp(tname, baseName, strlen(baseName)) == 0)
+        testPass("anyNotify(thread='%s')", tname);
+    else
+        testDiag("anyNotify(thread='%s')", tname);
 }
 
 void taskNotify(void *usr)
 {
-    testPass("taskNotify");
+    const char *id = (const char *) usr;
+
+    testPass("taskNotify id='%s'", id);
 }
 
 void testTask1(void *arg)
 {
-    taskwdInsert(0, taskNotify, NULL);
-    epicsThreadSleep(10.0);
+    taskwdInsert(0, taskNotify, "1");
+    epicsThreadSleep(14.0);
+    testDiag("Task 1 cleaning up");
     taskwdRemove(0);
 }
 
 void testTask2(void *arg)
 {
-    taskwdInsert(0, taskNotify, NULL);
-    testDiag("Task suspending");
+    taskwdInsert(0, taskNotify, "2");
+    epicsThreadSleep(1.0);
+    testDiag("Task 2 suspending");
     epicsThreadSuspendSelf();
     epicsThreadSleep(1.0);
-    testDiag("Alive again");
-    epicsThreadSleep(10.0);
+    testDiag("Task 2 alive again");
+    epicsThreadSleep(6.0);
+    testDiag("Task 2 cleaning up");
     taskwdRemove(0);
 }
 
@@ -73,12 +102,12 @@ MAIN(taskwdTest)
     taskwdMonitorAdd(&monFuncs, NULL);
     taskwdAnyInsert(NULL, anyNotify, NULL);
 
-    epicsThreadCreate("testTask1", epicsThreadPriorityMax,
+    epicsThreadCreate(baseName "1", epicsThreadPriorityMax,
         epicsThreadGetStackSize(epicsThreadStackSmall),
         testTask1, NULL);
     epicsThreadSleep(1.0);
 
-    epicsThreadCreate("testTask2", epicsThreadPriorityMax,
+    epicsThreadCreate(baseName "2", epicsThreadPriorityMax,
         epicsThreadGetStackSize(epicsThreadStackSmall),
         testTask2, NULL);
 
@@ -91,4 +120,3 @@ MAIN(taskwdTest)
     eltc(1);
     return testDone();
 }
-

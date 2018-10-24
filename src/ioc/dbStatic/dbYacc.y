@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 %{
 static int yyerror();
@@ -97,7 +97,7 @@ choice:	tokenCHOICE '(' tokenSTRING ',' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("choice %s %s\n",$3,$5);
 	dbMenuChoice($3,$5); dbmfFree($3); dbmfFree($5);
-} 
+}
 	| include;
 
 recordtype_head: '(' tokenSTRING ')'
@@ -139,12 +139,12 @@ recordtype_field_body:	'{' recordtype_field_item_list '}' ;
 recordtype_field_item_list:  recordtype_field_item_list recordtype_field_item
 	| recordtype_field_item;
 
-recordtype_field_item:	tokenSTRING '(' tokenSTRING ')' 
+recordtype_field_item:	tokenSTRING '(' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("recordtype_field_item %s %s\n",$1,$3);
 	dbRecordtypeFieldItem($1,$3); dbmfFree($1); dbmfFree($3);
 }
-	| tokenMENU '(' tokenSTRING ')' 
+	| tokenMENU '(' tokenSTRING ')'
 {
 
 	if(dbStaticDebug>2) printf("recordtype_field_item %s (%s)\n","menu",$3);
@@ -154,7 +154,7 @@ recordtype_field_item:	tokenSTRING '(' tokenSTRING ')'
 
 device: tokenDEVICE '('
 	tokenSTRING ',' tokenSTRING ',' tokenSTRING ',' tokenSTRING ')'
-{ 
+{
 	if(dbStaticDebug>2) printf("device %s %s %s %s\n",$3,$5,$7,$9);
 	dbDevice($3,$5,$7,$9);
 	dbmfFree($3); dbmfFree($5);
@@ -290,6 +290,7 @@ json_object: '{' '}'
 };
 
 json_members: json_pair
+	| json_pair ','
 	| json_pair ',' json_members
 {
 	$$ = dbmfStrcat3($1, ",", $3);
@@ -325,6 +326,14 @@ json_array: '[' ']'
 };
 
 json_elements: json_value
+	| json_value ','
+{	/* Retain the trailing ',' so link parser can distinguish a
+	 * 1-element const list from a PV name (commas are illegal)
+	 */
+	$$ = dbmfStrcat3($1, ",", "");
+	dbmfFree($1);
+	if (dbStaticDebug>2) printf("json %s\n", $$);
+};
 	| json_value ',' json_elements
 {
 	$$ = dbmfStrcat3($1, ",", $3);
@@ -342,7 +351,7 @@ json_value: jsonNULL	{ $$ = dbmfStrdup("null"); }
 
 
 %%
- 
+
 #include "dbLex.c"
 
 
@@ -363,7 +372,7 @@ static long pvt_yy_parse(void)
 {
     static int	FirstFlag = 1;
     long	rtnval;
- 
+
     if (!FirstFlag) {
 	yyAbort = FALSE;
 	yyFailed = FALSE;

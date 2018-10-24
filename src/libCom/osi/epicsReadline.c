@@ -1,11 +1,11 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
-* Copyright (c) 2014 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2015 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* Author:  Eric Norum Date: 12DEC2001 */
+/* Author: Eric Norum */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,8 +15,15 @@
 #include "envDefs.h"
 #include "epicsReadline.h"
 
+/* Basic command-line input, no editing or history: */
 #define EPICS_COMMANDLINE_LIBRARY_EPICS     0
+
+/*  OS-specific command-line editing and/or history: */
 #define EPICS_COMMANDLINE_LIBRARY_LIBTECLA  1
+#define EPICS_COMMANDLINE_LIBRARY_LEDLIB    1
+#define EPICS_COMMANDLINE_LIBRARY_OTHER     1
+
+/* GNU readline, or Apple's libedit wrapper: */
 #define EPICS_COMMANDLINE_LIBRARY_READLINE  2
 #define EPICS_COMMANDLINE_LIBRARY_READLINE_CURSES  2
 #define EPICS_COMMANDLINE_LIBRARY_READLINE_NCURSES 2
@@ -38,18 +45,17 @@ static void osdReadlineEnd(struct readlineContext *);
 
 #if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_EPICS
 
-static void osdReadlineBegin(struct readlineContext * c) {}
-static char * osdReadline(const char *prompt, struct readlineContext * c) { return NULL; }
-static void osdReadlineEnd(struct readlineContext * c) {}
+static void osdReadlineBegin(struct readlineContext *rc) {}
+static char * osdReadline(const char *prompt, struct readlineContext *rc)
+{
+    return NULL;
+}
+static void osdReadlineEnd(struct readlineContext *rc) {}
 
+#elif EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
+#  include "gnuReadline.c"
 #else
-
-#  if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
-#    include "gnuReadline.c"
-#  else
-#    include "osdReadline.c"
-#  endif
-
+#  include "osdReadline.c"
 #endif
 
 /*
@@ -58,15 +64,15 @@ static void osdReadlineEnd(struct readlineContext * c) {}
 void * epicsShareAPI
 epicsReadlineBegin(FILE *in)
 {
-    struct readlineContext *readlineContext = calloc(1, sizeof(*readlineContext));
+    struct readlineContext *rc = calloc(1, sizeof(*rc));
 
-    if (readlineContext) {
-        readlineContext->in = in;
-        readlineContext->line = NULL;
+    if (rc) {
+        rc->in = in;
+        rc->line = NULL;
         if (!envGetConfigParamPtr(&IOCSH_HISTEDIT_DISABLE))
-            osdReadlineBegin(readlineContext);
+            osdReadlineBegin(rc);
     }
-    return readlineContext;
+    return rc;
 }
 
 /*
@@ -75,19 +81,19 @@ epicsReadlineBegin(FILE *in)
 char * epicsShareAPI
 epicsReadline (const char *prompt, void *context)
 {
-    struct readlineContext *readlineContext = context;
+    struct readlineContext *rc = context;
     FILE *in;
     char *line;
     int c;      /* char is unsigned on some archs, EOF is -ve */
     int linelen = 0;
     int linesize = 50;
 
-    if (readlineContext->osd)
-        return osdReadline(prompt, readlineContext);
+    if (rc->osd)
+        return osdReadline(prompt, rc);
 
-    free(readlineContext->line);
-    readlineContext->line = NULL;
-    if ((in = readlineContext->in) == NULL) {
+    free(rc->line);
+    rc->line = NULL;
+    if ((in = rc->in) == NULL) {
         in = stdin;
         if (prompt) {
             fputs(prompt, stdout);
@@ -125,7 +131,7 @@ epicsReadline (const char *prompt, void *context)
         line[linelen++] = c;
     }
     line[linelen] = '\0';
-    readlineContext->line = line;
+    rc->line = line;
     return line;
 }
 
@@ -136,13 +142,13 @@ void epicsShareAPI
 epicsReadlineEnd (void *context)
 {
     if (context) {
-        struct readlineContext *readlineContext = context;
+        struct readlineContext *rc = context;
 
-	if (readlineContext->osd)
-	    osdReadlineEnd(readlineContext);
-	else
-            free(readlineContext->line);
-        free(readlineContext);
+        if (rc->osd)
+            osdReadlineEnd(rc);
+        else
+            free(rc->line);
+        free(rc);
     }
 }
 

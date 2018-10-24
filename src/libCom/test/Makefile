@@ -12,6 +12,7 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
 PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
+PROD_SYS_LIBS_solaris += socket nsl
 
 PROD_SRCS_RTEMS += rtemsTestData.c
 
@@ -55,8 +56,6 @@ TESTS += epicsMathTest
 
 TESTPROD_HOST += epicsMMIOTest
 epicsMMIOTest_SRCS += epicsMMIOTest.c
-epicsMMIOTest_SYS_LIBS_solaris = socket
-epicsMMIOTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsMMIOTest.c
 TESTS += epicsMMIOTest
 
@@ -70,10 +69,13 @@ epicsEnvTest_SRCS += epicsEnvTest.c
 testHarness_SRCS += epicsEnvTest.c
 TESTS += epicsEnvTest
 
+TESTPROD_HOST += epicsEnvUnsetTest
+epicsEnvUnsetTest_SRCS += epicsEnvUnsetTest.c
+testHarness_SRCS += epicsEnvUnsetTest.c
+TESTS += epicsEnvUnsetTest
+
 TESTPROD_HOST += epicsErrlogTest
 epicsErrlogTest_SRCS += epicsErrlogTest.c
-epicsErrlogTest_SYS_LIBS_solaris = socket
-epicsErrlogTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsErrlogTest.c
 TESTS += epicsErrlogTest
 
@@ -89,8 +91,6 @@ TESTS += epicsStdlibTest
 
 TESTPROD_HOST += epicsSockResolveTest
 epicsSockResolveTest_SRCS += epicsSockResolveTest.c
-epicsSockResolveTest_SYS_LIBS_solaris = socket
-epicsSockResolveTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsSockResolveTest.c
 TESTS += epicsSockResolveTest
 
@@ -202,9 +202,6 @@ TESTS += taskwdTest
 TESTPROD_HOST += blockingSockTest
 blockingSockTest_SRCS += blockingSockTest.cpp
 testHarness_SRCS += blockingSockTest.cpp
-# needed when its an object library build
-blockingSockTest_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
-blockingSockTest_SYS_LIBS_solaris = socket
 TESTS += blockingSockTest
 
 TESTPROD_HOST += epicsMessageQueueTest
@@ -221,6 +218,18 @@ TESTPROD_HOST += ipAddrToAsciiTest
 ipAddrToAsciiTest_SRCS += ipAddrToAsciiTest.cpp
 testHarness_SRCS += ipAddrToAsciiTest.cpp
 TESTS += ipAddrToAsciiTest
+
+TESTPROD_HOST += osiSockTest
+osiSockTest_SRCS += osiSockTest.c
+testHarness_SRCS += osiSockTest.c
+TESTS += osiSockTest
+
+ifneq ($(OS_CLASS),WIN32)
+# This test can only be run on a build host, and is broken on Windows
+TESTPROD_HOST += yajl_test
+yajl_test_SRCS += yajl_test.c
+TESTS += yajlTest
+endif
 
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c
@@ -270,4 +279,3 @@ cvtFastPerform_SRCS += cvtFastPerform.cpp
 testHarness_SRCS += cvtFastPerform.cpp
 
 include $(TOP)/configure/RULES
-

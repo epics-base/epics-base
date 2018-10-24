@@ -246,7 +246,8 @@ static jlif jlifZ = {
     NULL, /* end child */
     &z_lset,
     NULL, /* report */
-    NULL  /* map child */
+    NULL,  /* map child */
+    NULL /* start child */
 };
 
 epicsExportAddress(jlif, jlifZ);

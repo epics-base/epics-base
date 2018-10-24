@@ -72,8 +72,8 @@
 <H3><A NAME="0_0_6"> Software requirements</A></H3>
 
 <BLOCKQUOTE><B>GNU make</B><BR>
- You must use GNU make, gnumake, for any EPICS builds. Set your path
- so that a gnumake version 3.81 or later is available.
+ You must use the GNU version of make for EPICS builds, and we now recommend
+ version 4.1 or later (version 3.82 may work on Linux, but doesn't on Windows).
 
 <P><B>Perl</B><BR>
  You must have Perl version 5.8.1 or later installed. The EPICS configuration
@@ -98,25 +98,25 @@
  base/configure/os/CONFIG_SITE.Common.vxWorksCommon file or in one of its
  target-specific overrides.</P>
 
-<P>Consult the <a href="http://www.aps.anl.gov/epics/base/vxWorks6.php">vxWorks
+<P>Consult the <a href="https://epics.anl.gov/base/vxWorks6.php">vxWorks
  6.x</a> EPICS web pages and the vxWorks documentation for information
  about configuring your vxWorks operating system for use with EPICS.</P>
 
 <P><B>RTEMS</B><BR>
- For RTEMS targets, you need RTEMS core and toolset version 4.9.2 or later.</P>
+ For RTEMS targets, you need RTEMS core and toolset version 4.9.2 or 4.10. The
+ newer 4.11 or 5.x releases are not supported yet.</P>
 
-<P><B>GNU readline or Tecla library</B><BR>
- GNU readline and Tecla libraries can be used by the IOC shell to
- provide command line editing and command line history recall and edit.
- GNU readline (or Tecla library) must be installed on your target system
- when COMMANDLINE_LIBRARY is set to READLINE (or TECLA) for that target.
- EPICS (EPICS shell) is the default specified in CONFIG_COMMON. A
- READLINE override is defined for linux-x86 in the EPICS distribution.
- Comment out COMMANDLINE_LIBRARY=READLINE in
- configure/os/CONFIG_SITE.Common.linux-x86 if readline is not installed
- on linux-x86. Command-line editing and history will then be those
- supplied by the os. On vxWorks the ledLib command-line input library is
- used instead.</P>
+<P><B>Command-line editing libraries</B><BR>
+
+ GNU readline or other OS-specific libraries can be used by the IOC shell to
+ provide command line editing and history recall. The default setting is
+ different for each OS. On Linux the default is to use READLINE since most
+ distributions include it. On MacOS the default is also READLINE since Apple
+ provides a compatible library, although it isn't GNU. On RTEMS we support GNU
+ readline and Tecla, although the default is to use neither since these have to
+ be added to the RTEMS installation separately. On vxWorks we support the
+ built-in ledLib library.</P>
+
 </BLOCKQUOTE>
 
 <H3><A NAME="0_0_7"> Host system storage requirements</A></H3>
@@ -128,7 +128,7 @@
 
 <H3><A NAME="0_0_8"> Documentation</A></H3>
 <BLOCKQUOTE>EPICS documentation is available through the
- <a href="http://www.aps.anl.gov/epics/">EPICS website</a> at Argonne.
+ <a href="https://epics.anl.gov/">EPICS website</a> at Argonne.
  <P>Release specific documentation can also be found in the base/documentation
  directory of the distribution.</BLOCKQUOTE>
 
@@ -176,12 +176,11 @@
 
 <H4>base/startup directory - contains scripts to set environment and path</H4>
 <PRE>
-        EpicsHostArch       C shell script to set EPICS_HOST_ARCH env variable
-        EpicsHostArch.pl    Perl script to set EPICS_HOST_ARCH env variable
-        Site.profile        bourne shell script to set path and env variables
-        Site.cshrc          c shell script to set path and env variables
-        cygwin.bat          WIN32 bat file to set cygwin path and env variables
-        win32.bat           WIN32 bat file to set path and env variables
+        EpicsHostArch       Shell script to set EPICS_HOST_ARCH env variable
+        unix.csh            C shell script to set path and env variables
+        unix.sh             Bourne shell script to set path and env variables
+        win32.bat           Bat file example to configure win32-x86 target
+        windows.bat         Bat file example to configure windows-x64 target
 </PRE>
 
 <H4>base/configure directory - contains build definitions and rules</H4>

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* Author:  Marty Kraimer Date:    13JUL95*/
@@ -169,7 +169,7 @@ static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
     }
     pdbPathNode = (dbPathNode *)ellFirst(ppathList);
     while (pdbPathNode) {
-        fullfilename = dbMalloc(strlen(pdbPathNode->directory) + 
+        fullfilename = dbMalloc(strlen(pdbPathNode->directory) +
             strlen(filename) + 2);
         strcpy(fullfilename, pdbPathNode->directory);
         strcat(fullfilename, "/");
@@ -190,7 +190,7 @@ static void freeInputFileList(void)
     inputFile *pinputFileNow;
 
     while((pinputFileNow=(inputFile *)ellFirst(&inputFileList))) {
-	if(fclose(pinputFileNow->fp)) 
+	if(fclose(pinputFileNow->fp))
 	    errPrintf(0,__FILE__, __LINE__,
 			"Closing file %s",pinputFileNow->filename);
 	free((void *)pinputFileNow->filename);
@@ -215,7 +215,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     inputFile	*pinputFile = NULL;
     char	*penv;
     char	**macPairs;
-    
+
     if(ellCount(&tempList)) {
         epicsPrintf("dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
     }
@@ -341,7 +341,7 @@ static int db_yyinput(char *buf, int max_size)
 {
     size_t  l,n;
     char	*fgetsRtn;
-    
+
     if(yyAbort) return(0);
     if(*my_buffer_ptr==0) {
 	while(TRUE) { /*until we get some input*/
@@ -360,7 +360,7 @@ static int db_yyinput(char *buf, int max_size)
 		fgetsRtn = fgets(my_buffer,MY_BUFFER_SIZE,pinputFileNow->fp);
 	    }
 	    if(fgetsRtn) break;
-	    if(fclose(pinputFileNow->fp)) 
+	    if(fclose(pinputFileNow->fp))
 		errPrintf(0,__FILE__, __LINE__,
 			"Closing file %s",pinputFileNow->filename);
 	    free((void *)pinputFileNow->filename);
@@ -511,7 +511,7 @@ static void dbRecordtypeFieldHead(char *name,char *type)
 {
     dbFldDes		*pdbFldDes;
     int			i;
-    
+
     if(duplicate) return;
     pdbFldDes = dbCalloc(1,sizeof(dbFldDes));
     allocTemp(pdbFldDes);
@@ -544,7 +544,7 @@ static short findOrAddGuiGroup(const char *name)
 static void dbRecordtypeFieldItem(char *name,char *value)
 {
     dbFldDes		*pdbFldDes;
-    
+
     if(duplicate) return;
     pdbFldDes = (dbFldDes *)getLastTemp();
     if(strcmp(name,"asl")==0) {
@@ -636,11 +636,11 @@ static void dbRecordtypeCdef(char *text) {
     dbText		*pdbCdef;
     tempListNode	*ptempListNode;
     dbRecordType	*pdbRecordType;
-    
+
     if (!pdbbase->loadCdefs || duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbRecordType = ptempListNode->item;
-    
+
     pdbCdef = dbCalloc(1,sizeof(dbText));
     if (text[0] == ' ') text++;	/* strip leading space if present */
     pdbCdef->text = epicsStrDup(text);
@@ -699,7 +699,7 @@ static void dbRecordtypeBody(void)
 	if((field_type==DBF_STRING) && (pdbFldDes->size==0))
 	    fprintf(stderr,"recordtype(%s).%s size not specified\n",
 		pdbRecordType->name,pdbFldDes->name);
-	if((field_type==DBF_NOACCESS) && (pdbFldDes->extra==0)) 
+	if((field_type==DBF_NOACCESS) && (pdbFldDes->extra==0))
 	    fprintf(stderr,"recordtype(%s).%s extra not specified\n",
 		pdbRecordType->name,pdbFldDes->name);
     }
@@ -811,7 +811,7 @@ static void dbDriver(char *name)
     pgphentry = gphAdd(pdbbase->pgpHash,pdrvSup->name,&pdbbase->drvList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
-    } 
+    }
     pgphentry->userPvt = pdrvSup;
     ellAdd(&pdbbase->drvList,&pdrvSup->node);
 }
@@ -831,7 +831,7 @@ static void dbLinkType(char *name, char *jlif_name)
     pgphentry = gphAdd(pdbbase->pgpHash, pLinkSup->name, &pdbbase->linkList);
     if (!pgphentry) {
 	yyerrorAbort("gphAdd failed");
-    } 
+    }
     pgphentry->userPvt = pLinkSup;
     ellAdd(&pdbbase->linkList, &pLinkSup->node);
 }
@@ -850,7 +850,7 @@ static void dbRegistrar(char *name)
     pgphentry = gphAdd(pdbbase->pgpHash,ptext->text,&pdbbase->registrarList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
-    } 
+    }
     pgphentry->userPvt = ptext;
     ellAdd(&pdbbase->registrarList,&ptext->node);
 }
@@ -889,7 +889,7 @@ static void dbVariable(char *name, char *type)
     pgphentry = gphAdd(pdbbase->pgpHash,pvar->name,&pdbbase->variableList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
-    } 
+    }
     pgphentry->userPvt = pvar;
     ellAdd(&pdbbase->variableList,&pvar->node);
 }
@@ -948,11 +948,11 @@ static void dbBreakBody(void)
     pnewbrkTable->paBrkInt = paBrkInt = dbCalloc(number, sizeof(brkInt));
     for (i=0; i<number; i++) {
 	char	*str;
-	
+
 	str = (char *)popFirstTemp();
 	(void) epicsScanDouble(str, &paBrkInt[i].raw);
 	free(str);
-	
+
 	str = (char *)popFirstTemp();
 	(void) epicsScanDouble(str, &paBrkInt[i].eng);
 	free(str);
@@ -1064,32 +1064,39 @@ static void dbRecordHead(char *recordType, char *name, int visible)
 
 static void dbRecordField(char *name,char *value)
 {
-    DBENTRY		*pdbentry;
-    tempListNode	*ptempListNode;
-    long		status;
+    DBENTRY *pdbentry;
+    tempListNode *ptempListNode;
+    long status;
 
-    if(duplicate) return;
+    if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
-    if(status) {
-	epicsPrintf("Record \"%s\" does not have a field \"%s\"\n", 
-                    dbGetRecordName(pdbentry), name);
-	yyerror(NULL);
-	return;
+    if (status) {
+        epicsPrintf("Record \"%s\" does not have a field \"%s\"\n",
+            dbGetRecordName(pdbentry), name);
+        yyerror(NULL);
+        return;
+    }
+    if (pdbentry->indfield == 0) {
+        epicsPrintf("Can't set \"NAME\" field of record \"%s\"\n",
+            dbGetRecordName(pdbentry));
+        yyerror(NULL);
+        return;
     }
     if (*value == '"') {
-	/* jsonSTRING values still have their quotes */
+        /* jsonSTRING values still have their quotes */
         value++;
-	value[strlen(value) - 1] = 0;
+        value[strlen(value) - 1] = 0;
     }
     dbTranslateEscape(value, value);    /* in-place; safe & legal */
     status = dbPutString(pdbentry,value);
-    if(status) {
+    if (status) {
         char msg[128];
+
         errSymLookup(status, msg, sizeof(msg));
         epicsPrintf("Can't set \"%s.%s\" to \"%s\" %s\n",
-                    dbGetRecordName(pdbentry), name, value, msg);
+            dbGetRecordName(pdbentry), name, value, msg);
         yyerror(NULL);
         return;
     }
@@ -1097,39 +1104,39 @@ static void dbRecordField(char *name,char *value)
 
 static void dbRecordInfo(char *name, char *value)
 {
-    DBENTRY		*pdbentry;
-    tempListNode	*ptempListNode;
-    long		status;
+    DBENTRY *pdbentry;
+    tempListNode *ptempListNode;
+    long status;
 
-    if(duplicate) return;
+    if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
     if (*value == '"') {
-	/* jsonSTRING values still have their quotes */
+        /* jsonSTRING values still have their quotes */
         value++;
-	value[strlen(value) - 1] = 0;
+        value[strlen(value) - 1] = 0;
     }
     dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutInfo(pdbentry,name,value);
-    if(status) {
-	epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\"\n",
+    if (status) {
+        epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\"\n",
                     dbGetRecordName(pdbentry), name, value);
-	yyerror(NULL);
-	return;
+        yyerror(NULL);
+        return;
     }
 }
 
 static void dbRecordAlias(char *name)
 {
-    DBENTRY		*pdbentry;
-    tempListNode	*ptempListNode;
-    long		status;
+    DBENTRY *pdbentry;
+    tempListNode *ptempListNode;
+    long status;
 
-    if(duplicate) return;
+    if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
     status = dbCreateAlias(pdbentry, name);
-    if(status) {
+    if (status) {
         epicsPrintf("Can't create alias \"%s\" for \"%s\"\n",
                     name, dbGetRecordName(pdbentry));
         yyerror(NULL);
@@ -1139,15 +1146,16 @@ static void dbRecordAlias(char *name)
 
 static void dbAlias(char *name, char *alias)
 {
-    DBENTRY	dbEntry;
-    DBENTRY	*pdbEntry = &dbEntry;
+    DBENTRY dbEntry;
+    DBENTRY *pdbEntry = &dbEntry;
 
     dbInitEntry(pdbbase, pdbEntry);
     if (dbFindRecord(pdbEntry, name)) {
         epicsPrintf("Alias \"%s\" refers to unknown record \"%s\"\n",
                     alias, name);
         yyerror(NULL);
-    } else if (dbCreateAlias(pdbEntry, alias)) {
+    }
+    else if (dbCreateAlias(pdbEntry, alias)) {
         epicsPrintf("Can't create alias \"%s\" referring to \"%s\"\n",
                     alias, name);
         yyerror(NULL);
@@ -1157,14 +1165,14 @@ static void dbAlias(char *name, char *alias)
 
 static void dbRecordBody(void)
 {
-    DBENTRY	*pdbentry;
+    DBENTRY *pdbentry;
 
-    if(duplicate) {
-	duplicate = FALSE;
-	return;
+    if (duplicate) {
+        duplicate = FALSE;
+        return;
     }
     pdbentry = (DBENTRY *)popFirstTemp();
-    if(ellCount(&tempList))
-	yyerrorAbort("dbRecordBody: tempList not empty");
+    if (ellCount(&tempList))
+        yyerrorAbort("dbRecordBody: tempList not empty");
     dbFreeEntry(pdbentry);
 }

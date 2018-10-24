@@ -37,7 +37,7 @@ our %field_attrs = (
     base        => qr/^(?:DECIMAL|HEX)$/,
     size        => qr/^\d+$/,
     extra       => qr/^.*$/,
-    menu        => qr/^$RXident$/o,
+    menu        => qr/^$RXident$/,
     prop        => qr/^(?:YES|NO)$/
 );
 

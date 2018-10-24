@@ -34,7 +34,7 @@
 #include "errlog.h"
 #include "errMdef.h"
 
-#define epicsExportSharedSymbols
+#include "epicsExport.h" /* #define epicsExportSharedSymbols */
 #include "caeventmask.h"
 #include "callback.h"
 #include "dbAccessDefs.h"
@@ -64,6 +64,9 @@
 
 epicsShareDef struct dbBase *pdbbase = 0;
 epicsShareDef volatile int interruptAccept=FALSE;
+
+epicsShareDef int dbAccessDebugPUTF = 0;
+epicsExportAddress(int, dbAccessDebugPUTF);
 
 /* Hook Routines */
 
@@ -293,10 +296,14 @@ static void get_alarm(DBADDR *paddr, char **ppbuffer,
     if (*options & DBR_AL_LONG) {
         struct dbr_alLong *pal = (struct dbr_alLong*) pbuffer;
 
-        pal->upper_alarm_limit   = (epicsInt32) ald.upper_alarm_limit;
-        pal->upper_warning_limit = (epicsInt32) ald.upper_warning_limit;
-        pal->lower_warning_limit = (epicsInt32) ald.lower_warning_limit;
-        pal->lower_alarm_limit   = (epicsInt32) ald.lower_alarm_limit;
+        pal->upper_alarm_limit   = finite(ald.upper_alarm_limit) ?
+            (epicsInt32) ald.upper_alarm_limit : 0;
+        pal->upper_warning_limit = finite(ald.upper_warning_limit) ?
+            (epicsInt32) ald.upper_warning_limit : 0;
+        pal->lower_warning_limit = finite(ald.lower_warning_limit) ?
+            (epicsInt32) ald.lower_warning_limit : 0;
+        pal->lower_alarm_limit   = finite(ald.lower_alarm_limit) ?
+            (epicsInt32) ald.lower_alarm_limit : 0;
 
         if (no_data)
             *options ^= DBR_AL_LONG; /*Turn off option*/
@@ -443,22 +450,6 @@ int dbGetFieldIndex(const struct dbAddr *paddr)
 }
 
 /*
- *  Process a record if its scan field is passive.
- *     Will notify if processing is complete by callback.
- *       (only if you are interested in completion)
- */
-long dbScanPassive(dbCommon *pfrom, dbCommon *pto)
-{
-    /* if not passive just return success */
-    if (pto->scan != 0)
-        return 0;
-
-    if (pfrom && pfrom->ppn)
-        dbNotifyAdd(pfrom,pto);
-    return dbProcess(pto);
-}
-
-/*
  *   Process the record.
  *     1.  Check for breakpoints.
  *     2.  Check the process active flag (PACT).
@@ -523,7 +514,8 @@ long dbProcess(dbCommon *precord)
         unsigned short monitor_mask;
 
         if (*ptrace)
-            printf("%s: Active %s\n", context, precord->name);
+            printf("%s: dbProcess of Active '%s' with RPRO=%d\n",
+                context, precord->name, precord->rpro);
 
         /* raise scan alarm after MAX_LOCK times */
         if ((precord->stat == SCAN_ALARM) ||
@@ -552,7 +544,8 @@ long dbProcess(dbCommon *precord)
     /* if disabled check disable alarm severity and return success */
     if (precord->disa == precord->disv) {
         if (*ptrace)
-            printf("%s: Disabled %s\n", context, precord->name);
+            printf("%s: dbProcess of Disabled '%s'\n",
+                context, precord->name);
 
         /*take care of caching and notifyCompletion*/
         precord->rpro = FALSE;
@@ -589,7 +582,7 @@ long dbProcess(dbCommon *precord)
     }
 
     if (*ptrace)
-        printf("%s: Process %s\n", context, precord->name);
+        printf("%s: dbProcess of '%s'\n", context, precord->name);
 
     /* process record */
     status = prset->process(precord);
@@ -1036,7 +1029,7 @@ static long dbPutFieldLink(DBADDR *paddr,
         return S_db_badDbrtype;
     }
 
-    status = dbParseLink(pstring, pfldDes->field_type, &link_info, 0);
+    status = dbParseLink(pstring, pfldDes->field_type, &link_info);
     if (status)
         return status;
 
@@ -1209,8 +1202,8 @@ long dbPutField(DBADDR *paddr, short dbrType,
              precord->scan == 0 &&
              dbrType < DBR_PUT_ACKT)) {
             if (precord->pact) {
-                if (precord->tpro)
-                    printf("%s: Active %s\n",
+                if (dbAccessDebugPUTF && precord->tpro)
+                    printf("%s: dbPutField to Active '%s', setting RPRO=1\n",
                         epicsThreadGetNameSelf(), precord->name);
                 precord->rpro = TRUE;
             } else {
@@ -1343,4 +1336,3 @@ done:
     paddr->pfield = pfieldsave;
     return status;
 }
-

@@ -9,7 +9,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* mbbiDirectRecord.c - Record Support routines for mbboDirect records */
+/* mbbiDirectRecord.c - Record Support routines for mbbiDirect records */
 /*
  *      Original Authors: Bob Dalesio and Matthew Needes
  *      Date: 10-07-93
@@ -92,7 +92,7 @@ struct mbbidset { /* multi bit binary input dset */
 static void monitor(mbbiDirectRecord *);
 static long readValue(mbbiDirectRecord *);
 
-#define NUM_BITS 16
+#define NUM_BITS 32
 
 static long init_record(struct dbCommon *pcommon, int pass)
 {
@@ -114,7 +114,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
-    recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
+    recGblInitConstantLink(&prec->siol, DBF_ULONG, &prec->sval);
 
     /* Initialize MASK if the user set NOBT instead */
     if (prec->mask == 0 && prec->nobt <= 32)
@@ -123,11 +123,11 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (pdset->init_record) {
         status = pdset->init_record(prec);
         if (status == 0) {
-            epicsUInt16 val = prec->val;
+            epicsUInt32 val = prec->val;
             epicsUInt8 *pBn = &prec->b0;
             int i;
 
-            /* Initialize B0 - BF from VAL */
+            /* Initialize B0 - B1F from VAL */
             for (i = 0; i < NUM_BITS; i++, pBn++, val >>= 1)
                 *pBn = !! (val & 1);
         }
@@ -188,7 +188,7 @@ static void monitor(mbbiDirectRecord *prec)
 {
     epicsUInt16 events = recGblResetAlarms(prec);
     epicsUInt16 vl_events = events | DBE_VALUE | DBE_LOG;
-    epicsUInt16 val = prec->val;
+    epicsUInt32 val = prec->val;
     epicsUInt8 *pBn = &prec->b0;
     int i;
 

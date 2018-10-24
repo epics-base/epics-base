@@ -1021,7 +1021,7 @@ d:/user/epics/base-3.15/lib/win32-x86/Com.lib</code></p>
 <h2><a name="CommandUtils">Command Line Utilities</a></h2>
 
 <h3><a name="acctst">acctst</a></h3>
-<pre>acctst &lt;PV name&gt; [progress logging level] [channel duplication count] 
+<pre>acctst &lt;PV name&gt; [progress logging level] [channel duplication count]
                  [test repetition count] [enable preemptive callback]</pre>
 
 <h4>Description</h4>
@@ -2091,7 +2091,7 @@ example, be beneficial when tuning an archiver installation.</p>
 <p>Significant performance gains can be realized when the CA client library
 doesn't wait for a response to return from the server after each request. All
 requests which require interaction with a CA server are accumulated (buffered)
-and not forwarded to the IOC until one of <code>ca_flush_io()</code>, 
+and not forwarded to the IOC until one of <code>ca_flush_io()</code>,
 <code>ca_pend_io()</code>, <code>ca_pend_event()</code>, or
 <code>ca_sg_block()</code> are called allowing several operations to be
 efficiently sent over the network together. Any process variable values written
@@ -2115,16 +2115,16 @@ shouldn't test the success of a CA function call by checking to see if the
 returned value is zero as is the UNIX convention. Below are several methods to
 test CA function returns. See <a href="#ca_signal"><code>ca_signal()</code> and
 <code>SEVCHK()</code></a> for more information on this topic.</p>
-<pre>status = ca_XXXX(); 
-SEVCHK( status, "ca_XXXX() returned failure status"); 
+<pre>status = ca_XXXX();
+SEVCHK( status, "ca_XXXX() returned failure status");
 
-if ( status &amp; CA_M_SUCCESS ) { 
-        printf ( "The requested ca_XXXX() operation didn't complete successfully"); 
-} 
+if ( status &amp; CA_M_SUCCESS ) {
+        printf ( "The requested ca_XXXX() operation didn't complete successfully");
+}
 
-if ( status != ECA_NORMAL ) { 
+if ( status != ECA_NORMAL ) {
         printf("The requested ca_XXXX() operation didn't complete successfully because \"%s\"\n",
-                ca_message ( status ) ); 
+                ca_message ( status ) );
 }</pre>
 
 <h3><a name="Channel">Channel Access Data Types</a></h3>
@@ -2297,7 +2297,7 @@ int main ( int argc, char ** argv )
     unsigned nBytes;
     unsigned elementCount;
     char timeString[32];
-    unsigned i;    
+    unsigned i;
     chid chan;
     double sum;
     int status;
@@ -2340,7 +2340,7 @@ int main ( int argc, char ** argv )
     epicsTimeToStrftime ( timeString, sizeof ( timeString ),
         "%a %b %d %Y %H:%M:%S.%f", &amp; pTD-&gt;stamp );
 
-    printf ( "The sum of elements in %s at %s was %f\n", 
+    printf ( "The sum of elements in %s at %s was %f\n",
         argv[1], timeString, sum );
 
     ca_clear_channel ( chan );
@@ -2371,7 +2371,7 @@ executing within the user's callback function.</p>
 <pre>typedef struct event_handler_args {
     void            *usr;   /* user argument supplied with request */
     chanId          chid;   /* channel id */
-    long            type;   /* the type of the item returned */ 
+    long            type;   /* the type of the item returned */
     long            count;  /* the element count of the item returned */
     const void      *dbr;   /* a pointer to the item returned */
     int             status; /* ECA_XXX status of the requested op from the server */
@@ -2394,7 +2394,7 @@ attached to the request, an exception handler is executed in the client. The
 default exception handler prints a message on the console and exits if the
 exception condition is severe. Certain internal exceptions within the CA client
 library, and failures detected by the SEVCHK macro may also cause the exception
-handler to be invoked. To modify this behavior see 
+handler to be invoked. To modify this behavior see
 <code><a href="#ca_add_exception_event">ca_add_exception_event</a>()</code>.</p>
 
 <h3><a name="Server">Server and Client Share the Same Address Space on The Same
@@ -2686,6 +2686,14 @@ automatically released by the system when the process exits and
 vxWorks or RTEMS no cleanup occurs unless the application calls
 <code>ca_context_destroy()</code>.</p>
 
+<p>Note: This operation blocks until any user callbacks for any channel
+created in the current context have run to completion. If callbacks take a
+lock (mutex) then it is the user's responsibility to ensure that this lock
+is not held when <code>ca_clear_context()</code> is called, otherwise a
+deadlock may ensue. (See also
+<code><a href="#ca_clear_channel">ca_clear_channel</a>()</code> and
+<code><a href="#ca_clear_event">ca_clear_subscription</a>()</code>.)</p>
+
 <h4>Returns</h4>
 
 <p>ECA_NORMAL - Normal successful completion</p>
@@ -2758,7 +2766,7 @@ time.</p>
 </dl>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Optional address of the user's callback function to be run when the
+    <dd>Optional pointer to the user's callback function to be run when the
       connection state changes. Casual users of channel access may decide to
       set this field to null or 0 if they do not need to have a callback
       function run in response to each connection state change event.
@@ -2831,6 +2839,12 @@ efficiently sent over the network in one message.</p>
 clearing a channel does shutdown and reclaim any channel state change event
 subscriptions (monitors) registered with the channel.</p>
 
+<p>Note: This operation blocks until any user callbacks for this channel
+have run to completion. If callbacks take a lock (mutex) then it is the
+user's responsibility to ensure that this lock is not held when
+<code>ca_clear_channel()</code> is called, otherwise a deadlock may ensue.
+(See also <code><a href="#ca_clear_event">ca_clear_subscription</a>()</code>.)</p>
+
 <h4>Arguments</h4>
 <dl>
   <dt><code>CHID</code></dt>
@@ -2845,16 +2859,16 @@ subscriptions (monitors) registered with the channel.</p>
 
 <h3><code><a name="ca_put">ca_put()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
-int ca_put ( chtype TYPE, 
-        chid CHID, void *PVALUE ); 
-int ca_array_put ( chtype TYPE, unsigned long COUNT, 
+int ca_put ( chtype TYPE,
+        chid CHID, void *PVALUE );
+int ca_array_put ( chtype TYPE, unsigned long COUNT,
         chid CHID, const void *PVALUE);
 typedef void ( caEventCallBackFunc ) (struct event_handler_args);
-int ca_put_callback ( chtype TYPE, 
-        chid CHID, const void *PVALUE, 
-        caEventCallBackFunc PFUNC, void *USERARG ); 
-int ca_array_put_callback ( chtype TYPE, unsigned long COUNT, 
-        chid CHID, const void *PVALUE, 
+int ca_put_callback ( chtype TYPE,
+        chid CHID, const void *PVALUE,
+        caEventCallBackFunc PFUNC, void *USERARG );
+int ca_array_put_callback ( chtype TYPE, unsigned long COUNT,
+        chid CHID, const void *PVALUE,
         caEventCallBackFunc PFUNC, void *USERARG );</pre>
 
 <h4>Description</h4>
@@ -2933,7 +2947,7 @@ but they do not cause the record to be processed.</p>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>address of <a href="#User">user supplied callback function</a> to be
+    <dd>Pointer to a <a href="#User">user supplied callback function</a> to be
       run when the requested operation completes</dd>
 </dl>
 <dl>
@@ -3041,7 +3055,7 @@ when a CA get request is initiated.</p>
 </dl>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Address of <a href="#User">user supplied callback function</a> to be
+    <dd>Pointer to a <a href="#User">user supplied callback function</a> to be
       run when the requested operation completes.</dd>
 </dl>
 <dl>
@@ -3081,7 +3095,7 @@ when a CA get request is initiated.</p>
 typedef void ( caEventCallBackFunc ) (struct event_handler_args);
 int ca_create_subscription ( chtype TYPE, unsigned long COUNT,
         chid CHID, unsigned long MASK,
-        caEventCallBackFunc USERFUNC, void *USERARG, 
+        caEventCallBackFunc USERFUNC, void *USERARG,
         evid *PEVID );</pre>
 
 <h4>Description</h4>
@@ -3142,8 +3156,8 @@ indicating the current state of the channel.</p>
     <dd>channel identifier</dd>
 </dl>
 <dl>
-  <dt><code>USRERFUNC</code></dt>
-    <dd>The address of <a href="#User">user supplied callback function</a> to
+  <dt><code>USERFUNC</code></dt>
+    <dd>Pointer to a <a href="#User">user supplied callback function</a> to
       be invoked with each subscription update.</dd>
 </dl>
 <dl>
@@ -3165,7 +3179,7 @@ indicating the current state of the channel.</p>
   <dt><code>MASK</code></dt>
     <dd>A mask with bits set for each of the event trigger types requested. The
       event trigger mask must be a <em>bitwise or</em> of one or more of the
-      following constants. 
+      following constants.
       <ul>
         <li>DBE_VALUE - Trigger events when the channel value exceeds the
           monitor dead band</li>
@@ -3211,6 +3225,13 @@ int ca_clear_subscription ( evid EVID );</pre>
 and not forwarded to the server until one of <code>ca_flush_io()</code>, <code>ca_pend_io()</code>,
 <code>ca_pend_event()</code>, or <code>ca_sg_block()</code> are called. This allows several requests to be
 efficiently sent together in one message.</p>
+
+<p>Note: This operation blocks until any user callbacks for this channel
+have run to completion. If callbacks take a lock (mutex) then it is the
+user's responsibility to ensure that this lock is not held when
+<code>ca_clear_subscription()</code> is called, otherwise a deadlock may
+ensue. (See also <code><a
+href="#ca_clear_channel">ca_clear_channel</a>()</code>.)</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -3376,7 +3397,7 @@ becomes full.</p>
 
 <h3><code><a name="ca_signal">ca_signal()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
-int ca_signal ( long CA_STATUS, const char * CONTEXT_STRING ); 
+int ca_signal ( long CA_STATUS, const char * CONTEXT_STRING );
 void SEVCHK( CA_STATUS, CONTEXT_STRING );</pre>
 
 <h4>Description</h4>
@@ -3393,7 +3414,7 @@ recommended error handler for simple applications which do not wish to write
 code testing the status returned from each channel access call.</p>
 
 <h4>Examples</h4>
-<pre>status = ca_context_create (...); 
+<pre>status = ca_context_create (...);
 SEVCHK ( status, "Unable to create a CA client context" );</pre>
 
 <p>If the application only wishes to print the message associated with an error
@@ -3417,7 +3438,7 @@ this purpose.</p>
 
 <h3><code><a
 name="ca_add_exception_event">ca_add_exception_event()</a></code></h3>
-<pre>#include &lt;cadef.h&gt; 
+<pre>#include &lt;cadef.h&gt;
 typedef void (*pCallback) ( struct exception_handler_args HANDLERARGS );
 int ca_add_exception_event ( pCallback  USERFUNC, void *USERARG );</pre>
 
@@ -3441,7 +3462,7 @@ field should not be used.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Address of user callback function to be executed when an exceptions
+    <dd>Pointer to a user callback function to be executed when exceptions
       occur. Passing a null value causes the default exception handler to be
       reinstalled. The following structure is passed by value to the user's
       callback function. Currently, the <code>op</code> field can be one of
@@ -3576,7 +3597,7 @@ default handler uses fprintf to send messages to 'stderr'.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>The address of a user supplied callback handler to be invoked when CA
+    <dd>A pointer to a user supplied callback handler to be invoked when CA
       prints diagnostic messages. Installing a null pointer will cause the
       default callback handler to be reinstalled.</dd>
 </dl>
@@ -3624,9 +3645,9 @@ specified channel.</p>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>Address of user supplied callback function. A null pointer uninstalls
+    <dd>Pointer to a user supplied callback function. A null pointer uninstalls
       the current handler. The following arguments are passed <em>by value</em>
-      to the supplied callback handler. 
+      to the supplied callback handler.
       <pre>typedef struct ca_access_rights {
     unsigned    read_access:1;
     unsigned    write_access:1;
@@ -3966,8 +3987,8 @@ type.</p>
 prints diagnostics to standard out.</p>
 
 <h4>Examples</h4>
-<pre>void ca_test_event (); 
-status = ca_create_subscription ( type, chid, ca_test_event, NULL, NULL ); 
+<pre>void ca_test_event ();
+status = ca_create_subscription ( type, chid, ca_test_event, NULL, NULL );
 SEVCHK ( status, .... );</pre>
 
 <h4>See Also</h4>
@@ -4001,8 +4022,8 @@ outstanding within them at any given time.</p>
 </dl>
 
 <h4>Examples</h4>
-<pre>CA_SYNC_GID gid; 
-status = ca_sg_create ( &amp;gid ); 
+<pre>CA_SYNC_GID gid;
+status = ca_sg_create ( &amp;gid );
 SEVCHK ( status, Sync group create failed );</pre>
 
 <h4>Returns</h4>
@@ -4040,8 +4061,8 @@ int ca_sg_delete ( CA_SYNC_GID GID );</pre>
 </dl>
 
 <h4>Examples</h4>
-<pre>CA_SYNC_GID gid; 
-status = ca_sg_delete ( gid ); 
+<pre>CA_SYNC_GID gid;
+status = ca_sg_delete ( gid );
 SEVCHK ( status, Sync group delete failed );</pre>
 
 <h4>Returns</h4>
@@ -4152,7 +4173,7 @@ will not block unless additional subsequent requests are made.</p>
 </dl>
 
 <h4>Examples</h4>
-<pre>CA_SYNC_GID gid; 
+<pre>CA_SYNC_GID gid;
 status = ca_sg_reset(gid);</pre>
 
 <h4>Returns</h4>
@@ -4165,7 +4186,7 @@ status = ca_sg_reset(gid);</pre>
 <pre>#include &lt;cadef.h&gt;
 int ca_sg_put ( CA_SYNC_GID GID, chtype TYPE,
         chid CHID, void *PVALUE );
-int ca_sg_array_put ( CA_SYNC_GID GID, chtype TYPE, 
+int ca_sg_array_put ( CA_SYNC_GID GID, chtype TYPE,
         unsigned long COUNT, chid CHID, void *PVALUE );</pre>
 
 <p>Write a value, or array of values, to a channel and increment the outstanding
@@ -4306,7 +4327,7 @@ reissued.</p>
 
 <h3><code><a name="ca_client_status">ca_client_status()</a></code></h3>
 <pre>int ca_client_status ( unsigned level );
-int ca_context_status ( struct ca_client_context *CONTEXT, 
+int ca_context_status ( struct ca_client_context *CONTEXT,
        unsigned LEVEL );</pre>
 
 <h4>Description</h4>

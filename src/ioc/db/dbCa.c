@@ -784,11 +784,16 @@ static void connectionCallback(struct connection_handler_args arg)
     if (pca->gotFirstConnection) {
         if (pca->nelements != ca_element_count(arg.chid) ||
             pca->dbrType != ca_field_type(arg.chid)) {
-            /* BUG: We have no way to clear any old subscription with the
-             *      originally chosen data type/size.  That will continue
-             *      to send us data and will result in an assert() fail.
-             */
-            /* Let next dbCaGetLink and/or dbCaPutLink determine options */
+            /* Size or type changed, clear everything and let the next call
+               to dbCaGetLink() and/or dbCaPutLink() reset everything */
+            if (pca->evidNative) {
+                ca_clear_event(pca->evidNative);
+                pca->evidNative = 0;
+            }
+            if (pca->evidString) {
+                ca_clear_event(pca->evidString);
+                pca->evidString = 0;
+            }
             plink->value.pv_link.pvlMask &=
                 ~(pvlOptInpNative | pvlOptInpString |
                   pvlOptOutNative | pvlOptOutString);
@@ -837,6 +842,7 @@ static void eventCallback(struct event_handler_args arg)
     struct dbr_time_double *pdbr_time_double;
     dbCaCallback monitor = 0;
     void *userPvt = 0;
+    int doScan = 1;
 
     assert(pca);
     epicsMutexMustLock(pca->lock);
@@ -867,10 +873,13 @@ static void eventCallback(struct event_handler_args arg)
         memcpy(pca->pgetString, dbr_value_ptr(arg.dbr, arg.type), size);
         pca->gotInString = TRUE;
     } else switch (arg.type){
+    case DBR_TIME_ENUM:
+        /* Disable the record scan if we also have a string monitor */
+        doScan = !(plink->value.pv_link.pvlMask & pvlOptInpString);
+        /* fall through */
     case DBR_TIME_STRING: 
     case DBR_TIME_SHORT: 
     case DBR_TIME_FLOAT:
-    case DBR_TIME_ENUM:
     case DBR_TIME_CHAR:
     case DBR_TIME_LONG:
     case DBR_TIME_DOUBLE:
@@ -888,7 +897,7 @@ static void eventCallback(struct event_handler_args arg)
     pca->sevr = pdbr_time_double->severity;
     pca->stat = pdbr_time_double->status;
     memcpy(&pca->timeStamp, &pdbr_time_double->stamp, sizeof(epicsTimeStamp));
-    if (precord) {
+    if (doScan && precord) {
         struct pv_link *ppv_link = &plink->value.pv_link;
 
         if ((ppv_link->pvlMask & pvlOptCP) ||
@@ -1149,7 +1158,8 @@ static void dbCaTask(void *arg)
                 status = ca_add_array_event(
                     dbf_type_to_DBR_TIME(ca_field_type(pca->chid)),
                     0, /* dynamic size */
-                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0, 0);
+                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0,
+                    &pca->evidNative);
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",
                         ca_message(status));
@@ -1161,7 +1171,8 @@ static void dbCaTask(void *arg)
                 pca->pgetString = dbCalloc(1, MAX_STRING_SIZE);
                 epicsMutexUnlock(pca->lock);
                 status = ca_add_array_event(DBR_TIME_STRING, 1,
-                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0, 0);
+                    pca->chid, eventCallback, pca, 0.0, 0.0, 0.0,
+                    &pca->evidString);
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",
                         ca_message(status));

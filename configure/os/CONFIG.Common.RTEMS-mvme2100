@@ -5,6 +5,7 @@
 # All RTEMS targets use the same Makefile fragment
 #
 EXE = .elf
+RTEMS_BSP = mvme2100
 RTEMS_TARGET_CPU = powerpc
 GNU_TARGET = powerpc-rtems
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL

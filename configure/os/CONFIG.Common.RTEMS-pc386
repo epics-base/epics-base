@@ -5,7 +5,8 @@
 #
 # All RTEMS targets use the same Makefile fragment
 #
-RTEMS_TARGET_CPU=i386
+RTEMS_BSP = pc386
+RTEMS_TARGET_CPU = i386
 
 MUNCH_SUFFIX = .boot
 MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))

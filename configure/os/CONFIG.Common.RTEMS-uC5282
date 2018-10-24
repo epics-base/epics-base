@@ -5,6 +5,7 @@
 #
 # All RTEMS targets use the same Makefile fragment
 #
+RTEMS_BSP = uC5282
 RTEMS_TARGET_CPU = m68k
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 

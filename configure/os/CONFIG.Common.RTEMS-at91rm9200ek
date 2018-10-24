@@ -9,5 +9,6 @@
 #
 # All RTEMS targets use the same Makefile fragment
 #
-RTEMS_TARGET_CPU=arm
+RTEMS_BSP = at91rm9200ek
+RTEMS_TARGET_CPU = arm
 include $(CONFIG)/os/CONFIG.Common.RTEMS

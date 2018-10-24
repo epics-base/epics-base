@@ -1,5 +1,0 @@
-#
-# Site-specific overrides for RTEMS-pc386 target
-#
-
-CROSS_COMPILER_RUNTEST_ARCHS += RTEMS-pc386

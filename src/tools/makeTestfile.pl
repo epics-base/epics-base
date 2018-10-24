@@ -37,7 +37,7 @@ if( $TA =~ /^win32-x86/ && $HA !~ /^win/ ) {
   $exec = "wine64 $exe";
 
 # Run pc386 test harness w/ QEMU
-} elsif( $TA =~ /^RTEMS-pc386$/ ) {
+} elsif( $TA =~ /^RTEMS-pc386-qemu$/ ) {
   $exec = "qemu-system-i386 -m 64 -no-reboot -serial stdio -display none -net nic,model=ne2k_pci -net user,restrict=yes -kernel $exe";
 
 # Explicitly fail for other RTEMS targets

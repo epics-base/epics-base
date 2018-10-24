@@ -62,14 +62,13 @@ RTEMS_VERSION=$RTEMS
 RTEMS_BASE=/home/travis/.rtems
 EOF
   cat << EOF >> configure/CONFIG_SITE
-CROSS_COMPILER_TARGET_ARCHS+=RTEMS-pc386
-CROSS_COMPILER_RUNTEST_ARCHS+=RTEMS-pc386
+CROSS_COMPILER_TARGET_ARCHS += RTEMS-pc386-qemu
+CROSS_COMPILER_RUNTEST_ARCHS += RTEMS-pc386-qemu
 EOF
 
   # find local qemu-system-i386
   echo -n "Using QEMU: "
   type qemu-system-i386 || echo "Missing qemu"
-  EXTRA=RTEMS_QEMU_FIXUPS=YES
 fi
 
 make -j2 $EXTRA

@@ -42,7 +42,7 @@ if( $TA =~ /^win32-x86/ && $HA !~ /^win/ ) {
 
 # Explicitly fail for other RTEMS targets
 } elsif( $TA =~ /^RTEMS-/ ) {
-  die "I don't know how to run tests for $TA on $HA";
+  die "$0: I don't know how to create scripts for testing $TA on $HA\n";
 
 } else {
   $exec = "./$exe";
@@ -51,7 +51,7 @@ if( $TA =~ /^win32-x86/ && $HA !~ /^win/ ) {
 open(my $OUT, '>', $target) or die "Can't create $target: $!\n";
 
 print $OUT <<EOF;
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use Cwd 'abs_path';

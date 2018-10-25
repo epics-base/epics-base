@@ -19,6 +19,26 @@
 
 -->
 
+<h3>Type-safe Device and Driver Support Tables</h3>
+
+<p>Type-safe versions of the device and driver support structures <tt>dset</tt>
+and <tt>drvet</tt> have been added to the devSup.h and drvSup.h headers
+respectively. The original structure definitions have not been changed so
+existing support modules will still build normally, but older modules can be
+modified and new code written to be compatible with both.</p>
+
+<p>The old structure definitions will be replaced by the new ones if the macros
+<tt>USE_TYPED_DSET</tt> and/or <tt>USE_TYPED_DRVET</tt> are defined when the
+appropriate header is included. The best place to define these is in the
+Makefile, as with the <tt>USE_TYPED_RSET</tt> macro that was introduced in
+Base-3.16.1 and described below. See the comments in devSup.h for a brief usage
+example, or look at <a href="https://github.com/epics-modules/ipac/commit/a7e0ff4089b9aa39108bc8569e95ba7fcf07cee9">
+this commit</a> to the ipac module to see a module conversion.</p>
+
+<p>A helper function <tt>DBLINK* dbGetDevLink(dbCommon *prec)</tt> has also been
+added to devSup.h which fetches a pointer to the INP or OUT field of the
+record.</p>
+
 <h3>RTEMS build configuration update, running tests under QEMU</h3>
 
 <p>This release includes the ability to run the EPICS unit tests built for a

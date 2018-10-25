@@ -19,6 +19,7 @@
 #include "menuScan.h"
 #include "shareLib.h"
 #include "compilerDependencies.h"
+#include "devSup.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,9 +34,7 @@ extern "C" {
 #define MIN_PHASE           SHRT_MIN
 
 /*definitions for I/O Interrupt Scanning */
-struct ioscan_head;
-
-typedef struct ioscan_head *IOSCANPVT;
+/* IOSCANPVT now defined in devSup.h */
 typedef struct event_list *EVENTPVT;
 
 struct dbCommon;

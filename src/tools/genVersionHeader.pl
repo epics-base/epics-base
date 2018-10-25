@@ -23,17 +23,19 @@ my $tfmt = '%Y-%m-%dT%H:%M';
 $tfmt .= '%z' unless $^O eq 'MSWin32'; # %z returns zone name on Windows
 my $now = strftime($tfmt, localtime);
 
-our ($opt_h, $opt_v, $opt_q);
+our ($opt_d, $opt_h, $opt_i, $opt_v, $opt_q);
 our $opt_t = '.';
 our $opt_N = 'VCSVERSION';
 our $opt_V = $now;
 
 my $vcs;
 
-getopts('hvqt:N:V:') && @ARGV == 1
+getopts('dhivqt:N:V:') && @ARGV == 1
     or HELP_MESSAGE();
 
 my ($outfile) = @ARGV;
+
+if ($opt_d) { exit 0 } # exit if make is run in dry-run mode
 
 if (!$vcs && -d "$opt_t/_darcs") { # Darcs
     print "== Found <top>/_darcs directory\n" if $opt_v;
@@ -135,18 +137,35 @@ if (open($DST, '+<', $outfile)) {
     print "== Current:\n$actual==\n" if $opt_v;
 
     if ($actual eq $output) {
-        print "Keeping VCS header $outfile\n    $opt_N = \"$opt_V\"\n"
+        close $DST;
+        print "Keeping VCS header $outfile\n",
+            "    $opt_N = \"$opt_V\"\n"
             unless $opt_q;
         exit 0;
     }
-    print "Updating VCS header $outfile\n    $opt_N = \"$opt_V\"\n"
-        unless $opt_q;
+
+    # This regexp must match the #define in $output above:
+    $actual =~ m/#define (\w+) ("[^"]*")\n/;
+    if ($opt_i) {
+        print "Outdated VCS header $outfile\n",
+            "    has:   $1 = $2\n",
+            "    needs: $opt_N = \"$opt_V\"\n";
+    }
+    else {
+        print "Updating VCS header $outfile\n",
+            "    from: $1 = $2\n",
+            "    to:   $opt_N = \"$opt_V\"\n"
+            unless $opt_q;
+    }
 } else {
-    print "Creating VCS header $outfile\n    $opt_N = \"$opt_V\"\n"
+    print "Creating VCS header $outfile\n",
+        "    $opt_N = \"$opt_V\"\n"
         unless $opt_q;
     open($DST, '>', $outfile)
         or die "Can't create $outfile: $!\n";
 }
+
+if ($opt_i) { exit 1 }; # exit if make is run in "question" mode
 
 seek $DST, 0, 0;
 truncate $DST, 0;
@@ -158,9 +177,11 @@ sub HELP_MESSAGE {
 Usage:
     genVersionHeader.pl -h
         Display this Usage message
-    genVersionHeader.pl [-v] [-q] [-t top] [-N NAME] [-V version] output.h";
+    genVersionHeader.pl [-v] [-d] [-q] [-t top] [-N NAME] [-V version] output.h";
         Generate or update the header file output.h
         -v         - Verbose (debugging messages)
+        -d         - Dry-run
+        -i         - Question mode
         -q         - Quiet
         -t top     - Path to the module's top (default '$opt_t')
         -N NAME    - Macro name to be defined (default '$opt_N')

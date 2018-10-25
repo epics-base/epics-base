@@ -80,6 +80,7 @@ IOCS_APPL_TOP               = $(shell $(FULLPATHNAME) $(INSTALL_LOCATION))
 NOP = :
 ECHO = @$(if $(findstring s,$(patsubst T_A=%,,$(MAKEFLAGS))),$(NOP),echo)
 QUIET_FLAG := $(if $(findstring s,$(MAKEFLAGS)),-q,)
+QUESTION_FLAG := $(if $(findstring q,$(MAKEFLAGS)),-i,)
 
 #-------------------------------------------------------
 ifdef T_A

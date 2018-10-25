@@ -14,10 +14,17 @@ PROD_LIBS += Com
 PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
 PROD_SYS_LIBS_solaris += socket nsl
 
+PROD_SRCS_RTEMS += rtemsTestData.c
+
+ifeq ($(EPICS_HOST_ARCH),$(T_A))
+# skip except for host arch due to custom .plt
+
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c
 # Not much point running this on vxWorks or RTEMS...
 TESTS += epicsUnitTestTest
+
+endif
 
 TESTPROD_HOST += epicsTypesTest
 epicsTypesTest_SRCS += epicsTypesTest.cpp
@@ -237,6 +244,10 @@ TESTSPEC_vxWorks = libComTestHarness.munch; epicsRunLibComTests
 TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
+ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
+TESTPROD_RTEMS = $(TESTPROD_HOST)
+TESTSCRIPTS_RTEMS += $(filter-out epicsUnitTestTest.t, $(TESTS:%=%.t))
+endif
 
 
 # The following are not test programs, they measure performance.

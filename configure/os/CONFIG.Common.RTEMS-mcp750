@@ -5,5 +5,6 @@
 #
 # All RTEMS targets use the same Makefile fragment
 #
-RTEMS_TARGET_CPU=ppc
+RTEMS_BSP = mcp750
+RTEMS_TARGET_CPU = ppc
 include $(CONFIG)/os/CONFIG.Common.RTEMS

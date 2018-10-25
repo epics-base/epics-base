@@ -138,6 +138,8 @@ testHarness_SRCS += epicsRunRecordTests.c
 recordTestHarness_SRCS += $(testHarness_SRCS)
 recordTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 
+PROD_SRCS_RTEMS += rtemsTestData.c
+
 PROD_vxWorks = recordTestHarness
 PROD_RTEMS = recordTestHarness
 
@@ -145,5 +147,12 @@ TESTSPEC_vxWorks = recordTestHarness.munch; epicsRunRecordTests
 TESTSPEC_RTEMS = recordTestHarness.boot; epicsRunRecordTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
+ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
+TESTPROD_RTEMS = $(TESTPROD_HOST)
+TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
+endif
 
 include $(TOP)/configure/RULES
+
+rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
+	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)

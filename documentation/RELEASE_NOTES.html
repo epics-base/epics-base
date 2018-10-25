@@ -19,6 +19,32 @@
 
 -->
 
+<h3>RTEMS build configuration update, running tests under QEMU</h3>
+
+<p>This release includes the ability to run the EPICS unit tests built for a
+special version of the RTEMS-pc386 target architecture on systems that have an
+appropriate QEMU emulator installed (<tt>qemu-system-i386</tt>). It is also now
+possible to create sub-architectures of RTEMS targets, whereas previously the
+EPICS target architecture name had to be <tt>RTEMS-$(RTEMS_BSP)</tt>.</p>
+
+<p>The new target <tt>RTEMS-pc386-qemu</tt> builds binaries that can be run in
+the <tt>qemu-system-i386</tt> PC System emulator. This target is a derivative of
+the original <tt>RTEMS-pc386</tt> target but with additional software to build
+an in-memory file-system, and some minor modifications to allow the unit tests
+to work properly under QEMU. When this target is enabled, building any of the
+make targets that cause the built-in self-tests to be run (such as
+<tt>make&nbsp;runtests</tt>) will also run the tests for RTEMS using QEMU.</p>
+
+<p>To allow the new 3-component RTEMS target name, the EPICS build system for
+RTEMS was modified to allow a <tt>configure/os/CONFIG.Common.&lt;arch&gt;</tt>
+file to set the <tt>RTEMS_BSP</tt> variable to inform the build what RTEMS BSP
+to use. Previously this was inferred from the value of the <tt>T_A</tt> make
+variable, but that prevents having multiple EPICS targets that build against the
+same BSP. All the included RTEMS target configuration files have been updated;
+build configuration files for out-of-tree RTEMS targets will continue to work as
+the original rules are used to set <tt>RTEMS_BSP</tt> if it hasn't been set when
+needed.</p>
+
 <h3>Link type enhancements</h3>
 
 <p>This release adds three new link types: "state", "debug" and "trace". The

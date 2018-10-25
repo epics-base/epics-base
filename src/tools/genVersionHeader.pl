@@ -137,14 +137,29 @@ if (open($DST, '+<', $outfile)) {
     print "== Current:\n$actual==\n" if $opt_v;
 
     if ($actual eq $output) {
-        print "Keeping VCS header $outfile\n    $opt_N = \"$opt_V\"\n"
+        close $DST;
+        print "Keeping VCS header $outfile\n",
+            "    $opt_N = \"$opt_V\"\n"
             unless $opt_q;
         exit 0;
     }
-    print "Updating VCS header $outfile\n    $opt_N = \"$opt_V\"\n"
-        unless $opt_q;
+
+    # This regexp must match the #define in $output above:
+    $actual =~ m/#define (\w+) ("[^"]*")\n/;
+    if ($opt_i) {
+        print "Outdated VCS header $outfile\n",
+            "    has:   $1 = $2\n",
+            "    needs: $opt_N = \"$opt_V\"\n";
+    }
+    else {
+        print "Updating VCS header $outfile\n",
+            "    from: $1 = $2\n",
+            "    to:   $opt_N = \"$opt_V\"\n"
+            unless $opt_q;
+    }
 } else {
-    print "Creating VCS header $outfile\n    $opt_N = \"$opt_V\"\n"
+    print "Creating VCS header $outfile\n",
+        "    $opt_N = \"$opt_V\"\n"
         unless $opt_q;
     open($DST, '>', $outfile)
         or die "Can't create $outfile: $!\n";

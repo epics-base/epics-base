@@ -106,7 +106,6 @@ static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct aaiRecord *prec = (struct aaiRecord *)pcommon;
     struct aaidset *pdset = (struct aaidset *)(prec->dset);
-    long status;
 
     /* must have dset defined */
     if (!pdset) {
@@ -119,11 +118,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
             prec->nelm = 1;
         if (prec->ftvl > DBF_ENUM)
             prec->ftvl = DBF_UCHAR;
-        if (prec->nelm == 1) {
-            prec->nord = 1;
-        } else {
-            prec->nord = 0;
-        }
+        prec->nord = (prec->nelm == 1);
 
         /* we must call pdset->init_record in pass 0
            because it may set prec->bptr which must
@@ -131,8 +126,10 @@ static long init_record(struct dbCommon *pcommon, int pass)
         */
 
         if (pdset->init_record) {
+            long status = pdset->init_record(prec);
+
             /* init_record may set the bptr to point to the data */
-            if ((status = pdset->init_record(prec)))
+            if (status)
                 return status;
         }
         if (!prec->bptr) {
@@ -142,7 +139,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         }
         return 0;
     }
-    
+
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
     /* must have read_aai function defined */
@@ -167,9 +164,10 @@ static long process(struct dbCommon *pcommon)
     }
 
     status = readValue(prec); /* read the new value */
-    if (!pact && prec->pact) return 0;
-    prec->pact = TRUE;
+    if (!pact && prec->pact)
+        return 0;
 
+    prec->pact = TRUE;
     prec->udf = FALSE;
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
@@ -187,17 +185,19 @@ static long special(DBADDR *paddr, int after)
     int          special_type = paddr->special;
 
     switch(special_type) {
-    case(SPC_MOD):
+    case SPC_MOD:
         if (dbGetFieldIndex(paddr) == aaiRecordSIMM) {
             if (!after)
                 recGblSaveSimm(prec->sscn, &prec->oldsimm, prec->simm);
             else
-                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
-            return(0);
+                recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm,
+                    prec->simm);
+            return 0;
         }
+
     default:
         recGblDbaddrError(S_db_badChoice, paddr, "aai: special");
-        return(S_db_badChoice);
+        return S_db_badChoice;
     }
 }
 
@@ -357,11 +357,14 @@ static long readValue(aaiRecord *prec)
 
         if (prec->sdly >= 0) {
             CALLBACK *pvt = prec->simpvt;
-            if (!pvt) {
-                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+
+            if (!pvt) { /* very lazy allocation of callback structure */
+                pvt = calloc(1, sizeof(CALLBACK));
                 prec->simpvt = pvt;
             }
-            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+            if (pvt)
+                callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec,
+                    prec->sdly);
             prec->pact = TRUE;
             return 0;
         }

@@ -2,7 +2,7 @@
 * Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbJLink.h */
 
@@ -21,11 +21,15 @@ typedef enum {
     jlif_continue = 1
 } jlif_result;
 
+epicsShareExtern const char *jlif_result_name[2];
+
 typedef enum {
     jlif_key_stop = jlif_stop,
     jlif_key_continue = jlif_continue,
-    jlif_key_child_link
+    jlif_key_child_inlink, jlif_key_child_outlink, jlif_key_child_fwdlink
 } jlif_key_result;
+
+epicsShareExtern const char *jlif_key_result_name[5];
 
 struct link;
 struct lset;
@@ -35,7 +39,7 @@ typedef struct jlink {
     struct jlif *pif;       /* Link methods */
     struct jlink *parent;   /* NULL for top-level links */
     int parseDepth;         /* Used by parser, unused afterwards */
-    unsigned debug:1;       /* set by caller of jlif operations to request debug output to console */
+    unsigned debug:1;       /* Set to request debug output to console */
     /* Link types extend or embed this structure for private storage */
 } jlink;
 
@@ -72,8 +76,9 @@ typedef struct jlif {
         /* Optional, parser saw a string value */
 
     jlif_key_result (*parse_start_map)(jlink *);
-        /* Optional, parser saw an open-brace '{'. Return jlif_key_child_link
-         * to expect a child link next (extra key/value pairs may follow).
+        /* Optional, parser saw an open-brace '{'. Return jlif_key_child_inlink,
+         * jlif_key_child_outlink, or jlif_key_child_fwdlink to expect a child
+         * link next (extra key/value pairs may follow)
          */
 
     jlif_result (*parse_map_key)(jlink *, const char *key, size_t len);
@@ -90,7 +95,8 @@ typedef struct jlif {
 
     void (*end_child)(jlink *parent, jlink *child);
         /* Optional, called with pointer to the new child link after
-         * parse_start_map() returned jlif_key_child_link */
+         * the child link has finished parsing successfully
+         */
 
     struct lset* (*get_lset)(const jlink *);
         /* Required, return lset for this link instance */
@@ -98,7 +104,7 @@ typedef struct jlif {
     void (*report)(const jlink *, int level, int indent);
         /* Optional, print status information about this link instance, then
          * if (level > 0) print a link identifier (at indent+2) and call
-         *     dbJLinkReport(child, level-1, indent+4) 
+         *     dbJLinkReport(child, level-1, indent+4)
          * for each child.
          */
 
@@ -107,13 +113,19 @@ typedef struct jlif {
          * Stop immediately and return status if non-zero.
          */
 
+     void (*start_child)(jlink *parent, jlink *child);
+         /* Optional, called with pointer to the new child link after
+          * parse_start_map() returned a jlif_key_child_link value and
+          * the child link has been allocated (but not parsed yet)
+          */
+
     /* Link types must NOT extend this table with their own routines,
      * this space is reserved for extensions to the jlink interface.
      */
 } jlif;
 
 epicsShareFunc long dbJLinkParse(const char *json, size_t len, short dbfType,
-    jlink **ppjlink, unsigned opts);
+    jlink **ppjlink);
 epicsShareFunc long dbJLinkInit(struct link *plink);
 
 epicsShareFunc void dbJLinkFree(jlink *);
@@ -130,4 +142,3 @@ epicsShareFunc long dbJLinkMapAll(char *recname, jlink_map_fn rtn, void *ctx);
 #endif
 
 #endif /* INC_dbJLink_H */
-

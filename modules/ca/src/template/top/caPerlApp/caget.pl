@@ -143,6 +143,10 @@ sub display {
             printf "    Lo ctrl limit:    %g\n", $data->{lower_ctrl_limit};
             printf "    Hi ctrl limit:    %g\n", $data->{upper_ctrl_limit};
         }
+        if (exists $data->{ackt}) {
+            printf "    Ack transients:   %s\n", $data->{ackt} ? 'YES' : 'NO';
+            printf "    Ack severity:     %s\n", $data->{acks};
+        }
     } else {
         my $value = format_number($data, $type);
         if ($opt_t) {

@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*  dbStaticPvt.h */
 /*
@@ -59,13 +59,10 @@ typedef struct dbLinkInfo {
 
 long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec);
 
-#define LINK_DEBUG_LSET 1
-#define LINK_DEBUG_JPARSE 2
-
 /* Parse link string.  no record locks needed.
  * on success caller must free pinfo->target
  */
-epicsShareFunc long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, unsigned opts);
+epicsShareFunc long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo);
 /* Check if link type allow the parsed link value pinfo
  * to be assigned to the given link.
  * Record containing plink must be locked.

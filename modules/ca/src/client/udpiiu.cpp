@@ -193,7 +193,7 @@ udpiiu::udpiiu (
 
 #ifdef IP_MULTICAST_TTL
     {
-        int ttl;
+        osiSockOptMcastTTL_t ttl;
         long val;
         if(envGetLongConfigParam(&EPICS_CA_MCAST_TTL, &val))
             val =1;

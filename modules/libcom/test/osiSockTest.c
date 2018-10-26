@@ -42,6 +42,21 @@ void multiCastLoop(SOCKET s, int put)
         "getsockopt MULTICAST_LOOP => %d", (int) flag);
 }
 
+void multiCastTTL(SOCKET s, int put)
+{
+    int status;
+    osiSockOptMcastTTL_t flag = put;
+    osiSocklen_t len = sizeof(flag);
+
+    status = setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL,
+                   (char *)&flag, len);
+    testOk(status >= 0, "setsockopt IP_MULTICAST_TTL := %d", put);
+
+    status = getsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, (char *)&flag, &len);
+    testOk(status >= 0 && len == sizeof(flag) && !flag == !put,
+        "getsockopt IP_MULTICAST_TTL => %d", (int) flag);
+}
+
 void udpSockTest(void)
 {
     SOCKET s;
@@ -55,6 +70,9 @@ void udpSockTest(void)
     multiCastLoop(s, 1);
     multiCastLoop(s, 0);
 
+    multiCastTTL(s, 1);
+    multiCastTTL(s, 0);
+
     epicsSocketDestroy(s);
 }
 
@@ -62,7 +80,7 @@ void udpSockTest(void)
 MAIN(osiSockTest)
 {
     int status;
-    testPlan(10);
+    testPlan(14);
 
     status = osiSockAttach();
     testOk(status, "osiSockAttach");

@@ -99,6 +99,7 @@ epicsShareFunc long epicsShareAPI
     envGetBoolConfigParam(const ENV_PARAM *pParam, int *pBool);
 epicsShareFunc long epicsShareAPI epicsPrtEnvParams(void);
 epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value);
+epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name);
 epicsShareFunc void epicsShareAPI epicsEnvShow (const char *name);
 
 #ifdef __cplusplus

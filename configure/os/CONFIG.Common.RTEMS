@@ -27,9 +27,13 @@ ifneq ($(CONFIG),$(TOP)/configure)
 -include $(TOP)/configure/CONFIG_SITE.Common.RTEMS
 endif
 
+#--------------------------------------------------
+# Set RTEMS_BSP from T_A if not already done
+RTEMS_BSP ?= $(subst RTEMS-,,$(T_A))
+
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
-include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems$(RTEMS_VERSION)/$(subst RTEMS-,,$(T_A))/Makefile.inc
+include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
 

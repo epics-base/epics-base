@@ -21,3 +21,5 @@ extern char *env_nfsMountPoint;
  */
 int epicsRtemsInitPreSetBootConfigFromNVRAM(struct rtems_bsdnet_config *config);
 int epicsRtemsInitPostSetBootConfigFromNVRAM(struct rtems_bsdnet_config *config);
+/* Return 0 if local file system was setup, or non-zero (will fall back to network */
+int epicsRtemsMountLocalFilesystem(char **argv);

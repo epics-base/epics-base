@@ -2,17 +2,17 @@
 * Copyright (c) 2002 Lawrence Berkeley Laboratory,The Control Systems
 *     Group, Systems Engineering Department
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* recSubArray.c - Record Support Routines for SubArray records 
+/* recSubArray.c - Record Support Routines for SubArray records
  *
  *
  *      Author:         Carl Lionberger
  *      Date:           090293
  *
  *      NOTES:
- * Derived from waveform record. 
+ * Derived from waveform record.
  * Modification Log:
  * -----------------
  */
@@ -126,7 +126,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     if (pdset->init_record)
-        return (*pdset->init_record)(prec);
+        return pdset->init_record(prec);
 
     return 0;
 }
@@ -194,11 +194,14 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 static long put_array_info(DBADDR *paddr, long nNew)
 {
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
+    epicsUInt32 nord = prec->nord;
 
-    if (nNew > prec->malm)
-        nNew = prec->malm;
     prec->nord = nNew;
+    if (prec->nord > prec->malm)
+        prec->nord = prec->malm;
 
+    if (nord != prec->nord)
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     return 0;
 }
 
@@ -211,7 +214,7 @@ static long get_units(DBADDR *paddr, char *units)
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
             if (prec->ftvl == DBF_STRING || prec->ftvl == DBF_ENUM)
-                break; 
+                break;
         case indexof(HOPR):
         case indexof(LOPR):
             strncpy(units,prec->egu,DB_UNITS_SIZE);
@@ -321,4 +324,3 @@ static long readValue(subArrayRecord *prec)
 
     return status;
 }
-

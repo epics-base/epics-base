@@ -15,6 +15,10 @@
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @file dbState.h
  * @brief Generic IOC state facility
  *
@@ -88,5 +92,10 @@ epicsShareFunc void dbStateShow(dbStateId id, unsigned int level);
  * @param level Interest level.
  */
 epicsShareFunc void dbStateShowAll(unsigned int level);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // INCdbStateH

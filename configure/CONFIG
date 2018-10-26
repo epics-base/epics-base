@@ -20,11 +20,14 @@ else
 endif
 
 # Provide a default if the user hasn't set EPICS_HOST_ARCH
-ifeq ($(strip $(EPICS_HOST_ARCH)),)
-  # NB: We must set the environment variable for submodules to include
-  # the correct modules/RELEASE.<host>.local file to set EPICS_BASE,
-  # they can't do this for themselves since CONFIG is relative to it:
-  export EPICS_HOST_ARCH := $(shell $(CONFIG)/../startup/EpicsHostArch.pl)
+#
+ifeq ($(origin EPICS_HOST_ARCH), undefined)
+  # Bootstrapping ...
+  EHA := $(firstword $(wildcard $(EPICS_BASE)/lib/perl/EpicsHostArch.pl \
+        $(TOP)/src/tools/EpicsHostArch.pl))
+  # NB: We use a simply expanded variable here for performance:
+  export EPICS_HOST_ARCH := $(shell perl $(EHA))
+  EHA :=
 endif
 
 -include $(CONFIG)/RELEASE

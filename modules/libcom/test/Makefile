@@ -14,10 +14,17 @@ PROD_LIBS += Com
 PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
 PROD_SYS_LIBS_solaris += socket nsl
 
+PROD_SRCS_RTEMS += rtemsTestData.c
+
+ifeq ($(EPICS_HOST_ARCH),$(T_A))
+# skip except for host arch due to custom .plt
+
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c
 # Not much point running this on vxWorks or RTEMS...
 TESTS += epicsUnitTestTest
+
+endif
 
 TESTPROD_HOST += epicsTypesTest
 epicsTypesTest_SRCS += epicsTypesTest.cpp
@@ -61,6 +68,11 @@ TESTPROD_HOST += epicsEnvTest
 epicsEnvTest_SRCS += epicsEnvTest.c
 testHarness_SRCS += epicsEnvTest.c
 TESTS += epicsEnvTest
+
+TESTPROD_HOST += epicsEnvUnsetTest
+epicsEnvUnsetTest_SRCS += epicsEnvUnsetTest.c
+testHarness_SRCS += epicsEnvUnsetTest.c
+TESTS += epicsEnvUnsetTest
 
 TESTPROD_HOST += epicsErrlogTest
 epicsErrlogTest_SRCS += epicsErrlogTest.c
@@ -215,11 +227,13 @@ osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
+ifeq ($(BUILD_CLASS),HOST)
 ifneq ($(OS_CLASS),WIN32)
 # This test can only be run on a build host, and is broken on Windows
 TESTPROD_HOST += yajl_test
 yajl_test_SRCS += yajl_test.c
 TESTS += yajlTest
+endif
 endif
 
 # The testHarness runs all the test programs in a known working order.
@@ -235,6 +249,10 @@ TESTSPEC_vxWorks = libComTestHarness.munch; epicsRunLibComTests
 TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
+ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
+TESTPROD_RTEMS = $(TESTPROD_HOST)
+TESTSCRIPTS_RTEMS += $(filter-out epicsUnitTestTest.t, $(TESTS:%=%.t))
+endif
 
 
 # The following are not test programs, they measure performance.

@@ -90,6 +90,4 @@ realclean:
 .PHONY : $(BUILD_ARCHS) rebuild archsCommonClean
 .PHONY : $(ACTIONS) clean realclean archclean host all
 
-#  User specific rules
-#
--include $(HOME)/configure/RULES_USER
+include $(CONFIG)/RULES_COMMON

@@ -19,6 +19,7 @@
 
 #include "alarm.h"
 #include "dbDefs.h"
+#include "alarm.h"
 #include "epicsMath.h"
 #include "epicsPrint.h"
 #include "epicsStdlib.h"
@@ -179,6 +180,9 @@ unsigned short recGblResetAlarms(void *precord)
     epicsEnum16 new_sevr = pdbc->nsev;
     epicsEnum16 val_mask = 0;
     epicsEnum16 stat_mask = 0;
+
+    if (new_sevr > INVALID_ALARM)
+        new_sevr = INVALID_ALARM;
 
     pdbc->stat = new_stat;
     pdbc->sevr = new_sevr;

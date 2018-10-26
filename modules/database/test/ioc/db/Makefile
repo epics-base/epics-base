@@ -180,6 +180,8 @@ testHarness_SRCS += epicsRunDbTests.c
 dbTestHarness_SRCS += $(testHarness_SRCS)
 dbTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 
+PROD_SRCS_RTEMS += rtemsTestData.c
+
 PROD_vxWorks = dbTestHarness
 PROD_RTEMS = dbTestHarness
 
@@ -187,6 +189,10 @@ TESTSPEC_vxWorks = dbTestHarness.munch; epicsRunDbTests
 TESTSPEC_RTEMS = dbTestHarness.boot; epicsRunDbTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
+ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
+TESTPROD_RTEMS = $(TESTPROD_HOST)
+TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
+endif
 
 include $(TOP)/configure/RULES
 
@@ -197,3 +203,6 @@ dbStressLock$(DEP): $(COMMON_DIR)/xRecord.h
 devx$(DEP): $(COMMON_DIR)/xRecord.h
 scanIoTest$(DEP): $(COMMON_DIR)/xRecord.h
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
+
+rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
+	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)

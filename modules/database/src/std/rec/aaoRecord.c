@@ -2,7 +2,7 @@
 * Copyright (c) 2002 Southeastern Universities Research Association, as
 *     Operator of Thomas Jefferson National Accelerator Facility.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* recAao.c */
 
@@ -11,7 +11,7 @@
  *      Original Author: Dave Barker
  *
  *      C  E  B  A  F
- *     
+ *
  *      Continuous Electron Beam Accelerator Facility
  *      Newport News, Virginia, USA.
  *
@@ -225,10 +225,14 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 static long put_array_info(DBADDR *paddr, long nNew)
 {
     aaoRecord *prec = (aaoRecord *)paddr->precord;
+    epicsUInt32 nord = prec->nord;
 
     prec->nord = nNew;
     if (prec->nord > prec->nelm)
         prec->nord = prec->nelm;
+
+    if (nord != prec->nord)
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     return 0;
 }
 
@@ -241,7 +245,7 @@ static long get_units(DBADDR *paddr, char *units)
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
             if (prec->ftvl == DBF_STRING || prec->ftvl == DBF_ENUM)
-                break; 
+                break;
         case indexof(HOPR):
         case indexof(LOPR):
             strncpy(units,prec->egu,DB_UNITS_SIZE);

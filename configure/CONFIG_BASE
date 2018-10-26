@@ -42,7 +42,7 @@ PODTOHTML        = $(PERL) $(TOOLS)/podToHtml.pl
 CONVERTRELEASE   = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FULLPATHNAME     = $(PERL) $(TOOLS)/fullPathName.pl
 TAPTOJUNIT       = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
-GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG)
+GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG) $(QUESTION_FLAG)
 
 #---------------------------------------------------------------
 # tools for installing libraries and products

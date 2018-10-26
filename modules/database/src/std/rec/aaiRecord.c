@@ -2,7 +2,7 @@
 * Copyright (c) 2002 Southeastern Universities Research Association, as
 *     Operator of Thomas Jefferson National Accelerator Facility.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* recAai.c */
 
@@ -11,7 +11,7 @@
  *      Original Author: Dave Barker
  *
  *      C  E  B  A  F
- *     
+ *
  *      Continuous Electron Beam Accelerator Facility
  *      Newport News, Virginia, USA.
  *
@@ -225,10 +225,14 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 static long put_array_info(DBADDR *paddr, long nNew)
 {
     aaiRecord *prec = (aaiRecord *)paddr->precord;
+    epicsUInt32 nord = prec->nord;
 
     prec->nord = nNew;
     if (prec->nord > prec->nelm)
         prec->nord = prec->nelm;
+
+    if (nord != prec->nord)
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     return 0;
 }
 
@@ -241,7 +245,7 @@ static long get_units(DBADDR *paddr, char *units)
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
             if (prec->ftvl == DBF_STRING || prec->ftvl == DBF_ENUM)
-                break; 
+                break;
         case indexof(HOPR):
         case indexof(LOPR):
             strncpy(units,prec->egu,DB_UNITS_SIZE);
@@ -336,33 +340,22 @@ static void monitor(aaiRecord *prec)
 static long readValue(aaiRecord *prec)
 {
     struct aaidset *pdset = (struct aaidset *) prec->dset;
-    long status = 0;
+    long status;
 
-    if (!prec->pact) {
-        status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
-        if (status) return status;
-    }
+    /* NB: Device support must post updates to NORD */
 
-    switch (prec->simm) {
-    case menuYesNoNO:
-        status = pdset->read_aai(prec);
-        break;
+    if (prec->pact)
+        goto do_read;
 
-    case menuYesNoYES: {
+    status = recGblGetSimm((dbCommon *)prec, &prec->sscn, &prec->oldsimm,
+        &prec->simm, &prec->siml);
+    if (status)
+        return status;
+
+    if (prec->simm == menuYesNoYES) {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        if (prec->pact || (prec->sdly < 0.)) {
-            /* Device suport is responsible for buffer
-               which might be read-only so we may not be
-               allowed to call dbGetLink on it.
-               Maybe also device support has an advanced
-               simulation mode.
-               Thus call device now.
 
-               Reading through SIOL is handled in Soft Channel Device Support
-             */
-            status = pdset->read_aai(prec);
-            prec->pact = FALSE;
-        } else { /* !prec->pact && delay >= 0. */
+        if (prec->sdly >= 0) {
             CALLBACK *pvt = prec->simpvt;
             if (!pvt) {
                 pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
@@ -370,14 +363,14 @@ static long readValue(aaiRecord *prec)
             }
             if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
             prec->pact = TRUE;
+            return 0;
         }
-        break;
     }
-
-    default:
+    else if (prec->simm != menuYesNoNO) {
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
-        status = -1;
+        return -1;
     }
 
-    return status;
+do_read:
+    return pdset->read_aai(prec);
 }

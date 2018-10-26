@@ -4,12 +4,12 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
  *      Original Author: Bob Dalesio
- *      Date:            7-14-89 
+ *      Date:            7-14-89
  */
 
 #include <stddef.h>
@@ -439,12 +439,16 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 static long put_array_info(DBADDR *paddr, long nNew)
 {
     compressRecord *prec = (compressRecord *) paddr->precord;
+    epicsUInt32 nuse = prec->nuse;
 
     if (prec->balg == bufferingALG_FIFO)
         prec->off = (prec->off + nNew) % prec->nsam;
     prec->nuse += nNew;
     if (prec->nuse > prec->nsam)
         prec->nuse = prec->nsam;
+
+    if (nuse != prec->nuse)
+        db_post_events(prec, &prec->nuse, DBE_VALUE | DBE_LOG);
     return 0;
 }
 

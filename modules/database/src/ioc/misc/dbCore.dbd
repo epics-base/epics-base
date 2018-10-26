@@ -12,6 +12,9 @@ variable(asCaDebug,int)
 # CA server debug flag (very verbose) range[0,5]
 variable(CASDEBUG,int)
 
+# Link parsing debug
+variable(dbJLinkDebug,int)
+
 # Static database access variables
 variable(dbRecordsOnceOnly,int)
 variable(dbRecordsAbcSorted,int)
@@ -19,8 +22,12 @@ variable(dbBptNotMonotonic,int)
 variable(dbQuietMacroWarnings,int)
 variable(dbConvertStrict,int)
 
+# PUTF/RPRO tracing; set TPRO on records to trace
+variable(dbAccessDebugPUTF,int)
+
 # dbLoadTemplate settings
 variable(dbTemplateMaxVars,int)
+
 # Default number of parallel callback threads
 variable(callbackParallelThreadsDefault,int)
 

@@ -66,10 +66,12 @@ void miscIocRegister(void)
 
 /* system -- escape to system command interpreter.
  *
- * Disabled by default, for security reasons. To enable this command, add
+ * Disabled by default for security reasons, not available on all OSs.
+ * To enable this command, add
  *     registrar(iocshSystemCommand)
- * to an application dbd file.
+ * to an application dbd file, or include system.dbd
  */
+#ifndef SYSTEM_UNAVAILABLE
 static const iocshArg systemArg0 = { "command string",iocshArgString};
 static const iocshArg * const systemArgs[] = {&systemArg0};
 static const iocshFuncDef systemFuncDef = {"system",1,systemArgs};
@@ -77,12 +79,15 @@ static void systemCallFunc(const iocshArgBuf *args)
 {
     system(args[0].sval);
 }
+#endif
 
 static void iocshSystemCommand(void)
 {
+#ifndef SYSTEM_UNAVAILABLE
     if (system(NULL))
         iocshRegister(&systemFuncDef, systemCallFunc);
     else
+#endif
         errlogPrintf ("Can't register 'system' command -- no command interpreter available.\n");
 }
 epicsExportRegistrar(iocshSystemCommand);

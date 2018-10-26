@@ -92,7 +92,4 @@ $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
 .PHONY : $(dirActionArchTargets)
 .PHONY : $(actionArchTargets)
 
-
-#  User specific rules
-#
--include $(HOME)/configure/RULES_USER
+include $(CONFIG)/RULES_COMMON

@@ -265,8 +265,19 @@ int dbIsLinkConnected(const struct link *plink)
 {
     lset *plset = plink->lset;
 
-    if (!plset || !plset->isConnected)
+    if (!plset)
         return FALSE;
+    if (!plset->isVolatile)
+        return TRUE;
+
+    if (!plset->isConnected) {
+        struct dbCommon *precord = plink->precord;
+
+        errlogPrintf("dbLink: Link type for '%s.%s' is volatile but has no"
+            " lset::isConnected() method\n",
+            precord->name, dbLinkFieldName(plink));
+        return FALSE;
+    }
 
     return plset->isConnected(plink);
 }

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* recWaveform.c - Record Support Routines for Waveform records */
@@ -205,12 +205,14 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 static long put_array_info(DBADDR *paddr, long nNew)
 {
     waveformRecord *prec = (waveformRecord *) paddr->precord;
+    epicsUInt32 nord = prec->nord;
 
     prec->nord = nNew;
     if (prec->nord > prec->nelm)
         prec->nord = prec->nelm;
 
-    db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+    if (nord != prec->nord)
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     return 0;
 }
 
@@ -223,7 +225,7 @@ static long get_units(DBADDR *paddr, char *units)
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
             if (prec->ftvl == DBF_STRING || prec->ftvl == DBF_ENUM)
-                break; 
+                break;
         case indexof(HOPR):
         case indexof(LOPR):
             strncpy(units,prec->egu,DB_UNITS_SIZE);
@@ -346,15 +348,18 @@ static long readValue(waveformRecord *prec)
 
     case menuYesNoYES: {
         long nRequest = prec->nelm;
+        epicsUInt32 nord = prec->nord;
 
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
         if (prec->pact || (prec->sdly < 0.)) {
             status = dbGetLink(&prec->siol, prec->ftvl, prec->bptr, 0, &nRequest);
-            if (status == 0) prec->udf = FALSE;
-            /* nord set only for db links: needed for old db_access */
+            if (status == 0)
+                prec->udf = FALSE;
+
             if (!dbLinkIsConstant(&prec->siol)) {
                 prec->nord = nRequest;
-                db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+                if (nord != prec->nord)
+                    db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
             }
             prec->pact = FALSE;
         } else { /* !prec->pact && delay >= 0. */

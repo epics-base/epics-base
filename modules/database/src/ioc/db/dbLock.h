@@ -13,6 +13,8 @@
 #ifndef INCdbLockh
 #define INCdbLockh
 
+#include <stddef.h>
+
 #include "ellLib.h"
 #include "shareLib.h"
 

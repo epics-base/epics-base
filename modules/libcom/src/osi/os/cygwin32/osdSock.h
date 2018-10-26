@@ -35,6 +35,8 @@ typedef int                     SOCKET;
 typedef int osiSockIoctl_t;
 typedef int osiSocklen_t;
 typedef int osiSockOptMcastLoop_t;
+typedef int osiSockOptMcastTTL_t;
+
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)
 #ifndef SHUT_RD
 #define SHUT_RD 0

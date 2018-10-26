@@ -60,7 +60,9 @@ static const struct testParseDataT {
     TEST_PV_LINK(" world MSICP", "world", pvlOptMSI|pvlOptCP),
 
     {"#C14 S145 @testing", {VME_IO, "testing", 0, "CS", {14, 145}}},
+    {"#C14 S145", {VME_IO, "", 0, "CS", {14, 145}}},
     {"#B11 C12 N13 A14 F15 @cparam", {CAMAC_IO, "cparam", 0, "BCNAF", {11, 12, 13, 14, 15}}},
+    {"#B11 C12 N13 A14 F15", {CAMAC_IO, "", 0, "BCNAF", {11, 12, 13, 14, 15}}},
     {" #B111 C112 N113 @cparam", {CAMAC_IO, "cparam", 0, "BCN", {111, 112, 113}}},
     {" @hello world ", {INST_IO, "hello world", 0, "", /*{}*/}},
     {" {\"x\":true} ", {JSON_LINK, "{\"x\":true}", 0, "", /*{}*/}},
@@ -87,11 +89,15 @@ static void testLinkParse(void)
     for (;td->str; td++) {
         int i, N;
         testDiag("Parsing \"%s\"", td->str);
-        testOk(dbParseLink(td->str, DBF_INLINK, &info, 0) == 0, "Parser returned OK");
+        testOk(dbParseLink(td->str, DBF_INLINK, &info) == 0, "Parser returned OK");
         if (!testOk(info.ltype == td->info.ltype, "Link type value"))
             testDiag("Expected %d, got %d", td->info.ltype, info.ltype);
-        if (td->info.target)
+        if (td->info.target && info.target)
             testStrcmp(0, info.target, td->info.target);
+        else if(!!td->info.target ^ !!info.target)
+            testFail("info target NULL mis-match %s %s", info.target, td->info.target);
+        else
+            testPass("info target NULL as expected");
         if (info.ltype == td->info.ltype) {
             switch (info.ltype) {
             case PV_LINK:
@@ -125,7 +131,6 @@ static const char *testParseFailData[] = {
     "#A0 B @",
     "#A0 B C @",
     "#R1 M2 D3 E4 @oops", /* RF_IO has no parm */
-    "#C1 S2", /* VME_IO needs parm */
     NULL
 };
 
@@ -147,7 +152,7 @@ static void testLinkFailParse(void)
     eltc(1);
 
     for(;*td; td++) {
-        testOk(dbParseLink(*td, DBF_INLINK, &info, 0) == S_dbLib_badField,
+        testOk(dbParseLink(*td, DBF_INLINK, &info) == S_dbLib_badField,
             "dbParseLink correctly rejected \"%s\"", *td);
     }
 
@@ -480,6 +485,13 @@ static void testLinkInitFail(void)
     testOk1(plink->type == INST_IO);
     testOk1(plink->value.instio.string != NULL);
 
+    testdbGetFieldEqual("eINST_IO2.INP", DBR_STRING, "@");
+
+    prec = (xRecord *) testdbRecordPtr("eINST_IO2");
+    plink = &prec->inp;
+    testOk1(plink->type == INST_IO);
+    testOk1(plink->value.instio.string != NULL);
+
     testIocShutdownOk();
 
     testdbCleanup();
@@ -684,7 +696,7 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(320);
+    testPlan(337);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

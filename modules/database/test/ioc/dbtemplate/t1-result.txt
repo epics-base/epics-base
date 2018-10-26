@@ -1,6 +1,6 @@
 This is t1-template.txt
 
-With $(a,undefined) & $(b,undefined):
+With $(a) & $(b):
 This is t1-include.txt 
   a = default value used when a is undefined
   b = default value used when b is undefined

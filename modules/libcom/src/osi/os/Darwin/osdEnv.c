@@ -40,6 +40,16 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *val
 }
 
 /*
+ * Unset an environment variable
+ */
+
+epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name)
+{
+    iocshEnvClear(name);
+    unsetenv(name);
+}
+
+/*
  * Show the value of the specified, or all, environment variables
  */
 epicsShareFunc void epicsShareAPI epicsEnvShow (const char *name)

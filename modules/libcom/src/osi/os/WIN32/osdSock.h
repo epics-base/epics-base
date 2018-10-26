@@ -29,6 +29,7 @@
 typedef u_long FAR osiSockIoctl_t;
 typedef int osiSocklen_t;
 typedef BOOL osiSockOptMcastLoop_t;
+typedef DWORD osiSockOptMcastTTL_t;
 
 #ifndef SHUT_RD
 #   define SHUT_RD SD_RECEIVE

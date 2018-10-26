@@ -1,4 +1,13 @@
-# <top>/configure/RULES_EXPAND
+#*************************************************************************
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution.
+#*************************************************************************
+
+# RULES_EXPAND
 
 vpath %@ $(USR_VPATH) $(ALL_SRC_DIRS)
 

@@ -842,6 +842,7 @@ static void eventCallback(struct event_handler_args arg)
     struct dbr_time_double *pdbr_time_double;
     dbCaCallback monitor = 0;
     void *userPvt = 0;
+    int doScan = 1;
 
     assert(pca);
     epicsMutexMustLock(pca->lock);
@@ -872,10 +873,13 @@ static void eventCallback(struct event_handler_args arg)
         memcpy(pca->pgetString, dbr_value_ptr(arg.dbr, arg.type), size);
         pca->gotInString = TRUE;
     } else switch (arg.type){
+    case DBR_TIME_ENUM:
+        /* Disable the record scan if we also have a string monitor */
+        doScan = !(plink->value.pv_link.pvlMask & pvlOptInpString);
+        /* fall through */
     case DBR_TIME_STRING: 
     case DBR_TIME_SHORT: 
     case DBR_TIME_FLOAT:
-    case DBR_TIME_ENUM:
     case DBR_TIME_CHAR:
     case DBR_TIME_LONG:
     case DBR_TIME_DOUBLE:
@@ -893,7 +897,7 @@ static void eventCallback(struct event_handler_args arg)
     pca->sevr = pdbr_time_double->severity;
     pca->stat = pdbr_time_double->status;
     memcpy(&pca->timeStamp, &pdbr_time_double->stamp, sizeof(epicsTimeStamp));
-    if (precord) {
+    if (doScan && precord) {
         struct pv_link *ppv_link = &plink->value.pv_link;
 
         if ((ppv_link->pvlMask & pvlOptCP) ||

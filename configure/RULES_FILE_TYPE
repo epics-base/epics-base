@@ -7,9 +7,11 @@
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# Include <top>/configure/RULES_BUILD from tops defined in RELEASE* files
+# Include <top>/configure/RULES_BUILD from tops defined in RELEASE* files,
+# excluding EPICS_BASE
 #
-RELEASE_RULES_BUILDS = $(foreach top, $(RELEASE_TOPS), \
+RELEASE_RULES_BUILDS = $(foreach top, \
+    $(filter-out EPICS_BASE, $(RELEASE_TOPS)), \
     $(wildcard $($(top))/configure/RULES_BUILD))
 ifneq ($(RELEASE_RULES_BUILDS),)
   include $(RELEASE_RULES_BUILDS)
@@ -23,7 +25,7 @@ ifneq ($(RELEASE_CFG_RULES),)
   include $(RELEASE_CFG_RULES)
 endif
 
-# If this is not BASE then include <TOP>/configure/RULES_BUILD
+# If this is not BASE then include <top>/configure/RULES_BUILD
 #
 ifeq ($(wildcard $(TOP)/configure/CONFIG_BASE_VERSION),)
 TOP_RULES_BUILDS = $(wildcard $(TOP)/configure/RULES_BUILD)
@@ -67,7 +69,3 @@ file_type_clean:
 	@$(RM) $(foreach type, $(FILE_TYPE), $($(type)))
 
 .PHONY : file_type_clean
-
-#  User specific rules
-#
--include $(HOME)/configure/RULES_USER

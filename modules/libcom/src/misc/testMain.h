@@ -27,7 +27,13 @@
  *     }
  */
 
-#if defined(vxWorks) || defined(__rtems__)
+#if defined(__rtems__)
+  #ifdef __cplusplus
+    #define MAIN(prog) extern "C" int prog(void); extern "C" int main() __attribute__((weak, alias(#prog))); extern "C" int prog(void)
+  #else
+    #define MAIN(prog) int prog(); int main() __attribute__((weak, alias(#prog))); int prog()
+  #endif
+#elif defined(vxWorks)
   #ifdef __cplusplus
     #define MAIN(prog) extern "C" int prog(void)
   #else

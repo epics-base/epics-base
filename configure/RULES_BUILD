@@ -6,11 +6,12 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
+
+# RULES_BUILD
+
+# Rules for making things specified in a Makefile
 #
-#	Rules for making things specified in Makefile
-#
-#	we are in O.$(T_A), but most sources are elsewhere
-#
+# CWD is O.$(T_A), but most sources are elsewhere
 
 ifndef BASE_RULES_BUILD
 BASE_RULES_BUILD=1
@@ -79,9 +80,9 @@ else
 host:
 endif
 
--include $(CONFIG)/RULES_FILE_TYPE
+include $(CONFIG)/RULES_FILE_TYPE
 
--include $(CONFIG)/RULES.Db
+include $(CONFIG)/RULES.Db
 
 #---------------------------------------------------------------
 # Include defines and rules for prod, library and test* targets
@@ -185,7 +186,7 @@ endif
 
 # RELEASE file consistency checking
 checkRelease:
-	$(CONVERTRELEASE) checkRelease
+	+$(CONVERTRELEASE) checkRelease
 warnRelease:
 	-$(CONVERTRELEASE) checkRelease
 noCheckRelease:
@@ -256,15 +257,13 @@ YACCOPT ?= $($*_YACCOPT)
 	$(MV) $*.tab.c $*.c
 	$(if $(findstring -d, $(YACCOPT)),$(MV) $*.tab.h $*.h,)
 
-# must be a seperate rule since when not using '-d' the
+# must be a separate rule since when not using '-d' the
 # prefix for .h will be different then .c
 %.h : %.c %.y
 
 %.c: %.l
-	@$(RM) $*.yy.c
-	$(LEX) $(LEXOPT) -t $< > $*.yy.c
 	@$(RM) $@
-	$(MV) $*.yy.c $@
+	$(LEX) $(LEXOPT) -o$@ $<
 
 #---------------------------------------------------------------
 # Libraries, shared/DLL and stubs
@@ -392,7 +391,7 @@ endif
 # Generate a perl program to exec the real test binary.
 %.t: %$(EXE) $(TOOLS)/makeTestfile.pl
 	@$(RM) $@
-	$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
+	$(PERL) $(TOOLS)/makeTestfile.pl $(T_A) $(EPICS_HOST_ARCH) $@ $<
 
 #---------------------------------------------------------------
 # Generate header with version number from VCS
@@ -531,7 +530,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
--include $(CONFIG)/RULES_EXPAND
+include $(CONFIG)/RULES_EXPAND
 
 .PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)
@@ -540,5 +539,9 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PHONY: runtests tapfiles clean-tests test-results junitfiles
 .PHONY: checkRelease warnRelease noCheckRelease FORCE
 
+include $(CONFIG)/RULES_COMMON
+
+else
+    $(warning RULES_BUILD included more than once. \
+        Use 'make show-makefiles' to work out why.)
 endif # BASE_RULES_BUILD
-#	EOF RULES_BUILD

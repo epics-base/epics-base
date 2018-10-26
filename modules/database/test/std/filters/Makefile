@@ -63,6 +63,8 @@ testHarness_SRCS += epicsRunFilterTests.c
 filterTestHarness_SRCS += $(testHarness_SRCS)
 filterTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 
+PROD_SRCS_RTEMS += rtemsTestData.c
+
 PROD_vxWorks = filterTestHarness
 PROD_RTEMS = filterTestHarness
 
@@ -70,6 +72,10 @@ TESTSPEC_vxWorks = filterTestHarness.munch; epicsRunFilterTests
 TESTSPEC_RTEMS = filterTestHarness.boot; epicsRunFilterTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
+ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
+TESTPROD_RTEMS = $(TESTPROD_HOST)
+TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
+endif
 
 include $(TOP)/configure/RULES
 
@@ -79,3 +85,6 @@ dbndTest$(DEP): $(COMMON_DIR)/xRecord.h
 syncTest$(DEP): $(COMMON_DIR)/xRecord.h
 arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
 arrTest$(DEP): $(COMMON_DIR)/arrRecord.h
+
+rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
+	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)

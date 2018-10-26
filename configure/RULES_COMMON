@@ -1,0 +1,35 @@
+#*************************************************************************
+# Copyright (c) 2018 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution.
+#*************************************************************************
+
+# These rules show the set of Makefiles, config files and
+# rules files loaded by GNUmake.
+
+# Protect against filenames containing colons (Windows)
+SAFE_MAKEFILES = $(subst :,__colon__,$(MAKEFILE_LIST))
+SHOW_MAKEFILES = $(SAFE_MAKEFILES:%=show-makefile.%)
+show-makefiles: $(SHOW_MAKEFILES)
+
+# The sort prevents warnings about duplicate targets:
+$(sort $(SHOW_MAKEFILES)): show-makefile.%:
+	@echo "    $(subst __colon__,:,$(@:show-makefile.%=%))"
+
+.PHONY: show-makefiles show-makefile.%
+
+# These rules support printing a Makefile variable values.
+# Many variables are only set inside an O.<arch> build directory.
+#   make PRINT.T_A
+
+PRINT_Var = $(@:PRINT.%=%)
+PRINT.%:
+	@echo $(PRINT_Var) = '$($(PRINT_Var))'
+
+.PHONY: PRINT PRINT.%
+
+
+#  User specific rules
+#
+-include $(HOME)/configure/RULES_USER

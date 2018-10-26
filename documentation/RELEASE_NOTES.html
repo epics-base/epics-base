@@ -97,6 +97,115 @@ be happy to try and answer them!</p>
 
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Type-safe Device and Driver Support Tables</h3>
+
+<p>Type-safe versions of the device and driver support structures <tt>dset</tt>
+and <tt>drvet</tt> have been added to the devSup.h and drvSup.h headers
+respectively. The original structure definitions have not been changed so
+existing support modules will still build normally, but older modules can be
+modified and new code written to be compatible with both.</p>
+
+<p>The old structure definitions will be replaced by the new ones if the macros
+<tt>USE_TYPED_DSET</tt> and/or <tt>USE_TYPED_DRVET</tt> are defined when the
+appropriate header is included. The best place to define these is in the
+Makefile, as with the <tt>USE_TYPED_RSET</tt> macro that was introduced in
+Base-3.16.1 and described below. See the comments in devSup.h for a brief usage
+example, or look at <a href="https://github.com/epics-modules/ipac/commit/a7e0ff4089b9aa39108bc8569e95ba7fcf07cee9">
+this commit</a> to the ipac module to see a module conversion.</p>
+
+<p>A helper function <tt>DBLINK* dbGetDevLink(dbCommon *prec)</tt> has also been
+added to devSup.h which fetches a pointer to the INP or OUT field of the
+record.</p>
+
+<h3>RTEMS build configuration update, running tests under QEMU</h3>
+
+<p>This release includes the ability to run the EPICS unit tests built for a
+special version of the RTEMS-pc386 target architecture on systems that have an
+appropriate QEMU emulator installed (<tt>qemu-system-i386</tt>). It is also now
+possible to create sub-architectures of RTEMS targets, whereas previously the
+EPICS target architecture name had to be <tt>RTEMS-$(RTEMS_BSP)</tt>.</p>
+
+<p>The new target <tt>RTEMS-pc386-qemu</tt> builds binaries that can be run in
+the <tt>qemu-system-i386</tt> PC System emulator. This target is a derivative of
+the original <tt>RTEMS-pc386</tt> target but with additional software to build
+an in-memory file-system, and some minor modifications to allow the unit tests
+to work properly under QEMU. When this target is enabled, building any of the
+make targets that cause the built-in self-tests to be run (such as
+<tt>make&nbsp;runtests</tt>) will also run the tests for RTEMS using QEMU.</p>
+
+<p>To allow the new 3-component RTEMS target name, the EPICS build system for
+RTEMS was modified to allow a <tt>configure/os/CONFIG.Common.&lt;arch&gt;</tt>
+file to set the <tt>RTEMS_BSP</tt> variable to inform the build what RTEMS BSP
+to use. Previously this was inferred from the value of the <tt>T_A</tt> make
+variable, but that prevents having multiple EPICS targets that build against the
+same BSP. All the included RTEMS target configuration files have been updated;
+build configuration files for out-of-tree RTEMS targets will continue to work as
+the original rules are used to set <tt>RTEMS_BSP</tt> if it hasn't been set when
+needed.</p>
+
+<h3>Link type enhancements</h3>
+
+<p>This release adds three new link types: "state", "debug" and "trace". The
+"state" link type gets and puts boolean values from/to the dbState library that
+was added in the 3.15.1 release. The "debug" link type sets the
+<code>jlink::debug</code> flag in its child link, while the "trace" link type
+also causes the arguments and return values for all calls to the child link's
+jlif and lset routines to be printed on stdout. The debug flag can no longer be
+set using an info tag. The addition of the "trace" link type has allowed over
+200 lines of conditional diagnostic printf() calls to be removed from the other
+link types.</p>
+
+<p>The "calc" link type can now be used for output links as well as input links.
+This allows modification of the output value and even combining it with values
+from other input links. See the separate JSON Link types document for
+details.</p>
+
+<p>A new <code>start_child()</code> method was added to the end of the jlif
+interface table.</p>
+
+<p>The <code>lset</code> methods have now been properly documented in the
+dbLink.h header file using Doxygen annotations, although we do not run Doxygen
+on the source tree yet to generate API documentation.</p>
+
+<p>Link types that utilize child links must now indicate whether the child will
+be used for input, output or forward linking by the return value from its
+<code>parse_start_map()</code> method. The <code>jlif_key_result</code> enum now
+contains 3 values <code>jlif_key_child_inlink</code>,
+<code>jlif_key_child_outlink</code> and <code>jlif_key_child_fwdlink</code>
+instead of the single <code>jlif_key_child_link</code> that was previously used
+for this.</p>
+
+<h3>GNUmake targets for debugging</h3>
+
+<p>Some additional build rules have been added to help debug configuration
+problems with the build system. Run <tt>make show-makefiles</tt> to get a sorted
+list of all the files that the build system includes when building in the
+current directory.</p>
+
+<p>A new pattern rule for <tt>PRINT.%</tt> can be used to show the value of any
+GNUmake variable for the current build directory (make sure you are in the right
+directory though, many variables are only set when inside the
+<tt>O.<i>arch</i></tt> build directory). For example <tt>make PRINT.T_A</tt>
+will display the build target architecture name from inside a
+<tt>O.<i>arch</i></tt> directory but the variable will be empty from an
+application top or src directory. <tt>make PRINT.EPICS_BASE</tt> will show the
+path to Base from any EPICS application directory though.</p>
+
+<h3>Propagate PUTF across Asynchronous record processing</h3>
+
+<p>The IOC contains a mechanism involving the PUTF and RPRO fields of each
+record to ensure that if a record is busy when it receives a put to one of its
+fields, the record will be processed again to ensure that the new field value
+has been correctly acted on. Until now that mechanism only worked if the put was
+to the asynchronous record itself, so puts that were chained from some other
+record via a DB link did not cause reprocessing.</p>
+
+<p>In this release the mechanism has been extended to propagate the PUTF state
+across DB links until all downstream records have been reprocessed. Some
+additional information about the record state can be shown by setting the TPRO
+field of an upstream record, and even more trace data is displayed if the
+debugging variable <tt>dbAccessDebugPUTF</tt> is set in addition to TPRO.</p>
+
 <h3>Finding info fields</h3>
 
 <p>A new iocsh command <code>dbli</code> lists the info fields defined in the
@@ -113,15 +222,18 @@ release also includes additional protection against buffer overflows while
 printing long links in <tt>dbpr</tt>, and corrects the output of long strings
 from the <tt>dbgf</tt> command.</p>
 
-<h3>Record types mbbiDirect and mbboDirect extended to 32 bit</h3>
+<h3>Record types mbbiDirect and mbboDirect upgraded to 32 bit</h3>
 
-<p>The VAL fields of mbbiDirect and mbboDirect records have
-been extended from <tt>DBF_USHORT</tt> (16 bit) to <tt>DBF_LONG</tt> (32 bit).
-New bit fields <tt>B10</tt>...<tt>B1F</tt> have been added.</p>
+<p>The VAL fields and related fields of these records are now <tt>DBF_LONG</tt>.
+(Not <tt>DBF_ULONG</tt> in order to prevent Channel Access from promoting them
+to <tt>DBF_DOUBLE</tt>.) Additional bit fields <tt>B10</tt>...<tt>B1F</tt> have
+been added.</p>
 
-<p>Device support which accesses the bit fields can test if the macro
-<tt>mbbiDirectRecord1BF</tt> or <tt>mbboDirectRecord1BF</tt> is
-defined. Device support which only accesses RVAL needs no modification.</p>
+<p>Device support that accesses <tt>VAL</tt> or the bit fields directly (most
+don't) and aims for compatibility with old and new versions of these records
+should use at least 32 bit integer types to avoid bit loss. The number of bit
+fields can be calculated using <code>8&nbsp;*&nbsp;sizeof(prec->val)</code>
+which is correct in both versions.</p>
 
 <h3>Restore use of ledlib for VxWorks command editing</h3>
 
@@ -763,10 +875,44 @@ the stdout stream, making it hard to parse.</p>
 callback.h header and removed the need for dbScan.c to reach into the internals
 of its CALLBACK objects.</p>
 
-
-<h2 align="center">Changes from the 3.15 branch since 3.15.5</h2>
+<h2 align="center">Changes from the 3.15 branch since 3.15.6</h2>
 
 <!-- Insert inherited items immediately below here ... -->
+
+
+<h2 align="center">Changes made between 3.15.5 and 3.15.6</h2>
+
+<h3>Unsetting environment variables</h3>
+
+<p>The new command <code>epicsEnvUnset <i>varname</i></code> can be used to
+unset an environment variable.</p>
+
+<h3>Warning indicators in msi (and macLib) output</h3>
+
+<p>The libCom macro expansion library has been modified so that when the
+SUPPRESS_WARNINGS flag is set it will no longer include any <tt>,undefined</tt>
+or <tt>,recursive</tt> indicators in its output when undefined or recursive
+macros are encountered. These indicators were harmless when the output was fed
+into an IOC along with a definition for the macro, but when the <tt>msi</tt>
+tool was used to generate other kinds of files they caused problems. If the
+<tt>msi -V</tt> flag is used the markers will still be present in the output
+whenever the appropriate condition is seen.</p>
+
+<h3>Improvements to msi</h3>
+
+<p>In addition to fixing its response to discovering parsing errors in its
+substitution input file (reported as Launchpad
+<a href="https://bugs.launchpad.net/epics-base/+bug/1503661">bug #1503661</a>)
+so it now deletes the incomplete output file, the msi program has been cleaned
+up a little bit internally.</p>
+
+<h3>All array records now post monitors on their array-length fields</h3>
+
+<p>The waveform record has been posting monitors on its NORD field since Base
+3.15.0.1; we finally got around to doing the equivalent in all the other
+built-in record types, which even required modifying device support in some
+cases. This fixes <a href="https://bugs.launchpad.net/epics-base/+bug/1730727">
+Launchpad bug #1730727</a>.</p>
 
 <h3>HOWTO: Converting Wiki Record Reference to POD</h3>
 
@@ -799,15 +945,84 @@ of having go modify or replace the original. A new .gitignore pattern
 tells git to ignore all configure/*.local files.</p>
 
 
-<h2 align="center">Changes from the 3.14 branch since 3.15.5</h2>
+<h2 align="center">Changes from the 3.14 branch between 3.15.5 and 3.15.6</h2>
 
-<!-- Insert inherited items immediately below here ... -->
+<h3>Fix broken <tt>EPICS_IOC_LOG_FILE_LIMIT=0</tt> setting</h3>
+
+<p>The Application Developers' Guide says this is allowed and disables the
+limit on the log-file, but it hasn't actually worked for some time (if ever).
+Note that the iocLogServer will be removed from newer Base release sometime
+soon as its functionality can be implemented by other dedicated log servers
+such as logstash or syslog-ng.</p>
+
+<p>Fixes <a href="https://bugs.launchpad.net/bugs/1786858">lp:1786858</a>
+and part of <a href="https://bugs.launchpad.net/bugs/1786966">lp:1786966</a>.
+</p>
+
+<h3>Cleanup of startup directory</h3>
+
+<p>The files in the startup directory have not been maintained in recent years
+and have grown crufty (technical term). This release includes the following
+updates to these files:</p>
+
+<ul>
+
+<li>The Perl <tt>EpicsHostArch.pl</tt> script has been rewritten, and support
+for a few previously missing host architectures has been added to it.</li>
+
+<li>The <tt>EpicsHostArch.pl</tt> script has also been moved into the standard
+<tt>src/tools</tt> directory, from where it will be installed into
+<tt>lib/perl</tt>. In this new location it is no longer executable, so it must
+be run by the <tt>perl</tt> executable.</li>
+
+<li>The build system has been adjusted to look for <tt>EpicsHostArch.pl</tt> in
+both places if the <tt>EPICS_HOST_ARCH</tt> environment variable has not been
+set at build-time.</li>
+
+<li>Sites that used the original Perl script to set <tt>EPICS_HOST_ARCH</tt> as
+part of their standard environment will need to adjust their scripts when they
+upgrade to this release.</li>
+
+<li>The <tt>EpicsHostArch</tt> shell script has been replaced with a wrapper
+routine that calls the Perl <tt>EpicsHostArch.pl</tt> script. Sites that rely on
+this script to set <tt>EPICS_HOST_ARCH</tt> should consider switching to the
+Perl script instead.</li>
+
+<li>The <tt>Site.cshrc</tt> and <tt>Site.profile</tt> files have been renamed to
+<tt>unix.csh</tt> and <tt>unix.sh</tt>, respectively.</li>
+
+<li>The existing <tt>win32.bat</tt> file has been cleaned up and a new
+<tt>windows.bat</tt> file added for 64-bit targets. The contents of these files
+should be seen as examples, don't uncomment or install parts for software that
+you don't explicitly know that you need.</li>
+
+</ul>
+
+<h3>Recent Apple XCode Build Issues</h3>
+
+<p>The latest version of XCode will not compile calls to <tt>system()</tt> or
+<tt>clock_settime()</tt> for iOS targets. There were several places in Base
+where these were being compiled, although there were probably never called. The
+code has now been modified to permit iOS builds to complete again.</p>
+
+<h3>Prevent illegal alarm severities</h3>
+
+<p>A check has been added to <tt>recGblResetAlarms()</tt> that prevents records
+from getting an alarm severity higher than INVALID_ALARM. It is still possible
+for a field like HSV to get set to a value that is not a legal alarm severity,
+but the core IOC code should never copy such a value into a record's SEVR or
+ACKS fields. With this fix the record's alarm severity will be limited to
+INVALID_ALARM.</p>
 
 <h3>Fixes for Launchpad bugs</h3>
 
 <p>The following launchpad bugs have fixes included:</p>
 
 <ul>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/1786320">
+    lp: #1786320</a>, dbCa subscribes twice to ENUM</li>
+<li><a href="https://bugs.launchpad.net/epics-base/+bug/541221">
+    lp: #541221</a>, 'assert (pca->pgetNative)' failed in ../dbCa.c</li>
 <li><a href="https://bugs.launchpad.net/epics-base/+bug/1747091">
     lp: #1747091</a>, epicsTimeGetEvent() / generalTime bug</li>
 <li><a href="https://bugs.launchpad.net/epics-base/+bug/1743076">

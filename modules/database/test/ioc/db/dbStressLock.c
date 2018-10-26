@@ -219,6 +219,11 @@ MAIN(dbStressTest)
 
     testPlan(80+nworkers*3);
 
+#if defined(__rtems__)
+    testSkip(80+nworkers*3, "Test assumes time sliced preempting scheduling");
+    return testDone();
+#endif
+
     priv = callocMustSucceed(nworkers, sizeof(*priv), "no memory");
 
     testDiag("lock set stress test");

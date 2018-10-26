@@ -110,6 +110,21 @@ static void epicsEnvSetCallFunc(const iocshArgBuf *args)
     epicsEnvSet (name, value);
 }
 
+/* epicsEnvUnset */
+static const iocshArg epicsEnvUnsetArg0 = { "name",iocshArgString};
+static const iocshArg * const epicsEnvUnsetArgs[1] = {&epicsEnvUnsetArg0};
+static const iocshFuncDef epicsEnvUnsetFuncDef = {"epicsEnvUnset",1,epicsEnvUnsetArgs};
+static void epicsEnvUnsetCallFunc(const iocshArgBuf *args)
+{
+    char *name = args[0].sval;
+
+    if (name == NULL) {
+        fprintf(stderr, "Missing environment variable name argument.\n");
+        return;
+    }
+    epicsEnvUnset (name);
+}
+
 /* epicsParamShow */
 static const iocshFuncDef epicsParamShowFuncDef = {"epicsParamShow",0,NULL};
 static void epicsParamShowCallFunc(const iocshArgBuf *args)
@@ -367,6 +382,7 @@ void epicsShareAPI libComRegister(void)
     iocshRegister(&pwdFuncDef, pwdCallFunc);
 
     iocshRegister(&epicsEnvSetFuncDef, epicsEnvSetCallFunc);
+    iocshRegister(&epicsEnvUnsetFuncDef, epicsEnvUnsetCallFunc);
     iocshRegister(&epicsParamShowFuncDef, epicsParamShowCallFunc);
     iocshRegister(&epicsPrtEnvParamsFuncDef, epicsPrtEnvParamsCallFunc);
     iocshRegister(&epicsEnvShowFuncDef, epicsEnvShowCallFunc);

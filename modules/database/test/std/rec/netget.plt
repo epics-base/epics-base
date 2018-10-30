@@ -10,6 +10,14 @@ use EPICS::IOC;
 
 $ENV{HARNESS_ACTIVE} = 1 if scalar @ARGV && shift eq '-tap';
 
+# Keep traffic local and avoid duplicates over multiple interfaces
+$ENV{EPICS_CA_AUTO_ADDR_LIST} = 'NO';
+$ENV{EPICS_CA_ADDR_LIST} = 'localhost';
+$ENV{EPICS_CAS_INTF_ADDR_LIST} = 'localhost';
+$ENV{EPICS_PVA_AUTO_ADDR_LIST} = 'NO';
+$ENV{EPICS_PVA_ADDR_LIST} = 'localhost';
+$ENV{EPICS_PVAS_INTF_ADDR_LIST} = 'localhost';
+
 my $bin = "@TOP@/bin/@ARCH@";
 my $exe = ($^O =~ m/^(MSWin32|cygwin)$/x) ? '.exe' : '';
 my $prefix = "test-$$";

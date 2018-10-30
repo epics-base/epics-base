@@ -55,7 +55,7 @@ SKIP: {
         if $softIoc eq "$bin/softIoc$exe";
     skip "pvget not available", 1
         unless -x $pvget;
-    like(`$pvget $pv`, qr/$pv \s+ \Q$version\E/x,
+    like(`$pvget $pv`, qr/$pv \s .* \Q$version\E/x,
         'Got same BaseVersion from pvget');
 }
 

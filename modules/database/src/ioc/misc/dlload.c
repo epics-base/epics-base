@@ -9,14 +9,19 @@
 #include "iocsh.h"
 #include "epicsExport.h"
 
+IOCSH_STATIC_FUNC void dlload(const char* name)
+{
+    if (!epicsLoadLibrary(name)) {
+        printf("epicsLoadLibrary failed: %s\n", epicsLoadError());
+    }
+}
+
 static const iocshArg dlloadArg0 = { "path/library.so", iocshArgString};
 static const iocshArg * const dlloadArgs[] = {&dlloadArg0};
 static const iocshFuncDef dlloadFuncDef = {"dlload", 1, dlloadArgs};
 static void dlloadCallFunc(const iocshArgBuf *args)
 {
-    if (!epicsLoadLibrary(args[0].sval)) {
-        printf("epicsLoadLibrary failed: %s\n", epicsLoadError());
-    }
+    dlload(args[0].sval);
 }
 
 static void dlloadRegistar(void) {

@@ -40,6 +40,10 @@ int gft(const char *pname)
     short type;
     int i;
 
+    if (!pname) {
+        printf("Usage: gft \"pv_name\"\n");
+        return -1;
+    }
     chan = dbChannel_create(pname);
     if (!chan) {
         printf("Channel couldn't be created\n");
@@ -94,6 +98,10 @@ int pft(const char *pname, const char *pvalue)
     unsigned char charvalue;
     double doublevalue;
 
+    if (!pname || !pvalue) {
+        printf("Usage: pft \"pv_name\", \"value\"\n");
+        return -1;
+    }
     chan = dbChannel_create(pname);
     if (!chan) {
         printf("Channel couldn't be created\n");
@@ -223,6 +231,10 @@ int tpn(const char *pname, const char *pvalue)
     tpnInfo *ptpnInfo;
     processNotify *ppn = NULL;
 
+    if (!pname || !pvalue) {
+        printf("Usage: tpn \"pv_name\", \"value\"\n");
+        return -1;
+    }
     chan = dbChannel_create(pname);
     if (!chan) {
         printf("Channel couldn't be created\n");

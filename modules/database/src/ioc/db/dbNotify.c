@@ -596,9 +596,13 @@ long dbtpn(char *pname, char *pvalue)
     tpnInfo *ptpnInfo;
     processNotify *ppn=NULL;
 
+    if (!pname) {
+        printf("Usage: dbtpn \"name\", \"value\"\n");
+        return -1;
+    }
     chan = dbChannelCreate(pname);
     if (!chan) {
-        printf("dbtpn: No such channel");
+        printf("dbtpn: No such channel\n");
         return -1;
     }
     

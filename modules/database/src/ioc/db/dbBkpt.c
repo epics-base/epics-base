@@ -283,6 +283,10 @@ long dbb(const char *record_name)
  /*
   *  Convert name to address
   */
+  if (!record_name) {
+      printf("Usage: dbb \"record_name\"\n");
+      return -1;
+  }
   status = dbNameToAddr(record_name, &addr);
   if (status == S_db_notFound)
       printf("   BKPT> Record %s not found\n", record_name);
@@ -403,6 +407,10 @@ long dbd(const char *record_name)
  /*
   *  Convert name to address
   */
+  if (!record_name) {
+      printf("Usage: dbd \"record_name\"\n");
+      return -1;
+  }
   status = dbNameToAddr(record_name, &addr);
   if (status == S_db_notFound)
       printf("   BKPT> Record %s not found\n", record_name);
@@ -846,6 +854,10 @@ long dbap(const char *record_name)
  /*
   *  Convert name to address
   */
+  if (!record_name) {
+      printf("Usage: dbap \"record_name\"\n");
+      return -1;
+  }
   status = dbNameToAddr(record_name, &addr);
   if (status == S_db_notFound)
       printf("   BKPT> Record %s not found\n", record_name);

@@ -27,6 +27,7 @@
 #include "libComRegister.h"
 
 
+/* date */
 void date(const char *format)
 {
     epicsTimeStamp now;
@@ -42,7 +43,6 @@ void date(const char *format)
     puts(nowText);
 }
 
-/* date */
 static const iocshArg dateArg0 = { "format",iocshArgString};
 static const iocshArg * const dateArgs[] = {&dateArg0};
 static const iocshFuncDef dateFuncDef = {"date", 1, dateArgs};
@@ -52,18 +52,21 @@ static void dateCallFunc (const iocshArgBuf *args)
 }
 
 /* echo */
-static const iocshArg echoArg0 = { "string",iocshArgString};
-static const iocshArg * const echoArgs[1] = {&echoArg0};
-static const iocshFuncDef echoFuncDef = {"echo",1,echoArgs};
-static void echoCallFunc(const iocshArgBuf *args)
+IOCSH_STATIC_FUNC void echo(char* str)
 {
-    char *str = args[0].sval;
-
     if (str)
         dbTranslateEscape(str, str); /* in-place is safe */
     else
         str = "";
     printf("%s\n", str);
+}
+
+static const iocshArg echoArg0 = { "string",iocshArgString};
+static const iocshArg * const echoArgs[1] = {&echoArg0};
+static const iocshFuncDef echoFuncDef = {"echo",1,echoArgs};
+static void echoCallFunc(const iocshArgBuf *args)
+{
+    echo(args[0].sval);
 }
 
 /* chdir */
@@ -126,10 +129,15 @@ static void epicsEnvUnsetCallFunc(const iocshArgBuf *args)
 }
 
 /* epicsParamShow */
+IOCSH_STATIC_FUNC void epicsParamShow()
+{
+    epicsPrtEnvParams ();
+}
+
 static const iocshFuncDef epicsParamShowFuncDef = {"epicsParamShow",0,NULL};
 static void epicsParamShowCallFunc(const iocshArgBuf *args)
 {
-    epicsPrtEnvParams ();
+    epicsParamShow ();
 }
 
 /* epicsPrtEnvParams */
@@ -163,12 +171,17 @@ static void iocLogInitCallFunc(const iocshArgBuf *args)
 }
 
 /* iocLogDisable */
+IOCSH_STATIC_FUNC void setIocLogDisable(int val)
+{
+    iocLogDisable = val;
+}
+
 static const iocshArg iocLogDisableArg0 = {"(0,1)=>(false,true)",iocshArgInt};
 static const iocshArg * const iocLogDisableArgs[1] = {&iocLogDisableArg0};
 static const iocshFuncDef iocLogDisableFuncDef = {"setIocLogDisable",1,iocLogDisableArgs};
 static void iocLogDisableCallFunc(const iocshArgBuf *args)
 {
-    iocLogDisable = args[0].ival;
+    setIocLogDisable(args[0].ival);
 }
 
 /* iocLogShow */
@@ -212,12 +225,17 @@ static void errlogInit2CallFunc(const iocshArgBuf *args)
 }
 
 /* errlog */
+IOCSH_STATIC_FUNC void errlog(const char *message)
+{
+    errlogPrintfNoConsole("%s\n", message);
+}
+
 static const iocshArg errlogArg0 = { "message",iocshArgString};
 static const iocshArg * const errlogArgs[1] = {&errlogArg0};
 static const iocshFuncDef errlogFuncDef = {"errlog",1,errlogArgs};
 static void errlogCallFunc(const iocshArgBuf *args)
 {
-    errlogPrintfNoConsole("%s\n", args[0].sval);
+    errlog(args[0].sval);
 }
 
 /* iocLogPrefix */

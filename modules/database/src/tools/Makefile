@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2018 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
@@ -23,6 +23,9 @@ PERL_MODULES += DBD/Recordtype.pm
 PERL_MODULES += DBD/Record.pm
 PERL_MODULES += DBD/Registrar.pm
 PERL_MODULES += DBD/Variable.pm
+
+PERL_MODULES += EPICS/IOC.pm
+HTMLS += EPICS/IOC.html
 
 PERL_SCRIPTS += databaseModuleDirs.pm
 

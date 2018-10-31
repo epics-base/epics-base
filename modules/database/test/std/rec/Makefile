@@ -145,6 +145,10 @@ asyncproctest_SRCS += asyncproctest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/asyncproctest.dbd ../asyncproctest.db
 TESTS += asyncproctest
 
+ifeq ($(T_A),$(EPICS_HOST_ARCH))
+# Host-only tests of softIoc/softIocPVA, caget and pvget (if present)
+TESTS += netget
+endif
 # epicsRunRecordTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunRecordTests.c
 

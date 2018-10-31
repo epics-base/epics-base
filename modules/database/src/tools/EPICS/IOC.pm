@@ -268,6 +268,7 @@ sub _geterrors {
     while ($self->{select}->can_read(0.01)) {
         sysread $self->{stderr}, my $errbuf, 1024;
         push @errors, split m/\n/, $self->{errbuf} . $errbuf, -1;
+        last unless @errors;
         $self->{errbuf} = pop @errors;
     }
     return @errors;
@@ -311,7 +312,7 @@ sub cmd {
     }
 
     push @response, $self->_getlines($term);
-    pop @response if $response[-1] =~ $term;
+    pop @response if @response and $response[-1] =~ $term;
 
     my @errors = $self->_geterrors;
     if (scalar @errors && $self->{debug}) {

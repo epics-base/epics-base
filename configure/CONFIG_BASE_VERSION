@@ -15,17 +15,26 @@
 # EPICS_SITE_VERSION is defined in CONFIG_SITE for sites that want a local
 # version number to be included in the reported version string.
 
-# We define BASE_3_14 and BASE_3_15 as NO and BASE_3_16 as YES, so
+# We define convenience macros for our release series to be NO or YES, so
+# Makefiles can detect 'Series X or later', or 'Series X only' like this:
+#
 #   ifdef BASE_3_14
 #       true for 3.14 or later
 #   ifdef BASE_3_15
 #       true for 3.15 or later
+#   ifdef BASE_3_16
+#       true for 3.16 or later
+#   ifdef BASE_7_0
+#       true for 7.0 or later
+#
 #   ifeq ($(BASE_3_14),YES)
 #       true for 3.14.x only
 #   ifeq ($(BASE_3_15),YES)
-#       true for 3.15 only
+#       true for 3.15.x only
 #   ifeq ($(BASE_3_16),YES)
-#       true for 3.16 only.
+#       true for 3.16.x only.
+#   ifeq ($(BASE_7_0),YES)
+#       true for 7.0.x only.
 
 BASE_3_14 = NO
 BASE_3_15 = NO
@@ -39,19 +48,19 @@ EPICS_VERSION = 7
 EPICS_REVISION = 0
 
 # EPICS_MODIFICATION must be a number >=0 and <256
-EPICS_MODIFICATION = 1
+EPICS_MODIFICATION = 2
 
 # EPICS_PATCH_LEVEL must be a number (win32 resource file requirement)
 # Not included if zero
-EPICS_PATCH_LEVEL = 2
+EPICS_PATCH_LEVEL = 0
 
 # This will end in -DEV between official releases
-EPICS_DEV_SNAPSHOT=-DEV
+#EPICS_DEV_SNAPSHOT=-DEV
 #EPICS_DEV_SNAPSHOT=-pre1
 #EPICS_DEV_SNAPSHOT=-pre1-DEV
 #EPICS_DEV_SNAPSHOT=-pre2
 #EPICS_DEV_SNAPSHOT=-pre2-DEV
-#EPICS_DEV_SNAPSHOT=-rc1
+EPICS_DEV_SNAPSHOT=-rc1
 #EPICS_DEV_SNAPSHOT=-rc1-DEV
 #EPICS_DEV_SNAPSHOT=-rc2
 #EPICS_DEV_SNAPSHOT=-rc2-DEV

@@ -19,6 +19,15 @@
 
 -->
 
+<h3>Support for event codes greater than or equal to NUM_TIME_EVENTS</h3>
+<p>Event numbers greater than or equal to
+NUM_TIME_EVENTS are now allowed if supported by a custom time provider
+which should provide its own advancing timestamp validation.</p>
+
+<p>Time Events numbered 0 through (NUM_TIME_EVENTS-1) are still validated by
+code in epicsGeneralTime.c that tests for advancing timestamps and
+enforces that restriction.</p>
+
 <h3>Type-safe Device and Driver Support Tables</h3>
 
 <p>Type-safe versions of the device and driver support structures <tt>dset</tt>

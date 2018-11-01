@@ -50,10 +50,14 @@ my $version = $ioc->dbgf("$pv");
 like($version, qr/^ \d+ \. \d+ \. \d+ /x,
     "Got BaseVersion '$version' from iocsh");
 
+note("CA server configuration:\n",
+    map("  $_\n", $ioc->cmd('casr', 1)));
+
 my $caget = "$bin/caget$exe";
 SKIP: {
     skip "caget not available", 1 unless -x $caget;
-    like(`$caget $pv`, qr/$pv \s+ \Q$version\E/x,
+    my $caVersion = `$caget $pv`;
+    like($caVersion, qr/$pv \s+ \Q$version\E/x,
         'Got same BaseVersion from caget');
 }
 
@@ -61,9 +65,13 @@ my $pvget = "$bin/pvget$exe";
 SKIP: {
     skip "softIocPVA not available", 1
         if $softIoc eq "$bin/softIoc$exe";
+    note("PVA server configuration:\n",
+        map("  $_\n", $ioc->cmd('pvasr')));
+
     skip "pvget not available", 1
         unless -x $pvget;
-    like(`$pvget $pv`, qr/$pv \s .* \Q$version\E/x,
+    my $pvaVersion = `$pvget $pv`;
+    like($pvaVersion, qr/$pv \s .* \Q$version\E/x,
         'Got same BaseVersion from pvget');
 }
 

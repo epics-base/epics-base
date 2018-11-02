@@ -353,14 +353,17 @@ ifneq ($(TAPFILES),)
 ifdef RUNTESTS_ENABLED
 	prove --failures --ext .tap --exec "$(CAT)" --color $(TAPFILES)
 endif
+
+CURRENT_TAPFILES := $(wildcard $(TAPFILES))
+CURRENT_JUNITFILES := $(wildcard $(JUNITFILES))
 endif
 
 clean-tests:
-ifneq ($(TAPFILES),)
-	$(RM) $(TAPFILES)
+ifneq ($(CURRENT_TAPFILES),)
+	$(RM) $(CURRENT_TAPFILES)
 endif
-ifneq ($(JUNITFILES),)
-	$(RM) $(JUNITFILES)
+ifneq ($(CURRENT_JUNITFILES),)
+	$(RM) $(CURRENT_JUNITFILES)
 endif
 
 tapfiles: $(TESTSCRIPTS) $(TAPFILES)

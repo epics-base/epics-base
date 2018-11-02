@@ -13,9 +13,12 @@ $ENV{HARNESS_ACTIVE} = 1 if scalar @ARGV && shift eq '-tap';
 # Keep traffic local and avoid duplicates over multiple interfaces
 $ENV{EPICS_CA_AUTO_ADDR_LIST} = 'NO';
 $ENV{EPICS_CA_ADDR_LIST} = 'localhost';
+$ENV{EPICS_CA_SERVER_PORT} = 55064;
 $ENV{EPICS_CAS_INTF_ADDR_LIST} = 'localhost';
+
 $ENV{EPICS_PVA_AUTO_ADDR_LIST} = 'NO';
 $ENV{EPICS_PVA_ADDR_LIST} = 'localhost';
+$ENV{EPICS_PVA_SERVER_PORT} = 55076;
 $ENV{EPICS_PVAS_INTF_ADDR_LIST} = 'localhost';
 
 my $bin = "@TOP@/bin/@ARCH@";

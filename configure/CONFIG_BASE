@@ -72,7 +72,7 @@ TAPTOJUNIT                 = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
 
 #-------------------------------------------------------
 # tools for installing libraries and products
-INSTALL_QUIETLY := $(if $(findstring s,$(MAKEFLAGS)),-q,)
+INSTALL_QUIETLY := $(if $(findstring s,$(MFLAGS)),-q,)
 INSTALL = $(PERL) $(TOOLS)/installEpics.pl $(INSTALL_QUIETLY)
 INSTALL_PRODUCT = $(INSTALL)
 INSTALL_LIBRARY = $(INSTALL)

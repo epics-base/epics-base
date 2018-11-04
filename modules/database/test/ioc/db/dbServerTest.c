@@ -79,6 +79,11 @@ dbServer one = {
     oneInit, oneRun, onePause, oneStop
 };
 
+dbServer one2 = {
+    ELLNODE_INIT, "one",
+    oneReport, oneStats, oneClient,
+    oneInit, oneRun, onePause, oneStop
+};
 
 /* Server layer for testing NULL methods */
 
@@ -123,7 +128,7 @@ MAIN(dbServerTest)
     char *theName = "The One";
     int status;
 
-    testPlan(24);
+    testPlan(25);
 
     /* Prove that we handle substring names properly */
     epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none ones");
@@ -132,7 +137,8 @@ MAIN(dbServerTest)
     testOk(dbRegisterServer(&one) == 0, "Registered 'one'");
     testOk1(oneState == NOTHING_CALLED);
 
-    testOk(dbRegisterServer(&one) != 0, "Duplicate registration rejected");
+    testOk(dbRegisterServer(&one) == 0, "Duplicate registration accepted");
+    testOk(dbRegisterServer(&one2) != 0, "change registration rejected");
     testOk(dbRegisterServer(&illegal) != 0, "Illegal registration rejected");
 
     testDiag("Registering dbServer 'no-routines'");

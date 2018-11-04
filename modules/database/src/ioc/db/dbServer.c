@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "dbDefs.h"
 #include "ellLib.h"
 #include "envDefs.h"
 #include "epicsStdio.h"
@@ -29,6 +30,7 @@ static char *stateNames[] = {
 int dbRegisterServer(dbServer *psrv)
 {
     const char * ignore = envGetConfigParamPtr(&EPICS_IOC_IGNORE_SERVERS);
+    ELLNODE *node;
 
     if (!psrv || !psrv->name || state != registering)
         return -1;
@@ -55,10 +57,14 @@ int dbRegisterServer(dbServer *psrv)
         }
     }
 
-    if (ellNext(&psrv->node) || ellLast(&serverList) == &psrv->node) {
-        fprintf(stderr, "dbRegisterServer: '%s' registered twice?\n",
-            psrv->name);
-        return -1;
+    for(node=ellFirst(&serverList); node; node = ellNext(node)) {
+        dbServer *cur = CONTAINER(node, dbServer, node);
+        if(cur==psrv) {
+            return 0; /* already registered identically. */
+        } else if(strcmp(cur->name, psrv->name)==0) {
+            fprintf(stderr, "dbRegisterServer: Can't redefine '%s'.\n", cur->name);
+            return -1;
+        }
     }
 
     ellAdd(&serverList, &psrv->node);

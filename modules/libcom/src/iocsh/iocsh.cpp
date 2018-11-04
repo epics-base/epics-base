@@ -178,9 +178,11 @@ void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
         for (l = NULL, p = iocshVariableHead ; p != NULL ; l = p, p = p->next) {
             i = strcmp (piocshVarDef->name, p->pVarDef->name);
             if (i == 0) {
-                errlogPrintf("Warning: iocshRegisterVariable redefining %s.\n",
-                    piocshVarDef->name);
-                p->pVarDef = piocshVarDef;
+                if (p->pVarDef != piocshVarDef) {
+                    errlogPrintf("Warning: iocshRegisterVariable redefining %s.\n",
+                        piocshVarDef->name);
+                    p->pVarDef = piocshVarDef;
+                }
                 found = 1;
                 break;
             }

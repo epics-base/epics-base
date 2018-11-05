@@ -114,6 +114,7 @@ TESTPROD_HOST += regressTest
 regressTest_SRCS += regressTest.c
 regressTest_SRCS += regressTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db ../regressHex.db ../regressLinkMS.db
+TESTFILES += ../badCaLink.db
 TESTS += regressTest
 
 TESTPROD_HOST += mbbioDirectTest

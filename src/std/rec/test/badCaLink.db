@@ -1,0 +1,4 @@
+record(ai, "ai:disconn") {
+    field(INP , "invalid CA")
+    field(UDF , "0")
+}

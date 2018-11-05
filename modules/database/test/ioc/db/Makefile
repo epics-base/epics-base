@@ -6,12 +6,13 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
-
-TOP = ../../..
+CURDIR := $(or $(dir $(lastword $(MAKEFILE_LIST))), .)
+TOP = ../../../../..
 include $(TOP)/configure/CONFIG
 
 # Allow access to private headers in db/
-USR_CPPFLAGS = -I $(TOP)/src/ioc/db
+USR_CPPFLAGS += -I $(CURDIR)/../../../src/ioc/db
+USR_CPPFLAGS += -DUSE_TYPED_RSET
 
 TESTLIBRARY = dbTestIoc
 

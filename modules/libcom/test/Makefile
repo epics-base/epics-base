@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-TOP = ..
+TOP = ../../..
 include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com

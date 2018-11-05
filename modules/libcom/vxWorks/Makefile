@@ -5,7 +5,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-TOP = ..
+TOP = ../../..
 include $(TOP)/configure/CONFIG
 
 # Install Boost smart_ptr headers needed by VxWorks 6.x

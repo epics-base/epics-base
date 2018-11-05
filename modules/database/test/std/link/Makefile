@@ -8,6 +8,8 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
+USR_CPPFLAGS += -DUSE_TYPED_RSET
+
 TESTLIBRARY = Recs
 
 Recs_SRCS += ioRecord.c

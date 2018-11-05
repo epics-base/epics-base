@@ -1,2 +1,0 @@
-#RULES_DIRS
-include $(CONFIG)/RULES_DIRS

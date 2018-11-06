@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 =head1 NAME
 
 tap-to-junit-xml - convert perl-style TAP test output to JUnit-style XML

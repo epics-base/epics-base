@@ -31,12 +31,12 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "epicsStdlib.h"
+#include <epicsStdlib.h>
 
-#include "cadef.h"
-#include "epicsGetopt.h"
-#include "epicsEvent.h"
-#include "epicsString.h"
+#include <cadef.h>
+#include <epicsGetopt.h>
+#include <epicsEvent.h>
+#include <epicsString.h>
 #include "epicsVersion.h"
 
 #include "tool_lib.h"
@@ -286,8 +286,8 @@ int main (int argc, char *argv[])
         case 'h':               /* Print usage */
             usage();
             return 0;
-		case 'V':
-    		printf( "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
+        case 'V':
+            printf( "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
             return 0;
         case 'n':               /* Force interpret ENUM as index number */
             enumAsNr = 1;

@@ -22,11 +22,11 @@
  */
 
 #include <stdio.h>
-#include "epicsStdlib.h"
+#include <epicsStdlib.h>
 #include "epicsVersion.h"
 
-#include "cadef.h"
-#include "epicsGetopt.h"
+#include <cadef.h>
+#include <epicsGetopt.h>
 
 #include "tool_lib.h"
 
@@ -145,8 +145,8 @@ int main (int argc, char *argv[])
         case 'h':               /* Print usage */
             usage();
             return 0;
-		case 'V':
-    		printf( "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
+        case 'V':
+            printf( "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
             return 0;
         case 'w':               /* Set CA timeout value */
             if(epicsScanDouble(optarg, &caTimeout) != 1)

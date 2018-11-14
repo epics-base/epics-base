@@ -961,7 +961,7 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
 
 udpiiu :: SearchDestUDP :: SearchDestUDP ( 
     const osiSockAddr & destAddr, udpiiu & udpiiuIn ) :
-    _destAddr ( destAddr ), _udpiiu ( udpiiuIn )
+    _lastError (0u), _destAddr ( destAddr ), _udpiiu ( udpiiuIn )
 {
 }
 
@@ -976,6 +976,13 @@ void udpiiu :: SearchDestUDP :: searchRequest (
         int status = sendto ( _udpiiu.sock, const_cast<char *>(pBuf), bufSizeAsInt, 0, 
                 & _destAddr.sa, sizeof ( _destAddr.sa ) );
         if ( status == bufSizeAsInt ) {
+            if ( _lastError ) {
+                char buf[64];
+                sockAddrToDottedIP ( &_destAddr.sa, buf, sizeof ( buf ) );
+                errlogPrintf (
+                    "CAC: ok sending UDP msg to %s\n", buf);
+            }
+            _lastError = 0;
             break;
         }
         if ( status >= 0 ) {
@@ -1002,7 +1009,9 @@ void udpiiu :: SearchDestUDP :: searchRequest (
             else if ( localErrno == SOCK_EBADF ) {
                 break;
             }
-            else {
+            else if ( localErrno == _lastError) {
+                break;
+            } else {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
@@ -1011,6 +1020,8 @@ void udpiiu :: SearchDestUDP :: searchRequest (
                 errlogPrintf (
                     "CAC: error = \"%s\" sending UDP msg to %s\n",
                     sockErrBuf, buf);
+
+                _lastError = localErrno;
                 break;
             }
         }

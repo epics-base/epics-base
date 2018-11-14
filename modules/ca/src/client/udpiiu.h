@@ -123,6 +123,7 @@ private:
         void show ( 
             epicsGuard < epicsMutex > &, unsigned level ) const;
     private:
+        int _lastError;
         osiSockAddr _destAddr;
         udpiiu & _udpiiu;
     };

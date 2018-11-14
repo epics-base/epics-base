@@ -81,8 +81,8 @@ static const char hostname_config[] = ""
 
 static void testHostNames(void)
 {
-
     testDiag("testHostNames()");
+    asUseIP = 0;
 
     testOk1(asInitMem(hostname_config, NULL)==0);
 
@@ -109,11 +109,46 @@ static void testHostNames(void)
     testAccess("ro", 0);
     testAccess("rw", 0);
 }
+
+static void testUseIP(void)
+{
+    testDiag("testUseIP()");
+    asUseIP = 1;
+
+    /* still host names in .acf */
+    testOk1(asInitMem(hostname_config, NULL)==0);
+    /* now resolved to IPs */
+
+    setUser("testing");
+    setHost("localhost"); /* will not match against resolved IP */
+    asAsl = 0;
+
+    testAccess("invalid", 0);
+    testAccess("DEFAULT", 0);
+    testAccess("ro", 0);
+    testAccess("rw", 0);
+
+    setHost("127.0.0.1");
+
+    testAccess("invalid", 0);
+    testAccess("DEFAULT", 0);
+    testAccess("ro", 1);
+    testAccess("rw", 3);
+
+    setHost("nosuchhost");
+
+    testAccess("invalid", 0);
+    testAccess("DEFAULT", 0);
+    testAccess("ro", 0);
+    testAccess("rw", 0);
+}
+
 MAIN(aslibtest)
 {
-    testPlan(14);
+    testPlan(27);
     testSyntaxErrors();
     testHostNames();
+    testUseIP();
     errlogFlush();
     return testDone();
 }

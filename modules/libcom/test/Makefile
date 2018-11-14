@@ -194,6 +194,11 @@ macLibTest_SRCS += macLibTest.c
 testHarness_SRCS += macLibTest.c
 TESTS += macLibTest
 
+TESTPROD_HOST += aslibtest
+aslibtest_SRCS += aslibtest.c
+testHarness_SRCS += aslibtest.c
+TESTS += aslibtest
+
 # Perl module tests:
 TESTS += macLib
 

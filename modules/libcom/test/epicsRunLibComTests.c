@@ -16,6 +16,7 @@
 #include <epicsThread.h>
 #include <epicsUnitTest.h>
 
+int aslibtest(void);
 int blockingSockTest(void);
 int epicsAlgorithm(void);
 int epicsAtomicTest(void);
@@ -73,6 +74,7 @@ void epicsRunLibComTests(void)
     /*
      * Run the regular tests in alphabetical order
      */
+    runTest(aslibtest);
     runTest(blockingSockTest);
     runTest(epicsAlgorithm);
     runTest(epicsAtomicTest);

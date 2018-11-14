@@ -250,7 +250,35 @@ long epicsShareAPI asInitFP(FILE *fp,const char *substitutions)
     }
     return(status);
 }
-
+
+static const char* membuf;
+
+static int memInputFunction(char *buf, int max_size)
+{
+    int ret = 0;
+    if(!membuf) return ret;
+
+    while(max_size && *membuf) {
+        *buf++ = *membuf++;
+        max_size--;
+        ret++;
+    }
+
+    return ret;
+}
+
+long epicsShareAPI asInitMem(const char *acf, const char *substitutions)
+{
+    long ret = S_asLib_InitFailed;
+    if(!acf) return ret;
+
+    membuf = acf;
+    ret = asInitialize(&memInputFunction);
+    membuf = NULL;
+
+    return ret;
+}
+
 long epicsShareAPI asAddMember(ASMEMBERPVT *pasMemberPvt,const char *asgName)
 {
     long	status;

@@ -66,6 +66,7 @@ epicsShareFunc long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction);
 epicsShareFunc long epicsShareAPI asInitFile(
     const char *filename,const char *substitutions);
 epicsShareFunc long epicsShareAPI asInitFP(FILE *fp,const char *substitutions);
+epicsShareFunc long epicsShareAPI asInitMem(const char *acf, const char *substitutions);
 /*caller must provide permanent storage for asgName*/
 epicsShareFunc long epicsShareAPI asAddMember(
     ASMEMBERPVT *asMemberPvt,const char *asgName);

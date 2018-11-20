@@ -34,6 +34,7 @@
 #include <alarm.h>
 #include <cadef.h>
 #include <epicsGetopt.h>
+#include "epicsVersion.h"
 
 #include "tool_lib.h"
 
@@ -55,6 +56,7 @@ static void usage (void)
 {
     fprintf (stderr, "\nUsage: caget [options] <PV name> ...\n\n"
     "  -h: Help: Print this message\n"
+    "  -V: Version: Show EPICS and CA versions\n"
     "Channel Access options:\n"
     "  -w <sec>: Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -c: Asynchronous get (use ca_get_callback and wait for completion)\n"
@@ -389,10 +391,13 @@ int main (int argc, char *argv[])
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
-    while ((opt = getopt(argc, argv, ":taicnhsSe:f:g:l:#:d:0:w:p:F:")) != -1) {
+    while ((opt = getopt(argc, argv, ":taicnhsSVe:f:g:l:#:d:0:w:p:F:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
+            return 0;
+        case 'V':
+            printf( "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
             return 0;
         case 't':               /* Terse output mode */
             complainIfNotPlainAndSet(&format, terse);

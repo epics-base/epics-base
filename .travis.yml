@@ -15,7 +15,7 @@ addons:
 script:
   - .ci/travis-build.sh
 env:
-  - CMPLR=gcc
+  - CMPLR=gcc EXTRA=LINKER_USE_RPATH=ORIGIN
   - CMPLR=clang
   - CMPLR=gcc   STATIC=YES
   - CMPLR=clang STATIC=YES

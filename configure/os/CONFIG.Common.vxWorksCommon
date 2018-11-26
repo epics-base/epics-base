@@ -146,8 +146,10 @@ SHRLIB_CFLAGS =
 SHRLIB_LDFLAGS =
 
 #--------------------------------------------------
-# Earlier versions of gcc don't understand -MF
-HDEPENDS_COMPFLAGS = -MM > $@
+# Don't use gcc 2.x for dependency generation
+
+HDEPENDS_METHOD_2 = MKMF
+HDEPENDS_METHOD = $(firstword $(HDEPENDS_METHOD_$(VX_GNU_MAJOR_VERSION)) COMP)
 
 #--------------------------------------------------
 # osithead use default stack, YES or NO override

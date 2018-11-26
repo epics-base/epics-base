@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <epicsStdlib.h>
+#include "epicsVersion.h"
 
 #include <cadef.h>
 #include <epicsGetopt.h>
@@ -36,12 +37,14 @@ void usage (void)
 {
     fprintf (stderr, "\nUsage: cainfo [options] <PV name> ...\n\n"
     "  -h: Help: Print this message\n"
+    "  -V: Version: Show EPICS and CA versions\n"
     "Channel Access options:\n"
     "  -w <sec>:   Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -s <level>: Call ca_client_status with the specified interest level\n"
     "  -p <prio>:  CA priority (0-%u, default 0=lowest)\n"
     "\nExample: cainfo my_channel another_channel\n\n"
              , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);
+    fprintf (stderr, "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
 }
 
 
@@ -137,10 +140,13 @@ int main (int argc, char *argv[])
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
-    while ((opt = getopt(argc, argv, ":nhw:s:p:")) != -1) {
+    while ((opt = getopt(argc, argv, ":nhVw:s:p:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
+            return 0;
+        case 'V':
+            printf( "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
             return 0;
         case 'w':               /* Set CA timeout value */
             if(epicsScanDouble(optarg, &caTimeout) != 1)

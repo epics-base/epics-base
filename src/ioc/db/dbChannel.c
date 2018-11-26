@@ -20,6 +20,7 @@
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "epicsString.h"
+#include "epicsStdio.h"
 #include "errlog.h"
 #include "freeList.h"
 #include "gpHash.h"

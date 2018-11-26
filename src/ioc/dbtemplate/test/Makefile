@@ -17,8 +17,9 @@ TESTS += msi
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
-TARGETS_HOST += msi-copy$(EXE)
-TARGETS += $(TARGETS_$(BUILD_CLASS))
+ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
+  TARGETS += msi-copy$(EXE)
+endif
 
 include $(TOP)/configure/RULES
 

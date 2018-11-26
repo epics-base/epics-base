@@ -17,7 +17,11 @@ extern "C" {
 #endif
 
 #define NUM_TIME_EVENTS 256
-/* Time Events are numbered 0 through (NUM_TIME_EVENTS-1) */
+/* Time Events numbered 0 through (NUM_TIME_EVENTS-1) are validated by */
+/* code in epicsGeneralTime.c that tests for advancing timestamps and */
+/* enforces that restriction.  Event numbers greater than or equal to */
+/* NUM_TIME_EVENTS are now allowed if supported by a custom time provider */
+/* which should provide its own advancing timestamp validation. */
 
 epicsShareFunc void generalTime_Init(void);
 

@@ -18,7 +18,7 @@ TESTS += msi
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
-  TARGETS += msi-copy$(EXE)
+  TARGETS_HOST += msi-copy$(EXE)
 endif
 
 include $(TOP)/configure/RULES

@@ -100,7 +100,7 @@ int callbackSetQueueSize(int size)
         fprintf(stderr, "Callback system already initialized\n");
         return -1;
     }
-    epicsAtomicSetIntT(&callbackQueueSize, size);
+    callbackQueueSize = size;
     return 0;
 }
 
@@ -110,7 +110,7 @@ int callbackQueueStatus(const int reset, callbackQueueStats *result)
     if (!callbackIsInit) return -1;
     if (result) {
         int prio;
-        result->size = epicsAtomicGetIntT(&callbackQueueSize);
+        result->size = callbackQueueSize;
         for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
             epicsRingPointerId qId = callbackQueue[prio].queue;
             result->numUsed[prio] = epicsRingPointerGetUsed(qId);
@@ -286,7 +286,7 @@ void callbackInit(void)
         epicsThreadId tid;
 
         callbackQueue[i].semWakeUp = epicsEventMustCreate(epicsEventEmpty);
-        callbackQueue[i].queue = epicsRingPointerLockedCreate(epicsAtomicGetIntT(&callbackQueueSize));
+        callbackQueue[i].queue = epicsRingPointerLockedCreate(callbackQueueSize);
         if (callbackQueue[i].queue == 0)
             cantProceed("epicsRingPointerLockedCreate failed for %s\n",
                 threadNamePrefix[i]);

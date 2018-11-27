@@ -106,11 +106,11 @@ int callbackSetQueueSize(int size)
 
 int callbackQueueStatus(const int reset, callbackQueueStats *result)
 {
-    if (!callbackIsInit) return -1;
     int ret;
+    if (!callbackIsInit) return -1;
     if (result) {
-        result->size = epicsAtomicGetIntT(&callbackQueueSize);
         int prio;
+        result->size = epicsAtomicGetIntT(&callbackQueueSize);
         for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
             epicsRingPointerId qId = callbackQueue[prio].queue;
             result->numUsed[prio] = epicsRingPointerGetUsed(qId);
@@ -136,16 +136,16 @@ void callbackQueuePrintStatus(const int reset)
     if (callbackQueueStatus(reset, &stats) == -1) {
         fprintf(stderr, "Callback system not initialized, yet. Please run "
             "iocInit before using this command.\n");
-        return;
-    }
-
-    printf("PRIORITY  HIGH-WATER MARK  ITEMS IN Q  Q SIZE  %% USED  Q OVERFLOWS\n");
-    int prio;
-    for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-        double qusage = 100.0 * stats.numUsed[prio] / stats.size;
-        printf("%8s  %15d  %10d  %6d  %6.1f  %11d\n", threadNamePrefix[prio],
-               stats.maxUsed[prio], stats.numUsed[prio], stats.size,
-               qusage, stats.numOverflow[prio]);
+    } else {
+        int prio;
+        printf("PRIORITY  HIGH-WATER MARK  ITEMS IN Q  Q SIZE  %% USED  Q OVERFLOWS\n");
+        for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+            double qusage = 100.0 * stats.numUsed[prio] / stats.size;
+            printf("%8s  %15d  %10d  %6d  %6.1f  %11d\n",
+                   threadNamePrefix[prio], stats.maxUsed[prio],
+                   stats.numUsed[prio], stats.size, qusage,
+                   stats.numOverflow[prio]);
+        }
     }
 }
 

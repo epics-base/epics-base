@@ -727,8 +727,8 @@ int scanOnceSetQueueSize(int size)
 
 int scanOnceQueueStatus(const int reset, scanOnceQueueStats *result)
 {
-    if (!onceQ) return -1;
     int ret;
+    if (!onceQ) return -1;
     if (result) {
         result->size = epicsRingBytesSize(onceQ) / sizeof(onceEntry);
         result->numUsed = epicsRingBytesUsedBytes(onceQ) / sizeof(onceEntry);
@@ -750,13 +750,13 @@ void scanOnceQueuePrintStatus(const int reset)
     if (scanOnceQueueStatus(reset, &stats) == -1) {
         fprintf(stderr, "scanOnce system not initialized, yet. Please run "
             "iocInit before using this command.\n");
-        return;
+    } else {
+        double qusage = 100.0 * stats.numUsed / stats.size;
+        printf("PRIORITY  HIGH-WATER MARK  ITEMS IN Q  Q SIZE  %% USED  Q OVERFLOWS\n");
+        printf("%8s  %15d  %10d  %6d  %6.1f  %11d\n", "scanOnce", stats.maxUsed,
+               stats.numUsed, stats.size, qusage,
+               epicsAtomicGetIntT(&onceQOverruns));
     }
-
-    printf("PRIORITY  HIGH-WATER MARK  ITEMS IN Q  Q SIZE  %% USED  Q OVERFLOWS\n");
-    double qusage = 100.0 * stats.numUsed / stats.size;
-    printf("%8s  %15d  %10d  %6d  %6.1f  %11d\n", "scanOnce", stats.maxUsed, stats.numUsed, stats.size, qusage,
-           epicsAtomicGetIntT(&onceQOverruns));
 }
 
 static void initOnce(void)

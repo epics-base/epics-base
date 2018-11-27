@@ -135,8 +135,8 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
             return 0;
         }
         if (nbytes) {
-            memcpy ((void *)&pring->buffer[nextPut], value, nbytes);
             int curUsed = pring->size - SLOP - freeCount;
+            memcpy ((void *)&pring->buffer[nextPut], value, nbytes);
             if (curUsed > epicsAtomicGetIntT(&pring->highWaterMark)) {
                 epicsAtomicSetIntT(&pring->highWaterMark, curUsed);
             }
@@ -152,8 +152,8 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
         topCount = size - nextPut;
         copyCount = (nbytes > topCount) ?  topCount : nbytes;
         if (copyCount) {
-            memcpy ((void *)&pring->buffer[nextPut], value, copyCount);
             int curUsed = pring->size - SLOP - freeCount;
+            memcpy ((void *)&pring->buffer[nextPut], value, copyCount);
             if (curUsed > epicsAtomicGetIntT(&pring->highWaterMark)) {
                 epicsAtomicSetIntT(&pring->highWaterMark, curUsed);
             }

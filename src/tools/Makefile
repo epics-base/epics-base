@@ -48,27 +48,4 @@ HTMLS += munch.html
 HTMLS += podToHtml.html
 HTMLS += podRemove.html
 
-# Build Package Config Files
-
-FINAL_LOCATION ?= $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
-C_CFLAGS += $(filter-out -g,$(filter-out -O%,$(filter-out -W%,$(CPPFLAGS))))
-C_CFLAGS += $(filter-out -g,$(filter-out -O%,$(filter-out -W%,$(CFLAGS))))
-PKGVARS += FINAL_LOCATION OS_CLASS CMPLR_CLASS C_CFLAGS LDFLAGS LDLIBS
-PKGVARS += EPICS_VERSION EPICS_REVISION EPICS_MODIFICATION EPICS_PATCH_LEVEL
-PKGVARS += CC CCC CPP AR LD
-PKGVARS += EPICS_BASE_IOC_LIBS
-
-EXPANDFLAGS += $(foreach var,$(PKGVARS),-D$(var)="$(strip $($(var)))")
-PKGCONFIG += epics-base-$(T_A).pc
-ifeq ($(T_A),$(EPICS_HOST_ARCH))
-PKGCONFIG += epics-base.pc
-endif
-
-EXPAND += $(PKGCONFIG:%=%@)
-CLEANS += epics-base-$(T_A).pc@
-
 include $(TOP)/configure/RULES
-
-epics-base-$(T_A).pc@: ../epics-base-arch.pc@
-	@$(RM) $@
-	@$(CP) $< $@

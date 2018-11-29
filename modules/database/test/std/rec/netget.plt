@@ -18,7 +18,8 @@ $ENV{EPICS_CAS_INTF_ADDR_LIST} = 'localhost';
 
 $ENV{EPICS_PVA_AUTO_ADDR_LIST} = 'NO';
 $ENV{EPICS_PVA_ADDR_LIST} = 'localhost';
-$ENV{EPICS_PVA_SERVER_PORT} = 55076;
+$ENV{EPICS_PVAS_SERVER_PORT} = 55075;
+$ENV{EPICS_PVA_BROADCAST_PORT} = 55076;
 $ENV{EPICS_PVAS_INTF_ADDR_LIST} = 'localhost';
 
 my $bin = "@TOP@/bin/@ARCH@";
@@ -59,7 +60,7 @@ note("CA server configuration:\n",
 my $caget = "$bin/caget$exe";
 SKIP: {
     skip "caget not available", 1 unless -x $caget;
-    my $caVersion = `$caget $pv`;
+    my $caVersion = `$caget -w5 $pv`;
     like($caVersion, qr/$pv \s+ \Q$version\E/x,
         'Got same BaseVersion from caget');
 }
@@ -73,7 +74,7 @@ SKIP: {
 
     skip "pvget not available", 1
         unless -x $pvget;
-    my $pvaVersion = `$pvget $pv`;
+    my $pvaVersion = `$pvget -w5 $pv`;
     like($pvaVersion, qr/$pv \s .* \Q$version\E/x,
         'Got same BaseVersion from pvget');
 }

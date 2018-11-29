@@ -29,11 +29,13 @@ my $prefix = "test-$$";
 my $ioc = EPICS::IOC->new();
 #$ioc->debug(1);
 
-$SIG{__DIE__} = $SIG{'INT'} = $SIG{'QUIT'} = sub {
+$SIG{__DIE__} = $SIG{INT} = $SIG{QUIT} = $SIG{ALRM} = sub {
     $ioc->kill
         if ref($ioc) eq 'EPICS::IOC' && $ioc->started;
     BAIL_OUT('Caught signal');
 };
+
+alarm 30;
 
 my $softIoc = "$bin/softIocPVA$exe";
 $softIoc = "$bin/softIoc$exe"

@@ -121,7 +121,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
 {
     ringPvt *pring = (ringPvt *)id;
     int nextGet, nextPut, size;
-    int freeCount, copyCount, topCount;
+    int freeCount, copyCount, topCount, used;
 
     if (pring->lock) epicsSpinLock(pring->lock);
     nextGet = pring->nextGet;
@@ -135,11 +135,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
             return 0;
         }
         if (nbytes) {
-            int curUsed = pring->size - SLOP - freeCount;
             memcpy ((void *)&pring->buffer[nextPut], value, nbytes);
-            if (curUsed > epicsAtomicGetIntT(&pring->highWaterMark)) {
-                epicsAtomicSetIntT(&pring->highWaterMark, curUsed);
-            }
         }
         nextPut += nbytes;
     }
@@ -152,11 +148,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
         topCount = size - nextPut;
         copyCount = (nbytes > topCount) ?  topCount : nbytes;
         if (copyCount) {
-            int curUsed = pring->size - SLOP - freeCount;
             memcpy ((void *)&pring->buffer[nextPut], value, copyCount);
-            if (curUsed > epicsAtomicGetIntT(&pring->highWaterMark)) {
-                epicsAtomicSetIntT(&pring->highWaterMark, curUsed);
-            }
         }
         nextPut += copyCount;
         if (nextPut == size) {
@@ -167,6 +159,12 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
         }
     }
     pring->nextPut = nextPut;
+
+    used = nextPut - nextGet;
+    if (used < 0) used += pring->size;
+    if (used > epicsAtomicGetIntT(&pring->highWaterMark)) {
+        epicsAtomicSetIntT(&pring->highWaterMark, used);
+    }
 
     if (pring->lock) epicsSpinUnlock(pring->lock);
     return nbytes;

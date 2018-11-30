@@ -26,3 +26,5 @@ endif
 # Needed to find dlls for base installed build tools (antelope,eflex,...)
 PATH := $(EPICS_BASE_BIN):$(PATH)
 
+# Silence the tr1 namespace deprecation warnings
+USR_CXXFLAGS_WIN32 += -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING

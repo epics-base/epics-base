@@ -1373,7 +1373,7 @@ caStatus casStrmClient :: searchAction ( epicsGuard < casClientMutex > & guard )
 
     if ( pChanName[0] == '\0' ) {
         caServerI::dumpMsg ( this->pHostName, "?", mp, this->ctx.getData(), 
-            "zero length PV name in UDP search request?\n" );
+            "zero length PV name in TCP search request?\n" );
         return S_cas_success;
     }
 
@@ -1383,7 +1383,7 @@ caStatus casStrmClient :: searchAction ( epicsGuard < casClientMutex > & guard )
     for ( unsigned i = mp->m_postsize-1; pChanName[i] != '\0'; i-- ) {
         if ( i <= 1 ) {
             caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
-                "unterminated PV name in UDP search request?\n" );
+                "unterminated PV name in TCP search request?\n" );
             return S_cas_success;
         }
     }

@@ -131,8 +131,8 @@ inline bool epicsRingPointer<T>::push(T *p)
     buffer[next] = p;
     nextPush = newNext;
     int used = getUsedNoLock();
-    if (used > epicsAtomicGetIntT(&highWaterMark)) {
-        epicsAtomicSetIntT(&highWaterMark, used);
+    while(int oldHWM = epicsAtomicGetIntT(&highWaterMark), oldHWM < used) {
+        epicsAtomicCmpAndSwapIntT(&highWaterMark, oldHWM, used);
     }
     if (lock) epicsSpinUnlock(lock);
     return(true);

@@ -121,7 +121,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
 {
     ringPvt *pring = (ringPvt *)id;
     int nextGet, nextPut, size;
-    int freeCount, copyCount, topCount, used;
+    int freeCount, copyCount, topCount, used, oldHWM;
 
     if (pring->lock) epicsSpinLock(pring->lock);
     nextGet = pring->nextGet;
@@ -162,8 +162,8 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
 
     used = nextPut - nextGet;
     if (used < 0) used += pring->size;
-    if (used > epicsAtomicGetIntT(&pring->highWaterMark)) {
-        epicsAtomicSetIntT(&pring->highWaterMark, used);
+    while(oldHWM = epicsAtomicGetIntT(&pring->highWaterMark), oldHWM < used) {
+        epicsAtomicCmpAndSwapIntT(&pring->highWaterMark, oldHWM, used);
     }
 
     if (pring->lock) epicsSpinUnlock(pring->lock);

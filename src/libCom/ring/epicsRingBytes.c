@@ -21,7 +21,6 @@
 #include <stdio.h>
 
 #define epicsExportSharedSymbols
-#include "epicsAtomic.h"
 #include "epicsSpin.h"
 #include "dbDefs.h"
 #include "epicsRingBytes.h"
@@ -121,7 +120,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
 {
     ringPvt *pring = (ringPvt *)id;
     int nextGet, nextPut, size;
-    int freeCount, copyCount, topCount, used, oldHWM;
+    int freeCount, copyCount, topCount, used;
 
     if (pring->lock) epicsSpinLock(pring->lock);
     nextGet = pring->nextGet;
@@ -162,9 +161,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
 
     used = nextPut - nextGet;
     if (used < 0) used += pring->size;
-    while(oldHWM = epicsAtomicGetIntT(&pring->highWaterMark), oldHWM < used) {
-        epicsAtomicCmpAndSwapIntT(&pring->highWaterMark, oldHWM, used);
-    }
+    if (used > pring->highWaterMark) pring->highWaterMark = used;
 
     if (pring->lock) epicsSpinUnlock(pring->lock);
     return nbytes;
@@ -239,11 +236,16 @@ epicsShareFunc int epicsShareAPI epicsRingBytesIsFull(epicsRingBytesId id)
 epicsShareFunc int epicsShareAPI epicsRingBytesHighWaterMark(epicsRingBytesIdConst id)
 {
     ringPvt *pring = (ringPvt *)id;
-    return epicsAtomicGetIntT(&pring->highWaterMark);
+    return pring->highWaterMark;
 }
 
 epicsShareFunc void epicsShareAPI epicsRingBytesResetHighWaterMark(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
-    epicsAtomicSetIntT(&pring->highWaterMark, epicsRingBytesUsedBytes(id));
+    int used;
+    if (pring->lock) epicsSpinLock(pring->lock);
+    used = pring->nextGet - pring->nextPut;
+    if (used < 0) used += pring->size;
+    pring->highWaterMark = used;
+    if (pring->lock) epicsSpinUnlock(pring->lock);
 }

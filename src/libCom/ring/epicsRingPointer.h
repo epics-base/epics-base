@@ -23,7 +23,6 @@
  *   epicsRingPointerLocked uses a spinlock.
  */
 
-#include "epicsAtomic.h"
 #include "epicsSpin.h"
 #include "shareLib.h"
 
@@ -131,9 +130,7 @@ inline bool epicsRingPointer<T>::push(T *p)
     buffer[next] = p;
     nextPush = newNext;
     int used = getUsedNoLock();
-    while(int oldHWM = epicsAtomicGetIntT(&highWaterMark), oldHWM < used) {
-        epicsAtomicCmpAndSwapIntT(&highWaterMark, oldHWM, used);
-    }
+    if (used > highWaterMark) highWaterMark = used;
     if (lock) epicsSpinUnlock(lock);
     return(true);
 }
@@ -219,13 +216,15 @@ inline bool epicsRingPointer<T>::isFull() const
 template <class T>
 inline int epicsRingPointer<T>::getHighWaterMark() const
 {
-    return epicsAtomicGetIntT(&highWaterMark);
+    return highWaterMark;
 }
 
 template <class T>
 inline void epicsRingPointer<T>::resetHighWaterMark()
 {
-    epicsAtomicSetIntT(&highWaterMark, getUsed());
+    if (lock) epicsSpinLock(lock);
+    highWaterMark = getUsedNoLock();
+    if (lock) epicsSpinUnlock(lock);
 }
 
 #endif /* __cplusplus */

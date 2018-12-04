@@ -1,0 +1,4 @@
+# comment line
+a=$(a)
+# comment line
+a=gbl

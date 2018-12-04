@@ -11,7 +11,7 @@
 use strict;
 use Test;
 
-BEGIN {plan tests => 9}
+BEGIN {plan tests => 11}
 
 # Check include/substitute command model
 ok(msi('-I .. ../t1-template.txt'),             slurp('../t1-result.txt'));
@@ -49,6 +49,12 @@ ok(msi('-I.. -D -o t8.txt ../t1-template.txt'), slurp('../t8-result.txt'));
 
 # Dependency generation, dbLoadTemplate format
 ok(msi('-I.. -D -ot9.txt -S ../t2-substitution.txt'), slurp('../t9-result.txt'));
+
+# Substitution file, variable format, with 0 variable definitions
+ok(msi('-I. -I.. -S ../t10-substitute.txt'), slurp('../t10-result.txt'));
+
+# Substitution file, pattern format, with 0 pattern definitions
+ok(msi('-I. -I.. -S ../t11-substitute.txt'), slurp('../t11-result.txt'));
 
 
 # Test support routines

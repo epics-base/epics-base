@@ -52,8 +52,6 @@
 /*
  * Prototypes for some functions not in header files
  */
-void tzset(void);
-int fileno(FILE *);
 int main(int argc, char **argv);
 
 static void
@@ -100,26 +98,6 @@ LogFatal (const char *msg, ...)
     va_start (ap, msg);
     errlogVprintf (msg, ap);
     va_end (ap);
-    delayedPanic (msg);
-}
-
-/*
- * Log RTEMS error and terminate
- */
-void
-LogRtemsFatal (const char *msg, rtems_status_code sc)
-{
-    errlogPrintf ("%s: %s\n", msg, rtems_status_text (sc));
-    delayedPanic (msg);
-}
-
-/*
- * Log network error and terminate
- */
-void
-LogNetFatal (const char *msg, int err)
-{
-    errlogPrintf ("%s: %d\n", msg, err);
     delayedPanic (msg);
 }
 
@@ -370,7 +348,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
 }
 
 static
-char rtems_etc_hosts[] = "127.0.0.1       localhost\n";
+const char rtems_etc_hosts[] = "127.0.0.1 localhost\n";
 
 /* If it doesn't already exist, create /etc/hosts with an entry for 'localhost' */
 static

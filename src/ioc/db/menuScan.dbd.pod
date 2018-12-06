@@ -1,11 +1,48 @@
 #*************************************************************************
-# Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2018 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
+
+=head1 Menu menuScan
+
+This menu is used for the C<SCAN> field of all record types.
+
+The set of periodic scan rates may be modified for an individual IOC by
+copying the F<menuScan.dbd> file from Base into the IOC's source
+directory and changing it to contain the desired scan rates.
+
+The scan periods are extracted from the choice strings at runtime, which
+must be expressed as a number with any of the following units appended:
+
+=over 4
+
+ second
+ seconds
+ minute
+ minutes
+ hour
+ hours
+ Hertz
+ Hz
+
+=back
+
+At IOC start-up a separate scan thread will be created for each period,
+with thread priority increasing further down the list, so faster periods
+should appear after slower ones.
+
+Scan rates that cannot be achieved will generate a warning message from
+the C<iocInit> command.
+
+
+=menu menuScan
+
+=cut
+
 menu(menuScan) {
 	choice(menuScanPassive,"Passive")
 	choice(menuScanEvent,"Event")

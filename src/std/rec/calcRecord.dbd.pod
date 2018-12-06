@@ -1,0 +1,948 @@
+#*************************************************************************
+# Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=title Calculation Record (calc)
+
+The calculation or "Calc" record is used to perform algebraic, relational,
+and logical operations on values retrieved from other records. The result
+of its operations can then be accessed by another record so that it can
+then be used.
+
+=head2 Parameter Fields
+
+The fields in the record fall into the following categories:
+
+=over 1
+
+=item *
+scan parameters
+
+=item *
+read parameters
+
+=item *
+expression parameters
+
+=item *
+operator display parameters
+
+=item *
+alarm parameters
+
+=item *
+monitor parameters
+
+=item *
+run-time parameters
+
+=back
+
+=recordtype calc
+
+=cut
+
+recordtype(calc) {
+
+=head3 Scan Parameters
+
+The Calc record has the standard fields for specifying under what
+circumstances the record will be processed. These fields are listed in
+L<Scan Fields>. In addition, L<Scanning Specification> explains how these
+fields are used. Since the Calc record supports no direct interfaces to
+hardware, it cannot be scanned on I/O interrupt, so its SCAN field cannot
+be C<I/O Intr>.
+
+=fields SCAN
+
+
+=head3 Read Parameters
+
+The read parameters for the Calc record consist of 12 input links INPA,
+INPB, ... INPL. The fields can be database links, channel access links, or
+constants. If they are links, they must specify another record's field or a
+channel access link. If they are constants, they will be initialized with
+the value they are configured with and can be changed via C<dbPuts>. They
+cannot be hardware addresses.
+
+See L<Address Specification> for information on how to specify database
+links.
+
+=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL
+
+=head3 Expression
+
+At the core of the Calc record lies the CALC and RPCL fields. The CALC field
+contains the infix expresion which the record routine will use when it
+processes the record. The resulting value is placed in the VAL field and
+can be accessed from there. The CALC expression is actually converted to
+opcode and stored as Reverse Polish Notation in the RPCL field. It is this
+expression which is actually used to calculate VAL. The Reverse Polish
+expression is evaluated more efficiently during run-time than an infix
+expression. CALC can be changed at run-time, and a special record routine
+calls a function to convert it to Reverse Polish Notation.
+
+The infix expressions that can be used are very similar to the C expression
+syntax, but with some additions and subtle differences in operator meaning
+and precedence. The string may contain a series of expressions separated by
+a semi-colon character ";" any one of which may actually provide the
+calculation result; however, all of the other expressions included must
+assign their result to a variable. All alphabetic elements described below
+are case independent, so upper and lower case letters may be used and mixed
+in the variable and function names as desired. Spaces may be used anywhere
+within an expression except between characters that make up a single
+expression element.
+
+The range of expressions supported by the calculation record are separated
+into literals, constants, operands, algebraic operators, trigonometric operators,
+relational operators, logical operators, the assignment operator,
+parentheses and commas, and the question mark or '?:' operator.
+
+=fields CALC, RPCL
+
+=head3 Literals
+
+=over 1
+
+=item *
+Standard double precision floating point numbers
+
+=item *
+Inf: Infinity
+
+=item *
+Nan: Not a Number
+
+=back
+
+=head3 Constants
+
+=over 1
+
+=item *
+PI: returns the mathematical constant E<pi>
+
+=item *
+D2R: evaluates to E<pi>/180 which, when used as a multiplier, converts an
+angle from degrees to radians
+
+=item *
+R2D: evaluates to 180/E<pi> which as a multiplier converts an angle from
+radians to degrees
+
+=back
+
+=head3 Operands
+
+The expression uses the values retrieved from the INPx links as operands,
+though constants can be used as operands too. These values retrieved from
+the input links are stored in the A-L fields. The values to be used in the
+expression are simply referenced by the field letter. For instance, the
+value obtained from INPA link is stored in the field A, and the value
+obtained from INPB is stored in field B. The field names can be included in
+the expression which will operate on their respective values, as in A+B.
+Also, the RNDM nullary function can be included as an operand in the
+expression in order to generate a random number between 0 and 1.
+
+=fields A, B, C, D, E, F, G, H, I, J, K, L
+
+The keyword VAL returns the current contents of the VAL field (which can be
+written to by a CA put, so it might I<not> be the result from the last time
+the expression was evaluated).
+
+=head3 Algebraic Operators
+
+=over 1
+
+=item *
+ABS: Absolute value (unary)
+
+=item *
+SQR: Square root (unary)
+
+=item *
+MIN: Minimum (any number of args)
+
+=item *
+MAX: Maximum (any number of args)
+
+=item *
+FINITE: returns non-zero if none of the arguments are NaN or Inf (any
+number of args)
+
+=item *
+ISNAN: returns non-zero if any of the arguments is NaN or Inf (any number
+of args)
+
+=item *
+CEIL: Ceiling (unary)
+
+=item *
+FLOOR: Floor (unary)
+
+=item *
+LOG: Log base 10 (unary)
+
+=item *
+LOGE: Natural log (unary)
+
+=item *
+LN: Natural log (unary)
+
+=item *
+EXP: Exponential function (unary)
+
+=item *
+^ : Exponential (binary)
+
+=item *
+** : Exponential (binary)
+
+=item *
++ : Addition (binary)
+
+=item *
+- : Subtraction (binary)
+
+=item *
+* : Multiplication (binary)
+
+=item *
+/ : Division (binary)
+
+=item *
+% : Modulo (binary)
+
+=item *
+NOT: Negate (unary)
+
+=back
+
+=head3 Trigonometric Operators
+
+=over 1
+
+=item *
+SIN: Sine
+
+=item *
+SINH: Hyperbolic sine
+
+=item *
+ASIN: Arc sine
+
+=item *
+COS: Cosine
+
+=item *
+COSH: Hyperbolic cosine
+
+=item *
+ACOS: Arc cosine
+
+=item *
+TAN: Tangent
+
+=item *
+TANH: Hyperbolic tangent
+
+=item *
+ATAN: Arc tangent
+
+=back
+
+=head3 Relational Operators
+
+=over 1
+
+=item *
+>= : Greater than or equal to
+
+=item *
+> : Greater than
+
+=item *
+<= : Less than or equal to
+
+=item *
+< : Less than
+
+=item *
+# : Not equal to
+
+=item *
+= : Equal to
+
+=back
+
+=head3 Logical Operators
+
+=over 1
+
+=item *
+&& : And
+
+=item *
+|| : Or
+
+=item *
+! : Not
+
+=back
+
+=head3 Bitwise Operators
+
+=over 1
+
+=item *
+| : Bitwise Or
+
+=item *
+& : Bitwise And
+
+=item *
+OR : Bitwise Or
+
+=item *
+AND : Bitwise And
+
+=item *
+XOR : Bitwise Exclusive Or
+
+=item *
+~ : One's Complement
+
+=item *
+<< : Left shift
+
+=item *
+>> : Right shift
+
+=back
+
+=head3 Assignment Operator
+
+=over 1
+
+=item *
+:= : assigns a value (right hand side) to a variable (i.e. field)
+
+=back
+
+=head3 Parantheses, Comma, and Semicolon
+
+The open and close parentheses are supported. Nested parentheses are
+supported.
+
+The comma is supported when used to separate the arguments of a binary
+function.
+
+The semicolon is used to separate expressions. Although only one
+traditional calculation expression is allowed, multiple assignment
+expressions are allowed.
+
+=head3 Conditional Expression
+
+The C language's question mark operator is supported. The format is:
+C<condition ? True result : False result>
+
+=head3 Expression Examples
+
+=head3 Algebraic
+
+C<A + B + 10>
+
+=over 1
+
+=item *
+Result is A + B + 10
+
+=back
+
+=head3 Relational
+
+C<(A + B) < (C + D)>
+
+=over 1
+
+=item *
+Result is 1 if (A + B) < (C + D)
+
+=item *
+Result is 0 if (A + B) >= (C + D)
+
+=back
+
+=head3 Question Mark
+
+C<(A + B) < (C + D) ? E : F + L + 10>
+
+=over 1
+
+=item *
+Result is E if (A + B) < (C + D)
+
+=item *
+Result is F + L + 10 if (A + B) >= (C + D)
+
+=back
+
+Prior to Base 3.14.9 it was legal to omit the : and the second (else) part
+of the conditional, like this:
+
+C<(A + B)<(C + D) ? E>
+
+=over 1
+
+=item
+Result is E if (A + B)<(C + D)
+
+=item
+Result is unchanged if (A + B)>=(C + D)
+
+From 3.14.9 onwards, this expresion must be written as
+C<(A + B) < (C + D) ? E : VAL>
+
+=back
+
+=head3 Logical
+
+C<A&B>
+
+=over 1
+
+=item *
+Causes the following to occur:
+
+=over 1
+
+=item *
+Convert A to integer
+
+=item *
+Convert B to integer
+
+=item *
+Bitwise And A and B
+
+=item *
+Convert result to floating point
+
+=back
+
+=back
+
+=head3 Assignment
+
+C<sin(a); a:=a+D2R>
+
+=over 1
+
+=item *
+Causes the Calc record to output the successive values of a sine curve in
+1 degree intervals.
+
+=back
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. These
+fields are used to display VAL and other parameters of the calculation
+record either textually or graphically.
+
+The EGU field contains a string of up to 16 characters which is supplied by
+the user and which describes the values being operated upon. The string is
+retrieved whenever the routine C<get_units> is called. The EGU string is
+solely for an operator's sake and does not have to be used.
+
+The HOPR and LOPR fields only refer to the limits of the VAL, HIHI, HIGH,
+LOW and LOLO fields. PREC controls the precision of the VAL field.
+
+See L<Fields Common to All Record Types> for more on the record name (NAME)
+and description (DESC) fields.
+
+=fields EGU, PREC, HOPR, LOPR, NAME, DESC
+
+=head3 Alarm Parameters
+
+The possible alarm conditions for the Calc record are the SCAN, READ,
+Calculation, and limit alarms. The SCAN and READ alarms are called by the
+record support routines. The Calculation alarm is called by the record
+processing routine when the CALC expression is an invalid one, upon which
+an error message is generated.
+
+The following alarm parameters which are configured by the user, define the
+limit alarms for the VAL field and the severity corresponding to those
+conditions.
+
+The HYST field defines an alarm deadband for each limit. See L<Alarm Specification>
+for a complete explanation of alarms of these fields. L<Alarm Fields>
+lists other fields related to alarms that are common to all record types.
+
+=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST
+
+=head3 Monitor Parameters
+
+These paramaeters are used to determine when to send monitors for the value
+fields. These monitors are sent when the value field exceeds the last
+monitored field by the appropriate deadband, the ADEL for archiver monitors
+and the MDEL field for all other types of monitors. If these fields have a
+value of zero, everytime the value changes, monitors are triggered; if they have a
+value of -1, everytime the record is scanned, monitors are triggered. See
+L<Monitor Specification> for a complete explanation of monitors.
+
+=fields ADEL, MDEL
+
+=head3 Run-time Parameters
+
+These fields are not configurable using a configuration tool and none are
+modifiable at run-time. They are used to process the record.
+
+The LALM field is used to implement the hysteresis factor for the alarm
+limits.
+
+The LA-LL fields are used to decide when to trigger monitors for the
+corresponding fields. For instance, if LA does not equal the value A,
+monitors for A are triggered. The MLST and ALST fields are used in the same
+manner for the VAL field.
+
+=fields LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
+
+=cut
+
+	include "dbCommon.dbd" 
+	field(VAL,DBF_DOUBLE) {
+		prompt("Result")
+		promptgroup("50 - Output")
+		asl(ASL0)
+	}
+	field(CALC,DBF_STRING) {
+		prompt("Calculation")
+		promptgroup("30 - Action")
+		special(SPC_CALC)
+		pp(TRUE)
+		size(80)
+		initial("0")
+	}
+	field(INPA,DBF_INLINK) {
+		prompt("Input A")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPB,DBF_INLINK) {
+		prompt("Input B")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPC,DBF_INLINK) {
+		prompt("Input C")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPD,DBF_INLINK) {
+		prompt("Input D")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPE,DBF_INLINK) {
+		prompt("Input E")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPF,DBF_INLINK) {
+		prompt("Input F")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPG,DBF_INLINK) {
+		prompt("Input G")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPH,DBF_INLINK) {
+		prompt("Input H")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPI,DBF_INLINK) {
+		prompt("Input I")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPJ,DBF_INLINK) {
+		prompt("Input J")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPK,DBF_INLINK) {
+		prompt("Input K")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPL,DBF_INLINK) {
+		prompt("Input L")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
+		interest(1)
+		size(16)
+		prop(YES)
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(HOPR,DBF_DOUBLE) {
+		prompt("High Operating Rng")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(LOPR,DBF_DOUBLE) {
+		prompt("Low Operating Range")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(HIHI,DBF_DOUBLE) {
+		prompt("Hihi Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(LOLO,DBF_DOUBLE) {
+		prompt("Lolo Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(HIGH,DBF_DOUBLE) {
+		prompt("High Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(LOW,DBF_DOUBLE) {
+		prompt("Low Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(HHSV,DBF_MENU) {
+		prompt("Hihi Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(LLSV,DBF_MENU) {
+		prompt("Lolo Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(HSV,DBF_MENU) {
+		prompt("High Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(LSV,DBF_MENU) {
+		prompt("Low Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(AFTC, DBF_DOUBLE) {
+		prompt("Alarm Filter Time Constant")
+		promptgroup("70 - Alarm")
+		interest(1)
+	}
+	field(AFVL, DBF_DOUBLE) {
+		prompt("Alarm Filter Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(HYST,DBF_DOUBLE) {
+		prompt("Alarm Deadband")
+		promptgroup("70 - Alarm")
+		interest(1)
+	}
+	field(ADEL,DBF_DOUBLE) {
+		prompt("Archive Deadband")
+		promptgroup("80 - Display")
+		interest(1)
+	}
+	field(MDEL,DBF_DOUBLE) {
+		prompt("Monitor Deadband")
+		promptgroup("80 - Display")
+		interest(1)
+	}
+	field(A,DBF_DOUBLE) {
+		prompt("Value of Input A")
+		pp(TRUE)
+	}
+	field(B,DBF_DOUBLE) {
+		prompt("Value of Input B")
+		pp(TRUE)
+	}
+	field(C,DBF_DOUBLE) {
+		prompt("Value of Input C")
+		pp(TRUE)
+	}
+	field(D,DBF_DOUBLE) {
+		prompt("Value of Input D")
+		pp(TRUE)
+	}
+	field(E,DBF_DOUBLE) {
+		prompt("Value of Input E")
+		pp(TRUE)
+	}
+	field(F,DBF_DOUBLE) {
+		prompt("Value of Input F")
+		pp(TRUE)
+	}
+	field(G,DBF_DOUBLE) {
+		prompt("Value of Input G")
+		pp(TRUE)
+	}
+	field(H,DBF_DOUBLE) {
+		prompt("Value of Input H")
+		pp(TRUE)
+	}
+	field(I,DBF_DOUBLE) {
+		prompt("Value of Input I")
+		pp(TRUE)
+	}
+	field(J,DBF_DOUBLE) {
+		prompt("Value of Input J")
+		pp(TRUE)
+	}
+	field(K,DBF_DOUBLE) {
+		prompt("Value of Input K")
+		pp(TRUE)
+	}
+	field(L,DBF_DOUBLE) {
+		prompt("Value of Input L")
+		pp(TRUE)
+	}
+	field(LA,DBF_DOUBLE) {
+		prompt("Prev Value of A")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LB,DBF_DOUBLE) {
+		prompt("Prev Value of B")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LC,DBF_DOUBLE) {
+		prompt("Prev Value of C")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LD,DBF_DOUBLE) {
+		prompt("Prev Value of D")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LE,DBF_DOUBLE) {
+		prompt("Prev Value of E")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LF,DBF_DOUBLE) {
+		prompt("Prev Value of F")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LG,DBF_DOUBLE) {
+		prompt("Prev Value of G")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LH,DBF_DOUBLE) {
+		prompt("Prev Value of H")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LI,DBF_DOUBLE) {
+		prompt("Prev Value of I")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LJ,DBF_DOUBLE) {
+		prompt("Prev Value of J")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LK,DBF_DOUBLE) {
+		prompt("Prev Value of K")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LL,DBF_DOUBLE) {
+		prompt("Prev Value of L")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LALM,DBF_DOUBLE) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(ALST,DBF_DOUBLE) {
+		prompt("Last Value Archived")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MLST,DBF_DOUBLE) {
+		prompt("Last Val Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	%#include "postfix.h"
+	field(RPCL,DBF_NOACCESS) {
+		prompt("Reverse Polish Calc")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(80)]")
+	}
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head2 C<init_record>
+
+For each constant input link, the corresponding value field is initialized
+with the constant value if the input link is CONSTANT or a channel access
+link is created if the input link is a PV_LINK.
+
+A routine postfix is called to convert the infix expression in CALC to
+Reverse Polish Notation. The result is stored in RPCL.
+
+=head2 C<process>
+
+See next section.
+
+=head2 C<special>
+
+This is called if CALC is changed. C<special> calls postfix.
+
+=head2 C<get_value>
+
+Fills in the values of struct valueDes so that the refer to VAL.
+
+=head2 C<get_units>
+
+Retrieves EGU.
+
+=head2 C<get_precision>
+
+Retrieves PREC.
+
+=head2 C<get_graphic_double>
+
+Sets the upper display and lower display limits for a field. If the field
+is VAL, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR, else
+if the field has upper and lower limits defined they will be used, else the
+upper and lower maximum values for the field will be used.
+
+=head2 C<get_control_double>
+
+Sets the upper control and the lower control limits for a field. If the
+field is VAL, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and
+LOPR, else if the field has upper and lower limits defined they will be
+used, else the upper and lower maximum values for the field type will be
+used.
+
+=head2 C<get_alarm_double>
+
+Sets the following values:
+
+=over 1
+
+upper_alarm_limit = HIHI
+
+upper_warning_limit = HIGH
+
+lower_warning_limit = LOW
+
+lower_alarm_limit = LOLO
+
+=back
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over 1
+
+=item 1.
+Fetch all arguments.
+
+=item 2.
+Call routine C<calcPerform>, which calculates VAL from the postfix version of
+the expression given in CALC. If C<calcPerform> returns success UDF is set to
+FALSE.
+
+=item 3.
+Check alarms. This routine checks to see if the new VAL causes the alarm
+status and severity to change. If so, NSEV, NSTA, and LALM are set. It also
+honors the alarm hysteresis factor (HYST). Thus the value must change by
+at least HYST before the alarm status and severity changes.
+
+=item 4.
+Check to see if monitors should be invoked.
+
+=back
+
+=over 1
+
+=item *
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+Archive and values change monitors are invoked if ADEL and MDEL conditions
+are met.
+
+=item *
+Monitors for A-L are checked whenever other monitors are invoked.
+
+=item *
+NSEV and NSTA are reset to 0.
+
+=back
+
+=over
+
+=item 5.
+Scan forward link if necessary, set PACT FALSE, and return.
+
+=back
+
+=cut
+
+}

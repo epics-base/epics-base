@@ -218,6 +218,7 @@ static const iocshFuncDef errlogFuncDef = {"errlog",1,errlogArgs};
 static void errlogCallFunc(const iocshArgBuf *args)
 {
     errlogPrintfNoConsole("%s\n", args[0].sval);
+    errlogFlush();
 }
 
 /* iocLogPrefix */

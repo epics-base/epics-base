@@ -37,6 +37,9 @@ dbStateId dbStateFind(const char *name)
     ELLNODE *node;
     dbStateId id;
 
+    if (!name)
+        return NULL;
+
     for (node = ellFirst(&states); node; node = ellNext(node)) {
         id = CONTAINER(node, dbState, node);
         if (strcmp(id->name, name) == 0)
@@ -48,6 +51,9 @@ dbStateId dbStateFind(const char *name)
 dbStateId dbStateCreate(const char *name)
 {
     dbStateId id;
+
+    if (!name)
+        return NULL;
 
     if ((id = dbStateFind(name)))
         return id;

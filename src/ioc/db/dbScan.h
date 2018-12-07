@@ -65,7 +65,7 @@ epicsShareFunc int scanOnce(struct dbCommon *);
 epicsShareFunc int scanOnceCallback(struct dbCommon *, once_complete cb, void *usr);
 epicsShareFunc int scanOnceSetQueueSize(int size);
 epicsShareFunc int scanOnceQueueStatus(const int reset, scanOnceQueueStats *result);
-void scanOnceQueuePrintStatus(const int reset);
+epicsShareFunc void scanOnceQueueShow(const int reset);
 
 /*print periodic lists*/
 epicsShareFunc int scanppl(double rate);

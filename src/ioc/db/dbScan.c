@@ -744,7 +744,7 @@ int scanOnceQueueStatus(const int reset, scanOnceQueueStats *result)
     return ret;
 }
 
-void scanOnceQueuePrintStatus(const int reset)
+void scanOnceQueueShow(const int reset)
 {
     scanOnceQueueStats stats;
     if (scanOnceQueueStatus(reset, &stats) == -1) {

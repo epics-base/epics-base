@@ -130,7 +130,7 @@ int callbackQueueStatus(const int reset, callbackQueueStats *result)
     return ret;
 }
 
-void callbackQueuePrintStatus(const int reset)
+void callbackQueueShow(const int reset)
 {
     callbackQueueStats stats;
     if (callbackQueueStatus(reset, &stats) == -1) {

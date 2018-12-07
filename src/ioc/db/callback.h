@@ -81,7 +81,7 @@ epicsShareFunc void callbackRequestProcessCallbackDelayed(
     CALLBACK *pCallback, int Priority, void *pRec, double seconds);
 epicsShareFunc int callbackSetQueueSize(int size);
 epicsShareFunc int callbackQueueStatus(const int reset, callbackQueueStats *result);
-void callbackQueuePrintStatus(const int reset);
+epicsShareFunc void callbackQueueShow(const int reset);
 epicsShareFunc int callbackParallelThreads(int count, const char *prio);
 
 #ifdef __cplusplus

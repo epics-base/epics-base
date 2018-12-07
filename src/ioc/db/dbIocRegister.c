@@ -296,15 +296,15 @@ static void scanOnceSetQueueSizeCallFunc(const iocshArgBuf *args)
     scanOnceSetQueueSize(args[0].ival);
 }
 
-/* scanOnceQueueStatus */
-static const iocshArg scanOnceQueueStatusArg0 = { "reset",iocshArgInt};
-static const iocshArg * const scanOnceQueueStatusArgs[1] =
-    {&scanOnceQueueStatusArg0};
-static const iocshFuncDef scanOnceQueueStatusFuncDef =
-    {"scanOnceQueueStatus",1,scanOnceQueueStatusArgs};
-static void scanOnceQueueStatusCallFunc(const iocshArgBuf *args)
+/* scanOnceQueueShow */
+static const iocshArg scanOnceQueueShowArg0 = { "reset",iocshArgInt};
+static const iocshArg * const scanOnceQueueShowArgs[1] =
+    {&scanOnceQueueShowArg0};
+static const iocshFuncDef scanOnceQueueShowFuncDef =
+    {"scanOnceQueueShow",1,scanOnceQueueShowArgs};
+static void scanOnceQueueShowCallFunc(const iocshArgBuf *args)
 {
-    scanOnceQueuePrintStatus(args[0].ival);
+    scanOnceQueueShow(args[0].ival);
 }
 
 /* scanppl */
@@ -346,15 +346,15 @@ static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
     callbackSetQueueSize(args[0].ival);
 }
 
-/* callbackQueueStatus */
-static const iocshArg callbackQueueStatusArg0 = { "reset", iocshArgInt};
-static const iocshArg * const callbackQueueStatusArgs[1] =
-    {&callbackQueueStatusArg0};
-static const iocshFuncDef callbackQueueStatusFuncDef =
-    {"callbackQueueStatus",1,callbackQueueStatusArgs};
-static void callbackQueueStatusCallFunc(const iocshArgBuf *args)
+/* callbackQueueShow */
+static const iocshArg callbackQueueShowArg0 = { "reset", iocshArgInt};
+static const iocshArg * const callbackQueueShowArgs[1] =
+    {&callbackQueueShowArg0};
+static const iocshFuncDef callbackQueueShowFuncDef =
+    {"callbackQueueShow",1,callbackQueueShowArgs};
+static void callbackQueueShowCallFunc(const iocshArgBuf *args)
 {
-    callbackQueuePrintStatus(args[0].ival);
+    callbackQueueShow(args[0].ival);
 }
 
 /* callbackParallelThreads */
@@ -463,14 +463,14 @@ void dbIocRegister(void)
     iocshRegister(&dbLockShowLockedFuncDef,dbLockShowLockedCallFunc);
 
     iocshRegister(&scanOnceSetQueueSizeFuncDef,scanOnceSetQueueSizeCallFunc);
-    iocshRegister(&scanOnceQueueStatusFuncDef,scanOnceQueueStatusCallFunc);
+    iocshRegister(&scanOnceQueueShowFuncDef,scanOnceQueueShowCallFunc);
     iocshRegister(&scanpplFuncDef,scanpplCallFunc);
     iocshRegister(&scanpelFuncDef,scanpelCallFunc);
     iocshRegister(&postEventFuncDef,postEventCallFunc);
     iocshRegister(&scanpiolFuncDef,scanpiolCallFunc);
 
     iocshRegister(&callbackSetQueueSizeFuncDef,callbackSetQueueSizeCallFunc);
-    iocshRegister(&callbackQueueStatusFuncDef,callbackQueueStatusCallFunc);
+    iocshRegister(&callbackQueueShowFuncDef,callbackQueueShowCallFunc);
     iocshRegister(&callbackParallelThreadsFuncDef,callbackParallelThreadsCallFunc);
 
     /* Needed before callback system is initialized */

@@ -40,18 +40,22 @@ public: /* Functions */
     int getSize() const;
     bool isEmpty() const;
     bool isFull() const;
+    int getHighWaterMark() const;
+    void resetHighWaterMark();
 
 private: /* Prevent compiler-generated member functions */
     /* default constructor, copy constructor, assignment operator */
     epicsRingPointer();
     epicsRingPointer(const epicsRingPointer &);
     epicsRingPointer& operator=(const epicsRingPointer &);
+    int getUsedNoLock() const;
 
 private: /* Data */
     epicsSpinId lock;
     volatile int nextPush;
     volatile int nextPop;
     int size;
+    int highWaterMark;
     T  * volatile * buffer;
 };
 
@@ -59,6 +63,7 @@ extern "C" {
 #endif /*__cplusplus */
 
 typedef void *epicsRingPointerId;
+typedef void const *epicsRingPointerIdConst;
 
 epicsShareFunc epicsRingPointerId  epicsShareAPI epicsRingPointerCreate(int size);
 /* Same, but secured by a spinlock */
@@ -74,6 +79,8 @@ epicsShareFunc int  epicsShareAPI epicsRingPointerGetUsed(epicsRingPointerId id)
 epicsShareFunc int  epicsShareAPI epicsRingPointerGetSize(epicsRingPointerId id);
 epicsShareFunc int  epicsShareAPI epicsRingPointerIsEmpty(epicsRingPointerId id);
 epicsShareFunc int  epicsShareAPI epicsRingPointerIsFull(epicsRingPointerId id);
+epicsShareFunc int  epicsShareAPI epicsRingPointerGetHighWaterMark(epicsRingPointerIdConst id);
+epicsShareFunc void epicsShareAPI epicsRingPointerResetHighWaterMark(epicsRingPointerId id);
 
 /* This routine was incorrectly named in previous releases */
 #define epicsRingPointerSize epicsRingPointerGetSize
@@ -95,7 +102,8 @@ epicsShareFunc int  epicsShareAPI epicsRingPointerIsFull(epicsRingPointerId id);
 
 template <class T>
 inline epicsRingPointer<T>::epicsRingPointer(int sz, bool locked) :
-    lock(0), nextPush(0), nextPop(0), size(sz+1), buffer(new T* [sz+1])
+    lock(0), nextPush(0), nextPop(0), size(sz+1), highWaterMark(0),
+    buffer(new T* [sz+1])
 {
     if (locked)
         lock = epicsSpinCreate();
@@ -121,6 +129,8 @@ inline bool epicsRingPointer<T>::push(T *p)
     }
     buffer[next] = p;
     nextPush = newNext;
+    int used = getUsedNoLock();
+    if (used > highWaterMark) highWaterMark = used;
     if (lock) epicsSpinUnlock(lock);
     return(true);
 }
@@ -162,11 +172,18 @@ inline int epicsRingPointer<T>::getFree() const
 }
 
 template <class T>
+inline int epicsRingPointer<T>::getUsedNoLock() const
+{
+    int n = nextPush - nextPop;
+    if (n < 0) n += size;
+    return n;
+}
+
+template <class T>
 inline int epicsRingPointer<T>::getUsed() const
 {
     if (lock) epicsSpinLock(lock);
-    int n = nextPush - nextPop;
-    if (n < 0) n += size;
+    int n = getUsedNoLock();
     if (lock) epicsSpinUnlock(lock);
     return n;
 }
@@ -194,6 +211,20 @@ inline bool epicsRingPointer<T>::isFull() const
     int count = nextPush - nextPop +1;
     if (lock) epicsSpinUnlock(lock);
     return((count == 0) || (count == size));
+}
+
+template <class T>
+inline int epicsRingPointer<T>::getHighWaterMark() const
+{
+    return highWaterMark;
+}
+
+template <class T>
+inline void epicsRingPointer<T>::resetHighWaterMark()
+{
+    if (lock) epicsSpinLock(lock);
+    highWaterMark = getUsedNoLock();
+    if (lock) epicsSpinUnlock(lock);
 }
 
 #endif /* __cplusplus */

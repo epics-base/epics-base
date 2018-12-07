@@ -296,6 +296,17 @@ static void scanOnceSetQueueSizeCallFunc(const iocshArgBuf *args)
     scanOnceSetQueueSize(args[0].ival);
 }
 
+/* scanOnceQueueStatus */
+static const iocshArg scanOnceQueueStatusArg0 = { "reset",iocshArgInt};
+static const iocshArg * const scanOnceQueueStatusArgs[1] =
+    {&scanOnceQueueStatusArg0};
+static const iocshFuncDef scanOnceQueueStatusFuncDef =
+    {"scanOnceQueueStatus",1,scanOnceQueueStatusArgs};
+static void scanOnceQueueStatusCallFunc(const iocshArgBuf *args)
+{
+    scanOnceQueuePrintStatus(args[0].ival);
+}
+
 /* scanppl */
 static const iocshArg scanpplArg0 = { "rate",iocshArgDouble};
 static const iocshArg * const scanpplArgs[1] = {&scanpplArg0};
@@ -333,6 +344,17 @@ static const iocshFuncDef callbackSetQueueSizeFuncDef =
 static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
 {
     callbackSetQueueSize(args[0].ival);
+}
+
+/* callbackQueueStatus */
+static const iocshArg callbackQueueStatusArg0 = { "reset", iocshArgInt};
+static const iocshArg * const callbackQueueStatusArgs[1] =
+    {&callbackQueueStatusArg0};
+static const iocshFuncDef callbackQueueStatusFuncDef =
+    {"callbackQueueStatus",1,callbackQueueStatusArgs};
+static void callbackQueueStatusCallFunc(const iocshArgBuf *args)
+{
+    callbackQueuePrintStatus(args[0].ival);
 }
 
 /* callbackParallelThreads */
@@ -441,12 +463,14 @@ void dbIocRegister(void)
     iocshRegister(&dbLockShowLockedFuncDef,dbLockShowLockedCallFunc);
 
     iocshRegister(&scanOnceSetQueueSizeFuncDef,scanOnceSetQueueSizeCallFunc);
+    iocshRegister(&scanOnceQueueStatusFuncDef,scanOnceQueueStatusCallFunc);
     iocshRegister(&scanpplFuncDef,scanpplCallFunc);
     iocshRegister(&scanpelFuncDef,scanpelCallFunc);
     iocshRegister(&postEventFuncDef,postEventCallFunc);
     iocshRegister(&scanpiolFuncDef,scanpiolCallFunc);
 
     iocshRegister(&callbackSetQueueSizeFuncDef,callbackSetQueueSizeCallFunc);
+    iocshRegister(&callbackQueueStatusFuncDef,callbackQueueStatusCallFunc);
     iocshRegister(&callbackParallelThreadsFuncDef,callbackParallelThreadsCallFunc);
 
     /* Needed before callback system is initialized */

@@ -38,6 +38,7 @@ typedef struct ringPvt {
     volatile int   nextPut;
     volatile int   nextGet;
     int            size;
+    int            highWaterMark;
     volatile char buffer[1]; /* actually larger */
 }ringPvt;
 
@@ -47,6 +48,7 @@ epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
     if(!pring)
         return NULL;
     pring->size = size + SLOP;
+    pring->highWaterMark = 0;
     pring->nextGet = 0;
     pring->nextPut = 0;
     pring->lock    = 0;
@@ -118,7 +120,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
 {
     ringPvt *pring = (ringPvt *)id;
     int nextGet, nextPut, size;
-    int freeCount, copyCount, topCount;
+    int freeCount, copyCount, topCount, used;
 
     if (pring->lock) epicsSpinLock(pring->lock);
     nextGet = pring->nextGet;
@@ -131,8 +133,9 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
             if (pring->lock) epicsSpinUnlock(pring->lock);
             return 0;
         }
-        if (nbytes)
+        if (nbytes) {
             memcpy ((void *)&pring->buffer[nextPut], value, nbytes);
+        }
         nextPut += nbytes;
     }
     else {
@@ -143,8 +146,9 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
         }
         topCount = size - nextPut;
         copyCount = (nbytes > topCount) ?  topCount : nbytes;
-        if (copyCount)
+        if (copyCount) {
             memcpy ((void *)&pring->buffer[nextPut], value, copyCount);
+        }
         nextPut += copyCount;
         if (nextPut == size) {
             int nLeft = nbytes - copyCount;
@@ -154,6 +158,10 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
         }
     }
     pring->nextPut = nextPut;
+
+    used = nextPut - nextGet;
+    if (used < 0) used += pring->size;
+    if (used > pring->highWaterMark) pring->highWaterMark = used;
 
     if (pring->lock) epicsSpinUnlock(pring->lock);
     return nbytes;
@@ -223,4 +231,21 @@ epicsShareFunc int epicsShareAPI epicsRingBytesIsEmpty(epicsRingBytesId id)
 epicsShareFunc int epicsShareAPI epicsRingBytesIsFull(epicsRingBytesId id)
 {
     return (epicsRingBytesFreeBytes(id) <= 0);
+}
+
+epicsShareFunc int epicsShareAPI epicsRingBytesHighWaterMark(epicsRingBytesIdConst id)
+{
+    ringPvt *pring = (ringPvt *)id;
+    return pring->highWaterMark;
+}
+
+epicsShareFunc void epicsShareAPI epicsRingBytesResetHighWaterMark(epicsRingBytesId id)
+{
+    ringPvt *pring = (ringPvt *)id;
+    int used;
+    if (pring->lock) epicsSpinLock(pring->lock);
+    used = pring->nextGet - pring->nextPut;
+    if (used < 0) used += pring->size;
+    pring->highWaterMark = used;
+    if (pring->lock) epicsSpinUnlock(pring->lock);
 }

@@ -97,7 +97,7 @@ sub ParseDBD {
             my $rtyp = $dbd->recordtype($record_type);
             if (!defined $rtyp) {
                 $rtyp = DBD::Recordtype->new($record_type);
-                warn "Device using undefined record type '$record_type', place-holder created\n";
+                warn "Device using unknown record type '$record_type', declaration created\n";
                 $dbd->add($rtyp);
             }
             $rtyp->add_device(DBD::Device->new($link_type, $dset, $choice));
@@ -218,7 +218,12 @@ sub parse_breaktable {
 sub parse_recordtype {
     my ($dbd, $record_type) = @_;
     pushContext("recordtype($record_type)");
-    my $rtyp = DBD::Recordtype->new($record_type);
+    # Re-use a matching declaration record type if one exists
+    my $rtyp = $dbd->recordtype($record_type);
+    if (!defined($rtyp) || $rtyp->fields) {
+        # Earlier record type is not a declaration, don't re-use it
+        $rtyp = DBD::Recordtype->new($record_type);
+    }
     while(1) {
         parseCommon($rtyp);
         if (m/\G field \s* \( \s* $RXstr \s* , \s* $RXstr \s* \) \s* \{/xgc) {

@@ -130,7 +130,18 @@ sub attribute {
 }
 
 sub equals {
-    dieContext("Record field objects are not comparable");
+    my ($l, $r) = @_;
+    return 1 if $l eq $r;
+    return 0 if
+        $l->{NAME} ne $r->{NAME} ||
+        $l->{DBF_TYPE} ne $r->{DBF_TYPE};
+    my ($la, $ra) = ($l->{ATTR_INDEX}, $r->{ATTR_INDEX});
+    my @keys = sort keys %$la;
+    return 0 if join(',', @keys) ne join(',', sort keys %$ra);
+    foreach my $k (@keys) {
+        return 0 if $la->{$k} ne $ra->{$k};
+    }
+    return 1;
 }
 
 sub check_valid {

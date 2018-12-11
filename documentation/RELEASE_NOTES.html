@@ -19,6 +19,15 @@
 
 -->
 
+<h3>Status reporting for the callback and scanOnce task queues</h3>
+
+<p>Two new iocsh commands and some associated underlying APIs have been added to
+show the state of the queues that feed the three callback tasks and the scanOnce
+task, including a high-water mark which can optionally be reset. The new iocsh
+commands are <tt>callbackQueueShow</tt> and <tt>scanOnceQueueShow</tt>; both
+take an optional integer argument which must be non-zero to reset the
+high-water mark.</p>
+
 <h3>Support for event codes greater than or equal to NUM_TIME_EVENTS</h3>
 
 <p>Event numbers greater than or equal to NUM_TIME_EVENTS are now allowed if

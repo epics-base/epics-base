@@ -48,6 +48,13 @@ typedef epicsCallback CALLBACK;
 
 typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 
+typedef struct callbackQueueStats {
+    int size;
+    int numUsed[NUM_CALLBACK_PRIORITIES];
+    int maxUsed[NUM_CALLBACK_PRIORITIES];
+    int numOverflow[NUM_CALLBACK_PRIORITIES];
+} callbackQueueStats;
+
 #define callbackSetCallback(PFUN, PCALLBACK) \
     ( (PCALLBACK)->callback = (PFUN) )
 #define callbackSetPriority(PRIORITY, PCALLBACK) \
@@ -73,6 +80,8 @@ epicsShareFunc void callbackCancelDelayed(CALLBACK *pcallback);
 epicsShareFunc void callbackRequestProcessCallbackDelayed(
     CALLBACK *pCallback, int Priority, void *pRec, double seconds);
 epicsShareFunc int callbackSetQueueSize(int size);
+epicsShareFunc int callbackQueueStatus(const int reset, callbackQueueStats *result);
+epicsShareFunc void callbackQueueShow(const int reset);
 epicsShareFunc int callbackParallelThreads(int count, const char *prio);
 
 #ifdef __cplusplus

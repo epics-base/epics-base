@@ -61,7 +61,7 @@ DBDINC += menuScan
 DBDINC += dbCommon
 
 dbMenusPod = $(notdir $(wildcard ../db/menu*.dbd.pod))
-HTMLS += $(patsubst %.dbd.pod,%.html,$(menusPod))
+HTMLS += $(patsubst %.dbd.pod,%.html,$(dbMenusPod))
 
 dbCore_SRCS += dbLock.c
 dbCore_SRCS += dbAccess.c

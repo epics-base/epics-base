@@ -64,6 +64,7 @@ static void testSingle(void)
     testOk1(epicsRingPointerGetFree(ring)==rsize);
     testOk1(epicsRingPointerGetSize(ring)==rsize);
     testOk1(epicsRingPointerGetUsed(ring)==0);
+    testOk1(epicsRingPointerGetHighWaterMark(ring)==0);
 
     testOk1(epicsRingPointerPop(ring)==NULL);
 
@@ -75,6 +76,10 @@ static void testSingle(void)
     testOk1(epicsRingPointerGetFree(ring)==rsize-1);
     testOk1(epicsRingPointerGetSize(ring)==rsize);
     testOk1(epicsRingPointerGetUsed(ring)==1);
+    testOk1(epicsRingPointerGetHighWaterMark(ring)==1);
+
+    epicsRingPointerResetHighWaterMark(ring);
+    testOk1(epicsRingPointerGetHighWaterMark(ring)==1);
 
     testDiag("Fill it up");
     for(i=2; i<2*rsize; i++) {
@@ -92,6 +97,7 @@ static void testSingle(void)
     testOk1(epicsRingPointerGetFree(ring)==0);
     testOk1(epicsRingPointerGetSize(ring)==rsize);
     testOk1(epicsRingPointerGetUsed(ring)==rsize);
+    testOk1(epicsRingPointerGetHighWaterMark(ring)==rsize);
 
     testDiag("Drain it out");
     for(i=1; i<2*rsize; i++) {
@@ -108,6 +114,7 @@ static void testSingle(void)
     testOk1(epicsRingPointerGetFree(ring)==rsize);
     testOk1(epicsRingPointerGetSize(ring)==rsize);
     testOk1(epicsRingPointerGetUsed(ring)==0);
+    testOk1(epicsRingPointerGetHighWaterMark(ring)==rsize);
 
     testDiag("Fill it up again");
     for(i=2; i<2*rsize; i++) {
@@ -236,7 +243,7 @@ MAIN(ringPointerTest)
 {
     int prio = epicsThreadGetPrioritySelf();
 
-    testPlan(37);
+    testPlan(42);
     testSingle();
     if (prio)
         epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityScanLow);

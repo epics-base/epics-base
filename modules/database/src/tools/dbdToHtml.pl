@@ -127,6 +127,33 @@ if ($opt_D) {   # Output dependencies only
 open my $out, '>', $opt_o or
     die "Can't create $opt_o: $!\n";
 
+my $podHtml;
+my $idify;
+
+if ($::XHTML) {
+    $podHtml = Pod::Simple::XHTML->new();
+    $podHtml->html_doctype(<< '__END_DOCTYPE');
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'
+     'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+__END_DOCTYPE
+    $podHtml->html_header_tags($podHtml->html_header_tags .
+        "\n<link rel='stylesheet' href='style.css' type='text/css'>");
+
+    $idify = sub {
+        my $title = shift;
+        return $podHtml->idify($title, 1);
+    }
+} else { # Fall back to HTML
+    $podHtml = Pod::Simple::HTML->new();
+    $podHtml->html_css('style.css');
+
+    $idify = sub {
+        my $title = shift;
+        return Pod::Simple::HTML::esc($podHtml->section_escape($title));
+    }
+}
+
 # Parse the Pod text from the root DBD object
 my $pod = join "\n", '=for html <div class="pod">', '',
     map {
@@ -155,22 +182,6 @@ my $pod = join "\n", '=for html <div class="pod">', '',
         }
     } $dbd->pod,
     '=for html </div>', '';
-
-my $podHtml;
-
-if ($::XHTML) {
-    $podHtml = Pod::Simple::XHTML->new();
-    $podHtml->html_doctype(<< '__END_DOCTYPE');
-<?xml version='1.0' encoding='iso-8859-1'?>
-<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'
-     'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
-__END_DOCTYPE
-    $podHtml->html_header_tags($podHtml->html_header_tags .
-        "\n<link rel='stylesheet' href='style.css' type='text/css'>");
-} else { # Fall back to HTML
-    $podHtml = Pod::Simple::HTML->new();
-    $podHtml->html_css('style.css');
-}
 
 $podHtml->force_title(encode_entities($title));
 $podHtml->perldoc_url_prefix('');
@@ -249,7 +260,7 @@ sub fieldTableRow {
     if ($type eq 'MENU') {
         my $mn = $fld->attribute('menu');
         my $menu = $dbd->menu($mn);
-        my $url = $menu ? "#Menu_$mn" : "${mn}.html";
+        my $url = $menu ? '#' . &$idify("Menu $mn") : "${mn}.html";
         $html .= " (<a href='$url'>$mn</a>)";
     }
     $html .= '</td><td class="cell">';
@@ -377,6 +388,8 @@ can be found in the aai and aSub record types.
 
 If you look at the L<aoRecord.dbd.pod> file you'll see that the POD there starts
 by documenting a record-specific menu definition. The "menu" keyword generates a
-table that lists all the choices found in the named menu.
+table that lists all the choices found in the named menu. Any MENU fields in the
+field tables that refer to a locally-defined menu will generate a link to a
+document section which must be titled "Menu [menuName]".
 
 =cut

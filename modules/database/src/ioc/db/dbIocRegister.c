@@ -296,6 +296,17 @@ static void scanOnceSetQueueSizeCallFunc(const iocshArgBuf *args)
     scanOnceSetQueueSize(args[0].ival);
 }
 
+/* scanOnceQueueShow */
+static const iocshArg scanOnceQueueShowArg0 = { "reset",iocshArgInt};
+static const iocshArg * const scanOnceQueueShowArgs[1] =
+    {&scanOnceQueueShowArg0};
+static const iocshFuncDef scanOnceQueueShowFuncDef =
+    {"scanOnceQueueShow",1,scanOnceQueueShowArgs};
+static void scanOnceQueueShowCallFunc(const iocshArgBuf *args)
+{
+    scanOnceQueueShow(args[0].ival);
+}
+
 /* scanppl */
 static const iocshArg scanpplArg0 = { "rate",iocshArgDouble};
 static const iocshArg * const scanpplArgs[1] = {&scanpplArg0};
@@ -333,6 +344,17 @@ static const iocshFuncDef callbackSetQueueSizeFuncDef =
 static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
 {
     callbackSetQueueSize(args[0].ival);
+}
+
+/* callbackQueueShow */
+static const iocshArg callbackQueueShowArg0 = { "reset", iocshArgInt};
+static const iocshArg * const callbackQueueShowArgs[1] =
+    {&callbackQueueShowArg0};
+static const iocshFuncDef callbackQueueShowFuncDef =
+    {"callbackQueueShow",1,callbackQueueShowArgs};
+static void callbackQueueShowCallFunc(const iocshArgBuf *args)
+{
+    callbackQueueShow(args[0].ival);
 }
 
 /* callbackParallelThreads */
@@ -441,12 +463,14 @@ void dbIocRegister(void)
     iocshRegister(&dbLockShowLockedFuncDef,dbLockShowLockedCallFunc);
 
     iocshRegister(&scanOnceSetQueueSizeFuncDef,scanOnceSetQueueSizeCallFunc);
+    iocshRegister(&scanOnceQueueShowFuncDef,scanOnceQueueShowCallFunc);
     iocshRegister(&scanpplFuncDef,scanpplCallFunc);
     iocshRegister(&scanpelFuncDef,scanpelCallFunc);
     iocshRegister(&postEventFuncDef,postEventCallFunc);
     iocshRegister(&scanpiolFuncDef,scanpiolCallFunc);
 
     iocshRegister(&callbackSetQueueSizeFuncDef,callbackSetQueueSizeCallFunc);
+    iocshRegister(&callbackQueueShowFuncDef,callbackQueueShowCallFunc);
     iocshRegister(&callbackParallelThreadsFuncDef,callbackParallelThreadsCallFunc);
 
     /* Needed before callback system is initialized */

@@ -104,9 +104,19 @@ sub pod {
 
 sub equals {
     my ($new, $known) = @_;
-    return 0 if ! $known->fields;
-    return 1 if ! $new->fields;
-    dieContext("Duplicate definition of record type '$known->{NAME}'");
+    return 1 if $new eq $known;
+    return 0 if $new->{NAME} ne $known->{NAME};
+    return 1 if ! $new->fields; # Later declarations always match
+    # NB: Definition after declaration is handled in parse_recordtype()
+    my @nf = @{$new->{FIELD_LIST}};
+    my @kf = @{$known->{FIELD_LIST}};
+    return 0 if scalar @nf != scalar @kf;
+    while (@nf) {
+        my $nf = shift @nf;
+        my $kf = shift @kf;
+        return 0 if ! $nf->equals($kf);
+    }
+    return 1;
 }
 
 sub toDeclaration {

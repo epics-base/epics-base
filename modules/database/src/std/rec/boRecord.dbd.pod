@@ -1,0 +1,611 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=title Binary Output Record (bo)
+
+The normal use for this record type is to store a simple bit (0 or 1) value
+to be sent to a Digital Output module. It can also be used to write binary
+values into other records via database or channel access links. This record
+can implement both latched and momentary binary outputs depending on how
+the HIGH field is configured.
+
+=head2 Parameter Fields
+
+The binary output's fields fall into the following categories:
+
+=over 1
+
+=item *
+scan parameters
+
+=item *
+convert and write parameters
+
+=item *
+operator display parameters
+
+=item *
+alarm parameters
+
+=item *
+run-time parameters
+
+=back
+
+=recordtype bo
+
+=cut
+
+recordtype(bo) {
+
+=head3 Scan Parameters
+
+The binary output record has the standard fields for specifying under what
+circumstances the record will be processed. The fields are listed in
+L<Scan Fields>. In addition, L<Scanning Specification> explains how these
+fields are used. Note that I/O event scanning is only supported for those card
+types that interrupt.
+
+=fields SCAN
+
+=head3 Desired Output Parameters
+
+The binary output record must specify where its desired output originates.
+The desired output needs to be in engineering units.
+
+The first field that determines where the desired output originates is the
+output mode select (OMSL) field, which can have two possible values:
+C<losed_loop> or C<supervisory>. If C<supervisory> is specified, the value
+in the VAL field can be set externally via dbPuts at run-time. If
+C<closed_loop> is specified, the VAL field's value is obtained from the
+address specified in the desired output location (DOL) field which can be a
+database link, a channel access link, or a constant. To achieve continuous
+control, a database link to a control algorithm record should be entered in
+the DOL field.
+
+L<Address Specification> presents more information on database addresses
+and links. L<Scanning Specification> explaines the effect of database
+linkage on scanning.
+
+=fields DOL, OMSL
+
+=head3 Convert and Write Parameters
+
+These parameters are used to determine where the binary output writes to
+and how to convert the engineering units to a raw signal. After VAL is set
+and forced to be either 1 or 0, as the result of either a dbPut or a new
+value being retrieved from the link in the DOL field, then what happens
+next depends on which device support routine is used and how the HIGH field
+is configured.
+
+If the C<Soft Channel> device support routine is specified, then the device
+support routine writes the VAL field's value to the address specified in
+the OUT field. Otherwise, RVAL is the value written by the device support
+routines after being converted.
+
+If VAL is equal to 0, then the record processing routine sets RVAL equal to
+zero. When VAL is not equal to 0, then RVAL is set equal to the value
+contained in the MASK field. (MASK is set by the device support routines
+and is of no concern to the user.) Also, when VAL is not 0 and after RVAL is
+set equal to MASK, the record processing routine checks to see if the HIGH
+field is greater than 0. If it is, then the routine will process the record
+again with VAL set to 0 after the number of seconds specified by HIGH.
+Thus, HIGH implements a momentary output which changes the state of the
+device back to 0 after I<N> number of seconds.
+
+=fields DTYP, OUT, VAL, RVAL, HIGH, ZNAM, ONAM
+
+=head3 Conversion Parameters
+
+The ZNAM field has the string that corresponds to the 0 state, and the ONAM
+field holds the string that corresponds to the 1 state. These fields, other
+than being used to tell the operator what each state represents, are used
+to perform conversions if the value fetched by DOL is a string. If it is,
+VAL is set to the state which corresponds to that string. For instance, if the
+value fetched is the string "Off" and the ZNAM string is "Off," then VAL is
+set to 0.
+
+After VAL is set, if VAL is equal to 0, then the record processing routine
+sets RVAL equal to zero. When VAL is not equal to 0, then RVAL is set equal
+to the value contained in the MASK field. (Mask is set by the device
+support routines and is of no concern to the user.) Also when VAL is equal
+to 1 and after RVAL is set equal to MASK, the record processing routine checks
+to see if the HIGH field is greater than 0. If it is, then the routine
+processes the record again with VAL=0 after the number of seconds specified
+by HIGH. Thus, HIGH implements a latched output which changes the state of
+the device or link to 1, then changes it back to 0 after I<N> number of seconds.
+
+=fields ZNAM, ONAM, HIGH
+
+=head3 Output Specification
+
+The OUT field specifies where the binary output record writes its output.
+It must specify the address of an I/O card if the record sends its output
+to hardware, and the DTYP field must contain the corresponding device
+support module. Be aware that the address format differs according to the
+I/O bus used. See L<Address Specification> for information on the format of
+hardware addresses. You can see a list of device support modules currently
+supported at the user's local site by using the C<dbst> utility in R3.13.
+
+Otherwise, if the record is configured to use the soft device support
+modules, then it can be either a database link, a channel access link, or a
+constant. Be aware that nothing will be written when OUT is a constant. See
+L<Address Specification> for information on the format of the database and
+channel access addresses. Also, see L<Device Support For Soft Records> in
+this chapter for more on output to other records.
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator, The
+C<get_enum_str> record support routine can retrieve the state string
+corresponding to the VAL's state. So, if the value is 1, C<get_enum_str>
+will return the string in the ONAM field: and if 0, C<get_enum_str> will
+return the ZNAM string.
+
+See L<Fields Common to All Record Types> for more on the record name (NAME)
+and description (DESC) fields.
+
+=fields ZNAM, ONAM, NAME, DESC
+
+=head3 Alarm Parameters
+
+These parameters are used to determine the binary output's alarm condition
+and to determine the severity of that condition. The possible alarm
+conditions for binary outputs are the SCAN, READ, INVALID and state alarms.
+The user can configure the state alarm conditions using these fields.
+
+The possible values for these fields are C<NO_ALARM>, C<MINOR>, and
+C<MAJOR>. The ZSV holds the severity for the zero state; OSV for the one
+state. COSV is used to cause an alarm whenever the state changes between
+states (0-1, 1-0) and its severity is configured as MINOR or MAJOR.
+
+See L<Invalid Alarm Output Action> for more information on the IVOA and
+IVOV fields. L<Alarm Fields> lists other fields related to alarms that are
+common to all record types.
+
+=fields ZSV, OSV, COSV, IVOA, IVOV
+
+=head3 Run-Time and Simulation Mode Parameters
+
+These parameters are used by the run-time code for processiong the binary
+output. They are not configurable using a configuration tool. They
+represent the current state of the binary output.
+
+ORAW is used to determine if monitors should be triggered for RVAL at the
+same time they are triggered for VAL.
+
+MASK is given a value by the device support routines and should not concern
+the user.
+
+The RBV field is also set by device support. It is the actual read back
+value obtained from the hardware itself or from the associated device
+driver.
+
+The ORBV field is used to decide if monitors should be triggered
+for RBV at the same time monitors are triggered for changes in VAL.
+
+The LALM field holds the value of the last occurrence of the change of
+state alarm. It is used to implement the change of state alarm, and thus
+only has meaning if COSV is MINOR or MAJOR.
+
+The MLST is used by the C<process> record support routine to determine if
+archive and value change monitors are invoked. They are if MLST is not
+equal to VAL.
+
+The WPDT field is a private field for honoring seconds to hold HIGH.
+
+=fields ORAW, MASK, RBV, ORBV, LALM, MLST, RPVT, WDPT
+
+The following fields are used to operate the binary output in the
+simulation mode. See L<Fields Common to Many Record Types> for more
+information on these fields.
+
+=fields SIOL, SIML, SIMM, SIMS
+
+=cut
+
+	include "dbCommon.dbd" 
+	field(VAL,DBF_ENUM) {
+		prompt("Current Value")
+		promptgroup("50 - Output")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(OMSL,DBF_MENU) {
+		prompt("Output Mode Select")
+		promptgroup("50 - Output")
+		interest(1)
+		menu(menuOmsl)
+	}
+	field(DOL,DBF_INLINK) {
+		prompt("Desired Output Loc")
+		promptgroup("40 - Input")
+		interest(1)
+	}
+	field(OUT,DBF_OUTLINK) {
+		prompt("Output Specification")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(HIGH,DBF_DOUBLE) {
+		prompt("Seconds to Hold High")
+		promptgroup("30 - Action")
+		interest(1)
+	}
+	field(ZNAM,DBF_STRING) {
+		prompt("Zero Name")
+		promptgroup("80 - Display")
+		pp(TRUE)
+		interest(1)
+		size(26)
+		prop(YES)
+	}
+	field(ONAM,DBF_STRING) {
+		prompt("One Name")
+		promptgroup("80 - Display")
+		pp(TRUE)
+		interest(1)
+		size(26)
+		prop(YES)
+	}
+	field(RVAL,DBF_ULONG) {
+		prompt("Raw Value")
+		pp(TRUE)
+	}
+	field(ORAW,DBF_ULONG) {
+		prompt("prev Raw Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MASK,DBF_ULONG) {
+		prompt("Hardware Mask")
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(RPVT,DBF_NOACCESS) {
+		prompt("Record Private")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("void *  rpvt")
+	}
+	field(WDPT,DBF_NOACCESS) {
+		prompt("Watch Dog Timer ID")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("void *	wdpt")
+	}
+	field(ZSV,DBF_MENU) {
+		prompt("Zero Error Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(OSV,DBF_MENU) {
+		prompt("One Error Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(COSV,DBF_MENU) {
+		prompt("Change of State Sevr")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(RBV,DBF_ULONG) {
+		prompt("Readback Value")
+		special(SPC_NOMOD)
+	}
+	field(ORBV,DBF_ULONG) {
+		prompt("Prev Readback Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MLST,DBF_USHORT) {
+		prompt("Last Value Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LALM,DBF_USHORT) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(SIOL,DBF_OUTLINK) {
+		prompt("Simulation Output Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SIML,DBF_INLINK) {
+		prompt("Simulation Mode Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+		special(SPC_MOD)
+		interest(1)
+		menu(menuYesNo)
+	}
+	field(SIMS,DBF_MENU) {
+		prompt("Simulation Mode Severity")
+		promptgroup("90 - Simulate")
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+    field(OLDSIMM,DBF_MENU) {
+        prompt("Prev. Simulation Mode")
+        special(SPC_NOMOD)
+        interest(4)
+        menu(menuSimm)
+    }
+    field(SSCN,DBF_MENU) {
+        prompt("Sim. Mode Scan")
+        promptgroup("90 - Simulate")
+        interest(1)
+        menu(menuScan)
+        initial("65535")
+    }
+    field(SDLY,DBF_DOUBLE) {
+        prompt("Sim. Mode Async Delay")
+        promptgroup("90 - Simulate")
+        interest(2)
+        initial("-1.0")
+    }
+    %#include "callback.h"
+    field(SIMPVT,DBF_NOACCESS) {
+        prompt("Sim. Mode Private")
+        special(SPC_NOMOD)
+        interest(4)
+        extra("CALLBACK            *simpvt")
+    }
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID outpt action")
+		promptgroup("50 - Output")
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_USHORT) {
+		prompt("INVALID output value")
+		promptgroup("50 - Output")
+		interest(2)
+	}
+
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head2 C<init_record>
+
+This routine initializes SIMM if SIML is a constant or creates a channel
+access link if SIML is PV_LINK. If SIOL is a PV_LINK a channel access link
+is created.
+
+This routine next checks to see that device support is available. The
+routine next checks to see if the device support write routine is defined.
+
+If either device support or the device support write routine does not
+exist, and error message is issued and processing is terminated.
+
+If DOL is a constant, then VAL is initialized to 1 if its value is nonzero
+or initialzed to 0 if DOL is zero, and UDF is set to FALSE.
+
+If device support includes C<init_record>, it is called. VAL is set using
+RVAL, and UDF is set to FALSE.
+
+=head2 C<process>
+
+See next section.
+
+=head2 C<get_value>
+
+Fills in the values of struct valueDes so that they refer to VAL.
+
+=head2 C<get_enum_str>
+
+Retrieves ASCII string corresponding to VAL.
+
+=head2 C<get_enum_strs>
+
+Retrieves ASCII strings for ZNAM and ONAM.
+
+=head2 C<put_enum_str>
+
+Checks if string matches ZNAM or ONAM, and if it does, sets VAL.
+
+=head2 Record Processing
+
+Routine process implements the following algorithm:
+
+=over 1
+
+=item 1.
+Check to see that the appropriate device support module exists. If it
+doesn't, an error message is issued and processing is terminated with
+the PACT field still set to TRUE. This ensures that processes will no
+longer be called for this record. Thus error storms will not occur.
+
+=item 2.
+If PACT is FALSE
+
+=back
+
+=over
+
+=item *
+If DOL is DB_LINK and OMSL is CLOSED_LOOP
+
+=over
+
+=item *
+get values from DOL
+
+=item *
+check for link alarm
+
+=item *
+force VAL to be 0 or 1
+
+=item *
+if MASK is defined
+
+=over
+
+=item *
+if VAL is 0 set RVAL = 0
+
+=back
+
+=item *
+else set RVAL = MASK
+
+=back
+
+=back
+
+=over
+
+=item 3.
+Check alarms: This routine checks to see if the new VAL causes the alarm
+status and severity to change. If so, NSEV, NSTA, and LALM are set.
+
+=item 4.
+Check severity and write the new value. See L<Invalid Alarm Output Action>
+for more information on how INVALID alarms affect output.
+
+=item 5.
+If PACT has been changed to TRUE, the device support write output routine
+has started but has not completed writing the new value. in this case, the
+processing routine merely returns, leaving PACT TRUE.
+
+=item 6.
+Check WAIT. If VAL is 1 and WAIT is greater than 0, process again with a
+VAL=0 after WAIT seconds.
+
+=item 7.
+Check to see if monitors should be invoked.
+
+=back
+
+=over 1
+
+=item *
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+Archive and value change monitors are invoked if MLST is not equal to VAL.
+
+=item *
+Monitors for RVAL and for RBV are checked whenever other monitors are
+invoked.
+
+=item *
+NSEV and NSTA are reset to 0.
+
+=back
+
+=over
+
+=item 8
+Scan forward link if necessary, set PACT FALSE, and return
+
+=back
+
+=head2 Device support
+
+=head3 Fields Of Interest To Device Support
+
+Each binary output record must have an associated set of device support
+routines. The primary responsibility of the device support routines is to
+write a new value whenever C<write_bo> is called. The device support routines
+are primarily interested in the following fields:
+
+=fields PACT, DPVT, NSEV, NSTA, VAL, OUT, RVAL, MASK, RBV
+
+=head3 Decive Support Routines
+
+Device support consists of the following routines:
+
+=head2 C<report(FILE fp, paddr)>
+
+Not currently used.
+
+=head2 C<init()>
+
+This routine is called once during IOC initialization.
+
+=head2 C<init_record(precord)>
+
+This routine is optional. If provided, it is called by record support
+C<init_record> routine. It should determine MASK if it is needed.
+
+=over
+
+=item *
+0: Success. RVAL modified (VAL will be set accordingly)
+
+=item *
+2: Success. VAL modified
+
+=item *
+other: Error
+
+=back
+
+=head2 C<get_ioint_info(int cmd, struct dbCommon *precord, IOSCANPVT *ppvt)>
+
+This routine is called by the ioEventScan system each time the record is
+added or deleted from an I/O event scan list. C<cmd> has the value (0,1) if
+the record is being (added to, deleted from) an I/O event list. It must be
+provided for any device type that can use the ioEvent scanner.
+
+=head2 C<write_bo(precord)>
+
+This routine must output a new value. It returns the following values:
+
+=over
+
+=item *
+0: Success
+
+=item *
+other: Error.
+
+=back
+
+=head2 Device Support For Soft Records
+
+Two soft device support modules C<Soft Channel> and C<Raw Soft Channel> are
+provided for output records not related to actual hardware devices. The OUT
+link type must be either CONSTANT, DB_LINK, or CA_LINK.
+
+=head3 Soft Channel
+
+This module writes the current value of VAL.
+
+If the OUT link type is PV_LINK, then C<dbCaAddInlink> is called by
+C<init_record>. C<init_record> always returns a value of 2, which means
+that no conversion will ever be attempted. C<write_bo> calls
+C<recGblPutLinkValue> to write the current value of VAL. See L<Soft Output>
+for details.
+
+=head3 Raw Soft Channel
+
+This module is like the previous except that it writes the current value of
+RVAL
+
+=cut
+}
+
+variable(boHIGHprecision, int)
+variable(boHIGHlimit, double)

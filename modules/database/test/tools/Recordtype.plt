@@ -2,7 +2,7 @@
 
 use lib '@TOP@/lib/perl';
 
-use Test::More tests => 17;
+use Test::More tests => 23;
 
 use DBD::Recordtype;
 use DBD::Recfield;
@@ -12,6 +12,11 @@ my $rtyp = DBD::Recordtype->new('test');
 isa_ok $rtyp, 'DBD::Recordtype';
 is $rtyp->name, 'test', 'Record name';
 is $rtyp->fields, 0, 'No fields yet';
+
+is $rtyp->equals($rtyp), 1, 'A declaration == itself';
+
+my $rt2 = DBD::Recordtype->new('test');
+is $rtyp->equals($rt2), 1, 'A declaration == a different declaration';
 
 my $fld1 = DBD::Recfield->new('NAME', 'DBF_STRING');
 $fld1->add_attribute("size", "41");
@@ -25,6 +30,18 @@ is $rtyp->fields, 1, 'First field added';
 
 $rtyp->add_field($fld2);
 is $rtyp->fields, 2, 'Second field added';
+
+is $rtyp->equals($rtyp), 1, 'A definition == itself';
+is $rt2->equals($rtyp), 1, 'A declaration == a definition';
+
+$rt2->add_field($fld1);
+my $fld3 = DBD::Recfield->new('DTYP', 'DBF_DEVICE');
+$fld3->check_valid;
+$rt2->add_field($fld3);
+is $rt2->equals($rtyp), 1, 'Identical definitions are equal';
+
+$fld3->add_attribute("pp", "TRUE");
+is $rt2->equals($rtyp), 0, 'Different definitions are not equal';
 
 my @fields = $rtyp->fields;
 is_deeply \@fields, [$fld1, $fld2], 'Field list';

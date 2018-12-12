@@ -8,6 +8,7 @@
 #include <testMain.h>
 #include <dbAccess.h>
 #include <errlog.h>
+#include <alarm.h>
 
 #include <calcoutRecord.h>
 #include <waveformRecord.h>
@@ -123,12 +124,26 @@ void testLinkMS(void)
     testdbCleanup();
 }
 
+/* lp:1798855 disconnected CA link must alarm */
+static
+void testCADisconn(void)
+{
+    testDiag("In testCADisconn()");
+
+    startRegressTestIoc("badCaLink.db");
+
+    testdbPutFieldOk("ai:disconn.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("ai:disconn.SEVR", DBF_LONG, INVALID_ALARM);
+    testdbGetFieldEqual("ai:disconn.STAT", DBF_LONG, LINK_ALARM);
+}
+
 
 MAIN(regressTest)
 {
-    testPlan(31);
+    testPlan(34);
     testArrayLength1();
     testHexConstantLinks();
     testLinkMS();
+    testCADisconn();
     return testDone();
 }

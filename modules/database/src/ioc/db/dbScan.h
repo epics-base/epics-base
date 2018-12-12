@@ -42,6 +42,13 @@ struct dbCommon;
 typedef void (*io_scan_complete)(void *usr, IOSCANPVT, int prio);
 typedef void (*once_complete)(void *usr, struct dbCommon*);
 
+typedef struct scanOnceQueueStats {
+    int size;
+    int numUsed;
+    int maxUsed;
+    int numOverflow;
+} scanOnceQueueStats;
+
 epicsShareFunc long scanInit(void);
 epicsShareFunc void scanRun(void);
 epicsShareFunc void scanPause(void);
@@ -57,6 +64,8 @@ epicsShareFunc double scanPeriod(int scan);
 epicsShareFunc int scanOnce(struct dbCommon *);
 epicsShareFunc int scanOnceCallback(struct dbCommon *, once_complete cb, void *usr);
 epicsShareFunc int scanOnceSetQueueSize(int size);
+epicsShareFunc int scanOnceQueueStatus(const int reset, scanOnceQueueStats *result);
+epicsShareFunc void scanOnceQueueShow(const int reset);
 
 /*print periodic lists*/
 epicsShareFunc int scanppl(double rate);

@@ -30,7 +30,8 @@ typedef struct info {
     epicsRingBytesId	ring;
 }info;
 
-static void check(epicsRingBytesId ring, int expectedFree)
+static void check(epicsRingBytesId ring, int expectedFree,
+                  int expectedHighWaterMark)
 {
     int expectedUsed = RINGSIZE - expectedFree;
     int expectedEmpty = (expectedUsed == 0);
@@ -39,11 +40,14 @@ static void check(epicsRingBytesId ring, int expectedFree)
     int nUsed = epicsRingBytesUsedBytes(ring);
     int isEmpty = epicsRingBytesIsEmpty(ring);
     int isFull = epicsRingBytesIsFull(ring);
+    int highWaterMark = epicsRingBytesHighWaterMark(ring);
     
     testOk(nFree == expectedFree, "Free: %d == %d", nFree, expectedFree);
     testOk(nUsed == expectedUsed, "Used: %d == %d", nUsed, expectedUsed);
     testOk(isEmpty == expectedEmpty, "Empty: %d == %d", isEmpty, expectedEmpty);
     testOk(isFull == expectedFull, "Full: %d == %d", isFull, expectedFull);
+    testOk(highWaterMark == expectedHighWaterMark, "HighWaterMark: %d == %d",
+           highWaterMark, expectedHighWaterMark);
 }
     
 MAIN(ringBytesTest)
@@ -55,7 +59,7 @@ MAIN(ringBytesTest)
     char get[RINGSIZE+1];
     epicsRingBytesId ring;
 
-    testPlan(245);
+    testPlan(292);
 
     pinfo = calloc(1,sizeof(info));
     if (!pinfo) {
@@ -70,50 +74,54 @@ MAIN(ringBytesTest)
     if (!ring) {
         testAbort("epicsRingBytesCreate failed");
     }
-    check(ring, RINGSIZE);
+    check(ring, RINGSIZE, 0);
 
     for (i = 0 ; i < sizeof(put) ; i++)
         put[i] = i;
     for(i = 0 ; i < RINGSIZE ; i++) {
         n = epicsRingBytesPut(ring, put, i);
         testOk(n==i, "ring put %d", i);
-        check(ring, RINGSIZE-i);
+        check(ring, RINGSIZE-i, i);
         n = epicsRingBytesGet(ring, get, i);
         testOk(n==i, "ring get %d", i);
-        check(ring, RINGSIZE);
+        check(ring, RINGSIZE, i);
         testOk(memcmp(put,get,i)==0, "get matches write");
     }
+
+    epicsRingBytesResetHighWaterMark(ring);
 
     for(i = 0 ; i < RINGSIZE ; i++) {
         n = epicsRingBytesPut(ring, put+i, 1);
         testOk(n==1, "ring put 1, %d", i);
-        check(ring, RINGSIZE-1-i);
+        check(ring, RINGSIZE-1-i, i + 1);
     }
     n = epicsRingBytesPut(ring, put+RINGSIZE, 1);
     testOk(n==0, "put to full ring");
-    check(ring, 0);
+    check(ring, 0, RINGSIZE);
     for(i = 0 ; i < RINGSIZE ; i++) {
         n = epicsRingBytesGet(ring, get+i, 1);
         testOk(n==1, "ring get 1, %d", i);
-        check(ring, 1+i);
+        check(ring, 1+i, RINGSIZE);
     }
     testOk(memcmp(put,get,RINGSIZE)==0, "get matches write");
     n = epicsRingBytesGet(ring, get+RINGSIZE, 1);
     testOk(n==0, "get from empty ring");
-    check(ring, RINGSIZE);
+    check(ring, RINGSIZE, RINGSIZE);
+
+    epicsRingBytesResetHighWaterMark(ring);
 
     n = epicsRingBytesPut(ring, put, RINGSIZE+1);
     testOk(n==0, "ring put beyond ring capacity (%d, expected 0)",n);
-    check(ring, RINGSIZE);
+    check(ring, RINGSIZE, 0);
     n = epicsRingBytesPut(ring, put, 1);
     testOk(n==1, "ring put %d", 1);
-    check(ring, RINGSIZE-1);
+    check(ring, RINGSIZE-1, 1);
     n = epicsRingBytesPut(ring, put, RINGSIZE);
     testOk(n==0, "ring put beyond ring capacity (%d, expected 0)",n);
-    check(ring, RINGSIZE-1);
+    check(ring, RINGSIZE-1, 1);
     n = epicsRingBytesGet(ring, get, 1);
     testOk(n==1, "ring get %d", 1);
-    check(ring, RINGSIZE);
+    check(ring, RINGSIZE, 1);
 
     epicsRingBytesDelete(ring);
     epicsEventDestroy(consumerEvent);

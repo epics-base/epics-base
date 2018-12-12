@@ -54,6 +54,7 @@ typedef struct cbQueueSet {
     epicsEventId semWakeUp;
     epicsRingPointerId queue;
     int queueOverflow;
+    int queueOverflows;
     int shutdown;
     int threadsConfigured;
     int threadsRunning;
@@ -101,6 +102,51 @@ int callbackSetQueueSize(int size)
     }
     callbackQueueSize = size;
     return 0;
+}
+
+int callbackQueueStatus(const int reset, callbackQueueStats *result)
+{
+    int ret;
+    if (!callbackIsInit) return -1;
+    if (result) {
+        int prio;
+        result->size = callbackQueueSize;
+        for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+            epicsRingPointerId qId = callbackQueue[prio].queue;
+            result->numUsed[prio] = epicsRingPointerGetUsed(qId);
+            result->maxUsed[prio] = epicsRingPointerGetHighWaterMark(qId);
+            result->numOverflow[prio] = epicsAtomicGetIntT(&callbackQueue[prio].queueOverflows);
+        }
+        ret = 0;
+    } else {
+        ret = -2;
+    }
+    if (reset) {
+        int prio;
+        for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+            epicsRingPointerResetHighWaterMark(callbackQueue[prio].queue);
+        }
+    }
+    return ret;
+}
+
+void callbackQueueShow(const int reset)
+{
+    callbackQueueStats stats;
+    if (callbackQueueStatus(reset, &stats) == -1) {
+        fprintf(stderr, "Callback system not initialized, yet. Please run "
+            "iocInit before using this command.\n");
+    } else {
+        int prio;
+        printf("PRIORITY  HIGH-WATER MARK  ITEMS IN Q  Q SIZE  %% USED  Q OVERFLOWS\n");
+        for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+            double qusage = 100.0 * stats.numUsed[prio] / stats.size;
+            printf("%8s  %15d  %10d  %6d  %6.1f  %11d\n",
+                   threadNamePrefix[prio], stats.maxUsed[prio],
+                   stats.numUsed[prio], stats.size, qusage,
+                   stats.numOverflow[prio]);
+        }
+    }
 }
 
 int callbackParallelThreads(int count, const char *prio)
@@ -290,6 +336,7 @@ int callbackRequest(CALLBACK *pcallback)
     if (!pushOK) {
         epicsInterruptContextMessage(fullMessage[priority]);
         mySet->queueOverflow = TRUE;
+        epicsAtomicIncrIntT(&mySet->queueOverflows);
         return S_db_bufFull;
     }
     epicsEventSignal(mySet->semWakeUp);

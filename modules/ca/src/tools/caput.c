@@ -37,6 +37,7 @@
 #include <epicsGetopt.h>
 #include <epicsEvent.h>
 #include <epicsString.h>
+#include "epicsVersion.h"
 
 #include "tool_lib.h"
 
@@ -59,6 +60,7 @@ void usage (void)
     fprintf (stderr, "\nUsage: caput [options] <PV name> <PV value> ...\n"
     "       caput -a [options] <PV name> <no of values> <PV value> ...\n\n"
     "  -h: Help: Print this message\n"
+    "  -V: Version: Show EPICS and CA versions\n"
     "Channel Access options:\n"
     "  -w <sec>:  Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -c: Asynchronous put (use ca_put_callback and wait for completion)\n"
@@ -281,10 +283,13 @@ int main (int argc, char *argv[])
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
     putenv("POSIXLY_CORRECT="); /* Behave correct on GNU getopt systems */
 
-    while ((opt = getopt(argc, argv, ":cnlhatsS#:w:p:F:")) != -1) {
+    while ((opt = getopt(argc, argv, ":cnlhatsVS#:w:p:F:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
+            return 0;
+        case 'V':
+            printf( "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
             return 0;
         case 'n':               /* Force interpret ENUM as index number */
             enumAsNr = 1;

@@ -76,11 +76,14 @@ COMMON_DIR = ../O.Common
 IOCS_APPL_TOP               = $(shell $(FULLPATHNAME) $(INSTALL_LOCATION))
 
 #-------------------------------------------------------
-# Make echo output - suppress echoing if make's '-s' flag is set
+# Silencing the build - suppress messages during 'make -s'
 NOP = :
-ECHO = @$(if $(findstring s,$(patsubst T_A=%,,$(MAKEFLAGS))),$(NOP),echo)
-QUIET_FLAG := $(if $(findstring s,$(MAKEFLAGS)),-q,)
-QUESTION_FLAG := $(if $(findstring q,$(MAKEFLAGS)),-i,)
+ECHO = @$(if $(findstring s,$(MFLAGS)),$(NOP),echo)
+QUIET_FLAG := $(if $(findstring s,$(MFLAGS)),-q,)
+
+#-------------------------------------------------------
+# Convert 'make -q' flag into '-i' for genVersionHeader.pl
+QUESTION_FLAG := $(if $(findstring q,$(MFLAGS)),-i,)
 
 #-------------------------------------------------------
 ifdef T_A
@@ -90,7 +93,7 @@ INSTALL_SHRLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_TCLLIB              = $(INSTALL_LOCATION_LIB)/$(T_A)
 INSTALL_BIN                 = $(INSTALL_LOCATION_BIN)/$(T_A)
 
-#Directories for libraries
+# Directories for libraries
 SHRLIB_SEARCH_DIRS          = $(INSTALL_LIB)
 
 #-------------------------------------------------------

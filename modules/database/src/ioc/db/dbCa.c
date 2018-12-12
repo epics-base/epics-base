@@ -703,7 +703,12 @@ static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
     caLink *pca;
     long status;
 
-    pcaGetCheck
+    assert(plink);
+    if (plink->type != CA_LINK) return -1;
+    pca = (caLink *)plink->value.pv_link.pvt;
+    assert(pca);
+    epicsMutexMustLock(pca->lock);
+    assert(pca->plink);
     status = rtn(plink, priv);
     epicsMutexUnlock(pca->lock);
     return status;

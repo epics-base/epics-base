@@ -1,0 +1,491 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=title Binary Input Record (bi)
+
+This record type is normally used to obtain a binary value of 0 or 1. Most
+device support modules obtain values from hardware and place the value in
+RVAL. For these devices, record processing sets VAL = (0,1) if RVAL is (0,
+not 0). Device support modules may optionally read a value directly from
+VAL.
+
+Soft device modules are provided to obtain input via database or channel
+access links via dbPutField or dbPutLink requests. Two soft device support
+modules are provided: C<Soft Channel> and C<Raw Soft Channel>. The first
+allows VAL to be an arbitrary unsigned short integer. The second reads the
+value into RVAL just like normal hardware modules.
+
+=head2 Parameter Fields
+
+The binary input's fields fall into the following categories:
+
+=over
+
+=item *
+scan Parameters
+
+=item *
+read and convert parameters
+
+=item *
+operator display parameters
+
+=item *
+alarm parameters
+
+=item *
+run-time parameters
+
+=back
+
+=recordtype bi
+
+=cut
+
+recordtype(bi) {
+
+=head3 Scan Parameters
+
+The binary input record has the standard fields for specifying under what
+circumstances the record will be processed. These fields are listed in
+L<Scan Fields>. In addition, L<Scanning Specification> explains how these
+fields are used. Note that I/O event scanning is only supported for those
+card types that interrupt.
+
+=fields SCAN
+
+=head3 Read and Convert Parameters
+
+The read and convert fields determine where the binary input gets its
+input from and how to convert the raw signal to engineering units. The INP
+field contains the address from where device support retrieves the value.
+If the binary input record gets its value from hardware, the address of the
+card must be entered in the INP field, and the name of the device support
+module must be entered in the DTYP field. See L<Address Specification> for
+information on the format of the hardware address. Be aware that the format
+differs between types of cards. You can see a list of device support
+modules currently supported at the user's local site by using C<dbst>
+utility (R3.13).
+
+For records that specify C<Soft Channel> or C<Raw Soft Channel> device
+support routines, the INP field can be a channel or a database link, or a
+constant. If a constant, VAL can be changed directly by dbPuts. See
+L<Address Specification> for information on the format of database and
+channel access addresses. Also, see L<Device Support for Soft Records> in
+this chapter for information on soft device support.
+
+If the record gets its values from hardware or uses the C<Raw Soft Channel>
+device support, the device support routines place the value in the RVAL
+field which is then converted using the process described in the next
+section.
+
+=fields INP, DTYP, ZNAM, ONAM, RVAL, VAL
+
+=head3 Conversion Fields
+
+The VAL field is set equal to (0,1) if the RVAL field is (0, not 0), unless
+the device support module reads a value directly into VAL or the
+C<Soft Channel> device support is used. The value can also be fetched as one of
+the strings specified in the ZNAM or ONAM fields. The ZNAM field has a
+string that corresponds to the 0 state, so when the value is fetched as
+this string, C<put_enum_str> will return a 0. The ONAM field hold the
+string that corresponds to the 1 state, so when the value is fetched as
+this string, C<put_enum_str> returns a 1.
+
+=fields ZNAM, ONAM
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. The
+C<get_enum_str> record support routine can retrieve the state string
+corresponding to the VAL's state. If the value is 1, C<get_enum_str> will
+return the string in the ONAM field; and if 0, C<get_enum_str> will return
+the ZNAM string.
+
+See L<Fields Common to All Record Types> for more on the record name (NAME)
+and description (DESC) fields.
+
+=fields ZNAM, ONAM, NAME, DESC
+
+=head3 Alarm Parameters
+
+These parameters are used to determine if the binary input is in alarm
+condition and to determine the severity of that condition. The possible
+alarm conditions for binary inputs are the SCAN, READ state alarms, and the
+change of state alarm. The SCAN and READ alarms are called by the device
+supprt routines.
+
+The user can choose the severity of each state in the ZSV and OSV fields.
+The possible values for these fields are C<NO_ALARM>, C<MINOR>, and
+C<MAJOR>. The ZSV field holds the severity for the zero state; OSV, for
+the one state.  COSV causes an alarm whenever the state changes between
+0 and 1 and the severity is configured as MINOR or MAJOR.
+
+See L<Alarm Specification> for a complete explanation of the discrete alarm
+states. L<Alarm Fields> lists other fields related to alarms that are
+common to all record types.
+
+=fields ZSV, OSV, COSV
+
+=head3 Run-time Parameters and Simulation Mode Parameters
+
+These parameters are used by the run-time code for processing the binary
+input. They are not configured using a database configuration tool.
+
+ORAW is used to determine if monitors should be triggered for RVAL at the same
+time they are triggered for VAL.
+
+MASK is given a value by ithe device support routines. This value is used to
+manipulate the record's value, but is only the concern of the hardware device
+support routines.
+
+The LALM fields holds the value of the last occurence of the change of
+state alarm. It is used to implement the change of state alarm, and thus
+only has meaning if COSV is MAJOR or MINOR.
+
+The MSLT field is used by the C<process> record support routine to
+determine if archive and value change monitors are invoked. They are if MSLT
+is not equal to VAL.
+
+=fields ORAW, MASK, LALM, MLST
+
+The following fields are used to operate the binary input in simulation
+mode. See L<Fields Common to Many Record Types> for more information on
+these fields.
+
+=fields SIOL, SVAL, SIML, SIMM, SIMS
+
+
+=cut
+
+	include "dbCommon.dbd" 
+	field(INP,DBF_INLINK) {
+		prompt("Input Specification")
+		promptgroup("40 - Input")
+		interest(1)
+	}
+	field(VAL,DBF_ENUM) {
+		prompt("Current Value")
+		promptgroup("40 - Input")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(ZSV,DBF_MENU) {
+		prompt("Zero Error Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(OSV,DBF_MENU) {
+		prompt("One Error Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(COSV,DBF_MENU) {
+		prompt("Change of State Svr")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(ZNAM,DBF_STRING) {
+		prompt("Zero Name")
+		promptgroup("80 - Display")
+		pp(TRUE)
+		interest(1)
+		size(26)
+		prop(YES)
+	}
+	field(ONAM,DBF_STRING) {
+		prompt("One Name")
+		promptgroup("80 - Display")
+		pp(TRUE)
+		interest(1)
+		size(26)
+		prop(YES)
+	}
+	field(RVAL,DBF_ULONG) {
+		prompt("Raw Value")
+		pp(TRUE)
+	}
+	field(ORAW,DBF_ULONG) {
+		prompt("prev Raw Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MASK,DBF_ULONG) {
+		prompt("Hardware Mask")
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(LALM,DBF_USHORT) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MLST,DBF_USHORT) {
+		prompt("Last Value Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(SIOL,DBF_INLINK) {
+		prompt("Simulation Input Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SVAL,DBF_ULONG) {
+		prompt("Simulation Value")
+	}
+	field(SIML,DBF_INLINK) {
+		prompt("Simulation Mode Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+		special(SPC_MOD)
+		interest(1)
+		menu(menuSimm)
+	}
+	field(SIMS,DBF_MENU) {
+		prompt("Simulation Mode Severity")
+		promptgroup("90 - Simulate")
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+    field(OLDSIMM,DBF_MENU) {
+        prompt("Prev. Simulation Mode")
+        special(SPC_NOMOD)
+        interest(4)
+        menu(menuSimm)
+    }
+    field(SSCN,DBF_MENU) {
+        prompt("Sim. Mode Scan")
+        promptgroup("90 - Simulate")
+        interest(1)
+        menu(menuScan)
+        initial("65535")
+    }
+    field(SDLY,DBF_DOUBLE) {
+        prompt("Sim. Mode Async Delay")
+        promptgroup("90 - Simulate")
+        interest(2)
+        initial("-1.0")
+    }
+    %#include "callback.h"
+    field(SIMPVT,DBF_NOACCESS) {
+        prompt("Sim. Mode Private")
+        special(SPC_NOMOD)
+        interest(4)
+        extra("CALLBACK            *simpvt")
+    }
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head2 C<init_record>
+
+This routine initializes SIMM with the value of SIML if SIML type is a
+CONSTANT link or creates a channel access link if SIML type is PV_LINK.
+SVAL is likewise initialized if SIOL is a CONSTANT or PV_LINK.
+
+This routine next checks to see that device support is available and a
+device support routine is defined. If neither exist, an error is issued and
+processing is terminated.
+
+If device support includes C<init_record>, it is called.
+
+=head2 C<process>
+
+See next section.
+
+=head2 C<get_value>
+
+Fills in the values of struct valueDes so that they refer to VAL.
+
+=head2 C<get_enum_str>
+
+Retrieves ASCII string corresponding to VAL.
+
+=head2 C<get_enum_strs>
+
+Retrieves ASCII strings for ZNAM and ONAM.
+
+=head2 C<put_enum_str>
+
+Check if string matches ZNAM or ONAM, and if it does, sets VAL.
+
+=head2 Record Processing
+
+Routine process implements the following algorithm:
+
+=over 1
+
+=item 1.
+Check to see that the appropriate device support module exists. If it
+doesn't, an error message is issued and processing is terminated with
+the PACT field still set to TRUE. This ensures that processes will no
+longer be called for this record. Thus error storms will not occur.
+
+=item 2.
+C<readValue> is called. See L<Input Records> for details.
+
+=item 3.
+If PACT has been changed to TRUE, the device support read routine has
+started but has not completed reading a new input value. In this case, the
+processing routine merely returns, leaving PACT TRUE.
+
+=item 4.
+Convert.
+
+=back
+
+=over 1
+
+=item *
+status = read_bi
+
+=item *
+PACT = TRUE
+
+=item *
+TIME = tslocaltime
+
+=item *
+if status is 0, then set VAL=(0,1) if RVAL is (0, not 0) and UDF = False.
+
+=item *
+if status is 2, set status = 0
+
+=back
+
+=over 1
+
+=item 5.
+Check alarms: This routine checks to see if the new VAL causes the alarm
+status and severity to change. If so, NSEV, NSTA and LALM are set. Note
+that if VAL is greater than 1, no checking is performed.
+
+=item 6.
+Check if monitors should be invoked:
+
+=back
+
+=over 1
+
+=item *
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+Archive and value change monitors are invoked if MSLT is not equal to VAL.
+
+=item *
+Monitors for RVAL are checked whenever other monitors are invoked.
+
+=item *
+NSEV and NSTA are reset to 0.
+
+=back
+
+=over 1
+
+=item 7.
+Scan forward link if necessary, set PACT FALSE, and return.
+
+=back
+
+=head2 Device Support
+
+=head3 Fields of Interest to Device Support
+
+Each binary input record must have an associated set of device support
+routines. The primary resposibility of the device support routines is to
+obtain a new raw input value whenever C<read_bi> is called. The device
+support routines are primarily interested in the following fields:
+
+=fields PACT, DPVT, UDF, NSEV, NSTA, VAL, INP, RVAL, MASK
+
+=head3 Device Support routines
+
+Device support consists of the following routines:
+
+=head2 C<report(FILE fp, paddr)>
+
+Not currently used.
+
+=head2 C<init()>
+
+This routine is called once during IOC initialization.
+
+=head2 C<init_record(precord)>
+
+This routine is optional. If provided, it is called by the record support
+C<init_record> routine.
+
+=head2 C<get_ioint_info(int cmd, struct dbCommon *precord, IOSCANPVT *ppvt)>
+
+This routine is called by the C<ioEventScan> system each time the record is
+added or deleted from an I/O event scan list. C<cmd> has the value (0,1) if
+the record is being (added to, deleted from) and I/O event list. It must be
+provided for any device type that can use the ioEvent scanner.
+
+=head2 C<read_bi(precord)>
+
+This routine must provide a new input value. It returns the following
+values:
+
+=over
+
+=item 0:
+Success. A new raw value is placed in RVAL. The record support module
+forces VAL to be (0,1) if RVAL is (0, not 0).
+
+=item 2:
+Success, but don't modify VAL.
+
+=item Other:
+Error.
+
+=back
+
+=head3 Device Support for Soft Records
+
+Two soft device support modules, Soft Channel and Raw Soft Channel, are
+provided for input records not related to actual hardware devices. The INP
+link type must be either CONSTANT, DB_LINK, or CA_LINK.
+
+=head3 Soft Channel
+
+C<read_bi> always returns a value of 2, which means that no conversion is
+performed.
+
+If the INP link type is CONSTANT, then the constant value is stored in VAL
+by C<init_record>, and the UDF is set to FALSE. VAL can be changed via
+C<dbPut> requests. If the INP link type is PV_LINK, the C<dbCaAddInlink> is
+called by C<init_record>.
+
+C<read_bi> calls C<recGbleGetLinkValue> to read the current value of VAL.
+See L<Soft Input> for details.
+
+If the return status of C<recGblGetLinkValue> is zero, then C<read_bi> sets
+UDF to FALSE. The status of C<recGblGetLinkValue> is returned.
+
+=head3 Raw Soft Channel
+
+This module is like the previous except that values are read into RVAL.
+
+C<read_bi> returns a value of 0. Thus the record processing routine will
+force VAL to be 0 or 1.
+
+=cut
+}

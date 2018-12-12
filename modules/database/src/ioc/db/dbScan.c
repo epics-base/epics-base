@@ -24,6 +24,7 @@
 #include "cantProceed.h"
 #include "dbDefs.h"
 #include "ellLib.h"
+#include "epicsAtomic.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 #include "epicsPrint.h"
@@ -63,6 +64,7 @@ static volatile enum ctl scanCtl;
 static int onceQueueSize = 1000;
 static epicsEventId onceSem;
 static epicsRingBytesId onceQ;
+static int onceQOverruns = 0;
 static epicsThreadId onceTaskId;
 static void *exitOnce;
 
@@ -676,6 +678,7 @@ int scanOnceCallback(struct dbCommon *precord, once_complete cb, void *usr)
     if (!pushOK) {
         if (newOverflow) errlogPrintf("scanOnce: Ring buffer overflow\n");
         newOverflow = FALSE;
+        epicsAtomicIncrIntT(&onceQOverruns);
     } else {
         newOverflow = TRUE;
     }
@@ -720,6 +723,40 @@ int scanOnceSetQueueSize(int size)
 {
     onceQueueSize = size;
     return 0;
+}
+
+int scanOnceQueueStatus(const int reset, scanOnceQueueStats *result)
+{
+    int ret;
+    if (!onceQ) return -1;
+    if (result) {
+        result->size = epicsRingBytesSize(onceQ) / sizeof(onceEntry);
+        result->numUsed = epicsRingBytesUsedBytes(onceQ) / sizeof(onceEntry);
+        result->maxUsed = epicsRingBytesHighWaterMark(onceQ) / sizeof(onceEntry);
+        result->numOverflow = epicsAtomicGetIntT(&onceQOverruns);
+        ret = 0;
+    } else {
+        ret = -2;
+    }
+    if (reset) {
+        epicsRingBytesResetHighWaterMark(onceQ);
+    }
+    return ret;
+}
+
+void scanOnceQueueShow(const int reset)
+{
+    scanOnceQueueStats stats;
+    if (scanOnceQueueStatus(reset, &stats) == -1) {
+        fprintf(stderr, "scanOnce system not initialized, yet. Please run "
+            "iocInit before using this command.\n");
+    } else {
+        double qusage = 100.0 * stats.numUsed / stats.size;
+        printf("PRIORITY  HIGH-WATER MARK  ITEMS IN Q  Q SIZE  %% USED  Q OVERFLOWS\n");
+        printf("%8s  %15d  %10d  %6d  %6.1f  %11d\n", "scanOnce", stats.maxUsed,
+               stats.numUsed, stats.size, qusage,
+               epicsAtomicGetIntT(&onceQOverruns));
+    }
 }
 
 static void initOnce(void)

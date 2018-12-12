@@ -24,6 +24,7 @@ extern "C" {
 #include "shareLib.h"
 
 typedef void *epicsRingBytesId;
+typedef void const *epicsRingBytesIdConst;
 
 epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int nbytes);
 /* Same, but secured by a spinlock */
@@ -39,6 +40,8 @@ epicsShareFunc int  epicsShareAPI epicsRingBytesUsedBytes(epicsRingBytesId id);
 epicsShareFunc int  epicsShareAPI epicsRingBytesSize(epicsRingBytesId id);
 epicsShareFunc int  epicsShareAPI epicsRingBytesIsEmpty(epicsRingBytesId id);
 epicsShareFunc int  epicsShareAPI epicsRingBytesIsFull(epicsRingBytesId id);
+epicsShareFunc int  epicsShareAPI epicsRingBytesHighWaterMark(epicsRingBytesIdConst id);
+epicsShareFunc void epicsShareAPI epicsRingBytesResetHighWaterMark(epicsRingBytesId id);
 
 #ifdef __cplusplus
 }

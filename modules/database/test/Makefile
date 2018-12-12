@@ -14,6 +14,7 @@ DIRS += ioc/db
 DIRS += ioc/dbtemplate
 
 DIRS += std/rec
+DIRS += std/link
 DIRS += std/filters
 
 DIRS += tools

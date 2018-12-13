@@ -54,3 +54,7 @@ OPT_CXXFLAGS_YES += -g
 # Tune GNU compiler output for a specific 32-bit cpu-type
 # (e.g. generic, native, i386, i686, pentium2/3/4, prescott, k6, athlon etc.)
 GNU_TUNE_CFLAGS = -mtune=generic
+
+
+# Developers using a suitable compiler may enable its address sanitizer:
+#ENABLE_ASAN = YES

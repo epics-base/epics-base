@@ -50,3 +50,7 @@ OPT_CXXFLAGS_YES += -g
 # Tune GNU compiler output for a specific 64-bit cpu-type
 # (e.g. generic, native, core2, nocona, k8, opteron, athlon64, barcelona etc.)
 GNU_TUNE_CFLAGS = -mtune=generic
+
+
+# Developers using a suitable compiler may enable its address sanitizer:
+#ENABLE_ASAN = YES

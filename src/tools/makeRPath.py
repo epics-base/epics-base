@@ -26,6 +26,10 @@ for path in args.path:
     if args.root and os.path.relpath(path, args.root).startswith('../'):
         pass # absolute rpath
     else:
+        # some older binutils don't seem to handle $ORIGIN correctly
+        # when locating dependencies of libraries.  So also provide
+        # the absolute path for internal use by 'ld' only.
+        output.append('-Wl,-rpath-link,'+path)
         path = os.path.relpath(path, fdir)
 
     output.append('-Wl,-rpath,'+os.path.join(args.origin, path))

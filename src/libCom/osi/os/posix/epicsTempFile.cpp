@@ -14,8 +14,6 @@
 #include "epicsTempFile.h"
 
 extern "C"
-
-extern "C"
 epicsShareFunc FILE * epicsShareAPI epicsTempFile ( void )
 {
     return tmpfile ();

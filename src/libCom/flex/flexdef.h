@@ -350,7 +350,6 @@ extern int yymore_really_used, reject_really_used;
  * temp_action_file - temporary file to hold actions
  * backtrack_file - file to summarize backtracking states to
  * infilename - name of input file
- * action_file_name - name of the temporary file
  * input_files - array holding names of input files
  * num_input_files - size of input_files array
  * program_name - name with which program was invoked 
@@ -359,7 +358,6 @@ extern int yymore_really_used, reject_really_used;
 extern int datapos, dataline, linenum;
 extern FILE *skelfile, *yyin, *temp_action_file, *backtrack_file;
 extern char *infilename;
-extern char action_file_name[];
 extern char **input_files;
 extern int num_input_files;
 extern char *program_name;

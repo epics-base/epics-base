@@ -20,7 +20,6 @@
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI epicsTempName(char *pbuf, size_t bufLen);
 epicsShareFunc FILE * epicsShareAPI epicsTempFile(void);
 
 #ifdef  __cplusplus

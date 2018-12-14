@@ -22,28 +22,6 @@
 #include "epicsTempFile.h"
 
 //
-// epicsTempName
-//
-// allow the teporary file directory to be set with the 
-// TMP environment varianble
-//
-extern "C"
-epicsShareFunc void epicsShareAPI epicsTempName ( 
-	char * pNameBuf, size_t nameBufLength )
-{
-    if ( nameBufLength ) {
-        pNameBuf[0] = '\0';
-        char * pName = _tempnam ( "c:\\tmp", "epics" );
-        if ( pName ) {
-            if ( nameBufLength > strlen ( pName ) ) {
-                strncpy ( pNameBuf, pName, nameBufLength );
-            }
-            free ( pName );
-        }
-    }
-}
-
-//
 // epicsTmpFile
 //
 // allow the teporary file directory to be set with the 

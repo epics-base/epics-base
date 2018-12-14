@@ -108,8 +108,10 @@ epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned lon
 		return TF_ERROR;
 	}
 	rewind (ptmp);
-	while ((c = getc (ptmp)) != EOF) {
-		if (ferror(ptmp)) {
+	charNo = 0u;
+	while (charNo<size) {
+        c = getc (ptmp);
+		if (c==EOF) {
 			fprintf (stderr,
 				"File access problems to temp file because `%s'\n", 
 				strerror(errno));
@@ -127,6 +129,7 @@ epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned lon
 			fclose (ptmp);
 			return TF_ERROR;
 		}
+        charNo++;
 	}
     fclose(ptmp);
     fclose(pFile);

@@ -27,7 +27,6 @@
  */
 epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned long size)
 {
-	char tmpName[256>L_tmpnam?256:L_tmpnam];
 	long filePos;
 	FILE *pFile;
 	FILE *ptmp;
@@ -67,18 +66,10 @@ epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned lon
 		return TF_OK;
 	}
 
-    epicsTempName ( tmpName, sizeof (tmpName) );
-	if ( tmpName[0] == '\0' ) {
-		fprintf (stderr,"Unable to create tmp file name?\n");
-		fclose (pFile);
-		return TF_ERROR;
-	}
-
-	ptmp = fopen (tmpName, "w");
+	ptmp = epicsTempFile();
 	if (!ptmp) {
 		fprintf (stderr,
-			"File access problems to `%s' because `%s'\n", 
-			tmpName,
+			"File access problems to temp file because `%s'\n", 
 			strerror(errno));
 		fclose (pFile);
 		return TF_ERROR;
@@ -89,48 +80,59 @@ epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned lon
 		c = getc (pFile);
 		if (c==EOF) {
 			fprintf (stderr,
-				"File access problems to `%s' because `%s'\n", 
-				pFileName,
+				"File access problems to temp file because `%s'\n", 
 				strerror(errno));
 			fclose (pFile);
 			fclose (ptmp);
-			remove (tmpName);
 			return TF_ERROR;
 		}
 		status = putc (c, ptmp);
 		if (status==EOF) {
 			fprintf(stderr,
-				"File access problems to `%s' because `%s'\n", 
-				tmpName,
+				"File access problems to temp file because `%s'\n", 
 				strerror(errno));
 			fclose (pFile);
 			fclose (ptmp);
-			remove (tmpName);
 			return TF_ERROR;
 		}
 		charNo++;
 	}
 	fclose (pFile);
-	fclose (ptmp);
-	status = remove (pFileName);
-	if (status!=TF_OK) {
+	pFile = fopen(pFileName, "w");
+	if (!pFile) {
 		fprintf (stderr,
-			"Unable to remove `%s' during truncate because `%s'\n", 
+			"File access problems to `%s' because `%s'\n", 
 			pFileName,
 			strerror(errno));
-		remove (tmpName);
+        fclose (ptmp);
 		return TF_ERROR;
 	}
-	status = rename (tmpName, pFileName);
-	if (status!=TF_OK) {
-		fprintf (stderr,
-			"Unable to rename %s to `%s' because `%s'\n", 
-			tmpName,
-			pFileName,
-			strerror(errno));
-		remove (tmpName);
-		return TF_ERROR;
+	rewind (ptmp);
+	charNo = 0u;
+	while (charNo<size) {
+        c = getc (ptmp);
+		if (c==EOF) {
+			fprintf (stderr,
+				"File access problems to temp file because `%s'\n", 
+				strerror(errno));
+			fclose (pFile);
+			fclose (ptmp);
+			return TF_ERROR;
+		}
+		status = putc (c, pFile);
+		if (status==EOF) {
+			fprintf(stderr,
+				"File access problems to `%s' because `%s'\n", 
+				pFileName,
+				strerror(errno));
+			fclose (pFile);
+			fclose (ptmp);
+			return TF_ERROR;
+		}
+        charNo++;
 	}
+    fclose(ptmp);
+    fclose(pFile);
 	return TF_OK;
 }
 

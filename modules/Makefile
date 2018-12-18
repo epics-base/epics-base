@@ -55,4 +55,4 @@ $(RELEASE_LOCAL):
 	$(ECHO) Creating $@, EPICS_BASE = $(INSTALL_LOCATION_ABS)
 	@echo EPICS_BASE = $(INSTALL_LOCATION_ABS)> $@
 realclean:
-	$(RM) $(RELEASE_LOCAL)
+	$(RM) $(wildcard RELEASE.*.local)

@@ -86,6 +86,7 @@ public:
 
     static epicsTime getEvent ( const epicsTimeEvent & );
     static epicsTime getCurrent ();
+    static epicsTime getMonotonic ();
 
     /* convert to and from EPICS epicsTimeStamp format */
     operator epicsTimeStamp () const;
@@ -192,6 +193,7 @@ extern "C" {
 epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp * pDest );
 epicsShareFunc int epicsShareAPI epicsTimeGetEvent (
     epicsTimeStamp *pDest, int eventNumber);
+epicsShareFunc int epicsTimeGetMonotonic ( epicsTimeStamp * pDest );
 
 /* These are callable from an Interrupt Service Routine */
 epicsShareFunc int epicsTimeGetCurrentInt(epicsTimeStamp *pDest);

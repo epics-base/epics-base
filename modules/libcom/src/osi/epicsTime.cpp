@@ -218,6 +218,13 @@ epicsTime epicsTime::getCurrent ()
     return epicsTime ( current );
 }
 
+epicsTime epicsTime::getMonotonic()
+{
+    epicsTimeStamp current;
+    epicsTimeGetMonotonic (&current); // can't fail
+    return epicsTime ( current );
+}
+
 epicsTime epicsTime::getEvent (const epicsTimeEvent &event)
 {
     epicsTimeStamp current;

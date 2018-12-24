@@ -481,7 +481,7 @@ int ca_client_context::pendIO ( const double & timeout )
     }
 
     int status = ECA_NORMAL;
-    epicsTime beg_time = epicsTime::getCurrent ();
+    epicsTime beg_time = epicsTime::getMonotonic ();
     double remaining = timeout;
 
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -499,7 +499,7 @@ int ca_client_context::pendIO ( const double & timeout )
             this->blockForEventAndEnableCallbacks ( this->ioDone, remaining );
         }
 
-        double delay = epicsTime::getCurrent () - beg_time;
+        double delay = epicsTime::getMonotonic () - beg_time;
         if ( delay < timeout ) {
             remaining = timeout - delay;
         }
@@ -528,7 +528,7 @@ int ca_client_context::pendEvent ( const double & timeout )
         return ECA_EVDISALLOW;
     }
 
-    epicsTime current = epicsTime::getCurrent ();
+    epicsTime current = epicsTime::getMonotonic ();
 
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
@@ -569,7 +569,7 @@ int ca_client_context::pendEvent ( const double & timeout )
         this->noWakeupSincePend = true;
     }
 
-    double elapsed = epicsTime::getCurrent() - current;
+    double elapsed = epicsTime::getMonotonic() - current;
     double delay;
 
     if ( timeout > elapsed ) {

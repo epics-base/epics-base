@@ -86,12 +86,6 @@ typedef struct notifyGlobal {
 
 static notifyGlobal *pnotifyGlobal = 0;
 
-/*Local routines*/
-static void notifyInit(processNotify *ppn);
-static void notifyCleanup(processNotify *ppn);
-static void restartCheck(processNotifyRecord *ppnr);
-static void callDone(dbCommon *precord,processNotify *ppn);
-static void processNotifyCommon(processNotify *ppn,dbCommon *precord);
 static void notifyCallback(CALLBACK *pcallback);
 
 #define ellSafeAdd(list,listnode) \
@@ -210,7 +204,7 @@ static void callDone(dbCommon *precord, processNotify *ppn)
     return;
 }
 
-static void processNotifyCommon(processNotify *ppn,dbCommon *precord)
+static void processNotifyCommon(processNotify *ppn, dbCommon *precord, int first)
 {
     notifyPvt *pnotifyPvt = (notifyPvt *) ppn->pnotifyPvt;
     int didPut = 0;
@@ -256,6 +250,9 @@ static void processNotifyCommon(processNotify *ppn,dbCommon *precord)
             doProcess = 1;
 
     if (doProcess) {
+        if (first) {
+            precord->putf = TRUE;
+        }
         ppn->wasProcessed = 1;
         precord->ppn = ppn;
         ellSafeAdd(&pnotifyPvt->waitList, &precord->ppnr->waitNode);
@@ -298,7 +295,7 @@ static void notifyCallback(CALLBACK *pcallback)
         return;
     }
     if(pnotifyPvt->state == notifyRestartCallbackRequested) {
-        processNotifyCommon(ppn, precord);
+        processNotifyCommon(ppn, precord, 0);
         return;
     }
     /* All done. Clean up and call userCallback */
@@ -382,7 +379,7 @@ void dbProcessNotify(processNotify *ppn)
         precord->ppnr->precord = precord;
         ellInit(&precord->ppnr->restartList);
     }
-    processNotifyCommon(ppn, precord);
+    processNotifyCommon(ppn, precord, 1);
 }
 
 void dbNotifyCancel(processNotify *ppn)
@@ -582,7 +579,7 @@ static void tpnThread(void *pvt)
     processNotify *ppn = (processNotify *) ptpnInfo->ppn;
 
     dbProcessNotify(ppn);
-    epicsEventWait(ptpnInfo->callbackDone);
+    epicsEventMustWait(ptpnInfo->callbackDone);
     dbNotifyCancel(ppn);
     epicsEventDestroy(ptpnInfo->callbackDone);
     dbChannelDelete(ppn->chan);

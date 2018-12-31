@@ -3,7 +3,7 @@
 # Authors: Ralph Lange, Marty Kraimer, Andrew Johnson and Janet Anderson
 
 use FindBin qw($Bin);
-use lib ("$Bin/../../lib/perl", $Bin);
+use lib ("$Bin/../../lib/perl");
 
 use Cwd;
 use Getopt::Std;

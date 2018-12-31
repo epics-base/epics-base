@@ -17,7 +17,7 @@ use Getopt::Std;
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 
 use FindBin qw($Bin);
-use lib ("$Bin/../../lib/perl", $Bin);
+use lib ("$Bin/../../lib/perl");
 
 use EPICS::Path;
 

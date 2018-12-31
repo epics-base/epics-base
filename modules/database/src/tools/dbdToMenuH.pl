@@ -8,7 +8,7 @@
 #*************************************************************************
 
 use FindBin qw($Bin);
-use lib ($Bin, "$Bin/../../lib/perl");
+use lib ("$Bin/../../lib/perl");
 no lib $Bin;
 
 use EPICS::Getopts;

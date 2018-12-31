@@ -12,7 +12,6 @@ SRC_DIRS += $(LIBCOM)/env
 vpath %.pl $(USR_VPATH) $(SRC_DIRS)
 
 PERL_SCRIPTS += bldEnvData.pl
-PERL_SCRIPTS += libcomModuleDirs.pm
 
 INC += envDefs.h
 

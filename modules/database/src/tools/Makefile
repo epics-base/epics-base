@@ -27,8 +27,6 @@ PERL_MODULES += DBD/Variable.pm
 PERL_MODULES += EPICS/IOC.pm
 HTMLS += EPICS/IOC.html
 
-PERL_SCRIPTS += databaseModuleDirs.pm
-
 PERL_SCRIPTS += makeIncludeDbd.pl
 
 PERL_SCRIPTS += dbdToMenuH.pl

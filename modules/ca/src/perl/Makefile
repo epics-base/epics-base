@@ -42,8 +42,6 @@ ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),) # Doesn't build on WIN32
   PERL_MODULES += CA.pm
   PERL_MODULES += $(PERL_ARCHPATH)/$(LOADABLE_SHRLIB_PREFIX)Cap5$(LOADABLE_SHRLIB_SUFFIX)
 
-  PERL_SCRIPTS += caModuleDirs.pm
-
   HTMLS_DIR = .
   HTMLS = CA.html
 endif

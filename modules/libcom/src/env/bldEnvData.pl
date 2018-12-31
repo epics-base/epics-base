@@ -15,7 +15,6 @@ use strict;
 
 use FindBin qw($Bin);
 use lib ($Bin, "$Bin/../../lib/perl");
-use libcomModuleDirs;
 no lib $Bin;
 
 use Getopt::Std;

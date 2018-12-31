@@ -8,7 +8,7 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 envData.c: $(LIBCOM)/env/envDefs.h \
-    $(INSTALL_HOST_BIN)/bldEnvData.pl $(INSTALL_HOST_BIN)/libcomModuleDirs.pm \
+    $(INSTALL_HOST_BIN)/bldEnvData.pl \
     $(CONFIG)/CONFIG_ENV $(CONFIG)/CONFIG_SITE_ENV \
     $(wildcard $(CONFIG)/os/CONFIG_SITE_ENV.$(T_A))
 	$(PERL) $(INSTALL_HOST_BIN)/bldEnvData.pl $(QUIET_FLAG) -t $(T_A) \

@@ -325,7 +325,7 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
             /*skip quote and any trailing blanks*/
             while (*++p == ' ') ;
             if (*p != '\n' && *p != 0) goto endcmd;
-            copy = calloc(pend-pstart + 1, sizeof(char));
+            copy = static_cast<char *>(calloc(pend-pstart + 1, sizeof(char)));
             strncpy(copy, pstart, pend-pstart);
 
             switch(cmdind) {
@@ -386,7 +386,7 @@ static void inputConstruct(inputData **ppvt)
 {
     inputData *pinputData;
 
-    pinputData = calloc(1, sizeof(inputData));
+    pinputData = static_cast<inputData *>(calloc(1, sizeof(inputData)));
     ellInit(&pinputData->inputFileList);
     ellInit(&pinputData->pathList);
     *ppvt = pinputData;
@@ -531,8 +531,8 @@ static void inputOpenFile(inputData *pinputData,char *filename)
     else {
         ppathNode = (pathNode *) ellFirst(ppathList);
         while (ppathNode) {
-            fullname = calloc(strlen(filename) + strlen(ppathNode->directory) + 2,
-                sizeof(char));
+            fullname = static_cast<char *>(calloc(strlen(filename) + strlen(ppathNode->directory) + 2,
+                sizeof(char)));
             strcpy(fullname, ppathNode->directory);
             strcat(fullname, "/");
             strcat(fullname, filename);
@@ -552,7 +552,7 @@ static void inputOpenFile(inputData *pinputData,char *filename)
     }
 
     STEP("File opened");
-    pinputFile = calloc(1, sizeof(inputFile));
+    pinputFile = static_cast<inputFile *>(calloc(1, sizeof(inputFile)));
 
     if (ppathNode) {
         pinputFile->filename = fullname;
@@ -654,7 +654,7 @@ struct subInfo {
 
 static char *subGetNextLine(subFile *psubFile);
 static tokenType subGetNextToken(subFile *psubFile);
-static void subFileErrPrint(subFile *psubFile,char * message);
+static void subFileErrPrint(subFile *psubFile, const char * message);
 static void freeSubFile(subInfo *psubInfo);
 static void freePattern(subInfo *psubInfo);
 static void catMacroReplacements(subInfo *psubInfo,const char *value);
@@ -704,9 +704,9 @@ static void substituteOpen(subInfo **ppvt, char *substitutionName)
     FILE        *fp;
 
     ENTER;
-    psubInfo = calloc(1, sizeof(subInfo));
+    psubInfo = static_cast<subInfo *>(calloc(1, sizeof(subInfo)));
     *ppvt = psubInfo;
-    psubFile = calloc(1, sizeof(subFile));
+    psubFile = static_cast<subFile *>(calloc(1, sizeof(subFile)));
     psubInfo->psubFile = psubFile;
     ellInit(&psubInfo->patternList);
 
@@ -831,7 +831,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
         if (psubFile->token != tokenString)
             break;
 
-        ppatternNode = calloc(1, sizeof(patternNode));
+        ppatternNode = static_cast<patternNode *>(calloc(1, sizeof(patternNode)));
         ellAdd(&psubInfo->patternList, &ppatternNode->node);
         ppatternNode->var = epicsStrDup(psubFile->string);
     }
@@ -1017,7 +1017,7 @@ static char *subGetNextLine(subFile *psubFile)
     return &psubFile->inputBuffer[0];
 }
 
-static void subFileErrPrint(subFile *psubFile,char * message)
+static void subFileErrPrint(subFile *psubFile, const char * message)
 {
     fprintf(stderr, "msi: %s\n",message);
     fprintf(stderr, "  in substitution file '%s' at line %d:\n  %s",
@@ -1117,7 +1117,7 @@ static void catMacroReplacements(subInfo *psubInfo, const char *value)
         STEP("Enlarging buffer");
         if (newsize <= psubInfo->curLength + len)
             newsize = psubInfo->curLength + len + 1;
-        newbuf = calloc(1, newsize);
+        newbuf = static_cast<char *>(calloc(1, newsize));
         if (!newbuf) {
             fprintf(stderr, "calloc failed for size %lu\n",
                 (unsigned long) newsize);

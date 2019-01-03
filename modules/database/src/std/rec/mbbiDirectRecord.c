@@ -51,7 +51,7 @@ static long special(DBADDR *, int);
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
-#define get_precision NULL
+static long get_precision(const DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -202,6 +202,16 @@ static long special(DBADDR *paddr, int after)
         recGblDbaddrError(S_db_badChoice, paddr, "mbbiDirect: special");
         return(S_db_badChoice);
     }
+}
+
+static long get_precision(const DBADDR *paddr,long *precision)
+{
+    mbbiDirectRecord	*prec=(mbbiDirectRecord *)paddr->precord;
+    if(dbGetFieldIndex(paddr)==mbbiDirectRecordVAL)
+        *precision = prec->nobt;
+    else
+        recGblGetPrec(paddr,precision);
+    return 0;
 }
 
 static void monitor(mbbiDirectRecord *prec)

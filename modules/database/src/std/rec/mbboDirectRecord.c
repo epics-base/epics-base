@@ -51,7 +51,7 @@ static long special(DBADDR *, int);
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
-#define get_precision NULL
+static long get_precision(const DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -310,6 +310,16 @@ static long special(DBADDR *paddr, int after)
     }
 
     prec->udf = FALSE;
+    return 0;
+}
+
+static long get_precision(const DBADDR *paddr,long *precision)
+{
+    mbboDirectRecord	*prec=(mbboDirectRecord *)paddr->precord;
+    if(dbGetFieldIndex(paddr)==mbboDirectRecordVAL)
+        *precision = prec->nobt;
+    else
+        recGblGetPrec(paddr,precision);
     return 0;
 }
 

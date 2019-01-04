@@ -658,6 +658,8 @@ struct subInfo {
     size_t      size;
     size_t      curLength;
     char        *macroReplacements;
+    subInfo() : psubFile(nullptr), isFile(0), filename(nullptr), isPattern(0),
+                size(0), curLength(0), macroReplacements(nullptr) {};
 };
 
 static char *subGetNextLine(subFile *psubFile);
@@ -701,7 +703,7 @@ static void substituteDestruct(subInfo * const psubInfo)
     ENTER;
     freeSubFile(psubInfo);
     freePattern(psubInfo);
-    free(psubInfo);
+    delete(psubInfo);
     EXIT;
 }
 
@@ -712,7 +714,7 @@ static void substituteOpen(subInfo **ppvt, char * const substitutionName)
     FILE        *fp;
 
     ENTER;
-    psubInfo = static_cast<subInfo *>(calloc(1, sizeof(subInfo)));
+    psubInfo = new subInfo;
     *ppvt = psubInfo;
     psubFile = static_cast<subFile *>(calloc(1, sizeof(subFile)));
     psubInfo->psubFile = psubFile;

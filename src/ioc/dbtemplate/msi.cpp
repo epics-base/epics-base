@@ -385,6 +385,7 @@ struct inputData {
     ELLLIST     inputFileList;
     ELLLIST     pathList;
     char        inputBuffer[MAX_BUFFER_SIZE];
+    inputData() { memset(inputBuffer, 0, sizeof(inputBuffer) * sizeof(inputBuffer[0])); };
 };
 
 static void inputOpenFile(inputData *pinputData, const char * const filename);
@@ -395,7 +396,7 @@ static void inputConstruct(inputData **ppvt)
 {
     inputData *pinputData;
 
-    pinputData = static_cast<inputData *>(calloc(1, sizeof(inputData)));
+    pinputData = new inputData;
     ellInit(&pinputData->inputFileList);
     ellInit(&pinputData->pathList);
     *ppvt = pinputData;
@@ -411,7 +412,7 @@ static void inputDestruct(inputData * const pinputData)
         free(ppathNode->directory);
         free(ppathNode);
     }
-    free(pinputData);
+    delete(pinputData);
 }
 
 static void inputAddPath(inputData * const pinputData, const char * const path)

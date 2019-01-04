@@ -10,6 +10,7 @@
 /* msi - macro substitutions and include */
 
 #include <string>
+#include <list>
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -370,7 +371,6 @@ endcmd:
 }
 
 typedef struct inputFile {
-    ELLNODE     node;
     char        *filename;
     FILE        *fp;
     int         lineNum;
@@ -382,7 +382,7 @@ typedef struct pathNode {
 } pathNode;
 
 struct inputData {
-    ELLLIST     inputFileList;
+    std::list<inputFile> inputFileList;
     ELLLIST     pathList;
     char        inputBuffer[MAX_BUFFER_SIZE];
     inputData() { memset(inputBuffer, 0, sizeof(inputBuffer) * sizeof(inputBuffer[0])); };
@@ -397,7 +397,6 @@ static void inputConstruct(inputData **ppvt)
     inputData *pinputData;
 
     pinputData = new inputData;
-    ellInit(&pinputData->inputFileList);
     ellInit(&pinputData->pathList);
     *ppvt = pinputData;
 }
@@ -468,14 +467,15 @@ static void inputBegin(inputData * const pinputData, const char * const fileName
 
 static char *inputNextLine(inputData * const pinputData)
 {
-    inputFile   *pinputFile;
+    std::list<inputFile>& inFileList = pinputData->inputFileList;
     char        *pline;
 
     ENTER;
-    while ((pinputFile = (inputFile *) ellFirst(&pinputData->inputFileList))) {
-        pline = fgets(pinputData->inputBuffer, MAX_BUFFER_SIZE, pinputFile->fp);
+    while (!inFileList.empty()) {
+        inputFile& inFile = inFileList.front();
+        pline = fgets(pinputData->inputBuffer, MAX_BUFFER_SIZE, inFile.fp);
         if (pline) {
-            ++pinputFile->lineNum;
+            ++inFile.lineNum;
             EXITS(pline);
             return pline;
         }
@@ -495,23 +495,21 @@ static void inputNewIncludeFile(inputData * const pinputData,
 
 static void inputErrPrint(const inputData *const pinputData)
 {
-    inputFile   *pinputFile;
-
     ENTER;
     fprintf(stderr, "input: '%s' at ", pinputData->inputBuffer);
-    pinputFile = (inputFile *) ellFirst(&pinputData->inputFileList);
-    while (pinputFile) {
-        fprintf(stderr, "line %d of ", pinputFile->lineNum);
+    const std::list<inputFile>& inFileList = pinputData->inputFileList;
+    std::list<inputFile>::const_iterator inFileIt = inFileList.begin();
+    while (inFileIt != inFileList.end()) {
+        fprintf(stderr, "line %d of ", inFileIt->lineNum);
 
-        if (pinputFile->filename) {
-            fprintf(stderr, " file %s\n", pinputFile->filename);
+        if (inFileIt->filename) {
+            fprintf(stderr, " file %s\n", inFileIt->filename);
         }
         else {
             fprintf(stderr, "stdin:\n");
         }
 
-        pinputFile = (inputFile *) ellNext(&pinputFile->node);
-        if (pinputFile) {
+        if (++inFileIt != inFileList.end()) {
             fprintf(stderr, "  included from ");
         }
         else {
@@ -526,7 +524,6 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
 {
     ELLLIST     *ppathList = &pinputData->pathList;
     pathNode    *ppathNode = 0;
-    inputFile   *pinputFile;
     char        *fullname = 0;
     FILE        *fp = 0;
 
@@ -563,20 +560,20 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
     }
 
     STEP("File opened");
-    pinputFile = static_cast<inputFile *>(calloc(1, sizeof(inputFile)));
+    inputFile inFile = inputFile();
 
     if (ppathNode) {
-        pinputFile->filename = fullname;
+        inFile.filename = fullname;
     }
     else if (filename) {
-        pinputFile->filename = epicsStrDup(filename);
+        inFile.filename = epicsStrDup(filename);
     }
     else {
-        pinputFile->filename = epicsStrDup("stdin");
+        inFile.filename = epicsStrDup("stdin");
     }
 
     if (opt_D) {
-        int hash = epicsStrHash(pinputFile->filename, 12345);
+        int hash = epicsStrHash(inFile.filename, 12345);
         int i = 0;
         int match = 0;
 
@@ -589,7 +586,7 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
         if (!match) {
             const char *wrap = numDeps ? " \\\n" : "";
 
-            printf("%s %s", wrap, pinputFile->filename);
+            printf("%s %s", wrap, inFile.filename);
             if (numDeps < MAX_DEPS) {
                 depHashes[numDeps++] = hash;
             }
@@ -600,33 +597,30 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
         }
     }
 
-    pinputFile->fp = fp;
-    ellInsert(&pinputData->inputFileList, 0, &pinputFile->node);
+    inFile.fp = fp;
+    pinputData->inputFileList.push_front(inFile);
     EXIT;
 }
 
 static void inputCloseFile(inputData *pinputData)
 {
-    inputFile *pinputFile;
-
+    std::list<inputFile>& inFileList = pinputData->inputFileList;
     ENTER;
-    pinputFile = (inputFile *) ellFirst(&pinputData->inputFileList);
-    if (pinputFile) {
-        ellDelete(&pinputData->inputFileList, &pinputFile->node);
-        if (fclose(pinputFile->fp))
-            fprintf(stderr, "msi: Can't close input file '%s'\n", pinputFile->filename);
-        free(pinputFile->filename);
-        free(pinputFile);
+    if(!inFileList.empty()) {
+        inputFile& inFile = inFileList.front();
+        if (fclose(inFile.fp))
+            fprintf(stderr, "msi: Can't close input file '%s'\n", inFile.filename);
+        free(inFile.filename);
+        inFileList.erase(inFileList.begin());
     }
     EXIT;
 }
 
 static void inputCloseAllFiles(inputData *pinputData)
 {
-    inputFile   *pinputFile;
-
     ENTER;
-    while ((pinputFile = (inputFile *) ellFirst(&pinputData->inputFileList))) {
+    const std::list<inputFile>& inFileList = pinputData->inputFileList;
+    while(!inFileList.empty()) {
         inputCloseFile(pinputData);
     }
     EXIT;

@@ -9,6 +9,8 @@
 
 /* msi - macro substitutions and include */
 
+#include <string>
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -655,11 +657,8 @@ struct subInfo {
     char        *filename;
     int         isPattern;
     ELLLIST     patternList;
-    size_t      size;
-    size_t      curLength;
-    char        *macroReplacements;
-    subInfo() : psubFile(nullptr), isFile(0), filename(nullptr), isPattern(0),
-                size(0), curLength(0), macroReplacements(nullptr) {};
+    std::string macroReplacements;
+    subInfo() : psubFile(NULL), isFile(0), filename(NULL), isPattern(0) {};
 };
 
 static char *subGetNextLine(subFile *psubFile);
@@ -861,9 +860,7 @@ static const char *substituteGetGlobalReplacements(subInfo * const psubInfo)
     subFile     *psubFile = psubInfo->psubFile;
 
     ENTER;
-    if (psubInfo->macroReplacements)
-        psubInfo->macroReplacements[0] = 0;
-    psubInfo->curLength = 0;
+    psubInfo->macroReplacements.clear();
 
     while (psubFile->token == tokenSeparator)
         subGetNextToken(psubFile);
@@ -891,8 +888,8 @@ static const char *substituteGetGlobalReplacements(subInfo * const psubInfo)
         switch(subGetNextToken(psubFile)) {
             case tokenRBrace:
                 subGetNextToken(psubFile);
-                EXITS(psubInfo->macroReplacements);
-                return psubInfo->macroReplacements;
+                EXITS(psubInfo->macroReplacements.c_str());
+                return psubInfo->macroReplacements.c_str();
 
             case tokenSeparator:
                 catMacroReplacements(psubInfo, ",");
@@ -918,9 +915,7 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
     patternNode *ppatternNode;
 
     ENTER;
-    if (psubInfo->macroReplacements)
-        psubInfo->macroReplacements[0] = 0;
-    psubInfo->curLength = 0;
+    psubInfo->macroReplacements.clear();
 
     while (psubFile->token == tokenSeparator)
         subGetNextToken(psubFile);
@@ -953,8 +948,8 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
         while (1) {
             if (psubFile->token == tokenRBrace) {
                 subGetNextToken(psubFile);
-                EXITS(psubInfo->macroReplacements);
-                return psubInfo->macroReplacements;
+                EXITS(psubInfo->macroReplacements.c_str());
+                return psubInfo->macroReplacements.c_str();
             }
 
             if (psubFile->token != tokenString) {
@@ -983,8 +978,8 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
         switch(subGetNextToken(psubFile)) {
             case tokenRBrace:
                 subGetNextToken(psubFile);
-                EXITS(psubInfo->macroReplacements);
-                return psubInfo->macroReplacements;
+                EXITS(psubInfo->macroReplacements.c_str());
+                return psubInfo->macroReplacements.c_str();
 
             case tokenSeparator:
                 catMacroReplacements(psubInfo, ",");
@@ -1117,32 +1112,8 @@ done:
 
 static void catMacroReplacements(subInfo *psubInfo, const char *value)
 {
-    size_t len = strlen(value);
-
     ENTER;
-    if (psubInfo->size <= (psubInfo->curLength + len)) {
-        size_t newsize = psubInfo->size + MAX_BUFFER_SIZE;
-        char *newbuf;
-
-        STEP("Enlarging buffer");
-        if (newsize <= psubInfo->curLength + len)
-            newsize = psubInfo->curLength + len + 1;
-        newbuf = static_cast<char *>(calloc(1, newsize));
-        if (!newbuf) {
-            fprintf(stderr, "calloc failed for size %lu\n",
-                (unsigned long) newsize);
-            abortExit(1);
-        }
-        if (psubInfo->macroReplacements) {
-            memcpy(newbuf, psubInfo->macroReplacements, psubInfo->curLength);
-            free(psubInfo->macroReplacements);
-        }
-        psubInfo->size = newsize;
-        psubInfo->macroReplacements = newbuf;
-    }
-
     STEPS("Appending", value);
-    strcat(psubInfo->macroReplacements, value);
-    psubInfo->curLength += len;
+    psubInfo->macroReplacements += value;
     EXIT;
 }

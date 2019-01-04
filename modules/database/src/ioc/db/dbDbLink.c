@@ -406,10 +406,6 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
             printf("%s: '%s' -> '%s' with PUTF=%u\n",
                 context, psrc->name, pdst->name, psrc->putf);
 
-        if (pdst->putf)
-            errlogPrintf("Warning: '%s.PUTF' found true with PACT false\n",
-                pdst->name);
-
         pdst->putf = psrc->putf;
     }
     else if (psrc->putf) {

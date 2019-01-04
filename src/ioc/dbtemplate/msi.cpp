@@ -56,28 +56,31 @@ int din = 0;
 typedef struct inputData inputData;
 
 static void inputConstruct(inputData **ppvt);
-static void inputDestruct(inputData *pvt);
-static void inputAddPath(inputData *pvt, char *pval);
-static void inputBegin(inputData *pvt, char *fileName);
-static char *inputNextLine(inputData *pvt);
-static void inputNewIncludeFile(inputData *pvt, char *name);
-static void inputErrPrint(inputData *pvt);
+static void inputDestruct(inputData * const pvt);
+static void inputAddPath(inputData * const pvt, const char * const pval);
+static void inputBegin(inputData * const pvt, const char * const fileName);
+static char *inputNextLine(inputData * const pvt);
+static void inputNewIncludeFile(inputData * const pvt, const char * const name);
+static void inputErrPrint(const inputData * const pvt);
 
 /* Module to read the substitution file */
 typedef struct subInfo subInfo;
 
-static void substituteOpen(subInfo **ppvt, char *substitutionName);
-static void substituteDestruct(subInfo *pvt);
-static int substituteGetNextSet(subInfo *pvt, char **filename);
-static int substituteGetGlobalSet(subInfo *pvt);
-static char *substituteGetReplacements(subInfo *pvt);
-static char *substituteGetGlobalReplacements(subInfo *pvt);
+static void substituteOpen(subInfo **ppvt, char * const substitutionName);
+static void substituteDestruct(subInfo * const pvt);
+static int substituteGetNextSet(subInfo * const pvt, char **filename);
+static int substituteGetGlobalSet(subInfo * const pvt);
+static const char *substituteGetReplacements(subInfo * const pvt);
+static const char *substituteGetGlobalReplacements(subInfo * const pvt);
 
 /* Forward references to local routines */
-static void usageExit(int status);
-static void abortExit(int status);
-static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval);
-static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *templateName);
+static void usageExit(const int status);
+static void abortExit(const int status);
+static void addMacroReplacements(MAC_HANDLE * const macPvt,
+                                 const char * const pval);
+static void makeSubstitutions(inputData * const inputPvt,
+                              MAC_HANDLE * const macPvt,
+                              const char * const templateName);
 
 /*Global variables */
 static int opt_V = 0;
@@ -180,9 +183,9 @@ int main(int argc,char **argv)
             isGlobal = substituteGetGlobalSet(substitutePvt);
             if (isGlobal) {
                 STEP("Handling global macros");
-                pval = substituteGetGlobalReplacements(substitutePvt);
-                if (pval)
-                    addMacroReplacements(macPvt, pval);
+                const char *macStr = substituteGetGlobalReplacements(substitutePvt);
+                if (macStr)
+                    addMacroReplacements(macPvt, macStr);
             }
             else if ((isFile = substituteGetNextSet(substitutePvt, &filename))) {
                 if (templateName)
@@ -193,11 +196,12 @@ int main(int argc,char **argv)
                 }
 
                 STEPS("Handling template file", filename);
-                while ((pval = substituteGetReplacements(substitutePvt))) {
+                const char *macStr;
+                while ((macStr = substituteGetReplacements(substitutePvt))) {
                     if (localScope)
                         macPushScope(macPvt);
 
-                    addMacroReplacements(macPvt, pval);
+                    addMacroReplacements(macPvt, macStr);
                     makeSubstitutions(inputPvt, macPvt, filename);
 
                     if (localScope)
@@ -218,7 +222,7 @@ int main(int argc,char **argv)
     return opt_V & 2;
 }
 
-void usageExit(int status)
+void usageExit(const int status)
 {
     fprintf(stderr,
         "Usage: msi [options] [template]\n"
@@ -236,7 +240,7 @@ void usageExit(int status)
     exit(status);
 }
 
-void abortExit(int status)
+void abortExit(const int status)
 {
     if (outFile) {
         fclose(stdout);
@@ -245,7 +249,8 @@ void abortExit(int status)
     exit(status);
 }
 
-static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval)
+static void addMacroReplacements(MAC_HANDLE * const macPvt,
+                                 const char * const pval)
 {
     char **pairs;
     long status;
@@ -268,7 +273,9 @@ static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval)
 typedef enum {cmdInclude,cmdSubstitute} cmdType;
 static const char *cmdNames[] = {"include","substitute"};
 
-static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *templateName)
+static void makeSubstitutions(inputData * const inputPvt,
+                              MAC_HANDLE * const macPvt,
+                              const char * const templateName)
 {
     char *input;
     static char buffer[MAX_BUFFER_SIZE];
@@ -378,7 +385,7 @@ struct inputData {
     char        inputBuffer[MAX_BUFFER_SIZE];
 };
 
-static void inputOpenFile(inputData *pinputData, char *filename);
+static void inputOpenFile(inputData *pinputData, const char * const filename);
 static void inputCloseFile(inputData *pinputData);
 static void inputCloseAllFiles(inputData *pinputData);
 
@@ -392,7 +399,7 @@ static void inputConstruct(inputData **ppvt)
     *ppvt = pinputData;
 }
 
-static void inputDestruct(inputData *pinputData)
+static void inputDestruct(inputData * const pinputData)
 {
     pathNode *ppathNode;
 
@@ -405,7 +412,7 @@ static void inputDestruct(inputData *pinputData)
     free(pinputData);
 }
 
-static void inputAddPath(inputData *pinputData, char *path)
+static void inputAddPath(inputData * const pinputData, const char * const path)
 {
     ELLLIST     *ppathList = &pinputData->pathList;
     pathNode    *ppathNode;
@@ -448,7 +455,7 @@ static void inputAddPath(inputData *pinputData, char *path)
     EXIT;
 }
 
-static void inputBegin(inputData *pinputData, char *fileName)
+static void inputBegin(inputData * const pinputData, const char * const fileName)
 {
     ENTER;
     inputCloseAllFiles(pinputData);
@@ -456,7 +463,7 @@ static void inputBegin(inputData *pinputData, char *fileName)
     EXIT;
 }
 
-static char *inputNextLine(inputData *pinputData)
+static char *inputNextLine(inputData * const pinputData)
 {
     inputFile   *pinputFile;
     char        *pline;
@@ -475,14 +482,15 @@ static char *inputNextLine(inputData *pinputData)
     return 0;
 }
 
-static void inputNewIncludeFile(inputData *pinputData, char *name)
+static void inputNewIncludeFile(inputData * const pinputData,
+                                const char * const name)
 {
     ENTER;
     inputOpenFile(pinputData,name);
     EXIT;
 }
 
-static void inputErrPrint(inputData *pinputData)
+static void inputErrPrint(const inputData *const pinputData)
 {
     inputFile   *pinputFile;
 
@@ -511,7 +519,7 @@ static void inputErrPrint(inputData *pinputData)
     EXIT;
 }
 
-static void inputOpenFile(inputData *pinputData,char *filename)
+static void inputOpenFile(inputData *pinputData, const char * const filename)
 {
     ELLLIST     *ppathList = &pinputData->pathList;
     pathNode    *ppathNode = 0;
@@ -688,7 +696,7 @@ void freePattern(subInfo *psubInfo)
     EXIT;
 }
 
-static void substituteDestruct(subInfo *psubInfo)
+static void substituteDestruct(subInfo * const psubInfo)
 {
     ENTER;
     freeSubFile(psubInfo);
@@ -697,7 +705,7 @@ static void substituteDestruct(subInfo *psubInfo)
     EXIT;
 }
 
-static void substituteOpen(subInfo **ppvt, char *substitutionName)
+static void substituteOpen(subInfo **ppvt, char * const substitutionName)
 {
     subInfo     *psubInfo;
     subFile     *psubFile;
@@ -725,7 +733,7 @@ static void substituteOpen(subInfo **ppvt, char *substitutionName)
     EXIT;
 }
 
-static int substituteGetGlobalSet(subInfo *psubInfo)
+static int substituteGetGlobalSet(subInfo * const psubInfo)
 {
     subFile *psubFile = psubInfo->psubFile;
 
@@ -744,7 +752,7 @@ static int substituteGetGlobalSet(subInfo *psubInfo)
     return 0;
 }
 
-static int substituteGetNextSet(subInfo *psubInfo,char **filename)
+static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
 {
     subFile     *psubFile = psubInfo->psubFile;
     patternNode *ppatternNode;
@@ -846,7 +854,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
     return 1;
 }
 
-static char *substituteGetGlobalReplacements(subInfo *psubInfo)
+static const char *substituteGetGlobalReplacements(subInfo * const psubInfo)
 {
     subFile     *psubFile = psubInfo->psubFile;
 
@@ -902,7 +910,7 @@ static char *substituteGetGlobalReplacements(subInfo *psubInfo)
     }
 }
 
-static char *substituteGetReplacements(subInfo *psubInfo)
+static const char *substituteGetReplacements(subInfo * const psubInfo)
 {
     subFile     *psubFile = psubInfo->psubFile;
     patternNode *ppatternNode;

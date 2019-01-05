@@ -504,7 +504,7 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
 {
     std::list<std::string>& pathList = pinputData->pathList;
     std::list<std::string>::iterator pathIt = pathList.end();
-    char        *fullname = 0;
+    std::string fullname;
     FILE        *fp = 0;
 
     ENTER;
@@ -519,16 +519,11 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
     else {
         pathIt = pathList.begin();
         while(pathIt != pathList.end()) {
-            fullname = static_cast<char *>(calloc(strlen(filename) + pathIt->length() + 2,
-                sizeof(char)));
-            strcpy(fullname, pathIt->c_str());
-            strcat(fullname, "/");
-            strcat(fullname, filename);
+            fullname = *pathIt + "/" + filename;
             STEPS("Trying", filename);
-            fp = fopen(fullname, "r");
+            fp = fopen(fullname.c_str(), "r");
             if (fp)
                 break;
-            free(fullname);
             ++pathIt;
         }
     }
@@ -551,7 +546,6 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
     else {
         inFile.filename = "stdin";
     }
-    free(fullname);
 
     if (opt_D) {
         int hash = epicsStrHash(inFile.filename.c_str(), 12345);

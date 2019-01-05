@@ -617,7 +617,7 @@ typedef struct subFile {
 
 typedef struct patternNode {
     ELLNODE     node;
-    char        *var;
+    std::string var;
 } patternNode;
 
 struct subInfo {
@@ -659,7 +659,6 @@ void freePattern(subInfo *psubInfo)
     ENTER;
     while ((ppatternNode = (patternNode *) ellFirst(&psubInfo->patternList))) {
         ellDelete(&psubInfo->patternList, &ppatternNode->node);
-        free(ppatternNode->var);
         free(ppatternNode);
     }
     psubInfo->isPattern = 0;
@@ -811,7 +810,7 @@ static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
 
         ppatternNode = static_cast<patternNode *>(calloc(1, sizeof(patternNode)));
         ellAdd(&psubInfo->patternList, &ppatternNode->node);
-        ppatternNode->var = epicsStrDup(psubFile->string);
+        ppatternNode->var = psubFile->string;
     }
 
     if (psubFile->token != tokenRBrace) {
@@ -931,7 +930,7 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
             gotFirstPattern = 1;
 
             if (ppatternNode) {
-                catMacroReplacements(psubInfo, ppatternNode->var);
+                catMacroReplacements(psubInfo, ppatternNode->var.c_str());
                 catMacroReplacements(psubInfo, "=");
                 catMacroReplacements(psubInfo, psubFile->string);
                 ppatternNode = (patternNode *) ellNext(&ppatternNode->node);

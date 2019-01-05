@@ -371,7 +371,7 @@ endcmd:
 }
 
 typedef struct inputFile {
-    char        *filename;
+    std::string filename;
     FILE        *fp;
     int         lineNum;
 } inputFile;
@@ -482,8 +482,8 @@ static void inputErrPrint(const inputData *const pinputData)
     while (inFileIt != inFileList.end()) {
         fprintf(stderr, "line %d of ", inFileIt->lineNum);
 
-        if (inFileIt->filename) {
-            fprintf(stderr, " file %s\n", inFileIt->filename);
+        if (!inFileIt->filename.empty()) {
+            fprintf(stderr, " file %s\n", inFileIt->filename.c_str());
         }
         else {
             fprintf(stderr, "stdin:\n");
@@ -546,14 +546,15 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
         inFile.filename = fullname;
     }
     else if (filename) {
-        inFile.filename = epicsStrDup(filename);
+        inFile.filename = filename;
     }
     else {
-        inFile.filename = epicsStrDup("stdin");
+        inFile.filename = "stdin";
     }
+    free(fullname);
 
     if (opt_D) {
-        int hash = epicsStrHash(inFile.filename, 12345);
+        int hash = epicsStrHash(inFile.filename.c_str(), 12345);
         int i = 0;
         int match = 0;
 
@@ -566,7 +567,7 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
         if (!match) {
             const char *wrap = numDeps ? " \\\n" : "";
 
-            printf("%s %s", wrap, inFile.filename);
+            printf("%s %s", wrap, inFile.filename.c_str());
             if (numDeps < MAX_DEPS) {
                 depHashes[numDeps++] = hash;
             }
@@ -589,8 +590,7 @@ static void inputCloseFile(inputData *pinputData)
     if(!inFileList.empty()) {
         inputFile& inFile = inFileList.front();
         if (fclose(inFile.fp))
-            fprintf(stderr, "msi: Can't close input file '%s'\n", inFile.filename);
-        free(inFile.filename);
+            fprintf(stderr, "msi: Can't close input file '%s'\n", inFile.filename.c_str());
         inFileList.erase(inFileList.begin());
     }
     EXIT;

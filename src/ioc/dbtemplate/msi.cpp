@@ -21,7 +21,6 @@
 
 #include <dbDefs.h>
 #include <macLib.h>
-#include <ellLib.h>
 #include <errlog.h>
 #include <epicsString.h>
 #include <osiFileName.h>
@@ -615,17 +614,12 @@ typedef struct subFile {
     char        string[MAX_BUFFER_SIZE];
 } subFile;
 
-typedef struct patternNode {
-    ELLNODE     node;
-    std::string var;
-} patternNode;
-
 struct subInfo {
     subFile     *psubFile;
     int         isFile;
     char        *filename;
     int         isPattern;
-    ELLLIST     patternList;
+    std::list<std::string> patternList;
     std::string macroReplacements;
     subInfo() : psubFile(NULL), isFile(0), filename(NULL), isPattern(0) {};
 };
@@ -654,13 +648,8 @@ void freeSubFile(subInfo *psubInfo)
 
 void freePattern(subInfo *psubInfo)
 {
-    patternNode *ppatternNode;
-
     ENTER;
-    while ((ppatternNode = (patternNode *) ellFirst(&psubInfo->patternList))) {
-        ellDelete(&psubInfo->patternList, &ppatternNode->node);
-        free(ppatternNode);
-    }
+    psubInfo->patternList.clear();
     psubInfo->isPattern = 0;
     EXIT;
 }
@@ -685,7 +674,6 @@ static void substituteOpen(subInfo **ppvt, char * const substitutionName)
     *ppvt = psubInfo;
     psubFile = static_cast<subFile *>(calloc(1, sizeof(subFile)));
     psubInfo->psubFile = psubFile;
-    ellInit(&psubInfo->patternList);
 
     fp = fopen(substitutionName, "r");
     if (!fp) {
@@ -724,7 +712,6 @@ static int substituteGetGlobalSet(subInfo * const psubInfo)
 static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
 {
     subFile     *psubFile = psubInfo->psubFile;
-    patternNode *ppatternNode;
 
     ENTER;
     *filename = 0;
@@ -808,9 +795,7 @@ static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
         if (psubFile->token != tokenString)
             break;
 
-        ppatternNode = static_cast<patternNode *>(calloc(1, sizeof(patternNode)));
-        ellAdd(&psubInfo->patternList, &ppatternNode->node);
-        ppatternNode->var = psubFile->string;
+        psubInfo->patternList.push_back(psubFile->string);
     }
 
     if (psubFile->token != tokenRBrace) {
@@ -880,7 +865,6 @@ static const char *substituteGetGlobalReplacements(subInfo * const psubInfo)
 static const char *substituteGetReplacements(subInfo * const psubInfo)
 {
     subFile     *psubFile = psubInfo->psubFile;
-    patternNode *ppatternNode;
 
     ENTER;
     psubInfo->macroReplacements.clear();
@@ -912,7 +896,8 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
         int gotFirstPattern = 0;
 
         while (subGetNextToken(psubFile) == tokenSeparator);
-        ppatternNode = (patternNode *) ellFirst(&psubInfo->patternList);
+        std::list<std::string>& patternList = psubInfo->patternList;
+        std::list<std::string>::iterator patternIt = patternList.begin();
         while (1) {
             if (psubFile->token == tokenRBrace) {
                 subGetNextToken(psubFile);
@@ -929,11 +914,11 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
                 catMacroReplacements(psubInfo, ",");
             gotFirstPattern = 1;
 
-            if (ppatternNode) {
-                catMacroReplacements(psubInfo, ppatternNode->var.c_str());
+            if (patternIt != patternList.end()) {
+                catMacroReplacements(psubInfo, patternIt->c_str());
                 catMacroReplacements(psubInfo, "=");
                 catMacroReplacements(psubInfo, psubFile->string);
-                ppatternNode = (patternNode *) ellNext(&ppatternNode->node);
+                ++patternIt;
             }
             else {
                 subFileErrPrint(psubFile, "Warning, too many values given");

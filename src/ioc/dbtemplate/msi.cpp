@@ -389,10 +389,7 @@ static void inputCloseAllFiles(inputData *pinputData);
 
 static void inputConstruct(inputData **ppvt)
 {
-    inputData *pinputData;
-
-    pinputData = new inputData;
-    *ppvt = pinputData;
+    *ppvt = new inputData;
 }
 
 static void inputDestruct(inputData * const pinputData)

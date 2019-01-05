@@ -376,14 +376,9 @@ typedef struct inputFile {
     int         lineNum;
 } inputFile;
 
-typedef struct pathNode {
-    ELLNODE     node;
-    char        *directory;
-} pathNode;
-
 struct inputData {
     std::list<inputFile> inputFileList;
-    ELLLIST     pathList;
+    std::list<std::string> pathList;
     char        inputBuffer[MAX_BUFFER_SIZE];
     inputData() { memset(inputBuffer, 0, sizeof(inputBuffer) * sizeof(inputBuffer[0])); };
 };
@@ -397,27 +392,17 @@ static void inputConstruct(inputData **ppvt)
     inputData *pinputData;
 
     pinputData = new inputData;
-    ellInit(&pinputData->pathList);
     *ppvt = pinputData;
 }
 
 static void inputDestruct(inputData * const pinputData)
 {
-    pathNode *ppathNode;
-
     inputCloseAllFiles(pinputData);
-    while ((ppathNode = (pathNode *) ellFirst(&pinputData->pathList))) {
-        ellDelete(&pinputData->pathList, &ppathNode->node);
-        free(ppathNode->directory);
-        free(ppathNode);
-    }
     delete(pinputData);
 }
 
 static void inputAddPath(inputData * const pinputData, const char * const path)
 {
-    ELLLIST     *ppathList = &pinputData->pathList;
-    pathNode    *ppathNode;
     const char  *pcolon;
     const char  *pdir;
     size_t      len;
@@ -431,15 +416,12 @@ static void inputAddPath(inputData * const pinputData, const char * const path)
         emptyName = ((*pdir == sep) ? 1 : 0);
         if (emptyName) ++pdir;
 
-        ppathNode = (pathNode *) calloc(1, sizeof(pathNode));
-        ellAdd(ppathList, &ppathNode->node);
-
+        std::string directory;
         if (!emptyName) {
             pcolon = strchr(pdir, sep);
             len = (pcolon ? (pcolon - pdir) : strlen(pdir));
             if (len > 0)  {
-                ppathNode->directory = (char *) calloc(len + 1, sizeof(char));
-                strncpy(ppathNode->directory, pdir, len);
+                directory = std::string(pdir, len);
                 pdir = pcolon;
                 /*unless at end skip past first colon*/
                 if (pdir && *(pdir + 1) != 0) ++pdir;
@@ -450,9 +432,10 @@ static void inputAddPath(inputData * const pinputData, const char * const path)
         }
 
         if (emptyName) {
-            ppathNode->directory = (char *) calloc(2, sizeof(char));
-            strcpy(ppathNode->directory, ".");
+            directory = ".";
         }
+
+        pinputData->pathList.push_back(directory);
     }
     EXIT;
 }
@@ -522,8 +505,8 @@ static void inputErrPrint(const inputData *const pinputData)
 
 static void inputOpenFile(inputData *pinputData, const char * const filename)
 {
-    ELLLIST     *ppathList = &pinputData->pathList;
-    pathNode    *ppathNode = 0;
+    std::list<std::string>& pathList = pinputData->pathList;
+    std::list<std::string>::iterator pathIt = pathList.end();
     char        *fullname = 0;
     FILE        *fp = 0;
 
@@ -532,16 +515,16 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
         STEP("Using stdin");
         fp = stdin;
     }
-    else if ((ellCount(ppathList) == 0) || strchr(filename, '/')){
+    else if (pathList.empty() || strchr(filename, '/')){
         STEPS("Opening ", filename);
         fp = fopen(filename, "r");
     }
     else {
-        ppathNode = (pathNode *) ellFirst(ppathList);
-        while (ppathNode) {
-            fullname = static_cast<char *>(calloc(strlen(filename) + strlen(ppathNode->directory) + 2,
+        pathIt = pathList.begin();
+        while(pathIt != pathList.end()) {
+            fullname = static_cast<char *>(calloc(strlen(filename) + pathIt->length() + 2,
                 sizeof(char)));
-            strcpy(fullname, ppathNode->directory);
+            strcpy(fullname, pathIt->c_str());
             strcat(fullname, "/");
             strcat(fullname, filename);
             STEPS("Trying", filename);
@@ -549,7 +532,7 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
             if (fp)
                 break;
             free(fullname);
-            ppathNode = (pathNode *) ellNext(&ppathNode->node);
+            ++pathIt;
         }
     }
 
@@ -562,7 +545,7 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
     STEP("File opened");
     inputFile inFile = inputFile();
 
-    if (ppathNode) {
+    if (pathIt != pathList.end()) {
         inFile.filename = fullname;
     }
     else if (filename) {

@@ -301,7 +301,6 @@ static void makeSubstitutions(inputData * const inputPvt,
         if (command) {
             char *pstart;
             char *pend;
-            char *copy;
             int  cmdind=-1;
             int  i;
 
@@ -334,16 +333,15 @@ static void makeSubstitutions(inputData * const inputPvt,
             /*skip quote and any trailing blanks*/
             while (*++p == ' ') ;
             if (*p != '\n' && *p != 0) goto endcmd;
-            copy = static_cast<char *>(calloc(pend-pstart + 1, sizeof(char)));
-            strncpy(copy, pstart, pend-pstart);
+            std::string copy = std::string(pstart, pend);
 
             switch(cmdind) {
             case cmdInclude:
-                inputNewIncludeFile(inputPvt,copy);
+                inputNewIncludeFile(inputPvt, copy.c_str());
                 break;
 
             case cmdSubstitute:
-                addMacroReplacements(macPvt,copy);
+                addMacroReplacements(macPvt, copy.c_str());
                 break;
 
             default:
@@ -351,7 +349,6 @@ static void makeSubstitutions(inputData * const inputPvt,
                 inputErrPrint(inputPvt);
                 abortExit(1);
             }
-            free(copy);
             expand = 0;
         }
 

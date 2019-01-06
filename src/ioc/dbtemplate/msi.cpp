@@ -69,8 +69,8 @@ typedef struct subInfo subInfo;
 
 static void substituteOpen(subInfo **ppvt, char * const substitutionName);
 static void substituteDestruct(subInfo * const pvt);
-static int substituteGetNextSet(subInfo * const pvt, char **filename);
-static int substituteGetGlobalSet(subInfo * const pvt);
+static bool substituteGetNextSet(subInfo * const pvt, char **filename);
+static bool substituteGetGlobalSet(subInfo * const pvt);
 static const char *substituteGetReplacements(subInfo * const pvt);
 static const char *substituteGetGlobalReplacements(subInfo * const pvt);
 
@@ -85,7 +85,7 @@ static void makeSubstitutions(inputData * const inputPvt,
 
 /*Global variables */
 static int opt_V = 0;
-static int opt_D = 0;
+static bool opt_D = false;
 
 static char *outFile = 0;
 static int numDeps = 0, depHashes[MAX_DEPS];
@@ -100,7 +100,7 @@ int main(int argc,char **argv)
     char *substitutionName = 0;
     char *templateName = 0;
     int  i;
-    int  localScope = 1;
+    bool localScope = true;
 
     inputConstruct(&inputPvt);
     macCreateHandle(&macPvt, 0);
@@ -112,7 +112,7 @@ int main(int argc,char **argv)
             inputAddPath(inputPvt, pval);
         }
         else if (strcmp(argv[1], "-D") == 0) {
-            opt_D = 1;
+            opt_D = true;
             narg = 1; /* no argument for this option */
         }
         else if(strncmp(argv[1], "-o", 2) == 0) {
@@ -129,7 +129,7 @@ int main(int argc,char **argv)
             narg = 1; /* no argument for this option */
         }
         else if (strcmp(argv[1], "-g") == 0) {
-            localScope = 0;
+            localScope = false;
             narg = 1; /* no argument for this option */
         }
         else if (strcmp(argv[1], "-h") == 0) {
@@ -176,7 +176,7 @@ int main(int argc,char **argv)
     else {
         subInfo *substitutePvt;
         char *filename = 0;
-        int isGlobal, isFile;
+        bool isGlobal, isFile;
 
         STEPS("Substitutions from file", substitutionName);
         substituteOpen(&substitutePvt, substitutionName);
@@ -397,14 +397,14 @@ static void inputAddPath(inputData * const pinputData, const char * const path)
     const char  *pcolon;
     const char  *pdir;
     size_t      len;
-    int         emptyName;
+    bool        emptyName;
     const char  sep = *OSI_PATH_LIST_SEPARATOR;
 
     ENTER;
     pdir = path;
     /*an empty name at beginning, middle, or end means current directory*/
     while (pdir && *pdir) {
-        emptyName = ((*pdir == sep) ? 1 : 0);
+        emptyName = (*pdir == sep);
         if (emptyName) ++pdir;
 
         std::string directory;
@@ -418,7 +418,7 @@ static void inputAddPath(inputData * const pinputData, const char * const path)
                 if (pdir && *(pdir + 1) != 0) ++pdir;
             }
             else { /*must have been trailing : */
-                emptyName = 1;
+                emptyName = true;
             }
         }
 
@@ -611,12 +611,13 @@ typedef struct subFile {
 
 struct subInfo {
     subFile     *psubFile;
-    int         isFile;
+    bool        isFile;
     char        *filename;
-    int         isPattern;
+    bool        isPattern;
     std::list<std::string> patternList;
     std::string macroReplacements;
-    subInfo() : psubFile(NULL), isFile(0), filename(NULL), isPattern(0) {};
+    subInfo() : psubFile(NULL), isFile(false), filename(NULL),
+                isPattern(false) {};
 };
 
 static char *subGetNextLine(subFile *psubFile);
@@ -645,7 +646,7 @@ void freePattern(subInfo *psubInfo)
 {
     ENTER;
     psubInfo->patternList.clear();
-    psubInfo->isPattern = 0;
+    psubInfo->isPattern = false;
     EXIT;
 }
 
@@ -685,7 +686,7 @@ static void substituteOpen(subInfo **ppvt, char * const substitutionName)
     EXIT;
 }
 
-static int substituteGetGlobalSet(subInfo * const psubInfo)
+static bool substituteGetGlobalSet(subInfo * const psubInfo)
 {
     subFile *psubFile = psubInfo->psubFile;
 
@@ -697,14 +698,14 @@ static int substituteGetGlobalSet(subInfo * const psubInfo)
         strcmp(psubFile->string, "global") == 0) {
         subGetNextToken(psubFile);
         EXITD(1);
-        return 1;
+        return true;
     }
 
     EXITD(0);
-    return 0;
+    return false;
 }
 
-static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
+static bool substituteGetNextSet(subInfo * const psubInfo,char **filename)
 {
     subFile     *psubFile = psubInfo->psubFile;
 
@@ -715,7 +716,7 @@ static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
 
     if (psubFile->token == tokenEOF) {
         EXITD(0);
-        return 0;
+        return false;
     }
 
     if (psubFile->token == tokenString &&
@@ -723,7 +724,7 @@ static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
         size_t len;
 
         STEP("Parsed 'file'");
-        psubInfo->isFile = 1;
+        psubInfo->isFile = true;
         if (subGetNextToken(psubFile) != tokenString) {
             subFileErrPrint(psubFile, "Parse error, expecting a filename");
             abortExit(1);
@@ -758,7 +759,7 @@ static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
 
     if (psubFile->token == tokenLBrace) {
         EXITD(1);
-        return 1;
+        return true;
     }
 
     if (psubFile->token == tokenRBrace) {
@@ -774,7 +775,7 @@ static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
 
     STEP("Parsed 'pattern'");
     freePattern(psubInfo);
-    psubInfo->isPattern = 1;
+    psubInfo->isPattern = true;
 
     while (subGetNextToken(psubFile) == tokenSeparator);
 
@@ -784,7 +785,7 @@ static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
     }
     STEP("Parsed '{'");
 
-    while (1) {
+    while (true) {
         while (subGetNextToken(psubFile) == tokenSeparator);
 
         if (psubFile->token != tokenString)
@@ -800,7 +801,7 @@ static int substituteGetNextSet(subInfo * const psubInfo,char **filename)
 
     subGetNextToken(psubFile);
     EXITD(1);
-    return 1;
+    return true;
 }
 
 static const char *substituteGetGlobalReplacements(subInfo * const psubInfo)
@@ -814,7 +815,7 @@ static const char *substituteGetGlobalReplacements(subInfo * const psubInfo)
         subGetNextToken(psubFile);
 
     if (psubFile->token == tokenRBrace && psubInfo->isFile) {
-        psubInfo->isFile = 0;
+        psubInfo->isFile = false;
         free(psubInfo->filename);
         psubInfo->filename = 0;
         freePattern(psubInfo);
@@ -832,7 +833,7 @@ static const char *substituteGetGlobalReplacements(subInfo * const psubInfo)
         return 0;
     }
 
-    while (1) {
+    while (true) {
         switch(subGetNextToken(psubFile)) {
             case tokenRBrace:
                 subGetNextToken(psubFile);
@@ -868,7 +869,7 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
         subGetNextToken(psubFile);
 
     if (psubFile->token==tokenRBrace && psubInfo->isFile) {
-        psubInfo->isFile = 0;
+        psubInfo->isFile = false;
         free(psubInfo->filename);
         psubInfo->filename = 0;
         freePattern(psubInfo);
@@ -888,12 +889,12 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
     }
 
     if (psubInfo->isPattern) {
-        int gotFirstPattern = 0;
+        bool gotFirstPattern = false;
 
         while (subGetNextToken(psubFile) == tokenSeparator);
         std::list<std::string>& patternList = psubInfo->patternList;
         std::list<std::string>::iterator patternIt = patternList.begin();
-        while (1) {
+        while (true) {
             if (psubFile->token == tokenRBrace) {
                 subGetNextToken(psubFile);
                 EXITS(psubInfo->macroReplacements.c_str());
@@ -907,7 +908,7 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
 
             if (gotFirstPattern)
                 catMacroReplacements(psubInfo, ",");
-            gotFirstPattern = 1;
+            gotFirstPattern = true;
 
             if (patternIt != patternList.end()) {
                 catMacroReplacements(psubInfo, patternIt->c_str());
@@ -922,7 +923,7 @@ static const char *substituteGetReplacements(subInfo * const psubInfo)
             while (subGetNextToken(psubFile) == tokenSeparator);
         }
     }
-    else while(1) {
+    else while(true) {
         switch(subGetNextToken(psubFile)) {
             case tokenRBrace:
                 subGetNextToken(psubFile);

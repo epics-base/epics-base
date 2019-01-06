@@ -637,7 +637,7 @@ void freeSubFile(subInfo *psubInfo)
         if (fclose(psubFile->fp))
             fprintf(stderr, "msi: Can't close substitution file\n");
     }
-    free(psubFile);
+    delete(psubFile);
     free(psubInfo->filename);
     psubInfo->psubFile = 0;
     EXIT;
@@ -669,7 +669,7 @@ static void substituteOpen(subInfo **ppvt, char * const substitutionName)
     ENTER;
     psubInfo = new subInfo;
     *ppvt = psubInfo;
-    psubFile = static_cast<subFile *>(calloc(1, sizeof(subFile)));
+    psubFile = new subFile;
     psubInfo->psubFile = psubFile;
 
     fp = fopen(substitutionName, "r");

@@ -96,16 +96,14 @@ int main(int argc,char **argv)
     inputData *inputPvt;
     MAC_HANDLE *macPvt;
     char *pval;
-    int  narg;
     std::string substitutionName;
     char *templateName = 0;
-    int  i;
     bool localScope = true;
 
     inputConstruct(&inputPvt);
     macCreateHandle(&macPvt, 0);
     while ((argc > 1) && (argv[1][0] == '-')) {
-        narg = (strlen(argv[1]) == 2) ? 2 : 1;
+        int narg = (strlen(argv[1]) == 2) ? 2 : 1;
         pval = (narg == 1) ? (argv[1] + 2) : argv[2];
 
         if (strncmp(argv[1], "-I", 2) == 0) {
@@ -141,7 +139,7 @@ int main(int argc,char **argv)
         }
 
         argc -= narg;
-        for (i = 1; i < argc; i++)
+        for (int i = 1; i < argc; i++)
             argv[i] = argv[i + narg];
     }
 
@@ -396,14 +394,13 @@ static void inputAddPath(inputData * const pinputData, const char * const path)
     const char  *pcolon;
     const char  *pdir;
     size_t      len;
-    bool        emptyName;
     const char  sep = *OSI_PATH_LIST_SEPARATOR;
 
     ENTER;
     pdir = path;
     /*an empty name at beginning, middle, or end means current directory*/
     while (pdir && *pdir) {
-        emptyName = (*pdir == sep);
+        bool emptyName = (*pdir == sep);
         if (emptyName) ++pdir;
 
         std::string directory;
@@ -441,12 +438,11 @@ static void inputBegin(inputData * const pinputData, const char * const fileName
 static char *inputNextLine(inputData * const pinputData)
 {
     std::list<inputFile>& inFileList = pinputData->inputFileList;
-    char        *pline;
 
     ENTER;
     while (!inFileList.empty()) {
         inputFile& inFile = inFileList.front();
-        pline = fgets(pinputData->inputBuffer, MAX_BUFFER_SIZE, inFile.fp);
+        char *pline = fgets(pinputData->inputBuffer, MAX_BUFFER_SIZE, inFile.fp);
         if (pline) {
             ++inFile.lineNum;
             EXITS(pline);

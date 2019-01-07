@@ -1,0 +1,3 @@
+file $(PREFIX)$(TEST_NO)-template.txt {
+    { a=foo }
+}

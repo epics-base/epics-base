@@ -67,7 +67,7 @@ static void inputErrPrint(const inputData * const pvt);
 /* Module to read the substitution file */
 typedef struct subInfo subInfo;
 
-static void substituteOpen(subInfo **ppvt, char * const substitutionName);
+static void substituteOpen(subInfo **ppvt, const std::string& substitutionName);
 static void substituteDestruct(subInfo * const pvt);
 static bool substituteGetNextSet(subInfo * const pvt, char **filename);
 static bool substituteGetGlobalSet(subInfo * const pvt);
@@ -97,7 +97,7 @@ int main(int argc,char **argv)
     MAC_HANDLE *macPvt;
     char *pval;
     int  narg;
-    char *substitutionName = 0;
+    std::string substitutionName;
     char *templateName = 0;
     int  i;
     bool localScope = true;
@@ -122,7 +122,7 @@ int main(int argc,char **argv)
             addMacroReplacements(macPvt, pval);
         }
         else if(strncmp(argv[1], "-S", 2) == 0) {
-            substitutionName = epicsStrDup(pval);
+            substitutionName = pval;
         }
         else if (strcmp(argv[1], "-V") == 0) {
             opt_V = 1;
@@ -169,7 +169,7 @@ int main(int argc,char **argv)
     if (argc == 2)
         templateName = epicsStrDup(argv[1]);
 
-    if (!substitutionName) {
+    if (substitutionName.empty()) {
         STEP("Single template+substitutions file");
         makeSubstitutions(inputPvt, macPvt, templateName);
     }
@@ -178,7 +178,7 @@ int main(int argc,char **argv)
         char *filename = 0;
         bool isGlobal, isFile;
 
-        STEPS("Substitutions from file", substitutionName);
+        STEPS("Substitutions from file", substitutionName.c_str());
         substituteOpen(&substitutePvt, substitutionName);
         do {
             isGlobal = substituteGetGlobalSet(substitutePvt);
@@ -218,7 +218,6 @@ int main(int argc,char **argv)
         printf("\n");
     }
     free(templateName);
-    free(substitutionName);
     return opt_V & 2;
 }
 
@@ -600,7 +599,7 @@ typedef enum {
 } tokenType;
 
 typedef struct subFile {
-    char        *substitutionName;
+    std::string substitutionName;
     FILE        *fp;
     int         lineNum;
     char        inputBuffer[MAX_BUFFER_SIZE];
@@ -659,7 +658,7 @@ static void substituteDestruct(subInfo * const psubInfo)
     EXIT;
 }
 
-static void substituteOpen(subInfo **ppvt, char * const substitutionName)
+static void substituteOpen(subInfo **ppvt, const std::string& substitutionName)
 {
     subInfo     *psubInfo;
     subFile     *psubFile;
@@ -671,9 +670,9 @@ static void substituteOpen(subInfo **ppvt, char * const substitutionName)
     psubFile = new subFile;
     psubInfo->psubFile = psubFile;
 
-    fp = fopen(substitutionName, "r");
+    fp = fopen(substitutionName.c_str(), "r");
     if (!fp) {
-        fprintf(stderr, "msi: Can't open file '%s'\n", substitutionName);
+        fprintf(stderr, "msi: Can't open file '%s'\n", substitutionName.c_str());
         abortExit(1);
     }
 
@@ -975,7 +974,8 @@ static void subFileErrPrint(subFile *psubFile, const char * message)
 {
     fprintf(stderr, "msi: %s\n",message);
     fprintf(stderr, "  in substitution file '%s' at line %d:\n  %s",
-        psubFile->substitutionName, psubFile->lineNum, psubFile->inputBuffer);
+            psubFile->substitutionName.c_str(), psubFile->lineNum,
+            psubFile->inputBuffer);
 }
 
 

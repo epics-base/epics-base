@@ -183,16 +183,15 @@ static long special(DBADDR *paddr, int after)
 
 #define indexof(field) int64inRecord##field
 
-static long get_units(DBADDR *paddr,char *units)
+static long get_units(DBADDR *paddr, char *units)
 {
-    int64inRecord *prec=(int64inRecord *)paddr->precord;
+    int64inRecord *prec = (int64inRecord *) paddr->precord;
 
-    if(paddr->pfldDes->field_type == DBF_LONG) {
-        strncpy(units,prec->egu,DB_UNITS_SIZE);
+    if (paddr->pfldDes->field_type == DBF_INT64) {
+        strncpy(units, prec->egu, DB_UNITS_SIZE);
     }
-    return(0);
+    return 0;
 }
-
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
@@ -255,7 +254,7 @@ static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble	*pad)
 
 static void checkAlarms(int64inRecord *prec, epicsTimeStamp *timeLast)
 {
-	enum {
+    enum {
         range_Lolo = 1,
         range_Low,
         range_Normal,

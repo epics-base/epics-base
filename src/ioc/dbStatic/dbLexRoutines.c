@@ -428,6 +428,10 @@ static void dbMenuHead(char *name)
     dbMenu		*pdbMenu;
     GPHENTRY		*pgphentry;
 
+    if (!*name) {
+        yyerrorAbort("dbMenuHead: Menu name can't be empty");
+        return;
+    }
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->menuList);
     if(pgphentry) {
 	duplicate = TRUE;
@@ -441,6 +445,10 @@ static void dbMenuHead(char *name)
 
 static void dbMenuChoice(char *name,char *value)
 {
+    if (!*name) {
+        yyerror("dbMenuChoice: Menu choice name can't be empty");
+        return;
+    }
     if(duplicate) return;
     allocTemp(epicsStrDup(name));
     allocTemp(epicsStrDup(value));
@@ -488,6 +496,10 @@ static void dbRecordtypeHead(char *name)
     dbRecordType		*pdbRecordType;
     GPHENTRY		*pgphentry;
 
+    if (!*name) {
+        yyerrorAbort("dbRecordtypeHead: Recordtype name can't be empty");
+        return;
+    }
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->recordTypeList);
     if(pgphentry) {
 	duplicate = TRUE;
@@ -505,7 +517,11 @@ static void dbRecordtypeFieldHead(char *name,char *type)
 {
     dbFldDes		*pdbFldDes;
     int			i;
-    
+
+    if (!*name) {
+        yyerrorAbort("dbRecordtypeFieldHead: Field name can't be empty");
+        return;
+    }
     if(duplicate) return;
     pdbFldDes = dbCalloc(1,sizeof(dbFldDes));
     allocTemp(pdbFldDes);
@@ -572,7 +588,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         if(sscanf(value,"%hd",&pdbFldDes->special)==1) {
             return;
         }
-        yyerror("Illegal special value.");
+        yyerror("Illegal 'special' value.");
         return;
     }
     if(strcmp(name,"pp")==0) {
@@ -581,13 +597,13 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         } else if((strcmp(value,"NO")==0) || (strcmp(value,"FALSE")==0)) {
             pdbFldDes->process_passive = FALSE;
         } else {
-            yyerror("Illegal value. Must be NO or YES");
+            yyerror("Illegal 'pp' value, must be YES/NO/TRUE/FALSE");
         }
         return;
     }
     if(strcmp(name,"interest")==0) {
         if(sscanf(value,"%hd",&pdbFldDes->interest)!=1)
-            yyerror("Illegal value. Must be integer");
+            yyerror("Illegal 'interest' value, must be integer");
         return;
     }
     if(strcmp(name,"base")==0) {
@@ -596,13 +612,13 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         } else if(strcmp(value,"HEX")==0) {
             pdbFldDes->base = CT_HEX;
         } else {
-            yyerror("Illegal value. Must be CT_DECIMAL or CT_HEX");
+            yyerror("Illegal 'base' value, must be DECIMAL/HEX");
         }
         return;
     }
     if(strcmp(name,"size")==0) {
         if(sscanf(value,"%hd",&pdbFldDes->size)!=1)
-            yyerror("Illegal value. Must be integer");
+            yyerror("Illegal 'size' value, must be integer");
         return;
     }
     if(strcmp(name,"extra")==0) {
@@ -794,6 +810,10 @@ static void dbDriver(char *name)
     drvSup	*pdrvSup;
     GPHENTRY	*pgphentry;
 
+    if (!*name) {
+        yyerrorAbort("dbDriver: Driver name can't be empty");
+        return;
+    }
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->drvList);
     if(pgphentry) {
 	return;
@@ -813,6 +833,10 @@ static void dbRegistrar(char *name)
     dbText	*ptext;
     GPHENTRY	*pgphentry;
 
+    if (!*name) {
+        yyerrorAbort("dbRegistrar: Registrar name can't be empty");
+        return;
+    }
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->registrarList);
     if(pgphentry) {
 	return;
@@ -832,6 +856,10 @@ static void dbFunction(char *name)
     dbText     *ptext;
     GPHENTRY   *pgphentry;
 
+    if (!*name) {
+        yyerrorAbort("dbFunction: Function name can't be empty");
+        return;
+    }
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->functionList);
     if(pgphentry) {
        return;
@@ -851,6 +879,10 @@ static void dbVariable(char *name, char *type)
     dbVariableDef	*pvar;
     GPHENTRY	*pgphentry;
 
+    if (!*name) {
+        yyerrorAbort("dbVariable: Variable name can't be empty");
+        return;
+    }
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->variableList);
     if(pgphentry) {
 	return;
@@ -871,6 +903,10 @@ static void dbBreakHead(char *name)
     brkTable	*pbrkTable;
     GPHENTRY	*pgphentry;
 
+    if (!*name) {
+        yyerrorAbort("dbBreakHead: Breaktable name can't be empty");
+        return;
+    }
     pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->bptList);
     if(pgphentry) {
 	duplicate = TRUE;
@@ -973,6 +1009,10 @@ static void dbRecordHead(char *recordType, char *name, int visible)
     DBENTRY *pdbentry;
     long status;
 
+    if (!*name) {
+        yyerrorAbort("dbRecordHead: Record name can't be empty");
+        return;
+    }
     badch = strpbrk(name, " \"'.$");
     if (badch) {
         epicsPrintf("Bad character '%c' in record name \"%s\"\n",
@@ -1072,6 +1112,10 @@ static void dbRecordInfo(char *name, char *value)
     tempListNode *ptempListNode;
     long status;
 
+    if (!*name) {
+        yyerrorAbort("dbRecordInfo: Info item name can't be empty");
+        return;
+    }
     if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
@@ -1091,6 +1135,10 @@ static void dbRecordAlias(char *name)
     tempListNode *ptempListNode;
     long status;
 
+    if (!*name) {
+        yyerrorAbort("dbRecordAlias: Alias name can't be empty");
+        return;
+    }
     if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
@@ -1108,6 +1156,10 @@ static void dbAlias(char *name, char *alias)
     DBENTRY dbEntry;
     DBENTRY *pdbEntry = &dbEntry;
 
+    if (!*alias) {
+        yyerrorAbort("dbAlias: Alias name can't be empty");
+        return;
+    }
     dbInitEntry(pdbbase, pdbEntry);
     if (dbFindRecord(pdbEntry, name)) {
         epicsPrintf("Alias \"%s\" refers to unknown record \"%s\"\n",

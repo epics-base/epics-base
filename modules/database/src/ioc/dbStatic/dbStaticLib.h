@@ -28,22 +28,6 @@
 extern "C" {
 #endif
 
-/*Field types as seen by static database access clients*/
-#define DCT_STRING      0
-#define DCT_INTEGER     1
-#define DCT_REAL        2
-#define DCT_MENU        3
-#define DCT_MENUFORM    4
-#define DCT_INLINK      5
-#define DCT_OUTLINK     6
-#define DCT_FWDLINK     7
-#define DCT_NOACCESS    8
-
-/*Link types as seen by static database access clients*/
-#define DCT_LINK_CONSTANT       0
-#define DCT_LINK_FORM           1
-#define DCT_LINK_PV             2
-
 typedef dbBase DBBASE;
 
 typedef struct{
@@ -139,7 +123,6 @@ epicsShareFunc long dbGetAttributePart(DBENTRY *pdbentry,
 
 epicsShareFunc long dbFirstField(DBENTRY *pdbentry, int dctonly);
 epicsShareFunc long dbNextField(DBENTRY *pdbentry, int dctonly);
-epicsShareFunc int  dbGetFieldType(DBENTRY *pdbentry);
 epicsShareFunc int  dbGetNFields(DBENTRY *pdbentry, int dctonly);
 epicsShareFunc char * dbGetFieldName(DBENTRY *pdbentry);
 epicsShareFunc char * dbGetDefault(DBENTRY *pdbentry);
@@ -231,7 +214,6 @@ epicsShareFunc linkSup * dbFindLinkSup(dbBase *pdbbase,
 
 epicsShareFunc int  dbGetNLinks(DBENTRY *pdbentry);
 epicsShareFunc long dbGetLinkField(DBENTRY *pdbentry, int index);
-epicsShareFunc int  dbGetLinkType(DBENTRY *pdbentry);
 
 /* Dump routines */
 epicsShareFunc void dbDumpPath(DBBASE *pdbbase);

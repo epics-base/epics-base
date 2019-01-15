@@ -31,6 +31,29 @@ release.</p>
 
 -->
 
+<h3>Old dbStaticLib APIs removed</h3>
+
+<p>Support for some obsolete dbStaticLib Database Configuration Tool (DCT) APIs
+was removed some time ago, but vestiges of them still remained. The following
+routines and macros and have now finally been removed:</p>
+
+<ul>
+<li>int dbGetFieldType(DBENTRY *pdbentry)</li>
+<li>int dbGetLinkType(DBENTRY *pdbentry)</li>
+<li>DCT_STRING</li>
+<li>DCT_INTEGER</li>
+<li>DCT_REAL</li>
+<li>DCT_MENU</li>
+<li>DCT_MENUFORM</li>
+<li>DCT_INLINK</li>
+<li>DCT_OUTLINK</li>
+<li>DCT_FWDLINK</li>
+<li>DCT_NOACCESS</li>
+<li>DCT_LINK_CONSTANT</li>
+<li>DCT_LINK_FORM</li>
+<li>DCT_LINK_PV</li>
+</ul>
+
 <h3>Fix for <tt>dbhcr</tt> before <tt>iocInit</tt></h3>
 
 <p>The <tt>dbhcr</tt> command used to work before <tt>iocInit</tt> as well as

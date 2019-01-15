@@ -79,16 +79,6 @@ epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
 	{"VXI_IO",VXI_IO}
 };
 
-static int mapDBFtoDCT[DBF_NOACCESS+1] = {
-	DCT_STRING,
-	DCT_INTEGER,DCT_INTEGER,DCT_INTEGER,DCT_INTEGER,DCT_INTEGER,DCT_INTEGER,
-	DCT_REAL,DCT_REAL,
-	DCT_INTEGER,
-	DCT_MENU,
-	DCT_MENUFORM,
-	DCT_INLINK,DCT_OUTLINK,DCT_FWDLINK,
-	DCT_NOACCESS};
-
 /*forward references for private routines*/
 static void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
     EPICS_PRINTF_STYLE(2,3);
@@ -165,38 +155,6 @@ void dbFreePath(DBBASE *pdbbase)
     return;
 }
 
-
-static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess)
-{
-    char		message[200];
-    char		*pmessage=&message[0];
-    dbRecordNode	*precnode = pdbentry->precnode;
-    dbFldDes 		*pflddes = pdbentry->pflddes;
-    char		*pname = NULL;
-
-    *pmessage=0;
-    if(pdbentry->precordType) pname = pdbentry->precordType->name;
-    if(pname) {
-	strcat(pmessage,"RecordType:");
-	strcat(pmessage,pname);
-    }
-    if(precnode){
-        if (dbIsAlias(pdbentry))
-            strcat(pmessage," Record Alias:");
-        else
-            strcat(pmessage," Record:");
-	strcat(pmessage,(char *)precnode->precord);
-    }
-    if(pflddes) {
-	char *pstr=pflddes->name;
-
-	strcat(pmessage," Field:");
-	strcat(pmessage,pstr);
-    }
-    strcat(pmessage,"\n");
-    strcat(pmessage,mess);
-    errMessage(status,pmessage);
-}
 
 static void zeroDbentry(DBENTRY *pdbentry)
 {
@@ -1396,19 +1354,6 @@ long dbNextField(DBENTRY *pdbentry,int dctonly)
 	}
 	indfield++;
     }
-}
-
-int dbGetFieldType(DBENTRY *pdbentry)
-{
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    long		status;
-
-    if(!pflddes){
-	status = S_dbLib_flddesNotFound;
-	entryErrMessage(pdbentry,status,"dbGetFieldType");
-	return(status);
-    }
-    return(mapDBFtoDCT[pflddes->field_type]);
 }
 
 int dbGetNFields(DBENTRY *pdbentry,int dctonly)
@@ -3216,48 +3161,21 @@ int  dbGetNLinks(DBENTRY *pdbentry)
     return((int)precordType->no_links);
 }
 
-long  dbGetLinkField(DBENTRY *pdbentry,int index)
+long  dbGetLinkField(DBENTRY *pdbentry, int index)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbFldDes	*pflddes;
+    dbRecordType *precordType = pdbentry->precordType;
+    dbFldDes *pflddes;
 
-    if(!precordType) return(S_dbLib_recordTypeNotFound);
-    if(index<0 || index>=precordType->no_links) return(S_dbLib_badLink);
+    if (!precordType)
+        return S_dbLib_recordTypeNotFound;
+
+    if (index < 0 || index >= precordType->no_links)
+        return S_dbLib_badLink;
+
     pdbentry->indfield = precordType->link_ind[index];
     pdbentry->pflddes = pflddes = precordType->papFldDes[pdbentry->indfield];
     dbGetFieldAddress(pdbentry);
-    return(0);
-}
-
-int  dbGetLinkType(DBENTRY *pdbentry)
-{
-    dbFldDes	*pflddes;
-    DBLINK	*plink;
-    int		field_type;
-
-    dbGetFieldAddress(pdbentry);
-    pflddes = pdbentry->pflddes;
-    if(!pflddes) return(-1);
-    plink = (DBLINK *)pdbentry->pfield;
-    if(!plink) return(-1);
-    field_type = pflddes->field_type;
-    switch (field_type) {
-    case DBF_INLINK:
-    case DBF_OUTLINK:
-    case DBF_FWDLINK:
-	switch(plink->type) {
-	case CONSTANT:
-	    return(DCT_LINK_CONSTANT);
-	case PV_LINK:
-        case PN_LINK:
-	case DB_LINK:
-	case CA_LINK:
-	    return(DCT_LINK_PV);
-	default:
-	    return(DCT_LINK_FORM);
-	}
-    }
-    return(-1);
+    return 0;
 }
 
 void  dbDumpPath(DBBASE *pdbbase)

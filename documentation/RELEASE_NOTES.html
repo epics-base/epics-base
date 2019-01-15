@@ -31,6 +31,15 @@ release.</p>
 
 -->
 
+<h3>Fix for <tt>dbhcr</tt> before <tt>iocInit</tt></h3>
+
+<p>The <tt>dbhcr</tt> command used to work before <tt>iocInit</tt> as well as
+afterwards. It displays all records that have hardware addresses (VME_IO,
+CAMAC_IO, GPIB_IO, INST_IO etc.) but stopped working if run before iocInit due
+to the rewrite of the link address parser code in dbStaticLib. This release
+fixes that issue, although in some cases the output may be slightly different
+than it used to be.</p>
+
 
 <h1 align="center">EPICS Release 7.0.2</h1>
 

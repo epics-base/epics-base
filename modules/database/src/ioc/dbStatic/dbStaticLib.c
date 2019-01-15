@@ -3556,68 +3556,110 @@ void  dbDumpBreaktable(DBBASE *pdbbase,const char *name)
     return;
 }
 
-static char *bus[VXI_IO+1] = {"","","VME","CAMAC","AB",
-	"GPIB","BITBUS","","","","","","INST","BBGPIB","VXI"};
-void  dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
+static char *bus[LINK_NTYPES] = {
+    "",     /* CONSTANT */
+    NULL,   /* PV_LINK */
+    "VME",
+    "CAMAC",
+    "AB",
+    "GPIB",
+    "BITBUS",
+    NULL,   /* MACRO_LINK */
+    NULL,   /* JSON_LINK */
+    NULL,   /* PN_LINK */
+    NULL,   /* DB_LINK */
+    NULL,   /* CA_LINK */
+    "INST",
+    "BBGPIB",
+    "VXI"
+};
+void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
 {
-    DBENTRY	dbentry;
-    DBENTRY	*pdbentry=&dbentry;
-    long	status;
-    char	linkValue[messagesize];
-    char	dtypValue[50];
-    char	cvtValue[40];
-    int		ilink,nlinks;
-    struct link	*plink;
-    int         linkType;
-    FILE        *stream = (report==0) ? stdout : report;
+    DBENTRY dbentry, *pdbentry = &dbentry;
+    long status;
+    FILE *stream = report ? report : stdout;
 
-    if(!pdbbase) {
-	fprintf(stderr,"pdbbase not specified\n");
-	return;
+    if (!pdbbase) {
+        fprintf(stderr, "dbReportDeviceConfig: pdbbase not specified\n");
+        return;
     }
+
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
-    while(!status) {
-	status = dbFirstRecord(pdbentry);
-	while(!status) {
-	    nlinks = dbGetNLinks(pdbentry);
-	    for(ilink=0; ilink<nlinks; ilink++) {
-		status = dbGetLinkField(pdbentry,ilink);
-		if(status || dbGetLinkType(pdbentry)!=DCT_LINK_FORM) continue;
-		plink = pdbentry->pfield;
-		linkType = plink->type;
-		if(bus[linkType][0]==0) continue;
-		strncpy(linkValue, dbGetString(pdbentry), NELEMENTS(linkValue)-1);
-		linkValue[NELEMENTS(linkValue)-1] = '\0';
-		status = dbFindField(pdbentry,"DTYP");
-		if(status) break;
-		strcpy(dtypValue,dbGetString(pdbentry));
-		status = dbFindField(pdbentry,"LINR");
-		if(status) {
-		    cvtValue[0] = 0;
-		} else {
-		    if(strcmp(dbGetString(pdbentry),"LINEAR")!=0) {
-			cvtValue[0] = 0;
-		    } else {
-			strcpy(cvtValue,"cvt(");
-			status = dbFindField(pdbentry,"EGUL");
-			if(!status) strcat(cvtValue,dbGetString(pdbentry));
-			status = dbFindField(pdbentry,"EGUF");
-			if(!status) {
-			    strcat(cvtValue,",");
-			    strcat(cvtValue,dbGetString(pdbentry));
-			}
-			strcat(cvtValue,")");
-		    }
-		}
-		fprintf(stream,"%-8s %-20s %-20s %-20s %-s\n",
-			bus[linkType],linkValue,dtypValue,
-			dbGetRecordName(pdbentry),cvtValue);
-		break;
-	    }
-	    status = dbNextRecord(pdbentry);
-	}
-	status = dbNextRecordType(pdbentry);
+    while (!status) {
+        const int nlinks = dbGetNLinks(pdbentry);
+
+        status = dbFirstRecord(pdbentry);
+        while (!status) {
+            int ilink;
+
+            for (ilink=0; ilink<nlinks; ilink++) {
+                char linkValue[messagesize];
+                char dtypValue[50];
+                char cvtValue[40];
+                struct link *plink;
+                int linkType;
+
+                status = dbGetLinkField(pdbentry, ilink);
+                if (status)
+                    continue;
+
+                plink = pdbentry->pfield;
+                linkType = plink->type;
+                if (plink->text) {  /* Not yet parsed */
+                    dbLinkInfo linfo;
+
+                    if (dbParseLink(plink->text, pdbentry->pflddes->field_type, &linfo))
+                        continue;
+
+                    linkType = linfo.ltype;
+                    if (linkType && bus[linkType])
+                        strncpy(linkValue, plink->text, messagesize-1);
+
+                    dbFreeLinkInfo(&linfo);
+                }
+                else {
+                    strncpy(linkValue, dbGetString(pdbentry), messagesize-1);
+                }
+
+                if (!linkType || !bus[linkType])
+                    continue;
+                linkValue[messagesize-1] = '\0';
+
+                status = dbFindField(pdbentry, "DTYP");
+                if (status)
+                    break;  /* Next record type */
+
+                strcpy(dtypValue, dbGetString(pdbentry));
+                status = dbFindField(pdbentry, "LINR");
+                if (status) {
+                    cvtValue[0] = 0;
+                }
+                else {
+                    if (strcmp(dbGetString(pdbentry), "LINEAR") != 0) {
+                        cvtValue[0] = 0;
+                    }
+                    else {
+                        strcpy(cvtValue,"cvt(");
+                        status = dbFindField(pdbentry, "EGUL");
+                        if (!status)
+                            strcat(cvtValue, dbGetString(pdbentry));
+                        status = dbFindField(pdbentry, "EGUF");
+                        if (!status) {
+                            strcat(cvtValue, ",");
+                            strcat(cvtValue, dbGetString(pdbentry));
+                        }
+                        strcat(cvtValue, ")");
+                    }
+                }
+                fprintf(stream,"%-8s %-20s %-20s %-20s %-s\n",
+                        bus[linkType], linkValue, dtypValue,
+                        dbGetRecordName(pdbentry), cvtValue);
+                break;
+            }
+            status = dbNextRecord(pdbentry);
+        }
+        status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
     finishOutstream(stream);

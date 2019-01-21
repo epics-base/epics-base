@@ -202,9 +202,9 @@ endif
 
 $(TESTPRODNAME) $(PRODNAME): $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 
-$(TESTPRODNAME) $(PRODNAME): %$(EXE):
+$(TESTPRODNAME) $(PRODNAME): %$(EXE): | $(INSTALL_LIB)
 	@$(RM) $@
-	$(DEBUGCMD) $(LINK.cpp)
+	$(LINK.cpp)
 	$(MT_EXE_COMMAND)
 
 %_ctdt$(OBJ) : %_ctdt.c
@@ -304,6 +304,10 @@ $(LOADABLE_SHRLIBNAME): $(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX):
 	@$(RM) $@
 	$(LINK.shrlib)
 	$(MT_DLL_COMMAND)
+
+$(LIBNAME) $(SHRLIBNAME) $(LOADABLE_SHRLIBNAME): | $(INSTALL_LIB)
+$(INSTALL_LIB):
+	@$(MKDIR) $@
 
 #---------------------------------------------------------------
 # C++ munching for VxWorks
@@ -467,9 +471,11 @@ $(INSTALL_TCLLIB)/%: ../%
 	@$(INSTALL) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_TCLLIB)
 endif
 
+ifneq ($(TCLINDEX),)
 $(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
 	$(ECHO) "Updating $@"
 	$(ECHO) eval auto_mkindex $(INSTALL_TCLLIB) "$(TCLLIBNAME)" | tclsh
+endif
 
 $(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	$(ECHO) "Installing loadable shared library $@"

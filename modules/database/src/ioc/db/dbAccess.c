@@ -679,7 +679,7 @@ finish:
 void dbInitEntryFromAddr(struct dbAddr *paddr, DBENTRY *pdbentry)
 {
     struct dbCommon *prec = paddr->precord;
-    dbCommonPvt *ppvt = CONTAINER(prec, dbCommonPvt, common);
+    dbCommonPvt *ppvt = dbRec2Pvt(prec);
 
     memset((char *)pdbentry,'\0',sizeof(DBENTRY));
 
@@ -693,7 +693,7 @@ void dbInitEntryFromAddr(struct dbAddr *paddr, DBENTRY *pdbentry)
 
 void dbInitEntryFromRecord(struct dbCommon *prec, DBENTRY *pdbentry)
 {
-    dbCommonPvt *ppvt = CONTAINER(prec, dbCommonPvt, common);
+    dbCommonPvt *ppvt = dbRec2Pvt(prec);
 
     memset((char *)pdbentry,'\0',sizeof(DBENTRY));
 

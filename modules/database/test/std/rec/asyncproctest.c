@@ -120,11 +120,9 @@ MAIN(asyncproctest)
         if (epicsEventWaitWithTimeout(done, 10.0) != epicsEventOK)
             testAbort("Processing timed out");
 
-        testTodoBegin("Bug");
         testdbGetFieldEqual("chain4_pos", DBF_SHORT, 1);
         testdbGetFieldEqual("chain4_rel", DBF_SHORT, 1);
         testdbGetFieldEqual("chain4_lim", DBF_SHORT, 1);
-        testTodoEnd();
     }
 
     testIocShutdownOk();

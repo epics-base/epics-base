@@ -53,3 +53,30 @@ record(sub, "done3") {
     field(FLNK, "chain3")
     field(TPRO, "$(TPRO=)")
 }
+
+
+# loop breaking regression
+# should _not_ RPRO
+record(calcout,"chain4_pos") {
+    field(CALC, "E:=E+1;E")
+    field(OUT,"chain4_rel.A PP")
+    field(TPRO, "$(TPRO=)")
+}
+
+record(calc,"chain4_rel") {
+    field(CALC, "E:=E+1;E")
+    field(FLNK,"chain4_lim")
+    field(TPRO, "$(TPRO=)")
+}
+
+record(calc,"chain4_lim") {
+    field(CALC, "E:=E+1;E")
+    field(INPA,"chain4_pos PP")
+    field(INPB,"chain4_pos.HIGH PP")
+    field(INPC,"chain4_pos.LOW PP")
+    field(TPRO, "$(TPRO=)")
+}
+
+record(bo, "chain4_dummy") {
+field(TPRO, "$(TPRO=)")
+}

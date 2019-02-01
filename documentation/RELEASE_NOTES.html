@@ -16,6 +16,15 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Perl CA bindings fixed for macOS Mojave</h3>
+
+<p>Apple removed some Perl header files from macOS Mojave that were available
+in their SDK, requiring a change to the include paths used when compiling the
+CA bindings. The new version should build on new and older macOS versions, and
+these changes may also help other targets that have an incomplete installation
+of Perl (the build will continue after printing a warning that the Perl CA
+bindings could not be built).</p>
+
 <h3>Routine <tt>epicsTempName()</tt> removed from libCom</h3>
 
 <p>This routine was a simple wrapper around the C89 function <tt>tmpnam()</tt>

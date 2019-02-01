@@ -215,7 +215,14 @@ epicsShareFunc int dbGetFieldIndex(const struct dbAddr *paddr);
 epicsShareFunc long dbScanPassive(
     struct dbCommon *pfrom,struct dbCommon *pto);
 epicsShareFunc long dbProcess(struct dbCommon *precord);
-epicsShareFunc long dbNameToAddr(const char *pname, struct dbAddr *);
+epicsShareFunc long dbNameToAddr(const char *pname, struct dbAddr *paddr);
+
+/** Initialize DBADDR from a dbEntry
+ * Also handles SPC_DBADDR processing. This is really an internal
+ * routine for use by dbNameToAddr() and dbChannelCreate().
+ */
+epicsShareFunc long dbEntryToAddr(const struct dbEntry *pdbentry,
+    struct dbAddr *paddr);
 
 /** Initialize DBENTRY from a valid dbAddr*
  * Constant time equivalent of dbInitEntry() then dbFindRecord(),

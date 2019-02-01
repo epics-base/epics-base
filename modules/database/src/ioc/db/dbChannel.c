@@ -473,9 +473,7 @@ dbChannel * dbChannelCreate(const char *name)
     dbChannel *chan = NULL;
     char *cname;
     dbAddr *paddr;
-    dbFldDes *pflddes;
     long status;
-    short dbfType;
 
     if (!name || !*name || !pdbbase)
         return NULL;
@@ -498,32 +496,14 @@ dbChannel * dbChannelCreate(const char *name)
     ellInit(&chan->post_chain);
 
     paddr = &chan->addr;
-    pflddes = dbEntry.pflddes;
-    dbfType = pflddes->field_type;
-
-    paddr->precord = dbEntry.precnode->precord;
-    paddr->pfield = dbEntry.pfield;
-    paddr->pfldDes = pflddes;
-    paddr->no_elements = 1;
-    paddr->field_type = dbfType;
-    paddr->field_size = pflddes->size;
-    paddr->special = pflddes->special;
-    paddr->dbr_field_type = mapDBFToDBR[dbfType];
-
-    if (paddr->special == SPC_DBADDR) {
-        rset *prset = dbGetRset(paddr);
-
-        /* Let record type modify paddr */
-        if (prset && prset->cvt_dbaddr) {
-            status = prset->cvt_dbaddr(paddr);
-            if (status)
-                goto finish;
-            dbfType = paddr->field_type;
-        }
-    }
+    status = dbEntryToAddr(&dbEntry, paddr);
+    if (status)
+        goto finish;
 
     /* Handle field modifiers */
     if (*pname) {
+        short dbfType = paddr->field_type;
+
         if (*pname == '$') {
             /* Some field types can be accessed as char arrays */
             if (dbfType == DBF_STRING) {
@@ -531,12 +511,14 @@ dbChannel * dbChannelCreate(const char *name)
                 paddr->field_type = DBF_CHAR;
                 paddr->field_size = 1;
                 paddr->dbr_field_type = DBR_CHAR;
-            } else if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
+            }
+            else if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
                 /* Clients see a char array, but keep original dbfType */
                 paddr->no_elements = PVLINK_STRINGSZ;
                 paddr->field_size = 1;
                 paddr->dbr_field_type = DBR_CHAR;
-            } else {
+            }
+            else {
                 status = S_dbLib_fieldNotFound;
                 goto finish;
             }

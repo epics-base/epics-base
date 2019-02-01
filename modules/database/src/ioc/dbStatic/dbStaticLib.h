@@ -30,7 +30,7 @@ extern "C" {
 
 typedef dbBase DBBASE;
 
-typedef struct{
+typedef struct dbEntry {
     DBBASE       *pdbbase;
     dbRecordType *precordType;
     dbFldDes     *pflddes;
@@ -41,9 +41,6 @@ typedef struct{
     short        indfield;
 } DBENTRY;
 
-struct dbAddr;
-struct dbCommon;
-
 /* Static database access routines*/
 epicsShareFunc DBBASE * dbAllocBase(void);
 epicsShareFunc void dbFreeBase(DBBASE *pdbbase);
@@ -51,18 +48,6 @@ epicsShareFunc DBENTRY * dbAllocEntry(DBBASE *pdbbase);
 epicsShareFunc void dbFreeEntry(DBENTRY *pdbentry);
 epicsShareFunc void dbInitEntry(DBBASE *pdbbase,
     DBENTRY *pdbentry);
-
-/** Initialize DBENTRY from a valid dbAddr*.
- * Constant time equivalent of dbInitEntry() then dbFindRecord(),
- * and finally dbFollowAlias()
- */
-epicsShareFunc void dbInitEntryFromAddr(struct dbAddr *paddr, DBENTRY *pdbentry);
-
-/** Initialize DBENTRY from a valid record (dbCommon*).
- * Constant time equivalent of dbInitEntry() then dbFindRecord(),
- * and finally dbFollowAlias() when no field is specified.
- */
-epicsShareFunc void dbInitEntryFromRecord(struct dbCommon *prec, DBENTRY *pdbentry);
 
 epicsShareFunc void dbFinishEntry(DBENTRY *pdbentry);
 epicsShareFunc DBENTRY * dbCopyEntry(DBENTRY *pdbentry);

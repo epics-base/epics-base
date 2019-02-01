@@ -204,6 +204,8 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_notInit    (M_dbAccess|67) /*Not initialized*/
 #define S_db_bufFull    (M_dbAccess|68) /*Buffer full*/
 
+struct dbEntry;
+
 epicsShareFunc long dbPutSpecial(struct dbAddr *paddr,int pass);
 epicsShareFunc rset * dbGetRset(const struct dbAddr *paddr);
 epicsShareFunc long dbPutAttribute(
@@ -213,8 +215,22 @@ epicsShareFunc int dbGetFieldIndex(const struct dbAddr *paddr);
 epicsShareFunc long dbScanPassive(
     struct dbCommon *pfrom,struct dbCommon *pto);
 epicsShareFunc long dbProcess(struct dbCommon *precord);
-epicsShareFunc long dbNameToAddr(
-    const char *pname,struct dbAddr *);
+epicsShareFunc long dbNameToAddr(const char *pname, struct dbAddr *);
+
+/** Initialize DBENTRY from a valid dbAddr*
+ * Constant time equivalent of dbInitEntry() then dbFindRecord(),
+ * and finally dbFollowAlias().
+ */
+epicsShareFunc void dbInitEntryFromAddr(struct dbAddr *paddr,
+    struct dbEntry *pdbentry);
+
+/** Initialize DBENTRY from a valid record (dbCommon*)
+ * Constant time equivalent of dbInitEntry() then dbFindRecord(),
+ * and finally dbFollowAlias() when no field is specified.
+ */
+epicsShareFunc void dbInitEntryFromRecord(struct dbCommon *prec,
+    struct dbEntry *pdbentry);
+
 epicsShareFunc devSup* dbDTYPtoDevSup(dbRecordType *prdes, int dtyp);
 epicsShareFunc devSup* dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset);
 epicsShareFunc long dbGetField(

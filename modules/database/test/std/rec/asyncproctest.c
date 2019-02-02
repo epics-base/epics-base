@@ -40,7 +40,7 @@ void asyncproctest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(asyncproctest)
 {
-    testPlan(25);
+    testPlan(27);
 
     done = epicsEventMustCreate(epicsEventEmpty);
 
@@ -123,6 +123,22 @@ MAIN(asyncproctest)
         testdbGetFieldEqual("chain4_pos", DBF_SHORT, 1);
         testdbGetFieldEqual("chain4_rel", DBF_SHORT, 1);
         testdbGetFieldEqual("chain4_lim", DBF_SHORT, 1);
+    }
+
+    testDiag("===== Chain 5 ======");
+
+    {
+        dbCommon *dummy=testdbRecordPtr("chain4_dummy");
+
+        testdbPutFieldOk("chain5_cnt.PROC", DBF_LONG, 0);
+
+        /* sync once queue to wait for any queued RPRO */
+        scanOnceCallback(dummy, dummydone, NULL);
+
+        if (epicsEventWaitWithTimeout(done, 10.0) != epicsEventOK)
+            testAbort("Processing timed out");
+
+        testdbGetFieldEqual("chain5_cnt", DBF_SHORT, 1);
     }
 
     testIocShutdownOk();

@@ -80,3 +80,11 @@ record(calc,"chain4_lim") {
 record(bo, "chain4_dummy") {
 field(TPRO, "$(TPRO=)")
 }
+
+# loop breaking regression part 2
+# selft link should _not_ RPRO
+record(calcout,"chain5_cnt") {
+    field(CALC, "E:=E+1;E")
+    field(OUT,"chain5_cnt.A PP")
+    field(TPRO, "$(TPRO=)")
+}

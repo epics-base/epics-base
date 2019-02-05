@@ -74,6 +74,7 @@ record(calc,"chain4_lim") {
     field(INPA,"chain4_pos PP")
     field(INPB,"chain4_pos.HIGH PP")
     field(INPC,"chain4_pos.LOW PP")
+    field(FLNK,"chain4_pos")
     field(TPRO, "$(TPRO=)")
 }
 
@@ -85,6 +86,8 @@ field(TPRO, "$(TPRO=)")
 # selft link should _not_ RPRO
 record(calcout,"chain5_cnt") {
     field(CALC, "E:=E+1;E")
+    field(INPA,"chain5_cnt.A PP")
     field(OUT,"chain5_cnt.A PP")
+    field(FLNK,"chain5_cnt")
     field(TPRO, "$(TPRO=)")
 }

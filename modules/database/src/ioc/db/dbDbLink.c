@@ -386,8 +386,8 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
 {
     char context[40] = "";
     int trace = dbAccessDebugPUTF && *dbLockSetAddrTrace(psrc);
-    int srcset = dbRec2Pvt(psrc)->procThread==NULL;
-    int dstset = psrc!=pdst && dbRec2Pvt(pdst)->procThread==NULL;
+    int claim_src = dbRec2Pvt(psrc)->procThread==NULL;
+    int claim_dst = psrc!=pdst && dbRec2Pvt(pdst)->procThread==NULL;
     long status;
     epicsUInt8 pact = psrc->pact;
     epicsThreadId self = epicsThreadGetIdSelf();
@@ -411,7 +411,7 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
 
         pdst->putf = psrc->putf;
     }
-    else if (psrc->putf && dstset) {
+    else if (psrc->putf && claim_dst) {
         /* The dst record is busy (awaiting async reprocessing),
          * not being processed recursively by us, and
          * we were originally triggered by a call to dbPutField(),
@@ -434,12 +434,12 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
                 context, psrc->name, pdst->name);
     }
 
-    if(srcset) {
+    if(claim_src) {
         dbRec2Pvt(psrc)->procThread = self;
     } else {
         assert(dbRec2Pvt(psrc)->procThread==self);
     }
-    if(dstset) {
+    if(claim_dst) {
         dbRec2Pvt(pdst)->procThread = self;
     } else {
         assert(dbRec2Pvt(psrc)->procThread==self);
@@ -451,10 +451,10 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
 
     assert(dbRec2Pvt(psrc)->procThread==self);
     assert(dbRec2Pvt(pdst)->procThread==self);
-    if(srcset) {
+    if(claim_src) {
         dbRec2Pvt(psrc)->procThread = NULL;
     }
-    if(dstset) {
+    if(claim_dst) {
         dbRec2Pvt(pdst)->procThread = NULL;
     }
 

@@ -272,19 +272,25 @@ int           low, try;
      * by resource limitations (but that is ignored
      * by sched_get_priority_max() [linux]).
      */
-    low = min;
 
-    while ( low < max ) {
+    low = min + 1;
+
+    /*
+     * At this point, low-1 is known to be a good
+	 * priority. Keep that a loop invariant
+     */
+
+    while ( low <= max ) {
         try = (max+low)/2;
         if ( try_pri(try, prm->policy) ) {
-            max = try;
+            max = try - 1;
         } else {
             low = try + 1;
         }
     }
 
     prm->min_pri = min;
-    prm->max_pri = try_pri(max, prm->policy) ? max-1 : max;
+    prm->max_pri = low - 1;
     prm->ok = 1;
 
     return 0;

@@ -212,7 +212,7 @@ sub _getline {
 
     my $line = readline $self->{stdout};
     if (defined $line) {
-        chomp $line;
+        $line =~ s/[\r\n]+ $//x;    # chomp broken on Windows?
         printf "#%d >> %s\n", $self->{pid}, $line if $self->{debug};
     }
     elsif (eof($self->{stdout})) {

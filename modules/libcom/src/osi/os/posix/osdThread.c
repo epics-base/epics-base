@@ -154,11 +154,11 @@ unsigned osi;
             / (double)(pcommonAttr->maxPriority - pcommonAttr->minPriority);
 
     osid  = round( (double)(posixPriority - pcommonAttr->minPriority) * slope + epicsThreadPriorityMin );
-	if ( osid < (double) epicsThreadPriorityMin ) {
-		/* may be negative! */
-		return epicsThreadPriorityMin;
-	}
-	osi = (unsigned)osid;
+    if ( osid < (double) epicsThreadPriorityMin ) {
+        /* may be negative! */
+        return epicsThreadPriorityMin;
+    }
+    osi = (unsigned)osid;
 
     if ( osi > epicsThreadPriorityMax )
         osi = epicsThreadPriorityMax;
@@ -192,7 +192,7 @@ static void setSchedulingPolicy(pthread_attr_t *pattr, epicsThreadOSD *pthreadIn
     status = pthread_attr_getschedparam(
         pattr,&pthreadInfo->schedParam);
     checkStatusOnce(status,"pthread_attr_getschedparam");
-	/* Must set schedPolicy first because epicsThreadGetPosixPriority inspects it */
+    /* Must set schedPolicy first because epicsThreadGetPosixPriority inspects it */
     pthreadInfo->schedPolicy = policy;
     pthreadInfo->schedParam.sched_priority = epicsThreadGetPosixPriority(pthreadInfo);
     status = pthread_attr_setschedpolicy(

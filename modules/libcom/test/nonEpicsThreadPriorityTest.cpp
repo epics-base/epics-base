@@ -8,15 +8,15 @@
 static void *nonEpicsTestFunc(void *arg)
 {
 unsigned int pri;
-	// epicsThreadGetIdSelf()  creates an EPICS context
-	// verify that the priority computed by epics context
-	// is OK
-	pri = epicsThreadGetPriority( epicsThreadGetIdSelf() );
-	if ( ! testOk( 0 == pri, "'createImplicit' assigned correct priority (%d) to non-EPICS thread", pri) ) {
-		return 0;
-	}
+    // epicsThreadGetIdSelf()  creates an EPICS context
+    // verify that the priority computed by epics context
+    // is OK
+    pri = epicsThreadGetPriority( epicsThreadGetIdSelf() );
+    if ( ! testOk( 0 == pri, "'createImplicit' assigned correct priority (%d) to non-EPICS thread", pri) ) {
+        return 0;
+    }
 
-	return (void*)1;
+    return (void*)1;
 }
 
 
@@ -36,42 +36,42 @@ pthread_attr_t      attr;
         goto done;
     }
 
-	if ( SCHED_FIFO != policy ) {
-		testSkip(1, "nonEpicsThreadPriorityTest must be executed with privileges to use SCHED_FIFO");
-		goto done;
-	}
+    if ( SCHED_FIFO != policy ) {
+        testSkip(1, "nonEpicsThreadPriorityTest must be executed with privileges to use SCHED_FIFO");
+        goto done;
+    }
 
-	if ( pthread_attr_init( &attr ) ) {
-		testSkip(1, "pthread_attr_init failed");
-		goto done;
-	}
+    if ( pthread_attr_init( &attr ) ) {
+        testSkip(1, "pthread_attr_init failed");
+        goto done;
+    }
     if ( pthread_attr_setinheritsched( &attr, PTHREAD_EXPLICIT_SCHED ) ) {
-		testSkip(1, "pthread_attr_setinheritsched failed");
-		goto done;
-	}
+        testSkip(1, "pthread_attr_setinheritsched failed");
+        goto done;
+    }
     if ( pthread_attr_setschedpolicy ( &attr, SCHED_OTHER            ) ) {
-		testSkip(1, "pthread_attr_setschedpolicy failed");
-		goto done;
-	}
-	param.sched_priority = 0;
+        testSkip(1, "pthread_attr_setschedpolicy failed");
+        goto done;
+    }
+    param.sched_priority = 0;
     if ( pthread_attr_setschedparam  ( &attr, &param                 ) ) {
-		testSkip(1, "pthread_attr_setschedparam failed");
-		goto done;
-	}
+        testSkip(1, "pthread_attr_setschedparam failed");
+        goto done;
+    }
 
-	if ( pthread_create( &tid, &attr, nonEpicsTestFunc, 0 ) ) {
-		testSkip(1, "pthread_create failed");
-		goto done;
-	}
+    if ( pthread_create( &tid, &attr, nonEpicsTestFunc, 0 ) ) {
+        testSkip(1, "pthread_create failed");
+        goto done;
+    }
 
-	if ( pthread_join( tid, &rval ) ) {
-		testSkip(1, "pthread_join failed");
-		goto done;
-	}
+    if ( pthread_join( tid, &rval ) ) {
+        testSkip(1, "pthread_join failed");
+        goto done;
+    }
 
 done:
 
-	epicsEventSignal( ev );
+    epicsEventSignal( ev );
 }
 
 MAIN(nonEpicsThreadPriorityTest)
@@ -85,14 +85,14 @@ unsigned int pri;
     epicsEventWaitStatus status = epicsEventWait(testComplete);
     testOk(status == epicsEventWaitOK,
         "epicsEventWait returned %d", status);
-	if ( epicsThreadBooleanStatusSuccess != epicsThreadHighestPriorityLevelBelow(48, &pri) ) {
-		testFail("epicsThreadHighestPriorityLevelBelow failed");
-	}
-	testOk(47 == pri, "epicsThreadHighestPriorityLevelBelow(48) = %d (!= 47)", pri);
+    if ( epicsThreadBooleanStatusSuccess != epicsThreadHighestPriorityLevelBelow(48, &pri) ) {
+        testFail("epicsThreadHighestPriorityLevelBelow failed");
+    }
+    testOk(47 == pri, "epicsThreadHighestPriorityLevelBelow(48) = %d (!= 47)", pri);
    	if ( epicsThreadBooleanStatusSuccess != epicsThreadLowestPriorityLevelAbove(47, &pri) ) {
-		testFail("epicsThreadLowestPriorityLevelAbove failed");
-	}
-	testOk(48 == pri, "epicsThreadLowestPriorityLevelAbove(47) = %d (!= 48)", pri);
+        testFail("epicsThreadLowestPriorityLevelAbove failed");
+    }
+    testOk(48 == pri, "epicsThreadLowestPriorityLevelAbove(47) = %d (!= 48)", pri);
  return testDone();
 }
 

@@ -30,7 +30,6 @@ typedef struct epicsThreadOSD {
     void              *createArg;
     epicsEventId       suspendEvent;
     int                isSuspended;
-    int                isEpicsThread;
     int                isOnThreadList;
     unsigned int       osiPriority;
     char               name[1];     /* actually larger */

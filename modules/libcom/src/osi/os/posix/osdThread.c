@@ -112,9 +112,9 @@ if(status) { \
     exit(-1);\
 }
 
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
 static int osi2posixPriority(unsigned osiPriority)
 {
-#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     double maxPriority,minPriority,slope;
     int    oss;
 
@@ -133,14 +133,10 @@ static int osi2posixPriority(unsigned osiPriority)
     if ( oss > pcommonAttr->maxPriority )
         oss = pcommonAttr->maxPriority;
     return oss;
-#else
-    return 0;
-#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 }
 
 static unsigned posix2osiPriority(int posixPriority)
 {
-#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
 double   slope, osid;
 unsigned osi;
 
@@ -164,10 +160,8 @@ unsigned osi;
         osi = epicsThreadPriorityMax;
 
     return osi;
-#else
-    return epicsThreadPriorityMedium;
-#endif
 }
+#endif
 
 
 epicsShareFunc int epicsThreadGetPosixPriority(epicsThreadId pthreadInfo)
@@ -598,7 +592,6 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate(const char *name,
     pthread_sigmask(SIG_SETMASK,&blockAllSig,&oldSig);
     pthreadInfo = init_threadInfo(name,priority,funptr,parm);
     if(pthreadInfo==0) return 0;
-    pthreadInfo->isEpicsThread = 1;
     attr_init( &attr, stackSize );
     setSchedulingPolicy( &attr, pthreadInfo,SCHED_FIFO);
     status = pthread_create(&pthreadInfo->tid,&attr,
@@ -610,7 +603,6 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate(const char *name,
         pthreadInfo = init_threadInfo(name,priority,funptr,parm);
         if(pthreadInfo==0) return 0;
         attr_init( &attr, stackSize );
-        pthreadInfo->isEpicsThread = 1;
         status = pthread_create(&pthreadInfo->tid,&attr,
                 start_routine,pthreadInfo);
         attr_destroy(&attr);
@@ -718,15 +710,6 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority(epicsThreadId pthreadIn
 
     assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
-    /* T.S.: There is in principle no problem with changing the priority of
-     * a non-EPICS thread -- as long as it uses the same scheduling policy.
-     * For sake of backwards compatibility I leave this test for now but
-     * it could as well be removed (and the 'isEpicsThread' member as well).
-     */
-    if(!pthreadInfo->isEpicsThread) {
-        fprintf(stderr,"epicsThreadSetPriority called by non epics thread\n");
-        return;
-    }
     pthreadInfo->osiPriority = priority;
 
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0

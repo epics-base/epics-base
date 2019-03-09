@@ -52,6 +52,7 @@ int epicsInlineTest(void);
 int ipAddrToAsciiTest(void);
 int macDefExpandTest(void);
 int macLibTest(void);
+int nonEpicsThreadPriorityTest(void);
 int osiSockTest(void);
 int ringBytesTest(void);
 int ringPointerTest(void);
@@ -107,6 +108,7 @@ void epicsRunLibComTests(void)
     runTest(ipAddrToAsciiTest);
     runTest(macDefExpandTest);
     runTest(macLibTest);
+    runTest(nonEpicsThreadPriorityTest);
     runTest(osiSockTest);
     runTest(ringBytesTest);
     runTest(ringPointerTest);

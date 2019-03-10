@@ -32,7 +32,7 @@
         LAST_RESORT_PRIORITY, osdTimeGetCurrent)
 
     extern "C" {
-    static int osdTimeGetCurrent (epicsTimeStamp *pDest)
+    int osdTimeGetCurrent (epicsTimeStamp *pDest)
     {
         struct timeval tv;
         struct timezone tz;

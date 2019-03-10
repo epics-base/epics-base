@@ -26,7 +26,7 @@
 static clock_serv_t host_clock;
 
 extern "C" {
-static int osdTimeGetCurrent (epicsTimeStamp *pDest)
+int osdTimeGetCurrent (epicsTimeStamp *pDest)
 {
     mach_timespec_t mts;
     struct timespec ts;

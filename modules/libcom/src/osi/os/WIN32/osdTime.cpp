@@ -47,7 +47,8 @@
 
 extern "C" void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
 
-static int osdTimeGetCurrent ( epicsTimeStamp *pDest );
+extern "C"
+int osdTimeGetCurrent ( epicsTimeStamp *pDest );
 
 // for mingw
 #if !defined ( MAXLONGLONG )
@@ -116,7 +117,7 @@ static int done = timeRegister();
 //
 // osdTimeGetCurrent ()
 //
-static int osdTimeGetCurrent ( epicsTimeStamp *pDest )
+int osdTimeGetCurrent ( epicsTimeStamp *pDest )
 {
     assert ( pCurrentTime );
 

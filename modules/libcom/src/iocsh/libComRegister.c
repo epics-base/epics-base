@@ -319,7 +319,7 @@ static const iocshArg epicsMutexShowAllArg1 = { "level",iocshArgInt};
 static const iocshArg * const epicsMutexShowAllArgs[2] =
     {&epicsMutexShowAllArg0,&epicsMutexShowAllArg1};
 static const iocshFuncDef epicsMutexShowAllFuncDef =
-    {"epicsMutexShowAll",1,epicsMutexShowAllArgs};
+    {"epicsMutexShowAll",2,epicsMutexShowAllArgs};
 static void epicsMutexShowAllCallFunc(const iocshArgBuf *args)
 {
     epicsMutexShowAll(args[0].ival,args[1].ival);

@@ -153,6 +153,10 @@ epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
 
 void epicsMutexOsdShow(struct epicsMutexOSD * pmutex, unsigned int level)
 {
+    /* GLIBC w/ NTPL is passing the &lock.__data.__lock as the first argument (UADDR)
+     * of the futex() syscall.  __lock is at offset 0 of the enclosing structures.
+     */
+    printf("    pthread_mutex_t* uaddr=%p\n", &pmutex->lock);
 }
 
 #else /*defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500 */

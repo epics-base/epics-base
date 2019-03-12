@@ -137,8 +137,8 @@ static int osi2posixPriority(unsigned osiPriority)
 
 static unsigned posix2osiPriority(int posixPriority)
 {
-double   slope, osid;
-unsigned osi;
+    double   slope, osid;
+    unsigned osi;
 
     if ( ! pcommonAttr->valid )
         return epicsThreadPriorityMedium;
@@ -220,7 +220,7 @@ static epicsThreadOSD * create_threadInfo(const char *name)
 
 static int attr_init(pthread_attr_t *pattr, size_t stackSize)
 {
-int status;
+    int status;
 
     status = pthread_attr_init(pattr);
     checkStatusOnce(status,"pthread_attr_init");
@@ -240,7 +240,7 @@ int status;
 
 static void attr_destroy(pthread_attr_t *pattr)
 {
-int status;
+    int status;
     status = pthread_attr_destroy(pattr);
     checkStatusQuit(status,"pthread_attr_destroy","free_threadInfo");
 }
@@ -283,7 +283,7 @@ static void free_threadInfo(epicsThreadOSD *pthreadInfo)
 
 static int try_pri(int pri, int policy)
 {
-struct sched_param  schedp;
+    struct sched_param  schedp;
 
     schedp.sched_priority = pri;
     return pthread_setschedparam(pthread_self(), policy, &schedp);
@@ -292,10 +292,10 @@ struct sched_param  schedp;
 static void*
 find_pri_range(void *arg)
 {
-priAvailable *prm = arg;
-int           min = sched_get_priority_min(prm->policy);
-int           max = sched_get_priority_max(prm->policy);
-int           low, try;
+    priAvailable *prm = arg;
+    int           min = sched_get_priority_min(prm->policy);
+    int           max = sched_get_priority_max(prm->policy);
+    int           low, try;
 
     if ( -1 == min || -1 == max ) {
         /* something is very wrong; maintain old behavior
@@ -356,10 +356,10 @@ int           low, try;
 
 static void findPriorityRange(commonAttr *a_p)
 {
-priAvailable arg;
-pthread_t    id;
-void         *dummy;
-int          status;
+    priAvailable arg;
+    pthread_t    id;
+    void         *dummy;
+    int          status;
 
     arg.policy = a_p->schedPolicy;
     arg.ok = 0;

@@ -288,10 +288,12 @@ TESTPROD_HOST += cvtFastPerform
 cvtFastPerform_SRCS += cvtFastPerform.cpp
 testHarness_SRCS += cvtFastPerform.cpp
 
+THREAD_CPPFLAGS_NO += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
+nonEpicsThreadPriorityTest_CPPFLAGS += $(THREAD_CPPFLAGS_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
+
 TESTPROD_Linux += nonEpicsThreadPriorityTest
 nonEpicsThreadPriorityTest_SRCS += nonEpicsThreadPriorityTest.cpp
-nonEpicsThreadPriorityTest_LIBS += Com
-nonEpicsThreadPriorityTest_SYS_LIBS += pthread rt
+testHarness_SRCS += nonEpicsThreadPriorityTest.cpp
 TESTS += nonEpicsThreadPriorityTest
 
 include $(TOP)/configure/RULES

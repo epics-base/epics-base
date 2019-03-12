@@ -1,13 +1,25 @@
-#include <pthread.h>
 #include <epicsThread.h>
 #include "epicsUnitTest.h"
 #include "testMain.h"
 #include <stdio.h>
 #include <string.h>
 
+#if defined(DONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING) || \
+   !defined(_POSIX_THREAD_PRIORITY_SCHEDULING)         || \
+   (_POSIX_THREAD_PRIORITY_SCHEDULING <= 0)
+
+MAIN(nonEpicsThreadPriorityTest)
+{
+    testPlan(1);
+    testSkip(1, "Not using POSIX RT-scheduler");
+    return testDone();
+}
+
+#else
+
 static void *nonEpicsTestFunc(void *arg)
 {
-unsigned int pri;
+    unsigned int pri;
     // epicsThreadGetIdSelf()  creates an EPICS context
     // verify that the priority computed by epics context
     // is OK
@@ -22,13 +34,13 @@ unsigned int pri;
 
 static void testFunc(void *arg)
 {
-epicsEventId        ev = (epicsEventId)arg;
-int                 policy;
-struct sched_param  param;
-int                 status;
-pthread_t           tid;
-void               *rval;
-pthread_attr_t      attr;
+    epicsEventId        ev = (epicsEventId)arg;
+    int                 policy;
+    struct sched_param  param;
+    int                 status;
+    pthread_t           tid;
+    void               *rval;
+    pthread_attr_t      attr;
 
     status = pthread_getschedparam(pthread_self(), &policy,&param);
     if ( status ) {
@@ -76,7 +88,7 @@ done:
 
 MAIN(nonEpicsThreadPriorityTest)
 {
-unsigned int pri;
+    unsigned int pri;
     testPlan(4);
     epicsEventId testComplete = epicsEventMustCreate(epicsEventEmpty);
     epicsThreadMustCreate("nonEpicsThreadPriorityTest", epicsThreadPriorityLow,
@@ -93,6 +105,7 @@ unsigned int pri;
         testFail("epicsThreadLowestPriorityLevelAbove failed");
     }
     testOk(48 == pri, "epicsThreadLowestPriorityLevelAbove(47) = %d (!= 48)", pri);
- return testDone();
+    return testDone();
 }
 
+#endif

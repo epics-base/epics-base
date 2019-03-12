@@ -23,8 +23,6 @@ extern "C" {
 typedef struct epicsThreadOSD {
     ELLNODE            node;
     pthread_t          tid;
-    struct sched_param schedParam;
-    int                schedPolicy;
     EPICSTHREADFUNC    createFunc;
     void              *createArg;
     epicsEventId       suspendEvent;

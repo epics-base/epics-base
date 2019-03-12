@@ -135,6 +135,14 @@ static int osi2posixPriority(unsigned osiPriority)
     return oss;
 }
 
+static int osi2posixPriorityForPolicy(unsigned osiPriority, int schedPolicy)
+{
+    if (!pcommonAttr->valid || pcommonAttr->schedPolicy != schedPolicy) {
+        return 0; // assume SCHED_OTHER
+	}
+	return osi2posixPriority( osiPriority );
+}
+
 static unsigned posix2osiPriority(int posixPriority)
 {
     double   slope, osid;
@@ -161,16 +169,23 @@ static unsigned posix2osiPriority(int posixPriority)
 
     return osi;
 }
+
+static void mustGetSchedParam(pthread_t tid, int *schedPolicy, struct sched_param *schedParam)
+{
+    int status;
+    status = pthread_getschedparam(tid,schedPolicy,schedParam);
+    checkStatusQuit(status, "pthread_getschedparam","mustGetSchedParam");
+ }
 #endif
 
 
 epicsShareFunc int epicsThreadGetPosixPriority(epicsThreadId pthreadInfo)
 {
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
-    if (pcommonAttr->schedPolicy != pthreadInfo->schedPolicy)
-        return 0; // assume SCHED_OTHER
-
-    return osi2posixPriority( pthreadInfo->osiPriority );
+    int                schedPolicy;
+    struct sched_param schedParam;
+    mustGetSchedParam(pthreadInfo->tid,&schedPolicy,&schedParam);
+    return osi2posixPriorityForPolicy( pthreadInfo->osiPriority, schedPolicy );
 #else
     return 0;
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
@@ -179,21 +194,20 @@ epicsShareFunc int epicsThreadGetPosixPriority(epicsThreadId pthreadInfo)
 static void setSchedulingPolicy(pthread_attr_t *pattr, epicsThreadOSD *pthreadInfo,int policy)
 {
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
-    int status;
+    int                status;
+    struct sched_param schedParam;
 
     if(!pcommonAttr->valid) return;
 
     status = pthread_attr_getschedparam(
-        pattr,&pthreadInfo->schedParam);
+        pattr,&schedParam);
     checkStatusOnce(status,"pthread_attr_getschedparam");
-    /* Must set schedPolicy first because epicsThreadGetPosixPriority inspects it */
-    pthreadInfo->schedPolicy = policy;
-    pthreadInfo->schedParam.sched_priority = epicsThreadGetPosixPriority(pthreadInfo);
+    schedParam.sched_priority = osi2posixPriorityForPolicy(pthreadInfo->osiPriority, policy);
     status = pthread_attr_setschedpolicy(
         pattr,policy);
     checkStatusOnce(status,"pthread_attr_setschedpolicy");
     status = pthread_attr_setschedparam(
-        pattr,&pthreadInfo->schedParam);
+        pattr,&schedParam);
     checkStatusOnce(status,"pthread_attr_setschedparam");
     status = pthread_attr_setinheritsched(
         pattr,PTHREAD_EXPLICIT_SCHED);
@@ -432,8 +446,6 @@ static void once(void)
 
     pthreadInfo = init_threadInfo("_main_",0,0,0);
     assert(pthreadInfo!=NULL);
-    status = pthread_getschedparam(pthread_self(),&pthreadInfo->schedPolicy,&pthreadInfo->schedParam);
-    checkStatusOnceQuit(status,"pthread_getschedparam","epicsThreadInit");
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
     checkStatusOnceQuit(status,"pthread_setspecific","epicsThreadInit");
     status = mutexLock(&listLock);
@@ -626,6 +638,10 @@ static epicsThreadOSD *createImplicit(void)
     char name[64];
     pthread_t tid;
     int status;
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+    int schedPolicy;
+    struct sched_param schedParam;
+#endif
 
     tid = pthread_self();
     sprintf(name, "non-EPICS_%ld", (long)tid);
@@ -635,12 +651,9 @@ static epicsThreadOSD *createImplicit(void)
     pthreadInfo->osiPriority = 0;
 
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
-    status = pthread_getschedparam(tid,&pthreadInfo->schedPolicy,&pthreadInfo->schedParam);
-    checkStatus(status,"pthread_getschedparam createImplicit");
-    if ( 0 == status && pcommonAttr->valid && pcommonAttr->schedPolicy == pthreadInfo->schedPolicy ) {
-        pthreadInfo->osiPriority =
-                 (pthreadInfo->schedParam.sched_priority - pcommonAttr->minPriority) * 100.0 /
-                    (pcommonAttr->maxPriority - pcommonAttr->minPriority + 1);
+    mustGetSchedParam( tid, &schedPolicy, &schedParam );
+    if ( pcommonAttr->valid && pcommonAttr->schedPolicy == schedPolicy ) {
+        pthreadInfo->osiPriority = posix2osiPriority( schedParam.sched_priority );
     }
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
@@ -706,6 +719,8 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority(epicsThreadId pthreadIn
 {
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     int status;
+    int schedPolicy;
+    struct sched_param schedParam;
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
     assert(epicsThreadOnceCalled);
@@ -713,10 +728,11 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority(epicsThreadId pthreadIn
     pthreadInfo->osiPriority = priority;
 
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
-    if( !pcommonAttr->valid || pcommonAttr->schedPolicy != pthreadInfo->schedPolicy) return;
-    pthreadInfo->schedParam.sched_priority = epicsThreadGetPosixPriority(pthreadInfo);
+    mustGetSchedParam(pthreadInfo->tid, &schedPolicy, &schedParam);
+    if( !pcommonAttr->valid || pcommonAttr->schedPolicy != schedPolicy) return;
+    schedParam.sched_priority = osi2posixPriority( pthreadInfo->osiPriority );
     status = pthread_setschedparam(
-        pthreadInfo->tid, pthreadInfo->schedPolicy, &pthreadInfo->schedParam);
+        pthreadInfo->tid, schedPolicy, &schedParam);
     if(errVerbose) checkStatus(status,"pthread_setschedparam");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 }

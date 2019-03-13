@@ -4,16 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(DONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING) || \
-   !defined(_POSIX_THREAD_PRIORITY_SCHEDULING)         || \
+#if !defined(_POSIX_THREAD_PRIORITY_SCHEDULING)         || \
    (_POSIX_THREAD_PRIORITY_SCHEDULING <= 0)
 
-MAIN(nonEpicsThreadPriorityTest)
-{
-    testPlan(1);
-    testSkip(1, "Not using POSIX RT-scheduler");
-    return testDone();
-}
+#error "Should not try to build this test!"
 
 #else
 

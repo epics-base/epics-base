@@ -288,9 +288,6 @@ TESTPROD_HOST += cvtFastPerform
 cvtFastPerform_SRCS += cvtFastPerform.cpp
 testHarness_SRCS += cvtFastPerform.cpp
 
-THREAD_CPPFLAGS_NO += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
-nonEpicsThreadPriorityTest_CPPFLAGS += $(THREAD_CPPFLAGS_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
-
 ifeq ($(POSIX),YES)
 ifeq ($(USE_POSIX_THREAD_PRIORITY_SCHEDULING),YES)
 TESTPROD_HOST += nonEpicsThreadPriorityTest

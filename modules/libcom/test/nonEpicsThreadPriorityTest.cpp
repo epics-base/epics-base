@@ -4,13 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#if !defined(_POSIX_THREAD_PRIORITY_SCHEDULING)         || \
-   (_POSIX_THREAD_PRIORITY_SCHEDULING <= 0)
-
-#error "Should not try to build this test!"
-
-#else
-
 static void *nonEpicsTestFunc(void *arg)
 {
     unsigned int pri;
@@ -101,5 +94,3 @@ MAIN(nonEpicsThreadPriorityTest)
     testOk(48 == pri, "epicsThreadLowestPriorityLevelAbove(47) = %d (!= 48)", pri);
     return testDone();
 }
-
-#endif

@@ -436,21 +436,27 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
 
     if(claim_src) {
         dbRec2Pvt(psrc)->procThread = self;
-    } else {
-        assert(dbRec2Pvt(psrc)->procThread==self);
     }
     if(claim_dst) {
         dbRec2Pvt(pdst)->procThread = self;
-    } else {
-        assert(dbRec2Pvt(psrc)->procThread==self);
+    }
+
+    if(dbRec2Pvt(psrc)->procThread!=self ||
+       dbRec2Pvt(pdst)->procThread!=self) {
+        errlogPrintf("Logic Error: processTarget 1 from %p, %s(%p) -> %s(%p)\n",
+                     self, psrc->name, dbRec2Pvt(psrc), pdst->name, dbRec2Pvt(pdst));
     }
 
     status = dbProcess(pdst);
 
     psrc->pact = pact;
 
-    assert(dbRec2Pvt(psrc)->procThread==self);
-    assert(dbRec2Pvt(pdst)->procThread==self);
+    if(dbRec2Pvt(psrc)->procThread!=self ||
+       dbRec2Pvt(pdst)->procThread!=self) {
+        errlogPrintf("Logic Error: processTarget 2 from %p, %s(%p) -> %s(%p)\n",
+                     self, psrc->name, dbRec2Pvt(psrc), pdst->name, dbRec2Pvt(pdst));
+    }
+
     if(claim_src) {
         dbRec2Pvt(psrc)->procThread = NULL;
     }

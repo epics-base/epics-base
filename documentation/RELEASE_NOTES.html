@@ -21,7 +21,7 @@ which should also be read to understand what has changed since an earlier
 release.</p>
 
 
-<h1 align="center">EPICS Release 7.0.3</h1>
+<h1 align="center">EPICS Release 7.0.2.1</h1>
 
 <!-- Insert new items immediately below this template ...
 
@@ -30,6 +30,18 @@ release.</p>
 <p>Description</p>
 
 -->
+
+<h3>Fix DB_LINK loop breaking</h3>
+
+<p>A regression was introduced in 7.0.2 which caused record chains with
+loops to be incorrectly broken.  Processing should be skipped when a
+DB_LINK with Process Passive (PP) closes a loop to a synchronous record.</p>
+
+<p>Instead in 7.0.2 the targeted record would be processed if processing began with
+a remote action (or other caller of dbPutField() ).  The would result in the loop
+running a second time.  The loop would be broken on the second iteration.</p>
+
+<p><a href="https://bugs.launchpad.net/epics-base/+bug/1809570">See lp #1809570</a></p>
 
 <h3>Old dbStaticLib APIs removed</h3>
 

@@ -4,6 +4,18 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __rtems__
+
+/* RTEMS is posix but currently does not use the pthread API */
+MAIN(nonEpicsThreadPriorityTest)
+{
+    testPlan(1);
+    testSkip(1, "Platform does not use pthread API");
+    return testDone();
+}
+
+#else
+
 static void *nonEpicsTestFunc(void *arg)
 {
     unsigned int pri;
@@ -94,3 +106,5 @@ MAIN(nonEpicsThreadPriorityTest)
     testOk(48 == pri, "epicsThreadLowestPriorityLevelAbove(47) = %d (!= 48)", pri);
     return testDone();
 }
+
+#endif

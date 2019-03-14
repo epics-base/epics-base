@@ -292,7 +292,7 @@ ifeq ($(POSIX),YES)
 ifeq ($(USE_POSIX_THREAD_PRIORITY_SCHEDULING),YES)
 TESTPROD_HOST += nonEpicsThreadPriorityTest
 nonEpicsThreadPriorityTest_SRCS += nonEpicsThreadPriorityTest.cpp
-nonEpicsThreadPriorityTest_SYS_LIBS += pthread rt
+nonEpicsThreadPriorityTest_SYS_LIBS += $(POSIX_LDLIBS:-l%=%)
 testHarness_SRCS += nonEpicsThreadPriorityTest.cpp
 epicsRunLibComTests_CFLAGS += -DHAVE_PTHREAD_PRIORITY_SCHEDULING
 TESTS += nonEpicsThreadPriorityTest

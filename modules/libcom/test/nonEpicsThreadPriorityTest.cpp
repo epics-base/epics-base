@@ -99,11 +99,11 @@ MAIN(nonEpicsThreadPriorityTest)
     if ( epicsThreadBooleanStatusSuccess != epicsThreadHighestPriorityLevelBelow(48, &pri) ) {
         testFail("epicsThreadHighestPriorityLevelBelow failed");
     }
-    testOk(47 == pri, "epicsThreadHighestPriorityLevelBelow(48) = %d (!= 47)", pri);
+    testOk(47 == pri, "epicsThreadHighestPriorityLevelBelow(48) = %d (expected: 47)", pri);
    	if ( epicsThreadBooleanStatusSuccess != epicsThreadLowestPriorityLevelAbove(47, &pri) ) {
         testFail("epicsThreadLowestPriorityLevelAbove failed");
     }
-    testOk(48 == pri, "epicsThreadLowestPriorityLevelAbove(47) = %d (!= 48)", pri);
+    testOk(48 == pri, "epicsThreadLowestPriorityLevelAbove(47) = %d (expected: 48)", pri);
     return testDone();
 }
 

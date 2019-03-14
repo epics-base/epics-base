@@ -737,15 +737,19 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority(epicsThreadId pthreadIn
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 }
 
-epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriorityLevelBelow(
-    unsigned int priority, unsigned *pPriorityJustBelow)
+/* Step the OSI-priority in the coarser-grained domain: if there are more
+ * OSI than OSS levels then step in the OSS domain otherwise in the OSI domain.
+ */
+static epicsThreadBooleanStatus
+coarserGrainedPriorityStep(unsigned priority, int step, unsigned *pNewPriority)
 {
-    unsigned newPriority = priority - 1;
+    unsigned newPriority = priority + step;
+
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
-    if ( pcommonAttr->valid ) {
+    if ( pcommonAttr->valid && step != 0 ) {
         int newOss;
         if ( epicsThreadPriorityMax - epicsThreadPriorityMin > pcommonAttr->maxPriority - pcommonAttr->minPriority ) {
-            newOss = osi2posixPriority( priority ) - 1;
+            newOss = osi2posixPriority( priority ) + step;
             if ( newOss < pcommonAttr->minPriority ) {
                 return epicsThreadBooleanStatusFail;
             }
@@ -757,48 +761,37 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
             newOss = osi2posixPriority( newPriority );
         }
         newPriority = posix2osiPriority( newOss );
-        if ( newPriority >= priority ) {
-            return epicsThreadBooleanStatusFail;
-        }
+		if ( step < 0 ) {
+			if ( newPriority >= priority ) {
+            	return epicsThreadBooleanStatusFail;
+			}
+        } else {
+			if ( newPriority <= priority ) {
+            	return epicsThreadBooleanStatusFail;
+			}
+		}
     }
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
-    /* test against Max necessary because priorities are unsigned; this discovers wrap-around */
+    /* test against Max necessary (even for negative steps) because priorities are unsigned;
+	 * this discovers wrap-around
+	 */
     if ( newPriority <= epicsThreadPriorityMax && newPriority >= epicsThreadPriorityMin ) {
-        *pPriorityJustBelow = newPriority;
+        *pNewPriority = newPriority;
         return epicsThreadBooleanStatusSuccess;
     }
     return epicsThreadBooleanStatusFail;
 }
 
+epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriorityLevelBelow(
+    unsigned int priority, unsigned *pPriorityJustBelow)
+{
+	return coarserGrainedPriorityStep( priority, -1, pPriorityJustBelow );
+}
+
 epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityLevelAbove(
     unsigned int priority, unsigned *pPriorityJustAbove)
 {
-    unsigned newPriority = priority + 1;
-#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
-    if ( pcommonAttr->valid ) {
-        int newOss;
-        if ( epicsThreadPriorityMax - epicsThreadPriorityMin > pcommonAttr->maxPriority - pcommonAttr->minPriority ) {
-            newOss = osi2posixPriority( priority ) + 1;
-            if ( newOss > pcommonAttr->maxPriority ) {
-                return epicsThreadBooleanStatusFail;
-            }
-        } else {
-            if ( newPriority > epicsThreadPriorityMax ) {
-                return epicsThreadBooleanStatusFail;
-            }
-            newOss = osi2posixPriority( newPriority );
-        }
-        newPriority = posix2osiPriority( newOss );
-        if ( newPriority <= priority ) {
-            return epicsThreadBooleanStatusFail;
-        }
-    }
-#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
-    if ( newPriority <= epicsThreadPriorityMax ) {
-        *pPriorityJustAbove = newPriority;
-        return epicsThreadBooleanStatusSuccess;
-    }
-    return epicsThreadBooleanStatusFail;
+	return coarserGrainedPriorityStep( priority, +1, pPriorityJustAbove );
 }
 
 epicsShareFunc int epicsShareAPI epicsThreadIsEqual(epicsThreadId p1, epicsThreadId p2)

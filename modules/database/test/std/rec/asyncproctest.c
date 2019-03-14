@@ -9,6 +9,7 @@
 
 #include <testMain.h>
 #include <dbUnitTest.h>
+#include <errlog.h>
 #include <dbCommon.h>
 #include <dbAccess.h>
 #include <epicsEvent.h>
@@ -16,6 +17,7 @@
 #include <iocsh.h>
 #include "registryFunction.h"
 #include <subRecord.h>
+#include <dbScan.h>
 
 epicsEventId done;
 static int waitFor;
@@ -28,11 +30,17 @@ long doneSubr(subRecord *prec)
     return 0;
 }
 
+static
+void dummydone(void *usr, struct dbCommon* prec)
+{
+    epicsEventMustTrigger(done);
+}
+
 void asyncproctest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(asyncproctest)
 {
-    testPlan(21);
+    testPlan(27);
 
     done = epicsEventMustCreate(epicsEventEmpty);
 
@@ -98,6 +106,40 @@ MAIN(asyncproctest)
 
     testdbGetFieldEqual("chain3", DBF_LONG, 7);
     testdbGetFieldEqual("chain3.A", DBF_LONG, 2);
+
+    testDiag("===== Chain 4 ======");
+
+    {
+        dbCommon *dummy=testdbRecordPtr("chain4_dummy");
+
+        testdbPutFieldOk("chain4_pos.PROC", DBF_LONG, 0);
+
+        /* sync once queue to wait for any queued RPRO */
+        scanOnceCallback(dummy, dummydone, NULL);
+
+        if (epicsEventWaitWithTimeout(done, 10.0) != epicsEventOK)
+            testAbort("Processing timed out");
+
+        testdbGetFieldEqual("chain4_pos", DBF_SHORT, 1);
+        testdbGetFieldEqual("chain4_rel", DBF_SHORT, 1);
+        testdbGetFieldEqual("chain4_lim", DBF_SHORT, 1);
+    }
+
+    testDiag("===== Chain 5 ======");
+
+    {
+        dbCommon *dummy=testdbRecordPtr("chain4_dummy");
+
+        testdbPutFieldOk("chain5_cnt.PROC", DBF_LONG, 0);
+
+        /* sync once queue to wait for any queued RPRO */
+        scanOnceCallback(dummy, dummydone, NULL);
+
+        if (epicsEventWaitWithTimeout(done, 10.0) != epicsEventOK)
+            testAbort("Processing timed out");
+
+        testdbGetFieldEqual("chain5_cnt", DBF_SHORT, 1);
+    }
 
     testIocShutdownOk();
 

@@ -56,7 +56,7 @@
 #include "dbAddr.h"
 #include "dbBase.h"
 #include "dbBkpt.h"
-#include "dbCommon.h"
+#include "dbCommonPvt.h"
 #include "dbConvertFast.h"
 #include "dbConvert.h"
 #include "db_field_log.h"
@@ -386,8 +386,11 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
 {
     char context[40] = "";
     int trace = dbAccessDebugPUTF && *dbLockSetAddrTrace(psrc);
+    int claim_src = dbRec2Pvt(psrc)->procThread==NULL;
+    int claim_dst = psrc!=pdst && dbRec2Pvt(pdst)->procThread==NULL;
     long status;
     epicsUInt8 pact = psrc->pact;
+    epicsThreadId self = epicsThreadGetIdSelf();
 
     psrc->pact = TRUE;
 
@@ -406,14 +409,11 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
             printf("%s: '%s' -> '%s' with PUTF=%u\n",
                 context, psrc->name, pdst->name, psrc->putf);
 
-        if (pdst->putf)
-            errlogPrintf("Warning: '%s.PUTF' found true with PACT false\n",
-                pdst->name);
-
         pdst->putf = psrc->putf;
     }
-    else if (psrc->putf) {
-        /* The dst record is busy (awaiting async reprocessing) and
+    else if (psrc->putf && claim_dst) {
+        /* The dst record is busy (awaiting async reprocessing),
+         * not being processed recursively by us, and
          * we were originally triggered by a call to dbPutField(),
          * so we mark the dst record for reprocessing once the async
          * completion is over.
@@ -426,17 +426,43 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
         pdst->rpro = TRUE;
     }
     else {
-        /* The dst record is busy, but we weren't triggered by a call
-         * to dbPutField(). Do nothing.
+        /* The dst record is busy, but either is being processed recursively,
+         * or wasn't triggered by a call to dbPutField(). Do nothing.
          */
         if (trace)
             printf("%s: '%s' -> Active '%s', done\n",
                 context, psrc->name, pdst->name);
     }
 
+    if(claim_src) {
+        dbRec2Pvt(psrc)->procThread = self;
+    }
+    if(claim_dst) {
+        dbRec2Pvt(pdst)->procThread = self;
+    }
+
+    if(dbRec2Pvt(psrc)->procThread!=self ||
+       dbRec2Pvt(pdst)->procThread!=self) {
+        errlogPrintf("Logic Error: processTarget 1 from %p, %s(%p) -> %s(%p)\n",
+                     self, psrc->name, dbRec2Pvt(psrc), pdst->name, dbRec2Pvt(pdst));
+    }
+
     status = dbProcess(pdst);
 
     psrc->pact = pact;
+
+    if(dbRec2Pvt(psrc)->procThread!=self ||
+       dbRec2Pvt(pdst)->procThread!=self) {
+        errlogPrintf("Logic Error: processTarget 2 from %p, %s(%p) -> %s(%p)\n",
+                     self, psrc->name, dbRec2Pvt(psrc), pdst->name, dbRec2Pvt(pdst));
+    }
+
+    if(claim_src) {
+        dbRec2Pvt(psrc)->procThread = NULL;
+    }
+    if(claim_dst) {
+        dbRec2Pvt(pdst)->procThread = NULL;
+    }
 
     return status;
 }

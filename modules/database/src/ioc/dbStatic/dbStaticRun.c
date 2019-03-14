@@ -179,7 +179,7 @@ long dbFreeRecord(DBENTRY *pdbentry)
     if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
     if(!precnode->precord) return(S_dbLib_recNotFound);
-    free(CONTAINER(precnode->precord, dbCommonPvt, common));
+    free(dbRec2Pvt(precnode->precord));
     precnode->precord = NULL;
     return(0);
 }

@@ -36,7 +36,10 @@ case "$PREFIX" in
 esac
 
 # Check for both <tag> and R<tag>
-if ! [ `git tag -l $TOPREV` ]
+if [ "$TOPREV" = "HEAD" ]
+then
+  true
+elif ! [ `git tag -l $TOPREV` ]
 then
   if [ `git tag -l R$TOPREV` ]
   then

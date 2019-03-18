@@ -288,7 +288,7 @@ TESTPROD_HOST += cvtFastPerform
 cvtFastPerform_SRCS += cvtFastPerform.cpp
 testHarness_SRCS += cvtFastPerform.cpp
 
-ifeq ($(POSIX),YES)
+ifeq ($(OS_CLASS),Linux)
 ifeq ($(USE_POSIX_THREAD_PRIORITY_SCHEDULING),YES)
 TESTPROD_HOST += nonEpicsThreadPriorityTest
 nonEpicsThreadPriorityTest_SRCS += nonEpicsThreadPriorityTest.cpp

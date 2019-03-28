@@ -37,6 +37,8 @@ that should be performed when creating production releases of EPICS Base.</p>
 
 <h3>The Release Process</h3>
 
+<h4>Full Process</h4>
+
 <p>The version released on the Feature Freeze date is designated the first
 pre-release, <tt>-pre1</tt>. The first release candidate <tt>-rc1</tt> is the
 first version that has undergone testing by the developers and has shown no
@@ -48,6 +50,12 @@ pre-releases are announced to to the developers via the core-talk list. After a
 release candidate has been available for 2 weeks without any new problems being
 reported or major changes having to be committed, the final release can be
 made.</p>
+
+<h4>Short Process for Patch Releases</h4>
+
+<p>The Patch Release date and its scope are agreed upon about four weeks
+ahead of time. If no blocking issues are raised, the release is made by the
+release manager.</p>
 
 <h3>Roles</h3>
 
@@ -322,6 +330,21 @@ made.</p>
           </tt></blockquote>
         </td>
       </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>Release Manager</td>
+      <td>Edit and commit changes to the EPICS Base version number file and
+        the embedded module version files:
+        <ul>
+          <li>configure/CONFIG_BASE_VERSION </li>
+          <li>modules/libcom/configure/CONFIG_LIBCOM_VERSION</li>
+          <li>modules/ca/configure/CONFIG_CA_VERSION</li>
+          <li>modules/database/configure/CONFIG_DATABASE_VERSION</li>
+        </ul>
+        Version numbers should be set to the next expected patch release,
+        with a "-DEV" tag added (where applicable).
+      </td>
+    </tr>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>

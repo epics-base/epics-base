@@ -49,7 +49,13 @@
 #include "link.h"
 #include "special.h"
 
-#define EVENTSPERQUE    32
+/* Queue size based on Ethernet MTU of 1500 bytes.
+ * Assume <=66 bytes of ethernet+IP+TCP overhead
+ * and 40 byte CA messages (DBF_TIME_DOUBLE).
+ *
+ * (1500-66)/40 -> 35
+ */
+#define EVENTSPERQUE    36
 #define EVENTENTRIES    4      /* the number of que entries for each event */
 #define EVENTQUESIZE    (EVENTENTRIES  * EVENTSPERQUE)
 #define EVENTQEMPTY     ((struct evSubscrip *)NULL)

@@ -20,6 +20,7 @@
 #include "timerPrivate.h"
 
 timerQueueActiveMgr::timerQueueActiveMgr ()
+    :mutex(__FILE__, __LINE__)
 {
 }
 

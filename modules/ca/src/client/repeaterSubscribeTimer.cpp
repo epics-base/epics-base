@@ -37,6 +37,7 @@ repeaterSubscribeTimer::repeaterSubscribeTimer (
     epicsMutex & cbMutexIn, cacContextNotify & ctxNotifyIn ) :
     timer ( queueIn.createTimer () ), iiu ( iiuIn ), 
         cbMutex ( cbMutexIn ),ctxNotify ( ctxNotifyIn ),
+        stateMutex(__FILE__, __LINE__),
         attempts ( 0 ), registered ( false ), once ( false )
 {
 }

@@ -67,6 +67,8 @@ cacService * ca_client_context::pDefaultService = 0;
 epicsMutex * ca_client_context::pDefaultServiceInstallMutex;
 
 ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
+    mutex(__FILE__, __LINE__),
+    cbMutex(__FILE__, __LINE__),
     createdByThread ( epicsThreadGetIdSelf () ),
     ca_exception_func ( 0 ), ca_exception_arg ( 0 ),
     pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 ),

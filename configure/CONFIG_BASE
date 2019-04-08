@@ -30,10 +30,11 @@ endif # BASE_TOP
 #---------------------------------------------------------------
 # Where to find the installed build tools
 #   Windows does not like commands with relative paths starting ../
-#   but the Perl scripts in TOP/src/tools are OK
+#   so TOOLS must be an absolute path, although Perl scripts are OK.
+#   FIND_TOOL is for scripts run before the build reaches src/tools.
 
 TOOLS = $(abspath $(EPICS_BASE_HOST_BIN))
-FIND_TOOL = $(firstword $(wildcard $(TOOLS)/$(1) $(TOP)/src/tools/$(1)))
+FIND_TOOL = $(firstword $(wildcard $(TOOLS)/$(1) $(EPICS_BASE)/src/tools/$(1)))
 
 #---------------------------------------------------------------
 # EPICS Base build tools and tool flags
@@ -54,3 +55,8 @@ INSTALL_LIBRARY = $(INSTALL)
 # tools for making header dependencies and variable replacement
 MKMF       = $(PERL) $(TOOLS)/mkmf.pl
 REPLACEVAR = $(PERL) $(TOOLS)/replaceVAR.pl
+
+#---------------------------------------------------------------
+# tools for cleaning out unwanted files
+CVSCLEAN = $(call FIND_TOOL,cvsclean.pl)
+DEPCLEAN = $(call FIND_TOOL,depclean.pl)

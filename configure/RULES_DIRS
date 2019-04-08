@@ -86,10 +86,18 @@ $(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
 $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
     $(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
-.PHONY : $(DIRS) all host rebuild
-.PHONY : $(ARCHS) $(ACTIONS)
-.PHONY : $(dirActionTargets) $(dirArchTargets)
-.PHONY : $(dirActionArchTargets)
-.PHONY : $(actionArchTargets)
+
+cvsclean:
+	$(PERL) $(CVSCLEAN)
+depclean:
+	$(PERL) $(DEPCLEAN)
+
+
+.PHONY: $(DIRS) all host rebuild
+.PHONY: $(ARCHS) $(ACTIONS)
+.PHONY: $(dirActionTargets) $(dirArchTargets)
+.PHONY: $(dirActionArchTargets)
+.PHONY: $(actionArchTargets)
+.PHONY: cvsclean depclean
 
 include $(CONFIG)/RULES_COMMON

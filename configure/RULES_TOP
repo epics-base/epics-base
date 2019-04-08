@@ -11,13 +11,7 @@ include $(CONFIG)/RULES_DIRS
 
 distclean: realclean cvsclean realuninstall
 
-CVSCLEAN = $(call FIND_TOOL,cvsclean.pl)
-cvsclean:
-	$(PERL) $(CVSCLEAN)
 
-DEPCLEAN = $(call FIND_TOOL,depclean.pl)
-depclean:
-	$(PERL) $(DEPCLEAN)
 
 realuninstall: uninstallDirs
 	$(RMDIR) $(INSTALL_LOCATION_BIN)
@@ -66,7 +60,12 @@ help:
 	@echo "                      Cannot be used within an O.<arch> dir"
 	@echo "     rebuild        - Same as clean install"
 	@echo "     archclean      - Removes O.<arch> dirs but not O.Common dir"
-	@echo "     runtests       - Run self-tests, summarize results"
+	@echo "     depclean       - Removes .d files from all O.<arch> dirs."
+	@echo "     cvsclean       - Removes backup files etc. from all dirs below"
+	@echo "     runtests       - Run self-tests, summarize results immediately"
+	@echo "     tapfiles       - Run self-tests, save to O.<arch>/*.tap files"
+	@echo "     test-results   - Summarize all O.<arch>/*.tap files"
+	@echo "     clean-tests    - Removes all O.<arch>/*.tap files"
 	@echo "\"Partial\" build targets supported by Makefiles:"
 	@echo "     host           - Builds and installs $(EPICS_HOST_ARCH) only."
 	@echo "     inc$(DIVIDER)<arch>     - Installs <arch> only header files."
@@ -79,15 +78,12 @@ help:
 	@echo "     uninstall      - Remove install directories created by this hostarch."
 	@echo "     realuninstall  - Removes ALL install dirs"
 	@echo "     distclean      - Same as realclean cvsclean realuninstall."
-	@echo "     depclean       - Removes all .d files from O.<arch> directories."
-	@echo "     cvsclean       - Removes cvs .#* files in all dirs of directory tree"
 	@echo "     help           - Prints this list of valid make targets "
 	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
-.PHONY: cleandirs distclean cvsclean depclean
+.PHONY: cleandirs distclean uninstall help
 .PHONY: realuninstall archuninstall uninstallDirs
-.PHONY: uninstall help
 
 # Include <top>/cfg/TOP_RULES* files from tops defined in RELEASE* files
 #

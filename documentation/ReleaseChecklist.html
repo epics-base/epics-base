@@ -53,9 +53,10 @@ made.</p>
 
 <h4>Short Process for Patch Releases</h4>
 
-<p>The Patch Release date and its scope are agreed upon about four weeks
-ahead of time. If no blocking issues are raised, the release is made by the
-release manager.</p>
+<p>The Patch Release date and its scope are agreed upon a few weeks ahead of the
+release. If no blocking issues are raised, the release is made by the Release
+Manager on or as soon as possible after that date, following the steps below
+starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
 
 <h3>Roles</h3>
 
@@ -72,6 +73,7 @@ release manager.</p>
     <dd>Responsible for the EPICS website</dd>
 </dl>
 
+<form>
 <table border="1" width="100%">
   <tbody>
     <tr>
@@ -132,14 +134,14 @@ release manager.</p>
       <th colspan="3">Creating pre-release and release-candidate versions</th>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <!-- Submodules... -->
       <td>Edit and commit changes to the EPICS version number file
         configure/CONFIG_BASE_VERSION.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Tag the module in Git, using these tag conventions:
         <ul>
@@ -161,7 +163,7 @@ release manager.</p>
         that are only tagged at the final release.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Export the tagged version into a tarfile. The <tt>make-tar.sh</tt>
         script generates a gzipped tarfile directly from the tag, excluding the
@@ -177,27 +179,27 @@ release manager.</p>
         </td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Test the tarfile by extracting its contents and building it on at
         least one supported platform.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Copy the tarfile and its signature to the Base download area of the
         website and add the new files to the website Base download index
         page.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Create or update a website subdirectory to hold the release
         documentation, and copy in selected files from the base/documentation
         and base/html directories of the tarfile.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Create or modify the webpage for the new release with links to the
         release documents and tar file. Pre-release and release-candidate
@@ -257,10 +259,11 @@ release manager.</p>
       </tr>
 
     <tr>
-      <th colspan="3">Release Approval</th>
+      <th colspan="3" id="ReleaseApproval">
+        Release Approval</th>
     </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Obtain a positive <q>Ok to release</q> from all platform developers
         once a release candidate version has gone for 2 weeks without any major
@@ -270,7 +273,7 @@ release manager.</p>
       <th colspan="3">Creating the final release version</th>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>
         <p>For each external submodule, check if the module's release version
@@ -282,7 +285,7 @@ release manager.</p>
           commit.</p></td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Edit and commit changes to the EPICS Base version number file and
         the embedded module version files:
@@ -294,33 +297,33 @@ release manager.</p>
           </ul></td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for 7.0.2' R7.0.2</i>
+          git tag -m 'ANJ: Tagged for 7.0.2.2' R7.0.2.2</i>
           </tt></blockquote>
         Don't push the new tag to the Launchpad repository yet.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Export the tagged version into a tarfile. The <tt>make-tar.sh</tt>
         script generates a gzipped tarfile directly from the tag, excluding the
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.2 base-7.0.2.tar.gz base-7.0.2/
+          ./.tools/make-tar.sh R7.0.2.2 base-7.0.2.2.tar.gz base-7.0.2.2/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-7.0.2.tar.gz
+          gpg --armor --sign --detach-sig base-7.0.2.2.tar.gz
           </tt></blockquote>
         </td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Test the tar file by extracting its contents and building it on at
         least one supported platform. When this succeeds the new git tag can be
@@ -331,7 +334,7 @@ release manager.</p>
         </td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Edit and commit changes to the EPICS Base version number file and
         the embedded module version files:
@@ -346,13 +349,13 @@ release manager.</p>
       </td>
     </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Copy the tarfile and its signature to the Base download area of the
         website.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Find all Launchpad bug reports with the status Fix Committed which
         have been fixed in this release and mark them Fix Released.</td>
@@ -361,48 +364,49 @@ release manager.</p>
       <th colspan="3">Publish and Announce it</th>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Upload the tar file and its <tt>.asc</tt> signature file to the
         Launchpad milestone for this release version.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Update the website subdirectory that holds the release
         documentation, and copy in the files from the base/documentation
         directory of the tarfile.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Update the webpage for the new release with links to the release
         documents and tar file.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Add the new release tar file to the website Base download index
         page.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Link to the release webpage from other relevent areas of the
         website - update front page and sidebars.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Add an entry to the website News page, linking to the new version
         webpage.</td>
       </tr>
     <tr>
-      <td>&nbsp;</td>
+      <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Announce the release on the tech-talk mailing list.</td>
       </tr>
     </tbody>
   </table>
+</form>
 </body>
 </html>

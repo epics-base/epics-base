@@ -30,6 +30,44 @@ release.</p>
 
 -->
 
+<h3>Build System changes</h3>
+
+<ul>
+
+<li>The GNUmake build targets <tt>cvsclean</tt> and <tt>depclean</tt> are now
+available from any directory; previously they were only available from
+application top directories.</li>
+
+<li>The approach that EPICS Base uses for building submodules inside the parent
+module looks useful for support modules too. The rules for building submodules
+have been modified and extracted into a new <tt>RULES_MODULES</tt> file, so a
+support module will be able to use them too without having to copy them into its
+own <tt>modules/Makefile</tt>. There are some specific requirements that support
+modules and their submodules must follow, which are described as comments in the
+new <tt>base/configure/RULES_MODULES</tt> file itself.</li>
+
+</ul>
+
+<h3>EPICS_BASE_VERSION Update Policy change</h3>
+
+<p>In the past, a build of EPICS using sources checked out from the repository
+branch between official releases would have shown the version number of the
+previous release, followed by a <q>-DEV</q> suffix, for example
+<q>7.0.2.1-DEV</q>.</p>
+
+<p>The policy that controls when the number gets updated has been changed, and
+now immediately after a release has been tagged the version number will be
+updated to the next patch release version, plus the <q>-DEV</q> suffix as
+before. Thus following <q>7.0.2.2</q> the version number will show as
+<q>7.0.2.3-DEV</q>. This does not require the next official release to be
+numbered <q>7.0.2.3</q> though, it could become <q>7.0.3</q> or even
+<q>7.1.0</q> if the changes incorporated into it are more substantial than bug
+fixes.</p>
+
+<h3>Drop CLOCK_MONOTONIC_RAW from posix/osdMonotonic.c</h3>
+
+<p>Turns out this is ~10x slower to query than CLOCK_MONOTONIC.</p>
+
 
 <h1 align="center">EPICS Release 7.0.2.1</h1>
 

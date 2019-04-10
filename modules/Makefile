@@ -40,26 +40,4 @@ example_DEPEND_DIRS = pva2pva pvaClient
 # Allow sites to add extra submodules
 -include Makefile.local
 
-# Add only checked-out submodules to DIRS
-DIRS += $(subst /Makefile,,$(wildcard $(addsuffix /Makefile, $(SUBMODULES))))
-
-include $(TOP)/configure/RULES_DIRS
-
-INSTALL_LOCATION_ABS := $(abspath $(INSTALL_LOCATION))
-RELEASE_LOCAL := RELEASE.$(EPICS_HOST_ARCH).local
-
-# Ensure that RELEASE.<host>.local exists before doing anything else
-all host $(DIRS) $(ARCHS) $(ACTIONS) $(dirActionTargets) $(dirArchTargets) \
-    $(dirActionArchTargets) $(actionArchTargets): | $(RELEASE_LOCAL)
-
-# Convenience target
-RELEASE.host: $(RELEASE_LOCAL)
-
-$(RELEASE_LOCAL): Makefile CONFIG_SITE.local
-	$(ECHO) Creating $@ with
-	$(ECHO) "    $(PARENT_MODULE) = $(INSTALL_LOCATION_ABS)"
-	@echo $(PARENT_MODULE) = $(INSTALL_LOCATION_ABS)> $@
-realclean:
-	$(RM) $(wildcard RELEASE.*.local)
-
-.PHONY: RELEASE.host realclean
+include $(TOP)/configure/RULES_MODULES

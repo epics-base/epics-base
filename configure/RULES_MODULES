@@ -1,0 +1,47 @@
+#*************************************************************************
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+# Support modules can use these rules to build submodules too.
+#
+# The requirements to do so are:
+#    1. Create a file CONFIG_SITE.local in the same directory as the
+#       Makefile, which defines these variables (the last one is empty):
+#           PARENT_MODULE - The name submodules call their parent
+#           INSTALL_LOCATION := $($(PARENT_MODULE))
+#           CONFIG_INSTALLS =
+#    2. The Makefile must set TOP and include $(TOP)/configure/CONFIG and
+#       CONFIG_SITE.local
+#    3. Submodules are added to the SUBMODULES variable in the Makefile
+#    4. Dependencies between submodules must be set using
+#           <name>_DEPEND_DIRS = <prerequisites>
+#    5. The Makefile must end by including $(TOP)/configure/RULES_MODULES
+#    6. Submodules must have a configure/RELEASE file that contains
+#           -include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local
+#    7. Submodules must have a configure/CONFIG_SITE file that contains
+#           -include $(TOP)/../CONFIG_SITE.local
+
+# Add checked-out submodules to DIRS
+DIRS += $(subst /Makefile,,$(wildcard $(addsuffix /Makefile, $(SUBMODULES))))
+
+include $(CONFIG)/RULES_DIRS
+
+INSTALL_LOCATION_ABS := $(abspath $(INSTALL_LOCATION))
+RELEASE_LOCAL := RELEASE.$(EPICS_HOST_ARCH).local
+
+# Ensure that RELEASE.<host>.local exists before doing anything else
+all host $(DIRS) $(ARCHS) $(ACTIONS) $(dirActionTargets) $(dirArchTargets) \
+    $(dirActionArchTargets) $(actionArchTargets): | $(RELEASE_LOCAL)
+
+# Convenience target
+RELEASE.host: $(RELEASE_LOCAL)
+
+$(RELEASE_LOCAL): Makefile CONFIG_SITE.local
+	$(ECHO) Creating $@ with
+	$(ECHO) "    $(PARENT_MODULE) = $(INSTALL_LOCATION_ABS)"
+	@echo $(PARENT_MODULE) = $(INSTALL_LOCATION_ABS)> $@
+realclean:
+	$(RM) $(wildcard RELEASE.*.local)
+
+.PHONY: RELEASE.host realclean

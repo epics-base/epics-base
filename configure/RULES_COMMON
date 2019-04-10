@@ -19,6 +19,7 @@ $(sort $(SHOW_MAKEFILES)): show-makefile.%:
 
 .PHONY: show-makefiles show-makefile.%
 
+
 # These rules support printing a Makefile variable values.
 # Many variables are only set inside an O.<arch> build directory.
 #   make PRINT.T_A
@@ -28,6 +29,17 @@ PRINT.%:
 	@echo $(PRINT_Var) = '$($(PRINT_Var))'
 
 .PHONY: PRINT PRINT.%
+
+
+# Clean rules for recursively deleting editor backup files
+# and dependency (.d) files from CWD and below.
+
+cvsclean:
+	$(PERL) $(CVSCLEAN)
+depclean:
+	$(PERL) $(DEPCLEAN)
+
+.PHONY: cvsclean depclean
 
 
 #  User specific rules

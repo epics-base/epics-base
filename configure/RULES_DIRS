@@ -87,17 +87,10 @@ $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
     $(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
 
-cvsclean:
-	$(PERL) $(CVSCLEAN)
-depclean:
-	$(PERL) $(DEPCLEAN)
-
-
 .PHONY: $(DIRS) all host rebuild
 .PHONY: $(ARCHS) $(ACTIONS)
 .PHONY: $(dirActionTargets) $(dirArchTargets)
 .PHONY: $(dirActionArchTargets)
 .PHONY: $(actionArchTargets)
-.PHONY: cvsclean depclean
 
 include $(CONFIG)/RULES_COMMON

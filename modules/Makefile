@@ -5,6 +5,7 @@
 
 TOP = ..
 include $(TOP)/configure/CONFIG
+include CONFIG_SITE.local
 
 # Submodules for bundle build
 SUBMODULES += libcom
@@ -51,8 +52,14 @@ RELEASE_LOCAL := RELEASE.$(EPICS_HOST_ARCH).local
 all host $(DIRS) $(ARCHS) $(ACTIONS) $(dirActionTargets) $(dirArchTargets) \
     $(dirActionArchTargets) $(actionArchTargets): | $(RELEASE_LOCAL)
 
-$(RELEASE_LOCAL):
-	$(ECHO) Creating $@, EPICS_BASE = $(INSTALL_LOCATION_ABS)
-	@echo EPICS_BASE = $(INSTALL_LOCATION_ABS)> $@
+# Convenience target
+RELEASE.host: $(RELEASE_LOCAL)
+
+$(RELEASE_LOCAL): Makefile CONFIG_SITE.local
+	$(ECHO) Creating $@ with
+	$(ECHO) "    $(PARENT_MODULE) = $(INSTALL_LOCATION_ABS)"
+	@echo $(PARENT_MODULE) = $(INSTALL_LOCATION_ABS)> $@
 realclean:
 	$(RM) $(wildcard RELEASE.*.local)
+
+.PHONY: RELEASE.host realclean

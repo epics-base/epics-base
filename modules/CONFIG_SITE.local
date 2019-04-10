@@ -3,8 +3,11 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# When building submodules, this should always be true:
-INSTALL_LOCATION = $(EPICS_BASE)
+# The name our submodules know us by:
+PARENT_MODULE = EPICS_BASE
 
-# Stop submodules from installing their configuration files:
+# When building submodules, this should always be true:
+INSTALL_LOCATION := $($(PARENT_MODULE))
+
+# Stop submodules installing their configure/ files into our area
 CONFIG_INSTALLS =

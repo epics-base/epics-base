@@ -9,20 +9,30 @@
 
 include $(CONFIG)/RULES_DIRS
 
+# Disable most top rules when installing into a parent's tree, indicated
+# by PARENT_MODULE being set in the modules/CONFIG_SITE.local file and
+# INSTALL_LOCATION pointing to the the same place as in the parent.
+ifeq ($(origin PARENT_MODULE),file)
+  ifeq ($(INSTALL_LOCATION),$($(PARENT_MODULE)))
+    DISABLE_TOP_RULES=YES
+  endif
+endif
+
+ifndef DISABLE_TOP_RULES
+  #
+  # Rules for a regular application top directory
+  #
+
 distclean: realclean cvsclean realuninstall
-
-
 
 realuninstall: uninstallDirs
 	$(RMDIR) $(INSTALL_LOCATION_BIN)
 	$(RMDIR) $(INSTALL_LOCATION_LIB)
 
-UNINSTALL_DIRS += $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC) \
-    $(INSTALL_HTML) $(INSTALL_TEMPLATES) $(INSTALL_DB) $(DIRECTORY_TARGETS)
+UNINSTALL_DIRS += $(INSTALL_DB) $(INSTALL_DBD) $(INSTALL_DOC) $(INSTALL_HTML)
+UNINSTALL_DIRS += $(INSTALL_INCLUDE) $(INSTALL_TEMPLATES) $(DIRECTORY_TARGETS)
 ifneq ($(INSTALL_LOCATION),$(TOP))
-ifneq ($(INSTALL_LOCATION),$(EPICS_BASE))
-UNINSTALL_DIRS += $(INSTALL_CONFIG)
-endif
+  UNINSTALL_DIRS += $(INSTALL_CONFIG)
 endif
 uninstallDirs:
 	$(RMDIR) $(UNINSTALL_DIRS)
@@ -36,6 +46,8 @@ uninstall$(DIVIDER)%:
 	$(RMDIR) $(INSTALL_LOCATION_BIN)/$(archPart)
 	$(RMDIR) $(INSTALL_LOCATION_LIB)/$(archPart)
 
+# Remove the bin and lib directories if they have no sub-directories
+#
 cleandirs:
 	@$(NOP)
 ifeq ($(wildcard $(INSTALL_LOCATION_BIN)/*),)
@@ -44,6 +56,16 @@ endif
 ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
 	$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
+
+else
+  #
+  # Using a disabled rule aborts
+  #
+
+  cleandirs distclean uninstall realuninstall archuninstall:
+	$(error Target '$@' not available in a submodule)
+
+endif # DISABLE_TOP_RULES
 
 
 help:
@@ -72,23 +94,27 @@ help:
 	@echo "     build$(DIVIDER)<arch>   - Builds and installs <arch> only."
 	@echo "     install$(DIVIDER)<arch> - Builds and installs <arch> only."
 	@echo "     clean$(DIVIDER)<arch>   - Cleans <arch> binaries in O.<arch> dirs only."
-	@echo "     uninstall$(DIVIDER)<arch> - Remove bin & lib directories for <arch> only."
 	@echo "Targets supported by top level Makefile:"
+ifndef DISABLE_TOP_RULES
 	@echo "     archuninstall  - Remove bin & lib directories created by this hostarch."
+	@echo "     uninstall$(DIVIDER)<arch> - Remove bin & lib directories for <arch> only."
 	@echo "     uninstall      - Remove install directories created by this hostarch."
 	@echo "     realuninstall  - Removes ALL install dirs"
 	@echo "     distclean      - Same as realclean cvsclean realuninstall."
+endif
 	@echo "     help           - Prints this list of valid make targets "
-	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
+	@echo "Object targets are supported by the O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
 .PHONY: cleandirs distclean uninstall help
 .PHONY: realuninstall archuninstall uninstallDirs
 
-# Include <top>/cfg/TOP_RULES* files from tops defined in RELEASE* files
-#
-RELEASE_CFG_TOP_RULES = $(foreach top, $(RELEASE_TOPS), \
-    $(wildcard $($(top))/cfg/TOP_RULES*))
-ifneq ($(RELEASE_CFG_TOP_RULES),)
-  include $(RELEASE_CFG_TOP_RULES)
+ifndef DISABLE_TOP_RULES
+  # Include <top>/cfg/TOP_RULES* files from tops defined in RELEASE* files
+  #
+  RELEASE_CFG_TOP_RULES = $(foreach top, $(RELEASE_TOPS), \
+      $(wildcard $($(top))/cfg/TOP_RULES*))
+  ifneq ($(RELEASE_CFG_TOP_RULES),)
+    include $(RELEASE_CFG_TOP_RULES)
+  endif
 endif

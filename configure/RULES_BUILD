@@ -553,6 +553,6 @@ include $(CONFIG)/RULES_EXPAND
 include $(CONFIG)/RULES_COMMON
 
 else
-    $(warning RULES_BUILD included more than once. \
-        Use 'make show-makefiles' to work out why.)
+    $(warning Warning: Base configure/RULES_BUILD file included more than once. \
+        Does configure/RELEASE have multiple pointers to $(EPICS_BASE)?)
 endif # BASE_RULES_BUILD

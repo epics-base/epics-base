@@ -1,0 +1,6 @@
+record(calcout, "cout") {
+    field(INPA, "99")
+    field(INPB, "99")
+    field(INPC, "99")
+    field(INPD, "99")
+}

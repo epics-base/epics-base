@@ -134,15 +134,44 @@ void testCADisconn(void)
     testdbPutFieldFail(-1, "ai:disconn.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("ai:disconn.SEVR", DBF_LONG, INVALID_ALARM);
     testdbGetFieldEqual("ai:disconn.STAT", DBF_LONG, LINK_ALARM);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
+/* lp:1824277 Regression in calcout, setting links at runtime */
+static void
+testSpecialLinks(void)
+{
+    testDiag("In testSpecialLinks()");
+
+    startRegressTestIoc("regressCalcout.db");
+
+    testdbPutFieldOk("cout.INPA", DBF_STRING, "10");
+    testdbGetFieldEqual("cout.A", DBF_LONG, 10);
+    testdbGetFieldEqual("cout.INAV", DBF_LONG, calcoutINAV_CON);
+    testdbPutFieldOk("cout.INPB", DBF_STRING, "{\"const\":20}");
+    testdbGetFieldEqual("cout.B", DBF_LONG, 20);
+    testdbGetFieldEqual("cout.INBV", DBF_LONG, calcoutINAV_CON);
+    testdbPutFieldOk("cout.INPC", DBF_STRING, "cout.A");
+    testdbGetFieldEqual("cout.C", DBF_LONG, 99);
+    testdbGetFieldEqual("cout.INCV", DBF_LONG, calcoutINAV_LOC);
+    testdbPutFieldOk("cout.INPD", DBF_STRING, "no-such-pv");
+    testdbGetFieldEqual("cout.D", DBF_LONG, 99);
+    testdbGetFieldEqual("cout.INDV", DBF_LONG, calcoutINAV_EXT_NC);
+
+    testIocShutdownOk();
+    testdbCleanup();
 }
 
 
 MAIN(regressTest)
 {
-    testPlan(34);
+    testPlan(46);
     testArrayLength1();
     testHexConstantLinks();
     testLinkMS();
     testCADisconn();
+    testSpecialLinks();
     return testDone();
 }

@@ -126,8 +126,8 @@ regressTest_DBD += base.dbd
 TESTPROD_HOST += regressTest
 regressTest_SRCS += regressTest.c
 regressTest_SRCS += regressTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db ../regressHex.db ../regressLinkMS.db
-TESTFILES += ../badCaLink.db
+TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db ../regressHex.db
+TESTFILES += ../regressLinkMS.db ../badCaLink.db ../regressCalcout.db
 TESTS += regressTest
 
 TARGETS += $(COMMON_DIR)/simmTest.dbd

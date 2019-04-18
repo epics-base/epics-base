@@ -81,7 +81,7 @@ static long add_record(dbCommon *pcommon)
     devPvt *pdevPvt;
     processNotify *ppn;
 
-    if (dbLinkIsDefined(plink) && dbLinkIsConstant(plink))
+    if (plink->type == CONSTANT)
         return 0;
 
     if (plink->type != PV_LINK) {

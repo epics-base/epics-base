@@ -160,6 +160,23 @@ testSpecialLinks(void)
     testdbGetFieldEqual("cout.D", DBF_LONG, 99);
     testdbGetFieldEqual("cout.INDV", DBF_LONG, calcoutINAV_EXT_NC);
 
+    eltc(0);
+    testdbPutFieldOk("ain.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "ain.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("bin.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "bin.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("iin.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "iin.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("lin.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "lin.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("min.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "min.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("din.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "din.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("sin.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "sin.INP", DBF_STRING, "{\"const\":1}");
+    eltc(1);
+
     testIocShutdownOk();
     testdbCleanup();
 }
@@ -167,7 +184,7 @@ testSpecialLinks(void)
 
 MAIN(regressTest)
 {
-    testPlan(46);
+    testPlan(60);
     testArrayLength1();
     testHexConstantLinks();
     testLinkMS();

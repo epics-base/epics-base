@@ -4,3 +4,24 @@ record(calcout, "cout") {
     field(INPC, "99")
     field(INPD, "99")
 }
+record(ai, "ain") {
+    field(DTYP, "Async Soft Channel")
+}
+record(bi, "bin") {
+    field(DTYP, "Async Soft Channel")
+}
+record(int64in, "iin") {
+    field(DTYP, "Async Soft Channel")
+}
+record(longin, "lin") {
+    field(DTYP, "Async Soft Channel")
+}
+record(mbbi, "min") {
+    field(DTYP, "Async Soft Channel")
+}
+record(mbbiDirect, "din") {
+    field(DTYP, "Async Soft Channel")
+}
+record(stringin, "sin") {
+    field(DTYP, "Async Soft Channel")
+}

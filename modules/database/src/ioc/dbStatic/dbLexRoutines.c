@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "epicsAssert.h"
 #include "dbDefs.h"
 #include "dbmf.h"
 #include "ellLib.h"
@@ -92,23 +93,32 @@ static void dbRecordHead(char *recordType,char*name,int visible);
 static void dbRecordField(char *name,char *value);
 static void dbRecordBody(void);
 
-/*private declarations*/
-#define MY_BUFFER_SIZE 1024
-static char *my_buffer=NULL;
-static char *mac_input_buffer=NULL;
-static char *my_buffer_ptr=NULL;
-static MAC_HANDLE *macHandle = NULL;
-typedef struct inputFile{
-    ELLNODE     node;
-    char        *path;
-    char        *filename;
-    FILE        *fp;
-    int         line_num;
-}inputFile;
-static ELLLIST inputFileList = ELLLIST_INIT;
+/*copied from flex.skel*/
+struct yy_buffer_state;
+static void yy_switch_to_buffer ( struct yy_buffer_state* new_buffer );
+static struct yy_buffer_state* yy_create_buffer ( FILE *file, int size );
+static void yy_delete_buffer ( struct yy_buffer_state* b );
 
-static inputFile *pinputFileNow = NULL;
+/*private declarations*/
 static DBBASE *pdbbase = NULL;
+
+static MAC_HANDLE* macHandle;
+
+#define MAX_LINE_LEN (1024u)
+
+static char *raw_buffer;
+
+typedef struct parserFrame {
+    struct parserFrame *prev;
+    const char *path, *filename;
+    unsigned lineNum;
+    FILE *fp;
+    struct yy_buffer_state* state;
+    // holds line w/ macros expanded
+    char *linebuf;
+    size_t bufidx, bufsize;
+} parserFrame;
+static parserFrame *fileStack;
 
 typedef struct tempListNode {
     ELLNODE     node;
@@ -156,20 +166,41 @@ static void *getLastTemp(void)
     return(ptempListNode->item);
 }
 
-static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
+static parserFrame* allocFrame(void)
 {
+    parserFrame *ret = dbCalloc(1, sizeof(*ret));
+    ret->linebuf = mallocMustSucceed(MAX_LINE_LEN, "allowFrame");
+    ret->state = yy_create_buffer(NULL, 1024);
+    ret->lineNum = 1u;
+    return ret;
+}
+
+static void freeFrame(parserFrame *frame)
+{
+    if(frame) {
+        if(frame->state)
+            yy_delete_buffer(frame->state);
+        free(frame->linebuf);
+        free(frame);
+    }
+}
+
+static parserFrame* dbOpenFile(DBBASE *pdbbase,const char *filename)
+{
+    parserFrame *ret = allocFrame();
     ELLLIST     *ppathList = (ELLLIST *)pdbbase->pathPvt;
     dbPathNode  *pdbPathNode;
     char        *fullfilename;
 
-    *fp = 0;
-    if (!filename) return 0;
+    assert(filename);
+    ret->filename = filename;
+
     if (!ppathList || ellCount(ppathList) == 0 ||
         strchr(filename, '/') || strchr(filename, '\\')) {
-        *fp = fopen(filename, "r");
-        if (*fp && makeDbdDepends)
+        ret->fp = fopen(filename, "r");
+        if (ret->fp && makeDbdDepends)
             fprintf(stdout, "%s:%s \n", makeDbdDepends, filename);
-        return 0;
+        return ret;
     }
     pdbPathNode = (dbPathNode *)ellFirst(ppathList);
     while (pdbPathNode) {
@@ -178,29 +209,18 @@ static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
         strcpy(fullfilename, pdbPathNode->directory);
         strcat(fullfilename, "/");
         strcat(fullfilename, filename);
-        *fp = fopen(fullfilename, "r");
-        if (*fp && makeDbdDepends)
+        ret->fp = fopen(fullfilename, "r");
+        if (ret->fp && makeDbdDepends)
             fprintf(stdout, "%s:%s \n", makeDbdDepends, fullfilename);
         free((void *)fullfilename);
-        if (*fp) return pdbPathNode->directory;
+        if (ret->fp) {
+            ret->path = pdbPathNode->directory;
+            return ret;
+        }
         pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);
     }
-    return 0;
-}
-
-
-static void freeInputFileList(void)
-{
-    inputFile *pinputFileNow;
-
-    while((pinputFileNow=(inputFile *)ellFirst(&inputFileList))) {
-        if(fclose(pinputFileNow->fp))
-            errPrintf(0,__FILE__, __LINE__,
-                        "Closing file %s",pinputFileNow->filename);
-        free((void *)pinputFileNow->filename);
-        ellDelete(&inputFileList,(ELLNODE *)pinputFileNow);
-        free((void *)pinputFileNow);
-    }
+    freeFrame(ret);
+    return NULL;
 }
 
 static
@@ -216,9 +236,16 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         const char *path,const char *substitutions)
 {
     long        status;
-    inputFile   *pinputFile = NULL;
+    parserFrame *frame = NULL;
     char        *penv;
     char        **macPairs;
+
+    assert(!!filename ^ !!fp);
+    assert(!fileStack);
+    assert(!macHandle);
+
+    if(dbStaticDebug)
+        printf("dbReadComm(%s,%p,%s,%s)\n", filename, fp, path, substitutions);
 
     if (ellCount(&tempList)) {
         epicsPrintf("dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
@@ -226,9 +253,12 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 
     if (getIocState() != iocVoid)
         return -2;
+        
+    if(*ppdbbase == 0)
+        *ppdbbase = dbAllocBase();
 
-    if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;
+
     if(path && strlen(path)>0) {
         dbPath(pdbbase,path);
     } else {
@@ -239,51 +269,47 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
             dbPath(pdbbase,".");
         }
     }
-    my_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
+
+    raw_buffer = callocMustSucceed(1, MAX_LINE_LEN, "dbReadCOM");
     freeListInitPvt(&freeListPvt,sizeof(tempListNode),100);
+
+    if(macCreateHandle(&macHandle,NULL)) {
+        epicsPrintf("macCreateHandle error\n");
+        status = -1;
+        goto cleanup;
+    }
+
     if(substitutions) {
-        if(macCreateHandle(&macHandle,NULL)) {
-            epicsPrintf("macCreateHandle error\n");
-            status = -1;
-            goto cleanup;
-        }
         macParseDefns(macHandle,(char *)substitutions,&macPairs);
-        if(macPairs ==NULL) {
-            macDeleteHandle(macHandle);
-            macHandle = NULL;
-        } else {
+        if(macPairs) {
             macInstallMacros(macHandle,macPairs);
             free((void *)macPairs);
-            mac_input_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
         }
         macSuppressWarning(macHandle,dbQuietMacroWarnings);
     }
-    pinputFile = dbCalloc(1,sizeof(inputFile));
-    if (filename) {
-        pinputFile->filename = macEnvExpand(filename);
-    }
-    if (!fp) {
-        FILE *fp1 = 0;
 
-        if (pinputFile->filename)
-            pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp1);
-        if (!pinputFile->filename || !fp1) {
+    if (filename) {
+        char *efilename = macEnvExpand(filename);
+        if(!efilename) {
             errPrintf(0, __FILE__, __LINE__,
-                "dbRead opening file %s",pinputFile->filename);
-            free(pinputFile->filename);
-            free(pinputFile);
+                      "dbRead opening file %s",filename);
             status = -1;
             goto cleanup;
         }
-        pinputFile->fp = fp1;
-    } else {
-        pinputFile->fp = fp;
+
+        frame = dbOpenFile(pdbbase, efilename);
+        if(!frame) {
+            free(efilename);
+            status = -1;
+            goto cleanup;
+        }
+    } else if (fp) {
+        frame = allocFrame();
+        frame->fp = fp;
     }
-    pinputFile->line_num = 0;
-    pinputFileNow = pinputFile;
-    my_buffer[0] = '\0';
-    my_buffer_ptr = my_buffer;
-    ellAdd(&inputFileList,&pinputFile->node);
+
+    fileStack = frame;
+
     status = pvt_yy_parse();
 
     if (ellCount(&tempList) && !yyAbort)
@@ -326,13 +352,16 @@ cleanup:
     }
     if(macHandle) macDeleteHandle(macHandle);
     macHandle = NULL;
-    if(mac_input_buffer) free((void *)mac_input_buffer);
-    mac_input_buffer = NULL;
+    free(raw_buffer);
     if(freeListPvt) freeListCleanup(freeListPvt);
     freeListPvt = NULL;
-    if(my_buffer) free((void *)my_buffer);
-    my_buffer = NULL;
-    freeInputFileList();
+    while(fileStack) {
+        parserFrame *frame = fileStack;
+        fileStack = frame->prev;
+        freeFrame(frame);
+    }
+    if(dbStaticDebug)
+        printf("dbReadComm() -> %ld\n", status);
     return(status);
 }
 
@@ -343,65 +372,80 @@ long dbReadDatabase(DBBASE **ppdbbase,const char *filename,
 long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
         const char *path,const char *substitutions)
 {return (dbReadCOM(ppdbbase,0,fp,path,substitutions));}
-
+
 static int db_yyinput(char *buf, int max_size)
 {
-    size_t  l,n;
-    char        *fgetsRtn;
+    while(!yyAbort && fileStack && fileStack->bufidx == fileStack->bufsize) {
+        parserFrame *frame = fileStack;
 
-    if(yyAbort) return(0);
-    if(*my_buffer_ptr==0) {
-        while(TRUE) { /*until we get some input*/
-            if(macHandle) {
-                fgetsRtn = fgets(mac_input_buffer,MY_BUFFER_SIZE,
-                        pinputFileNow->fp);
-                if(fgetsRtn) {
-                    int exp = macExpandString(macHandle,mac_input_buffer,
-                        my_buffer,MY_BUFFER_SIZE);
-                    if (exp < 0) {
-                        fprintf(stderr, "Warning: '%s' line %d has undefined macros\n",
-                            pinputFileNow->filename, pinputFileNow->line_num+1);
-                    }
-                }
-            } else {
-                fgetsRtn = fgets(my_buffer,MY_BUFFER_SIZE,pinputFileNow->fp);
+        char *ret = fgets(raw_buffer, MAX_LINE_LEN, frame->fp);
+
+        if(ret) {
+            size_t rawlen = strlen(raw_buffer);
+            long len = -1;
+            if(raw_buffer[rawlen-1]=='\n') {
+                len = macExpandString(macHandle, raw_buffer, frame->linebuf, MAX_LINE_LEN);
             }
-            if(fgetsRtn) break;
-            if(fclose(pinputFileNow->fp))
-                errPrintf(0,__FILE__, __LINE__,
-                        "Closing file %s",pinputFileNow->filename);
-            free((void *)pinputFileNow->filename);
-            ellDelete(&inputFileList,(ELLNODE *)pinputFileNow);
-            free((void *)pinputFileNow);
-            pinputFileNow = (inputFile *)ellLast(&inputFileList);
-            if(!pinputFileNow) return(0);
+            if(len<0) {
+                fprintf(stderr, "Error: %s:%d exceeds line buffer\n", frame->filename, frame->lineNum);
+                yyerrorAbort("Line too long");
+                return 0;
+            }
+            frame->lineNum++;
+
+            frame->bufidx = 0u;
+            frame->bufsize = (size_t)len;
+            if(dbStaticDebug)
+                printf("db_yyinput fill with %zu: %s\n", frame->bufsize, frame->linebuf);
+
+        } else if(ferror(frame->fp)) {
+            fprintf(stderr, "Error: %s:%d I/O Error\n", frame->filename, frame->lineNum);
+            yyerrorAbort("I/O Error");
+            return 0;
+
+        } else {
+            // assume EOF
+            if(dbStaticDebug)
+                printf("db_yyinput EOF %s\n", frame->filename);
+            return 0;
         }
-        if(dbStaticDebug) fprintf(stderr,"%s",my_buffer);
-        pinputFileNow->line_num++;
-        my_buffer_ptr = &my_buffer[0];
     }
-    l = strlen(my_buffer_ptr);
-    n = (l<=max_size ? l : max_size);
-    memcpy(buf,my_buffer_ptr,n);
-    my_buffer_ptr += n;
-    return (int)n;
+
+    if(!yyAbort && fileStack && fileStack->bufidx != fileStack->bufsize) {
+        parserFrame *frame = fileStack;
+        size_t tocopy = frame->bufsize - frame->bufidx;
+
+        if(tocopy > (size_t)max_size)
+            tocopy = (size_t)max_size;
+
+        memcpy(buf, frame->linebuf+frame->bufidx, tocopy);
+        frame->bufidx += tocopy;
+        if(dbStaticDebug)
+            printf("db_yyinput -> %d\n", (int)tocopy);
+        return (int)tocopy;
+
+    } else {
+        if(dbStaticDebug)
+            printf("db_yyinput EOF\n");
+        return 0;
+    }
 }
 
 static void dbIncludePrint(void)
 {
-    inputFile *pinputFile = pinputFileNow;
+    parserFrame *frame = fileStack;
 
-    while (pinputFile) {
+    while (frame) {
         epicsPrintf(" in");
-        if (pinputFile->path)
-            epicsPrintf(" path \"%s\" ",pinputFile->path);
-        if (pinputFile->filename) {
-            epicsPrintf(" file \"%s\"",pinputFile->filename);
+        if (frame->path)
+            epicsPrintf(" path \"%s\" ",frame->path);
+        if (frame->filename) {
+            epicsPrintf(" file \"%s\"",frame->filename);
         } else {
             epicsPrintf(" standard input");
         }
-        epicsPrintf(" line %d\n",pinputFile->line_num);
-        pinputFile = (inputFile *)ellPrevious(&pinputFile->node);
+        epicsPrintf(" line %d\n",frame->lineNum);
+        frame = frame->prev;
     }
     return;
 }
@@ -418,22 +462,26 @@ static void dbAddPathCmd(char *path)
 
 static void dbIncludeNew(char *filename)
 {
-    inputFile   *pinputFile;
-    FILE        *fp;
+    char *fullfilename = macDefExpand(filename, macHandle);
+    parserFrame *frame = NULL;
 
-    pinputFile = dbCalloc(1,sizeof(inputFile));
-    pinputFile->filename = macEnvExpand(filename);
-    pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp);
-    if (!fp) {
-        epicsPrintf("Can't open include file \"%s\"\n", filename);
-        yyerror(NULL);
-        free((void *)pinputFile->filename);
-        free((void *)pinputFile);
+    if(fullfilename) {
+        frame = dbOpenFile(pdbbase, fullfilename);
+    }
+
+    if(!frame) {
+        fprintf(stderr, "%s:%d Unable to open %s\n",
+                fileStack->filename, fileStack->lineNum,
+                fullfilename ? fullfilename : filename);
+        yyerrorAbort("Unable to open include");
         return;
     }
-    pinputFile->fp = fp;
-    ellAdd(&inputFileList,&pinputFile->node);
-    pinputFileNow = pinputFile;
+
+    frame->prev = fileStack;
+    fileStack = frame;
+    yy_switch_to_buffer(fileStack->state);
+
+    macPushScope(macHandle);
 }
 
 static void dbMenuHead(char *name)

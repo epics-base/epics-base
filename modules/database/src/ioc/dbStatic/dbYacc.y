@@ -364,6 +364,8 @@ json_value: jsonNULL    { $$ = dbmfStrdup("null"); }
 
 %%
 
+static int yywrap(void);
+#define yywrap() yywrap()
 #include "dbLex.c"
 
 
@@ -380,18 +382,36 @@ static int yyerror(char *str)
     }
     return(0);
 }
+#undef yywrap
+static int yywrap(void)
+{
+    parserFrame *frame = fileStack;
+    fileStack = frame->prev;
+    if(frame->prev) {
+        macPopScope(macHandle);
+        yy_switch_to_buffer(fileStack->state);
+    }
+    freeFrame(frame);
+    if(dbStaticDebug)
+        printf("dbYacc wrap %d\n", fileStack==NULL);
+    return fileStack==NULL;
+}
+
 static long pvt_yy_parse(void)
 {
-    static int  FirstFlag = 1;
     long        rtnval;
 
-    if (!FirstFlag) {
-        yyAbort = FALSE;
-        yyFailed = FALSE;
-        yyreset();
-        yyrestart(NULL);
-    }
-    FirstFlag = 0;
+    assert(fileStack);
+
+    yyAbort = FALSE;
+    yyFailed = FALSE;
+    yyreset();
+
+    yy_switch_to_buffer(fileStack->state);
     rtnval = yyparse();
-    if(rtnval!=0 || yyFailed) return(-1); else return(0);
+    if(rtnval!=0 || yyFailed)
+        return(-1);
+    else
+        return(0);
+    (void)&yyrestart;
 }

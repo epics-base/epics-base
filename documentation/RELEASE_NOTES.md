@@ -17,6 +17,18 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Fix for input links marked "special"
+
+The calcout record (and a number of synApps record types) marks its input
+link fields with the attribute `special(SPC_MOD)` and provides code in
+the record's `special()` routine to reinitialize the related value field
+whenever the input link field is set to a numeric constant. Unfortunately the
+changes to the link handling code broke this behaviour (reported as Launchpad
+[bug #1824277](https://bugs.launchpad.net/epics-base/+bug/1824277))
+back in the Base 3.16.1 release. This issue has been fixed in Base, although
+external record types may require some fixing to ensure they are correctly
+checking for and initializing the link in their `special()` routine.
+
 ### IOCsh sets `${PWD}`
 
 IOC shell will now ensure `${PWD}` is set on startup,

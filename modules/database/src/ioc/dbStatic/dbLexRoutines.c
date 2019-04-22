@@ -65,7 +65,8 @@ static int db_yyinput(char *buf,int max_size);
 static void dbIncludePrint(void);
 static void dbPathCmd(char *path);
 static void dbAddPathCmd(char *path);
-static void dbIncludeNew(char *include_file);
+static void dbIncludeNew(const char *include_files);
+static void dbIncludeMacro(const char *substitutions);
 static void dbMenuHead(char *name);
 static void dbMenuChoice(char *name,char *value);
 static void dbMenuBody(void);
@@ -119,6 +120,8 @@ typedef struct parserFrame {
     size_t bufidx, bufsize;
 } parserFrame;
 static parserFrame *fileStack;
+/* shared between dbIncludeMacro() and dbIncludeNew() */
+static char *includeMacros;
 
 typedef struct tempListNode {
     ELLNODE     node;
@@ -460,10 +463,22 @@ static void dbAddPathCmd(char *path)
     dbAddPath(pdbbase,path);
 }
 
-static void dbIncludeNew(char *filename)
+static void dbIncludeNew(const char *filename)
 {
     char *fullfilename = macDefExpand(filename, macHandle);
     parserFrame *frame = NULL;
+    char **pairs = NULL;
+
+    if(includeMacros) {
+        if(macParseDefns(NULL, includeMacros, &pairs)<0) {
+            fprintf(stderr, "%s:%d incorrect macro definitions\n",
+                    fileStack->filename, fileStack->lineNum);
+            yyerrorAbort("Invalid macro definitions");
+            return;
+        }
+        dbmfFree(includeMacros);
+        includeMacros = NULL;
+    }
 
     if(fullfilename) {
         frame = dbOpenFile(pdbbase, fullfilename);
@@ -482,8 +497,25 @@ static void dbIncludeNew(char *filename)
     yy_switch_to_buffer(fileStack->state);
 
     macPushScope(macHandle);
+    if(pairs) {
+        macInstallMacros(macHandle, pairs);
+    }
 }
-
+
+static void dbIncludeMacro(const char *substitutions)
+{
+    char **pairs = NULL;
+    char *prev = includeMacros;
+
+    if(prev) {
+        includeMacros = dbmfStrcat3(prev, ",", substitutions);
+        dbmfFree(prev);
+
+    } else {
+        includeMacros = dbmfStrdup(substitutions);
+    }
+}
+
 static void dbMenuHead(char *name)
 {
     dbMenu              *pdbMenu;

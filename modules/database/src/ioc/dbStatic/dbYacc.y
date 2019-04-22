@@ -62,11 +62,24 @@ database_item:  include
     |   alias
     ;
 
-include:    tokenINCLUDE tokenSTRING
+include:    tokenINCLUDE tokenSTRING include_mac_list
 {
-    if(dbStaticDebug>2) printf("include : %s\n",$2);
+    if(dbStaticDebug>2) printf("including : %s\n",$2);
     dbIncludeNew($2); dbmfFree($2);
-};
+}
+    | tokenINCLUDE '(' tokenSTRING include_mac_list ')'
+{
+    if(dbStaticDebug>2) printf("including : %s\n",$3);
+    dbIncludeNew($3); dbmfFree($3);
+}
+    ;
+
+include_mac_list: /* empty */
+    | include_mac_list ',' tokenSTRING
+{
+    if(dbStaticDebug>2) printf("  with %s\n",$3);
+    dbIncludeMacro($3); dbmfFree($3);
+}
 
 path:   tokenPATH tokenSTRING
 {

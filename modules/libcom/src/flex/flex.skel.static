@@ -749,6 +749,7 @@ static void yy_init_buffer( YY_BUFFER_STATE b, FILE *file )
 static int yyterminate_internal( void )
 {
         /* jbk fix - buffer created by yy_create_buffer needs to be freed */
+    if(yy_current_buffer)
         yy_delete_buffer(yy_current_buffer);
         yy_current_buffer=NULL;
         return YY_NULL;

@@ -37,7 +37,7 @@
 
 static unsigned short ioc_log_port;
 static long ioc_log_file_limit;
-static char ioc_log_file_name[256];
+static char ioc_log_file_name[512];
 static char ioc_log_file_command[256];
 
 

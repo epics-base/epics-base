@@ -60,6 +60,10 @@ matrix:
   # VS Express installs don't have the 64 bit compiler
   - platform: x64
     TOOLCHAIN: 10.0
+  # Cygwin static-debug has compiler problems
+  - configuration: static-debug
+    TOOLCHAIN: cygwin
+
 
 #---------------------------------#
 #     building & testing          #
@@ -80,6 +84,9 @@ test_script:
 
 notifications:
 
-  - provider: Slack
-    incoming_webhook:
-      secure: RYOm3FIUYeZGjWKaeTVKwq+C3fzK54AKwbmAoECED45mex3lN+8HmrC845a6mg9xPUJ/ND51RopWVaKDD9/UzaM0SO195RQLKqUTIUafiuM=
+  - provider: Email
+    to:
+      - core-talk@aps.anl.gov
+    on_build_success: false
+
+  - provider: GitHubPullRequest

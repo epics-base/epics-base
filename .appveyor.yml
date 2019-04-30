@@ -60,6 +60,10 @@ matrix:
   # VS Express installs don't have the 64 bit compiler
   - platform: x64
     TOOLCHAIN: 10.0
+  # Cygwin static-debug has compiler problems
+  - configuration: static-debug
+    TOOLCHAIN: cygwin
+
 
 #---------------------------------#
 #     building & testing          #

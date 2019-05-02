@@ -57,10 +57,10 @@ if "%TOOLCHAIN%"=="mingw" (
     )
     if "%OS%"=="64BIT" (
         echo [INFO] Installing MinGW 64bit
-        cinst mingw || cinst mingw
+        cinst mingw --version="5.3.0" || cinst mingw --version="5.3.0"
     ) else (
         echo [INFO] Installing MinGW 32bit
-        cinst mingw --x86 || cinst mingw --x86
+        cinst mingw --x86 --version="5.3.0" || cinst mingw --x86 --version="5.3.0"
     )
 )
 

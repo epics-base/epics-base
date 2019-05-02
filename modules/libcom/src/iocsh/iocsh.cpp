@@ -11,6 +11,8 @@
 /* Heavily modified by Eric Norum   Date: 03MAY2000 */
 /* Adapted to C++ by Eric Norum   Date: 18DEC2000 */
 
+#include <exception>
+
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
@@ -834,7 +836,14 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
                 for (int iarg = 0 ; ; ) {
                     if (iarg == piocshFuncDef->nargs) {
                         startRedirect(filename, lineno, redirects);
-                        (*found->def.func)(argBuf);
+                        /* execute */
+                        try {
+                            (*found->def.func)(argBuf);
+                        } catch(std::exception& e){
+                            fprintf(epicsGetStderr(), "c++ error: %s\n", e.what());
+                        } catch(...) {
+                            fprintf(epicsGetStderr(), "c++ error unknown\n");
+                        }
                         break;
                     }
                     if (iarg >= argBufCapacity) {

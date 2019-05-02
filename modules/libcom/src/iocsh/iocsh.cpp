@@ -58,7 +58,7 @@ static char iocshVarID[] = "iocshVar";
 extern "C" { static void varCallFunc(const iocshArgBuf *); }
 static epicsMutexId iocshTableMutex;
 static epicsThreadOnceId iocshOnceId = EPICS_THREAD_ONCE_INIT;
-static epicsThreadPrivateId iocshMacroHandleId;
+static epicsThreadPrivateId iocshScopeId;
 
 /*
  * I/O redirection
@@ -78,7 +78,7 @@ struct iocshRedirect {
 static void iocshOnce (void *)
 {
     iocshTableMutex = epicsMutexMustCreate ();
-    iocshMacroHandleId = epicsThreadPrivateCreate();
+    iocshScopeId = epicsThreadPrivateCreate();
 }
 
 static void iocshInit (void)
@@ -498,6 +498,19 @@ static void helpCallFunc(const iocshArgBuf *args)
     }
 }
 
+typedef enum {
+    Continue,
+    Break,
+    Halt
+} OnError;
+
+typedef struct {
+    MAC_HANDLE *handle;
+    OnError onerr;
+    double timeout;
+    bool errored;
+} Scope;
+
 /*
  * The body of the command interpreter
  */
@@ -526,8 +539,10 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     void *readlineContext = NULL;
     int wasOkToBlock;
     static const char * pairs[] = {"", "environ", NULL, NULL};
+    Scope *scope;
     MAC_HANDLE *handle;
     char ** defines = NULL;
+    int ret = 0;
     
     iocshInit();
 
@@ -588,17 +603,20 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     /*
      * Check for existing macro context or construct a new one.
      */
-    handle = (MAC_HANDLE *) epicsThreadPrivateGet(iocshMacroHandleId);
+    scope = (Scope *) epicsThreadPrivateGet(iocshScopeId);
     
-    if (handle == NULL) {
-        if (macCreateHandle(&handle, pairs)) {
+    if (!scope) {
+        scope = (Scope*)calloc(1, sizeof(*scope));
+        if (!scope || macCreateHandle(&scope->handle, pairs)) {
             errlogMessage("iocsh: macCreateHandle failed.");
             free(redirects);
+            free(scope);
             return -1;
         }
         
-        epicsThreadPrivateSet(iocshMacroHandleId, (void *) handle);
+        epicsThreadPrivateSet(iocshScopeId, (void *) scope);
     }
+    handle = scope->handle;
     
     macPushScope(handle);
     macInstallMacros(handle, defines);
@@ -837,12 +855,15 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
                     if (iarg == piocshFuncDef->nargs) {
                         startRedirect(filename, lineno, redirects);
                         /* execute */
+                        scope->errored = false;
                         try {
                             (*found->def.func)(argBuf);
                         } catch(std::exception& e){
                             fprintf(epicsGetStderr(), "c++ error: %s\n", e.what());
+                            scope->errored = true;
                         } catch(...) {
                             fprintf(epicsGetStderr(), "c++ error unknown\n");
+                            scope->errored = true;
                         }
                         break;
                     }
@@ -877,15 +898,33 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             }
             else {
                 showError(filename, lineno, "Command %s not found.", argv[0]);
+                scope->errored = true;
             }
         }
         stopRedirect(filename, lineno, redirects);
+        if(!commandLine && !scope->errored) {
+            if(scope->onerr==Continue) {
+            } else if(scope->onerr==Break) {
+                ret = -1;
+                break;
+            } else if(scope->onerr==Halt) {
+                ret = -1;
+                if(scope->timeout<=0.0) {
+                    epicsThreadSuspendSelf();
+                } else {
+                    fprintf(epicsGetStderr(), "Wait %f sec\n", scope->timeout);
+                    epicsThreadSleep(scope->timeout);
+                }
+                break;
+            }
+        }
     }
     macPopScope(handle);
     
     if (handle->level == 0) {
         macDeleteHandle(handle);
-        epicsThreadPrivateSet(iocshMacroHandleId, NULL);
+        free(scope);
+        epicsThreadPrivateSet(iocshScopeId, NULL);
     }
     if (fp && (fp != stdin))
         fclose (fp);
@@ -900,7 +939,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     if (readlineContext)
         epicsReadlineEnd(readlineContext);
     epicsThreadSetOkToBlock(wasOkToBlock);
-    return 0;
+    return ret;
 }
 
 /*
@@ -952,13 +991,13 @@ iocshRun(const char *cmd, const char *macros)
 void epicsShareAPI
 iocshEnvClear(const char *name)
 {
-    MAC_HANDLE *handle;
+    Scope *scope;
     
-    if (iocshMacroHandleId) {
-        handle = (MAC_HANDLE *) epicsThreadPrivateGet(iocshMacroHandleId);
+    if (iocshScopeId) {
+        scope = (Scope *) epicsThreadPrivateGet(iocshScopeId);
     
-        if (handle != NULL) {
-            macPutValue(handle, name, NULL);
+        if (scope != NULL) {
+            macPutValue(scope->handle, name, NULL);
         }
     }
 }
@@ -1063,6 +1102,41 @@ static void iocshRunCallFunc(const iocshArgBuf *args)
     iocshRun(args[0].sval, args[1].sval);
 }
 
+/* on */
+static const iocshArg onArg0 = { "...", iocshArgArgv };
+static const iocshArg *onArgs[1] = {&onArg0};
+static const iocshFuncDef onFuncDef = {"on", 1, onArgs};
+static void onCallFunc(const iocshArgBuf *args)
+{
+    Scope *scope = (Scope *) epicsThreadPrivateGet(iocshScopeId);
+
+    if(!scope || args->aval.ac<=2) {
+    } else if(strcmp(args->aval.av[1], "error")==0) {
+        if(args->aval.ac==2) {
+        } else if(strcmp(args->aval.av[2], "continue")==0) {
+            scope->onerr = Continue;
+            return;
+
+        } else if(strcmp(args->aval.av[2], "break")==0) {
+            scope->onerr = Break;
+            return;
+
+        } else if(strcmp(args->aval.av[2], "halt")==0) {
+            scope->onerr = Halt;
+            scope->timeout = 0.0;
+            return;
+
+        } else if(strcmp(args->aval.av[2], "wait")==0) {
+            scope->onerr = Halt;
+            if(args->aval.ac==3 || !epicsParseDouble(args->aval.av[3], &scope->timeout, NULL)) {
+                scope->timeout = 5.0;
+            }
+            return;
+        }
+    }
+    fprintf(epicsGetStderr(), "Invalid 'on'\n");
+}
+
 /*
  * Dummy internal commands -- register and install in command table
  * so they show up in the help display
@@ -1092,6 +1166,7 @@ static void localRegister (void)
     iocshRegister(&iocshCmdFuncDef,iocshCmdCallFunc);
     iocshRegister(&iocshLoadFuncDef,iocshLoadCallFunc);
     iocshRegister(&iocshRunFuncDef,iocshRunCallFunc);
+    iocshRegister(&onFuncDef, onCallFunc);
 }
 
 } /* extern "C" */

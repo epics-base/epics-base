@@ -57,7 +57,7 @@ if "%TOOLCHAIN%"=="mingw" (
     )
 )
 
-echo [INFO] Installing Make 4.1
-curl -fsS --retry 3 -o C:\tools\make-4.1.zip https://epics.anl.gov/download/tools/make-4.1-win64.zip
+echo [INFO] Installing Make 4.2.1 from ANL web site
+curl -fsS --retry 3 -o C:\tools\make-4.2.1.zip https://epics.anl.gov/download/tools/make-4.2.1-win64.zip
 cd \tools
-"C:\Program Files\7-Zip\7z" e make-4.1.zip
+"C:\Program Files\7-Zip\7z" e make-4.2.1.zip

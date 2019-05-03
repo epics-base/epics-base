@@ -511,6 +511,17 @@ typedef struct {
     bool errored;
 } Scope;
 
+int iocshSetError(int err)
+{
+    Scope *scope;
+    if (err && iocshScopeId) {
+        scope = (Scope *) epicsThreadPrivateGet(iocshScopeId);
+
+        if(scope) scope->errored = 1;
+    }
+    return err;
+}
+
 /*
  * The body of the command interpreter
  */

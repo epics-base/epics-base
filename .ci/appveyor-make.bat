@@ -42,13 +42,13 @@ if "%TOOLCHAIN%"=="mingw" (
     set "MAKE=mingw32-make"
     if "%OS%"=="64BIT" (
         set "EPICS_HOST_ARCH=windows-x64-mingw"
-        set "INCLUDE=C:\tools\mingw64\include;%INCLUDE%"
-        set "PATH=C:\tools\mingw64\bin;%PATH%"
+        set "INCLUDE=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\include;%INCLUDE%"
+        set "PATH=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin;%PATH%"
         echo [INFO] MinGW Toolchain 64bit
     ) else (
         set "EPICS_HOST_ARCH=win32-x86-mingw"
-        set "INCLUDE=C:\tools\mingw32\include;%INCLUDE%"
-        set "PATH=C:\tools\mingw32\bin;%PATH%"
+        set "INCLUDE=C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\include;%INCLUDE%"
+        set "PATH=C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin;%PATH%"
         echo [INFO] MinGW Toolchain 32bit
     )
     echo [INFO] Compiler Version

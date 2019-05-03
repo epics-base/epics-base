@@ -39,7 +39,7 @@ static const iocshFuncDef dbLoadDatabaseFuncDef =
     {"dbLoadDatabase",3,dbLoadDatabaseArgs};
 static void dbLoadDatabaseCallFunc(const iocshArgBuf *args)
 {
-    dbLoadDatabase(args[0].sval,args[1].sval,args[2].sval);
+    iocshSetError(dbLoadDatabase(args[0].sval,args[1].sval,args[2].sval));
 }
 
 /* dbLoadRecords */
@@ -49,7 +49,7 @@ static const iocshArg * const dbLoadRecordsArgs[2] = {&dbLoadRecordsArg0,&dbLoad
 static const iocshFuncDef dbLoadRecordsFuncDef = {"dbLoadRecords",2,dbLoadRecordsArgs};
 static void dbLoadRecordsCallFunc(const iocshArgBuf *args)
 {
-    dbLoadRecords(args[0].sval,args[1].sval);
+    iocshSetError(dbLoadRecords(args[0].sval,args[1].sval));
 }
 
 /* dbb */

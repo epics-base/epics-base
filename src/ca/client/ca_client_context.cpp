@@ -48,7 +48,6 @@ const unsigned ca_client_context :: flushBlockThreshold = 0x58000;
 extern "C" void cacExitHandler ( void *)
 {
     epicsThreadPrivateDelete ( caClientCallbackThreadId );
-    caClientCallbackThreadId = 0;
     delete ca_client_context::pDefaultServiceInstallMutex;
 }
 

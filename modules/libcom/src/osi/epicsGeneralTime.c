@@ -80,8 +80,8 @@ static const char * const tsfmt = "%Y-%m-%d %H:%M:%S.%09f";
 
 /* defined in osiClockTime.c or osdTime.cpp */
 int osdTimeGetCurrent ( epicsTimeStamp *pDest );
-/* set if/when gtPvt.timeProviders contains more than the default osdTimeGetCurrent() */
-static int gtMoreThanDefault;
+/* cleared if/when gtPvt.timeProviders contains more than the default osdTimeGetCurrent() */
+static int useOsdGetCurrent = 1;
 
 /* Implementation */
 
@@ -108,7 +108,7 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int ignore)
     gtProvider *ptp;
     int status = S_time_noProvider;
 
-    if(!gtMoreThanDefault)
+    if(useOsdGetCurrent)
         return osdTimeGetCurrent(pDest);
 
     generalTime_Init();
@@ -156,7 +156,7 @@ int epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
     int status = S_time_noProvider;
     epicsTimeStamp ts;
 
-    if(!gtMoreThanDefault)
+    if(useOsdGetCurrent)
         return osdTimeGetCurrent(pDest);
 
     generalTime_Init();
@@ -383,7 +383,7 @@ static void insertProvider(gtProvider *ptp, ELLLIST *plist, epicsMutexId lock)
 
     /* Check to see if we have more than just the OS default time source */
     if(plist==&gtPvt.timeProviders && (ellCount(plist)!=1 || ptp->get.Time!=&osdTimeGetCurrent)) {
-        gtMoreThanDefault = 1;
+        useOsdGetCurrent = 0;
     }
 
     epicsMutexUnlock(lock);

@@ -24,7 +24,7 @@ extern "C" {
 /* 0 - Use (unverified) client provided host name string.
  * 1 - Use actual client IP address.  HAG() are resolved to IPs at ACF load time.
  */
-epicsShareExtern int asUseIP;
+epicsShareExtern int asCheckClientIP;
 
 typedef struct asgMember *ASMEMBERPVT;
 typedef struct asgClient *ASCLIENTPVT;

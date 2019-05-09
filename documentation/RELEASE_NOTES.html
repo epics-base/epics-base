@@ -26,6 +26,28 @@ release.</p>
 
 -->
 
+<h3>ACF Hostname from DNS</h3>
+
+<p>ACF hostname has so far been a string provided by a CA client,
+which may or may not agree with DNS.  An option is now available
+to cause IOCs to resolve hostnames, and compare against the actual
+client IP address.</p>
+<p> This resolution is done at ACF file load time,
+which has two consequences.</p>
+
+<ul>
+<li>Slow/unavailable DNS will cause problems during ACF file
+loading.  eg. during IOC start.</li>
+<li>Changes in host -> IP mapping will not be picked up until/unless
+the ACF file is reloaded.</li>
+</ul>
+
+<p>This may be enabled with:</p>
+
+<blockquote><pre>
+var("asCheckClientIP",1)
+</pre></blockquote>
+
 <h3>Launchpad Bugs</h3>
 
 <p>The list of tracked bugs fixed in this release can be found on the

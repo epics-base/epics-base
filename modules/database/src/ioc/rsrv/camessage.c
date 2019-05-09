@@ -862,9 +862,9 @@ static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
     }
 
     /* after all validation */
-    if(asUseIP) {
+    if(asCheckClientIP) {
 
-        DLOG (2, ( "CAS: host_name_action for \"%s\" ignores clist provided host name\n",
+        DLOG (2, ( "CAS: host_name_action for \"%s\" ignores client provided host name\n",
             client->pHostName ) );
         return RSRV_OK;
     }

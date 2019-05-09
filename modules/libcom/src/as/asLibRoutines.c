@@ -29,7 +29,7 @@
 #include "postfix.h"
 #include "asLib.h"
 
-int asUseIP;
+int asCheckClientIP;
 
 static epicsMutexId asLock;
 #define LOCK epicsMutexMustLock(asLock)
@@ -1210,7 +1210,7 @@ static long asHagAddHost(HAG *phag,const char *host)
     int     len, i;
 
     if (!phag) return 0;
-    if(!asUseIP) {
+    if(!asCheckClientIP) {
         len = strlen(host);
         phagname = asCalloc(1, sizeof(HAGNAME) + len + 1);
         phagname->host = (char *)(phagname + 1);

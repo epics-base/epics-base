@@ -1421,7 +1421,7 @@ struct client *create_tcp_client (SOCKET sock , const osiSockAddr *peerAddr)
     }
 
     client->addr = peerAddr->ia;
-    if(asUseIP) {
+    if(asCheckClientIP) {
         epicsUInt32 ip = ntohl(client->addr.sin_addr.s_addr);
         client->pHostName = malloc(24);
         if(!client->pHostName) {

@@ -82,7 +82,7 @@ static const char hostname_config[] = ""
 static void testHostNames(void)
 {
     testDiag("testHostNames()");
-    asUseIP = 0;
+    asCheckClientIP = 0;
 
     testOk1(asInitMem(hostname_config, NULL)==0);
 
@@ -102,7 +102,7 @@ static void testHostNames(void)
     testAccess("ro", 0);
     testAccess("rw", 0);
 
-    setHost("nosuchhost");
+    setHost("guaranteed.invalid.");
 
     testAccess("invalid", 0);
     testAccess("DEFAULT", 0);
@@ -113,7 +113,7 @@ static void testHostNames(void)
 static void testUseIP(void)
 {
     testDiag("testUseIP()");
-    asUseIP = 1;
+    asCheckClientIP = 1;
 
     /* still host names in .acf */
     testOk1(asInitMem(hostname_config, NULL)==0);
@@ -135,7 +135,7 @@ static void testUseIP(void)
     testAccess("ro", 1);
     testAccess("rw", 3);
 
-    setHost("nosuchhost");
+    setHost("guaranteed.invalid.");
 
     testAccess("invalid", 0);
     testAccess("DEFAULT", 0);

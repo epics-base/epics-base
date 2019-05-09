@@ -393,7 +393,7 @@ static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
     installLastResortEventProvider();
 }
 
-static iocshVarDef asUseIPDef = {"asUseIP", iocshArgInt, 0};
+static iocshVarDef asCheckClientIPDef = {"asCheckClientIP", iocshArgInt, 0};
 
 void epicsShareAPI libComRegister(void)
 {
@@ -428,6 +428,6 @@ void epicsShareAPI libComRegister(void)
     iocshRegister(&generalTimeReportFuncDef,generalTimeReportCallFunc);
     iocshRegister(&installLastResortEventProviderFuncDef, installLastResortEventProviderCallFunc);
 
-    asUseIPDef.pval = &asUseIP;
-    iocshRegisterVariable(&asUseIPDef);
+    asCheckClientIPDef.pval = &asCheckClientIP;
+    iocshRegisterVariable(&asCheckClientIPDef);
 }

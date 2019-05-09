@@ -78,6 +78,7 @@ typedef struct {
     size_t checkLen;
     epicsEventId jammer;
     int jam;
+    epicsEventId done;
 } clientPvt;
 
 static void testLogPrefix(void);
@@ -102,12 +103,13 @@ static const char prefixexpectedmsg[] = "A message without prefix"
 static char prefixmsgbuffer[1024];
 
 
-static
-void testEqInt_(int lhs, int rhs, const char *LHS, const char *RHS)
+static void
+testEqInt_(int line, int lhs, int rhs, const char *LHS, const char *RHS)
 {
-    testOk(lhs==rhs, "%s (%d) == %s (%d)", LHS, lhs, RHS, rhs);
+    testOk(lhs==rhs, "%d: %s (%d) == %s (%d)", line, LHS, lhs, RHS, rhs);
 }
-#define testEqInt(L, R) testEqInt_(L, R, #L, #R);
+#define testEqInt(L, R) testEqInt_(__LINE__, L, R, #L, #R);
+
 static
 void logClient(void* raw, const char* msg)
 {
@@ -161,6 +163,7 @@ void logClient(void* raw, const char* msg)
     }
 
     pvt->count++;
+    epicsEventSignal(pvt->done);
 }
 
 MAIN(epicsErrlogTest)
@@ -169,7 +172,7 @@ MAIN(epicsErrlogTest)
     char msg[256];
     clientPvt pvt, pvt2;
 
-    testPlan(32);
+    testPlan(40);
 
     strcpy(msg, truncmsg);
 
@@ -188,7 +191,9 @@ MAIN(epicsErrlogTest)
     pvt2.jam = 0;
 
     pvt.jammer = epicsEventMustCreate(epicsEventEmpty);
+    pvt.done = epicsEventMustCreate(epicsEventEmpty);
     pvt2.jammer = epicsEventMustCreate(epicsEventEmpty);
+    pvt2.done = epicsEventMustCreate(epicsEventEmpty);
 
     testDiag("Check listener registration");
 
@@ -200,6 +205,7 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("%s", pvt.expect);
     errlogFlush();
 
+    epicsEventMustWait(pvt.done);
     testEqInt(pvt.count, 1);
 
     errlogAddListener(&logClient, &pvt2);
@@ -210,7 +216,10 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("%s", pvt.expect);
     errlogFlush();
 
+    epicsEventMustWait(pvt.done);
     testEqInt(pvt.count, 2);
+
+    epicsEventMustWait(pvt2.done);
     testEqInt(pvt2.count, 1);
 
     /* Removes the first listener */
@@ -223,6 +232,10 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("%s", pvt2.expect);
     errlogFlush();
 
+    testOk(epicsEventWaitWithTimeout(pvt.done, 0.5) == epicsEventWaitTimeout,
+        "%d: Listener 1 didn't run", __LINE__);
+    testOk(epicsEventTryWait(pvt2.done) == epicsEventOK,
+        "%d: Listener 2 ran", __LINE__);
     testEqInt(pvt.count, 2);
     testEqInt(pvt2.count, 2);
 
@@ -234,6 +247,10 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("Something different");
     errlogFlush();
 
+    testOk(epicsEventWaitWithTimeout(pvt.done, 0.5) == epicsEventWaitTimeout,
+        "%d: Listener 1 didn't run", __LINE__);
+    testOk(epicsEventTryWait(pvt2.done) == epicsEventWaitTimeout,
+        "%d: Listener 2 didn't run", __LINE__);
     testEqInt(pvt.count, 2);
     testEqInt(pvt2.count, 2);
 
@@ -248,6 +265,7 @@ MAIN(epicsErrlogTest)
     errlogPrintfNoConsole("%s", longmsg);
     errlogFlush();
 
+    epicsEventMustWait(pvt.done);
     testEqInt(pvt.count, 3);
 
     pvt.expect = NULL;
@@ -259,13 +277,15 @@ MAIN(epicsErrlogTest)
     pvt.jam = 1;
 
     errlogPrintfNoConsole("%s", longmsg);
-    epicsThreadSleep(0.1);
 
+    testOk(epicsEventWaitWithTimeout(pvt.done, 0.5) == epicsEventWaitTimeout,
+        "%d: Listener 1 didn't run", __LINE__);
     testEqInt(pvt.count, 3);
 
     epicsEventSignal(pvt.jammer);
     errlogFlush();
 
+    epicsEventMustWait(pvt.done);
     testEqInt(pvt.count, 4);
 
     testDiag("Find buffer capacity (%u theoretical)",LOGBUFSIZE);
@@ -303,6 +323,9 @@ MAIN(epicsErrlogTest)
         errlogFlush();
     }
 
+    testOk(epicsEventTryWait(pvt.done) == epicsEventOK,
+        "%d: Listener 1 ran", __LINE__);
+
     testDiag("Checking buffer use after partial flush");
 
     /* Use the numbers from the largest block size above */
@@ -317,16 +340,18 @@ MAIN(epicsErrlogTest)
     for (i = 0; i < N; i++) {
         errlogPrintfNoConsole("%s", msg);
     }
-    epicsThreadSleep(0.1); /* should really be a second Event */
 
+    testOk(epicsEventWaitWithTimeout(pvt.done, 0.5) == epicsEventWaitTimeout,
+        "%d: Listener 1 didn't run", __LINE__);
     testEqInt(pvt.count, 0);
 
     /* Extract the first 2 messages, 2*(sizeof(msgNode) + 128) bytes */
     pvt.jam = -2;
     epicsEventSignal(pvt.jammer);
-    epicsThreadSleep(0.1);
+    epicsThreadSleep(0.5);
 
     testDiag("Drained %u messages", pvt.count);
+    epicsEventMustWait(pvt.done);
     testEqInt(pvt.count, 2);
 
     /* The buffer has space for 1 more message: sizeof(msgNode) + 256 bytes */
@@ -335,12 +360,15 @@ MAIN(epicsErrlogTest)
     testDiag("Overflow the buffer");
     errlogPrintfNoConsole("%s", msg);
 
+    testOk(epicsEventWaitWithTimeout(pvt.done, 0.5) == epicsEventWaitTimeout,
+        "%d: Listener 1 didn't run", __LINE__);
     testEqInt(pvt.count, 2);
 
     epicsEventSignal(pvt.jammer); /* Empty */
     errlogFlush();
 
     testDiag("Logged %u messages", pvt.count);
+    epicsEventMustWait(pvt.done);
     testEqInt(pvt.count, N+1);
 
     /* Clean up */

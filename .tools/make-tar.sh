@@ -16,23 +16,46 @@ PREFIX="$3"
 if ! [ "$TOPREV" ]
 then
    cat <<EOF >&2
-usage: $0 [rev] [outfile.tar.gz] [prefix/]
+usage: $0 <rev> [<outfile> [<prefix>]]
 
   <rev> may be any git revision spec. (tag, branch, or commit id).
 
-  Output file may be .tar.gz, .tar.bz2, or any extension supported by "tar -a".
-  If output file name is omitted, "base-<rev>.tar.gz" will be used.
-  If <prefix> is omitted, the default prefix is "base-<rev>/".
+  If provided, <outfile> must end with ".tar", ".tar.gz" or ".tar.bz2".
+  If <outfile> is omitted, "base-<rev>.tar.gz" will be used.
+  If provided, <prefix> must end with "/".  If <prefix> is omitted,
+  the default is "base-<rev>/".
 EOF
    exit 1
 fi
 
-[ "$FINALTAR" ] || FINALTAR="base-$TOPREV.tar.gz"
-[ "$PREFIX" ] || PREFIX="base-$TOPREV/"
+case "$FINALTAR" in
+"")
+  TAROPT=-z
+  FINALTAR="base-$TOPREV.tar.gz"
+  ;;
+*.tar)
+  TAROPT=""
+  ;;
+*.tar.gz)
+  TAROPT=-z
+  ;;
+*.tar.bz2)
+  TAROPT=-j
+  ;;
+*)
+  die "outfile must end with '.tar.gz' or '.tar.bz2'"
+  ;;
+esac
 
 case "$PREFIX" in
-*/) ;;
-*)  die "Prefix must end with '/'";;
+"")
+  PREFIX="base-$TOPREV/"
+  ;;
+*/)
+  ;;
+*)
+  die "Prefix must end with '/'"
+  ;;
 esac
 
 # Check for both <tag> and R<tag>
@@ -97,13 +120,11 @@ then
 fi
 
 # Use the filtered list to build the final tar
-#  The -a option chooses compression automatically based on output file name.
-
-tar -C "$TDIR"/tar --files-from="$TDIR"/list.2 -caf "$FINALTAR"
+tar -c $TAROPT -C "$TDIR"/tar -T "$TDIR"/list.2 -f "$FINALTAR"
 
 echo "Wrote $FINALTAR"
 
-tar -taf "$FINALTAR" > "$TDIR"/list.3
+tar -t $TAROPT -f "$FINALTAR" > "$TDIR"/list.3
 
 # make sure we haven't picked up anything extra
 if ! diff -u "$TDIR"/list.2 "$TDIR"/list.3

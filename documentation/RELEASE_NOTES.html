@@ -26,26 +26,44 @@ release.</p>
 
 -->
 
-<h3>ACF Hostname from DNS</h3>
+<h3>Channel Access Security: Check Hostname Against DNS</h3>
 
-<p>ACF hostname has so far been a string provided by a CA client,
-which may or may not agree with DNS.  An option is now available
-to cause IOCs to resolve hostnames, and compare against the actual
-client IP address.</p>
-<p> This resolution is done at ACF file load time,
-which has two consequences.</p>
+<p>Host names given in a <tt>HAG</tt> entry of an IOC's Access Security
+Configuration File (ACF) have to date been compared against the hostname
+provided by the CA client at connection time, which may or may not be the actual
+name of that client. This allows rogue clients to pretend to be a different
+host, and the IOC would believe them.</p>
 
-<ul>
-<li>Slow/unavailable DNS will cause problems during ACF file
-loading.  eg. during IOC start.</li>
-<li>Changes in host -> IP mapping will not be picked up until/unless
-the ACF file is reloaded.</li>
-</ul>
+<p>An option is now available to cause an IOC to ask its operating system to
+look up the IP address of any hostnames listed in its ACF (which will normally
+be done using the DNS or the <tt>/etc/hosts</tt> file). The IOC will then
+compare the resulting IP address against the client's actual IP address when
+checking access permissions at connection time. This name resolution gets done
+at ACF file load time, which has a few consequences:</p>
 
-<p>This may be enabled with:</p>
+<ol>
+
+<li>If the DNS is slow when the names are resolved this will delay the process
+of loading the ACF file.</li>
+
+<li>If a host name cannot be resolved the IOC will treat the ACF as invalid,
+which prevents any CA clients from connecting.</li>
+
+<li>Any changes in the hostname to IP address mapping will not be picked up by
+the IOC unless and until the ACF file gets reloaded.</li>
+
+</ol>
+
+<p>This feature can be enabled before <tt>iocInit</tt> with</p>
 
 <blockquote><pre>
 var("asCheckClientIP",1)
+</pre></blockquote>
+
+<p>or with the VxWorks target shell use</p>
+
+<blockquote><pre>
+asCheckClientIP = 1
 </pre></blockquote>
 
 <h3>Launchpad Bugs</h3>

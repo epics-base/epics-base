@@ -40,7 +40,7 @@ static struct {
 static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
 
-#if defined(CLOCK_REALTIME) && !defined(_WIN32)
+#if defined(CLOCK_REALTIME) && !defined(_WIN32) && !defined(__APPLE__)
 /* This code is not used on systems without Posix CLOCK_REALTIME,
  * but the only way to detect that is from the OS headers, so the
  * Makefile can't exclude compiling this file on those systems.

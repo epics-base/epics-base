@@ -48,7 +48,7 @@ static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
 /* Forward references */
 
-static int ClockTimeGetCurrent(epicsTimeStamp *pDest);
+int osdTimeGetCurrent(epicsTimeStamp *pDest);
 
 #if defined(vxWorks) || defined(__rtems__)
 static void ClockTimeSync(void *dummy);
@@ -89,7 +89,7 @@ static void ClockTime_InitOnce(void *pfirst)
 
     /* Register as a time provider */
     generalTimeRegisterCurrentProvider("OS Clock", LAST_RESORT_PRIORITY,
-        ClockTimeGetCurrent);
+        osdTimeGetCurrent);
 }
 
 void ClockTime_Init(int synchronize)
@@ -125,7 +125,7 @@ void ClockTime_Init(int synchronize)
         else {
             /* No synchronization thread */
             if (firstTime)
-                ClockTimeGetCurrent(&ClockTimePvt.startTime);
+                osdTimeGetCurrent(&ClockTimePvt.startTime);
         }
     }
 }
@@ -191,7 +191,7 @@ static void ClockTimeSync(void *dummy)
 
 /* Time Provider Routine */
 
-static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
+int osdTimeGetCurrent(epicsTimeStamp *pDest)
 {
     struct timespec clockNow;
 

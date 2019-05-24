@@ -913,20 +913,22 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             }
         }
         stopRedirect(filename, lineno, redirects);
-        if(!commandLine && !scope->errored) {
+        if(!commandLine && scope->errored) {
             if(scope->onerr==Continue) {
             } else if(scope->onerr==Break) {
+                fprintf(epicsGetStderr(), "iocsh Error: Break\n" );
                 ret = -1;
                 break;
             } else if(scope->onerr==Halt) {
                 ret = -1;
                 if(scope->timeout<=0.0) {
+                    fprintf(epicsGetStderr(), "iocsh Error: Halt\n" );
                     epicsThreadSuspendSelf();
+                    break;
                 } else {
-                    fprintf(epicsGetStderr(), "Wait %f sec\n", scope->timeout);
+                    fprintf(epicsGetStderr(), "iocsh Error: Waiting %f sec ...\n", scope->timeout);
                     epicsThreadSleep(scope->timeout);
                 }
-                break;
             }
         }
     }
@@ -1114,7 +1116,7 @@ static void iocshRunCallFunc(const iocshArgBuf *args)
 }
 
 /* on */
-static const iocshArg onArg0 = { "...", iocshArgArgv };
+static const iocshArg onArg0 = { "'error' 'continue' | 'break' | 'wait' [value] | 'halt'", iocshArgArgv };
 static const iocshArg *onArgs[1] = {&onArg0};
 static const iocshFuncDef onFuncDef = {"on", 1, onArgs};
 static void onCallFunc(const iocshArgBuf *args)
@@ -1133,15 +1135,15 @@ static void onCallFunc(const iocshArgBuf *args)
             return;
 
         } else if(strcmp(args->aval.av[2], "halt")==0) {
-            scope->onerr = Halt;
             scope->timeout = 0.0;
+            scope->onerr = Halt;
             return;
 
         } else if(strcmp(args->aval.av[2], "wait")==0) {
-            scope->onerr = Halt;
-            if(args->aval.ac==3 || !epicsParseDouble(args->aval.av[3], &scope->timeout, NULL)) {
+            if(args->aval.ac<=3 || epicsParseDouble(args->aval.av[3], &scope->timeout, NULL)) {
                 scope->timeout = 5.0;
             }
+            scope->onerr = Halt;
             return;
         }
     }

@@ -1207,32 +1207,40 @@ static HAG *asHagAdd(const char *hagName)
 static long asHagAddHost(HAG *phag,const char *host)
 {
     HAGNAME *phagname;
-    int     len, i;
 
     if (!phag) return 0;
     if(!asCheckClientIP) {
-        len = strlen(host);
+        size_t i, len = strlen(host);
         phagname = asCalloc(1, sizeof(HAGNAME) + len + 1);
         phagname->host = (char *)(phagname + 1);
         for (i = 0; i < len; i++) {
             phagname->host[i] = (char)tolower((int)host[i]);
         }
+
     } else {
         struct sockaddr_in addr;
         epicsUInt32 ip;
+
         if(aToIPAddr(host, 0, &addr)) {
-            errlogPrintf("Unable to resolve host '%s'\n", host);
-            return S_asLib_noHag;
+            static const char unresolved[] = "unresolved:";
+
+            errlogPrintf("ACF: Unable to resolve host '%s'\n", host);
+
+            phagname = asCalloc(1, sizeof(HAGNAME) + sizeof(unresolved)-1+strlen(host));
+            strcpy(phagname->host, unresolved);
+            strcat(phagname->host, host);
+
+        } else {
+            ip = ntohl(addr.sin_addr.s_addr);
+            phagname = asCalloc(1, sizeof(HAGNAME) + 24);
+            phagname->host = (char *)(phagname + 1);
+            epicsSnprintf(phagname->host, 24,
+                          "%u.%u.%u.%u",
+                          (ip>>24)&0xff,
+                          (ip>>16)&0xff,
+                          (ip>>8)&0xff,
+                          (ip>>0)&0xff);
         }
-        ip = ntohl(addr.sin_addr.s_addr);
-        phagname = asCalloc(1, sizeof(HAGNAME) + 24);
-        phagname->host = (char *)(phagname + 1);
-        epicsSnprintf(phagname->host, 24,
-                      "%u.%u.%u.%u",
-                      (ip>>24)&0xff,
-                      (ip>>16)&0xff,
-                      (ip>>8)&0xff,
-                      (ip>>0)&0xff);
     }
     ellAdd(&phag->list, &phagname->node);
     return 0;

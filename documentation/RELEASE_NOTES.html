@@ -16,6 +16,23 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Added new decimation channel filter</h3>
+
+<p>A new server-side filter has been added to the IOC for reducing the number
+and frequency of monitor updates from a channel by a client-specified factor.
+The filter's behaviour is quite simplistic, it passes the first monitor event it
+sees to the client and then drops the next N-1 events before passing another
+event. For example to sample a 60Hz channel at 1Hz, a 10Hz channel every 6
+seconds, or a 1Hz channel once every minute:</p>
+
+<pre>    Hal$ camonitor 'test:channel.{"dec":{"n":60}}'
+    ...</pre>
+
+<p>More information is included in the
+<a href="filters.html">filters</a><!-- href for the EPICS website -->
+<a href="../html/filters.html">documentation</a><!-- href for install tree -->
+file.</p>
+
 <h3>Cleaning up with Multiple CA contexts in a Process</h3>
 
 <p>Bruno Martins reported a problem with the CA client library at shutdown in a

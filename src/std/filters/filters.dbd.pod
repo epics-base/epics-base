@@ -241,7 +241,7 @@ Assuming there is a system state called "blue", that is being controlled by
 some other facility such as a timing system, updates could be restricted to
 periods only when "blue" is true by using
 
- Hal$ camonitor 'test:channel' 'test:channel.{"while":"blue"}'
+ Hal$ camonitor 'test:channel' 'test:channel.{"sync":{"while":"blue"}}'
  ...
 
 =cut

@@ -6,7 +6,6 @@ use strict;
 use FindBin qw($Bin);
 use lib ("$Bin/../../lib/perl");
 use _APPNAME_ModuleDirs;
-no lib $Bin;
 
 use Getopt::Std;
 use CA;

@@ -9,7 +9,6 @@
 
 use FindBin qw($Bin);
 use lib ("$Bin/../../lib/perl");
-no lib $Bin;
 
 use DBD;
 use DBD::Parser;

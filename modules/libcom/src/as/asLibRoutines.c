@@ -1226,7 +1226,7 @@ static long asHagAddHost(HAG *phag,const char *host)
 
             errlogPrintf("ACF: Unable to resolve host '%s'\n", host);
 
-            phagname = asCalloc(1, sizeof(HAGNAME) + sizeof(unresolved)-1+strlen(host));
+            phagname = asCalloc(1, sizeof(HAGNAME) + sizeof(unresolved)+strlen(host));
             strcpy(phagname->host, unresolved);
             strcat(phagname->host, host);
 

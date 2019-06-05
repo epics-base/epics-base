@@ -1211,8 +1211,7 @@ static long asHagAddHost(HAG *phag,const char *host)
     if (!phag) return 0;
     if(!asCheckClientIP) {
         size_t i, len = strlen(host);
-        phagname = asCalloc(1, sizeof(HAGNAME) + len + 1);
-        phagname->host = (char *)(phagname + 1);
+        phagname = asCalloc(1, sizeof(HAGNAME) + len);
         for (i = 0; i < len; i++) {
             phagname->host[i] = (char)tolower((int)host[i]);
         }
@@ -1226,14 +1225,13 @@ static long asHagAddHost(HAG *phag,const char *host)
 
             errlogPrintf("ACF: Unable to resolve host '%s'\n", host);
 
-            phagname = asCalloc(1, sizeof(HAGNAME) + sizeof(unresolved)+strlen(host));
+            phagname = asCalloc(1, sizeof(HAGNAME) + sizeof(unresolved)-1+strlen(host));
             strcpy(phagname->host, unresolved);
             strcat(phagname->host, host);
 
         } else {
             ip = ntohl(addr.sin_addr.s_addr);
             phagname = asCalloc(1, sizeof(HAGNAME) + 24);
-            phagname->host = (char *)(phagname + 1);
             epicsSnprintf(phagname->host, 24,
                           "%u.%u.%u.%u",
                           (ip>>24)&0xff,

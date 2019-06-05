@@ -170,8 +170,8 @@ typedef struct uag{
 } UAG;
 /*Defs for Host Access Groups*/
 typedef struct{
-	ELLNODE	node;
-	char	*host;
+    ELLNODE	node;
+    char	host[1];
 } HAGNAME;
 typedef struct hag{
 	ELLNODE	node;

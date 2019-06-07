@@ -148,6 +148,8 @@ void ClockTime_GetProgramStart(epicsTimeStamp *pDest)
 /* Synchronization thread */
 
 #if defined(vxWorks) || defined(__rtems__)
+CLOCKTIME_SYNCHOOK ClockTime_syncHook = NULL;
+
 static void ClockTimeSync(void *dummy)
 {
     taskwdInsert(0, NULL, NULL);
@@ -179,11 +181,16 @@ static void ClockTimeSync(void *dummy)
             ClockTimePvt.syncTime         = timeNow;
             epicsMutexUnlock(ClockTimePvt.lock);
 
+            if (ClockTime_syncHook)
+                ClockTime_syncHook(1);
+
             ClockTimePvt.ClockTimeSyncInterval = ClockTimeSyncInterval_value;
         }
     }
 
     ClockTimePvt.synchronized = 0;
+    if (ClockTime_syncHook)
+        ClockTime_syncHook(0);
     taskwdRemove(0);
 }
 #endif

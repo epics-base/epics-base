@@ -223,7 +223,14 @@ epicsThreadCreateOpt (
     return((epicsThreadId)tid);
 }
 
-void epicsThreadJoin(epicsThreadId id) {}
+void epicsThreadJoin(epicsThreadId id) {
+#if EPICS_THREAD_CAN_JOIN
+    int tid = (int)id;
+
+    if (tid)
+        taskWait(tid, WAIT_FOREVER);
+#endif
+}
 
 void epicsThreadSuspendSelf()
 {

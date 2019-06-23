@@ -158,7 +158,7 @@ bool epicsThread::exitWait ( const double delay ) throw ()
                     epicsGuard < epicsMutex > guard ( this->mutex );
                     joined = true;
                 }
-                epicsThreadJoin(this->id);
+                epicsThreadMustJoin(this->id);
             }
             return true;
         }
@@ -177,7 +177,7 @@ bool epicsThread::exitWait ( const double delay ) throw ()
             joined = true;
 
             epicsGuardRelease < epicsMutex > unguard ( guard );
-            epicsThreadJoin(this->id);
+            epicsThreadMustJoin(this->id);
         }
     }
     catch ( std :: exception & except ) {

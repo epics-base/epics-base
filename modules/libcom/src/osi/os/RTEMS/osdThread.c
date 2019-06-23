@@ -363,7 +363,7 @@ threadMustCreate (const char *name,
     return tid;
 }
 
-void epicsThreadJoin(epicsThreadId id)
+void epicsThreadMustJoin(epicsThreadId id)
 {
     rtems_id target_tid = (rtems_id)id, self_tid;
     struct taskVar *v;
@@ -389,7 +389,7 @@ void epicsThreadJoin(epicsThreadId id)
             cantProceed("oopsj %s\n", rtems_status_text(sc));
 
         if(sc != RTEMS_SUCCESSFUL) {
-            errlogPrintf("epicsThreadJoin('%s') -> %s\n", v->name, rtems_status_text(sc));
+            errlogPrintf("epicsThreadMustJoin('%s') -> %s\n", v->name, rtems_status_text(sc));
         }
     }
 

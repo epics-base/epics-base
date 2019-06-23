@@ -89,7 +89,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadMustCreate (
     const char * name, unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void * parm );
-epicsShareFunc void epicsThreadJoin(epicsThreadId id);
+epicsShareFunc void epicsThreadMustJoin(epicsThreadId id);
 epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf(void);
 epicsShareFunc void epicsShareAPI epicsThreadResume(epicsThreadId id);
 epicsShareFunc unsigned int epicsShareAPI epicsThreadGetPriority(

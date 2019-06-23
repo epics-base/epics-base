@@ -557,7 +557,7 @@ epicsThreadCreateOpt (
     status = pthread_sigmask(SIG_SETMASK,&oldSig,NULL);
     checkStatusOnce(status,"pthread_sigmask");
     if(pthreadInfo->joinable) {
-        /* extra ref for epicsThreadJoin() */
+        /* extra ref for epicsThreadMustJoin() */
         epicsAtomicIncrIntT(&pthreadInfo->refcnt);
     }
     return(pthreadInfo);
@@ -600,7 +600,7 @@ static epicsThreadOSD *createImplicit(void)
     return pthreadInfo;
 }
 
-void epicsThreadJoin(epicsThreadId id)
+void epicsThreadMustJoin(epicsThreadId id)
 {
     void *ret = NULL;
     int status;

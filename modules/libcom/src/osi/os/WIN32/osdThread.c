@@ -662,7 +662,7 @@ epicsThreadId epicsThreadCreateOpt (
     return ( epicsThreadId ) pParmWIN32;
 }
 
-void epicsThreadJoin(epicsThreadId id)
+void epicsThreadMustJoin(epicsThreadId id)
 {
     win32ThreadParam * pParmWIN32 = id;
 

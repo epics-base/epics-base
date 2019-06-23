@@ -26,6 +26,28 @@ release.</p>
 
 -->
 
+<h3>Add epicsThreadCreateOpt() and epicsThreadMustJoin()</h3>
+
+<p>epicsThreadCreateOpt() is an alternative to epicsThreadCreate() which
+passes some arguments via a structure (struct epicsThreadOpts).
+This <code>epicsThreadOpts*</code> may be NULL to use target specific
+defaults.  Caller wishing to provide thread options should first call
+<code>epicsThreadOptsDefaults()</code> to fill in the defaults.</p>
+
+<blockquote><pre>
+void startitup(void) {
+    epicsThreadOpts opts;
+    epicsThreadOptsDefaults(&opts);
+    opts.priority = epicsThreadPriorityMedium;
+
+    ... = epicsThreadCreateOpt("my thread", &threadMain, NULL, &opts);
+}
+</pre></blockquote>
+
+<p>If the new epicsThreadOpts::joinable option flag is set (not the default),
+then epicsThreadMustJoin() needs to be called to free up thread resources.
+This function will block until the thread main function has returned.</p>
+
 <h3>Launchpad Bugs</h3>
 
 <p>The list of tracked bugs fixed in this release can be found on the

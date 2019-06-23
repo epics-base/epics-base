@@ -36,7 +36,7 @@
 #include "iocInit.h"
 #include "iocsh.h"
 #include "dbChannel.h"
-#include "epicsUnitTest.h"
+#include "dbUnitTest.h"
 #include "testMain.h"
 #include "osiFileName.h"
 
@@ -197,50 +197,33 @@ static void check(short dbr_type) {
     dbChannelDelete(pch);
 }
 
-static dbEventCtx evtctx;
-
-extern "C" {
-static void dbChArrTestCleanup(void* junk)
-{
-    dbFreeBase(pdbbase);
-    registryFree();
-    pdbbase=0;
-
-    db_close_events(evtctx);
-
-    dbmfFreeChunks();
-}
-}
-
 MAIN(dbChArrTest)
 {
     testPlan(102);
 
     /* Prepare the IOC */
+    testdbPrepare();
 
     epicsEnvSet("EPICS_CA_SERVER_PORT", server_port);
 
-    if (dbReadDatabase(&pdbbase, "dbChArrTest.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description not loaded");
+    testdbReadDatabase("dbChArrTest.dbd",
+                       "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
+                       "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL);
 
     dbChArrTest_registerRecordDeviceDriver(pdbbase);
 
-    if (dbReadDatabase(&pdbbase, "dbChArrTest.db",
-            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database not loaded");
+    testdbReadDatabase("dbChArrTest.db",
+                       "." OSI_PATH_LIST_SEPARATOR "..", NULL);
 
-    epicsAtExit(&dbChArrTestCleanup,NULL);
-
-    /* Start the IOC */
-
-    iocInit();
-    evtctx = db_init_events();
+    testIocInitOk();
 
     check(DBR_LONG);
     check(DBR_DOUBLE);
     check(DBR_STRING);
+
+    testIocShutdownOk();
+
+    testdbCleanup();
 
     return testDone();
 }

@@ -52,7 +52,7 @@ void myThread::run()
     startEvt.signal();
     int *pset = argvalue;
     privateKey.set(argvalue);
-    epicsThreadSleep(2.0);
+
     int *pget = privateKey.get();
     testOk1(pget == pset);
 
@@ -63,6 +63,7 @@ void myThread::run()
 
 typedef struct info {
     int  isOkToBlock;
+    int  didSomething;
 } info;
 
 extern "C" {
@@ -71,19 +72,19 @@ static void thread(void *arg)
     info *pinfo = (info *)arg;
 
     epicsThreadSetOkToBlock(pinfo->isOkToBlock);
-    epicsThreadSleep(1.0);
 
     testOk(epicsThreadIsOkToBlock() == pinfo->isOkToBlock,
         "%s epicsThreadIsOkToBlock() = %d",
         epicsThreadGetNameSelf(), pinfo->isOkToBlock);
-    epicsThreadSleep(0.1);
+
+    pinfo->didSomething = 1;
 }
 }
 
 
 MAIN(epicsThreadTest)
 {
-    testPlan(9);
+    testPlan(11);
 
     unsigned int ncpus = epicsThreadGetCPUs();
     testDiag("System has %u CPUs", ncpus);
@@ -108,15 +109,23 @@ MAIN(epicsThreadTest)
         delete myThreads[i];
     }
 
-    unsigned int stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
+    epicsThreadOpts opts;
+    epicsThreadOptsDefaults(&opts);
+    opts.priority = 50;
+    opts.joinable = 1;
 
-    info infoA = {0};
-    epicsThreadCreate("threadA", 50, stackSize, thread, &infoA);
+    info infoA = {0, 0};
+    epicsThreadId threadA = epicsThreadCreateOpt("threadA", thread, &infoA, &opts);
 
-    info infoB = {1};
-    epicsThreadCreate("threadB", 50, stackSize, thread, &infoB);
+    info infoB = {1, 0};
+    epicsThreadId threadB = epicsThreadCreateOpt("threadB", thread, &infoB, &opts);
 
-    epicsThreadSleep(2.0);
+    // join B first to better our chance of detecting if it never runs.
+    epicsThreadMustJoin(threadB);
+    testOk1(infoB.didSomething);
+
+    epicsThreadMustJoin(threadA);
+    testOk1(infoA.didSomething);
 
     return testDone();
 }

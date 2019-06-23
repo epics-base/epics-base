@@ -669,11 +669,16 @@ void epicsThreadMustJoin(epicsThreadId id)
     if(!id) {
         /* no-op */
     } else if(!pParmWIN32->joinable) {
-        /* try to error nicely, however in all likelyhood de-ref of
-         * 'pParmWIN32' has already crashed us as we are racing thread exit,
-         * which free's 'pParmWIN32'.
-         */
-        cantProceed("%s thread not joinable.\n", pParmWIN32->pName);
+        if(epicsThreadGetIdSelf()==id) {
+            fprintf(stderr, "Warning: %s thread self-join of unjoinable\n", pParmWIN32->pName);
+
+        } else {
+            /* try to error nicely, however in all likelyhood de-ref of
+             * 'id' has already caused SIGSEGV as we are racing thread exit,
+             * which free's 'id'.
+             */
+            cantProceed("Error: %s thread not joinable.\n", pParmWIN32->pName);
+        }
         return;
 
     } else if(epicsThreadGetIdSelf() != id) {

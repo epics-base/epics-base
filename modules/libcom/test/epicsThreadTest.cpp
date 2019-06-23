@@ -18,10 +18,13 @@
 #include <math.h>
 
 #include "epicsThread.h"
+#include "epicsEvent.h"
 #include "epicsTime.h"
 #include "errlog.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
+
+namespace {
 
 static epicsThreadPrivate<int> privateKey;
 
@@ -60,35 +63,8 @@ void myThread::run()
     testOk1(thread.getPriority() == epicsThreadGetPriority(self));
 }
 
-
-typedef struct info {
-    int  isOkToBlock;
-    int  didSomething;
-} info;
-
-extern "C" {
-static void thread(void *arg)
+void testMyThread()
 {
-    info *pinfo = (info *)arg;
-
-    epicsThreadSetOkToBlock(pinfo->isOkToBlock);
-
-    testOk(epicsThreadIsOkToBlock() == pinfo->isOkToBlock,
-        "%s epicsThreadIsOkToBlock() = %d",
-        epicsThreadGetNameSelf(), pinfo->isOkToBlock);
-
-    pinfo->didSomething = 1;
-}
-}
-
-
-MAIN(epicsThreadTest)
-{
-    testPlan(11);
-
-    unsigned int ncpus = epicsThreadGetCPUs();
-    testDiag("System has %u CPUs", ncpus);
-    testOk1(ncpus > 0);
 
     const int ntasks = 3;
     myThread *myThreads[ntasks];
@@ -108,6 +84,65 @@ MAIN(epicsThreadTest)
         myThreads[i]->thread.exitWait();
         delete myThreads[i];
     }
+}
+
+struct selfJoiner {
+    epicsEvent finished;
+};
+
+void joiner(void *arg) {
+    epicsEvent *finished = (epicsEvent*)arg;
+
+    // This is a no-op
+    epicsThreadMustJoin(epicsThreadGetIdSelf());
+
+    // This is a no-op as well, except for a warning.
+    eltc(0);
+    epicsThreadMustJoin(epicsThreadGetIdSelf());
+    eltc(1);
+
+    testPass("Check double self-join");
+    finished->signal();
+}
+
+typedef struct info {
+    int  isOkToBlock;
+    int  didSomething;
+} info;
+
+void testSelfJoin()
+{
+    epicsEvent finished;
+    epicsThreadOpts opts;
+    epicsThreadOptsDefaults(&opts);
+    opts.priority = 50;
+    opts.joinable = 1;
+
+    (void)epicsThreadCreateOpt("selfjoin", &joiner, &finished, &opts);
+
+    // as this thread "joins" itself, we can't.
+    finished.wait();
+}
+
+} // namespace
+
+extern "C" {
+static void thread(void *arg)
+{
+    info *pinfo = (info *)arg;
+
+    epicsThreadSetOkToBlock(pinfo->isOkToBlock);
+
+    testOk(epicsThreadIsOkToBlock() == pinfo->isOkToBlock,
+        "%s epicsThreadIsOkToBlock() = %d",
+        epicsThreadGetNameSelf(), pinfo->isOkToBlock);
+
+    pinfo->didSomething = 1;
+}
+}
+
+static void testOkToBlock()
+{
 
     epicsThreadOpts opts;
     epicsThreadOptsDefaults(&opts);
@@ -126,6 +161,21 @@ MAIN(epicsThreadTest)
 
     epicsThreadMustJoin(threadA);
     testOk1(infoA.didSomething);
+
+}
+
+
+MAIN(epicsThreadTest)
+{
+    testPlan(12);
+
+    unsigned int ncpus = epicsThreadGetCPUs();
+    testDiag("System has %u CPUs", ncpus);
+    testOk1(ncpus > 0);
+
+    testMyThread();
+    testSelfJoin();
+    testOkToBlock();
 
     return testDone();
 }

@@ -377,10 +377,16 @@ void epicsThreadMustJoin(epicsThreadId id)
     }
 
     if(!v->joinable) {
-        /* try to error nicely, however in all likelyhood rtems_task_get_note failed,
-         * or gave us the wrong thread as we are racing thread exit.
-         */
-        cantProceed("%s thread not joinable.\n", v->name);
+        if(epicsThreadGetIdSelf()==id) {
+            errlogPrintf("Warning: %s thread self-join of unjoinable\n", v->name);
+
+        } else {
+            /* try to error nicely, however in all likelyhood de-ref of
+             * 'id' has already caused SIGSEGV as we are racing thread exit,
+             * which free's 'id'.
+             */
+            cantProceed("Error: %s thread not joinable.\n", v->name);
+        }
         return;
 
     } else if(target_tid!=self_tid) {

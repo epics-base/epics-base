@@ -608,11 +608,16 @@ void epicsThreadMustJoin(epicsThreadId id)
     if(!id) {
         return;
     } else if(!id->joinable) {
-        /* try to error nicely, however in all likelyhood de-ref of
-         * 'id' has already caused SIGSEGV as we are racing thread exit,
-         * which free's 'id'.
-         */
-        cantProceed("%s thread not joinable.\n", id->name);
+        if(epicsThreadGetIdSelf()==id) {
+            errlogPrintf("Warning: %s thread self-join of unjoinable\n", id->name);
+
+        } else {
+            /* try to error nicely, however in all likelyhood de-ref of
+             * 'id' has already caused SIGSEGV as we are racing thread exit,
+             * which free's 'id'.
+             */
+            cantProceed("Error: %s thread not joinable.\n", id->name);
+        }
         return;
     }
 

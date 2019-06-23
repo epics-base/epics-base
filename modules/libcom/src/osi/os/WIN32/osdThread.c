@@ -673,7 +673,8 @@ void epicsThreadMustJoin(epicsThreadId id)
          * 'pParmWIN32' has already crashed us as we are racing thread exit,
          * which free's 'pParmWIN32'.
          */
-        cantProceed("%s join not enabled for thread.\n", pParmWIN32->pName);
+        cantProceed("%s thread not joinable.\n", pParmWIN32->pName);
+        return;
 
     } else if(epicsThreadGetIdSelf() != id) {
         DWORD status = WaitForSingleObject(pParmWIN32->handle, INFINITE);
@@ -681,9 +682,11 @@ void epicsThreadMustJoin(epicsThreadId id)
             /* TODO: signal error? */
         }
 
+        pParmWIN32->joinable = 0;
         epicsParmCleanupWIN32(pParmWIN32);
     } else {
         /* join self silently does nothing */
+        pParmWIN32->joinable = 0;
         epicsParmCleanupWIN32(pParmWIN32);
     }
 }

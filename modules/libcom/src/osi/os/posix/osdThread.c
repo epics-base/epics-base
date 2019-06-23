@@ -612,7 +612,8 @@ void epicsThreadMustJoin(epicsThreadId id)
          * 'id' has already caused SIGSEGV as we are racing thread exit,
          * which free's 'id'.
          */
-        cantProceed("%s join not enabled for thread.\n", id->name);
+        cantProceed("%s thread not joinable.\n", id->name);
+        return;
     }
 
     status = pthread_join(id->tid, &ret);
@@ -623,6 +624,7 @@ void epicsThreadMustJoin(epicsThreadId id)
         status = pthread_detach(id->tid);
         checkStatusOnce(status, "pthread_detach");
     } else checkStatusOnce(status, "pthread_join");
+    id->joinable = 0;
     free_threadInfo(id);
 }
 

@@ -380,7 +380,8 @@ void epicsThreadMustJoin(epicsThreadId id)
         /* try to error nicely, however in all likelyhood rtems_task_get_note failed,
          * or gave us the wrong thread as we are racing thread exit.
          */
-        cantProceed("%s join not enabled for thread.\n", v->name);
+        cantProceed("%s thread not joinable.\n", v->name);
+        return;
 
     } else if(target_tid!=self_tid) {
         /* wait for target to complete */
@@ -393,6 +394,7 @@ void epicsThreadMustJoin(epicsThreadId id)
         }
     }
 
+    v->joinable = 0;
     taskUnref(v);
     /* target task may be deleted.
      * self task is not deleted, even for self join.

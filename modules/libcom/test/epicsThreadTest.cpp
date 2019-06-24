@@ -172,10 +172,17 @@ MAIN(epicsThreadTest)
     unsigned int ncpus = epicsThreadGetCPUs();
     testDiag("System has %u CPUs", ncpus);
     testOk1(ncpus > 0);
+    testDiag("main() thread %p", epicsThreadGetIdSelf());
 
     testMyThread();
     testSelfJoin();
     testOkToBlock();
+
+    // attempt to self-join from a non-EPICS thread
+    // to make sure it does nothing as expected
+    eltc(0);
+    epicsThreadMustJoin(epicsThreadGetIdSelf());
+    eltc(1);
 
     return testDone();
 }

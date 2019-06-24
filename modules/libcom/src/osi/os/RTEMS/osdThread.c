@@ -366,7 +366,7 @@ threadMustCreate (const char *name,
 void epicsThreadMustJoin(epicsThreadId id)
 {
     rtems_id target_tid = (rtems_id)id, self_tid;
-    struct taskVar *v;
+    struct taskVar *v = 0;
 
     rtems_task_ident (RTEMS_SELF, 0, &self_tid);
 
@@ -375,10 +375,11 @@ void epicsThreadMustJoin(epicsThreadId id)
         rtems_task_get_note (target_tid, RTEMS_NOTEPAD_TASKVAR, &note);
         v = (void *)note;
     }
+    /* 'v' may be NULL if 'id' represents a non-EPICS thread other than _main_. */
 
-    if(!v->joinable) {
+    if(!v || !v->joinable) {
         if(epicsThreadGetIdSelf()==id) {
-            errlogPrintf("Warning: %s thread self-join of unjoinable\n", v->name);
+            errlogPrintf("Warning: %s thread self-join of unjoinable\n", v ? v->name : "non-EPICS thread");
 
         } else {
             /* try to error nicely, however in all likelyhood de-ref of

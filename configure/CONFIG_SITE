@@ -176,9 +176,10 @@ GCC_PIPE = NO
 LINKER_USE_RPATH = YES
 
 # Only used when LINKER_USE_RPATH=ORIGIN
-# The build time root of the relocatable tree.
-# Linking to libraries under this root directory will be relative.
+# The build time root(s) of the relocatable tree (separate multiple w/ ':').
+# Linking to libraries under any root directory will be relative.
 # Linking to libraries outside of this root will be absolute.
+# All root directories are considered to be the same.
 LINKER_ORIGIN_ROOT = $(INSTALL_LOCATION)
 
 # Overrides for the settings above may appear in a CONFIG_SITE.local file

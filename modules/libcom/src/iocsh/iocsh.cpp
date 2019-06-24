@@ -868,6 +868,9 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
          * Set up redirection
          */
         if ((openRedirect(filename, lineno, redirects) == 0) && (argc > 0)) {
+            // error unless a function is actually called.
+            // handles command not-found and arg parsing errors.
+            scope.errored = true;
             /*
              * Look up command
              */
@@ -924,7 +927,6 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             }
             else {
                 showError(filename, lineno, "Command %s not found.", argv[0]);
-                scope.errored = true;
             }
         }
         stopRedirect(filename, lineno, redirects);

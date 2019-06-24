@@ -10,9 +10,17 @@ from argparse import ArgumentParser
 if os.environ.get('EPICS_DEBUG_RPATH','')=='YES':
     sys.stderr.write('%s'%sys.argv)
 
-P = ArgumentParser()
+P = ArgumentParser(description='''Compute and output -rpath entries for each of the given paths.
+  Paths under --root will be computed as relative to --final .''',
+epilog='''
+eg. A library to be placed in /build/lib and linked against libraries in
+'/build/lib', '/build/module/lib', and '/other/lib' would pass:
+
+ "makeRPath.py -F /build/lib -R /build /build/lib /build/module/lib /other/lib"
+which prints "-Wl,-rpath,$ORIGIN/. -Wl,-rpath,$ORIGIN/../module/lib -Wl,-rpath,/other/lib"
+''')
 P.add_argument('-F','--final',default=os.getcwd(), help='Final install location for ELF file')
-P.add_argument('-R','--root',default='/')
+P.add_argument('-R','--root',default='/', help='Root of relocatable tree.')
 P.add_argument('-O', '--origin', default='$ORIGIN')
 P.add_argument('path', nargs='*')
 args = P.parse_args()

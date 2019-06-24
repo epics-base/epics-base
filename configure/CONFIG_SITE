@@ -172,7 +172,7 @@ GCC_PIPE = NO
 #  Must be either YES, NO, or ORIGIN.  If you set this to NO you must also provide a
 #  way for Base executables to find their shared libraries when they are
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
-#  ORIGIN is Linux specific.
+#  ORIGIN is a feature of the ELF executable format used by Linux, freebsd, and solaris.
 LINKER_USE_RPATH = YES
 
 # Only used when LINKER_USE_RPATH=ORIGIN

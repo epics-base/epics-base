@@ -205,9 +205,6 @@ epicsTime::epicsTime (const epicsTimeStamp &ts)
 epicsTime::epicsTime () :
     secPastEpoch(0u), nSec(0u) {}
 
-epicsTime::epicsTime (const epicsTime &t) :
-    secPastEpoch (t.secPastEpoch), nSec (t.nSec) {}
-
 epicsTime epicsTime::getCurrent ()
 {
     epicsTimeStamp current;

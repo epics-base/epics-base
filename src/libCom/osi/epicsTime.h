@@ -81,7 +81,6 @@ public:
     class formatProblemWithStructTM {};
 
     epicsTime ();
-    epicsTime ( const epicsTime & t );
 
     static epicsTime getEvent ( const epicsTimeEvent & );
     static epicsTime getCurrent ();

@@ -120,7 +120,7 @@ static long init_record(stringinRecord *prec, int pass)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(prec))) return(status);
     }
-    strncpy(prec->oval, prec->val, sizeof(prec->val));
+    strncpy(prec->oval, prec->val, sizeof(prec->oval));
     return(0);
 }
 
@@ -160,7 +160,7 @@ static void monitor(stringinRecord *prec)
 
     if (strncmp(prec->oval, prec->val, sizeof(prec->val))) {
         monitor_mask |= DBE_VALUE | DBE_LOG;
-        strncpy(prec->oval, prec->val, sizeof(prec->val));
+        strncpy(prec->oval, prec->val, sizeof(prec->oval));
     }
 
     if (prec->mpst == stringinPOST_Always)

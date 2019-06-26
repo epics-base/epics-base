@@ -11,7 +11,7 @@
 use strict;
 use Test;
 
-BEGIN {plan tests => 9}
+BEGIN {plan tests => 12}
 
 # Check include/substitute command model
 ok(msi('-I .. ../t1-template.txt'),             slurp('../t1-result.txt'));
@@ -50,6 +50,14 @@ ok(msi('-I.. -D -o t8.txt ../t1-template.txt'), slurp('../t8-result.txt'));
 # Dependency generation, dbLoadTemplate format
 ok(msi('-I.. -D -ot9.txt -S ../t2-substitution.txt'), slurp('../t9-result.txt'));
 
+# Substitution file, variable format, with 0 variable definitions
+ok(msi('-I. -I.. -S ../t10-substitute.txt'), slurp('../t10-result.txt'));
+
+# Substitution file, pattern format, with 0 pattern definitions
+ok(msi('-I. -I.. -S ../t11-substitute.txt'), slurp('../t11-result.txt'));
+
+# Macros in template-file name populated from environment variable
+ok(msi('-I. -I.. -S ../t12-substitute.txt', 'TEST_NO=12,PREFIX=t'), slurp('../t12-result.txt'));
 
 # Test support routines
 
@@ -62,10 +70,16 @@ sub slurp {
 }
 
 sub msi {
-    my ($args) = @_;
+    my ($args, $envstr) = @_;
     my $exe = ($^O eq 'MSWin32') || ($^O eq 'cygwin') ? '.exe' : '';
     my $msi = "./msi-copy$exe";
     my $result;
+    my @envs = split(/,/, $envstr);
+    foreach (@envs)
+    {
+        my ($var, $value) = split /=/, $_;
+        $ENV{$var} = $value;
+    }
     if ($args =~ m/-o / && $args !~ m/-D/) {
         # An empty result is expected
         $result = `$msi $args`;
@@ -78,6 +92,11 @@ sub msi {
             print "# result of '$msi $args' empty, retrying\n"
                 if $result eq '';
         } while ($result eq '') && (--$count > 0);
+    }
+    foreach (@envs)
+    {
+        my ($var, $value) = split /=/, $_;
+        delete $ENV{$var};
     }
     return $result;
 }

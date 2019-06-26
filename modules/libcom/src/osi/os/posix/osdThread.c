@@ -906,7 +906,7 @@ epicsShareFunc double epicsShareAPI epicsThreadSleepQuantum ()
 {
     double hz;
     hz = sysconf ( _SC_CLK_TCK );
-    if(hz<0)
+    if(hz<=0)
         return 0.0;
     return 1.0 / hz;
 }

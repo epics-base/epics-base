@@ -64,15 +64,29 @@ static void testHead (char* title) {
 }
 
 static void mustDrop(dbChannel *pch, db_field_log *pfl, char* m) {
+    int oldFree = db_available_logs();
     db_field_log *pfl2 = dbChannelRunPreChain(pch, pfl);
+    int newFree = db_available_logs();
 
     testOk(NULL == pfl2, "filter drops field_log (%s)", m);
+    testOk(newFree == oldFree + 1, "field_log was freed - %d+1 => %d",
+        oldFree, newFree);
+
+    if (newFree == oldFree)
+        db_delete_field_log(pfl);
 }
 
 static void mustPass(dbChannel *pch, db_field_log *pfl, char* m) {
+    int oldFree = db_available_logs();
     db_field_log *pfl2 = dbChannelRunPreChain(pch, pfl);
+    int newFree = db_available_logs();
 
     testOk(pfl == pfl2, "filter passes field_log (%s)", m);
+    testOk(newFree == oldFree, "field_log was not freed - %d => %d",
+        oldFree, newFree);
+
+    if (newFree == oldFree)
+        db_delete_field_log(pfl);
 }
 
 static void checkAndOpenChannel(dbChannel *pch, const chFilterPlugin *plug) {
@@ -114,7 +128,7 @@ MAIN(decTest)
     int i;
     dbEventCtx evtctx;
 
-    testPlan(68);
+    testPlan(103);
 
     testdbPrepare();
 
@@ -165,9 +179,6 @@ MAIN(decTest)
     mustPass(pch, pfl[3], "i=3");
     mustPass(pch, pfl[4], "i=4");
 
-    for (i = 0; i < 5; i++)
-        db_delete_field_log(pfl[i]);
-
     dbChannelDelete(pch);
 
     /* Decimation (N=2) */
@@ -195,9 +206,6 @@ MAIN(decTest)
     mustDrop(pch, pfl[7], "i=7");
     mustPass(pch, pfl[8], "i=8");
     mustDrop(pch, pfl[9], "i=9");
-
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
 
     dbChannelDelete(pch);
 
@@ -227,9 +235,6 @@ MAIN(decTest)
     mustDrop(pch, pfl[8], "i=8");
     mustPass(pch, pfl[9], "i=9");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
-
     dbChannelDelete(pch);
 
     /* Decimation (N=4) */
@@ -257,9 +262,6 @@ MAIN(decTest)
     mustDrop(pch, pfl[7], "i=7");
     mustPass(pch, pfl[8], "i=8");
     mustDrop(pch, pfl[9], "i=9");
-
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
 
     dbChannelDelete(pch);
 

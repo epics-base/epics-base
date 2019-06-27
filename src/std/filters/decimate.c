@@ -63,6 +63,8 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
 
     if (i++ == 0)
         passfl = pfl;
+    else
+        db_delete_field_log(pfl);
 
     if (i >= my->n)
         i = 0;

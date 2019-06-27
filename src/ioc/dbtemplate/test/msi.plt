@@ -56,8 +56,11 @@ ok(msi('-I. -I.. -S ../t10-substitute.txt'), slurp('../t10-result.txt'));
 # Substitution file, pattern format, with 0 pattern definitions
 ok(msi('-I. -I.. -S ../t11-substitute.txt'), slurp('../t11-result.txt'));
 
-# Macros in template-file name populated from environment variable
-ok(msi('-I. -I.. -S ../t12-substitute.txt', 'TEST_NO=12,PREFIX=t'), slurp('../t12-result.txt'));
+# Substitution file, environment variable macros in template filename
+my %envs = (TEST_NO => 12, PREFIX => 't');
+@ENV{ keys %envs } = values %envs;
+ok(msi('-I. -I.. -S ../t12-substitute.txt'), slurp('../t12-result.txt'));
+delete @ENV{ keys %envs };  # Not really needed
 
 # Test support routines
 
@@ -70,33 +73,23 @@ sub slurp {
 }
 
 sub msi {
-    my ($args, $envstr) = @_;
+    my ($args) = @_;
     my $exe = ($^O eq 'MSWin32') || ($^O eq 'cygwin') ? '.exe' : '';
+    my $nul = ($^O eq 'MSWin32') ? 'NUL' : '/dev/null';
     my $msi = "./msi-copy$exe";
     my $result;
-    my @envs = split(/,/, $envstr);
-    foreach (@envs)
-    {
-        my ($var, $value) = split /=/, $_;
-        $ENV{$var} = $value;
-    }
     if ($args =~ m/-o / && $args !~ m/-D/) {
         # An empty result is expected
-        $result = `$msi $args`;
+        $result = `$msi $args 2>$nul`;
     }
     else {
         # Try up to 5 times, sometimes msi fails on Windows
         my $count = 5;
         do {
-            $result = `$msi $args`;
+            $result = `$msi $args 2>$nul`;
             print "# result of '$msi $args' empty, retrying\n"
                 if $result eq '';
         } while ($result eq '') && (--$count > 0);
-    }
-    foreach (@envs)
-    {
-        my ($var, $value) = split /=/, $_;
-        delete $ENV{$var};
     }
     return $result;
 }

@@ -86,45 +86,74 @@ void testMyThread()
     }
 }
 
-struct selfJoiner {
-    epicsEvent finished;
+struct joinStuff {
+    epicsThreadOpts *opts;
+    epicsEvent *trigger;
+    epicsEvent *finished;
 };
 
-void joiner(void *arg) {
-    epicsEvent *finished = (epicsEvent*)arg;
+void donothing(void *arg)
+{}
+
+void dowait(void *arg)
+{
+    epicsEvent *trigger = (epicsEvent *) arg;
+    trigger->wait();
+    epicsThreadSleep(0.1);
+}
+
+void joinTests(void *arg)
+{
+    struct joinStuff *stuff = (struct joinStuff *) arg;
+
+    // Task finishes before parent joins
+    epicsThreadId tid = epicsThreadCreateOpt("nothing",
+        &donothing, 0, stuff->opts);
+    epicsThreadSleep(0.1);
+    epicsThreadMustJoin(tid);
+
+    // Parent joins before task finishes
+    tid = epicsThreadCreateOpt("await",
+        &dowait, stuff->trigger, stuff->opts);
+    stuff->trigger->signal();
+    epicsThreadMustJoin(tid);
 
     // This is a no-op
-    epicsThreadMustJoin(epicsThreadGetIdSelf());
+    epicsThreadId self = epicsThreadGetIdSelf();
+    epicsThreadMustJoin(self);
 
     // This is a no-op as well, except for a warning.
     eltc(0);
-    epicsThreadMustJoin(epicsThreadGetIdSelf());
+    epicsThreadMustJoin(self);
     eltc(1);
 
-    testPass("Check double self-join");
-    finished->signal();
+    stuff->finished->signal();
 }
 
-typedef struct info {
-    int  isOkToBlock;
-    int  didSomething;
-} info;
-
-void testSelfJoin()
+void testJoining()
 {
-    epicsEvent finished;
     epicsThreadOpts opts;
     epicsThreadOptsDefaults(&opts);
     opts.priority = 50;
     opts.joinable = 1;
 
-    (void)epicsThreadCreateOpt("selfjoin", &joiner, &finished, &opts);
+    epicsEvent finished, trigger;
 
-    // as this thread "joins" itself, we can't.
-    finished.wait();
+    struct joinStuff stuff = {
+        &opts, &trigger, &finished
+    };
+    epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts);
+
+    // as selfjoin joins itself, we can't.
+    testOk(finished.wait(10.0), "Join tests completed");
 }
 
 } // namespace
+
+typedef struct info {
+    int  isOkToBlock;
+    int  didSomething;
+} info;
 
 extern "C" {
 static void thread(void *arg)
@@ -174,8 +203,8 @@ MAIN(epicsThreadTest)
     testOk1(ncpus > 0);
     testDiag("main() thread %p", epicsThreadGetIdSelf());
 
+    testJoining(); // Do this first, ~epicsThread() uses it...
     testMyThread();
-    testSelfJoin();
     testOkToBlock();
 
     // attempt to self-join from a non-EPICS thread

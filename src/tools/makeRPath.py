@@ -54,7 +54,8 @@ for root in roots:
 
 if froot is None:
     sys.stderr.write("makeRPath: Final location %s\nNot under any of: %s\n"%(fdir, roots))
-    sys.exit(1)
+    # skip $ORIGIN handling below...
+    roots = []
 
 output = OrderedDict()
 for path in args.path:

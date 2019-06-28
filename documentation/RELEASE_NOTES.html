@@ -26,6 +26,13 @@ release.</p>
 
 -->
 
+<h3>VxWorks Minimum Version Requirements</h3>
+
+<p>The implementation of the <code>epicsThreadMustJoin()</code> functionality
+described below requires facilities that were added to the OS in VxWorks 6.9, so
+that is now the oldest version which this release of EPICS can be built
+against.</p>
+
 <h3>Add epicsThreadCreateOpt() and epicsThreadMustJoin()</h3>
 
 <p>epicsThreadCreateOpt() is an alternative to epicsThreadCreate() which
@@ -45,8 +52,16 @@ void startitup(void) {
 </pre></blockquote>
 
 <p>If the new epicsThreadOpts::joinable option flag is set (not the default),
-then epicsThreadMustJoin() needs to be called to free up thread resources.
-This function will block until the thread main function has returned.</p>
+then <code>epicsThreadMustJoin()</code> <em>must</em> be called with that
+thread's epicsThreadId when/after the thread exits, to free up thread resources.
+This function will block until the thread's main function has returned, after
+which the epicsThreadId will no longer be valid.</p>
+
+<p>A thread which was created with the joinable flag set may itself call
+<code>epicsThreadMustJoin()</code> passing its own epicsThreadId. This marks the
+thread as no longer being joinable, so it will then free the thread resources
+itself when its main function returns. The epicsThreadId for a thread that is
+not joinable gets invalidated as soon as its main function returns.</p>
 
 <h3>Launchpad Bugs</h3>
 

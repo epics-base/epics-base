@@ -16,9 +16,6 @@
 #include "ellLib.h"
 #include "epicsEvent.h"
 
-/* This target supports joining threads */
-#define EPICS_THREAD_CAN_JOIN (1)
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -124,7 +124,10 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadMustCreate (
     const char * name, unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void * parm );
-/** Wait for a joinable thread to exit (return from its main function */
+
+/* This gets undefined in osdThread.h on VxWorks < 6.9 */
+#define EPICS_THREAD_CAN_JOIN
+/** Wait for a joinable thread to exit (return from its main function) */
 epicsShareFunc void epicsThreadMustJoin(epicsThreadId id);
 /** Block the current thread until epicsThreadResume(). */
 epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf(void);

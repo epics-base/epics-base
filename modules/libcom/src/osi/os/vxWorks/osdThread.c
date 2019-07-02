@@ -34,7 +34,7 @@
 #include "vxLib.h"
 #include "epicsExit.h"
 
-#if EPICS_THREAD_CAN_JOIN
+#ifdef EPICS_THREAD_CAN_JOIN
   /* The implementation of epicsThreadMustJoin() here uses 2 features
    * of VxWorks that were first introduced in VxWorks 6.9: taskWait(),
    * and the taskSpareFieldGet/Set routines in taskUtilLib.
@@ -188,7 +188,7 @@ void epicsThreadOnce(epicsThreadOnceId *id, void (*func)(void *), void *arg)
     semGive(epicsThreadOnceMutex);
 }
 
-#if EPICS_THREAD_CAN_JOIN
+#ifdef EPICS_THREAD_CAN_JOIN
 
 /* This routine is not static so it appears in the back-trace
  * of a thread that is waiting to be joined.
@@ -286,8 +286,8 @@ epicsThreadId epicsThreadCreateOpt(const char * name,
 
 void epicsThreadMustJoin(epicsThreadId id)
 {
+#ifdef EPICS_THREAD_CAN_JOIN
     const char *fn = "epicsThreadMustJoin";
-#if EPICS_THREAD_CAN_JOIN
     int tid = (int) id;
     SEM_ID joinSem;
     STATUS status;
@@ -340,8 +340,6 @@ void epicsThreadMustJoin(epicsThreadId id)
         }
         cantProceed(fn);
     }
-#else
-    cantProceed("%s called when EPICS_THREAD_CAN_JOIN is 0\n", fn);
 #endif
 }
 

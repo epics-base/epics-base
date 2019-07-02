@@ -102,6 +102,11 @@ void dowait(void *arg)
     epicsThreadSleep(0.1);
 }
 
+void dodelay(void *arg)
+{
+    epicsThreadSleep(2.0);
+}
+
 void joinTests(void *arg)
 {
     struct joinStuff *stuff = (struct joinStuff *) arg;
@@ -117,6 +122,20 @@ void joinTests(void *arg)
         &dowait, stuff->trigger, stuff->opts);
     stuff->trigger->signal();
     epicsThreadMustJoin(tid);
+
+    // Parent gets delayed until task finishes
+    epicsTime start, end;
+    start = epicsTime::getCurrent();
+    tid = epicsThreadCreateOpt("delay",
+        &dodelay, 0, stuff->opts);
+    epicsThreadMustJoin(tid);
+    end = epicsTime::getCurrent();
+    double duration = end - start;
+#ifndef EPICS_THREAD_CAN_JOIN
+    testTodoBegin("Thread join doesn't work");
+#endif
+    testOk(duration > 1.0, "Join delayed parent (%g seconds)", duration);
+    testTodoEnd();
 
     // This is a no-op
     epicsThreadId self = epicsThreadGetIdSelf();
@@ -192,7 +211,7 @@ static void testOkToBlock()
 
 MAIN(epicsThreadTest)
 {
-    testPlan(12);
+    testPlan(13);
 
     unsigned int ncpus = epicsThreadGetCPUs();
     testDiag("System has %u CPUs", ncpus);

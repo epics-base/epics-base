@@ -26,42 +26,87 @@ release.</p>
 
 -->
 
-<h3>VxWorks Minimum Version Requirements</h3>
+<h3>VxWorks Minimum Version Recommendation</h3>
 
-<p>The implementation of the <code>epicsThreadMustJoin()</code> functionality
-described below requires facilities that were added to the OS in VxWorks 6.9, so
-that is now the oldest version which this release of EPICS can be built
-against.</p>
+<p>The implementation of the <code>epicsThreadMustJoin()</code> feature
+described below uses facilities that were added to VxWorks in version 6.9. When
+built against an older version of VxWorks the join functionality will not be
+available and calls to <code>epicsThreadMustJoin()</code> will return
+immediately. In this case the epicsThread.h header will not define the C macro
+<code>EPICS_THREAD_CAN_JOIN</code> to allow alternate code to be provided for
+these targets. The IOC's use of the join feature has been designed to work for
+either situation.</p>
 
-<h3>Add epicsThreadCreateOpt() and epicsThreadMustJoin()</h3>
 
-<p>epicsThreadCreateOpt() is an alternative to epicsThreadCreate() which
-passes some arguments via a structure (struct epicsThreadOpts).
-This <code>epicsThreadOpts*</code> may be NULL to use target specific
-defaults.  Caller wishing to provide thread options should first call
-<code>epicsThreadOptsDefaults()</code> to fill in the defaults.</p>
+<h3>New and modified epicsThread APIs</h3>
+
+<h4><code>epicsThreadCreateOpt()</code></h4>
+
+<p>A new routine <code>epicsThreadCreateOpt()</code> is an alternative to
+<code>epicsThreadCreate()</code> which takes some arguments via a structure
+(<code>struct epicsThreadOpts</code>) to allow for future extensions.</p>
+
+<blockquote><pre>
+typedef struct epicsThreadOpts {
+    unsigned int priority;
+    unsigned int stackSize;
+    unsigned int joinable;
+} epicsThreadOpts;
+#define EPICS_THREAD_OPTS_INIT { \
+    epicsThreadPriorityLow, epicsThreadStackMedium, 0}
+
+epicsThreadId epicsThreadCreateOpt(const char * name,
+    EPICSTHREADFUNC funptr, void * parm, const epicsThreadOpts *opts);
+</pre></blockquote>
+
+<p>The final <code>opts</code> parameter may be <code>NULL</code> to use the
+default values of thread priority (low) and stack size (medium). Callers wishing
+to provide alternative settings for these thread options or to create a joinable
+thread (see below) should create and pass in an <code>epicsThreadOpts</code>
+structure as shown below. Always initialize one of these structures using the
+<code>EPICS_THREAD_OPTS_INIT</code> macro to ensure that any additional fields
+that get added in the future are set to their default values.</p>
 
 <blockquote><pre>
 void startitup(void) {
-    epicsThreadOpts opts;
-    epicsThreadOptsDefaults(&opts);
-    opts.priority = epicsThreadPriorityMedium;
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+    epicsThreadId tid;
 
-    ... = epicsThreadCreateOpt("my thread", &threadMain, NULL, &opts);
+    opts.priority = epicsThreadPriorityMedium;
+    tid = epicsThreadCreateOpt("my thread", &amp;threadMain, NULL, &amp;opts);
 }
 </pre></blockquote>
 
-<p>If the new epicsThreadOpts::joinable option flag is set (not the default),
-then <code>epicsThreadMustJoin()</code> <em>must</em> be called with that
-thread's epicsThreadId when/after the thread exits, to free up thread resources.
-This function will block until the thread's main function has returned, after
-which the epicsThreadId will no longer be valid.</p>
+<p>C or C++ Code that also needs to build on earlier versions of Base can use
+<code>#ifdef&nbsp;EPICS_THREAD_OPTS_INIT</code> to determine whether the
+<code>epicsThreadCreateOpt()</code> API is available on this Base version.</p>
 
-<p>A thread which was created with the joinable flag set may itself call
-<code>epicsThreadMustJoin()</code> passing its own epicsThreadId. This marks the
-thread as no longer being joinable, so it will then free the thread resources
-itself when its main function returns. The epicsThreadId for a thread that is
-not joinable gets invalidated as soon as its main function returns.</p>
+<h4>Thread stack sizes</h4>
+
+<p>The <code>stackSize</code> member of the <code>epicsThreadOpts</code>
+structure and the equivalent parameters to the <code>epicsThreadCreate()</code>
+and <code>epicsThreadMustCreate()</code> routines can now be passed either one
+of the <code>epicsThreadStackSizeClass</code> enum values or a value returned
+from the <code>epicsThreadGetStackSize()</code> routine.</p>
+
+<h4><code>epicsThreadMustJoin()</code></h4>
+
+<p>If the new <code>joinable</code> flag of an <code>epicsThreadOpts</code>
+structure is non-zero (the default value is zero), the new API routine
+<code>epicsThreadMustJoin()</code> <em>must</em> be called with the thread's
+<code>epicsThreadId</code> when/after the thread exits, to free up thread
+resources. This function will block until the thread's main function has
+returned, allowing the parent to wait for its child thread. The child's
+<code>epicsThreadId</code> will no longer be valid and should not be used after
+the <code>epicsThreadMustJoin()</code> routine returns.</p>
+
+<p>A thread that was originally created with its joinable flag set may itself
+call <code>epicsThreadMustJoin()</code>, passing in its own epicsThreadId. This
+marks the thread as no longer being joinable, so it will then free the thread
+resources itself when its main function returns. The <code>epicsThreadId</code>
+of a thread that is not joinable gets invalidated as soon as its main function
+returns.</p>
+
 
 <h3>Launchpad Bugs</h3>
 

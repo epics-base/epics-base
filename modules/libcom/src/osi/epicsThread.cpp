@@ -35,7 +35,7 @@ epicsThreadId epicsShareAPI epicsThreadCreate (
     const char * name, unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void * parm )
 {
-    epicsThreadOpts opts;
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
     opts.priority = priority;
     opts.stackSize = stackSize;
     opts.joinable = 0;
@@ -202,11 +202,10 @@ epicsThread::epicsThread (
     epicsThreadRunable & runableIn, const char * pName,
         unsigned stackSize, unsigned priority ) :
     runable ( runableIn ), id ( 0 ), pThreadDestroyed ( 0 ),
-    begin ( false ), cancel ( false ), terminated ( false )
-  , joined(false)
+    begin ( false ), cancel ( false ), terminated ( false ),
+    joined ( false )
 {
-    epicsThreadOpts opts;
-    epicsThreadOptsDefaults(&opts);
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
     opts.stackSize = stackSize;
     opts.priority = priority;
     opts.joinable = 1;

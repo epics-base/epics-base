@@ -229,8 +229,8 @@ static void asCaTask(void)
     
 void asCaStart(void)
 {
-    epicsThreadOpts opts;
-    epicsThreadOptsDefaults(&opts);
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+
     opts.stackSize = epicsThreadGetStackSize(epicsThreadStackBig);
     opts.priority = epicsThreadPriorityScanLow - 3;
     opts.joinable = 1;

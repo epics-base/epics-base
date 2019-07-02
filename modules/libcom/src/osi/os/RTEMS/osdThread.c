@@ -152,13 +152,6 @@ epicsThreadGetStackSize (epicsThreadStackSizeClass size)
     return stackSize;
 }
 
-static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, 5000, 0};
-
-void epicsThreadOptsDefaults(epicsThreadOpts *opts)
-{
-    *opts = opts_default;
-}
-
 /*
  * Ensure integrity of task variable list
  */
@@ -315,15 +308,22 @@ epicsThreadCreateOpt (
     const char * name,
     EPICSTHREADFUNC funptr, void * parm, const epicsThreadOpts *opts )
 {
+    unsigned int stackSize;
     rtems_id tid;
     rtems_status_code sc;
     char c[4];
-    unsigned stackSize;
 
-    if(!opts) opts = &opts_default;
+    if (!initialized)
+        epicsThreadInit();
+
+    if (!opts) {
+        static const epicsThreadOpts opts_default = EPICS_THREAD_OPTS_INIT;
+        opts = &opts_default;
+    }
     stackSize = opts->stackSize;
+    if (stackSize <= epicsThreadStackBig)
+        stackSize = epicsThreadGetStackSize(stackSize);
 
-    if (!initialized) epicsThreadInit();
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
         errlogPrintf ("Warning: epicsThreadCreate %s illegal stackSize %d\n",
             name, stackSize);

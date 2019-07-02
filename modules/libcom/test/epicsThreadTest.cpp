@@ -40,7 +40,7 @@ private:
 };
 
 myThread::myThread(int arg,const char *name) :
-    thread(*this,name,epicsThreadGetStackSize(epicsThreadStackSmall),50+arg),
+    thread(*this,name,epicsThreadStackSmall,50+arg),
     argvalue(0)
 {
     argvalue = new int;
@@ -132,16 +132,14 @@ void joinTests(void *arg)
 
 void testJoining()
 {
-    epicsThreadOpts opts;
-    epicsThreadOptsDefaults(&opts);
-    opts.priority = 50;
-    opts.joinable = 1;
-
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
     epicsEvent finished, trigger;
-
     struct joinStuff stuff = {
         &opts, &trigger, &finished
     };
+
+    opts.priority = 50;
+    opts.joinable = 1;
     epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts);
 
     // as selfjoin joins itself, we can't.
@@ -172,9 +170,8 @@ static void thread(void *arg)
 
 static void testOkToBlock()
 {
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
 
-    epicsThreadOpts opts;
-    epicsThreadOptsDefaults(&opts);
     opts.priority = 50;
     opts.joinable = 1;
 
@@ -190,7 +187,6 @@ static void testOkToBlock()
 
     epicsThreadMustJoin(threadA);
     testOk1(infoA.didSomething);
-
 }
 
 

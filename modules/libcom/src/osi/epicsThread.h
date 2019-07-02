@@ -84,9 +84,8 @@ epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
 typedef struct epicsThreadOpts {
     /** Thread priority in OSI range (cf. epicsThreadPriority*) */
     unsigned int priority;
-    /** Thread stack size, as returned by epicsThreadGetStackSize().
-     *
-     * @warning Do not pass enum epicsThreadStackSizeClass directly!
+    /** Thread stack size, either in bytes for this architecture or
+     * an enum epicsThreadStackSizeClass value.
      */
     unsigned int stackSize;
     /** Should thread be joinable? (default (0) is not joinable).
@@ -95,8 +94,14 @@ typedef struct epicsThreadOpts {
     unsigned int joinable;
 } epicsThreadOpts;
 
-/** Fill in target specific default values. */
-epicsShareFunc void epicsThreadOptsDefaults(epicsThreadOpts *opts);
+/** Default initial values for epicsThreadOpts
+ * Applications should always use this macro to initialize an epicsThreadOpts
+ * structure. Additional fields may be added in the future, and the order of
+ * the fields might also change, thus code that assumes the above definition
+ * might break if these rules are not followed.
+ */
+#define EPICS_THREAD_OPTS_INIT { \
+    epicsThreadPriorityLow, epicsThreadStackMedium, 0}
 
 /** @brief Allocate and start a new OS thread.
  * @param name A name describing this thread.  Appears in various log and error message.

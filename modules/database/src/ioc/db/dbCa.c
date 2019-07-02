@@ -265,8 +265,8 @@ void dbCaShutdown(void)
 
 static void dbCaLinkInitImpl(int isolate)
 {
-    epicsThreadOpts opts;
-    epicsThreadOptsDefaults(&opts);
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+
     opts.stackSize = epicsThreadGetStackSize(epicsThreadStackBig);
     opts.priority = epicsThreadPriorityMedium;
     opts.joinable = 1;

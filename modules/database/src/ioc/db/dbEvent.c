@@ -1056,9 +1056,8 @@ int db_start_events (
     void *init_func_arg, unsigned osiPriority )
 {
      struct event_user * const evUser = (struct event_user *) ctx;
-     epicsThreadOpts opts;
+     epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
 
-     epicsThreadOptsDefaults(&opts);
      opts.stackSize = epicsThreadGetStackSize(epicsThreadStackMedium);
      opts.priority = osiPriority;
      opts.joinable = 1;

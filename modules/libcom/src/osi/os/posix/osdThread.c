@@ -469,13 +469,6 @@ epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize (epicsThreadSt
     return 0;
 #endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
 }
-
-static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, STACK_SIZE(1), 0};
-
-void epicsThreadOptsDefaults(epicsThreadOpts *opts)
-{
-    *opts = opts_default;
-}
 
 epicsShareFunc void epicsShareAPI epicsThreadOnce(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
@@ -519,48 +512,65 @@ epicsShareFunc void epicsShareAPI epicsThreadOnce(epicsThreadOnceId *id, void (*
 }
 
 epicsThreadId
-epicsThreadCreateOpt (
-    const char * name,
+epicsThreadCreateOpt(const char * name,
     EPICSTHREADFUNC funptr, void * parm, const epicsThreadOpts *opts )
 {
+    unsigned int stackSize;
     epicsThreadOSD *pthreadInfo;
     int status;
     sigset_t blockAllSig, oldSig;
 
-    if(!opts) opts = &opts_default;
-
     epicsThreadInit();
     assert(pcommonAttr);
+
+    if (!opts) {
+        static const epicsThreadOpts opts_default = EPICS_THREAD_OPTS_INIT;
+        opts = &opts_default;
+    }
+    stackSize = opts->stackSize;
+    if (stackSize <= epicsThreadStackBig)
+        stackSize = epicsThreadGetStackSize(stackSize);
+
     sigfillset(&blockAllSig);
-    pthread_sigmask(SIG_SETMASK,&blockAllSig,&oldSig);
-    pthreadInfo = init_threadInfo(name,opts->priority,opts->stackSize,funptr,parm,opts->joinable);
-    if(pthreadInfo==0) return 0;
+    pthread_sigmask(SIG_SETMASK, &blockAllSig, &oldSig);
+
+    pthreadInfo = init_threadInfo(name, opts->priority, stackSize, funptr,
+        parm, opts->joinable);
+    if (pthreadInfo==0)
+        return 0;
+
     pthreadInfo->isEpicsThread = 1;
-    setSchedulingPolicy(pthreadInfo,SCHED_FIFO);
+    setSchedulingPolicy(pthreadInfo, SCHED_FIFO);
     pthreadInfo->isRealTimeScheduled = 1;
-    status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
-                start_routine,pthreadInfo);
-    if(status==EPERM){
+
+    status = pthread_create(&pthreadInfo->tid, &pthreadInfo->attr,
+        start_routine, pthreadInfo);
+    if (status==EPERM) {
         /* Try again without SCHED_FIFO*/
         free_threadInfo(pthreadInfo);
-        pthreadInfo = init_threadInfo(name,opts->priority,opts->stackSize,funptr,parm,opts->joinable);
-        if(pthreadInfo==0) return 0;
+
+        pthreadInfo = init_threadInfo(name, opts->priority, stackSize,
+            funptr, parm, opts->joinable);
+        if (pthreadInfo==0)
+            return 0;
+
         pthreadInfo->isEpicsThread = 1;
-        status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
-                start_routine,pthreadInfo);
+        status = pthread_create(&pthreadInfo->tid, &pthreadInfo->attr,
+            start_routine, pthreadInfo);
     }
-    checkStatusOnce(status,"pthread_create");
-    if(status) {
+    checkStatusOnce(status, "pthread_create");
+    if (status) {
         free_threadInfo(pthreadInfo);
         return 0;
     }
-    status = pthread_sigmask(SIG_SETMASK,&oldSig,NULL);
-    checkStatusOnce(status,"pthread_sigmask");
-    if(pthreadInfo->joinable) {
+
+    status = pthread_sigmask(SIG_SETMASK, &oldSig, NULL);
+    checkStatusOnce(status, "pthread_sigmask");
+    if (pthreadInfo->joinable) {
         /* extra ref for epicsThreadMustJoin() */
         epicsAtomicIncrIntT(&pthreadInfo->refcnt);
     }
-    return(pthreadInfo);
+    return pthreadInfo;
 }
 
 /*

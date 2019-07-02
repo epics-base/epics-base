@@ -469,13 +469,6 @@ epicsShareFunc unsigned int epicsShareAPI
     return stackSizeTable[stackSizeClass];
 }
 
-static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, STACK_SIZE(1), 0};
-
-void epicsThreadOptsDefaults(epicsThreadOpts *opts)
-{
-    *opts = opts_default;
-}
-
 void epicsThreadCleanupWIN32 ()
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
@@ -599,6 +592,7 @@ epicsThreadId epicsThreadCreateOpt (
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParmWIN32;
+    unsigned int stackSize;
     int osdPriority;
     DWORD wstat;
     BOOL bstat;
@@ -607,7 +601,13 @@ epicsThreadId epicsThreadCreateOpt (
         return NULL;
     }
 
-    if(!opts) opts = &opts_default;
+    if (!opts) {
+        static const epicsThreadOpts opts_default = EPICS_THREAD_OPTS_INIT;
+        opts = &opts_default;
+    }
+    stackSize = opts->stackSize;
+    if (stackSize <= epicsThreadStackBig)
+        stackSize = epicsThreadGetStackSize(stackSize);
 
     pParmWIN32 = epicsThreadParmCreate ( pName );
     if ( pParmWIN32 == 0 ) {
@@ -620,7 +620,7 @@ epicsThreadId epicsThreadCreateOpt (
     {
         unsigned threadId;
         pParmWIN32->handle = (HANDLE) _beginthreadex ( 
-            0, opts->stackSize, epicsWin32ThreadEntry,
+            0, stackSize, epicsWin32ThreadEntry,
             pParmWIN32, 
             CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION, 
             & threadId );

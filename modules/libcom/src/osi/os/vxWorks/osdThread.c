@@ -150,13 +150,6 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
     return stackSizeTable[stackSizeClass];
 }
 
-static const epicsThreadOpts opts_default = {epicsThreadPriorityLow, 4000*ARCH_STACK_FACTOR, 0};
-
-void epicsThreadOptsDefaults(epicsThreadOpts *opts)
-{
-    *opts = opts_default;
-}
-
 struct epicsThreadOSD {};
     /* Strictly speaking this should be a WIND_TCB, but we only need it to
      * be able to create an epicsThreadId that is guaranteed never to be
@@ -256,20 +249,27 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
 epicsThreadId epicsThreadCreateOpt(const char * name,
     EPICSTHREADFUNC funptr, void * parm, const epicsThreadOpts *opts )
 {
+    unsigned int stackSize;
     int tid;
 
-    if (!opts)
-        opts = &opts_default;
-
     epicsThreadInit();
-    if (opts->stackSize < 100) {
+
+    if (!opts) {
+        static const epicsThreadOpts opts_default = EPICS_THREAD_OPTS_INIT;
+        opts = &opts_default;
+    }
+    stackSize = opts->stackSize;
+    if (stackSize <= epicsThreadStackBig)
+        stackSize = epicsThreadGetStackSize(stackSize);
+
+    if (stackSize < 100) {
         errlogPrintf("epicsThreadCreate %s illegal stackSize %d\n",
-            name, opts->stackSize);
+            name, stackSize);
         return 0;
     }
 
     tid = taskCreate((char *)name,getOssPriorityValue(opts->priority),
-        TASK_FLAGS, opts->stackSize,
+        TASK_FLAGS, stackSize,
         (FUNCPTR)createFunction, (int)funptr, (int)parm,
         0,0,0,0,0,0,0,0);
     if (tid == ERROR) {

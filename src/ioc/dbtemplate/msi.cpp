@@ -215,6 +215,7 @@ int main(int argc,char **argv)
     if (opt_D) {
         printf("\n");
     }
+    fflush(stdout);
     free(templateName);
     return opt_V & 2;
 }

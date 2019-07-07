@@ -255,8 +255,8 @@ TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD_RTEMS = $(TESTPROD_HOST)
-TESTSCRIPTS_RTEMS += $(filter-out epicsUnitTestTest.t, $(TESTS:%=%.t))
+TESTPROD = $(TESTPROD_HOST)
+TESTSCRIPTS += $(filter-out epicsUnitTestTest.t, $(TESTS:%=%.t))
 endif
 
 

@@ -72,8 +72,7 @@ static void mustDrop(dbChannel *pch, db_field_log *pfl, char* m) {
     testOk(newFree == oldFree + 1, "field_log was freed - %d+1 => %d",
         oldFree, newFree);
 
-    if (newFree == oldFree)
-        db_delete_field_log(pfl);
+    db_delete_field_log(pfl2);
 }
 
 static void mustPass(dbChannel *pch, db_field_log *pfl, char* m) {
@@ -85,8 +84,7 @@ static void mustPass(dbChannel *pch, db_field_log *pfl, char* m) {
     testOk(newFree == oldFree, "field_log was not freed - %d => %d",
         oldFree, newFree);
 
-    if (newFree == oldFree)
-        db_delete_field_log(pfl);
+    db_delete_field_log(pfl2);
 }
 
 static void checkAndOpenChannel(dbChannel *pch, const chFilterPlugin *plug) {
@@ -125,10 +123,10 @@ MAIN(decTest)
     const chFilterPlugin *plug;
     char myname[] = "dec";
     db_field_log *pfl[10];
-    int i;
+    int i, logsFree, logsFinal;
     dbEventCtx evtctx;
 
-    testPlan(103);
+    testPlan(104);
 
     testdbPrepare();
 
@@ -164,6 +162,11 @@ MAIN(decTest)
     testOk(!!(pch = dbChannelCreate("x.VAL{\"dec\":{\"n\":1}}")),
            "dbChannel with plugin dec (n=1) created");
 
+    /* Start the free-list */
+    db_delete_field_log(db_create_read_log(pch));
+    logsFree = db_available_logs();
+    testDiag("%d field_logs on free-list", logsFree);
+
     checkAndOpenChannel(pch, plug);
 
     for (i = 0; i < 5; i++) {
@@ -180,6 +183,8 @@ MAIN(decTest)
     mustPass(pch, pfl[4], "i=4");
 
     dbChannelDelete(pch);
+
+    testDiag("%d field_logs on free-list", db_available_logs());
 
     /* Decimation (N=2) */
 
@@ -209,6 +214,8 @@ MAIN(decTest)
 
     dbChannelDelete(pch);
 
+    testDiag("%d field_logs on free-list", db_available_logs());
+
     /* Decimation (N=3) */
 
     testHead("Decimation (n=3)");
@@ -237,6 +244,8 @@ MAIN(decTest)
 
     dbChannelDelete(pch);
 
+    testDiag("%d field_logs on free-list", db_available_logs());
+
     /* Decimation (N=4) */
 
     testHead("Decimation (n=4)");
@@ -264,6 +273,9 @@ MAIN(decTest)
     mustDrop(pch, pfl[9], "i=9");
 
     dbChannelDelete(pch);
+
+    logsFinal = db_available_logs();
+    testOk(logsFree == logsFinal, "%d field_logs on free-list", logsFinal);
 
     db_close_events(evtctx);
 

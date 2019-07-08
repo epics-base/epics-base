@@ -39,12 +39,14 @@ static int fl_equal(const db_field_log *pfl1, const db_field_log *pfl2) {
 static void fl_setup(dbChannel *chan, db_field_log *pfl) {
     struct dbCommon  *prec = dbChannelRecord(chan);
 
+    memset(pfl, 0, sizeof(db_field_log));
     pfl->ctx  = dbfl_context_read;
     pfl->type = dbfl_type_val;
     pfl->stat = prec->stat;
     pfl->sevr = prec->sevr;
     pfl->time = prec->time;
     pfl->field_type  = dbChannelFieldType(chan);
+    pfl->field_size  = dbChannelFieldSize(chan);
     pfl->no_elements = dbChannelElements(chan);
     /*
      * use memcpy to avoid a bus error on

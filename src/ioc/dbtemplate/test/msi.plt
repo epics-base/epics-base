@@ -76,19 +76,5 @@ sub msi {
     my ($args) = @_;
     my $nul = ($^O eq 'MSWin32') ? 'NUL' : '/dev/null';
     my $msi = ($^O eq 'MSWin32') ? 'msi-copy.exe' : './msi-copy';
-    my $result;
-    if ($args =~ m/-o / && $args !~ m/-D/) {
-        # An empty result is expected
-        $result = `$msi $args 2>$nul`;
-    }
-    else {
-        # Try up to 5 times, sometimes msi fails on Windows
-        my $count = 5;
-        do {
-            $result = `$msi $args 2>$nul`;
-            print "# result of '$msi $args' empty, retrying\n"
-                if $result eq '';
-        } while ($result eq '') && (--$count > 0);
-    }
-    return $result;
+    return `$msi $args 2>$nul`;
 }

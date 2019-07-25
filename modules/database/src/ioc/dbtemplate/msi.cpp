@@ -21,6 +21,7 @@
 
 #include <dbDefs.h>
 #include <macLib.h>
+#include <errlog.h>
 #include <epicsString.h>
 #include <osiFileName.h>
 #include <osiUnistd.h>
@@ -211,6 +212,7 @@ int main(int argc,char **argv)
         substituteDestruct(substitutePvt);
     }
     macDeleteHandle(macPvt);
+    errlogFlush();  // macLib calls errlogPrintf()
     inputDestruct(inputPvt);
     if (opt_D) {
         printf("\n");

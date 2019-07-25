@@ -1,0 +1,10 @@
+file t11-template.txt {
+    pattern {}
+    {}
+}
+
+global { a=gbl }
+file t11-template.txt {
+    pattern {}
+    {}
+}

@@ -65,7 +65,7 @@ typedef int                     SOCKET;
 #define socket_ioctl(A,B,C)     ioctl(A,B,(int)C)
 typedef int osiSockIoctl_t;
 typedef int osiSocklen_t;
-typedef int osiSockOptMcastLoop_t;
+typedef char osiSockOptMcastLoop_t;
 typedef char osiSockOptMcastTTL_t;
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE&&(FD)>=0)

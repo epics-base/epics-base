@@ -99,7 +99,7 @@ static void monitor(stateRecord *prec)
     monitor_mask = recGblResetAlarms(prec);
     if(strncmp(prec->oval,prec->val,sizeof(prec->val))) {
         db_post_events(prec,&(prec->val[0]),monitor_mask|DBE_VALUE|DBE_LOG);
-	strncpy(prec->oval,prec->val,sizeof(prec->val));
+	strncpy(prec->oval,prec->val,sizeof(prec->oval));
     }
     return;
 }

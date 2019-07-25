@@ -1037,6 +1037,15 @@ of its CALLBACK objects.</p>
 
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Cleaning up with Multiple CA contexts in a Process</h3>
+
+<p>Bruno Martins reported a problem with the CA client library at shutdown in a
+process that uses multiple CA client contexts. The first context that triggers
+the CA client exit handler prevents any others from being able to clean up
+because it resets the ID of an internal epicsThreadPrivate variable which is
+shared by all clients. This action has been removed from the client library,
+which makes cleanup of clients like this possible.</p>
+
 <h3>Perl CA bindings fixed for macOS Mojave</h3>
 
 <p>Apple removed some Perl header files from macOS Mojave that were available

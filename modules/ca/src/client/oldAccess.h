@@ -289,7 +289,6 @@ private:
 };
 
 extern "C" void cacOnceFunc ( void * );
-extern "C" void cacExitHandler ( void *);
 
 struct ca_client_context : public cacContextNotify
 {
@@ -429,7 +428,6 @@ private:
     ca_client_context & operator = ( const ca_client_context & );
 
     friend void cacOnceFunc ( void * );
-    friend void cacExitHandler ( void *);
     static cacService * pDefaultService;
     static epicsMutex * pDefaultServiceInstallMutex;
     static const unsigned flushBlockThreshold;

@@ -37,7 +37,7 @@
 
 static unsigned short ioc_log_port;
 static long ioc_log_file_limit;
-static char ioc_log_file_name[256];
+static char ioc_log_file_name[512];
 static char ioc_log_file_command[256];
 
 
@@ -866,7 +866,12 @@ static int setupSIGHUP(struct ioc_log_server *pserver)
  */
 static void sighupHandler(int signo)
 {
-	(void) write(sighupPipe[1], "SIGHUP\n", 7);
+    const char msg[] = "SIGHUP\n";
+    const ssize_t bytesWritten = write(sighupPipe[1], msg, sizeof(msg));
+    if (bytesWritten != sizeof(msg)) {
+        fprintf(stderr, "iocLogServer: failed to write to SIGHUP pipe because "
+                        "`%s'\n", strerror(errno));
+    }
 }
 
 
@@ -884,7 +889,10 @@ static void serviceSighupRequest(void *pParam)
 	/*
 	 * Read and discard message from pipe.
 	 */
-	(void) read(sighupPipe[0], buff, sizeof buff);
+	if (read(sighupPipe[0], buff, sizeof buff) <= 0) {
+        fprintf(stderr, "iocLogServer: failed to read from SIGHUP pipe because "
+                        "`%s'\n", strerror(errno));
+    };
 
 	/*
 	 * Determine new log file name.

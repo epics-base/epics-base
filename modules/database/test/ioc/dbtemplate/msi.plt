@@ -11,7 +11,7 @@
 use strict;
 use Test;
 
-BEGIN {plan tests => 9}
+BEGIN {plan tests => 12}
 
 # Check include/substitute command model
 ok(msi('-I .. ../t1-template.txt'),             slurp('../t1-result.txt'));
@@ -33,16 +33,9 @@ ok(msi('-S../t6-substitute.txt ../t6-template.txt'), slurp('../t6-result.txt'));
 
 # Output option -o and verbose option -V
 my $out = 't7-output.txt';
-my $count = 5; # Try up to 5 times...
-my $result;
-do {
-    unlink $out;
-    msi("-I.. -V -o $out ../t1-template.txt");
-    $result = slurp($out);
-    print "# msi output file empty, retrying\n"
-        if $result eq '';
-} while ($result eq '') && (--$count > 0);
-ok($result, slurp('../t7-result.txt'));
+unlink $out;
+msi("-I.. -V -o $out ../t1-template.txt");
+ok(slurp($out), slurp('../t7-result.txt'));
 
 # Dependency generation, include/substitute model
 ok(msi('-I.. -D -o t8.txt ../t1-template.txt'), slurp('../t8-result.txt'));
@@ -50,6 +43,17 @@ ok(msi('-I.. -D -o t8.txt ../t1-template.txt'), slurp('../t8-result.txt'));
 # Dependency generation, dbLoadTemplate format
 ok(msi('-I.. -D -ot9.txt -S ../t2-substitution.txt'), slurp('../t9-result.txt'));
 
+# Substitution file, variable format, with 0 variable definitions
+ok(msi('-I. -I.. -S ../t10-substitute.txt'), slurp('../t10-result.txt'));
+
+# Substitution file, pattern format, with 0 pattern definitions
+ok(msi('-I. -I.. -S ../t11-substitute.txt'), slurp('../t11-result.txt'));
+
+# Substitution file, environment variable macros in template filename
+my %envs = (TEST_NO => 12, PREFIX => 't');
+@ENV{ keys %envs } = values %envs;
+ok(msi('-I. -I.. -S ../t12-substitute.txt'), slurp('../t12-result.txt'));
+delete @ENV{ keys %envs };  # Not really needed
 
 # Test support routines
 
@@ -63,21 +67,8 @@ sub slurp {
 
 sub msi {
     my ($args) = @_;
+    my $nul = $^O eq 'MSWin32' ? 'NUL' : '/dev/null';
     my $msi = '@TOP@/bin/@ARCH@/msi';
-    $msi .= '.exe' if ($^O eq 'MSWin32') || ($^O eq 'cygwin');
-    my $result;
-    if ($args =~ m/-o / && $args !~ m/-D/) {
-        # An empty result is expected
-        $result = `$msi $args`;
-    }
-    else {
-        # Try up to 5 times, sometimes msi fails on Windows
-        my $count = 5;
-        do {
-            $result = `$msi $args`;
-            print "# result of '$msi $args' empty, retrying\n"
-                if $result eq '';
-        } while ($result eq '') && (--$count > 0);
-    }
-    return $result;
+    $msi =~ tr(/)(\\) if $^O eq 'MSWin32';
+    return `$msi $args 2>$nul`;
 }

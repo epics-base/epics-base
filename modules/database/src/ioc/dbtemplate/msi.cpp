@@ -9,6 +9,9 @@
 
 /* msi - macro substitutions and include */
 
+#include <string>
+#include <list>
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -18,8 +21,6 @@
 
 #include <dbDefs.h>
 #include <macLib.h>
-#include <ellLib.h>
-#include <errlog.h>
 #include <epicsString.h>
 #include <osiFileName.h>
 #include <osiUnistd.h>
@@ -56,32 +57,35 @@ int din = 0;
 typedef struct inputData inputData;
 
 static void inputConstruct(inputData **ppvt);
-static void inputDestruct(inputData *pvt);
-static void inputAddPath(inputData *pvt, char *pval);
-static void inputBegin(inputData *pvt, char *fileName);
-static char *inputNextLine(inputData *pvt);
-static void inputNewIncludeFile(inputData *pvt, char *name);
-static void inputErrPrint(inputData *pvt);
+static void inputDestruct(inputData * const pvt);
+static void inputAddPath(inputData * const pvt, const char * const pval);
+static void inputBegin(inputData * const pvt, const char * const fileName);
+static char *inputNextLine(inputData * const pvt);
+static void inputNewIncludeFile(inputData * const pvt, const char * const name);
+static void inputErrPrint(const inputData * const pvt);
 
 /* Module to read the substitution file */
 typedef struct subInfo subInfo;
 
-static void substituteOpen(subInfo **ppvt, char *substitutionName);
-static void substituteDestruct(subInfo *pvt);
-static int substituteGetNextSet(subInfo *pvt, char **filename);
-static int substituteGetGlobalSet(subInfo *pvt);
-static char *substituteGetReplacements(subInfo *pvt);
-static char *substituteGetGlobalReplacements(subInfo *pvt);
+static void substituteOpen(subInfo **ppvt, const std::string& substitutionName);
+static void substituteDestruct(subInfo * const pvt);
+static bool substituteGetNextSet(subInfo * const pvt, char **filename);
+static bool substituteGetGlobalSet(subInfo * const pvt);
+static const char *substituteGetReplacements(subInfo * const pvt);
+static const char *substituteGetGlobalReplacements(subInfo * const pvt);
 
 /* Forward references to local routines */
-static void usageExit(int status);
-static void abortExit(int status);
-static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval);
-static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *templateName);
+static void usageExit(const int status);
+static void abortExit(const int status);
+static void addMacroReplacements(MAC_HANDLE * const macPvt,
+                                 const char * const pval);
+static void makeSubstitutions(inputData * const inputPvt,
+                              MAC_HANDLE * const macPvt,
+                              const char * const templateName);
 
 /*Global variables */
 static int opt_V = 0;
-static int opt_D = 0;
+static bool opt_D = false;
 
 static char *outFile = 0;
 static int numDeps = 0, depHashes[MAX_DEPS];
@@ -92,23 +96,21 @@ int main(int argc,char **argv)
     inputData *inputPvt;
     MAC_HANDLE *macPvt;
     char *pval;
-    int  narg;
-    char *substitutionName = 0;
+    std::string substitutionName;
     char *templateName = 0;
-    int  i;
-    int  localScope = 1;
+    bool localScope = true;
 
     inputConstruct(&inputPvt);
     macCreateHandle(&macPvt, 0);
     while ((argc > 1) && (argv[1][0] == '-')) {
-        narg = (strlen(argv[1]) == 2) ? 2 : 1;
+        int narg = (strlen(argv[1]) == 2) ? 2 : 1;
         pval = (narg == 1) ? (argv[1] + 2) : argv[2];
 
         if (strncmp(argv[1], "-I", 2) == 0) {
             inputAddPath(inputPvt, pval);
         }
         else if (strcmp(argv[1], "-D") == 0) {
-            opt_D = 1;
+            opt_D = true;
             narg = 1; /* no argument for this option */
         }
         else if(strncmp(argv[1], "-o", 2) == 0) {
@@ -118,14 +120,14 @@ int main(int argc,char **argv)
             addMacroReplacements(macPvt, pval);
         }
         else if(strncmp(argv[1], "-S", 2) == 0) {
-            substitutionName = epicsStrDup(pval);
+            substitutionName = pval;
         }
         else if (strcmp(argv[1], "-V") == 0) {
             opt_V = 1;
             narg = 1; /* no argument for this option */
         }
         else if (strcmp(argv[1], "-g") == 0) {
-            localScope = 0;
+            localScope = false;
             narg = 1; /* no argument for this option */
         }
         else if (strcmp(argv[1], "-h") == 0) {
@@ -137,7 +139,7 @@ int main(int argc,char **argv)
         }
 
         argc -= narg;
-        for (i = 1; i < argc; i++)
+        for (int i = 1; i < argc; i++)
             argv[i] = argv[i + narg];
     }
 
@@ -165,24 +167,24 @@ int main(int argc,char **argv)
     if (argc == 2)
         templateName = epicsStrDup(argv[1]);
 
-    if (!substitutionName) {
+    if (substitutionName.empty()) {
         STEP("Single template+substitutions file");
         makeSubstitutions(inputPvt, macPvt, templateName);
     }
     else {
         subInfo *substitutePvt;
         char *filename = 0;
-        int isGlobal, isFile;
+        bool isGlobal, isFile;
 
-        STEPS("Substitutions from file", substitutionName);
+        STEPS("Substitutions from file", substitutionName.c_str());
         substituteOpen(&substitutePvt, substitutionName);
         do {
             isGlobal = substituteGetGlobalSet(substitutePvt);
             if (isGlobal) {
                 STEP("Handling global macros");
-                pval = substituteGetGlobalReplacements(substitutePvt);
-                if (pval)
-                    addMacroReplacements(macPvt, pval);
+                const char *macStr = substituteGetGlobalReplacements(substitutePvt);
+                if (macStr)
+                    addMacroReplacements(macPvt, macStr);
             }
             else if ((isFile = substituteGetNextSet(substitutePvt, &filename))) {
                 if (templateName)
@@ -193,11 +195,12 @@ int main(int argc,char **argv)
                 }
 
                 STEPS("Handling template file", filename);
-                while ((pval = substituteGetReplacements(substitutePvt))) {
+                const char *macStr;
+                while ((macStr = substituteGetReplacements(substitutePvt))) {
                     if (localScope)
                         macPushScope(macPvt);
 
-                    addMacroReplacements(macPvt, pval);
+                    addMacroReplacements(macPvt, macStr);
                     makeSubstitutions(inputPvt, macPvt, filename);
 
                     if (localScope)
@@ -207,18 +210,17 @@ int main(int argc,char **argv)
         } while (isGlobal || isFile);
         substituteDestruct(substitutePvt);
     }
-    errlogFlush();
     macDeleteHandle(macPvt);
     inputDestruct(inputPvt);
     if (opt_D) {
         printf("\n");
     }
+    fflush(stdout);
     free(templateName);
-    free(substitutionName);
     return opt_V & 2;
 }
 
-void usageExit(int status)
+void usageExit(const int status)
 {
     fprintf(stderr,
         "Usage: msi [options] [template]\n"
@@ -236,7 +238,7 @@ void usageExit(int status)
     exit(status);
 }
 
-void abortExit(int status)
+void abortExit(const int status)
 {
     if (outFile) {
         fclose(stdout);
@@ -245,7 +247,8 @@ void abortExit(int status)
     exit(status);
 }
 
-static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval)
+static void addMacroReplacements(MAC_HANDLE * const macPvt,
+                                 const char * const pval)
 {
     char **pairs;
     long status;
@@ -268,7 +271,9 @@ static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval)
 typedef enum {cmdInclude,cmdSubstitute} cmdType;
 static const char *cmdNames[] = {"include","substitute"};
 
-static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *templateName)
+static void makeSubstitutions(inputData * const inputPvt,
+                              MAC_HANDLE * const macPvt,
+                              const char * const templateName)
 {
     char *input;
     static char buffer[MAX_BUFFER_SIZE];
@@ -292,7 +297,6 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
         if (command) {
             char *pstart;
             char *pend;
-            char *copy;
             int  cmdind=-1;
             int  i;
 
@@ -325,16 +329,15 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
             /*skip quote and any trailing blanks*/
             while (*++p == ' ') ;
             if (*p != '\n' && *p != 0) goto endcmd;
-            copy = calloc(pend-pstart + 1, sizeof(char));
-            strncpy(copy, pstart, pend-pstart);
+            std::string copy = std::string(pstart, pend);
 
             switch(cmdind) {
             case cmdInclude:
-                inputNewIncludeFile(inputPvt,copy);
+                inputNewIncludeFile(inputPvt, copy.c_str());
                 break;
 
             case cmdSubstitute:
-                addMacroReplacements(macPvt,copy);
+                addMacroReplacements(macPvt, copy.c_str());
                 break;
 
             default:
@@ -342,7 +345,6 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
                 inputErrPrint(inputPvt);
                 abortExit(1);
             }
-            free(copy);
             expand = 0;
         }
 
@@ -361,94 +363,72 @@ endcmd:
 }
 
 typedef struct inputFile {
-    ELLNODE     node;
-    char        *filename;
+    std::string filename;
     FILE        *fp;
     int         lineNum;
 } inputFile;
 
-typedef struct pathNode {
-    ELLNODE     node;
-    char        *directory;
-} pathNode;
-
 struct inputData {
-    ELLLIST     inputFileList;
-    ELLLIST     pathList;
+    std::list<inputFile> inputFileList;
+    std::list<std::string> pathList;
     char        inputBuffer[MAX_BUFFER_SIZE];
+    inputData() { memset(inputBuffer, 0, sizeof(inputBuffer) * sizeof(inputBuffer[0])); };
 };
 
-static void inputOpenFile(inputData *pinputData, char *filename);
+static void inputOpenFile(inputData *pinputData, const char * const filename);
 static void inputCloseFile(inputData *pinputData);
 static void inputCloseAllFiles(inputData *pinputData);
 
 static void inputConstruct(inputData **ppvt)
 {
-    inputData *pinputData;
-
-    pinputData = calloc(1, sizeof(inputData));
-    ellInit(&pinputData->inputFileList);
-    ellInit(&pinputData->pathList);
-    *ppvt = pinputData;
+    *ppvt = new inputData;
 }
 
-static void inputDestruct(inputData *pinputData)
+static void inputDestruct(inputData * const pinputData)
 {
-    pathNode *ppathNode;
-
     inputCloseAllFiles(pinputData);
-    while ((ppathNode = (pathNode *) ellFirst(&pinputData->pathList))) {
-        ellDelete(&pinputData->pathList, &ppathNode->node);
-        free(ppathNode->directory);
-        free(ppathNode);
-    }
-    free(pinputData);
+    delete(pinputData);
 }
 
-static void inputAddPath(inputData *pinputData, char *path)
+static void inputAddPath(inputData * const pinputData, const char * const path)
 {
-    ELLLIST     *ppathList = &pinputData->pathList;
-    pathNode    *ppathNode;
     const char  *pcolon;
     const char  *pdir;
     size_t      len;
-    int         emptyName;
     const char  sep = *OSI_PATH_LIST_SEPARATOR;
 
     ENTER;
     pdir = path;
     /*an empty name at beginning, middle, or end means current directory*/
     while (pdir && *pdir) {
-        emptyName = ((*pdir == sep) ? 1 : 0);
+        bool emptyName = (*pdir == sep);
         if (emptyName) ++pdir;
 
-        ppathNode = (pathNode *) calloc(1, sizeof(pathNode));
-        ellAdd(ppathList, &ppathNode->node);
-
+        std::string directory;
         if (!emptyName) {
             pcolon = strchr(pdir, sep);
             len = (pcolon ? (pcolon - pdir) : strlen(pdir));
             if (len > 0)  {
-                ppathNode->directory = (char *) calloc(len + 1, sizeof(char));
-                strncpy(ppathNode->directory, pdir, len);
+                directory = std::string(pdir, len);
                 pdir = pcolon;
                 /*unless at end skip past first colon*/
                 if (pdir && *(pdir + 1) != 0) ++pdir;
             }
             else { /*must have been trailing : */
-                emptyName = 1;
+                emptyName = true;
             }
         }
 
         if (emptyName) {
-            ppathNode->directory = (char *) calloc(2, sizeof(char));
-            strcpy(ppathNode->directory, ".");
+            directory = ".";
         }
+
+        pinputData->pathList.push_back(directory);
     }
     EXIT;
 }
 
-static void inputBegin(inputData *pinputData, char *fileName)
+static void inputBegin(inputData * const pinputData, const char * const fileName)
 {
     ENTER;
     inputCloseAllFiles(pinputData);
@@ -456,16 +436,16 @@ static void inputBegin(inputData *pinputData, char *fileName)
     EXIT;
 }
 
-static char *inputNextLine(inputData *pinputData)
+static char *inputNextLine(inputData * const pinputData)
 {
-    inputFile   *pinputFile;
-    char        *pline;
+    std::list<inputFile>& inFileList = pinputData->inputFileList;
 
     ENTER;
-    while ((pinputFile = (inputFile *) ellFirst(&pinputData->inputFileList))) {
-        pline = fgets(pinputData->inputBuffer, MAX_BUFFER_SIZE, pinputFile->fp);
+    while (!inFileList.empty()) {
+        inputFile& inFile = inFileList.front();
+        char *pline = fgets(pinputData->inputBuffer, MAX_BUFFER_SIZE, inFile.fp);
         if (pline) {
-            ++pinputFile->lineNum;
+            ++inFile.lineNum;
             EXITS(pline);
             return pline;
         }
@@ -475,32 +455,31 @@ static char *inputNextLine(inputData *pinputData)
     return 0;
 }
 
-static void inputNewIncludeFile(inputData *pinputData, char *name)
+static void inputNewIncludeFile(inputData * const pinputData,
+                                const char * const name)
 {
     ENTER;
     inputOpenFile(pinputData,name);
     EXIT;
 }
 
-static void inputErrPrint(inputData *pinputData)
+static void inputErrPrint(const inputData *const pinputData)
 {
-    inputFile   *pinputFile;
-
     ENTER;
     fprintf(stderr, "input: '%s' at ", pinputData->inputBuffer);
-    pinputFile = (inputFile *) ellFirst(&pinputData->inputFileList);
-    while (pinputFile) {
-        fprintf(stderr, "line %d of ", pinputFile->lineNum);
+    const std::list<inputFile>& inFileList = pinputData->inputFileList;
+    std::list<inputFile>::const_iterator inFileIt = inFileList.begin();
+    while (inFileIt != inFileList.end()) {
+        fprintf(stderr, "line %d of ", inFileIt->lineNum);
 
-        if (pinputFile->filename) {
-            fprintf(stderr, " file %s\n", pinputFile->filename);
+        if (!inFileIt->filename.empty()) {
+            fprintf(stderr, " file %s\n", inFileIt->filename.c_str());
         }
         else {
             fprintf(stderr, "stdin:\n");
         }
 
-        pinputFile = (inputFile *) ellNext(&pinputFile->node);
-        if (pinputFile) {
+        if (++inFileIt != inFileList.end()) {
             fprintf(stderr, "  included from ");
         }
         else {
@@ -511,12 +490,11 @@ static void inputErrPrint(inputData *pinputData)
     EXIT;
 }
 
-static void inputOpenFile(inputData *pinputData,char *filename)
+static void inputOpenFile(inputData *pinputData, const char * const filename)
 {
-    ELLLIST     *ppathList = &pinputData->pathList;
-    pathNode    *ppathNode = 0;
-    inputFile   *pinputFile;
-    char        *fullname = 0;
+    std::list<std::string>& pathList = pinputData->pathList;
+    std::list<std::string>::iterator pathIt = pathList.end();
+    std::string fullname;
     FILE        *fp = 0;
 
     ENTER;
@@ -524,24 +502,19 @@ static void inputOpenFile(inputData *pinputData,char *filename)
         STEP("Using stdin");
         fp = stdin;
     }
-    else if ((ellCount(ppathList) == 0) || strchr(filename, '/')){
+    else if (pathList.empty() || strchr(filename, '/')){
         STEPS("Opening ", filename);
         fp = fopen(filename, "r");
     }
     else {
-        ppathNode = (pathNode *) ellFirst(ppathList);
-        while (ppathNode) {
-            fullname = calloc(strlen(filename) + strlen(ppathNode->directory) + 2,
-                sizeof(char));
-            strcpy(fullname, ppathNode->directory);
-            strcat(fullname, "/");
-            strcat(fullname, filename);
+        pathIt = pathList.begin();
+        while(pathIt != pathList.end()) {
+            fullname = *pathIt + "/" + filename;
             STEPS("Trying", filename);
-            fp = fopen(fullname, "r");
+            fp = fopen(fullname.c_str(), "r");
             if (fp)
                 break;
-            free(fullname);
-            ppathNode = (pathNode *) ellNext(&ppathNode->node);
+            ++pathIt;
         }
     }
 
@@ -552,20 +525,20 @@ static void inputOpenFile(inputData *pinputData,char *filename)
     }
 
     STEP("File opened");
-    pinputFile = calloc(1, sizeof(inputFile));
+    inputFile inFile = inputFile();
 
-    if (ppathNode) {
-        pinputFile->filename = fullname;
+    if (pathIt != pathList.end()) {
+        inFile.filename = fullname;
     }
     else if (filename) {
-        pinputFile->filename = epicsStrDup(filename);
+        inFile.filename = filename;
     }
     else {
-        pinputFile->filename = epicsStrDup("stdin");
+        inFile.filename = "stdin";
     }
 
     if (opt_D) {
-        int hash = epicsStrHash(pinputFile->filename, 12345);
+        int hash = epicsStrHash(inFile.filename.c_str(), 12345);
         int i = 0;
         int match = 0;
 
@@ -578,7 +551,7 @@ static void inputOpenFile(inputData *pinputData,char *filename)
         if (!match) {
             const char *wrap = numDeps ? " \\\n" : "";
 
-            printf("%s %s", wrap, pinputFile->filename);
+            printf("%s %s", wrap, inFile.filename.c_str());
             if (numDeps < MAX_DEPS) {
                 depHashes[numDeps++] = hash;
             }
@@ -589,33 +562,29 @@ static void inputOpenFile(inputData *pinputData,char *filename)
         }
     }
 
-    pinputFile->fp = fp;
-    ellInsert(&pinputData->inputFileList, 0, &pinputFile->node);
+    inFile.fp = fp;
+    pinputData->inputFileList.push_front(inFile);
     EXIT;
 }
 
 static void inputCloseFile(inputData *pinputData)
 {
-    inputFile *pinputFile;
-
+    std::list<inputFile>& inFileList = pinputData->inputFileList;
     ENTER;
-    pinputFile = (inputFile *) ellFirst(&pinputData->inputFileList);
-    if (pinputFile) {
-        ellDelete(&pinputData->inputFileList, &pinputFile->node);
-        if (fclose(pinputFile->fp))
-            fprintf(stderr, "msi: Can't close input file '%s'\n", pinputFile->filename);
-        free(pinputFile->filename);
-        free(pinputFile);
+    if(!inFileList.empty()) {
+        inputFile& inFile = inFileList.front();
+        if (fclose(inFile.fp))
+            fprintf(stderr, "msi: Can't close input file '%s'\n", inFile.filename.c_str());
+        inFileList.erase(inFileList.begin());
     }
     EXIT;
 }
 
 static void inputCloseAllFiles(inputData *pinputData)
 {
-    inputFile   *pinputFile;
-
     ENTER;
-    while ((pinputFile = (inputFile *) ellFirst(&pinputData->inputFileList))) {
+    const std::list<inputFile>& inFileList = pinputData->inputFileList;
+    while(!inFileList.empty()) {
         inputCloseFile(pinputData);
     }
     EXIT;
@@ -627,7 +596,7 @@ typedef enum {
 } tokenType;
 
 typedef struct subFile {
-    char        *substitutionName;
+    std::string substitutionName;
     FILE        *fp;
     int         lineNum;
     char        inputBuffer[MAX_BUFFER_SIZE];
@@ -636,25 +605,20 @@ typedef struct subFile {
     char        string[MAX_BUFFER_SIZE];
 } subFile;
 
-typedef struct patternNode {
-    ELLNODE     node;
-    char        *var;
-} patternNode;
-
 struct subInfo {
     subFile     *psubFile;
-    int         isFile;
+    bool        isFile;
     char        *filename;
-    int         isPattern;
-    ELLLIST     patternList;
-    size_t      size;
-    size_t      curLength;
-    char        *macroReplacements;
+    bool        isPattern;
+    std::list<std::string> patternList;
+    std::string macroReplacements;
+    subInfo() : psubFile(NULL), isFile(false), filename(NULL),
+                isPattern(false) {};
 };
 
 static char *subGetNextLine(subFile *psubFile);
 static tokenType subGetNextToken(subFile *psubFile);
-static void subFileErrPrint(subFile *psubFile,char * message);
+static void subFileErrPrint(subFile *psubFile, const char * message);
 static void freeSubFile(subInfo *psubInfo);
 static void freePattern(subInfo *psubInfo);
 static void catMacroReplacements(subInfo *psubInfo,const char *value);
@@ -668,7 +632,7 @@ void freeSubFile(subInfo *psubInfo)
         if (fclose(psubFile->fp))
             fprintf(stderr, "msi: Can't close substitution file\n");
     }
-    free(psubFile);
+    delete(psubFile);
     free(psubInfo->filename);
     psubInfo->psubFile = 0;
     EXIT;
@@ -676,43 +640,36 @@ void freeSubFile(subInfo *psubInfo)
 
 void freePattern(subInfo *psubInfo)
 {
-    patternNode *ppatternNode;
-
     ENTER;
-    while ((ppatternNode = (patternNode *) ellFirst(&psubInfo->patternList))) {
-        ellDelete(&psubInfo->patternList, &ppatternNode->node);
-        free(ppatternNode->var);
-        free(ppatternNode);
-    }
-    psubInfo->isPattern = 0;
+    psubInfo->patternList.clear();
+    psubInfo->isPattern = false;
     EXIT;
 }
 
-static void substituteDestruct(subInfo *psubInfo)
+static void substituteDestruct(subInfo * const psubInfo)
 {
     ENTER;
     freeSubFile(psubInfo);
     freePattern(psubInfo);
-    free(psubInfo);
+    delete(psubInfo);
     EXIT;
 }
 
-static void substituteOpen(subInfo **ppvt, char *substitutionName)
+static void substituteOpen(subInfo **ppvt, const std::string& substitutionName)
 {
     subInfo     *psubInfo;
     subFile     *psubFile;
     FILE        *fp;
 
     ENTER;
-    psubInfo = calloc(1, sizeof(subInfo));
+    psubInfo = new subInfo;
     *ppvt = psubInfo;
-    psubFile = calloc(1, sizeof(subFile));
+    psubFile = new subFile;
     psubInfo->psubFile = psubFile;
-    ellInit(&psubInfo->patternList);
 
-    fp = fopen(substitutionName, "r");
+    fp = fopen(substitutionName.c_str(), "r");
     if (!fp) {
-        fprintf(stderr, "msi: Can't open file '%s'\n", substitutionName);
+        fprintf(stderr, "msi: Can't open file '%s'\n", substitutionName.c_str());
         abortExit(1);
     }
 
@@ -725,7 +682,7 @@ static void substituteOpen(subInfo **ppvt, char *substitutionName)
     EXIT;
 }
 
-static int substituteGetGlobalSet(subInfo *psubInfo)
+static bool substituteGetGlobalSet(subInfo * const psubInfo)
 {
     subFile *psubFile = psubInfo->psubFile;
 
@@ -737,17 +694,16 @@ static int substituteGetGlobalSet(subInfo *psubInfo)
         strcmp(psubFile->string, "global") == 0) {
         subGetNextToken(psubFile);
         EXITD(1);
-        return 1;
+        return true;
     }
 
     EXITD(0);
-    return 0;
+    return false;
 }
 
-static int substituteGetNextSet(subInfo *psubInfo,char **filename)
+static bool substituteGetNextSet(subInfo * const psubInfo,char **filename)
 {
     subFile     *psubFile = psubInfo->psubFile;
-    patternNode *ppatternNode;
 
     ENTER;
     *filename = 0;
@@ -756,7 +712,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
 
     if (psubFile->token == tokenEOF) {
         EXITD(0);
-        return 0;
+        return false;
     }
 
     if (psubFile->token == tokenString &&
@@ -764,7 +720,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
         size_t len;
 
         STEP("Parsed 'file'");
-        psubInfo->isFile = 1;
+        psubInfo->isFile = true;
         if (subGetNextToken(psubFile) != tokenString) {
             subFileErrPrint(psubFile, "Parse error, expecting a filename");
             abortExit(1);
@@ -799,7 +755,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
 
     if (psubFile->token == tokenLBrace) {
         EXITD(1);
-        return 1;
+        return true;
     }
 
     if (psubFile->token == tokenRBrace) {
@@ -815,7 +771,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
 
     STEP("Parsed 'pattern'");
     freePattern(psubInfo);
-    psubInfo->isPattern = 1;
+    psubInfo->isPattern = true;
 
     while (subGetNextToken(psubFile) == tokenSeparator);
 
@@ -825,15 +781,13 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
     }
     STEP("Parsed '{'");
 
-    while (1) {
+    while (true) {
         while (subGetNextToken(psubFile) == tokenSeparator);
 
         if (psubFile->token != tokenString)
             break;
 
-        ppatternNode = calloc(1, sizeof(patternNode));
-        ellAdd(&psubInfo->patternList, &ppatternNode->node);
-        ppatternNode->var = epicsStrDup(psubFile->string);
+        psubInfo->patternList.push_back(psubFile->string);
     }
 
     if (psubFile->token != tokenRBrace) {
@@ -843,23 +797,21 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
 
     subGetNextToken(psubFile);
     EXITD(1);
-    return 1;
+    return true;
 }
 
-static char *substituteGetGlobalReplacements(subInfo *psubInfo)
+static const char *substituteGetGlobalReplacements(subInfo * const psubInfo)
 {
     subFile     *psubFile = psubInfo->psubFile;
 
     ENTER;
-    if (psubInfo->macroReplacements)
-        psubInfo->macroReplacements[0] = 0;
-    psubInfo->curLength = 0;
+    psubInfo->macroReplacements.clear();
 
     while (psubFile->token == tokenSeparator)
         subGetNextToken(psubFile);
 
     if (psubFile->token == tokenRBrace && psubInfo->isFile) {
-        psubInfo->isFile = 0;
+        psubInfo->isFile = false;
         free(psubInfo->filename);
         psubInfo->filename = 0;
         freePattern(psubInfo);
@@ -877,12 +829,12 @@ static char *substituteGetGlobalReplacements(subInfo *psubInfo)
         return 0;
     }
 
-    while (1) {
+    while (true) {
         switch(subGetNextToken(psubFile)) {
             case tokenRBrace:
                 subGetNextToken(psubFile);
-                EXITS(psubInfo->macroReplacements);
-                return psubInfo->macroReplacements;
+                EXITS(psubInfo->macroReplacements.c_str());
+                return psubInfo->macroReplacements.c_str();
 
             case tokenSeparator:
                 catMacroReplacements(psubInfo, ",");
@@ -902,21 +854,18 @@ static char *substituteGetGlobalReplacements(subInfo *psubInfo)
     }
 }
 
-static char *substituteGetReplacements(subInfo *psubInfo)
+static const char *substituteGetReplacements(subInfo * const psubInfo)
 {
     subFile     *psubFile = psubInfo->psubFile;
-    patternNode *ppatternNode;
 
     ENTER;
-    if (psubInfo->macroReplacements)
-        psubInfo->macroReplacements[0] = 0;
-    psubInfo->curLength = 0;
+    psubInfo->macroReplacements.clear();
 
     while (psubFile->token == tokenSeparator)
         subGetNextToken(psubFile);
 
     if (psubFile->token==tokenRBrace && psubInfo->isFile) {
-        psubInfo->isFile = 0;
+        psubInfo->isFile = false;
         free(psubInfo->filename);
         psubInfo->filename = 0;
         freePattern(psubInfo);
@@ -936,15 +885,16 @@ static char *substituteGetReplacements(subInfo *psubInfo)
     }
 
     if (psubInfo->isPattern) {
-        int gotFirstPattern = 0;
+        bool gotFirstPattern = false;
 
         while (subGetNextToken(psubFile) == tokenSeparator);
-        ppatternNode = (patternNode *) ellFirst(&psubInfo->patternList);
-        while (1) {
+        std::list<std::string>& patternList = psubInfo->patternList;
+        std::list<std::string>::iterator patternIt = patternList.begin();
+        while (true) {
             if (psubFile->token == tokenRBrace) {
                 subGetNextToken(psubFile);
-                EXITS(psubInfo->macroReplacements);
-                return psubInfo->macroReplacements;
+                EXITS(psubInfo->macroReplacements.c_str());
+                return psubInfo->macroReplacements.c_str();
             }
 
             if (psubFile->token != tokenString) {
@@ -954,13 +904,13 @@ static char *substituteGetReplacements(subInfo *psubInfo)
 
             if (gotFirstPattern)
                 catMacroReplacements(psubInfo, ",");
-            gotFirstPattern = 1;
+            gotFirstPattern = true;
 
-            if (ppatternNode) {
-                catMacroReplacements(psubInfo, ppatternNode->var);
+            if (patternIt != patternList.end()) {
+                catMacroReplacements(psubInfo, patternIt->c_str());
                 catMacroReplacements(psubInfo, "=");
                 catMacroReplacements(psubInfo, psubFile->string);
-                ppatternNode = (patternNode *) ellNext(&ppatternNode->node);
+                ++patternIt;
             }
             else {
                 subFileErrPrint(psubFile, "Warning, too many values given");
@@ -969,12 +919,12 @@ static char *substituteGetReplacements(subInfo *psubInfo)
             while (subGetNextToken(psubFile) == tokenSeparator);
         }
     }
-    else while(1) {
+    else while(true) {
         switch(subGetNextToken(psubFile)) {
             case tokenRBrace:
                 subGetNextToken(psubFile);
-                EXITS(psubInfo->macroReplacements);
-                return psubInfo->macroReplacements;
+                EXITS(psubInfo->macroReplacements.c_str());
+                return psubInfo->macroReplacements.c_str();
 
             case tokenSeparator:
                 catMacroReplacements(psubInfo, ",");
@@ -1017,11 +967,12 @@ static char *subGetNextLine(subFile *psubFile)
     return &psubFile->inputBuffer[0];
 }
 
-static void subFileErrPrint(subFile *psubFile,char * message)
+static void subFileErrPrint(subFile *psubFile, const char * message)
 {
     fprintf(stderr, "msi: %s\n",message);
     fprintf(stderr, "  in substitution file '%s' at line %d:\n  %s",
-        psubFile->substitutionName, psubFile->lineNum, psubFile->inputBuffer);
+            psubFile->substitutionName.c_str(), psubFile->lineNum,
+            psubFile->inputBuffer);
 }
 
 
@@ -1107,32 +1058,8 @@ done:
 
 static void catMacroReplacements(subInfo *psubInfo, const char *value)
 {
-    size_t len = strlen(value);
-
     ENTER;
-    if (psubInfo->size <= (psubInfo->curLength + len)) {
-        size_t newsize = psubInfo->size + MAX_BUFFER_SIZE;
-        char *newbuf;
-
-        STEP("Enlarging buffer");
-        if (newsize <= psubInfo->curLength + len)
-            newsize = psubInfo->curLength + len + 1;
-        newbuf = calloc(1, newsize);
-        if (!newbuf) {
-            fprintf(stderr, "calloc failed for size %lu\n",
-                (unsigned long) newsize);
-            abortExit(1);
-        }
-        if (psubInfo->macroReplacements) {
-            memcpy(newbuf, psubInfo->macroReplacements, psubInfo->curLength);
-            free(psubInfo->macroReplacements);
-        }
-        psubInfo->size = newsize;
-        psubInfo->macroReplacements = newbuf;
-    }
-
     STEPS("Appending", value);
-    strcat(psubInfo->macroReplacements, value);
-    psubInfo->curLength += len;
+    psubInfo->macroReplacements += value;
     EXIT;
 }

@@ -348,9 +348,9 @@ static long get_enum_strs(const DBADDR *paddr,struct dbr_enumStrs *pes)
     /*SETTING no_str=0 breaks channel access clients*/
     pes->no_str = 2;
     memset(pes->strs,'\0',sizeof(pes->strs));
-    strncpy(pes->strs[0],prec->znam,sizeof(prec->znam));
+    strncpy(pes->strs[0],prec->znam,sizeof(pes->strs[0]));
     if(*prec->znam!=0) pes->no_str=1;
-    strncpy(pes->strs[1],prec->onam,sizeof(prec->onam));
+    strncpy(pes->strs[1],prec->onam,sizeof(pes->strs[1]));
     if(*prec->onam!=0) pes->no_str=2;
     return(0);
 }

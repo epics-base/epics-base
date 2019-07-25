@@ -32,8 +32,12 @@ public:
     typedef epicsGuard<epicsMutex> release_t;
     class mutexCreateFailed; /* exception payload */
     class invalidMutex; /* exception payload */
+#if !defined(__GNUC__) || __GNUC__<4 || (__GNUC__==4 && __GNUC_MINOR__<8)
     epicsMutex ();
     epicsMutex ( const char *pFileName, int lineno );
+#else
+    epicsMutex ( const char *pFileName = __builtin_FILE(), int lineno = __builtin_LINE() );
+#endif
     ~epicsMutex ();
     void show ( unsigned level ) const;
     void lock (); /* blocks until success */

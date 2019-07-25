@@ -247,6 +247,7 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
     epicsMutexOsdUnlock(epicsMutexGlobalLock);
 }
 
+#if !defined(__GNUC__) || __GNUC__<4 || (__GNUC__==4 && __GNUC_MINOR__<8)
 epicsMutex :: epicsMutex () :
     id ( epicsMutexCreate () )
 {
@@ -254,6 +255,7 @@ epicsMutex :: epicsMutex () :
         throw mutexCreateFailed ();
     }
 }
+#endif
 
 epicsMutex :: epicsMutex ( const char *pFileName, int lineno ) :
     id ( epicsMutexOsiCreate (pFileName, lineno) )

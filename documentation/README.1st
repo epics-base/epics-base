@@ -1,24 +1,24 @@
                            Installation Instructions
 
-                            EPICS Base Release 7.0.2
+                            EPICS Base Release 7.0.3
 
    --------------------------------------------------------------------------
 
   Table of Contents
 
-     * What is EPICS base?
-     * What is new in this release?
-     * Copyright
-     * Supported platforms
-     * Supported compilers
-     * Software requirements
-     * Host system storage requirements
-     * Documentation
-     * Directory Structure
-     * Build related components
-     * Building EPICS base (Unix and Win32)
-     * Example application and extension
-     * Multiple host platforms
+     * What is EPICS base?
+     * What is new in this release?
+     * Copyright
+     * Supported platforms
+     * Supported compilers
+     * Software requirements
+     * Host system storage requirements
+     * Documentation
+     * Directory Structure
+     * Build related components
+     * Building EPICS base (Unix and Win32)
+     * Example application and extension
+     * Multiple host platforms
 
    --------------------------------------------------------------------------
 

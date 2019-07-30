@@ -147,17 +147,17 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Tag the module in Git, using these tag conventions:
         <ul>
           <li>
-            <tt>R7.0.2-pre<i>n</i></tt>
+            <tt>R7.0.3-pre<i>n</i></tt>
             &mdash; pre-release tag
             </li>
           <li>
-            <tt>R7.0.2-rc<i>n</i></tt>
+            <tt>R7.0.3-rc<i>n</i></tt>
             &mdash; release candidate tag
             </li>
           </ul>
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for 7.0.2-rc1' R7.0.2-rc1
+          git tag -m 'ANJ: Tagged for 7.0.3-rc1' R7.0.3-rc1
           </tt></blockquote>
         Note that submodules must <em>not</em> be tagged with the version used
         for the top-level, they each have their own separate version numbers
@@ -171,11 +171,11 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.2-rc1 base-7.0.2-rc1.tar.gz base-7.0.2-rc1/
+          ./.tools/make-tar.sh R7.0.3-rc1 base-7.0.3-rc1.tar.gz base-7.0.3-rc1/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-7.0.2-rc1.tar.gz
+          gpg --armor --sign --detach-sig base-7.0.3-rc1.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -303,7 +303,7 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for 7.0.2.2' R7.0.2.2</i>
+          git tag -m 'ANJ: Tagged for 7.0.3' R7.0.3</i>
           </tt></blockquote>
         Don't push the new tag to the Launchpad repository yet.</td>
       </tr>
@@ -315,11 +315,11 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.2.2 base-7.0.2.2.tar.gz base-7.0.2.2/
+          ./.tools/make-tar.sh R7.0.3 base-7.0.3.tar.gz base-7.0.3/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-7.0.2.2.tar.gz
+          gpg --armor --sign --detach-sig base-7.0.3.tar.gz
           </tt></blockquote>
         </td>
       </tr>

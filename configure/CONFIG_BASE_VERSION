@@ -48,16 +48,16 @@ EPICS_VERSION = 7
 EPICS_REVISION = 0
 
 # EPICS_MODIFICATION must be a number >=0 and <256
-EPICS_MODIFICATION = 2
+EPICS_MODIFICATION = 3
 
 # EPICS_PATCH_LEVEL must be a number (win32 resource file requirement)
-# Not included if zero
-EPICS_PATCH_LEVEL = 3
+# Not included in the official EPICS version number if zero
+EPICS_PATCH_LEVEL = 0
 
 # Between official releases, the EPICS_PATCH_LEVEL gets incremented
 # and a -DEV suffix is added (similar to the Maven -SNAPSHOT versions)
-#EPICS_DEV_SNAPSHOT=
-EPICS_DEV_SNAPSHOT=-DEV
+EPICS_DEV_SNAPSHOT=
+#EPICS_DEV_SNAPSHOT=-DEV
 #EPICS_DEV_SNAPSHOT=-pre1
 #EPICS_DEV_SNAPSHOT=-pre1-DEV
 #EPICS_DEV_SNAPSHOT=-pre2

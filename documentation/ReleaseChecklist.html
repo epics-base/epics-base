@@ -408,7 +408,11 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td><input type="checkbox"></td>
       <td>Website Manager</td>
       <td>Upload the tar file and its <tt>.asc</tt> signature file to the
-        epics-controls web-server [ToDo: ssh-key, location]</td>
+        epics-controls web-server.
+        <blockquote><tt>
+          scp base-7.0.3.tar.gz base-7.0.3.tar.gz.asc epics-controls:download/base<br />
+          </tt></blockquote>
+        </td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
@@ -416,7 +420,10 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Follow instructions on
         <a href="https://epics-controls.org/resources-and-support/documents/epics-website-documentation/adding-a-page-for-a-new-release/">
         Add a page for a new release</a> to create a new release webpage (not
-        required for a patch release though, just edit the existing page).</td>
+        required for a patch release, just edit the existing page). Update the
+        TablePress "Point Releases" table and add the new download, and adjust
+        the XYZ Html Snippet for the series download.
+        </td>
       </tr>
 
     <tr>

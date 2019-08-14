@@ -240,6 +240,10 @@ int astac(const char *pname,const char *user,const char *location)
     char	*puser;
     char	*plocation;
 
+    if (!pname || !user || !location){
+        printf("Usage: astac \"record name\", \"user\", \"host\"\n");
+        return(1);
+    }
     paddr = dbCalloc(1,sizeof(DBADDR) + sizeof(ASCLIENTPVT));
     pasclientpvt = (ASCLIENTPVT *)(paddr + 1);
     status=dbNameToAddr(pname,paddr);

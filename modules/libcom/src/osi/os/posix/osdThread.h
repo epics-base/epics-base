@@ -23,15 +23,10 @@ extern "C" {
 typedef struct epicsThreadOSD {
     ELLNODE            node;
     pthread_t          tid;
-    pthread_attr_t     attr;
-    struct sched_param schedParam;
-    int                schedPolicy;
     EPICSTHREADFUNC    createFunc;
     void              *createArg;
     epicsEventId       suspendEvent;
     int                isSuspended;
-    int                isEpicsThread;
-    int                isRealTimeScheduled;
     int                isOnThreadList;
     unsigned int       osiPriority;
     char               name[1];     /* actually larger */

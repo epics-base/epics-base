@@ -52,6 +52,9 @@ int epicsInlineTest(void);
 int ipAddrToAsciiTest(void);
 int macDefExpandTest(void);
 int macLibTest(void);
+#ifdef HAVE_PTHREAD_PRIORITY_SCHEDULING
+int nonEpicsThreadPriorityTest(void);
+#endif
 int osiSockTest(void);
 int ringBytesTest(void);
 int ringPointerTest(void);
@@ -107,6 +110,9 @@ void epicsRunLibComTests(void)
     runTest(ipAddrToAsciiTest);
     runTest(macDefExpandTest);
     runTest(macLibTest);
+#ifdef HAVE_PTHREAD_PRIORITY_SCHEDULING
+    runTest(nonEpicsThreadPriorityTest);
+#endif
     runTest(osiSockTest);
     runTest(ringBytesTest);
     runTest(ringPointerTest);

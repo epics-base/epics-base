@@ -9,10 +9,13 @@
 
 #include <vxWorks.h>
 #include <stdio.h>
+#include <sysLib.h>
+#include <taskLib.h>
 
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "epicsTypes.h"
 #include "epicsTime.h"
+#include "cantProceed.h"
 
 
 #define NS_PER_SEC 1000000000
@@ -23,6 +26,7 @@ union timebase {
     UINT64 u64;     /* epicsMonotonicGet() */
 };
 
+static void measureTickRate(void);
 
 #if CPU_FAMILY == PPC
 #include <arch/ppc/vxPpcLib.h>
@@ -46,12 +50,15 @@ void osdMonotonicInit(void)
     if (sysTimeBaseFreq) {
         ticksPerSec = sysTimeBaseFreq();
 
-        if (!ticksPerSec)
-            printf("Warning: Failed to set up monotonic time source.\n");
-            /* Warn here only if the BSP routine exists but returned 0 */
+        if (ticksPerSec)
+            return;
+
+        /* This should never happen */
+        printf("Warning: sysTimeBaseFreq() present but returned zero.\n");
     }
-    else
-        ticksPerSec = 0;    /* Warn on first use */
+
+    /* Fall back to measuring */
+    measureTickRate();
 }
 
 
@@ -73,8 +80,14 @@ void osdMonotonicInit(void)
 {
     ticksPerSec = vxCpuIdGetFreq();
 
-    if (!ticksPerSec)
-        printf("Warning: Failed to set up monotonic time source.\n");
+    if (ticksPerSec)
+        return;
+
+    /* This should never happen */
+    printf("Warning: vxCpuIdGetFreq() returned zero.\n");
+
+    /* Fall back to measuring */
+    measureTickRate();
 }
 
 
@@ -96,13 +109,7 @@ epicsUInt64 epicsMonotonicGet(void)
     union timebase tbNow;
 
     if (!ticksPerSec) {
-        static int warned = 0;
-
-        if (!warned) {
-            printf("Warning: Monotonic time source is not available.\n");
-            warned = 1;
-        }
-        return 0;
+        cantProceed("Monotonic time source not available.\n");
     }
 
     TIMEBASEGET(tbNow);
@@ -110,4 +117,21 @@ epicsUInt64 epicsMonotonicGet(void)
      * as many bits in the mantissa as possible.
      */
     return ((long double) tbNow.u64) * NS_PER_SEC / ticksPerSec;
+}
+
+static void measureTickRate(void)
+{
+    union timebase start, end;
+    int sysTicks = sysClkRateGet(); /* 1 second */
+
+    printf("osdMonotonicInit: Measuring CPU time-base frequency ...");
+    fflush(stdout);
+
+    taskDelay(1);
+    TIMEBASEGET(start);
+    taskDelay(sysTicks);
+    TIMEBASEGET(end);
+    ticksPerSec = end.u64 - start.u64;
+
+    printf(" %llu ticks/sec.\n", (unsigned long long) ticksPerSec);
 }

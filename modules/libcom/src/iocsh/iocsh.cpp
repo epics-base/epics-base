@@ -623,9 +623,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         }
     }
     
-    /*
-     * Check for existing macro context or construct a new one.
-     */
+    // Check for existing context or construct a new one.
     context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
 
     if (!context) {
@@ -654,6 +652,29 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
      * Read commands till EOF or exit
      */
     for (;;) {
+        if(!scope.interactive && scope.errored) {
+            if(scope.onerr==Continue) {
+                /* do nothing */
+
+            } else if(scope.onerr==Break) {
+                ret = -1;
+                fprintf(epicsGetStderr(), "iocsh Error: Break\n" );
+                break;
+
+            } else if(scope.onerr==Halt) {
+                ret = -1;
+                if(scope.timeout<=0.0 || isinf(scope.timeout)) {
+                    fprintf(epicsGetStderr(), "iocsh Error: Halt\n" );
+                    epicsThreadSuspendSelf();
+                    break;
+
+                } else {
+                    fprintf(epicsGetStderr(), "iocsh Error: Waiting %.1f sec ...\n", scope.timeout);
+                    epicsThreadSleep(scope.timeout);
+                }
+            }
+        }
+
         /*
          * Read a line
          */
@@ -692,8 +713,10 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
          * Expand macros
          */
         free(line);
-        if ((line = macDefExpand(raw, handle)) == NULL)
+        if ((line = macDefExpand(raw, handle)) == NULL) {
+            scope.errored = true;
             continue;
+        }
 
         /*
          * Skip leading white-space coming from a macro
@@ -706,9 +729,11 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
          * Echo non-empty lines read from a script.
          * Comments delineated with '#-' aren't echoed.
          */
-        if ((prompt == NULL) && *line && (commandLine == NULL))
-            if ((c != '#') || (line[icin + 1] != '-'))
+        if ((prompt == NULL) && *line && (commandLine == NULL)) {
+            if ((c != '#') || (line[icin + 1] != '-')) {
                 puts(line);
+            }
+        }
 
         /*
          * Ignore lines that became a comment or empty after macro expansion
@@ -732,6 +757,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
                 if (newv == NULL) {
                     fprintf (epicsGetStderr(), "Out of memory!\n");
                     argc = -1;
+                    scope.errored = true;
                     break;
                 }
                 argv = newv;
@@ -805,8 +831,9 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             }
             else {
                 if (!sep) {
-                    if (((c == '"') || (c == '\'')) && !backslash)
+                    if (((c == '"') || (c == '\'')) && !backslash) {
                         quote = c;
+                    }
                     if (redirect != NULL) {
                         if (redirect->name != NULL) {
                             argc = -1;
@@ -827,16 +854,20 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         }
         if (redirect != NULL) {
             showError(filename, lineno, "Illegal redirection.");
+            scope.errored = true;
             continue;
         }
-        if (argc < 0)
+        if (argc < 0) {
             break;
+        }
         if (quote != EOF) {
             showError(filename, lineno, "Unbalanced quote.");
+            scope.errored = true;
             continue;
         }
         if (backslash) {
             showError(filename, lineno, "Trailing backslash.");
+            scope.errored = true;
             continue;
         }
         if (inword)
@@ -853,7 +884,8 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             if (openRedirect(filename, lineno, redirects) < 0)
                 continue;
             startRedirect(filename, lineno, redirects);
-            iocshBody(commandFile, NULL, macros);
+            if(iocshBody(commandFile, NULL, macros))
+                scope.errored = true;
             stopRedirect(filename, lineno, redirects);
             continue;
         }
@@ -930,29 +962,6 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             }
         }
         stopRedirect(filename, lineno, redirects);
-
-        if(!scope.interactive && scope.errored) {
-            if(scope.onerr==Continue) {
-                /* do nothing */
-
-            } else if(scope.onerr==Break) {
-                ret = -1;
-                fprintf(epicsGetStderr(), "iocsh Error: Break\n" );
-                break;
-
-            } else if(scope.onerr==Halt) {
-                ret = -1;
-                if(scope.timeout<=0.0 || isinf(scope.timeout)) {
-                    fprintf(epicsGetStderr(), "iocsh Error: Halt\n" );
-                    epicsThreadSuspendSelf();
-                    break;
-
-                } else {
-                    fprintf(epicsGetStderr(), "iocsh Error: Waiting %f sec ...\n", scope.timeout);
-                    epicsThreadSleep(scope.timeout);
-                }
-            }
-        }
     }
     macPopScope(handle);
     

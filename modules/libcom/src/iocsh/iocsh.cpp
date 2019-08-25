@@ -1156,34 +1156,49 @@ static void onCallFunc(const iocshArgBuf *args)
 {
     iocshContext *context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
 
+#define USAGE() fprintf(epicsGetStderr(), "Usage: on error [continue | break | halt | wait <delay>]\n")
+
     if(!context || !context->scope) {
         // we are not called through iocshBody()...
 
     } else if(args->aval.ac<3 || strcmp(args->aval.av[1], "error")!=0) {
-        fprintf(epicsGetStderr(), "Usage: on error [continue | break | halt | wait <delay>]\n");
+        USAGE();
 
     } else if(context->scope->interactive) {
         fprintf(epicsGetStderr(), "Interactive shell ignores  on error ...\n");
 
-    } else if(strcmp(args->aval.av[2], "continue")==0) {
-        context->scope->onerr = Continue;
-
-    } else if(strcmp(args->aval.av[2], "break")==0) {
-        context->scope->onerr = Break;
-
-    } else if(strcmp(args->aval.av[2], "halt")==0) {
-        context->scope->onerr = Halt;
-        context->scope->timeout = 0.0;
-
-    } else if(strcmp(args->aval.av[2], "wait")==0) {
-        context->scope->onerr = Halt;
-        if(args->aval.ac==3 || epicsParseDouble(args->aval.av[3], &context->scope->timeout, NULL)) {
-            context->scope->timeout = 5.0;
-        }
-
     } else {
-        fprintf(epicsGetStderr(), "Usage: on error [continue | break | halt | wait <delay>]\n");
+        // don't fault on previous, ignored, errors
+        context->scope->errored = false;
+
+        if(strcmp(args->aval.av[2], "continue")==0) {
+            context->scope->onerr = Continue;
+
+        } else if(strcmp(args->aval.av[2], "break")==0) {
+            context->scope->onerr = Break;
+
+        } else if(strcmp(args->aval.av[2], "halt")==0) {
+            context->scope->onerr = Halt;
+            context->scope->timeout = 0.0;
+
+        } else if(strcmp(args->aval.av[2], "wait")==0) {
+            context->scope->onerr = Halt;
+            if(args->aval.ac<=3) {
+                USAGE();
+            } else if(epicsParseDouble(args->aval.av[3], &context->scope->timeout, NULL)) {
+                context->scope->timeout = 5.0;
+            } else {
+                USAGE();
+                fprintf(epicsGetStderr(), "Unable to parse 'on error wait' time %s\n", args->aval.av[3]);
+            }
+
+        } else {
+            fprintf(epicsGetStderr(), "Usage: on error [continue | break | halt | wait <delay>]\n");
+            context->scope->errored = true;
+        }
     }
+
+#undef USAGE
 }
 
 /*

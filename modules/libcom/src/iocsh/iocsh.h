@@ -76,7 +76,7 @@ epicsShareFunc void epicsShareAPI iocshRegister(
 epicsShareFunc void epicsShareAPI iocshRegisterVariable (
     const iocshVarDef *piocshVarDef);
 epicsShareFunc const iocshCmdDef * epicsShareAPI iocshFindCommand(
-    const char* name);
+    const char* name) EPICS_DEPRECATED;
 epicsShareFunc const iocshVarDef * epicsShareAPI iocshFindVariable(
     const char* name);
 

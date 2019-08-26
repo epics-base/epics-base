@@ -600,6 +600,10 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
                 fclose(fp);
             return -1;
         }
+
+    } else {
+        // use of iocshCmd() implies "on error break"
+        scope.onerr = Break;
     }
 
     /*

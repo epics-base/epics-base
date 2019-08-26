@@ -30,6 +30,27 @@ release.</p>
 
 -->
 
+<h3>Iocsh &quot;on error ...&quot;</h3>
+
+<p>A new statement is added to enable IOC shell commands
+to signal error conditions, and for scripts to respond.
+This first is through the new function <pre>iocshSetError(int)</pre>
+A script may be prefixed with eg. &quot;on error break&quot;
+to stop at the failed command.</p>
+
+<pre>
+on error continue | break | wait [value] | halt
+</pre>
+
+<p>A suggested form for IOC shell commands is:</p>
+
+<pre>
+static void doSomethingCallFunc(const iocshArgBuf *args)
+{
+    iocshSetError(doSomething(...)); /* return 0 == success */
+}
+</pre>
+
 <h1 align="center">EPICS Release 7.0.2.2</h1>
 
 <h3>Build System changes</h3>

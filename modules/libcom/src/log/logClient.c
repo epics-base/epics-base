@@ -44,6 +44,7 @@ typedef struct {
     SOCKET              sock;
     epicsThreadId       restartThreadId;
     epicsEventId        stateChangeNotify;
+    epicsEventId        shutdownNotify;
     unsigned            connectCount;
     unsigned            nextMsgIndex;
     unsigned            connected;
@@ -113,6 +114,7 @@ static void logClientDestroy (logClientId id)
     epicsMutexMustLock ( pClient->mutex );
     pClient->shutdown = 1u;
     epicsMutexUnlock ( pClient->mutex );
+    epicsEventSignal ( pClient->shutdownNotify );
 
     /* unblock log client thread blocking in send() or connect() */
     interruptInfo =
@@ -157,8 +159,8 @@ static void logClientDestroy (logClientId id)
     logClientClose ( pClient );
 
     epicsMutexDestroy ( pClient->mutex );
-   
     epicsEventDestroy ( pClient->stateChangeNotify );
+    epicsEventDestroy ( pClient->shutdownNotify );
 
     free ( pClient );
 }
@@ -461,8 +463,8 @@ static void logClientRestart ( logClientId id )
         else {
             logClientConnect ( pClient );
         }
-        
-        epicsThreadSleep ( LOG_RESTART_DELAY );
+
+        epicsEventWaitWithTimeout ( pClient->shutdownNotify, LOG_RESTART_DELAY);
 
         epicsMutexMustLock ( pClient->mutex );
     }
@@ -505,14 +507,22 @@ logClientId epicsShareAPI logClientCreate (
     pClient->shutdownConfirm = 0;
 
     epicsAtExit (logClientDestroy, (void*) pClient);
-    
+
     pClient->stateChangeNotify = epicsEventCreate (epicsEventEmpty);
     if ( ! pClient->stateChangeNotify ) {
         epicsMutexDestroy ( pClient->mutex );
         free ( pClient );
         return NULL;
     }
-   
+
+    pClient->shutdownNotify = epicsEventCreate (epicsEventEmpty);
+    if ( ! pClient->shutdownNotify ) {
+        epicsMutexDestroy ( pClient->mutex );
+        epicsEventDestroy ( pClient->stateChangeNotify );
+        free ( pClient );
+        return NULL;
+    }
+
     pClient->restartThreadId = epicsThreadCreate (
         "logRestart", epicsThreadPriorityLow, 
         epicsThreadGetStackSize(epicsThreadStackSmall),
@@ -520,6 +530,7 @@ logClientId epicsShareAPI logClientCreate (
     if ( pClient->restartThreadId == NULL ) {
         epicsMutexDestroy ( pClient->mutex );
         epicsEventDestroy ( pClient->stateChangeNotify );
+        epicsEventDestroy ( pClient->shutdownNotify );
         free (pClient);
         fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
         return NULL;

@@ -18,8 +18,10 @@
 
 #define epicsExportSharedSymbols
 #include "envDefs.h"
+#include "errlog.h"
 #include "logClient.h"
 #include "iocLog.h"
+#include "epicsExit.h"
 
 int iocLogDisable = 0;
 
@@ -75,6 +77,14 @@ void epicsShareAPI epicsShareAPI iocLogFlush (void)
 }
 
 /*
+ * logClientDestroy()
+ */
+static void iocLogClientDestroy (logClientId id)
+{
+    errlogRemoveListeners (logClientSendMessage, id);
+}
+
+/*
  *  iocLogClientInit()
  */
 static logClientId iocLogClientInit (void)
@@ -89,6 +99,10 @@ static logClientId iocLogClientInit (void)
         return NULL;
     }
     id = logClientCreate (addr, port);
+    if (id != NULL) {
+        errlogAddListener (logClientSendMessage, id);
+        epicsAtExit (iocLogClientDestroy, id);
+    }
     return id;
 }
 

@@ -154,8 +154,6 @@ static void logClientDestroy (logClientId id)
         return;
     }
 
-    errlogRemoveListeners ( logClientSendMessage, (void *) pClient );
-
     logClientClose ( pClient );
 
     epicsMutexDestroy ( pClient->mutex );
@@ -549,8 +547,6 @@ logClientId epicsShareAPI logClientCreate (
             pClient->name, LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
     }
         
-    errlogAddListener ( logClientSendMessage, (void *) pClient );
-
     return (void *) pClient;
 }
 

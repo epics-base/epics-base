@@ -223,7 +223,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
 
     logClient * pClient = ( logClient * ) id;
 
-    if ( ! pClient ) {
+    if ( ! pClient || ! pClient->connected ) {
         return;
     }
 
@@ -419,12 +419,8 @@ static void logClientRestart ( logClientId id )
 
         epicsMutexUnlock ( pClient->mutex );
 
-        if ( isConn ) {
-            logClientFlush ( pClient );
-        }
-        else {
-            logClientConnect ( pClient );
-        }
+        if ( ! isConn ) logClientConnect ( pClient );
+        logClientFlush ( pClient );
 
         epicsEventWaitWithTimeout ( pClient->shutdownNotify, LOG_RESTART_DELAY);
 

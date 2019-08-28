@@ -54,7 +54,6 @@ typedef struct {
 } logClient;
 
 static const double      LOG_RESTART_DELAY = 5.0; /* sec */
-static const double      LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT = 5.0; /* sec */
 static const double      LOG_SERVER_SHUTDOWN_TIMEOUT = 30.0; /* sec */
 
 /*
@@ -438,9 +437,7 @@ static void logClientRestart ( logClientId id )
 logClientId epicsShareAPI logClientCreate (
     struct in_addr server_addr, unsigned short server_port)
 {
-    epicsTimeStamp begin, current;
     logClient *pClient;
-    double diff;
 
     pClient = calloc (1, sizeof (*pClient));
     if (pClient==NULL) {
@@ -494,28 +491,6 @@ logClientId epicsShareAPI logClientCreate (
         return NULL;
     }
 
-    /*
-     * attempt to synchronize with circuit connect
-     */
-    epicsTimeGetCurrent ( & begin );
-    epicsMutexMustLock ( pClient->mutex );
-    do {
-        epicsMutexUnlock ( pClient->mutex );
-        epicsEventWaitWithTimeout ( 
-            pClient->stateChangeNotify, 
-            LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT / 10.0 ); 
-        epicsTimeGetCurrent ( & current );
-        diff = epicsTimeDiffInSeconds ( & current, & begin );
-        epicsMutexMustLock ( pClient->mutex );
-    }
-    while ( ! pClient->connected && diff < LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
-    epicsMutexUnlock ( pClient->mutex );
-
-    if ( ! pClient->connected ) {
-        fprintf (stderr, "log client create: timed out synchronizing with circuit connect to \"%s\" after %.1f seconds\n",
-            pClient->name, LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
-    }
-        
     return (void *) pClient;
 }
 

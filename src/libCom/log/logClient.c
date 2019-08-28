@@ -219,6 +219,8 @@ void epicsShareAPI logClientSend ( logClientId id, const char * message )
 
 void epicsShareAPI logClientFlush ( logClientId id )
 {
+    unsigned nSent = 0u;
+
     logClient * pClient = ( logClient * ) id;
 
     if ( ! pClient ) {
@@ -227,20 +229,11 @@ void epicsShareAPI logClientFlush ( logClientId id )
 
     epicsMutexMustLock ( pClient->mutex );
 
-    while ( pClient->nextMsgIndex && pClient->connected ) {
-        int status = send ( pClient->sock, pClient->msgBuf, 
-            pClient->nextMsgIndex, 0 );
+    while ( nSent < pClient->nextMsgIndex && pClient->connected ) {
+        int status = send ( pClient->sock, pClient->msgBuf + nSent,
+            pClient->nextMsgIndex - nSent, 0 );
         if ( status > 0 ) {
-            unsigned nSent = (unsigned) status;
-            if ( nSent < pClient->nextMsgIndex ) {
-                unsigned newNextMsgIndex = pClient->nextMsgIndex - nSent;
-                memmove ( pClient->msgBuf, & pClient->msgBuf[nSent], 
-                    newNextMsgIndex );
-                pClient->nextMsgIndex = newNextMsgIndex;
-            }
-            else {
-                pClient->nextMsgIndex = 0u;
-            }
+            nSent += (unsigned) status;
         }
         else {
             if ( ! pClient->shutdown ) {
@@ -257,6 +250,11 @@ void epicsShareAPI logClientFlush ( logClientId id )
             logClientClose ( pClient );
             break;
         }
+    }
+    pClient->nextMsgIndex -= nSent;
+    if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
+        memmove ( pClient->msgBuf, & pClient->msgBuf[nSent],
+            pClient->nextMsgIndex );
     }
     epicsMutexUnlock ( pClient->mutex );
 }

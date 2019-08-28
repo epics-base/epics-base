@@ -20,7 +20,7 @@ release.</p>
 which should also be read to understand what has changed since an earlier
 release.</p>
 
-<h1 align="center">EPICS Release 7.0.3</h1>
+<h1 align="center">EPICS Release 7.0.3.1</h1>
 
 <!-- Insert new items immediately below this template ...
 
@@ -29,6 +29,18 @@ release.</p>
 <p>Description</p>
 
 -->
+
+<h3>Non-VME RTEMS targets now define pdevLibVME</h3>
+
+<p>Previously IOC executables that made calls to devLib routines would fail to
+link when built for some non-VME based RTEMS targets, which would have to be
+explicitly filtered out by sites that build Base for those targets.
+<a href="https://bugs.launchpad.net/epics-base/+bug/1841692">This fix</a> makes
+that no longer necessary, all RTEMS targets should now link although the IOC
+won't be able to be used with the VME I/O on those systems (that we don't have
+VMEbus I/O support for in libCom).</p>
+
+<h1 align="center">EPICS Release 7.0.3</h1>
 
 <h3>epicsTimeGetCurrent() optimization</h3>
 

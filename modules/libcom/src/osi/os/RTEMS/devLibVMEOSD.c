@@ -350,7 +350,12 @@ static void unsolicitedHandlerEPICS(int vectorNumber)
         );
 }
 
-#endif /* defined(__PPC__) && defined(mpc750) */
+#else /* !defined(__PPC__) && !defined(__mcf528x__) */
+
+/* No known VME interface here, provide a dummy */
+devLibVME *pdevLibVME;
+
+#endif /* defined(__PPC__) || defined(__mcf528x__) */
 
 /*
  * Some vxWorks convenience routines

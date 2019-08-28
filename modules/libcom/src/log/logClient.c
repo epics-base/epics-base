@@ -174,57 +174,23 @@ static void sendMessageChunk(logClient * pClient, const char * message) {
         unsigned msgBufBytesLeft = 
             sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
 
-        if ( strSize > msgBufBytesLeft ) {
-            int status;
-
-            if ( ! pClient->connected ) {
-                break;
-            }
-
-            if ( msgBufBytesLeft > 0u ) {
-                memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
-                    message, msgBufBytesLeft );
-                pClient->nextMsgIndex += msgBufBytesLeft;
-                strSize -= msgBufBytesLeft;
-                message += msgBufBytesLeft;
-            }
-
-            status = send ( pClient->sock, pClient->msgBuf, 
-                pClient->nextMsgIndex, 0 );
-            if ( status > 0 ) {
-                unsigned nSent = (unsigned) status;
-                if ( nSent < pClient->nextMsgIndex ) {
-                    unsigned newNextMsgIndex = pClient->nextMsgIndex - nSent;
-                    memmove ( pClient->msgBuf, & pClient->msgBuf[nSent], 
-                        newNextMsgIndex );
-                    pClient->nextMsgIndex = newNextMsgIndex;
-                }
-                else {
-                    pClient->nextMsgIndex = 0u;
-                }
-            }
-            else {
-                if ( ! pClient->shutdown ) {
-                    char sockErrBuf[64];
-                    if ( status ) {
-                        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                    }
-                    else {
-                        strcpy ( sockErrBuf, "server initiated disconnect" );
-                    }
-                    fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
-                        pClient->name, sockErrBuf );
-                }
-                logClientClose ( pClient );
-                break;
-            }
+        if ( msgBufBytesLeft < strSize && pClient->nextMsgIndex != 0u && pClient->connected)
+        {
+            /* buffer is full, thus flush it */
+            logClientFlush ( pClient );
+            msgBufBytesLeft = sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
         }
-        else {
-            memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
-                message, strSize );
-            pClient->nextMsgIndex += strSize;
+        if ( msgBufBytesLeft == 0u ) {
+            fprintf ( stderr, "log client: messages to \"%s\" are lost\n",
+                pClient->name );
             break;
         }
+        if ( msgBufBytesLeft > strSize) msgBufBytesLeft = strSize;
+        memcpy ( & pClient->msgBuf[pClient->nextMsgIndex],
+            message, msgBufBytesLeft );
+        pClient->nextMsgIndex += msgBufBytesLeft;
+        strSize -= msgBufBytesLeft;
+        message += msgBufBytesLeft;
     }
 }
 

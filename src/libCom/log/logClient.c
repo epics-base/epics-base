@@ -85,8 +85,6 @@ static void logClientClose ( logClient *pClient )
         pClient->sock = INVALID_SOCKET;
     }
 
-    pClient->nextMsgIndex = 0u;
-    memset ( pClient->msgBuf, '\0', sizeof ( pClient->msgBuf ) );
     pClient->connected = 0u;
 
     /*

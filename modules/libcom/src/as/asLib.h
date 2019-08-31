@@ -21,6 +21,11 @@
 extern "C" {
 #endif
 
+/* 0 - Use (unverified) client provided host name string.
+ * 1 - Use actual client IP address.  HAG() are resolved to IPs at ACF load time.
+ */
+epicsShareExtern int asCheckClientIP;
+
 typedef struct asgMember *ASMEMBERPVT;
 typedef struct asgClient *ASCLIENTPVT;
 typedef int (*ASINPUTFUNCPTR)(char *buf,int max_size);
@@ -165,8 +170,8 @@ typedef struct uag{
 } UAG;
 /*Defs for Host Access Groups*/
 typedef struct{
-	ELLNODE	node;
-	char	*host;
+    ELLNODE	node;
+    char	host[1];
 } HAGNAME;
 typedef struct hag{
 	ELLNODE	node;

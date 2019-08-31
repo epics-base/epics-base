@@ -86,7 +86,7 @@ typedef struct client {
   ELLLIST               chanList;
   ELLLIST               chanPendingUpdateARList;
   ELLLIST               putNotifyQue;
-  struct sockaddr_in    addr;
+  struct sockaddr_in    addr; /* peer address, TCP only */
   epicsTimeStamp        time_at_last_send;
   epicsTimeStamp        time_at_last_recv;
   void                  *evuser;

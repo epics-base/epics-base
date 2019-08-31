@@ -861,6 +861,14 @@ static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
         return RSRV_ERROR;
     }
 
+    /* after all validation */
+    if(asCheckClientIP) {
+
+        DLOG (2, ( "CAS: host_name_action for \"%s\" ignores client provided host name\n",
+            client->pHostName ) );
+        return RSRV_OK;
+    }
+
     /*
      * user name will not change if there isnt enough memory
      */

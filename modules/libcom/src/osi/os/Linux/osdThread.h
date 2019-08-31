@@ -22,6 +22,7 @@ extern "C" {
 
 typedef struct epicsThreadOSD {
     ELLNODE            node;
+    int                refcnt;
     pthread_t          tid;
     pid_t              lwpId;
     pthread_attr_t     attr;
@@ -35,6 +36,7 @@ typedef struct epicsThreadOSD {
     int                isRealTimeScheduled;
     int                isOnThreadList;
     unsigned int       osiPriority;
+    int                joinable;
     char               name[1];     /* actually larger */
 } epicsThreadOSD;
 

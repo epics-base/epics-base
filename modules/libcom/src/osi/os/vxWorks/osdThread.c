@@ -34,6 +34,22 @@
 #include "vxLib.h"
 #include "epicsExit.h"
 
+#ifdef EPICS_THREAD_CAN_JOIN
+  /* The implementation of epicsThreadMustJoin() here uses 2 features
+   * of VxWorks that were first introduced in VxWorks 6.9: taskWait(),
+   * and the taskSpareFieldGet/Set routines in taskUtilLib.
+   */
+  #include <taskUtilLib.h>
+
+  #define JOIN_WARNING_TIMEOUT (60 * sysClkRateGet())
+
+  static SPARE_NUM joinField;
+  #define ALLOT_JOIN(tid) taskSpareNumAllot(tid, &joinField)
+#else
+  #define ALLOT_JOIN(tid)
+#endif
+
+
 epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
 
 #if CPU_FAMILY == MC680X0
@@ -109,6 +125,7 @@ static void epicsThreadInit(void)
         assert(taskIdList);
         taskIdListSize = ID_LIST_CHUNK;
         atRebootRegister();
+        ALLOT_JOIN(0);
         done = 1;
     }
     lock = 0;
@@ -170,19 +187,58 @@ void epicsThreadOnce(epicsThreadOnceId *id, void (*func)(void *), void *arg)
     }
     semGive(epicsThreadOnceMutex);
 }
-
+
+#ifdef EPICS_THREAD_CAN_JOIN
+
+/* This routine is not static so it appears in the back-trace
+ * of a thread that is waiting to be joined.
+ */
+void epicsThreadAwaitingJoin(int tid)
+{
+    SEM_ID joinSem = (SEM_ID) taskSpareFieldGet(tid, joinField);
+    STATUS status;
+
+    if (!joinSem || (int) joinSem == ERROR)
+        return;
+
+    /* Wait for our supervisor */
+    status = semTake(joinSem, JOIN_WARNING_TIMEOUT);
+    if (status && errno == S_objLib_OBJ_TIMEOUT) {
+        errlogPrintf("Warning: epicsThread '%s' still awaiting join\n",
+            epicsThreadGetNameSelf());
+        status = semTake(joinSem, WAIT_FOREVER);
+    }
+    if (status)
+        perror("epicsThreadAwaitingJoin");
+
+    semDelete(joinSem);
+    taskSpareFieldSet(tid, joinField, 0);
+}
+  #define PREPARE_JOIN(tid, joinable) \
+    taskSpareFieldSet(tid, joinField, \
+        joinable ? (int) semBCreate(SEM_Q_FIFO, SEM_EMPTY) : 0)
+  #define AWAIT_JOIN(tid) epicsThreadAwaitingJoin(tid)
+#else
+  #define PREPARE_JOIN(tid, joinable)
+  #define AWAIT_JOIN(tid)
+#endif
+
 static void createFunction(EPICSTHREADFUNC func, void *parm)
 {
     int tid = taskIdSelf();
 
     taskVarAdd(tid,(int *)(char *)&papTSD);
-    /*Make sure that papTSD is still 0 after that call to taskVarAdd*/
-    papTSD = 0;
+    papTSD = NULL; /* Initialize for this thread */
+
     osdThreadHooksRun((epicsThreadId)tid);
+
     (*func)(parm);
+
     epicsExitCallAtThreadExits ();
     free(papTSD);
     taskVarDelete(tid,(int *)(char *)&papTSD);
+
+    AWAIT_JOIN(tid);
 }
 
 #ifdef ALTIVEC
@@ -190,27 +246,101 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
 #else
   #define TASK_FLAGS (VX_FP_TASK)
 #endif
-epicsThreadId epicsThreadCreate(const char *name,
-    unsigned int priority, unsigned int stackSize,
-    EPICSTHREADFUNC funptr,void *parm)
+epicsThreadId epicsThreadCreateOpt(const char * name,
+    EPICSTHREADFUNC funptr, void * parm, const epicsThreadOpts *opts )
 {
+    unsigned int stackSize;
     int tid;
 
     epicsThreadInit();
-    if(stackSize<100) {
-        errlogPrintf("epicsThreadCreate %s illegal stackSize %d\n",name,stackSize);
-        return(0);
+
+    if (!opts) {
+        static const epicsThreadOpts opts_default = EPICS_THREAD_OPTS_INIT;
+        opts = &opts_default;
     }
-    tid = taskSpawn((char *)name,getOssPriorityValue(priority),
+    stackSize = opts->stackSize;
+    if (stackSize <= epicsThreadStackBig)
+        stackSize = epicsThreadGetStackSize(stackSize);
+
+    if (stackSize < 100) {
+        errlogPrintf("epicsThreadCreate %s illegal stackSize %d\n",
+            name, stackSize);
+        return 0;
+    }
+
+    tid = taskCreate((char *)name,getOssPriorityValue(opts->priority),
         TASK_FLAGS, stackSize,
-        (FUNCPTR)createFunction,(int)funptr,(int)parm,
+        (FUNCPTR)createFunction, (int)funptr, (int)parm,
         0,0,0,0,0,0,0,0);
-    if(tid==ERROR) {
+    if (tid == ERROR) {
         errlogPrintf("epicsThreadCreate %s failure %s\n",
-            name,strerror(errno));
-        return(0);
+            name, strerror(errno));
+        return 0;
     }
-    return((epicsThreadId)tid);
+
+    PREPARE_JOIN(tid, opts->joinable);
+    taskActivate(tid);
+
+    return (epicsThreadId)tid;
+}
+
+void epicsThreadMustJoin(epicsThreadId id)
+{
+#ifdef EPICS_THREAD_CAN_JOIN
+    const char *fn = "epicsThreadMustJoin";
+    int tid = (int) id;
+    SEM_ID joinSem;
+    STATUS status;
+
+    if (!tid)
+        return;
+
+    joinSem = (SEM_ID) taskSpareFieldGet(tid, joinField);
+    if ((int) joinSem == ERROR) {
+        errlogPrintf("%s: Thread '%s' no longer exists.\n",
+            fn, taskName(tid));
+        return;
+    }
+
+    if (tid == taskIdSelf()) {
+        if (joinSem) {
+            semDelete(joinSem);
+            taskSpareFieldSet(tid, joinField, 0);
+        }
+        else {
+            errlogPrintf("%s: Self-join of unjoinable thread '%s'\n",
+                fn, taskName(tid));
+        }
+        return;
+    }
+
+    if (!joinSem) {
+        cantProceed("%s: Thread '%s' is not joinable.\n",
+            fn, taskName(tid));
+        return;
+    }
+
+    semGive(joinSem);   /* Rendezvous with thread */
+
+    status = taskWait(tid, JOIN_WARNING_TIMEOUT);
+    if (status && errno == S_objLib_OBJ_TIMEOUT) {
+        errlogPrintf("Warning: %s still waiting for thread '%s'\n",
+            fn, taskName(tid));
+        status = taskWait(tid, WAIT_FOREVER);
+    }
+    if (status) {
+        if (errno == S_taskLib_ILLEGAL_OPERATION) {
+            errlogPrintf("%s: This shouldn't happen!\n", fn);
+        }
+        else if (errno == S_objLib_OBJ_ID_ERROR) {
+            errlogPrintf("%s: %x is not a known thread\n", fn, tid);
+        }
+        else {
+            perror(fn);
+        }
+        cantProceed(fn);
+    }
+#endif
 }
 
 void epicsThreadSuspendSelf()

@@ -35,6 +35,7 @@
 #include "osiUnistd.h"
 #include "osdInterrupt.h"
 #include "epicsExit.h"
+#include "epicsAtomic.h"
 
 epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
 epicsShareFunc void osdThreadHooksRunMain(epicsThreadId id);
@@ -47,6 +48,9 @@ struct taskVar {
     struct taskVar  *back;
     char            *name;
     rtems_id             id;
+    rtems_id             join_barrier; /* only valid if joinable */
+    int                refcnt;
+    int                joinable;
     EPICSTHREADFUNC              funptr;
     void                *parm;
     unsigned int        threadVariableCapacity;
@@ -163,6 +167,22 @@ taskVarUnlock (void)
     epicsMutexOsdUnlock (taskVarMutex);
 }
 
+static
+void taskUnref(struct taskVar *v)
+{
+    int ref = epicsAtomicDecrIntT(&v->refcnt);
+    assert(ref>=0);
+    if(ref>0) return;
+
+
+    if (v->joinable) {
+        rtems_barrier_delete(v->join_barrier);
+    }
+    free (v->threadVariables);
+    free (v->name);
+    free (v);
+}
+
 /*
  * EPICS threads destroy themselves by returning from the thread entry function.
  * This simple wrapper provides the same semantics on RTEMS.
@@ -183,9 +203,12 @@ threadWrapper (rtems_task_argument arg)
     if (v->forw)
         v->forw->back = v->back;
     taskVarUnlock ();
-    free (v->threadVariables);
-    free (v->name);
-    free (v);
+    if(v->joinable) {
+        rtems_status_code sc = rtems_barrier_wait(v->join_barrier, RTEMS_NO_TIMEOUT);
+        if(sc!=RTEMS_SUCCESSFUL)
+            cantProceed("oops %s\n", rtems_status_text(sc));
+    }
+    taskUnref(v);
     rtems_task_delete (RTEMS_SELF);
 }
 
@@ -196,21 +219,34 @@ void epicsThreadExitMain (void)
 {
 }
 
-static void
+static rtems_status_code
 setThreadInfo(rtems_id tid, const char *name, EPICSTHREADFUNC funptr,
-    void *parm)
+    void *parm, int joinable)
 {
     struct taskVar *v;
     uint32_t note;
-    rtems_status_code sc;
+    rtems_status_code sc = RTEMS_SUCCESSFUL;
 
     v = mallocMustSucceed (sizeof *v, "epicsThreadCreate_vars");
     v->name = epicsStrDup(name);
     v->id = tid;
     v->funptr = funptr;
     v->parm = parm;
+    v->joinable = joinable;
+    v->refcnt = joinable ? 2 : 1;
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
+    if (joinable) {
+        char c[3];
+        strncpy(c, v->name, 3);
+        sc = rtems_barrier_create(rtems_build_name('~', c[0], c[1], c[2]),
+                RTEMS_BARRIER_AUTOMATIC_RELEASE | RTEMS_LOCAL,
+                2, &v->join_barrier);
+        if (sc != RTEMS_SUCCESSFUL) {
+            free(v);
+            return sc;
+        }
+    }
     note = (uint32_t)v;
     rtems_task_set_note (tid, RTEMS_NOTEPAD_TASKVAR, note);
     taskVarLock ();
@@ -222,10 +258,14 @@ setThreadInfo(rtems_id tid, const char *name, EPICSTHREADFUNC funptr,
     taskVarUnlock ();
     if (funptr) {
         sc = rtems_task_start (tid, threadWrapper, (rtems_task_argument)v);
-        if (sc !=  RTEMS_SUCCESSFUL)
-            errlogPrintf ("setThreadInfo:  Can't start  %s: %s\n",
-                name, rtems_status_text(sc));
     }
+    if (sc != RTEMS_SUCCESSFUL) {
+        if (joinable) {
+            rtems_barrier_delete(v->join_barrier);
+        }
+        free(v);
+    }
+    return sc;
 }
 
 /*
@@ -247,7 +287,8 @@ epicsThreadInit (void)
         if (!onceMutex || !taskVarMutex)
             cantProceed("epicsThreadInit() can't create global mutexes\n");
         rtems_task_ident (RTEMS_SELF, 0, &tid);
-        setThreadInfo (tid, "_main_", NULL, NULL);
+        if(setThreadInfo (tid, "_main_", NULL, NULL, 0) != RTEMS_SUCCESSFUL)
+            cantProceed("epicsThreadInit() unable to setup _main_");
         osdThreadHooksRunMain((epicsThreadId)tid);
         initialized = 1;
         epicsThreadCreate ("ImsgDaemon", 99,
@@ -263,15 +304,26 @@ void epicsThreadRealtimeLock(void)
  * Create and start a new thread
  */
 epicsThreadId
-epicsThreadCreate (const char *name,
-    unsigned int priority, unsigned int stackSize,
-    EPICSTHREADFUNC funptr,void *parm)
+epicsThreadCreateOpt (
+    const char * name,
+    EPICSTHREADFUNC funptr, void * parm, const epicsThreadOpts *opts )
 {
+    unsigned int stackSize;
     rtems_id tid;
     rtems_status_code sc;
     char c[4];
 
-    if (!initialized) epicsThreadInit();
+    if (!initialized)
+        epicsThreadInit();
+
+    if (!opts) {
+        static const epicsThreadOpts opts_default = EPICS_THREAD_OPTS_INIT;
+        opts = &opts_default;
+    }
+    stackSize = opts->stackSize;
+    if (stackSize <= epicsThreadStackBig)
+        stackSize = epicsThreadGetStackSize(stackSize);
+
     if (stackSize < RTEMS_MINIMUM_STACK_SIZE) {
         errlogPrintf ("Warning: epicsThreadCreate %s illegal stackSize %d\n",
             name, stackSize);
@@ -279,7 +331,7 @@ epicsThreadCreate (const char *name,
     }
     strncpy (c, name, sizeof c);
     sc = rtems_task_create (rtems_build_name (c[0], c[1], c[2], c[3]),
-         epicsThreadGetOssPriorityValue (priority),
+         epicsThreadGetOssPriorityValue (opts->priority),
          stackSize,
          RTEMS_PREEMPT|RTEMS_NO_TIMESLICE|RTEMS_NO_ASR|RTEMS_INTERRUPT_LEVEL(0),
          RTEMS_FLOATING_POINT|RTEMS_LOCAL,
@@ -289,7 +341,13 @@ epicsThreadCreate (const char *name,
             name, rtems_status_text(sc));
         return 0;
     }
-    setThreadInfo (tid, name, funptr,parm);
+    sc = setThreadInfo (tid, name, funptr, parm, opts->joinable);
+    if (sc != RTEMS_SUCCESSFUL) {
+        errlogPrintf ("epicsThreadCreate create failure during setup for %s: %s\n",
+            name, rtems_status_text(sc));
+        rtems_task_delete(tid);
+        return 0;
+    }
     return (epicsThreadId)tid;
 }
 
@@ -303,6 +361,51 @@ threadMustCreate (const char *name,
     if (tid == NULL)
         cantProceed(0);
     return tid;
+}
+
+void epicsThreadMustJoin(epicsThreadId id)
+{
+    rtems_id target_tid = (rtems_id)id, self_tid;
+    struct taskVar *v = 0;
+
+    rtems_task_ident (RTEMS_SELF, 0, &self_tid);
+
+    {
+        uint32_t note;
+        rtems_task_get_note (target_tid, RTEMS_NOTEPAD_TASKVAR, &note);
+        v = (void *)note;
+    }
+    /* 'v' may be NULL if 'id' represents a non-EPICS thread other than _main_. */
+
+    if(!v || !v->joinable) {
+        if(epicsThreadGetIdSelf()==id) {
+            errlogPrintf("Warning: %s thread self-join of unjoinable\n", v ? v->name : "non-EPICS thread");
+
+        } else {
+            /* try to error nicely, however in all likelyhood de-ref of
+             * 'id' has already caused SIGSEGV as we are racing thread exit,
+             * which free's 'id'.
+             */
+            cantProceed("Error: %s thread not joinable.\n", v->name);
+        }
+        return;
+
+    } else if(target_tid!=self_tid) {
+        /* wait for target to complete */
+        rtems_status_code sc = rtems_barrier_wait(v->join_barrier, RTEMS_NO_TIMEOUT);
+        if(sc!=RTEMS_SUCCESSFUL)
+            cantProceed("oopsj %s\n", rtems_status_text(sc));
+
+        if(sc != RTEMS_SUCCESSFUL) {
+            errlogPrintf("epicsThreadMustJoin('%s') -> %s\n", v->name, rtems_status_text(sc));
+        }
+    }
+
+    v->joinable = 0;
+    taskUnref(v);
+    /* target task may be deleted.
+     * self task is not deleted, even for self join.
+     */
 }
 
 void

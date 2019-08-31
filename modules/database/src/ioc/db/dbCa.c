@@ -68,6 +68,7 @@ static volatile enum dbCaCtl_t {
     ctlInit, ctlRun, ctlPause, ctlExit
 } dbCaCtl;
 static epicsEventId startStopEvent;
+static epicsThreadId dbCaWorker;
 
 struct ca_client_context * dbCaClientContext;
 
@@ -258,10 +259,18 @@ void dbCaShutdown(void)
     dbCaCtl = ctlExit;
     epicsEventSignal(workListEvent);
     epicsEventMustWait(startStopEvent);
+    if(dbCaWorker)
+        epicsThreadMustJoin(dbCaWorker);
 }
 
 static void dbCaLinkInitImpl(int isolate)
 {
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+
+    opts.stackSize = epicsThreadGetStackSize(epicsThreadStackBig);
+    opts.priority = epicsThreadPriorityMedium;
+    opts.joinable = 1;
+
     dbServiceIsolate = isolate;
     dbServiceIOInit();
 
@@ -274,9 +283,8 @@ static void dbCaLinkInitImpl(int isolate)
         startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     dbCaCtl = ctlPause;
 
-    epicsThreadCreate("dbCaLink", epicsThreadPriorityMedium,
-        epicsThreadGetStackSize(epicsThreadStackBig),
-        dbCaTask, NULL);
+    dbCaWorker = epicsThreadCreateOpt("dbCaLink", dbCaTask, NULL, &opts);
+    /* wait for worker to startup and initialize dbCaClientContext */
     epicsEventMustWait(startStopEvent);
 }
 

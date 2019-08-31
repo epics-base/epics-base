@@ -229,20 +229,23 @@ static void asCaTask(void)
     
 void asCaStart(void)
 {
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+
+    opts.stackSize = epicsThreadGetStackSize(epicsThreadStackBig);
+    opts.priority = epicsThreadPriorityScanLow - 3;
+    opts.joinable = 1;
+
     if(asCaDebug) printf("asCaStart called\n");
     if(firstTime) {
-	firstTime = FALSE;
+        firstTime = FALSE;
         asCaTaskLock=epicsMutexMustCreate();
         asCaTaskWait=epicsEventMustCreate(epicsEventEmpty);
         asCaTaskAddChannels=epicsEventMustCreate(epicsEventEmpty);
         asCaTaskClearChannels=epicsEventMustCreate(epicsEventEmpty);
-        threadid = epicsThreadCreate("asCaTask",
-            (epicsThreadPriorityScanLow - 3),
-            epicsThreadGetStackSize(epicsThreadStackBig),
-            (EPICSTHREADFUNC)asCaTask,0);
-	if(threadid==0) {
-	    errMessage(0,"asCaStart: taskSpawn Failure\n");
-	}
+        threadid = epicsThreadCreateOpt("asCaTask", (EPICSTHREADFUNC)asCaTask, 0, &opts);
+        if(threadid==0) {
+            errMessage(0,"asCaStart: taskSpawn Failure\n");
+        }
     }
     epicsMutexMustLock(asCaTaskLock);
     epicsEventSignal(asCaTaskAddChannels);
@@ -260,6 +263,8 @@ void asCaStop(void)
     epicsEventMustWait(asCaTaskWait);
     if(asCaDebug) printf("asCaStop done\n");
     epicsMutexUnlock(asCaTaskLock);
+    epicsThreadMustJoin(threadid);
+    threadid = 0;
 }
 
 int ascar(int level) { return ascarFP(stdout,level);}

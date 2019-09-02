@@ -64,6 +64,9 @@ matrix:
   # Cygwin static-debug has compiler problems
   - configuration: static-debug
     TOOLCHAIN: cygwin
+  # Cygwin x86 install is currently (08/2019) broken (libncursesw-devel fails)
+  - platform: x86
+    TOOLCHAIN: cygwin
 
 
 #---------------------------------#

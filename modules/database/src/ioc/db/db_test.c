@@ -21,6 +21,7 @@
 #include "epicsStdlib.h"
 #include "epicsString.h"
 #include "errlog.h"
+#include "epicsEvent.h"
 
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"

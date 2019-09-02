@@ -13,8 +13,6 @@
 
 #include "shareLib.h"
 #include "ellLib.h"
-#include "epicsEvent.h"
-#include "callback.h"
 
 #ifdef __cplusplus
     extern "C" {

@@ -29,9 +29,9 @@ menu(compressALG) {
 	choice(compressALG_N_to_1_Low_Value,"N to 1 Low Value")
 	choice(compressALG_N_to_1_High_Value,"N to 1 High Value")
 	choice(compressALG_N_to_1_Average,"N to 1 Average")
-	choice(compressALG_N_to_1_Median,"N to 1 Median")
 	choice(compressALG_Average,"Average")
 	choice(compressALG_Circular_Buffer,"Circular Buffer")
+	choice(compressALG_N_to_1_Median,"N to 1 Median")
 }
 recordtype(compress) {
 
@@ -134,9 +134,11 @@ holds the average of the first element of INP over N samples, VAL[1] holds the
 average of the next element of INP over N samples, and so on. The following
 shows the equation:
 
+=for comment Latex form of equation bellow : VAL[i] \leftarrow \frac{1}{N}\sum_{n=1}^NINP_{n}[i]
+
 =begin html
 
-<img src="compress-1.jpg" style="width:200px;height:60px;">
+<img src="image/compress-1.png">
 
 =end html
 
@@ -183,7 +185,7 @@ as in the following diagram:
 
 =begin html
 
-<img src="compress-2.gif">
+<img src="image/compress-2.png">
 
 =end html
 
@@ -246,57 +248,57 @@ WPTR is used by the dbGetlinks routines.
 
 =head4 init_record
   
-  static long init_record(compressRecord *prec, int pass)
+  long (*init_record)(struct dbCommon *precord, int pass)
 
 Space for all necessary arrays is allocated. The addresses are stored in the
 appropriate fields in the record.
 
 =head4 process
 
-  static long process(compressRecord *prec)
+  long (*process)(struct dbCommon *precord)
 
 See L<Record Processing>
 
 =head4 special
 
-  static long special(DBADDR *paddr, int after)
+  long (*special)(struct dbAddr *paddr, int after)
 
 This routine is called when RSET, ALG, or N are set. It performs a reset.
 
 =head4 cvt_dbaddr
 
-  static long cvt_dbaddr(DBADDR *paddr)
+  long (*cvt_dbaddr)(struct dbAddr *paddr)
 
 This is called by dbNameToAddr. It makes the dbAddr structure refer to the
 actual buffer holding the result.
 
 =head4 get_array_info
 
-  static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
+  long (*get_array_info)(struct dbAddr *paddr, long *no_elements, long *offset)
 
 Obtains values from the circular buffer referenced by VAL.
 
 =head4 put_array_info
 
-  static long put_array_info(DBADDR *paddr, long nNew)
+  long (*put_array_info)(struct dbAddr *paddr, long nNew);
 
 Writes values into the circular buffer referenced by VAL.
 
 =head4 get_units
 
-  static long get_units(DBADDR *paddr, char *units)
+  long (*get_units)(struct dbAddr *paddr, char *units);
 
 Retrieves EGU.
 
 =head4 get_precision
 
-  static long get_precision(DBADDR *paddr, long *precision)
+  long (*get_precision)(const struct dbAddr *paddr, long *precision);
 
 Retrieves PREC.
 
 =head4 get_graphic_double
 
-  static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
+  long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p);
 
 Sets the upper display and lower display limits for a field. If the field is
 VAL, the limits are set to HOPR and LOPR, else if the field has upper and lower
@@ -305,7 +307,7 @@ the field type will be used.
 
 =head4 get_control_double
 
-  static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
+  long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p);
 
 Sets the upper control and the lower control limits for a field. If the field is
 VAL, the limits are set to HOPR and LOPR, else if the field has upper and lower

@@ -10,7 +10,7 @@
 
 =head1 Menu menuFtype
 
-This menu is used for the C<FTVL> field of all record types.
+This menu is used for the C<FTVL> and similar fields of many record types.
 
 =menu menuFtype
 

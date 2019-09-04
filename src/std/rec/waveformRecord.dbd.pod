@@ -1,4 +1,11 @@
-=pod
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
 
 =title Waveform Record (waveform)
 
@@ -9,6 +16,8 @@ types.
 =recordtype waveform
 
 =cut
+
+include "menuFtype.dbd"
 
 menu(waveformPOST) {
     choice(waveformPOST_Always,"Always")
@@ -115,64 +124,7 @@ The RARM field causes the device to re-arm when this field is set to 1.
 
 =head4 Possible data types for FTVL
 
-=begin html
-
-<blockquote><table border="1"><tr>
-<th>Index</th><th>Identifier</th><th>Choice String</th></tr>
-<tr>
-<td class='cell DBD_Menu index'>0</td>
-<td class='cell DBD_Menu identifier'>menuFtypeSTRING</td>
-<td class='cell DBD_Menu choice'>STRING</td>
-</tr>
-<tr>
-<td class='cell DBD_Menu index'>1</td>
-<td class='cell DBD_Menu identifier'>menuFtypeCHAR</td>
-<td class='cell DBD_Menu choice'>CHAR</td>
-</tr>
-<tr>
-<td class='cell DBD_Menu index'>2</td>
-<td class='cell DBD_Menu identifier'>menuFtypeUCHAR</td>
-<td class='cell DBD_Menu choice'>UCHAR</td>
-</tr>
-<tr>
-<td class='cell DBD_Menu index'>3</td>
-<td class='cell DBD_Menu identifier'>menuFtypeSHORT</td>
-<td class='cell DBD_Menu choice'>SHORT</td>
-</tr>
-<tr>
-<td class='cell DBD_Menu index'>4</td>
-<td class='cell DBD_Menu identifier'>menuFtypeUSHORT</td>
-<td class='cell DBD_Menu choice'>USHORT</td>
-</tr>
-<tr>
-<td class='cell DBD_Menu index'>5</td>
-<td class='cell DBD_Menu identifier'>menuFtypeLONG</td>
-<td class='cell DBD_Menu choice'>LONG</td>
-</tr>
-<tr>
-<td class='cell DBD_Menu index'>6</td>
-<td class='cell DBD_Menu identifier'>menuFtypeULONG</td>
-<td class='cell DBD_Menu choice'>ULONG</td>
-</tr>
-<tr>
-<td class='cell DBD_Menu index'>7</td>
-<td class='cell DBD_Menu identifier'>menuFtypeFLOAT</td>
-<td class='cell DBD_Menu choice'>FLOAT</td>
-</tr>
-<tr>
-<td class='cell DBD_Menu index'>8</td>
-<td class='cell DBD_Menu identifier'>menuFtypeDOUBLE</td>
-<td class='cell DBD_Menu choice'>DOUBLE</td>
-</tr>
-<tr>
-<td class='cell DBD_Menu index'>9</td>
-<td class='cell DBD_Menu identifier'>menuFtypeENUM</td>
-<td class='cell DBD_Menu choice'>ENUM</td>
-</tr>
-</table></blockquote>
-
-
-=end html
+=menu menuFtype
 
 =head3 Operator Display Parameters
 

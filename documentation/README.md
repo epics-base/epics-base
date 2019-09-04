@@ -167,10 +167,9 @@ base/documentation directory of the distribution.
 #### base/documentation directory - contains setup, build, and install documents
 
 ``` 
-        README.1st           Instructions for setup and building epics base
-        README.html          html version of README.1st
+        README.md            Instructions for setup and building epics base
         README.darwin.html   Installation notes for Mac OS X (Darwin)
-        RELEASE_NOTES.html   Notes on release changes
+        RELEASE_NOTES.md     Notes on release changes
         KnownProblems.html   List of known problems and workarounds
 ```
 

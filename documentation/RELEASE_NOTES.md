@@ -48,7 +48,7 @@ The waveform record has been posting monitors on its NORD field since Base 3.15.
 
 ### HOWTO: Converting Wiki Record Reference to POD
 
-Some documentation has been added to the `dbdToHtml.pl` script explaining how Perl POD (Plain Old Documentation) markup can be added to `.dbd` files to generate HTML documentation for the record types. To see these instructions, run `perl bin/<host>/dbdToHtml.pl -H` or `perldoc bin/<host>/dbdToHtml.pl`.
+Some documentation has been added to the `dbdToHtml.pl` script explaining how Perl POD (Plain Old Documentation) markup can be added to `.dbd` files to generate HTML documentation for the record types. To see these instructions, run `perl bin/&lt;host>/dbdToHtml.pl -H` or `perldoc bin/&lt;host>/dbdToHtml.pl`.
 
 ### Fix problem with numeric soft events
 
@@ -275,7 +275,7 @@ This fixes [Launchpad bug \#1581212](https://bugs.launchpad.net/epics-base/+bug/
 
 ### New CONFIG\_SITE variable for running self-tests
 
-The 'make runtests' and 'make tapfiles' build targets normally only run the self-tests for the main `EPICS_HOST_ARCH` architecture. If the host is able to execute self-test programs for other target architectures that are being built by the host, such as when building a `-debug` version of the host architecture for example, the names of those other architectures can be added to the new `CROSS_COMPILER_RUNTEST_ARCHS` variable in either the `configure/CONFIG_SITE` file or in an appropriate `configure/os/CONFIG_SITE.<host>.Common` file to have the test programs for those targets be run as well.
+The 'make runtests' and 'make tapfiles' build targets normally only run the self-tests for the main `EPICS_HOST_ARCH` architecture. If the host is able to execute self-test programs for other target architectures that are being built by the host, such as when building a `-debug` version of the host architecture for example, the names of those other architectures can be added to the new `CROSS_COMPILER_RUNTEST_ARCHS` variable in either the `configure/CONFIG_SITE` file or in an appropriate `configure/os/CONFIG_SITE.&lt;host>.Common` file to have the test programs for those targets be run as well.
 
 ### Additional RELEASE file checks
 
@@ -354,11 +354,11 @@ The length of INP/OUT link fields in database files was limited to 79 chars by a
 
 The ao record type now checks converted raw values and limits them to the 32-bit integer range before writing them to the RVAL field. Previously value overflows relied on Undefined Behaviour which could give different results on different platforms. The ROFF fields of the ao and ai record types are now DBF\_ULONG to allow an ROFF setting of 0x80000000 to work properly.
 
-### Changes to \<top\>/cfg/\* files
+### Changes to \&lt;top\>/cfg/\* files
 
-The order in which cfg/CONFIG\* and cfg/RULES\* files are included from support applications listed in the configure/RELEASE\* files has been changed. Previously these files were included in the order in which the top areas are listed in the RELEASE file, but it makes more sense to load them in reverse order since later entries override earlier ones in Makefiles but the release file order is supposed to allow earlier entries to take precedence over later ones. The same change has been made to the inclusion of the \<top\>/configure/RULES\_BUILD files.
+The order in which cfg/CONFIG\* and cfg/RULES\* files are included from support applications listed in the configure/RELEASE\* files has been changed. Previously these files were included in the order in which the top areas are listed in the RELEASE file, but it makes more sense to load them in reverse order since later entries override earlier ones in Makefiles but the release file order is supposed to allow earlier entries to take precedence over later ones. The same change has been made to the inclusion of the \&lt;top\>/configure/RULES\_BUILD files.
 
-Two new file types can also be provided in a module's cfg directory. Files named TOP\_RULES\* will be included by the top-level Makefile of other modules that refer to this module; files name DIR\_RULES\* will be included by all Makefiles that merely descend into lower-level directories. The cfg/RULES\* files are only included when make is building code inside the O.\<arch\> directories.
+Two new file types can also be provided in a module's cfg directory. Files named TOP\_RULES\* will be included by the top-level Makefile of other modules that refer to this module; files name DIR\_RULES\* will be included by all Makefiles that merely descend into lower-level directories. The cfg/RULES\* files are only included when make is building code inside the O.\&lt;arch\> directories.
 
 The new cfg/DIR\_RULES\* file inclusion was designed to permit new recursive make actions to be implemented by appending the name of the new action to the ACTIONS variable. There must be a matching rule in one of the cfg/RULES\* files when doing this. Similar rules may also be defined in the cfg/TOP\_RULES\* and/or cfg/DIR\_RULES\* files, but these should only state prerequisites and not directly provide commands to be executed.
 
@@ -806,7 +806,7 @@ A new pair of macros has been added to make version number comparisons easier. C
 
 ### Added support for iocLogPrefix
 
-Added a `iocLogPrefix` command to `iocsh`. This adds a prefix to all messages from this IOC (or other log client) as they get sent to the iocLogServer. This lets sites use the "fac=\<*facility*\>" syntax for displaying the facility, process name etc. in log viewers like the `cmlogviewer`.
+Added a `iocLogPrefix` command to `iocsh`. This adds a prefix to all messages from this IOC (or other log client) as they get sent to the iocLogServer. This lets sites use the "fac=\&lt;*facility*\>" syntax for displaying the facility, process name etc. in log viewers like the `cmlogviewer`.
 
 ### Reworked the epicsEvent C & C++ APIs
 
@@ -848,126 +848,38 @@ This change also allows the number of libraries built to be reduced to: libCap5.
 
 In order to better reflect these relations the following directories and files were moved as described:
 
-Relocations
+#### Relocations
 
-Previous
-
-New
-
-libCom
-
-src/RTEMS
-
-src/libCom/RTEMS
-
-src/toolsComm/flex
-
-src/libCom/flex
-
-src/toolsComm/antelope
-
-src/libCom/yacc
-
-src/dbStatic/alarm.h  
-.../alarmString.h
-
-src/libCom/misc/
-
-IOC Core Components
-
-src/bpt
-
-src/ioc/bpt
-
-src/db
-
-src/ioc/db
-
-src/dbStatic
-
-src/ioc/dbStatic
-
-src/dbtools
-
-src/ioc/dbtemplate
-
-src/misc
-
-src/ioc/misc
-
-src/registry
-
-src/ioc/registry
-
-src/rsrv
-
-src/ioc/rsrv [1](#rsrv)
-
-Standard Record Definitions
-
-src/dev/softDev
-
-src/std/dev
-
-src/rec
-
-src/std/rec
-
-src/softIoc
-
-src/std/softIoc
-
-Channel Access
-
-src/ca
-
-src/ca/client
-
-src/catools
-
-src/ca/client/tools
-
-src/cap5
-
-src/ca/client/perl
-
-src/gdd
-
-src/ca/legacy/gdd
-
-src/cas
-
-src/ca/legacy/pcas
-
-src/excas
-
-src/ca/legacy/pcas/ex
-
-User Templates
-
-src/makeBaseApp
-
-src/template/base
-
-src/makeBaseExt
-
-src/template/ext
-
-Dispersed
-
-src/util [2](#util)
-
-src/ca/client
-
-src/ca/client/test
-
-src/libCom/log
-
-src/as [3](#as)
-
-src/libCom/as
-
-src/ioc/as
+Category | Previous | New
+:--- | :--- | :---
+libCom | srcRTEMS | src/libCom/RTEMS
+| | src/toolsComm/flex | src/libCom/flex |
+| | src/toolsComm/antelope | src/libCom/yacc
+| | src/dbStatic/alarm.h | src/libCom/misc
+| | .../alarmString.h | src/libCom/misc
+IOC Core Components | src/bpt | src/ioc/bpt
+| | src/db | src/ioc/db
+| | src/dbStatic | src/ioc/dbStatic
+| | src/dbtools | src/ioc/dbtemplate
+| | src/misc | src/ioc/misc
+| | src/registry | src/ioc/registry
+| | src/rsrv | src/ioc/rsrv [1](#rsrv)
+| Standard Record Definitions | src/dev/softDev | src/std/dev |
+| | src/rec | src/std/rec
+| | src/softIoc | src/std/softIoc
+Channel Access | src/ca | src/ca/client
+| | src/catools | src/ca/client/tools
+| | src/cap5 | src/ca/client/perl
+| | src/gdd | src/ca/legacy/gdd
+| | src/cas | src/ca/legacy/pcas
+| | src/excas | src/ca/legacy/pcas/ex
+User Templates | src/makeBaseApp | src/template/base
+| | src/makeBaseExt | src/template/ext
+Dispersed | src/util [2](#util) | src/ca/client
+| | | src/ca/client/test
+| | | src/libCom/log
+| | src/as [3](#as) | src/libCom/as
+| | | src/ioc/as
 
 <span id="rsrv">1</span> RSRV is built as part of dbCore due to its tight (bidirectional) coupling with the other database code.
 
@@ -981,4 +893,4 @@ These files are now found under src/RTEMS.
 
 ### Removed 3.13 compatibility
 
-Removed the 3.13 \<top\>/config directory and build compatibility rules and variables, and various conversion documents.
+Removed the 3.13 \&lt;top\>/config directory and build compatibility rules and variables, and various conversion documents.

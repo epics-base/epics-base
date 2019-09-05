@@ -26,7 +26,7 @@ extern "C" {
 /*
  * WINDOWS also has a "CALLBACK" type def
  */
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(EPICS_NO_CALLBACK)
 #	ifdef CALLBACK
 #		undef CALLBACK
 #	endif /*CALLBACK*/
@@ -44,7 +44,9 @@ typedef struct callbackPvt {
         void            *timer; /*for use by callback itself*/
 }epicsCallback;
 
+#if !defined(EPICS_NO_CALLBACK)
 typedef epicsCallback CALLBACK;
+#endif
 
 typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 

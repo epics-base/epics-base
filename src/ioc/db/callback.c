@@ -168,7 +168,7 @@ static void callbackTask(void *arg)
             epicsEventMustWait(mySet->semWakeUp);
 
         while ((ptr = epicsRingPointerPop(mySet->queue))) {
-            CALLBACK *pcallback = (CALLBACK *)ptr;
+            epicsCallback *pcallback = (epicsCallback *)ptr;
             if(!epicsRingPointerIsEmpty(mySet->queue))
                 epicsEventMustTrigger(mySet->semWakeUp);
             mySet->queueOverflow = FALSE;
@@ -268,7 +268,7 @@ void callbackInit(void)
 }
 
 /* This routine can be called from interrupt context */
-int callbackRequest(CALLBACK *pcallback)
+int callbackRequest(epicsCallback *pcallback)
 {
     int priority;
     int pushOK;
@@ -297,7 +297,7 @@ int callbackRequest(CALLBACK *pcallback)
     return 0;
 }
 
-static void ProcessCallback(CALLBACK *pcallback)
+static void ProcessCallback(epicsCallback *pcallback)
 {
     dbCommon *pRec;
 
@@ -308,14 +308,14 @@ static void ProcessCallback(CALLBACK *pcallback)
     dbScanUnlock(pRec);
 }
 
-void callbackSetProcess(CALLBACK *pcallback, int Priority, void *pRec)
+void callbackSetProcess(epicsCallback *pcallback, int Priority, void *pRec)
 {
     callbackSetCallback(ProcessCallback, pcallback);
     callbackSetPriority(Priority, pcallback);
     callbackSetUser(pRec, pcallback);
 }
 
-int  callbackRequestProcessCallback(CALLBACK *pcallback,
+int  callbackRequestProcessCallback(epicsCallback *pcallback,
     int Priority, void *pRec)
 {
     callbackSetProcess(pcallback, Priority, pRec);
@@ -324,11 +324,11 @@ int  callbackRequestProcessCallback(CALLBACK *pcallback,
 
 static void notify(void *pPrivate)
 {
-    CALLBACK *pcallback = (CALLBACK *)pPrivate;
+    epicsCallback *pcallback = (epicsCallback *)pPrivate;
     callbackRequest(pcallback);
 }
 
-void callbackRequestDelayed(CALLBACK *pcallback, double seconds)
+void callbackRequestDelayed(epicsCallback *pcallback, double seconds)
 {
     epicsTimerId timer = (epicsTimerId)pcallback->timer;
 
@@ -339,7 +339,7 @@ void callbackRequestDelayed(CALLBACK *pcallback, double seconds)
     epicsTimerStartDelay(timer, seconds);
 }
 
-void callbackCancelDelayed(CALLBACK *pcallback)
+void callbackCancelDelayed(epicsCallback *pcallback)
 {
     epicsTimerId timer = (epicsTimerId)pcallback->timer;
 
@@ -348,7 +348,7 @@ void callbackCancelDelayed(CALLBACK *pcallback)
     }
 }
 
-void callbackRequestProcessCallbackDelayed(CALLBACK *pcallback,
+void callbackRequestProcessCallbackDelayed(epicsCallback *pcallback,
     int Priority, void *pRec, double seconds)
 {
     callbackSetProcess(pcallback, Priority, pRec);

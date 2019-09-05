@@ -34,7 +34,7 @@
 /* The following is provided for access security*/
 /*It allows a CA client to force access security initialization*/
 
-static void myCallback(CALLBACK *pcallback)
+static void myCallback(epicsCallback *pcallback)
 {
     ASDBCALLBACK	*pasdbcallback = (ASDBCALLBACK *)pcallback;
     subRecord	*precord;

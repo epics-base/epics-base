@@ -100,7 +100,7 @@ struct histogramdset { /* histogram input dset */
 
 /* control block for callback*/
 typedef struct myCallback {
-    CALLBACK callback;
+    epicsCallback callback;
     histogramRecord *prec;
 } myCallback;
 
@@ -110,7 +110,7 @@ static void monitor(histogramRecord *);
 static long readValue(histogramRecord *);
 
 
-static void wdogCallback(CALLBACK *arg)
+static void wdogCallback(epicsCallback *arg)
 {
     myCallback *pcallback;
     histogramRecord *prec;

@@ -35,7 +35,7 @@
 
 typedef struct devPvt {
     processNotify pn;
-    CALLBACK callback;
+    epicsCallback callback;
     long options;
     int status;
     struct {

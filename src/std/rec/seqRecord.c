@@ -31,7 +31,7 @@
 
 static void processNextLink(seqRecord *prec);
 static long asyncFinish(seqRecord *prec);
-static void processCallback(CALLBACK *arg);
+static void processCallback(epicsCallback *arg);
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -94,7 +94,7 @@ typedef struct linkGrp {
 
 /* The list of link-groups for processing */
 typedef struct seqRecPvt {
-    CALLBACK callback;
+    epicsCallback callback;
     seqRecord *prec;
     linkGrp *grps[NUM_LINKS + 1];   /* List of link-groups */
     int index;                      /* Where we are now */
@@ -241,7 +241,7 @@ static long asyncFinish(seqRecord *prec)
 }
 
 
-static void processCallback(CALLBACK *arg)
+static void processCallback(epicsCallback *arg)
 {
     seqRecPvt *pcb;
     seqRecord *prec;

@@ -16,7 +16,7 @@
 #include "shareLib.h"
 
 typedef struct {
-    CALLBACK	callback;
+    epicsCallback	callback;
     long	status;
 } ASDBCALLBACK;
 

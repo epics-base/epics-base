@@ -55,21 +55,21 @@ typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 #define callbackSetUser(USER,PCALLBACK)\
 ( (PCALLBACK)->user = (void *)(USER) )
 #define callbackGetUser(USER,PCALLBACK)\
-( (USER) = (void *)((CALLBACK *)(PCALLBACK))->user )
+( (USER) = (void *)((epicsCallback *)(PCALLBACK))->user )
 
 epicsShareFunc void callbackInit(void);
 epicsShareFunc void callbackStop(void);
 epicsShareFunc void callbackCleanup(void);
-epicsShareFunc int callbackRequest(CALLBACK *pCallback);
+epicsShareFunc int callbackRequest(epicsCallback *pCallback);
 epicsShareFunc void callbackSetProcess(
-    CALLBACK *pcallback, int Priority, void *pRec);
+    epicsCallback *pcallback, int Priority, void *pRec);
 epicsShareFunc int callbackRequestProcessCallback(
-    CALLBACK *pCallback,int Priority, void *pRec);
+    epicsCallback *pCallback,int Priority, void *pRec);
 epicsShareFunc void callbackRequestDelayed(
-    CALLBACK *pCallback,double seconds);
-epicsShareFunc void callbackCancelDelayed(CALLBACK *pcallback);
+    epicsCallback *pCallback,double seconds);
+epicsShareFunc void callbackCancelDelayed(epicsCallback *pcallback);
 epicsShareFunc void callbackRequestProcessCallbackDelayed(
-    CALLBACK *pCallback, int Priority, void *pRec, double seconds);
+    epicsCallback *pCallback, int Priority, void *pRec, double seconds);
 epicsShareFunc int callbackSetQueueSize(int size);
 epicsShareFunc int callbackParallelThreads(int count, const char *prio);
 

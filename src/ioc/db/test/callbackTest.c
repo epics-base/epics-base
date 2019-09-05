@@ -44,8 +44,8 @@
 #define TEST_DELAY(i) ((i / NUM_CALLBACK_PRIORITIES) * DELAY_QUANTUM)
 
 typedef struct myPvt {
-    CALLBACK cb1;
-    CALLBACK cb2;
+    epicsCallback cb1;
+    epicsCallback cb2;
     epicsTimeStamp pass1Time;
     epicsTimeStamp pass2Time;
     double delay;
@@ -56,7 +56,7 @@ typedef struct myPvt {
 epicsEventId finished;
 
 
-static void myCallback(CALLBACK *pCallback)
+static void myCallback(epicsCallback *pCallback)
 {
     myPvt *pmyPvt;
 
@@ -75,7 +75,7 @@ static void myCallback(CALLBACK *pCallback)
     }
 }
 
-static void finalCallback(CALLBACK *pCallback)
+static void finalCallback(epicsCallback *pCallback)
 {
     myCallback(pCallback);
     epicsEventSignal(finished);

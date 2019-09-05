@@ -98,7 +98,7 @@ struct bodset { /* binary output dset */
 
 /* control block for callback*/
 typedef struct myCallback {
-        CALLBACK        callback;
+        epicsCallback        callback;
         struct dbCommon *precord;
 }myCallback;
 
@@ -106,7 +106,7 @@ static void checkAlarms(boRecord *);
 static void monitor(boRecord *);
 static long writeValue(boRecord *);
 
-static void myCallbackFunc(CALLBACK *arg)
+static void myCallbackFunc(epicsCallback *arg)
 {
     myCallback *pcallback;
     boRecord *prec;

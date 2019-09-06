@@ -78,10 +78,9 @@ recordtype(compress) {
 =head3 Scanning Parameters
 
 The compression record has the standard fields for specifying under what
-circumstances the record will be processed. These fields are listed in 
-L<Scan Fields|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Scan_Fields>. In addition,  
-L<Scanning Specification|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Concepts#Scanning_Specification> 
-explains how these fields are used. Since  the compression record supports no 
+circumstances the record will be processed. These fields are listed in
+L<Scan Fields>. In addition, L<Scanning Specification>
+explains how these fields are used. Since  the compression record supports no
 direct interfaces to hardware, its SCAN field cannot specify C<<< I/O Intr >>>.
 
 =head3 Algorithms and Related Parameters
@@ -99,18 +98,17 @@ The following fields determine what channel to read and how to compress the data
 
 As stated above, the ALG field specifies which algorithm to be performed on the data.
 
-The INP should be a database or channel access link. Though INP can be a constant, 
-the data compression algorithms are supported only when INP is a database link. See 
-L<Address Specification|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Concepts#Address_Specification> 
-for information on specifying links.
+The INP should be a database or channel access link. Though INP can be a constant,
+the data compression algorithms are supported only when INP is a database link. See
+L<Address Specification> for information on specifying links.
 
 
 IHIL and ILIL can be set to provide an initial value filter on the input array.
-If ILIL E<lt> IHIL, the input elements will be skipped until a value is found 
-that is in the range of ILIL to IHIL. Note that ILIL and IHIL are used only in 
+If ILIL E<lt> IHIL, the input elements will be skipped until a value is found
+that is in the range of ILIL to IHIL. Note that ILIL and IHIL are used only in
 C<<< N to 1 >>> algorithms.
 
-OFF provides the offset to the current beginning of the array data. 
+OFF provides the offset to the current beginning of the array data.
 Note that OFF is used only in C<<< N to 1 >>> algorithms.
 
 The RES field can be accessed at run time to cause the algorithm to reset
@@ -120,7 +118,7 @@ itself before the maximum number of samples are reached.
 
 B<Circular Buffer> algorithm keeps a circular buffer of length NSAM.
 Each time the record is processed, it gets the data referenced by INP and puts
-it into the circular buffer referenced by VAL. The INP can refer to both scalar or 
+it into the circular buffer referenced by VAL. The INP can refer to both scalar or
 array data and VAL is just a time ordered circular buffer of  values obtained
 from INP.
 Note that N, ILIL, IHIL and OFF are not used in C<<< Circular Buffer >>> algorithm.
@@ -144,7 +142,7 @@ shows the equation:
 
 B<N to 1> If any of the C<<< N to 1 >>> algorithms are chosen, then VAL is a circular
 buffer of NSAM samples.
-The actual algorithm depends on whether INP references a scalar or an array. 
+The actual algorithm depends on whether INP references a scalar or an array.
 
 If INP refers to a scalar, then N successive time ordered samples of INP are taken.
 After the Nth sample is obtained, a new value determined by the algorithm
@@ -201,21 +199,21 @@ graphically.
 The EGU field should be given a string that describes the value of VAL, but is
 used whenever the C<<< get_units >>> record support routine is called.
 
-The HOPR and LOPR fields only specify the upper and lower display limits for 
+The HOPR and LOPR fields only specify the upper and lower display limits for
 VAL, HIHI, HIGH, LOLO and LOW fields.
 
 PREC controls the floating-point precision whenever C<<< get_precision >>> is
 called, and the field being referenced is the VAL field (i.e., one of the values
 contained in the circular buffer).
 
-See L<Fields Common to All Record Types|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Fields_Common_to_All_Record_Types> 
+See L<Fields Common to All Record Types>
 for more on the record name (NAME) and description (DESC) fields.
 
 
 =head3 Alarm Parameters
 
-The compression record has the alarm parameters common to all record types described in
-L<Alarm Fields|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Alarm_Fields>.
+The compression record has the alarm parameters common to all record types
+described in L<Alarm Fields>.
 
 =head3 Run-time Parameters
 
@@ -247,7 +245,7 @@ WPTR is used by the dbGetlinks routines.
 =head3 Record Support Routines (compressRecord.c)
 
 =head4 init_record
-  
+
   long (*init_record)(struct dbCommon *precord, int pass)
 
 Space for all necessary arrays is allocated. The addresses are stored in the
@@ -517,3 +515,4 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		interest(3)
 	}
 }
+

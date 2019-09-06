@@ -10,7 +10,7 @@
 =head1 Subroutine Record (sub)
 
 The subroutine record is used to call a C initialization routine and a recurring
-scan routine. There is no device support for this record. 
+scan routine. There is no device support for this record.
 
 =head2 Contents
 
@@ -71,10 +71,8 @@ recordtype(sub) {
 =head3 Scan Parameters
 
 The subroutine record has the standard fields for specifying under what
-circumstances it will be processed. These fields are listed in 
-L<Scan Fields|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Scan_Fields>.
-In addition, 
-L<Scanning Specification|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Concepts#Scanning_Specification> 
+circumstances it will be processed. These fields are listed in
+L<Scan Fields>.  In addition, L<Scanning Specification>
 explains how these fields are used.
 
 =head3 Read Parameters
@@ -87,16 +85,14 @@ The input links can be either channel access or database links, or constants.
 When constants, the corresponding value field for the link is initialized with
 the constant value and the field's value can be changed at run-time via dbPuts.
 Otherwise, the values for (A-F) are fetched from the input links when the record
-is processed. See 
-L<Address Specification|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Concepts#Address_Specification> 
-for information on specifying links.
+is processed. See L<Address Specification> for information on specifying links.
 
 =fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL, A, B, C, D, E, F, G, H, I, J, K, L
 
 =head3 Subroutine Connection
 
 These fields are used to connect to the C subroutine. The name of the subroutine
-should be entered in the SNAM field. 
+should be entered in the SNAM field.
 
 =fields INAM, SNAM
 
@@ -119,7 +115,7 @@ The PREC field determines the floating point precision with which to display
 VAL. It is used whenever the C<<< get_precision >>> record support routine is
 called.
 
-See L<Fields Common to All Record Types|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Fields_Common_to_All_Record_Types> 
+See L<Fields Common to All Record Types>
 for more on the record name (NAME) and description (DESC) fields.
 
 =fields EGU, HOPR, LOPR, PREC, NAME, DESC
@@ -135,10 +131,8 @@ these fields, there is a corresponding severity field which can be either
 NO_ALARM, MINOR, or MAJOR.
 
 The BRSV field is where the user can set the alarm severity in case the
-subroutine returns a negative value. See 
-L<Alarm Specification|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Concepts#Alarm_Specification> 
-for a complete explanation of alarms and these fields. 
-L<Alarm Fields|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Alarm_Fields> 
+subroutine returns a negative value. See L<Alarm Specification>
+for a complete explanation of alarms and these fields.  L<Alarm Fields>
 lists other fields related to a alarms that are common to all record types.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, BRSV, HYST
@@ -153,8 +147,7 @@ minimum delta which the change must surpass before the value-change monitors are
 invoked. If these fields have a value of zero, everytime the value changes, a
 monitor will be triggered; if they have a value of -1, everytime the record is
 processed, monitors are triggered. The ADEL field is used by archive monitors
-and the MDEL field for all other types of monitors. See 
-L<Monitor Specification|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Concepts#Monitor_Specification>
+and the MDEL field for all other types of monitors. See L<Monitor Specification>
 for a complete explanation of monitors and deadbands.
 
 =fields ADEL, MDEL
@@ -780,3 +773,4 @@ processing.
 		interest(3)
 	}
 }
+

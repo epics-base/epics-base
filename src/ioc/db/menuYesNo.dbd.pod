@@ -7,7 +7,22 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-menu(menuOmsl) {
-	choice(menuOmslsupervisory,"supervisory")
-	choice(menuOmslclosed_loop,"closed_loop")
+
+=head1 Menu menuYesNo
+
+This menu is used to specify the C<NO> or C<YES> options of C<SIMM> field of 
+many record types. 
+
+Note that no other values for a field that uses menuYesNo are possible e.g. 
+C<0.5>, C<MAYBE>, and C<NO WAY> are not possible choices for the field.
+Also, the choices C<yes>, C<No>, and C<Yes> are not valid choices since they 
+don't match the case of C<NO> or C<YES>.
+
+=menu menuYesNo
+
+=cut
+
+menu(menuYesNo) {
+	choice(menuYesNoNO,"NO")
+	choice(menuYesNoYES,"YES")
 }

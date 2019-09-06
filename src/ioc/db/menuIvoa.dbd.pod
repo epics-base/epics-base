@@ -7,6 +7,17 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
+
+=head1 Menu menuIvoa
+
+This menu specifies the possibile actions to take when the INVALID alarm is 
+triggered. See 
+L<Invalid Alarm Output Action|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Common#Invalid_Alarm_Output_Action>
+
+=menu menuIvoa
+
+=cut
+
 menu(menuIvoa) {
 	choice(menuIvoaContinue_normally,"Continue normally")
 	choice(menuIvoaDon_t_drive_outputs,"Don't drive outputs")

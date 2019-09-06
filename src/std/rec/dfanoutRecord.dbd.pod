@@ -379,11 +379,6 @@ and the DOL link, a non-zero value is returned if an error occurs.
 
 See next section.
 
-=head2 C<get_value()>
-
-This routine fills in the members of C<struct valueDes> with the VAL fields
-value and characteristics.
-
 =head2 C<get_units()>
 
 The routine copies the string specified in the EGU field to the location

@@ -261,22 +261,22 @@ ATAN: Arc tangent
 =over 1
 
 =item *
->= : Greater than or equal to
+C<<< >= >>> : Greater than or equal to
 
 =item *
-> : Greater than
+C<<< > >>> : Greater than
 
 =item *
-<= : Less than or equal to
+C<<< <= >>> : Less than or equal to
 
 =item *
-< : Less than
+C<<< < >>> : Less than
 
 =item *
-# : Not equal to
+C<<< # >>> : Not equal to
 
 =item *
-= : Equal to
+C<<< = >>> : Equal to
 
 =back
 
@@ -285,13 +285,13 @@ ATAN: Arc tangent
 =over 1
 
 =item *
-&& : And
+C<&&> : And
 
 =item *
-|| : Or
+C<||> : Or
 
 =item *
-! : Not
+C<!> : Not
 
 =back
 
@@ -300,10 +300,10 @@ ATAN: Arc tangent
 =over 1
 
 =item *
-| : Bitwise Or
+C<|> : Bitwise Or
 
 =item *
-& : Bitwise And
+C<&> : Bitwise And
 
 =item *
 OR : Bitwise Or
@@ -315,13 +315,13 @@ AND : Bitwise And
 XOR : Bitwise Exclusive Or
 
 =item *
-~ : One's Complement
+C<~> : One's Complement
 
 =item *
-<< : Left shift
+C<<< << >>> : Left shift
 
 =item *
->> : Right shift
+C<<< >> >>> : Right shift
 
 =back
 
@@ -330,7 +330,7 @@ XOR : Bitwise Exclusive Or
 =over 1
 
 =item *
-:= : assigns a value (right hand side) to a variable (i.e. field)
+C<:=> : assigns a value (right hand side) to a variable (i.e. field)
 
 =back
 
@@ -360,35 +360,35 @@ C<A + B + 10>
 =over 1
 
 =item *
-Result is A + B + 10
+Result is C<A + B + 10>
 
 =back
 
 =head3 Relational
 
-C<(A + B) < (C + D)>
+C<<< (A + B) < (C + D) >>>
 
 =over 1
 
 =item *
-Result is 1 if (A + B) < (C + D)
+Result is 1 if C<<< (A + B) < (C + D) >>>
 
 =item *
-Result is 0 if (A + B) >= (C + D)
+Result is 0 if C<<< (A + B) >= (C + D) >>>
 
 =back
 
 =head3 Question Mark
 
-C<(A + B) < (C + D) ? E : F + L + 10>
+C<<< (A + B) < (C + D) ? E : F + L + 10 >>>
 
 =over 1
 
 =item *
-Result is E if (A + B) < (C + D)
+Result is C<E> if C<<< (A + B) < (C + D) >>>
 
 =item *
-Result is F + L + 10 if (A + B) >= (C + D)
+Result is C<F + L + 10> if C<<< (A + B) >= (C + D) >>>
 
 =back
 
@@ -412,7 +412,7 @@ C<(A + B) < (C + D) ? E : VAL>
 
 =head3 Logical
 
-C<A&B>
+C<A & B>
 
 =over 1
 
@@ -850,10 +850,6 @@ See next section.
 =head2 C<special>
 
 This is called if CALC is changed. C<special> calls postfix.
-
-=head2 C<get_value>
-
-Fills in the values of struct valueDes so that the refer to VAL.
 
 =head2 C<get_units>
 

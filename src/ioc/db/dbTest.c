@@ -54,7 +54,7 @@ typedef struct msgBuff TAB_BUFFER;
 #   define MIN(x,y)  (((x) < (y)) ? (x) : (y))
 #endif
 #ifndef MAX
-#   define MAX(x,y)  (((x) < (y)) ? (x) : (y))
+#   define MAX(x,y)  (((x) > (y)) ? (x) : (y))
 #endif
 
 /* Local Routines */

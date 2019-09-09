@@ -16,6 +16,18 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Add option to avoid CALLBACK conflict</h3>
+
+<p>If a macro EPICS_NO_CALLBACK is defined, then callback.h will no longer (re)define CALLBACK.
+The name 'CALLBACK' is used by the WIN32 API, and redefinition in callback.h cause errors
+if some windows headers are later included.
+</p>
+
+<p>Code which defines EPICS_NO_CALLBACK, but still wishes to use callbacks, should use
+the alternate name 'epicsCallback' introduced in 3.15.6, 3.16.2, and 7.0.2.
+It is also possible, though not encouraged, to use 'struct callbackPvt'
+which has been present since the callback API was introduced.</p>
+
 <h3>Cleaning up with Multiple CA contexts in a Process</h3>
 
 <p>Bruno Martins reported a problem with the CA client library at shutdown in a

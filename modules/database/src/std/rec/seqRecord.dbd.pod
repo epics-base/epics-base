@@ -1,0 +1,647 @@
+#*************************************************************************
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+=title Sequence Record (seq)
+
+The Sequence record is used to trigger the processing of up to ten other records
+and send values to those records. It is similar to the fanout record, except
+that it will fetch an input value and write an output value instead of simply
+processing a collection of forward links. It can also specify one of several
+selection algorithms that determine which values to write. It has no associated
+device support.
+
+=recordtype seq
+
+=cut
+
+menu(seqSELM) {
+    choice(seqSELM_All,"All")
+    choice(seqSELM_Specified,"Specified")
+    choice(seqSELM_Mask,"Mask")
+}
+
+recordtype(seq) {
+
+=pod
+
+=head1 Contents
+
+=over
+
+=item * L<Parameter Fields>
+
+=over
+
+=item * L<Scan Parameters>
+
+=item * L<Desired Output Parameters>
+
+=item * L<Output Parameters>
+
+=item * L<Selection Algorithm Parameters>
+
+=item * L<Delay Parameters>
+
+=item * L<Operator Display Parameters>
+
+=item * L<Alarm Parameters>
+
+=back
+
+=item * L<Record Support>
+
+=back
+
+=begin html
+
+<br><hr><br>
+
+=end html
+
+=head2 Parameter Fields
+
+The fields fall into the following categories:
+
+=over
+
+=item * L<Scan Parameters>
+
+=item * L<Desired Output Parameters>
+
+=item * L<Output Parameters>
+
+=item * L<Selection Algorithm Parameters>
+
+=item * L<Delay Parameters>
+
+=item * L<Operator Display Parameters>
+
+=item * L<Alarm Parameters>
+
+=back
+
+=head3 Scan Parameters
+
+The sequence record has the standard fields for specifying under what
+circumstances it will be processed. These fields are listed in L<Scan Fields>.
+In addition, L<Scanning Specification> explains how these fields are used.
+
+=head3 Desired Output Parameters
+
+These fields determine where the record retrieves the values it is to write to
+other records. All of these values are not necessarily used, depending on the
+selection algorithm.
+
+The sequence record can retrieve up to 16 values from 16 locations. The user
+specifies the locations in the Desired Output Link fields (DOL0-DOLF), which can
+be either constants, database links, or channel access links. If a Desired
+Output Link is a constant, the corresponding value field for that link is
+initialized to the constant value and ''cannot'' be changed via dbputs.
+Otherwise, if the Desired Output Link is a database or channel access link, a
+value is fetched from the link each time the record is processed (provided that
+the output link is part of the record's selection algorithm). See L<Address
+Specification> for information on how to specify database links.
+
+The value fetched from the Desired Output Links are stored in the corresponding
+Desired Output Value fields (DO0-DOF). These fields can be initialized to a
+constant value, but they cannot be changed via dbPuts.
+
+=head4 Desired Output Link Fields
+
+=fields DOL0, DOL1, DOL2, DOL3, DOL4, DOL5, DOL6, DOL7, DOL8, DOL9, DOLA, DOLB, DOLC, DOLD, DOLE, DOLF
+
+=head4 Desired Output Value Fields
+
+=fields DO0, DO1, DO2, DO3, DO4, DO5, DO6, DO7, DO8, DO9, DOA, DOB, DOC, DOD, DOE, DOF
+
+=head3 Output Parameters
+
+When the record is processed, the desired output values are retrieved for the
+links in the record's selection algorithm and are written to the corresponding
+output link (LNK0-LNKF). These output links can be database links or channel
+access links; they cannot be device addresses. There are sixteen output links, one
+for each desired output link. Only those that are defined are used.
+
+=fields LNK0, LNK1, LNK2, LNK3, LNK4, LNK5, LNK6, LNK7, LNK8, LNK9, LNKA, LNKB, LNKC, LNKD, LNKE, LNKF
+
+=head3 Selection Algorithm Parameters
+
+When the sequence record is processed, it uses a selection algorithm similar to
+that of the selection record to decide which links to process.The select
+mechanism field (SELM) has three algorithms to choose from: C<<< All >>>,
+C<<<Specified >>> or C<<< Mask >>>.
+
+=head4 Record fields related to the Selection Algorithm
+
+=fields SELM, SELN, SELL, SHFT, OFFS
+
+=head4 Fields Description
+
+B<SELM - Selection Mode>
+
+=menu seqSELM
+
+See L<Selection Algorithms Description> below;
+
+B<SELL - Link Selection Location>
+
+This field can be initialized as a CONSTANT or as a LINK to any other record. SELN will fetch its value from this field when the seq record is processed.
+Thus, when using I<Mask> or I<Specified> modes, the links that seq will process can be dinamically changed by the record pointed by SELL.
+
+B<SELN - Link Selection>
+
+When B<C<SELM = Specified>> this is the index number of the link that will be processed, used in combination with the C<OFFS> field:
+
+  SELN = SELN + OFFS
+
+
+I<(By default, the OFFS is initalized to ZERO)>
+
+When B<C<SELM = Mask>> this field is the bitmask that will be used to determine which links will be processed by the seq record,
+in combination with the C<SHFT> field:
+
+  if (SHFT >= 0)
+    SELN = SELN << -SHFT
+  else
+    SELN = SELN >> SHFT
+
+I<(By default, the SHFT is initalized to -1)>
+
+=head4 B<Note about SHFT and OFFS fields>
+
+The first versions of seq record had DO, DOL, LNK and DLY fields starting with index ONE (DO1, DOL1, LNK1 and DLY1).
+New version of the seq record now supports 16 links, starting by index ZERO (DO0, DOL0, LNK0 and DLY0). The SHFT and OFFS fields
+were introduced to keep compatibility of old databases that used seq record with its links indexed from one onwards.
+
+B<If one wants to use DO0, DOL0, LNK0, DLY0 fields when SELM = Mask, SHFT field must be set to ZERO>
+
+=head4 Selection Algorithms Description
+
+B<All>
+
+The C<<< All >>> algorithm causes the record to process each input and output
+link each time the record is processed, in order from 0 to 15. So when SELM is
+C<<< All >>>, the desired output value from DOL0 will fetched and sent to LNK0,
+then the desired output value from DOL1 will be fetched and sent to the location
+in LNK1, and so on until the last input and output link DOF and LNKF. (Note that
+undefined links are not used.) If DOLI<x> is a constant, the current value
+field is simply used and the desired output link is ignored. The SELN field is
+not used when C<<< All >>> is the algorithm.
+
+B<Specified>
+
+When the C<<< Specified >>> algorithm is chosen, each time the record is
+processed it gets the integer value in the Link Selection (SELN) field and uses
+that as the index of the link to process. For instance, if SELN is 4, the
+desired output value from DO4 will be retrieved and sent to LNK4. If DOLI<x> is
+a constant, DOI<x> is simply used without the value being fetched from the
+input link.
+
+B<Mask>
+
+When C<<< Mask >>> is chosen, the record uses the individual bits of the SELN
+field to determine the links to process. When bit 0 of SELN is set, the value
+from DO0 will be written to the location in LNK0; when bit 1 is set, the valud
+from DO1 will be written to the location in LNK1 etc. Thus for example if SELN
+is 3, the record will retrieve the values from DO0 and DO1 and write them to the
+locations in LNK0 and LNK1, respectively. If SELN is 63, DO0...DO5 will be
+written to LNK0...LNK5.
+
+
+=head3 Delay Parameters
+
+The delay parameters consist of 16 fields, one for each I/O link discussed
+above. These fields can be configured to cause the record to delay processing
+the link. For instance, if the user gives the DLY1 field a value of 3.0, each
+time the record is processed at run-time, the record will delay processing the
+DOL1, DOV1, and LNK1 fields for three seconds. That is, the desired output value
+will not be fetched and written to the output link until three seconds have
+lapsed.
+
+=fields DLY0, DLY1, DLY2, DLY3, DLY4, DLY5, DLY6, DLY7, DLY8, DLY9, DLYA, DLYB, DLYC, DLYD, DLYE, DLYF
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. The
+Precision field (PREC) determines the decimal precision for the VAL field when
+it is displayed. It is used when the C<<< get_precision >>> record routine is
+called.
+
+See L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
+
+=fields PREC, NAME, DESC
+
+=head3 Alarm Parameters
+
+The sequence record has the alarm parameters common to all record types.
+L<Alarm Fields> lists other fields related to a alarms that are common to all
+record types.
+
+=head2 Record Support
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+First, PACT is set to TRUE, and the link selection is fetched. Depending on the
+selection mechanism, the link selection output links are processed in order from
+LNK0 to LNKF. When LNKI<x> is processed, the corresponding DLYI<x> value is
+used to generate a delay via watchdog timer.
+
+=item 2.
+
+After DLYI<x> seconds have expired, the input value is fetched from DOI<x> (if
+DOLI<x> is constant) or DOLI<x> (if DOLI<x> is a database link or channel
+access link) and written to LNKI<x>.
+
+=item 3.
+
+When all links are completed, an asynchronous completion call back to dbProcess
+is made (see the Application Developer's Guide for more information on
+asynchronous processing.)
+
+=item 4.
+
+Then UDF is set to FALSE.
+
+=item 5.
+
+Monitors are checked.
+
+=item 6.
+
+The forward link is scanned, PACT is set FALSE, and the process routine returns.
+
+=back
+
+For the delay mechanism to operate properly, the record is processed
+asynchronously. The only time the record will not be processed asynchronously is
+when there are no non-NULL output links selected (i.e. when it has nothing to
+do.) The processing of the links is done via callback tasks at the priority set
+in the PRIO field in dbCommon (see the Application Developer's Guide for more
+information on call
+
+=cut
+
+    include "dbCommon.dbd" 
+    field(VAL,DBF_LONG) {
+        prompt("Used to trigger")
+        asl(ASL0)
+        pp(TRUE)
+    }
+    field(SELM,DBF_MENU) {
+        prompt("Select Mechanism")
+        promptgroup("30 - Action")
+        interest(1)
+        menu(seqSELM)
+    }
+    field(SELN,DBF_USHORT) {
+        prompt("Link Selection")
+        interest(1)
+        initial("1")
+    }
+    field(SELL,DBF_INLINK) {
+        prompt("Link Selection Loc")
+        promptgroup("30 - Action")
+        interest(1)
+    }
+    field(OFFS,DBF_SHORT) {
+        prompt("Offset for Specified")
+        promptgroup("30 - Action")
+        interest(1)
+        initial("0")
+    }
+    field(SHFT,DBF_SHORT) {
+        prompt("Shift for Mask mode")
+        promptgroup("30 - Action")
+        interest(1)
+        initial("-1")
+    }
+    field(OLDN,DBF_USHORT) {
+        prompt("Old Selection")
+        interest(4)
+    }
+    field(PREC,DBF_SHORT) {
+        prompt("Display Precision")
+        promptgroup("80 - Display")
+        interest(1)
+    }
+    field(DLY0,DBF_DOUBLE) {
+        prompt("Delay 0")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL0,DBF_INLINK) {
+        prompt("Input link 0")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO0,DBF_DOUBLE) {
+        prompt("Value 0")
+        interest(1)
+    }
+    field(LNK0,DBF_OUTLINK) {
+        prompt("Output Link 0")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY1,DBF_DOUBLE) {
+        prompt("Delay 1")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL1,DBF_INLINK) {
+        prompt("Input link1")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO1,DBF_DOUBLE) {
+        prompt("Value 1")
+        interest(1)
+    }
+    field(LNK1,DBF_OUTLINK) {
+        prompt("Output Link 1")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY2,DBF_DOUBLE) {
+        prompt("Delay 2")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL2,DBF_INLINK) {
+        prompt("Input link 2")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO2,DBF_DOUBLE) {
+        prompt("Value 2")
+        interest(1)
+    }
+    field(LNK2,DBF_OUTLINK) {
+        prompt("Output Link 2")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY3,DBF_DOUBLE) {
+        prompt("Delay 3")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL3,DBF_INLINK) {
+        prompt("Input link 3")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO3,DBF_DOUBLE) {
+        prompt("Value 3")
+        interest(1)
+    }
+    field(LNK3,DBF_OUTLINK) {
+        prompt("Output Link 3")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY4,DBF_DOUBLE) {
+        prompt("Delay 4")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL4,DBF_INLINK) {
+        prompt("Input link 4")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO4,DBF_DOUBLE) {
+        prompt("Value 4")
+        interest(1)
+    }
+    field(LNK4,DBF_OUTLINK) {
+        prompt("Output Link 4")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY5,DBF_DOUBLE) {
+        prompt("Delay 5")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL5,DBF_INLINK) {
+        prompt("Input link 5")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO5,DBF_DOUBLE) {
+        prompt("Value 5")
+        interest(1)
+    }
+    field(LNK5,DBF_OUTLINK) {
+        prompt("Output Link 5")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY6,DBF_DOUBLE) {
+        prompt("Delay 6")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL6,DBF_INLINK) {
+        prompt("Input link 6")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO6,DBF_DOUBLE) {
+        prompt("Value 6")
+        interest(1)
+    }
+    field(LNK6,DBF_OUTLINK) {
+        prompt("Output Link 6")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY7,DBF_DOUBLE) {
+        prompt("Delay 7")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DOL7,DBF_INLINK) {
+        prompt("Input link 7")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DO7,DBF_DOUBLE) {
+        prompt("Value 7")
+        interest(1)
+    }
+    field(LNK7,DBF_OUTLINK) {
+        prompt("Output Link 7")
+        promptgroup("41 - Link 0-7")
+        interest(1)
+    }
+    field(DLY8,DBF_DOUBLE) {
+        prompt("Delay 8")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOL8,DBF_INLINK) {
+        prompt("Input link 8")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DO8,DBF_DOUBLE) {
+        prompt("Value 8")
+        interest(1)
+    }
+    field(LNK8,DBF_OUTLINK) {
+        prompt("Output Link 8")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLY9,DBF_DOUBLE) {
+        prompt("Delay 9")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOL9,DBF_INLINK) {
+        prompt("Input link 9")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DO9,DBF_DOUBLE) {
+        prompt("Value 9")
+        interest(1)
+    }
+    field(LNK9,DBF_OUTLINK) {
+        prompt("Output Link 9")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYA,DBF_DOUBLE) {
+        prompt("Delay 10")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLA,DBF_INLINK) {
+        prompt("Input link 10")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOA,DBF_DOUBLE) {
+        prompt("Value 10")
+        interest(1)
+    }
+    field(LNKA,DBF_OUTLINK) {
+        prompt("Output Link 10")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYB,DBF_DOUBLE) {
+        prompt("Delay 11")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLB,DBF_INLINK) {
+        prompt("Input link 11")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOB,DBF_DOUBLE) {
+        prompt("Value 11")
+        interest(1)
+    }
+    field(LNKB,DBF_OUTLINK) {
+        prompt("Output Link 11")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYC,DBF_DOUBLE) {
+        prompt("Delay 12")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLC,DBF_INLINK) {
+        prompt("Input link 12")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOC,DBF_DOUBLE) {
+        prompt("Value 12")
+        interest(1)
+    }
+    field(LNKC,DBF_OUTLINK) {
+        prompt("Output Link 12")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYD,DBF_DOUBLE) {
+        prompt("Delay 13")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLD,DBF_INLINK) {
+        prompt("Input link 13")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOD,DBF_DOUBLE) {
+        prompt("Value 13")
+        interest(1)
+    }
+    field(LNKD,DBF_OUTLINK) {
+        prompt("Output Link 13")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYE,DBF_DOUBLE) {
+        prompt("Delay 14")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLE,DBF_INLINK) {
+        prompt("Input link 14")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOE,DBF_DOUBLE) {
+        prompt("Value 14")
+        interest(1)
+    }
+    field(LNKE,DBF_OUTLINK) {
+        prompt("Output Link 14")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DLYF,DBF_DOUBLE) {
+        prompt("Delay 15")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOLF,DBF_INLINK) {
+        prompt("Input link 15")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+    field(DOF,DBF_DOUBLE) {
+        prompt("Value 15")
+        interest(1)
+    }
+    field(LNKF,DBF_OUTLINK) {
+        prompt("Output Link 15")
+        promptgroup("42 - Link 8-F")
+        interest(1)
+    }
+}
+
+variable(seqDLYprecision, int)
+variable(seqDLYlimit, double)

@@ -98,7 +98,7 @@ struct bodset { /* binary output dset */
 
 /* control block for callback*/
 typedef struct myCallback {
-        CALLBACK        callback;
+        epicsCallback        callback;
         struct dbCommon *precord;
 }myCallback;
 
@@ -106,7 +106,7 @@ static void checkAlarms(boRecord *);
 static void monitor(boRecord *);
 static long writeValue(boRecord *);
 
-static void myCallbackFunc(CALLBACK *arg)
+static void myCallbackFunc(epicsCallback *arg)
 {
     myCallback *pcallback;
     boRecord *prec;
@@ -439,9 +439,9 @@ static long writeValue(boRecord *prec)
             status = dbPutLink(&prec->siol, DBR_USHORT, &prec->val, 1);
             prec->pact = FALSE;
         } else { /* !prec->pact && delay >= 0. */
-            CALLBACK *pvt = prec->simpvt;
+            epicsCallback *pvt = prec->simpvt;
             if (!pvt) {
-                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                pvt = calloc(1, sizeof(epicsCallback)); /* very lazy allocation of callback structure */
                 prec->simpvt = pvt;
             }
             if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);

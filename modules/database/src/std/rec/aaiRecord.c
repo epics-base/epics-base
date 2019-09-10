@@ -356,10 +356,10 @@ static long readValue(aaiRecord *prec)
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
 
         if (prec->sdly >= 0) {
-            CALLBACK *pvt = prec->simpvt;
+            epicsCallback *pvt = prec->simpvt;
 
             if (!pvt) { /* very lazy allocation of callback structure */
-                pvt = calloc(1, sizeof(CALLBACK));
+                pvt = calloc(1, sizeof(epicsCallback));
                 prec->simpvt = pvt;
             }
             if (pvt)

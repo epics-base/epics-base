@@ -69,7 +69,7 @@ typedef struct notifyPvt {
     ELLNODE      node;   /*For free list*/
     long         magic;
     short        state;
-    CALLBACK     callback;
+    epicsCallback     callback;
     ELLLIST      waitList; /*list of records for current processNotify*/
     short        cancelWait;
     short        userCallbackWait;
@@ -86,7 +86,7 @@ typedef struct notifyGlobal {
 
 static notifyGlobal *pnotifyGlobal = 0;
 
-static void notifyCallback(CALLBACK *pcallback);
+static void notifyCallback(epicsCallback *pcallback);
 
 #define ellSafeAdd(list,listnode) \
 { \
@@ -270,7 +270,7 @@ static void processNotifyCommon(processNotify *ppn, dbCommon *precord, int first
     callDone(precord, ppn);
 }
 
-static void notifyCallback(CALLBACK *pcallback)
+static void notifyCallback(epicsCallback *pcallback)
 {
     processNotify *ppn = NULL;
     dbCommon  *precord;

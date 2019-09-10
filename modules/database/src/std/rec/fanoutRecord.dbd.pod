@@ -1,0 +1,314 @@
+#*************************************************************************
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+=title Fanout Record (fanout)
+
+The fanout record uses several forward processing links to force multiple
+passive records to scan. When more than one record needs to be scanned as the
+result of a record being processed, the forward link of that record can specify
+a fanout record. The fanout record can specify up to sixteen other records to
+process. If more than sixteen are needed, one of the forward links in the fanout
+record (or its FLNK field) can point to another fanout record.
+
+B<NOTE: Fanout records only propagate processing, not data.> The dfanout or
+data fanout record can, on the other hand, send data to other records.
+
+=head2 Parameter Fields
+
+The fanout record's fields fall into the following categories:
+
+=over
+
+=item *
+
+scan parameters
+
+=item *
+
+operator display parameters
+
+=item *
+
+run-time parameters.
+
+=back
+
+=recordtype fanout
+
+=cut
+
+menu(fanoutSELM) {
+	choice(fanoutSELM_All,"All")
+	choice(fanoutSELM_Specified,"Specified")
+	choice(fanoutSELM_Mask,"Mask")
+}
+
+recordtype(fanout) {
+	include "dbCommon.dbd"
+
+=head3 Scan Parameters
+
+The forward link fields of the fanout record (LNK0-LNK9, LNKA-LNKF) specify
+records to be scanned. The records to be processed must specify C<Passive> in
+their SCAN fields; otherwise the forward link will not cause them to process.
+Also when specifying database links for the fanout record, the user needs only
+to specify the record name. As no value is being sent or retrieved, a field name
+is only required when the link will be over Channel Access, in which case the
+field PROC must be named.
+
+The SELM, SELN, and SELL fields specify the order of processing for the forward
+links. The select mechanism menu field (SELM) has three choices:
+
+=menu fanoutSELM
+
+How the SELM value affects which links to process and in which order is as
+follows:
+
+=over
+
+=item *
+
+B<All>
+Links are processed in numerical order - LNK0, LNK1, etc.
+
+=item *
+
+B<Specified> The sum of the values in the SELN and OFFS fields is used as the
+specifier of which link to process. For instance, with OFFS=0 and SELN=1, the
+record targeted by LNK1 will be processed.
+
+=item *
+
+B<Mask> The individual bits in SELN are shifted by SHFT bits (negative means
+shift left) and the result used to select which links to process as follows:
+
+=over
+
+=item *
+
+If bit 0 (LSB) is set, LNK0 is processed.
+
+=item *
+
+If bit 1 is set, LNK2 is processed.
+
+=item *
+
+If bit 2 is set, LNK3 is processed, etc.
+
+=back
+
+=back
+
+SELN reads its value from SELL. SELL can be a constant, a database link, or a
+channel access link.  If a constant, SELN is initialized with the constant value
+and can be changed via dbPuts. For database/channel access links, SELN is
+retrieved from SELL each time the record is processed and can also be changed
+via dbPuts.
+
+The Fanout record also has the standard scanning fields common to all records.
+These fields are listed in L<Scan Fields>. In addition,
+L<Scanning Specification> explains in more detail how forward links and the
+scanning algorithms work.
+
+=fields SELM, SELN, SELL, OFFS, SHFT, LNK0, LNK1, LNK2, LNK3, LNK4, LNK5, LNK6, LNK7, LNK8, LNK9, LNKA, LNKB, LNKC, LNKD, LNKE, LNKF
+
+=cut
+
+	field(VAL,DBF_LONG) {
+		prompt("Used to trigger")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(SELM,DBF_MENU) {
+		prompt("Select Mechanism")
+		promptgroup("30 - Action")
+		interest(1)
+		menu(fanoutSELM)
+	}
+	field(SELN,DBF_USHORT) {
+		prompt("Link Selection")
+		interest(1)
+		initial("1")
+	}
+	field(SELL,DBF_INLINK) {
+		prompt("Link Selection Loc")
+		promptgroup("30 - Action")
+		interest(1)
+	}
+	field(OFFS,DBF_SHORT) {
+		prompt("Offset for Specified")
+                promptgroup("30 - Action")
+                interest(1)
+		initial("0")
+	}
+	field(SHFT,DBF_SHORT) {
+		prompt("Shift for Mask mode")
+                promptgroup("30 - Action")
+                interest(1)
+		initial("-1")
+	}
+	field(LNK0,DBF_FWDLINK) {
+		prompt("Forward Link 0")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK1,DBF_FWDLINK) {
+		prompt("Forward Link 1")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK2,DBF_FWDLINK) {
+		prompt("Forward Link 2")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK3,DBF_FWDLINK) {
+		prompt("Forward Link 3")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK4,DBF_FWDLINK) {
+		prompt("Forward Link 4")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK5,DBF_FWDLINK) {
+		prompt("Forward Link 5")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK6,DBF_FWDLINK) {
+		prompt("Forward Link 6")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK7,DBF_FWDLINK) {
+		prompt("Forward Link 7")
+		promptgroup("51 - Output 0-7")
+		interest(1)
+	}
+	field(LNK8,DBF_FWDLINK) {
+		prompt("Forward Link 8")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNK9,DBF_FWDLINK) {
+		prompt("Forward Link 9")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKA,DBF_FWDLINK) {
+		prompt("Forward Link 10")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKB,DBF_FWDLINK) {
+		prompt("Forward Link 11")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKC,DBF_FWDLINK) {
+		prompt("Forward Link 12")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKD,DBF_FWDLINK) {
+		prompt("Forward Link 13")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKE,DBF_FWDLINK) {
+		prompt("Forward Link 14")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+	field(LNKF,DBF_FWDLINK) {
+		prompt("Forward Link 15")
+		promptgroup("52 - Output 8-F")
+		interest(1)
+	}
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. See
+L<Fields Common to All Record Types> for more on these fields.
+
+=fields NAME, DESC
+
+=head3 Alarm Parameters
+
+The Fanout record has the alarm parameters common to all record types.
+L<Alarm Fields> lists other fields related to a alarms that are common to all
+record types.
+
+=head3 Run-time Parameters
+
+The VAL field performs no specific function, but a Channel Access put to it will
+cause the record to process.
+
+=fields VAL
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head4 init_record
+
+This routine initializes SELN with the value of SELL, if SELL type is CONSTANT
+link, or creates a channel access link if SELL type is PV_LINK.
+
+=head4 process
+
+See next section.
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+PACT is set to TRUE.
+
+=item 2.
+
+The link selection SELN is fetched.
+
+=item 3.
+
+Depending on the selection mechanism, the link selection forward links are
+processed, and UDF is set to FALSE.
+
+=item 4.
+
+Check to see if monitors should be invoked:
+
+=over
+
+=item *
+
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+
+NSEV and NSTA are reset to 0.
+
+=back
+
+=item 5.
+
+Scan forward link field FLNK if used, set PACT FALSE, and return.
+
+=back
+
+=cut
+
+}

@@ -6,6 +6,15 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
+
+=head1 Menu menuFtype
+
+This menu is used for the C<FTVL> and similar fields of many record types.
+
+=menu menuFtype
+
+=cut
+
 menu(menuFtype) {
 	choice(menuFtypeSTRING,"STRING")
 	choice(menuFtypeCHAR,"CHAR")

@@ -26,7 +26,7 @@ extern "C" {
 /*
  * WINDOWS also has a "CALLBACK" type def
  */
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(EPICS_NO_CALLBACK)
 #	ifdef CALLBACK
 #		undef CALLBACK
 #	endif /*CALLBACK*/
@@ -44,7 +44,9 @@ typedef struct callbackPvt {
         void            *timer; /*for use by callback itself*/
 }epicsCallback;
 
+#if !defined(EPICS_NO_CALLBACK)
 typedef epicsCallback CALLBACK;
+#endif
 
 typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 
@@ -69,16 +71,16 @@ typedef struct callbackQueueStats {
 epicsShareFunc void callbackInit(void);
 epicsShareFunc void callbackStop(void);
 epicsShareFunc void callbackCleanup(void);
-epicsShareFunc int callbackRequest(CALLBACK *pCallback);
+epicsShareFunc int callbackRequest(epicsCallback *pCallback);
 epicsShareFunc void callbackSetProcess(
-    CALLBACK *pcallback, int Priority, void *pRec);
+    epicsCallback *pcallback, int Priority, void *pRec);
 epicsShareFunc int callbackRequestProcessCallback(
-    CALLBACK *pCallback,int Priority, void *pRec);
+    epicsCallback *pCallback,int Priority, void *pRec);
 epicsShareFunc void callbackRequestDelayed(
-    CALLBACK *pCallback,double seconds);
-epicsShareFunc void callbackCancelDelayed(CALLBACK *pcallback);
+    epicsCallback *pCallback,double seconds);
+epicsShareFunc void callbackCancelDelayed(epicsCallback *pcallback);
 epicsShareFunc void callbackRequestProcessCallbackDelayed(
-    CALLBACK *pCallback, int Priority, void *pRec, double seconds);
+    epicsCallback *pCallback, int Priority, void *pRec, double seconds);
 epicsShareFunc int callbackSetQueueSize(int size);
 epicsShareFunc int callbackQueueStatus(const int reset, callbackQueueStats *result);
 epicsShareFunc void callbackQueueShow(const int reset);

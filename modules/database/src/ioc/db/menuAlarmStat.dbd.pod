@@ -7,6 +7,17 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
+
+=head1 Menu menuAlarmStat
+
+This menu defines the possible alarm statuses that EPICS records can exhibit 
+which is used for C<STAT> and C<NSTA> fields of all record types.
+See L<Alarm Status> for more information.
+
+=menu menuAlarmStat
+
+=cut
+
 menu(menuAlarmStat) {
 	choice(menuAlarmStatNO_ALARM,"NO_ALARM")
 	choice(menuAlarmStatREAD,"READ")

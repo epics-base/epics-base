@@ -100,7 +100,7 @@ struct histogramdset { /* histogram input dset */
 
 /* control block for callback*/
 typedef struct myCallback {
-    CALLBACK callback;
+    epicsCallback callback;
     histogramRecord *prec;
 } myCallback;
 
@@ -110,7 +110,7 @@ static void monitor(histogramRecord *);
 static long readValue(histogramRecord *);
 
 
-static void wdogCallback(CALLBACK *arg)
+static void wdogCallback(epicsCallback *arg)
 {
     myCallback *pcallback;
     histogramRecord *prec;
@@ -403,9 +403,9 @@ static long readValue(histogramRecord *prec)
             }
             prec->pact = FALSE;
         } else { /* !prec->pact && delay >= 0. */
-            CALLBACK *pvt = prec->simpvt;
+            epicsCallback *pvt = prec->simpvt;
             if (!pvt) {
-                pvt = calloc(1, sizeof(CALLBACK)); /* very lazy allocation of callback structure */
+                pvt = calloc(1, sizeof(epicsCallback)); /* very lazy allocation of callback structure */
                 prec->simpvt = pvt;
             }
             if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);

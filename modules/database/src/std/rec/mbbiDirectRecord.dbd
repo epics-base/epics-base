@@ -98,7 +98,7 @@ recordtype(mbbiDirect) {
         prompt("Sim. Mode Private")
         special(SPC_NOMOD)
         interest(4)
-        extra("CALLBACK            *simpvt")
+        extra("epicsCallback            *simpvt")
     }
     field(B0,DBF_UCHAR) {
         prompt("Bit 0")

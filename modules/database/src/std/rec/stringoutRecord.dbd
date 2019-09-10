@@ -99,7 +99,7 @@ recordtype(stringout) {
         prompt("Sim. Mode Private")
         special(SPC_NOMOD)
         interest(4)
-        extra("CALLBACK            *simpvt")
+        extra("epicsCallback            *simpvt")
     }
         field(IVOA,DBF_MENU) {
 		prompt("INVALID output action")

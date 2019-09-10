@@ -134,6 +134,6 @@ recordtype(lso) {
         prompt("Sim. Mode Private")
         special(SPC_NOMOD)
         interest(4)
-        extra("CALLBACK            *simpvt")
+        extra("epicsCallback            *simpvt")
     }
 }

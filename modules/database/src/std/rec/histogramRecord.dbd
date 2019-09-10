@@ -154,7 +154,7 @@ recordtype(histogram) {
         prompt("Sim. Mode Private")
         special(SPC_NOMOD)
         interest(4)
-        extra("CALLBACK            *simpvt")
+        extra("epicsCallback            *simpvt")
     }
         field(HOPR,DBF_ULONG) {
 		prompt("High Operating Range")

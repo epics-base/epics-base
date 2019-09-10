@@ -376,7 +376,7 @@ epicsShareFunc void taskwdShow(int level)
         mCount, tCount, fCount);
     if (level) {
         printf("%16.16s %9s %12s %12s %12s\n",
-            "THREAD NAME", "STATE", "EPICS TID", "CALLBACK", "USR ARG");
+            "THREAD NAME", "STATE", "EPICS TID", "epicsCallback", "USR ARG");
         pt = (struct tNode *)ellFirst(&tList);
         while (pt != NULL) {
             epicsThreadGetName(pt->tid, tName, sizeof(tName));

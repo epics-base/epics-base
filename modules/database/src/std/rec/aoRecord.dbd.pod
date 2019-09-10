@@ -70,7 +70,7 @@ output value PVAL is added to it.
 =head4 Drive Limits
 
 The output value is now clipped to the range DRVL to DRVH inclusive, provided
-that DRVH > DRVL.
+that DRVH E<gt> DRVL.
 The result is copied into both the VAL and PVAL fields.
 
 =head4 Limit Rate of Change
@@ -164,9 +164,7 @@ OUT field must specify the address of the I/O card. In addition, the
 DTYP field must contain the name of the device support module. Be aware
 that the address format differs according to the I/O bus used. See
 Address Specification for information on the format of hardware
-addresses. The user can see a list of the device support modules
-currently supported at the user's local site by using the dbst utility
-in R3.13.
+addresses.
 
 For soft records the output link can be a database link, a channel
 access link, or a constant value. If the link is a constant, no output
@@ -573,7 +571,7 @@ information on these fields.
         prompt("Sim. Mode Private")
         special(SPC_NOMOD)
         interest(4)
-        extra("CALLBACK            *simpvt")
+        extra("epicsCallback            *simpvt")
     }
     field(IVOA,DBF_MENU) {
         prompt("INVALID output action")
@@ -620,7 +618,7 @@ terminated.
 For compatibility with old device supports that don't know EOFF, if
 both EOFF and ESLO have their default value, EOFF is set to EGUL.
 
-If device support includes init_record, it is called.
+If device support includes C<init_record()>, it is called.
 
 INIT is set TRUE. This causes PBRK, LBRK, and smoothing to be
 re-initialized. If "backwards" linear conversion is requested, then VAL
@@ -646,10 +644,6 @@ called.
 
 INIT is set TRUE. This causes PBRK, LBRK, and smoothing to be
 re-initialized.
-
-=item get_value
-
-Fills in the values of struct valueDes so that they refer to VAL.
 
 =item get_alarm_double
 
@@ -930,7 +924,7 @@ OUT link type must be either a CONSTANT, DB_LINK, or CA_LINK.
 This module writes the current value of OVAL.
 
 If the OUT link type is PV_LINK, then dbCaAddInlink is called by
-init_record. init_record always returns a value of 2, which means that
+C<init_record()>. C<init_record()> always returns a value of 2, which means that
 no conversion will ever be attempted.
 
 write_ao calls recGblPutLinkValue to write the current value of VAL.

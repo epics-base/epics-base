@@ -1,0 +1,647 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=pod
+
+=head1 Select Record (sel)
+
+The select record computes a value based on input obtained from up to 12
+locations. The selection algorithm can be one of the following: C<<< Specified
+>>>, C<<< High Signal >>>, C<<< Low Signal >>>, C<<< Median Signal >>>. Each
+input can be a constant, a database link, or a channel access link.
+
+=head2 Contents
+
+=over
+
+=item * L<Parameter Fields>
+
+=over
+
+=item * L<Scan Parameters>
+
+=item * L<Read Parameters>
+
+=item * L<Select Parameters>
+
+=item * L<Operator Display Parameters>
+
+=item * L<Alarm Parameters>
+
+=item * L<Monitor Parameters>
+
+=item * L<Run-time Parameters>
+
+=back
+
+=item * L<Record Support>
+
+=over
+
+=item * L<Record Support Routines (selRecord.c)>
+
+=item * L<Record Processing>
+
+=back
+
+=back
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=recordtype sel
+
+=cut
+
+menu(selSELM) {
+	choice(selSELM_Specified,"Specified")
+	choice(selSELM_High_Signal,"High Signal")
+	choice(selSELM_Low_Signal,"Low Signal")
+	choice(selSELM_Median_Signal,"Median Signal")
+}
+recordtype(sel) {
+
+=head2 Parameter Fields
+
+=head3 Scan Parameters
+
+The select record has the standard fields for specifying under what
+circumstances the record will be processed. These fields are listed in
+L<Scan Fields>.  In addition, L<Scanning Specification>
+explains how these fields work.
+
+=head3 Read Parameters
+
+The INPA-L links determine where the selection record retrieves the values from
+which it is to select or compute its final value. The INPA-L links are input
+links configured by the user to be either constants, channel access links, or
+database links. If channel access or database links, a value is retrieved for
+each link and placed in the corresponding value field, A-L. If any input link is
+a constant, the value field for that link will be initialized with the constant
+value given to it and can be modified via dbPuts. See L<Address Specification>
+for information on how to specify database links.
+
+Any links not defined are ignored by the selection record and its algorithm. An
+undefined link is any constant link whose value is 0. At initialization time,
+the corresponding value links for such fields are set to NaN, which means
+MISSING. The value field of an undefined link can be changed at run-time from
+NaN to another value in order to define the link and its field. Note that all
+undefined links must be recognized as such if the selection algorithm is to work
+as expected.
+
+=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL, A, B, C, D, E, F, G, H, I, J, K, L
+
+=head3 Select Parameters
+
+The selection algorithm is determined by three fields configurable by the user:
+the select mechanism (SELM) field, the select number (SELN) field, and the index
+value location (NVL) field.
+
+The SELM field has four choices, i.e., four algorithms as follows:
+
+=head4 Menu selSELM
+
+=menu selSELM
+
+The selection record's VAL field is determined differently for each algorithm.
+For C<<< Specified >>>, the VAL field is set equal to the value field (A, B, C,
+D, E, F, G, H, I, J, K, or L) specified by the SELN field. The SELN field
+contains a
+number from 0-11 which corresponds to the value field to be used (0 means use A;
+1 means use B, etc.). How the NVL field is configured determines, in turn,
+SELN's value. NVL is an input link from which a value for SELN can be retrieved,
+Like most other input links NVL can be a constant, or a channel access or
+database link. If NVL is a link, SELN is retrieved from the location in NVL. If
+a constant, SELN is initialized to the value given to the constant and can be
+changed via dbPuts. See L<Address Specification> for information on how to
+specify database links.
+
+The C<<< High Signal >>>, C<<< Low Signal >>>, and C<<< Median Signal >>>
+algorithms do not use SELN or NVL. If C<<< High Signal >>> is chosen, VAL is set
+equal to the highest value out of all the defined value fields (A-L). If C<<<
+Low Signal >>> is chosen, VAL is set equal to lowest value of all the defined
+fields (A-L). And if C<<< Median Signal >>> is chosen, VAL is set equal to the
+median value of the defined value fields (A-L). (Note that these algorithms
+select from the value fields; they do not select from the value field index. For
+instance, C<<< Low Signal >>> will not select the A field's value unless the
+value itself is the lowest of all the defined values.)
+
+=fields SELM, SELN, NVL
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. They
+display the value and other parameters of the select record either textually or
+graphically.
+
+EGU is a string of up to 16 characters describing the units that the selection
+record manipulates. It is retrieved by the C<<< get_units >>> record support
+routine.
+
+The HOPR and LOPR fields set the upper and lower display limits for the VAL,
+HIHI, HIGH, LOW, and LOLO fields. Both the C<<< get_graphic_double >>> and C<<<
+get_control_double >>> record support routines retrieve these fields.
+
+The PREC field determines the floating point precision with which to display
+VAL. It is used whenever the C<<< get_precision >>> record support routine is
+called.
+
+See L<Fields Common to All Record Types> for more on the record name (NAME)
+and description (DESC) fields.
+
+=fields EGU, HOPR, LOPR, PREC, NAME, DESC
+
+=head3 Alarm Parameters
+
+The possible alarm conditions for select records are the SCAN, READ, and limit
+alarms. The SCAN and READ alarms are called by the record or device support
+routines. The limit alarms are configured by the user in the HIHI, LOLO, HIGH,
+and LOW fields using numerical values. They specify conditions for the VAL
+field. For each of these fields, there is a corresponding severity field which
+can be either NO_ALARM, MINOR, or MAJOR. See L<Alarm Specification>
+for a complete explanation of alarms and these fields.  L<Alarm Fields>
+lists other fields related to a alarms that are common to all record types.
+
+=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST
+
+=head3 Monitor Parameters
+
+These fields are configurable by the user. They are used as deadbands for the
+archiver and monitor calls for the VAL field. Unless, VAL changes by more than
+the value specified by each, then the respective monitors will not be called. If
+these fields have a value of zero, everytime the VAL changes, monitors are
+triggered; if they have a value of -1, everytime the record is processed,
+monitors are triggered.  L<Monitor Specification>
+gives a complete explanation of alarms and deadbands.
+
+=fields ADEL, MDEL
+
+=head3 Run-time Parameters
+
+These parameters are used by the run-time code for processing the selection
+record. They are not configurable prior to run-time, nor are they modifiable at
+run-time. They represent the current state of the record. The record support
+routines use some of them for more efficient processing.
+
+The VAL field is the result of the selection record's processing. It can be
+accessed in the normal way by another record or through database access, but is
+not modifiable except by the record itself. The LALM, ALST, and the MLST are
+used to implement the HYST, ADEL, and MDEL hysteresis factors for the alarms,
+archiver, and monitors, respectively.
+
+The LA-LL fields are used to implement the monitors for each of the value
+fields, A-L. They represent previous input values. For example, unless LA is not
+equal to A, no monitor is invoked for A.
+
+=fields VAL, LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=head2 Record Support
+
+=head3 Record Support Routines (selRecord.c)
+
+=head4 init_record
+
+  long (*init_record)(struct dbCommon *precord, int pass)
+
+IF NVL is a constant, SELN is set to its value. If NVL is a PV_LINK a channel
+access link is created.
+
+For each constant input link, the corresponding value field is initialized with
+the constant value (or NaN if the constant has the value 0).
+
+For each input link that is of type PV_LINK, a database or channel access link
+is created.
+
+=head4 process
+
+  long (*process)(struct dbCommon *precord)
+
+See L<Record Processing>.
+
+=head4 get_units
+
+  long (*get_units)(struct dbAddr *paddr, char *units)
+
+Retrieves EGU.
+
+=head4 get_precision
+
+  long (*get_precision)(const struct dbAddr *paddr, long *precision)
+
+Retrieves PREC.
+
+=head4 get_graphic_double
+
+  long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p)
+
+Sets the upper display and lower display limits for a field. If the field is
+VAL, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR, else if the
+field has upper and lower limits defined they will be used, else the upper and
+lower maximum values for the field type will be used.
+
+=head4 get_control_double
+
+  long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p)
+
+Sets the upper control and the lower control limits for a field. If the field is
+VAL, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR, else if the
+field has upper and lower limits defined they will be used, else the upper and
+lower maximum values for the field type will be used.
+
+=head4 get_alarm_double
+
+  long (*get_alarm_double)(struct dbAddr *paddr, struct dbr_alDouble *p)
+
+Sets the following values:
+
+  upper_alarm_limit = HIHI
+  upper_warning_limit = HIGH
+  lower_warning_limit = LOW
+  lower_alarm_limit = LOLO
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+If NVL is a database or channel access link, SELN is obtained from NVL. Fetch
+all values if database or channel access links. If SELM is SELECTED, then only
+the selected link is fetched.
+
+=item 2.
+
+Implement the appropriate selection algorithm. For SELECT_HIGH, SELECT_LOW, and
+SELECT_MEDIAN, input fields are ignored if they are undefined. If success, UDF
+is set to FALSE.
+
+=item 3.
+
+Check alarms. This routine checks to see if the new VAL causes the alarm status
+and severity to change. If so, NSEV, NSTA, and LALM are set. It also honors the
+alarm hysteresis factor (HYST). Thus the value must change by more than HYST
+before the alarm status and severity is lowered.
+
+=item 4.
+
+Check to see if monitors should be invoked.
+
+=over
+
+=item *
+
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+
+Archive and value change monitors are invoked if ADEL and MDEL conditions are
+met
+
+=item *
+
+Monitors for A-L are checked whenever other monitors are invoked
+
+=item *
+
+NSEV and NSTA are reset to 0.
+
+=back
+
+=item 5.
+
+Scan forward link if necessary, set PACT FALSE, and return.
+
+=back
+
+=cut
+
+	include "dbCommon.dbd" 
+	field(VAL,DBF_DOUBLE) {
+		prompt("Result")
+		promptgroup("40 - Input")
+		asl(ASL0)
+		special(SPC_NOMOD)
+	}
+	field(SELM,DBF_MENU) {
+		prompt("Select Mechanism")
+		promptgroup("30 - Action")
+		menu(selSELM)
+	}
+	field(SELN,DBF_USHORT) {
+		prompt("Index value")
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup("80 - Display")
+		interest(1)
+	}
+	field(NVL,DBF_INLINK) {
+		prompt("Index Value Location")
+		promptgroup("30 - Action")
+		interest(1)
+	}
+	field(INPA,DBF_INLINK) {
+		prompt("Input A")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPB,DBF_INLINK) {
+		prompt("Input B")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPC,DBF_INLINK) {
+		prompt("Input C")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPD,DBF_INLINK) {
+		prompt("Input D")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPE,DBF_INLINK) {
+		prompt("Input E")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPF,DBF_INLINK) {
+		prompt("Input F")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPG,DBF_INLINK) {
+		prompt("Input G")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPH,DBF_INLINK) {
+		prompt("Input H")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPI,DBF_INLINK) {
+		prompt("Input I")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPJ,DBF_INLINK) {
+		prompt("Input J")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPK,DBF_INLINK) {
+		prompt("Input K")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPL,DBF_INLINK) {
+		prompt("Input L")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
+		interest(1)
+		size(16)
+		prop(YES)
+	}
+	field(HOPR,DBF_DOUBLE) {
+		prompt("High Operating Rng")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(LOPR,DBF_DOUBLE) {
+		prompt("Low Operating Range")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(HIHI,DBF_DOUBLE) {
+		prompt("Hihi Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(LOLO,DBF_DOUBLE) {
+		prompt("Lolo Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(HIGH,DBF_DOUBLE) {
+		prompt("High Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(LOW,DBF_DOUBLE) {
+		prompt("Low Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(HHSV,DBF_MENU) {
+		prompt("Hihi Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(LLSV,DBF_MENU) {
+		prompt("Lolo Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(HSV,DBF_MENU) {
+		prompt("High Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(LSV,DBF_MENU) {
+		prompt("Low Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(HYST,DBF_DOUBLE) {
+		prompt("Alarm Deadband")
+		promptgroup("70 - Alarm")
+		interest(1)
+	}
+	field(ADEL,DBF_DOUBLE) {
+		prompt("Archive Deadband")
+		promptgroup("80 - Display")
+		interest(1)
+	}
+	field(MDEL,DBF_DOUBLE) {
+		prompt("Monitor Deadband")
+		promptgroup("80 - Display")
+		interest(1)
+	}
+	field(A,DBF_DOUBLE) {
+		prompt("Value of Input A")
+		pp(TRUE)
+	}
+	field(B,DBF_DOUBLE) {
+		prompt("Value of Input B")
+		pp(TRUE)
+	}
+	field(C,DBF_DOUBLE) {
+		prompt("Value of Input C")
+		pp(TRUE)
+	}
+	field(D,DBF_DOUBLE) {
+		prompt("Value of Input D")
+		pp(TRUE)
+	}
+	field(E,DBF_DOUBLE) {
+		prompt("Value of Input E")
+		pp(TRUE)
+	}
+	field(F,DBF_DOUBLE) {
+		prompt("Value of Input F")
+		pp(TRUE)
+	}
+	field(G,DBF_DOUBLE) {
+		prompt("Value of Input G")
+		pp(TRUE)
+	}
+	field(H,DBF_DOUBLE) {
+		prompt("Value of Input H")
+		pp(TRUE)
+	}
+	field(I,DBF_DOUBLE) {
+		prompt("Value of Input I")
+		pp(TRUE)
+	}
+	field(J,DBF_DOUBLE) {
+		prompt("Value of Input J")
+		pp(TRUE)
+	}
+	field(K,DBF_DOUBLE) {
+		prompt("Value of Input K")
+		pp(TRUE)
+	}
+	field(L,DBF_DOUBLE) {
+		prompt("Value of Input L")
+		pp(TRUE)
+	}
+	field(LA,DBF_DOUBLE) {
+		prompt("Prev Value of A")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LB,DBF_DOUBLE) {
+		prompt("Prev Value of B")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LC,DBF_DOUBLE) {
+		prompt("Prev Value of C")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LD,DBF_DOUBLE) {
+		prompt("Prev Value of D")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LE,DBF_DOUBLE) {
+		prompt("Prev Value of E")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LF,DBF_DOUBLE) {
+		prompt("Prev Value of F")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LG,DBF_DOUBLE) {
+		prompt("Prev Value of G")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LH,DBF_DOUBLE) {
+		prompt("Prev Value of H")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LI,DBF_DOUBLE) {
+		prompt("Prev Value of I")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LJ,DBF_DOUBLE) {
+		prompt("Prev Value of J")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LK,DBF_DOUBLE) {
+		prompt("Prev Value of K")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LL,DBF_DOUBLE) {
+		prompt("Prev Value of L")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LALM,DBF_DOUBLE) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(ALST,DBF_DOUBLE) {
+		prompt("Last Value Archived")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MLST,DBF_DOUBLE) {
+		prompt("Last Val Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(NLST,DBF_USHORT) {
+		prompt("Last Index Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+}
+

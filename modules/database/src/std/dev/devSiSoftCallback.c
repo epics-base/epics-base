@@ -37,7 +37,7 @@
 typedef struct devPvt {
     DBADDR dbaddr;
     processNotify pn;
-    CALLBACK callback;
+    epicsCallback callback;
     long options;
     int status;
     struct {

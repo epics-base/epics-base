@@ -9,28 +9,15 @@
 
 =title Waveform Record (waveform)
 
-...
-
-=head2 Record-specific Menus
-
-=head3 Menu waveformPOST
-
-The MPST and APST fields use this menu to determine when to post new value
-and archive monitors respectively.
-
-=menu waveformPOST
-
-...
-
-=head2 Parameter Fields
-
-The record-specific fields are described below.
+The waveform record type is used to interface waveform digitizers. The record
+stores its data in arrays. The array can contain any of the supported data
+types.
 
 =recordtype waveform
 
-...
-
 =cut
+
+include "menuFtype.dbd"
 
 menu(waveformPOST) {
     choice(waveformPOST_Always,"Always")
@@ -39,7 +26,435 @@ menu(waveformPOST) {
 
 recordtype(waveform) {
 
-=fields VAL, FTVL, MPST, APST
+=pod
+
+=head1 Contents
+
+=over
+
+=item * L<Parameter Fields>
+
+=over
+
+=item * L<Scan Parameters>
+
+=item * L<Read Parameters>
+
+=item * L<Operator Display Parameters>
+
+=item * L<Run-time Parameters>
+
+=back
+
+=item * L<Record Support>
+
+=over
+
+=item * L<Record Support Routines>
+
+=item * L<Record Processing>
+
+=back
+
+=item * L<Device Support>
+
+=over
+
+=item * L<Fields Of Interest To Device Support>
+
+=item * L<Device Support Routines>
+
+=item * L<Device Support For Soft Records>
+
+=back
+
+=back
+
+=begin html
+
+<hr>
+
+=end html
+
+=head2 Parameter Fields
+
+The waveform's fields fall into the following categories:
+
+=over
+
+=item * L<Scan Parameters>;
+
+=item * L<Read Parameters>;
+
+=item * L<Operator Display Parameters>;
+
+=item * L<Run-time Parameters>;
+
+=back
+
+=head3 Scan Parameters
+
+The waveform record has the standard fields for specifying under what
+circumstances the record will be processed. These fields are listed in L<Scan
+Fields>. In addition, L<Scanning Specification> explains how these fields are
+used. Note that I/O event scanning is only supported for those card types that
+interrupt.
+
+=head3 Read Parameters
+
+These fields are configurable by the user to specify how and from where the
+record reads its data. How the INP field is configured determines where the
+waveform gets its input. It can be a hardware address, a channel access or
+database link, or a constant. Only in records that use soft device support can
+the INP field be a channel access link, a database link, or a constant.
+Otherwise, the INP field must be a hardware address. See L<Address
+Specification> for information on the format of hardware addresses and database
+links.
+
+=head4 Fields related to waveform reading
+
+=fields DTYP, INP, NELM, FTVL, RARM
+
+The DTYP field must contain the name of the appropriate device support module.
+The values retrieved from the input link are placed in an array referenced by
+VAL. (If the INP link is a constant, elements can be placed in the array via
+dbPuts.) NELM specifies the number of elements that the array will hold, while
+FTVL specifies the data type of the elements.
+The RARM field causes the device to re-arm when this field is set to 1. 
+
+=head4 Possible data types for FTVL
+
+=menu menuFtype
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. They
+display the value and other parameters of the waveform either textually or
+graphically.
+
+=head4 Fields related to I<Operator Display>
+
+=fields EGU, HOPR, LOPR, PREC, NAME, DESC
+
+EGU is a string of up to 16 characters describing the units that the waveform
+measures. It is retrieved by the C<<< get_units >>> record support routine.
+
+The HOPR and LOPR fields set the upper and lower display limits for array
+elements referenced by the VAL field. Both the C<<< get_graphic_double >>> and
+C<<< get_control_double >>> record support routines retrieve these fields.
+
+The PREC field determines the floating point precision with which to display the
+array values. It is used whenever the C<<< get_precision >>> record support
+routine is called.
+
+See L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
+
+
+=head3 Alarm Parameters
+
+The waveform record has the alarm parameters common to all record types. L<Alarm
+Fields> lists other fields related to a alarms that are common to all record
+types.
+
+=head3 Monitor Parameters
+
+These parameters are used to determine when to send monitors placed on the VAL
+field. The APST and MPST fields are a menu with choices "Always" and "On
+Change". The default is "Always", thus monitors will normally be sent every time
+the record processes. Selecting "On Change" causes a 32-bit hash of the VAL
+field buffer to be calculated and compared with the previous hash value every
+time the record processes; the monitor will only be sent if the hash is
+different, indicating that the buffer has changed. Note that there is a small
+chance that two different value buffers might result in the same hash value, so
+for critical systems "Always" may be a better choice, even though it re-sends
+duplicate data.
+
+=head4 Record fields related to I<Monitor Parameters>
+
+=fields APST, MPST, HASH
+
+=head4 Menu choices for C<APST> and C<MPST> fields
+
+=menu waveformPOST
+
+=head3 Run-time Parameters
+
+These parameters are used by the run-time code for processing the waveform. They
+are not configured using a configuration tool. Only the VAL field is modifiable
+at run-time.
+
+VAL references the array where the waveform stores its data. The BPTR field
+holds the address of the array.
+
+The NORD field holds a counter of the number of elements that have been read
+into the array. It is reset to 0 when the device is rearmed. The BUSY field
+indicates if the device is armed but has not yet been digitized.
+
+=fields VAL, BPTR, NORD, BUSY
+
+The following fields are used to operate the waveform in the simulation mode.
+See L<Simulation Mode> for more information on the simulation mode fields.
+
+=fields SIOL, SIML, SIMM, SIMS
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head4 init_record
+
+   static long init_record(waveformRecord *prec, int pass)
+
+Using NELM and FTVL space for the array is allocated. The array address is
+stored in the record.
+
+This routine initializes SIMM with the value of SIML if SIML type is CONSTANT
+link or creates a channel access link if SIML type is PV_LINK. VAL is likewise
+initialized if SIOL is CONSTANT or PV_LINK.
+
+This routine next checks to see that device support is available and a device
+support read routine is defined. If either does not exist, an error message is
+issued and processing is terminated
+
+If device support includes C<init_record()>, it is called.
+
+=head4 process
+
+  static long process(waveformRecord *prec)
+
+See L</"Record Processing"> section below.
+
+=head4 cvt_dbaddr
+
+  static long cvt_dbaddr(DBADDR *paddr)
+
+This is called by dbNameToAddr. It makes the dbAddr structure refer to the
+actual buffer holding the result.
+
+=head4 get_array_info
+
+  static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
+
+Obtains values from the array referenced by VAL.
+
+=head4 put_array_info
+
+  static long put_array_info(DBADDR *paddr, long nNew)
+
+Writes values into the array referenced by VAL.
+
+=head4 get_units
+
+  static long get_units(DBADDR *paddr, char *units)
+
+Retrieves EGU.
+
+=head4 get_prec
+
+  static long get_precision(DBADDR *paddr, long *precision)
+
+Retrieves PREC if field is VAL field. Otherwise, calls C<<< recGblGetPrec() >>>.
+
+=head4 get_graphic_double
+
+  static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
+
+Sets the upper display and lower display limits for a field. If the field is VAL
+the limits are set to HOPR and LOPR, else if the field has upper and lower
+limits defined they will be used, else the upper and lower maximum values for
+the field type will be used.
+
+Sets the following values:
+
+  upper_disp_limit = HOPR
+  lower_disp_limit = LOPR
+
+=head4 get_control_double
+
+  static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
+
+Sets the upper control and the lower control limits for a field. If the field is
+VAL the limits are set to HOPR and LOPR, else if the field has upper and lower
+limits defined they will be used, else the upper and lower maximum values for
+the field type will be used.
+
+Sets the following values
+
+  upper_ctrl_limit = HOPR
+  lower_ctrl_limit = LOPR
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+Check to see that the appropriate device support module exists. If it doesn't,
+an error message is issued and processing is terminated with the PACT field
+still set to TRUE. This ensures that processes will no longer be called for this
+record. Thus error storms will not occur.
+
+=item 2.
+
+Call device support read routine.
+
+=item 3.
+
+If PACT has been changed to TRUE, the device support read routine has started
+but has not completed writing the new value. In this case, the processing
+routine merely returns, leaving PACT TRUE.
+
+=item 4.
+
+Check to see if monitors should be invoked.
+
+=over
+
+=item *
+
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+
+Archive and value change monitors are invoked if APST or MPST are Always or if
+the result of the hash calculation is different.
+
+=item *
+
+NSEV and NSTA are reset to 0.
+
+=back
+
+=item 5.
+
+Scan forward link if necessary, set PACT FALSE, and return.
+
+=back
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=head2 Device Support
+
+=head3 Fields Of Interest To Device Support
+
+Each waveform record must have an associated set of device support routines. The
+primary responsibility of the device support routines is to obtain a new array
+value whenever read_wf is called. The device support routines are primarily
+interested in the following fields:
+
+=fields PACT, DPVT, NSEV, NSTA, INP, NELM, FTVL, RARM, BPTR, NORD, BUSY
+
+=head3 Device Support Routines
+
+Device support consists of the following routines:
+
+=head4 long report(int level)
+
+This optional routine is called by the IOC command C<dbior> and is passed the
+report level that was requested by the user.
+It should print a report on the state of the device support to stdout.
+The C<level> parameter may be used to output increasingly more detailed
+information at higher levels, or to select different types of information with
+different levels.
+Level zero should print no more than a small summary.
+
+=head4 long init(int after)
+
+This optional routine is called twice at IOC initialization time.
+The first call happens before any of the C<init_record()> calls are made, with
+the integer parameter C<after> set to 0.
+The second call happens after all of the C<init_record()> calls have been made,
+with C<after> set to 1.
+
+=head4 init_record
+
+  init_record(precord)
+
+This routine is optional. If provided, it is called by the record support
+C<init_record()> routine.
+
+=head4 get_ioint_info
+
+  get_ioint_info(int cmd,struct dbCommon *precord,IOSCANPVT *ppvt)
+
+This routine is called by the ioEventScan system each time the record is added
+or deleted from an I/O event scan list.  cmd has the value (0,1) if the
+record is being (added to, deleted from) an I/O event list. It must be
+provided for any device type that can use the ioEvent scanner.
+
+=head4 read_wf
+
+  read_wf(precord)
+
+This routine must provide a new input value. It returns the following values:
+
+=over
+
+=item *
+
+0: Success.
+
+=item *
+
+Other: Error.
+
+=back
+
+=head3 Device Support For Soft Records
+
+The C<<< Soft Channel >>> device support module is provided to read values from
+other records and store them in arrays. If INP is a constant link, then read_wf
+does nothing. In this case, the record can be used to hold arrays written via
+dbPuts. If INP is a database or channel access link, the new array value is read
+from the link. NORD is set.
+
+This module places a value directly in VAL.
+
+If the INP link type is constant, then NORD is set to zero. If the INP link type
+is PV_LINK, then dbCaAddInlink is called by C<init_record()>.
+
+read_wf calls recGblGetLinkValue which performs the following steps:
+
+=over
+
+=item *
+
+If the INP link type is CONSTANT recGblGetLinkValue does nothing.
+
+=item *
+
+If the INP link type is DB_LINK, then dbGetLink is called to obtain a new input
+value. If dbGetLink returns an error, a LINK_ALARM with a severity of
+INVALID_ALARM is raised.
+
+=item *
+
+If the INP link type is CA_LINK, then dbCaGetLink is called to obtain a new
+input value. If dbCaGetLink returns an error, a LINK_ALARM with a severity of
+INVALID_ALARM is raised.
+
+=item *
+
+NORD is set to the number of values returned and read_wf returns.
+
+=back
 
 =cut
 
@@ -164,7 +579,7 @@ recordtype(waveform) {
         prompt("Sim. Mode Private")
         special(SPC_NOMOD)
         interest(4)
-        extra("CALLBACK            *simpvt")
+        extra("epicsCallback            *simpvt")
     }
 	field(MPST,DBF_MENU) {
 		prompt("Post Value Monitors")

@@ -1,0 +1,776 @@
+#*************************************************************************
+# Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+=head1 Subroutine Record (sub)
+
+The subroutine record is used to call a C initialization routine and a recurring
+scan routine. There is no device support for this record.
+
+=head2 Contents
+
+=over
+
+=item * L<Parameter Fields>
+
+=over
+
+=item * L<Scan Parameters>
+
+=item * L<Read Parameters>
+
+=item * L<Subroutine Connection>
+
+=item * L<Operator Display Parameters>
+
+=item * L<Alarm Parameters>
+
+=item * L<Monitor Parameters>
+
+=item * L<Run-time Parameters>
+
+=back
+
+=item * L<Record Support>
+
+=over
+
+=item * L<Record Support Routines (subRecord.c)>
+
+=item * L<Record Processing>
+
+=item * L<Example Synchronous Subroutine>
+
+=item * L<Example Asynchronous Subroutine>
+
+=back
+
+=back
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=recordtype sub
+
+=cut
+
+recordtype(sub) {
+
+=head2 Parameter Fields
+
+=head3 Scan Parameters
+
+The subroutine record has the standard fields for specifying under what
+circumstances it will be processed. These fields are listed in
+L<Scan Fields>.  In addition, L<Scanning Specification>
+explains how these fields are used.
+
+=head3 Read Parameters
+
+The subroutine record has twelve input links (INPA-INPL), each of which has a
+corresponding value field (A-L). These fields are used to retrieve and store
+values that can be passed to the subroutine that the record calls.
+
+The input links can be either channel access or database links, or constants.
+When constants, the corresponding value field for the link is initialized with
+the constant value and the field's value can be changed at run-time via dbPuts.
+Otherwise, the values for (A-F) are fetched from the input links when the record
+is processed. See L<Address Specification> for information on specifying links.
+
+=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL, A, B, C, D, E, F, G, H, I, J, K, L
+
+=head3 Subroutine Connection
+
+These fields are used to connect to the C subroutine. The name of the subroutine
+should be entered in the SNAM field.
+
+=fields INAM, SNAM
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. They
+display the value and other parameters of the subroutine either textually or
+graphically.
+
+EGU is a string of up to 16 characters that could describe any units used by the
+subroutine record. It is retrieved by the C<<< get_units >>> record support
+routine.
+
+The HOPR and LOPR fields set the upper and lower display limits for the VAL,
+A-L, LA-LL, HIHI, LOLO, LOW, and HIGH fields. Both the C<<< get_graphic_double
+>>> and C<<< get_control_double >>> record support routines retrieve these
+fields.
+
+The PREC field determines the floating point precision with which to display
+VAL. It is used whenever the C<<< get_precision >>> record support routine is
+called.
+
+See L<Fields Common to All Record Types>
+for more on the record name (NAME) and description (DESC) fields.
+
+=fields EGU, HOPR, LOPR, PREC, NAME, DESC
+
+=head3 Alarm Parameters
+
+The possible alarm conditions for subroutine records are the SCAN, READ, limit
+alarms, and an alarm that can be triggered if the subroutine returns a negative
+value. The SCAN and READ alarms are called by the record or device support
+routines. The limit alarms are configured by the user in the HIHI, LOLO, HIGH,
+and LOW fields using numerical values. They apply to the VAL field. For each of
+these fields, there is a corresponding severity field which can be either
+NO_ALARM, MINOR, or MAJOR.
+
+The BRSV field is where the user can set the alarm severity in case the
+subroutine returns a negative value. See L<Alarm Specification>
+for a complete explanation of alarms and these fields.  L<Alarm Fields>
+lists other fields related to a alarms that are common to all record types.
+
+=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, BRSV, HYST
+
+=head3 Monitor Parameters
+
+These parameters are used to determine when to send monitors placed on the VAL
+field. The appropriate monitors are invoked when VAL differs from the values in
+the ALST and MLST run-time fields, i.e., when the value of VAL changes by more
+than the deadband specified in these fields. The ADEL and MDEL fields specify a
+minimum delta which the change must surpass before the value-change monitors are
+invoked. If these fields have a value of zero, everytime the value changes, a
+monitor will be triggered; if they have a value of -1, everytime the record is
+processed, monitors are triggered. The ADEL field is used by archive monitors
+and the MDEL field for all other types of monitors. See L<Monitor Specification>
+for a complete explanation of monitors and deadbands.
+
+=fields ADEL, MDEL
+
+=head3 Run-time Parameters
+
+These parameters are used by the run-time code for processing the subroutine
+record. They are not configured using a database configuration tool. They
+represent the current state of the record. Many of them are used by the record
+processing routines or the monitors.
+
+VAL should be set by the subroutine. SADR holds the subroutine address and is
+set by the record processing routine.
+
+The rest of these fields--LALM, ALST, MLST, and the LA-LL fields--are used to
+implement the monitors. For example, when LA is not equal to A, the value-change
+monitors are called for that field.
+
+=fields VAL, SADR, LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
+
+=head2 Record Support
+
+=head3 Record Support Routines (subRecord.c)
+
+=head4 init_record
+
+  long (*init_record)(struct dbCommon *precord, int pass)
+
+For each constant input link, the corresponding value field is initialized with
+the constant value. For each input link that is of type PV_LINK, a channel
+access link is created.
+
+If an initialization subroutine is defined, it is located and called.
+
+The processing subroutine is located and its address stored in SADR.
+
+=head4 process
+
+  long (*process)(struct dbCommon *precord)
+
+See L<Record Processing>.
+
+=head4 get_units
+
+  long (*get_units)(struct dbAddr *paddr, char *units)
+
+Retrieves EGU.
+
+=head4 get_precision
+
+  long (*get_precision)(const struct dbAddr *paddr, long *precision)
+
+Retrieves PREC when VAL is the field being referenced. Otherwise, calls C<<<
+recGblGetPrec() >>>.
+
+=head4 get_graphic_double
+
+  long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p)
+
+Sets the upper display and lower display limits for a field. If the field is
+VAL, A-L, LA-LL, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR,
+else if the field has upper and lower limits defined they will be used, else the
+upper and lower maximum values for the field type will be used.
+
+=head4 get_control_double
+
+  long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p)
+
+Sets the upper control and the lower control limits for a field. If the field is
+VAL, A-L, LA-LL, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR,
+else if the field has upper and lower limits defined they will be used, else the
+upper and lower maximum values for the field type will be used.
+
+=head4 get_alarm_double
+
+  long (*get_alarm_double)(struct dbAddr *paddr, struct dbr_alDouble *p)
+
+Sets the following values:
+
+  upper_alarm_limit = HIHI
+  upper_warning_limit = HIGH
+  lower_warning_limit = LOW
+  lower_alarm_limit = LOLO
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+If PACT is FALSE then fetch all arguments.
+
+=item 2.
+
+Call the subroutine and check return value.
+
+=over
+
+=item *
+
+Call subroutine
+
+=item *
+
+Set PACT TRUE
+
+=item *
+
+If return value is 1, return
+
+=back
+
+=item 3.
+
+Check alarms. This routine checks to see if the new VAL causes the alarm status and severity to change. If so, NSEV, NSTA and LALM are set. It also honors the alarm hysteresis factor (HYST). Thus the value must change by more than HYST before the alarm status and severity is lowered.
+
+=item 4.
+
+Check to see if monitors should be invoked.
+
+=over
+
+=item *
+
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+
+Archive and value change monitors are invoked if ADEL and MDEL conditions are
+met.
+
+=item *
+
+Monitors for A-L are invoked if value has changed.
+
+=item *
+
+NSEV and NSTA are reset to 0.
+
+=back
+
+=item 5.
+
+Scan forward link if necessary, set PACT FALSE, and return.
+
+=back
+
+=head3 Example Synchronous Subroutine
+
+This is an example subroutine that merely increments VAL each time process is
+called.
+
+  #include <stdio.h>
+  #include <dbDefs.h>
+  #include <subRecord.h>
+  #include <registryFunction.h>
+  #include <epicsExport.h>
+ 
+  static long subInit(struct subRecord *psub)
+  {
+      printf("subInit was called\n");
+      return 0;
+  }
+ 
+  static long subProcess(struct subRecord *psub)
+  {
+      psub->val++;
+      return 0;
+  }
+ 
+  epicsRegisterFunction(subInit);
+  epicsRegisterFunction(subProcess);
+
+
+=head3 Example Asynchronous Subroutine
+
+This example for a VxWorks IOC shows an asynchronous subroutine. It uses
+(actually misuses) fields A and B. Field A is taken as the number of seconds
+until asynchronous completion. Field B is a flag to decide if messages should be
+printed. Lets assume A E<gt> 0 and B = 1. The following sequence of actions will
+occcur:
+
+=over
+
+=item 1.
+
+subProcess is called with pact FALSE. It performs the following steps.
+
+=over
+
+=item *
+
+Computes, from A, the number of ticks until asynchronous completion should
+occur.
+
+=item *
+
+Prints a message stating that it is requesting an asynchronous callback.
+
+=item *
+
+Calls the vxWorks watchdog start routine.
+
+=item *
+
+Sets pact TRUE and returns a value of 0. This tells record support to complete
+without checking alarms, monitors, or the forward link.
+
+=back
+
+=item 2.
+
+When the time expires, the system wide callback task calls myCallback.
+myCallback locks the record, calls process, and unlocks the record.
+
+=item 3.
+
+Process again calls subProcess, but now pact is TRUE. Thus the following is
+done:
+
+=over
+
+=item *
+
+VAL is incremented.
+
+=item *
+
+A completion message is printed.
+
+=item *
+
+subProcess returns 0. The record processing routine will complete record
+processing.
+
+=back
+
+=back
+
+  #include <types.h>
+  #include <stdio.h>
+  #include <wdLib.h>
+  #include <callback.h>
+  #include <dbDefs.h>
+  #include <dbAccess.h>
+  #include <subRecord.h>
+ 
+  /* control block for callback*/
+  struct callback {
+      epicsCallback callback;
+      struct dbCommon *precord;
+      WDOG_ID wd_id;
+  };
+ 
+  void myCallback(struct callback *pcallback)
+  {
+      struct dbCommon *precord=pcallback->precord;
+      struct rset *prset=(struct rset *)(precord->rset);
+      dbScanLock(precord);
+      (*prset->process)(precord);
+      dbScanUnlock(precord);
+  }
+ 
+  long subInit(struct subRecord *psub)
+  {
+      struct callback *pcallback;
+      pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
+      psub->dpvt = (void *)pcallback;
+      callbackSetCallback(myCallback,pcallback);
+      pcallback->precord = (struct dbCommon *)psub;
+      pcallback->wd_id = wdCreate();
+      printf("subInit was called\n");
+      return 0;
+  }
+ 
+  long subProcess(struct subRecord *psub)
+  {
+      struct callback *pcallback=(struct callback *)(psub->dpvt);
+      /* sub.inp must be a CONSTANT*/
+      if (psub->pact) {
+          psub->val++;
+          if (psub->b)
+          printf("%s subProcess Completed\n", psub->name);
+          return 0;
+      } else {
+          int wait_time = (long)(psub->a * vxTicksPerSecond);
+          if (wait_time <= 0){
+              if (psub->b)
+                  printf("%s subProcess sync processing\n", psub->name);
+              psub->pact = TRUE;
+              return 0;
+          }
+          if (psub->b){
+              callbackSetPriority(psub->prio, pcallback);
+              printf("%s Starting async processing\n", psub->name);
+              wdStart(pcallback->wd_id, wait_time, callbackRequest, (int)pcallback);
+              return 1;
+          }
+      }
+      return 0;
+  }
+
+=cut
+
+	include "dbCommon.dbd" 
+	field(VAL,DBF_DOUBLE) {
+		prompt("Result")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(INAM,DBF_STRING) {
+		prompt("Init Routine Name")
+		promptgroup("30 - Action")
+		special(SPC_NOMOD)
+		interest(1)
+		size(40)
+	}
+	field(SNAM,DBF_STRING) {
+		prompt("Subroutine Name")
+		promptgroup("30 - Action")
+		special(SPC_MOD)
+		interest(1)
+		size(40)
+	}
+	%struct subRecord;
+	%typedef long (*SUBFUNCPTR)(struct subRecord *);
+	field(SADR,DBF_NOACCESS) {
+		prompt("Subroutine Address")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("SUBFUNCPTR sadr")
+	}
+	field(INPA,DBF_INLINK) {
+		prompt("Input A")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPB,DBF_INLINK) {
+		prompt("Input B")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPC,DBF_INLINK) {
+		prompt("Input C")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPD,DBF_INLINK) {
+		prompt("Input D")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPE,DBF_INLINK) {
+		prompt("Input E")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPF,DBF_INLINK) {
+		prompt("Input F")
+		promptgroup("41 - Input A-F")
+		interest(1)
+	}
+	field(INPG,DBF_INLINK) {
+		prompt("Input G")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPH,DBF_INLINK) {
+		prompt("Input H")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPI,DBF_INLINK) {
+		prompt("Input I")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPJ,DBF_INLINK) {
+		prompt("Input J")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPK,DBF_INLINK) {
+		prompt("Input K")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPL,DBF_INLINK) {
+		prompt("Input L")
+		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
+		interest(1)
+		size(16)
+		prop(YES)
+	}
+	field(HOPR,DBF_DOUBLE) {
+		prompt("High Operating Range")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(LOPR,DBF_DOUBLE) {
+		prompt("Low Operating Range")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(HIHI,DBF_DOUBLE) {
+		prompt("Hihi Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(LOLO,DBF_DOUBLE) {
+		prompt("Lolo Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(HIGH,DBF_DOUBLE) {
+		prompt("High Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(LOW,DBF_DOUBLE) {
+		prompt("Low Alarm Limit")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(BRSV,DBF_MENU) {
+		prompt("Bad Return Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(HHSV,DBF_MENU) {
+		prompt("Hihi Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(LLSV,DBF_MENU) {
+		prompt("Lolo Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(HSV,DBF_MENU) {
+		prompt("High Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(LSV,DBF_MENU) {
+		prompt("Low Severity")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+		menu(menuAlarmSevr)
+	}
+	field(HYST,DBF_DOUBLE) {
+		prompt("Alarm Deadband")
+		promptgroup("70 - Alarm")
+		interest(1)
+	}
+	field(ADEL,DBF_DOUBLE) {
+		prompt("Archive Deadband")
+		promptgroup("80 - Display")
+		interest(1)
+	}
+	field(MDEL,DBF_DOUBLE) {
+		prompt("Monitor Deadband")
+		promptgroup("80 - Display")
+		interest(1)
+	}
+	field(A,DBF_DOUBLE) {
+		prompt("Value of Input A")
+		pp(TRUE)
+	}
+	field(B,DBF_DOUBLE) {
+		prompt("Value of Input B")
+		pp(TRUE)
+	}
+	field(C,DBF_DOUBLE) {
+		prompt("Value of Input C")
+		pp(TRUE)
+	}
+	field(D,DBF_DOUBLE) {
+		prompt("Value of Input D")
+		pp(TRUE)
+	}
+	field(E,DBF_DOUBLE) {
+		prompt("Value of Input E")
+		pp(TRUE)
+	}
+	field(F,DBF_DOUBLE) {
+		prompt("Value of Input F")
+		pp(TRUE)
+	}
+	field(G,DBF_DOUBLE) {
+		prompt("Value of Input G")
+		pp(TRUE)
+	}
+	field(H,DBF_DOUBLE) {
+		prompt("Value of Input H")
+		pp(TRUE)
+	}
+	field(I,DBF_DOUBLE) {
+		prompt("Value of Input I")
+		pp(TRUE)
+	}
+	field(J,DBF_DOUBLE) {
+		prompt("Value of Input J")
+		pp(TRUE)
+	}
+	field(K,DBF_DOUBLE) {
+		prompt("Value of Input K")
+		pp(TRUE)
+	}
+	field(L,DBF_DOUBLE) {
+		prompt("Value of Input L")
+		pp(TRUE)
+	}
+	field(LA,DBF_DOUBLE) {
+		prompt("Prev Value of A")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LB,DBF_DOUBLE) {
+		prompt("Prev Value of B")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LC,DBF_DOUBLE) {
+		prompt("Prev Value of C")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LD,DBF_DOUBLE) {
+		prompt("Prev Value of D")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LE,DBF_DOUBLE) {
+		prompt("Prev Value of E")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LF,DBF_DOUBLE) {
+		prompt("Prev Value of F")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LG,DBF_DOUBLE) {
+		prompt("Prev Value of G")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LH,DBF_DOUBLE) {
+		prompt("Prev Value of H")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LI,DBF_DOUBLE) {
+		prompt("Prev Value of I")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LJ,DBF_DOUBLE) {
+		prompt("Prev Value of J")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LK,DBF_DOUBLE) {
+		prompt("Prev Value of K")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LL,DBF_DOUBLE) {
+		prompt("Prev Value of L")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LALM,DBF_DOUBLE) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(ALST,DBF_DOUBLE) {
+		prompt("Last Value Archived")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MLST,DBF_DOUBLE) {
+		prompt("Last Value Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+}
+

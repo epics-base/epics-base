@@ -57,14 +57,17 @@ sub equals {
 sub toDeclaration {
     my $this = shift;
     my $name = $this->name;
+    my $macro_name = "${name}_NUM_CHOICES";
     my @choices = map {
         sprintf "    %-31s /* %s */", @{$_}[0], escapeCcomment(@{$_}[1]);
     } $this->choices;
     my $num = scalar @choices;
-    return "typedef enum {\n" .
+    return "#ifndef $macro_name\n" .
+           "typedef enum {\n" .
                join(",\n", @choices) .
            "\n} $name;\n" .
-           "#define ${name}_NUM_CHOICES $num\n\n";
+           "#define $macro_name $num\n" .
+           "#endif\n\n";
 }
 
 sub toDefinition {

@@ -122,7 +122,7 @@ recordtype(aao) {
         prompt("Sim. Mode Private")
         special(SPC_NOMOD)
         interest(4)
-        extra("CALLBACK            *simpvt")
+        extra("epicsCallback            *simpvt")
     }
     field(MPST,DBF_MENU) {
 		prompt("Post Value Monitors")

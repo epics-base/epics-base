@@ -109,7 +109,7 @@ static char *priorityName[NUM_CALLBACK_PRIORITIES] = {
 /* EVENT */
 
 typedef struct event_list {
-    CALLBACK            callback[NUM_CALLBACK_PRIORITIES];
+    epicsCallback            callback[NUM_CALLBACK_PRIORITIES];
     scan_list           scan_list[NUM_CALLBACK_PRIORITIES];
     struct event_list   *next;
     char                eventname[1]; /* actually arbitrary size */
@@ -120,7 +120,7 @@ static epicsMutexId event_lock;
 /* IO_EVENT*/
 
 typedef struct io_scan_list {
-    CALLBACK callback;
+    epicsCallback callback;
     scan_list scan_list;
 } io_scan_list;
 
@@ -141,9 +141,9 @@ static void periodicTask(void *arg);
 static void initPeriodic(void);
 static void deletePeriodic(void);
 static void spawnPeriodic(int ind);
-static void eventCallback(CALLBACK *pcallback);
+static void eventCallback(epicsCallback *pcallback);
 static void ioscanInit(void);
-static void ioscanCallback(CALLBACK *pcallback);
+static void ioscanCallback(epicsCallback *pcallback);
 static void ioscanDestroy(void);
 static void printList(scan_list *psl, char *message);
 static void scanList(scan_list *psl);
@@ -448,7 +448,7 @@ int scanpiol(void)                  /* print pioscan_list */
     return 0;
 }
 
-static void eventCallback(CALLBACK *pcallback)
+static void eventCallback(epicsCallback *pcallback)
 {
     scan_list *psl;
 
@@ -944,7 +944,7 @@ static void spawnPeriodic(int ind)
     epicsEventWait(startStopEvent);
 }
 
-static void ioscanCallback(CALLBACK *pcallback)
+static void ioscanCallback(epicsCallback *pcallback)
 {
     ioscan_head *piosh;
     int prio;

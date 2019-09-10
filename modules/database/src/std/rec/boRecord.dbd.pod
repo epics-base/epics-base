@@ -130,8 +130,7 @@ It must specify the address of an I/O card if the record sends its output
 to hardware, and the DTYP field must contain the corresponding device
 support module. Be aware that the address format differs according to the
 I/O bus used. See L<Address Specification> for information on the format of
-hardware addresses. You can see a list of device support modules currently
-supported at the user's local site by using the C<dbst> utility in R3.13.
+hardware addresses.
 
 Otherwise, if the record is configured to use the soft device support
 modules, then it can be either a database link, a channel access link, or a
@@ -143,9 +142,9 @@ this chapter for more on output to other records.
 =head3 Operator Display Parameters
 
 These parameters are used to present meaningful data to the operator, The
-C<get_enum_str> record support routine can retrieve the state string
-corresponding to the VAL's state. So, if the value is 1, C<get_enum_str>
-will return the string in the ONAM field: and if 0, C<get_enum_str> will
+C<get_enum_str()> record support routine can retrieve the state string
+corresponding to the VAL's state. So, if the value is 1, C<get_enum_str()>
+will return the string in the ONAM field: and if 0, C<get_enum_str()> will
 return the ZNAM string.
 
 See L<Fields Common to All Record Types> for more on the record name (NAME)
@@ -194,7 +193,7 @@ The LALM field holds the value of the last occurrence of the change of
 state alarm. It is used to implement the change of state alarm, and thus
 only has meaning if COSV is MINOR or MAJOR.
 
-The MLST is used by the C<process> record support routine to determine if
+The MLST is used by the C<process()> record support routine to determine if
 archive and value change monitors are invoked. They are if MLST is not
 equal to VAL.
 
@@ -366,7 +365,7 @@ information on these fields.
         prompt("Sim. Mode Private")
         special(SPC_NOMOD)
         interest(4)
-        extra("CALLBACK            *simpvt")
+        extra("epicsCallback            *simpvt")
     }
 	field(IVOA,DBF_MENU) {
 		prompt("INVALID outpt action")
@@ -400,16 +399,12 @@ exist, and error message is issued and processing is terminated.
 If DOL is a constant, then VAL is initialized to 1 if its value is nonzero
 or initialzed to 0 if DOL is zero, and UDF is set to FALSE.
 
-If device support includes C<init_record>, it is called. VAL is set using
+If device support includes C<init_record()>, it is called. VAL is set using
 RVAL, and UDF is set to FALSE.
 
 =head2 C<process>
 
 See next section.
-
-=head2 C<get_value>
-
-Fills in the values of struct valueDes so that they refer to VAL.
 
 =head2 C<get_enum_str>
 
@@ -443,7 +438,7 @@ If PACT is FALSE
 =over
 
 =item *
-If DOL is DB_LINK and OMSL is CLOSED_LOOP
+If DOL holds a link and OMSL is C<closed_loop>
 
 =over
 
@@ -527,27 +522,37 @@ Scan forward link if necessary, set PACT FALSE, and return
 
 Each binary output record must have an associated set of device support
 routines. The primary responsibility of the device support routines is to
-write a new value whenever C<write_bo> is called. The device support routines
+write a new value whenever C<write_bo()> is called. The device support routines
 are primarily interested in the following fields:
 
 =fields PACT, DPVT, NSEV, NSTA, VAL, OUT, RVAL, MASK, RBV
 
-=head3 Decive Support Routines
+=head3 Device Support Routines
 
 Device support consists of the following routines:
 
-=head2 C<report(FILE fp, paddr)>
+=head4 long report(int level)
 
-Not currently used.
+This optional routine is called by the IOC command C<dbior> and is passed the
+report level that was requested by the user.
+It should print a report on the state of the device support to stdout.
+The C<level> parameter may be used to output increasingly more detailed
+information at higher levels, or to select different types of information with
+different levels.
+Level zero should print no more than a small summary.
 
-=head2 C<init()>
+=head4 long init(int after)
 
-This routine is called once during IOC initialization.
+This optional routine is called twice at IOC initialization time.
+The first call happens before any of the C<init_record()> calls are made, with
+the integer parameter C<after> set to 0.
+The second call happens after all of the C<init_record()> calls have been made,
+with C<after> set to 1.
 
 =head2 C<init_record(precord)>
 
 This routine is optional. If provided, it is called by record support
-C<init_record> routine. It should determine MASK if it is needed.
+C<init_record()> routine. It should determine MASK if it is needed.
 
 =over
 
@@ -593,10 +598,10 @@ link type must be either CONSTANT, DB_LINK, or CA_LINK.
 
 This module writes the current value of VAL.
 
-If the OUT link type is PV_LINK, then C<dbCaAddInlink> is called by
-C<init_record>. C<init_record> always returns a value of 2, which means
-that no conversion will ever be attempted. C<write_bo> calls
-C<recGblPutLinkValue> to write the current value of VAL. See L<Soft Output>
+If the OUT link type is PV_LINK, then C<dbCaAddInlink()> is called by
+C<init_record()>. C<init_record()> always returns a value of 2, which means
+that no conversion will ever be attempted. C<write_bo()> calls
+C<recGblPutLinkValue()> to write the current value of VAL. See L<Soft Output>
 for details.
 
 =head3 Raw Soft Channel

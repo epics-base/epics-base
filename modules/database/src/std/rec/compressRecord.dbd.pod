@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-=title Compress Record (compress)
+=title Compression Record (compress)
 
 The data compression record is used to collect and compress data from arrays.
 When the INP field references a data array field, it immediately compresses the
@@ -62,7 +62,359 @@ menu(bufferingALG) {
 }
 recordtype(compress) {
 
-=fields VAL
+=head2 Contents
+
+=over
+
+=item * L<Parameter Fields>
+
+=over
+
+=item * L<Scanning Parameters>
+
+=item * L<Algorithms and Related Parameters>
+
+=item * L<Operator Display Parameters>
+
+=item * L<Run-time Parameters>
+
+=back
+
+=item * L<Record Support>
+
+=over
+
+=item * L<Record Support Routines>
+
+=item * L<Record Processing>
+
+=back
+
+=back
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=head2 Parameter Fields
+
+=head3 Scanning Parameters
+
+The compression record has the standard fields for specifying under what
+circumstances the record will be processed. These fields are listed in
+L<Scan Fields>. In addition, L<Scanning Specification>
+explains how these fields are used. Since  the compression record supports no
+direct interfaces to hardware, its SCAN field cannot specify C<<< I/O Intr >>>.
+
+=head3 Algorithms and Related Parameters
+
+The user specifies the algorithm to be used in the ALG field. There are six possible
+algorithms which can be specified as follows:
+
+=head4 Menu compressALG
+
+=menu compressALG
+
+The following fields determine what channel to read and how to compress the data:
+
+=fields ALG, INP, NSAM, N, ILIL, IHIL, OFF, RES
+
+As stated above, the ALG field specifies which algorithm to be performed on the data.
+
+The INP should be a database or channel access link. Though INP can be a constant,
+the data compression algorithms are supported only when INP is a database link. See
+L<Address Specification> for information on specifying links.
+
+
+IHIL and ILIL can be set to provide an initial value filter on the input array.
+If ILIL E<lt> IHIL, the input elements will be skipped until a value is found
+that is in the range of ILIL to IHIL. Note that ILIL and IHIL are used only in
+C<<< N to 1 >>> algorithms.
+
+OFF provides the offset to the current beginning of the array data.
+Note that OFF is used only in C<<< N to 1 >>> algorithms.
+
+The RES field can be accessed at run time to cause the algorithm to reset
+itself before the maximum number of samples are reached.
+
+=head4 Algorithms
+
+B<Circular Buffer> algorithm keeps a circular buffer of length NSAM.
+Each time the record is processed, it gets the data referenced by INP and puts
+it into the circular buffer referenced by VAL. The INP can refer to both scalar or
+array data and VAL is just a time ordered circular buffer of  values obtained
+from INP.
+Note that N, ILIL, IHIL and OFF are not used in C<<< Circular Buffer >>> algorithm.
+
+B<Average> takes an average of every element of the array obtained from
+INP over time; that is, the entire array referenced by INP is retrieved, and for
+each element, the new average is calculated and placed in the corresponding
+element of the value buffer. The retrieved array is truncated to be of length
+NSAM. N successive arrays are averaged and placed in the buffer. Thus, VAL[0]
+holds the average of the first element of INP over N samples, VAL[1] holds the
+average of the next element of INP over N samples, and so on. The following
+shows the equation:
+
+=for comment Latex form of equation bellow : VAL[i] \leftarrow \frac{1}{N}\sum_{n=1}^NINP_{n}[i]
+
+=begin html
+
+<img src="image/compress-1.png">
+
+=end html
+
+B<N to 1> If any of the C<<< N to 1 >>> algorithms are chosen, then VAL is a circular
+buffer of NSAM samples.
+The actual algorithm depends on whether INP references a scalar or an array.
+
+If INP refers to a scalar, then N successive time ordered samples of INP are taken.
+After the Nth sample is obtained, a new value determined by the algorithm
+(Lowest, Highest, or Average), is written to the circular buffer referenced by
+VAL. If C<<< Low Value >>> the lowest value of all the samples is written; if
+C<<< High Value >>> the highest value is written; and if C<<< Average >>>, the
+average of all the samples are written.  The C<<< Median >>> setting behaves
+like C<<< Average >>> with scalar input data.
+
+If INP refers to an array, then the following applies:
+
+=over
+
+=item C<<< N to 1 Low Value >>>
+
+Compress N to 1 samples, keeping the lowest value.
+
+=item C<<< N to 1 High Value >>>
+
+Compress N to 1 samples, keeping the highest value.
+
+=item C<<< N to 1 Average >>>
+
+Compress N to 1 samples, taking the average value.
+
+=item C<<< N to 1 Median >>>
+
+Compress N to 1 samples, taking the median value.
+
+=back
+
+The compression record keeps NSAM data samples.
+
+The field N determines the number of elements to compress into each result.
+
+Thus, if NSAM was 3, and N was also equal to 3, then the algorithms would work
+as in the following diagram:
+
+=begin html
+
+<img src="image/compress-2.png">
+
+=end html
+
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. They
+display the value and other parameters of the record either textually or
+graphically.
+
+=fields EGU, HOPR, LOPR, PREC, NAME, DESC
+
+The EGU field should be given a string that describes the value of VAL, but is
+used whenever the C<<< get_units >>> record support routine is called.
+
+The HOPR and LOPR fields only specify the upper and lower display limits for
+VAL, HIHI, HIGH, LOLO and LOW fields.
+
+PREC controls the floating-point precision whenever C<<< get_precision >>> is
+called, and the field being referenced is the VAL field (i.e., one of the values
+contained in the circular buffer).
+
+See L<Fields Common to All Record Types>
+for more on the record name (NAME) and description (DESC) fields.
+
+
+=head3 Alarm Parameters
+
+The compression record has the alarm parameters common to all record types
+described in L<Alarm Fields>.
+
+=head3 Run-time Parameters
+
+These parameters are used by the run-time code for processing the data
+compression algorithm. They are not configurable by the user, though some are
+accessible at run-time. They can represent the current state of the waveform or
+of the record whose field is referenced by the INP field.
+
+=fields NUSE, OUSE, BPTR, SPTR, WPTR, CVB, INPN, INX
+
+NUSE and OUSE hold the current and previous number of elements stored in VAL.
+
+BPTR is a pointer that refers to the buffer referenced by VAL.
+
+SPTR points to an array that is used for array averages.
+
+WPTR is used by the dbGetlinks routines.
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=head2 Record Support
+
+=head3 Record Support Routines (compressRecord.c)
+
+=head4 init_record
+
+  long (*init_record)(struct dbCommon *precord, int pass)
+
+Space for all necessary arrays is allocated. The addresses are stored in the
+appropriate fields in the record.
+
+=head4 process
+
+  long (*process)(struct dbCommon *precord)
+
+See L<Record Processing>
+
+=head4 special
+
+  long (*special)(struct dbAddr *paddr, int after)
+
+This routine is called when RSET, ALG, or N are set. It performs a reset.
+
+=head4 cvt_dbaddr
+
+  long (*cvt_dbaddr)(struct dbAddr *paddr)
+
+This is called by dbNameToAddr. It makes the dbAddr structure refer to the
+actual buffer holding the result.
+
+=head4 get_array_info
+
+  long (*get_array_info)(struct dbAddr *paddr, long *no_elements, long *offset)
+
+Obtains values from the circular buffer referenced by VAL.
+
+=head4 put_array_info
+
+  long (*put_array_info)(struct dbAddr *paddr, long nNew);
+
+Writes values into the circular buffer referenced by VAL.
+
+=head4 get_units
+
+  long (*get_units)(struct dbAddr *paddr, char *units);
+
+Retrieves EGU.
+
+=head4 get_precision
+
+  long (*get_precision)(const struct dbAddr *paddr, long *precision);
+
+Retrieves PREC.
+
+=head4 get_graphic_double
+
+  long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p);
+
+Sets the upper display and lower display limits for a field. If the field is
+VAL, the limits are set to HOPR and LOPR, else if the field has upper and lower
+limits defined they will be used, else the upper and lower maximum values for
+the field type will be used.
+
+=head4 get_control_double
+
+  long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p);
+
+Sets the upper control and the lower control limits for a field. If the field is
+VAL, the limits are set to HOPR and LOPR, else if the field has upper and lower
+limits defined they will be used, else the upper and lower maximum values for
+the field type will be used.
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+If INP is not a database link, check monitors and the forward link and return.
+
+=item 2.
+
+Get the current data referenced by INP.
+
+=item 3.
+
+Perform the appropriate algorithm:
+
+=over
+
+=item *
+
+Average: Read N successive instances of INP and perform an element by element
+average. Until N instances have been obtained it just return without checking
+monitors or the forward link. When N instances have been obtained complete the
+algorithm, store the result in the VAL array, check monitors and the forward
+link, and return.
+
+=item *
+
+Circular Buffer: Write the values obtained from INP into the VAL array as a
+circular buffer, check monitors and the forward link, and return.
+
+=item *
+
+N to 1 xxx when INP refers to a scalar: Obtain N successive values from INP and
+apply the N to 1 xxx algorithm to these values. Until N values are obtained
+monitors and forward links are not triggered. When N successive values have been
+obtained, complete the algorithm, check monitors and trigger the forward link,
+and return.
+
+=item *
+
+N to 1 xxx when INP refers to an array: The ILIL and IHIL are honored if ILIL
+E<lt> IHIL. The input array is divided into subarrays of length N. The specified
+N to 1 xxx compression algorithm is applied to each sub-array and the result
+stored in the array referenced by VAL. The monitors and forward link are
+checked.
+
+=back
+
+=item 4.
+
+If success, set UDF to FALSE.
+
+=item 5.
+
+Check to see if monitors should be invoked:
+
+=over
+
+=item *
+
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+
+NSEV and NSTA are reset to 0.
+
+=back
+
+=item 6.
+
+Scan forward link if necessary, set PACT FALSE, and return.
+
+=back
 
 =cut
 
@@ -197,3 +549,4 @@ recordtype(compress) {
 		interest(3)
 	}
 }
+

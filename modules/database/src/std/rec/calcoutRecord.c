@@ -117,8 +117,8 @@ typedef struct calcoutDSET {
 #define CA_LINKS_NOT_OK 2
 
 typedef struct rpvtStruct {
-    CALLBACK doOutCb;
-    CALLBACK checkLinkCb;
+    epicsCallback doOutCb;
+    epicsCallback checkLinkCb;
     short    cbScheduled;
     short    caLinkStat; /* NO_CA_LINKS, CA_LINKS_ALL_OK, CA_LINKS_NOT_OK */
 } rpvtStruct;
@@ -128,7 +128,7 @@ static void monitor(calcoutRecord *prec);
 static int fetch_values(calcoutRecord *prec);
 static void execOutput(calcoutRecord *prec);
 static void checkLinks(calcoutRecord *prec);
-static void checkLinksCallback(CALLBACK *arg);
+static void checkLinksCallback(epicsCallback *arg);
 static long writeValue(calcoutRecord *prec);
 
 int    calcoutRecDebug;
@@ -702,7 +702,7 @@ static int fetch_values(calcoutRecord *prec)
         return(status);
 }
 
-static void checkLinksCallback(CALLBACK *arg)
+static void checkLinksCallback(epicsCallback *arg)
 {
 
     calcoutRecord *prec;
@@ -760,7 +760,7 @@ static void checkLinks(calcoutRecord *prec)
         prpvt->caLinkStat = NO_CA_LINKS;
 
     if (!prpvt->cbScheduled && caLinkNc) {
-        /* Schedule another CALLBACK */
+        /* Schedule another epicsCallback */
         prpvt->cbScheduled = 1;
         callbackRequestDelayed(&prpvt->checkLinkCb, .5);
     }

@@ -5,18 +5,10 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# Set EPICS_LIBCOM if necessary
-ifndef EPICS_LIBCOM
-  EPICS_LIBCOM = $(if $(BUILDING_LIBCOM),$(INSTALL_LOCATION),$(EPICS_BASE))
-
-  # Paths to tools built here
-  EPICS_LIBCOM_HOST_BIN ?= $(EPICS_LIBCOM)/bin/$(EPICS_HOST_ARCH)
-endif
-
 # Set location of locally generated tools
-YACC = $(abspath $(EPICS_LIBCOM_HOST_BIN))/antelope$(HOSTEXE)
-LEX = $(abspath $(EPICS_LIBCOM_HOST_BIN))/e_flex$(HOSTEXE) \
-        -S$(EPICS_LIBCOM)/include/flex.skel.static
+YACC = $(abspath $(EPICS_BASE)/bin/$(EPICS_HOST_ARCH))/antelope$(HOSTEXE)
+LEX = $(abspath $(EPICS_BASE)/bin/$(EPICS_HOST_ARCH))/e_flex$(HOSTEXE) \
+        -S$(EPICS_BASE)/include/flex.skel.static
 
 # Default stack size for osiThread
 OSITHREAD_USE_DEFAULT_STACK = NO

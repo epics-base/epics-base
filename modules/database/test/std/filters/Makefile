@@ -7,9 +7,11 @@
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
 
-TOP = ../../..
+TOP = ../../../../..
 
 include $(TOP)/configure/CONFIG
+
+USR_CPPFLAGS += -DUSE_TYPED_RSET
 
 TESTLIBRARY = Recs
 

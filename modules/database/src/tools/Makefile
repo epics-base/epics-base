@@ -4,7 +4,7 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
-TOP=../..
+TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
@@ -26,8 +26,6 @@ PERL_MODULES += DBD/Variable.pm
 
 PERL_MODULES += EPICS/IOC.pm
 HTMLS += EPICS/IOC.html
-
-PERL_SCRIPTS += databaseModuleDirs.pm
 
 PERL_SCRIPTS += makeIncludeDbd.pl
 

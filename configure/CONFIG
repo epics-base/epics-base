@@ -58,8 +58,12 @@ include $(CONFIG)/CONFIG_BASE_VERSION
 include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).Common
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
 
+# Parse configure/RELEASE
+# except when building Base itself, where this file is empty,
+# and would error in src/tools/ anyway.
+ifndef BASE_TOP
 RELEASE_TOPS := $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops)
-
+endif
 
 ifdef T_A
 

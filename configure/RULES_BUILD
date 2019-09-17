@@ -190,7 +190,7 @@ endif
 checkRelease:
 	+$(CONVERTRELEASE) checkRelease
 warnRelease:
-	-$(CONVERTRELEASE) checkRelease
+	$(CONVERTRELEASE) checkRelease
 noCheckRelease:
 ifeq ($(EPICS_HOST_ARCH),$(T_A))
 	$(info Warning: RELEASE file consistency checks have been disabled)
@@ -350,7 +350,7 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 
 runtests: $(TESTSCRIPTS)
 ifdef RUNTESTS_ENABLED
-	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
+	$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
 endif
 
 testspec: $(TESTSCRIPTS)
@@ -385,7 +385,7 @@ junitfiles: $(JUNITFILES)
 # A .tap file is the output from running the associated test script
 %.tap: %.t
 ifdef RUNTESTS_ENABLED
-	-$(PERL) $< -tap > $@
+	$(PERL) $< -tap > $@
 endif
 
 %.xml: %.tap

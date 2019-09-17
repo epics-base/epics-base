@@ -6,14 +6,12 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
-
-TOP = ..
+LIBCOM := $(or $(dir $(lastword $(MAKEFILE_LIST))), .)
+TOP = ../../..
 include $(TOP)/configure/CONFIG
 
 # Uncomment this to remove the (benign) valgrind helper stubs
 #USR_CFLAGS += -DNVALGRIND
-
-LIBCOM = $(TOP)/src
 
 INC += valgrind/valgrind.h
 

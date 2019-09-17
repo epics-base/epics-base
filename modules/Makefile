@@ -7,15 +7,15 @@ TOP = ..
 include $(TOP)/configure/CONFIG
 include CONFIG_SITE.local
 
-# Submodules for bundle build
-SUBMODULES += libcom
+DIRS += libcom
 
-SUBMODULES += ca
+DIRS += ca
 ca_DEPEND_DIRS = libcom
 
-SUBMODULES += database
+DIRS += database
 database_DEPEND_DIRS = ca
 
+# Submodules for bundle build
 SUBMODULES += pvData
 pvData_DEPEND_DIRS = libcom
 

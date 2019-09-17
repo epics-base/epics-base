@@ -6,11 +6,13 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
-
-TOP = ../..
+STDDIR := $(or $(dir $(lastword $(MAKEFILE_LIST))), .)
+TOP = ../../../..
 include $(TOP)/configure/CONFIG
 
-STDDIR=$(TOP)/src/std
+USR_CPPFLAGS += -DUSE_TYPED_RSET
+
+SHRLIB_VERSION = 3.17.0
 
 LIBRARY_IOC += dbRecStd
 dbRecStd_LIBS = dbCore ca Com

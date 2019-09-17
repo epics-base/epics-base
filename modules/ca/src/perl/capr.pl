@@ -10,9 +10,7 @@
 use strict;
 
 use FindBin qw($Bin);
-use lib ($Bin, "$Bin/../../lib/perl");
-use caModuleDirs;
-no lib $Bin;
+use lib ("$Bin/../../lib/perl");
 
 use Getopt::Std;
 use EPICS::Path;

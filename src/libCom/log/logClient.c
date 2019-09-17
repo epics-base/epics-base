@@ -21,7 +21,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "iocLog.h"
@@ -32,8 +31,12 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 #include "epicsSignal.h"
+#include "epicsExport.h"
 
 #include "logClient.h"
+
+int logClientDebug = 0;
+epicsExportAddress (int, logClientDebug);
 
 typedef struct {
     char                msgBuf[0x4000];
@@ -65,10 +68,10 @@ static char* logClientPrefix = NULL;
  */
 static void logClientClose ( logClient *pClient )
 {
-#   ifdef DEBUG
+    if (logClientDebug) {
         fprintf (stderr, "log client: lingering for connection close...");
         fflush (stderr);
-#   endif
+    }
 
     /*
      * mutex on
@@ -90,9 +93,8 @@ static void logClientClose ( logClient *pClient )
      */
     epicsMutexUnlock (pClient->mutex);
 
-#   ifdef DEBUG
+    if (logClientDebug)
         fprintf (stderr, "done\n");
-#   endif
 }
 
 /*
@@ -262,10 +264,10 @@ void epicsShareAPI logClientFlush ( logClientId id )
  */
 static void logClientMakeSock (logClient *pClient)
 {
-    
-#   ifdef DEBUG
+    if (logClientDebug) {
         fprintf (stderr, "log client: creating socket...");
-#   endif
+        fflush (stderr);
+    }
 
     epicsMutexMustLock (pClient->mutex);
    
@@ -283,10 +285,8 @@ static void logClientMakeSock (logClient *pClient)
     
     epicsMutexUnlock (pClient->mutex);
 
-#   ifdef DEBUG
+    if (logClientDebug)
         fprintf (stderr, "done\n");
-#   endif
-
 }
 
 /*

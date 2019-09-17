@@ -49,6 +49,7 @@ typedef struct {
     epicsEventId        shutdownNotify;
     unsigned            connectCount;
     unsigned            nextMsgIndex;
+    unsigned            backlog;
     unsigned            connected;
     unsigned            shutdown;
     unsigned            shutdownConfirm;
@@ -194,6 +195,39 @@ static void sendMessageChunk(logClient * pClient, const char * message) {
     }
 }
 
+/*
+ * epicsSockCountUnsentBytes ()
+ * Should go to osd socket support
+ */
+#if defined (_WIN32) && WINVER >= _WIN32_WINNT_WIN10
+#include <mstcpip.h>
+#endif
+
+static int epicsSockCountUnsentBytes(SOCKET sock) {
+#if defined (_WIN32) && WINVER >= _WIN32_WINNT_WIN10
+/* Windows 10 Version 1703 / Server 2016 */
+/* https://docs.microsoft.com/en-us/windows/win32/api/mstcpip/ns-mstcpip-tcp_info_v0 */
+    DWORD infoVersion = 0, bytesReturned;
+    TCP_INFO_v0 tcpInfo;
+    int status;
+    if ((status = WSAIoctl(sock, SIO_TCP_INFO, &infoVersion, sizeof(infoVersion),
+        &tcpInfo, sizeof(tcpInfo), &bytesReturned, NULL, NULL)) == 0)
+        return tcpInfo.BytesInFlight;
+#elif defined (SO_NWRITE)
+/* macOS / iOS */
+/* https://www.unix.com/man-page/osx/2/setsockopt/ */
+    int unsent;
+    if (getsockopt(sock, SOL_SOCKET, SO_NWRITE, &unsent) == 0)
+        return unsent;
+#elif defined (TIOCOUTQ)
+/* Linux */
+/* https://linux.die.net/man/7/tcp */
+    int unsent;
+    if (ioctl(sock, TIOCOUTQ, &unsent) == 0)
+        return unsent;
+#endif
+    return 0;
+}
 
 /* 
  * logClientSend ()
@@ -219,7 +253,8 @@ void epicsShareAPI logClientSend ( logClientId id, const char * message )
 
 void epicsShareAPI logClientFlush ( logClientId id )
 {
-    unsigned nSent = 0u;
+    unsigned nSent;
+    int status = 0;
 
     logClient * pClient = ( logClient * ) id;
 
@@ -229,32 +264,32 @@ void epicsShareAPI logClientFlush ( logClientId id )
 
     epicsMutexMustLock ( pClient->mutex );
 
+    nSent = pClient->backlog;
     while ( nSent < pClient->nextMsgIndex && pClient->connected ) {
-        int status = send ( pClient->sock, pClient->msgBuf + nSent,
+        status = send ( pClient->sock, pClient->msgBuf + nSent,
             pClient->nextMsgIndex - nSent, 0 );
-        if ( status > 0 ) {
-            nSent += (unsigned) status;
-        }
-        else {
-            if ( ! pClient->shutdown ) {
-                char sockErrBuf[128];
-                if ( status ) {
-                    epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                }
-                else {
-                    strcpy ( sockErrBuf, "server initiated disconnect" );
-                }
-                fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
-                    pClient->name, sockErrBuf );
-            }
-            logClientClose ( pClient );
-            break;
-        }
+        if ( status < 0 ) break;
+        nSent += status;
     }
-    pClient->nextMsgIndex -= nSent;
-    if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
-        memmove ( pClient->msgBuf, & pClient->msgBuf[nSent],
-            pClient->nextMsgIndex );
+
+    if ( status < 0 ) {
+        if ( ! pClient->shutdown ) {
+            char sockErrBuf[128];
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
+                pClient->name, sockErrBuf );
+        }
+        pClient->backlog = 0;
+        logClientClose ( pClient );
+    }
+    else if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
+        pClient->backlog = epicsSockCountUnsentBytes ( pClient->sock );
+        nSent -= pClient->backlog;
+        if ( nSent > 0 ) {
+            memmove ( pClient->msgBuf, & pClient->msgBuf[nSent],
+                pClient->nextMsgIndex );
+            pClient->nextMsgIndex -= nSent;
+        }
     }
     epicsMutexUnlock ( pClient->mutex );
 }

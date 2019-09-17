@@ -235,7 +235,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
         }
         else {
             if ( ! pClient->shutdown ) {
-                char sockErrBuf[64];
+                char sockErrBuf[128];
                 if ( status ) {
                     epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                 }
@@ -274,7 +274,7 @@ static void logClientMakeSock (logClient *pClient)
      */
     pClient->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, 0 );
     if ( pClient->sock == INVALID_SOCKET ) {
-        char sockErrBuf[64];
+        char sockErrBuf[128];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf ( stderr, "log client: no socket error %s\n", 
@@ -326,7 +326,7 @@ static void logClientConnect (logClient *pClient)
             }
             else {
                 if ( pClient->connFailStatus != errnoCpy && ! pClient->shutdown ) {
-                    char sockErrBuf[64];
+                    char sockErrBuf[128];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     fprintf (stderr,
@@ -352,7 +352,7 @@ static void logClientConnect (logClient *pClient)
     optval = TRUE;
     status = setsockopt (pClient->sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval));
     if (status<0) {
-        char sockErrBuf[64];
+        char sockErrBuf[128];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "log client: unable to enable keepalive option because \"%s\"\n", sockErrBuf);
@@ -364,7 +364,7 @@ static void logClientConnect (logClient *pClient)
      */
     status = shutdown (pClient->sock, SHUT_RD);
     if (status < 0) {
-        char sockErrBuf[64];
+        char sockErrBuf[128];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "%s:%d shutdown(%d,SHUT_RD) error was \"%s\"\n", 
@@ -385,7 +385,7 @@ static void logClientConnect (logClient *pClient)
         lingerval.l_linger = 60*5; 
         status = setsockopt (pClient->sock, SOL_SOCKET, SO_LINGER, (char *) &lingerval, sizeof(lingerval));
         if (status<0) {
-            char sockErrBuf[64];
+            char sockErrBuf[128];
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
             fprintf (stderr, "log client: unable to set linger options because \"%s\"\n", sockErrBuf);

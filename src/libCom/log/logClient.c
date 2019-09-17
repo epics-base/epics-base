@@ -25,7 +25,6 @@
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "iocLog.h"
-#include "errlog.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "epicsTime.h"

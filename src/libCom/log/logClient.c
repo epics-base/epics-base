@@ -507,14 +507,21 @@ void epicsShareAPI logClientShow (logClientId id, unsigned level)
         printf ("log client: disconnected from log server at \"%s\"\n", pClient->name);
     }
 
-    if (level>1) {
-        printf ("log client: sock=%s, connect cycles = %u\n",
+    if (logClientPrefix) {
+        printf ("log client: prefix is \"%s\"\n", logClientPrefix);
+    }
+
+    if (level>0) {
+        printf ("log client: sock %s, connect cycles = %u\n",
             pClient->sock==INVALID_SOCKET?"INVALID":"OK",
             pClient->connectCount);
     }
-
-    if (logClientPrefix) {
-        printf ("log client: prefix is \"%s\"\n", logClientPrefix);
+    if (level>1) {
+        printf ("log client: %u bytes in buffer\n", pClient->nextMsgIndex);
+        if (pClient->nextMsgIndex)
+            printf("-------------------------\n"
+                "%.*s-------------------------\n",
+                (int)(pClient->nextMsgIndex), pClient->msgBuf);
     }
 }
 

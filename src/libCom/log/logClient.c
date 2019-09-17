@@ -402,8 +402,8 @@ static void logClientConnect (logClient *pClient)
         char sockErrBuf[128];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        fprintf (stderr, "%s:%d shutdown(%d,SHUT_RD) error was \"%s\"\n", 
-            __FILE__, __LINE__, pClient->sock, sockErrBuf);
+        fprintf (stderr, "%s:%d shutdown(sock,SHUT_RD) error was \"%s\"\n", 
+            __FILE__, __LINE__, sockErrBuf);
         /* not fatal (although it shouldn't happen) */
     }
 

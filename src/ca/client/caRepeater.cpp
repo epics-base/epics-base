@@ -32,10 +32,12 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "epicsAssert.h"
+#include "osiUnistd.h"
 #include "udpiiu.h"
 
 int main()
 {
+    chdir ( "/" );
     ca_repeater ();
     return ( 0 );
 }

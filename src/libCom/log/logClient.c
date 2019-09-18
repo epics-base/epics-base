@@ -272,6 +272,15 @@ void epicsShareAPI logClientFlush ( logClientId id )
         nSent += status;
     }
 
+    if ( pClient->backlog > 0 && status >= 0 )
+    {
+        /* On Linux send 0 bytes can detect EPIPE */
+        /* NOOP on Windows, fails on vxWorks */
+        errno = 0;
+        status = send ( pClient->sock, NULL, 0, 0 );
+        if (!(errno == ECONNRESET || errno == EPIPE)) status = 0;
+    }
+
     if ( status < 0 ) {
         if ( ! pClient->shutdown ) {
             char sockErrBuf[128];

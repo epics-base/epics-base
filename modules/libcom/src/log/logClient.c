@@ -196,14 +196,14 @@ static void sendMessageChunk(logClient * pClient, const char * message) {
 }
 
 /*
- * epicsSockCountUnsentBytes ()
+ * epicsSocketCountUnsentBytes ()
  * Should go to osd socket support
  */
 #if defined (_WIN32) && WINVER >= _WIN32_WINNT_WIN10
 #include <mstcpip.h>
 #endif
 
-static int epicsSockCountUnsentBytes(SOCKET sock) {
+static int epicsSocketCountUnsentBytes(SOCKET sock) {
 #if defined (_WIN32) && WINVER >= _WIN32_WINNT_WIN10
 /* Windows 10 Version 1703 / Server 2016 */
 /* https://docs.microsoft.com/en-us/windows/win32/api/mstcpip/ns-mstcpip-tcp_info_v0 */
@@ -292,7 +292,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
         logClientClose ( pClient );
     }
     else if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
-        pClient->backlog = epicsSockCountUnsentBytes ( pClient->sock );
+        pClient->backlog = epicsSocketCountUnsentBytes ( pClient->sock );
         nSent -= pClient->backlog;
         if ( nSent > 0 ) {
             memmove ( pClient->msgBuf, & pClient->msgBuf[nSent],

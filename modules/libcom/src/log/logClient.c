@@ -226,7 +226,7 @@ static int epicsSocketCountUnsentBytes(SOCKET sock) {
     if (ioctl(sock, TIOCOUTQ, &unsent) == 0)
         return unsent;
 #endif
-    return 0;
+    return -1;
 }
 
 /* 
@@ -292,8 +292,11 @@ void epicsShareAPI logClientFlush ( logClientId id )
         logClientClose ( pClient );
     }
     else if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
-        pClient->backlog = epicsSocketCountUnsentBytes ( pClient->sock );
-        nSent -= pClient->backlog;
+        int backlog = epicsSocketCountUnsentBytes ( pClient->sock );
+        if (backlog >= 0) {
+            pClient->backlog = backlog;
+            nSent -= backlog;
+        }
         pClient->nextMsgIndex -= nSent;
         if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
             memmove ( pClient->msgBuf, & pClient->msgBuf[nSent],

@@ -77,7 +77,7 @@ void epicsShareAPI epicsShareAPI iocLogFlush (void)
 }
 
 /*
- * logClientDestroy()
+ * iocLogClientDestroy()
  */
 static void iocLogClientDestroy (logClientId id)
 {

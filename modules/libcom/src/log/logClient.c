@@ -294,10 +294,10 @@ void epicsShareAPI logClientFlush ( logClientId id )
     else if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
         pClient->backlog = epicsSocketCountUnsentBytes ( pClient->sock );
         nSent -= pClient->backlog;
-        if ( nSent > 0 ) {
+        pClient->nextMsgIndex -= nSent;
+        if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
             memmove ( pClient->msgBuf, & pClient->msgBuf[nSent],
                 pClient->nextMsgIndex );
-            pClient->nextMsgIndex -= nSent;
         }
     }
     epicsMutexUnlock ( pClient->mutex );

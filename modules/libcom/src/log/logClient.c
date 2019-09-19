@@ -570,16 +570,6 @@ void epicsShareAPI logClientShow (logClientId id, unsigned level)
 }
 
 /*
- * logClientSendMessage (); deprecated
- */
-void logClientSendMessage ( logClientId id, const char * message )
-{
-    if ( !iocLogDisable ) {
-        logClientSend (id, message);
-    }
-}
-
-/*
  * iocLogPrefix()
  */
 void epicsShareAPI iocLogPrefix(const char * prefix)

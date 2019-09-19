@@ -77,6 +77,16 @@ void epicsShareAPI epicsShareAPI iocLogFlush (void)
 }
 
 /*
+ * logClientSendMessage ()
+ */
+static void logClientSendMessage ( logClientId id, const char * message )
+{
+    if ( !iocLogDisable ) {
+        logClientSend (id, message);
+    }
+}
+
+/*
  * iocLogClientDestroy()
  */
 static void iocLogClientDestroy (logClientId id)
@@ -149,3 +159,4 @@ logClientId epicsShareAPI logClientInit (void)
 {
     return iocLogClientInit ();
 }
+

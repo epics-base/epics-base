@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "iocLog.h"

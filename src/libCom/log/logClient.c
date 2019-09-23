@@ -196,40 +196,6 @@ static void sendMessageChunk(logClient * pClient, const char * message) {
     }
 }
 
-/*
- * epicsSocketCountUnsentBytes ()
- * Should go to osd socket support
- */
-#if defined (_WIN32) && WINVER >= _WIN32_WINNT_WIN10
-#include <mstcpip.h>
-#endif
-
-static int epicsSocketCountUnsentBytes(SOCKET sock) {
-#if defined (_WIN32) && WINVER >= _WIN32_WINNT_WIN10
-/* Windows 10 Version 1703 / Server 2016 */
-/* https://docs.microsoft.com/en-us/windows/win32/api/mstcpip/ns-mstcpip-tcp_info_v0 */
-    DWORD infoVersion = 0, bytesReturned;
-    TCP_INFO_v0 tcpInfo;
-    int status;
-    if ((status = WSAIoctl(sock, SIO_TCP_INFO, &infoVersion, sizeof(infoVersion),
-        &tcpInfo, sizeof(tcpInfo), &bytesReturned, NULL, NULL)) == 0)
-        return tcpInfo.BytesInFlight;
-#elif defined (SO_NWRITE)
-/* macOS / iOS */
-/* https://www.unix.com/man-page/osx/2/setsockopt/ */
-    int unsent;
-    if (getsockopt(sock, SOL_SOCKET, SO_NWRITE, &unsent) == 0)
-        return unsent;
-#elif defined (TIOCOUTQ)
-/* Linux */
-/* https://linux.die.net/man/7/tcp */
-    int unsent;
-    if (ioctl(sock, TIOCOUTQ, &unsent) == 0)
-        return unsent;
-#endif
-    return -1;
-}
-
 /* 
  * logClientSend ()
  */
@@ -293,7 +259,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
         logClientClose ( pClient );
     }
     else if ( nSent > 0 && pClient->nextMsgIndex > 0 ) {
-        int backlog = epicsSocketCountUnsentBytes ( pClient->sock );
+        int backlog = epicsSocketUnsentCount ( pClient->sock );
         if (backlog >= 0) {
             pClient->backlog = backlog;
             nSent -= backlog;

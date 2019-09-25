@@ -37,7 +37,6 @@
 epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
 
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
-static void threadCleanupWIN32 ( void );
 
 typedef struct win32ThreadGlobal {
     CRITICAL_SECTION mutex;
@@ -218,15 +217,6 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
         return 0;
     }
 
-    crtlStatus = atexit ( threadCleanupWIN32 );
-    if ( crtlStatus ) {
-        TlsFree ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS );
-        DeleteCriticalSection ( & pWin32ThreadGlobal->mutex );
-        free ( pWin32ThreadGlobal );
-        pWin32ThreadGlobal = 0;
-        return 0;
-    }
-
     InterlockedExchange ( & initCompleted, 1 );
 
     return pWin32ThreadGlobal;
@@ -251,25 +241,6 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
         CloseHandle ( pParm->handle );
         free ( pParm );
         TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, 0 );
-    }
-}
-
-/*
- * threadCleanupWIN32 ()
- */
-static void threadCleanupWIN32 ( void )
-{
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    if ( ! pGbl )  {
-        fprintf ( stderr, "threadCleanupWIN32: unable to find ctx\n" );
-        return;
-    }
-
-    while ( ( pParm = ( win32ThreadParam * ) 
-        ellFirst ( & pGbl->threadList ) ) ) {
-        epicsParmCleanupWIN32 ( pParm );
     }
 }
 

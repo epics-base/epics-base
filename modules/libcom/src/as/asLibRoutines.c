@@ -79,6 +79,7 @@ static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc);
 */
 static void asInitializeOnce(void *arg)
 {
+    osiSockAttach();
     asLock  = epicsMutexMustCreate();
 }
 long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)

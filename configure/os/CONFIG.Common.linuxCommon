@@ -29,9 +29,9 @@ SHRLIBDIR_LDFLAGS += \
     $(SHRLIBDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
 
 # Set runtime path for products if USE_RPATH=YES and STATIC_BUILD=NO
-PRODDIR_RPATH_LDFLAGS_YES_NO = $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
+PRODDIR_RPATH_LDFLAGS_YES = $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
 PRODDIR_LDFLAGS += \
-    $(PRODDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH)_$(STATIC_BUILD))
+    $(PRODDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
 
 # Link libraries controlled by COMMANDLINE_LIBRARY
 # The newest Linux versions only need readline, older ones need both

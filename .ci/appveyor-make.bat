@@ -1,6 +1,6 @@
 :: Universal build script for AppVeyor (https://ci.appveyor.com/)
 :: Environment:
-::     TOOLCHAIN      -  toolchain version   [10.0/11.0/12.0/14.0/2017/cygwin/mingw]
+::     TOOLCHAIN      -  toolchain version   [10.0/11.0/12.0/14.0/2017/2019/cygwin/mingw]
 ::     CONFIGURATION  -  determines EPICS build   [dynamic/static]
 ::     PLATFORM       -  architecture   [x86/x64]
 ::
@@ -8,8 +8,16 @@
 
 Setlocal EnableDelayedExpansion
 
+:: we do not currently have a combined static and debug EPICS_HOST_ARCH target
+:: So a combined debug and static target will appear to be just static
+:: but debug will have been specified in CONFIG_SITE by appveyor-prepare.bat
 set "ST="
-if /i "%CONFIGURATION%"=="static" set ST=-static
+echo.%CONFIGURATION% | findstr /C:"debug">nul && (
+    set "ST=-debug"
+)
+echo.%CONFIGURATION% | findstr /C:"static">nul && (
+    set "ST=-static"
+)
 
 set OS=64BIT
 if "%PLATFORM%"=="x86" set OS=32BIT
@@ -56,6 +64,11 @@ if "%TOOLCHAIN%"=="mingw" (
     goto Finish
 )
 
+if "%TOOLCHAIN%"=="2019" (
+    echo [INFO] Setting strawberry perl path
+    set "PATH=c:\strawberry\perl\site\bin;C:\strawberry\perl\bin;%PATH%"
+)
+
 set "VSINSTALL=C:\Program Files (x86)\Microsoft Visual Studio %TOOLCHAIN%"
 if not exist "%VSINSTALL%\" set "VSINSTALL=C:\Program Files (x86)\Microsoft Visual Studio\%TOOLCHAIN%\Community"
 if not exist "%VSINSTALL%\" goto MSMissing
@@ -66,7 +79,7 @@ echo [INFO] APPVEYOR_BUILD_WORKER_IMAGE=%APPVEYOR_BUILD_WORKER_IMAGE%
 
 if "%OS%"=="64BIT" (
     set EPICS_HOST_ARCH=windows-x64%ST%
-    :: VS 2017
+    :: VS 2017/2019
     if exist "%VSINSTALL%\VC\Auxiliary\Build\vcvars64.bat" (
         call "%VSINSTALL%\VC\Auxiliary\Build\vcvars64.bat"
         where cl
@@ -91,7 +104,7 @@ if "%OS%"=="64BIT" (
     )
 ) else (
     set EPICS_HOST_ARCH=win32-x86%ST%
-    :: VS 2017
+    :: VS 2017/2019
     if exist "%VSINSTALL%\VC\Auxiliary\Build\vcvars32.bat" (
         call "%VSINSTALL%\VC\Auxiliary\Build\vcvars32.bat"
         where cl

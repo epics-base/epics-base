@@ -46,6 +46,8 @@ environment:
   - TOOLCHAIN: 14.0
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
     TOOLCHAIN: 2017
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    TOOLCHAIN: 2019
   - TOOLCHAIN: cygwin
   - TOOLCHAIN: mingw
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
@@ -82,6 +84,20 @@ build_script:
 
 test_script:
   - cmd: .ci/appveyor-make.bat runtests
+
+
+#---------------------------------#
+#         debugging               #
+#---------------------------------#
+
+## if you want to connect by remote desktop to a failed build, uncomment these lines
+## note that you will need to connect within the usual build timeout limit (60 minutes)
+## so you may want to adjust the build matrix above to just build the one of interest
+
+#on_failure:
+#  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 
 #---------------------------------#
 #         notifications           #

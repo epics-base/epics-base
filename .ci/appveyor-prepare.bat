@@ -11,10 +11,10 @@
 
 Setlocal EnableDelayedExpansion
 
-set OS=64BIT
-if "%PLATFORM%"=="x86" set OS=32BIT
+set MY_OS=64BIT
+if "%PLATFORM%"=="x86" set MY_OS=32BIT
 
-echo [INFO] Platform: %OS%
+echo [INFO] Platform: %MY_OS%
 
 :: with MSVC either static or debug can be handled as part
 :: of EPICS_HOST_ARCH but not both. So we set the appropriate
@@ -36,7 +36,7 @@ echo.%CONFIGURATION% | findstr /C:"debug">nul && (
 )
 
 if "%TOOLCHAIN%"=="cygwin" (
-    if "%OS%"=="64BIT" (
+    if "%MY_OS%"=="64BIT" (
         echo [INFO] Installing Cygwin 64bit and dependencies
         @powershell -Command "(new-object net.webclient).DownloadFile('http://www.cygwin.com/setup-x86_64.exe', 'C:\cygwin64\setup-x86_64.exe')"
         C:\cygwin64\setup-x86_64.exe -q -P "libreadline-devel,libncursesw-devel"

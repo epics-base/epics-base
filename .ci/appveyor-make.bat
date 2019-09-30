@@ -19,10 +19,10 @@ echo.%CONFIGURATION% | findstr /C:"static">nul && (
     set "ST=-static"
 )
 
-set OS=64BIT
-if "%PLATFORM%"=="x86" set OS=32BIT
+set MY_OS=64BIT
+if "%PLATFORM%"=="x86" set MY_OS=32BIT
 
-echo [INFO] Platform: %OS%
+echo [INFO] Platform: %MY_OS%
 
 :: Use parallel make, except for 3.14
 set "MAKEARGS=-j2 -Otarget"
@@ -30,7 +30,7 @@ if "%APPVEYOR_REPO_BRANCH%"=="3.14" set MAKEARGS=
 
 if "%TOOLCHAIN%"=="cygwin" (
     set "MAKE=make"
-    if "%OS%"=="64BIT" (
+    if "%MY_OS%"=="64BIT" (
         set "EPICS_HOST_ARCH=cygwin-x86_64"
         set "INCLUDE=C:\cygwin64\include;%INCLUDE%"
         set "PATH=C:\cygwin64\bin;%PATH%"
@@ -48,7 +48,7 @@ if "%TOOLCHAIN%"=="cygwin" (
 
 if "%TOOLCHAIN%"=="mingw" (
     set "MAKE=mingw32-make"
-    if "%OS%"=="64BIT" (
+    if "%MY_OS%"=="64BIT" (
         set "EPICS_HOST_ARCH=windows-x64-mingw"
         set "INCLUDE=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\include;%INCLUDE%"
         set "PATH=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin;%PATH%"
@@ -77,7 +77,7 @@ set "MAKE=C:\tools\make"
 
 echo [INFO] APPVEYOR_BUILD_WORKER_IMAGE=%APPVEYOR_BUILD_WORKER_IMAGE%
 
-if "%OS%"=="64BIT" (
+if "%MY_OS%"=="64BIT" (
     set EPICS_HOST_ARCH=windows-x64%ST%
     :: VS 2017/2019
     if exist "%VSINSTALL%\VC\Auxiliary\Build\vcvars64.bat" (
@@ -132,7 +132,7 @@ if "%OS%"=="64BIT" (
 )
 
 :MSMissing
-echo [INFO] Installation for MSVC Toolchain %TOOLCHAIN% / %OS% seems to be missing
+echo [INFO] Installation for MSVC Toolchain %TOOLCHAIN% / %MY_OS% seems to be missing
 exit 1
 
 :MSFound

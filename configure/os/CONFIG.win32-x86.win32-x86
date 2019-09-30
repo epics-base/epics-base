@@ -140,9 +140,11 @@ STATIC_LDLIBS_NO=
 STATIC_LDFLAGS=
 RANLIB=
 
+#
 # option needed for parallel builds with Visual Studio 2013 onward
 # VS2012 and above have VisualStudioVersion, so just need to exclude 2012 (11.0)
 # -FS Force Synchronous PDB Writes
+#
 ifneq ($(VisualStudioVersion),)
 ifneq ($(VisualStudioVersion),11.0)
   OPT_CXXFLAGS_NO += -FS

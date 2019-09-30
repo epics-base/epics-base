@@ -612,18 +612,12 @@ MAIN(epicsCalcTest)
     testExpr(0.0 + NaN);
     testExpr(Inf + 0.0);
     testExpr(Inf + Inf);
-#if defined(_WIN64) && defined(_MSC_VER)
+    // only test CALC as MSVC seems to incorrectly evaluate this expression at compile time.
+    // see note in epicsMathTest
     testCalc("Inf + -Inf", NaN);
-#else
-    testExpr(Inf + -Inf);
-#endif
     testExpr(Inf + NaN);
     testExpr(-Inf + 0.0);
-#if defined(_WIN64) && defined(_MSC_VER)
     testCalc("-Inf + Inf", NaN);
-#else
-    testExpr(-Inf + Inf);
-#endif
     testExpr(-Inf + -Inf);
     testExpr(-Inf + NaN);
     testExpr(NaN + 0.0);

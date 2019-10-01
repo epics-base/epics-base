@@ -1,6 +1,6 @@
 :: Universal build script for AppVeyor (https://ci.appveyor.com/)
 :: Environment:
-::     TOOLCHAIN      -  toolchain version   [10.0/11.0/12.0/14.0/2017/mingw]
+::     TOOLCHAIN      -  toolchain version   [10.0/11.0/12.0/14.0/2017/2019/mingw]
 ::     CONFIGURATION  -  determines EPICS build   [dynamic/static]
 ::     PLATFORM       -  architecture   [x86/x64]
 ::
@@ -8,13 +8,21 @@
 
 Setlocal EnableDelayedExpansion
 
+:: we do not currently have a combined static and debug EPICS_HOST_ARCH target
+:: So a combined debug and static target will appear to be just static
+:: but debug will have been specified in CONFIG_SITE by appveyor-prepare.bat
 set "ST="
-if /i "%CONFIGURATION%"=="static" set ST=-static
+echo.%CONFIGURATION% | findstr /C:"debug">nul && (
+    set "ST=-debug"
+)
+echo.%CONFIGURATION% | findstr /C:"static">nul && (
+    set "ST=-static"
+)
 
-set OS=64BIT
-if "%PLATFORM%"=="x86" set OS=32BIT
+set MY_OS=64BIT
+if "%PLATFORM%"=="x86" set MY_OS=32BIT
 
-echo [INFO] Platform: %OS%
+echo [INFO] Platform: %MY_OS%
 
 :: Use parallel make, except for 3.14
 set "MAKEARGS=-j2 -Otarget"
@@ -22,7 +30,7 @@ if "%APPVEYOR_REPO_BRANCH%"=="3.14" set MAKEARGS=
 
 if "%TOOLCHAIN%"=="mingw" (
     set "MAKE=mingw32-make"
-    if "%OS%"=="64BIT" (
+    if "%MY_OS%"=="64BIT" (
         set "EPICS_HOST_ARCH=windows-x64-mingw"
         set "INCLUDE=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\include;%INCLUDE%"
         set "PATH=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin;%PATH%"
@@ -38,6 +46,11 @@ if "%TOOLCHAIN%"=="mingw" (
     goto Finish
 )
 
+if "%TOOLCHAIN%"=="2019" (
+    echo [INFO] Setting strawberry perl path
+    set "PATH=c:\strawberry\perl\site\bin;C:\strawberry\perl\bin;%PATH%"
+)
+
 set "VSINSTALL=C:\Program Files (x86)\Microsoft Visual Studio %TOOLCHAIN%"
 if not exist "%VSINSTALL%\" set "VSINSTALL=C:\Program Files (x86)\Microsoft Visual Studio\%TOOLCHAIN%\Community"
 if not exist "%VSINSTALL%\" goto MSMissing
@@ -46,9 +59,9 @@ set "MAKE=C:\tools\make"
 
 echo [INFO] APPVEYOR_BUILD_WORKER_IMAGE=%APPVEYOR_BUILD_WORKER_IMAGE%
 
-if "%OS%"=="64BIT" (
+if "%MY_OS%"=="64BIT" (
     set EPICS_HOST_ARCH=windows-x64%ST%
-    :: VS 2017
+    :: VS 2017/2019
     if exist "%VSINSTALL%\VC\Auxiliary\Build\vcvars64.bat" (
         call "%VSINSTALL%\VC\Auxiliary\Build\vcvars64.bat"
         where cl
@@ -73,7 +86,7 @@ if "%OS%"=="64BIT" (
     )
 ) else (
     set EPICS_HOST_ARCH=win32-x86%ST%
-    :: VS 2017
+    :: VS 2017/2019
     if exist "%VSINSTALL%\VC\Auxiliary\Build\vcvars32.bat" (
         call "%VSINSTALL%\VC\Auxiliary\Build\vcvars32.bat"
         where cl
@@ -101,7 +114,7 @@ if "%OS%"=="64BIT" (
 )
 
 :MSMissing
-echo [INFO] Installation for MSVC Toolchain %TOOLCHAIN% / %OS% seems to be missing
+echo [INFO] Installation for MSVC Toolchain %TOOLCHAIN% / %MY_OS% seems to be missing
 exit 1
 
 :MSFound

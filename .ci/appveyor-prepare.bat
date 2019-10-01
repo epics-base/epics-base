@@ -52,8 +52,8 @@ curl -fsS --retry 3 -o C:\tools\make-4.2.1.zip https://epics.anl.gov/download/to
 cd \tools
 "C:\Program Files\7-Zip\7z" e make-4.2.1.zip
 
+set "PERLVER=5.30.0.1"
 if "%TOOLCHAIN%"=="2019" (
-    set "PERLVER=5.30.0.1"
     echo [INFO] Installing Strawberry Perl %PERLVER%
     curl -fsS --retry 3 -o C:\tools\perl-%PERLVER%.zip http://strawberryperl.com/download/%PERLVER%/strawberry-perl-%PERLVER%-64bit.zip
     cd \tools

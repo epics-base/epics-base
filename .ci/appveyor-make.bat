@@ -1,6 +1,6 @@
 :: Universal build script for AppVeyor (https://ci.appveyor.com/)
 :: Environment:
-::     TOOLCHAIN      -  toolchain version   [10.0/11.0/12.0/14.0/2017/cygwin/mingw]
+::     TOOLCHAIN      -  toolchain version   [10.0/11.0/12.0/14.0/2017/mingw]
 ::     CONFIGURATION  -  determines EPICS build   [dynamic/static]
 ::     PLATFORM       -  architecture   [x86/x64]
 ::
@@ -19,24 +19,6 @@ echo [INFO] Platform: %OS%
 :: Use parallel make, except for 3.14
 set "MAKEARGS=-j2 -Otarget"
 if "%APPVEYOR_REPO_BRANCH%"=="3.14" set MAKEARGS=
-
-if "%TOOLCHAIN%"=="cygwin" (
-    set "MAKE=make"
-    if "%OS%"=="64BIT" (
-        set "EPICS_HOST_ARCH=cygwin-x86_64"
-        set "INCLUDE=C:\cygwin64\include;%INCLUDE%"
-        set "PATH=C:\cygwin64\bin;%PATH%"
-        echo [INFO] Cygwin Toolchain 64bit
-    ) else (
-        set "EPICS_HOST_ARCH=cygwin-x86"
-        set "INCLUDE=C:\cygwin\include;%INCLUDE%"
-        set "PATH=C:\cygwin\bin;%PATH%"
-        echo [INFO] Cygwin Toolchain 32bit
-    )
-    echo [INFO] Compiler Version
-    gcc -v
-    goto Finish
-)
 
 if "%TOOLCHAIN%"=="mingw" (
     set "MAKE=mingw32-make"

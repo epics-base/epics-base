@@ -4,6 +4,7 @@
 \*************************************************************************/
 
 #define epicsExportSharedSymbols
+#define EPICS_PRIVATE_API
 #include "osiSock.h"
 #include <mstcpip.h>
 

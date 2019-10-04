@@ -3,6 +3,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+#define EPICS_PRIVATE_API
 #include "osiSock.h"
 
 /*
@@ -11,7 +12,8 @@
  */
 int epicsSocketUnsentCount(SOCKET sock) {
     int unsent;
-    if (getsockopt(sock, SOL_SOCKET, SO_NWRITE, &unsent) == 0)
+    socklen_t len = sizeof(unsent);
+    if (getsockopt(sock, SOL_SOCKET, SO_NWRITE, &unsent, &len) == 0)
         return unsent;
     return -1;
 }

@@ -4,6 +4,7 @@
 \*************************************************************************/
 
 #include <linux/sockios.h>
+#define EPICS_PRIVATE_API
 #include "osiSock.h"
 
 /*

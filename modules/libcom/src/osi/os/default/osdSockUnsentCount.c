@@ -3,6 +3,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+#define EPICS_PRIVATE_API
 #include "osiSock.h"
 
 /*

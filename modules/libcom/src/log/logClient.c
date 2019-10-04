@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#define EPICS_PRIVATE_API
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsEvent.h"

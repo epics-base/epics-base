@@ -16,6 +16,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+#  include <crtdbg.h>
+#endif
+
 #define epicsExportSharedSymbols
 #include "epicsThread.h"
 #include "epicsMutex.h"
@@ -57,6 +61,14 @@ static epicsThreadOnceId onceFlag = EPICS_THREAD_ONCE_INIT;
 static void testOnce(void *dummy) {
     testLock = epicsMutexMustCreate();
     perlHarness = (getenv("HARNESS_ACTIVE") != NULL);
+#ifdef _WIN32
+    _CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_FILE |_CRTDBG_MODE_DEBUG );
+    _CrtSetReportFile( _CRT_ASSERT, _CRTDBG_FILE_STDERR );
+    _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_FILE |_CRTDBG_MODE_DEBUG );
+    _CrtSetReportFile( _CRT_ERROR, _CRTDBG_FILE_STDERR );
+    _CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_FILE |_CRTDBG_MODE_DEBUG );
+    _CrtSetReportFile( _CRT_WARN, _CRTDBG_FILE_STDERR );
+#endif
 }
 
 void testPlan(int plan) {

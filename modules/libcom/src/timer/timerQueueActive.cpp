@@ -73,7 +73,7 @@ void timerQueueActive :: _printLastChanceExceptionMessage (
 { 
     char date[64];
     try {
-        epicsTime cur = epicsTime :: getCurrent ();
+        epicsTime cur = epicsTime :: getMonotonic ();
         cur.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
     }
     catch ( ... ) {
@@ -91,7 +91,7 @@ void timerQueueActive :: run ()
     epics::atomic::set(this->exitFlag, 0);
     while ( ! this->terminateFlag ) {
         try {
-            double delay = this->queue.process ( epicsTime::getCurrent() );
+            double delay = this->queue.process ( epicsTime::getMonotonic() );
             debugPrintf ( ( "timer thread sleeping for %g sec (max)\n", delay ) );
             this->rescheduleEvent.wait ( delay );
         }

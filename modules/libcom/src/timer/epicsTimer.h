@@ -118,7 +118,7 @@ inline double epicsTimer::getExpireDelay ()
 {
     epicsTimer::expireInfo info = this->getExpireInfo ();
     if ( info.active ) {
-        double delay = info.expireTime - epicsTime::getCurrent ();
+        double delay = info.expireTime - epicsTime::getMonotonic ();
         if ( delay < 0.0 ) {
             delay = 0.0;
         }

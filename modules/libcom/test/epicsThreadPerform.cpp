@@ -55,9 +55,9 @@ static void epicsThreadPriorityTest()
 
 static double threadSleepMeasureDelayError ( const double & delay )
 {
-    epicsTime beg = epicsTime::getCurrent();
+    epicsTime beg = epicsTime::getMonotonic();
     epicsThreadSleep ( delay );
-    epicsTime end = epicsTime::getCurrent();
+    epicsTime end = epicsTime::getMonotonic();
     double meas = end - beg;
     double error = fabs ( delay - meas );
     return error;
@@ -76,10 +76,10 @@ static double measureSleepQuantum (
         double interval = rand ();
         interval /= RAND_MAX;
         interval *= testInterval;
-        epicsTime start = epicsTime::getCurrent ();
+        epicsTime start = epicsTime::getMonotonic ();
         epicsTime current = start;
         while ( current - start < interval ) {
-            current = epicsTime::getCurrent ();
+            current = epicsTime::getMonotonic ();
         }
         errorSum += threadSleepMeasureDelayError ( testInterval );
         if ( i % ( iterations / 10 ) == 0 ) {
@@ -150,7 +150,7 @@ static void epicsThreadGetIdSelfPerfTest ()
 {
     static const unsigned N = 10000;
     static const double microSecPerSec = 1e6;
-    epicsTime begin = epicsTime::getCurrent ();
+    epicsTime begin = epicsTime::getMonotonic ();
     for ( unsigned i = 0u; i < N; i++ ) {
         epicsThreadGetIdSelf ();
         epicsThreadGetIdSelf ();
@@ -164,7 +164,7 @@ static void epicsThreadGetIdSelfPerfTest ()
         epicsThreadGetIdSelf ();
         epicsThreadGetIdSelf ();
     };
-    epicsTime end = epicsTime::getCurrent ();
+    epicsTime end = epicsTime::getMonotonic ();
     printf ( "It takes %f micro sec to call epicsThreadGetIdSelf ()\n",
         microSecPerSec * ( end - begin ) / (10 * N) );
 }
@@ -204,12 +204,12 @@ static void timeEpicsThreadPrivateGet ()
 {
     priv.set ( 0 );
 
-    epicsTime begin = epicsTime::getCurrent ();
+    epicsTime begin = epicsTime::getMonotonic ();
     static const unsigned N = 1000u;
     for ( unsigned i = 0u; i < N; i++ ) {
         callItTenTimesSquared ();
     }
-    double delay = epicsTime::getCurrent() - begin;
+    double delay = epicsTime::getMonotonic() - begin;
     delay /= N * 100u; // convert to sec per call
     delay *= 1e6; // convert to micro sec
     printf("epicsThreadPrivateGet() takes %f microseconds\n", delay);

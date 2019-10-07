@@ -156,9 +156,9 @@ static void eventWakeupTest(void)
 
 static double eventWaitMeasureDelayError( const epicsEventId &id, const double & delay )
 {
-    epicsTime beg = epicsTime::getCurrent();
+    epicsTime beg = epicsTime::getMonotonic();
     epicsEventWaitWithTimeout ( id, delay );
-    epicsTime end = epicsTime::getCurrent();
+    epicsTime end = epicsTime::getMonotonic();
     double meas = end - beg;
     double error = fabs ( delay - meas );
     testDiag("epicsEventWaitWithTimeout(%.6f)  delay error %.6f sec",

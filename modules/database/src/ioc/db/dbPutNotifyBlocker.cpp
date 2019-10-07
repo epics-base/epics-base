@@ -144,12 +144,12 @@ void dbPutNotifyBlocker::initiatePutNotify (
             break;
         }
         if ( beginTimeInit ) {
-            if ( epicsTime::getCurrent () - begin > 30.0 ) {
+            if ( epicsTime::getMonotonic () - begin > 30.0 ) {
                 throw cacChannel::requestTimedOut ();
             }
         }
         else {
-            begin = epicsTime::getCurrent ();
+            begin = epicsTime::getMonotonic ();
             beginTimeInit = true;
         }
         {

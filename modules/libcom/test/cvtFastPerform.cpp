@@ -147,11 +147,11 @@ void Perf :: measure (double srcD, float srcF, int prec)
 
         std::memset(buf, 0, sizeof(buf));
 
-        epicsTime beg = epicsTime :: getCurrent ();
+        epicsTime beg = epicsTime :: getMonotonic ();
         for ( unsigned i = 0; i < nIterations; i++ ) {
             c->target (srcD, srcF, buf, sizeof(buf) - 1, prec);
         }
-        epicsTime end = epicsTime :: getCurrent ();
+        epicsTime end = epicsTime :: getMonotonic ();
 
         double elapsed = end - beg;
         elapsed /= nIterations * nUnrolled;

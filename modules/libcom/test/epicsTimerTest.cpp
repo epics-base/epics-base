@@ -156,7 +156,7 @@ void testAccuracy ()
 
     expireCount = nTimers;
     for ( i = 0u; i < nTimers; i++ ) {
-        epicsTime cur = epicsTime::getCurrent ();
+        epicsTime cur = epicsTime::getMonotonic ();
         pTimers[i]->setBegin ( cur );
         pTimers[i]->start ( cur + pTimers[i]->delay () );
     }
@@ -253,7 +253,7 @@ void testCancel ()
         testDiag ( "cancelCount = %u", cancelVerify::cancelCount );
 
     testDiag ( "starting %d timers", nTimers );
-    epicsTime exp = epicsTime::getCurrent () + 4.0;
+    epicsTime exp = epicsTime::getMonotonic () + 4.0;
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i]->start ( exp );
     }
@@ -339,7 +339,7 @@ void testExpireDestroy ()
     testOk1 ( expireDestroyVerify::destroyCount == 0 );
 
     testDiag ( "starting %d timers", nTimers );
-    epicsTime cur = epicsTime::getCurrent ();
+    epicsTime cur = epicsTime::getMonotonic ();
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i]->start ( cur );
     }
@@ -432,7 +432,7 @@ void testPeriodic ()
     testOk1 ( timerCount == nTimers );
 
     testDiag ( "starting %d timers", nTimers );
-    epicsTime cur = epicsTime::getCurrent ();
+    epicsTime cur = epicsTime::getMonotonic ();
     for ( i = 0u; i < nTimers; i++ ) {
         pTimers[i]->start ( cur );
     }

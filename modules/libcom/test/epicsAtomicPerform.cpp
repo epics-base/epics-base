@@ -394,12 +394,12 @@ static const unsigned N = 10000;
 void recursiveOwnershipRetPerformance ()
 {
     RefCtr refCtr;
-    epicsTime begin = epicsTime::getCurrent ();
+    epicsTime begin = epicsTime::getMonotonic ();
     for ( size_t i = 0; i < N; i++ ) {
         Ownership ownership ( refCtr );
         recurRetOwner1000 ( ownership );
     }
-    double delay = epicsTime::getCurrent () -  begin;
+    double delay = epicsTime::getMonotonic () -  begin;
     delay /= N * 1000u; // convert to delay per call
     delay *= 1e6; // convert to micro seconds
     testDiag ( "retOwnership() takes %f microseconds", delay );
@@ -408,13 +408,13 @@ void recursiveOwnershipRetPerformance ()
 void ownershipPassRefPerformance ()
 {
     RefCtr refCtr;
-    epicsTime begin = epicsTime::getCurrent ();
+    epicsTime begin = epicsTime::getMonotonic ();
     for ( size_t i = 0; i < N; i++ ) {
         Ownership ownershipSrc ( refCtr );
         Ownership ownershipDest;
         passRefOwnership1000 ( ownershipSrc, ownershipDest );
     }
-    double delay = epicsTime::getCurrent () -  begin;
+    double delay = epicsTime::getMonotonic () -  begin;
     delay /= N * 1000u; // convert to delay per call
     delay *= 1e6; // convert to micro seconds
     testDiag ( "passRefOwnership() takes %f microseconds", delay );
@@ -456,7 +456,7 @@ void Ten < T > :: diagnostic ( double delay )
 template < class T >
 void measurePerformance ()
 {
-    epicsTime begin = epicsTime::getCurrent ();
+    epicsTime begin = epicsTime::getMonotonic ();
     T target;
     for ( size_t i = 0; i < N; i++ ) {
         target.run ();
@@ -470,7 +470,7 @@ void measurePerformance ()
         target.run ();
         target.run ();
     }
-    double delay = epicsTime::getCurrent () -  begin;
+    double delay = epicsTime::getMonotonic () -  begin;
     delay /= ( N * 10u ); // convert to delay per call
     target.diagnostic ( delay );
 }

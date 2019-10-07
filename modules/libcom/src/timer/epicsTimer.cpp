@@ -173,7 +173,7 @@ extern "C" double epicsShareAPI
     epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId pQueue )
 {
     try {
-        return pQueue->process ( epicsTime::getCurrent() );
+        return pQueue->process ( epicsTime::getMonotonic() );
     }
     catch ( ... ) {
         return 1.0;

@@ -59,7 +59,7 @@ int main ( int argc, char ** argv )
     epicsMutex mutex;
     epicsGuard < epicsMutex > guard ( mutex );
     bheFreeStoreMgr bheFreeList;
-    epicsTime programBeginTime = epicsTime::getCurrent ();
+    epicsTime programBeginTime = epicsTime::getMonotonic ();
     bool validCommandLine = false;
     unsigned interest = 0u;
     SOCKET sock;
@@ -244,7 +244,7 @@ int main ( int argc, char ** argv )
                 ca_uint32_t beaconNumber = ntohl ( pCurMsg->m_cid );
                 unsigned protocolRevision = ntohs ( pCurMsg->m_dataType );
 
-                epicsTime currentTime = epicsTime::getCurrent();
+                epicsTime currentTime = epicsTime::getMonotonic();
 
                 /*
                  * look for it in the hash table

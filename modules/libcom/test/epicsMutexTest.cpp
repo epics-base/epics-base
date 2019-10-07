@@ -168,32 +168,32 @@ void epicsMutexPerformance ()
 	unsigned i;
 
     // test a single lock pair
-    epicsTime begin = epicsTime::getCurrent ();
+    epicsTime begin = epicsTime::getMonotonic ();
     static const unsigned N = 1000;
     for ( i = 0; i < N; i++ ) {
         tenLockPairsSquared ( mutex );
     }
-    double delay = epicsTime::getCurrent () -  begin;
+    double delay = epicsTime::getMonotonic () -  begin;
     delay /= N * 100u; // convert to delay per lock pair
     delay *= 1e6; // convert to micro seconds
     testDiag("lock()*1/unlock()*1 takes %f microseconds", delay);
 
     // test a two times recursive lock pair
-    begin = epicsTime::getCurrent ();
+    begin = epicsTime::getMonotonic ();
     for ( i = 0; i < N; i++ ) {
         tenDoubleRecursiveLockPairsSquared ( mutex );
     }
-    delay = epicsTime::getCurrent () -  begin;
+    delay = epicsTime::getMonotonic () -  begin;
     delay /= N * 100u; // convert to delay per lock pair
     delay *= 1e6; // convert to micro seconds
     testDiag("lock()*2/unlock()*2 takes %f microseconds", delay);
 
     // test a four times recursive lock pair
-    begin = epicsTime::getCurrent ();
+    begin = epicsTime::getMonotonic ();
     for ( i = 0; i < N; i++ ) {
         tenQuadRecursiveLockPairsSquared ( mutex );
     }
-    delay = epicsTime::getCurrent () -  begin;
+    delay = epicsTime::getMonotonic () -  begin;
     delay /= N * 100u; // convert to delay per lock pair
     delay *= 1e6; // convert to micro seconds
     testDiag("lock()*4/unlock()*4 takes %f microseconds", delay);

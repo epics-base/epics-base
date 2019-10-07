@@ -476,7 +476,7 @@ void tcpRecvThread::run ()
             statusWireIO stat;
             pComBuf->fillFromWire ( this->iiu, stat );
 
-            epicsTime currentTime = epicsTime::getCurrent ();
+            epicsTime currentTime = epicsTime::getMonotonic ();
 
             {
                 epicsGuard < epicsMutex > guard ( this->iiu.mutex );
@@ -1669,7 +1669,7 @@ bool tcpiiu::sendThreadFlush ( epicsGuard < epicsMutex > & guard )
 
     if ( this->sendQue.occupiedBytes() > 0 ) {
         while ( comBuf * pBuf = this->sendQue.popNextComBufToSend () ) {
-            epicsTime current = epicsTime::getCurrent ();
+            epicsTime current = epicsTime::getMonotonic ();
 
             unsigned bytesToBeSent = pBuf->occupiedBytes ();
             bool success = false;

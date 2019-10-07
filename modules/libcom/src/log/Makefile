@@ -19,7 +19,7 @@ iocLogServer_SRCS = iocLogServer.c
 iocLogServer_LIBS = Com
 
 iocLogServer_SYS_LIBS_solaris += socket
-iocLogServer_SYS_LIBS_WIN32   += user32 ws2_32
+iocLogServer_SYS_LIBS_WIN32   += user32 ws2_32 dbghelp
 
 SCRIPTS_HOST = S99logServer
 

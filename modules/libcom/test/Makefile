@@ -217,8 +217,17 @@ epicsMessageQueueTest_SRCS += epicsMessageQueueTest.cpp
 testHarness_SRCS += epicsMessageQueueTest.cpp
 TESTS += epicsMessageQueueTest
 
+# we need to build this with debug symbols in all configurations
+# otherwise the test will not be able to lookup names and so fail
 TESTPROD_HOST += epicsStackTraceTest
 epicsStackTraceTest_SRCS += epicsStackTraceTest.c
+ifneq ($(findstring mingw,$(T_A)),)
+epicsStackTraceTest_CFLAGS_WIN32 += -g -O0
+epicsStackTraceTest_LDFLAGS_WIN32 += -g
+else
+epicsStackTraceTest_CFLAGS_WIN32 += -Zi
+epicsStackTraceTest_LDFLAGS_WIN32 += -DEBUG
+endif
 testHarness_SRCS += epicsStackTraceTest.c
 TESTS += epicsStackTraceTest
 

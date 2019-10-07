@@ -106,7 +106,7 @@ findStringOcc(const char *buf, const char *what)
     while ( (buf = strstr(buf, what)) ) {
         /* Is it just a prefix? */
         ch = buf[l];
-        if ( ! isalnum(ch) && '_' != ch ) {
+        if ( ! isalnum(ch) && '_' != ch && '.' != ch ) {
             rval++;
         }
         buf += l;

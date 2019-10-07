@@ -32,4 +32,4 @@ LOADABLE_SHRLIB_LDFLAGS = -shared \
 GNU_LDLIBS_YES =
 
 # Link with system libraries
-OP_SYS_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
+OP_SYS_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm -ldbghelp

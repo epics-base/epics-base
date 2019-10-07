@@ -30,6 +30,13 @@ release.</p>
 
 -->
 
+<h3>Timers and delays use monotonic clock</h3>
+
+<p>Many internal timers and delay calculations use a monotonic clock
+epicsTimeGetMonotonic() instead of the realtime epicsTimeGetCurrent().
+This is intended to make IOCs less susceptible to jumps in system
+time.</p>
+
 <h3>Iocsh &quot;on error ...&quot;</h3>
 
 <p>A new statement is added to enable IOC shell commands

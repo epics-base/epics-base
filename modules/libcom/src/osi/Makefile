@@ -123,6 +123,7 @@ Com_SRCS += osdMonotonic.c
 Com_SRCS += osdProcess.c
 Com_SRCS += osdNetIntf.c
 Com_SRCS += osdMessageQueue.c
+Com_SRCS += osdgetexec.c
 
 Com_SRCS += devLibVME.c
 Com_SRCS += devLibVMEOSD.c

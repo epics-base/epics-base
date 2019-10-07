@@ -196,6 +196,13 @@ ifeq ($(EPICS_HOST_ARCH),$(T_A))
 	$(info Warning: RELEASE file consistency checks have been disabled)
 endif
 
+# $(FINAL_DIR) signals eventual install locations to makeRPath script
+$(TESTPRODNAME): FINAL_DIR=.
+$(PRODNAME): FINAL_DIR=$(INSTALL_BIN)
+$(TESTSHRLIBNAME): FINAL_DIR=.
+$(SHRLIBNAME): FINAL_DIR=$(INSTALL_SHRLIB)
+$(LOADABLE_SHRLIBNAME): FINAL_DIR=$(INSTALL_SHRLIB)
+
 #---------------------------------------------------------------
 #  The order of the following rules is
 #  VERY IMPORTANT !!!!

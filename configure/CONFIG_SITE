@@ -169,10 +169,18 @@ EPICS_SITE_VERSION =
 GCC_PIPE = NO
 
 # Set RPATH when linking executables and libraries.
-#  Must be either YES or NO.  If you set this to NO you must also provide a
+#  Must be either YES, NO, or ORIGIN.  If you set this to NO you must also provide a
 #  way for Base executables to find their shared libraries when they are
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
+#  ORIGIN is a feature of the ELF executable format used by Linux, freebsd, and solaris.
 LINKER_USE_RPATH = YES
+
+# Only used when LINKER_USE_RPATH=ORIGIN
+# The build time root(s) of the relocatable tree (separate multiple w/ ':').
+# Linking to libraries under any root directory will be relative.
+# Linking to libraries outside of this root will be absolute.
+# All root directories are considered to be the same.
+LINKER_ORIGIN_ROOT = $(INSTALL_LOCATION)
 
 # Overrides for the settings above may appear in a CONFIG_SITE.local file
 -include $(CONFIG)/CONFIG_SITE.local

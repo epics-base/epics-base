@@ -246,6 +246,11 @@ TESTS += yajlTest
 endif
 endif
 
+TESTPROD_HOST += iocshTest
+iocshTest_SRCS += iocshTest.cpp
+TESTS += iocshTest
+TESTFILES += $(wildcard ../iocshTest*.cmd)
+
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c
 
@@ -305,3 +310,6 @@ endif
 endif
 
 include $(TOP)/configure/RULES
+
+rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
+	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)

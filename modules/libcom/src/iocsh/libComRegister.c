@@ -77,7 +77,7 @@ static const iocshFuncDef chdirFuncDef = {"cd",1,chdirArgs};
 static void chdirCallFunc(const iocshArgBuf *args)
 {
     if (args[0].sval == NULL ||
-        chdir(args[0].sval)) {
+        iocshSetError(chdir(args[0].sval))) {
         fprintf(stderr, "Invalid directory path, ignored\n");
     }
 }

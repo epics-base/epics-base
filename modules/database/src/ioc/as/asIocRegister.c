@@ -39,7 +39,7 @@ static void asSetSubstitutionsCallFunc(const iocshArgBuf *args)
 static const iocshFuncDef asInitFuncDef = {"asInit",0};
 static void asInitCallFunc(const iocshArgBuf *args)
 {
-    asInit();
+    iocshSetError(asInit());
 }
 
 /* asdbdump */

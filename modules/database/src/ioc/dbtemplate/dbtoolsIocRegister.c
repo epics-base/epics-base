@@ -22,7 +22,7 @@ static const iocshFuncDef dbLoadTemplateFuncDef =
     {"dbLoadTemplate", 2, dbLoadTemplateArgs};
 static void dbLoadTemplateCallFunc(const iocshArgBuf *args)
 {
-    dbLoadTemplate(args[0].sval, args[1].sval);
+    iocshSetError(dbLoadTemplate(args[0].sval, args[1].sval));
 }
 
 

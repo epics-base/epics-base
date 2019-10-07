@@ -22,28 +22,28 @@
 static const iocshFuncDef iocInitFuncDef = {"iocInit",0,NULL};
 static void iocInitCallFunc(const iocshArgBuf *args)
 {
-    iocInit();
+    iocshSetError(iocInit());
 }
 
 /* iocBuild */
 static const iocshFuncDef iocBuildFuncDef = {"iocBuild",0,NULL};
 static void iocBuildCallFunc(const iocshArgBuf *args)
 {
-    iocBuild();
+    iocshSetError(iocBuild());
 }
 
 /* iocRun */
 static const iocshFuncDef iocRunFuncDef = {"iocRun",0,NULL};
 static void iocRunCallFunc(const iocshArgBuf *args)
 {
-    iocRun();
+    iocshSetError(iocRun());
 }
 
 /* iocPause */
 static const iocshFuncDef iocPauseFuncDef = {"iocPause",0,NULL};
 static void iocPauseCallFunc(const iocshArgBuf *args)
 {
-    iocPause();
+    iocshSetError(iocPause());
 }
 
 /* coreRelease */
@@ -77,7 +77,7 @@ static const iocshArg * const systemArgs[] = {&systemArg0};
 static const iocshFuncDef systemFuncDef = {"system",1,systemArgs};
 static void systemCallFunc(const iocshArgBuf *args)
 {
-    system(args[0].sval);
+    iocshSetError(system(args[0].sval));
 }
 #endif
 

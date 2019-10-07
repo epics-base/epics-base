@@ -275,7 +275,7 @@ static const iocshFuncDef rrddFuncDef =
     {"$subname", 1, rrddArgs};
 static void rrddCallFunc(const iocshArgBuf *)
 {
-    $subname(*iocshPpdbbase);
+    iocshSetError($subname(*iocshPpdbbase));
 }
 
 } // extern "C"

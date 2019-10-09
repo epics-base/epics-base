@@ -227,9 +227,8 @@ epicsThread::~epicsThread () throw ()
         char nameBuf [256];
         this->getName ( nameBuf, sizeof ( nameBuf ) );
         fprintf ( stderr,
-            "epicsThread::~epicsThread(): "
-            "blocking for thread \"%s\" to exit\n",
-            nameBuf );
+            "epicsThread::~epicsThread(): \"%s\" blocking for thread \"%s\" to exit\n",
+            getNameSelf(), nameBuf );
         fprintf ( stderr,
             "was epicsThread object destroyed before thread exit ?\n");
     }

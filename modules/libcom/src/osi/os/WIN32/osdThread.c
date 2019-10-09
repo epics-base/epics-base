@@ -174,7 +174,6 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
     static win32ThreadGlobal * pWin32ThreadGlobal = 0;
     static LONG initStarted = 0;
     static LONG initCompleted = 0;
-    int crtlStatus;
     LONG started;
     LONG done;
 
@@ -231,7 +230,9 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
     }
 
     if ( pParm ) {
-        if(epicsAtomicDecrIntT(&pParm->refcnt) > 0) return;
+        int cnt = epicsAtomicDecrIntT(&pParm->refcnt);
+        if(cnt > 0) return;
+        assert(cnt==0);
 
         /* fprintf ( stderr, "thread %s is exiting\n", pParm->pName ); */
         EnterCriticalSection ( & pGbl->mutex );
@@ -439,21 +440,6 @@ epicsShareFunc unsigned int epicsShareAPI
     return stackSizeTable[stackSizeClass];
 }
 
-void epicsThreadCleanupWIN32 ()
-{
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    if ( ! pGbl )  {
-        fprintf ( stderr, "epicsThreadCleanupWIN32: unable to find ctx\n" );
-        return;
-    }
-
-    pParm = ( win32ThreadParam * ) 
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-    epicsParmCleanupWIN32 ( pParm );
-}
-
 /*
  * epicsWin32ThreadEntry()
  */
@@ -487,7 +473,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     /*
      * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!
      */
-    TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, 0 );
+    TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, (void*)0xdeadbeef );
     epicsParmCleanupWIN32 ( pParm );
 
     return retStat; /* this indirectly closes the thread handle */

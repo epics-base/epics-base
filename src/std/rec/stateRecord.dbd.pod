@@ -14,7 +14,7 @@ interface. Its only function is to provide a place in the database through which
 the state program can inform the operator interface of its state by storing an
 arbitrary ASCII string in its VAL field.
 
-B<Note that this record is deprecated and will probably be removed from future EPICS base releases.>
+B<Note this record is deprecated and is likely to be removed in a future EPICS release.>
 
 =head2 Contents
 
@@ -55,31 +55,28 @@ B<Note that this record is deprecated and will probably be removed from future E
 =cut
 
 recordtype(state) {
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 
 =head2 Parameter Fields
 
 =head3 Scan Parameters
 
 The state record has the standard fields for specifying under what circumstances
-it will be processed. These fields are listed in 
-L<Scan Fields|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Scan_Fields>. 
-In addition,
-L<Scanning Specification|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Concepts#Scanning_Specification> 
-explains how these fields are used.
+it will be processed. These fields are listed in L<Scan Fields>. In addition,
+L<Scanning Specification> explains how these fields are used.
 
 =head3 Operator Display Parameters
 
-See L<Fields Common to All Record Types|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Fields_Common_to_All_Record_Types> 
-for more on the record name (NAME) and description (DESC) fields.
+See L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
 
 =fields NAME, DESC
 
 =head3 Alarm Parameters
 
-The state record has the alarm parameters common to all record types.  
-L<Alarm Fields|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Alarm_Fields> 
-lists other fields related to a alarms that are common to all record types.
+The state record has the alarm parameters common to all record types.
+L<Alarm Fields> lists other fields related to a alarms that are common to all
+record types.
 
 =head3 Run-time Parameters
 
@@ -87,7 +84,7 @@ These parameters are used by the application code to convey the state of the
 program to the operator interface. The VAL field holds the string retrieved from
 the state program. The OVAL is used to implement monitors for the VAL field.
 When the string in OVAL differs from the one in VAL, monitors are triggered.
-They represent the current state of the sequence program. 
+They represent the current state of the sequence program.
 
 =fields VAL, OVAL
 
@@ -115,8 +112,8 @@ They represent the current state of the sequence program.
 
   long (*process)(struct dbCommon *precord)
 
-process triggers monitors on VAL when it changes and scans the forward link if
-necessary.
+C<process()> triggers monitors on VAL when it changes and scans the forward
+link if necessary.
 
 =cut
 

@@ -1490,7 +1490,7 @@ written like this to prevent it from compiling:
     #if defined(VERSION_INT) && EPICS_VERSION_INT < VERSION_INT(3,15,0,0)
     #  error EPICS Base R3.15.0 or later is required
     #endif
-    ```
+```
 
 ### Added support for iocLogPrefix
 

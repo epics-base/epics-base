@@ -77,7 +77,7 @@ menu(stringinPOST) {
 	choice(stringinPOST_Always,"Always")
 }
 recordtype(stringin) {
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(VAL,DBF_STRING) {
 		prompt("Current Value")
 		promptgroup("40 - Input")
@@ -91,11 +91,8 @@ recordtype(stringin) {
 =head3 Scan Parameters
 
 The string input record has the standard fields for specifying under what
-circumstances it will be processed. These fields are listed in 
-L<Scan Fields|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Scan_Fields>.
-In addition, 
-L<Scanning Specification|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Concepts#Scanning_Specification> 
-explains how these fields are used.
+circumstances it will be processed. These fields are listed in L<Scan Fields>.
+In addition, L<Scanning Specification> explains how these fields are used.
 
 =head3 Read Parameters
 
@@ -107,8 +104,7 @@ placed in the VAL field. The maximum number of characters that the string in VAL
 can be is 40. In addition, the appropriate device support module must be entered
 into the DTYP field.
 
-See L<Address Specification|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Concepts#Address_Specification> 
-for information on specifying links.
+See L<Address Specification> for information on specifying links.
 
 =fields VAL, INP, DTYP
 
@@ -122,7 +118,7 @@ for information on specifying links.
 
 =head3 Monitor Parameters
 
-These parameters are used to specify when the monitor post should be sent by 
+These parameters are used to specify when the monitor post should be sent by
 C<monitor()> routine. There are two possible choices:
 
 =head4 Menu stringinPOST
@@ -150,16 +146,16 @@ APST is used for archiver monitors and MPST is for all other type of monitors.
 
 =head3 Operator Display Parameters
 
-See L<Fields Common to All Record Types|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Fields_Common_to_All_Record_Types> 
-for more on the record name (NAME) and description (DESC) fields.
+See L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
 
 =fields NAME, DESC
 
 =head3 Alarm Parameters
 
 The string input record has the alarm parameters common to all record types.
-L<Alarm Fields|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_dbCommon#Alarm_Fields> 
-lists other fields related to a alarms that are common to all record types.
+L<Alarm Fields> lists other fields related to a alarms that are common to all
+record types.
 
 =head3 Run-time and Simulation Mode Parameters
 
@@ -171,9 +167,7 @@ monitors for VAL. If VAL is not equal to OVAL, then monitors are triggered.
 
 
 The following fields are used to operate the string input in the simulation
-mode. See 
-L<Simulation Mode|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Common#Simulation_Mode> 
-for more information on simulation mode fields.
+mode. See L<Simulation Mode> for more information on simulation mode fields.
 
 =fields SIOL, SVAL, SIML, SIMM, SIMS
 
@@ -259,9 +253,8 @@ record. Thus error storms will not occur.
 
 =item 2.
 
-readValue is called. See 
-L<Simulation Mode|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Common#Simulation_Mode> 
-for more information on simulation mode fields and how they affect input.
+readValue is called. See L<Simulation Mode> for more information on simulation
+mode fields and how they affect input.
 
 =item 3.
 
@@ -350,7 +343,7 @@ to a string and stored into VAL by C<init_record()>, and UDF is set to FALSE. If
 the INP link type is PV_LINK, then dbCaAddInlink is called by C<init_record()>.
 
 read_stringin calls recGblGetLinkValue to read the current value of VAL. See
-L<Soft Input|https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Common#Soft_Input>.
+L<Soft Input>.
 
 If the return status of recGblGetLinkValue is zero, then read_stringin sets UDF
 to FALSE. The status of recGblGetLinkValue is returned.

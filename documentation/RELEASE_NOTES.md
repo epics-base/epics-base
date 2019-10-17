@@ -6,6 +6,14 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
+### `make test-results` for Windows
+
+The make target `test-results` should now work properly on Windows. Some Perl
+installations used versions of `prove.bat` that would only display the results of
+up to 3 tests or didn't return an error status in the event of tests failing. The
+build system now calls its own perl script to summarize the results instead of
+passing a list of TAP filenames to `prove`.
+
 ### Add option to avoid CALLBACK conflict
 
 If a macro `EPICS_NO_CALLBACK` is defined, then callback.h will no longer (re)define CALLBACK.
@@ -235,23 +243,23 @@ built-in self-test programs and viewing the results. Since these targets are
 intended for limited use they can have requirements for the build host which
 go beyond the standard minimum set needed to build and run Base.
 
-#### `test-results` — Summarize test results
+#### `test-results` - Summarize test results
 
 The new make target `test-results` will run the self-tests if
 necessary to generate a TAP file for each test, then summarizes the TAP output
 files in each test directory in turn, displaying the details of any failures.
-This step uses the program “prove” which comes with Perl, but also needs
-“cat” to be provided in the default search path so will not work on most
+This step uses the program `prove` which comes with Perl, but also needs
+`cat` to be provided in the default search path so will not work on most
 Windows systems.
 
-#### `junitfiles` — Convert test results to JUnit XML Format
+#### `junitfiles` - Convert test results to JUnit XML Format
 
 The new make target `junitfiles` will run the self-tests if necessary
 and then convert the TAP output files into the more commonly-supported JUnit
 XML format. The program that performs this conversion needs the Perl module
-“`XML::Generator`” to have been installed.
+`XML::Generator` to have been installed.
 
-#### `clean-tests` — Delete test result files
+#### `clean-tests` - Delete test result files
 
 The new make target `clean-tests` removes any test result files from
 previous test runs. It cleans both TAP and JUnit XML files.
@@ -1103,11 +1111,11 @@ configured to have a lower severity or even no alarm when undefined. Be careful
 when changing this on applications where the IVOA field of output records is
 used, IVOA still requires an INVALID severity to trigger value replacement.
 
-### New build target “tapfiles”
+### New build target `tapfiles`
 
-This new make target runs the same tests as the “runtests” target, but
+This new make target runs the same tests as the `runtests` target, but
 instead of summarizing or displaying the output for each test script it creates
-a “.tap” file inside the architecture build directory which contains the
+a `.tap` file inside the architecture build directory which contains the
 detailed test output. The output file can be parsed by continuous integration
 packages such as [Jenkins](http://www.jenkins-ci.org/) to show the
 test results.

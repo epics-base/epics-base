@@ -40,16 +40,16 @@ configuration:
 # Environment variables: compiler toolchain
 environment:
   matrix:
-  - TOOLCHAIN: 10.0
-  - TOOLCHAIN: 11.0
-  - TOOLCHAIN: 12.0
-  - TOOLCHAIN: 14.0
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-    TOOLCHAIN: 2017
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-    TOOLCHAIN: 2019
   - TOOLCHAIN: mingw
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    TOOLCHAIN: 2019
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    TOOLCHAIN: 2017
+  - TOOLCHAIN: 14.0
+  - TOOLCHAIN: 12.0
+  - TOOLCHAIN: 11.0
+  - TOOLCHAIN: 10.0
 
 # Platform: architecture
 platform:
@@ -62,6 +62,19 @@ matrix:
   # VS Express installs don't have the 64 bit compiler
   - platform: x64
     TOOLCHAIN: 10.0
+  # Exclude to reduce total job runtime
+  # skip 64-bit for older and 32-bit for newer
+  - platform: x64
+    TOOLCHAIN: 11.0
+  - platform: x86
+    TOOLCHAIN: mingw
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+  - platform: x86
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    TOOLCHAIN: 2019
+  - platform: x86
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    TOOLCHAIN: 2017
 
 
 #---------------------------------#

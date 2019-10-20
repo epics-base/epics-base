@@ -6,6 +6,22 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
+### Imported Record Reference Documentation from Wiki
+
+The remaining record types that had 3.14 reference documentation in the EPICS
+Wiki have had that documentation converted and imported into their DBD files.
+The preferred form for future updates to the record type descriptions is now an
+emailed patch file, a Pull Request through GitHub, or a Merge Request through
+Launchpad. Note that in some cases the behavior of a record type in a 7.0.x
+release may differ from that of the same record type in a 3.15 release, although
+this would be unusual, so it may be important to indicate the branch that your
+changes apply to.
+
+**NOTE:** *These documentation changes may have modified the order of the fields
+in some record definitions, in which case this release will not be compatible
+with record or device support binaries that were compiled against an earlier
+release.*
+
 ### `make test-results` for Windows
 
 The make target `test-results` should now work properly on Windows. Some Perl

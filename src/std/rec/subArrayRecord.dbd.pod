@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 Sub-Array Record (subArray)
+=title Sub-Array Record (subArray)
 
 The normal use for the subArray record type is to obtain sub-arrays from
 waveform records. Setting either the number of elements (NELM) or index (INDX)
@@ -23,64 +23,6 @@ elements actually available are returned, and the number of elements read field
 (NORD) is set to reflect this. This record type does not support writing new
 values into waveform records.
 
-=head2 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Read Parameters>
-
-=item * L<Array Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines (subArrayRecord.c)>
-
-=item * L<Record Processing>
-
-=item * L<Example Synchronous Subroutine>
-
-=item * L<Example Asynchronous Subroutine>
-
-=back
-
-=item * L<Device Support>
-
-=over
-
-=item * L<Fields Of Interest To Device Support>
-
-=item * L<Device Support Routines (devSASoft.c)>
-
-=item * L<Device Support For Soft Records>
-
-=back
-
-=back
-
-=begin html
-
-<br>
-<hr>
-<br>
-
-=end html
-
 =recordtype subArray
 
 =cut
@@ -89,14 +31,14 @@ recordtype(subArray) {
 
 =head2 Parameter Fields
 
+The record-specific fields are described below, grouped by functionality.
+
 =head3 Scan Parameters
 
 The subArray record has the standard fields for specifying under what
 circumstances the record will be processed. These fields are listed in
 L<Scan Fields>.
-In addition,
-L<Scanning Specification>
-explains how these fields are used.
+In addition, L<Scanning Specification> explains how these fields are used.
 
 =head3 Read Parameters
 
@@ -186,7 +128,7 @@ BPTR contains a pointer to the record's array.
 
 =head2 Record Support
 
-=head3 Record Support Routines (subArrayRecord.c)
+=head3 Record Support Routines
 
 =head4 init_record
 
@@ -372,7 +314,7 @@ INP is expected to point to a waveform record.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
 		asl(ASL0)

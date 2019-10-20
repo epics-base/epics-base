@@ -7,63 +7,13 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 B<Multi-Bit Binary Output Direct Record (mbboDirect)>
+=title Multi-Bit Binary Output Direct Record (mbboDirect)
 
 The mbboDirect record performs the opposite function to that of the mbbiDirect
 record. It accumulates bits (in the fields B0 - BF) as unsigned characters, and
 converts them to a word which is then written out to hardware. If a bit field is
 non-zero, it is interpreted as a binary 1. On the other hand, if it is zero, it
 is interpreted as a binary 0.
-
-=head1 L<Contents>
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Convert and Write Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time and Simulation Mode Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines>
-
-=item * L<Record Processing>
-
-=back
-
-=item * L<Device Support>
-
-=over
-
-=item * L<Fields Of Interest To Device Support>
-
-=item * L<Device Support Routines>
-
-=item * L<Device Support For Soft Records>
-
-=back
-
-=back
-
-=begin html
-
-<br><hr><br>
-
-=end html
 
 =recordtype mbboDirect
 
@@ -73,21 +23,7 @@ recordtype(mbboDirect) {
 
 =head2 Parameter Fields
 
-The mbboDirect record's fields fall into the following categories:
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Convert and Write Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time and Simulation Mode Parameters>
-
-=back
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -153,7 +89,7 @@ description (DESC) fields.
 
 =cut
 
-    include "dbCommon.dbd" 
+    include "dbCommon.dbd"
     field(VAL,DBF_USHORT) {
         prompt("Word")
         promptgroup("50 - Output")

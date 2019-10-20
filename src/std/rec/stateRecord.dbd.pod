@@ -7,48 +7,14 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 State Record (state)
+=title State Record (state)
 
 The state record is a means for a state program to communicate with the operator
 interface. Its only function is to provide a place in the database through which
 the state program can inform the operator interface of its state by storing an
 arbitrary ASCII string in its VAL field.
 
-B<Note this record is deprecated and is likely to be removed in a future EPICS release.>
-
-=head2 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines (stateRecord.c)>
-
-=back
-
-=back
-
-=begin html
-
-<br>
-<hr>
-<br>
-
-=end html
+B<Note this record is deprecated and may be removed in a future EPICS release.>
 
 =recordtype state
 
@@ -58,6 +24,8 @@ recordtype(state) {
 	include "dbCommon.dbd"
 
 =head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -106,7 +74,7 @@ They represent the current state of the sequence program.
 
 =head2 Record Support
 
-=head3 Record Support Routines (stateRecord.c)
+=head3 Record Support Routines
 
 =head4 process
 

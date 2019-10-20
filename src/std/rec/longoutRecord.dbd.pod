@@ -7,68 +7,14 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 B<Long Output Record (longout)>
+=title Long Output Record (longout)
 
 The normal use for the long output or "longout" record type is to store long
-integer values of up to 32 bits  and write them to hardware devices. The C<<<
-Soft Channel >>> device support routine can also be used to write values to
+integer values of up to 32 bits and write them to hardware devices. The C<<<
+Soft Channel >>> device support layer can also be used to write values to
 other records via database or channel access links. The OUT field determines how
 the record is used. The record supports alarm limits and graphics and control
 limits.
-
-=head1 L<Contents>
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Desired Output Parameters>
-
-=item * L<Write Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Monitor Parameters>
-
-=item * L<Simulation Mode Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines>
-
-=item * L<Record Processing>
-
-=back
-
-=item * L<Device Support>
-
-=over
-
-=item * L<Fields Of Interest To Device Support>
-
-=item * L<Device Support Routines>
-
-=item * L<Device Support For Soft Records>
-
-=back
-
-=back
-
-=begin html
-
-<br><hr><br>
-
-=end html
 
 =recordtype longout
 
@@ -149,7 +95,7 @@ and database links.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(VAL,DBF_LONG) {
 		prompt("Desired Output")
 		promptgroup("50 - Output")
@@ -243,7 +189,7 @@ HYST field contains the alarm deadband around each limit alarm.
 See the See L<Alarm Specification> for a complete explanation of alarms and
 these fields. For an explanation of the IVOA and IVOV fields, see L<Output
 Records>. L<Alarm Fields> lists other fields related to a alarms that are common
-to all record types. 
+to all record types.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, IVOA, IVOV
 

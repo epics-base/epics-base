@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 B<Multi-Bit Binary Input Direct Record (mbbiDirect)>
+=title Multi-Bit Binary Input Direct Record (mbbiDirect)
 
 The mbbiDirect record retrieves a sixteen-bit hardware value and converts it to
 an array of sixteen unsigned characters, each representing a bit of the word.
@@ -17,60 +17,6 @@ This record's operation is similar to that of the multi-bit binary input record,
 and it has many fields in common with it. This record also has two available
 soft device support modules: C<Soft Channel> and C<Raw Soft Channel>.
 
-=head1 L<Contents>
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Desired Output Parameters>
-
-=item * L<Write Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Monitor Parameters>
-
-=item * L<Simulation Mode Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines>
-
-=item * L<Record Processing>
-
-=back
-
-=item * L<Device Support>
-
-=over
-
-=item * L<Fields Of Interest To Device Support>
-
-=item * L<Device Support Routines>
-
-=item * L<Device Support For Soft Records>
-
-=back
-
-=back
-
-=begin html
-
-<br><hr><br>
-
-=end html
-
 =recordtype mbbiDirect
 
 =cut
@@ -79,23 +25,7 @@ recordtype(mbbiDirect) {
 
 =head2 Parameter Fields
 
-The fields fall into the following categories:
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Read and Convert Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time and Simulation Mode Parameters>
-
-=back
-
-=cut
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -104,8 +34,6 @@ circumstances the record will be processed. These fields are listed in L<Scan
 Fields>. In addition, L<Scanning Specification> explains how these fields are
 used. Note that I/O event scanning is only supported for those card types
 that interrupt.
-
-=cut
 
 =head3 Read and Convert Parameters
 
@@ -143,8 +71,6 @@ determine VAL as follows:
 Each of the fields, B0-BF, represents one bit of the word.
 
 =fields VAL, INP, RVAL, SHFT, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, BA, BB, BC, BD, BE, BF
-
-=cut
 
 =head3 Operator Display Parameters
 
@@ -338,12 +264,6 @@ record types.
         pp(TRUE)
         interest(1)
     }
-
-=begin html
-
-<br><hr><br>
-
-=end html
 
 =head2 Record Support
 

@@ -7,52 +7,14 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 Permissive Record (permissive)
+=title Permissive Record (permissive)
 
 The permissive record is for communication between a server and a client. An
 example would be a sequence program server and an operator interface client.  By
 using multiple permissive records a sequence program can communicate its current
 state to the client.
 
-B<Note this record is deprecated and is likely to be removed in a future EPICS release.>
-
-=head2 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Client-server Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines (permissiveRecord.c)>
-
-=back
-
-=back
-
-=begin html
-
-<br>
-<hr>
-<br>
-
-=end html
+B<Note this record is deprecated and may be removed in a future EPICS release.>
 
 =recordtype permissive
 
@@ -62,6 +24,8 @@ recordtype(permissive) {
 	include "dbCommon.dbd"
 
 =head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -150,7 +114,7 @@ OLFG.
 
 =head2 Record Support
 
-=head3 Record Support Routines (permissiveRecord.c)
+=head3 Record Support Routines
 
 =head4 process
 

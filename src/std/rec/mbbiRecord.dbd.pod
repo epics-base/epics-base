@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 B<Multi-Bit Binary Input Record (mbbi)>
+=title Multi-Bit Binary Input Record (mbbi)
 
 The normal use for the multi-bit binary input record is to read contiguous,
 multiple bit inputs from hardware. The binary value represents a state from a
@@ -25,58 +25,6 @@ are provided: C<<< Soft Channel >>> allows VAL to be an arbitrary unsigned short
 integer. C<<< Raw Soft Channel >>> reads the value into RVAL just like normal
 device support modules.
 
-=head1 L<Contents>
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Read and Convert Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time Parameters>
-
-=item * L<Simulation Mode Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines>
-
-=item * L<Record Processing>
-
-=back
-
-=item * L<Device Support>
-
-=over
-
-=item * L<Fields Of Interest To Device Support>
-
-=item * L<Device Support Routines>
-
-=item * L<Device Support For Soft Records>
-
-=back
-
-=back
-
-=begin html
-
-<br><hr><br>
-
-=end html
-
 =recordtype mbbi
 
 =cut
@@ -85,23 +33,7 @@ recordtype(mbbi) {
 
 =head2 Parameter Fields
 
-The multi-bit binary input fields fall into the following categories:
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Read and Convert Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time Parameters>
-
-=item * L<Simulation Mode Parameters>
-
-=back
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -121,7 +53,7 @@ differs according to the I/O bus used. See L<Address Specification> for
 information on the format of hardware addresses.
 
 Two soft device support modules can be specified in DTYP C<Soft Channel> and
-C<<< Raw Soft Channel >>>. 
+C<<< Raw Soft Channel >>>.
 
 C<<< Raw Soft Channel >>> reads the value into RVAL,
 upon which the normal conversion process is undergone. C<<< Soft Channel >>>
@@ -165,7 +97,7 @@ Each of the fields, ZRVL-FFVL, represents one of the possible sixteen states
 Alternatively, the input value can be read as a string, in which case, a match
 is sought with one of the strings specified in the ZRST-FFST fields. Then RVAL
 is set equal to the corresponding value for that string, and the conversion
-process occurs. 
+process occurs.
 
 =fields VAL, INP, MASK, NOBT, RVAL, SHFT, ZRVL, ONVL, TWVL, THVL, FRVL, FVVL, SXVL, SVVL, EIVL, NIVL, TEVL, ELVL, TVVL, TTVL, FTVL, FFVL
 
@@ -186,7 +118,7 @@ description (DESC) fields.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(VAL,DBF_ENUM) {
 		prompt("Current Value")
 		promptgroup("40 - Input")
@@ -478,7 +410,7 @@ state occurs, if set to MAJOR or MINOR.
 The other fields, when set to MAJOR or MINOR, trigger an alarm when VAL equals
 the corresponding state. See the See L<Alarm Specification> for a complete
 explanation of discrete alarms and these fields. L<Alarm Fields> lists other
-fields related to a alarms that are common to all record types. 
+fields related to a alarms that are common to all record types.
 
 =fields UNSV, COSV, ZRSV, ONSV, TWSV, THSV, FRSV, FVSV, SXSV, SVSV, EISV, NISV, TESV, ELSV, TVSV, TTSV, FTSV, FFSV
 
@@ -709,14 +641,6 @@ See L<Fields Common to Many Record Types> for more information on these fields.
 		menu(menuAlarmSevr)
 	}
 
-=pod
-
-=begin html
-
-<br><hr><br>
-
-=end html
-
 =head2 Record Support
 
 =head3 Record Support Routines
@@ -869,7 +793,6 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 =back
 
-
 =head2 Device Support
 
 =head3 Fields Of Interest To Device Support
@@ -881,12 +804,6 @@ input value whenever read_mbbi is called. The device support routines are
 primarily interested in the following fields:
 
 =fields PACT, DPVT, UDF, NSEV, NSTA, NOBT, VAL, INP, RVAL, MASK, SHFT
-
-=begin html
-
-<br><hr><br>
-
-=end html
 
 =head3 Device Support Routines
 
@@ -978,7 +895,6 @@ FALSE. The status of recGblGetLinkValue is returned.
 This module is like the previous except that values are read into RVAL, VAL is
 computed from RVAL, and read_mbbi returns a value of 0. Thus the record
 processing routine will determine VAL in the normal way.
-
 
 =cut
 

@@ -7,66 +7,10 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 String Output Record (stringout)
+=title String Output Record (stringout)
 
 The stringout record is used to write an arbitrary ASCII string of up to 40
 characters to other records or software variables.
-
-=head2 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Desired Output Parameters>
-
-=item * L<Write Parameters>
-
-=item * L<Monitor Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time and Simulation Mode Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines (stringoutRecord.c)>
-
-=item * L<Record Processing>
-
-=back
-
-=item * L<Device Support>
-
-=over
-
-=item * L<Fields Of Interest To Device Support>
-
-=item * L<Device Support Routines (devSoSoft.c)>
-
-=item * L<Device Support for Soft Records>
-
-=back
-
-=back
-
-=begin html
-
-<br>
-<hr>
-<br>
-
-=end html
 
 =recordtype stringout
 
@@ -89,6 +33,8 @@ recordtype(stringout) {
 	}
 
 =head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -285,7 +231,7 @@ for more information on these fields.
 
 =head2 Record Support
 
-=head3 Record Support Routines (stringoutRecord.c)
+=head3 Record Support Routines
 
 =head4 init_record
 

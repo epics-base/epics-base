@@ -32,13 +32,14 @@ passing a list of TAP filenames to `prove`.
 
 ### Add option to avoid CALLBACK conflict
 
-If a macro `EPICS_NO_CALLBACK` is defined, then callback.h will no longer (re)define CALLBACK.
-The name 'CALLBACK' is used by the WIN32 API, and redefinition in callback.h cause errors
-if some windows headers are later included.
+If a macro `EPICS_NO_CALLBACK` is defined, then callback.h will no longer
+(re)define CALLBACK. The name 'CALLBACK' is used by the WIN32 API, and
+redefinition in callback.h cause errors if some windows headers are later
+included.
 
-Code which defines `EPICS_NO_CALLBACK`, but still wishes to use callbacks, should use
-the alternate name 'epicsCallback' introduced in 3.15.6, 3.16.2, and 7.0.2.
-It is also possible, though not encouraged, to use 'struct callbackPvt'
+Code which defines `EPICS_NO_CALLBACK`, but still wishes to use callbacks,
+should use the alternate name `epicsCallback` introduced in 3.15.6, 3.16.2, and
+7.0.2. It is also possible, though not encouraged, to use `struct callbackPvt`
 which has been present since the callback API was introduced.
 
 ### Cleaning up with Multiple CA contexts in a Process
@@ -179,8 +180,8 @@ updates to these files:
   - The build system has been adjusted to look for `EpicsHostArch.pl` in
     both places if the `EPICS_HOST_ARCH` environment variable has not been
     set at build-time.
-  - Sites that used the original Perl script to set `EPICS_HOST_ARCH` as
-    part of their standard environment will need to adjust their scripts when they
+  - Sites that used the original Perl script to set `EPICS_HOST_ARCH` as part of
+    their standard environment will need to adjust their scripts when they
     upgrade to this release.
   - The `EpicsHostArch` shell script has been replaced with a wrapper
     routine that calls the Perl `EpicsHostArch.pl` script. Sites that rely on
@@ -190,8 +191,8 @@ updates to these files:
     `unix.csh` and `unix.sh`, respectively.
   - The existing `win32.bat` file has been cleaned up and a new
     `windows.bat` file added for 64-bit targets. The contents of these files
-    should be seen as examples, don't uncomment or install parts for software that
-    you don't explicitly know that you need.
+    should be seen as examples, don't uncomment or install parts for software
+    that you don't explicitly know that you need.
 
 ### Recent Apple XCode Build Issues
 
@@ -213,15 +214,22 @@ ACKS fields. With this fix the record's alarm severity will be limited to
 
 The following launchpad bugs have fixes included:
 
-  - [lp: 1786320](https://bugs.launchpad.net/epics-base/+bug/1786320), dbCa subscribes twice to ENUM
-  - [lp: 541221](https://bugs.launchpad.net/epics-base/+bug/541221), 'assert (pca-\>pgetNative)' failed in ../dbCa.c
-  - [lp: 1747091](https://bugs.launchpad.net/epics-base/+bug/1747091), epicsTimeGetEvent() / generalTime bug
-  - [lp: 1743076](https://bugs.launchpad.net/epics-base/+bug/1743076), Segfault in `ca_attach_context()` during exits
-  - [lp: 1751380](https://bugs.launchpad.net/epics-base/+bug/1751380), Deadlock in `ca_clear_subscription()`
-  - [lp: 1597809](https://bugs.launchpad.net/epics-base/+bug/1597809), Setting NAME field in DB file may break IOC
-  - [lp: 1770292](https://bugs.launchpad.net/epics-base/+bug/1770292), `get_alarm_double()` inconsistent across record types
-  - [lp: 1771298](https://bugs.launchpad.net/epics-base/+bug/1771298), Conversion of NaN to integer relies on undefined
-    behavior
+  - [lp: 1786320](https://bugs.launchpad.net/epics-base/+bug/1786320), dbCa
+    subscribes twice to ENUM
+  - [lp: 541221](https://bugs.launchpad.net/epics-base/+bug/541221),
+    `assert (pca->pgetNative)` failed in ../dbCa.c
+  - [lp: 1747091](https://bugs.launchpad.net/epics-base/+bug/1747091),
+    epicsTimeGetEvent() / generalTime bug
+  - [lp: 1743076](https://bugs.launchpad.net/epics-base/+bug/1743076), Segfault
+    in `ca_attach_context()` during exits
+  - [lp: 1751380](https://bugs.launchpad.net/epics-base/+bug/1751380), Deadlock
+    in `ca_clear_subscription()`
+  - [lp: 1597809](https://bugs.launchpad.net/epics-base/+bug/1597809), Setting
+    NAME field in DB file may break IOC
+  - [lp: 1770292](https://bugs.launchpad.net/epics-base/+bug/1770292),
+    `get_alarm_double()` inconsistent across record types
+  - [lp: 1771298](https://bugs.launchpad.net/epics-base/+bug/1771298),
+    Conversion of NaN to integer relies on undefined behavior
 
 ### Updated VxWorks Timezone settings
 
@@ -283,8 +291,8 @@ previous test runs. It cleans both TAP and JUnit XML files.
 ### Fix DNS related crash on exit
 
 The attempt to fix DNS related delays for short lived CLI programs (eg. caget)
-in lp:1527636 introduced a bug which cased these short lived clients to crash on exit.
-This bug should now be fixed.
+in lp:1527636 introduced a bug which cased these short lived clients to crash on
+exit. This bug should now be fixed.
 
 ### Server bind issue on Windows
 
@@ -326,11 +334,14 @@ of the dbStatic library that is not being built anymore.
 In addition to the more detailed change descriptions below, the following
 Launchpad bugs have also been fixed in this release:
 
-  - [lp:1440186](https://bugs.launchpad.net/epics-base/+bug/1440186) Crash due to a too small buffer being provided in
-    dbContextReadNotifyCache
-  - [lp:1479316](https://bugs.launchpad.net/epics-base/+bug/1479316) Some data races found using Helgrind
-  - [lp:1495833](https://bugs.launchpad.net/epics-base/+bug/1495833) biRecord prompt groups are nonsensical
-  - [lp:1606848](https://bugs.launchpad.net/epics-base/+bug/1606848) WSAIoctl `SIO_GET_INTERFACE_LIST` failed in Windows
+  - [lp:1440186](https://bugs.launchpad.net/epics-base/+bug/1440186) Crash due
+    to a too small buffer being provided in dbContextReadNotifyCache
+  - [lp:1479316](https://bugs.launchpad.net/epics-base/+bug/1479316) Some data
+    races found using Helgrind
+  - [lp:1495833](https://bugs.launchpad.net/epics-base/+bug/1495833) biRecord
+    prompt groups are nonsensical
+  - [lp:1606848](https://bugs.launchpad.net/epics-base/+bug/1606848) WSAIoctl
+    `SIO_GET_INTERFACE_LIST` failed in Windows
 
 ### Whole-Program Optimization for MS Visual Studio Targets
 
@@ -408,10 +419,11 @@ change will not cause the IOC to see time going backwards.
 
 ### Microsoft Visual Studio builds
 
-The build configuration files for builds using the Microsoft compilers have
-been updated, although there should be no noticable difference at most sites.
-One extra compiler warning is now being suppressed for C++ code, `C4344: behavior change: use of explicit template arguments results in ...` which is
-gratuitous and was appearing frequently in builds of the EPICS V4 modules.
+The build configuration files for builds using the Microsoft compilers have been
+updated, although there should be no noticable difference at most sites. One
+extra compiler warning is now being suppressed for C++ code, `C4344: behavior
+change: use of explicit template arguments results in ...` which is gratuitous
+and was appearing frequently in builds of the EPICS V4 modules.
 
 Cross-builds of the windows-x64 target from a win32-x86 host have been
 removed as they don't actually work within the context of a single `make`
@@ -455,8 +467,8 @@ Makefile should set `DELAY_INSTALL_LIBS = YES` before including the
 
 ### IOC environment variables and build parameters
 
-The IOC now sets a number of environment variables at startup that provide
-the version of EPICS Base it was built against (`EPICS_VERSION_...`) and its build
+The IOC now sets a number of environment variables at startup that provide the
+version of EPICS Base it was built against (`EPICS_VERSION_...`) and its build
 architecture (ARCH). In some cases this allows a single iocBoot/ioc directory to
 be used to run the same IOC on several different architectures without any
 changes.
@@ -495,10 +507,10 @@ accept traffic on the .1.1 and .2.1, but ignore from .3.1
 RSRV now honors `EPICS_CAS_IGNORE_ADDR_LIST` and ignores UDP messages received
 from addresses in this list.
 
-Previously, CA servers (RSRV and PCAS) would build the beacon address list
-using `EPICS_CA_ADDR_LIST` if `EPICS_CAS_BEACON_ADDR_LIST` was no set. This is no
-longer done. Sites depending on this should set both environment variables to the
-same value.
+Previously, CA servers (RSRV and PCAS) would build the beacon address list using
+`EPICS_CA_ADDR_LIST` if `EPICS_CAS_BEACON_ADDR_LIST` was no set. This is no
+longer done. Sites depending on this should set both environment variables to
+the same value.
 
 ### IPv4 multicast for name search and beacons
 
@@ -579,8 +591,8 @@ programs for those targets be run as well.
 An additional check has been added at build-time for the contents of the
 `configure/RELEASE` file(s), which will mostly only affect users of the Debian
 EPICS packages published by NSLS-2. Support modules may share an install path,
-but all such modules must be listed adjacent to each other in any `RELEASE` files
-that point to them. For example the following will fail the new checks:
+but all such modules must be listed adjacent to each other in any `RELEASE`
+files that point to them. For example the following will fail the new checks:
 
 ```
     AUTOSAVE = /usr/lib/epics
@@ -666,12 +678,12 @@ image is not correctly configured with the IP address of a local NTP server.
 
 ### Assembling files from numbered snippets
 
-A tool has been added that assembles file snippets specified on the
-command line into a single output file, with sorting and replacing/adding of
-snippets done based on their file names. The build system integration requires
-the output file to be specified setting `COMMON_ASSEMBLIES` (arch independent)
-or `ASSEMBLIES` (created by arch), then defining the snippets for each assembly
-setting `*_SNIPPETS` (explicitly) or `*_PATTERN` (searched relative to all source
+A tool has been added that assembles file snippets specified on the command line
+into a single output file, with sorting and replacing/adding of snippets done
+based on their file names. The build system integration requires the output file
+to be specified setting `COMMON_ASSEMBLIES` (arch independent) or `ASSEMBLIES`
+(created by arch), then defining the snippets for each assembly setting
+`*_SNIPPETS` (explicitly) or `*_PATTERN` (searched relative to all source
 directories).
 
 ### Clean up after GNU readline()
@@ -708,27 +720,28 @@ different platforms. The ROFF fields of the ao and ai record types are now
 
 ### Changes to `<top>/cfg/*` files
 
-The order in which `cfg/CONFIG*` and `cfg/RULES*` files are included from support
-applications listed in the `configure/RELEASE*` files has been changed. Previously
-these files were included in the order in which the top areas are listed in the
-RELEASE file, but it makes more sense to load them in reverse order since later
-entries override earlier ones in Makefiles but the release file order is
-supposed to allow earlier entries to take precedence over later ones. The same
-change has been made to the inclusion of the `<top>/configure/RULES_BUILD`
-files.
+The order in which `cfg/CONFIG*` and `cfg/RULES*` files are included from
+support applications listed in the `configure/RELEASE*` files has been changed.
+Previously these files were included in the order in which the top areas are
+listed in the RELEASE file, but it makes more sense to load them in reverse
+order since later entries override earlier ones in Makefiles but the release
+file order is supposed to allow earlier entries to take precedence over later
+ones. The same change has been made to the inclusion of the
+`<top>/configure/RULES_BUILD` files.
 
 Two new file types can also be provided in a module's `cfg` directory. Files
 named `TOP_RULES*` will be included by the top-level Makefile of other modules
 that refer to this module; files name `DIR_RULES*` will be included by all
-Makefiles that merely descend into lower-level directories. The `cfg/RULES*` files
-are only included when make is building code inside the `O.<arch>` directories.
+Makefiles that merely descend into lower-level directories. The `cfg/RULES*`
+files are only included when make is building code inside the `O.<arch>`
+directories.
 
 The new `cfg/DIR_RULES*` file inclusion was designed to permit new recursive
 make actions to be implemented by appending the name of the new action to the
-`ACTIONS` variable. There must be a matching rule in one of the `cfg/RULES*` files
-when doing this. Similar rules may also be defined in the `cfg/TOP_RULES*` and/or
-`cfg/DIR_RULES*` files, but these should only state prerequisites and not directly
-provide commands to be executed.
+`ACTIONS` variable. There must be a matching rule in one of the `cfg/RULES*`
+files when doing this. Similar rules may also be defined in the `cfg/TOP_RULES*`
+and/or `cfg/DIR_RULES*` files, but these should only state prerequisites and not
+directly provide commands to be executed.
 
 ### Build rules for RTEMS GESYS modules
 
@@ -795,14 +808,14 @@ printed if it is ever used.
 
 ### Using msi for dependencies
 
-To reduce confusion the msi program has been modified to allow the generation
-of dependency rules by adding support for a `-D` option, and changing the
-commands in RULES.Db to use this option instead of the mkmf.pl script. The new
-build rules will not work with old versions of the msi program, so the command
-variable name used in the rules has been changed from `MSI` to `MSI3_15`. Sites that
-use a modified version of msi must provide support for both the `-D` and
-`-o outfile` options, and should then point the `MSI3_15` variable in
-their applications' `CONFIG_SITE` files to that updated executable.
+To reduce confusion the msi program has been modified to allow the generation of
+dependency rules by adding support for a `-D` option, and changing the commands
+in RULES.Db to use this option instead of the mkmf.pl script. The new build
+rules will not work with old versions of the msi program, so the command
+variable name used in the rules has been changed from `MSI` to `MSI3_15`. Sites
+that use a modified version of msi must provide support for both the `-D` and
+`-o outfile` options, and should then point the `MSI3_15` variable in their
+applications' `CONFIG_SITE` files to that updated executable.
 
 ## Changes made between 3.15.0.2 and 3.15.1
 
@@ -822,20 +835,19 @@ version number has been fixed.
 
 ### Hooking into dbLoadRecords
 
-A function pointer hook has been added to the dbLoadRecords() routine, to
-allow external modules such as autosave to be notified when new records have
-been loaded during IOC initialization. The hook is called `dbLoadRecordsHook` and
+A function pointer hook has been added to the dbLoadRecords() routine, to allow
+external modules such as autosave to be notified when new records have been
+loaded during IOC initialization. The hook is called `dbLoadRecordsHook` and
 follows the model of the `recGblAlarmHook` pointer in that modules that wish to
 use it must save the current value of the pointer before installing their own
-function pointer, and must call the original function from their own
-routine.
+function pointer, and must call the original function from their own routine.
 
 The hook is activiated from the `dbLoadRecords()` routine and gets called only
 after a database instance file has been read in without error. Note that the
 `dbLoadTemplates()` routine directly calls `dbLoadRecords()` so this hook also
 provides information about instantiated database templates. It is still possible
-to load record instances using `dbLoadDatabase()` though, and doing this will not
-result in the hook routines being called.
+to load record instances using `dbLoadDatabase()` though, and doing this will
+not result in the hook routines being called.
 
 Code to use this hook should look something like this:
 
@@ -972,8 +984,8 @@ file2.dbd then file3.dbd. The new file will then be installed into
 
 The source files file1.dbd, file2.dbd and file3.dbd may be created by the
 current Makefile, be located in the parent directory or any other directory in
-the `SRC_DIRS` list, be specified by their full pathname, exist in the install dbd
-directory, or be found in any dbd directory linked from the application's
+the `SRC_DIRS` list, be specified by their full pathname, exist in the install
+dbd directory, or be found in any dbd directory linked from the application's
 RELEASE files.
 
 ### Posix: Drop `SCHED_FIFO` before exec() in child process

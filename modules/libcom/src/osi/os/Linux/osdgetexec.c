@@ -7,6 +7,10 @@
 #define epicsExportSharedSymbols
 #include <osiFileName.h>
 
+#ifndef PATH_MAX
+#  define PATH_MAX 100
+#endif
+
 char *epicsGetExecName(void)
 {
     size_t max = PATH_MAX;

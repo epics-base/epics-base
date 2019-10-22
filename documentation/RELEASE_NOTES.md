@@ -6,6 +6,24 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
+### Added new decimation channel filter
+
+A new server-side filter has been added to the IOC for reducing the number
+and frequency of monitor updates from a channel by a client-specified factor.
+The filter's behaviour is quite simplistic, it passes the first monitor event it
+sees to the client and then drops the next N-1 events before passing another
+event. For example to sample a 60Hz channel at 1Hz, a 10Hz channel every 6
+seconds, or a 1Hz channel once every minute:
+
+```
+    Hal$ camonitor 'test:channel.{"dec":{"n":60}}'
+    ...
+```
+
+More information is included in the filters documentation, which can be found
+[here](filters.html) or [here](../html/filters.html) depending on where you're
+reading this document from.
+
 ### Imported Record Reference Documentation from Wiki
 
 The remaining record types that had 3.14 reference documentation in the EPICS

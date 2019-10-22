@@ -14,6 +14,8 @@ The following filters are available in this release:
 
 =item * L<Synchronize|/"Synchronize Filter sync">
 
+=item * L<Decimation|/"Decimation Filter dec">
+
 =back
 
 =head2 Using Filters
@@ -242,6 +244,44 @@ some other facility such as a timing system, updates could be restricted to
 periods only when "blue" is true by using
 
  Hal$ camonitor 'test:channel' 'test:channel.{"sync":{"while":"blue"}}'
+ ...
+
+=cut
+
+registrar(decInitialize)
+
+=head3 Decimation Filter C<"dec">
+
+This filter is used to reduce the number or rate of monitor updates from a
+channel by an integer factor C<n> that is provided as a filter argument,
+discarding the other updates. A true decimation following the original meaning
+of the word would be achieved by giving C<n> as 10, to only allow every tenth
+update through.
+
+=head4 Parameters
+
+=over
+
+=item Number C<"n">
+
+The decimation factor, a positive integer. Giving n=1 is equivalent to a no-op
+that allows all updates to be passed to the client.
+
+=back
+
+This filter is intentionally very simplistic. It passes on the first monitor
+event that it sees after the channel connects, then discards the next N-1 events
+before sending the next event. If several clients connect to a channel using the
+same filter settings they may see completely different data streams since each
+client gets its own instance of the filter whose event counter starts when that
+client connects.
+
+=head4 Example
+
+To sample a 60Hz channel at 1Hz, a 10Hz channel every 6 seconds or a 1Hz channel
+once every minute:
+
+ Hal$ camonitor 'test:channel' 'test:channel.{"dec":{"n":60}}'
  ...
 
 =cut

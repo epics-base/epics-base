@@ -33,10 +33,8 @@
 
 /*
  * CXX_PLACEMENT_DELETE - defined if compiler supports placement delete
- * CXX_THROW_SPECIFICATION - defined if compiler supports throw specification
  */
 #define CXX_PLACEMENT_DELETE
-#define CXX_THROW_SPECIFICATION
 
 #endif /* __cplusplus */
 

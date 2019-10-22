@@ -19,6 +19,12 @@ void ClockTime_Init(int synchronize);
 void ClockTime_Shutdown(void *dummy);
 int  ClockTime_Report(int level);
 
+#if defined(vxWorks) || defined(__rtems__)
+typedef void (* CLOCKTIME_SYNCHOOK)(int synchronized);
+
+extern CLOCKTIME_SYNCHOOK ClockTime_syncHook;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -6,6 +6,37 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
+### Replace EPICS_TIMEZONE with EPICS_TZ
+
+The `EPICS_TIMEZONE` environment parameter provided time-zone information for
+the IOC's locale in the old ANSI format expected by VxWorks for its `TIMEZONE`
+environment variable, and can also used by RTEMS to set its `TZ` environment
+variable. However the `TIMEZONE` value has to be updated every year since it
+contains the exact dates of the daylight-savings time changes. The Posix TZ
+format that RTEMS uses contains rules that for calculating those dates, thus its
+value would only need updating if the rules (or the locale) are changed.
+
+This release contains changes that replace the `EPICS_TIMEZONE` environment
+parameter with one called `EPICS_TZ` and a routine for VxWorks that calculates
+the `TIMEZONE` environment variable from the current `TZ` value. This routine
+will be run once at start-up, when the EPICS clock has synchronized to its NTP
+server. The calculations it contains were worked out and donated to EPICS by
+Larry Hoff in 2009; it is unforunate that it has taken 10 years for them to be
+integrated into Base.
+
+The default value for the `EPICS_TZ` environment parameter is set in the Base
+configure/CONFIG_SITE_ENV file, which contains example settings for most EPICS
+sites that use VxWorks, and a link to a page describing the Posix TZ format for
+any locations that I missed.
+
+If a VxWorks IOC runs continuously without being rebooted from December 31st to
+the start of daylight savings time the following year, its `TIMEZONE` value will
+be wrong as it was calculated for the previous year. This only affects times
+that are converted to a string on the IOC however and is easily fixed; just run
+the command `tz2timezone()` on the VxWorks shell and the calculation will be
+redone for the current year. IOCs that get rebooted at least once before the
+start of summer time will not need this to be done.
+
 ### Added new decimation channel filter
 
 A new server-side filter has been added to the IOC for reducing the number

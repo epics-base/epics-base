@@ -38,7 +38,6 @@ epicsShareFunc void epicsShareAPI iocLogPrefix(const char* prefix);
 /* deprecated interface; retained for backward compatibility */
 /* note: implementations are in iocLog.c, not logClient.c */
 epicsShareFunc logClientId epicsShareAPI logClientInit (void);
-epicsShareFunc void logClientSendMessage (logClientId id, const char *message);
 
 #ifdef __cplusplus
 }

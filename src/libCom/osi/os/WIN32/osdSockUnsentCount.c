@@ -13,7 +13,7 @@
  * See https://docs.microsoft.com/en-us/windows/win32/api/mstcpip/ns-mstcpip-tcp_info_v0
  */
 int epicsSocketUnsentCount(SOCKET sock) {
-#if defined (_WIN32) && WINVER >= _WIN32_WINNT_WIN10
+#ifdef SIO_TCP_INFO
 /* Windows 10 Version 1703 / Server 2016 */
     DWORD infoVersion = 0, bytesReturned;
     TCP_INFO_v0 tcpInfo;

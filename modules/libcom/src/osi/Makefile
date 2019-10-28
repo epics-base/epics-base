@@ -86,6 +86,7 @@ endif
 
 Com_SRCS += osdSock.c
 Com_SRCS += osdSockAddrReuse.cpp
+Com_SRCS += osdSockUnsentCount.c
 Com_SRCS += osiSock.c
 Com_SRCS += systemCallIntMech.cpp
 Com_SRCS += epicsSocketConvertErrnoToString.cpp

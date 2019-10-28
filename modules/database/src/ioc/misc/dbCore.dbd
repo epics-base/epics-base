@@ -33,3 +33,6 @@ variable(callbackParallelThreadsDefault,int)
 
 # Real-time operation
 variable(dbThreadRealtimeLock,int)
+
+# show logClient network activity
+variable(logClientDebug,int)

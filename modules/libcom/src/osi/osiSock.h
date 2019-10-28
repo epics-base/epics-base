@@ -52,6 +52,14 @@ enum epicsSocketSystemCallInterruptMechanismQueryInfo {
 epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo 
         epicsSocketSystemCallInterruptMechanismQuery ();
 
+#ifdef EPICS_PRIVATE_API
+/*
+ * Some systems (e.g Linux and Windows 10) allow to check the amount
+ * of unsent data in the output queue.
+ * Returns -1 if the information is not available.
+ */
+epicsShareFunc int epicsSocketUnsentCount(SOCKET sock);
+#endif
 
 /*
  * convert socket address to ASCII in this order

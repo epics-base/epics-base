@@ -23,7 +23,8 @@
 #include "taskwd.h"
 
 #define NSEC_PER_SEC 1000000000
-#define ClockTimeSyncInterval_value 60.0
+#define ClockTimeSyncInterval_initial 1.0
+#define ClockTimeSyncInterval_normal 60.0
 
 
 static struct {
@@ -79,7 +80,7 @@ static void ClockTime_InitOnce(void *pfirst)
 
     ClockTimePvt.loopEvent   = epicsEventMustCreate(epicsEventEmpty);
     ClockTimePvt.lock        = epicsMutexCreate();
-    ClockTimePvt.ClockTimeSyncInterval = 1.0;   /* First sync */
+    ClockTimePvt.ClockTimeSyncInterval = ClockTimeSyncInterval_initial;
 
     epicsAtExit(ClockTime_Shutdown, NULL);
 
@@ -148,6 +149,8 @@ void ClockTime_GetProgramStart(epicsTimeStamp *pDest)
 /* Synchronization thread */
 
 #if defined(vxWorks) || defined(__rtems__)
+CLOCKTIME_SYNCHOOK ClockTime_syncHook = NULL;
+
 static void ClockTimeSync(void *dummy)
 {
     taskwdInsert(0, NULL, NULL);
@@ -179,11 +182,16 @@ static void ClockTimeSync(void *dummy)
             ClockTimePvt.syncTime         = timeNow;
             epicsMutexUnlock(ClockTimePvt.lock);
 
-            ClockTimePvt.ClockTimeSyncInterval = ClockTimeSyncInterval_value;
+            if (ClockTime_syncHook)
+                ClockTime_syncHook(1);
+
+            ClockTimePvt.ClockTimeSyncInterval = ClockTimeSyncInterval_normal;
         }
     }
 
     ClockTimePvt.synchronized = 0;
+    if (ClockTime_syncHook)
+        ClockTime_syncHook(0);
     taskwdRemove(0);
 }
 #endif

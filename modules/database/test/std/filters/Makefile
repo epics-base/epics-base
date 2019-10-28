@@ -59,6 +59,12 @@ syncTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += syncTest.c
 TESTS += syncTest
 
+TESTPROD_HOST += decTest
+decTest_SRCS += decTest.c
+decTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += decTest.c
+TESTS += decTest
+
 # epicsRunFilterTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunFilterTests.c
 

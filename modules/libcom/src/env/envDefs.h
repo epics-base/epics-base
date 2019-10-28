@@ -63,7 +63,7 @@ epicsShareExtern const ENV_PARAM EPICS_CAS_BEACON_PORT;
 epicsShareExtern const ENV_PARAM EPICS_BUILD_COMPILER_CLASS;
 epicsShareExtern const ENV_PARAM EPICS_BUILD_OS_CLASS;
 epicsShareExtern const ENV_PARAM EPICS_BUILD_TARGET_ARCH;
-epicsShareExtern const ENV_PARAM EPICS_TIMEZONE;
+epicsShareExtern const ENV_PARAM EPICS_TZ;
 epicsShareExtern const ENV_PARAM EPICS_TS_NTP_INET;
 epicsShareExtern const ENV_PARAM EPICS_IOC_IGNORE_SERVERS;
 epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_PORT;

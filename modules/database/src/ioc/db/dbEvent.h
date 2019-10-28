@@ -82,6 +82,7 @@ epicsShareFunc void db_event_disable (dbEventSubscription es);
 epicsShareFunc struct db_field_log* db_create_event_log (struct evSubscrip *pevent);
 epicsShareFunc struct db_field_log* db_create_read_log (struct dbChannel *chan);
 epicsShareFunc void db_delete_field_log (struct db_field_log *pfl);
+epicsShareFunc int db_available_logs(void);
 
 #define DB_EVENT_OK 0
 #define DB_EVENT_ERROR (-1)
@@ -91,4 +92,3 @@ epicsShareFunc void db_delete_field_log (struct db_field_log *pfl);
 #endif
 
 #endif /*INCLdbEventh*/
-

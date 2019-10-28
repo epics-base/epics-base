@@ -1,0 +1,128 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=title Permissive Record (permissive)
+
+The permissive record is for communication between a server and a client. An
+example would be a sequence program server and an operator interface client.  By
+using multiple permissive records a sequence program can communicate its current
+state to the client.
+
+B<Note this record is deprecated and may be removed in a future EPICS release.>
+
+=recordtype permissive
+
+=cut
+
+recordtype(permissive) {
+	include "dbCommon.dbd"
+
+=head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
+
+=head3 Scan Parameters
+
+The permissive record has the standard fields for specifying under what
+circumstances the record will be processed. These fields are listed in
+L<Scan Fields>. In addition, L<Scanning Specification> explains how these
+fields are used. Since the permissive record supports  no direct interfaces to
+hardware, its SCAN field cannot be C<<< I/O Intr >>>.
+
+=head3 Client-server Parameters
+
+The client and server communicate through the VAL and watchdog flag (WFLG)
+fields. At initialization, both fields are set equal to 0, which means OFF. The
+server sets WFLG equal to ON when it is ready to accept a request. The client
+monitors WFLG and when WFLG equals 1, the client-server action is performed (a
+private matter between server and client).
+
+When WFLG is off--when the server is busy--the client program may turn the VAL
+field from OFF to ON. After the server finishes its task, it will notice that
+VAL is ON and will turn both WFLG and VAL OFF and performs the requested
+service.
+
+Note that when WFLG is ON, the client program ''must not'' turn VAL to on.
+
+=fields VAL, WFLG
+
+=cut
+
+	field(VAL,DBF_USHORT) {
+		prompt("Status")
+		promptgroup("40 - Input")
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(WFLG,DBF_USHORT) {
+		prompt("Wait Flag")
+		pp(TRUE)
+	}
+
+=head3 Operator Display Parameters
+
+The label field (LABL) contains a string given to it that should describe the
+record in further detail. In  addition to the DESC field. See
+L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
+
+=fields LABL, NAME, DESC
+
+=cut
+
+	field(LABL,DBF_STRING) {
+		prompt("Button Label")
+		promptgroup("80 - Display")
+		pp(TRUE)
+		interest(1)
+		size(20)
+	}
+
+=head3 Alarm Parameters
+
+The Permissive record has the alarm parameters common to all record types.
+L<Alarm Fields> lists other fields related to a alarms that are common to all
+record types.
+
+=head3 Run-time Parameters
+
+These fields are used to trigger monitors for each field. Monitors for the VAL
+field are triggered when OVAL, the old value field, does not equal VAL.
+Likewise, OFLG causes monitors to be invoked for WFLG when WFLG does not equal
+OLFG.
+
+=fields OVAL, OFLG
+
+=cut
+
+	field(OVAL,DBF_USHORT) {
+		prompt("Old Status")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(OFLG,DBF_USHORT) {
+		prompt("Old Flag")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head4 process
+
+  long (*process)(struct dbCommon *precord)
+
+C<<< process() >>> sets UDF to FALSE, triggers monitors on VAL and WFLG when
+they change, and scans the forward link if necessary.
+
+=cut
+
+}

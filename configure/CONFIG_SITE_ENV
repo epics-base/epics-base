@@ -24,40 +24,40 @@
 
 #  Site-specific environment settings
 
-# Time service:
-# EPICS_TIMEZONE
-#	Local timezone info for vxWorks and RTEMS.  The format is
-#	    <name>::<minutesWest>:<startDST>:<endDST>
-#	where <name> is only used by strftime() for %Z conversions,
-#	and <startDST> and <endDST> are mmddhh - that is month,day,hour
-#	e.g. for ANL in 2018: EPICS_TIMEZONE=CUS::360:031102:110402
-#	The future dates below assume the rules don't get changed;
-#	see http://www.timeanddate.com/time/dst/2018.html to check.
-#
-#	DST for 2019  US: Mar 10 - Nov 03
-#	              EU: Mar 31 - Oct 27
-EPICS_TIMEZONE = CUS::360:031002:110302
-#EPICS_TIMEZONE = MET::-60:033102:102703
-#
-#	DST for 2020  US: Mar 08 - Nov 01
-#	              EU: Mar 29 - Oct 25
-#EPICS_TIMEZONE = CUS::360:030802:110102
-#EPICS_TIMEZONE = MET::-60:032902:102503
-#
-#	DST for 2021  US: Mar 14 - Nov 07
-#	              EU: Mar 28 - Oct 31
-#EPICS_TIMEZONE = CUS::360:031402:110702
-#EPICS_TIMEZONE = MET::-60:032802:103103
-#
-#	DST for 2022  US: Mar 13 - Nov 06
-#	              EU: Mar 27 - Oct 30
-#EPICS_TIMEZONE = CUS::360:031302:110602
-#EPICS_TIMEZONE = MET::-60:032702:103003
-#
-#	DST for 2023  US: Mar 13 - Nov 06
-#	              EU: Mar 27 - Oct 30
-#EPICS_TIMEZONE = CUS::360:031202:110502
-#EPICS_TIMEZONE = MET::-60:032602:102903
+## Time service:
+# EPICS_TZ
+#       Local timezone rules for vxWorks and RTEMS. The value follows the Posix
+#       TZ environment variable's Mm.n.d/h format (see the IBM link below for
+#       details). If TZ hasn't already been set when the osdTime timeRegister()
+#       C++ static constructor runs, this parameter will be copied into the TZ
+#       environment variable. Once the OS clock has been synchronized to NTP the
+#       routine tz2timezone() will be run to convert TZ into the TIMEZONE
+#       variable format that VxWorks needs.
+#               https://developer.ibm.com/articles/au-aix-posix/
+
+# Japan Standard Time, no DST:
+#EPICS_TZ = "JST-9"
+
+# Central European (Summer) Time:
+#EPICS_TZ = "CET-1CEST,M3.5.0/2,M10.5.0/3"
+
+# Greenwich Mean/British Summer Time:
+#EPICS_TZ = "GMT0BST,M3.5.0/1,M10.5.0/2"
+
+# US Eastern Standard/Daylight Time:
+#EPICS_TZ = "EST5EDT,M3.2.0/2,M11.1.0/2"
+
+# US Central Standard/Daylight Time:
+EPICS_TZ = "CST6CDT,M3.2.0/2,M11.1.0/2"
+
+# US Mountain Standard/Daylight Time:
+#EPICS_TZ = "MST7MDT,M3.2.0/2,M11.1.0/2"
+
+# US Pacific Standard/Daylight Time:
+#EPICS_TZ = "PST8PDT,M3.2.0/2,M11.1.0/2"
+
+# US Hawaiian Standard Time, no DST:
+#EPICS_TZ = "HST10"
 
 # EPICS_TS_NTP_INET
 #	NTP time server ip address for VxWorks and RTEMS.

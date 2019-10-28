@@ -1,39 +1,35 @@
 # CONFIG_SITE.Common.linux-arm
 #
-# Site Specific definitions for all linux-arm targets
-#-------------------------------------------------------
+# Site-specific settings for the linux-arm target
 
-# NOTE for SHARED_LIBRARIES: In most cases if this is set to YES the
+# NOTE: In most cases if SHARED_LIBRARIES is set to YES the
 # shared libraries will be found automatically.  However if the .so
 # files are installed at a different path to their compile-time path
 # then in order to be found at runtime do one of these:
 # a) LD_LIBRARY_PATH must include the full absolute pathname to
 #    $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when invoking base
 #    executables.
-# b) Add the runtime path to SHRLIB_DEPLIB_DIRS and PROD_DEPLIB_DIRS, which 
+# b) Add the runtime path to SHRLIB_DEPLIB_DIRS and PROD_DEPLIB_DIRS, which
 #    will add the named directory to the list contained in the executables.
 # c) Add the runtime path to /etc/ld.so.conf and run ldconfig
 #    to inform the system of the shared library location.
 
-# Depending on your version of Linux you'll want one of the following
-# lines to enable command-line editing and history in iocsh.  If you're
-# not sure which, start with the top one and work downwards until the
-# build doesn't fail to link the readline library.  If none of them work,
-# comment them all out to build without readline support.
 
-# No other libraries needed (recent Fedora, Ubuntu etc.):
-#COMMANDLINE_LIBRARY = READLINE
+# Use GNU Readline if the header file is installed
+COMMANDLINE_LIBRARY = $(strip $(if $(wildcard \
+    $(firstword $(READLINE_DIR) $(GNU_DIR))/include/readline/readline.h), \
+  READLINE, EPICS))
 
-# Needs -lncurses (RHEL 5 etc.):
+# If libreadline needs additional libraries to be linked with it, try
+# uncommenting each of the lines below in turn, starting with the top
+# one and working downwards, until the build succeeds. Do a 'make rebuild'
+# from the top of the Base tree after changing this setting.
+
+# Needs -lncurses:
 #COMMANDLINE_LIBRARY = READLINE_NCURSES
 
-# Needs -lcurses (older versions)
+# Needs -lcurses:
 #COMMANDLINE_LIBRARY = READLINE_CURSES
 
-
-# It makes sense to include debugging symbols even in optimized builds
-# in case you want to attach gdb to the process or examine a core-dump.
-# This does cost disk space, but not memory as debug symbols are not
-# loaded into RAM when the binary is loaded.
-OPT_CFLAGS_YES += -g
-OPT_CXXFLAGS_YES += -g
+# Readline is broken or you don't want use it:
+#COMMANDLINE_LIBRARY = EPICS

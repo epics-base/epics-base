@@ -65,9 +65,9 @@ C<losed_loop> or C<supervisory>. If C<supervisory> is specified, the value
 in the VAL field can be set externally via dbPuts at run-time. If
 C<closed_loop> is specified, the VAL field's value is obtained from the
 address specified in the desired output location (DOL) field which can be a
-database link, a channel access link, or a constant. To achieve continuous
-control, a database link to a control algorithm record should be entered in
-the DOL field.
+database link or a channel access link, but not a constant. To achieve
+continuous control, a database link to a control algorithm record should be
+entered in the DOL field.
 
 L<Address Specification> presents more information on database addresses
 and links. L<Scanning Specification> explaines the effect of database

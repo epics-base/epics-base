@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 =title Waveform Record (waveform)
@@ -26,71 +26,9 @@ menu(waveformPOST) {
 
 recordtype(waveform) {
 
-=pod
-
-=head1 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Read Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Run-time Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines>
-
-=item * L<Record Processing>
-
-=back
-
-=item * L<Device Support>
-
-=over
-
-=item * L<Fields Of Interest To Device Support>
-
-=item * L<Device Support Routines>
-
-=item * L<Device Support For Soft Records>
-
-=back
-
-=back
-
-=begin html
-
-<hr>
-
-=end html
-
 =head2 Parameter Fields
 
-The waveform's fields fall into the following categories:
-
-=over
-
-=item * L<Scan Parameters>;
-
-=item * L<Read Parameters>;
-
-=item * L<Operator Display Parameters>;
-
-=item * L<Run-time Parameters>;
-
-=back
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -120,7 +58,7 @@ The values retrieved from the input link are placed in an array referenced by
 VAL. (If the INP link is a constant, elements can be placed in the array via
 dbPuts.) NELM specifies the number of elements that the array will hold, while
 FTVL specifies the data type of the elements.
-The RARM field causes the device to re-arm when this field is set to 1. 
+The RARM field causes the device to re-arm when this field is set to 1.
 
 =head4 Possible data types for FTVL
 
@@ -458,7 +396,7 @@ NORD is set to the number of values returned and read_wf returns.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
 		asl(ASL0)

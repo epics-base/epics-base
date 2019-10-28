@@ -25,22 +25,38 @@
 
 #define NTP_REQUEST_TIMEOUT 4 /* seconds */
 
+extern "C" {
+    int tz2timezone(void);
+}
+
 static char sntp_sync_task[] = "ipsntps";
 static char ntp_daemon[] = "ipntpd";
 
 static const char *pserverAddr = NULL;
+static CLOCKTIME_SYNCHOOK prevHook;
+
 extern char* sysBootLine;
+
+static void timeSync(int synchronized) {
+    if (!tz2timezone())
+        ClockTime_syncHook = prevHook; /* Don't call me again */
+}
 
 static int timeRegister(void)
 {
-    /* If TIMEZONE not defined, set it from EPICS_TIMEZONE */
-    if (getenv("TIMEZONE") == NULL) {
-        const char *timezone = envGetConfigParamPtr(&EPICS_TIMEZONE);
-        if (timezone == NULL) {
-            printf("timeRegister: No Time Zone Information\n");
-        } else {
-            epicsEnvSet("TIMEZONE", timezone);
+    /* If TZ not defined, set it from EPICS_TZ */
+    if (getenv("TZ") == NULL) {
+        const char *tz = envGetConfigParamPtr(&EPICS_TZ);
+
+        if (tz && *tz) {
+            epicsEnvSet("TZ", tz);
+
+            /* Call tz2timezone() once we know what year it is */
+            prevHook = ClockTime_syncHook;
+            ClockTime_syncHook = timeSync;
         }
+        else if (getenv("TIMEZONE") == NULL)
+            printf("timeRegister: No Time Zone Information available\n");
     }
 
     // Define EPICS_TS_FORCE_NTPTIME to force use of NTPTime provider
@@ -58,7 +74,7 @@ static int timeRegister(void)
     }
 
     if (useNTP) {
-        // Start NTP first so it can be used to sync SysTime
+        // Start NTP first so it can be used to sync ClockTime
         NTPTime_Init(100);
         ClockTime_Init(CLOCKTIME_SYNC);
     } else {

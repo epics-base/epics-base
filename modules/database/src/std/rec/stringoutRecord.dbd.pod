@@ -1,0 +1,384 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=title String Output Record (stringout)
+
+The stringout record is used to write an arbitrary ASCII string of up to 40
+characters to other records or software variables.
+
+=recordtype stringout
+
+=cut
+
+include "menuIvoa.dbd"
+
+menu(stringoutPOST) {
+	choice(stringoutPOST_OnChange,"On Change")
+	choice(stringoutPOST_Always,"Always")
+}
+recordtype(stringout) {
+	include "dbCommon.dbd"
+	field(VAL,DBF_STRING) {
+		prompt("Current Value")
+		promptgroup("50 - Output")
+		asl(ASL0)
+		pp(TRUE)
+		size(40)
+	}
+	field(OVAL,DBF_STRING) {
+		prompt("Previous Value")
+		special(SPC_NOMOD)
+		interest(3)
+		size(40)
+	}
+
+
+=head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
+
+=head3 Scan Parameters
+
+The string output record has the standard fields for specifying under what
+circumstances it will be processed. These fields are listed in
+L<Scan Fields>.
+In addition, L<Scanning Specification>
+explains how these fields are used.
+
+=head3 Desired Output Parameters
+
+The string output record must specify from where it gets its desired output
+string. The first field that determines where the desired output originates is
+the output mode select (OSML) field, which can have two possible value: C<<<
+closed_loop >>> or C<<< supervisory >>>. If C<<< supervisory >>> is specified,
+DOL is ignored, the current value of VAL is written, and the VAL can be changed
+externally via dbPuts at run-time. If C<<< closed_loop >>> is specified, the VAL
+field's value is obtained from the address specified in the desired output
+location field (DOL) which can be either a database link or a channel access
+link.
+
+DOL can also be a constant in addition to a link, in which case VAL is
+initialized to the constant value. However, your string constant may be
+interpreted as a CA link name, so if you want to initialize your string output
+record, it's best to use the VAL field. Note that if DOL is a constant, OMSL
+cannot be C<<< closed_loop. >>> See
+L<Address Specification>
+for information on specifying links.
+
+=fields VAL, DOL, OMSL
+
+=cut
+
+	field(DOL,DBF_INLINK) {
+		prompt("Desired Output Loc")
+		promptgroup("40 - Input")
+		interest(1)
+	}
+	field(OMSL,DBF_MENU) {
+		prompt("Output Mode Select")
+		promptgroup("50 - Output")
+		interest(1)
+		menu(menuOmsl)
+	}
+
+=head3 Write Parameters
+
+The output link specified in the OUT field specifies where the string output
+record is to write its string. The link can be a database or channel access
+link. If the OUT field is a constant, no output will be written. See L<Address
+Specification> for information on specifying links.
+
+In addition, the appropriate device support module must be entered into the DTYP
+field.
+
+=fields OUT, DTYP
+
+=cut
+
+	field(OUT,DBF_OUTLINK) {
+		prompt("Output Specification")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+
+=head3 Monitor Parameters
+
+These parameters are used to specify when the monitor post should be sent by
+C<monitor()> routine. There are two possible choices:
+
+=head4 Menu stringoutPOST
+
+=menu stringoutPOST
+
+APST is used for archiver monitors and MPST is for all other type of monitors.
+
+=fields MPST, APST
+
+=cut
+
+	field(MPST,DBF_MENU) {
+		prompt("Post Value Monitors")
+		promptgroup("80 - Display")
+		interest(1)
+		menu(stringoutPOST)
+	}
+	field(APST,DBF_MENU) {
+		prompt("Post Archive Monitors")
+		promptgroup("80 - Display")
+		interest(1)
+		menu(stringoutPOST)
+	}
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. These
+fields are used to display the value and other parameters of the string output
+either textually or graphically.
+
+See L<Fields Common to All Record Types>
+for more on the record name (NAME) and description (DESC) fields.
+
+=fields NAME, DESC
+
+=head3 Run-time and Simulation Mode Parameters
+
+The old value field (OVAL) of the string input is used to implement value change
+monitors for VAL. If VAL is not equal to OVAL, then monitors are triggered.
+
+=fields OVAL
+
+The following fields are used to operate the string output in the simulation
+mode. See
+L<Simulation Mode>
+for more information on these fields.
+
+=fields SIOL, SIML, SIMM, SIMS, SSCN, SDLY
+
+=cut
+
+	field(SIOL,DBF_OUTLINK) {
+		prompt("Simulation Output Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SIML,DBF_INLINK) {
+		prompt("Simulation Mode Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+		special(SPC_MOD)
+		interest(1)
+		menu(menuYesNo)
+	}
+	field(SIMS,DBF_MENU) {
+		prompt("Simulation Mode Severity")
+		promptgroup("90 - Simulate")
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+    field(OLDSIMM,DBF_MENU) {
+        prompt("Prev. Simulation Mode")
+        special(SPC_NOMOD)
+        interest(4)
+        menu(menuSimm)
+    }
+    field(SSCN,DBF_MENU) {
+        prompt("Sim. Mode Scan")
+        promptgroup("90 - Simulate")
+        interest(1)
+        menu(menuScan)
+        initial("65535")
+    }
+    field(SDLY,DBF_DOUBLE) {
+        prompt("Sim. Mode Async Delay")
+        promptgroup("90 - Simulate")
+        interest(2)
+        initial("-1.0")
+    }
+    %#include "callback.h"
+    field(SIMPVT,DBF_NOACCESS) {
+        prompt("Sim. Mode Private")
+        special(SPC_NOMOD)
+        interest(4)
+        extra("epicsCallback            *simpvt")
+    }
+
+=head3 Alarm Parameters
+
+The possible alarm conditions for the string output record are the SCAN, READ,
+and INVALID alarms. The severity of the first two is always MAJOR and not
+configurable.
+
+The IVOA field specifies an action to take when the INVALID alarm is triggered.
+There are three possible actions:
+
+=head4 Menu menuIvoa
+
+=menu menuIvoa
+
+When C<<< Set output to IVOV >>>, the value contained in the IVOV field is
+written to the output link during an alarm condition. See
+L<Invalid Alarm Output Action>
+for more information on the IVOA and IVOV fields.
+L<Alarm Fields>
+lists other fields related to a alarms that are common to all record types.
+
+=fields IVOA, IVOV
+
+=cut
+
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID output action")
+		promptgroup("50 - Output")
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_STRING) {
+		prompt("INVALID output value")
+		promptgroup("50 - Output")
+		interest(2)
+		size(40)
+	}
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head4 init_record
+
+  long (*init_record)(struct dbCommon *precord, int pass)
+
+This routine initializes SIMM if SIML is a constant or creates a channel access
+link if SIML is PV_LINK. If SIOL is PV_LINK a channel access link is created.
+
+This routine next checks to see that device support is available. The routine
+next checks to see if the device support write routine is defined. If either
+device support or the device support write routine does not exist, an error
+message is issued and processing is terminated.
+
+If DOL is a constant, then the type double constant, if non-zero, is converted
+to a string and stored into VAL and UDF is set to FALSE. If DOL type is a
+PV_LINK then dbCaAddInlink is called to create a channel access link.
+
+If device support includes C<init_record()>, it is called.
+
+=head4 process
+
+  long (*process)(struct dbCommon *precord)
+
+See L<Record Processing>.
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+Check to see that the appropriate device support module exists. If it doesn't,
+an error message is issued and processing is terminated with the PACT field
+still set to TRUE. This ensures that processes will no longer be called for this
+record. Thus error storms will not occur.
+
+=item 2.
+
+If PACT is FALSE and OMSL is CLOSED_LOOP, recGblGetLinkValue is called to read
+the current value of VAL. See L<Soft Output>.
+If the return status of recGblGetLinkValue is zero then UDF is set to FALSE.
+
+=item 3.
+
+Check severity and write the new value. See
+L<Simulation Mode>
+and L<Invalid Alarm Output Action>
+for details on how the simulation mode and the INVALID alarm conditions affect output.
+
+=item 4.
+
+If PACT has been changed to TRUE, the device support write output routine has
+started but has not completed writing the new value. In this case, the
+processing routine merely returns, leaving PACT TRUE.
+
+=item 5.
+
+Check to see if monitors should be invoked.
+
+=over
+
+=item *
+
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+
+Archive and value change monitors are invoked if OVAL is not equal to VAL.
+
+=item *
+
+NSEV and NSTA are reset to 0.
+
+=back
+
+=item 6.
+
+Scan forward link if necessary, set PACT FALSE, and return.
+
+=back
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=head2 Device Support
+
+=head3 Fields Of Interest To Device Support
+
+Each stringout output record must have an associated set of device support
+routines. The primary responsibility of the device support routines is to write
+a new value whenever write_stringout is called. The device support routines are
+primarily interested in the following fields:
+
+=fields PACT, DPVT, NSEV, NSTA, VAL, OUT
+
+=head3 Device Support Routines (devSoSoft.c)
+
+=head4 write_stringout
+
+  long write_stringout(stringoutRecord *prec)
+
+This routine must output a new value. It returns the following values:
+
+=over
+
+=item * 0: Success.
+
+=item * Other: Error.
+
+=back
+
+=head3 Device Support for Soft Records
+
+The C<<< Soft Channel >>> device support module writes the current value of VAL.
+
+If the OUT link type is PV_LINK, then dbCaAddInlink is called by
+C<init_record()>.
+
+write_so calls recGblPutLinkValue to write the current value of VAL. See
+L<Soft Output>.
+
+=cut
+
+}

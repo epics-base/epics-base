@@ -1,0 +1,969 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=title Multi-Bit Binary Output Record (mbbo)
+
+The normal use for the mbbo record type is to send a binary value (representing
+one of up to 16 states) to a Digital Output module. It is used for any device
+that uses more than one contiguous bit to control it. The mbbo record can also
+be used to write discrete values to other records via database or channel access
+links.
+
+=recordtype mbbo
+
+=cut
+
+recordtype(mbbo) {
+
+=head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
+
+=head3 Scan Parameters
+
+The mbbo record has the standard fields for specifying under what circumstances
+it will be processed. These fields are listed in L<Scan Fields>. In addition,
+L<Scanning Specification> explains how these fields are used. Note that I/O
+event scanning is only supported for those card types that interrupt.
+
+=head3 Desired Output Parameters
+
+The multi-bit binary output record, like all output records, must specify where
+its output originates. The output mode select (OMSL) field determines whether
+the output originates from another record or from database access (i.e., the
+operator). When set to C<<< closed_loop >>>, the desired output is retrieved
+from the link specified in the desired output (DOL) field--which can specify
+either a database or channel access link--and placed into the VAL field. When
+set to C<<< supervisory >>>, the DOL field is ignored and the current value of
+VAL is simply written. VAL can be changed via dpPuts at run-time when OMSL is
+C<<< supervisory >>>. The DOL field can also be a constant, in which case the
+VAL field is initialized to the constant value. If DOL is a constant, OMSL
+cannot be set to C<<< closed_loop >>>.
+
+The VAL field itself usually consists of an index that specifies one of the
+states. The actual output written is the value of RVAL, which is converted from
+VAL following the routine explained in the next section. However, records that
+use the C<<< Soft Channel >>> device support module write the VAL field's value
+without any conversion.
+
+=fields OMSL, DOL, VAL
+
+=head3 Convert and Write Parameters
+
+The device support routines write the desired output to the location specified
+in the OUT field. If the record uses soft device support, OUT can contain a
+constant, a database link, or a channel access link; however, if OUT is a
+constant, no value will be written.
+
+For records that write their values to hardware devices, the OUT output link
+must specify the address of the I/O card, and the DTYP field must specify
+the corresponding device support module. Be aware that the address format
+differs according to the I/O bus used. See L<Address Specification> for
+information on the format of hardware addresses.
+
+For mbbo records that write to hardware, the value written to the output
+location is the value contained in RVAL, which is converted from VAL, VAL
+containing an index of one of the 16 states (0-15). RVAL is then set to the
+corresponding state value, the value in one of the fields ZRVL through FFVL.
+Then this value is shifted left according to the number in the SHFT field so
+that the value is in the correct position for the bits being used (the SHFT
+value is set by device support and is not configurable by the user).
+
+The state value fields ZRVL through FFVL must be configured by the user before
+run-time. When the state values are not defined, the states defined (SDEF) field
+is set to FALSE at initialization time by the record routines. When SDEF is
+FALSE, then the record processing routine does not try to find a match, RVAL is
+set equal to VAL, the bits are shifted using the number in SHFT, and the value
+is written thus.
+
+If the OUT output link specifies a database link, channel access link, or
+constant, then the DTYP field must specify either one of the two soft device
+support modules-- C<<< Soft Channel >>> or C<<< Raw Soft Channel >>>. C<<< Soft
+>>> C<<< Channel >>> writes the value of VAL to the output link, without any
+conversion, while C<<< Raw Soft Channel >>> writes the value from RVAL after it
+has undergone the above conversion. See L<Address Specification> for information
+on specifying links.
+
+Note also that when a string is retrieved as the desired output, a record
+support routine is provided (C<<< put_enum_str() >>>) that will check to see
+if the string matches one of the strings in the ZRST through FFST fields. If a
+match is found, RVAL is set equal to the corresponding state value of that
+string.
+
+=fields OUT, DTYP, RVAL, SHFT, SDEF, ZRVL, ONVL, TWVL, THVL, FRVL, FVVL, SXVL, SVVL, EIVL, NIVL, TEVL, ELVL, TVVL, TTVL, FTVL, FFVL
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. These
+fields are used to display the value and other parameters of the mbbo record
+either textually or graphically. The ZRST-FFST fields contain strings describing
+each of the corresponding states. The C<<< get_enum_str() >>> and
+C<<< get_enum_strs() >>> record routines retrieve these strings for the
+operator. C<<< get_enum_str() >>> gets the string corresponding to the value in
+VAL, and C<<< get_enum_strs() >>> retrieves all the strings.
+
+See L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
+
+=fields NAME, DESC, ZRST, ONST, TWST, THST, FRST, FVST, SXST, SVST, EIST, NIST, TEST, ELST, TVST, TTST, FTST, FFST
+
+=head3 Alarm Parameters
+
+The possible alarm conditions for multi-bit binary outputs are the SCAN, READ,
+INVALID, and state alarms. The SCAN and READ alarms are called by the support
+modules and are not configurable by the user, as their severity is always MAJOR.
+
+The IVOA field specifies an action to take from a number of possible choices
+when the INVALID alarm is triggered. The IVOV field contains a value to be
+written once the INVALID alarm has been triggered if C<<< Set output to IVOV >>>
+has been chosen in the IVOA field. The severity of the INVALID alarm is not
+configurable by the user.
+
+The state alarms are configured in the below severity fields. These fields have
+the usual possible values for severity fields: NO_ALARM, MINOR, and MAJOR.
+
+The unknown state severity field (UNSV), if set to MINOR or MAJOR, triggers an
+alarm when the record support routine cannot find a matching value in the state
+value fields for VAL or when VAL is out of range.
+
+The change of state severity field (COSV) triggers an alarm when the record's
+state changes, if set to MAJOR or MINOR.
+
+The state severity (ZRSV-FFSV) fields, when set to MAJOR or MINOR, trigger an
+alarm when VAL equals the corresponding field.
+
+See L<Alarm Specification> for a complete explanation of discrete alarms and
+these fields. See L<Invalid Alarm Output Action> for an explanation of the IVOA
+and IVOV fields. L<Alarm Fields> lists other fields related to a alarms that are
+common to all record types.
+
+=fields UNSV, COSV, IVOA, IVOV, ZRSV, ONSV, TWSV, THSV, FRSV, FVSV, SXSV, SVSV, EISV, NISV, TESV, ELSV, TVSV, TTSV, FTSV, FFSV
+
+=head3 Run-Time and Simulation Mode Parameters
+
+These parameters are used by the run-time code for processing the multi-bit
+binary output.
+
+MASK is used by device support routine to read the hardware register. Record
+support sets low order of MASK the number of bits specified in NOBT. Device
+support can shift this value.
+
+The LALM field implements the change of state alarm severity by holding the
+value of VAL when the previous change of state alarm was issued.
+
+MLST holds the value when the last monitor for value change was triggered.
+
+SDEF is used by record support to save time if no states are defined; it is used
+for converting VAL to RVAL.
+
+=fields NOBT, ORAW, MASK, LALM, MLST, SDEF
+
+The following fields are used to operate the mbbo record in the simulation mode.
+See L<Fields Common to Many Record Types> for more information on the simulation
+mode fields.
+
+=fields SIOL, SIML, SIMM, SIMS, SSCN, SDLY
+
+=cut
+
+	include "dbCommon.dbd"
+	field(VAL,DBF_ENUM) {
+		prompt("Desired Value")
+		promptgroup("50 - Output")
+		special(SPC_DBADDR)
+		asl(ASL0)
+		pp(TRUE)
+		#=read Yes
+		#=write Yes
+	}
+	field(DOL,DBF_INLINK) {
+		prompt("Desired Output Loc")
+		promptgroup("40 - Input")
+		interest(1)
+	}
+	field(OMSL,DBF_MENU) {
+		prompt("Output Mode Select")
+		promptgroup("50 - Output")
+		interest(1)
+		menu(menuOmsl)
+	}
+	field(NOBT,DBF_USHORT) {
+		prompt("Number of Bits")
+		promptgroup("50 - Output")
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(OUT,DBF_OUTLINK) {
+		prompt("Output Specification")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(ZRVL,DBF_ULONG) {
+		prompt("Zero Value")
+		promptgroup("51 - Output 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(ONVL,DBF_ULONG) {
+		prompt("One Value")
+		promptgroup("51 - Output 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(TWVL,DBF_ULONG) {
+		prompt("Two Value")
+		promptgroup("51 - Output 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(THVL,DBF_ULONG) {
+		prompt("Three Value")
+		promptgroup("51 - Output 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(FRVL,DBF_ULONG) {
+		prompt("Four Value")
+		promptgroup("51 - Output 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(FVVL,DBF_ULONG) {
+		prompt("Five Value")
+		promptgroup("51 - Output 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(SXVL,DBF_ULONG) {
+		prompt("Six Value")
+		promptgroup("51 - Output 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(SVVL,DBF_ULONG) {
+		prompt("Seven Value")
+		promptgroup("51 - Output 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(EIVL,DBF_ULONG) {
+		prompt("Eight Value")
+		promptgroup("52 - Output 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(NIVL,DBF_ULONG) {
+		prompt("Nine Value")
+		promptgroup("52 - Output 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(TEVL,DBF_ULONG) {
+		prompt("Ten Value")
+		promptgroup("52 - Output 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(ELVL,DBF_ULONG) {
+		prompt("Eleven Value")
+		promptgroup("52 - Output 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(TVVL,DBF_ULONG) {
+		prompt("Twelve Value")
+		promptgroup("52 - Output 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(TTVL,DBF_ULONG) {
+		prompt("Thirteen Value")
+		promptgroup("52 - Output 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(FTVL,DBF_ULONG) {
+		prompt("Fourteen Value")
+		promptgroup("52 - Output 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(FFVL,DBF_ULONG) {
+		prompt("Fifteen Value")
+		promptgroup("52 - Output 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		base(HEX)
+		interest(1)
+	}
+	field(ZRST,DBF_STRING) {
+		prompt("Zero String")
+		promptgroup("81 - Display 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(ONST,DBF_STRING) {
+		prompt("One String")
+		promptgroup("81 - Display 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(TWST,DBF_STRING) {
+		prompt("Two String")
+		promptgroup("81 - Display 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(THST,DBF_STRING) {
+		prompt("Three String")
+		promptgroup("81 - Display 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(FRST,DBF_STRING) {
+		prompt("Four String")
+		promptgroup("81 - Display 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(FVST,DBF_STRING) {
+		prompt("Five String")
+		promptgroup("81 - Display 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(SXST,DBF_STRING) {
+		prompt("Six String")
+		promptgroup("81 - Display 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(SVST,DBF_STRING) {
+		prompt("Seven String")
+		promptgroup("81 - Display 0-7")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(EIST,DBF_STRING) {
+		prompt("Eight String")
+		promptgroup("82 - Display 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(NIST,DBF_STRING) {
+		prompt("Nine String")
+		promptgroup("82 - Display 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(TEST,DBF_STRING) {
+		prompt("Ten String")
+		promptgroup("82 - Display 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(ELST,DBF_STRING) {
+		prompt("Eleven String")
+		promptgroup("82 - Display 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(TVST,DBF_STRING) {
+		prompt("Twelve String")
+		promptgroup("82 - Display 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(TTST,DBF_STRING) {
+		prompt("Thirteen String")
+		promptgroup("82 - Display 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(FTST,DBF_STRING) {
+		prompt("Fourteen String")
+		promptgroup("82 - Display 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(FFST,DBF_STRING) {
+		prompt("Fifteen String")
+		promptgroup("82 - Display 8-15")
+		special(SPC_MOD)
+		pp(TRUE)
+		interest(1)
+		size(26)
+	}
+	field(ZRSV,DBF_MENU) {
+		prompt("State Zero Severity")
+		promptgroup("71 - Alarm 0-7")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(ONSV,DBF_MENU) {
+		prompt("State One Severity")
+		promptgroup("71 - Alarm 0-7")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(TWSV,DBF_MENU) {
+		prompt("State Two Severity")
+		promptgroup("71 - Alarm 0-7")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(THSV,DBF_MENU) {
+		prompt("State Three Severity")
+		promptgroup("71 - Alarm 0-7")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(FRSV,DBF_MENU) {
+		prompt("State Four Severity")
+		promptgroup("71 - Alarm 0-7")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(FVSV,DBF_MENU) {
+		prompt("State Five Severity")
+		promptgroup("71 - Alarm 0-7")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(SXSV,DBF_MENU) {
+		prompt("State Six Severity")
+		promptgroup("71 - Alarm 0-7")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(SVSV,DBF_MENU) {
+		prompt("State Seven Severity")
+		promptgroup("71 - Alarm 0-7")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(EISV,DBF_MENU) {
+		prompt("State Eight Severity")
+		promptgroup("72 - Alarm 8-15")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(NISV,DBF_MENU) {
+		prompt("State Nine Severity")
+		promptgroup("72 - Alarm 8-15")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(TESV,DBF_MENU) {
+		prompt("State Ten Severity")
+		promptgroup("72 - Alarm 8-15")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(ELSV,DBF_MENU) {
+		prompt("State Eleven Severity")
+		promptgroup("72 - Alarm 8-15")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(TVSV,DBF_MENU) {
+		prompt("State Twelve Severity")
+		promptgroup("72 - Alarm 8-15")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(TTSV,DBF_MENU) {
+		prompt("State Thirteen Sevr")
+		promptgroup("72 - Alarm 8-15")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(FTSV,DBF_MENU) {
+		prompt("State Fourteen Sevr")
+		promptgroup("72 - Alarm 8-15")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(FFSV,DBF_MENU) {
+		prompt("State Fifteen Sevr")
+		promptgroup("72 - Alarm 8-15")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(UNSV,DBF_MENU) {
+		prompt("Unknown State Sevr")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(COSV,DBF_MENU) {
+		prompt("Change of State Sevr")
+		promptgroup("70 - Alarm")
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(RVAL,DBF_ULONG) {
+		prompt("Raw Value")
+		pp(TRUE)
+	}
+	field(ORAW,DBF_ULONG) {
+		prompt("Prev Raw Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(RBV,DBF_ULONG) {
+		prompt("Readback Value")
+		special(SPC_NOMOD)
+	}
+	field(ORBV,DBF_ULONG) {
+		prompt("Prev Readback Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MASK,DBF_ULONG) {
+		prompt("Hardware Mask")
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(MLST,DBF_USHORT) {
+		prompt("Last Value Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LALM,DBF_USHORT) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(SDEF,DBF_SHORT) {
+		prompt("States Defined")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(SHFT,DBF_USHORT) {
+		prompt("Shift")
+		promptgroup("50 - Output")
+		interest(1)
+	}
+	field(SIOL,DBF_OUTLINK) {
+		prompt("Simulation Output Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SIML,DBF_INLINK) {
+		prompt("Simulation Mode Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+		special(SPC_MOD)
+		interest(1)
+		menu(menuYesNo)
+	}
+	field(SIMS,DBF_MENU) {
+		prompt("Simulation Mode Severity")
+		promptgroup("90 - Simulate")
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+    field(OLDSIMM,DBF_MENU) {
+        prompt("Prev. Simulation Mode")
+        special(SPC_NOMOD)
+        interest(4)
+        menu(menuSimm)
+    }
+    field(SSCN,DBF_MENU) {
+        prompt("Sim. Mode Scan")
+        promptgroup("90 - Simulate")
+        interest(1)
+        menu(menuScan)
+        initial("65535")
+    }
+    field(SDLY,DBF_DOUBLE) {
+        prompt("Sim. Mode Async Delay")
+        promptgroup("90 - Simulate")
+        interest(2)
+        initial("-1.0")
+    }
+    %#include "callback.h"
+    field(SIMPVT,DBF_NOACCESS) {
+        prompt("Sim. Mode Private")
+        special(SPC_NOMOD)
+        interest(4)
+        extra("epicsCallback            *simpvt")
+    }
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID outpt action")
+		promptgroup("50 - Output")
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_USHORT) {
+		prompt("INVALID output value")
+		promptgroup("50 - Output")
+		interest(2)
+	}
+}
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head4 init_record
+
+This routine initializes SIMM if SIML is a constant or creates a channel access
+link if SIML is PV_LINK. If SIOL is PV_LINK a channel access link is created.
+
+This routine next checks to see that device support is available. The routine
+next checks to see if the device support write routine is defined. If either
+device support or the device support write routine does not exist, an error
+message is issued and processing is terminated.
+
+If DOL is a constant, then VAL is initialized to its value and UDF is set to
+FALSE.
+
+MASK is cleared and then the NOBT low order bits are set.
+
+If device support includes C<init_record()>, it is called.
+
+init_common is then called to determine if any states are defined. If states are
+defined, SDEF is set to TRUE.
+
+If device support returns success, VAL is then set from RVAL and UDF is set to
+FALSE.
+
+=head4 process
+
+See next section.
+
+=head4 special
+
+Computes SDEF when any of the fields ZRVL,...FFVL change value.
+
+=head4 get_value
+
+Fills in the values of struct valueDes so that they refer to VAL.
+
+=head4 get_enum_str
+
+Retrieves ASCII string corresponding to VAL.
+
+=head4 get_enum_strs
+
+Retrieves ASCII strings for ZRST,...FFST.
+
+=head4 put_enum_str
+
+Checks if string matches ZRST,...FFST and if it does, sets VAL.
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+Check to see that the appropriate device support module exists. If it doesn't,
+an error message is issued and processing is terminated with the PACT field
+still set to TRUE. This ensures that processes will not longer be called for
+this record. Thus error storms will not occur.
+
+=item 2.
+
+If PACT is FALSE
+
+=over
+
+=item *
+
+If DOL is DB_LINK and OMSL is CLOSED_LOOP
+
+=over
+
+=item *
+
+Get value from DOL
+
+=item *
+
+Set UDF to FALSE
+
+=item *
+
+Check for link alarm
+
+=back
+
+=item *
+
+If any state values are defined
+
+=over
+
+=item *
+
+If VAL E<gt> 15, then raise alarm and go to 4
+
+=item *
+
+Else using VAL as index set RVAL = one of ZRVL,...FFVL
+
+=back
+
+=item *
+
+Else set RVAL = VAL
+
+=item *
+
+Shift RVAL left SHFT bits
+
+=back
+
+=item 3.
+
+Convert
+
+=over
+
+=item *
+
+If PACT is FALSE, compute RVAL
+
+=over
+
+=item *
+
+If VAL is 0,...,15, set RVAL from ZRVL,...,FFVL
+
+=item *
+
+If VAL out of range, set RVAL = undefined
+
+=back
+
+=item *
+
+Status = write_mbbo
+
+=back
+
+=item 4.
+
+Check alarms. This routine checks to see if the new VAL causes the alarm status
+and severity to change. If so, NSEV, NSTA and LALM are set.
+
+=item 5.
+
+Check severity and write the new value. See L<Simulation Mode> and L<Invalid
+Alarm Output Action> for more information.
+
+=item 6.
+
+If PACT has been changed to TRUE, the device support write output routine has
+started but has not completed writing the new value. In this case, the
+processing routine merely returns, leaving PACT TRUE.
+
+=item 7.
+
+Check to see if monitors should be invoked.
+
+=over
+
+=item *
+
+Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item *
+
+Archive and value change monitors are invoked if MLST is not equal to VAL.
+
+=item *
+
+Monitors for RVAL and RBV are checked whenever other monitors are invoked.
+
+=item *
+
+NSEV and NSTA are reset to 0.
+
+=back
+
+=item 8.
+
+Scan forward link if necessary, set PACT FALSE, and return.
+
+=back
+
+
+=head2 Device Support
+
+=head3 Fields Of Interest To Device Support
+
+Each mbbo record must have an associated set of device support routines. The
+primary responsibility of the device support routines is to obtain a new raw
+mbbo value whenever write_mbbo is called. The device support routines are
+primarily interested in the following fields:
+
+=fields PACT, DPVT, NSEV, NSTA, NOBT, OUT, RVAL, RBV, MASK, SHFT
+
+=head3 Device Support Routines
+
+Device support consists of the following routines:
+
+=head4 long report(int level)
+
+This optional routine is called by the IOC command C<dbior> and is passed the
+report level that was requested by the user.
+It should print a report on the state of the device support to stdout.
+The C<level> parameter may be used to output increasingly more detailed
+information at higher levels, or to select different types of information with
+different levels.
+Level zero should print no more than a small summary.
+
+=head4 long init(int after)
+
+This optional routine is called twice at IOC initialization time.
+The first call happens before any of the C<init_record()> calls are made, with
+the integer parameter C<after> set to 0.
+The second call happens after all of the C<init_record()> calls have been made,
+with C<after> set to 1.
+
+=head4 init_record
+
+  init_record(precord)
+
+This routine is optional. If provided, it is called by the record support's
+C<init_record()> routine. If MASK is used, it should be shifted if necessary and SHFT
+given a value.
+
+=head4 get_ioint_info
+
+  get_ioint_info(int cmd,struct dbCommon *precord,IOSCANPVT *ppvt)
+
+This routine is called by the ioEventScan system each time the record is added
+or deleted from an I/O event scan list. cmd has the value (0,1) if the
+record is being (added to, deleted from) an I/O event list. It must be
+provided for any device type that can use the ioEvent scanner.
+
+=head4 write_mbbo
+
+  write_mbbo(precord)
+
+This routine must output a new value. It returns the following values:
+
+=over
+
+=item *
+
+0: Success.
+
+=item *
+
+Other: Error.
+
+=back
+
+=head3 Device Support For Soft Records
+
+=head4 Soft Channel
+
+The C<<< Soft Channel >>> module writes the current value of VAL.
+
+If the OUT link type is PV_LINK, then dbCaAddInlink is called by
+C<init_record()>.
+
+write_mbbo calls recGblPutLinkValue to write the current value of VAL. See
+L<Soft Output> for more information.
+
+=head4 Raw Soft Channel
+
+This module writes RVAL to the location specified in the output link. It returns
+a 0.
+
+=cut

@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 =title Sequence Record (seq)
@@ -28,63 +28,9 @@ menu(seqSELM) {
 
 recordtype(seq) {
 
-=pod
-
-=head1 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Desired Output Parameters>
-
-=item * L<Output Parameters>
-
-=item * L<Selection Algorithm Parameters>
-
-=item * L<Delay Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=back
-
-=begin html
-
-<br><hr><br>
-
-=end html
-
 =head2 Parameter Fields
 
-The fields fall into the following categories:
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Desired Output Parameters>
-
-=item * L<Output Parameters>
-
-=item * L<Selection Algorithm Parameters>
-
-=item * L<Delay Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=back
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -294,7 +240,7 @@ information on call
 
 =cut
 
-    include "dbCommon.dbd" 
+    include "dbCommon.dbd"
     field(VAL,DBF_LONG) {
         prompt("Used to trigger")
         asl(ASL0)

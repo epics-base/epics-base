@@ -4,61 +4,13 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 Subroutine Record (sub)
+=title Subroutine Record (sub)
 
 The subroutine record is used to call a C initialization routine and a recurring
 scan routine. There is no device support for this record.
-
-=head2 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Read Parameters>
-
-=item * L<Subroutine Connection>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Monitor Parameters>
-
-=item * L<Run-time Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines (subRecord.c)>
-
-=item * L<Record Processing>
-
-=item * L<Example Synchronous Subroutine>
-
-=item * L<Example Asynchronous Subroutine>
-
-=back
-
-=back
-
-=begin html
-
-<br>
-<hr>
-<br>
-
-=end html
 
 =recordtype sub
 
@@ -67,6 +19,8 @@ scan routine. There is no device support for this record.
 recordtype(sub) {
 
 =head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -170,7 +124,7 @@ monitors are called for that field.
 
 =head2 Record Support
 
-=head3 Record Support Routines (subRecord.c)
+=head3 Record Support Routines
 
 =head4 init_record
 
@@ -307,19 +261,19 @@ called.
   #include <subRecord.h>
   #include <registryFunction.h>
   #include <epicsExport.h>
- 
+
   static long subInit(struct subRecord *psub)
   {
       printf("subInit was called\n");
       return 0;
   }
- 
+
   static long subProcess(struct subRecord *psub)
   {
       psub->val++;
       return 0;
   }
- 
+
   epicsRegisterFunction(subInit);
   epicsRegisterFunction(subProcess);
 
@@ -396,14 +350,14 @@ processing.
   #include <dbDefs.h>
   #include <dbAccess.h>
   #include <subRecord.h>
- 
+
   /* control block for callback*/
   struct callback {
       epicsCallback callback;
       struct dbCommon *precord;
       WDOG_ID wd_id;
   };
- 
+
   void myCallback(struct callback *pcallback)
   {
       struct dbCommon *precord=pcallback->precord;
@@ -412,7 +366,7 @@ processing.
       (*prset->process)(precord);
       dbScanUnlock(precord);
   }
- 
+
   long subInit(struct subRecord *psub)
   {
       struct callback *pcallback;
@@ -424,7 +378,7 @@ processing.
       printf("subInit was called\n");
       return 0;
   }
- 
+
   long subProcess(struct subRecord *psub)
   {
       struct callback *pcallback=(struct callback *)(psub->dpvt);
@@ -454,7 +408,7 @@ processing.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(VAL,DBF_DOUBLE) {
 		prompt("Result")
 		asl(ASL0)
@@ -773,4 +727,3 @@ processing.
 		interest(3)
 	}
 }
-

@@ -7,63 +7,13 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 Long Input Record (longin)
+=title Long Input Record (longin)
 
 The normal use for the long input record or "longin" record is to retrieve a
 long integer value of up to 32 bits. Device support routines are provided to
 support direct interfaces to hardware. In addition, the C<<< Soft Channel >>>
 device module is provided to obtain input via database or channel access links
 or via dbPutField or dbPutLink requests.
-
-=head1 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Read Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time and Simulation Mode Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines>
-
-=item * L<Record Processing>
-
-=back
-
-=item * L<Device Support>
-
-=over
-
-=item * L<Fields Of Interest To Device Support>
-
-=item * L<Device Support Routines>
-
-=item * L<Device Support For Soft Records>
-
-=back
-
-=back
-
-=begin html
-
-<br><hr><br>
-
-=end html
 
 =recordtype longin
 
@@ -73,21 +23,7 @@ recordtype(longin) {
 
 =head2 Parameter Fields
 
-The fields in this record fall into the following categories:
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Read Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Run-time and Simulation Mode Parameters>
-
-=back
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -174,17 +110,11 @@ See L<Fields Common to Many Record Types> for more information on these fields.
 
 =fields SIOL, SVAL, SIML, SIMM, SIMS
 
-=begin html
-
-<br><hr><br>
-
-=end html
-
 =head2 Record Support
 
-=head3 Record Support Routines 
+=head3 Record Support Routines
 
-=head4 init_record 
+=head4 init_record
 
 This routine initializes SIMM with the value of SIML if SIML type is CONSTANT
 link or creates a channel access link if SIML type is PV_LINK. SVAL is likewise
@@ -374,7 +304,7 @@ sets UDF to FALSE. read_longin returns the status of C<recGblGetLinkValue>.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(VAL,DBF_LONG) {
 		prompt("Current value")
 		promptgroup("40 - Input")

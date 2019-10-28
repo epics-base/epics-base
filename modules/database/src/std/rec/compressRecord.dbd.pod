@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 =title Compression Record (compress)
@@ -62,45 +62,9 @@ menu(bufferingALG) {
 }
 recordtype(compress) {
 
-=head2 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scanning Parameters>
-
-=item * L<Algorithms and Related Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Run-time Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines>
-
-=item * L<Record Processing>
-
-=back
-
-=back
-
-=begin html
-
-<br>
-<hr>
-<br>
-
-=end html
-
 =head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scanning Parameters
 
@@ -259,80 +223,52 @@ SPTR points to an array that is used for array averages.
 
 WPTR is used by the dbGetlinks routines.
 
-=begin html
-
-<br>
-<hr>
-<br>
-
-=end html
-
 =head2 Record Support
 
-=head3 Record Support Routines (compressRecord.c)
+=head3 Record Support Routines
 
-=head4 init_record
-
-  long (*init_record)(struct dbCommon *precord, int pass)
+  long init_record(struct dbCommon *precord, int pass)
 
 Space for all necessary arrays is allocated. The addresses are stored in the
 appropriate fields in the record.
 
-=head4 process
+  long process(struct dbCommon *precord)
 
-  long (*process)(struct dbCommon *precord)
+See L<Record Processing> below.
 
-See L<Record Processing>
-
-=head4 special
-
-  long (*special)(struct dbAddr *paddr, int after)
+  long special(struct dbAddr *paddr, int after)
 
 This routine is called when RSET, ALG, or N are set. It performs a reset.
 
-=head4 cvt_dbaddr
-
-  long (*cvt_dbaddr)(struct dbAddr *paddr)
+  long cvt_dbaddr(struct dbAddr *paddr)
 
 This is called by dbNameToAddr. It makes the dbAddr structure refer to the
 actual buffer holding the result.
 
-=head4 get_array_info
-
-  long (*get_array_info)(struct dbAddr *paddr, long *no_elements, long *offset)
+  long get_array_info(struct dbAddr *paddr, long *no_elements, long *offset)
 
 Obtains values from the circular buffer referenced by VAL.
 
-=head4 put_array_info
-
-  long (*put_array_info)(struct dbAddr *paddr, long nNew);
+  long put_array_info(struct dbAddr *paddr, long nNew);
 
 Writes values into the circular buffer referenced by VAL.
 
-=head4 get_units
-
-  long (*get_units)(struct dbAddr *paddr, char *units);
+  long get_units(struct dbAddr *paddr, char *units);
 
 Retrieves EGU.
 
-=head4 get_precision
-
-  long (*get_precision)(const struct dbAddr *paddr, long *precision);
+  long get_precision(const struct dbAddr *paddr, long *precision);
 
 Retrieves PREC.
 
-=head4 get_graphic_double
-
-  long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p);
+  long get_graphic_double(struct dbAddr *paddr, struct dbr_grDouble *p);
 
 Sets the upper display and lower display limits for a field. If the field is
 VAL, the limits are set to HOPR and LOPR, else if the field has upper and lower
 limits defined they will be used, else the upper and lower maximum values for
 the field type will be used.
 
-=head4 get_control_double
-
-  long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p);
+  long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *p);
 
 Sets the upper control and the lower control limits for a field. If the field is
 VAL, the limits are set to HOPR and LOPR, else if the field has upper and lower
@@ -418,7 +354,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
 		asl(ASL0)
@@ -549,4 +485,3 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		interest(3)
 	}
 }
-

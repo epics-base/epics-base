@@ -1154,3 +1154,8 @@ void db_delete_field_log (db_field_log *pfl)
         freeListFree(dbevFieldLogFreeList, pfl);
     }
 }
+
+int db_available_logs(void)
+{
+    return (int) freeListItemsAvail(dbevFieldLogFreeList);
+}

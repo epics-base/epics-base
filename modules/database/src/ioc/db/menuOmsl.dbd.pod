@@ -6,19 +6,20 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
-recordtype(state) {
-	include "dbCommon.dbd" 
-	field(VAL,DBF_STRING) {
-		prompt("Value")
-		promptgroup("40 - Input")
-		asl(ASL0)
-		pp(TRUE)
-		size(20)
-	}
-	field(OVAL,DBF_STRING) {
-		prompt("Prev Value")
-		special(SPC_NOMOD)
-		interest(3)
-		size(20)
-	}
+
+=head1 Menu menuOmsl
+
+This menu is used for the C<OMSL> field of many output record types. It controls
+whether the record will fetch an input value from its C<DOL> input link when
+processed, which is useful when it is part of a closed loop control algorithm.
+The C<supervisory> state means the input link will not be used, C<closed_loop>
+enables the input link.
+
+=menu menuOmsl
+
+=cut
+
+menu(menuOmsl) {
+	choice(menuOmslsupervisory,"supervisory")
+	choice(menuOmslclosed_loop,"closed_loop")
 }

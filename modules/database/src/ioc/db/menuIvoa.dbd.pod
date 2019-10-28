@@ -6,33 +6,18 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
-recordtype(permissive) {
-	include "dbCommon.dbd" 
-	field(LABL,DBF_STRING) {
-		prompt("Button Label")
-		promptgroup("80 - Display")
-		pp(TRUE)
-		interest(1)
-		size(20)
-	}
-	field(VAL,DBF_USHORT) {
-		prompt("Status")
-		promptgroup("40 - Input")
-		asl(ASL0)
-		pp(TRUE)
-	}
-	field(OVAL,DBF_USHORT) {
-		prompt("Old Status")
-		special(SPC_NOMOD)
-		interest(3)
-	}
-	field(WFLG,DBF_USHORT) {
-		prompt("Wait Flag")
-		pp(TRUE)
-	}
-	field(OFLG,DBF_USHORT) {
-		prompt("Old Flag")
-		special(SPC_NOMOD)
-		interest(3)
-	}
+
+=head1 Menu menuIvoa
+
+This menu specifies the possibile actions to take when the INVALID alarm is
+triggered. See individual record types for more information.
+
+=menu menuIvoa
+
+=cut
+
+menu(menuIvoa) {
+	choice(menuIvoaContinue_normally,"Continue normally")
+	choice(menuIvoaDon_t_drive_outputs,"Don't drive outputs")
+	choice(menuIvoaSet_output_to_IVOV,"Set output to IVOV")
 }

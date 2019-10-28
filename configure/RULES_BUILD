@@ -370,7 +370,7 @@ testspec: $(TESTSCRIPTS)
 test-results: tapfiles
 ifneq ($(TAPFILES),)
 ifdef RUNTESTS_ENABLED
-	$(PERL) -e 'use App::Prove;my $$app = App::Prove->new;$$app->process_args(@ARGV);exit( $$app->run ? 0 : 1 );' -- --failures --ext .tap --exec "$(CAT)" --color $(TAPFILES)
+	$(PROVE) --failures --ext .tap --exec "$(CAT)" --color $(TAPFILES)
 endif
 
 CURRENT_TAPFILES := $(wildcard $(TAPFILES))

@@ -1,0 +1,29 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=head1 Menu menuYesNo
+
+This menu is used by many record types to specify simple C<NO> or C<YES>
+options for record-specific purposes.
+
+Note that no other values for a field that uses menuYesNo are possible, e.g.
+C<MAYBE> or C<NO WAY> would not be accepted as choices for the field.
+Also, the choices C<yes>, C<No>, and C<Yes> are not valid choices since they
+don't match the case of C<NO> or C<YES>.
+The integer values C<0> and C<1> may often be used instead however, they are
+used as an index into the choices so C<0> becomes C<NO> and C<1> becomes <YES>.
+
+=menu menuYesNo
+
+=cut
+
+menu(menuYesNo) {
+	choice(menuYesNoNO,"NO")
+	choice(menuYesNoYES,"YES")
+}

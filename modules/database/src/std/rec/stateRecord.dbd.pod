@@ -1,0 +1,88 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=title State Record (state)
+
+The state record is a means for a state program to communicate with the operator
+interface. Its only function is to provide a place in the database through which
+the state program can inform the operator interface of its state by storing an
+arbitrary ASCII string in its VAL field.
+
+B<Note this record is deprecated and may be removed in a future EPICS release.>
+
+=recordtype state
+
+=cut
+
+recordtype(state) {
+	include "dbCommon.dbd"
+
+=head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
+
+=head3 Scan Parameters
+
+The state record has the standard fields for specifying under what circumstances
+it will be processed. These fields are listed in L<Scan Fields>. In addition,
+L<Scanning Specification> explains how these fields are used.
+
+=head3 Operator Display Parameters
+
+See L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
+
+=fields NAME, DESC
+
+=head3 Alarm Parameters
+
+The state record has the alarm parameters common to all record types.
+L<Alarm Fields> lists other fields related to a alarms that are common to all
+record types.
+
+=head3 Run-time Parameters
+
+These parameters are used by the application code to convey the state of the
+program to the operator interface. The VAL field holds the string retrieved from
+the state program. The OVAL is used to implement monitors for the VAL field.
+When the string in OVAL differs from the one in VAL, monitors are triggered.
+They represent the current state of the sequence program.
+
+=fields VAL, OVAL
+
+=cut
+
+	field(VAL,DBF_STRING) {
+		prompt("Value")
+		promptgroup("40 - Input")
+		asl(ASL0)
+		pp(TRUE)
+		size(20)
+	}
+	field(OVAL,DBF_STRING) {
+		prompt("Prev Value")
+		special(SPC_NOMOD)
+		interest(3)
+		size(20)
+	}
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head4 process
+
+  long (*process)(struct dbCommon *precord)
+
+C<process()> triggers monitors on VAL when it changes and scans the forward
+link if necessary.
+
+=cut
+
+}

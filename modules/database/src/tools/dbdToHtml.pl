@@ -127,14 +127,23 @@ open my $out, '>', $opt_o or
 
 my $podHtml;
 my $idify;
+my $contentType =
+    '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >';
 
 if ($::XHTML) {
     $podHtml = Pod::Simple::XHTML->new();
     $podHtml->html_doctype(<< '__END_DOCTYPE');
-<?xml version='1.0' encoding='iso-8859-1'?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'
      'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
 __END_DOCTYPE
+    if ($podHtml->can('html_charset')) {
+        $podHtml->html_charset('UTF-8');
+    }
+    else {
+        # Older version of Pod::Simple::XHTML without html_charset()
+        $podHtml->html_header_tags($contentType);
+    }
     $podHtml->html_header_tags($podHtml->html_header_tags .
         "\n<link rel='stylesheet' href='style.css' type='text/css'>");
 
@@ -143,6 +152,7 @@ __END_DOCTYPE
         return $podHtml->idify($title, 1);
     }
 } else { # Fall back to HTML
+    $Pod::Simple::HTML::Content_decl = $contentType;
     $podHtml = Pod::Simple::HTML->new();
     $podHtml->html_css('style.css');
 

@@ -110,7 +110,9 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             passfl = pfl;
             pfl = NULL;
         }
-        break;
+        else
+            db_delete_field_log(pfl);
+        goto save_state;
     case syncModeLast:
         if (!actstate && my->laststate) {
             passfl = my->lastfl;
@@ -122,28 +124,34 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             passfl = pfl;
             pfl = NULL;
         }
-        break;
+        else
+            db_delete_field_log(pfl);
+        goto save_state;
     case syncModeWhile:
-        if (actstate) {
+        if (actstate)
             passfl = pfl;
-        }
+        else
+            db_delete_field_log(pfl);
         goto no_shift;
     case syncModeUnless:
-        if (!actstate) {
+        if (!actstate)
             passfl = pfl;
-        }
+        else
+            db_delete_field_log(pfl);
         goto no_shift;
     }
 
     if (my->lastfl)
         db_delete_field_log(my->lastfl);
     my->lastfl = pfl;
-    my->laststate = actstate;
 
     /* since no copy is made we can't keep a reference to the returned fl */
     assert(my->lastfl != passfl);
 
-    no_shift:
+save_state:
+    my->laststate = actstate;
+
+no_shift:
     return passfl;
 }
 

@@ -7,58 +7,12 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=pod
-
-=head1 Select Record (sel)
+=title Select Record (sel)
 
 The select record computes a value based on input obtained from up to 12
 locations. The selection algorithm can be one of the following: C<<< Specified
 >>>, C<<< High Signal >>>, C<<< Low Signal >>>, C<<< Median Signal >>>. Each
 input can be a constant, a database link, or a channel access link.
-
-=head2 Contents
-
-=over
-
-=item * L<Parameter Fields>
-
-=over
-
-=item * L<Scan Parameters>
-
-=item * L<Read Parameters>
-
-=item * L<Select Parameters>
-
-=item * L<Operator Display Parameters>
-
-=item * L<Alarm Parameters>
-
-=item * L<Monitor Parameters>
-
-=item * L<Run-time Parameters>
-
-=back
-
-=item * L<Record Support>
-
-=over
-
-=item * L<Record Support Routines (selRecord.c)>
-
-=item * L<Record Processing>
-
-=back
-
-=back
-
-=begin html
-
-<br>
-<hr>
-<br>
-
-=end html
 
 =recordtype sel
 
@@ -73,6 +27,8 @@ menu(selSELM) {
 recordtype(sel) {
 
 =head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
@@ -206,17 +162,9 @@ equal to A, no monitor is invoked for A.
 
 =fields VAL, LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
 
-=begin html
-
-<br>
-<hr>
-<br>
-
-=end html
-
 =head2 Record Support
 
-=head3 Record Support Routines (selRecord.c)
+=head3 Record Support Routines
 
 =head4 init_record
 
@@ -336,7 +284,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(VAL,DBF_DOUBLE) {
 		prompt("Result")
 		promptgroup("40 - Input")
@@ -644,4 +592,3 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		interest(3)
 	}
 }
-

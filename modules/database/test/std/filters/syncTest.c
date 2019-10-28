@@ -42,12 +42,14 @@ static int fl_equal(const db_field_log *pfl1, const db_field_log *pfl2) {
 static void fl_setup(dbChannel *chan, db_field_log *pfl, long val) {
     struct dbCommon  *prec = dbChannelRecord(chan);
 
+    memset(pfl, 0, sizeof(db_field_log));
     pfl->ctx  = dbfl_context_event;
     pfl->type = dbfl_type_val;
     pfl->stat = prec->stat;
     pfl->sevr = prec->sevr;
     pfl->time = prec->time;
     pfl->field_type  = DBF_LONG;
+    pfl->field_size  = sizeof(epicsInt32);
     pfl->no_elements = 1;
     /*
      * use memcpy to avoid a bus error on
@@ -66,31 +68,92 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
-static void mustDrop(dbChannel *pch, db_field_log *pfl2, char* m) {
-    db_field_log *pfl = dbChannelRunPreChain(pch, pfl2);
-    testOk(NULL == pfl, "filter drops field_log (%s)", m);
+/*
+ * Use mustDrop() and mustPass() to test filters with no memory
+ * of previous field_log pointers.
+ */
+static void mustDrop(dbChannel *pch, db_field_log *pfl, char* m) {
+    int oldFree = db_available_logs();
+    db_field_log *pfl2 = dbChannelRunPreChain(pch, pfl);
+    int newFree = db_available_logs();
+
+    testOk(NULL == pfl2, "filter drops field_log (%s)", m);
+    testOk(newFree == oldFree + 1, "a field_log was freed - %d+1 => %d",
+        oldFree, newFree);
+
+    db_delete_field_log(pfl2);
 }
 
-static void mustPassTwice(dbChannel *pch, db_field_log *pfl2, char* m) {
-    db_field_log *pfl;
+static void mustPass(dbChannel *pch, db_field_log *pfl, char* m) {
+    int oldFree = db_available_logs();
+    db_field_log *pfl2 = dbChannelRunPreChain(pch, pfl);
+    int newFree = db_available_logs();
+
+    testOk(pfl == pfl2, "filter passes field_log (%s)", m);
+    testOk(newFree == oldFree, "no field_logs were freed - %d => %d",
+        oldFree, newFree);
+
+    db_delete_field_log(pfl2);
+}
+
+/*
+ * Use mustStash() and mustSwap() to test filters that save
+ * field_log pointers and return them later.
+ *
+ * mustStash() expects the filter to save the current pointer
+ *      (freeing any previously saved pointer) and return NULL.
+ * mustSwap() expects the filter to return the previously
+ *      saved pointer and save the current pointer.
+ */
+static db_field_log *stashed;
+
+static void streamReset(void) {
+    stashed = NULL;
+}
+
+static void mustStash(dbChannel *pch, db_field_log *pfl, char* m) {
+    int oldFree = db_available_logs();
+    db_field_log *pfl2 = dbChannelRunPreChain(pch, pfl);
+    int newFree = db_available_logs();
+
+    testOk(NULL == pfl2, "filter stashes field_log (%s)", m);
+    if (stashed) {
+        testOk(newFree == oldFree + 1, "a field_log was freed - %d+1 => %d",
+            oldFree, newFree);
+    }
+    else {
+        testOk(newFree == oldFree, "no field_logs were freed - %d => %d",
+            oldFree, newFree);
+    }
+    stashed = pfl;
+    db_delete_field_log(pfl2);
+}
+
+static void mustSwap(dbChannel *pch, db_field_log *pfl, char* m) {
+    int oldFree = db_available_logs();
+    db_field_log *pfl2 = dbChannelRunPreChain(pch, pfl);
+    int newFree = db_available_logs();
+
+    testOk(stashed == pfl2, "filter returns stashed field log (%s)", m);
+    testOk(newFree == oldFree, "no field_logs were freed - %d => %d",
+        oldFree, newFree);
+
+    stashed = pfl;
+    db_delete_field_log(pfl2);
+}
+
+static void mustPassTwice(dbChannel *pch, db_field_log *pfl, char* m) {
+    int oldFree = db_available_logs(), newFree;
+    db_field_log *pfl2;
 
     testDiag("%s: filter must pass twice", m);
-    pfl = dbChannelRunPreChain(pch, pfl2);
+    pfl2 = dbChannelRunPreChain(pch, pfl);
     testOk(pfl2 == pfl, "call 1 does not drop or replace field_log");
-    pfl = dbChannelRunPreChain(pch, pfl2);
+    pfl2 = dbChannelRunPreChain(pch, pfl);
     testOk(pfl2 == pfl, "call 2 does not drop or replace field_log");
-}
-
-static void mustPassOld(dbChannel *pch, db_field_log *old, db_field_log *cur, char* m) {
-    db_field_log *pfl = dbChannelRunPreChain(pch, cur);
-
-    testOk(old == pfl, "filter passes previous field log (%s)", m);
-}
-
-static void mustPass(dbChannel *pch, db_field_log *cur, char* m) {
-    db_field_log *pfl = dbChannelRunPreChain(pch, cur);
-
-    testOk(cur == pfl, "filter passes field_log (%s)", m);
+    newFree = db_available_logs();
+    testOk(newFree == oldFree, "no field_logs were freed - %d => %d",
+        oldFree, newFree);
 }
 
 static void checkCtxRead(dbChannel *pch, dbStateId id) {
@@ -138,10 +201,10 @@ MAIN(syncTest)
     const chFilterPlugin *plug;
     char myname[] = "sync";
     db_field_log *pfl[10];
-    int i;
+    int i, logsFree, logsFinal;
     dbEventCtx evtctx;
 
-    testPlan(139);
+    testPlan(214);
 
     testdbPrepare();
 
@@ -176,9 +239,14 @@ MAIN(syncTest)
     testOk(!!(pch = dbChannelCreate("x.VAL{\"sync\":{\"m\":\"while\",\"s\":\"red\"}}")),
            "dbChannel with plugin sync (m='while' s='red') created");
 
+    /* Start the free-list */
+    db_delete_field_log(db_create_read_log(pch));
+    logsFree = db_available_logs();
+    testDiag("%d field_logs on free-list", logsFree);
+
     checkAndOpenChannel(pch, plug);
 
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < 9; i++) {
         pfl[i] = db_create_read_log(pch);
         fl_setup(pch, pfl[i], 120 + i);
     }
@@ -198,10 +266,9 @@ MAIN(syncTest)
     mustDrop(pch, pfl[7], "state=FALSE, log7");
     mustDrop(pch, pfl[8], "state=FALSE, log8");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
-
     dbChannelDelete(pch);
+
+    testDiag("%d field_logs on free-list", db_available_logs());
 
     /* mode UNLESS */
 
@@ -211,7 +278,7 @@ MAIN(syncTest)
 
     checkAndOpenChannel(pch, plug);
 
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < 9; i++) {
         pfl[i] = db_create_read_log(pch);
         fl_setup(pch, pfl[i], 120 + i);
     }
@@ -231,10 +298,9 @@ MAIN(syncTest)
     mustPass(pch, pfl[7], "state=FALSE, log7");
     mustPass(pch, pfl[8], "state=FALSE, log8");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
-
     dbChannelDelete(pch);
+
+    testDiag("%d field_logs on free-list", db_available_logs());
 
     /* mode BEFORE */
 
@@ -251,23 +317,24 @@ MAIN(syncTest)
 
     testDiag("Test event stream");
 
+    streamReset();
     dbStateClear(red);
-    mustDrop(pch, pfl[0], "state=FALSE, log0");
-    mustDrop(pch, pfl[1], "state=FALSE, log1");
-    mustDrop(pch, pfl[2], "state=FALSE, log2");
+    mustStash(pch, pfl[0], "state=FALSE, log0");
+    mustStash(pch, pfl[1], "state=FALSE, log1");
+    mustStash(pch, pfl[2], "state=FALSE, log2");
     dbStateSet(red);
-    mustPassOld(pch, pfl[2], pfl[3], "state=TRUE, log3, pass=log2");
-    mustDrop(pch, pfl[4], "state=TRUE, log4");
-    mustDrop(pch, pfl[5], "state=TRUE, log5");
-    mustDrop(pch, pfl[6], "state=TRUE, log6");
+    mustSwap(pch, pfl[3], "state=TRUE, log3");
+    mustStash(pch, pfl[4], "state=TRUE, log4");
+    mustStash(pch, pfl[5], "state=TRUE, log5");
+    mustStash(pch, pfl[6], "state=TRUE, log6");
     dbStateClear(red);
-    mustDrop(pch, pfl[7], "state=FALSE, log7");
-    mustDrop(pch, pfl[8], "state=FALSE, log8");
-    mustDrop(pch, pfl[9], "state=FALSE, log9");
-
-    db_delete_field_log(pfl[2]);
+    mustStash(pch, pfl[7], "state=FALSE, log7");
+    mustStash(pch, pfl[8], "state=FALSE, log8");
+    mustStash(pch, pfl[9], "state=FALSE, log9");
 
     dbChannelDelete(pch);
+
+    testDiag("%d field_logs on free-list", db_available_logs());
 
     /* mode FIRST */
 
@@ -277,13 +344,14 @@ MAIN(syncTest)
 
     checkAndOpenChannel(pch, plug);
 
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < 9; i++) {
         pfl[i] = db_create_read_log(pch);
         fl_setup(pch, pfl[i], 120 + i);
     }
 
     testDiag("Test event stream");
 
+    streamReset();
     dbStateClear(red);
     mustDrop(pch, pfl[0], "state=FALSE, log0");
     mustDrop(pch, pfl[1], "state=FALSE, log1");
@@ -297,10 +365,9 @@ MAIN(syncTest)
     mustDrop(pch, pfl[7], "state=FALSE, log7");
     mustDrop(pch, pfl[8], "state=FALSE, log8");
 
-    db_delete_field_log(pfl[3]);
-    db_delete_field_log(pfl[9]);
-
     dbChannelDelete(pch);
+
+    testDiag("%d field_logs on free-list", db_available_logs());
 
     /* mode LAST */
 
@@ -317,23 +384,24 @@ MAIN(syncTest)
 
     testDiag("Test event stream");
 
+    streamReset();
     dbStateClear(red);
-    mustDrop(pch, pfl[0], "state=FALSE, log0");
-    mustDrop(pch, pfl[1], "state=FALSE, log1");
-    mustDrop(pch, pfl[2], "state=FALSE, log2");
+    mustStash(pch, pfl[0], "state=FALSE, log0");
+    mustStash(pch, pfl[1], "state=FALSE, log1");
+    mustStash(pch, pfl[2], "state=FALSE, log2");
     dbStateSet(red);
-    mustDrop(pch, pfl[3], "state=TRUE, log3");
-    mustDrop(pch, pfl[4], "state=TRUE, log4");
-    mustDrop(pch, pfl[5], "state=TRUE, log5");
+    mustStash(pch, pfl[3], "state=TRUE, log3");
+    mustStash(pch, pfl[4], "state=TRUE, log4");
+    mustStash(pch, pfl[5], "state=TRUE, log5");
     dbStateClear(red);
-    mustPassOld(pch, pfl[5], pfl[6], "state=TRUE, log6, pass=log5");
-    mustDrop(pch, pfl[7], "state=FALSE, log7");
-    mustDrop(pch, pfl[8], "state=FALSE, log8");
-    mustDrop(pch, pfl[9], "state=FALSE, log9");
-
-    db_delete_field_log(pfl[5]);
+    mustSwap(pch, pfl[6], "state=TRUE, log6");
+    mustStash(pch, pfl[7], "state=FALSE, log7");
+    mustStash(pch, pfl[8], "state=FALSE, log8");
+    mustStash(pch, pfl[9], "state=FALSE, log9");
 
     dbChannelDelete(pch);
+
+    testDiag("%d field_logs on free-list", db_available_logs());
 
     /* mode AFTER */
 
@@ -343,13 +411,14 @@ MAIN(syncTest)
 
     checkAndOpenChannel(pch, plug);
 
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < 9; i++) {
         pfl[i] = db_create_read_log(pch);
         fl_setup(pch, pfl[i], 120 + i);
     }
 
     testDiag("Test event stream");
 
+    streamReset();
     dbStateClear(red);
     mustDrop(pch, pfl[0], "state=FALSE, log0");
     mustDrop(pch, pfl[1], "state=FALSE, log1");
@@ -363,10 +432,10 @@ MAIN(syncTest)
     mustDrop(pch, pfl[7], "state=FALSE, log7");
     mustDrop(pch, pfl[8], "state=FALSE, log8");
 
-    db_delete_field_log(pfl[6]);
-    db_delete_field_log(pfl[9]);
-
     dbChannelDelete(pch);
+
+    logsFinal = db_available_logs();
+    testOk(logsFree == logsFinal, "%d field_logs on free-list", logsFinal);
 
     db_close_events(evtctx);
 

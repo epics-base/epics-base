@@ -162,7 +162,7 @@ these fields.
 
 =cut
 
-	include "dbCommon.dbd" 
+	include "dbCommon.dbd"
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
 		promptgroup("40 - Input")
@@ -291,7 +291,7 @@ these fields.
 
 =head3 Record Support Routines
 
-=head2 C<init_record>
+  long init_record(struct dbCommon *precord, int pass);
 
 This routine initializes SIMM with the value of SIML if SIML type is a
 CONSTANT link or creates a channel access link if SIML type is PV_LINK.
@@ -303,19 +303,19 @@ processing is terminated.
 
 If device support includes C<init_record()>, it is called.
 
-=head2 C<process>
+  long process(struct dbCommon *precord);
 
-See next section.
+See L<Record Processing> below.
 
-=head2 C<get_enum_str>
+  long get_enum_str(const struct dbAddr *paddr, char *pbuffer);
 
 Retrieves ASCII string corresponding to VAL.
 
-=head2 C<get_enum_strs>
+  long get_enum_strs(const struct dbAddr *paddr, struct dbr_enumStrs *p);
 
 Retrieves ASCII strings for ZNAM and ONAM.
 
-=head2 C<put_enum_str>
+  long put_enum_str(const struct dbAddr *paddr, const char *pbuffer);
 
 Check if string matches ZNAM or ONAM, and if it does, sets VAL.
 
@@ -323,7 +323,7 @@ Check if string matches ZNAM or ONAM, and if it does, sets VAL.
 
 Routine process implements the following algorithm:
 
-=over 1
+=over
 
 =item 1.
 Check to see that the appropriate device support module exists. If it
@@ -344,7 +344,7 @@ Convert.
 
 =back
 
-=over 1
+=over
 
 =item *
 status = read_bi
@@ -363,7 +363,7 @@ if status is 2, set status = 0
 
 =back
 
-=over 1
+=over
 
 =item 5.
 Check alarms: This routine checks to see if the new VAL causes the alarm
@@ -375,7 +375,7 @@ Check if monitors should be invoked:
 
 =back
 
-=over 1
+=over
 
 =item *
 Alarm monitors are invoked if the alarm status or severity has changed.
@@ -391,7 +391,7 @@ NSEV and NSTA are reset to 0.
 
 =back
 
-=over 1
+=over
 
 =item 7.
 Scan forward link if necessary, set PACT FALSE, and return.
@@ -413,7 +413,7 @@ support routines are primarily interested in the following fields:
 
 Device support consists of the following routines:
 
-=head4 long report(int level)
+  long report(int level);
 
 This optional routine is called by the IOC command C<dbior> and is passed the
 report level that was requested by the user.
@@ -423,7 +423,7 @@ information at higher levels, or to select different types of information with
 different levels.
 Level zero should print no more than a small summary.
 
-=head4 long init(int after)
+  long init(int after);
 
 This optional routine is called twice at IOC initialization time.
 The first call happens before any of the C<init_record()> calls are made, with
@@ -431,19 +431,19 @@ the integer parameter C<after> set to 0.
 The second call happens after all of the C<init_record()> calls have been made,
 with C<after> set to 1.
 
-=head2 C<init_record(precord)>
+  long init_record(struct dbCommon *precord);
 
 This routine is optional. If provided, it is called by the record support
 C<init_record()> routine.
 
-=head2 C<get_ioint_info(int cmd, struct dbCommon *precord, IOSCANPVT *ppvt)>
+  long get_ioint_info(int cmd, struct dbCommon *precord, IOSCANPVT *ppvt);
 
 This routine is called by the ioEventScan system each time the record is
 added or deleted from an I/O event scan list. C<cmd> has the value (0,1) if
 the record is being (added to, deleted from) and I/O event list. It must be
 provided for any device type that can use the ioEvent scanner.
 
-=head2 C<read_bi(precord)>
+  long read_bi(struct dbCommon *precord);
 
 This routine must provide a new input value. It returns the following
 values:

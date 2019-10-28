@@ -1,0 +1,588 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=title Multi-Bit Binary Input Direct Record (mbbiDirect)
+
+The mbbiDirect record retrieves a 32-bit hardware value and converts it to
+an array of 32 unsigned characters, each representing a bit of the word.
+These fields (B0-B9, BA-BF, B10-B19, B1A-B1F) are set to 1 if the corresponding
+bit is set, and 0 if not.
+
+This record's operation is similar to that of the multi-bit binary input record,
+and it has many fields in common with it. This record also has two available
+soft device support modules: C<Soft Channel> and C<Raw Soft Channel>.
+
+=recordtype mbbiDirect
+
+=cut
+
+recordtype(mbbiDirect) {
+
+=head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
+
+=head3 Scan Parameters
+
+The mbbiDirect record has the standard fields for specifying under what
+circumstances the record will be processed. These fields are listed in L<Scan
+Fields>. In addition, L<Scanning Specification> explains how these fields are
+used. Note that I/O event scanning is only supported for those card types
+that interrupt.
+
+=head3 Read and Convert Parameters
+
+The device support routines obtain the record's input from the device or link
+specified in the INP field. For records that obtain their input from devices,
+the INP field must contain the address of the I/O card, and the DTYP field
+must specify the proper device support module. Be aware that the address format
+differs according to the I/O bus used. See L<Address Specification> for
+information on the format of hardware addresses.
+
+Two soft device support modules can be specified in DTYP C<Soft Channel> and
+C<<< Raw Soft Channel >>>.
+
+C<<< Raw Soft Channel >>> reads the value into RVAL,
+upon which the normal conversion process is undergone. C<<< Soft Channel >>>
+reads any unsigned integer directly into VAL. For a soft mbbiDirect record, the
+INP field can be a constant, a database, or a channel access link. If INP is a
+constant, then the VAL is initialized to the INP value but can be changed at
+run-time via dbPutField or dbPutLink. See L<Address Specification> for
+information on how to database links.
+
+For records that don't use C<<< Soft Channel >>> device support, RVAL is used to
+determine VAL as follows:
+
+=over
+
+=item 1. RVAL is assigned to a temporary variable I<rval> = RVAL
+
+=item 2. I<rval> is shifted right SHFT number of bits.
+
+=item 3. VAL is set equal to I<rval>.
+
+=back
+
+Each of the fields, B0-BF and B10-B1F, represents one bit of the word.
+
+=fields VAL, INP, RVAL, SHFT, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, BA, BB, BC, BD, BE, BF, B10, B11, B12, B13, B14, B15, B16, B17, B18, B19, B1A, B1B, B1C, B1D, B1E, B1F
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator.
+
+See L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
+
+=fields NAME, DESC
+
+=cut
+
+    include "dbCommon.dbd"
+    field(VAL,DBF_LONG) {
+        prompt("Current Value")
+        promptgroup("40 - Input")
+        asl(ASL0)
+        pp(TRUE)
+    }
+    field(NOBT,DBF_SHORT) {
+        prompt("Number of Bits")
+        promptgroup("40 - Input")
+        special(SPC_NOMOD)
+        interest(1)
+    }
+    field(INP,DBF_INLINK) {
+        prompt("Input Specification")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(RVAL,DBF_ULONG) {
+        prompt("Raw Value")
+        pp(TRUE)
+    }
+    field(ORAW,DBF_ULONG) {
+        prompt("Prev Raw Value")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(MASK,DBF_ULONG) {
+        prompt("Hardware Mask")
+        special(SPC_NOMOD)
+        interest(1)
+    }
+    field(MLST,DBF_LONG) {
+        prompt("Last Value Monitored")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(SHFT,DBF_USHORT) {
+        prompt("Shift")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+
+=head3 Run-time and Simulation Mode Parameters
+
+These parameters are used by the run-time code for processing the mbbi direct
+record. They are not configurable prior to run-time.
+
+MASK is used by device support routine to read hardware register. Record support
+sets low order NOBT bits in MASK. Device support can shift this value.
+
+MLST holds the value when the last monitor for value change was triggered.
+
+=fields NOBT, ORAW, MASK, MLST
+
+The following fields are used to operate the mbbiDirect record in the simulation
+mode.  See L<Fields Common to Many Record Types> for more information on these
+fields.
+
+=fields SIOL, SVAL, SIML, SIMM, SIMS, SSCN, SDLY
+
+=cut
+
+    field(SIOL,DBF_INLINK) {
+        prompt("Simulation Input Link")
+        promptgroup("90 - Simulate")
+        interest(1)
+    }
+    field(SVAL,DBF_LONG) {
+        prompt("Simulation Value")
+    }
+    field(SIML,DBF_INLINK) {
+        prompt("Simulation Mode Link")
+        promptgroup("90 - Simulate")
+        interest(1)
+    }
+    field(SIMM,DBF_MENU) {
+        prompt("Simulation Mode")
+        special(SPC_MOD)
+        interest(1)
+        menu(menuSimm)
+    }
+    field(SIMS,DBF_MENU) {
+        prompt("Simulation Mode Severity")
+        promptgroup("90 - Simulate")
+        interest(2)
+        menu(menuAlarmSevr)
+    }
+    field(OLDSIMM,DBF_MENU) {
+        prompt("Prev. Simulation Mode")
+        special(SPC_NOMOD)
+        interest(4)
+        menu(menuSimm)
+    }
+    field(SSCN,DBF_MENU) {
+        prompt("Sim. Mode Scan")
+        promptgroup("90 - Simulate")
+        interest(1)
+        menu(menuScan)
+        initial("65535")
+    }
+    field(SDLY,DBF_DOUBLE) {
+        prompt("Sim. Mode Async Delay")
+        promptgroup("90 - Simulate")
+        interest(2)
+        initial("-1.0")
+    }
+    %#include "callback.h"
+    field(SIMPVT,DBF_NOACCESS) {
+        prompt("Sim. Mode Private")
+        special(SPC_NOMOD)
+        interest(4)
+        extra("epicsCallback            *simpvt")
+    }
+
+=head3 Alarm Parameters
+
+The possible alarm conditions for multi-bit binary input direct records  are the
+SCAN and READ alarms. These alarms are not configurable by the user  since they
+are always of MAJOR severity. See L<Alarm Specification> for a complete
+explanation of Scan and Read alarms. No fields exist for the mbbi direct record
+to have state alarms.
+
+L<Alarm Fields> lists other fields related to a alarms that are common to all
+record types.
+
+=cut
+
+    field(B0,DBF_UCHAR) {
+        prompt("Bit 0")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1,DBF_UCHAR) {
+        prompt("Bit 1")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B2,DBF_UCHAR) {
+        prompt("Bit 2")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B3,DBF_UCHAR) {
+        prompt("Bit 3")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B4,DBF_UCHAR) {
+        prompt("Bit 4")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B5,DBF_UCHAR) {
+        prompt("Bit 5")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B6,DBF_UCHAR) {
+        prompt("Bit 6")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B7,DBF_UCHAR) {
+        prompt("Bit 7")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B8,DBF_UCHAR) {
+        prompt("Bit 8")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B9,DBF_UCHAR) {
+        prompt("Bit 9")
+        pp(TRUE)
+        interest(1)
+    }
+    field(BA,DBF_UCHAR) {
+        prompt("Bit 10")
+        pp(TRUE)
+        interest(1)
+    }
+    field(BB,DBF_UCHAR) {
+        prompt("Bit 11")
+        pp(TRUE)
+        interest(1)
+    }
+    field(BC,DBF_UCHAR) {
+        prompt("Bit 12")
+        pp(TRUE)
+        interest(1)
+    }
+    field(BD,DBF_UCHAR) {
+        prompt("Bit 13")
+        pp(TRUE)
+        interest(1)
+    }
+    field(BE,DBF_UCHAR) {
+        prompt("Bit 14")
+        pp(TRUE)
+        interest(1)
+    }
+    field(BF,DBF_UCHAR) {
+        prompt("Bit 15")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B10,DBF_UCHAR) {
+        prompt("Bit 16")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B11,DBF_UCHAR) {
+        prompt("Bit 17")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B12,DBF_UCHAR) {
+        prompt("Bit 18")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B13,DBF_UCHAR) {
+        prompt("Bit 19")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B14,DBF_UCHAR) {
+        prompt("Bit 20")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B15,DBF_UCHAR) {
+        prompt("Bit 21")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B16,DBF_UCHAR) {
+        prompt("Bit 22")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B17,DBF_UCHAR) {
+        prompt("Bit 23")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B18,DBF_UCHAR) {
+        prompt("Bit 24")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B19,DBF_UCHAR) {
+        prompt("Bit 25")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1A,DBF_UCHAR) {
+        prompt("Bit 26")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1B,DBF_UCHAR) {
+        prompt("Bit 27")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1C,DBF_UCHAR) {
+        prompt("Bit 28")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1D,DBF_UCHAR) {
+        prompt("Bit 29")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1E,DBF_UCHAR) {
+        prompt("Bit 30")
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1F,DBF_UCHAR) {
+        prompt("Bit 31")
+        pp(TRUE)
+        interest(1)
+    }
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head4 init_record
+
+This routine initializes SIMM with the value of SIML if SIML type is CONSTANT
+link or creates a channel access link if SIML type is PV_LINK. SVAL is likewise
+initialized if SIOL is CONSTANT or PV_LINK.
+
+This routine next checks to see that device support is available and a device
+support read routine is defined. If either does not exist, an error message is
+issued and processing is terminated.
+
+Clears MASK and then sets the NOBT low order bits.
+
+If device support includes C<init_record()>, it is called.
+
+refresh_bits is then called to refresh all the bit fields based on a hardware
+value.
+
+=head4 process
+
+See next section.
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+Check to see that the appropriate device support module exists. If it doesn't,
+an error message is issued and processing is terminated with the PACT field
+still set to TRUE. This ensures that processes will no longer be called for this
+record. Thus error storms will not occur.
+
+=item 2.
+
+readValue is called. See L<Output Records> for information.
+
+=item 3.
+
+If PACT has been changed to TRUE, the device support read routine has started
+but has not completed reading a new input value. In this case, the processing
+routine merely returns, leaving PACT TRUE.
+
+=item 4.
+
+Convert.
+
+=over
+
+=item * status = read_mbbiDirect
+
+=item * PACT = TRUE
+
+=item * C<recGblGetTimeStamp()> is called.
+
+=item * If status is 0, then determine VAL
+
+=over
+
+=item * Set rval = RVAL
+
+=item * Shift rval right SHFT bits
+
+=item * Set VAL = RVAL
+
+=back
+
+=item * If status is 1, return 0
+
+=item * If status is 2, set status = 0
+
+=back
+
+=item 5.
+
+Check to see if monitors should be invoked.
+
+=over
+
+=item * Alarm monitors are invoked if the alarm status or severity has changed.
+
+=item * Archive and value change monitors are invoked if MLST is not equal to VAL.
+
+=item * Monitors for RVAL are checked whenever other monitors are invoked.
+
+=item * NSEV and NSTA are reset to 0.
+
+=back
+
+=item 6.
+
+Scan forward link if necessary, set PACT FALSE, and return.
+
+=back
+
+=begin html
+
+<br><hr><br>
+
+=end html
+
+=head2 Device Support
+
+=head3 Fields Of Interest To Device Support
+
+Each input record must have an associated set of device support routines.
+
+The primary responsibility of the device support routines is to obtain a new raw
+input value whenever read_mbbiDirect is called. The device support routines are
+primarily interested in the following fields:
+
+=fields PACT, DPVT, UDF, NSEV, NSTA, NOBT, VAL, INP, RVAL, MASK, SHFT
+
+=head3 Device Support Routines
+
+Device support consists of the following routines:
+
+=head4 long report(int level)
+
+This optional routine is called by the IOC command C<dbior> and is passed the
+report level that was requested by the user.
+It should print a report on the state of the device support to stdout.
+The C<level> parameter may be used to output increasingly more detailed
+information at higher levels, or to select different types of information with
+different levels.
+Level zero should print no more than a small summary.
+
+=head4 long init(int after)
+
+This optional routine is called twice at IOC initialization time.
+The first call happens before any of the C<init_record()> calls are made, with
+the integer parameter C<after> set to 0.
+The second call happens after all of the C<init_record()> calls have been made,
+with C<after> set to 1.
+
+=head4 init_record
+
+  init_record(precord)
+
+This routine is optional. If provided, it is called by the record support
+C<init_record()> routine. If it uses MASK, it should shift it as necessary and
+also give SHFT a value.
+
+=head4 get_ioint_info
+
+  get_ioint_info(int cmd,struct dbCommon *precord,IOSCANPVT *ppvt)
+
+This routine is called by the ioEventScan system each time the record is added
+or deleted from an IE<sol>O event scan list. cmd has the value (0,1) if the
+record is being (added to, deleted from) an IE<sol>O event list. It must be
+provided for any device type that can use the ioEvent scanner.
+
+=head4 read_mbbiDirect
+
+  read_mbbiDirect(precord)
+
+This routine must provide a new input value. It returns the following values:
+
+=over
+
+=item *
+
+0: Success. A new raw value is placed in RVAL. The record support module
+determines VAL from RVAL and SHFT.
+
+=item *
+
+2: Success, but don't modify VAL.
+
+=item *
+
+Other: Error.
+
+=back
+
+=head3 Device Support For Soft Records
+
+Two soft device support modules, C<<< Soft Channel >>> and C<<< Raw Soft Channel
+>>>, are provided for multi-bit binary input direct records not related to
+actual hardware devices. The INP link type must be either CONSTANT, DB_LINK, or
+CA_LINK.
+
+=head4 Soft Channel
+
+For this module, read_mbbiDirect always returns a value of 2, which means that
+no conversion is performed.
+
+If the INP link type is constant, then the constant value is stored into VAL by
+C<init_record()>, and UDF is set to FALSE. VAL can be changed via dbPut
+requests. If the INP link type is PV_LINK, then dbCaAddInlink is called by
+C<init_record()>.
+
+read_mbbiDirect calls recGblGetLinkValue to read the current value of VAL.
+
+See L<Input Records> for a further explanation.
+
+If the return status of recGblGetLinkValue is zero, then read_mbbi sets UDF to
+FALSE. The status of recGblGetLinkValue is returned.
+
+=head4 Raw Soft Channel
+
+This module is like the previous except that values are read into RVAL, VAL is
+computed from RVAL, and read_mbbiDirect returns a value of 0. Thus the record
+processing routine will determine VAL in the normal way.
+
+=cut
+
+}

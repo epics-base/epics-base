@@ -110,7 +110,21 @@ static long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *
 
 static void *devA24Malloc(size_t size);
 static void devA24Free(void *pBlock);
-static long devInit(void) { return 0;}
+
+/* We don't know which functions are implemented in the BSP */
+static int (*sysIntEnableFunc)(int) = NULL;
+static int (*sysIntDisableFunc)(int) = NULL;
+static int (*sysIntEnablePICFunc)(int) = NULL;
+static int (*sysIntDisablePICFunc)(int) = NULL;
+
+static long devInit(void)
+{
+    sysIntEnableFunc = epicsFindSymbol ("sysIntEnable");
+    sysIntDisableFunc = epicsFindSymbol ("sysIntDisable");
+    sysIntDisablePICFunc = epicsFindSymbol ("sysIntDisablePIC");
+    sysIntEnablePICFunc = epicsFindSymbol ("sysIntEnablePIC");
+    return 0;
+}
 
 static long vxDevConnectInterruptVME (
     unsigned vectorNumber,
@@ -214,16 +228,16 @@ static long vxDevDisconnectInterruptVME (
  */
 static long vxDevEnableInterruptLevelVME (unsigned level)
 {
-#   if CPU_FAMILY != I80X86 
+    if (sysIntEnableFunc) {
         int s;
-        s = sysIntEnable (level);
+        s = sysIntEnableFunc (level);
         if (s!=OK) {
             return S_dev_intEnFail;
         }
         return 0;
-#   else
+    } else {
         return S_dev_intEnFail;
-#   endif
+    }
 }
 
 /*
@@ -231,16 +245,16 @@ static long vxDevEnableInterruptLevelVME (unsigned level)
  */
 long devEnableInterruptLevelISA (unsigned level)
 {
-#   if CPU_FAMILY == I80X86
+    if (sysIntEnablePICFunc) {
         int s;
-        s = sysIntEnablePIC (level);
+        s = sysIntEnablePICFunc (level);
         if (s!=OK) {
             return S_dev_intEnFail;
         }
         return 0;
-#   else
+    } else {
         return S_dev_intEnFail;
-#   endif
+    }
 }
 
 /*
@@ -248,15 +262,15 @@ long devEnableInterruptLevelISA (unsigned level)
  */
 long devDisableInterruptLevelISA (unsigned level)
 {
-#   if CPU_FAMILY == I80X86
+    if (sysIntDisablePICFunc) {
         int s;
-        s = sysIntDisablePIC (level);
+        s = sysIntDisablePICFunc (level);
         if (s!=OK) {
             return S_dev_intEnFail;
         }
-#   else
+    } else {
         return S_dev_intEnFail;
-#   endif
+    }
 
     return 0;
 }
@@ -266,16 +280,16 @@ long devDisableInterruptLevelISA (unsigned level)
  */
 static long vxDevDisableInterruptLevelVME (unsigned level)
 {
-#   if CPU_FAMILY != I80X86
+    if (sysIntDisableFunc) {
         int s;
-        s = sysIntDisable (level);
+        s = sysIntDisableFunc (level);
         if (s!=OK) {
             return S_dev_intDissFail;
         }
         return 0;
-#   else
+    } else {
         return S_dev_intEnFail;
-#   endif
+    }
 }
 
 /*

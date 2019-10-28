@@ -6,8 +6,9 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
-STDDIR := $(or $(dir $(lastword $(MAKEFILE_LIST))), .)
+STDDIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 TOP = ../../../..
+
 include $(TOP)/configure/CONFIG
 
 USR_CPPFLAGS += -DUSE_TYPED_RSET

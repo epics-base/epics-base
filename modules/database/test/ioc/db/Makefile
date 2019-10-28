@@ -6,8 +6,9 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
-CURDIR := $(or $(dir $(lastword $(MAKEFILE_LIST))), .)
+CURDIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 TOP = ../../../../..
+
 include $(TOP)/configure/CONFIG
 
 # Allow access to private headers in db/

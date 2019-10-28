@@ -6,8 +6,9 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
-LIBCOM := $(or $(dir $(lastword $(MAKEFILE_LIST))), .)
+LIBCOM := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 TOP = ../../..
+
 include $(TOP)/configure/CONFIG
 
 # Uncomment this to remove the (benign) valgrind helper stubs

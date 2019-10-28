@@ -14,13 +14,20 @@ release.
 
 # EPICS Release 7.0.3.1
 
+**IMPORTANT NOTE:** *Some record types in this release will not be compatible
+with device support binaries compiled against earlier versions of those record
+types, because importing the record documentation from the EPICS Wiki
+[as described below](#imported-record-reference-documentation-from-wiki)
+also modified the order of some of the fields in the record definitions.*
+
+
 ### Timers and delays use monotonic clock
 
 Many internal timers and delay calculations use a monotonic clock
 epicsTimeGetMonotonic() instead of the realtime epicsTimeGetCurrent(). This is
 intended to make IOCs less susceptible to jumps in system time.
 
-### Iocsh "on error ..."
+### Iocsh `on error ...`
 
 A new statement is added to enable IOC shell commands to signal error
 conditions, and for scripts to respond. This first is through the new function
@@ -147,7 +154,7 @@ support for in libCom).
 
 # EPICS Release 7.0.3
 
-### epicsTimeGetCurrent() optimization
+### `epicsTimeGetCurrent()` optimization
 
 Add a fast path to epicsTimeGetCurrent() and related calls in the common case
 where only the default OS current time provider is registered. This path does
@@ -254,9 +261,8 @@ to be.
 
 ### Launchpad Bugs
 
-The list of tracked bugs fixed in this release can be found on the [Launchpad
-Milestone page for EPICS Base 7.0.2](https://launchpad.net/epics-
-base/+milestone/7.0.2).
+The list of tracked bugs fixed in this release can be found on the
+[Launchpad Milestone page for EPICS Base 7.0.2](https://launchpad.net/epics-base/+milestone/7.0.2).
 
 ### Git Branches Recombined
 
@@ -279,7 +285,7 @@ set to `LINK_ALARM` without increasing the severity. This allows clients to get
 some notification of a failing or bad `SIML` link without otherwise affecting
 record processing.
 
-### dbVerify() has been restored to dbStaticLib
+### `dbVerify()` has been restored to dbStaticLib
 
 This routine was removed in Base-3.16.1 but has been reimplemented in this
 release by special request. Note that the error message strings that it
@@ -328,9 +334,8 @@ and we'll be happy to try and answer them!
 
 ## Changes between 3.16.1 and 3.16.2
 
-The list of tracked bugs fixed in this release can be found on the [Launchpad
-Milestone page for EPICS Base 3.16.2](https://launchpad.net/epics-
-base/+milestone/3.16.2).
+The list of tracked bugs fixed in this release can be found on the
+[Launchpad Milestone page for EPICS Base 3.16.2](https://launchpad.net/epics-base/+milestone/3.16.2).
 
 ### Status reporting for the callback and scanOnce task queues
 
@@ -364,8 +369,7 @@ The old structure definitions will be replaced by the new ones if the macros
 header is included. The best place to define these is in the Makefile, as with
 the `USE_TYPED_RSET` macro that was introduced in Base-3.16.1 and described
 below. See the comments in devSup.h for a brief usage example, or look at
-[this commit]
-(https://github.com/epics-modules/ipac/commit/a7e0ff4089b9aa39108bc8569e95ba7fcf07cee9)
+[this commit](https://github.com/epics-modules/ipac/commit/a7e0ff4089b9aa39108bc8569e95ba7fcf07cee9)
 to the ipac module to see a module conversion.
 
 A helper function `DBLINK* dbGetDevLink(dbCommon *prec)` has also been added
@@ -532,8 +536,8 @@ test program has been added to prevent regressions of this behaviour.
 
 In the 3.16.1 release a crash can occur in the IOC's RSRV server when a large
 array is made even larger; the previous array buffer was not being released
-correctly. See Launchpad [bug #1706703](https://bugs.launchpad.net/epics-
-base/+bug/1706703).
+correctly. See Launchpad
+[bug #1706703](https://bugs.launchpad.net/epics-base/+bug/1706703).
 
 ## Changes made between 3.16.0.1 and 3.16.1
 
@@ -700,13 +704,16 @@ types are created though, the `calc` link type has little practical utility as
 it can currently only fetch inputs from other `calc` links or from `const`
 links.
 
-      field(INP, {calc:{expr:"A+B+1",
-                        args:[5,         # A
-                              {const:6}] # B
-             }})
+```
+    field(INP, {calc:{expr:"A+B+1",
+                      args:[5,         # A
+                            {const:6}] # B
+                     }
+               }
+           )
+```
 
-The new link types are documented in a [separate](links.html)
-[document](../html/links.html) .
+The new link types are documented in a separate document that gets generated at build time and installed as `html/links.html`.
 
 #### Device Support Addressing using `JSON_LINK`
 
@@ -730,13 +737,13 @@ type, i.e. change this code:
             recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
         }
 
-into this:
+    into this:
 
         recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
 
-Note that `recGblInitConstantLink()` still returns TRUE if the field was
-successfully initialized from the link (implying the link is constant).  
-This change will work properly with all Base releases currently in use.
+    Note that `recGblInitConstantLink()` still returns TRUE if the field was
+    successfully initialized from the link (implying the link is constant).
+    This change will work properly with all Base releases currently in use.
 
  * Code that needs to identify a constant link should be modified to use
 the new routine `dbLinkIsConstant()` instead, which returns TRUE for constant
@@ -745,12 +752,12 @@ different values on different calls. For example this:
 
         if (prec->dol.type != CONSTANT)
 
-should become this:
+    should become this:
 
         if (!dbLinkIsConstant(&prec->dol))
 
-When the converted software is also required to build against older versions
-of Base, this macro definition may be useful:
+    When the converted software is also required to build against older versions
+    of Base, this macro definition may be useful:
 
     #define dbLinkIsConstant(lnk) ((lnk)->type == CONSTANT)
 
@@ -759,21 +766,21 @@ a link has been resolved as a CA link using code such as
 
         if (prec->inp.type == CA_LINK)
 
-will still compile and run, but will only work properly with the old CA link
-type. To operate with the new extensible link types such code must be modified
-to use the new generic routines defined in dbLink.h and should never attempt
-to examine or modify data inside the link. After conversion the above line
-would probably become:
+    will still compile and run, but will only work properly with the old CA link
+    type. To operate with the new extensible link types such code must be
+    modified to use the new generic routines defined in dbLink.h and should
+    never attempt to examine or modify data inside the link. After conversion
+    the above line would probably become:
 
         if (dbLinkIsVolatile(&prec->inp))
 
-A volatile link is one like a Channel Access link which may disconnect and
-reconnect without notice at runtime. Database links and constant links are not
-volatile; unless their link address is changed they will always remain in the
-same state they started in. For compatibility when building against older
-versions of Base, this macro definition may be useful:
+    A volatile link is one like a Channel Access link which may disconnect and
+    reconnect without notice at runtime. Database links and constant links are
+    not volatile; unless their link address is changed they will always remain
+    in the same state they started in. For compatibility when building against
+    older versions of Base, this macro definition may be useful:
 
-    #define dbLinkIsVolatile(lnk) ((lnk)->type == CA_LINK)
+        #define dbLinkIsVolatile(lnk) ((lnk)->type == CA_LINK)
 
  * The current connection state of a volatile link can be found using the
 routine `dbIsLinkConnected()` which will only return TRUE for a volatile link
@@ -782,11 +789,11 @@ information used to look like this:
 
         stat = dbCaIsLinkConnected(plink);
 
-which should become:
+    which should become:
 
         stat = dbIsLinkConnected(plink);
 
-Similar changes should be made for calls to the other dbCa routines.
+    Similar changes should be made for calls to the other dbCa routines.
 
  * A full example can be found by looking at the changes to the calcout
 record type, which has been modified in this release to use the new dbLink
@@ -976,19 +983,19 @@ valgrind.h are advised to do likewise.
 The IOC record locking code has been re-written with an expanded API; global
 locks are no longer required by the IOC database implementation.
 
-The new API functions center around dbScanLockMany(), which behaves like
-dbScanLock() applied to an arbitrary group of records. dbLockerAlloc() is used
-to prepare a list or record pointers, then dbScanLockMany() is called. When it
-returns, all of the records listed may be accessed (in any order) until
-dbScanUnlockMany() is called.
+The new API functions center around `dbScanLockMany()`, which behaves like
+`dbScanLock()` applied to an arbitrary group of records. `dbLockerAlloc()` is
+used to prepare a list or record pointers, then `dbScanLockMany()` is called.
+When it returns, all of the records listed may be accessed (in any order) until
+`dbScanUnlockMany()` is called.
 
 The Application Developer's Guide has been updated to describe the API and
 implementation is more detail.
 
 Previously a global mutex `lockSetModifyLock` was locked and unlocked during
-dbScanLock(), acting as a sequencing point for otherwise unrelated calls. The
-new dbLock.c implementation does not include any global mutex in dbScanLock()
-or dbScanLockMany(). Locking and unlocking of unrelated lock sets is now
+`dbScanLock()`, acting as a sequencing point for otherwise unrelated calls. The
+new dbLock.c implementation does not include any global mutex in `dbScanLock()`
+or `dbScanLockMany()`. Locking and unlocking of unrelated lock sets is now
 completely concurrent.
 
 ### Generate Version Header
@@ -1038,7 +1045,7 @@ the stdout stream, making it hard to parse.
 
 Added a new macro `callbackGetPriority(prio, callback)` to the callback.h
 header and removed the need for dbScan.c to reach into the internals of its
-CALLBACK objects.
+`CALLBACK` objects.
 
 ## Changes from the 3.15 branch since 3.15.6
 
@@ -1097,8 +1104,7 @@ seconds, or a 1Hz channel once every minute:
 ```
 
 More information is included in the filters documentation, which can be found
-[here](filters.html) or [here](../html/filters.html) depending on where you're
-reading this document from.
+in the `html/filters.html` document that is generated during the build.
 
 ### Imported Record Reference Documentation from Wiki
 
@@ -1111,10 +1117,9 @@ release may differ from that of the same record type in a 3.15 release, although
 this would be unusual, so it may be important to indicate the branch that your
 changes apply to.
 
-**NOTE:** *These documentation changes may have modified the order of the fields
-in some record definitions, in which case this release will not be compatible
-with record or device support binaries that were compiled against an earlier
-release.*
+**NOTE:** *These documentation changes have modified the order of the fields in
+some record definitions. As a result this release is not compatible with record
+or device support binaries that were compiled against earlier releases.*
 
 ### `make test-results` for Windows
 
@@ -1385,8 +1390,9 @@ previous test runs. It cleans both TAP and JUnit XML files.
 ### Fix DNS related crash on exit
 
 The attempt to fix DNS related delays for short lived CLI programs (eg. caget)
-in lp:1527636 introduced a bug which cased these short lived clients to crash on
-exit. This bug should now be fixed.
+in [lp:1527636](https://bugs.launchpad.net/epics-base/+bug/1527636) introduced a
+bug which cased these short lived clients to crash on exit. This bug should now
+be fixed.
 
 ### Server bind issue on Windows
 
@@ -1429,7 +1435,7 @@ In addition to the more detailed change descriptions below, the following
 Launchpad bugs have also been fixed in this release:
 
   - [lp:1440186](https://bugs.launchpad.net/epics-base/+bug/1440186) Crash due
-    to a too small buffer being provided in dbContextReadNotifyCache
+    to a too small buffer being provided in `dbContextReadNotifyCache()`
   - [lp:1479316](https://bugs.launchpad.net/epics-base/+bug/1479316) Some data
     races found using Helgrind
   - [lp:1495833](https://bugs.launchpad.net/epics-base/+bug/1495833) biRecord

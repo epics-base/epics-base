@@ -128,7 +128,7 @@ value on the VAL field.
 The HOPR and LOPR fields determine the upper and lower display limits for
 graphic displays and the upper and lower control limits for control
 displays. They apply to the VAL, HIHI, HIGH, LOW, and LOLO fields. The
-record support routines C<get_graphic_double> or C<get_control_double>
+record support routines C<get_graphic_double()> and C<get_control_double()>
 retrieve HOPR and LOPR.
 
 See L<Fields Common to All Record Types> for more on the record name (NAME)
@@ -394,13 +394,13 @@ routine is called.
 
 =head2 C<get_control_double()>
 
-Same as the C<get_graphic_double> routine except that it uses the
+Same as the C<get_graphic_double()> routine except that it uses the
 C<dbr_ctrlDouble> structure.
 
 =head2 C<get_alarm_double()>
 
 This sets the members of the C<dbr_alDouble> structure to the specified
-alarm limits if the referenced field is VAL:
+alarm limits when the referenced field is VAL:
 
 =over
 
@@ -422,26 +422,32 @@ is called.
 =over
 
 =item 1.
-The C<process()> routine first retrieves a value for DOL and places it in
-VAL if OMSL is set to colsed loop mode. If an error occurs, then UDF is set
-to FALSE.
+The C<process()> routine first checks that DOL is not a constant link and
+that OMSL is set to "closed_loop". If so, it retrieves a value through DOL
+and places it into VAL. If no errors occur, UDF is set to FALSE.
 
 =item 2.
-PACT is set TRUE
+PACT is set TRUE, and the record's timestamp is set.
 
 =item 3.
-VAL is then sent to all the records specified in the OUTA-OUTH fields by
-calling C<recGblePutLinkValue()> for each link.
+A value is fetched from SELL and placed into SELN.
 
 =item 4.
-Alarms are checked and monitors are called if conditions apply.
+Alarms ranges are checked against the contents of the VAL field.
 
 =item 5.
-The data fanout's own forward link is then processed.
+VAL is then sent through the OUTA-OUTH links by calling C<dbPutLink()> for
+each link, conditional on the setting of SELM and the value in SELN.
 
 =item 6.
-PACT is set FALSE, and the C<process()> routine returns. A -1 is returned
-if there was an error writing values to one of the output links.
+Value and archive monitors are posted on the VAL field if appropriate based on
+the settings of MDEL and ADEL respectively.
+
+=item 7.
+The data fanout's forward link FLNK is processed.
+
+=item 6.
+PACT is set FALSE, and the C<process()> routine returns.
 
 =back
 

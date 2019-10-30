@@ -21,6 +21,11 @@ types, because importing the record documentation from the EPICS Wiki
 also modified the order of some of the fields in the record definitions.*
 
 
+### logClient reliability
+
+On supported targets (Linux, Mac, Windows) logClient will attempt to avoid dropping
+undelivered log messages when the connection to the log server is closed/reset.
+
 ### Timers and delays use monotonic clock
 
 Many internal timers and delay calculations use a monotonic clock
@@ -45,6 +50,37 @@ A suggested form for IOC shell commands is:
     {
         iocshSetError(doSomething(...)); /* return 0 == success */
     }
+
+### Relocatable Builds
+
+Allows built trees to be copied or moved without invalidating RPATH entires.
+
+The `LINKER_USE_RPATH` Makefile variable (see `configure/CONFIG_SITE`) may be
+set to `YES`, `NO`, and a new third option `ORIGIN`.  This is limited to
+targets using the ELF executable format (eg. Linux).
+
+When `LINKER_USE_RPATH=ORIGIN`, the variable `LINKER_ORIGIN_ROOT` is set to
+one of the parents of the build directory.  Any libraries being linked
+to which are found under this root will have a relative RPATH entry.
+Other libraries continue to result in absolute RPATH entries.
+
+An effect of this might change a support library from being linked with
+`-Wl,-rpath /build/epics-base/lib/linux-x86`
+to being linked with
+`-Wl,-rpath \$ORIGIN/../../../epics-base/lib/linux-x86`
+if the support module directory is `/build/mymodule`
+and `LINKER_ORIGIN_ROOT=/build`.
+
+The API functions `epicsGetExecDir()` and `epicsGetExecName()` are also
+added to `osiFileName.h` to provide runtime access to the directory or
+filename of the executable with which the process was started.
+
+### Decouple LINKER_USE_RPATH and STATIC_BUILD
+
+Previously, setting `STATIC_BUILD=NO` implied `LINKER_USE_RPATH=NO`.
+This is no longer the case.  Setting `LINKER_USE_RPATH=YES` will
+always emit RPATH entries.  This was found to be helpful when linking
+against some 3rd party libraries which are only available as shared objects.
 
 ### Channel Access Security: Check Hostname Against DNS
 

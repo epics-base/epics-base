@@ -1,4 +1,10 @@
-# EPICS Base Release 3.15.7
+# EPICS Base Release 3.15.8
+
+This version of EPICS Base has not been released yet.
+
+## Changes made on the 3.15 branch since 3.15.7
+
+<!-- Insert new items immediately below here ... -->
 
 ## Changes made between 3.15.6 and 3.15.7
 

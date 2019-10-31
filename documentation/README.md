@@ -1,6 +1,6 @@
 # Installation Instructions
 
-## EPICS Base Release 3.15.7
+## EPICS Base Release 3.15.8
 
 -----
 
@@ -62,7 +62,7 @@ vendor's C and C++ compilers, as well as the GNU gcc and g++
 compilers. The GNU cross-compilers work for all cross-compiled
 targets. You may need the C and C++ compilers to be in your search
 path to do EPICS builds; check the definitions of CC and CCC in
-base/configure/os/CONFIG.&lt;host>.&lt;host> if you have problems.
+`base/configure/os/CONFIG.<host>.<host>` if you have problems.
 
 ### <span id="0_0_6">Software requirements</span>
 
@@ -187,7 +187,7 @@ base/documentation directory of the distribution.
         CONFIG                Includes configure files and allows variable overrides
         CONFIG.CrossCommon    Cross build definitions
         CONFIG.gnuCommon      Gnu compiler build definitions for all archs
-        CONFIG_ADDONS         Definitions for &lt;osclass> and DEFAULT options
+        CONFIG_ADDONS         Definitions for <osclass> and DEFAULT options
         CONFIG_APP_INCLUDE
         CONFIG_BASE           EPICS base tool and location definitions
         CONFIG_BASE_VERSION   Definitions for EPICS base version number
@@ -207,22 +207,22 @@ base/documentation directory of the distribution.
         RULES_EXPAND
         RULES_FILE_TYPE
         RULES_TARGET
-        RULES_TOP             Rules specific to a &lt;top> dir (uninstall and tar)
+        RULES_TOP             Rules specific to a <top> dir (uninstall and tar)
         Sample.Makefile       Sample makefile with comments
 ```
 
 #### base/configure/os directory - contains os-arch specific definitions
 
 ```
-        CONFIG.&lt;host>.&lt;target>      Specific host-target build definitions
-        CONFIG.Common.&lt;target>      Specific target definitions for all hosts
-        CONFIG.&lt;host>.Common        Specific host definitions for all targets
+        CONFIG.<host>.<target>      Specific host-target build definitions
+        CONFIG.Common.<target>      Specific target definitions for all hosts
+        CONFIG.<host>.Common        Specific host definitions for all targets
         CONFIG.UnixCommon.Common    Definitions for Unix hosts and all targets
         CONFIG.Common.UnixCommon    Definitions for Unix targets and all hosts
         CONFIG.Common.vxWorksCommon Specific host definitions for all vx targets
-        CONFIG_SITE.&lt;host>.&lt;target> Site specific host-target definitions
-        CONFIG_SITE.Common.&lt;target> Site specific target defs for all hosts
-        CONFIG_SITE.&lt;host>.Common   Site specific host defs for all targets
+        CONFIG_SITE.<host>.<target> Site specific host-target definitions
+        CONFIG_SITE.Common.<target> Site specific target defs for all hosts
+        CONFIG_SITE.<host>.Common   Site specific host defs for all targets
 ```
 
 ### <span id="0_0_12">Building EPICS base (Unix and Win32)</span>
@@ -294,8 +294,8 @@ distribution file to be overridden except with CONFIG in the name
 changed to `CONFIG_SITE`.
 
 ```
-        configure/os/CONFIG.&lt;host>.&lt;host>      Host build settings
-        configure/os/CONFIG.&lt;host>.Common      Host common build settings
+        configure/os/CONFIG.<host>.<host>      Host build settings
+        configure/os/CONFIG.<host>.Common      Host common build settings
 ```
 
 **Target configuration**
@@ -307,8 +307,8 @@ replaced by `CONFIG_SITE`. This step is necessary even if the host
 system is the only target system.
 
 ```
-        configure/os/CONFIG.Common.&lt;target>     Target common settings
-        configure/os/CONFIG.&lt;host>.&lt;target>     Host-target settings
+        configure/os/CONFIG.Common.<target>     Target common settings
+        configure/os/CONFIG.<host>.<target>     Host-target settings
 ```
 
 #### Build EPICS base
@@ -351,7 +351,7 @@ the host system.
 A perl script, makeBaseExt.pl, is included in the distribution file.
 This script will create a sample extension that can be built and
 executed. The makeBaseApp.pl and makeBaseExt.pl scripts are installed
-into the install location bin/&lt;hostarch> directory during the base
+into the install location `bin/<hostarch>` directory during the base
 build.
 
 ### <span id="0_0_14">Multiple host platforms</span>
@@ -365,7 +365,7 @@ into the `$(INSTALL_LOCATION)/bin/<arch>` directories. Libraries are
 installed into $`(INSTALL_LOCATION)/lib/<arch>`. The default
 definition for `$(INSTALL_LOCATION)` is `$(TOP)` which is the root
 directory in the distribution directory structure, base. Created
-object files are stored in O.&lt;arch> source subdirectories, This
+object files are stored in `O.<arch>` source subdirectories, This
 allows objects for multiple cross target architectures to be
 maintained at the same time. To build EPICS base for a specific
 host/target combination you must have the proper host/target C/C++

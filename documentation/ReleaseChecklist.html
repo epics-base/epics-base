@@ -136,17 +136,17 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Tag the module in Git, using these tag conventions:
         <ul>
           <li>
-            <tt>R3.15.7-pre1</tt>
+            <tt>R3.15.8-pre1</tt>
             &mdash; pre-release tag
             </li>
           <li>
-            <tt>R3.15.7-rc1</tt>
+            <tt>R3.15.8-rc1</tt>
             &mdash; release candidate tag
             </li>
         </ul>
         <blockquote><tt>
           cd base-3.15<br />
-          git tag -m 'ANJ: Tagged for 3.15.7-rc1' R3.15.7-rc1
+          git tag -m 'ANJ: Tagged for 3.15.8-rc1' R3.15.8-rc1
           </tt></blockquote>
         </td>
       </tr>
@@ -158,11 +158,11 @@ relevent roles unless the Release Manager designates otherwise:</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-3.15<br />
-          git archive --prefix=base-3.15.7-rc1/ --output=base-3.15.7-rc1.tar.gz R3.15.7-rc1 configure documentation LICENSE Makefile README src startup
+          git archive --prefix=base-3.15.8-rc1/ --output=base-3.15.8-rc1.tar.gz R3.15.8-rc1 configure documentation LICENSE Makefile README src startup
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-3.15.7-rc1.tar.gz
+          gpg --armor --sign --detach-sig base-3.15.8-rc1.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -274,7 +274,7 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Tag the module in Git:
         <blockquote><tt>
           cd base-3.15<br />
-          git tag -m 'ANJ: Tagged for 3.15.7' R3.15.7
+          git tag -m 'ANJ: Tagged for 3.15.8' R3.15.8
           </tt></blockquote>
         </td>
       </tr>
@@ -285,11 +285,11 @@ relevent roles unless the Release Manager designates otherwise:</p>
         generates a gzipped tarfile directly from the repository:
         <blockquote><tt>
           cd base-3.15<br />
-          git archive --prefix=base-3.15.7/ --output=base-3.15.7.tar.gz R3.15.7 configure documentation LICENSE Makefile README src startup
+          git archive --prefix=base-3.15.8/ --output=base-3.15.8.tar.gz R3.15.8 configure documentation LICENSE Makefile README src startup
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-3.15.7.tar.gz
+          gpg --armor --sign --detach-sig base-3.15.8.tar.gz
           </tt></blockquote>
         </td>
       </tr>

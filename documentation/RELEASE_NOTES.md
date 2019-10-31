@@ -1083,7 +1083,11 @@ Added a new macro `callbackGetPriority(prio, callback)` to the callback.h
 header and removed the need for dbScan.c to reach into the internals of its
 `CALLBACK` objects.
 
-## Changes from the 3.15 branch since 3.15.6
+## Changes from the 3.15 branch since 3.15.7
+
+> None.
+
+## Changes made between 3.15.6 and 3.15.7
 
 ### GNU Readline detection on Linux
 

@@ -277,32 +277,77 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>
-        <p>For each external submodule, check if the module's release version
-          number (and SHRLIB_VERSION setting) has been updated if appropriate,
-          and that its Release Notes have been updated to cover any changes.
-          Commit any fixes and tag the module if that hasn't already been
-          done.</p>
-        <p>Update all external submodules on the Base-7.0 branch and
-          commit.</p></td>
+        <p>For each external submodule in turn (assuming it has not been tagged
+          yet):</p>
+        <ol>
+          <li>Check that the module's Release Notes have been updated to cover
+            all changes; add items as necessary, and set the module version
+            number and release date if appropriate. Convert to HTML and view in
+            a browser to check the formatting:
+            <blockquote><tt>
+              cd base-7.0/modules/&lt;module&gt;/documentation<br />
+              pandoc -f gfm -t html -o RELEASE_NOTES.html RELEASE_NOTES.md
+              </tt></blockquote>
+            Commit changes (don't push yet).</li>
+
+          <li>Edit the module's release version file
+            <tt>configure/CONFIG_<i>module</i>_VERSION</tt> and its top-level
+            <tt>Doxyfile</tt>; set the <tt>DEVELOPMENT_FLAG</tt> value to 0 and
+            remove <tt>-dev</tt> from the <tt>PROJECT_NUMBER</tt> string.
+            Commit changes (don't push).</li>
+
+          <li>Tag the module:
+            <blockquote><tt>
+              git tag -m 'ANJ: Tag for EPICS 7.0.3.1' &lt;module-version&gt;
+              </tt></blockquote>
+            </li>
+
+          <li>Update the git submodule on the Base-7.0 branch to the
+            newly-tagged version, but don't commit yet:
+            <blockquote><tt>
+              cd base-7.0/modules<br />
+              git add &lt;module&gt;<br />
+              git submodule status --cached
+              </tt></blockquote>
+            </li>
+
+          <li>Edit the module's release version file
+            <tt>configure/CONFIG_<i>module</i>_VERSION</tt> and its top-level
+            <tt>Doxyfile</tt>; increment the <tt>MAINTENANCE_VERSION</tt>, set
+            the <tt>DEVELOPMENT_FLAG</tt> value to 1, and update the
+            <tt>PROJECT_NUMBER</tt> string, appending <tt>-dev</tt> to the new
+            module version number. Commit changes.</li>
+
+          <li>Push commits and the new tag to the submodule's GitHub repository:
+            <blockquote><tt>
+              cd base-7.0/modules/&lt;module&gt;<br />
+              git push --follow-tags upstream master
+              </tt></blockquote>
+            </li>
+
+          </ol>
+        <p>Commit all the submodule updates to the 7.0 branch.</p>
+        </td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
-      <td>Edit and commit changes to the EPICS Base version number file and
-        these embedded module version files:
+
+      <td>Edit the main EPICS Base version file and the built-in module version
+        files:
         <ul>
-          <li>configure/CONFIG_BASE_VERSION </li>
-          <li>modules/libcom/configure/CONFIG_LIBCOM_VERSION</li>
-          <li>modules/ca/configure/CONFIG_CA_VERSION</li>
-          <li>modules/database/configure/CONFIG_DATABASE_VERSION</li>
+          <li><tt>configure/CONFIG_BASE_VERSION</tt></li>
+          <li><tt>configure/CONFIG_LIBCOM_VERSION</tt></li>
+          <li><tt>configure/CONFIG_CA_VERSION</tt></li>
+          <li><tt>configure/CONFIG_DATABASE_VERSION</tt></li>
           </ul>
-        <p>Version numbers should be set according to the level of changes
-          made since the last release. Note that the MAINTENANCE_VERSION or
-          PATCH_LEVEL value should have been incremented after the previous
-          release tag was applied.</p>
-        <p>Set all DEVELOPMENT_FLAG values to 0 and EPICS_DEV_SNAPSHOT to the
-          empty string.</p>
-          </td>
+        <p>Version numbers should be set according to the level of changes made
+          since the last release. Note that the <tt>MAINTENANCE_VERSION</tt> or
+          <tt>PATCH_LEVEL</tt> value should have been incremented after the
+          previous release tag was applied. Set all <tt>DEVELOPMENT_FLAG</tt>
+          values to 0 and <tt>EPICS_DEV_SNAPSHOT</tt> to the empty string.</p>
+        <p>Commit these changes (don't push).</p>
+        </td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
@@ -310,27 +355,28 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for 7.0.3.1' R7.0.3.1</i>
+          git tag -m 'ANJ: Tagged for 7.0.3.1' R7.0.3.1
           </tt></blockquote>
         <p>Don't push these commits or the new tag to the Launchpad repository
-          yet.</td>
+          yet.</p>
+        </td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
-      <td>Edit and commit changes to the EPICS Base version number file and
-        the embedded module version files as follows:
+      <td>Edit the main EPICS Base version file and the built-in module version
+        files:
         <ul>
-          <li>configure/CONFIG_BASE_VERSION </li>
-          <li>modules/libcom/configure/CONFIG_LIBCOM_VERSION</li>
-          <li>modules/ca/configure/CONFIG_CA_VERSION</li>
-          <li>modules/database/configure/CONFIG_DATABASE_VERSION</li>
+          <li><tt>configure/CONFIG_BASE_VERSION</tt></li>
+          <li><tt>configure/CONFIG_LIBCOM_VERSION</tt></li>
+          <li><tt>configure/CONFIG_CA_VERSION</tt></li>
+          <li><tt>configure/CONFIG_DATABASE_VERSION</tt></li>
           </ul>
         <p>Version numbers should be set for the next expected patch/maintenance
-          release by incrementing the MAINTENANCE_VERSION or PATCH_LEVEL
-          value in each file.</p>
-        <p>Set all DEVELOPMENT_FLAG values to 1 and EPICS_DEV_SNAPSHOT to
-          "-DEV".</p>
+          release by incrementing the MAINTENANCE_VERSION or PATCH_LEVEL value
+          in each file. Set all <tt>DEVELOPMENT_FLAG</tt> values to 1 and
+          <tt>EPICS_DEV_SNAPSHOT</tt> to "-DEV".</p>
+        <p>Commit these changes (don't push).</p>
         </td>
       </tr>
     <tr>

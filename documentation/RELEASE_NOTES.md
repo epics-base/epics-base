@@ -19,6 +19,9 @@ with device support binaries compiled against earlier versions of those record
 types, because importing the record documentation from the EPICS Wiki
 [as described below](#imported-record-reference-documentation-from-wiki)
 also modified the order of some of the fields in the record definitions.*
+As long as all support modules and IOCs are rebuilt from source after updating
+them to use this release of EPICS Base, these changes should not have any
+affect.
 
 
 ### logClient reliability
@@ -37,19 +40,25 @@ intended to make IOCs less susceptible to jumps in system time.
 A new statement is added to enable IOC shell commands to signal error
 conditions, and for scripts to respond. This first is through the new function
 
-    iocshSetError(int)
+```C
+    int iocshSetError(int err);
+```
 
 A script may be prefixed with eg. "on error break" to stop at the failed
 command.
 
+```sh
     on error continue | break | wait [value] | halt
+```
 
 A suggested form for IOC shell commands is:
 
+```C
     static void doSomethingCallFunc(const iocshArgBuf *args)
     {
         iocshSetError(doSomething(...)); /* return 0 == success */
     }
+```
 
 ### Relocatable Builds
 
@@ -111,11 +120,15 @@ names in the ACF file.
 
 This feature can be enabled before `iocInit` with
 
+```
     var("asCheckClientIP",1)
+```
 
 or with the VxWorks target shell use
 
+```C
     asCheckClientIP = 1
+```
 
 ### New and modified epicsThread APIs
 
@@ -125,6 +138,7 @@ A new routine `epicsThreadCreateOpt()` is an alternative to
 `epicsThreadCreate()` which takes some arguments via a structure (`struct
 epicsThreadOpts`) to allow for future extensions.
 
+```C
     typedef struct epicsThreadOpts {
         unsigned int priority;
         unsigned int stackSize;
@@ -134,6 +148,7 @@ epicsThreadOpts`) to allow for future extensions.
         epicsThreadPriorityLow, epicsThreadStackMedium, 0}
      epicsThreadId epicsThreadCreateOpt(const char * name,
         EPICSTHREADFUNC funptr, void * parm, const epicsThreadOpts *opts);
+```
 
 The final `opts` parameter may be `NULL` to use the default values of thread
 priority (low) and stack size (medium). Callers wishing to provide alternative
@@ -143,6 +158,7 @@ Always initialize one of these structures using the `EPICS_THREAD_OPTS_INIT`
 macro to ensure that any additional fields that get added in the future are
 set to their default values.
 
+```C
     void startitup(void) {
         epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
         epicsThreadId tid;
@@ -150,6 +166,7 @@ set to their default values.
         opts.priority = epicsThreadPriorityMedium;
         tid = epicsThreadCreateOpt("my thread", &threadMain, NULL, &opts);
     }
+```
 
 C or C++ Code that also needs to build on earlier versions of Base can use
 `#ifdef EPICS_THREAD_OPTS_INIT` to determine whether the
@@ -598,24 +615,26 @@ whether this version of base provides 64-bit support by checking for the
 presence of the `DBR_INT64` macro as follows (Note that `DBF_INT64` is an
 enum tag and not a preprocessor macro):
 
+```
     #ifdef DBR_INT64
         /* Code where Base has INT64 support */
     #else
         /* Code for older versions */
     #endif
+```
 
 If the code uses the old `db_access.h` types (probably because it's calling
 Channel Access APIs) then it will have to test against the EPICS version
 number instead, like this:
 
+```
     #include <epicsVersion.h>
     
     #ifndef VERSION_INT
     #  define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
     #endif
     #ifndef EPICS_VERSION_INT
-    #  define EPICS_VERSION_INT VERSION_INT(EPICS_VERSION, EPICS_REVISION,
-EPICS_MODIFICATION, EPICS_PATCH_LEVEL)
+    #  define EPICS_VERSION_INT VERSION_INT(EPICS_VERSION, EPICS_REVISION, EPICS_MODIFICATION, EPICS_PATCH_LEVEL)
     #endif
     
     #if EPICS_VERSION_INT >= VERSION_INT(3,16,1,0)
@@ -623,6 +642,7 @@ EPICS_MODIFICATION, EPICS_PATCH_LEVEL)
     #else
         /* Code for older versions */
     #endif
+```
 
 Channel Access does not (and probably never will) directly support 64-bit
 integer types, so the new field types are presented to the CA server as
@@ -658,7 +678,9 @@ buffer setting in `EPICS_CA_AUTO_ARRAY_BYTES` as in previous releases.
 The default setting for `EPICS_CA_AUTO_ARRAY_BYTES` can be changed by adding the
 line
 
+```makefile
     EPICS_CA_AUTO_ARRAY_BYTES=NO
+```
 
 to the `configure/CONFIG_SITE_ENV` file before building Base. Sites that wish to
 override this only for specific IOC architectures can create new files for each
@@ -687,6 +709,7 @@ compatible with secure protocol design practice.
 The subArray record can now be used as a lookup-table from a constant array
 specified in its INP field. For example:
 
+```
     record(subArray, "powers-of-2") {
       field(FTVL, "LONG")
       field(MALM, 12)
@@ -694,6 +717,7 @@ specified in its INP field. For example:
       field(INDX, 0)
       field(NELM, 1)
     }
+```
 
 The INDX field selects which power of 2 to set the VAL field to. In previous
 releases the INP field would have to have been pointed to a separate waveform
@@ -769,67 +793,87 @@ conversions:
  * Make all calls to `recGblInitConstantLink()` unconditional on the link
 type, i.e. change this code:
 
+```C
         if (prec->siml.type == CONSTANT) {
             recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
         }
+```
 
-    into this:
+  into this:
 
+```C
         recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+```
 
-    Note that `recGblInitConstantLink()` still returns TRUE if the field was
-    successfully initialized from the link (implying the link is constant).
-    This change will work properly with all Base releases currently in use.
+  Note that `recGblInitConstantLink()` still returns TRUE if the field was
+  successfully initialized from the link (implying the link is constant).
+  This change will work properly with all Base releases currently in use.
 
  * Code that needs to identify a constant link should be modified to use
 the new routine `dbLinkIsConstant()` instead, which returns TRUE for constant
 or undefined links, FALSE for links whose `dbGetLink()` routine may return
 different values on different calls. For example this:
 
+```C
         if (prec->dol.type != CONSTANT)
+```
 
-    should become this:
+  should become this:
 
+```C
         if (!dbLinkIsConstant(&prec->dol))
+```
 
-    When the converted software is also required to build against older versions
-    of Base, this macro definition may be useful:
+  When the converted software is also required to build against older versions
+  of Base, this macro definition may be useful:
 
-    #define dbLinkIsConstant(lnk) ((lnk)->type == CONSTANT)
+```C
+        #define dbLinkIsConstant(lnk) ((lnk)->type == CONSTANT)
+```
 
  * Any code that calls dbCa routines directly, or that explicitly checks if
 a link has been resolved as a CA link using code such as
 
+```C
         if (prec->inp.type == CA_LINK)
+```
 
-    will still compile and run, but will only work properly with the old CA link
-    type. To operate with the new extensible link types such code must be
-    modified to use the new generic routines defined in dbLink.h and should
-    never attempt to examine or modify data inside the link. After conversion
-    the above line would probably become:
+  will still compile and run, but will only work properly with the old CA link
+  type. To operate with the new extensible link types such code must be
+  modified to use the new generic routines defined in dbLink.h and should
+  never attempt to examine or modify data inside the link. After conversion
+  the above line would probably become:
 
+```C
         if (dbLinkIsVolatile(&prec->inp))
+```
 
-    A volatile link is one like a Channel Access link which may disconnect and
-    reconnect without notice at runtime. Database links and constant links are
-    not volatile; unless their link address is changed they will always remain
-    in the same state they started in. For compatibility when building against
-    older versions of Base, this macro definition may be useful:
+  A volatile link is one like a Channel Access link which may disconnect and
+  reconnect without notice at runtime. Database links and constant links are
+  not volatile; unless their link address is changed they will always remain
+  in the same state they started in. For compatibility when building against
+  older versions of Base, this macro definition may be useful:
 
+```C
         #define dbLinkIsVolatile(lnk) ((lnk)->type == CA_LINK)
+```
 
  * The current connection state of a volatile link can be found using the
 routine `dbIsLinkConnected()` which will only return TRUE for a volatile link
 that is currently connected. Code using the older dbCa API returning this
 information used to look like this:
 
+```C
         stat = dbCaIsLinkConnected(plink);
+```
 
-    which should become:
+  which should become:
 
+```C
         stat = dbIsLinkConnected(plink);
+```
 
-    Similar changes should be made for calls to the other dbCa routines.
+  Similar changes should be made for calls to the other dbCa routines.
 
  * A full example can be found by looking at the changes to the calcout
 record type, which has been modified in this release to use the new dbLink
@@ -850,6 +894,7 @@ and/or their soft device supports have been modified to support this.
 
 Some examples of constant array and string initialized records are:
 
+```
     record(stringin, "const:string") {
         field(INP, ["Not-a-PV-name"])
     }
@@ -873,6 +918,7 @@ Some examples of constant array and string initialized records are:
         field(NOVA, 1)
         field(SNAM, "select_asub")
     }
+```
 
 Reminder: Link initialization with constant values normally only occurs at
 record initialization time. The calcout and printf record types are the only
@@ -912,6 +958,7 @@ provided is a single string, and even here the quotes can be omitted in some
 cases as described above. The following shows both correct and incorrect
 excerpts from a database file:
 
+```
     record(ai, math:pi) {
         field(INP, {const: 3.14159265358979})   # Correct
         field(SIOL, "{const: 3.142857}")        # Wrong
@@ -921,6 +968,7 @@ excerpts from a database file:
             pass0:[VAL]
         })                          # Correct
     }
+```
 
 Note that the record, field and info-tag names do *not* accept JSON values, so
 they follows the older bareword rules for quoting where the colon `:` and
@@ -963,6 +1011,7 @@ Record types written in C++ need to take more drastic measures because of the
 stricter type checking in C++. To remain compatible with older versions of
 base you will need to use something like:
 
+```
     #include "epicsVersion.h"
     #ifdef VERSION_INT
     #  if EPICS_VERSION_INT < VERSION_INT(3,16,0,2)
@@ -973,6 +1022,7 @@ base you will need to use something like:
     #else
     #  define RECSUPFUN_CAST (RECSUPFUN)
     #endif
+```
 
 and then replace `(RECSUPFUN)` with `RECSUPFUN_CAST` when initializing the
 rset. Further changes might also be needed, e.g. to adapt `const`-ness of
@@ -1058,6 +1108,7 @@ Time providers that have to return a status value and still need to be built
 with earlier versions of Base can define the necessary status symbols like
 this:
 
+```
     #include "epicsTime.h"
     
     #ifndef M_time
@@ -1065,6 +1116,7 @@ this:
       #define S_time_unsynchronized epicsTimeERROR
       #define S_time_...whatever... epicsTimeERROR
     #endif
+```
 
 ### Refactoring of epicsReadline
 

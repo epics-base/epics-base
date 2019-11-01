@@ -6,7 +6,7 @@ EPICS_CA_MAINTENANCE_VERSION = 5
 
 # Development flag, set to zero for release versions
 
-EPICS_CA_DEVELOPMENT_FLAG = 1
+EPICS_CA_DEVELOPMENT_FLAG = 0
 
 # Immediately after a release the MAINTENANCE_VERSION
 # will be incremented and the DEVELOPMENT_FLAG set to 1

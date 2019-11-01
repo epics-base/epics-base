@@ -147,17 +147,17 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Tag the module in Git, using these tag conventions:
         <ul>
           <li>
-            <tt>R7.0.3.1-pre<i>n</i></tt>
+            <tt>R7.0.3.2-pre<i>n</i></tt>
             &mdash; pre-release tag
             </li>
           <li>
-            <tt>R7.0.3.1-rc<i>n</i></tt>
+            <tt>R7.0.3.2-rc<i>n</i></tt>
             &mdash; release candidate tag
             </li>
           </ul>
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for 7.0.3.1-rc1' R7.0.3.1-rc1
+          git tag -m 'ANJ: Tagged for 7.0.3.2-rc1' R7.0.3.2-rc1
           </tt></blockquote>
         Note that submodules must <em>not</em> be tagged with the version used
         for the top-level, they each have their own separate version numbers
@@ -171,11 +171,11 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.3.1-rc1 base-7.0.3.1-rc1.tar.gz base-7.0.3.1-rc1/
+          ./.tools/make-tar.sh R7.0.3.2-rc1 base-7.0.3.2-rc1.tar.gz base-7.0.3.2-rc1/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-7.0.3.1-rc1.tar.gz
+          gpg --armor --sign --detach-sig base-7.0.3.2-rc1.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -298,7 +298,7 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
 
           <li>Tag the module:
             <blockquote><tt>
-              git tag -m 'ANJ: Tag for EPICS 7.0.3.1' &lt;module-version&gt;
+              git tag -m 'ANJ: Tag for EPICS 7.0.3.2' &lt;module-version&gt;
               </tt></blockquote>
             </li>
 
@@ -355,7 +355,7 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for 7.0.3.1' R7.0.3.1
+          git tag -m 'ANJ: Tagged for 7.0.3.2' R7.0.3.2
           </tt></blockquote>
         <p>Don't push these commits or the new tag to the Launchpad repository
           yet.</p>
@@ -387,11 +387,12 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.3.1 base-7.0.3.1.tar.gz base-7.0.3.1/
+          ./.tools/make-tar.sh R7.0.3.2 ../base-7.0.3.2.tar.gz base-7.0.3.2/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-7.0.3.1.tar.gz
+          cd ..<br />
+          gpg --armor --sign --detach-sig base-7.0.3.2.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -456,7 +457,7 @@ starting at <a href="#ReleaseApproval">Release Approval</a>.</p>
       <td>Upload the tar file and its <tt>.asc</tt> signature file to the
         epics-controls web-server.
         <blockquote><tt>
-          scp base-7.0.3.1.tar.gz base-7.0.3.1.tar.gz.asc epics-controls:download/base<br />
+          scp base-7.0.3.2.tar.gz base-7.0.3.2.tar.gz.asc epics-controls:download/base<br />
           </tt></blockquote>
         </td>
       </tr>

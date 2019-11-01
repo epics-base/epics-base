@@ -52,12 +52,12 @@ EPICS_MODIFICATION = 3
 
 # EPICS_PATCH_LEVEL must be a number (win32 resource file requirement)
 # Not included in the official EPICS version number if zero
-EPICS_PATCH_LEVEL = 1
+EPICS_PATCH_LEVEL = 2
 
 # Immediately after an official release the EPICS_PATCH_LEVEL is incremented
 # and the -DEV suffix is added (similar to the Maven -SNAPSHOT versions)
-EPICS_DEV_SNAPSHOT=
-#EPICS_DEV_SNAPSHOT=-DEV
+#EPICS_DEV_SNAPSHOT=
+EPICS_DEV_SNAPSHOT=-DEV
 #EPICS_DEV_SNAPSHOT=-pre1
 #EPICS_DEV_SNAPSHOT=-pre1-DEV
 #EPICS_DEV_SNAPSHOT=-pre2

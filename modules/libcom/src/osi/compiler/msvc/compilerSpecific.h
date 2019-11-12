@@ -20,11 +20,7 @@
 #   error compiler/msvc/compilerSpecific.h is only for use with the Microsoft compiler
 #endif
 
-#if _MSC_VER >= 1200
 #define EPICS_ALWAYS_INLINE __forceinline
-#else
-#define EPICS_ALWAYS_INLINE __inline
-#endif
 
 /* Expands to a 'const char*' which describes the name of the current function scope */
 #define EPICS_FUNCTION __FUNCTION__
@@ -42,13 +38,8 @@
  * CXX_PLACEMENT_DELETE - defined if compiler supports placement delete
  * CXX_THROW_SPECIFICATION - defined if compiler supports throw specification
  */
-#if _MSC_VER >= 1200  /* visual studio 6.0 or later */
-#    define CXX_PLACEMENT_DELETE
-#endif
-
-#if _MSC_VER > 1300  /* some release after visual studio 7 we hope */
-#    define CXX_THROW_SPECIFICATION
-#endif
+#define CXX_PLACEMENT_DELETE
+#define CXX_THROW_SPECIFICATION
 
 #endif /* __cplusplus */
 

@@ -24,11 +24,7 @@
 #   error compiler/gcc/compilerSpecific.h is not for use with the clang compiler
 #endif
 
-#if __GNUC__ > 2
-#  define EPICS_ALWAYS_INLINE __inline__ __attribute__((always_inline))
-#else
-#  define EPICS_ALWAYS_INLINE __inline__
-#endif
+#define EPICS_ALWAYS_INLINE __inline__ __attribute__((always_inline))
 
 /* Expands to a 'const char*' which describes the name of the current function scope */
 #define EPICS_FUNCTION __PRETTY_FUNCTION__
@@ -46,14 +42,8 @@
  * CXX_PLACEMENT_DELETE - defined if compiler supports placement delete
  * CXX_THROW_SPECIFICATION - defined if compiler supports throw specification
  */
-
-#if __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 95 )
-#   define CXX_THROW_SPECIFICATION
-#endif
-
-#if __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 96 )
-#   define CXX_PLACEMENT_DELETE
-#endif
+#define CXX_THROW_SPECIFICATION
+#define CXX_PLACEMENT_DELETE
 
 #endif /* __cplusplus */
 
@@ -63,11 +53,9 @@
 #define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__printf__,f,a)))
 
 /*
- * Deprecation marker if possible
+ * Deprecation marker
  */
-#if  (__GNUC__ > 2)
-#   define EPICS_DEPRECATED __attribute__((deprecated))
-#endif
+#define EPICS_DEPRECATED __attribute__((deprecated))
 
 /*
  * Unused marker

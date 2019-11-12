@@ -16,8 +16,7 @@ cvsclean:
 	$(PERL) $(CVSCLEAN)
 
 realuninstall: uninstallDirs
-	$(RMDIR) $(INSTALL_LOCATION_BIN)
-	$(RMDIR) $(INSTALL_LOCATION_LIB)
+	$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB)
 
 UNINSTALL_DIRS += $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC) \
     $(INSTALL_HTML) $(INSTALL_TEMPLATES) $(INSTALL_DB) $(DIRECTORY_TARGETS)
@@ -32,10 +31,9 @@ uninstall: archuninstall uninstallDirs
 
 archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 
-archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 uninstall$(DIVIDER)%:
-	$(RMDIR) $(INSTALL_LOCATION_BIN)/$(archPart)
-	$(RMDIR) $(INSTALL_LOCATION_LIB)/$(archPart)
+	$(RMDIR) $(addsuffix /$(subst uninstall$(DIVIDER),,$@), \
+	    $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB))
 
 
 help:

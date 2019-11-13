@@ -246,7 +246,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
         /* NOOP on Windows, fails on vxWorks */
         errno = 0;
         status = send ( pClient->sock, NULL, 0, 0 );
-        if (!(errno == ECONNRESET || errno == EPIPE)) status = 0;
+        if (!(errno == SOCK_ECONNRESET || errno == SOCK_EPIPE)) status = 0;
     }
 
     if ( status < 0 ) {

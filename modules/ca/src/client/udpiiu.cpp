@@ -1162,7 +1162,7 @@ void udpiiu :: show ( unsigned level ) const
         }
     }
     if ( level > 2u ) {
-        ::printf ("\tsocket identifier %d\n", this->sock );
+        ::printf ("\tsocket identifier %d\n", int(this->sock) );
         ::printf ("\tbytes in xmit buffer %u\n", this->nBytesInXmitBuf );
         ::printf ("\tshut down command bool %u\n", this->shutdownCmd );
         ::printf ( "\trecv thread exit signal:\n" );
@@ -1195,10 +1195,7 @@ bool udpiiu::wakeupMsg ()
     // send a wakeup msg so the UDP recv thread will exit
     int status = sendto ( this->sock, reinterpret_cast < char * > ( &msg ),  
             sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
-    if ( status == sizeof (msg) ) {
-        return true;
-    }
-    return false;
+    return status == sizeof (msg);
 }
 
 void udpiiu::beaconAnomalyNotify ( 

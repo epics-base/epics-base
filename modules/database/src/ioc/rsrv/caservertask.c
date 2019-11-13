@@ -335,7 +335,7 @@ void rsrv_build_addr_lists(void)
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("rsrv: failed to set mcast ttl %d\n", ttl);
+            errlogPrintf("rsrv: failed to set mcast ttl %d\n", (int)ttl);
         }
     }
 #endif

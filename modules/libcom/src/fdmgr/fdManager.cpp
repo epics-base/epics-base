@@ -249,7 +249,7 @@ void fdRegId::show ( unsigned level ) const
         static_cast <const void *> ( this ) );
     if ( level > 1u ) {
         printf ( "\tfd = %d, type = %d\n",
-            this->fd, this->type );
+            int(this->fd), this->type );
     }
 }
 

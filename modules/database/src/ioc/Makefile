@@ -36,6 +36,9 @@ include $(IOCDIR)/misc/Makefile
 include $(IOCDIR)/registry/Makefile
 include $(IOCDIR)/rsrv/Makefile
 
+GENVERSION = epicsVCS.h
+GENVERSIONMACRO = EPICS_VCS_VERSION
+
 EXPANDVARS += EPICS_DATABASE_MAJOR_VERSION
 EXPANDVARS += EPICS_DATABASE_MINOR_VERSION
 EXPANDVARS += EPICS_DATABASE_MAINTENANCE_VERSION
@@ -55,3 +58,5 @@ include $(IOCDIR)/dbtemplate/RULES
 ../O.Common/databaseVersionNum.h: ../databaseVersionNum.h@
 	$(MKDIR) $(COMMON_DIR)
 	$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
+
+epicsRelease$(DEP): $(COMMON_DIR)/$(GENVERSION)

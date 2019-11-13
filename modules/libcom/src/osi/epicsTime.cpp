@@ -38,7 +38,7 @@
 #include "epicsStdio.h"
 
 static const char pEpicsTimeVersion[] =
-    "@(#) " EPICS_VERSION_STRING ", Common Utilities Library " __DATE__;
+    "@(#) " EPICS_VERSION_STRING ", Common Utilities Library";
 
 //
 // useful public constants

@@ -384,7 +384,7 @@ void dbContext::show (
         this->mutex.show ( level - 2u );
     }
     if ( this->pNetContext.get() ) {
-        this->pNetContext.get()->show ( guard, level );
+        this->pNetContext->show ( guard, level );
     }
 }
 
@@ -393,7 +393,7 @@ void dbContext::flush (
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->pNetContext.get() ) {
-        this->pNetContext.get()->flush ( guard );
+        this->pNetContext->flush ( guard );
     }
 }
 
@@ -402,7 +402,7 @@ unsigned dbContext::circuitCount (
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->pNetContext.get() ) {
-        return this->pNetContext.get()->circuitCount ( guard );
+        return this->pNetContext->circuitCount ( guard );
     }
     else {
         return 0u;
@@ -416,7 +416,7 @@ void dbContext::selfTest (
     this->ioTable.verify ();
 
     if ( this->pNetContext.get() ) {
-        this->pNetContext.get()->selfTest ( guard );
+        this->pNetContext->selfTest ( guard );
     }
 }
 
@@ -425,7 +425,7 @@ unsigned dbContext::beaconAnomaliesSinceProgramStart (
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->pNetContext.get() ) {
-        return this->pNetContext.get()->beaconAnomaliesSinceProgramStart ( guard );
+        return this->pNetContext->beaconAnomaliesSinceProgramStart ( guard );
     }
     else {
         return 0u;

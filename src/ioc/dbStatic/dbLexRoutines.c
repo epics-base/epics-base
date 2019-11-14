@@ -16,7 +16,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 
 #include "dbDefs.h"
 #include "dbmf.h"
@@ -27,6 +26,7 @@
 #include "freeList.h"
 #include "gpHash.h"
 #include "macLib.h"
+#include "iocInit.h"
 
 #define epicsExportSharedSymbols
 #include "dbBase.h"
@@ -116,12 +116,6 @@ typedef struct tempListNode {
 static ELLLIST tempList = ELLLIST_INIT;
 static void *freeListPvt = NULL;
 static int duplicate = FALSE;
-static bool dbLoadRecordsAllowed = true;
-
-void disableDbLoadRecords()
-{
-    dbLoadRecordsAllowed = false;
-}
 
 static void yyerrorAbort(char *str)
 {
@@ -222,7 +216,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     char	*penv;
     char	**macPairs;
     
-    if(!dbLoadRecordsAllowed)
+    if(getIocState() != iocVirgin)
         return -2;
 
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();

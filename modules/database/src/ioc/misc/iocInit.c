@@ -710,20 +710,27 @@ int iocShutdown(void)
 {
     if (iocState == iocVoid) return 0;
 
+    initHookAnnounce(initHookAtShutdown);
+
     iterateRecords(doCloseLinks, NULL);
+    initHookAnnounce(initHookAfterCloseLinks);
 
     if (iocBuildMode == buildIsolated) {
         /* stop and "join" threads */
         scanStop();
+        initHookAnnounce(initHookAfterStopScan);
         callbackStop();
-    }
-    else
+        initHookAnnounce(initHookAfterStopCallback);
+    } else {
         dbStopServers();
+    }
 
     dbCaShutdown(); /* must be before dbFreeRecord and dbChannelExit */
+    initHookAnnounce(initHookAfterStopLinks);
 
     if (iocBuildMode == buildIsolated) {
         /* free resources */
+        initHookAnnounce(initHookBeforeFree);
         scanCleanup();
         callbackCleanup();
 
@@ -738,6 +745,8 @@ int iocShutdown(void)
 
     iocState = iocVoid;
     iocBuildMode = buildServers;
+
+    initHookAnnounce(initHookAfterShutdown);
     return 0;
 }
 

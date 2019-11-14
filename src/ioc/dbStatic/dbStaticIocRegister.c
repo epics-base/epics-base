@@ -8,11 +8,18 @@
 \*************************************************************************/
 
 #include "iocsh.h"
+#include "initHooks.h"
 
 #define epicsExportSharedSymbols
 #include "dbStaticIocRegister.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
+
+static void dbStaticIocRegisterInitHook(initHookState state)
+{
+    if(state == initHookAtIocBuild)
+        disableDbLoadRecords();
+}
 
 /* common arguments */
 
@@ -153,6 +160,7 @@ static void dbReportDeviceConfigCallFunc(const iocshArgBuf *args)
 
 void dbStaticIocRegister(void)
 {
+    initHookRegister(dbStaticIocRegisterInitHook);
     iocshRegister(&dbDumpPathFuncDef, dbDumpPathCallFunc);
     iocshRegister(&dbDumpRecordFuncDef, dbDumpRecordCallFunc);
     iocshRegister(&dbDumpMenuFuncDef, dbDumpMenuCallFunc);

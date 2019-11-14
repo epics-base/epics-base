@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "dbDefs.h"
 #include "dbmf.h"
@@ -115,6 +116,12 @@ typedef struct tempListNode {
 static ELLLIST tempList = ELLLIST_INIT;
 static void *freeListPvt = NULL;
 static int duplicate = FALSE;
+static bool dbLoadRecordsAllowed = true;
+
+void disableDbLoadRecords()
+{
+    dbLoadRecordsAllowed = false;
+}
 
 static void yyerrorAbort(char *str)
 {
@@ -215,6 +222,9 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     char	*penv;
     char	**macPairs;
     
+    if(!dbLoadRecordsAllowed)
+        return -2;
+
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;
     if(path && strlen(path)>0) {

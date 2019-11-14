@@ -25,6 +25,7 @@ dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry);
 void dbFreeLinkContents(struct link *plink);
 void dbFreePath(DBBASE *pdbbase);
 int dbIsMacroOk(DBENTRY *pdbentry);
+void disableDbLoadRecords();
 
 /*The following routines have different versions for run-time no-run-time*/
 long dbAllocRecord(DBENTRY *pdbentry,const char *precordName);

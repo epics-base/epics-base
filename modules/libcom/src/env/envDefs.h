@@ -71,8 +71,6 @@ epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_INET;
 epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_LIMIT;
 epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
 epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
-epicsShareExtern const ENV_PARAM EPICS_CMD_PROTO_PORT;
-epicsShareExtern const ENV_PARAM EPICS_AR_PORT;
 epicsShareExtern const ENV_PARAM IOCSH_PS1;
 epicsShareExtern const ENV_PARAM IOCSH_HISTSIZE;
 epicsShareExtern const ENV_PARAM IOCSH_HISTEDIT_DISABLE;

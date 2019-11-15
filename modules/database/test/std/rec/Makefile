@@ -148,6 +148,13 @@ asyncproctest_SRCS += asyncproctest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/asyncproctest.dbd ../asyncproctest.db
 TESTS += asyncproctest
 
+# dbHeader* is only a compile test
+# no need to actually run
+TESTPROD += dbHeaderTest
+dbHeaderTest_SRCS += dbHeaderTest.cpp
+TESTPROD += dbHeaderTestxx
+dbHeaderTestxx_SRCS += dbHeaderTestxx.cpp
+
 ifeq ($(T_A),$(EPICS_HOST_ARCH))
 # Host-only tests of softIoc/softIocPVA, caget and pvget (if present)
 TESTS += netget

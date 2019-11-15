@@ -26,7 +26,6 @@
 #include "freeList.h"
 #include "gpHash.h"
 #include "macLib.h"
-#include "iocInit.h"
 
 #define epicsExportSharedSymbols
 #include "dbBase.h"
@@ -36,6 +35,7 @@
 #include "epicsExport.h"
 #include "link.h"
 #include "special.h"
+#include "iocInit.h"
 
 
 

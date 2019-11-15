@@ -11,6 +11,8 @@
 #ifndef INCasCah
 #define INCasCah
 
+#include <stdio.h>
+
 #include "shareLib.h"
 
 #ifdef __cplusplus

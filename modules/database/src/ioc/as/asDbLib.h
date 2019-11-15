@@ -12,6 +12,8 @@
 #ifndef INCdbAsLibh
 #define INCdbAsLibh
 
+#include <stdio.h>
+
 #include "callback.h"
 #include "shareLib.h"
 

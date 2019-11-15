@@ -1010,7 +1010,7 @@ devSup* dbDTYPtoDevSup(dbRecordType *prdes, int dtyp) {
     return (devSup *)ellNth(&prdes->devList, dtyp+1);
 }
 
-devSup* dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset) {
+devSup* dbDSETtoDevSup(dbRecordType *prdes, dset *pdset) {
     devSup *pdevSup = (devSup *)ellFirst(&prdes->devList);
     while (pdevSup) {
         if (pdset == pdevSup->pdset) return pdevSup;
@@ -1032,7 +1032,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     struct link *plink = (struct link *)paddr->pfield;
     const char  *pstring = (const char *)pbuffer;
     struct dsxt *old_dsxt = NULL;
-    struct dset *new_dset = NULL;
+    dset *new_dset = NULL;
     struct dsxt *new_dsxt = NULL;
     devSup      *new_devsup = NULL;
     long        status;

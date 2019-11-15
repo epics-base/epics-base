@@ -18,12 +18,12 @@ static void *registryID = "device support";
 
 
 epicsShareFunc int registryDeviceSupportAdd(
-    const char *name, const struct dset *pdset)
+    const char *name, const dset *pdset)
 {
     return registryAdd(registryID, name, (void *)pdset);
 }
 
-epicsShareFunc struct dset * registryDeviceSupportFind(
+epicsShareFunc dset * registryDeviceSupportFind(
     const char *name)
 {
     return registryFind(registryID, name);

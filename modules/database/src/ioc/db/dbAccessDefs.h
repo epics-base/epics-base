@@ -18,14 +18,15 @@
 
 #include "epicsTypes.h"
 #include "epicsTime.h"
-#include "dbBase.h"
-#include "dbAddr.h"
-#include "recSup.h"
 
 #ifdef INCLdb_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
 #   include "shareLib.h"
 #endif
+
+#include "dbBase.h"
+#include "dbAddr.h"
+#include "recSup.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -239,7 +240,7 @@ epicsShareFunc void dbInitEntryFromRecord(struct dbCommon *prec,
     struct dbEntry *pdbentry);
 
 epicsShareFunc devSup* dbDTYPtoDevSup(dbRecordType *prdes, int dtyp);
-epicsShareFunc devSup* dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset);
+epicsShareFunc devSup* dbDSETtoDevSup(dbRecordType *prdes, dset *pdset);
 epicsShareFunc long dbGetField(
     struct dbAddr *,short dbrType,void *pbuffer,long *options,
     long *nRequest,void *pfl);

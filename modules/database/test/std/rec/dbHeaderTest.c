@@ -98,7 +98,6 @@
 #  include <epicsGuard.h>
 #endif
 #include <epicsInterrupt.h>
-#include <epicsjtree.h>
 #include <epicsMemFs.h>
 #include <epicsMessageQueue.h>
 #include <epicsMutex.h>

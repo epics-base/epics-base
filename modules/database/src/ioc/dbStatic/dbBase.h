@@ -19,6 +19,7 @@
 #include "ellLib.h"
 #include "dbDefs.h"
 #include "recSup.h"
+#include "devSup.h"
 
 typedef struct dbMenu {
 	ELLNODE		node;
@@ -40,7 +41,7 @@ typedef struct devSup {
 	char		*choice;
 	int		link_type;
 	/*Following only available on run time system*/
-	struct dset	*pdset;
+    dset	*pdset;
 	struct dsxt	*pdsxt;       /* Extended device support */
 }devSup;
 

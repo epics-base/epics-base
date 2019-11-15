@@ -433,7 +433,7 @@ static void initDevSup(void)
         for (pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
              pdevSup;
              pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-            struct dset *pdset = registryDeviceSupportFind(pdevSup->name);
+            dset *pdset = registryDeviceSupportFind(pdevSup->name);
 
             if (!pdset) {
                 errlogPrintf("device support %s not found\n",pdevSup->name);
@@ -456,7 +456,7 @@ static void finishDevSup(void)
         for (pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
              pdevSup;
              pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-            struct dset *pdset = pdevSup->pdset;
+            dset *pdset = pdevSup->pdset;
 
             if (pdset && pdset->init)
                 pdset->init(1);

@@ -199,11 +199,12 @@
 		interest(4)
         extra("struct typed_rset   *rset")
 	}
+    %#include "devSup.h"
 	field(DSET,DBF_NOACCESS) {
 		prompt("DSET address")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct dset         *dset")
+        extra("unambiguous_dset                *dset")
 	}
 	field(DPVT,DBF_NOACCESS) {
 		prompt("Device Private")

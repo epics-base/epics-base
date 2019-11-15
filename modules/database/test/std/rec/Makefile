@@ -11,6 +11,7 @@ TOP = ../../../../..
 include $(TOP)/configure/CONFIG
 
 USR_CPPFLAGS += -DUSE_TYPED_RSET
+USR_CPPFLAGS += -DUSE_TYPED_DSET
 
 TESTLIBRARY = dbRecStdTest
 

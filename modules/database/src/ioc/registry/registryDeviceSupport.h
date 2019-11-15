@@ -18,8 +18,8 @@ extern "C" {
 #endif
 
 epicsShareFunc int registryDeviceSupportAdd(
-    const char *name, const struct dset *pdset);
-epicsShareFunc struct dset * registryDeviceSupportFind(
+    const char *name, const dset *pdset);
+epicsShareFunc dset * registryDeviceSupportFind(
     const char *name);
 
 #ifdef __cplusplus

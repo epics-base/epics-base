@@ -153,6 +153,9 @@ typedef struct dset {   /* device support entry table */
 typedef typed_dset dset;
 #endif /* USE_TYPED_DSET */
 
+/* exists only to disambiguate  dset dbCommon::dset */
+typedef dset unambiguous_dset;
+
 /** Fetch INP or OUT link (or NULL if record type has neither).
  *
  * Recommended for use in device support init_record()

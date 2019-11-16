@@ -53,7 +53,7 @@
 
 static const char pVersionCAC[] =
     "@(#) " EPICS_VERSION_STRING
-    ", CA Client Library " __DATE__;
+    ", CA Client Library";
 
 // TCP response dispatch table
 const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =

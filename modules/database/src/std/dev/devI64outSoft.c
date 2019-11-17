@@ -25,27 +25,7 @@
 #include "int64outRecord.h"
 #include "epicsExport.h"
 
-/* Create the dset for devI64outSoft */
-static long init_record(int64outRecord *prec);
-static long write_int64out(int64outRecord *prec);
-struct {
-    long number;
-    DEVSUPFUN report;
-    DEVSUPFUN init;
-    DEVSUPFUN init_record;
-    DEVSUPFUN get_ioint_info;
-    DEVSUPFUN write_int64out;
-} devI64outSoft = {
-    5,
-    NULL,
-    NULL,
-    init_record,
-    NULL,
-    write_int64out
-};
-epicsExportAddress(dset, devI64outSoft);
-
-static long init_record(int64outRecord *prec)
+static long init_record(dbCommon *common)
 {
     return 0;
 }
@@ -55,3 +35,10 @@ static long write_int64out(int64outRecord *prec)
     dbPutLink(&prec->out, DBR_INT64, &prec->val,1);
     return 0;
 }
+
+/* Create the dset for devI64outSoft */
+int64outdset devI64outSoft = {
+    { 5, NULL, NULL, init_record, NULL }, write_int64out
+};
+epicsExportAddress(dset, devI64outSoft);
+

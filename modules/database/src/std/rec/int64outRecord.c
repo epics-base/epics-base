@@ -80,14 +80,6 @@ rset int64outRSET={
 epicsExportAddress(rset,int64outRSET);
 
 
-struct int64outdset { /* int64out input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_int64out;/*(-1,0)=>(failure,success*/
-};
 static void checkAlarms(int64outRecord *prec);
 static void monitor(int64outRecord *prec);
 static long writeValue(int64outRecord *prec);
@@ -109,7 +101,7 @@ static long init_record(dbCommon *pcommon, int pass)
 	return(S_dev_noDSET);
     }
     /* must have  write_int64out functions defined */
-    if( (pdset->number < 5) || (pdset->write_int64out == NULL) ) {
+    if ((pdset->common.number < 5) || (pdset->write_int64out == NULL)) {
 	recGblRecordError(S_dev_missingSup,(void *)prec,"int64out: init_record");
 	return(S_dev_missingSup);
     }
@@ -117,8 +109,8 @@ static long init_record(dbCommon *pcommon, int pass)
 	if(recGblInitConstantLink(&prec->dol,DBF_INT64,&prec->val))
 	    prec->udf=FALSE;
     }
-    if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(prec))) return(status);
+    if (pdset->common.init_record) {
+	if ((status = pdset->common.init_record(pcommon))) return status;
     }
     prec->mlst = prec->val;
     prec->alst = prec->val;

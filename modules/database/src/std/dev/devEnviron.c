@@ -69,7 +69,7 @@ static long read_lsi(lsiRecord *prec)
 }
 
 lsidset devLsiEnviron = {
-    5, NULL, init_lsi, NULL, NULL, read_lsi
+    {5, NULL, init_lsi, NULL, NULL }, read_lsi
 };
 epicsExportAddress(dset, devLsiEnviron);
 

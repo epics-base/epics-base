@@ -32,6 +32,7 @@ dbRecStd_SRCS += devI64inSoft.c
 dbRecStd_SRCS += devI64outSoft.c
 dbRecStd_SRCS += devLiSoft.c
 dbRecStd_SRCS += devLoSoft.c
+devLsiSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devLsiSoft.c
 dbRecStd_SRCS += devLsoSoft.c
 dbRecStd_SRCS += devMbbiDirectSoft.c
@@ -73,6 +74,7 @@ dbRecStd_SRCS += devSoSoftCallback.c
 dbRecStd_SRCS += devTimestamp.c
 devStdio_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devStdio.c
+devEnviron_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devEnviron.c
 
 dbRecStd_SRCS += asSubRecordFunctions.c

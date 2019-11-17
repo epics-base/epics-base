@@ -29,6 +29,7 @@ stdRecords += int64inRecord
 stdRecords += int64outRecord
 stdRecords += longinRecord
 stdRecords += longoutRecord
+lsiRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += lsiRecord
 stdRecords += lsoRecord
 stdRecords += mbbiRecord

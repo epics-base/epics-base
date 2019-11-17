@@ -17,8 +17,9 @@
 #include "lsiRecord.h"
 #include "epicsExport.h"
 
-static long init_record(lsiRecord *prec)
+static long init_record(dbCommon *common)
 {
+    lsiRecord *prec = (lsiRecord *)common;
     dbLoadLinkLS(&prec->inp, prec->val, prec->sizv, &prec->len);
 
     return 0;
@@ -49,6 +50,6 @@ static long read_string(lsiRecord *prec)
 }
 
 lsidset devLsiSoft = {
-    5, NULL, NULL, init_record, NULL, read_string
+    { 5, NULL, NULL, init_record, NULL }, read_string
 };
 epicsExportAddress(dset, devLsiSoft);

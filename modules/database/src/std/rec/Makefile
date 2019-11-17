@@ -31,6 +31,7 @@ stdRecords += longinRecord
 stdRecords += longoutRecord
 lsiRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += lsiRecord
+lsoRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += lsoRecord
 stdRecords += mbbiRecord
 stdRecords += mbbiDirectRecord

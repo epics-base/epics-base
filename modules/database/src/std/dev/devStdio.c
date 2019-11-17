@@ -103,7 +103,7 @@ static long write_lso(lsoRecord *prec)
 }
 
 lsodset devLsoStdio = {
-    5, NULL, init_lso, NULL, NULL, write_lso
+    { 5, NULL, init_lso, NULL, NULL }, write_lso
 };
 epicsExportAddress(dset, devLsoStdio);
 

@@ -25,6 +25,7 @@ stdRecords += dfanoutRecord
 stdRecords += eventRecord
 stdRecords += fanoutRecord
 stdRecords += histogramRecord
+int64inRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += int64inRecord
 stdRecords += int64outRecord
 stdRecords += longinRecord

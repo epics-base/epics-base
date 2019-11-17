@@ -28,6 +28,7 @@ dbRecStd_SRCS += devBoDbState.c
 dbRecStd_SRCS += devCalcoutSoft.c
 dbRecStd_SRCS += devEventSoft.c
 dbRecStd_SRCS += devHistogramSoft.c
+devI64inSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devI64inSoft.c
 dbRecStd_SRCS += devI64outSoft.c
 dbRecStd_SRCS += devLiSoft.c
@@ -54,6 +55,7 @@ dbRecStd_SRCS += devGeneralTime.c
 
 dbRecStd_SRCS += devAiSoftCallback.c
 dbRecStd_SRCS += devBiSoftCallback.c
+devI64inSoftCallback_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devI64inSoftCallback.c
 dbRecStd_SRCS += devLiSoftCallback.c
 dbRecStd_SRCS += devMbbiDirectSoftCallback.c

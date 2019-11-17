@@ -111,6 +111,15 @@ monitoring deadband functionality.
 =cut
 
     include "dbCommon.dbd"
+    %#include "devSup.h"
+    %
+    %/* Declare Device Support Entry Table */
+    %struct int64inRecord;
+    %typedef struct int64indset {
+    %    dset common;
+    %    long (*read_int64in)(struct int64inRecord *prec);
+    %} int64indset;
+    %
     field(VAL,DBF_INT64) {
         prompt("Current value")
         promptgroup("40 - Input")

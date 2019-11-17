@@ -151,8 +151,9 @@ static long init(int pass)
     return 0;
 }
 
-static long init_record(int64inRecord *prec)
+static long init_record(dbCommon *common)
 {
+    int64inRecord *prec = (int64inRecord *)common;
     if (recGblInitConstantLink(&prec->inp, DBR_INT64, &prec->val))
         prec->udf = FALSE;
 
@@ -204,11 +205,7 @@ static long read_int64in(int64inRecord *prec)
 }
 
 /* Create the dset for devI64inSoftCallback */
-struct {
-    dset common;
-    DEVSUPFUN read_int64in;
-} devI64inSoftCallback = {
-    {5, NULL, init, init_record, NULL},
-    read_int64in
+int64indset devI64inSoftCallback = {
+    { 5, NULL, init, init_record, NULL }, read_int64in
 };
 epicsExportAddress(dset, devI64inSoftCallback);

@@ -40,6 +40,6 @@ static long write_string(printfRecord *prec)
 }
 
 printfdset devPrintfSoftCallback = {
-    5, NULL, NULL, NULL, NULL, write_string
+    { 5, NULL, NULL, NULL, NULL }, write_string
 };
 epicsExportAddress(dset, devPrintfSoftCallback);

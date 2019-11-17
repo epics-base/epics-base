@@ -36,6 +36,7 @@ stdRecords += mbbiDirectRecord
 stdRecords += mbboRecord
 stdRecords += mbboDirectRecord
 stdRecords += permissiveRecord
+printfRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += printfRecord
 stdRecords += selRecord
 stdRecords += seqRecord

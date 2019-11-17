@@ -336,13 +336,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (!pdset)
         return 0;       /* Device support is optional */
 
-    if (pdset->number < 5) {
+    if (pdset->common.number < 5) {
         recGblRecordError(S_dev_missingSup, prec, "printf::init_record");
         return S_dev_missingSup;
     }
 
-    if (pdset->init_record) {
-        long status = pdset->init_record(prec);
+    if (pdset->common.init_record) {
+        long status = pdset->common.init_record(pcommon);
         if (status)
             return status;
     }
@@ -368,7 +368,7 @@ static long process(struct dbCommon *pcommon)
     /* Call device support */
     pdset = (printfdset *) prec->dset;
     if (pdset &&
-        pdset->number >= 5 &&
+        pdset->common.number >= 5 &&
         pdset->write_string) {
         status = pdset->write_string(prec);
 

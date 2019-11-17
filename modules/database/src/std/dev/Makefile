@@ -42,6 +42,7 @@ dbRecStd_SRCS += devMbboDirectSoft.c
 dbRecStd_SRCS += devMbboDirectSoftRaw.c
 dbRecStd_SRCS += devMbboSoft.c
 dbRecStd_SRCS += devMbboSoftRaw.c
+devPrintfSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devPrintfSoft.c
 dbRecStd_SRCS += devSASoft.c
 dbRecStd_SRCS += devSiSoft.c
@@ -65,10 +66,12 @@ dbRecStd_SRCS += devLoSoftCallback.c
 dbRecStd_SRCS += devLsoSoftCallback.c
 dbRecStd_SRCS += devMbboSoftCallback.c
 dbRecStd_SRCS += devMbboDirectSoftCallback.c
+devPrintfSoftCallback_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devPrintfSoftCallback.c
 dbRecStd_SRCS += devSoSoftCallback.c
 
 dbRecStd_SRCS += devTimestamp.c
+devStdio_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devStdio.c
 dbRecStd_SRCS += devEnviron.c
 

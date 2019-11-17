@@ -153,7 +153,7 @@ static long write_printf(printfRecord *prec)
 }
 
 printfdset devPrintfStdio = {
-    5, NULL, init_printf, NULL, NULL, write_printf
+    {5, NULL, init_printf, NULL, NULL }, write_printf
 };
 epicsExportAddress(dset, devPrintfStdio);
 

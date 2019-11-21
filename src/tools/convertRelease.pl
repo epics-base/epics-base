@@ -259,24 +259,26 @@ sub checkRelease {
     my $latest = AbsPath($macros{$app});
     my %paths = ($latest => $app);
     foreach $app (@modules) {
-        my $path = AbsPath($macros{$app});
+        my $val = $macros{$app};
+        next if $val eq '';
+        my $path = AbsPath($val);
         if ($path ne $latest && exists $paths{$path}) {
             my $prev = $paths{$path};
             print "\n" unless ($status);
             print "This application's RELEASE file(s) define\n";
-            print "\t$app = $macros{$app}\n";
-            print "after but not adjacent to\n\t$prev = $macros{$prev}\n";
+            print "\t$app = $val\n";
+            print "and\n\t$prev = $macros{$prev}\n";
             print "both of which resolve to $path\n"
-                if $path ne $macros{$app} || $path ne $macros{$prev};
+                if $path ne $val || $path ne $macros{$prev};
             $status = 2;
         }
         $paths{$path} = $app;
         $latest = $path;
     }
     if ($status == 2) {
-        print "Module definitions that share paths must be grouped together.\n";
-        print "Either remove a definition, or move it to a line immediately\n";
-        print "above or below the other(s).\n";
+        print "Module definitions that share the same path must have their\n";
+        print "first definitions grouped together. Either remove a module,\n";
+        print "or arrange them so all those with that path are adjacent.\n";
         print "Any non-module definitions belong in configure/CONFIG_SITE.\n";
         $status = 1;
     }

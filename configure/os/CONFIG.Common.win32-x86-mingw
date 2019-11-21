@@ -30,7 +30,7 @@ ARCH_DEP_LDFLAGS += -m32
 # Compiler does not define  __unix __unix__ unix
 
 # Override for -DUNIX from CONFIG.Common.UnixCommon
-OP_SYS_CPPFLAGS = -D_MINGW
+OP_SYS_CPPFLAGS = -D_MINGW -Wno-format
 
 EXE = .exe
 RES = .coff

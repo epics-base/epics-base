@@ -26,8 +26,7 @@ ifndef DISABLE_TOP_RULES
 distclean: realclean cvsclean realuninstall
 
 realuninstall: uninstallDirs
-	$(RMDIR) $(INSTALL_LOCATION_BIN)
-	$(RMDIR) $(INSTALL_LOCATION_LIB)
+	$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB)
 
 UNINSTALL_DIRS += $(INSTALL_DB) $(INSTALL_DBD) $(INSTALL_DOC) $(INSTALL_HTML)
 UNINSTALL_DIRS += $(INSTALL_INCLUDE) $(INSTALL_TEMPLATES) $(DIRECTORY_TARGETS)
@@ -37,32 +36,26 @@ endif
 uninstallDirs:
 	$(RMDIR) $(UNINSTALL_DIRS)
 
+  # Remove the bin and lib directories if they have no sub-directories
+  #
+EMPTY_INSTALL_DIRS = \
+    $(if $(wildcard $(INSTALL_LOCATION_BIN)/*),,$(INSTALL_LOCATION_BIN)) \
+    $(if $(wildcard $(INSTALL_LOCATION_LIB)/*),,$(INSTALL_LOCATION_LIB))
 uninstall: archuninstall uninstallDirs
+	$(RMDIR) $(EMPTY_INSTALL_DIRS)
 
-archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS)) | cleandirs
+archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 
-archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 uninstall$(DIVIDER)%:
-	$(RMDIR) $(INSTALL_LOCATION_BIN)/$(archPart)
-	$(RMDIR) $(INSTALL_LOCATION_LIB)/$(archPart)
-
-# Remove the bin and lib directories if they have no sub-directories
-#
-cleandirs:
-	@$(NOP)
-ifeq ($(wildcard $(INSTALL_LOCATION_BIN)/*),)
-	$(RMDIR) $(INSTALL_LOCATION_BIN)
-endif
-ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
-	$(RMDIR) $(INSTALL_LOCATION_LIB)
-endif
+	$(RMDIR) $(addsuffix /$(subst uninstall$(DIVIDER),,$@), \
+	    $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB))
 
 else
   #
   # Using a disabled rule aborts
   #
 
-  cleandirs distclean uninstall realuninstall archuninstall:
+  distclean uninstall realuninstall archuninstall:
 	$(error Target '$@' not available in a submodule)
 
 endif # DISABLE_TOP_RULES
@@ -106,7 +99,7 @@ endif
 	@echo "Object targets are supported by the O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
-.PHONY: cleandirs distclean uninstall help
+.PHONY: distclean uninstall help
 .PHONY: realuninstall archuninstall uninstallDirs
 
 ifndef DISABLE_TOP_RULES

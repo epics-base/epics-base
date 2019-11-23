@@ -37,12 +37,12 @@ extern "C" int softIoc_registerRecordDeviceDriver(struct dbBase *pdbbase);
 #  error -DEPICS_BASE required
 #endif
 
-#define DBD_BASE "dbd/softIoc.dbd"
-#define EXIT_BASE "db/softIocExit.db"
-#define DBD_FILE_REL "../../" DBD_BASE
-#define EXIT_FILE_REL "../../" EXIT_BASE
-#define DBD_FILE EPICS_BASE "/" DBD_BASE
-#define EXIT_FILE EPICS_BASE "/" EXIT_BASE
+#define DBD_BASE "dbd" OSI_PATH_SEPARATOR "softIoc.dbd"
+#define EXIT_BASE "db" OSI_PATH_SEPARATOR "softIocExit.db"
+#define DBD_FILE_REL ".." OSI_PATH_SEPARATOR ".." OSI_PATH_SEPARATOR DBD_BASE
+#define EXIT_FILE_REL ".." OSI_PATH_SEPARATOR ".." OSI_PATH_SEPARATOR EXIT_BASE
+#define DBD_FILE EPICS_BASE OSI_PATH_SEPARATOR DBD_BASE
+#define EXIT_FILE EPICS_BASE OSI_PATH_SEPARATOR EXIT_BASE
 
 namespace {
 

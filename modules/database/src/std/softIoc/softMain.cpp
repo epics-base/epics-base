@@ -96,10 +96,11 @@ void errIf(int ret, const std::string& msg)
         throw std::runtime_error(msg);
 }
 
+bool lazy_dbd_loaded;
+
 void lazy_dbd(const std::string& dbd_file) {
-    static bool loaded;
-    if(loaded) return;
-    loaded = true;
+    if(lazy_dbd_loaded) return;
+    lazy_dbd_loaded = true;
 
     errIf(dbLoadDatabase(dbd_file.c_str(), NULL, NULL),
           std::string("Failed to load DBD file: ")+dbd_file);
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
 
         int opt;
 
-        while ((opt = getopt(argc, argv, "ha:d:m:Ssx:")) != -1) {
+        while ((opt = getopt(argc, argv, "ha:D:d:m:Ssx:")) != -1) {
             switch (opt) {
             case 'h':               /* Print usage */
                 usage(argv[0], dbd_file);
@@ -163,6 +164,12 @@ int main(int argc, char *argv[])
                 if(asSetFilename(optarg))
                     throw std::bad_alloc();
                 std::cout<<"asSetFilename(\""<<optarg<<"\")\n";
+                break;
+            case 'D':
+                if(lazy_dbd_loaded) {
+                    throw std::runtime_error("-D specified too late.  softIoc.dbd already loaded.\n");
+                }
+                dbd_file = optarg;
                 break;
             case 'd':
                 lazy_dbd(dbd_file);

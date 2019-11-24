@@ -46,6 +46,7 @@ void registerRecordTypes(DBBASE *pbase, int nRecordTypes,
         } else {
             sizeOffset(dbEntry.precordType);
         }
+        dbFinishEntry(&dbEntry);
     }
 }
 

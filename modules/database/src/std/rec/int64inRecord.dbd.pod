@@ -119,6 +119,7 @@ monitoring deadband functionality.
     %    dset common;
     %    long (*read_int64in)(struct int64inRecord *prec);
     %} int64indset;
+    %#define HAS_int64indset
     %
     field(VAL,DBF_INT64) {
         prompt("Current value")

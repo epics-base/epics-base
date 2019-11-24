@@ -15,6 +15,7 @@ recordtype(lsi) {
     %    dset common;
     %    long (*read_string)(struct lsiRecord *prec);
     %} lsidset;
+    %#define HAS_lsidset
     %
     field(VAL,DBF_NOACCESS) {
         prompt("Current Value")

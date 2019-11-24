@@ -15,6 +15,7 @@ recordtype(printf) {
     %    dset common;
     %    long (*write_string)(struct printfRecord *prec);
     %} printfdset;
+    %#define HAS_printfdset
     %
     field(VAL,DBF_NOACCESS) {
         prompt("Result")

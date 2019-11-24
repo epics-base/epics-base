@@ -15,6 +15,7 @@ recordtype(lso) {
     %    dset common;
     %    long (*write_string)(struct lsoRecord *prec);
     %} lsodset;
+    %#define HAS_lsodset
     %
     field(VAL,DBF_NOACCESS) {
         prompt("Current Value")

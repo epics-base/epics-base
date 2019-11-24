@@ -223,7 +223,7 @@ void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
 const iocshVarDef * epicsShareAPI iocshFindVariable(const char *name)
 {
     struct iocshVariable *temp = (iocshVariable *) registryFind(iocshVarID, name);
-    return temp->pVarDef; 
+    return temp ? temp->pVarDef : 0;
 }
 
 /*

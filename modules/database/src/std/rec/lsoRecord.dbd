@@ -7,7 +7,6 @@
 
 recordtype(lso) {
     include "dbCommon.dbd" 
-    %#include "devSup.h"
     %
     %/* Declare Device Support Entry Table */
     %struct lsoRecord;

@@ -137,7 +137,6 @@ monitoring deadband functionality.
 =cut
 
     include "dbCommon.dbd"
-    %#include "devSup.h"
     %
     %/* Declare Device Support Entry Table */
     %struct int64outRecord;

@@ -15,7 +15,9 @@ DBD += devSoft.dbd
 
 dbRecStd_SRCS += devAaiSoft.c
 dbRecStd_SRCS += devAaoSoft.c
+devAiSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devAiSoft.c
+devAiSoftRaw_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devAiSoftRaw.c
 dbRecStd_SRCS += devAoSoft.c
 dbRecStd_SRCS += devAoSoftRaw.c
@@ -52,8 +54,8 @@ dbRecStd_SRCS += devSASoft.c
 dbRecStd_SRCS += devSiSoft.c
 dbRecStd_SRCS += devSoSoft.c
 dbRecStd_SRCS += devWfSoft.c
-dbRecStd_SRCS += devGeneralTime.c
 
+devAiSoftCallback_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devAiSoftCallback.c
 dbRecStd_SRCS += devBiSoftCallback.c
 devI64inSoftCallback_CFLAGS += -DUSE_TYPED_DSET
@@ -77,6 +79,9 @@ devPrintfSoftCallback_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devPrintfSoftCallback.c
 dbRecStd_SRCS += devSoSoftCallback.c
 
+devGeneralTime_CFLAGS += -DUSE_TYPED_DSET
+dbRecStd_SRCS += devGeneralTime.c
+devTimestamp_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devTimestamp.c
 devStdio_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devStdio.c

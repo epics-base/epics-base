@@ -215,6 +215,16 @@ monitoring functionality.
 =cut
 
     include "dbCommon.dbd"
+    %
+    %/* Declare Device Support Entry Table */
+    %struct aiRecord;
+    %typedef struct aidset {
+    %    dset common;
+    %    long (*read_ai)(struct aiRecord *prec);
+    %    long (*special_linconv)(struct aiRecord *prec, int after);
+    %} aidset;
+    %#define HAS_aidset
+    %
     field(VAL,DBF_DOUBLE) {
         prompt("Current EGU Value")
         promptgroup("40 - Input")

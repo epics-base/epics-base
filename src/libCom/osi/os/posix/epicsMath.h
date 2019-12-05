@@ -14,6 +14,14 @@
 #include <shareLib.h>
 
 #ifdef __cplusplus
+
+#include <cmath>
+
+using std::isfinite;
+using std::isinf;
+using std::isnan;
+using std::isnormal;
+
 extern "C" {
 #endif
 

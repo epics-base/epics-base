@@ -83,6 +83,11 @@ print $OUT <<"END";
 #endif
 #define EPICS_VERSION_INT VERSION_INT($ver, $rev, $mod, $patch)
 
+/* macros that show if certain features are implemented: */
+
+/* environment variable EPICS_CAS_IGNORE_NET_LIST is supported: */
+#define EPICS_HAS_CAS_IGNORE_NET_LIST 1
+
 #endif /* INC_${obase}_H */
 END
 

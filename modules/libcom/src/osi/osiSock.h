@@ -15,6 +15,8 @@
 #ifndef osiSockh
 #define osiSockh
 
+#include <epicsTypes.h>
+
 #include "shareLib.h"
 #include "osdSock.h"
 #include "ellLib.h"
@@ -162,6 +164,16 @@ typedef struct osiSockAddrNode {
     ELLNODE node;
     osiSockAddr addr;
 } osiSockAddrNode;
+
+typedef struct osiSockNet {
+    epicsUInt32 addr; /* network byte order */
+    epicsUInt32 mask; /* network byte order */
+} osiSockNet;
+
+typedef struct osiSockNetNode {
+    ELLNODE node;
+    osiSockNet net;
+} osiSockNetNode;
 
 /*
  * sockAddrAreIdentical() 

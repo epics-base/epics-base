@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+#include "epicsTypes.h"
 #include "envDefs.h"
 #include "epicsAssert.h"
 #include "epicsStdioRedirect.h"
@@ -68,6 +69,94 @@ static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
 		return pBuf;
 	}
     return NULL;
+}
+
+/* Examples for valid network specifications:
+ * CIDR Notation:      193.245.13.0/24
+ * ADDR:MASK Notation: 193.245.13.0:255.255.255.0
+ * single IP address:  193.245.13.14
+ * sets two uint32 integers in network byte order 
+ * returns: 1 on success, 0 on error 
+ * */
+static int scan_netspec(const char *st, epicsUInt32 *addr, epicsUInt32 *mask)
+  {
+    int a[4]= { 0, 0, 0, 0};
+    int b[4]= { 0, 0, 0, 0};
+    int i,m=32;
+    int rc;
+
+    /* addr:mask format: */
+    rc= sscanf(st, "%d.%d.%d.%d:%d.%d.%d.%d", a, a+1, a+2, a+3,
+                                              b, b+1, b+2, b+3);
+    if (rc!=8)
+      {
+        /* CIDR format: */
+        rc= sscanf(st, "%d.%d.%d.%d/%d", a, a+1, a+2, a+3, &m);
+        if (rc!=5)
+          {
+            /* single IP format: */
+            rc= sscanf(st, "%d.%d.%d.%d", a, a+1, a+2, a+3);
+            if (rc!=4)
+              return 0;
+          }
+      }
+    /* range checks: */
+    for(i=0; i<4; i++)
+      { 
+        if ((a[i]<0) || (a[i]>255))
+          return 0;
+        if ((b[i]<0) || (b[i]>255))
+          return 0;
+      }
+    if ((m<=0) || (m>32))
+      return 0;
+
+    *addr= htonl((a[0]<<24) | (a[1]<<16) | (a[2]<<8) | (a[3]));
+    if (rc==8) /* netmask was given explicitly */
+      *mask= htonl((b[0]<<24) | (b[1]<<16) | (b[2]<<8) | (b[3]));
+    else
+      {
+        if (rc==4) /* only a single ip was provided */
+          m= 32;
+        *mask= htonl( 0xFFFFFFFF & (0xFFFFFFFF << (32-m)));
+      }
+    return 1;
+  }
+
+extern "C" int epicsShareAPI networkList
+    ( ELLLIST *pList, const ENV_PARAM *pEnv )
+{
+    char buf[40]; /* large enough to hold a CIDR notation */
+    osiSockNetNode *pNewNode;
+    int ret = -1;
+    epicsUInt32 addr, mask;
+    const char *pStr;
+    const char *pToken;
+
+    pStr = envGetConfigParamPtr (pEnv);
+    if (!pStr) {
+        return ret;
+    }
+    while ( ( pToken = getToken (&pStr, buf, sizeof (buf) ) ) ) {
+        if (!scan_netspec( pToken, &addr, &mask )) {
+            fprintf ( stderr, "%s: Parsing '%s'\n", __FILE__, pEnv->name);
+            fprintf ( stderr, "\tBad notation for network: '%s'\n", pToken);
+            continue;
+        }
+        pNewNode = (osiSockNetNode *) calloc (1, sizeof(*pNewNode));
+        if (pNewNode==NULL) {
+            fprintf ( stderr, "networkList(): no memory available for configuration\n");
+            break;
+        }
+        pNewNode->net.addr= addr;
+        pNewNode->net.mask= mask;
+		/*
+		 * LOCK applied externally
+		 */
+        ellAdd (pList, &pNewNode->node);
+        ret = 0; /* success if anything is added to the list */
+    }
+    return ret;
 }
 
 /*

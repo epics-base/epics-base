@@ -54,6 +54,7 @@ epicsShareExtern const ENV_PARAM EPICS_CA_NAME_SERVERS;
 epicsShareExtern const ENV_PARAM EPICS_CA_MCAST_TTL;
 epicsShareExtern const ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;
 epicsShareExtern const ENV_PARAM EPICS_CAS_IGNORE_ADDR_LIST;
+epicsShareExtern const ENV_PARAM EPICS_CAS_IGNORE_NET_LIST;
 epicsShareExtern const ENV_PARAM EPICS_CAS_AUTO_BEACON_ADDR_LIST;
 epicsShareExtern const ENV_PARAM EPICS_CAS_BEACON_ADDR_LIST;
 epicsShareExtern const ENV_PARAM EPICS_CAS_SERVER_PORT;

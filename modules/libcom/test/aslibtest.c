@@ -17,6 +17,8 @@
 
 #include <asLib.h>
 
+#define DUMMY_IP 0
+
 static char *asUser,
             *asHost;
 static int asAsl;
@@ -44,7 +46,7 @@ static void testAccess(const char *asg, unsigned mask)
         testFail("testAccess(ASG:%s, USER:%s, HOST:%s, ASL:%d) -> asAddMember error: %s",
                  asg, asUser, asHost, asAsl, errSymMsg(ret));
     } else {
-        ret = asAddClient(&client, asp, asAsl, asUser, asHost);
+        ret = asAddClient(&client, asp, asAsl, asUser, asHost, DUMMY_IP);
     }
     if(ret) {
         testFail("testAccess(ASG:%s, USER:%s, HOST:%s, ASL:%d) -> asAddClient error: %s",

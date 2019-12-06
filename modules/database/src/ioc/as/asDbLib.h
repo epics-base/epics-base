@@ -47,7 +47,8 @@ epicsShareFunc int aspmem(const char *asgname,int clients);
 epicsShareFunc int aspmemFP(
     FILE *fp,const char *asgname,int clients);
 epicsShareFunc int astac(
-    const char *recordname,const char *user,const char *location);
+    const char *recordname,const char *user,const char *location,
+    const char *dotted_ip);
 
 #ifdef __cplusplus
 }

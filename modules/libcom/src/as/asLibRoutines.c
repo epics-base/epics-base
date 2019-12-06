@@ -14,6 +14,9 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <epicsTypes.h>
+#include <osdSock.h>
+
 #define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "epicsTypes.h"
@@ -49,6 +52,19 @@ static void         *freeListPvt = NULL;
 static int myParse(ASINPUTFUNCPTR inputfunction);
 
 /*private routines */
+
+
+static void asInitAddrList(ADDRLIST *st, int n_allocate);
+#if 0
+static void asDelAddrList(ADDRLIST *st);
+static void asDumpAddrList(ADDRLIST *st);
+#endif
+static int asAddrListNo(ADDRLIST *st);
+static void asPrintAddrList(FILE *stream, ADDRLIST *st);
+static void asAddToAddrList(ADDRLIST *st, epicsUInt32 addr);
+static int asIPCmp(const void *a_p, const void *b_p);
+static epicsUInt32 *asFindInAddrList(ADDRLIST *st, epicsUInt32 addr);
+
 static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,const char *asgName);
 static long asComputeAllAsgPvt(void);
 static long asComputeAsgPvt(ASG *pasg);
@@ -56,13 +72,17 @@ static long asComputePvt(ASCLIENTPVT asClientPvt);
 static UAG *asUagAdd(const char *uagName);
 static long asUagAddUser(UAG *puag,const char *user);
 static HAG *asHagAdd(const char *hagName);
+static IPAG *asIPagAdd(const char *ipagName);
 static long asHagAddHost(HAG *phag,const char *host);
+static char *asIpToStr(epicsUInt32 addr);
+static long asIPagAddIP(IPAG *pipag, char *dotted_ip);
 static ASG *asAsgAdd(const char *asgName);
 static long asAsgAddInp(ASG *pasg,const char *inp,int inpIndex);
 static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level);
 static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask);
 static long asAsgRuleUagAdd(ASGRULE *pasgrule,const char *name);
 static long asAsgRuleHagAdd(ASGRULE *pasgrule,const char *name);
+static long asAsgRuleIPagAdd(ASGRULE *pasgrule, const char *name);
 static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc);
 
 /*
@@ -100,6 +120,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     if(!freeListPvt) freeListInitPvt(&freeListPvt,sizeof(ASGCLIENT),20);
     ellInit(&pasbasenew->uagList);
     ellInit(&pasbasenew->hagList);
+    ellInit(&pasbasenew->ipagList);
     ellInit(&pasbasenew->asgList);
     asAsgAdd(DEFAULT);
     status = myParse(inputfunction);
@@ -129,6 +150,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 	}
 	puag = (UAG *)ellNext(&puag->node);
     }
+
     phag = (HAG *)ellFirst(&pasbasenew->hagList);
     while(phag) {
 	phagname = (HAGNAME *)ellFirst(&phag->list);
@@ -142,6 +164,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 	}
 	phag = (HAG *)ellNext(&phag->node);
     }
+
     pasbaseold = (ASBASE *)pasbase;
     pasbase = (ASBASE volatile *)pasbasenew;
     if(pasbaseold) {
@@ -361,7 +384,7 @@ void epicsShareAPI asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
 }
 
 long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
-	int asl,const char *user,char *host)
+	int asl,const char *user,char *host, epicsUInt32 ip_addr)
 {
     ASGMEMBER	*pasgmember = asMemberPvt;
     ASGCLIENT	*pasgclient;
@@ -381,6 +404,7 @@ long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
+    pasgclient->ip_addr= ip_addr;
     LOCK;
     ellAdd(&pasgmember->clientList,&pasgclient->node);
     status = asComputePvt(pasgclient);
@@ -389,7 +413,7 @@ long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
 }
 
 long epicsShareAPI asChangeClient(
-    ASCLIENTPVT asClientPvt,int asl,const char *user,char *host)
+    ASCLIENTPVT asClientPvt,int asl,const char *user,char *host, epicsUInt32 ip_addr)
 {
     ASGCLIENT	*pasgclient = asClientPvt;
     long	status;
@@ -405,6 +429,7 @@ long epicsShareAPI asChangeClient(
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
+    pasgclient->ip_addr= ip_addr;
     status = asComputePvt(pasgclient);
     UNLOCK;
     return(status);
@@ -520,10 +545,12 @@ int epicsShareAPI asDumpFP(
     UAGNAME	*puagname;
     HAG		*phag;
     HAGNAME	*phagname;
+    IPAG	*pipag;
     ASG		*pasg;
     ASGINP	*pasginp;
     ASGRULE	*pasgrule;
     ASGHAG	*pasghag;
+    ASGIPAG	*pasgipag;
     ASGUAG	*pasguag;
     ASGMEMBER	*pasgmember;
     ASGCLIENT	*pasgclient;
@@ -542,6 +569,7 @@ int epicsShareAPI asDumpFP(
 	}
 	puag = (UAG *)ellNext(&puag->node);
     }
+
     phag = (HAG *)ellFirst(&pasbase->hagList);
     if(!phag) fprintf(fp,"No HAGs\n");
     while(phag) {
@@ -555,6 +583,20 @@ int epicsShareAPI asDumpFP(
 	}
 	phag = (HAG *)ellNext(&phag->node);
     }
+
+    pipag = (IPAG *)ellFirst(&pasbase->ipagList);
+    if(!pipag) fprintf(fp,"No IPAGs\n");
+    while(pipag) {
+	fprintf(fp,"IPAG(%s)",pipag->name);
+        if (asAddrListNo(&(pipag->addrlist))) {
+	    fprintf(fp," {"); 
+            asPrintAddrList(fp, &(pipag->addrlist));
+	    fprintf(fp,"}"); 
+        }
+	fprintf(fp,"\n"); 
+	pipag = (IPAG *)ellNext(&pipag->node);
+    }
+
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     if(!pasg) fprintf(fp,"No ASGs\n");
     while(pasg) {
@@ -604,6 +646,7 @@ int epicsShareAPI asDumpFP(
 		pasguag = (ASGUAG *)ellNext(&pasguag->node);
 		if(pasguag) fprintf(fp,","); else fprintf(fp,")\n");
 	    }
+
 	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
 	    if(pasghag) fprintf(fp,"\t\tHAG(");
 	    while(pasghag) {
@@ -611,6 +654,15 @@ int epicsShareAPI asDumpFP(
 		pasghag = (ASGHAG *)ellNext(&pasghag->node);
 		if(pasghag) fprintf(fp,","); else fprintf(fp,")\n");
 	    }
+
+	    pasgipag = (ASGIPAG *)ellFirst(&pasgrule->ipagList);
+	    if(pasgipag) fprintf(fp,"\t\tIPAG(");
+	    while(pasgipag) {
+		fprintf(fp,"%s",pasgipag->pipag->name);
+		pasgipag = (ASGIPAG *)ellNext(&pasgipag->node);
+		if(pasgipag) fprintf(fp,","); else fprintf(fp,")\n");
+	    }
+
 	    if(pasgrule->calc) {
 		fprintf(fp,"\t\tCALC(\"%s\")",pasgrule->calc);
 		if(verbose)
@@ -632,7 +684,10 @@ int epicsShareAPI asDumpFP(
 	    fprintf(fp,"\n");
 	    pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
 	    while(pasgclient) {
-		fprintf(fp,"\t\t\t %s %s",pasgclient->user,pasgclient->host);
+		fprintf(fp,"\t\t\t %s %s %s",
+                        pasgclient->user,
+                        pasgclient->host,
+                        asIpToStr(pasgclient->ip_addr));
 		if(pasgclient->level>=0 && pasgclient->level<=1)
 			fprintf(fp," %s",asLevelName[pasgclient->level]);
 		else
@@ -716,6 +771,35 @@ int epicsShareAPI asDumpHagFP(FILE *fp,const char *hagname)
     }
     return(0);
 }
+
+int epicsShareAPI asDumpIPag(const char *ipagname)
+{
+    return asDumpIPagFP(stdout,ipagname);
+}
+
+int epicsShareAPI asDumpIPagFP(FILE *fp,const char *ipagname)
+{
+    IPAG		*pipag;
+
+    if(!asActive) return(0);
+    pipag = (IPAG *)ellFirst(&pasbase->ipagList);
+    if(!pipag) fprintf(fp,"No IPAGs\n");
+    while(pipag) {
+	if(ipagname && strcmp(ipagname,pipag->name)!=0) {
+	    pipag = (IPAG *)ellNext(&pipag->node);
+	    continue;
+	}
+	fprintf(fp,"IPAG(%s)",pipag->name);
+        if (asAddrListNo(&(pipag->addrlist))) {
+	    fprintf(fp," {"); 
+            asPrintAddrList(fp, &(pipag->addrlist));
+	    fprintf(fp,"}"); 
+        }
+	fprintf(fp,"\n"); 
+	pipag = (IPAG *)ellNext(&pipag->node);
+    }
+    return(0);
+}
 
 int epicsShareAPI asDumpRules(const char *asgname)
 {
@@ -728,6 +812,7 @@ int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname)
     ASGINP	*pasginp;
     ASGRULE	*pasgrule;
     ASGHAG	*pasghag;
+    ASGIPAG	*pasgipag;
     ASGUAG	*pasguag;
 
     if(!asActive) return(0);
@@ -767,7 +852,8 @@ int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname)
                 asTrapOption[pasgrule->trapMask]);
 	    pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
 	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
-	    if(pasguag || pasghag || pasgrule->calc) {
+	    pasgipag = (ASGIPAG *)ellFirst(&pasgrule->ipagList);
+	    if(pasguag || pasghag || pasgipag || pasgrule->calc) {
 		fprintf(fp," {\n");
 		print_end_brace = TRUE;
 	    } else {
@@ -780,6 +866,7 @@ int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname)
 		pasguag = (ASGUAG *)ellNext(&pasguag->node);
 		if(pasguag) fprintf(fp,","); else fprintf(fp,")\n");
 	    }
+
 	    pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
 	    if(pasghag) fprintf(fp,"\t\tHAG(");
 	    while(pasghag) {
@@ -787,6 +874,15 @@ int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname)
 		pasghag = (ASGHAG *)ellNext(&pasghag->node);
 		if(pasghag) fprintf(fp,","); else fprintf(fp,")\n");
 	    }
+
+	    pasgipag = (ASGIPAG *)ellFirst(&pasgrule->ipagList);
+	    if(pasgipag) fprintf(fp,"\t\tIPAG(");
+	    while(pasgipag) {
+		fprintf(fp,"%s",pasgipag->pipag->name);
+		pasgipag = (ASGIPAG *)ellNext(&pasgipag->node);
+		if(pasgipag) fprintf(fp,","); else fprintf(fp,")\n");
+	    }
+
 	    if(pasgrule->calc) {
 		fprintf(fp,"\t\tCALC(\"%s\")",pasgrule->calc);
 		fprintf(fp," result=%s",(pasgrule->result==1 ? "TRUE" : "FALSE"));
@@ -886,6 +982,120 @@ epicsShareFunc char * epicsShareAPI asStrdup(unsigned char *str)
 	strcpy(buf, (char *) str);
 	return buf;
 }
+
+static void asInitAddrList(ADDRLIST *st, int n_allocate)
+  /* Init a new ADDRLIST structure.
+   * allocate memory for <n_allocate> entries. */
+  {
+    st->addrs= calloc(n_allocate, sizeof(epicsUInt32));
+    st->n_addrs= 0;
+    st->n_allocated= n_allocate;
+  }
+
+#if 0
+static void asDelAddrList(ADDRLIST *st)
+  /* Delete the ADDRLIST structure. */
+  {
+    free(st->addrs);
+    free(st);
+  }
+
+static void asDumpAddrList(ADDRLIST *st)
+  /* Print the contents of the ADDRLIST structure to the console. */
+  {
+    int i;
+    printf("allocated elements: %d\n", st->n_allocated);
+    printf("elements:           %d\n", st->n_addrs);
+    for(i=0; i<st->n_addrs; i++)
+      {
+        printf("%5d", (st->addrs)[i]);
+      }
+    printf("\n");
+  }
+#endif
+
+static int asAddrListNo(ADDRLIST *st)
+  {
+    return st->n_addrs;
+  }
+
+static void asPrintAddrList(FILE *stream, ADDRLIST *st)
+  /* Print all ip addresses to a file */
+  {
+    int i;
+    for(i=0; i<st->n_addrs; i++)
+      {
+        if (i==0)
+            fprintf(stream, "%s", asIpToStr((st->addrs)[i]));
+        else
+            fprintf(stream, ",%s", asIpToStr((st->addrs)[i]));
+      }
+  }
+
+static void asAddToAddrList(ADDRLIST *st, epicsUInt32 addr)
+  /* Add a new address to the ADDRLIST structure. */
+  {
+    epicsUInt32 *new, *dest, *src;
+    int n;
+    if (st->n_addrs>=st->n_allocated)
+      {
+        st->n_allocated+= 10; /* allocate space for 10 more IP addresses */
+        new= calloc(st->n_allocated, sizeof(epicsUInt32));
+        src= st->addrs;
+        dest= new;
+        n= st->n_addrs;
+        while((addr>*src)&&(n>0))
+          {
+            *(dest++)= *(src++);
+            n--;
+          }
+        if (addr!=*src)
+          {
+            *(dest++)= addr;
+            st->n_addrs+=1;
+          }
+        for(;n>0;n--)
+          *(dest++)= *(src++);
+        free(st->addrs);
+        st->addrs= new;
+      }
+    else
+      {
+        src= st->addrs;
+        n= st->n_addrs;
+        while((addr>*src)&&(n>0))
+          {
+            src++;
+            n--;
+          }
+        if (addr==*src)
+          return; /* do nothing, already in list */
+        memmove(src+1, src, sizeof(epicsUInt32)*n);
+        *src= addr;
+        st->n_addrs+=1;
+      }
+  }
+
+static int asIPCmp(const void *a_p, const void *b_p)
+  /* Internal compare function for ADDRLIST. */
+  {
+    epicsUInt32 a= *((epicsUInt32 *)a_p);
+    epicsUInt32 b= *((epicsUInt32 *)b_p);
+    if (a < b)
+      return -1;
+    if (a > b)
+      return 1;
+    return 0;
+  }
+
+static epicsUInt32 *asFindInAddrList(ADDRLIST *st, epicsUInt32 addr)
+  /* Find an address in the ADDRLIST structure.
+   * Returns a pointer to the found element or NULL if it was not found. */
+  {
+    return (epicsUInt32 *)bsearch(&addr, st->addrs, st->n_addrs, 
+                               sizeof(epicsUInt32), asIPCmp);
+  }
+
 
 static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,const char *asgName)
 {
@@ -1022,9 +1232,25 @@ check_hag:
 	    while(pasghag) {
 		if((phag = pasghag->phag)) {
 		    pgphentry=gphFind(pasbase->phash,pasgclient->host,phag);
-		    if(pgphentry) goto check_calc;
+		    if(pgphentry) goto check_ipag;
 		}
 		pasghag = (ASGHAG *)ellNext(&pasghag->node);
+	    }
+	    goto next_rule;
+	}
+check_ipag: 
+	/*if hagList is empty then no need to check hag*/
+	if(ellCount(&pasgrule->ipagList)>0) {
+	    ASGIPAG	*pasgipag;
+	    IPAG        *pipag;
+
+	    pasgipag = (ASGIPAG *)ellFirst(&pasgrule->ipagList);
+	    while(pasgipag) {
+		if((pipag = pasgipag->pipag)) {
+                    if (asFindInAddrList(&(pipag->addrlist), pasgclient->ip_addr))
+                        goto check_calc;
+		}
+		pasgipag = (ASGIPAG *)ellNext(&pasgipag->node);
 	    }
 	    goto next_rule;
 	}
@@ -1205,6 +1431,38 @@ static HAG *asHagAdd(const char *hagName)
     return(phag);
 }
 
+static IPAG *asIPagAdd(const char *ipagName)
+{
+    IPAG		*pprev;
+    IPAG		*pnext;
+    IPAG		*pipag;
+    int		cmpvalue;
+    ASBASE	*pasbase = (ASBASE *)pasbasenew;
+
+    /*Insert in alphabetic order*/
+    pnext = (IPAG *)ellFirst(&pasbase->ipagList);
+    while(pnext) {
+	cmpvalue = strcmp(ipagName,pnext->name);
+	if(cmpvalue < 0) break;
+	if(cmpvalue==0) {
+	    errlogPrintf("Duplicate IP Access Group named '%s'\n", ipagName);
+	    return(NULL);
+	}
+	pnext = (IPAG *)ellNext(&pnext->node);
+    }
+    pipag = asCalloc(1,sizeof(IPAG)+strlen(ipagName)+1);
+    asInitAddrList(&(pipag->addrlist), 5); /* initially space for 5 IP adresses */
+    pipag->name = (char *)(pipag+1);
+    strcpy(pipag->name,ipagName);
+    if(pnext==NULL) { /*Add to end of list*/
+	ellAdd(&pasbase->ipagList,&pipag->node);
+    } else {
+	pprev = (IPAG *)ellPrevious(&pnext->node);
+	ellInsert(&pasbase->ipagList,&pprev->node,&pipag->node);
+    }
+    return(pipag);
+}
+
 static long asHagAddHost(HAG *phag,const char *host)
 {
     HAGNAME *phagname;
@@ -1242,6 +1500,45 @@ static long asHagAddHost(HAG *phag,const char *host)
         }
     }
     ellAdd(&phag->list, &phagname->node);
+    return 0;
+}
+
+epicsShareFunc int asScanIp(const char *dotted_ip, epicsUInt32 *addr)
+{
+    int a[4];
+    int rc;
+    int i;
+    rc= sscanf(dotted_ip, "%d.%d.%d.%d", a, a+1, a+2, a+3);
+    if (rc!=4)
+        return 0;
+    for(i=0; i<4; i++)
+        if ((a[i]<0) || (a[i]>255))
+            return 0;
+    *addr= htonl((a[0]<<24) | (a[1]<<16) | (a[2]<<8) | (a[3]));
+    return 1;
+}
+
+static char *asIpToStr(epicsUInt32 addr)
+{
+    static char buf[20];
+    epicsUInt32 haddr;
+    haddr= ntohl(addr);
+    sprintf(buf, "%lu.%lu.%lu.%lu", 
+            (unsigned long)( haddr >> 24        ), 
+            (unsigned long)((haddr >> 16) & 0xFF), 
+            (unsigned long)((haddr >>  8) & 0xFF), 
+            (unsigned long)( haddr        & 0xFF)
+           );
+    return buf;
+}
+
+static long asIPagAddIP(IPAG *pipag, char *dotted_ip)
+{
+    epicsUInt32 addr;
+
+    if (!pipag) return 0;
+    if (!asScanIp(dotted_ip, &addr)) return 1;
+    asAddToAddrList(&(pipag->addrlist), addr);
     return 0;
 }
 
@@ -1369,6 +1666,32 @@ static long asAsgRuleHagAdd(ASGRULE *pasgrule, const char *name)
     pasghag = asCalloc(1, sizeof(ASGHAG));
     pasghag->phag = phag;
     ellAdd(&pasgrule->hagList, &pasghag->node);
+    return 0;
+}
+
+static long asAsgRuleIPagAdd(ASGRULE *pasgrule, const char *name)
+{
+    ASGIPAG	*pasgipag;
+    IPAG	*pipag;
+    ASBASE	*pasbase = (ASBASE *)pasbasenew;
+
+    if (!pasgrule)
+        return 0;
+
+    pipag = (IPAG *)ellFirst(&pasbase->ipagList);
+    while (pipag) {
+        if (strcmp(pipag->name, name)==0)
+            break;
+        pipag = (IPAG *)ellNext(&pipag->node);
+    }
+    if (!pipag){
+        errlogPrintf("No Host Access Group named '%s' defined\n", name);
+        return S_asLib_noIPag;
+    }
+
+    pasgipag = asCalloc(1, sizeof(ASGIPAG));
+    pasgipag->pipag = pipag;
+    ellAdd(&pasgrule->ipagList, &pasgipag->node);
     return 0;
 }
 

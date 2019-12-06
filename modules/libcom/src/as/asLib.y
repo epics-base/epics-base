@@ -14,13 +14,14 @@ static int yyFailed = FALSE;
 static int line_num=1;
 static UAG *yyUag=NULL;
 static HAG *yyHag=NULL;
+static IPAG *yyIPag=NULL;
 static ASG *yyAsg=NULL;
 static ASGRULE *yyAsgRule=NULL;
 %}
 
 %start asconfig
 
-%token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC 
+%token tokenUAG tokenHAG tokenIPAG tokenASG tokenRULE tokenCALC 
 %token <Str> tokenINP
 %token <Int> tokenINTEGER
 %token <Str> tokenSTRING
@@ -40,6 +41,8 @@ asconfig_item:	tokenUAG uag_head uag_body
 	|	tokenUAG uag_head
 	|	tokenHAG hag_head hag_body
 	|	tokenHAG hag_head
+	|	tokenIPAG ipag_head ipag_body
+	|	tokenIPAG ipag_head
 	|	tokenASG asg_head asg_body
 	|	tokenASG asg_head
 	;
@@ -88,6 +91,29 @@ hag_host_list:	hag_host_list ',' hag_host_list_name
 hag_host_list_name:	tokenSTRING
 	{
 		if (asHagAddHost(yyHag,$1))
+			yyerror("");
+		free((void *)$1);
+	}
+	;
+
+ipag_head:	'(' tokenSTRING ')'
+	{
+		yyIPag = asIPagAdd($2);
+		if(!yyIPag) yyerror("");
+		free((void *)$2);
+	}
+	;
+
+ipag_body:	'{' ipag_host_list '}'
+	;
+
+ipag_host_list:	ipag_host_list ',' ipag_host_list_name
+	|	ipag_host_list_name
+	;
+
+ipag_host_list_name:	tokenSTRING
+	{
+		if (asIPagAddIP(yyIPag,$1))
 			yyerror("");
 		free((void *)$1);
 	}
@@ -168,6 +194,7 @@ rule_list:	rule_list rule_list_item
 
 rule_list_item: tokenUAG '(' rule_uag_list ')'
 	|	tokenHAG  '(' rule_hag_list ')'
+	|	tokenIPAG  '(' rule_ipag_list ')'
 	|	tokenCALC '(' tokenSTRING ')'
 	{
 		if (asAsgRuleCalc(yyAsgRule,$3))
@@ -195,6 +222,18 @@ rule_hag_list:	rule_hag_list ',' rule_hag_list_name
 rule_hag_list_name:	tokenSTRING
 	{
 		if (asAsgRuleHagAdd(yyAsgRule,$1))
+			yyerror("");
+		free((void *)$1);
+	}
+	;
+
+rule_ipag_list:	rule_ipag_list ',' rule_ipag_list_name
+	|	rule_ipag_list_name
+	;
+
+rule_ipag_list_name:	tokenSTRING
+	{
+		if (asAsgRuleIPagAdd(yyAsgRule,$1))
 			yyerror("");
 		free((void *)$1);
 	}

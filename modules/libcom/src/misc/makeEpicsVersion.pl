@@ -91,6 +91,9 @@ print $OUT <<"END";
 /* environment variable EPICS_CA_IGNORE_NET_LIST is supported: */
 #define EPICS_HAS_CA_IGNORE_NET_LIST 1
 
+/* access security supports ip address access groups (IPAG): */
+#define EPICS_HAS_AS_IPAG 1
+
 #endif /* INC_${obase}_H */
 END
 

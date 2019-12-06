@@ -1273,7 +1273,9 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
             asDbGetMemberPvt(pciu->dbch),
             asDbGetAsl(pciu->dbch),
             client->pUserName ? client->pUserName : "",
-            client->pHostName ? client->pHostName : "");
+            client->pHostName ? client->pHostName : "",
+            client->addr.sin_addr.s_addr
+            );
     if(status != 0 && status != S_asLib_asNotActive){
         log_header ("No room for security table",
             client, mp, pPayload, 0);

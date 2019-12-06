@@ -18,8 +18,10 @@
 #include <cmath>
 
 using std::isfinite;
+#ifndef __GXX_EXPERIMENTAL_CXX0X__
 using std::isinf;
 using std::isnan;
+#endif
 using std::isnormal;
 
 extern "C" {

@@ -291,6 +291,23 @@ udpiiu::udpiiu (
         _searchDestList.add ( searchDest );
         free ( pNode );
     }
+    {
+      ELLLIST temp;
+      ellInit ( & temp );
+      size_t idx = 0;
+      osiSockNetNode *node;
+      networkList ( &temp, &EPICS_CA_IGNORE_NET_LIST );
+      this->ignoreNets= new osiSockNet[1+ellCount(&temp)];
+      while((node=(osiSockNetNode*)ellGet(&temp))!=NULL)
+      {
+          (this->ignoreNets)[idx].addr= node->net.addr;
+          (this->ignoreNets)[idx].mask= node->net.mask;
+          idx++;
+          free(node);
+      }
+      (this->ignoreNets)[idx].addr= 0;
+      (this->ignoreNets)[idx].mask= 0;
+    }
 
     /* add list of tcp name service addresses */
     _searchDestList.add ( searchDestListIn );
@@ -849,6 +866,15 @@ void udpiiu::postMsg (
                 "%s: Undecipherable (too small) UDP msg from %s ignored\n", 
                     __FILE__,  buf );
             return;
+        }
+        if ((this->ignoreNets)[0].addr) {
+            const sockaddr_in * pIP = reinterpret_cast < const sockaddr_in * > ( & net_addr );
+            osiSockNet *spec= this->ignoreNets;
+            for(; spec->addr; spec++) {
+                if ((pIP->sin_addr.s_addr & spec->mask)==(spec->addr & spec->mask)) 
+                    /* ignore */
+                    return;
+            }
         }
 
         pCurMsg = reinterpret_cast < caHdr * > ( pInBuf );

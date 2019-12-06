@@ -43,6 +43,7 @@ typedef struct envParam {
  * bldEnvData.pl looks for "epicsShareExtern const ENV_PARAM <name>;"
  */
 epicsShareExtern const ENV_PARAM EPICS_CA_ADDR_LIST;
+epicsShareExtern const ENV_PARAM EPICS_CA_IGNORE_NET_LIST;
 epicsShareExtern const ENV_PARAM EPICS_CA_CONN_TMO;
 epicsShareExtern const ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
 epicsShareExtern const ENV_PARAM EPICS_CA_REPEATER_PORT;

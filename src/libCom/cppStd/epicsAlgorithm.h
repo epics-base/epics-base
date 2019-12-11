@@ -13,7 +13,9 @@
 #ifndef __EPICS_ALGORITHM_H__
 #define __EPICS_ALGORITHM_H__
 
-#include "epicsMath.h"
+#include <cmath>
+
+using std::isnan;
 
 // The C++ standard only requires types to be less-than comparable, so
 // the epicsMin and epicsMax templates only use operator <

@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
+#include <cmath>
 
 #define epicsExportSharedSymbols
 #include "errlog.h"
@@ -30,6 +31,8 @@
 #include "epicsReadline.h"
 #include "cantProceed.h"
 #include "iocsh.h"
+
+using std::isinf;
 
 extern "C" {
 

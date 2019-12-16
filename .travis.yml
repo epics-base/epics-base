@@ -1,8 +1,54 @@
-sudo: false
-dist: trusty
 language: c
-compiler:
-  - gcc
+
+matrix:
+  include:
+    - sudo: false
+      dist: bionic
+      compiler: gcc
+      env: CMPLR=gcc
+    - sudo: false
+      dist: xenial
+      compiler: gcc
+      env: CMPLR=gcc
+    - sudo: false
+      dist: bionic
+      compiler: gcc
+      env: CMPLR=gcc CMD_CXXFLAGS=-std=c++11
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: CMPLR=gcc STATIC=YES
+    - sudo: false
+      dist: bionic
+      compiler: gcc
+      env: CMPLR=clang
+    - sudo: false
+      dist: xenial
+      compiler: gcc
+      env: CMPLR=clang
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: CMPLR=clang STATIC=YES
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: WINE=32 TEST=NO STATIC=YES
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: WINE=32 TEST=NO STATIC=NO
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: RTEMS=4.10
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: RTEMS=4.9
+    - os: osx
+      env: CMD_CFLAGS="-mmacosx-version-min=10.7" CMD_CXXFLAGS="-mmacosx-version-min=10.7 -std=c++11 -stdlib=libc++" CMD_LDXFLAGS="-mmacosx-version-min=10.7 -std=c++11 -stdlib=libc++"
+
 addons:
   apt:
     packages:
@@ -13,15 +59,5 @@ addons:
     - g++-mingw-w64-i686
     - qemu-system-x86
 script:
+  - .ci/travis-prepare.sh
   - .ci/travis-build.sh
-env:
-  - CMPLR=gcc EXTRA=LINKER_USE_RPATH=ORIGIN
-  - CMPLR=clang
-  - CMPLR=gcc   STATIC=YES
-  - CMPLR=clang STATIC=YES
-  - CMPLR=gcc   EXTRA=CMD_CXXFLAGS=-std=c++11
-  - CMPLR=clang EXTRA=CMD_CXXFLAGS=-std=c++11
-  - WINE=32 TEST=NO STATIC=YES
-  - WINE=32 TEST=NO STATIC=NO
-  - RTEMS=4.10 TEST=YES
-  - RTEMS=4.9  TEST=YES

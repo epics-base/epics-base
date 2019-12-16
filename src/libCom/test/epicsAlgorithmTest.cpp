@@ -9,14 +9,10 @@
 // epicsAlgorithmTest.cpp
 //	Authors: Jeff Hill & Andrew Johnson
 
-#include <cmath>
-
 #include "epicsUnitTest.h"
 #include "epicsAlgorithm.h"
 #include "epicsMath.h"
 #include "testMain.h"
-
-using std::isnan;
 
 MAIN(epicsAlgorithm)
 {

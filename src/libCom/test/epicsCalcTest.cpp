@@ -8,7 +8,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <cmath>
 
 #include "epicsUnitTest.h"
 #include "epicsTypes.h"
@@ -16,9 +15,6 @@
 #include "epicsAlgorithm.h"
 #include "postfix.h"
 #include "testMain.h"
-
-using std::isnan;
-using std::isinf;
 
 /* Infrastructure for running tests */
 

@@ -75,13 +75,11 @@ CROSS_COMPILER_TARGET_ARCHS+=RTEMS-pc386
 EOF
 
   # find local qemu-system-i386
-  export PATH="$HOME/.cache/qemu/usr/bin:$PATH"
   echo -n "Using QEMU: "
   type qemu-system-i386 || echo "Missing qemu"
-  EXTRA=RTEMS_QEMU_FIXUPS=YES
 fi
 
-make -j2 $EXTRA
+make -j2 RTEMS_QEMU_FIXUPS=YES CMD_CFLAGS="${CMD_CFLAGS}" CMD_CXXFLAGS="${CMD_CXXFLAGS}" CMD_LDFLAGS="${CMD_LDFLAGS}"
 
 if [ "$TEST" != "NO" ]
 then

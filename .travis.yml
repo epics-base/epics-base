@@ -1,18 +1,54 @@
-sudo: false
-dist: trusty
 language: c
-compiler:
-  - gcc
-env:
-  - CMPLR=gcc
-  - CMPLR=gcc EXTRA=CMD_CXXFLAGS=-std=c++11
-  - CMPLR=gcc STATIC=YES
-  - CMPLR=clang
-  - CMPLR=clang STATIC=YES
-  - WINE=32 TEST=NO STATIC=YES
-  - WINE=32 TEST=NO STATIC=NO
-  - RTEMS=4.10 TEST=NO
-  - RTEMS=4.9 TEST=NO
+
+matrix:
+  include:
+    - sudo: false
+      dist: bionic
+      compiler: gcc
+      env: CMPLR=gcc
+    - sudo: false
+      dist: xenial
+      compiler: gcc
+      env: CMPLR=gcc
+    - sudo: false
+      dist: bionic
+      compiler: gcc
+      env: CMPLR=gcc CMD_CXXFLAGS=-std=c++11
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: CMPLR=gcc STATIC=YES
+    - sudo: false
+      dist: bionic
+      compiler: gcc
+      env: CMPLR=clang
+    - sudo: false
+      dist: xenial
+      compiler: gcc
+      env: CMPLR=clang
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: CMPLR=clang STATIC=YES
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: WINE=32 TEST=NO STATIC=YES
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: WINE=32 TEST=NO STATIC=NO
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: RTEMS=4.10 TEST=NO
+    - sudo: false
+      dist: trusty
+      compiler: gcc
+      env: RTEMS=4.9 TEST=NO
+    - os: osx
+      env: CMD_CFLAGS="-mmacosx-version-min=10.7" CMD_CXXFLAGS="-mmacosx-version-min=10.7 -std=c++11 -stdlib=libc++" CMD_LDXFLAGS="-mmacosx-version-min=10.7 -std=c++11 -stdlib=libc++"
+
 addons:
   apt:
     packages:
@@ -21,12 +57,6 @@ addons:
     - perl
     - clang
     - g++-mingw-w64-i686
-    - bison
-    - flex
-    - texinfo
-    - install-info
-cache:
-  directories:
-   - $HOME/.cache
+
 install: sh ci/travis-prepare.sh </dev/null
 script: sh ci/travis-build.sh </dev/null

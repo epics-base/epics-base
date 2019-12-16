@@ -15,12 +15,14 @@
 
 #ifdef __cplusplus
 
+#if __cplusplus>=201103L
 #include <cmath>
 
 using std::isfinite;
 using std::isinf;
 using std::isnan;
 using std::isnormal;
+#endif
 
 extern "C" {
 #endif

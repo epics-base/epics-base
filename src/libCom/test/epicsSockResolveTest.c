@@ -75,8 +75,11 @@ MAIN(epicsSockResolveTest)
             testSkip(2, "  aToIPAddr() failed");
         }
         else {
-            testOk(addr.sin_addr.s_addr == htonl(okdata[i].IP), "  IP correct");
-            testOk(addr.sin_port == htons(okdata[i].port), "  Port correct");
+            testOk(addr.sin_addr.s_addr == htonl(okdata[i].IP),
+                   "  IP correct 0x%08x == 0x%08x", (unsigned)ntohl(addr.sin_addr.s_addr),
+                   (unsigned)okdata[i].IP);
+            testOk(addr.sin_port == htons(okdata[i].port), "  Port correct %u == %u",
+                   ntohs(addr.sin_port), okdata[i].port);
         }
     }
 

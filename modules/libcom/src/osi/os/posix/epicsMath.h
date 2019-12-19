@@ -18,11 +18,13 @@
 #if __cplusplus>=201103L
 #include <cmath>
 
+#if __GLIBCXX__>20160427
 using std::isfinite;
 using std::isinf;
 using std::isnan;
 using std::isnormal;
 #endif
+#endif /* c++11 */
 
 extern "C" {
 #endif

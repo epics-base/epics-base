@@ -366,7 +366,7 @@ C<:=> : assigns a value (right hand side) to a variable (i.e. field)
 
 =back
 
-=head3 Parantheses, Comma, and Semicolon
+=head3 Parentheses, Comma, and Semicolon
 
 The open and close parentheses are supported. Nested parentheses are
 supported.
@@ -437,7 +437,7 @@ Result is E if (A + B)<(C + D)
 =item
 Result is unchanged if (A + B)>=(C + D)
 
-From 3.14.9 onwards, this expresion must be written as
+From 3.14.9 onwards, this expression must be written as
 C<(A + B) < (C + D) ? E : VAL>
 
 =back
@@ -505,7 +505,7 @@ C<On Change> -- write output every time VAL changes, i.e., every time the
 result of the expression changes.
 
 =item *
-C<When Zero> -- when record is preocessed, write output if VAL is zero.
+C<When Zero> -- when record is processed, write output if VAL is zero.
 
 =item *
 C<When Non-zero> -- when record is processed, write output if VAL is
@@ -531,9 +531,9 @@ output is executed. The field is a menu field with two options:
 If C<Use CALC> is specified, when the record writes its
 output it will write the result of the expression in the CALC field, that
 is, it will write the value of the VAL field. If C<Use OCAL> is specified,
-the record will instead write the result of the expresion in the OCAL
+the record will instead write the result of the expression in the OCAL
 field, which is contained in the OVAL field. The OCAL field is exactly like
-the CALC field and has the same fuctionality it can contain the string
+the CALC field and has the same functionality it can contain the string
 representation of an expression which is evaluated at run-time. Thus, if
 necessary, the record can use the result of the CALC expression to
 determine if data should be written and can use the result of the OCAL
@@ -548,7 +548,7 @@ the wait is over. The field DLYA is equal to 1 during the delay period. The
 resolution of the delay entry system dependent.
 
 The IVOA field specifies what action to take with the OUT link if the
-Calcout record eneters an INVALID alarm status. The options are
+Calcout record enters an INVALID alarm status. The options are
 C<Continue normally>, C<Don't drive outputs>, and C<Set output to IVOV>.
 If the IVOA field is C<Set output to IVOV>, the data entered into the
 IVOV field is written to the OUT link if the record alarm severity is
@@ -602,7 +602,7 @@ The CLCV and OLCV fields indicate the validity of the expression in the
 CALC and OCAL fields respectfully. If the expression in invalid, the field
 is set to one.
 
-The DYLA field is set to one during the delay specified in ODLY.
+The DLYA field is set to one during the delay specified in ODLY.
 
 See L<Fields Common to All Record Types> for more information on the record
 name (NAME) and description (DESC) fields.
@@ -617,7 +617,7 @@ record support routines. The Calculation alarm is called by the record
 processing routine when the CALC expression is an invalid one, upon which
 an error message is generated.
 
-The following alarm parametersi, which are configured by the user, define the
+The following alarm parameters, which are configured by the user, define the
 limit alarms for the VAL field and the severity corresponding to those
 conditions.
 
@@ -633,7 +633,7 @@ common to all record types.
 These parameters are used to determine when to send monitors for the value
 fields. These monitors are sent when the value field exceeds the last
 monitored field by the appropriate deadband, the ADEL for archiver monitors
-and the MDEL field for all aother types of monitors. If these fields have a
+and the MDEL field for all other types of monitors. If these fields have a
 value of zero, every time the value changes, monitors are triggered; if
 they have a value of -1, every time the record is scanned, monitors are
 triggered. See L<Monitor Specification> for a complete explanation of
@@ -1193,13 +1193,13 @@ Retrieves PREC.
 Sets the upper display and lower display limits for a field. If the field
 is VAL, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR, else
 if the field has upper and lower limits defined they will be used, else the
-upper and lower macimum values for the field type will be used.
+upper and lower maximum values for the field type will be used.
 
 =head2 C<get_control_double>
 
 Sets the upper control and lower control limits for a field. If the VAL,
 HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR, else if the
-field has upper and lower limits defimed they will be used, else the upper
+field has upper and lower limits defined they will be used, else the upper
 and lower maximum values for the field will be used.
 
 =head2 C<get_alarm_double>
@@ -1241,7 +1241,7 @@ honors the alarm hysteresis factor (HYST). Thus the value must change by at
 least HYST before the alarm status and severity changes.
 
 =item 4.
-Determin if the Output Execution Option (OOPT) is met. If it met, either
+Determine if the Output Execution Option (OOPT) is met. If it met, either
 execute the output link (and output event) immediately (if ODLY = 0), or
 schedule a callback after the specified interval. See the explanation for
 the C<execOutput()> routine below.
@@ -1267,7 +1267,7 @@ NSEV and NSTA are reset to 0
 =back
 
 =item 6.
-If no output delay was specified, scan forwark link if necessaru, set PACT
+If no output delay was specified, scan forward link if necessary, set PACT
 FALSE, and return.
 
 =back
@@ -1290,7 +1290,7 @@ put the value of OVAL to the OUT link and post the event in OEVT (if
 non-zero).
 
 =item 4.
-If an output delay was implemented, process the forwark link.
+If an output delay was implemented, process the forward link.
 
 =back
 

@@ -17,7 +17,7 @@ matrix:
     - sudo: false
       dist: trusty
       compiler: gcc
-      env: CMPLR=gcc STATIC=YES
+      env: CMPLR=gcc STATIC=YES CMD_CXXFLAGS=-std=c++11
     - sudo: false
       dist: bionic
       compiler: gcc

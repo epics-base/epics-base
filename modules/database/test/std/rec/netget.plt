@@ -28,7 +28,7 @@ my $exe = ($^O =~ m/^(MSWin32|cygwin)$/x) ? '.exe' : '';
 my $prefix = "test-$$";
 
 my $ioc = EPICS::IOC->new();
-#$ioc->debug(1);
+$ioc->debug(1);
 
 $SIG{__DIE__} = $SIG{INT} = $SIG{QUIT} = sub {
     $ioc->kill;

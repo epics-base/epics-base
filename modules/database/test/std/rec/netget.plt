@@ -8,6 +8,9 @@ use lib '@TOP@/lib/perl';
 use Test::More tests => 3;
 use EPICS::IOC;
 
+# Set to 1 to echo all IOC and client communications
+my $debug = 1;
+
 $ENV{HARNESS_ACTIVE} = 1 if scalar @ARGV && shift eq '-tap';
 
 # Keep traffic local and avoid duplicates over multiple interfaces
@@ -23,12 +26,12 @@ $ENV{EPICS_PVAS_SERVER_PORT} = 55075;
 $ENV{EPICS_PVA_BROADCAST_PORT} = 55076;
 $ENV{EPICS_PVAS_INTF_ADDR_LIST} = 'localhost';
 
-my $bin = "@TOP@/bin/@ARCH@";
+my $bin = '@TOP@/bin/@ARCH@';
 my $exe = ($^O =~ m/^(MSWin32|cygwin)$/x) ? '.exe' : '';
 my $prefix = "test-$$";
 
 my $ioc = EPICS::IOC->new();
-$ioc->debug(1);
+$ioc->debug($debug);
 
 $SIG{__DIE__} = $SIG{INT} = $SIG{QUIT} = sub {
     $ioc->exit;
@@ -87,6 +90,19 @@ like($version, qr/^ \d+ \. \d+ \. \d+ /x,
     "Got BaseVersion '$version' from iocsh");
 
 
+# Client Tests
+
+my $client = EPICS::IOC->new;
+$client->debug($debug);
+
+sub close_client {
+    my $doing = shift;
+    return sub {
+        $client->close;
+        fail("Timeout $doing");
+    }
+}
+
 # Channel Access
 
 SKIP: {
@@ -104,10 +120,16 @@ SKIP: {
     # CA Client test
 
     watchdog {
-        my $caVersion = `$caget -w5 $pv`;
+        $client->start($caget, '-w5', $pv);
+        my $caVersion = $client->_getline;
         like($caVersion, qr/^ $pv \s+ \Q$version\E $/x,
             'Got same BaseVersion from caget');
-    } 10, kill_bail('doing caget');
+        my @errors = $client->_geterrors;
+        note("Errors from caget:\n",
+            map("  $_\n", @errors))
+            if scalar @errors;
+        $client->close;
+    } 10, close_client('doing caget');
 }
 
 
@@ -131,10 +153,16 @@ SKIP: {
     # PVA Client test
 
     watchdog {
-        my $pvaVersion = `$pvget -w5 $pv`;
+        $client->start($pvget, '-w5', $pv);
+        my $pvaVersion = $client->_getline;
         like($pvaVersion, qr/^ $pv \s .* \Q$version\E \s* $/x,
             'Got same BaseVersion from pvget');
-    } 10, kill_bail('doing pvget');
+        my @errors = $client->_geterrors;
+        note("Errors from pvget:\n",
+            map("  $_\n", @errors))
+            if scalar @errors;
+        $client->close;
+    } 10, close_client('doing pvget');
 }
 
 $ioc->exit;

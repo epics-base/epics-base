@@ -210,17 +210,24 @@ undef value will be returned.
 
 sub _getline {
     my $self = shift;
+    my $pid = $self->pid;
+    return undef
+        unless $self->started;
 
-    my $line = readline $self->{stdout};
+    # Save, could be closed by a timeout during readline
+    my $stdout = $self->{stdout};
+    my $debug = $self->{debug};
+
+    my $line = readline $stdout;
     if (defined $line) {
         $line =~ s/[\r\n]+ $//x;    # chomp broken on Windows?
-        printf "#%d >> %s\n", $self->{pid}, $line if $self->{debug};
+        printf "#%d >> %s\n", $pid, $line if $debug;
     }
-    elsif (eof($self->{stdout})) {
-        printf "#%d >> <EOF>\n", $self->{pid} if $self->{debug};
+    elsif (eof($stdout)) {
+        printf "#%d >> <EOF>\n", $pid if $debug;
     }
     else {
-        printf "#%d Error: %s\n", $self->{pid}, $! if $self->{debug};
+        printf "#%d Error: %s\n", $pid, $! if $debug;
     }
     return $line;
 }
@@ -362,6 +369,10 @@ sub close {
     return ()
         unless $self->started;
 
+    my $pid = $self->{pid};
+    my $debug = $self->{debug};
+
+    printf "#%d << <EOF>\n", $pid if $debug;
     close $self->{stdin};
 
     my @response = $self->_getlines; # No terminator
@@ -370,8 +381,6 @@ sub close {
     $self->{select}->remove($self->{stderr});
     close $self->{stderr};
 
-    my $pid = $self->{pid};
-
     # Reset these before we call waitpid in case of timeout
     $self->{pid} = undef;
     $self->{stdin} = gensym;
@@ -379,8 +388,10 @@ sub close {
     $self->{stderr} = gensym;
 
     if ($^O ne 'MSWin32') {
+        printf "#%d killing ... ", $pid if $debug;
         kill 'TERM', $pid;
         waitpid $pid, 0;
+        printf "%d dead.\n", $pid if $debug;
     }
 
     return @response;

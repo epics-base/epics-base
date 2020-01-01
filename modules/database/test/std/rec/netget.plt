@@ -98,8 +98,8 @@ $client->debug($debug);
 sub close_client {
     my $doing = shift;
     return sub {
+        diag("Timeout $doing");
         $client->close;
-        fail("Timeout $doing");
     }
 }
 

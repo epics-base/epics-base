@@ -363,21 +363,25 @@ sub close {
         unless $self->started;
 
     close $self->{stdin};
-    $self->{stdin} = gensym;
 
     my @response = $self->_getlines; # No terminator
     close $self->{stdout};
-    $self->{stdout} = gensym;
 
     $self->{select}->remove($self->{stderr});
     close $self->{stderr};
+
+    my $pid = $self->{pid};
+
+    # Reset these before we call waitpid in case of timeout
+    $self->{pid} = undef;
+    $self->{stdin} = gensym;
+    $self->{stdout} = gensym;
     $self->{stderr} = gensym;
 
     if ($^O ne 'MSWin32') {
-        kill 'TERM', $self->{pid};
-        waitpid $self->{pid}, 0;
+        kill 'TERM', $pid;
+        waitpid $pid, 0;
     }
-    $self->{pid} = undef;
 
     return @response;
 }

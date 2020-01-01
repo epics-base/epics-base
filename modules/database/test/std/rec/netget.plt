@@ -31,7 +31,7 @@ my $ioc = EPICS::IOC->new();
 $ioc->debug(1);
 
 $SIG{__DIE__} = $SIG{INT} = $SIG{QUIT} = sub {
-    $ioc->kill;
+    $ioc->exit;
     BAIL_OUT('Caught signal');
 };
 
@@ -41,7 +41,7 @@ $SIG{__DIE__} = $SIG{INT} = $SIG{QUIT} = sub {
 sub kill_bail {
     my $doing = shift;
     return sub {
-        $ioc->kill;
+        $ioc->exit;
         BAIL_OUT("Timeout $doing");
     }
 }
@@ -137,4 +137,4 @@ SKIP: {
     } 10, kill_bail('doing pvget');
 }
 
-$ioc->kill;
+$ioc->exit;

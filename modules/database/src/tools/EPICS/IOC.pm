@@ -29,7 +29,7 @@ EPICS::IOC - Manage an EPICS IOC
     my @records = $ioc->dbl;
     my @values = map { $ioc->dbgf($_); } @records;
 
-    $ioc->kill;
+    $ioc->exit;
 
 =head1 DESCRIPTION
 
@@ -58,7 +58,8 @@ use IO::Select;
 
 Calling C<new> creates an C<EPICS::IOC> object that can be used to start and
 interact with a single IOC. After this IOC has been shut down (by calling its
-C<kill> method) the C<EPICS::IOC> object may be reused for another IOC.
+C<exit> or C<close> methods) the C<EPICS::IOC> object may be reused for another
+IOC.
 
 =back
 
@@ -162,9 +163,9 @@ sub pid {
 
 =item started ()
 
-Returns a true value if the IOC has been started and not yet killed. This state
-will not change if the IOC dies by itself, it indicates that the start method
-has been called without the kill method.
+Returns a true value if the IOC has been started and not yet closed. This state
+will not change if the IOC dies by itself, it indicates that the C<start>
+method has been called but not the C<close> method.
 
 =cut
 
@@ -253,7 +254,7 @@ sub _getlines {
 =item _geterrors ( )
 
 Returns a list of lines output by the IOC to stderr since last called. Only
-complete lines are included, and trailing newlines have been removed.
+complete lines are included, with trailing newline char's removed.
 
 NOTE: This doesn't work on Windows because it uses select which Perl doesn't
 support on that OS, but it doesn't seem to cause any problems for short-lived
@@ -324,24 +325,42 @@ sub cmd {
     return @response;
 }
 
-=item kill ()
+=item exit ()
 
-The C<kill> method attempts to stop an IOC that is still running in several
-ways. First it sends an C<exit> command to the IOC shell. Next it closes the
-IOC's stdin stream which will trigger an end-of-file on that stream, and it
-fetches any remaining lines from the IOC's stdout stream before closing both
-that and the stderr stream. Finally (unless running on MS-Windows) it sends a
-SIGTERM signal to the child process and waits for it to clean up.
+The C<exit> method attempts to stop and clean up after an IOC that is still
+running. It sends an C<exit> command to the IOC shell (without waiting for a
+response), then calls the C<close> method to finish the task of shutting down
+the IOC process and tidying up after it.
 
 =cut
 
-sub kill {
-    my $self = shift;
+sub exit {
+    my $self = $_[0];
 
     return ()
         unless $self->started;
 
     $self->_send("exit\n"); # Don't wait
+
+    goto &close;
+}
+
+=item close ()
+
+The C<close> method first closes the IOC's stdin stream, which will trigger an
+end-of-file to the IOC shell, then it fetches any remaining lines from the
+IOC's stdout stream before closing both that and the stderr stream. Finally
+(unless we're running on MS-Windows) it sends a SIGTERM signal to the child
+process and waits for it to clean up. A list containing the final output from
+the IOC's stdout stream is returned.
+
+=cut
+
+sub close {
+    my $self = shift;
+
+    return ()
+        unless $self->started;
 
     close $self->{stdin};
     $self->{stdin} = gensym;
@@ -354,7 +373,7 @@ sub kill {
     close $self->{stderr};
     $self->{stderr} = gensym;
 
-    if ($^O ne "MSWin32") {
+    if ($^O ne 'MSWin32') {
         kill 'TERM', $self->{pid};
         waitpid $self->{pid}, 0;
     }
@@ -365,15 +384,15 @@ sub kill {
 
 =item DESTROY ()
 
-C<EPICS::IOC> objects have a destructor which calls the C<kill> method, but it
-is not recommended that this be relied on to terminate an IOC process. Better to
-use an C<END {}> block and/or trap the necessary signals to explicitly kill the
-IOC.
+C<EPICS::IOC> objects have a destructor which calls the C<exit> method, but it
+is not recommended that this be relied on to terminate an IOC process. Better
+to use an C<END {}> block and/or trap the necessary signals and explicitly
+C<exit> or C<close> the IOC.
 
 =cut
 
 sub DESTROY {
-    shift->kill;
+    shift->exit;
 }
 
 

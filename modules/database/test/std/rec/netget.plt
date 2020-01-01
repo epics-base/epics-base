@@ -129,7 +129,7 @@ SKIP: {
             map("  $_\n", @errors))
             if scalar @errors;
         $client->close;
-    } 10, close_client('doing caget');
+    } 15, close_client('doing caget');
 }
 
 

@@ -266,7 +266,8 @@ sub _geterrors {
     my @errors;
 
     while ($self->{select}->can_read(0.01)) {
-        sysread $self->{stderr}, my $errbuf, 1024;
+        my $n = sysread $self->{stderr}, my $errbuf, 1024;
+        return @errors unless $n;   # $n is 0 on EOF
         push @errors, split m/\n/, $self->{errbuf} . $errbuf, -1;
         last unless @errors;
         $self->{errbuf} = pop @errors;

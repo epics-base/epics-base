@@ -190,8 +190,8 @@ void epicsThreadOnce(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 
 #ifdef EPICS_THREAD_CAN_JOIN
 
-/* This routine is not static so it appears in the back-trace
- * of a thread that is waiting to be joined.
+/* The next 2 routines are not static so they appear in the back-trace
+ * of the epicsThreads that have called them.
  */
 void epicsThreadAwaitingJoin(int tid)
 {
@@ -227,7 +227,7 @@ void epicsThreadAwaitingJoin(int tid)
 
 #endif
 
-static void createFunction(EPICSTHREADFUNC func, void *parm)
+void epicsThreadEntry(EPICSTHREADFUNC func, void *parm)
 {
     int tid = taskIdSelf();
 
@@ -274,7 +274,7 @@ epicsThreadId epicsThreadCreateOpt(const char * name,
 
     tid = taskCreate((char *)name,getOssPriorityValue(opts->priority),
         TASK_FLAGS, stackSize,
-        (FUNCPTR)createFunction, (int)funptr, (int)parm,
+        (FUNCPTR)epicsThreadEntry, (int)funptr, (int)parm,
         0,0,0,0,0,0,0,0);
     if (tid == ERROR) {
         errlogPrintf("epicsThreadCreate %s failure %s\n",

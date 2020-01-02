@@ -151,18 +151,26 @@ void joinTests(void *arg)
 
 void testJoining()
 {
-    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+    epicsThreadOpts opts1 = EPICS_THREAD_OPTS_INIT;
+    epicsThreadOpts opts2 = EPICS_THREAD_OPTS_INIT;
     epicsEvent finished, trigger;
     struct joinStuff stuff = {
-        &opts, &trigger, &finished
+        &opts1, &trigger, &finished
     };
 
-    opts.priority = 50;
-    opts.joinable = 1;
-    epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts);
+    opts1.priority = 50;
+    opts2.priority = 40;
+    opts1.joinable = 1;
+    opts2.joinable = 1;
+    epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts2);
 
-    // as selfjoin joins itself, we can't.
-    testOk(finished.wait(10.0), "Join tests completed");
+    // Thread 'parent' joins itself, so we can't.
+    testOk(finished.wait(10.0), "Join tests #1 completed");
+
+    // Repeat with opposite thread priorities
+    stuff.opts = &opts2;
+    epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts1);
+    testOk(finished.wait(10.0), "Join tests #2 completed");
 }
 
 } // namespace
@@ -211,7 +219,7 @@ static void testOkToBlock()
 
 MAIN(epicsThreadTest)
 {
-    testPlan(13);
+    testPlan(15);
 
     unsigned int ncpus = epicsThreadGetCPUs();
     testDiag("System has %u CPUs", ncpus);

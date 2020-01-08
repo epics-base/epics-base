@@ -49,7 +49,7 @@ L<Address Specification>
 for information on specifying links.
 
 In addition, the DTYP field must specify a device support module. Currently, the
-only device support module is C<<< Soft Channel >>>.
+only device support module is C<Soft Channel>.
 
 =fields INP, DTYP
 
@@ -59,13 +59,13 @@ These parameters determine the number of array elements (the array length) and
 the data type of those elements. The Field Type of Value (FTVL) field determines
 the data type of the array.
 
-The user specifies the maximum number of elements allowed in the subarray in the
-MALM field. Generally, the number should be equal to the number of elements of
-the Waveform array (found in the Waveform's NELM field). The MALM field is used
-to allocate memory. The subArray's Number of Elements (NELM) field is where the
-user specifies the actual number of elements that the subArray will contain. It
-should of course be no greater than MALM; if it is, the record processing
-routine sets it equal to MALM.
+The user specifies the maximum number of elements that can be read into the
+subarray in the MALM field. This number should normally be equal to the number
+of elements of the Waveform array (found in the Waveform's NELM field). The MALM
+field is used to allocate memory. The subArray's Number of Elements (NELM) field
+is where the user specifies the actual number of elements that the subArray will
+extract. It should of course be no greater than MALM; if it is, the record
+processing routine sets it equal to MALM.
 
 The INDX field determines the offset of the subArray record's array in relation
 to the Waveform's. For instance, if INDX is 2, then the subArray will read NELM
@@ -83,15 +83,15 @@ display the value and other parameters of the subarray record either textually
 or graphically.
 
 EGU is a string of up to 16 characters describing the engineering units (if any)
-of the values which the subArray holds. It is retrieved by the C<<< get_units
->>> record support routine.
+of the values which the subArray holds. It is retrieved by the C<get_units()>
+record support routine.
 
 The HOPR and LOPR fields set the upper and lower display limits for the
-sub-array elements. Both the C<<< get_graphic_double >>> and C<<<
-get_control_double >>> record support routines retrieve these fields.
+sub-array elements. Both the C<get_graphic_double()> and C<get_control_double()>
+record support routines retrieve these fields.
 
 The PREC field determines the floating point precision with which to display
-VAL. It is used whenever the C<<< get_precision >>> record support routine is
+VAL. It is used whenever the C<get_precision()> record support routine is
 called.
 
 See L<Fields Common to All Record Types>
@@ -110,9 +110,9 @@ record types.
 These fields are not configurable by the user. They are used for the record's
 internal processing or to represent the current state of the record.
 
-The NORD field holds a counter of the number of elements read into the array. It
-can be less than NELM even after the array is full if NELM exceeds the number of
-existing elements in the referenced array, i.e., the Waveform's array.
+The NORD field holds the number of elements that were actually read into the
+array. It will be less than NELM whenever the sum of the NELM and INDX fields
+exceeds the number of existing elements found in the source array.
 
 BPTR contains a pointer to the record's array.
 
@@ -150,14 +150,14 @@ See L<Record Processing>.
 
   long (*cvt_dbaddr)(struct dbAddr *paddr)
 
-This is called by dbNameToAddr. It makes the dbAddr structure refer to the
+This is called by C<dbNameToAddr()>. It makes the dbAddr structure refer to the
 actual buffer holding the result.
 
 =head4 get_array_info
 
   long (*get_array_info)(struct dbAddr *paddr, long *no_elements, long *offset)
 
-Retrieves NELM.
+Retrieves NORD.
 
 =head4 put_array_info
 
@@ -171,14 +171,14 @@ Sets NORD.
 
 For the elements in the array, this routine routines HOPR and LOPR. For the INDX
 field, this routine returns MALM - 1 and 0. For NELM, it returns MALM and 1. For
-other fields, it calls C<<< recGblGetGraphicDouble() >>>.
+other fields, it calls C<recGblGetGraphicDouble()>.
 
 =head4 get_control_double
 
   long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p)
 
-For array elements, this routine retrieves HOPR and LOPR. Otherwise, C<<<
-recGblGetControlDouble() >>> is called.
+For array elements, this routine retrieves HOPR and LOPR. Otherwise,
+C<recGblGetControlDouble()> is called.
 
 =head4 get_units
 
@@ -212,13 +212,13 @@ INDX is greater than or equal to MALM it is set to MALM-1.
 
 =item 3.
 
-Call device support read routine. This routine is expected to place the desired
-sub-array at the beginning of the buffer and set NORD to the number of elements
-of the sub-array that were read.
+Call the device support's C<read_sa()> routine. This routine is expected to
+place the desired sub-array at the beginning of the buffer and set NORD to the
+number of elements of the sub-array that were read.
 
 =item 4.
 
-If PACT has been changed to TRUE, the device support read routine has started
+If PACT has been changed to TRUE, the device support read operation has started
 but has not completed writing the new value. In this case, the processing
 routine merely returns, leaving PACT TRUE. Otherwise, process sets PACT TRUE at
 this time. This asynchronous processing logic is not currently used but has been
@@ -305,12 +305,11 @@ sub-array were acquired.
 
 =head3 Device Support For Soft Records
 
-Only the device support module C<<< Soft Channel >>> is currently provided. The
-INP link type must be either DB_LINK or CA_LINK.
+Only the device support module C<Soft Channel> is currently provided.
 
 =head4 Soft Channel
 
-INP is expected to point to a waveform record.
+INP is expected to point to an array field of a waveform record or similar.
 
 =cut
 

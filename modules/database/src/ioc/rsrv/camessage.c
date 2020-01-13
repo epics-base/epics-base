@@ -474,8 +474,8 @@ static void no_read_access_event ( struct client *pClient,
     }
     else {
         send_err ( &pevext->msg, status, pClient,
-            "server unable to load read access denied response into protocol buffer PV=\"%s max bytes=%u\"",
-            RECORD_NAME ( pevext->pciu->dbch ), rsrvSizeofLargeBufTCP );
+            "server unable to load read access denied response into protocol buffer PV=\"%s\" dbf=%u count=%u avail=%u max bytes=%u",
+            RECORD_NAME ( pevext->pciu->dbch ), pevext->msg.m_dataType, pevext->msg.m_count, pevext->msg.m_available, rsrvSizeofLargeBufTCP );
     }
 }
 
@@ -516,8 +516,8 @@ static void read_reply ( void *pArg, struct dbChannel *dbch,
     if ( status != ECA_NORMAL ) {
         send_err ( &pevext->msg, status, pClient,
             "server unable to load read (or subscription update) response "
-            "into protocol buffer PV=\"%s\" max bytes=%u",
-            RECORD_NAME ( dbch ), rsrvSizeofLargeBufTCP );
+            "into protocol buffer PV=\"%s\" dbf=%u count=%ld avail=%u max bytes=%u",
+            RECORD_NAME ( dbch ), pevext->msg.m_dataType, item_count, pevext->msg.m_available, rsrvSizeofLargeBufTCP );
         if ( ! eventsRemaining )
             cas_send_bs_msg ( pClient, FALSE );
         SEND_UNLOCK ( pClient );
@@ -638,8 +638,8 @@ static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *p
         mp->m_dataType, mp->m_count, pciu->cid, mp->m_available, &pPayload );
     if ( status != ECA_NORMAL ) {
         send_err ( mp, status, pClient,
-            "server unable to load read response into protocol buffer PV=\"%s\" max bytes=%u",
-            RECORD_NAME ( pciu->dbch ), rsrvSizeofLargeBufTCP );
+            "server unable to load read response into protocol buffer PV=\"%s\" dbf=%u count=%u avail=%u max bytes=%u",
+            RECORD_NAME ( pciu->dbch ), mp->m_dataType, mp->m_count, mp->m_available, rsrvSizeofLargeBufTCP );
         SEND_UNLOCK ( pClient );
         return RSRV_OK;
     }

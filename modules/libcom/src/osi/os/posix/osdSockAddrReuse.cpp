@@ -34,23 +34,26 @@ epicsShareFunc void epicsShareAPI
     }
 }
 
-#ifdef SO_REUSEPORT
-#  define X_REUSEUDP SO_REUSEPORT
-#else
-#  define X_REUSEUDP SO_REUSEADDR
-#endif
-
-epicsShareFunc void epicsShareAPI 
-    epicsSocketEnableAddressUseForDatagramFanout ( SOCKET s )
+static
+void setfanout(SOCKET s, int opt, const char *optname)
 {
     int yes = true;
     int status;
-    status = setsockopt ( s, SOL_SOCKET, X_REUSEUDP,
+    status = setsockopt ( s, SOL_SOCKET, opt,
         (char *) & yes, sizeof ( yes ) );
     if ( status < 0 ) {
         errlogPrintf (
             "epicsSocketEnablePortUseForDatagramFanout: "
-            "unable to set %s?\n",
-                    (X_REUSEUDP==SO_REUSEADDR)?"SO_REUSEADDR":"SO_REUSEPORT");
+            "unable to set %s?\n", optname);
     }
+}
+
+void epicsSocketEnableAddressUseForDatagramFanout ( SOCKET s )
+{
+#define DOIT(sock, opt) setfanout(sock, opt, #opt)
+#ifdef SO_REUSEPORT
+    DOIT(s, SO_REUSEPORT);
+#endif
+    DOIT(s, SO_REUSEADDR);
+#undef DOIT
 }

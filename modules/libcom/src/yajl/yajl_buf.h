@@ -33,6 +33,10 @@
  */
 typedef struct yajl_buf_t * yajl_buf;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* allocate a new buffer */
 yajl_buf yajl_buf_alloc(yajl_alloc_funcs * alloc);
 
@@ -53,5 +57,9 @@ size_t yajl_buf_len(yajl_buf buf);
 
 /* truncate the buffer */
 void yajl_buf_truncate(yajl_buf buf, size_t len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

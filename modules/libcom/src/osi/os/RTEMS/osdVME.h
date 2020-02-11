@@ -19,4 +19,12 @@
 #endif
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void bcopyLongs(char *source, char *destination, int nlongs);
+
+#ifdef __cplusplus
+}
+#endif

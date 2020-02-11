@@ -58,6 +58,10 @@ struct yajl_handle_t {
     unsigned int flags;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 yajl_status
 yajl_do_parse(yajl_handle handle, const unsigned char * jsonText,
               size_t jsonTextLen);
@@ -74,5 +78,8 @@ yajl_render_error_string(yajl_handle hand, const unsigned char * jsonText,
 long long
 yajl_parse_integer(const unsigned char *number, size_t length);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

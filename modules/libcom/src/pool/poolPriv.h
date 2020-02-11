@@ -94,6 +94,14 @@ struct epicsJob {
     unsigned int dead:1; /* flag to catch use of freed objects */
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int createPoolThread(epicsThreadPool *pool);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // POOLPRIV_H

@@ -74,7 +74,7 @@
 #include "recSup.h"
 #include "special.h"
 #include "dbDbLink.h"
-
+#include "dbChannel.h"
 
 /***************************** Database Links *****************************/
 
@@ -83,45 +83,50 @@ static lset dbDb_lset;
 
 static long processTarget(dbCommon *psrc, dbCommon *pdst);
 
+#define linkChannel(plink) ((dbChannel *) (plink)->value.pv_link.pvt)
+
 long dbDbInitLink(struct link *plink, short dbfType)
 {
-    DBADDR dbaddr;
     long status;
-    DBADDR *pdbAddr;
+    dbChannel *chan;
+    dbCommon *precord;
 
-    status = dbNameToAddr(plink->value.pv_link.pvname, &dbaddr);
+    chan = dbChannelCreate(plink->value.pv_link.pvname);
+    if (!chan)
+        return S_db_notFound;
+    status = dbChannelOpen(chan);
     if (status)
         return status;
 
+    precord = dbChannelRecord(chan);
     plink->lset = &dbDb_lset;
     plink->type = DB_LINK;
-    pdbAddr = dbCalloc(1, sizeof(struct dbAddr));
-    *pdbAddr = dbaddr; /* structure copy */
-    plink->value.pv_link.pvt = pdbAddr;
-    ellAdd(&dbaddr.precord->bklnk, &plink->value.pv_link.backlinknode);
+    plink->value.pv_link.pvt = chan;
+    ellAdd(&precord->bklnk, &plink->value.pv_link.backlinknode);
     /* merging into the same lockset is deferred to the caller.
      * cf. initPVLinks()
      */
-    dbLockSetMerge(NULL, plink->precord, dbaddr.precord);
-    assert(plink->precord->lset->plockSet == dbaddr.precord->lset->plockSet);
+    dbLockSetMerge(NULL, plink->precord, precord);
+    assert(plink->precord->lset->plockSet == precord->lset->plockSet);
     return 0;
 }
 
 void dbDbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
-    DBADDR *ptarget)
+    dbChannel *ptarget)
 {
     plink->lset = &dbDb_lset;
     plink->type = DB_LINK;
     plink->value.pv_link.pvt = ptarget;
-    ellAdd(&ptarget->precord->bklnk, &plink->value.pv_link.backlinknode);
+    ellAdd(&dbChannelRecord(ptarget)->bklnk, &plink->value.pv_link.backlinknode);
 
     /* target record is already locked in dbPutFieldLink() */
-    dbLockSetMerge(locker, plink->precord, ptarget->precord);
+    dbLockSetMerge(locker, plink->precord, dbChannelRecord(ptarget));
 }
 
 static void dbDbRemoveLink(struct dbLocker *locker, struct link *plink)
 {
-    DBADDR *pdbAddr = (DBADDR *) plink->value.pv_link.pvt;
+    dbChannel *chan = linkChannel(plink);
+    dbCommon *precord = dbChannelRecord(chan);
 
     plink->type = PV_LINK;
 
@@ -131,10 +136,10 @@ static void dbDbRemoveLink(struct dbLocker *locker, struct link *plink)
         plink->value.pv_link.getCvt = 0;
         plink->value.pv_link.pvlMask = 0;
         plink->value.pv_link.lastGetdbrType = 0;
-        ellDelete(&pdbAddr->precord->bklnk, &plink->value.pv_link.backlinknode);
-        dbLockSetSplit(locker, plink->precord, pdbAddr->precord);
+        ellDelete(&precord->bklnk, &plink->value.pv_link.backlinknode);
+        dbLockSetSplit(locker, plink->precord, precord);
     }
-    free(pdbAddr);
+    dbChannelDelete(chan);
 }
 
 static int dbDbIsConnected(const struct link *plink)
@@ -144,16 +149,14 @@ static int dbDbIsConnected(const struct link *plink)
 
 static int dbDbGetDBFtype(const struct link *plink)
 {
-    DBADDR *paddr = (DBADDR *) plink->value.pv_link.pvt;
-
-    return paddr->field_type;
+    dbChannel *chan = linkChannel(plink);
+    return dbChannelFinalFieldType(chan);
 }
 
 static long dbDbGetElements(const struct link *plink, long *nelements)
 {
-    DBADDR *paddr = (DBADDR *) plink->value.pv_link.pvt;
-
-    *nelements = paddr->no_elements;
+    dbChannel *chan = linkChannel(plink);
+    *nelements = dbChannelFinalElements(chan);
     return 0;
 }
 
@@ -161,30 +164,31 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         long *pnRequest)
 {
     struct pv_link *ppv_link = &plink->value.pv_link;
-    DBADDR *paddr = ppv_link->pvt;
+    dbChannel *chan = linkChannel(plink);
+    DBADDR *paddr = &chan->addr;
     dbCommon *precord = plink->precord;
     long status;
 
     /* scan passive records if link is process passive  */
     if (ppv_link->pvlMask & pvlOptPP) {
-        status = dbScanPassive(precord, paddr->precord);
+        status = dbScanPassive(precord, dbChannelRecord(chan));
         if (status)
             return status;
     }
 
     if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
-        status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
+        status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
     } else {
-        unsigned short dbfType = paddr->field_type;
+        unsigned short dbfType = dbChannelFinalFieldType(chan);
 
         if (dbrType < 0 || dbrType > DBR_ENUM || dbfType > DBF_DEVICE)
             return S_db_badDbrtype;
 
-        if (paddr->no_elements == 1 && (!pnRequest || *pnRequest == 1)
-                && paddr->special != SPC_DBADDR
-                && paddr->special != SPC_ATTRIBUTE) {
+        if (dbChannelFinalElements(chan) == 1 && (!pnRequest || *pnRequest == 1)
+                && dbChannelSpecial(chan) != SPC_DBADDR
+                && dbChannelSpecial(chan) != SPC_ATTRIBUTE) {
             ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
-            status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
+            status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
         } else {
             ppv_link->getCvt = NULL;
             status = dbGet(paddr, dbrType, pbuffer, NULL, pnRequest, NULL);
@@ -192,16 +196,18 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         ppv_link->lastGetdbrType = dbrType;
     }
 
-    if (!status && precord != paddr->precord)
+    if (!status && precord != dbChannelRecord(chan))
         recGblInheritSevr(plink->value.pv_link.pvlMask & pvlOptMsMode,
-            plink->precord, paddr->precord->stat, paddr->precord->sevr);
+            plink->precord,
+            dbChannelRecord(chan)->stat, dbChannelRecord(chan)->sevr);
     return status;
 }
 
 static long dbDbGetControlLimits(const struct link *plink, double *low,
         double *high)
 {
-    DBADDR *paddr = (DBADDR *) plink->value.pv_link.pvt;
+    dbChannel *chan = linkChannel(plink);
+    DBADDR *paddr = &chan->addr;
     struct buffer {
         DBRctrlDouble
         double value;
@@ -222,7 +228,8 @@ static long dbDbGetControlLimits(const struct link *plink, double *low,
 static long dbDbGetGraphicLimits(const struct link *plink, double *low,
         double *high)
 {
-    DBADDR *paddr = (DBADDR *) plink->value.pv_link.pvt;
+    dbChannel *chan = linkChannel(plink);
+    DBADDR *paddr = &chan->addr;
     struct buffer {
         DBRgrDouble
         double value;
@@ -243,7 +250,8 @@ static long dbDbGetGraphicLimits(const struct link *plink, double *low,
 static long dbDbGetAlarmLimits(const struct link *plink, double *lolo,
         double *low, double *high, double *hihi)
 {
-    DBADDR *paddr = (DBADDR *) plink->value.pv_link.pvt;
+    dbChannel *chan = linkChannel(plink);
+    DBADDR *paddr = &chan->addr;
     struct buffer {
         DBRalDouble
         double value;
@@ -265,7 +273,8 @@ static long dbDbGetAlarmLimits(const struct link *plink, double *lolo,
 
 static long dbDbGetPrecision(const struct link *plink, short *precision)
 {
-    DBADDR *paddr = (DBADDR *) plink->value.pv_link.pvt;
+    dbChannel *chan = linkChannel(plink);
+    DBADDR *paddr = &chan->addr;
     struct buffer {
         DBRprecision
         double value;
@@ -284,7 +293,8 @@ static long dbDbGetPrecision(const struct link *plink, short *precision)
 
 static long dbDbGetUnits(const struct link *plink, char *units, int unitsSize)
 {
-    DBADDR *paddr = (DBADDR *) plink->value.pv_link.pvt;
+    dbChannel *chan = linkChannel(plink);
+    DBADDR *paddr = &chan->addr;
     struct buffer {
         DBRunits
         double value;
@@ -304,20 +314,20 @@ static long dbDbGetUnits(const struct link *plink, char *units, int unitsSize)
 static long dbDbGetAlarm(const struct link *plink, epicsEnum16 *status,
         epicsEnum16 *severity)
 {
-    DBADDR *paddr = (DBADDR *) plink->value.pv_link.pvt;
-
+    dbChannel *chan = linkChannel(plink);
+    dbCommon *precord = dbChannelRecord(chan);
     if (status)
-        *status = paddr->precord->stat;
+        *status = precord->stat;
     if (severity)
-        *severity = paddr->precord->sevr;
+        *severity = precord->sevr;
     return 0;
 }
 
 static long dbDbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
 {
-    DBADDR *paddr = (DBADDR *) plink->value.pv_link.pvt;
-
-    *pstamp = paddr->precord->time;
+    dbChannel *chan = linkChannel(plink);
+    dbCommon *precord = dbChannelRecord(chan);
+    *pstamp = precord->time;
     return 0;
 }
 
@@ -325,9 +335,10 @@ static long dbDbPutValue(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest)
 {
     struct pv_link *ppv_link = &plink->value.pv_link;
+    dbChannel *chan = linkChannel(plink);
     struct dbCommon *psrce = plink->precord;
-    DBADDR *paddr = (DBADDR *) ppv_link->pvt;
-    dbCommon *pdest = paddr->precord;
+    DBADDR *paddr = &chan->addr;
+    dbCommon *pdest = dbChannelRecord(chan);
     long status = dbPut(paddr, dbrType, pbuffer, nRequest);
 
     recGblInheritSevr(ppv_link->pvlMask & pvlOptMsMode, pdest, psrce->nsta,
@@ -335,7 +346,7 @@ static long dbDbPutValue(struct link *plink, short dbrType,
     if (status)
         return status;
 
-    if (paddr->pfield == (void *) &pdest->proc ||
+    if (dbChannelField(chan) == (void *) &pdest->proc ||
         (ppv_link->pvlMask & pvlOptPP && pdest->scan == 0)) {
         status = processTarget(psrce, pdest);
     }
@@ -346,9 +357,8 @@ static long dbDbPutValue(struct link *plink, short dbrType,
 static void dbDbScanFwdLink(struct link *plink)
 {
     dbCommon *precord = plink->precord;
-    dbAddr *paddr = (dbAddr *) plink->value.pv_link.pvt;
-
-    dbScanPassive(precord, paddr->precord);
+    dbChannel *chan = linkChannel(plink);
+    dbScanPassive(precord, dbChannelRecord(chan));
 }
 
 static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)

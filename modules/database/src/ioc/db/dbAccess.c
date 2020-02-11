@@ -1042,7 +1042,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     short dbrType, const void *pbuffer, long nRequest)
 {
     dbLinkInfo  link_info;
-    DBADDR      *pdbaddr = NULL;
+    dbChannel   *chan = NULL;
     dbCommon    *precord = paddr->precord;
     dbCommon    *lockrecs[2];
     dbLocker    locker;
@@ -1080,16 +1080,11 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     if (link_info.ltype == PV_LINK &&
         (link_info.modifiers & (pvlOptCA | pvlOptCP | pvlOptCPP)) == 0) {
-        DBADDR tempaddr;
-
-        if (dbNameToAddr(link_info.target, &tempaddr)==0) {
-            /* This will become a DB link. */
-            pdbaddr = malloc(sizeof(*pdbaddr));
-            if (!pdbaddr) {
-                status = S_db_noMemory;
-                goto cleanup;
-            }
-            *pdbaddr = tempaddr; /* struct copy */
+        chan = dbChannelCreate(link_info.target);
+        if (chan && dbChannelOpen(chan) != 0) {
+            errlogPrintf("ERROR: dbPutFieldLink %s.%s=%s: dbChannelOpen() failed\n",
+                precord->name, pfldDes->name, link_info.target);
+            goto cleanup;
         }
     }
 
@@ -1098,7 +1093,7 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     memset(&locker, 0, sizeof(locker));
     lockrecs[0] = precord;
-    lockrecs[1] = pdbaddr ? pdbaddr->precord : NULL;
+    lockrecs[1] = chan ? dbChannelRecord(chan) : NULL;
     dbLockerPrepare(&locker, lockrecs, 2);
 
     dbScanLockMany(&locker);
@@ -1186,7 +1181,8 @@ static long dbPutFieldLink(DBADDR *paddr,
     case PV_LINK:
     case CONSTANT:
     case JSON_LINK:
-        dbAddLink(&locker, plink, pfldDes->field_type, pdbaddr);
+        dbAddLink(&locker, plink, pfldDes->field_type, chan);
+        chan = NULL; /* don't clean it up */
         break;
 
     case DB_LINK:
@@ -1216,6 +1212,8 @@ unlock:
     dbScanUnlockMany(&locker);
     dbLockerFinalize(&locker);
 cleanup:
+    if (chan)
+        dbChannelDelete(chan);
     free(link_info.target);
     return status;
 }

@@ -75,6 +75,14 @@ typedef DWORD osiSockOptMcastTTL_t;
  */
 #define FD_IN_FDSET(FD) (1)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ();
+
+#ifdef __cplusplus
+}
+#endif /*__cplusplus*/
 
 #endif /*osdSockH*/

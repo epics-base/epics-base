@@ -19,6 +19,14 @@ typedef struct {
     const epicsMemFile * const *files;
 } epicsMemFS;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int epicsMemFsLoad(const epicsMemFS *fs);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // EPICSMEMFS_H

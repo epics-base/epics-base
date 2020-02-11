@@ -86,6 +86,10 @@ struct dbLocker {
     lockRecordRef refs[DBLOCKER_NALLOC]; /* actual length is maxrefs */
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* These are exported for testing only */
 epicsShareFunc lockSet* dbLockGetRef(lockRecord *lr); /* lookup lockset and increment ref count */
 epicsShareFunc void dbLockIncRef(lockSet* ls);
@@ -106,5 +110,9 @@ void dbLockSetMerge(struct dbLocker *locker,
 void dbLockSetSplit(struct dbLocker *locker,
                     struct dbCommon *psource,
                     struct dbCommon *psecond);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DBLOCKPVT_H */

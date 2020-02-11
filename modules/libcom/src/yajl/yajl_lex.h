@@ -47,6 +47,10 @@ typedef enum {
 
 typedef struct yajl_lexer_t * yajl_lexer;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 yajl_lexer yajl_lex_alloc(yajl_alloc_funcs * alloc,
                           unsigned int allowComments,
                           unsigned int validateUTF8);
@@ -113,5 +117,9 @@ size_t yajl_lex_current_line(yajl_lexer lexer);
 /** get the number of chars lexed by this lexer instance since the last
  *  \n or \r */
 size_t yajl_lex_current_char(yajl_lexer lexer);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

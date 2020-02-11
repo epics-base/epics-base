@@ -32,6 +32,9 @@ extern	struct	glob_dat {
 /********************************/
 /* FUNCTION PROTOTYPES		*/
 /********************************/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void	cdreg(int *ext, int b, int c, int n, int a);
 void	cfsa(int f, int ext, int *dat, int *q);
@@ -55,3 +58,6 @@ void	csubc(int f, int ext, unsigned short *intc, int cb[4]);
 void	csubr(int f, int ext, int intc[], int cb[4]);
 void	print_reg(int ext);
 
+#ifdef __cplusplus
+}
+#endif

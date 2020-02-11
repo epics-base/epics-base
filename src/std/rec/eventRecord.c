@@ -106,10 +106,11 @@ static long init_record(eventRecord *prec, int pass)
 	recGblInitConstantLink(&prec->siol,DBF_STRING,&prec->sval);
     }
 
-    prec->epvt = eventNameToHandle(prec->val);
-
     if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) ) 
 		status=(*pdset->init_record)(prec);
+
+    prec->epvt = eventNameToHandle(prec->val);
+
     return(status);
 }
 

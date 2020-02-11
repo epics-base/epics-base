@@ -394,7 +394,7 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
 
     psrc->pact = TRUE;
 
-    if (psrc && psrc->ppn)
+    if (psrc->ppn)
         dbNotifyAdd(psrc, pdst);
 
     if (trace && dbServerClient(context, sizeof(context))) {

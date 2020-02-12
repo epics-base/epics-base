@@ -85,7 +85,7 @@ void assertCallFunc(const iocshArgBuf *args)
 
 MAIN(iocshTest)
 {
-    testPlan(19);
+    testPlan(22);
     libComRegister();
     iocshRegister(&positionFuncDef, &positionCallFunc);
     iocshRegister(&assertFuncDef, &assertCallFunc);
@@ -127,9 +127,9 @@ MAIN(iocshTest)
     testPosition("after_error_1", false);
     reached.clear();
 
-    testFile("iocshTestNullArgument.cmd", false);
-    testPosition("before_error");
-    testPosition("after_error", false);
+    testFile("iocshTestNullArgument.cmd");
+    testPosition("before_null_input");
+    testPosition("after_null_input");
     reached.clear();
 
     return testDone();

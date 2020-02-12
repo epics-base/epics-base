@@ -72,6 +72,7 @@ make -j2 RTEMS_QEMU_FIXUPS=YES CMD_CFLAGS="${CMD_CFLAGS}" CMD_CXXFLAGS="${CMD_CX
 
 if [ "$TEST" != "NO" ]
 then
+   export EPICS_TEST_IMPRECISE_TIMING=YES
    make -j2 tapfiles
    make -s test-results
 fi

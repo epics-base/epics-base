@@ -112,9 +112,13 @@ double delayVerify::checkError () const
     double actualDelay =  this->expireStamp - this->beginStamp;
     double measuredError = actualDelay - this->expectedDelay;
     double percentError = 100.0 * fabs ( measuredError ) / this->expectedDelay;
+    if(testImpreciseTiming())
+        testTodoBegin("imprecise");
     testOk ( percentError < messageThresh, "%f < %f, delay = %f s, error = %f s (%.1f %%)",
              percentError, messageThresh,
              this->expectedDelay, measuredError, percentError  );
+    if(testImpreciseTiming())
+        testTodoEnd();
     return measuredError;
 }
 

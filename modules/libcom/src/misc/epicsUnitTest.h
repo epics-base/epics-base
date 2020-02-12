@@ -40,6 +40,8 @@ epicsShareFunc int  testDone(void);
 
 #define testOk1(cond) testOk(cond, "%s", #cond)
 
+epicsShareFunc
+int testImpreciseTiming(void);
 
 typedef int (*TESTFUNC)(void);
 epicsShareFunc void testHarness(void);

@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef _WIN32
 #  include <crtdbg.h>
@@ -248,6 +249,17 @@ int testDone(void) {
     return (status);
 }
 
+static int impreciseTiming;
+
+int testImpreciseTiming(void)
+{
+    if(impreciseTiming==0) {
+        const char* env = getenv("EPICS_TEST_IMPRECISE_TIMING");
+
+        impreciseTiming = (env && strcmp(env, "YES")==0) ? 1 : -1;
+    }
+    return impreciseTiming>0;
+}
 
 /* Our test harness, for RTEMS and vxWorks */
 

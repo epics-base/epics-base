@@ -127,8 +127,8 @@ static jlif_result lnkCalc_integer(jlink *pjlink, long long num)
     }
 
     if (clink->pstate != ps_args) {
-        return jlif_stop;
         errlogPrintf("lnkCalc: Unexpected integer %lld\n", num);
+        return jlif_stop;
     }
 
     if (clink->nArgs == CALCPERFORM_NARGS) {
@@ -147,8 +147,8 @@ static jlif_result lnkCalc_double(jlink *pjlink, double num)
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     if (clink->pstate != ps_args) {
-        return jlif_stop;
         errlogPrintf("lnkCalc: Unexpected double %g\n", num);
+        return jlif_stop;
     }
 
     if (clink->nArgs == CALCPERFORM_NARGS) {
@@ -196,8 +196,9 @@ static jlif_result lnkCalc_string(jlink *pjlink, const char *val, size_t len)
     }
 
     inbuf = malloc(len+1);
-    if(!inbuf) {
+    if(!inbuf) { 
         errlogPrintf("lnkCalc: Out of memory\n");
+        free(postbuf);
         return jlif_stop;
     }
     memcpy(inbuf, val, len);

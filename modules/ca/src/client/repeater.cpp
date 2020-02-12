@@ -74,6 +74,7 @@
 #include "caProto.h"
 #include "udpiiu.h"
 #include "repeaterClient.h"
+#include "addrList.h"
 
 
 /* 
@@ -92,7 +93,7 @@ static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
     SOCKET sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, 0 );     
 
     if ( sock == INVALID_SOCKET ) {
-	*pSock = sock;
+        *pSock = sock;
         return SOCKERRNO;
     }
 
@@ -516,6 +517,60 @@ void ca_repeater ()
         delete [] pBuf;
         return;
     }
+
+#ifdef IP_ADD_MEMBERSHIP
+    /*
+     * join UDP socket to any multicast groups
+     */
+    {
+        ELLLIST casBeaconAddrList = ELLLIST_INIT;
+        ELLLIST dummy = ELLLIST_INIT;
+
+        /*
+         * collect user specified beacon address list;
+         * check BEACON_ADDR_LIST list first; if no result, take CA_ADDR_LIST
+        */
+        if(!addAddrToChannelAccessAddressList(&casBeaconAddrList,&EPICS_CAS_BEACON_ADDR_LIST,port,0)) {
+            addAddrToChannelAccessAddressList(&casBeaconAddrList,&EPICS_CA_ADDR_LIST,port,0);
+        }
+
+        /* First clean up */
+        removeDuplicateAddresses(&casBeaconAddrList, &dummy , 0);
+
+        osiSockAddrNode *pNode;
+        for(pNode = (osiSockAddrNode*)ellFirst(&casBeaconAddrList);
+            pNode;
+            pNode = (osiSockAddrNode*)ellNext(&pNode->node))
+        {
+
+            if(pNode->addr.ia.sin_family==AF_INET) {
+                epicsUInt32 top = ntohl(pNode->addr.ia.sin_addr.s_addr)>>24;
+                if(top>=224 && top<=239) {
+
+                    /* This is a multi-cast address */
+                    struct ip_mreq mreq;
+
+                    memset(&mreq, 0, sizeof(mreq));
+                    mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
+                    mreq.imr_interface.s_addr = INADDR_ANY;
+
+                    if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                        (char *) &mreq, sizeof(mreq)) != 0) {
+                        struct sockaddr_in temp;
+                        char name[40];
+                        char sockErrBuf[64];
+                        temp.sin_family = AF_INET;
+                        temp.sin_addr = mreq.imr_multiaddr;
+                        temp.sin_port = htons ( port );
+                        epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+                        ipAddrToDottedIP (&temp, name, sizeof(name));
+                        errlogPrintf("caR: Socket mcast join to %s failed: %s\n", name, sockErrBuf );
+                    }
+                }
+            }
+        }
+    }
+#endif
 
     debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
 

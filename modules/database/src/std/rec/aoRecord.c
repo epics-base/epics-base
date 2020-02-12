@@ -83,18 +83,6 @@ rset aoRSET={
 	get_control_double,
 	get_alarm_double };
 
-struct aodset { /* analog input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (0,2)=>(success,success no convert)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_ao;/*(0)=>(success ) */
-	DEVSUPFUN	special_linconv;
-};
-epicsExportAddress(rset,aoRSET);
-
-
 static void checkAlarms(aoRecord *);
 static long fetch_value(aoRecord *, double *);
 static void convert(aoRecord *, double);

@@ -14,6 +14,7 @@ SRC_DIRS += $(STDDIR)/rec
 stdRecords += aaiRecord
 stdRecords += aaoRecord
 aiRecord_CFLAGS += -DUSE_TYPED_DSET
+aoRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += aiRecord
 stdRecords += aoRecord
 stdRecords += aSubRecord

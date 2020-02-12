@@ -269,6 +269,15 @@ information on these fields.
 =cut
 
     include "dbCommon.dbd" 
+    %
+    %/* Declare Device Support Entry Table */
+    %struct aoRecord;
+    %typedef struct aodset {
+    %    dset common;
+    %    long (*write_ao)(struct aoRecord *prec);
+    %} aodset;
+    %#define HAS_aodset
+    %
     field(VAL,DBF_DOUBLE) {
         prompt("Desired Output")
         promptgroup("50 - Output")

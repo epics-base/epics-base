@@ -127,5 +127,10 @@ MAIN(iocshTest)
     testPosition("after_error_1", false);
     reached.clear();
 
+    testFile("iocshTestNullArgument.cmd", false);
+    testPosition("before_error");
+    testPosition("after_error", false);
+    reached.clear();
+
     return testDone();
 }

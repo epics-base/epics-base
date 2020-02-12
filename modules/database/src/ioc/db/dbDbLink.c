@@ -61,6 +61,7 @@
 #include "dbConvertFast.h"
 #include "dbConvert.h"
 #include "db_field_log.h"
+#include "db_access_routines.h"
 #include "dbFldTypes.h"
 #include "dbLink.h"
 #include "dbLockPvt.h"
@@ -184,7 +185,18 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         if (dbrType < 0 || dbrType > DBR_ENUM || dbfType > DBF_DEVICE)
             return S_db_badDbrtype;
 
-        if (dbChannelFinalElements(chan) == 1 && (!pnRequest || *pnRequest == 1)
+        /* If filters are involved in a read, create field log and run filters */
+        if (ellCount(&chan->filters)) {
+            db_field_log *pfl;
+            long options = 0;
+            pfl = db_create_read_log(chan);
+            if (pfl) {
+                pfl = dbChannelRunPreChain(chan, pfl);
+                pfl = dbChannelRunPostChain(chan, pfl);
+                status = dbChannelGet(chan, dbrType, pbuffer, &options, pnRequest, pfl);
+                db_delete_field_log(pfl);
+            }
+        } else if (dbChannelFinalElements(chan) == 1 && (!pnRequest || *pnRequest == 1)
                 && dbChannelSpecial(chan) != SPC_DBADDR
                 && dbChannelSpecial(chan) != SPC_ATTRIBUTE) {
             ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];

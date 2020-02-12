@@ -946,7 +946,7 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
 
     caHdr * pbufmsg = ( caHdr * ) &this->xmitBuf[this->nBytesInXmitBuf];
     *pbufmsg = msg;
-    if ( extsize ) {
+    if ( extsize && pExt ) {
         memcpy ( pbufmsg + 1, pExt, extsize );
         if ( extsize != alignedExtSize ) {
             char *pDest = (char *) ( pbufmsg + 1 );

@@ -314,13 +314,18 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
         break;
 
     case iocshArgPersistentString:
-        argBuf->sval = (char *) malloc(strlen(arg) + 1);
-        if (argBuf->sval == NULL) {
-            showError(filename, lineno, "Out of memory");
+        if (arg != NULL) {
+            argBuf->sval = (char *) malloc(strlen(arg) + 1);
+            if (argBuf->sval == NULL) {
+                showError(filename, lineno, "Out of memory");
+                return 0;
+            }
+            strcpy(argBuf->sval, arg);
+            break;
+        } else {
+            showError(filename, lineno, "Unable to copy as provided arg was NULL");
             return 0;
         }
-        strcpy(argBuf->sval, arg);
-        break;
 
     case iocshArgPdbbase:
         /* Argument must be missing or 0 or pdbbase */

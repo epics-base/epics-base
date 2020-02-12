@@ -69,15 +69,7 @@ static void req_server (void *pParm)
     IOC_sock = conf->tcp;
 
     /* listen and accept new connections */
-    if ( listen ( IOC_sock, 20 ) < 0 ) {
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString (
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        errlogPrintf ( "CAS: Listen error: %s\n",
-            sockErrBuf );
-        epicsSocketDestroy (IOC_sock);
-        epicsThreadSuspendSelf ();
-    }
+    /*    moved into rsrv_grab_tcp()     */
 
     epicsEventSignal(castcp_startStopEvent);
 
@@ -247,6 +239,21 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
                     cantProceed( "CAS: Socket bind %s error: %s\n",
+                        name, sockErrBuf );
+                }
+                ok = 0;
+                break;
+            }
+            if ( listen ( tcpsock, 20 ) < 0 ) {
+                int errcode = SOCKERRNO;
+                if (errcode != SOCK_EADDRINUSE) {
+                    char name[40];
+                    char sockErrBuf[64];
+                    epicsSocketConvertErrnoToString (
+                    sockErrBuf, sizeof ( sockErrBuf ) );
+                    ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
+
+                    cantProceed( "CAS: Socket Listen %s error: %s\n",
                         name, sockErrBuf );
                 }
                 ok = 0;

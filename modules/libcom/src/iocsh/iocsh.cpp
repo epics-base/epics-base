@@ -321,11 +321,10 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
                 return 0;
             }
             strcpy(argBuf->sval, arg);
-            break;
         } else {
-            showError(filename, lineno, "Unable to copy as provided arg was NULL");
-            return 0;
+          argBuf->sval = NULL;
         }
+        break;
 
     case iocshArgPdbbase:
         /* Argument must be missing or 0 or pdbbase */

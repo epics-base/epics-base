@@ -100,6 +100,13 @@ long dbDbInitLink(struct link *plink, short dbfType)
         return status;
 
     precord = dbChannelRecord(chan);
+
+    if (dbChannelFinalElements(chan) < 1) {
+        errlogPrintf("Warning: %s.%s=%s has %ld elements. This will not work.\n",
+            plink->precord->name, dbLinkFieldName(plink),
+            dbChannelName(chan), dbChannelFinalElements(chan));
+    }
+
     plink->lset = &dbDb_lset;
     plink->type = DB_LINK;
     plink->value.pv_link.pvt = chan;
@@ -113,15 +120,21 @@ long dbDbInitLink(struct link *plink, short dbfType)
 }
 
 void dbDbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
-    dbChannel *ptarget)
+    dbChannel *chan)
 {
+    if (dbChannelFinalElements(chan) < 1) {
+        errlogPrintf("Warning: %s.%s=%s has %ld elements. This will not work.\n",
+            plink->precord->name, dbLinkFieldName(plink),
+            dbChannelName(chan), dbChannelFinalElements(chan));
+    }
+
     plink->lset = &dbDb_lset;
     plink->type = DB_LINK;
-    plink->value.pv_link.pvt = ptarget;
-    ellAdd(&dbChannelRecord(ptarget)->bklnk, &plink->value.pv_link.backlinknode);
+    plink->value.pv_link.pvt = chan;
+    ellAdd(&dbChannelRecord(chan)->bklnk, &plink->value.pv_link.backlinknode);
 
     /* target record is already locked in dbPutFieldLink() */
-    dbLockSetMerge(locker, plink->precord, dbChannelRecord(ptarget));
+    dbLockSetMerge(locker, plink->precord, dbChannelRecord(chan));
 }
 
 static void dbDbRemoveLink(struct dbLocker *locker, struct link *plink)
@@ -177,7 +190,24 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
             return status;
     }
 
-    if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
+    /* If filters are involved in a read, create field log and run filters */
+    if (ellCount(&chan->filters)) {
+        db_field_log *pfl;
+        long options = 0;
+
+        if (dbChannelFinalElements(chan) < 1)
+        {
+            recGblSetSevr(precord, LINK_ALARM, UDF_ALARM);
+            return S_db_badField;
+        }
+        pfl = db_create_read_log(chan);
+        if (pfl) {
+            pfl = dbChannelRunPreChain(chan, pfl);
+            pfl = dbChannelRunPostChain(chan, pfl);
+            status = dbChannelGet(chan, dbrType, pbuffer, &options, pnRequest, pfl);
+            db_delete_field_log(pfl);
+        }
+    } else if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
         status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
     } else {
         unsigned short dbfType = dbChannelFinalFieldType(chan);
@@ -185,18 +215,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         if (dbrType < 0 || dbrType > DBR_ENUM || dbfType > DBF_DEVICE)
             return S_db_badDbrtype;
 
-        /* If filters are involved in a read, create field log and run filters */
-        if (ellCount(&chan->filters)) {
-            db_field_log *pfl;
-            long options = 0;
-            pfl = db_create_read_log(chan);
-            if (pfl) {
-                pfl = dbChannelRunPreChain(chan, pfl);
-                pfl = dbChannelRunPostChain(chan, pfl);
-                status = dbChannelGet(chan, dbrType, pbuffer, &options, pnRequest, pfl);
-                db_delete_field_log(pfl);
-            }
-        } else if (dbChannelFinalElements(chan) == 1 && (!pnRequest || *pnRequest == 1)
+        if (dbChannelFinalElements(chan) == 1 && (!pnRequest || *pnRequest == 1)
                 && dbChannelSpecial(chan) != SPC_DBADDR
                 && dbChannelSpecial(chan) != SPC_ATTRIBUTE) {
             ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];

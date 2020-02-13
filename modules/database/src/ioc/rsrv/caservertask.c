@@ -68,9 +68,6 @@ static void req_server (void *pParm)
 
     IOC_sock = conf->tcp;
 
-    /* listen and accept new connections */
-    /*    moved into rsrv_grab_tcp()     */
-
     epicsEventSignal(castcp_startStopEvent);
 
     while (TRUE) {
@@ -190,7 +187,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
 
             epicsSocketEnableAddressReuseDuringTimeWaitState ( tcpsock );
 
-            if(bind(tcpsock, &scratch.sa, sizeof(scratch))==0) {
+            if(bind(tcpsock, &scratch.sa, sizeof(scratch))==0 && listen(tcpsock, 20)==0) {
                 if(scratch.ia.sin_port==0) {
                     /* use first socket to pick a random port */
                     osiSocklen_t alen = sizeof(ifaceAddr);
@@ -239,21 +236,6 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
                     cantProceed( "CAS: Socket bind %s error: %s\n",
-                        name, sockErrBuf );
-                }
-                ok = 0;
-                break;
-            }
-            if ( listen ( tcpsock, 20 ) < 0 ) {
-                int errcode = SOCKERRNO;
-                if (errcode != SOCK_EADDRINUSE) {
-                    char name[40];
-                    char sockErrBuf[64];
-                    epicsSocketConvertErrnoToString (
-                    sockErrBuf, sizeof ( sockErrBuf ) );
-                    ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
-
-                    cantProceed( "CAS: Socket Listen %s error: %s\n",
                         name, sockErrBuf );
                 }
                 ok = 0;

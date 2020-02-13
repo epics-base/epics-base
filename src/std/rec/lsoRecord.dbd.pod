@@ -5,8 +5,110 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
+
+=title Long String Output Record (lso)
+
+The long string output record is used to write an arbitrary ASCII string with a
+maximum length of 65535 characters.
+
+=head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
+
+=recordtype lso
+
+=cut
+
+include "menuIvoa.dbd"
+
 recordtype(lso) {
-    include "dbCommon.dbd" 
+
+=head3 Scan Parameters
+
+The long string output record has the standard fields for specifying under what
+circumstances it will be processed. These fields are listed in L<Scan Fields>.
+In addition, L<Scanning Specification> explains how these fields are used.
+
+=head3 Desired Output Parameters
+
+The long string output record must specify from where it gets its desired output
+string. The first field that determines where the desired output originates is
+the output mode select (OMSL) field, which can have two possible value:
+C<closed_loop> or C<supervisory>. If C<supervisory> is specified, DOL is
+ignored, the current value of VAL is written, and VAL can be changed externally
+via dbPuts at run-time. If C<closed_loop> is specified, the VAL field's value is
+obtained from the address specified in the desired output location field (DOL)
+which can be either a database link or a channel access link.
+
+The maximum number of characters in VAL is given by SIZV, and cannot be larger
+than 65535.
+
+DOL can also be a constant in addition to a link, in which case VAL is
+initialized to the constant value. Your string constant, however, may be
+interpreted as a CA link name. If you want to initialize your string output
+record, it is therefore best to use the VAL field. Note that if DOL is a
+constant, OMSL cannot be C<closed_loop>.
+
+See L<Address Specification> for information on specifying links.
+
+=fields VAL, SIZV, DOL, OMSL
+
+=head3 Output Specification
+
+The output link specified in the OUT field specifies where the long string
+output record is to write its string. The link can be a database or channel
+access link. If the OUT field is a constant, no output will be written.
+
+See L<Address Specification> for information on specifying links.
+
+In addition, the appropriate device support module must be entered into the DTYP
+field.
+
+
+=fields OUT, DTYP
+
+=head3 Monitor Parameters
+
+These parameters are used to specify when the monitor post should be sent by the
+C<monitor()> routine. There are two possible choices:
+
+APST is used for archiver monitors and MPST  for all other type of monitors.
+
+=fields MPST, APST
+
+
+=head3 Operator Display Parameters
+
+See L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
+
+=fields NAME, DESC
+
+=head3 Alarm Parameters
+
+The long string input record has the alarm parameters common to all record
+types. L<Alarm Fields> lists other fields related to a alarms that are common to
+all record types.
+
+The IVOA field specifies an action to take when the INVALID alarm is triggered.
+There are three possible actions:
+
+=head4 Menu menuIvoa
+
+=menu menuIvoa
+
+When C<<< Set output to IVOV >>>, the value contained in the IVOV field is
+written to the output link during an alarm condition. See
+L<Invalid Alarm Output Action>
+for more information on the IVOA and IVOV fields.
+L<Alarm Fields>
+lists other fields related to a alarms that are common to all record types.
+
+=fields IVOA, IVOV
+
+=cut
+
+    include "dbCommon.dbd"
     %#include "devSup.h"
     %
     %/* Declare Device Support Entry Table */
@@ -25,12 +127,18 @@ recordtype(lso) {
         pp(TRUE)
         special(SPC_DBADDR)
         extra("char *val")
+        #=type STRING[SIZV]
+        #=read Yes
+        #=write Yes
     }
     field(OVAL,DBF_NOACCESS) {
         prompt("Previous Value")
         special(SPC_DBADDR)
         interest(3)
         extra("char *oval")
+        #=type STRING[SIZV]
+        #=read Yes
+        #=write No
     }
     field(SIZV,DBF_USHORT) {
         prompt("Size of buffers")
@@ -88,6 +196,24 @@ recordtype(lso) {
         interest(1)
         menu(menuPost)
     }
+
+
+=head3 Run-time and Simulation Mode Parameters
+
+The old value field (OVAL) of the long string input record is used to implement
+value change monitors for VAL. If VAL is not equal to OVAL, then monitors are
+triggered. LEN contains the length of the string in VAL, OLEN contains the
+length of the string in OVAL.
+
+=fields OVAL, LEN, OLEN
+
+The following fields are used to operate the string input in the simulation
+mode. See L<Simulation Mode> for more information on simulation mode fields.
+
+=fields SIOL, SIML, SIMM, SIMS
+
+=cut
+
     field(SIML,DBF_INLINK) {
         prompt("Sim Mode link")
         promptgroup("90 - Simulate")
@@ -110,3 +236,37 @@ recordtype(lso) {
         interest(1)
     }
 }
+
+
+
+=head2 Device Support Interface
+
+The record requires device support to provide an entry table (dset) which
+defines the following members:
+
+ typedef struct {
+     long number;
+     long (*report)(int level);
+     long (*init)(int after);
+     long (*init_record)(lsoRecord *prec);
+     long (*get_ioint_info)(int cmd, lsoRecord *prec, IOSCANPVT *piosl);
+     long (*write_string)(lsoRecord *prec);
+ } lsodset;
+
+The module must set C<number> to at least 5, and provide a pointer to its
+C<write_string()> routine; the other function pointers may be C<NULL> if their
+associated functionality is not required for this support layer.
+Most device supports also provide an C<init_record()> routine to configure the
+record instance and connect it to the hardware or driver support layer.
+
+
+=head2 Device Support for Soft Records
+
+Device support for DTYP C<Soft Channel> is provided for writing values to other
+records or other software components.
+
+Device support for DTYP C<stdio> is provided for writing values to the stdout,
+stderr, or errlog streams. C<INST_IO> addressing C<@stdout>, C<@stderr> or
+C<@errlog> is used on the OUT link field to select the desired stream.
+
+=cut

@@ -12,6 +12,19 @@ The external PVA submodules each have their own separate set of release notes
 which should also be read to understand what has changed since an earlier
 release.
 
+## EPICS Release 7.x.y.z
+
+### caRepeater /dev/null
+
+On *NIX targets caRepeater will now partially daemonize by redirecting
+stdin/out/err with /dev/null.  This prevents caRepeater from inheriting
+the stdin/out of a process, like caget, which has spawned it in the
+background.  This has been known to cause problems in some cases when
+caget is itself being run from a shell script.
+
+caRepeater will now understand the '-v' argument to retain stdin/out/err
+which may be necessary to see any error messages it may emit.
+
 ## EPICS Release 7.0.3.1
 
 **IMPORTANT NOTE:** *Some record types in this release will not be compatible

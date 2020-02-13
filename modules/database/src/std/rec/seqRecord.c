@@ -156,8 +156,6 @@ static long process(struct dbCommon *pcommon)
                 recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
                 return asyncFinish(prec);
             }
-            if (grpn == 0)
-                return asyncFinish(prec);
 
             lmask = 1 << grpn;
         }

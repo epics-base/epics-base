@@ -28,6 +28,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "errlog.h"
 
 #define GEN_SIZE_OFFSET
 #include "stateRecord.h"
@@ -37,7 +38,7 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-#define init_record NULL
+static long init_record(struct dbCommon *prec, int pass);
 static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
@@ -77,6 +78,19 @@ epicsExportAddress(rset,stateRSET);
 
 static void monitor(stateRecord *);
 
+static long init_record(struct dbCommon *prec, int pass)
+{
+    if(pass == 0) {
+        errlogPrintf(
+            "WARNING: Using deprecated record type \"state\" for record "
+            "\"%s\".\nThis record type will be removed beginning with EPICS "
+            "7.1. Please replace it\nby a stringin record.\n",
+            prec->name
+        );
+    }
+    return 0;
+}
+
 static long process(struct dbCommon *pcommon)
 {
     struct stateRecord *prec = (struct stateRecord *)pcommon;

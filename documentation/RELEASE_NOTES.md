@@ -54,6 +54,12 @@ caget is itself being run from a shell script.
 caRepeater will now understand the '-v' argument to retain stdin/out/err
 which may be necessary to see any error messages it may emit.
 
+### `state` record deprecated
+
+IOCs now emit a warning when a database file containing the `state` record is
+loaded. This record has been deprecated for a while and will be removed
+beginning with EPICS 7.1. Consider using the `stringin` record instead.
+
 ## EPICS Release 7.0.3.1
 
 **IMPORTANT NOTE:** *Some record types in this release will not be compatible

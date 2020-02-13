@@ -48,7 +48,7 @@ void setfanout(SOCKET s, int opt, const char *optname)
     }
 }
 
-void epicsSocketEnableAddressUseForDatagramFanout ( SOCKET s )
+void epicsShareAPI epicsSocketEnableAddressUseForDatagramFanout ( SOCKET s )
 {
 #define DOIT(sock, opt) setfanout(sock, opt, #opt)
 #ifdef SO_REUSEPORT

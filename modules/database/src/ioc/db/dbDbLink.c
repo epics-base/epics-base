@@ -101,12 +101,6 @@ long dbDbInitLink(struct link *plink, short dbfType)
 
     precord = dbChannelRecord(chan);
 
-    if (dbChannelFinalElements(chan) < 1) {
-        errlogPrintf("Warning: %s.%s=%s has %ld elements. This will not work.\n",
-            plink->precord->name, dbLinkFieldName(plink),
-            dbChannelName(chan), dbChannelFinalElements(chan));
-    }
-
     plink->lset = &dbDb_lset;
     plink->type = DB_LINK;
     plink->value.pv_link.pvt = chan;
@@ -122,12 +116,6 @@ long dbDbInitLink(struct link *plink, short dbfType)
 void dbDbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
     dbChannel *chan)
 {
-    if (dbChannelFinalElements(chan) < 1) {
-        errlogPrintf("Warning: %s.%s=%s has %ld elements. This will not work.\n",
-            plink->precord->name, dbLinkFieldName(plink),
-            dbChannelName(chan), dbChannelFinalElements(chan));
-    }
-
     plink->lset = &dbDb_lset;
     plink->type = DB_LINK;
     plink->value.pv_link.pvt = chan;
@@ -197,15 +185,20 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         fl.ctx = dbfl_context_read;
         fl.type = dbfl_type_rec;
 
-        if (dbChannelFinalElements(chan) < 1)
+        /* For the moment, empty arrays are not supported by EPICS */
+        if (dbChannelFinalElements(chan) > 0)
         {
-            recGblSetSevr(precord, LINK_ALARM, UDF_ALARM);
-            return S_db_badField;
+            dbChannelRunPreChain(chan, &fl);
+            dbChannelRunPostChain(chan, &fl);
+            status = dbChannelGet(chan, dbrType, pbuffer, &options, pnRequest, &fl);
+            if (!status && pnRequest && *pnRequest <= 0)
+                status = S_db_badField;
+        } else {
+            status = S_db_badField;
         }
-        
-        dbChannelRunPreChain(chan, &fl);
-        dbChannelRunPostChain(chan, &fl);
-        status = dbChannelGet(chan, dbrType, pbuffer, &options, pnRequest, &fl);
+        if (status) {
+            recGblSetSevr(precord, LINK_ALARM, UDF_ALARM);
+        }
     } else if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
         status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
     } else {

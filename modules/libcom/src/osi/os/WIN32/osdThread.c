@@ -473,7 +473,11 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     /*
      * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!
      */
-    TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, (void*)0xdeadbeef );
+    
+    if ( pGbl )  {
+        TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, (void*)0xdeadbeef );
+    }
+
     epicsParmCleanupWIN32 ( pParm );
 
     return retStat; /* this indirectly closes the thread handle */

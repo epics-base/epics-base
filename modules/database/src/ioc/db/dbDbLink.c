@@ -192,21 +192,20 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
 
     /* If filters are involved in a read, create field log and run filters */
     if (ellCount(&chan->filters)) {
-        db_field_log *pfl;
         long options = 0;
+        db_field_log fl = {};
+        fl.ctx = dbfl_context_read;
+        fl.type = dbfl_type_rec;
 
         if (dbChannelFinalElements(chan) < 1)
         {
             recGblSetSevr(precord, LINK_ALARM, UDF_ALARM);
             return S_db_badField;
         }
-        pfl = db_create_read_log(chan);
-        if (pfl) {
-            pfl = dbChannelRunPreChain(chan, pfl);
-            pfl = dbChannelRunPostChain(chan, pfl);
-            status = dbChannelGet(chan, dbrType, pbuffer, &options, pnRequest, pfl);
-            db_delete_field_log(pfl);
-        }
+        
+        dbChannelRunPreChain(chan, &fl);
+        dbChannelRunPostChain(chan, &fl);
+        status = dbChannelGet(chan, dbrType, pbuffer, &options, pnRequest, &fl);
     } else if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
         status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
     } else {

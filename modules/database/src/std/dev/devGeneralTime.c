@@ -150,13 +150,12 @@ static long write_bo(boRecord *prec)
     return 0;
 }
 
-struct {
-    dset common;
-    DEVSUPFUN read_write;
-} devBoGeneralTime = {
-    {5, NULL, NULL, init_bo, NULL}, write_bo
+bodset devBoGeneralTime = {
+    {5, NULL, NULL, init_bo, NULL},
+    write_bo
 };
 epicsExportAddress(dset, devBoGeneralTime);
+
 
 
 /******* longin record *************/
@@ -209,11 +208,9 @@ static long read_li(longinRecord *prec)
     return 0;
 }
 
-struct {
-    dset common;
-    DEVSUPFUN read_write;
-} devLiGeneralTime = {
-    {5, NULL, NULL, init_li, NULL}, read_li
+longindset devLiGeneralTime = {
+    {5, NULL, NULL, init_li, NULL},
+    read_li
 };
 epicsExportAddress(dset, devLiGeneralTime);
 
@@ -289,10 +286,8 @@ static long read_si(stringinRecord *prec)
     return 0;
 }
 
-struct {
-    dset common;
-    DEVSUPFUN read_write;
-} devSiGeneralTime = {
-    {5, NULL, NULL, init_si, NULL}, read_si
+stringindset devSiGeneralTime = {
+    {5, NULL, NULL, init_si, NULL},
+    read_si
 };
 epicsExportAddress(dset, devSiGeneralTime);

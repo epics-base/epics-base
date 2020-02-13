@@ -119,10 +119,8 @@ static long read_stringin(stringinRecord *prec)
     return 0;
 }
 
-static struct {
-    dset common;
-    DEVSUPFUN read;
-} devSiEnviron = {
-    {5, NULL, init_stringin, NULL, NULL}, read_stringin
+stringindset devSiEnviron = {
+    {5, NULL, init_stringin, NULL, NULL},
+    read_stringin
 };
 epicsExportAddress(dset, devSiEnviron);

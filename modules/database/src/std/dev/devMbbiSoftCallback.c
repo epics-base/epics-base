@@ -151,8 +151,10 @@ static long init(int pass)
     return 0;
 }
 
-static long init_record(mbbiRecord *prec)
+static long init_record(dbCommon *pcommon)
 {
+	mbbiRecord *prec = (mbbiRecord *)pcommon;
+
     if (recGblInitConstantLink(&prec->inp, DBR_ENUM, &prec->val))
         prec->udf = FALSE;
 
@@ -204,11 +206,8 @@ static long read_mbbi(mbbiRecord *prec)
 }
 
 /* Create the dset for devMbbiSoftCallback */
-struct {
-    dset common;
-    DEVSUPFUN read_mbbi;
-} devMbbiSoftCallback = {
+mbbidset devMbbiSoftCallback = {
     {5, NULL, init, init_record, NULL},
     read_mbbi
 };
-epicsExportAddress(dset,devMbbiSoftCallback);
+epicsExportAddress(dset, devMbbiSoftCallback);

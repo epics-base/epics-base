@@ -82,15 +82,6 @@ rset mbboRSET = {
 };
 epicsExportAddress(rset,mbboRSET);
 
-struct mbbodset { /* multi bit binary output dset */
-    long number;
-    DEVSUPFUN dev_report;
-    DEVSUPFUN init;
-    DEVSUPFUN init_record;  /*returns: (0, 2) => (success, success no convert)*/
-    DEVSUPFUN get_ioint_info;
-    DEVSUPFUN write_mbbo;   /*returns: (0, 2) => (success, success no convert)*/
-};
-
 
 static void checkAlarms(mbboRecord *);
 static void convert(mbboRecord *);
@@ -117,7 +108,7 @@ static void init_common(mbboRecord *prec)
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct mbboRecord *prec = (struct mbboRecord *)pcommon;
-    struct mbbodset *pdset;
+    mbbodset *pdset;
     long status;
 
     if (pass == 0) {
@@ -125,13 +116,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return 0;
     }
 
-    pdset = (struct mbbodset *) prec->dset;
+    pdset = (mbbodset *) prec->dset;
     if (!pdset) {
         recGblRecordError(S_dev_noDSET, prec, "mbbo: init_record");
         return S_dev_noDSET;
     }
 
-    if ((pdset->number < 5) || (pdset->write_mbbo == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->write_mbbo == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "mbbo: init_record");
         return S_dev_missingSup;
     }
@@ -145,8 +136,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (prec->mask == 0 && prec->nobt <= 32)
         prec->mask = ((epicsUInt64) 1u << prec->nobt) - 1;
 
-    if (pdset->init_record) {
-        status = pdset->init_record(prec);
+    if (pdset->common.init_record) {
+        status = pdset->common.init_record(pcommon);
         init_common(prec);
         if (status == 0) {
             /* Convert initial read-back */
@@ -194,7 +185,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct mbboRecord *prec = (struct mbboRecord *)pcommon;
-    struct mbbodset  *pdset = (struct mbbodset *) prec->dset;
+    mbbodset  *pdset = (mbbodset *) prec->dset;
     long status = 0;
     int pact = prec->pact;
 
@@ -439,7 +430,7 @@ static void convert(mbboRecord *prec)
 
 static long writeValue(mbboRecord *prec)
 {
-    struct mbbodset *pdset = (struct mbbodset *) prec->dset;
+    mbbodset *pdset = (mbbodset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

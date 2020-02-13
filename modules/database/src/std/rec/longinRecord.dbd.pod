@@ -305,6 +305,15 @@ sets UDF to FALSE. read_longin returns the status of C<recGblGetLinkValue>.
 =cut
 
 	include "dbCommon.dbd"
+    %
+    %/* Declare Device Support Entry Table */
+    %struct longinRecord;
+    %typedef struct longindset {
+    %    dset common; /*init_record returns: (-1,0)=>(failure,success)*/
+    %    long (*read_longin)(struct longinRecord *prec); /*returns: (-1,0)=>(failure,success)*/
+    %} longindset;
+    %#define HAS_longindset
+    %
 	field(VAL,DBF_LONG) {
 		prompt("Current value")
 		promptgroup("40 - Input")

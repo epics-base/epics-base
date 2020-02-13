@@ -31,15 +31,9 @@
 
 static long write_calcout(calcoutRecord *prec);
 
-struct {
-    long	number;
-    DEVSUPFUN	report;
-    DEVSUPFUN	init;
-    DEVSUPFUN	init_record;
-    DEVSUPFUN	get_ioint_info;
-    DEVSUPFUN	write;
-} devCalcoutSoftCallback = {
-    5, NULL, NULL, NULL, NULL, write_calcout
+calcoutdset devCalcoutSoftCallback = {
+    {5, NULL, NULL, NULL, NULL},
+    write_calcout
 };
 epicsExportAddress(dset, devCalcoutSoftCallback);
 

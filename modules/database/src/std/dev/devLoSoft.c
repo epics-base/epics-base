@@ -26,26 +26,16 @@
 #include "epicsExport.h"
 
 /* Create the dset for devLoSoft */
-static long init_record(longoutRecord *prec);
+static long init_record(dbCommon *pcommon);
 static long write_longout(longoutRecord *prec);
-struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_longout;
-}devLoSoft={
-	5,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	write_longout
+
+longoutdset devLoSoft = {
+    {5, NULL, NULL, init_record, NULL},
+    write_longout
 };
-epicsExportAddress(dset,devLoSoft);
-
-static long init_record(longoutRecord *prec)
+epicsExportAddress(dset, devLoSoft);
+
+static long init_record(dbCommon *pcommon)
 {
     return 0;
 } /* end init_record() */

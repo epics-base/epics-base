@@ -81,7 +81,9 @@ rset aoRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
+	get_alarm_double
+};
+epicsExportAddress(rset,aoRSET);
 
 static void checkAlarms(aoRecord *);
 static long fetch_value(aoRecord *, double *);
@@ -92,7 +94,7 @@ static long writeValue(aoRecord *);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct aoRecord *prec = (struct aoRecord *)pcommon;
-    struct aodset  *pdset;
+    aodset *pdset;
     double 	eoff = prec->eoff, eslo = prec->eslo;
     double	value;
     long    status = 0;
@@ -101,7 +103,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
-    if(!(pdset = (struct aodset *)(prec->dset))) {
+    if(!(pdset = (aodset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"ao: init_record");
 	return(S_dev_noDSET);
     }
@@ -110,7 +112,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         prec->udf = isnan(prec->val);
 
     /* must have write_ao function defined */
-    if ((pdset->number < 6) || (pdset->write_ao ==NULL)) {
+    if ((pdset->common.number < 6) || (pdset->write_ao ==NULL)) {
 	recGblRecordError(S_dev_missingSup,(void *)prec,"ao: init_record");
 	return(S_dev_missingSup);
     }
@@ -120,8 +122,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
 	prec->eoff = prec->egul;
     }
 
-    if (pdset->init_record) {
-        status = (*pdset->init_record)(prec);
+    if (pdset->common.init_record) {
+        status = pdset->common.init_record(pcommon);
 	if (prec->linr == menuConvertSLOPE) {
 	    prec->eoff = eoff;
 	    prec->eslo = eslo;
@@ -162,7 +164,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct aoRecord *prec = (struct aoRecord *)pcommon;
-    struct aodset  *pdset = (struct aodset *)(prec->dset);
+    aodset      *pdset = (aodset *)(prec->dset);
 	long		 status=0;
 	unsigned char    pact=prec->pact;
 	double		value;
@@ -233,12 +235,12 @@ static long process(struct dbCommon *pcommon)
 static long special(DBADDR *paddr, int after)
 {
     aoRecord     *prec = (aoRecord *)(paddr->precord);
-    struct aodset       *pdset = (struct aodset *) (prec->dset);
+    aodset       *pdset = (aodset *) (prec->dset);
     int                 special_type = paddr->special;
 
     switch(special_type) {
     case(SPC_LINCONV):
-        if(pdset->number<6 ) {
+        if(pdset->common.number<6 ) {
             recGblDbaddrError(S_db_noMod,paddr,"ao: special");
             return(S_db_noMod);
         }
@@ -543,7 +545,7 @@ static void monitor(aoRecord *prec)
 
 static long writeValue(aoRecord *prec)
 {
-    struct aodset *pdset = (struct aodset *) prec->dset;
+    aodset *pdset = (aodset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

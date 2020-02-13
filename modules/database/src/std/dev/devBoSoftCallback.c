@@ -31,22 +31,11 @@
 /* Create the dset for devBoCallbackSoft */
 static long write_bo(boRecord *prec);
 
-struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_bo;
-}devBoSoftCallback={
-	5,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	write_bo
+bodset devBoSoftCallback = {
+    {5, NULL, NULL, NULL, NULL},
+    write_bo
 };
-epicsExportAddress(dset,devBoSoftCallback);
+epicsExportAddress(dset, devBoSoftCallback);
 
 static long write_bo(boRecord *prec)
 {
@@ -64,4 +53,3 @@ static long write_bo(boRecord *prec)
 
     return status;
 }
-

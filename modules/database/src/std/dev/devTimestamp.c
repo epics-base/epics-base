@@ -65,10 +65,7 @@ static long read_stringin (stringinRecord *prec)
     return 0;
 }
 
-struct {
-    dset common;
-    DEVSUPFUN read_stringin;
-} devTimestampSI = {
+stringindset devTimestampSI = {
     {5, NULL, initAllow, NULL, NULL},
     read_stringin
 };

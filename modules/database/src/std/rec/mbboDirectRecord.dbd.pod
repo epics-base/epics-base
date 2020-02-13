@@ -90,6 +90,14 @@ description (DESC) fields.
 =cut
 
     include "dbCommon.dbd"
+    %/* Declare Device Support Entry Table */
+    %struct mbboDirectRecord;
+    %typedef struct mbbodirectdset {
+    %    dset common; /*init_record returns: (0, 2)=>(success, success no convert)*/
+    %    long (*write_mbbo)(struct mbboDirectRecord *prec); /*returns: (0, 2)=>(success, success no convert)*/
+    %} mbbodirectdset;
+    %#define HAS_mbbodirectdset
+    %
     field(VAL,DBF_LONG) {
         prompt("Word")
         promptgroup("50 - Output")

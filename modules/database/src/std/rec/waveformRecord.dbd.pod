@@ -397,6 +397,15 @@ NORD is set to the number of values returned and read_wf returns.
 =cut
 
 	include "dbCommon.dbd"
+    %
+    %/* Declare Device Support Entry Table */
+    %struct waveformRecord;
+    %typedef struct wfdset {
+    %    dset common; /*init_record returns: (-1,0)=>(failure,success)*/
+    %    long (*read_wf)(struct waveformRecord *prec); /*returns: (-1,0)=>(failure,success)*/
+    %} wfdset;
+    %#define HAS_wfdset
+    %
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
 		asl(ASL0)

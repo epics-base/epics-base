@@ -27,19 +27,9 @@
 
 /* Create the dset for devSoSoftCallback */
 static long write_stringout(stringoutRecord *prec);
-struct {
-    long        number;
-    DEVSUPFUN   report;
-    DEVSUPFUN   init;
-    DEVSUPFUN   init_record;
-    DEVSUPFUN   get_ioint_info;
-    DEVSUPFUN   write_stringout;
-} devSoSoftCallback = {
-    5,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+
+stringoutdset devSoSoftCallback = {
+    {5, NULL, NULL, NULL, NULL},
     write_stringout
 };
 epicsExportAddress(dset, devSoSoftCallback);
@@ -60,4 +50,3 @@ static long write_stringout(stringoutRecord *prec)
 
     return status;
 }
-

@@ -26,10 +26,7 @@ static long write_mbbo(mbboDirectRecord	*prec)
 }
 
 /* Create the dset for devMbboDirectSoft */
-struct {
-    dset common;
-    DEVSUPFUN write;
-} devMbboDirectSoft = {
+mbbodirectdset devMbboDirectSoft = {
     {5, NULL, NULL, NULL, NULL},
     write_mbbo
 };

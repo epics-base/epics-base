@@ -80,14 +80,6 @@ rset stringinRSET={
 };
 epicsExportAddress(rset,stringinRSET);
 
-struct stringindset { /* stringin input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_stringin; /*returns: (-1,0)=>(failure,success)*/
-};
 static void monitor(stringinRecord *);
 static long readValue(stringinRecord *);
 
@@ -97,7 +89,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     struct stringinRecord *prec = (struct stringinRecord *)pcommon;
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
     STATIC_ASSERT(sizeof(prec->sval)==sizeof(prec->val));
-    struct stringindset *pdset = (struct stringindset *) prec->dset;
+    stringindset *pdset = (stringindset *) prec->dset;
 
     if (pass == 0) return 0;
 
@@ -110,13 +102,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have read_stringin function defined */
-    if ((pdset->number < 5) || (pdset->read_stringin == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->read_stringin == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "stringin: init_record");
         return S_dev_missingSup;
     }
 
-    if (pdset->init_record) {
-        long status = pdset->init_record(prec);
+    if (pdset->common.init_record) {
+        long status = pdset->common.init_record(pcommon);
 
         if (status)
             return status;
@@ -130,7 +122,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct stringinRecord *prec = (struct stringinRecord *)pcommon;
-    struct stringindset  *pdset = (struct stringindset *)(prec->dset);
+    stringindset  *pdset = (stringindset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
 
@@ -196,7 +188,7 @@ static void monitor(stringinRecord *prec)
 
 static long readValue(stringinRecord *prec)
 {
-    struct stringindset *pdset = (struct stringindset *) prec->dset;
+    stringindset *pdset = (stringindset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

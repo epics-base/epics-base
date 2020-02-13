@@ -80,15 +80,6 @@ rset longoutRSET={
 };
 epicsExportAddress(rset,longoutRSET);
 
-
-struct longoutdset { /* longout input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_longout;/*(-1,0)=>(failure,success*/
-};
 static void checkAlarms(longoutRecord *prec);
 static void monitor(longoutRecord *prec);
 static long writeValue(longoutRecord *prec);
@@ -97,7 +88,7 @@ static void convert(longoutRecord *prec, epicsInt32 value);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct longoutRecord *prec = (struct longoutRecord *)pcommon;
-    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
+    longoutdset *pdset = (longoutdset *) prec->dset;
 
     if (pass == 0) return 0;
 
@@ -109,7 +100,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have  write_longout functions defined */
-    if ((pdset->number < 5) || (pdset->write_longout == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->write_longout == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "longout: init_record");
         return S_dev_missingSup;
     }
@@ -117,8 +108,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (recGblInitConstantLink(&prec->dol, DBF_LONG, &prec->val))
         prec->udf=FALSE;
 
-    if (pdset->init_record) {
-        long status = pdset->init_record(prec);
+    if (pdset->common.init_record) {
+        long status = pdset->common.init_record(pcommon);
 
         if (status)
             return status;
@@ -133,7 +124,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct longoutRecord *prec = (struct longoutRecord *)pcommon;
-    struct longoutdset  *pdset = (struct longoutdset *)(prec->dset);
+    longoutdset  *pdset = (longoutdset *)(prec->dset);
 	long		 status=0;
 	epicsInt32	 value;
 	unsigned char    pact=prec->pact;
@@ -382,7 +373,7 @@ static void monitor(longoutRecord *prec)
 
 static long writeValue(longoutRecord *prec)
 {
-    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
+    longoutdset *pdset = (longoutdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

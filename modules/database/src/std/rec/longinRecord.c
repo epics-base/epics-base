@@ -83,15 +83,6 @@ rset longinRSET={
 };
 epicsExportAddress(rset,longinRSET);
 
-
-struct longindset { /* longin input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_longin; /*returns: (-1,0)=>(failure,success)*/
-};
 static void checkAlarms(longinRecord *prec, epicsTimeStamp *timeLast);
 static void monitor(longinRecord *prec);
 static long readValue(longinRecord *prec);
@@ -100,7 +91,7 @@ static long readValue(longinRecord *prec);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct longinRecord *prec = (struct longinRecord *)pcommon;
-    struct longindset *pdset = (struct longindset *) prec->dset;
+    longindset *pdset = (longindset *) prec->dset;
 
     if (pass == 0) return 0;
 
@@ -113,13 +104,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have read_longin function defined */
-    if ((pdset->number < 5) || (pdset->read_longin == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->read_longin == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "longin: init_record");
         return S_dev_missingSup;
     }
 
-    if (pdset->init_record) {
-        long status = pdset->init_record(prec);
+    if (pdset->common.init_record) {
+        long status = pdset->common.init_record(pcommon);
 
         if (status)
             return status;
@@ -134,7 +125,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct longinRecord *prec = (struct longinRecord *)pcommon;
-    struct longindset  *pdset = (struct longindset *)(prec->dset);
+    longindset  *pdset = (longindset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
 	epicsTimeStamp   timeLast;
@@ -405,7 +396,7 @@ static void monitor(longinRecord *prec)
 
 static long readValue(longinRecord *prec)
 {
-    struct longindset *pdset = (struct longindset *) prec->dset;
+    longindset *pdset = (longindset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

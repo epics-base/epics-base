@@ -33,25 +33,13 @@
 
 /* Create the dset for devAoSoftRaw */
 static long write_ao(aoRecord *prec);
-struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_ao;
-	DEVSUPFUN	special_linconv;
-}devAoSoftRaw={
-	6,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	write_ao,
-	NULL
+
+aodset devAoSoftRaw = {
+    {6, NULL, NULL, NULL, NULL},
+    write_ao, NULL
 };
-epicsExportAddress(dset,devAoSoftRaw);
-
+epicsExportAddress(dset, devAoSoftRaw);
+
 static long write_ao(aoRecord *prec)
 {
     long status;

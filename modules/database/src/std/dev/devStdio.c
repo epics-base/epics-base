@@ -202,10 +202,8 @@ static long write_stringout(stringoutRecord *prec)
     return 0;
 }
 
-static struct {
-    dset common;
-    DEVSUPFUN write;
-} devSoStdio = {
-    {5, NULL, init_stringout, NULL, NULL}, write_stringout
+stringoutdset devSoStdio = {
+    {5, NULL, init_stringout, NULL, NULL},
+    write_stringout
 };
 epicsExportAddress(dset, devSoStdio);

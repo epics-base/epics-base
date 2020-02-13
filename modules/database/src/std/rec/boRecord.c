@@ -86,16 +86,6 @@ epicsExportAddress(int, boHIGHprecision);
 double boHIGHlimit = 100000;
 epicsExportAddress(double, boHIGHlimit);
 
-struct bodset { /* binary output dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;  /*returns:(0,2)=>(success,success no convert*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_bo;/*returns: (-1,0)=>(failure,success)*/
-};
-
-
 /* control block for callback*/
 typedef struct myCallback {
         epicsCallback        callback;
@@ -131,7 +121,7 @@ static void myCallbackFunc(epicsCallback *arg)
 static long init_record(struct dbCommon *pcommon,int pass)
 {
     struct boRecord *prec = (struct boRecord *)pcommon;
-    struct bodset *pdset = (struct bodset *) prec->dset;
+    bodset *pdset = (bodset *) prec->dset;
     unsigned short ival = 0;
     long status = 0;
     myCallback *pcallback;
@@ -146,7 +136,7 @@ static long init_record(struct dbCommon *pcommon,int pass)
     }
 
     /* must have  write_bo functions defined */
-    if ((pdset->number < 5) || (pdset->write_bo == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->write_bo == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "bo: init_record");
         return S_dev_missingSup;
     }
@@ -163,8 +153,8 @@ static long init_record(struct dbCommon *pcommon,int pass)
     callbackSetUser(pcallback, &pcallback->callback);
     pcallback->precord = (struct dbCommon *) prec;
 
-    if (pdset->init_record) {
-	status=(*pdset->init_record)(prec);
+    if (pdset->common.init_record) {
+	status=(*pdset->common.init_record)(pcommon);
 	if(status==0) {
 		if(prec->rval==0) prec->val = 0;
 		else prec->val = 1;
@@ -188,7 +178,7 @@ static long init_record(struct dbCommon *pcommon,int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct boRecord *prec = (struct boRecord *)pcommon;
-    struct bodset  *pdset = (struct bodset *)(prec->dset);
+    bodset  *pdset = (bodset *)(prec->dset);
 	long		 status=0;
 	unsigned char    pact=prec->pact;
 
@@ -420,7 +410,7 @@ static void monitor(boRecord *prec)
 
 static long writeValue(boRecord *prec)
 {
-    struct bodset *pdset = (struct bodset *) prec->dset;
+    bodset *pdset = (bodset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

@@ -25,28 +25,19 @@
 #include "epicsExport.h"
 
 /* Create the dset for devBiSoft */
-static long init_record(biRecord *prec);
+static long init_record(dbCommon *pcommon);
 static long read_bi(biRecord *prec);
 
-struct {
-    long      number;
-    DEVSUPFUN report;
-    DEVSUPFUN init;
-    DEVSUPFUN init_record;
-    DEVSUPFUN get_ioint_info;
-    DEVSUPFUN read_bi;
-} devBiSoft = {
-    5,
-    NULL,
-    NULL,
-    init_record,
-    NULL,
+bidset devBiSoft = {
+    {5, NULL, NULL, init_record, NULL},
     read_bi
 };
 epicsExportAddress(dset, devBiSoft);
 
-static long init_record(biRecord *prec)
+static long init_record(dbCommon *pcommon)
 {
+	biRecord *prec = (biRecord *)pcommon;
+
     if (recGblInitConstantLink(&prec->inp, DBF_ENUM, &prec->val))
         prec->udf = FALSE;
     return 0;

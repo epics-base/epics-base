@@ -153,8 +153,10 @@ static long init(int pass)
     return 0;
 }
 
-static long init_record(stringinRecord *prec)
+static long init_record(dbCommon *pcommon)
 {
+    stringinRecord *prec = (stringinRecord *)pcommon;
+
     if (recGblInitConstantLink(&prec->inp, DBR_STRING, &prec->val))
         prec->udf = FALSE;
 
@@ -207,11 +209,8 @@ static long read_si(stringinRecord *prec)
 }
 
 /* Create the dset for devSiSoftCallback */
-struct {
-    dset common;
-    DEVSUPFUN read_li;
-} devSiSoftCallback = {
+stringindset devSiSoftCallback = {
     {5, NULL, init, init_record, NULL},
     read_si
 };
-epicsExportAddress(dset,devSiSoftCallback);
+epicsExportAddress(dset, devSiSoftCallback);

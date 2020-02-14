@@ -524,18 +524,18 @@ void ca_repeater ()
      */
     {
         ELLLIST casBeaconAddrList = ELLLIST_INIT;
-        ELLLIST dummy = ELLLIST_INIT;
+        ELLLIST casMergeAddrList = ELLLIST_INIT;
 
         /*
          * collect user specified beacon address list;
          * check BEACON_ADDR_LIST list first; if no result, take CA_ADDR_LIST
         */
-        if(!addAddrToChannelAccessAddressList(&casBeaconAddrList,&EPICS_CAS_BEACON_ADDR_LIST,port,0)) {
-            addAddrToChannelAccessAddressList(&casBeaconAddrList,&EPICS_CA_ADDR_LIST,port,0);
+        if(!addAddrToChannelAccessAddressList(&casMergeAddrList,&EPICS_CAS_BEACON_ADDR_LIST,port,0)) {
+            addAddrToChannelAccessAddressList(&casMergeAddrList,&EPICS_CA_ADDR_LIST,port,0);
         }
 
         /* First clean up */
-        removeDuplicateAddresses(&casBeaconAddrList, &dummy , 0);
+        removeDuplicateAddresses(&casBeaconAddrList, &casMergeAddrList , 0);
 
         osiSockAddrNode *pNode;
         for(pNode = (osiSockAddrNode*)ellFirst(&casBeaconAddrList);
@@ -551,7 +551,6 @@ void ca_repeater ()
                     struct ip_mreq mreq;
 
                     memset(&mreq, 0, sizeof(mreq));
-                    mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
                     mreq.imr_interface.s_addr = INADDR_ANY;
 
                     if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
@@ -560,7 +559,7 @@ void ca_repeater ()
                         char name[40];
                         char sockErrBuf[64];
                         temp.sin_family = AF_INET;
-                        temp.sin_addr = mreq.imr_multiaddr;
+                        temp.sin_addr = pNode->addr.ia.sin_addr;
                         temp.sin_port = htons ( port );
                         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
                         ipAddrToDottedIP (&temp, name, sizeof(name));

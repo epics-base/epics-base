@@ -436,8 +436,12 @@ void testSimmDelay(const char *name,
     testdbGetFieldEqual(namePACT, DBR_USHORT, 1);
     epicsTimeGetCurrent(&now);
     epicsThreadSleep(1.75*delay);
+    if(testImpreciseTiming())
+        testTodoBegin("imprecise");
     testdbGetFieldEqual(namePACT, DBR_USHORT, 0);
     testOk(epicsTimeLessThan(&now, mytime), "time stamp taken from second pass processing");
+    if(testImpreciseTiming())
+        testTodoEnd();
 
     /* Reset delay */
     *psdly = -1.;

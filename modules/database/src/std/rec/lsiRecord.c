@@ -221,7 +221,7 @@ static void monitor(lsiRecord *prec)
 
 static long readValue(lsiRecord *prec)
 {
-    struct lsidset *pdset = (struct lsidset *) prec->dset;
+    lsidset *pdset = (lsidset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

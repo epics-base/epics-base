@@ -32,28 +32,18 @@
 #include "epicsExport.h"
 
 /* Create the dset for devAaiSoft */
-static long init_record();
-static long read_aai();
+static long init_record(dbCommon *pcommon);
+static long read_aai(aaiRecord *prec);
 
-struct {
-    long      number;
-    DEVSUPFUN report;
-    DEVSUPFUN init;
-    DEVSUPFUN init_record;
-    DEVSUPFUN get_ioint_info;
-    DEVSUPFUN read_aai;
-} devAaiSoft = {
-    5,
-    NULL,
-    NULL,
-    init_record,
-    NULL,
+aaidset devAaiSoft = {
+    {5, NULL, NULL, init_record, NULL},
     read_aai
 };
-epicsExportAddress(dset,devAaiSoft);
+epicsExportAddress(dset, devAaiSoft);
 
-static long init_record(aaiRecord *prec)
+static long init_record(dbCommon *pcommon)
 {
+    aaiRecord *prec = (aaiRecord *)pcommon;
     DBLINK *plink = &prec->inp;
 
     /* This is pass 0, link hasn't been initialized yet */

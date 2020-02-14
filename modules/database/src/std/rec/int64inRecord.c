@@ -91,7 +91,7 @@ static long readValue(int64inRecord *prec);
 static long init_record(dbCommon *pcommon, int pass)
 {
     int64inRecord *prec = (int64inRecord*)pcommon;
-    struct int64indset *pdset;
+    int64indset *pdset;
     long status;
 
     if (pass == 0) return 0;
@@ -100,7 +100,7 @@ static long init_record(dbCommon *pcommon, int pass)
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_INT64, &prec->sval);
 
-    if(!(pdset = (struct int64indset *)(prec->dset))) {
+    if(!(pdset = (int64indset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"int64in: init_record");
 	return(S_dev_noDSET);
     }
@@ -121,7 +121,7 @@ static long init_record(dbCommon *pcommon, int pass)
 static long process(dbCommon *pcommon)
 {
     int64inRecord *prec = (int64inRecord*)pcommon;
-	struct int64indset	*pdset = (struct int64indset *)(prec->dset);
+	int64indset	*pdset = (int64indset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
 	epicsTimeStamp   timeLast;
@@ -389,7 +389,7 @@ static void monitor(int64inRecord *prec)
 
 static long readValue(int64inRecord *prec)
 {
-    struct int64indset *pdset = (struct int64indset *) prec->dset;
+    int64indset *pdset = (int64indset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

@@ -89,14 +89,14 @@ static void convert(int64outRecord *prec, epicsInt64 value);
 static long init_record(dbCommon *pcommon, int pass)
 {
     int64outRecord *prec = (int64outRecord*)pcommon;
-    struct int64outdset *pdset;
+    int64outdset *pdset;
     long status=0;
 
     if (pass == 0) return 0;
 
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
-    if(!(pdset = (struct int64outdset *)(prec->dset))) {
+    if(!(pdset = (int64outdset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"int64out: init_record");
 	return(S_dev_noDSET);
     }
@@ -121,7 +121,7 @@ static long init_record(dbCommon *pcommon, int pass)
 static long process(dbCommon *pcommon)
 {
     int64outRecord *prec = (int64outRecord*)pcommon;
-	struct int64outdset	*pdset = (struct int64outdset *)(prec->dset);
+	int64outdset	*pdset = (int64outdset *)(prec->dset);
 	long		 status=0;
 	epicsInt64	 value;
 	unsigned char    pact=prec->pact;
@@ -369,7 +369,7 @@ static void monitor(int64outRecord *prec)
 
 static long writeValue(int64outRecord *prec)
 {
-    struct int64outdset *pdset = (struct int64outdset *) prec->dset;
+    int64outdset *pdset = (int64outdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

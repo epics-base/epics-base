@@ -11,11 +11,13 @@
 
 SRC_DIRS += $(STDDIR)/rec
 
+aaiRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += aaiRecord
+aaoRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += aaoRecord
 aiRecord_CFLAGS += -DUSE_TYPED_DSET
-aoRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += aiRecord
+aoRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += aoRecord
 stdRecords += aSubRecord
 biRecord_CFLAGS += -DUSE_TYPED_DSET
@@ -27,8 +29,10 @@ calcoutRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += calcoutRecord
 stdRecords += compressRecord
 stdRecords += dfanoutRecord
+eventRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += eventRecord
 stdRecords += fanoutRecord
+histogramRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += histogramRecord
 int64inRecord_CFLAGS += -DUSE_TYPED_DSET
 stdRecords += int64inRecord

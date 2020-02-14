@@ -13,7 +13,9 @@ SRC_DIRS += $(STDDIR)/dev
 
 DBD += devSoft.dbd
 
+devAaiSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devAaiSoft.c
+devAaoSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devAaoSoft.c
 devAiSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devAiSoft.c
@@ -35,7 +37,9 @@ dbRecStd_SRCS += devBoSoftRaw.c
 dbRecStd_SRCS += devBoDbState.c
 devCalcoutSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devCalcoutSoft.c
+devEventSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devEventSoft.c
+devHistogramSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devHistogramSoft.c
 devI64inSoft_CFLAGS += -DUSE_TYPED_DSET
 dbRecStd_SRCS += devI64inSoft.c

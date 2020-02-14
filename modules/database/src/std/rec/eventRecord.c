@@ -80,14 +80,6 @@ rset eventRSET={
 };
 epicsExportAddress(rset,eventRSET);
 
-struct eventdset { /* event input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_event;/*(0)=> success */
-};
 static void monitor(eventRecord *);
 static long readValue(eventRecord *);
 
@@ -95,7 +87,7 @@ static long readValue(eventRecord *);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct eventRecord *prec = (struct eventRecord *)pcommon;
-    struct eventdset *pdset;
+    eventdset *pdset;
     long status=0;
 
     if (pass == 0) return 0;
@@ -103,8 +95,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_STRING, &prec->sval);
 
-    if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) ) 
-		status=(*pdset->init_record)(prec);
+    if( (pdset=(eventdset *)(prec->dset)) && (pdset->common.init_record) ) 
+		status=(*pdset->common.init_record)(pcommon);
 
     prec->epvt = eventNameToHandle(prec->val);
 
@@ -114,11 +106,11 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct eventRecord *prec = (struct eventRecord *)pcommon;
-    struct eventdset  *pdset = (struct eventdset *)(prec->dset);
+    eventdset  *pdset = (eventdset *)(prec->dset);
 	long		 status=0;
 	unsigned char    pact=prec->pact;
 
-	if((pdset!=NULL) && (pdset->number >= 5) && pdset->read_event ) 
+	if((pdset!=NULL) && (pdset->common.number >= 5) && pdset->read_event ) 
                 status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && prec->pact ) return(0);
@@ -173,7 +165,7 @@ static void monitor(eventRecord *prec)
 
 static long readValue(eventRecord *prec)
 {
-    struct eventdset *pdset = (struct eventdset *) prec->dset;
+    eventdset *pdset = (eventdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

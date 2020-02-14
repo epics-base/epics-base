@@ -28,29 +28,19 @@
 #include "epicsExport.h"
 
 /* Create the dset for devHistogramSoft */
-static long init_record(histogramRecord *prec);
+static long init_record(dbCommon *pcommon);
 static long read_histogram(histogramRecord *prec);
-struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_histogram;
-	DEVSUPFUN	special_linconv;
-}devHistogramSoft={
-	6,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	read_histogram,
-	NULL
+
+histogramdset devHistogramSoft = {
+    {6, NULL, NULL, init_record, NULL},
+    read_histogram, NULL
 };
-epicsExportAddress(dset,devHistogramSoft);
-
-static long init_record(histogramRecord	*prec)
+epicsExportAddress(dset, devHistogramSoft);
+
+static long init_record(dbCommon *pcommon)
 {
+    histogramRecord *prec = (histogramRecord *)pcommon;
+
     if (recGblInitConstantLink(&prec->svl,DBF_DOUBLE,&prec->sgnl))
         prec->udf = FALSE;
 

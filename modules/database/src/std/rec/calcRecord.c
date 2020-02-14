@@ -43,7 +43,7 @@
 
 #define report NULL
 #define initialize NULL
-static long init_record(struct dbCommon *prec, int pass);
+static long init_record(struct dbCommon *pcommon, int pass);
 static long process(struct dbCommon *prec);
 static long special(DBADDR *paddr, int after);
 #define get_value NULL

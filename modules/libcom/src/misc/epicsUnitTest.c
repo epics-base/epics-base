@@ -176,7 +176,7 @@ void testTodoBegin(const char *why) {
 }
 
 void testTodoEnd(void) {
-    todo = NULL;
+    testTodoBegin(NULL);
 }
 
 int testDiag(const char *fmt, ...) {

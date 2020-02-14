@@ -26,7 +26,7 @@ void testSeqSpecified(void){
 
         testdbPutFieldOk("seq0.PROC", DBR_USHORT, 1);
 
-        epicsThreadSleep(0.1);
+        testSyncCallback();
         testdbGetFieldEqual("ai0", DBR_LONG, i+1);
     }
 }

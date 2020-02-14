@@ -20,6 +20,17 @@ limits.
 
 =cut
 
+menu(longoutOOPT) {
+	choice(longoutOOPT_Every_Time,"Every Time")
+	choice(longoutOOPT_On_Change,"On Change")
+	choice(longoutOOPT_When_Zero,"When Zero")
+	choice(longoutOOPT_When_Non_zero,"When Non-zero")
+	choice(longoutOOPT_Transition_To_Zero,"Transition To Zero")
+	choice(longoutOOPT_Transition_To_Non_zero,"Transition To Non-zero")
+	choice(longoutOOPT_Write_Once_Then_On_Change, "Write Once Then On Change")
+}
+
+
 recordtype(longout) {
 
 =head2 Parameter Fields
@@ -93,6 +104,7 @@ and database links.
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
+		special(SPC_MOD)
 		promptgroup("50 - Output")
 		interest(1)
 	}
@@ -372,6 +384,19 @@ for more information on simulation mode and its fields.
 		prompt("INVALID output value")
 		promptgroup("50 - Output")
 		interest(2)
+	}
+	field(OVAL,DBF_LONG) {
+		prompt("Last Value Written")
+		promptgroup("50 - Output")
+		asl(ASL1)
+		special(SPC_NOMOD)
+	}
+	field(OOPT,DBF_MENU) {
+		prompt("Output Execute Opt")
+		promptgroup("50 - Output")
+		interest(1)
+		menu(longoutOOPT)
+		initial("0")
 	}
 
 

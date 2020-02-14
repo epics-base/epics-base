@@ -85,6 +85,7 @@ static void checkAlarms(longoutRecord *prec);
 static void monitor(longoutRecord *prec);
 static long writeValue(longoutRecord *prec);
 static void convert(longoutRecord *prec, epicsInt32 value);
+static long conditional_write(longoutRecord *prec);
 
 static long init_record(struct dbCommon *pcommon, int pass)
 {
@@ -119,6 +120,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     prec->mlst = prec->val;
     prec->alst = prec->val;
     prec->lalm = prec->val;
+    prec->oval = prec->val;
     return 0;
 }
 
@@ -210,6 +212,15 @@ static long special(DBADDR *paddr, int after)
                 recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
             return(0);
         }
+
+        /* If OOPT is "on change" we force a write operation */
+        if (dbGetFieldIndex(paddr) == longoutRecordOUT) {
+            if ((!after) && (prec->oopt == longoutOOPT_On_Change))
+                prec->oopt = longoutOOPT_Write_Once_Then_On_Change;
+            return 0;
+        }
+
+
     default:
         recGblDbaddrError(S_db_badChoice, paddr, "longout: special");
         return(S_db_badChoice);
@@ -381,7 +392,10 @@ static void monitor(longoutRecord *prec)
 
 static long writeValue(longoutRecord *prec)
 {
+<<<<<<< HEAD
     longoutdset *pdset = (longoutdset *) prec->dset;
+=======
+>>>>>>> 2b7ca9598 (Added OOPT to longout record)
     long status = 0;
 
     if (!prec->pact) {
@@ -391,7 +405,7 @@ static long writeValue(longoutRecord *prec)
 
     switch (prec->simm) {
     case menuYesNoNO:
-        status = pdset->write_longout(prec);
+        status = conditional_write(prec);
         break;
 
     case menuYesNoYES: {
@@ -427,4 +441,50 @@ static void convert(longoutRecord *prec, epicsInt32 value)
         else if (value < prec->drvl) value = prec->drvl;
     }
     prec->val = value;
+}
+
+/* Evaluate OOPT field to perform the write operation */
+static long conditional_write(longoutRecord *prec)
+{
+    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
+    long status = 0;
+    int doDevSupWrite = 0;
+
+    switch (prec->oopt) 
+    {
+    case longoutOOPT_On_Change:
+        doDevSupWrite = (prec->val != prec->oval);
+        break;
+
+    case longoutOOPT_Write_Once_Then_On_Change:
+        prec->oopt = longoutOOPT_On_Change;
+    case longoutOOPT_Every_Time:
+        doDevSupWrite = 1;
+        break;
+
+    case longoutOOPT_When_Zero:
+        doDevSupWrite = (prec->val == 0);
+        break;
+
+    case longoutOOPT_When_Non_zero:
+        doDevSupWrite = (prec->val != 0);
+        break;
+
+    case longoutOOPT_Transition_To_Zero:
+        doDevSupWrite = ((prec->val == 0)&&(prec->oval != 0));
+        break;
+
+    case longoutOOPT_Transition_To_Non_zero:
+        doDevSupWrite = ((prec->val != 0)&&(prec->oval == 0));      
+        break;
+
+    default:
+        break;
+    }
+
+    if (doDevSupWrite)
+        status = pdset->write_longout(prec);
+
+    prec->oval = prec->val;
+    return status;
 }

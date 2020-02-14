@@ -1,0 +1,16 @@
+record(waveform, "src") {
+    field(NELM, "10")
+    field(FTVL, "SHORT")
+    field(INP, [1, 2, 3, 4, 5, 6, 7, 8])
+}
+record(ai, "ai") {
+    field(INP, "src.[2]") # expect 3
+    field(PINI, "YES")
+}
+record(waveform, "wf") {
+    field(NELM, "5")
+    field(FTVL, "DOUBLE")
+    field(INP,  "src.[2:4]") # expect 3,4,5
+    field(PINI, "YES")
+}
+

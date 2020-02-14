@@ -551,7 +551,7 @@ void ca_repeater ()
                     struct ip_mreq mreq;
 
                     memset(&mreq, 0, sizeof(mreq));
-		    mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
+                    mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
                     mreq.imr_interface.s_addr = INADDR_ANY;
 
                     if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,

@@ -25,11 +25,17 @@
 #include "postfix.h"
 #include "postfixPvt.h"
 
+
 static double calcRandom(void);
 static int cond_search(const char **ppinst, int match);
 
 #ifndef PI
 #define PI 3.14159265358979323
+#endif
+
+/* Turn off global optimization for 64-bit MSVC builds */
+#if defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
+#  pragma optimize("g", off)
 #endif
 
 /* calcPerform
@@ -391,6 +397,10 @@ epicsShareFunc long
     *presult = *ptop;
     return 0;
 }
+
+#if defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
+#  pragma optimize("", on)
+#endif
 
 epicsShareFunc long
 calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)

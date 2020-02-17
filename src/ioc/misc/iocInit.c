@@ -70,9 +70,7 @@
 #include "registryRecordType.h"
 #include "rsrv.h"
 
-static enum {
-    iocVirgin, iocBuilding, iocBuilt, iocRunning, iocPaused, iocStopped
-} iocState = iocVirgin;
+static enum iocStateEnum iocState = iocVirgin;
 static enum {
     buildRSRV, buildIsolated
 } iocBuildMode;
@@ -90,6 +88,11 @@ static void exitDatabase(void *dummy);
 
 int dbThreadRealtimeLock = 1;
 epicsExportAddress(int, dbThreadRealtimeLock);
+
+enum iocStateEnum getIocState(void)
+{
+    return iocState;
+}
 
 /*
  *  Initialize EPICS on the IOC.

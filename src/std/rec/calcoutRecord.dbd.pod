@@ -357,6 +357,7 @@ C<<< >> >>> : Arithmetic Right Shift
 
 =item *
 C<<<< >>> >>>> : Logical Right Shift
+
 =back
 
 =head3 Assignment Operator

@@ -40,8 +40,8 @@ public:
     void release ( void * );
 private:
     tsFreeList < class bhe, 0x100 > freeList;
-	bheFreeStoreMgr ( const bheFreeStoreMgr & );
-	bheFreeStoreMgr & operator = ( const bheFreeStoreMgr & );
+    bheFreeStoreMgr ( const bheFreeStoreMgr & );
+    bheFreeStoreMgr & operator = ( const bheFreeStoreMgr & );
 };
 
 void * bheFreeStoreMgr::allocate ( size_t size )

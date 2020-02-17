@@ -85,6 +85,7 @@ static void req_server (void *pParm)
         SOCKET clientSock;
         osiSockAddr         sockAddr;
         osiSocklen_t        addLen = sizeof(sockAddr);
+        memset(&sockAddr, 0, sizeof(sockAddr));
 
         while (castcp_ctl == ctlPause) {
             epicsThreadSleep(0.1);
@@ -335,7 +336,7 @@ void rsrv_build_addr_lists(void)
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("rsrv: failed to set mcast ttl %d\n", (int)ttl);
+            errlogPrintf("rsrv: failed to set mcast ttl %d\n", ttl);
         }
     }
 #endif

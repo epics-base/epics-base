@@ -197,6 +197,7 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
             }
             else {
                 delete pTimer;
+                pTimer = NULL;
             }
         }
         else {

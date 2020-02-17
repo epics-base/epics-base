@@ -119,7 +119,7 @@ int main (int argc, char **argv)
          SEVCHK(ca_search (argv[1], &chan), NULL);
     }
 
-    while (1) {
+    for(int loop=0; loop < 5; loop++)  {
         tmo.tv_sec = 0;
         tmo.tv_usec = 100000;
         cbsfd.trig = 0;

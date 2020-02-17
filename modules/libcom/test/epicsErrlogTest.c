@@ -139,7 +139,7 @@ void logClient(void* raw, const char* msg)
         strcat(show + 25, msg + len - 20);
     }
     else {
-        strcpy(show, msg);
+        strncpy(show, msg, sizeof(show)-1);
     }
 
     if (pvt->checkLen)

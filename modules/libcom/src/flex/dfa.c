@@ -417,6 +417,9 @@ void ntod(void)
      */
     int duplist[CSIZE + 1], state[CSIZE + 1];
     int targfreq[CSIZE + 1], targstate[CSIZE + 1];
+    memset(state, 0, sizeof(state));
+    memset(targfreq, 0, sizeof(targfreq));
+    memset(targstate, 0, sizeof(targstate));
 
     /* this is so find_table_space(...) will know where to start looking in
      * chk/nxt for unused records for space to put in the state

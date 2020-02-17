@@ -210,6 +210,7 @@ int main(void)
         fdmgr_pend_event(pserver->pfdctx, &timeout);
         fflush(pserver->poutfile);
     }
+    return 0;
 }
 
 /*
@@ -370,7 +371,7 @@ static int openLogFile (struct ioc_log_server *pserver)
         pserver->poutfile = stderr;
         return IOCLS_ERROR;
     }
-    strcpy (pserver->outfile, ioc_log_file_name);
+    strncpy (pserver->outfile, ioc_log_file_name, sizeof(pserver->outfile)-1);
     pserver->max_file_size = ioc_log_file_limit;
 
     return seekLatestLine (pserver);
@@ -730,7 +731,7 @@ static void logTime(struct iocLogClient *pclient)
     pTimeString = ctime (&sec);
     strncpy (pclient->ascii_time, 
         pTimeString, 
-        sizeof (pclient->ascii_time) );
+        sizeof (pclient->ascii_time)-1 );
     pclient->ascii_time[sizeof(pclient->ascii_time)-1] = '\0';
     pcr = strchr(pclient->ascii_time, '\n');
     if (pcr) {

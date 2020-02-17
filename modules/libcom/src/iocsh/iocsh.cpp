@@ -322,7 +322,7 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
             }
             strcpy(argBuf->sval, arg);
         } else {
-          argBuf->sval = NULL;
+            argBuf->sval = NULL;
         }
         break;
 
@@ -616,6 +616,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     redirects = (struct iocshRedirect *)calloc(NREDIRECTS, sizeof *redirects);
     if (redirects == NULL) {
         fprintf(epicsGetStderr(), "Out of memory!\n");
+        if (fp) fclose(fp);
         return -1;
     }
     
@@ -627,6 +628,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     if (macros) {
         if (macParseDefns(NULL, macros, &defines) < 0) {
             free(redirects);
+            if (fp) fclose(fp);
             return -1;
         }
     }
@@ -640,6 +642,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             errlogMessage("iocsh: macCreateHandle failed.");
             free(redirects);
             free(context);
+            if (fp) fclose(fp);
             return -1;
         }
         
@@ -993,6 +996,8 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     if (readlineContext)
         epicsReadlineEnd(readlineContext);
     epicsThreadSetOkToBlock(wasOkToBlock);
+    if (fp)
+        fclose(fp);
     return ret;
 }
 

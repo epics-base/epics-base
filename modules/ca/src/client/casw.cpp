@@ -293,7 +293,7 @@ int main ( int argc, char ** argv )
                     if ( anomaly && interest > 0 ) {
                         printf ( "\testimate=%f current=%f\n", 
                             pBHE->period ( guard ), 
-                            currentTime - previousTime );
+                            double(currentTime - previousTime) );
                     }
                     fflush(stdout);
                 }

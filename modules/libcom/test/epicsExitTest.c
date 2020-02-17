@@ -30,7 +30,7 @@ typedef struct info {
     epicsEventId terminate;
     epicsEventId terminated;
 }info;
-
+ 
 static void atExit(void *pvt)
 {
     info *pinfo = (info *)pvt;
@@ -55,7 +55,7 @@ static void thread(void *arg)
 {
     info *pinfo = (info *)arg;
 
-    strcpy(pinfo->name, epicsThreadGetNameSelf());
+    strncpy(pinfo->name, epicsThreadGetNameSelf(), sizeof(pinfo->name)-1);
     testDiag("%s starting", pinfo->name);
     pinfo->terminate = epicsEventMustCreate(epicsEventEmpty);
     pinfo->terminated = epicsEventMustCreate(epicsEventEmpty);

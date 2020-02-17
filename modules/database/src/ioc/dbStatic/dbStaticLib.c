@@ -245,7 +245,7 @@ static void realToString(double value, char *preturn, int isdouble)
     int		round;
     int		ise = FALSE;
     char	*loce = NULL;
-
+    memset(tstr, 0, sizeof(tstr));
     if (value == 0) {
         strcpy(preturn, "0");
         return;
@@ -275,7 +275,7 @@ static void realToString(double value, char *preturn, int isdouble)
 
         ise = TRUE;
         prec = precision[isdouble];
-        nout = sprintf(ptstr, "%.*e", prec, value);
+        nout = snprintf(ptstr, sizeof(tstr), "%.*e", prec, value);
         loce = strchr(ptstr, 'e');
 
         if (!loce) {
@@ -1269,7 +1269,7 @@ long dbPutRecordAttribute(
     pdbFldDes->size = MAX_STRING_SIZE;
     pattribute->pdbFldDes = pdbFldDes;
     }
-    strncpy(pattribute->value,value,MAX_STRING_SIZE);
+    strncpy(pattribute->value,value,MAX_STRING_SIZE-1);
     pattribute->value[MAX_STRING_SIZE-1] = 0;
     return(0);
 }
@@ -1354,6 +1354,7 @@ long dbNextField(DBENTRY *pdbentry,int dctonly)
     }
     indfield++;
     }
+    return(0);
 }
 
 int dbGetNFields(DBENTRY *pdbentry,int dctonly)
@@ -3548,7 +3549,7 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
                 if (status)
                     break;  /* Next record type */
 
-                strcpy(dtypValue, dbGetString(pdbentry));
+                strncpy(dtypValue, dbGetString(pdbentry), sizeof(dtypValue)-1);
                 status = dbFindField(pdbentry, "LINR");
                 if (status) {
                     cvtValue[0] = 0;
@@ -3561,13 +3562,13 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
                         strcpy(cvtValue,"cvt(");
                         status = dbFindField(pdbentry, "EGUL");
                         if (!status)
-                            strcat(cvtValue, dbGetString(pdbentry));
+                            strncat(cvtValue, dbGetString(pdbentry), sizeof(cvtValue)-strlen(cvtValue)-1);
                         status = dbFindField(pdbentry, "EGUF");
                         if (!status) {
-                            strcat(cvtValue, ",");
-                            strcat(cvtValue, dbGetString(pdbentry));
+                            strncat(cvtValue, ",", sizeof(cvtValue)-strlen(cvtValue)-1);
+                            strncat(cvtValue, dbGetString(pdbentry), sizeof(cvtValue)-strlen(cvtValue)-1);
                         }
-                        strcat(cvtValue, ")");
+                        strncat(cvtValue, ")", sizeof(cvtValue)-strlen(cvtValue)-1);
                     }
                 }
                 fprintf(stream,"%-8s %-20s %-20s %-20s %-s\n",

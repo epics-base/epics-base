@@ -140,9 +140,9 @@ static long wdogInit(histogramRecord *prec)
     if (!prec->wdog && prec->sdel > 0) {
         /* initialize a callback object */
         pcallback = calloc(1, sizeof(myCallback));
-        pcallback->prec = prec;
         if (!pcallback)
             return -1;
+        pcallback->prec = prec;
 
         callbackSetCallback(wdogCallback, &pcallback->callback);
         callbackSetUser(pcallback, &pcallback->callback);

@@ -251,7 +251,7 @@ int main (int argc, char *argv[])
             }
             break;
         case '#':               /* Array count */
-            if (sscanf(optarg,"%ld", &reqElems) != 1)
+            if (sscanf(optarg,"%lu", &reqElems) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid array element count "
                         "- ignored. ('camonitor -h' for help.)\n", optarg);

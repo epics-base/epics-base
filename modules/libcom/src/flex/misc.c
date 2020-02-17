@@ -684,7 +684,7 @@ char *readable_form(int c)
         case '\b': return ( "\\b" );
 
         default:
-        (void) sprintf( rform, "\\%.3o", c );
+        (void) snprintf( rform, sizeof(rform), "\\%.3o", c );
         return ( rform );
         }
     }

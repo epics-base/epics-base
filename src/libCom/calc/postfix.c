@@ -149,7 +149,6 @@ static const ELEMENT operators[] = {
 {";",		0, 0,	0,	EXPR_TERMINATOR,NOT_GENERATED},
 {"<",		3, 3,	-1,	BINARY_OPERATOR,LESS_THAN},
 {"<<",		2, 2,	-1,	BINARY_OPERATOR,LEFT_SHIFT_ARITH},
-{"<<<",		2, 2,	-1,	BINARY_OPERATOR,LEFT_SHIFT_LOGIC},
 {"<=",		3, 3,	-1,	BINARY_OPERATOR,LESS_OR_EQ},
 {"=",		3, 3,	-1,	BINARY_OPERATOR,EQUAL},
 {"==",		3, 3,	-1,	BINARY_OPERATOR,EQUAL},
@@ -582,9 +581,8 @@ epicsShareFunc void
 	"BIT_EXCL_OR",
 	"BIT_NOT",
 	"RIGHT_SHIFT_ARITH",
-	"RIGHT_SHIFT_LOGIC",
 	"LEFT_SHIFT_ARITH",
-	"LEFT_SHIFT_LOGIC",
+	"RIGHT_SHIFT_LOGIC",
     /* Relationals */
 	"NOT_EQ",
 	"LESS_THAN",

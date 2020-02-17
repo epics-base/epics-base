@@ -32,11 +32,6 @@ static int cond_search(const char **ppinst, int match);
 #define PI 3.14159265358979323
 #endif
 
-/* Turn off global optimization for 64-bit MSVC builds */
-#if 0 && defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
-#  pragma optimize("g", off)
-#endif
-
 /* calcPerform
  *
  * Evalutate the postfix expression
@@ -319,9 +314,12 @@ epicsShareFunc long
 	    *ptop = (double)~d2i(*ptop);
 	    break;
 
-        /* The shift operators use signed integers, so a right-shift will
-         * extend the sign bit into the left-hand end of the value. The
-         * double-casting through unsigned here is important, see above.
+        /* In C the shift operators decide on an arithmetic or logical shift
+         * based on whether the integer is signed or unsigned.
+         * With signed integers, a right-shift is arithmetic and will
+         * extend the sign bit into the left-hand end of the value. When used
+         * with unsigned values a logical shift is performed. The
+         * double-casting through signed/unsigned here is important, see above.
          */
 
 	case RIGHT_SHIFT_ARITH:
@@ -337,11 +335,6 @@ epicsShareFunc long
 	case RIGHT_SHIFT_LOGIC:
 	    top = *ptop--;
 	    *ptop = (double)(d2ui(*ptop) >> (d2ui(top) & 31u));
-	    break;
-
-	case LEFT_SHIFT_LOGIC:
-	    top = *ptop--;
-	    *ptop = (double)(d2ui(*ptop) << (d2ui(top) & 31u));
 	    break;
 
 	case NOT_EQ:
@@ -398,11 +391,6 @@ epicsShareFunc long
     *presult = *ptop;
     return 0;
 }
-#if 0 && defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
-#  pragma optimize("", on)
-#endif
-
-
 
 epicsShareFunc long
 calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)

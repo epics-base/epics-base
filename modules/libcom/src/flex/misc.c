@@ -684,7 +684,7 @@ char *readable_form(int c)
         case '\b': return ( "\\b" );
 
         default:
-        (void) snprintf( rform, sizeof(rform), "\\%.3o", c );
+        (void)epicsSnprintf( rform, sizeof(rform), "\\%.3o", c );
         return ( rform );
         }
     }

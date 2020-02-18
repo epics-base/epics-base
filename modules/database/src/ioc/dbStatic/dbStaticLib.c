@@ -275,7 +275,7 @@ static void realToString(double value, char *preturn, int isdouble)
 
         ise = TRUE;
         prec = precision[isdouble];
-        nout = snprintf(ptstr, sizeof(tstr), "%.*e", prec, value);
+        nout = epicsSnprintf(ptstr, sizeof(tstr), "%.*e", prec, value);
         loce = strchr(ptstr, 'e');
 
         if (!loce) {

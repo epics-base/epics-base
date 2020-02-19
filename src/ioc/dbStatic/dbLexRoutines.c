@@ -216,7 +216,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     char	*penv;
     char	**macPairs;
     
-    if(getIocState() != iocVirgin)
+    if(getIocState() != iocVoid)
         return -2;
 
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();

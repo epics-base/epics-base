@@ -14,7 +14,7 @@
 #include "shareLib.h"
 
 enum iocStateEnum {
-    iocVirgin, iocBuilding, iocBuilt, iocRunning, iocPaused, iocStopped
+    iocVoid, iocBuilding, iocBuilt, iocRunning, iocPaused
 };
 
 #ifdef __cplusplus

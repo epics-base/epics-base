@@ -996,8 +996,6 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     if (readlineContext)
         epicsReadlineEnd(readlineContext);
     epicsThreadSetOkToBlock(wasOkToBlock);
-    if (fp)
-        fclose(fp);
     return ret;
 }
 

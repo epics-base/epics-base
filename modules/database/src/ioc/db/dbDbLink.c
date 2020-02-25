@@ -180,21 +180,28 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
 
     /* If filters are involved in a read, create field log and run filters */
     if (ellCount(&chan->filters)) {
+        db_field_log *pfl;
         long options = 0;
-        db_field_log fl = {};
-        fl.ctx = dbfl_context_read;
-        fl.type = dbfl_type_rec;
 
         /* For the moment, empty arrays are not supported by EPICS */
-        if (dbChannelFinalElements(chan) > 0)
+        if (dbChannelFinalElements(chan) <= 0)
         {
-            dbChannelRunPreChain(chan, &fl);
-            dbChannelRunPostChain(chan, &fl);
-            status = dbChannelGet(chan, dbrType, pbuffer, &options, pnRequest, &fl);
-            if (!status && pnRequest && *pnRequest <= 0)
-                status = S_db_badField;
-        } else {
+            /* empty array request */
             status = S_db_badField;
+        } else {
+            pfl = db_create_read_log(chan);
+            if (!pfl) {
+                status = S_db_noMemory;
+            } else {
+                pfl = dbChannelRunPreChain(chan, pfl);
+                pfl = dbChannelRunPostChain(chan, pfl);
+                status = dbChannelGet(chan, dbrType, pbuffer, &options, pnRequest, pfl);
+                db_delete_field_log(pfl);
+                if (!status && pnRequest && *pnRequest <= 0) {
+                    /* empty array result */
+                    status = S_db_badField;
+                }
+            }
         }
         if (status) {
             recGblSetSevr(precord, LINK_ALARM, UDF_ALARM);

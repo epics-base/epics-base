@@ -51,6 +51,7 @@ epicsShareFunc int db_post_events (
 typedef void * dbEventCtx;
 
 typedef void EXTRALABORFUNC (void *extralabor_arg);
+void db_init_event_freelists (void);
 epicsShareFunc dbEventCtx db_init_events (void);
 epicsShareFunc int db_start_events (
     dbEventCtx ctx, const char *taskname, void (*init_func)(void *),

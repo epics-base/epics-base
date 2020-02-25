@@ -252,18 +252,15 @@ int dbel ( const char *pname, unsigned level )
 }
 
 /*
- * DB_INIT_EVENTS()
+ * DB_INIT_EVENT_FREELISTS()
  *
  *
- * Initialize the event facility for this task. Must be called at least once
- * by each task which uses the db event facility
+ * Initialize the free lists used by the event facility.
+ * Safe to be called multiple times.
  *
- * returns: ptr to event user block or NULL if memory can't be allocated
  */
-dbEventCtx db_init_events (void)
+void db_init_event_freelists (void)
 {
-    struct event_user * evUser;
-
     if (!dbevEventUserFreeList) {
         freeListInitPvt(&dbevEventUserFreeList,
             sizeof(struct event_user),8);
@@ -280,6 +277,22 @@ dbEventCtx db_init_events (void)
         freeListInitPvt(&dbevFieldLogFreeList,
             sizeof(struct db_field_log),2048);
     }
+}
+
+/*
+ * DB_INIT_EVENTS()
+ *
+ *
+ * Initialize the event facility for this task. Must be called at least once
+ * by each task which uses the db event facility
+ *
+ * returns: ptr to event user block or NULL if memory can't be allocated
+ */
+dbEventCtx db_init_events (void)
+{
+    struct event_user * evUser;
+
+    db_init_event_freelists();
 
     evUser = (struct event_user *)
         freeListCalloc(dbevEventUserFreeList);

@@ -38,9 +38,9 @@ static void expectProcSuccess(const char *rec)
     sprintf(fieldname, "%s.PROC", rec);
     testdbPutFieldOk(fieldname, DBF_LONG, 1);
     sprintf(fieldname, "%s.SEVR", rec);
-    testdbGetFieldEqual(fieldname, DBF_LONG, NO_ALARM);   
+    testdbGetFieldEqual(fieldname, DBF_LONG, NO_ALARM);
     sprintf(fieldname, "%s.STAT", rec);
-    testdbGetFieldEqual(fieldname, DBF_LONG, NO_ALARM);   
+    testdbGetFieldEqual(fieldname, DBF_LONG, NO_ALARM);
 }
 
 static void expectProcFailure(const char *rec)
@@ -50,9 +50,9 @@ static void expectProcFailure(const char *rec)
     sprintf(fieldname, "%s.PROC", rec);
     testdbPutFieldFail(S_db_badField, fieldname, DBF_LONG, 1);
     sprintf(fieldname, "%s.SEVR", rec);
-    testdbGetFieldEqual(fieldname, DBF_LONG, INVALID_ALARM);   
+    testdbGetFieldEqual(fieldname, DBF_LONG, INVALID_ALARM);
     sprintf(fieldname, "%s.STAT", rec);
-    testdbGetFieldEqual(fieldname, DBF_LONG, LINK_ALARM);   
+    testdbGetFieldEqual(fieldname, DBF_LONG, LINK_ALARM);
 }
 
 static void changeRange(long start, long stop, long step)
@@ -70,7 +70,7 @@ static void changeRange(long start, long stop, long step)
 }
 
 static double buf[] = {1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 2, 4, 6};
-    
+
 static void expectRange(long start, long end)
 {
     long n = end-start+1;
@@ -102,20 +102,19 @@ MAIN(linkFilterTest)
     expectProcSuccess("wf");
     expectRange(3,6);
 
+    testDiag("backward range");
+    changeRange(5,3,0);
+    expectProcFailure("ai");
+    expectProcFailure("wf");
+
     testDiag("step 2");
     changeRange(1,6,2);
     expectProcSuccess("ai");
     expectProcSuccess("wf");
     expectRange(10,12);
 
-    testDiag("single value");
-    changeRange(5,0,0);
-    expectProcSuccess("ai");
-    expectProcSuccess("wf");
-    expectRange(5,5);
-
-    testDiag("backward range");
-    changeRange(5,3,0);
+    testDiag("range start beyond src.NORD");
+    changeRange(8,9,0);
     expectProcFailure("ai");
     expectProcFailure("wf");
 
@@ -125,26 +124,27 @@ MAIN(linkFilterTest)
     expectProcSuccess("wf");
     expectRange(3,7); /* clipped range */
 
+    testDiag("range start beyond src.NELM");
+    changeRange(11,12,0);
+    expectProcFailure("ai");
+    expectProcFailure("wf");
+
     testDiag("range end beyond src.NELM");
     changeRange(4,12,0);
     expectProcSuccess("ai");
     expectProcSuccess("wf");
     expectRange(4,7); /* clipped range */
 
-    testDiag("range start beyond src.NORD");
-    changeRange(8,9,0);
-    expectProcFailure("ai");
-    expectProcFailure("wf");
-
-    testDiag("range start beyond src.NELM");
-    changeRange(11,12,0);
-    expectProcFailure("ai");
-    expectProcFailure("wf");
-
     testDiag("single value beyond src.NORD");
     changeRange(8,0,0);
     expectProcFailure("ai");
     expectProcFailure("wf");
+
+    testDiag("single value");
+    changeRange(5,0,0);
+    expectProcSuccess("ai");
+    expectProcSuccess("wf");
+    expectRange(5,5);
 
     testDiag("single beyond rec.NELM");
     changeRange(12,0,0);

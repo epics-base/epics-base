@@ -183,28 +183,19 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         db_field_log *pfl;
 
         /* For the moment, empty arrays are not supported by EPICS */
-        if (dbChannelFinalElements(chan) <= 0)
-        {
-            /* empty array request */
-            status = S_db_badField;
-        } else {
-            pfl = db_create_read_log(chan);
-            if (!pfl) {
-                status = S_db_noMemory;
-            } else {
-                pfl = dbChannelRunPreChain(chan, pfl);
-                pfl = dbChannelRunPostChain(chan, pfl);
-                status = dbChannelGet(chan, dbrType, pbuffer, NULL, pnRequest, pfl);
-                db_delete_field_log(pfl);
-                if (!status && pnRequest && *pnRequest <= 0) {
-                    /* empty array result */
-                    status = S_db_badField;
-                }
-            }
-        }
-        if (status) {
-            recGblSetSevr(precord, LINK_ALARM, UDF_ALARM);
-        }
+        if (dbChannelFinalElements(chan) <= 0) /* empty array request */
+            return S_db_badField;
+        pfl = db_create_read_log(chan);
+        if (!pfl)
+            return S_db_noMemory;
+        pfl = dbChannelRunPreChain(chan, pfl);
+        pfl = dbChannelRunPostChain(chan, pfl);
+        status = dbChannelGet(chan, dbrType, pbuffer, NULL, pnRequest, pfl);
+        db_delete_field_log(pfl);
+        if (status)
+            return status;
+        if (pnRequest && *pnRequest <= 0) /* empty array result */
+            return S_db_badField;
     } else if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
         status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
     } else {

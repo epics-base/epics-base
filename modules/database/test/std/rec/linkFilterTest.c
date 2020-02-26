@@ -90,7 +90,7 @@ static void expectEmptyArray(void)
 
 MAIN(linkFilterTest)
 {
-    testPlan(0);
+    testPlan(98);
     startTestIoc("linkFilterTest.db");
 
     testDiag("PINI");

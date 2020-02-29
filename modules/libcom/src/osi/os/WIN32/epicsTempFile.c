@@ -27,7 +27,6 @@
 // allow the teporary file directory to be set with the 
 // TMP environment varianble
 //
-extern "C"
 epicsShareFunc FILE * epicsShareAPI epicsTempFile ()
 {
     char * pName = _tempnam ( "c:\\tmp", "epics" );

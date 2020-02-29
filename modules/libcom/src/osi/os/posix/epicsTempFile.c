@@ -13,7 +13,6 @@
 #define epicsExportSharedSymbols
 #include "epicsTempFile.h"
 
-extern "C"
 epicsShareFunc FILE * epicsShareAPI epicsTempFile ( void )
 {
     return tmpfile ();

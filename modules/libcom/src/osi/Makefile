@@ -104,7 +104,7 @@ epicsReadline_INCLUDES += $(INCLUDES_$(COMMANDLINE_LIBRARY))
 
 Com_SRCS += epicsReadline.c
 
-Com_SRCS += epicsTempFile.cpp
+Com_SRCS += epicsTempFile.c
 Com_SRCS += epicsStdio.c
 Com_SRCS += osdStdio.c
 

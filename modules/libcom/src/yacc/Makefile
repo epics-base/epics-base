@@ -23,7 +23,6 @@ antelope_SRCS += skeleton.c
 antelope_SRCS += symtab.c
 antelope_SRCS += verbose.c
 antelope_SRCS += warshall.c
-antelope_OBJS += epicsTempFile$(OBJ)
 
 PROD_HOST += antelope
 

@@ -8,9 +8,9 @@
 \*************************************************************************/
 #include <signal.h>
 #include "defs.h"
-#define epicsExportSharedSymbols
-#include "epicsTempFile.h"
-#undef epicsExportSharedSymbols
+
+/* Need this before the Com library can build it */
+#include "epicsTempFile.c"
 
 char dflag;
 char lflag;

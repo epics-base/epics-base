@@ -409,6 +409,22 @@ endif
 	$(PERL) $(TOOLS)/makeTestfile.pl $(T_A) $(EPICS_HOST_ARCH) $@ $<
 
 #---------------------------------------------------------------
+# Generate an $(API_HEADER) file on request (%API.h)
+
+ifdef API_HEADER
+# Install it
+INC += $(API_HEADER)
+
+# Ensure we generate it early enough
+$(filter-out $(INSTALL_INCLUDE)/$(API_HEADER), $(INSTALL_INC)) $(HDEPENDS_FILES): \
+    | $(INSTALL_INCLUDE)/$(API_HEADER)
+
+# How to make it
+$(COMMON_DIR)/$(API_HEADER):
+	@$(RM) $@
+	$(PERL) $(TOOLS)/makeAPIheader.pl -o $@ $(API_HEADER:API.h=)
+endif
+
 # Generate header with version number from VCS
 
 ifneq ($(GENVERSION),)

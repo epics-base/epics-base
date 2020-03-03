@@ -45,7 +45,7 @@ epicsShareFunc FILE * epicsShareAPI epicsTempFile ()
     // _O_BINARY no translation 
     // _O_SHORT_LIVED avoid flush to disk
     //
-    const int openFlag = _O_CREAT | _O_EXCL | _O_RDWR | 
+    int openFlag = _O_CREAT | _O_EXCL | _O_RDWR |
         _O_SHORT_LIVED | _O_BINARY | _O_TEMPORARY;
     int fd = open ( pName, openFlag, _S_IWRITE );
     FILE * pNewFile = 0;

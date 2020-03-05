@@ -3,13 +3,12 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- *  Author: Jeff Hill 
+ *  Author: Jeff Hill
  */
 
 #include <stdlib.h>
@@ -21,43 +20,41 @@
 #define epicsExportSharedSymbols
 #include "epicsTempFile.h"
 
-//
-// epicsTmpFile
-//
-// allow the teporary file directory to be set with the 
-// TMP environment varianble
-//
+/*
+ * epicsTmpFile
+ *
+ * allow the teporary file directory to be set with the
+ * TMP environment varianble
+ */
 epicsShareFunc FILE * epicsShareAPI epicsTempFile ()
 {
-    char * pName = _tempnam ( "c:\\tmp", "epics" );
-    if( ! pName ) {
-        return 0;
+    char * pName = _tempnam("c:\\tmp", "epics");
+    if (pName) {
+        /* We use open followed by fdopen so that the _O_EXCL
+         * flag can be used. This causes detection of a race
+         * condition where two programs end up receiving the
+         * same temporary file name.
+         *
+         * _O_CREAT create if non-existant
+         * _O_EXCL file must not exist
+         * _O_RDWR read and write the file
+         * _O_TEMPORARY delete file on close
+         * _O_BINARY no translation
+         * _O_SHORT_LIVED avoid flush to disk
+         */
+        int openFlag = _O_CREAT | _O_EXCL | _O_RDWR |
+            _O_SHORT_LIVED | _O_BINARY | _O_TEMPORARY;
+        int fd = open(pName, openFlag, _S_IWRITE);
+        FILE * pNewFile = 0;
+        if (fd >=0) {
+            pNewFile = _fdopen(fd, "w+b");
+        }
+        else {
+            printf("Temporary file \"%s\" open failed because "
+                "\"%s\"\n", pName, strerror(errno));
+        }
+        free(pName);
+        return pNewFile;
     }
-    // We use open followed by fdopen so that the _O_EXCL
-    // flag can be used. This causes detection of a race 
-    // condition where two programs end up receiving the 
-    // same temporary file name.
-    //
-    // _O_CREAT create if non-existant
-    // _O_EXCL file must not exist
-    // _O_RDWR read and write the file
-    // _O_TEMPORARY delete file on close
-    // _O_BINARY no translation 
-    // _O_SHORT_LIVED avoid flush to disk
-    //
-    int openFlag = _O_CREAT | _O_EXCL | _O_RDWR |
-        _O_SHORT_LIVED | _O_BINARY | _O_TEMPORARY;
-    int fd = open ( pName, openFlag, _S_IWRITE );
-    FILE * pNewFile = 0;
-    if ( fd >=0 ) {
-        pNewFile = _fdopen ( fd, "w+b" );
-    }
-    else {
-        printf ( 
-            "Temporary file \"%s\" open failed because "
-            "\"%s\"\n", pName, strerror ( errno ) );
-    }
-    free ( pName );
-    return pNewFile;
+    return 0;
 }
-

@@ -90,10 +90,10 @@ build_script:
 
 test_script:
   - cmd: .ci/appveyor-make.bat tapfiles
-  - cmd: .ci/appveyor-make.bat test-results
 
 on_finish:
   - ps: Get-ChildItem *.tap -Recurse -Force | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+  - cmd: .ci/appveyor-make.bat -s test-results
 
 
 #---------------------------------#

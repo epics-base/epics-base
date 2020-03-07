@@ -41,7 +41,6 @@ epicsExportAddress(dset, devBoSoft);
 
 static long init_record(dbCommon *pcommon)
 {
-   boRecord *prec = (boRecord *)pcommon;
    long status=0;
  
     /* dont convert */

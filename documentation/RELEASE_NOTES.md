@@ -17,16 +17,17 @@ release.
 <!-- Insert new items immediately below here ... -->
 
 
-### Record types publish their dset's
+### Record types publish dset's
 
-The record types in Base are starting to define the device support entry table
+The record types in Base now define their device support entry table (DSET)
 structures in the record header file. While still optional, developers of
 external support modules are encouraged to start converting their code to use
-the record's definitions instead of the traditional approach of copying the
-structure definitions into each source file that needs them. It will still be
-possible for converted code to build and work with older Base releases.
+the record's new definitions instead of the traditional approach of copying the
+structure definitions into each source file that needs them. By following the
+instructions below it is still possible for the converted code to build and
+work with older Base releases.
 
-This might also be a good time to modify the device support to use the type-safe
+This would also be a good time to modify the device support to use the type-safe
 device support entry tables that were introduced in Base-3.16.2 -- see
 [#type-safe-device-and-driver-support-tables](this entry below) for the
 description of that change, which is also optional for now.
@@ -75,8 +76,8 @@ it's provided in the header:
 #ifndef HAS_aidset
 typedef struct aidset {
     dset common;
-    long (*read_ai)(struct aiRecord *prec);
-    long (*special_linconv)(struct aiRecord *prec, int after);
+    long (*read_ai)(aiRecord *prec);
+    long (*special_linconv)(aiRecord *prec, int after);
 } aidset;
 #endif
 aidset devAiSoft = {
@@ -93,14 +94,14 @@ This same pattern should be followed for all record types except for the lsi,
 lso and printf record types, which have published their device support entry
 table structures since they were first added to Base but didn't previously embed
 the `dset common` member. Device support for these record types therefore can't
-use the dset name since the new definitions are different from the originals
-causing a compile error, so this pattern should be used instead:
+use the dset name since the new definitions are different from the originals and
+will cause a compile error, so this pattern should be used instead:
 
 ```C
 #ifndef HAS_lsidset
 struct {
     dset common;
-    long (*read_string)(struct lsiRecord *prec);
+    long (*read_string)(lsiRecord *prec);
 }
 #else
 lsidset

@@ -190,6 +190,16 @@ void cast_server(void *pParm)
                     break;
                 }
             }
+            for(idx=0; casIgnoreNets[idx].addr; idx++)
+            {
+                int mask= casIgnoreNets[idx].mask;
+                int cmp = casIgnoreNets[idx].addr & mask;
+
+                if((new_recv_addr.sin_addr.s_addr & mask)==cmp) {
+                    status = -1; /* ignore */
+                    break;
+                }
+            }
         }
 
         if (status >= 0 && casudp_ctl == ctlRun) {

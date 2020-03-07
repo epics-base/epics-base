@@ -90,11 +90,13 @@ static void aspmemCallFunc(const iocshArgBuf *args)
 static const iocshArg astacArg0 = { "recordname",iocshArgString};
 static const iocshArg astacArg1 = { "user",iocshArgString};
 static const iocshArg astacArg2 = { "location",iocshArgString};
-static const iocshArg * const astacArgs[] = {&astacArg0,&astacArg1,&astacArg2};
-static const iocshFuncDef astacFuncDef = {"astac",3,astacArgs};
+static const iocshArg astacArg3 = { "ip address",iocshArgString};
+static const iocshArg * const astacArgs[] = {&astacArg0,&astacArg1,
+                                             &astacArg2,&astacArg3};
+static const iocshFuncDef astacFuncDef = {"astac",4,astacArgs};
 static void astacCallFunc(const iocshArgBuf *args)
 {
-    astac(args[0].sval,args[1].sval,args[2].sval);
+    astac(args[0].sval,args[1].sval,args[2].sval,args[3].sval);
 }
 
 /* ascar */

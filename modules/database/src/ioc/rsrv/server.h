@@ -195,6 +195,7 @@ GLBLTYPE ELLLIST            beaconAddrList;
 GLBLTYPE SOCKET             beaconSocket;
 GLBLTYPE ELLLIST            casIntfAddrList, casMCastAddrList;
 GLBLTYPE epicsUInt32        *casIgnoreAddrs;
+GLBLTYPE osiSockNet         *casIgnoreNets;
 GLBLTYPE epicsMutexId       clientQlock;
 GLBLTYPE BUCKET             *pCaBucket; /* locked by clientQlock */
 GLBLTYPE void               *rsrvClientFreeList;

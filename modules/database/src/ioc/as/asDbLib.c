@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <epicsTypes.h>
+
 #include "alarm.h"
 #include "asLib.h"
 #include "cantProceed.h"
@@ -230,7 +232,8 @@ static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
 	(asCheckPut(clientPvt) ? "Yes" : "No"));
 }
 
-int astac(const char *pname,const char *user,const char *location)
+int astac(const char *pname,const char *user,const char *location,
+          const char *dotted_ip)
 {
     DBADDR	*paddr;
     long	status;
@@ -239,6 +242,7 @@ int astac(const char *pname,const char *user,const char *location)
     dbFldDes	*pflddes;
     char	*puser;
     char	*plocation;
+    epicsUInt32 ip_addr;
 
     if (!pname || !user || !location){
         printf("Usage: astac \"record name\", \"user\", \"host\"\n");
@@ -251,6 +255,10 @@ int astac(const char *pname,const char *user,const char *location)
 	errMessage(status,"dbNameToAddr error");
 	return(1);
     }
+    if (!asScanIp(dotted_ip, &ip_addr)) {
+	errMessage(status,"invalid ip address");
+	return(1);
+    }
     precord = paddr->precord;
     pflddes = paddr->pfldDes;
     puser = asCalloc(1,strlen(user)+1);
@@ -259,7 +267,7 @@ int astac(const char *pname,const char *user,const char *location)
     strcpy(plocation,location);
 
     status = asAddClient(pasclientpvt,precord->asp,
-	(int)pflddes->as_level,puser,plocation);
+	(int)pflddes->as_level,puser,plocation,ip_addr);
     if(status) {
 	errMessage(status,"asAddClient error");
 	return(1);

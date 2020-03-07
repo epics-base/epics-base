@@ -83,6 +83,17 @@ print $OUT <<"END";
 #endif
 #define EPICS_VERSION_INT VERSION_INT($ver, $rev, $mod, $patch)
 
+/* macros that show if certain features are implemented: */
+
+/* environment variable EPICS_CAS_IGNORE_NET_LIST is supported: */
+#define EPICS_HAS_CAS_IGNORE_NET_LIST 1
+
+/* environment variable EPICS_CA_IGNORE_NET_LIST is supported: */
+#define EPICS_HAS_CA_IGNORE_NET_LIST 1
+
+/* access security supports ip address access groups (IPAG): */
+#define EPICS_HAS_AS_IPAG 1
+
 #endif /* INC_${obase}_H */
 END
 

@@ -37,6 +37,7 @@ static int yyreset(void)
 
 UAG	{ return(tokenUAG);	}
 HAG	{ return(tokenHAG);	}
+IPAG	{ return(tokenIPAG);	}
 ASG	{ return(tokenASG);	}
 RULE	{ return(tokenRULE);	}
 CALC	{ return(tokenCALC);	}

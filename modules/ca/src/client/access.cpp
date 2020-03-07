@@ -785,8 +785,7 @@ void epicsShareAPI ca_self_test ()
     pcac->selfTest ();
 }
 
-// extern "C"
-epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
+const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
     DBR_SHORT, /* forces conversion fronm uint8 to int16 */
     DBR_CHAR,
     DBR_SHORT,
@@ -800,8 +799,7 @@ epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
     DBR_STRING
 };
 
-// extern "C"
-epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
+const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 	epicsOldStringT,
 	epicsInt16T,
 	epicsFloat32T,
@@ -848,8 +846,7 @@ epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 	epicsOldStringT
 };
 
-// extern "C"
-epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
+const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),		/* string max size		*/
 	sizeof(dbr_short_t),		/* short			*/
 	sizeof(dbr_float_t),		/* IEEE Float			*/
@@ -898,8 +895,7 @@ epicsShareDef const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),		/* string max size		*/
 };
 
-// extern "C"
-epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
+const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),	/* string max size		*/
 	sizeof(dbr_short_t),	/* short			*/
 	sizeof(dbr_float_t),	/* IEEE Float			*/
@@ -949,7 +945,7 @@ epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 };
 
 //extern "C"
-epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
+const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
 	dbr_class_string,	/* string max size		*/
 	dbr_class_int,		/* short			*/
 	dbr_class_float,	/* IEEE Float			*/
@@ -995,8 +991,7 @@ epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
 	dbr_class_string,	/* string max size		*/
 };
 
-// extern "C"
-epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
+const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
 	0,					/* string			*/
 	0,					/* short			*/
 	0,					/* IEEE Float			*/
@@ -1038,8 +1033,7 @@ epicsShareDef const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
 	0,					/* string			*/
 };
 
-// extern "C"
-epicsShareDef const char *dbf_text[LAST_TYPE+3] = {
+const char *dbf_text[LAST_TYPE+3] = {
 	"TYPENOTCONN",
 	"DBF_STRING",
 	"DBF_SHORT",
@@ -1051,14 +1045,11 @@ epicsShareDef const char *dbf_text[LAST_TYPE+3] = {
 	"DBF_NO_ACCESS"
 };
 
-// extern "C"
-epicsShareDef const char *dbf_text_invalid = "DBF_invalid";
+const char *dbf_text_invalid = "DBF_invalid";
 
-// extern "C"
-epicsShareDef const short dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
+const short dbf_text_dim = (sizeof dbf_text)/(sizeof (char *));
 
-// extern "C"
-epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
+const char *dbr_text[LAST_BUFFER_TYPE+1] = {
     "DBR_STRING",
     "DBR_SHORT",
     "DBR_FLOAT",
@@ -1100,8 +1091,6 @@ epicsShareDef const char *dbr_text[LAST_BUFFER_TYPE+1] = {
     "DBR_CLASS_NAME"
 };
 
-// extern "C"
-epicsShareDef const char *dbr_text_invalid = "DBR_invalid";
+const char *dbr_text_invalid = "DBR_invalid";
 
-// extern "C"
-epicsShareDef const short dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;
+const short dbr_text_dim = (sizeof dbr_text) / (sizeof (char *)) + 1;

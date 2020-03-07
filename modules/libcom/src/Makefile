@@ -45,6 +45,10 @@ include $(LIBCOM)/timer/Makefile
 include $(LIBCOM)/yacc/Makefile
 include $(LIBCOM)/yajl/Makefile
 
+# Generate library API header file
+API_HEADER = libComAPI.h
+Com_API = libCom
+
 # Library to build:
 LIBRARY=Com
 

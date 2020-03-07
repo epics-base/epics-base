@@ -73,6 +73,9 @@ LIBSRCS += comBuf.cpp
 LIBSRCS += hostNameCache.cpp
 LIBSRCS += msgForMultiplyDefinedPV.cpp
 
+API_HEADER = libCaAPI.h
+ca_API = libCa
+
 LIBRARY=ca
 
 ca_RCS = ca.rc

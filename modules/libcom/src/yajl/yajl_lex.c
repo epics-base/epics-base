@@ -19,7 +19,6 @@
 #include <assert.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "yajl_lex.h"
 #include "yajl_buf.h"
 

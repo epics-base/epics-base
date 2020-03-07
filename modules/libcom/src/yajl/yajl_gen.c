@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define epicsExportSharedSymbols
 #include "epicsMath.h"
 #include "yajl_gen.h"
 #include "yajl_buf.h"

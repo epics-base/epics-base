@@ -15,6 +15,9 @@ USR_CPPFLAGS += -DUSE_TYPED_RSET
 
 SHRLIB_VERSION = 3.17.0
 
+API_HEADER = dbRecStdAPI.h
+dbRecStd_API = dbRecStd
+
 LIBRARY_IOC += dbRecStd
 dbRecStd_LIBS = dbCore ca Com
 

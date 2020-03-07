@@ -35,6 +35,8 @@
 #   include "shareLib.h"
 #endif
 
+#include "libCaAPI.h"
+
 /*  CA Status Code Definitions   */
 
 #define CA_K_INFO       3   /* successful */
@@ -149,9 +151,9 @@
 extern "C" {
 #endif
 
-epicsShareFunc const char * epicsShareAPI ca_message(long ca_status);
+LIBCA_API const char * epicsShareAPI ca_message(long ca_status);
 
-epicsShareExtern const char * ca_message_text [];
+LIBCA_API extern const char * ca_message_text [];
 
 #ifdef __cplusplus
 }

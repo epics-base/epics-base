@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "yajl_buf.h"
 
 #define YAJL_BUF_INIT_SIZE 2048

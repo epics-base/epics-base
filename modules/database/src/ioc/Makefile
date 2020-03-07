@@ -15,6 +15,9 @@ USR_CPPFLAGS += -DUSE_TYPED_RSET
 
 SHRLIB_VERSION = 3.17.0
 
+API_HEADER = dbCoreAPI.h
+dbCore_API = dbCore
+
 LIBRARY_IOC += dbCore
 dbCore_LIBS += ca Com
 dbCore_SYS_LIBS_WIN32 += ws2_32

@@ -23,7 +23,6 @@
 #include <assert.h>
 #include <math.h>
 
-#define epicsExportSharedSymbols
 #include "yajl_parse.h"
 #include "yajl_lex.h"
 #include "yajl_parser.h"

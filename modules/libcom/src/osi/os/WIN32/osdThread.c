@@ -54,7 +54,7 @@ typedef struct epicsThreadOSD {
     DWORD id;
     unsigned epicsPriority;
     char isSuspended;
-    char joinable;
+    int joinable;
 } win32ThreadParam;
 
 typedef struct epicsThreadPrivateOSD {
@@ -577,6 +577,10 @@ epicsThreadId epicsThreadCreateOpt (
     pParmWIN32->funptr = pFunc;
     pParmWIN32->parm = pParm;
     pParmWIN32->epicsPriority = opts->priority;
+    if(opts->joinable) {
+        pParmWIN32->joinable = 1;
+        epicsAtomicIncrIntT(&pParmWIN32->refcnt);
+    }
 
     {
         unsigned threadId;
@@ -615,11 +619,6 @@ epicsThreadId epicsThreadCreateOpt (
         return NULL;
     }
 
-    if(opts->joinable) {
-        pParmWIN32->joinable = 1;
-        epicsAtomicIncrIntT(&pParmWIN32->refcnt);
-    }
-
     return ( epicsThreadId ) pParmWIN32;
 }
 
@@ -629,7 +628,7 @@ void epicsThreadMustJoin(epicsThreadId id)
 
     if(!id) {
         /* no-op */
-    } else if(!pParmWIN32->joinable) {
+    } else if(epicsAtomicCmpAndSwapIntT(&id->joinable, 1, 0)!=1) {
         if(epicsThreadGetIdSelf()==id) {
             fprintf(stderr, "Warning: %s thread self-join of unjoinable\n", pParmWIN32->pName);
 
@@ -640,7 +639,6 @@ void epicsThreadMustJoin(epicsThreadId id)
              */
             cantProceed("Error: %s thread not joinable.\n", pParmWIN32->pName);
         }
-        return;
 
     } else if(epicsThreadGetIdSelf() != id) {
         DWORD status = WaitForSingleObject(pParmWIN32->handle, INFINITE);
@@ -648,11 +646,9 @@ void epicsThreadMustJoin(epicsThreadId id)
             /* TODO: signal error? */
         }
 
-        pParmWIN32->joinable = 0;
         epicsParmCleanupWIN32(pParmWIN32);
     } else {
         /* join self silently does nothing */
-        pParmWIN32->joinable = 0;
         epicsParmCleanupWIN32(pParmWIN32);
     }
 }

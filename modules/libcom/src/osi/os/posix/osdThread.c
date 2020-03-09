@@ -185,7 +185,7 @@ static epicsThreadOSD * init_threadInfo(const char *name,
         return NULL;
     pthreadInfo->createFunc = funptr;
     pthreadInfo->createArg = parm;
-    pthreadInfo->joinable = joinable;
+    pthreadInfo->joinable = !!joinable; /* ensure 0 or 1 for later atomic compare+swap */
     status = pthread_attr_init(&pthreadInfo->attr);
     checkStatusOnce(status,"pthread_attr_init");
     if(status) return 0;
@@ -558,6 +558,11 @@ epicsThreadCreateOpt(const char * name,
     setSchedulingPolicy(pthreadInfo, SCHED_FIFO);
     pthreadInfo->isRealTimeScheduled = 1;
 
+    if (pthreadInfo->joinable) {
+        /* extra ref for epicsThreadMustJoin() */
+        epicsAtomicIncrIntT(&pthreadInfo->refcnt);
+    }
+
     status = pthread_create(&pthreadInfo->tid, &pthreadInfo->attr,
         start_routine, pthreadInfo);
     if (status==EPERM) {
@@ -575,16 +580,17 @@ epicsThreadCreateOpt(const char * name,
     }
     checkStatusOnce(status, "pthread_create");
     if (status) {
+        if (pthreadInfo->joinable) {
+            /* release extra ref which would have been for epicsThreadMustJoin() */
+            epicsAtomicDecrIntT(&pthreadInfo->refcnt);
+        }
+
         free_threadInfo(pthreadInfo);
         return 0;
     }
 
     status = pthread_sigmask(SIG_SETMASK, &oldSig, NULL);
     checkStatusOnce(status, "pthread_sigmask");
-    if (pthreadInfo->joinable) {
-        /* extra ref for epicsThreadMustJoin() */
-        epicsAtomicIncrIntT(&pthreadInfo->refcnt);
-    }
     return pthreadInfo;
 }
 
@@ -631,7 +637,7 @@ void epicsThreadMustJoin(epicsThreadId id)
 
     if(!id) {
         return;
-    } else if(!id->joinable) {
+    } else if(epicsAtomicCmpAndSwapIntT(&id->joinable, 1, 0)!=1) {
         if(epicsThreadGetIdSelf()==id) {
             errlogPrintf("Warning: %s thread self-join of unjoinable\n", id->name);
 
@@ -653,7 +659,6 @@ void epicsThreadMustJoin(epicsThreadId id)
         status = pthread_detach(id->tid);
         checkStatusOnce(status, "pthread_detach");
     } else checkStatusOnce(status, "pthread_join");
-    id->joinable = 0;
     free_threadInfo(id);
 }
 

@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*  
@@ -23,20 +22,11 @@
  *	505 665 1831
  */
 
-#ifndef autoPtrFreeListh
-#define autoPtrFreeListh
-
-#ifdef epicsExportSharedSymbols
-#   define autoPtrFreeListh_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
+#ifndef INC_autoPtrFreeList_H
+#define INC_autoPtrFreeList_H
 
 #include "tsFreeList.h"
 #include "compilerDependencies.h"
-
-#ifdef autoPtrFreeListh_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#endif
 
 template < class T, unsigned N = 0x400, class MUTEX = epicsMutex >
 class autoPtrFreeList {
@@ -101,4 +91,4 @@ inline T * autoPtrFreeList < T, N, MUTEX >::release ()
     return pTmp;
 }
 
-#endif // #ifdef autoPtrFreeListh
+#endif // #ifndef INC_autoPtrFreeList_H

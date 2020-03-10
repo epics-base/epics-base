@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*  
@@ -23,22 +22,13 @@
  *	505 665 1831
  */
 
-#ifndef msgForMultiplyDefinedPVh
-#define msgForMultiplyDefinedPVh
-
-#ifdef epicsExportSharedSymbols
-#   define msgForMultiplyDefinedPVh_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
+#ifndef INC_msgForMultiplyDefinedPV_H
+#define INC_msgForMultiplyDefinedPV_H
 
 #include "ipAddrToAsciiAsynchronous.h"
 #include "tsFreeList.h"
 #include "tsDLList.h"
 #include "compilerDependencies.h"
-
-#ifdef msgForMultiplyDefinedPVh_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#endif
 
 class callbackForMultiplyDefinedPV {
 public:
@@ -75,5 +65,5 @@ inline void msgForMultiplyDefinedPV::ioInitiate ( const osiSockAddr & rej )
     this->dnsTransaction.ipAddrToAscii ( rej, *this );
 }
 
-#endif // ifdef msgForMultiplyDefinedPVh
+#endif // ifdef INC_msgForMultiplyDefinedPV_H
 

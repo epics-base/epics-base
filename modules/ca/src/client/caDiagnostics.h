@@ -3,13 +3,12 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#ifndef caDiagnosticsh
-#define caDiagnosticsh
+#ifndef INC_caDiagnostics_H
+#define INC_caDiagnostics_H
 
 #include "cadef.h"
 
@@ -33,6 +32,6 @@ int acctst ( const char *pname, unsigned logggingInterestLevel,
 
 void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn );
 
-#endif /* caDiagnosticsh */
+#endif /* ifndef INC_caDiagnostics_H */
 
 

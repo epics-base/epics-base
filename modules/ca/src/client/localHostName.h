@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*  
@@ -19,21 +18,12 @@
  *  Author: Jeff Hill
  */
 
-#ifndef localHostNameh
-#define localHostNameh
+#ifndef INC_localHostName_H
+#define INC_localHostName_H
 
 #include <string.h>
 
-#ifdef epicsExportSharedSymbols
-#   define localHostNameh_restore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include "epicsSingleton.h"
-
-#ifdef localHostNameh_restore_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#endif
 
 class localHostName {
 public:
@@ -60,6 +50,6 @@ inline const char * localHostName::pointer () const
     return this->cache;
 }
 
-#endif // ifndef localHostNameh
+#endif // ifndef INC_localHostName_H
 
 

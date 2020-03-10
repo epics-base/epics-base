@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *
@@ -18,8 +17,8 @@
  *  Author: Jeff Hill
  */
 
-#ifndef caServerIDh
-#define caServerIDh
+#ifndef INC_caServerID_H
+#define INC_caServerID_H
 
 #include "osiSock.h"
 #include "resourceLib.h"
@@ -83,6 +82,4 @@ inline unsigned caServerID::priority () const
     return this->pri;
 }
 
-#endif // ifdef caServerID
-
-
+#endif // ifdef INC_caServerID_H

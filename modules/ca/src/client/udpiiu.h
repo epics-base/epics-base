@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*  
@@ -22,26 +22,17 @@
  *	505 665 1831
  */
 
-#ifndef udpiiuh
-#define udpiiuh
+#ifndef INC_udpiiu_H
+#define INC_udpiiu_H
 
 #include <memory>
-
-#ifdef epicsExportSharedSymbols
-#   define udpiiuh_accessh_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
 
 #include "osiSock.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "tsDLList.h"
 
-#ifdef udpiiuh_accessh_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
-
+#include "libCaAPI.h"
 #include "netiiu.h"
 #include "searchTimer.h"
 #include "disconnectGovernorTimer.h"
@@ -50,13 +41,13 @@
 
 extern "C" void cacRecvThreadUDP ( void *pParam );
 
-epicsShareFunc void epicsShareAPI caStartRepeaterIfNotInstalled ( 
+LIBCA_API void epicsShareAPI caStartRepeaterIfNotInstalled (
     unsigned repeaterPort );
-epicsShareFunc void epicsShareAPI caRepeaterRegistrationMessage ( 
+LIBCA_API void epicsShareAPI caRepeaterRegistrationMessage (
     SOCKET sock, unsigned repeaterPort, unsigned attemptNumber );
-extern "C" epicsShareFunc void caRepeaterThread ( 
+extern "C" LIBCA_API void caRepeaterThread (
     void * pDummy );
-epicsShareFunc void ca_repeater ( void );
+LIBCA_API void ca_repeater ( void );
 
 class cac;
 class cacContextNotify;
@@ -314,5 +305,4 @@ private:
     friend class udpiiu::M_repeaterTimerNotify;
 };
 
-#endif // udpiiuh
-
+#endif // ifndef INC_udpiiu_H

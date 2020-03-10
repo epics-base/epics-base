@@ -1,4 +1,4 @@
-#ifndef CAVERSION_H
+#ifndef INC_caVersion_H
 #  error include caVersion.h, not this header
 #endif
 #define EPICS_CA_MAJOR_VERSION @EPICS_CA_MAJOR_VERSION@

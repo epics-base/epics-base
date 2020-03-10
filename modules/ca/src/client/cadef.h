@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* 
  *
@@ -21,8 +20,8 @@
  *
  */
 
-#ifndef INCLcadefh
-#define INCLcadefh
+#ifndef INC_cadef_H
+#define INC_cadef_H
 
 /*
  * done in two ifdef steps so that we will remain compatible with
@@ -32,20 +31,9 @@
 #   include <stdarg.h>
 #endif
 
-#ifdef epicsExportSharedSymbols
-#   define INCLcadefh_accessh_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include "epicsThread.h"
 
-#ifdef INCLcadefh_accessh_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
-
 #include "libCaAPI.h"
-
 #include "caerr.h"
 #include "db_access.h"
 #include "caeventmask.h"
@@ -901,5 +889,5 @@ LIBCA_API int epicsShareAPI ca_modify_host_name ( const char *pHostName );
 /*
  * no additions below this endif
  */
-#endif /* ifndef INCLcadefh */
+#endif /* ifndef INC_cadef_H */
 

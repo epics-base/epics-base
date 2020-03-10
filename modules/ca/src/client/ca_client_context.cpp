@@ -34,7 +34,6 @@
 #include "errlog.h"
 #include "locationException.h"
 
-#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"

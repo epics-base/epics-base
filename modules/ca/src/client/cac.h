@@ -19,13 +19,8 @@
  *
  */
 
-#ifndef cach
-#define cach
-
-#ifdef epicsExportSharedSymbols
-#   define cach_restore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
+#ifndef INC_cac_H
+#define INC_cac_H
 
 #include "compilerDependencies.h"
 #include "ipAddrToAsciiAsynchronous.h"
@@ -35,11 +30,7 @@
 #include "freeList.h"
 #include "localHostName.h"
 
-#ifdef cach_restore_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
-
+#include "libCaAPI.h"
 #include "nciu.h"
 #include "comBuf.h"
 #include "bhe.h"
@@ -432,4 +423,4 @@ inline double cac ::
     return this->connTMO;
 }
 
-#endif // ifdef cach
+#endif // ifndef INC_cac_H

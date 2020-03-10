@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*  
@@ -22,8 +22,8 @@
  *	505 665 1831
  */
 
-#ifndef virtualCircuith  
-#define virtualCircuith
+#ifndef INC_virtualCircuit_H
+#define INC_virtualCircuit_H
 
 #include "tsDLList.h"
 
@@ -418,4 +418,4 @@ inline void SearchDestTCP::setCircuit ( tcpiiu * piiu )
     _ptcpiiu = piiu;
 }
 
-#endif // ifdef virtualCircuith
+#endif // ifdef INC_virtualCircuit_H

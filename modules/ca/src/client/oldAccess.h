@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
@@ -23,25 +22,16 @@
  *	505 665 1831
  */
 
-#ifndef oldAccessh
-#define oldAccessh
+#ifndef INC_oldAccess_H
+#define INC_oldAccess_H
 
 #include <memory>
-
-#ifdef epicsExportSharedSymbols
-#   define oldAccessh_restore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
 
 #include "tsFreeList.h"
 #include "compilerDependencies.h"
 #include "osiSock.h"
 
-#ifdef oldAccessh_restore_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
-
+#include "libCaAPI.h"
 #include "caProto.h"
 #include "cacIO.h"
 #include "cadef.h"
@@ -607,4 +597,4 @@ void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO (
     }
 }
 
-#endif // ifndef oldAccessh
+#endif // ifndef INC_oldAccess_H

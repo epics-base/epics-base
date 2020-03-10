@@ -3,32 +3,21 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* base/include/db_access.h */
 /*      Author:          Bob Dalesio
  *      Date:            4-4-88
 */
 
-#ifndef INCLdb_accessh
-#define INCLdb_accessh
+#ifndef INC_db_access_H
+#define INC_db_access_H
 
 #include <stddef.h>
 
-#ifdef epicsExportSharedSymbols
-#   define INCLdb_accessh_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include "epicsTypes.h"
 #include "epicsTime.h"
-
-#ifdef INCLdb_accessh_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
 
 #include "libCaAPI.h"
 
@@ -726,17 +715,17 @@ union db_access_val{
         (type) + 4*(dbf_text_dim-2)   :  -1  )
 
 
-LIBCA_API extern const char	    *dbf_text[LAST_TYPE+3];
-LIBCA_API extern const short	    dbf_text_dim;
-LIBCA_API extern const char      *dbf_text_invalid;
+LIBCA_API extern const char *dbf_text[LAST_TYPE+3];
+LIBCA_API extern const short dbf_text_dim;
+LIBCA_API extern const char *dbf_text_invalid;
 
-LIBCA_API extern const char	    *dbr_text[LAST_BUFFER_TYPE+1];
-LIBCA_API extern const short	    dbr_text_dim;
-LIBCA_API extern const char      *dbr_text_invalid;
+LIBCA_API extern const char *dbr_text[LAST_BUFFER_TYPE+1];
+LIBCA_API extern const short dbr_text_dim;
+LIBCA_API extern const char *dbr_text_invalid;
 #endif /*db_accessHFORdb_accessC*/
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* INCLdb_accessh */
+#endif /* ifndef INC_db_access_H */

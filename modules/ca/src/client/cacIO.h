@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
@@ -22,8 +21,8 @@
  *	505 665 1831
  */
 
-#ifndef cacIOh
-#define cacIOh
+#ifndef INC_cacIO_H
+#define INC_cacIO_H
 
 //
 // Open Issues
@@ -47,20 +46,10 @@
 #include <new>
 #include <stdarg.h>
 
-#ifdef epicsExportSharedSymbols
-#   define cacIOh_restore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include "tsDLList.h"
 #include "epicsMutex.h"
 #include "epicsGuard.h"
 #include "epicsThread.h"
-
-#ifdef cacIOh_restore_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
 
 #include "libCaAPI.h"
 
@@ -391,4 +380,4 @@ inline bool caAccessRights::operatorConfirmationRequest () const
     return this->f_operatorConfirmationRequest;
 }
 
-#endif // ifndef cacIOh
+#endif // ifndef INC_cacIO_H

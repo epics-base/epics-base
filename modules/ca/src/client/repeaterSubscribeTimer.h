@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*  
@@ -23,22 +22,12 @@
  *	505 665 1831
  */
 
-#ifndef repeaterSubscribeTimerh  
-#define repeaterSubscribeTimerh
+#ifndef INC_repeaterSubscribeTimer_H
+#define INC_repeaterSubscribeTimer_H
 
 #include "epicsTimer.h"
 
-#ifdef epicsExportSharedSymbols
-#   define repeaterSubscribeTimerh_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
-#include "epicsTimer.h"
-
-#ifdef repeaterSubscribeTimerh_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
+#include "libCaAPI.h"
 
 class epicsMutex;
 class cacContextNotify;
@@ -79,4 +68,4 @@ private:
 	repeaterSubscribeTimer & operator = ( const repeaterSubscribeTimer & );
 };
 
-#endif // ifdef repeaterSubscribeTimerh
+#endif // ifdef INC_repeaterSubscribeTimer_H

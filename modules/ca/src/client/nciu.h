@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
@@ -22,13 +21,8 @@
  *	505 665 1831
  */
 
-#ifndef nciuh
-#define nciuh
-
-#ifdef epicsExportSharedSymbols
-#   define nciuh_restore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
+#ifndef INC_nciu_H
+#define INC_nciu_H
 
 #include "resourceLib.h"
 #include "tsDLList.h"
@@ -36,10 +30,7 @@
 #include "epicsMutex.h"
 #include "compilerDependencies.h"
 
-#ifdef nciuh_restore_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
+#include "libCaAPI.h"
 
 #define CA_MINOR_PROTOCOL_REVISION 13
 #include "caProto.h"
@@ -382,4 +373,4 @@ inline bool channelNode::isInstalledInServer ( epicsGuard < epicsMutex > & ) con
         this->listMember == cs_subscripUpdateReqPend;
 }
 
-#endif // ifdef nciuh
+#endif // ifdef INC_nciu_H

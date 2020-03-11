@@ -316,7 +316,7 @@ public:
         cacContextNotify & ) = 0;
 };
 
-LIBCA_API void epicsShareAPI caInstallDefaultService ( cacService & service );
+LIBCA_API void epicsStdCall caInstallDefaultService ( cacService & service );
 
 LIBCA_API extern epicsThreadPrivateId caClientCallbackThreadId;
 

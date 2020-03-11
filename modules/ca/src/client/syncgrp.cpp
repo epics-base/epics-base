@@ -21,7 +21,7 @@
 /*
  * ca_sg_create()
  */
-extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid )
+extern "C" int epicsStdCall ca_sg_create ( CA_SYNC_GID * pgid )
 {
     ca_client_context * pcac;
     int caStatus;
@@ -65,7 +65,7 @@ int ca_sync_group_destroy ( CallbackGuard & cbGuard, epicsGuard < epicsMutex > &
 /*
  * ca_sg_delete()
  */
-extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
+extern "C" int epicsStdCall ca_sg_delete ( const CA_SYNC_GID gid )
 {
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( & pcac );
@@ -124,7 +124,7 @@ void sync_group_reset ( ca_client_context & client, CASG & sg )
 // !!!! is disabled. This prevents the preemptive callback lock from being released
 // !!!! by other threads than the one that locked it.
 //
-extern "C" int epicsShareAPI ca_sg_block (
+extern "C" int epicsStdCall ca_sg_block (
     const CA_SYNC_GID gid, ca_real timeout )
 {
     ca_client_context *pcac;
@@ -152,7 +152,7 @@ extern "C" int epicsShareAPI ca_sg_block (
 /*
  * ca_sg_reset
  */
-extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
+extern "C" int epicsStdCall ca_sg_reset ( const CA_SYNC_GID gid )
 {
     ca_client_context *pcac;
     int caStatus = fetchClientContext (&pcac);
@@ -176,7 +176,7 @@ extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
 /*
  * ca_sg_stat
  */
-extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
+extern "C" int epicsStdCall ca_sg_stat ( const CA_SYNC_GID gid )
 {
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -199,7 +199,7 @@ extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
 /*
  * ca_sg_test
  */
-extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid )
+extern "C" int epicsStdCall ca_sg_test ( const CA_SYNC_GID gid )
 {
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -243,7 +243,7 @@ extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid )
 /*
  * ca_sg_array_put()
  */
-extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype type,
+extern "C" int epicsStdCall ca_sg_array_put ( const CA_SYNC_GID gid, chtype type,
     arrayElementCount count, chid pChan, const void *pValue )
 {
     ca_client_context *pcac;
@@ -305,7 +305,7 @@ extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype typ
 /*
  * ca_sg_array_get()
  */
-extern "C" int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid, chtype type,
+extern "C" int epicsStdCall ca_sg_array_get ( const CA_SYNC_GID gid, chtype type,
     arrayElementCount count, chid pChan, void *pValue )
 {
     ca_client_context *pcac;

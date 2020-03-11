@@ -461,7 +461,7 @@ void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned a
  *
  *  register with the repeater 
  */
-void epicsShareAPI caRepeaterRegistrationMessage ( 
+void epicsStdCall caRepeaterRegistrationMessage ( 
            SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
 {
     osiSockAddr saddr;
@@ -578,7 +578,7 @@ void epicsShareAPI caRepeaterRegistrationMessage (
  *
  *  072392 - problem solved by using SO_REUSEADDR
  */
-void epicsShareAPI caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
+void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
 {
     bool installed = false;
     int status;

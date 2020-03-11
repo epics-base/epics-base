@@ -19,17 +19,17 @@
 extern "C" {
 #endif
 
-LIBCA_API void epicsShareAPI configureChannelAccessAddressList
+LIBCA_API void epicsStdCall configureChannelAccessAddressList
     ( struct ELLLIST *pList, SOCKET sock, unsigned short port );
 
-LIBCA_API int epicsShareAPI addAddrToChannelAccessAddressList
+LIBCA_API int epicsStdCall addAddrToChannelAccessAddressList
     ( struct ELLLIST *pList, const ENV_PARAM *pEnv, 
     unsigned short port, int ignoreNonDefaultPort );
 
-LIBCA_API void epicsShareAPI printChannelAccessAddressList
+LIBCA_API void epicsStdCall printChannelAccessAddressList
     ( const struct ELLLIST *pList );
 
-LIBCA_API void epicsShareAPI removeDuplicateAddresses
+LIBCA_API void epicsStdCall removeDuplicateAddresses
     ( struct ELLLIST *pDestList, ELLLIST *pSrcList, int silent);
 
 #ifdef __cplusplus

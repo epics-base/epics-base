@@ -140,7 +140,7 @@
 extern "C" {
 #endif
 
-LIBCA_API const char * epicsShareAPI ca_message(long ca_status);
+LIBCA_API const char * epicsStdCall ca_message(long ca_status);
 
 LIBCA_API extern const char * ca_message_text [];
 

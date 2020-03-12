@@ -154,31 +154,34 @@ static void eventWakeupTest(void)
 
 } // extern "C"
 
-static double eventWaitMeasureDelayError( const epicsEventId &id, const double & delay )
+static double eventWaitCheckDelayError( const epicsEventId &id, const double & delay )
 {
+    epicsEventWaitWithTimeout ( id, 0.000001 );
+
     epicsTime beg = epicsTime::getMonotonic();
     epicsEventWaitWithTimeout ( id, delay );
     epicsTime end = epicsTime::getMonotonic();
     double meas = end - beg;
-    double error = fabs ( delay - meas );
-    testDiag("epicsEventWaitWithTimeout(%.6f)  delay error %.6f sec",
-        delay, error );
-    return error;
+    double error = meas - delay;
+    testOk(error >= 0, "epicsEventWaitWithTimeout(%.6f)  delay error %.6f sec",
+        delay, error);
+    return fabs(error);
 }
 
+#define WAITCOUNT 21
 static void eventWaitTest()
 {
-    double errorSum = 0.0;
-    epicsEventId event = epicsEventMustCreate ( epicsEventEmpty );
-    int i;
-    for ( i = 0u; i < 20; i++ ) {
+    epicsEventId event = epicsEventMustCreate(epicsEventEmpty);
+    double errorSum = eventWaitCheckDelayError(event, 0.0);
+
+    for (int i = 0; i < WAITCOUNT - 1; i++) {
         double delay = ldexp ( 1.0 , -i );
-        errorSum += eventWaitMeasureDelayError ( event, delay );
+        errorSum += eventWaitCheckDelayError ( event, delay );
     }
-    errorSum += eventWaitMeasureDelayError ( event, 0.0 );
-    epicsEventDestroy ( event );
-    double meanError = errorSum / ( i + 1 );
-    testOk(meanError < 0.05, "Average error %.6f sec", meanError);
+    double meanError = errorSum / WAITCOUNT;
+    testOk(meanError < 0.05, "Mean delay error was %.6f sec", meanError);
+
+    epicsEventDestroy(event);
 }
 
 
@@ -190,7 +193,7 @@ MAIN(epicsEventTest)
     epicsEventId event;
     int status;
 
-    testPlan(13+SLEEPERCOUNT);
+    testPlan(13 + SLEEPERCOUNT + WAITCOUNT);
 
     event = epicsEventMustCreate(epicsEventEmpty);
 

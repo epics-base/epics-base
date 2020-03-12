@@ -65,14 +65,15 @@ example the stem used in the example here is C<libCom>:
     # Generate our library API header file
     API_HEADER += libComAPI.h
 
-Lower down in the RULES section of the same Makefile (below the line that
-says C<include $(TOP)/configure/RULES>), add another line like this:
+The Makefile also needs to find the API stem given the name of the library.
+These may be different, as shown in our example since the libCom API actually
+gets used by a library whose formal name is just "Com". This relationship is
+indicated by setting the C<library_API> variable to the API stem, like this:
 
-    # Set the API Building flag while we are building the code
-    $(LIBNAME) $(SHRLIBNAME): USR_CPPFLAGS += -DBUILDING_libCom_API
-
-For your library replace the string C<libCom> in the last word above with
-the stem from your header filename.
+    # Library to build:
+    LIBRARY = Com
+    # API stem for the Com library
+    Com_API = libCom
 
 Then in each header file that declares a function, global variable or C++
 class or method to be exported by the library, decorate those declarations

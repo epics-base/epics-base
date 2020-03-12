@@ -53,6 +53,11 @@ library implementation code to define the C<epicsExportSharedSymbols> macro in
 between the import and export headers. The order of including header files no
 longer matters when using this approach.
 
+For libraries that contain EPICS record, device, driver or link support and use
+the epicsExport.h macros to publish the associated support entry table for the
+IOC to locate, switching from shareLib.h to a generated API header file is not
+recommended. The old approach is simpler in these cases.
+
 =head1 USING WITH EPICS
 
 In a Makefile that is building a DLL or shared library, set the variable
@@ -76,8 +81,9 @@ indicated by setting the C<library_API> variable to the API stem, like this:
     Com_API = libCom
 
 Then in each header file that declares a function, global variable or C++
-class or method to be exported by the library, decorate those declarations
-with the all-uppercase keyword C<STEM_API> as in these examples:
+class or method to be exported by the library, include the generated header
+file and then decorate those declarations with the all-uppercase keyword
+C<STEM_API> as in these examples:
 
     LIBCOM_API void epicsExit(int status);
     LIBCOM_API int asCheckClientIP;

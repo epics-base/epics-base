@@ -70,8 +70,9 @@ void udpSockTest(void)
     multiCastLoop(s, 1);
     multiCastLoop(s, 0);
 
+    /* Defaults to 1, setting to 0 makes no sense */
+    multiCastTTL(s, 2);
     multiCastTTL(s, 1);
-    multiCastTTL(s, 0);
 
     epicsSocketDestroy(s);
 }

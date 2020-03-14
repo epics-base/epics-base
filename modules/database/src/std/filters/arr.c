@@ -99,7 +99,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
     long end = my->end;
     long nTarget = 0;
     long offset = 0;
-    long nSource = chan->addr.no_elements;
+    long nSource = dbChannelElements(chan);
     long capacity = nSource;
     void *pdst;
 
@@ -110,12 +110,12 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
 
     case dbfl_type_rec:
         /* Extract from record */
-        if (chan->addr.special == SPC_DBADDR &&
+        if (dbChannelSpecial(chan) == SPC_DBADDR &&
             nSource > 1 &&
             (prset = dbGetRset(&chan->addr)) &&
             prset->get_array_info)
         {
-            void *pfieldsave = chan->addr.pfield;
+            void *pfieldsave = dbChannelField(chan);
             prec = dbChannelRecord(chan);
             dbScanLock(prec);
             prset->get_array_info(&chan->addr, &nSource, &offset);
@@ -124,22 +124,22 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
             pfl->stat = prec->stat;
             pfl->sevr = prec->sevr;
             pfl->time = prec->time;
-            pfl->field_type = chan->addr.field_type;
-            pfl->field_size = chan->addr.field_size;
+            pfl->field_type = dbChannelFieldType(chan);
+            pfl->field_size = dbChannelFieldSize(chan);
             pfl->no_elements = nTarget;
             if (nTarget) {
                 pdst = freeListCalloc(my->arrayFreeList);
                 if (pdst) {
                     pfl->u.r.dtor = freeArray;
                     pfl->u.r.pvt = my->arrayFreeList;
-                    offset = (offset + start) % chan->addr.no_elements;
+                    offset = (offset + start) % dbChannelElements(chan);
                     dbExtractArrayFromRec(&chan->addr, pdst, nTarget, capacity,
                         offset, my->incr);
                     pfl->u.r.field = pdst;
                 }
             }
             dbScanUnlock(prec);
-            chan->addr.pfield = pfieldsave;
+            dbChannelField(chan) = pfieldsave;
         }
         break;
 

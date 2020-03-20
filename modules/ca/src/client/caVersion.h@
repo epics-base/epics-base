@@ -8,17 +8,14 @@
 #ifndef INC_caVersion_H
 #define INC_caVersion_H
 
-#include <epicsVersion.h>
+#define EPICS_CA_MAJOR_VERSION @EPICS_CA_MAJOR_VERSION@
+#define EPICS_CA_MINOR_VERSION @EPICS_CA_MINOR_VERSION@
+#define EPICS_CA_MAINTENANCE_VERSION @EPICS_CA_MAINTENANCE_VERSION@
+#define EPICS_CA_DEVELOPMENT_FLAG @EPICS_CA_DEVELOPMENT_FLAG@
 
-/* include generated headers with:
- *   EPICS_CA_MAJOR_VERSION
- *   EPICS_CA_MINOR_VERSION
- *   EPICS_CA_MAINTENANCE_VERSION
- *   EPICS_CA_DEVELOPMENT_FLAG
- */
-#include "caVersionNum.h"
+#include <epicsVersion.h>
 
 #define CA_VERSION_INT VERSION_INT(EPICS_CA_MAJOR_VERSION, \
     EPICS_CA_MINOR_VERSION, EPICS_CA_MAINTENANCE_VERSION, 0)
 
-#endif /* ifndef INC_caVersion_H */
+#endif /* INC_caVersion_H */

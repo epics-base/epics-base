@@ -48,8 +48,10 @@ void epicsAtomicLock ( EpicsAtomicLockKey * )
         status = pthread_mutex_lock ( & mutex );
         if ( status == 0 ) return;
         assert ( status == EINTR );
-        static const useconds_t retryDelayUSec = 100000;
-        usleep ( retryDelayUSec );
+        struct timespec retryDelay = { 0, 100000000 };
+        struct timespec remainingDelay;
+        while (nanosleep(&retryDelay, &remainingDelay) == -1 && errno == EINTR)
+            retryDelay = remainingDelay;
         countDown--;
         assert ( countDown );
     }

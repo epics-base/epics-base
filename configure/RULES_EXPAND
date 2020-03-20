@@ -12,28 +12,72 @@
 vpath %@ $(USR_VPATH) $(ALL_SRC_DIRS)
 
 #---------------------------------------------------------------
-# Variable expansion
+# Template variable expansion
+
+# This feature allows you to instantiate simple template files at
+# build-time, replacing macros spelled @NAME@ with values provided
+# by the Makefile. The template filename must end with an @ sign,
+# which is removed to create the expanded filename.
+
+# Makefiles can use this variable expansion as follows:
+#
+# 1. Add the template filename (with the trailing @ sign) to either
+#    the EXPAND or EXPAND_COMMON variable, for example:
+#        EXPAND_COMMON += myVersion.h@
+#    Use EXPAND_COMMON for templates that don't depend on the
+#    target architecture (these will be generated in O.Common).
+# 2. There are 2 ways of defining template macros. The simplest
+#    is to add a NAME=VALUE string to the EXPAND_VARS variable for
+#    the desired macros, e.g.:
+#        EXPAND_VARS += MY_MAJOR_VERSION=$(MY_MAJOR_VERSION)
+#        EXPAND_VARS += MY_MINOR_VERSION=$(MY_MINOR_VERSION)
+#    These values may not contain spaces, even if inside quotes.
+# 3. A better way in the above case is to add the names of any
+#    Makefile variables that should be provided as macros to the
+#    variable EXPAND_ME, like this:
+#        EXPAND_ME += MY_MAJOR_VERSION
+#        EXPAND_ME += MY_MINOR_VERSION
+#    The values of these variables may contain spaces.
+# 4. The macros TOP and ARCH will be set by the build system.
+#    TOP is the value of $(INSTALL_LOCATION) for this module.
+#    ARCH is the target architecture $(T_A), but is only set
+#    while expanding files in EXPAND
+# 5. Add the expanded filename to some other variable that will
+#    cause it to be created and used, such as INC here:
+#        INC += myVersion.h
 
 # Default settings
 EXPAND_TOOL ?= $(PERL) $(TOOLS)/expandVars.pl
 
-EXPANDFLAGS += -t $(INSTALL_LOCATION) -a $(T_A)
-EXPANDFLAGS += $(addprefix -D ,$(EXPAND_VARS))
+EXPANDARCH = -a $(T_A)
+EXPANDFLAGS += -t $(INSTALL_LOCATION)
+EXPANDFLAGS += $(addprefix -D ,$(EXPAND_VARS) $($@_EXPAND_VARS))
+EXPANDFLAGS += $(foreach var, $(EXPAND_ME) $($@_EXPAND_ME), \
+    -D$(var)="$(strip $($(var)))")
 
 # The names of files to be expanded must end with '@'
 EXPANDED = $(EXPAND:%@=%)
+EXPANDED_COM = $(EXPAND_COMMON:%@=%)
+EXPANDED_COMMON = $(EXPANDED_COM:%=$(COMMON_DIR)/%)
 
 $(EXPANDED): %: %@
 	$(ECHO) "Expanding $< to $@"
 	@$(RM) $@
-	@$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
+	$(EXPAND_TOOL) $(EXPANDARCH) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
+
+$(EXPANDED_COM): %: %@
+	$(ECHO) "Expanding $< to $(COMMON_DIR)/$@"
+	@$(RM) $@
+	$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
+$(EXPANDED_COMMON): $(COMMON_DIR)/%: %
+	@$(MV) $< $@
 
 clean: expand_clean
 
 expand_clean:
-	@$(RM) $(EXPANDED)
+	@$(RM) $(EXPANDED) $(EXPANDED_COMMON)
 
-.PRECIOUS: $(EXPANDED)
+.PRECIOUS: $(EXPANDED) $(EXPANDED_COMMON)
 .PHONY: expand_clean
 
 #---------------------------------------------------------------
@@ -70,4 +114,3 @@ $1$(DEP):
 endef
 $(foreach asy, $(sort $(COMMON_ASSEMBLIES) $(ASSEMBLIES)), \
     $(eval $(call ASSEMBLY_DEP_template,$(strip $(asy)))))
-

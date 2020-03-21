@@ -26,6 +26,16 @@
 #define quote(v) #v
 #define str(v) quote(v)
 
+/* dynamic_registerRecordDeviceDriver */
+static const iocshArg rrddArg0 = {"pdbbase", iocshArgPdbbase};
+static const iocshArg *rrddArgs[] = {&rrddArg0};
+static const iocshFuncDef rrddFuncDef =
+    {"dynamic_registerRecordDeviceDriver", 1, rrddArgs};
+static void rrddCallFunc(const iocshArgBuf *args)
+{
+    iocshSetError(dynamic_registerRecordDeviceDriver(*iocshPpdbbase));
+}
+
 void iocshRegisterCommon(void)
 {
     const char *targetArch = envGetConfigParamPtr(&EPICS_BUILD_TARGET_ARCH);
@@ -53,4 +63,5 @@ void iocshRegisterCommon(void)
     asIocRegister();
     miscIocRegister();
     libComRegister();
+    iocshRegister(&rrddFuncDef, rrddCallFunc);
 }

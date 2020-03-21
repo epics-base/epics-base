@@ -33,6 +33,7 @@
 #include "initHooks.h"
 #include "iocInit.h"
 #include "errSymTbl.h"
+#include "iocshRegisterCommon.h"
 
 static dbEventCtx testEvtCtx;
 static epicsMutexId testEvtLock;
@@ -98,6 +99,7 @@ void testdbCleanup(void)
     db_cleanup_events();
     initHookFree();
     registryFree();
+    clearRegistrarOnce();
     pdbbase = NULL;
     dbmfFreeChunks();
 }

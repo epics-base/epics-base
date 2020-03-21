@@ -25,5 +25,6 @@ dbCore_SRCS += iocInit.c
 dbCore_SRCS += miscIocRegister.c
 dbCore_SRCS += dlload.c
 dbCore_SRCS += iocshRegisterCommon.c
+dbCore_SRCS += dynamic_registerRecordDeviceDriver.cpp
 
 miscIocRegister_CFLAGS_iOS = -DSYSTEM_UNAVAILABLE

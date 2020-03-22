@@ -11,7 +11,16 @@
 #define epicsExportSharedSymbols
 #include "epicsFindSymbol.h"
 
-static int epicsLoadErrorCode = 0;
+#ifdef _MSC_VER
+#  define STORE static __declspec( thread )
+#elif __GNUC__
+#  define STORE static __thread
+#else
+#  define STORE static
+#endif
+
+STORE
+int epicsLoadErrorCode = 0;
 
 epicsShareFunc void * epicsLoadLibrary(const char *name)
 {
@@ -28,7 +37,7 @@ epicsShareFunc void * epicsLoadLibrary(const char *name)
 
 epicsShareFunc const char *epicsLoadError(void)
 {
-    static char buffer[100];
+    STORE char buffer[100];
 
     FormatMessage(
         FORMAT_MESSAGE_FROM_SYSTEM,
@@ -42,5 +51,9 @@ epicsShareFunc const char *epicsLoadError(void)
 
 epicsShareFunc void * epicsShareAPI epicsFindSymbol(const char *name)
 {
-    return GetProcAddress(0, name);
+    void* ret = GetProcAddress(0, name);
+    if(!ret) {
+        epicsLoadErrorCode = GetLastError();
+    }
+    return ret;
 }

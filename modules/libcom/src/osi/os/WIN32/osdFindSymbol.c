@@ -5,8 +5,13 @@
 \*************************************************************************/
 /* osi/os/WIN32/osdFindSymbol.c */
 
+/* avoid need to link against psapi.dll
+ * requires windows 7 or later
+ */
+#define NTDDI_VERSION NTDDI_WIN7
 
 #include <windows.h>
+#include <psapi.h>
 
 #define epicsExportSharedSymbols
 #include "epicsFindSymbol.h"
@@ -51,8 +56,22 @@ epicsShareFunc const char *epicsLoadError(void)
 
 epicsShareFunc void * epicsShareAPI epicsFindSymbol(const char *name)
 {
-    void* ret = GetProcAddress(0, name);
+    HMODULE dlls[128];
+    DWORD ndlls=0u, i;
+    void* ret = NULL;
+
+    /* As a handle returned by LoadLibrary() isn't available to us,
+     * try all loaded modules in arbitrary order.
+     */
+    if(K32EnumProcessModules(GetCurrentProcess(), dlls, sizeof(dlls), &ndlls)) {
+        for(i=0; !ret && i<ndlls; i++) {
+            ret = GetProcAddress(dlls[i], name);
+        }
+    }
     if(!ret) {
+        /* only capturing the last error code,
+         * but what else to do?
+         */
         epicsLoadErrorCode = GetLastError();
     }
     return ret;

@@ -52,7 +52,7 @@ typedef struct {
     struct dbr_sts_double rtndata;
     chid		chid;
 } CAPVT;
-
+
 static void exceptionCallback(struct exception_handler_args args)
 {
     chid        chid = args.chid;
@@ -77,14 +77,14 @@ static void exceptionCallback(struct exception_handler_args args)
     writeAccess = (chid ? ca_write_access(chid) : 0);
 
     errlogPrintf("dbCa:exceptionCallback stat \"%s\" channel \"%s\""
-        " context \"%s\"\n"
-        " nativeType %s requestType %s"
-        " nativeCount %ld requestCount %ld %s %s\n",
-        ca_message(stat),channel,context,
-        nativeType,requestType,
-        nativeCount,requestCount,
-        (readAccess ? "readAccess" : "noReadAccess"),
-        (writeAccess ? "writeAccess" : "noWriteAccess"));
+                 " context \"%s\"\n"
+                 " nativeType %s requestType %s"
+                 " nativeCount %ld requestCount %ld %s %s\n",
+                 ca_message(stat),channel,context,
+                 nativeType,requestType,
+                 nativeCount,requestCount,
+                 (readAccess ? "readAccess" : "noReadAccess"),
+                 (writeAccess ? "writeAccess" : "noWriteAccess"));
 }
 
 /*connectCallback only handles disconnects*/
@@ -95,13 +95,13 @@ static void connectCallback(struct connection_handler_args arg)
     ASG			*pasg = pasginp->pasg;
 
     if(ca_state(chid)!=cs_conn) {
-	if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
-	    /*was good so lets make it bad*/
-	    pasg->inpBad |= (1<<pasginp->inpIndex);
-	    if(!caInitializing) asComputeAsg(pasg);
-	    if(asCaDebug) printf("as connectCallback disconnect %s\n",
-		ca_name(chid));
-	}
+        if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
+            /*was good so lets make it bad*/
+            pasg->inpBad |= (1<<pasginp->inpIndex);
+            if(!caInitializing) asComputeAsg(pasg);
+            if(asCaDebug) printf("as connectCallback disconnect %s\n",
+                                 ca_name(chid));
+        }
     }
 }
 
@@ -115,52 +115,52 @@ static void eventCallback(struct event_handler_args arg)
     const struct dbr_sts_double *pdata;
 
     if(caStatus!=ECA_NORMAL) {
-	if(chid) {
-	    epicsPrintf("asCa: eventCallback error %s channel %s\n",
-	        ca_message(caStatus),ca_name(chid));
-	} else {
-	    epicsPrintf("asCa: eventCallback error %s chid is null\n",
-		ca_message(caStatus));
-	}
-	return;
+        if(chid) {
+            epicsPrintf("asCa: eventCallback error %s channel %s\n",
+                        ca_message(caStatus),ca_name(chid));
+        } else {
+            epicsPrintf("asCa: eventCallback error %s chid is null\n",
+                        ca_message(caStatus));
+        }
+        return;
     }
     pasg = pasginp->pasg;
     pcapvt = (CAPVT *)pasginp->capvt;
     if(chid!=pcapvt->chid) {
-	epicsPrintf("asCa: eventCallback error pcapvt->chid != arg.chid\n");
-	return;
+        epicsPrintf("asCa: eventCallback error pcapvt->chid != arg.chid\n");
+        return;
     }
     if(ca_state(chid)!=cs_conn || !ca_read_access(chid)) {
-	if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
-	    /*was good so lets make it bad*/
-	    pasg->inpBad |= (1<<pasginp->inpIndex);
-	    if(!caInitializing) asComputeAsg(pasg);
-	    if(asCaDebug) {
-		printf("as eventCallback %s inpBad ca_state %d"
-		    " ca_read_access %d\n",
-		    ca_name(chid),ca_state(chid),ca_read_access(chid));
-	    }
-	}
-	return;
+        if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
+            /*was good so lets make it bad*/
+            pasg->inpBad |= (1<<pasginp->inpIndex);
+            if(!caInitializing) asComputeAsg(pasg);
+            if(asCaDebug) {
+                printf("as eventCallback %s inpBad ca_state %d"
+                       " ca_read_access %d\n",
+                       ca_name(chid),ca_state(chid),ca_read_access(chid));
+            }
+        }
+        return;
     }
     pdata = arg.dbr;
     pcapvt->rtndata = *pdata; /*structure copy*/
     if(pdata->severity==INVALID_ALARM) {
         pasg->inpBad |= (1<<pasginp->inpIndex);
-	if(asCaDebug)
-	    printf("as eventCallback %s inpBad because INVALID_ALARM\n",
-	    ca_name(chid));
+        if(asCaDebug)
+            printf("as eventCallback %s inpBad because INVALID_ALARM\n",
+                   ca_name(chid));
     } else {
         pasg->inpBad &= ~((1<<pasginp->inpIndex));
         pasg->pavalue[pasginp->inpIndex] = pdata->value;
-	if(asCaDebug)
-	    printf("as eventCallback %s inpGood data %f\n",
-		ca_name(chid),pdata->value);
+        if(asCaDebug)
+            printf("as eventCallback %s inpGood data %f\n",
+                   ca_name(chid),pdata->value);
     }
     pasg->inpChanged |= (1<<pasginp->inpIndex);
     if(!caInitializing) asComputeAsg(pasg);
 }
-
+
 static void asCaTask(void)
 {
     ASG		*pasg;
@@ -170,79 +170,79 @@ static void asCaTask(void)
 
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
     SEVCHK(ca_context_create(ca_enable_preemptive_callback),
-        "asCaTask calling ca_context_create");
+           "asCaTask calling ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
-        "ca_add_exception_event");
-    while(TRUE) { 
+           "ca_add_exception_event");
+    while(TRUE) {
         epicsEventMustWait(asCaTaskAddChannels);
-	caInitializing = TRUE;
-	pasg = (ASG *)ellFirst(&pasbase->asgList);
-	while(pasg) {
-	    pasginp = (ASGINP *)ellFirst(&pasg->inpList);
-	    while(pasginp) {
-		pasg->inpBad |= (1<<pasginp->inpIndex);
-		pcapvt = pasginp->capvt = asCalloc(1,sizeof(CAPVT));
-		/*Note calls connectCallback immediately for local Pvs*/
-		status = ca_search_and_connect(pasginp->inp,&pcapvt->chid,
-		    connectCallback,pasginp);
-		if(status!=ECA_NORMAL) {
-		    epicsPrintf("asCa ca_search_and_connect error %s\n",
-			ca_message(status));
-		}
-		/*Note calls eventCallback immediately  for local Pvs*/
-		status = ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
-		    eventCallback,pasginp,0);
-		if(status!=ECA_NORMAL) {
-		    epicsPrintf("asCa ca_add_event error %s\n",
-			ca_message(status));
-		}
-		pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
-	    }
-	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
-	}
+        caInitializing = TRUE;
+        pasg = (ASG *)ellFirst(&pasbase->asgList);
+        while(pasg) {
+            pasginp = (ASGINP *)ellFirst(&pasg->inpList);
+            while(pasginp) {
+                pasg->inpBad |= (1<<pasginp->inpIndex);
+                pcapvt = pasginp->capvt = asCalloc(1,sizeof(CAPVT));
+                /*Note calls connectCallback immediately for local Pvs*/
+                status = ca_search_and_connect(pasginp->inp,&pcapvt->chid,
+                                               connectCallback,pasginp);
+                if(status!=ECA_NORMAL) {
+                    epicsPrintf("asCa ca_search_and_connect error %s\n",
+                                ca_message(status));
+                }
+                /*Note calls eventCallback immediately  for local Pvs*/
+                status = ca_add_event(DBR_STS_DOUBLE,pcapvt->chid,
+                                      eventCallback,pasginp,0);
+                if(status!=ECA_NORMAL) {
+                    epicsPrintf("asCa ca_add_event error %s\n",
+                                ca_message(status));
+                }
+                pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
+            }
+            pasg = (ASG *)ellNext((ELLNODE *)pasg);
+        }
         SEVCHK(ca_flush_io(),"asCaTask");
-	caInitializing = FALSE;
-	asComputeAllAsg();
-	if(asCaDebug) printf("asCaTask initialized\n");
-	epicsEventSignal(asCaTaskWait);
+        caInitializing = FALSE;
+        asComputeAllAsg();
+        if(asCaDebug) printf("asCaTask initialized\n");
+        epicsEventSignal(asCaTaskWait);
         epicsEventMustWait(asCaTaskClearChannels);
-	pasg = (ASG *)ellFirst(&pasbase->asgList);
-	while(pasg) {
-	    pasginp = (ASGINP *)ellFirst(&pasg->inpList);
-	    while(pasginp) {
-		pcapvt = (CAPVT *)pasginp->capvt;
-		status = ca_clear_channel(pcapvt->chid);
-		if(status!=ECA_NORMAL) {
-		    epicsPrintf("asCa ca_clear_channel error %s\n",
-			ca_message(status));
-		}
-		free(pasginp->capvt);
-		pasginp->capvt = 0;
-		pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
-	    }
-	    pasg = (ASG *)ellNext((ELLNODE *)pasg);
-	}
-	if(asCaDebug) printf("asCaTask has cleared all channels\n");
-	epicsEventSignal(asCaTaskWait);
+        pasg = (ASG *)ellFirst(&pasbase->asgList);
+        while(pasg) {
+            pasginp = (ASGINP *)ellFirst(&pasg->inpList);
+            while(pasginp) {
+                pcapvt = (CAPVT *)pasginp->capvt;
+                status = ca_clear_channel(pcapvt->chid);
+                if(status!=ECA_NORMAL) {
+                    epicsPrintf("asCa ca_clear_channel error %s\n",
+                                ca_message(status));
+                }
+                free(pasginp->capvt);
+                pasginp->capvt = 0;
+                pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
+            }
+            pasg = (ASG *)ellNext((ELLNODE *)pasg);
+        }
+        if(asCaDebug) printf("asCaTask has cleared all channels\n");
+        epicsEventSignal(asCaTaskWait);
     }
 }
-    
+
 void asCaStart(void)
 {
     if(asCaDebug) printf("asCaStart called\n");
     if(firstTime) {
-	firstTime = FALSE;
+        firstTime = FALSE;
         asCaTaskLock=epicsMutexMustCreate();
         asCaTaskWait=epicsEventMustCreate(epicsEventEmpty);
         asCaTaskAddChannels=epicsEventMustCreate(epicsEventEmpty);
         asCaTaskClearChannels=epicsEventMustCreate(epicsEventEmpty);
         threadid = epicsThreadCreate("asCaTask",
-            (epicsThreadPriorityScanLow - 3),
-            epicsThreadGetStackSize(epicsThreadStackBig),
-            (EPICSTHREADFUNC)asCaTask,0);
-	if(threadid==0) {
-	    errMessage(0,"asCaStart: taskSpawn Failure\n");
-	}
+                                     (epicsThreadPriorityScanLow - 3),
+                                     epicsThreadGetStackSize(epicsThreadStackBig),
+                                     (EPICSTHREADFUNC)asCaTask,0);
+        if(threadid==0) {
+            errMessage(0,"asCaStart: taskSpawn Failure\n");
+        }
     }
     epicsMutexMustLock(asCaTaskLock);
     epicsEventSignal(asCaTaskAddChannels);
@@ -293,8 +293,8 @@ int ascarFP(FILE *fp,int level)
                 else if(state==cs_closed) fprintf(fp,"closed");
                 else fprintf(fp,"unknown");
                 fprintf(fp," read:%s write:%s",
-                    (ca_read_access(chid) ? "yes" : "no "),
-                    (ca_write_access(chid) ? "yes" : "no "));
+                        (ca_read_access(chid) ? "yes" : "no "),
+                        (ca_write_access(chid) ? "yes" : "no "));
                 fprintf(fp," %s %s\n", ca_name(chid),ca_host_name(chid));
             }
             pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);

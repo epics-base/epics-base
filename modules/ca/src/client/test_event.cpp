@@ -87,7 +87,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         dbr_enum_t *pvalue = (dbr_enum_t *)pbuffer;
         for (i = 0; i < count; i++,pvalue++){
             if(count!=1 && (i%10 == 0)) printf("\n");
-            printf("%d ",*pvalue);
+            printf("%hd ",*pvalue);
         }
         break;
     }
@@ -134,7 +134,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
     {
         struct dbr_sts_string *pvalue 
           = (struct dbr_sts_string *) pbuffer;
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         printf("\tValue: %s",pvalue->value);
         break;
     }
@@ -143,7 +143,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_sts_enum *pvalue
           = (struct dbr_sts_enum *)pbuffer;
         dbr_enum_t *pEnum = &pvalue->value;
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pEnum++){
             if(count!=1 && (i%10 == 0)) printf("\n");
@@ -156,11 +156,11 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_sts_short *pvalue
           = (struct dbr_sts_short *)pbuffer;
         dbr_short_t *pshort = &pvalue->value;
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pshort++){
             if(count!=1 && (i%10 == 0)) printf("\n");
-            printf("%u ",*pshort);
+            printf("%hu ",*pshort);
         }
         break;
     }
@@ -169,7 +169,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_sts_float *pvalue
           = (struct dbr_sts_float *)pbuffer;
         dbr_float_t *pfloat = &pvalue->value;
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pfloat++){
             if(count!=1 && (i%10 == 0)) printf("\n");
@@ -183,7 +183,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
           = (struct dbr_sts_char *)pbuffer;
         dbr_char_t *pchar = &pvalue->value;
 
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pchar++){
             if(count!=1 && (i%10 == 0)) printf("\n");
@@ -196,7 +196,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_sts_long *pvalue
           = (struct dbr_sts_long *)pbuffer;
         dbr_long_t *plong = &pvalue->value;
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,plong++){
             if(count!=1 && (i%10 == 0)) printf("\n");
@@ -209,7 +209,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_sts_double *pvalue
           = (struct dbr_sts_double *)pbuffer;
         dbr_double_t *pdouble = &pvalue->value;
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pdouble++){
             if(count!=1 && (i%10 == 0)) printf("\n");
@@ -254,14 +254,14 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         dbr_short_t *pshort = &pvalue->value;
         epicsTimeToStrftime(tsString,sizeof(tsString),
             "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
-        printf("%2d %2d",
+        printf("%2hd %2hd",
             pvalue->status,
             pvalue->severity);
         printf("\tTimeStamp: %s",tsString);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pshort++){
             if(count!=1 && (i%10 == 0)) printf("\n");
-            printf("%d ",*pshort);
+            printf("%hd ",*pshort);
         }
         break;
     }
@@ -273,7 +273,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
 
                 epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         printf("\tTimeStamp: %s",tsString);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pfloat++){
@@ -290,7 +290,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
 
                 epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         printf("\tTimeStamp: %s",tsString);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pchar++){
@@ -307,7 +307,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
 
                 epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         printf("\tTimeStamp: %s",tsString);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,plong++){
@@ -324,7 +324,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
 
                 epicsTimeToStrftime(tsString,sizeof(tsString),
                     "%Y/%m/%d %H:%M:%S.%06f",&pvalue->stamp);
-        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf("%2hd %2hd",pvalue->status,pvalue->severity);
         printf("\tTimeStamp: %s",tsString);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pdouble++){
@@ -338,7 +338,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_gr_short *pvalue
           = (struct dbr_gr_short *)pbuffer;
         dbr_short_t *pshort = &pvalue->value;
-        printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+        printf("%2hd %2hd %.8s",pvalue->status,pvalue->severity,
             pvalue->units);
         printf("\n\t%8d %8d %8d %8d %8d %8d",
           pvalue->upper_disp_limit,pvalue->lower_disp_limit,
@@ -347,7 +347,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pshort++){
             if(count!=1 && (i%10 == 0)) printf("\n");
-            printf("%d ",*pshort);
+            printf("%hd ",*pshort);
         }
         break;
     }
@@ -356,7 +356,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_gr_float *pvalue
           = (struct dbr_gr_float *)pbuffer;
         dbr_float_t *pfloat = &pvalue->value;
-        printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+        printf("%2hd %2hd %.8s",pvalue->status,pvalue->severity,
             pvalue->units);
         printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
           pvalue->precision,
@@ -374,11 +374,11 @@ extern "C" void epicsShareAPI ca_dump_dbr (
     {
         struct dbr_gr_enum *pvalue
           = (struct dbr_gr_enum *)pbuffer;
-        printf("%2d %2d",pvalue->status,
+        printf("%2hd %2hd",pvalue->status,
             pvalue->severity);
-        printf("\tValue: %d",pvalue->value);
+        printf("\tValue: %hd",pvalue->value);
         if(pvalue->no_str>0) {
-            printf("\n\t%3d",pvalue->no_str);
+            printf("\n\t%3hd",pvalue->no_str);
             for (i = 0; i < (unsigned) pvalue->no_str; i++)
                 printf("\n\t%.26s",pvalue->strs[i]);
         }
@@ -388,7 +388,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
     {
         struct dbr_ctrl_enum *pvalue
           = (struct dbr_ctrl_enum *)pbuffer;
-        printf("%2d %2d",pvalue->status,
+        printf("%2hd %2hd",pvalue->status,
             pvalue->severity);
         printf("\tValue: %d",pvalue->value);
         if(pvalue->no_str>0) {
@@ -441,7 +441,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         dbr_double_t *pdouble = &pvalue->value;
         printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
             pvalue->units);
-        printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
+        printf(" %3hd\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
           pvalue->precision,
           (float)(pvalue->upper_disp_limit),
           (float)(pvalue->lower_disp_limit),
@@ -461,13 +461,13 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_ctrl_short *pvalue
           = (struct dbr_ctrl_short *)pbuffer;
         dbr_short_t *pshort = &pvalue->value;
-        printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+        printf("%2hd %2hd %.8s",pvalue->status,pvalue->severity,
             pvalue->units);
         printf("\n\t%8d %8d %8d %8d %8d %8d",
           pvalue->upper_disp_limit,pvalue->lower_disp_limit,
           pvalue->upper_alarm_limit,pvalue->upper_warning_limit,
           pvalue->lower_warning_limit,pvalue->lower_alarm_limit);
-        printf(" %8d %8d",
+        printf(" %8hd %8hd",
           pvalue->upper_ctrl_limit,pvalue->lower_ctrl_limit);
         if(count==1) printf("\tValue: ");
         for (i = 0; i < count; i++,pshort++){
@@ -481,7 +481,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_ctrl_float *pvalue
           = (struct dbr_ctrl_float *)pbuffer;
         dbr_float_t *pfloat = &pvalue->value;
-        printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+        printf("%2hd %2hd %.8s",pvalue->status,pvalue->severity,
             pvalue->units);
         printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
           pvalue->precision,
@@ -502,7 +502,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_ctrl_char *pvalue
           = (struct dbr_ctrl_char *)pbuffer;
         dbr_char_t *pchar = &pvalue->value;
-        printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+        printf("%2hd %2hd %.8s",pvalue->status,pvalue->severity,
             pvalue->units);
         printf("\n\t%8d %8d %8d %8d %8d %8d",
           pvalue->upper_disp_limit,pvalue->lower_disp_limit,
@@ -522,7 +522,7 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_ctrl_long *pvalue
           = (struct dbr_ctrl_long *)pbuffer;
         dbr_long_t *plong = &pvalue->value;
-        printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+        printf("%2hd %2hd %.8s",pvalue->status,pvalue->severity,
             pvalue->units);
         printf("\n\t%8d %8d %8d %8d %8d %8d",
           pvalue->upper_disp_limit,pvalue->lower_disp_limit,
@@ -542,9 +542,9 @@ extern "C" void epicsShareAPI ca_dump_dbr (
         struct dbr_ctrl_double *pvalue
           = (struct dbr_ctrl_double *)pbuffer;
         dbr_double_t *pdouble = &pvalue->value;
-        printf("%2d %2d %.8s",pvalue->status,pvalue->severity,
+        printf("%2hd %2hd %.8s",pvalue->status,pvalue->severity,
             pvalue->units);
-        printf(" %3d\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
+        printf(" %3hd\n\t%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
           pvalue->precision,
           (float)(pvalue->upper_disp_limit),
           (float)(pvalue->lower_disp_limit),

@@ -394,12 +394,12 @@ static long processTarget(dbCommon *psrc, dbCommon *pdst)
 
     psrc->pact = TRUE;
 
-    if (psrc->ppn)
+    if (psrc && psrc->ppn)
         dbNotifyAdd(psrc, pdst);
 
     if (trace && dbServerClient(context, sizeof(context))) {
         /* No client, use thread name */
-        strncpy(context, epicsThreadGetNameSelf(), sizeof(context));
+        strncpy(context, epicsThreadGetNameSelf(), sizeof(context)-1);
         context[sizeof(context) - 1] = 0;
     }
 

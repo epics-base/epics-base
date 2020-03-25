@@ -8,7 +8,7 @@
 #include "epicsThreadPool.h"
 
 /* included to allow tests to peek */
-#include "../../src/pool/poolPriv.h"
+#include "../src/pool/poolPriv.h"
 
 #include "testMain.h"
 #include "epicsUnitTest.h"

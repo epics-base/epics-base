@@ -3036,7 +3036,7 @@ void verifyMultithreadSubscr ( const char * pName, unsigned interestLevel )
                 epicsEventMustCreate ( epicsEventEmpty );
     verify ( pMultiThreadSubscrTest->m_threadExitEvent );
     strncpy ( pMultiThreadSubscrTest->m_chanName, pName, 
-            sizeof ( pMultiThreadSubscrTest->m_chanName ) );
+            sizeof ( pMultiThreadSubscrTest->m_chanName )-1);
     pMultiThreadSubscrTest->m_chanName
         [ sizeof ( pMultiThreadSubscrTest->m_chanName ) - 1u ] = '\0';
     pMultiThreadSubscrTest->m_nUpdatesRequired = nSubscr;
@@ -3396,7 +3396,7 @@ void verifyContextRundownChanStillExist (
 }
 
 int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount, 
-			unsigned repetitionCount, enum ca_preemptive_callback_select select )
+            unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
     chid chan;
     int status;
@@ -3507,7 +3507,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     verify ( pChans );
 
     for ( i = 0; i < channelCount; i++ ) {
-        strncpy ( pChans[ i ].name, pName, sizeof ( pChans[ i ].name ) );
+        strncpy ( pChans[ i ].name, pName, sizeof ( pChans[ i ].name ) - 1 );
         pChans[ i ].name[ sizeof ( pChans[i].name ) - 1 ] = '\0';
     }
 

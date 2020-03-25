@@ -162,7 +162,7 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
     /*
      * host name string 
      */
-    status = sscanf ( pAddrString, " %511[^:] %s ", hostName, dummy );
+    status = sscanf ( pAddrString, " %511[^:] %7s ", hostName, dummy );
     if ( status == 1 ) {
         port = defaultPort;
         status = hostToIPAddr ( hostName, &ina );
@@ -174,7 +174,7 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
     /*
      * host name string, and port
      */
-    status = sscanf ( pAddrString, " %511[^:] : %u %s ", hostName, 
+    status = sscanf ( pAddrString, " %511[^:] : %u %7s ", hostName, 
                         &port, dummy );
     if ( status >= 2 ) {
         if ( status > 2 ) {

@@ -42,15 +42,15 @@ public:
     class doubleDelete {};
 
     epicsShareFunc fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType type, 
-		const bool onceOnly, fdManager &manager, pCallBackFDMgr pFunc, void *pParam);
+        const bool onceOnly, fdManager &manager, pCallBackFDMgr pFunc, void *pParam);
     epicsShareFunc ~fdRegForOldFdmgr ();
 
 private:
     pCallBackFDMgr pFunc;
     void *pParam;
-	epicsShareFunc virtual void callBack ();
-	fdRegForOldFdmgr ( const fdRegForOldFdmgr & );
-	fdRegForOldFdmgr & operator = ( const fdRegForOldFdmgr & );
+    epicsShareFunc virtual void callBack ();
+    fdRegForOldFdmgr ( const fdRegForOldFdmgr & );
+    fdRegForOldFdmgr & operator = ( const fdRegForOldFdmgr & );
 };
 
 class oldFdmgr;
@@ -60,8 +60,8 @@ class oldFdmgr;
 //
 class timerForOldFdmgr : public epicsTimerNotify, public chronIntIdRes<timerForOldFdmgr> {
 public:
-	epicsShareFunc timerForOldFdmgr (oldFdmgr &fdmgr, double delay, pCallBackFDMgr pFunc, void *pParam);
-	epicsShareFunc virtual ~timerForOldFdmgr ();
+    epicsShareFunc timerForOldFdmgr (oldFdmgr &fdmgr, double delay, pCallBackFDMgr pFunc, void *pParam);
+    epicsShareFunc virtual ~timerForOldFdmgr ();
 
     //
     // exceptions
@@ -75,8 +75,8 @@ private:
     void *pParam;
     unsigned id;
     epicsShareFunc expireStatus expire ( const epicsTime & currentTime );
-	timerForOldFdmgr ( const timerForOldFdmgr & );
-	timerForOldFdmgr & operator = ( const timerForOldFdmgr & );
+    timerForOldFdmgr ( const timerForOldFdmgr & );
+    timerForOldFdmgr & operator = ( const timerForOldFdmgr & );
 };
 
 class oldFdmgr : public fdManager {
@@ -88,8 +88,8 @@ public:
 
 private:
     chronIntIdResTable <timerForOldFdmgr> resTbl;
-	oldFdmgr ( const oldFdmgr & );
-	oldFdmgr & operator = ( const oldFdmgr & );
+    oldFdmgr ( const oldFdmgr & );
+    oldFdmgr & operator = ( const oldFdmgr & );
 };
 
 #ifdef _MSC_VER
@@ -106,7 +106,7 @@ template class resTable<timerForOldFdmgr, chronIntId>;
 
 epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr 
     (const SOCKET fdIn, const fdRegType typeIn, 
-	    const bool onceOnlyIn, fdManager &managerIn, 
+        const bool onceOnlyIn, fdManager &managerIn, 
         pCallBackFDMgr pFuncIn, void *pParamIn) :
     fdReg (fdIn, typeIn, onceOnlyIn, managerIn), 
         pFunc (pFuncIn), pParam (pParamIn)
@@ -184,7 +184,7 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
     while (true) {
         try {
             pTimer = new timerForOldFdmgr 
-			    (*pfdm, delay, pFunc, pParam);
+                (*pfdm, delay, pFunc, pParam);
         }
         catch (...)
         {
@@ -197,6 +197,7 @@ extern "C" epicsShareFunc fdmgrAlarmId epicsShareAPI fdmgr_add_timeout (
             }
             else {
                 delete pTimer;
+                pTimer = NULL;
             }
         }
         else {
@@ -323,7 +324,7 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_delete (fdctx *pfdctx)
  */
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_fd (fdctx *pfdctx, SOCKET fd)
 {
-	return fdmgr_clear_callback(pfdctx, fd, fdi_read);
+    return fdmgr_clear_callback(pfdctx, fd, fdi_read);
 }
 
 /*
@@ -332,5 +333,5 @@ extern "C" epicsShareFunc int epicsShareAPI fdmgr_clear_fd (fdctx *pfdctx, SOCKE
 extern "C" epicsShareFunc int epicsShareAPI fdmgr_add_fd ( 
     fdctx   *pfdctx, SOCKET  fd, void (*pfunc)(void *pParam), void *param)
 {
-	return fdmgr_add_callback (pfdctx, fd, fdi_read, pfunc, param);
+    return fdmgr_add_callback (pfdctx, fd, fdi_read, pfunc, param);
 }

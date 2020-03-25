@@ -55,7 +55,7 @@ void caEventRate ( const char *pName, unsigned count )
         }
         epicsTime end = epicsTime::getCurrent ();
     
-        printf ( " done(%f sec).\n", end - begin );
+        printf ( " done(%f sec).\n", double(end - begin) );
     }
 
     {
@@ -74,7 +74,7 @@ void caEventRate ( const char *pName, unsigned count )
     
         epicsTime end = epicsTime::getCurrent ();
     
-        printf ( " done(%f sec).\n", end - begin );
+        printf ( " done(%f sec).\n", double(end - begin) );
     }
         
     {
@@ -91,7 +91,7 @@ void caEventRate ( const char *pName, unsigned count )
         }
         epicsTime end = epicsTime::getCurrent ();
     
-        printf ( " done(%f sec).\n", end - begin );
+        printf ( " done(%f sec).\n", double(end - begin) );
     }
 
     double samplePeriod = initialSamplePeriod;

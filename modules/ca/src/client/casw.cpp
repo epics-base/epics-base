@@ -40,8 +40,8 @@ public:
     void release ( void * );
 private:
     tsFreeList < class bhe, 0x100 > freeList;
-	bheFreeStoreMgr ( const bheFreeStoreMgr & );
-	bheFreeStoreMgr & operator = ( const bheFreeStoreMgr & );
+    bheFreeStoreMgr ( const bheFreeStoreMgr & );
+    bheFreeStoreMgr & operator = ( const bheFreeStoreMgr & );
 };
 
 void * bheFreeStoreMgr::allocate ( size_t size )
@@ -293,7 +293,7 @@ int main ( int argc, char ** argv )
                     if ( anomaly && interest > 0 ) {
                         printf ( "\testimate=%f current=%f\n", 
                             pBHE->period ( guard ), 
-                            currentTime - previousTime );
+                            double(currentTime - previousTime) );
                     }
                     fflush(stdout);
                 }

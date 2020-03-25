@@ -32,7 +32,7 @@ int doneCount = 0;
 void onceInit(void *ctx)
 {
     initCount++;
-    strcpy(initBy, epicsThreadGetNameSelf());
+    strncpy(initBy, epicsThreadGetNameSelf(), sizeof(initBy)-1);
 }
 
 void onceThread(void *ctx)

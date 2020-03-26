@@ -152,7 +152,7 @@ result should be displayed. Equivalent to the C<PREC> field of a record.
 =item time
 
 An optional string containing a single upper or lower-case letter C<A> ... C<L>
-which must correspond to an input provided in the c<args> parameter. When the
+which must correspond to an input provided in the C<args> parameter. When the
 record containing such a link has C<TSEL> set to -2 (epicsTimeEventDeviceTime)
 the record's timestamp field C<TIME> will be read from the indicated input link
 atomically with the value of the input argument.
@@ -161,7 +161,7 @@ atomically with the value of the input argument.
 
 =head4 Example
 
- {calc: {expr:"A*B", args:[{db:"record.VAL"}, 1.5], prec:3}}
+ {calc: {expr:"A*B", args:[{pva:"record"}, 1.5], prec:3}}
 
 =cut
 

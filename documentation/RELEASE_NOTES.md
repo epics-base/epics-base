@@ -12,12 +12,32 @@ The external PVA submodules each have their own separate set of release notes
 which should also be read to understand what has changed since an earlier
 release.
 
-## EPICS Release 7.x.y.z
+## EPICS Release 7.0.3.2
+
+### Variable names in RELEASE files
+
+`configure/RELEASE` files are parsed by both GNUmake and the `convertRelease.pl`
+script. While GNUmake is quite relaxed about what characters may be used in a
+RELEASE variable name, the `convertRelease.pl` script parser has only recognized
+variable names that match the Perl regular expression `\w+`, i.e. upper and
+lower-case letters, digits and underscore characters.
+
+The script has been modified so now RELEASE variable names must start with a
+letter or underscore, and be followed by any number of letters, digits,
+underscore or hyphen characters, matching the regular expression
+`[A-Za-z_][A-Za-z_0-9-]*`. The hyphen character `-` was not previously allowed
+and if used would have prevented a build from finding include files and
+libraries in any module using that in its RELEASE variable name.
+
+This change does disallow names that start with a digit which used to be
+allowed, but hopefully nobody has been relying on that ability. The regular
+expression used for names can be found in the file `src/tools/EPICS/Release.pm`
+and can be adjusted locally if necessary.
 
 ### caRepeater /dev/null
 
 On *NIX targets caRepeater will now partially daemonize by redirecting
-stdin/out/err with /dev/null.  This prevents caRepeater from inheriting
+stdin/out/err to /dev/null.  This prevents caRepeater from inheriting
 the stdin/out of a process, like caget, which has spawned it in the
 background.  This has been known to cause problems in some cases when
 caget is itself being run from a shell script.

@@ -5,6 +5,9 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
+# Regex to recognize variable names allowed in a RELEASE file
+my $MVAR = qr/[A-Za-z_] [A-Za-z_0-9-]*/x;
+
 #
 # Parse all relevent configure/RELEASE* files and includes
 #
@@ -58,17 +61,17 @@ sub readRelease {
         s/ \s+ $//x;            # Remove trailing whitespace
         next if m/^ \s* $/x;    # Skip blank lines
 
-        # Handle "<macro> = <path>" plus the := and ?= variants
-        my ($macro, $op, $val) = m/^ \s* (\w+) \s* ([?:]?=) \s* (.*) /x;
-        if ($macro ne '') {
-            $macro = 'TOP' if $macro =~ m/^ INSTALL_LOCATION /x;
-            if (exists $Rmacros->{$macro}) {
+        # Handle "<variable> = <path>" plus the := and ?= variants
+        my ($var, $op, $val) = m/^ \s* ($MVAR) \s* ([?:]?=) \s* (.*) /x;
+        if ($var ne '') {
+            $var = 'TOP' if $var =~ m/^ INSTALL_LOCATION /x;
+            if (exists $Rmacros->{$var}) {
                 next if $op eq '?=';
             } else {
-                push @$Rapps, $macro;
+                push @$Rapps, $var;
             }
             $val = expandMacros($val, $Rmacros) if $op eq ':=';
-            $Rmacros->{$macro} = $val;
+            $Rmacros->{$var} = $val;
             next;
         }
         # Handle "include <path>" and "-include <path>" syntax
@@ -85,13 +88,13 @@ sub readRelease {
 }
 
 #
-# Expand all (possibly nested) macros in a string
+# Expand all (possibly nested) variables in a string
 #
 sub expandMacros {
     my ($str, $Rmacros) = @_;
     # $Rmacros is a reference to a hash
 
-    while (my ($pre, $var, $post) = $str =~ m/ (.*) \$\( (\w+) \) (.*) /x) {
+    while (my ($pre, $var, $post) = $str =~ m/ (.*) \$\( ($MVAR) \) (.*) /x) {
         last unless exists $Rmacros->{$var};
         $str = $pre . $Rmacros->{$var} . $post;
     }
@@ -99,21 +102,21 @@ sub expandMacros {
 }
 
 #
-# Expand all (possibly nested) macros in a dictionary
+# Expand all (possibly nested) variables in a dictionary
 #
 sub expandRelease {
     my ($Rmacros, $warn) = @_;
     # $Rmacros is a reference to a hash
     $warn = '' unless defined $warn;
 
-    while (my ($macro, $val) = each %$Rmacros) {
-        while (my ($pre,$var,$post) = $val =~ m/ (.*) \$\( (\w+) \) (.*) /x) {
-            warn "EPICS/Release.pm: Undefined macro \$($var) used $warn\n"
+    while (my ($relvar, $val) = each %$Rmacros) {
+        while (my ($pre,$var,$post) = $val =~ m/ (.*) \$\( ($MVAR) \) (.*) /x) {
+            warn "EPICS/Release.pm: Undefined variable \$($var) used $warn\n"
                 unless exists $Rmacros->{$var};
-            die "EPICS/Release.pm: Circular definition of macro $var $warn\n"
-                if $macro eq $var;
+            die "EPICS/Release.pm: Circular definition of variable $var $warn\n"
+                if $relvar eq $var;
             $val = $pre . $Rmacros->{$var} . $post;
-            $Rmacros->{$macro} = $val;
+            $Rmacros->{$relvar} = $val;
         }
     }
 }

@@ -169,6 +169,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
     dbChannel *chan = linkChannel(plink);
     DBADDR *paddr = &chan->addr;
     dbCommon *precord = plink->precord;
+    db_field_log *pfl = NULL;
     long status;
 
     /* scan passive records if link is process passive  */
@@ -178,42 +179,55 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
             return status;
     }
 
-    /* If filters are involved in a read, create field log and run filters */
-    if (ellCount(&chan->filters)) {
-        db_field_log *pfl;
-
-        /* For the moment, empty arrays are not supported by EPICS */
-        if (dbChannelFinalElements(chan) <= 0) /* empty array request */
-            return S_db_badField;
-        pfl = db_create_read_log(chan);
-        if (!pfl)
-            return S_db_noMemory;
-        pfl = dbChannelRunPreChain(chan, pfl);
-        pfl = dbChannelRunPostChain(chan, pfl);
-        status = dbChannelGet(chan, dbrType, pbuffer, NULL, pnRequest, pfl);
-        db_delete_field_log(pfl);
-        if (status)
-            return status;
-        if (pnRequest && *pnRequest <= 0) /* empty array result */
-            return S_db_badField;
-    } else if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
+    if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType)
+    {
+        /* shortcut: scalar with known conversion, no filter */
         status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
-    } else {
+    }
+    else if (dbChannelFinalElements(chan) == 1 && (!pnRequest || *pnRequest == 1)
+                && dbChannelSpecial(chan) != SPC_DBADDR
+                && dbChannelSpecial(chan) != SPC_ATTRIBUTE
+                && ellCount(&chan->filters) == 0)
+    {
+        /* simple scalar: set up shortcut */
         unsigned short dbfType = dbChannelFinalFieldType(chan);
 
         if (dbrType < 0 || dbrType > DBR_ENUM || dbfType > DBF_DEVICE)
             return S_db_badDbrtype;
 
-        if (dbChannelFinalElements(chan) == 1 && (!pnRequest || *pnRequest == 1)
-                && dbChannelSpecial(chan) != SPC_DBADDR
-                && dbChannelSpecial(chan) != SPC_ATTRIBUTE) {
-            ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
-            status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
-        } else {
-            ppv_link->getCvt = NULL;
-            status = dbGet(paddr, dbrType, pbuffer, NULL, pnRequest, NULL);
-        }
+        ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
         ppv_link->lastGetdbrType = dbrType;
+        status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
+    }
+    else
+    {
+        /* filter, array, or special */
+        ppv_link->getCvt = NULL;
+
+        /* For the moment, empty arrays are not supported by EPICS */
+        if (dbChannelFinalElements(chan) <= 0) /* empty array request */
+            return S_db_badField;
+
+        if (ellCount(&chan->filters)) {
+            /* If filters are involved in a read, create field log and run filters */
+            pfl = db_create_read_log(chan);
+            if (!pfl)
+                return S_db_noMemory;
+
+            pfl = dbChannelRunPreChain(chan, pfl);
+            pfl = dbChannelRunPostChain(chan, pfl);
+        }
+
+        status = dbChannelGet(chan, dbrType, pbuffer, NULL, pnRequest, pfl);
+
+        if (pfl)
+            db_delete_field_log(pfl);
+
+        if (status)
+            return status;
+
+        if (pnRequest && *pnRequest <= 0) /* empty array result */
+            return S_db_badField;
     }
 
     if (!status && precord != dbChannelRecord(chan))

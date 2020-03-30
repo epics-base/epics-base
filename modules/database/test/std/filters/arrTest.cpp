@@ -73,9 +73,9 @@ static int fl_equals_array(short type, const db_field_log *pfl1, void *p2) {
             }
             break;
         case DBR_STRING:
-            if (strtol(&((const char*)pfl1->u.r.field)[i*MAX_STRING_SIZE], NULL, 0) != ((epicsInt32*)p2)[i]) {
+            if (strtol(&((const char*)pfl1->u.r.field)[i*pfl1->field_size], NULL, 0) != ((epicsInt32*)p2)[i]) {
                 testDiag("at index=%d: field log has '%s', should be '%d'",
-                         i, &((const char*)pfl1->u.r.field)[i*MAX_STRING_SIZE], ((epicsInt32*)p2)[i]);
+                         i, &((const char*)pfl1->u.r.field)[i*pfl1->field_size], ((epicsInt32*)p2)[i]);
                 return 0;
             }
             break;
@@ -120,7 +120,7 @@ static void testHead (const char *title, const char *typ = "") {
     off = Offset; \
     (void) dbPutField(&offaddr, DBR_LONG, &off, 1); \
     pfl = db_create_read_log(pch); \
-    testOk(pfl->type == dbfl_type_rec, "original field log has type rec"); \
+    testOk(pfl->type == dbfl_type_ref, "original field log has type ref"); \
     pfl2 = dbChannelRunPostChain(pch, pfl); \
     testOk(pfl2 == pfl, "call does not drop or replace field_log"); \
     testOk(pfl->type == dbfl_type_ref, "filtered field log has type ref"); \

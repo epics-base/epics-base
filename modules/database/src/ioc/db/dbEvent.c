@@ -668,27 +668,21 @@ int db_post_extra_labor (dbEventCtx ctx)
     return DB_EVENT_OK;
 }
 
-/*
- *  DB_CREATE_EVENT_LOG()
- *
- *  NOTE: This assumes that the db scan lock is already applied
- *        (as it copies data from the record)
- */
-db_field_log* db_create_event_log (struct evSubscrip *pevent)
+static db_field_log* db_create_field_log (struct dbChannel *chan, int use_val)
 {
     db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
 
     if (pLog) {
-        struct dbChannel *chan = pevent->chan;
         struct dbCommon  *prec = dbChannelRecord(chan);
-        pLog->ctx = dbfl_context_event;
-        if (pevent->useValque) {
+        pLog->stat = prec->stat;
+        pLog->sevr = prec->sevr;
+        pLog->time = prec->time;
+        pLog->field_type  = dbChannelFieldType(chan);
+        pLog->field_size  = dbChannelFieldSize(chan);
+        pLog->no_elements = dbChannelElements(chan);
+
+        if (use_val) {
             pLog->type = dbfl_type_val;
-            pLog->stat = prec->stat;
-            pLog->sevr = prec->sevr;
-            pLog->time = prec->time;
-            pLog->field_type  = dbChannelFieldType(chan);
-            pLog->no_elements = dbChannelElements(chan);
             /*
              * use memcpy to avoid a bus error on
              * union copy of char in the db at an odd
@@ -698,8 +692,30 @@ db_field_log* db_create_event_log (struct evSubscrip *pevent)
                    dbChannelField(chan),
                    dbChannelFieldSize(chan));
         } else {
-            pLog->type = dbfl_type_rec;
+            pLog->type = dbfl_type_ref;
+
+            /* don't make a copy yet, just reference the field value */
+            pLog->u.r.field = dbChannelField(chan);
+            /* indicate field value still owned by record */
+            pLog->u.r.dtor = NULL;
+            /* no private data yet, may be set by a filter */
+            pLog->u.r.pvt = NULL;
         }
+    }
+    return pLog;
+}
+
+/*
+ *  DB_CREATE_EVENT_LOG()
+ *
+ *  NOTE: This assumes that the db scan lock is already applied
+ *        (as it calls rset->get_array_info)
+ */
+db_field_log* db_create_event_log (struct evSubscrip *pevent)
+{
+    db_field_log *pLog = db_create_field_log(pevent->chan, pevent->useValque);
+    if (pLog) {
+        pLog->ctx  = dbfl_context_event;
     }
     return pLog;
 }
@@ -710,11 +726,12 @@ db_field_log* db_create_event_log (struct evSubscrip *pevent)
  */
 db_field_log* db_create_read_log (struct dbChannel *chan)
 {
-    db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
-
+    db_field_log *pLog = db_create_field_log(chan,
+        dbChannelElements(chan) == 1 &&
+        dbChannelSpecial(chan) != SPC_DBADDR &&
+        dbChannelFieldSize(chan) <= sizeof(union native_value));
     if (pLog) {
         pLog->ctx  = dbfl_context_read;
-        pLog->type = dbfl_type_rec;
     }
     return pLog;
 }
@@ -736,20 +753,6 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
      */
 
     LOCKEVQUE (ev_que);
-
-    /*
-     * if we have an event on the queue and both the last
-     * event on the queue and the current event are emtpy
-     * (i.e. of type dbfl_type_rec), simply ignore duplicate
-     * events (saving empty events serves no purpose)
-     */
-    if (pevent->npend > 0u &&
-        (*pevent->pLastLog)->type == dbfl_type_rec &&
-        pLog->type == dbfl_type_rec) {
-        db_delete_field_log(pLog);
-        UNLOCKEVQUE (ev_que);
-        return;
-    }
 
     /*
      * add to task local event que

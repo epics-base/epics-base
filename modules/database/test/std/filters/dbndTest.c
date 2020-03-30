@@ -130,7 +130,7 @@ MAIN(dbndTest)
     dbEventCtx evtctx;
     int logsFree, logsFinal;
 
-    testPlan(77);
+    testPlan(72);
 
     testdbPrepare();
 
@@ -171,12 +171,9 @@ MAIN(dbndTest)
            "dbnd has one filter with argument in pre chain");
     testOk((ellCount(&pch->post_chain) == 0), "dbnd has no filter in post chain");
 
-    /* Field logs of type ref and rec: pass any update */
+    /* Field logs of type ref: pass any update */
 
-    testHead("Field logs of type ref and rec");
-    fl1.type = dbfl_type_rec;
-    mustPassTwice(pch, &fl1, "abs field_log=rec", 0., 0);
-
+    testHead("Field logs of type ref");
     fl1.type = dbfl_type_ref;
     mustPassTwice(pch, &fl1, "abs field_log=ref", 0., 0);
 

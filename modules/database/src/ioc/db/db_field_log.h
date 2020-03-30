@@ -57,20 +57,31 @@ union native_value {
 struct db_field_log;
 typedef void (dbfl_freeFunc)(struct db_field_log *pfl);
 
-/* Types of db_field_log: rec = use record, val = val inside, ref = reference inside */
+/*
+ * A db_field_log has one of two types:
+ *
+ * dbfl_type_ref - Reference to value
+ *  Used for variable size (array) data types.  Meta-data
+ *  is stored in the field log, but value data is stored externally.
+ *  Only the dbfl_ref side of the data union is valid.
+ *
+ * dbfl_type_val - Internal value
+ *  Used to store small scalar data.  Meta-data and value are
+ *  present in this structure and no external references are used.
+ *  Only the dbfl_val side of the data union is valid.
+ */
 typedef enum dbfl_type {
-    dbfl_type_rec = 0,
     dbfl_type_val,
     dbfl_type_ref
 } dbfl_type;
 
 /* Context of db_field_log: event = subscription update, read = read reply */
 typedef enum dbfl_context {
-    dbfl_context_read = 0,
+    dbfl_context_read,
     dbfl_context_event
 } dbfl_context;
 
-#define dbflTypeStr(t) (t==dbfl_type_val?"val":t==dbfl_type_rec?"rec":"ref")
+#define dbflTypeStr(t) (t==dbfl_type_val?"val":"ref")
 
 struct dbfl_val {
     union native_value field; /* Field value */
@@ -82,6 +93,8 @@ struct dbfl_val {
  * db_delete_field_log().  Any code which changes a dbfl_type_ref
  * field log to another type, or to reference different data,
  * must explicitly call the dtor function.
+ * If the dtor is NULL, then this means the array data is still owned
+ * by a record.
  */
 struct dbfl_ref {
     dbfl_freeFunc     *dtor;  /* Callback to free filter-allocated resources */
@@ -89,8 +102,11 @@ struct dbfl_ref {
     void              *field; /* Field value */
 };
 
+/*
+ * Note that field_size may be larger than MAX_STRING_SIZE.
+ */
 typedef struct db_field_log {
-    unsigned int     type:2;  /* type (union) selector */
+    unsigned int     type:1;  /* type (union) selector */
     /* ctx is used for all types */
     unsigned int      ctx:1;  /* context (operation type) */
     /* the following are used for value and reference types */
@@ -98,36 +114,13 @@ typedef struct db_field_log {
     unsigned short     stat;  /* Alarm Status */
     unsigned short     sevr;  /* Alarm Severity */
     short        field_type;  /* DBF type of data */
-    short        field_size;  /* Data size */
-    long        no_elements;  /* No of array elements */
+    short        field_size;  /* Size of a single element */
+    long        no_elements;  /* No of valid array elements */
     union {
         struct dbfl_val v;
         struct dbfl_ref r;
     } u;
 } db_field_log;
-
-/*
- * A db_field_log will in one of three types:
- *
- * dbfl_type_rec - Reference to record
- *  The field log stores no data itself.  Data must instead be taken
- *  via the dbChannel* which must always be provided when along
- *  with the field log.
- *  For this type only the 'type' and 'ctx' members are used.
- *
- * dbfl_type_ref - Reference to outside value
- *  Used for variable size (array) data types.  Meta-data
- *  is stored in the field log, but value data is stored externally
- *  (see struct dbfl_ref).
- *  For this type all meta-data members are used.  The dbfl_ref side of the
- *  data union is used.
- *
- * dbfl_type_val - Internal value
- *  Used to store small scalar data.  Meta-data and value are
- *  present in this structure and no external references are used.
- *  For this type all meta-data members are used.  The dbfl_val side of the
- *  data union is used.
- */
 
 #ifdef __cplusplus
 }

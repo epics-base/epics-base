@@ -339,7 +339,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         dbCommon        *pcommon;
         char            *pbuffer = *poriginal;
 
-        if (!pfl || pfl->type == dbfl_type_rec)
+        if (!pfl)
             field_type = paddr->field_type;
         else
             field_type = pfl->field_type;
@@ -349,7 +349,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         if( (*options) & DBR_STATUS ) {
             unsigned short *pushort = (unsigned short *)pbuffer;
 
-            if (!pfl || pfl->type == dbfl_type_rec) {
+            if (!pfl) {
                 *pushort++ = pcommon->stat;
                 *pushort++ = pcommon->sevr;
             } else {
@@ -383,7 +383,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         if( (*options) & DBR_TIME ) {
             epicsUInt32 *ptime = (epicsUInt32 *)pbuffer;
 
-            if (!pfl || pfl->type == dbfl_type_rec) {
+            if (!pfl) {
                 *ptime++ = pcommon->time.secPastEpoch;
                 *ptime++ = pcommon->time.nsec;
             } else {
@@ -904,22 +904,23 @@ long dbGet(DBADDR *paddr, short dbrType,
     if (nRequest && *nRequest == 0)
         return 0;
 
-    if (!pfl || pfl->type == dbfl_type_rec) {
+    if (!pfl) {
         field_type = paddr->field_type;
         no_elements = capacity = paddr->no_elements;
-
-        /* Update field info from record
-         * may modify paddr->pfield
-         */
-        if (paddr->pfldDes->special == SPC_DBADDR &&
-            (prset = dbGetRset(paddr)) &&
-            prset->get_array_info) {
-            status = prset->get_array_info(paddr, &no_elements, &offset);
-        } else
-            offset = 0;
     } else {
         field_type = pfl->field_type;
         no_elements = capacity = pfl->no_elements;
+    }
+
+    /* Update field info from record
+     * may modify paddr->pfield
+     */
+    if ((!pfl || (pfl->type==dbfl_type_ref && !pfl->u.r.dtor)) &&
+        paddr->pfldDes->special == SPC_DBADDR &&
+        (prset = dbGetRset(paddr)) &&
+        prset->get_array_info) {
+        status = prset->get_array_info(paddr, &no_elements, &offset);
+    } else {
         offset = 0;
     }
 
@@ -951,7 +952,7 @@ long dbGet(DBADDR *paddr, short dbrType,
             goto done;
         }
 
-        if (!pfl || pfl->type == dbfl_type_rec) {
+        if (!pfl) {
             status = dbFastGetConvertRoutine[field_type][dbrType]
                 (paddr->pfield, pbuf, paddr);
         } else {
@@ -964,6 +965,7 @@ long dbGet(DBADDR *paddr, short dbrType,
 
             localAddr.field_type = pfl->field_type;
             localAddr.field_size = pfl->field_size;
+            /* not used by dbFastConvert: */
             localAddr.no_elements = pfl->no_elements;
             if (pfl->type == dbfl_type_val)
                 localAddr.pfield = (char *) &pfl->u.v.field;
@@ -979,6 +981,8 @@ long dbGet(DBADDR *paddr, short dbrType,
         if (nRequest) {
             if (no_elements < *nRequest)
                 *nRequest = no_elements;
+            if (capacity < *nRequest)
+                *nRequest = capacity;
             n = *nRequest;
         } else {
             n = 1;
@@ -995,8 +999,8 @@ long dbGet(DBADDR *paddr, short dbrType,
         }
         /* convert data into the caller's buffer */
         if (n <= 0) {
-            ;/*do nothing*/
-        } else if (!pfl || pfl->type == dbfl_type_rec) {
+            ;                           /*do nothing */
+        } else if (!pfl) {
             status = convert(paddr, pbuf, n, capacity, offset);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
@@ -1008,6 +1012,7 @@ long dbGet(DBADDR *paddr, short dbrType,
 
             localAddr.field_type = pfl->field_type;
             localAddr.field_size = pfl->field_size;
+            /* not used by dbConvert, it uses the passed capacity instead: */
             localAddr.no_elements = pfl->no_elements;
             if (pfl->type == dbfl_type_val)
                 localAddr.pfield = (char *) &pfl->u.v.field;

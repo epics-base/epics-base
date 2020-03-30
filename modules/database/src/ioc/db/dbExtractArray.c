@@ -14,11 +14,12 @@
 /*
  *  Author: Ralph Lange <Ralph.Lange@bessy.de>
  *
- *  based on dbConvert.c
+ *  based on dbConvert.c, see copyNoConvert
  *  written by: Bob Dalesio, Marty Kraimer
  */
 
 #include <string.h>
+#include <assert.h>
 
 #include "epicsTypes.h"
 
@@ -26,61 +27,30 @@
 #include "dbAddr.h"
 #include "dbExtractArray.h"
 
-void dbExtractArrayFromRec(const dbAddr *paddr, void *pto,
-                           long nRequest, long no_elements, long offset, long increment)
+void dbExtractArray(const void *pfrom, void *pto, short field_size,
+    long nRequest, long no_elements, long offset, long increment)
 {
     char *pdst = (char *) pto;
-    char *psrc = (char *) paddr->pfield;
-    long nUpperPart;
-    int i;
-    short srcSize = paddr->field_size;
-    short dstSize = srcSize;
-    char isString = (paddr->field_type == DBF_STRING);
+    const char *psrc = (char *) pfrom;
 
-    if (nRequest > no_elements) nRequest = no_elements;
-    if (isString && srcSize > MAX_STRING_SIZE) dstSize = MAX_STRING_SIZE;
-
-    if (increment == 1 && dstSize == srcSize) {
-        nUpperPart = nRequest < no_elements - offset ? nRequest : no_elements - offset;
-        memcpy(pdst, &psrc[offset * srcSize], dstSize * nUpperPart);
-        if (nRequest > nUpperPart)
-            memcpy(&pdst[dstSize * nUpperPart], psrc, dstSize * (nRequest - nUpperPart));
-        if (isString)
-            for (i = 1; i <= nRequest; i++)
-                pdst[dstSize*i-1] = '\0';
-    } else {
-        for (; nRequest > 0; nRequest--, pdst += dstSize, offset += increment) {
-            offset %= no_elements;
-            memcpy(pdst, &psrc[offset*srcSize], dstSize);
-            if (isString) pdst[dstSize-1] = '\0';
-        }
-    }
-}
-
-void dbExtractArrayFromBuf(const void *pfrom, void *pto,
-                           short field_size, short field_type,
-                           long nRequest, long no_elements, long offset, long increment)
-{
-    char *pdst = (char *) pto;
-    char *psrc = (char *) pfrom;
-    int i;
-    short srcSize = field_size;
-    short dstSize = srcSize;
-    char isString = (field_type == DBF_STRING);
-
-    if (nRequest > no_elements) nRequest = no_elements;
-    if (offset > no_elements - 1) offset = no_elements - 1;
-    if (isString && dstSize >= MAX_STRING_SIZE) dstSize = MAX_STRING_SIZE - 1;
+    /* assert preconditions */
+    assert(nRequest >= 0);
+    assert(no_elements >= 0);
+    assert(increment > 0);
+    assert(0 <= offset);
+    assert(offset < no_elements);
 
     if (increment == 1) {
-        memcpy(pdst, &psrc[offset * srcSize], dstSize * nRequest);
-        if (isString)
-            for (i = 1; i <= nRequest; i++)
-                pdst[dstSize*i] = '\0';
+        long nUpperPart =
+            nRequest < no_elements - offset ? nRequest : no_elements - offset;
+        memcpy(pdst, psrc + (offset * field_size), field_size * nUpperPart);
+        if (nRequest > nUpperPart)
+            memcpy(pdst + (field_size * nUpperPart), psrc,
+                field_size * (nRequest - nUpperPart));
     } else {
-        for (; nRequest > 0; nRequest--, pdst += srcSize, offset += increment) {
-            memcpy(pdst, &psrc[offset*srcSize], dstSize);
-            if (isString) pdst[dstSize] = '\0';
+        for (; nRequest > 0; nRequest--, pdst += field_size, offset += increment) {
+            offset %= no_elements;
+            memcpy(pdst, psrc + (offset * field_size), field_size);
         }
     }
 }

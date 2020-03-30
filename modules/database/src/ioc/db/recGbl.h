@@ -15,6 +15,9 @@
 #ifndef INCrecGblh
 #define INCrecGblh 1
 
+#include <stdarg.h>
+
+#include "compilerDependencies.h"
 #include "epicsTypes.h"
 #include "dbCoreAPI.h"
 
@@ -62,6 +65,12 @@ DBCORE_API int recGblSetSevr(void *precord, epicsEnum16 new_stat,
     epicsEnum16 new_sevr);
 DBCORE_API void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
     epicsEnum16 sevr);
+DBCORE_API int recGblSetSevrMsg(void *precord, epicsEnum16 new_stat,
+                                epicsEnum16 new_sevr,
+                                const char *msg, ...) EPICS_PRINTF_STYLE(4,5);
+DBCORE_API int recGblSetSevrVMsg(void *precord, epicsEnum16 new_stat,
+                                 epicsEnum16 new_sevr,
+                                 const char *msg, va_list args);
 DBCORE_API void recGblFwdLink(void *precord);
 DBCORE_API void recGblGetTimeStamp(void *precord);
 DBCORE_API void recGblGetTimeStampSimm(void *prec, const epicsEnum16 simm, struct link *siol);

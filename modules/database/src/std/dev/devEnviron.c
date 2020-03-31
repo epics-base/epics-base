@@ -63,7 +63,7 @@ static long read_lsi(lsiRecord *prec)
         prec->val[0] = 0;
         prec->len = 1;
         prec->udf = TRUE;
-        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
+        recGblSetSevrMsg(prec, UDF_ALARM, prec->udfs, "No such ENV");
     }
 
     return 0;
@@ -114,7 +114,7 @@ static long read_stringin(stringinRecord *prec)
     else {
         prec->val[0] = 0;
         prec->udf = TRUE;
-        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
+        recGblSetSevrMsg(prec, UDF_ALARM, prec->udfs, "No such ENV");
     }
 
     return 0;

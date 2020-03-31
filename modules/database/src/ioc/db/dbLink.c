@@ -313,10 +313,27 @@ long dbTryGetLink(struct link *plink, short dbrType, void *pbuffer,
     return plset->getValue(plink, dbrType, pbuffer, pnRequest);
 }
 
+static
+void setLinkAlarm(struct link* plink)
+{
+    struct dbCommon *precord = plink->precord;
+    dbRecordType *rdes = precord->rdes;
+    const char* amsg = NULL;
+    short i;
+
+    for(i=0; i<rdes->no_links; i++) {
+        dbFldDes *fdes = rdes->papFldDes[rdes->link_ind[i]];
+        if((char*)plink - (char*)precord == fdes->offset) {
+            amsg = fdes->name;
+        }
+    }
+
+    recGblSetSevrMsg(precord, LINK_ALARM, INVALID_ALARM, "field %s", amsg);
+}
+
 long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
         long *poptions, long *pnRequest)
 {
-    struct dbCommon *precord = plink->precord;
     long status;
 
     if (poptions && *poptions) {
@@ -328,7 +345,7 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
     if (status == S_db_noLSET)
         return -1;
     if (status)
-        recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        setLinkAlarm(plink);
 
     return status;
 }
@@ -416,9 +433,7 @@ long dbPutLink(struct link *plink, short dbrType, const void *pbuffer,
 
     status = plset->putValue(plink, dbrType, pbuffer, nRequest);
     if (status) {
-        struct dbCommon *precord = plink->precord;
-
-        recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        setLinkAlarm(plink);
     }
     return status;
 }
@@ -443,9 +458,7 @@ long dbPutLinkAsync(struct link *plink, short dbrType, const void *pbuffer,
 
     status = plset->putAsync(plink, dbrType, pbuffer, nRequest);
     if (status) {
-        struct dbCommon *precord = plink->precord;
-
-        recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        setLinkAlarm(plink);
     }
     return status;
 }

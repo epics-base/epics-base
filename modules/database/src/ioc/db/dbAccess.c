@@ -523,7 +523,7 @@ long dbProcess(dbCommon *precord)
             (precord->lcnt++ < MAX_LOCK) ||
             (precord->sevr >= INVALID_ALARM)) goto all_done;
 
-        recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
+        recGblSetSevrMsg(precord, SCAN_ALARM, INVALID_ALARM, "Async in progress");
         monitor_mask = recGblResetAlarms(precord);
         monitor_mask |= DBE_VALUE|DBE_LOG;
         pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];

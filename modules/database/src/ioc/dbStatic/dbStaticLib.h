@@ -110,6 +110,7 @@ epicsShareFunc long dbFirstField(DBENTRY *pdbentry, int dctonly);
 epicsShareFunc long dbNextField(DBENTRY *pdbentry, int dctonly);
 epicsShareFunc int  dbGetNFields(DBENTRY *pdbentry, int dctonly);
 epicsShareFunc char * dbGetFieldName(DBENTRY *pdbentry);
+epicsShareFunc int dbGetFieldDbfType(DBENTRY *pdbentry);
 epicsShareFunc char * dbGetDefault(DBENTRY *pdbentry);
 epicsShareFunc char * dbGetPrompt(DBENTRY *pdbentry);
 epicsShareFunc int dbGetPromptGroup(DBENTRY *pdbentry);

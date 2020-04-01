@@ -1381,6 +1381,14 @@ char * dbGetFieldName(DBENTRY *pdbentry)
     return(pflddes->name);
 }
 
+int dbGetFieldDbfType(DBENTRY *pdbentry)
+{
+    dbFldDes  	*pflddes = pdbentry->pflddes;
+
+    if(!pflddes) return(-1);
+    return(pflddes->field_type);
+}
+
 char * dbGetDefault(DBENTRY *pdbentry)
 {
     dbFldDes    *pflddes = pdbentry->pflddes;

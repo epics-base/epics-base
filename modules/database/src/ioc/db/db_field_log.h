@@ -93,8 +93,8 @@ struct dbfl_val {
  * db_delete_field_log().  Any code which changes a dbfl_type_ref
  * field log to another type, or to reference different data,
  * must explicitly call the dtor function.
- * If the dtor is NULL, then this means the array data is still owned
- * by a record.
+ * If the dtor is NULL and no_elements > 0, then this means the array
+ * data is still owned by a record. See the macro dbfl_has_copy below.
  */
 struct dbfl_ref {
     dbfl_freeFunc     *dtor;  /* Callback to free filter-allocated resources */
@@ -121,6 +121,18 @@ typedef struct db_field_log {
         struct dbfl_ref r;
     } u;
 } db_field_log;
+
+/*
+ * Whether a db_field_log* owns the field data. If this is the case, then the
+ * db_field_log is fully decoupled from the record: there is no need to lock
+ * the record when accessing the data, nor to call any rset methods (like
+ * get_array_info) because this has already been done when we made the copy. A
+ * special case here is that of no (remaining) data (i.e. no_elements==0). In
+ * this case, making a copy is redundant, so we have no dtor. But conceptually
+ * the db_field_log still owns the (empty) data.
+ */
+#define dbfl_has_copy(p)\
+ ((p) && ((p)->type==dbfl_type_val || (p)->u.r.dtor || (p)->no_elements==0))
 
 #ifdef __cplusplus
 }

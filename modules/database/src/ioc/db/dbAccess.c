@@ -912,10 +912,10 @@ long dbGet(DBADDR *paddr, short dbrType,
         no_elements = capacity = pfl->no_elements;
     }
 
-    /* Update field info from record
-     * may modify paddr->pfield
+    /* Update field info from record (if neccessary);
+     * may modify paddr->pfield.
      */
-    if ((!pfl || (pfl->type==dbfl_type_ref && !pfl->u.r.dtor)) &&
+    if (!dbfl_has_copy(pfl) &&
         paddr->pfldDes->special == SPC_DBADDR &&
         (prset = dbGetRset(paddr)) &&
         prset->get_array_info) {

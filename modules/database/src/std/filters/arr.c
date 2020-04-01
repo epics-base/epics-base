@@ -115,7 +115,6 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
             (prset = dbGetRset(&chan->addr)) &&
             prset->get_array_info)
         {
-            void *pfieldsave = dbChannelField(chan);
             prec = dbChannelRecord(chan);
             dbScanLock(prec);
             prset->get_array_info(&chan->addr, &nSource, &offset);
@@ -139,7 +138,6 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
                 }
             }
             dbScanUnlock(prec);
-            dbChannelField(chan) = pfieldsave;
         }
         break;
 

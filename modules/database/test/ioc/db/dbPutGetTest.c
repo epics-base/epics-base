@@ -119,11 +119,26 @@ void testLongField(void)
     testdbGetArrFieldEqual("lnktest.NAME$", DBR_CHAR, 8, 8, "lnktest");
 }
 
+static
+void testPutArr(void)
+{
+    epicsUInt32 buf[10];
+    testDiag("testPutArr()");
+
+    testdbGetArrFieldEqual("arr", DBR_LONG, 1, 0, NULL);
+
+    buf[0] = 1; buf[1] = 2; buf[2] = 3; buf[3] = 0;
+    testdbPutArrFieldOk("arr", DBF_ULONG, 3, buf);
+
+    buf[3] = 0xdeadbeef;
+    testdbGetArrFieldEqual("arr", DBR_LONG, 4, 3, buf);
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
 {
-    testPlan(41);
+    testPlan(44);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -141,6 +156,8 @@ MAIN(dbPutGet)
     testLongLink();
     testLongAttr();
     testLongField();
+
+    testPutArr();
 
     testIocShutdownOk();
 

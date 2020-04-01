@@ -16,6 +16,7 @@ struct dbFldDes;
 typedef struct dbAddr {
         struct dbCommon *precord;   /* address of record                     */
         void    *pfield;            /* address of field                      */
+        void    *compare;           /* use only for equality/order test between instances */
         struct dbFldDes *pfldDes;   /* address of struct fldDes              */
         long    no_elements;        /* number of elements (arrays)           */
         short   field_type;         /* type of database field                */

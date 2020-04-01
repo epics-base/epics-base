@@ -39,6 +39,7 @@
 #include "callback.h"
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
+#include "dbAddrModifier.h"
 #include "dbBase.h"
 #include "dbBkpt.h"
 #include "dbCommonPvt.h"
@@ -1244,6 +1245,12 @@ cleanup:
 long dbPutField(DBADDR *paddr, short dbrType,
     const void *pbuffer, long nRequest)
 {
+    return dbPutFieldModifier(paddr, dbrType, pbuffer, nRequest, NULL);
+}
+
+long dbPutFieldModifier(DBADDR *paddr, short dbrType,
+    const void *pbuffer, long nRequest, dbAddrModifier *pmod)
+{
     long        status = 0;
     long        special  = paddr->special;
     dbFldDes    *pfldDes = paddr->pfldDes;
@@ -1261,7 +1268,7 @@ long dbPutField(DBADDR *paddr, short dbrType,
         return dbPutFieldLink(paddr, dbrType, pbuffer, nRequest);
 
     dbScanLock(precord);
-    status = dbPut(paddr, dbrType, pbuffer, nRequest);
+    status = dbPutModifier(paddr, dbrType, pbuffer, nRequest, pmod);
     if (status == 0) {
         if (paddr->pfield == &precord->proc ||
             (pfldDes->process_passive &&
@@ -1315,16 +1322,23 @@ static long putAcks(DBADDR *paddr, const void *pbuffer, long nRequest,
     return 0;
 }
 
-long dbPut(DBADDR *paddr, short dbrType,
-    const void *pbuffer, long nRequest)
+long dbPut(DBADDR *paddr, short dbrType, const void *pbuffer, long nRequest)
+{
+    return dbPutModifier(paddr, dbrType, pbuffer, nRequest, NULL);
+}
+
+long dbPutModifier(DBADDR *paddr, short dbrType,
+    const void *pbuffer, long nRequest, dbAddrModifier *pmod)
 {
     dbCommon *precord = paddr->precord;
     short field_type  = paddr->field_type;
+    short field_size  = paddr->field_size;
     long no_elements  = paddr->no_elements;
     long special      = paddr->special;
     void *pfieldsave  = paddr->pfield;
     rset *prset = dbGetRset(paddr);
     long status = 0;
+    long available_no_elements = no_elements;
     long offset;
     dbFldDes *pfldDes;
     int isValueField;
@@ -1351,26 +1365,60 @@ long dbPut(DBADDR *paddr, short dbrType,
 
     if (paddr->pfldDes->special == SPC_DBADDR &&
         prset && prset->get_array_info) {
-        long dummy;
 
-        status = prset->get_array_info(paddr, &dummy, &offset);
+        status = prset->get_array_info(paddr, &available_no_elements, &offset);
         /* paddr->pfield may be modified */
         if (status) goto done;
-        if (no_elements < nRequest)
-            nRequest = no_elements;
-        status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
-            nRequest, no_elements, offset);
-        /* update array info */
-        if (!status && prset->put_array_info)
-            status = prset->put_array_info(paddr, nRequest);
+    } else
+        offset = 0;
+
+    if (pmod && pmod->incr > 1) {
+        long start = pmod->start;
+        long end = pmod->end;
+        long i,j;
+        long (*putCvt) (const void *from, void *to, const dbAddr * paddr) =
+            dbFastPutConvertRoutine[dbrType][field_type];
+        short dbr_size = dbValueSize(dbrType);
+        /*
+         * With an increment > 1 it makes no sense to write beyond the
+         * current array size.
+         */
+        long n = wrapArrayIndices(&start, pmod->incr, &end, available_no_elements);
+        if (nRequest > n)
+            nRequest = n;
+        for (i=0, j=(offset+start)%no_elements; i<nRequest; i++, j=(j+pmod->incr)%no_elements) {
+            status = putCvt(pbuffer+(i*dbr_size), paddr->pfield+(j*field_size), paddr);
+            if (status)
+                break;
+        }
     } else {
-        if (nRequest < 1) {
-            recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
-        } else {
+        if (pmod) {
+            long start = pmod->start;
+            long end = pmod->end;
+            /* Note that this limits the return value to be <= no_elements */
+            long n = wrapArrayIndices(&start, pmod->incr, &end, no_elements);
+            assert(pmod->incr == 1);
+            offset = (offset + start) % no_elements;
+            if (nRequest > n)
+                nRequest = n;
+        }
+        if (no_elements <= 1) {
             status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
                 paddr->pfield, paddr);
             nRequest = 1;
+        } else {
+            if (no_elements < nRequest)
+                nRequest = no_elements;
+            status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
+                nRequest, no_elements, offset);
         }
+    }
+
+    /* update array info unless we have a modifier or writing failed */
+    if (!pmod && !status &&
+        paddr->pfldDes->special == SPC_DBADDR &&
+        prset && prset->put_array_info) {
+        status = prset->put_array_info(paddr, nRequest);
     }
 
     /* Always do special processing if needed */

@@ -51,12 +51,14 @@ typedef struct parseContext {
 
 static void *dbChannelFreeList;
 static void *chFilterFreeList;
+static void *dbAddrModifierFreeList;
 
 void dbChannelExit(void)
 {
     freeListCleanup(dbChannelFreeList);
     freeListCleanup(chFilterFreeList);
-    dbChannelFreeList = chFilterFreeList = NULL;
+    freeListCleanup(dbAddrModifierFreeList);
+    dbChannelFreeList = chFilterFreeList = dbAddrModifierFreeList = NULL;
 }
 
 void dbChannelInit (void)
@@ -66,6 +68,7 @@ void dbChannelInit (void)
 
     freeListInitPvt(&dbChannelFreeList,  sizeof(dbChannel), 128);
     freeListInitPvt(&chFilterFreeList,  sizeof(chFilter), 64);
+    freeListInitPvt(&dbAddrModifierFreeList,  sizeof(dbAddrModifier), 128);
     db_init_event_freelists();
 }
 
@@ -402,9 +405,19 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
     pname++;
     *ppnext = pname;
 
+    if (!chan->paddrModifier) {
+        chan->paddrModifier = freeListCalloc(dbAddrModifierFreeList);
+        if (!chan->paddrModifier) {
+            status = S_db_noMemory;
+            goto finish;
+        }
+    }
+    chan->paddrModifier->start = start;
+    chan->paddrModifier->incr = incr;
+    chan->paddrModifier->end = end;
+
     plug = dbFindFilter("arr", 3);
     if (!plug) {
-        status = S_dbLib_fieldNotFound;
         goto finish;
     }
 
@@ -654,13 +667,15 @@ long dbChannelGetField(dbChannel *chan, short dbrType, void *pbuffer,
 long dbChannelPut(dbChannel *chan, short type, const void *pbuffer,
         long nRequest)
 {
-    return dbPut(&chan->addr, type, pbuffer, nRequest);
+    return dbPutModifier(&chan->addr, type, pbuffer, nRequest,
+        chan->paddrModifier);
 }
 
 long dbChannelPutField(dbChannel *chan, short type, const void *pbuffer,
         long nRequest)
 {
-    return dbPutField(&chan->addr, type, pbuffer, nRequest);
+    return dbPutFieldModifier(&chan->addr, type, pbuffer, nRequest,
+        chan->paddrModifier);
 }
 
 void dbChannelShow(dbChannel *chan, int level, const unsigned short indent)
@@ -714,6 +729,8 @@ void dbChannelDelete(dbChannel *chan)
         freeListFree(chFilterFreeList, filter);
     }
     free((char *) chan->name);
+    if (chan->paddrModifier)
+        freeListFree(dbAddrModifierFreeList, chan->paddrModifier);
     freeListFree(dbChannelFreeList, chan);
 }
 

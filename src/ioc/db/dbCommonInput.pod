@@ -1,0 +1,181 @@
+#*************************************************************************
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=head1 Fields Common to Input Record Types
+
+This section describes fields that are found in many input record types.
+These fields usually have the same meaning whenever they are used.
+
+See also L<Fields Common to All Record Types|dbCommonRecord> and L<Fields Common
+to Output Record Types|dbCommonOutput>.
+
+=head3 Input and Value Fields
+
+The B<INP> field specifies an input link. It is used by the device support
+routines to obtain input. For soft analog records it can be a constant, a
+database link, or a channel access link.
+
+The B<DTYP> field specifies the name of the device support module that will
+input values. Each record type has its own set of device support routines. If
+a record type does not have any associated device support, DTYP is
+meaningless.
+
+The B<RVAL> field contains - whenever possible - the raw data value exactly as
+it is obtained from the hardware or from the associated device driver and
+before it undergoes any conversions. The Soft Channel device support module
+reads values directly into VAL, bypassing this field.
+
+The B<VAL> field contains the record's final value, after any needed
+conversions have been performed.
+
+=head3 Device Input
+
+A device input routine normally returns one of the following values to its
+associated record support routine:
+
+=over
+
+=item *
+
+0: Success and convert. The input value is in RVAL. The record support module
+will compute VAL from RVAL.
+
+=item *
+
+2: Success, but don't convert. The device support module can specify this
+value if it does not want any conversions. It might do this for two reasons:
+
+=over
+
+=item *
+
+A hardware error is detected (in this case, it should also raise an alarm
+condition).
+
+=item *
+
+The device support routine reads values directly into the VAL field and then
+sets UDF to FALSE. For some record types the device support routine may have to
+do other record-specific processing as well such as applying a smoothing filter
+to the engineering units value.
+
+=back
+
+=back
+
+=head3 Device Support for Soft Records
+
+In most cases, two soft output device support modules are provided: Soft Channel
+and Raw Soft Channel. Both allow INP to be a constant, a database link, or a
+channel access link. The Soft Channel device support module reads input directly
+into the VAL field and specifies that no value conversion should be performed.
+This allows the record to store values in the data type of its VAL field. Note
+that for Soft Channel input, the RVAL field is not used. The Raw Soft Channel
+support module reads input into RVAL and indicates that any specified unit
+conversions be performed.
+
+The device support read routine normally calls C<dbGetLink()> which
+fetches a value from the link.
+
+If a value was returned by the link the UDF field is set to FALSE. The device
+support read routine normally returns the status from C<dbGetLink()>.
+
+
+=head3 Input Simulation Fields
+
+The B<SIMM> field controls simulation mode. It has either the value YES or NO.
+By setting this field to YES, the record can be switched into simulation mode
+of operation. While in simulation mode, input will be obtained from SIOL
+instead of INP.
+
+Ths B<SIML> specifies the simulation mode location. This field can be a
+constant, a database link, or a channel access link. If SIML is a database or
+channel access link, then SIMM is read from SIML. If SIML is a constant link
+then SIMM is initialized with the constant value but can be changed via
+dbPuts.
+
+Ths B<SVAL> field contains the simulation value. This is the record's input
+value, in engineering units, when the record is switched into simulation mode,
+i.e. when SIMM is set to YES.
+
+The B<SIOL> field is a link that can be used to fetch the simulation value. The
+link can be a constant, a database link, or a channel access link. If SIOL is a
+database or channel access link, then SVAL is read from SIOL. If SIOL is a
+constant link then SVAL is initialized with the constant value but can be
+changed via dbPuts.
+
+The B<SIMS> field specifies the simulation mode alarm severity. When this
+field is set to a value other than NO_ALARM and the record is in simulation
+mode, it will be put into alarm with this severity and a status of SIMM.
+
+=head3 Simulation Mode for Input Records
+
+An input record can be switched into simulation mode of operation by setting
+the value of SIMM to YES or RAW. During simulation, the record will be put
+into alarm with a severity of SIMS and a status of SIMM_ALARM. While in
+simulation mode, input values will be read from SIOL instead of INP:
+
+           -- (SIMM = NO?) INP (if supported and directed by device support, -> RVAL -- convert -> VAL), (else -> VAL)
+         /
+
+ SIML -> SIMM
+
+         \
+          -- (SIMM = YES?) SIOL -> SVAL -> VAL
+           \
+             -- (SIMM = RAW?) SIOL -> SVAL -> RVAL -- convert -> VAL
+
+A record can be switched into simulation mode of operation by setting the
+value of SIMM to YES. During simulation, the record will be put into alarm
+with a severity of SIMS and a status of SIMM_ALARM. While in simulation mode,
+input values, in engineering units, will be obtained from SIOL instead of INP.
+Also, while the record is in simulation mode, there will be no raw value
+conversion and no calls to device support when the record is processed.
+
+Normally input records contain a private readValue() routine which performs
+the following steps:
+
+=over
+
+=item *
+
+If PACT is TRUE, the device support read routine is called, status is set to
+its return code, and readValue returns.
+
+=item *
+
+Call C<dbGetLink()> to get a new value for SIMM from SIML.
+
+=item *
+
+Check value of SIMM.
+
+=item *
+
+If SIMM is NO, then call the device support read routine, set status to its
+return code, and return.
+
+=item *
+
+If SIMM is YES, then call C<dbGetLink()> to read the input value from SIOL
+into SVAL. If success, then set VAL to SVAL and UDF to FALSE and set status to
+2 (don't convert) if input record supports conversion. If SIMS is greater than
+zero, set alarm status to SIMM and severity to SIMS. Set status to the return
+code from recGblGetLinkValue and return.
+
+=item *
+
+If SIMM is RAW, then call C<dbGetLink()> to read the input value from SIOL
+into SVAL. If success, then set RVAL to SVAL and UDF to FALSE and set status
+to 0 (convert) if input record supports conversion. If SIMS is greater than
+zero, set alarm status to SIMM and severity to SIMS. Set status to the return
+code from recGblGetLinkValue and return.
+
+=item *
+
+If SIMM is not YES, NO or RAW, a SOFT alarm with a severity of INVALID is
+raised, and return status is set to -1.
+
+=back

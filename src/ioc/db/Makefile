@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 # This is a Makefile fragment, see src/ioc/Makefile.
@@ -59,6 +59,9 @@ DBDINC += dbCommon
 
 dbMenusPod = $(notdir $(wildcard ../db/menu*.dbd.pod))
 HTMLS += $(patsubst %.dbd.pod,%.html,$(dbMenusPod))
+HTMLS += dbCommonRecord.html
+HTMLS += dbCommonInput.html
+HTMLS += dbCommonOutput.html
 
 dbCore_SRCS += dbLock.c
 dbCore_SRCS += dbAccess.c
@@ -91,4 +94,3 @@ dbCore_SRCS += chfPlugin.c
 dbCore_SRCS += dbState.c
 dbCore_SRCS += dbUnitTest.c
 dbCore_SRCS += dbServer.c
-

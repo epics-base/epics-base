@@ -1,9 +1,17 @@
 # Record Reference Documentation
 
-The following documentation for the record types and menus include with Base was converted from the old EPICS Wiki pages and updated. This list does not include all of the available record types as some have not been documented yet.
+The following documentation for the record types and menus include with Base was
+converted from the old EPICS Wiki pages and updated. This list only includes the
+record types supplied with Base.
+
+* [Fields Common to All Record Types](dbCommonRecord.html)
+* [Fields Common to Input Record Types](dbCommonInputs.html)
+* [Fields Common to Output Record Types](dbCommonOutputs.html)
 
 ## Record Types
 
+* [Analog Array Input Record (aai)](aaiRecord.html)
+* [Analog Array Output Record (aao)](aaoRecord.html)
 * [Analog Input Record (ai)](aiRecord.html)
 * [Analog Output Record (ao)](aoRecord.html)
 * [Array Subroutine Record (aSub)](aSubRecord.html)
@@ -49,4 +57,9 @@ The following documentation for the record types and menus include with Base was
 
 ## Corrections and Updates
 
-Corrections to these documents can be submitted as patch files to the EPICS core developers, or as merge requests or pull requests to the 3.15 branch of epics-base. The document sources can be found in the `src/std/rec` and `src/ioc/db` directories in files with extension `.dbd.pod`. The documentation format is an extended version of Perl POD, run `perldoc pod` for details.
+Corrections to these documents can be submitted as patch files to the EPICS core
+developers, or as merge requests or pull requests to the 3.15 branch of Base.
+The document sources can be found in the `src/std/rec` and `src/ioc/db`
+directories in files with extension `.dbd.pod`. The documentation source format
+is a combination of the EPICS DBD file format with an extended version of Perl's
+POD (plain old documentation); run `perldoc pod` for details of POD.

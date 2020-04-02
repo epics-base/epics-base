@@ -1,0 +1,211 @@
+#*************************************************************************
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=head1 Fields Common to Output Record Types
+
+This section describes fields that are found in many output record types.
+These fields usually have the same meaning whenever they are used.
+
+See also L<Fields Common to All Record Types|dbCommonRecord> and L<Fields Common to
+Input Records|dbCommonInput>.
+
+=head3 Output and Value Fields
+
+The B<OUT> field specifies an output link. It is used by the device support
+routines to decide where to send output. For soft records, it can be a
+constant, a database link, or a channel access link. If the link is a
+constant, the result is no output.
+
+The B<DTYP> field specifies the name of the device support module that will
+input values. Each record type has its own set of device support routines. If
+a record type does not have any associated device support, DTYP is
+meaningless.
+
+The B<VAL> field contains the desired value before any conversions to raw
+output have been performed.
+
+The B<OVAL> field is used to decide when to invoke monitors. Archive and value
+change monitors are invoked if OVAL is not equal to VAL. If a record type
+needs to make adjustments, OVAL is used to enforce the maximum rate of change
+limit before converting the desired value to a raw value.
+
+The B<RVAL> field contains - whenever possible -  the actual value sent to the
+hardware itself or to the associated device driver.
+
+The B<RBV> field contains - whenever possible - the actual read back value
+obtained from the hardware itself or from the associated device driver.
+
+
+=head3 Device Support for Soft Records
+
+Normally two soft output device support modules are provided, Soft Channel and
+and Raw Soft Channel. Both write a value through the output link OUT.
+The Soft Channel module writes output from the value associated with OVAL or
+VAL (if OVAL does not exist). The Raw Soft Channel support module writes the
+value associated with the RVAL field after conversion has been performed.
+
+The device support write routine normally calls C<dbPutLink()> which writes a
+value through the OUT link, and returns the status from that call.
+
+
+=head3 Input and Mode Select Fields
+
+The B<DOL> field is a link from which the desired output value can be fetched.
+DOL can be a constant, a database link, or a channel access link. If DOL is a
+database or channel access link and OMSL is closed_loop, then VAL is obtained
+from DOL.
+
+The B<OMSL> field selects the output mode. This field has either the value
+C<supervisory> or C<closed_loop>. DOL is used to fetch VAL only if OMSL has the
+value C<closed_loop>. By setting this field a record can be switched between
+supervisory and closed loop mode of operation. While in closed loop mode, the
+VAL field cannot be set via dbPuts.
+
+=head3 Output Mode Selection
+
+The fields DOL and OMSL are used to allow the output record to be part of a
+closed loop control algorithm. OMSL is meaningful only if DOL refers to a
+database or channel access link. It can have the values C<supervisory> or
+C<closed_loop>. If the mode is C<supervisory>, then nothing is done to VAL. If
+the mode is C<closed_loop> and the record type does not contain an OIF field,
+then each time the record is processed, VAL is set equal to the value obtained
+from the location referenced by DOL. If the mode is C<closed_loop> in record
+types with an OIF field and OIF is Full, VAL is set equal to the value obtained
+from the location referenced by DOL; if OIF is Incremental VAL is incremented by
+the value obtained from DOL.
+
+=head3 Invalid Output Action Fields
+
+The B<IVOA> field specifies the output action for the case that the record is
+put into an INVALID alarm severity. IVOA can be one of the following actions:
+
+=over
+
+=item *
+
+C<Continue normally>
+
+=item *
+
+C<Don't drive outputs>
+
+=item *
+
+C<Set output to IVOV>
+
+=back
+
+The B<IVOV> field contains the value for the IVOA action C<Set output to IVOV>
+in engineering units. If a new severity has been set to INVALID  and IVOA is
+C<Set output to IVOV>, then VAL is set to IVOV and converted to RVAL before
+device support is called.
+
+=head3 Invalid Alarm Output Action
+
+Whenever an output record is put into INVALID alarm severity, IVOA specifies
+an action to take. The record support process routine for each output record
+contains code which performs the following steps.
+
+=over
+
+=item *
+
+If new severity is less than INVALID, then call C<writeValue()>:
+
+=item *
+
+Else do the following:
+
+=over
+
+=item *
+
+If IVOA is C<Continue normally> then call C<writeValue()>.
+
+=item *
+
+If IVOA is C<Don't drive outputs> then do not write output.
+
+=item *
+
+If IVOA is C<Set output to IVOV> then set VAL to IVOV, call C<convert()> if
+necessary, and then call C<writeValue()>.
+
+=item *
+
+If IVOA not one of the above, an error message is generated.
+
+=back
+
+=back
+
+
+=head3 Simulation Fields
+
+The B<SIMM> field controls simulation mode. It has either the value YES or NO.
+By setting this field to YES, the record can be switched into simulation mode
+of operation. While in simulation mode, output will be forwarded through SIOL
+instead of OUT.
+
+Ths B<SIML> specifies the simulation mode location. This field can be a
+constant, a database link, or a channel access link. If SIML is a database or
+channel access link, then SIMM is read from SIML. If SIML is a constant link
+then SIMM is initialized with the constant value but can be changed via
+dbPuts.
+
+The B<SIOL> field is a link that the output value is written to when the record
+is in simulation mode.
+
+The B<SIMS> field specifies the simulation mode alarm severity. When this
+field is set to a value other than NO_ALARM and the record is in simulation
+mode, it will be put into alarm with this severity and a status of SIMM.
+
+=head3 Simulation Mode
+
+An output record can be switched into simulation mode of operation by setting
+the value of SIMM to YES. During simulation, the record will be put into alarm
+with a severity of SIMS and a status of SIMM_ALARM. While in simulation mode,
+output values, in engineering units, will be written to SIOL instead of OUT.
+However, the output values are never converted. Also, while the record is in
+simulation mode, there will be no calls to device support during record
+processing.
+
+Normally output records contain a private C<writeValue()> routine which performs
+the following steps:
+
+=over
+
+=item *
+
+If PACT is TRUE, the device support write routine is called, status is set to
+its return code, and readValue returns.
+
+=item *
+
+Call C<dbGetLink()> to get a new value for SIMM if SIML is a DB_LINK or a
+CA_LINK.
+
+=item *
+
+Check value of SIMM.
+
+=item *
+
+If SIMM is NO, then call the device support write routine, set status to its
+return code, and return.
+
+=item *
+
+If SIMM is YES, then call C<dbPutLink()> to write the output value from VAL or
+OVAL to SIOL. Set alarm status to SIMM and severity to SIMS, if SIMS is
+greater than zero. Set status to the return code from C<dbPutLink()> and
+return.
+
+=item *
+
+If SIMM not one of the above, a SOFT alarm with a severity of INVALID is
+raised, and return status is set to -1.
+
+=back

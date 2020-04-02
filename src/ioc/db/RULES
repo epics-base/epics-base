@@ -6,21 +6,25 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/RULES
-	@$(RM) $@
-	@$(DBTORECORDTYPEH) -D -I ../db -o $(COMMONDEP_TARGET) $< > $@
+THESE_RULES := $(IOCDIR)/db/RULES
 
-$(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/RULES
+dbCommon.h$(DEP): $(COMMON_DIR)/dbCommonRecord.dbd $(THESE_RULES)
+	@$(RM) $@
+	@$(DBTORECORDTYPEH) -D -I ../db  -I $(COMMON_DIR) -o $(COMMONDEP_TARGET) $< > $@
+
+$(COMMON_DIR)/dbCommonRecord.html: ../db/dbCommon.dbd.pod
+
+$(COMMON_DIR)/dbCommon.h: $(COMMON_DIR)/dbCommonRecord.dbd $(THESE_RULES)
 	@$(RM) $(notdir $@)
-	$(DBTORECORDTYPEH) -I ../db -o $(notdir $@) $<
+	$(DBTORECORDTYPEH) -I ../db  -I $(COMMON_DIR) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/menuGlobal.dbd: $(IOCDIR)/db/Makefile $(IOCDIR)/db/RULES
+$(COMMON_DIR)/menuGlobal.dbd: $(IOCDIR)/db/Makefile $(THESE_RULES)
 
 # This is a target-specific variable
 $(COMMON_DIR)/menuGlobal.dbd: DBDCAT_COMMAND = \

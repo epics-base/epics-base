@@ -2,7 +2,7 @@
 # Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 TOP=../..
 
@@ -17,6 +17,8 @@ PERL_MODULES += EPICS/Release.pm
 PERL_MODULES += EPICS/Readfile.pm
 PERL_MODULES += EPICS/Getopts.pm
 PERL_MODULES += EPICS/macLib.pm
+PERL_MODULES += EPICS/PodHtml.pm
+PERL_MODULES += EPICS/PodXHtml.pm
 
 PERL_MODULES += DBD.pm
 PERL_MODULES += DBD/Base.pm
@@ -82,8 +84,7 @@ EXPAND += $(PKGCONFIG:%=%@)
 CLEANS += epics-base-$(T_A).pc@
 
 include $(TOP)/configure/RULES
- 
+
 epics-base-$(T_A).pc@: ../epics-base-arch.pc@
 	@$(RM) $@
 	@$(CP) $< $@
-

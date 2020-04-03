@@ -9,8 +9,11 @@
 use strict;
 use warnings;
 
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
+
 use Getopt::Std;
-use Pod::Simple::HTML;
+use EPICS::PodHtml;
 
 our ($opt_o);
 
@@ -27,11 +30,9 @@ if (!$opt_o) {
 open my $out, '>', $opt_o or
     die "Can't create $opt_o: $!\n";
 
-my $podHtml = Pod::Simple::HTML->new();
+my $podHtml = EPICS::PodHtml->new();
 
 $podHtml->html_css('style.css');
-$podHtml->perldoc_url_prefix('');
-$podHtml->perldoc_url_postfix('.html');
 $podHtml->set_source($infile);
 $podHtml->output_string(\my $html);
 $podHtml->run;

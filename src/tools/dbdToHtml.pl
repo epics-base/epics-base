@@ -18,10 +18,10 @@ use EPICS::macLib;
 use EPICS::Readfile;
 
 BEGIN {
-    $::XHTML = eval "require Pod::Simple::XHTML; 1";
+    $::XHTML = eval "require EPICS::PodXHtml; 1";
     $::ENTITIES = eval "require HTML::Entities; 1";
     if (!$::XHTML) {
-        require Pod::Simple::HTML;
+        require EPICS::PodHtml;
     }
     if (!$::ENTITIES) {
         my %entities = (
@@ -130,7 +130,7 @@ my $contentType =
     '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >';
 
 if ($::XHTML) {
-    $podHtml = Pod::Simple::XHTML->new();
+    $podHtml = EPICS::PodXHtml->new();
     $podHtml->html_doctype(<< '__END_DOCTYPE');
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'
@@ -152,7 +152,7 @@ __END_DOCTYPE
     }
 } else { # Fall back to HTML
     $Pod::Simple::HTML::Content_decl = $contentType;
-    $podHtml = Pod::Simple::HTML->new();
+    $podHtml = EPICS::PodHtml->new();
     $podHtml->html_css('style.css');
 
     $idify = sub {

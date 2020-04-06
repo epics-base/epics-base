@@ -78,6 +78,7 @@ typedef struct
     epicsTimeStamp tsPreviousS;
     char firstStampPrinted;
     char onceConnected;
+    evid evid;
 } pv;
 
 

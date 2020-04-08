@@ -43,14 +43,23 @@ epicsShareFunc void * epicsLoadLibrary(const char *name)
 epicsShareFunc const char *epicsLoadError(void)
 {
     STORE char buffer[100];
+    DWORD n;
 
-    FormatMessage(
+    n = FormatMessage(
         FORMAT_MESSAGE_FROM_SYSTEM,
         NULL,
         epicsLoadErrorCode,
         0,
         buffer,
         sizeof(buffer)-1, NULL );
+
+    /* n - number of chars stored excluding nil.
+     *
+     * Some messages include a trailing newline, which we strip.
+     */
+    for(; n>=1 && (buffer[n-1]=='\n' || buffer[n-1]=='\r'); n--)
+        buffer[n-1] = '\0';
+
     return buffer;
 }
 

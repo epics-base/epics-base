@@ -40,14 +40,18 @@ configuration:
 # Environment variables: compiler toolchain
 environment:
   matrix:
-  - TOOLCHAIN: 10.0
-  - TOOLCHAIN: 11.0
-  - TOOLCHAIN: 12.0
-  - TOOLCHAIN: 14.0
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    TOOLCHAIN: 10.0
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    TOOLCHAIN: 11.0
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    TOOLCHAIN: 12.0
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    TOOLCHAIN: 14.0
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
     TOOLCHAIN: 2017
-  - TOOLCHAIN: mingw
-    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    TOOLCHAIN: mingw
 
 # Platform: architecture
 platform:

@@ -6,6 +6,47 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
+### epicsThread: Main thread defaults to allow blocking I/O
+
+VxWorks IOCs (and potentially RTEMS IOCs running GeSys) have had problems with
+garbled error messages from dbStaticLib routines for some time &mdash; messages
+printed before `iocInit` were being queued through the errlog thread instead of
+being output immediately. This has been fixed by initializing the main thread
+with its `OkToBlock` flag set instead of cleared. IOCs running on other
+operating systems that use iocsh to execute the startup script previously had
+that set anyway in iocsh so were not affected, but this change might cause other
+programs that don't use iocsh to change their behavior slightly if they use
+`errlogPrintf()`, `epicsPrintf()` or `errPrintf()`.
+
+### catools: Handle data type changes in camonitor
+
+The camonitor program didn't properly cope if subscribed to a channel whose data
+type changed when its IOC was rebooted without restarting the camonitor program.
+This has now been fixed.
+
+### More Record Reference Documentation
+
+The remaining record types have had their reference pages moved from the Wiki,
+and some new reference pages have been written to cover the analog array and
+long string input and output record types plus the printf recor type, none of
+which were previously documented. The wiki reference pages covering the fields
+common to all, input, and output record types have also been added, thanks to
+Rolf Keitel. The POD conversion scripts have also been improved and they now
+properly support linking to subsections in a different document, although the
+POD changes to add the cross-links that appeared in the original wiki pages
+still needs to be done in most cases.
+
+### Fix build issues with newer MinGW versions
+
+The `clock_gettime()` routine is no longer used under MinGW since newer versions
+don't provide it any more.
+
+### Fix race for port in RSRV when multiple IOCs start simultaneously
+
+If multiple IOCs were started at the same time, by systemd say, they could race
+to obtain the Channel Access TCP port number 5064. This issue has been fixed.
+
+
 ## Changes made between 3.15.6 and 3.15.7
 
 ### GNU Readline detection on Linux

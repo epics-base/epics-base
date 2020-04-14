@@ -19,25 +19,8 @@ use EPICS::Readfile;
 
 BEGIN {
     $::XHTML = eval "require EPICS::PodXHtml; 1";
-    $::ENTITIES = eval "require HTML::Entities; 1";
     if (!$::XHTML) {
         require EPICS::PodHtml;
-    }
-    if (!$::ENTITIES) {
-        my %entities = (
-            q{>} => 'gt',
-            q{<} => 'lt',
-            q{'} => '#39',
-            q{"} => 'quot',
-            q{&} => 'amp',
-        );
-
-        sub encode_entities {
-            my $str = shift;
-            my $ents = join '', keys %entities;
-            $str =~ s/([ $ents ])/'&' . ($entities{$1} || sprintf '#x%X', ord $1) . ';'/xge;
-            return $str;
-        }
     }
 }
 
@@ -190,7 +173,7 @@ my $pod = join "\n", '=for html <div class="pod">', '',
     } $dbd->pod,
     '=for html </div>', '';
 
-$podHtml->force_title(encode_entities($title));
+$podHtml->force_title($podHtml->encode_entities($title));
 $podHtml->perldoc_url_prefix('');
 $podHtml->perldoc_url_postfix('.html');
 $podHtml->output_fh($out);

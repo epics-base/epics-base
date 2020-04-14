@@ -104,7 +104,7 @@ void testUInt32Calc(const char *expr, epicsUInt32 expected) {
             testDiag("calcPerform: error evaluating '%s'", expr);
         }
 
-    uresult = (epicsUInt32) result;
+    uresult = (result < 0.0 ? (epicsUInt32)(epicsInt32)result : (epicsUInt32)result);
     pass = (uresult == expected);
     if (!testOk(pass, "%s", expr)) {
         testDiag("Expected result is 0x%x (%u), actually got 0x%x (%u)",
@@ -297,7 +297,7 @@ MAIN(epicsCalcTest)
     const double a=1.0, b=2.0, c=3.0, d=4.0, e=5.0, f=6.0,
 		 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0;
     
-    testPlan(613);
+    testPlan(630);
 
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -612,14 +612,14 @@ MAIN(epicsCalcTest)
     testExpr(0.0 + NaN);
     testExpr(Inf + 0.0);
     testExpr(Inf + Inf);
-#if defined(_WIN64) && defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
     testCalc("Inf + -Inf", NaN);
 #else
     testExpr(Inf + -Inf);
 #endif
     testExpr(Inf + NaN);
     testExpr(-Inf + 0.0);
-#if defined(_WIN64) && defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
     testCalc("-Inf + Inf", NaN);
 #else
     testExpr(-Inf + Inf);
@@ -688,7 +688,7 @@ MAIN(epicsCalcTest)
     testExpr(NaN < NaN);
     
     testExpr(1 << 2);
-    testExpr(1 << 3 << 2)
+    testExpr(1 << 3 << 2);
     
     testExpr(0 <= 1);
     testExpr(0 <= 0);
@@ -776,7 +776,9 @@ MAIN(epicsCalcTest)
     testExpr(NaN >= NaN);
     
     testExpr(8 >> 1);
+    testCalc("8 >>> 1", 8u >> 1u);
     testExpr(64 >> 2 >> 1);
+    testCalc("64 >>> 2 >>> 1", 64u >> 2u >> 1u);
     
     testExpr(7 AND 4);
     
@@ -875,11 +877,14 @@ MAIN(epicsCalcTest)
     testExpr(3 << 2 & 10);			// 2 2
     testCalc("18 & 6 << 2", (18 & 6) << 2);	// 2 2
     testExpr(36 >> 2 & 10);			// 2 2
+    testCalc("36 >>> 2 & 10", 36u >> 2u & 10u);			// 2 2
     testCalc("18 & 20 >> 2", (18 & 20) >> 2);	// 2 2
+    testCalc("18 & 20 >>> 2", (18u & 20u) >> 2u);	// 2 2
     testExpr(3 & 4 == 4);			// 2 3
     testExpr(3 AND 4 == 4);			// 2 3
     testCalc("1 << 2 != 4", 1 << (2 != 4));	// 2 3
     testCalc("16 >> 2 != 4", 16 >> (2 != 4));	// 2 3
+    testCalc("16 >>> 2 != 4", 16u >> (2u != 4u));	// 2 3
     testExpr(3 AND -2); 			// 2 8
     testExpr(0 < 1 ? 2 : 3);			// 3 0
     testExpr(1 <= 0 ? 2 : 3);			// 3 0
@@ -951,7 +956,11 @@ MAIN(epicsCalcTest)
     testUInt32Calc("~0xaaaaaaaa", 0x55555555u);
     testUInt32Calc("~~0xaaaaaaaa", 0xaaaaaaaau);
     testUInt32Calc("0xaaaaaaaa >> 8", 0xffaaaaaau);
+    testUInt32Calc("0x55555555 >> 8", 0x00555555u);
+    testUInt32Calc("0xaaaaaaaa >>> 8", 0x00aaaaaau);
+    testUInt32Calc("0x55555555 >>> 8", 0x00555555u);
     testUInt32Calc("0xaaaaaaaa << 8", 0xaaaaaa00u);
+    testUInt32Calc("0x55555555 << 8", 0x55555500u);
     //   using integer literals assigned to variables
     testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a AND b", 0xaaaa0000u);
     testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a OR b", 0xffffaaaau);
@@ -959,7 +968,11 @@ MAIN(epicsCalcTest)
     testUInt32Calc("a:=0xaaaaaaaa; ~a", 0x55555555u);
     testUInt32Calc("a:=0xaaaaaaaa; ~~a", 0xaaaaaaaau);
     testUInt32Calc("a:=0xaaaaaaaa; a >> 8", 0xffaaaaaau);
+    testUInt32Calc("a:=0xaaaaaaaa; a >>> 8", 0x00aaaaaau);
     testUInt32Calc("a:=0xaaaaaaaa; a << 8", 0xaaaaaa00u);
+    testUInt32Calc("a:=0x55555555; a >> 8", 0x00555555u);
+    testUInt32Calc("a:=0x55555555; a >>> 8", 0x00555555u);
+    testUInt32Calc("a:=0x55555555; a << 8", 0x55555500u);
 
     // Test proper conversion of double values (+ 0.1 enforces double literal)
     // when used as inputs to the bitwise operations.
@@ -979,9 +992,13 @@ MAIN(epicsCalcTest)
     testUInt32Calc("~ -1431655766.1", 0x55555555u);
     testUInt32Calc("~ 2863311530.1", 0x55555555u);
     testUInt32Calc("-1431655766.1 >> 0", 0xaaaaaaaau);
+    testUInt32Calc("-1431655766.1 >>> 0", 0xaaaaaaaau);
     testUInt32Calc("2863311530.1 >> 0", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 >>> 0", 0xaaaaaaaau);
     testUInt32Calc("-1431655766.1 >> 0.1", 0xaaaaaaaau);
+    testUInt32Calc("-1431655766.1 >>> 0.1", 0xaaaaaaaau);
     testUInt32Calc("2863311530.1 >> 0.1", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 >>> 0.1", 0xaaaaaaaau);
     testUInt32Calc("-1431655766.1 << 0", 0xaaaaaaaau);
     testUInt32Calc("2863311530.1 << 0", 0xaaaaaaaau);
     testUInt32Calc("-1431655766.1 << 0.1", 0xaaaaaaaau);
@@ -989,4 +1006,3 @@ MAIN(epicsCalcTest)
 
     return testDone();
 }
-

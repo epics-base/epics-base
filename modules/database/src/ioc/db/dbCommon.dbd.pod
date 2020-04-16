@@ -524,6 +524,11 @@ field which is then used to acquire a timestamp.
 		interest(2)
 		extra("epicsTimeStamp      time")
 	}
+	field(UTAG,DBF_LONG) {
+		prompt("Time Tag")
+		special(SPC_NOMOD)
+		interest(3)
+	}
 	field(FLNK,DBF_FWDLINK) {
 		prompt("Forward Process Link")
 		promptgroup("20 - Scan")

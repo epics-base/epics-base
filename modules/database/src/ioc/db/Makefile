@@ -11,6 +11,7 @@
 
 SRC_DIRS += $(IOCDIR)/db
 
+INC += arrayRangeModifier.h
 INC += callback.h
 INC += dbAccess.h
 INC += dbAccessDefs.h
@@ -67,9 +68,9 @@ HTMLS += dbCommonRecord.html
 HTMLS += dbCommonInput.html
 HTMLS += dbCommonOutput.html
 
+dbCore_SRCS += arrayRangeModifier.c
 dbCore_SRCS += dbLock.c
 dbCore_SRCS += dbAccess.c
-dbCore_SRCS += dbAddrModifier.c
 dbCore_SRCS += dbBkpt.c
 dbCore_SRCS += dbChannel.c
 dbCore_SRCS += dbConstLink.c

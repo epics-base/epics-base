@@ -1327,46 +1327,6 @@ long dbPut(DBADDR *paddr, short dbrType, const void *pbuffer, long nRequest)
     return dbPutModifier(paddr, dbrType, pbuffer, nRequest, NULL);
 }
 
-/* The record MUST be locked when this is called! */
-long dbHandleModifier(DBADDR *paddr, short dbrType, const void *pbuffer,
-    long nRequest, dbAddrModifier *pmod, long offset, long available)
-{
-    long status = 0;
-    long start = pmod->start;
-    long end = pmod->end;
-    /* Note that this limits the return value to be <= available */
-    long n = wrapArrayIndices(&start, pmod->incr, &end, available);
-
-    assert(pmod->incr > 0);
-    if (pmod->incr > 1) {
-        long i, j;
-        long (*putCvt) (const void *from, void *to, const dbAddr * paddr) =
-            dbFastPutConvertRoutine[dbrType][paddr->field_type];
-        short dbr_size = dbValueSize(dbrType);
-        if (nRequest > n)
-            nRequest = n;
-        for (i = 0, j = (offset + start) % paddr->no_elements; i < nRequest;
-            i++, j = (j + pmod->incr) % paddr->no_elements) {
-            status = putCvt(pbuffer + (i * dbr_size),
-                paddr->pfield + (j * paddr->field_size), paddr);
-        }
-    } else {
-        offset = (offset + start) % paddr->no_elements;
-        if (nRequest > n)
-            nRequest = n;
-        if (paddr->no_elements <= 1) {
-            status = dbFastPutConvertRoutine[dbrType][paddr->field_type] (pbuffer,
-                paddr->pfield, paddr);
-        } else {
-            if (paddr->no_elements < nRequest)
-                nRequest = paddr->no_elements;
-            status = dbPutConvertRoutine[dbrType][paddr->field_type] (paddr,
-                pbuffer, nRequest, paddr->no_elements, offset);
-        }
-    }
-    return status;
-}
-
 long dbPutModifier(DBADDR *paddr, short dbrType,
     const void *pbuffer, long nRequest, dbAddrModifier *pmod)
 {
@@ -1411,9 +1371,9 @@ long dbPutModifier(DBADDR *paddr, short dbrType,
     } else
         offset = 0;
 
-    if (pmod) {
-        status = dbHandleModifier(paddr, dbrType, pbuffer, nRequest,
-            pmod, offset, available_no_elements);
+    if (pmod && pmod->handle && pmod->pvt) {
+        status = pmod->handle(paddr, dbrType, pbuffer, nRequest,
+            pmod->pvt, offset, available_no_elements);
     } else {
         if (no_elements <= 1) {
             status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,

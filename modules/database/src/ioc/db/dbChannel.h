@@ -55,7 +55,7 @@ typedef struct chFilter chFilter;
 typedef struct dbChannel {
     const char *name;
     dbAddr addr;              /* address structure for record/field */
-    dbAddrModifier *paddrModifier;
+    dbAddrModifier addrModifier;
                               /* optional: which indices are targeted */
     long  final_no_elements;  /* final number of elements (arrays) */
     short final_field_size;   /* final size of element */

@@ -1,27 +1,48 @@
+/*************************************************************************\
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
 #ifndef DBADDRMODIFIER_H
 #define DBADDRMODIFIER_H
 
-#include "shareLib.h"
+#include "dbAddr.h"
 
-typedef struct {
-    long start;
-    long incr;
-    long end;
-} dbAddrModifier;
+/** @brief Generic API for address modifiers. */
 
-/** @brief The address modifier that modifies nothing. */
-#define defaultAddrModifier (struct dbAddrModifier){0,1,-1}
-
-/** @brief Given a number of elements, convert negative start and end indices
- *         to non-negative ones by counting from the end of the array.
+/** @brief Type of functions that handle an address modifier.
  *
- * @param start         Pointer to possibly negative start index.
- * @param increment     Increment.
- * @param end           Pointer to possibly negative end index.
- * @param no_elements   Number of array elements.
- * @return              Final number of elements.
+ * This function should write the value in 'pbuffer' to the target 'pAddr',
+ * according to the number of requested elements 'nRequest', the requested type
+ * 'dbrType', and the address modifier private data 'pvt'. It may also take
+ * into account the actual number of elements 'available' in the target, and
+ * the 'offset', both of which usually result from a previous call to
+ * 'get_array_info'.
+ * The targeted record must be locked. Furthermore, the lock must not be given
+ * up between the call to 'get_array_info' and call to this function, otherwise
+ * 'offset' and 'available' may be out of sync.
+ *
+ * @param paddr         Target (field) address
+ * @param dbrType       Requested (element) type
+ * @param pbuffer       Data requested to be written
+ * @param nRequest      Number of elements in pbuffer
+ * @param pvt           Private modifier data
+ * @param offset        Current offset in the target field
+ * @param available     Current number of elements in the target field
+ * @return              Status
  */
-epicsShareFunc long wrapArrayIndices(long *start, const long increment,
-    long *end, const long no_elements);
+typedef long dbHandleAddrModifier(DBADDR *paddr, short dbrType,
+    const void *pbuffer, long nRequest, void *pvt, long offset,
+    long available);
+
+/** @brief Structure of an address modifier.
+ *
+ * This will normally be allocated by user code. An address modifier
+ * implementation should supply a function to create the private data 'pvt'
+ * and initialize 'handle' with a function to handle the modifier.
+ */
+typedef struct {
+    void *pvt;                      /** @brief Private modifier data */
+    dbHandleAddrModifier *handle;   /** @brief Function to handle the modifier */
+} dbAddrModifier;
 
 #endif /* DBADDRMODIFIER_H */

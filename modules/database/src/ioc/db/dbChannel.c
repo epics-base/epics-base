@@ -29,6 +29,7 @@
 #include "gpHash.h"
 #include "yajl_parse.h"
 
+#include "arrayRangeModifier.h"
 #include "dbAccessDefs.h"
 #include "dbBase.h"
 #include "dbChannel.h"
@@ -51,14 +52,12 @@ typedef struct parseContext {
 
 static void *dbChannelFreeList;
 static void *chFilterFreeList;
-static void *dbAddrModifierFreeList;
 
 void dbChannelExit(void)
 {
     freeListCleanup(dbChannelFreeList);
     freeListCleanup(chFilterFreeList);
-    freeListCleanup(dbAddrModifierFreeList);
-    dbChannelFreeList = chFilterFreeList = dbAddrModifierFreeList = NULL;
+    dbChannelFreeList = chFilterFreeList = NULL;
 }
 
 void dbChannelInit (void)
@@ -68,7 +67,6 @@ void dbChannelInit (void)
 
     freeListInitPvt(&dbChannelFreeList,  sizeof(dbChannel), 128);
     freeListInitPvt(&chFilterFreeList,  sizeof(chFilter), 64);
-    freeListInitPvt(&dbAddrModifierFreeList,  sizeof(dbAddrModifier), 128);
     db_init_event_freelists();
 }
 
@@ -352,10 +350,10 @@ if (Func) { \
 }
 
 static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppnext) {
-    epicsInt32 start = 0;
-    epicsInt32 end = -1;
-    epicsInt32 incr = 1;
-    epicsInt32 l;
+    long start = 0;
+    long end = -1;
+    long incr = 1;
+    long l;
     char *pnext;
     ptrdiff_t exist;
     chFilter *filter;
@@ -405,16 +403,10 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
     pname++;
     *ppnext = pname;
 
-    if (!chan->paddrModifier) {
-        chan->paddrModifier = freeListCalloc(dbAddrModifierFreeList);
-        if (!chan->paddrModifier) {
-            status = S_db_noMemory;
-            goto finish;
-        }
+    status = createArrayRangeModifier(&chan->addrModifier, start, incr, end);
+    if (status) {
+        goto finish;
     }
-    chan->paddrModifier->start = start;
-    chan->paddrModifier->incr = incr;
-    chan->paddrModifier->end = end;
 
     plug = dbFindFilter("arr", 3);
     if (!plug) {
@@ -493,6 +485,8 @@ dbChannel * dbChannelCreate(const char *name)
         goto finish;
 
     /* Handle field modifiers */
+    chan->addrModifier.pvt = NULL;
+    chan->addrModifier.handle = NULL;
     if (*pname) {
         short dbfType = paddr->field_type;
 
@@ -668,14 +662,14 @@ long dbChannelPut(dbChannel *chan, short type, const void *pbuffer,
         long nRequest)
 {
     return dbPutModifier(&chan->addr, type, pbuffer, nRequest,
-        chan->paddrModifier);
+        &chan->addrModifier);
 }
 
 long dbChannelPutField(dbChannel *chan, short type, const void *pbuffer,
         long nRequest)
 {
     return dbPutFieldModifier(&chan->addr, type, pbuffer, nRequest,
-        chan->paddrModifier);
+        &chan->addrModifier);
 }
 
 void dbChannelShow(dbChannel *chan, int level, const unsigned short indent)
@@ -729,8 +723,7 @@ void dbChannelDelete(dbChannel *chan)
         freeListFree(chFilterFreeList, filter);
     }
     free((char *) chan->name);
-    if (chan->paddrModifier)
-        freeListFree(dbAddrModifierFreeList, chan->paddrModifier);
+    deleteArrayRangeModifier(&chan->addrModifier);
     freeListFree(dbChannelFreeList, chan);
 }
 

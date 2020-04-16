@@ -99,7 +99,8 @@ DBCORE_API extern int dbAccessDebugPUTF;
         epicsUInt16     status;         /* alarm status */\
         epicsUInt16     severity;       /* alarm severity*/\
         epicsUInt16     acks;           /* alarm ack severity*/\
-        epicsUInt16     ackt;           /* Acknowledge transient alarms?*/
+        epicsUInt16     ackt;           /* Acknowledge transient alarms?*/\
+        char amsg[40];
 #define DB_UNITS_SIZE   16
 #define DBRunits \
         char            units[DB_UNITS_SIZE];   /* units        */
@@ -112,7 +113,9 @@ DBCORE_API extern int dbAccessDebugPUTF;
          * too late to change now.  DBRprecision must be padded to
          * maintain 8-byte alignment. */
 #define DBRtime \
-        epicsTimeStamp  time;           /* time stamp*/
+        epicsTimeStamp	time;		/* time stamp*/\
+        epicsInt32 utag;\
+        epicsInt32 padTime;
 #define DBRenumStrs \
         epicsUInt32     no_str;         /* number of strings*/\
         epicsInt32      padenumStrs;    /*padding to force 8 byte align*/\

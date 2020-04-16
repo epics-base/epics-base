@@ -675,7 +675,10 @@ static db_field_log* db_create_field_log (struct dbChannel *chan, int use_val)
         struct dbCommon  *prec = dbChannelRecord(chan);
         pLog->stat = prec->stat;
         pLog->sevr = prec->sevr;
+        strncpy(pLog->amsg, prec->amsg, sizeof(pLog->amsg)-1);
+        pLog->amsg[sizeof(pLog->amsg)-1] = '\0';
         pLog->time = prec->time;
+        pLog->utag = prec->utag;
         pLog->field_type  = dbChannelFieldType(chan);
         pLog->field_size  = dbChannelFieldSize(chan);
         pLog->no_elements = dbChannelElements(chan);

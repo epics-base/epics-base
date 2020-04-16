@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      Author  W. Eric Norum
@@ -50,7 +50,7 @@ struct epicsMessageQueueOSD {
     ELLLIST         receiveQueue;
     ELLLIST         eventFreeList;
     int             numberOfSendersWaiting;
-    
+
     epicsMutexId    mutex;
     unsigned long   capacity;
     unsigned long   maxMessageSize;
@@ -335,11 +335,10 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     ellAdd(&pmsg->receiveQueue, &threadNode.link);
     epicsMutexUnlock(pmsg->mutex);
 
-    epicsEventStatus status;
     if (timeout > 0)
-        status = epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
+        epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
     else
-        status = epicsEventWait(threadNode.evp->event);
+        epicsEventWait(threadNode.evp->event);
 
     epicsMutexMustLock(pmsg->mutex);
 
@@ -349,8 +348,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
 
     epicsMutexUnlock(pmsg->mutex);
 
-    if (threadNode.eventSent && (threadNode.size <= size) &&
-        status == epicsEventOK)
+    if (threadNode.eventSent && (threadNode.size <= size))
         return threadNode.size;
     return -1;
 }

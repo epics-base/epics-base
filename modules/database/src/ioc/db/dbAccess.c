@@ -359,6 +359,14 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
             *pushort++ = pcommon->acks;
             *pushort++ = pcommon->ackt;
             pbuffer = (char *)pushort;
+            if (!pfl || pfl->type == dbfl_type_rec) {
+                STATIC_ASSERT(sizeof(pcommon->amsg)==sizeof(pfl->amsg));
+                strncpy(pbuffer, pcommon->amsg, sizeof(pcommon->amsg)-1);
+            } else {
+                strncpy(pbuffer, pfl->amsg,sizeof(pfl->amsg)-1);
+            }
+            pbuffer[sizeof(pcommon->amsg)-1] = '\0';
+            pbuffer += sizeof(pcommon->amsg);
         }
         if( (*options) & DBR_UNITS ) {
             memset(pbuffer,'\0',dbr_units_size);
@@ -386,10 +394,13 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
             if (!pfl) {
                 *ptime++ = pcommon->time.secPastEpoch;
                 *ptime++ = pcommon->time.nsec;
+                *ptime++ = pcommon->utag;
             } else {
                 *ptime++ = pfl->time.secPastEpoch;
                 *ptime++ = pfl->time.nsec;
+                *ptime++ = pfl->utag;
             }
+            *ptime++ = 0; /* padding */
             pbuffer = (char *)ptime;
         }
         if( (*options) & DBR_ENUM_STRS )

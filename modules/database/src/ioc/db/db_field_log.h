@@ -113,8 +113,10 @@ typedef struct db_field_log {
     unsigned char      mask;  /* DBE_* mask */
     /* the following are used for value and reference types */
     epicsTimeStamp     time;  /* Time stamp */
+    epicsInt32         utag;
     unsigned short     stat;  /* Alarm Status */
     unsigned short     sevr;  /* Alarm Severity */
+    char               amsg[40];
     short        field_type;  /* DBF type of data */
     short        field_size;  /* Size of a single element */
     long        no_elements;  /* No of valid array elements */

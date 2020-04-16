@@ -46,4 +46,8 @@ recordtype(x) {
     special(SPC_NOMOD)
     extra("void (*clbk)(struct xRecord*)")
   }
+  field(OTST, DBF_DOUBLE) {
+    prompt("dbGet() options test")
+    special(SPC_NOMOD)
+  }
 }

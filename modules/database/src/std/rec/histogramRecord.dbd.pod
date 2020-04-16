@@ -1,0 +1,445 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=title Histogram Record (histogram)
+
+The histogram record is used to store frequency counts of a signal into an array
+of arbitrary length. The user can configure the range of the signal value that
+the array will store. Anything outside this range will be ignored.
+
+=head2 Parameter Fields
+
+The record-specific fields are described below.
+
+=recordtype histogram
+
+=cut
+
+menu(histogramCMD) {
+	choice(histogramCMD_Read,"Read")
+	choice(histogramCMD_Clear,"Clear")
+	choice(histogramCMD_Start,"Start")
+	choice(histogramCMD_Stop,"Stop")
+}
+recordtype(histogram) {
+
+=head3 Read Parameters
+
+The SVL is the input link where the record reads its value. It can be a
+constant, a database link, or a channel access link. If SVL is a database or
+channel access link, then SGNL is read from SVL. If SVL is a constant, then SGNL
+is initialized with the constant value but can be changed via dbPuts. The C<Soft
+Channel> device support module can be specified in the DTYP field.
+
+The ULIM and LLIM fields determine the usable range of signal values. Any value
+of SGNL below LLIM or above ULIM is outside the range and will not be stored in
+the array. In the NELM field the user must specify the array size, e.g., the
+number of array elements. Each element in the NELM field holds the counts for an
+interval of the range of signal counts, the range specified by ULIM and LLIM.
+These intervals are determined by dividing the range by NELM:
+
+  (ULIM - LLIM) / NELM.
+
+=fields SVL, SGNL, DTYP, NELM, ULIM, LLIM
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator. These
+fields are used to display the value and other parameters of the histogram
+either textually or graphically. See L<Fields Common to All Record Types> for
+more on the record name (NAME) and description (DESC) fields.
+
+=fields NAME, DESC
+
+=head3 Alarm Parameters
+
+The Histogram record has the alarm parameters common to all record types.
+L<Alarm Fields> lists other fields related to a alarms that are common to all
+record types.
+
+=head3 Monitor Parameters
+
+The MDEL field implements the monitor count deadband. Only when MCNT is greater
+than the value given to MDEL are monitors triggered, MCNT being the number of
+counts since the last time the record was processed. If MDEL is -1, everytime
+the record is processed, a monitor is triggered regardless.
+
+If SDEL is greater than 0, it causes a callback routine to be called. The number
+specified in SDEL is the callback routines interval. The callback routine is
+called every SDEL seconds. The callback routine posts an event if MCNT is
+greater than 0.
+
+=fields MDEL, SDEL
+
+=head3 Run-time and Simulation Mode Parameters
+
+These parameters are used by the run-time code for processing the histogram.
+They are not configurable by the user prior to run-time. They represent the
+current state of the record. Many of them are used to process the histogram more
+efficiently.
+
+The BPTR field contains a pointer to the unsigned long array of frequency
+values. The VAL field references this array as well. However, the BPTR field is
+not accessible at run-time.
+
+The MCNT field keeps counts the number of signal counts since the last monitor
+was invoked.
+
+The collections controls field (CMD) is a menu field with five choices:
+
+=menu histogramCMD
+
+When CMD is C<Read>, the record retrieves its values and adds them to the signal
+array. This command will first clear the signal counts which have already been
+read when it is first invoked.
+
+The C<Clear> command erases the signal counts, setting the elements in the array
+back to zero. Afterwards, the CMD field is set back to C<Read>.
+
+The C<Start> command simply causes the record to read signal values into the
+array. Unlike C<Read>, it doesn't clear the array first.
+
+The C<Stop> command disables the reading of signal values into the array.
+
+The C<Setup> command waits until the C<start> or C<read> command has been issued
+to start counting.
+
+The CSTA or collections status field implements the CMD field choices by
+enabling or disabling the reading of values into the histogram array. While
+FALSE, no signals are added to the array. While TRUE, signals are read and added
+to the array. The field is initialized to TRUE. The C<Stop> command is the only
+command that sets CSTA to FALSE. On the other hand, the C<Start> command is the
+only command that sets it to TRUE. Thus, C<Start> must be invoked after each
+C<Stop> command in order to enable counting; invoking C<Read> will not enable
+signal counting after C<Stop> has been invoked.
+
+A typical use of these fields would be to initialize the CMD field to C<Read>
+(it is initialized to this command by default), to use the C<Stop> command to
+disable counting when necessary, after which the C<Start> command can be invoked
+to re-start the signal count.
+
+The WDTH field is a private field that holds the signal width of the array
+elements. For instance, if the LLIM was configured to be 4.0 and ULIM was
+configured to be 12.0 and the NELM was set to 4, then the WDTH for each array
+would be 2. Thus, it is (ULIM - LLIM) / NELM.
+
+=fields BPTR, VAL, MCNT, CMD, CSTA, WDTH
+
+The following fields are used to operate the histogram record in simulation
+mode. See L<Fields Common to Many Record Types> for more information on the
+simulation mode fields.
+
+=fields SIOL, SVAL, SIML, SIMM, SIMS
+
+=cut
+
+	include "dbCommon.dbd"
+	field(VAL,DBF_NOACCESS) {
+		prompt("Value")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		extra("void *	val")
+		#=type ULONG[]
+		#=read Yes
+		#=write Yes
+	}
+	field(NELM,DBF_USHORT) {
+		prompt("Num of Array Elements")
+		promptgroup("30 - Action")
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(CSTA,DBF_SHORT) {
+		prompt("Collection Status")
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(CMD,DBF_MENU) {
+		prompt("Collection Control")
+		asl(ASL0)
+		special(SPC_CALC)
+		interest(1)
+		menu(histogramCMD)
+	}
+	field(ULIM,DBF_DOUBLE) {
+		prompt("Upper Signal Limit")
+		promptgroup("30 - Action")
+		special(SPC_RESET)
+		interest(1)
+		prop(YES)
+	}
+	field(LLIM,DBF_DOUBLE) {
+		prompt("Lower Signal Limit ")
+		promptgroup("30 - Action")
+		special(SPC_RESET)
+		interest(1)
+		prop(YES)
+	}
+	field(WDTH,DBF_DOUBLE) {
+		prompt("Element Width")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(SGNL,DBF_DOUBLE) {
+		prompt("Signal Value")
+		special(SPC_MOD)
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(SVL,DBF_INLINK) {
+		prompt("Signal Value Location")
+		promptgroup("40 - Input")
+		interest(1)
+	}
+	field(BPTR,DBF_NOACCESS) {
+		prompt("Buffer Pointer")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("epicsUInt32 *bptr")
+	}
+	field(WDOG,DBF_NOACCESS) {
+		prompt("Watchdog callback")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("void *  wdog")
+	}
+	field(MDEL,DBF_SHORT) {
+		prompt("Monitor Count Deadband")
+		promptgroup("80 - Display")
+		interest(1)
+	}
+	field(MCNT,DBF_SHORT) {
+		prompt("Counts Since Monitor")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(SDEL,DBF_DOUBLE) {
+		prompt("Monitor Seconds Dband")
+		promptgroup("80 - Display")
+		special(SPC_RESET)
+		interest(1)
+	}
+	field(SIOL,DBF_INLINK) {
+                prompt("Simulation Input Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SVAL,DBF_DOUBLE) {
+		prompt("Simulation Value")
+	}
+	field(SIML,DBF_INLINK) {
+                prompt("Simulation Mode Link")
+		promptgroup("90 - Simulate")
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+                special(SPC_MOD)
+                interest(1)
+		menu(menuYesNo)
+	}
+	field(SIMS,DBF_MENU) {
+                prompt("Simulation Mode Severity")
+		promptgroup("90 - Simulate")
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+    field(OLDSIMM,DBF_MENU) {
+        prompt("Prev. Simulation Mode")
+        special(SPC_NOMOD)
+        interest(4)
+        menu(menuSimm)
+    }
+    field(SSCN,DBF_MENU) {
+        prompt("Sim. Mode Scan")
+        promptgroup("90 - Simulate")
+        interest(1)
+        menu(menuScan)
+        initial("65535")
+    }
+    field(SDLY,DBF_DOUBLE) {
+        prompt("Sim. Mode Async Delay")
+        promptgroup("90 - Simulate")
+        interest(2)
+        initial("-1.0")
+    }
+    %#include "callback.h"
+    field(SIMPVT,DBF_NOACCESS) {
+        prompt("Sim. Mode Private")
+        special(SPC_NOMOD)
+        interest(4)
+        extra("epicsCallback            *simpvt")
+    }
+        field(HOPR,DBF_ULONG) {
+		prompt("High Operating Range")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+	field(LOPR,DBF_ULONG) {
+		prompt("Low Operating Range")
+		promptgroup("80 - Display")
+		interest(1)
+		prop(YES)
+	}
+
+=head2 Record Support
+
+=head3 Record Support Routines
+
+=head4 init_record
+
+Using NELM, space for the unsigned long array is allocated and the width WDTH of
+the array is calculated.
+
+This routine initializes SIMM with the value of SIML if SIML type is CONSTANT
+link or creates a channel access link if SIML type is PV_LINK. SVAL is likewise
+initialized if SIOL is CONSTANT or PV_LINK.
+
+This routine next checks to see that device support and a device support read
+routine are available. If device support includes C<init_record()>, it is
+called.
+
+=head4 process
+
+See next section.
+
+=head4 special
+
+Special is invoked whenever the fields CMD, SGNL, ULIM, or LLIM are changed.
+
+If SGNL is changed, add_count is called.
+
+If ULIM or LLIM are changed, WDTH is recalculated and clear_histogram is called.
+
+If CMD is less or equal to 1, clear_histogram is called and CMD is reset to 0.
+If CMD is 2, CSTA is set to TRUE and CMD is reset to 0. If CMD is 3, CSTA is set
+to FALSE and CMD is reset to 0.
+
+clear_histogram zeros out the histogram array. add_count increments the
+frequency in the histogram array.
+
+=head4 cvt_dbaddr
+
+This is called by dbNameToAddr. It makes the dbAddr structure refer to the
+actual buffer holding the array.
+
+=head4 get_array_info
+
+Obtains values from the array referenced by VAL.
+
+=head4 put_array_info
+
+Writes values into the array referenced by VAL.
+
+=head3 Record Processing
+
+Routine process implements the following algorithm:
+
+=over
+
+=item 1.
+
+Check to see that the appropriate device support module exists. If it doesn't,
+an error message is issued and processing is terminated with the PACT field set
+to TRUE. This ensures that processes will no longer be called for this record.
+Thus error storms will not occur.
+
+=item 2.
+
+readValue is called. See  L<Input Records> for more information
+
+=item 3.
+
+If PACT has been changed to TRUE, the device support read routine has started
+but has not completed writing the new value. In this case, the processing
+routine merely returns, leaving PACT TRUE.
+
+=item 4.
+
+Add count to histogram array.
+
+=item 5.
+
+Check to see if monitors should be invoked. Alarm monitors are invoked if the
+alarm status or severity has changed. Archive and value change monitors are
+invoked if MDEL conditions are met. NSEV and NSTA are reset to 0.
+
+=item 6.
+
+Scan forward link if necessary, set PACT and INIT to FALSE, and return.
+
+=back
+
+=head2 Device Support
+
+=head3 Fields Of Interest To Device Support
+
+The device support routines are primarily interested in the following fields:
+
+=fields PACT, DPVT, UDF, NSEV, NSTA, SVL, SGNL
+
+=head3 Device Support Routines
+
+Device support consists of the following routines:
+
+=head4 long report(int level)
+
+This optional routine is called by the IOC command C<dbior> and is passed the
+report level that was requested by the user.
+It should print a report on the state of the device support to stdout.
+The C<level> parameter may be used to output increasingly more detailed
+information at higher levels, or to select different types of information with
+different levels.
+Level zero should print no more than a small summary.
+
+=head4 long init(int after)
+
+This optional routine is called twice at IOC initialization time.
+The first call happens before any of the C<init_record()> calls are made, with
+the integer parameter C<after> set to 0.
+The second call happens after all of the C<init_record()> calls have been made,
+with C<after> set to 1.
+
+=head4 init_record
+
+  init_record(precord)
+
+This routine is called by the record support C<init_record()> routine. It makes
+sure that SGNL is a CONSTANT, PV_LINK, DB_LINK, or CA_LINK. It also retrieves a
+value for SVL from SGNL. If SGNL is none of the above, an error is generated.
+
+=head4 read_histogram
+
+  read_histogram(*precord)
+
+This routine is called by the record support routines. It retrieves a value for
+SVL from SGNL.
+
+=head3 Device Support For Soft Records
+
+Only the device support module C<Soft Channel> is currently provided, though
+other device support modules may be provided at the user's site.
+
+=head4 Soft Channel
+
+The C<Soft Channel> device support routine retrieves a value from SGNL. SGNL
+must be CONSTANT, PV_LINK, DB_LINK, or CA_LINK.
+
+=cut
+
+}
+
+variable(histogramSDELprecision, int)

@@ -383,5 +383,11 @@ extern "C" {
     }
 } // extern "C"
 
-// Ensure the main thread gets a unique ID
-epicsThreadId epicsThreadMainId = epicsThreadGetIdSelf();
+static epicsThreadId initMainThread(void) {
+    epicsThreadId main = epicsThreadGetIdSelf();
+    epicsThreadSetOkToBlock(1);
+    return main;
+}
+
+// Ensure the main thread gets a unique ID and allows blocking I/O
+epicsThreadId epicsThreadMainId = initMainThread();

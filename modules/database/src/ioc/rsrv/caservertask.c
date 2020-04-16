@@ -68,17 +68,6 @@ static void req_server (void *pParm)
 
     IOC_sock = conf->tcp;
 
-    /* listen and accept new connections */
-    if ( listen ( IOC_sock, 20 ) < 0 ) {
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString (
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        errlogPrintf ( "CAS: Listen error: %s\n",
-            sockErrBuf );
-        epicsSocketDestroy (IOC_sock);
-        epicsThreadSuspendSelf ();
-    }
-
     epicsEventSignal(castcp_startStopEvent);
 
     while (TRUE) {
@@ -198,7 +187,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
 
             epicsSocketEnableAddressReuseDuringTimeWaitState ( tcpsock );
 
-            if(bind(tcpsock, &scratch.sa, sizeof(scratch))==0) {
+            if(bind(tcpsock, &scratch.sa, sizeof(scratch))==0 && listen(tcpsock, 20)==0) {
                 if(scratch.ia.sin_port==0) {
                     /* use first socket to pick a random port */
                     osiSocklen_t alen = sizeof(ifaceAddr);

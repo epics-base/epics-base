@@ -25,6 +25,7 @@
 #include "postfix.h"
 #include "postfixPvt.h"
 
+
 static double calcRandom(void);
 static int cond_search(const char **ppinst, int match);
 
@@ -48,7 +49,6 @@ epicsShareFunc long
     double *ptop;			/* stack pointer */
     double top; 			/* value from top of stack */
     epicsInt32 itop;			/* integer from top of stack */
-    epicsUInt32 utop;			/* unsigned integer from top of stack */
     int op;
     int nargs;
 
@@ -287,45 +287,60 @@ epicsShareFunc long
 	    *ptop = ! *ptop;
 	    break;
 
-        /* For bitwise operations on values with bit 31 set, double values
-         * must first be cast to unsigned to correctly set that bit; the
-         * double value must be negative in that case. The result must be
-         * cast to a signed integer before converting to the double result.
+        /* Be VERY careful converting double to int in case bit 31 is set!
+         * Out-of-range errors give very different results on different sytems.
+         * Convert negative doubles to signed and positive doubles to unsigned
+         * first to avoid overflows if bit 32 is set.
+         * The result is always signed, values with bit 31 set are negative
+         * to avoid problems when writing the value to signed integer fields
+         * like longout.VAL or ao.RVAL. However unsigned fields may give
+         * problems on some architectures. (Fewer than giving problems with
+         * signed integer. Maybe the conversion functions should handle
+         * overflows better.)
          */
+        #define d2i(x) ((x)<0?(epicsInt32)(x):(epicsInt32)(epicsUInt32)(x))
+        #define d2ui(x) ((x)<0?(epicsUInt32)(epicsInt32)(x):(epicsUInt32)(x))
 
 	case BIT_OR:
-	    utop = *ptop--;
-	    *ptop = (epicsInt32) ((epicsUInt32) *ptop | utop);
+	    top = *ptop--;
+	    *ptop = (double)(d2i(*ptop) | d2i(top));
 	    break;
 
 	case BIT_AND:
-	    utop = *ptop--;
-	    *ptop = (epicsInt32) ((epicsUInt32) *ptop & utop);
+	    top = *ptop--;
+	    *ptop = (double)(d2i(*ptop) & d2i(top));
 	    break;
 
 	case BIT_EXCL_OR:
-	    utop = *ptop--;
-	    *ptop = (epicsInt32) ((epicsUInt32) *ptop ^ utop);
+	    top = *ptop--;
+	    *ptop = (double)(d2i(*ptop) ^ d2i(top));
 	    break;
 
 	case BIT_NOT:
-	    utop = *ptop;
-	    *ptop = (epicsInt32) ~utop;
+	    *ptop = (double)~d2i(*ptop);
 	    break;
 
-        /* The shift operators use signed integers, so a right-shift will
-         * extend the sign bit into the left-hand end of the value. The
-         * double-casting through unsigned here is important, see above.
+        /* In C the shift operators decide on an arithmetic or logical shift
+         * based on whether the integer is signed or unsigned.
+         * With signed integers, a right-shift is arithmetic and will
+         * extend the sign bit into the left-hand end of the value. When used
+         * with unsigned values a logical shift is performed. The
+         * double-casting through signed/unsigned here is important, see above.
          */
 
-	case RIGHT_SHIFT:
-	    utop = *ptop--;
-	    *ptop = ((epicsInt32) (epicsUInt32) *ptop) >> (utop & 31);
+	case RIGHT_SHIFT_ARITH:
+	    top = *ptop--;
+	    *ptop = (double)(d2i(*ptop) >> (d2i(top) & 31));
 	    break;
 
-	case LEFT_SHIFT:
-	    utop = *ptop--;
-	    *ptop = ((epicsInt32) (epicsUInt32) *ptop) << (utop & 31);
+	case LEFT_SHIFT_ARITH:
+	    top = *ptop--;
+	    *ptop = (double)(d2i(*ptop) << (d2i(top) & 31));
+	    break;
+
+	case RIGHT_SHIFT_LOGIC:
+	    top = *ptop--;
+	    *ptop = (double)(d2ui(*ptop) >> (d2ui(top) & 31u));
 	    break;
 
 	case NOT_EQ:
@@ -382,11 +397,11 @@ epicsShareFunc long
     *presult = *ptop;
     return 0;
 }
+
 #if defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
 #  pragma optimize("", on)
 #endif
 
-
 epicsShareFunc long
 calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
 {

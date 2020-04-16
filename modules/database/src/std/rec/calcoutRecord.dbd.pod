@@ -350,10 +350,13 @@ XOR : Bitwise Exclusive Or
 C<~> : One's Complement
 
 =item *
-C<<< << >>> : Left shift
+C<<< << >>> : Arithmetic Left Shift
 
 =item *
-C<<< >> >>> : Right shift
+C<<< >> >>> : Arithmetic Right Shift
+
+=item *
+C<<<< >>> >>>> : Logical Right Shift
 
 =back
 

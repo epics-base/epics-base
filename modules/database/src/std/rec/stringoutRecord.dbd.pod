@@ -55,7 +55,7 @@ explains how these fields are used.
 
 The string output record must specify from where it gets its desired output
 string. The first field that determines where the desired output originates is
-the output mode select (OSML) field, which can have two possible value: C<<<
+the output mode select (OMSL) field, which can have two possible value: C<<<
 closed_loop >>> or C<<< supervisory >>>. If C<<< supervisory >>> is specified,
 DOL is ignored, the current value of VAL is written, and the VAL can be changed
 externally via dbPuts at run-time. If C<<< closed_loop >>> is specified, the VAL
@@ -87,7 +87,7 @@ for information on specifying links.
 		menu(menuOmsl)
 	}
 
-=head3 Write Parameters
+=head3 Output Specification
 
 The output link specified in the OUT field specifies where the string output
 record is to write its string. The link can be a database or channel access
@@ -353,7 +353,47 @@ primarily interested in the following fields:
 
 =fields PACT, DPVT, NSEV, NSTA, VAL, OUT
 
-=head3 Device Support Routines (devSoSoft.c)
+=head3 Device Support Routines
+
+Device support consists of the following routines:
+
+=head4 report
+
+  long report(int level)
+
+This optional routine is called by the IOC command C<dbior> and is passed the
+report level that was requested by the user.
+It should print a report on the state of the device support to stdout.
+The C<level> parameter may be used to output increasingly more detailed
+information at higher levels, or to select different types of information with
+different levels.
+Level zero should print no more than a small summary.
+
+=head4 init
+
+  long init(int after)
+
+This optional routine is called twice at IOC initialization time.
+The first call happens before any of the C<init_record()> calls are made, with
+the integer parameter C<after> set to 0.
+The second call happens after all of the C<init_record()> calls have been made,
+with C<after> set to 1.
+
+=head4 init_record
+
+  long init_record(dbCommon *prec)
+
+This routine is optional. If provided, it is called by the record support
+C<init_record()> routine.
+
+=head4 get_ioint_info
+
+  long get_ioint_info(int cmd, dbCommon *precord, IOSCANPVT *ppvt)
+
+This routine is called by the ioEventScan system each time the record is added
+or deleted from an I/O event scan list. C<cmd> has the value (0,1) if the
+record is being (added to, deleted from) an I/O event list. It must be
+provided for any device type that can use the ioEvent scanner.
 
 =head4 write_stringout
 
@@ -373,11 +413,9 @@ This routine must output a new value. It returns the following values:
 
 The C<<< Soft Channel >>> device support module writes the current value of VAL.
 
-If the OUT link type is PV_LINK, then dbCaAddInlink is called by
-C<init_record()>.
-
-write_so calls recGblPutLinkValue to write the current value of VAL. See
-L<Soft Output>.
+Device support for DTYP C<stdio> is provided for writing values to the stdout,
+stderr, or errlog streams. C<INST_IO> addressing C<@stdout>, C<@stderr> or
+C<@errlog> is used on the OUT link field to select the desired stream.
 
 =cut
 

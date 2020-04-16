@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* recEvent.c - Record Support Routines for Event records */
@@ -103,7 +103,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_STRING, &prec->sval);
 
-    if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) ) 
+    if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) )
 		status=(*pdset->init_record)(prec);
 
     prec->epvt = eventNameToHandle(prec->val);
@@ -118,12 +118,12 @@ static long process(struct dbCommon *pcommon)
 	long		 status=0;
 	unsigned char    pact=prec->pact;
 
-	if((pdset!=NULL) && (pdset->number >= 5) && pdset->read_event ) 
+	if((pdset!=NULL) && (pdset->number >= 5) && pdset->read_event )
                 status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
- 
+
 	postEvent(prec->epvt);
 
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);

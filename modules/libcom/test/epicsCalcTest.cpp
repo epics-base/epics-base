@@ -104,7 +104,7 @@ void testUInt32Calc(const char *expr, epicsUInt32 expected) {
             testDiag("calcPerform: error evaluating '%s'", expr);
         }
 
-    uresult = (epicsUInt32) result;
+    uresult = (result < 0.0 ? (epicsUInt32)(epicsInt32)result : (epicsUInt32)result);
     pass = (uresult == expected);
     if (!testOk(pass, "%s", expr)) {
         testDiag("Expected result is 0x%x (%u), actually got 0x%x (%u)",
@@ -296,8 +296,8 @@ MAIN(epicsCalcTest)
     int repeat;
     const double a=1.0, b=2.0, c=3.0, d=4.0, e=5.0, f=6.0,
 		 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0;
-    
-    testPlan(613);
+
+    testPlan(630);
 
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -320,7 +320,7 @@ MAIN(epicsCalcTest)
     testExpr(Inf);
     testCalc("Infinity", Inf);
     testExpr(NaN);
-    
+
     /* OPERAND elements */
     testExpr(a);
     testExpr(b);
@@ -337,7 +337,7 @@ MAIN(epicsCalcTest)
     testExpr(PI);
     testExpr(D2R);
     testExpr(R2D);
-    
+
     for (repeat=0; repeat<100; repeat++) {
 	double res = doCalc("rndm");
 	if (res<0 || res >1) {
@@ -346,13 +346,13 @@ MAIN(epicsCalcTest)
 	}
     }
     testOk(repeat == 100, "rndm");
-    
+
     /* UNARY_MINUS element */
     testExpr(-1);
     testExpr(-Inf);
     testExpr(- -1);
     testCalc("-0x80000000", 2147483648.0);
-    
+
     /* UNARY_OPERATOR elements */
     testExpr((1));
     testExpr(!0);
@@ -544,7 +544,7 @@ MAIN(epicsCalcTest)
     testExpr(tanh(0.5));
     testExpr(~5);
     testExpr(~~5);
-    
+
     /* BINARY_OPERATOR elements */
     testExpr(0 != 1);
     testExpr(0 != 0);
@@ -565,24 +565,24 @@ MAIN(epicsCalcTest)
     testExpr(NaN != Inf);
     testExpr(NaN != -Inf);
     testExpr(NaN != NaN);
-    
+
     testCalc("0 # 1", 0 != 1);
     testCalc("0 # 0", 0 != 0);
     testCalc("1 # 0", 1 != 0);
     testCalc("1 # 0 # 2", 1 != 0 != 2);
-    
+
     testExpr(7 % 4);
     testExpr(-7 % 4);
     testExpr(63 % 16 % 6)
     testCalc("1 % 0", NaN);
-    
+
     testExpr(7 & 4);
-    
+
     testExpr(0 && 0);
     testExpr(0 && 1);
     testExpr(1 && 0);
     testExpr(1 && 1);
-    
+
     testExpr(2 * 2);
     testExpr(0.0 * Inf);
     testExpr(0.0 * -Inf);
@@ -599,32 +599,38 @@ MAIN(epicsCalcTest)
     testExpr(NaN * Inf);
     testExpr(NaN * -Inf);
     testExpr(NaN * NaN);
-    
+
     testCalc("2 ** 0.2", pow(2., 0.2));
     testCalc("2 ** -0.2", pow(2., -0.2));
     testCalc("-0.2 ** 2", pow(-0.2, 2.));
     testCalc("-0.2 ** -2", pow(-0.2, -2));
     testCalc("2 ** 2 ** 3", pow(pow(2., 2.), 3.));
-    
+
     testExpr(0 + 1);
     testExpr(0.0 + Inf);
     testExpr(0.0 + -Inf);
     testExpr(0.0 + NaN);
     testExpr(Inf + 0.0);
     testExpr(Inf + Inf);
-    // only test CALC as MSVC seems to incorrectly evaluate this expression at compile time.
-    // see note in epicsMathTest
+#if defined(_WIN32) && defined(_MSC_VER)
     testCalc("Inf + -Inf", NaN);
+#else
+    testExpr(Inf + -Inf);
+#endif
     testExpr(Inf + NaN);
     testExpr(-Inf + 0.0);
+#if defined(_WIN32) && defined(_MSC_VER)
     testCalc("-Inf + Inf", NaN);
+#else
+    testExpr(-Inf + Inf);
+#endif
     testExpr(-Inf + -Inf);
     testExpr(-Inf + NaN);
     testExpr(NaN + 0.0);
     testExpr(NaN + Inf);
     testExpr(NaN + -Inf);
     testExpr(NaN + NaN);
-    
+
     testExpr(0 - 1);
     testExpr(0 - 1 - 2);
     testExpr(0.0 - Inf);
@@ -642,7 +648,7 @@ MAIN(epicsCalcTest)
     testExpr(NaN - Inf);
     testExpr(NaN - -Inf);
     testExpr(NaN - NaN);
-    
+
     testExpr(2.0 / 3.0);
     testExpr(1.0 / 2.0 / 3.0);
     testExpr(0.0 / Inf);
@@ -660,7 +666,7 @@ MAIN(epicsCalcTest)
     testExpr(NaN / Inf);
     testExpr(NaN / -Inf);
     testExpr(NaN / NaN);
-    
+
     testExpr(0 < 1);
     testExpr(0 < 0);
     testExpr(1 < 0);
@@ -680,10 +686,10 @@ MAIN(epicsCalcTest)
     testExpr(NaN < Inf);
     testExpr(NaN < -Inf);
     testExpr(NaN < NaN);
-    
+
     testExpr(1 << 2);
-    testExpr(1 << 3 << 2)
-    
+    testExpr(1 << 3 << 2);
+
     testExpr(0 <= 1);
     testExpr(0 <= 0);
     testExpr(1 <= 0);
@@ -703,12 +709,12 @@ MAIN(epicsCalcTest)
     testExpr(NaN <= Inf);
     testExpr(NaN <= -Inf);
     testExpr(NaN <= NaN);
-    
+
     testCalc("0 = 1", 0 == 1);
     testCalc("0 = 0", 0 == 0);
     testCalc("1 = 0", 1 == 0);
     testCalc("2 = 2 = 1", 2 == 2 == 1);
-    
+
     testExpr(0 == 1);
     testExpr(0 == 0);
     testExpr(1 == 0);
@@ -728,7 +734,7 @@ MAIN(epicsCalcTest)
     testExpr(NaN == Inf);
     testExpr(NaN == -Inf);
     testExpr(NaN == NaN);
-    
+
     testExpr(0 > 1);
     testExpr(0 > 0);
     testExpr(1 > 0);
@@ -748,7 +754,7 @@ MAIN(epicsCalcTest)
     testExpr(NaN > Inf);
     testExpr(NaN > -Inf);
     testExpr(NaN > NaN);
-    
+
     testExpr(0 >= 1);
     testExpr(0 >= 0);
     testExpr(1 >= 0);
@@ -768,29 +774,31 @@ MAIN(epicsCalcTest)
     testExpr(NaN >= Inf);
     testExpr(NaN >= -Inf);
     testExpr(NaN >= NaN);
-    
+
     testExpr(8 >> 1);
+    testCalc("8 >>> 1", 8u >> 1u);
     testExpr(64 >> 2 >> 1);
-    
+    testCalc("64 >>> 2 >>> 1", 64u >> 2u >> 1u);
+
     testExpr(7 AND 4);
-    
+
     testExpr(1 OR 8);
-    
+
     testExpr(3 XOR 9);
-    
+
     testCalc("2 ^ 0.2", pow(2., 0.2));
     testCalc("2 ^ -0.2", pow(2., -0.2));
     testCalc("(-0.2) ^ 2", pow(-0.2, 2.));
     testCalc("(-0.2) ^ -2", pow(-0.2, -2.));
     testCalc("2 ^ 2 ^ 3", pow(pow(2., 2.), 3.));
-    
+
     testExpr(1 | 8);
-    
+
     testExpr(0 || 0);
     testExpr(0 || 1);
     testExpr(1 || 0);
     testExpr(1 || 1);
-    
+
     /* CONDITIONAL elements */
     testExpr(0 ? 1 : 2);
     testExpr(1 ? 1 : 2);
@@ -804,7 +812,7 @@ MAIN(epicsCalcTest)
     testExpr(0 ? 2 : 1 ? 3 : 4);
     testExpr(1 ? 2 : 0 ? 3 : 4);
     testExpr(1 ? 2 : 1 ? 3 : 4);
-    
+
     /* STORE_OPERATOR and EXPR_TERM elements*/
     testCalc("a := 0; a", 0);
     testCalc("b := 0; b", 0);
@@ -818,7 +826,7 @@ MAIN(epicsCalcTest)
     testCalc("j := 0; j", 0);
     testCalc("k := 0; k", 0);
     testCalc("l := 0; l", 0);
-    
+
     testCalc("a; a := 0", a);
     testCalc("b; b := 0", b);
     testCalc("c; c := 0", c);
@@ -831,7 +839,7 @@ MAIN(epicsCalcTest)
     testCalc("j; j := 0", j);
     testCalc("k; k := 0", k);
     testCalc("l; l := 0", l);
-    
+
     // Check relative precedences.
     testExpr(0 ? 1 : 2 | 4);			// 0 1
     testExpr(1 ? 1 : 2 | 4);			// 0 1
@@ -869,11 +877,14 @@ MAIN(epicsCalcTest)
     testExpr(3 << 2 & 10);			// 2 2
     testCalc("18 & 6 << 2", (18 & 6) << 2);	// 2 2
     testExpr(36 >> 2 & 10);			// 2 2
+    testCalc("36 >>> 2 & 10", 36u >> 2u & 10u);	// 2 2
     testCalc("18 & 20 >> 2", (18 & 20) >> 2);	// 2 2
+    testCalc("18 & 20 >>> 2", (18u & 20u) >> 2);// 2 2
     testExpr(3 & 4 == 4);			// 2 3
     testExpr(3 AND 4 == 4);			// 2 3
     testCalc("1 << 2 != 4", 1 << (2 != 4));	// 2 3
     testCalc("16 >> 2 != 4", 16 >> (2 != 4));	// 2 3
+    testCalc("16 >>> 2 != 4", 16u >> (2 != 4));	// 2 3
     testExpr(3 AND -2); 			// 2 8
     testExpr(0 < 1 ? 2 : 3);			// 3 0
     testExpr(1 <= 0 ? 2 : 3);			// 3 0
@@ -885,12 +896,12 @@ MAIN(epicsCalcTest)
     testExpr(-1 - 2);				// 7 4
     testCalc("-2 ** 2", pow(-2., 2.));		// 7 6
     testCalc("-2 ^ 2", pow(-2., 2.));		// 7 6
-    
+
     // Check parentheses
     testCalc("(1 | 2) ** 3", pow((double) (1 | 2), 3.));// 8 6
     testCalc("1+(1|2)**3", 1+pow((double) (1 | 2), 3.));// 8 6
     testExpr(1+(1?(1<2):(1>2))*2);
-    
+
     testArgs("a", A_A, 0);
     testArgs("A", A_A, 0);
     testArgs("B", A_B, 0);
@@ -920,7 +931,7 @@ MAIN(epicsCalcTest)
     testArgs("11.1;L:=0", 0, A_L);
     testArgs("12.1;A:=0;B:=A;C:=B;D:=C", 0, A_A|A_B|A_C|A_D);
     testArgs("13.1;B:=A;A:=B;C:=D;D:=C", A_A|A_D, A_A|A_B|A_C|A_D);
-    
+
     // Malformed expressions
     testBadExpr("0x0.1", CALC_ERR_SYNTAX);
     testBadExpr("1*", CALC_ERR_INCOMPLETE);
@@ -945,7 +956,11 @@ MAIN(epicsCalcTest)
     testUInt32Calc("~0xaaaaaaaa", 0x55555555u);
     testUInt32Calc("~~0xaaaaaaaa", 0xaaaaaaaau);
     testUInt32Calc("0xaaaaaaaa >> 8", 0xffaaaaaau);
+    testUInt32Calc("0x55555555 >> 8", 0x00555555u);
+    testUInt32Calc("0xaaaaaaaa >>> 8", 0x00aaaaaau);
+    testUInt32Calc("0x55555555 >>> 8", 0x00555555u);
     testUInt32Calc("0xaaaaaaaa << 8", 0xaaaaaa00u);
+    testUInt32Calc("0x55555555 << 8", 0x55555500u);
     //   using integer literals assigned to variables
     testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a AND b", 0xaaaa0000u);
     testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a OR b", 0xffffaaaau);
@@ -953,7 +968,11 @@ MAIN(epicsCalcTest)
     testUInt32Calc("a:=0xaaaaaaaa; ~a", 0x55555555u);
     testUInt32Calc("a:=0xaaaaaaaa; ~~a", 0xaaaaaaaau);
     testUInt32Calc("a:=0xaaaaaaaa; a >> 8", 0xffaaaaaau);
+    testUInt32Calc("a:=0xaaaaaaaa; a >>> 8", 0x00aaaaaau);
     testUInt32Calc("a:=0xaaaaaaaa; a << 8", 0xaaaaaa00u);
+    testUInt32Calc("a:=0x55555555; a >> 8", 0x00555555u);
+    testUInt32Calc("a:=0x55555555; a >>> 8", 0x00555555u);
+    testUInt32Calc("a:=0x55555555; a << 8", 0x55555500u);
 
     // Test proper conversion of double values (+ 0.1 enforces double literal)
     // when used as inputs to the bitwise operations.
@@ -973,9 +992,13 @@ MAIN(epicsCalcTest)
     testUInt32Calc("~ -1431655766.1", 0x55555555u);
     testUInt32Calc("~ 2863311530.1", 0x55555555u);
     testUInt32Calc("-1431655766.1 >> 0", 0xaaaaaaaau);
+    testUInt32Calc("-1431655766.1 >>> 0", 0xaaaaaaaau);
     testUInt32Calc("2863311530.1 >> 0", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 >>> 0", 0xaaaaaaaau);
     testUInt32Calc("-1431655766.1 >> 0.1", 0xaaaaaaaau);
+    testUInt32Calc("-1431655766.1 >>> 0.1", 0xaaaaaaaau);
     testUInt32Calc("2863311530.1 >> 0.1", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 >>> 0.1", 0xaaaaaaaau);
     testUInt32Calc("-1431655766.1 << 0", 0xaaaaaaaau);
     testUInt32Calc("2863311530.1 << 0", 0xaaaaaaaau);
     testUInt32Calc("-1431655766.1 << 0.1", 0xaaaaaaaau);
@@ -983,4 +1006,3 @@ MAIN(epicsCalcTest)
 
     return testDone();
 }
-

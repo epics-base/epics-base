@@ -138,7 +138,14 @@ static void connection_handler ( struct connection_handler_args args )
     pv *ppv = ( pv * ) ca_puser ( args.chid );
     if ( args.op == CA_OP_CONN_UP ) {
         nConn++;
-        if (!ppv->onceConnected) {
+
+        if (ppv->onceConnected && ppv->dbfType != ca_field_type(ppv->chid)) {
+            /* Data type has changed. Rebuild connection with new type. */
+            ca_clear_subscription(ppv->evid);
+            ppv->evid = NULL;
+        }
+
+        if (!ppv->evid) {
             ppv->onceConnected = 1;
                                 /* Set up pv structure */
                                 /* ------------------- */
@@ -169,7 +176,7 @@ static void connection_handler ( struct connection_handler_args args )
                                                 eventMask,
                                                 event_handler,
                                                 (void*)ppv,
-                                                NULL);
+                                                &ppv->evid);
         }
     }
     else if ( args.op == CA_OP_CONN_DOWN ) {

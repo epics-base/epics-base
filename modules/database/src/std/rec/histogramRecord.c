@@ -133,33 +133,28 @@ static void wdogCallback(epicsCallback *arg)
 
     return;
 }
-static long wdogInit(histogramRecord *prec)
+
+static void wdogInit(histogramRecord *prec)
 {
-    myCallback *pcallback;
-
-    if (!prec->wdog && prec->sdel > 0) {
-        /* initialize a callback object */
-        pcallback = calloc(1, sizeof(myCallback));
-        pcallback->prec = prec;
-        if (!pcallback)
-            return -1;
-
-        callbackSetCallback(wdogCallback, &pcallback->callback);
-        callbackSetUser(pcallback, &pcallback->callback);
-        callbackSetPriority(priorityLow, &pcallback->callback);
-        prec->wdog = pcallback;
-    }
-
-    if (!prec->wdog)
-        return -1;
-    pcallback = prec->wdog;
-    if (!pcallback)
-        return -1;
     if (prec->sdel > 0) {
+        myCallback *pcallback = prec->wdog;
+
+        if (!pcallback) {
+            /* initialize a callback object */
+            pcallback = calloc(1, sizeof(myCallback));
+            if (!pcallback)
+                return;
+
+            pcallback->prec = prec;
+            callbackSetCallback(wdogCallback, &pcallback->callback);
+            callbackSetUser(pcallback, &pcallback->callback);
+            callbackSetPriority(priorityLow, &pcallback->callback);
+            prec->wdog = pcallback;
+        }
+
         /* start new timer on monitor */
         callbackRequestDelayed(&pcallback->callback, prec->sdel);
     }
-    return 0;
 }
 
 static long init_record(struct dbCommon *pcommon, int pass)

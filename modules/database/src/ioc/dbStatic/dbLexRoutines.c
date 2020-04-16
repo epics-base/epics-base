@@ -35,6 +35,7 @@
 #include "epicsExport.h"
 #include "link.h"
 #include "special.h"
+#include "iocInit.h"
 
 
 
@@ -216,9 +217,12 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     char	*penv;
     char	**macPairs;
 
-    if(ellCount(&tempList)) {
+    if (ellCount(&tempList)) {
         epicsPrintf("dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
     }
+
+    if (getIocState() != iocVoid)
+        return -2;
 
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;

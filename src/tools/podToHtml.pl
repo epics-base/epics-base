@@ -9,10 +9,13 @@
 use strict;
 use warnings;
 
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
+
 use Getopt::Std;
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 
-use Pod::Simple::HTML;
+use EPICS::PodHtml;
 
 use Pod::Usage;
 
@@ -86,7 +89,7 @@ my $root = '../' x scalar @inpath;
 open my $out, '>', $opt_o or
     die "Can't create $opt_o: $!\n";
 
-my $podHtml = Pod::Simple::HTML->new();
+my $podHtml = EPICS::PodHtml->new();
 
 $podHtml->html_css($root . 'style.css');
 $podHtml->perldoc_url_prefix('');

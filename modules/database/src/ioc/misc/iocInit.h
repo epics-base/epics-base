@@ -13,10 +13,15 @@
 
 #include "shareLib.h"
 
+enum iocStateEnum {
+    iocVoid, iocBuilding, iocBuilt, iocRunning, iocPaused
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+epicsShareFunc enum iocStateEnum getIocState(void);
 epicsShareFunc int iocInit(void);
 epicsShareFunc int iocBuild(void);
 epicsShareFunc int iocBuildIsolated(void);

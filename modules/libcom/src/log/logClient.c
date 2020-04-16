@@ -3,14 +3,12 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* logClient.c,v 1.25.2.6 2004/10/07 13:37:34 mrk Exp */
 /*
- *      Author:         Jeffrey O. Hill 
- *      Date:           080791 
+ *      Author:         Jeffrey O. Hill
+ *      Date:           080791
  */
 
 /*
@@ -80,7 +78,7 @@ static void logClientClose ( logClient *pClient )
      * mutex on
      */
     epicsMutexMustLock (pClient->mutex);
-    
+
     /*
      * close any preexisting connection to the log server
      */
@@ -140,9 +138,9 @@ static void logClientDestroy (logClientId id)
     epicsMutexMustLock ( pClient->mutex );
     do {
         epicsMutexUnlock ( pClient->mutex );
-        epicsEventWaitWithTimeout ( 
-            pClient->stateChangeNotify, 
-            LOG_SERVER_SHUTDOWN_TIMEOUT / 10.0 ); 
+        epicsEventWaitWithTimeout (
+            pClient->stateChangeNotify,
+            LOG_SERVER_SHUTDOWN_TIMEOUT / 10.0 );
         epicsTimeGetCurrent ( & current );
         diff = epicsTimeDiffInSeconds ( & current, & begin );
         epicsMutexMustLock ( pClient->mutex );
@@ -151,8 +149,8 @@ static void logClientDestroy (logClientId id)
     epicsMutexUnlock ( pClient->mutex );
 
     if ( ! pClient->shutdownConfirm ) {
-        fprintf ( stderr, "log client shutdown: timed out stopping"
-            " reconnect thread for \"%s\" after %.1f seconds - cleanup aborted\n",
+        fprintf ( stderr, "log client shutdown: timed out stopping reconnect\n"
+            " thread for '%s' after %.1f seconds - cleanup aborted\n",
             pClient->name, LOG_SERVER_SHUTDOWN_TIMEOUT );
         return;
     }
@@ -174,7 +172,7 @@ static void sendMessageChunk(logClient * pClient, const char * message) {
 
     strSize = strlen ( message );
     while ( strSize ) {
-        unsigned msgBufBytesLeft = 
+        unsigned msgBufBytesLeft =
             sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
 
         if ( msgBufBytesLeft < strSize && pClient->nextMsgIndex != 0u && pClient->connected)
@@ -197,7 +195,7 @@ static void sendMessageChunk(logClient * pClient, const char * message) {
     }
 }
 
-/* 
+/*
  * logClientSend ()
  */
 void epicsShareAPI logClientSend ( logClientId id, const char * message )
@@ -240,8 +238,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
         nSent += status;
     }
 
-    if ( pClient->backlog > 0 && status >= 0 )
-    {
+    if ( pClient->backlog > 0 && status >= 0 ) {
         /* On Linux send 0 bytes can detect EPIPE */
         /* NOOP on Windows, fails on vxWorks */
         errno = 0;
@@ -252,9 +249,9 @@ void epicsShareAPI logClientFlush ( logClientId id )
     if ( status < 0 ) {
         if ( ! pClient->shutdown ) {
             char sockErrBuf[128];
-            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
-                pClient->name, sockErrBuf );
+            epicsSocketConvertErrnoToString(sockErrBuf, sizeof(sockErrBuf));
+            fprintf(stderr, "log client: lost contact with log server at '%s'\n"
+                " because \"%s\"\n", pClient->name, sockErrBuf);
         }
         pClient->backlog = 0;
         logClientClose ( pClient );
@@ -285,19 +282,19 @@ static void logClientMakeSock (logClient *pClient)
     }
 
     epicsMutexMustLock (pClient->mutex);
-   
-    /* 
-     * allocate a socket 
+
+    /*
+     * allocate a socket
      */
     pClient->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, 0 );
     if ( pClient->sock == INVALID_SOCKET ) {
         char sockErrBuf[128];
-        epicsSocketConvertErrnoToString ( 
+        epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        fprintf ( stderr, "log client: no socket error %s\n", 
+        fprintf ( stderr, "log client: no socket error %s\n",
             sockErrBuf );
     }
-    
+
     epicsMutexUnlock (pClient->mutex);
 
     if (logClientDebug)
@@ -312,16 +309,16 @@ static void logClientConnect (logClient *pClient)
     osiSockIoctl_t  optval;
     int             errnoCpy;
     int             status;
-   
+
     if ( pClient->sock == INVALID_SOCKET ) {
         logClientMakeSock ( pClient );
         if ( pClient->sock == INVALID_SOCKET ) {
             return;
         }
     }
-    
+
     while ( 1 ) {
-        status = connect (pClient->sock, 
+        status = connect (pClient->sock,
             (struct sockaddr *)&pClient->addr, sizeof(pClient->addr));
         if ( status >= 0 ) {
             break;
@@ -345,8 +342,9 @@ static void logClientConnect (logClient *pClient)
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     fprintf (stderr,
-                        "log client: failed to connect to \"%s\" because %d=\"%s\"\n", 
-                        pClient->name, errnoCpy, sockErrBuf);
+                        "log client: failed to connect to server '%s'"
+                        " because '%s'\n",
+                        pClient->name, sockErrBuf);
                     pClient->connFailStatus = errnoCpy;
                 }
                 logClientClose ( pClient );
@@ -365,12 +363,14 @@ static void logClientConnect (logClient *pClient)
      * (after a long delay)
      */
     optval = TRUE;
-    status = setsockopt (pClient->sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval));
+    status = setsockopt (pClient->sock, SOL_SOCKET, SO_KEEPALIVE,
+        (char *)&optval, sizeof(optval));
     if (status<0) {
         char sockErrBuf[128];
-        epicsSocketConvertErrnoToString ( 
+        epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        fprintf (stderr, "log client: unable to enable keepalive option because \"%s\"\n", sockErrBuf);
+        fprintf (stderr, "log client: unable to enable SO_KEEPALIVE\n"
+            " because '%s'\n", sockErrBuf);
     }
 
     /*
@@ -380,9 +380,9 @@ static void logClientConnect (logClient *pClient)
     status = shutdown (pClient->sock, SHUT_RD);
     if (status < 0) {
         char sockErrBuf[128];
-        epicsSocketConvertErrnoToString ( 
+        epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        fprintf (stderr, "%s:%d shutdown(sock,SHUT_RD) error was \"%s\"\n", 
+        fprintf (stderr, "%s:%d shutdown(sock,SHUT_RD) error was '%s'\n",
             __FILE__, __LINE__, sockErrBuf);
         /* not fatal (although it shouldn't happen) */
     }
@@ -395,25 +395,28 @@ static void logClientConnect (logClient *pClient)
      */
     {
         struct  linger      lingerval;
-        
+
         lingerval.l_onoff = TRUE;
-        lingerval.l_linger = 60*5; 
-        status = setsockopt (pClient->sock, SOL_SOCKET, SO_LINGER, (char *) &lingerval, sizeof(lingerval));
+        lingerval.l_linger = 60*5;
+        status = setsockopt (pClient->sock, SOL_SOCKET, SO_LINGER,
+            (char *) &lingerval, sizeof(lingerval));
         if (status<0) {
             char sockErrBuf[128];
-            epicsSocketConvertErrnoToString ( 
+            epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            fprintf (stderr, "log client: unable to set linger options because \"%s\"\n", sockErrBuf);
+            fprintf(stderr, "log client: unable to set SO_LINGER\n"
+                " because '%s'\n", sockErrBuf);
         }
     }
-    
+
     pClient->connectCount++;
 
     epicsMutexUnlock ( pClient->mutex );
-    
+
     epicsEventSignal ( pClient->stateChangeNotify );
 
-    fprintf ( stderr, "log client: connected to log server at \"%s\"\n", pClient->name );
+    fprintf(stderr, "log client: connected to log server at '%s'\n",
+        pClient->name);
 }
 
 /*
@@ -493,7 +496,7 @@ logClientId epicsShareAPI logClientCreate (
     }
 
     pClient->restartThreadId = epicsThreadCreate (
-        "logRestart", epicsThreadPriorityLow, 
+        "logRestart", epicsThreadPriorityLow,
         epicsThreadGetStackSize(epicsThreadStackSmall),
         logClientRestart, pClient );
     if ( pClient->restartThreadId == NULL ) {
@@ -501,7 +504,7 @@ logClientId epicsShareAPI logClientCreate (
         epicsEventDestroy ( pClient->stateChangeNotify );
         epicsEventDestroy ( pClient->shutdownNotify );
         free (pClient);
-        fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
+        fprintf(stderr, "log client: unable to start reconnection thread\n");
         return NULL;
     }
 
@@ -516,10 +519,11 @@ void epicsShareAPI logClientShow (logClientId id, unsigned level)
     logClient *pClient = (logClient *) id;
 
     if ( pClient->connected ) {
-        printf ("log client: connected to log server at \"%s\"\n", pClient->name);
+        printf ("log client: connected to log server at '%s'\n", pClient->name);
     }
     else {
-        printf ("log client: disconnected from log server at \"%s\"\n", pClient->name);
+        printf ("log client: disconnected from log server at '%s'\n",
+            pClient->name);
     }
 
     if (logClientPrefix) {

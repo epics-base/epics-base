@@ -48,7 +48,7 @@ The string input record has the standard fields for specifying under what
 circumstances it will be processed. These fields are listed in L<Scan Fields>.
 In addition, L<Scanning Specification> explains how these fields are used.
 
-=head3 Read Parameters
+=head3 Input Specification
 
 The INP field determines where the string input record gets its string. It can
 be a database or channel access link, or a constant. If constant, the VAL field
@@ -117,7 +117,6 @@ The old value field (OVAL) of the string input is used to implement value change
 monitors for VAL. If VAL is not equal to OVAL, then monitors are triggered.
 
 =fields OVAL
-
 
 The following fields are used to operate the string input in the simulation
 mode. See L<Simulation Mode> for more information on simulation mode fields.
@@ -277,14 +276,47 @@ routines are primarily interested in the following fields:
 
 =fields PACT, DPVT, UDF, VAL, INP
 
-=head3 Device Support Routines (devSiSoft.c)
+=head3 Device Support Routines
+
+Device support consists of the following routines:
+
+=head4 report
+
+  long report(int level)
+
+This optional routine is called by the IOC command C<dbior> and is passed the
+report level that was requested by the user.
+It should print a report on the state of the device support to stdout.
+The C<level> parameter may be used to output increasingly more detailed
+information at higher levels, or to select different types of information with
+different levels.
+Level zero should print no more than a small summary.
+
+=head4 init
+
+  long init(int after)
+
+This optional routine is called twice at IOC initialization time.
+The first call happens before any of the C<init_record()> calls are made, with
+the integer parameter C<after> set to 0.
+The second call happens after all of the C<init_record()> calls have been made,
+with C<after> set to 1.
 
 =head4 init_record
 
-  long init_record(stringinRecord *prec)
+  long init_record(dbCommon *prec)
 
 This routine is optional. If provided, it is called by the record support
 C<init_record()> routine.
+
+=head4 get_ioint_info
+
+  long get_ioint_info(int cmd, dbCommon *precord, IOSCANPVT *ppvt)
+
+This routine is called by the ioEventScan system each time the record is added
+or deleted from an I/O event scan list. C<cmd> has the value (0,1) if the
+record is being (added to, deleted from) an I/O event list. It must be
+provided for any device type that can use the ioEvent scanner.
 
 =head4 read_stringin
 
@@ -302,17 +334,11 @@ This routine must provide a new input value. It returns the following values:
 
 =head3 Device Support for Soft Records
 
-The C<<< Soft Channel >>> module places a value directly in VAL.
+The C<<< Soft Channel >>> module reads a value directly into VAL.
 
-If the INP link type is constant, the double constant, if non-zero, is converted
-to a string and stored into VAL by C<init_record()>, and UDF is set to FALSE. If
-the INP link type is PV_LINK, then dbCaAddInlink is called by C<init_record()>.
-
-read_stringin calls recGblGetLinkValue to read the current value of VAL. See
-L<Soft Input>.
-
-If the return status of recGblGetLinkValue is zero, then read_stringin sets UDF
-to FALSE. The status of recGblGetLinkValue is returned.
+Device support for DTYP C<getenv> is provided for retrieving strings from environment variables.
+C<INST_IO> addressing C!!@<environment variable> !!is used on the C<INP> link field to select the
+desired environment variable.
 
 =cut
 

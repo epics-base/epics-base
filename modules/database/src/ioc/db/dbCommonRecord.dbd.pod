@@ -1,0 +1,20 @@
+#*************************************************************************
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+=head1 Fields Common to All Record Types
+
+This section contains a description of the fields that are common to all record
+types. These fields are defined in dbCommon.dbd.
+
+See also L<Fields Common to Input Record Types|dbCommonInput> and L<Fields
+Common to Output Record Types|dbCommonOutput>.
+
+=recordtype dbCommon
+
+=cut
+
+recordtype(dbCommon) {
+    include "dbCommon.dbd.pod"
+}

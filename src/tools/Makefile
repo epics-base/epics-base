@@ -16,6 +16,8 @@ PERL_MODULES += EPICS/Path.pm
 PERL_MODULES += EPICS/Release.pm
 PERL_MODULES += EPICS/Readfile.pm
 PERL_MODULES += EPICS/Getopts.pm
+PERL_MODULES += EPICS/PodHtml.pm
+PERL_MODULES += EPICS/PodXHtml.pm
 
 # This goes into lib/perl, not bin/<host>
 PERL_MODULES += EpicsHostArch.pl

@@ -36,7 +36,7 @@ and can be adjusted locally if necessary.
 
 ### caRepeater /dev/null
 
-On *NIX targets caRepeater will now partially daemonize by redirecting
+On \*NIX targets caRepeater will now partially daemonize by redirecting
 stdin/out/err to /dev/null.  This prevents caRepeater from inheriting
 the stdin/out of a process, like caget, which has spawned it in the
 background.  This has been known to cause problems in some cases when
@@ -195,7 +195,7 @@ set to their default values.
     void startitup(void) {
         epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
         epicsThreadId tid;
-    
+
         opts.priority = epicsThreadPriorityMedium;
         tid = epicsThreadCreateOpt("my thread", &threadMain, NULL, &opts);
     }
@@ -662,14 +662,14 @@ number instead, like this:
 
 ```
     #include <epicsVersion.h>
-    
+
     #ifndef VERSION_INT
     #  define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
     #endif
     #ifndef EPICS_VERSION_INT
     #  define EPICS_VERSION_INT VERSION_INT(EPICS_VERSION, EPICS_REVISION, EPICS_MODIFICATION, EPICS_PATCH_LEVEL)
     #endif
-    
+
     #if EPICS_VERSION_INT >= VERSION_INT(3,16,1,0)
         /* Code where Base has INT64 support */
     #else
@@ -995,7 +995,7 @@ excerpts from a database file:
     record(ai, math:pi) {
         field(INP, {const: 3.14159265358979})   # Correct
         field(SIOL, "{const: 3.142857}")        # Wrong
-        
+
         info(autosave, {            # White-space and comments are allowed
             fields:[DESC, SIMM],
             pass0:[VAL]
@@ -1143,7 +1143,7 @@ this:
 
 ```
     #include "epicsTime.h"
-    
+
     #ifndef M_time
       /* S_time_... status values were not provided before Base 3.16 */
       #define S_time_unsynchronized epicsTimeERROR
@@ -1168,9 +1168,49 @@ Added a new macro `callbackGetPriority(prio, callback)` to the callback.h
 header and removed the need for dbScan.c to reach into the internals of its
 `CALLBACK` objects.
 
+
 ## Changes from the 3.15 branch since 3.15.7
 
-> None.
+### epicsThread: Main thread defaults to allow blocking I/O
+
+VxWorks IOCs (and potentially RTEMS IOCs running GeSys) have had problems with
+garbled error messages from dbStaticLib routines for some time &mdash; messages
+printed before `iocInit` were being queued through the errlog thread instead of
+being output immediately. This has been fixed by initializing the main thread
+with its `OkToBlock` flag set instead of cleared. IOCs running on other
+operating systems that use iocsh to execute the startup script previously had
+that set anyway in iocsh so were not affected, but this change might cause other
+programs that don't use iocsh to change their behavior slightly if they use
+`errlogPrintf()`, `epicsPrintf()` or `errPrintf()`.
+
+### catools: Handle data type changes in camonitor
+
+The camonitor program didn't properly cope if subscribed to a channel whose data
+type changed when its IOC was rebooted without restarting the camonitor program.
+This has now been fixed.
+
+### More Record Reference Documentation
+
+The remaining record types have had their reference pages moved from the Wiki,
+and some new reference pages have been written to cover the analog array and
+long string input and output record types plus the printf recor type, none of
+which were previously documented. The wiki reference pages covering the fields
+common to all, input, and output record types have also been added, thanks to
+Rolf Keitel. The POD conversion scripts have also been improved and they now
+properly support linking to subsections in a different document, although the
+POD changes to add the cross-links that appeared in the original wiki pages
+still needs to be done in most cases.
+
+### Fix build issues with newer MinGW versions
+
+The `clock_gettime()` routine is no longer used under MinGW since newer versions
+don't provide it any more.
+
+### Fix race for port in RSRV when multiple IOCs start simultaneously
+
+If multiple IOCs were started at the same time, by systemd say, they could race
+to obtain the Channel Access TCP port number 5064. This issue has been fixed.
+
 
 ## Changes made between 3.15.6 and 3.15.7
 
@@ -1887,4 +1927,3 @@ Simpler versions of the `epicsTime_gmtime()` and `epicsTime_localtime()`
 routines have been included in the Windows implementations, and a new test
 program added. The original versions do not report DST status properly. Fixes
 [Launchpad bug 1528284](https://bugs.launchpad.net/bugs/1528284).
-

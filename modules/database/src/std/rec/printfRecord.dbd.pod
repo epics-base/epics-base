@@ -1,0 +1,323 @@
+#*************************************************************************
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+
+=title Printf Record (printf)
+
+The printf record is used to generate and write a string using a format
+specification and parameters, analogous to the C C<printf()> function.
+
+=head2 Parameter Fields
+
+The record-specific fields are described below, grouped by functionality.
+
+=recordtype printf
+
+=cut
+
+recordtype(printf) {
+
+=head3 Scan Parameters
+
+The printf record has the standard fields for specifying under what
+circumstances it will be processed. These fields are listed in L<Scan Fields>.
+In addition, L<Scanning Specification> explains how these fields are used.
+
+=head3 String Generation Parameters
+
+The printf record must specify the desired output string with embedded format
+specifiers in the FMT field. Plain characters are copied directly to the output
+string. A pair of percent characters 'C<%%>' are converted into a single percent
+character in the output string. A single precent character 'C<%>' introduces a
+format specifier and is followed by zero or more of the standard C<printf()>
+format flags and modifiers:
+
+=over 4
+
+=item *
+
+Plus ('C<+>')
+
+=item *
+
+Minus ('C<->')
+
+=item *
+
+Space ('C< >')
+
+=item *
+
+Hash ('C<#>')
+
+=item *
+
+Minimum Field Width (decimal digits or 'C<*>')
+
+=item *
+
+Precision ('C<.>' followed by decimal digits or 'C<*>')
+
+=item *
+
+Length Modifier 'C<hh>' E<ndash> Reads link as DBR_CHAR or DBR_UCHAR
+
+=item *
+
+Length Modifier 'C<h>' E<ndash> Reads link as DBR_SHORT or DBR_USHORT for
+integer conversions, DBR_FLOAT for floating-point conversions.
+
+=item *
+
+Length Modifier 'C<l>' E<ndash> Reads link as DBR_LONG or DBR_ULONG for integer
+conversions, array of DBR_CHAR for string conversion.
+
+=back
+
+
+The following character specifies the conversion to perform, see your operating
+system's C<printf()> documentation for more details. These conversions
+ultimately call the C<snprintf()> routine for the actual string conversion
+process, so are subject to the behaviour of that routine.
+
+=over 4
+
+=item  *
+
+'C<c>' E<ndash> Convert to a character. Only single byte characters are
+permitted.
+
+=item  *
+
+'C<d>' or 'C<i>' E<ndash> Convert to a decimal integer.
+
+=item  *
+
+'C<o>' E<ndash> Convert to an unsigned octal integer.
+
+=item  *
+
+'C<u>' E<ndash> Convert to an unsigned decimal integer.
+
+=item  *
+
+'C<x>' E<ndash> Convert to an unsigned hexadecimal integer, using C<abcdef>.
+
+=item  *
+
+'C<X>' E<ndash> Convert to an unsigned hexadecimal integer, using C<ABCDEF>.
+
+=item *
+
+'C<e>' or 'C<E>' E<ndash> Convert to floating-point in exponent style, reading
+the link as DBR_DOUBLE or DBR_FLOAT.
+
+=item *
+
+'C<f>' or 'C<F>' E<ndash> Convert to floating-point in fixed-point style,
+reading the link as DBR_DOUBLE or DBR_FLOAT.
+
+=item *
+
+'C<g>' or 'C<G>' E<ndash> Convert to floating-point in general style, reading
+the link as DBR_DOUBLE or DBR_FLOAT.
+
+=item *
+
+'C<s>' E<ndash> Insert string, reading the link as DBR_STRING or array of
+DBR_CHAR.
+
+=back
+
+The fields INP0 ... INP9 are input links that provide the parameter values to be
+formatted into the output. The format specifiers in the FMT string determine
+which type of the data is requested through the appropriate input link. As with
+C<printf()> a C<*> character may be used in the format to specify width and/or
+precision instead of numeric literals, in which case additional input links are
+used to provide the necessary integer parameter or parameters. See L<Address
+Specification> for information on specifying links.
+
+The formatted string is written to the VAL field.  The maximum number of
+characters in VAL is given by SIZV, and cannot be larger than 65535. The LEN
+field contains the length of the formatted string in the VAL field.
+
+=fields FMT, INP0, INP1, INP2, INP3, INP4, INP5, INP6, INP7, INP8, INP9, VAL, SIZV, LEN
+
+
+=head3 Output Specification
+
+The output link specified in the OUT field specifies where the printf record is
+to write the contents of  its VAL field. The link can be a database or channel
+access link. If the OUT field is a constant, no output will be written.
+
+See L<Address Specification> for information on specifying links.
+
+In addition, the appropriate device support module must be entered into the DTYP
+field.
+
+=fields OUT, DTYP
+
+=head3 Operator Display Parameters
+
+See L<Fields Common to All Record Types> for more on the record name (NAME) and
+description (DESC) fields.
+
+=fields NAME, DESC
+
+=cut
+
+    include "dbCommon.dbd"
+    %#include "devSup.h"
+    %
+    %/* Declare Device Support Entry Table */
+    %typedef struct printfdset {
+    %    long number;
+    %    DEVSUPFUN report;
+    %    DEVSUPFUN init;
+    %    DEVSUPFUN init_record;
+    %    DEVSUPFUN get_ioint_info;
+    %    DEVSUPFUN write_string;
+    %} printfdset;
+    %
+    field(VAL,DBF_NOACCESS) {
+        prompt("Result")
+        asl(ASL0)
+        pp(TRUE)
+        special(SPC_DBADDR)
+        extra("char *val")
+        #=type STRING[SIZV]
+        #=read Yes
+        #=write Yes
+    }
+    field(SIZV,DBF_USHORT) {
+        prompt("Size of VAL buffer")
+        promptgroup("30 - Action")
+        special(SPC_NOMOD)
+        interest(1)
+        initial("41")
+    }
+    field(LEN,DBF_ULONG) {
+        prompt("Length of VAL")
+        special(SPC_NOMOD)
+    }
+    field(OUT,DBF_OUTLINK) {
+        prompt("Output Specification")
+        promptgroup("50 - Output")
+        interest(1)
+    }
+    field(FMT,DBF_STRING) {
+        prompt("Format String")
+        promptgroup("30 - Action")
+        pp(TRUE)
+        size(81)
+    }
+
+
+=head3 Alarm Parameters
+
+The printf record has the alarm parameters common to all record types.
+L<Alarm Fields> lists other fields related to a alarms that are common to all
+record types.
+
+The IVLS field specifies a string which is sent to the OUT link if if input
+link data are invalid.
+
+=fields IVLS
+
+=cut
+
+    field(IVLS,DBF_STRING) {
+        prompt("Invalid Link String")
+        promptgroup("30 - Action")
+        size(16)
+        initial("LNK")
+    }
+    field(INP0,DBF_INLINK) {
+        prompt("Input 0")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP1,DBF_INLINK) {
+        prompt("Input 1")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP2,DBF_INLINK) {
+        prompt("Input 2")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP3,DBF_INLINK) {
+        prompt("Input 3")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP4,DBF_INLINK) {
+        prompt("Input 4")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP5,DBF_INLINK) {
+        prompt("Input 5")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP6,DBF_INLINK) {
+        prompt("Input 6")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP7,DBF_INLINK) {
+        prompt("Input 7")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP8,DBF_INLINK) {
+        prompt("Input 8")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    field(INP9,DBF_INLINK) {
+        prompt("Input 9")
+        promptgroup("40 - Input")
+        interest(1)
+    }
+    %/* Number of INPx fields defined */
+    %#define PRINTF_NLINKS 10
+}
+
+
+=head2 Device Support Interface
+
+The record requires device support to provide an entry table (dset) which
+defines the following members:
+
+ typedef struct {
+     long number;
+     long (*report)(int level);
+     long (*init)(int after);
+     long (*init_record)(printfRecord *prec);
+     long (*get_ioint_info)(int cmd, printfRecord *prec, IOSCANPVT *piosl);
+     long (*write_string)(printfRecord *prec);
+ } printfdset;
+
+The module must set C<number> to at least 5, and provide a pointer to its
+C<write_string()> routine; the other function pointers may be C<NULL> if their
+associated functionality is not required for this support layer.
+Most device supports also provide an C<init_record()> routine to configure the
+record instance and connect it to the hardware or driver support layer.
+
+=head2 Device Support for Soft Records
+
+A soft device support module Soft Channel is provided for writing values to
+other records  or other software components.
+
+Device support for DTYP C<stdio> is provided for writing values to the stdout,
+stderr, or errlog streams. C<INST_IO> addressing C<@stdout>, C<@stderr> or
+C<@errlog> is used on the OUT link field to select the desired stream.
+
+=cut

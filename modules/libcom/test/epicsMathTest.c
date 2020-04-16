@@ -20,38 +20,38 @@ MAIN(epicsMathTest)
     double huge = 1e300;
     double tiny = 1e-300;
     double c;
-    
+
     testPlan(35);
-    
+
     testOk1(!isnan(0.0));
     testOk1(!isinf(0.0));
-    
+
     testOk1(!isnan(epicsINF));
     testOk1(isinf(epicsINF));
     testOk1(epicsINF == epicsINF);
     testOk1(epicsINF > 0.0);
     testOk1(epicsINF - epicsINF != 0.0);
 
-#if defined(_MSC_VER)
-    testTodoBegin("Known failure on windows (MSVC optimizer bug?)");
+#if defined(_WIN32) && defined(_MSC_VER)
+    testTodoBegin("Known failure on windows-x64 and win32-x86");
 #endif
     testOk1(epicsINF + -epicsINF != 0.0);
     testOk1(-epicsINF + epicsINF != 0.0);
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
     testTodoEnd();
 #endif
 
     testOk1(isnan(epicsINF - epicsINF));
 
-#if defined(_MSC_VER)
-    testTodoBegin("Known failure on windows (MSVC optimizer bug?)");
+#if defined(_WIN32) && defined(_MSC_VER)
+    testTodoBegin("Known failure on windows-x64  and win32-x86");
 #endif
     testOk1(isnan(epicsINF + -epicsINF));
     testOk1(isnan(-epicsINF + epicsINF));
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
     testTodoEnd();
 #endif
-    
+
     testOk1(isnan(epicsNAN));
     testOk1(!isinf(epicsNAN));
     testOk1(epicsNAN != epicsNAN);
@@ -62,34 +62,34 @@ MAIN(epicsMathTest)
     testOk1(!(epicsNAN > epicsNAN));
     testOk1(isnan(epicsNAN - epicsNAN));
 
-#if defined(_MSC_VER)
-    testTodoBegin("Known failure on windows (MSVC optimizer bug?)");
+#if defined(_WIN32) && defined(_MSC_VER)
+    testTodoBegin("Known failure on windows-x64 and win32-x86");
 #endif
     testOk1(isnan(epicsNAN + -epicsNAN));
     testOk1(isnan(-epicsNAN + epicsNAN));
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
     testTodoEnd();
 #endif
-    
+
     c = huge / tiny;
     testOk(!isnan(c), "!isnan(1e300 / 1e-300)");
     testOk(isinf(c), "isinf(1e300 / 1e-300)");
     testOk(c > 0.0, "1e300 / 1e-300 > 0.0");
-    
+
     c = (-huge) / tiny;
     testOk(!isnan(c), "!isnan(-1e300 / 1e-300)");
     testOk(isinf(c), "isinf(-1e300 / 1e-300)");
     testOk(c < 0.0, "-1e300 / 1e-300 < 0.0");
-    
+
     c = huge / huge;
     testOk(!isnan(c), "!isnan(1e300 / 1e300)");
     testOk(!isinf(c), "!isinf(1e300 / 1e300)");
     testOk(c == 1.0, "1e300 / 1e300 == 1.0");
-    
+
     c = tiny / tiny;
     testOk(!isnan(c), "!isnan(1e-300 / 1e-300)");
     testOk(!isinf(c), "!isinf(1e-300 / 1e-300)");
     testOk(c == 1.0, "1e300 / 1e-300 == 1.0");
-    
+
     return testDone();
 }

@@ -2,7 +2,7 @@
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include <stddef.h>
@@ -101,7 +101,7 @@ void ClockTime_Init(int synchronize)
 
     if (synchronize == CLOCKTIME_SYNC) {
         if (ClockTimePvt.synchronize == CLOCKTIME_NOSYNC) {
-            
+
 #if defined(vxWorks) || defined(__rtems__)
             /* Start synchronizing */
             ClockTimePvt.synchronize = synchronize;
@@ -229,7 +229,11 @@ int osdTimeGetCurrent(epicsTimeStamp *pDest)
     return 0;
 }
 
-#endif /* CLOCK_REALTIME */
+/* Used in Report function below: */
+#define UNINIT_ERROR "initialized"
+#else
+#define UNINIT_ERROR "available"
+#endif /* CLOCK_REALTIME && !WIN32 */
 
 /* Allow the following report routine to be compiled anyway
  * to avoid getting a build warning from ranlib.
@@ -242,13 +246,7 @@ int ClockTime_Report(int level)
     char timebuf[32];
 
     if (onceId == EPICS_THREAD_ONCE_INIT) {
-        printf("OS Clock driver not %s.\n",
-#ifdef CLOCK_REALTIME
-            "initialized"
-#else
-            "available"
-#endif /* CLOCK_REALTIME */
-            );
+        puts("OS Clock driver not " UNINIT_ERROR);
     }
     else if (ClockTimePvt.synchronize == CLOCKTIME_SYNC) {
         int synchronized, syncFromPriority;

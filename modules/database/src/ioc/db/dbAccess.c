@@ -776,8 +776,19 @@ int dbLoadRecords(const char* file, const char* subs)
         return -1;
     }
     status = dbReadDatabase(&pdbbase, file, 0, subs);
-    if (!status && dbLoadRecordsHook)
-        dbLoadRecordsHook(file, subs);
+    switch(status)
+    {
+    case 0:
+        if(dbLoadRecordsHook)
+            dbLoadRecordsHook(file, subs);
+        break;
+    case -2:
+        errlogPrintf("dbLoadRecords: failed to load '%s'\n"
+            "    Records cannot be loaded after iocInit!\n", file);
+        break;
+    default:
+        errlogPrintf("dbLoadRecords: failed to load '%s'\n", file);
+    }
     return status;
 }
 
@@ -942,6 +953,11 @@ long dbGet(DBADDR *paddr, short dbrType,
                 (paddr->pfield, pbuf, paddr);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
+
+            if (pfl->no_elements < 1) {
+                status = S_db_badField;
+                goto done;
+            }
 
             localAddr.field_type = pfl->field_type;
             localAddr.field_size = pfl->field_size;

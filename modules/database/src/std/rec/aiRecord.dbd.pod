@@ -190,7 +190,13 @@ noise.
 The AFTC field sets the time constant on a low-pass filter that delays the
 reporting of limit alarms until the signal has been within the alarm range for
 that number of seconds (the default AFTC value of zero retains the previous
-behavior).
+behavior). The record must be scanned often enough for the filtering action to
+work effectively and the alarm severity can only change when the record is
+processed, but that processing does not have to be regular; the filter uses the
+time since the record last processed in its calculation. Setting AFTC to a
+positive number of seconds will delay the record going into or out of a minor
+alarm severity or from minor to major severity until the input signal has been
+in the alarm range for that number of seconds.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, AFTC, LALM
 

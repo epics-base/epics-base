@@ -332,7 +332,7 @@ extern "C" void messageQueueTest(void *parm)
      * Single receiver, multiple sender tests
      */
     testDiag("Single receiver, multiple sender tests:");
-    testDiag("This test lasts 60 seconds...");
+    testDiag("This test lasts 30 seconds...");
     testOk(!!epicsThreadCreate("Sender 1", epicsThreadPriorityLow,
         mediumStack, sender, q1),
         "Created Sender 1");
@@ -346,9 +346,9 @@ extern "C" void messageQueueTest(void *parm)
         mediumStack, sender, q1),
         "Created Sender 4");
 
-    for (i = 0; i < 10; i++) {
-        testDiag("... %2d", 10 - i);
-        epicsThreadSleep(6.0);
+    for (i = 0; i < 6; i++) {
+        testDiag("... %2d", 6 - i);
+        epicsThreadSleep(5.0);
     }
 
     sendExit = 1;

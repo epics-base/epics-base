@@ -353,7 +353,7 @@ testspec: $(TESTSCRIPTS)
 test-results: tapfiles
 ifneq ($(strip $(TAPFILES)),)
 ifdef RUNTESTS_ENABLED
-	$(PROVE) --failures --ext .tap --exec "$(CAT)" --color $(TAPFILES)
+	-$(PROVE) --failures --ext .tap --exec "$(CAT)" --color $(TAPFILES)
 endif
 
 CURRENT_TAPFILES := $(wildcard $(TAPFILES))

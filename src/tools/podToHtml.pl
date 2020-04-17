@@ -9,8 +9,12 @@
 use strict;
 use warnings;
 
+# To find the EPICS::PodHtml module used below we need to add our lib/perl to
+# the lib search path. If the script is running from the src/tools directory
+# before everything has been installed though, the search path must include
+# our source directory (i.e. $Bin), so we add both here.
 use FindBin qw($Bin);
-use lib "$Bin/../../lib/perl";
+use lib ("$Bin/../../lib/perl", $Bin);
 
 use Getopt::Std;
 use EPICS::PodHtml;

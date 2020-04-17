@@ -28,12 +28,14 @@ long wrapArrayIndices(long *start, long increment, long *end, long no_elements);
  * @param start         Start index (possibly negative)
  * @param incr          Increment (must be positive)
  * @param end           End index (possibly negative)
- * @return              Array range modifier private data
+ * @return              Status
  */
 epicsShareFunc
 long createArrayRangeModifier(dbAddrModifier *pmod, long start, long incr, long end);
 
 /** @brief Free private memory associated with an array range modifier
+ *
+ * Note this does not free 'pmod' which is always user allocated.
  *
  * @param pmod          Pointer to address modifier (user allocated)
  */

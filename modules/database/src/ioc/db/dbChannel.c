@@ -349,79 +349,27 @@ if (Func) { \
     if (result != parse_continue) goto failure; \
 }
 
-static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppnext) {
-    long start = 0;
-    long end = -1;
-    long incr = 1;
-    long l;
-    char *pnext;
-    ptrdiff_t exist;
+static long createArrayRangeFilter(dbChannel* chan) {
+    long start, incr, end;
     chFilter *filter;
     const chFilterPlugin *plug;
     parse_result result;
-    long status = 0;
-
-    /* If no number is present, strtol() returns 0 and sets pnext=pname,
-       else pnext points to the first char after the number */
-    pname++;
-    l = strtol(pname, &pnext, 0);
-    exist = pnext - pname;
-    if (exist) start = l;
-    pname = pnext;
-    if (*pname == ']' && exist) {
-        end = start;
-        goto insertplug;
-    }
-    if (*pname != ':') {
-        status = S_dbLib_fieldNotFound;
-        goto finish;
-    }
-    pname++;
-    l = strtol(pname, &pnext, 0);
-    exist = pnext - pname;
-    pname = pnext;
-    if (*pname == ']') {
-        if (exist) end = l;
-        goto insertplug;
-    }
-    if (exist) incr = l;
-    if (*pname != ':') {
-        status = S_dbLib_fieldNotFound;
-        goto finish;
-    }
-    pname++;
-    l = strtol(pname, &pnext, 0);
-    exist = pnext - pname;
-    if (exist) end = l;
-    pname = pnext;
-    if (*pname != ']') {
-        status = S_dbLib_fieldNotFound;
-        goto finish;
-    }
-
-    insertplug:
-    pname++;
-    *ppnext = pname;
-
-    status = createArrayRangeModifier(&chan->addrModifier, start, incr, end);
-    if (status) {
-        goto finish;
-    }
 
     plug = dbFindFilter("arr", 3);
     if (!plug) {
-        goto finish;
+        /* "arr" plugin not found, this is not an error! */
+        return 0;
     }
 
     filter = freeListCalloc(chFilterFreeList);
     if (!filter) {
-        status = S_db_noMemory;
-        goto finish;
+        return S_db_noMemory;
     }
     filter->chan = chan;
     filter->plug = plug;
     filter->puser = NULL;
 
+    getArrayRange(&chan->addrModifier, &start, &incr, &end);
     TRY(filter->plug->fif->parse_start, (filter));
     TRY(filter->plug->fif->parse_start_map, (filter));
     if (start != 0) {
@@ -442,12 +390,9 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
     ellAdd(&chan->filters, &filter->list_node);
     return 0;
 
-    failure:
+failure:
     freeListFree(chFilterFreeList, filter);
-    status = S_dbLib_fieldNotFound;
-
-    finish:
-    return status;
+    return S_dbLib_fieldNotFound;
 }
 
 dbChannel * dbChannelCreate(const char *name)
@@ -511,12 +456,15 @@ dbChannel * dbChannelCreate(const char *name)
             pname++;
         }
 
-        if (*pname == '[') {
-            status = parseArrayRange(chan, pname, &pname);
+        /* Try to recognize an array range expression */
+        if (parseArrayRange(&chan->addrModifier, &pname)==0) {
+            status = createArrayRangeFilter(chan);
             if (status) goto finish;
         }
 
         /* JSON may follow */
+        /* Note that chf_parse issues error messages if it fails,
+        which is why we have to check for the opening brace here. */
         if (*pname == '{') {
             status = chf_parse(chan, &pname);
             if (status) goto finish;

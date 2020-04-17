@@ -98,3 +98,70 @@ void deleteArrayRangeModifier(dbAddrModifier *pmod)
     if (pmod->pvt)
         free(pmod->pvt);
 }
+
+long parseArrayRange(dbAddrModifier *pmod, const char **pstring)
+{
+    long start = 0;
+    long end = -1;
+    long incr = 1;
+    long tmp;
+    const char *pcurrent = *pstring;
+    char *pnext;
+    ptrdiff_t advance;
+    long status = 0;
+
+    if (*pcurrent != '[') {
+        return -1;
+    }
+    pcurrent++;
+    /* If no number is present, strtol() returns 0 and sets pnext=pcurrent,
+       else pnext points to the first char after the number */
+    tmp = strtol(pcurrent, &pnext, 0);
+    advance = pnext - pcurrent;
+    if (advance) start = tmp;
+    pcurrent = pnext;
+    if (*pcurrent == ']' && advance) {
+        end = start;
+        goto done;
+    }
+    if (*pcurrent != ':') {
+        return -1;
+    }
+    pcurrent++;
+    tmp = strtol(pcurrent, &pnext, 0);
+    advance = pnext - pcurrent;
+    pcurrent = pnext;
+    if (*pcurrent == ']') {
+        if (advance) end = tmp;
+        goto done;
+    }
+    if (advance) incr = tmp;
+    if (*pcurrent != ':') {
+        return -1;
+    }
+    pcurrent++;
+    tmp = strtol(pcurrent, &pnext, 0);
+    advance = pnext - pcurrent;
+    if (advance) end = tmp;
+    pcurrent = pnext;
+    if (*pcurrent != ']') {
+        return -1;
+    }
+
+done:
+    status = createArrayRangeModifier(pmod, start, incr, end);
+    if (status) {
+        return status;
+    }
+    pcurrent++;
+    *pstring = pcurrent;
+    return 0;
+}
+
+void getArrayRange(dbAddrModifier *pmod, long *pstart, long *pincr, long *pend)
+{
+    arrayRangeModifier *pvt = (arrayRangeModifier *)pmod->pvt;
+    *pstart = pvt->start;
+    *pincr = pvt->incr;
+    *pend = pvt->end;
+}

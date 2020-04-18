@@ -30,7 +30,7 @@
 #endif
 
 STORE
-int epicsLoadErrorCode = 0;
+DWORD epicsLoadErrorCode = 0;
 
 epicsShareFunc void * epicsLoadLibrary(const char *name)
 {

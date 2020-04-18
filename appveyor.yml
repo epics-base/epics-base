@@ -77,7 +77,7 @@ build_script:
   - cmd: ci/appveyor-make.bat
 
 test_script:
-  - cmd: ci/appveyor-make.bat runtests
+  - cmd: ci/appveyor-make.bat tapfiles test-results
 
 #---------------------------------#
 #         notifications           #

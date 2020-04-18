@@ -17,6 +17,11 @@
 
 namespace {
 
+void loadBad()
+{
+    testOk1(!epicsFindSymbol("noSuchFunction"));
+}
+
 // lookup a symbol from libCom
 // which this executable is linked against (maybe statically)
 // Doesn't work for static builds on windows
@@ -70,13 +75,14 @@ void loadCA()
 
 MAIN(epicsLoadTest)
 {
-    testPlan(3);
+    testPlan(4);
 
     // reference to ensure linkage when linking statically,
     // and actually use the result to make extra doubly sure that
     // this call isn't optimized out by eg. an LTO pass.
     testDiag("# of CPUs %d", epicsThreadGetCPUs());
 
+    loadBad();
 #if defined(__rtems__) || defined(vxWorks)
     testSkip(3, "Target does not implement epicsFindSymbol()");
 #else

@@ -19,6 +19,7 @@
 #include <psapi.h>
 
 #define epicsExportSharedSymbols
+#include "epicsStdio.h"
 #include "epicsFindSymbol.h"
 
 #ifdef _MSC_VER
@@ -78,23 +79,44 @@ epicsShareFunc const char *epicsLoadError(void)
 
 epicsShareFunc void * epicsShareAPI epicsFindSymbol(const char *name)
 {
-    HMODULE dlls[128];
-    DWORD ndlls=0u, i;
+    HANDLE proc = GetCurrentProcess();
+    HMODULE *dlls=NULL;
+    DWORD nalloc=0u, needed=0u;
     void* ret = NULL;
 
     /* As a handle returned by LoadLibrary() isn't available to us,
      * try all loaded modules in arbitrary order.
      */
-    if(epicsEnumProcessModules(GetCurrentProcess(), dlls, sizeof(dlls), &ndlls)) {
-        for(i=0; !ret && i<ndlls; i++) {
+
+    if(!epicsEnumProcessModules(proc, NULL, 0, &needed)) {
+        epicsLoadErrorCode = GetLastError();
+        return ret;
+    }
+
+    if(!(dlls = malloc(nalloc = needed))) {
+        epicsLoadErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+        return ret;
+    }
+
+    if(epicsEnumProcessModules(proc, dlls, nalloc, &needed)) {
+        DWORD i, ndlls;
+
+        /* settle potential races w/o retry by iterating smaller of nalloc or needed */
+        if(nalloc > needed)
+            nalloc = needed;
+
+        for(i=0, ndlls = nalloc/sizeof(*dlls); !ret && i<ndlls; i++) {
             ret = GetProcAddress(dlls[i], name);
+            if(!ret && GetLastError()!=ERROR_PROC_NOT_FOUND) {
+                break;
+            }
         }
     }
+
+
     if(!ret) {
-        /* only capturing the last error code,
-         * but what else to do?
-         */
         epicsLoadErrorCode = GetLastError();
     }
+    free(dlls);
     return ret;
 }

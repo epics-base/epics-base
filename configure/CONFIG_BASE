@@ -68,8 +68,6 @@ DBTOMENUH                  = $(PERL) $(TOOLS)/dbdToMenuH.pl
 REGISTERRECORDDEVICEDRIVER = $(PERL) $(TOOLS)/registerRecordDeviceDriver.pl
 CONVERTRELEASE             = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FULLPATHNAME               = $(PERL) $(TOOLS)/fullPathName.pl
-TAPTOJUNIT                 = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
-PROVE                      = $(PERL) $(TOOLS)/epicsProve.pl
 
 #-------------------------------------------------------
 # tools for installing libraries and products
@@ -82,6 +80,15 @@ INSTALL_LIBRARY = $(INSTALL)
 # tools for making header dependancies and variable replacement
 MKMF                       = $(PERL) $(TOOLS)/mkmf.pl
 REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
+
+#---------------------------------------------------------------
+# Tools for testing
+TAPTOJUNIT                 = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
+PROVE                      = $(PERL) $(TOOLS)/epicsProve.pl
+PROVE.tap                  = $(PROVE) --ext .tap --exec "$(CAT)"
+
+TEST_FAILURE_FILE          = $(TOP)/.tests-failed
+PROVE_FAILURE              = echo $(abspath .)>> $(TEST_FAILURE_FILE)
 
 #---------------------------------------------------------------
 # private versions of lex/yacc from EPICS

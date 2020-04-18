@@ -35,6 +35,11 @@ uninstall$(DIVIDER)%:
 	$(RMDIR) $(addsuffix /$(subst uninstall$(DIVIDER),,$@), \
 	    $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB))
 
+pre-make:
+	@$(if $(filter test-results, $(MAKECMDGOALS)), \
+	    $(RM) $(TEST_FAILURE_FILE))
+test-results:
+	$(PERL) $(TOOLS)/testFailures.pl $(TEST_FAILURE_FILE)
 
 help:
 	@echo "Usage: gnumake [options] [target] ..."

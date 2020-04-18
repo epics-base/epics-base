@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 
 ARCHS += $(BUILD_ARCHS)
@@ -79,14 +79,15 @@ $(foreach arch, $(ARCHS), \
 
 dirPart = $(join $(dir $@), $(word 1, $(subst $(DIVIDER), ,$(notdir $@))))
 actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$(notdir $@))), \
-   $(addprefix $(DIVIDER),$(word 3, $(subst $(DIVIDER), ,$(notdir $@))))) 
-$(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
+   $(addprefix $(DIVIDER),$(word 3, $(subst $(DIVIDER), ,$(notdir $@)))))
+
+$(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets): pre-make
 	$(MAKE) -C $(dirPart) $(actionArchPart)
 
 $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
     $(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
-.PHONY : $(DIRS) all host rebuild
+.PHONY : $(DIRS) all host rebuild pre-make
 .PHONY : $(ARCHS) $(ACTIONS)
 .PHONY : $(dirActionTargets) $(dirArchTargets)
 .PHONY : $(dirActionArchTargets)

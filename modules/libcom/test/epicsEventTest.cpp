@@ -171,6 +171,10 @@ static double eventWaitCheckDelayError( const epicsEventId &id, const double & d
 #define WAITCOUNT 21
 static void eventWaitTest()
 {
+#ifdef _WIN32
+    testTodoBegin("Known issue with WaitForSingleObject");
+#endif
+
     epicsEventId event = epicsEventMustCreate(epicsEventEmpty);
     double errorSum = eventWaitCheckDelayError(event, 0.0);
 
@@ -180,6 +184,8 @@ static void eventWaitTest()
     }
     double meanError = errorSum / WAITCOUNT;
     testOk(meanError < 0.05, "Mean delay error was %.6f sec", meanError);
+
+    testTodoEnd();
 
     epicsEventDestroy(event);
 }

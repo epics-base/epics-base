@@ -39,10 +39,7 @@ epicsShareFunc void * epicsLoadLibrary(const char *name)
 
     epicsLoadErrorCode = 0;
     lib = LoadLibrary(name);
-    if (lib == NULL)
-    {
-        epicsLoadErrorCode = GetLastError();
-    }
+    epicsLoadErrorCode = lib ? 0 : GetLastError();
     return lib;
 }
 
@@ -113,10 +110,7 @@ epicsShareFunc void * epicsShareAPI epicsFindSymbol(const char *name)
         }
     }
 
-
-    if(!ret) {
-        epicsLoadErrorCode = GetLastError();
-    }
+    epicsLoadErrorCode = ret ? 0 : GetLastError();
     free(dlls);
     return ret;
 }

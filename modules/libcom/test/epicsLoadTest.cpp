@@ -67,8 +67,8 @@ void loadCA()
     void *ptr = epicsLoadLibrary(libname.c_str());
     testOk(!!ptr, "Loaded %p : %s", ptr, epicsLoadError());
 
-    ptr = epicsFindSymbol("ca_context_create");
-    testOk(!!ptr, "ca_context_create %p : %s", ptr, epicsLoadError());
+    ptr = epicsFindSymbol("dbf_text");
+    testOk(!!ptr, "dbf_text %p : %s", ptr, epicsLoadError());
 }
 
 } // namespace

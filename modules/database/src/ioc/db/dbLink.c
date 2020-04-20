@@ -423,12 +423,21 @@ long dbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
 
 long dbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
 {
+    return dbGetTimeStampTag(plink, pstamp, NULL);
+}
+
+long dbGetTimeStampTag(const struct link *plink,
+                       epicsTimeStamp *pstamp, epicsInt32 *ptag)
+{
     lset *plset = plink->lset;
 
-    if (!plset || !plset->getTimeStamp)
+    if (plset && plset->getTimeStampTag) {
+        return plset->getTimeStampTag(plink, pstamp, ptag);
+    } else if(plset && plset->getTimeStamp) {
+        return plset->getTimeStamp(plink, pstamp);
+    } else {
         return S_db_noLSET;
-
-    return plset->getTimeStamp(plink, pstamp);
+    }
 }
 
 long dbPutLink(struct link *plink, short dbrType, const void *pbuffer,

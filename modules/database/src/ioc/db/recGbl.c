@@ -304,7 +304,7 @@ void recGblGetTimeStampSimm(void *pvoid, const epicsEnum16 simm, struct link *si
 
     if (!dbLinkIsConstant(plink)) {
         if (plink->flags & DBLINK_FLAG_TSELisTIME) {
-            if (dbGetTimeStamp(plink, &prec->time))
+            if (dbGetTimeStampTag(plink, &prec->time, &prec->utag))
                 errlogPrintf("recGblGetTimeStamp: dbGetTimeStamp failed for %s.TSEL\n",
                     prec->name);
             return;

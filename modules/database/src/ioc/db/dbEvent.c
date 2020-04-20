@@ -714,6 +714,7 @@ db_field_log* db_create_event_log (struct evSubscrip *pevent)
 {
     db_field_log *pLog = db_create_field_log(pevent->chan, pevent->useValque);
     if (pLog) {
+        pLog->mask = pevent->select;
         pLog->ctx  = dbfl_context_event;
     }
     return pLog;

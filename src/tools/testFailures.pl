@@ -24,8 +24,10 @@ die "Usage: testFailures.pl .tests-failed\n"
 
 open FAILURES, '<', shift or
     exit 0;
+my @failures = <FAILURES>;
+close FAILURES;
 
 print "\nTest failures were reported in:\n",
-    map {"    $_\n"} <FAILURES>;
+    (map {"    $_"} @failures), "\n";
 
 exit 1;

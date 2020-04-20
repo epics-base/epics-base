@@ -377,6 +377,15 @@ typedef struct lset {
      */
     long (*getAlarmMsg)(const struct link *plink, epicsEnum16 *status,
                         epicsEnum16 *severity, char *msgbuf, size_t msgbuflen);
+
+    /** @brief Extended version of getTimeStamp
+     *
+     * Equivalent of getTimeStamp() and also copy out time tag.
+     * ptag may be NULL.
+     *
+     * @since Added after UNRELEASED
+     */
+    long (*getTimeStampTag)(const struct link *plink, epicsTimeStamp *pstamp, epicsInt32 *ptag);
 } lset;
 
 #define dbGetSevr(link, sevr) \
@@ -428,6 +437,10 @@ DBCORE_API long dbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
 #define dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN) dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN)
 DBCORE_API long dbGetTimeStamp(const struct link *plink,
         epicsTimeStamp *pstamp);
+/** @since UNRELEASED */
+DBCORE_API long dbGetTimeStampTag(const struct link *plink,
+        epicsTimeStamp *pstamp, epicsInt32 *ptag);
+#define dbGetTimeStampTag(LINK, STAMP, TAG) dbGetTimeStampTag(LINK, STAMP, TAG)
 DBCORE_API long dbPutLink(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest);
 DBCORE_API void dbLinkAsyncComplete(struct link *plink);

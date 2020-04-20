@@ -67,6 +67,7 @@ typedef struct calc_link {
     struct link out;
     double arg[CALCPERFORM_NARGS];
     epicsTimeStamp time;
+    epicsInt32 utag;
     double val;
 } calc_link;
 
@@ -534,6 +535,7 @@ static long lnkCalc_getElements(const struct link *plink, long *nelements)
 struct lcvt {
     double *pval;
     epicsTimeStamp *ptime;
+    epicsInt32 *ptag;
 };
 
 static long readLocked(struct link *pinp, void *vvt)
@@ -543,7 +545,7 @@ static long readLocked(struct link *pinp, void *vvt)
     long status = dbGetLink(pinp, DBR_DOUBLE, pvt->pval, NULL, &nReq);
 
     if (!status && pvt->ptime)
-        dbGetTimeStamp(pinp, pvt->ptime);
+        dbGetTimeStampTag(pinp, pvt->ptime, pvt->ptag);
 
     return status;
 }
@@ -569,7 +571,7 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         long nReq = 1;
 
         if (i == clink->tinp) {
-            struct lcvt vt = {&clink->arg[i], &clink->time};
+            struct lcvt vt = {&clink->arg[i], &clink->time, &clink->utag};
 
             status = dbLinkDoLocked(child, readLocked, &vt);
             if (status == S_db_noLSET)
@@ -578,6 +580,7 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
             if (dbLinkIsConstant(&prec->tsel) &&
                 prec->tse == epicsTimeEventDeviceTime) {
                 prec->time = clink->time;
+                prec->utag = clink->utag;
             }
         }
         else
@@ -648,7 +651,7 @@ static long lnkCalc_putValue(struct link *plink, short dbrType,
         long nReq = 1;
 
         if (i == clink->tinp) {
-            struct lcvt vt = {&clink->arg[i], &clink->time};
+            struct lcvt vt = {&clink->arg[i], &clink->time, &clink->utag};
 
             status = dbLinkDoLocked(child, readLocked, &vt);
             if (status == S_db_noLSET)
@@ -657,6 +660,7 @@ static long lnkCalc_putValue(struct link *plink, short dbrType,
             if (dbLinkIsConstant(&prec->tsel) &&
                 prec->tse == epicsTimeEventDeviceTime) {
                 prec->time = clink->time;
+                prec->utag = clink->utag;
             }
         }
         else
@@ -750,17 +754,24 @@ static long lnkCalc_getAlarm(const struct link *plink, epicsEnum16 *status,
     return lnkCalc_getAlarmMsg(plink, status, severity, NULL, 0u);
 }
 
-static long lnkCalc_getTimestamp(const struct link *plink, epicsTimeStamp *pstamp)
+static long lnkCalc_getTimestampTag(const struct link *plink, epicsTimeStamp *pstamp, epicsInt32 *ptag)
 {
     calc_link *clink = CONTAINER(plink->value.json.jlink,
         struct calc_link, jlink);
 
     if (clink->tinp >= 0) {
         *pstamp = clink->time;
+        if(ptag)
+            *ptag = clink->utag;
         return 0;
     }
 
     return -1;
+}
+
+static long lnkCalc_getTimestamp(const struct link *plink, epicsTimeStamp *pstamp)
+{
+    return lnkCalc_getTimestampTag(plink, pstamp, NULL);
 }
 
 static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
@@ -783,6 +794,7 @@ static lset lnkCalc_lset = {
     lnkCalc_putValue, NULL,
     NULL, doLocked,
     lnkCalc_getAlarmMsg,
+    lnkCalc_getTimestampTag,
 };
 
 static jlif lnkCalcIf = {

@@ -105,11 +105,8 @@ PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
 TESTPRODTARGETS += $(TESTPRODNAME) $(TESTMUNCHNAME)
 
 #---------------------------------------------------------------
-#   Test specifications and test result files
+#   Test result files
 #
-ifneq (,$(strip $(TESTS)))
-TARGETS += testspec
-endif
 
 # Enable testing if this host can run tests on the current target
 ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
@@ -341,14 +338,6 @@ ifdef RUNTESTS_ENABLED
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
 endif
 endif
-
-testspec: $(TESTSCRIPTS)
-	@$(RM) $@
-	@echo OS-class: $(OS_CLASS) > $@
-	@echo Target-arch: $(T_A) >> $@
-	$(if $^, @echo Tests: $^ >> $@)
-	$(if $(TESTFILES), @echo Files: $(TESTFILES) >> $@)
-	$(if $(TESTSPEC_$(OS_CLASS)), @echo "Harness: $(TESTSPEC_$(OS_CLASS))" >> $@)
 
 test-results: tapfiles
 ifneq ($(strip $(TAPFILES)),)

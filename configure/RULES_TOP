@@ -35,10 +35,10 @@ uninstall$(DIVIDER)%:
 	$(RMDIR) $(addsuffix /$(subst uninstall$(DIVIDER),,$@), \
 	    $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB))
 
-pre-make:
-	@$(if $(filter test-results, $(MAKECMDGOALS)), \
-	    $(RM) $(TEST_FAILURE_FILE))
-test-results:
+before-runtests before-test-results: rm-failure-file
+rm-failure-file:
+	@$(RM) $(TEST_FAILURE_FILE)
+runtests test-results:
 	$(PERL) $(TOOLS)/testFailures.pl $(TEST_FAILURE_FILE)
 
 help:
@@ -74,7 +74,7 @@ help:
 	@echo "     xxxRecord.o"
 
 .PHONY: distclean cvsclean realuninstall archuninstall uninstallDirs
-.PHONY: uninstall help
+.PHONY: uninstall rm-failure-file help
 
 # Include <top>/cfg/TOP_RULES* files from tops defined in RELEASE* files
 #

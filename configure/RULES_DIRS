@@ -54,7 +54,7 @@ $(foreach dir, $(DIRS), \
 
 define DEP_template2
 $(1)$$(DIVIDER)$(2) : $$(foreach ddir, $$($(1)_DEPEND_DIRS), \
-    $$(addsuffix $$(DIVIDER)$(2),$$(ddir)))
+    $$(addsuffix $$(DIVIDER)$(2),$$(ddir))) | before-$(2)
 endef
 $(foreach action, $(ACTIONS), \
     $(foreach dir, $(DIRS), \
@@ -81,14 +81,20 @@ dirPart = $(join $(dir $@), $(word 1, $(subst $(DIVIDER), ,$(notdir $@))))
 actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$(notdir $@))), \
    $(addprefix $(DIVIDER),$(word 3, $(subst $(DIVIDER), ,$(notdir $@)))))
 
-$(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets): pre-make
+$(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets):
 	$(MAKE) -C $(dirPart) $(actionArchPart)
+
+# before-action rules are run once prior to recursing through the
+# list of subdirectories and running the action rule in each one.
+# See DEP_template2 above for how that rule ordering is achieved.
+beforeActions = $(addprefix before-,$(ACTIONS))
+$(beforeActions):
 
 $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
     $(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
-.PHONY : $(DIRS) all host rebuild pre-make
-.PHONY : $(ARCHS) $(ACTIONS)
+.PHONY : $(DIRS) all host rebuild
+.PHONY : $(ARCHS) $(ACTIONS) $(beforeActions)
 .PHONY : $(dirActionTargets) $(dirArchTargets)
 .PHONY : $(dirActionArchTargets)
 .PHONY : $(actionArchTargets)

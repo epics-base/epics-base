@@ -9,7 +9,7 @@
  * MinGW doesn't provide wrappers until 6.0, so fallback to psapi.dll
  */
 #ifdef _MSC_VER
-#  define NTDDI_VERSION NTDDI_WIN7
+#  define PSAPI_VERSION 2
 #  define epicsEnumProcessModules K32EnumProcessModules
 #else
 #  define epicsEnumProcessModules EnumProcessModules

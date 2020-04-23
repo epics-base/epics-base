@@ -164,7 +164,7 @@ bool epicsThread::exitWait ( const double delay ) throw ()
             }
             return true;
         }
-        epicsTime exitWaitBegin = epicsTime::getMonotonic ();
+        epicsTime exitWaitBegin = epicsTime::getCurrent ();
         double exitWaitElapsed = 0.0;
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->cancel = true;
@@ -172,7 +172,7 @@ bool epicsThread::exitWait ( const double delay ) throw ()
             epicsGuardRelease < epicsMutex > unguard ( guard );
             this->event.signal ();
             this->exitEvent.wait ( delay - exitWaitElapsed );
-            epicsTime current = epicsTime::getMonotonic ();
+            epicsTime current = epicsTime::getCurrent ();
             exitWaitElapsed = current - exitWaitBegin;
         }
         if(this->terminated && !joined) {

@@ -83,7 +83,7 @@ int CASG::block (
         return ECA_TIMEOUT;
     }
 
-    cur_time = epicsTime::getMonotonic ();
+    cur_time = epicsTime::getCurrent ();
 
     this->client.flush ( guard );
 
@@ -121,7 +121,7 @@ int CASG::block (
         /*
          * force a time update
          */
-        cur_time = epicsTime::getMonotonic ();
+        cur_time = epicsTime::getCurrent ();
 
         delay = cur_time - beg_time;
     }

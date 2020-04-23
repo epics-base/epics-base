@@ -130,7 +130,7 @@ cac::cac (
     epicsMutex & callbackControlIn,
     cacContextNotify & notifyIn ) :
     _refLocalHostName ( localHostNameCache.getReference () ),
-    programBeginTime ( epicsTime::getMonotonic() ),
+    programBeginTime ( epicsTime::getCurrent() ),
     connTMO ( CA_CONN_VERIFY_PERIOD ),
     mutex ( mutualExclusionIn ),
     cbMutex ( callbackControlIn ),

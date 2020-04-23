@@ -54,7 +54,7 @@ void timer::destroy ()
 
 void timer::start ( epicsTimerNotify & notify, double delaySeconds )
 {
-    this->start ( notify, epicsTime::getMonotonic () + delaySeconds );
+    this->start ( notify, epicsTime::getCurrent () + delaySeconds );
 }
 
 void timer::start ( epicsTimerNotify & notify, const epicsTime & expire )
@@ -129,7 +129,7 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
 
     debugPrintf ( ("Start of \"%s\" with delay %f at %p preempting %u\n", 
         typeid ( this->notify ).name (), 
-        expire - epicsTime::getMonotonic (), 
+        expire - epicsTime::getCurrent (), 
         this, preemptCount ) );
 }
 
@@ -190,7 +190,7 @@ void timer::show ( unsigned int level ) const
     double delay;
     if ( this->curState == statePending || this->curState == stateActive ) {
         try {
-            delay = this->exp - epicsTime::getMonotonic();
+            delay = this->exp - epicsTime::getCurrent();
         }
         catch ( ... ) {
             delay = - DBL_MAX;

@@ -43,7 +43,7 @@ searchTimer::searchTimer (
         const unsigned indexIn, 
         epicsMutex & mutexIn,
         bool boostPossibleIn ) :
-    timeAtLastSend ( epicsTime::getMonotonic () ),
+    timeAtLastSend ( epicsTime::getCurrent () ),
     timer ( queueIn.createTimer () ),
     iiu ( iiuIn ),
     mutex ( mutexIn ),

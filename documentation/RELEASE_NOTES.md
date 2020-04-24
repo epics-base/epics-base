@@ -6,6 +6,28 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
+### Improvements to the self-test build targets
+
+This release contains changes that make it possible to integrate another test
+running and reporting system (such as Google's gtest) into the EPICS build
+system. The built-in test-runner and reporting system will continue to be used
+by the test programs inside Base however.
+
+These GNUmake `tapfiles` and `test-results` build targets now collect a list of
+the directories that experienced test failures and display those at the end of
+running and/or reporting all of the tests. The GNUmake process will also only
+exit with an error status after running and/or reporting all of the test
+results; previously the `-k` flag to make was needed and even that didn't always
+work.
+
+Continuous Integration systems are recommended to run `make tapfiles` (or if
+they can read junittest output instead of TAP `make junitests`) followed by
+`make -s test-results` to display the results of the tests. If multiple CPUs are
+available the `-j` flag can be used to run tests in parallel, giving the maximum
+jobs that should be allowed so `make -j4 tapfiles` for a system with 4 CPUs say.
+Running many more jobs than you have CPUs is likely to be slower and is not
+recommended.
+
 ### epicsThread: Main thread defaults to allow blocking I/O
 
 VxWorks IOCs (and potentially RTEMS IOCs running GeSys) have had problems with

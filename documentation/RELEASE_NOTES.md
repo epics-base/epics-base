@@ -14,6 +14,15 @@ release.
 
 ## EPICS Release 7.0.3.2
 
+### IOCsh usage messages
+
+`help <cmd>` now prints a descriptive usage message
+for many internal IOCsh commands.  Try `help *` to
+see them all.
+
+External code which wishes to provide a usage message
+should do so through the new `iocshFuncDef::usage` member.
+
 ### Variable names in RELEASE files
 
 `configure/RELEASE` files are parsed by both GNUmake and the `convertRelease.pl`

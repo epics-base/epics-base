@@ -62,6 +62,7 @@ typedef struct iocshFuncDef {
     const char *name;
     int nargs;
     const iocshArg * const *arg;
+    const char* usage;
 }iocshFuncDef;
 
 typedef void (*iocshCallFunc)(const iocshArgBuf *argBuf);

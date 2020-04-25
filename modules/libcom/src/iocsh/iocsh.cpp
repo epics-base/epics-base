@@ -442,7 +442,10 @@ stopRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
 static const iocshArg helpArg0 = { "[command ...]",iocshArgArgv};
 static const iocshArg *helpArgs[1] = {&helpArg0};
 static const iocshFuncDef helpFuncDef =
-    {"help",1,helpArgs};
+    {"help",1,helpArgs,
+    "With no arguments, list available command names.\n"
+    "With arguments, list arguments and usage for command(s).\n"
+    "Command names may contain wildcards\n"};
 static void helpCallFunc(const iocshArgBuf *args)
 {
     int argc = args[0].aval.ac;
@@ -485,6 +488,9 @@ static void helpCallFunc(const iocshArgBuf *args)
             for (pcmd = iocshCommandHead ; pcmd != NULL ; pcmd = pcmd->next) {
                 piocshFuncDef = pcmd->def.pFuncDef;
                 if (epicsStrGlobMatch(piocshFuncDef->name, argv[iarg]) != 0) {
+                    if(piocshFuncDef->usage) {
+                        fputs("\nUsage: ", epicsGetStdout());
+                    }
                     fputs(piocshFuncDef->name, epicsGetStdout());
                     for (int a = 0 ; a < piocshFuncDef->nargs ; a++) {
                         const char *cp = piocshFuncDef->arg[a]->name;
@@ -497,6 +503,9 @@ static void helpCallFunc(const iocshArgBuf *args)
                         }
                     }
                     fprintf(epicsGetStdout(),"\n");;
+                    if(piocshFuncDef->usage) {
+                        fprintf(epicsGetStdout(), "\n%s", piocshFuncDef->usage);
+                    }
                 }
             }
         }
@@ -1159,7 +1168,12 @@ static void iocshRunCallFunc(const iocshArgBuf *args)
 /* on */
 static const iocshArg onArg0 = { "'error' 'continue' | 'break' | 'wait' [value] | 'halt'", iocshArgArgv };
 static const iocshArg *onArgs[1] = {&onArg0};
-static const iocshFuncDef onFuncDef = {"on", 1, onArgs};
+static const iocshFuncDef onFuncDef = {"on", 1, onArgs,
+                                       "Change IOC shell error handling.\n"
+                                       "  continue (default) - Ignores error and continue with next commands.\n"
+                                       "  break - Return to caller without executing futher commands.\n"
+                                       "  halt - Suspend process.\n"
+                                       "  wait - stall process for [value] seconds, the continue.\n"};
 static void onCallFunc(const iocshArgBuf *args)
 {
     iocshContext *context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
@@ -1225,7 +1239,8 @@ static void commentCallFunc(const iocshArgBuf *)
 
 /* exit */
 static const iocshFuncDef exitFuncDef =
-    {"exit",0,0};
+    {"exit",0,0,
+     "Return to caller.  IOCs exit() from process.\n"};
 static void exitCallFunc(const iocshArgBuf *)
 {
 }

@@ -22,7 +22,8 @@ static const iocshArg argRecType = { "recordTypeName", iocshArgString};
 
 /* dbDumpPath */
 static const iocshArg * const dbDumpPathArgs[] = {&argPdbbase};
-static const iocshFuncDef dbDumpPathFuncDef = {"dbDumpPath",1,dbDumpPathArgs};
+static const iocshFuncDef dbDumpPathFuncDef = {"dbDumpPath",1,dbDumpPathArgs,
+                                               "Dump .db/.dbd file search path.\n"};
 static void dbDumpPathCallFunc(const iocshArgBuf *args)
 {
     dbDumpPath(*iocshPpdbbase);

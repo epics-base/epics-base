@@ -42,8 +42,6 @@ FIND_TOOL = $(firstword $(wildcard $(TOOLS)/$(1) $(EPICS_BASE)/src/tools/$(1)))
 PODTOHTML        = $(PERL) $(TOOLS)/podToHtml.pl
 CONVERTRELEASE   = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FULLPATHNAME     = $(PERL) $(TOOLS)/fullPathName.pl
-TAPTOJUNIT       = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
-PROVE            = $(PERL) $(TOOLS)/epicsProve.pl
 GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG) $(QUESTION_FLAG)
 
 MAKERPATH = $(PYTHON) $(TOOLS)/makeRPath.py
@@ -63,3 +61,12 @@ REPLACEVAR = $(PERL) $(TOOLS)/replaceVAR.pl
 # tools for cleaning out unwanted files
 CVSCLEAN = $(call FIND_TOOL,cvsclean.pl)
 DEPCLEAN = $(call FIND_TOOL,depclean.pl)
+
+#---------------------------------------------------------------
+# Tools for testing
+TAPTOJUNIT                 = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
+PROVE                      = $(PERL) $(TOOLS)/epicsProve.pl
+PROVE.tap                  = $(PROVE) --ext .tap --exec "$(CAT)"
+
+TEST_FAILURE_FILE          = $(TOP)/.tests-failed
+PROVE_FAILURE              = echo $(abspath .)>> $(TEST_FAILURE_FILE)

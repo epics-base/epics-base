@@ -108,17 +108,17 @@ PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
 TESTPRODTARGETS += $(TESTPRODNAME) $(TESTMUNCHNAME)
 
 #---------------------------------------------------------------
-#   Test specifications and test result files
+#   Test result files
 #
-ifneq (,$(strip $(TESTS)))
-TARGETS += testspec
-endif
 
-# Enable testing if this host can run tests on the current target
-ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
+# Enable testing if this host can run tests for the current target
+ifneq (,$(filter $(T_A), $(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
 RUNTESTS_ENABLED = YES
-TAPFILES += $(TESTSCRIPTS:.t=.tap)
-JUNITFILES += $(TAPFILES:.tap=.xml)
+TESTSCRIPTS.t = $(filter %.t, $(TESTSCRIPTS))
+TAPFILES.t += $(TESTSCRIPTS.t:.t=.tap)
+JUNITFILES.t += $(TESTSCRIPTS.t:.t=.xml)
+TAPFILES += $(TAPFILES.t)
+JUNITFILES += $(JUNITFILES.t)
 endif
 
 #---------------------------------------------------------------
@@ -354,23 +354,22 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 #---------------------------------------------------------------
 # Automated testing
 
-runtests: $(TESTSCRIPTS)
+runtests: run-tap-tests
+run-tap-tests: $(TESTSCRIPTS.t)
+ifneq ($(TESTSCRIPTS.t),)
 ifdef RUNTESTS_ENABLED
-	$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
+	$(PROVE) --failures --color $^ || $(PROVE_FAILURE)
+endif
 endif
 
-testspec: $(TESTSCRIPTS)
-	@$(RM) $@
-	@echo OS-class: $(OS_CLASS) > $@
-	@echo Target-arch: $(T_A) >> $@
-	$(if $^, @echo Tests: $^ >> $@)
-	$(if $(TESTFILES), @echo Files: $(TESTFILES) >> $@)
-	$(if $(TESTSPEC_$(OS_CLASS)), @echo "Harness: $(TESTSPEC_$(OS_CLASS))" >> $@)
+tapfiles: $(TAPFILES)
+junitfiles: $(JUNITFILES)
 
-test-results: tapfiles
-ifneq ($(TAPFILES),)
+test-results: tap-results
+tap-results: $(TAPFILES)
+ifneq ($(strip $(TAPFILES)),)
 ifdef RUNTESTS_ENABLED
-	$(PROVE) --failures --ext .tap --exec "$(CAT)" --color $(TAPFILES)
+	$(PROVE.tap) --failures --color $^ || $(PROVE_FAILURE)
 endif
 
 CURRENT_TAPFILES := $(wildcard $(TAPFILES))
@@ -385,16 +384,13 @@ ifneq ($(CURRENT_JUNITFILES),)
 	$(RM) $(CURRENT_JUNITFILES)
 endif
 
-tapfiles: $(TESTSCRIPTS) $(TAPFILES)
-junitfiles: $(JUNITFILES)
-
 # A .tap file is the output from running the associated test script
-%.tap: %.t
+$(TAPFILES.t): %.tap: %.t
 ifdef RUNTESTS_ENABLED
 	$(PERL) $< -tap > $@
 endif
 
-%.xml: %.tap
+$(JUNITFILES.t): %.xml: %.tap
 	$(TAPTOJUNIT) --puretap --output $@ --input $< $*
 
 # If there's a perl test script (.plt) available, use it
@@ -553,8 +549,8 @@ include $(CONFIG)/RULES_EXPAND
 .PRECIOUS: $(COMMON_INC)
 
 .PHONY: all host inc build install clean rebuild buildInstall build_clean
-.PHONY: runtests tapfiles clean-tests test-results junitfiles
-.PHONY: checkRelease warnRelease noCheckRelease FORCE
+.PHONY: runtests run-tap-tests tapfiles junitfiles test-results tap-results
+.PHONY: clean-tests checkRelease warnRelease noCheckRelease FORCE
 
 include $(CONFIG)/RULES_COMMON
 

@@ -60,6 +60,11 @@ else
 
 endif # DISABLE_TOP_RULES
 
+before-runtests before-test-results: rm-failure-file
+rm-failure-file:
+	@$(RM) $(TEST_FAILURE_FILE)
+runtests test-results:
+	$(PERL) $(TOOLS)/testFailures.pl $(TEST_FAILURE_FILE)
 
 help:
 	@echo "Usage: gnumake [options] [target] ..."
@@ -99,7 +104,7 @@ endif
 	@echo "Object targets are supported by the O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
-.PHONY: distclean uninstall help
+.PHONY: distclean uninstall rm-failure-file help
 .PHONY: realuninstall archuninstall uninstallDirs
 
 ifndef DISABLE_TOP_RULES

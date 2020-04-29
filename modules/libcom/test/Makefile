@@ -265,6 +265,16 @@ iocshTest_SRCS += iocshTest.cpp
 TESTS += iocshTest
 TESTFILES += $(wildcard ../iocshTest*.cmd)
 
+TESTPROD_HOST += epicsLoadTest
+epicsLoadTest_SRCS += epicsLoadTest.cpp
+# test linked against static libCom?
+epicsLoadTest_CPPFLAGS_STATIC_YES = -DLINKING_STATIC
+epicsLoadTest_CPPFLAGS += $(epicsLoadTest_CPPFLAGS_STATIC_$(STATIC_BUILD))
+# are dynamic libraries built?
+epicsLoadTest_CPPFLAGS_SHARED_YES = -DBUILDING_SHARED_LIBRARIES
+epicsLoadTest_CPPFLAGS += $(epicsLoadTest_CPPFLAGS_SHARED_$(SHARED_LIBRARIES))
+TESTS += epicsLoadTest
+
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c
 

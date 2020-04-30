@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* 
@@ -31,10 +31,7 @@
 #include "errlog.h"
 #include "osiWireFormat.h"
 
-#define epicsExportSharedSymbols
 #include "addrList.h"
-#undef epicsExportSharedSymbols
-
 #include "iocinf.h"
 
 /*
@@ -73,7 +70,7 @@ static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
 /*
  * addAddrToChannelAccessAddressList ()
  */
-extern "C" int epicsShareAPI addAddrToChannelAccessAddressList
+extern "C" int epicsStdCall addAddrToChannelAccessAddressList
     ( ELLLIST *pList, const ENV_PARAM *pEnv, 
     unsigned short port, int ignoreNonDefaultPort )
 {
@@ -122,7 +119,7 @@ extern "C" int epicsShareAPI addAddrToChannelAccessAddressList
 /*
  * removeDuplicateAddresses ()
  */
-extern "C" void epicsShareAPI removeDuplicateAddresses 
+extern "C" void epicsStdCall removeDuplicateAddresses 
     ( ELLLIST *pDestList, ELLLIST *pSrcList, int silent )
 {
     ELLNODE *pRawNode;
@@ -182,7 +179,7 @@ static void  forcePort ( ELLLIST *pList, unsigned short port )
 /*
  * configureChannelAccessAddressList ()
  */
-extern "C" void epicsShareAPI configureChannelAccessAddressList 
+extern "C" void epicsStdCall configureChannelAccessAddressList 
         ( ELLLIST *pList, SOCKET sock, unsigned short port )
 {
     ELLLIST         tmpList;
@@ -250,7 +247,7 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
 /*
  * printChannelAccessAddressList ()
  */
-extern "C" void epicsShareAPI printChannelAccessAddressList ( const ELLLIST *pList )
+extern "C" void epicsStdCall printChannelAccessAddressList ( const ELLLIST *pList )
 {
     osiSockAddrNode *pNode;
 

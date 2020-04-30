@@ -21,9 +21,9 @@
 #include "ellLib.h"
 #include "epicsTypes.h"
 #include "errMdef.h"
-#include "shareLib.h"
 #include "db_field_log.h"
 #include "dbEvent.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -148,14 +148,14 @@ struct chFilter {
 struct dbCommon;
 struct dbFldDes;
 
-epicsShareFunc void dbChannelInit (void);
-epicsShareFunc void dbChannelExit(void);
-epicsShareFunc long dbChannelTest(const char *name);
-epicsShareFunc dbChannel * dbChannelCreate(const char *name);
-epicsShareFunc long dbChannelOpen(dbChannel *chan);
+DBCORE_API void dbChannelInit (void);
+DBCORE_API void dbChannelExit(void);
+DBCORE_API long dbChannelTest(const char *name);
+DBCORE_API dbChannel * dbChannelCreate(const char *name);
+DBCORE_API long dbChannelOpen(dbChannel *chan);
 
 /*Following is also defined in db_convert.h*/
-epicsShareExtern unsigned short dbDBRnewToDBRold[];
+DBCORE_API extern unsigned short dbDBRnewToDBRold[];
 
 /* In the following macros pChan is dbChannel* */
 
@@ -206,25 +206,25 @@ epicsShareExtern unsigned short dbDBRnewToDBRold[];
 #define dbChannelField(pChan) ((pChan)->addr.pfield)
 
 
-epicsShareFunc long dbChannelGet(dbChannel *chan, short type,
+DBCORE_API long dbChannelGet(dbChannel *chan, short type,
         void *pbuffer, long *options, long *nRequest, void *pfl);
-epicsShareFunc long dbChannelGetField(dbChannel *chan, short type,
+DBCORE_API long dbChannelGetField(dbChannel *chan, short type,
         void *pbuffer, long *options, long *nRequest, void *pfl);
-epicsShareFunc long dbChannelPut(dbChannel *chan, short type,
+DBCORE_API long dbChannelPut(dbChannel *chan, short type,
         const void *pbuffer, long nRequest);
-epicsShareFunc long dbChannelPutField(dbChannel *chan, short type,
+DBCORE_API long dbChannelPutField(dbChannel *chan, short type,
         const void *pbuffer, long nRequest);
-epicsShareFunc void dbChannelShow(dbChannel *chan, int level,
+DBCORE_API void dbChannelShow(dbChannel *chan, int level,
         const unsigned short indent);
-epicsShareFunc void dbChannelFilterShow(dbChannel *chan, int level,
+DBCORE_API void dbChannelFilterShow(dbChannel *chan, int level,
         const unsigned short indent);
-epicsShareFunc void dbChannelDelete(dbChannel *chan);
+DBCORE_API void dbChannelDelete(dbChannel *chan);
 
-epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif, void *puser);
-epicsShareFunc db_field_log* dbChannelRunPreChain(dbChannel *chan, db_field_log *pLogIn);
-epicsShareFunc db_field_log* dbChannelRunPostChain(dbChannel *chan, db_field_log *pLogIn);
-epicsShareFunc const chFilterPlugin * dbFindFilter(const char *key, size_t len);
-epicsShareFunc void dbChannelMakeArrayCopy(void *pvt, db_field_log *pfl, dbChannel *chan);
+DBCORE_API void dbRegisterFilter(const char *key, const chFilterIf *fif, void *puser);
+DBCORE_API db_field_log* dbChannelRunPreChain(dbChannel *chan, db_field_log *pLogIn);
+DBCORE_API db_field_log* dbChannelRunPostChain(dbChannel *chan, db_field_log *pLogIn);
+DBCORE_API const chFilterPlugin * dbFindFilter(const char *key, size_t len);
+DBCORE_API void dbChannelMakeArrayCopy(void *pvt, db_field_log *pfl, dbChannel *chan);
 
 #ifdef __cplusplus
 }

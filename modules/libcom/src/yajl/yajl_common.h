@@ -18,7 +18,7 @@
 #define __YAJL_COMMON_H__
 
 #include <stddef.h>
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #include <epicsVersion.h>
 
@@ -42,7 +42,7 @@ extern "C" {
 
 #define YAJL_MAX_DEPTH 128
 
-#define YAJL_API epicsShareFunc
+#define YAJL_API LIBCOM_API
 
 /** pointer to a malloc function, supporting client overriding memory
  *  allocation routines */

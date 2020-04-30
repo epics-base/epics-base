@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "yajl_encode.h"
 
 static void CharToHex(unsigned char c, char * hexBuf)

@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *
@@ -20,20 +19,12 @@
  */ 
 
 
-#ifndef INCLcaerrh
-#define INCLcaerrh
+#ifndef INC_caerr_H
+#define INC_caerr_H
 
-#ifdef epicsExportSharedSymbols
-#   define INCLcaerrh_accessh_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
+#include "epicsTypes.h"
 
-#   include "epicsTypes.h"
-
-#ifdef INCLcaerrh_accessh_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
+#include "libCaAPI.h"
 
 /*  CA Status Code Definitions   */
 
@@ -149,9 +140,9 @@
 extern "C" {
 #endif
 
-epicsShareFunc const char * epicsShareAPI ca_message(long ca_status);
+LIBCA_API const char * epicsStdCall ca_message(long ca_status);
 
-epicsShareExtern const char * ca_message_text [];
+LIBCA_API extern const char * ca_message_text [];
 
 #ifdef __cplusplus
 }

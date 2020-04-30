@@ -10,7 +10,7 @@
 #define INC_dbJLink_H
 
 #include <stdlib.h>
-#include <shareLib.h>
+#include <dbCoreAPI.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,18 +124,18 @@ typedef struct jlif {
      */
 } jlif;
 
-epicsShareFunc long dbJLinkParse(const char *json, size_t len, short dbfType,
+DBCORE_API long dbJLinkParse(const char *json, size_t len, short dbfType,
     jlink **ppjlink);
-epicsShareFunc long dbJLinkInit(struct link *plink);
+DBCORE_API long dbJLinkInit(struct link *plink);
 
-epicsShareFunc void dbJLinkFree(jlink *);
-epicsShareFunc void dbJLinkReport(jlink *, int level, int indent);
+DBCORE_API void dbJLinkFree(jlink *);
+DBCORE_API void dbJLinkReport(jlink *, int level, int indent);
 
-epicsShareFunc long dbJLinkMapChildren(struct link *,
+DBCORE_API long dbJLinkMapChildren(struct link *,
     jlink_map_fn rtn, void *ctx);
 
-epicsShareFunc long dbjlr(const char *recname, int level);
-epicsShareFunc long dbJLinkMapAll(char *recname, jlink_map_fn rtn, void *ctx);
+DBCORE_API long dbjlr(const char *recname, int level);
+DBCORE_API long dbJLinkMapAll(char *recname, jlink_map_fn rtn, void *ctx);
 
 #ifdef __cplusplus
 }

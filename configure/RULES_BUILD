@@ -405,6 +405,23 @@ $(JUNITFILES.t): %.xml: %.tap
 	$(PERL) $(TOOLS)/makeTestfile.pl $(T_A) $(EPICS_HOST_ARCH) $@ $<
 
 #---------------------------------------------------------------
+# Generate $(API_HEADER) files on request (%API.h)
+
+ifdef API_HEADER
+# Install them
+INC += $(API_HEADER)
+
+# Ensure we generate them early enough
+INSTALL_API_HEADERS = $(addprefix $(INSTALL_INCLUDE)/,$(API_HEADER))
+$(filter-out $(INSTALL_API_HEADERS), $(INSTALL_INC)) $(HDEPENDS_FILES): \
+    | $(INSTALL_API_HEADERS)
+
+# How to make one
+$(COMMON_DIR)/%API.h: $(TOOLS)/makeAPIheader.pl
+	@$(RM) $@
+	$(PERL) $(TOOLS)/makeAPIheader.pl -o $@ $(@:$(COMMON_DIR)/%API.h=%)
+endif
+
 # Generate header with version number from VCS
 
 ifneq ($(GENVERSION),)

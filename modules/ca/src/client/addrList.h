@@ -3,38 +3,38 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#ifndef addrListh
-#define addrListh
+#ifndef INC_addrList_H
+#define INC_addrList_H
 
-#include "shareLib.h"
 #include "envDefs.h" 
 #include "osiSock.h"
+
+#include "libCaAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI configureChannelAccessAddressList 
+LIBCA_API void epicsStdCall configureChannelAccessAddressList
     ( struct ELLLIST *pList, SOCKET sock, unsigned short port );
 
-epicsShareFunc int epicsShareAPI addAddrToChannelAccessAddressList
+LIBCA_API int epicsStdCall addAddrToChannelAccessAddressList
     ( struct ELLLIST *pList, const ENV_PARAM *pEnv, 
     unsigned short port, int ignoreNonDefaultPort );
 
-epicsShareFunc void epicsShareAPI printChannelAccessAddressList 
+LIBCA_API void epicsStdCall printChannelAccessAddressList
     ( const struct ELLLIST *pList );
 
-epicsShareFunc void epicsShareAPI removeDuplicateAddresses
+LIBCA_API void epicsStdCall removeDuplicateAddresses
     ( struct ELLLIST *pDestList, ELLLIST *pSrcList, int silent);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ifndef addrListh */
+#endif /* ifndef INC_addrList_H */
 

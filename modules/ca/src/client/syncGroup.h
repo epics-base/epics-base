@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
@@ -22,13 +21,8 @@
  *	505 665 1831
  */
 
-#ifndef syncGrouph
-#define syncGrouph
-
-#ifdef epicsExportSharedSymbols
-#   define syncGrouph_restore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
+#ifndef INC_syncGroup_H
+#define INC_syncGroup_H
 
 #include "tsDLList.h"
 #include "tsFreeList.h"
@@ -36,11 +30,7 @@
 #include "epicsEvent.h"
 #include "compilerDependencies.h"
 
-#ifdef syncGrouph_restore_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
-
+#include "libCaAPI.h"
 #include "cadef.h"
 #include "cacIO.h"
 
@@ -277,4 +267,4 @@ inline bool syncGroupReadNotify::ioPending (
     return ! this->ioComplete;
 }
 
-#endif // ifdef syncGrouph
+#endif // ifdef INC_syncGroup_H

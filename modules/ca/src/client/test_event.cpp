@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *
@@ -16,10 +15,9 @@
 
 #include "epicsStdioRedirect.h"
 
-#define epicsExportSharedSymbols
 #include "cadef.h"
 
-extern "C" void epicsShareAPI ca_test_event ( struct event_handler_args args )
+extern "C" void epicsStdCall ca_test_event ( struct event_handler_args args )
 {
     chtype nativeType = ca_field_type ( args.chid );
     const char * pNativeTypeName = "<invalid>";
@@ -49,7 +47,7 @@ extern "C" void epicsShareAPI ca_test_event ( struct event_handler_args args )
  * ca_dump_dbr()
  * dump the specified dbr type to stdout
  */
-extern "C" void epicsShareAPI ca_dump_dbr ( 
+extern "C" void epicsStdCall ca_dump_dbr ( 
     chtype type, unsigned count, const void * pbuffer )
 {
     unsigned i;

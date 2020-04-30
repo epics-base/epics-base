@@ -34,12 +34,11 @@
 #include "errlog.h"
 #include "locationException.h"
 
-#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "oldAccess.h"
 #include "cac.h"
 
-epicsShareDef epicsThreadPrivateId caClientCallbackThreadId;
+epicsThreadPrivateId caClientCallbackThreadId;
 
 static epicsThreadOnceId cacOnce = EPICS_THREAD_ONCE_INIT;
 
@@ -736,12 +735,12 @@ void ca_client_context::installDefaultService ( cacService & service )
     ca_client_context::pDefaultService = & service;
 }
 
-void epicsShareAPI caInstallDefaultService ( cacService & service )
+void epicsStdCall caInstallDefaultService ( cacService & service )
 {
     ca_client_context::installDefaultService ( service );
 }
 
-epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
+LIBCA_API int epicsStdCall ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();

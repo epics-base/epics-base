@@ -18,7 +18,6 @@
 
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "iocinf.h"
 #include "syncGroup.h"
 #include "oldAccess.h"

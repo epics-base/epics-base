@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *
@@ -14,8 +13,8 @@
  *              505 665 1831
  */
 
-#ifndef __CAPROTO__
-#define __CAPROTO__ 
+#ifndef INC_caProto_H
+#define INC_caProto_H
 
 #define capStrOf(A) #A
 #define capStrOfX(A) capStrOf ( A )
@@ -183,5 +182,5 @@ struct  mon_info {
  */
 #define unreasonablePVNameSize 500u
 
-#endif /* __CAPROTO__ */
+#endif /* ifndef INC_caProto_H */
 

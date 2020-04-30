@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *
@@ -13,11 +12,11 @@
  *
  */
 
-#ifndef _NET_CONVERT_H
-#define _NET_CONVERT_H
+#ifndef INC_net_convert_H
+#define INC_net_convert_H
 
 #include "db_access.h"
-#include "shareLib.h"
+#include "libCaAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +24,7 @@ extern "C" {
 
 typedef unsigned long arrayElementCount;
 
-epicsShareFunc int caNetConvert ( 
+LIBCA_API int caNetConvert (
     unsigned type, const void *pSrc, void *pDest, 
     int hton, arrayElementCount count );
 
@@ -33,4 +32,4 @@ epicsShareFunc int caNetConvert (
 }
 #endif
 
-#endif	/* define _NET_CONVERT_H */
+#endif	/* ifndef INC_net_convert_H */

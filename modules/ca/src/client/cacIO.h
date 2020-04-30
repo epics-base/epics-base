@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
@@ -22,8 +21,8 @@
  *	505 665 1831
  */
 
-#ifndef cacIOh
-#define cacIOh
+#ifndef INC_cacIO_H
+#define INC_cacIO_H
 
 //
 // Open Issues
@@ -47,20 +46,12 @@
 #include <new>
 #include <stdarg.h>
 
-#ifdef epicsExportSharedSymbols
-#   define cacIOh_restore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include "tsDLList.h"
 #include "epicsMutex.h"
 #include "epicsGuard.h"
 #include "epicsThread.h"
 
-#ifdef cacIOh_restore_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
+#include "libCaAPI.h"
 
 
 class cacChannel;
@@ -69,7 +60,7 @@ typedef unsigned long arrayElementCount;
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacWriteNotify {
+class LIBCA_API cacWriteNotify {
 public:
     virtual ~cacWriteNotify () = 0;
     virtual void completion ( epicsGuard < epicsMutex > & ) = 0;
@@ -82,7 +73,7 @@ public:
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacReadNotify {
+class LIBCA_API cacReadNotify {
 public:
     virtual ~cacReadNotify () = 0;
     virtual void completion (
@@ -97,7 +88,7 @@ public:
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacStateNotify {
+class LIBCA_API cacStateNotify {
 public:
     virtual ~cacStateNotify () = 0;
     virtual void current (
@@ -131,7 +122,7 @@ private:
     bool f_operatorConfirmationRequest:1;
 };
 
-class epicsShareClass cacChannelNotify {
+class LIBCA_API cacChannelNotify {
 public:
     virtual ~cacChannelNotify () = 0;
     virtual void connectNotify ( epicsGuard < epicsMutex > & ) = 0;
@@ -169,7 +160,7 @@ private:
 // but perhaps is a bad practice that should be eliminated? If so,
 // then the IO should not store or use a pointer to the channel.
 //
-class epicsShareClass cacChannel {
+class LIBCA_API cacChannel {
 public:
     typedef unsigned priLev;
     static const priLev priorityMax;
@@ -277,7 +268,7 @@ private:
 	cacChannel & operator = ( const cacChannel & );
 };
 
-class epicsShareClass cacContext {
+class LIBCA_API cacContext {
 public:
     virtual ~cacContext ();
     virtual cacChannel & createChannel (
@@ -296,7 +287,7 @@ public:
         epicsGuard < epicsMutex > &, unsigned level ) const = 0;
 };
 
-class epicsShareClass cacContextNotify {
+class LIBCA_API cacContextNotify {
 public:
     virtual ~cacContextNotify () = 0;
     virtual cacContext & createNetworkContext (
@@ -316,7 +307,7 @@ public:
 // **** Lock Hierarchy ****
 // callbackControl must be taken before mutualExclusion if both are held at
 // the same time
-class epicsShareClass cacService {
+class LIBCA_API cacService {
 public:
     virtual ~cacService () = 0;
     virtual cacContext & contextCreate (
@@ -325,9 +316,9 @@ public:
         cacContextNotify & ) = 0;
 };
 
-epicsShareFunc void epicsShareAPI caInstallDefaultService ( cacService & service );
+LIBCA_API void epicsStdCall caInstallDefaultService ( cacService & service );
 
-epicsShareExtern epicsThreadPrivateId caClientCallbackThreadId;
+LIBCA_API extern epicsThreadPrivateId caClientCallbackThreadId;
 
 inline cacChannel::cacChannel ( cacChannelNotify & notify ) :
     callback ( notify )
@@ -389,4 +380,4 @@ inline bool caAccessRights::operatorConfirmationRequest () const
     return this->f_operatorConfirmationRequest;
 }
 
-#endif // ifndef cacIOh
+#endif // ifndef INC_cacIO_H

@@ -28,22 +28,12 @@
 
 /* Create the dset for devMbboSoftCallback */
 static long write_mbbo(mbboRecord *prec);
-struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_mbbo;
-}devMbboSoftCallback={
-	5,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	write_mbbo
+
+mbbodset devMbboSoftCallback = {
+    {5, NULL, NULL, NULL, NULL},
+    write_mbbo
 };
-epicsExportAddress(dset,devMbboSoftCallback);
+epicsExportAddress(dset, devMbboSoftCallback);
 
 static long write_mbbo(mbboRecord *prec)
 {

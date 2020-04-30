@@ -69,20 +69,9 @@ static long read_bi(biRecord *prec)
     return 2;
 }
 
-static struct {
-        long		number;
-        DEVSUPFUN	report;
-        DEVSUPFUN	init;
-        DEVSUPFUN	init_record;
-        DEVSUPFUN	get_ioint_info;
-        DEVSUPFUN	read_bi;
-} devBiDbState = {
-        5,
-        NULL,
-        init,
-        NULL,
-        NULL,
-        read_bi
+/* Create the dset for devBiDbState */
+bidset devBiDbState = {
+    {5, NULL, init, NULL, NULL},
+    read_bi
 };
-
 epicsExportAddress(dset, devBiDbState);

@@ -40,7 +40,7 @@ static long write_string(lsoRecord *prec)
 }
 
 lsodset devLsoSoftCallback = {
-    5, NULL, NULL, NULL, NULL, write_string
+    { 5, NULL, NULL, NULL, NULL }, write_string
 };
 epicsExportAddress(dset, devLsoSoftCallback);
 

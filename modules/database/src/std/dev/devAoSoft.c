@@ -31,31 +31,17 @@
 #include "aoRecord.h"
 #include "epicsExport.h"
 
-/* added for Channel Access Links */
-static long init_record(aoRecord *prec);
-
 /* Create the dset for devAoSoft */
+static long init_record(dbCommon *pcommon);
 static long write_ao(aoRecord *prec);
-struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_ao;
-	DEVSUPFUN	special_linconv;
-}devAoSoft={
-	6,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	write_ao,
-	NULL};
-epicsExportAddress(dset,devAoSoft);
-
 
-static long init_record(aoRecord *prec)
+aodset devAoSoft = {
+    {6, NULL, NULL, init_record, NULL},
+    write_ao, NULL
+};
+epicsExportAddress(dset, devAoSoft);
+
+static long init_record(dbCommon *pcommon)
 {
 
     long status=0;

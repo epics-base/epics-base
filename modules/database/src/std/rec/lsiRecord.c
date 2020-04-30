@@ -66,13 +66,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have a read_string function */
-    if (pdset->number < 5 || !pdset->read_string) {
+    if (pdset->common.number < 5 || !pdset->read_string) {
         recGblRecordError(S_dev_missingSup, prec, "lsi: init_record");
         return S_dev_missingSup;
     }
 
-    if (pdset->init_record) {
-        long status = pdset->init_record(prec);
+    if (pdset->common.init_record) {
+        long status = pdset->common.init_record(pcommon);
 
         if (status)
             return status;
@@ -221,7 +221,7 @@ static void monitor(lsiRecord *prec)
 
 static long readValue(lsiRecord *prec)
 {
-    struct lsidset *pdset = (struct lsidset *) prec->dset;
+    lsidset *pdset = (lsidset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

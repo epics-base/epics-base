@@ -75,17 +75,10 @@ rset biRSET={
 	put_enum_str,
 	get_graphic_double,
 	get_control_double,
-	get_alarm_double };
-struct bidset { /* binary input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_bi;/*(0,2)=> success and convert, don't convert)*/
-                        /* if convert then raw value stored in rval */
+	get_alarm_double
 };
 epicsExportAddress(rset,biRSET);
+
 static void checkAlarms(biRecord *);
 static void monitor(biRecord *);
 static long readValue(biRecord *);
@@ -93,7 +86,7 @@ static long readValue(biRecord *);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct biRecord *prec = (struct biRecord *)pcommon;
-    struct bidset *pdset;
+    bidset *pdset;
     long status;
 
     if (pass == 0) return 0;
@@ -101,17 +94,17 @@ static long init_record(struct dbCommon *pcommon, int pass)
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
 
-    if(!(pdset = (struct bidset *)(prec->dset))) {
+    if(!(pdset = (bidset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"bi: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_bi function defined */
-    if( (pdset->number < 5) || (pdset->read_bi == NULL) ) {
+    if( (pdset->common.number < 5) || (pdset->read_bi == NULL) ) {
 	recGblRecordError(S_dev_missingSup,(void *)prec,"bi: init_record");
 	return(S_dev_missingSup);
     }
-    if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(prec))) return(status);
+    if( pdset->common.init_record ) {
+	if((status=(*pdset->common.init_record)(pcommon))) return(status);
     }
     prec->mlst = prec->val;
     prec->lalm = prec->val;
@@ -122,7 +115,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct biRecord *prec = (struct biRecord *)pcommon;
-    struct bidset  *pdset = (struct bidset *)(prec->dset);
+    bidset  *pdset = (bidset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
 
@@ -275,7 +268,7 @@ static void monitor(biRecord *prec)
 
 static long readValue(biRecord *prec)
 {
-    struct bidset *pdset = (struct bidset *)prec->dset;
+    bidset *pdset = (bidset *)prec->dset;
     long status = 0;
 
     if (!prec->pact) {

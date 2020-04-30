@@ -50,8 +50,9 @@ static struct ai_channel {
     {"TIME", getCurrentTime},
 };
 
-static long init_ai(aiRecord *prec)
+static long init_ai(dbCommon *pcommon)
 {
+    aiRecord *prec = (aiRecord *)pcommon;
     int i;
 
     if (prec->inp.type != INST_IO) {
@@ -91,12 +92,9 @@ static long read_ai(aiRecord *prec)
     return -1;
 }
 
-struct {
-    dset common;
-    DEVSUPFUN read_write;
-    DEVSUPFUN special_linconv;
-} devAiGeneralTime = {
-    {6, NULL, NULL, init_ai, NULL}, read_ai,  NULL
+aidset devAiGeneralTime = {
+    {6, NULL, NULL, init_ai, NULL},
+    read_ai,  NULL
 };
 epicsExportAddress(dset, devAiGeneralTime);
 
@@ -114,8 +112,9 @@ static struct bo_channel {
     {"RSTERRCNT", resetErrors},
 };
 
-static long init_bo(boRecord *prec)
+static long init_bo(dbCommon *pcommon)
 {
+    boRecord *prec = (boRecord *)pcommon;
     int i;
 
     if (prec->out.type != INST_IO) {
@@ -151,13 +150,12 @@ static long write_bo(boRecord *prec)
     return 0;
 }
 
-struct {
-    dset common;
-    DEVSUPFUN read_write;
-} devBoGeneralTime = {
-    {5, NULL, NULL, init_bo, NULL}, write_bo
+bodset devBoGeneralTime = {
+    {5, NULL, NULL, init_bo, NULL},
+    write_bo
 };
 epicsExportAddress(dset, devBoGeneralTime);
+
 
 
 /******* longin record *************/
@@ -173,8 +171,9 @@ static struct li_channel {
     {"GETERRCNT", errorCount},
 };
 
-static long init_li(longinRecord *prec)
+static long init_li(dbCommon *pcommon)
 {
+    longinRecord *prec = (longinRecord *)pcommon;
     int i;
 
     if (prec->inp.type != INST_IO) {
@@ -209,11 +208,9 @@ static long read_li(longinRecord *prec)
     return 0;
 }
 
-struct {
-    dset common;
-    DEVSUPFUN read_write;
-} devLiGeneralTime = {
-    {5, NULL, NULL, init_li, NULL}, read_li
+longindset devLiGeneralTime = {
+    {5, NULL, NULL, init_li, NULL},
+    read_li
 };
 epicsExportAddress(dset, devLiGeneralTime);
 
@@ -243,8 +240,9 @@ static struct si_channel {
     {"BESTTEP", eventProvider},
 };
 
-static long init_si(stringinRecord *prec)
+static long init_si(dbCommon *pcommon)
 {
+    stringinRecord *prec = (stringinRecord *)pcommon;
     int i;
 
     if (prec->inp.type != INST_IO) {
@@ -288,10 +286,8 @@ static long read_si(stringinRecord *prec)
     return 0;
 }
 
-struct {
-    dset common;
-    DEVSUPFUN read_write;
-} devSiGeneralTime = {
-    {5, NULL, NULL, init_si, NULL}, read_si
+stringindset devSiGeneralTime = {
+    {5, NULL, NULL, init_si, NULL},
+    read_si
 };
 epicsExportAddress(dset, devSiGeneralTime);

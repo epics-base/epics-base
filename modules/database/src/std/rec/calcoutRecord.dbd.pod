@@ -662,6 +662,14 @@ manner for the VAL field.
 =cut
 
 	include "dbCommon.dbd" 
+    %/* Declare Device Support Entry Table */
+    %struct calcoutRecord;
+    %typedef struct calcoutdset {
+    %    dset common;
+    %    long (*write)(struct calcoutRecord *prec);
+    %} calcoutdset;
+    %#define HAS_calcoutdset
+    %
 	field(RPVT,DBF_NOACCESS) {
 		prompt("Record Private")
 		special(SPC_NOMOD)

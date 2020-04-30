@@ -44,17 +44,14 @@ See L<Address Specification> for information on specifying links.
 =cut
 
     include "dbCommon.dbd"
-    %#include "devSup.h"
     %
     %/* Declare Device Support Entry Table */
+    %struct lsiRecord;
     %typedef struct lsidset {
-    %    long number;
-    %    DEVSUPFUN report;
-    %    DEVSUPFUN init;
-    %    DEVSUPFUN init_record;
-    %    DEVSUPFUN get_ioint_info;
-    %    DEVSUPFUN read_string;
+    %    dset common;
+    %    long (*read_string)(struct lsiRecord *prec);
     %} lsidset;
+    %#define HAS_lsidset
     %
     field(VAL,DBF_NOACCESS) {
         prompt("Current Value")

@@ -83,15 +83,6 @@ rset mbbiRSET = {
 };
 epicsExportAddress(rset,mbbiRSET);
 
-struct mbbidset { /* multi bit binary input dset */
-    long number;
-    DEVSUPFUN dev_report;
-    DEVSUPFUN init;
-    DEVSUPFUN init_record; /* returns: (-1,0) => (failure, success)*/
-    DEVSUPFUN get_ioint_info;
-    DEVSUPFUN read_mbbi;/* (0, 2) => (success, success no convert)*/
-};
-
 static void checkAlarms(mbbiRecord *, epicsTimeStamp *);
 static void monitor(mbbiRecord *);
 static long readValue(mbbiRecord *);
@@ -115,18 +106,17 @@ static void init_common(mbbiRecord *prec)
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct mbbiRecord *prec = (struct mbbiRecord *)pcommon;
-    struct mbbidset  *pdset = (struct mbbidset *) prec->dset;
+    mbbidset  *pdset = (mbbidset *) prec->dset;
     long status = 0;
 
     if (pass == 0) return 0;
 
-    pdset = (struct mbbidset *) prec->dset;
     if (!pdset) {
         recGblRecordError(S_dev_noDSET, prec, "mbbi: init_record");
         return S_dev_noDSET;
     }
 
-    if ((pdset->number < 5) || (pdset->read_mbbi == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->read_mbbi == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "mbbi: init_record");
         return S_dev_missingSup;
     }
@@ -138,8 +128,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (prec->mask == 0 && prec->nobt <= 32)
         prec->mask = ((epicsUInt64) 1u << prec->nobt) - 1;
 
-    if (pdset->init_record)
-        status = pdset->init_record(prec);
+    if (pdset->common.init_record)
+        status = pdset->common.init_record(pcommon);
 
     init_common(prec);
 
@@ -152,7 +142,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct mbbiRecord *prec = (struct mbbiRecord *)pcommon;
-    struct mbbidset  *pdset = (struct mbbidset *) prec->dset;
+    mbbidset  *pdset = (mbbidset *) prec->dset;
     long status;
     int pact = prec->pact;
     epicsTimeStamp timeLast;
@@ -380,7 +370,7 @@ static void monitor(mbbiRecord *prec)
 
 static long readValue(mbbiRecord *prec)
 {
-    struct mbbidset *pdset = (struct mbbidset *) prec->dset;
+    mbbidset *pdset = (mbbidset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

@@ -70,15 +70,15 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have a write_string function defined */
-    if (pdset->number < 5 || !pdset->write_string) {
+    if (pdset->common.number < 5 || !pdset->write_string) {
         recGblRecordError(S_dev_missingSup, prec, "lso: init_record");
         return S_dev_missingSup;
     }
 
     dbLoadLinkLS(&prec->dol, prec->val, prec->sizv, &prec->len);
 
-    if (pdset->init_record) {
-        long status = pdset->init_record(prec);
+    if (pdset->common.init_record) {
+        long status = pdset->common.init_record(pcommon);
 
         if (status)
             return status;

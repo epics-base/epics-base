@@ -86,17 +86,6 @@ rset aiRSET={
 };
 epicsExportAddress(rset,aiRSET);
 
-typedef struct aidset { /* analog input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_ai;/*(0,2)=> success and convert,don't convert)*/
-			/* if convert then raw value stored in rval */
-	DEVSUPFUN	special_linconv;
-}aidset;
-
 static void checkAlarms(aiRecord *prec, epicsTimeStamp *lastTime);
 static void convert(aiRecord *prec);
 static void monitor(aiRecord *prec);
@@ -118,7 +107,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 	return(S_dev_noDSET);
     }
     /* must have read_ai function defined */
-    if( (pdset->number < 6) || (pdset->read_ai == NULL) ) {
+    if ((pdset->common.number < 6) || (pdset->read_ai == NULL)) {
 	recGblRecordError(S_dev_missingSup,(void *)prec,"ai: init_record");
 	return(S_dev_missingSup);
     }
@@ -128,8 +117,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
 	prec->eoff = prec->egul;
     }
 
-    if( pdset->init_record ) {
-	long status=(*pdset->init_record)(prec);
+    if (pdset->common.init_record) {
+	long status = pdset->common.init_record(pcommon);
 	if (prec->linr == menuConvertSLOPE) {
 	    prec->eoff = eoff;
 	    prec->eslo = eslo;
@@ -190,7 +179,7 @@ static long special(DBADDR *paddr,int after)
 
     switch(special_type) {
     case(SPC_LINCONV):
-        if(pdset->number<6) {
+        if (pdset->common.number < 6) {
             recGblDbaddrError(S_db_noMod,paddr,"ai: special");
             return(S_db_noMod);
         }

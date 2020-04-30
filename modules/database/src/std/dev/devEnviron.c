@@ -69,7 +69,7 @@ static long read_lsi(lsiRecord *prec)
 }
 
 lsidset devLsiEnviron = {
-    5, NULL, init_lsi, NULL, NULL, read_lsi
+    {5, NULL, init_lsi, NULL, NULL }, read_lsi
 };
 epicsExportAddress(dset, devLsiEnviron);
 
@@ -119,10 +119,8 @@ static long read_stringin(stringinRecord *prec)
     return 0;
 }
 
-static struct {
-    dset common;
-    DEVSUPFUN read;
-} devSiEnviron = {
-    {5, NULL, init_stringin, NULL, NULL}, read_stringin
+stringindset devSiEnviron = {
+    {5, NULL, init_stringin, NULL, NULL},
+    read_stringin
 };
 epicsExportAddress(dset, devSiEnviron);

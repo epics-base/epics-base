@@ -137,6 +137,15 @@ monitoring deadband functionality.
 =cut
 
     include "dbCommon.dbd"
+    %
+    %/* Declare Device Support Entry Table */
+    %struct int64outRecord;
+    %typedef struct int64outdset {
+    %    dset common;
+    %    long (*write_int64out)(struct int64outRecord *prec);
+    %} int64outdset;
+    %#define HAS_int64outdset
+    %
     field(VAL,DBF_INT64) {
         prompt("Desired Output")
         promptgroup("50 - Output")

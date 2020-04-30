@@ -34,7 +34,7 @@ struct link; /* aka DBLINK */
  *
  * In Makefile:
  @code
- USR_CFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
+ USR_CPPFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
  @endcode
  *
  * In C source file:
@@ -48,10 +48,7 @@ struct link; /* aka DBLINK */
  static long get_iointr_info(int detach, dbCommon *prec, IOCSCANPVT* pscan);
  static long longin_read(longinRecord *prec);
 
- const struct {
-     dset common;
-     long (*read)(longinRecord *prec);
- } devLiDevName = {
+ longindset devLiDevName = {
      {
       5, // 4 from dset + 1 from longinRecord
          NULL,

@@ -26,28 +26,18 @@
 #include "epicsExport.h"
 
 /* Create the dset for devWfSoft */
-static long init_record(waveformRecord *prec);
+static long init_record(dbCommon *pcommon);
 static long read_wf(waveformRecord *prec);
 
-struct {
-    long      number;
-    DEVSUPFUN report;
-    DEVSUPFUN init;
-    DEVSUPFUN init_record;
-    DEVSUPFUN get_ioint_info;
-    DEVSUPFUN read_wf;
-} devWfSoft = {
-    5,
-    NULL,
-    NULL,
-    init_record,
-    NULL,
+wfdset devWfSoft = {
+    {5, NULL, NULL, init_record, NULL},
     read_wf
 };
 epicsExportAddress(dset, devWfSoft);
 
-static long init_record(waveformRecord *prec)
+static long init_record(dbCommon *pcommon)
 {
+    waveformRecord *prec = (waveformRecord *)pcommon;
     long nelm = prec->nelm;
     long status = dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nelm);
 

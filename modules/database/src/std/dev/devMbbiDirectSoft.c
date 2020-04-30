@@ -25,28 +25,19 @@
 #include "epicsExport.h"
 
 /* Create the dset for devMbbiDirectSoft */
-static long init_record(mbbiDirectRecord *prec);
+static long init_record(dbCommon *pcommon);
 static long read_mbbi(mbbiDirectRecord *prec);
 
-struct {
-    long      number;
-    DEVSUPFUN report;
-    DEVSUPFUN init;
-    DEVSUPFUN init_record;
-    DEVSUPFUN get_ioint_info;
-    DEVSUPFUN read_mbbi;
-} devMbbiDirectSoft = {
-    5,
-    NULL,
-    NULL,
-    init_record,
-    NULL,
+mbbidirectdset devMbbiDirectSoft = {
+    {5, NULL, NULL, init_record, NULL},
     read_mbbi
 };
 epicsExportAddress(dset, devMbbiDirectSoft);
 
-static long init_record(mbbiDirectRecord *prec)
+static long init_record(dbCommon *pcommon)
 {
+	mbbiDirectRecord *prec = (mbbiDirectRecord *)pcommon;
+
     if (recGblInitConstantLink(&prec->inp, DBR_ULONG, &prec->val))
         prec->udf = FALSE;
 

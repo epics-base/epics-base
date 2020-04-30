@@ -210,6 +210,15 @@ information on these fields.
 =cut
 
 	include "dbCommon.dbd" 
+    %
+    %/* Declare Device Support Entry Table */
+    %struct boRecord;
+    %typedef struct bodset {
+    %    dset common; /*init_record returns:(0,2)=>(success,success no convert*/
+    %    long (*write_bo)(struct boRecord *prec); /*returns: (-1,0)=>(failure,success)*/
+    %} bodset;
+    %#define HAS_bodset
+    %
 	field(VAL,DBF_ENUM) {
 		prompt("Current Value")
 		promptgroup("50 - Output")

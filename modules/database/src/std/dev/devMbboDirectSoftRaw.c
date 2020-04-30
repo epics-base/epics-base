@@ -20,8 +20,10 @@
 #include "mbboDirectRecord.h"
 #include "epicsExport.h"
 
-static long init_record(mbboDirectRecord *prec)
+static long init_record(dbCommon *pcommon)
 {
+	mbboDirectRecord *prec = (mbboDirectRecord *)pcommon;
+
     if (prec->nobt == 0)
         prec->mask = 0xffffffff;
 
@@ -40,10 +42,7 @@ static long write_mbbo(mbboDirectRecord	*prec)
 }
 
 /* Create the dset for devMbboDirectSoftRaw */
-struct {
-    dset common;
-    DEVSUPFUN write;
-} devMbboDirectSoftRaw = {
+mbbodirectdset devMbboDirectSoftRaw = {
     {5, NULL, NULL, init_record, NULL},
     write_mbbo
 };

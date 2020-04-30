@@ -173,6 +173,14 @@ mode fields.
 =cut
 
 	include "dbCommon.dbd"
+    %/* Declare Device Support Entry Table */
+    %struct mbboRecord;
+    %typedef struct mbbodset {
+    %    dset common; /*init_record returns: (0, 2) => (success, success no convert)*/
+    %    long (*write_mbbo)(struct mbboRecord *prec); /*returns: (0, 2) => (success, success no convert)*/
+    %} mbbodset;
+    %#define HAS_mbbodset
+    %
 	field(VAL,DBF_ENUM) {
 		prompt("Desired Value")
 		promptgroup("50 - Output")

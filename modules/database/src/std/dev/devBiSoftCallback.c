@@ -151,8 +151,10 @@ static long init(int pass)
     return 0;
 }
 
-static long init_record(biRecord *prec)
+static long init_record(dbCommon *pcommon)
 {
+	biRecord *prec = (biRecord *)pcommon;
+
     if (recGblInitConstantLink(&prec->inp, DBR_ENUM, &prec->val))
         prec->udf = FALSE;
 
@@ -204,10 +206,7 @@ static long read_bi(biRecord *prec)
 }
 
 /* Create the dset for devBiSoftCallback */
-struct {
-    dset common;
-    DEVSUPFUN read_bi;
-} devBiSoftCallback = {
+bidset devBiSoftCallback = {
     {5, NULL, init, init_record, NULL},
     read_bi
 };

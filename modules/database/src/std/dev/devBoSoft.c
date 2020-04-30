@@ -29,31 +29,18 @@
 #include "boRecord.h"
 #include "epicsExport.h"
 
-static long init_record(boRecord *prec);
-
 /* Create the dset for devBoSoft */
+static long init_record(dbCommon *pcommon);
 static long write_bo(boRecord *prec);
 
-struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_bo;
-}devBoSoft={
-	5,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	write_bo
+bodset devBoSoft = {
+    {5, NULL, NULL, init_record, NULL},
+    write_bo
 };
-epicsExportAddress(dset,devBoSoft);
-
-static long init_record(boRecord *prec)
+epicsExportAddress(dset, devBoSoft);
+
+static long init_record(dbCommon *pcommon)
 {
- 
    long status=0;
  
     /* dont convert */

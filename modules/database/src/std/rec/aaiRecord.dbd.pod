@@ -288,6 +288,15 @@ Scan forward link if necessary, set PACT FALSE, and return.
 =cut
 
 	include "dbCommon.dbd" 
+    %
+    %/* Declare Device Support Entry Table */
+    %struct aaiRecord;
+    %typedef struct aaidset {
+    %    dset common; /*init_record returns: (-1,0)=>(failure,success)*/
+    %    long (*read_aai)(struct aaiRecord *prec); /*returns: (-1,0)=>(failure,success)*/
+    %} aaidset;
+    %#define HAS_aaidset
+    %
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
 		asl(ASL0)

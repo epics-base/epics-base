@@ -19,7 +19,7 @@ static long write_string(printfRecord *prec)
 }
 
 printfdset devPrintfSoft = {
-    5, NULL, NULL, NULL, NULL, write_string
+    { 5, NULL, NULL, NULL, NULL }, write_string
 };
 epicsExportAddress(dset, devPrintfSoft);
 

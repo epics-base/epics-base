@@ -31,23 +31,12 @@
 
 /* Create the dset for devAoSoftCallback */
 static long write_ao(aoRecord *prec);
-struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_ao;
-	DEVSUPFUN	special_linconv;
-}devAoSoftCallback={
-	6,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	write_ao,
-	NULL};
-epicsExportAddress(dset,devAoSoftCallback);
+
+aodset devAoSoftCallback = {
+    {6, NULL, NULL, NULL, NULL},
+    write_ao, NULL
+};
+epicsExportAddress(dset, devAoSoftCallback);
 
 static long write_ao(aoRecord *prec)
 {

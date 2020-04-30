@@ -25,25 +25,6 @@
 #include "int64outRecord.h"
 #include "epicsExport.h"
 
-/* Create the dset for devI64outSoftCallback */
-static long write_int64out(int64outRecord *prec);
-struct {
-    long		number;
-    DEVSUPFUN	report;
-    DEVSUPFUN	init;
-    DEVSUPFUN	init_record;
-    DEVSUPFUN	get_ioint_info;
-    DEVSUPFUN	write_int64out;
-} devI64outSoftCallback = {
-    5,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    write_int64out
-};
-epicsExportAddress(dset, devI64outSoftCallback);
-
 static long write_int64out(int64outRecord *prec)
 {
     struct link *plink = &prec->out;
@@ -60,3 +41,9 @@ static long write_int64out(int64outRecord *prec)
 
     return status;
 }
+
+/* Create the dset for devI64outSoftCallback */
+int64outdset devI64outSoftCallback = {
+    { 5, NULL, NULL, NULL, NULL }, write_int64out
+};
+epicsExportAddress(dset, devI64outSoftCallback);

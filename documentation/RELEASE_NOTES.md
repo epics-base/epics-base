@@ -60,6 +60,101 @@ IOCs now emit a warning when a database file containing the `state` record is
 loaded. This record has been deprecated for a while and will be removed
 beginning with EPICS 7.1. Consider using the `stringin` record instead.
 
+### Record types publish dset's
+
+The record types in Base now define their device support entry table (DSET)
+structures in the record header file. While still optional, developers of
+external support modules are encouraged to start converting their code to use
+the record's new definitions instead of the traditional approach of copying the
+structure definitions into each source file that needs them. By following the
+instructions below it is still possible for the converted code to build and
+work with older Base releases.
+
+This would also be a good time to modify the device support to use the type-safe
+device support entry tables that were introduced in Base-3.16.2 -- see
+[#type-safe-device-and-driver-support-tables](this entry below) for the
+description of that change, which is also optional for now.
+
+Look at the aiRecord for example. Near the top of the generated `aiRecord.h`
+header file is a new section that declares the `aidset`:
+
+```C
+/* Declare Device Support Entry Table */
+struct aiRecord;
+typedef struct aidset {
+    dset common;
+    long (*read_ai)(struct aiRecord *prec);
+    long (*special_linconv)(struct aiRecord *prec, int after);
+} aidset;
+#define HAS_aidset
+```
+
+Notice that the common members (`number`, `report()`, `init()`, `init_record()`
+and `get_ioint_info()` don't appear directly but are included by embedding the
+`dset common` member instead. This avoids the need to have separate definitions
+of those members in each record dset, but does require those members to be
+wrapped inside another set of braces `{}` when initializing the data structure
+for the individual device supports. It also requires changes to code that
+references those common members, but that code usually only appears inside the
+record type implementation and very rarely in device supports.
+
+An aiRecord device support that will only be built against this or later
+versions of EPICS can now declare its dset like this:
+
+```C
+aidset devAiSoft = {
+    { 6, NULL, NULL, init_record, NULL },
+    read_ai, NULL
+};
+epicsExportAddress(dset, devAiSoft);
+```
+
+However most device support that is not built into EPICS itself will need to
+remain compatible with older EPICS versions, which is why the ai record's header
+file also declares the preprocessor macro `HAS_aidset`. This makes it easy to
+define the `aidset` in the device support code when it's needed, and not when
+it's provided in the header:
+
+```C
+#ifndef HAS_aidset
+typedef struct aidset {
+    dset common;
+    long (*read_ai)(aiRecord *prec);
+    long (*special_linconv)(aiRecord *prec, int after);
+} aidset;
+#endif
+aidset devAiSoft = {
+    { 6, NULL, NULL, init_record, NULL },
+    read_ai, NULL
+};
+epicsExportAddress(dset, devAiSoft);
+```
+
+The above `typedef struct` declaration was copied directly from the new
+aiRecord.h file and wrapped in the `#ifndef HAS_aidset` conditional.
+
+This same pattern should be followed for all record types except for the lsi,
+lso and printf record types, which have published their device support entry
+table structures since they were first added to Base but didn't previously embed
+the `dset common` member. Device support for these record types therefore can't
+use the dset name since the new definitions are different from the originals and
+will cause a compile error, so this pattern should be used instead:
+
+```C
+#ifndef HAS_lsidset
+struct {
+    dset common;
+    long (*read_string)(lsiRecord *prec);
+}
+#else
+lsidset
+#endif
+devLsiEtherIP = {
+    {5, NULL, lsi_init, lsi_init_record, get_ioint_info},
+    lsi_read
+};
+```
+
 ## EPICS Release 7.0.3.1
 
 **IMPORTANT NOTE:** *Some record types in this release will not be compatible

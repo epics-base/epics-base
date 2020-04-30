@@ -83,14 +83,6 @@ rset int64inRSET={
 epicsExportAddress(rset,int64inRSET);
 
 
-struct int64indset { /* int64in input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_int64in; /*returns: (-1,0)=>(failure,success)*/
-};
 static void checkAlarms(int64inRecord *prec, epicsTimeStamp *timeLast);
 static void monitor(int64inRecord *prec);
 static long readValue(int64inRecord *prec);
@@ -99,7 +91,7 @@ static long readValue(int64inRecord *prec);
 static long init_record(dbCommon *pcommon, int pass)
 {
     int64inRecord *prec = (int64inRecord*)pcommon;
-    struct int64indset *pdset;
+    int64indset *pdset;
     long status;
 
     if (pass == 0) return 0;
@@ -108,17 +100,17 @@ static long init_record(dbCommon *pcommon, int pass)
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
     recGblInitConstantLink(&prec->siol, DBF_INT64, &prec->sval);
 
-    if(!(pdset = (struct int64indset *)(prec->dset))) {
+    if(!(pdset = (int64indset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"int64in: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_int64in function defined */
-    if( (pdset->number < 5) || (pdset->read_int64in == NULL) ) {
+    if ((pdset->common.number < 5) || (pdset->read_int64in == NULL)) {
 	recGblRecordError(S_dev_missingSup,(void *)prec,"int64in: init_record");
 	return(S_dev_missingSup);
     }
-    if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(prec))) return(status);
+    if (pdset->common.init_record) {
+	if ((status = pdset->common.init_record(pcommon))) return status;
     }
     prec->mlst = prec->val;
     prec->alst = prec->val;
@@ -129,7 +121,7 @@ static long init_record(dbCommon *pcommon, int pass)
 static long process(dbCommon *pcommon)
 {
     int64inRecord *prec = (int64inRecord*)pcommon;
-	struct int64indset	*pdset = (struct int64indset *)(prec->dset);
+	int64indset	*pdset = (int64indset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
 	epicsTimeStamp   timeLast;
@@ -397,7 +389,7 @@ static void monitor(int64inRecord *prec)
 
 static long readValue(int64inRecord *prec)
 {
-    struct int64indset *pdset = (struct int64indset *) prec->dset;
+    int64indset *pdset = (int64indset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

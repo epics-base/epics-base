@@ -47,7 +47,6 @@ dbRecStd_SRCS += devSASoft.c
 dbRecStd_SRCS += devSiSoft.c
 dbRecStd_SRCS += devSoSoft.c
 dbRecStd_SRCS += devWfSoft.c
-dbRecStd_SRCS += devGeneralTime.c
 
 dbRecStd_SRCS += devAiSoftCallback.c
 dbRecStd_SRCS += devBiSoftCallback.c
@@ -68,6 +67,7 @@ dbRecStd_SRCS += devMbboDirectSoftCallback.c
 dbRecStd_SRCS += devPrintfSoftCallback.c
 dbRecStd_SRCS += devSoSoftCallback.c
 
+dbRecStd_SRCS += devGeneralTime.c
 dbRecStd_SRCS += devTimestamp.c
 dbRecStd_SRCS += devStdio.c
 dbRecStd_SRCS += devEnviron.c

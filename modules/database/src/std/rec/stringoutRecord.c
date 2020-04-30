@@ -82,14 +82,6 @@ rset stringoutRSET={
 };
 epicsExportAddress(rset,stringoutRSET);
 
-struct stringoutdset { /* stringout input dset */
-	long		number;
-	DEVSUPFUN	dev_report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record; /*returns: (-1,0)=>(failure,success)*/
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_stringout;/*(-1,0)=>(failure,success)*/
-};
 static void monitor(stringoutRecord *);
 static long writeValue(stringoutRecord *);
 
@@ -99,7 +91,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     struct stringoutRecord *prec = (struct stringoutRecord *)pcommon;
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
     STATIC_ASSERT(sizeof(prec->ivov)==sizeof(prec->val));
-    struct stringoutdset *pdset = (struct stringoutdset *) prec->dset;
+    stringoutdset *pdset = (stringoutdset *) prec->dset;
 
     if (pass == 0) return 0;
 
@@ -111,7 +103,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     /* must have  write_stringout functions defined */
-    if ((pdset->number < 5) || (pdset->write_stringout == NULL)) {
+    if ((pdset->common.number < 5) || (pdset->write_stringout == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "stringout: init_record");
         return S_dev_missingSup;
     }
@@ -120,8 +112,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     if (recGblInitConstantLink(&prec->dol, DBF_STRING, prec->val))
         prec->udf = FALSE;
 
-    if (pdset->init_record) {
-        long status = pdset->init_record(prec);
+    if (pdset->common.init_record) {
+        long status = pdset->common.init_record(pcommon);
 
         if(status)
             return status;
@@ -133,7 +125,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct stringoutRecord *prec = (struct stringoutRecord *)pcommon;
-    struct stringoutdset  *pdset = (struct stringoutdset *)(prec->dset);
+    stringoutdset  *pdset = (stringoutdset *)(prec->dset);
 	long		 status=0;
 	unsigned char    pact=prec->pact;
 
@@ -228,7 +220,7 @@ static void monitor(stringoutRecord *prec)
 
 static long writeValue(stringoutRecord *prec)
 {
-    struct stringoutdset *pdset = (struct stringoutdset *) prec->dset;
+    stringoutdset *pdset = (stringoutdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

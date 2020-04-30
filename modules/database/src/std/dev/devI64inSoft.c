@@ -24,29 +24,9 @@
 #include "int64inRecord.h"
 #include "epicsExport.h"
 
-/* Create the dset for devI64inSoft */
-static long init_record(int64inRecord *prec);
-static long read_int64in(int64inRecord *prec);
-
-struct {
-    long      number;
-    DEVSUPFUN report;
-    DEVSUPFUN init;
-    DEVSUPFUN init_record;
-    DEVSUPFUN get_ioint_info;
-    DEVSUPFUN read_int64in;
-} devI64inSoft = {
-    5,
-    NULL,
-    NULL,
-    init_record,
-    NULL,
-    read_int64in
-};
-epicsExportAddress(dset, devI64inSoft);
-
-static long init_record(int64inRecord *prec)
+static long init_record(dbCommon *common)
 {
+    int64inRecord *prec = (int64inRecord *)common;
     if (recGblInitConstantLink(&prec->inp, DBF_INT64, &prec->val))
         prec->udf = FALSE;
 
@@ -76,3 +56,11 @@ static long read_int64in(int64inRecord *prec)
 
     return status;
 }
+
+/* Create the dset for devI64inSoft */
+
+int64indset devI64inSoft = {
+    { 5, NULL, NULL, init_record, NULL }, read_int64in
+};
+epicsExportAddress(dset, devI64inSoft);
+

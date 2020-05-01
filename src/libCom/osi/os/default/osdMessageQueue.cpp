@@ -145,6 +145,16 @@ getEventNode(epicsMessageQueueId pmsg)
     return evp;
 }
 
+static void
+freeEventNode(epicsMessageQueueId pmsg, eventNode *evp, epicsEventStatus status)
+{
+    if (status == epicsEventWaitTimeout) {
+        epicsEventSignal(evp->event);
+        epicsEventWait(evp->event);
+    }
+    ellAdd(&pmsg->eventFreeList, &evp->link);
+}
+
 static int
 mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
     double timeout)
@@ -195,7 +205,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
             ellDelete(&pmsg->sendQueue, &threadNode.link);
         pmsg->numberOfSendersWaiting--;
 
-        ellAdd(&pmsg->eventFreeList, &threadNode.evp->link);
+        freeEventNode(pmsg, threadNode.evp, status);
 
         if ((pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL)) ||
             status != epicsEventOK) {
@@ -342,7 +352,8 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
 
     if (!threadNode.eventSent)
         ellDelete(&pmsg->receiveQueue, &threadNode.link);
-    ellAdd(&pmsg->eventFreeList, &threadNode.evp->link);
+
+    freeEventNode(pmsg, threadNode.evp, status);
 
     epicsMutexUnlock(pmsg->mutex);
 

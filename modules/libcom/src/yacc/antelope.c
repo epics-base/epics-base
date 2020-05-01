@@ -10,6 +10,13 @@
 #include "defs.h"
 
 /* Need this before the Com library can build it */
+#ifdef EPICS_BUILD_DLL
+#  undef EPICS_BUILD_DLL
+#endif
+#ifdef EPICS_CALL_DLL
+#  undef EPICS_CALL_DLL
+#endif
+
 #include "epicsTempFile.c"
 
 char dflag;

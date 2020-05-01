@@ -43,8 +43,14 @@ char copyright[] =
 #endif /* not lint */
 
 
-#include "epicsTempFile.h"
-#undef epicsExportSharedSymbols
+#ifdef EPICS_BUILD_DLL
+#  undef EPICS_BUILD_DLL
+#endif
+#ifdef EPICS_CALL_DLL
+#  undef EPICS_CALL_DLL
+#endif
+
+#include "epicsTempFile.c"
 
 static char flex_version[] = "2.3";
 

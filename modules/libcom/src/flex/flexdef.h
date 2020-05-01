@@ -43,6 +43,12 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#ifdef _WIN32
+#  include <io.h>
+#else
+#  include <unistd.h>
+#endif
+
 #ifdef __GNUC__
 #define NORETURN __attribute__((noreturn))
 #else
@@ -823,13 +829,6 @@ extern int yylex ();
 
 
 /* The Unix kernel calls used here */
-
-extern int read (int, char*, int);
-#ifndef _WIN32
-extern int unlink (char*);
-#endif
-extern int write (int, char*, int);
-
 
 #endif /* INC_flexdef_H */
 

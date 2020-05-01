@@ -408,7 +408,8 @@ epicsMessageQueuePending(epicsMessageQueueId pmsg)
 epicsShareFunc void epicsShareAPI
 epicsMessageQueueShow(epicsMessageQueueId pmsg, int level)
 {
-    printf("Message Queue Used:%d  Slots:%lu", epicsMessageQueuePending(pmsg), pmsg->capacity);
+    printf("Message Queue Used:%d  Slots:%lu",
+        epicsMessageQueuePending(pmsg), pmsg->capacity);
     if (level >= 1)
         printf("  Maximum size:%lu", pmsg->maxMessageSize);
     printf("\n");

@@ -106,7 +106,7 @@ epicsShareFunc epicsMessageQueueId epicsShareAPI epicsMessageQueueCreate(
 }
 
 static void
-freeEventNode(struct eventNode *enode)
+destroyEventNode(struct eventNode *enode)
 {
     epicsEventDestroy(enode->event);
     free(enode);
@@ -119,7 +119,7 @@ epicsMessageQueueDestroy(epicsMessageQueueId pmsg)
 
     while ((evp = reinterpret_cast < struct eventNode * >
             ( ellGet(&pmsg->eventFreeList) ) ) != NULL) {
-        freeEventNode(evp);
+        destroyEventNode(evp);
     }
     epicsMutexDestroy(pmsg->mutex);
     free(pmsg->buf);

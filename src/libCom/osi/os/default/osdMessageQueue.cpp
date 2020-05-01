@@ -165,7 +165,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
         /*
          * Return if not allowed to wait
          */
-        if (timeout == 0) {
+        if (timeout <= 0) {
             epicsMutexUnlock(pmsg->mutex);
             return -1;
         }
@@ -186,11 +186,8 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
 
         epicsMutexUnlock(pmsg->mutex);
 
-        epicsEventStatus status;
-        if (timeout > 0)
-            status = epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
-        else
-            status = epicsEventWait(threadNode.evp->event);
+        epicsEventStatus status =
+            epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
 
         epicsMutexMustLock(pmsg->mutex);
 
@@ -304,7 +301,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     /*
      * Return if not allowed to wait
      */
-    if (timeout == 0) {
+    if (timeout <= 0) {
         epicsMutexUnlock(pmsg->mutex);
         return -1;
     }
@@ -335,10 +332,11 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     ellAdd(&pmsg->receiveQueue, &threadNode.link);
     epicsMutexUnlock(pmsg->mutex);
 
-    if (timeout > 0)
+    /*
+     * Wait for a message to arrive
+     */
+    epicsEventStatus status =
         epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
-    else
-        epicsEventWait(threadNode.evp->event);
 
     epicsMutexMustLock(pmsg->mutex);
 

@@ -207,8 +207,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
 
         freeEventNode(pmsg, threadNode.evp, status);
 
-        if ((pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL)) ||
-            status != epicsEventOK) {
+        if (pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL)) {
             epicsMutexUnlock(pmsg->mutex);
             return -1;
         }

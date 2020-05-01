@@ -201,9 +201,10 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
 
         epicsMutexMustLock(pmsg->mutex);
 
-        if(!threadNode.eventSent)
+        if (!threadNode.eventSent) {
             ellDelete(&pmsg->sendQueue, &threadNode.link);
-        pmsg->numberOfSendersWaiting--;
+            pmsg->numberOfSendersWaiting--;
+        }
 
         freeEventNode(pmsg, threadNode.evp, status);
 
@@ -300,6 +301,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
          */
         if ((pthr = reinterpret_cast < struct threadNode * >
              ( ellGet(&pmsg->sendQueue) ) ) != NULL) {
+            pmsg->numberOfSendersWaiting--;
             pthr->eventSent = true;
             epicsEventSignal(pthr->evp->event);
         }
@@ -316,16 +318,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     }
 
     /*
-     * Wake up the oldest task waiting to send
-     */
-    if ((pthr = reinterpret_cast < struct threadNode * >
-         ( ellGet(&pmsg->sendQueue) ) ) != NULL) {
-        pthr->eventSent = true;
-        epicsEventSignal(pthr->evp->event);
-    }
-
-    /*
-     * Wait for message to arrive
+     * Indicate that we're waiting
      */
     struct threadNode threadNode;
     threadNode.evp = getEventNode(pmsg);
@@ -339,6 +332,17 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     }
 
     ellAdd(&pmsg->receiveQueue, &threadNode.link);
+
+    /*
+     * Wake up the oldest task waiting to send
+     */
+    if ((pthr = reinterpret_cast < struct threadNode * >
+         ( ellGet(&pmsg->sendQueue) ) ) != NULL) {
+        pmsg->numberOfSendersWaiting--;
+        pthr->eventSent = true;
+        epicsEventSignal(pthr->evp->event);
+    }
+
     epicsMutexUnlock(pmsg->mutex);
 
     /*

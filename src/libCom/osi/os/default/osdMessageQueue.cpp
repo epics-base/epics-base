@@ -173,15 +173,15 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
     if ((pmsg->numberOfSendersWaiting > 0)
      || (pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL))) {
         /*
-         * Return if not allowed to wait
+         * Return if not allowed to wait. NB -1 means wait forever.
          */
-        if (timeout <= 0) {
+        if (timeout == 0) {
             epicsMutexUnlock(pmsg->mutex);
             return -1;
         }
 
         /*
-         * Wait
+         * Indicate that we're waiting
          */
         struct threadNode threadNode;
         threadNode.evp = getEventNode(pmsg);
@@ -196,12 +196,17 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
 
         epicsMutexUnlock(pmsg->mutex);
 
-        epicsEventStatus status =
+        /*
+         * Wait for receiver to wake us
+         */
+        epicsEventStatus status = timeout < 0 ?
+            epicsEventWait(threadNode.evp->event) :
             epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
 
         epicsMutexMustLock(pmsg->mutex);
 
         if (!threadNode.eventSent) {
+            /* Receiver didn't take us off the sendQueue, do it ourselves */
             ellDelete(&pmsg->sendQueue, &threadNode.link);
             pmsg->numberOfSendersWaiting--;
         }
@@ -209,6 +214,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
         freeEventNode(pmsg, threadNode.evp, status);
 
         if (pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL)) {
+            /* State of the queue didn't change, exit */
             epicsMutexUnlock(pmsg->mutex);
             return -1;
         }
@@ -310,9 +316,9 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     }
 
     /*
-     * Return if not allowed to wait
+     * Return if not allowed to wait. NB -1 means wait forever.
      */
-    if (timeout <= 0) {
+    if (timeout == 0) {
         epicsMutexUnlock(pmsg->mutex);
         return -1;
     }
@@ -348,7 +354,8 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     /*
      * Wait for a message to arrive
      */
-    epicsEventStatus status =
+    epicsEventStatus status = timeout < 0 ?
+        epicsEventWait(threadNode.evp->event) :
         epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
 
     epicsMutexMustLock(pmsg->mutex);

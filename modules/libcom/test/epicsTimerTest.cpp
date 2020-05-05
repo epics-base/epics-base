@@ -1,4 +1,5 @@
 /*************************************************************************\
+* Copyright (c) 2021 Facility for Rare Isotope Beams.
 * Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -16,6 +17,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#if __cplusplus >= 201103L
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <functional>
+#include <atomic>
+#endif
 
 #include "epicsTimer.h"
 #include "epicsEvent.h"
@@ -27,6 +35,154 @@
 
 #define verify(exp) ((exp) ? (void)0 : \
     epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
+
+#if __cplusplus >= 201103L
+const double timeTolerance { 1e-3 + epicsThreadSleepQuantum() };
+
+class handler : public epicsTimerNotify
+{
+public:
+  handler(epicsTimerQueue& queue, std::function<void()> expireFctIn = [] {}) : timer(queue.createTimer()), expireFct(expireFctIn) {}
+  ~handler() { timer.destroy(); }
+  void start(double delay) {
+    startTime = epicsTime::getCurrent();
+    timer.start(*this, delay);
+  }
+  void cancel() { timer.cancel(); }
+  expireStatus expire(const epicsTime& currentTime) {
+    expireTime = epicsTime::getCurrent();
+    expireCount++;
+    expireFct();
+    return expireStatus(noRestart);
+  }
+  int getExpireCount() const { return expireCount; }
+  double getDelay() const { return expireTime - startTime; }
+private:
+  epicsTimer &timer;
+  int expireCount { 0 };
+  epicsTime startTime;
+  epicsTime expireTime;
+  std::function<void()> expireFct;
+};
+
+void verifyExpirationTime(double delta_t, double tolerance) {
+  if (!testOk(std::abs(delta_t) < tolerance, "timer expired at the expected "
+              "time (error = %f ms, tolerance = +/-%f ms)", 1000.0 * delta_t,
+              1000.0 * tolerance)) {
+    const char * msg = delta_t < 0.0 ? "early" : "late";
+    testDiag("delta t = %g ms (timer expired too %s)", 1000.0 * delta_t, msg);
+  }
+}
+
+void testTimerExpires() {
+  testDiag("Timer expires");
+  epicsTimerQueueActive &queue = epicsTimerQueueActive::allocate(false);
+  {
+    epicsEvent waitForExpire;
+    handler h1(queue, [&] { waitForExpire.trigger(); } );
+    const double arbitrary_time { 0.3 };
+    h1.start(arbitrary_time);
+
+    waitForExpire.wait();
+
+    verifyExpirationTime(h1.getDelay() - arbitrary_time, timeTolerance);
+  } // destroy timer
+  queue.release();
+}
+
+void testMultipleTimersExpire(std::vector<double> && sleepTime) {
+  epicsTimerQueueActive &queue = epicsTimerQueueActive::allocate(false);
+  {
+    std::atomic<int> count { 3 };
+    epicsEvent all_timers_expired;
+    std::vector<handler> hv;
+    hv.reserve(3);
+    for (unsigned i = 0; i < 3; i++) {
+      hv.emplace_back(queue, [&] {
+        if (!--count) { all_timers_expired.trigger(); }
+      });
+    }
+    for (unsigned i = 0; i < hv.size(); i++) {
+      hv[i].start(sleepTime[i]);
+    }
+
+    all_timers_expired.wait();
+
+    for (unsigned i = 0; i < hv.size(); i++) {
+      testOk(hv[i].getExpireCount() == 1, "timer expired exactly once");
+      verifyExpirationTime(hv[i].getDelay() - sleepTime[i], timeTolerance);
+    }
+  } // destroy timers
+  queue.release();
+}
+
+void testMultipleTimersExpireFirstTimerExpiresFirst() {
+  testDiag("Multiple timers expire - first timer expires first");
+  testMultipleTimersExpire({ 1.0, 1.2, 1.1 });
+}
+
+void testMultipleTimersExpireLastTimerExpiresFirst() {
+  testDiag("Multiple timers expire - last timer expires first");
+  testMultipleTimersExpire({ 1.1, 1.2, 1.0 });
+}
+
+void testTimerReschedule() {
+  testDiag("Reschedule timer");
+  epicsTimerQueueActive &queue = epicsTimerQueueActive::allocate(false);
+  {
+    epicsEvent waitForExpire;
+    handler h1(queue, [&] { waitForExpire.trigger(); } );
+    double arbitrary_time { 10.0 };
+    h1.start(arbitrary_time);
+    arbitrary_time = 0.3;
+    h1.start(arbitrary_time);
+
+    waitForExpire.wait();
+
+    verifyExpirationTime(h1.getDelay() - arbitrary_time, timeTolerance);
+  } // destroy timer
+  queue.release();
+}
+
+void testCancelTimer() {
+  testDiag("Cancel timer");
+  epicsTimerQueueActive &queue = epicsTimerQueueActive::allocate(false);
+  {
+    handler h1(queue);
+    h1.start(0.1);
+    h1.cancel();
+
+    epicsThreadSleep(0.2);
+
+    testOk(h1.getExpireCount() == 0, "timer expired exactly 0 times");
+  } // destroy timer
+  queue.release();
+}
+
+void testCancelTimerWhileExpireIsRunning() {
+  testDiag("Cancel timer while expire handler is running");
+  epicsTimerQueueActive &queue = epicsTimerQueueActive::allocate(false);
+  {
+    epicsEvent expireStarted;
+    std::atomic_flag endOfExpireReached = ATOMIC_FLAG_INIT;
+    auto longRunningFct = [&] {
+      expireStarted.trigger();
+      epicsThreadSleep(0.1);
+      endOfExpireReached.test_and_set();
+    };
+    handler h1(queue, longRunningFct);
+    h1.start(0.0);
+    expireStarted.wait(); // wait for expire() to be called
+
+    h1.cancel(); // cancel while expire() is running
+    bool cancelBlocked = endOfExpireReached.test_and_set();
+
+    testOk(h1.getExpireCount() == 1, "timer expired exactly once");
+    testOk(cancelBlocked, "cancel() blocks until all expire() calls are finished");
+  } // destroy timer
+  queue.release();
+}
+#endif
 
 class notified : public epicsTimerNotify
 {
@@ -40,6 +196,7 @@ public:
 
 void testRefCount()
 {
+    testDiag("Reference counting");
     notified action;
 
     epicsTimerQueueActive *Q1, *Q2;
@@ -456,7 +613,17 @@ void testPeriodic ()
 
 MAIN(epicsTimerTest)
 {
-    testPlan(41);
+    testPlan(58);
+#if __cplusplus >= 201103L
+    testTimerExpires();
+    testMultipleTimersExpireFirstTimerExpiresFirst();
+    testMultipleTimersExpireLastTimerExpiresFirst();
+    testTimerReschedule();
+    testCancelTimer();
+    testCancelTimerWhileExpireIsRunning();
+#else
+    testSkip(17, "Test requires a compiler which supports C++11");
+#endif
     testRefCount();
     testAccuracy ();
     testCancel ();

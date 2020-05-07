@@ -51,7 +51,6 @@ epicsShareFunc int db_post_events (
 typedef void * dbEventCtx;
 
 typedef void EXTRALABORFUNC (void *extralabor_arg);
-void db_init_event_freelists (void);
 epicsShareFunc dbEventCtx db_init_events (void);
 epicsShareFunc int db_start_events (
     dbEventCtx ctx, const char *taskname, void (*init_func)(void *),
@@ -67,6 +66,7 @@ epicsShareFunc void db_event_change_priority ( dbEventCtx ctx, unsigned epicsPri
 
 #ifdef EPICS_PRIVATE_API
 epicsShareFunc void db_cleanup_events(void);
+epicsShareFunc void db_init_event_freelists (void);
 #endif
 
 typedef void EVENTFUNC (void *user_arg, struct dbChannel *chan,

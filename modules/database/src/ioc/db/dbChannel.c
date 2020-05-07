@@ -18,6 +18,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#define EPICS_PRIVATE_API
+
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "epicsString.h"

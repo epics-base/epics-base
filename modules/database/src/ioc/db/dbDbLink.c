@@ -204,10 +204,6 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         /* filter, array, or special */
         ppv_link->getCvt = NULL;
 
-        /* For the moment, empty arrays are not supported by EPICS */
-        if (dbChannelFinalElements(chan) <= 0) /* empty array request */
-            return S_db_emptyArray;
-
         if (ellCount(&chan->filters)) {
             /* If filters are involved in a read, create field log and run filters */
             pfl = db_create_read_log(chan);
@@ -226,7 +222,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         if (status)
             return status;
 
-        if (pnRequest && *pnRequest <= 0) /* empty array result */
+        if (pnRequest && *pnRequest <= 0)
             return S_db_emptyArray;
     }
 

@@ -69,7 +69,7 @@ static void changeRange(long start, long stop, long step)
     testdbPutFieldOk("wf.INP", DBF_STRING, linkstring);
 }
 
-static double buf[] = {1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 2, 4, 6};
+static const double buf[] = {1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 2, 4, 6};
 
 static void expectRange(long start, long end)
 {
@@ -78,15 +78,6 @@ static void expectRange(long start, long end)
     testdbGetFieldEqual("wf.NORD", DBF_LONG, n);
     testdbGetArrFieldEqual("wf.VAL", DBF_DOUBLE, n+2, n, buf+start);
 }
-
-#if 0
-static void expectEmptyArray(void)
-{
-    /* empty arrays are now allowed at the moment */
-    testDiag("expecting empty array");
-    testdbGetFieldEqual("wf.NORD", DBF_LONG, 0);
-}
-#endif
 
 MAIN(linkFilterTest)
 {

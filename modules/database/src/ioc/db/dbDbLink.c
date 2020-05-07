@@ -206,7 +206,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
 
         /* For the moment, empty arrays are not supported by EPICS */
         if (dbChannelFinalElements(chan) <= 0) /* empty array request */
-            return S_db_badField;
+            return S_db_emptyArray;
 
         if (ellCount(&chan->filters)) {
             /* If filters are involved in a read, create field log and run filters */
@@ -227,7 +227,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
             return status;
 
         if (pnRequest && *pnRequest <= 0) /* empty array result */
-            return S_db_badField;
+            return S_db_emptyArray;
     }
 
     if (!status && precord != dbChannelRecord(chan))

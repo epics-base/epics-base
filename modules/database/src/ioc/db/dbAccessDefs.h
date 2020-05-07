@@ -205,6 +205,7 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_noMemory   (M_dbAccess|66) /*unable to allocate data structure from pool*/
 #define S_db_notInit    (M_dbAccess|67) /*Not initialized*/
 #define S_db_bufFull    (M_dbAccess|68) /*Buffer full*/
+#define S_db_emptyArray (M_dbAccess|69) /*Array has no elements*/
 
 struct dbEntry;
 

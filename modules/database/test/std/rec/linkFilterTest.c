@@ -46,9 +46,9 @@ static void expectProcSuccess(const char *rec)
 static void expectProcFailure(const char *rec)
 {
     char fieldname[20];
-    testDiag("expecting failure S_db_badField %#x from %s", S_db_badField, rec);
+    testDiag("expecting failure S_db_emptyArray %#x from %s", S_db_emptyArray, rec);
     sprintf(fieldname, "%s.PROC", rec);
-    testdbPutFieldFail(S_db_badField, fieldname, DBF_LONG, 1);
+    testdbPutFieldFail(S_db_emptyArray, fieldname, DBF_LONG, 1);
     sprintf(fieldname, "%s.SEVR", rec);
     testdbGetFieldEqual(fieldname, DBF_LONG, INVALID_ALARM);
     sprintf(fieldname, "%s.STAT", rec);

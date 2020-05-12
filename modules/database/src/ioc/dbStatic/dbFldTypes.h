@@ -15,10 +15,24 @@
 #define INCdbFldTypesh 1
 
 #include "dbCoreAPI.h"
+#include "ellLib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct VFieldType {
+    const char* name;
+} VFieldType;
+
+typedef struct VFieldTypeNode {
+    ELLNODE node;
+    const VFieldType* vtype;
+} VFieldTypeNode;
+
+typedef struct VField {
+    const VFieldType* vtype;
+} VField;
 
 /* field types */
 typedef enum {
@@ -87,6 +101,7 @@ mapdbfType pamapdbfType[DBF_NTYPES] = {
 #define DBR_ENUM        DBF_ENUM
 #define DBR_PUT_ACKT    DBR_ENUM+1
 #define DBR_PUT_ACKS    DBR_PUT_ACKT+1
+#define DBR_VFIELD      (DBR_PUT_ACKS+1)
 #define DBR_NOACCESS    DBF_NOACCESS
 #define VALID_DB_REQ(x) ((x >= 0) && (x <= DBR_ENUM))
 #define INVALID_DB_REQ(x)       ((x < 0) || (x > DBR_ENUM))

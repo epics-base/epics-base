@@ -25,6 +25,8 @@ device(stringout,CONSTANT,devSoSoft,"Soft Channel")
 device(subArray,CONSTANT,devSASoft,"Soft Channel")
 device(waveform,CONSTANT,devWfSoft,"Soft Channel")
 
+device(stdstringin,CONSTANT,devSSiSoft,"Soft Channel")
+
 device(ai,CONSTANT,devAiSoftRaw,"Raw Soft Channel")
 device(ao,CONSTANT,devAoSoftRaw,"Raw Soft Channel")
 device(bi,CONSTANT,devBiSoftRaw,"Raw Soft Channel")

@@ -32,6 +32,7 @@ struct dbr_enumStrs;
 struct dbr_grDouble;
 struct dbr_ctrlDouble;
 struct dbr_alDouble;
+struct VField;
 
 /* record support entry table */
 struct typed_rset {
@@ -53,6 +54,8 @@ struct typed_rset {
     long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p);
     long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p);
     long (*get_alarm_double)(struct dbAddr *paddr, struct dbr_alDouble *p);
+    long (*get_vfield)(struct dbAddr *paddr, struct VField *p);
+    long (*put_vfield)(struct dbAddr *paddr, const struct VField *p);
 };
 
 #ifdef USE_TYPED_RSET
@@ -84,13 +87,15 @@ struct rset {   /* record support entry table */
     long (*get_graphic_double)();
     long (*get_control_double)();
     long (*get_alarm_double)();
+    long (*get_vfield)(struct dbAddr *paddr, struct VField *p);
+    long (*put_vfield)(struct dbAddr *paddr, const struct VField *p);
 } EPICS_DEPRECATED;
 
 typedef struct rset rset EPICS_DEPRECATED;
 
 #endif
 
-#define RSETNUMBER 17
+#define RSETNUMBER 19
 
 #define S_rec_noRSET     (M_recSup| 1) /*Missing record support entry table*/
 #define S_rec_noSizeOffset (M_recSup| 2) /*Missing SizeOffset Routine*/

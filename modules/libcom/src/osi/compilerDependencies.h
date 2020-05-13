@@ -7,10 +7,11 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/*
- * Author: 
- * Jeffrey O. Hill
- * johill@lanl.gov
+/**
+ * @file   compilerDependencies.h
+ * @author Jeffrey O. Hill johill@lanl.gov
+ * @brief  Compiler specific declarations
+ *
  */
 
 #ifndef compilerDependencies_h

@@ -6,8 +6,15 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*asTrapWrite.h*/
-/* Author:  Marty Kraimer Date:    07NOV2000 */
+
+/**
+ * @file asTrapWrite.h
+ * @brief API for monitoring external put operations to an IOC.
+ * @author  Marty Kraimer
+ *
+ * The access security subsystem provides an API asTrapWrite that makes
+ * put/write requests visible to any facility that registers a listener.
+ */
 
 #ifndef INCasTrapWriteh
 #define INCasTrapWriteh
@@ -18,36 +25,64 @@
 extern "C" {
 #endif
 
+/**
+ * @brief The message passed to registered listeners.
+ */
 typedef struct asTrapWriteMessage {
-    const char *userid;
-    const char *hostid;
-    void *serverSpecific;
-    void *userPvt;
-    int dbrType;    /* Data type from ca/db_access.h, NOT dbFldTypes.h */
-    int no_elements;
-    void *data;     /* Might be NULL if no data is available */
+    const char *userid; /**< @brief Userid of whoever orginated the request. */
+    const char *hostid; /**< @brief Hostid of whoever orginated the request. */
+    void *serverSpecific; /**< @brief A field for use by the server.
+        *
+        * Any listener that uses this field must know what type of
+        * server is forwarding the put requests. This pointer holds
+        * the value the server provides to asTrapWriteWithData(), which
+        * for RSRV is the dbChannel pointer for the target field.
+        */
+    void *userPvt; /**< @brief A field for use by the @ref asTrapWriteListener.
+        *
+        * When the listener is called before the write, this has the
+        * value 0. The listener can give it any value it desires
+        * and it will have the same value when the listener gets
+        * called again after the write. */
+    int dbrType; /**< @brief Data type from ca/db_access.h, NOT dbFldTypes.h */
+    int no_elements; /**< @brief Array length  */
+    void *data;     /**< @brief Might be NULL if no data is available */
 } asTrapWriteMessage;
 
-
+/**
+ * @brief An identifier needed to unregister an listener.
+ */
 typedef void *asTrapWriteId;
+
+/**
+ * @brief Pointer to a listener function.
+ *
+ * Each registered listener function is called twice for every put; once
+ * before and once after the write is performed.
+ * The listener may set @c userPvt in the first call and retrieve it in the
+ * second call.
+ *
+ * Each asTrapWriteMessage can change or may be deleted after the user's
+ * asTrapWriteListener returns
+ *
+ * The listener function is called by a server thread so it must not block
+ * or do anything that causes a delay.
+*/
 typedef void(*asTrapWriteListener)(asTrapWriteMessage *pmessage,int after);
 
+/**
+ * @brief Register function to be called on asTrapWriteListener.
+ * @param func The listener function to be called.
+ * @return A listener identifier for unregistering this listener.
+ */
 epicsShareFunc asTrapWriteId epicsShareAPI asTrapWriteRegisterListener(
     asTrapWriteListener func);
+/**
+ * @brief Unregister asTrapWriteListener.
+ * @param id Listener identifier from asTrapWriteRegisterListener().
+ */
 epicsShareFunc void epicsShareAPI asTrapWriteUnregisterListener(
     asTrapWriteId id);
-
-/*
- * asTrapWriteListener is called before and after the write is performed.
- * The listener can set userPvt on the before call and retrieve it after
- * after = (0,1) (before,after) the put.
- *
- * Each asTrapWriteMessage can change or may be deleted after
- * the user's asTrapWriteListener returns
- *
- * asTrapWriteListener delays the associated server thread so it must not
- * do anything that causes to to block.
-*/
 
 #ifdef __cplusplus
 }

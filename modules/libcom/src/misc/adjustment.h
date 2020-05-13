@@ -5,9 +5,15 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* src/libCom/adjustment.h */
+
+/**
+ * @file adjustment.h
+ * @brief Declare function `adjustToWorstCaseAlignment`
+ *
+ * Declares a single function `adjustToWorstCaseAlignment`.
+ */
 
 #ifndef INCadjustmenth
 #define INCadjustmenth
@@ -17,6 +23,9 @@
 extern "C" {
 #endif
 
+/** returns a value larger or equal than `size`, that is an exact
+      multiple of the worst case alignment for the architecture on
+      which the routine is executed. */
 epicsShareFunc size_t adjustToWorstCaseAlignment(size_t size);
 
 #ifdef __cplusplus
@@ -25,4 +34,3 @@ epicsShareFunc size_t adjustToWorstCaseAlignment(size_t size);
 
 
 #endif /*INCadjustmenth*/
-

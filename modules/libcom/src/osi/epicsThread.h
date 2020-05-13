@@ -5,8 +5,53 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2013 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
+
+/**
+ * \file epicsThread.h
+ *
+ * \brief C++ and C descriptions for a thread.
+ *
+ * The epicsThread API is meant as a somewhat minimal interface for
+ * multithreaded applications. It can be implementedon a wide variety of
+ * systems with the restriction that the system MUST support a
+ * multithreaded environment.
+ * A POSIX pthreads version is provided.
+ *
+ * The interface provides the following thread facilities,
+ * with restrictions as noted:
+ * - Life cycle: a thread starts life as a result of a call to
+ *   epicsThreadCreate. It terminates when the thread function returns.
+ *   It should not return until it has released all resources it uses.
+ *   If a thread is expected to terminate as a natural part of its life
+ *   cycle then the thread function must return.
+ * - epicsThreadOnce: this provides the ability to have an
+ *   initialization function that is guaranteed to be called exactly
+ *   once.
+ * - main: if a main routine finishes its work but wants to leave other
+ *   threads running it can call epicsThreadExitMain, which should be
+ *   the last statement in main.
+ * - Priorities: ranges between 0 and 99 with a higher number meaning
+ *   higher priority. A number of constants are defined for iocCore
+ *   specific threads. The underlying implementation may collapse the
+ *   range 0 to 99 into a smaller range; even a single priority. User
+ *   code should never rely on the existence of multiple thread
+ *   priorities to guarantee correct behavior.
+ * - Stack Size: epicsThreadCreate accepts a stack size parameter. Three
+ *   generic sizes are available: small, medium,and large. Portable code
+ *   should always use one of the generic sizes. Some implementation may
+ *   ignore the stack size request and use a system default instead.
+ *   Virtual memory systems providing generous stack sizes can be
+ *   expected to use the system default.
+ * - epicsThreadId: every epicsThread has an Id which gets returned by
+ *   epicsThreadCreate and is valid as long as that thread still exists.
+ *   A value of 0 always means no thread. If a threadId is used after
+ *   the thread has terminated,the results are not defined (but will
+ *   normally lead to bad things happening). Thus code that looks after
+ *   other threads MUST be aware of threads terminating.
+ */
+
 #ifndef epicsThreadh
 #define epicsThreadh
 
@@ -36,7 +81,7 @@ typedef void (*EPICSTHREADFUNC)(void *parm);
 #define epicsThreadPriorityIocsh        91
 #define epicsThreadPriorityBaseMax      91
 
-/* stack sizes for each stackSizeClass are implementation and CPU dependent */
+/** Stack sizes for each stackSizeClass are implementation and CPU dependent. */
 typedef enum {
     epicsThreadStackSmall, epicsThreadStackMedium, epicsThreadStackBig
 } epicsThreadStackSizeClass;
@@ -45,11 +90,15 @@ typedef enum {
     epicsThreadBooleanStatusFail, epicsThreadBooleanStatusSuccess
 } epicsThreadBooleanStatus;
 
-/** Lookup target specific default stack size */
+/**
+ * Get a stack size value that can be given to epicsThreadCreate().
+ * \param size one of the values epicsThreadStackSmall,
+ * epicsThreadStackMedium or epicsThreadStackBig.
+ **/
 epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize(
     epicsThreadStackSizeClass size);
 
-/* (epicsThreadId)0 is guaranteed to be an invalid thread id */
+/** (epicsThreadId)0 is guaranteed to be an invalid thread id */
 typedef struct epicsThreadOSD *epicsThreadId;
 
 typedef epicsThreadId epicsThreadOnceId;
@@ -57,9 +106,13 @@ typedef epicsThreadId epicsThreadOnceId;
 
 /** Perform one-time initialization.
  *
- * Run the provided function if it has not run, and is not running.
+ * Run the provided function if it has not run, and is not running in
+ * some other thread.
  *
- * @post The provided function has been run.
+ * For each unique epicsThreadOnceId, epicsThreadOnce guarantees that
+ * -# myInitFunc will only be called only once.
+ * -# myInitFunc will have returned before any other epicsThreadOnce
+ *   call using the same epicsThreadOnceId returns.
  *
  * @code
  * static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
@@ -72,12 +125,19 @@ typedef epicsThreadId epicsThreadOnceId;
 epicsShareFunc void epicsShareAPI epicsThreadOnce(
     epicsThreadOnceId *id, EPICSTHREADFUNC, void *arg);
 
-/* When real-time scheduling is active, attempt any post-init operations
+/**
+ * When real-time scheduling is active, attempt any post-init operations
  * that preserve real-time performance. For POSIX targets this locks the
  * process into RAM, preventing swap-related VM faults.
- */
+ **/
 epicsShareFunc void epicsThreadRealtimeLock(void);
 
+/**
+ * If the main routine is done but wants to let other threads run it can
+ * call this routine. This should be the last call in main, except the
+ * final return. On most systems epicsThreadExitMain never returns.This
+ * must only be called by the main thread.
+ **/
 epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
 
 /** For use with epicsThreadCreateOpt() */
@@ -156,7 +216,11 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI
 /** Test if two thread IDs actually refer to the same OS thread */
 epicsShareFunc int epicsShareAPI epicsThreadIsEqual(
     epicsThreadId id1, epicsThreadId id2);
-/** Test if thread has been suspended with epicsThreadSuspendSelf() */
+/** How and why a thread can be suspended is implementation dependent. A
+ * thread calling epicsThreadSuspendSelf() should result in this routine
+ * returning true for that thread, but a thread may also be suspended
+ * for other reasons.
+ **/
 epicsShareFunc int epicsShareAPI epicsThreadIsSuspended(epicsThreadId id);
 /** @brief Block the calling thread for at least the specified time.
  * @param seconds Time to wait in seconds.  Values <=0 blocks for the shortest possible time.
@@ -206,7 +270,18 @@ epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf(void);
 epicsShareFunc void epicsShareAPI epicsThreadGetName(
     epicsThreadId id, char *name, size_t size);
 
+/**
+ * Is it OK for a thread to block? This can be called by support code
+ * that does not know if it is called in a thread that should not block.
+ * For example the errlog system calls this to decide when messages
+ * should be displayed on the console.
+ **/
 epicsShareFunc int epicsShareAPI epicsThreadIsOkToBlock(void);
+/**
+ * When a thread is started the default is that it is not allowed to
+ * block. This method can be called to change the state. For example
+ * iocsh calls this to specify that it is OK to block.
+ **/
 epicsShareFunc void epicsShareAPI epicsThreadSetOkToBlock(int isOkToBlock);
 
 /** Print to stdout information about all running EPICS threads.
@@ -217,11 +292,32 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll(unsigned int level);
 epicsShareFunc void epicsShareAPI epicsThreadShow(
     epicsThreadId id,unsigned int level);
 
-/* Hooks called when a thread starts, map function called once for every thread */
+/**
+ * Hooks called when a thread starts, map function called once for every thread.
+ **/
 typedef void (*EPICS_THREAD_HOOK_ROUTINE)(epicsThreadId id);
+
+/**
+ * Register a routine to be called by every new thread before the thread
+ * function gets run. Hook routines will often register a thread exit
+ * routine with epicsAtThreadExit() to release thread-specific resources
+ * they have allocated.
+ */
 epicsShareFunc int epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook);
+
+/**
+ * Remove routine from the list of hooks run at thread creation time.
+ **/
 epicsShareFunc int epicsThreadHookDelete(EPICS_THREAD_HOOK_ROUTINE hook);
+
+/**
+ * Print the current list of hook function pointers.
+ **/
 epicsShareFunc void epicsThreadHooksShow(void);
+
+/**
+ * Call func once for every known thread.
+ **/
 epicsShareFunc void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func);
 
 /** Thread local storage */
@@ -331,7 +427,7 @@ private:
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
     friend void epicsThreadCallEntryPoint ( void * );
-    void printLastChanceExceptionMessage ( 
+    void printLastChanceExceptionMessage (
         const char * pExceptionTypeName,
         const char * pExceptionContext );
     /* exceptions */
@@ -346,7 +442,7 @@ protected:
 };
 
 template < class T >
-class epicsThreadPrivate : 
+class epicsThreadPrivate :
     private epicsThreadPrivateBase {
 public:
     epicsThreadPrivate ();

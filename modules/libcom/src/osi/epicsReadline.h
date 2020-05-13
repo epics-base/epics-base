@@ -6,6 +6,16 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
+
+/**
+ * @file epicsReadline.h
+ * @brief Command-line editing functions
+ * @author Eric Norum
+ *
+ * Provides a generalized API for command line history and line-editing.
+ * The implementation of this API can call GNU Readline, libtecla, and on
+ * VxWorks the ledLib routines, according to the EPICS build configuration.
+ */
 #ifndef INC_epicsReadline_H
 #define INC_epicsReadline_H
 
@@ -15,9 +25,23 @@ extern "C" {
 
 #include <shareLib.h>
 #include <stdio.h>
-
+/**
+ * @brief Create a command-line context
+ * @param in Filehandle to read from
+ * @returns Command-line context
+ */
 epicsShareFunc void * epicsShareAPI epicsReadlineBegin (FILE *in);
+/**
+ * @brief Read a line of input
+ * @param prompt Prompt string
+ * @param context To read from
+ * @returns Line read
+ */
 epicsShareFunc char * epicsShareAPI epicsReadline (const char *prompt, void *context);
+/**
+ * @brief Destroy a command-line context
+ * @param context Command-line context to destroy
+ */
 epicsShareFunc void   epicsShareAPI epicsReadlineEnd (void *context);
 
 #ifdef __cplusplus

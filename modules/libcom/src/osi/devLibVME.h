@@ -4,14 +4,23 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* devLib.h */
 
-/*
- * Original Author: Marty Kraimer 
- *  Author:     Jeff Hill
- *  Date:       03-10-93
+/**
+ * @file devLibVME.h
+ * @author Marty Kraimer, Jeff Hill
+ * @brief API for accessing hardware devices, mosty over VMEbus.
+ *
+ * API for accessing hardware devices. The original APIs here were for
+ * written for use with VMEbus but additional routines were added for
+ * ISA-bus (but not fully implemented inside EPICS Base and may never
+ * have been actually used).
+ *
+ * If all VMEbus drivers register with these routines then addressing
+ * conflicts caused by multiple device/drivers trying to use the same
+ * VME addresses will be detected. This API also makes it easy for a
+ * single driver to be written that works on both VxWorks and RTEMS.
  */
 
 #ifndef INCdevLibh
@@ -27,23 +36,17 @@
 extern "C" {
 #endif
 
-/*
- * epdevAddressType & EPICStovxWorksAddrType
- * devLib.c must change in unison
- */
+/** @brief The available bus address types */
 typedef enum {
-		atVMEA16,
-		atVMEA24,
-		atVMEA32,
-		atISA,	/* memory mapped ISA access (until now only on PC) */
-		atVMECSR, /* VME-64 CR/CSR address space */
-		atLast	/* atLast must be the last enum in this list */
-		} epicsAddressType;
+    atVMEA16,   /**< @brief VME short I/O. */
+    atVMEA24,   /**< @brief VME standard I/O. */
+    atVMEA32,   /**< @brief VME extended I/O. */
+    atISA,      /**< @brief Memory mapped ISA access. */
+    atVMECSR,   /**< @brief VME-64 CR/CSR address space. */
+    atLast      /**< @brief Invalid, must be the last entry. */
+} epicsAddressType;
 
-/*
- * pointer to an array of strings for each of
- * the above address types
- */
+/** @brief A string representation of each of the bus address types */
 epicsShareExtern const char *epicsAddressTypeName[];
 
 #ifdef __cplusplus
@@ -61,41 +64,54 @@ epicsShareExtern const char *epicsAddressTypeName[];
 extern "C" {
 #endif
 
-/*
- *  General API
+/** @brief Print a map of registered bus addresses.
  *
- *  This section applies to all bus types
+ * Display a table of registsred bus address ranges, including the owner of
+ * each registered address.
+ * @return 0, or an error status value
  */
+epicsShareFunc long devAddressMap(void);
 
-epicsShareFunc long devAddressMap(void); /* print an address map */
-
-/*
- * devBusToLocalAddr()
+/** @brief Translate a bus address to a pointer the CPU can use.
  *
- * OSI routine to translate bus addresses their local CPU address mapping
+ * Given a bus address, returns a pointer to that location in the CPU's
+ * memory map, or an error if direct access isn't currently possible.
+ * @param addrType The bus address type.
+ * @param busAddr Bus address to be translated.
+ * @param *ppLocalAddr Where to put the CPU pointer.
+ * @return 0, or an error status value.
  */
 epicsShareFunc long devBusToLocalAddr (
 		epicsAddressType addrType,
 		size_t busAddr,
 		volatile void **ppLocalAddr);
-/*
- * devReadProbe()
+
+/** @brief Probe the bus for reading from a specific address.
  *
- * a bus error safe "wordSize" read at the specified address which returns 
- * unsuccessful status if the device isnt present
+ * Performs a bus-error-safe @c wordSize atomic read from a specific
+ * address and returns an error if this caused a bus error.
+ * @param wordSize The word size to read: 1, 2, 4 or 8 bytes.
+ * @param ptr Pointer to the location in the CPU's memory map to read.
+ * @param pValueRead Where to put the value read.
+ * @return 0, or an error status value if the location could not be
+ * accessed or the read caused a bus error.
  */
 epicsShareFunc long devReadProbe (
     unsigned wordSize, volatile const void *ptr, void *pValueRead);
 
-/*
- * devNoResponseProbe()
+/** @brief Read-probe a range of bus addresses, looking for empty space.
  *
- * Verifies that no devices respond at naturally aligned words
- * within the specified address range. Return success if no devices
- * respond. Returns an error if a device does respond or if
- * a physical address for a naturally aligned word cant be mapped.
- * Checks all naturally aligned word sizes between char and long for
- * the entire specified range of bytes.
+ * Verifies that no device responds at any naturally aligned addresses
+ * within the given range. Tries to read every aligned address at every
+ * word size between char and long over the entire range, returning
+ * success only if none of the reads succeed.
+ * @warning This routine may be slow and have a very bad effect on a busy
+ * VMEbus. Every read probe of an unused address will hold onto the VMEbus
+ * for the global bus timeout period.
+ * @param addrType The bus address type.
+ * @param base First address base to probe.
+ * @param size Range of bus addresses to test, in bytes.
+ * @return 0 if no devices respond, or an error status value.
  */
 epicsShareFunc long devNoResponseProbe(
 			epicsAddressType addrType,
@@ -103,29 +119,71 @@ epicsShareFunc long devNoResponseProbe(
 			size_t size
 );
 
-/*
- * devWriteProbe
+/** @brief Probe the bus for writing to a specific address.
  *
- * a bus error safe "wordSize" write at the specified address which returns 
- * unsuccessful status if the device isnt present
+ * Performs a bus-error-safe @c wordSize atomic write to a specific
+ * address and returns an error if this caused a bus error.
+ * @param wordSize The word size to write: 1, 2, 4 or 8 bytes.
+ * @param ptr Pointer to the location in the CPU's memory map to write to.
+ * @param pValueWritten The value to write.
+ * @return 0, or an error status value if the location could not be
+ * accessed or the write caused a bus error.
  */
 epicsShareFunc long devWriteProbe (
     unsigned wordSize, volatile void *ptr, const void *pValueWritten);
 
+/** @brief Register a bus address range with a name.
+ *
+ * The devLib code keeps a list of all bus address ranges registered with
+ * this routine and returns an error if a later call attempts to register
+ * any addresses that overlap with a range already registered. The call to
+ * registering a range also converts the given base address into a pointer
+ * in the CPU address space for the driver to use (see devBusToLocalAddr()).
+ * @param pOwnerName Name of a driver that will own this range.
+ * @param addrType The bus address type.
+ * @param logicalBaseAddress The bus start address.
+ * @param size Number of bytes to reserve.
+ * @param pPhysicalAddress Where to put the converted CPU pointer.
+ * @return 0, or an error status.
+ */
 epicsShareFunc long devRegisterAddress(
 			const char *pOwnerName,
 			epicsAddressType addrType,
 			size_t logicalBaseAddress,
-			size_t size, /* bytes */
+			size_t size,
 			volatile void **pPhysicalAddress);
 
+/** @brief Release a bus address range previously registered.
+ *
+ * Release an address range that was previously registered by a call to
+ * devRegisterAddress() or devAllocAddress().
+ * @param addrType The bus address type.
+ * @param logicalBaseAddress The bus start address.
+ * @param pOwnerName The name of the driver that owns this range.
+ * @return 0, or an error status.
+ */
 epicsShareFunc long devUnregisterAddress(
 			epicsAddressType addrType,
 			size_t logicalBaseAddress,
 			const char *pOwnerName);
 
-/*
- * allocate and register an unoccupied address block
+/** @brief Allocate and register an unoccupied address block.
+ *
+ * Asks devLib to allocate an address block of a particular address type.
+ * This is useful for devices that appear in more than one address space
+ * and can program the base address of one window using registers found
+ * in another window. As with devRegisterAddress() this call also converts
+ * the new base address into a pointer in the CPU address space for the
+ * driver to use (see devBusToLocalAddr()).
+ * @note This routine calls devNoResponseProbe() to find an unoccupied
+ * block in the bus address space, so using it may have a bad effect on a
+ * busy VMEbus at allocation time; see the warning above.
+ * @param pOwnerName Name of a driver that will own this range.
+ * @param addrType The bus address type.
+ * @param size Number of bytes to be allocated.
+ * @param alignment How many low bits in the address must all be zero.
+ * @param pLocalAddress Where to put the CPU pointer.
+ * @return 0, or an error status value.
  */
 epicsShareFunc long devAllocAddress(
 			const char *pOwnerName,
@@ -134,117 +192,185 @@ epicsShareFunc long devAllocAddress(
 			unsigned alignment, /*n ls bits zero in addr*/
 			volatile void **pLocalAddress);
 
-/*
- * VME API
- *
- * Functions in this section apply only to the VME bus type
+/** @name VME Interrupt Management
+ * Routines to manage VME interrupts.
+ * @{
  */
-
-/*
- * connect ISR to a VME interrupt vector
+/** @brief Connect an ISR up to a VME interrupt vector.
+ *
+ * Interrupt Service Routines (ISRs) are normally written in C, and get
+ * passed a context parameter given with them to this connection routine.
+ *
+ * There are many restrictions on the routines that an ISR may call; see
+ * epicsEvent.h, epicsInterrupt.h, epicsMessageQueue.h, epicsRingBytes.h,
+ * epicsRingPointer.h and epicsTime.h for some APIs known to be suitable.
+ * It is safest just to trigger a high-priority task to handle any
+ * complex work that must happen as a result of the interrupt.
+ * @param vectorNumber VME interrupt vector number.
+ * @param pFunction The ISR to be called.
+ * @param parameter Context parameter for the ISR.
+ * @return 0, or an error status value.
  */
 epicsShareFunc long devConnectInterruptVME(
 			unsigned vectorNumber,
 			void (*pFunction)(void *),
 			void  *parameter);
 
-/*
- * disconnect ISR from a VME interrupt vector
+/** @brief Disconnect an ISR from its VME interrupt vector.
  *
- * The parameter pFunction should be set to the C function pointer that 
- * was connected. It is used as a key to prevent a driver from inadvertently
- * removing an interrupt handler that it didn't install 
+ * Device drivers may disconnect an ISR they connected earlier using this
+ * routine. In addition to taking the @c vectorNumber the ISR itself is
+ * required and used as a check to prevent a driver from inadvertently
+ * removing an interrupt handler that it didn't install.
+ *
+ * On a PowerPC target running VxWorks, this routine will always return
+ * with an error status.
+ * @param vectorNumber VME interrupt vector number.
+ * @param pFunction The ISR to be disconnected.
+ * @return 0, or an error status value.
  */
 epicsShareFunc long devDisconnectInterruptVME(
 			unsigned vectorNumber,
 			void (*pFunction)(void *));
 
-/*
- * determine if a VME interrupt vector is in use
+/** @brief Determine if a VME interrupt vector is in use.
  *
- * returns boolean
+ * On a PowerPC target running VxWorks this routine will always return
+ * false, indicating that a vector is unused.
+ * @param vectorNumber Interrupt vector number.
+ * @return True if vector has an ISR attached, otherwise false.
  */
 epicsShareFunc int devInterruptInUseVME (unsigned vectorNumber);
 
-/*
- * enable VME interrupt level
+/** @brief Enable a VME interrupt level onto the CPU.
+ *
+ * The VMEbus allows multiple CPU boards to be installed in the same
+ * backplane. When this is done, the differente VME interrupt levels
+ * must be assigned to the CPUs since they cannot be shared. This
+ * routine tells the VME interface that it should connect interrupts
+ * from the indicated interrupt level to a CPU interrupt line.
+ * @param level VMEbus interrupt level to enable, 1-7.
+ * @return 0, or an error status value.
  */
 epicsShareFunc long devEnableInterruptLevelVME (unsigned level);
 
-/*
- * disable VME interrupt level
+/** @brief Disable a VME interrupt level.
+ *
+ * This routine is the reverse of devEnableInterruptLevelVME().
+ * @note This routine should not normally be used, even by a
+ * driver that enabled the interrupt level. Disabling a VME
+ * interrupt level should only be done by software that knows
+ * for certain that no other interrupting device is also using
+ * that VME interrupt level.
+ * @param level VMEbus interrupt level to disable, 1-7.
+ * @return 0, or an error status value.
  */
 epicsShareFunc long devDisableInterruptLevelVME (unsigned level);
+/** @} */
 
-/*
- * Routines to allocate and free memory in the A24 memory region.
- *
+/** @name Memory for VME DMA Operations
+ * These routines manage memory that can be directly accessed
+ * from the VMEbus in the A24 address space by another bus master
+ * such as a DMA controller.
+ * @{
  */
-epicsShareFunc void *devLibA24Malloc(size_t);
-epicsShareFunc void *devLibA24Calloc(size_t);
+/** @brief malloc() for VME drivers that support DMA.
+ *
+ * Allocate memory of a given size from a region that can be
+ * accessed from the VMEbus in the A24 address space.
+ * @param size How many bytes to allocate
+ * @return A pointer to the memory allocated, or NULL.
+ */
+epicsShareFunc void *devLibA24Malloc(size_t size);
+
+/** @brief calloc() for VME drivers that support DMA.
+ *
+ * Allocate and zero-fill a block of memory of a given size from
+ * a region that can be accessed from the VMEbus in the A24
+ * address space.
+ * @param size How many bytes to allocate and zero.
+ * @return A pointer to the memory allocated, or NULL.
+ */
+epicsShareFunc void *devLibA24Calloc(size_t size);
+
+/** @brief free() for VME drivers that support DMA.
+ *
+ * Free a block of memory that was allocated using either
+ * devLibA24Malloc() or devLibA24Calloc().
+ * @param pBlock Block to be released.
+ */
 epicsShareFunc void devLibA24Free(void *pBlock);
+/** @} */
 
-/*
- * ISA API
- *
- * Functions in this section apply only to the ISA bus type
+/** @name ISA Interrupt Management
+ * Routines to manage ISAbus interrupts.
+ * @note These routines may not have been used for a very long time;
+ * some appear to have never been implemented at all. They may vanish
+ * with no notice from future versions of EPICS Base. Nobody is using
+ * the PC's ISA-bus any more are they?
+ * @{
  */
 
-/*
- * connect ISR to an ISA interrupt level
- * (not implemented)
- * (API should be reviewed)
+/**
+ * Connect ISR to a ISA interrupt.
+ * @warning Not implemented!
+ * @param interruptLevel Bus interrupt level to connect to.
+ * @param pFunction C function pointer to connect to.
+ * @param parameter Parameter to the called function.
+ * @return Returns success or error.
  */
 epicsShareFunc long devConnectInterruptISA(
 			unsigned interruptLevel,
 			void (*pFunction)(void *),
 			void  *parameter);
 
-/*
- * disconnect ISR from an ISA interrupt level
- * (not implemented)
- * (API should be reviewed)
- *
- * The parameter pFunction should be set to the C function pointer that 
- * was connected. It is used as a key to prevent a driver from inadvertently
- * removing an interrupt handler that it didn't install 
+/**
+ * Disconnect ISR from a ISA interrupt level.
+ * @warning Not implemented!
+ * @param interruptLevel Interrupt level.
+ * @param pFunction C function pointer that was connected.
+ * @return returns success or error.
  */
 epicsShareFunc long devDisconnectInterruptISA(
 			unsigned interruptLevel,
 			void (*pFunction)(void *));
 
-/*
- * determine if an ISA interrupt level is in use
- * (not implemented)
- *
- * returns boolean
+/**
+ * Determine if an ISA interrupt level is in use
+ * @warning Not implemented!
+ * @param interruptLevel Interrupt level.
+ * @return Returns True/False.
  */
 epicsShareFunc int devInterruptLevelInUseISA (unsigned interruptLevel);
 
-/*
- * enable ISA interrupt level
+/**
+ * Enable ISA interrupt level
+ * @param level Interrupt level.
+ * @return Returns True/False.
  */
 epicsShareFunc long devEnableInterruptLevelISA (unsigned level);
 
-/*
- * disable ISA interrupt level
+/**
+ * Disable ISA interrupt level
+ * @param level Interrupt level.
+ * @return Returns True/False.
  */
 epicsShareFunc long devDisableInterruptLevelISA (unsigned level);
-
-/*
- * Deprecated interface
- */
+/** @} */
 
 #ifndef NO_DEVLIB_OLD_INTERFACE
 
+/**
+ * @name Deprecated Interfaces
+ * @{
+ */
 typedef enum {intVME, intVXI, intISA} epicsInterruptType;
 
-/*
- * NOTE: this routine has been deprecated. It exists
+/**
+ * @note This routine has been deprecated. It exists
  * for backwards compatibility purposes only.
- *
- * Please use one of devConnectInterruptVME, devConnectInterruptPCI,
- * devConnectInterruptISA etc. devConnectInterrupt will be removed 
+ * Please use one of devConnectInterruptVME(), devConnectInterruptPCI(),
+ * devConnectInterruptISA() instead. devConnectInterrupt() will be removed
  * in a future release.
  */
 epicsShareFunc long devConnectInterrupt(
@@ -253,49 +379,47 @@ epicsShareFunc long devConnectInterrupt(
 			void (*pFunction)(void *),
 			void  *parameter);
 
-/*
- * NOTE: this routine has been deprecated. It exists
+/**
+ * @note This routine has been deprecated. It exists
  * for backwards compatibility purposes only.
- *
- * Please use one of devDisconnectInterruptVME, devDisconnectInterruptPCI,
- * devDisconnectInterruptISA etc. devDisconnectInterrupt will be removed 
- * in a future release.
+ * Please use one of devDisconnectInterruptVME(), devDisconnectInterruptPCI(),
+ * devDisconnectInterruptISA() instead. devDisconnectInterrupt() will
+ * be removed in a future release.
  */
 epicsShareFunc long devDisconnectInterrupt(
 			epicsInterruptType      intType,
 			unsigned                vectorNumber,
 			void		        (*pFunction)(void *));
 
-/*
- * NOTE: this routine has been deprecated. It exists
+/**
+ * @note This routine has been deprecated. It exists
  * for backwards compatibility purposes only.
- *
- * Please use one of devEnableInterruptLevelVME, devEnableInterruptLevelPCI,
- * devEnableInterruptLevelISA etc. devEnableInterruptLevel will be removed 
- * in a future release.
+ * Please use one of devEnableInterruptLevelVME(), devEnableInterruptLevelPCI(),
+ * devEnableInterruptLevelISA() instead. devEnableInterruptLevel() will
+ * be removed in a future release.
  */
 epicsShareFunc long devEnableInterruptLevel(
     epicsInterruptType intType, unsigned level);
 
-/*
- * NOTE: this routine has been deprecated. It exists
+/**
+ * @note This routine has been deprecated. It exists
  * for backwards compatibility purposes only.
- *
- * Please use one of devDisableInterruptLevelVME, devDisableInterruptLevelISA,
- * devDisableInterruptLevelPCI etc. devDisableInterruptLevel will be removed 
- * in a future release.
+ * Please use one of devDisableInterruptLevelVME(), devDisableInterruptLevelISA(),
+ * devDisableInterruptLevelPCI() instead. devDisableInterruptLevel() will
+ * be removed in a future release.
  */
 epicsShareFunc long devDisableInterruptLevel (
     epicsInterruptType intType, unsigned level);
 
-/*
- * NOTE: this routine has been deprecated. It exists
+/**
+ * @note This routine has been deprecated. It exists
  * for backwards compatibility purposes only.
- *
- * Please use devNoResponseProbe(). locationProbe() will be removed 
+ * Please use devNoResponseProbe() instead. locationProbe() will be removed
  * in a future release.
  */
 epicsShareFunc long locationProbe (epicsAddressType addrType, char *pLocation);
+
+/** @} */
 
 #endif /* NO_DEVLIB_OLD_INTERFACE */
 

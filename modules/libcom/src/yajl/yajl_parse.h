@@ -16,7 +16,8 @@
 
 /**
  * \file yajl_parse.h
- * Interface to YAJL's JSON stream parsing facilities.
+ * \brief Interface to YAJL's JSON stream parsing facilities.
+ * \author Lloyd Hilaiel
  */
 
 #ifndef __YAJL_PARSE_H__
@@ -27,47 +28,45 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    /** error codes returned from this interface */
+    /** Error codes returned from this interface */
     typedef enum {
-        /** no error was encountered */
+        /** No error was encountered */
         yajl_status_ok,
-        /** a client callback returned zero, stopping the parse */
+        /** A client callback returned zero, stopping the parse */
         yajl_status_client_canceled,
-        /** An error occured during the parse.  Call yajl_get_error for
+        /** An error occured during the parse.  Call yajl_get_error() for
          *  more information about the encountered error */
         yajl_status_error
     } yajl_status;
 
-    /** attain a human readable, english, string for an error */
+    /** Attain a human readable, english, string for an error */
     YAJL_API const char * yajl_status_to_string(yajl_status code);
 
-    /** an opaque handle to a parser */
+    /** An opaque handle to a parser */
     typedef struct yajl_handle_t * yajl_handle;
 
-    /** yajl is an event driven parser.  this means as json elements are
+    /** YAJL is an event driven parser.  This means as json elements are
      *  parsed, you are called back to do something with the data.  The
      *  functions in this table indicate the various events for which
      *  you will be called back.  Each callback accepts a "context"
-     *  pointer, this is a void * that is passed into the yajl_parse
+     *  pointer, this is a void * that is passed into the yajl_parse()
      *  function which the client code may use to pass around context.
      *
      *  All callbacks return an integer.  If non-zero, the parse will
      *  continue.  If zero, the parse will be canceled and
-     *  yajl_status_client_canceled will be returned from the parse.
+     *  yajl_status_client_canceled() will be returned from the parse.
      *
-     *  \attention {
+     *  \attention
      *    A note about the handling of numbers:
-     *
      *    yajl will only convert numbers that can be represented in a
      *    double or a 64 bit (long long) int.  All other numbers will
-     *    be passed to the client in string form using the yajl_number
-     *    callback.  Furthermore, if yajl_number is not NULL, it will
-     *    always be used to return numbers, that is yajl_integer and
-     *    yajl_double will be ignored.  If yajl_number is NULL but one
-     *    of yajl_integer or yajl_double are defined, parsing of a
+     *    be passed to the client in string form using the yajl_number()
+     *    callback.  Furthermore, if yajl_number() is not NULL, it will
+     *    always be used to return numbers, that is yajl_integer() and
+     *    yajl_double() will be ignored.  If yajl_number() is NULL but one
+     *    of yajl_integer() or yajl_double() are defined, parsing of a
      *    number larger than is representable in a double or 64 bit
      *    integer will result in a parse error.
-     *  }
      */
     typedef struct {
         int (* yajl_null)(void * ctx);
@@ -79,7 +78,7 @@ extern "C" {
         int (* yajl_number)(void * ctx, const char * numberVal,
                             size_t numberLen);
 
-        /** strings are returned as pointers into the JSON text when,
+        /** Strings are returned as pointers into the JSON text when,
          * possible, as a result, they are _not_ null padded */
         int (* yajl_string)(void * ctx, const unsigned char * stringVal,
                             size_t stringLen);
@@ -93,8 +92,8 @@ extern "C" {
         int (* yajl_end_array)(void * ctx);
     } yajl_callbacks;
 
-    /** allocate a parser handle
-     *  \param callbacks  a yajl callbacks structure specifying the
+    /** Allocate a parser handle
+     *  \param callbacks  A yajl callbacks structure specifying the
      *                    functions to call when different JSON entities
      *                    are encountered in the input text.  May be NULL,
      *                    which is only useful for validation.
@@ -107,7 +106,7 @@ extern "C" {
                                     void * ctx);
 
 
-    /** configuration parameters for the parser, these may be passed to
+    /** Configuration parameters for the parser, these may be passed to
      *  yajl_config() along with option specific argument(s).  In general,
      *  all configuration parameters default to *off*. */
     typedef enum {
@@ -115,8 +114,9 @@ extern "C" {
          *  JSON input.  Non-standard, but rather fun
          *  arguments: toggled off with integer zero, on otherwise.
          *
-         *  example:
+         *  Example: \code{.cpp}
          *    yajl_config(h, yajl_allow_comments, 1); // turn comment support on
+	 *  \endcode
          */
         yajl_allow_comments = 0x01,
         /**
@@ -125,8 +125,9 @@ extern "C" {
          * this option makes parsing slightly more expensive (~7% depending
          * on processor and compiler in use)
          *
-         * example:
+         * Example: \code{.cpp}
          *   yajl_config(h, yajl_dont_validate_strings, 1); // disable utf8 checking
+	 * \endcode
          */
         yajl_dont_validate_strings     = 0x02,
         /**
@@ -157,17 +158,17 @@ extern "C" {
         yajl_allow_partial_values = 0x10
     } yajl_option;
 
-    /** allow the modification of parser options subsequent to handle
-     *  allocation (via yajl_alloc)
+    /** Allow the modification of parser options subsequent to handle
+     *  allocation (via yajl_alloc())
      *  \returns zero in case of errors, non-zero otherwise
      */
     YAJL_API int yajl_config(yajl_handle h, yajl_option opt, ...);
 
-    /** free a parser handle */
+    /** Free a parser handle */
     YAJL_API void yajl_free(yajl_handle handle);
 
     /** Parse some json!
-     *  \param hand - a handle to the json parser allocated with yajl_alloc
+     *  \param hand - a handle to the json parser allocated with yajl_alloc()
      *  \param jsonText - a pointer to the UTF8 json text to be parsed
      *  \param jsonTextLength - the length, in bytes, of input text
      */
@@ -182,11 +183,11 @@ extern "C" {
      *  yajl can't know whether another digit is next or some character
      *  that would terminate the integer token.
      *
-     *  \param hand - a handle to the json parser allocated with yajl_alloc
+     *  \param hand - a handle to the json parser allocated with yajl_alloc()
      */
     YAJL_API yajl_status yajl_complete_parse(yajl_handle hand);
 
-    /** get an error string describing the state of the
+    /** Get an error string describing the state of the
      *  parse.
      *
      *  If verbose is non-zero, the message will include the JSON
@@ -194,14 +195,14 @@ extern "C" {
      *  the specific char.
      *
      *  \returns A dynamically allocated string will be returned which should
-     *  be freed with yajl_free_error
+     *  be freed with yajl_free_error()
      */
     YAJL_API unsigned char * yajl_get_error(yajl_handle hand, int verbose,
                                             const unsigned char * jsonText,
                                             size_t jsonTextLength);
 
     /**
-     * get the amount of data consumed from the last chunk passed to YAJL.
+     * Get the amount of data consumed from the last chunk passed to YAJL.
      *
      * In the case of a successful parse this can help you understand if
      * the entire buffer was consumed (which will allow you to handle
@@ -214,7 +215,7 @@ extern "C" {
      */
     YAJL_API size_t yajl_get_bytes_consumed(yajl_handle hand);
 
-    /** free an error returned from yajl_get_error */
+    /** Free an error returned from yajl_get_error() */
     YAJL_API void yajl_free_error(yajl_handle hand, unsigned char * str);
 
 #ifdef __cplusplus

@@ -136,16 +136,16 @@ fastReceiver(void *arg)
     epicsEventSignal(complete);
 }
 
-void sleepySender(epicsMessageQueue *q, double delay)
+void sleepySender(double delay)
 {
     testDiag("sleepySender: sending every %.3f seconds", delay);
+    epicsMessageQueue q(4, 20);
     epicsThreadCreate("Fast Receiver", epicsThreadPriorityMedium,
-        mediumStack, fastReceiver, q);
+        mediumStack, fastReceiver, &q);
 
     numSent = 0;
-    numReceived = 0;
     for (int i = 0 ; i < SLEEPY_TESTS ; i++) {
-        if (q->send((void *)msg1, 4) == 0) {
+        if (q.send((void *)msg1, 4) == 0) {
             numSent++;
         }
         epicsThreadSleep(delay);
@@ -157,7 +157,7 @@ void sleepySender(epicsMessageQueue *q, double delay)
         numReceived, SLEEPY_TESTS);
 
     recvExit = 1;
-    while (q->send((void *)msg1, 4) != 0)
+    while (q.send((void *)msg1, 4) != 0)
         epicsThreadSleep(0.01);
     epicsEventMustWait(complete);
 }
@@ -182,17 +182,18 @@ fastSender(void *arg)
     epicsEventSignal(complete);
 }
 
-void sleepyReceiver(epicsMessageQueue *q, double delay)
+void sleepyReceiver(double delay)
 {
     testDiag("sleepyReceiver: acquiring every %.3f seconds", delay);
+    epicsMessageQueue q(4, 20);
 
     // Fill the queue
-    for (int i = q->pending(); i < 4 ;i++) {
-        q->send((void *)msg1, 4);
+    for (int i = q.pending(); i < 4 ;i++) {
+        q.send((void *)msg1, 4);
     }
 
     epicsThreadCreate("Fast Sender", epicsThreadPriorityMedium,
-        mediumStack, fastSender, q);
+        mediumStack, fastSender, &q);
     epicsThreadSleep(0.5);
 
     char cbuf[80];
@@ -200,7 +201,7 @@ void sleepyReceiver(epicsMessageQueue *q, double delay)
     numReceived = 0;
 
     for (int i = 0 ; i < SLEEPY_TESTS ; i++) {
-        len = q->receive(cbuf, sizeof cbuf);
+        len = q.receive(cbuf, sizeof cbuf);
         if (len > 0) {
             numReceived++;
         }
@@ -213,7 +214,7 @@ void sleepyReceiver(epicsMessageQueue *q, double delay)
         numReceived, SLEEPY_TESTS);
 
     sendExit = 1;
-    while (q->receive(cbuf, sizeof cbuf) <= 0)
+    while (q.receive(cbuf, sizeof cbuf) <= 0)
         epicsThreadSleep(0.01);
     epicsEventMustWait(complete);
 }
@@ -245,7 +246,6 @@ extern "C" void messageQueueTest(void *parm)
     int want;
 
     epicsMessageQueue *q1 = new epicsMessageQueue(4, 20);
-    epicsMessageQueue *q2 = new epicsMessageQueue(4, 20);
 
     testDiag("Simple single-thread tests:");
     i = 0;
@@ -360,12 +360,12 @@ extern "C" void messageQueueTest(void *parm)
         SLEEPY_TESTS * 0.010);
 
     complete = epicsEventMustCreate(epicsEventEmpty);
-    sleepySender(q2, 0.009);
-    sleepySender(q2, 0.010);
-    sleepySender(q2, 0.011);
-    sleepyReceiver(q2, 0.009);
-    sleepyReceiver(q2, 0.010);
-    sleepyReceiver(q2, 0.011);
+    sleepySender(0.009);
+    sleepySender(0.010);
+    sleepySender(0.011);
+    sleepyReceiver(0.009);
+    sleepyReceiver(0.010);
+    sleepyReceiver(0.011);
 
     testDiag("Single receiver, single sender tests:");
     epicsThreadSetPriority(myThreadId, epicsThreadPriorityHigh);

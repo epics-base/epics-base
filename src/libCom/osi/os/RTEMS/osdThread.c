@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <syslog.h>
 #include <limits.h>
+#include <pthread.h>
 
 #include <rtems.h>
 #include <rtems/error.h>
@@ -615,6 +616,23 @@ showInternalTaskInfo (rtems_id tid)
     }
     thread = *the_thread;
     _Thread_Enable_dispatch();
+
+    /* This looks a bit weird, but it has to support RTEMS versions both before
+     * and after 4.10.2 when threads changed how their priorities are stored.
+     */
+    int policy;
+    struct sched_param sp;
+    rtems_task_priority real_priority, current_priority;
+    rtems_status_code sc = pthread_getschedparam(tid, &policy, &sp);
+    if (sc == RTEMS_SUCCESSFUL) {
+        real_priority = sp.sched_priority;
+        sc = rtems_task_set_priority(tid, RTEMS_CURRENT_PRIORITY, &current_priority);
+    }
+    if (sc != RTEMS_SUCCESSFUL) {
+        fprintf(epicsGetStdout(),"%-30s",  "  *** RTEMS task gone! ***");
+        return;
+    }
+
     /*
      * Show both real and current priorities if they differ.
      * Note that the epicsThreadGetOsiPriorityValue routine is not used here.
@@ -622,17 +640,17 @@ showInternalTaskInfo (rtems_id tid)
      * that priority should be displayed, not the value truncated to
      * the EPICS range.
      */
-    epicsPri = 199-thread.real_priority;
+    epicsPri = 199-real_priority;
     if (epicsPri < 0)
         fprintf(epicsGetStdout(),"   <0");
     else if (epicsPri > 99)
         fprintf(epicsGetStdout(),"  >99");
     else
         fprintf(epicsGetStdout()," %4d", epicsPri);
-    if (thread.current_priority == thread.real_priority)
-        fprintf(epicsGetStdout(),"%4d    ", (int)thread.current_priority);
+    if (current_priority == real_priority)
+        fprintf(epicsGetStdout(),"%4d    ", (int)current_priority);
     else
-        fprintf(epicsGetStdout(),"%4d/%-3d", (int)thread.real_priority, (int)thread.current_priority);
+        fprintf(epicsGetStdout(),"%4d/%-3d", (int)real_priority, (int)current_priority);
     showBitmap (bitbuf, thread.current_state, taskState);
     fprintf(epicsGetStdout(),"%8.8s", bitbuf);
     if (thread.current_state & (STATES_WAITING_FOR_SEMAPHORE |

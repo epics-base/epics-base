@@ -5,8 +5,8 @@ converted from the old EPICS Wiki pages and updated. This list only includes the
 record types supplied with Base.
 
 * [Fields Common to All Record Types](dbCommonRecord.html)
-* [Fields Common to Input Record Types](dbCommonInputs.html)
-* [Fields Common to Output Record Types](dbCommonOutputs.html)
+* [Fields Common to Input Record Types](dbCommonInput.html)
+* [Fields Common to Output Record Types](dbCommonOutput.html)
 
 ## Record Types
 

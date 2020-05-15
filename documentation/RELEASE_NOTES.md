@@ -1,10 +1,28 @@
 # EPICS Base Release 3.15.8
 
-This version of EPICS Base has not been released yet.
+## Changes made between 3.15.7 and 3.15.8
 
-## Changes made on the 3.15 branch since 3.15.7
+### Bug fixes
 
-<!-- Insert new items immediately below here ... -->
+The following launchpad bugs have fixes included in this release:
+
+- [lp: 1812084](https://bugs.launchpad.net/epics-base/+bug/1812084), Build
+  failure on RTEMS 4.10.2
+- [lp: 1829770](https://bugs.launchpad.net/epics-base/+bug/1829770), event
+  record device support broken with constant INP
+- [lp: 1829919](https://bugs.launchpad.net/epics-base/+bug/1829919), IOC
+  segfaults when calling dbLoadRecords after iocInit
+- [lp: 1838792](https://bugs.launchpad.net/epics-base/+bug/1838792), epicsCalc
+  bit-wise operators on aarch64
+- [lp: 1841608](https://bugs.launchpad.net/epics-base/+bug/1841608), logClient
+  falsely sends error logs on all connections
+- [lp: 1853168](https://bugs.launchpad.net/epics-base/+bug/1853168), undefined
+  reference to `clock_gettime()`
+- [lp: 1862328](https://bugs.launchpad.net/epics-base/+bug/1862328), Race
+  condition on IOC start leaves rsrv unresponsive
+- [lp: 1868486](https://bugs.launchpad.net/epics-base/+bug/1868486),
+  epicsMessageQueue lost messages
+
 
 ### Improvements to the self-test build targets
 
@@ -28,6 +46,25 @@ jobs that should be allowed so `make -j4 tapfiles` for a system with 4 CPUs say.
 Running many more jobs than you have CPUs is likely to be slower and is not
 recommended.
 
+### Calc Engine Fixes and Enhancements
+
+The code that implements bit operations for Calc expressions has been reworked
+to better handle some CPU architectures and compilers. As part of this work a
+new operator has been added: `>>>` performs a logical right-shift, inserting
+zero bits into the most significant bits (the operator `>>` is an arithmetic
+right-shift which copies the sign bit as it shifts the value rightwards).
+
+### IOC logClient Changes
+
+The IOC's error logging system has been updated significantly to fix a number
+of issues including:
+
+  - Only send errlog messages to iocLogClient listeners
+  - Try to minimize lost messages while the log server is down:
+    + Detect disconnects sooner
+    + Don't discard the buffer on disconnect
+    + Flush the buffer immediately after a server reconnects
+
 ### epicsThread: Main thread defaults to allow blocking I/O
 
 VxWorks IOCs (and potentially RTEMS IOCs running GeSys) have had problems with
@@ -50,7 +87,7 @@ This has now been fixed.
 
 The remaining record types have had their reference pages moved from the Wiki,
 and some new reference pages have been written to cover the analog array and
-long string input and output record types plus the printf recor type, none of
+long string input and output record types plus the printf record type, none of
 which were previously documented. The wiki reference pages covering the fields
 common to all, input, and output record types have also been added, thanks to
 Rolf Keitel. The POD conversion scripts have also been improved and they now

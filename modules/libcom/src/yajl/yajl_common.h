@@ -26,47 +26,54 @@
 extern "C" {
 #endif    
 
+/** \file yajl_common.h
+ * \brief Common routines and macros used by other YAJL APIs.
+ * \author Lloyd Hilaiel
+ */
+
 /** YAJL API history in brief
  *
- * Originally macro not defined
- *   YAJL 1.0.12
- *   Bundled with EPICS Base 3.15.0.1
+ * This macro was not defined in the
+ *   YAJL 1.0.12 version that was
+ *   bundled with EPICS Base 3.15.0.1
  *
  * YAJL 2.1.0
- *   Changes argument type for yajl_integer() from 'int' to 'long long'
- *   Changes argument type for yajl_string() and yajl_map_key() from 'unsigned' to 'size_t'
- *   Replacement of struct yajl_parser_config with yajl_config()
- *   Replacement of yajl_parse_complete() with yajl_complete_parse()
+ *  \li Changes argument type for yajl_integer() from \c int to \c long \c long
+ *  \li Changes argument type for yajl_string() and yajl_map_key() from \c unsigned to \c size_t
+ *  \li Replacement of struct yajl_parser_config with yajl_config()
+ *  \li Replacement of yajl_parse_complete() with yajl_complete_parse()
  */
 #define EPICS_YAJL_VERSION VERSION_INT(2,1,0,0)
 
+/** Maximum generation depth for YAJL's JSON generation routines */
 #define YAJL_MAX_DEPTH 128
 
+/** Symbol decoration for Microsoft builds */
 #define YAJL_API epicsShareFunc
 
-/** pointer to a malloc function, supporting client overriding memory
+/** Pointer to a malloc() function, supporting client overriding memory
  *  allocation routines */
 typedef void * (*yajl_malloc_func)(void *ctx, size_t sz);
 
-/** pointer to a free function, supporting client overriding memory
+/** Pointer to a free() function, supporting client overriding memory
  *  allocation routines */
 typedef void (*yajl_free_func)(void *ctx, void * ptr);
 
-/** pointer to a realloc function which can resize an allocation. */
+/** Pointer to a realloc() function which can resize an allocation. */
 typedef void * (*yajl_realloc_func)(void *ctx, void * ptr, size_t sz);
 
 /** A structure which can be passed to yajl_*_alloc routines to allow the
  *  client to specify memory allocation functions to be used. */
 typedef struct
 {
-    /** pointer to a function that can allocate uninitialized memory */
+    /** Pointer to a function that can allocate uninitialized memory */
     yajl_malloc_func malloc;
-    /** pointer to a function that can resize memory allocations */
+    /** Pointer to a function that can resize memory allocations */
     yajl_realloc_func realloc;
-    /** pointer to a function that can free memory allocated using
+    /** Pointer to a function that can free memory allocated using
      *  reallocFunction or mallocFunction */
     yajl_free_func free;
-    /** a context pointer that will be passed to above allocation routines */
+    /** A context pointer that will be passed to above allocation routines */
     void * ctx;
 } yajl_alloc_funcs;
 

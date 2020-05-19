@@ -4,8 +4,14 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*
- * Author: Michael Davidsaver <mdavidsaver@bnl.gov>
+/**
+ * \file epicsMMIODef.h
+ * \brief Memory Mapped I/O
+ *
+ * Definitions related to Memory Mapped I/O
+ *
+ * \author Michael Davidsaver <mdavidsaver@bnl.gov>
+ * @ingroup mmio
  */
 
 #ifndef EPICSMMIODEF_H
@@ -26,7 +32,7 @@
  *@{
  */
 
-/** @brief Read a single byte.
+/** \brief Read a single byte.
  */
 static EPICS_ALWAYS_INLINE
 epicsUInt8
@@ -35,7 +41,7 @@ ioread8(volatile void* addr)
     return *(volatile epicsUInt8*)(addr);
 }
 
-/** @brief Write a single byte.
+/** \brief Write a single byte.
  */
 static EPICS_ALWAYS_INLINE
 void
@@ -44,7 +50,7 @@ iowrite8(volatile void* addr, epicsUInt8 val)
     *(volatile epicsUInt8*)(addr) = val;
 }
 
-/** @brief Read two bytes in host order.
+/** \brief Read two bytes in host order.
  * Not byte swapping
  */
 static EPICS_ALWAYS_INLINE
@@ -54,7 +60,7 @@ nat_ioread16(volatile void* addr)
     return *(volatile epicsUInt16*)(addr);
 }
 
-/** @brief Write two byte in host order.
+/** \brief Write two byte in host order.
  * Not byte swapping
  */
 static EPICS_ALWAYS_INLINE
@@ -64,7 +70,7 @@ nat_iowrite16(volatile void* addr, epicsUInt16 val)
     *(volatile epicsUInt16*)(addr) = val;
 }
 
-/** @brief Read four bytes in host order.
+/** \brief Read four bytes in host order.
  * Not byte swapping
  */
 static EPICS_ALWAYS_INLINE
@@ -74,7 +80,7 @@ nat_ioread32(volatile void* addr)
     return *(volatile epicsUInt32*)(addr);
 }
 
-/** @brief Write four byte in host order.
+/** \brief Write four byte in host order.
  * Not byte swapping
  */
 static EPICS_ALWAYS_INLINE
@@ -151,50 +157,50 @@ bswap32(epicsUInt32 value)
 #  error Unable to determine native byte order
 #endif
 
-/** @def bswap16
- *  @brief Unconditional two byte swap
+/** \def bswap16
+ *  \brief Unconditional two byte swap
  */
-/** @def bswap32
- *  @brief Unconditional four byte swap
+/** \def bswap32
+ *  \brief Unconditional four byte swap
  */
-/** @def be_ioread16
- *  @brief Read two byte in big endian order.
+/** \def be_ioread16
+ *  \brief Read two byte in big endian order.
  */
-/** @def be_iowrite16
- *  @brief Write two byte in big endian order.
+/** \def be_iowrite16
+ *  \brief Write two byte in big endian order.
  */
-/** @def be_ioread32
- *  @brief Read four byte in big endian order.
+/** \def be_ioread32
+ *  \brief Read four byte in big endian order.
  */
-/** @def be_iowrite32
- *  @brief Write four byte in big endian order.
+/** \def be_iowrite32
+ *  \brief Write four byte in big endian order.
  */
-/** @def le_ioread16
- *  @brief Read two byte in little endian order.
+/** \def le_ioread16
+ *  \brief Read two byte in little endian order.
  */
-/** @def le_iowrite16
- *  @brief Write two byte in little endian order.
+/** \def le_iowrite16
+ *  \brief Write two byte in little endian order.
  */
-/** @def le_ioread32
- *  @brief Read four byte in little endian order.
+/** \def le_ioread32
+ *  \brief Read four byte in little endian order.
  */
-/** @def le_iowrite32
- *  @brief Write four byte in little endian order.
+/** \def le_iowrite32
+ *  \brief Write four byte in little endian order.
  */
 
 /** @ingroup mmio
  *@{
  */
 
-/** @brief Explicit read memory barrier
+/** \brief Explicit read memory barrier
  * Prevents reordering of reads around it.
  */
 #define rbarr()  do{}while(0)
-/** @brief Explicit write memory barrier
+/** \brief Explicit write memory barrier
  * Prevents reordering of writes around it.
  */
 #define wbarr()  do{}while(0)
-/** @brief Explicit read/write memory barrier
+/** \brief Explicit read/write memory barrier
  * Prevents reordering of reads or writes around it.
  */
 #define rwbarr() do{}while(0)
@@ -233,30 +239,30 @@ bswap32(epicsUInt32 value)
  *
  *@b PCI
  *
- @code
+ \code
   be_iowrite16(base+off, 14);
   var = be_ioread16(base+off);
- @endcode
+ \endcode
  *
  *@b VME
  *
- @code
+ \code
   nat_iowrite16(base+off, 14);
   var = nat_ioread16(base+off);
- @endcode
+ \endcode
  *
  *@subsection mmioexle Little endian device
  *
  *@b PCI
- @code
+ \code
   le_iowrite16(base+off, 14);
   var = le_ioread16(base+off);
- @endcode
+ \endcode
  *@b VME
- @code
+ \code
   nat_iowrite16(base+off, bswap16(14));
   var = bswap16(nat_iowrite16(base+off));
- @endcode
+ \endcode
  *This difference arises because VME bridges implement hardware byte
  *swapping on little endian systems, while PCI bridges do not.
  *Software accessing PCI devices must know if byte swapping is required.
@@ -268,7 +274,9 @@ bswap32(epicsUInt32 value)
  *
  *Software accessing VME must @b not do conditional swapping.
  *
- *@note All read and write operations have an implicit read or write barrier.
+ *\note All read and write operations have an implicit read or write barrier.
  */
+
+ /** @} */
 
 #endif /* EPICSMMIODEF_H */

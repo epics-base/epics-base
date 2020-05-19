@@ -4,10 +4,13 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* epicsTempFile.h */
+/**
+ * \file epicsTempFile.h
+ * \brief OS-independent way to create temporary files.
+ **/
 
 #ifndef INC_epicsTempFile_H
 #define INC_epicsTempFile_H
@@ -20,6 +23,10 @@
 extern "C" {
 #endif
 
+/**
+ *  \brief Create and open a temporary file.
+ *  \return NULL or a FILE pointer to a temporary file.
+ **/
 epicsShareFunc FILE * epicsShareAPI epicsTempFile(void);
 
 #ifdef  __cplusplus

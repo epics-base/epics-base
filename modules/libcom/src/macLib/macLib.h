@@ -7,9 +7,9 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /**
- * @file macLib.h
- * @brief Text macro substitution routines
- * @author William Lupton, W. M. Keck Observatory
+ * \file macLib.h
+ * \brief Text macro substitution routines
+ * \author William Lupton, W. M. Keck Observatory
  *
  * This general purpose macro substitution library
  * is used for all macro substitutions in EPICS Base.
@@ -31,31 +31,31 @@
 extern "C" {
 #endif
 
-/** @brief Maximum size of a macro name or value
+/** \brief Maximum size of a macro name or value
  */
 #define MAC_SIZE 256
 
-/** @brief Macro substitution context, for use by macLib routines only.
+/** \brief Macro substitution context, for use by macLib routines only.
  *
  * An application may have multiple active contexts if desired.
  */
 typedef struct {
-    long        magic;          /**< @brief magic number (used for authentication) */
-    int         dirty;          /**< @brief values need expanding from raw values? */
-    int         level;          /**< @brief scoping level */
-    int         debug;          /**< @brief debugging level */
-    ELLLIST     list;           /**< @brief macro name / value list */
-    int         flags;          /**< @brief operating mode flags */
+    long        magic;          /**< \brief magic number (used for authentication) */
+    int         dirty;          /**< \brief values need expanding from raw values? */
+    int         level;          /**< \brief scoping level */
+    int         debug;          /**< \brief debugging level */
+    ELLLIST     list;           /**< \brief macro name / value list */
+    int         flags;          /**< \brief operating mode flags */
 } MAC_HANDLE;
 
-/** @name Core Library
+/** \name Core Library
  *  The core library provides a minimal set of basic operations.
  *  @{
  */
 
 /**
- * @brief Creates a new macro substitution context.
- * @return 0 = OK; <0 = ERROR
+ * \brief Creates a new macro substitution context.
+ * \return 0 = OK; <0 = ERROR
  */
 epicsShareFunc long
 epicsShareAPI macCreateHandle(
@@ -64,16 +64,16 @@ epicsShareAPI macCreateHandle(
 
     const char * pairs[]        /**< pointer to NULL-terminated array of
                                   {name,value} pair strings. A NULL
-                                  value implies undefined; a NULL @c pairs
+                                  value implies undefined; a NULL \c pairs
                                   argument implies no macros. */
 );
 /**
- * @brief Disable or enable warning messages.
+ * \brief Disable or enable warning messages.
  *
  * The macExpandString() routine prints warnings when it cant expand a macro.
  * This routine can be used to silence those warnings. A non zero value will
  * suppress the warning messages from subsequent library routines given the
- * same @c handle.
+ * same \c handle.
  */
 epicsShareFunc void
 epicsShareAPI macSuppressWarning(
@@ -83,15 +83,15 @@ epicsShareAPI macSuppressWarning(
 );
 
 /**
- * @brief Expand a string which may contain macro references.
- * @return Returns the length of the expanded string, <0 if any macro are
+ * \brief Expand a string which may contain macro references.
+ * \return Returns the length of the expanded string, <0 if any macro are
  * undefined
  *
- * This routine parses the @c src string looking for macro references and
+ * This routine parses the \c src string looking for macro references and
  * passes any it finds to macGetValue() for translation.
  *
- * @note The return value is similar to that of macGetValue(). Its absolute
- * value is the number of characters copied to @c dest. If the return value
+ * \note The return value is similar to that of macGetValue(). Its absolute
+ * value is the number of characters copied to \c dest. If the return value
  * is negative, at least one undefined macro was left unexpanded.
  */
 epicsShareFunc long
@@ -106,11 +106,11 @@ epicsShareAPI macExpandString(
 );
 
 /**
- * @brief Sets the value of a specific macro.
- * @return Returns the length of the value string.
- * @note If @c value is NULL, all instances of @c name are undefined at
+ * \brief Sets the value of a specific macro.
+ * \return Returns the length of the value string.
+ * \note If \c value is NULL, all instances of \c name are undefined at
  * all scoping levels (the named macro doesn't have to exist in this case).
- * Macros referenced in @c value need not be defined at this point.
+ * Macros referenced in \c value need not be defined at this point.
  */
 epicsShareFunc long
 epicsShareAPI macPutValue(
@@ -122,22 +122,22 @@ epicsShareAPI macPutValue(
 );
 
 /**
- * @brief Returns the value of a macro
- * @return Returns the length of the value string, <0 if undefined
+ * \brief Returns the value of a macro
+ * \return Returns the length of the value string, <0 if undefined
  *
- * @c value will be zero-terminated if the length of the value is less than
- * @c capacity. The return value is the number of characters copied to
- * @c value (see below for behavior if the macro is undefined). If @c capacity
- * is zero, no characters will be copied to @c value (which may be NULL)
+ * \c value will be zero-terminated if the length of the value is less than
+ * \c capacity. The return value is the number of characters copied to
+ * \c value (see below for behavior if the macro is undefined). If \c capacity
+ * is zero, no characters will be copied to \c value (which may be NULL)
  * and the call can be used to check whether the macro is defined.
  *
- * @note Truncation of the value is not reported, applications should assume
+ * \note Truncation of the value is not reported, applications should assume
  * that truncation has occurred if the return value is equal to capacity.
  *
  * If the macro is undefined, the macro reference will be returned in
  * the value string (if permitted by maxlen) and the function value will
  * be _minus_ the number of characters copied. Note that treatment of
- * @c capacity is intended to be consistent with the strncpy() routine.
+ * \c capacity is intended to be consistent with the strncpy() routine.
  *
  * If the value contains macro references, these references will be
  * expanded recursively. This expansion will detect a direct or indirect
@@ -161,9 +161,9 @@ epicsShareAPI macGetValue(
     long        capacity        /**< capacity of destination buffer (value) */
 );
 /**
- * @brief Marks a handle invalid, and frees all storage associated with it
- * @return 0 = OK; <0 = ERROR
- * @note Note that this does not free any strings into which macro values have
+ * \brief Marks a handle invalid, and frees all storage associated with it
+ * \return 0 = OK; <0 = ERROR
+ * \note Note that this does not free any strings into which macro values have
  *  been returned. Macro values are always returned into strings which
  *  were pre-allocated by the caller.
  */
@@ -172,8 +172,8 @@ epicsShareAPI macDeleteHandle(
     MAC_HANDLE  *handle         /**< opaque handle */
 );
 /**
- * @brief Marks the start of a new scoping level
- * @return 0 = OK; <0 = ERROR
+ * \brief Marks the start of a new scoping level
+ * \return 0 = OK; <0 = ERROR
  *
  * Marks all macro definitions added after this call as belonging
  * to another scope. These macros will be lost on a macPopScope()
@@ -184,8 +184,8 @@ epicsShareAPI macPushScope(
     MAC_HANDLE  *handle         /**< opaque handle */
 );
 /**
- * @brief Retrieve the last pushed scope (like stack operations)
- * @return 0 = OK; <0 = ERROR
+ * \brief Retrieve the last pushed scope (like stack operations)
+ * \return 0 = OK; <0 = ERROR
  *
  * See macPushScope()
  */
@@ -194,8 +194,8 @@ epicsShareAPI macPopScope(
     MAC_HANDLE  *handle         /**< opaque handle */
 );
 /**
- * @brief Reports details of current definitions
- * @return 0 = OK; <0 = ERROR
+ * \brief Reports details of current definitions
+ * \return 0 = OK; <0 = ERROR
  * This sends details of current definitions to standard output,
  * and is intended purely for debugging purposes.
  */
@@ -205,15 +205,15 @@ epicsShareAPI macReportMacros(
 );
 /** @} */
 
-/** @name Utility Library
+/** \name Utility Library
  * These convenience functions are intended for applications to use and
  * provide a more convenient interface for some purposes.
  * @{
  */
 
 /**
- * @brief Parse macro definitions into an array of {name, value} pairs.
- * @return Number of macros found; <0 = ERROR
+ * \brief Parse macro definitions into an array of {name, value} pairs.
+ * \return Number of macros found; <0 = ERROR
  *
  * This takes a set of macro definitions in "a=xxx,b=yyy" format and
  * converts them into an array of pointers to character strings which
@@ -251,8 +251,8 @@ epicsShareAPI macParseDefns(
 );
 
 /**
- * @brief Install set of {name, value} pairs as definitions
- * @return Number of macros defined; <0 = ERROR
+ * \brief Install set of {name, value} pairs as definitions
+ * \return Number of macros defined; <0 = ERROR
  *
  * This takes an array of pairs as defined above and installs them as
  * definitions by calling macPutValue(). The pairs array is terminated
@@ -269,8 +269,8 @@ epicsShareAPI macInstallMacros(
 );
 
 /**
- * @brief Expand environment variables in a string.
- * @return Expanded string; NULL if any undefined macros were used.
+ * \brief Expand environment variables in a string.
+ * \return Expanded string; NULL if any undefined macros were used.
  *
  * This routine expands a string which may contain macros that are
  * environment variables. It parses the string looking for such
@@ -285,8 +285,8 @@ epicsShareAPI macEnvExpand(
 );
 
 /**
- * @brief Expands macros and environment variables in a string.
- * @return Expanded string; NULL if any undefined macros were used.
+ * \brief Expands macros and environment variables in a string.
+ * \return Expanded string; NULL if any undefined macros were used.
  *
  * This routine is similar to macEnvExpand() but allows an optional handle
  * to be passed in that may contain additional macro definitions.

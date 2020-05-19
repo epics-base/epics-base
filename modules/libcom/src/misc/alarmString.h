@@ -8,12 +8,12 @@
 \*************************************************************************/
 
 /**
- * @file alarmString.h
- * @brief Deprecated, use alarm.h instead
+ * \file alarmString.h
+ * \brief Deprecated, use alarm.h instead
  *
  * How to convert alarm status and severity values into a string for printing.
  *
- * @note This file is deprecated, use alarm.h instead.
+ * \note This file is deprecated, use alarm.h instead.
  */
 
 #ifndef INC_alarmString_H
@@ -26,11 +26,11 @@ extern "C" {
 #endif
 
 /**
- * @brief An alias for epicsAlarmSeverityStrings
+ * \brief An alias for epicsAlarmSeverityStrings
  */
 #define alarmSeverityString epicsAlarmSeverityStrings
 /**
- * @brief An alias for epicsAlarmConditionStrings
+ * \brief An alias for epicsAlarmConditionStrings
  */
 #define alarmStatusString epicsAlarmConditionStrings
 

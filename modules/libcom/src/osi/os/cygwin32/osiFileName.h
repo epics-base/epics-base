@@ -24,13 +24,13 @@ extern "C" {
 #define OSI_PATH_SEPARATOR "\\"
 
 /** Return the absolute path of the current executable.
- @returns NULL or the path.  Caller must free()
+ \return NULL or the path.  Caller must free()
  */
 epicsShareFunc
 char *epicsGetExecName(void);
 
 /** Return the absolute path of the directory containing the current executable.
- @returns NULL or the path.  Caller must free()
+ \return NULL or the path.  Caller must free()
  */
 epicsShareFunc
 char *epicsGetExecDir(void);

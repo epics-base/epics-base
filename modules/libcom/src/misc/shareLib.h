@@ -7,8 +7,8 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /**
- * @file shareLib.h
- * @brief Mark external symbols and entry points for shared libraries.
+ * \file shareLib.h
+ * \brief Mark external symbols and entry points for shared libraries.
  *
  * This is the header file for the "decorated names" that appear in
  * header files, e.g.
@@ -35,7 +35,7 @@
  *     int epicsShareAPI myExtFunc ( int arg );
  *     int epicsShareAPI myExtFunc ( int arg ) {}
  *
- *   @note  The epicsShareAPI attribute is deprecated and has been removed
+ *   \note  The epicsShareAPI attribute is deprecated and has been removed
  *             from all IOC-specific APIs.  Most libCom APIs still use it, but
  *             it may get removed from these at some point in the future.
  *
@@ -77,8 +77,8 @@
  * which functions are exported from the DLL and which of them are imported
  * from other DLLs.
  *
- * You must first @c \#include what you import and then @c \#define
- * @c epicsExportSharedSymbols only right before you @c \#include the
+ * You must first \c \#include what you import and then \c \#define
+ * \c epicsExportSharedSymbols only right before you \c \#include the
  * prototypes for what you implement! You must include shareLib.h again each
  * time that the state of the import/export keywords changes, but this
  * usually occurs as a side effect of including the shareable libraries header

@@ -7,16 +7,16 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /**
- * @file bucketLib.h
- * @author Jeffrey O. Hill
- * @brief A hash table. Do not use for new code.
+ * \file bucketLib.h
+ * \author Jeffrey O. Hill
+ * \brief A hash table. Do not use for new code.
  *
- * @details
+ * \details
  * A hash table for which keys may be unsigned integers, pointers, or
  * strings. This API is used by the IOC's Channel Access Server, but
  * it should not be used by other code.
  *
- * @note Storage for identifiers must persist until an item is deleted
+ * \note Storage for identifiers must persist until an item is deleted
  */
 
 #ifndef INCbucketLibh
@@ -30,13 +30,13 @@ extern "C" {
 #include "epicsTypes.h"
 #include "shareLib.h"
 
-/** @brief Internal: bucket identifier */
+/** \brief Internal: bucket identifier */
 typedef	unsigned 	BUCKETID;
 
-/** @brief Internal: bucket key type */
+/** \brief Internal: bucket key type */
 typedef enum {bidtUnsigned, bidtPointer, bidtString} buckTypeOfId;
 
-/** @brief Internal: bucket item structure */
+/** \brief Internal: bucket item structure */
 typedef struct item{
 	struct item	*pItem;
 	const void	*pId;
@@ -44,7 +44,7 @@ typedef struct item{
 	buckTypeOfId	type;
 }ITEM;
 
-/** @brief Internal: Hash table structure */
+/** \brief Internal: Hash table structure */
 typedef struct bucket{
 	ITEM		**pTable;
 	void		*freeListPVT;
@@ -53,140 +53,140 @@ typedef struct bucket{
         unsigned        nInUse;
 }BUCKET;
 /**
- * @brief Creates a new hash table
- * @param nHashTableEntries Table size
- * @return Pointer to the newly created hash table, or NULL.
+ * \brief Creates a new hash table
+ * \param nHashTableEntries Table size
+ * \return Pointer to the newly created hash table, or NULL.
  */
 epicsShareFunc BUCKET * epicsShareAPI bucketCreate (unsigned nHashTableEntries);
 /**
- * @brief Release memory used by a hash table
- * @param *prb Pointer to the hash table
- * @return S_bucket_success
- * @note All items must be deleted from the hash table before calling this.
+ * \brief Release memory used by a hash table
+ * \param *prb Pointer to the hash table
+ * \return S_bucket_success
+ * \note All items must be deleted from the hash table before calling this.
  */
 epicsShareFunc int epicsShareAPI bucketFree (BUCKET *prb);
 /**
- * @brief Display information about a hash table
- * @param *prb Pointer to the hash table
- * @return S_bucket_success
+ * \brief Display information about a hash table
+ * \param *prb Pointer to the hash table
+ * \return S_bucket_success
  */
 epicsShareFunc int epicsShareAPI bucketShow (BUCKET *prb);
 
 /**
- * @brief Add an item identified by an unsigned int to the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @param *pApp Pointer to the payload
- * @return Status value
+ * \brief Add an item identified by an unsigned int to the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \param *pApp Pointer to the payload
+ * \return Status value
  */
 epicsShareFunc int epicsShareAPI bucketAddItemUnsignedId (BUCKET *prb,
 		const unsigned *pId, const void *pApp);
 /**
- * @brief Add an item identified by a pointer to the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @param *pApp Pointer to the payload
- * @return Status value
+ * \brief Add an item identified by a pointer to the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \param *pApp Pointer to the payload
+ * \return Status value
  */
 epicsShareFunc int epicsShareAPI bucketAddItemPointerId (BUCKET *prb,
 		void * const *pId, const void *pApp);
 /**
- * @brief Add an item identified by a string to the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @param *pApp Pointer to the payload
- * @return Status value
+ * \brief Add an item identified by a string to the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \param *pApp Pointer to the payload
+ * \return Status value
  */
 epicsShareFunc int epicsShareAPI bucketAddItemStringId (BUCKET *prb,
 		const char *pId, const void *pApp);
 /**
- * @brief Remove an item identified by a string from the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @return Status value
+ * \brief Remove an item identified by a string from the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \return Status value
  */
 epicsShareFunc int epicsShareAPI bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId);
 /**
- * @brief Remove an item identified by a pointer from the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @return Status value
+ * \brief Remove an item identified by a pointer from the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \return Status value
  */
 epicsShareFunc int epicsShareAPI bucketRemoveItemPointerId (BUCKET *prb, void * const *pId);
 /**
- * @brief Remove an item identified by a string from the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @return Status value
+ * \brief Remove an item identified by a string from the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \return Status value
  */
 epicsShareFunc int epicsShareAPI bucketRemoveItemStringId (BUCKET *prb, const char *pId);
 /**
- * @brief Find an item identified by an unsigned int in the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @return Item's payload pointer, or NULL if not found
+ * \brief Find an item identified by an unsigned int in the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \return Item's payload pointer, or NULL if not found
  */
 epicsShareFunc void * epicsShareAPI bucketLookupItemUnsignedId (BUCKET *prb, const unsigned *pId);
 /**
- * @brief Find an item identified by a pointer in the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @return Item's payload pointer, or NULL if not found
+ * \brief Find an item identified by a pointer in the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \return Item's payload pointer, or NULL if not found
  */
 epicsShareFunc void * epicsShareAPI bucketLookupItemPointerId (BUCKET *prb, void * const *pId);
 /**
- * @brief Find an item identified by a string in the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @return Item's payload pointer, or NULL if not found
+ * \brief Find an item identified by a string in the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \return Item's payload pointer, or NULL if not found
  */
 epicsShareFunc void * epicsShareAPI bucketLookupItemStringId (BUCKET *prb, const char *pId);
 
 /**
- * @brief Find and delete an item identified by an unsigned int from the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @return Item's payload pointer, or NULL if not found
+ * \brief Find and delete an item identified by an unsigned int from the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \return Item's payload pointer, or NULL if not found
  */
 epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId);
 /**
- * @brief Find and delete an item identified by a pointer from the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @return Item's payload pointer, or NULL if not found
+ * \brief Find and delete an item identified by a pointer from the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \return Item's payload pointer, or NULL if not found
  */
 epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * const *pId);
 /**
- * @brief Find and delete an item identified by a string from the table
- * @param *prb Pointer to the hash table
- * @param *pId Pointer to the identifier
- * @return Item's payload pointer, or NULL if not found
+ * \brief Find and delete an item identified by a string from the table
+ * \param *prb Pointer to the hash table
+ * \param *pId Pointer to the identifier
+ * \return Item's payload pointer, or NULL if not found
  */
 epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, const char *pId);
 
 
  /**
- * @name Status values returned by some bucketLib functions
+ * \name Status values returned by some bucketLib functions
  * @{
  */
 /**
- * @brief A synonym for S_bucket_success
+ * \brief A synonym for S_bucket_success
  */
 #define BUCKET_SUCCESS		S_bucket_success
 /**
- * @brief Success, must be 0.
+ * \brief Success, must be 0.
  */
 #define S_bucket_success	0
 /**
- * @brief Memory allocation failed
+ * \brief Memory allocation failed
  */
 #define S_bucket_noMemory	(M_bucket | 1) 	/*Memory allocation failed*/
 /**
- * @brief Identifier already in use
+ * \brief Identifier already in use
  */
 #define S_bucket_idInUse	(M_bucket | 2) 	/*Identifier already in use*/
 /**
- * @brief Unknown identifier
+ * \brief Unknown identifier
  */
 #define S_bucket_uknId		(M_bucket | 3) 	/*Unknown identifier*/
 /** @} */

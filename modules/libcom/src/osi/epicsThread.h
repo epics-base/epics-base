@@ -65,6 +65,9 @@ extern "C" {
 
 typedef void (*EPICSTHREADFUNC)(void *parm);
 
+/** @name Some Named Thread Priorities
+ * @{
+ */
 #define epicsThreadPriorityMax          99
 #define epicsThreadPriorityMin           0
 
@@ -80,6 +83,7 @@ typedef void (*EPICSTHREADFUNC)(void *parm);
 #define epicsThreadPriorityScanHigh     70
 #define epicsThreadPriorityIocsh        91
 #define epicsThreadPriorityBaseMax      91
+/** @} */
 
 /** Stack sizes for each stackSizeClass are implementation and CPU dependent. */
 typedef enum {
@@ -114,13 +118,13 @@ typedef epicsThreadId epicsThreadOnceId;
  * -# myInitFunc will have returned before any other epicsThreadOnce
  *   call using the same epicsThreadOnceId returns.
  *
- * @code
+ * \code
  * static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
  * static void myInitFunc(void *arg) { ... }
  * static void some Function(void) {
  *     epicsThreadOnce(&onceId, &myInitFunc, NULL);
  * }
- * @endcode
+ * \endcode
  */
 epicsShareFunc void epicsShareAPI epicsThreadOnce(
     epicsThreadOnceId *id, EPICSTHREADFUNC, void *arg);
@@ -163,12 +167,12 @@ typedef struct epicsThreadOpts {
 #define EPICS_THREAD_OPTS_INIT { \
     epicsThreadPriorityLow, epicsThreadStackMedium, 0}
 
-/** @brief Allocate and start a new OS thread.
- * @param name A name describing this thread.  Appears in various log and error message.
- * @param funptr The thread main function.
- * @param parm Passed to thread main function.
- * @param opts Modifiers for the new thread, or NULL to use target specific defaults.
- * @return NULL on error
+/** \brief Allocate and start a new OS thread.
+ * \param name A name describing this thread.  Appears in various log and error message.
+ * \param funptr The thread main function.
+ * \param parm Passed to thread main function.
+ * \param opts Modifiers for the new thread, or NULL to use target specific defaults.
+ * \return NULL on error
  */
 epicsShareFunc epicsThreadId epicsThreadCreateOpt (
     const char * name,
@@ -222,14 +226,14 @@ epicsShareFunc int epicsShareAPI epicsThreadIsEqual(
  * for other reasons.
  **/
 epicsShareFunc int epicsShareAPI epicsThreadIsSuspended(epicsThreadId id);
-/** @brief Block the calling thread for at least the specified time.
- * @param seconds Time to wait in seconds.  Values <=0 blocks for the shortest possible time.
+/** \brief Block the calling thread for at least the specified time.
+ * \param seconds Time to wait in seconds.  Values <=0 blocks for the shortest possible time.
  */
 epicsShareFunc void epicsShareAPI epicsThreadSleep(double seconds);
-/** @brief Query a value approximating the OS timer/scheduler resolution.
- * @return A value in seconds >=0
+/** \brief Query a value approximating the OS timer/scheduler resolution.
+ * \return A value in seconds >=0
  *
- * @warning On targets other than vxWorks and RTEMS, the quantum value often isn't
+ * \warning On targets other than vxWorks and RTEMS, the quantum value often isn't
  *          meaningful.  Use of this function is discouraged in portable code.
  */
 epicsShareFunc double epicsShareAPI epicsThreadSleepQuantum(void);
@@ -238,23 +242,23 @@ epicsShareFunc double epicsShareAPI epicsThreadSleepQuantum(void);
  */
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf(void);
 /** Attempt to find the first instance of a thread by name.
- * @return An epicsThreadId, or NULL if no such thread is currently running.
+ * \return An epicsThreadId, or NULL if no such thread is currently running.
  *         Note that a non-NULL ID may still be invalid if this call races
  *         with thread exit.
  *
- * @warning Safe use of this function requires external knowledge that this
+ * \warning Safe use of this function requires external knowledge that this
  *          thread will not return.
  */
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId(const char *name);
 /** Return a value approximating the number of threads which this target
  *  can run in parallel.  This value is advisory.
- * @return >=1
+ * \return >=1
  */
 epicsShareFunc int epicsThreadGetCPUs(void);
 
 /** Return the name of the current thread.
  *
- * @return Never NULL.  Storage lifetime tied to epicsThreadId.
+ * \return Never NULL.  Storage lifetime tied to epicsThreadId.
  *
  * This is either a copy of the string passed to epicsThread*Create*(),
  * or an arbitrary unique string for non-EPICS threads.
@@ -285,7 +289,7 @@ epicsShareFunc int epicsShareAPI epicsThreadIsOkToBlock(void);
 epicsShareFunc void epicsShareAPI epicsThreadSetOkToBlock(int isOkToBlock);
 
 /** Print to stdout information about all running EPICS threads.
- * @param level 0 prints minimal output.  Higher values print more details.
+ * \param level 0 prints minimal output.  Higher values print more details.
  */
 epicsShareFunc void epicsShareAPI epicsThreadShowAll(unsigned int level);
 /** Print info about a single EPICS thread. */
@@ -356,18 +360,18 @@ public:
 
 extern "C" void epicsThreadCallEntryPoint ( void * );
 
-/** @brief An OS thread
+/** \brief An OS thread
  *
  * A wrapper around the epicsThread* C API.
  *
- * @note Threads must be start() ed.
+ * \note Threads must be start() ed.
  */
 class epicsShareClass epicsThread {
 public:
     /** Create a new thread with the provided information.
      *
      * cf. epicsThreadOpts
-     * @note Threads must be start() ed.
+     * \note Threads must be start() ed.
      * @throws epicsThread::unableToCreateThread on error.
      */
     epicsThread ( epicsThreadRunable &,const char *name, unsigned int stackSize,
@@ -378,11 +382,11 @@ public:
     //! Wait for the thread epicsRunnable::run() to return.
     void exitWait () throw ();
     //! Wait for the thread epicsRunnable::run() to return.
-    //! @param delay Wait up to this many seconds.
-    //! @returns true if run() returned.  false on timeout.
+    //! \param delay Wait up to this many seconds.
+    //! \return true if run() returned.  false on timeout.
     bool exitWait ( const double delay ) throw (); 
     //! @throws A special exitException which will be caught and ignored.
-    //! @note This exitException doesn't not derive from std::exception
+    //! \note This exitException doesn't not derive from std::exception
     static void exit ();
     //! cf. epicsThreadResume()
     void resume () throw ();
@@ -396,7 +400,7 @@ public:
     void setPriority ( unsigned int ) throw ();
     bool priorityIsEqual ( const epicsThread & ) const throw ();
     bool isSuspended () const throw ();
-    //! @return true if call through this thread's epicsRunnable::run()
+    //! \return true if call through this thread's epicsRunnable::run()
     bool isCurrentThread () const throw ();
     bool operator == ( const epicsThread & ) const throw ();
     //! Say something interesting about this thread to stdout.

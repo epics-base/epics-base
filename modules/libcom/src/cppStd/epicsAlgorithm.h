@@ -7,12 +7,12 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /**
- * @file epicsAlgorithm.h
- * @author Jeff Hill & Andrew Johnson
+ * \file epicsAlgorithm.h
+ * \author Jeff Hill & Andrew Johnson
  *
- * @brief Contains a few templates out of the C++ standard header algorithm
+ * \brief Contains a few templates out of the C++ standard header algorithm
  *
- * @note The templates are provided here in a much smaller file. Standard algorithm
+ * \note The templates are provided here in a much smaller file. Standard algorithm
  * contains many templates for sorting and searching through C++ template containers
  * which are not used in EPICS. If all you need from there is std::min(),
  * std::max() and/or std::swap() your code may compile faster if you include
@@ -41,7 +41,7 @@ inline const T& epicsMin (const T& a, const T& b)
 /**
  * Returns the smaller of a or b compared using a<b.
  *
- * @note If b is a NaN the above template returns a, but should return NaN.
+ * \note If b is a NaN the above template returns a, but should return NaN.
  * These specializations ensure that epicsMin(x,NaN) == NaN
  */
 template <>
@@ -53,7 +53,7 @@ inline const float& epicsMin (const float& a, const float& b)
 /**
  * Returns the smaller of a or b compared using a<b.
  *
- * @note If b is a NaN the above template returns a, but should return NaN.
+ * \note If b is a NaN the above template returns a, but should return NaN.
  * These specializations ensure that epicsMin(x,NaN) == NaN
  */
 template <>
@@ -75,7 +75,7 @@ inline const T& epicsMax (const T& a, const T& b)
 /**
  * Returns the larger of a or b compared using a<b.
  *
- * @note If b is a NaN the above template returns a, but should return NaN.
+ * \note If b is a NaN the above template returns a, but should return NaN.
  * These specializations ensure that epicsMax(x,NaN) == NaN
  */
 template <>
@@ -87,7 +87,7 @@ inline const float& epicsMax (const float& a, const float& b)
 /**
  * Returns the larger of a or b compared using a<b.
  *
- * @note If b is a NaN the above template returns a, but should return NaN.
+ * \note If b is a NaN the above template returns a, but should return NaN.
  * These specializations ensure that epicsMax(x,NaN) == NaN
  */
 template <>
@@ -99,7 +99,7 @@ inline const double& epicsMax (const double& a, const double& b)
 /**
  * Swaps the values of a and b.
  *
- * @note The data type must support both copy-construction and assignment.
+ * \note The data type must support both copy-construction and assignment.
  *
  */
 template <class T>

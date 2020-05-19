@@ -7,10 +7,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /**
- * @file postfix.h
- * @author Bob Dalesio, Andrew Johnson
+ * \file postfix.h
+ * \author Bob Dalesio, Andrew Johnson
  *
- * @brief The API for the EPICS Calculation Engine
+ * \brief The API for the EPICS Calculation Engine
  *
  * Defines macros and the routines provided by the calculation engine for
  * subsystems that need to evaluate mathematical expressions.
@@ -21,50 +21,50 @@
 
 #include "shareLib.h"
 
-/** @brief Number of input arguments to a calc expression (A-L) */
+/** \brief Number of input arguments to a calc expression (A-L) */
 #define CALCPERFORM_NARGS 12
-/** @brief Size of the internal partial result stack */
+/** \brief Size of the internal partial result stack */
 #define CALCPERFORM_STACK 80
 
 /**
- * @name Postfix and Infix Buffer Sizes
+ * \name Postfix and Infix Buffer Sizes
  * @{
  */
 /**
- * @brief Calculate required size of postfix buffer from infix
+ * \brief Calculate required size of postfix buffer from infix
  *
  * This macro calculates the maximum size of postfix buffer needed for an
- * infix expression buffer of a given size. The argument @c n must count
+ * infix expression buffer of a given size. The argument \c n must count
  * the trailing nil byte in the input expression string. The actual size
  * needed is never larger than this value, although it is actually a
  * few bytes smaller for some sizes.
  *
  * The maximum expansion from infix to postfix is for the sub-expression
- @code
+ \code
         .1?.1:
-@endcode
+\endcode
  * which is 6 characters long and results in 21 bytes of postfix:
-@code
+\code
         .1 => LITERAL_DOUBLE + 8 byte value
         ?  => COND_IF
         .1 => LITERAL_DOUBLE + 8 byte value
         :  => COND_ELSE
         ...
            => COND_END
-@endcode
+\endcode
  * For other short expressions the factor 21/6 always gives a big enough
  * postfix buffer (proven by hand, look at '1+' and '.1+' as well).
  */
 #define INFIX_TO_POSTFIX_SIZE(n) ((n)*21/6)
 
 /**
- * @brief Size of a "standard" infix string.
+ * \brief Size of a "standard" infix string.
  *
  * This is not a hard limit, just the default size for the database
  */
 #define MAX_INFIX_SIZE 100
 /**
- * @brief Size of a "standard" postfix buffer.
+ * \brief Size of a "standard" postfix buffer.
  *
  * This is not a hard limit, just the default size for the database
  */
@@ -72,38 +72,38 @@
 
 /** @} */
 
-/** @name Calc Engine Error Codes
-* @note Changes in these errors must also be made in calcErrorStr().
+/** \name Calc Engine Error Codes
+* \note Changes in these errors must also be made in calcErrorStr().
  * @{
  */
 
-/** @brief No error */
+/** \brief No error */
 #define CALC_ERR_NONE            0
-/** @brief Too many results returned */
+/** \brief Too many results returned */
 #define CALC_ERR_TOOMANY         1
-/** @brief  Bad numeric literal */
+/** \brief  Bad numeric literal */
 #define CALC_ERR_BAD_LITERAL     2
-/** @brief Bad assignment target */
+/** \brief Bad assignment target */
 #define CALC_ERR_BAD_ASSIGNMENT  3
-/** @brief Comma without parentheses */
+/** \brief Comma without parentheses */
 #define CALC_ERR_BAD_SEPERATOR   4
-/** @brief Close parenthesis without open */
+/** \brief Close parenthesis without open */
 #define CALC_ERR_PAREN_NOT_OPEN  5
-/** @brief Open parenthesis at end of expression */
+/** \brief Open parenthesis at end of expression */
 #define CALC_ERR_PAREN_OPEN      6
-/** @brief Unbalanced conditional ?: operators */
+/** \brief Unbalanced conditional ?: operators */
 #define CALC_ERR_CONDITIONAL     7
-/** @brief Incomplete expression, operand missing */
+/** \brief Incomplete expression, operand missing */
 #define CALC_ERR_INCOMPLETE      8
-/** @brief Runtime stack would underflow */
+/** \brief Runtime stack would underflow */
 #define CALC_ERR_UNDERFLOW       9
-/** @brief Runtime stack would overflow */
+/** \brief Runtime stack would overflow */
 #define CALC_ERR_OVERFLOW       10
-/** @brief Syntax error */
+/** \brief Syntax error */
 #define CALC_ERR_SYNTAX         11
-/** @brief NULL or empty input argument */
+/** \brief NULL or empty input argument */
 #define CALC_ERR_NULL_ARG       12
-/** @brief Internal error, bad element type */
+/** \brief Internal error, bad element type */
 #define CALC_ERR_INTERNAL       13
 
 /** @} */
@@ -112,21 +112,21 @@
 extern "C" {
 #endif
 
-/** @brief Compile an infix expression into postfix byte-code
+/** \brief Compile an infix expression into postfix byte-code
  *
  * Converts an expression from an infix string to postfix byte-code
  *
- * @param pinfix Pointer to the infix string
- * @param ppostfix Pointer to the postfix buffer
- * @param perror Place to return an error code
- * @return Non-zero value in event of error
+ * \param pinfix Pointer to the infix string
+ * \param ppostfix Pointer to the postfix buffer
+ * \param perror Place to return an error code
+ * \return Non-zero value in event of error
  *
  * It is the callers's responsibility to ensure that \c ppostfix points
  * to sufficient storage to hold the postfix expression. The macro
  * INFIX_TO_POSTFIX_SIZE(n) can be used to calculate an appropriate
  * postfix buffer size from the length of the infix buffer.
  *
- * @note "n" must count the terminating nil byte too.
+ * \note "n" must count the terminating nil byte too.
  *
  * -# The **infix expressions** that can be used are very similar
  * to the C expression syntax, but with some additions and subtle
@@ -230,7 +230,7 @@ extern "C" {
  *    - Arccosine: acos(a)
  *    - Arctangent: atan(a)
  *    - 2 parameter arctangent: atan2(a, b)
- *  @note  Note that these arguments are the reverse of the ANSI C function,
+ *  \note  Note that these arguments are the reverse of the ANSI C function,
  *  so while C would return arctan(a/b) the calc expression engine returns arctan(b/a)
  *
  * -# ***Hyperbolic Trigonometry***
@@ -298,62 +298,62 @@ extern "C" {
 epicsShareFunc long
     postfix(const char *pinfix, char *ppostfix, short *perror);
 
-/** @brief Run the calculation engine
+/** \brief Run the calculation engine
  *
  * Evaluates the postfix expression against a set ot input values.
  *
- * @param parg Pointer to an array of double values for the arguments A-L
+ * \param parg Pointer to an array of double values for the arguments A-L
  * that can appear in the expression. Note that the argument values may be
  * modified if the expression uses the assignment operator.
- * @param presult Where to put the calculated result, which may be a NaN or Infinity.
- * @param ppostfix The postfix expression created by postfix().
- * @return Status value 0 for OK, or non-zero if an error is discovered
+ * \param presult Where to put the calculated result, which may be a NaN or Infinity.
+ * \param ppostfix The postfix expression created by postfix().
+ * \return Status value 0 for OK, or non-zero if an error is discovered
  * during the evaluation process.
  */
 epicsShareFunc long
     calcPerform(double *parg, double *presult, const char *ppostfix);
 
-/** @brief Find the inputs and outputs of an expression
+/** \brief Find the inputs and outputs of an expression
  *
  * Software using the calc subsystem may need to know what expression
  * arguments are used and/or modified by a particular expression. It can
  * discover this from the postfix string by calling calcArgUsage(), which
- * takes two pointers @c pinputs and @c pstores to a pair of unsigned long
+ * takes two pointers \c pinputs and \c pstores to a pair of unsigned long
  * bitmaps which return that information to the caller. Passing a NULL value
  * for either of these pointers is legal if only the other is needed.
  *
- * The least signficant bit (bit 0) of the bitmap at @c *pinputs will be set
+ * The least signficant bit (bit 0) of the bitmap at \c *pinputs will be set
  * if the expression depends on the argument A, and so on through bit 11 for
  * the argument L. An argument that is not used until after a value has been
  * assigned to it will not be set in the pinputs bitmap, thus the bits can
  * be used to determine whether a value needs to be supplied for their
  * associated argument or not for the purposes of evaluating the expression.
  *
- * Bit 0 of the bitmap at @c *pstores will be set if the expression assigns
+ * Bit 0 of the bitmap at \c *pstores will be set if the expression assigns
  * a value to the argument A, bit 1 for argument B etc.
- * @param ppostfix A postfix expression created by postfix().
- * @param pinputs Bitmap pointer.
- * @param pstores Bitmap pointer.
- * @return The return value will be non-zero if the ppostfix expression was
+ * \param ppostfix A postfix expression created by postfix().
+ * \param pinputs Bitmap pointer.
+ * \param pstores Bitmap pointer.
+ * \return The return value will be non-zero if the ppostfix expression was
  * illegal, otherwise 0.
  */
 epicsShareFunc long
     calcArgUsage(const char *ppostfix, unsigned long *pinputs, unsigned long *pstores);
 
-/** @brief Convert an error code to a string.
+/** \brief Convert an error code to a string.
  *
  * Gives out a printable version of an individual error code.
- * The error codes are macros defined here with names starting @c CALC_ERR_
- * @param error Error code
- * @return A string representation of the error code
+ * The error codes are macros defined here with names starting \c CALC_ERR_
+ * \param error Error code
+ * \return A string representation of the error code
  */
 epicsShareFunc const char *
     calcErrorStr(short error);
 
-/** @brief Disassemble a postfix expression
+/** \brief Disassemble a postfix expression
  *
  * Convert the byte-code stream to text and print to stdout.
- * @param pinst postfix instructions
+ * \param pinst postfix instructions
  */
 epicsShareFunc void
     calcExprDump(const char *pinst);

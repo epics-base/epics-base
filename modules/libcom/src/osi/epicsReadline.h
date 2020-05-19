@@ -8,9 +8,9 @@
 \*************************************************************************/
 
 /**
- * @file epicsReadline.h
- * @brief Command-line editing functions
- * @author Eric Norum
+ * \file epicsReadline.h
+ * \brief Command-line editing functions
+ * \author Eric Norum
  *
  * Provides a generalized API for command line history and line-editing.
  * The implementation of this API can call GNU Readline, libtecla, and on
@@ -26,21 +26,21 @@ extern "C" {
 #include <shareLib.h>
 #include <stdio.h>
 /**
- * @brief Create a command-line context
- * @param in Filehandle to read from
- * @returns Command-line context
+ * \brief Create a command-line context
+ * \param in Filehandle to read from
+ * \return Command-line context
  */
 epicsShareFunc void * epicsShareAPI epicsReadlineBegin (FILE *in);
 /**
- * @brief Read a line of input
- * @param prompt Prompt string
- * @param context To read from
- * @returns Line read
+ * \brief Read a line of input
+ * \param prompt Prompt string
+ * \param context To read from
+ * \return Line read
  */
 epicsShareFunc char * epicsShareAPI epicsReadline (const char *prompt, void *context);
 /**
- * @brief Destroy a command-line context
- * @param context Command-line context to destroy
+ * \brief Destroy a command-line context
+ * \param context Command-line context to destroy
  */
 epicsShareFunc void   epicsShareAPI epicsReadlineEnd (void *context);
 

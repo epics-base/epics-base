@@ -8,9 +8,9 @@
 \*************************************************************************/
 
 /**
- * @file alarm.h
- * @brief Alarm severity and status/condition values
- * @author Bob Dalesio and Marty Kraimer
+ * \file alarm.h
+ * \brief Alarm severity and status/condition values
+ * \author Bob Dalesio and Marty Kraimer
  *
  * These alarm definitions must match the related
  * menuAlarmSevr.dbd and menuAlarmStat.dbd files
@@ -27,13 +27,13 @@ extern "C" {
 #endif
 
 /**
- * @brief The NO_ALARM value can be used as both a severity and a status.
+ * \brief The NO_ALARM value can be used as both a severity and a status.
  */
 #define NO_ALARM            0
 
 /**
- * @brief Alarm severity values
- * @note These must match the choices in menuAlarmSevr.dbd
+ * \brief Alarm severity values
+ * \note These must match the choices in menuAlarmSevr.dbd
  */
 typedef enum {
     epicsSevNone = NO_ALARM, /**< No alarm */
@@ -44,7 +44,7 @@ typedef enum {
 } epicsAlarmSeverity;
 
 /**
- * @name Original macros for alarm severity values
+ * \name Original macros for alarm severity values
  * @{
  */
 #define firstEpicsAlarmSev  epicsSevNone
@@ -55,8 +55,8 @@ typedef enum {
 /** @} */
 
 /**
- * @brief Alarm status/condition values
- * @note These must match the choices in menuAlarmStat.dbd
+ * \brief Alarm status/condition values
+ * \note These must match the choices in menuAlarmStat.dbd
  */
 typedef enum {
     epicsAlarmNone = NO_ALARM, /**< No alarm */
@@ -85,7 +85,7 @@ typedef enum {
 } epicsAlarmCondition;
 
 /**
- * @name Original macros for alarm status/condition values
+ * \name Original macros for alarm status/condition values
  * @{
  */
 #define firstEpicsAlarmCond epicsAlarmNone
@@ -114,11 +114,11 @@ typedef enum {
 /** @} */
 
 /**
- * @brief How to convert an alarm severity into a string
+ * \brief How to convert an alarm severity into a string
  */
 epicsShareExtern const char *epicsAlarmSeverityStrings [ALARM_NSEV];
 /**
- * @brief How to convert an alarm condition/status into a string
+ * \brief How to convert an alarm condition/status into a string
  */
 epicsShareExtern const char *epicsAlarmConditionStrings [ALARM_NSTATUS];
 

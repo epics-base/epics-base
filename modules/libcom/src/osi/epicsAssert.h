@@ -7,20 +7,20 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/**@file epicsAssert.h
- * @author Jeffery O. Hill
+/**\file epicsAssert.h
+ * \author Jeffery O. Hill
  *
- * @brief An EPICS-specific replacement for ANSI C's assert.
+ * \brief An EPICS-specific replacement for ANSI C's assert.
  *
  * To use this version just include:
- @code
+ \code
     #define epicsAssertAuthor "Code Author my@email.address"
     #include <epicsAssert.h>
- @endcode
+ \endcode
  * instead of
- @code
+ \code
     #include <assert.h>
- @endcode
+ \endcode
  *
  * If an assert() fails, it calls errlog indicating the program's author, file name, and
  * line number. Under each OS there are specialized instructions assisting the user to
@@ -34,7 +34,7 @@
  * This header also provides a compile-time assertion macro STATIC_ASSERT()
  * which can be used to check a constant-expression at compile-time. The C or
  * C++ compiler will flag an error if the expresstion evaluates to 0. The
- * STATIC_ASSERT() macro can only be used where a @c typedef is syntactically
+ * STATIC_ASSERT() macro can only be used where a \c typedef is syntactically
  * legal.
  **/
 
@@ -50,7 +50,7 @@ extern "C" {
 
 
 #ifndef epicsAssertAuthor
-/**@brief Optional string giving the author's name */
+/**\brief Optional string giving the author's name */
 #   define epicsAssertAuthor 0
 #endif
 
@@ -64,8 +64,8 @@ extern "C" {
 epicsShareFunc void epicsAssert (const char *pFile, const unsigned line,
     const char *pExp, const char *pAuthorName);
 
-/**@brief Declare that a condition should be true.
- * @param exp Expression that should evaluate to True.
+/**\brief Declare that a condition should be true.
+ * \param exp Expression that should evaluate to True.
  */
 #   define assert(exp) ((exp) ? (void)0 : \
         epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
@@ -80,8 +80,8 @@ epicsShareFunc void epicsAssert (const char *pFile, const unsigned line,
 #define STATIC_JOIN(x, y) STATIC_JOIN2(x, y)
 #define STATIC_JOIN2(x, y) x ## y
 
-/**@brief Declare a condition that should be true at compile-time.
- * @param expr A C/C++ const-expression that should evaluate to True.
+/**\brief Declare a condition that should be true at compile-time.
+ * \param expr A C/C++ const-expression that should evaluate to True.
  */
 #define STATIC_ASSERT(expr) \
     typedef int STATIC_JOIN(static_assert_failed_at_line_, __LINE__) \

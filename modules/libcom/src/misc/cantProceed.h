@@ -8,8 +8,8 @@
 \*************************************************************************/
 
 /**
- * @file cantProceed.h
- * @brief Routines for code that can't continue or return after an error.
+ * \file cantProceed.h
+ * \brief Routines for code that can't continue or return after an error.
  *
  * This is the EPICS equivalent of a Kernel Panic, except that the effect
  * is to halt only the thread that detects the error.
@@ -33,19 +33,19 @@
 extern "C" {
 #endif
 
-/** @brief Suspend this thread, the caller cannot continue or return.
+/** \brief Suspend this thread, the caller cannot continue or return.
  *
  * The effect of calling this is to print the error message followed by
  * the name of the thread that is being suspended. A stack trace will
  * also be shown if supported by the OS, and the thread is suspended
  * inside an infinite loop.
- * @param errorMessage A printf-style error message describing the error.
- * @param ... Any parameters required for the error message.
+ * \param errorMessage A printf-style error message describing the error.
+ * \param ... Any parameters required for the error message.
  */
 epicsShareFunc void cantProceed(const char *errorMessage, ...)
     EPICS_PRINTF_STYLE(1,2);
 
-/** @name Memory Allocation Functions
+/** \name Memory Allocation Functions
  * These versions of calloc() and malloc() never fail, they suspend the
  * thread if the OS is unable to allocate the requested memory at the current
  * time. If the thread is resumed, they will re-try the memory allocation,
@@ -54,18 +54,18 @@ epicsShareFunc void cantProceed(const char *errorMessage, ...)
  * gracefully when memory runs out.
  */
 /** @{ */
-/** @brief A calloc() that never returns NULL.
- * @param count Number of objects.
- * @param size Size of each object.
- * @param errorMessage What this memory is needed for.
- * @return Pointer to zeroed allocated memory.
+/** \brief A calloc() that never returns NULL.
+ * \param count Number of objects.
+ * \param size Size of each object.
+ * \param errorMessage What this memory is needed for.
+ * \return Pointer to zeroed allocated memory.
  */
 epicsShareFunc void * callocMustSucceed(size_t count, size_t size,
     const char *errorMessage);
-/** @brief A malloc() that never returns NULL.
- * @param size Size of block to allocate.
- * @param errorMessage What this memory is needed for.
- * @return Pointer to allocated memory.
+/** \brief A malloc() that never returns NULL.
+ * \param size Size of block to allocate.
+ * \param errorMessage What this memory is needed for.
+ * \return Pointer to allocated memory.
  */
 epicsShareFunc void * mallocMustSucceed(size_t size, const char *errorMessage);
 /** @} */

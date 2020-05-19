@@ -8,9 +8,9 @@
 \*************************************************************************/
 
 /**
- * @file   compilerDependencies.h
- * @author Jeffrey O. Hill johill@lanl.gov
- * @brief  Compiler specific declarations
+ * \file   compilerDependencies.h
+ * \author Jeffrey O. Hill johill@lanl.gov
+ * \brief  Compiler specific declarations
  *
  */
 

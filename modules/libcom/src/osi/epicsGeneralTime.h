@@ -7,9 +7,9 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/**@file epicsGeneralTime.h
+/**\file epicsGeneralTime.h
  *
- * @brief The generalTime framework provides a mechanism for several time providers to be
+ * \brief The generalTime framework provides a mechanism for several time providers to be
  * present within the system.
  *
  * There are two types of time provider, one type provides the current wall-clock
@@ -28,7 +28,7 @@
  * cannot check the priority queue, so will only succeed if the last-used provider has
  * registered a suitable routine.
  *
- * @note There are two interfaces to this framework, epicsGeneralTime.h for consumers
+ * \note There are two interfaces to this framework, epicsGeneralTime.h for consumers
  * to obtain a time and query the framework, and generalTimeSup.h for providers
  * that can supply timestamps.
  **/
@@ -42,108 +42,108 @@
 extern "C" {
 #endif
 
-/**@def NUM_TIME_EVENTS
- * @brief The number of time events that are validated.
+/**\def NUM_TIME_EVENTS
+ * \brief The number of time events that are validated.
  *
  * Time Events numbered 0 through (NUM_TIME_EVENTS-1) are validated by code in
  * epicsGeneralTime.c that tests for advancing timestamps and enforces that
  * restriction.
  *
- * @note Event numbers greater than or equal to NUM_TIME_EVENTS are now allowed
+ * \note Event numbers greater than or equal to NUM_TIME_EVENTS are now allowed
  * if supported by a custom time provider which should provide its own advancing
  * timestamp validation.
  **/
 #define NUM_TIME_EVENTS 256
 
-/**@brief Initialise the framework.
+/**\brief Initialise the framework.
  *
  * This routine is called automatically by any function that requires the
  * framework. It does not need to be called explicitly.
  **/
 epicsShareFunc void generalTime_Init(void);
 
-/**@brief Install a Time Event time provider that returns the current time for any
+/**\brief Install a Time Event time provider that returns the current time for any
  * Time event number.
  *
- * @note This is optional as it is site policy whether the last resort for a Time
+ * \note This is optional as it is site policy whether the last resort for a Time
  * Event time in the absence of any working provider should be a failure, or the
  * current time.
  **/
 epicsShareFunc int  installLastResortEventProvider(void);
 
-/**@brief Reset the internal counter of the number of times the time returned was
+/**\brief Reset the internal counter of the number of times the time returned was
  * earlier than when previously requested.
  *
  * Used by device support for binary out record
  * with:
- @code
+ \code
      DTYP = "General Time"
      OUT = "@RSTERRCNT"
- @endcode
+ \endcode
  **/
 epicsShareFunc void generalTimeResetErrorCounts(void);
 
-/**@brief Return the internal counter of the number of times the time returned was
+/**\brief Return the internal counter of the number of times the time returned was
  * earlier than when previously requested.
  *
  * Used by device support for longin record
  * with:
- @code
+ \code
      DTYP = "General Time"
      INP = "@GETERRCNT"
- @endcode
+ \endcode
  *
- * @return Reset error counts
+ * \return Reset error counts
  **/
 epicsShareFunc int  generalTimeGetErrorCounts(void);
 
-/**@brief Return the nume of the provider that last returned a valid current time, or
+/**\brief Return the nume of the provider that last returned a valid current time, or
  * NULL if none.
  *
  * Used by stringin device support with:
- @code
+ \code
     DTYP = "General Time"
     INP = "@BESTTCP"
- @endcode
+ \endcode
  *
- * @return Provider name
+ * \return Provider name
  **/
 epicsShareFunc const char * generalTimeCurrentProviderName(void);
 
-/**@brief Return the name of the provider that last returned a valid Time Event time, or
+/**\brief Return the name of the provider that last returned a valid Time Event time, or
  * NULL of none.
  *
  * Used by stringin device support with:
- @code
+ \code
      DTYP = "General Time"
      INP = "@BESTTEP"
- @endcode
+ \endcode
  *
- * @return Provider name
+ * \return Provider name
  **/
 epicsShareFunc const char * generalTimeEventProviderName(void);
 
-/**@brief Return the name of the registered current time provider that has the highest
+/**\brief Return the name of the registered current time provider that has the highest
  * priority.
  *
  * Used by stringin device support with:
- @code
+ \code
     DTYP = "General Time"
     INP = "@TOPTCP"
- @endcode
+ \endcode
  *
- * @return Provider name
+ * \return Provider name
  **/
 epicsShareFunc const char * generalTimeHighestCurrentName(void);
 
-/** @brief Old name provided for backwards compatibility */
+/** \brief Old name provided for backwards compatibility */
 #define generalTimeCurrentTpName generalTimeCurrentProviderName
-/** @brief Old name provided for backwards compatibility */
+/** \brief Old name provided for backwards compatibility */
 #define generalTimeEventTpName generalTimeEventProviderName
 
-/**@brief Provide information about the installed providers and their current best times.
+/**\brief Provide information about the installed providers and their current best times.
  *
- * @param interest Desired interest level to report
+ * \param interest Desired interest level to report
  **/
 epicsShareFunc long generalTimeReport(int interest);
 

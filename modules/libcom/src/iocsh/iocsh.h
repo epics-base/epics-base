@@ -85,27 +85,27 @@ epicsShareFunc const iocshVarDef * epicsShareAPI iocshFindVariable(
 /* This should only be called when iocsh is no longer needed*/
 epicsShareFunc void epicsShareAPI iocshFree(void);
 
-/** shorthand for @code iocshLoad(pathname, NULL) @endcode */
+/** shorthand for \code iocshLoad(pathname, NULL) \endcode */
 epicsShareFunc int epicsShareAPI iocsh(const char *pathname);
-/** shorthand for @code iocshRun(cmd, NULL) @endcode */
+/** shorthand for \code iocshRun(cmd, NULL) \endcode */
 epicsShareFunc int epicsShareAPI iocshCmd(const char *cmd);
 /** Read and evaluate IOC shell commands from the given file.
- * @param pathname Path to script file
- * @param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
- * @return 0 on success, non-zero on error
+ * \param pathname Path to script file
+ * \param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
+ * \return 0 on success, non-zero on error
  */
 epicsShareFunc int epicsShareAPI iocshLoad(const char *pathname, const char* macros);
 /** Evaluate a single IOC shell command
- * @param cmd Command string.  eg. "echo \"something or other\""
- * @param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
- * @return 0 on success, non-zero on error
+ * \param cmd Command string.  eg. "echo \"something or other\""
+ * \param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
+ * \return 0 on success, non-zero on error
  */
 epicsShareFunc int epicsShareAPI iocshRun(const char *cmd, const char* macros);
 
-/** @brief Signal error from an IOC shell function.
+/** \brief Signal error from an IOC shell function.
  *
- * @param err 0 - success (no op), !=0 - error
- * @return The err argument value.
+ * \param err 0 - success (no op), !=0 - error
+ * \return The err argument value.
  */
 epicsShareFunc int iocshSetError(int err);
 

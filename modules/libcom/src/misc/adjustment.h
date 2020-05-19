@@ -9,8 +9,8 @@
 \*************************************************************************/
 
 /**
- * @file adjustment.h
- * @brief Declare function `adjustToWorstCaseAlignment`
+ * \file adjustment.h
+ * \brief Declare function `adjustToWorstCaseAlignment`
  *
  * Declares a single function `adjustToWorstCaseAlignment`.
  */

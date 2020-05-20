@@ -16,7 +16,6 @@
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "osiSock.h"
 
-#define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "epicsTime.h"
 #include "generalTimeSup.h"
@@ -88,7 +87,7 @@ int epicsTime_localtime ( const time_t *clock,
     }
 }
 
-extern "C" epicsShareFunc void
+extern "C" LIBCOM_API void
     convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
 {
     struct timespec now, wait;

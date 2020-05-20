@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "epicsStdio.h"
 

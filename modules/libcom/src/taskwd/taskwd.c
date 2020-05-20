@@ -17,7 +17,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "dbDefs.h"
 #include "epicsEvent.h"
@@ -356,7 +355,7 @@ void taskwdAnyRemove(void *key)
 
 /* Report function */
 
-epicsShareFunc void taskwdShow(int level)
+LIBCOM_API void taskwdShow(int level)
 {
     struct tNode *pt;
     int mCount, fCount, tCount;

@@ -16,7 +16,7 @@
  * Author: Jeff Hill
  *
  */
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +25,7 @@ extern "C" {
 typedef enum osiGetUserNameReturn {
                 osiGetUserNameFail, 
                 osiGetUserNameSuccess} osiGetUserNameReturn;
-epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, unsigned bufSize);
+LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigned bufSize);
 
 /*
  * Spawn detached process with named executable, but return 
@@ -37,7 +37,7 @@ typedef enum osiSpawnDetachedProcessReturn {
                 osiSpawnDetachedProcessSuccess,
                 osiSpawnDetachedProcessNoSupport} osiSpawnDetachedProcessReturn;
 
-epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess 
+LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess 
     (const char *pProcessName, const char *pBaseExecutableName);
 
 #ifdef __cplusplus

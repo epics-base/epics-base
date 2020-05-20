@@ -21,7 +21,6 @@
 //#define EPICS_FREELIST_DEBUG
 #define EPICS_PRIVATE_API
 
-#define epicsExportSharedSymbols
 #include "ipAddrToAsciiAsynchronous.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"

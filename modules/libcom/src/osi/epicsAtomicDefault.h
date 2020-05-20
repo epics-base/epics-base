@@ -22,10 +22,10 @@ extern "C" {
 
 /*
  * struct EpicsAtomicLockKey;
- * epicsShareFunc void epicsAtomicReadMemoryBarrier ();
- * epicsShareFunc void epicsAtomicWriteMemoryBarrier ();
- * epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
- * epicsShareFunc void epicsAtomicUnock ( struct EpicsAtomicLockKey * );
+ * LIBCOM_API void epicsAtomicReadMemoryBarrier ();
+ * LIBCOM_API void epicsAtomicWriteMemoryBarrier ();
+ * LIBCOM_API void epicsAtomicLock ( struct EpicsAtomicLockKey * );
+ * LIBCOM_API void epicsAtomicUnock ( struct EpicsAtomicLockKey * );
  */
 
 /*

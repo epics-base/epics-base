@@ -13,7 +13,6 @@
 #include <new>
 #include <exception>
 
-#define epicsExportSharedSymbols
 #include "epicsEvent.h"
 #include "epicsStdio.h"
 #include "cantProceed.h"
@@ -104,7 +103,7 @@ void epicsEvent::show ( unsigned level ) const
 
 extern "C" {
 
-epicsShareFunc epicsEventId epicsEventMustCreate (
+LIBCOM_API epicsEventId epicsEventMustCreate (
     epicsEventInitialState initialState)
 {
     epicsEventId id = epicsEventCreate (initialState);
@@ -114,14 +113,14 @@ epicsShareFunc epicsEventId epicsEventMustCreate (
     return id;
 }
 
-epicsShareFunc void epicsEventMustTrigger (epicsEventId id) {
+LIBCOM_API void epicsEventMustTrigger (epicsEventId id) {
     epicsEventStatus status = epicsEventTrigger (id);
 
     if (status != epicsEventOK)
         cantProceed ("epicsEventMustTrigger");
 }
 
-epicsShareFunc void epicsEventMustWait (epicsEventId id) {
+LIBCOM_API void epicsEventMustWait (epicsEventId id) {
     epicsEventStatus status = epicsEventWait (id);
 
     if (status != epicsEventOK)

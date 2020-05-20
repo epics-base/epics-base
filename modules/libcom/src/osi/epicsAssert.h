@@ -41,7 +41,7 @@
 #ifndef INC_epicsAssert_H
 #define INC_epicsAssert_H
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "compilerDependencies.h"
 
 #ifdef __cplusplus
@@ -61,7 +61,7 @@ extern "C" {
 #else /* NDEBUG */
 
 /**@private */
-epicsShareFunc void epicsAssert (const char *pFile, const unsigned line,
+LIBCOM_API void epicsAssert (const char *pFile, const unsigned line,
     const char *pExp, const char *pAuthorName);
 
 /**\brief Declare that a condition should be true.

@@ -15,7 +15,7 @@
 #ifndef INC_initHooks_H
 #define INC_initHooks_H
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,10 +64,10 @@ typedef enum {
 } initHookState;
 
 typedef void (*initHookFunction)(initHookState state);
-epicsShareFunc int initHookRegister(initHookFunction func);
-epicsShareFunc void initHookAnnounce(initHookState state);
-epicsShareFunc const char *initHookName(int state);
-epicsShareFunc void initHookFree(void);
+LIBCOM_API int initHookRegister(initHookFunction func);
+LIBCOM_API void initHookAnnounce(initHookState state);
+LIBCOM_API const char *initHookName(int state);
+LIBCOM_API void initHookFree(void);
 
 #ifdef __cplusplus
 }

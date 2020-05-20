@@ -11,7 +11,6 @@
  *      Date:           02-27-95
  */
 
-#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsVersion.h"

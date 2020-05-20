@@ -28,7 +28,7 @@
 static char *errmsg = NULL;
 static char *oldmsg = NULL;
 
-epicsShareFunc void * epicsLoadLibrary(const char *name)
+LIBCOM_API void * epicsLoadLibrary(const char *name)
 {
     MODULE_ID m = 0;
     int fd;
@@ -54,7 +54,7 @@ epicsShareFunc void * epicsLoadLibrary(const char *name)
     return m;
 }
 
-epicsShareFunc const char *epicsLoadError(void)
+LIBCOM_API const char *epicsLoadError(void)
 {
     if (oldmsg)
         free(oldmsg);

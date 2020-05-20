@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -27,7 +27,7 @@ extern "C" {
  *  \brief Create and open a temporary file.
  *  \return NULL or a FILE pointer to a temporary file.
  **/
-epicsShareFunc FILE * epicsShareAPI epicsTempFile(void);
+LIBCOM_API FILE * epicsStdCall epicsTempFile(void);
 
 #ifdef  __cplusplus
 }

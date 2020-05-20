@@ -17,7 +17,7 @@
 
 #include <time.h>
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "epicsTypes.h"
 #include "osdTime.h"
 #include "errMdef.h"
@@ -108,7 +108,7 @@ struct time_t_wrapper {
  * Stores an event number for use by the epicsTime::getEvent() static
  * class method.
  */
-class epicsShareClass epicsTimeEvent
+class LIBCOM_API epicsTimeEvent
 {
 public:
     epicsTimeEvent (const int &number); /**< \brief Constructor */
@@ -128,7 +128,7 @@ private:
  * has defective POSIX, BSD/SRV5, or standard C time support the EPICS
  * implementation should be valid until 2106.
  */
-class epicsShareClass epicsTime
+class LIBCOM_API epicsTime
 {
 public:
      /// \brief Exception: Time provider problem
@@ -367,12 +367,12 @@ extern "C" {
  * @{
  */
 /** \brief Get current time into \p *pDest */
-epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp * pDest );
+LIBCOM_API int epicsStdCall epicsTimeGetCurrent ( epicsTimeStamp * pDest );
 /** \brief Get time of event \p eventNumber into \p *pDest */
-epicsShareFunc int epicsShareAPI epicsTimeGetEvent (
+LIBCOM_API int epicsStdCall epicsTimeGetEvent (
     epicsTimeStamp *pDest, int eventNumber);
 /** \brief Get monotonic time into \p *pDest */
-epicsShareFunc int epicsTimeGetMonotonic ( epicsTimeStamp * pDest );
+LIBCOM_API int epicsTimeGetMonotonic ( epicsTimeStamp * pDest );
 /** @} */
 
 /** \name ISR-callable
@@ -382,9 +382,9 @@ epicsShareFunc int epicsTimeGetMonotonic ( epicsTimeStamp * pDest );
  * @{
  */
 /** \brief Get current time into \p *pDest (ISR-safe) */
-epicsShareFunc int epicsTimeGetCurrentInt(epicsTimeStamp *pDest);
+LIBCOM_API int epicsTimeGetCurrentInt(epicsTimeStamp *pDest);
 /** \brief Get time of event \p eventNumber into \p *pDest (ISR-safe) */
-epicsShareFunc int epicsTimeGetEventInt(epicsTimeStamp *pDest, int eventNumber);
+LIBCOM_API int epicsTimeGetEventInt(epicsTimeStamp *pDest, int eventNumber);
 /** @} */
 
 /** \name ANSI C time_t conversions
@@ -392,10 +392,10 @@ epicsShareFunc int epicsTimeGetEventInt(epicsTimeStamp *pDest, int eventNumber);
  * @{
  */
 /** \brief Convert epicsTimeStamp to ANSI C \c time_t */
-epicsShareFunc int epicsShareAPI epicsTimeToTime_t (
+LIBCOM_API int epicsStdCall epicsTimeToTime_t (
     time_t * pDest, const epicsTimeStamp * pSrc );
 /** \brief Convert ANSI C \c time_t to epicsTimeStamp */
-epicsShareFunc int epicsShareAPI epicsTimeFromTime_t (
+LIBCOM_API int epicsStdCall epicsTimeFromTime_t (
     epicsTimeStamp * pDest, time_t src );
 /** @} */
 
@@ -404,16 +404,16 @@ epicsShareFunc int epicsShareAPI epicsTimeFromTime_t (
  * @{
  */
 /** \brief Convert epicsTimeStamp to <tt>struct tm</tt> in local time zone */
-epicsShareFunc int epicsShareAPI epicsTimeToTM (
+LIBCOM_API int epicsStdCall epicsTimeToTM (
     struct tm * pDest, unsigned long * pNSecDest, const epicsTimeStamp * pSrc );
 /** \brief Convert epicsTimeStamp to <tt>struct tm</tt> in UTC/GMT */
-epicsShareFunc int epicsShareAPI epicsTimeToGMTM (
+LIBCOM_API int epicsStdCall epicsTimeToGMTM (
     struct tm * pDest, unsigned long * pNSecDest, const epicsTimeStamp * pSrc );
 /** \brief Set epicsTimeStamp from <tt>struct tm</tt> in local time zone */
-epicsShareFunc int epicsShareAPI epicsTimeFromTM (
+LIBCOM_API int epicsStdCall epicsTimeFromTM (
     epicsTimeStamp * pDest, const struct tm * pSrc, unsigned long nSecSrc );
 /** \brief Set epicsTimeStamp from <tt>struct tm</tt> in UTC/GMT */
-epicsShareFunc int epicsShareAPI epicsTimeFromGMTM (
+LIBCOM_API int epicsStdCall epicsTimeFromGMTM (
     epicsTimeStamp * pDest, const struct tm * pSrc, unsigned long nSecSrc );
 /** @} */
 
@@ -422,10 +422,10 @@ epicsShareFunc int epicsShareAPI epicsTimeFromGMTM (
  * format.
  * @{ */
 /** \brief Convert epicsTimeStamp to <tt>struct timespec</tt> */
-epicsShareFunc int epicsShareAPI epicsTimeToTimespec (
+LIBCOM_API int epicsStdCall epicsTimeToTimespec (
     struct timespec * pDest, const epicsTimeStamp * pSrc );
 /** \brief Set epicsTimeStamp from <tt>struct timespec</tt> */
-epicsShareFunc int epicsShareAPI epicsTimeFromTimespec (
+LIBCOM_API int epicsStdCall epicsTimeFromTimespec (
     epicsTimeStamp * pDest, const struct timespec * pSrc );
 /** @} */
 
@@ -433,10 +433,10 @@ epicsShareFunc int epicsShareAPI epicsTimeFromTimespec (
  * Convert to and from the BSD <tt>struct timeval</tt> format.
  * @{ */
 /** \brief Convert epicsTimeStamp to <tt>struct timeval</tt> */
-epicsShareFunc int epicsShareAPI epicsTimeToTimeval (
+LIBCOM_API int epicsStdCall epicsTimeToTimeval (
     struct timeval * pDest, const epicsTimeStamp * pSrc );
 /** \brief Set epicsTimeStamp from <tt>struct timeval</tt> */
-epicsShareFunc int epicsShareAPI epicsTimeFromTimeval (
+LIBCOM_API int epicsStdCall epicsTimeFromTimeval (
     epicsTimeStamp * pDest, const struct timeval * pSrc );
 /** @} */
 
@@ -445,10 +445,10 @@ epicsShareFunc int epicsShareAPI epicsTimeFromTimeval (
  * which are always expressed as a \c double in seconds.
  * @{ */
 /** \brief Time difference between \p left and \p right in seconds. */
-epicsShareFunc double epicsShareAPI epicsTimeDiffInSeconds (
+LIBCOM_API double epicsStdCall epicsTimeDiffInSeconds (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight );/* left - right */
 /** \brief Add some number of seconds to \p dest */
-epicsShareFunc void epicsShareAPI epicsTimeAddSeconds (
+LIBCOM_API void epicsStdCall epicsTimeAddSeconds (
     epicsTimeStamp * pDest, double secondsToAdd ); /* adds seconds to *pDest */
 /** @} */
 
@@ -456,31 +456,31 @@ epicsShareFunc void epicsShareAPI epicsTimeAddSeconds (
  * Comparisons between epicsTimeStamp objects, returning 0=false, 1=true.
  * @{ */
 /** \brief \p left equals \p right */
-epicsShareFunc int epicsShareAPI epicsTimeEqual (
+LIBCOM_API int epicsStdCall epicsTimeEqual (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 /** \brief \p left not equal to \p right */
-epicsShareFunc int epicsShareAPI epicsTimeNotEqual (
+LIBCOM_API int epicsStdCall epicsTimeNotEqual (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 /** \brief \p left was before \p right */
-epicsShareFunc int epicsShareAPI epicsTimeLessThan (
+LIBCOM_API int epicsStdCall epicsTimeLessThan (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 /** \brief \p right was no later than \p left */
-epicsShareFunc int epicsShareAPI epicsTimeLessThanEqual (
+LIBCOM_API int epicsStdCall epicsTimeLessThanEqual (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 /** \brief \p left was after \p right */
-epicsShareFunc int epicsShareAPI epicsTimeGreaterThan (
+LIBCOM_API int epicsStdCall epicsTimeGreaterThan (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 /** \brief \p right was not before \p left */
-epicsShareFunc int epicsShareAPI epicsTimeGreaterThanEqual (
+LIBCOM_API int epicsStdCall epicsTimeGreaterThanEqual (
     const epicsTimeStamp * pLeft, const epicsTimeStamp * pRight);
 /** @} */
 
 /** \brief Convert epicsTimeStamp to string. See epicsTime::strftime() */
-epicsShareFunc size_t epicsShareAPI epicsTimeToStrftime (
+LIBCOM_API size_t epicsStdCall epicsTimeToStrftime (
     char * pBuff, size_t bufLength, const char * pFormat, const epicsTimeStamp * pTS );
 
 /** \brief Dump current state to stdout */
-epicsShareFunc void epicsShareAPI epicsTimeShow (
+LIBCOM_API void epicsStdCall epicsTimeShow (
     const epicsTimeStamp *, unsigned interestLevel );
 
 /** \name Reentrant time_t to struct tm conversions
@@ -488,9 +488,9 @@ epicsShareFunc void epicsShareAPI epicsTimeShow (
  * vxWorks \c gmtime_r interface does not match POSIX standards
  * @{ */
 /** \brief Break down a \c time_t into a <tt>struct tm</tt> in the local timezone */
-epicsShareFunc int epicsShareAPI epicsTime_localtime ( const time_t * clock, struct tm * result );
+LIBCOM_API int epicsStdCall epicsTime_localtime ( const time_t * clock, struct tm * result );
 /** \brief Break down a \c time_t into a <tt>struct tm</tt> in the UTC timezone */
-epicsShareFunc int epicsShareAPI epicsTime_gmtime ( const time_t * clock, struct tm * result );
+LIBCOM_API int epicsStdCall epicsTime_gmtime ( const time_t * clock, struct tm * result );
 /** @} */
 
 /** \name Monotonic time routines
@@ -499,14 +499,14 @@ epicsShareFunc int epicsShareAPI epicsTime_gmtime ( const time_t * clock, struct
  * minimum non-zero time difference between two calls to epicsMonotonicGet()
  * in units of nanoseconds.
  */
-epicsShareFunc epicsUInt64 epicsMonotonicResolution(void);
+LIBCOM_API epicsUInt64 epicsMonotonicResolution(void);
 /** \brief Fetch monotonic counter, returns the number of nanoseconds since
  * some unspecified time. */
-epicsShareFunc epicsUInt64 epicsMonotonicGet(void);
+LIBCOM_API epicsUInt64 epicsMonotonicGet(void);
 /** @} */
 
 #ifdef EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
-epicsShareFunc void osdMonotonicInit(void);
+LIBCOM_API void osdMonotonicInit(void);
 #endif
 
 #ifdef __cplusplus

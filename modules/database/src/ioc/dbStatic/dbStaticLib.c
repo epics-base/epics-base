@@ -60,7 +60,7 @@ STATIC_ASSERT(messagesize >= 21);
 static char *ppstring[5]={" NPP"," PP"," CA"," CP"," CPP"};
 static char *msstring[4]={" NMS"," MS"," MSI"," MSS"};
 
-epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
+maplinkType pamaplinkType[LINK_NTYPES] = {
 	{"CONSTANT",CONSTANT},
 	{"PV_LINK",PV_LINK},
 	{"VME_IO",VME_IO},

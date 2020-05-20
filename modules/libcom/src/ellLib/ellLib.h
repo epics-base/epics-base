@@ -26,7 +26,7 @@
 #ifndef INC_ellLib_H
 #define INC_ellLib_H
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,7 +112,7 @@ typedef void (*FREEFUNC)(void *);
  * \param pList Pointer to list descriptor
  * \param pNode Pointer to node to be added
  */
-epicsShareFunc void ellAdd (ELLLIST *pList, ELLNODE *pNode);
+LIBCOM_API void ellAdd (ELLLIST *pList, ELLNODE *pNode);
 /**
  * \brief Concatenates a list to the end of another list.
  * The list to be added is left empty. Either list (or both)
@@ -120,13 +120,13 @@ epicsShareFunc void ellAdd (ELLLIST *pList, ELLNODE *pNode);
  * \param pDstList Destination list
  * \param pAddList List to be added to \c pDstList
  */
-epicsShareFunc void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList);
+LIBCOM_API void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList);
 /**
  * \brief Deletes a node from a list.
  * \param pList Pointer to list descriptor
  * \param pNode Pointer to node to be deleted
  */
-epicsShareFunc void ellDelete (ELLLIST *pList, ELLNODE *pNode);
+LIBCOM_API void ellDelete (ELLLIST *pList, ELLNODE *pNode);
 /**
  * \brief Extract a sublist from a list.
  * \param pSrcList Pointer to source list
@@ -134,19 +134,19 @@ epicsShareFunc void ellDelete (ELLLIST *pList, ELLNODE *pNode);
  * \param pEndNode Last node in \c pSrcList to be extracted
  * \param pDstList Pointer to list where to put extracted list
  */
-epicsShareFunc void ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList);
+LIBCOM_API void ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList);
 /**
  * \brief Deletes and returns the first node from a list
  * \param pList Pointer to list from which to get node
  * \return Pointer to the first node from the list, or NULL if the list is empty
  */
-epicsShareFunc ELLNODE * ellGet (ELLLIST *pList);
+LIBCOM_API ELLNODE * ellGet (ELLLIST *pList);
 /**
  * \brief Deletes and returns the last node from a list.
  * \param pList Pointer to list from which to get node
  * \return Pointer to the last node from the list, or NULL if the list is empty
  */
-epicsShareFunc ELLNODE * ellPop (ELLLIST *pList);
+LIBCOM_API ELLNODE * ellPop (ELLLIST *pList);
 /**
  * \brief Inserts a node into a list immediately after a specific node
  * \param plist Pointer to list into which to insert node
@@ -154,7 +154,7 @@ epicsShareFunc ELLNODE * ellPop (ELLLIST *pList);
  * \param pNode Pointer to the node to be inserted
  * \note If \c pPrev is NULL \c pNode will be inserted at the head of the list
  */
-epicsShareFunc void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
+LIBCOM_API void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
 /**
  * \brief Find the Nth node in a list
  * \param pList Pointer to list from which to find node
@@ -163,7 +163,7 @@ epicsShareFunc void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
  * there is no such node in the list.
  * \note The first node has index 1.
  */
-epicsShareFunc ELLNODE * ellNth (ELLLIST *pList, int nodeNum);
+LIBCOM_API ELLNODE * ellNth (ELLLIST *pList, int nodeNum);
 /**
  * \brief Find the list node \c nStep steps away from a specified node
  * \param pNode The known node
@@ -171,7 +171,7 @@ epicsShareFunc ELLNODE * ellNth (ELLLIST *pList, int nodeNum);
  * \return Pointer to the node \c nStep nodes from \c pNode, or NULL if there
  * is no such node in the list.
  */
-epicsShareFunc ELLNODE * ellNStep (ELLNODE *pNode, int nStep);
+LIBCOM_API ELLNODE * ellNStep (ELLNODE *pNode, int nStep);
 /**
  * \brief Find the index of a specific node in a list
  * \param pList Pointer to list to search
@@ -179,7 +179,7 @@ epicsShareFunc ELLNODE * ellNStep (ELLNODE *pNode, int nStep);
  * \return The node's index, or -1 if it cannot be found on the list.
  * \note The first node has index 1.
  */
-epicsShareFunc int  ellFind (ELLLIST *pList, ELLNODE *pNode);
+LIBCOM_API int  ellFind (ELLLIST *pList, ELLNODE *pNode);
 
 typedef int (*pListCmp)(const ELLNODE* A, const ELLNODE* B);
 /**
@@ -192,7 +192,7 @@ typedef int (*pListCmp)(const ELLNODE* A, const ELLNODE* B);
  * \note Use of mergesort algorithm based on analysis by
  * http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
  */
-epicsShareFunc void ellSortStable(ELLLIST *pList, pListCmp pListCmp);
+LIBCOM_API void ellSortStable(ELLLIST *pList, pListCmp pListCmp);
 /**
  * \brief Free all the nodes in a list.
  *
@@ -203,12 +203,12 @@ epicsShareFunc void ellSortStable(ELLLIST *pList, pListCmp pListCmp);
  * structures were malloc()'d one-at-a-time and that the ELLNODE structure is
  * the first member of the parent structure.
  */
-epicsShareFunc void ellFree2 (ELLLIST *pList, FREEFUNC freeFunc);
+LIBCOM_API void ellFree2 (ELLLIST *pList, FREEFUNC freeFunc);
 /**
  * \brief Verifies that the list is consistent
  * \param pList List to be verified
  */
-epicsShareFunc void ellVerify (ELLLIST *pList);
+LIBCOM_API void ellVerify (ELLLIST *pList);
 
 #ifdef __cplusplus
 }

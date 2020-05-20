@@ -17,16 +17,16 @@
 #define ipAddrToAsciiAsynchronous_h
 
 #include "osiSock.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
-class epicsShareClass ipAddrToAsciiCallBack {
+class LIBCOM_API ipAddrToAsciiCallBack {
 public:
     virtual void transactionComplete ( const char * pHostName ) = 0;
     virtual void show ( unsigned level ) const; 
     virtual ~ipAddrToAsciiCallBack () = 0;
 };
 
-class epicsShareClass ipAddrToAsciiTransaction {
+class LIBCOM_API ipAddrToAsciiTransaction {
 public:
     virtual void release () = 0; 
     virtual void ipAddrToAscii ( const osiSockAddr &, ipAddrToAsciiCallBack & ) = 0;
@@ -36,7 +36,7 @@ protected:
     virtual ~ipAddrToAsciiTransaction () = 0;
 };
 
-class epicsShareClass ipAddrToAsciiEngine {
+class LIBCOM_API ipAddrToAsciiEngine {
 public:
     virtual void release () = 0; 
     virtual ipAddrToAsciiTransaction & createTransaction () = 0;

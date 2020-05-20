@@ -8,20 +8,19 @@
 \*************************************************************************/
 /* osi/os/default/osdFindSymbol.c */
 
-#define epicsExportSharedSymbols
 #include "epicsFindSymbol.h"
 
-epicsShareFunc void * epicsLoadLibrary(const char *name)
+LIBCOM_API void * epicsLoadLibrary(const char *name)
 {
     return 0;
 }
 
-epicsShareFunc const char *epicsLoadError(void)
+LIBCOM_API const char *epicsLoadError(void)
 {
     return "epicsLoadLibrary not implemented";
 }
 
-epicsShareFunc void * epicsShareAPI epicsFindSymbol(const char *name)
+LIBCOM_API void * epicsStdCall epicsFindSymbol(const char *name)
 {
     return 0;
 }

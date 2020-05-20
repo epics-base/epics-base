@@ -22,7 +22,6 @@
 #define REDZONE 0
 #endif
 
-#define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "freeList.h"
@@ -41,7 +40,7 @@ typedef struct {
     epicsMutexId lock;
 }FREELISTPVT;
 
-epicsShareFunc void epicsShareAPI 
+LIBCOM_API void epicsStdCall 
 	freeListInitPvt(void **ppvt,int size,int nmalloc)
 {
     FREELISTPVT	*pfl;
@@ -58,7 +57,7 @@ epicsShareFunc void epicsShareAPI
     return;
 }
 
-epicsShareFunc void * epicsShareAPI freeListCalloc(void *pvt)
+LIBCOM_API void * epicsStdCall freeListCalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
 #   ifdef EPICS_FREELIST_DEBUG
@@ -72,7 +71,7 @@ epicsShareFunc void * epicsShareAPI freeListCalloc(void *pvt)
 #   endif
 }
 
-epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
+LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
 #   ifdef EPICS_FREELIST_DEBUG
@@ -129,7 +128,7 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
 #   endif
 }
 
-epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem)
+LIBCOM_API void epicsStdCall freeListFree(void *pvt,void*pmem)
 {
     FREELISTPVT	*pfl = pvt;
 #   ifdef EPICS_FREELIST_DEBUG
@@ -150,7 +149,7 @@ epicsShareFunc void epicsShareAPI freeListFree(void *pvt,void*pmem)
 #   endif
 }
 
-epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)
+LIBCOM_API void epicsStdCall freeListCleanup(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
     allocMem	*phead;
@@ -169,7 +168,7 @@ epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)
     free(pvt);
 }
 
-epicsShareFunc size_t epicsShareAPI freeListItemsAvail(void *pvt)
+LIBCOM_API size_t epicsStdCall freeListItemsAvail(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
     size_t nBlocksAvailable;

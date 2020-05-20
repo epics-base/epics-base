@@ -16,13 +16,12 @@
 #include <errno.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "ellLib.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
 
-epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
-epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
+LIBCOM_API extern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
+LIBCOM_API extern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
 
 typedef struct epicsThreadHook {
     ELLNODE                   node;
@@ -52,7 +51,7 @@ static void threadHookInit(void)
     epicsThreadOnce(&flag, threadHookOnce, NULL);
 }
 
-epicsShareFunc int epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook)
+LIBCOM_API int epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook)
 {
     epicsThreadHook *pHook;
 
@@ -75,7 +74,7 @@ epicsShareFunc int epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook)
     return -1;
 }
 
-epicsShareFunc int epicsThreadHookDelete(EPICS_THREAD_HOOK_ROUTINE hook)
+LIBCOM_API int epicsThreadHookDelete(EPICS_THREAD_HOOK_ROUTINE hook)
 {
     if (!hook) return 0;
     threadHookInit();
@@ -97,13 +96,13 @@ epicsShareFunc int epicsThreadHookDelete(EPICS_THREAD_HOOK_ROUTINE hook)
     return -1;
 }
 
-epicsShareFunc void osdThreadHooksRunMain(epicsThreadId id)
+LIBCOM_API void osdThreadHooksRunMain(epicsThreadId id)
 {
     if (epicsThreadHookMain)
         epicsThreadHookMain(id);
 }
 
-epicsShareFunc void osdThreadHooksRun(epicsThreadId id)
+LIBCOM_API void osdThreadHooksRun(epicsThreadId id)
 {
     threadHookInit();
 
@@ -121,7 +120,7 @@ epicsShareFunc void osdThreadHooksRun(epicsThreadId id)
     }
 }
 
-epicsShareFunc void epicsThreadHooksShow(void)
+LIBCOM_API void epicsThreadHooksShow(void)
 {
     threadHookInit();
 

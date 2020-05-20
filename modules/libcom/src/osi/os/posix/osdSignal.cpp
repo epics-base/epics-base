@@ -16,7 +16,6 @@
 #include <errno.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "epicsSignal.h"
 
 static void ignoreIfDefault(int signum, const char *name)
@@ -38,7 +37,7 @@ static void ignoreIfDefault(int signum, const char *name)
 /*
  * epicsSignalInstallSigHupIgnore ()
  */
-epicsShareFunc void epicsShareAPI epicsSignalInstallSigHupIgnore (void)
+LIBCOM_API void epicsStdCall epicsSignalInstallSigHupIgnore (void)
 {
     ignoreIfDefault(SIGHUP, "SIGHUP");
 }
@@ -46,12 +45,12 @@ epicsShareFunc void epicsShareAPI epicsSignalInstallSigHupIgnore (void)
 /*
  * epicsSignalInstallSigPipeIgnore ()
  */
-epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore (void)
+LIBCOM_API void epicsStdCall epicsSignalInstallSigPipeIgnore (void)
 {
     ignoreIfDefault(SIGPIPE, "SIGPIPE");
 }
 
 /* Disabled */
-epicsShareFunc void epicsShareAPI epicsSignalInstallSigAlarmIgnore ( void ) {}
-epicsShareFunc void epicsShareAPI epicsSignalRaiseSigAlarm 
+LIBCOM_API void epicsStdCall epicsSignalInstallSigAlarmIgnore ( void ) {}
+LIBCOM_API void epicsStdCall epicsSignalRaiseSigAlarm 
                                   ( struct epicsThreadOSD * /* threadId */ ) {}

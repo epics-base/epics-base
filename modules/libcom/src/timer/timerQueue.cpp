@@ -15,7 +15,6 @@
 #include <stdio.h>
 #include <float.h>
 
-#define epicsExportSharedSymbols
 #include "epicsGuard.h"
 #include "timerPrivate.h"
 #include "errlog.h"

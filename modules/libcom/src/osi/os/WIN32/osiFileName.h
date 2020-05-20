@@ -15,7 +15,7 @@
 #ifndef osiFileNameH
 #define osiFileNameH
 
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,13 +27,13 @@ extern "C" {
 /** Return the absolute path of the current executable.
  * \return NULL or the path.  Caller must free()
  */
-epicsShareFunc
+LIBCOM_API
 char *epicsGetExecName(void);
 
 /** Return the absolute path of the directory containing the current executable.
  * \return NULL or the path.  Caller must free()
  */
-epicsShareFunc
+LIBCOM_API
 char *epicsGetExecDir(void);
 
 #ifdef __cplusplus

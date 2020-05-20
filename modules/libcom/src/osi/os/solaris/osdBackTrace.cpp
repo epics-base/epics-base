@@ -9,7 +9,6 @@
 
 #include <ucontext.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStackTracePvt.h"
 
 struct wlk {

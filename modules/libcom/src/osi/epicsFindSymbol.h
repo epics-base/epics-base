@@ -13,11 +13,11 @@
 extern "C" {
 #endif
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
-epicsShareFunc void * epicsLoadLibrary(const char *name);
-epicsShareFunc const char *epicsLoadError(void);
-epicsShareFunc void * epicsShareAPI epicsFindSymbol(const char *name);
+LIBCOM_API void * epicsLoadLibrary(const char *name);
+LIBCOM_API const char *epicsLoadError(void);
+LIBCOM_API void * epicsStdCall epicsFindSymbol(const char *name);
 
 #ifdef __cplusplus
 }

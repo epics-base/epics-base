@@ -14,13 +14,12 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#define epicsExportSharedSymbols
 #include "errlog.h"
 #include "cantProceed.h"
 #include "epicsThread.h"
 #include "epicsStackTrace.h"
 
-epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *msg)
+LIBCOM_API void * callocMustSucceed(size_t count, size_t size, const char *msg)
 {
     void * mem = NULL;
     if (count > 0 && size > 0) {
@@ -36,7 +35,7 @@ epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *m
     return mem;
 }
 
-epicsShareFunc void * mallocMustSucceed(size_t size, const char *msg)
+LIBCOM_API void * mallocMustSucceed(size_t size, const char *msg)
 {
     void * mem = NULL;
     if (size > 0) {
@@ -52,7 +51,7 @@ epicsShareFunc void * mallocMustSucceed(size_t size, const char *msg)
     return mem;
 }
 
-epicsShareFunc void cantProceed(const char *msg, ...)
+LIBCOM_API void cantProceed(const char *msg, ...)
 {
     va_list pvar;
     va_start(pvar, msg);

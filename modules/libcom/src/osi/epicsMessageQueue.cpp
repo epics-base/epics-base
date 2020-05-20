@@ -15,7 +15,6 @@
 
 #include <new>
 
-#define epicsExportSharedSymbols
 #include "epicsMessageQueue.h"
 #include "epicsStdio.h"
 

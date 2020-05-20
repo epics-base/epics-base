@@ -16,7 +16,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "cantProceed.h"
 #include "epicsFindSymbol.h"
@@ -32,7 +31,7 @@ static void registryInit(int tableSize)
     if(!gphPvt) cantProceed("registry why did gphInitPvt fail\n");
 }
     
-epicsShareFunc int epicsShareAPI registrySetTableSize(int size)
+LIBCOM_API int epicsStdCall registrySetTableSize(int size)
 {
     if(gphPvt) {
         printf("registryInit already called\n");
@@ -43,7 +42,7 @@ epicsShareFunc int epicsShareAPI registrySetTableSize(int size)
 }
     
 
-epicsShareFunc int epicsShareAPI registryAdd(
+LIBCOM_API int epicsStdCall registryAdd(
     void *registryID,const char *name,void *data)
 {
     GPHENTRY *pentry;
@@ -54,7 +53,7 @@ epicsShareFunc int epicsShareAPI registryAdd(
     return(TRUE);
 }
 
-epicsShareFunc int epicsShareAPI registryChange(
+LIBCOM_API int epicsStdCall registryChange(
     void *registryID,const char *name,void *data)
 {
     GPHENTRY *pentry;
@@ -65,7 +64,7 @@ epicsShareFunc int epicsShareAPI registryChange(
     return(TRUE);
 }
 
-epicsShareFunc void * epicsShareAPI registryFind(
+LIBCOM_API void * epicsStdCall registryFind(
     void *registryID,const char *name)
 {
     GPHENTRY *pentry;
@@ -77,14 +76,14 @@ epicsShareFunc void * epicsShareAPI registryFind(
     return(pentry->userPvt);
 }
 
-epicsShareFunc void epicsShareAPI registryFree(void)
+LIBCOM_API void epicsStdCall registryFree(void)
 {
     if(!gphPvt) return;
     gphFreeMem(gphPvt);
     gphPvt = 0;
 }
 
-epicsShareFunc int epicsShareAPI registryDump(void)
+LIBCOM_API int epicsStdCall registryDump(void)
 {
     if(!gphPvt) return(0);
     gphDump(gphPvt);

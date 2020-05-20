@@ -23,7 +23,7 @@
  * own use--the only caveat is that such parameters aren't automatically
  * setup by EPICS.
  *
- * \note bldEnvData.pl looks for "epicsShareExtern const ENV_PARAM <name>;"
+ * \note bldEnvData.pl looks for "LIBCOM_API extern const ENV_PARAM <name>;"
  */
 
 #ifndef envDefsH
@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 /**
  * \brief A structure to hold a single environment parameter
@@ -43,39 +43,39 @@ typedef struct envParam {
     char *pdflt;    /**< \brief Default value */
 } ENV_PARAM;
 
-epicsShareExtern const ENV_PARAM EPICS_CA_ADDR_LIST;
-epicsShareExtern const ENV_PARAM EPICS_CA_CONN_TMO;
-epicsShareExtern const ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
-epicsShareExtern const ENV_PARAM EPICS_CA_REPEATER_PORT;
-epicsShareExtern const ENV_PARAM EPICS_CA_SERVER_PORT;
-epicsShareExtern const ENV_PARAM EPICS_CA_MAX_ARRAY_BYTES;
-epicsShareExtern const ENV_PARAM EPICS_CA_AUTO_ARRAY_BYTES;
-epicsShareExtern const ENV_PARAM EPICS_CA_MAX_SEARCH_PERIOD;
-epicsShareExtern const ENV_PARAM EPICS_CA_NAME_SERVERS;
-epicsShareExtern const ENV_PARAM EPICS_CA_MCAST_TTL;
-epicsShareExtern const ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;
-epicsShareExtern const ENV_PARAM EPICS_CAS_IGNORE_ADDR_LIST;
-epicsShareExtern const ENV_PARAM EPICS_CAS_AUTO_BEACON_ADDR_LIST;
-epicsShareExtern const ENV_PARAM EPICS_CAS_BEACON_ADDR_LIST;
-epicsShareExtern const ENV_PARAM EPICS_CAS_SERVER_PORT;
-epicsShareExtern const ENV_PARAM EPICS_CA_BEACON_PERIOD; /**< \brief deprecated */
-epicsShareExtern const ENV_PARAM EPICS_CAS_BEACON_PERIOD;
-epicsShareExtern const ENV_PARAM EPICS_CAS_BEACON_PORT;
-epicsShareExtern const ENV_PARAM EPICS_BUILD_COMPILER_CLASS;
-epicsShareExtern const ENV_PARAM EPICS_BUILD_OS_CLASS;
-epicsShareExtern const ENV_PARAM EPICS_BUILD_TARGET_ARCH;
-epicsShareExtern const ENV_PARAM EPICS_TZ;
-epicsShareExtern const ENV_PARAM EPICS_TS_NTP_INET;
-epicsShareExtern const ENV_PARAM EPICS_IOC_IGNORE_SERVERS;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_PORT;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_INET;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_LIMIT;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
-epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
-epicsShareExtern const ENV_PARAM IOCSH_PS1;
-epicsShareExtern const ENV_PARAM IOCSH_HISTSIZE;
-epicsShareExtern const ENV_PARAM IOCSH_HISTEDIT_DISABLE;
-epicsShareExtern const ENV_PARAM *env_param_list[];
+LIBCOM_API extern const ENV_PARAM EPICS_CA_ADDR_LIST;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_CONN_TMO;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_AUTO_ADDR_LIST;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_REPEATER_PORT;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_SERVER_PORT;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_MAX_ARRAY_BYTES;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_AUTO_ARRAY_BYTES;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_MAX_SEARCH_PERIOD;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_NAME_SERVERS;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_MCAST_TTL;
+LIBCOM_API extern const ENV_PARAM EPICS_CAS_INTF_ADDR_LIST;
+LIBCOM_API extern const ENV_PARAM EPICS_CAS_IGNORE_ADDR_LIST;
+LIBCOM_API extern const ENV_PARAM EPICS_CAS_AUTO_BEACON_ADDR_LIST;
+LIBCOM_API extern const ENV_PARAM EPICS_CAS_BEACON_ADDR_LIST;
+LIBCOM_API extern const ENV_PARAM EPICS_CAS_SERVER_PORT;
+LIBCOM_API extern const ENV_PARAM EPICS_CA_BEACON_PERIOD; /**< \brief deprecated */
+LIBCOM_API extern const ENV_PARAM EPICS_CAS_BEACON_PERIOD;
+LIBCOM_API extern const ENV_PARAM EPICS_CAS_BEACON_PORT;
+LIBCOM_API extern const ENV_PARAM EPICS_BUILD_COMPILER_CLASS;
+LIBCOM_API extern const ENV_PARAM EPICS_BUILD_OS_CLASS;
+LIBCOM_API extern const ENV_PARAM EPICS_BUILD_TARGET_ARCH;
+LIBCOM_API extern const ENV_PARAM EPICS_TZ;
+LIBCOM_API extern const ENV_PARAM EPICS_TS_NTP_INET;
+LIBCOM_API extern const ENV_PARAM EPICS_IOC_IGNORE_SERVERS;
+LIBCOM_API extern const ENV_PARAM EPICS_IOC_LOG_PORT;
+LIBCOM_API extern const ENV_PARAM EPICS_IOC_LOG_INET;
+LIBCOM_API extern const ENV_PARAM EPICS_IOC_LOG_FILE_LIMIT;
+LIBCOM_API extern const ENV_PARAM EPICS_IOC_LOG_FILE_NAME;
+LIBCOM_API extern const ENV_PARAM EPICS_IOC_LOG_FILE_COMMAND;
+LIBCOM_API extern const ENV_PARAM IOCSH_PS1;
+LIBCOM_API extern const ENV_PARAM IOCSH_HISTSIZE;
+LIBCOM_API extern const ENV_PARAM IOCSH_HISTEDIT_DISABLE;
+LIBCOM_API extern const ENV_PARAM *env_param_list[];
 
 struct in_addr;
 
@@ -94,7 +94,7 @@ struct in_addr;
  * \return Pointer to the environment variable value string, or
  * NULL if no parameter value and default value was empty.
  */
-epicsShareFunc char * epicsShareAPI
+LIBCOM_API char * epicsStdCall
 	envGetConfigParam(const ENV_PARAM *pParam, int bufDim, char *pBuf);
 
 /**
@@ -105,7 +105,7 @@ epicsShareFunc char * epicsShareAPI
  * the default value for the parameter, or NULL if those strings
  * were empty or not set.
  */
-epicsShareFunc const char * epicsShareAPI
+LIBCOM_API const char * epicsStdCall
 	envGetConfigParamPtr(const ENV_PARAM *pParam);
 
 /**
@@ -114,7 +114,7 @@ epicsShareFunc const char * epicsShareAPI
  * \param pParam Pointer to config param structure.
  * \return 0
  */
-epicsShareFunc long epicsShareAPI
+LIBCOM_API long epicsStdCall
 	envPrtConfigParam(const ENV_PARAM *pParam);
 
 /**
@@ -133,7 +133,7 @@ epicsShareFunc long epicsShareAPI
  * \param pAddr Pointer to struct to receive inet addr.
  * \return 0, or -1 if an error is encountered
  */
-epicsShareFunc long epicsShareAPI
+LIBCOM_API long epicsStdCall
 	envGetInetAddrConfigParam(const ENV_PARAM *pParam, struct in_addr *pAddr);
 
 /**
@@ -151,7 +151,7 @@ epicsShareFunc long epicsShareAPI
  * \param pDouble Pointer to place to store value.
  * \return 0, or -1 if an error is encountered
  */
-epicsShareFunc long epicsShareAPI
+LIBCOM_API long epicsStdCall
 	envGetDoubleConfigParam(const ENV_PARAM *pParam, double *pDouble);
 
 /**
@@ -169,7 +169,7 @@ epicsShareFunc long epicsShareAPI
  * \param pLong Pointer to place to store value.
  * \return 0, or -1 if an error is encountered
  */
-epicsShareFunc long epicsShareAPI
+LIBCOM_API long epicsStdCall
 	envGetLongConfigParam(const ENV_PARAM *pParam, long *pLong);
 
 /**
@@ -186,7 +186,7 @@ epicsShareFunc long epicsShareAPI
  * \param defaultPort Port number to be used if environment settings invalid.
  * \return Port number.
  */
-epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam
+LIBCOM_API unsigned short epicsStdCall envGetInetPortConfigParam
         (const ENV_PARAM *pEnv, unsigned short defaultPort);
 /**
  * \brief Get value of a boolean configuration parameter.
@@ -207,7 +207,7 @@ epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam
  * \param pBool Pointer to place to store value.
  * \return 0, or -1 if an error is encountered
  */
-epicsShareFunc long epicsShareAPI
+LIBCOM_API long epicsStdCall
     envGetBoolConfigParam(const ENV_PARAM *pParam, int *pBool);
 
 /**
@@ -215,7 +215,7 @@ epicsShareFunc long epicsShareAPI
  *
  * \return 0
  */
-epicsShareFunc long epicsShareAPI epicsPrtEnvParams(void);
+LIBCOM_API long epicsStdCall epicsPrtEnvParams(void);
 
 /**
  * \brief Set an environment variable's value
@@ -225,18 +225,18 @@ epicsShareFunc long epicsShareAPI epicsPrtEnvParams(void);
  * \param name Environment variable name.
  * \param value New value for environment variable.
  */
-epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value);
+LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value);
 /**
  * \brief Clear the value of an environment variable
  * \param name Environment variable name.
  */
-epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name);
+LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name);
 /**
  * \brief Print value of an environment variable, or all variables
  *
  * \param name Environment variable name, or NULL to show all.
  */
-epicsShareFunc void epicsShareAPI epicsEnvShow (const char *name);
+LIBCOM_API void epicsStdCall epicsEnvShow (const char *name);
 
 #ifdef __cplusplus
 }

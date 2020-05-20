@@ -9,7 +9,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define epicsExportSharedSymbols
 
 #include "dbDefs.h"
 #include "errlog.h"

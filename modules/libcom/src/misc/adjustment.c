@@ -20,10 +20,9 @@
  * After setting the following they will be declared as exports
  *   (Appropriate for what we implenment)
  */
-#define epicsExportSharedSymbols
 #include "adjustment.h"
 
-epicsShareFunc size_t adjustToWorstCaseAlignment(size_t size)
+LIBCOM_API size_t adjustToWorstCaseAlignment(size_t size)
 {
     int align_size, adjust;
     struct test_long_word { char c; long lw; };

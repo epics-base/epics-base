@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "ellLib.h"
 #include "freeList.h"
 #include "epicsStdio.h"
@@ -71,7 +70,7 @@ static void asTrapWriteInit(void)
     pasTrapWritePvt->lock = epicsMutexMustCreate();
 }
 
-asTrapWriteId epicsShareAPI asTrapWriteRegisterListener(
+asTrapWriteId epicsStdCall asTrapWriteRegisterListener(
     asTrapWriteListener func)
 {
     listener *plistener;
@@ -84,7 +83,7 @@ asTrapWriteId epicsShareAPI asTrapWriteRegisterListener(
     return((asTrapWriteId)plistener);
 }
 
-void epicsShareAPI asTrapWriteUnregisterListener(asTrapWriteId id)
+void epicsStdCall asTrapWriteUnregisterListener(asTrapWriteId id)
 {
     listener *plistener = (listener *)id;
     writeMessage *pwriteMessage;
@@ -111,7 +110,7 @@ void epicsShareAPI asTrapWriteUnregisterListener(asTrapWriteId id)
     epicsMutexUnlock(pasTrapWritePvt->lock);
 }
 
-void * epicsShareAPI asTrapWriteBeforeWithData(
+void * epicsStdCall asTrapWriteBeforeWithData(
     const char *userid, const char *hostid, void *addr,
     int dbrType, int no_elements, void *data)
 {
@@ -149,7 +148,7 @@ void * epicsShareAPI asTrapWriteBeforeWithData(
     return pwriteMessage;
 }
 
-void epicsShareAPI asTrapWriteAfterWrite(void *pvt)
+void epicsStdCall asTrapWriteAfterWrite(void *pvt)
 {
     writeMessage *pwriteMessage = (writeMessage *)pvt;
     listenerPvt *plistenerPvt;

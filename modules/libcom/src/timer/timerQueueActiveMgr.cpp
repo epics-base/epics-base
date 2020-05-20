@@ -15,7 +15,6 @@
 
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "epicsGuard.h"
 #include "timerPrivate.h"
 

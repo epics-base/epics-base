@@ -36,7 +36,7 @@
 
 #include "epicsAssert.h"
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 /**\brief An identifier for an epicsMutex for use with the C API */
 typedef struct epicsMutexParm *epicsMutexId;
@@ -59,7 +59,7 @@ typedef enum {
 
 /**\brief The C++ API for an epicsMutex.
  */
-class epicsShareClass epicsMutex {
+class LIBCOM_API epicsMutex {
 public:
     typedef epicsGuard<epicsMutex> guard_t;
     typedef epicsGuard<epicsMutex> release_t;
@@ -129,7 +129,7 @@ private:
 };
 
 /**\brief A semaphore for locating deadlocks in C++ code. */
-class epicsShareClass epicsDeadlockDetectMutex {
+class LIBCOM_API epicsDeadlockDetectMutex {
 public:
     typedef epicsGuard<epicsDeadlockDetectMutex> guard_t;
     typedef epicsGuard<epicsDeadlockDetectMutex> release_t;
@@ -161,7 +161,7 @@ extern "C" {
  **/
 #define epicsMutexCreate() epicsMutexOsiCreate(__FILE__,__LINE__)
 /**\brief Internal API, used by epicsMutexCreate(). */
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsiCreate(
+LIBCOM_API epicsMutexId epicsStdCall epicsMutexOsiCreate(
     const char *pFileName,int lineno);
 
 /**\brief Create an epicsMutex semaphore for use from C code.
@@ -172,20 +172,20 @@ epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsiCreate(
  **/
 #define epicsMutexMustCreate() epicsMutexOsiMustCreate(__FILE__,__LINE__)
 /**\brief Internal API, used by epicsMutexMustCreate(). */
-epicsShareFunc epicsMutexId epicsShareAPI epicsMutexOsiMustCreate(
+LIBCOM_API epicsMutexId epicsStdCall epicsMutexOsiMustCreate(
     const char *pFileName,int lineno);
 
 /**\brief Destroy an epicsMutex semaphore.
  * \param id The mutex identifier.
  **/
-epicsShareFunc void epicsShareAPI epicsMutexDestroy(epicsMutexId id);
+LIBCOM_API void epicsStdCall epicsMutexDestroy(epicsMutexId id);
 
 /**\brief Release the semaphore.
  * \param id The mutex identifier.
  * \note If a thread issues recursive locks, it must call epicsMutexUnlock()
  * as many times as it calls epicsMutexLock() or equivalents.
  **/
-epicsShareFunc void epicsShareAPI epicsMutexUnlock(epicsMutexId id);
+LIBCOM_API void epicsStdCall epicsMutexUnlock(epicsMutexId id);
 
 /**\brief Claim the semaphore, waiting until it's free if currently owned
  * owned by a different thread.
@@ -197,7 +197,7 @@ epicsShareFunc void epicsShareAPI epicsMutexUnlock(epicsMutexId id);
  * \param id The mutex identifier.
  * \return Status indicator.
  **/
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock(
+LIBCOM_API epicsMutexLockStatus epicsStdCall epicsMutexLock(
     epicsMutexId id);
 
 /**\brief Claim a semaphore (see epicsMutexLock()).
@@ -217,7 +217,7 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock(
  * \return \c epicsMutexLockOK if the resource is now owned by the caller.
  * \return \c epicsMutexLockTimeout if some other thread owns the resource.
  **/
-epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
+LIBCOM_API epicsMutexLockStatus epicsStdCall epicsMutexTryLock(
     epicsMutexId id);
 
 /**\brief Display information about the semaphore.
@@ -227,7 +227,7 @@ epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
  * \param id The mutex identifier.
  * \param level Desired information level to report
  **/
-epicsShareFunc void epicsShareAPI epicsMutexShow(
+LIBCOM_API void epicsStdCall epicsMutexShow(
     epicsMutexId id,unsigned  int level);
 
 /**\brief Display information about all epicsMutex semaphores.
@@ -237,7 +237,7 @@ epicsShareFunc void epicsShareAPI epicsMutexShow(
  * \param onlyLocked Non-zero to show only locked semaphores.
  * \param level Desired information level to report
  **/
-epicsShareFunc void epicsShareAPI epicsMutexShowAll(
+LIBCOM_API void epicsStdCall epicsMutexShowAll(
     int onlyLocked,unsigned  int level);
 
 /**@privatesection

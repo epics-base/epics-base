@@ -9,7 +9,7 @@
 #define epicsMathh
 
 #include <math.h>
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #define finite(x) isfinite(x)
 
@@ -17,8 +17,8 @@
 extern "C" {
 #endif
 
-epicsShareExtern float epicsNAN;
-epicsShareExtern float epicsINF;
+LIBCOM_API extern float epicsNAN;
+LIBCOM_API extern float epicsINF;
 
 #ifdef __cplusplus
 }

@@ -18,7 +18,6 @@
 #include <windows.h>
 #include <psapi.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include "epicsFindSymbol.h"
 
@@ -33,7 +32,7 @@
 STORE
 DWORD epicsLoadErrorCode = 0;
 
-epicsShareFunc void * epicsLoadLibrary(const char *name)
+LIBCOM_API void * epicsLoadLibrary(const char *name)
 {
     HMODULE lib;
 
@@ -43,7 +42,7 @@ epicsShareFunc void * epicsLoadLibrary(const char *name)
     return lib;
 }
 
-epicsShareFunc const char *epicsLoadError(void)
+LIBCOM_API const char *epicsLoadError(void)
 {
     STORE char buffer[100];
     DWORD n;
@@ -74,7 +73,7 @@ epicsShareFunc const char *epicsLoadError(void)
     return buffer;
 }
 
-epicsShareFunc void * epicsShareAPI epicsFindSymbol(const char *name)
+LIBCOM_API void * epicsStdCall epicsFindSymbol(const char *name)
 {
     HANDLE proc = GetCurrentProcess();
     HMODULE *dlls=NULL;

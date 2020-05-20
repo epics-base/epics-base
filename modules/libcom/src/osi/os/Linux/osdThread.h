@@ -12,7 +12,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
 
@@ -40,8 +40,8 @@ typedef struct epicsThreadOSD {
     char               name[1];     /* actually larger */
 } epicsThreadOSD;
 
-epicsShareFunc pthread_t epicsThreadGetPosixThreadId(epicsThreadId id);
-epicsShareFunc int epicsThreadGetPosixPriority(epicsThreadId id);
+LIBCOM_API pthread_t epicsThreadGetPosixThreadId(epicsThreadId id);
+LIBCOM_API int epicsThreadGetPosixPriority(epicsThreadId id);
 
 #ifdef __cplusplus
 }

@@ -62,15 +62,15 @@
 #include "recSup.h"
 #include "special.h"
 
-epicsShareDef struct dbBase *pdbbase = 0;
-epicsShareDef volatile int interruptAccept=FALSE;
+struct dbBase *pdbbase = 0;
+volatile int interruptAccept=FALSE;
 
-epicsShareDef int dbAccessDebugPUTF = 0;
+int dbAccessDebugPUTF = 0;
 epicsExportAddress(int, dbAccessDebugPUTF);
 
 /* Hook Routines */
 
-epicsShareDef DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook = NULL;
+DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook = NULL;
 
 static short mapDBFToDBR[DBF_NTYPES] = {
     /* DBF_STRING   => */    DBR_STRING,

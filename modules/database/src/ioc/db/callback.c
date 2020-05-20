@@ -65,7 +65,7 @@ static cbQueueSet callbackQueue[NUM_CALLBACK_PRIORITIES];
 int callbackThreadsDefault = 1;
 /* Don't know what a reasonable default is (yet).
  * For the time being: parallel means 2 if not explicitly specified */
-epicsShareDef int callbackParallelThreadsDefault = 2;
+int callbackParallelThreadsDefault = 2;
 epicsExportAddress(int,callbackParallelThreadsDefault);
 
 /* Timer for Delayed Requests */

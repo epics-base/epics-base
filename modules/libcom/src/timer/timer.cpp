@@ -19,7 +19,6 @@
 #include <stdexcept>
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "epicsGuard.h"
 #include "timerPrivate.h"
 #include "errlog.h"

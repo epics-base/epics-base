@@ -21,7 +21,7 @@
 #define epicsMessageQueueh
 
 #include "epicsAssert.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
 typedef struct epicsMessageQueueOSD *epicsMessageQueueId;
 
@@ -45,7 +45,7 @@ typedef struct epicsMessageQueueOSD *epicsMessageQueueId;
  *  pmq = &mq1;               // OK, pointer assignment and address-of
  *  \endcode
  **/
-class epicsShareClass epicsMessageQueue {
+class LIBCOM_API epicsMessageQueue {
 public:
 
     /**
@@ -173,14 +173,14 @@ extern "C" {
  *  message that may be queued
  *  \return An identifier for the new queue, or 0.
  **/
-epicsShareFunc epicsMessageQueueId epicsShareAPI epicsMessageQueueCreate(
+LIBCOM_API epicsMessageQueueId epicsStdCall epicsMessageQueueCreate(
     unsigned int capacity,
     unsigned int maximumMessageSize);
 
 /**
  *  \brief Destroy a message queue, release all its memory.
  **/
-epicsShareFunc void epicsShareAPI epicsMessageQueueDestroy(
+LIBCOM_API void epicsStdCall epicsMessageQueueDestroy(
     epicsMessageQueueId id);
 
 /**
@@ -192,7 +192,7 @@ epicsShareFunc void epicsShareAPI epicsMessageQueueDestroy(
  *  \returns -1 if no more messages can be queued or if the message
  *  is larger than the queue's maximum message size.
  **/
-epicsShareFunc int epicsShareAPI epicsMessageQueueTrySend(
+LIBCOM_API int epicsStdCall epicsMessageQueueTrySend(
     epicsMessageQueueId id,
     void *message,
     unsigned int messageSize);
@@ -204,7 +204,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueTrySend(
  *  \returns -1 if the message is larger than the queue's maximum
  *  message size.
  **/
-epicsShareFunc int epicsShareAPI epicsMessageQueueSend(
+LIBCOM_API int epicsStdCall epicsMessageQueueSend(
     epicsMessageQueueId id,
     void *message,
     unsigned int messageSize);
@@ -217,7 +217,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSend(
  *  message could be sent or queued, or if the message is larger
  *  than the queue's maximum message size.
  **/
-epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
+LIBCOM_API int epicsStdCall epicsMessageQueueSendWithTimeout(
     epicsMessageQueueId id,
     void *message,
     unsigned int messageSize,
@@ -238,7 +238,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
  *  \returns Number of bytes in the message.
  *  \returns -1 if the message queue is empty, or the buffer too small.
  **/
-epicsShareFunc int epicsShareAPI epicsMessageQueueTryReceive(
+LIBCOM_API int epicsStdCall epicsMessageQueueTryReceive(
     epicsMessageQueueId id,
     void *message,
     unsigned int size);
@@ -257,7 +257,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueTryReceive(
  *  \returns Number of bytes in the message.
  *  \returns -1 if the buffer is too small for the message.
  **/
-epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
+LIBCOM_API int epicsStdCall epicsMessageQueueReceive(
     epicsMessageQueueId id,
     void *message,
     unsigned int size);
@@ -277,7 +277,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
  *  \returns -1 if a message is not received within the timeout
  *  interval.
  **/
-epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
+LIBCOM_API int epicsStdCall epicsMessageQueueReceiveWithTimeout(
     epicsMessageQueueId id,
     void *message,
     unsigned int size,
@@ -288,7 +288,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
  *  \param id Message queue identifier.
  *  \returns The number of messages presently in the queue.
  **/
-epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
+LIBCOM_API int epicsStdCall epicsMessageQueuePending(
     epicsMessageQueueId id);
 
 /**
@@ -296,7 +296,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
  *  \param id Message queue identifier.
  *  \param level Controls the amount of information displayed.
  **/
-epicsShareFunc void epicsShareAPI epicsMessageQueueShow(
+LIBCOM_API void epicsStdCall epicsMessageQueueShow(
     epicsMessageQueueId id,
     int level);
 

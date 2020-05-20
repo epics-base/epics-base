@@ -7,7 +7,6 @@
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 
-#define epicsExportSharedSymbols
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "dbDefs.h"
 #include "errlog.h"

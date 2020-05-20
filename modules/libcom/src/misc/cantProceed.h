@@ -27,7 +27,7 @@
 #include <stdlib.h>
 
 #include "compilerDependencies.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,7 +42,7 @@ extern "C" {
  * \param errorMessage A printf-style error message describing the error.
  * \param ... Any parameters required for the error message.
  */
-epicsShareFunc void cantProceed(const char *errorMessage, ...)
+LIBCOM_API void cantProceed(const char *errorMessage, ...)
     EPICS_PRINTF_STYLE(1,2);
 
 /** \name Memory Allocation Functions
@@ -60,14 +60,14 @@ epicsShareFunc void cantProceed(const char *errorMessage, ...)
  * \param errorMessage What this memory is needed for.
  * \return Pointer to zeroed allocated memory.
  */
-epicsShareFunc void * callocMustSucceed(size_t count, size_t size,
+LIBCOM_API void * callocMustSucceed(size_t count, size_t size,
     const char *errorMessage);
 /** \brief A malloc() that never returns NULL.
  * \param size Size of block to allocate.
  * \param errorMessage What this memory is needed for.
  * \return Pointer to allocated memory.
  */
-epicsShareFunc void * mallocMustSucceed(size_t size, const char *errorMessage);
+LIBCOM_API void * mallocMustSucceed(size_t size, const char *errorMessage);
 /** @} */
 
 #ifdef __cplusplus

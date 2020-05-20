@@ -29,7 +29,7 @@
 #include "dbDefs.h"
 #include "osdVME.h"
 #include "errMdef.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "devLib.h"
 
 #ifdef __cplusplus
@@ -47,7 +47,7 @@ typedef enum {
 } epicsAddressType;
 
 /** \brief A string representation of each of the bus address types */
-epicsShareExtern const char *epicsAddressTypeName[];
+LIBCOM_API extern const char *epicsAddressTypeName[];
 
 #ifdef __cplusplus
 }
@@ -70,7 +70,7 @@ extern "C" {
  * each registered address.
  * \return 0, or an error status value
  */
-epicsShareFunc long devAddressMap(void);
+LIBCOM_API long devAddressMap(void);
 
 /** \brief Translate a bus address to a pointer the CPU can use.
  *
@@ -81,7 +81,7 @@ epicsShareFunc long devAddressMap(void);
  * \param *ppLocalAddr Where to put the CPU pointer.
  * \return 0, or an error status value.
  */
-epicsShareFunc long devBusToLocalAddr (
+LIBCOM_API long devBusToLocalAddr (
 		epicsAddressType addrType,
 		size_t busAddr,
 		volatile void **ppLocalAddr);
@@ -96,7 +96,7 @@ epicsShareFunc long devBusToLocalAddr (
  * \return 0, or an error status value if the location could not be
  * accessed or the read caused a bus error.
  */
-epicsShareFunc long devReadProbe (
+LIBCOM_API long devReadProbe (
     unsigned wordSize, volatile const void *ptr, void *pValueRead);
 
 /** \brief Read-probe a range of bus addresses, looking for empty space.
@@ -113,7 +113,7 @@ epicsShareFunc long devReadProbe (
  * \param size Range of bus addresses to test, in bytes.
  * \return 0 if no devices respond, or an error status value.
  */
-epicsShareFunc long devNoResponseProbe(
+LIBCOM_API long devNoResponseProbe(
 			epicsAddressType addrType,
 			size_t base,
 			size_t size
@@ -129,7 +129,7 @@ epicsShareFunc long devNoResponseProbe(
  * \return 0, or an error status value if the location could not be
  * accessed or the write caused a bus error.
  */
-epicsShareFunc long devWriteProbe (
+LIBCOM_API long devWriteProbe (
     unsigned wordSize, volatile void *ptr, const void *pValueWritten);
 
 /** \brief Register a bus address range with a name.
@@ -146,7 +146,7 @@ epicsShareFunc long devWriteProbe (
  * \param pPhysicalAddress Where to put the converted CPU pointer.
  * \return 0, or an error status.
  */
-epicsShareFunc long devRegisterAddress(
+LIBCOM_API long devRegisterAddress(
 			const char *pOwnerName,
 			epicsAddressType addrType,
 			size_t logicalBaseAddress,
@@ -162,7 +162,7 @@ epicsShareFunc long devRegisterAddress(
  * \param pOwnerName The name of the driver that owns this range.
  * \return 0, or an error status.
  */
-epicsShareFunc long devUnregisterAddress(
+LIBCOM_API long devUnregisterAddress(
 			epicsAddressType addrType,
 			size_t logicalBaseAddress,
 			const char *pOwnerName);
@@ -185,7 +185,7 @@ epicsShareFunc long devUnregisterAddress(
  * \param pLocalAddress Where to put the CPU pointer.
  * \return 0, or an error status value.
  */
-epicsShareFunc long devAllocAddress(
+LIBCOM_API long devAllocAddress(
 			const char *pOwnerName,
 			epicsAddressType addrType,
 			size_t size,
@@ -211,7 +211,7 @@ epicsShareFunc long devAllocAddress(
  * \param parameter Context parameter for the ISR.
  * \return 0, or an error status value.
  */
-epicsShareFunc long devConnectInterruptVME(
+LIBCOM_API long devConnectInterruptVME(
 			unsigned vectorNumber,
 			void (*pFunction)(void *),
 			void  *parameter);
@@ -229,7 +229,7 @@ epicsShareFunc long devConnectInterruptVME(
  * \param pFunction The ISR to be disconnected.
  * \return 0, or an error status value.
  */
-epicsShareFunc long devDisconnectInterruptVME(
+LIBCOM_API long devDisconnectInterruptVME(
 			unsigned vectorNumber,
 			void (*pFunction)(void *));
 
@@ -240,7 +240,7 @@ epicsShareFunc long devDisconnectInterruptVME(
  * \param vectorNumber Interrupt vector number.
  * \return True if vector has an ISR attached, otherwise false.
  */
-epicsShareFunc int devInterruptInUseVME (unsigned vectorNumber);
+LIBCOM_API int devInterruptInUseVME (unsigned vectorNumber);
 
 /** \brief Enable a VME interrupt level onto the CPU.
  *
@@ -252,7 +252,7 @@ epicsShareFunc int devInterruptInUseVME (unsigned vectorNumber);
  * \param level VMEbus interrupt level to enable, 1-7.
  * \return 0, or an error status value.
  */
-epicsShareFunc long devEnableInterruptLevelVME (unsigned level);
+LIBCOM_API long devEnableInterruptLevelVME (unsigned level);
 
 /** \brief Disable a VME interrupt level.
  *
@@ -265,7 +265,7 @@ epicsShareFunc long devEnableInterruptLevelVME (unsigned level);
  * \param level VMEbus interrupt level to disable, 1-7.
  * \return 0, or an error status value.
  */
-epicsShareFunc long devDisableInterruptLevelVME (unsigned level);
+LIBCOM_API long devDisableInterruptLevelVME (unsigned level);
 /** @} */
 
 /** \name Memory for VME DMA Operations
@@ -281,7 +281,7 @@ epicsShareFunc long devDisableInterruptLevelVME (unsigned level);
  * \param size How many bytes to allocate
  * \return A pointer to the memory allocated, or NULL.
  */
-epicsShareFunc void *devLibA24Malloc(size_t size);
+LIBCOM_API void *devLibA24Malloc(size_t size);
 
 /** \brief calloc() for VME drivers that support DMA.
  *
@@ -291,7 +291,7 @@ epicsShareFunc void *devLibA24Malloc(size_t size);
  * \param size How many bytes to allocate and zero.
  * \return A pointer to the memory allocated, or NULL.
  */
-epicsShareFunc void *devLibA24Calloc(size_t size);
+LIBCOM_API void *devLibA24Calloc(size_t size);
 
 /** \brief free() for VME drivers that support DMA.
  *
@@ -299,7 +299,7 @@ epicsShareFunc void *devLibA24Calloc(size_t size);
  * devLibA24Malloc() or devLibA24Calloc().
  * \param pBlock Block to be released.
  */
-epicsShareFunc void devLibA24Free(void *pBlock);
+LIBCOM_API void devLibA24Free(void *pBlock);
 /** @} */
 
 /** \name ISA Interrupt Management
@@ -319,7 +319,7 @@ epicsShareFunc void devLibA24Free(void *pBlock);
  * \param parameter Parameter to the called function.
  * \return Returns success or error.
  */
-epicsShareFunc long devConnectInterruptISA(
+LIBCOM_API long devConnectInterruptISA(
 			unsigned interruptLevel,
 			void (*pFunction)(void *),
 			void  *parameter);
@@ -331,7 +331,7 @@ epicsShareFunc long devConnectInterruptISA(
  * \param pFunction C function pointer that was connected.
  * \return returns success or error.
  */
-epicsShareFunc long devDisconnectInterruptISA(
+LIBCOM_API long devDisconnectInterruptISA(
 			unsigned interruptLevel,
 			void (*pFunction)(void *));
 
@@ -341,21 +341,21 @@ epicsShareFunc long devDisconnectInterruptISA(
  * \param interruptLevel Interrupt level.
  * \return Returns True/False.
  */
-epicsShareFunc int devInterruptLevelInUseISA (unsigned interruptLevel);
+LIBCOM_API int devInterruptLevelInUseISA (unsigned interruptLevel);
 
 /**
  * Enable ISA interrupt level
  * \param level Interrupt level.
  * \return Returns True/False.
  */
-epicsShareFunc long devEnableInterruptLevelISA (unsigned level);
+LIBCOM_API long devEnableInterruptLevelISA (unsigned level);
 
 /**
  * Disable ISA interrupt level
  * \param level Interrupt level.
  * \return Returns True/False.
  */
-epicsShareFunc long devDisableInterruptLevelISA (unsigned level);
+LIBCOM_API long devDisableInterruptLevelISA (unsigned level);
 /** @} */
 
 #ifndef NO_DEVLIB_OLD_INTERFACE
@@ -373,7 +373,7 @@ typedef enum {intVME, intVXI, intISA} epicsInterruptType;
  * devConnectInterruptISA() instead. devConnectInterrupt() will be removed
  * in a future release.
  */
-epicsShareFunc long devConnectInterrupt(
+LIBCOM_API long devConnectInterrupt(
 			epicsInterruptType intType,
 			unsigned vectorNumber,
 			void (*pFunction)(void *),
@@ -386,7 +386,7 @@ epicsShareFunc long devConnectInterrupt(
  * devDisconnectInterruptISA() instead. devDisconnectInterrupt() will
  * be removed in a future release.
  */
-epicsShareFunc long devDisconnectInterrupt(
+LIBCOM_API long devDisconnectInterrupt(
 			epicsInterruptType      intType,
 			unsigned                vectorNumber,
 			void		        (*pFunction)(void *));
@@ -398,7 +398,7 @@ epicsShareFunc long devDisconnectInterrupt(
  * devEnableInterruptLevelISA() instead. devEnableInterruptLevel() will
  * be removed in a future release.
  */
-epicsShareFunc long devEnableInterruptLevel(
+LIBCOM_API long devEnableInterruptLevel(
     epicsInterruptType intType, unsigned level);
 
 /**
@@ -408,7 +408,7 @@ epicsShareFunc long devEnableInterruptLevel(
  * devDisableInterruptLevelPCI() instead. devDisableInterruptLevel() will
  * be removed in a future release.
  */
-epicsShareFunc long devDisableInterruptLevel (
+LIBCOM_API long devDisableInterruptLevel (
     epicsInterruptType intType, unsigned level);
 
 /**
@@ -417,7 +417,7 @@ epicsShareFunc long devDisableInterruptLevel (
  * Please use devNoResponseProbe() instead. locationProbe() will be removed
  * in a future release.
  */
-epicsShareFunc long locationProbe (epicsAddressType addrType, char *pLocation);
+LIBCOM_API long locationProbe (epicsAddressType addrType, char *pLocation);
 
 /** @} */
 

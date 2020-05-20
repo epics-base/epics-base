@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#define epicsExportSharedSymbols
 #include "epicsMutex.h"
 #include "cantProceed.h"
 #include "epicsTime.h"

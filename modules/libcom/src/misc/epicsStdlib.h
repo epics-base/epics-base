@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "osdStrtod.h"
 #include "epicsTypes.h"
 #include "errMdef.h"
@@ -31,37 +31,37 @@ extern "C" {
 #define S_stdlib_badBase      (M_stdlib | 5) /* Number base not supported */
 
 
-epicsShareFunc int
+LIBCOM_API int
     epicsParseLong(const char *str, long *to, int base, char **units);
-epicsShareFunc int
+LIBCOM_API int
     epicsParseULong(const char *str, unsigned long *to, int base, char **units);
-epicsShareFunc int
+LIBCOM_API int
     epicsParseLLong(const char *str, long long *to, int base, char **units);
-epicsShareFunc int
+LIBCOM_API int
     epicsParseULLong(const char *str, unsigned long long *to, int base, char **units);
-epicsShareFunc int
+LIBCOM_API int
     epicsParseDouble(const char *str, double *to, char **units);
 
-epicsShareFunc int
+LIBCOM_API int
     epicsParseFloat(const char *str, float *to, char **units);
 
-epicsShareFunc int
+LIBCOM_API int
     epicsParseInt8(const char *str, epicsInt8 *to, int base, char **units);
-epicsShareFunc int
+LIBCOM_API int
     epicsParseUInt8(const char *str, epicsUInt8 *to, int base, char **units);
-epicsShareFunc int
+LIBCOM_API int
     epicsParseInt16(const char *str, epicsInt16 *to, int base, char **units);
-epicsShareFunc int
+LIBCOM_API int
     epicsParseUInt16(const char *str, epicsUInt16 *to, int base, char **units);
 
-epicsShareFunc int
+LIBCOM_API int
     epicsParseInt32(const char *str, epicsInt32 *to, int base, char **units);
-epicsShareFunc int
+LIBCOM_API int
     epicsParseUInt32(const char *str, epicsUInt32 *to, int base, char **units);
 
-epicsShareFunc int
+LIBCOM_API int
     epicsParseInt64(const char *str, epicsInt64 *to, int base, char **units);
-epicsShareFunc int
+LIBCOM_API int
     epicsParseUInt64(const char *str, epicsUInt64 *to, int base, char **units);
 
 #define epicsParseFloat32(str, to, units) epicsParseFloat(str, to, units)

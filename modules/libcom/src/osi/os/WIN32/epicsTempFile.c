@@ -17,7 +17,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#define epicsExportSharedSymbols
 #include "epicsTempFile.h"
 
 /*
@@ -26,7 +25,7 @@
  * allow the teporary file directory to be set with the
  * TMP environment varianble
  */
-epicsShareFunc FILE * epicsShareAPI epicsTempFile ()
+LIBCOM_API FILE * epicsStdCall epicsTempFile ()
 {
     char * pName = _tempnam("c:\\tmp", "epics");
     if (pName) {

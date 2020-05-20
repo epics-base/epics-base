@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include "epicsThread.h"
 #include "valgrind/valgrind.h"
@@ -83,7 +82,7 @@ static void epicsMutexOsiInit(void *) {
     epicsMutexGlobalLock = epicsMutexOsdCreate();
 }
 
-epicsMutexId epicsShareAPI epicsMutexOsiCreate(
+epicsMutexId epicsStdCall epicsMutexOsiCreate(
     const char *pFileName,int lineno)
 {
     epicsMutexOSD * id;
@@ -117,7 +116,7 @@ epicsMutexId epicsShareAPI epicsMutexOsiCreate(
     return(pmutexNode);
 }
 
-epicsMutexId epicsShareAPI epicsMutexOsiMustCreate(
+epicsMutexId epicsStdCall epicsMutexOsiMustCreate(
     const char *pFileName,int lineno)
 {
     epicsMutexId id = epicsMutexOsiCreate(pFileName,lineno);
@@ -125,7 +124,7 @@ epicsMutexId epicsShareAPI epicsMutexOsiMustCreate(
     return(id );
 }
 
-void epicsShareAPI epicsMutexDestroy(epicsMutexId pmutexNode)
+void epicsStdCall epicsMutexDestroy(epicsMutexId pmutexNode)
 {
     epicsMutexLockStatus lockStat =
         epicsMutexOsdLock(epicsMutexGlobalLock);
@@ -138,12 +137,12 @@ void epicsShareAPI epicsMutexDestroy(epicsMutexId pmutexNode)
     epicsMutexOsdUnlock(epicsMutexGlobalLock);
 }
 
-void epicsShareAPI epicsMutexUnlock(epicsMutexId pmutexNode)
+void epicsStdCall epicsMutexUnlock(epicsMutexId pmutexNode)
 {
     epicsMutexOsdUnlock(pmutexNode->id);
 }
 
-epicsMutexLockStatus epicsShareAPI epicsMutexLock(
+epicsMutexLockStatus epicsStdCall epicsMutexLock(
     epicsMutexId pmutexNode)
 {
     epicsMutexLockStatus status = 
@@ -156,7 +155,7 @@ epicsMutexLockStatus epicsShareAPI epicsMutexLock(
     return status;
 }
 
-epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
+epicsMutexLockStatus epicsStdCall epicsMutexTryLock(
     epicsMutexId pmutexNode)
 {
     epicsMutexLockStatus status = 
@@ -189,7 +188,7 @@ void epicsMutexCleanup(void)
     epicsMutexOsdUnlock(epicsMutexGlobalLock);
 }
 
-void epicsShareAPI epicsMutexShow(
+void epicsStdCall epicsMutexShow(
     epicsMutexId pmutexNode, unsigned  int level)
 {
 #   ifdef LOG_LAST_OWNER
@@ -215,7 +214,7 @@ void epicsShareAPI epicsMutexShow(
     }
 }
 
-void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
+void epicsStdCall epicsMutexShowAll(int onlyLocked,unsigned  int level)
 {
     epicsMutexParm *pmutexNode;
 

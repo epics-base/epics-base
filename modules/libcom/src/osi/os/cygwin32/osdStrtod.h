@@ -16,7 +16,7 @@ extern "C" {
 /*
  * epicsStrtod() for systems with broken strtod() routine
  */
-epicsShareFunc double epicsStrtod(const char *str, char **endp); 
+LIBCOM_API double epicsStrtod(const char *str, char **endp); 
 
 #ifdef __cplusplus
 }

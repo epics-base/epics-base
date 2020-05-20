@@ -23,7 +23,6 @@
 #include <math.h>
 #include <time.h>
 
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "freeList.h"	/* bucketLib uses freeListLib inside the DLL */
 #include "bucketLib.h"
@@ -216,7 +215,7 @@ static BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
 /*
  * bucketCreate()
  */
-epicsShareFunc BUCKET * epicsShareAPI bucketCreate (unsigned nHashTableEntries)
+LIBCOM_API BUCKET * epicsStdCall bucketCreate (unsigned nHashTableEntries)
 {
 	BUCKETID	mask;
 	unsigned	nbits;
@@ -283,7 +282,7 @@ epicsShareFunc BUCKET * epicsShareAPI bucketCreate (unsigned nHashTableEntries)
 /*
  * bucketFree()
  */
-epicsShareFunc int epicsShareAPI bucketFree (BUCKET *prb)
+LIBCOM_API int epicsStdCall bucketFree (BUCKET *prb)
 {
 	/*
 	 * deleting a bucket with entries in use
@@ -305,17 +304,17 @@ epicsShareFunc int epicsShareAPI bucketFree (BUCKET *prb)
 /*
  * bucketAddItem()
  */
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketAddItemUnsignedId(BUCKET *prb, const unsigned *pId, const void *pApp)
 {
 	return bucketAddItem(prb, &BSET[bidtUnsigned], pId, pApp);
 }
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketAddItemPointerId(BUCKET *prb, void * const *pId, const void *pApp)
 {
 	return bucketAddItem(prb, &BSET[bidtPointer], pId, pApp);
 }
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketAddItemStringId(BUCKET *prb, const char *pId, const void *pApp)
 {
 	return bucketAddItem(prb, &BSET[bidtString], pId, pApp);
@@ -395,15 +394,15 @@ static void *bucketLookupAndRemoveItem (BUCKET *prb, bucketSET *pBSET, const voi
 
 	return pApp;
 }
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
+LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
     return bucketLookupAndRemoveItem(prb, &BSET[bidtUnsigned], pId);
 }
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * const *pId)
+LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * const *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtPointer], pId);
 }
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, const char *pId)
+LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtString], pId);
 }
@@ -412,17 +411,17 @@ epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *p
 /*
  * bucketRemoveItem()
  */
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
     return bucketLookupAndRemoveItem(prb, &BSET[bidtUnsigned], pId)?S_bucket_success:S_bucket_uknId;
 }
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketRemoveItemPointerId (BUCKET *prb, void * const *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtPointer], pId)?S_bucket_success:S_bucket_uknId;
 }
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 	bucketRemoveItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtString], pId)?S_bucket_success:S_bucket_uknId;
@@ -432,17 +431,17 @@ epicsShareFunc int epicsShareAPI
 /*
  * bucketLookupItem()
  */
-epicsShareFunc void * epicsShareAPI
+LIBCOM_API void * epicsStdCall
  	bucketLookupItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtUnsigned], pId);
 }
-epicsShareFunc void * epicsShareAPI
+LIBCOM_API void * epicsStdCall
 	bucketLookupItemPointerId (BUCKET *prb, void * const *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtPointer], pId);
 }
-epicsShareFunc void * epicsShareAPI
+LIBCOM_API void * epicsStdCall
 	bucketLookupItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketLookupItem(prb, &BSET[bidtString], pId);
@@ -474,7 +473,7 @@ static void *bucketLookupItem (BUCKET *pb, bucketSET *pBSET, const void *pId)
 /*
  * bucketShow()
  */
-epicsShareFunc int epicsShareAPI bucketShow(BUCKET *pb)
+LIBCOM_API int epicsStdCall bucketShow(BUCKET *pb)
 {
 	ITEM 		**ppi;
 	ITEM 		*pi;

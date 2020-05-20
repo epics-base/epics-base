@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "errlog.h"
 #include "macLib.h"
@@ -30,7 +29,7 @@
  * values)
  */
 long				/* #defns encountered; <0 = ERROR */
-epicsShareAPI macParseDefns(
+epicsStdCall macParseDefns(
     MAC_HANDLE	*handle,	/* opaque handle; can be NULL if default */
 				/* special characters are to be used */
 
@@ -251,7 +250,7 @@ error:
  * one (preferably two) NULL pointers 
  */
 long				/* #macros defined; <0 = ERROR */
-epicsShareAPI macInstallMacros(
+epicsStdCall macInstallMacros(
     MAC_HANDLE	*handle,	/* opaque handle */
 
     char	*pairs[] )	/* pointer to NULL-terminated array of */

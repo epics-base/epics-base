@@ -12,7 +12,6 @@
 
 #include <dlfcn.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStackTrace.h"
 #include "epicsStackTracePvt.h"
 

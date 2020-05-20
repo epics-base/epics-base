@@ -15,7 +15,6 @@
 
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 
 /*

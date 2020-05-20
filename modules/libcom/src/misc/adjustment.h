@@ -17,7 +17,7 @@
 
 #ifndef INCadjustmenth
 #define INCadjustmenth
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,7 +26,7 @@ extern "C" {
 /** returns a value larger or equal than `size`, that is an exact
       multiple of the worst case alignment for the architecture on
       which the routine is executed. */
-epicsShareFunc size_t adjustToWorstCaseAlignment(size_t size);
+LIBCOM_API size_t adjustToWorstCaseAlignment(size_t size);
 
 #ifdef __cplusplus
 }

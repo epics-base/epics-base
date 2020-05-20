@@ -20,84 +20,83 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "epicsRingPointer.h"
 typedef epicsRingPointer<void> voidPointer;
 
 
-epicsShareFunc epicsRingPointerId  epicsShareAPI epicsRingPointerCreate(int size)
+LIBCOM_API epicsRingPointerId  epicsStdCall epicsRingPointerCreate(int size)
 {
     voidPointer *pvoidPointer = new voidPointer(size, false);
     return(reinterpret_cast<void *>(pvoidPointer));
 }
 
-epicsShareFunc epicsRingPointerId  epicsShareAPI epicsRingPointerLockedCreate(int size)
+LIBCOM_API epicsRingPointerId  epicsStdCall epicsRingPointerLockedCreate(int size)
 {
     voidPointer *pvoidPointer = new voidPointer(size, true);
     return(reinterpret_cast<void *>(pvoidPointer));
 }
 
-epicsShareFunc void epicsShareAPI epicsRingPointerDelete(epicsRingPointerId id)
+LIBCOM_API void epicsStdCall epicsRingPointerDelete(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     delete pvoidPointer;
 }
 
-epicsShareFunc void* epicsShareAPI epicsRingPointerPop(epicsRingPointerId id)
+LIBCOM_API void* epicsStdCall epicsRingPointerPop(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     return pvoidPointer->pop();
 }
 
-epicsShareFunc int epicsShareAPI epicsRingPointerPush(epicsRingPointerId id, void *p)
+LIBCOM_API int epicsStdCall epicsRingPointerPush(epicsRingPointerId id, void *p)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     return((pvoidPointer->push(p) ? 1 : 0));
 }
 
-epicsShareFunc void epicsShareAPI epicsRingPointerFlush(epicsRingPointerId id)
+LIBCOM_API void epicsStdCall epicsRingPointerFlush(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     pvoidPointer->flush();
 }
 
-epicsShareFunc int epicsShareAPI epicsRingPointerGetFree(epicsRingPointerId id)
+LIBCOM_API int epicsStdCall epicsRingPointerGetFree(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     return(pvoidPointer->getFree());
 }
 
-epicsShareFunc int epicsShareAPI epicsRingPointerGetUsed(epicsRingPointerId id)
+LIBCOM_API int epicsStdCall epicsRingPointerGetUsed(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     return(pvoidPointer->getUsed());
 }
 
-epicsShareFunc int epicsShareAPI epicsRingPointerGetSize(epicsRingPointerId id)
+LIBCOM_API int epicsStdCall epicsRingPointerGetSize(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     return(pvoidPointer->getSize());
 }
 
-epicsShareFunc int epicsShareAPI epicsRingPointerIsEmpty(epicsRingPointerId id)
+LIBCOM_API int epicsStdCall epicsRingPointerIsEmpty(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     return((pvoidPointer->isEmpty()) ? 1 : 0);
 }
 
-epicsShareFunc int epicsShareAPI epicsRingPointerIsFull(epicsRingPointerId id)
+LIBCOM_API int epicsStdCall epicsRingPointerIsFull(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     return((pvoidPointer->isFull()) ? 1 : 0);
 }
 
-epicsShareFunc int epicsShareAPI epicsRingPointerGetHighWaterMark(epicsRingPointerIdConst id)
+LIBCOM_API int epicsStdCall epicsRingPointerGetHighWaterMark(epicsRingPointerIdConst id)
 {
     voidPointer const *pvoidPointer = reinterpret_cast<voidPointer const*>(id);
     return(pvoidPointer->getHighWaterMark());
 }
 
-epicsShareFunc void epicsShareAPI epicsRingPointerResetHighWaterMark(epicsRingPointerId id)
+LIBCOM_API void epicsStdCall epicsRingPointerResetHighWaterMark(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     pvoidPointer->resetHighWaterMark();

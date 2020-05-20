@@ -1390,7 +1390,7 @@ static long cvt_device_st(
  *  NULL implies the conversion is not supported.
  */
 
-epicsShareDef long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
+long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
 
  /* Convert DBF_STRING to ... */
 { cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_q, cvt_st_uq, cvt_st_f, cvt_st_d, cvt_st_e },
@@ -1446,7 +1446,7 @@ epicsShareDef long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])() = {
  *  NULL implies the conversion is not supported.
  */
 
-epicsShareDef long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])() = {
+long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])() = {
 
  /* Convert DBR_STRING to ... */
 { cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_q, cvt_st_uq, cvt_st_f, cvt_st_d, cvt_st_e, cvt_st_menu, cvt_st_device},

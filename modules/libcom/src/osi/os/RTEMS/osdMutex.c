@@ -185,7 +185,7 @@ epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * id)
 #endif
 }
 
-epicsShareFunc void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int level)
+LIBCOM_API void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int level)
 {
 #ifdef RTEMS_FAST_MUTEX
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;

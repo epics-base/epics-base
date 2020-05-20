@@ -36,7 +36,7 @@
 #ifndef INC_epicsGeneralTime_H
 #define INC_epicsGeneralTime_H
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,7 +60,7 @@ extern "C" {
  * This routine is called automatically by any function that requires the
  * framework. It does not need to be called explicitly.
  **/
-epicsShareFunc void generalTime_Init(void);
+LIBCOM_API void generalTime_Init(void);
 
 /**\brief Install a Time Event time provider that returns the current time for any
  * Time event number.
@@ -69,7 +69,7 @@ epicsShareFunc void generalTime_Init(void);
  * Event time in the absence of any working provider should be a failure, or the
  * current time.
  **/
-epicsShareFunc int  installLastResortEventProvider(void);
+LIBCOM_API int  installLastResortEventProvider(void);
 
 /**\brief Reset the internal counter of the number of times the time returned was
  * earlier than when previously requested.
@@ -81,7 +81,7 @@ epicsShareFunc int  installLastResortEventProvider(void);
      OUT = "@RSTERRCNT"
  \endcode
  **/
-epicsShareFunc void generalTimeResetErrorCounts(void);
+LIBCOM_API void generalTimeResetErrorCounts(void);
 
 /**\brief Return the internal counter of the number of times the time returned was
  * earlier than when previously requested.
@@ -95,7 +95,7 @@ epicsShareFunc void generalTimeResetErrorCounts(void);
  *
  * \return Reset error counts
  **/
-epicsShareFunc int  generalTimeGetErrorCounts(void);
+LIBCOM_API int  generalTimeGetErrorCounts(void);
 
 /**\brief Return the nume of the provider that last returned a valid current time, or
  * NULL if none.
@@ -108,7 +108,7 @@ epicsShareFunc int  generalTimeGetErrorCounts(void);
  *
  * \return Provider name
  **/
-epicsShareFunc const char * generalTimeCurrentProviderName(void);
+LIBCOM_API const char * generalTimeCurrentProviderName(void);
 
 /**\brief Return the name of the provider that last returned a valid Time Event time, or
  * NULL of none.
@@ -121,7 +121,7 @@ epicsShareFunc const char * generalTimeCurrentProviderName(void);
  *
  * \return Provider name
  **/
-epicsShareFunc const char * generalTimeEventProviderName(void);
+LIBCOM_API const char * generalTimeEventProviderName(void);
 
 /**\brief Return the name of the registered current time provider that has the highest
  * priority.
@@ -134,7 +134,7 @@ epicsShareFunc const char * generalTimeEventProviderName(void);
  *
  * \return Provider name
  **/
-epicsShareFunc const char * generalTimeHighestCurrentName(void);
+LIBCOM_API const char * generalTimeHighestCurrentName(void);
 
 /** \brief Old name provided for backwards compatibility */
 #define generalTimeCurrentTpName generalTimeCurrentProviderName
@@ -145,7 +145,7 @@ epicsShareFunc const char * generalTimeHighestCurrentName(void);
  *
  * \param interest Desired interest level to report
  **/
-epicsShareFunc long generalTimeReport(int interest);
+LIBCOM_API long generalTimeReport(int interest);
 
 #ifdef __cplusplus
 }

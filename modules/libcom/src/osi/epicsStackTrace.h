@@ -10,14 +10,14 @@
 #ifndef INC_epicsStackTrace_H
 #define INC_epicsStackTrace_H
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Dump a stack trace to the errlog */
-epicsShareFunc void epicsStackTrace(void);
+LIBCOM_API void epicsStackTrace(void);
 
 /* Inquire about functionality implemented on your system */
 
@@ -34,7 +34,7 @@ epicsShareFunc void epicsStackTrace(void);
 #define EPICS_STACKTRACE_LCL_SYMBOLS (1<<3)
 
 /* returns ORed bitset of supported features    */
-epicsShareFunc int epicsStackTraceGetFeatures(void);
+LIBCOM_API int epicsStackTraceGetFeatures(void);
 
 #ifdef __cplusplus
 }

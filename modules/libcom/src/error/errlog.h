@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "compilerDependencies.h"
 
 #ifdef __cplusplus
@@ -30,18 +30,18 @@ typedef enum {
     errlogFatal
 } errlogSevEnum;
 
-epicsShareExtern int errVerbose;
+LIBCOM_API extern int errVerbose;
 
 
 #ifdef ERRLOG_INIT
-    epicsShareDef const char *errlogSevEnumString[] = {
+    const char *errlogSevEnumString[] = {
         "info",
         "minor",
         "major",
         "fatal"
     };
 #else
-    epicsShareExtern const char * errlogSevEnumString[];
+    LIBCOM_API extern const char * errlogSevEnumString[];
 #endif
 
 /* errMessage is a macro so it can get the file and line number */
@@ -51,38 +51,38 @@ epicsShareExtern int errVerbose;
 #define epicsPrintf errlogPrintf
 #define epicsVprintf errlogVprintf
 
-epicsShareFunc int errlogPrintf(const char *pformat, ...)
+LIBCOM_API int errlogPrintf(const char *pformat, ...)
     EPICS_PRINTF_STYLE(1,2);
-epicsShareFunc int errlogVprintf(const char *pformat, va_list pvar);
-epicsShareFunc int errlogSevPrintf(const errlogSevEnum severity,
+LIBCOM_API int errlogVprintf(const char *pformat, va_list pvar);
+LIBCOM_API int errlogSevPrintf(const errlogSevEnum severity,
     const char *pformat, ...) EPICS_PRINTF_STYLE(2,3);
-epicsShareFunc int errlogSevVprintf(const errlogSevEnum severity,
+LIBCOM_API int errlogSevVprintf(const errlogSevEnum severity,
     const char *pformat, va_list pvar);
-epicsShareFunc int errlogMessage(const char *message);
+LIBCOM_API int errlogMessage(const char *message);
 
-epicsShareFunc const char * errlogGetSevEnumString(errlogSevEnum severity);
-epicsShareFunc void errlogSetSevToLog(errlogSevEnum severity);
-epicsShareFunc errlogSevEnum errlogGetSevToLog(void);
+LIBCOM_API const char * errlogGetSevEnumString(errlogSevEnum severity);
+LIBCOM_API void errlogSetSevToLog(errlogSevEnum severity);
+LIBCOM_API errlogSevEnum errlogGetSevToLog(void);
 
-epicsShareFunc void errlogAddListener(errlogListener listener, void *pPrivate);
-epicsShareFunc int errlogRemoveListeners(errlogListener listener,
+LIBCOM_API void errlogAddListener(errlogListener listener, void *pPrivate);
+LIBCOM_API int errlogRemoveListeners(errlogListener listener,
     void *pPrivate);
 
-epicsShareFunc int eltc(int yesno);
-epicsShareFunc int errlogSetConsole(FILE *stream);
+LIBCOM_API int eltc(int yesno);
+LIBCOM_API int errlogSetConsole(FILE *stream);
 
-epicsShareFunc int errlogInit(int bufsize);
-epicsShareFunc int errlogInit2(int bufsize, int maxMsgSize);
-epicsShareFunc void errlogFlush(void);
+LIBCOM_API int errlogInit(int bufsize);
+LIBCOM_API int errlogInit2(int bufsize, int maxMsgSize);
+LIBCOM_API void errlogFlush(void);
 
-epicsShareFunc void errPrintf(long status, const char *pFileName, int lineno,
+LIBCOM_API void errPrintf(long status, const char *pFileName, int lineno,
     const char *pformat, ...) EPICS_PRINTF_STYLE(4,5);
 
-epicsShareFunc int errlogPrintfNoConsole(const char *pformat, ...)
+LIBCOM_API int errlogPrintfNoConsole(const char *pformat, ...)
     EPICS_PRINTF_STYLE(1,2);
-epicsShareFunc int errlogVprintfNoConsole(const char *pformat,va_list pvar);
+LIBCOM_API int errlogVprintfNoConsole(const char *pformat,va_list pvar);
 
-epicsShareFunc void errSymLookup(long status, char *pBuf, size_t bufLength);
+LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
 
 #ifdef __cplusplus
 }

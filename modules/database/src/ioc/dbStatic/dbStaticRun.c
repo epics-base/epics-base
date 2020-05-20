@@ -31,7 +31,7 @@
 #include "devSup.h"
 #include "special.h"
 
-epicsShareDef int dbConvertStrict = 0;
+int dbConvertStrict = 0;
 epicsExportAddress(int, dbConvertStrict);
 
 static long do_nothing(struct dbCommon *precord) { return 0; }

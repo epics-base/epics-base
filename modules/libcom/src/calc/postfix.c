@@ -17,7 +17,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsAssert.h"
 #include "epicsStdlib.h"
@@ -25,7 +24,7 @@
 #include "epicsTypes.h"
 #include "postfix.h"
 #include "postfixPvt.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
 
 /* declarations for postfix */
@@ -206,7 +205,7 @@ static int
  *
  * convert an infix expression to a postfix expression
  */
-epicsShareFunc long
+LIBCOM_API long
     postfix(const char *psrc, char *pout, short *perror)
 {
     ELEMENT stack[80];
@@ -490,7 +489,7 @@ bad:
  *
  * Return a message string appropriate for the given error code
  */
-epicsShareFunc const char *
+LIBCOM_API const char *
     calcErrorStr(short error)
 {
     static const char *errStrs[] = {
@@ -520,7 +519,7 @@ epicsShareFunc const char *
  *
  * Disassemble the given postfix instructions to stdout
  */
-epicsShareFunc void
+LIBCOM_API void
     calcExprDump(const char *pinst)
 {
     static const char *opcodes[] = {

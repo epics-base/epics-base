@@ -6,7 +6,6 @@
 \*************************************************************************/
 /* epicsMath.cpp */
 
-#define epicsExportSharedSymbols
 #include <epicsMath.h>
 
 #ifdef _MSC_VER
@@ -33,8 +32,8 @@ static float makeINF ( void )
 #endif
 
 extern "C" {
-epicsShareDef float epicsNAN = NAN;
-epicsShareDef float epicsINF = INFINITY;
+float epicsNAN = NAN;
+float epicsINF = INFINITY;
 }
 
 #ifdef _MSC_VER

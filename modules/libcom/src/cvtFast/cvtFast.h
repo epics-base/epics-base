@@ -20,7 +20,7 @@
 #include <stddef.h>
 
 #include "epicsTypes.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,38 +29,38 @@ extern "C" {
 /*
  * All functions return the number of characters in the output
  */
-epicsShareFunc int
+LIBCOM_API int
     cvtFloatToString(float val, char *pdest, epicsUInt16 prec);
-epicsShareFunc int
+LIBCOM_API int
     cvtDoubleToString(double val, char *pdest, epicsUInt16 prec);
 
-epicsShareFunc int
+LIBCOM_API int
     cvtFloatToExpString(float val, char *pdest, epicsUInt16 prec);
-epicsShareFunc int
+LIBCOM_API int
     cvtDoubleToExpString(double val, char *pdest, epicsUInt16 prec);
-epicsShareFunc int
+LIBCOM_API int
     cvtFloatToCompactString(float val, char *pdest, epicsUInt16 prec);
-epicsShareFunc int
+LIBCOM_API int
     cvtDoubleToCompactString(double val, char *pdest, epicsUInt16 prec);
 
-epicsShareFunc size_t
+LIBCOM_API size_t
     cvtInt32ToString(epicsInt32 val, char *pdest);
-epicsShareFunc size_t
+LIBCOM_API size_t
     cvtUInt32ToString(epicsUInt32 val, char *pdest);
-epicsShareFunc size_t
+LIBCOM_API size_t
     cvtInt64ToString(epicsInt64 val, char *pdest);
-epicsShareFunc size_t
+LIBCOM_API size_t
     cvtUInt64ToString(epicsUInt64 val, char *pdest);
 
-epicsShareFunc size_t
+LIBCOM_API size_t
     cvtInt32ToHexString(epicsInt32 val, char *pdest);
-epicsShareFunc size_t
+LIBCOM_API size_t
     cvtUInt32ToHexString(epicsUInt32 val, char *pdest);
-epicsShareFunc size_t
+LIBCOM_API size_t
     cvtInt32ToOctalString(epicsInt32 val, char *pdest);
-epicsShareFunc size_t
+LIBCOM_API size_t
     cvtInt64ToHexString(epicsInt64 val, char *pdest);
-epicsShareFunc size_t
+LIBCOM_API size_t
     cvtUInt64ToHexString(epicsUInt64 val, char *pdest);
 
 /* Support the original names */

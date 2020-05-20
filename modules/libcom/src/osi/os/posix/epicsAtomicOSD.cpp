@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "epicsAtomic.h"
 

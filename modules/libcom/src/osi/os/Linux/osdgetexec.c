@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include <osiFileName.h>
 
 #ifndef PATH_MAX

@@ -28,7 +28,7 @@ extern "C" {
 
 #include "errMdef.h"
 #include "epicsTypes.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
 /** \brief Internal: bucket identifier */
 typedef	unsigned 	BUCKETID;
@@ -57,20 +57,20 @@ typedef struct bucket{
  * \param nHashTableEntries Table size
  * \return Pointer to the newly created hash table, or NULL.
  */
-epicsShareFunc BUCKET * epicsShareAPI bucketCreate (unsigned nHashTableEntries);
+LIBCOM_API BUCKET * epicsStdCall bucketCreate (unsigned nHashTableEntries);
 /**
  * \brief Release memory used by a hash table
  * \param *prb Pointer to the hash table
  * \return S_bucket_success
  * \note All items must be deleted from the hash table before calling this.
  */
-epicsShareFunc int epicsShareAPI bucketFree (BUCKET *prb);
+LIBCOM_API int epicsStdCall bucketFree (BUCKET *prb);
 /**
  * \brief Display information about a hash table
  * \param *prb Pointer to the hash table
  * \return S_bucket_success
  */
-epicsShareFunc int epicsShareAPI bucketShow (BUCKET *prb);
+LIBCOM_API int epicsStdCall bucketShow (BUCKET *prb);
 
 /**
  * \brief Add an item identified by an unsigned int to the table
@@ -79,7 +79,7 @@ epicsShareFunc int epicsShareAPI bucketShow (BUCKET *prb);
  * \param *pApp Pointer to the payload
  * \return Status value
  */
-epicsShareFunc int epicsShareAPI bucketAddItemUnsignedId (BUCKET *prb,
+LIBCOM_API int epicsStdCall bucketAddItemUnsignedId (BUCKET *prb,
 		const unsigned *pId, const void *pApp);
 /**
  * \brief Add an item identified by a pointer to the table
@@ -88,7 +88,7 @@ epicsShareFunc int epicsShareAPI bucketAddItemUnsignedId (BUCKET *prb,
  * \param *pApp Pointer to the payload
  * \return Status value
  */
-epicsShareFunc int epicsShareAPI bucketAddItemPointerId (BUCKET *prb,
+LIBCOM_API int epicsStdCall bucketAddItemPointerId (BUCKET *prb,
 		void * const *pId, const void *pApp);
 /**
  * \brief Add an item identified by a string to the table
@@ -97,7 +97,7 @@ epicsShareFunc int epicsShareAPI bucketAddItemPointerId (BUCKET *prb,
  * \param *pApp Pointer to the payload
  * \return Status value
  */
-epicsShareFunc int epicsShareAPI bucketAddItemStringId (BUCKET *prb,
+LIBCOM_API int epicsStdCall bucketAddItemStringId (BUCKET *prb,
 		const char *pId, const void *pApp);
 /**
  * \brief Remove an item identified by a string from the table
@@ -105,42 +105,42 @@ epicsShareFunc int epicsShareAPI bucketAddItemStringId (BUCKET *prb,
  * \param *pId Pointer to the identifier
  * \return Status value
  */
-epicsShareFunc int epicsShareAPI bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId);
+LIBCOM_API int epicsStdCall bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId);
 /**
  * \brief Remove an item identified by a pointer from the table
  * \param *prb Pointer to the hash table
  * \param *pId Pointer to the identifier
  * \return Status value
  */
-epicsShareFunc int epicsShareAPI bucketRemoveItemPointerId (BUCKET *prb, void * const *pId);
+LIBCOM_API int epicsStdCall bucketRemoveItemPointerId (BUCKET *prb, void * const *pId);
 /**
  * \brief Remove an item identified by a string from the table
  * \param *prb Pointer to the hash table
  * \param *pId Pointer to the identifier
  * \return Status value
  */
-epicsShareFunc int epicsShareAPI bucketRemoveItemStringId (BUCKET *prb, const char *pId);
+LIBCOM_API int epicsStdCall bucketRemoveItemStringId (BUCKET *prb, const char *pId);
 /**
  * \brief Find an item identified by an unsigned int in the table
  * \param *prb Pointer to the hash table
  * \param *pId Pointer to the identifier
  * \return Item's payload pointer, or NULL if not found
  */
-epicsShareFunc void * epicsShareAPI bucketLookupItemUnsignedId (BUCKET *prb, const unsigned *pId);
+LIBCOM_API void * epicsStdCall bucketLookupItemUnsignedId (BUCKET *prb, const unsigned *pId);
 /**
  * \brief Find an item identified by a pointer in the table
  * \param *prb Pointer to the hash table
  * \param *pId Pointer to the identifier
  * \return Item's payload pointer, or NULL if not found
  */
-epicsShareFunc void * epicsShareAPI bucketLookupItemPointerId (BUCKET *prb, void * const *pId);
+LIBCOM_API void * epicsStdCall bucketLookupItemPointerId (BUCKET *prb, void * const *pId);
 /**
  * \brief Find an item identified by a string in the table
  * \param *prb Pointer to the hash table
  * \param *pId Pointer to the identifier
  * \return Item's payload pointer, or NULL if not found
  */
-epicsShareFunc void * epicsShareAPI bucketLookupItemStringId (BUCKET *prb, const char *pId);
+LIBCOM_API void * epicsStdCall bucketLookupItemStringId (BUCKET *prb, const char *pId);
 
 /**
  * \brief Find and delete an item identified by an unsigned int from the table
@@ -148,21 +148,21 @@ epicsShareFunc void * epicsShareAPI bucketLookupItemStringId (BUCKET *prb, const
  * \param *pId Pointer to the identifier
  * \return Item's payload pointer, or NULL if not found
  */
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId);
+LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId);
 /**
  * \brief Find and delete an item identified by a pointer from the table
  * \param *prb Pointer to the hash table
  * \param *pId Pointer to the identifier
  * \return Item's payload pointer, or NULL if not found
  */
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * const *pId);
+LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * const *pId);
 /**
  * \brief Find and delete an item identified by a string from the table
  * \param *prb Pointer to the hash table
  * \param *pId Pointer to the identifier
  * \return Item's payload pointer, or NULL if not found
  */
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, const char *pId);
+LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemStringId (BUCKET *prb, const char *pId);
 
 
  /**

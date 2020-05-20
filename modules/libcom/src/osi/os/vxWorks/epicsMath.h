@@ -12,7 +12,7 @@
 
 #include <math.h>
 #include <private/mathP.h>
-#include <shareLib.h>
+#include <libComAPI.h>
 
 /* private/mathP.h defines NAN as 4, and uses its value in the
  * isNan() macro.  We need mathP.h for isInf(), but can create
@@ -29,8 +29,8 @@
 extern "C" {
 #endif
 
-epicsShareExtern float epicsNAN;
-epicsShareExtern float epicsINF;
+LIBCOM_API extern float epicsNAN;
+LIBCOM_API extern float epicsINF;
 
 #ifdef __cplusplus
 }

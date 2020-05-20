@@ -149,7 +149,7 @@ ok  3 - M_PI == 4.0*atan(1.0)
 #include <stdarg.h>
 
 #include "compilerDependencies.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -159,7 +159,7 @@ extern "C" {
  * \param tests Number of tests to be run. May be zero if not known but the
  * test harness then can't tell if the program dies prematurely.
  */
-epicsShareFunc void testPlan(int tests);
+LIBCOM_API void testPlan(int tests);
 
 /** \name Announcing Test Results
  * Routines that declare individual test results.
@@ -171,7 +171,7 @@ epicsShareFunc void testPlan(int tests);
  * \param ... Any parameters required for the format string.
  * \return The value of \p pass.
  */
-epicsShareFunc int  testOk(int pass, const char *fmt, ...)
+LIBCOM_API int  testOk(int pass, const char *fmt, ...)
     EPICS_PRINTF_STYLE(2, 3);
 /** \brief Test result using condition as description
  * \param cond Condition to be evaluated and displayed.
@@ -184,19 +184,19 @@ epicsShareFunc int  testOk(int pass, const char *fmt, ...)
  * \param pvar A var-args pointer to any parameters for the format string.
  * \return The value of \p pass.
  */
-epicsShareFunc int  testOkV(int pass, const char *fmt, va_list pvar);
+LIBCOM_API int  testOkV(int pass, const char *fmt, va_list pvar);
 /** \brief Passing test result with printf-style description.
  * \param fmt A printf-style format string describing the test.
  * \param ... Any parameters required for the format string.
  * \return The value of \p pass.
  */
-epicsShareFunc void testPass(const char *fmt, ...)
+LIBCOM_API void testPass(const char *fmt, ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** \brief Failing test result with printf-style description.
  * \param fmt A printf-style format string describing the test.
  * \param ... Any parameters required for the format string.
  */
-epicsShareFunc void testFail(const char *fmt, ...)
+LIBCOM_API void testFail(const char *fmt, ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** @} */
 
@@ -209,19 +209,19 @@ epicsShareFunc void testFail(const char *fmt, ...)
  * \param skip How many tests are being skipped.
  * \param why Reason for skipping these tests.
  */
-epicsShareFunc void testSkip(int skip, const char *why);
+LIBCOM_API void testSkip(int skip, const char *why);
 /** \brief Mark the start of a group of tests that are expected to fail
  * \param why Reason for expected failures.
  */
-epicsShareFunc void testTodoBegin(const char *why);
+LIBCOM_API void testTodoBegin(const char *why);
 /** \brief Mark the end of a failing test group.
  */
-epicsShareFunc void testTodoEnd(void);
+LIBCOM_API void testTodoEnd(void);
 /** \brief Stop testing, program cannot continue.
  * \param fmt A printf-style format string giving the reason for stopping.
  * \param ... Any parameters required for the format string.
  */
-epicsShareFunc void testAbort(const char *fmt, ...)
+LIBCOM_API void testAbort(const char *fmt, ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** @} */
 
@@ -229,13 +229,13 @@ epicsShareFunc void testAbort(const char *fmt, ...)
  * \param fmt A printf-style format string containing diagnostic information.
  * \param ... Any parameters required for the format string.
  */
-epicsShareFunc int  testDiag(const char *fmt, ...)
+LIBCOM_API int  testDiag(const char *fmt, ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** \brief Mark the end of testing.
  */
-epicsShareFunc int  testDone(void);
+LIBCOM_API int  testDone(void);
 
-epicsShareFunc
+LIBCOM_API
 int testImpreciseTiming(void);
 
 /** \name Test Harness for Embedded OSs
@@ -248,9 +248,9 @@ int testImpreciseTiming(void);
 typedef int (*TESTFUNC)(void);
 /** \brief Initialize test harness
  */
-epicsShareFunc void testHarness(void);
-epicsShareFunc void testHarnessExit(void *dummy);
-epicsShareFunc void runTestFunc(const char *name, TESTFUNC func);
+LIBCOM_API void testHarness(void);
+LIBCOM_API void testHarnessExit(void *dummy);
+LIBCOM_API void runTestFunc(const char *name, TESTFUNC func);
 
 /** \brief Run a test program
  * \param func Name of the test program.

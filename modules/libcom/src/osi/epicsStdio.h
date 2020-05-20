@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "compilerDependencies.h"
 #include "epicsTempFile.h"
 
@@ -51,9 +51,9 @@ extern "C" {
 #  define putchar epicsStdoutPutchar
 #endif
 
-epicsShareFunc int epicsShareAPI epicsSnprintf(
+LIBCOM_API int epicsStdCall epicsSnprintf(
     char *str, size_t size, const char *format, ...) EPICS_PRINTF_STYLE(3,4);
-epicsShareFunc int epicsShareAPI epicsVsnprintf(
+LIBCOM_API int epicsStdCall epicsVsnprintf(
     char *str, size_t size, const char *format, va_list ap);
 
 /*
@@ -68,24 +68,24 @@ epicsShareFunc int epicsShareAPI epicsVsnprintf(
  * TF_ERROR if the file could not be truncated.
  */
 enum TF_RETURN {TF_OK=0, TF_ERROR=1};
-epicsShareFunc enum TF_RETURN truncateFile ( const char *pFileName, unsigned long size );
+LIBCOM_API enum TF_RETURN truncateFile ( const char *pFileName, unsigned long size );
 
 /* The following are for redirecting stdin,stdout,stderr */
-epicsShareFunc FILE * epicsShareAPI epicsGetStdin(void);
-epicsShareFunc FILE * epicsShareAPI epicsGetStdout(void);
-epicsShareFunc FILE * epicsShareAPI epicsGetStderr(void);
+LIBCOM_API FILE * epicsStdCall epicsGetStdin(void);
+LIBCOM_API FILE * epicsStdCall epicsGetStdout(void);
+LIBCOM_API FILE * epicsStdCall epicsGetStderr(void);
 /* These are intended for iocsh only */
-epicsShareFunc FILE * epicsShareAPI epicsGetThreadStdin(void);
-epicsShareFunc FILE * epicsShareAPI epicsGetThreadStdout(void);
-epicsShareFunc FILE * epicsShareAPI epicsGetThreadStderr(void);
-epicsShareFunc void  epicsShareAPI epicsSetThreadStdin(FILE *);
-epicsShareFunc void  epicsShareAPI epicsSetThreadStdout(FILE *);
-epicsShareFunc void  epicsShareAPI epicsSetThreadStderr(FILE *);
+LIBCOM_API FILE * epicsStdCall epicsGetThreadStdin(void);
+LIBCOM_API FILE * epicsStdCall epicsGetThreadStdout(void);
+LIBCOM_API FILE * epicsStdCall epicsGetThreadStderr(void);
+LIBCOM_API void  epicsStdCall epicsSetThreadStdin(FILE *);
+LIBCOM_API void  epicsStdCall epicsSetThreadStdout(FILE *);
+LIBCOM_API void  epicsStdCall epicsSetThreadStderr(FILE *);
 
-epicsShareFunc int epicsShareAPI epicsStdoutPrintf(
+LIBCOM_API int epicsStdCall epicsStdoutPrintf(
     const char *pformat, ...) EPICS_PRINTF_STYLE(1,2);
-epicsShareFunc int epicsShareAPI epicsStdoutPuts(const char *str);
-epicsShareFunc int epicsShareAPI epicsStdoutPutchar(int c);
+LIBCOM_API int epicsStdCall epicsStdoutPuts(const char *str);
+LIBCOM_API int epicsStdCall epicsStdoutPutchar(int c);
 
 #ifdef  __cplusplus
 }

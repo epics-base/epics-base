@@ -22,7 +22,6 @@
 
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 
 int osiSockAttach()
@@ -34,7 +33,7 @@ void osiSockRelease()
 {
 }
 
-epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
     int domain, int type, int protocol )
 {
     SOCKET sock = socket ( domain, type, protocol );
@@ -44,7 +43,7 @@ epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate (
     return sock;
 }
 
-epicsShareFunc int epicsShareAPI epicsSocketAccept ( 
+LIBCOM_API int epicsStdCall epicsSocketAccept ( 
     int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
 {
     int newSock = accept ( sock, pAddr, addrlen );
@@ -54,7 +53,7 @@ epicsShareFunc int epicsShareAPI epicsSocketAccept (
     return newSock;
 }
 
-epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
+LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
 {
     int status = close ( s );
     if ( status < 0 ) {
@@ -70,7 +69,7 @@ epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
 /*
  * ipAddrToHostName
  */
-epicsShareFunc unsigned epicsShareAPI ipAddrToHostName 
+LIBCOM_API unsigned epicsStdCall ipAddrToHostName 
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
 	int				status;
@@ -112,7 +111,7 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName
 /*
  * hostToIPAddr ()
  */
-epicsShareFunc int epicsShareAPI
+LIBCOM_API int epicsStdCall
 hostToIPAddr(const char *pHostName, struct in_addr *pIPA)
 {
     int addr = hostGetByName ( (char *) pHostName );

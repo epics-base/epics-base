@@ -19,7 +19,7 @@
 #ifndef fdManagerH_included
 #define fdManagerH_included
 
-#include "shareLib.h" // reset share lib defines
+#include "libComAPI.h" // reset share lib defines
 #include "tsDLList.h"
 #include "resourceLib.h"
 #include "epicsTime.h"
@@ -33,7 +33,7 @@ enum fdRegType {fdrRead, fdrWrite, fdrException, fdrNEnums};
 //
 // file descriptor interest id
 //
-class epicsShareClass fdRegId
+class LIBCOM_API fdRegId
 {
 public:
 
@@ -77,12 +77,12 @@ public:
     //
     class fdInterestSubscriptionAlreadyExits {};
 
-    epicsShareFunc fdManager ();
-    epicsShareFunc virtual ~fdManager ();
-    epicsShareFunc void process ( double delay ); // delay parameter is in seconds
+    LIBCOM_API fdManager ();
+    LIBCOM_API virtual ~fdManager ();
+    LIBCOM_API void process ( double delay ); // delay parameter is in seconds
 
     // returns NULL if the fd is unknown
-    epicsShareFunc class fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
+    LIBCOM_API class fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
 
     epicsTimer & createTimer ();
 
@@ -113,14 +113,14 @@ private:
 //
 // default file descriptor manager
 //
-epicsShareExtern fdManager fileDescriptorManager;
+LIBCOM_API extern fdManager fileDescriptorManager;
 
 //
 // fdReg
 //
 // file descriptor registration
 //
-class epicsShareClass fdReg :
+class LIBCOM_API fdReg :
     public fdRegId, public tsDLNode<fdReg>, public tsSLNode<fdReg> {
     friend class fdManager;
 

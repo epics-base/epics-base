@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "epicsAssert.h"
 #include "errlog.h"
@@ -65,7 +64,7 @@ static struct ifreq * ifreqNext ( struct ifreq *pifreq )
 /*
  * osiSockDiscoverBroadcastAddresses ()
  */
-epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
+LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
     static const unsigned           nelem = 100;
@@ -345,7 +344,7 @@ fail:
 }
 
 
-epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
+LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
 {
     epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, &socket);
     return osiLocalAddrResult;

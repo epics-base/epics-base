@@ -9,10 +9,9 @@
 \*************************************************************************/
 
 #include <osiUnistd.h>
-#define epicsExportSharedSymbols
 #include <epicsStdio.h>
 
-epicsShareFunc int epicsShareAPI epicsSnprintf(
+LIBCOM_API int epicsStdCall epicsSnprintf(
     char *str, size_t size, const char *format, ...)
 {
     int nchars;
@@ -24,7 +23,7 @@ epicsShareFunc int epicsShareAPI epicsSnprintf(
     return(nchars);
 }
 
-epicsShareFunc int epicsShareAPI epicsVsnprintf(
+LIBCOM_API int epicsStdCall epicsVsnprintf(
     char *str, size_t size, const char *format, va_list ap)
 {
     return vsnprintf ( str, size, format, ap );

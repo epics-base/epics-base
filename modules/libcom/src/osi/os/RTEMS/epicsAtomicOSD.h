@@ -16,7 +16,7 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
-#include <shareLib.h>
+#include <libComAPI.h>
 #include "epicsMMIO.h"
 #include "compilerSpecific.h"
 #include "epicsInterrupt.h"

@@ -9,12 +9,11 @@
 
 /* String names for alarm status and severity values */
 
-#define epicsExportSharedSymbols
 #include "alarm.h"
 
 /* ALARM SEVERITIES - must match menuAlarmSevr.dbd and alarm.h */
 
-epicsShareDef const char * epicsAlarmSeverityStrings[ALARM_NSEV] = {
+const char * epicsAlarmSeverityStrings[ALARM_NSEV] = {
     "NO_ALARM",
     "MINOR",
     "MAJOR",
@@ -24,7 +23,7 @@ epicsShareDef const char * epicsAlarmSeverityStrings[ALARM_NSEV] = {
 
 /* ALARM STATUS - must match menuAlarmStat.dbd and alarm.h */
 
-epicsShareDef const char * epicsAlarmConditionStrings[ALARM_NSTATUS] = {
+const char * epicsAlarmConditionStrings[ALARM_NSTATUS] = {
     "NO_ALARM",
     "READ",
     "WRITE",

@@ -6,7 +6,6 @@
 
 #include <windows.h>
 #include <dbghelp.h>
-#define epicsExportSharedSymbols
 #include "epicsStackTracePvt.h"
 #include "epicsStackTrace.h"
 #include "epicsString.h"

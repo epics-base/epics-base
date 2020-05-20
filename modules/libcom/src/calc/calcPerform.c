@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "osiUnistd.h"
 #include "dbDefs.h"
 #include "epicsMath.h"
@@ -42,7 +41,7 @@ static int cond_search(const char **ppinst, int match);
  *
  * Evalutate the postfix expression
  */
-epicsShareFunc long
+LIBCOM_API long
     calcPerform(double *parg, double *presult, const char *pinst)
 {
     double stack[CALCPERFORM_STACK+1];	/* zero'th entry not used */
@@ -402,7 +401,7 @@ epicsShareFunc long
 #  pragma optimize("", on)
 #endif
 
-epicsShareFunc long
+LIBCOM_API long
 calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
 {
     unsigned long inputs = 0;

@@ -4,7 +4,6 @@
 
 #include <mach-o/dyld.h>
 
-#define epicsExportSharedSymbols
 #include <osiFileName.h>
 
 char *epicsGetExecName(void)

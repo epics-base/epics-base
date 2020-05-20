@@ -12,7 +12,7 @@
 #ifndef INCasLibh
 #define INCasLibh
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "ellLib.h"
 #include "errMdef.h"
 #include "errlog.h"
@@ -24,7 +24,7 @@ extern "C" {
 /* 0 - Use (unverified) client provided host name string.
  * 1 - Use actual client IP address.  HAG() are resolved to IPs at ACF load time.
  */
-epicsShareExtern int asCheckClientIP;
+LIBCOM_API extern int asCheckClientIP;
 
 typedef struct asgMember *ASMEMBERPVT;
 typedef struct asgClient *ASCLIENTPVT;
@@ -67,63 +67,63 @@ void *asTrapWriteBefore(ASCLIENTPVT asClientPvt,
     asTrapWriteWithData(asClientPvt, user, host, addr, 0, 0, NULL)
 
 
-epicsShareFunc long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction);
-epicsShareFunc long epicsShareAPI asInitFile(
+LIBCOM_API long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction);
+LIBCOM_API long epicsStdCall asInitFile(
     const char *filename,const char *substitutions);
-epicsShareFunc long epicsShareAPI asInitFP(FILE *fp,const char *substitutions);
-epicsShareFunc long epicsShareAPI asInitMem(const char *acf, const char *substitutions);
+LIBCOM_API long epicsStdCall asInitFP(FILE *fp,const char *substitutions);
+LIBCOM_API long epicsStdCall asInitMem(const char *acf, const char *substitutions);
 /*caller must provide permanent storage for asgName*/
-epicsShareFunc long epicsShareAPI asAddMember(
+LIBCOM_API long epicsStdCall asAddMember(
     ASMEMBERPVT *asMemberPvt,const char *asgName);
-epicsShareFunc long epicsShareAPI asRemoveMember(ASMEMBERPVT *asMemberPvt);
+LIBCOM_API long epicsStdCall asRemoveMember(ASMEMBERPVT *asMemberPvt);
 /*caller must provide permanent storage for newAsgName*/
-epicsShareFunc long epicsShareAPI asChangeGroup(
+LIBCOM_API long epicsStdCall asChangeGroup(
     ASMEMBERPVT *asMemberPvt,const char *newAsgName);
-epicsShareFunc void * epicsShareAPI asGetMemberPvt(ASMEMBERPVT asMemberPvt);
-epicsShareFunc void epicsShareAPI asPutMemberPvt(
+LIBCOM_API void * epicsStdCall asGetMemberPvt(ASMEMBERPVT asMemberPvt);
+LIBCOM_API void epicsStdCall asPutMemberPvt(
     ASMEMBERPVT asMemberPvt,void *userPvt);
 /*client must provide permanent storage for user and host*/
-epicsShareFunc long epicsShareAPI asAddClient(
+LIBCOM_API long epicsStdCall asAddClient(
     ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
     int asl,const char *user,char *host);
 /*client must provide permanent storage for user and host*/
-epicsShareFunc long epicsShareAPI asChangeClient(
+LIBCOM_API long epicsStdCall asChangeClient(
     ASCLIENTPVT asClientPvt,int asl,const char *user,char *host);
-epicsShareFunc long epicsShareAPI asRemoveClient(ASCLIENTPVT *asClientPvt);
-epicsShareFunc void * epicsShareAPI asGetClientPvt(ASCLIENTPVT asClientPvt);
-epicsShareFunc void epicsShareAPI asPutClientPvt(
+LIBCOM_API long epicsStdCall asRemoveClient(ASCLIENTPVT *asClientPvt);
+LIBCOM_API void * epicsStdCall asGetClientPvt(ASCLIENTPVT asClientPvt);
+LIBCOM_API void epicsStdCall asPutClientPvt(
     ASCLIENTPVT asClientPvt,void *userPvt);
-epicsShareFunc long epicsShareAPI asRegisterClientCallback(
+LIBCOM_API long epicsStdCall asRegisterClientCallback(
     ASCLIENTPVT asClientPvt, ASCLIENTCALLBACK pcallback);
-epicsShareFunc long epicsShareAPI asComputeAllAsg(void);
+LIBCOM_API long epicsStdCall asComputeAllAsg(void);
 /* following declared below after ASG is declared
-epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);
+LIBCOM_API long epicsStdCall asComputeAsg(ASG *pasg);
 */
-epicsShareFunc long epicsShareAPI asCompute(ASCLIENTPVT asClientPvt);
-epicsShareFunc int epicsShareAPI asDump(
+LIBCOM_API long epicsStdCall asCompute(ASCLIENTPVT asClientPvt);
+LIBCOM_API int epicsStdCall asDump(
     void (*memcallback)(ASMEMBERPVT,FILE *),
     void (*clientcallback)(ASCLIENTPVT,FILE *),int verbose);
-epicsShareFunc int epicsShareAPI asDumpFP(FILE *fp,
+LIBCOM_API int epicsStdCall asDumpFP(FILE *fp,
     void (*memcallback)(ASMEMBERPVT,FILE *),
     void (*clientcallback)(ASCLIENTPVT,FILE *),int verbose);
-epicsShareFunc int epicsShareAPI asDumpUag(const char *uagname);
-epicsShareFunc int epicsShareAPI asDumpUagFP(FILE *fp,const char *uagname);
-epicsShareFunc int epicsShareAPI asDumpHag(const char *hagname);
-epicsShareFunc int epicsShareAPI asDumpHagFP(FILE *fp,const char *hagname);
-epicsShareFunc int epicsShareAPI asDumpRules(const char *asgname);
-epicsShareFunc int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname);
-epicsShareFunc int epicsShareAPI asDumpMem(const char *asgname,
+LIBCOM_API int epicsStdCall asDumpUag(const char *uagname);
+LIBCOM_API int epicsStdCall asDumpUagFP(FILE *fp,const char *uagname);
+LIBCOM_API int epicsStdCall asDumpHag(const char *hagname);
+LIBCOM_API int epicsStdCall asDumpHagFP(FILE *fp,const char *hagname);
+LIBCOM_API int epicsStdCall asDumpRules(const char *asgname);
+LIBCOM_API int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname);
+LIBCOM_API int epicsStdCall asDumpMem(const char *asgname,
     void (*memcallback)(ASMEMBERPVT,FILE *),int clients);
-epicsShareFunc int epicsShareAPI asDumpMemFP(FILE *fp,const char *asgname,
+LIBCOM_API int epicsStdCall asDumpMemFP(FILE *fp,const char *asgname,
     void (*memcallback)(ASMEMBERPVT,FILE *),int clients);
-epicsShareFunc int epicsShareAPI asDumpHash(void);
-epicsShareFunc int epicsShareAPI asDumpHashFP(FILE *fp);
+LIBCOM_API int epicsStdCall asDumpHash(void);
+LIBCOM_API int epicsStdCall asDumpHashFP(FILE *fp);
 
-epicsShareFunc void * epicsShareAPI asTrapWriteBeforeWithData(
+LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithData(
     const char *userid, const char *hostid, void *addr,
     int dbrType, int no_elements, void *data);
 
-epicsShareFunc void epicsShareAPI asTrapWriteAfterWrite(void *pvt);
+LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
 
 #define S_asLib_clientsExist 	(M_asLib| 1) /*Client Exists*/
 #define S_asLib_noUag 		(M_asLib| 2) /*User Access Group does not exist*/
@@ -141,7 +141,7 @@ epicsShareFunc void epicsShareAPI asTrapWriteAfterWrite(void *pvt);
 #define S_asLib_noMemory	(M_asLib|14) /*access security: no Memory */
 
 /*Private declarations */
-epicsShareExtern int asActive;
+LIBCOM_API extern int asActive;
 
 /* definition of access rights*/
 typedef enum{asNOACCESS,asREAD,asWRITE} asAccessRights;
@@ -156,7 +156,7 @@ typedef struct asBase{
 	struct gphPvt *phash;
 } ASBASE;
 
-epicsShareExtern volatile ASBASE *pasbase;
+LIBCOM_API extern volatile ASBASE *pasbase;
 
 /*Defs for User Access Groups*/
 typedef struct{
@@ -238,11 +238,11 @@ typedef struct asgClient {
 	int		trapMask;
 } ASGCLIENT;
 
-epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);
+LIBCOM_API long epicsStdCall asComputeAsg(ASG *pasg);
 /*following is "friend" function*/
-epicsShareFunc void * epicsShareAPI asCalloc(size_t nobj,size_t size);
-epicsShareFunc char * epicsShareAPI asStrdup(unsigned char *str);
-epicsShareFunc void asFreeAll(ASBASE *pasbase);
+LIBCOM_API void * epicsStdCall asCalloc(size_t nobj,size_t size);
+LIBCOM_API char * epicsStdCall asStrdup(unsigned char *str);
+LIBCOM_API void asFreeAll(ASBASE *pasbase);
 #ifdef __cplusplus
 }
 #endif

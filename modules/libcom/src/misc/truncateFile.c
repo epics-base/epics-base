@@ -14,7 +14,6 @@
 #include <string.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 
 #ifndef SEEK_END
@@ -25,7 +24,7 @@
  * truncate to specified size (we dont use truncate()
  * because it is not portable)
  */
-epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned long size)
+LIBCOM_API enum TF_RETURN  truncateFile (const char *pFileName, unsigned long size)
 {
 	long filePos;
 	FILE *pFile;

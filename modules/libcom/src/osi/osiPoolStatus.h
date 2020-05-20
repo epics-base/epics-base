@@ -17,7 +17,7 @@
 #define INC_osiPoolStatus_H
 
 #include <stdlib.h>
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +35,7 @@ extern "C" {
  * \param contiguousBlockSize Block size to check.
  * \return True if the requested memory should be available.
  */
-epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize );
+LIBCOM_API int epicsStdCall osiSufficentSpaceInPool ( size_t contiguousBlockSize );
 
 #ifdef __cplusplus
 }

@@ -50,7 +50,7 @@ typedef struct mapdbfType{
 
 epicsShareExtern mapdbfType pamapdbfType[];
 #ifdef DBFLDTYPES_GBLSOURCE
-epicsShareDef mapdbfType pamapdbfType[DBF_NTYPES] = {
+mapdbfType pamapdbfType[DBF_NTYPES] = {
 	{"DBF_STRING",DBF_STRING},
 	{"DBF_CHAR",DBF_CHAR},
 	{"DBF_UCHAR",DBF_UCHAR},

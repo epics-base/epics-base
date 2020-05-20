@@ -10,7 +10,6 @@
 #include <memLib.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "epicsThread.h"
 #include "osiPoolStatus.h"
 
@@ -55,7 +54,7 @@ static void osdSufficentSpaceInPoolInit ( void *pArgIn )
 /*
  * osiSufficentSpaceInPool () 
  */
-epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize )
+LIBCOM_API int epicsStdCall osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {
     epicsThreadOnce ( &osdMaxBlockOnceler, osdSufficentSpaceInPoolInit, 0 );
 

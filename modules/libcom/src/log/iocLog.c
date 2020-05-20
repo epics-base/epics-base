@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "envDefs.h"
 #include "errlog.h"
 #include "logClient.h"
@@ -69,7 +68,7 @@ static int getConfig (struct in_addr *pserver_addr, unsigned short *pserver_port
 /*
  *  iocLogFlush ()
  */
-void epicsShareAPI epicsShareAPI iocLogFlush (void)
+void epicsStdCall epicsStdCall iocLogFlush (void)
 {
     if (iocLogClient!=NULL) {
         logClientFlush (iocLogClient);
@@ -119,7 +118,7 @@ static logClientId iocLogClientInit (void)
 /*
  *  iocLogInit()
  */
-int epicsShareAPI iocLogInit (void)
+int epicsStdCall iocLogInit (void)
 {
     /*
      * check for global disable
@@ -145,7 +144,7 @@ int epicsShareAPI iocLogInit (void)
 /*
  *  iocLogShow ()
  */
-void epicsShareAPI iocLogShow (unsigned level)
+void epicsStdCall iocLogShow (unsigned level)
 {
     if (iocLogClient!=NULL) {
         logClientShow (iocLogClient, level);
@@ -155,7 +154,7 @@ void epicsShareAPI iocLogShow (unsigned level)
 /*
  *  logClientInit(); deprecated
  */
-logClientId epicsShareAPI logClientInit (void)
+logClientId epicsStdCall logClientInit (void)
 {
     return iocLogClientInit ();
 }

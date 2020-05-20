@@ -19,7 +19,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#define epicsExportSharedSymbols
 #include "epicsEvent.h"
 #include "epicsTime.h"
 #include "errlog.h"
@@ -45,7 +44,7 @@ struct epicsEventOSD {
     }
 
 
-epicsShareFunc epicsEventId epicsEventCreate(epicsEventInitialState init)
+LIBCOM_API epicsEventId epicsEventCreate(epicsEventInitialState init)
 {
     epicsEventId pevent = malloc(sizeof(*pevent));
 
@@ -68,7 +67,7 @@ epicsShareFunc epicsEventId epicsEventCreate(epicsEventInitialState init)
     return NULL;
 }
 
-epicsShareFunc void epicsEventDestroy(epicsEventId pevent)
+LIBCOM_API void epicsEventDestroy(epicsEventId pevent)
 {
     int status = pthread_mutex_destroy(&pevent->mutex);
 
@@ -78,7 +77,7 @@ epicsShareFunc void epicsEventDestroy(epicsEventId pevent)
     free(pevent);
 }
 
-epicsShareFunc epicsEventStatus epicsEventTrigger(epicsEventId pevent)
+LIBCOM_API epicsEventStatus epicsEventTrigger(epicsEventId pevent)
 {
     int status = pthread_mutex_lock(&pevent->mutex);
 
@@ -93,7 +92,7 @@ epicsShareFunc epicsEventStatus epicsEventTrigger(epicsEventId pevent)
     return epicsEventOK;
 }
 
-epicsShareFunc epicsEventStatus epicsEventWait(epicsEventId pevent)
+LIBCOM_API epicsEventStatus epicsEventWait(epicsEventId pevent)
 {
     epicsEventStatus result = epicsEventOK;
     int status = pthread_mutex_lock(&pevent->mutex);
@@ -115,7 +114,7 @@ release:
     return result;
 }
 
-epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout(epicsEventId pevent,
+LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout(epicsEventId pevent,
     double timeout)
 {
     epicsEventStatus result = epicsEventOK;
@@ -143,12 +142,12 @@ release:
     return result;
 }
 
-epicsShareFunc epicsEventStatus epicsEventTryWait(epicsEventId id)
+LIBCOM_API epicsEventStatus epicsEventTryWait(epicsEventId id)
 {
     return epicsEventWaitWithTimeout(id, 0.0);
 }
 
-epicsShareFunc void epicsEventShow(epicsEventId pevent, unsigned int level)
+LIBCOM_API void epicsEventShow(epicsEventId pevent, unsigned int level)
 {
     printf("epicsEvent %p: %s\n", pevent,
         pevent->isFull ? "full" : "empty");

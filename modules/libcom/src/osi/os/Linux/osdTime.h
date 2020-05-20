@@ -21,7 +21,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-epicsShareFunc void epicsShareAPI
+LIBCOM_API void epicsStdCall
     convertDoubleToWakeTime(double timeout,struct timespec *wakeTime);
 
 #ifdef __cplusplus

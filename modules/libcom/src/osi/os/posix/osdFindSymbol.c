@@ -8,7 +8,6 @@
 
 #include <dlfcn.h>
 
-#define epicsExportSharedSymbols
 #include "epicsFindSymbol.h"
 
 /* non-POSIX extension available on Linux (glibc at least) and OSX.
@@ -17,17 +16,17 @@
 #  define RTLD_DEFAULT 0
 #endif
 
-epicsShareFunc void * epicsLoadLibrary(const char *name)
+LIBCOM_API void * epicsLoadLibrary(const char *name)
 {
     return dlopen(name, RTLD_LAZY | RTLD_GLOBAL);
 }
 
-epicsShareFunc const char *epicsLoadError(void)
+LIBCOM_API const char *epicsLoadError(void)
 {
     return dlerror();
 }
 
-epicsShareFunc void * epicsShareAPI epicsFindSymbol(const char *name)
+LIBCOM_API void * epicsStdCall epicsFindSymbol(const char *name)
 {
     return dlsym(RTLD_DEFAULT, name);
 }

@@ -13,7 +13,6 @@
 
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "ellLib.h"
 

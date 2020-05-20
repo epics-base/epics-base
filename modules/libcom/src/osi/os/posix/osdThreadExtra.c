@@ -11,14 +11,13 @@
 
 /* This is part of the posix implementation of epicsThread */
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
-epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
-epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
+EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
+EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
 
 void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
 {

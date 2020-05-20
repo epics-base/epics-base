@@ -18,17 +18,17 @@
 
 #else /* _MINGW */
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc int getopt(int argc, char * const argv[], const char *optstring);
+LIBCOM_API int getopt(int argc, char * const argv[], const char *optstring);
 
-epicsShareExtern char *optarg;
+LIBCOM_API extern char *optarg;
 
-epicsShareExtern int optind, opterr, optopt;
+LIBCOM_API extern int optind, opterr, optopt;
 
 #ifdef __cplusplus
 }

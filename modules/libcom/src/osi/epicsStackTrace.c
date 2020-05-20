@@ -9,7 +9,6 @@
 
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "errlog.h"

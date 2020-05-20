@@ -13,7 +13,7 @@
  *  johill@lanl.gov
  */
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
@@ -172,8 +172,8 @@ typedef struct EpicsAtomicLockKey {
 extern "C" {
 #endif /* __cplusplus */
 
-epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
-epicsShareFunc void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
+LIBCOM_API void epicsAtomicLock ( struct EpicsAtomicLockKey * );
+LIBCOM_API void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
 
 #ifdef __cplusplus
 } /* end of extern "C" */

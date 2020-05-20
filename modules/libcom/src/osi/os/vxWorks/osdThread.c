@@ -50,7 +50,7 @@
 #endif
 
 
-epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
+LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 
 #if CPU_FAMILY == MC680X0
 #define ARCH_STACK_FACTOR 1
@@ -457,7 +457,7 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     name[size-1] = '\0';
 }
 
-epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+LIBCOM_API void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 {
     int noTasks = 0;
     int i;
@@ -571,7 +571,7 @@ double epicsThreadSleepQuantum ()
     return 1.0 / HZ;
 }
 
-epicsShareFunc int epicsThreadGetCPUs(void)
+LIBCOM_API int epicsThreadGetCPUs(void)
 {
     return 1;
 }

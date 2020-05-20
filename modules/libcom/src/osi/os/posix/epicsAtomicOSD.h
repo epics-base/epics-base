@@ -16,7 +16,7 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #define EPICS_ATOMIC_OS_NAME "POSIX"
 
@@ -26,9 +26,9 @@ typedef struct EpicsAtomicLockKey {} EpicsAtomicLockKey;
 extern "C" {
 #endif /* __cplusplus */
 
-epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
-epicsShareFunc void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
-epicsShareFunc void epicsAtomicMemoryBarrierFallback ( void );
+LIBCOM_API void epicsAtomicLock ( struct EpicsAtomicLockKey * );
+LIBCOM_API void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
+LIBCOM_API void epicsAtomicMemoryBarrierFallback ( void );
 
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)

@@ -29,7 +29,7 @@
 
 
 #include "epicsSpin.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 /**
@@ -122,69 +122,69 @@ typedef void const *epicsRingPointerIdConst;
  * \param size Size of ring buffer to create
  * \return Ring buffer identifier or NULL on failure
  */
-epicsShareFunc epicsRingPointerId  epicsShareAPI epicsRingPointerCreate(int size);
+LIBCOM_API epicsRingPointerId  epicsStdCall epicsRingPointerCreate(int size);
 /**
  * \brief Create a new ring buffer, secured by a spinlock
  * \param size Size of ring buffer to create
  * \return Ring buffer identifier or NULL on failure
  */
-epicsShareFunc epicsRingPointerId  epicsShareAPI epicsRingPointerLockedCreate(int size);
+LIBCOM_API epicsRingPointerId  epicsStdCall epicsRingPointerLockedCreate(int size);
 /**
  * \brief Delete the ring buffer and free any associated memory
  * \param id Ring buffer identifier
  */
-epicsShareFunc void epicsShareAPI epicsRingPointerDelete(epicsRingPointerId id);
+LIBCOM_API void epicsStdCall epicsRingPointerDelete(epicsRingPointerId id);
 /**
  * \brief Push pointer into the ring buffer
  * \param id Ring buffer identifier
  * \param p Pointer to be pushed to the ring
  * \return 1 if the pointer was successfully pushed, 0 if the buffer was full
  */
-epicsShareFunc int  epicsShareAPI epicsRingPointerPush(epicsRingPointerId id,void *p);
+LIBCOM_API int  epicsStdCall epicsRingPointerPush(epicsRingPointerId id,void *p);
 /**
  * \brief Take an element off the ring
  * \param id Ring buffer identifier
  * \return The pointer from the buffer, or NULL if the ring was empty
  */
-epicsShareFunc void* epicsShareAPI epicsRingPointerPop(epicsRingPointerId id) ;
+LIBCOM_API void* epicsStdCall epicsRingPointerPop(epicsRingPointerId id) ;
 /**
  * \brief Remove all elements from the ring
  * \param id Ring buffer identifier
  * \note If this operation is performed on a ring buffer of the unsecured
  * kind, all access to the ring should be locked.
  */
-epicsShareFunc void epicsShareAPI epicsRingPointerFlush(epicsRingPointerId id);
+LIBCOM_API void epicsStdCall epicsRingPointerFlush(epicsRingPointerId id);
 /**
  * \brief Return the amount of empty space in the ring buffer
  * \param id Ring buffer identifier
  * \return The number of additional elements it could hold.
  */
-epicsShareFunc int  epicsShareAPI epicsRingPointerGetFree(epicsRingPointerId id);
+LIBCOM_API int  epicsStdCall epicsRingPointerGetFree(epicsRingPointerId id);
 /**
  * \brief Return the number of elements stored in the ring buffer
  * \param id Ring buffer identifier
  * \return The number of elements stored in the ring buffer
  */
-epicsShareFunc int  epicsShareAPI epicsRingPointerGetUsed(epicsRingPointerId id);
+LIBCOM_API int  epicsStdCall epicsRingPointerGetUsed(epicsRingPointerId id);
 /**
  * \brief Return the size of the ring
  * \param id Ring buffer identifier
  * \return The size of the ring buffer, i.e. the value of \c size
  * given when the ring was created.
  */
-epicsShareFunc int  epicsShareAPI epicsRingPointerGetSize(epicsRingPointerId id);
+LIBCOM_API int  epicsStdCall epicsRingPointerGetSize(epicsRingPointerId id);
 /**
  * \brief Check if the ring buffer is currently empty
  * \param id Ring buffer identifier
  * \return 1 if the ring is empty, otherwise 0
  */
-epicsShareFunc int  epicsShareAPI epicsRingPointerIsEmpty(epicsRingPointerId id);
+LIBCOM_API int  epicsStdCall epicsRingPointerIsEmpty(epicsRingPointerId id);
 /**
  * \brief Check if the ring buffer is currently full
  * \param id Ring buffer identifier
  * \return 1 if the ring buffer is full, otherwise 0
  */
-epicsShareFunc int  epicsShareAPI epicsRingPointerIsFull(epicsRingPointerId id);
+LIBCOM_API int  epicsStdCall epicsRingPointerIsFull(epicsRingPointerId id);
 /**
  * \brief Get the Highwater mark of the ring buffer
  *
@@ -194,14 +194,14 @@ epicsShareFunc int  epicsShareAPI epicsRingPointerIsFull(epicsRingPointerId id);
  * \param id Ring buffer identifier
  * \return Actual Highwater mark
  */
-epicsShareFunc int  epicsShareAPI epicsRingPointerGetHighWaterMark(epicsRingPointerIdConst id);
+LIBCOM_API int  epicsStdCall epicsRingPointerGetHighWaterMark(epicsRingPointerIdConst id);
 /**
  * \brief Reset the Highwater mark of the ring buffer
  *
  * The Highwater mark will be set to the current usage
  * \param id Ring buffer identifier
  */
-epicsShareFunc void epicsShareAPI epicsRingPointerResetHighWaterMark(epicsRingPointerId id);
+LIBCOM_API void epicsStdCall epicsRingPointerResetHighWaterMark(epicsRingPointerId id);
 
 /* This routine was incorrectly named in previous releases */
 #define epicsRingPointerSize epicsRingPointerGetSize

@@ -16,7 +16,6 @@
 #include <string.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "cvtFast.h"
 #include "epicsMath.h"
 #include "epicsStdio.h"

@@ -40,18 +40,18 @@
 
 
 /*global declarations*/
-epicsShareDef char *makeDbdDepends=0;
+char *makeDbdDepends=0;
 
-epicsShareDef int dbRecordsOnceOnly=0;
+int dbRecordsOnceOnly=0;
 epicsExportAddress(int,dbRecordsOnceOnly);
 
-epicsShareDef int dbBptNotMonotonic=0;
+int dbBptNotMonotonic=0;
 epicsExportAddress(int,dbBptNotMonotonic);
 
-epicsShareDef int dbQuietMacroWarnings=0;
+int dbQuietMacroWarnings=0;
 epicsExportAddress(int,dbQuietMacroWarnings);
 
-epicsShareDef int dbRecordsAbcSorted=0;
+int dbRecordsAbcSorted=0;
 epicsExportAddress(int,dbRecordsAbcSorted);
 
 /*private routines */

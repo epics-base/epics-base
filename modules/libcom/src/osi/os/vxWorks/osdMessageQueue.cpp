@@ -13,13 +13,12 @@
  *              630 252 4793
  */
 
-#define epicsExportSharedSymbols
 #include <limits.h>
 #include "epicsMessageQueue.h"
 
 extern "C" int sysClkRateGet(void);
 
-epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
+LIBCOM_API int epicsStdCall epicsMessageQueueSendWithTimeout(
     epicsMessageQueueId id,
     void *message,
     unsigned int messageSize,
@@ -36,7 +35,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
     return msgQSend((MSG_Q_ID)id, (char *)message, messageSize, ticks, MSG_PRI_NORMAL);
 }
 
-epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
+LIBCOM_API int epicsStdCall epicsMessageQueueReceiveWithTimeout(
     epicsMessageQueueId id,
     void *message,
     unsigned int size,

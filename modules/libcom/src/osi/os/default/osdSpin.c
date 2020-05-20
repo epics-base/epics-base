@@ -12,7 +12,6 @@
 
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "errlog.h"
 #include "epicsMutex.h"

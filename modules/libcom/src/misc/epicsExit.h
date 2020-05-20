@@ -21,7 +21,7 @@
 
 #ifndef epicsExith
 #define epicsExith
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,14 +37,14 @@ typedef void (*epicsExitFunc)(void *arg);
  * \brief Calls epicsExitCallAtExits(), then the OS exit() routine.
  * \param status Passed to exit()
  */
-epicsShareFunc void epicsExit(int status);
+LIBCOM_API void epicsExit(int status);
 /**
  * \brief Arrange to call epicsExit() later from a low priority thread.
  *
  * This delays the actual call to exit() so it doesn't run in this thread.
  * \param status Passed to exit()
  */
-epicsShareFunc void epicsExitLater(int status);
+LIBCOM_API void epicsExitLater(int status);
 /**
  * \brief Internal routine that runs the registered exit routines.
  *
@@ -52,14 +52,14 @@ epicsShareFunc void epicsExitLater(int status);
  * in reverse order of their registration.
  * \note Most applications will not call this routine directly.
  */
-epicsShareFunc void epicsExitCallAtExits(void);
+LIBCOM_API void epicsExitCallAtExits(void);
 /**
  * \brief Register a function and an associated context parameter
  * \param func Function to be called when epicsExitCallAtExits is invoked.
  * \param arg Context parameter for the function.
  * \param name Function name
  */
-epicsShareFunc int epicsAtExit3(epicsExitFunc func, void *arg, const char* name);
+LIBCOM_API int epicsAtExit3(epicsExitFunc func, void *arg, const char* name);
 
 /**
  * \brief Convenience macro to register a function and context value to be
@@ -77,14 +77,14 @@ epicsShareFunc int epicsAtExit3(epicsExitFunc func, void *arg, const char* name)
  * entry routine returns. It will not be run if the thread gets stopped by
  * some other method.
  */
-epicsShareFunc void epicsExitCallAtThreadExits(void);
+LIBCOM_API void epicsExitCallAtThreadExits(void);
 /**
  * \brief Register a function and an context value to be run by this thread
  * when it returns from its entry routine.
  * \param func Function be called at thread completion.
  * \param arg Context parameter for the function.
  */
-epicsShareFunc int epicsAtThreadExit(epicsExitFunc func, void *arg);
+LIBCOM_API int epicsAtThreadExit(epicsExitFunc func, void *arg);
 
 
 #ifdef __cplusplus

@@ -19,7 +19,6 @@
 #include <math.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "epicsStdio.h"

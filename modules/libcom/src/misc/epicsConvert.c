@@ -11,12 +11,11 @@
 #include <float.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "epicsMath.h"
 #include "epicsConvert.h"
 #include "cantProceed.h"
 
-epicsShareFunc float epicsConvertDoubleToFloat(double value)
+LIBCOM_API float epicsConvertDoubleToFloat(double value)
 {
     double abs;
 

@@ -9,13 +9,12 @@
 \*************************************************************************/
 #include <rtems/malloc.h>
 
-#define epicsExportSharedSymbols
 #include "osiPoolStatus.h"
 
 /*
  * osiSufficentSpaceInPool ()
  */
-epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize )
+LIBCOM_API int epicsStdCall osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {
     rtems_malloc_statistics_t s;
     unsigned long n;

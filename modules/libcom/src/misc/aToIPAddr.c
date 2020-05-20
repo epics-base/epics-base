@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "epicsTypes.h"
 #include "osiSock.h"
 
@@ -75,7 +74,7 @@ static int initIPAddr ( struct in_addr ipAddr, unsigned port,
  * "pAddrString" does not contain an address of the form
  * "n.n.n.n:p or host:p"
  */
-epicsShareFunc int epicsShareAPI 
+LIBCOM_API int epicsStdCall 
 aToIPAddr( const char *pAddrString, unsigned short defaultPort, 
                 struct sockaddr_in *pIP )
 {

@@ -16,7 +16,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "epicsMutex.h"

@@ -10,7 +10,7 @@
 #ifndef INC_epicsStackTracePvt_H
 #define INC_epicsStackTracePvt_H
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 typedef struct epicsSymbol {
 	const char *f_nam;  /* file where the symbol is defined  */
@@ -25,7 +25,7 @@ extern "C" {
 /* Take a snapshot of the stack into 'buf' (limited to buf_sz entries)
  * RETURNS: actual number of entries in 'buf'
  */
-epicsShareFunc int epicsBackTrace(void **buf, int buf_sz);
+LIBCOM_API int epicsBackTrace(void **buf, int buf_sz);
 
 /* Find symbol closest to 'addr'.
  * 
@@ -36,10 +36,10 @@ epicsShareFunc int epicsBackTrace(void **buf, int buf_sz);
  * RETURNS: 0 on success, nonzero on failure (not finding an address
  *          is not considered an error).
  */
-epicsShareFunc int epicsFindAddr(void *addr, epicsSymbol *sym_p);
+LIBCOM_API int epicsFindAddr(void *addr, epicsSymbol *sym_p);
 
 /* report supported features (as reported by epicsStackTraceGetFeatures) */
-epicsShareFunc int epicsFindAddrGetFeatures();
+LIBCOM_API int epicsFindAddrGetFeatures();
 
 #ifdef __cplusplus
 }

@@ -23,7 +23,6 @@
 
 #endif
 
-#define epicsExportSharedSymbols
 #include "epicsStackTracePvt.h"
 
 int epicsBackTrace(void **buf, int buf_sz)

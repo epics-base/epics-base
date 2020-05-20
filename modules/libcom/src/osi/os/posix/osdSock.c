@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#define epicsExportSharedSymbols
 #include "epicsThread.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
@@ -69,7 +68,7 @@ void osiSockRelease()
  * the socket will be closed if the user uses exec()
  * as is the case with third party tools such as TCL/TK
  */
-epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
     int domain, int type, int protocol )
 {
     SOCKET sock = socket ( domain, type, protocol );
@@ -92,7 +91,7 @@ epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate (
     return sock;
 }
 
-epicsShareFunc int epicsShareAPI epicsSocketAccept ( 
+LIBCOM_API int epicsStdCall epicsSocketAccept ( 
     int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
 {
     int newSock = accept ( sock, pAddr, addrlen );
@@ -115,7 +114,7 @@ epicsShareFunc int epicsShareAPI epicsSocketAccept (
     return newSock;
 }
 
-epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
+LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
 {
     int status = close ( s );
     if ( status < 0 ) {
@@ -133,7 +132,7 @@ epicsShareFunc void epicsShareAPI epicsSocketDestroy ( SOCKET s )
  * On many systems, gethostbyaddr must be protected by a
  * mutex since the routine is not thread-safe.
  */
-epicsShareFunc unsigned epicsShareAPI ipAddrToHostName 
+LIBCOM_API unsigned epicsStdCall ipAddrToHostName 
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
 	struct hostent *ent;
@@ -159,7 +158,7 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName
  * On many systems, gethostbyname must be protected by a
  * mutex since the routine is not thread-safe.
  */
-epicsShareFunc int epicsShareAPI hostToIPAddr 
+LIBCOM_API int epicsStdCall hostToIPAddr 
 				(const char *pHostName, struct in_addr *pIPA)
 {
 	struct hostent *phe;

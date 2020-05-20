@@ -8,13 +8,13 @@
 #ifndef INC_libComRegister_H
 #define INC_libComRegister_H
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI libComRegister(void);
+LIBCOM_API void epicsStdCall libComRegister(void);
 
 #ifdef __cplusplus
 }

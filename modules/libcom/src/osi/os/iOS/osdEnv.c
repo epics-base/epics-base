@@ -18,7 +18,6 @@
 #include <ctype.h>
 #include <errno.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include <errlog.h>
 #include <cantProceed.h>
@@ -30,7 +29,7 @@
 /*
  * Set the value of an environment variable
  */
-epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value)
+LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
 {
     if (!name) return;
     iocshEnvClear(name);
@@ -41,7 +40,7 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *val
  * Unset an environment variable
  */
 
-epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name)
+LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
 {
     iocshEnvClear(name);
     unsetenv(name);
@@ -50,7 +49,7 @@ epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name)
 /*
  * Show the value of the specified, or all, environment variables
  */
-epicsShareFunc void epicsShareAPI epicsEnvShow (const char *name)
+LIBCOM_API void epicsStdCall epicsEnvShow (const char *name)
 {
     if (name == NULL) {
         extern char **environ;

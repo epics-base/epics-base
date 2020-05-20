@@ -23,7 +23,6 @@
 #include <sys/mman.h>
 #endif
 
-#define epicsExportSharedSymbols
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
@@ -32,7 +31,7 @@
 #include "epicsStackTracePvt.h"
 
 /* This routine is provided by osiClockTime.c */
-epicsShareExtern void ClockTime_GetProgramStart(epicsTimeStamp *pDest);
+LIBCOM_API extern void ClockTime_GetProgramStart(epicsTimeStamp *pDest);
 
 #define FIND_ADDR_DEBUG 0
 

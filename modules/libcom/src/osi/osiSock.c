@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "epicsSignal.h"
 #include "epicsStdio.h"
@@ -32,7 +31,7 @@
  * sockAddrAreIdentical() 
  * (returns true if addresses are identical)
  */
-int epicsShareAPI sockAddrAreIdentical 
+int epicsStdCall sockAddrAreIdentical 
 			( const osiSockAddr *plhs, const osiSockAddr *prhs )
 {
     int match;
@@ -59,7 +58,7 @@ int epicsShareAPI sockAddrAreIdentical
  * sockAddrToA() 
  * (convert socket address to ASCII host name)
  */
-unsigned epicsShareAPI sockAddrToA ( 
+unsigned epicsStdCall sockAddrToA ( 
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
 	if ( bufSize < 1 ) {
@@ -90,7 +89,7 @@ unsigned epicsShareAPI sockAddrToA (
  * ipAddrToA() 
  * (convert IP address to ASCII host name)
  */
-unsigned epicsShareAPI ipAddrToA ( 
+unsigned epicsStdCall ipAddrToA ( 
     const struct sockaddr_in * paddr, char * pBuf, unsigned bufSize )
 {
 	unsigned len = ipAddrToHostName ( 
@@ -116,7 +115,7 @@ unsigned epicsShareAPI ipAddrToA (
 /*
  * sockAddrToDottedIP () 
  */
-unsigned epicsShareAPI sockAddrToDottedIP ( 
+unsigned epicsStdCall sockAddrToDottedIP ( 
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
 	if ( paddr->sa_family != AF_INET ) {
@@ -142,7 +141,7 @@ unsigned epicsShareAPI sockAddrToDottedIP (
 /*
  * ipAddrToDottedIP () 
  */
-unsigned epicsShareAPI ipAddrToDottedIP ( 
+unsigned epicsStdCall ipAddrToDottedIP ( 
     const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize )
 {
     static const char * pErrStr = "<IPA>";

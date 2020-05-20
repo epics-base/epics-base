@@ -30,7 +30,6 @@
 //
 // EPICS
 //
-#define epicsExportSharedSymbols
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "epicsTime.h"
 #include "generalTimeSup.h"
@@ -126,7 +125,7 @@ int osdTimeGetCurrent ( epicsTimeStamp *pDest )
 }
 
 // synthesize a reentrant gmtime on WIN32
-int epicsShareAPI epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
+int epicsStdCall epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 {
     struct tm * pRet = gmtime ( pAnsiTime );
     if ( pRet ) {
@@ -139,7 +138,7 @@ int epicsShareAPI epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 }
 
 // synthesize a reentrant localtime on WIN32
-int epicsShareAPI epicsTime_localtime (
+int epicsStdCall epicsTime_localtime (
     const time_t * pAnsiTime, struct tm * pTM )
 {
     struct tm * pRet = localtime ( pAnsiTime );

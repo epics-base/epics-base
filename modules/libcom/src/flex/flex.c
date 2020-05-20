@@ -43,7 +43,6 @@ char copyright[] =
 #endif /* not lint */
 
 
-#define epicsExportSharedSymbols
 #include "epicsTempFile.h"
 #undef epicsExportSharedSymbols
 

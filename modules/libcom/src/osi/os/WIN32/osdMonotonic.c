@@ -6,7 +6,6 @@
 
 #include <windows.h>
 
-#define epicsExportSharedSymbols
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "dbDefs.h"
 #include "errlog.h"

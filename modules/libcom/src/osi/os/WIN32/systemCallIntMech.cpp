@@ -12,7 +12,6 @@
  *      Author:		Jeff Hill 
  */
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 
 enum epicsSocketSystemCallInterruptMechanismQueryInfo 

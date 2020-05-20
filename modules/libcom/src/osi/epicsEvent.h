@@ -40,7 +40,7 @@
 #ifndef epicsEventh
 #define epicsEventh
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 /** \brief An identifier for an epicsEvent for use with the C API */
 typedef struct epicsEventOSD *epicsEventId;
@@ -75,7 +75,7 @@ typedef enum {
  * immediately. Multiple calls to trigger() may occur between wait() calls
  * but will have the same effect as a single trigger(), filling the event.
  **/
-class epicsShareClass epicsEvent {
+class LIBCOM_API epicsEvent {
 public:
     /**\brief Constructor.
      * \param initial State when created, empty (the default) or full.
@@ -128,7 +128,7 @@ extern "C" {
  * \param initialState Starting state, \c epicsEventEmpty or \c epicsEventFull.
  * \return An identifier for the new event, or NULL if one not be created.
  **/
-epicsShareFunc epicsEventId epicsEventCreate(
+LIBCOM_API epicsEventId epicsEventCreate(
     epicsEventInitialState initialState);
 
 /**\brief Create an epicsEvent for use from C code.
@@ -137,7 +137,7 @@ epicsShareFunc epicsEventId epicsEventCreate(
  * \param initialState Starting state, \c epicsEventEmpty or \c epicsEventFull.
  * \return An identifier for the new event.
  **/
-epicsShareFunc epicsEventId epicsEventMustCreate (
+LIBCOM_API epicsEventId epicsEventMustCreate (
     epicsEventInitialState initialState);
 
 /**\brief Destroy an epicsEvent and any resources it holds.
@@ -145,7 +145,7 @@ epicsShareFunc epicsEventId epicsEventMustCreate (
  * No calls to any epicsEventWait routines can be active when this call is made.
  * \param id The event identifier.
  **/
-epicsShareFunc void epicsEventDestroy(epicsEventId id);
+LIBCOM_API void epicsEventDestroy(epicsEventId id);
 
 /**\brief Trigger an event i.e. ensures the next or current call to wait
  * completes.
@@ -155,7 +155,7 @@ epicsShareFunc void epicsEventDestroy(epicsEventId id);
  * \param id The event identifier.
  * \return Status indicator.
  **/
-epicsShareFunc epicsEventStatus epicsEventTrigger(
+LIBCOM_API epicsEventStatus epicsEventTrigger(
     epicsEventId id);
 
 /**\brief Trigger an event.
@@ -163,7 +163,7 @@ epicsShareFunc epicsEventStatus epicsEventTrigger(
  * This routine does not return if the identifier is invalid.
  * \param id The event identifier.
  */
-epicsShareFunc void epicsEventMustTrigger(epicsEventId id);
+LIBCOM_API void epicsEventMustTrigger(epicsEventId id);
 
 /**\brief A synonym for epicsEventTrigger().
  * \param ID The event identifier.
@@ -176,7 +176,7 @@ epicsShareFunc void epicsEventMustTrigger(epicsEventId id);
  * \param id The event identifier.
  * \return Status indicator.
  **/
-epicsShareFunc epicsEventStatus epicsEventWait(
+LIBCOM_API epicsEventStatus epicsEventWait(
     epicsEventId id);
 
 /**\brief Wait for an event (see epicsEventWait()).
@@ -184,7 +184,7 @@ epicsShareFunc epicsEventStatus epicsEventWait(
  * This routine does not return if the identifier is invalid.
  * \param id The event identifier.
  */
-epicsShareFunc void epicsEventMustWait(epicsEventId id);
+LIBCOM_API void epicsEventMustWait(epicsEventId id);
 
 /**\brief Wait an the event or until the specified timeout period is over.
  * \note Blocks until full or timeout.
@@ -192,7 +192,7 @@ epicsShareFunc void epicsEventMustWait(epicsEventId id);
  * \param timeOut The timeout delay in seconds.
  * \return Status indicator.
  **/
-epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout(
+LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout(
     epicsEventId id, double timeOut);
 
 /**\brief Similar to wait() except that if the event is currenly empty the
@@ -200,7 +200,7 @@ epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout(
  * \param id The event identifier.
  * \return Status indicator, \c epicsEventWaitTimeout when the event is empty.
  **/
-epicsShareFunc epicsEventStatus epicsEventTryWait(
+LIBCOM_API epicsEventStatus epicsEventTryWait(
     epicsEventId id);
 
 /**\brief Display information about the semaphore.
@@ -208,7 +208,7 @@ epicsShareFunc epicsEventStatus epicsEventTryWait(
  * \param id The event identifier.
  * \param level An unsigned int for the level of information to be displayed.
  **/
-epicsShareFunc void epicsEventShow(
+LIBCOM_API void epicsEventShow(
     epicsEventId id, unsigned int level);
 
 #ifdef __cplusplus

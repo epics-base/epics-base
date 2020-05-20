@@ -14,7 +14,6 @@
 
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "epicsAtomic.h"
 #include "timerPrivate.h"
 #include "errlog.h"

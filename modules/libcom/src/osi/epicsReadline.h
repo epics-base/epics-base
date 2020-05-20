@@ -23,26 +23,26 @@
 extern "C" {
 #endif
 
-#include <shareLib.h>
+#include <libComAPI.h>
 #include <stdio.h>
 /**
  * \brief Create a command-line context
  * \param in Filehandle to read from
  * \return Command-line context
  */
-epicsShareFunc void * epicsShareAPI epicsReadlineBegin (FILE *in);
+LIBCOM_API void * epicsStdCall epicsReadlineBegin (FILE *in);
 /**
  * \brief Read a line of input
  * \param prompt Prompt string
  * \param context To read from
  * \return Line read
  */
-epicsShareFunc char * epicsShareAPI epicsReadline (const char *prompt, void *context);
+LIBCOM_API char * epicsStdCall epicsReadline (const char *prompt, void *context);
 /**
  * \brief Destroy a command-line context
  * \param context Command-line context to destroy
  */
-epicsShareFunc void   epicsShareAPI epicsReadlineEnd (void *context);
+LIBCOM_API void   epicsStdCall epicsReadlineEnd (void *context);
 
 #ifdef __cplusplus
 }

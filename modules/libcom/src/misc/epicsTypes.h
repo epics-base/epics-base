@@ -15,7 +15,7 @@
 #ifndef INC_epicsTypes_H
 #define INC_epicsTypes_H
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "compilerDependencies.h"
 
 #ifndef stringOf
@@ -120,7 +120,7 @@ typedef enum {
  * of type name strings.
  */
 #ifdef epicsTypesGLOBAL
-epicsShareDef const char *epicsTypeNames [lastEpicsType+1] = {
+const char *epicsTypeNames [lastEpicsType+1] = {
     "epicsInt8",
     "epicsUInt8",
     "epicsInt16",
@@ -134,7 +134,7 @@ epicsShareDef const char *epicsTypeNames [lastEpicsType+1] = {
     "epicsOldString",
 };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern const char *epicsTypeNames [lastEpicsType+1];
+LIBCOM_API extern const char *epicsTypeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 /*
@@ -142,7 +142,7 @@ epicsShareExtern const char *epicsTypeNames [lastEpicsType+1];
  * of type code name strings.
  */
 #ifdef epicsTypesGLOBAL
-epicsShareDef const char *epicsTypeCodeNames [lastEpicsType+1] = {
+const char *epicsTypeCodeNames [lastEpicsType+1] = {
     "epicsInt8T",
     "epicsUInt8T",
     "epicsInt16T",
@@ -156,11 +156,11 @@ epicsShareDef const char *epicsTypeCodeNames [lastEpicsType+1] = {
     "epicsOldStringT",
 };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern const char *epicsTypeCodeNames [lastEpicsType+1];
+LIBCOM_API extern const char *epicsTypeCodeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 #ifdef epicsTypesGLOBAL
-epicsShareDef const unsigned epicsTypeSizes [lastEpicsType+1] = {
+const unsigned epicsTypeSizes [lastEpicsType+1] = {
     sizeof (epicsInt8),
     sizeof (epicsUInt8),
     sizeof (epicsInt16),
@@ -174,7 +174,7 @@ epicsShareDef const unsigned epicsTypeSizes [lastEpicsType+1] = {
     sizeof (epicsOldString),
 };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern const unsigned epicsTypeSizes [lastEpicsType+1];
+LIBCOM_API extern const unsigned epicsTypeSizes [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 /*
@@ -191,7 +191,7 @@ typedef enum {
 } epicsTypeClass;
 
 #ifdef epicsTypesGLOBAL
-epicsShareDef const epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
+const epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
     epicsIntC,
     epicsUIntC,
     epicsIntC,
@@ -205,12 +205,12 @@ epicsShareDef const epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
     epicsOldStringC
 };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern const epicsTypeClass epicsTypeClasses [lastEpicsType+1];
+LIBCOM_API extern const epicsTypeClass epicsTypeClasses [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 
 #ifdef epicsTypesGLOBAL
-epicsShareDef const char *epicsTypeAnyFieldName [lastEpicsType+1] = {
+const char *epicsTypeAnyFieldName [lastEpicsType+1] = {
     "int8",
     "uInt8",
     "int16",
@@ -224,7 +224,7 @@ epicsShareDef const char *epicsTypeAnyFieldName [lastEpicsType+1] = {
     "", /* Old Style Strings will not be in epicsAny type */
 };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern const char *epicsTypeAnyFieldName [lastEpicsType+1];
+LIBCOM_API extern const char *epicsTypeAnyFieldName [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 #endif /* INC_epicsTypes_H */

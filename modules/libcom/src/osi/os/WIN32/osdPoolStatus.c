@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#define epicsExportSharedSymbols
 #include "osiPoolStatus.h"
 
 /*
@@ -17,7 +16,7 @@
  * @@@@@ not implemented @@@@@
  *
  */
-epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize )
+LIBCOM_API int epicsStdCall osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {
     return 1;
 }

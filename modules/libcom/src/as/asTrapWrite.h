@@ -19,7 +19,7 @@
 #ifndef INCasTrapWriteh
 #define INCasTrapWriteh
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,13 +78,13 @@ typedef void(*asTrapWriteListener)(asTrapWriteMessage *pmessage,int after);
  * \param func The listener function to be called.
  * \return A listener identifier for unregistering this listener.
  */
-epicsShareFunc asTrapWriteId epicsShareAPI asTrapWriteRegisterListener(
+LIBCOM_API asTrapWriteId epicsStdCall asTrapWriteRegisterListener(
     asTrapWriteListener func);
 /**
  * \brief Unregister asTrapWriteListener.
  * \param id Listener identifier from asTrapWriteRegisterListener().
  */
-epicsShareFunc void epicsShareAPI asTrapWriteUnregisterListener(
+LIBCOM_API void epicsStdCall asTrapWriteUnregisterListener(
     asTrapWriteId id);
 
 #ifdef __cplusplus

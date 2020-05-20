@@ -79,7 +79,7 @@ typedef DWORD osiSockOptMcastTTL_t;
 extern "C" {
 #endif
 
-epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ();
+LIBCOM_API unsigned epicsStdCall wsaMajorVersion ();
 
 #ifdef __cplusplus
 }

@@ -16,7 +16,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
@@ -32,26 +31,26 @@ static void initOnce(void *junk)
     globalLock = epicsMutexMustCreate();
 }
 
-epicsShareFunc int epicsInterruptLock()
+LIBCOM_API int epicsInterruptLock()
 {
     epicsThreadOnce(&onceId, initOnce, NULL);
     epicsMutexMustLock(globalLock);
     return 0;
 }
 
-epicsShareFunc void epicsInterruptUnlock(int key)
+LIBCOM_API void epicsInterruptUnlock(int key)
 {
     if (!globalLock)
         cantProceed("epicsInterruptUnlock called before epicsInterruptLock\n");
     epicsMutexUnlock(globalLock);
 }
 
-epicsShareFunc int epicsInterruptIsInterruptContext()
+LIBCOM_API int epicsInterruptIsInterruptContext()
 {
     return 0;
 }
 
-epicsShareFunc void epicsInterruptContextMessage(const char *message)
+LIBCOM_API void epicsInterruptContextMessage(const char *message)
 {
     errlogPrintf("%s", message);
 }

@@ -28,7 +28,6 @@
 #define REDZONE 0
 #endif
 
-#define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "ellLib.h"

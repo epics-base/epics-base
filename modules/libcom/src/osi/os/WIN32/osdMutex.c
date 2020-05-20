@@ -42,8 +42,7 @@
 #endif
 #include <windows.h>
 
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "epicsMutex.h"
 #include "epicsAssert.h"
 #include "epicsStdio.h"

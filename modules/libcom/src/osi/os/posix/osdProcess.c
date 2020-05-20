@@ -26,12 +26,11 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-#define epicsExportSharedSymbols
 #include "osiProcess.h"
 #include "errlog.h"
 #include "epicsAssert.h"
 
-epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, unsigned bufSizeIn)
+LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigned bufSizeIn)
 {
     struct passwd *p;
 
@@ -58,7 +57,7 @@ epicsShareFunc osiGetUserNameReturn epicsShareAPI osiGetUserName (char *pBuf, un
     }
 }
 
-epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProcess 
+LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess 
     (const char *pProcessName, const char *pBaseExecutableName)
 {
     int status;

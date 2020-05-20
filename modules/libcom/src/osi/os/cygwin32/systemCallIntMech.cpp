@@ -12,7 +12,6 @@
 
 #include <cygwin/version.h>
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 
 enum epicsSocketSystemCallInterruptMechanismQueryInfo 

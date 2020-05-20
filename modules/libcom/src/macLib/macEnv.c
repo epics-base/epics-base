@@ -12,18 +12,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define epicsExportSharedSymbols
 #include "errlog.h"
 #include "epicsString.h"
 #include "macLib.h"
 
-char * epicsShareAPI
+char * epicsStdCall
 macEnvExpand(const char *str)
 {
     return macDefExpand(str, NULL);
 }
 
-char * epicsShareAPI
+char * epicsStdCall
 macDefExpand(const char *str, MAC_HANDLE *macros)
 {
     MAC_HANDLE *handle;

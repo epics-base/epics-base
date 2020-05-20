@@ -35,7 +35,7 @@
 #define DBMF_H
 
 #include <stdlib.h>
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,13 +52,13 @@ extern "C" {
  * \note If dbmfInit() is not called before one of the other routines then it
  * is automatically called with size=64 and chunkItems=10
  */
-epicsShareFunc int dbmfInit(size_t size, int chunkItems);
+LIBCOM_API int dbmfInit(size_t size, int chunkItems);
 /**
  * \brief Allocate memory.
  * \param bytes If bytes > size then malloc() is used to allocate the memory.
  * \return Pointer to the newly-allocated memory, or NULL on failure.
  */
-epicsShareFunc void * dbmfMalloc(size_t bytes);
+LIBCOM_API void * dbmfMalloc(size_t bytes);
 /**
  * \brief Duplicate a string.
  *
@@ -66,7 +66,7 @@ epicsShareFunc void * dbmfMalloc(size_t bytes);
  * \param str Pointer to the null-terminated string to be copied.
  * \return A pointer to the new copy, or NULL on failure.
  */
-epicsShareFunc char * dbmfStrdup(const char *str);
+LIBCOM_API char * dbmfStrdup(const char *str);
 /**
  * \brief Duplicate a string (up to len bytes).
  *
@@ -76,7 +76,7 @@ epicsShareFunc char * dbmfStrdup(const char *str);
  * \param len Max number of bytes to copy.
  * \return A pointer to the new string, or NULL on failure.
  */
-epicsShareFunc char * dbmfStrndup(const char *str, size_t len);
+LIBCOM_API char * dbmfStrndup(const char *str, size_t len);
 /**
  * \brief Concatenate three strings.
 
@@ -87,24 +87,24 @@ epicsShareFunc char * dbmfStrndup(const char *str, size_t len);
  * \param rhs Last string to be concatenated to the lhs+mid (right part).
  * \return A pointer to the new string, or NULL on failure.
  */
-epicsShareFunc char * dbmfStrcat3(const char *lhs, const char *mid,
+LIBCOM_API char * dbmfStrcat3(const char *lhs, const char *mid,
     const char *rhs);
 /**
  * \brief Free the memory allocated by dbmfMalloc.
  * \param bytes Pointer to memory obtained from dbmfMalloc(), dbmfStrdup(),
  * dbmfStrndup() or dbmfStrcat3().
  */
-epicsShareFunc void dbmfFree(void *bytes);
+LIBCOM_API void dbmfFree(void *bytes);
 /**
  * \brief Free all chunks that contain only free items.
  */
-epicsShareFunc void dbmfFreeChunks(void);
+LIBCOM_API void dbmfFreeChunks(void);
 /**
  * \brief Show the status of the dbmf memory pool.
  * \param level Detail level.
  * \return 0.
  */
-epicsShareFunc int dbmfShow(int level);
+LIBCOM_API int dbmfShow(int level);
 
 #ifdef __cplusplus
 }

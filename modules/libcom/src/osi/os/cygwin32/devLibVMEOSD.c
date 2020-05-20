@@ -7,7 +7,6 @@
 
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "devLibVME.h"
 
-epicsShareDef devLibVME *pdevLibVME = NULL;
+devLibVME *pdevLibVME = NULL;

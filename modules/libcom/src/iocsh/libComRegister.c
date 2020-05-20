@@ -10,7 +10,6 @@
 
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "iocsh.h"
 #include "asLib.h"
 #include "epicsStdioRedirect.h"
@@ -396,7 +395,7 @@ static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
 
 static iocshVarDef asCheckClientIPDef[] = { { "asCheckClientIP", iocshArgInt, 0 }, { NULL, iocshArgInt, NULL } };
 
-void epicsShareAPI libComRegister(void)
+void epicsStdCall libComRegister(void)
 {
     iocshRegister(&dateFuncDef, dateCallFunc);
     iocshRegister(&echoFuncDef, echoCallFunc);

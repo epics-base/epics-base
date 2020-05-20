@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <ctype.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include "cantProceed.h"
 #include "epicsString.h"

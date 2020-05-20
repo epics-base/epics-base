@@ -18,9 +18,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#define epicsExportSharedSymbols
 #define epicsStdioStdStreams
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "epicsThread.h"
 #include "epicsStdio.h"
 
@@ -36,7 +35,7 @@ static void once(void *junk)
     stderrThreadPrivateId = epicsThreadPrivateCreate();
 }
 
-FILE * epicsShareAPI epicsGetStdin(void)
+FILE * epicsStdCall epicsGetStdin(void)
 {
     FILE *fp = epicsGetThreadStdin();
 
@@ -45,7 +44,7 @@ FILE * epicsShareAPI epicsGetStdin(void)
     return fp;
 }
 
-FILE * epicsShareAPI epicsGetStdout(void)
+FILE * epicsStdCall epicsGetStdout(void)
 {
     FILE *fp = epicsGetThreadStdout();
 
@@ -54,7 +53,7 @@ FILE * epicsShareAPI epicsGetStdout(void)
     return fp;
 }
 
-FILE * epicsShareAPI epicsGetStderr(void)
+FILE * epicsStdCall epicsGetStderr(void)
 {
     FILE *fp = epicsGetThreadStderr();
 
@@ -63,19 +62,19 @@ FILE * epicsShareAPI epicsGetStderr(void)
     return fp;
 }
 
-FILE * epicsShareAPI epicsGetThreadStdin(void)
+FILE * epicsStdCall epicsGetThreadStdin(void)
 {
     epicsThreadOnce(&onceId,once,0);
     return epicsThreadPrivateGet(stdinThreadPrivateId);
 }
 
-FILE * epicsShareAPI epicsGetThreadStdout(void)
+FILE * epicsStdCall epicsGetThreadStdout(void)
 {
     epicsThreadOnce(&onceId,once,0);
     return epicsThreadPrivateGet(stdoutThreadPrivateId);
 }
 
-FILE * epicsShareAPI epicsGetThreadStderr(void)
+FILE * epicsStdCall epicsGetThreadStderr(void)
 {
     /* Deliberately don't do the epicsThreadOnce() here; epicsThreadInit()
      * is allowed to use stderr inside its once() routine, in which case we
@@ -88,25 +87,25 @@ FILE * epicsShareAPI epicsGetThreadStderr(void)
     return epicsThreadPrivateGet(stderrThreadPrivateId);
 }
 
-void  epicsShareAPI epicsSetThreadStdin(FILE *fp)
+void  epicsStdCall epicsSetThreadStdin(FILE *fp)
 {
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stdinThreadPrivateId,fp);
 }
 
-void  epicsShareAPI epicsSetThreadStdout(FILE *fp)
+void  epicsStdCall epicsSetThreadStdout(FILE *fp)
 {
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stdoutThreadPrivateId,fp);
 }
 
-void  epicsShareAPI epicsSetThreadStderr(FILE *fp)
+void  epicsStdCall epicsSetThreadStderr(FILE *fp)
 {
     epicsThreadOnce(&onceId,once,0);
     epicsThreadPrivateSet(stderrThreadPrivateId,fp);
 }
 
-int epicsShareAPI epicsStdoutPrintf(const char *pFormat, ...)
+int epicsStdCall epicsStdoutPrintf(const char *pFormat, ...)
 {
     va_list     pvar;
     int         nchar;
@@ -118,12 +117,12 @@ int epicsShareAPI epicsStdoutPrintf(const char *pFormat, ...)
     return nchar;
 }
 
-int epicsShareAPI epicsStdoutPuts(const char *str)
+int epicsStdCall epicsStdoutPuts(const char *str)
 {
     return fprintf(epicsGetStdout(), "%s\n", str);
 }
 
-int epicsShareAPI epicsStdoutPutchar(int c)
+int epicsStdCall epicsStdoutPutchar(int c)
 {
     return putc(c, epicsGetStdout());
 }

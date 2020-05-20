@@ -19,7 +19,7 @@
 #define INCdevLibImplh 1
 
 #include "dbDefs.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "devLib.h"
 
 #ifdef __cplusplus
@@ -71,7 +71,7 @@ typedef struct devLibVME {
 }devLibVME;
 
 /** \brief Pointer to the entry table used by devLibVME routines. */
-epicsShareExtern devLibVME *pdevLibVME;
+LIBCOM_API extern devLibVME *pdevLibVME;
 
 #ifndef NO_DEVLIB_COMPAT
 /** \brief An alias for pdevLibVME */

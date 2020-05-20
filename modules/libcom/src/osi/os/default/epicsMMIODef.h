@@ -20,7 +20,7 @@
 #include <epicsTypes.h>
 #include <epicsEndian.h>
 #include <compilerSpecific.h>
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #ifdef __cplusplus
 #  ifndef INLINE

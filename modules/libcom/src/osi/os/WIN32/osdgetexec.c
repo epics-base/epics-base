@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <windows.h>
 
-#define epicsExportSharedSymbols
 #include <osiFileName.h>
 
 char *epicsGetExecName(void)

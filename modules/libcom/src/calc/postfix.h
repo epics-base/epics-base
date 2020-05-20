@@ -19,7 +19,7 @@
 #ifndef INCpostfixh
 #define INCpostfixh
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 /** \brief Number of input arguments to a calc expression (A-L) */
 #define CALCPERFORM_NARGS 12
@@ -295,7 +295,7 @@ extern "C" {
  * the expression evaluation engine is limited to 80 results (which require an
  * expression at least 321 characters long to reach).
  */
-epicsShareFunc long
+LIBCOM_API long
     postfix(const char *pinfix, char *ppostfix, short *perror);
 
 /** \brief Run the calculation engine
@@ -310,7 +310,7 @@ epicsShareFunc long
  * \return Status value 0 for OK, or non-zero if an error is discovered
  * during the evaluation process.
  */
-epicsShareFunc long
+LIBCOM_API long
     calcPerform(double *parg, double *presult, const char *ppostfix);
 
 /** \brief Find the inputs and outputs of an expression
@@ -337,7 +337,7 @@ epicsShareFunc long
  * \return The return value will be non-zero if the ppostfix expression was
  * illegal, otherwise 0.
  */
-epicsShareFunc long
+LIBCOM_API long
     calcArgUsage(const char *ppostfix, unsigned long *pinputs, unsigned long *pstores);
 
 /** \brief Convert an error code to a string.
@@ -347,7 +347,7 @@ epicsShareFunc long
  * \param error Error code
  * \return A string representation of the error code
  */
-epicsShareFunc const char *
+LIBCOM_API const char *
     calcErrorStr(short error);
 
 /** \brief Disassemble a postfix expression
@@ -355,7 +355,7 @@ epicsShareFunc const char *
  * Convert the byte-code stream to text and print to stdout.
  * \param pinst postfix instructions
  */
-epicsShareFunc void
+LIBCOM_API void
     calcExprDump(const char *pinst);
 
 #ifdef __cplusplus

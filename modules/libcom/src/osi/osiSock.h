@@ -15,7 +15,7 @@
 #ifndef osiSockh
 #define osiSockh
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "osdSock.h"
 #include "ellLib.h"
 
@@ -27,15 +27,15 @@ struct sockaddr;
 struct sockaddr_in;
 struct in_addr;
 
-epicsShareFunc SOCKET epicsShareAPI epicsSocketCreate ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
     int domain, int type, int protocol );
-epicsShareFunc int epicsShareAPI epicsSocketAccept ( 
+LIBCOM_API int epicsStdCall epicsSocketAccept ( 
     int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen );
-epicsShareFunc void epicsShareAPI epicsSocketDestroy ( 
+LIBCOM_API void epicsStdCall epicsSocketDestroy ( 
     SOCKET );
-epicsShareFunc void epicsShareAPI 
+LIBCOM_API void epicsStdCall 
     epicsSocketEnableAddressReuseDuringTimeWaitState ( SOCKET s );
-epicsShareFunc void epicsShareAPI 
+LIBCOM_API void epicsStdCall 
     epicsSocketEnableAddressUseForDatagramFanout ( SOCKET s );
 
 /*
@@ -49,7 +49,7 @@ enum epicsSocketSystemCallInterruptMechanismQueryInfo {
     esscimqi_socketBothShutdownRequired,
     esscimqi_socketSigAlarmRequired /* NO LONGER USED/SUPPORTED */
 };
-epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo 
+LIBCOM_API enum epicsSocketSystemCallInterruptMechanismQueryInfo 
         epicsSocketSystemCallInterruptMechanismQuery ();
 
 #ifdef EPICS_PRIVATE_API
@@ -58,7 +58,7 @@ epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo
  * of unsent data in the output queue.
  * Returns -1 if the information is not available.
  */
-epicsShareFunc int epicsSocketUnsentCount(SOCKET sock);
+LIBCOM_API int epicsSocketUnsentCount(SOCKET sock);
 #endif
 
 /*
@@ -72,7 +72,7 @@ epicsShareFunc int epicsSocketUnsentCount(SOCKET sock);
  * including the null termination, but always writes at least a
  * null ternminater in the string (if bufSize >= 1)
  */
-epicsShareFunc unsigned epicsShareAPI sockAddrToA (
+LIBCOM_API unsigned epicsStdCall sockAddrToA (
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
 
 /*
@@ -84,7 +84,7 @@ epicsShareFunc unsigned epicsShareAPI sockAddrToA (
  * including the null termination, but always writes at least a
  * null ternminater in the string (if bufSize >= 1)
  */
-epicsShareFunc unsigned epicsShareAPI ipAddrToA (
+LIBCOM_API unsigned epicsStdCall ipAddrToA (
     const struct sockaddr_in * pInetAddr, char * pBuf, unsigned bufSize );
 
 /*
@@ -95,7 +95,7 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToA (
  * including the null termination, but always writes at least a
  * null ternminater in the string (if bufSize >= 1)
  */
-epicsShareFunc unsigned epicsShareAPI sockAddrToDottedIP ( 
+LIBCOM_API unsigned epicsStdCall sockAddrToDottedIP ( 
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
 
 /*
@@ -106,7 +106,7 @@ epicsShareFunc unsigned epicsShareAPI sockAddrToDottedIP (
  * including the null termination, but always writes at least a
  * null ternminater in the string (if bufSize >= 1)
  */
-epicsShareFunc unsigned epicsShareAPI ipAddrToDottedIP ( 
+LIBCOM_API unsigned epicsStdCall ipAddrToDottedIP ( 
     const struct sockaddr_in * paddr, char * pBuf, unsigned bufSize );
 
 /*
@@ -118,7 +118,7 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToDottedIP (
  *
  * there are many OS specific implementation stubs for this routine
  */
-epicsShareFunc unsigned epicsShareAPI ipAddrToHostName (
+LIBCOM_API unsigned epicsStdCall ipAddrToHostName (
     const struct in_addr * pAddr, char * pBuf, unsigned bufSize );
 
 /*
@@ -127,30 +127,30 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName (
  * 2) look for raw number form of ip address with optional port
  * 3) look for valid host name with optional port
  */
-epicsShareFunc int epicsShareAPI aToIPAddr
+LIBCOM_API int epicsStdCall aToIPAddr
 	( const char * pAddrString, unsigned short defaultPort, struct sockaddr_in * pIP);
 
 /*
  * attempt to convert ASCII host name string with optional port to an IP address
  */
-epicsShareFunc int epicsShareAPI hostToIPAddr 
+LIBCOM_API int epicsStdCall hostToIPAddr 
 				(const char *pHostName, struct in_addr *pIPA);
 /*
  * attach to BSD socket library
  */
-epicsShareFunc int epicsShareAPI osiSockAttach (void); /* returns T if success, else F */
+LIBCOM_API int epicsStdCall osiSockAttach (void); /* returns T if success, else F */
 
 /*
  * release BSD socket library
  */
-epicsShareFunc void epicsShareAPI osiSockRelease (void);
+LIBCOM_API void epicsStdCall osiSockRelease (void);
 
 /*
  * convert socket error numbers to a string
  */
-epicsShareFunc void epicsSocketConvertErrorToString (
+LIBCOM_API void epicsSocketConvertErrorToString (
         char * pBuf, unsigned bufSize, int error );
-epicsShareFunc void epicsSocketConvertErrnoToString (
+LIBCOM_API void epicsSocketConvertErrnoToString (
         char * pBuf, unsigned bufSize );
 
 typedef union osiSockAddr {
@@ -167,7 +167,7 @@ typedef struct osiSockAddrNode {
  * sockAddrAreIdentical() 
  * (returns true if addresses are identical)
  */
-epicsShareFunc int epicsShareAPI sockAddrAreIdentical 
+LIBCOM_API int epicsStdCall sockAddrAreIdentical 
 			( const osiSockAddr * plhs, const osiSockAddr * prhs );
 
 /*
@@ -188,7 +188,7 @@ epicsShareFunc int epicsShareAPI sockAddrAreIdentical
  * 	Any mutex locking required to protect pList is applied externally.
  *
  */
-epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
+LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr);
 
 /*
@@ -207,7 +207,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
  * to current code. After all CA repeaters have been restarted 
  * this osi interface can be eliminated.
  */
-epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket);
+LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket);
 
 #ifdef __cplusplus
 }

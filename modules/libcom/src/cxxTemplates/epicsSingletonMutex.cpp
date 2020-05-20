@@ -14,7 +14,6 @@
 
 #include <climits>
 
-#define epicsExportSharedSymbols
 #include "epicsMutex.h"
 #include "epicsGuard.h"
 #include "epicsThread.h"

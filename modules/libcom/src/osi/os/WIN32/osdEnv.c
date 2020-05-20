@@ -18,7 +18,6 @@
 #include <ctype.h>
 #include <errno.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include "errlog.h"
 #include "cantProceed.h"
@@ -32,7 +31,7 @@
  * Leaks memory, but the assumption is that this routine won't be
  * called often enough for the leak to be a problem.
  */
-epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value)
+LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
 {
     char *cp;
 
@@ -60,7 +59,7 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *val
  * Using putenv with a an existing name plus "=" (without value) deletes
  */
 
-epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name)
+LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
 {
     iocshEnvClear(name);
     if (getenv(name) != NULL)
@@ -70,7 +69,7 @@ epicsShareFunc void epicsShareAPI epicsEnvUnset (const char *name)
 /*
  * Show the value of the specified, or all, environment variables
  */
-epicsShareFunc void epicsShareAPI epicsEnvShow (const char *name)
+LIBCOM_API void epicsStdCall epicsEnvShow (const char *name)
 {
     if (name == NULL) {
         extern char **environ;

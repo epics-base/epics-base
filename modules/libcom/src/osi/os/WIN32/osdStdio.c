@@ -16,10 +16,9 @@
 _CRTIMP int __cdecl __MINGW_NOTHROW _vscprintf (const char*, va_list);
 #endif
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 
-int epicsShareAPI epicsVsnprintf(char *str, size_t len,
+int epicsStdCall epicsVsnprintf(char *str, size_t len,
     const char *fmt, va_list ap)
 {
     int retval = _vsnprintf(str, len, fmt, ap);
@@ -33,7 +32,7 @@ int epicsShareAPI epicsVsnprintf(char *str, size_t len,
     return retval;
 }
 
-int epicsShareAPI epicsSnprintf (char *str, size_t len, const char *fmt, ...)
+int epicsStdCall epicsSnprintf (char *str, size_t len, const char *fmt, ...)
 {
     int rtn;
     va_list pvar;

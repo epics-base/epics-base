@@ -11,13 +11,13 @@
 #ifndef INC_epicsConvert_H
 #define INC_epicsConvert_H
 
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc float epicsConvertDoubleToFloat(double value);
+LIBCOM_API float epicsConvertDoubleToFloat(double value);
 
 #ifdef __cplusplus
 }

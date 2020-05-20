@@ -25,7 +25,7 @@
 #define INCmacLibH
 
 #include "ellLib.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,8 +57,8 @@ typedef struct {
  * \brief Creates a new macro substitution context.
  * \return 0 = OK; <0 = ERROR
  */
-epicsShareFunc long
-epicsShareAPI macCreateHandle(
+LIBCOM_API long
+epicsStdCall macCreateHandle(
     MAC_HANDLE  **handle,       /**< pointer to variable to receive pointer
                                   to new macro substitution context */
 
@@ -75,8 +75,8 @@ epicsShareAPI macCreateHandle(
  * suppress the warning messages from subsequent library routines given the
  * same \c handle.
  */
-epicsShareFunc void
-epicsShareAPI macSuppressWarning(
+LIBCOM_API void
+epicsStdCall macSuppressWarning(
     MAC_HANDLE  *handle,        /**< opaque handle */
 
     int         falseTrue       /**< 0 means issue, 1 means suppress*/
@@ -94,8 +94,8 @@ epicsShareAPI macSuppressWarning(
  * value is the number of characters copied to \c dest. If the return value
  * is negative, at least one undefined macro was left unexpanded.
  */
-epicsShareFunc long
-epicsShareAPI macExpandString(
+LIBCOM_API long
+epicsStdCall macExpandString(
     MAC_HANDLE  *handle,        /**< opaque handle */
 
     const char  *src,           /**< source string */
@@ -112,8 +112,8 @@ epicsShareAPI macExpandString(
  * all scoping levels (the named macro doesn't have to exist in this case).
  * Macros referenced in \c value need not be defined at this point.
  */
-epicsShareFunc long
-epicsShareAPI macPutValue(
+LIBCOM_API long
+epicsStdCall macPutValue(
     MAC_HANDLE  *handle,        /**< opaque handle */
 
     const char  *name,          /**< macro name */
@@ -149,8 +149,8 @@ epicsShareAPI macPutValue(
  * the named macro is undefined at the moment of expansion. A reference
  * is terminated by the matching ")" or "}" character.
  */
-epicsShareFunc long
-epicsShareAPI macGetValue(
+LIBCOM_API long
+epicsStdCall macGetValue(
     MAC_HANDLE  *handle,        /**< opaque handle */
 
     const char  *name,          /**< macro name or reference */
@@ -167,8 +167,8 @@ epicsShareAPI macGetValue(
  *  been returned. Macro values are always returned into strings which
  *  were pre-allocated by the caller.
  */
-epicsShareFunc long
-epicsShareAPI macDeleteHandle(
+LIBCOM_API long
+epicsStdCall macDeleteHandle(
     MAC_HANDLE  *handle         /**< opaque handle */
 );
 /**
@@ -179,8 +179,8 @@ epicsShareAPI macDeleteHandle(
  * to another scope. These macros will be lost on a macPopScope()
  * call and those at the current scope will be re-instated.
  */
-epicsShareFunc long
-epicsShareAPI macPushScope(
+LIBCOM_API long
+epicsStdCall macPushScope(
     MAC_HANDLE  *handle         /**< opaque handle */
 );
 /**
@@ -189,8 +189,8 @@ epicsShareAPI macPushScope(
  *
  * See macPushScope()
  */
-epicsShareFunc long
-epicsShareAPI macPopScope(
+LIBCOM_API long
+epicsStdCall macPopScope(
     MAC_HANDLE  *handle         /**< opaque handle */
 );
 /**
@@ -199,8 +199,8 @@ epicsShareAPI macPopScope(
  * This sends details of current definitions to standard output,
  * and is intended purely for debugging purposes.
  */
-epicsShareFunc long
-epicsShareAPI macReportMacros(
+LIBCOM_API long
+epicsStdCall macReportMacros(
     MAC_HANDLE  *handle         /**< opaque handle */
 );
 /** @} */
@@ -236,8 +236,8 @@ epicsShareAPI macReportMacros(
  * The function returns the number of definitions encountered, or -1 if
  * the supplied string is invalid.
  */
-epicsShareFunc long
-epicsShareAPI macParseDefns(
+LIBCOM_API long
+epicsStdCall macParseDefns(
     MAC_HANDLE  *handle,        /**< opaque handle; may be NULL if debug
                                 messages are not required. */
 
@@ -258,8 +258,8 @@ epicsShareAPI macParseDefns(
  * definitions by calling macPutValue(). The pairs array is terminated
  * by a NULL pointer.
  */
-epicsShareFunc long
-epicsShareAPI macInstallMacros(
+LIBCOM_API long
+epicsStdCall macInstallMacros(
     MAC_HANDLE  *handle,        /**< opaque handle */
 
     char        *pairs[]        /**< pointer to NULL-terminated array of
@@ -279,8 +279,8 @@ epicsShareAPI macInstallMacros(
  * pointer to this null-terminated string. It returns NULL if the source
  * string contains any undefined references.
  */
-epicsShareFunc char *
-epicsShareAPI macEnvExpand(
+LIBCOM_API char *
+epicsStdCall macEnvExpand(
     const char *str             /**< string to be expanded */
 );
 
@@ -293,8 +293,8 @@ epicsShareAPI macEnvExpand(
  * These macros are appended to the set of macros from environment
  * variables when expanding the string.
  */
-epicsShareFunc char *
-epicsShareAPI macDefExpand(
+LIBCOM_API char *
+epicsStdCall macDefExpand(
     const char *str,            /**< string to be expanded */
     MAC_HANDLE *macros          /**< opaque handle; may be NULL if only
                                 environment variables are to be used */

@@ -41,7 +41,7 @@
 
 #include "tsSLList.h"
 #include "epicsString.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 typedef size_t resTableIndex;
 
 template < class T, class ID > class resTableIter;
@@ -253,7 +253,7 @@ private:
 //
 // character string identifier
 //
-class epicsShareClass stringId {
+class LIBCOM_API stringId {
 public:
     enum allocationType {copyString, refString};
     stringId (const char * idIn, allocationType typeIn=copyString);

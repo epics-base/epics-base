@@ -17,7 +17,7 @@
 
 #ifndef INCiocLogh
 #define INCiocLogh 1
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,10 +26,10 @@ extern "C" {
 /*
  * ioc log client interface
  */
-epicsShareExtern int iocLogDisable;
-epicsShareFunc int epicsShareAPI iocLogInit (void);
-epicsShareFunc void epicsShareAPI iocLogShow (unsigned level);
-epicsShareFunc void epicsShareAPI iocLogFlush (void);
+LIBCOM_API extern int iocLogDisable;
+LIBCOM_API int epicsStdCall iocLogInit (void);
+LIBCOM_API void epicsStdCall iocLogShow (unsigned level);
+LIBCOM_API void epicsStdCall iocLogFlush (void);
 
 #ifdef __cplusplus
 }

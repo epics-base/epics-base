@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 /** \brief An identifier for a ring buffer */
 typedef void *epicsRingBytesId;
@@ -42,18 +42,18 @@ typedef void const *epicsRingBytesIdConst;
  * \param nbytes Size of ring buffer to create
  * \return Ring buffer Id or NULL on failure
  */
-epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int nbytes);
+LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesCreate(int nbytes);
 /**
  * \brief Create a new ring buffer, secured by a spinlock
  * \param nbytes Size of ring buffer to create
  * \return Ring buffer Id or NULL on failure
  */
-epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesLockedCreate(int nbytes);
+LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesLockedCreate(int nbytes);
 /**
  * \brief Delete the ring buffer and free any associated memory
  * \param id RingbufferID returned by epicsRingBytesCreate()
  */
-epicsShareFunc void epicsShareAPI epicsRingBytesDelete(epicsRingBytesId id);
+LIBCOM_API void epicsStdCall epicsRingBytesDelete(epicsRingBytesId id);
 /**
  * \brief Read data out of the ring buffer
  * \param id RingbufferID returned by epicsRingBytesCreate()
@@ -61,7 +61,7 @@ epicsShareFunc void epicsShareAPI epicsRingBytesDelete(epicsRingBytesId id);
  * \param nbytes Maximum number of bytes to get
  * \return The number of bytes actually fetched
  */
-epicsShareFunc int  epicsShareAPI epicsRingBytesGet(
+LIBCOM_API int  epicsStdCall epicsRingBytesGet(
     epicsRingBytesId id, char *value,int nbytes);
 /**
  * \brief Write data into the ring buffer
@@ -70,45 +70,45 @@ epicsShareFunc int  epicsShareAPI epicsRingBytesGet(
  * \param nbytes How many bytes to put
  * \return The number of bytes actually stored, zero if not enough space
  */
-epicsShareFunc int  epicsShareAPI epicsRingBytesPut(
+LIBCOM_API int  epicsStdCall epicsRingBytesPut(
     epicsRingBytesId id, char *value,int nbytes);
 /**
  * \brief Make the ring buffer empty
  * \param id RingbufferID returned by epicsRingBytesCreate()
  * \note Should only be used when both gets and puts are locked out.
  */
-epicsShareFunc void epicsShareAPI epicsRingBytesFlush(epicsRingBytesId id);
+LIBCOM_API void epicsStdCall epicsRingBytesFlush(epicsRingBytesId id);
 /**
  * \brief Return the number of free bytes in the ring buffer
  * \param id RingbufferID returned by epicsRingBytesCreate()
  * \return The number of free bytes in the ring buffer
  */
-epicsShareFunc int  epicsShareAPI epicsRingBytesFreeBytes(epicsRingBytesId id);
+LIBCOM_API int  epicsStdCall epicsRingBytesFreeBytes(epicsRingBytesId id);
 /**
  * \brief Return the number of bytes currently stored in the ring buffer
  * \param id RingbufferID returned by epicsRingBytesCreate()
  * \return The number of bytes currently stored in the ring buffer
  */
-epicsShareFunc int  epicsShareAPI epicsRingBytesUsedBytes(epicsRingBytesId id);
+LIBCOM_API int  epicsStdCall epicsRingBytesUsedBytes(epicsRingBytesId id);
 /**
  * \brief Return the size of the ring buffer
  * \param id RingbufferID returned by epicsRingBytesCreate()
  * \return Return the size of the ring buffer, i.e., nbytes specified in
  * the call to epicsRingBytesCreate().
  */
-epicsShareFunc int  epicsShareAPI epicsRingBytesSize(epicsRingBytesId id);
+LIBCOM_API int  epicsStdCall epicsRingBytesSize(epicsRingBytesId id);
 /**
  * \brief Test if the ring buffer is currently empty.
  * \param id RingbufferID returned by epicsRingBytesCreate()
  * \return 1 if the buffer is empty, otherwise 0
  */
-epicsShareFunc int  epicsShareAPI epicsRingBytesIsEmpty(epicsRingBytesId id);
+LIBCOM_API int  epicsStdCall epicsRingBytesIsEmpty(epicsRingBytesId id);
 /**
  * \brief Test if the ring buffer is currently full.
  * \param id RingbufferID returned by epicsRingBytesCreate()
  * \return 1 if the buffer is full, otherwise 0
  */
-epicsShareFunc int  epicsShareAPI epicsRingBytesIsFull(epicsRingBytesId id);
+LIBCOM_API int  epicsStdCall epicsRingBytesIsFull(epicsRingBytesId id);
 /**
  * \brief See how full a ring buffer has been since it was last checked.
  *
@@ -118,14 +118,14 @@ epicsShareFunc int  epicsShareAPI epicsRingBytesIsFull(epicsRingBytesId id);
  * \param id RingbufferID returned by epicsRingBytesCreate()
  * \return Actual Highwater mark
  */
-epicsShareFunc int  epicsShareAPI epicsRingBytesHighWaterMark(epicsRingBytesIdConst id);
+LIBCOM_API int  epicsStdCall epicsRingBytesHighWaterMark(epicsRingBytesIdConst id);
 /**
  * \brief Reset the Highwater mark of the ring buffer.
  *
  * The Highwater mark will be set to the current usage
  * \param id RingbufferID returned by epicsRingBytesCreate()
  */
-epicsShareFunc void epicsShareAPI epicsRingBytesResetHighWaterMark(epicsRingBytesId id);
+LIBCOM_API void epicsStdCall epicsRingBytesResetHighWaterMark(epicsRingBytesId id);
 
 #ifdef __cplusplus
 }

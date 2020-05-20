@@ -23,7 +23,6 @@
 
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "timerPrivate.h"
 
 epicsTimerQueuePassive::~epicsTimerQueuePassive () {}

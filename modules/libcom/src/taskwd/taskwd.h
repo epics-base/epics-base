@@ -17,7 +17,7 @@
 #define INC_taskwd_H
 
 #include "epicsThread.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,15 +25,15 @@ extern "C" {
 
 
 /* Initialization, optional */
-epicsShareFunc void taskwdInit(void);
+LIBCOM_API void taskwdInit(void);
 
 
 /* For tasks to be monitored */
 typedef void (*TASKWDFUNC)(void *usr);
 
-epicsShareFunc void taskwdInsert(epicsThreadId tid,
+LIBCOM_API void taskwdInsert(epicsThreadId tid,
     TASKWDFUNC callback, void *usr);
-epicsShareFunc void taskwdRemove(epicsThreadId tid);
+LIBCOM_API void taskwdRemove(epicsThreadId tid);
 
 
 /* Monitoring API */
@@ -43,20 +43,20 @@ typedef struct {
     void (*remove)(void *usr, epicsThreadId tid);
 } taskwdMonitor;
 
-epicsShareFunc void taskwdMonitorAdd(const taskwdMonitor *funcs, void *usr);
-epicsShareFunc void taskwdMonitorDel(const taskwdMonitor *funcs, void *usr);
+LIBCOM_API void taskwdMonitorAdd(const taskwdMonitor *funcs, void *usr);
+LIBCOM_API void taskwdMonitorDel(const taskwdMonitor *funcs, void *usr);
 
 
 /* Old monitoring API, deprecated */
 typedef void (*TASKWDANYFUNC)(void *usr, epicsThreadId tid);
 
-epicsShareFunc void taskwdAnyInsert(void *key,
+LIBCOM_API void taskwdAnyInsert(void *key,
     TASKWDANYFUNC callback, void *usr);
-epicsShareFunc void taskwdAnyRemove(void *key);
+LIBCOM_API void taskwdAnyRemove(void *key);
 
 
 /* Report function */
-epicsShareFunc void taskwdShow(int level);
+LIBCOM_API void taskwdShow(int level);
 
 
 #ifdef __cplusplus

@@ -37,8 +37,8 @@
 #include "epicsExit.h"
 #include "epicsAtomic.h"
 
-epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
-epicsShareFunc void osdThreadHooksRunMain(epicsThreadId id);
+LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
+LIBCOM_API void osdThreadHooksRunMain(epicsThreadId id);
 
 /*
  * Per-task variables
@@ -107,7 +107,7 @@ int epicsThreadGetOssPriorityValue(unsigned int osiPriority)
 /*
  * epicsThreadLowestPriorityLevelAbove ()
  */
-epicsShareFunc epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove 
+LIBCOM_API epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove 
             (unsigned int priority, unsigned *pPriorityJustAbove)
 {
     unsigned newPriority = priority + 1;
@@ -123,7 +123,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove
 /*
  * epicsThreadHighestPriorityLevelBelow ()
  */
-epicsShareFunc epicsThreadBooleanStatus epicsThreadHighestPriorityLevelBelow 
+LIBCOM_API epicsThreadBooleanStatus epicsThreadHighestPriorityLevelBelow 
             (unsigned int priority, unsigned *pPriorityJustBelow)
 {
     unsigned newPriority = priority - 1;
@@ -841,7 +841,7 @@ double epicsThreadSleepQuantum ( void )
     return 1.0 / rtemsTicksPerSecond_double;
 }
 
-epicsShareFunc int epicsThreadGetCPUs(void)
+LIBCOM_API int epicsThreadGetCPUs(void)
 {
 #if defined(RTEMS_SMP)
     return rtems_smp_get_number_of_processors();

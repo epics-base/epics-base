@@ -40,7 +40,7 @@ epicsShareExtern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])
 epicsShareExtern unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1];
 epicsShareExtern unsigned short dbDBRnewToDBRold[newDBR_ENUM+1];
 #ifdef DB_CONVERT_GBLSOURCE
-epicsShareDef unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
+unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
 	0, /*DBR_STRING to DBF_STRING*/
 	3, /*DBR_INT to DBF_SHORT*/
 	9, /*DBR_FLOAT to DBF_FLOAT*/
@@ -49,7 +49,7 @@ epicsShareDef unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
 	5, /*DBR_LONG to DBF_LONG*/
 	10  /*DBR_DOUBLE to DBF_DOUBLE*/
 };
-epicsShareDef unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
+unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
 	0, /*DBR_STRING to DBR_STRING*/
 	4, /*DBR_CHAR to DBR_CHAR*/
 	4, /*DBR_UCHAR to DBR_CHAR*/

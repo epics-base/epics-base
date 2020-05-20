@@ -16,11 +16,10 @@
 #  define __BSD_VISIBLE 1
 #endif
 
-#define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "errlog.h"
 
-epicsShareFunc void epicsShareAPI 
+LIBCOM_API void epicsStdCall 
     epicsSocketEnableAddressReuseDuringTimeWaitState ( SOCKET s )
 {
     int yes = true;
@@ -48,7 +47,7 @@ void setfanout(SOCKET s, int opt, const char *optname)
     }
 }
 
-void epicsShareAPI epicsSocketEnableAddressUseForDatagramFanout ( SOCKET s )
+void epicsStdCall epicsSocketEnableAddressUseForDatagramFanout ( SOCKET s )
 {
 #define DOIT(sock, opt) setfanout(sock, opt, #opt)
 #ifdef SO_REUSEPORT

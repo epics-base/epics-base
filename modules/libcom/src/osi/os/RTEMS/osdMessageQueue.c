@@ -19,7 +19,6 @@
  */
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 1
 
-#define epicsExportSharedSymbols
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +28,7 @@
 #include "epicsMessageQueue.h"
 #include "errlog.h"
 
-epicsShareFunc epicsMessageQueueId epicsShareAPI
+LIBCOM_API epicsMessageQueueId epicsStdCall
 epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
 {
     rtems_status_code sc;
@@ -120,7 +119,7 @@ static rtems_status_code rtems_message_queue_send_timeout(
   return RTEMS_INTERNAL_ERROR;   /* unreached - only to remove warnings */
 }
 
-epicsShareFunc int epicsShareAPI epicsMessageQueueSend(
+LIBCOM_API int epicsStdCall epicsMessageQueueSend(
     epicsMessageQueueId id,
     void *message,
     unsigned int messageSize)
@@ -131,7 +130,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSend(
         return -1;
 }
 
-epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
+LIBCOM_API int epicsStdCall epicsMessageQueueSendWithTimeout(
     epicsMessageQueueId id,
     void *message,
     unsigned int messageSize,
@@ -183,7 +182,7 @@ static int receiveMessage(
     return rsize;
 }
 
-epicsShareFunc int epicsShareAPI epicsMessageQueueTryReceive(
+LIBCOM_API int epicsStdCall epicsMessageQueueTryReceive(
     epicsMessageQueueId id,
     void *message,
     unsigned int size)
@@ -191,7 +190,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueTryReceive(
     return receiveMessage(id, message, size, RTEMS_NO_WAIT, 0);
 }
 
-epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
+LIBCOM_API int epicsStdCall epicsMessageQueueReceive(
     epicsMessageQueueId id,
     void *message,
     unsigned int size)
@@ -199,7 +198,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceive(
     return receiveMessage(id, message, size, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
 }
 
-epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
+LIBCOM_API int epicsStdCall epicsMessageQueueReceiveWithTimeout(
     epicsMessageQueueId id,
     void *message,
     unsigned int size,
@@ -225,7 +224,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
     return receiveMessage(id, message, size, wait, delay);
 }
 
-epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
+LIBCOM_API int epicsStdCall epicsMessageQueuePending(
             epicsMessageQueueId id)
 {
     uint32_t count;
@@ -241,7 +240,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
     return count;
 }
 
-epicsShareFunc void epicsShareAPI epicsMessageQueueShow(
+LIBCOM_API void epicsStdCall epicsMessageQueueShow(
             epicsMessageQueueId id,
                 int level)
 {

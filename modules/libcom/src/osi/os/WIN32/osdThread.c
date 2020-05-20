@@ -24,9 +24,8 @@
 #include <windows.h>
 #include <process.h> /* for _endthread() etc */
 
-#define epicsExportSharedSymbols
 #include "epicsStdio.h"
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
 #include "epicsAssert.h"
@@ -34,7 +33,7 @@
 #include "epicsExit.h"
 #include "epicsAtomic.h"
 
-epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
+LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
 
@@ -247,7 +246,7 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
 /*
  * epicsThreadExitMain ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadExitMain ( void )
+LIBCOM_API void epicsStdCall epicsThreadExitMain ( void )
 {
     _endthread ();
 }
@@ -275,7 +274,7 @@ static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority, unsigned p
     return magnitude;
 }
 
-epicsShareFunc
+LIBCOM_API
 void epicsThreadRealtimeLock(void)
 {}
 
@@ -357,7 +356,7 @@ static unsigned epicsThreadGetOsiPriorityValue ( int osdPriority )
 /*
  * epicsThreadLowestPriorityLevelAbove ()
  */
-epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityLevelAbove 
+LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadLowestPriorityLevelAbove 
             ( unsigned int priority, unsigned * pPriorityJustAbove )
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
@@ -387,7 +386,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadLowestPriorityL
 /*
  * epicsThreadHighestPriorityLevelBelow ()
  */
-epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriorityLevelBelow 
+LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadHighestPriorityLevelBelow 
             ( unsigned int priority, unsigned * pPriorityJustBelow )
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
@@ -417,7 +416,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
 /*
  * epicsThreadGetStackSize ()
  */
-epicsShareFunc unsigned int epicsShareAPI 
+LIBCOM_API unsigned int epicsStdCall 
     epicsThreadGetStackSize ( epicsThreadStackSizeClass stackSizeClass ) 
 {
     #define STACK_SIZE(f) (f * 0x10000 * sizeof(void *))
@@ -656,7 +655,7 @@ void epicsThreadMustJoin(epicsThreadId id)
 /*
  * epicsThreadSuspendSelf ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
+LIBCOM_API void epicsStdCall epicsThreadSuspendSelf ()
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -681,7 +680,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
 /*
  * epicsThreadResume ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadResume ( epicsThreadId id )
+LIBCOM_API void epicsStdCall epicsThreadResume ( epicsThreadId id )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
@@ -702,7 +701,7 @@ epicsShareFunc void epicsShareAPI epicsThreadResume ( epicsThreadId id )
 /*
  * epicsThreadGetPriority ()
  */
-epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id) 
+LIBCOM_API unsigned epicsStdCall epicsThreadGetPriority (epicsThreadId id) 
 { 
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     return pParm->epicsPriority;
@@ -711,7 +710,7 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id)
 /*
  * epicsThreadGetPrioritySelf ()
  */
-epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf () 
+LIBCOM_API unsigned epicsStdCall epicsThreadGetPrioritySelf () 
 { 
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -737,7 +736,7 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf ()
 /*
  * epicsThreadSetPriority ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadSetPriority ( epicsThreadId id, unsigned priority ) 
+LIBCOM_API void epicsStdCall epicsThreadSetPriority ( epicsThreadId id, unsigned priority ) 
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     BOOL stat = SetThreadPriority ( pParm->handle, epicsThreadGetOsdPriorityValue (priority) );
@@ -747,7 +746,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority ( epicsThreadId id, uns
 /*
  * epicsThreadIsEqual ()
  */
-epicsShareFunc int epicsShareAPI epicsThreadIsEqual ( epicsThreadId id1, epicsThreadId id2 ) 
+LIBCOM_API int epicsStdCall epicsThreadIsEqual ( epicsThreadId id1, epicsThreadId id2 ) 
 {
     win32ThreadParam * pParm1 = ( win32ThreadParam * ) id1;
     win32ThreadParam * pParm2 = ( win32ThreadParam * ) id2;
@@ -757,7 +756,7 @@ epicsShareFunc int epicsShareAPI epicsThreadIsEqual ( epicsThreadId id1, epicsTh
 /*
  * epicsThreadIsSuspended () 
  */
-epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id ) 
+LIBCOM_API int epicsStdCall epicsThreadIsSuspended ( epicsThreadId id ) 
 {
     win32ThreadParam *pParm = ( win32ThreadParam * ) id;
     DWORD exitCode;
@@ -780,7 +779,7 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id )
 /*
  * epicsThreadSleep ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
+LIBCOM_API void epicsStdCall epicsThreadSleep ( double seconds )
 {
     static const unsigned mSecPerSec = 1000;
     DWORD milliSecDelay;
@@ -800,7 +799,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 /*
  * epicsThreadSleepQuantum ()
  */
-double epicsShareAPI epicsThreadSleepQuantum ()
+double epicsStdCall epicsThreadSleepQuantum ()
 { 
     /*
      * Its worth noting here that the sleep quantum on windows can
@@ -832,7 +831,7 @@ double epicsShareAPI epicsThreadSleepQuantum ()
 /*
  * epicsThreadGetIdSelf ()
  */
-epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf (void) 
+LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetIdSelf (void) 
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -848,7 +847,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf (void)
     return ( epicsThreadId ) pParm;
 }
 
-epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char * pName )
+LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetId ( const char * pName )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -879,7 +878,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char * pName
 /*
  * epicsThreadGetNameSelf ()
  */
-epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf (void)
+LIBCOM_API const char * epicsStdCall epicsThreadGetNameSelf (void)
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -905,7 +904,7 @@ epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf (void)
 /*
  * epicsThreadGetName ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadGetName ( 
+LIBCOM_API void epicsStdCall epicsThreadGetName ( 
     epicsThreadId id, char * pName, size_t size )
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
@@ -980,7 +979,7 @@ static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
 /*
  * epicsThreadMap ()
  */
-epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+LIBCOM_API void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -1002,7 +1001,7 @@ epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 /*
  * epicsThreadShowAll ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
+LIBCOM_API void epicsStdCall epicsThreadShowAll ( unsigned level )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -1025,7 +1024,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
 /*
  * epicsThreadShow ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned level )
+LIBCOM_API void epicsStdCall epicsThreadShow ( epicsThreadId id, unsigned level )
 {
     epicsThreadShowInfo ( 0, level );
     epicsThreadShowInfo ( id, level );
@@ -1034,7 +1033,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned l
 /*
  * epicsThreadOnce ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadOnce (
+LIBCOM_API void epicsStdCall epicsThreadOnce (
     epicsThreadOnceId *id, void (*func)(void *), void *arg )
 {
     static struct epicsThreadOSD threadOnceComplete;
@@ -1069,7 +1068,7 @@ epicsShareFunc void epicsShareAPI epicsThreadOnce (
 /*
  * epicsThreadPrivateCreate ()
  */
-epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate ()
+LIBCOM_API epicsThreadPrivateId epicsStdCall epicsThreadPrivateCreate ()
 {
     epicsThreadPrivateOSD *p = ( epicsThreadPrivateOSD * ) malloc ( sizeof ( *p ) );
     if ( p ) {
@@ -1085,7 +1084,7 @@ epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate ()
 /*
  * epicsThreadPrivateDelete ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadPrivateDelete ( epicsThreadPrivateId p )
+LIBCOM_API void epicsStdCall epicsThreadPrivateDelete ( epicsThreadPrivateId p )
 {
     BOOL stat = TlsFree ( p->key );
     assert ( stat );
@@ -1095,7 +1094,7 @@ epicsShareFunc void epicsShareAPI epicsThreadPrivateDelete ( epicsThreadPrivateI
 /*
  * epicsThreadPrivateSet ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, void *pVal )
+LIBCOM_API void epicsStdCall epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, void *pVal )
 {
     BOOL stat = TlsSetValue ( pPvt->key, (void *) pVal );
     assert (stat);
@@ -1104,7 +1103,7 @@ epicsShareFunc void epicsShareAPI epicsThreadPrivateSet ( epicsThreadPrivateId p
 /*
  * epicsThreadPrivateGet ()
  */
-epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet ( epicsThreadPrivateId pPvt )
+LIBCOM_API void * epicsStdCall epicsThreadPrivateGet ( epicsThreadPrivateId pPvt )
 {
     return ( void * ) TlsGetValue ( pPvt->key );
 }
@@ -1112,7 +1111,7 @@ epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet ( epicsThreadPrivateId
 /*
  * epicsThreadGetCPUs ()
  */
-epicsShareFunc int epicsThreadGetCPUs ( void )
+LIBCOM_API int epicsThreadGetCPUs ( void )
 {
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);

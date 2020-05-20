@@ -18,7 +18,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define epicsExportSharedSymbols
 #define ERRLOG_INIT
 #include "adjustment.h"
 #include "dbDefs.h"
@@ -39,7 +38,7 @@
 #define MAX_MESSAGE_SIZE 256
 
 /*Declare storage for errVerbose */
-epicsShareDef int errVerbose = 0;
+int errVerbose = 0;
 
 static void errlogExitHandler(void *);
 static void errlogThread(void);

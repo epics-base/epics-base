@@ -12,14 +12,14 @@
 
 #include <math.h>
 #include <ieeefp.h>
-#include <shareLib.h>
+#include <libComAPI.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareExtern float epicsNAN;
-epicsShareExtern float epicsINF;
+LIBCOM_API extern float epicsNAN;
+LIBCOM_API extern float epicsINF;
 
 #ifdef __cplusplus
 }

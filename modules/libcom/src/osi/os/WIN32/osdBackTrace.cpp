@@ -9,7 +9,6 @@
 
 #include <windows.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStackTracePvt.h"
 
 int epicsBackTrace(void **buf, int buf_sz)

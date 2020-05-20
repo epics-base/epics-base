@@ -9,7 +9,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define epicsExportSharedSymbols
 
 #include "dbDefs.h"
 #include "errlog.h"
@@ -326,7 +325,7 @@ void sharedPoolsInit(void* unused)
     sharedPoolsGuard = epicsMutexMustCreate();
 }
 
-epicsShareFunc epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *opts)
+LIBCOM_API epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *opts)
 {
     ELLNODE *node;
     epicsThreadPool *cur;
@@ -383,7 +382,7 @@ epicsShareFunc epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *
     return cur;
 }
 
-epicsShareFunc void epicsThreadPoolReleaseShared(epicsThreadPool *pool)
+LIBCOM_API void epicsThreadPoolReleaseShared(epicsThreadPool *pool)
 {
     if (!pool)
         return;

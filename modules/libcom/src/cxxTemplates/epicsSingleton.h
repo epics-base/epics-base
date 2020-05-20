@@ -18,10 +18,10 @@
 #include <new>
 #include <cstddef>
 
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "epicsAssert.h"
 
-class epicsShareClass SingletonUntyped {
+class LIBCOM_API SingletonUntyped {
 public:
     SingletonUntyped ();
     ~SingletonUntyped ();

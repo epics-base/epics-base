@@ -22,8 +22,7 @@
 #define STRICT
 #include <windows.h>
 
-#define epicsExportSharedSymbols
-#include "shareLib.h"
+#include "libComAPI.h"
 #include "epicsEvent.h"
 
 typedef struct epicsEventOSD {
@@ -33,7 +32,7 @@ typedef struct epicsEventOSD {
 /*
  * epicsEventCreate ()
  */
-epicsShareFunc epicsEventId epicsEventCreate (
+LIBCOM_API epicsEventId epicsEventCreate (
     epicsEventInitialState initialState ) 
 {
     epicsEventOSD *pSem;
@@ -53,7 +52,7 @@ epicsShareFunc epicsEventId epicsEventCreate (
 /*
  * epicsEventDestroy ()
  */
-epicsShareFunc void epicsEventDestroy ( epicsEventId pSem ) 
+LIBCOM_API void epicsEventDestroy ( epicsEventId pSem ) 
 {
     CloseHandle ( pSem->handle );
     free ( pSem );
@@ -62,7 +61,7 @@ epicsShareFunc void epicsEventDestroy ( epicsEventId pSem )
 /*
  * epicsEventTrigger ()
  */
-epicsShareFunc epicsEventStatus epicsEventTrigger ( epicsEventId pSem ) 
+LIBCOM_API epicsEventStatus epicsEventTrigger ( epicsEventId pSem ) 
 {
     BOOL status;
     status = SetEvent ( pSem->handle );
@@ -72,7 +71,7 @@ epicsShareFunc epicsEventStatus epicsEventTrigger ( epicsEventId pSem )
 /*
  * epicsEventWait ()
  */
-epicsShareFunc epicsEventStatus epicsEventWait ( epicsEventId pSem ) 
+LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem ) 
 { 
     DWORD status;
     status = WaitForSingleObject (pSem->handle, INFINITE);
@@ -87,7 +86,7 @@ epicsShareFunc epicsEventStatus epicsEventWait ( epicsEventId pSem )
 /*
  * epicsEventWaitWithTimeout ()
  */
-epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout (
+LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
 { 
     static const unsigned mSecPerSec = 1000;
@@ -121,7 +120,7 @@ epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout (
 /*
  * epicsEventTryWait ()
  */
-epicsShareFunc epicsEventStatus epicsEventTryWait ( epicsEventId pSem ) 
+LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem ) 
 { 
     DWORD status;
 
@@ -140,6 +139,6 @@ epicsShareFunc epicsEventStatus epicsEventTryWait ( epicsEventId pSem )
 /*
  * epicsEventShow ()
  */
-epicsShareFunc void epicsEventShow ( epicsEventId id, unsigned level ) 
+LIBCOM_API void epicsEventShow ( epicsEventId id, unsigned level ) 
 { 
 }

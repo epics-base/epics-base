@@ -12,7 +12,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define epicsExportSharedSymbols
 #include "epicsTypes.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
@@ -150,7 +149,7 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int ignore)
     return status;
 }
 
-int epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
+int epicsStdCall epicsTimeGetCurrent(epicsTimeStamp *pDest)
 {
     gtProvider *ptp;
     int status = S_time_noProvider;
@@ -339,7 +338,7 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
     return status;
 }
 
-int epicsShareAPI epicsTimeGetEvent(epicsTimeStamp *pDest, int eventNumber)
+int epicsStdCall epicsTimeGetEvent(epicsTimeStamp *pDest, int eventNumber)
 {
     if (eventNumber == epicsTimeEventCurrentTime) {
         return epicsTimeGetCurrent(pDest);

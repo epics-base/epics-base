@@ -20,7 +20,7 @@
 #ifndef INC_alarm_H
 #define INC_alarm_H
 
-#include "shareLib.h"
+#include "libComAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -116,11 +116,11 @@ typedef enum {
 /**
  * \brief How to convert an alarm severity into a string
  */
-epicsShareExtern const char *epicsAlarmSeverityStrings [ALARM_NSEV];
+LIBCOM_API extern const char *epicsAlarmSeverityStrings [ALARM_NSEV];
 /**
  * \brief How to convert an alarm condition/status into a string
  */
-epicsShareExtern const char *epicsAlarmConditionStrings [ALARM_NSTATUS];
+LIBCOM_API extern const char *epicsAlarmConditionStrings [ALARM_NSTATUS];
 
 
 #ifdef __cplusplus

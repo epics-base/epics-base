@@ -28,7 +28,6 @@
 #include <float.h>
 #include <string> // vxWorks 6.0 requires this include
 
-#define epicsExportSharedSymbols
 #include "locationException.h"
 #include "epicsAssert.h"
 #include "epicsVersion.h"
@@ -931,7 +930,7 @@ extern "C" {
     // its too bad that these cant be implemented with inline functions
     // at least when running the GNU compiler
     //
-    epicsShareFunc int epicsShareAPI epicsTimeToTime_t (time_t *pDest, const epicsTimeStamp *pSrc)
+    LIBCOM_API int epicsStdCall epicsTimeToTime_t (time_t *pDest, const epicsTimeStamp *pSrc)
     {
         try {
             time_t_wrapper dst = epicsTime (*pSrc);
@@ -942,7 +941,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc int epicsShareAPI epicsTimeFromTime_t (epicsTimeStamp *pDest, time_t src)
+    LIBCOM_API int epicsStdCall epicsTimeFromTime_t (epicsTimeStamp *pDest, time_t src)
     {
         try {
             time_t_wrapper dst;
@@ -954,7 +953,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc int epicsShareAPI epicsTimeToTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
+    LIBCOM_API int epicsStdCall epicsTimeToTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
     {
         try {
             local_tm_nano_sec tmns = epicsTime (*pSrc);
@@ -967,7 +966,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc int epicsShareAPI epicsTimeToGMTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
+    LIBCOM_API int epicsStdCall epicsTimeToGMTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
     {
         try {
             gm_tm_nano_sec gmtmns = epicsTime (*pSrc);
@@ -980,7 +979,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc int epicsShareAPI epicsTimeFromTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
+    LIBCOM_API int epicsStdCall epicsTimeFromTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
     {
         try {
             local_tm_nano_sec tmns;
@@ -993,7 +992,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc int epicsShareAPI epicsTimeFromGMTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
+    LIBCOM_API int epicsStdCall epicsTimeFromGMTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
     {
         try {
             gm_tm_nano_sec tmns;
@@ -1006,7 +1005,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc int epicsShareAPI epicsTimeToTimespec (struct timespec *pDest, const epicsTimeStamp *pSrc)
+    LIBCOM_API int epicsStdCall epicsTimeToTimespec (struct timespec *pDest, const epicsTimeStamp *pSrc)
     {
         try {
             *pDest = epicsTime (*pSrc);
@@ -1016,7 +1015,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc int epicsShareAPI epicsTimeFromTimespec (epicsTimeStamp *pDest, const struct timespec *pSrc)
+    LIBCOM_API int epicsStdCall epicsTimeFromTimespec (epicsTimeStamp *pDest, const struct timespec *pSrc)
     {
         try {
             *pDest = epicsTime (*pSrc);
@@ -1026,7 +1025,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc int epicsShareAPI epicsTimeToTimeval (struct timeval *pDest, const epicsTimeStamp *pSrc)
+    LIBCOM_API int epicsStdCall epicsTimeToTimeval (struct timeval *pDest, const epicsTimeStamp *pSrc)
     {
         try {
             *pDest = epicsTime (*pSrc);
@@ -1036,7 +1035,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc int epicsShareAPI epicsTimeFromTimeval (epicsTimeStamp *pDest, const struct timeval *pSrc)
+    LIBCOM_API int epicsStdCall epicsTimeFromTimeval (epicsTimeStamp *pDest, const struct timeval *pSrc)
     {
         try {
             *pDest = epicsTime (*pSrc);
@@ -1046,7 +1045,7 @@ extern "C" {
         }
         return epicsTimeOK;
     }
-    epicsShareFunc double epicsShareAPI epicsTimeDiffInSeconds (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+    LIBCOM_API double epicsStdCall epicsTimeDiffInSeconds (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
         try {
             return epicsTime (*pLeft) - epicsTime (*pRight);
@@ -1055,7 +1054,7 @@ extern "C" {
             return - DBL_MAX;
         }
     }
-    epicsShareFunc void epicsShareAPI epicsTimeAddSeconds (epicsTimeStamp *pDest, double seconds)
+    LIBCOM_API void epicsStdCall epicsTimeAddSeconds (epicsTimeStamp *pDest, double seconds)
     {
         try {
             *pDest = epicsTime (*pDest) + seconds;
@@ -1064,7 +1063,7 @@ extern "C" {
             *pDest = epicsTime ();
         }
     }
-    epicsShareFunc int epicsShareAPI epicsTimeEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+    LIBCOM_API int epicsStdCall epicsTimeEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
         try {
             return epicsTime (*pLeft) == epicsTime (*pRight);
@@ -1073,7 +1072,7 @@ extern "C" {
             return 0;
         }
     }
-    epicsShareFunc int epicsShareAPI epicsTimeNotEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+    LIBCOM_API int epicsStdCall epicsTimeNotEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
         try {
             return epicsTime (*pLeft) != epicsTime (*pRight);
@@ -1082,7 +1081,7 @@ extern "C" {
             return 1;
         }
     }
-    epicsShareFunc int epicsShareAPI epicsTimeLessThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+    LIBCOM_API int epicsStdCall epicsTimeLessThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
         try {
             return epicsTime (*pLeft) < epicsTime (*pRight);
@@ -1091,7 +1090,7 @@ extern "C" {
             return 0;
         }
     }
-    epicsShareFunc int epicsShareAPI epicsTimeLessThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+    LIBCOM_API int epicsStdCall epicsTimeLessThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
         try {
             return epicsTime (*pLeft) <= epicsTime (*pRight);
@@ -1100,7 +1099,7 @@ extern "C" {
             return 0;
         }
     }
-    epicsShareFunc int epicsShareAPI epicsTimeGreaterThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+    LIBCOM_API int epicsStdCall epicsTimeGreaterThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
         try {
             return epicsTime (*pLeft) > epicsTime (*pRight);
@@ -1109,7 +1108,7 @@ extern "C" {
             return 0;
         }
     }
-    epicsShareFunc int epicsShareAPI epicsTimeGreaterThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+    LIBCOM_API int epicsStdCall epicsTimeGreaterThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
         try {
             return epicsTime (*pLeft) >= epicsTime (*pRight);
@@ -1118,7 +1117,7 @@ extern "C" {
             return 0;
         }
     }
-    epicsShareFunc size_t epicsShareAPI epicsTimeToStrftime (char *pBuff, size_t bufLength, const char *pFormat, const epicsTimeStamp *pTS)
+    LIBCOM_API size_t epicsStdCall epicsTimeToStrftime (char *pBuff, size_t bufLength, const char *pFormat, const epicsTimeStamp *pTS)
     {
         try {
             return epicsTime(*pTS).strftime (pBuff, bufLength, pFormat);
@@ -1127,7 +1126,7 @@ extern "C" {
             return 0;
         }
     }
-    epicsShareFunc void epicsShareAPI epicsTimeShow (const epicsTimeStamp *pTS, unsigned interestLevel)
+    LIBCOM_API void epicsStdCall epicsTimeShow (const epicsTimeStamp *pTS, unsigned interestLevel)
     {
         try {
             epicsTime(*pTS).show (interestLevel);

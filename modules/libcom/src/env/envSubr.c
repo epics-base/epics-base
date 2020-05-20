@@ -40,7 +40,6 @@
 #include <string.h>
 #include <limits.h>
 
-#define epicsExportSharedSymbols
 #include "epicsStdlib.h"
 #include "epicsStdio.h"
 #include "epicsString.h"
@@ -79,7 +78,7 @@
 *	}
 *
 *-*/
-const char * epicsShareAPI envGetConfigParamPtr(
+const char * epicsStdCall envGetConfigParamPtr(
 const ENV_PARAM *pParam /* I pointer to config param structure */
 )
 {
@@ -137,7 +136,7 @@ const ENV_PARAM *pParam /* I pointer to config param structure */
 *	    printf("DISPLAY is %s\n", temp);
 *
 *-*/
-char * epicsShareAPI envGetConfigParam(
+char * epicsStdCall envGetConfigParam(
 const ENV_PARAM *pParam,/* I pointer to config param structure */
 int	bufDim,		/* I dimension of parameter buffer */
 char	*pBuf		/* I pointer to parameter buffer  */
@@ -189,7 +188,7 @@ char	*pBuf		/* I pointer to parameter buffer  */
 *	}
 *
 *-*/
-long epicsShareAPI envGetDoubleConfigParam(
+long epicsStdCall envGetDoubleConfigParam(
 const ENV_PARAM *pParam,/* I pointer to config param structure */
 double	*pDouble	/* O pointer to place to store value */
 )
@@ -244,7 +243,7 @@ double	*pDouble	/* O pointer to place to store value */
 *	}
 *
 *-*/
-long epicsShareAPI envGetInetAddrConfigParam(
+long epicsStdCall envGetInetAddrConfigParam(
 const ENV_PARAM *pParam,/* I pointer to config param structure */
 struct in_addr *pAddr	/* O pointer to struct to receive inet addr */
 )
@@ -301,7 +300,7 @@ struct in_addr *pAddr	/* O pointer to struct to receive inet addr */
 *	}
 *
 *-*/
-long epicsShareAPI envGetLongConfigParam(
+long epicsStdCall envGetLongConfigParam(
 const ENV_PARAM *pParam,/* I pointer to config param structure */
 long	*pLong		/* O pointer to place to store value */
 )
@@ -322,7 +321,7 @@ long	*pLong		/* O pointer to place to store value */
 }
 
 
-long epicsShareAPI
+long epicsStdCall
 envGetBoolConfigParam(const ENV_PARAM *pParam, int *pBool)
 {
     char text[20];
@@ -351,7 +350,7 @@ envGetBoolConfigParam(const ENV_PARAM *pParam, int *pBool)
 *	envPrtConfigParam(&EPICS_TS_NTP_INET);
 *
 *-*/
-long epicsShareAPI envPrtConfigParam(
+long epicsStdCall envPrtConfigParam(
 const ENV_PARAM *pParam)	/* pointer to config param structure */
 {
     const char *pVal;
@@ -381,7 +380,7 @@ const ENV_PARAM *pParam)	/* pointer to config param structure */
 *       epicsPrtEnvParams();
 *
 *-*/
-long epicsShareAPI
+long epicsStdCall
 epicsPrtEnvParams(void)
 {
     const ENV_PARAM **ppParam = env_param_list;
@@ -395,7 +394,7 @@ epicsPrtEnvParams(void)
 /*
  * envGetInetPortConfigParam ()
  */
-epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam 
+LIBCOM_API unsigned short epicsStdCall envGetInetPortConfigParam 
                 (const ENV_PARAM *pEnv, unsigned short defaultPort)
 {
     long        longStatus;

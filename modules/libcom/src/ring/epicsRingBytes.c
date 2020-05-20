@@ -20,7 +20,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#define epicsExportSharedSymbols
 #include "epicsSpin.h"
 #include "dbDefs.h"
 #include "epicsRingBytes.h"
@@ -42,7 +41,7 @@ typedef struct ringPvt {
     volatile char buffer[1]; /* actually larger */
 }ringPvt;
 
-epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
+LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesCreate(int size)
 {
     ringPvt *pring = malloc(sizeof(ringPvt) + size + SLOP);
     if(!pring)
@@ -55,7 +54,7 @@ epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
     return((void *)pring);
 }
 
-epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesLockedCreate(int size)
+LIBCOM_API epicsRingBytesId  epicsStdCall epicsRingBytesLockedCreate(int size)
 {
     ringPvt *pring = (ringPvt *)epicsRingBytesCreate(size);
     if(!pring)
@@ -64,14 +63,14 @@ epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesLockedCreate(int si
     return((void *)pring);
 }
 
-epicsShareFunc void epicsShareAPI epicsRingBytesDelete(epicsRingBytesId id)
+LIBCOM_API void epicsStdCall epicsRingBytesDelete(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     if (pring->lock) epicsSpinDestroy(pring->lock);
     free((void *)pring);
 }
 
-epicsShareFunc int epicsShareAPI epicsRingBytesGet(
+LIBCOM_API int epicsStdCall epicsRingBytesGet(
     epicsRingBytesId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
@@ -115,7 +114,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesGet(
     return nbytes;
 }
 
-epicsShareFunc int epicsShareAPI epicsRingBytesPut(
+LIBCOM_API int epicsStdCall epicsRingBytesPut(
     epicsRingBytesId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
@@ -167,7 +166,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
     return nbytes;
 }
 
-epicsShareFunc void epicsShareAPI epicsRingBytesFlush(epicsRingBytesId id)
+LIBCOM_API void epicsStdCall epicsRingBytesFlush(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
 
@@ -176,7 +175,7 @@ epicsShareFunc void epicsShareAPI epicsRingBytesFlush(epicsRingBytesId id)
     if (pring->lock) epicsSpinUnlock(pring->lock);
 }
 
-epicsShareFunc int epicsShareAPI epicsRingBytesFreeBytes(epicsRingBytesId id)
+LIBCOM_API int epicsStdCall epicsRingBytesFreeBytes(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int nextGet, nextPut;
@@ -192,7 +191,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesFreeBytes(epicsRingBytesId id)
         return pring->size - nextPut + nextGet - SLOP;
 }
 
-epicsShareFunc int epicsShareAPI epicsRingBytesUsedBytes(epicsRingBytesId id)
+LIBCOM_API int epicsStdCall epicsRingBytesUsedBytes(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int nextGet, nextPut;
@@ -209,14 +208,14 @@ epicsShareFunc int epicsShareAPI epicsRingBytesUsedBytes(epicsRingBytesId id)
     return used;
 }
 
-epicsShareFunc int epicsShareAPI epicsRingBytesSize(epicsRingBytesId id)
+LIBCOM_API int epicsStdCall epicsRingBytesSize(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
 
     return pring->size - SLOP;
 }
 
-epicsShareFunc int epicsShareAPI epicsRingBytesIsEmpty(epicsRingBytesId id)
+LIBCOM_API int epicsStdCall epicsRingBytesIsEmpty(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int isEmpty;
@@ -228,18 +227,18 @@ epicsShareFunc int epicsShareAPI epicsRingBytesIsEmpty(epicsRingBytesId id)
     return isEmpty;
 }
 
-epicsShareFunc int epicsShareAPI epicsRingBytesIsFull(epicsRingBytesId id)
+LIBCOM_API int epicsStdCall epicsRingBytesIsFull(epicsRingBytesId id)
 {
     return (epicsRingBytesFreeBytes(id) <= 0);
 }
 
-epicsShareFunc int epicsShareAPI epicsRingBytesHighWaterMark(epicsRingBytesIdConst id)
+LIBCOM_API int epicsStdCall epicsRingBytesHighWaterMark(epicsRingBytesIdConst id)
 {
     ringPvt *pring = (ringPvt *)id;
     return pring->highWaterMark;
 }
 
-epicsShareFunc void epicsShareAPI epicsRingBytesResetHighWaterMark(epicsRingBytesId id)
+LIBCOM_API void epicsStdCall epicsRingBytesResetHighWaterMark(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
     int used;

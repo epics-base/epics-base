@@ -22,7 +22,6 @@
 #include <algorithm>
 
 #define instantiateRecourceLib
-#define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "epicsThread.h"
 #include "fdManager.h"
@@ -30,7 +29,7 @@
 
 using std :: max;
 
-epicsShareDef fdManager fileDescriptorManager;
+fdManager fileDescriptorManager;
 
 const unsigned mSecPerSec = 1000u;
 const unsigned uSecPerSec = 1000u * mSecPerSec;
@@ -41,7 +40,7 @@ const unsigned uSecPerSec = 1000u * mSecPerSec;
 // hopefully its a reasonable guess that select() and epicsThreadSleep()
 // will have the same sleep quantum 
 //
-epicsShareFunc fdManager::fdManager () : 
+LIBCOM_API fdManager::fdManager () : 
     sleepQuantum ( epicsThreadSleepQuantum () ), 
         fdSetsPtr ( new fd_set [fdrNEnums] ),
         pTimerQueue ( 0 ), maxFD ( 0 ), processInProg ( false ), 
@@ -58,7 +57,7 @@ epicsShareFunc fdManager::fdManager () :
 //
 // fdManager::~fdManager()
 //
-epicsShareFunc fdManager::~fdManager()
+LIBCOM_API fdManager::~fdManager()
 {
     fdReg   *pReg;
 
@@ -78,7 +77,7 @@ epicsShareFunc fdManager::~fdManager()
 //
 // fdManager::process()
 //
-epicsShareFunc void fdManager::process (double delay)
+LIBCOM_API void fdManager::process (double delay)
 {
     this->lazyInitTimerQueue ();
 
@@ -331,7 +330,7 @@ double fdManager::quantum ()
 //
 // lookUpFD()
 //
-epicsShareFunc fdReg *fdManager::lookUpFD (const SOCKET fd, const fdRegType type)
+LIBCOM_API fdReg *fdManager::lookUpFD (const SOCKET fd, const fdRegType type)
 {
     if (fd<0) {
         return NULL;

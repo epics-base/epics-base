@@ -170,7 +170,7 @@ common to all record types.
 
 =fields ZSV, OSV, COSV, IVOA, IVOV
 
-=head3 Run-Time and Simulation Mode Parameters
+=head3 Run-Time Parameters
 
 These parameters are used by the run-time code for processiong the binary
 output. They are not configurable using a configuration tool. They
@@ -201,11 +201,20 @@ The WPDT field is a private field for honoring seconds to hold HIGH.
 
 =fields ORAW, MASK, RBV, ORBV, LALM, MLST, RPVT, WDPT
 
-The following fields are used to operate the binary output in the
-simulation mode. See L<Fields Common to Many Record Types> for more
-information on these fields.
+=head3 Simulation Mode Parameters
 
-=fields SIOL, SIML, SIMM, SIMS
+The following fields are used to operate the record in simulation mode.
+
+If SIMM (fetched through SIML) is YES, the record is put in SIMS
+severity and the value is written through SIOL.
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
+
+See L<Output Simulation Fields|dbCommonOutput/Output Simulation Fields>
+for more information on simulation mode and its fields.
+
+=fields SIML, SIMM, SIOL, SIMS, SDLY, SSCN
 
 =cut
 

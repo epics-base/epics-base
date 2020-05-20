@@ -298,7 +298,7 @@ monitors.
 		interest(3)
 	}
 
-=head3 Run-time and Simulation Mode Parameters
+=head3 Run-time Parameters
 
 The LALM, MLST, and ALST fields are used to implement the hysteresis factors for
 monitor callbacks. Only if the difference between these fields and the
@@ -308,15 +308,24 @@ between VAL and MLST is greater than MDEL are the monitors triggered for VAL.
 
 =fields LALM, ALST, MLST
 
-The following fields are used to operate the long output in the simulation mode.
-See L<Fields Common to Many Record Types> for more information on the simulation
-mode fields
+=head3 Simulation Mode Parameters
 
-=fields SIOL, SIML, SIMM, SIMS
+The following fields are used to operate the record in simulation mode.
+
+If SIMM (fetched through SIML) is YES, the record is put in SIMS
+severity and the value is written through SIOL.
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
+
+See L<Output Simulation Fields|dbCommonOutput/Output Simulation Fields>
+for more information on simulation mode and its fields.
+
+=fields SIML, SIMM, SIOL, SIMS, SDLY, SSCN
 
 =cut
 
-	field(SIOL,DBF_OUTLINK) {
+        field(SIOL,DBF_OUTLINK) {
 		prompt("Sim Output Specifctn")
 		promptgroup("90 - Simulate")
 		interest(1)

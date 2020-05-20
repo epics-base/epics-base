@@ -441,35 +441,22 @@ monitoring functionality.
         interest(3)
     }
 
-=head3 Simulation Mode
+=head3 Simulation Mode Parameters
 
-The record provides several fields to support simulation of absent hardware.
-If the SIML field is set it is used to read a value into the SIMM field, which
-controls whether simulation is used or not:
+The following fields are used to operate the record in simulation mode.
 
-=over
+If SIMM (fetched through SIML) is YES or RAW, the record is put in SIMS
+severity and the value is fetched through SIOL (buffered in SVAL).
+If SIMM is YES, SVAL is written to VAL without conversion,
+if SIMM is RAW, SVAL is trancated to RVAL and converted.
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
 
-=item *
-SIMM must be zero (C<NO>) for the record to request a value from the device
-support.
+See L<Input Simulation Fields|dbCommonInput/Input Simulation Fields>
+for more information on simulation mode and its fields.
 
-=item *
-If SIMM is C<YES> and the SIOL link field is set, a simlated value in
-engineering units is read using the link into the SVAL field, from where it will
-subsequently be copied into the VAL field.
-
-=item *
-If SIMM is C<RAW> the SIOL link is still read into SVAL, but is then truncated
-and copied into the RVAL field.
-The L</Units Conversion> process described above is then followed to transform
-the simulated raw value into engineering units.
-
-=back
-
-The SIMS field can be set to give the record an alarm severity while it is in
-simulation mode.
-
-=fields SIML, SIMM, SIOL, SVAL, SIMS
+=fields SIML, SIMM, SIOL, SVAL, SIMS, SDLY, SSCN
 
 =cut
 

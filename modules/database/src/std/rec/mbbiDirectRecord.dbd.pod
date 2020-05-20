@@ -127,7 +127,7 @@ description (DESC) fields.
         interest(1)
     }
 
-=head3 Run-time and Simulation Mode Parameters
+=head3 Run-time Parameters
 
 These parameters are used by the run-time code for processing the mbbi direct
 record. They are not configurable prior to run-time.
@@ -139,11 +139,22 @@ MLST holds the value when the last monitor for value change was triggered.
 
 =fields NOBT, ORAW, MASK, MLST
 
-The following fields are used to operate the mbbiDirect record in the simulation
-mode.  See L<Fields Common to Many Record Types> for more information on these
-fields.
+=head3 Simulation Mode Parameters
 
-=fields SIOL, SVAL, SIML, SIMM, SIMS, SSCN, SDLY
+The following fields are used to operate the record in simulation mode.
+
+If SIMM (fetched through SIML) is YES or RAW, the record is put in SIMS
+severity and the value is fetched through SIOL (buffered in SVAL).
+If SIMM is YES, SVAL is written to VAL without conversion,
+if SIMM is RAW, SVAL is trancated to RVAL and converted.
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
+
+See L<Input Simulation Fields|dbCommonInput/Input Simulation Fields>
+for more information on simulation mode and its fields.
+
+=fields SIML, SIMM, SIOL, SVAL, SIMS, SDLY, SSCN
 
 =cut
 

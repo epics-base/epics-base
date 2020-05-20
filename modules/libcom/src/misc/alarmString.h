@@ -4,13 +4,16 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*
- * This file is deprecated, use alarm.h instead.
+/**
+ * \file alarmString.h
+ * \brief Deprecated, use alarm.h instead
  *
- * Old string names for alarm status and severity values
+ * How to convert alarm status and severity values into a string for printing.
+ *
+ * \note This file is deprecated, use alarm.h instead.
  */
 
 #ifndef INC_alarmString_H
@@ -22,9 +25,13 @@
 extern "C" {
 #endif
 
-/* Old versions of alarmString.h defined these names: */
-
+/**
+ * \brief An alias for epicsAlarmSeverityStrings
+ */
 #define alarmSeverityString epicsAlarmSeverityStrings
+/**
+ * \brief An alias for epicsAlarmConditionStrings
+ */
 #define alarmStatusString epicsAlarmConditionStrings
 
 

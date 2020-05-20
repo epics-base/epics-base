@@ -8,7 +8,7 @@
 \*************************************************************************/
 
 
-/*  
+/*
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -39,7 +39,7 @@ private:
     epicsSingleton < localHostName > :: reference
         _refLocalHostName;
 };
-    
+
 static epicsThreadOnceId cacChannelIdOnce = EPICS_THREAD_ONCE_INIT;
 
 const cacChannel::priLev cacChannel::priorityMax = 99u;
@@ -53,63 +53,63 @@ cacChannel::~cacChannel ()
 {
 }
 
-caAccessRights cacChannel::accessRights ( 
-    epicsGuard < epicsMutex > & ) const 
+caAccessRights cacChannel::accessRights (
+    epicsGuard < epicsMutex > & ) const
 {
     static caAccessRights ar ( true, true );
     return ar;
 }
 
-unsigned cacChannel::searchAttempts ( 
-    epicsGuard < epicsMutex > & ) const 
+unsigned cacChannel::searchAttempts (
+    epicsGuard < epicsMutex > & ) const
 {
     return 0u;
 }
 
-double cacChannel::beaconPeriod ( 
-    epicsGuard < epicsMutex > & ) const 
+double cacChannel::beaconPeriod (
+    epicsGuard < epicsMutex > & ) const
 {
     return - DBL_MAX;
 }
 
-double cacChannel::receiveWatchdogDelay ( 
+double cacChannel::receiveWatchdogDelay (
     epicsGuard < epicsMutex > & ) const
 {
     return - DBL_MAX;
 }
 
 bool cacChannel::ca_v42_ok (
-    epicsGuard < epicsMutex > & ) const 
+    epicsGuard < epicsMutex > & ) const
 {
     return true;
 }
 
 bool cacChannel::connected (
-    epicsGuard < epicsMutex > & ) const 
+    epicsGuard < epicsMutex > & ) const
 {
     return true;
 }
 
-CACChannelPrivate :: 
+CACChannelPrivate ::
     CACChannelPrivate() :
     _refLocalHostName ( localHostNameCache.getReference () )
 {
 }
 
-inline unsigned CACChannelPrivate :: 
+inline unsigned CACChannelPrivate ::
     getHostName ( char * pBuf, unsigned bufLength )
 {
     return _refLocalHostName->getName ( pBuf, bufLength );
 }
-    
-inline const char * CACChannelPrivate :: 
+
+inline const char * CACChannelPrivate ::
     pHostName ()
 {
     return _refLocalHostName->pointer ();
 }
 
 static CACChannelPrivate * pCACChannelPrivate = 0;
-    
+
 // runs once only for each process
 extern "C" void cacChannelSetup ( void * )
 {
@@ -117,7 +117,7 @@ extern "C" void cacChannelSetup ( void * )
 }
 
 // the default is to assume that it is a locally hosted channel
-unsigned cacChannel::getHostName ( 
+unsigned cacChannel::getHostName (
     epicsGuard < epicsMutex > &,
     char * pBuf, unsigned bufLength ) const throw ()
 {

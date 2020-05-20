@@ -124,49 +124,49 @@ int main(int argc, char *argv[])
     readin();
 
     if ( syntaxerror )
-	flexend( 1 );
+        flexend( 1 );
 
     if ( yymore_really_used == REALLY_USED )
-	yymore_used = true;
+        yymore_used = true;
     else if ( yymore_really_used == REALLY_NOT_USED )
-	yymore_used = false;
+        yymore_used = false;
 
     if ( reject_really_used == REALLY_USED )
-	reject = true;
+        reject = true;
     else if ( reject_really_used == REALLY_NOT_USED )
-	reject = false;
+        reject = false;
 
     if ( performance_report )
-	{
-	if ( interactive )
-	    fprintf( stderr,
-		     "-I (interactive) entails a minor performance penalty\n" );
+        {
+        if ( interactive )
+            fprintf( stderr,
+                     "-I (interactive) entails a minor performance penalty\n" );
 
-	if ( yymore_used )
-	    fprintf( stderr, "yymore() entails a minor performance penalty\n" );
+        if ( yymore_used )
+            fprintf( stderr, "yymore() entails a minor performance penalty\n" );
 
-	if ( reject )
-	    fprintf( stderr, "REJECT entails a large performance penalty\n" );
+        if ( reject )
+            fprintf( stderr, "REJECT entails a large performance penalty\n" );
 
-	if ( variable_trailing_context_rules )
-	    fprintf( stderr,
+        if ( variable_trailing_context_rules )
+            fprintf( stderr,
 "Variable trailing context rules entail a large performance penalty\n" );
-	}
+        }
 
     if ( reject )
-	real_reject = true;
+        real_reject = true;
 
     if ( variable_trailing_context_rules )
-	reject = true;
+        reject = true;
 
     if ( (fulltbl || fullspd) && reject )
-	{
-	if ( real_reject )
-	    flexerror( "REJECT cannot be used with -f or -F" );
-	else
-	    flexerror(
-	"variable trailing context rules cannot be used with -f or -F" );
-	}
+        {
+        if ( real_reject )
+            flexerror( "REJECT cannot be used with -f or -F" );
+        else
+            flexerror(
+        "variable trailing context rules cannot be used with -f or -F" );
+        }
 
     ntod();
 
@@ -199,181 +199,181 @@ void flexend(int status)
     char *flex_gettime();
 
     if ( skelfile != NULL )
-	{
-	if ( ferror( skelfile ) )
-	    flexfatal( "error occurred when writing skeleton file" );
+        {
+        if ( ferror( skelfile ) )
+            flexfatal( "error occurred when writing skeleton file" );
 
-	else if ( fclose( skelfile ) )
-	    flexfatal( "error occurred when closing skeleton file" );
-	}
+        else if ( fclose( skelfile ) )
+            flexfatal( "error occurred when closing skeleton file" );
+        }
 
     if ( temp_action_file )
-	{
-	if ( ferror( temp_action_file ) )
-	    flexfatal( "error occurred when writing temporary action file" );
+        {
+        if ( ferror( temp_action_file ) )
+            flexfatal( "error occurred when writing temporary action file" );
 
-	else if ( fclose( temp_action_file ) )
-	    flexfatal( "error occurred when closing temporary action file" );
+        else if ( fclose( temp_action_file ) )
+            flexfatal( "error occurred when closing temporary action file" );
     }
 
     if ( status != 0 && outfile_created )
-	{
-	if ( ferror( stdout ) )
-	    flexfatal( "error occurred when writing output file" );
+        {
+        if ( ferror( stdout ) )
+            flexfatal( "error occurred when writing output file" );
 
-	else if ( fclose( stdout ) )
-	    flexfatal( "error occurred when closing output file" );
+        else if ( fclose( stdout ) )
+            flexfatal( "error occurred when closing output file" );
 
-	else if ( unlink( outfile ) )
-	    flexfatal( "error occurred when deleting output file" );
-	}
+        else if ( unlink( outfile ) )
+            flexfatal( "error occurred when deleting output file" );
+        }
 
     if ( backtrack_report && backtrack_file )
-	{
-	if ( num_backtracking == 0 )
-	    fprintf( backtrack_file, "No backtracking.\n" );
-	else if ( fullspd || fulltbl )
-	    fprintf( backtrack_file,
-		     "%d backtracking (non-accepting) states.\n",
-		     num_backtracking );
-	else
-	    fprintf( backtrack_file, "Compressed tables always backtrack.\n" );
+        {
+        if ( num_backtracking == 0 )
+            fprintf( backtrack_file, "No backtracking.\n" );
+        else if ( fullspd || fulltbl )
+            fprintf( backtrack_file,
+                     "%d backtracking (non-accepting) states.\n",
+                     num_backtracking );
+        else
+            fprintf( backtrack_file, "Compressed tables always backtrack.\n" );
 
-	if ( ferror( backtrack_file ) )
-	    flexfatal( "error occurred when writing backtracking file" );
+        if ( ferror( backtrack_file ) )
+            flexfatal( "error occurred when writing backtracking file" );
 
-	else if ( fclose( backtrack_file ) )
-	    flexfatal( "error occurred when closing backtracking file" );
-	}
+        else if ( fclose( backtrack_file ) )
+            flexfatal( "error occurred when closing backtracking file" );
+        }
 
     if ( printstats )
-	{
-	endtime = flex_gettime();
+        {
+        endtime = flex_gettime();
 
-	fprintf( stderr, "%s version %s usage statistics:\n", program_name,
-		 flex_version );
-	fprintf( stderr, "  started at %s, finished at %s\n",
-		 starttime, endtime );
+        fprintf( stderr, "%s version %s usage statistics:\n", program_name,
+                 flex_version );
+        fprintf( stderr, "  started at %s, finished at %s\n",
+                 starttime, endtime );
 
-	fprintf( stderr, "  scanner options: -" );
+        fprintf( stderr, "  scanner options: -" );
 
-	if ( backtrack_report )
-	    putc( 'b', stderr );
-	if ( ddebug )
-	    putc( 'd', stderr );
-	if ( interactive )
-	    putc( 'I', stderr );
-	if ( caseins )
-	    putc( 'i', stderr );
-	if ( ! gen_line_dirs )
-	    putc( 'L', stderr );
-	if ( performance_report )
-	    putc( 'p', stderr );
-	if ( spprdflt )
-	    putc( 's', stderr );
-	if ( use_stdout )
-	    putc( 't', stderr );
-	if ( trace )
-	    putc( 'T', stderr );
-	if ( printstats )
-	    putc( 'v', stderr );	/* always true! */
-	if ( csize == 256 )
-	    putc( '8', stderr );
+        if ( backtrack_report )
+            putc( 'b', stderr );
+        if ( ddebug )
+            putc( 'd', stderr );
+        if ( interactive )
+            putc( 'I', stderr );
+        if ( caseins )
+            putc( 'i', stderr );
+        if ( ! gen_line_dirs )
+            putc( 'L', stderr );
+        if ( performance_report )
+            putc( 'p', stderr );
+        if ( spprdflt )
+            putc( 's', stderr );
+        if ( use_stdout )
+            putc( 't', stderr );
+        if ( trace )
+            putc( 'T', stderr );
+        if ( printstats )
+            putc( 'v', stderr );        /* always true! */
+        if ( csize == 256 )
+            putc( '8', stderr );
 
-	fprintf( stderr, " -C" );
+        fprintf( stderr, " -C" );
 
-	if ( fulltbl )
-	    putc( 'f', stderr );
-	if ( fullspd )
-	    putc( 'F', stderr );
-	if ( useecs )
-	    putc( 'e', stderr );
-	if ( usemecs )
-	    putc( 'm', stderr );
+        if ( fulltbl )
+            putc( 'f', stderr );
+        if ( fullspd )
+            putc( 'F', stderr );
+        if ( useecs )
+            putc( 'e', stderr );
+        if ( usemecs )
+            putc( 'm', stderr );
 
-	if ( strcmp( skelname, ENQUOTE(DEFAULT_SKELETON_FILE) ) )
-	    fprintf( stderr, " -S%s", skelname );
+        if ( strcmp( skelname, ENQUOTE(DEFAULT_SKELETON_FILE) ) )
+            fprintf( stderr, " -S%s", skelname );
 
-	putc( '\n', stderr );
+        putc( '\n', stderr );
 
-	fprintf( stderr, "  %d/%d NFA states\n", lastnfa, current_mns );
-	fprintf( stderr, "  %d/%d DFA states (%d words)\n", lastdfa,
-		 current_max_dfas, totnst );
-	fprintf( stderr,
-		 "  %d rules\n", num_rules - 1 /* - 1 for def. rule */ );
+        fprintf( stderr, "  %d/%d NFA states\n", lastnfa, current_mns );
+        fprintf( stderr, "  %d/%d DFA states (%d words)\n", lastdfa,
+                 current_max_dfas, totnst );
+        fprintf( stderr,
+                 "  %d rules\n", num_rules - 1 /* - 1 for def. rule */ );
 
-	if ( num_backtracking == 0 )
-	    fprintf( stderr, "  No backtracking\n" );
-	else if ( fullspd || fulltbl )
-	    fprintf( stderr, "  %d backtracking (non-accepting) states\n",
-		     num_backtracking );
-	else
-	    fprintf( stderr, "  compressed tables always backtrack\n" );
+        if ( num_backtracking == 0 )
+            fprintf( stderr, "  No backtracking\n" );
+        else if ( fullspd || fulltbl )
+            fprintf( stderr, "  %d backtracking (non-accepting) states\n",
+                     num_backtracking );
+        else
+            fprintf( stderr, "  compressed tables always backtrack\n" );
 
-	if ( bol_needed )
-	    fprintf( stderr, "  Beginning-of-line patterns used\n" );
+        if ( bol_needed )
+            fprintf( stderr, "  Beginning-of-line patterns used\n" );
 
-	fprintf( stderr, "  %d/%d start conditions\n", lastsc,
-		 current_max_scs );
-	fprintf( stderr, "  %d epsilon states, %d double epsilon states\n",
-		 numeps, eps2 );
+        fprintf( stderr, "  %d/%d start conditions\n", lastsc,
+                 current_max_scs );
+        fprintf( stderr, "  %d epsilon states, %d double epsilon states\n",
+                 numeps, eps2 );
 
-	if ( lastccl == 0 )
-	    fprintf( stderr, "  no character classes\n" );
-	else
-	    fprintf( stderr,
-	"  %d/%d character classes needed %d/%d words of storage, %d reused\n",
-		     lastccl, current_maxccls,
-		     cclmap[lastccl] + ccllen[lastccl],
-		     current_max_ccl_tbl_size, cclreuse );
+        if ( lastccl == 0 )
+            fprintf( stderr, "  no character classes\n" );
+        else
+            fprintf( stderr,
+        "  %d/%d character classes needed %d/%d words of storage, %d reused\n",
+                     lastccl, current_maxccls,
+                     cclmap[lastccl] + ccllen[lastccl],
+                     current_max_ccl_tbl_size, cclreuse );
 
-	fprintf( stderr, "  %d state/nextstate pairs created\n", numsnpairs );
-	fprintf( stderr, "  %d/%d unique/duplicate transitions\n",
-		 numuniq, numdup );
+        fprintf( stderr, "  %d state/nextstate pairs created\n", numsnpairs );
+        fprintf( stderr, "  %d/%d unique/duplicate transitions\n",
+                 numuniq, numdup );
 
-	if ( fulltbl )
-	    {
-	    tblsiz = lastdfa * numecs;
-	    fprintf( stderr, "  %d table entries\n", tblsiz );
-	    }
+        if ( fulltbl )
+            {
+            tblsiz = lastdfa * numecs;
+            fprintf( stderr, "  %d table entries\n", tblsiz );
+            }
 
-	else
-	    {
-	    tblsiz = 2 * (lastdfa + numtemps) + 2 * tblend;
+        else
+            {
+            tblsiz = 2 * (lastdfa + numtemps) + 2 * tblend;
 
-	    fprintf( stderr, "  %d/%d base-def entries created\n",
-		     lastdfa + numtemps, current_max_dfas );
-	    fprintf( stderr, "  %d/%d (peak %d) nxt-chk entries created\n",
-		     tblend, current_max_xpairs, peakpairs );
-	    fprintf( stderr,
-		     "  %d/%d (peak %d) template nxt-chk entries created\n",
-		     numtemps * nummecs, current_max_template_xpairs,
-		     numtemps * numecs );
-	    fprintf( stderr, "  %d empty table entries\n", nummt );
-	    fprintf( stderr, "  %d protos created\n", numprots );
-	    fprintf( stderr, "  %d templates created, %d uses\n",
-		     numtemps, tmpuses );
-	    }
+            fprintf( stderr, "  %d/%d base-def entries created\n",
+                     lastdfa + numtemps, current_max_dfas );
+            fprintf( stderr, "  %d/%d (peak %d) nxt-chk entries created\n",
+                     tblend, current_max_xpairs, peakpairs );
+            fprintf( stderr,
+                     "  %d/%d (peak %d) template nxt-chk entries created\n",
+                     numtemps * nummecs, current_max_template_xpairs,
+                     numtemps * numecs );
+            fprintf( stderr, "  %d empty table entries\n", nummt );
+            fprintf( stderr, "  %d protos created\n", numprots );
+            fprintf( stderr, "  %d templates created, %d uses\n",
+                     numtemps, tmpuses );
+            }
 
-	if ( useecs )
-	    {
-	    tblsiz = tblsiz + csize;
-	    fprintf( stderr, "  %d/%d equivalence classes created\n",
-		     numecs, csize );
-	    }
+        if ( useecs )
+            {
+            tblsiz = tblsiz + csize;
+            fprintf( stderr, "  %d/%d equivalence classes created\n",
+                     numecs, csize );
+            }
 
-	if ( usemecs )
-	    {
-	    tblsiz = tblsiz + numecs;
-	    fprintf( stderr, "  %d/%d meta-equivalence classes created\n",
-		     nummecs, csize );
-	    }
+        if ( usemecs )
+            {
+            tblsiz = tblsiz + numecs;
+            fprintf( stderr, "  %d/%d meta-equivalence classes created\n",
+                     nummecs, csize );
+            }
 
-	fprintf( stderr, "  %d (%d saved) hash collisions, %d DFAs equal\n",
-		 hshcol, hshsave, dfaeql );
-	fprintf( stderr, "  %d sets of reallocations needed\n", num_reallocs );
-	fprintf( stderr, "  %d total table entries needed\n", tblsiz );
-	}
+        fprintf( stderr, "  %d (%d saved) hash collisions, %d DFAs equal\n",
+                 hshcol, hshsave, dfaeql );
+        fprintf( stderr, "  %d sets of reallocations needed\n", num_reallocs );
+        fprintf( stderr, "  %d total table entries needed\n", tblsiz );
+        }
 
     exit( status );
 }
@@ -407,187 +407,187 @@ void flexinit(int argc, char **argv)
 
     /* read flags */
     for ( --argc, ++argv; argc ; --argc, ++argv )
-	{
-	if ( argv[0][0] != '-' || argv[0][1] == '\0' )
-	    break;
+        {
+        if ( argv[0][0] != '-' || argv[0][1] == '\0' )
+            break;
 
-	arg = argv[0];
+        arg = argv[0];
 
-	for ( i = 1; arg[i] != '\0'; ++i )
-	    switch ( arg[i] )
-		{
-		case 'b':
-		    backtrack_report = true;
-		    break;
+        for ( i = 1; arg[i] != '\0'; ++i )
+            switch ( arg[i] )
+                {
+                case 'b':
+                    backtrack_report = true;
+                    break;
 
-		case 'c':
-		    fprintf( stderr,
-	"%s: Assuming use of deprecated -c flag is really intended to be -C\n",
-			     program_name );
+                case 'c':
+                    fprintf( stderr,
+        "%s: Assuming use of deprecated -c flag is really intended to be -C\n",
+                             program_name );
 
-		    /* fall through */
+                    /* fall through */
 
-		case 'C':
-		    if ( i != 1 )
-			flexerror( "-C flag must be given separately" );
+                case 'C':
+                    if ( i != 1 )
+                        flexerror( "-C flag must be given separately" );
 
-		    if ( ! sawcmpflag )
-			{
-			useecs = false;
-			usemecs = false;
-			fulltbl = false;
-			sawcmpflag = true;
-			}
+                    if ( ! sawcmpflag )
+                        {
+                        useecs = false;
+                        usemecs = false;
+                        fulltbl = false;
+                        sawcmpflag = true;
+                        }
 
-		    for ( ++i; arg[i] != '\0'; ++i )
-			switch ( arg[i] )
-			    {
-			    case 'e':
-				useecs = true;
-				break;
+                    for ( ++i; arg[i] != '\0'; ++i )
+                        switch ( arg[i] )
+                            {
+                            case 'e':
+                                useecs = true;
+                                break;
 
-			    case 'F':
-				fullspd = true;
-				break;
+                            case 'F':
+                                fullspd = true;
+                                break;
 
-			    case 'f':
-				fulltbl = true;
-				break;
+                            case 'f':
+                                fulltbl = true;
+                                break;
 
-			    case 'm':
-				usemecs = true;
-				break;
+                            case 'm':
+                                usemecs = true;
+                                break;
 
-			    default:
-				lerrif( "unknown -C option '%c'",
-					(int) arg[i] );
-				break;
-			    }
+                            default:
+                                lerrif( "unknown -C option '%c'",
+                                        (int) arg[i] );
+                                break;
+                            }
 
-		    goto get_next_arg;
+                    goto get_next_arg;
 
-		case 'd':
-		    ddebug = true;
-		    break;
+                case 'd':
+                    ddebug = true;
+                    break;
 
-		case 'f':
-		    useecs = usemecs = false;
-		    fulltbl = true;
-		    break;
+                case 'f':
+                    useecs = usemecs = false;
+                    fulltbl = true;
+                    break;
 
-		case 'F':
-		    useecs = usemecs = false;
-		    fullspd = true;
-		    break;
+                case 'F':
+                    useecs = usemecs = false;
+                    fullspd = true;
+                    break;
 
-		case 'I':
-		    interactive = true;
-		    break;
+                case 'I':
+                    interactive = true;
+                    break;
 
-		case 'i':
-		    caseins = true;
-		    break;
+                case 'i':
+                    caseins = true;
+                    break;
 
-		case 'L':
-		    gen_line_dirs = false;
-		    break;
+                case 'L':
+                    gen_line_dirs = false;
+                    break;
 
-		case 'n':
-		    /* stupid do-nothing deprecated option */
-		    break;
+                case 'n':
+                    /* stupid do-nothing deprecated option */
+                    break;
 
-		case 'o':
-		    if ( i != 1 )
-			flexerror( "-o flag must be given separately" );
+                case 'o':
+                    if ( i != 1 )
+                        flexerror( "-o flag must be given separately" );
 
-		    outfile = arg + i + 1;
-		    goto get_next_arg;
+                    outfile = arg + i + 1;
+                    goto get_next_arg;
 
-		case 'p':
-		    performance_report = true;
-		    break;
+                case 'p':
+                    performance_report = true;
+                    break;
 
-		case 'S':
-		    if ( i != 1 )
-			flexerror( "-S flag must be given separately" );
+                case 'S':
+                    if ( i != 1 )
+                        flexerror( "-S flag must be given separately" );
 
-		    skelname = arg + i + 1;
-		    goto get_next_arg;
+                    skelname = arg + i + 1;
+                    goto get_next_arg;
 
-		case 's':
-		    spprdflt = true;
-		    break;
+                case 's':
+                    spprdflt = true;
+                    break;
 
-		case 't':
-		    use_stdout = true;
-		    break;
+                case 't':
+                    use_stdout = true;
+                    break;
 
-		case 'T':
-		    trace = true;
-		    break;
+                case 'T':
+                    trace = true;
+                    break;
 
-		case 'v':
-		    printstats = true;
-		    break;
+                case 'v':
+                    printstats = true;
+                    break;
 
-		case '8':
-		    csize = CSIZE;
-		    break;
+                case '8':
+                    csize = CSIZE;
+                    break;
 
-		default:
-		    lerrif( "unknown flag '%c'", (int) arg[i] );
-		    break;
-		}
+                default:
+                    lerrif( "unknown flag '%c'", (int) arg[i] );
+                    break;
+                }
 
 get_next_arg: /* used by -C and -S flags in lieu of a "continue 2" control */
-	;
-	}
+        ;
+        }
 
     if ( (fulltbl || fullspd) && usemecs )
-	flexerror( "full table and -Cm don't make sense together" );
+        flexerror( "full table and -Cm don't make sense together" );
 
     if ( (fulltbl || fullspd) && interactive )
-	flexerror( "full table and -I are (currently) incompatible" );
+        flexerror( "full table and -I are (currently) incompatible" );
 
     if ( fulltbl && fullspd )
-	flexerror( "full table and -F are mutually exclusive" );
+        flexerror( "full table and -F are mutually exclusive" );
 
     if ( ! skelname )
-	{
-	static char skeleton_name_storage[400];
+        {
+        static char skeleton_name_storage[400];
 
-	skelname = skeleton_name_storage;
-	(void) strcpy( skelname, ENQUOTE(DEFAULT_SKELETON_FILE) );
-	}
+        skelname = skeleton_name_storage;
+        (void) strcpy( skelname, ENQUOTE(DEFAULT_SKELETON_FILE) );
+        }
 
     if ( ! use_stdout )
-	{
-	FILE *prev_stdout = freopen( outfile, "w", stdout );
+        {
+        FILE *prev_stdout = freopen( outfile, "w", stdout );
 
-	if ( prev_stdout == NULL )
-	    lerrsf( "could not create %s", outfile );
+        if ( prev_stdout == NULL )
+            lerrsf( "could not create %s", outfile );
 
-	outfile_created = 1;
-	}
+        outfile_created = 1;
+        }
 
     num_input_files = argc;
     input_files = argv;
     set_input_file( num_input_files > 0 ? input_files[0] : NULL );
 
     if ( backtrack_report )
-	{
+        {
 #ifndef SHORT_FILE_NAMES
-	backtrack_file = fopen( "lex.backtrack", "w" );
+        backtrack_file = fopen( "lex.backtrack", "w" );
 #else
-	backtrack_file = fopen( "lex.bck", "w" );
+        backtrack_file = fopen( "lex.bck", "w" );
 #endif
 
-	if ( backtrack_file == NULL )
-	    flexerror( "could not create lex.backtrack" );
-	}
+        if ( backtrack_file == NULL )
+            flexerror( "could not create lex.backtrack" );
+        }
 
     else
-	backtrack_file = NULL;
+        backtrack_file = NULL;
 
 
     lastccl = 0;
@@ -597,7 +597,7 @@ get_next_arg: /* used by -C and -S flags in lieu of a "continue 2" control */
     starttime = flex_gettime();
 
     if ( (skelfile = fopen( skelname, "r" )) == NULL )
-	lerrsf( "can't open skeleton file %s", skelname );
+        lerrsf( "can't open skeleton file %s", skelname );
 
     if ( ( temp_action_file = epicsTempFile () ) == NULL )
     {
@@ -619,29 +619,29 @@ get_next_arg: /* used by -C and -S flags in lieu of a "continue 2" control */
     lastprot = 1;
 
     if ( useecs )
-	{ /* set up doubly-linked equivalence classes */
-	/* We loop all the way up to csize, since ecgroup[csize] is the
-	 * position used for NUL characters
-	 */
-	ecgroup[1] = NIL;
+        { /* set up doubly-linked equivalence classes */
+        /* We loop all the way up to csize, since ecgroup[csize] is the
+         * position used for NUL characters
+         */
+        ecgroup[1] = NIL;
 
-	for ( i = 2; i <= csize; ++i )
-	    {
-	    ecgroup[i] = i - 1;
-	    nextecm[i - 1] = i;
-	    }
+        for ( i = 2; i <= csize; ++i )
+            {
+            ecgroup[i] = i - 1;
+            nextecm[i - 1] = i;
+            }
 
-	nextecm[csize] = NIL;
-	}
+        nextecm[csize] = NIL;
+        }
 
     else
-	{ /* put everything in its own equivalence class */
-	for ( i = 1; i <= csize; ++i )
-	    {
-	    ecgroup[i] = i;
-	    nextecm[i] = BAD_SUBSCRIPT;	/* to catch errors */
-	    }
-	}
+        { /* put everything in its own equivalence class */
+        for ( i = 1; i <= csize; ++i )
+            {
+            ecgroup[i] = i;
+            nextecm[i] = BAD_SUBSCRIPT; /* to catch errors */
+            }
+        }
 
     set_up_initial_allocations();
 }
@@ -658,39 +658,39 @@ void readin(void)
     skelout();
 
     if ( ddebug )
-	puts( "#define FLEX_DEBUG" );
+        puts( "#define FLEX_DEBUG" );
 
     if ( csize == 256 )
-	puts( "#define YY_CHAR unsigned char" );
+        puts( "#define YY_CHAR unsigned char" );
     else
-	puts( "#define YY_CHAR char" );
+        puts( "#define YY_CHAR char" );
 
     line_directive_out( stdout );
 
     if ( yyparse() )
-	{
-	pinpoint_message( "fatal parse error" );
-	flexend( 1 );
-	}
+        {
+        pinpoint_message( "fatal parse error" );
+        flexend( 1 );
+        }
 
     if ( xlation )
-	{
-	numecs = ecs_from_xlation( ecgroup );
-	useecs = true;
-	}
+        {
+        numecs = ecs_from_xlation( ecgroup );
+        useecs = true;
+        }
 
     else if ( useecs )
-	numecs = cre8ecs( nextecm, ecgroup, csize );
+        numecs = cre8ecs( nextecm, ecgroup, csize );
 
     else
-	numecs = csize;
+        numecs = csize;
 
     /* now map the equivalence class for NUL to its expected place */
     ecgroup[0] = ecgroup[csize];
     NUL_ec = abs( ecgroup[0] );
 
     if ( useecs )
-	ccl2ecl();
+        ccl2ecl();
 }
 
 

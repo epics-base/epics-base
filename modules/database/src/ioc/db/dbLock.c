@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include <stddef.h>
@@ -882,16 +882,16 @@ static char *msstring[4]={"NMS","MS","MSI","MSS"};
 
 long dblsr(char *recordname,int level)
 {
-    int			link;
-    DBENTRY		dbentry;
-    DBENTRY		*pdbentry=&dbentry;
-    long		status;
-    dbCommon		*precord;
-    lockSet		*plockSet;
-    lockRecord		*plockRecord;
-    dbRecordType	*pdbRecordType;
-    dbFldDes		*pdbFldDes;
-    DBLINK		*plink;
+    int                 link;
+    DBENTRY             dbentry;
+    DBENTRY             *pdbentry=&dbentry;
+    long                status;
+    dbCommon            *precord;
+    lockSet             *plockSet;
+    lockRecord          *plockRecord;
+    dbRecordType        *pdbRecordType;
+    dbFldDes            *pdbFldDes;
+    DBLINK              *plink;
 
     if (recordname && ((*recordname == '\0') || !strcmp(recordname,"*")))
         recordname = NULL;
@@ -923,7 +923,7 @@ long dblsr(char *recordname,int level)
             printf("%s\n",precord->name);
             if(level<=1) continue;
             for(link=0; (link<pdbRecordType->no_links) ; link++) {
-                DBADDR	*pdbAddr;
+                DBADDR  *pdbAddr;
                 pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[link]];
                 plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
                 if(plink->type != DB_LINK) continue;
@@ -983,8 +983,8 @@ long dbLockShowLocked(int level)
 
 int * dbLockSetAddrTrace(dbCommon *precord)
 {
-    lockRecord	*plockRecord = precord->lset;
-    lockSet	*plockSet = plockRecord->plockSet;
+    lockRecord  *plockRecord = precord->lset;
+    lockSet     *plockSet = plockRecord->plockSet;
 
     return(&plockSet->trace);
 }

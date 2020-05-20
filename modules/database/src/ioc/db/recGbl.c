@@ -59,8 +59,8 @@ static void getMaxRangeValues(short field_type, double *pupper_limit,
 void recGblDbaddrError(long status, const struct dbAddr *paddr,
     const char *pmessage)
 {
-    dbCommon *precord = 0;
-    dbFldDes	*pdbFldDes = 0;
+    dbCommon    *precord = 0;
+    dbFldDes    *pdbFldDes = 0;
 
     if(paddr) {
         pdbFldDes = paddr->pfldDes;
@@ -78,7 +78,7 @@ void recGblDbaddrError(long status, const struct dbAddr *paddr,
 void recGblRecordError(long status, void *pdbc,
     const char *pmessage)
 {
-    dbCommon	*precord = pdbc;
+    dbCommon    *precord = pdbc;
 
     errPrintf(status,0,0,
         "PV: %s %s\n",
@@ -190,24 +190,24 @@ unsigned short recGblResetAlarms(void *precord)
     pdbc->nsev = 0;
 
     if (prev_sevr != new_sevr) {
-	stat_mask = DBE_ALARM;
-	db_post_events(pdbc, &pdbc->sevr, DBE_VALUE);
+        stat_mask = DBE_ALARM;
+        db_post_events(pdbc, &pdbc->sevr, DBE_VALUE);
     }
     if (prev_stat != new_stat) {
-	stat_mask |= DBE_VALUE;
+        stat_mask |= DBE_VALUE;
     }
     if (stat_mask) {
-	db_post_events(pdbc, &pdbc->stat, stat_mask);
-	val_mask = DBE_ALARM;
+        db_post_events(pdbc, &pdbc->stat, stat_mask);
+        val_mask = DBE_ALARM;
 
-	if (!pdbc->ackt || new_sevr >= pdbc->acks) {
-	    pdbc->acks = new_sevr;
-	    db_post_events(pdbc, &pdbc->acks, DBE_VALUE);
-	}
+        if (!pdbc->ackt || new_sevr >= pdbc->acks) {
+            pdbc->acks = new_sevr;
+            db_post_events(pdbc, &pdbc->acks, DBE_VALUE);
+        }
 
-	if (recGblAlarmHook) {
-	    (*recGblAlarmHook)(pdbc, prev_sevr, prev_stat);
-	}
+        if (recGblAlarmHook) {
+            (*recGblAlarmHook)(pdbc, prev_sevr, prev_stat);
+        }
     }
     return val_mask;
 }
@@ -217,8 +217,8 @@ int recGblSetSevr(void *precord, epicsEnum16 new_stat, epicsEnum16 new_sevr)
     struct dbCommon *prec = precord;
     if (prec->nsev < new_sevr) {
         prec->nsta = new_stat;
-	prec->nsev = new_sevr;
-	return TRUE;
+        prec->nsev = new_sevr;
+        return TRUE;
     }
     return FALSE;
 }
@@ -228,17 +228,17 @@ void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
 {
     switch (msMode) {
     case pvlOptNMS:
-	break;
+        break;
     case pvlOptMSI:
         if (sevr < INVALID_ALARM)
-	    break;
-	/* Fall through */
+            break;
+        /* Fall through */
     case pvlOptMS:
-	recGblSetSevr(precord, LINK_ALARM, sevr);
-	break;
+        recGblSetSevr(precord, LINK_ALARM, sevr);
+        break;
     case pvlOptMSS:
         recGblSetSevr(precord, stat, sevr);
-	break;
+        break;
     }
 }
 
@@ -251,9 +251,9 @@ void recGblFwdLink(void *precord)
     /*Handle dbPutFieldNotify record completions*/
     if(pdbc->ppn) dbNotifyCompletion(pdbc);
     if(pdbc->rpro) {
-	/*If anyone requested reprocessing do it*/
-	pdbc->rpro = FALSE;
-	scanOnce(pdbc);
+        /*If anyone requested reprocessing do it*/
+        pdbc->rpro = FALSE;
+        scanOnce(pdbc);
     }
     /*In case putField caused put we are all done */
     pdbc->putf = FALSE;

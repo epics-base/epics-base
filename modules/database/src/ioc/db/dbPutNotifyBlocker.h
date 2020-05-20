@@ -8,10 +8,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+/*
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifndef dbPutNotifyBlockerh
@@ -75,8 +75,8 @@ private:
         epicsGuard < epicsMutex > &, unsigned long newSize );
     friend void putNotifyCompletion ( processNotify * ppn );
     friend int  putNotifyPut ( processNotify *ppn, notifyPutType type );
-	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );
-	dbPutNotifyBlocker & operator = ( const dbPutNotifyBlocker & );
+    dbPutNotifyBlocker ( const dbPutNotifyBlocker & );
+    dbPutNotifyBlocker & operator = ( const dbPutNotifyBlocker & );
     virtual ~dbPutNotifyBlocker ();
     void operator delete ( void * );
 };

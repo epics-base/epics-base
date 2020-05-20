@@ -7,19 +7,19 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-//  
 //
-//                              
+//
+//
 //                    L O S  A L A M O S
 //              Los Alamos National Laboratory
 //               Los Alamos, New Mexico 87545
-//                                  
+//
 //  Copyright, 1986, The Regents of the University of California.
-//                                  
-//           
-//	Author Jeffrey O. Hill
-//	johill@lanl.gov
-//	505 665 1831
+//
+//
+//  Author Jeffrey O. Hill
+//  johill@lanl.gov
+//  505 665 1831
 //
 
 #ifndef INC_disconnectGovernorTimer_H
@@ -36,22 +36,22 @@
 class disconnectGovernorNotify {
 public:
     virtual ~disconnectGovernorNotify () = 0;
-    virtual void govExpireNotify ( 
+    virtual void govExpireNotify (
         epicsGuard < epicsMutex > &, nciu & ) = 0;
 };
 
 class disconnectGovernorTimer : private epicsTimerNotify {
 public:
-    disconnectGovernorTimer ( 
+    disconnectGovernorTimer (
         class disconnectGovernorNotify &, epicsTimerQueue &, epicsMutex & );
     virtual ~disconnectGovernorTimer ();
     void start ();
     void shutdown (
         epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
-    void installChan ( 
+    void installChan (
         epicsGuard < epicsMutex > &, nciu & );
-    void uninstallChan ( 
+    void uninstallChan (
         epicsGuard < epicsMutex > &, nciu & );
     void show ( unsigned level ) const;
 private:
@@ -60,8 +60,8 @@ private:
     epicsTimer & timer;
     class disconnectGovernorNotify & iiu;
     epicsTimerNotify::expireStatus expire ( const epicsTime & currentTime );
-	disconnectGovernorTimer ( const disconnectGovernorTimer & );
-	disconnectGovernorTimer & operator = ( const disconnectGovernorTimer & );
+    disconnectGovernorTimer ( const disconnectGovernorTimer & );
+    disconnectGovernorTimer & operator = ( const disconnectGovernorTimer & );
 };
 
 #endif // ifdef INC_disconnectGovernorTimer_H

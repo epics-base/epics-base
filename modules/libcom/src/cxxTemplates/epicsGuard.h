@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #ifndef epicsGuardh
@@ -22,7 +22,7 @@
 template < class T > class epicsGuardRelease;
 
 // Automatically applies and releases the mutex.
-// This class is also useful in situations where 
+// This class is also useful in situations where
 // C++ exceptions are possible.
 template < class T >
 class epicsGuard {
@@ -33,13 +33,13 @@ public:
     ~epicsGuard ();
 private:
     T * _pTargetMutex;
-    epicsGuard ( const epicsGuard & ); 
-    epicsGuard & operator = ( const epicsGuard & ); 
+    epicsGuard ( const epicsGuard & );
+    epicsGuard & operator = ( const epicsGuard & );
     friend class epicsGuardRelease < T >;
 };
 
 // Automatically releases and reapplies the mutex.
-// This class is also useful in situations where 
+// This class is also useful in situations where
 // C++ exceptions are possible.
 template < class T >
 class epicsGuardRelease {
@@ -50,8 +50,8 @@ public:
 private:
     epicsGuard < T > & _guard;
     T * _pTargetMutex;
-    epicsGuardRelease ( const epicsGuardRelease & ); 
-    epicsGuardRelease & operator = ( const epicsGuardRelease & ); 
+    epicsGuardRelease ( const epicsGuardRelease & );
+    epicsGuardRelease & operator = ( const epicsGuardRelease & );
 };
 
 // same interface as epicsMutex
@@ -77,23 +77,23 @@ inline epicsGuard < T > :: ~epicsGuard ()
 }
 
 template < class T >
-inline void epicsGuard < T > :: assertIdenticalMutex ( 
+inline void epicsGuard < T > :: assertIdenticalMutex (
     const T & mutexToVerify ) const
 {
     assert ( _pTargetMutex == & mutexToVerify );
 }
 
 template < class T >
-inline epicsGuardRelease < T > :: 
+inline epicsGuardRelease < T > ::
     epicsGuardRelease ( epicsGuard<T> & guardIn ) :
-    _guard ( guardIn ), 
+    _guard ( guardIn ),
     _pTargetMutex ( guardIn._pTargetMutex )
 {
-    // Setting the guard's _pTargetMutex to nill will 
-    // allow assertIdenticalMutex to catch situations 
-    // where a guard is being used and it has been 
-    // released, and also situations where ~epicsGuard () 
-    // runs and an epicsGuardRelease is still referencing 
+    // Setting the guard's _pTargetMutex to nill will
+    // allow assertIdenticalMutex to catch situations
+    // where a guard is being used and it has been
+    // released, and also situations where ~epicsGuard ()
+    // runs and an epicsGuardRelease is still referencing
     // the guard will be detected.
     _guard._pTargetMutex = 0;
     _pTargetMutex->unlock ();

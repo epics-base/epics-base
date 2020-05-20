@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* src/libCom/adjustment.c */
 
@@ -32,23 +32,23 @@ LIBCOM_API size_t adjustToWorstCaseAlignment(size_t size)
     int test_double_size = sizeof(struct test_double) - sizeof(double);
     int test_ptr_size = sizeof(struct test_ptr) - sizeof(void *);
     size_t adjusted_size = size;
-    
+
     /*
      * Use Jeff's alignment tests to determine worst case of long,
      * double or pointer alignment requirements.
     */
     align_size = test_long_size > test_ptr_size ?
                   test_long_size : test_ptr_size;
-    
+
     align_size = align_size > test_double_size ?
                   align_size : test_double_size;
-  
+
     /*
      * Increase the size to fit worst case alignment if not already
      * properly aligned.
-     */ 
+     */
     adjust = align_size - size%align_size;
     if (adjust != align_size) adjusted_size += adjust;
-    
+
     return (adjusted_size);
 }

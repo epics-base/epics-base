@@ -384,7 +384,7 @@ public:
     //! Wait for the thread epicsRunnable::run() to return.
     //! \param delay Wait up to this many seconds.
     //! \return true if run() returned.  false on timeout.
-    bool exitWait ( const double delay ) throw (); 
+    bool exitWait ( const double delay ) throw ();
     //! @throws A special exitException which will be caught and ignored.
     //! \note This exitException doesn't not derive from std::exception
     static void exit ();

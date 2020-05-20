@@ -589,7 +589,7 @@ epicsThreadId epicsThreadGetId (const char *name)
         if (strcmp (name, v->name) == 0) {
             tid = v->id;
             break;
-        } 
+        }
     }
     taskVarUnlock ();
     return (epicsThreadId)tid;

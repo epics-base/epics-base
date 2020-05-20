@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -21,16 +21,16 @@
 // With future CA protocols user defined payload composition will be
 // supported and we will need to move away from a naturally aligned
 // protocol (because pad byte overhead will probably be excessive when
-// maintaining 8 byte natural alignment if the user isnt thinking about 
+// maintaining 8 byte natural alignment if the user isnt thinking about
 // placing like sized elements together).
 //
 // Nevertheless, the R3.14 protocol continues to be naturally aligned,
 // and all of the fields within the DBR_XXXX types are naturally aligned.
-// Therefore we support here two wire transfer interfaces (naturally 
-// aligned and otherwise) because there are important optimizations 
+// Therefore we support here two wire transfer interfaces (naturally
+// aligned and otherwise) because there are important optimizations
 // specific to each of them.
 //
-// At some point in the future the naturally aligned interfaces might 
+// At some point in the future the naturally aligned interfaces might
 // be eliminated (or unbundled from base) should they be no-longer needed.
 //
 
@@ -70,8 +70,8 @@ private:
 };
 
 template < class T >
-inline AlignedWireRef < T > :: AlignedWireRef ( T & ref ) : 
-    _ref ( ref ) 
+inline AlignedWireRef < T > :: AlignedWireRef ( T & ref ) :
+    _ref ( ref )
 {
 }
 
@@ -91,8 +91,8 @@ inline AlignedWireRef < T > & AlignedWireRef < T > :: operator = ( const T & src
 }
 
 template < class T >
-inline AlignedWireRef < const T > :: AlignedWireRef ( const T & ref ) : 
-    _ref ( ref ) 
+inline AlignedWireRef < const T > :: AlignedWireRef ( const T & ref ) :
+    _ref ( ref )
 {
 }
 
@@ -107,16 +107,16 @@ inline AlignedWireRef < const T > :: operator T () const
 // may be useful when creating support for little endian
 inline epicsUInt16 byteSwap ( const epicsUInt16 & src )
 {
-    return static_cast < epicsUInt16 > 
+    return static_cast < epicsUInt16 >
         ( ( src << 8u ) | ( src >> 8u ) );
 }
 
 // may be useful when creating support for little endian
 inline epicsUInt32 byteSwap ( const epicsUInt32 & src )
 {
-    epicsUInt32 tmp0 = byteSwap ( 
+    epicsUInt32 tmp0 = byteSwap (
         static_cast < epicsUInt16 > ( src >> 16u ) );
-    epicsUInt32 tmp1 = byteSwap ( 
+    epicsUInt32 tmp1 = byteSwap (
         static_cast < epicsUInt16 > ( src ) );
     return static_cast < epicsUInt32 >
         ( ( tmp1 << 16u ) | tmp0 );
@@ -149,7 +149,7 @@ union WireAlias < epicsFloat32 > {
 };
 
 //
-// Missaligned unsigned wire format get/set can be implemented generically 
+// Missaligned unsigned wire format get/set can be implemented generically
 // w/o performance penalty. Attempts to improve this on architectures that
 // dont have alignement requirements will probably get into trouble with
 // over-aggressive optimization under strict aliasing rules.
@@ -158,7 +158,7 @@ union WireAlias < epicsFloat32 > {
 template < class T >
 inline void WireGet ( const epicsUInt8 * pWireSrc, T & dst )
 {
-    // copy through union here 
+    // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
     WireAlias < T > tmp;
@@ -167,14 +167,14 @@ inline void WireGet ( const epicsUInt8 * pWireSrc, T & dst )
 }
 
 template <>
-inline void WireGet < epicsUInt8 > ( 
+inline void WireGet < epicsUInt8 > (
     const epicsUInt8 * pWireSrc, epicsUInt8 & dst )
 {
     dst = pWireSrc[0];
 }
 
 template <>
-inline void WireGet < epicsUInt16 > ( 
+inline void WireGet < epicsUInt16 > (
     const epicsUInt8 * pWireSrc, epicsUInt16 & dst )
 {
     dst = static_cast < epicsUInt16 > (
@@ -182,11 +182,11 @@ inline void WireGet < epicsUInt16 > (
 }
 
 template <>
-inline void WireGet < epicsUInt32 > ( 
+inline void WireGet < epicsUInt32 > (
     const epicsUInt8 * pWireSrc, epicsUInt32 & dst )
 {
     dst = static_cast < epicsUInt32 > (
-        ( pWireSrc[0] << 24u ) | 
+        ( pWireSrc[0] << 24u ) |
         ( pWireSrc[1] << 16u ) |
         ( pWireSrc[2] <<  8u ) |
           pWireSrc[3] );
@@ -195,7 +195,7 @@ inline void WireGet < epicsUInt32 > (
 template < class T >
 inline void WireSet ( const T & src, epicsUInt8 * pWireDst )
 {
-    // copy through union here 
+    // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
     WireAlias < T > tmp;
@@ -204,14 +204,14 @@ inline void WireSet ( const T & src, epicsUInt8 * pWireDst )
 }
 
 template <>
-inline void WireSet < epicsUInt8 > ( 
+inline void WireSet < epicsUInt8 > (
     const epicsUInt8 & src, epicsUInt8 * pWireDst )
 {
     pWireDst[0] = src;
 }
 
 template <>
-inline void WireSet < epicsUInt16 > ( 
+inline void WireSet < epicsUInt16 > (
     const epicsUInt16 & src, epicsUInt8 * pWireDst )
 {
     pWireDst[0] = static_cast < epicsUInt8 > ( src >> 8u );
@@ -219,7 +219,7 @@ inline void WireSet < epicsUInt16 > (
 }
 
 template <>
-inline void WireSet < epicsUInt32 > ( 
+inline void WireSet < epicsUInt32 > (
     const epicsUInt32 & src, epicsUInt8 * pWireDst )
 {
     pWireDst[0] = static_cast < epicsUInt8 > ( src >> 24u );
@@ -231,7 +231,7 @@ inline void WireSet < epicsUInt32 > (
 template < class T >
 inline void AlignedWireGet ( const T & src, T & dst )
 {
-    // copy through union here 
+    // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
     WireAlias < T > srcu, dstu;
@@ -243,7 +243,7 @@ inline void AlignedWireGet ( const T & src, T & dst )
 template < class T >
 inline void AlignedWireSet ( const T & src, T & dst )
 {
-    // copy through union here 
+    // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
     WireAlias < T > srcu, dstu;

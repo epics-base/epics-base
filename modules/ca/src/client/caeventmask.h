@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #ifndef INCLcaeventmaskh
@@ -13,12 +13,12 @@
 
 /*
     event selections
-    (If any more than 8 of these are needed then update the 
-    select field in the event_block struct in db_event.c from 
+    (If any more than 8 of these are needed then update the
+    select field in the event_block struct in db_event.c from
     unsigned char to unsigned short)
 
 
-    DBE_VALUE 
+    DBE_VALUE
     Trigger an event when a significant change in the channel's value
     occurs. Relies on the monitor deadband field under DCT.
 

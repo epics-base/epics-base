@@ -305,7 +305,7 @@ static long special(DBADDR *paddr, int after)
 
 static long get_precision(const DBADDR *paddr,long *precision)
 {
-    mbboDirectRecord	*prec=(mbboDirectRecord *)paddr->precord;
+    mbboDirectRecord    *prec=(mbboDirectRecord *)paddr->precord;
     if(dbGetFieldIndex(paddr)==mbboDirectRecordVAL)
         *precision = prec->nobt;
     else

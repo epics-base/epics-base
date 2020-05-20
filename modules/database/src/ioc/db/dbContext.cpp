@@ -6,10 +6,10 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*  
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+/*
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #include <limits.h>
@@ -123,7 +123,7 @@ cacChannel & dbContext::createChannel (
 
 void dbContext::destroyChannel (
                   CallbackGuard & cbGuard,
-                  epicsGuard < epicsMutex > & guard, 
+                  epicsGuard < epicsMutex > & guard,
                   dbChannelIO & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -281,7 +281,7 @@ void dbContext::initiatePutNotify (
 
 void dbContext::destroyAllIO (
                   CallbackGuard & cbGuard,
-                  epicsGuard < epicsMutex > & guard, 
+                  epicsGuard < epicsMutex > & guard,
                   dbChannelIO & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -315,7 +315,7 @@ void dbContext::destroyAllIO (
 }
 
 void dbContext::ioCancel (
-    CallbackGuard & cbGuard, epicsGuard < epicsMutex > & guard, 
+    CallbackGuard & cbGuard, epicsGuard < epicsMutex > & guard,
     dbChannelIO & chan, const cacChannel::ioid &id )
 {
     guard.assertIdenticalMutex ( this->mutex );

@@ -32,7 +32,7 @@ typedef void * chid;
 typedef void * evid;
 epicsShareExtern const unsigned short dbr_value_size[];
 epicsShareExtern short epicsShareAPI ca_field_type (chid chan);
-#define MAX_UNITS_SIZE		8
+#define MAX_UNITS_SIZE          8
 
 #include "dbCaPvt.h"
 #include "errlog.h"

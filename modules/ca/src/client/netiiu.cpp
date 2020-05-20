@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -19,7 +19,7 @@
  */
 
 #include <stdexcept>
-#include <string> // vxWorks 6.0 requires this include 
+#include <string> // vxWorks 6.0 requires this include
 
 #include <limits.h>
 #include <float.h>
@@ -46,51 +46,51 @@ bool netiiu::ca_v41_ok (
     return false;
 }
 
-void netiiu::writeRequest ( 
-    epicsGuard < epicsMutex > &, nciu &, 
+void netiiu::writeRequest (
+    epicsGuard < epicsMutex > &, nciu &,
     unsigned, arrayElementCount, const void * )
 {
     throw cacChannel::notConnected();
 }
 
-void netiiu::writeNotifyRequest ( 
-    epicsGuard < epicsMutex > &, 
-    nciu &, netWriteNotifyIO &, unsigned, 
+void netiiu::writeNotifyRequest (
+    epicsGuard < epicsMutex > &,
+    nciu &, netWriteNotifyIO &, unsigned,
     arrayElementCount, const void * )
 {
     throw cacChannel::notConnected();
 }
 
-void netiiu::readNotifyRequest ( 
-    epicsGuard < epicsMutex > &, 
+void netiiu::readNotifyRequest (
+    epicsGuard < epicsMutex > &,
     nciu &, netReadNotifyIO &, unsigned, arrayElementCount )
 {
     throw cacChannel::notConnected();
 }
 
-void netiiu::clearChannelRequest ( 
+void netiiu::clearChannelRequest (
     epicsGuard < epicsMutex > &, ca_uint32_t, ca_uint32_t )
 {
 }
 
-void netiiu::subscriptionRequest ( 
+void netiiu::subscriptionRequest (
     epicsGuard < epicsMutex > &, nciu &, netSubscription & )
 {
 }
 
-void netiiu::subscriptionCancelRequest ( 
+void netiiu::subscriptionCancelRequest (
     epicsGuard < epicsMutex > &, nciu &, netSubscription & )
 {
 }
 
-void netiiu::subscriptionUpdateRequest ( 
+void netiiu::subscriptionUpdateRequest (
     epicsGuard < epicsMutex > &, nciu &, netSubscription & )
 {
 }
 
 static const char * const pHostNameNetIIU = "<disconnected>";
 
-unsigned netiiu::getHostName ( 
+unsigned netiiu::getHostName (
     epicsGuard < epicsMutex > &,
     char * pBuf, unsigned bufLen ) const throw ()
 {
@@ -123,18 +123,18 @@ osiSockAddr netiiu::getNetworkAddress (
     return addr;
 }
 
-void netiiu::flushRequest ( 
+void netiiu::flushRequest (
     epicsGuard < epicsMutex > & )
 {
 }
 
-unsigned netiiu::requestMessageBytesPending ( 
+unsigned netiiu::requestMessageBytesPending (
     epicsGuard < epicsMutex > & )
 {
     return 0u;
 }
 
-void netiiu::flush ( 
+void netiiu::flush (
     epicsGuard < epicsMutex > & )
 {
 }
@@ -144,7 +144,7 @@ void netiiu::requestRecvProcessPostponedFlush (
 {
 }
 
-void netiiu::uninstallChan ( 
+void netiiu::uninstallChan (
     epicsGuard < epicsMutex > &, nciu & )
 {
     throw cacChannel::notConnected();
@@ -156,15 +156,15 @@ double netiiu::receiveWatchdogDelay (
     return - DBL_MAX;
 }
 
-void netiiu::uninstallChanDueToSuccessfulSearchResponse ( 
+void netiiu::uninstallChanDueToSuccessfulSearchResponse (
     epicsGuard < epicsMutex > &, nciu &, const epicsTime & )
 {
-    throw std::runtime_error ( 
+    throw std::runtime_error (
         "search response occured when not attached to udpiiu?" );
 }
 
 bool netiiu::searchMsg (
-    epicsGuard < epicsMutex > &, ca_uint32_t /* id */, 
+    epicsGuard < epicsMutex > &, ca_uint32_t /* id */,
     const char * /* pName */, unsigned /* nameLength */ )
 {
     return false;

@@ -8,9 +8,9 @@
 /* This is the command, which the vxWorks shell will call directly */
 void hello(const char *name) {
     if (name) {
-	printf("Hello %s, from _APPNAME_\n", name);
+        printf("Hello %s, from _APPNAME_\n", name);
     } else {
-	puts("Hello from _APPNAME_");
+        puts("Hello from _APPNAME_");
     }
 }
 

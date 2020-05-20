@@ -6,7 +6,7 @@
 # Copyright (c) 2014 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 #
 #   makeStatTbl.pl - Create Error Symbol Table

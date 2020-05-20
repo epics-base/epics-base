@@ -549,7 +549,7 @@ inline epicsTime epicsTime::operator -= ( const double & rhs )
 inline bool epicsTime::operator == ( const epicsTime & rhs ) const
 {
     if ( this->secPastEpoch == rhs.secPastEpoch && this->nSec == rhs.nSec ) {
-    	return true;
+        return true;
     }
     return false;
 }

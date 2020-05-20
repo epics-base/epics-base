@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* misc - miscellaneous flex routines */
 
@@ -14,7 +14,7 @@
  *
  * This code is derived from software contributed to Berkeley by
  * Vern Paxson.
- * 
+ *
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
@@ -64,10 +64,10 @@ void action_out(void)
     char buf[MAXLINE];
 
     while ( fgets( buf, MAXLINE, temp_action_file ) != NULL )
-	if ( buf[0] == '%' && buf[1] == '%' )
-	    break;
-	else
-	    fputs( buf, stdout );
+        if ( buf[0] == '%' && buf[1] == '%' )
+            break;
+        else
+            fputs( buf, stdout );
     }
 
 
@@ -87,7 +87,7 @@ void *allocate_array(int size, int element_size)
     mem = (void *) malloc( (unsigned) (element_size * size) );
 
     if ( mem == NULL )
-	flexfatal( "memory allocation failed in allocate_array()" );
+        flexfatal( "memory allocation failed in allocate_array()" );
 
     return ( mem );
     }
@@ -104,11 +104,11 @@ void *allocate_array(int size, int element_size)
 int all_lower(Char *str)
 {
     while ( *str )
-	{
-	if ( ! isascii( (int) *str ) || ! islower( (int) *str ) )
-	    return ( 0 );
-	++str;
-	}
+        {
+        if ( ! isascii( (int) *str ) || ! islower( (int) *str ) )
+            return ( 0 );
+        ++str;
+        }
 
     return ( 1 );
     }
@@ -125,11 +125,11 @@ int all_lower(Char *str)
 int all_upper(Char *str)
 {
     while ( *str )
-	{
-	if ( ! isascii( (int) *str ) || ! isupper( (int) *str ) )
-	    return ( 0 );
-	++str;
-	}
+        {
+        if ( ! isascii( (int) *str ) || ! isupper( (int) *str ) )
+            return ( 0 );
+        ++str;
+        }
 
     return ( 1 );
     }
@@ -154,13 +154,13 @@ void bubble(int v[], int n)
     int i, j, k;
 
     for ( i = n; i > 1; --i )
-	for ( j = 1; j < i; ++j )
-	    if ( v[j] > v[j + 1] )	/* compare */
-		{
-		k = v[j];	/* exchange */
-		v[j] = v[j + 1];
-		v[j + 1] = k;
-		}
+        for ( j = 1; j < i; ++j )
+            if ( v[j] > v[j + 1] )      /* compare */
+                {
+                k = v[j];       /* exchange */
+                v[j] = v[j + 1];
+                v[j + 1] = k;
+                }
     }
 
 
@@ -192,15 +192,15 @@ char *copy_string(char *str)
 
     /* find length */
     for ( c = str; *c; ++c )
-	;
+        ;
 
     copy = malloc( (unsigned) ((c - str + 1) * sizeof( char )) );
 
     if ( copy == NULL )
-	flexfatal( "dynamic memory failure in copy_string()" );
+        flexfatal( "dynamic memory failure in copy_string()" );
 
     for ( c = copy; (*c++ = *str++); )
-	;
+        ;
 
     return ( copy );
     }
@@ -221,15 +221,15 @@ Char *copy_unsigned_string(Char *str)
 
     /* find length */
     for ( c = str; *c; ++c )
-	;
+        ;
 
     copy = (Char *) malloc( (unsigned) ((c - str + 1) * sizeof( Char )) );
 
     if ( copy == NULL )
-	flexfatal( "dynamic memory failure in copy_unsigned_string()" );
+        flexfatal( "dynamic memory failure in copy_unsigned_string()" );
 
     for ( c = copy; (*c++ = *str++); )
-	;
+        ;
 
     return ( copy );
     }
@@ -259,27 +259,27 @@ void cshell(Char *v, int n, int special_case_0)
     Char k;
 
     for ( gap = n / 2; gap > 0; gap = gap / 2 )
-	for ( i = gap; i < n; ++i )
-	    for ( j = i - gap; j >= 0; j = j - gap )
-		{
-		jg = j + gap;
+        for ( i = gap; i < n; ++i )
+            for ( j = i - gap; j >= 0; j = j - gap )
+                {
+                jg = j + gap;
 
-		if ( special_case_0 )
-		    {
-		    if ( v[jg] == 0 )
-			break;
+                if ( special_case_0 )
+                    {
+                    if ( v[jg] == 0 )
+                        break;
 
-		    else if ( v[j] != 0 && v[j] <= v[jg] )
-			break;
-		    }
+                    else if ( v[j] != 0 && v[j] <= v[jg] )
+                        break;
+                    }
 
-		else if ( v[j] <= v[jg] )
-		    break;
+                else if ( v[j] <= v[jg] )
+                    break;
 
-		k = v[j];
-		v[j] = v[jg];
-		v[jg] = k;
-		}
+                k = v[j];
+                v[j] = v[jg];
+                v[jg] = k;
+                }
     }
 
 
@@ -292,7 +292,7 @@ void cshell(Char *v, int n, int special_case_0)
 void dataend(void)
 {
     if ( datapos > 0 )
-	dataflush();
+        dataflush();
 
     /* add terminator for initialization */
     puts( "    } ;\n" );
@@ -314,13 +314,13 @@ void dataflush(void)
     putchar( '\n' );
 
     if ( ++dataline >= NUMDATALINES )
-	{
-	/* put out a blank line so that the table is grouped into
-	 * large blocks that enable the user to find elements easily
-	 */
-	putchar( '\n' );
-	dataline = 0;
-	}
+        {
+        /* put out a blank line so that the table is grouped into
+         * large blocks that enable the user to find elements easily
+         */
+        putchar( '\n' );
+        dataline = 0;
+        }
 
     /* reset the number of characters written on the current line */
     datapos = 0;
@@ -445,7 +445,7 @@ int htoi(unsigned char *str)
 
 
 /* is_hex_digit - returns true if a character is a valid hex digit, false
- *		  otherwise
+ *                otherwise
  *
  * synopsis:
  *    int true_or_false, is_hex_digit();
@@ -456,21 +456,21 @@ int htoi(unsigned char *str)
 int is_hex_digit(int ch)
 {
     if ( isdigit( ch ) )
-	return ( 1 );
+        return ( 1 );
 
     switch ( clower( ch ) )
-	{
-	case 'a':
-	case 'b':
-	case 'c':
-	case 'd':
-	case 'e':
-	case 'f':
-	    return ( 1 );
+        {
+        case 'a':
+        case 'b':
+        case 'c':
+        case 'd':
+        case 'e':
+        case 'f':
+            return ( 1 );
 
-	default:
-	    return ( 0 );
-	}
+        default:
+            return ( 0 );
+        }
     }
 
 
@@ -494,17 +494,17 @@ void line_directive_out(FILE *output_file_name)
 void mk2data(int value)
 {
     if ( datapos >= NUMDATAITEMS )
-	{
-	putchar( ',' );
-	dataflush();
-	}
+        {
+        putchar( ',' );
+        dataflush();
+        }
 
     if ( datapos == 0 )
-	/* indent */
-	fputs( "    ", stdout );
+        /* indent */
+        fputs( "    ", stdout );
 
     else
-	putchar( ',' );
+        putchar( ',' );
 
     ++datapos;
 
@@ -524,17 +524,17 @@ void mk2data(int value)
 void mkdata(int value)
 {
     if ( datapos >= NUMDATAITEMS )
-	{
-	putchar( ',' );
-	dataflush();
-	}
+        {
+        putchar( ',' );
+        dataflush();
+        }
 
     if ( datapos == 0 )
-	/* indent */
-	fputs( "    ", stdout );
+        /* indent */
+        fputs( "    ", stdout );
 
     else
-	putchar( ',' );
+        putchar( ',' );
 
     ++datapos;
 
@@ -575,69 +575,69 @@ Char myesc(Char *array)
     int sptr;
 
     switch ( array[1] )
-	{
-	case 'a': return ( '\a' );
-	case 'b': return ( '\b' );
-	case 'f': return ( '\f' );
-	case 'n': return ( '\n' );
-	case 'r': return ( '\r' );
-	case 't': return ( '\t' );
-	case 'v': return ( '\v' );
+        {
+        case 'a': return ( '\a' );
+        case 'b': return ( '\b' );
+        case 'f': return ( '\f' );
+        case 'n': return ( '\n' );
+        case 'r': return ( '\r' );
+        case 't': return ( '\t' );
+        case 'v': return ( '\v' );
 
-	case '0':
-	case '1':
-	case '2':
-	case '3':
-	case '4':
-	case '5':
-	case '6':
-	case '7':
-	case '8':
-	case '9':
-	    { /* \<octal> */
-	    sptr = 1;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            { /* \<octal> */
+            sptr = 1;
 
-	    while ( isascii( array[sptr] ) && isdigit( array[sptr] ) )
-		/* don't increment inside loop control because if
-		 * isdigit() is a macro it might expand into multiple
-		 * increments ...
-		 */
-		++sptr;
+            while ( isascii( array[sptr] ) && isdigit( array[sptr] ) )
+                /* don't increment inside loop control because if
+                 * isdigit() is a macro it might expand into multiple
+                 * increments ...
+                 */
+                ++sptr;
 
-	    c = array[sptr];
-	    array[sptr] = '\0';
+            c = array[sptr];
+            array[sptr] = '\0';
 
-	    esc_char = otoi( array + 1 );
+            esc_char = otoi( array + 1 );
 
-	    array[sptr] = c;
+            array[sptr] = c;
 
-	    return ( esc_char );
-	    }
+            return ( esc_char );
+            }
 
-	case 'x':
-	    { /* \x<hex> */
-	    int sptr = 2;
+        case 'x':
+            { /* \x<hex> */
+            int sptr = 2;
 
-	    while ( isascii( array[sptr] ) && is_hex_digit( array[sptr] ) )
-		/* don't increment inside loop control because if
-		 * isdigit() is a macro it might expand into multiple
-		 * increments ...
-		 */
-		++sptr;
+            while ( isascii( array[sptr] ) && is_hex_digit( array[sptr] ) )
+                /* don't increment inside loop control because if
+                 * isdigit() is a macro it might expand into multiple
+                 * increments ...
+                 */
+                ++sptr;
 
-	    c = array[sptr];
-	    array[sptr] = '\0';
+            c = array[sptr];
+            array[sptr] = '\0';
 
-	    esc_char = htoi( array + 2 );
+            esc_char = htoi( array + 2 );
 
-	    array[sptr] = c;
+            array[sptr] = c;
 
-	    return ( esc_char );
-	    }
+            return ( esc_char );
+            }
 
-	default:
-	    return ( array[1] );
-	}
+        default:
+            return ( array[1] );
+        }
     }
 
 
@@ -674,31 +674,31 @@ char *readable_form(int c)
     static char rform[10];
 
     if ( (c >= 0 && c < 32) || c >= 127 )
-	{
-	switch ( c )
-	    {
-	    case '\n': return ( "\\n" );
-	    case '\t': return ( "\\t" );
-	    case '\f': return ( "\\f" );
-	    case '\r': return ( "\\r" );
-	    case '\b': return ( "\\b" );
+        {
+        switch ( c )
+            {
+            case '\n': return ( "\\n" );
+            case '\t': return ( "\\t" );
+            case '\f': return ( "\\f" );
+            case '\r': return ( "\\r" );
+            case '\b': return ( "\\b" );
 
-	    default:
-		(void) sprintf( rform, "\\%.3o", c );
-		return ( rform );
-	    }
-	}
+            default:
+                (void) sprintf( rform, "\\%.3o", c );
+                return ( rform );
+            }
+        }
 
     else if ( c == ' ' )
-	return ( "' '" );
+        return ( "' '" );
 
     else
-	{
-	rform[0] = c;
-	rform[1] = '\0';
+        {
+        rform[0] = c;
+        rform[1] = '\0';
 
-	return ( rform );
-	}
+        return ( rform );
+        }
     }
 
 
@@ -713,10 +713,10 @@ void *reallocate_array(void *array, int size, int element_size)
         flexfatal( "attempt to increase array size by less than 1 byte" );
 
     new_array =
-	(void *) realloc( (char *)array, (unsigned) (size * element_size ));
+        (void *) realloc( (char *)array, (unsigned) (size * element_size ));
 
     if ( new_array == NULL )
-	flexfatal( "attempt to increase array size failed" );
+        flexfatal( "attempt to increase array size failed" );
 
     return ( new_array );
     }
@@ -736,10 +736,10 @@ void skelout(void)
     char buf[MAXLINE];
 
     while ( fgets( buf, MAXLINE, skelfile ) != NULL )
-	if ( buf[0] == '%' && buf[1] == '%' )
-	    break;
-	else
-	    fputs( buf, stdout );
+        if ( buf[0] == '%' && buf[1] == '%' )
+            break;
+        else
+            fputs( buf, stdout );
     }
 
 
@@ -760,12 +760,12 @@ void transition_struct_out(int element_v, int element_n)
     datapos += TRANS_STRUCT_PRINT_LENGTH;
 
     if ( datapos >= 75 )
-	{
-	putchar( '\n' );
+        {
+        putchar( '\n' );
 
-	if ( ++dataline % 10 == 0 )
-	    putchar( '\n' );
+        if ( ++dataline % 10 == 0 )
+            putchar( '\n' );
 
-	datapos = 0;
-	}
+        datapos = 0;
+        }
     }

@@ -36,7 +36,7 @@ private:
     ca_uint8_t pri;
 };
 
-inline caServerID::caServerID ( 
+inline caServerID::caServerID (
     const struct sockaddr_in & addrIn, unsigned priorityIn ) :
     addr ( addrIn ), pri ( static_cast <ca_uint8_t> ( priorityIn ) )
 {
@@ -45,7 +45,7 @@ inline caServerID::caServerID (
 
 inline bool caServerID::operator == ( const caServerID & rhs ) const
 {
-    if (    this->addr.sin_addr.s_addr == rhs.addr.sin_addr.s_addr && 
+    if (    this->addr.sin_addr.s_addr == rhs.addr.sin_addr.s_addr &&
             this->addr.sin_port == rhs.addr.sin_port &&
             this->pri == rhs.pri ) {
         return true;
@@ -66,7 +66,7 @@ inline resTableIndex caServerID::hash () const
     index ^= this->addr.sin_port;
     index ^= this->addr.sin_port >> 8u;
     index ^= this->pri;
-    return integerHash ( caServerMinIndexBitWidth, 
+    return integerHash ( caServerMinIndexBitWidth,
         caServerMaxIndexBitWidth, index );
 }
 

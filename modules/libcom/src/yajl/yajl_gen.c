@@ -139,7 +139,7 @@ yajl_gen_free(yajl_gen g)
     } else if (g->state[g->depth] == yajl_gen_map_val) {        \
         g->print(g->ctx, ":", 1);                               \
         if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, " ", 1);                \
-   } 
+   }
 
 #define INSERT_WHITESPACE                                               \
     if ((g->flags & yajl_gen_beautify)) {                                                    \
@@ -212,7 +212,7 @@ yajl_gen_status
 yajl_gen_double(yajl_gen g, double number)
 {
     char i[32];
-    ENSURE_VALID_STATE; ENSURE_NOT_KEY; 
+    ENSURE_VALID_STATE; ENSURE_NOT_KEY;
     if (isnan(number) || isinf(number)) return yajl_gen_invalid_number;
     INSERT_SEP; INSERT_WHITESPACE;
     sprintf(i, "%.20g", number);
@@ -268,7 +268,7 @@ yajl_gen_bool(yajl_gen g, int boolean)
 {
     const char * val = boolean ? "true" : "false";
 
-	ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
+    ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
     g->print(g->ctx, val, (unsigned int)strlen(val));
     APPENDED_ATOM;
     FINAL_NEWLINE;
@@ -279,8 +279,8 @@ yajl_gen_status
 yajl_gen_map_open(yajl_gen g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
-    INCREMENT_DEPTH; 
-    
+    INCREMENT_DEPTH;
+
     g->state[g->depth] = yajl_gen_map_start;
     g->print(g->ctx, "{", 1);
     if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, "\n", 1);
@@ -291,9 +291,9 @@ yajl_gen_map_open(yajl_gen g)
 yajl_gen_status
 yajl_gen_map_close(yajl_gen g)
 {
-    ENSURE_VALID_STATE; 
+    ENSURE_VALID_STATE;
     DECREMENT_DEPTH;
-    
+
     if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, "\n", 1);
     APPENDED_ATOM;
     INSERT_WHITESPACE;
@@ -306,7 +306,7 @@ yajl_gen_status
 yajl_gen_array_open(yajl_gen g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
-    INCREMENT_DEPTH; 
+    INCREMENT_DEPTH;
     g->state[g->depth] = yajl_gen_array_start;
     g->print(g->ctx, "[", 1);
     if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, "\n", 1);

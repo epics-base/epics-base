@@ -10,7 +10,7 @@
 #ifndef INC_addrList_H
 #define INC_addrList_H
 
-#include "envDefs.h" 
+#include "envDefs.h"
 #include "osiSock.h"
 
 #include "libCaAPI.h"
@@ -23,7 +23,7 @@ LIBCA_API void epicsStdCall configureChannelAccessAddressList
     ( struct ELLLIST *pList, SOCKET sock, unsigned short port );
 
 LIBCA_API int epicsStdCall addAddrToChannelAccessAddressList
-    ( struct ELLLIST *pList, const ENV_PARAM *pEnv, 
+    ( struct ELLLIST *pList, const ENV_PARAM *pEnv,
     unsigned short port, int ignoreNonDefaultPort );
 
 LIBCA_API void epicsStdCall printChannelAccessAddressList

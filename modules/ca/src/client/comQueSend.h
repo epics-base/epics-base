@@ -8,19 +8,19 @@
 \*************************************************************************/
 
 
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifndef INC_comQueSend_H
@@ -38,7 +38,7 @@ template < class T > class epicsGuard;
 
 class comQueSendMsgMinder {
 public:
-    comQueSendMsgMinder ( 
+    comQueSendMsgMinder (
         class comQueSend &, epicsGuard < epicsMutex > & );
     ~comQueSendMsgMinder ();
     void commit ();
@@ -55,20 +55,20 @@ public:
     comQueSend ( wireSendAdapter &, comBufMemoryManager & );
     ~comQueSend ();
     void clear ();
-    unsigned occupiedBytes () const; 
+    unsigned occupiedBytes () const;
     bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const;
-    bool flushBlockThreshold () const; 
+    bool flushBlockThreshold () const;
     void pushUInt16 ( const ca_uint16_t value );
     void pushUInt32 ( const ca_uint32_t value );
     void pushFloat32 ( const ca_float32_t value );
     void pushString ( const char *pVal, unsigned nChar );
-    void insertRequestHeader ( 
-        ca_uint16_t request, ca_uint32_t payloadSize, 
-        ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+    void insertRequestHeader (
+        ca_uint16_t request, ca_uint32_t payloadSize,
+        ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid,
         ca_uint32_t requestDependent, bool v49Ok );
     void insertRequestWithPayLoad (
-        ca_uint16_t request, unsigned dataType, arrayElementCount nElem, 
-        ca_uint32_t cid, ca_uint32_t requestDependent, 
+        ca_uint16_t request, unsigned dataType, arrayElementCount nElem,
+        ca_uint32_t cid, ca_uint32_t requestDependent,
         const void * pPayload, bool v49Ok );
     comBuf * popNextComBufToSend ();
 private:
@@ -78,43 +78,43 @@ private:
     wireSendAdapter & wire;
     unsigned nBytesPending;
 
-    typedef void ( comQueSend::*copyScalarFunc_t ) ( 
+    typedef void ( comQueSend::*copyScalarFunc_t ) (
         const void * pValue );
     static const copyScalarFunc_t dbrCopyScalar [comQueSendCopyDispatchSize];
     void copy_dbr_string ( const void * pValue );
-    void copy_dbr_short ( const void * pValue ); 
-    void copy_dbr_float ( const void * pValue ); 
-    void copy_dbr_char ( const void * pValue ); 
-    void copy_dbr_long ( const void * pValue ); 
-    void copy_dbr_double ( const void * pValue ); 
+    void copy_dbr_short ( const void * pValue );
+    void copy_dbr_float ( const void * pValue );
+    void copy_dbr_char ( const void * pValue );
+    void copy_dbr_long ( const void * pValue );
+    void copy_dbr_double ( const void * pValue );
     void copy_dbr_invalid ( const void * pValue );
 
-    typedef void ( comQueSend::*copyVectorFunc_t ) (  
+    typedef void ( comQueSend::*copyVectorFunc_t ) (
         const void * pValue, unsigned nElem );
     static const copyVectorFunc_t dbrCopyVector [comQueSendCopyDispatchSize];
     void copy_dbr_string ( const void *pValue, unsigned nElem );
-    void copy_dbr_short ( const void *pValue, unsigned nElem ); 
-    void copy_dbr_float ( const void *pValue, unsigned nElem ); 
-    void copy_dbr_char ( const void *pValue, unsigned nElem ); 
-    void copy_dbr_long ( const void *pValue, unsigned nElem ); 
-    void copy_dbr_double ( const void *pValue, unsigned nElem ); 
+    void copy_dbr_short ( const void *pValue, unsigned nElem );
+    void copy_dbr_float ( const void *pValue, unsigned nElem );
+    void copy_dbr_char ( const void *pValue, unsigned nElem );
+    void copy_dbr_long ( const void *pValue, unsigned nElem );
+    void copy_dbr_double ( const void *pValue, unsigned nElem );
     void copy_dbr_invalid ( const void * pValue, unsigned nElem );
 
-    void pushComBuf ( comBuf & ); 
-    comBuf * newComBuf (); 
+    void pushComBuf ( comBuf & );
+    comBuf * newComBuf ();
 
-    void beginMsg (); 
-    void commitMsg (); 
+    void beginMsg ();
+    void commitMsg ();
     void clearUncommitedMsg ();
 
     friend class comQueSendMsgMinder;
 
     //
-    // visual C++ versions 6 & 7 do not allow out of 
+    // visual C++ versions 6 & 7 do not allow out of
     // class member template function definition
     //
     template < class T >
-    inline void push ( const T *pVal, const unsigned nElem ) 
+    inline void push ( const T *pVal, const unsigned nElem )
     {
         comBuf * pLastBuf = this->bufs.last ();
         unsigned nCopied;
@@ -126,18 +126,18 @@ private:
         }
         while ( nElem > nCopied ) {
             comBuf * pComBuf = newComBuf ();
-            nCopied += pComBuf->push 
+            nCopied += pComBuf->push
                         ( &pVal[nCopied], nElem - nCopied );
             this->pushComBuf ( *pComBuf );
         }
     }
 
     //
-    // visual C++ versions 6 and 7 do not allow out of 
+    // visual C++ versions 6 and 7 do not allow out of
     // class member template function definition
     //
     template < class T >
-    inline void push ( const T & val ) 
+    inline void push ( const T & val )
     {
         comBuf * pComBuf = this->bufs.last ();
         if ( pComBuf && pComBuf->push ( val ) ) {
@@ -158,8 +158,8 @@ private:
 
 extern const char cacNillBytes[];
 
-inline comQueSendMsgMinder::comQueSendMsgMinder ( 
-    class comQueSend & sendQueIn, epicsGuard < epicsMutex > & ) : 
+inline comQueSendMsgMinder::comQueSendMsgMinder (
+    class comQueSend & sendQueIn, epicsGuard < epicsMutex > & ) :
         pSendQue ( & sendQueIn )
 {
     sendQueIn.beginMsg ();
@@ -180,32 +180,32 @@ inline void comQueSendMsgMinder::commit ()
     }
 }
 
-inline void comQueSend::beginMsg () 
+inline void comQueSend::beginMsg ()
 {
     this->pFirstUncommited = this->bufs.lastIter ();
 }
 
-inline void comQueSend::pushUInt16 ( const ca_uint16_t value ) 
+inline void comQueSend::pushUInt16 ( const ca_uint16_t value )
 {
     this->push ( value );
 }
 
-inline void comQueSend::pushUInt32 ( const ca_uint32_t value ) 
+inline void comQueSend::pushUInt32 ( const ca_uint32_t value )
 {
     this->push ( value );
 }
 
-inline void comQueSend::pushFloat32 ( const ca_float32_t value ) 
+inline void comQueSend::pushFloat32 ( const ca_float32_t value )
 {
     this->push ( value );
 }
 
-inline void comQueSend::pushString ( const char *pVal, unsigned nChar ) 
+inline void comQueSend::pushString ( const char *pVal, unsigned nChar )
 {
     this->push ( pVal, nChar );
 }
 
-inline void comQueSend::pushComBuf ( comBuf & cb ) 
+inline void comQueSend::pushComBuf ( comBuf & cb )
 {
     this->bufs.add ( cb );
     if ( ! this->pFirstUncommited.valid() ) {
@@ -213,7 +213,7 @@ inline void comQueSend::pushComBuf ( comBuf & cb )
     }
 }
 
-inline unsigned comQueSend::occupiedBytes () const 
+inline unsigned comQueSend::occupiedBytes () const
 {
     return this->nBytesPending;
 }

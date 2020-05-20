@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #ifndef tsFreeList_h
@@ -16,7 +16,7 @@
  */
 
 //
-// TODO: this should allow free list chaining so that a free 
+// TODO: this should allow free list chaining so that a free
 // list (in a different lock domain) is used to provide the
 // tsFreeListChunk.
 //
@@ -24,14 +24,14 @@
 //
 // To allow your class to be allocated off of a free list
 // using the new operator:
-// 
-// 1) add the following static, private free list data members 
+//
+// 1) add the following static, private free list data members
 // to your class
 //
 // static tsFreeList < class classXYZ > freeList;
 //
 // 2) add the following member functions to your class
-// 
+//
 // inline void * classXYZ::operator new ( size_t size )
 // {
 //    return freeList.allocate ( size );
@@ -46,7 +46,7 @@
 //
 // 1) A NOOP mutex class may be specified if mutual exclusion isnt required
 //
-// 2) If you wish to force use of the new operator, then declare your class's 
+// 2) If you wish to force use of the new operator, then declare your class's
 // destructor as a protected member function.
 //
 // 3) Setting N to zero causes the free list to be bypassed
@@ -71,16 +71,16 @@
 
 // ms visual studio 6.0 and before incorrectly
 // warn about a missing delete operator if only the
-// newly preferred delete operator with a size argument 
-// is present 
-#if defined ( _MSC_VER ) && _MSC_VER <= 1200 
-#   pragma warning ( disable : 4291 )  
+// newly preferred delete operator with a size argument
+// is present
+#if defined ( _MSC_VER ) && _MSC_VER <= 1200
+#   pragma warning ( disable : 4291 )
 #endif
 
 template < class T > union tsFreeListItem;
 template < class T, unsigned N> struct tsFreeListChunk;
 
-template < class T, unsigned N = 0x400, 
+template < class T, unsigned N = 0x400,
     class MUTEX = epicsMutex >
 class tsFreeList {
 public:
@@ -110,7 +110,7 @@ struct tsFreeListChunk {
 };
 
 template < class T, unsigned N, class MUTEX >
-inline tsFreeList < T, N, MUTEX > :: tsFreeList () : 
+inline tsFreeList < T, N, MUTEX > :: tsFreeList () :
     pFreeList ( 0 ), pChunkList ( 0 ) {}
 
 template < class T, unsigned N, class MUTEX >
@@ -123,7 +123,7 @@ tsFreeList < T, N, MUTEX > :: ~tsFreeList ()
 }
 
 template < class T, unsigned N, class MUTEX >
-void * tsFreeList < T, N, MUTEX >::allocate ( size_t size ) 
+void * tsFreeList < T, N, MUTEX >::allocate ( size_t size )
 {
     if ( size != sizeof ( T ) || N == 0u || tsFreeListDebugBypass ) {
         void * p = ::operator new ( size );
@@ -142,9 +142,9 @@ void * tsFreeList < T, N, MUTEX >::allocate ( size_t size )
 }
 
 template < class T, unsigned N, class MUTEX >
-void * tsFreeList < T, N, MUTEX >::allocateFromNewChunk () 
+void * tsFreeList < T, N, MUTEX >::allocateFromNewChunk ()
 {
-    tsFreeListChunk < T, N > * pChunk = 
+    tsFreeListChunk < T, N > * pChunk =
         new tsFreeListChunk < T, N >;
 
     for ( unsigned i=1u; i < N-1; i++ ) {
@@ -161,7 +161,7 @@ void * tsFreeList < T, N, MUTEX >::allocateFromNewChunk ()
 }
 
 template < class T, unsigned N, class MUTEX >
-void tsFreeList < T, N, MUTEX >::release ( void * pCadaver, size_t size ) 
+void tsFreeList < T, N, MUTEX >::release ( void * pCadaver, size_t size )
 {
     if ( size != sizeof ( T ) ) {
         tsFreeListMemSetDelete ( pCadaver, size );
@@ -181,7 +181,7 @@ void tsFreeList < T, N, MUTEX >::release ( void * pCadaver )
     }
     else if ( pCadaver ) {
         epicsGuard < MUTEX > guard ( this->mutex );
-        tsFreeListItem < T > * p = 
+        tsFreeListItem < T > * p =
             static_cast < tsFreeListItem < T > * > ( pCadaver );
         p->pNext = this->pFreeList;
         this->pFreeList = p;

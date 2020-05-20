@@ -5,10 +5,10 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* 
+/*
  * Operating System Dependent Implementation of osiProcess.h
  *
  * Author: Jeff Hill
@@ -109,7 +109,7 @@ LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
      * Run the specified executable
      */
     status = execlp (pBaseExecutableName, pBaseExecutableName, (char *)NULL);
-    if ( status < 0 ) { 
+    if ( status < 0 ) {
         fprintf ( stderr, "**** The executable \"%s\" couldn't be located\n", pBaseExecutableName );
         fprintf ( stderr, "**** because of errno = \"%s\".\n", strerror (errno) );
         fprintf ( stderr, "**** You may need to modify your PATH environment variable.\n" );

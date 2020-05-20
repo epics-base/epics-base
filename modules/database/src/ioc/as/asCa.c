@@ -5,7 +5,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* Author:  Marty Kraimer Date:    10-15-93 */
 
@@ -43,14 +43,14 @@ epicsExportAddress(int,asCaDebug);
 static int firstTime = TRUE;
 static epicsThreadId threadid=0;
 static int caInitializing=FALSE;
-static epicsMutexId asCaTaskLock;		/*lock access to task */
-static epicsEventId asCaTaskWait;		/*Wait for task to respond*/
-static epicsEventId asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
-static epicsEventId asCaTaskClearChannels;/*Tell asCaTask to clear channels*/
+static epicsMutexId asCaTaskLock;               /*lock access to task */
+static epicsEventId asCaTaskWait;               /*Wait for task to respond*/
+static epicsEventId asCaTaskAddChannels;        /*Tell asCaTask to add channels*/
+static epicsEventId asCaTaskClearChannels;      /*Tell asCaTask to clear channels*/
 
 typedef struct {
     struct dbr_sts_double rtndata;
-    chid		chid;
+    chid                chid;
 } CAPVT;
 
 static void exceptionCallback(struct exception_handler_args args)
@@ -90,9 +90,9 @@ static void exceptionCallback(struct exception_handler_args args)
 /*connectCallback only handles disconnects*/
 static void connectCallback(struct connection_handler_args arg)
 {
-    chid		chid = arg.chid;
-    ASGINP		*pasginp = (ASGINP *)ca_puser(chid);
-    ASG			*pasg = pasginp->pasg;
+    chid                chid = arg.chid;
+    ASGINP              *pasginp = (ASGINP *)ca_puser(chid);
+    ASG                 *pasg = pasginp->pasg;
 
     if(ca_state(chid)!=cs_conn) {
         if(!(pasg->inpBad & (1<<pasginp->inpIndex))) {
@@ -107,11 +107,11 @@ static void connectCallback(struct connection_handler_args arg)
 
 static void eventCallback(struct event_handler_args arg)
 {
-    int		caStatus = arg.status;
-    chid	chid = arg.chid;
-    ASGINP	*pasginp = (ASGINP *)arg.usr;
-    ASG		*pasg;
-    CAPVT	*pcapvt;
+    int         caStatus = arg.status;
+    chid        chid = arg.chid;
+    ASGINP      *pasginp = (ASGINP *)arg.usr;
+    ASG         *pasg;
+    CAPVT       *pcapvt;
     const struct dbr_sts_double *pdata;
 
     if(caStatus!=ECA_NORMAL) {
@@ -163,10 +163,10 @@ static void eventCallback(struct event_handler_args arg)
 
 static void asCaTask(void)
 {
-    ASG		*pasg;
-    ASGINP	*pasginp;
-    CAPVT	*pcapvt;
-    int		status;
+    ASG         *pasg;
+    ASGINP      *pasginp;
+    CAPVT       *pcapvt;
+    int         status;
 
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
     SEVCHK(ca_context_create(ca_enable_preemptive_callback),

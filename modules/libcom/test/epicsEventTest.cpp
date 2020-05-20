@@ -65,7 +65,7 @@ static void consumer(void *arg)
                 testDiag("consumer: message %p %p\n", message[0], message[1]);
                 errors++;
             }
-        }  
+        }
     }
     testOk(errors == 0, "consumer: errors = %d", errors);
 }

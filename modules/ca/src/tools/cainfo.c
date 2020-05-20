@@ -7,7 +7,7 @@
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -51,17 +51,17 @@ void usage (void)
 
 /*+**************************************************************************
  *
- * Function:	cainfo
+ * Function:    cainfo
  *
- * Description:	Print CA info data or call ca_client_status
+ * Description: Print CA info data or call ca_client_status
  *
- * Arg(s) In:	pvs       -  Pointer to an array of pv structures
+ * Arg(s) In:   pvs       -  Pointer to an array of pv structures
  *              nPvs      -  Number of elements in the pvs array
  *
- * Return(s):	Error code: 0 = OK, 1 = Error
+ * Return(s):   Error code: 0 = OK, 1 = Error
  *
  **************************************************************************-*/
- 
+
 int cainfo (pv *pvs, int nPvs)
 {
     int n;
@@ -114,17 +114,17 @@ int cainfo (pv *pvs, int nPvs)
 
 /*+**************************************************************************
  *
- * Function:	main
+ * Function:    main
  *
- * Description:	cainfo main()
- * 		Evaluate command line options, set up CA, connect the
- * 		channels, print the data as requested
+ * Description: cainfo main()
+ *              Evaluate command line options, set up CA, connect the
+ *              channels, print the data as requested
  *
- * Arg(s) In:	[options] <pv-name> ...
+ * Arg(s) In:   [options] <pv-name> ...
  *
- * Arg(s) Out:	none
+ * Arg(s) Out:  none
  *
- * Return(s):	Standard return code (0=success, 1=error)
+ * Return(s):   Standard return code (0=success, 1=error)
  *
  **************************************************************************-*/
 

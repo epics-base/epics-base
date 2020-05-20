@@ -24,7 +24,7 @@
 #include "syncGroup.h"
 #include "oldAccess.h"
 
-syncGroupWriteNotify::syncGroupWriteNotify ( CASG & sgIn, 
+syncGroupWriteNotify::syncGroupWriteNotify ( CASG & sgIn,
                       PRecycleFunc pRecycleFuncIn, chid pChan ) :
     chan ( pChan ), pRecycleFunc ( pRecycleFuncIn ),
     sg ( sgIn ), magic ( CASG_MAGIC ),

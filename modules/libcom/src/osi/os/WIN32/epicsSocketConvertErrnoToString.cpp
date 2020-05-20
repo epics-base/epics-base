@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include <stdio.h>
@@ -22,7 +22,7 @@ void epicsSocketConvertErrorToString (
         /*
          * this does not work on systems prior to W2K
          */
-        DWORD success = FormatMessage ( 
+        DWORD success = FormatMessage (
             FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
             NULL, theSockError,
             MAKELANGID ( LANG_NEUTRAL, SUBLANG_DEFAULT ), /* Default language */

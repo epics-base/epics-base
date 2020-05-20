@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /** @file drvSup.h
  *
@@ -40,7 +40,7 @@ typedef typed_drvet drvet;
 
 /* These interfaces may eventually get deprecated */
 
-typedef long (*DRVSUPFUN) ();	/* ptr to driver support function */
+typedef long (*DRVSUPFUN) ();   /* ptr to driver support function */
 
 typedef struct drvet {  /* driver entry table */
     long number;        /* number of support routines */

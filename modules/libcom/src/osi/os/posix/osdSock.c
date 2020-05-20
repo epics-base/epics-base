@@ -5,12 +5,12 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* osdSock.c */
 /*
- *      Author:		Jeff Hill 
- *      Date:          	04-05-94 
+ *      Author:         Jeff Hill
+ *      Date:           04-05-94
  *
  */
 
@@ -34,18 +34,18 @@
 static epicsMutexId infoMutex;
 static void createInfoMutex (void *unused)
 {
-	infoMutex = epicsMutexMustCreate ();
+    infoMutex = epicsMutexMustCreate ();
 }
 static void lockInfo (void)
 {
     static epicsThreadOnceId infoMutexOnceFlag = EPICS_THREAD_ONCE_INIT;
 
     epicsThreadOnce (&infoMutexOnceFlag, createInfoMutex, NULL);
-	epicsMutexMustLock (infoMutex);
+    epicsMutexMustLock (infoMutex);
 }
 static void unlockInfo (void)
 {
-	epicsMutexUnlock (infoMutex);
+    epicsMutexUnlock (infoMutex);
 }
 
 /*
@@ -53,7 +53,7 @@ static void unlockInfo (void)
  */
 int osiSockAttach()
 {
-	return 1;
+    return 1;
 }
 
 /*
@@ -80,7 +80,7 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
         if ( status < 0 ) {
             char buf [ 64 ];
             epicsSocketConvertErrnoToString (  buf, sizeof ( buf ) );
-            errlogPrintf ( 
+            errlogPrintf (
                 "epicsSocketCreate: failed to "
                 "fcntl FD_CLOEXEC because \"%s\"\n",
                 buf );
@@ -103,7 +103,7 @@ LIBCOM_API int epicsStdCall epicsSocketAccept (
         if ( status < 0 ) {
             char buf [ 64 ];
             epicsSocketConvertErrnoToString (  buf, sizeof ( buf ) );
-            errlogPrintf ( 
+            errlogPrintf (
                 "epicsSocketCreate: failed to "
                 "fcntl FD_CLOEXEC because \"%s\"\n",
                 buf );
@@ -120,7 +120,7 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
     if ( status < 0 ) {
         char buf [ 64 ];
         epicsSocketConvertErrnoToString (  buf, sizeof ( buf ) );
-        errlogPrintf ( 
+        errlogPrintf (
             "epicsSocketDestroy: failed to "
             "close a socket because \"%s\"\n",
             buf );
@@ -135,21 +135,21 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
 LIBCOM_API unsigned epicsStdCall ipAddrToHostName 
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
-	struct hostent *ent;
-	int ret = 0;
+    struct hostent *ent;
+    int ret = 0;
 
-	if (bufSize<1) {
-		return 0;
-	}
+    if (bufSize<1) {
+        return 0;
+    }
 
-	lockInfo ();
-	ent = gethostbyaddr((const char *) pAddr, sizeof (*pAddr), AF_INET);
-	if (ent) {
+    lockInfo ();
+    ent = gethostbyaddr((const char *) pAddr, sizeof (*pAddr), AF_INET);
+    if (ent) {
         strncpy (pBuf, ent->h_name, bufSize);
         pBuf[bufSize-1] = '\0';
         ret = strlen (pBuf);
-	}
-	unlockInfo ();
+    }
+    unlockInfo ();
     return ret;
 }
 
@@ -159,23 +159,23 @@ LIBCOM_API unsigned epicsStdCall ipAddrToHostName
  * mutex since the routine is not thread-safe.
  */
 LIBCOM_API int epicsStdCall hostToIPAddr 
-				(const char *pHostName, struct in_addr *pIPA)
+                (const char *pHostName, struct in_addr *pIPA)
 {
-	struct hostent *phe;
-	int ret = -1;
+    struct hostent *phe;
+    int ret = -1;
 
-	lockInfo ();
-	phe = gethostbyname (pHostName);
-	if (phe && phe->h_addr_list[0]) {
-		if (phe->h_addrtype==AF_INET && phe->h_length<=sizeof(struct in_addr)) {
-			struct in_addr *pInAddrIn = (struct in_addr *) phe->h_addr_list[0];
-			
-			*pIPA = *pInAddrIn;
-			ret = 0;
-		}
-	}
-	unlockInfo ();
-	return ret;
+    lockInfo ();
+    phe = gethostbyname (pHostName);
+    if (phe && phe->h_addr_list[0]) {
+        if (phe->h_addrtype==AF_INET && phe->h_length<=sizeof(struct in_addr)) {
+            struct in_addr *pInAddrIn = (struct in_addr *) phe->h_addr_list[0];
+
+            *pIPA = *pInAddrIn;
+            ret = 0;
+        }
+    }
+    unlockInfo ();
+    return ret;
 }
 
 

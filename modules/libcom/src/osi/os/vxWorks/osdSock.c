@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
@@ -59,7 +59,7 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
     if ( status < 0 ) {
         char buf [ 64 ];
         epicsSocketConvertErrnoToString (  buf, sizeof ( buf ) );
-        errlogPrintf ( 
+        errlogPrintf (
             "epicsSocketDestroy: failed to "
             "close a socket because \"%s\"\n",
             buf );
@@ -72,17 +72,17 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
 LIBCOM_API unsigned epicsStdCall ipAddrToHostName 
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
-	int				status;
-	int				errnoCopy = errno;
+    int             status;
+    int             errnoCopy = errno;
     unsigned        len;
 
-	if (bufSize<1) {
-		return 0;
-	}
+    if (bufSize<1) {
+        return 0;
+    }
 
     if (bufSize>MAXHOSTNAMELEN) {
-	    status = hostGetByAddr ((int)pAddr->s_addr, pBuf);
-	    if (status==OK) {
+        status = hostGetByAddr ((int)pAddr->s_addr, pBuf);
+        if (status==OK) {
             pBuf[MAXHOSTNAMELEN] = '\0';
             len = strlen (pBuf);
         }
@@ -91,19 +91,19 @@ LIBCOM_API unsigned epicsStdCall ipAddrToHostName
         }
     }
     else {
-	    char name[MAXHOSTNAMELEN+1];
-	    status = hostGetByAddr (pAddr->s_addr, name);
-	    if (status==OK) {
+        char name[MAXHOSTNAMELEN+1];
+        status = hostGetByAddr (pAddr->s_addr, name);
+        if (status==OK) {
             strncpy (pBuf, name, bufSize);
             pBuf[bufSize-1] = '\0';
             len = strlen (pBuf);
-	    }
+        }
         else {
             len = 0;
         }
     }
 
-	errno = errnoCopy;
+    errno = errnoCopy;
 
     return len;
 }

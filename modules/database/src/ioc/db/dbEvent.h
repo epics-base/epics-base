@@ -68,7 +68,7 @@ epicsShareFunc void db_cleanup_events(void);
 #endif
 
 typedef void EVENTFUNC (void *user_arg, struct dbChannel *chan,
-	int eventsRemaining, struct db_field_log *pfl);
+    int eventsRemaining, struct db_field_log *pfl);
 
 typedef void * dbEventSubscription;
 epicsShareFunc dbEventSubscription db_add_event (

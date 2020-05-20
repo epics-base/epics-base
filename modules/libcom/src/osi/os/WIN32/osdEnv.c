@@ -1,7 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* osdEnv.c */
 /*
@@ -36,13 +36,13 @@ LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
     char *cp;
 
     iocshEnvClear(name);
-    
-	cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
-	strcpy (cp, name);
-	strcat (cp, "=");
-	strcat (cp, value);
-	if (putenv (cp) < 0) {
-		errPrintf(
+
+    cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
+    strcpy (cp, name);
+    strcat (cp, "=");
+    strcat (cp, value);
+    if (putenv (cp) < 0) {
+        errPrintf(
                 -1L,
                 __FILE__,
                 __LINE__,
@@ -51,7 +51,7 @@ LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
                 value,
                 strerror (errno));
         free (cp);
-	}
+    }
 }
 
 /*

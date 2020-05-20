@@ -4,19 +4,19 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*epicsExit.c*/
-/* 
- * Author: Marty Kraimer 
+/*
+ * Author: Marty Kraimer
  * Date: 23AUG2004
  * Thread exit revisions: Jeff Hill
  * Date: 06Dec2006
  *
- * Note that epicsExitCallAtThreadExits is currently called directly from the 
- * thread entry wrapper in OS dependent code. That approach might not work 
+ * Note that epicsExitCallAtThreadExits is currently called directly from the
+ * thread entry wrapper in OS dependent code. That approach might not work
  * correctly if the thread exits indirectly instead of just returning from
- * the function specified to epicsThreadCreate. For example the thread might 
+ * the function specified to epicsThreadCreate. For example the thread might
  * exit via the exit() call. There might be OS dependent solutions for that
  * weakness.
  *

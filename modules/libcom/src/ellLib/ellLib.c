@@ -46,7 +46,7 @@ void ellAdd (ELLLIST *pList, ELLNODE *pNode)
 void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)
 {
     if (pAddList->count == 0)
-        return;	/* Add list is empty, nothing to add. */
+        return; /* Add list is empty, nothing to add. */
 
     if (pDstList->count == 0) {
         /* Destination list is empty... just transfer the add list over. */

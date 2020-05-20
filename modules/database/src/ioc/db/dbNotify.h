@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* dbNotify.h	*/
+/* dbNotify.h   */
 
 #ifndef INCdbNotifyh
 #define INCdbNotifyh
@@ -89,7 +89,7 @@ epicsShareFunc void dbNotifyCompletion(struct dbCommon *precord);
 epicsShareFunc int db_put_process(
     processNotify *processNotify,notifyPutType type,
     int src_type,const void *psrc, int no_elements);
- 
+
 /* dbtpn is test routine for dbNotify putProcessRequest */
 epicsShareFunc long dbtpn(char *recordname,char *value);
 
@@ -98,7 +98,7 @@ epicsShareFunc int dbNotifyDump(void);
 
 /* This module provides code to handle process notify.
  * client code semantics are:
- * 1) The client code allocates storage for a processNotify structure. 
+ * 1) The client code allocates storage for a processNotify structure.
  *    This structure can be used for multiple calls to dbProcessNotify.
  *    The client is responsible for setting the following fields :
  *    requestType - The type of request.
@@ -107,7 +107,7 @@ epicsShareFunc int dbNotifyDump(void);
  *    getCallback - If request is processGetRequest or putProcessGetRequest
  *    doneCallback - Must be set
  *    usrPvt - For exclusive use of client. dbNotify does not access this field
- * 2) The client calls dbProcessNotify. 
+ * 2) The client calls dbProcessNotify.
  * 3) putCallback is called after dbNotify has claimed the record instance
  *    but before a potential process is requested.
  *    The putCallback MUST issue the correct put request
@@ -140,22 +140,22 @@ epicsShareFunc int dbNotifyDump(void);
  * The other global routines (dbNotifyAdd and dbNotifyCompletion) are called by:
  *
  *  dbAccess.c
- *	dbScanPassive and dbScanLink
- *		call dbNotifyAdd just before calling dbProcess
- *	dbProcess
- *		Calls dbNotifyCompletion if dbProcess does not call process
+ *      dbScanPassive and dbScanLink
+ *              call dbNotifyAdd just before calling dbProcess
+ *      dbProcess
+ *              Calls dbNotifyCompletion if dbProcess does not call process
  *              Unless pact is already true.
- *	recGbl
- *		recGblFwdLink calls dbNotifyCompletion
+ *      recGbl
+ *              recGblFwdLink calls dbNotifyCompletion
  *
  * Two fields in dbCommon are used for put notify.
- *	ppn     pointer to processNotify
- *		If a record is part of a put notify group,
- *		This field is the address of the associated processNotify.
- *		As soon as a record completes processing the field is set NULL
- *	ppnr    pointer to processNotifyRecord, which is a private structure
+ *      ppn     pointer to processNotify
+ *              If a record is part of a put notify group,
+ *              This field is the address of the associated processNotify.
+ *              As soon as a record completes processing the field is set NULL
+ *      ppnr    pointer to processNotifyRecord, which is a private structure
  *              owned by dbNotify.
- *		dbNotify is reponsible for this structure.
+ *              dbNotify is reponsible for this structure.
  *
  */
 #ifdef __cplusplus

@@ -100,7 +100,7 @@ static long add_record(dbCommon *pcommon)
 
     pdevPvt = calloc(1, sizeof(*pdevPvt));
     if (!pdevPvt) {
-	long status = S_db_noMemory;
+        long status = S_db_noMemory;
 
         recGblRecordError(status, (void *)prec,
             "devMbbiSoftCallback (add_record) out of memory, calloc() failed");

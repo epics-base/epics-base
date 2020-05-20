@@ -7,19 +7,19 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, The Regents of the University of California.
- *                                  
- *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #include <string>
@@ -30,7 +30,7 @@
 #include "iocinf.h"
 #include "oldAccess.h"
 
-getCallback::getCallback ( oldChannelNotify & chanIn, 
+getCallback::getCallback ( oldChannelNotify & chanIn,
     caEventCallBackFunc *pFuncIn, void *pPrivateIn ) :
         chan ( chanIn ), pFunc ( pFuncIn ), pPrivate ( pPrivateIn )
 {
@@ -63,7 +63,7 @@ void getCallback::completion (
 
 void getCallback::exception (
     epicsGuard < epicsMutex > & guard,
-    int status, const char * /* pContext */, 
+    int status, const char * /* pContext */,
     unsigned type, arrayElementCount count )
 {
     if ( status != ECA_CHANDESTROY ) {

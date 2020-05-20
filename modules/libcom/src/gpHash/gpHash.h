@@ -19,10 +19,10 @@
 #include "ellLib.h"
 
 typedef struct{
-    ELLNODE	node;
-    const char	*name;		/*address of name placed in directory*/
-    void	*pvtid;		/*private name for subsystem user*/
-    void	*userPvt;	/*private for user*/
+    ELLNODE     node;
+    const char  *name;          /*address of name placed in directory*/
+    void        *pvtid;         /*private name for subsystem user*/
+    void        *userPvt;       /*private for user*/
 } GPHENTRY;
 
 struct gphPvt;

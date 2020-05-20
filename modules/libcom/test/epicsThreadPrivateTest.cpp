@@ -34,8 +34,8 @@ MAIN(epicsThreadPrivateTest)
     priv.set ( &var );
     testOk1 ( &var == priv.get() );
 
-    epicsThreadCreate ( "epicsThreadPrivateTest", epicsThreadPriorityMax, 
-        epicsThreadGetStackSize ( epicsThreadStackSmall ), 
+    epicsThreadCreate ( "epicsThreadPrivateTest", epicsThreadPriorityMax,
+        epicsThreadGetStackSize ( epicsThreadStackSmall ),
         epicsThreadPrivateTestThread, 0 );
     epicsThreadSleep ( 1.0 );
     testOk1 ( &var == priv.get() );

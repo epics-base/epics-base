@@ -27,8 +27,8 @@ template < class T >
 static void incr ( void *arg )
 {
     using epics::atomic::increment;
-    TestDataIncrDecr < T > * const pTestData = 
-	    reinterpret_cast < TestDataIncrDecr < T > * > ( arg );
+    TestDataIncrDecr < T > * const pTestData =
+        reinterpret_cast < TestDataIncrDecr < T > * > ( arg );
     increment ( pTestData->m_testValue );
     increment ( pTestData->m_testIterations );
 }
@@ -38,8 +38,8 @@ static void decr ( void *arg )
 {
     using epics::atomic::decrement;
     using epics::atomic::increment;
-    TestDataIncrDecr < T > * const pTestData = 
-	    reinterpret_cast < TestDataIncrDecr < T > * > ( arg );
+    TestDataIncrDecr < T > * const pTestData =
+        reinterpret_cast < TestDataIncrDecr < T > * > ( arg );
     decrement ( pTestData->m_testValue );
     increment ( pTestData->m_testIterations );
 }
@@ -50,8 +50,8 @@ static void add ( void *arg )
 {
     using epics::atomic::add;
     using epics::atomic::increment;
-    TestDataAddSub < T > * const pTestData = 
-	    reinterpret_cast < TestDataAddSub < T > * > ( arg );
+    TestDataAddSub < T > * const pTestData =
+        reinterpret_cast < TestDataAddSub < T > * > ( arg );
     add ( pTestData->m_testValue, TestDataAddSub < T > :: delta  );
     increment ( pTestData->m_testIterations );
 }
@@ -61,8 +61,8 @@ static void sub ( void *arg )
 {
     using epics::atomic::subtract;
     using epics::atomic::increment;
-    TestDataAddSub < T > * const pTestData = 
-	    reinterpret_cast < TestDataAddSub < T > * > ( arg );
+    TestDataAddSub < T > * const pTestData =
+        reinterpret_cast < TestDataAddSub < T > * > ( arg );
     subtract ( pTestData->m_testValue, TestDataAddSub < T > :: delta );
     increment ( pTestData->m_testIterations );
 }
@@ -86,7 +86,7 @@ inline int trueValue < int > () { return 1; }
 template <>
 inline int falseValue < int > () { return 0; }
 
-// size_t 
+// size_t
 template <>
 inline size_t trueValue < size_t > () { return 1u; }
 
@@ -95,11 +95,11 @@ inline size_t falseValue < size_t > () { return 0u; }
 
 // EpicsAtomicPtrT
 template <>
-inline EpicsAtomicPtrT trueValue < EpicsAtomicPtrT > () 
+inline EpicsAtomicPtrT trueValue < EpicsAtomicPtrT > ()
 { static char c; return & c; }
 
 template <>
-inline EpicsAtomicPtrT falseValue < EpicsAtomicPtrT > () 
+inline EpicsAtomicPtrT falseValue < EpicsAtomicPtrT > ()
 { return 0u; }
 
 template < class T >
@@ -110,15 +110,15 @@ static void cas ( void *arg )
     using epics::atomic::decrement;
     using epics::atomic::compareAndSwap;
 
-    TestDataCAS < T > * const pTestData = 
-	    reinterpret_cast < TestDataCAS < T > * > ( arg );
+    TestDataCAS < T > * const pTestData =
+        reinterpret_cast < TestDataCAS < T > * > ( arg );
     /*
      * intentionally waste cpu and maximize
      * contention for the shared data
      */
     increment ( pTestData->m_testIterationsNotSet );
-    while ( ! compareAndSwap ( pTestData->m_testValue, 
-                                        falseValue < T > (), 
+    while ( ! compareAndSwap ( pTestData->m_testValue,
+                                        falseValue < T > (),
                                         trueValue < T > () ) ) {
     }
     decrement ( pTestData->m_testIterationsNotSet );
@@ -135,21 +135,21 @@ void testIncrDecr ()
     static const size_t N = 90;
     static const T NT = static_cast < T > ( N );
 
-    const unsigned int stackSize = 
+    const unsigned int stackSize =
         epicsThreadGetStackSize ( epicsThreadStackSmall );
 
     TestDataIncrDecr < T > testData = { 0, N };
     set ( testData.m_testValue, NT  );
     testOk ( get ( testData.m_testValue ) == NT,
-	    "get returns initial incr/decr test data value that was set" );
+        "get returns initial incr/decr test data value that was set" );
     set ( testData.m_testIterations, 0u );
     testOk ( get ( testData.m_testIterations ) == 0u,
-	    "get returns initial incr/decr test thread iterations value that was set" );
+        "get returns initial incr/decr test thread iterations value that was set" );
     for ( size_t i = 0u; i < N; i++ ) {
         epicsThreadMustCreate ( "incr",
-		    50, stackSize, incr < T >, & testData );
+            50, stackSize, incr < T >, & testData );
         epicsThreadMustCreate ( "decr",
-		    50, stackSize, decr < T >, & testData );
+            50, stackSize, decr < T >, & testData );
         if(i%10==0)
             testDiag("iteration %u", (unsigned)i);
     }
@@ -157,9 +157,9 @@ void testIncrDecr ()
         epicsThreadSleep ( 0.01 );
     }
     testOk ( get ( testData.m_testIterations ) == 2 * N,
-	    "proper number of incr/decr test thread iterations" );
-    testOk ( get ( testData.m_testValue ) == NT, 
-	    "proper final incr/decr test value" );
+        "proper number of incr/decr test thread iterations" );
+    testOk ( get ( testData.m_testValue ) == NT,
+        "proper final incr/decr test value" );
 }
 
 template < class T >
@@ -170,31 +170,31 @@ void testAddSub ()
 
     static const size_t N = 90;
     static const T NDT = TestDataAddSub < T > :: delta *
-	    				static_cast < T > ( N );
+                        static_cast < T > ( N );
 
-    const unsigned int stackSize = 
+    const unsigned int stackSize =
         epicsThreadGetStackSize ( epicsThreadStackSmall );
 
     TestDataIncrDecr < T > testData = { 0, N };
     set ( testData.m_testValue, NDT  );
     testOk ( get ( testData.m_testValue ) == NDT,
-	    "get returns initial add/sub test data value that was set" );
+        "get returns initial add/sub test data value that was set" );
     set ( testData.m_testIterations, 0u );
     testOk ( get ( testData.m_testIterations ) == 0u,
-	    "get returns initial incr/decr test thread iterations value that was set" );
+        "get returns initial incr/decr test thread iterations value that was set" );
     for ( size_t i = 0u; i < N; i++ ) {
         epicsThreadMustCreate ( "add",
-		    50, stackSize, add < T >, & testData );
+            50, stackSize, add < T >, & testData );
         epicsThreadMustCreate ( "sub",
-		    50, stackSize, sub < T >, & testData );
+            50, stackSize, sub < T >, & testData );
     }
     while ( testData.m_testIterations < 2 * N ) {
         epicsThreadSleep ( 0.01 );
     }
     testOk ( get ( testData.m_testIterations ) == 2 * N,
-	    "proper number of add/sub test thread iterations" );
-    testOk ( get ( testData.m_testValue ) == NDT, 
-	    "proper final add/sub test value" );
+        "proper number of add/sub test thread iterations" );
+    testOk ( get ( testData.m_testValue ) == NDT,
+        "proper final add/sub test value" );
 }
 
 template < class T >
@@ -203,35 +203,35 @@ void testCAS ()
     using epics::atomic::set;
     using epics::atomic::get;
 
-	static const size_t N = 10;
+    static const size_t N = 10;
 
-    const unsigned int stackSize = 
+    const unsigned int stackSize =
         epicsThreadGetStackSize ( epicsThreadStackSmall );
 
-	TestDataCAS < T > testData = { 0, N, N };
-	set ( testData.m_testIterationsSet, 0 );
-	testOk ( get ( testData.m_testIterationsSet ) == 0u,
-				"get returns initial CAS test thread "
+    TestDataCAS < T > testData = { 0, N, N };
+    set ( testData.m_testIterationsSet, 0 );
+    testOk ( get ( testData.m_testIterationsSet ) == 0u,
+                "get returns initial CAS test thread "
                 "iterations set value" );
-	set ( testData.m_testIterationsNotSet, 0 );
-	testOk ( get ( testData.m_testIterationsNotSet ) == 0u,
-				"get returns initial CAS test thread "
+    set ( testData.m_testIterationsNotSet, 0 );
+    testOk ( get ( testData.m_testIterationsNotSet ) == 0u,
+                "get returns initial CAS test thread "
                 "iterations not set value" );
-	set ( testData.m_testValue, trueValue < T > () );
-	testOk ( get ( testData.m_testValue ) == trueValue < T > (),
-				"set/get a true value" );
-	for ( size_t i = 0u; i < N; i++ ) {
+    set ( testData.m_testValue, trueValue < T > () );
+    testOk ( get ( testData.m_testValue ) == trueValue < T > (),
+                "set/get a true value" );
+    for ( size_t i = 0u; i < N; i++ ) {
         epicsThreadMustCreate ( "tns",
-					50, stackSize, cas < T >, & testData );
-	}
-	set ( testData.m_testValue, falseValue < T > () );
-	while ( testData.m_testIterationsSet < N ) {
-		epicsThreadSleep ( 0.01 );
-	}
-	testOk ( get ( testData.m_testIterationsSet ) == N,
-				"proper number of CAS test thread set iterations" );
-	testOk ( get ( testData.m_testIterationsNotSet ) == 0u,
-				"proper number of CAS test thread not set iterations" );
+                    50, stackSize, cas < T >, & testData );
+    }
+    set ( testData.m_testValue, falseValue < T > () );
+    while ( testData.m_testIterationsSet < N ) {
+        epicsThreadSleep ( 0.01 );
+    }
+    testOk ( get ( testData.m_testIterationsSet ) == N,
+                "proper number of CAS test thread set iterations" );
+    testOk ( get ( testData.m_testIterationsNotSet ) == 0u,
+                "proper number of CAS test thread not set iterations" );
 }
 
 // template instances, needed for vxWorks 5.5.2

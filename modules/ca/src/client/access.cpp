@@ -181,19 +181,19 @@ int epicsStdCall ca_context_create (
         }
 
         pcac = ( ca_client_context * ) epicsThreadPrivateGet ( caClientContextId );
-	    if ( pcac ) {
+        if ( pcac ) {
             if ( premptiveCallbackSelect == ca_enable_preemptive_callback &&
                 ! pcac->preemptiveCallbakIsEnabled() ) {
                 return ECA_NOTTHREADED;
             }
-		    return ECA_NORMAL;
-	    }
+            return ECA_NORMAL;
+        }
 
         pcac = new ca_client_context (
             premptiveCallbackSelect == ca_enable_preemptive_callback );
-	    if ( ! pcac ) {
-		    return ECA_ALLOCMEM;
-	    }
+        if ( ! pcac ) {
+            return ECA_ALLOCMEM;
+        }
 
         epicsThreadPrivateSet ( caClientContextId, (void *) pcac );
     }
@@ -465,7 +465,7 @@ int epicsStdCall ca_pend_event ( ca_real timeout )
     try {
         // preserve past odd ball behavior of waiting forever when
         // the delay is zero
-    	if ( timeout == 0.0 ) {
+        if ( timeout == 0.0 ) {
             while ( true ) {
                 pcac->pendEvent ( 60.0 );
             }
@@ -694,7 +694,7 @@ int epicsStdCall ca_channel_status ( epicsThreadId /* tid */ )
 {
     ::printf ("The R3.14 EPICS OS abstraction API does not allow peeking at thread private storage of another thread.\n");
     ::printf ("Please call \"ca_client_status ( unsigned level )\" from the subsystem specific diagnostic code.\n");
-	return ECA_ANACHRONISM;
+    return ECA_ANACHRONISM;
 }
 
 // extern "C"
@@ -798,249 +798,249 @@ const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
 };
 
 const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
-	epicsOldStringT,
-	epicsInt16T,
-	epicsFloat32T,
-	epicsEnum16T,
-	epicsUInt8T,
-	epicsInt32T,
-	epicsFloat64T,
+    epicsOldStringT,
+    epicsInt16T,
+    epicsFloat32T,
+    epicsEnum16T,
+    epicsUInt8T,
+    epicsInt32T,
+    epicsFloat64T,
 
-	epicsOldStringT,
-	epicsInt16T,
-	epicsFloat32T,
-	epicsEnum16T,
-	epicsUInt8T,
-	epicsInt32T,
-	epicsFloat64T,
+    epicsOldStringT,
+    epicsInt16T,
+    epicsFloat32T,
+    epicsEnum16T,
+    epicsUInt8T,
+    epicsInt32T,
+    epicsFloat64T,
 
-	epicsOldStringT,
-	epicsInt16T,
-	epicsFloat32T,
-	epicsEnum16T,
-	epicsUInt8T,
-	epicsInt32T,
-	epicsFloat64T,
+    epicsOldStringT,
+    epicsInt16T,
+    epicsFloat32T,
+    epicsEnum16T,
+    epicsUInt8T,
+    epicsInt32T,
+    epicsFloat64T,
 
-	epicsOldStringT,
-	epicsInt16T,
-	epicsFloat32T,
-	epicsEnum16T,
-	epicsUInt8T,
-	epicsInt32T,
-	epicsFloat64T,
+    epicsOldStringT,
+    epicsInt16T,
+    epicsFloat32T,
+    epicsEnum16T,
+    epicsUInt8T,
+    epicsInt32T,
+    epicsFloat64T,
 
-	epicsOldStringT,
-	epicsInt16T,
-	epicsFloat32T,
-	epicsEnum16T,
-	epicsUInt8T,
-	epicsInt32T,
-	epicsFloat64T,
+    epicsOldStringT,
+    epicsInt16T,
+    epicsFloat32T,
+    epicsEnum16T,
+    epicsUInt8T,
+    epicsInt32T,
+    epicsFloat64T,
 
-	epicsUInt16T,
-	epicsUInt16T,
-	epicsOldStringT,
-	epicsOldStringT
+    epicsUInt16T,
+    epicsUInt16T,
+    epicsOldStringT,
+    epicsOldStringT
 };
 
 const unsigned short dbr_size[LAST_BUFFER_TYPE+1] = {
-	sizeof(dbr_string_t),		/* string max size		*/
-	sizeof(dbr_short_t),		/* short			*/
-	sizeof(dbr_float_t),		/* IEEE Float			*/
-	sizeof(dbr_enum_t),		/* item number			*/
-	sizeof(dbr_char_t),		/* character			*/
+    sizeof(dbr_string_t),           /* string max size              */
+    sizeof(dbr_short_t),            /* short                        */
+    sizeof(dbr_float_t),            /* IEEE Float                   */
+    sizeof(dbr_enum_t),             /* item number                  */
+    sizeof(dbr_char_t),             /* character                    */
 
-	sizeof(dbr_long_t),		/* long				*/
-	sizeof(dbr_double_t),		/* double			*/
-	sizeof(struct dbr_sts_string),	/* string field	with status	*/
-	sizeof(struct dbr_sts_short),	/* short field with status	*/
-	sizeof(struct dbr_sts_float),	/* float field with status	*/
+    sizeof(dbr_long_t),             /* long                         */
+    sizeof(dbr_double_t),           /* double                       */
+    sizeof(struct dbr_sts_string),  /* string field with status     */
+    sizeof(struct dbr_sts_short),   /* short field with status      */
+    sizeof(struct dbr_sts_float),   /* float field with status      */
 
-	sizeof(struct dbr_sts_enum),	/* item number with status	*/
-	sizeof(struct dbr_sts_char),	/* char field with status	*/
-	sizeof(struct dbr_sts_long),	/* long field with status	*/
-	sizeof(struct dbr_sts_double),	/* double field with time	*/
-	sizeof(struct dbr_time_string),	/* string field	with time	*/
+    sizeof(struct dbr_sts_enum),    /* item number with status      */
+    sizeof(struct dbr_sts_char),    /* char field with status       */
+    sizeof(struct dbr_sts_long),    /* long field with status       */
+    sizeof(struct dbr_sts_double),  /* double field with time       */
+    sizeof(struct dbr_time_string), /* string field with time       */
 
-	sizeof(struct dbr_time_short),	/* short field with time	*/
-	sizeof(struct dbr_time_float),	/* float field with time	*/
-	sizeof(struct dbr_time_enum),	/* item number with time	*/
-	sizeof(struct dbr_time_char),	/* char field with time		*/
-	sizeof(struct dbr_time_long),	/* long field with time		*/
+    sizeof(struct dbr_time_short),  /* short field with time        */
+    sizeof(struct dbr_time_float),  /* float field with time        */
+    sizeof(struct dbr_time_enum),   /* item number with time        */
+    sizeof(struct dbr_time_char),   /* char field with time         */
+    sizeof(struct dbr_time_long),   /* long field with time         */
 
-	sizeof(struct dbr_time_double),	/* double field with time	*/
-	sizeof(struct dbr_sts_string),	/* graphic string info		*/
-	sizeof(struct dbr_gr_short),	/* graphic short info		*/
-	sizeof(struct dbr_gr_float),	/* graphic float info		*/
-	sizeof(struct dbr_gr_enum),	/* graphic item info		*/
+    sizeof(struct dbr_time_double), /* double field with time       */
+    sizeof(struct dbr_sts_string),  /* graphic string info          */
+    sizeof(struct dbr_gr_short),    /* graphic short info           */
+    sizeof(struct dbr_gr_float),    /* graphic float info           */
+    sizeof(struct dbr_gr_enum),     /* graphic item info            */
 
-	sizeof(struct dbr_gr_char),	/* graphic char info		*/
-	sizeof(struct dbr_gr_long),	/* graphic long info		*/
-	sizeof(struct dbr_gr_double),	/* graphic double info		*/
-	sizeof(struct dbr_sts_string),	/* control string info		*/
-	sizeof(struct dbr_ctrl_short),	/* control short info		*/
+    sizeof(struct dbr_gr_char),     /* graphic char info            */
+    sizeof(struct dbr_gr_long),     /* graphic long info            */
+    sizeof(struct dbr_gr_double),   /* graphic double info          */
+    sizeof(struct dbr_sts_string),  /* control string info          */
+    sizeof(struct dbr_ctrl_short),  /* control short info           */
 
-	sizeof(struct dbr_ctrl_float),	/* control float info		*/
-	sizeof(struct dbr_ctrl_enum),	/* control item info		*/
-	sizeof(struct dbr_ctrl_char),	/* control char info		*/
-	sizeof(struct dbr_ctrl_long),	/* control long info		*/
-	sizeof(struct dbr_ctrl_double),	/* control double info		*/
+    sizeof(struct dbr_ctrl_float),  /* control float info           */
+    sizeof(struct dbr_ctrl_enum),   /* control item info            */
+    sizeof(struct dbr_ctrl_char),   /* control char info            */
+    sizeof(struct dbr_ctrl_long),   /* control long info            */
+    sizeof(struct dbr_ctrl_double), /* control double info          */
 
-	sizeof(dbr_put_ackt_t),		/* put ackt			*/
-	sizeof(dbr_put_acks_t),		/* put acks			*/
-	sizeof(struct dbr_stsack_string),/* string field with status/ack*/
-	sizeof(dbr_string_t),		/* string max size		*/
+    sizeof(dbr_put_ackt_t),         /* put ackt                     */
+    sizeof(dbr_put_acks_t),         /* put acks                     */
+    sizeof(struct dbr_stsack_string),/* string field with status/ack*/
+    sizeof(dbr_string_t),           /* string max size              */
 };
 
 const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_short_t),	/* short			*/
-	sizeof(dbr_float_t),	/* IEEE Float			*/
-	sizeof(dbr_enum_t),	/* item number			*/
-	sizeof(dbr_char_t),	/* character			*/
+    sizeof(dbr_string_t),   /* string max size              */
+    sizeof(dbr_short_t),    /* short                        */
+    sizeof(dbr_float_t),    /* IEEE Float                   */
+    sizeof(dbr_enum_t),     /* item number                  */
+    sizeof(dbr_char_t),     /* character                    */
 
-	sizeof(dbr_long_t),	/* long				*/
-	sizeof(dbr_double_t),	/* double			*/
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_short_t),	/* short			*/
-	sizeof(dbr_float_t),	/* IEEE Float			*/
+    sizeof(dbr_long_t),     /* long                         */
+    sizeof(dbr_double_t),   /* double                       */
+    sizeof(dbr_string_t),   /* string max size              */
+    sizeof(dbr_short_t),    /* short                        */
+    sizeof(dbr_float_t),    /* IEEE Float                   */
 
-	sizeof(dbr_enum_t),	/* item number			*/
-	sizeof(dbr_char_t),	/* character			*/
-	sizeof(dbr_long_t),	/* long				*/
-	sizeof(dbr_double_t),	/* double			*/
-	sizeof(dbr_string_t),	/* string max size		*/
+    sizeof(dbr_enum_t),     /* item number                  */
+    sizeof(dbr_char_t),     /* character                    */
+    sizeof(dbr_long_t),     /* long                         */
+    sizeof(dbr_double_t),   /* double                       */
+    sizeof(dbr_string_t),   /* string max size              */
 
-	sizeof(dbr_short_t),	/* short			*/
-	sizeof(dbr_float_t),	/* IEEE Float			*/
-	sizeof(dbr_enum_t),	/* item number			*/
-	sizeof(dbr_char_t),	/* character			*/
-	sizeof(dbr_long_t),	/* long				*/
+    sizeof(dbr_short_t),    /* short                        */
+    sizeof(dbr_float_t),    /* IEEE Float                   */
+    sizeof(dbr_enum_t),     /* item number                  */
+    sizeof(dbr_char_t),     /* character                    */
+    sizeof(dbr_long_t),     /* long                         */
 
-	sizeof(dbr_double_t),	/* double			*/
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_short_t),	/* short			*/
-	sizeof(dbr_float_t),	/* IEEE Float			*/
-	sizeof(dbr_enum_t),	/* item number			*/
+    sizeof(dbr_double_t),   /* double                       */
+    sizeof(dbr_string_t),   /* string max size              */
+    sizeof(dbr_short_t),    /* short                        */
+    sizeof(dbr_float_t),    /* IEEE Float                   */
+    sizeof(dbr_enum_t),     /* item number                  */
 
-	sizeof(dbr_char_t),	/* character			*/
-	sizeof(dbr_long_t),	/* long				*/
-	sizeof(dbr_double_t),	/* double			*/
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_short_t),	/* short			*/
+    sizeof(dbr_char_t),     /* character                    */
+    sizeof(dbr_long_t),     /* long                         */
+    sizeof(dbr_double_t),   /* double                       */
+    sizeof(dbr_string_t),   /* string max size              */
+    sizeof(dbr_short_t),    /* short                        */
 
-	sizeof(dbr_float_t),	/* IEEE Float			*/
-	sizeof(dbr_enum_t),	/* item number			*/
-	sizeof(dbr_char_t),	/* character			*/
-	sizeof(dbr_long_t),	/* long				*/
-	sizeof(dbr_double_t),	/* double			*/
+    sizeof(dbr_float_t),    /* IEEE Float                   */
+    sizeof(dbr_enum_t),     /* item number                  */
+    sizeof(dbr_char_t),     /* character                    */
+    sizeof(dbr_long_t),     /* long                         */
+    sizeof(dbr_double_t),   /* double                       */
 
-	sizeof(dbr_ushort_t), 	/* put_ackt			*/
-	sizeof(dbr_ushort_t), 	/* put_acks			*/
-	sizeof(dbr_string_t),	/* string max size		*/
-	sizeof(dbr_string_t),	/* string max size		*/
+    sizeof(dbr_ushort_t),   /* put_ackt                     */
+    sizeof(dbr_ushort_t),   /* put_acks                     */
+    sizeof(dbr_string_t),   /* string max size              */
+    sizeof(dbr_string_t),   /* string max size              */
 };
 
 //extern "C"
 const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
+    dbr_class_string,       /* string max size              */
+    dbr_class_int,          /* short                        */
+    dbr_class_float,        /* IEEE Float                   */
+    dbr_class_int,          /* item number                  */
+    dbr_class_int,          /* character                    */
+    dbr_class_int,          /* long                         */
+    dbr_class_float,        /* double                       */
 
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
+    dbr_class_string,       /* string max size              */
+    dbr_class_int,          /* short                        */
+    dbr_class_float,        /* IEEE Float                   */
+    dbr_class_int,          /* item number                  */
+    dbr_class_int,          /* character                    */
+    dbr_class_int,          /* long                         */
+    dbr_class_float,        /* double                       */
 
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
+    dbr_class_string,       /* string max size              */
+    dbr_class_int,          /* short                        */
+    dbr_class_float,        /* IEEE Float                   */
+    dbr_class_int,          /* item number                  */
+    dbr_class_int,          /* character                    */
+    dbr_class_int,          /* long                         */
+    dbr_class_float,        /* double                       */
 
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
+    dbr_class_string,       /* string max size              */
+    dbr_class_int,          /* short                        */
+    dbr_class_float,        /* IEEE Float                   */
+    dbr_class_int,          /* item number                  */
+    dbr_class_int,          /* character                    */
+    dbr_class_int,          /* long                         */
+    dbr_class_float,        /* double                       */
 
-	dbr_class_string,	/* string max size		*/
-	dbr_class_int,		/* short			*/
-	dbr_class_float,	/* IEEE Float			*/
-	dbr_class_int,		/* item number			*/
-	dbr_class_int,		/* character			*/
-	dbr_class_int,		/* long				*/
-	dbr_class_float,	/* double			*/
-	dbr_class_int,
-	dbr_class_int,
-	dbr_class_string,
-	dbr_class_string,	/* string max size		*/
+    dbr_class_string,       /* string max size              */
+    dbr_class_int,          /* short                        */
+    dbr_class_float,        /* IEEE Float                   */
+    dbr_class_int,          /* item number                  */
+    dbr_class_int,          /* character                    */
+    dbr_class_int,          /* long                         */
+    dbr_class_float,        /* double                       */
+    dbr_class_int,
+    dbr_class_int,
+    dbr_class_string,
+    dbr_class_string,       /* string max size              */
 };
 
 const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1] = {
-	0,					/* string			*/
-	0,					/* short			*/
-	0,					/* IEEE Float			*/
-	0,					/* item number			*/
-	0,					/* character			*/
-	0,					/* long				*/
-	0,					/* IEEE double			*/
-	(unsigned short) offsetof(dbr_sts_string,value[0]),/* string field	with status	*/
-	(unsigned short) offsetof(dbr_sts_short,value),	/* short field with status	*/
-	(unsigned short) offsetof(dbr_sts_float,value),	/* float field with status	*/
-	(unsigned short) offsetof(dbr_sts_enum,value),	/* item number with status	*/
-	(unsigned short) offsetof(dbr_sts_char,value),	/* char field with status	*/
-	(unsigned short) offsetof(dbr_sts_long,value),	/* long field with status	*/
-	(unsigned short) offsetof(dbr_sts_double,value),	/* double field with time	*/
-	(unsigned short) offsetof(dbr_time_string,value[0] ),/* string field with time	*/
-	(unsigned short) offsetof(dbr_time_short,value),	/* short field with time	*/
-	(unsigned short) offsetof(dbr_time_float,value),	/* float field with time	*/
-	(unsigned short) offsetof(dbr_time_enum,value),	/* item number with time	*/
-	(unsigned short) offsetof(dbr_time_char,value),	/* char field with time		*/
-	(unsigned short) offsetof(dbr_time_long,value),	/* long field with time		*/
-	(unsigned short) offsetof(dbr_time_double,value),	/* double field with time	*/
-	(unsigned short) offsetof(dbr_sts_string,value[0]),/* graphic string info		*/
-	(unsigned short) offsetof(dbr_gr_short,value),	/* graphic short info		*/
-	(unsigned short) offsetof(dbr_gr_float,value),	/* graphic float info		*/
-	(unsigned short) offsetof(dbr_gr_enum,value),	/* graphic item info		*/
-	(unsigned short) offsetof(dbr_gr_char,value),	/* graphic char info		*/
-	(unsigned short) offsetof(dbr_gr_long,value),	/* graphic long info		*/
-	(unsigned short) offsetof(dbr_gr_double,value),	/* graphic double info		*/
-	(unsigned short) offsetof(dbr_sts_string,value[0]),/* control string info		*/
-	(unsigned short) offsetof(dbr_ctrl_short,value),	/* control short info		*/
-	(unsigned short) offsetof(dbr_ctrl_float,value),	/* control float info		*/
-	(unsigned short) offsetof(dbr_ctrl_enum,value),	/* control item info		*/
-	(unsigned short) offsetof(dbr_ctrl_char,value),	/* control char info		*/
-	(unsigned short) offsetof(dbr_ctrl_long,value),	/* control long info		*/
-	(unsigned short) offsetof(dbr_ctrl_double,value),	/* control double info		*/
-	0,					/* put ackt			*/
-	0,					/* put acks			*/
-	(unsigned short) offsetof(dbr_stsack_string,value[0]),/* string field	with status	*/
-	0,					/* string			*/
+    0,                                                      /* string                   */
+    0,                                                      /* short                    */
+    0,                                                      /* IEEE Float               */
+    0,                                                      /* item number              */
+    0,                                                      /* character                */
+    0,                                                      /* long                     */
+    0,                                                      /* IEEE double              */
+    (unsigned short) offsetof(dbr_sts_string,value[0]),     /* string field with status */
+    (unsigned short) offsetof(dbr_sts_short,value),         /* short field with status  */
+    (unsigned short) offsetof(dbr_sts_float,value),         /* float field with status  */
+    (unsigned short) offsetof(dbr_sts_enum,value),          /* item number with status  */
+    (unsigned short) offsetof(dbr_sts_char,value),          /* char field with status   */
+    (unsigned short) offsetof(dbr_sts_long,value),          /* long field with status   */
+    (unsigned short) offsetof(dbr_sts_double,value),        /* double field with time   */
+    (unsigned short) offsetof(dbr_time_string,value[0] ),   /* string field with time   */
+    (unsigned short) offsetof(dbr_time_short,value),        /* short field with time    */
+    (unsigned short) offsetof(dbr_time_float,value),        /* float field with time    */
+    (unsigned short) offsetof(dbr_time_enum,value),         /* item number with time    */
+    (unsigned short) offsetof(dbr_time_char,value),         /* char field with time     */
+    (unsigned short) offsetof(dbr_time_long,value),         /* long field with time     */
+    (unsigned short) offsetof(dbr_time_double,value),       /* double field with time   */
+    (unsigned short) offsetof(dbr_sts_string,value[0]),     /* graphic string info      */
+    (unsigned short) offsetof(dbr_gr_short,value),          /* graphic short info       */
+    (unsigned short) offsetof(dbr_gr_float,value),          /* graphic float info       */
+    (unsigned short) offsetof(dbr_gr_enum,value),           /* graphic item info        */
+    (unsigned short) offsetof(dbr_gr_char,value),           /* graphic char info        */
+    (unsigned short) offsetof(dbr_gr_long,value),           /* graphic long info        */
+    (unsigned short) offsetof(dbr_gr_double,value),         /* graphic double info      */
+    (unsigned short) offsetof(dbr_sts_string,value[0]),     /* control string info      */
+    (unsigned short) offsetof(dbr_ctrl_short,value),        /* control short info       */
+    (unsigned short) offsetof(dbr_ctrl_float,value),        /* control float info       */
+    (unsigned short) offsetof(dbr_ctrl_enum,value),         /* control item info        */
+    (unsigned short) offsetof(dbr_ctrl_char,value),         /* control char info        */
+    (unsigned short) offsetof(dbr_ctrl_long,value),         /* control long info        */
+    (unsigned short) offsetof(dbr_ctrl_double,value),       /* control double info      */
+    0,                                                      /* put ackt                 */
+    0,                                                      /* put acks                 */
+    (unsigned short) offsetof(dbr_stsack_string,value[0]),  /* string field with status */
+    0,                                                      /* string                   */
 };
 
 const char *dbf_text[LAST_TYPE+3] = {
-	"TYPENOTCONN",
-	"DBF_STRING",
-	"DBF_SHORT",
-	"DBF_FLOAT",
-	"DBF_ENUM",
-	"DBF_CHAR",
-	"DBF_LONG",
-	"DBF_DOUBLE",
-	"DBF_NO_ACCESS"
+    "TYPENOTCONN",
+    "DBF_STRING",
+    "DBF_SHORT",
+    "DBF_FLOAT",
+    "DBF_ENUM",
+    "DBF_CHAR",
+    "DBF_LONG",
+    "DBF_DOUBLE",
+    "DBF_NO_ACCESS"
 };
 
 const char *dbf_text_invalid = "DBF_invalid";

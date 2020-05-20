@@ -8,7 +8,7 @@
 \*************************************************************************/
 /*
  *
- *	Author: J. Hill 
+ *  Author: J. Hill
  *
  */
 
@@ -25,7 +25,7 @@ extern "C" {
 typedef unsigned long arrayElementCount;
 
 LIBCA_API int caNetConvert (
-    unsigned type, const void *pSrc, void *pDest, 
+    unsigned type, const void *pSrc, void *pDest,
     int hton, arrayElementCount count );
 
 #ifdef __cplusplus

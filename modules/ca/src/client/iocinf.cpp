@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* 
+/*
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -62,8 +62,8 @@ static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
 
     if ( tokenFound ) {
         pBuf[bufSIze-1] = '\0';
-		return pBuf;
-	}
+        return pBuf;
+    }
     return NULL;
 }
 
@@ -71,7 +71,7 @@ static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
  * addAddrToChannelAccessAddressList ()
  */
 extern "C" int epicsStdCall addAddrToChannelAccessAddressList
-    ( ELLLIST *pList, const ENV_PARAM *pEnv, 
+    ( ELLLIST *pList, const ENV_PARAM *pEnv,
     unsigned short port, int ignoreNonDefaultPort )
 {
     osiSockAddrNode *pNewNode;
@@ -106,9 +106,9 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
 
         pNewNode->addr.ia = addr;
 
-		/*
-		 * LOCK applied externally
-		 */
+        /*
+         * LOCK applied externally
+         */
         ellAdd (pList, &pNewNode->node);
         ret = 0; /* success if anything is added to the list */
     }
@@ -125,8 +125,8 @@ extern "C" void epicsStdCall removeDuplicateAddresses
     ELLNODE *pRawNode;
 
     while ( (pRawNode  = ellGet ( pSrcList ) ) ) {
-		STATIC_ASSERT ( offsetof (osiSockAddrNode, node) == 0 );
-		osiSockAddrNode *pNode = reinterpret_cast <osiSockAddrNode *> ( pRawNode );
+        STATIC_ASSERT ( offsetof (osiSockAddrNode, node) == 0 );
+        osiSockAddrNode *pNode = reinterpret_cast <osiSockAddrNode *> ( pRawNode );
         osiSockAddrNode *pTmpNode;
 
         if ( pNode->addr.sa.sa_family == AF_INET ) {
@@ -134,14 +134,14 @@ extern "C" void epicsStdCall removeDuplicateAddresses
             pTmpNode = (osiSockAddrNode *) ellFirst (pDestList);
             while ( pTmpNode ) {
                 if (pTmpNode->addr.sa.sa_family == AF_INET) {
-                    if ( pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr && 
+                    if ( pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr &&
                             pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port ) {
-						if ( ! silent ) {
+                        if ( ! silent ) {
                             char buf[64];
                             ipAddrToDottedIP ( &pNode->addr.ia, buf, sizeof (buf) );
-							fprintf ( stderr, 
-								"Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
-						}
+                            fprintf ( stderr,
+                                "Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
+                        }
                         free (pNode);
                         pNode = NULL;
                         break;
@@ -200,7 +200,7 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
      * from the interfaces found.
      */
     yes = true;
-    pstr = envGetConfigParam ( &EPICS_CA_AUTO_ADDR_LIST,       
+    pstr = envGetConfigParam ( &EPICS_CA_AUTO_ADDR_LIST,
             sizeof (yesno), yesno );
     if ( pstr ) {
         if ( strstr ( pstr, "no" ) || strstr ( pstr, "NO" ) ) {
@@ -213,19 +213,19 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
      * (lock outside because this is used by the server also)
      */
     if (yes) {
-		ELLLIST bcastList;
+        ELLLIST bcastList;
         osiSockAddr addr;
-		ellInit ( &bcastList );
+        ellInit ( &bcastList );
         addr.ia.sin_family = AF_UNSPEC;
         osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &addr );
         forcePort ( &bcastList, port );
-		removeDuplicateAddresses ( &tmpList, &bcastList, 1 );
+        removeDuplicateAddresses ( &tmpList, &bcastList, 1 );
         if ( ellCount ( &tmpList ) == 0 ) {
             osiSockAddrNode *pNewNode;
             pNewNode = (osiSockAddrNode *) calloc ( 1, sizeof (*pNewNode) );
             if ( pNewNode ) {
-                /* 
-                 * if no interfaces found then look for local channels 
+                /*
+                 * if no interfaces found then look for local channels
                  * with the loop back interface
                  */
                 pNewNode->addr.ia.sin_family = AF_INET;

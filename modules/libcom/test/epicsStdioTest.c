@@ -47,9 +47,9 @@ static void testEpicsSnprintf(void) {
 
     sprintf(exbuffer, format, ivalue, fvalue, svalue);
     rlen = strlen(expected)+1;
-    
+
     strcpy(buffer, "AAAA");
-    
+
     for (size = 1; size < strlen(expected) + 5; ++size) {
         rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
         testOk(rtn <= rlen-1, "epicsSnprintf(size=%d) = %d", size, rtn);
@@ -69,7 +69,7 @@ void testStdoutRedir (const char *report)
     FILE *stream = 0;
     char linebuf[80];
     size_t buflen = sizeof linebuf;
-    
+
     testOk1(epicsGetStdout() == stdout);
 
     errno = 0;

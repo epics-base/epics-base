@@ -31,161 +31,161 @@ static epicsInt32 frac_multiplier[] =
 int cvtFloatToString(float flt_value, char *pdest,
     epicsUInt16 precision)
 {
-        int got_one, i;
-	epicsInt32 whole, iplace, number, fraction, fplace;
-	float		ftemp;
-	char		*startAddr;
+    int got_one, i;
+    epicsInt32  whole, iplace, number, fraction, fplace;
+    float       ftemp;
+    char        *startAddr;
 
-	/* can this routine handle this conversion */
-	if (isnan(flt_value) || precision > 8 ||
-	    flt_value > 10000000.0 || flt_value < -10000000.0) {
-		if (precision > 8 || flt_value >= 1e8 || flt_value <= -1e8) {
-		    if (precision > 12) precision = 12; /* FIXME */
-		    sprintf(pdest, "%*.*e", precision+6, precision, (double) flt_value);
-		} else {
-		    if (precision > 3) precision = 3; /* FIXME */
-		    sprintf(pdest, "%.*f", precision, (double) flt_value);
-		}
-		return((int)strlen(pdest));
-	}
-	startAddr = pdest;
-
-	/* determine the sign */
-        if (flt_value < 0){
-                *pdest++ = '-';
-                flt_value = -flt_value;
-        };
-
-	/* remove the whole number portion */
-	whole = (epicsInt32)flt_value;
-	ftemp = flt_value - whole;
-
-	/* multiplier to convert fractional portion to integer */
-	fplace = frac_multiplier[precision];
-	fraction = (epicsInt32)(ftemp * fplace * 10);
-	fraction = (fraction + 5) / 10;		/* round up */
-
-	/* determine rounding into the whole number portion */
-	if ((fraction / fplace) >= 1){
-		whole++;
-		fraction -= fplace;
-	}
-
-	/* whole numbers */
-        got_one = 0;
-        for (iplace = 10000000; iplace >= 1; iplace /= 10){
-                if (whole >= iplace){
-                        got_one = 1;
-                        number = whole / iplace;
-                        whole = whole - (number * iplace);
-                        *pdest = number + '0';
-                        pdest++;
-                }else if (got_one){
-                        *pdest = '0';
-                        pdest++;
-                }
+    /* can this routine handle this conversion */
+    if (isnan(flt_value) || precision > 8 ||
+        flt_value > 10000000.0 || flt_value < -10000000.0) {
+        if (precision > 8 || flt_value >= 1e8 || flt_value <= -1e8) {
+            if (precision > 12) precision = 12; /* FIXME */
+            sprintf(pdest, "%*.*e", precision+6, precision, (double) flt_value);
+        } else {
+            if (precision > 3) precision = 3; /* FIXME */
+            sprintf(pdest, "%.*f", precision, (double) flt_value);
         }
-        if (!got_one){
-                *pdest = '0';
-                pdest++;
-        }
+        return((int)strlen(pdest));
+    }
+    startAddr = pdest;
 
-        /* fraction */
-        if (precision > 0){
-		/* convert fractional portional to ASCII */
-                *pdest = '.';
-                pdest++;
-                for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){
-                        number = fraction / fplace;
-                        fraction -= number * fplace;
-                        *pdest = number + '0';
-                        pdest++;
-                }
-        }
-        *pdest = 0;
+    /* determine the sign */
+    if (flt_value < 0){
+        *pdest++ = '-';
+        flt_value = -flt_value;
+    };
 
-        return((int)(pdest - startAddr));
+    /* remove the whole number portion */
+    whole = (epicsInt32)flt_value;
+    ftemp = flt_value - whole;
+
+    /* multiplier to convert fractional portion to integer */
+    fplace = frac_multiplier[precision];
+    fraction = (epicsInt32)(ftemp * fplace * 10);
+    fraction = (fraction + 5) / 10;     /* round up */
+
+    /* determine rounding into the whole number portion */
+    if ((fraction / fplace) >= 1){
+        whole++;
+        fraction -= fplace;
+    }
+
+    /* whole numbers */
+    got_one = 0;
+    for (iplace = 10000000; iplace >= 1; iplace /= 10){
+        if (whole >= iplace){
+            got_one = 1;
+            number = whole / iplace;
+            whole = whole - (number * iplace);
+            *pdest = number + '0';
+            pdest++;
+        }else if (got_one){
+            *pdest = '0';
+            pdest++;
+        }
+    }
+    if (!got_one){
+        *pdest = '0';
+        pdest++;
+    }
+
+    /* fraction */
+    if (precision > 0){
+    /* convert fractional portional to ASCII */
+        *pdest = '.';
+        pdest++;
+        for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){
+            number = fraction / fplace;
+            fraction -= number * fplace;
+            *pdest = number + '0';
+            pdest++;
+        }
+    }
+    *pdest = 0;
+
+    return((int)(pdest - startAddr));
 }
 
 int cvtDoubleToString(
-	double flt_value,
-	char  *pdest,
-	epicsUInt16 precision)
+    double flt_value,
+    char  *pdest,
+    epicsUInt16 precision)
 {
-        epicsUInt16	got_one,i;
-	epicsInt32		whole,iplace,number,fraction,fplace;
-	double		ftemp;
-	char		*startAddr;
+    epicsUInt16 got_one,i;
+    epicsInt32  whole,iplace,number,fraction,fplace;
+    double      ftemp;
+    char        *startAddr;
 
-	/* can this routine handle this conversion */
-	if (isnan(flt_value) || precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
-		if (precision > 8 || flt_value > 1e16 || flt_value < -1e16) {
-		    if(precision>17) precision=17;
-		    sprintf(pdest,"%*.*e",precision+7,precision,
-			flt_value);
-		} else {
-		    if(precision>3) precision=3;
-		    sprintf(pdest,"%.*f",precision,flt_value);
-		}
-		return((int)strlen(pdest));
-	}
-	startAddr = pdest;
-
-	/* determine the sign */
-        if (flt_value < 0){
-                *pdest++ = '-';
-                flt_value = -flt_value;
-        };
-
-	/* remove the whole number portion */
-	whole = (epicsInt32)flt_value;
-	ftemp = flt_value - whole;
-
-	/* multiplier to convert fractional portion to integer */
-	fplace = frac_multiplier[precision];
-	fraction = (epicsInt32)(ftemp * fplace * 10);	
-	fraction = (fraction + 5) / 10;		/* round up */
-
-	/* determine rounding into the whole number portion */
-	if ((fraction / fplace) >= 1){
-		whole++;
-		fraction -= fplace;
-	}
-
-	/* whole numbers */
-        got_one = 0;
-        for (iplace = 10000000; iplace >= 1; iplace /= 10){
-                if (whole >= iplace){
-                        got_one = 1;
-                        number = whole / iplace;
-                        whole = whole - (number * iplace);
-                        *pdest = number + '0';
-                        pdest++;
-                }else if (got_one){
-                        *pdest = '0';
-                        pdest++;
-                }
+    /* can this routine handle this conversion */
+    if (isnan(flt_value) || precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
+        if (precision > 8 || flt_value > 1e16 || flt_value < -1e16) {
+            if(precision>17) precision=17;
+            sprintf(pdest,"%*.*e",precision+7,precision,
+            flt_value);
+        } else {
+            if(precision>3) precision=3;
+            sprintf(pdest,"%.*f",precision,flt_value);
         }
-        if (!got_one){
-                *pdest = '0';
-                pdest++;
-        }
+        return((int)strlen(pdest));
+    }
+    startAddr = pdest;
 
-        /* fraction */
-        if (precision > 0){
-		/* convert fractional portional to ASCII */
-                *pdest = '.';
-                pdest++;
-                for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){
-                        number = fraction / fplace;
-                        fraction -= number * fplace;
-                        *pdest = number + '0';
-                        pdest++;
-                }
-        }
-        *pdest = 0;
+    /* determine the sign */
+    if (flt_value < 0){
+        *pdest++ = '-';
+        flt_value = -flt_value;
+    };
 
-        return((int)(pdest - startAddr));
+    /* remove the whole number portion */
+    whole = (epicsInt32)flt_value;
+    ftemp = flt_value - whole;
+
+    /* multiplier to convert fractional portion to integer */
+    fplace = frac_multiplier[precision];
+    fraction = (epicsInt32)(ftemp * fplace * 10);
+    fraction = (fraction + 5) / 10;     /* round up */
+
+    /* determine rounding into the whole number portion */
+    if ((fraction / fplace) >= 1){
+        whole++;
+        fraction -= fplace;
+    }
+
+    /* whole numbers */
+    got_one = 0;
+    for (iplace = 10000000; iplace >= 1; iplace /= 10){
+        if (whole >= iplace){
+            got_one = 1;
+            number = whole / iplace;
+            whole = whole - (number * iplace);
+            *pdest = number + '0';
+            pdest++;
+        }else if (got_one){
+            *pdest = '0';
+            pdest++;
+        }
+    }
+    if (!got_one){
+        *pdest = '0';
+        pdest++;
+    }
+
+    /* fraction */
+    if (precision > 0){
+    /* convert fractional portional to ASCII */
+        *pdest = '.';
+        pdest++;
+        for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){
+            number = fraction / fplace;
+            fraction -= number * fplace;
+            *pdest = number + '0';
+            pdest++;
+        }
+    }
+    *pdest = 0;
+
+    return((int)(pdest - startAddr));
 }
 
 /*

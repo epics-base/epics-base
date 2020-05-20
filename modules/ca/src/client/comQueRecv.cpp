@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*  
+/*
  *
  *
  *                    L O S  A L A M O S
@@ -25,8 +25,8 @@
 #include "iocinf.h"
 #include "virtualCircuit.h"
 
-comQueRecv::comQueRecv ( comBufMemoryManager & comBufMemoryManagerIn ): 
-    comBufMemMgr ( comBufMemoryManagerIn ), nBytesPending ( 0u ) 
+comQueRecv::comQueRecv ( comBufMemoryManager & comBufMemoryManagerIn ):
+    comBufMemMgr ( comBufMemoryManagerIn ), nBytesPending ( 0u )
 {
 }
 
@@ -100,7 +100,7 @@ void comQueRecv::popString ( epicsOldString *pStr )
 }
 
 void comQueRecv::pushLastComBufReceived ( comBuf & bufIn )
-   
+
 {
     bufIn.commitIncomming ();
     comBuf * pComBuf = this->bufs.last ();
@@ -171,7 +171,7 @@ void comQueRecv::removeAndDestroyBuf ( comBuf & buf )
     this->comBufMemMgr.release ( & buf );
 }
 
-epicsUInt8 comQueRecv::popUInt8 () 
+epicsUInt8 comQueRecv::popUInt8 ()
 {
     comBuf * pComBuf = this->bufs.first ();
     if ( ! pComBuf ) {

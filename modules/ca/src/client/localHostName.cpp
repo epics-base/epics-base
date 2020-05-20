@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -30,7 +30,7 @@ localHostName::localHostName () :
     const char * pErrStr = "<unknown host>";
     int status = -1;
     if ( this->attachedToSockLib ) {
-        status = gethostname ( 
+        status = gethostname (
             this->cache, sizeof ( this->cache ) );
     }
     if ( status ) {
@@ -47,7 +47,7 @@ localHostName::~localHostName ()
     }
 }
 
-unsigned localHostName::getName ( 
+unsigned localHostName::getName (
     char * pBuf, unsigned bufLength ) const
 {
     if ( bufLength ) {

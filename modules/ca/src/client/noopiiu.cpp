@@ -6,19 +6,19 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #include "osiSock.h"
@@ -27,11 +27,11 @@
 
 noopiiu noopIIU;
 
-noopiiu::~noopiiu () 
+noopiiu::~noopiiu ()
 {
 }
 
-unsigned noopiiu::getHostName ( 
+unsigned noopiiu::getHostName (
     epicsGuard < epicsMutex > & cacGuard,
     char * pBuf, unsigned bufLength ) const throw ()
 {
@@ -56,71 +56,71 @@ bool noopiiu::ca_v41_ok (
     return netiiu::ca_v41_ok ( cacGuard );
 }
 
-void noopiiu::writeRequest ( 
-    epicsGuard < epicsMutex > & guard, 
-    nciu & chan, unsigned type, 
+void noopiiu::writeRequest (
+    epicsGuard < epicsMutex > & guard,
+    nciu & chan, unsigned type,
     arrayElementCount nElem, const void * pValue )
 {
     netiiu::writeRequest ( guard, chan, type, nElem, pValue );
 }
 
-void noopiiu::writeNotifyRequest ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
-    netWriteNotifyIO & io, unsigned type, 
+void noopiiu::writeNotifyRequest (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
+    netWriteNotifyIO & io, unsigned type,
     arrayElementCount nElem, const void *pValue )
 {
     netiiu::writeNotifyRequest ( guard, chan, io, type, nElem, pValue );
 }
 
-void noopiiu::readNotifyRequest ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
+void noopiiu::readNotifyRequest (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
     netReadNotifyIO & io, unsigned type, arrayElementCount nElem )
 {
     netiiu::readNotifyRequest ( guard, chan, io, type, nElem );
 }
 
-void noopiiu::clearChannelRequest ( 
-    epicsGuard < epicsMutex > & guard, 
+void noopiiu::clearChannelRequest (
+    epicsGuard < epicsMutex > & guard,
     ca_uint32_t sid, ca_uint32_t cid )
 {
     netiiu::clearChannelRequest ( guard, sid, cid );
 }
 
-void noopiiu::subscriptionRequest ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
+void noopiiu::subscriptionRequest (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
     netSubscription & subscr )
 {
     netiiu::subscriptionRequest ( guard, chan, subscr );
 }
 
-void noopiiu::subscriptionUpdateRequest ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
+void noopiiu::subscriptionUpdateRequest (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
     netSubscription & subscr )
 {
     netiiu::subscriptionUpdateRequest (
         guard, chan, subscr );
 }
 
-void noopiiu::subscriptionCancelRequest ( 
-    epicsGuard < epicsMutex > & guard, 
+void noopiiu::subscriptionCancelRequest (
+    epicsGuard < epicsMutex > & guard,
     nciu & chan, netSubscription & subscr )
 {
     netiiu::subscriptionCancelRequest ( guard, chan, subscr );
 }
 
-void noopiiu::flushRequest ( 
+void noopiiu::flushRequest (
     epicsGuard < epicsMutex > & guard )
 {
     netiiu::flushRequest ( guard );
 }
 
-unsigned noopiiu::requestMessageBytesPending ( 
+unsigned noopiiu::requestMessageBytesPending (
     epicsGuard < epicsMutex > & guard )
 {
     return netiiu::requestMessageBytesPending ( guard );
 }
 
-void noopiiu::flush ( 
+void noopiiu::flush (
     epicsGuard < epicsMutex > & guard )
 {
     netiiu::flush ( guard );
@@ -144,14 +144,14 @@ double noopiiu::receiveWatchdogDelay (
     return netiiu::receiveWatchdogDelay ( guard );
 }
 
-void noopiiu::uninstallChan ( 
+void noopiiu::uninstallChan (
     epicsGuard < epicsMutex > &, nciu & )
 {
     // intentionally does not call default in netiiu
 }
 
-void noopiiu::uninstallChanDueToSuccessfulSearchResponse ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
+void noopiiu::uninstallChanDueToSuccessfulSearchResponse (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
     const class epicsTime & currentTime )
 {
     netiiu::uninstallChanDueToSuccessfulSearchResponse (
@@ -159,7 +159,7 @@ void noopiiu::uninstallChanDueToSuccessfulSearchResponse (
 }
 
 bool noopiiu::searchMsg (
-    epicsGuard < epicsMutex > & guard, ca_uint32_t id, 
+    epicsGuard < epicsMutex > & guard, ca_uint32_t id,
         const char * pName, unsigned nameLength )
 {
     return netiiu::searchMsg (

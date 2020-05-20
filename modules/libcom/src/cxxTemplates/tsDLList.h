@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      type safe doubly linked list templates
@@ -76,7 +76,7 @@ private:
     T * pFirst;
     T * pLast;
     unsigned itemCount;
-    void clear (); 
+    void clear ();
     tsDLList ( const tsDLList & ); // not allowed
     const tsDLList <T> & operator = ( const tsDLList <T> & ); // not allowed
 };
@@ -84,7 +84,7 @@ private:
 //
 // class tsDLIterConst<T>
 //
-// bi-directional iterator for a const doubly linked list 
+// bi-directional iterator for a const doubly linked list
 //
 template <class T>
 class tsDLIterConst {
@@ -96,10 +96,10 @@ public:
     tsDLIterConst<T> & operator = ( const tsDLIterConst<T> & );
     const T & operator * () const;
     const T * operator -> () const;
-    tsDLIterConst<T> & operator ++ (); 
-    tsDLIterConst<T> operator ++ (int); 
-    tsDLIterConst<T> & operator -- (); 
-    tsDLIterConst<T> operator -- (int); 
+    tsDLIterConst<T> & operator ++ ();
+    tsDLIterConst<T> operator ++ (int);
+    tsDLIterConst<T> & operator -- ();
+    tsDLIterConst<T> operator -- (int);
     const T * pointer () const;
 private:
     const T * pEntry;
@@ -110,7 +110,7 @@ private:
 //
 // class tsDLIter<T>
 //
-// bi-directional iterator for a doubly linked list 
+// bi-directional iterator for a doubly linked list
 //
 template <class T>
 class tsDLIter {
@@ -122,10 +122,10 @@ public:
     tsDLIter<T> & operator = ( const tsDLIter<T> & );
     T & operator * () const;
     T * operator -> () const;
-    tsDLIter<T> & operator ++ (); 
-    tsDLIter<T> operator ++ ( int ); 
-    tsDLIter<T> & operator -- (); 
-    tsDLIter<T> operator -- ( int );  
+    tsDLIter<T> & operator ++ ();
+    tsDLIter<T> operator ++ ( int );
+    tsDLIter<T> & operator -- ();
+    tsDLIter<T> operator -- ( int );
     T * pointer () const;
 private:
     T * pEntry;
@@ -144,19 +144,19 @@ template <class T>
 inline tsDLNode<T>::tsDLNode() : pNext(0), pPrev(0) {}
 
 template <class T>
-inline tsDLNode<T>::tsDLNode ( const tsDLNode<T> & ) :  
+inline tsDLNode<T>::tsDLNode ( const tsDLNode<T> & ) :
     pNext (0), pPrev(0) {}
 
 //
 // tsDLNode<T>::operator = ()
 //
-// when someone tries to copy another node into a node 
+// when someone tries to copy another node into a node
 // do _not_ change the node pointers
 //
 template <class T>
-inline const tsDLNode<T> & tsDLNode<T>::operator = ( const tsDLNode<T> & ) 
-{ 
-    return * this; 
+inline const tsDLNode<T> & tsDLNode<T>::operator = ( const tsDLNode<T> & )
+{
+    return * this;
 }
 
 //////////////////////////////////////
@@ -167,7 +167,7 @@ inline const tsDLNode<T> & tsDLNode<T>::operator = ( const tsDLNode<T> & )
 // tsDLList<T>::tsDLList ()
 //
 template <class T>
-inline tsDLList<T>::tsDLList () 
+inline tsDLList<T>::tsDLList ()
 {
     this->clear ();
 }
@@ -180,25 +180,25 @@ inline tsDLList<T>::tsDLList ()
 template <class T>
 inline unsigned tsDLList<T>::count () const
 {
-    return this->itemCount; 
+    return this->itemCount;
 }
 
 //
 // tsDLList<T>::first ()
 //
 template <class T>
-inline T * tsDLList<T>::first (void) const 
+inline T * tsDLList<T>::first (void) const
 {
-    return this->pFirst; 
+    return this->pFirst;
 }
 
 //
 // tsDLList<T>::last ()
 //
 template <class T>
-inline T *tsDLList<T>::last (void) const 
-{ 
-    return this->pLast; 
+inline T *tsDLList<T>::last (void) const
+{
+    return this->pLast;
 }
 
 //
@@ -225,7 +225,7 @@ inline void tsDLList<T>::remove ( T &item )
     }
     else {
         tsDLNode<T> &nextNode = *theNode.pNext;
-        nextNode.pPrev = theNode.pPrev; 
+        nextNode.pPrev = theNode.pPrev;
     }
 
     if ( this->pFirst == &item ) {
@@ -235,7 +235,7 @@ inline void tsDLList<T>::remove ( T &item )
         tsDLNode<T> &prevNode = *theNode.pPrev;
         prevNode.pNext = theNode.pNext;
     }
-    
+
     this->itemCount--;
 }
 
@@ -243,7 +243,7 @@ inline void tsDLList<T>::remove ( T &item )
 // tsDLList<T>::removeAll ()
 //
 template <class T>
-inline void tsDLList<T>::removeAll ( 
+inline void tsDLList<T>::removeAll (
         tsDLList <T> & destination )
 {
     destination.pFirst = this->pFirst;
@@ -265,7 +265,7 @@ inline T * tsDLList<T>::get()
     if ( pItem ) {
         this->remove ( *pItem );
     }
-    
+
     return pItem;
 }
 
@@ -281,7 +281,7 @@ inline T * tsDLList<T>::pop ()
 
 //
 // tsDLList<T>::add ()
-// 
+//
 // adds addList to the end of the list
 // (and removes all items from addList)
 //
@@ -384,7 +384,7 @@ inline void tsDLList<T>::insertBefore (T &item, T &itemAfter)
 
 //
 // tsDLList<T>::push ()
-// 
+//
 // adds pushList to the beginning of the list
 // (and removes all items from pushList)
 //
@@ -433,7 +433,7 @@ inline void tsDLList<T>::push (T &item)
 }
 
 //
-// tsDLList<T>::find () 
+// tsDLList<T>::find ()
 // returns -1 if the item isnt on the list
 // and the node number (beginning with zero if
 // it is)
@@ -495,11 +495,11 @@ inline tsDLIter <T> tsDLList < T > :: invalidIter ()
 // tsDLIterConst<T> member functions
 //////////////////////////////////////////
 template <class T>
-inline tsDLIterConst<T>::tsDLIterConst ( const T *pInitialEntry ) : 
+inline tsDLIterConst<T>::tsDLIterConst ( const T *pInitialEntry ) :
     pEntry ( pInitialEntry ) {}
 
 template <class T>
-inline tsDLIterConst<T>::tsDLIterConst () : 
+inline tsDLIterConst<T>::tsDLIterConst () :
     pEntry ( 0 ) {}
 
 template <class T>
@@ -543,7 +543,7 @@ inline const T * tsDLIterConst<T>::operator -> () const
 // prefix ++
 //
 template <class T>
-inline tsDLIterConst<T> & tsDLIterConst<T>::operator ++ () 
+inline tsDLIterConst<T> & tsDLIterConst<T>::operator ++ ()
 {
     const tsDLNode<T> &node = *this->pEntry;
     this->pEntry = node.pNext;
@@ -554,7 +554,7 @@ inline tsDLIterConst<T> & tsDLIterConst<T>::operator ++ ()
 // postfix ++
 //
 template <class T>
-inline tsDLIterConst<T> tsDLIterConst<T>::operator ++ (int) 
+inline tsDLIterConst<T> tsDLIterConst<T>::operator ++ (int)
 {
     const tsDLIterConst<T> tmp = *this;
     const tsDLNode<T> &node = *this->pEntry;
@@ -563,10 +563,10 @@ inline tsDLIterConst<T> tsDLIterConst<T>::operator ++ (int)
 }
 
 //
-// prefix -- 
+// prefix --
 //
 template <class T>
-inline tsDLIterConst<T> & tsDLIterConst<T>::operator -- () 
+inline tsDLIterConst<T> & tsDLIterConst<T>::operator -- ()
 {
     const tsDLNode<T> &entryNode = *this->pEntry;
     this->pEntry = entryNode.pPrev;
@@ -574,10 +574,10 @@ inline tsDLIterConst<T> & tsDLIterConst<T>::operator -- ()
 }
 
 //
-// postfix -- 
+// postfix --
 //
 template <class T>
-inline tsDLIterConst<T> tsDLIterConst<T>::operator -- (int) 
+inline tsDLIterConst<T> tsDLIterConst<T>::operator -- (int)
 {
     const tsDLIterConst<T> tmp = *this;
     const tsDLNode<T> &entryNode = *this->pEntry;
@@ -596,11 +596,11 @@ inline const T * tsDLIterConst<T>::pointer () const
 //////////////////////////////////////////
 
 template <class T>
-inline tsDLIter<T>::tsDLIter ( T * pInitialEntry ) : 
+inline tsDLIter<T>::tsDLIter ( T * pInitialEntry ) :
     pEntry ( pInitialEntry ) {}
 
 template <class T>
-inline tsDLIter<T>::tsDLIter () : 
+inline tsDLIter<T>::tsDLIter () :
     pEntry ( 0 ) {}
 
 template <class T>
@@ -666,7 +666,7 @@ inline tsDLIter<T> & tsDLIter<T>::operator -- () // prefix --
 }
 
 template <class T>
-inline tsDLIter<T> tsDLIter<T>::operator -- (int) // postfix -- 
+inline tsDLIter<T> tsDLIter<T>::operator -- (int) // postfix --
 {
     const tsDLIter<T> tmp = *this;
     const tsDLNode<T> &entryNode = *this->pEntry;

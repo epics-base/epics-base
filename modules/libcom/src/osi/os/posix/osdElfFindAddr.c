@@ -1,11 +1,11 @@
-/* 
+/*
  * Copyright: Stanford University / SLAC National Laboratory.
  *
  * EPICS BASE is distributed subject to a Software License Agreement found
- * in file LICENSE that is included with this distribution. 
+ * in file LICENSE that is included with this distribution.
  *
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2011, 2014
- */ 
+ */
 
 #include <unistd.h>
 #include <dlfcn.h>
@@ -35,7 +35,7 @@ LIBCOM_API extern void ClockTime_GetProgramStart(epicsTimeStamp *pDest);
 
 #define FIND_ADDR_DEBUG 0
 
-/* 
+/*
  * On some systems (linux, solaris) dladdr doesn't find local symbols
  * or symbols in the main executable.
  * Hence, we want to use dladdr() to find the file name
@@ -82,7 +82,7 @@ typedef struct MMap_ {
 
 /* Structure describing symbol information
  * contained in a file.
- * We keep these around (so that the file 
+ * We keep these around (so that the file
  * doesn't have to be opened + parsed every
  * time we do a lookup).
  */
@@ -203,7 +203,7 @@ bail:
 #else
 static MMap getscn_mmap(int fd, uint8_t c, Shrd *shdr_p)
 {
-	return 0;
+    return 0;
 }
 #endif
 
@@ -417,7 +417,7 @@ elfRead(const char *fname, uintptr_t fbase)
     es->nsyms = n / (ELFCLASS32==c ? sizeof(Elf32_Sym) : sizeof(Elf64_Sym));
 
     /* find and read string table */
-    
+
     n = ELFCLASS32 == c ? sizeof(shdr.e32) : sizeof(shdr.e64);
 
     /* seek to section header table */
@@ -457,7 +457,7 @@ elfRead(const char *fname, uintptr_t fbase)
             errlogPrintf("dlLookupAddr(): Unexpected ELF object file type %u\n", FLD(c,ehdr,e_type));
             goto bail;
     }
-        
+
     return es;
 
 bail:
@@ -491,13 +491,13 @@ ESyms es;
 
     elfsLockWrite();
     while ( (es = elfs) ) {
-        elfs = es->next; 
+        elfs = es->next;
         es->next = 0;
-    	elfsUnlockWrite();
+        elfsUnlockWrite();
         elfSymsDestroy(es);
-    	elfsLockWrite();
+        elfsLockWrite();
     }
-   	elfsUnlockWrite();
+    elfsUnlockWrite();
 }
 
 */
@@ -510,7 +510,7 @@ elfSymsFind(const char *fname)
     ESyms es;
 
     for ( es=elfs; es && strcmp(fname, es->fname); es = es->next )
-        /* nothing else to do */; 
+        /* nothing else to do */;
     return es;
 }
 
@@ -589,7 +589,7 @@ epicsFindAddr(void *addr, epicsSymbol *sym_p)
         sym.raw = (char*)es->symMap->addr + es->symMap->off;
         strtab  = (char*)es->strMap->addr + es->strMap->off;
 
-        /* Do a brute-force search through the symbol table; if this is executed 
+        /* Do a brute-force search through the symbol table; if this is executed
          * very often then it would be worthwhile constructing a sorted list of
          * symbol addresses but for the stack trace we don't care...
          */

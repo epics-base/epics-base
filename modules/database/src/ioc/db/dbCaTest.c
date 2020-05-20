@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbCaTest.c */
 
@@ -155,7 +155,7 @@ done:
     printf("  (%lu disconnects, %lu writes prohibited)\n\n",
            nDisconnect, nNoWrite);
     dbFinishEntry(pdbentry);
-    
+
     if ( level > 2  && dbCaClientContext != 0 ) {
         ca_context_status ( dbCaClientContext, level - 2 );
     }

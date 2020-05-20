@@ -4,13 +4,13 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* 
- * Archictecture dependent support for common device driver resources 
+/*
+ * Archictecture dependent support for common device driver resources
  *
- *      Author: Jeff Hill 
- *      Date: 10-30-98  
+ *      Author: Jeff Hill
+ *      Date: 10-30-98
  */
 
 #include <stdlib.h>
@@ -76,7 +76,7 @@ int cISRTest(void (*)(), void (**)(), void **);
 
 #define EPICSAddrTypeNoConvert -1
 
-int EPICStovxWorksAddrType[] 
+int EPICStovxWorksAddrType[]
                 = {
                 VME_AM_SUP_SHORT_IO,
                 VME_AM_STD_SUP_DATA,
@@ -97,13 +97,13 @@ static long vxDevMapAddr (epicsAddressType addrType, unsigned options,
         size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
 
 /*
- * a bus error safe "wordSize" read at the specified address which returns 
+ * a bus error safe "wordSize" read at the specified address which returns
  * unsuccessful status if the device isnt present
  */
 static long vxDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue);
 
 /*
- * a bus error safe "wordSize" write at the specified address which returns 
+ * a bus error safe "wordSize" write at the specified address which returns
  * unsuccessful status if the device isnt present
  */
 static long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue);
@@ -133,7 +133,7 @@ static long vxDevConnectInterruptVME (
 
 static long vxDevDisconnectInterruptVME (
     unsigned vectorNumber,
-    void (*pFunction)() 
+    void (*pFunction)()
 );
 
 static long vxDevEnableInterruptLevelVME (unsigned level);
@@ -146,7 +146,7 @@ static int vxDevInterruptInUseVME (unsigned vectorNumber);
  * used by dynamic bind in devLib.c
  */
 static devLibVME vxVirtualOS = {
-    vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe, 
+    vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe,
     vxDevConnectInterruptVME, vxDevDisconnectInterruptVME,
     vxDevEnableInterruptLevelVME, vxDevDisableInterruptLevelVME,
     devA24Malloc,devA24Free,devInit,vxDevInterruptInUseVME
@@ -167,12 +167,12 @@ static long vxDevConnectInterruptVME (
 
 
     if (devInterruptInUseVME(vectorNumber)) {
-        return S_dev_vectorInUse; 
+        return S_dev_vectorInUse;
     }
     status = intConnect(
             (void *)INUM_TO_IVEC(vectorNumber),
             pFunction,
-            (int) parameter);       
+            (int) parameter);
     if (status<0) {
         return S_dev_vecInstlFail;
     }
@@ -186,14 +186,14 @@ static long vxDevConnectInterruptVME (
  *
  *  wrapper to minimize driver dependency on vxWorks
  *
- *  The parameter pFunction should be set to the C function pointer that 
- *  was connected. It is used as a key to prevent a driver from removing 
+ *  The parameter pFunction should be set to the C function pointer that
+ *  was connected. It is used as a key to prevent a driver from removing
  *  an interrupt handler that was installed by another driver
  *
  */
 static long vxDevDisconnectInterruptVME (
     unsigned vectorNumber,
-    void (*pFunction)() 
+    void (*pFunction)()
 )
 {
     void (*psub)();
@@ -215,7 +215,7 @@ static long vxDevDisconnectInterruptVME (
     status = intConnect(
             (void *)INUM_TO_IVEC(vectorNumber),
             unsolicitedHandlerEPICS,
-            (int) vectorNumber);        
+            (int) vectorNumber);
     if(status<0){
         return S_dev_vecInstlFail;
     }
@@ -321,7 +321,7 @@ static long vxDevMapAddr (epicsAddressType addrType, unsigned options,
 }
 
 /*
- * a bus error safe "wordSize" read at the specified address which returns 
+ * a bus error safe "wordSize" read at the specified address which returns
  * unsuccessful status if the device isn't present
  */
 static long vxDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
@@ -337,7 +337,7 @@ static long vxDevReadProbe (unsigned wordSize, volatile const void *ptr, void *p
 }
 
 /*
- * a bus error safe "wordSize" write at the specified address which returns 
+ * a bus error safe "wordSize" write at the specified address which returns
  * unsuccessful status if the device isn't present
  */
 static long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
@@ -401,7 +401,7 @@ static int vxDevInterruptInUseVME (unsigned vectorNumber)
             initHandlerAddrList();
             init = TRUE;
         }
-    
+
         psub = isrFetch (vectorNumber);
 
         /*
@@ -451,7 +451,7 @@ void unsolicitedHandlerEPICS(int vectorNumber)
  *      init list of interrupt handlers to ignore
  *
  */
-static 
+static
 void initHandlerAddrList(void)
 {
     int i;
@@ -483,7 +483,7 @@ static void *devA24Malloc(size_t size)
 {
     static int    UsingBSP = 0;
     void        *ret;
-    
+
     if (A24MallocFunc == NULL)
     {
         /* See if the sysA24Malloc() function is present. */
@@ -503,10 +503,10 @@ static void *devA24Malloc(size_t size)
         }
     }
     ret = A24MallocFunc(size);
-    
+
     if ((ret == NULL) && (UsingBSP))
         errMessage(S_dev_noMemory, "devLibA24Malloc ran out of A24 memory, try sysA24MapRam(size)");
-    
+
     return(ret);
 }
 

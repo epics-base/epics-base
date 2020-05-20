@@ -4,7 +4,7 @@
 * Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -35,7 +35,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void);
 
 /*
  * lock out other smp processors from accessing the target,
- * load target into cache, add one to target, flush cache 
+ * load target into cache, add one to target, flush cache
  * to target, allow other smp processors to access the target,
  * return new value of target as modified by this operation
  */
@@ -44,7 +44,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicIncrIntT ( int * pTarget );
 
 /*
  * lock out other smp processors from accessing the target,
- * load target into cache, subtract one from target, flush cache 
+ * load target into cache, subtract one from target, flush cache
  * to target, allow out other smp processors to access the target,
  * return new value of target as modified by this operation
  */
@@ -53,7 +53,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicDecrIntT ( int * pTarget );
 
 /*
  * lock out other smp processors from accessing the target,
- * load target into cache, add/sub delta to/from target, flush cache 
+ * load target into cache, add/sub delta to/from target, flush cache
  * to target, allow other smp processors to access the target,
  * return new value of target as modified by this operation
  */
@@ -62,7 +62,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta );
 
 /*
- * set cache version of target, flush cache to target 
+ * set cache version of target, flush cache to target
  */
 EPICS_ATOMIC_INLINE void epicsAtomicSetSizeT  ( size_t * pTarget, size_t newValue );
 EPICS_ATOMIC_INLINE void epicsAtomicSetIntT ( int * pTarget, int newValue );
@@ -77,8 +77,8 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT *
 
 /*
  * lock out other smp processors from accessing the target,
- * load target into cache, if target is equal to oldVal set target 
- * to newVal, flush cache to target, allow other smp processors 
+ * load target into cache, if target is equal to oldVal set target
+ * to newVal, flush cache to target, allow other smp processors
  * to access the target, return the original value stored in the
  * target
  */
@@ -87,8 +87,8 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget,
 EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
                                             int oldVal, int newVal );
 EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
-                                            EpicsAtomicPtrT * pTarget, 
-                                            EpicsAtomicPtrT oldVal, 
+                                            EpicsAtomicPtrT * pTarget,
+                                            EpicsAtomicPtrT oldVal,
                                             EpicsAtomicPtrT newVal );
 
 #ifdef __cplusplus
@@ -96,11 +96,11 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
 #endif
 
 /*
- * options for in-line compiler intrinsic or OS specific 
+ * options for in-line compiler intrinsic or OS specific
  * implementations of the above function prototypes
  *
  * for some of the compilers we must define the
- * in-line functions before they get used in the c++ 
+ * in-line functions before they get used in the c++
  * in-line functions below
  */
 #include "epicsAtomicCD.h"
@@ -110,8 +110,8 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
 namespace epics {
 namespace atomic {
 
-/* 
- * overloaded c++ interface 
+/*
+ * overloaded c++ interface
  */
 
 /************* incr ***************/
@@ -160,8 +160,8 @@ EPICS_ATOMIC_INLINE int subtract ( int & v, int delta )
 
 /************* set ***************/
 EPICS_ATOMIC_INLINE void set ( size_t & v , size_t newValue )
-{ 
-    epicsAtomicSetSizeT  ( & v, newValue ); 
+{
+    epicsAtomicSetSizeT  ( & v, newValue );
 }
 
 EPICS_ATOMIC_INLINE void set ( int & v, int newValue )
@@ -210,7 +210,7 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT compareAndSwap ( EpicsAtomicPtrT & v,
 }
 
 } /* end of name space atomic */
-} /* end of name space epics */ 
+} /* end of name space epics */
 
 #endif /* ifdef __cplusplus */
 

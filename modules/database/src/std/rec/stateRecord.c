@@ -4,13 +4,13 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* recState.c - Record Support Routines for State records */
 /*
  *      Original Author: Bob Dalesio
- *      Date:            10-10-90 
+ *      Date:            10-10-90
  */
 
 #include <stddef.h>
@@ -55,24 +55,24 @@ static long process(struct dbCommon *);
 #define get_alarm_double NULL
 
 rset stateRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_control_double,
-	get_alarm_double
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
 epicsExportAddress(rset,stateRSET);
 
@@ -95,14 +95,14 @@ static long process(struct dbCommon *pcommon)
 {
     struct stateRecord *prec = (struct stateRecord *)pcommon;
 
-	prec->udf = FALSE;
-        prec->pact=TRUE;
-	recGblGetTimeStamp(prec);
-	monitor(prec);
-        /* process the forward scan link record */
-        recGblFwdLink(prec);
-        prec->pact=FALSE;
-	return(0);
+    prec->udf = FALSE;
+    prec->pact=TRUE;
+    recGblGetTimeStamp(prec);
+    monitor(prec);
+    /* process the forward scan link record */
+    recGblFwdLink(prec);
+    prec->pact=FALSE;
+    return(0);
 }
 
 static void monitor(stateRecord *prec)
@@ -113,7 +113,7 @@ static void monitor(stateRecord *prec)
     monitor_mask = recGblResetAlarms(prec);
     if(strncmp(prec->oval,prec->val,sizeof(prec->val))) {
         db_post_events(prec,&(prec->val[0]),monitor_mask|DBE_VALUE|DBE_LOG);
-	strncpy(prec->oval,prec->val,sizeof(prec->oval));
+        strncpy(prec->oval,prec->val,sizeof(prec->oval));
     }
     return;
 }

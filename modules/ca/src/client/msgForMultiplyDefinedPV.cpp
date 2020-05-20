@@ -7,19 +7,19 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #include <string>
@@ -34,9 +34,9 @@
 #include "cac.h"
 #include "caerr.h" // for ECA_DBLCHNL
 
-msgForMultiplyDefinedPV::msgForMultiplyDefinedPV ( 
+msgForMultiplyDefinedPV::msgForMultiplyDefinedPV (
     ipAddrToAsciiEngine & engine,
-    callbackForMultiplyDefinedPV & cbIn, 
+    callbackForMultiplyDefinedPV & cbIn,
     const char * pChannelName, const char * pAcc ) :
     dnsTransaction ( engine.createTransaction () ), cb ( cbIn )
 {
@@ -59,15 +59,15 @@ void msgForMultiplyDefinedPV::transactionComplete ( const char * pHostNameRej )
     // !! dont touch 'this' pointer after this point because object has been deleted !!
 }
 
-void * msgForMultiplyDefinedPV::operator new ( size_t size, 
+void * msgForMultiplyDefinedPV::operator new ( size_t size,
     tsFreeList < class msgForMultiplyDefinedPV, 16 > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-void msgForMultiplyDefinedPV::operator delete ( void *pCadaver, 
-    tsFreeList < class msgForMultiplyDefinedPV, 16 > & freeList ) 
+void msgForMultiplyDefinedPV::operator delete ( void *pCadaver,
+    tsFreeList < class msgForMultiplyDefinedPV, 16 > & freeList )
 {
     freeList.release ( pCadaver, sizeof ( msgForMultiplyDefinedPV ) );
 }

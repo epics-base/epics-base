@@ -31,26 +31,26 @@ extern "C" {
 #include "libComAPI.h"
 
 /** \brief Internal: bucket identifier */
-typedef	unsigned 	BUCKETID;
+typedef unsigned        BUCKETID;
 
 /** \brief Internal: bucket key type */
 typedef enum {bidtUnsigned, bidtPointer, bidtString} buckTypeOfId;
 
 /** \brief Internal: bucket item structure */
 typedef struct item{
-	struct item	*pItem;
-	const void	*pId;
-	const void   *pApp;
-	buckTypeOfId	type;
+    struct item     *pItem;
+    const void      *pId;
+    const void      *pApp;
+    buckTypeOfId    type;
 }ITEM;
 
 /** \brief Internal: Hash table structure */
 typedef struct bucket{
-	ITEM		**pTable;
-	void		*freeListPVT;
-	unsigned	hashIdMask;
-	unsigned	hashIdNBits;
-        unsigned        nInUse;
+    ITEM            **pTable;
+    void            *freeListPVT;
+    unsigned        hashIdMask;
+    unsigned        hashIdNBits;
+    unsigned        nInUse;
 }BUCKET;
 /**
  * \brief Creates a new hash table
@@ -80,7 +80,7 @@ LIBCOM_API int epicsStdCall bucketShow (BUCKET *prb);
  * \return Status value
  */
 LIBCOM_API int epicsStdCall bucketAddItemUnsignedId (BUCKET *prb,
-		const unsigned *pId, const void *pApp);
+        const unsigned *pId, const void *pApp);
 /**
  * \brief Add an item identified by a pointer to the table
  * \param *prb Pointer to the hash table
@@ -89,7 +89,7 @@ LIBCOM_API int epicsStdCall bucketAddItemUnsignedId (BUCKET *prb,
  * \return Status value
  */
 LIBCOM_API int epicsStdCall bucketAddItemPointerId (BUCKET *prb,
-		void * const *pId, const void *pApp);
+        void * const *pId, const void *pApp);
 /**
  * \brief Add an item identified by a string to the table
  * \param *prb Pointer to the hash table
@@ -98,7 +98,7 @@ LIBCOM_API int epicsStdCall bucketAddItemPointerId (BUCKET *prb,
  * \return Status value
  */
 LIBCOM_API int epicsStdCall bucketAddItemStringId (BUCKET *prb,
-		const char *pId, const void *pApp);
+        const char *pId, const void *pApp);
 /**
  * \brief Remove an item identified by a string from the table
  * \param *prb Pointer to the hash table
@@ -172,23 +172,23 @@ LIBCOM_API void * epicsStdCall bucketLookupAndRemoveItemStringId (BUCKET *prb, c
 /**
  * \brief A synonym for S_bucket_success
  */
-#define BUCKET_SUCCESS		S_bucket_success
+#define BUCKET_SUCCESS      S_bucket_success
 /**
  * \brief Success, must be 0.
  */
-#define S_bucket_success	0
+#define S_bucket_success    0
 /**
  * \brief Memory allocation failed
  */
-#define S_bucket_noMemory	(M_bucket | 1) 	/*Memory allocation failed*/
+#define S_bucket_noMemory   (M_bucket | 1)  /*Memory allocation failed*/
 /**
  * \brief Identifier already in use
  */
-#define S_bucket_idInUse	(M_bucket | 2) 	/*Identifier already in use*/
+#define S_bucket_idInUse    (M_bucket | 2)  /*Identifier already in use*/
 /**
  * \brief Unknown identifier
  */
-#define S_bucket_uknId		(M_bucket | 3) 	/*Unknown identifier*/
+#define S_bucket_uknId      (M_bucket | 3)  /*Unknown identifier*/
 /** @} */
 
 #ifdef __cplusplus

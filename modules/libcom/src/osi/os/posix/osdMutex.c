@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* osi/os/posix/osdMutex.c */
 
@@ -161,15 +161,15 @@ void epicsMutexOsdShow(struct epicsMutexOSD * pmutex, unsigned int level)
 #else /*defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500 */
 
 typedef struct epicsMutexOSD {
-    pthread_mutex_t	lock;
+    pthread_mutex_t     lock;
     pthread_mutexattr_t mutexAttr;
-    pthread_cond_t	waitToBeOwner;
+    pthread_cond_t      waitToBeOwner;
 #if defined(_POSIX_THREAD_PROCESS_SHARED) && _POSIX_THREAD_PROCESS_SHARED > 0
     pthread_condattr_t  condAttr;
 #endif /*_POSIX_THREAD_PROCESS_SHARED*/
-    int			count;
-    int			owned;  /* TRUE | FALSE */
-    pthread_t		ownerTid;
+    int                 count;
+    int                 owned;  /* TRUE | FALSE */
+    pthread_t           ownerTid;
 } epicsMutexOSD;
 
 epicsMutexOSD * epicsMutexOsdCreate(void) {

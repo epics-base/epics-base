@@ -5,9 +5,9 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*  
+/*
  *  Author: Jeffrey O. Hill
  *      hill@luke.lanl.gov
  *      (505) 665 1831
@@ -75,7 +75,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             }
             else {
                 unsigned bytesLeft = pclient->send.stk - transferSize;
-                memmove ( pclient->send.buf, &pclient->send.buf[transferSize], 
+                memmove ( pclient->send.buf, &pclient->send.buf[transferSize],
                     bytesLeft );
                 pclient->send.stk = bytesLeft;
             }
@@ -103,7 +103,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
 
             ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
 
-            if (    
+            if (
                 anerrno == SOCK_ECONNABORTED ||
                 anerrno == SOCK_ECONNRESET ||
                 anerrno == SOCK_EPIPE ||
@@ -112,7 +112,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             }
             else {
                 char sockErrBuf[64];
-                epicsSocketConvertErrnoToString ( 
+                epicsSocketConvertErrnoToString (
                     sockErrBuf, sizeof ( sockErrBuf ) );
                 errlogPrintf ( "CAS: TCP send to %s failed: %s\n",
                     buf, sockErrBuf);
@@ -138,7 +138,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
                         int status = shutdown ( pclient->sock, SHUT_RDWR );
                         if ( status ) {
                             char sockErrBuf[64];
-                            epicsSocketConvertErrnoToString ( 
+                            epicsSocketConvertErrnoToString (
                                 sockErrBuf, sizeof ( sockErrBuf ) );
                             errlogPrintf ("CAS: Socket shutdown error: %s\n",
                                 sockErrBuf );
@@ -174,7 +174,7 @@ void cas_send_dg_msg ( struct client * pclient )
 {
     int status;
     int sizeDG;
-    char * pDG; 
+    char * pDG;
     caHdr * pMsg;
 
     if ( CASDEBUG > 2 && pclient->send.stk ) {
@@ -208,14 +208,14 @@ void cas_send_dg_msg ( struct client * pclient )
             epicsTimeGetCurrent ( &pclient->time_at_last_send );
         }
         else {
-            errlogPrintf ( 
+            errlogPrintf (
                 "CAS: System failed to send entire udp frame?\n" );
         }
     }
     else {
         char sockErrBuf[64];
         char buf[128];
-        epicsSocketConvertErrnoToString ( 
+        epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
         ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
         errlogPrintf( "CAS: UDP send to %s failed: %s\n",
@@ -238,19 +238,19 @@ void cas_send_dg_msg ( struct client * pclient )
 
 /*
  *
- *  cas_copy_in_header() 
+ *  cas_copy_in_header()
  *
  *  Allocate space in the outgoing message buffer and
  *  copy in message header. Return pointer to message body.
  *
  *  send lock must be on while in this routine
  *
- *  Returns a valid ptr to message body or NULL if the msg 
+ *  Returns a valid ptr to message body or NULL if the msg
  *  will not fit.
- */         
-int cas_copy_in_header ( 
+ */
+int cas_copy_in_header (
     struct client *pclient, ca_uint16_t response, ca_uint32_t payloadSize,
-    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid,
     ca_uint32_t responseSpecific, void **ppPayload )
 {
     unsigned    msgSize;
@@ -319,7 +319,7 @@ int cas_copy_in_header (
     /* zero out pad bytes */
     if ( alignedPayloadSize > payloadSize ) {
         char *p = ( char * ) *ppPayload;
-        memset ( p + payloadSize, '\0', 
+        memset ( p + payloadSize, '\0',
             alignedPayloadSize - payloadSize );
     }
 
@@ -367,7 +367,7 @@ void cas_commit_msg ( struct client *pClient, ca_uint32_t size )
 }
 
 /*
- * this assumes that we have already checked to see 
+ * this assumes that we have already checked to see
  * if sufficent bytes are available
  */
 ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
@@ -375,7 +375,7 @@ ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
     ca_uint8_t *pBuf = ( ca_uint8_t * ) recv->buf;
     ca_uint16_t result;
     /*
-     * this assumes that we have already checked to see 
+     * this assumes that we have already checked to see
      * if sufficent bytes are available
      */
     assert ( recv->cnt - recv->stk >= 2u );
@@ -385,7 +385,7 @@ ca_uint16_t rsrvGetUInt16 ( struct message_buffer *recv )
 }
 
 /*
- * this assumes that we have already checked to see 
+ * this assumes that we have already checked to see
  * if sufficent bytes are available
  */
 ca_uint32_t rsrvGetUInt32 ( struct message_buffer *recv )
@@ -393,7 +393,7 @@ ca_uint32_t rsrvGetUInt32 ( struct message_buffer *recv )
     ca_uint8_t *pBuf = ( ca_uint8_t * ) recv->buf;
     ca_uint32_t result;
     /*
-     * this assumes that we have already checked to see 
+     * this assumes that we have already checked to see
      * if sufficent bytes are available
      */
     assert ( recv->cnt - recv->stk >= 4u );

@@ -5,7 +5,7 @@
 * Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -41,15 +41,15 @@
 #   define MS_ATOMIC_64
 #   pragma intrinsic ( __faststorefence )
     EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier (void)
-    { 
+    {
         __faststorefence ();
     }
 #elif defined ( _M_IA64 )
 #   define MS_ATOMIC_64
 #   pragma intrinsic ( __mf )
     EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier (void)
-    { 
-        __mf (); 
+    {
+        __mf ();
     }
 #else
 #   error unexpected target architecture, msvc version of epicsAtomicCD.h
@@ -59,23 +59,23 @@
  * The windows doc appears to recommend defining InterlockedExchange
  * to be _InterlockedExchange to cause it to be an intrinsic, but that
  * creates issues when later, in a windows os specific header, we include
- * windows.h. Therefore, we except some code duplication between the msvc 
- * csAtomic.h and win32 osdAtomic.h to avoid problems, and to keep the 
+ * windows.h. Therefore, we except some code duplication between the msvc
+ * csAtomic.h and win32 osdAtomic.h to avoid problems, and to keep the
  * os specific windows.h header file out of the msvc cdAtomic.h
  */
 #define MS_LONG long
 #define MS_InterlockedExchange _InterlockedExchange
 #define MS_InterlockedCompareExchange _InterlockedCompareExchange
-#define MS_InterlockedIncrement _InterlockedIncrement 
-#define MS_InterlockedDecrement _InterlockedDecrement 
+#define MS_InterlockedIncrement _InterlockedIncrement
+#define MS_InterlockedDecrement _InterlockedDecrement
 #define MS_InterlockedExchange _InterlockedExchange
 #define MS_InterlockedExchangeAdd _InterlockedExchangeAdd
-#if defined ( MS_ATOMIC_64 ) 
+#if defined ( MS_ATOMIC_64 )
 #   define MS_LONGLONG long long
 #   define MS_InterlockedIncrement64 _InterlockedIncrement64
-#   define MS_InterlockedDecrement64 _InterlockedDecrement64 
-#   define MS_InterlockedExchange64 _InterlockedExchange64 
-#   define MS_InterlockedExchangeAdd64 _InterlockedExchangeAdd64 
+#   define MS_InterlockedDecrement64 _InterlockedDecrement64
+#   define MS_InterlockedExchange64 _InterlockedExchange64
+#   define MS_InterlockedExchangeAdd64 _InterlockedExchangeAdd64
 #   define MS_InterlockedCompareExchange64 _InterlockedCompareExchange64
 #endif
 
@@ -106,7 +106,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 
 #define EPICS_ATOMIC_CMPLR_NAME "MSVC-DIRECT"
 
-/* 
+/*
  * if unavailable as an intrinsic we will try
  * for os specific inline solution
  */

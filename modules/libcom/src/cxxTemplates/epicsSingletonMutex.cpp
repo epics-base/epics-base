@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -29,7 +29,7 @@ static epicsMutex * pEPICSSigletonMutex = 0;
 extern "C" void SingletonMutexOnce ( void * /* pParm */ )
 {
     // This class exists for the purpose of avoiding file scope
-    // object chicken and egg problems. Therefore, pEPICSSigletonMutex 
+    // object chicken and egg problems. Therefore, pEPICSSigletonMutex
     // is never destroyed.
     pEPICSSigletonMutex = newEpicsMutex;
 }
@@ -37,7 +37,7 @@ extern "C" void SingletonMutexOnce ( void * /* pParm */ )
 void SingletonUntyped :: incrRefCount ( PBuild pBuild )
 {
     epicsThreadOnce ( & epicsSigletonOnceFlag, SingletonMutexOnce, 0 );
-    epicsGuard < epicsMutex > 
+    epicsGuard < epicsMutex >
         guard ( *pEPICSSigletonMutex );
     assert ( _refCount < SIZE_MAX );
     if ( _refCount == 0 ) {
@@ -48,7 +48,7 @@ void SingletonUntyped :: incrRefCount ( PBuild pBuild )
 
 void SingletonUntyped :: decrRefCount ( PDestroy pDestroy )
 {
-    epicsGuard < epicsMutex > 
+    epicsGuard < epicsMutex >
         guard ( *pEPICSSigletonMutex );
     assert ( _refCount > 0 );
     _refCount--;

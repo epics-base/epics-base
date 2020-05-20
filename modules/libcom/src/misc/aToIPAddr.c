@@ -8,7 +8,7 @@
 \*************************************************************************/
 /*
  * rational replacement for inet_addr()
- * 
+ *
  * author: Jeff Hill
  */
 #include <stdio.h>
@@ -24,7 +24,7 @@
 /*
  * addrArrayToUL ()
  */
-static int addrArrayToUL ( const unsigned *pAddr, 
+static int addrArrayToUL ( const unsigned *pAddr,
                           unsigned nElements, struct in_addr *pIpAddr )
 {
     unsigned i;
@@ -38,7 +38,7 @@ static int addrArrayToUL ( const unsigned *pAddr,
         addr |= ( epicsUInt32 ) pAddr[i];
     }
     pIpAddr->s_addr = htonl ( addr );
-        
+
     return 0;
 }
 
@@ -47,7 +47,7 @@ static int addrArrayToUL ( const unsigned *pAddr,
  * !! ipAddr should be passed in in network byte order !!
  * !! port is passed in in host byte order !!
  */
-static int initIPAddr ( struct in_addr ipAddr, unsigned port, 
+static int initIPAddr ( struct in_addr ipAddr, unsigned port,
                         struct sockaddr_in *pIP )
 {
     if ( port > 0xffff ) {
@@ -70,29 +70,29 @@ static int initIPAddr ( struct in_addr ipAddr, unsigned port,
  * to specify a port number, and allows also a
  * named host to be specified.
  *
- * Sets the port number to "defaultPort" only if 
+ * Sets the port number to "defaultPort" only if
  * "pAddrString" does not contain an address of the form
  * "n.n.n.n:p or host:p"
  */
 LIBCOM_API int epicsStdCall 
-aToIPAddr( const char *pAddrString, unsigned short defaultPort, 
+aToIPAddr( const char *pAddrString, unsigned short defaultPort,
                 struct sockaddr_in *pIP )
 {
     int status;
     unsigned addr[4];
     unsigned long rawAddr;
-    /* 
-     * !! change n elements here requires change in format below !! 
+    /*
+     * !! change n elements here requires change in format below !!
      */
-    char hostName[512]; 
-    char dummy[8]; 
+    char hostName[512];
+    char dummy[8];
     unsigned port;
     struct in_addr ina;
 
     /*
      * dotted ip addresses
      */
-    status = sscanf ( pAddrString, " %u . %u . %u . %u %7s ", 
+    status = sscanf ( pAddrString, " %u . %u . %u . %u %7s ",
             addr, addr+1u, addr+2u, addr+3u, dummy );
     if ( status == 4 ) {
         if ( addrArrayToUL ( addr, NELEMENTS ( addr ), & ina ) < 0 ) {
@@ -101,11 +101,11 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
         port = defaultPort;
         return initIPAddr ( ina, port, pIP );
     }
-    
+
     /*
      * dotted ip addresses and port
      */
-    status = sscanf ( pAddrString, " %u . %u . %u . %u : %u %7s", 
+    status = sscanf ( pAddrString, " %u . %u . %u . %u : %u %7s",
             addr, addr+1u, addr+2u, addr+3u, &port, dummy );
     if ( status >= 5 ) {
         if ( status > 5 ) {
@@ -135,7 +135,7 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
             return initIPAddr ( ina, port, pIP );
         }
     }
-    
+
     /*
      * IP address as a raw number, and port
      */
@@ -159,7 +159,7 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
 
 
     /*
-     * host name string 
+     * host name string
      */
     status = sscanf ( pAddrString, " %511[^:] %s ", hostName, dummy );
     if ( status == 1 ) {
@@ -169,11 +169,11 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
             return initIPAddr ( ina, port, pIP );
         }
     }
-    
+
     /*
      * host name string, and port
      */
-    status = sscanf ( pAddrString, " %511[^:] : %u %s ", hostName, 
+    status = sscanf ( pAddrString, " %511[^:] : %u %s ", hostName,
                         &port, dummy );
     if ( status >= 2 ) {
         if ( status > 2 ) {

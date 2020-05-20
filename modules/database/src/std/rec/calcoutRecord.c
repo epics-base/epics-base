@@ -210,7 +210,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     prpvt->cbScheduled = 0;
 
     prec->epvt = eventNameToHandle(prec->oevt);
-    
+
     if (pcalcoutDSET->common.init_record) pcalcoutDSET->common.init_record(pcommon);
     prec->pval = prec->val;
     prec->mlst = prec->val;
@@ -261,7 +261,7 @@ static long process(struct dbCommon *pcommon)
             doOutput = (prec->val != 0.0);
             break;
         default:
-	    doOutput = 0;
+            doOutput = 0;
             break;
         }
         prec->pval = prec->val;
@@ -458,7 +458,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
     int linkNumber;
-    
+
     switch (fieldIndex) {
         case indexof(VAL):
         case indexof(HIHI):
@@ -474,7 +474,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
         case indexof(ODLY):
             recGblGetGraphicDouble(paddr,pgd);
             pgd->lower_disp_limit = 0.0;
-            break;       
+            break;
         default:
             linkNumber = get_linkNumber(fieldIndex);
             if (linkNumber >= 0) {
@@ -490,7 +490,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
-    
+
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
         case indexof(HIHI):

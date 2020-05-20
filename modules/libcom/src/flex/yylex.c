@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* yylex - scanner front-end for flex */
 
@@ -14,7 +14,7 @@
  *
  * This code is derived from software contributed to Berkeley by
  * Vern Paxson.
- * 
+ *
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
@@ -59,159 +59,159 @@ int yylex(void)
     static int beglin = false;
 
     if ( eofseen )
-	toktype = EOF;
+        toktype = EOF;
     else
-	toktype = flexscan();
+        toktype = flexscan();
 
     if ( toktype == EOF || toktype == 0 )
-	{
-	eofseen = 1;
+        {
+        eofseen = 1;
 
-	if ( sectnum == 1 )
-	    {
-	    synerr( "premature EOF" );
-	    sectnum = 2;
-	    toktype = SECTEND;
-	    }
+        if ( sectnum == 1 )
+            {
+            synerr( "premature EOF" );
+            sectnum = 2;
+            toktype = SECTEND;
+            }
 
-	else if ( sectnum == 2 )
-	    {
-	    sectnum = 3;
-	    toktype = 0;
-	    }
+        else if ( sectnum == 2 )
+            {
+            sectnum = 3;
+            toktype = 0;
+            }
 
-	else
-	    toktype = 0;
-	}
+        else
+            toktype = 0;
+        }
 
     if ( trace )
-	{
-	if ( beglin )
-	    {
-	    fprintf( stderr, "%d\t", num_rules + 1 );
-	    beglin = 0;
-	    }
+        {
+        if ( beglin )
+            {
+            fprintf( stderr, "%d\t", num_rules + 1 );
+            beglin = 0;
+            }
 
-	switch ( toktype )
-	    {
-	    case '<':
-	    case '>':
-	    case '^':
-	    case '$':
-	    case '"':
-	    case '[':
-	    case ']':
-	    case '{':
-	    case '}':
-	    case '|':
-	    case '(':
-	    case ')':
-	    case '-':
-	    case '/':
-	    case '\\':
-	    case '?':
-	    case '.':
-	    case '*':
-	    case '+':
-	    case ',':
-		(void) putc( toktype, stderr );
-		break;
+        switch ( toktype )
+            {
+            case '<':
+            case '>':
+            case '^':
+            case '$':
+            case '"':
+            case '[':
+            case ']':
+            case '{':
+            case '}':
+            case '|':
+            case '(':
+            case ')':
+            case '-':
+            case '/':
+            case '\\':
+            case '?':
+            case '.':
+            case '*':
+            case '+':
+            case ',':
+                (void) putc( toktype, stderr );
+                break;
 
-	    case '\n':
-		(void) putc( '\n', stderr );
+            case '\n':
+                (void) putc( '\n', stderr );
 
-		if ( sectnum == 2 )
-		    beglin = 1;
+                if ( sectnum == 2 )
+                    beglin = 1;
 
-		break;
+                break;
 
-	    case SCDECL:
-		fputs( "%s", stderr );
-		break;
+            case SCDECL:
+                fputs( "%s", stderr );
+                break;
 
-	    case XSCDECL:
-		fputs( "%x", stderr );
-		break;
+            case XSCDECL:
+                fputs( "%x", stderr );
+                break;
 
-	    case WHITESPACE:
-		(void) putc( ' ', stderr );
-		break;
+            case WHITESPACE:
+                (void) putc( ' ', stderr );
+                break;
 
-	    case SECTEND:
-		fputs( "%%\n", stderr );
+            case SECTEND:
+                fputs( "%%\n", stderr );
 
-		/* we set beglin to be true so we'll start
-		 * writing out numbers as we echo rules.  flexscan() has
-		 * already assigned sectnum
-		 */
+                /* we set beglin to be true so we'll start
+                 * writing out numbers as we echo rules.  flexscan() has
+                 * already assigned sectnum
+                 */
 
-		if ( sectnum == 2 )
-		    beglin = 1;
+                if ( sectnum == 2 )
+                    beglin = 1;
 
-		break;
+                break;
 
-	    case NAME:
-		fprintf( stderr, "'%s'", nmstr );
-		break;
+            case NAME:
+                fprintf( stderr, "'%s'", nmstr );
+                break;
 
-	    case CHAR:
-		switch ( yylval )
-		    {
-		    case '<':
-		    case '>':
-		    case '^':
-		    case '$':
-		    case '"':
-		    case '[':
-		    case ']':
-		    case '{':
-		    case '}':
-		    case '|':
-		    case '(':
-		    case ')':
-		    case '-':
-		    case '/':
-		    case '\\':
-		    case '?':
-		    case '.':
-		    case '*':
-		    case '+':
-		    case ',':
-			fprintf( stderr, "\\%c", yylval );
-			break;
+            case CHAR:
+                switch ( yylval )
+                    {
+                    case '<':
+                    case '>':
+                    case '^':
+                    case '$':
+                    case '"':
+                    case '[':
+                    case ']':
+                    case '{':
+                    case '}':
+                    case '|':
+                    case '(':
+                    case ')':
+                    case '-':
+                    case '/':
+                    case '\\':
+                    case '?':
+                    case '.':
+                    case '*':
+                    case '+':
+                    case ',':
+                        fprintf( stderr, "\\%c", yylval );
+                        break;
 
-		    default:
-			if ( ! isascii( yylval ) || ! isprint( yylval ) )
-			    fprintf( stderr, "\\%.3o", yylval );
-			else
-			    (void) putc( yylval, stderr );
-			break;
-		    }
-			
-		break;
+                    default:
+                        if ( ! isascii( yylval ) || ! isprint( yylval ) )
+                            fprintf( stderr, "\\%.3o", yylval );
+                        else
+                            (void) putc( yylval, stderr );
+                        break;
+                    }
 
-	    case NUMBER:
-		fprintf( stderr, "%d", yylval );
-		break;
+                break;
 
-	    case PREVCCL:
-		fprintf( stderr, "[%d]", yylval );
-		break;
+            case NUMBER:
+                fprintf( stderr, "%d", yylval );
+                break;
 
-	    case EOF_OP:
-		fprintf( stderr, "<<EOF>>" );
-		break;
+            case PREVCCL:
+                fprintf( stderr, "[%d]", yylval );
+                break;
 
-	    case 0:
-		fprintf( stderr, "End Marker" );
-		break;
+            case EOF_OP:
+                fprintf( stderr, "<<EOF>>" );
+                break;
 
-	    default:
-		fprintf( stderr, "*Something Weird* - tok: %d val: %d\n",
-			 toktype, yylval );
-		break;
-	    }
-	}
+            case 0:
+                fprintf( stderr, "End Marker" );
+                break;
+
+            default:
+                fprintf( stderr, "*Something Weird* - tok: %d val: %d\n",
+                         toktype, yylval );
+                break;
+            }
+        }
 
     return ( toktype );
 }

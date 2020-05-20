@@ -38,20 +38,20 @@ extern "C" {
  * will adjust automatically, it just compares field sizes.
  */
 union native_value {
-    epicsInt8		dbf_char;
-    epicsInt16		dbf_short;
-    epicsEnum16		dbf_enum;
-    epicsInt32		dbf_long;
-    epicsFloat32	dbf_float;
-    epicsFloat64	dbf_double;
+    epicsInt8       dbf_char;
+    epicsInt16      dbf_short;
+    epicsEnum16     dbf_enum;
+    epicsInt32      dbf_long;
+    epicsFloat32    dbf_float;
+    epicsFloat64    dbf_double;
 #ifdef DB_EVENT_LOG_STRINGS
-    char		dbf_string[MAX_STRING_SIZE];
+    char            dbf_string[MAX_STRING_SIZE];
 #endif
 };
 
 /*
- *	structure to log the state of a data base field at the time
- *	an event is triggered.
+ *  structure to log the state of a data base field at the time
+ *  an event is triggered.
  */
 struct db_field_log;
 typedef void (dbfl_freeFunc)(struct db_field_log *pfl);

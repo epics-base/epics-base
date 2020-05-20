@@ -95,7 +95,7 @@ struct in_addr;
  * NULL if no parameter value and default value was empty.
  */
 LIBCOM_API char * epicsStdCall
-	envGetConfigParam(const ENV_PARAM *pParam, int bufDim, char *pBuf);
+    envGetConfigParam(const ENV_PARAM *pParam, int bufDim, char *pBuf);
 
 /**
  * \brief Get a configuration parameter's value or default string.
@@ -106,7 +106,7 @@ LIBCOM_API char * epicsStdCall
  * were empty or not set.
  */
 LIBCOM_API const char * epicsStdCall
-	envGetConfigParamPtr(const ENV_PARAM *pParam);
+    envGetConfigParamPtr(const ENV_PARAM *pParam);
 
 /**
  * \brief Print the value of a configuration parameter.
@@ -115,7 +115,7 @@ LIBCOM_API const char * epicsStdCall
  * \return 0
  */
 LIBCOM_API long epicsStdCall
-	envPrtConfigParam(const ENV_PARAM *pParam);
+    envPrtConfigParam(const ENV_PARAM *pParam);
 
 /**
  * \brief Get value of an inet addr config parameter.
@@ -134,7 +134,7 @@ LIBCOM_API long epicsStdCall
  * \return 0, or -1 if an error is encountered
  */
 LIBCOM_API long epicsStdCall
-	envGetInetAddrConfigParam(const ENV_PARAM *pParam, struct in_addr *pAddr);
+    envGetInetAddrConfigParam(const ENV_PARAM *pParam, struct in_addr *pAddr);
 
 /**
  * \brief Get value of a double configuration parameter.
@@ -152,7 +152,7 @@ LIBCOM_API long epicsStdCall
  * \return 0, or -1 if an error is encountered
  */
 LIBCOM_API long epicsStdCall
-	envGetDoubleConfigParam(const ENV_PARAM *pParam, double *pDouble);
+    envGetDoubleConfigParam(const ENV_PARAM *pParam, double *pDouble);
 
 /**
  * \brief Get value of a long configuration parameter.
@@ -170,7 +170,7 @@ LIBCOM_API long epicsStdCall
  * \return 0, or -1 if an error is encountered
  */
 LIBCOM_API long epicsStdCall
-	envGetLongConfigParam(const ENV_PARAM *pParam, long *pLong);
+    envGetLongConfigParam(const ENV_PARAM *pParam, long *pLong);
 
 /**
  * \brief Get value of a port number configuration parameter.
@@ -187,7 +187,7 @@ LIBCOM_API long epicsStdCall
  * \return Port number.
  */
 LIBCOM_API unsigned short epicsStdCall envGetInetPortConfigParam
-        (const ENV_PARAM *pEnv, unsigned short defaultPort);
+    (const ENV_PARAM *pEnv, unsigned short defaultPort);
 /**
  * \brief Get value of a boolean configuration parameter.
  *

@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-// 
+//
 //
 //                    L O S  A L A M O S
 //              Los Alamos National Laboratory
@@ -25,9 +25,9 @@
 
 static const double disconnectGovernorPeriod = 10.0; // sec
 
-disconnectGovernorTimer::disconnectGovernorTimer ( 
-    disconnectGovernorNotify & iiuIn, 
-    epicsTimerQueue & queueIn, 
+disconnectGovernorTimer::disconnectGovernorTimer (
+    disconnectGovernorNotify & iiuIn,
+    epicsTimerQueue & queueIn,
     epicsMutex & mutexIn ) :
         mutex ( mutexIn ), timer ( queueIn.createTimer () ),
     iiu ( iiuIn )
@@ -56,18 +56,18 @@ void disconnectGovernorTimer::shutdown (
         }
     }
     while ( nciu * pChan = this->chanList.get () ) {
-        pChan->channelNode::listMember = 
+        pChan->channelNode::listMember =
             channelNode::cs_none;
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
 }
 
-epicsTimerNotify::expireStatus disconnectGovernorTimer::expire ( 
+epicsTimerNotify::expireStatus disconnectGovernorTimer::expire (
     const epicsTime & /* currentTime */ )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     while ( nciu * pChan = chanList.get () ) {
-        pChan->channelNode::listMember = 
+        pChan->channelNode::listMember =
             channelNode::cs_none;
         this->iiu.govExpireNotify ( guard, *pChan );
     }
@@ -81,14 +81,14 @@ void disconnectGovernorTimer::show ( unsigned level ) const
         this->chanList.count () );
     if ( level > 0u ) {
         tsDLIterConst < nciu > pChan = this->chanList.firstIter ();
-	    while ( pChan.valid () ) {
+        while ( pChan.valid () ) {
             pChan->show ( level - 1u );
             pChan++;
         }
     }
 }
 
-void disconnectGovernorTimer::installChan ( 
+void disconnectGovernorTimer::installChan (
     epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );

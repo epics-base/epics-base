@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* devBoSoft.c - Device Support Routines for  Soft Binary Output*/
@@ -42,11 +42,11 @@ epicsExportAddress(dset, devBoSoft);
 static long init_record(dbCommon *pcommon)
 {
    long status=0;
- 
+
     /* dont convert */
    status=2;
    return status;
- 
+
 } /* end init_record() */
 
 static long write_bo(boRecord *prec)

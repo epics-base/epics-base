@@ -8,7 +8,7 @@
 /*
  * Device support for EPICS time stamps
  *
- *   Original Author:	Eric Norum
+ *   Original Author:   Eric Norum
  */
 
 #include "dbDefs.h"

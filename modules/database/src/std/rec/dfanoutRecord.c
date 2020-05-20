@@ -2,17 +2,17 @@
 * Copyright (c) 2002 Southeastern Universities Research Association, as
 *     Operator of Thomas Jefferson National Accelerator Facility.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* recDfanout.c - Record Support Routines for Dfanout records */
 /*
- * Original Author: 	Matt Bickley   (Sometime in 1994)
+ * Original Author:     Matt Bickley   (Sometime in 1994)
  *
  * Modification Log:
  * -----------------
  * .01  1994        mhb     Started with longout record to make the data fanout
- * .02  May 10, 96  jt	    Bug Fix
+ * .02  May 10, 96  jt      Bug Fix
  * .03  11SEP2000   mrk     LONG=>DOUBLE, add SELL,SELN,SELM
  */
 
@@ -62,24 +62,24 @@ static long get_control_double(DBADDR *,struct dbr_ctrlDouble *);
 static long get_alarm_double(DBADDR *,struct dbr_alDouble *);
 
 rset dfanoutRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_control_double,
-	get_alarm_double
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
 epicsExportAddress(rset,dfanoutRSET);
 
@@ -183,8 +183,8 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
         case indexof(LALM):
         case indexof(ALST):
         case indexof(MLST):
-	    pcd->upper_ctrl_limit = prec->hopr;
-	    pcd->lower_ctrl_limit = prec->lopr;
+            pcd->upper_ctrl_limit = prec->hopr;
+            pcd->lower_ctrl_limit = prec->lopr;
             break;
         default:
             recGblGetControlDouble(paddr,pcd);
@@ -194,7 +194,7 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
     dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
-    
+
     if(dbGetFieldIndex(paddr) == indexof(VAL)) {
         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
         pad->upper_warning_limit = prec->hsv ? prec->high : epicsNAN;

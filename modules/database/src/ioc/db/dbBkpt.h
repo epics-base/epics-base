@@ -5,9 +5,9 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* dbBkpt.h			*/
+/* dbBkpt.h                     */
 /*
  *      Author:          Matthew Needes
  *      Date:            8-30-93
@@ -32,7 +32,7 @@ extern "C" {
 
 struct BP_LIST {
    ELLNODE *next_list;
-   ELLNODE *prev_list; 
+   ELLNODE *prev_list;
    struct dbCommon *precord;
 };
 
@@ -41,7 +41,7 @@ struct BP_LIST {
  *    detected for a lockset.
  */
 struct EP_LIST {
-   ELLNODE *next_list; 
+   ELLNODE *next_list;
    ELLNODE *prev_list;
    struct dbCommon *entrypoint;  /* pointer to entry point in lockset */
    unsigned long count;          /* number of times record processed */

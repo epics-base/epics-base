@@ -26,69 +26,69 @@ static ASINPUTFUNCPTR *my_yyinput;
 
 static int yyreset(void)
 {
-	line_num=1;
-	BEGIN INITIAL;
-	return(0);
+        line_num=1;
+        BEGIN INITIAL;
+        return(0);
 }
 
 %}
 
 %%
 
-UAG	{ return(tokenUAG);	}
-HAG	{ return(tokenHAG);	}
-ASG	{ return(tokenASG);	}
-RULE	{ return(tokenRULE);	}
-CALC	{ return(tokenCALC);	}
+UAG     { return(tokenUAG);     }
+HAG     { return(tokenHAG);     }
+ASG     { return(tokenASG);     }
+RULE    { return(tokenRULE);    }
+CALC    { return(tokenCALC);    }
 
 INP{link} {
-	yylval.Int = (unsigned char)yytext[3];
-	yylval.Int -= 'A';
-	return(tokenINP);
+        yylval.Int = (unsigned char)yytext[3];
+        yylval.Int -= 'A';
+        return(tokenINP);
 }
 
 {digit}+ { /*integer*/
-	yylval.Int = atoi((char *)yytext);
-	return(tokenINTEGER);
+        yylval.Int = atoi((char *)yytext);
+        return(tokenINTEGER);
 }
 
 {name}+ { /*unquoted string*/
-	yylval.Str=asStrdup(yytext);
-	return(tokenSTRING);
+        yylval.Str=asStrdup(yytext);
+        return(tokenSTRING);
 }
 
 {doublequote}({stringchar}|{escape})*{doublequote} { /* quoted string */
-	yylval.Str=asStrdup(yytext+1);
-	yylval.Str[strlen(yylval.Str)-1] = '\0';
-	return(tokenSTRING);
+        yylval.Str=asStrdup(yytext+1);
+        yylval.Str[strlen(yylval.Str)-1] = '\0';
+        return(tokenSTRING);
 }
 
 {doublequote}({stringchar}|{escape})*{newline} { /* bad string */
-	yyerror("Newline in quoted string, closing quote missing");
+        yyerror("Newline in quoted string, closing quote missing");
 }
 
-{punctuation}	{ return(yytext[0]); }
+{punctuation}   { return(yytext[0]); }
 
-{newline}	{ line_num++; }
+{newline}       { line_num++; }
 
-{comment}.*	;
-{whitespace}	;
+{comment}.*     ;
+{whitespace}    ;
 
-.	{
-	char message[40];
-	YY_BUFFER_STATE *dummy=0;
+.       {
+        char message[40];
+        YY_BUFFER_STATE *dummy=0;
 
-	if (isprint((int) yytext[0])) {
-	    sprintf(message, "Invalid character '%c'", yytext[0]);
-	}
-	else {
-	    sprintf(message, "Invalid character 0x%2.2x", yytext[0]);
-	}
-	yyerror(message);
+        if (isprint((int) yytext[0])) {
+            sprintf(message, "Invalid character '%c'", yytext[0]);
+        }
+        else {
+            sprintf(message, "Invalid character 0x%2.2x", yytext[0]);
+        }
+        yyerror(message);
 
-	/*The following suppress compiler warning messages*/
-	if (0) yyunput('c',(unsigned char *) message);
-	if (0) yy_switch_to_buffer(*dummy);
+        /*The following suppress compiler warning messages*/
+        if (0) yyunput('c',(unsigned char *) message);
+        if (0) yy_switch_to_buffer(*dummy);
 }
 
 %%

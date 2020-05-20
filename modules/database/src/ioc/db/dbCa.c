@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -641,7 +641,7 @@ static long getControlLimits(const struct link *plink,
         *low  = pca->controlLimits[0];
         *high = pca->controlLimits[1];
     }
-    epicsMutexUnlock(pca->lock); 
+    epicsMutexUnlock(pca->lock);
     return gotAttributes ? 0 : -1;
 }
 
@@ -657,7 +657,7 @@ static long getGraphicLimits(const struct link *plink,
         *low  = pca->displayLimits[0];
         *high = pca->displayLimits[1];
     }
-    epicsMutexUnlock(pca->lock); 
+    epicsMutexUnlock(pca->lock);
     return gotAttributes ? 0 : -1;
 }
 
@@ -687,7 +687,7 @@ static long getPrecision(const struct link *plink, short *precision)
     pcaGetCheck
     gotAttributes = pca->gotAttributes;
     if (gotAttributes) *precision = pca->precision;
-    epicsMutexUnlock(pca->lock); 
+    epicsMutexUnlock(pca->lock);
     return gotAttributes ? 0 : -1;
 }
 
@@ -890,8 +890,8 @@ static void eventCallback(struct event_handler_args arg)
         /* Disable the record scan if we also have a string monitor */
         doScan = !(plink->value.pv_link.pvlMask & pvlOptInpString);
         /* fall through */
-    case DBR_TIME_STRING: 
-    case DBR_TIME_SHORT: 
+    case DBR_TIME_STRING:
+    case DBR_TIME_SHORT:
     case DBR_TIME_FLOAT:
     case DBR_TIME_CHAR:
     case DBR_TIME_LONG:
@@ -970,7 +970,7 @@ done:
 static void accessRightsCallback(struct access_rights_handler_args arg)
 {
     caLink *pca = (caLink *)ca_puser(arg.chid);
-    struct link	*plink;
+    struct link *plink;
     struct pv_link *ppv_link;
     dbCommon *precord;
 

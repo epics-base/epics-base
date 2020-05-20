@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      type safe singly linked list templates
@@ -57,7 +57,7 @@ template < class T >
 class tsSLList : public tsSLNode < T > {
 public:
     tsSLList (); // creates an empty list
-    tsSLList ( tsSLList & ); 
+    tsSLList ( tsSLList & );
     void insert ( T &item, tsSLNode < T > &itemBefore ); // insert after item before
     void add ( T &item ); // add to the beginning of the list
     T * get (); // remove from the beginning of the list
@@ -145,7 +145,7 @@ inline tsSLNode < T > :: tsSLNode ( const tsSLNode < T > & )
 // do _not_ change the node pointers
 //
 template < class T >
-inline tsSLNode < T > &  tsSLNode < T >::operator = 
+inline tsSLNode < T > &  tsSLNode < T >::operator =
     ( const tsSLNode < T > & )
 {
     return *this;
@@ -291,13 +291,13 @@ inline tsSLIter <T> tsSLList < T > :: invalidIter ()
 //////////////////////////////////////////
 
 template < class T >
-inline tsSLIterConst<T>::tsSLIterConst ( const T *pInitialEntry ) : 
+inline tsSLIterConst<T>::tsSLIterConst ( const T *pInitialEntry ) :
     pEntry ( pInitialEntry )
 {
 }
 
 template < class T >
-inline tsSLIterConst<T>::tsSLIterConst () : 
+inline tsSLIterConst<T>::tsSLIterConst () :
     pEntry ( 0 )
 {
 }
@@ -321,7 +321,7 @@ inline bool tsSLIterConst<T>::operator != (const tsSLIterConst<T> &rhs) const
 }
 
 template < class T >
-inline tsSLIterConst<T> & tsSLIterConst<T>::operator = ( const tsSLIterConst<T> & rhs ) 
+inline tsSLIterConst<T> & tsSLIterConst<T>::operator = ( const tsSLIterConst<T> & rhs )
 {
     this->pEntry = rhs.pEntry;
     return *this;
@@ -369,13 +369,13 @@ inline const T * tsSLIterConst < T > :: pointer () const
 //////////////////////////////////////////
 
 template < class T >
-inline tsSLIter<T>::tsSLIter ( T *pInitialEntry ) : 
+inline tsSLIter<T>::tsSLIter ( T *pInitialEntry ) :
     pEntry ( pInitialEntry )
 {
 }
 
 template < class T >
-inline tsSLIter<T>::tsSLIter () : 
+inline tsSLIter<T>::tsSLIter () :
     pEntry ( 0 )
 {
 }
@@ -399,7 +399,7 @@ inline bool tsSLIter<T>::operator != ( const tsSLIter<T> &rhs ) const
 }
 
 template < class T >
-inline tsSLIter<T> & tsSLIter<T>::operator = ( const tsSLIter<T> & rhs ) 
+inline tsSLIter<T> & tsSLIter<T>::operator = ( const tsSLIter<T> & rhs )
 {
     this->pEntry = rhs.pEntry;
     return *this;

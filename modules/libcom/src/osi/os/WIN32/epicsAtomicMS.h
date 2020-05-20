@@ -5,7 +5,7 @@
 * Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -49,19 +49,19 @@ EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
     STATIC_ASSERT ( sizeof ( MS_LONG ) == sizeof ( int ) );
     MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
     /* we dont use InterlockedAdd because only latest windows is supported */
-    return delta + ( int ) MS_InterlockedExchangeAdd ( pTarg, 
+    return delta + ( int ) MS_InterlockedExchangeAdd ( pTarg,
                                             ( MS_LONG ) delta );
 }
 #endif
 
 #ifndef EPICS_ATOMIC_CAS_INTT
 #define EPICS_ATOMIC_CAS_INTT
-EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget, 
+EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
                                             int oldVal, int newVal )
 {
     STATIC_ASSERT ( sizeof ( MS_LONG ) == sizeof ( int ) );
     MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
-    return (int) MS_InterlockedCompareExchange ( pTarg, 
+    return (int) MS_InterlockedCompareExchange ( pTarg,
                                     (MS_LONG) newVal, (MS_LONG) oldVal );
 }
 #endif
@@ -69,7 +69,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
 #if ! defined ( MS_ATOMIC_64 )
 
 /*
- * necessary for next three functions 
+ * necessary for next three functions
  *
  * looking at the MS documentation it appears that they will
  * keep type long the same size as an int on 64 bit builds
@@ -96,12 +96,12 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 
 #ifndef EPICS_ATOMIC_ADD_SIZET
 #define EPICS_ATOMIC_ADD_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, 
+EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget,
                                                     size_t delta )
 {
     MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
     /* we dont use InterlockedAdd because only latest windows is supported */
-    return delta + ( size_t ) MS_InterlockedExchangeAdd ( pTarg, 
+    return delta + ( size_t ) MS_InterlockedExchangeAdd ( pTarg,
                                                  ( MS_LONG ) delta );
 }
 #endif
@@ -119,24 +119,24 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 
 #ifndef EPICS_ATOMIC_CAS_SIZET
 #define EPICS_ATOMIC_CAS_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( 
-                                    size_t * pTarget, 
+EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT (
+                                    size_t * pTarget,
                                     size_t oldVal, size_t newVal )
 {
     MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
-    return (size_t) MS_InterlockedCompareExchange ( pTarg, 
+    return (size_t) MS_InterlockedCompareExchange ( pTarg,
                                     (MS_LONG) newVal, (MS_LONG) oldVal );
 }
 #endif
 
 #ifndef EPICS_ATOMIC_CAS_PTRT
 #define EPICS_ATOMIC_CAS_PTRT
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( 
-                                    EpicsAtomicPtrT * pTarget, 
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
+                                    EpicsAtomicPtrT * pTarget,
                                     EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
     MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
-    return (EpicsAtomicPtrT) MS_InterlockedCompareExchange ( pTarg, 
+    return (EpicsAtomicPtrT) MS_InterlockedCompareExchange ( pTarg,
                                     (MS_LONG) newVal, (MS_LONG) oldVal );
 }
 #endif
@@ -144,7 +144,7 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
 #else /* ! MS_ATOMIC_64 */
 
 /*
- * necessary for next three functions 
+ * necessary for next three functions
  */
 STATIC_ASSERT ( sizeof ( MS_LONGLONG ) == sizeof ( size_t ) );
 
@@ -172,7 +172,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta 
 {
     MS_LONGLONG * const pTarg = ( MS_LONGLONG * ) ( pTarget );
     /* we dont use InterlockedAdd64 because only latest windows is supported */
-    return delta + ( size_t ) MS_InterlockedExchangeAdd64 ( pTarg, 
+    return delta + ( size_t ) MS_InterlockedExchangeAdd64 ( pTarg,
                                         ( MS_LONGLONG ) delta );
 }
 #endif
@@ -190,24 +190,24 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 
 #ifndef EPICS_ATOMIC_CAS_SIZET
 #define EPICS_ATOMIC_CAS_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget, 
+EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget,
                                     size_t oldVal, size_t newVal )
 {
     MS_LONGLONG * const pTarg = ( MS_LONGLONG * ) ( pTarget );
-    return (size_t) MS_InterlockedCompareExchange64 ( pTarg, 
-                                    (MS_LONGLONG) newVal, 
+    return (size_t) MS_InterlockedCompareExchange64 ( pTarg,
+                                    (MS_LONGLONG) newVal,
                                     (MS_LONGLONG) oldVal );
 }
 #endif
 
 #ifndef EPICS_ATOMIC_CAS_PTRT
 #define EPICS_ATOMIC_CAS_PTRT
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( 
-                            EpicsAtomicPtrT * pTarget, 
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
+                            EpicsAtomicPtrT * pTarget,
                             EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
     MS_LONGLONG * const pTarg = ( MS_LONGLONG * ) ( pTarget );
-    return (EpicsAtomicPtrT) MS_InterlockedCompareExchange64 ( pTarg, 
+    return (EpicsAtomicPtrT) MS_InterlockedCompareExchange64 ( pTarg,
                                     (MS_LONGLONG) newVal, (MS_LONGLONG) oldVal );
 }
 #endif

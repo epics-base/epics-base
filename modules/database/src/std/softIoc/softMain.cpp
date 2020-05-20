@@ -7,7 +7,7 @@
 * found in the file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* Author: Andrew Johnson	Date: 2003-04-08 */
+/* Author: Andrew Johnson   Date: 2003-04-08 */
 
 #include <iostream>
 #include <string>
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
             std::cout<<"# End "<<argv[optind]<<"\n";
 
             epicsThreadSleep(0.2);
-            loadedDb = true;	/* Give it the benefit of the doubt... */
+            loadedDb = true;    /* Give it the benefit of the doubt... */
         }
 
         if (loadedDb) {

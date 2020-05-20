@@ -10,7 +10,7 @@
 #ifndef INC_osiProcess_H
 #define INC_osiProcess_H
 
-/* 
+/*
  * Operating System Independent Interface to Process Environment
  *
  * Author: Jeff Hill
@@ -23,17 +23,17 @@ extern "C" {
 #endif
 
 typedef enum osiGetUserNameReturn {
-                osiGetUserNameFail, 
+                osiGetUserNameFail,
                 osiGetUserNameSuccess} osiGetUserNameReturn;
 LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigned bufSize);
 
 /*
- * Spawn detached process with named executable, but return 
+ * Spawn detached process with named executable, but return
  * osiSpawnDetachedProcessNoSupport if the local OS does not
  * support heavy weight processes.
  */
 typedef enum osiSpawnDetachedProcessReturn {
-                osiSpawnDetachedProcessFail, 
+                osiSpawnDetachedProcessFail,
                 osiSpawnDetachedProcessSuccess,
                 osiSpawnDetachedProcessNoSupport} osiSpawnDetachedProcessReturn;
 

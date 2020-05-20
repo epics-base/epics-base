@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* epicsTimer.h */
 
@@ -54,7 +54,7 @@ public:
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
     /* WARNING: A deadlock will occur if you hold a lock while
-     * calling this function that you also take within the timer 
+     * calling this function that you also take within the timer
      * expiration callback.
      */
     virtual void cancel () = 0;
@@ -83,7 +83,7 @@ class epicsTimerQueueActive
 public:
     static LIBCOM_API epicsTimerQueueActive & allocate (
         bool okToShare, unsigned threadPriority = epicsThreadPriorityMin + 10 );
-    virtual void release () = 0; 
+    virtual void release () = 0;
 protected:
     LIBCOM_API virtual ~epicsTimerQueueActive () = 0;
 };
@@ -108,9 +108,9 @@ public:
     virtual double process ( const epicsTime & currentTime ) = 0; /* returns delay to next expire */
 };
 
-inline epicsTimer::expireInfo::expireInfo ( bool activeIn, 
+inline epicsTimer::expireInfo::expireInfo ( bool activeIn,
     const epicsTime & expireTimeIn ) :
-        active ( activeIn ), expireTime ( expireTimeIn ) 
+        active ( activeIn ), expireTime ( expireTimeIn )
 {
 }
 
@@ -140,7 +140,7 @@ LIBCOM_API epicsTimerQueueId epicsStdCall
 LIBCOM_API void epicsStdCall 
     epicsTimerQueueRelease ( epicsTimerQueueId );
 LIBCOM_API epicsTimerId epicsStdCall 
-    epicsTimerQueueCreateTimer ( epicsTimerQueueId queueid, 
+    epicsTimerQueueCreateTimer ( epicsTimerQueueId queueid,
         epicsTimerCallback callback, void *arg );
 LIBCOM_API void epicsStdCall 
     epicsTimerQueueDestroyTimer ( epicsTimerQueueId queueid, epicsTimerId id );
@@ -152,7 +152,7 @@ typedef struct epicsTimerQueuePassiveForC * epicsTimerQueuePassiveId;
 typedef void ( * epicsTimerQueueNotifyReschedule ) ( void * pPrivate );
 typedef double ( * epicsTimerQueueNotifyQuantum ) ( void * pPrivate );
 LIBCOM_API epicsTimerQueuePassiveId epicsStdCall
-    epicsTimerQueuePassiveCreate ( epicsTimerQueueNotifyReschedule, 
+    epicsTimerQueuePassiveCreate ( epicsTimerQueueNotifyReschedule,
         epicsTimerQueueNotifyQuantum, void *pPrivate );
 LIBCOM_API void epicsStdCall 
     epicsTimerQueuePassiveDestroy ( epicsTimerQueuePassiveId );

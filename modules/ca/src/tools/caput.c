@@ -110,18 +110,18 @@ void put_event_handler ( struct event_handler_args args )
 
 /*+**************************************************************************
  *
- * Function:	caget
+ * Function:    caget
  *
- * Description:	Issue read request, wait for incoming data
- * 		and print the data
+ * Description: Issue read request, wait for incoming data
+ *              and print the data
  *
- * Arg(s) In:	pvs       -  Pointer to an array of pv structures
+ * Arg(s) In:   pvs       -  Pointer to an array of pv structures
  *              nPvs      -  Number of elements in the pvs array
  *              format    -  Output format
  *              dbrType   -  Requested dbr type
  *              reqElems  -  Requested number of (array) elements
  *
- * Return(s):	Error code: 0 = OK, 1 = Error
+ * Return(s):   Error code: 0 = OK, 1 = Error
  *
  **************************************************************************-*/
 
@@ -241,17 +241,17 @@ int caget (pv *pvs, int nPvs, OutputT format,
 
 /*+**************************************************************************
  *
- * Function:	main
+ * Function:    main
  *
- * Description:	caput main()
- * 		Evaluate command line options, set up CA, connect the
- * 		channel, put and print the data
+ * Description: caput main()
+ *              Evaluate command line options, set up CA, connect the
+ *              channel, put and print the data
  *
- * Arg(s) In:	[options] <pv-name> <pv-value> ...
+ * Arg(s) In:   [options] <pv-name> <pv-value> ...
  *
- * Arg(s) Out:	none
+ * Arg(s) Out:  none
  *
- * Return(s):	Standard return code (0=success, 1=error)
+ * Return(s):   Standard return code (0=success, 1=error)
  *
  **************************************************************************-*/
 

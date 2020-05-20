@@ -3,7 +3,7 @@
 * Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * RTEMS osdEvent.c
@@ -34,14 +34,14 @@
 unsigned long semEstat[4];
 #define SEMSTAT(i)  semEstat[i]++;
 #else
-#define SEMSTAT(i) 
+#define SEMSTAT(i)
 #endif
 
 /*
  * Create a simple binary semaphore
  */
 epicsEventId
-epicsEventCreate(epicsEventInitialState initialState) 
+epicsEventCreate(epicsEventInitialState initialState)
 {
     rtems_status_code sc;
     rtems_id sid;
@@ -49,11 +49,11 @@ epicsEventCreate(epicsEventInitialState initialState)
     static char c1 = 'a';
     static char c2 = 'a';
     static char c3 = 'a';
-    
+
     sc = rtems_semaphore_create (rtems_build_name ('B', c3, c2, c1),
         initialState,
-	RTEMS_FIFO | RTEMS_SIMPLE_BINARY_SEMAPHORE |
-	    RTEMS_NO_INHERIT_PRIORITY | RTEMS_NO_PRIORITY_CEILING | RTEMS_LOCAL,
+        RTEMS_FIFO | RTEMS_SIMPLE_BINARY_SEMAPHORE |
+            RTEMS_NO_INHERIT_PRIORITY | RTEMS_NO_PRIORITY_CEILING | RTEMS_LOCAL,
         0,
         &sid);
     if (sc != RTEMS_SUCCESSFUL) {
@@ -88,7 +88,7 @@ epicsEventDestroy(epicsEventId id)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
-    
+
     sc = rtems_semaphore_delete (sid);
     if (sc != RTEMS_SUCCESSFUL)
         errlogPrintf ("Can't destroy semaphore: %s\n", rtems_status_text (sc));
@@ -99,7 +99,7 @@ epicsEventTrigger(epicsEventId id)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
-    
+
     sc = rtems_semaphore_release (sid);
     if (sc == RTEMS_SUCCESSFUL)
         return epicsEventOK;
@@ -112,7 +112,7 @@ epicsEventWait(epicsEventId id)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
-    
+
     SEMSTAT(0)
     sc = rtems_semaphore_obtain (sid, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
     if (sc != RTEMS_SUCCESSFUL)
@@ -127,7 +127,7 @@ epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
     rtems_status_code sc;
     rtems_interval delay;
     extern double rtemsTicksPerSecond_double;
-    
+
     if (timeOut <= 0.0)
         return epicsEventTryWait(id);
     SEMSTAT(1)
@@ -148,7 +148,7 @@ epicsEventTryWait(epicsEventId id)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
-    
+
     SEMSTAT(2)
     sc = rtems_semaphore_obtain (sid, RTEMS_NO_WAIT, RTEMS_NO_TIMEOUT);
     if (sc == RTEMS_SUCCESSFUL)

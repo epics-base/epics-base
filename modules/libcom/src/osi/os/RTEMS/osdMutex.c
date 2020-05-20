@@ -2,7 +2,7 @@
 * Copyright (c) 2002 The University of Saskatchewan
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * RTEMS osdMutex.c
@@ -36,7 +36,7 @@
 unsigned long semMstat[4];
 #define SEMSTAT(i)  semMstat[i]++;
 #else
-#define SEMSTAT(i) 
+#define SEMSTAT(i)
 #endif
 
 struct epicsMutexOSD *
@@ -48,7 +48,7 @@ epicsMutexOsdCreate(void)
     static char c1 = 'a';
     static char c2 = 'a';
     static char c3 = 'a';
-    
+
     sc = rtems_semaphore_create (rtems_build_name ('M', c3, c2, c1),
         1,
         RTEMS_PRIORITY|RTEMS_BINARY_SEMAPHORE|RTEMS_INHERIT_PRIORITY|RTEMS_NO_PRIORITY_CEILING|RTEMS_LOCAL,
@@ -84,7 +84,7 @@ epicsMutexOsdCreate(void)
       Objects_Locations  location;
 
       the_semaphore = _Semaphore_Get( sid, &location );
-      _Thread_Enable_dispatch();  
+      _Thread_Enable_dispatch();
 
       return (struct epicsMutexOSD *)the_semaphore;
     }
@@ -116,7 +116,7 @@ void epicsMutexOsdUnlock(struct epicsMutexOSD * id)
 #ifdef RTEMS_FAST_MUTEX
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
     _Thread_Disable_dispatch();
-	_CORE_mutex_Surrender (
+    _CORE_mutex_Surrender (
         &the_semaphore->Core_control.mutex,
         the_semaphore->Object.id,
         NULL
@@ -191,5 +191,5 @@ LIBCOM_API void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int level)
     Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
     id = (struct epicsMutexOSD *)the_semaphore->Object.id;
 #endif
-	epicsEventShow ((epicsEventId)id,level);
+    epicsEventShow ((epicsEventId)id,level);
 }

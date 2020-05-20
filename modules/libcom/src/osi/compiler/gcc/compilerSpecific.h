@@ -4,11 +4,11 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- * Author: 
+ * Author:
  * Jeffrey O. Hill
  * johill@lanl.gov
  */
@@ -28,13 +28,13 @@
 
 /* Expands to a 'const char*' which describes the name of the current function scope */
 #define EPICS_FUNCTION __PRETTY_FUNCTION__
- 
+
 #ifdef __cplusplus
 
 /*
  * in general we dont like ifdefs but they do allow us to check the
- * compiler version and make the optimistic assumption that 
- * standards incompliance issues will be fixed by future compiler 
+ * compiler version and make the optimistic assumption that
+ * standards incompliance issues will be fixed by future compiler
  * releases
  */
 

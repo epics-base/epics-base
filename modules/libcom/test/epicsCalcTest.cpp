@@ -4,7 +4,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-//	Author: Andrew Johnson
+//  Author: Andrew Johnson
 
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +21,7 @@
 double doCalc(const char *expr) {
     /* Evaluate expression, return result */
     double args[CALCPERFORM_NARGS] = {
-	1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
+        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
     };
     char *rpn = (char*)malloc(INFIX_TO_POSTFIX_SIZE(strlen(expr)+1));
     short err;
@@ -34,11 +34,11 @@ double doCalc(const char *expr) {
     }
 
     if (postfix(expr, rpn, &err)) {
-	testDiag("postfix: %s in expression '%s'", calcErrorStr(err), expr);
+        testDiag("postfix: %s in expression '%s'", calcErrorStr(err), expr);
     } else
-	if (calcPerform(args, &result, rpn) && finite(result)) {
-	    testDiag("calcPerform: error evaluating '%s'", expr);
-	}
+        if (calcPerform(args, &result, rpn) && finite(result)) {
+            testDiag("calcPerform: error evaluating '%s'", expr);
+        }
     free(rpn);
     return result;
 }
@@ -295,7 +295,7 @@ MAIN(epicsCalcTest)
 {
     int repeat;
     const double a=1.0, b=2.0, c=3.0, d=4.0, e=5.0, f=6.0,
-		 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0;
+                 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0;
 
     testPlan(630);
 
@@ -339,11 +339,11 @@ MAIN(epicsCalcTest)
     testExpr(R2D);
 
     for (repeat=0; repeat<100; repeat++) {
-	double res = doCalc("rndm");
-	if (res<0 || res >1) {
-	    testDiag("rndm returned %g", res);
-	    break;
-	}
+        double res = doCalc("rndm");
+        if (res<0 || res >1) {
+            testDiag("rndm returned %g", res);
+            break;
+        }
     }
     testOk(repeat == 100, "rndm");
 
@@ -841,61 +841,61 @@ MAIN(epicsCalcTest)
     testCalc("l; l := 0", l);
 
     // Check relative precedences.
-    testExpr(0 ? 1 : 2 | 4);			// 0 1
-    testExpr(1 ? 1 : 2 | 4);			// 0 1
-    testExpr(0 ? 2 | 4 : 1);			// 0 1
-    testExpr(1 ? 2 | 4 : 1);			// 0 1
-    testExpr(0 ? 1 : 2 & 3);			// 0 2
-    testExpr(1 ? 1 : 2 & 3);			// 0 2
-    testExpr(0 ? 2 & 3 : 1);			// 0 2
-    testExpr(1 ? 2 & 3 : 1);			// 0 2
-    testExpr(0 ? 2 : 3 >= 1);			// 0 3
-    testExpr(0 ? 3 >= 1 : 2);			// 0 3
-    testExpr(1 ? 0 == 1 : 2);			// 0 3
-    testExpr(1 ? 2 : 0 == 1);			// 0 3
-    testExpr(0 ? 1 : 2 + 4);			// 0 4
-    testExpr(1 ? 1 : 2 + 4);			// 0 4
-    testExpr(0 ? 2 + 4 : 1);			// 0 4
-    testExpr(1 ? 2 + 4 : 1);			// 0 4
-    testExpr(0 ? 1 : 2 * 4);			// 0 5
-    testExpr(1 ? 1 : 2 * 4);			// 0 5
-    testExpr(0 ? 2 * 4 : 1);			// 0 5
-    testExpr(1 ? 2 * 4 : 1);			// 0 5
-    testCalc("0 ? 1 : 2 ** 3", 8);		// 0 6
-    testCalc("1 ? 1 : 2 ** 3", 1);		// 0 6
-    testCalc("0 ? 2 ** 3 : 1", 1);		// 0 6
-    testCalc("1 ? 2 ** 3 : 1", 8);		// 0 6
-    testCalc("1 | 3 XOR 1", (1 | 3) ^ 1);	// 1 1
-    testExpr(1 XOR 3 | 1);			// 1 1
-    testExpr(3 | 1 & 2);			// 1 2
-    testExpr(2 | 4 > 3);			// 1 3
-    testExpr(2 OR 4 > 3);			// 1 3
-    testExpr(2 XOR 3 >= 0);			// 1 3
-    testExpr(2 | 1 - 3);			// 1 4
-    testExpr(2 | 4 / 2);			// 1 5
+    testExpr(0 ? 1 : 2 | 4);                    // 0 1
+    testExpr(1 ? 1 : 2 | 4);                    // 0 1
+    testExpr(0 ? 2 | 4 : 1);                    // 0 1
+    testExpr(1 ? 2 | 4 : 1);                    // 0 1
+    testExpr(0 ? 1 : 2 & 3);                    // 0 2
+    testExpr(1 ? 1 : 2 & 3);                    // 0 2
+    testExpr(0 ? 2 & 3 : 1);                    // 0 2
+    testExpr(1 ? 2 & 3 : 1);                    // 0 2
+    testExpr(0 ? 2 : 3 >= 1);                   // 0 3
+    testExpr(0 ? 3 >= 1 : 2);                   // 0 3
+    testExpr(1 ? 0 == 1 : 2);                   // 0 3
+    testExpr(1 ? 2 : 0 == 1);                   // 0 3
+    testExpr(0 ? 1 : 2 + 4);                    // 0 4
+    testExpr(1 ? 1 : 2 + 4);                    // 0 4
+    testExpr(0 ? 2 + 4 : 1);                    // 0 4
+    testExpr(1 ? 2 + 4 : 1);                    // 0 4
+    testExpr(0 ? 1 : 2 * 4);                    // 0 5
+    testExpr(1 ? 1 : 2 * 4);                    // 0 5
+    testExpr(0 ? 2 * 4 : 1);                    // 0 5
+    testExpr(1 ? 2 * 4 : 1);                    // 0 5
+    testCalc("0 ? 1 : 2 ** 3", 8);              // 0 6
+    testCalc("1 ? 1 : 2 ** 3", 1);              // 0 6
+    testCalc("0 ? 2 ** 3 : 1", 1);              // 0 6
+    testCalc("1 ? 2 ** 3 : 1", 8);              // 0 6
+    testCalc("1 | 3 XOR 1", (1 | 3) ^ 1);       // 1 1
+    testExpr(1 XOR 3 | 1);                      // 1 1
+    testExpr(3 | 1 & 2);                        // 1 2
+    testExpr(2 | 4 > 3);                        // 1 3
+    testExpr(2 OR 4 > 3);                       // 1 3
+    testExpr(2 XOR 3 >= 0);                     // 1 3
+    testExpr(2 | 1 - 3);                        // 1 4
+    testExpr(2 | 4 / 2);                        // 1 5
     testCalc("1 | 2 ** 3", 1 | (int) pow(2., 3.));// 1 6
-    testExpr(3 << 2 & 10);			// 2 2
-    testCalc("18 & 6 << 2", (18 & 6) << 2);	// 2 2
-    testExpr(36 >> 2 & 10);			// 2 2
-    testCalc("36 >>> 2 & 10", 36u >> 2u & 10u);	// 2 2
-    testCalc("18 & 20 >> 2", (18 & 20) >> 2);	// 2 2
+    testExpr(3 << 2 & 10);                      // 2 2
+    testCalc("18 & 6 << 2", (18 & 6) << 2);     // 2 2
+    testExpr(36 >> 2 & 10);                     // 2 2
+    testCalc("36 >>> 2 & 10", 36u >> 2u & 10u); // 2 2
+    testCalc("18 & 20 >> 2", (18 & 20) >> 2);   // 2 2
     testCalc("18 & 20 >>> 2", (18u & 20u) >> 2);// 2 2
-    testExpr(3 & 4 == 4);			// 2 3
-    testExpr(3 AND 4 == 4);			// 2 3
-    testCalc("1 << 2 != 4", 1 << (2 != 4));	// 2 3
-    testCalc("16 >> 2 != 4", 16 >> (2 != 4));	// 2 3
-    testCalc("16 >>> 2 != 4", 16u >> (2 != 4));	// 2 3
-    testExpr(3 AND -2); 			// 2 8
-    testExpr(0 < 1 ? 2 : 3);			// 3 0
-    testExpr(1 <= 0 ? 2 : 3);			// 3 0
-    testExpr(0 + -1);				// 4 8
-    testExpr(0 - -1);				// 4 8
-    testExpr(10 + 10 * 2);			// 4 5
-    testExpr(20 + 20 / 2);			// 4 5
-    testExpr(-1 + 1);				// 7 4
-    testExpr(-1 - 2);				// 7 4
-    testCalc("-2 ** 2", pow(-2., 2.));		// 7 6
-    testCalc("-2 ^ 2", pow(-2., 2.));		// 7 6
+    testExpr(3 & 4 == 4);                       // 2 3
+    testExpr(3 AND 4 == 4);                     // 2 3
+    testCalc("1 << 2 != 4", 1 << (2 != 4));     // 2 3
+    testCalc("16 >> 2 != 4", 16 >> (2 != 4));   // 2 3
+    testCalc("16 >>> 2 != 4", 16u >> (2 != 4)); // 2 3
+    testExpr(3 AND -2);                         // 2 8
+    testExpr(0 < 1 ? 2 : 3);                    // 3 0
+    testExpr(1 <= 0 ? 2 : 3);                   // 3 0
+    testExpr(0 + -1);                           // 4 8
+    testExpr(0 - -1);                           // 4 8
+    testExpr(10 + 10 * 2);                      // 4 5
+    testExpr(20 + 20 / 2);                      // 4 5
+    testExpr(-1 + 1);                           // 7 4
+    testExpr(-1 - 2);                           // 7 4
+    testCalc("-2 ** 2", pow(-2., 2.));          // 7 6
+    testCalc("-2 ^ 2", pow(-2., 2.));           // 7 6
 
     // Check parentheses
     testCalc("(1 | 2) ** 3", pow((double) (1 | 2), 3.));// 8 6
@@ -916,7 +916,7 @@ MAIN(epicsCalcTest)
     testArgs("K", A_K, 0);
     testArgs("L", A_L, 0);
     testArgs("A+B+C+D+E+F+G+H+I+J+K+L",
-	A_A|A_B|A_C|A_D|A_E|A_F|A_G|A_H|A_I|A_J|A_K|A_L, 0);
+        A_A|A_B|A_C|A_D|A_E|A_F|A_G|A_H|A_I|A_J|A_K|A_L, 0);
     testArgs("0.1;A:=0", 0, A_A);
     testArgs("1.1;B:=0", 0, A_B);
     testArgs("2.1;C:=0", 0, A_C);

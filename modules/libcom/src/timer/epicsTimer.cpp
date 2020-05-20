@@ -62,7 +62,7 @@ epicsTimerNotify::expireStatus epicsTimerForC::expire ( const epicsTime & )
 }
 
 epicsTimerQueueActiveForC ::
-    epicsTimerQueueActiveForC ( RefMgr & refMgr, 
+    epicsTimerQueueActiveForC ( RefMgr & refMgr,
         bool okToShare, unsigned priority ) :
     timerQueueActive ( refMgr, okToShare, priority )
 {
@@ -78,18 +78,18 @@ void epicsTimerQueueActiveForC::release ()
     _refMgr->release ( *this );
 }
 
-epicsTimerQueuePassiveForC::epicsTimerQueuePassiveForC ( 
-    epicsTimerQueueNotifyReschedule pRescheduleCallbackIn, 
+epicsTimerQueuePassiveForC::epicsTimerQueuePassiveForC (
+    epicsTimerQueueNotifyReschedule pRescheduleCallbackIn,
     epicsTimerQueueNotifyQuantum pSleepQuantumCallbackIn,
     void * pPrivateIn ) :
-        timerQueuePassive ( * static_cast < epicsTimerQueueNotify * > ( this ) ), 
-        pRescheduleCallback ( pRescheduleCallbackIn ), 
+        timerQueuePassive ( * static_cast < epicsTimerQueueNotify * > ( this ) ),
+        pRescheduleCallback ( pRescheduleCallbackIn ),
         pSleepQuantumCallback ( pSleepQuantumCallbackIn ),
         pPrivate ( pPrivateIn )
 {
 }
 
-epicsTimerQueuePassiveForC::~epicsTimerQueuePassiveForC () 
+epicsTimerQueuePassiveForC::~epicsTimerQueuePassiveForC ()
 {
 }
 
@@ -112,7 +112,7 @@ LIBCOM_API epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) :
     delay ( - DBL_MAX )
 {
     if ( restart != noRestart ) {
-        throw std::logic_error 
+        throw std::logic_error
             ( "timer restart was requested without specifying a delay?" );
     }
 }
@@ -122,11 +122,11 @@ LIBCOM_API epicsTimerNotify::expireStatus::expireStatus
     delay ( expireDelaySec )
 {
     if ( restartIn != epicsTimerNotify::restart ) {
-        throw std::logic_error 
+        throw std::logic_error
             ( "no timer restart was requested, but a delay was specified?" );
     }
     if ( this->delay < 0.0 || !finite(this->delay) ) {
-        throw std::logic_error 
+        throw std::logic_error
             ( "timer restart was requested, but a negative delay was specified?" );
     }
 }
@@ -139,21 +139,21 @@ LIBCOM_API bool epicsTimerNotify::expireStatus::restart () const
 LIBCOM_API double epicsTimerNotify::expireStatus::expirationDelay () const
 {
     if ( this->delay < 0.0 || !finite(this->delay) ) {
-        throw std::logic_error 
+        throw std::logic_error
             ( "no timer restart was requested, but you are asking for a restart delay?" );
     }
     return this->delay;
 }
 
 extern "C" epicsTimerQueuePassiveId epicsStdCall
-    epicsTimerQueuePassiveCreate ( 
-        epicsTimerQueueNotifyReschedule pRescheduleCallbackIn, 
+    epicsTimerQueuePassiveCreate (
+        epicsTimerQueueNotifyReschedule pRescheduleCallbackIn,
         epicsTimerQueueNotifyQuantum pSleepQuantumCallbackIn,
         void * pPrivateIn )
 {
     try {
-        return new epicsTimerQueuePassiveForC ( 
-            pRescheduleCallbackIn, 
+        return new epicsTimerQueuePassiveForC (
+            pRescheduleCallbackIn,
             pSleepQuantumCallbackIn,
             pPrivateIn );
     }
@@ -206,9 +206,9 @@ extern "C" epicsTimerQueueId epicsStdCall
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority )
 {
     try {
-        epicsSingleton < timerQueueActiveMgr > :: reference ref = 
+        epicsSingleton < timerQueueActiveMgr > :: reference ref =
             timerQueueMgrEPICS.getReference ();
-        epicsTimerQueueActiveForC & tmr = 
+        epicsTimerQueueActiveForC & tmr =
             ref->allocate ( ref, okToShare ? true : false, threadPriority );
         return &tmr;
     }

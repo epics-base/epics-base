@@ -4,12 +4,12 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
  * devAaoSoft.c - Device Support Routines for soft Waveform Records
- * 
+ *
  *      Original Author: Bob Dalesio
  *      Current Author:  Dirk Zimoch
  *      Date:            27-MAY-2010

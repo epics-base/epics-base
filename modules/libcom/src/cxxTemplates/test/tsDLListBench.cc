@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include "tsDLList.h"
@@ -15,15 +15,15 @@
 
 class fred : public tsDLNode<fred> {
 public:
-	fred() : count(0) {}
-	void inc () {count++;}
+    fred() : count(0) {}
+    void inc () {count++;}
 private:
-	unsigned count;
+    unsigned count;
 };
 
 class jane : public fred, public tsDLNode<jane> {
 public:
-	jane() {}
+    jane() {}
 private:
 };
 
@@ -31,41 +31,41 @@ private:
 
 int main ()
 {
-	tsDLList<fred>  list;
-	tsDLIter<fred>  iter = list.firstIter();
-	fred			*pFred;
-	unsigned 		i;
-	clock_t			clk;
-	clock_t			diff;
-	double 			delay;
+    tsDLList<fred>  list;
+    tsDLIter<fred>  iter = list.firstIter();
+    fred            *pFred;
+    unsigned        i;
+    clock_t         clk;
+    clock_t         diff;
+    double          delay;
 
-	for (i=0; i<LOOPCOUNT; i++) {
-		pFred = new fred();
-		list.add(*pFred);
-	}
+    for (i=0; i<LOOPCOUNT; i++) {
+        pFred = new fred();
+        list.add(*pFred);
+    }
 
-	clk = clock();
-	while ( iter.valid() ) {
-		iter->inc();
+    clk = clock();
+    while ( iter.valid() ) {
+        iter->inc();
         iter++;
-	}
-	diff = clock() - clk;
-	delay = diff;
-	delay = delay/CLOCKS_PER_SEC;
-	delay = delay/LOOPCOUNT;
-	printf("delay = %15.10f\n", delay);
+    }
+    diff = clock() - clk;
+    delay = diff;
+    delay = delay/CLOCKS_PER_SEC;
+    delay = delay/LOOPCOUNT;
+    printf("delay = %15.10f\n", delay);
 
-	pFred = new fred();
-	clk = clock();
-	for (i=0; i<LOOPCOUNT; i++) {
-		pFred->inc();
-	}
-	diff = clock() - clk;
-	delay = diff;
-	delay = delay/CLOCKS_PER_SEC;
-	delay = delay/LOOPCOUNT;
-	printf("delay = %15.10f\n", delay);
+    pFred = new fred();
+    clk = clock();
+    for (i=0; i<LOOPCOUNT; i++) {
+        pFred->inc();
+    }
+    diff = clock() - clk;
+    delay = diff;
+    delay = delay/CLOCKS_PER_SEC;
+    delay = delay/LOOPCOUNT;
+    printf("delay = %15.10f\n", delay);
 
-	return 0;
+    return 0;
 }
 

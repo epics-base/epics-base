@@ -62,7 +62,7 @@ void testRefCount()
     Q1->release();
 }
 
-static const double delayVerifyOffset = 1.0; // sec 
+static const double delayVerifyOffset = 1.0; // sec
 
 class delayVerify : public epicsTimerNotify {
 public:
@@ -148,7 +148,7 @@ void testAccuracy ()
 
     testDiag ( "Testing timer accuracy" );
 
-    epicsTimerQueueActive &queue = 
+    epicsTimerQueueActive &queue =
         epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMax );
 
     for ( i = 0u; i < nTimers; i++ ) {
@@ -171,7 +171,7 @@ void testAccuracy ()
         averageMeasuredError += pTimers[i]->checkError ();
     }
     averageMeasuredError /= nTimers;
-    testDiag ("average timer delay error %f ms", 
+    testDiag ("average timer delay error %f ms",
         averageMeasuredError * 1000 );
     queue.release ();
 }
@@ -242,7 +242,7 @@ void testCancel ()
 
     testDiag ( "Testing timer cancellation" );
 
-    epicsTimerQueueActive &queue = 
+    epicsTimerQueueActive &queue =
         epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
@@ -331,7 +331,7 @@ void testExpireDestroy ()
 
     testDiag ( "Testing timer destruction in expire()" );
 
-    epicsTimerQueueActive &queue = 
+    epicsTimerQueueActive &queue =
         epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
@@ -373,7 +373,7 @@ private:
 };
 
 periodicVerify::periodicVerify ( epicsTimerQueue & queueIn ) :
-    timer ( queueIn.createTimer () ), nExpire ( 0u ), 
+    timer ( queueIn.createTimer () ), nExpire ( 0u ),
         cancelCalled ( false )
 {
 }
@@ -425,7 +425,7 @@ void testPeriodic ()
 
     testDiag ( "Testing periodic timers" );
 
-    epicsTimerQueueActive &queue = 
+    epicsTimerQueueActive &queue =
         epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {

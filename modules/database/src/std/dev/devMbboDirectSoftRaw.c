@@ -32,7 +32,7 @@ static long init_record(dbCommon *pcommon)
     return 2; /* Don't convert */
 }
 
-static long write_mbbo(mbboDirectRecord	*prec)
+static long write_mbbo(mbboDirectRecord *prec)
 {
     epicsUInt32 data;
 

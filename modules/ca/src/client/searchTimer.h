@@ -7,19 +7,19 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-//  
 //
-//                              
+//
+//
 //                    L O S  A L A M O S
 //              Los Alamos National Laboratory
 //               Los Alamos, New Mexico 87545
-//                                  
+//
 //  Copyright, 1986, The Regents of the University of California.
-//                                  
-//           
-//	Author Jeffrey O. Hill
-//	johill@lanl.gov
-//	505 665 1831
+//
+//
+//  Author Jeffrey O. Hill
+//  johill@lanl.gov
+//  505 665 1831
 //
 
 #ifndef INC_searchTimer_H
@@ -36,14 +36,14 @@
 class searchTimerNotify {
 public:
     virtual ~searchTimerNotify () = 0;
-    virtual void boostChannel ( 
+    virtual void boostChannel (
         epicsGuard < epicsMutex > &, nciu & ) = 0;
-    virtual void noSearchRespNotify ( 
+    virtual void noSearchRespNotify (
         epicsGuard < epicsMutex > &, nciu &, unsigned ) = 0;
     virtual double getRTTE ( epicsGuard < epicsMutex > & ) const = 0;
     virtual void updateRTTE ( epicsGuard < epicsMutex > &, double rtte ) = 0;
-    virtual bool datagramFlush ( 
-        epicsGuard < epicsMutex > &, 
+    virtual bool datagramFlush (
+        epicsGuard < epicsMutex > &,
         const epicsTime & currentTime ) = 0;
     virtual ca_uint32_t datagramSeqNumber (
         epicsGuard < epicsMutex > & ) const = 0;
@@ -51,24 +51,24 @@ public:
 
 class searchTimer : private epicsTimerNotify {
 public:
-    searchTimer ( 
-        class searchTimerNotify &, epicsTimerQueue &, 
+    searchTimer (
+        class searchTimerNotify &, epicsTimerQueue &,
         const unsigned index, epicsMutex &,
         bool boostPossible );
     virtual ~searchTimer ();
     void start ( epicsGuard < epicsMutex > & );
-    void shutdown ( 
+    void shutdown (
         epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
-    void moveChannels ( 
+    void moveChannels (
         epicsGuard < epicsMutex > &, searchTimer & dest );
-    void installChannel ( 
+    void installChannel (
         epicsGuard < epicsMutex > &, nciu & );
-    void uninstallChan ( 
+    void uninstallChan (
         epicsGuard < epicsMutex > &, nciu & );
-    void uninstallChanDueToSuccessfulSearchResponse ( 
-        epicsGuard < epicsMutex > &, nciu &, 
-        ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid, 
+    void uninstallChanDueToSuccessfulSearchResponse (
+        epicsGuard < epicsMutex > &, nciu &,
+        ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid,
         const epicsTime & currentTime );
     void show ( unsigned level ) const;
 private:
@@ -84,15 +84,15 @@ private:
     unsigned searchAttempts; /* num search tries after last timer experation */
     unsigned searchResponses; /* num search resp after last timer experation */
     const unsigned index;
-    ca_uint32_t dgSeqNoAtTimerExpireBegin; 
+    ca_uint32_t dgSeqNoAtTimerExpireBegin;
     ca_uint32_t dgSeqNoAtTimerExpireEnd;
     const bool boostPossible;
     bool stopped;
 
     expireStatus expire ( const epicsTime & currentTime );
     double period ( epicsGuard < epicsMutex > & ) const;
-	searchTimer ( const searchTimer & ); // not implemented
-	searchTimer & operator = ( const searchTimer & ); // not implemented
+    searchTimer ( const searchTimer & ); // not implemented
+    searchTimer & operator = ( const searchTimer & ); // not implemented
 };
 
 #endif // ifdef INC_searchTimer_H

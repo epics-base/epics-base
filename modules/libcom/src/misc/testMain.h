@@ -19,7 +19,7 @@
  *
  *     #include "testMain.h"
  *     #include "epicsUnitTest.h"
- *     
+ *
  *     MAIN(myProgTest) {
  *         testPlan(...);
  *         testOk(...)

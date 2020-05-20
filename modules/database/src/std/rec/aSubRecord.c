@@ -348,7 +348,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
     aSubRecord *prec = (aSubRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
     int linkNumber;
-    
+
     linkNumber = get_inlinkNumber(fieldIndex);
     if (linkNumber >= 0) {
         dbGetGraphicLimits(&prec->inpa + linkNumber,

@@ -16,7 +16,7 @@
  *
  *  Author: Jeffrey O. Hill
  *
- */ 
+ */
 
 
 #ifndef INC_caerr_H
@@ -69,9 +69,9 @@
 (CA_INSERT_MSG_NO(NUMBER) | CA_INSERT_SEVERITY(SEVERITY))
 
 /*
- * In the lines below "defunct" indicates that current release 
+ * In the lines below "defunct" indicates that current release
  * servers and client library will not return this error code, but
- * servers on earlier releases that communicate with current clients 
+ * servers on earlier releases that communicate with current clients
  * might still generate exceptions with these error constants
  */
 #define ECA_NORMAL          DEFMSG(CA_K_SUCCESS,    0) /* success */
@@ -80,10 +80,10 @@
 #define ECA_UKNSERV         DEFMSG(CA_K_ERROR,      3) /* defunct */
 #define ECA_SOCK            DEFMSG(CA_K_ERROR,      4) /* defunct */
 #define ECA_CONN            DEFMSG(CA_K_WARNING,    5) /* defunct */
-#define ECA_ALLOCMEM        DEFMSG(CA_K_WARNING,    6) 
+#define ECA_ALLOCMEM        DEFMSG(CA_K_WARNING,    6)
 #define ECA_UKNCHAN         DEFMSG(CA_K_WARNING,    7) /* defunct */
 #define ECA_UKNFIELD        DEFMSG(CA_K_WARNING,    8) /* defunct */
-#define ECA_TOLARGE         DEFMSG(CA_K_WARNING,    9) 
+#define ECA_TOLARGE         DEFMSG(CA_K_WARNING,    9)
 #define ECA_TIMEOUT         DEFMSG(CA_K_WARNING,   10)
 #define ECA_NOSUPPORT       DEFMSG(CA_K_WARNING,   11) /* defunct */
 #define ECA_STRTOBIG        DEFMSG(CA_K_WARNING,   12) /* defunct */

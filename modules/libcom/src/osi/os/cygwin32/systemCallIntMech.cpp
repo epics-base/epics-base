@@ -7,14 +7,14 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- *      Author:		Jeff Hill 
+ *      Author:     Jeff Hill
  */
 
 #include <cygwin/version.h>
 
 #include "osiSock.h"
 
-enum epicsSocketSystemCallInterruptMechanismQueryInfo 
+enum epicsSocketSystemCallInterruptMechanismQueryInfo
         epicsSocketSystemCallInterruptMechanismQuery ()
 {
 #if (CYGWIN_VERSION_DLL_MAJOR == 1007) && (CYGWIN_VERSION_DLL_MINOR < 15)

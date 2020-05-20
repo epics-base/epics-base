@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*asTrapWrite.c */
 /* Author:  Marty Kraimer Date:    07NOV2000 */
@@ -45,7 +45,7 @@ typedef struct writeMessage {
     asTrapWriteMessage message;
     ELLLIST listenerPvtList;
 }writeMessage;
-    
+
 
 typedef struct asTrapWritePvt
 {
@@ -76,7 +76,7 @@ asTrapWriteId epicsStdCall asTrapWriteRegisterListener(
     listener *plistener;
     if(pasTrapWritePvt==0) asTrapWriteInit();
     plistener = callocMustSucceed(1,sizeof(listener),"asTrapWriteRegisterListener");
-    plistener->func = func; 
+    plistener->func = func;
     epicsMutexMustLock(pasTrapWritePvt->lock);
     ellAdd(&pasTrapWritePvt->listenerList,&plistener->node);
     epicsMutexUnlock(pasTrapWritePvt->lock);

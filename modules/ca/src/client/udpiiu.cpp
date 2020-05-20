@@ -41,7 +41,7 @@
 #include "disconnectGovernorTimer.h"
 
 // UDP protocol dispatch table
-const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] = 
+const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
 {
     &udpiiu::versionAction,
     &udpiiu::badUDPRespAction,
@@ -112,16 +112,16 @@ unsigned getNTimers(double maxPeriod)
 //
 // udpiiu::udpiiu ()
 //
-udpiiu::udpiiu ( 
+udpiiu::udpiiu (
     epicsGuard < epicsMutex > & cacGuard,
-    epicsTimerQueueActive & timerQueue, 
-    epicsMutex & cbMutexIn, 
+    epicsTimerQueueActive & timerQueue,
+    epicsMutex & cbMutexIn,
     epicsMutex & cacMutexIn,
     cacContextNotify & ctxNotifyIn,
     cac & cac,
     unsigned port,
     tsDLList < SearchDest > & searchDestListIn ) :
-    recvThread ( *this, ctxNotifyIn, cbMutexIn, "CAC-UDP", 
+    recvThread ( *this, ctxNotifyIn, cbMutexIn, "CAC-UDP",
         epicsThreadGetStackSize ( epicsThreadStackMedium ),
         cac::lowestPriorityLevelAbove (
             cac::lowestPriorityLevelAbove (
@@ -158,19 +158,19 @@ udpiiu::udpiiu (
     }
 
     for ( unsigned i = 0; i < this->nTimers; i++ ) {
-        this->ppSearchTmr[i].reset ( 
-            new searchTimer ( *this, timerQueue, i, cacMutexIn, 
-                i > this->beaconAnomalyTimerIndex ) ); 
+        this->ppSearchTmr[i].reset (
+            new searchTimer ( *this, timerQueue, i, cacMutexIn,
+                i > this->beaconAnomalyTimerIndex ) );
     }
 
-    this->repeaterPort = 
+    this->repeaterPort =
         envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT,
                                     static_cast <unsigned short> (CA_REPEATER_PORT) );
 
     this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
+        epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf ("CAC: unable to create datagram socket because = \"%s\"\n",
             sockErrBuf );
@@ -207,11 +207,11 @@ udpiiu::udpiiu (
 #endif
 
     int boolValue = true;
-    int status = setsockopt ( this->sock, SOL_SOCKET, SO_BROADCAST, 
+    int status = setsockopt ( this->sock, SOL_SOCKET, SO_BROADCAST,
                 (char *) &boolValue, sizeof ( boolValue ) );
     if ( status < 0 ) {
         char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
+        epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
         errlogPrintf ("CAC: IP broadcasting enable failed because = \"%s\"\n",
             sockErrBuf );
@@ -243,26 +243,26 @@ udpiiu::udpiiu (
     osiSockAddr addr;
     memset ( (char *)&addr, 0 , sizeof (addr) );
     addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY ); 
+    addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
     addr.ia.sin_port = htons ( PORT_ANY );
     status = bind (this->sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
+        epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
         epicsSocketDestroy (this->sock);
         errlogPrintf ( "CAC: unable to bind to an unconstrained address because = \"%s\"\n",
             sockErrBuf );
         throwWithLocation ( noSocket () );
     }
-    
+
     {
         osiSockAddr tmpAddr;
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         status = getsockname ( this->sock, &tmpAddr.sa, &saddr_length );
         if ( status < 0 ) {
             char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
+            epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
             epicsSocketDestroy ( this->sock );
             errlogPrintf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
@@ -283,9 +283,9 @@ udpiiu::udpiiu (
     ELLLIST dest;
     ellInit ( & dest );
     configureChannelAccessAddressList ( & dest, this->sock, this->serverPort );
-    while ( osiSockAddrNode * 
+    while ( osiSockAddrNode *
         pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
-        SearchDestUDP & searchDest = * 
+        SearchDestUDP & searchDest = *
             new SearchDestUDP ( pNode->addr, *this );
         _searchDestList.add ( searchDest );
         free ( pNode );
@@ -293,14 +293,14 @@ udpiiu::udpiiu (
 
     /* add list of tcp name service addresses */
     _searchDestList.add ( searchDestListIn );
-    
+
     caStartRepeaterIfNotInstalled ( this->repeaterPort );
 
     this->pushVersionMsg ();
 
     // start timers and receive thread
     for ( unsigned j =0; j < this->nTimers; j++ ) {
-        this->ppSearchTmr[j]->start ( cacGuard ); 
+        this->ppSearchTmr[j]->start ( cacGuard );
     }
     this->govTmr.start ();
     this->repeaterSubscribeTmr.start ();
@@ -325,19 +325,19 @@ udpiiu::~udpiiu ()
         iter++;
         delete & curr;
     }
-    
+
     epicsSocketDestroy ( this->sock );
 }
 
-void udpiiu::shutdown ( 
-    epicsGuard < epicsMutex > & cbGuard, 
+void udpiiu::shutdown (
+    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     // stop all of the timers
     this->repeaterSubscribeTmr.shutdown ( cbGuard, guard );
     this->govTmr.shutdown ( cbGuard, guard );
     for ( unsigned i =0; i < this->nTimers; i++ ) {
-        this->ppSearchTmr[i]->shutdown ( cbGuard, guard ); 
+        this->ppSearchTmr[i]->shutdown ( cbGuard, guard );
     }
 
     {
@@ -367,13 +367,13 @@ void udpiiu::shutdown (
     }
 }
 
-udpRecvThread::udpRecvThread ( 
+udpRecvThread::udpRecvThread (
     udpiiu & iiuIn, cacContextNotify & ctxNotifyIn, epicsMutex & cbMutexIn,
     const char * pName, unsigned stackSize, unsigned priority ) :
-        iiu ( iiuIn ), cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ), 
+        iiu ( iiuIn ), cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ),
         thread ( *this, pName, stackSize, priority ) {}
 
-udpRecvThread::~udpRecvThread () 
+udpRecvThread::~udpRecvThread ()
 {
 }
 
@@ -394,18 +394,18 @@ void udpRecvThread::show ( unsigned /* level */ ) const
 void udpRecvThread::run ()
 {
     epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );
-    
-    if ( this->iiu._searchDestList.count () == 0 ) { 
+
+    if ( this->iiu._searchDestList.count () == 0 ) {
         callbackManager mgr ( this->ctxNotify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->iiu.cacMutex );
-        genLocalExcep ( mgr.cbGuard, guard, 
+        genLocalExcep ( mgr.cbGuard, guard,
             this->iiu.cacRef, ECA_NOSEARCHADDR, NULL );
     }
 
     do {
         osiSockAddr src;
         osiSocklen_t src_size = sizeof ( src );
-        int status = recvfrom ( this->iiu.sock, 
+        int status = recvfrom ( this->iiu.sock,
             this->iiu.recvBuf, sizeof ( this->iiu.recvBuf ), 0,
             & src.sa, & src_size );
 
@@ -413,7 +413,7 @@ void udpRecvThread::run ()
 
             if ( status < 0 ) {
                 int errnoCpy = SOCKERRNO;
-                if ( 
+                if (
                     errnoCpy != SOCK_EINTR &&
                     errnoCpy != SOCK_SHUTDOWN &&
                     errnoCpy != SOCK_ENOTSOCK &&
@@ -425,15 +425,15 @@ void udpRecvThread::run ()
                     errnoCpy != SOCK_ECONNRESET ) {
 
                     char sockErrBuf[64];
-                    epicsSocketConvertErrnoToString ( 
+                    epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
-                    errlogPrintf ( "CAC: UDP recv error was \"%s\"\n", 
+                    errlogPrintf ( "CAC: UDP recv error was \"%s\"\n",
                         sockErrBuf );
                 }
             }
         }
         else if ( status > 0 ) {
-            this->iiu.postMsg ( src, this->iiu.recvBuf, 
+            this->iiu.postMsg ( src, this->iiu.recvBuf,
                 (arrayElementCount) status, epicsTime::getCurrent() );
         }
 
@@ -441,14 +441,14 @@ void udpRecvThread::run ()
 }
 
 /* for sunpro compiler */
-udpiiu::M_repeaterTimerNotify::~M_repeaterTimerNotify () 
+udpiiu::M_repeaterTimerNotify::~M_repeaterTimerNotify ()
 {
 }
 
 /*
  *  udpiiu::M_repeaterTimerNotify::repeaterRegistrationMessage ()
  *
- *  register with the repeater 
+ *  register with the repeater
  */
 void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned attemptNumber )
 {
@@ -459,7 +459,7 @@ void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned a
 /*
  *  caRepeaterRegistrationMessage ()
  *
- *  register with the repeater 
+ *  register with the repeater
  */
 void epicsStdCall caRepeaterRegistrationMessage ( 
            SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
@@ -469,19 +469,19 @@ void epicsStdCall caRepeaterRegistrationMessage (
     int status;
     int len;
 
-	assert ( repeaterPort <= USHRT_MAX );
-	unsigned short port = static_cast <unsigned short> ( repeaterPort );
+    assert ( repeaterPort <= USHRT_MAX );
+    unsigned short port = static_cast <unsigned short> ( repeaterPort );
 
     /*
-     * In 3.13 beta 11 and before the CA repeater calls local_addr() 
-     * to determine a local address and does not allow registration 
-     * messages originating from other addresses. In these 
+     * In 3.13 beta 11 and before the CA repeater calls local_addr()
+     * to determine a local address and does not allow registration
+     * messages originating from other addresses. In these
      * releases local_addr() returned the address of the first enabled
      * interface found, and this address may or may not have been the loop
      * back address. Starting with 3.13 beta 12 local_addr() was
-     * changed to always return the address of the first enabled 
+     * changed to always return the address of the first enabled
      * non-loopback interface because a valid non-loopback local
-     * address is required in the beacon messages. Therefore, to 
+     * address is required in the beacon messages. Therefore, to
      * guarantee compatibility with past versions of the repeater
      * we alternate between the address returned by local_addr()
      * and the loopback address here.
@@ -526,9 +526,9 @@ void epicsStdCall caRepeaterRegistrationMessage (
      */
 #   if defined ( DOES_NOT_ACCEPT_ZERO_LENGTH_UDP )
         len = sizeof (msg);
-#   else 
+#   else
         len = 0;
-#   endif 
+#   endif
 
     status = sendto ( sock, (char *) &msg, len, 0,
                       &saddr.sa, sizeof ( saddr ) );
@@ -542,13 +542,13 @@ void epicsStdCall caRepeaterRegistrationMessage (
          * Linux returns SOCK_ECONNREFUSED
          * Windows 2000 returns SOCK_ECONNRESET
          */
-        if (    errnoCpy != SOCK_EINTR && 
-                errnoCpy != SOCK_ECONNREFUSED && 
+        if (    errnoCpy != SOCK_EINTR &&
+                errnoCpy != SOCK_ECONNREFUSED &&
                 errnoCpy != SOCK_ECONNRESET ) {
             char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
+            epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            fprintf ( stderr, "error sending registration message to CA repeater daemon was \"%s\"\n", 
+            fprintf ( stderr, "error sending registration message to CA repeater daemon was \"%s\"\n",
                 sockErrBuf );
         }
     }
@@ -564,7 +564,7 @@ void epicsStdCall caRepeaterRegistrationMessage (
  *  however the repeater detects this, prints a message,
  *  and lets the other task start the repeater.
  *
- *  QUESTION: is there a better way to test for a port in use? 
+ *  QUESTION: is there a better way to test for a port in use?
  *  ANSWER: none that I can find.
  *
  *  Problems with checking for the repeater installed
@@ -584,7 +584,7 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     int status;
     SOCKET tmpSock;
     union {
-        struct sockaddr_in ia; 
+        struct sockaddr_in ia;
         struct sockaddr sa;
     } bd;
 
@@ -598,8 +598,8 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
         memset ( (char *) &bd, 0, sizeof ( bd ) );
         bd.ia.sin_family = AF_INET;
-        bd.ia.sin_addr.s_addr = htonl ( INADDR_ANY ); 
-        bd.ia.sin_port = htons ( port );   
+        bd.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+        bd.ia.sin_port = htons ( port );
         status = bind ( tmpSock, &bd.sa, sizeof ( bd ) );
         if ( status < 0 ) {
             if ( SOCKERRNO == SOCK_EADDRINUSE ) {
@@ -620,14 +620,14 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     epicsSocketDestroy ( tmpSock );
 
     if ( ! installed ) {
-        
-	    /*
-	     * This is not called if the repeater is known to be 
-	     * already running. (in the event of a race condition 
-	     * the 2nd repeater exits when unable to attach to the 
-	     * repeater's port)
-	     */
-        osiSpawnDetachedProcessReturn osptr = 
+
+        /*
+         * This is not called if the repeater is known to be
+         * already running. (in the event of a race condition
+         * the 2nd repeater exits when unable to attach to the
+         * repeater's port)
+         */
+        osiSpawnDetachedProcessReturn osptr =
             osiSpawnDetachedProcess ( "CA Repeater", "caRepeater" );
         if ( osptr == osiSpawnDetachedProcessNoSupport ) {
             epicsThreadId tid;
@@ -644,19 +644,19 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     }
 }
 
-bool udpiiu::badUDPRespAction ( 
+bool udpiiu::badUDPRespAction (
     const caHdr &msg, const osiSockAddr &netAddr, const epicsTime &currentTime )
 {
     char buf[64];
     sockAddrToDottedIP ( &netAddr.sa, buf, sizeof ( buf ) );
     char date[64];
     currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
-    errlogPrintf ( "CAC: Undecipherable ( bad msg code %u ) UDP message from %s at %s\n", 
+    errlogPrintf ( "CAC: Undecipherable ( bad msg code %u ) UDP message from %s at %s\n",
                 msg.m_cmmd, buf, date );
     return false;
 }
 
-bool udpiiu::versionAction ( 
+bool udpiiu::versionAction (
     const caHdr & hdr, const osiSockAddr &, const epicsTime & /* currentTime */ )
 {
     epicsGuard < epicsMutex > guard ( this->cacMutex );
@@ -670,12 +670,12 @@ bool udpiiu::versionAction (
     return true;
 }
 
-bool udpiiu :: searchRespAction ( 
-    const caHdr & msg, const osiSockAddr & addr, 
+bool udpiiu :: searchRespAction (
+    const caHdr & msg, const osiSockAddr & addr,
     const epicsTime & currentTime )
 {
     /*
-     * we dont currently know what to do with channel's 
+     * we dont currently know what to do with channel's
      * found to be at non-IP type addresses
      */
     if ( addr.sa.sa_family != AF_INET ) {
@@ -693,7 +693,7 @@ bool udpiiu :: searchRespAction (
          * care is taken here not to break gcc 3.2 aggressive alias
          * analysis rules
          */
-        const ca_uint8_t * pPayLoad = 
+        const ca_uint8_t * pPayLoad =
             reinterpret_cast < const ca_uint8_t *> ( & msg + 1 );
         unsigned byte0 = pPayLoad[0];
         unsigned byte1 = pPayLoad[1];
@@ -728,21 +728,21 @@ bool udpiiu :: searchRespAction (
     }
 
     if ( CA_V42 ( minorVersion ) ) {
-       cacRef.transferChanToVirtCircuit 
-            ( msg.m_available, msg.m_cid, 0xffff, 
+       cacRef.transferChanToVirtCircuit
+            ( msg.m_available, msg.m_cid, 0xffff,
                 0, minorVersion, serverAddr, currentTime );
     }
     else {
-        cacRef.transferChanToVirtCircuit 
-            ( msg.m_available, msg.m_cid, msg.m_dataType, 
+        cacRef.transferChanToVirtCircuit
+            ( msg.m_available, msg.m_cid, msg.m_dataType,
                 msg.m_count, minorVersion, serverAddr, currentTime );
     }
 
     return true;
 }
 
-bool udpiiu::beaconAction ( 
-    const caHdr & msg, 
+bool udpiiu::beaconAction (
+    const caHdr & msg,
     const osiSockAddr & net_addr, const epicsTime & currentTime )
 {
     struct sockaddr_in ina;
@@ -753,9 +753,9 @@ bool udpiiu::beaconAction (
         return false;
     }
 
-    /* 
+    /*
      * this allows a fan-out server to potentially
-     * insert the true address of the CA server 
+     * insert the true address of the CA server
      *
      * old servers:
      *   1) set this field to one of the ip addresses of the host _or_
@@ -782,29 +782,29 @@ bool udpiiu::beaconAction (
     unsigned protocolRevision = msg.m_dataType;
     ca_uint32_t beaconNumber = msg.m_cid;
 
-    this->cacRef.beaconNotify ( ina, currentTime, 
+    this->cacRef.beaconNotify ( ina, currentTime,
         beaconNumber, protocolRevision );
 
     return true;
 }
 
-bool udpiiu::repeaterAckAction ( 
-    const caHdr &,  
+bool udpiiu::repeaterAckAction (
+    const caHdr &,
     const osiSockAddr &, const epicsTime &)
 {
     this->repeaterSubscribeTmr.confirmNotify ();
     return true;
 }
 
-bool udpiiu::notHereRespAction ( 
-    const caHdr &,  
+bool udpiiu::notHereRespAction (
+    const caHdr &,
         const osiSockAddr &, const epicsTime & )
 {
     return true;
 }
 
-bool udpiiu::exceptionRespAction ( 
-    const caHdr &msg, 
+bool udpiiu::exceptionRespAction (
+    const caHdr &msg,
     const osiSockAddr & net_addr, const epicsTime & currentTime )
 {
     const caHdr &reqMsg = * ( &msg + 1 );
@@ -814,22 +814,22 @@ bool udpiiu::exceptionRespAction (
     currentTime.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S");
 
     if ( msg.m_postsize > sizeof ( caHdr ) ){
-        errlogPrintf ( 
-            "error condition \"%s\" detected by %s with context \"%s\" at %s\n", 
-            ca_message ( msg.m_available ), 
+        errlogPrintf (
+            "error condition \"%s\" detected by %s with context \"%s\" at %s\n",
+            ca_message ( msg.m_available ),
             name, reinterpret_cast <const char *> ( &reqMsg + 1 ), date );
     }
     else{
-        errlogPrintf ( 
-            "error condition \"%s\" detected by %s at %s\n", 
+        errlogPrintf (
+            "error condition \"%s\" detected by %s at %s\n",
             ca_message ( msg.m_available ), name, date );
     }
 
     return true;
 }
 
-void udpiiu::postMsg ( 
-              const osiSockAddr & net_addr, 
+void udpiiu::postMsg (
+              const osiSockAddr & net_addr,
               char * pInBuf, arrayElementCount blockSize,
               const epicsTime & currentTime )
 {
@@ -844,16 +844,16 @@ void udpiiu::postMsg (
         if ( blockSize < sizeof ( *pCurMsg ) ) {
             char buf[64];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
-            errlogPrintf ( 
-                "%s: Undecipherable (too small) UDP msg from %s ignored\n", 
+            errlogPrintf (
+                "%s: Undecipherable (too small) UDP msg from %s ignored\n",
                     __FILE__,  buf );
             return;
         }
 
         pCurMsg = reinterpret_cast < caHdr * > ( pInBuf );
 
-        /* 
-         * fix endian of bytes 
+        /*
+         * fix endian of bytes
          */
         pCurMsg->m_postsize = AlignedWireRef < epicsUInt16 > ( pCurMsg->m_postsize );
         pCurMsg->m_cmmd = AlignedWireRef < epicsUInt16 > ( pCurMsg->m_cmmd );
@@ -881,8 +881,8 @@ void udpiiu::postMsg (
         if ( size > blockSize ) {
             char buf[64];
             sockAddrToDottedIP ( &net_addr.sa, buf, sizeof ( buf ) );
-            errlogPrintf ( 
-                "%s: Undecipherable (payload too small) UDP msg from %s ignored\n", 
+            errlogPrintf (
+                "%s: Undecipherable (payload too small) UDP msg from %s ignored\n",
                 __FILE__, buf );
             return;
         }
@@ -919,14 +919,14 @@ bool udpiiu::pushVersionMsg ()
     caHdr msg;
     AlignedWireRef < epicsUInt16 > ( msg.m_cmmd ) = CA_PROTO_VERSION;
     AlignedWireRef < epicsUInt32 > ( msg.m_available ) = 0;
-    AlignedWireRef < epicsUInt16 > ( msg.m_dataType ) = sequenceNoIsValid; 
+    AlignedWireRef < epicsUInt16 > ( msg.m_dataType ) = sequenceNoIsValid;
     AlignedWireRef < epicsUInt16 > ( msg.m_count ) = CA_MINOR_PROTOCOL_REVISION;
     AlignedWireRef < epicsUInt32 > ( msg.m_cid ) = this->sequenceNumber; // sequence number
 
     return this->pushDatagramMsg ( guard, msg, 0, 0 );
 }
 
-bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard, 
+bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
     const caHdr & msg, const void * pExt, ca_uint16_t extsize )
 {
     guard.assertIdenticalMutex ( this->cacMutex );
@@ -958,13 +958,13 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
     return true;
 }
 
-udpiiu :: SearchDestUDP :: SearchDestUDP ( 
+udpiiu :: SearchDestUDP :: SearchDestUDP (
     const osiSockAddr & destAddr, udpiiu & udpiiuIn ) :
     _lastError (0u), _destAddr ( destAddr ), _udpiiu ( udpiiuIn )
 {
 }
 
-void udpiiu :: SearchDestUDP :: searchRequest ( 
+void udpiiu :: SearchDestUDP :: searchRequest (
             epicsGuard < epicsMutex > & guard, const char * pBuf, size_t bufSize )
 {
     guard.assertIdenticalMutex ( _udpiiu.cacMutex );
@@ -972,7 +972,7 @@ void udpiiu :: SearchDestUDP :: searchRequest (
     int bufSizeAsInt = static_cast < int > ( bufSize );
     while ( true ) {
         // This const_cast is needed for vxWorks:
-        int status = sendto ( _udpiiu.sock, const_cast<char *>(pBuf), bufSizeAsInt, 0, 
+        int status = sendto ( _udpiiu.sock, const_cast<char *>(pBuf), bufSizeAsInt, 0,
                 & _destAddr.sa, sizeof ( _destAddr.sa ) );
         if ( status == bufSizeAsInt ) {
             if ( _lastError ) {
@@ -1012,7 +1012,7 @@ void udpiiu :: SearchDestUDP :: searchRequest (
                 break;
             } else {
                 char sockErrBuf[64];
-                epicsSocketConvertErrnoToString ( 
+                epicsSocketConvertErrnoToString (
                     sockErrBuf, sizeof ( sockErrBuf ) );
                 char buf[64];
                 sockAddrToDottedIP ( &_destAddr.sa, buf, sizeof ( buf ) );
@@ -1026,8 +1026,8 @@ void udpiiu :: SearchDestUDP :: searchRequest (
         }
     }
 }
-            
-void udpiiu :: SearchDestUDP :: show ( 
+
+void udpiiu :: SearchDestUDP :: show (
     epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
     guard.assertIdenticalMutex ( _udpiiu.cacMutex );
@@ -1036,17 +1036,17 @@ void udpiiu :: SearchDestUDP :: show (
     :: printf ( "UDP Search destination \"%s\"\n", buf );
 }
 
-udpiiu :: SearchRespCallback :: SearchRespCallback ( udpiiu & udpiiuIn ) : 
+udpiiu :: SearchRespCallback :: SearchRespCallback ( udpiiu & udpiiuIn ) :
     _udpiiu ( udpiiuIn )
 {
 }
-    
+
 void udpiiu :: SearchRespCallback :: notify (
     const caHdr & msg, const void * pPayloadUntyped,
         const osiSockAddr & addr, const epicsTime & currentTime )
-{   
+{
     /*
-     * we dont currently know what to do with channel's 
+     * we dont currently know what to do with channel's
      * found to be at non-IP type addresses
      */
     if ( addr.sa.sa_family != AF_INET ) {
@@ -1098,25 +1098,25 @@ void udpiiu :: SearchRespCallback :: notify (
     }
 
     if ( CA_V42 ( minorVersion ) ) {
-       _udpiiu.cacRef.transferChanToVirtCircuit 
-            ( msg.m_available, msg.m_cid, 0xffff, 
+       _udpiiu.cacRef.transferChanToVirtCircuit
+            ( msg.m_available, msg.m_cid, 0xffff,
                 0, minorVersion, serverAddr, currentTime );
     }
     else {
-        _udpiiu.cacRef.transferChanToVirtCircuit 
-            ( msg.m_available, msg.m_cid, msg.m_dataType, 
+        _udpiiu.cacRef.transferChanToVirtCircuit
+            ( msg.m_available, msg.m_cid, msg.m_dataType,
                 msg.m_count, minorVersion, serverAddr, currentTime );
     }
 }
 
-void udpiiu :: SearchRespCallback :: show ( 
+void udpiiu :: SearchRespCallback :: show (
     epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
     guard.assertIdenticalMutex ( _udpiiu.cacMutex );
     ::printf ( "udpiiu :: SearchRespCallback\n" );
 }
 
-bool udpiiu :: datagramFlush ( 
+bool udpiiu :: datagramFlush (
     epicsGuard < epicsMutex > & guard, const epicsTime & currentTime )
 {
     guard.assertIdenticalMutex ( cacMutex );
@@ -1148,10 +1148,10 @@ void udpiiu :: show ( unsigned level ) const
     if ( level > 1u ) {
         ::printf ("\trepeater port %u\n", this->repeaterPort );
         ::printf ("\tdefault server port %u\n", this->serverPort );
-        ::printf ( "Search Destination List with %u items\n", 
+        ::printf ( "Search Destination List with %u items\n",
             _searchDestList.count () );
         if ( level > 2u ) {
-            tsDLIterConst < SearchDest > iter ( 
+            tsDLIterConst < SearchDest > iter (
                 _searchDestList.firstIter () );
             while ( iter.valid () )
             {
@@ -1192,54 +1192,54 @@ bool udpiiu::wakeupMsg ()
     addr.ia.sin_port = htons ( this->localPort );
 
     // send a wakeup msg so the UDP recv thread will exit
-    int status = sendto ( this->sock, reinterpret_cast < char * > ( &msg ),  
+    int status = sendto ( this->sock, reinterpret_cast < char * > ( &msg ),
             sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
     return status == sizeof (msg);
 }
 
-void udpiiu::beaconAnomalyNotify ( 
-    epicsGuard < epicsMutex > & cacGuard ) 
+void udpiiu::beaconAnomalyNotify (
+    epicsGuard < epicsMutex > & cacGuard )
 {
-    for ( unsigned i = this->beaconAnomalyTimerIndex+1u; 
+    for ( unsigned i = this->beaconAnomalyTimerIndex+1u;
             i < this->nTimers; i++ ) {
-        this->ppSearchTmr[i]->moveChannels ( cacGuard, 
+        this->ppSearchTmr[i]->moveChannels ( cacGuard,
             *this->ppSearchTmr[this->beaconAnomalyTimerIndex] );
     }
 }
 
-void udpiiu::uninstallChanDueToSuccessfulSearchResponse ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
+void udpiiu::uninstallChanDueToSuccessfulSearchResponse (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
     const epicsTime & currentTime )
 {
-    channelNode::channelState chanState = 
+    channelNode::channelState chanState =
         chan.channelNode::listMember;
     if ( chanState == channelNode::cs_disconnGov ) {
         this->govTmr.uninstallChan ( guard, chan );
     }
     else {
-        this->ppSearchTmr[ chan.getSearchTimerIndex ( guard ) ]-> 
-            uninstallChanDueToSuccessfulSearchResponse ( 
-            guard, chan, this->lastReceivedSeqNo, 
+        this->ppSearchTmr[ chan.getSearchTimerIndex ( guard ) ]->
+            uninstallChanDueToSuccessfulSearchResponse (
+            guard, chan, this->lastReceivedSeqNo,
             this->lastReceivedSeqNoIsValid, currentTime );
     }
 }
 
-void udpiiu::uninstallChan ( 
+void udpiiu::uninstallChan (
         epicsGuard < epicsMutex > & guard, nciu & chan )
 {
-    channelNode::channelState chanState = 
+    channelNode::channelState chanState =
         chan.channelNode::listMember;
     if ( chanState == channelNode::cs_disconnGov ) {
         this->govTmr.uninstallChan ( guard, chan );
     }
     else {
-        this->ppSearchTmr[ chan.getSearchTimerIndex ( guard ) ]-> 
+        this->ppSearchTmr[ chan.getSearchTimerIndex ( guard ) ]->
             uninstallChan ( guard, chan );
     }
 }
 
 bool udpiiu::searchMsg (
-    epicsGuard < epicsMutex > & guard, ca_uint32_t id, 
+    epicsGuard < epicsMutex > & guard, ca_uint32_t id,
         const char * pName, unsigned nameLength )
 {
     caHdr msg;
@@ -1248,25 +1248,25 @@ bool udpiiu::searchMsg (
     AlignedWireRef < epicsUInt16 > ( msg.m_dataType ) = DONTREPLY;
     AlignedWireRef < epicsUInt16 > ( msg.m_count ) = CA_MINOR_PROTOCOL_REVISION;
     AlignedWireRef < epicsUInt32 > ( msg.m_cid ) = id;
-    return this->pushDatagramMsg ( 
+    return this->pushDatagramMsg (
         guard, msg, pName, (ca_uint16_t) nameLength );
 }
 
-void udpiiu::installNewChannel ( 
+void udpiiu::installNewChannel (
     epicsGuard < epicsMutex > & guard, nciu & chan, netiiu * & piiu )
 {
     piiu = this;
     this->ppSearchTmr[0]->installChannel ( guard, chan );
 }
 
-void udpiiu::installDisconnectedChannel ( 
+void udpiiu::installDisconnectedChannel (
     epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     chan.setServerAddressUnknown ( *this, guard );
     this->govTmr.installChan ( guard, chan );
 }
 
-void udpiiu::noSearchRespNotify ( 
+void udpiiu::noSearchRespNotify (
     epicsGuard < epicsMutex > & guard, nciu & chan, unsigned index )
 {
     const unsigned nTimersMinusOne = this->nTimers - 1;
@@ -1279,32 +1279,32 @@ void udpiiu::noSearchRespNotify (
     this->ppSearchTmr[index]->installChannel ( guard, chan );
 }
 
-void udpiiu::boostChannel ( 
+void udpiiu::boostChannel (
     epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     this->ppSearchTmr[this->beaconAnomalyTimerIndex]->
             installChannel ( guard, chan );
 }
 
-void udpiiu::govExpireNotify ( 
+void udpiiu::govExpireNotify (
     epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     this->ppSearchTmr[0]->installChannel ( guard, chan );
 }
 
-int udpiiu :: M_repeaterTimerNotify :: printFormated ( 
-                            epicsGuard < epicsMutex > & cbGuard, 
+int udpiiu :: M_repeaterTimerNotify :: printFormated (
+                            epicsGuard < epicsMutex > & cbGuard,
                             const char * pformat, ... )
 {
     va_list theArgs;
     int status;
 
     va_start ( theArgs, pformat );
-    
+
     status = m_udpiiu.cacRef.varArgsPrintFormated ( cbGuard, pformat, theArgs );
-    
+
     va_end ( theArgs );
-    
+
     return status;
 }
 
@@ -1331,7 +1331,7 @@ double udpiiu::getRTTE ( epicsGuard < epicsMutex > & guard ) const
     return this->rtteMean + 4 * this->rtteMeanDev;
 }
 
-unsigned udpiiu::getHostName ( 
+unsigned udpiiu::getHostName (
     epicsGuard < epicsMutex > & cacGuard,
     char *pBuf, unsigned bufLength ) const throw ()
 {
@@ -1356,71 +1356,71 @@ bool udpiiu::ca_v41_ok (
     return netiiu::ca_v41_ok ( cacGuard );
 }
 
-void udpiiu::writeRequest ( 
-    epicsGuard < epicsMutex > & guard, 
-    nciu & chan, unsigned type, 
+void udpiiu::writeRequest (
+    epicsGuard < epicsMutex > & guard,
+    nciu & chan, unsigned type,
     arrayElementCount nElem, const void * pValue )
 {
     netiiu::writeRequest ( guard, chan, type, nElem, pValue );
 }
 
-void udpiiu::writeNotifyRequest ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
-    netWriteNotifyIO & io, unsigned type, 
+void udpiiu::writeNotifyRequest (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
+    netWriteNotifyIO & io, unsigned type,
     arrayElementCount nElem, const void *pValue )
 {
     netiiu::writeNotifyRequest ( guard, chan, io, type, nElem, pValue );
 }
 
-void udpiiu::readNotifyRequest ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
+void udpiiu::readNotifyRequest (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
     netReadNotifyIO & io, unsigned type, arrayElementCount nElem )
 {
     netiiu::readNotifyRequest ( guard, chan, io, type, nElem );
 }
 
-void udpiiu::clearChannelRequest ( 
-    epicsGuard < epicsMutex > & guard, 
+void udpiiu::clearChannelRequest (
+    epicsGuard < epicsMutex > & guard,
     ca_uint32_t sid, ca_uint32_t cid )
 {
     netiiu::clearChannelRequest ( guard, sid, cid );
 }
 
-void udpiiu::subscriptionRequest ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
+void udpiiu::subscriptionRequest (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
     netSubscription & subscr )
 {
     netiiu::subscriptionRequest ( guard, chan, subscr );
 }
 
-void udpiiu::subscriptionUpdateRequest ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
+void udpiiu::subscriptionUpdateRequest (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
     netSubscription & subscr )
 {
     netiiu::subscriptionUpdateRequest (
         guard, chan, subscr );
 }
 
-void udpiiu::subscriptionCancelRequest ( 
-    epicsGuard < epicsMutex > & guard, 
+void udpiiu::subscriptionCancelRequest (
+    epicsGuard < epicsMutex > & guard,
     nciu & chan, netSubscription & subscr )
 {
     netiiu::subscriptionCancelRequest ( guard, chan, subscr );
 }
 
-void udpiiu::flushRequest ( 
+void udpiiu::flushRequest (
     epicsGuard < epicsMutex > & guard )
 {
     netiiu::flushRequest ( guard );
 }
 
-unsigned udpiiu::requestMessageBytesPending ( 
+unsigned udpiiu::requestMessageBytesPending (
     epicsGuard < epicsMutex > & guard )
 {
     return netiiu::requestMessageBytesPending ( guard );
 }
 
-void udpiiu::flush ( 
+void udpiiu::flush (
     epicsGuard < epicsMutex > & guard )
 {
     netiiu::flush ( guard );

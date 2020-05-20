@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* dbPvdLib.c */
@@ -84,7 +84,7 @@ PVDENTRY *dbPvdFind(dbBase *pdbbase, const char *name, size_t lenName)
     dbPvd *ppvd = pdbbase->ppvd;
     dbPvdBucket *pbucket;
     PVDENTRY *ppvdNode;
-    
+
     pbucket = ppvd->buckets[epicsMemHash(name, lenName, 0) & ppvd->mask];
     if (pbucket == NULL) return NULL;
 

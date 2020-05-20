@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 
@@ -71,10 +71,10 @@ int main ()
     }
 
     pJane = new jane("JA");
-    janeList.add(*pJane);   
+    janeList.add(*pJane);
     pJane = new jane("JB");
     verify ( janeList.find ( *pJane ) == -1 );
-    janeList.add(*pJane);   
+    janeList.add(*pJane);
     verify ( janeList.find ( *pJane ) == 1 );
 
     while ( janeFwdIter.valid() ) {
@@ -116,9 +116,9 @@ int main ()
     verify (janeList.count()==0);
 
     pJane = new jane("JA");
-    janeList.add(*pJane);   
+    janeList.add(*pJane);
     pJane = new jane("JB");
-    janeList.add(*pJane);   
+    janeList.add(*pJane);
     janeBwdIter = janeList.lastIter();
     while ( janeBwdIter.valid() ) {
         janeList.remove( * janeBwdIter.pointer() );

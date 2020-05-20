@@ -5,13 +5,13 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* devBoSoftRaw.c - Device Support Routines for  SoftRaw Binary Output*/
 /*
- *      Author:		Janet Anderson
- *      Date:		3-28-92
+ *      Author:     Janet Anderson
+ *      Date:       3-28-92
  */
 
 
@@ -41,11 +41,11 @@ epicsExportAddress(dset, devBoSoftRaw);
 static long init_record(dbCommon *pcommon)
 {
     long status;
-    
+
     /*Don't convert*/
     status = 2;
     return status;
- 
+
 } /* end init_record() */
 
 static long write_bo(boRecord *prec)

@@ -8,8 +8,8 @@
 \*************************************************************************/
 /* epicsMutexTest.c */
 
-/* 
- * Author:  Marty Kraimer Date:    26JAN2000 
+/*
+ * Author:  Marty Kraimer Date:    26JAN2000
  *          Jeff Hill (added mutex performance test )
  */
 
@@ -165,7 +165,7 @@ inline void tenQuadRecursiveLockPairsSquared ( epicsMutex & mutex )
 void epicsMutexPerformance ()
 {
     epicsMutex mutex;
-	unsigned i;
+    unsigned i;
 
     // test a single lock pair
     epicsTime begin = epicsTime::getMonotonic ();
@@ -206,7 +206,7 @@ struct verifyTryLock {
 
 extern "C" void verifyTryLockThread ( void *pArg )
 {
-    struct verifyTryLock *pVerify = 
+    struct verifyTryLock *pVerify =
         ( struct verifyTryLock * ) pArg;
 
     testOk1(epicsMutexTryLock(pVerify->mutex) == epicsMutexLockTimeout);
@@ -222,7 +222,7 @@ void verifyTryLock ()
 
     testOk1(epicsMutexTryLock(verify.mutex) == epicsMutexLockOK);
 
-    epicsThreadCreate ( "verifyTryLockThread", 40, 
+    epicsThreadCreate ( "verifyTryLockThread", 40,
         epicsThreadGetStackSize(epicsThreadStackSmall),
         verifyTryLockThread, &verify );
 

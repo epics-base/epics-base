@@ -26,14 +26,14 @@
 //
 // the recv watchdog timer is active when this object is created
 //
-tcpRecvWatchdog::tcpRecvWatchdog 
+tcpRecvWatchdog::tcpRecvWatchdog
     ( epicsMutex & cbMutexIn, cacContextNotify & ctxNotifyIn,
-            epicsMutex & mutexIn, tcpiiu & iiuIn, 
+            epicsMutex & mutexIn, tcpiiu & iiuIn,
             double periodIn, epicsTimerQueue & queueIn ) :
         period ( periodIn ), timer ( queueIn.createTimer () ),
-        cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ), 
-        mutex ( mutexIn ), iiu ( iiuIn ), 
-        probeResponsePending ( false ), beaconAnomaly ( true ), 
+        cbMutex ( cbMutexIn ), ctxNotify ( ctxNotifyIn ),
+        mutex ( mutexIn ), iiu ( iiuIn ),
+        probeResponsePending ( false ), beaconAnomaly ( true ),
         probeTimeoutDetected ( false ), shuttingDown ( false )
 {
 }
@@ -60,15 +60,15 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ )
                 char hostName[128];
                 this->iiu.getHostName ( guard, hostName, sizeof (hostName) );
                 debugPrintf ( ( "CA server \"%s\" unresponsive after %g inactive sec"
-                            "- disconnecting.\n", 
+                            "- disconnecting.\n",
                     hostName, this->period ) );
 #           endif
-            // to get the callback lock safely we must reorder 
+            // to get the callback lock safely we must reorder
             // the lock hierarchy
             epicsGuardRelease < epicsMutex > unguard ( guard );
             {
                 // callback lock is required because channel disconnect
-                // state change is initiated from this thread, and 
+                // state change is initiated from this thread, and
                 // this can cause their disconnect notify callback
                 // to be invoked.
                 callbackManager mgr ( this->ctxNotify, this->cbMutex );
@@ -90,7 +90,7 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ )
     }
 }
 
-void tcpRecvWatchdog::beaconArrivalNotify ( 
+void tcpRecvWatchdog::beaconArrivalNotify (
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -102,12 +102,12 @@ void tcpRecvWatchdog::beaconArrivalNotify (
 
 //
 // be careful about using beacons to reset the connection
-// time out watchdog until we have received a ping response 
+// time out watchdog until we have received a ping response
 // from the IOC (this makes the software detect reconnects
-// faster when the server is rebooted twice in rapid 
+// faster when the server is rebooted twice in rapid
 // succession before a 1st or 2nd beacon has been received)
 //
-void tcpRecvWatchdog::beaconAnomalyNotify ( 
+void tcpRecvWatchdog::beaconAnomalyNotify (
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -115,7 +115,7 @@ void tcpRecvWatchdog::beaconAnomalyNotify (
     debugPrintf ( ("Saw an abnormal beacon\n") );
 }
 
-void tcpRecvWatchdog::messageArrivalNotify ( 
+void tcpRecvWatchdog::messageArrivalNotify (
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -127,7 +127,7 @@ void tcpRecvWatchdog::messageArrivalNotify (
     }
 }
 
-void tcpRecvWatchdog::probeResponseNotify ( 
+void tcpRecvWatchdog::probeResponseNotify (
     epicsGuard < epicsMutex > & cbGuard )
 {
     bool restartNeeded = false;
@@ -157,27 +157,27 @@ void tcpRecvWatchdog::probeResponseNotify (
 }
 
 //
-// The thread for outgoing requests in the client runs 
+// The thread for outgoing requests in the client runs
 // at a higher priority than the thread in the client
-// that receives responses. Therefore, there could 
-// be considerable large array write send backlog that 
-// is delaying departure of an echo request and also 
-// interrupting delivery of an echo response. 
-// We must be careful not to timeout the echo response as 
-// long as we see indication of regular departures of  
-// message buffers from the client in a situation where 
-// we know that the TCP send queueing has been exceeded. 
-// The send watchdog will be responsible for detecting 
+// that receives responses. Therefore, there could
+// be considerable large array write send backlog that
+// is delaying departure of an echo request and also
+// interrupting delivery of an echo response.
+// We must be careful not to timeout the echo response as
+// long as we see indication of regular departures of
+// message buffers from the client in a situation where
+// we know that the TCP send queueing has been exceeded.
+// The send watchdog will be responsible for detecting
 // dead connections in this case.
 //
-void tcpRecvWatchdog::sendBacklogProgressNotify ( 
+void tcpRecvWatchdog::sendBacklogProgressNotify (
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
 
     // We dont set "beaconAnomaly" to be false here because, after we see a
-    // beacon anomaly (which could be transiently detecting a reboot) we will 
-    // not trust the beacon as an indicator of a healthy server until we 
+    // beacon anomaly (which could be transiently detecting a reboot) we will
+    // not trust the beacon as an indicator of a healthy server until we
     // receive at least one message from the server.
     if ( this->probeResponsePending && ! this->shuttingDown ) {
         this->timer.start ( *this, CA_ECHO_TIMEOUT );
@@ -196,7 +196,7 @@ void tcpRecvWatchdog::connectNotify (
     debugPrintf ( ("connected to the server - initiating circuit recv watchdog\n") );
 }
 
-void tcpRecvWatchdog::sendTimeoutNotify ( 
+void tcpRecvWatchdog::sendTimeoutNotify (
     epicsGuard < epicsMutex > & /* cbGuard */,
     epicsGuard < epicsMutex > & guard )
 {
@@ -242,7 +242,7 @@ void tcpRecvWatchdog::show ( unsigned level ) const
         static_cast <const void *> ( this ), this->period );
     if ( level > 0u ) {
         ::printf ( "\t%s %s %s\n",
-            this->probeResponsePending ? "probe-response-pending" : "", 
+            this->probeResponsePending ? "probe-response-pending" : "",
             this->beaconAnomaly ? "beacon-anomaly-detected" : "",
             this->probeTimeoutDetected ? "probe-response-timeout" : "" );
     }

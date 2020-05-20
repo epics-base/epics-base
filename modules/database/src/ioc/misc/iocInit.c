@@ -508,7 +508,7 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
 
     /* Initial UDF severity */
     if (precord->udf && precord->stat == UDF_ALARM)
-    	precord->sevr = precord->udfs;
+        precord->sevr = precord->udfs;
 
     /* Init DSET NOTE that result may be NULL */
     pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);

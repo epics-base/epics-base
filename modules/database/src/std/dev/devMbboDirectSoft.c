@@ -19,7 +19,7 @@
 #include "mbboDirectRecord.h"
 #include "epicsExport.h"
 
-static long write_mbbo(mbboDirectRecord	*prec)
+static long write_mbbo(mbboDirectRecord *prec)
 {
     dbPutLink(&prec->out, DBR_ULONG, &prec->val, 1);
     return 0;

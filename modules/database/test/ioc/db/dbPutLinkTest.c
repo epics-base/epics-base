@@ -459,7 +459,7 @@ static void testLinkInitFail(void)
     eltc(0);
     testOk(dbReadDatabase(&pdbbase, "dbBadLink.db", "." OSI_PATH_LIST_SEPARATOR
         ".." OSI_PATH_LIST_SEPARATOR "../O.Common" OSI_PATH_LIST_SEPARATOR
-	"O.Common", NULL) != 0, "dbReadDatabase returned error (expected)");
+        "O.Common", NULL) != 0, "dbReadDatabase returned error (expected)");
 
     testIocInitOk();
     eltc(1);

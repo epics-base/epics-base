@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* recGbl.h */
-/*	Record Global
+/*      Record Global
  *      Author:          Marty Kraimer
  *      Date:            13Jun95
  */

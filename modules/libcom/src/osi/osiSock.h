@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -44,8 +44,8 @@ LIBCOM_API void epicsStdCall
  * receive, or connect call. For odd ball systems this is stubbed out in the
  * osi area.
  */
-enum epicsSocketSystemCallInterruptMechanismQueryInfo { 
-    esscimqi_socketCloseRequired, 
+enum epicsSocketSystemCallInterruptMechanismQueryInfo {
+    esscimqi_socketCloseRequired,
     esscimqi_socketBothShutdownRequired,
     esscimqi_socketSigAlarmRequired /* NO LONGER USED/SUPPORTED */
 };
@@ -64,11 +64,11 @@ LIBCOM_API int epicsSocketUnsentCount(SOCKET sock);
 /*
  * convert socket address to ASCII in this order
  * 1) look for matching host name and typically add trailing IP port
- * 2) failing that, convert to raw ascii address (typically this is a 
+ * 2) failing that, convert to raw ascii address (typically this is a
  *      dotted IP address with trailing port)
  * 3) failing that, writes "<Ukn Addr Type>" into pBuf
  *
- * returns the number of character elements stored in buffer not 
+ * returns the number of character elements stored in buffer not
  * including the null termination, but always writes at least a
  * null ternminater in the string (if bufSize >= 1)
  */
@@ -80,7 +80,7 @@ LIBCOM_API unsigned epicsStdCall sockAddrToA (
  * 1) look for matching host name and add trailing port
  * 2) convert to raw dotted IP address with trailing port
  *
- * returns the number of character elements stored in buffer not 
+ * returns the number of character elements stored in buffer not
  * including the null termination, but always writes at least a
  * null ternminater in the string (if bufSize >= 1)
  */
@@ -88,10 +88,10 @@ LIBCOM_API unsigned epicsStdCall ipAddrToA (
     const struct sockaddr_in * pInetAddr, char * pBuf, unsigned bufSize );
 
 /*
- * sockAddrToDottedIP () 
+ * sockAddrToDottedIP ()
  * typically convert to raw dotted IP address with trailing port
  *
- * returns the number of character elements stored in buffer not 
+ * returns the number of character elements stored in buffer not
  * including the null termination, but always writes at least a
  * null ternminater in the string (if bufSize >= 1)
  */
@@ -99,10 +99,10 @@ LIBCOM_API unsigned epicsStdCall sockAddrToDottedIP (
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
 
 /*
- * ipAddrToDottedIP () 
+ * ipAddrToDottedIP ()
  * convert to raw dotted IP address with trailing port
  *
- * returns the number of character elements stored in buffer not 
+ * returns the number of character elements stored in buffer not
  * including the null termination, but always writes at least a
  * null ternminater in the string (if bufSize >= 1)
  */
@@ -112,7 +112,7 @@ LIBCOM_API unsigned epicsStdCall ipAddrToDottedIP (
 /*
  * convert inet address to a host name string
  *
- * returns the number of character elements stored in buffer not 
+ * returns the number of character elements stored in buffer not
  * including the null termination. This will be zero if a matching
  * host name cant be found.
  *
@@ -128,13 +128,13 @@ LIBCOM_API unsigned epicsStdCall ipAddrToHostName (
  * 3) look for valid host name with optional port
  */
 LIBCOM_API int epicsStdCall aToIPAddr
-	( const char * pAddrString, unsigned short defaultPort, struct sockaddr_in * pIP);
+    ( const char * pAddrString, unsigned short defaultPort, struct sockaddr_in * pIP);
 
 /*
  * attempt to convert ASCII host name string with optional port to an IP address
  */
 LIBCOM_API int epicsStdCall hostToIPAddr 
-				(const char *pHostName, struct in_addr *pIPA);
+    (const char *pHostName, struct in_addr *pIPA);
 /*
  * attach to BSD socket library
  */
@@ -164,28 +164,28 @@ typedef struct osiSockAddrNode {
 } osiSockAddrNode;
 
 /*
- * sockAddrAreIdentical() 
+ * sockAddrAreIdentical()
  * (returns true if addresses are identical)
  */
 LIBCOM_API int epicsStdCall sockAddrAreIdentical 
-			( const osiSockAddr * plhs, const osiSockAddr * prhs );
+    ( const osiSockAddr * plhs, const osiSockAddr * prhs );
 
 /*
  *  osiSockDiscoverBroadcastAddresses ()
  *  Returns the broadcast addresses of each network interface found.
  *
- *	This routine is provided with the address of an ELLLIST, a socket,
- * 	a destination port number, and a match address. When the 
- * 	routine returns there will be one additional entry 
- *	(an osiSockAddrNode) in the list for each network interface found that 
- *	is up and isnt a loop back interface (match addr is INADDR_ANY),
- *	or only the interfaces that match the specified addresses (match addr 
- *  is other than INADDR_ANY). If the interface supports broadcasting 
- *  then add its broadcast address to the list. If the interface is a 
+ *  This routine is provided with the address of an ELLLIST, a socket,
+ *  a destination port number, and a match address. When the
+ *  routine returns there will be one additional entry
+ *  (an osiSockAddrNode) in the list for each network interface found that
+ *  is up and isnt a loop back interface (match addr is INADDR_ANY),
+ *  or only the interfaces that match the specified addresses (match addr
+ *  is other than INADDR_ANY). If the interface supports broadcasting
+ *  then add its broadcast address to the list. If the interface is a
  *  point to point link then add the destination address of the point to
- *	point link to the list. 
+ *  point link to the list.
  *
- * 	Any mutex locking required to protect pList is applied externally.
+ *  Any mutex locking required to protect pList is applied externally.
  *
  */
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
@@ -194,17 +194,17 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
 /*
  * osiLocalAddr ()
  * Returns the osiSockAddr of the first non-loopback interface found
- * that is operational (up flag is set). If no valid address can be 
- * located then return an osiSockAddr with the address family set to 
+ * that is operational (up flag is set). If no valid address can be
+ * located then return an osiSockAddr with the address family set to
  * unspecified (AF_UNSPEC).
  *
  * Unfortunately in EPICS 3.13 beta 11 and before the CA
  * repeater would not always allow the loopback address
  * as a local client address so current clients alternate
  * between the address of the first non-loopback interface
- * found and the loopback addresss when subscribing with 
+ * found and the loopback addresss when subscribing with
  * the CA repeater until all CA repeaters have been updated
- * to current code. After all CA repeaters have been restarted 
+ * to current code. After all CA repeaters have been restarted
  * this osi interface can be eliminated.
  */
 LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket);

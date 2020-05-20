@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* Author:  Marty Kraimer Date:    04JAN99 */
@@ -58,14 +58,14 @@ LIBCOM_API void cantProceed(const char *msg, ...)
     if (msg)
         errlogVprintf(msg, pvar);
     va_end(pvar);
-    
+
     errlogPrintf("Thread %s (%p) can't proceed, suspending.\n",
             epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
 
     epicsStackTrace();
 
     errlogFlush();
-    
+
     epicsThreadSleep(1.0);
     while (1)
         epicsThreadSuspendSelf();

@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* asSubRecordFunctions.c */
 
@@ -36,16 +36,16 @@
 
 static void myCallback(epicsCallback *pcallback)
 {
-    ASDBCALLBACK	*pasdbcallback = (ASDBCALLBACK *)pcallback;
-    subRecord	*precord;
-    rset		*prset;
+    ASDBCALLBACK    *pasdbcallback = (ASDBCALLBACK *)pcallback;
+    subRecord       *precord;
+    rset            *prset;
 
     callbackGetUser(precord,pcallback);
     prset=(rset *)(precord->rset);
     precord->val = 0.0;
     if(pasdbcallback->status) {
-	recGblSetSevr(precord,READ_ALARM,precord->brsv);
-	recGblRecordError(pasdbcallback->status,precord,"asInit Failed");
+        recGblSetSevr(precord,READ_ALARM,precord->brsv);
+        recGblRecordError(pasdbcallback->status,precord,"asInit Failed");
     }
     dbScanLock((dbCommon *)precord);
     (*prset->process)((dbCommon *)precord);
@@ -69,11 +69,11 @@ long asSubProcess(subRecord *precord)
     ASDBCALLBACK *pcallback = (ASDBCALLBACK *)precord->dpvt;
 
     if(!precord->pact && precord->val==1.0)  {
-	db_post_events(precord,&precord->val,DBE_VALUE);
-	callbackSetPriority(precord->prio,&pcallback->callback);
-	asInitAsyn(pcallback);
-	precord->pact=TRUE;
-	return(1);
+        db_post_events(precord,&precord->val,DBE_VALUE);
+        callbackSetPriority(precord->prio,&pcallback->callback);
+        asInitAsyn(pcallback);
+        precord->pact=TRUE;
+        return(1);
     }
     db_post_events(precord,&precord->val,DBE_VALUE);
     return(0);

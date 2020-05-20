@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* aiRecord.c - Record Support Routines for Analog Input records */
@@ -63,26 +63,26 @@ static long get_precision(const DBADDR *, long *);
 static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
 static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
- 
+
 rset aiRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_control_double,
-	get_alarm_double
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
 epicsExportAddress(rset,aiRSET);
 
@@ -94,8 +94,8 @@ static long readValue(aiRecord *prec);
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct aiRecord *prec = (struct aiRecord *)pcommon;
-    aidset	*pdset;
-    double	eoff = prec->eoff, eslo = prec->eslo;
+    aidset  *pdset;
+    double  eoff = prec->eoff, eslo = prec->eslo;
 
     if (pass == 0) return 0;
 
@@ -103,27 +103,27 @@ static long init_record(struct dbCommon *pcommon, int pass)
     recGblInitConstantLink(&prec->siol, DBF_DOUBLE, &prec->sval);
 
     if(!(pdset = (aidset *)(prec->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)prec,"ai: init_record");
-	return(S_dev_noDSET);
+        recGblRecordError(S_dev_noDSET,(void *)prec,"ai: init_record");
+        return(S_dev_noDSET);
     }
     /* must have read_ai function defined */
     if ((pdset->common.number < 6) || (pdset->read_ai == NULL)) {
-	recGblRecordError(S_dev_missingSup,(void *)prec,"ai: init_record");
-	return(S_dev_missingSup);
+        recGblRecordError(S_dev_missingSup,(void *)prec,"ai: init_record");
+        return(S_dev_missingSup);
     }
     prec->init = TRUE;
     /*The following is for old device support that doesnt know about eoff*/
     if ((prec->eslo==1.0) && (prec->eoff==0.0)) {
-	prec->eoff = prec->egul;
+        prec->eoff = prec->egul;
     }
 
     if (pdset->common.init_record) {
 	long status = pdset->common.init_record(pcommon);
-	if (prec->linr == menuConvertSLOPE) {
-	    prec->eoff = eoff;
-	    prec->eslo = eslo;
-	}
-	return (status);
+        if (prec->linr == menuConvertSLOPE) {
+            prec->eoff = eoff;
+            prec->eslo = eslo;
+        }
+        return (status);
     }
     prec->mlst = prec->val;
     prec->alst = prec->val;
@@ -135,46 +135,46 @@ static long init_record(struct dbCommon *pcommon, int pass)
 static long process(struct dbCommon *pcommon)
 {
     struct aiRecord *prec = (struct aiRecord *)pcommon;
-    aidset		*pdset = (aidset *)(prec->dset);
-    long		 status;
+    aidset      *pdset = (aidset *)(prec->dset);
+    long         status;
     unsigned char    pact=prec->pact;
-        epicsTimeStamp	 timeLast;
+        epicsTimeStamp   timeLast;
 
-	if( (pdset==NULL) || (pdset->read_ai==NULL) ) {
-		prec->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)prec,"read_ai");
-		return(S_dev_missingSup);
-	}
-        timeLast = prec->time;
+    if( (pdset==NULL) || (pdset->read_ai==NULL) ) {
+        prec->pact=TRUE;
+        recGblRecordError(S_dev_missingSup,(void *)prec,"read_ai");
+        return(S_dev_missingSup);
+    }
+    timeLast = prec->time;
 
-	status=readValue(prec); /* read the new value */
-	/* check if device support set pact */
-	if ( !pact && prec->pact ) return(0);
-	prec->pact = TRUE;
+    status=readValue(prec); /* read the new value */
+    /* check if device support set pact */
+    if ( !pact && prec->pact ) return(0);
+    prec->pact = TRUE;
 
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
-	if (status==0) convert(prec);
-	else if (status==2) status=0;
+    if (status==0) convert(prec);
+    else if (status==2) status=0;
 
     if (status == 0) prec->udf = isnan(prec->val);
 
-	/* check for alarms */
-	checkAlarms(prec,&timeLast);
-	/* check event list */
-	monitor(prec);
-	/* process the forward scan link record */
+    /* check for alarms */
+    checkAlarms(prec,&timeLast);
+    /* check event list */
+    monitor(prec);
+    /* process the forward scan link record */
         recGblFwdLink(prec);
 
-	prec->init=FALSE;
-	prec->pact=FALSE;
-	return(status);
+    prec->init=FALSE;
+    prec->pact=FALSE;
+    return(status);
 }
 
 static long special(DBADDR *paddr,int after)
 {
-    aiRecord  	*prec = (aiRecord *)(paddr->precord);
-    aidset 	*pdset = (aidset *) (prec->dset);
+    aiRecord    *prec = (aiRecord *)(paddr->precord);
+    aidset      *pdset = (aidset *) (prec->dset);
     int          special_type = paddr->special;
 
     switch(special_type) {
@@ -215,7 +215,7 @@ static long special(DBADDR *paddr,int after)
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    aiRecord	*prec=(aiRecord *)paddr->precord;
+    aiRecord    *prec=(aiRecord *)paddr->precord;
 
     if(paddr->pfldDes->field_type == DBF_DOUBLE) {
         switch (dbGetFieldIndex(paddr)) {
@@ -232,7 +232,7 @@ static long get_units(DBADDR *paddr, char *units)
 
 static long get_precision(const DBADDR *paddr, long *precision)
 {
-    aiRecord	*prec=(aiRecord *)paddr->precord;
+    aiRecord    *prec=(aiRecord *)paddr->precord;
 
     *precision = prec->prec;
     if (dbGetFieldIndex(paddr) == indexof(VAL)) return(0);
@@ -242,7 +242,7 @@ static long get_precision(const DBADDR *paddr, long *precision)
 
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    aiRecord	*prec=(aiRecord *)paddr->precord;
+    aiRecord    *prec=(aiRecord *)paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
@@ -265,7 +265,7 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    aiRecord	*prec=(aiRecord *)paddr->precord;
+    aiRecord    *prec=(aiRecord *)paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
@@ -277,8 +277,8 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
         case indexof(ALST):
         case indexof(MLST):
         case indexof(SVAL):
-	    pcd->upper_ctrl_limit = prec->hopr;
-	    pcd->lower_ctrl_limit = prec->lopr;
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
             break;
         default:
             recGblGetControlDouble(paddr,pcd);
@@ -288,7 +288,7 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 
 static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
-    aiRecord	*prec=(aiRecord *)paddr->precord;
+    aiRecord    *prec=(aiRecord *)paddr->precord;
 
     if (dbGetFieldIndex(paddr) == indexof(VAL)) {
         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
@@ -369,7 +369,7 @@ static void checkAlarms(aiRecord *prec, epicsTimeStamp *lastTime)
              * level, otherwise to a higher.
              */
             afvl = alpha * afvl +
-                   ((afvl > 0) ? (1 - alpha) : (alpha - 1)) * alarmRange;
+                ((afvl > 0) ? (1 - alpha) : (alpha - 1)) * alarmRange;
             if (afvl - floor(afvl) > THRESHOLD)
                 afvl = -afvl; /* reverse rounding */
 
@@ -411,38 +411,38 @@ static void checkAlarms(aiRecord *prec, epicsTimeStamp *lastTime)
 
 static void convert(aiRecord *prec)
 {
-	double val;
+    double val;
 
 
-	val = (double)prec->rval + (double)prec->roff;
-	/* adjust slope and offset */
-	if(prec->aslo!=0.0) val*=prec->aslo;
-	val+=prec->aoff;
+    val = (double)prec->rval + (double)prec->roff;
+    /* adjust slope and offset */
+    if(prec->aslo!=0.0) val*=prec->aslo;
+    val+=prec->aoff;
 
-	/* convert raw to engineering units and signal units */
-	switch (prec->linr) {
-	case menuConvertNO_CONVERSION:
-		break; /* do nothing*/
-	
-	case menuConvertLINEAR:
-	case menuConvertSLOPE:
-		val = (val * prec->eslo) + prec->eoff;
-		break;
-	
-	default: /* must use breakpoint table */
-                if (cvtRawToEngBpt(&val,prec->linr,prec->init,(void *)&prec->pbrk,&prec->lbrk)!=0) {
-                      recGblSetSevr(prec,SOFT_ALARM,MAJOR_ALARM);
-                }
-	}
+    /* convert raw to engineering units and signal units */
+    switch (prec->linr) {
+        case menuConvertNO_CONVERSION:
+            break; /* do nothing*/
 
-	/* apply smoothing algorithm */
+        case menuConvertLINEAR:
+        case menuConvertSLOPE:
+            val = (val * prec->eslo) + prec->eoff;
+            break;
+
+        default: /* must use breakpoint table */
+            if (cvtRawToEngBpt(&val,prec->linr,prec->init,(void *)&prec->pbrk,&prec->lbrk)!=0) {
+                recGblSetSevr(prec,SOFT_ALARM,MAJOR_ALARM);
+            }
+    }
+
+    /* apply smoothing algorithm */
     if (prec->smoo != 0.0 && finite(prec->val)){
-	    if (prec->init) prec->val = val;	/* initial condition */
-	    prec->val = val * (1.00 - prec->smoo) + (prec->val * prec->smoo);
-	}else{
-	    prec->val = val;
-	}
-	return;
+        if (prec->init) prec->val = val;    /* initial condition */
+        prec->val = val * (1.00 - prec->smoo) + (prec->val * prec->smoo);
+    }else{
+        prec->val = val;
+    }
+    return;
 }
 
 static void monitor(aiRecord *prec)
@@ -455,15 +455,15 @@ static void monitor(aiRecord *prec)
     /* check for archive change */
     recGblCheckDeadband(&prec->alst, prec->val, prec->adel, &monitor_mask, DBE_ARCHIVE);
 
-	/* send out monitors connected to the value field */
-	if (monitor_mask){
-		db_post_events(prec,&prec->val,monitor_mask);
-		if(prec->oraw != prec->rval) {
-			db_post_events(prec,&prec->rval,monitor_mask);
-			prec->oraw = prec->rval;
-		}
-	}
-	return;
+    /* send out monitors connected to the value field */
+    if (monitor_mask){
+        db_post_events(prec,&prec->val,monitor_mask);
+        if(prec->oraw != prec->rval) {
+            db_post_events(prec,&prec->rval,monitor_mask);
+            prec->oraw = prec->rval;
+        }
+    }
+    return;
 }
 
 static long readValue(aiRecord *prec)
@@ -477,40 +477,40 @@ static long readValue(aiRecord *prec)
     }
 
     switch (prec->simm) {
-    case menuSimmNO:
-        status = pdset->read_ai(prec);
-        break;
+        case menuSimmNO:
+            status = pdset->read_ai(prec);
+            break;
 
-    case menuSimmYES:
-    case menuSimmRAW: {
-        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        if (prec->pact || (prec->sdly < 0.)) {
-            status = dbGetLink(&prec->siol, DBR_DOUBLE, &prec->sval, 0, 0);
-            if (status == 0) {
-                if (prec->simm == menuSimmYES) {
-                    prec->val = prec->sval;
-                    status = 2; /* don't convert */
-                } else {
-                    prec->rval = (long)floor(prec->sval);
-                    status = 0; /* convert RVAL */
+        case menuSimmYES:
+        case menuSimmRAW: {
+            recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+            if (prec->pact || (prec->sdly < 0.)) {
+                status = dbGetLink(&prec->siol, DBR_DOUBLE, &prec->sval, 0, 0);
+                if (status == 0) {
+                    if (prec->simm == menuSimmYES) {
+                        prec->val = prec->sval;
+                        status = 2; /* don't convert */
+                    } else {
+                        prec->rval = (long)floor(prec->sval);
+                        status = 0; /* convert RVAL */
+                    }
                 }
+                prec->pact = FALSE;
+            } else { /* !prec->pact && delay >= 0. */
+                epicsCallback *pvt = prec->simpvt;
+                if (!pvt) {
+                    pvt = calloc(1, sizeof(epicsCallback)); /* very lazy allocation of callback structure */
+                    prec->simpvt = pvt;
+                }
+                if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
+                prec->pact = TRUE;
             }
-            prec->pact = FALSE;
-        } else { /* !prec->pact && delay >= 0. */
-            epicsCallback *pvt = prec->simpvt;
-            if (!pvt) {
-                pvt = calloc(1, sizeof(epicsCallback)); /* very lazy allocation of callback structure */
-                prec->simpvt = pvt;
-            }
-            if (pvt) callbackRequestProcessCallbackDelayed(pvt, prec->prio, prec, prec->sdly);
-            prec->pact = TRUE;
+            break;
         }
-        break;
-    }
 
-    default:
-        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
-        status = -1;
+        default:
+            recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+            status = -1;
     }
 
     return status;

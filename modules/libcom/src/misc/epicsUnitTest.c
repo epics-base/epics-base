@@ -114,20 +114,20 @@ int testOkV(int pass, const char *fmt, va_list pvar) {
     epicsMutexMustLock(testLock);
     tested++;
     if (pass) {
-	result += 4;    /* skip "not " */
-	passed++;
-	if (todo)
-	    bonus++;
+        result += 4;    /* skip "not " */
+        passed++;
+        if (todo)
+            bonus++;
     } else {
-	if (todo) 
-	    passed++;
-	else
-	    failed++;
+        if (todo)
+            passed++;
+        else
+            failed++;
     }
     printf("%s %2d - ", result, tested);
     vprintf(fmt, pvar);
     if (todo)
-	printf(" # TODO %s", todo);
+        printf(" # TODO %s", todo);
     putchar('\n');
     fflush(stdout);
     epicsMutexUnlock(testLock);
@@ -159,10 +159,10 @@ void testFail(const char *fmt, ...) {
 void testSkip(int skip, const char *why) {
     epicsMutexMustLock(testLock);
     while (skip-- > 0) {
-	tested++;
-	passed++;
-	skipped++;
-	printf("ok %2d # SKIP %s\n", tested, why);
+        tested++;
+        passed++;
+        skipped++;
+        printf("ok %2d # SKIP %s\n", tested, why);
     }
     fflush(stdout);
     epicsMutexUnlock(testLock);
@@ -208,28 +208,28 @@ static void testResult(const char *result, int count) {
 
 int testDone(void) {
     int status = 0;
-    
+
     epicsMutexMustLock(testLock);
     if (perlHarness) {
-	if (!planned) printf("1..%d\n", tested);
+        if (!planned) printf("1..%d\n", tested);
     } else {
-	if (planned && tested > planned) {
-	    printf("\nRan %d tests but only planned for %d!\n", tested, planned);
-	    status = 2;
-	} else if (planned && tested < planned) {
-	    printf("\nPlanned %d tests but only ran %d\n", planned, tested);
-	    status = 2;
-	}
-	printf("\n    Results\n    =======\n       Tests: %-3d\n", tested);
-	if (tested) {
-	    testResult("Passed", passed);
-	    if (bonus) testResult("Todo Passes", bonus);
-	    if (failed) {
-		testResult("Failed", failed);
-		status = 1;
-	    }
-	    if (skipped) testResult("Skipped", skipped);
-	}
+        if (planned && tested > planned) {
+            printf("\nRan %d tests but only planned for %d!\n", tested, planned);
+            status = 2;
+        } else if (planned && tested < planned) {
+            printf("\nPlanned %d tests but only ran %d\n", planned, tested);
+            status = 2;
+        }
+        printf("\n    Results\n    =======\n       Tests: %-3d\n", tested);
+        if (tested) {
+            testResult("Passed", passed);
+            if (bonus) testResult("Todo Passes", bonus);
+            if (failed) {
+                testResult("Failed", failed);
+                status = 1;
+            }
+            if (skipped) testResult("Skipped", skipped);
+        }
     }
     if (Harness) {
         if (failed) {

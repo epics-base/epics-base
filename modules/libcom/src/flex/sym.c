@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* sym - symbol table routines */
 
@@ -14,7 +14,7 @@
  *
  * This code is derived from software contributed to Berkeley by
  * Vern Paxson.
- * 
+ *
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
@@ -69,28 +69,28 @@ int addsym(char *sym, char *str_def, int int_def, struct hash_entry **table, int
     struct hash_entry *successor;
 
     while ( sym_entry )
-	{
-	if ( ! strcmp( sym, sym_entry->name ) )
-	    { /* entry already exists */
-	    return ( -1 );
-	    }
-	
-	sym_entry = sym_entry->next;
-	}
+        {
+        if ( ! strcmp( sym, sym_entry->name ) )
+            { /* entry already exists */
+            return ( -1 );
+            }
+
+        sym_entry = sym_entry->next;
+        }
 
     /* create new entry */
     new_entry = (struct hash_entry *) malloc( sizeof( struct hash_entry ) );
 
     if ( new_entry == NULL )
-	flexfatal( "symbol table memory allocation failed" );
+        flexfatal( "symbol table memory allocation failed" );
 
     if ( (successor = table[hash_val]) )
-	{
-	new_entry->next = successor;
-	successor->prev = new_entry;
-	}
+        {
+        new_entry->next = successor;
+        successor->prev = new_entry;
+        }
     else
-	new_entry->next = NULL;
+        new_entry->next = NULL;
 
     new_entry->prev = NULL;
     new_entry->name = sym;
@@ -119,7 +119,7 @@ void cclinstal(Char *ccltxt, int cclnum)
     Char *copy_unsigned_string();
 
     (void) addsym( (char *) copy_unsigned_string( ccltxt ), (char *) 0, cclnum,
-		   ccltab, CCL_HASH_SIZE );
+                   ccltab, CCL_HASH_SIZE );
     }
 
 
@@ -151,21 +151,21 @@ struct hash_entry *findsym(char *sym, struct hash_entry **table, int table_size)
 {
     struct hash_entry *sym_entry = table[hashfunct( sym, table_size )];
     static struct hash_entry empty_entry =
-	{
-	(struct hash_entry *) 0, (struct hash_entry *) 0, NULL, NULL, 0,
-	} ;
+        {
+        (struct hash_entry *) 0, (struct hash_entry *) 0, NULL, NULL, 0,
+        } ;
 
     while ( sym_entry )
-	{
-	if ( ! strcmp( sym, sym_entry->name ) )
-	    return ( sym_entry );
-	sym_entry = sym_entry->next;
-	}
+        {
+        if ( ! strcmp( sym, sym_entry->name ) )
+            return ( sym_entry );
+        sym_entry = sym_entry->next;
+        }
 
     return ( &empty_entry );
     }
 
-    
+
 /* hashfunct - compute the hash value for "str" and hash size "hash_size"
  *
  * synopsis
@@ -183,7 +183,7 @@ int hashfunct(char *str, int hash_size)
     locstr = 0;
 
     while ( str[locstr] )
-	hashval = ((hashval << 1) + str[locstr++]) % hash_size;
+        hashval = ((hashval << 1) + str[locstr++]) % hash_size;
 
     return ( hashval );
     }
@@ -203,8 +203,8 @@ void ndinstal(char *nd, Char *def)
     Char *copy_unsigned_string();
 
     if ( addsym( copy_string( nd ), (char *) copy_unsigned_string( def ), 0,
-		 ndtbl, NAME_TABLE_HASH_SIZE ) )
-	synerr( "name defined twice" );
+                 ndtbl, NAME_TABLE_HASH_SIZE ) )
+        synerr( "name defined twice" );
     }
 
 
@@ -247,27 +247,27 @@ void scinstal(char *str, int xcluflg)
      */
 
     if ( strcmp( str, "0" ) )
-	printf( "#define %s %d\n", str, lastsc );
+        printf( "#define %s %d\n", str, lastsc );
 
     if ( ++lastsc >= current_max_scs )
-	{
-	current_max_scs += MAX_SCS_INCREMENT;
+        {
+        current_max_scs += MAX_SCS_INCREMENT;
 
-	++num_reallocs;
+        ++num_reallocs;
 
-	scset = reallocate_integer_array( scset, current_max_scs );
-	scbol = reallocate_integer_array( scbol, current_max_scs );
-	scxclu = reallocate_integer_array( scxclu, current_max_scs );
-	sceof = reallocate_integer_array( sceof, current_max_scs );
-	scname = reallocate_char_ptr_array( scname, current_max_scs );
-	actvsc = reallocate_integer_array( actvsc, current_max_scs );
-	}
+        scset = reallocate_integer_array( scset, current_max_scs );
+        scbol = reallocate_integer_array( scbol, current_max_scs );
+        scxclu = reallocate_integer_array( scxclu, current_max_scs );
+        sceof = reallocate_integer_array( sceof, current_max_scs );
+        scname = reallocate_char_ptr_array( scname, current_max_scs );
+        actvsc = reallocate_integer_array( actvsc, current_max_scs );
+        }
 
     scname[lastsc] = copy_string( str );
 
     if ( addsym( scname[lastsc], (char *) 0, lastsc,
-		 sctbl, START_COND_HASH_SIZE ) )
-	format_pinpoint_message( "start condition %s declared twice", str );
+                 sctbl, START_COND_HASH_SIZE ) )
+        format_pinpoint_message( "start condition %s declared twice", str );
 
     scset[lastsc] = mkstate( SYM_EPSILON );
     scbol[lastsc] = mkstate( SYM_EPSILON );

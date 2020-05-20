@@ -5,17 +5,17 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *
- *  CA performance test 
+ *  CA performance test
  *
- *  History 
+ *  History
  *  joh 09-12-89 Initial release
  *  joh 12-20-94 portability
  *
- * 
+ *
  */
 
 #include <stdio.h>
@@ -45,7 +45,7 @@ typedef struct testItem {
     char                name[128];
     int                 type;
     int                 count;
-    void *              pValue;	
+    void *              pValue;
 } ti;
 
 typedef void tf ( ti *pItems, unsigned iterations, unsigned *pInlineIter );
@@ -144,7 +144,7 @@ unsigned    *pInlineIter
 {
     int status;
     unsigned i;
-        
+
     for (i=0u; i<iterations; i++) {
         status = ca_clear_channel (pItems[i].chix);
         SEVCHK (status, NULL);
@@ -166,7 +166,7 @@ unsigned    *pInlineIter
     ti      *pi;
     int     status;
     dbr_int_t   val;
-  
+
     for (pi=pItems; pi < &pItems[iterations]; pi++) {
         status = ca_array_put(
                 pi->type,
@@ -257,7 +257,7 @@ unsigned    *pInlineIter
 {
     ti  *pi;
     int status;
-  
+
     for (pi=pItems; pi<&pItems[iterations]; pi++) {
         status = ca_array_get(
                 pi->type,
@@ -337,7 +337,7 @@ unsigned    *pInlineIter
 {
     ti  *pi;
     int status;
-  
+
     for (pi=pItems; pi<&pItems[iterations]; pi++) {
         status = ca_array_get(
                 pi->type,
@@ -361,9 +361,9 @@ static void measure_get_latency (ti *pItems, unsigned iterations)
     epicsTimeStamp start_time;
     double delay;
     double X = 0u;
-    double XX = 0u; 
-    double max = DBL_MIN; 
-    double min = DBL_MAX; 
+    double XX = 0u;
+    double max = DBL_MIN;
+    double min = DBL_MAX;
     double mean;
     double stdDev;
     ti *pi;
@@ -371,7 +371,7 @@ static void measure_get_latency (ti *pItems, unsigned iterations)
 
     for ( pi = pItems; pi < &pItems[iterations]; pi++ ) {
         epicsTimeGetCurrent ( &start_time );
-        status = ca_array_get ( pi->type, pi->count, 
+        status = ca_array_get ( pi->type, pi->count,
                         pi->chix, pi->pValue );
         SEVCHK ( status, NULL );
         status = ca_pend_io ( 100.0 );
@@ -395,13 +395,13 @@ static void measure_get_latency (ti *pItems, unsigned iterations)
 
     mean = X/iterations;
     stdDev = sqrt ( XX/iterations - mean*mean );
-    printf ( 
+    printf (
         "Get Latency - "
         "mean = %3.1f uS, "
         "std dev = %3.1f uS, "
         "min = %3.1f uS "
         "max = %3.1f uS\n",
-        mean * 1e6, stdDev * 1e6, 
+        mean * 1e6, stdDev * 1e6,
         min * 1e6, max * 1e6 );
 }
 
@@ -412,9 +412,9 @@ static void printSearchStat ( const ti * pi, unsigned iterations )
 {
     unsigned i;
     double  X = 0u;
-    double  XX = 0u; 
-    double  max = DBL_MIN; 
-    double  min = DBL_MAX; 
+    double  XX = 0u;
+    double  max = DBL_MIN;
+    double  min = DBL_MAX;
     double  mean;
     double  stdDev;
 
@@ -432,7 +432,7 @@ static void printSearchStat ( const ti * pi, unsigned iterations )
 
     mean = X / iterations;
     stdDev = sqrt( XX / iterations - mean * mean );
-    printf ( 
+    printf (
         "Search tries per chan - "
         "mean = %3.1f "
         "std dev = %3.1f "
@@ -458,10 +458,10 @@ void timeIt ( tf *pfunc, ti *pItems, unsigned iterations,
     delay = epicsTimeDiffInSeconds ( &end_time, &start_time );
     if ( delay > 0.0 ) {
         double freq = ( iterations * inlineIter ) / delay;
-        printf ( "Per Op, %8.4f uS ( %8.4f MHz )", 
+        printf ( "Per Op, %8.4f uS ( %8.4f MHz )",
             1e6 / freq, freq / 1e6 );
         if ( pItems != NULL ) {
-            printf(", %8.4f snd Mbps, %8.4f rcv Mbps\n", 
+            printf(", %8.4f snd Mbps, %8.4f rcv Mbps\n",
                 (inlineIter*nBytesSent*CHAR_BIT)/(delay*1e6),
                 (inlineIter*nBytesRecv*CHAR_BIT)/(delay*1e6) );
         }
@@ -479,13 +479,13 @@ static void test ( ti *pItems, unsigned iterations )
     unsigned payloadSize, dblPayloadSize;
     unsigned nBytesSent, nBytesRecv;
 
-    payloadSize =     
+    payloadSize =
         dbr_size_n ( pItems[0].type, pItems[0].count );
     payloadSize = CA_MESSAGE_ALIGN ( payloadSize );
 
     dblPayloadSize = dbr_size [ DBR_DOUBLE ];
     dblPayloadSize = CA_MESSAGE_ALIGN ( dblPayloadSize );
-    
+
     if ( payloadSize > dblPayloadSize ) {
         unsigned factor = payloadSize / dblPayloadSize;
         while ( factor ) {
@@ -500,15 +500,15 @@ static void test ( ti *pItems, unsigned iterations )
     printf ( "\t### async put test ###\n");
     nBytesSent = sizeof ( caHdr ) + CA_MESSAGE_ALIGN( payloadSize );
     nBytesRecv = 0u;
-    timeIt ( test_put, pItems, iterations, 
-        nBytesSent * iterations, 
+    timeIt ( test_put, pItems, iterations,
+        nBytesSent * iterations,
         nBytesRecv * iterations );
 
     printf ( "\t### async get test ###\n");
     nBytesSent = sizeof ( caHdr );
     nBytesRecv = sizeof ( caHdr ) + CA_MESSAGE_ALIGN ( payloadSize );
-    timeIt ( test_get, pItems, iterations, 
-        nBytesSent * ( iterations ), 
+    timeIt ( test_get, pItems, iterations,
+        nBytesSent * ( iterations ),
         nBytesRecv * ( iterations ) );
 
     printf ("\t### synch get test ###\n");
@@ -520,7 +520,7 @@ static void test ( ti *pItems, unsigned iterations )
     else if ( iterations > 10 ) {
         iterations /= 10;
     }
-    timeIt ( test_wait, pItems, iterations, 
+    timeIt ( test_wait, pItems, iterations,
         nBytesSent * iterations,
         nBytesRecv * iterations );
 }
@@ -528,7 +528,7 @@ static void test ( ti *pItems, unsigned iterations )
 /*
  * catime ()
  */
-int catime ( const char * channelName, 
+int catime ( const char * channelName,
     unsigned channelCount, enum appendNumberFlag appNF )
 {
     unsigned i;
@@ -536,7 +536,7 @@ int catime ( const char * channelName,
     unsigned strsize;
     unsigned nBytesSent, nBytesRecv;
     ti *pItemList;
-    
+
     if ( channelCount == 0 ) {
         printf ( "channel count was zero\n" );
         return 0;
@@ -547,15 +547,15 @@ int catime ( const char * channelName,
         return -1;
     }
 
-    SEVCHK ( ca_context_create ( ca_disable_preemptive_callback ), 
+    SEVCHK ( ca_context_create ( ca_disable_preemptive_callback ),
         "Unable to initialize" );
 
     if ( appNF == appendNumber ) {
-        printf ( "Testing with %u channels named %snnn\n", 
+        printf ( "Testing with %u channels named %snnn\n",
             channelCount, channelName );
     }
     else {
-        printf ( "Testing with %u channels named %s\n", 
+        printf ( "Testing with %u channels named %s\n",
              channelCount, channelName );
     }
 
@@ -573,7 +573,7 @@ int catime ( const char * channelName,
         pItemList[i].name[strsize]= '\0';
         pItemList[i].count = 0;
         pItemList[i].pValue = 0;
-        nBytesSent += 2 * ( CA_MESSAGE_ALIGN ( strlen ( pItemList[i].name ) ) 
+        nBytesSent += 2 * ( CA_MESSAGE_ALIGN ( strlen ( pItemList[i].name ) )
                             + sizeof (caHdr) );
         nBytesRecv += 2 * sizeof (caHdr);
     }
@@ -582,7 +582,7 @@ int catime ( const char * channelName,
     printf ( "--------------------\n" );
     timeIt ( test_search, pItemList, channelCount, nBytesSent, nBytesRecv );
     printSearchStat ( pItemList, channelCount );
-    
+
     for ( i = 0; i < channelCount; i++ ) {
         size_t count = ca_element_count ( pItemList[i].chix );
         size_t size = sizeof ( dbr_string_t ) * count;
@@ -608,7 +608,7 @@ int catime ( const char * channelName,
         for ( j = 0; j < pItemList[i].count; j++ ) {
             pFltVal[j] = (dbr_float_t) val;
         }
-        pItemList[i].type = DBR_FLOAT; 
+        pItemList[i].type = DBR_FLOAT;
     }
     printf ( "DBR_FLOAT Test\n" );
     printf ( "--------------\n" );
@@ -621,13 +621,13 @@ int catime ( const char * channelName,
         for ( j = 0; j < pItemList[i].count; j++ ) {
             pDblVal[j] = (dbr_double_t) val;
         }
-        pItemList[i].type = DBR_DOUBLE; 
+        pItemList[i].type = DBR_DOUBLE;
     }
     printf ( "DBR_DOUBLE Test\n" );
     printf ( "---------------\n" );
     test ( pItemList, channelCount );
 
-    
+
     for ( i = 0; i < channelCount; i++ ) {
         dbr_string_t * pStrVal = ( dbr_string_t * ) pItemList[i].pValue;
         double val = i;
@@ -635,7 +635,7 @@ int catime ( const char * channelName,
         for ( j = 0; j < pItemList[i].count; j++ ) {
             sprintf ( pStrVal[j], "%f", val );
         }
-        pItemList[i].type = DBR_STRING; 
+        pItemList[i].type = DBR_STRING;
     }
     printf ( "DBR_STRING Test\n" );
     printf ( "---------------\n" );
@@ -648,7 +648,7 @@ int catime ( const char * channelName,
         for ( j = 0; j < pItemList[i].count; j++ ) {
             pIntVal[j] = (dbr_int_t) val;
         }
-        pItemList[i].type = DBR_INT; 
+        pItemList[i].type = DBR_INT;
     }
     printf ( "DBR_INT Test\n" );
     printf ( "------------\n" );
@@ -661,8 +661,8 @@ int catime ( const char * channelName,
         for ( j = 0; j < pItemList[i].count; j++ ) {
             pDblVal[j] = 0;
         }
-        pItemList[i].type = DBR_DOUBLE; 
-    }   
+        pItemList[i].type = DBR_DOUBLE;
+    }
     measure_get_latency ( pItemList, channelCount );
 
     printf ( "Free Channel Test\n" );
@@ -670,10 +670,10 @@ int catime ( const char * channelName,
     timeIt ( test_free, pItemList, channelCount, 0, 0 );
 
     SEVCHK ( ca_task_exit (), "Unable to free resources at exit" );
-    
+
     for ( i = 0; i < channelCount; i++ ) {
         free ( pItemList[i].pValue );
-    }   
+    }
 
     free ( pItemList );
 

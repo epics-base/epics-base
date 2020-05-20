@@ -27,7 +27,7 @@
 
 typedef struct info {
     epicsEventId consumerEvent;
-    epicsRingBytesId	ring;
+    epicsRingBytesId ring;
 }info;
 
 static void check(epicsRingBytesId ring, int expectedFree,
@@ -41,7 +41,7 @@ static void check(epicsRingBytesId ring, int expectedFree,
     int isEmpty = epicsRingBytesIsEmpty(ring);
     int isFull = epicsRingBytesIsFull(ring);
     int highWaterMark = epicsRingBytesHighWaterMark(ring);
-    
+
     testOk(nFree == expectedFree, "Free: %d == %d", nFree, expectedFree);
     testOk(nUsed == expectedUsed, "Used: %d == %d", nUsed, expectedUsed);
     testOk(isEmpty == expectedEmpty, "Empty: %d == %d", isEmpty, expectedEmpty);
@@ -49,7 +49,7 @@ static void check(epicsRingBytesId ring, int expectedFree,
     testOk(highWaterMark == expectedHighWaterMark, "HighWaterMark: %d == %d",
            highWaterMark, expectedHighWaterMark);
 }
-    
+
 MAIN(ringBytesTest)
 {
     int i, n;

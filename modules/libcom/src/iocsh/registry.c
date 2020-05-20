@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*registry.c */
 
@@ -30,7 +30,7 @@ static void registryInit(int tableSize)
     gphInitPvt(&gphPvt,tableSize);
     if(!gphPvt) cantProceed("registry why did gphInitPvt fail\n");
 }
-    
+
 LIBCOM_API int epicsStdCall registrySetTableSize(int size)
 {
     if(gphPvt) {
@@ -40,7 +40,7 @@ LIBCOM_API int epicsStdCall registrySetTableSize(int size)
     registryInit(size);
     return(0);
 }
-    
+
 
 LIBCOM_API int epicsStdCall registryAdd(
     void *registryID,const char *name,void *data)

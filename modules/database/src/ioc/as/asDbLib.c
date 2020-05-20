@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* Author:  Marty Kraimer Date:    02-11-94*/
 
@@ -36,32 +36,32 @@
 #include "dbStaticLib.h"
 #include "recSup.h"
 
-static char	*pacf=NULL;
-static char	*psubstitutions=NULL;
-static epicsThreadId	asInitTheadId=0;
-static int	firstTime = TRUE;
+static char             *pacf=NULL;
+static char             *psubstitutions=NULL;
+static epicsThreadId    asInitTheadId=0;
+static int              firstTime = TRUE;
 
 static long asDbAddRecords(void)
 {
-    DBENTRY	dbentry;
-    DBENTRY	*pdbentry=&dbentry;
-    long	status;
-    dbCommon	*precord;
+    DBENTRY     dbentry;
+    DBENTRY     *pdbentry=&dbentry;
+    long        status;
+    dbCommon    *precord;
 
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
     while(!status) {
-	status = dbFirstRecord(pdbentry);
-	while(!status) {
-	    precord = pdbentry->precnode->precord;
-	    if(!precord->asp) {
-		status = asAddMember(&precord->asp, precord->asg);
-		if(status) errMessage(status,"asDbAddRecords:asAddMember");
-		asPutMemberPvt(precord->asp,precord);
-	    }
-	    status = dbNextRecord(pdbentry);
-	}
-	status = dbNextRecordType(pdbentry);
+        status = dbFirstRecord(pdbentry);
+        while(!status) {
+            precord = pdbentry->precnode->precord;
+            if(!precord->asp) {
+                status = asAddMember(&precord->asp, precord->asg);
+                if(status) errMessage(status,"asDbAddRecords:asAddMember");
+                asPutMemberPvt(precord->asp,precord);
+            }
+            status = dbNextRecord(pdbentry);
+        }
+        status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
     return(0);
@@ -92,14 +92,14 @@ int asSetSubstitutions(const char *substitutions)
 {
     if(psubstitutions) free ((void *)psubstitutions);
     if(substitutions) {
-	psubstitutions = calloc(1,strlen(substitutions)+1);
-	if(!psubstitutions) {
-	    errMessage(0,"asSetSubstitutions calloc failure");
-	} else {
-	    strcpy(psubstitutions,substitutions);
-	}
+        psubstitutions = calloc(1,strlen(substitutions)+1);
+        if(!psubstitutions) {
+            errMessage(0,"asSetSubstitutions calloc failure");
+        } else {
+            strcpy(psubstitutions,substitutions);
+        }
     } else {
-	psubstitutions = NULL;
+        psubstitutions = NULL;
     }
     return(0);
 }
@@ -117,9 +117,9 @@ static void asInitCommonOnce(void *arg)
 
 static long asInitCommon(void)
 {
-    long	status;
-    int		asWasActive = asActive;
-    int		wasFirstTime = firstTime;
+    long        status;
+    int         asWasActive = asActive;
+    int         wasFirstTime = firstTime;
     static epicsThreadOnceId asInitCommonOnceFlag = EPICS_THREAD_ONCE_INIT;
 
 
@@ -140,11 +140,11 @@ static long asInitCommon(void)
     }
     status = asInitFile(pacf,psubstitutions);
     if(asActive) {
-	if(!asWasActive) {
+        if(!asWasActive) {
             dbSpcAsRegisterCallback(asSpcAsCallback);
             asDbAddRecords();
         }
-	asCaStart();
+        asCaStart();
     }
     return(status);
 }
@@ -179,8 +179,8 @@ static void asInitTask(ASDBCALLBACK *pcallback)
     taskwdRemove(epicsThreadGetIdSelf());
     asInitTheadId = 0;
     if(pcallback) {
-	pcallback->status = status;
-	callbackRequest(&pcallback->callback);
+        pcallback->status = status;
+        callbackRequest(&pcallback->callback);
     }
 }
 
@@ -188,24 +188,24 @@ int asInitAsyn(ASDBCALLBACK *pcallback)
 {
     if(!pacf) return(0);
     if(asInitTheadId) {
-	errMessage(-1,"asInit: asInitTask already active");
-	if(pcallback) {
-	    pcallback->status = S_asLib_InitFailed;
-	    callbackRequest(&pcallback->callback);
-	}
-	return(-1);
+        errMessage(-1,"asInit: asInitTask already active");
+        if(pcallback) {
+            pcallback->status = S_asLib_InitFailed;
+            callbackRequest(&pcallback->callback);
+        }
+        return(-1);
     }
     asInitTheadId = epicsThreadCreate("asInitTask",
         (epicsThreadPriorityCAServerHigh + 1),
         epicsThreadGetStackSize(epicsThreadStackBig),
         (EPICSTHREADFUNC)asInitTask,(void *)pcallback);
     if(asInitTheadId==0) {
-	errMessage(0,"asInit: epicsThreadCreate Error");
-	if(pcallback) {
-	    pcallback->status = S_asLib_InitFailed;
-	    callbackRequest(&pcallback->callback);
-	}
-	asInitTheadId = 0;
+        errMessage(0,"asInit: epicsThreadCreate Error");
+        if(pcallback) {
+            pcallback->status = S_asLib_InitFailed;
+            callbackRequest(&pcallback->callback);
+        }
+        asInitTheadId = 0;
     }
     return(0);
 }
@@ -227,18 +227,18 @@ static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
     recordname = (char *)asGetClientPvt(clientPvt);
     printf("astac callback %s: status=%d",recordname,status);
     printf(" get %s put %s\n",(asCheckGet(clientPvt) ? "Yes" : "No"),
-	(asCheckPut(clientPvt) ? "Yes" : "No"));
+        (asCheckPut(clientPvt) ? "Yes" : "No"));
 }
 
 int astac(const char *pname,const char *user,const char *location)
 {
-    DBADDR	*paddr;
-    long	status;
-    ASCLIENTPVT	*pasclientpvt=NULL;
-    dbCommon	*precord;
-    dbFldDes	*pflddes;
-    char	*puser;
-    char	*plocation;
+    DBADDR      *paddr;
+    long        status;
+    ASCLIENTPVT *pasclientpvt=NULL;
+    dbCommon    *precord;
+    dbFldDes    *pflddes;
+    char        *puser;
+    char        *plocation;
 
     if (!pname || !user || !location){
         printf("Usage: astac \"record name\", \"user\", \"host\"\n");
@@ -248,8 +248,8 @@ int astac(const char *pname,const char *user,const char *location)
     pasclientpvt = (ASCLIENTPVT *)(paddr + 1);
     status=dbNameToAddr(pname,paddr);
     if(status) {
-	errMessage(status,"dbNameToAddr error");
-	return(1);
+        errMessage(status,"dbNameToAddr error");
+        return(1);
     }
     precord = paddr->precord;
     pflddes = paddr->pfldDes;
@@ -259,20 +259,20 @@ int astac(const char *pname,const char *user,const char *location)
     strcpy(plocation,location);
 
     status = asAddClient(pasclientpvt,precord->asp,
-	(int)pflddes->as_level,puser,plocation);
+        (int)pflddes->as_level,puser,plocation);
     if(status) {
-	errMessage(status,"asAddClient error");
-	return(1);
+        errMessage(status,"asAddClient error");
+        return(1);
     } else {
-	asPutClientPvt(*pasclientpvt,(void *)precord->name);
-	asRegisterClientCallback(*pasclientpvt,astacCallback);
+        asPutClientPvt(*pasclientpvt,(void *)precord->name);
+        asRegisterClientCallback(*pasclientpvt,astacCallback);
     }
     return(0);
 }
 
 static void myMemberCallback(ASMEMBERPVT memPvt,FILE *fp)
 {
-    dbCommon	*precord;
+    dbCommon    *precord;
 
     precord = asGetMemberPvt(memPvt);
     if(precord) fprintf(fp," Record:%s",precord->name);

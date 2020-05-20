@@ -5,12 +5,12 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
-	these are used in the pmt (prompt) field of the record support
-	ascii files.  They represent field groupings for dct tools
+    these are used in the pmt (prompt) field of the record support
+    ascii files.  They represent field groupings for dct tools
 */
 
 #ifndef __gui_group_h__

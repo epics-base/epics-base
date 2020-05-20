@@ -5,13 +5,13 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2013 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* includes for general purpose callback tasks		*/
+/* includes for general purpose callback tasks          */
 /*
  *      Original Author:        Marty Kraimer
- *      Date:   	        07-18-91
+ *      Date:                   07-18-91
 */
 
 #ifndef INCcallbackh
@@ -27,9 +27,9 @@ extern "C" {
  * WINDOWS also has a "CALLBACK" type def
  */
 #if defined(_WIN32) && !defined(EPICS_NO_CALLBACK)
-#	ifdef CALLBACK
-#		undef CALLBACK
-#	endif /*CALLBACK*/
+#       ifdef CALLBACK
+#               undef CALLBACK
+#       endif /*CALLBACK*/
 #endif /*_WIN32*/
 
 #define NUM_CALLBACK_PRIORITIES 3
@@ -38,9 +38,9 @@ extern "C" {
 #define priorityHigh    2
 
 typedef struct callbackPvt {
-	void (*callback)(struct callbackPvt*);
-	int		priority;
-	void		*user; /*for use by callback user*/
+        void (*callback)(struct callbackPvt*);
+        int             priority;
+        void            *user; /*for use by callback user*/
         void            *timer; /*for use by callback itself*/
 }epicsCallback;
 

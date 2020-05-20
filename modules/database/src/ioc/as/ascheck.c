@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*	Author: Marty Kraimer	Date: 03-24-94	*/
+/*  Author: Marty Kraimer   Date: 03-24-94  */
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -21,35 +21,35 @@
 int main(int argc,char **argv)
 {
     int         argn = 1;
-    char	*sub = NULL;
-    int		subLength = 0;
-    char	**pstr;
-    char	*psep;
-    int		*len;
-    long	status = 0;
+    char        *sub = NULL;
+    int         subLength = 0;
+    char        **pstr;
+    char        *psep;
+    int         *len;
+    long        status = 0;
     static char *subSep = ",";
 
     /* Look for -Smacro=value options */
     while (argc>argn && (strncmp(argv[argn], "-S", 2)==0)) {
-	pstr = &sub;
-	psep = subSep;
-	len = &subLength;
-	if (strlen(argv[argn])==2) {
-	    dbCatString(pstr, len, argv[++argn], psep);
-	} else {
-	    dbCatString(pstr, len, argv[argn]+2, psep);
-	}
-	argn++;
+        pstr = &sub;
+        psep = subSep;
+        len = &subLength;
+        if (strlen(argv[argn])==2) {
+            dbCatString(pstr, len, argv[++argn], psep);
+        } else {
+            dbCatString(pstr, len, argv[argn]+2, psep);
+        }
+        argn++;
     }
     if (argc == argn) {
-	status = asInitFP(stdin, sub);
-	if(status) errlogPrintf("ascheck: Access Security File failed.\n");
+        status = asInitFP(stdin, sub);
+        if(status) errlogPrintf("ascheck: Access Security File failed.\n");
     } else if (argc == argn+1) {
-	status = asInitFile(argv[argn], sub);
-	if(status) errlogPrintf("ascheck: Access Security File failed.\n");
+        status = asInitFile(argv[argn], sub);
+        if(status) errlogPrintf("ascheck: Access Security File failed.\n");
     } else {
-	printf("usage: ascheck [-Smac=sub ...] [<] file\n");
-	status = -1;
+        printf("usage: ascheck [-Smac=sub ...] [<] file\n");
+        status = -1;
     }
     errlogFlush();
     return status;

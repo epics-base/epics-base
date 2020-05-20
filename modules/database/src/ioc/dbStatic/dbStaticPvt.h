@@ -9,7 +9,7 @@
 \*************************************************************************/
 /*  dbStaticPvt.h */
 /*
- *	Author:		Marty Kraimer
+ *      Author:         Marty Kraimer
  *      Date:           06Jun95
  */
 
@@ -79,8 +79,8 @@ epicsShareFunc void dbFreeLinkInfo(dbLinkInfo *pinfo);
 
 /* The following is for path */
 typedef struct dbPathNode {
-	ELLNODE		node;
-	char		*directory;
+    ELLNODE     node;
+    char        *directory;
 } dbPathNode;
 
 /* Element of the global gui group list */
@@ -93,13 +93,13 @@ typedef struct dbGuiGroup {
 /*The following are in dbPvdLib.c*/
 /*directory*/
 typedef struct{
-	ELLNODE		node;
-	dbRecordType	*precordType;
-	dbRecordNode	*precnode;
+    ELLNODE         node;
+    dbRecordType    *precordType;
+    dbRecordNode    *precnode;
 }PVDENTRY;
 epicsShareFunc int dbPvdTableSize(int size);
 extern int dbStaticDebug;
-void	dbPvdInitPvt(DBBASE *pdbbase);
+void dbPvdInitPvt(DBBASE *pdbbase);
 PVDENTRY *dbPvdFind(DBBASE *pdbbase,const char *name,size_t lenname);
 PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecordType *precordType,dbRecordNode *precnode);
 void dbPvdDelete(DBBASE *pdbbase,dbRecordNode *precnode);

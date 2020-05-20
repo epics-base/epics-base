@@ -25,13 +25,13 @@
  * @{
  */
 /** \brief Create a bit mask for a given number of bits */
-#define devCreateMask(NBITS)	((1<<(NBITS))-1)
+#define devCreateMask(NBITS)    ((1<<(NBITS))-1)
 /** \brief Normalize a raw integer value and convert it to type double */
 #define devDigToNml(DIGITAL,NBITS) \
-	(((double)(DIGITAL))/devCreateMask(NBITS))
+    (((double)(DIGITAL))/devCreateMask(NBITS))
 /** \brief Convert a normalized value to a raw integer */
 #define devNmlToDig(NORMAL,NBITS) \
-	(((long)(NORMAL)) * devCreateMask(NBITS))
+    (((long)(NORMAL)) * devCreateMask(NBITS))
  /** @} */
 
 /**

@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* 
+/*
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -24,8 +24,8 @@
 #include "cac.h"
 #include "virtualCircuit.h"
 
-tcpSendWatchdog::tcpSendWatchdog ( 
-        epicsMutex & cbMutexIn, cacContextNotify & ctxNotifyIn, 
+tcpSendWatchdog::tcpSendWatchdog (
+        epicsMutex & cbMutexIn, cacContextNotify & ctxNotifyIn,
         epicsMutex & mutexIn, tcpiiu & iiuIn,
         double periodIn, epicsTimerQueue & queueIn ) :
         period ( periodIn ), timer ( queueIn.createTimer () ),
@@ -39,7 +39,7 @@ tcpSendWatchdog::~tcpSendWatchdog ()
     this->timer.destroy ();
 }
 
-epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( 
+epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
                  const epicsTime & /* currentTime */ )
 {
     {
@@ -54,7 +54,7 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
 #   ifdef DEBUG
         char hostName[128];
         this->iiu.getHostName ( guard, hostName, sizeof ( hostName ) );
-        debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
+        debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n",
             hostName, this->period ) );
 #   endif
         this->iiu.sendTimeoutNotify ( mgr, guard );

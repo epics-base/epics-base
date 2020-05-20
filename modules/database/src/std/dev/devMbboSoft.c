@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* devMbboSoft.c */
 /*
@@ -40,7 +40,7 @@ static long init_record(dbCommon *pcommon)
 {
     /*dont convert*/
     return 2;
- 
+
 } /* end init_record() */
 
 static long write_mbbo(mbboRecord *prec)

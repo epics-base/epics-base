@@ -1,7 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * RTEMS network configuration for EPICS
@@ -29,7 +29,7 @@ static struct rtems_bsdnet_ifconfig loopback_config = {
  * The following conditionals select the network interface card.
  *
  * On RTEMS-pc386 targets all network drivers which support run-time
- * probing are linked. 
+ * probing are linked.
  * On other targets the network interface specified by the board-support
  * package is used.
  * To use a different NIC for a particular application, copy this file to the

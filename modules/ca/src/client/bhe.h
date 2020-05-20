@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
@@ -70,13 +70,13 @@ private:
     tcpiiu * pIIU;
     ca_uint32_t lastBeaconNumber;
     void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );
-    void logBeacon ( const char * pDiagnostic, 
+    void logBeacon ( const char * pDiagnostic,
                      const double & currentPeriod,
                      const epicsTime & currentTime );
     void logBeaconDiscard ( unsigned beaconAdvance,
                      const epicsTime & currentTime );
-	bhe ( const bhe & );
-	bhe & operator = ( const bhe & );
+    bhe ( const bhe & );
+    bhe & operator = ( const bhe & );
     LIBCA_API void operator delete ( void * );
 };
 
@@ -89,20 +89,20 @@ public:
     void release ( void * );
 private:
     tsFreeList < bhe, 0x100 > freeList;
-	bheFreeStore ( const bheFreeStore & );
-	bheFreeStore & operator = ( const bheFreeStore & );
+    bheFreeStore ( const bheFreeStore & );
+    bheFreeStore & operator = ( const bheFreeStore & );
 };
 
-inline void * bhe::operator new ( size_t size, 
+inline void * bhe::operator new ( size_t size,
         bheMemoryManager & mgr )
-{ 
+{
     return mgr.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-inline void bhe::operator delete ( void * pCadaver, 
+inline void bhe::operator delete ( void * pCadaver,
         bheMemoryManager & mgr )
-{ 
+{
     mgr.release ( pCadaver );
 }
 #endif

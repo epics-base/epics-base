@@ -5,22 +5,22 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, The Regents of the University of California.
- *                                  
- *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifndef autoPtrRecycleh
@@ -29,7 +29,7 @@
 template < class T >
 class autoPtrRecycle {
 public:
-    autoPtrRecycle ( 
+    autoPtrRecycle (
         epicsGuard < epicsMutex > &, chronIntIdResTable < baseNMIU > &,
         cacRecycle &, T * );
     ~autoPtrRecycle ();
@@ -43,12 +43,12 @@ private:
     chronIntIdResTable < baseNMIU > & ioTable;
     epicsGuard < epicsMutex > & guard;
     // not implemented
-	autoPtrRecycle ( const autoPtrRecycle & );
-	autoPtrRecycle & operator = ( const autoPtrRecycle & );
+    autoPtrRecycle ( const autoPtrRecycle & );
+    autoPtrRecycle & operator = ( const autoPtrRecycle & );
 };
 
 template < class T >
-inline autoPtrRecycle<T>::autoPtrRecycle ( 
+inline autoPtrRecycle<T>::autoPtrRecycle (
     epicsGuard < epicsMutex > & guardIn, chronIntIdResTable < baseNMIU > & tbl,
         cacRecycle & rIn, T * pIn ) :
     p ( pIn ), r ( rIn ), ioTable ( tbl ), guard ( guardIn ) {}

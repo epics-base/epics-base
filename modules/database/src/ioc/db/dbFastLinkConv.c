@@ -38,7 +38,7 @@
 #include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
- 
+
 
 /*
  *  In the following functions:
@@ -1045,7 +1045,7 @@ static long cvt_f_st(
    long precision = 6;
 
    if(paddr) prset = dbGetRset(paddr);
- 
+
    if (prset && prset->get_precision)
      status = (*prset->get_precision)(paddr, &precision);
    cvtFloatToString(*from, to, (unsigned short)precision);
@@ -1140,7 +1140,7 @@ static long cvt_d_st(
    long precision = 6;
 
    if(paddr) prset = dbGetRset(paddr);
- 
+
    if (prset && prset->get_precision)
      status = (*prset->get_precision)(paddr, &precision);
    cvtDoubleToString(*from, to, (unsigned short)precision);
@@ -1313,7 +1313,7 @@ static long cvt_e_st_get(
    long status;
 
    if(paddr) prset = dbGetRset(paddr);
- 
+
    if (prset && prset->get_enum_str)
        return (*prset->get_enum_str)(paddr, to);
 
@@ -1335,20 +1335,20 @@ static long cvt_menu_st(
      epicsEnum16 *from,
      char *to,
      const dbAddr *paddr)
- { 
-   dbFldDes		*pdbFldDes;
-   dbMenu		*pdbMenu;
-   char			**papChoiceValue;
-   char			*pchoice;
+ {
+   dbFldDes             *pdbFldDes;
+   dbMenu               *pdbMenu;
+   char                 **papChoiceValue;
+   char                 *pchoice;
 
-    if(! paddr 
+    if(! paddr
     || !(pdbFldDes = paddr->pfldDes)
     || !(pdbMenu = (dbMenu *)pdbFldDes->ftPvt)
     || *from>=pdbMenu->nChoice
     || !(papChoiceValue = pdbMenu->papChoiceValue)
     || !(pchoice=papChoiceValue[*from])) {
-	recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_menu_st)");
-	return(S_db_badChoice);
+        recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_menu_st)");
+        return(S_db_badChoice);
     }
     strncpy(to,pchoice,MAX_STRING_SIZE);
     return(0);
@@ -1360,20 +1360,20 @@ static long cvt_device_st(
      epicsEnum16 *from,
      char *to,
      const dbAddr *paddr)
- { 
-   dbFldDes		*pdbFldDes;
-   dbDeviceMenu		*pdbDeviceMenu;
-   char			**papChoice;
-   char			*pchoice;
+ {
+   dbFldDes             *pdbFldDes;
+   dbDeviceMenu         *pdbDeviceMenu;
+   char                 **papChoice;
+   char                 *pchoice;
 
-    if(!paddr 
+    if(!paddr
     || !(pdbFldDes = paddr->pfldDes)
     || !(pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt)
     || *from>=pdbDeviceMenu->nChoice
     || !(papChoice= pdbDeviceMenu->papChoice)
     || !(pchoice=papChoice[*from])) {
-	recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_device_st)");
-	return(S_db_badChoice);
+        recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_device_st)");
+        return(S_db_badChoice);
     }
     strncpy(to,pchoice,MAX_STRING_SIZE);
     return(0);

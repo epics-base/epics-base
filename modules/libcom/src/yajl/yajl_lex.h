@@ -20,21 +20,21 @@
 #include "yajl_common.h"
 
 typedef enum {
-    yajl_tok_bool,         
+    yajl_tok_bool,
     yajl_tok_colon,
-    yajl_tok_comma,     
+    yajl_tok_comma,
     yajl_tok_eof,
     yajl_tok_error,
-    yajl_tok_left_brace,     
+    yajl_tok_left_brace,
     yajl_tok_left_bracket,
-    yajl_tok_null,         
-    yajl_tok_right_brace,     
+    yajl_tok_null,
+    yajl_tok_right_brace,
     yajl_tok_right_bracket,
 
     /* we differentiate between integers and doubles to allow the
      * parser to interpret the number without re-scanning */
-    yajl_tok_integer, 
-    yajl_tok_double, 
+    yajl_tok_integer,
+    yajl_tok_double,
 
     /* we differentiate between strings which require further processing,
      * and strings that do not */
@@ -69,7 +69,7 @@ n * error messages.
  *
  * When you pass the next chunk of data, context should be reinitialized
  * to zero.
- * 
+ *
  * Finally, the output buffer is usually just a pointer into the jsonText,
  * however in cases where the entity being lexed spans multiple chunks,
  * the lexer will buffer the entity and the data returned will be

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* selRecord.c - Record Support Routines for Select records */
@@ -55,28 +55,28 @@ static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
 rset selRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_control_double,
-	get_alarm_double
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
 epicsExportAddress(rset,selRSET);
 
-#define	SEL_MAX	12
+#define SEL_MAX 12
 
 static void checkAlarms(selRecord *);
 static void do_sel(selRecord *);
@@ -111,7 +111,7 @@ static long process(struct dbCommon *pcommon)
     struct selRecord *prec = (struct selRecord *)pcommon;
     prec->pact = TRUE;
     if ( RTN_SUCCESS(fetch_values(prec)) ) {
-	do_sel(prec);
+        do_sel(prec);
     }
 
     recGblGetTimeStamp(prec);
@@ -134,7 +134,7 @@ static long process(struct dbCommon *pcommon)
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    selRecord	*prec=(selRecord *)paddr->precord;
+    selRecord   *prec=(selRecord *)paddr->precord;
 
     if(paddr->pfldDes->field_type == DBF_DOUBLE) {
         strncpy(units,prec->egu,DB_UNITS_SIZE);
@@ -144,7 +144,7 @@ static long get_units(DBADDR *paddr, char *units)
 
 static long get_precision(const DBADDR *paddr, long *precision)
 {
-    selRecord	*prec=(selRecord *)paddr->precord;
+    selRecord   *prec=(selRecord *)paddr->precord;
     double *pvalue,*plvalue;
     int i;
 
@@ -155,10 +155,10 @@ static long get_precision(const DBADDR *paddr, long *precision)
     pvalue = &prec->a;
     plvalue = &prec->la;
     for(i=0; i<SEL_MAX; i++, pvalue++, plvalue++) {
-	if(paddr->pfield==(void *)&pvalue
-	|| paddr->pfield==(void *)&plvalue){
-	    return(0);
-	}
+        if(paddr->pfield==(void *)&pvalue
+        || paddr->pfield==(void *)&plvalue){
+            return(0);
+        }
     }
     recGblGetPrec(paddr,precision);
     return(0);
@@ -167,9 +167,9 @@ static long get_precision(const DBADDR *paddr, long *precision)
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    selRecord	*prec=(selRecord *)paddr->precord;
+    selRecord   *prec=(selRecord *)paddr->precord;
     int index = dbGetFieldIndex(paddr);
-    
+
     switch (index) {
         case indexof(VAL):
         case indexof(HIHI):
@@ -201,9 +201,9 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 
 static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
 {
-    selRecord	*prec=(selRecord *)paddr->precord;
+    selRecord   *prec=(selRecord *)paddr->precord;
     int index = dbGetFieldIndex(paddr);
-    
+
     switch (index) {
         case indexof(VAL):
         case indexof(HIHI):
@@ -235,7 +235,7 @@ static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
 
 static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
-    selRecord	*prec=(selRecord *)paddr->precord;
+    selRecord   *prec=(selRecord *)paddr->precord;
 
     if(dbGetFieldIndex(paddr) == indexof(VAL)) {
         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
@@ -305,9 +305,9 @@ static void checkAlarms(selRecord *prec)
 static void monitor(selRecord *prec)
 {
     unsigned    monitor_mask;
-    double		*pnew;
-    double		*pprev;
-    int			i;
+    double      *pnew;
+    double      *pprev;
+    int         i;
 
     monitor_mask = recGblResetAlarms(prec);
 
@@ -325,27 +325,27 @@ static void monitor(selRecord *prec)
 
     /* trigger monitors of the SELN field */
     if (prec->nlst != prec->seln) {
-	prec->nlst = prec->seln;
-	db_post_events(prec, &prec->seln, monitor_mask);
+        prec->nlst = prec->seln;
+        db_post_events(prec, &prec->seln, monitor_mask);
     }
 
     /* check all input fields for changes, even if VAL hasn't changed */
     for(i=0, pnew=&prec->a, pprev=&prec->la; i<SEL_MAX; i++, pnew++, pprev++) {
-	if(*pnew != *pprev) {
-	    db_post_events(prec, pnew, monitor_mask);
-	    *pprev = *pnew;
-	}
+        if(*pnew != *pprev) {
+            db_post_events(prec, pnew, monitor_mask);
+            *pprev = *pnew;
+        }
     }
     return;
 }
 
 static void do_sel(selRecord *prec)
 {
-    double		*pvalue;
-    double		order[SEL_MAX];
-    unsigned short	count;
-    unsigned short	i,j;
-    double		val;
+    double          *pvalue;
+    double          order[SEL_MAX];
+    unsigned short  count;
+    unsigned short  i,j;
+    double          val;
 
     /* selection mechanism */
     pvalue = &prec->a;
@@ -409,29 +409,29 @@ static void do_sel(selRecord *prec)
  */
 static int fetch_values(selRecord *prec)
 {
-    struct link	*plink;
-    double	*pvalue;
-    int		i;
-    long	status;
+    struct link *plink;
+    double      *pvalue;
+    int         i;
+    long        status;
 
     plink = &prec->inpa;
     pvalue = &prec->a;
     /* If mechanism is selSELM_Specified, only get the selected input*/
     if(prec->selm == selSELM_Specified) {
-	/* fetch the select index */
-	status=dbGetLink(&(prec->nvl),DBR_USHORT,&(prec->seln),0,0);
-	if (!RTN_SUCCESS(status) || (prec->seln >= SEL_MAX))
-	    return(status);
+        /* fetch the select index */
+        status=dbGetLink(&(prec->nvl),DBR_USHORT,&(prec->seln),0,0);
+        if (!RTN_SUCCESS(status) || (prec->seln >= SEL_MAX))
+            return(status);
 
-	plink += prec->seln;
-	pvalue += prec->seln;
+        plink += prec->seln;
+        pvalue += prec->seln;
 
-	status=dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
-	return(status);
+        status=dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
+        return(status);
     }
     /* fetch all inputs*/
     for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
-	status=dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
+        status=dbGetLink(plink,DBR_DOUBLE, pvalue,0,0);
     }
     return(status);
 }

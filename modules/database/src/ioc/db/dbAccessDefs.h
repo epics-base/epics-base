@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* dbAccessDefs.h	*/
+/* dbAccessDefs.h       */
 
 #ifndef INCdbAccessDefsh
 #define INCdbAccessDefsh
@@ -38,7 +38,7 @@ epicsShareExtern volatile int interruptAccept;
 epicsShareExtern int dbAccessDebugPUTF;
 
 /*  The database field and request types are defined in dbFldTypes.h*/
-/* Data Base Request Options	*/
+/* Data Base Request Options    */
 #define DBR_STATUS      0x00000001
 #define DBR_UNITS       0x00000002
 #define DBR_PRECISION   0x00000004
@@ -57,9 +57,9 @@ epicsShareExtern int dbAccessDebugPUTF;
  * of 10 float values + DBR_STATUS and DBR_TIME options
  *
  * struct {
- *	DBRstatus
- *	DBRtime
- *	epicsFloat32 value[10]
+ *      DBRstatus
+ *      DBRtime
+ *      epicsFloat32 value[10]
  * } buffer;
  *
  * IMPORTANT!! The DBRoptions must be given in the order that they
@@ -74,9 +74,9 @@ epicsShareExtern int dbAccessDebugPUTF;
  * rtnval=dbGetField(paddr,DBR_FLOAT,&buffer,&options,&number_elements);
  *
  * When dbGetField returns:
- *	rtnval is error status (0 means success)
- *	options has a bit set for each option that was accepted
- *	number_elements is actual number of elements obtained
+ *      rtnval is error status (0 means success)
+ *      options has a bit set for each option that was accepted
+ *      number_elements is actual number of elements obtained
  *
  * The individual items can be refered to by the expressions::
  *
@@ -90,9 +90,9 @@ epicsShareExtern int dbAccessDebugPUTF;
  * The following is also a valid declaration:
  *
  * typedef struct {
- *	DBRstatus
- *	DBRtime
- *	epicsFloat32 value[10]
+ *      DBRstatus
+ *      DBRtime
+ *      epicsFloat32 value[10]
  * } MYBUFFER;
  *
  * With this definition you can give definitions such as the following:
@@ -103,13 +103,13 @@ epicsShareExtern int dbAccessDebugPUTF;
 
 /* Macros for defining each option */
 #define DBRstatus \
-	epicsUInt16	status;		/* alarm status */\
-	epicsUInt16	severity;	/* alarm severity*/\
-	epicsUInt16	acks;		/* alarm ack severity*/\
-	epicsUInt16	ackt;		/* Acknowledge transient alarms?*/
+        epicsUInt16     status;         /* alarm status */\
+        epicsUInt16     severity;       /* alarm severity*/\
+        epicsUInt16     acks;           /* alarm ack severity*/\
+        epicsUInt16     ackt;           /* Acknowledge transient alarms?*/
 #define DB_UNITS_SIZE   16
 #define DBRunits \
-	char		units[DB_UNITS_SIZE];	/* units	*/
+        char            units[DB_UNITS_SIZE];   /* units        */
 #define DBRprecision union { \
         long            dp;      /* number of decimal places*/\
         double          unused;  /* for alignment */\
@@ -119,11 +119,11 @@ epicsShareExtern int dbAccessDebugPUTF;
          * too late to change now.  DBRprecision must be padded to
          * maintain 8-byte alignment. */
 #define DBRtime \
-	epicsTimeStamp	time;		/* time stamp*/
+        epicsTimeStamp  time;           /* time stamp*/
 #define DBRenumStrs \
-	epicsUInt32	no_str;		/* number of strings*/\
-	epicsInt32	padenumStrs;	/*padding to force 8 byte align*/\
-	char		strs[DB_MAX_CHOICES][MAX_STRING_SIZE];	/* string values    */
+        epicsUInt32     no_str;         /* number of strings*/\
+        epicsInt32      padenumStrs;    /*padding to force 8 byte align*/\
+        char            strs[DB_MAX_CHOICES][MAX_STRING_SIZE];  /* string values    */
 #define DBRgrLong \
         epicsInt32      upper_disp_limit;       /*upper limit of graph*/\
         epicsInt32      lower_disp_limit;       /*lower limit of graph*/
@@ -175,23 +175,23 @@ struct dbr_alDouble     {DBRalDouble};
 #ifndef INCerrMdefh
 #include "errMdef.h"
 #endif
-#define S_db_notFound 	(M_dbAccess| 1) /*Process Variable Not Found*/
-#define S_db_badDbrtype	(M_dbAccess| 3) /*Illegal Database Request Type*/
-#define S_db_noMod 	(M_dbAccess| 5) /*Attempt to modify noMod field*/
-#define S_db_badLset 	(M_dbAccess| 7) /*Illegal Lock Set*/
-#define S_db_precision 	(M_dbAccess| 9) /*get precision failed */
-#define S_db_onlyOne 	(M_dbAccess|11) /*Only one element allowed*/
-#define S_db_badChoice 	(M_dbAccess|13) /*Illegal choice*/
-#define S_db_badField 	(M_dbAccess|15) /*Illegal field value*/
-#define S_db_lsetLogic 	(M_dbAccess|17) /*Logic error generating lock sets*/
+#define S_db_notFound   (M_dbAccess| 1) /*Process Variable Not Found*/
+#define S_db_badDbrtype (M_dbAccess| 3) /*Illegal Database Request Type*/
+#define S_db_noMod      (M_dbAccess| 5) /*Attempt to modify noMod field*/
+#define S_db_badLset    (M_dbAccess| 7) /*Illegal Lock Set*/
+#define S_db_precision  (M_dbAccess| 9) /*get precision failed */
+#define S_db_onlyOne    (M_dbAccess|11) /*Only one element allowed*/
+#define S_db_badChoice  (M_dbAccess|13) /*Illegal choice*/
+#define S_db_badField   (M_dbAccess|15) /*Illegal field value*/
+#define S_db_lsetLogic  (M_dbAccess|17) /*Logic error generating lock sets*/
 #define S_db_noLSET     (M_dbAccess|21) /*No link support table or entry*/
-#define S_db_noRSET 	(M_dbAccess|31) /*missing record support entry table*/
-#define S_db_noSupport 	(M_dbAccess|33) /*RSET or DSXT routine not defined*/
-#define S_db_BadSub 	(M_dbAccess|35) /*Subroutine not found*/
+#define S_db_noRSET     (M_dbAccess|31) /*missing record support entry table*/
+#define S_db_noSupport  (M_dbAccess|33) /*RSET or DSXT routine not defined*/
+#define S_db_BadSub     (M_dbAccess|35) /*Subroutine not found*/
 /*!!!! Do not change next line without changing src/rsrv/server.h!!!!!!!!*/
-#define S_db_Pending 	(M_dbAccess|37) /*Request is pending*/
+#define S_db_Pending    (M_dbAccess|37) /*Request is pending*/
 
-#define S_db_Blocked 	(M_dbAccess|39) /*Request is Blocked*/
+#define S_db_Blocked    (M_dbAccess|39) /*Request is Blocked*/
 #define S_db_putDisabled (M_dbAccess|41) /*putFields are disabled*/
 #define S_db_badHWaddr  (M_dbAccess|43) /*Hardware link type not on INP/OUT*/
 #define S_db_bkptSet    (M_dbAccess|53) /*Breakpoint already set*/

@@ -88,7 +88,7 @@ void testTimer (fdctx *pfdm, double delay)
 
     measuredDelay = epicsTimeDiffInSeconds (&cbs.time, &begin);
     measuredError = fabs (measuredDelay-delay);
-    printf ("measured delay for %lf sec was off by %lf sec (%lf %%)\n", 
+    printf ("measured delay for %lf sec was off by %lf sec (%lf %%)\n",
         delay, measuredError, 100.0*measuredError/delay);
 }
 
@@ -130,9 +130,9 @@ int main (int argc, char **argv)
 
     status = fdmgr_delete (pfdm);
     verify (status==0);
-    
+
     printf ( "Test Complete\n" );
-    
+
     return 0;
 }
 

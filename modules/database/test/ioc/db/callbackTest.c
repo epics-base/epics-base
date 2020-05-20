@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2013 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* Author:  Marty Kraimer Date:    26JAN2000 */
@@ -61,7 +61,7 @@ static void myCallback(epicsCallback *pCallback)
     myPvt *pmyPvt;
 
     callbackGetUser(pmyPvt, pCallback);
-    
+
     pmyPvt->pass++;
 
     if (pmyPvt->pass == 1) {

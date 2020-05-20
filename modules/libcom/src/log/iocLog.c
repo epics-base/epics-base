@@ -5,12 +5,12 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* logClient.c,v 1.25.2.6 2004/10/07 13:37:34 mrk Exp */
 /*
- *      Author:         Jeffrey O. Hill 
- *      Date:           080791 
+ *      Author:         Jeffrey O. Hill
+ *      Date:           080791
  */
 
 #include <stdio.h>

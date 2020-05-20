@@ -7,10 +7,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+/*
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #include <string>
@@ -48,7 +48,7 @@ dbChannelIO::~dbChannelIO ()
 {
 }
 
-void dbChannelIO::destructor ( CallbackGuard & cbGuard, 
+void dbChannelIO::destructor ( CallbackGuard & cbGuard,
                               epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );

@@ -8,9 +8,9 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  *
  * NOTES:
  * 1) This interface is preliminary and will change in the future

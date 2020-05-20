@@ -154,7 +154,7 @@ cac::cac (
     }
 
     try {
-	    long status;
+        long status;
 
         /*
          * Certain os, such as HPUX, do not unblock a socket system call

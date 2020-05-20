@@ -43,12 +43,12 @@ public:
     epicsPlacementDeleteOperator (( void *, tsFreeList < timer, 0x20 > & ))
 protected:
     timer ( class timerQueue & );
-    ~timer (); 
+    ~timer ();
     timerQueue & queue;
 private:
     enum state { statePending = 45, stateActive = 56, stateLimbo = 78 };
-    epicsTime exp; // experation time 
-    state curState; // current state 
+    epicsTime exp; // experation time
+    state curState; // current state
     epicsTimerNotify * pNotify; // callback
     void privateStart ( epicsTimerNotify & notify, const epicsTime & );
     timer & operator = ( const timer & );
@@ -57,7 +57,7 @@ private:
     // because if I declare placement new and delete, but
     // comment out the placement delete definition there are
     // no undefined symbols.
-    void operator delete ( void * ); 
+    void operator delete ( void * );
     friend class timerQueue;
 };
 
@@ -66,7 +66,7 @@ public:
     void destroy ();
 protected:
     epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
-    ~epicsTimerForC (); 
+    ~epicsTimerForC ();
     void * operator new ( size_t size, tsFreeList < epicsTimerForC, 0x20 > & );
     epicsPlacementDeleteOperator (( void *, tsFreeList < epicsTimerForC, 0x20 > & ))
 private:
@@ -79,7 +79,7 @@ private:
     // because if I declare placement new and delete, but
     // comment out the placement delete definition there are
     // no undefined symbols.
-    void operator delete ( void * ); 
+    void operator delete ( void * );
     friend class timerQueue;
 };
 
@@ -107,7 +107,7 @@ private:
     static const double exceptMsgMinPeriod;
     void printExceptMsg ( const char * pName,
                 const type_info & type );
-	timerQueue ( const timerQueue & );
+    timerQueue ( const timerQueue & );
     timerQueue & operator = ( const timerQueue & );
     friend class timer;
     friend struct epicsTimerForC;
@@ -125,7 +125,7 @@ private:
 
 class timerQueueActiveMgr;
 
-class timerQueueActive : public epicsTimerQueueActive, 
+class timerQueueActive : public epicsTimerQueueActive,
     public epicsThreadRunable, public epicsTimerQueueNotify,
     public timerQueueActiveMgrPrivate {
 public:
@@ -152,26 +152,26 @@ private:
     void run ();
     void reschedule ();
     double quantum ();
-    void _printLastChanceExceptionMessage ( 
+    void _printLastChanceExceptionMessage (
                 const char * pExceptionTypeName,
                 const char * pExceptionContext );
     epicsTimerQueue & getEpicsTimerQueue ();
-	timerQueueActive ( const timerQueueActive & );
+    timerQueueActive ( const timerQueueActive & );
     timerQueueActive & operator = ( const timerQueueActive & );
 };
 
 class timerQueueActiveMgr {
 public:
     typedef epicsSingleton < timerQueueActiveMgr > :: reference RefThis;
-	timerQueueActiveMgr ();
+    timerQueueActiveMgr ();
     ~timerQueueActiveMgr ();
-    epicsTimerQueueActiveForC & allocate ( RefThis &, bool okToShare, 
+    epicsTimerQueueActiveForC & allocate ( RefThis &, bool okToShare,
         unsigned threadPriority = epicsThreadPriorityMin + 10 );
     void release ( epicsTimerQueueActiveForC & );
 private:
     epicsMutex mutex;
     tsDLList < epicsTimerQueueActiveForC > sharedQueueList;
-	timerQueueActiveMgr ( const timerQueueActiveMgr & );
+    timerQueueActiveMgr ( const timerQueueActiveMgr & );
     timerQueueActiveMgr & operator = ( const timerQueueActiveMgr & );
 };
 
@@ -188,15 +188,15 @@ protected:
     timerQueue queue;
     ~timerQueuePassive ();
     epicsTimerQueue & getEpicsTimerQueue ();
-	timerQueuePassive ( const timerQueuePassive & );
+    timerQueuePassive ( const timerQueuePassive & );
     timerQueuePassive & operator = ( const timerQueuePassive & );
 };
 
-struct epicsTimerQueuePassiveForC : 
+struct epicsTimerQueuePassiveForC :
     public epicsTimerQueueNotify, public timerQueuePassive {
 public:
-    epicsTimerQueuePassiveForC ( 
-        epicsTimerQueueNotifyReschedule, 
+    epicsTimerQueuePassiveForC (
+        epicsTimerQueueNotifyReschedule,
         epicsTimerQueueNotifyQuantum,
         void * pPrivate );
     void destroy ();
@@ -211,7 +211,7 @@ private:
     double quantum ();
 };
 
-struct epicsTimerQueueActiveForC : public timerQueueActive, 
+struct epicsTimerQueueActiveForC : public timerQueueActive,
     public tsDLNode < epicsTimerQueueActiveForC > {
 public:
     epicsTimerQueueActiveForC ( RefMgr &, bool okToShare, unsigned priority );
@@ -221,7 +221,7 @@ public:
 protected:
     virtual ~epicsTimerQueueActiveForC ();
 private:
-	epicsTimerQueueActiveForC ( const epicsTimerQueueActiveForC & );
+    epicsTimerQueueActiveForC ( const epicsTimerQueueActiveForC & );
     epicsTimerQueueActiveForC & operator = ( const epicsTimerQueueActiveForC & );
 };
 
@@ -235,29 +235,29 @@ inline unsigned timerQueueActive::threadPriority () const
     return thread.getPriority ();
 }
 
-inline void * timer::operator new ( size_t size, 
-                     tsFreeList < timer, 0x20 > & freeList ) 
+inline void * timer::operator new ( size_t size,
+                     tsFreeList < timer, 0x20 > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-inline void timer::operator delete ( void * pCadaver, 
-                     tsFreeList < timer, 0x20 > & freeList ) 
+inline void timer::operator delete ( void * pCadaver,
+                     tsFreeList < timer, 0x20 > & freeList )
 {
     freeList.release ( pCadaver );
 }
 #endif
 
 inline void * epicsTimerForC::operator new ( size_t size,
-                        tsFreeList < epicsTimerForC, 0x20 > & freeList ) 
+                        tsFreeList < epicsTimerForC, 0x20 > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-inline void epicsTimerForC::operator delete ( void * pCadaver, 
-                        tsFreeList < epicsTimerForC, 0x20 > & freeList ) 
+inline void epicsTimerForC::operator delete ( void * pCadaver,
+                        tsFreeList < epicsTimerForC, 0x20 > & freeList )
 {
     freeList.release ( pCadaver );
 }

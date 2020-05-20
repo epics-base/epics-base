@@ -7,7 +7,7 @@
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -94,15 +94,15 @@ static void sprint_long (char *ret, dbr_long_t val, IntFormatT outType)
 
 /*+**************************************************************************
  *
- * Function:	val2str
+ * Function:    val2str
  *
- * Description:	Print (convert) value to a string
+ * Description: Print (convert) value to a string
  *
- * Arg(s) In:	v      -  Pointer to dbr_... structure
+ * Arg(s) In:   v      -  Pointer to dbr_... structure
  *              type   -  Numeric dbr type
- *              index  -  Index of element to print (for arrays) 
+ *              index  -  Index of element to print (for arrays)
  *
- * Return(s):	Pointer to static output string
+ * Return(s):   Pointer to static output string
  *
  **************************************************************************-*/
 
@@ -192,14 +192,14 @@ char *val2str (const void *v, unsigned type, int index)
 
 /*+**************************************************************************
  *
- * Function:	dbr2str
+ * Function:    dbr2str
  *
- * Description:	Print (convert) additional information contained in dbr_...
+ * Description: Print (convert) additional information contained in dbr_...
  *
- * Arg(s) In:	value  -  Pointer to dbr_... structure
+ * Arg(s) In:   value  -  Pointer to dbr_... structure
  *              type   -  Numeric dbr type
  *
- * Return(s):	Pointer to static output string
+ * Return(s):   Pointer to static output string
  *
  **************************************************************************-*/
 
@@ -398,16 +398,16 @@ char *dbr2str (const void *value, unsigned type)
 
 /*+**************************************************************************
  *
- * Function:	print_time_val_sts
+ * Function:    print_time_val_sts
  *
- * Description:	Print (to stdout) one wide output line
+ * Description: Print (to stdout) one wide output line
  *              (name, timestamp, value, status, severity)
  *
- * Arg(s) In:	pv      -  Pointer to pv structure
+ * Arg(s) In:   pv      -  Pointer to pv structure
  *              nElems  -  Number of elements (array)
  *
  **************************************************************************-*/
- 
+
 #define PRN_TIME_VAL_STS(TYPE,TYPE_ENUM)                                \
     printAbs = !pv->firstStampPrinted;                                  \
                                                                         \
@@ -555,22 +555,22 @@ void print_time_val_sts (pv* pv, unsigned long reqElems)
 
 /*+**************************************************************************
  *
- * Function:	create_pvs
+ * Function:    create_pvs
  *
- * Description:	Creates an arbitrary number of PVs
+ * Description: Creates an arbitrary number of PVs
  *
- * Arg(s) In:	pvs   -  Pointer to an array of pv structures
+ * Arg(s) In:   pvs   -  Pointer to an array of pv structures
  *              nPvs  -  Number of elements in the pvs array
  *              pCB   -  Connection state change callback
  *
- * Arg(s) Out:	none
+ * Arg(s) Out:  none
  *
- * Return(s):	Error code:
+ * Return(s):   Error code:
  *                  0  -  All PVs created
  *                  1  -  Some PV(s) not created
  *
  **************************************************************************-*/
- 
+
 int create_pvs (pv* pvs, int nPvs, caCh *pCB)
 {
     int n;
@@ -603,21 +603,21 @@ int create_pvs (pv* pvs, int nPvs, caCh *pCB)
 
 /*+**************************************************************************
  *
- * Function:	connect_pvs
+ * Function:    connect_pvs
  *
- * Description:	Connects an arbitrary number of PVs
+ * Description: Connects an arbitrary number of PVs
  *
- * Arg(s) In:	pvs   -  Pointer to an array of pv structures
+ * Arg(s) In:   pvs   -  Pointer to an array of pv structures
  *              nPvs  -  Number of elements in the pvs array
  *
- * Arg(s) Out:	none
+ * Arg(s) Out:  none
  *
- * Return(s):	Error code:
+ * Return(s):   Error code:
  *                  0  -  All PVs connected
  *                  1  -  Some PV(s) not connected
  *
  **************************************************************************-*/
- 
+
 int connect_pvs (pv* pvs, int nPvs)
 {
     int returncode = create_pvs ( pvs, nPvs, 0);
@@ -630,7 +630,7 @@ int connect_pvs (pv* pvs, int nPvs)
             {
                 fprintf(stderr, "Channel connect timed out: some PV(s) not found.\n");
             } else {
-                fprintf(stderr, "Channel connect timed out: '%s' not found.\n", 
+                fprintf(stderr, "Channel connect timed out: '%s' not found.\n",
                         pvs[0].name);
             }
             returncode = 1;

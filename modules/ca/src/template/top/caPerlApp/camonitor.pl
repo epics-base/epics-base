@@ -55,7 +55,7 @@ sub conn_callback {
             if ($opt_n && $type eq 'DBR_ENUM')
             || (!$opt_S && $type eq 'DBR_CHAR');
         $type =~ s/^DBR_/DBR_TIME_/;
-        
+
         $monitors{$chan} =
             $chan->create_subscription($opt_m, \&mon_callback, $type, 0+$opt_c);
     }
@@ -93,7 +93,7 @@ sub display {
     my ($chan, $data) = @_;
     die "Internal error"
         unless ref $data eq 'HASH';
-    
+
     my $type = $data->{TYPE};
     my $value = $data->{value};
     if (ref $value eq 'ARRAY') {

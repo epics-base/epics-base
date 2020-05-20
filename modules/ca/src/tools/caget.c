@@ -8,7 +8,7 @@
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -109,12 +109,12 @@ static void usage (void)
 
 /*+**************************************************************************
  *
- * Function:	event_handler
+ * Function:    event_handler
  *
- * Description:	CA event_handler for request type callback
- * 		Allocates the dbr structure and copies the data
+ * Description: CA event_handler for request type callback
+ *              Allocates the dbr structure and copies the data
  *
- * Arg(s) In:	args  -  event handler args (see CA manual)
+ * Arg(s) In:   args  -  event handler args (see CA manual)
  *
  **************************************************************************-*/
 
@@ -137,22 +137,22 @@ static void event_handler (evargs args)
 
 /*+**************************************************************************
  *
- * Function:	caget
+ * Function:    caget
  *
- * Description:	Issue read requests, wait for incoming data
- * 		and print the data according to the selected format
+ * Description: Issue read requests, wait for incoming data
+ *              and print the data according to the selected format
  *
- * Arg(s) In:	pvs       -  Pointer to an array of pv structures
+ * Arg(s) In:   pvs       -  Pointer to an array of pv structures
  *              nPvs      -  Number of elements in the pvs array
  *              request   -  Request type
  *              format    -  Output format
  *              dbrType   -  Requested dbr type
  *              reqElems  -  Requested number of (array) elements
  *
- * Return(s):	Error code: 0 = OK, 1 = Error
+ * Return(s):   Error code: 0 = OK, 1 = Error
  *
  **************************************************************************-*/
- 
+
 static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
            chtype dbrType, unsigned long reqElems)
 {
@@ -350,23 +350,23 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
 
 /*+**************************************************************************
  *
- * Function:	main
+ * Function:    main
  *
- * Description:	caget main()
- * 		Evaluate command line options, set up CA, connect the
- * 		channels, collect and print the data as requested
+ * Description: caget main()
+ *              Evaluate command line options, set up CA, connect the
+ *              channels, collect and print the data as requested
  *
- * Arg(s) In:	[options] <pv-name> ...
+ * Arg(s) In:   [options] <pv-name> ...
  *
- * Arg(s) Out:	none
+ * Arg(s) Out:  none
  *
- * Return(s):	Standard return code (0=success, 1=error)
+ * Return(s):   Standard return code (0=success, 1=error)
  *
  **************************************************************************-*/
 
 static void complainIfNotPlainAndSet (OutputT *current, const OutputT requested)
 {
-    if (*current != plain) 
+    if (*current != plain)
         fprintf(stderr,
                 "Options t,d,a are mutually exclusive. "
                 "('caget -h' for help.)\n");
@@ -467,7 +467,7 @@ int main (int argc, char *argv[])
         case 'f':
         case 'g':
             if (sscanf(optarg, "%d", &digits) != 1)
-                fprintf(stderr, 
+                fprintf(stderr,
                         "Invalid precision argument '%s' "
                         "for option '-%c' - ignored.\n", optarg, opt);
             else

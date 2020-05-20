@@ -7,19 +7,19 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifndef INC_udpiiu_H
@@ -52,10 +52,10 @@ LIBCA_API void ca_repeater ( void );
 class cac;
 class cacContextNotify;
 
-class udpRecvThread : 
+class udpRecvThread :
         private epicsThreadRunable {
 public:
-    udpRecvThread ( 
+    udpRecvThread (
         class udpiiu & iiuIn, cacContextNotify &, epicsMutex &,
         const char * pName, unsigned stackSize, unsigned priority );
     virtual ~udpRecvThread ();
@@ -76,31 +76,31 @@ static const double maxSearchPeriodDefault = 5.0 * 60.0; // seconds
 static const double maxSearchPeriodLowerLimit = 60.0; // seconds
 static const double beaconAnomalySearchPeriod = 5.0; // seconds
 
-class udpiiu : 
-    private netiiu, 
-    private searchTimerNotify, 
+class udpiiu :
+    private netiiu,
+    private searchTimerNotify,
     private disconnectGovernorNotify {
 public:
-    udpiiu ( 
+    udpiiu (
         epicsGuard < epicsMutex > & cacGuard,
-        class epicsTimerQueueActive &, 
-        epicsMutex & callbackControl, 
-        epicsMutex & mutualExclusion, 
+        class epicsTimerQueueActive &,
+        epicsMutex & callbackControl,
+        epicsMutex & mutualExclusion,
         cacContextNotify &,
         class cac &,
         unsigned port,
         tsDLList < SearchDest > & );
     virtual ~udpiiu ();
-    void installNewChannel ( 
+    void installNewChannel (
         epicsGuard < epicsMutex > &, nciu &, netiiu * & );
-    void installDisconnectedChannel ( 
+    void installDisconnectedChannel (
         epicsGuard < epicsMutex > &, nciu & );
-    void beaconAnomalyNotify ( 
+    void beaconAnomalyNotify (
         epicsGuard < epicsMutex > & guard );
-    void shutdown ( epicsGuard < epicsMutex > & cbGuard, 
+    void shutdown ( epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
     void show ( unsigned level ) const;
-    
+
     // exceptions
     class noSocket {};
 
@@ -109,43 +109,43 @@ private:
         public SearchDest {
     public:
         SearchDestUDP ( const osiSockAddr &, udpiiu & );
-        void searchRequest ( 
+        void searchRequest (
             epicsGuard < epicsMutex > &, const char * pBuf, size_t bufLen );
-        void show ( 
+        void show (
             epicsGuard < epicsMutex > &, unsigned level ) const;
     private:
         int _lastError;
         osiSockAddr _destAddr;
         udpiiu & _udpiiu;
     };
-    class SearchRespCallback : 
+    class SearchRespCallback :
         public SearchDest :: Callback {
     public:
         SearchRespCallback ( udpiiu & );
         void notify (
             const caHdr &, const void * pPayload,
             const osiSockAddr &, const epicsTime & );
-        void show ( 
+        void show (
             epicsGuard < epicsMutex > &, unsigned level ) const;
     private:
         udpiiu & _udpiiu;
     };
-    class M_repeaterTimerNotify : 
+    class M_repeaterTimerNotify :
         public repeaterTimerNotify {
     public:
-        M_repeaterTimerNotify ( udpiiu & iiu ) : 
+        M_repeaterTimerNotify ( udpiiu & iiu ) :
             m_udpiiu ( iiu ) {}
         ~M_repeaterTimerNotify (); /* for sunpro compiler */
         // repeaterTimerNotify
-        void repeaterRegistrationMessage ( 
+        void repeaterRegistrationMessage (
             unsigned attemptNumber );
-        int printFormated ( 
-            epicsGuard < epicsMutex > & callbackControl, 
+        int printFormated (
+            epicsGuard < epicsMutex > & callbackControl,
             const char * pformat, ... );
     private:
         udpiiu & m_udpiiu;
     };
-    char xmitBuf [MAX_UDP_SEND];   
+    char xmitBuf [MAX_UDP_SEND];
     char recvBuf [MAX_UDP_RECV];
     udpRecvThread recvThread;
     M_repeaterTimerNotify m_repeaterTimerNotify;
@@ -182,120 +182,120 @@ private:
 
     bool wakeupMsg ();
 
-    void postMsg ( 
-            const osiSockAddr & net_addr, 
+    void postMsg (
+            const osiSockAddr & net_addr,
             char *pInBuf, arrayElementCount blockSize,
             const epicsTime &currenTime );
 
-    bool pushDatagramMsg ( epicsGuard < epicsMutex > &, 
-        const caHdr & hdr, const void * pExt, 
+    bool pushDatagramMsg ( epicsGuard < epicsMutex > &,
+        const caHdr & hdr, const void * pExt,
         ca_uint16_t extsize);
 
-    typedef bool ( udpiiu::*pProtoStubUDP ) ( 
-        const caHdr &, 
+    typedef bool ( udpiiu::*pProtoStubUDP ) (
+        const caHdr &,
         const osiSockAddr &, const epicsTime & );
 
     // UDP protocol dispatch table
     static const pProtoStubUDP udpJumpTableCAC[];
 
     // UDP protocol stubs
-    bool versionAction ( 
-        const caHdr &, 
+    bool versionAction (
+        const caHdr &,
         const osiSockAddr &, const epicsTime & );
-    bool badUDPRespAction ( 
-        const caHdr &msg, 
+    bool badUDPRespAction (
+        const caHdr &msg,
         const osiSockAddr &netAddr, const epicsTime & );
-    bool searchRespAction ( 
-        const caHdr &msg, 
+    bool searchRespAction (
+        const caHdr &msg,
         const osiSockAddr &net_addr, const epicsTime & );
-    bool exceptionRespAction ( 
-        const caHdr &msg, 
+    bool exceptionRespAction (
+        const caHdr &msg,
         const osiSockAddr &net_addr, const epicsTime & );
-    bool beaconAction ( 
-        const caHdr &msg, 
+    bool beaconAction (
+        const caHdr &msg,
         const osiSockAddr &net_addr, const epicsTime & );
-    bool notHereRespAction ( 
-        const caHdr &msg, 
+    bool notHereRespAction (
+        const caHdr &msg,
         const osiSockAddr &net_addr, const epicsTime & );
-    bool repeaterAckAction ( 
-        const caHdr &msg, 
+    bool repeaterAckAction (
+        const caHdr &msg,
         const osiSockAddr &net_addr, const epicsTime & );
 
     // netiiu stubs
-    unsigned getHostName ( 
-        epicsGuard < epicsMutex > &, char * pBuf, 
+    unsigned getHostName (
+        epicsGuard < epicsMutex > &, char * pBuf,
         unsigned bufLength ) const throw ();
     const char * pHostName (
-        epicsGuard < epicsMutex > & ) const throw (); 
+        epicsGuard < epicsMutex > & ) const throw ();
         bool ca_v41_ok (
         epicsGuard < epicsMutex > & ) const;
     bool ca_v42_ok (
         epicsGuard < epicsMutex > & ) const;
-    unsigned requestMessageBytesPending ( 
+    unsigned requestMessageBytesPending (
         epicsGuard < epicsMutex > & mutualExclusionGuard );
-    void flush ( 
+    void flush (
         epicsGuard < epicsMutex > & mutualExclusionGuard );
-    void writeRequest ( 
-        epicsGuard < epicsMutex > &, nciu &, 
-        unsigned type, arrayElementCount nElem, 
+    void writeRequest (
+        epicsGuard < epicsMutex > &, nciu &,
+        unsigned type, arrayElementCount nElem,
         const void *pValue );
-    void writeNotifyRequest ( 
-        epicsGuard < epicsMutex > &, 
-        nciu &, netWriteNotifyIO &, 
-        unsigned type, arrayElementCount nElem, 
+    void writeNotifyRequest (
+        epicsGuard < epicsMutex > &,
+        nciu &, netWriteNotifyIO &,
+        unsigned type, arrayElementCount nElem,
         const void *pValue );
-    void readNotifyRequest ( 
-        epicsGuard < epicsMutex > &, nciu &, 
-        netReadNotifyIO &, unsigned type, 
+    void readNotifyRequest (
+        epicsGuard < epicsMutex > &, nciu &,
+        netReadNotifyIO &, unsigned type,
         arrayElementCount nElem );
-    void clearChannelRequest ( 
-        epicsGuard < epicsMutex > &, 
+    void clearChannelRequest (
+        epicsGuard < epicsMutex > &,
         ca_uint32_t sid, ca_uint32_t cid );
-    void subscriptionRequest ( 
-        epicsGuard < epicsMutex > &, 
+    void subscriptionRequest (
+        epicsGuard < epicsMutex > &,
         nciu &, netSubscription & );
-    void subscriptionUpdateRequest ( 
-        epicsGuard < epicsMutex > &, 
+    void subscriptionUpdateRequest (
+        epicsGuard < epicsMutex > &,
         nciu &, netSubscription & );
-    void subscriptionCancelRequest ( 
-        epicsGuard < epicsMutex > &, 
+    void subscriptionCancelRequest (
+        epicsGuard < epicsMutex > &,
         nciu & chan, netSubscription & subscr );
-    void flushRequest ( 
+    void flushRequest (
         epicsGuard < epicsMutex > & );
     void requestRecvProcessPostponedFlush (
         epicsGuard < epicsMutex > & );
         osiSockAddr getNetworkAddress (
         epicsGuard < epicsMutex > & ) const;
-    void uninstallChan ( 
+    void uninstallChan (
         epicsGuard < epicsMutex > &, nciu & );
-    void uninstallChanDueToSuccessfulSearchResponse ( 
-        epicsGuard < epicsMutex > &, nciu &, 
+    void uninstallChanDueToSuccessfulSearchResponse (
+        epicsGuard < epicsMutex > &, nciu &,
     const class epicsTime & currentTime );
         double receiveWatchdogDelay (
         epicsGuard < epicsMutex > & ) const;
     bool searchMsg (
-        epicsGuard < epicsMutex > &, ca_uint32_t id, 
+        epicsGuard < epicsMutex > &, ca_uint32_t id,
             const char * pName, unsigned nameLength );
 
     // searchTimerNotify stubs
     double getRTTE ( epicsGuard < epicsMutex > & ) const;
     void updateRTTE ( epicsGuard < epicsMutex > &, double rtte );
     bool pushVersionMsg ();
-    void boostChannel ( 
+    void boostChannel (
         epicsGuard < epicsMutex > & guard, nciu & chan );
-    void noSearchRespNotify ( 
+    void noSearchRespNotify (
         epicsGuard < epicsMutex > &, nciu & chan, unsigned index );
-    bool datagramFlush ( 
+    bool datagramFlush (
         epicsGuard < epicsMutex > &, const epicsTime & currentTime );
-    ca_uint32_t datagramSeqNumber ( 
+    ca_uint32_t datagramSeqNumber (
         epicsGuard < epicsMutex > & ) const;
 
     // disconnectGovernorNotify
-    void govExpireNotify ( 
+    void govExpireNotify (
         epicsGuard < epicsMutex > &, nciu & );
 
-	udpiiu ( const udpiiu & );
-	udpiiu & operator = ( const udpiiu & );
+    udpiiu ( const udpiiu & );
+    udpiiu & operator = ( const udpiiu & );
 
     friend class udpRecvThread;
 

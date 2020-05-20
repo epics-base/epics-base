@@ -16,8 +16,8 @@
  *  Copyright, 1986, The Regents of the University of California.
  *
  *
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
  */
 
 #ifndef INC_comBuf_H
@@ -39,23 +39,23 @@ static const unsigned comBufSize = 0x4000;
 class comBufMemoryManager {
 public:
     virtual ~comBufMemoryManager ();
-    virtual void * allocate ( size_t ) = 0; 
-    virtual void release ( void * ) = 0; 
+    virtual void * allocate ( size_t ) = 0;
+    virtual void release ( void * ) = 0;
 };
 
 class wireSendAdapter {
 public:
-    virtual unsigned sendBytes ( const void * pBuf, 
-        unsigned nBytesInBuf, 
+    virtual unsigned sendBytes ( const void * pBuf,
+        unsigned nBytesInBuf,
         const class epicsTime & currentTime ) = 0;
 protected:
     virtual ~wireSendAdapter() {}
 };
 
-enum swioCircuitState { 
-        swioConnected, 
-        swioPeerHangup, 
-        swioPeerAbort, 
+enum swioCircuitState {
+        swioConnected,
+        swioPeerHangup,
+        swioPeerAbort,
         swioLinkFailure,
         swioLocalAbort
 };
@@ -66,7 +66,7 @@ struct statusWireIO {
 
 class wireRecvAdapter {
 public:
-    virtual void recvBytes ( void * pBuf, 
+    virtual void recvBytes ( void * pBuf,
         unsigned nBytesInBuf, statusWireIO & ) = 0;
 protected:
     virtual ~wireRecvAdapter() {}
@@ -105,7 +105,7 @@ public:
     template < class T >
     popStatus pop ( T & );
     static void throwInsufficentBytesException ();
-    void * operator new ( size_t size, 
+    void * operator new ( size_t size,
         comBufMemoryManager  & );
     epicsPlacementDeleteOperator (( void *, comBufMemoryManager & ))
 private:
@@ -118,14 +118,14 @@ private:
     bool push ( const T * ); // disabled
 };
 
-inline void * comBuf::operator new ( size_t size, 
+inline void * comBuf::operator new ( size_t size,
     comBufMemoryManager & mgr )
 {
     return mgr.allocate ( size );
 }
-    
+
 #ifdef CXX_PLACEMENT_DELETE
-inline void comBuf::operator delete ( void * pCadaver, 
+inline void comBuf::operator delete ( void * pCadaver,
     comBufMemoryManager & mgr )
 {
     mgr.release ( pCadaver );
@@ -161,8 +161,8 @@ inline unsigned comBuf :: uncommittedBytes () const
 
 inline unsigned comBuf :: push ( comBuf & bufIn )
 {
-    unsigned nBytes = this->copyInBytes ( 
-        & bufIn.buf[ bufIn.nextReadIndex ], 
+    unsigned nBytes = this->copyInBytes (
+        & bufIn.buf[ bufIn.nextReadIndex ],
         bufIn.commitIndex - bufIn.nextReadIndex );
     bufIn.nextReadIndex += nBytes;
     return nBytes;
@@ -173,11 +173,11 @@ inline unsigned comBuf :: capacityBytes ()
     return comBufSize;
 }
 
-inline void comBuf :: fillFromWire ( 
+inline void comBuf :: fillFromWire (
     wireRecvAdapter & wire, statusWireIO & stat )
 {
-    wire.recvBytes ( 
-        & this->buf[this->nextWriteIndex], 
+    wire.recvBytes (
+        & this->buf[this->nextWriteIndex],
         sizeof ( this->buf ) - this->nextWriteIndex, stat );
     if ( stat.circuitState == swioConnected ) {
         this->nextWriteIndex += stat.bytesCopied;

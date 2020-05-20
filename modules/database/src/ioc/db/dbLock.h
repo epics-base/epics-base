@@ -5,10 +5,10 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbLock.h */
-/*	Author: Marty Kraimer	Date: 12MAR96	*/
+/*      Author: Marty Kraimer   Date: 12MAR96   */
 
 #ifndef INCdbLockh
 #define INCdbLockh

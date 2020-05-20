@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*      RTEMS port by Till Straumann, <strauman@slac.stanford.edu>
@@ -58,7 +58,7 @@ static myISR *defaultHandlerAddr[]={
  * address modes by default
  */
 #define EPICSAddrTypeNoConvert -1
-int EPICStovxWorksAddrType[] 
+int EPICStovxWorksAddrType[]
                 = {
                 VME_AM_SUP_SHORT_IO,
                 VME_AM_STD_SUP_DATA,
@@ -75,13 +75,13 @@ static long rtemsDevMapAddr (epicsAddressType addrType, unsigned options,
         size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
 
 /*
- * a bus error safe "wordSize" read at the specified address which returns 
+ * a bus error safe "wordSize" read at the specified address which returns
  * unsuccessful status if the device isnt present
  */
 static long rtemsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue);
 
 /*
- * a bus error safe "wordSize" write at the specified address which returns 
+ * a bus error safe "wordSize" write at the specified address which returns
  * unsuccessful status if the device isnt present
  */
 static long rtemsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue);
@@ -93,7 +93,7 @@ static long rtemsDevConnectInterruptVME (
 
 static long rtemsDevDisconnectInterruptVME (
     unsigned vectorNumber,
-    void (*pFunction)() 
+    void (*pFunction)()
 );
 
 static long rtemsDevEnableInterruptLevelVME (unsigned level);
@@ -113,7 +113,7 @@ static long rtemsDevInit(void);
  * used by bind in devLib.c
  */
 static devLibVME rtemsVirtualOS = {
-    rtemsDevMapAddr, rtemsDevReadProbe, rtemsDevWriteProbe, 
+    rtemsDevMapAddr, rtemsDevReadProbe, rtemsDevWriteProbe,
     rtemsDevConnectInterruptVME, rtemsDevDisconnectInterruptVME,
     rtemsDevEnableInterruptLevelVME, rtemsDevDisableInterruptLevelVME,
     devA24Malloc,devA24Free,rtemsDevInit,rtemsDevInterruptInUseVME
@@ -143,12 +143,12 @@ static long rtemsDevConnectInterruptVME (
 
 
     if (devInterruptInUseVME(vectorNumber)) {
-        return S_dev_vectorInUse; 
+        return S_dev_vectorInUse;
     }
     status = BSP_installVME_isr(
             vectorNumber,
             pFunction,
-            parameter);       
+            parameter);
     if (status) {
         return S_dev_vecInstlFail;
     }
@@ -162,14 +162,14 @@ static long rtemsDevConnectInterruptVME (
  *
  *  wrapper to minimize driver dependency on OS
  *
- *  The parameter pFunction should be set to the C function pointer that 
- *  was connected. It is used as a key to prevent a driver from removing 
+ *  The parameter pFunction should be set to the C function pointer that
+ *  was connected. It is used as a key to prevent a driver from removing
  *  an interrupt handler that was installed by another driver
  *
  */
 static long rtemsDevDisconnectInterruptVME (
     unsigned vectorNumber,
-    void (*pFunction)() 
+    void (*pFunction)()
 )
 {
     void (*psub)();
@@ -192,7 +192,7 @@ static long rtemsDevDisconnectInterruptVME (
      BSP_installVME_isr(
         vectorNumber,
         (BSP_VME_ISR_t)unsolicitedHandlerEPICS,
-        (void*)vectorNumber);        
+        (void*)vectorNumber);
     if(status){
         return S_dev_vecInstlFail;
     }
@@ -245,7 +245,7 @@ static long rtemsDevMapAddr (epicsAddressType addrType, unsigned options,
 }
 
 /*
- * a bus error safe "wordSize" read at the specified address which returns 
+ * a bus error safe "wordSize" read at the specified address which returns
  * unsuccessful status if the device isnt present
  */
 rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval);
@@ -265,7 +265,7 @@ static long rtemsDevReadProbe (unsigned wordSize, volatile const void *ptr, void
 }
 
 /*
- * a bus error safe "wordSize" write at the specified address which returns 
+ * a bus error safe "wordSize" write at the specified address which returns
  * unsuccessful status if the device isnt present
  */
 static long rtemsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)

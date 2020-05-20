@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      Author  W. Eric Norum
@@ -40,7 +40,7 @@ epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
 
     if(!id)
         return NULL;
-    
+
     sc = rtems_message_queue_create (rtems_build_name ('Q', c3, c2, c1),
         capacity,
         maximumMessageSize,
@@ -85,7 +85,7 @@ static rtems_status_code rtems_message_queue_send_timeout(
   Message_queue_Control    *the_message_queue;
   Objects_Locations         location;
   CORE_message_queue_Status msg_status;
-    
+
   the_message_queue = _Message_queue_Get( id, &location );
   switch ( location )
   {
@@ -108,7 +108,7 @@ static rtems_status_code rtems_message_queue_send_timeout(
       /*
        *  If we had to block, then this is where the task returns
        *  after it wakes up.  The returned status is correct for
-       *  non-blocking operations but if we blocked, then we need 
+       *  non-blocking operations but if we blocked, then we need
        *  to look at the status in our TCB.
        */
 
@@ -138,7 +138,7 @@ LIBCOM_API int epicsStdCall epicsMessageQueueSendWithTimeout(
 {
     rtems_interval delay;
     extern double rtemsTicksPerSecond_double;
-    
+
     /*
      * Convert time to ticks
      */
@@ -162,7 +162,7 @@ static int receiveMessage(
 {
     size_t rsize;
     rtems_status_code sc;
-    
+
     if (size < id->maxSize) {
         if (id->localBuf == NULL) {
             id->localBuf = malloc(id->maxSize);
@@ -207,7 +207,7 @@ LIBCOM_API int epicsStdCall epicsMessageQueueReceiveWithTimeout(
     rtems_interval delay;
     uint32_t wait;
     extern double rtemsTicksPerSecond_double;
-    
+
     /*
      * Convert time to ticks
      */
@@ -229,7 +229,7 @@ LIBCOM_API int epicsStdCall epicsMessageQueuePending(
 {
     uint32_t count;
     rtems_status_code sc;
-    
+
     sc = rtems_message_queue_get_number_pending(id->id, &count);
     if (sc != RTEMS_SUCCESSFUL) {
         errlogPrintf("Message queue %x get number pending failed: %s\n",

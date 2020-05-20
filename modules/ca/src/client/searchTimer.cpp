@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-// 
+//
 //
 //                    L O S  A L A M O S
 //              Los Alamos National Laboratory
@@ -18,7 +18,7 @@
 //
 
 #include <stdexcept>
-#include <string> // vxWorks 6.0 requires this include 
+#include <string> // vxWorks 6.0 requires this include
 #include <limits.h>
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
@@ -30,15 +30,15 @@
 #include "nciu.h"
 
 static const unsigned initialTriesPerFrame = 1u; // initial UDP frames per search try
-static const unsigned maxTriesPerFrame = 64u; // max UDP frames per search try 
+static const unsigned maxTriesPerFrame = 64u; // max UDP frames per search try
 
 //
 // searchTimer::searchTimer ()
 //
-searchTimer::searchTimer ( 
-        searchTimerNotify & iiuIn, 
-        epicsTimerQueue & queueIn, 
-        const unsigned indexIn, 
+searchTimer::searchTimer (
+        searchTimerNotify & iiuIn,
+        epicsTimerQueue & queueIn,
+        const unsigned indexIn,
         epicsMutex & mutexIn,
         bool boostPossibleIn ) :
     timeAtLastSend ( epicsTime::getCurrent () ),
@@ -71,7 +71,7 @@ searchTimer::~searchTimer ()
     this->timer.destroy ();
 }
 
-void searchTimer::shutdown ( 
+void searchTimer::shutdown (
     epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
@@ -85,25 +85,25 @@ void searchTimer::shutdown (
     }
 
     while ( nciu * pChan = this->chanListReqPending.get () ) {
-        pChan->channelNode::listMember = 
+        pChan->channelNode::listMember =
             channelNode::cs_none;
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
     while ( nciu * pChan = this->chanListRespPending.get () ) {
-        pChan->channelNode::listMember = 
+        pChan->channelNode::listMember =
             channelNode::cs_none;
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
 }
 
-void searchTimer::installChannel ( 
+void searchTimer::installChannel (
     epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     this->chanListReqPending.add ( chan );
     chan.channelNode::setReqPendingState ( guard, this->index );
 }
 
-void searchTimer::moveChannels ( 
+void searchTimer::moveChannels (
     epicsGuard < epicsMutex > & guard, searchTimer & dest )
 {
     while ( nciu * pChan = this->chanListRespPending.get () ) {
@@ -120,25 +120,25 @@ void searchTimer::moveChannels (
 //
 // searchTimer::expire ()
 //
-epicsTimerNotify::expireStatus searchTimer::expire ( 
+epicsTimerNotify::expireStatus searchTimer::expire (
     const epicsTime & currentTime )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 
     while ( nciu * pChan = this->chanListRespPending.get () ) {
-        pChan->channelNode::listMember = 
+        pChan->channelNode::listMember =
             channelNode::cs_none;
-        this->iiu.noSearchRespNotify ( 
+        this->iiu.noSearchRespNotify (
             guard, *pChan, this->index );
     }
-    
+
     this->timeAtLastSend = currentTime;
 
     // boost search period for channels not recently
     // searched for if there was some success
     if ( this->searchResponses && this->boostPossible ) {
         while ( nciu * pChan = this->chanListReqPending.get () ) {
-            pChan->channelNode::listMember = 
+            pChan->channelNode::listMember =
                 channelNode::cs_none;
             this->iiu.boostChannel ( guard, *pChan );
         }
@@ -147,8 +147,8 @@ epicsTimerNotify::expireStatus searchTimer::expire (
     if ( this->searchAttempts ) {
 #if 0
         //
-        // dynamically adjust the number of UDP frames per 
-        // try depending how many search requests are not 
+        // dynamically adjust the number of UDP frames per
+        // try depending how many search requests are not
         // replied to
         //
         // The variable this->framesPerTry
@@ -158,13 +158,13 @@ epicsTimerNotify::expireStatus searchTimer::expire (
         // network bandwidth. If it is too low we will
         // use very little of the incoming UDP message
         // buffer associated with the server's port and
-        // will therefore take longer to connect. We 
-        // initialize this->framesPerTry to a prime number 
+        // will therefore take longer to connect. We
+        // initialize this->framesPerTry to a prime number
         // so that it is less likely that the
         // same channel is in the last UDP frame
         // sent every time that this is called (and
         // potentially discarded by a CA server with
-        // a small UDP input queue). 
+        // a small UDP input queue).
         //
         // increase frames per try only if we see better than
         // a 93.75% success rate for one pass through the list
@@ -180,19 +180,19 @@ epicsTimerNotify::expireStatus searchTimer::expire (
                 else {
                     this->framesPerTry += (this->framesPerTry/8) + 1;
                 }
-                debugPrintf ( ("Increasing frame count to %u t=%u r=%u\n", 
+                debugPrintf ( ("Increasing frame count to %u t=%u r=%u\n",
                     this->framesPerTry, this->searchAttempts, this->searchResponses) );
             }
         }
-        // if we detect congestion because we have less than a 87.5% success 
+        // if we detect congestion because we have less than a 87.5% success
         // rate then gradually reduce the frames per try
-        else if ( this->searchResponses < 
+        else if ( this->searchResponses <
             ( this->searchAttempts - (this->searchAttempts/8u) ) ) {
             if ( this->framesPerTry > 1 ) {
                 this->framesPerTry--;
             }
             this->framesPerTryCongestThresh = this->framesPerTry/2 + 1;
-            debugPrintf ( ("Congestion detected - set frames per try to %f t=%u r=%u\n", 
+            debugPrintf ( ("Congestion detected - set frames per try to %f t=%u r=%u\n",
                 this->framesPerTry, this->searchAttempts, this->searchResponses) );
         }
 #else
@@ -212,20 +212,20 @@ epicsTimerNotify::expireStatus searchTimer::expire (
                 else {
                     this->framesPerTry += 1.0 / this->framesPerTry;
                 }
-                debugPrintf ( ("Increasing frame count to %g t=%u r=%u\n", 
+                debugPrintf ( ("Increasing frame count to %g t=%u r=%u\n",
                     this->framesPerTry, this->searchAttempts, this->searchResponses) );
             }
         }
         else  {
             this->framesPerTryCongestThresh = this->framesPerTry / 2.0;
             this->framesPerTry = 1u;
-            debugPrintf ( ("Congestion detected - set frames per try to %g t=%u r=%u\n", 
+            debugPrintf ( ("Congestion detected - set frames per try to %g t=%u r=%u\n",
                 this->framesPerTry, this->searchAttempts, this->searchResponses) );
         }
 #endif
     }
 
-    this->dgSeqNoAtTimerExpireBegin = 
+    this->dgSeqNoAtTimerExpireBegin =
         this->iiu.datagramSeqNumber ( guard );
 
     this->searchAttempts = 0;
@@ -238,9 +238,9 @@ epicsTimerNotify::expireStatus searchTimer::expire (
             break;
         }
 
-        pChan->channelNode::listMember = 
+        pChan->channelNode::listMember =
             channelNode::cs_none;
-    
+
         bool success = pChan->searchMsg ( guard );
         if ( ! success ) {
             if ( this->iiu.datagramFlush ( guard, currentTime ) ) {
@@ -251,14 +251,14 @@ epicsTimerNotify::expireStatus searchTimer::expire (
             }
             if ( ! success ) {
                 this->chanListReqPending.push ( *pChan );
-                pChan->channelNode::setReqPendingState ( 
+                pChan->channelNode::setReqPendingState (
                     guard, this->index );
                 break;
             }
         }
 
         this->chanListRespPending.add ( *pChan );
-        pChan->channelNode::setRespPendingState ( 
+        pChan->channelNode::setRespPendingState (
             guard, this->index );
 
         if ( this->searchAttempts < UINT_MAX ) {
@@ -271,14 +271,14 @@ epicsTimerNotify::expireStatus searchTimer::expire (
         nFrameSent++;
     }
 
-    this->dgSeqNoAtTimerExpireEnd = 
+    this->dgSeqNoAtTimerExpireEnd =
         this->iiu.datagramSeqNumber ( guard ) - 1u;
 
 #   ifdef DEBUG
         if ( this->searchAttempts ) {
             char buf[64];
             currentTime.strftime ( buf, sizeof(buf), "%M:%S.%09f");
-            debugPrintf ( ("sent %u delay sec=%f Rts=%s\n", 
+            debugPrintf ( ("sent %u delay sec=%f Rts=%s\n",
                 nFrameSent, this->period(), buf ) );
         }
 #   endif
@@ -291,22 +291,22 @@ void searchTimer :: show ( unsigned level ) const
     epicsGuard < epicsMutex > guard ( this->mutex );
     ::printf ( "searchTimer with period %f\n", this->period ( guard ) );
     if ( level > 0 ) {
-        ::printf ( "channels with search request pending = %u\n", 
+        ::printf ( "channels with search request pending = %u\n",
             this->chanListReqPending.count () );
         if ( level > 1u ) {
-            tsDLIterConst < nciu > pChan = 
+            tsDLIterConst < nciu > pChan =
                 this->chanListReqPending.firstIter ();
-	        while ( pChan.valid () ) {
+            while ( pChan.valid () ) {
                 pChan->show ( level - 2u );
                 pChan++;
             }
         }
-        ::printf ( "channels with search response pending = %u\n", 
+        ::printf ( "channels with search response pending = %u\n",
             this->chanListRespPending.count () );
         if ( level > 1u ) {
-            tsDLIterConst < nciu > pChan = 
+            tsDLIterConst < nciu > pChan =
                 this->chanListRespPending.firstIter ();
-	        while ( pChan.valid () ) {
+            while ( pChan.valid () ) {
                 pChan->show ( level - 2u );
                 pChan++;
             }
@@ -319,9 +319,9 @@ void searchTimer :: show ( unsigned level ) const
 // at least one response. However, dont reset this delay if we
 // get a delayed response to an old search request.
 //
-void searchTimer::uninstallChanDueToSuccessfulSearchResponse ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, 
-    ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid, 
+void searchTimer::uninstallChanDueToSuccessfulSearchResponse (
+    epicsGuard < epicsMutex > & guard, nciu & chan,
+    ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid,
     const epicsTime & currentTime )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -333,8 +333,8 @@ void searchTimer::uninstallChanDueToSuccessfulSearchResponse (
 
     bool validResponse = true;
     if ( seqNumberIsValid ) {
-        validResponse = 
-            this->dgSeqNoAtTimerExpireBegin <= respDatagramSeqNo && 
+        validResponse =
+            this->dgSeqNoAtTimerExpireBegin <= respDatagramSeqNo &&
                 this->dgSeqNoAtTimerExpireEnd >= respDatagramSeqNo;
     }
 
@@ -349,7 +349,7 @@ void searchTimer::uninstallChanDueToSuccessfulSearchResponse (
             if ( this->searchResponses == this->searchAttempts ) {
                 if ( this->chanListReqPending.count () ) {
                     //
-                    // when we get 100% success immediately 
+                    // when we get 100% success immediately
                     // send another search request
                     //
                     debugPrintf ( ( "All requests succesful, set timer delay to zero\n" ) );
@@ -364,25 +364,25 @@ void searchTimer::uninstallChan (
     epicsGuard < epicsMutex > & cacGuard, nciu & chan )
 {
     cacGuard.assertIdenticalMutex ( this->mutex );
-    unsigned ulistmem = 
-	static_cast <unsigned> ( chan.channelNode::listMember );
-    unsigned uReqBase = 
-	static_cast <unsigned> ( channelNode::cs_searchReqPending0 );
+    unsigned ulistmem =
+        static_cast <unsigned> ( chan.channelNode::listMember );
+    unsigned uReqBase =
+        static_cast <unsigned> ( channelNode::cs_searchReqPending0 );
     if ( ulistmem == this->index + uReqBase ) {
         this->chanListReqPending.remove ( chan );
     }
-    else { 
-	unsigned uRespBase = 
-	    static_cast <unsigned > ( 
-		channelNode::cs_searchRespPending0 );
-	if ( ulistmem == this->index + uRespBase ) {
-	    this->chanListRespPending.remove ( chan );
-	}
-	else {
-	    throw std::runtime_error ( 
-		"uninstalling channel search timer, but channel "
-		"state is wrong" );
-	}
+    else {
+        unsigned uRespBase =
+            static_cast <unsigned > (
+                channelNode::cs_searchRespPending0 );
+        if ( ulistmem == this->index + uRespBase ) {
+            this->chanListRespPending.remove ( chan );
+        }
+        else {
+            throw std::runtime_error (
+                "uninstalling channel search timer, but channel "
+                "state is wrong" );
+        }
     }
     chan.channelNode::listMember = channelNode::cs_none;
 }

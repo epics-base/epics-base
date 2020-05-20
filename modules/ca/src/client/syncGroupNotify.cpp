@@ -19,7 +19,7 @@
 #include "syncGroup.h"
 #include "oldAccess.h"
 
-syncGroupNotify::syncGroupNotify () 
+syncGroupNotify::syncGroupNotify ()
 {
 }
 

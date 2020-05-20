@@ -7,19 +7,19 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifndef INC_repeaterClient_H
@@ -47,9 +47,9 @@ public:
     bool verify ();
     bool identicalAddress ( const osiSockAddr &from );
     bool identicalPort ( const osiSockAddr &from );
-    void * operator new ( size_t size, 
+    void * operator new ( size_t size,
         tsFreeList < repeaterClient, 0x20 > & );
-    epicsPlacementDeleteOperator (( void *, 
+    epicsPlacementDeleteOperator (( void *,
         tsFreeList < repeaterClient, 0x20 > & ))
 private:
     osiSockAddr from;

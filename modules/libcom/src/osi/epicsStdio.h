@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* epicsStdio.h */
@@ -62,7 +62,7 @@ LIBCOM_API int epicsStdCall epicsVsnprintf(
  *
  * pFileName - name (and optionally path) of file
  * size - the new file size (if file is curretly larger)
- * 
+ *
  * returns TF_OK if the file is less than size bytes
  * or if it was successfully truncated. Returns
  * TF_ERROR if the file could not be truncated.

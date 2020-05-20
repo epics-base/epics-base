@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -18,10 +18,10 @@
 #include <unistd.h>
 
 #if !defined(_POSIX_TIMERS) || _POSIX_TIMERS < 0
-	struct timespec {
-		time_t tv_sec; /* seconds since some epoch */
-		long tv_nsec; /* nanoseconds within the second */
-	};
+    struct timespec {
+        time_t tv_sec; /* seconds since some epoch */
+        long tv_nsec; /* nanoseconds within the second */
+    };
 #endif /* !_POSIX_TIMERS */
 
 #ifdef __cplusplus

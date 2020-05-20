@@ -46,7 +46,7 @@ int sysClkRateGet(void);
 #endif
 
 typedef int                     SOCKET;
-#define INVALID_SOCKET		(-1)
+#define INVALID_SOCKET          (-1)
 #define SOCKERRNO               errno
 #ifndef SHUT_RD
 #   define SHUT_RD 0

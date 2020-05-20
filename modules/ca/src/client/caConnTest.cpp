@@ -59,50 +59,50 @@ void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn )
 {
     unsigned iteration = 0u;
     int status;
-	unsigned i;
-	chid *pChans;
+    unsigned i;
+    chid *pChans;
 
     channelCount = channelCountIn;
 
     pChans = new chid [channelCount];
-	
-	while ( 1 ) {
+
+    while ( 1 ) {
         connCount = 0u;
         subsequentConnect = false;
         begin = epicsTime::getCurrent ();
 
         printf ( "initializing CA client library\n" );
 
-		status = ca_task_initialize();
-		SEVCHK ( status, "CA init failed" );
+        status = ca_task_initialize();
+        SEVCHK ( status, "CA init failed" );
 
         printf ( "creating channels\n" );
 
-		for ( i = 0u; i < channelCount; i++ ) {
-			status = ca_search_and_connect ( pNameIn, 
+        for ( i = 0u; i < channelCount; i++ ) {
+            status = ca_search_and_connect ( pNameIn,
                 &pChans[i], caConnTestConnHandler, 0 );
-			SEVCHK ( status, "CA search problems" );
-		}
+            SEVCHK ( status, "CA search problems" );
+        }
 
         printf ( "all channels were created\n" );
 
-		ca_pend_event ( delayIn );
+        ca_pend_event ( delayIn );
 
         if ( iteration & 1 ) {
-		    for ( i = 0u; i < channelCount; i++ ) {
-			    status = ca_clear_channel ( pChans[i] );
-			    SEVCHK ( status, "ca_clear_channel() problems" );
-		    }
+            for ( i = 0u; i < channelCount; i++ ) {
+                status = ca_clear_channel ( pChans[i] );
+                SEVCHK ( status, "ca_clear_channel() problems" );
+            }
             printf ( "all channels were destroyed\n" );
         }
 
         printf ( "shutting down CA client library\n" );
 
-		status = ca_task_exit ();
-		SEVCHK ( status, "task exit problems" );
+        status = ca_task_exit ();
+        SEVCHK ( status, "task exit problems" );
 
         iteration++;
-	}
+    }
 
     //delete [] pChans;
 }

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* recPermissive.c - Record Support Routines for Permissive records */
@@ -53,24 +53,24 @@ static long process(struct dbCommon *);
 #define get_alarm_double NULL
 
 rset permissiveRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_control_double,
-	get_alarm_double
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
 epicsExportAddress(rset,permissiveRSET);
 
@@ -104,12 +104,12 @@ static void monitor(permissiveRecord *prec)
     prec->oval = val;
     prec->oflg = wflg;
     if(oval != val) {
-	db_post_events(prec,&prec->val,
-	    monitor_mask|DBE_VALUE|DBE_LOG);
+        db_post_events(prec,&prec->val,
+        monitor_mask|DBE_VALUE|DBE_LOG);
     }
     if(oflg != wflg) {
         db_post_events(prec,&prec->wflg,
-	    monitor_mask|DBE_VALUE|DBE_LOG);
+        monitor_mask|DBE_VALUE|DBE_LOG);
     }
     return;
 }

@@ -5,21 +5,21 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 //
-// On older version of ms visual c++ operator new 
+// On older version of ms visual c++ operator new
 // does not throw a bad_alloc exception
 // when it fails. It simply returns a null pointer.
-// This behavior is not in conformance with the 
+// This behavior is not in conformance with the
 // ANSI / ISO C++.
-// 
+//
 #if _MSC_VER > 1000 && _MSC_VER < 1400
 
 #include <new>
 #include <new.h>
 
-// instruct loader to call this gllobal object 
+// instruct loader to call this gllobal object
 // constructor before user global object constructors
 #pragma warning (disable: 4073)
 #pragma init_seg(lib)

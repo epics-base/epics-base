@@ -36,7 +36,7 @@ longoutdset devLoSoftCallback = {
 };
 epicsExportAddress(dset, devLoSoftCallback);
 
-static long write_longout(longoutRecord	*prec)
+static long write_longout(longoutRecord *prec)
 {
     struct link *plink = &prec->out;
     long status;

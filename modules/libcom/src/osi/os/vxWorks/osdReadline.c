@@ -69,7 +69,7 @@ osdReadline (const char *prompt, struct readlineContext *context)
         fflush(stdout);
     }
     if (osd->ledId != (LED_ID) ERROR) {
-        i = ledRead(osd->ledId, osd->line, LEDLIB_LINESIZE-1); 
+        i = ledRead(osd->ledId, osd->line, LEDLIB_LINESIZE-1);
         if (i < 0)
             return NULL;
     }

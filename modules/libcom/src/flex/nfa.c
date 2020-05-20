@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* nfa - NFA construction routines */
 
@@ -14,7 +14,7 @@
  *
  * This code is derived from software contributed to Berkeley by
  * Vern Paxson.
- * 
+ *
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
@@ -61,14 +61,14 @@ void add_accept(int mach, int accepting_number)
      */
 
     if ( transchar[finalst[mach]] == SYM_EPSILON )
-	accptnum[finalst[mach]] = accepting_number;
+        accptnum[finalst[mach]] = accepting_number;
 
     else
-	{
-	int astate = mkstate( SYM_EPSILON );
-	accptnum[astate] = accepting_number;
-	mach = link_machines( mach, astate );
-	}
+        {
+        int astate = mkstate( SYM_EPSILON );
+        accptnum[astate] = accepting_number;
+        mach = link_machines( mach, astate );
+        }
     }
 
 
@@ -90,7 +90,7 @@ int copysingl(int singl, int num)
     copy = mkstate( SYM_EPSILON );
 
     for ( i = 1; i <= num; ++i )
-	copy = link_machines( copy, dupmachine( singl ) );
+        copy = link_machines( copy, dupmachine( singl ) );
 
     return ( copy );
     }
@@ -108,7 +108,7 @@ void dumpnfa(int state1)
     int sym, tsp1, tsp2, anum, ns;
 
     fprintf( stderr, "\n\n********** beginning dump of nfa with start state %d\n",
-	     state1 );
+             state1 );
 
     /* we probably should loop starting at firstst[state1] and going to
      * lastst[state1], but they're not maintained properly when we "or"
@@ -118,21 +118,21 @@ void dumpnfa(int state1)
 
     /* for ( ns = firstst[state1]; ns <= lastst[state1]; ++ns ) */
     for ( ns = 1; ns <= lastnfa; ++ns )
-	{
-	fprintf( stderr, "state # %4d\t", ns );
+        {
+        fprintf( stderr, "state # %4d\t", ns );
 
-	sym = transchar[ns];
-	tsp1 = trans1[ns];
-	tsp2 = trans2[ns];
-	anum = accptnum[ns];
+        sym = transchar[ns];
+        tsp1 = trans1[ns];
+        tsp2 = trans2[ns];
+        anum = accptnum[ns];
 
-	fprintf( stderr, "%3d:  %4d, %4d", sym, tsp1, tsp2 );
+        fprintf( stderr, "%3d:  %4d, %4d", sym, tsp1, tsp2 );
 
-	if ( anum != NIL )
-	    fprintf( stderr, "  [%d]", anum );
+        if ( anum != NIL )
+            fprintf( stderr, "  [%d]", anum );
 
-	fprintf( stderr, "\n" );
-	}
+        fprintf( stderr, "\n" );
+        }
 
     fprintf( stderr, "********** end of dump\n" );
     }
@@ -162,22 +162,22 @@ int dupmachine(int mach)
     int last = lastst[mach];
 
     for ( i = firstst[mach]; i <= last; ++i )
-	{
-	state = mkstate( transchar[i] );
+        {
+        state = mkstate( transchar[i] );
 
-	if ( trans1[i] != NO_TRANSITION )
-	    {
-	    mkxtion( finalst[state], trans1[i] + state - i );
+        if ( trans1[i] != NO_TRANSITION )
+            {
+            mkxtion( finalst[state], trans1[i] + state - i );
 
-	    if ( transchar[i] == SYM_EPSILON && trans2[i] != NO_TRANSITION )
-		mkxtion( finalst[state], trans2[i] + state - i );
-	    }
+            if ( transchar[i] == SYM_EPSILON && trans2[i] != NO_TRANSITION )
+                mkxtion( finalst[state], trans2[i] + state - i );
+            }
 
-	accptnum[state] = accptnum[i];
-	}
+        accptnum[state] = accptnum[i];
+        }
 
     if ( state == 0 )
-	flexfatal( "empty machine in dupmachine()" );
+        flexfatal( "empty machine in dupmachine()" );
 
     state_offset = state - i + 1;
 
@@ -219,46 +219,46 @@ void finish_rule(int mach, int variable_trail_rule, int headcnt, int trailcnt)
      * already been updated, giving us the wrong number
      */
     if ( continued_action )
-	--rule_linenum[num_rules];
+        --rule_linenum[num_rules];
 
     fprintf( temp_action_file, "case %d:\n", num_rules );
 
     if ( variable_trail_rule )
-	{
-	rule_type[num_rules] = RULE_VARIABLE;
+        {
+        rule_type[num_rules] = RULE_VARIABLE;
 
-	if ( performance_report )
-	    fprintf( stderr, "Variable trailing context rule at line %d\n",
-		     rule_linenum[num_rules] );
+        if ( performance_report )
+            fprintf( stderr, "Variable trailing context rule at line %d\n",
+                     rule_linenum[num_rules] );
 
-	variable_trailing_context_rules = true;
-	}
+        variable_trailing_context_rules = true;
+        }
 
     else
-	{
-	rule_type[num_rules] = RULE_NORMAL;
+        {
+        rule_type[num_rules] = RULE_NORMAL;
 
-	if ( headcnt > 0 || trailcnt > 0 )
-	    {
-	    /* do trailing context magic to not match the trailing characters */
-	    char *scanner_cp = "yy_c_buf_p = yy_cp";
-	    char *scanner_bp = "yy_bp";
+        if ( headcnt > 0 || trailcnt > 0 )
+            {
+            /* do trailing context magic to not match the trailing characters */
+            char *scanner_cp = "yy_c_buf_p = yy_cp";
+            char *scanner_bp = "yy_bp";
 
-	    fprintf( temp_action_file,
-	"*yy_cp = yy_hold_char; /* undo effects of setting up yytext */\n" );
+            fprintf( temp_action_file,
+        "*yy_cp = yy_hold_char; /* undo effects of setting up yytext */\n" );
 
-	    if ( headcnt > 0 )
-		fprintf( temp_action_file, "%s = %s + %d;\n",
-			 scanner_cp, scanner_bp, headcnt );
+            if ( headcnt > 0 )
+                fprintf( temp_action_file, "%s = %s + %d;\n",
+                         scanner_cp, scanner_bp, headcnt );
 
-	    else
-		fprintf( temp_action_file,
-			 "%s -= %d;\n", scanner_cp, trailcnt );
-	
-	    fprintf( temp_action_file,
-		     "YY_DO_BEFORE_ACTION; /* set up yytext again */\n" );
-	    }
-	}
+            else
+                fprintf( temp_action_file,
+                         "%s -= %d;\n", scanner_cp, trailcnt );
+
+            fprintf( temp_action_file,
+                     "YY_DO_BEFORE_ACTION; /* set up yytext again */\n" );
+            }
+        }
 
     line_directive_out( temp_action_file );
     }
@@ -283,20 +283,20 @@ void finish_rule(int mach, int variable_trail_rule, int headcnt, int trailcnt)
 int link_machines(int first, int last)
 {
     if ( first == NIL )
-	return ( last );
+        return ( last );
 
     else if ( last == NIL )
-	return ( first );
+        return ( first );
 
     else
-	{
-	mkxtion( finalst[first], last );
-	finalst[first] = finalst[last];
-	lastst[first] = max( lastst[first], lastst[last] );
-	firstst[first] = min( firstst[first], firstst[last] );
+        {
+        mkxtion( finalst[first], last );
+        finalst[first] = finalst[last];
+        lastst[first] = max( lastst[first], lastst[last] );
+        firstst[first] = min( firstst[first], firstst[last] );
 
-	return ( first );
-	}
+        return ( first );
+        }
     }
 
 
@@ -316,28 +316,28 @@ int link_machines(int first, int last)
 void mark_beginning_as_normal(int mach)
 {
     switch ( state_type[mach] )
-	{
-	case STATE_NORMAL:
-	    /* oh, we've already visited here */
-	    return;
+        {
+        case STATE_NORMAL:
+            /* oh, we've already visited here */
+            return;
 
-	case STATE_TRAILING_CONTEXT:
-	    state_type[mach] = STATE_NORMAL;
+        case STATE_TRAILING_CONTEXT:
+            state_type[mach] = STATE_NORMAL;
 
-	    if ( transchar[mach] == SYM_EPSILON )
-		{
-		if ( trans1[mach] != NO_TRANSITION )
-		    mark_beginning_as_normal( trans1[mach] );
+            if ( transchar[mach] == SYM_EPSILON )
+                {
+                if ( trans1[mach] != NO_TRANSITION )
+                    mark_beginning_as_normal( trans1[mach] );
 
-		if ( trans2[mach] != NO_TRANSITION )
-		    mark_beginning_as_normal( trans2[mach] );
-		}
-	    break;
+                if ( trans2[mach] != NO_TRANSITION )
+                    mark_beginning_as_normal( trans2[mach] );
+                }
+            break;
 
-	default:
-	    flexerror( "bad state type in mark_beginning_as_normal()" );
-	    break;
-	}
+        default:
+            flexerror( "bad state type in mark_beginning_as_normal()" );
+            break;
+        }
     }
 
 
@@ -360,10 +360,10 @@ int mkbranch(int first, int second)
     int eps;
 
     if ( first == NO_TRANSITION )
-	return ( second );
+        return ( second );
 
     else if ( second == NO_TRANSITION )
-	return ( first );
+        return ( first );
 
     eps = mkstate( SYM_EPSILON );
 
@@ -407,10 +407,10 @@ int mkopt(int mach)
     int eps;
 
     if ( ! SUPER_FREE_EPSILON(finalst[mach]) )
-	{
-	eps = mkstate( SYM_EPSILON );
-	mach = link_machines( mach, eps );
-	}
+        {
+        eps = mkstate( SYM_EPSILON );
+        mach = link_machines( mach, eps );
+        }
 
     /* can't skimp on the following if FREE_EPSILON(mach) is true because
      * some state interior to "mach" might point back to the beginning
@@ -444,46 +444,46 @@ int mkor(int first, int second)
     int eps, orend;
 
     if ( first == NIL )
-	return ( second );
+        return ( second );
 
     else if ( second == NIL )
-	return ( first );
+        return ( first );
 
     else
-	{
-	/* see comment in mkopt() about why we can't use the first state
-	 * of "first" or "second" if they satisfy "FREE_EPSILON"
-	 */
-	eps = mkstate( SYM_EPSILON );
+        {
+        /* see comment in mkopt() about why we can't use the first state
+         * of "first" or "second" if they satisfy "FREE_EPSILON"
+         */
+        eps = mkstate( SYM_EPSILON );
 
-	first = link_machines( eps, first );
+        first = link_machines( eps, first );
 
-	mkxtion( first, second );
+        mkxtion( first, second );
 
-	if ( SUPER_FREE_EPSILON(finalst[first]) &&
-	     accptnum[finalst[first]] == NIL )
-	    {
-	    orend = finalst[first];
-	    mkxtion( finalst[second], orend );
-	    }
+        if ( SUPER_FREE_EPSILON(finalst[first]) &&
+             accptnum[finalst[first]] == NIL )
+            {
+            orend = finalst[first];
+            mkxtion( finalst[second], orend );
+            }
 
-	else if ( SUPER_FREE_EPSILON(finalst[second]) &&
-		  accptnum[finalst[second]] == NIL )
-	    {
-	    orend = finalst[second];
-	    mkxtion( finalst[first], orend );
-	    }
+        else if ( SUPER_FREE_EPSILON(finalst[second]) &&
+                  accptnum[finalst[second]] == NIL )
+            {
+            orend = finalst[second];
+            mkxtion( finalst[first], orend );
+            }
 
-	else
-	    {
-	    eps = mkstate( SYM_EPSILON );
+        else
+            {
+            eps = mkstate( SYM_EPSILON );
 
-	    first = link_machines( first, eps );
-	    orend = finalst[first];
+            first = link_machines( first, eps );
+            orend = finalst[first];
 
-	    mkxtion( finalst[second], orend );
-	    }
-	}
+            mkxtion( finalst[second], orend );
+            }
+        }
 
     finalst[first] = orend;
     return ( first );
@@ -503,17 +503,17 @@ int mkposcl(int state)
     int eps;
 
     if ( SUPER_FREE_EPSILON(finalst[state]) )
-	{
-	mkxtion( finalst[state], state );
-	return ( state );
-	}
+        {
+        mkxtion( finalst[state], state );
+        return ( state );
+        }
 
     else
-	{
-	eps = mkstate( SYM_EPSILON );
-	mkxtion( eps, state );
-	return ( link_machines( state, eps ) );
-	}
+        {
+        eps = mkstate( SYM_EPSILON );
+        mkxtion( eps, state );
+        return ( link_machines( state, eps ) );
+        }
     }
 
 
@@ -536,24 +536,24 @@ int mkrep(int mach, int lb, int ub)
     base_mach = copysingl( mach, lb - 1 );
 
     if ( ub == INFINITY )
-	{
-	copy = dupmachine( mach );
-	mach = link_machines( mach,
-			      link_machines( base_mach, mkclos( copy ) ) );
-	}
+        {
+        copy = dupmachine( mach );
+        mach = link_machines( mach,
+                              link_machines( base_mach, mkclos( copy ) ) );
+        }
 
     else
-	{
-	tail = mkstate( SYM_EPSILON );
+        {
+        tail = mkstate( SYM_EPSILON );
 
-	for ( i = lb; i < ub; ++i )
-	    {
-	    copy = dupmachine( mach );
-	    tail = mkopt( link_machines( copy, tail ) );
-	    }
+        for ( i = lb; i < ub; ++i )
+            {
+            copy = dupmachine( mach );
+            tail = mkopt( link_machines( copy, tail ) );
+            }
 
-	mach = link_machines( mach, link_machines( base_mach, tail ) );
-	}
+        mach = link_machines( mach, link_machines( base_mach, tail ) );
+        }
 
     return ( mach );
     }
@@ -578,23 +578,23 @@ int mkrep(int mach, int lb, int ub)
 int mkstate(int sym)
 {
     if ( ++lastnfa >= current_mns )
-	{
-	if ( (current_mns += MNS_INCREMENT) >= MAXIMUM_MNS )
-	    lerrif( "input rules are too complicated (>= %d NFA states)",
-		    current_mns );
-	
-	++num_reallocs;
+        {
+        if ( (current_mns += MNS_INCREMENT) >= MAXIMUM_MNS )
+            lerrif( "input rules are too complicated (>= %d NFA states)",
+                    current_mns );
 
-	firstst = reallocate_integer_array( firstst, current_mns );
-	lastst = reallocate_integer_array( lastst, current_mns );
-	finalst = reallocate_integer_array( finalst, current_mns );
-	transchar = reallocate_integer_array( transchar, current_mns );
-	trans1 = reallocate_integer_array( trans1, current_mns );
-	trans2 = reallocate_integer_array( trans2, current_mns );
-	accptnum = reallocate_integer_array( accptnum, current_mns );
-	assoc_rule = reallocate_integer_array( assoc_rule, current_mns );
-	state_type = reallocate_integer_array( state_type, current_mns );
-	}
+        ++num_reallocs;
+
+        firstst = reallocate_integer_array( firstst, current_mns );
+        lastst = reallocate_integer_array( lastst, current_mns );
+        finalst = reallocate_integer_array( finalst, current_mns );
+        transchar = reallocate_integer_array( transchar, current_mns );
+        trans1 = reallocate_integer_array( trans1, current_mns );
+        trans2 = reallocate_integer_array( trans2, current_mns );
+        accptnum = reallocate_integer_array( accptnum, current_mns );
+        assoc_rule = reallocate_integer_array( assoc_rule, current_mns );
+        state_type = reallocate_integer_array( state_type, current_mns );
+        }
 
     firstst[lastnfa] = lastnfa;
     finalst[lastnfa] = lastnfa;
@@ -615,21 +615,21 @@ int mkstate(int sym)
      */
 
     if ( sym < 0 )
-	{
-	/* we don't have to update the equivalence classes since that was
-	 * already done when the ccl was created for the first time
-	 */
-	}
+        {
+        /* we don't have to update the equivalence classes since that was
+         * already done when the ccl was created for the first time
+         */
+        }
 
     else if ( sym == SYM_EPSILON )
-	++numeps;
+        ++numeps;
 
     else
-	{
-	if ( useecs )
-	    /* map NUL's to csize */
-	    mkechar( sym ? sym : csize, nextecm, ecgroup );
-	}
+        {
+        if ( useecs )
+            /* map NUL's to csize */
+            mkechar( sym ? sym : csize, nextecm, ecgroup );
+        }
 
     return ( lastnfa );
     }
@@ -648,17 +648,17 @@ int mkstate(int sym)
 void mkxtion(int statefrom, int stateto)
 {
     if ( trans1[statefrom] == NO_TRANSITION )
-	trans1[statefrom] = stateto;
+        trans1[statefrom] = stateto;
 
     else if ( (transchar[statefrom] != SYM_EPSILON) ||
-	      (trans2[statefrom] != NO_TRANSITION) )
-	flexfatal( "found too many transitions in mkxtion()" );
+              (trans2[statefrom] != NO_TRANSITION) )
+        flexfatal( "found too many transitions in mkxtion()" );
 
     else
-	{ /* second out-transition for an epsilon state */
-	++eps2;
-	trans2[statefrom] = stateto;
-	}
+        { /* second out-transition for an epsilon state */
+        ++eps2;
+        trans2[statefrom] = stateto;
+        }
     }
 
 /* new_rule - initialize for a new rule
@@ -674,16 +674,16 @@ void mkxtion(int statefrom, int stateto)
 void new_rule(void)
 {
     if ( ++num_rules >= current_max_rules )
-	{
-	++num_reallocs;
-	current_max_rules += MAX_RULES_INCREMENT;
-	rule_type = reallocate_integer_array( rule_type, current_max_rules );
-	rule_linenum =
-	    reallocate_integer_array( rule_linenum, current_max_rules );
-	}
+        {
+        ++num_reallocs;
+        current_max_rules += MAX_RULES_INCREMENT;
+        rule_type = reallocate_integer_array( rule_type, current_max_rules );
+        rule_linenum =
+            reallocate_integer_array( rule_linenum, current_max_rules );
+        }
 
     if ( num_rules > MAX_RULE )
-	lerrif( "too many rules (> %d)!", MAX_RULE );
+        lerrif( "too many rules (> %d)!", MAX_RULE );
 
     rule_linenum[num_rules] = linenum;
     }

@@ -4,13 +4,13 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* int64inRecord.c - Record Support Routines for int64in records */
 /*
  *      Original Author: Janet Anderson
- *      Date:   	9/23/91
+ *      Date:           9/23/91
  */
 
 #include <stddef.h>
@@ -58,27 +58,27 @@ static long get_units(DBADDR *, char *);
 #define put_enum_str NULL
 static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
 static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
-static long get_alarm_double(DBADDR *, struct dbr_alDouble	*);
+static long get_alarm_double(DBADDR *, struct dbr_alDouble  *);
 
 rset int64inRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_control_double,
-	get_alarm_double
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
 epicsExportAddress(rset,int64inRSET);
 
@@ -101,13 +101,13 @@ static long init_record(dbCommon *pcommon, int pass)
     recGblInitConstantLink(&prec->siol, DBF_INT64, &prec->sval);
 
     if(!(pdset = (int64indset *)(prec->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)prec,"int64in: init_record");
-	return(S_dev_noDSET);
+        recGblRecordError(S_dev_noDSET,(void *)prec,"int64in: init_record");
+        return(S_dev_noDSET);
     }
     /* must have read_int64in function defined */
     if ((pdset->common.number < 5) || (pdset->read_int64in == NULL)) {
-	recGblRecordError(S_dev_missingSup,(void *)prec,"int64in: init_record");
-	return(S_dev_missingSup);
+        recGblRecordError(S_dev_missingSup,(void *)prec,"int64in: init_record");
+        return(S_dev_missingSup);
     }
     if (pdset->common.init_record) {
 	if ((status = pdset->common.init_record(pcommon))) return status;
@@ -122,35 +122,35 @@ static long process(dbCommon *pcommon)
 {
     int64inRecord *prec = (int64inRecord*)pcommon;
 	int64indset	*pdset = (int64indset *)(prec->dset);
-	long		 status;
-	unsigned char    pact=prec->pact;
-	epicsTimeStamp   timeLast;
+    long                status;
+    unsigned char       pact=prec->pact;
+    epicsTimeStamp      timeLast;
 
-	if( (pdset==NULL) || (pdset->read_int64in==NULL) ) {
-		prec->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)prec,"read_int64in");
-		return(S_dev_missingSup);
-	}
-	timeLast = prec->time;
+    if( (pdset==NULL) || (pdset->read_int64in==NULL) ) {
+        prec->pact=TRUE;
+        recGblRecordError(S_dev_missingSup,(void *)prec,"read_int64in");
+        return(S_dev_missingSup);
+    }
+    timeLast = prec->time;
 
-	status=readValue(prec); /* read the new value */
-	/* check if device support set pact */
-	if ( !pact && prec->pact ) return(0);
-	prec->pact = TRUE;
+    status=readValue(prec); /* read the new value */
+    /* check if device support set pact */
+    if ( !pact && prec->pact ) return(0);
+    prec->pact = TRUE;
 
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
     if (status==0) prec->udf = FALSE;
 
-	/* check for alarms */
-	checkAlarms(prec, &timeLast);
-	/* check event list */
-	monitor(prec);
-	/* process the forward scan link record */
-	recGblFwdLink(prec);
+    /* check for alarms */
+    checkAlarms(prec, &timeLast);
+    /* check event list */
+    monitor(prec);
+    /* process the forward scan link record */
+    recGblFwdLink(prec);
 
-	prec->pact=FALSE;
-	return(status);
+    prec->pact=FALSE;
+    return(status);
 }
 
 static long special(DBADDR *paddr, int after)
@@ -231,7 +231,7 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
     return(0);
 }
 
-static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble	*pad)
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
     int64inRecord *prec=(int64inRecord *)paddr->precord;
 
@@ -257,7 +257,7 @@ static void checkAlarms(int64inRecord *prec, epicsTimeStamp *timeLast)
         SOFT_ALARM, LOLO_ALARM, LOW_ALARM,
         NO_ALARM, HIGH_ALARM, HIHI_ALARM
     };
-    
+
     double aftc, afvl;
     epicsInt64 val, hyst, lalm;
     epicsInt64 alev;

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* Record Support Routines for Calculation records */
@@ -206,7 +206,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
     calcRecord *prec = (calcRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
     int linkNumber;
-    
+
     switch (fieldIndex) {
         case indexof(VAL):
         case indexof(HIHI):
@@ -234,7 +234,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     calcRecord *prec = (calcRecord *)paddr->precord;
-    
+
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
         case indexof(HIHI):
@@ -281,24 +281,24 @@ static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 static void checkAlarms(calcRecord *prec, epicsTimeStamp *timeLast)
 {
 
-	enum {
-		range_Lolo = 1,
-		range_Low,
-		range_Normal,
-		range_High,
-		range_Hihi
-	} alarmRange;
-	static const epicsEnum16 range_stat[] = {
-		SOFT_ALARM, LOLO_ALARM, LOW_ALARM, 
-		NO_ALARM, HIGH_ALARM, HIHI_ALARM
-	};
+    enum {
+        range_Lolo = 1,
+        range_Low,
+        range_Normal,
+        range_High,
+        range_Hihi
+    } alarmRange;
+    static const epicsEnum16 range_stat[] = {
+        SOFT_ALARM, LOLO_ALARM, LOW_ALARM,
+        NO_ALARM, HIGH_ALARM, HIHI_ALARM
+    };
 
     double val, hyst, lalm, alev, aftc, afvl;
     epicsEnum16 asev;
 
     if (prec->udf) {
         recGblSetSevr(prec, UDF_ALARM, prec->udfs);
-	prec->afvl = 0;
+        prec->afvl = 0;
         return;
     }
 

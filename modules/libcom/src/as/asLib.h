@@ -5,7 +5,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* Author:  Marty Kraimer Date:    09-27-93*/
 
@@ -30,7 +30,7 @@ typedef struct asgMember *ASMEMBERPVT;
 typedef struct asgClient *ASCLIENTPVT;
 typedef int (*ASINPUTFUNCPTR)(char *buf,int max_size);
 typedef enum{
-    asClientCOAR	/*Change of access rights*/
+    asClientCOAR        /*Change of access rights*/
     /*For now this is all*/
 } asClientStatus;
 
@@ -125,20 +125,20 @@ LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithData(
 
 LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
 
-#define S_asLib_clientsExist 	(M_asLib| 1) /*Client Exists*/
-#define S_asLib_noUag 		(M_asLib| 2) /*User Access Group does not exist*/
-#define S_asLib_noHag 		(M_asLib| 3) /*Host Access Group does not exist*/
-#define S_asLib_noAccess	(M_asLib| 4) /*access security: no access allowed*/
-#define S_asLib_noModify	(M_asLib| 5) /*access security: no modification allowed*/
-#define S_asLib_badConfig	(M_asLib| 6) /*access security: bad configuration file*/
-#define S_asLib_badCalc		(M_asLib| 7) /*access security: bad calculation espression*/
-#define S_asLib_dupAsg 		(M_asLib| 8) /*Duplicate Access Security Group */
-#define S_asLib_InitFailed 	(M_asLib| 9) /*access security: Init failed*/
-#define S_asLib_asNotActive 	(M_asLib|10) /*access security is not active*/
-#define S_asLib_badMember 	(M_asLib|11) /*access security: bad ASMEMBERPVT*/
-#define S_asLib_badClient 	(M_asLib|12) /*access security: bad ASCLIENTPVT*/
-#define S_asLib_badAsg 		(M_asLib|13) /*access security: bad ASG*/
-#define S_asLib_noMemory	(M_asLib|14) /*access security: no Memory */
+#define S_asLib_clientsExist    (M_asLib| 1) /*Client Exists*/
+#define S_asLib_noUag           (M_asLib| 2) /*User Access Group does not exist*/
+#define S_asLib_noHag           (M_asLib| 3) /*Host Access Group does not exist*/
+#define S_asLib_noAccess        (M_asLib| 4) /*access security: no access allowed*/
+#define S_asLib_noModify        (M_asLib| 5) /*access security: no modification allowed*/
+#define S_asLib_badConfig       (M_asLib| 6) /*access security: bad configuration file*/
+#define S_asLib_badCalc         (M_asLib| 7) /*access security: bad calculation espression*/
+#define S_asLib_dupAsg          (M_asLib| 8) /*Duplicate Access Security Group */
+#define S_asLib_InitFailed      (M_asLib| 9) /*access security: Init failed*/
+#define S_asLib_asNotActive     (M_asLib|10) /*access security is not active*/
+#define S_asLib_badMember       (M_asLib|11) /*access security: bad ASMEMBERPVT*/
+#define S_asLib_badClient       (M_asLib|12) /*access security: bad ASCLIENTPVT*/
+#define S_asLib_badAsg          (M_asLib|13) /*access security: bad ASG*/
+#define S_asLib_noMemory        (M_asLib|14) /*access security: no Memory */
 
 /*Private declarations */
 LIBCOM_API extern int asActive;
@@ -150,92 +150,92 @@ struct gphPvt;
 
 /*Base pointers for access security*/
 typedef struct asBase{
-	ELLLIST	uagList;
-	ELLLIST	hagList;
-	ELLLIST	asgList;
-	struct gphPvt *phash;
+    ELLLIST         uagList;
+    ELLLIST         hagList;
+    ELLLIST         asgList;
+    struct gphPvt   *phash;
 } ASBASE;
 
 LIBCOM_API extern volatile ASBASE *pasbase;
 
 /*Defs for User Access Groups*/
 typedef struct{
-	ELLNODE	node;
-	char	*user;
+    ELLNODE         node;
+    char            *user;
 } UAGNAME;
 typedef struct uag{
-	ELLNODE	node;
-	char	*name;
-	ELLLIST	list;	/*list of UAGNAME*/
+    ELLNODE         node;
+    char            *name;
+    ELLLIST         list;   /*list of UAGNAME*/
 } UAG;
 /*Defs for Host Access Groups*/
 typedef struct{
-    ELLNODE	node;
-    char	host[1];
+    ELLNODE         node;
+    char            host[1];
 } HAGNAME;
 typedef struct hag{
-	ELLNODE	node;
-	char	*name;
-	ELLLIST	list;	/*list of HAGNAME*/
+    ELLNODE         node;
+    char            *name;
+    ELLLIST         list;   /*list of HAGNAME*/
 } HAG;
 /*Defs for Access SecurityGroups*/
 typedef struct {
-	ELLNODE	node;
-	UAG	*puag;
+    ELLNODE         node;
+    UAG             *puag;
 }ASGUAG;
 typedef struct {
-	ELLNODE	node;
-	HAG	*phag;
+    ELLNODE         node;
+    HAG             *phag;
 }ASGHAG;
 #define AS_TRAP_WRITE 1
 typedef struct{
-	ELLNODE		node;
-	asAccessRights	access;
-	int		level;
-	unsigned long	inpUsed; /*bitmap of which inputs are used*/
-	int		result;  /*Result of calc converted to TRUE/FALSE*/
-	char		*calc;
-	void		*rpcl;
-	ELLLIST		uagList; /*List of ASGUAG*/
-	ELLLIST		hagList; /*List of ASGHAG*/
-	int		trapMask;
+    ELLNODE         node;
+    asAccessRights  access;
+    int             level;
+    unsigned long   inpUsed; /*bitmap of which inputs are used*/
+    int             result;  /*Result of calc converted to TRUE/FALSE*/
+    char            *calc;
+    void            *rpcl;
+    ELLLIST         uagList; /*List of ASGUAG*/
+    ELLLIST         hagList; /*List of ASGHAG*/
+    int             trapMask;
 } ASGRULE;
 typedef struct{
-	ELLNODE		node;
-	char		*inp;
-	void		*capvt;
-	struct asg	*pasg;
-	int		inpIndex;
+    ELLNODE         node;
+    char            *inp;
+    void            *capvt;
+    struct asg      *pasg;
+    int             inpIndex;
 }ASGINP;
 
 typedef struct asg{
-	ELLNODE	node;
-	char	*name;
-	ELLLIST	inpList;
-	ELLLIST	ruleList;
-	ELLLIST	memberList;
-	double	*pavalue;	  /*pointer to array of input values*/
-	unsigned long inpBad;	  /*bitmap of which inputs are bad*/
-	unsigned long inpChanged; /*bitmap of inputs that changed*/
+    ELLNODE         node;
+    char            *name;
+    ELLLIST         inpList;
+    ELLLIST         ruleList;
+    ELLLIST         memberList;
+    double          *pavalue;   /*pointer to array of input values*/
+    unsigned long   inpBad;     /*bitmap of which inputs are bad*/
+    unsigned long   inpChanged; /*bitmap of inputs that changed*/
 } ASG;
 typedef struct asgMember {
-	ELLNODE		node;
-	ASG		*pasg;
-	ELLLIST		clientList;
-	const char	*asgName;
-	void		*userPvt;
+    ELLNODE         node;
+    ASG             *pasg;
+    ELLLIST         clientList;
+    const char      *asgName;
+    void            *userPvt;
 } ASGMEMBER;
 
 typedef struct asgClient {
-	ELLNODE		node;	
-	ASGMEMBER	*pasgMember;
-	const char	*user;
-	char	        *host;
-	void		*userPvt;
-	ASCLIENTCALLBACK pcallback;
-	int		level;
-	asAccessRights	access;
-	int		trapMask;
+    ELLNODE         node;
+    ASGMEMBER       *pasgMember;
+    const char      *user;
+    char            *host;
+    void            *userPvt;
+    ASCLIENTCALLBACK pcallback;
+    int             level;
+    asAccessRights  access;
+    int             trapMask;
 } ASGCLIENT;
 
 LIBCOM_API long epicsStdCall asComputeAsg(ASG *pasg);

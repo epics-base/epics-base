@@ -4,20 +4,20 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      General hash table templates for fast indexing of resources
- *      of any base resource type and any resource identifier type. Fast 
- *      indexing is implemented with a hash lookup. The identifier type 
- *      implements the hash algorithm (or derives from one of the supplied 
- *      identifier types which provide a hashing routine). The table expands 
- *      dynamically depending on load, and without introducing non-determanistic 
+ *      of any base resource type and any resource identifier type. Fast
+ *      indexing is implemented with a hash lookup. The identifier type
+ *      implements the hash algorithm (or derives from one of the supplied
+ *      identifier types which provide a hashing routine). The table expands
+ *      dynamically depending on load, and without introducing non-determanistic
  *      latency.
  *
  *      Unsigned integer and string identifier classes are supplied here.
  *
- *      Authors Jeffrey O. Hill 
+ *      Authors Jeffrey O. Hill
  *              Marty Kraimer (string hash algorithm)
  *              influenced by papers by Peter K. Pearson and Per-Ake Larson
  *
@@ -26,7 +26,7 @@
  */
 
 #ifndef INCresourceLibh
-#define INCresourceLibh 
+#define INCresourceLibh
 
 #include <new>
 #include <typeinfo>
@@ -50,13 +50,13 @@ template < class T, class ID > class resTableIterConst;
 //
 // class resTable <T, ID>
 //
-// This class stores resource entries of type T which can be efficiently 
+// This class stores resource entries of type T which can be efficiently
 // located with a hash key of type ID.
 //
-// NOTES: 
+// NOTES:
 // 1)   class T must derive from class ID and also from class tsSLNode<T>
 //
-// 2)   If the "resTable::show (unsigned level)" member function is called then 
+// 2)   If the "resTable::show (unsigned level)" member function is called then
 //      class T must also implement a "show (unsigned level)" member function which
 //      dumps increasing diagnostics information with increasing "level" to
 //      standard out.
@@ -67,9 +67,9 @@ template < class T, class ID > class resTableIterConst;
 //          bool operator == (const ID &);
 //
 //          // ID to hash index convert (see examples below)
-//          resTableIndex hash (unsigned nBitsHashIndex) const; 
+//          resTableIndex hash (unsigned nBitsHashIndex) const;
 //
-// 4)   Storage for identifier of type ID must persist until the item of type 
+// 4)   Storage for identifier of type ID must persist until the item of type
 //      T is deleted from the resTable
 //
 template <class T, class ID>
@@ -131,8 +131,8 @@ public:
     resTableIter < T, ID > & operator = ( const resTableIter < T, ID > & );
     T & operator * () const;
     T * operator -> () const;
-    resTableIter < T, ID > & operator ++ (); 
-    resTableIter < T, ID > operator ++ ( int ); 
+    resTableIter < T, ID > & operator ++ ();
+    resTableIter < T, ID > operator ++ ( int );
     T * pointer ();
 private:
     tsSLIter < T > iter;
@@ -158,8 +158,8 @@ public:
     resTableIterConst < T, ID > & operator = ( const resTableIterConst < T, ID > & );
     const T & operator * () const;
     const T * operator -> () const;
-    resTableIterConst < T, ID > & operator ++ (); 
-    resTableIterConst < T, ID > operator ++ ( int ); 
+    resTableIterConst < T, ID > & operator ++ ();
+    resTableIterConst < T, ID > operator ++ ( int );
     const T * pointer () const;
 private:
     tsSLIterConst < T > iter;
@@ -184,18 +184,18 @@ private:
 //
 // 1<<MIN_INDEX_WIDTH specifies the minimum number of
 // elements in the hash table within resTable <class T, class ID>.
-// Set this parameter to zero if unsure of the correct minimum 
+// Set this parameter to zero if unsure of the correct minimum
 // hash table size.
 //
-// MAX_ID_WIDTH specifies the maximum number of ls bits in an 
-// integer identifier which might be set at any time. 
+// MAX_ID_WIDTH specifies the maximum number of ls bits in an
+// integer identifier which might be set at any time.
 //
 // MIN_INDEX_WIDTH and MAX_ID_WIDTH are specified here at
-// compile time so that the hash index can be produced 
-// efficiently. Hash indexes are produced more efficiently 
+// compile time so that the hash index can be produced
+// efficiently. Hash indexes are produced more efficiently
 // when (MAX_ID_WIDTH - MIN_INDEX_WIDTH) is minimized.
 //
-template <class T, unsigned MIN_INDEX_WIDTH=4u, 
+template <class T, unsigned MIN_INDEX_WIDTH=4u,
     unsigned MAX_ID_WIDTH = sizeof(T)*CHAR_BIT>
 class intId {
 public:
@@ -212,10 +212,10 @@ protected:
 //
 // a specialized resTable which uses unsigned integer keys which are
 // allocated in chronological sequence
-// 
+//
 // NOTE: ITEM must public inherit from chronIntIdRes <ITEM>
 //
-class chronIntId : public intId<unsigned, 8u, sizeof(unsigned)*CHAR_BIT> 
+class chronIntId : public intId<unsigned, 8u, sizeof(unsigned)*CHAR_BIT>
 {
 public:
     chronIntId ( const unsigned &idIn );
@@ -229,8 +229,8 @@ public:
     void idAssignAdd ( ITEM & item );
 private:
     unsigned allocId;
-	chronIntIdResTable ( const chronIntIdResTable & );
-	chronIntIdResTable & operator = ( const chronIntIdResTable & );
+    chronIntIdResTable ( const chronIntIdResTable & );
+    chronIntIdResTable & operator = ( const chronIntIdResTable & );
 };
 
 //
@@ -244,7 +244,7 @@ public:
     chronIntIdRes ();
 private:
     void setId (unsigned newId);
-	chronIntIdRes (const chronIntIdRes & );
+    chronIntIdRes (const chronIntIdRes & );
     friend class chronIntIdResTable<ITEM>;
 };
 
@@ -273,14 +273,14 @@ private:
 // resTable<class T, class ID> member functions
 /////////////////////////////////////////////////
 
-// 
+//
 // resTable::resTable ()
 //
 template <class T, class ID>
 inline resTable<T,ID>::resTable () :
-	pTable ( 0 ), nextSplitIndex ( 0 ), hashIxMask ( 0 ), 
-        hashIxSplitMask ( 0 ), nBitsHashIxSplitMask ( 0 ),
-        logBaseTwoTableSize ( 0 ), nInUse ( 0 ) {}
+    pTable ( 0 ), nextSplitIndex ( 0 ), hashIxMask ( 0 ),
+    hashIxSplitMask ( 0 ), nBitsHashIxSplitMask ( 0 ),
+    logBaseTwoTableSize ( 0 ), nInUse ( 0 ) {}
 
 template <class T, class ID>
 inline unsigned resTable<T,ID>::resTableBitMask ( const unsigned nBits )
@@ -369,10 +369,10 @@ inline resTableIndex resTable<T,ID>::hash ( const ID & idIn ) const
 //
 template <class T, class ID>
 void resTable<T,ID>::show ( unsigned level ) const
-{    
+{
     const unsigned N = this->tableSize ();
 
-    printf ( "Hash table with %u buckets and %u items of type %s installed\n", 
+    printf ( "Hash table with %u buckets and %u items of type %s installed\n",
         N, this->nInUse, typeid(T).name() );
 
     if ( level >= 1u && N ) {
@@ -417,7 +417,7 @@ void resTable<T,ID>::show ( unsigned level ) const
 
         double mean = X / N;
         double stdDev = sqrt( XX / N - mean * mean );
-        printf ( 
+        printf (
     "entries per bucket: mean = %f std dev = %f max = %u\n",
             mean, stdDev, maxEntries );
         printf("%u empty buckets\n", empty);
@@ -439,7 +439,7 @@ void resTable<T,ID>::verify () const
         assert ( this->hashIxMask == ( this->hashIxSplitMask >> 1 ) );
         assert ( this->hashIxSplitMask );
         assert ( this->nBitsHashIxSplitMask );
-        assert ( resTableBitMask ( this->nBitsHashIxSplitMask ) 
+        assert ( resTableBitMask ( this->nBitsHashIxSplitMask )
                         == this->hashIxSplitMask );
         assert ( this->logBaseTwoTableSize );
         assert ( this->nBitsHashIxSplitMask <= this->logBaseTwoTableSize );
@@ -472,7 +472,7 @@ void resTable<T,ID>::verify () const
 // resTable<T,ID>::traverse
 //
 template <class T, class ID>
-void resTable<T,ID>::traverse ( void (T::*pCB)() ) 
+void resTable<T,ID>::traverse ( void (T::*pCB)() )
 {
     const unsigned N = this->tableSize ();
     for ( unsigned i = 0u; i < N; i++ ) {
@@ -531,18 +531,18 @@ void resTable<T,ID>::setTableSize ( const unsigned newTableSize )
         return;
     }
 
-	//
-	// count the number of bits in newTableSize and round up 
+    //
+    // count the number of bits in newTableSize and round up
     // to the next power of two
-	//
+    //
     unsigned newMask = newTableSize - 1;
-	unsigned nbits;
-	for ( nbits = 0; nbits < sizeof (newTableSize) * CHAR_BIT; nbits++ ) {
-		unsigned nBitsMask = resTableBitMask ( nbits ); 
-		if ( ( newMask & ~nBitsMask ) == 0){
-			break;
-		}
-	}
+    unsigned nbits;
+    for ( nbits = 0; nbits < sizeof (newTableSize) * CHAR_BIT; nbits++ ) {
+        unsigned nBitsMask = resTableBitMask ( nbits );
+        if ( ( newMask & ~nBitsMask ) == 0){
+            break;
+        }
+    }
     setTableSizePrivate ( nbits );
 }
 
@@ -567,18 +567,18 @@ bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSizeIn )
 
     tsSLList<T> * pNewTable;
     try {
-        pNewTable = ( tsSLList<T> * ) 
+        pNewTable = ( tsSLList<T> * )
             ::operator new ( newTableSize * sizeof ( tsSLList<T> ) );
     }
     catch ( ... ){
         if ( ! this->pTable ) {
-		    throw;
+            throw;
         }
         return false;
     }
 
     // run the constructors using placement new
-	unsigned i;
+    unsigned i;
     for ( i = 0u; i < oldTableOccupiedSize; i++ ) {
         new ( &pNewTable[i] ) tsSLList<T> ( this->pTable[i] );
     }
@@ -586,7 +586,7 @@ bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSizeIn )
         new ( &pNewTable[i] ) tsSLList<T>;
     }
     // Run the destructors explicitly. Currently this destructor is a noop.
-    // The Tornado II compiler and RedHat 6.2 will not compile ~tsSLList<T>() but 
+    // The Tornado II compiler and RedHat 6.2 will not compile ~tsSLList<T>() but
     // since its a NOOP we can find an ugly workaround
 #   if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
         for ( i = 0; i < oldTableSize; i++ ) {
@@ -612,7 +612,7 @@ template <class T, class ID>
 void resTable<T,ID>::splitBucket ()
 {
     // double the hash table when necessary
-    // (this results in only a memcpy overhead, but 
+    // (this results in only a memcpy overhead, but
     // no hashing or entry redistribution)
     if ( this->nextSplitIndex > this->hashIxMask ) {
         bool success = this->setTableSizePrivate ( this->nBitsHashIxSplitMask + 1 );
@@ -687,7 +687,7 @@ T * resTable<T,ID>::find ( tsSLList<T> &list, const ID &idIn ) const
 // ~resTable<T,ID>::resTable()
 //
 template <class T, class ID>
-resTable<T,ID>::~resTable() 
+resTable<T,ID>::~resTable()
 {
     operator delete ( this->pTable );
 }
@@ -728,21 +728,21 @@ inline resTableIter < T, ID > resTable<T,ID>::firstIter ()
 //////////////////////////////////////////////
 
 template < class T, class ID >
-inline resTableIter<T,ID>::resTableIter ( resTable < T,ID > & tableIn ) : 
-    index ( 0 ), pResTable ( & tableIn ) 
+inline resTableIter<T,ID>::resTableIter ( resTable < T,ID > & tableIn ) :
+    index ( 0 ), pResTable ( & tableIn )
 {
     this->findNextEntry ();
-} 
+}
 
 template < class T, class ID >
-inline resTableIter<T,ID>::resTableIter () : 
-    iter ( tsSLList<T>::invalidIter() ), 
-    index ( 0 ), pResTable ( 0 ) 
+inline resTableIter<T,ID>::resTableIter () :
+    iter ( tsSLList<T>::invalidIter() ),
+    index ( 0 ), pResTable ( 0 )
 {
-} 
+}
 
 template < class T, class ID >
-inline void resTableIter<T,ID>::findNextEntry () 
+inline void resTableIter<T,ID>::findNextEntry ()
 {
     if ( this->pResTable ) {
         while ( this->index < this->pResTable->tableSize() ) {
@@ -752,7 +752,7 @@ inline void resTableIter<T,ID>::findNextEntry ()
             }
         }
     }
-} 
+}
 
 template < class T, class ID >
 inline bool resTableIter<T,ID>::valid () const
@@ -781,7 +781,7 @@ inline resTableIter < T, ID > & resTableIter<T,ID>::operator =
     ( const resTableIter < T, ID > & rhs )
 {
     this->pResTable = rhs.pResTable;
-    this->index  = rhs.index; 
+    this->index  = rhs.index;
     this->iter   = rhs.iter;
     return *this;
 }
@@ -817,7 +817,7 @@ inline resTableIter<T,ID> resTableIter<T,ID>::operator ++ ( int )
 }
 
 template < class T, class ID >
-inline T * resTableIter<T,ID>::pointer () 
+inline T * resTableIter<T,ID>::pointer ()
 {
     return this->iter.pointer ();
 }
@@ -827,21 +827,21 @@ inline T * resTableIter<T,ID>::pointer ()
 //////////////////////////////////////////////
 
 template < class T, class ID >
-inline resTableIterConst<T,ID>::resTableIterConst ( const resTable < T,ID > & tableIn ) : 
-    index ( 0 ), pResTable ( & tableIn ) 
+inline resTableIterConst<T,ID>::resTableIterConst ( const resTable < T,ID > & tableIn ) :
+    index ( 0 ), pResTable ( & tableIn )
 {
     this->findNextEntry ();
-} 
+}
 
 template < class T, class ID >
-inline resTableIterConst<T,ID>::resTableIterConst () : 
-    iter ( tsSLList<T>::invalidIter() ), 
-    index ( 0 ), pResTable ( 0 ) 
+inline resTableIterConst<T,ID>::resTableIterConst () :
+    iter ( tsSLList<T>::invalidIter() ),
+    index ( 0 ), pResTable ( 0 )
 {
-} 
+}
 
 template < class T, class ID >
-inline void resTableIterConst<T,ID>::findNextEntry () 
+inline void resTableIterConst<T,ID>::findNextEntry ()
 {
     if ( this->pResTable ) {
         while ( this->index < this->pResTable->tableSize() ) {
@@ -852,7 +852,7 @@ inline void resTableIterConst<T,ID>::findNextEntry ()
             }
         }
     }
-} 
+}
 
 template < class T, class ID >
 inline bool resTableIterConst<T,ID>::valid () const
@@ -881,7 +881,7 @@ inline resTableIterConst < T, ID > & resTableIterConst<T,ID>::operator =
     ( const resTableIterConst < T, ID > & rhs )
 {
     this->pResTable = rhs.pResTable;
-    this->index = rhs.index; 
+    this->index = rhs.index;
     this->iter = rhs.iter;
     return *this;
 }
@@ -925,25 +925,25 @@ inline const T * resTableIterConst<T,ID>::pointer () const
 //////////////////////////////////////////////
 // chronIntIdResTable<ITEM> member functions
 //////////////////////////////////////////////
-inline chronIntId::chronIntId ( const unsigned &idIn ) : 
+inline chronIntId::chronIntId ( const unsigned &idIn ) :
     intId<unsigned, 8u, sizeof(unsigned)*CHAR_BIT> ( idIn ) {}
 
 //
 // chronIntIdResTable<ITEM>::chronIntIdResTable()
 //
 template <class ITEM>
-inline chronIntIdResTable<ITEM>::chronIntIdResTable () : 
+inline chronIntIdResTable<ITEM>::chronIntIdResTable () :
     resTable<ITEM, chronIntId> (), allocId(1u) {}
 
 template <class ITEM>
 inline chronIntIdResTable<ITEM>::chronIntIdResTable ( const chronIntIdResTable<ITEM> & ) :
-	resTable<ITEM, chronIntId> (), allocId(1u) {}
+    resTable<ITEM, chronIntId> (), allocId(1u) {}
 
 template <class ITEM>
 inline chronIntIdResTable<ITEM> & chronIntIdResTable<ITEM>::
-	operator = ( const chronIntIdResTable<ITEM> & ) 
+    operator = ( const chronIntIdResTable<ITEM> & )
 {
-	return *this;
+    return *this;
 }
 
 //
@@ -956,8 +956,8 @@ chronIntIdResTable<ITEM>::~chronIntIdResTable() {}
 //
 // chronIntIdResTable<ITEM>::add()
 //
-// NOTE: This detects (and avoids) the case where 
-// the PV id wraps around and we attempt to have two 
+// NOTE: This detects (and avoids) the case where
+// the PV id wraps around and we attempt to have two
 // resources with the same id.
 //
 template <class ITEM>
@@ -987,7 +987,7 @@ inline chronIntIdRes<ITEM>::chronIntIdRes () : chronIntId (UINT_MAX) {}
 // workaround for bug in DEC compiler
 //
 template <class ITEM>
-inline void chronIntIdRes<ITEM>::setId (unsigned newId) 
+inline void chronIntIdRes<ITEM>::setId (unsigned newId)
 {
     this->id = newId;
 }
@@ -1001,7 +1001,7 @@ inline void chronIntIdRes<ITEM>::setId (unsigned newId)
 //
 // (if this is inline SUN PRO botches the template instantiation)
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::intId (const T &idIn) 
+intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::intId (const T &idIn)
     : id (idIn) {}
 
 //
@@ -1035,14 +1035,14 @@ inline resTableIndex integerHash ( unsigned MIN_INDEX_WIDTH,
     resTableIndex hashid = static_cast <resTableIndex> ( id );
 
     //
-    // the intent here is to gurantee that all components of the 
+    // the intent here is to gurantee that all components of the
     // integer contribute even if the resTableIndex returned might
     // index a small table.
     //
     // On most compilers the optimizer will unroll this loop so this
     // is actually a very small inline function
     //
-    // Experiments using the microsoft compiler show that this isnt 
+    // Experiments using the microsoft compiler show that this isnt
     // slower than switching on the architecture size and unrolling the
     // loop explicitly (that solution has resulted in portability
     // problems in the past).
@@ -1077,7 +1077,7 @@ inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash () const
 //
 // stringId::operator == ()
 //
-inline bool stringId::operator == 
+inline bool stringId::operator ==
         (const stringId &idIn) const
 {
     if (this->pStr!=NULL && idIn.pStr!=NULL) {
@@ -1133,19 +1133,19 @@ stringId::~stringId()
     if (this->allocType==copyString) {
         if (this->pStr!=NULL) {
             //
-            // the microsoft and solaris compilers will 
+            // the microsoft and solaris compilers will
             // not allow a pointer to "const char"
-            // to be deleted 
+            // to be deleted
             //
             // the HP-UX compiler gives us a warning on
             // each cast away of const, but in this case
-            // it cant be avoided. 
+            // it cant be avoided.
             //
-            // The DEC compiler complains that const isnt 
+            // The DEC compiler complains that const isnt
             // really significant in a cast if it is present.
             //
             // I hope that deleting a pointer to "char"
-            // is the same as deleting a pointer to 
+            // is the same as deleting a pointer to
             // "const char" on all compilers
             //
             delete [] const_cast<char *>(this->pStr);

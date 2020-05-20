@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbBkpt.c */
 /*
@@ -89,7 +89,7 @@ static long FIND_CONT_NODE(
  *  dbb() and dbd() add a breakpoint to a record or delete one
  *    from a record.  dbstat() prints out comprehensive breakpoint
  *    status information.
- *   
+ *
  *  Breakpoints may be set on a per lockset basis.  When a
  *    breakpoint is set in a lockset, a new task is created. A
  *    separate task gets created for _every_ lockset containing
@@ -201,7 +201,7 @@ static long FIND_CONT_NODE(
   struct LS_LIST **ppnode,
   struct dbCommon **pprecord)
 {
-  struct dbAddr addr; 
+  struct dbAddr addr;
   struct LS_LIST *pnode;
   struct dbCommon *precord = NULL;
   long status = 0;
@@ -211,7 +211,7 @@ static long FIND_CONT_NODE(
      *  Search through stack, taking the first entry that
      *    is currently stopped at a breakpoint.
      */
-     pnode = (struct LS_LIST *) ellFirst(&lset_stack); 
+     pnode = (struct LS_LIST *) ellFirst(&lset_stack);
      while (pnode != NULL) {
         if (pnode->precord != NULL) {
            precord = pnode->precord;
@@ -219,7 +219,7 @@ static long FIND_CONT_NODE(
         }
         pnode = (struct LS_LIST *) ellNext((ELLNODE *)pnode);
      }
-  
+
      if (pnode == NULL) {
         printf("   BKPT> No records are currently stopped\n");
         return(S_db_notStopped);
@@ -295,7 +295,7 @@ long dbb(const char *record_name)
   precord = addr.precord;
 
   if (precord->bkpt & BKPT_ON_MASK) {
-     printf("   BKPT> Breakpoint already set in this record\n"); 
+     printf("   BKPT> Breakpoint already set in this record\n");
      return(S_db_bkptSet);
   }
 
@@ -354,13 +354,13 @@ long dbb(const char *record_name)
      epicsMutexUnlock(bkpt_stack_sem);
      return(1);
   }
-  pbl->precord = precord; 
+  pbl->precord = precord;
   ellAdd(&pnode->bp_list, (ELLNODE *)pbl);
 
  /*
   *  Turn on breakpoint field in record
   */
-  precord->bkpt |= BKPT_ON_MASK; 
+  precord->bkpt |= BKPT_ON_MASK;
 
   if (! pnode->taskid) {
 
@@ -455,7 +455,7 @@ long dbd(const char *record_name)
   }
 
   if (pbl == NULL) {
-     printf("   BKPT> Logic Error in dbd()\n"); 
+     printf("   BKPT> Logic Error in dbd()\n");
      precord->bkpt &= BKPT_OFF_MASK;
      epicsMutexUnlock(bkpt_stack_sem);
      dbScanUnlock(precord);
@@ -663,9 +663,9 @@ int dbBkpt(dbCommon *precord)
 
  /*
   *  Take and give a semaphore to check for breakpoints
-  *	every time a record is processed.  Slow.  Thank
-  *	goodness breakpoint checking is turned off during
-  *	normal operation.
+  *     every time a record is processed.  Slow.  Thank
+  *     goodness breakpoint checking is turned off during
+  *     normal operation.
   */
   epicsMutexMustLock(bkpt_stack_sem);
   FIND_LOCKSET(precord, pnode);
@@ -696,7 +696,7 @@ int dbBkpt(dbCommon *precord)
   *    is used to determine if the source of processing is the
   *    continuation task or an external source. If it is an external
   *    source, queue its execution, but dump out of dbProcess without
-  *    calling record support. 
+  *    calling record support.
   */
   if (pnode->taskid && (epicsThreadGetIdSelf() != pnode->taskid)) {
     /* CONTINUE TASK CANNOT ENTER HERE */
@@ -706,7 +706,7 @@ int dbBkpt(dbCommon *precord)
      *    not already exist.
      */
      FIND_QUEUE_ENTRY(&pnode->ep_queue, pqe, precord);
- 
+
      if (pqe == NULL) {
 
         pqe = (struct EP_LIST *) malloc(sizeof(struct EP_LIST));
@@ -746,7 +746,7 @@ int dbBkpt(dbCommon *precord)
        /*
         *  Release the semaphore, letting the continuation
         *     task begin execution of the new entrypoint.
-        */ 
+        */
         epicsEventSignal(pnode->ex_sem);
      }
      return(1);
@@ -903,7 +903,7 @@ long dbstat(void)
              pnode->l_num, pnode->precord->name, ellCount(&pnode->bp_list), pnode->taskid);
 
       /* for each entrypoint detected, print out entrypoint statistics */
-       pqe = (struct EP_LIST *) ellFirst(&pnode->ep_queue); 
+       pqe = (struct EP_LIST *) ellFirst(&pnode->ep_queue);
        while (pqe != NULL) {
           double diff = epicsTimeDiffInSeconds(&time,&pqe->time);
           if (diff) {

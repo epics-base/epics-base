@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * Implementation of core macro substitution library (macLib)
@@ -251,7 +251,7 @@ epicsStdCall macPutValue(
     /* handle NULL value case: if name was found, delete entry (may be
        several entries at different scoping levels) */
     if ( value == NULL ) {
-        /* 
+        /*
          * FIXME: shouldn't be able to delete entries from lower scopes
          * NOTE: when this is changed, this functionality of removing
          * a macro from all scopes will still be needed by iocshEnvClear
@@ -259,11 +259,11 @@ epicsStdCall macPutValue(
         while ( ( entry = lookup( handle, name, FALSE ) ) != NULL ) {
             int done = strcmp(entry->type, "environment variable") == 0;
             delete( handle, entry );
-            
+
             if (done)
                 break;
         }
-        
+
         return 0;
     }
 
@@ -658,7 +658,7 @@ static long expand( MAC_HANDLE *handle )
                 entry->rawval ? entry->rawval : "" );
 
         if ( entry->value == NULL ) {
-            if ( ( entry->value = malloc( MAC_SIZE + 1 ) ) == NULL ) {  
+            if ( ( entry->value = malloc( MAC_SIZE + 1 ) ) == NULL ) {
                 return -1;
             }
         }

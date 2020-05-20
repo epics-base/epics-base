@@ -24,7 +24,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif    
+#endif
 
 /** \file yajl_common.h
  * \brief Common routines and macros used by other YAJL APIs.

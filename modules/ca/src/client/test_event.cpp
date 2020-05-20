@@ -30,7 +30,7 @@ extern "C" void epicsStdCall ca_test_event ( struct event_handler_args args )
         }
     }
 
-    printf ( "ca_test_event() for channel \"%s\" with native type %s\n", 
+    printf ( "ca_test_event() for channel \"%s\" with native type %s\n",
         ca_name(args.chid), pNativeTypeName );
 
     if ( ! ( CA_M_SUCCESS & args.status ) ) {
@@ -130,7 +130,7 @@ extern "C" void epicsStdCall ca_dump_dbr (
     case DBR_GR_STRING:
     case DBR_CTRL_STRING:
     {
-        struct dbr_sts_string *pvalue 
+        struct dbr_sts_string *pvalue
           = (struct dbr_sts_string *) pbuffer;
         printf("%2d %2d",pvalue->status,pvalue->severity);
         printf("\tValue: %s",pvalue->value);
@@ -217,7 +217,7 @@ extern "C" void epicsStdCall ca_dump_dbr (
     }
     case DBR_TIME_STRING:
     {
-        struct dbr_time_string *pvalue 
+        struct dbr_time_string *pvalue
           = (struct dbr_time_string *) pbuffer;
 
                 epicsTimeToStrftime(tsString,sizeof(tsString),
@@ -562,12 +562,12 @@ extern "C" void epicsStdCall ca_dump_dbr (
     }
     case DBR_STSACK_STRING:
     {
-		struct dbr_stsack_string *pvalue
-		  = (struct dbr_stsack_string *)pbuffer;
-		printf("%2d %2d",pvalue->status,pvalue->severity);
-		printf(" %2d %2d",pvalue->ackt,pvalue->acks);
-		printf(" %s",pvalue->value);
-		break;
+        struct dbr_stsack_string *pvalue
+          = (struct dbr_stsack_string *)pbuffer;
+        printf("%2d %2d",pvalue->status,pvalue->severity);
+        printf(" %2d %2d",pvalue->ackt,pvalue->acks);
+        printf(" %s",pvalue->value);
+        break;
     }
     case DBR_CLASS_NAME:
     {
@@ -577,7 +577,7 @@ extern "C" void epicsStdCall ca_dump_dbr (
         break;
     }
     default:
-        printf ( 
+        printf (
             "unsupported by ca_dbrDump()" );
         break;
     }

@@ -4,13 +4,13 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* recStringin.c - Record Support Routines for Stringin records */
 /*
- *      Author: 	Janet Anderson
- *      Date:   	4/23/91
+ *      Author:     Janet Anderson
+ *      Date:       4/23/91
  */
 
 
@@ -59,24 +59,24 @@ static long special(DBADDR *, int);
 #define get_alarm_double NULL
 
 rset stringinRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_control_double,
-	get_alarm_double
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
 epicsExportAddress(rset,stringinRSET);
 
@@ -123,29 +123,29 @@ static long process(struct dbCommon *pcommon)
 {
     struct stringinRecord *prec = (struct stringinRecord *)pcommon;
     stringindset  *pdset = (stringindset *)(prec->dset);
-	long		 status;
-	unsigned char    pact=prec->pact;
+    long             status;
+    unsigned char    pact=prec->pact;
 
-	if( (pdset==NULL) || (pdset->read_stringin==NULL) ) {
-		prec->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)prec,"read_stringin");
-		return(S_dev_missingSup);
-	}
+    if( (pdset==NULL) || (pdset->read_stringin==NULL) ) {
+        prec->pact=TRUE;
+        recGblRecordError(S_dev_missingSup,(void *)prec,"read_stringin");
+        return(S_dev_missingSup);
+    }
 
-	status=readValue(prec); /* read the new value */
-	/* check if device support set pact */
-	if ( !pact && prec->pact ) return(0);
+    status=readValue(prec); /* read the new value */
+    /* check if device support set pact */
+    if ( !pact && prec->pact ) return(0);
 
     prec->pact = TRUE;
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
-	/* check event list */
-	monitor(prec);
-	/* process the forward scan link record */
-	recGblFwdLink(prec);
+    /* check event list */
+    monitor(prec);
+    /* process the forward scan link record */
+    recGblFwdLink(prec);
 
-	prec->pact=FALSE;
-	return(status);
+    prec->pact=FALSE;
+    return(status);
 }
 
 static long special(DBADDR *paddr, int after)

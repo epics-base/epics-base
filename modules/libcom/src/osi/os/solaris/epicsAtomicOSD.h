@@ -5,7 +5,7 @@
 * Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -22,7 +22,7 @@
 
 #if defined ( __SunOS_5_10 )
 
-/* 
+/*
  * atomic.h exists only in Solaris 10 or higher
  */
 #include <atomic.h>
@@ -56,7 +56,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
 {
     STATIC_ASSERT ( sizeof ( int ) == sizeof ( unsigned ) );
     unsigned * const pTarg = ( unsigned * ) pTarget;
-    return ( int ) atomic_cas_uint ( pTarg, ( unsigned ) oldVal, 
+    return ( int ) atomic_cas_uint ( pTarg, ( unsigned ) oldVal,
                                         ( unsigned ) newVal );
 }
 #endif
@@ -76,8 +76,8 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT (
 #ifndef EPICS_ATOMIC_CAS_PTRT
 #define EPICS_ATOMIC_CAS_PTRT
 EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
-                                       EpicsAtomicPtrT * pTarget, 
-                                       EpicsAtomicPtrT oldVal, 
+                                       EpicsAtomicPtrT * pTarget,
+                                       EpicsAtomicPtrT oldVal,
                                        EpicsAtomicPtrT newVal )
 {
     return atomic_cas_ptr ( pTarget, oldVal, newVal );

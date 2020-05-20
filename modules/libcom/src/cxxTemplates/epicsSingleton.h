@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -40,7 +40,7 @@ private:
 // This class exists for the purpose of avoiding file scope
 // object chicken and egg problems. It implements thread safe
 // lazy initialization. To avoid locking overhead retain a
-// copy of the epicsSingleton :: reference for future use. 
+// copy of the epicsSingleton :: reference for future use.
 template < class TYPE >
 class epicsSingleton {
 public:
@@ -49,11 +49,11 @@ public:
         reference ( epicsSingleton & );
         reference ( const reference & );
         ~reference ();
-	// this somewhat convoluted reference of the return
-	// type ref through the epicsSingleton template is
-	// required for the archaic Tornado gnu compiler
-        typename epicsSingleton < TYPE > :: reference & 
-	    operator = ( const reference & );
+        // this somewhat convoluted reference of the return
+        // type ref through the epicsSingleton template is
+        // required for the archaic Tornado gnu compiler
+        typename epicsSingleton < TYPE > :: reference &
+            operator = ( const reference & );
         TYPE * operator -> ();
         const TYPE * operator -> () const;
         TYPE & operator * ();
@@ -76,16 +76,16 @@ private:
 };
 
 template < class TYPE >
-inline epicsSingleton < TYPE > :: reference :: 
+inline epicsSingleton < TYPE > :: reference ::
     reference ( epicsSingleton & es ):
-    _pSingleton ( & es ) 
+    _pSingleton ( & es )
 {
     es._singletonUntyped.
         incrRefCount ( & epicsSingleton < TYPE > :: _build );
 }
 
 template < class TYPE >
-inline epicsSingleton < TYPE > :: reference :: 
+inline epicsSingleton < TYPE > :: reference ::
     reference ( const reference & ref ) :
     _pSingleton ( ref._pSingleton )
 {
@@ -95,7 +95,7 @@ inline epicsSingleton < TYPE > :: reference ::
 }
 
 template < class TYPE >
-inline epicsSingleton < TYPE > :: reference :: 
+inline epicsSingleton < TYPE > :: reference ::
     ~reference ()
 {
     assert ( _pSingleton );
@@ -104,8 +104,8 @@ inline epicsSingleton < TYPE > :: reference ::
 }
 
 template < class TYPE >
-typename epicsSingleton < TYPE > :: reference & 
-    epicsSingleton < TYPE > :: reference :: 
+typename epicsSingleton < TYPE > :: reference &
+    epicsSingleton < TYPE > :: reference ::
         operator = ( const reference & ref )
 {
     if ( _pSingleton != ref._pSingleton ) {
@@ -115,48 +115,48 @@ typename epicsSingleton < TYPE > :: reference &
         _pSingleton = ref._pSingleton;
         assert ( _pSingleton );
         _pSingleton->_singletonUntyped.
-            incrRefCount ( & epicsSingleton < TYPE > :: _build ); 
+            incrRefCount ( & epicsSingleton < TYPE > :: _build );
     }
     return *this;
 }
 
 template < class TYPE >
-inline TYPE * 
-    epicsSingleton < TYPE > :: reference :: 
+inline TYPE *
+    epicsSingleton < TYPE > :: reference ::
         operator -> ()
-{ 
-    assert ( _pSingleton );
-    return reinterpret_cast < TYPE * > 
-            ( _pSingleton->_singletonUntyped.pInstance () ); 
-}
-
-template < class TYPE >
-inline const TYPE * 
-    epicsSingleton < TYPE > :: reference :: 
-        operator -> () const 
 {
     assert ( _pSingleton );
-    return reinterpret_cast < const TYPE * > 
-            ( _pSingleton->_singletonUntyped.pInstance () ); 
+    return reinterpret_cast < TYPE * >
+            ( _pSingleton->_singletonUntyped.pInstance () );
 }
 
 template < class TYPE >
-inline TYPE & 
-    epicsSingleton < TYPE > :: reference :: 
-        operator * () 
+inline const TYPE *
+    epicsSingleton < TYPE > :: reference ::
+        operator -> () const
+{
+    assert ( _pSingleton );
+    return reinterpret_cast < const TYPE * >
+            ( _pSingleton->_singletonUntyped.pInstance () );
+}
+
+template < class TYPE >
+inline TYPE &
+    epicsSingleton < TYPE > :: reference ::
+        operator * ()
 {
     return * this->operator -> ();
 }
 
 template < class TYPE >
-inline const TYPE & 
-    epicsSingleton < TYPE > :: reference :: 
-            operator * () const 
+inline const TYPE &
+    epicsSingleton < TYPE > :: reference ::
+            operator * () const
 {
     return * this->operator -> ();
 }
 
-inline SingletonUntyped :: SingletonUntyped () : 
+inline SingletonUntyped :: SingletonUntyped () :
     _pInstance ( 0 ), _refCount ( 0 )
 {
 }
@@ -170,10 +170,10 @@ inline SingletonUntyped :: ~SingletonUntyped ()
 {
     // we dont assert fail on non-zero _refCount
     // and or non nill _pInstance here because this
-    // is designed to tolarate situations where 
-    // file scope epicsSingleton objects (which 
-    // theoretically dont have storage lifespan 
-    // issues) are deleted in a non-determanistic 
+    // is designed to tolarate situations where
+    // file scope epicsSingleton objects (which
+    // theoretically dont have storage lifespan
+    // issues) are deleted in a non-determanistic
     // order
 #   if 0
         assert ( _refCount == 0 );
@@ -188,26 +188,26 @@ void * epicsSingleton < TYPE > :: _build ()
 }
 
 template < class TYPE >
-void epicsSingleton < TYPE > :: 
+void epicsSingleton < TYPE > ::
     _destroy ( void * pDestroyTypeless )
 {
-    TYPE * pDestroy = 
+    TYPE * pDestroy =
         reinterpret_cast < TYPE * > ( pDestroyTypeless );
     delete pDestroy;
 }
 
 template < class TYPE >
-inline typename epicsSingleton < TYPE > :: reference 
+inline typename epicsSingleton < TYPE > :: reference
     epicsSingleton < TYPE > :: getReference ()
 {
     return reference ( * this );
 }
 
 template < class TYPE >
-inline const typename epicsSingleton < TYPE > :: reference 
+inline const typename epicsSingleton < TYPE > :: reference
     epicsSingleton < TYPE > :: getReference () const
 {
-    epicsSingleton < TYPE > * pConstCastAway = 
+    epicsSingleton < TYPE > * pConstCastAway =
         const_cast < epicsSingleton < TYPE > * > ( this );
     return pConstCastAway->getReference ();
 }

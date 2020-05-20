@@ -9,10 +9,10 @@
 \*************************************************************************/
 /* callback.c */
 
-/* general purpose callback tasks		*/
+/* general purpose callback tasks               */
 /*
  *      Original Author:        Marty Kraimer
- *      Date:   	        07-18-91
+ *      Date:                   07-18-91
 */
 
 #include <stddef.h>

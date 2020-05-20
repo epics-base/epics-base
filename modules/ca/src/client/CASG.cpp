@@ -208,23 +208,23 @@ bool CASG::ioComplete (
     return this->ioPendingList.count () == 0u;
 }
 
-void CASG::put ( epicsGuard < epicsMutex > & guard, chid pChan, 
+void CASG::put ( epicsGuard < epicsMutex > & guard, chid pChan,
     unsigned type, arrayElementCount count, const void * pValue )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
     sgAutoPtr < syncGroupWriteNotify > pNotify ( guard, *this );
-    pNotify = syncGroupWriteNotify::factory ( 
+    pNotify = syncGroupWriteNotify::factory (
         this->freeListWriteOP, *this, & CASG :: recycleWriteNotifyIO, pChan );
     pNotify->begin ( guard, type, count, pValue );
     pNotify.release ();
 }
 
-void CASG::get ( epicsGuard < epicsMutex > & guard, chid pChan, 
+void CASG::get ( epicsGuard < epicsMutex > & guard, chid pChan,
                 unsigned type, arrayElementCount count, void *pValue )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
     sgAutoPtr < syncGroupReadNotify > pNotify ( guard, *this );
-    pNotify = syncGroupReadNotify::factory ( 
+    pNotify = syncGroupReadNotify::factory (
         this->freeListReadOP, *this, & CASG :: recycleReadNotifyIO, pChan, pValue );
     pNotify->begin ( guard, type, count );
     pNotify.release ();
@@ -241,14 +241,14 @@ void CASG::completionNotify (
     }
 }
 
-void CASG :: recycleReadNotifyIO ( epicsGuard < epicsMutex > & guard, 
+void CASG :: recycleReadNotifyIO ( epicsGuard < epicsMutex > & guard,
                             syncGroupReadNotify & io )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
     this->freeListReadOP.release ( & io );
 }
 
-void CASG :: recycleWriteNotifyIO ( epicsGuard < epicsMutex > & guard, 
+void CASG :: recycleWriteNotifyIO ( epicsGuard < epicsMutex > & guard,
                             syncGroupWriteNotify & io )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );

@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -14,7 +14,7 @@
  * Jeff Hill
  * Murali Shankar - initial versions of verifyMultithreadSubscr
  * Michael Abbott - initial versions of multiSubscrDestroyNoLateCallbackTest
- * 
+ *
  */
 
 /*
@@ -110,7 +110,7 @@ void nUpdatesTester ( struct event_handler_args args )
         ( *pCtr ) ++;
     }
     else {
-        printf ( "subscription update failed for \"%s\" because \"%s\"", 
+        printf ( "subscription update failed for \"%s\" because \"%s\"",
             ca_name ( args.chid ), ca_message ( args.status ) );
     }
 }
@@ -131,7 +131,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan, unsigned
      * verify that the first event arrives (with evid)
      * and channel connected
      */
-    status = ca_add_event ( DBR_FLOAT, 
+    status = ca_add_event ( DBR_FLOAT,
                 chan, nUpdatesTester, &eventCount, &id );
     SEVCHK ( status, 0 );
     ca_flush_io ();
@@ -190,7 +190,7 @@ void monitorSubscriptionFirstUpdateTest ( const char *pName, chid chan, unsigned
     waitCount = 0u;
     status = ca_search ( pName, &chan2 );
     SEVCHK ( status, 0 );
-    status = ca_add_event ( DBR_FLOAT, chan2, 
+    status = ca_add_event ( DBR_FLOAT, chan2,
                 nUpdatesTester, &eventCount, 0 );
     SEVCHK ( status, 0 );
     status = ca_pend_io ( timeoutToPendIO );
@@ -250,7 +250,7 @@ void ioTesterGet ( struct event_handler_args args )
         ( *pCtr ) ++;
     }
     else {
-        printf("get call back failed for \"%s\" because \"%s\"", 
+        printf("get call back failed for \"%s\" because \"%s\"",
             ca_name ( args.chid ), ca_message ( args.status ) );
     }
 }
@@ -263,7 +263,7 @@ void ioTesterEvent ( struct event_handler_args args )
         SEVCHK ( status, 0 );
     }
     else {
-        printf ( "subscription update failed for \"%s\" because \"%s\"", 
+        printf ( "subscription update failed for \"%s\" because \"%s\"",
             ca_name ( args.chid ), ca_message ( args.status ) );
     }
 }
@@ -280,7 +280,7 @@ void verifyMonitorSubscriptionFlushIO ( chid chan, unsigned interestLevel  )
     /*
      * verify that the first event arrives
      */
-    status = ca_add_event ( DBR_FLOAT, 
+    status = ca_add_event ( DBR_FLOAT,
                 chan, nUpdatesTester, &eventCount, &id );
     SEVCHK (status, 0);
     ca_flush_io ();
@@ -317,8 +317,8 @@ void getCallbackStateChange ( struct event_handler_args args )
     verify ( pChan->channel == args.chid );
     verify ( pChan->connected );
     if ( args.status != ECA_NORMAL ) {
-        printf ( "getCallbackStateChange abnormal status was \"%s\"\n", 
-            ca_message ( args.status ) ); 
+        printf ( "getCallbackStateChange abnormal status was \"%s\"\n",
+            ca_message ( args.status ) );
         verify ( args.status == ECA_NORMAL );
     }
 
@@ -373,7 +373,7 @@ void subscriptionStateChange ( struct event_handler_args args )
 void noopSubscriptionStateChange ( struct event_handler_args args )
 {
     if ( args.status != ECA_NORMAL ) {
-        printf ( "noopSubscriptionStateChange: subscription update failed for \"%s\" because \"%s\"", 
+        printf ( "noopSubscriptionStateChange: subscription update failed for \"%s\" because \"%s\"",
             ca_name ( args.chid ), ca_message ( args.status ) );
     }
 }
@@ -396,7 +396,7 @@ void noopSubscriptionStateChange ( struct event_handler_args args )
  *
  * 7) verify that a nill access rights handler can be installed
  */
-void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount, 
+void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount,
                         unsigned repetitionCount, unsigned interestLevel )
 {
     int status;
@@ -439,7 +439,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount,
 
         showProgress ( interestLevel );
 
-        while ( connectionUpdateCount < chanCount || 
+        while ( connectionUpdateCount < chanCount ||
             getCallbackCount < chanCount ) {
             epicsThreadSleep ( 0.1 );
             ca_poll (); /* emulate typical GUI */
@@ -471,7 +471,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount,
         ca_self_test ();
 
         showProgress ( interestLevel );
-        
+
         for ( j = 0u; j < chanCount; j++ ) {
             status = ca_replace_access_rights_event (
                     pChans[j].channel, 0 );
@@ -494,7 +494,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount,
 /*
  * verifyBlockingConnect ()
  *
- * 1) verify that we dont print a disconnect message when 
+ * 1) verify that we dont print a disconnect message when
  * we delete the last channel
  *
  * 2) verify that we delete the connection to the IOC
@@ -502,7 +502,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount,
  *
  * 3) verify channel connection state variables
  *
- * 4) verify ca_test_io () and ca_pend_io () work with 
+ * 4) verify ca_test_io () and ca_pend_io () work with
  * channels w/o connection handlers
  *
  * 5) verify that the pending IO count is properly
@@ -512,7 +512,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount,
  * 6) verify that the pending IO count goes to zero
  * if the channel is deleted before it connects.
  */
-void verifyBlockingConnect ( appChan *pChans, unsigned chanCount, 
+void verifyBlockingConnect ( appChan *pChans, unsigned chanCount,
                             unsigned repetitionCount, unsigned interestLevel )
 {
     int status;
@@ -551,7 +551,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount,
                 verify ( INVALID_DB_REQ ( ca_field_type ( pChans[j].channel ) ) );
                 verify ( ca_test_io () == ECA_IOINPROGRESS );
             }
-            
+
             status = ca_replace_access_rights_event (
                     pChans[j].channel, accessRightsStateChange );
             SEVCHK ( status, NULL );
@@ -605,7 +605,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount,
         showProgress ( interestLevel );
 
         /*
-         * verify that connections to IOC's that are 
+         * verify that connections to IOC's that are
          * not in use are dropped
          */
         if ( ca_get_ioc_connection_count () != backgroundConnCount ) {
@@ -698,13 +698,13 @@ void verifyClear ( appChan *pChans, unsigned interestLevel )
 
     /*
      * verify subscription clear before connect
-     * and verify that NULL evid does not cause failure 
+     * and verify that NULL evid does not cause failure
      */
     status = ca_search ( pChans[0].name, &pChans[0].channel );
     SEVCHK ( status, NULL );
 
     SEVCHK ( status, NULL );
-    status = ca_add_event ( DBR_GR_DOUBLE, 
+    status = ca_add_event ( DBR_GR_DOUBLE,
             pChans[0].channel, noopSubscriptionStateChange, NULL, NULL );
     SEVCHK ( status, NULL );
 
@@ -791,7 +791,7 @@ void ctrlDoubleTest ( chid chan, unsigned interestLevel )
     SEVCHK (status, "ctrlDoubleTest, ca_array_put");
 
     size = dbr_size_n(DBR_CTRL_DOUBLE, ca_element_count(chan));
-    pCtrlDbl = (struct dbr_ctrl_double *) malloc (size); 
+    pCtrlDbl = (struct dbr_ctrl_double *) malloc (size);
     verify (pCtrlDbl!=NULL);
 
     /*
@@ -846,7 +846,7 @@ void verifyBlockInPendIO ( chid chan, unsigned interestLevel  )
         else if ( resp != -100 ) {
             printf ( "CA didnt block for get to return?\n" );
         }
-            
+
         req = 1;
         resp = -100;
         SEVCHK ( ca_put (DBR_LONG, chan, &req), NULL );
@@ -898,7 +898,7 @@ void floatTest ( chid chan, dbr_float_t beginValue, dbr_float_t increment,
 /*
  * doubleTest ()
  */
-void doubleTest ( chid chan, dbr_double_t beginValue, 
+void doubleTest ( chid chan, dbr_double_t beginValue,
     dbr_double_t  increment, dbr_double_t epsilon,
     unsigned iterations)
 {
@@ -929,7 +929,7 @@ void doubleTest ( chid chan, dbr_double_t beginValue,
  * Verify that we can write and then read back
  * the same analog value
  */
-void verifyAnalogIO ( chid chan, int dataType, double min, double max, 
+void verifyAnalogIO ( chid chan, int dataType, double min, double max,
                int minExp, int maxExp, double epsilon, unsigned interestLevel )
 {
     int i;
@@ -962,11 +962,11 @@ void verifyAnalogIO ( chid chan, int dataType, double min, double max,
             iter = 10u;
         }
         if ( dataType == DBR_FLOAT ) {
-            floatTest ( chan, (dbr_float_t) base, (dbr_float_t) incr, 
+            floatTest ( chan, (dbr_float_t) base, (dbr_float_t) incr,
                 (dbr_float_t) epsil, iter );
         }
         else if (dataType == DBR_DOUBLE ) {
-            doubleTest ( chan, (dbr_double_t) base, (dbr_double_t) incr, 
+            doubleTest ( chan, (dbr_double_t) base, (dbr_double_t) incr,
                 (dbr_double_t) epsil, iter );
         }
         else {
@@ -983,11 +983,11 @@ void verifyAnalogIO ( chid chan, int dataType, double min, double max,
             iter = 10u;
         }
         if ( dataType == DBR_FLOAT ) {
-            floatTest ( chan, (dbr_float_t) base, (dbr_float_t) incr, 
+            floatTest ( chan, (dbr_float_t) base, (dbr_float_t) incr,
                 (dbr_float_t) epsil, iter );
         }
         else if (dataType == DBR_DOUBLE ) {
-            doubleTest ( chan, (dbr_double_t) base, (dbr_double_t) incr, 
+            doubleTest ( chan, (dbr_double_t) base, (dbr_double_t) incr,
                 (dbr_double_t) epsil, iter );
          }
         else {
@@ -1004,11 +1004,11 @@ void verifyAnalogIO ( chid chan, int dataType, double min, double max,
             iter = 10l;
         }
         if ( dataType == DBR_FLOAT ) {
-            floatTest ( chan, (dbr_float_t) base, (dbr_float_t) incr, 
+            floatTest ( chan, (dbr_float_t) base, (dbr_float_t) incr,
                 (dbr_float_t) epsil, iter );
         }
         else if (dataType == DBR_DOUBLE ) {
-            doubleTest ( chan, (dbr_double_t) base, (dbr_double_t) incr, 
+            doubleTest ( chan, (dbr_double_t) base, (dbr_double_t) incr,
                 (dbr_double_t) epsil, iter );
          }
         else {
@@ -1045,7 +1045,7 @@ void verifyLongIO ( chid chan, unsigned interestLevel  )
         if ( incr == 0 ) {
             incr = 1;
         }
-        for ( iter = cl.lower_ctrl_limit; 
+        for ( iter = cl.lower_ctrl_limit;
             iter <= cl.upper_ctrl_limit; iter+=incr ) {
 
             ca_put ( DBR_LONG, chan, &iter );
@@ -1089,8 +1089,8 @@ void verifyShortIO ( chid chan, unsigned interestLevel  )
         if ( incr == 0 ) {
             incr = 1;
         }
-        for ( iter = (dbr_short_t) cl.lower_ctrl_limit; 
-            iter <= (dbr_short_t) cl.upper_ctrl_limit; 
+        for ( iter = (dbr_short_t) cl.lower_ctrl_limit;
+            iter <= (dbr_short_t) cl.upper_ctrl_limit;
             iter = (dbr_short_t) (iter + incr) ) {
 
             ca_put ( DBR_SHORT, chan, &iter );
@@ -1131,7 +1131,7 @@ void verifyHighThroughputRead ( chid chan, unsigned interestLevel )
     }
 }
 
-void verifyHighThroughputWrite ( chid chan, unsigned interestLevel  ) 
+void verifyHighThroughputWrite ( chid chan, unsigned interestLevel  )
 {
     int status;
     unsigned i;
@@ -1155,12 +1155,12 @@ void verifyHighThroughputWrite ( chid chan, unsigned interestLevel  )
  * verify we dont jam up on many uninterrupted
  * get callback requests
  */
-void verifyHighThroughputReadCallback ( chid chan, unsigned interestLevel ) 
+void verifyHighThroughputReadCallback ( chid chan, unsigned interestLevel )
 {
     unsigned i;
     int status;
 
-    if ( ca_read_access ( chan ) ) { 
+    if ( ca_read_access ( chan ) ) {
         unsigned count = 0u;
         showProgressBegin ( "verifyHighThroughputReadCallback", interestLevel );
         for ( i=0; i<10000; i++ ) {
@@ -1203,10 +1203,10 @@ void verifyHighThroughputWriteCallback ( chid chan, unsigned interestLevel )
         SEVCHK ( ca_flush_io (), NULL );
         dval = 0.0;
         status = ca_get ( DBR_DOUBLE, chan, &dval );
-        SEVCHK ( status, 
+        SEVCHK ( status,
             "verifyHighThroughputWriteCallback, verification get" );
         status = ca_pend_io ( timeoutToPendIO );
-        SEVCHK ( status, 
+        SEVCHK ( status,
             "verifyHighThroughputWriteCallback, verification get pend" );
         verify ( dval == i );
         showProgressEnd ( interestLevel );
@@ -1360,9 +1360,9 @@ static void noLateCallbackDetect ( struct event_handler_args args )
     verify ( callbackIsOk );
 }
 
-static void multiSubscrDestroyNoLateCallbackThread ( void * pParm ) 
+static void multiSubscrDestroyNoLateCallbackThread ( void * pParm )
 {
-    struct MultiSubscrDestroyNoLateCallbackTestData * const pTestData = 
+    struct MultiSubscrDestroyNoLateCallbackTestData * const pTestData =
               ( struct MultiSubscrDestroyNoLateCallbackTestData * ) pParm;
     unsigned i, j;
     int status;
@@ -1391,10 +1391,10 @@ static void multiSubscrDestroyNoLateCallbackThread ( void * pParm )
             SEVCHK ( ca_add_event ( DBR_GR_FLOAT, pTestData->m_chan, noLateCallbackDetect,
                         &pTestData->m_eventData[j], &pTestData->m_eventData[j].m_id ) , NULL );
         }
-        SEVCHK ( ca_flush_io(), NULL ); 
+        SEVCHK ( ca_flush_io(), NULL );
 
         /*
-         * raise the priority of the current thread hoping to improve our 
+         * raise the priority of the current thread hoping to improve our
          * likelyhood of detecting a bug
          */
         priorityOfTestThread = epicsThreadGetPrioritySelf ();
@@ -1445,7 +1445,7 @@ static void multiSubscrDestroyNoLateCallbackThread ( void * pParm )
 }
 
 /*
- * verify that, in a preemtive callback mode client, a subscription callback never 
+ * verify that, in a preemtive callback mode client, a subscription callback never
  * comes after the subscription is destroyed
  */
 static void multiSubscrDestroyNoLateCallbackTest ( const char *pName, unsigned interestLevel )
@@ -1456,13 +1456,13 @@ static void multiSubscrDestroyNoLateCallbackTest ( const char *pName, unsigned i
 
     pTestData = calloc ( 1u, sizeof ( struct MultiSubscrDestroyNoLateCallbackTestData ) );
     verify ( pTestData );
-    pTestData->m_mutex = epicsMutexMustCreate (); 
+    pTestData->m_mutex = epicsMutexMustCreate ();
     pTestData->m_testDoneEvent = epicsEventMustCreate ( epicsEventEmpty );
     pTestData->m_pChanName = pName;
     pTestData->m_interestLevel = interestLevel;
     epicsThreadMustCreate (
                       "multiSubscrDestroyNoLateCallbackTest",
-                      epicsThreadPriorityLow, 
+                      epicsThreadPriorityLow,
                       epicsThreadGetStackSize ( epicsThreadStackMedium ),
                       multiSubscrDestroyNoLateCallbackThread,
                       pTestData );
@@ -1488,7 +1488,7 @@ static void multiSubscrDestroyNoLateCallbackTest ( const char *pName, unsigned i
  * 1) verify we can add many monitors at once
  * 2) verify that under heavy load the last monitor
  *      returned is the last modification sent
- * 3) attempt to delete monitors while many monitors 
+ * 3) attempt to delete monitors while many monitors
  *      are running
  */
 void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
@@ -1497,7 +1497,7 @@ void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
     evid mid[1000];
     dbr_float_t temp, getResp;
     unsigned i;
-    
+
     showProgressBegin ( "multiSubscriptionDeleteTest", interestLevel );
 
     for ( i=0; i < NELEMENTS (mid); i++ ) {
@@ -1510,7 +1510,7 @@ void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
      * complete
      *
      * NOTE: this hopefully demonstrates that when the
-     * server is very busy with monitors the client 
+     * server is very busy with monitors the client
      * is still able to punch through with a request.
      */
     SEVCHK ( ca_get ( DBR_FLOAT,chan,&getResp ), NULL );
@@ -1521,7 +1521,7 @@ void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
     /*
      * attempt to generate heavy event traffic before initiating
      * the monitor delete
-     */  
+     */
     if ( ca_write_access (chan) ) {
         for ( i=0; i < NELEMENTS (mid); i++ ) {
             temp = (float) i;
@@ -1532,12 +1532,12 @@ void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
     showProgress ( interestLevel );
 
     /*
-     * without pausing begin deleting the event subscriptions 
+     * without pausing begin deleting the event subscriptions
      * while the queue is full
      *
-     * continue attempting to generate heavy event traffic 
-     * while deleting subscriptions with the hope that we will 
-     * deleting an event at the instant that its callback is 
+     * continue attempting to generate heavy event traffic
+     * while deleting subscriptions with the hope that we will
+     * deleting an event at the instant that its callback is
      * occurring
      */
     for ( i=0; i < NELEMENTS (mid); i++ ) {
@@ -1557,14 +1557,14 @@ void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
     SEVCHK ( ca_pend_io (timeoutToPendIO), NULL );
 
     showProgressEnd ( interestLevel );
-} 
+}
 
 
 /*
  * singleSubscriptionDeleteTest
  *
- * verify that we dont fail when we repeatedly create 
- * and delete only one subscription with a high level of 
+ * verify that we dont fail when we repeatedly create
+ * and delete only one subscription with a high level of
  * traffic on it
  */
 void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
@@ -1573,7 +1573,7 @@ void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
     evid sid;
     dbr_float_t temp, getResp;
     unsigned i;
-    
+
     showProgressBegin ( "singleSubscriptionDeleteTest", interestLevel );
 
     for ( i=0; i < 1000; i++ ){
@@ -1595,14 +1595,14 @@ void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
          * attempt to generate heavy event traffic before initiating
          * the monitor delete
          *
-         * try to interrupt the recv thread while it is processing 
+         * try to interrupt the recv thread while it is processing
          * incoming subscription updates
-         */  
+         */
         if ( ca_write_access (chan) ) {
             unsigned j = 0;
             while ( j < i ) {
                 temp = (float) j++;
-                SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), 
+                SEVCHK ( ca_put (DBR_FLOAT, chan, &temp),
                     "singleSubscriptionDeleteTest - one of multiple puts" );
             }
             ca_flush_io ();
@@ -1612,7 +1612,7 @@ void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
     }
 
     showProgressEnd ( interestLevel );
-} 
+}
 
 /*
  * channelClearWithEventTrafficTest
@@ -1626,13 +1626,13 @@ void channelClearWithEventTrafficTest ( const char *pName, unsigned interestLeve
     evid sid;
     dbr_float_t temp, getResp;
     unsigned i;
-    
+
     showProgressBegin ( "channelClearWithEventTrafficTest", interestLevel );
 
     for ( i=0; i < 1000; i++ ) {
         chid chan;
 
-        int status = ca_create_channel ( pName, 0, 0, 
+        int status = ca_create_channel ( pName, 0, 0,
             CA_PRIORITY_DEFAULT, &chan );
         status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, "channelClearWithEventTrafficTest: channel connect failed" );
@@ -1652,9 +1652,9 @@ void channelClearWithEventTrafficTest ( const char *pName, unsigned interestLeve
          * attempt to generate heavy event traffic before initiating
          * the channel delete
          *
-         * try to interrupt the recv thread while it is processing 
+         * try to interrupt the recv thread while it is processing
          * incoming subscription updates
-         */  
+         */
         if ( ca_write_access (chan) ) {
             unsigned j = 0;
             while ( j < i ) {
@@ -1669,7 +1669,7 @@ void channelClearWithEventTrafficTest ( const char *pName, unsigned interestLeve
     }
 
     showProgressEnd ( interestLevel );
-} 
+}
 
 
 
@@ -1679,7 +1679,7 @@ void selfDeleteEvent ( struct event_handler_args args )
 {
     int status;
     status = ca_clear_event ( globalEventID );
-    verify ( status == ECA_NORMAL ); 
+    verify ( status == ECA_NORMAL );
 }
 
 void eventClearTest ( chid chan )
@@ -1687,29 +1687,29 @@ void eventClearTest ( chid chan )
     int status;
     evid monix1, monix2, monix3;
 
-    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange,
                 NULL, &monix1 );
     SEVCHK ( status, NULL );
 
     status = ca_clear_event ( monix1 );
     SEVCHK ( status, NULL );
 
-    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange,
                 NULL, &monix1 );
     SEVCHK ( status, NULL );
 
-    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange,
                 NULL, &monix2);
     SEVCHK (status, NULL);
 
     status = ca_clear_event ( monix2 );
     SEVCHK ( status, NULL);
 
-    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange,
                 NULL, &monix2);
     SEVCHK ( status, NULL );
 
-    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange, 
+    status = ca_add_event ( DBR_FLOAT, chan, noopSubscriptionStateChange,
                 NULL, &monix3);
     SEVCHK ( status, NULL );
 
@@ -1722,7 +1722,7 @@ void eventClearTest ( chid chan )
     status = ca_clear_event ( monix3 );
     SEVCHK ( status, NULL);
 
-    status = ca_add_event ( DBR_FLOAT, chan, selfDeleteEvent, 
+    status = ca_add_event ( DBR_FLOAT, chan, selfDeleteEvent,
                 0, &globalEventID );
     SEVCHK ( status, NULL );
 }
@@ -1739,7 +1739,7 @@ void arrayEventExceptionNotify ( struct event_handler_args args )
     if ( args.status == ECA_NORMAL ) {
         printf (
             "arrayEventExceptionNotify: expected "
-            "exception but didnt receive one against \"%s\" \n", 
+            "exception but didnt receive one against \"%s\" \n",
             ca_name ( args.chid ) );
     }
     else {
@@ -1765,8 +1765,8 @@ void exceptionTest ( chid chan, unsigned interestLevel )
 
         pRS = malloc ( ca_element_count (chan) * sizeof (*pRS) );
         verify ( pRS );
-        status = ca_array_get ( DBR_PUT_ACKT, 
-            ca_element_count (chan), chan, pRS ); 
+        status = ca_array_get ( DBR_PUT_ACKT,
+            ca_element_count (chan), chan, pRS );
         SEVCHK  ( status, "array read request failed" );
         ca_pend_io ( 1e-5 );
         epicsThreadSleep ( 0.1 );
@@ -1787,8 +1787,8 @@ void exceptionTest ( chid chan, unsigned interestLevel )
      */
     {
         arrayEventExceptionNotifyComplete = 0u;
-        status = ca_array_get_callback ( DBR_PUT_ACKT, 
-            ca_element_count (chan), chan, arrayEventExceptionNotify, 0 ); 
+        status = ca_array_get_callback ( DBR_PUT_ACKT,
+            ca_element_count (chan), chan, arrayEventExceptionNotify, 0 );
         if ( status != ECA_NORMAL ) {
             verify ( status == ECA_BADTYPE || status == ECA_GETFAIL );
             arrayEventExceptionNotifyComplete = 1;
@@ -1811,8 +1811,8 @@ void exceptionTest ( chid chan, unsigned interestLevel )
         evid id;
 
         arrayEventExceptionNotifyComplete = 0u;
-        status = ca_add_array_event ( DBR_PUT_ACKT, ca_element_count ( chan ), 
-                        chan, arrayEventExceptionNotify, 0, 0.0, 0.0, 0.0, &id ); 
+        status = ca_add_array_event ( DBR_PUT_ACKT, ca_element_count ( chan ),
+                        chan, arrayEventExceptionNotify, 0, 0.0, 0.0, 0.0, &id );
         if ( status != ECA_NORMAL ) {
             verify ( status == ECA_BADTYPE || status == ECA_GETFAIL );
             arrayEventExceptionNotifyComplete = 1;
@@ -1846,8 +1846,8 @@ void exceptionTest ( chid chan, unsigned interestLevel )
         for ( i = 0; i < ca_element_count (chan); i++ ) {
             strcpy ( pWS[i], "@#$%" );
         }
-        status = ca_array_put ( DBR_STRING, 
-            ca_element_count (chan), chan, pWS ); 
+        status = ca_array_put ( DBR_STRING,
+            ca_element_count (chan), chan, pWS );
         if ( status != ECA_NORMAL ) {
             verify ( status == ECA_BADTYPE || status == ECA_PUTFAIL );
             acctstExceptionCount++; /* local PV case */
@@ -1879,9 +1879,9 @@ void exceptionTest ( chid chan, unsigned interestLevel )
             strcpy ( pWS[i], "@#$%" );
         }
         arrayEventExceptionNotifyComplete = 0u;
-        status = ca_array_put_callback ( DBR_STRING, 
+        status = ca_array_put_callback ( DBR_STRING,
             ca_element_count (chan), chan, pWS,
-            arrayEventExceptionNotify, 0); 
+            arrayEventExceptionNotify, 0);
         if ( status != ECA_NORMAL ) {
             arrayEventExceptionNotifyComplete = 1;
         }
@@ -1924,7 +1924,7 @@ void arrayWriteNotify ( struct event_handler_args args )
         arrayWriteNotifyComplete = 1;
     }
     else {
-       printf ( "arrayWriteNotify: update failed for \"%s\" because \"%s\"", 
+       printf ( "arrayWriteNotify: update failed for \"%s\" because \"%s\"",
             ca_name ( args.chid ), ca_message ( args.status ) );
     }
 }
@@ -1956,15 +1956,15 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
         pWF[i] =  rand ();
         pRF[i] = - pWF[i];
     }
-    status = ca_array_put ( DBR_DOUBLE, ca_element_count ( chan ), 
-                    chan, pWF ); 
+    status = ca_array_put ( DBR_DOUBLE, ca_element_count ( chan ),
+                    chan, pWF );
     SEVCHK ( status, "array write request failed" );
 
     /*
      * read back the array
      */
-    status = ca_array_get ( DBR_DOUBLE,  ca_element_count (chan), 
-                    chan, pRF ); 
+    status = ca_array_get ( DBR_DOUBLE,  ca_element_count (chan),
+                    chan, pRF );
     SEVCHK ( status, "array read request failed" );
     status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "array read failed" );
@@ -1991,8 +1991,8 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
 
             pRS = malloc ( ca_element_count (chan) * MAX_STRING_SIZE );
             verify ( pRS );
-            status = ca_array_get ( DBR_STRING, 
-                ca_element_count (chan), chan, pRS ); 
+            status = ca_array_get ( DBR_STRING,
+                ca_element_count (chan), chan, pRS );
             SEVCHK  ( status, "array read request failed" );
             status = ca_pend_io ( timeoutToPendIO );
             SEVCHK ( status, "array read failed" );
@@ -2010,11 +2010,11 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
         pWF[i] =  rand ();
         pRF[i] = - pWF[i];
     }
-    status = ca_array_put_callback ( DBR_DOUBLE, ca_element_count (chan), 
-                    chan, pWF, arrayWriteNotify, 0 ); 
+    status = ca_array_put_callback ( DBR_DOUBLE, ca_element_count (chan),
+                    chan, pWF, arrayWriteNotify, 0 );
     SEVCHK ( status, "array write notify request failed" );
-    status = ca_array_get_callback ( DBR_DOUBLE, ca_element_count (chan), 
-                    chan, arrayReadNotify, pWF ); 
+    status = ca_array_get_callback ( DBR_DOUBLE, ca_element_count (chan),
+                    chan, arrayReadNotify, pWF );
     SEVCHK  ( status, "array read notify request failed" );
     ca_flush_io ();
     while ( ! arrayWriteNotifyComplete || ! arrayReadNotifyComplete ) {
@@ -2030,11 +2030,11 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
         pRF[i] = - pWF[i];
     }
     arrayReadNotifyComplete = 0;
-    status = ca_array_put ( DBR_DOUBLE, ca_element_count ( chan ), 
-                    chan, pWF ); 
+    status = ca_array_put ( DBR_DOUBLE, ca_element_count ( chan ),
+                    chan, pWF );
     SEVCHK ( status, "array write notify request failed" );
-    status = ca_add_array_event ( DBR_DOUBLE, ca_element_count ( chan ), 
-                    chan, arrayReadNotify, pWF, 0.0, 0.0, 0.0, &id ); 
+    status = ca_add_array_event ( DBR_DOUBLE, ca_element_count ( chan ),
+                    chan, arrayReadNotify, pWF, 0.0, 0.0, 0.0, &id );
     SEVCHK ( status, "array subscription request failed" );
     ca_flush_io ();
     while ( ! arrayReadNotifyComplete ) {
@@ -2052,8 +2052,8 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
         acctstExceptionCount = 0u;
         status = ca_add_exception_event ( acctstExceptionNotify, 0 );
         SEVCHK ( status, "exception notify install failed" );
-        status = ca_array_get ( DBR_DOUBLE, 
-            ca_element_count (chan)+1, chan, pRF ); 
+        status = ca_array_get ( DBR_DOUBLE,
+            ca_element_count (chan)+1, chan, pRF );
         if ( status == ECA_NORMAL ) {
             ca_poll ();
             while ( acctstExceptionCount < 1u ) {
@@ -2076,7 +2076,7 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
-/* 
+/*
  * verify that unequal send/recv buffer sizes work
  * (a bug related to this test was detected in early R3.14)
  *
@@ -2115,8 +2115,8 @@ void unequalServerBufferSizeTest ( const char * pName, unsigned interestLevel )
     pWF = (dbr_double_t *) calloc ( ca_element_count (newChan), sizeof (*pWF) );
     verify ( pWF != NULL );
 
-    status = ca_array_get ( DBR_DOUBLE, ca_element_count ( newChan ), 
-                newChan, pRF ); 
+    status = ca_array_get ( DBR_DOUBLE, ca_element_count ( newChan ),
+                newChan, pRF );
     status = ca_pend_io ( timeoutToPendIO );
     verify ( status == ECA_NORMAL );
     status = ca_clear_channel ( newChan );
@@ -2131,11 +2131,11 @@ void unequalServerBufferSizeTest ( const char * pName, unsigned interestLevel )
 
     showProgress ( interestLevel );
 
-    status = ca_array_put ( DBR_DOUBLE, ca_element_count ( newChan ), 
-                newChan, pWF ); 
+    status = ca_array_put ( DBR_DOUBLE, ca_element_count ( newChan ),
+                newChan, pWF );
     verify ( status == ECA_NORMAL );
-    status = ca_array_get ( DBR_DOUBLE, 1, 
-                newChan, pRF ); 
+    status = ca_array_get ( DBR_DOUBLE, 1,
+                newChan, pRF );
     verify ( status == ECA_NORMAL );
     status = ca_pend_io ( timeoutToPendIO );
     verify ( status == ECA_NORMAL );
@@ -2205,9 +2205,9 @@ void verifyDataTypeMacros (void)
     verify ( dbf_type_is_valid ( DBF_SHORT ) );
     {
         int dataType = -1;
-        dbf_text_to_type ( "DBF_SHORT", dataType ); 
+        dbf_text_to_type ( "DBF_SHORT", dataType );
         verify ( dataType == DBF_SHORT );
-        dbr_text_to_type ( "DBR_CLASS_NAME", dataType ); 
+        dbr_text_to_type ( "DBR_CLASS_NAME", dataType );
         verify ( dataType == DBR_CLASS_NAME );
     }
 }
@@ -2225,7 +2225,7 @@ void updateTestEvent ( struct event_handler_args args )
 {
     eventTest *pET = (eventTest *) args.usr;
     struct dbr_gr_float *pGF = (struct dbr_gr_float *) args.dbr;
-    pET->lastValue = pGF->value; 
+    pET->lastValue = pGF->value;
     pET->count++;
 }
 
@@ -2246,7 +2246,7 @@ void clearChannelInGetCallbackTest ( const char *pName, unsigned level )
     unsigned i;
     chid chan;
     int status;
-    
+
     showProgressBegin ( "clearChannelInGetCallbackTest", level );
 
     for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
@@ -2259,15 +2259,15 @@ void clearChannelInGetCallbackTest ( const char *pName, unsigned level )
 
     status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "clearChannelInGetCallbackTest connect channel" );
-    
+
     status = ca_get_callback ( DBR_DOUBLE, chan, callbackClearsChannel, 0 );
     SEVCHK ( status, "clearChannelInGetCallbackTest get callback" );
-    
+
     for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
         ca_pend_event ( 0.1 );
         verify ( i < 100 );
     }
-    
+
     showProgressEnd ( level );
 }
 
@@ -2277,7 +2277,7 @@ void clearChannelInPutCallbackTest ( const char *pName, unsigned level )
     const dbr_double_t value = 1.1;
     chid chan;
     int status;
-    
+
     showProgressBegin ( "clearChannelInPutCallbackTest", level );
 
     for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
@@ -2291,15 +2291,15 @@ void clearChannelInPutCallbackTest ( const char *pName, unsigned level )
     status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "clearChannelInPutCallbackTest connect channel" );
 
-    status = ca_put_callback ( DBR_DOUBLE, chan, & value, 
+    status = ca_put_callback ( DBR_DOUBLE, chan, & value,
                         callbackClearsChannel, 0 );
     SEVCHK ( status, "clearChannelInPutCallbackTest get callback" );
-    
+
     for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
         ca_pend_event ( 0.1 );
         verify ( i < 100 );
     }
-    
+
     showProgressEnd ( level );
 }
 
@@ -2308,7 +2308,7 @@ void clearChannelInSubscrCallbackTest ( const char *pName, unsigned level )
     unsigned i;
     chid chan;
     int status;
-    
+
     showProgressBegin ( "clearChannelInSubscrCallbackTest", level );
 
     for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
@@ -2321,8 +2321,8 @@ void clearChannelInSubscrCallbackTest ( const char *pName, unsigned level )
 
     status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "clearChannelInSubscrCallbackTest connect channel" );
-                        
-    status = ca_create_subscription ( DBR_DOUBLE, 1, chan, 
+
+    status = ca_create_subscription ( DBR_DOUBLE, 1, chan,
         DBE_VALUE, callbackClearsChannel, 0, 0 );
     SEVCHK ( status, "clearChannelInSubscrCallbackTest subscribe" );
 
@@ -2330,18 +2330,18 @@ void clearChannelInSubscrCallbackTest ( const char *pName, unsigned level )
         ca_pend_event ( 0.1 );
         verify ( i < 100 );
     }
-    
+
     showProgressEnd ( level );
 }
 
-void monitorAddConnectionCallback ( struct connection_handler_args args ) 
+void monitorAddConnectionCallback ( struct connection_handler_args args )
 {
     if ( args.op == CA_OP_CONN_UP ) {
         unsigned * pEventCount = ( unsigned * ) ca_puser ( args.chid );
         int status;
         verify ( *pEventCount == 0u );
         (*pEventCount)++;
-        status = ca_create_subscription ( DBR_DOUBLE, 1, 
+        status = ca_create_subscription ( DBR_DOUBLE, 1,
             args.chid, DBE_VALUE, nUpdatesTester, ca_puser ( args.chid ), 0 );
         SEVCHK ( status, "monitorAddConnectionCallback create subscription" );
     }
@@ -2363,7 +2363,7 @@ void monitorAddConnectionCallbackTest ( const char *pName, unsigned interestLeve
     int status;
     unsigned eventCount = 0u;
     unsigned getCallbackCount = 0u;
-    
+
     showProgressBegin ( "monitorAddConnectionCallbackTest", interestLevel );
 
     for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
@@ -2371,7 +2371,7 @@ void monitorAddConnectionCallbackTest ( const char *pName, unsigned interestLeve
         verify ( i < 100 );
     }
 
-    status = ca_create_channel ( pName, 
+    status = ca_create_channel ( pName,
         monitorAddConnectionCallback, &eventCount, 0, & chan );
     SEVCHK ( status, "monitorAddConnectionCallbackTest create channel" );
 
@@ -2379,7 +2379,7 @@ void monitorAddConnectionCallbackTest ( const char *pName, unsigned interestLeve
         ca_pend_event ( 0.1 );
     }
     verify ( eventCount >= 2u );
-    
+
     status = ca_get_callback ( DBR_DOUBLE, chan, nUpdatesTester, &getCallbackCount );
     SEVCHK ( status, "monitorAddConnectionCallback get callback" );
     while ( getCallbackCount == 0 ) {
@@ -2390,7 +2390,7 @@ void monitorAddConnectionCallbackTest ( const char *pName, unsigned interestLeve
 
     status = ca_clear_channel ( chan );
     SEVCHK ( status, "monitorAddConnectionCallbackTest clear channel" );
-    
+
     status = ca_flush_io ();
     SEVCHK ( status, "monitorAddConnectionCallbackTest flush" );
 
@@ -2423,7 +2423,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
         printf ("skipped monitorUpdateTest test - not an analog type\n");
         return;
     }
-    
+
     showProgressBegin ( "monitorUpdateTest", interestLevel );
 
     /*
@@ -2444,12 +2444,12 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
      * complete
      *
      * NOTE: this hopefully demonstrates that when the
-     * server is very busy with monitors the client 
+     * server is very busy with monitors the client
      * is still able to punch through with a request.
      */
     SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp) ,NULL );
     SEVCHK ( ca_pend_io ( timeoutToPendIO ) ,NULL );
-            
+
     showProgress ( interestLevel );
 
     /*
@@ -2483,7 +2483,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
     /*
      * attempt to uncover problems where the last event isnt sent
      * and hopefully get into a flow control situation
-     */   
+     */
     prevPassCount = 0u;
     for ( i = 0; i < 10; i++ ) {
         for ( j = 0; j < NELEMENTS(test); j++ ) {
@@ -2492,7 +2492,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
             test[j].lastValue = -1.0f;
             SEVCHK ( ca_add_event ( DBR_GR_FLOAT, chan, updateTestEvent,
                 &test[j], &test[j].id ) , NULL );
-        } 
+        }
 
         for ( j = 0; j <= i; j++ ) {
             temp = monitorUpdateTestPattern ( j );
@@ -2522,7 +2522,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
             ca_poll (); /* emulate typical GUI */
             for ( j = 0; j < NELEMENTS ( test ); j++ ) {
                 /*
-                 * we shouldnt see old monitors because 
+                 * we shouldnt see old monitors because
                  * we resubscribed
                  */
                 verify ( test[j].count <= i + 2 );
@@ -2562,12 +2562,12 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
     showProgress ( interestLevel );
 
     /*
-     * delete the event subscriptions 
+     * delete the event subscriptions
      */
     for ( i = 0; i < NELEMENTS ( test ); i++ ) {
         SEVCHK ( ca_clear_event ( test[i].id ), NULL );
     }
-        
+
     /*
      * force all of the clear event requests to
      * complete
@@ -2578,7 +2578,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
     /* printf ( "flow control bypassed %u events\n", flowCtrlCount ); */
 
     showProgressEnd ( interestLevel );
-} 
+}
 
 void verifyReasonableBeaconPeriod ( chid chan, unsigned interestLevel )
 {
@@ -2594,7 +2594,7 @@ void verifyReasonableBeaconPeriod ( chid chan, unsigned interestLevel )
             ca_beacon_anomaly_count () );
 
         beaconPeriod = ca_beacon_period ( chan );
-        printf ( "Estimated beacon period for channel %s = %g sec.\n", 
+        printf ( "Estimated beacon period for channel %s = %g sec.\n",
             ca_name ( chan ), beaconPeriod );
 
         watchDogDelay = ca_receive_watchdog_delay ( chan );
@@ -2603,8 +2603,8 @@ void verifyReasonableBeaconPeriod ( chid chan, unsigned interestLevel )
         printf ( "busy: receive watchdog for \"%s\" expires in %g sec.\n",
             ca_name ( chan ), watchDogDelay );
 
-        /* 
-         * let one default connection timeout go by w/o receive activity 
+        /*
+         * let one default connection timeout go by w/o receive activity
          * so we can see if beacons reset the watchdog
          */
         for ( i = 0u; i < 15u; i++ ) {
@@ -2667,18 +2667,18 @@ void verifyTimeStamps ( chid chan, unsigned interestLevel )
     status = ca_pend_io ( timeoutToPendIO );
     verify ( status == ECA_NORMAL );
 
-    length = epicsTimeToStrftime ( buf, sizeof ( buf ), 
+    length = epicsTimeToStrftime ( buf, sizeof ( buf ),
         "%a %b %d %Y %H:%M:%S.%f", & first.stamp );
     verify ( length );
-    printf ("Processing time of channel \"%s\" was \"%s\"\n", 
+    printf ("Processing time of channel \"%s\" was \"%s\"\n",
         ca_name ( chan ), buf );
 
     diff = epicsTimeDiffInSeconds ( & last.stamp, & first.stamp );
-    printf ("Time difference between two successive reads was %g sec\n", 
+    printf ("Time difference between two successive reads was %g sec\n",
         diff );
 
     diff = epicsTimeDiffInSeconds ( & first.stamp, & localTime );
-    printf ("Time difference between client and server %g sec\n", 
+    printf ("Time difference between client and server %g sec\n",
         diff );
 
     showProgressEnd ( interestLevel );
@@ -2700,7 +2700,7 @@ void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
         double value;
         chid chan0, chan1;
         unsigned priority0, priority1;
-        
+
         priority0 = ( i * ( CA_PRIORITY_MAX - CA_PRIORITY_MIN ) ) / nPrio;
         priority0 += CA_PRIORITY_MIN;
         if ( priority0 > CA_PRIORITY_MAX ) {
@@ -2713,11 +2713,11 @@ void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
             priority1 = CA_PRIORITY_MAX;
         }
 
-        status = ca_create_channel ( pName, 0, 0, 
+        status = ca_create_channel ( pName, 0, 0,
             priority0, &chan0 );
         SEVCHK ( status, "prioritized channel create failed" );
 
-        status = ca_create_channel ( pName, 0, 0, 
+        status = ca_create_channel ( pName, 0, 0,
             priority1, &chan1 );
         SEVCHK ( status, "prioritized channel create failed" );
 
@@ -2751,8 +2751,8 @@ void verifyChannelPriorities ( const char *pName, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
-void verifyTearDownWhenChannelConnected ( const char * pName, 
-        enum ca_preemptive_callback_select select, 
+void verifyTearDownWhenChannelConnected ( const char * pName,
+        enum ca_preemptive_callback_select select,
         unsigned interestLevel )
 {
     static const unsigned chanCount = 20;
@@ -2761,15 +2761,15 @@ void verifyTearDownWhenChannelConnected ( const char * pName,
     chid * const pChans = (chid * const) calloc ( chanCount, sizeof ( *pChans ) );
     double * const pValues = (double * const) calloc ( chanCount, sizeof ( *pValues ) );
     unsigned i, j;
-    
+
     verify ( pChans && pValues );
-    
+
     showProgressBegin ( "verifyTearDownWhenChannelConnected", interestLevel );
 
     for ( i = 0u; i < loopCount; i++ ) {
         int status;
         ca_context_create ( select );
-        
+
         for ( j = 0; j < chanCount; j++ ) {
             status = ca_create_channel ( pName, 0, 0, 0, & pChans[j] );
             SEVCHK ( status, "immediate tear down channel create failed" );
@@ -2782,11 +2782,11 @@ void verifyTearDownWhenChannelConnected ( const char * pName,
             status = ca_get ( DBR_DOUBLE, pChans[j], &pValues[j] );
             SEVCHK ( status, "immediate tear down channel get failed" );
         }
-        
+
         status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, "immediate tear down get pend io failed" );
 
-        ca_context_destroy ();    
+        ca_context_destroy ();
     }
 
     ca_context_create ( select );
@@ -2798,8 +2798,8 @@ void verifyTearDownWhenChannelConnected ( const char * pName,
 }
 
 
-void verifyImmediateTearDown ( const char * pName, 
-        enum ca_preemptive_callback_select select, 
+void verifyImmediateTearDown ( const char * pName,
+        enum ca_preemptive_callback_select select,
         unsigned interestLevel )
 {
     int i;
@@ -2817,8 +2817,8 @@ void verifyImmediateTearDown ( const char * pName,
         status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, "immediate tear down channel connect failed" );
         verify ( status == ECA_NORMAL );
-        /* 
-         * verify that puts pending when we call ca_task_exit() 
+        /*
+         * verify that puts pending when we call ca_task_exit()
          * get flushed out
          */
         if ( i > 0 ) {
@@ -2868,12 +2868,12 @@ void fdRegCB ( void * parg, int fd, int opened )
 
     fdctx * mgrCtx = ( fdctx * ) parg;
     if ( opened ) {
-        status = fdmgr_add_callback ( 
+        status = fdmgr_add_callback (
             mgrCtx, fd, fdi_read, fdcb, 0 );
         verify ( status >= 0 );
     }
     else {
-        status = fdmgr_clear_callback ( 
+        status = fdmgr_clear_callback (
             mgrCtx, fd, fdi_read );
         verify ( status >= 0 );
     }
@@ -2893,21 +2893,21 @@ typedef struct {
     unsigned m_interestLevel;
 } MultiThreadSubscrTest;
 
-static void testMultithreadSubscrSubscrCallback 
+static void testMultithreadSubscrSubscrCallback
                         ( struct event_handler_args eha )
 {
     const epicsEventId firstUpdateEvent = ( epicsEventId ) eha.usr;
     epicsEventSignal ( firstUpdateEvent );
 }
 
-static void testMultithreadSubscrCreateSubscr ( void * pParm ) 
+static void testMultithreadSubscrCreateSubscr ( void * pParm )
 {
     static unsigned nElem = 0;
     int testComplete = FALSE;
     evid id;
     epicsEventId firstUpdateEvent;
-    epicsEventWaitStatus eventWaitStatus;   
-    MultiThreadSubscrTest * const pMultiThreadSubscrTest = 
+    epicsEventWaitStatus eventWaitStatus;
+    MultiThreadSubscrTest * const pMultiThreadSubscrTest =
                                 ( MultiThreadSubscrTest * ) pParm;
 
     /* this is required for the ca_flush below to work correctly */
@@ -2915,19 +2915,19 @@ static void testMultithreadSubscrCreateSubscr ( void * pParm )
     verify ( status == ECA_NORMAL );
     firstUpdateEvent = epicsEventMustCreate ( epicsEventEmpty );
     verify ( firstUpdateEvent );
-    status = ca_create_subscription ( 
-                            DBR_TIME_LONG, 
-                            nElem, 
-                            pMultiThreadSubscrTest->m_chan, 
-                            DBE_VALUE, 
-                            testMultithreadSubscrSubscrCallback, 
-                            firstUpdateEvent, 
+    status = ca_create_subscription (
+                            DBR_TIME_LONG,
+                            nElem,
+                            pMultiThreadSubscrTest->m_chan,
+                            DBE_VALUE,
+                            testMultithreadSubscrSubscrCallback,
+                            firstUpdateEvent,
                             & id );
     verify ( status == ECA_NORMAL );
     status = ca_flush_io ();
     verify ( status == ECA_NORMAL );
     /* wait for first update */
-    eventWaitStatus = epicsEventWaitWithTimeout ( 
+    eventWaitStatus = epicsEventWaitWithTimeout (
                             firstUpdateEvent, 60.0 * 10 );
     verify ( eventWaitStatus ==  epicsEventWaitOK );
     epicsEventDestroy ( firstUpdateEvent );
@@ -2935,7 +2935,7 @@ static void testMultithreadSubscrCreateSubscr ( void * pParm )
     verify ( status == ECA_NORMAL );
     epicsMutexMustLock ( pMultiThreadSubscrTest->m_mutex );
     pMultiThreadSubscrTest->m_nUpdatesReceived++;
-    testComplete = ( pMultiThreadSubscrTest->m_nUpdatesReceived == 
+    testComplete = ( pMultiThreadSubscrTest->m_nUpdatesReceived ==
                     pMultiThreadSubscrTest->m_nUpdatesRequired );
     pMultiThreadSubscrTest->m_testComplete = testComplete;
     epicsMutexUnlock ( pMultiThreadSubscrTest->m_mutex );
@@ -2946,10 +2946,10 @@ static void testMultithreadSubscrCreateSubscr ( void * pParm )
 
 void testMultithreadSubscrConnHandler ( struct connection_handler_args args )
 {
-    MultiThreadSubscrTest * const pMultiThreadSubscrTest = 
+    MultiThreadSubscrTest * const pMultiThreadSubscrTest =
                         ( MultiThreadSubscrTest * ) ca_puser ( args.chid );
     epicsMutexMustLock ( pMultiThreadSubscrTest->m_mutex );
-    if ( !pMultiThreadSubscrTest->m_testInitiated && 
+    if ( !pMultiThreadSubscrTest->m_testInitiated &&
             args.op == CA_OP_CONN_UP ) {
         int i;
         pMultiThreadSubscrTest->m_testInitiated = TRUE;
@@ -2957,10 +2957,10 @@ void testMultithreadSubscrConnHandler ( struct connection_handler_args args )
             char threadname[64];
             epicsThreadId threadId;
             sprintf(threadname, "testSubscr%06u", i);
-            threadId = epicsThreadCreate ( threadname, 
-                        epicsThreadPriorityMedium, 
-                        epicsThreadGetStackSize(epicsThreadStackSmall), 
-                        testMultithreadSubscrCreateSubscr, 
+            threadId = epicsThreadCreate ( threadname,
+                        epicsThreadPriorityMedium,
+                        epicsThreadGetStackSize(epicsThreadStackSmall),
+                        testMultithreadSubscrCreateSubscr,
                         pMultiThreadSubscrTest );
             verify ( threadId );
         }
@@ -2970,7 +2970,7 @@ void testMultithreadSubscrConnHandler ( struct connection_handler_args args )
 
 void testMultithreadSubscr ( void * pParm )
 {
-    MultiThreadSubscrTest * const pMultiThreadSubscrTest = 
+    MultiThreadSubscrTest * const pMultiThreadSubscrTest =
                                 ( MultiThreadSubscrTest * ) pParm;
     int status;
     unsigned i;
@@ -2983,11 +2983,11 @@ void testMultithreadSubscr ( void * pParm )
                 pMultiThreadSubscrTest->m_chanName,
                 testMultithreadSubscrConnHandler,
                 pMultiThreadSubscrTest,
-                CA_PRIORITY_MIN, 
+                CA_PRIORITY_MIN,
                 & pMultiThreadSubscrTest->m_chan );
     verify ( status == ECA_NORMAL );
 
-    showProgressBegin ( "verifyMultithreadSubscr", 
+    showProgressBegin ( "verifyMultithreadSubscr",
             pMultiThreadSubscrTest->m_interestLevel );
     i = 0;
     while ( TRUE ) {
@@ -2999,11 +2999,11 @@ void testMultithreadSubscr ( void * pParm )
         if ( success ) {
             break;
         }
-        eventWaitStatus = epicsEventWaitWithTimeout ( 
+        eventWaitStatus = epicsEventWaitWithTimeout (
                             pMultiThreadSubscrTest->m_testCompleteEvent, 0.1 );
-        verify ( eventWaitStatus ==  epicsEventWaitOK || 
+        verify ( eventWaitStatus ==  epicsEventWaitOK ||
                 eventWaitStatus ==  epicsEventWaitTimeout );
-        if ( i++ % 100 == 0u ) 
+        if ( i++ % 100 == 0u )
             showProgress ( pMultiThreadSubscrTest->m_interestLevel );
         verify ( i < 1000 );
     }
@@ -3023,33 +3023,33 @@ void verifyMultithreadSubscr ( const char * pName, unsigned interestLevel )
 {
     static unsigned nSubscr = 3000;
     epicsThreadId threadId;
-    MultiThreadSubscrTest * const pMultiThreadSubscrTest = 
-                                (MultiThreadSubscrTest*) calloc ( 1, 
+    MultiThreadSubscrTest * const pMultiThreadSubscrTest =
+                                (MultiThreadSubscrTest*) calloc ( 1,
                                     sizeof ( MultiThreadSubscrTest ) );
     verify ( pMultiThreadSubscrTest);
     pMultiThreadSubscrTest->m_mutex = epicsMutexMustCreate ();
     verify ( pMultiThreadSubscrTest->m_mutex );
-    pMultiThreadSubscrTest->m_testCompleteEvent = 
+    pMultiThreadSubscrTest->m_testCompleteEvent =
                 epicsEventMustCreate ( epicsEventEmpty );
     verify ( pMultiThreadSubscrTest->m_testCompleteEvent );
-    pMultiThreadSubscrTest->m_threadExitEvent = 
+    pMultiThreadSubscrTest->m_threadExitEvent =
                 epicsEventMustCreate ( epicsEventEmpty );
     verify ( pMultiThreadSubscrTest->m_threadExitEvent );
-    strncpy ( pMultiThreadSubscrTest->m_chanName, pName, 
+    strncpy ( pMultiThreadSubscrTest->m_chanName, pName,
             sizeof ( pMultiThreadSubscrTest->m_chanName ) );
     pMultiThreadSubscrTest->m_chanName
         [ sizeof ( pMultiThreadSubscrTest->m_chanName ) - 1u ] = '\0';
     pMultiThreadSubscrTest->m_nUpdatesRequired = nSubscr;
     pMultiThreadSubscrTest->m_interestLevel = interestLevel;
-    threadId = epicsThreadCreate ( 
-                "testMultithreadSubscr", 
-                epicsThreadPriorityMedium, 
-                epicsThreadGetStackSize(epicsThreadStackSmall), 
+    threadId = epicsThreadCreate (
+                "testMultithreadSubscr",
+                epicsThreadPriorityMedium,
+                epicsThreadGetStackSize(epicsThreadStackSmall),
                 testMultithreadSubscr, pMultiThreadSubscrTest );
     verify ( threadId );
     {
         epicsEventWaitStatus eventWaitStatus;
-        eventWaitStatus = epicsEventWaitWithTimeout ( 
+        eventWaitStatus = epicsEventWaitWithTimeout (
                 pMultiThreadSubscrTest->m_threadExitEvent, 1000.0 );
         verify  ( eventWaitStatus == epicsEventWaitOK );
     }
@@ -3068,7 +3068,7 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
     evid subscription;
     unsigned eventCount = 0u;
     epicsTimeStamp begin, end;
-    
+
     mgrCtx = fdmgr_init ();
     verify ( mgrCtx );
 
@@ -3089,7 +3089,7 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
 
     showProgress ( interestLevel );
 
-    status = ca_add_event ( DBR_FLOAT, newChan, 
+    status = ca_add_event ( DBR_FLOAT, newChan,
         nUpdatesTester, & eventCount,  & subscription );
     verify ( status == ECA_NORMAL );
 
@@ -3142,7 +3142,7 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
-void verifyConnectWithDisconnectedChannels ( 
+void verifyConnectWithDisconnectedChannels (
     const char *pName, unsigned interestLevel )
 {
     int status;
@@ -3171,11 +3171,11 @@ void verifyConnectWithDisconnectedChannels (
     status = ca_create_channel ( pName, 0, 0, 0, & validChan );
     verify ( status == ECA_NORMAL );
 
-    /* 
-     * we should be able to connect to a valid 
+    /*
+     * we should be able to connect to a valid
      * channel within a reasonable delay even
-     * though there is one permanently 
-     * diasconnected channel 
+     * though there is one permanently
+     * diasconnected channel
      */
     status = ca_pend_io ( timeoutToPendIO );
     verify ( status == ECA_NORMAL );
@@ -3205,7 +3205,7 @@ void noopExceptionCallback ( struct exception_handler_args args )
 {
 }
 
-void verifyDisconnect ( 
+void verifyDisconnect (
     const char * pName, unsigned interestLevel )
 {
     int disconnectFlag = 0;
@@ -3214,8 +3214,8 @@ void verifyDisconnect (
     chid chan1;
     int status;
 
-    status = ca_create_channel  ( 
-        pName, verifyClearChannelOnDisconnectCallback, 
+    status = ca_create_channel  (
+        pName, verifyClearChannelOnDisconnectCallback,
         & disconnectFlag, 0, & chan0 );
     SEVCHK ( status, NULL );
 
@@ -3256,7 +3256,7 @@ void verifyDisconnect (
     fprintf ( stdout, "confirmed.\n" );
     /* channel cleared by disconnect handler */
 
-    status = ca_create_channel  ( 
+    status = ca_create_channel  (
         pName, 0, 0, 0, & chan1 );
     SEVCHK ( status, NULL );
 
@@ -3275,11 +3275,11 @@ void verifyDisconnect (
     SEVCHK ( status, NULL );
 }
 
-void verifyName ( 
+void verifyName (
     const char * pName, unsigned interestLevel )
 {
     chid chan;
-    int status = ca_create_channel  ( 
+    int status = ca_create_channel  (
                     pName, 0, 0, 0, & chan );
     SEVCHK ( status, NULL );
     if ( strcmp ( pName, ca_name ( chan ) ) != 0 ) {
@@ -3297,13 +3297,13 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
 
     for ( i=0u; i < 1000; i++ ) {
         const dbr_double_t stim = i;
-        
-        {  
+
+        {
             chid chan;
             int status;
             status = ca_context_create ( ca_disable_preemptive_callback );
             SEVCHK ( status, "context create failed" );
-            
+
             status = ca_create_channel  ( pName, 0, 0, 0, & chan );
             /*
              * currently in-memory channels cant be used with this test
@@ -3311,26 +3311,26 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
              */
             if ( status != ECA_UNAVAILINSERV ) {
                 SEVCHK ( status, NULL );
-                
+
                 status = ca_pend_io( timeoutToPendIO );
                 SEVCHK ( status, "channel connect failed" );
-                
+
                 status = ca_put ( DBR_DOUBLE, chan, & stim );
                 SEVCHK ( status, "channel put failed" );
-        
+
                 status = ca_clear_channel ( chan );
                 SEVCHK ( status, NULL );
             }
             ca_context_destroy ();
         }
-        
+
         {
             chid chan;
             int status;
             dbr_double_t resp;
             status = ca_context_create ( ca_disable_preemptive_callback );
             SEVCHK ( status, "context create failed" );
-           
+
             status = ca_create_channel  ( pName, 0, 0, 0, & chan );
             SEVCHK ( status, NULL );
             /*
@@ -3340,15 +3340,15 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
             if ( status != ECA_UNAVAILINSERV ) {
                 status = ca_pend_io( timeoutToPendIO );
                 SEVCHK ( status, "channel connect failed" );
-        
+
                 status = ca_get ( DBR_DOUBLE, chan, & resp );
                 SEVCHK ( status, "channel get failed" );
-        
+
                 status = ca_pend_io ( timeoutToPendIO );
                 SEVCHK ( status, "get, pend io failed" );
-                
+
                 verify ( stim == resp );
-        
+
                 status = ca_clear_channel ( chan );
                 SEVCHK ( status, NULL );
             }
@@ -3359,11 +3359,11 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
             showProgress ( interestLevel );
         }
     }
-    
+
     showProgressEnd ( interestLevel );
 }
 
-void verifyContextRundownChanStillExist ( 
+void verifyContextRundownChanStillExist (
     const char * pName, unsigned interestLevel )
 {
     chid chan[10000];
@@ -3374,7 +3374,7 @@ void verifyContextRundownChanStillExist (
 
     status = ca_context_create ( ca_disable_preemptive_callback );
     SEVCHK ( status, "context create failed" );
-    
+
     for ( i = 0; i < NELEMENTS ( chan ); i++ ) {
         status = ca_create_channel  ( pName, 0, 0, 0, & chan[i] );
         /*
@@ -3386,17 +3386,17 @@ void verifyContextRundownChanStillExist (
         }
         SEVCHK ( status, NULL );
     }
-    
+
     status = ca_pend_io( timeoutToPendIO );
     SEVCHK ( status, "channel connect failed" );
 
     ca_context_destroy ();
-    
+
     showProgressEnd ( interestLevel );
 }
 
-int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount, 
-			unsigned repetitionCount, enum ca_preemptive_callback_select select )
+int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
+            unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
     chid chan;
     int status;
@@ -3405,7 +3405,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     unsigned connections;
     unsigned maxArrayBytes = 10000000;
 
-    printf ( "CA Client V%s, channel name \"%s\", timeout %g\n", 
+    printf ( "CA Client V%s, channel name \"%s\", timeout %g\n",
         ca_version (), pName, timeoutToPendIO );
     if ( select == ca_enable_preemptive_callback ) {
         printf ( "Preemptive call back is enabled.\n" );
@@ -3414,7 +3414,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     {
         char tmpString[32];
         sprintf ( tmpString, "%u", maxArrayBytes );
-        epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString ); 
+        epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString );
     }
 
     /*
@@ -3447,7 +3447,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     showProgressEnd ( interestLevel );
 
     printf ( "native type was %s, native count was %lu\n",
-        dbf_type_to_text ( ca_field_type ( chan ) ), 
+        dbf_type_to_text ( ca_field_type ( chan ) ),
         ca_element_count ( chan ) );
 
     connections = ca_get_ioc_connection_count ();
@@ -3464,14 +3464,14 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     verifyTimeStamps ( chan, interestLevel );
     verifyOldPend ( interestLevel );
     exceptionTest ( chan, interestLevel );
-    arrayTest ( chan, maxArrayBytes, interestLevel ); 
+    arrayTest ( chan, maxArrayBytes, interestLevel );
     verifyMonitorSubscriptionFlushIO ( chan, interestLevel );
     monitorSubscriptionFirstUpdateTest ( pName, chan, interestLevel );
     ctrlDoubleTest ( chan, interestLevel );
     verifyBlockInPendIO ( chan, interestLevel );
-    verifyAnalogIO ( chan, DBR_FLOAT, FLT_MIN, FLT_MAX, 
+    verifyAnalogIO ( chan, DBR_FLOAT, FLT_MIN, FLT_MAX,
                FLT_MIN_EXP, FLT_MAX_EXP, FLT_EPSILON, interestLevel );
-    verifyAnalogIO ( chan, DBR_DOUBLE, DBL_MIN, DBL_MAX, 
+    verifyAnalogIO ( chan, DBR_DOUBLE, DBL_MIN, DBL_MAX,
                DBL_MIN_EXP, DBL_MAX_EXP, DBL_EPSILON, interestLevel );
     verifyLongIO ( chan, interestLevel );
     verifyShortIO ( chan, interestLevel );
@@ -3486,7 +3486,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     verifyBadString ( chan, interestLevel );
     verifyMultithreadSubscr ( pName, interestLevel );
     if ( select != ca_enable_preemptive_callback ) {
-        fdManagerVerify ( pName, interestLevel ); 
+        fdManagerVerify ( pName, interestLevel );
     }
 
     /*
@@ -3497,7 +3497,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     printf ( "\n" );
     pend_event_delay_test ( 1.0 );
     pend_event_delay_test ( 0.1 );
-    pend_event_delay_test ( 0.25 ); 
+    pend_event_delay_test ( 0.25 );
 
     /* ca_channel_status ( 0 ); */
     ca_client_status ( 0 );
@@ -3539,10 +3539,10 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     /* SEVCHK ( status, NULL ); */
 
     caTaskExitTest ( interestLevel );
-    
+
     verifyContextRundownFlush ( pName, interestLevel );
     verifyContextRundownChanStillExist ( pName, interestLevel );
-    
+
     free ( pChans );
 
     printf ( "\nTest Complete\n" );

@@ -1,11 +1,11 @@
-/* 
+/*
  * Copyright: Stanford University / SLAC National Laboratory.
  *
  * EPICS BASE is distributed subject to a Software License Agreement found
- * in file LICENSE that is included with this distribution. 
+ * in file LICENSE that is included with this distribution.
  *
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2014
- */ 
+ */
 
 /*
  * Check stack trace functionality
@@ -132,14 +132,14 @@ findNumOcc(const char *buf)
     }
     /* We should find an address close to epicsStackTraceRecurseGbl twice */
     for (i=0; i<n_ptrs-1; i++) {
-        /* I got a (unjustified) index-out-of-bound warning 
+        /* I got a (unjustified) index-out-of-bound warning
          * when setting j=i+1 here. Thus the weird j!= i check...
          */
         j = i;
         while ( j < n_ptrs ) {
             if ( j != i && ptrs[j] == ptrs[i] ) {
                 if ( (char*)ptrs[i] >= (char*)epicsStackTraceRecurseGbl && (char*)ptrs[i] < (char*)epicsStackTraceRecurseGbl + WINDOW_SZ ) {
-                    rval ++;    
+                    rval ++;
                     testDiag("found address %p again\n", ptrs[i]);
                 }
             }
@@ -160,7 +160,7 @@ MAIN(epicsStackTraceTest)
 
     testPlan(5);
 
-    features = epicsStackTraceGetFeatures(); 
+    features = epicsStackTraceGetFeatures();
 
     all_features =   EPICS_STACKTRACE_LCL_SYMBOLS
                    | EPICS_STACKTRACE_GBL_SYMBOLS

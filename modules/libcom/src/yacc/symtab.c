@@ -4,15 +4,15 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 #include "defs.h"
 
 
 /* TABLE_SIZE is the number of entries in the symbol table. */
-/* TABLE_SIZE must be a power of two.			    */
+/* TABLE_SIZE must be a power of two.                       */
 
-#define	TABLE_SIZE 1024
+#define TABLE_SIZE 1024
 
 
 bucket **symbol_table;
@@ -30,7 +30,7 @@ hash(char *name)
     s = name;
     k = *s;
     while ((c = *++s))
-	k = (31*k + c) & (TABLE_SIZE - 1);
+        k = (31*k + c) & (TABLE_SIZE - 1);
 
     return (k);
 }
@@ -72,9 +72,9 @@ lookup(char *name)
 
     while (bp)
     {
-	if (strcmp(name, bp->name) == 0) return (bp);
-	bpp = &bp->link;
-	bp = *bpp;
+        if (strcmp(name, bp->name) == 0) return (bp);
+        bpp = &bp->link;
+        bp = *bpp;
     }
 
     *bpp = bp = make_bucket(name);
@@ -93,7 +93,7 @@ create_symbol_table(void)
     symbol_table = (bucket **) MALLOC(TABLE_SIZE*sizeof(bucket *));
     if (symbol_table == 0) no_space();
     for (i = 0; i < TABLE_SIZE; i++)
-	symbol_table[i] = 0;
+        symbol_table[i] = 0;
 
     bp = make_bucket("error");
     bp->index = 1;
@@ -120,7 +120,7 @@ free_symbols(void)
 
     for (p = first_symbol; p; p = q)
     {
-	q = p->next;
-	FREE(p);
+        q = p->next;
+        FREE(p);
     }
 }

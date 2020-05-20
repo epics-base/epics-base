@@ -7,19 +7,19 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifndef INC_comQueRecv_H
@@ -53,8 +53,8 @@ private:
     epicsUInt16 multiBufferPopUInt16 ();
     epicsUInt32 multiBufferPopUInt32 ();
     void removeAndDestroyBuf ( comBuf & );
-	comQueRecv ( const comQueRecv & );
-	comQueRecv & operator = ( const comQueRecv & );
+    comQueRecv ( const comQueRecv & );
+    comQueRecv & operator = ( const comQueRecv & );
 };
 
 inline unsigned comQueRecv::occupiedBytes () const

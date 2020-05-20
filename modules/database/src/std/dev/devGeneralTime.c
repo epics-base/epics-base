@@ -4,8 +4,8 @@
 \*************************************************************************/
 
 /*
- *   Original Author:	Sheng Peng, ORNL / SNS Project
- *   Date:		07/2004
+ *   Original Author:   Sheng Peng, ORNL / SNS Project
+ *   Date:              07/2004
  *
  *   EPICS device support for general timestamp support
  *

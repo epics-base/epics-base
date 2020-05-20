@@ -16,9 +16,9 @@
  *  Copyright, 1986, The Regents of the University of California.
  *
  *
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifndef INC_nciu_H
@@ -269,8 +269,8 @@ private:
         epicsGuard < epicsMutex > &, class baseNMIU & );
     const char * pHostName (
         epicsGuard < epicsMutex > & guard ) const throw ();
-	nciu ( const nciu & );
-	nciu & operator = ( const nciu & );
+    nciu ( const nciu & );
+    nciu & operator = ( const nciu & );
     void operator delete ( void * );
 };
 

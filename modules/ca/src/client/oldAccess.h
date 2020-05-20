@@ -17,9 +17,9 @@
  *  Copyright, The Regents of the University of California.
  *
  *
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifndef INC_oldAccess_H
@@ -185,8 +185,8 @@ private:
     void exception (
         epicsGuard < epicsMutex > &, int status,
         const char *pContext, unsigned type, arrayElementCount count );
-	getCopy ( const getCopy & );
-	getCopy & operator = ( const getCopy & );
+    getCopy ( const getCopy & );
+    getCopy & operator = ( const getCopy & );
     void operator delete ( void * );
 };
 
@@ -210,8 +210,8 @@ private:
     void exception (
         epicsGuard < epicsMutex > &, int status,
         const char * pContext, unsigned type, arrayElementCount count );
-	getCallback ( const getCallback & );
-	getCallback & operator = ( const getCallback & );
+    getCallback ( const getCallback & );
+    getCallback & operator = ( const getCallback & );
     void operator delete ( void * );
 };
 
@@ -233,8 +233,8 @@ private:
     void exception (
         epicsGuard < epicsMutex > &, int status, const char *pContext,
         unsigned type, arrayElementCount count );
-	putCallback ( const putCallback & );
-	putCallback & operator = ( const putCallback & );
+    putCallback ( const putCallback & );
+    putCallback & operator = ( const putCallback & );
     void operator delete ( void * );
 };
 
@@ -273,8 +273,8 @@ private:
     void exception (
         epicsGuard < epicsMutex > &, int status,
         const char *pContext, unsigned type, arrayElementCount count );
-	oldSubscription ( const oldSubscription & );
-	oldSubscription & operator = ( const oldSubscription & );
+    oldSubscription ( const oldSubscription & );
+    oldSubscription & operator = ( const oldSubscription & );
     void operator delete ( void * );
 };
 
@@ -374,7 +374,7 @@ public:
     friend int ca_sync_group_destroy ( CallbackGuard & cbGuard,
                                  epicsGuard < epicsMutex > & guard,
                                 ca_client_context & cac, const CA_SYNC_GID gid );
-    friend void sync_group_reset ( ca_client_context & client, 
+    friend void sync_group_reset ( ca_client_context & client,
                                                   CASG & sg );
 
     // exceptions
@@ -571,7 +571,7 @@ inline unsigned ca_client_context::sequenceNumberOfOutstandingIO (
 }
 
 template < class T >
-void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO ( 
+void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO (
                             epicsGuard < epicsMutex > & guard, T & io )
 {
     if ( this->pCallbackGuard.get() &&

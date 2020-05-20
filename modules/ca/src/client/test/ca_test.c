@@ -5,11 +5,11 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- *	Author:	Jeff Hill
- *	Date:	07-01-91
+ *  Author: Jeff Hill
+ *  Date:   07-01-91
  */
 
 /*
@@ -32,24 +32,24 @@ static unsigned long outstanding;
 
 
 /*
- *  	ca_test
+ *  ca_test
  *
- *	find channel, write a value if supplied, and 
- *	read back the current value
+ *  find channel, write a value if supplied, and
+ *  read back the current value
  *
  */
 int ca_test(
-char	*pname,
-char	*pvalue
+char    *pname,
+char    *pvalue
 )
 {
     int status;
-	if(pvalue){
-		status = capft(pname,pvalue);
-	}
-	else{
-		status = cagft(pname);
-	}
+    if(pvalue){
+        status = capft(pname,pvalue);
+    }
+    else{
+        status = cagft(pname);
+    }
     ca_task_exit();
     return status;
 }
@@ -57,244 +57,244 @@ char	*pvalue
 
 
 /*
- * 	cagft()
+ *  cagft()
  *
- *	ca get field test
+ *  ca get field test
  *
- *	test ca get over the range of CA data types
+ *  test ca get over the range of CA data types
  */
 static int cagft(char *pname)
-{	
-	const unsigned maxTries = 1000ul;
-	unsigned ntries = 0u;
-	chid chan_id;
-	int status;
-	int i;
+{
+    const unsigned maxTries = 1000ul;
+    unsigned ntries = 0u;
+    chid chan_id;
+    int status;
+    int i;
 
-	/* 
-	 *	convert name to chan id 
-	 */
-	status = ca_search(pname, &chan_id);
-	SEVCHK(status,NULL);
-	status = ca_pend_io(5.0);
-	if(status != ECA_NORMAL){
+    /*
+     *  convert name to chan id
+     */
+    status = ca_search(pname, &chan_id);
+    SEVCHK(status,NULL);
+    status = ca_pend_io(5.0);
+    if(status != ECA_NORMAL){
         SEVCHK(ca_clear_channel(chan_id),NULL);
-		printf("Not Found %s\n", pname);
-		return -1;
-	}
+        printf("Not Found %s\n", pname);
+        return -1;
+    }
 
-	printf("name:\t%s\n", 
+    printf("name:\t%s\n",
         ca_name(chan_id));
-	printf("native type:\t%s\n", 
+    printf("native type:\t%s\n",
         dbr_type_to_text(ca_field_type(chan_id)));
-	printf("native count:\t%lu\n", 
+    printf("native count:\t%lu\n",
         ca_element_count(chan_id));
 
 
-	/* 
- 	 * fetch as each type 
-	 */
-	for(i=0; i<=LAST_BUFFER_TYPE; i++){
-		if(ca_field_type(chan_id)==DBR_STRING) {
-			if( (i!=DBR_STRING)
-			  && (i!=DBR_STS_STRING)
-			  && (i!=DBR_TIME_STRING)
-			  && (i!=DBR_GR_STRING)
+    /*
+     * fetch as each type
+     */
+    for(i=0; i<=LAST_BUFFER_TYPE; i++){
+        if(ca_field_type(chan_id)==DBR_STRING) {
+            if( (i!=DBR_STRING)
+              && (i!=DBR_STS_STRING)
+              && (i!=DBR_TIME_STRING)
+              && (i!=DBR_GR_STRING)
               && (i!=DBR_CTRL_STRING)) {
                   continue;
             }
         }
         /* ignore write only types */
-        if ( 
-            i == DBR_PUT_ACKT || 
+        if (
+            i == DBR_PUT_ACKT ||
             i == DBR_PUT_ACKS ) {
                 continue;
         }
 
-		status = ca_array_get_callback(
-				i, 
-				ca_element_count(chan_id),
-				chan_id, 
-				printit, 
-				NULL);
-		SEVCHK(status, NULL);
+        status = ca_array_get_callback(
+                i,
+                ca_element_count(chan_id),
+                chan_id,
+                printit,
+                NULL);
+        SEVCHK(status, NULL);
 
-		outstanding++;
-	}
+        outstanding++;
+    }
 
-	/*
-	 * wait for the operation to complete
-	 * before returning 
-	 */
-	while ( ntries < maxTries ) {
-		unsigned long oldOut;
+    /*
+     * wait for the operation to complete
+     * before returning
+     */
+    while ( ntries < maxTries ) {
+        unsigned long oldOut;
 
-		oldOut = outstanding;
-		ca_pend_event ( 0.05 );
+        oldOut = outstanding;
+        ca_pend_event ( 0.05 );
 
-		if ( ! outstanding ) {
+        if ( ! outstanding ) {
             SEVCHK ( ca_clear_channel ( chan_id ), NULL );
-			printf ( "\n\n" );
-			return 0;
-		}
+            printf ( "\n\n" );
+            return 0;
+        }
 
-		if ( outstanding == oldOut ) {
-			ntries++;
-		}
-	}
+        if ( outstanding == oldOut ) {
+            ntries++;
+        }
+    }
 
     SEVCHK ( ca_clear_channel ( chan_id ), NULL );
-	return -1;
+    return -1;
 }
 
 
 /*
- *	PRINTIT()
+ *  PRINTIT()
  */
 static void printit ( struct event_handler_args args )
 {
-	if ( args.status == ECA_NORMAL ) {
-		ca_dump_dbr ( args.type, args.count, args.dbr );
-	}
-	else {
+    if ( args.status == ECA_NORMAL ) {
+        ca_dump_dbr ( args.type, args.count, args.dbr );
+    }
+    else {
         printf ( "%s\t%s\n", dbr_text[args.type], ca_message(args.status) );
-	}
+    }
 
-	outstanding--;
+    outstanding--;
 }
 
 /*
- *	capft
+ *  capft
  *
- *	test ca_put() over a range of data types
- *	
+ *  test ca_put() over a range of data types
+ *
  */
 static int capft(
-char		*pname,
-char		*pvalue
+char        *pname,
+char        *pvalue
 )
 {
-	dbr_short_t			shortvalue;
-	dbr_long_t			longvalue;
-	dbr_float_t			floatvalue;
-	dbr_char_t			charvalue;
-	dbr_double_t		doublevalue;
-	unsigned long		ntries = 10ul;
-	int					status;
-	chid				chan_id;
+    dbr_short_t         shortvalue;
+    dbr_long_t          longvalue;
+    dbr_float_t         floatvalue;
+    dbr_char_t          charvalue;
+    dbr_double_t        doublevalue;
+    unsigned long       ntries = 10ul;
+    int                 status;
+    chid                chan_id;
 
-	if (((*pname < ' ') || (*pname > 'z'))
-	  || ((*pvalue < ' ') || (*pvalue > 'z'))){
-		printf("\nusage \"pv name\",\"value\"\n");
-		return -1;
-	}
+    if (((*pname < ' ') || (*pname > 'z'))
+      || ((*pvalue < ' ') || (*pvalue > 'z'))){
+        printf("\nusage \"pv name\",\"value\"\n");
+        return -1;
+    }
 
-	/* 
-	 *	convert name to chan id 
-	 */
-	status = ca_search(pname, &chan_id);
-	SEVCHK(status,NULL);
-	status = ca_pend_io(5.0);
-	if(status != ECA_NORMAL){
+    /*
+     *  convert name to chan id
+     */
+    status = ca_search(pname, &chan_id);
+    SEVCHK(status,NULL);
+    status = ca_pend_io(5.0);
+    if(status != ECA_NORMAL){
         SEVCHK(ca_clear_channel(chan_id),NULL);
-		printf("Not Found %s\n", pname);
-		return -1;
-	}
+        printf("Not Found %s\n", pname);
+        return -1;
+    }
 
-	printf("name:\t%s\n", ca_name(chan_id));
-	printf("native type:\t%d\n", ca_field_type(chan_id));
-	printf("native count:\t%lu\n", ca_element_count(chan_id));
+    printf("name:\t%s\n", ca_name(chan_id));
+    printf("native type:\t%d\n", ca_field_type(chan_id));
+    printf("native count:\t%lu\n", ca_element_count(chan_id));
 
-	/*
-	 *  string value ca_put
-	 */
-	status = ca_put(
-			DBR_STRING, 
-			chan_id, 
-			pvalue);
-	SEVCHK(status, NULL);
-	verify_value(chan_id, DBR_STRING);
+    /*
+     *  string value ca_put
+     */
+    status = ca_put(
+            DBR_STRING,
+            chan_id,
+            pvalue);
+    SEVCHK(status, NULL);
+    verify_value(chan_id, DBR_STRING);
 
-	if(ca_field_type(chan_id)==0)goto skip_rest;
+    if(ca_field_type(chan_id)==0)goto skip_rest;
 
-	if(sscanf(pvalue,"%hd",&shortvalue)==1) {
-		/*
-		 * short integer ca_put
-		 */
-		status = ca_put(
-				DBR_SHORT, 
-				chan_id, 
-				&shortvalue);
-		SEVCHK(status, NULL);
-		verify_value(chan_id, DBR_SHORT);
-		status = ca_put(
-				DBR_ENUM, 
-				chan_id, 
-				&shortvalue);
-		SEVCHK(status, NULL);
-		verify_value(chan_id, DBR_ENUM);
-		charvalue=(dbr_char_t)shortvalue;
-		status = ca_put(
-				DBR_CHAR, 
-				chan_id, 
-				&charvalue);
-		SEVCHK(status, NULL);
-		verify_value(chan_id, DBR_CHAR);
-	}
-	if(sscanf(pvalue,"%d",&longvalue)==1) {
-		/*
-		 * long integer ca_put
-		 */
-		status = ca_put(
-				DBR_LONG, 
-				chan_id, 
-				&longvalue);
-		SEVCHK(status, NULL);
-		verify_value(chan_id, DBR_LONG);
-	}
-	if(epicsScanFloat(pvalue, &floatvalue)==1) {
-		/*
-		 * single precision float ca_put
-		 */
-		status = ca_put(
-				DBR_FLOAT, 
-				chan_id, 
-				&floatvalue);
-		SEVCHK(status, NULL);
-		verify_value(chan_id, DBR_FLOAT);
-	}
-	if(epicsScanDouble(pvalue, &doublevalue)==1) {
-		/*
-		 * double precision float ca_put
-		 */
-		status = ca_put(
-				DBR_DOUBLE, 
-				chan_id, 
-				&doublevalue);
-		SEVCHK(status, NULL);
-		verify_value(chan_id, DBR_DOUBLE);
-	}
+    if(sscanf(pvalue,"%hd",&shortvalue)==1) {
+        /*
+         * short integer ca_put
+         */
+        status = ca_put(
+                DBR_SHORT,
+                chan_id,
+                &shortvalue);
+        SEVCHK(status, NULL);
+        verify_value(chan_id, DBR_SHORT);
+        status = ca_put(
+                DBR_ENUM,
+                chan_id,
+                &shortvalue);
+        SEVCHK(status, NULL);
+        verify_value(chan_id, DBR_ENUM);
+        charvalue=(dbr_char_t)shortvalue;
+        status = ca_put(
+                DBR_CHAR,
+                chan_id,
+                &charvalue);
+        SEVCHK(status, NULL);
+        verify_value(chan_id, DBR_CHAR);
+    }
+    if(sscanf(pvalue,"%d",&longvalue)==1) {
+        /*
+         * long integer ca_put
+         */
+        status = ca_put(
+                DBR_LONG,
+                chan_id,
+                &longvalue);
+        SEVCHK(status, NULL);
+        verify_value(chan_id, DBR_LONG);
+    }
+    if(epicsScanFloat(pvalue, &floatvalue)==1) {
+        /*
+         * single precision float ca_put
+         */
+        status = ca_put(
+                DBR_FLOAT,
+                chan_id,
+                &floatvalue);
+        SEVCHK(status, NULL);
+        verify_value(chan_id, DBR_FLOAT);
+    }
+    if(epicsScanDouble(pvalue, &doublevalue)==1) {
+        /*
+         * double precision float ca_put
+         */
+        status = ca_put(
+                DBR_DOUBLE,
+                chan_id,
+                &doublevalue);
+        SEVCHK(status, NULL);
+        verify_value(chan_id, DBR_DOUBLE);
+    }
 
 skip_rest:
 
-	/*
-	 * wait for the operation to complete
-	 * (outstabnding decrements to zero)
-	 */
-	while(ntries){
-		ca_pend_event(1.0);
+    /*
+     * wait for the operation to complete
+     * (outstabnding decrements to zero)
+     */
+    while(ntries){
+        ca_pend_event(1.0);
 
-		if(!outstanding){
+        if(!outstanding){
             SEVCHK(ca_clear_channel(chan_id),NULL);
-			printf("\n\n");
-			return 0;
-		}
+            printf("\n\n");
+            return 0;
+        }
 
-		ntries--;
-	}
+        ntries--;
+    }
 
     SEVCHK(ca_clear_channel(chan_id),NULL);
-	return -1;
+    return -1;
 }
 
 
@@ -305,19 +305,19 @@ skip_rest:
  */
 static void verify_value(chid chan_id, chtype type)
 {
-	int status;
+    int status;
 
-	/*
-	 * issue a get which calls back `printit'
-	 * upon completion
-	 */
-	status = ca_array_get_callback(
-			type, 
-			ca_element_count(chan_id),
-			chan_id, 
-			printit, 
-			NULL);
-	SEVCHK(status, NULL);
+    /*
+     * issue a get which calls back `printit'
+     * upon completion
+     */
+    status = ca_array_get_callback(
+            type,
+            ca_element_count(chan_id),
+            chan_id,
+            printit,
+            NULL);
+    SEVCHK(status, NULL);
 
-	outstanding++;
+    outstanding++;
 }

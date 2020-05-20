@@ -5,12 +5,12 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
+/*
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
  */
 
 #include <string>
@@ -32,27 +32,27 @@
 #include "errlog.h"
 
 // - this class implements the asynchronous DNS query
-// - it completes early with the host name in dotted IP address form 
+// - it completes early with the host name in dotted IP address form
 //   if the ipAddrToAsciiEngine is destroyed before IO completion
 //   or if there are too many items already in the engine's queue.
-class ipAddrToAsciiTransactionPrivate : 
+class ipAddrToAsciiTransactionPrivate :
     public ipAddrToAsciiTransaction,
     public tsDLNode < ipAddrToAsciiTransactionPrivate > {
 public:
     ipAddrToAsciiTransactionPrivate ( class ipAddrToAsciiEnginePrivate & engineIn );
     virtual ~ipAddrToAsciiTransactionPrivate ();
     osiSockAddr address () const;
-    void show ( unsigned level ) const; 
-    void * operator new ( size_t size, tsFreeList 
+    void show ( unsigned level ) const;
+    void * operator new ( size_t size, tsFreeList
         < ipAddrToAsciiTransactionPrivate, 0x80 > & );
-    epicsPlacementDeleteOperator (( void *, tsFreeList 
+    epicsPlacementDeleteOperator (( void *, tsFreeList
         < ipAddrToAsciiTransactionPrivate, 0x80 > & ))
     osiSockAddr addr;
     ipAddrToAsciiEnginePrivate & engine;
     ipAddrToAsciiCallBack * pCB;
     bool pending;
     void ipAddrToAscii ( const osiSockAddr &, ipAddrToAsciiCallBack & );
-    void release (); 
+    void release ();
     void operator delete ( void * );
 private:
     ipAddrToAsciiTransactionPrivate & operator = ( const ipAddrToAsciiTransactionPrivate & );
@@ -64,7 +64,7 @@ private:
 #   pragma warning ( disable:4660 )
 #endif
 
-template class tsFreeList 
+template class tsFreeList
     < ipAddrToAsciiTransactionPrivate, 0x80 >;
 
 #ifdef _MSC_VER
@@ -103,12 +103,12 @@ struct ipAddrToAsciiGlobal : public epicsThreadRunable {
 
 // - this class executes the synchronous DNS query
 // - it creates one thread
-class ipAddrToAsciiEnginePrivate : 
+class ipAddrToAsciiEnginePrivate :
     public ipAddrToAsciiEngine {
 public:
     ipAddrToAsciiEnginePrivate() :refcount(1u), released(false) {}
     virtual ~ipAddrToAsciiEnginePrivate () {}
-    void show ( unsigned level ) const; 
+    void show ( unsigned level ) const;
 
     unsigned refcount;
     bool released;
@@ -119,7 +119,7 @@ public:
 
 private:
     ipAddrToAsciiEnginePrivate ( const ipAddrToAsciiEngine & );
-	ipAddrToAsciiEnginePrivate & operator = ( const ipAddrToAsciiEngine & );
+    ipAddrToAsciiEnginePrivate & operator = ( const ipAddrToAsciiEngine & );
 };
 
 ipAddrToAsciiGlobal * ipAddrToAsciiEnginePrivate :: pEngine = 0;
@@ -155,9 +155,9 @@ void ipAddrToAsciiEngine::cleanup()
     ipAddrToAsciiEnginePrivate::pEngine = 0;
 }
 
-// for now its probably sufficent to allocate one 
+// for now its probably sufficent to allocate one
 // DNS transaction thread for all codes sharing
-// the same process that need DNS services but we 
+// the same process that need DNS services but we
 // leave our options open for the future
 ipAddrToAsciiEngine & ipAddrToAsciiEngine::allocate ()
 {
@@ -234,7 +234,7 @@ void ipAddrToAsciiEnginePrivate::release ()
 void ipAddrToAsciiEnginePrivate::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->pEngine->mutex );
-    printf ( "ipAddrToAsciiEngine at %p with %u requests pending\n", 
+    printf ( "ipAddrToAsciiEngine at %p with %u requests pending\n",
         static_cast <const void *> (this), this->pEngine->labor.count () );
     if ( level > 0u ) {
         tsDLIter < ipAddrToAsciiTransactionPrivate >
@@ -254,14 +254,14 @@ void ipAddrToAsciiEnginePrivate::show ( unsigned level ) const
     }
 }
 
-inline void * ipAddrToAsciiTransactionPrivate::operator new ( size_t size, tsFreeList 
+inline void * ipAddrToAsciiTransactionPrivate::operator new ( size_t size, tsFreeList
     < ipAddrToAsciiTransactionPrivate, 0x80 > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-inline void ipAddrToAsciiTransactionPrivate::operator delete ( void * pTrans, tsFreeList 
+inline void ipAddrToAsciiTransactionPrivate::operator delete ( void * pTrans, tsFreeList
     < ipAddrToAsciiTransactionPrivate, 0x80 > &  freeList )
 {
     freeList.release ( pTrans );
@@ -310,10 +310,10 @@ void ipAddrToAsciiGlobal::run ()
             }
             osiSockAddr addr = pItem->addr;
             this->pCurrent = pItem;
-    
+
             if ( this->exitFlag )
             {
-                sockAddrToDottedIP ( & addr.sa, this->nameTmp, 
+                sockAddrToDottedIP ( & addr.sa, this->nameTmp,
                     sizeof ( this->nameTmp ) );
             }
             else {
@@ -324,7 +324,7 @@ void ipAddrToAsciiGlobal::run ()
             }
 
             // the ipAddrToAsciiTransactionPrivate destructor is allowed to
-            // set pCurrent to nill and avoid blocking on a slow DNS 
+            // set pCurrent to nill and avoid blocking on a slow DNS
             // operation
             if ( ! this->pCurrent ) {
                 continue;
@@ -356,7 +356,7 @@ void ipAddrToAsciiGlobal::run ()
     }
 }
 
-ipAddrToAsciiTransactionPrivate::ipAddrToAsciiTransactionPrivate 
+ipAddrToAsciiTransactionPrivate::ipAddrToAsciiTransactionPrivate
     ( ipAddrToAsciiEnginePrivate & engineIn ) :
     engine ( engineIn ), pCB ( 0 ), pending ( false )
 {
@@ -417,7 +417,7 @@ ipAddrToAsciiTransactionPrivate::~ipAddrToAsciiTransactionPrivate ()
     }
 }
 
-void ipAddrToAsciiTransactionPrivate::ipAddrToAscii ( 
+void ipAddrToAsciiTransactionPrivate::ipAddrToAscii (
     const osiSockAddr & addrIn, ipAddrToAsciiCallBack & cbIn )
 {
     bool success;
@@ -448,7 +448,7 @@ void ipAddrToAsciiTransactionPrivate::ipAddrToAscii (
     }
     else {
         char autoNameTmp[256];
-        sockAddrToDottedIP ( & addrIn.sa, autoNameTmp, 
+        sockAddrToDottedIP ( & addrIn.sa, autoNameTmp,
             sizeof ( autoNameTmp ) );
         cbIn.transactionComplete ( autoNameTmp );
     }

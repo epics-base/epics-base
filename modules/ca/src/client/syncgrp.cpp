@@ -100,7 +100,7 @@ void sync_group_reset ( ca_client_context & client, CASG & sg )
         epicsGuard < epicsMutex > guard ( client.mutex );
         sg.reset ( *client.pCallbackGuard.get(), guard );
     }
-    else {  
+    else {
         //
         // we will definately stall out here if all of the
         // following are true
@@ -260,7 +260,7 @@ extern "C" int epicsStdCall ca_sg_array_put ( const CA_SYNC_GID gid, chtype type
     }
 
     try {
-        pcasg->put ( guard, pChan, type, 
+        pcasg->put ( guard, pChan, type,
             static_cast < unsigned > ( count ), pValue );
         return ECA_NORMAL;
     }
@@ -322,7 +322,7 @@ extern "C" int epicsStdCall ca_sg_array_get ( const CA_SYNC_GID gid, chtype type
     }
 
     try {
-        pcasg->get ( guard, pChan, type, 
+        pcasg->get ( guard, pChan, type,
             static_cast < unsigned > ( count ), pValue );
         return ECA_NORMAL;
     }

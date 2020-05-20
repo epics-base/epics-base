@@ -4,10 +4,10 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* recSup.h
- *	Record Support
+ *      Record Support
  *      Author:          Marty Kraimer
  *      Date:            6-1-90
  */
@@ -64,22 +64,22 @@ typedef struct typed_rset rset;
 
 typedef long (*RECSUPFUN) () EPICS_DEPRECATED;      /* ptr to record support function*/
 
-struct rset {	/* record support entry table */
-    long number;            /*number of support routines	*/
-    long (*report)();       /*print report			*/
-    long (*init)();         /*init support			*/
-    long (*init_record)();  /*init record			*/
-    long (*process)();      /*process record		*/
-    long (*special)();      /*special processing		*/
-    long (*get_value)();    /*no longer used		*/
-    long (*cvt_dbaddr)();   /*cvt  dbAddr			*/
+struct rset {   /* record support entry table */
+    long number;            /*number of support routines*/
+    long (*report)();       /*print report              */
+    long (*init)();         /*init support              */
+    long (*init_record)();  /*init record               */
+    long (*process)();      /*process record            */
+    long (*special)();      /*special processing        */
+    long (*get_value)();    /*no longer used            */
+    long (*cvt_dbaddr)();   /*cvt  dbAddr               */
     long (*get_array_info)();
     long (*put_array_info)();
     long (*get_units)();
     long (*get_precision)();
-    long (*get_enum_str)(); /*get string from enum item*/
-    long (*get_enum_strs)();/*get all enum strings		*/
-    long (*put_enum_str)(); /*put string from enum item*/
+    long (*get_enum_str)(); /*get string from enum item */
+    long (*get_enum_strs)();/*get all enum strings      */
+    long (*put_enum_str)(); /*put string from enum item */
     long (*get_graphic_double)();
     long (*get_control_double)();
     long (*get_alarm_double)();

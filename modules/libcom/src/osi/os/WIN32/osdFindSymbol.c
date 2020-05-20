@@ -1,7 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2013 Dirk Zimoch, PSI
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* osi/os/WIN32/osdFindSymbol.c */
 

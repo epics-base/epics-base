@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* Record Support Routines for Subroutine records */
@@ -241,7 +241,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
     subRecord *prec = (subRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
     int linkNumber;
-    
+
     switch (fieldIndex) {
         case indexof(VAL):
         case indexof(HIHI):
@@ -269,7 +269,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     subRecord *prec = (subRecord *)paddr->precord;
-    
+
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
         case indexof(HIHI):
@@ -308,7 +308,7 @@ static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
                 &pad->upper_warning_limit,
                 &pad->upper_alarm_limit);
         } else
-	    recGblGetAlarmDouble(paddr, pad);
+        recGblGetAlarmDouble(paddr, pad);
     }
     return 0;
 }

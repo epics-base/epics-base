@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -28,11 +28,11 @@
 #define makeMask(NBITS) ( ( 1u << ( (unsigned) NBITS) ) - 1u )
 
 /*
- * sockAddrAreIdentical() 
+ * sockAddrAreIdentical()
  * (returns true if addresses are identical)
  */
 int epicsStdCall sockAddrAreIdentical 
-			( const osiSockAddr *plhs, const osiSockAddr *prhs )
+            ( const osiSockAddr *plhs, const osiSockAddr *prhs )
 {
     int match;
 
@@ -45,7 +45,7 @@ int epicsStdCall sockAddrAreIdentical
     else if ( plhs->ia.sin_addr.s_addr != prhs->ia.sin_addr.s_addr ) {
         match = 0;
     }
-    else if ( plhs->ia.sin_port != prhs->ia.sin_port ) { 
+    else if ( plhs->ia.sin_port != prhs->ia.sin_port ) {
         match = 0;
     }
     else {
@@ -55,17 +55,17 @@ int epicsStdCall sockAddrAreIdentical
 }
 
 /*
- * sockAddrToA() 
+ * sockAddrToA()
  * (convert socket address to ASCII host name)
  */
 unsigned epicsStdCall sockAddrToA ( 
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
-	if ( bufSize < 1 ) {
-		return 0;
-	}
+    if ( bufSize < 1 ) {
+        return 0;
+    }
 
-	if ( paddr->sa_family != AF_INET ) {
+    if ( paddr->sa_family != AF_INET ) {
         static const char * pErrStr = "<Ukn Addr Type>";
         unsigned len = strlen ( pErrStr );
         if ( len < bufSize ) {
@@ -73,34 +73,34 @@ unsigned epicsStdCall sockAddrToA (
             return len;
         }
         else {
-		    strncpy ( pBuf, "<Ukn Addr Type>", bufSize-1 );
-		    pBuf[bufSize-1] = '\0';
+            strncpy ( pBuf, "<Ukn Addr Type>", bufSize-1 );
+            pBuf[bufSize-1] = '\0';
             return bufSize-1;
         }
-	}
-	else {
-        const struct sockaddr_in * paddr_in = 
+    }
+    else {
+        const struct sockaddr_in * paddr_in =
             (const struct sockaddr_in *) paddr;
         return ipAddrToA ( paddr_in, pBuf, bufSize );
-	}
+    }
 }
 
 /*
- * ipAddrToA() 
+ * ipAddrToA()
  * (convert IP address to ASCII host name)
  */
 unsigned epicsStdCall ipAddrToA ( 
     const struct sockaddr_in * paddr, char * pBuf, unsigned bufSize )
 {
-	unsigned len = ipAddrToHostName ( 
+    unsigned len = ipAddrToHostName (
         & paddr->sin_addr, pBuf, bufSize );
-	if ( len == 0 ) {
+    if ( len == 0 ) {
         len = ipAddrToDottedIP ( paddr, pBuf, bufSize );
-	}
+    }
     else {
         unsigned reducedSize = bufSize - len;
-        int status = epicsSnprintf ( 
-                        &pBuf[len], reducedSize, ":%hu", 
+        int status = epicsSnprintf (
+                        &pBuf[len], reducedSize, ":%hu",
                         ntohs (paddr->sin_port) );
         if ( status > 0 ) {
             unsigned portSize = (unsigned) status;
@@ -113,12 +113,12 @@ unsigned epicsStdCall ipAddrToA (
 }
 
 /*
- * sockAddrToDottedIP () 
+ * sockAddrToDottedIP ()
  */
 unsigned epicsStdCall sockAddrToDottedIP ( 
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
-	if ( paddr->sa_family != AF_INET ) {
+    if ( paddr->sa_family != AF_INET ) {
         const char * pErrStr = "<Ukn Addr Type>";
         unsigned errStrLen = strlen ( pErrStr );
         if ( errStrLen < bufSize ) {
@@ -128,18 +128,18 @@ unsigned epicsStdCall sockAddrToDottedIP (
         else {
             unsigned reducedSize = bufSize - 1u;
             strncpy ( pBuf, pErrStr, reducedSize );
-		    pBuf[reducedSize] = '\0';
+            pBuf[reducedSize] = '\0';
             return reducedSize;
         }
-	}
-	else {
+    }
+    else {
         const struct sockaddr_in *paddr_in = ( const struct sockaddr_in * ) paddr;
         return ipAddrToDottedIP ( paddr_in, pBuf, bufSize );
     }
 }
 
 /*
- * ipAddrToDottedIP () 
+ * ipAddrToDottedIP ()
  */
 unsigned epicsStdCall ipAddrToDottedIP ( 
     const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize )
@@ -164,9 +164,9 @@ unsigned epicsStdCall ipAddrToDottedIP (
      * inet_ntoa() isnt used because it isnt thread safe
      * (and the replacements are not standardized)
      */
-    status = epicsSnprintf ( 
-                pBuf, bufSize, "%u.%u.%u.%u:%hu", 
-                chunk[3], chunk[2], chunk[1], chunk[0], 
+    status = epicsSnprintf (
+                pBuf, bufSize, "%u.%u.%u.%u:%hu",
+                chunk[3], chunk[2], chunk[1], chunk[0],
                 ntohs ( paddr->sin_port ) );
     if ( status > 0 ) {
         strLen = ( unsigned ) status;
@@ -181,7 +181,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
     }
     else {
         strncpy ( pBuf, pErrStr, bufSize );
-	    pBuf[bufSize-1] = '\0';
+        pBuf[bufSize-1] = '\0';
         return bufSize - 1u;
     }
 }

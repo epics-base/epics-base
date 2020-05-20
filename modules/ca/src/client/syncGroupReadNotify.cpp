@@ -27,7 +27,7 @@
 syncGroupReadNotify::syncGroupReadNotify (
     CASG & sgIn, PRecycleFunc pRecycleFuncIn,
     chid pChan, void * pValueIn ) :
-    chan ( pChan ), pRecycleFunc ( pRecycleFuncIn ), 
+    chan ( pChan ), pRecycleFunc ( pRecycleFuncIn ),
     sg ( sgIn ), pValue ( pValueIn ),
     magic ( CASG_MAGIC ), id ( 0u ),
     idIsValid ( false ), ioComplete ( false )

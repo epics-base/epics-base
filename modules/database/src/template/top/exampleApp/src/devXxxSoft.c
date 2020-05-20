@@ -21,25 +21,25 @@
 static long init_record();
 static long read_xxx();
 struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_xxx;
+    long        number;
+    DEVSUPFUN   report;
+    DEVSUPFUN   init;
+    DEVSUPFUN   init_record;
+    DEVSUPFUN   get_ioint_info;
+    DEVSUPFUN   read_xxx;
 }devXxxSoft={
-	5,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	read_xxx,
+    5,
+    NULL,
+    NULL,
+    init_record,
+    NULL,
+    read_xxx,
 };
 epicsExportAddress(dset,devXxxSoft);
 
 
 static long init_record(pxxx)
-    struct xxxRecord	*pxxx;
+    struct xxxRecord    *pxxx;
 {
     if(recGblInitConstantLink(&pxxx->inp,DBF_DOUBLE,&pxxx->val))
          pxxx->udf = FALSE;
@@ -47,7 +47,7 @@ static long init_record(pxxx)
 }
 
 static long read_xxx(pxxx)
-    struct xxxRecord	*pxxx;
+    struct xxxRecord    *pxxx;
 {
     long status;
 

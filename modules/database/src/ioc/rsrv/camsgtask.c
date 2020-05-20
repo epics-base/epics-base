@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *  Author: Jeffrey O. Hill
@@ -57,7 +57,7 @@ void camsgtask ( void *pParm )
         if (status < 0) {
             char sockErrBuf[64];
 
-            epicsSocketConvertErrnoToString ( 
+            epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf("CAS: FIONREAD error: %s\n",
                 sockErrBuf);
@@ -69,7 +69,7 @@ void camsgtask ( void *pParm )
 
         client->recv.stk = 0;
         assert ( client->recv.maxstk >= client->recv.cnt );
-        nchars = recv ( client->sock, &client->recv.buf[client->recv.cnt], 
+        nchars = recv ( client->sock, &client->recv.buf[client->recv.cnt],
                 (int) ( client->recv.maxstk - client->recv.cnt ), 0 );
         if ( nchars == 0 ){
             if ( CASDEBUG > 0 ) {
@@ -127,9 +127,9 @@ void camsgtask ( void *pParm )
 
                 /*
                  * overlapping regions handled
-                 * properly by memmove 
+                 * properly by memmove
                  */
-                memmove (client->recv.buf, 
+                memmove (client->recv.buf,
                     &client->recv.buf[client->recv.stk], bytes_left);
                 client->recv.cnt = bytes_left;
             }
@@ -142,9 +142,9 @@ void camsgtask ( void *pParm )
 
             /* flush any queued messages before shutdown */
             cas_send_bs_msg(client, 1);
-            
+
             client->recv.cnt = 0ul;
-            
+
             /*
              * disconnect when there are severe message errors
              */

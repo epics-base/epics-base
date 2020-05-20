@@ -16,9 +16,9 @@
  *  Copyright, 1986, The Regents of the University of California.
  *
  *
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ *  505 665 1831
  */
 
 #ifndef INC_cacIO_H
@@ -264,8 +264,8 @@ protected:
 
 private:
     cacChannelNotify & callback;
-	cacChannel ( const cacChannel & );
-	cacChannel & operator = ( const cacChannel & );
+    cacChannel ( const cacChannel & );
+    cacChannel & operator = ( const cacChannel & );
 };
 
 class LIBCA_API cacContext {

@@ -22,7 +22,7 @@ sub new {
     my $this = {
         'DBD::Breaktable' => {},
         'DBD::Driver'     => {},
-	'DBD::Link'       => {},
+        'DBD::Link'       => {},
         'DBD::Function'   => {},
         'DBD::Menu'       => {},
         'DBD::Recordtype' => {},

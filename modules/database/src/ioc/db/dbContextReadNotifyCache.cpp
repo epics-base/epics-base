@@ -38,18 +38,18 @@ public:
         dbContextReadNotifyCacheAllocator & allocator, unsigned long size ) :
         _allocator ( allocator ), _p ( allocator.alloc ( size ) ) {}
     ~privateAutoDestroyPtr () { _allocator.free ( _p ); }
-	char * get () const { return _p; }
+    char * get () const { return _p; }
 private:
     dbContextReadNotifyCacheAllocator & _allocator;
     char * _p;
-	privateAutoDestroyPtr ( const privateAutoDestroyPtr & );
-	privateAutoDestroyPtr & operator = ( const privateAutoDestroyPtr & );
+    privateAutoDestroyPtr ( const privateAutoDestroyPtr & );
+    privateAutoDestroyPtr & operator = ( const privateAutoDestroyPtr & );
 };
 
 // extra effort taken here to not hold the lock when calling the callback
 void dbContextReadNotifyCache::callReadNotify (
     epicsGuard < epicsMutex > & guard, struct dbChannel * dbch,
-	unsigned type, unsigned long count, cacReadNotify & notify )
+    unsigned type, unsigned long count, cacReadNotify & notify )
 {
     guard.assertIdenticalMutex ( _mutex );
 

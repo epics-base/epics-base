@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* flexdef - definitions file for flex */
 
@@ -14,7 +14,7 @@
  *
  * This code is derived from software contributed to Berkeley by
  * Vern Paxson.
- * 
+ *
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
@@ -114,16 +114,16 @@
  * that can be used.  This definition is currently not used.
  */
 #define FREE_EPSILON(state) \
-	(transchar[state] == SYM_EPSILON && \
-	 trans2[state] == NO_TRANSITION && \
-	 finalst[state] != state)
+    (transchar[state] == SYM_EPSILON && \
+     trans2[state] == NO_TRANSITION && \
+     finalst[state] != state)
 
 /* returns true if an nfa state has an epsilon out-transition character
  * and both slots are free
  */
 #define SUPER_FREE_EPSILON(state) \
-	(transchar[state] == SYM_EPSILON && \
-	 trans1[state] == NO_TRANSITION) \
+    (transchar[state] == SYM_EPSILON && \
+     trans1[state] == NO_TRANSITION) \
 
 /* maximum number of NFA states that can comprise a DFA state.  It's real
  * big because if there's a lot of rules, the initial state will have a
@@ -156,28 +156,28 @@
  */
 #define NIL 0
 
-#define JAM -1	/* to mark a missing DFA transition */
+#define JAM -1  /* to mark a missing DFA transition */
 #define NO_TRANSITION NIL
-#define UNIQUE -1	/* marks a symbol as an e.c. representative */
-#define INFINITY -1	/* for x{5,} constructions */
+#define UNIQUE -1       /* marks a symbol as an e.c. representative */
+#define INFINITY -1     /* for x{5,} constructions */
 
-#define INITIAL_MAX_CCLS 100	/* max number of unique character classes */
+#define INITIAL_MAX_CCLS 100    /* max number of unique character classes */
 #define MAX_CCLS_INCREMENT 100
 
 /* size of table holding members of character classes */
 #define INITIAL_MAX_CCL_TBL_SIZE 500
 #define MAX_CCL_TBL_SIZE_INCREMENT 250
 
-#define INITIAL_MAX_RULES 100	/* default maximum number of rules */
+#define INITIAL_MAX_RULES 100   /* default maximum number of rules */
 #define MAX_RULES_INCREMENT 100
 
-#define INITIAL_MNS 2000	/* default maximum number of nfa states */
-#define MNS_INCREMENT 1000	/* amount to bump above by if it's not enough */
+#define INITIAL_MNS 2000        /* default maximum number of nfa states */
+#define MNS_INCREMENT 1000      /* amount to bump above by if it's not enough */
 
-#define INITIAL_MAX_DFAS 1000	/* default maximum number of dfa states */
+#define INITIAL_MAX_DFAS 1000   /* default maximum number of dfa states */
 #define MAX_DFAS_INCREMENT 1000
 
-#define JAMSTATE -32766	/* marks a reference to the state that always jams */
+#define JAMSTATE -32766 /* marks a reference to the state that always jams */
 
 /* enough so that if it's subtracted from an NFA state number, the result
  * is guaranteed to be negative
@@ -193,13 +193,13 @@
 #define INITIAL_MAX_TEMPLATE_XPAIRS 2500
 #define MAX_TEMPLATE_XPAIRS_INCREMENT 2500
 
-#define SYM_EPSILON (CSIZE + 1)	/* to mark transitions on the symbol epsilon */
+#define SYM_EPSILON (CSIZE + 1) /* to mark transitions on the symbol epsilon */
 
-#define INITIAL_MAX_SCS 40	/* maximum number of start conditions */
-#define MAX_SCS_INCREMENT 40	/* amount to bump by if it's not enough */
+#define INITIAL_MAX_SCS 40      /* maximum number of start conditions */
+#define MAX_SCS_INCREMENT 40    /* amount to bump by if it's not enough */
 
-#define ONE_STACK_SIZE 500	/* stack of states with only one out-transition */
-#define SAME_TRANS -1	/* transition is the same as "default" entry for state */
+#define ONE_STACK_SIZE 500      /* stack of states with only one out-transition */
+#define SAME_TRANS -1   /* transition is the same as "default" entry for state */
 
 /* the following percentages are used to tune table compression:
 
@@ -211,7 +211,7 @@
 
 /* the percentage the number of homogeneous out-transitions of a state
  * must be of the number of total out-transitions of the state in order
- * that the state's transition table is first compared with a potential 
+ * that the state's transition table is first compared with a potential
  * template of the most common out-transition instead of with the first
  * proto in the proto queue
  */
@@ -253,7 +253,7 @@
  */
 #define PROT_SAVE_SIZE 2000
 
-#define MSP 50	/* maximum number of saved protos (protos on the proto queue) */
+#define MSP 50  /* maximum number of saved protos (protos on the proto queue) */
 
 /* maximum number of out-transitions a state can have that we'll rummage
  * around through the interior of the internal fast table looking for a
@@ -299,7 +299,7 @@ typedef struct hash_entry *hash_table[];
 #define START_COND_HASH_SIZE 101
 #define CCL_HASH_SIZE 101
 
-extern struct hash_entry *ndtbl[NAME_TABLE_HASH_SIZE]; 
+extern struct hash_entry *ndtbl[NAME_TABLE_HASH_SIZE];
 extern struct hash_entry *sctbl[START_COND_HASH_SIZE];
 extern struct hash_entry *ccltab[CCL_HASH_SIZE];
 
@@ -358,7 +358,7 @@ extern int yymore_really_used, reject_really_used;
  * infilename - name of input file
  * input_files - array holding names of input files
  * num_input_files - size of input_files array
- * program_name - name with which program was invoked 
+ * program_name - name with which program was invoked
  */
 
 extern int datapos, dataline, linenum;
@@ -543,7 +543,7 @@ extern int end_of_buffer_state;
  * cclng - true for a given ccl if the ccl is negated
  * cclreuse - counts how many times a ccl is re-used
  * current_max_ccl_tbl_size - current limit on number of characters needed
- *	to represent the unique ccl's
+ *      to represent the unique ccl's
  * ccltbl - holds the characters in each ccl - indexed by cclmap
  */
 
@@ -563,7 +563,7 @@ extern Char *ccltbl;
  * numeps - number of epsilon NFA states created
  * eps2 - number of epsilon states which have 2 out-transitions
  * num_reallocs - number of times it was necessary to realloc() a group
- *		  of arrays
+ *                of arrays
  * tmpuses - number of DFA states that chain to templates
  * totnst - total number of NFA states used to make DFA states
  * peakpairs - peak number of transition pairs we had to store internally
@@ -583,42 +583,42 @@ void *allocate_array(int size, int element_size);
 void *reallocate_array(void *array, int size, int element_size);
 
 #define allocate_integer_array(size) \
-	(int *) allocate_array( size, sizeof( int ) )
+    (int *) allocate_array( size, sizeof( int ) )
 
 #define reallocate_integer_array(array,size) \
-	(int *) reallocate_array( (void *) array, size, sizeof( int ) )
+    (int *) reallocate_array( (void *) array, size, sizeof( int ) )
 
 #define allocate_int_ptr_array(size) \
-	(int **) allocate_array( size, sizeof( int * ) )
+    (int **) allocate_array( size, sizeof( int * ) )
 
 #define allocate_char_ptr_array(size) \
-	(char **) allocate_array( size, sizeof( char * ) )
+    (char **) allocate_array( size, sizeof( char * ) )
 
 #define allocate_dfaacc_union(size) \
-	(union dfaacc_union *) \
-		allocate_array( size, sizeof( union dfaacc_union ) )
+    (union dfaacc_union *) \
+        allocate_array( size, sizeof( union dfaacc_union ) )
 
 #define reallocate_int_ptr_array(array,size) \
-	(int **) reallocate_array( (void *) array, size, sizeof( int * ) )
+    (int **) reallocate_array( (void *) array, size, sizeof( int * ) )
 
 #define reallocate_char_ptr_array(array,size) \
-	(char **) reallocate_array( (void *) array, size, sizeof( char * ) )
+    (char **) reallocate_array( (void *) array, size, sizeof( char * ) )
 
 #define reallocate_dfaacc_union(array, size) \
-	(union dfaacc_union *) \
-	reallocate_array( (void *) array, size, sizeof( union dfaacc_union ) )
+    (union dfaacc_union *) \
+        reallocate_array( (void *) array, size, sizeof( union dfaacc_union ) )
 
 #define allocate_character_array(size) \
-	(Char *) allocate_array( size, sizeof( Char ) )
+    (Char *) allocate_array( size, sizeof( Char ) )
 
 #define reallocate_character_array(array,size) \
-	(Char *) reallocate_array( (void *) array, size, sizeof( Char ) )
+    (Char *) reallocate_array( (void *) array, size, sizeof( Char ) )
 
 #if 0 /* JRW this might couse truuble... but not for IOC usage */
 /* used to communicate between scanner and parser.  The type should really
  * be YYSTYPE, but we can't easily get our hands on it.
  */
-#ifdef __alpha		/* inconsistency with parse.y, line 57... on Alpha */
+#ifdef __alpha          /* inconsistency with parse.y, line 57... on Alpha */
 extern long yylval;
 #else
 extern int yylval;
@@ -631,9 +631,9 @@ extern int yylval;
 
 /* from file ccl.c */
 
-extern void ccladd (int, int);	/* Add a single character to a ccl */
-extern int cclinit (void);	/* make an empty ccl */
-extern void cclnegate (int);	/* negate a ccl */
+extern void ccladd (int, int);  /* Add a single character to a ccl */
+extern int cclinit (void);      /* make an empty ccl */
+extern void cclnegate (int);    /* negate a ccl */
 
 /* list the members of a set of characters in CCL form */
 extern void list_character_set (FILE*, int[]);
@@ -644,7 +644,7 @@ extern void list_character_set (FILE*, int[]);
 /* increase the maximum number of dfas */
 extern void increase_max_dfas (void);
 
-extern void ntod (void);	/* convert a ndfa to a dfa */
+extern void ntod (void);        /* convert a ndfa to a dfa */
 
 
 /* from file ecs.c */
@@ -667,7 +667,7 @@ extern void mkechar (int, int[], int[]);
 
 /* from file gen.c */
 
-extern void make_tables (void);	/* generate transition tables */
+extern void make_tables (void); /* generate transition tables */
 
 
 /* from file main.c */
@@ -692,7 +692,7 @@ extern void bubble (int [], int);
 /* shell sort a character array */
 extern void cshell (Char [], int, int);
 
-extern void dataend (void);	/* finish up a block of data declarations */
+extern void dataend (void);     /* finish up a block of data declarations */
 
 /* report an error message and terminate */
 extern void flexerror (char[]) NORETURN;
@@ -712,7 +712,7 @@ extern void line_directive_out (FILE*);
 /* generate a data statment for a two-dimensional array */
 extern void mk2data (int);
 
-extern void mkdata (int);	/* generate a data statement */
+extern void mkdata (int);       /* generate a data statement */
 
 /* return the integer represented by a string of digits */
 extern int myctoi (Char []);
@@ -749,8 +749,8 @@ extern void mark_beginning_as_normal (int);
 /* make a machine that branches to two machines */
 extern int mkbranch (int, int);
 
-extern int mkclos (int);	/* convert a machine into a closure */
-extern int mkopt (int);	/* make a machine optional */
+extern int mkclos (int);        /* convert a machine into a closure */
+extern int mkopt (int); /* make a machine optional */
 
 /* make a machine that matches either one of two machines */
 extern int mkor (int, int);
@@ -758,12 +758,12 @@ extern int mkor (int, int);
 /* convert a machine into a positive closure */
 extern int mkposcl (int);
 
-extern int mkrep (int, int, int);	/* make a replicated machine */
+extern int mkrep (int, int, int);       /* make a replicated machine */
 
 /* create a state with a transition on a given symbol */
 extern int mkstate (int);
 
-extern void new_rule (void);	/* initialize for a new rule */
+extern void new_rule (void);    /* initialize for a new rule */
 
 
 /* from file parse.y */
@@ -774,18 +774,18 @@ extern void format_pinpoint_message (char[], char[]);
 /* write out a message, pinpointing its location */
 extern void pinpoint_message (char[]);
 
-extern void synerr (char []);	/* report a syntax error */
-/* extern int yyparse ();*/ 	/* the YACC parser */
+extern void synerr (char []);   /* report a syntax error */
+/* extern int yyparse ();*/     /* the YACC parser */
 
 
 /* from file scan.l */
 
-extern int flexscan ();	/* the Flex-generated scanner for flex */
+extern int flexscan (); /* the Flex-generated scanner for flex */
 
 /* open the given file (if NULL, stdin) for scanning */
 extern void set_input_file (char*);
 
-extern int yywrap ();	/* wrapup a file in the lexical analyzer */
+extern int yywrap ();   /* wrapup a file in the lexical analyzer */
 
 
 /* from file sym.c */
@@ -796,8 +796,8 @@ extern void cclinstal (Char [], int);
 /* lookup the number associated with character class */
 extern int ccllookup (Char []);
 
-extern void ndinstal (char[], Char[]);	/* install a name definition */
-extern void scinstal (char[], int);	/* make a start condition */
+extern void ndinstal (char[], Char[]);  /* install a name definition */
+extern void scinstal (char[], int);     /* make a start condition */
 
 /* lookup the number associated with a start condition */
 extern int sclookup (char[]);
@@ -808,9 +808,9 @@ extern int sclookup (char[]);
 /* build table entries for dfa state */
 extern void bldtbl (int[], int, int, int, int);
 
-extern void cmptmps (void);	/* compress template table entries */
-extern void inittbl (void);	/* initialize transition tables */
-extern void mkdeftbl (void);	/* make the default, "jam" table entries */
+extern void cmptmps (void);     /* compress template table entries */
+extern void inittbl (void);     /* initialize transition tables */
+extern void mkdeftbl (void);    /* make the default, "jam" table entries */
 
 /* create table entries for a state (or state fragment) which has
  * only one out-transition */

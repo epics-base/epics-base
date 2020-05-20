@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* osdEvent.c */
 /*
@@ -33,7 +33,7 @@ typedef struct epicsEventOSD {
  * epicsEventCreate ()
  */
 LIBCOM_API epicsEventId epicsEventCreate (
-    epicsEventInitialState initialState ) 
+    epicsEventInitialState initialState )
 {
     epicsEventOSD *pSem;
 
@@ -72,7 +72,7 @@ LIBCOM_API epicsEventStatus epicsEventTrigger ( epicsEventId pSem )
  * epicsEventWait ()
  */
 LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem ) 
-{ 
+{
     DWORD status;
     status = WaitForSingleObject (pSem->handle, INFINITE);
     if ( status == WAIT_OBJECT_0 ) {
@@ -88,7 +88,7 @@ LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem )
  */
 LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
-{ 
+{
     static const unsigned mSecPerSec = 1000;
     DWORD status;
     DWORD tmo;
@@ -121,7 +121,7 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
  * epicsEventTryWait ()
  */
 LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem ) 
-{ 
+{
     DWORD status;
 
     status = WaitForSingleObject ( pSem->handle, 0 );
@@ -140,5 +140,5 @@ LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem )
  * epicsEventShow ()
  */
 LIBCOM_API void epicsEventShow ( epicsEventId id, unsigned level ) 
-{ 
+{
 }

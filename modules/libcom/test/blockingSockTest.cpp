@@ -69,9 +69,9 @@ protected:
 };
 
 circuit::circuit ( SOCKET sockIn ) :
-    sock ( sockIn ), 
+    sock ( sockIn ),
     id ( 0 ),
-    recvWakeup ( false ), 
+    recvWakeup ( false ),
     sendWakeup ( false )
 {
     testOk ( this->sock != INVALID_SOCKET, "Socket valid" );
@@ -102,7 +102,7 @@ void circuit::recvTest ()
 {
     char buf [1];
     while ( true ) {
-        int status = recv ( this->sock, 
+        int status = recv ( this->sock,
             buf, (int) sizeof ( buf ), 0 );
         if ( status == 0 ) {
             testDiag ( "%s was disconnected", this->pName () );
@@ -114,7 +114,7 @@ void circuit::recvTest ()
         }
         else {
             char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
+            epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
             testDiag ( "%s socket recv() error was \"%s\"",
                 this->pName (), sockErrBuf );
@@ -134,14 +134,14 @@ clientCircuit::clientCircuit ( const address & addrIn ) :
     circuit ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) )
 {
     address tmpAddr = addrIn;
-    int status = ::connect ( 
+    int status = ::connect (
         this->sock, & tmpAddr.sa, sizeof ( tmpAddr ) );
     testOk ( status == 0, "Client end connected" );
 
     circuit * pCir = this;
-    this->id = epicsThreadCreate ( 
-        "client circuit", epicsThreadPriorityMedium, 
-        epicsThreadGetStackSize(epicsThreadStackMedium), 
+    this->id = epicsThreadCreate (
+        "client circuit", epicsThreadPriorityMedium,
+        epicsThreadGetStackSize(epicsThreadStackMedium),
         socketRecvTest, pCir );
     testOk ( this->id != 0, "Client thread created" );
 }
@@ -179,9 +179,9 @@ server::server ( const address & addrIn ) :
 
 void server::start ()
 {
-    this->id = epicsThreadCreate ( 
-        "server daemon", epicsThreadPriorityMedium, 
-        epicsThreadGetStackSize(epicsThreadStackMedium), 
+    this->id = epicsThreadCreate (
+        "server daemon", epicsThreadPriorityMedium,
+        epicsThreadGetStackSize(epicsThreadStackMedium),
         serverDaemon, this );
     testOk ( this->id != 0, "Server thread created" );
 }
@@ -192,7 +192,7 @@ void server::daemon ()
         // accept client side
         address addr;
         osiSocklen_t addressSize = sizeof ( addr );
-        SOCKET ns = accept ( this->sock, 
+        SOCKET ns = accept ( this->sock,
             & addr.sa, & addressSize );
         if ( this->exit )
             break;
@@ -256,7 +256,7 @@ MAIN(blockingSockTest)
     address addr;
     memset ( (char *) & addr, 0, sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK ); 
+    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
     addr.ia.sin_port = 0;
 
     server srv ( addr );

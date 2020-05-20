@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* osdMutex.c */
 /*
@@ -22,23 +22,23 @@
 
 #define VC_EXTRALEAN
 #define STRICT
-/* 
+/*
  * Defining this allows the *much* faster critical
  * section mutex primitive to be used. Unfortunately,
- * using certain of these functions drops support for W95\W98\WME 
- * unless we specify "delay loading" when we link with the 
- * DLL so that DLL entry points are not resolved until they 
+ * using certain of these functions drops support for W95\W98\WME
+ * unless we specify "delay loading" when we link with the
+ * DLL so that DLL entry points are not resolved until they
  * are used. The code does have run time switches so
- * that the more advanced calls are not called unless 
+ * that the more advanced calls are not called unless
  * they are available in the windows OS, but this feature
- * isnt going to be very useful unless we specify "delay 
+ * isnt going to be very useful unless we specify "delay
  * loading" when we link with the DLL.
  *
  * It appears that the only entry point used here that causes
  * portability problems with W95\W98\WME is TryEnterCriticalSection.
  */
 #ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0400 
+#   define _WIN32_WINNT 0x0400
 #endif
 #include <windows.h>
 
@@ -47,7 +47,7 @@
 #include "epicsAssert.h"
 #include "epicsStdio.h"
 
-typedef struct epicsMutexOSD { 
+typedef struct epicsMutexOSD {
     union {
         HANDLE mutex;
         CRITICAL_SECTION criticalSection;
@@ -60,7 +60,7 @@ static LONG weHaveInitialized = 0;
 /*
  * epicsMutexCreate ()
  */
-epicsMutexOSD * epicsMutexOsdCreate ( void ) 
+epicsMutexOSD * epicsMutexOsdCreate ( void )
 {
     epicsMutexOSD * pSem;
 
@@ -72,7 +72,7 @@ epicsMutexOSD * epicsMutexOsdCreate ( void )
         thisIsNT = status && ( osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT );
         weHaveInitialized = 1;
     }
- 
+
     pSem = malloc ( sizeof (*pSem) );
     if ( pSem ) {
         if ( thisIsNT ) {
@@ -85,15 +85,15 @@ epicsMutexOSD * epicsMutexOsdCreate ( void )
                 pSem = 0;
             }
         }
-    }    
+    }
     return pSem;
 }
 
 /*
  * epicsMutexOsdDestroy ()
  */
-void epicsMutexOsdDestroy ( epicsMutexOSD * pSem ) 
-{    
+void epicsMutexOsdDestroy ( epicsMutexOSD * pSem )
+{
     if ( thisIsNT ) {
         DeleteCriticalSection  ( &pSem->os.criticalSection );
     }
@@ -106,7 +106,7 @@ void epicsMutexOsdDestroy ( epicsMutexOSD * pSem )
 /*
  * epicsMutexOsdUnlock ()
  */
-void epicsMutexOsdUnlock ( epicsMutexOSD * pSem ) 
+void epicsMutexOsdUnlock ( epicsMutexOSD * pSem )
 {
     if ( thisIsNT ) {
         LeaveCriticalSection ( &pSem->os.criticalSection );
@@ -120,7 +120,7 @@ void epicsMutexOsdUnlock ( epicsMutexOSD * pSem )
 /*
  * epicsMutexOsdLock ()
  */
-epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem ) 
+epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem )
 {
     if ( thisIsNT ) {
         EnterCriticalSection ( &pSem->os.criticalSection );
@@ -137,8 +137,8 @@ epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem )
 /*
  * epicsMutexOsdTryLock ()
  */
-epicsMutexLockStatus epicsMutexOsdTryLock ( epicsMutexOSD * pSem ) 
-{ 
+epicsMutexLockStatus epicsMutexOsdTryLock ( epicsMutexOSD * pSem )
+{
     if ( thisIsNT ) {
         if ( TryEnterCriticalSection ( &pSem->os.criticalSection ) ) {
             return epicsMutexLockOK;
@@ -164,14 +164,14 @@ epicsMutexLockStatus epicsMutexOsdTryLock ( epicsMutexOSD * pSem )
 /*
  * epicsMutexOsdShow ()
  */
-void epicsMutexOsdShow ( epicsMutexOSD * pSem, unsigned level ) 
-{ 
+void epicsMutexOsdShow ( epicsMutexOSD * pSem, unsigned level )
+{
     if ( thisIsNT ) {
         printf ("epicsMutex: win32 critical section at %p\n",
             (void * ) & pSem->os.criticalSection );
     }
     else {
-        printf ( "epicsMutex: win32 mutex at %p\n", 
+        printf ( "epicsMutex: win32 mutex at %p\n",
             ( void * ) pSem->os.mutex );
     }
 }

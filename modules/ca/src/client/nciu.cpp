@@ -49,7 +49,7 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
     typeCode ( USHRT_MAX ),
     priority ( static_cast <ca_uint8_t> ( pri ) )
 {
-	size_t nameLengthTmp = strlen ( pNameIn ) + 1;
+    size_t nameLengthTmp = strlen ( pNameIn ) + 1;
 
     // second constraint is imposed by size field in protocol header
     if ( nameLengthTmp > MAX_UDP_SEND - sizeof ( caHdr ) || nameLengthTmp > USHRT_MAX ) {
@@ -60,7 +60,7 @@ nciu::nciu ( cac & cacIn, netiiu & iiuIn, cacChannelNotify & chanIn,
         throw cacChannel::badPriority ();
     }
 
-	this->nameLength = static_cast <unsigned short> ( nameLengthTmp );
+    this->nameLength = static_cast <unsigned short> ( nameLengthTmp );
 
     this->pNameStr = new char [ this->nameLength ];
     strcpy ( this->pNameStr, pNameIn );
@@ -112,7 +112,7 @@ void nciu::initiateConnect (
 }
 
 void nciu::connect ( unsigned nativeType,
-	unsigned nativeCount, unsigned sidIn,
+    unsigned nativeCount, unsigned sidIn,
     epicsGuard < epicsMutex > & /* cbGuard */,
     epicsGuard < epicsMutex > & guard )
 {

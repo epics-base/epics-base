@@ -4,10 +4,10 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* 
+/*
  * Operating System Dependent Implementation of osiProcess.h
  *
  * Author: Jeff Hill
@@ -27,11 +27,11 @@
 
 LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigned bufSizeIn)
 {
-	char pName[MAX_IDENTITY_LEN];
+    char pName[MAX_IDENTITY_LEN];
     unsigned uiLength;
     size_t len;
 
-	remCurIdGet ( pName, NULL );
+    remCurIdGet ( pName, NULL );
     len = strlen ( pName );
 
     if (len>UINT_MAX || len<=0) {

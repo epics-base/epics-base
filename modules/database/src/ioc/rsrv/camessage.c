@@ -595,7 +595,7 @@ static void read_reply ( void *pArg, struct dbChannel *dbch,
     }
 
     /*
-     * Ensures timely response for events, but does queue 
+     * Ensures timely response for events, but does queue
      * them up like db requests when the OPI does not keep up.
      */
     if ( ! eventsRemaining )
@@ -679,7 +679,7 @@ static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *p
     status = caNetConvert (
         mp->m_dataType, pPayload, pPayload,
         TRUE /* host -> net format */, mp->m_count );
-	if ( status != ECA_NORMAL ) {
+    if ( status != ECA_NORMAL ) {
         send_err ( mp, status, pClient, RECORD_NAME ( pciu->dbch ) );
         SEND_UNLOCK ( pClient );
         return RSRV_OK;
@@ -779,7 +779,7 @@ static int write_action ( caHdrLargeArray *mp,
     status = caNetConvert (
         mp->m_dataType, pPayload, pPayload,
         FALSE /* net -> host format */, mp->m_count );
-	if ( status != ECA_NORMAL ) {
+    if ( status != ECA_NORMAL ) {
         log_header ("invalid data type", client, mp, pPayload, 0);
         SEND_LOCK(client);
         send_err(
@@ -849,7 +849,7 @@ static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
     pName = (char *) pPayload;
     size = epicsStrnLen(pName, mp->m_postsize)+1;
     if (size > 512 || size > mp->m_postsize) {
-        log_header ( "bad (very long) host name", 
+        log_header ( "bad (very long) host name",
             client, mp, pPayload, 0 );
         SEND_LOCK(client);
         send_err(
@@ -936,7 +936,7 @@ static int client_name_action ( caHdrLargeArray *mp, void *pPayload,
     pName = (char *) pPayload;
     size = epicsStrnLen(pName, mp->m_postsize)+1;
     if (size > 512 || size > mp->m_postsize) {
-        log_header ("a very long user name was specified", 
+        log_header ("a very long user name was specified",
             client, mp, pPayload, 0);
         SEND_LOCK(client);
         send_err(
@@ -1325,7 +1325,7 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
  {
      struct channel_in_use * pciu = (struct channel_in_use *) ppn->usrPvt;
      struct rsrv_put_notify *pNotify;
- 
+
      if(ppn->status==notifyCanceled) return 0;
  /*
   * No locking in this method because only a dbNotifyCancel could interrupt
@@ -1337,7 +1337,7 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
      return db_put_process(ppn,type,
          pNotify->dbrType,pNotify->pbuffer,pNotify->nRequest);
  }
- 
+
  /*
   * write_notify_done_callback()
   *
@@ -1760,7 +1760,7 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
     status = caNetConvert (
         mp->m_dataType, pPayload, pciu->pPutNotify->pbuffer,
         FALSE /* net -> host format */, mp->m_count );
-	if ( status != ECA_NORMAL ) {
+    if ( status != ECA_NORMAL ) {
         log_header ("invalid data type", client, mp, pPayload, 0);
         putNotifyErrorReply ( client, mp, status );
         return RSRV_ERROR;
@@ -1954,7 +1954,7 @@ static int clear_channel_reply ( caHdrLargeArray *mp,
          errMessage(status, RECORD_NAME(pciu->dbch));
          return RSRV_ERROR;
      }
-     
+
      epicsMutexMustLock ( client->chanListLock );
      if ( pciu->state == rsrvCS_inService ||
             pciu->state == rsrvCS_pendConnectResp  ) {
@@ -2252,7 +2252,7 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
 /*
  *  search_reply_tcp ()
  */
-static int search_reply_tcp ( 
+static int search_reply_tcp (
     caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
     char            *pName = (char *) pPayload;
@@ -2270,7 +2270,7 @@ static int search_reply_tcp (
      * check the sanity of the message
      */
     if (mp->m_postsize<=1) {
-        log_header ("empty PV name in UDP search request?", 
+        log_header ("empty PV name in UDP search request?",
             client, mp, pPayload, 0);
         return RSRV_OK;
     }
@@ -2289,9 +2289,9 @@ static int search_reply_tcp (
      */
     spaceAvailOnFreeList =     freeListItemsAvail ( rsrvChanFreeList ) > 0
                             && freeListItemsAvail ( rsrvEventFreeList ) > reasonableMonitorSpace;
-    spaceNeeded = sizeof (struct channel_in_use) + 
+    spaceNeeded = sizeof (struct channel_in_use) +
         reasonableMonitorSpace * sizeof (struct event_ext);
-    if ( ! ( osiSufficentSpaceInPool(spaceNeeded) || spaceAvailOnFreeList ) ) { 
+    if ( ! ( osiSufficentSpaceInPool(spaceNeeded) || spaceAvailOnFreeList ) ) {
         SEND_LOCK(client);
         send_err ( mp, ECA_ALLOCMEM, client, "Server memory exhausted" );
         SEND_UNLOCK(client);
@@ -2299,7 +2299,7 @@ static int search_reply_tcp (
     }
 
     SEND_LOCK ( client );
-    status = cas_copy_in_header ( client, CA_PROTO_SEARCH, 
+    status = cas_copy_in_header ( client, CA_PROTO_SEARCH,
         0, ca_server_port, 0, ~0U, mp->m_available, 0 );
     if ( status != ECA_NORMAL ) {
         SEND_UNLOCK ( client );

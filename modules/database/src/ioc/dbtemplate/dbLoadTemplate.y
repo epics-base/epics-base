@@ -4,7 +4,7 @@
 * Copyright (c) 2006 UChicago, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include <stdio.h>
@@ -307,9 +307,9 @@ variable_definition: WORD EQUALS WORD
     ;
 
 %%
- 
+
 #include "dbLoadTemplate_lex.c"
- 
+
 static int yyerror(char* str)
 {
     if (str)

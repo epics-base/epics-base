@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* ecs - equivalence class routines */
 
@@ -14,7 +14,7 @@
  *
  * This code is derived from software contributed to Berkeley by
  * Vern Paxson.
- * 
+ *
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
@@ -47,56 +47,56 @@ void ccl2ecl(void)
     int i, ich, newlen, cclp, ccls, cclmec;
 
     for ( i = 1; i <= lastccl; ++i )
-	{
-	/* we loop through each character class, and for each character
-	 * in the class, add the character's equivalence class to the
-	 * new "character" class we are creating.  Thus when we are all
-	 * done, character classes will really consist of collections
-	 * of equivalence classes
-	 */
+        {
+        /* we loop through each character class, and for each character
+         * in the class, add the character's equivalence class to the
+         * new "character" class we are creating.  Thus when we are all
+         * done, character classes will really consist of collections
+         * of equivalence classes
+         */
 
-	newlen = 0;
-	cclp = cclmap[i];
+        newlen = 0;
+        cclp = cclmap[i];
 
-	for ( ccls = 0; ccls < ccllen[i]; ++ccls )
-	    {
-	    ich = ccltbl[cclp + ccls];
-	    cclmec = ecgroup[ich];
+        for ( ccls = 0; ccls < ccllen[i]; ++ccls )
+            {
+            ich = ccltbl[cclp + ccls];
+            cclmec = ecgroup[ich];
 
-	    if ( xlation && cclmec < 0 )
-		{
-		/* special hack--if we're doing %t tables then it's
-		 * possible that no representative of this character's
-		 * equivalence class is in the ccl.  So waiting till
-		 * we see the representative would be disastrous.  Instead,
-		 * we add this character's equivalence class anyway, if it's
-		 * not already present.
-		 */
-		int j;
+            if ( xlation && cclmec < 0 )
+                {
+                /* special hack--if we're doing %t tables then it's
+                 * possible that no representative of this character's
+                 * equivalence class is in the ccl.  So waiting till
+                 * we see the representative would be disastrous.  Instead,
+                 * we add this character's equivalence class anyway, if it's
+                 * not already present.
+                 */
+                int j;
 
-		/* this loop makes this whole process n^2; but we don't
-		 * really care about %t performance anyway
-		 */
-		for ( j = 0; j < newlen; ++j )
-		    if ( ccltbl[cclp + j] == -cclmec )
-			break;
+                /* this loop makes this whole process n^2; but we don't
+                 * really care about %t performance anyway
+                 */
+                for ( j = 0; j < newlen; ++j )
+                    if ( ccltbl[cclp + j] == -cclmec )
+                        break;
 
-		if ( j >= newlen )
-		    { /* no representative yet, add this one in */
-		    ccltbl[cclp + newlen] = -cclmec;
-		    ++newlen;
-		    }
-		}
+                if ( j >= newlen )
+                    { /* no representative yet, add this one in */
+                    ccltbl[cclp + newlen] = -cclmec;
+                    ++newlen;
+                    }
+                }
 
-	    else if ( cclmec > 0 )
-		{
-		ccltbl[cclp + newlen] = cclmec;
-		++newlen;
-		}
-	    }
+            else if ( cclmec > 0 )
+                {
+                ccltbl[cclp + newlen] = cclmec;
+                ++newlen;
+                }
+            }
 
-	ccllen[i] = newlen;
-	}
+        ccllen[i] = newlen;
+        }
     }
 
 
@@ -124,12 +124,12 @@ int cre8ecs(int fwd[], int bck[], int num)
      * class.
      */
     for ( i = 1; i <= num; ++i )
-	if ( bck[i] == NIL )
-	    {
-	    bck[i] = ++numcl;
-	    for ( j = fwd[i]; j != NIL; j = fwd[j] )
-		bck[j] = -numcl;
-	    }
+        if ( bck[i] == NIL )
+            {
+            bck[i] = ++numcl;
+            for ( j = fwd[i]; j != NIL; j = fwd[j] )
+                bck[j] = -numcl;
+            }
 
     return ( numcl );
     }
@@ -154,62 +154,62 @@ int ecs_from_xlation(int ecmap[])
     int did_default_xlation_class = false;
 
     if ( xlation[0] != 0 )
-	{
-	/* if NUL shares its translation with other characters, choose one
-	 * of the other characters as the representative for the equivalence
-	 * class.  This allows a cheap test later to see whether we can
-	 * do away with NUL's equivalence class.
-	 */
-	for ( i = 1; i < csize; ++i )
-	    if ( xlation[i] == -xlation[0] )
-		{
-		xlation[i] = xlation[0];
-		ecmap[0] = -xlation[0];
-		break;
-		}
+        {
+        /* if NUL shares its translation with other characters, choose one
+         * of the other characters as the representative for the equivalence
+         * class.  This allows a cheap test later to see whether we can
+         * do away with NUL's equivalence class.
+         */
+        for ( i = 1; i < csize; ++i )
+            if ( xlation[i] == -xlation[0] )
+                {
+                xlation[i] = xlation[0];
+                ecmap[0] = -xlation[0];
+                break;
+                }
 
-	if ( i >= csize )
-	    /* didn't find a companion character--remember this fact */
-	    nul_is_alone = true;
-	}
+        if ( i >= csize )
+            /* didn't find a companion character--remember this fact */
+            nul_is_alone = true;
+        }
 
     for ( i = 1; i < csize; ++i )
-	if ( xlation[i] == 0 )
-	    {
-	    if ( did_default_xlation_class )
-		ecmap[i] = -num_xlations;
-	    
-	    else
-		{
-		/* make an equivalence class for those characters not
-		 * specified in the %t table
-		 */
-		++num_xlations;
-		ecmap[i] = num_xlations;
-		did_default_xlation_class = true;
-		}
-	    }
+        if ( xlation[i] == 0 )
+            {
+            if ( did_default_xlation_class )
+                ecmap[i] = -num_xlations;
 
-	else
-	    ecmap[i] = xlation[i];
+            else
+                {
+                /* make an equivalence class for those characters not
+                 * specified in the %t table
+                 */
+                ++num_xlations;
+                ecmap[i] = num_xlations;
+                did_default_xlation_class = true;
+                }
+            }
+
+        else
+            ecmap[i] = xlation[i];
 
     if ( nul_is_alone )
-	/* force NUL's equivalence class to be the last one */
-	{
-	++num_xlations;
-	ecmap[0] = num_xlations;
+        /* force NUL's equivalence class to be the last one */
+        {
+        ++num_xlations;
+        ecmap[0] = num_xlations;
 
-	/* there's actually a bug here: if someone is fanatic enough to
-	 * put every character in its own translation class, then right
-	 * now we just promoted NUL's equivalence class to be csize + 1;
-	 * we can handle NUL's class number being == csize (by instead
-	 * putting it in its own table), but we can't handle some *other*
-	 * character having to be put in its own table, too.  So in
-	 * this case we bail out.
-	 */
-	if ( num_xlations > csize )
-	    flexfatal( "too many %t classes!" );
-	}
+        /* there's actually a bug here: if someone is fanatic enough to
+         * put every character in its own translation class, then right
+         * now we just promoted NUL's equivalence class to be csize + 1;
+         * we can handle NUL's class number being == csize (by instead
+         * putting it in its own table), but we can't handle some *other*
+         * character having to be put in its own table, too.  So in
+         * this case we bail out.
+         */
+        if ( num_xlations > csize )
+            flexfatal( "too many %t classes!" );
+        }
 
     return num_xlations;
     }
@@ -233,7 +233,7 @@ void mkeccl(unsigned char ccls[], int lenccl, int fwd[], int bck[], int llsiz, i
 {
     int cclp, oldec, newec;
     int cclm, i, j;
-    static unsigned char cclflags[CSIZE];	/* initialized to all '\0' */
+    static unsigned char cclflags[CSIZE];       /* initialized to all '\0' */
 
     /* note that it doesn't matter whether or not the character class is
      * negated.  The same results will be obtained in either case.
@@ -242,79 +242,79 @@ void mkeccl(unsigned char ccls[], int lenccl, int fwd[], int bck[], int llsiz, i
     cclp = 0;
 
     while ( cclp < lenccl )
-	{
-	cclm = ccls[cclp];
+        {
+        cclm = ccls[cclp];
 
-	if ( NUL_mapping && cclm == 0 )
-	    cclm = NUL_mapping;
+        if ( NUL_mapping && cclm == 0 )
+            cclm = NUL_mapping;
 
-	oldec = bck[cclm];
-	newec = cclm;
+        oldec = bck[cclm];
+        newec = cclm;
 
-	j = cclp + 1;
+        j = cclp + 1;
 
-	for ( i = fwd[cclm]; i != NIL && i <= llsiz; i = fwd[i] )
-	    { /* look for the symbol in the character class */
-	    for ( ; j < lenccl; ++j )
-		{
-		int ccl_char;
+        for ( i = fwd[cclm]; i != NIL && i <= llsiz; i = fwd[i] )
+            { /* look for the symbol in the character class */
+            for ( ; j < lenccl; ++j )
+                {
+                int ccl_char;
 
-		if ( NUL_mapping && ccls[j] == 0 )
-		    ccl_char = NUL_mapping;
-		else
-		    ccl_char = ccls[j];
+                if ( NUL_mapping && ccls[j] == 0 )
+                    ccl_char = NUL_mapping;
+                else
+                    ccl_char = ccls[j];
 
-		if ( ccl_char > i )
-		    break;
+                if ( ccl_char > i )
+                    break;
 
-		if ( ccl_char == i && ! cclflags[j] )
-		    {
-		    /* we found an old companion of cclm in the ccl.
-		     * link it into the new equivalence class and flag it as
-		     * having been processed
-		     */
+                if ( ccl_char == i && ! cclflags[j] )
+                    {
+                    /* we found an old companion of cclm in the ccl.
+                     * link it into the new equivalence class and flag it as
+                     * having been processed
+                     */
 
-		    bck[i] = newec;
-		    fwd[newec] = i;
-		    newec = i;
-		    cclflags[j] = 1;	/* set flag so we don't reprocess */
+                    bck[i] = newec;
+                    fwd[newec] = i;
+                    newec = i;
+                    cclflags[j] = 1;    /* set flag so we don't reprocess */
 
-		    /* get next equivalence class member */
-		    /* continue 2 */
-		    goto next_pt;
-		    }
-		}
+                    /* get next equivalence class member */
+                    /* continue 2 */
+                    goto next_pt;
+                    }
+                }
 
-	    /* symbol isn't in character class.  Put it in the old equivalence
-	     * class
-	     */
+            /* symbol isn't in character class.  Put it in the old equivalence
+             * class
+             */
 
-	    bck[i] = oldec;
+            bck[i] = oldec;
 
-	    if ( oldec != NIL )
-		fwd[oldec] = i;
+            if ( oldec != NIL )
+                fwd[oldec] = i;
 
-	    oldec = i;
+            oldec = i;
 next_pt:
-	    ;
-	    }
+            ;
+            }
 
-	if ( bck[cclm] != NIL || oldec != bck[cclm] )
-	    {
-	    bck[cclm] = NIL;
-	    fwd[oldec] = NIL;
-	    }
+        if ( bck[cclm] != NIL || oldec != bck[cclm] )
+            {
+            bck[cclm] = NIL;
+            fwd[oldec] = NIL;
+            }
 
-	fwd[newec] = NIL;
+        fwd[newec] = NIL;
 
-	/* find next ccl member to process */
+        /* find next ccl member to process */
 
-	for ( ++cclp; cclflags[cclp] && cclp < lenccl; ++cclp )
-	    {
-	    /* reset "doesn't need processing" flag */
-	    cclflags[cclp] = 0;
-	    }
-	}
+        for ( ++cclp; cclflags[cclp] && cclp < lenccl; ++cclp )
+            {
+            /* reset "doesn't need processing" flag */
+            cclflags[cclp] = 0;
+            }
+        }
     }
 
 
@@ -332,10 +332,10 @@ void mkechar(int tch, int fwd[], int bck[])
      */
 
     if ( fwd[tch] != NIL )
-	bck[fwd[tch]] = bck[tch];
+        bck[fwd[tch]] = bck[tch];
 
     if ( bck[tch] != NIL )
-	fwd[bck[tch]] = fwd[tch];
+        fwd[bck[tch]] = fwd[tch];
 
     fwd[tch] = NIL;
     bck[tch] = NIL;

@@ -9,7 +9,7 @@
 
 /*
  *      Original Author: Janet Anderson
- *      Date:   	09-23-91
+ *      Date:           09-23-91
 */
 
 #include <stdlib.h>

@@ -5,10 +5,10 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* 
+/*
  * route vxWorks logMsg messages into the EPICS logging system
  *
  * Author: Jeff Hill
@@ -31,8 +31,8 @@ extern "C" {
 
 int logMsgToErrlog() { return 0;}
 
-static class errlogDevTimeInit 
-{ 
+static class errlogDevTimeInit
+{
 public:
     errlogDevTimeInit ();
 } errlogDevInstance;
@@ -48,19 +48,19 @@ static int errlogWrite ( DEV_HDR *, const char * pInBuf, int nbytes )
     return nbytes;
 }
 
-errlogDevTimeInit::errlogDevTimeInit () 
+errlogDevTimeInit::errlogDevTimeInit ()
 {
-    int errlogNo = iosDrvInstall ( 
+    int errlogNo = iosDrvInstall (
                     0, // create not supported
                     0, // remove not supported
                     reinterpret_cast < FUNCPTR > ( errlogOpen ),
                     0, // close is a noop
                     0, // read not supported
                     reinterpret_cast < FUNCPTR > ( errlogWrite ),
-                    0 // ioctl not supported 
+                    0 // ioctl not supported
                     );
     if ( errlogNo == ERROR ) {
-        errlogPrintf ( 
+        errlogPrintf (
             "Unable to install driver routing the vxWorks "
             "logging system to the EPICS logging system because \"%s\"\n",
             strerror ( errno ) );
@@ -68,7 +68,7 @@ errlogDevTimeInit::errlogDevTimeInit ()
     }
     DEV_HDR * pDev = static_cast < DEV_HDR * > ( calloc ( 1, sizeof ( *pDev ) ) );
     if ( ! pDev ) {
-        errlogPrintf ( 
+        errlogPrintf (
             "Unable to create driver data structure for routing the vxWorks "
             "logging system to the EPICS logging system because \"%s\"\n",
             strerror ( errno ) );
@@ -76,7 +76,7 @@ errlogDevTimeInit::errlogDevTimeInit ()
     }
     int status = iosDevAdd ( pDev, "/errlog/", errlogNo );
     if ( status < 0 ) {
-        errlogPrintf ( 
+        errlogPrintf (
             "Unable to install device routing the vxWorks "
             "logging system to the EPICS logging system because \"%s\"\n",
             strerror ( errno ) );
@@ -85,7 +85,7 @@ errlogDevTimeInit::errlogDevTimeInit ()
     }
     int fd = open ( "/errlog/any", O_WRONLY, 0 );
     if ( fd < 0 ) {
-        errlogPrintf ( 
+        errlogPrintf (
             "Unable to open fd routing the vxWorks "
             "logging system to the EPICS logging system because \"%s\"\n",
             strerror ( errno ) );
@@ -93,7 +93,7 @@ errlogDevTimeInit::errlogDevTimeInit ()
     }
     status = logFdAdd ( fd );
     if ( status != OK) {
-        errlogPrintf ( 
+        errlogPrintf (
             "Unable to install fd routing the vxWorks "
             "logging system to the EPICS logging system because \"%s\"\n",
             strerror ( errno ) );

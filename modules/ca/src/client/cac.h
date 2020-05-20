@@ -72,8 +72,8 @@ public:
     void release ( void * );
 private:
     tsFreeList < comBuf, 0x20 > freeList;
-	cacComBufMemoryManager ( const cacComBufMemoryManager & );
-	cacComBufMemoryManager & operator = ( const cacComBufMemoryManager & );
+    cacComBufMemoryManager ( const cacComBufMemoryManager & );
+    cacComBufMemoryManager & operator = ( const cacComBufMemoryManager & );
 };
 
 class notifyGuard {
@@ -339,8 +339,8 @@ private:
                     const char *pCtx, unsigned status );
     static const pExcepProtoStubTCP tcpExcepJumpTableCAC [];
 
-	cac ( const cac & );
-	cac & operator = ( const cac & );
+        cac ( const cac & );
+        cac & operator = ( const cac & );
 
     friend class tcpiiu;
 };

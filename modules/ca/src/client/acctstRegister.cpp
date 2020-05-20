@@ -60,7 +60,7 @@ struct AutoInit {
     AutoInit ();
 };
 
-AutoInit :: AutoInit () 
+AutoInit :: AutoInit ()
 {
     iocshRegister ( &acctstFuncDef, acctstCallFunc );
 }

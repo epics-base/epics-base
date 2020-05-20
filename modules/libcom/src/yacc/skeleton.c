@@ -4,17 +4,17 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 #include "defs.h"
 
-/*  If the skeleton is changed, the banner should be changed so that	*/
-/*  the altered version can be easily distinguished from the original.	*/
-/*									*/
-/*  The #defines included with the banner are there because they are	*/
-/*  useful in subsequent code.  The macros #defined in the header or	*/
-/*  the body either are not useful outside of semantic actions or	*/
-/*  are conditional.							*/
+/*  If the skeleton is changed, the banner should be changed so that    */
+/*  the altered version can be easily distinguished from the original.  */
+/*                                                                      */
+/*  The #defines included with the banner are there because they are    */
+/*  useful in subsequent code.  The macros #defined in the header or    */
+/*  the body either are not useful outside of semantic actions or       */
+/*  are conditional.                                                    */
 
 char *banner[] =
 {
@@ -31,18 +31,18 @@ char *banner[] =
 
 char *tables[] =
 {
-    "static short yylhs[];",	/* JRW */
-    "static short yylen[];",	/* JRW */
-    "static short yydefred[];",	/* JRW */
-    "static short yydgoto[];",	/* JRW */
-    "static short yysindex[];",	/* JRW */
-    "static short yyrindex[];",	/* JRW */
-    "static short yygindex[];",	/* JRW */
-    "static short yytable[];",	/* JRW */
-    "static short yycheck[];",	/* JRW */
+    "static short yylhs[];",    /* JRW */
+    "static short yylen[];",    /* JRW */
+    "static short yydefred[];", /* JRW */
+    "static short yydgoto[];",  /* JRW */
+    "static short yysindex[];", /* JRW */
+    "static short yyrindex[];", /* JRW */
+    "static short yygindex[];", /* JRW */
+    "static short yytable[];",  /* JRW */
+    "static short yycheck[];",  /* JRW */
     "#if YYDEBUG",
-    "static char *yyname[];",	/* JRW */
-    "static char *yyrule[];",	/* JRW */
+    "static char *yyname[];",   /* JRW */
+    "static char *yyrule[];",   /* JRW */
     "#endif",
     0
 };
@@ -61,18 +61,18 @@ char *header[] =
     "#define YYMAXDEPTH 500",
     "#endif",
     "#endif",
-    "#if YYDEBUG",				/* MRK */
-    "static int yydebug;",			/* JRW */
-    "#endif",					/* MRK */
-    "static int yynerrs;",			/* JRW */
-    "static int yyerrflag;",			/* JRW */
-    "static int yychar;",			/* JRW */
-    "static short *yyssp;",			/* JRW */
-    "static YYSTYPE *yyvsp;",			/* JRW */
-    "static YYSTYPE yyval;",			/* JRW */
-    "static YYSTYPE yylval;",			/* JRW */
-    "static short yyss[YYSTACKSIZE];",		/* JRW */
-    "static YYSTYPE yyvs[YYSTACKSIZE];",	/* JRW */
+    "#if YYDEBUG",                              /* MRK */
+    "static int yydebug;",                      /* JRW */
+    "#endif",                                   /* MRK */
+    "static int yynerrs;",                      /* JRW */
+    "static int yyerrflag;",                    /* JRW */
+    "static int yychar;",                       /* JRW */
+    "static short *yyssp;",                     /* JRW */
+    "static YYSTYPE *yyvsp;",                   /* JRW */
+    "static YYSTYPE yyval;",                    /* JRW */
+    "static YYSTYPE yylval;",                   /* JRW */
+    "static short yyss[YYSTACKSIZE];",          /* JRW */
+    "static YYSTYPE yyvs[YYSTACKSIZE];",        /* JRW */
     "#define yystacksize YYSTACKSIZE",
     0
 };
@@ -84,8 +84,8 @@ char *body[] =
     "#define YYREJECT goto yyabort",
     "#define YYACCEPT goto yyaccept",
     "#define YYERROR goto yyerrlab",
-    "static int",		/* JRW */
-    "yyparse(void)",		/* JRW */
+    "static int",               /* JRW */
+    "yyparse(void)",            /* JRW */
     "{",
     "    int yym, yyn, yystate;",
     "#if YYDEBUG",
@@ -291,12 +291,12 @@ write_section(char *section[])
     f = code_file;
     for (i = 0; (s = section[i]); ++i)
     {
-	++outline;
-	while ((c = *s))
-	{
-	    putc(c, f);
-	    ++s;
-	}
-	putc('\n', f);
+        ++outline;
+        while ((c = *s))
+        {
+            putc(c, f);
+            ++s;
+        }
+        putc('\n', f);
     }
 }

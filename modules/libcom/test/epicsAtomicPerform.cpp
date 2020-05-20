@@ -11,7 +11,7 @@
 #include "testMain.h"
 
 using std :: size_t;
-using namespace epics; 
+using namespace epics;
 using namespace atomic;
 
 class RefCtr {
@@ -36,59 +36,59 @@ private:
     static RefCtr m_noOwnership;
 };
 
-inline RefCtr :: RefCtr () 
+inline RefCtr :: RefCtr ()
 {
     epicsAtomicSetSizeT ( & m_cnt, 0 );
 }
 
-inline RefCtr :: ~RefCtr () 
-{ 
+inline RefCtr :: ~RefCtr ()
+{
     unsigned cnt = epicsAtomicGetSizeT ( & m_cnt );
-    assert ( cnt == 0u ); 
+    assert ( cnt == 0u );
 }
 
-inline void RefCtr :: reference () 
-{ 
-    epicsAtomicIncrSizeT ( & m_cnt ); 
+inline void RefCtr :: reference ()
+{
+    epicsAtomicIncrSizeT ( & m_cnt );
 }
 
-inline void RefCtr :: unreference () 
-{ 
-    epicsAtomicDecrSizeT ( & m_cnt ); 
+inline void RefCtr :: unreference ()
+{
+    epicsAtomicDecrSizeT ( & m_cnt );
 }
 
 RefCtr Ownership :: m_noOwnership;
 
-inline Ownership :: Ownership () : 
-    _pRefCtr ( & m_noOwnership ) 
+inline Ownership :: Ownership () :
+    _pRefCtr ( & m_noOwnership )
 {
     m_noOwnership.reference ();
 }
 
-inline Ownership :: Ownership ( RefCtr & refCtr ) : 
-    _pRefCtr ( & refCtr ) 
-{ 
-    refCtr.reference (); 
-} 
+inline Ownership :: Ownership ( RefCtr & refCtr ) :
+    _pRefCtr ( & refCtr )
+{
+    refCtr.reference ();
+}
 
-inline Ownership :: Ownership ( const Ownership & ownership ) : 
-    _pRefCtr ( ownership._pRefCtr ) 
-{ 
-    _pRefCtr->reference (); 
-} 
+inline Ownership :: Ownership ( const Ownership & ownership ) :
+    _pRefCtr ( ownership._pRefCtr )
+{
+    _pRefCtr->reference ();
+}
 
-inline Ownership :: ~Ownership () 
-{ 
-    _pRefCtr->unreference (); 
-} 
+inline Ownership :: ~Ownership ()
+{
+    _pRefCtr->unreference ();
+}
 
 inline Ownership & Ownership ::
     operator = ( const Ownership & ownership )
 {
     RefCtr * const pOldRefCtr = _pRefCtr;
     _pRefCtr = ownership._pRefCtr;
-    _pRefCtr->reference (); 
-    pOldRefCtr->unreference (); 
+    _pRefCtr->reference ();
+    pOldRefCtr->unreference ();
     return *this;
 }
 
@@ -99,46 +99,46 @@ inline Ownership retOwnership ( const Ownership & ownership )
 
 inline Ownership recurRetOwner10 ( const Ownership & ownershipIn )
 {
-    Ownership ownership = 
-        retOwnership ( 
-            retOwnership ( 
-                retOwnership ( 
-                    retOwnership ( 
+    Ownership ownership =
+        retOwnership (
+            retOwnership (
+                retOwnership (
+                    retOwnership (
                         retOwnership ( ownershipIn ) ) ) ) );
-    return retOwnership ( 
-                retOwnership ( 
-                    retOwnership ( 
-                        retOwnership ( 
+    return retOwnership (
+                retOwnership (
+                    retOwnership (
+                        retOwnership (
                             retOwnership ( ownership ) ) ) ) );
 }
 
 inline Ownership recurRetOwner100 ( const Ownership & ownershipIn )
 {
-    Ownership ownership = 
-            recurRetOwner10 ( 
-                recurRetOwner10 ( 
-                    recurRetOwner10 ( 
-                        recurRetOwner10 ( 
+    Ownership ownership =
+            recurRetOwner10 (
+                recurRetOwner10 (
+                    recurRetOwner10 (
+                        recurRetOwner10 (
                             recurRetOwner10 ( ownershipIn ) ) ) ) );
-    return recurRetOwner10 ( 
-            recurRetOwner10 ( 
-                recurRetOwner10 ( 
-                    recurRetOwner10 ( 
+    return recurRetOwner10 (
+            recurRetOwner10 (
+                recurRetOwner10 (
+                    recurRetOwner10 (
                         recurRetOwner10 ( ownership ) ) ) ) );
 }
 
 inline Ownership recurRetOwner1000 ( const Ownership & ownershipIn )
 {
-    Ownership ownership = 
-            recurRetOwner100 ( 
-                recurRetOwner100 ( 
-                    recurRetOwner100 ( 
-                        recurRetOwner100 ( 
-                            recurRetOwner100 ( ownershipIn ) ) ) ) );
-    return recurRetOwner100 ( 
-            recurRetOwner100 ( 
+    Ownership ownership =
+            recurRetOwner100 (
                 recurRetOwner100 (
-                    recurRetOwner100 ( 
+                    recurRetOwner100 (
+                        recurRetOwner100 (
+                            recurRetOwner100 ( ownershipIn ) ) ) ) );
+    return recurRetOwner100 (
+            recurRetOwner100 (
+                recurRetOwner100 (
+                    recurRetOwner100 (
                         recurRetOwner100 ( ownership ) ) ) ) );
 }
 
@@ -155,13 +155,13 @@ inline void passRefOwnership10 ( const Ownership & ownershipIn, Ownership & owne
     passRefOwnership ( ownershipTmp0, ownershipTmp1 );
     Ownership ownershipTmp2;
     passRefOwnership ( ownershipTmp1, ownershipTmp2 );
-    Ownership ownershipTmp3; 
+    Ownership ownershipTmp3;
     passRefOwnership ( ownershipTmp2, ownershipTmp3 );
     Ownership ownershipTmp4;
     passRefOwnership ( ownershipTmp3, ownershipTmp4 );
     Ownership ownershipTmp5;
     passRefOwnership ( ownershipTmp4, ownershipTmp5 );
-    Ownership ownershipTmp6; 
+    Ownership ownershipTmp6;
     passRefOwnership ( ownershipTmp5, ownershipTmp6 );
     Ownership ownershipTmp7;
     passRefOwnership ( ownershipTmp6, ownershipTmp7 );
@@ -178,13 +178,13 @@ inline void passRefOwnership100 ( const Ownership & ownershipIn, Ownership & own
     passRefOwnership10 ( ownershipTmp0, ownershipTmp1 );
     Ownership ownershipTmp2;
     passRefOwnership10 ( ownershipTmp1, ownershipTmp2 );
-    Ownership ownershipTmp3; 
+    Ownership ownershipTmp3;
     passRefOwnership10 ( ownershipTmp2, ownershipTmp3 );
     Ownership ownershipTmp4;
     passRefOwnership10 ( ownershipTmp3, ownershipTmp4 );
     Ownership ownershipTmp5;
     passRefOwnership10 ( ownershipTmp4, ownershipTmp5 );
-    Ownership ownershipTmp6; 
+    Ownership ownershipTmp6;
     passRefOwnership10 ( ownershipTmp5, ownershipTmp6 );
     Ownership ownershipTmp7;
     passRefOwnership10 ( ownershipTmp6, ownershipTmp7 );
@@ -201,13 +201,13 @@ inline void passRefOwnership1000 ( const Ownership & ownershipIn, Ownership & ow
     passRefOwnership100 ( ownershipTmp0, ownershipTmp1 );
     Ownership ownershipTmp2;
     passRefOwnership100 ( ownershipTmp1, ownershipTmp2 );
-    Ownership ownershipTmp3; 
+    Ownership ownershipTmp3;
     passRefOwnership100 ( ownershipTmp2, ownershipTmp3 );
     Ownership ownershipTmp4;
     passRefOwnership100 ( ownershipTmp3, ownershipTmp4 );
     Ownership ownershipTmp5;
     passRefOwnership100 ( ownershipTmp4, ownershipTmp5 );
-    Ownership ownershipTmp6; 
+    Ownership ownershipTmp6;
     passRefOwnership100 ( ownershipTmp5, ownershipTmp6 );
     Ownership ownershipTmp7;
     passRefOwnership100 ( ownershipTmp6, ownershipTmp7 );
@@ -224,14 +224,14 @@ public:
     OrdinaryIncr () : m_target ( 0 ) {}
     void run ();
     void diagnostic ( double delay );
-private:	
+private:
     T m_target;
 };
 
-// tests the time it takes to perform a call to an external 
-// function and also increment an integer word. The 
-// epicsInterruptIsInterruptContext function is an 
-// out-of-line function implemented in a sharable library 
+// tests the time it takes to perform a call to an external
+// function and also increment an integer word. The
+// epicsInterruptIsInterruptContext function is an
+// out-of-line function implemented in a sharable library
 // so hopefully it wont be optimized away.
 template < class T >
 inline void OrdinaryIncr < T > :: run ()
@@ -254,7 +254,7 @@ void OrdinaryIncr < T > :: diagnostic ( double delay )
     delay /= 10.0;
     delay *= 1e6;
     const char * const pName = typeid ( T ) . name ();
-    testDiag ( "raw incr of \"%s\" and a NOOP function call takes %f microseconds", 
+    testDiag ( "raw incr of \"%s\" and a NOOP function call takes %f microseconds",
                          pName, delay );
 }
 
@@ -264,7 +264,7 @@ public:
     AtomicIncr () : m_target ( 0 ) {}
     void run ();
     void diagnostic ( double delay );
-private:	
+private:
     T m_target;
 };
 
@@ -289,7 +289,7 @@ void AtomicIncr < T > :: diagnostic ( double delay )
     delay /= 10.0;
     delay *= 1e6;
     const char * const pName = typeid ( T ) . name ();
-    testDiag ( "epicsAtomicIncr \"%s\" takes %f microseconds", 
+    testDiag ( "epicsAtomicIncr \"%s\" takes %f microseconds",
                         pName, delay );
 }
 
@@ -303,7 +303,7 @@ inline int trueValue < int > () { return 1; }
 template <>
 inline int falseValue < int > () { return 0; }
 
-// size_t 
+// size_t
 template <>
 inline size_t trueValue < size_t > () { return 1u; }
 
@@ -312,11 +312,11 @@ inline size_t falseValue < size_t > () { return 0u; }
 
 // EpicsAtomicPtrT
 template <>
-inline EpicsAtomicPtrT trueValue < EpicsAtomicPtrT > () 
+inline EpicsAtomicPtrT trueValue < EpicsAtomicPtrT > ()
 { static char c; return & c; }
 
 template <>
-inline EpicsAtomicPtrT falseValue < EpicsAtomicPtrT > () 
+inline EpicsAtomicPtrT falseValue < EpicsAtomicPtrT > ()
 { return 0u; }
 
 template < class T >
@@ -325,7 +325,7 @@ public:
     AtomicCmpAndSwap () : m_target ( 0 ) {}
     void run ();
     void diagnostic ( double delay );
-private:	
+private:
     T m_target;
 };
 
@@ -350,7 +350,7 @@ void AtomicCmpAndSwap < T > :: diagnostic ( double delay )
     delay /= 10.0;
     delay *= 1e6;
     const char * const pName = typeid ( T ) . name ();
-    testDiag ( "epicsAtomicCmpAndSwap of \"%s\" takes %f microseconds", 
+    testDiag ( "epicsAtomicCmpAndSwap of \"%s\" takes %f microseconds",
                          pName, delay );
 }
 
@@ -360,7 +360,7 @@ public:
     AtomicSet () : m_target ( 0 ) {}
     void run ();
     void diagnostic ( double delay );
-private:	
+private:
     T m_target;
 };
 
@@ -385,8 +385,8 @@ void AtomicSet < T > :: diagnostic ( double delay )
     delay /= 10.0;
     delay *= 1e6;
     const char * const pName = typeid ( T ) . name ();
-    testDiag ( "epicsAtomicSet of \"%s\" takes %f microseconds", 
-		    pName, delay );
+    testDiag ( "epicsAtomicSet of \"%s\" takes %f microseconds",
+            pName, delay );
 }
 
 static const unsigned N = 10000;
@@ -421,7 +421,7 @@ void ownershipPassRefPerformance ()
 }
 
 template < class T >
-class Ten 
+class Ten
 {
 public:
     void run ();
@@ -475,7 +475,7 @@ void measurePerformance ()
     target.diagnostic ( delay );
 }
 
-template < class T > 
+template < class T >
 void measure ()
 {
     measurePerformance < typename Ten < T > :: Hundred > ();

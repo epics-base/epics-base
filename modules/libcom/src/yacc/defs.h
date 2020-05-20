@@ -4,59 +4,59 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 
 
-/*  machine-dependent definitions			*/
-/*  the following definitions are for the Tahoe		*/
-/*  they might have to be changed for other machines	*/
+/*  machine-dependent definitions                       */
+/*  the following definitions are for the Tahoe         */
+/*  they might have to be changed for other machines    */
 
-/*  MAXCHAR is the largest unsigned character value	*/
-/*  MAXSHORT is the largest value of a C short		*/
-/*  MINSHORT is the most negative value of a C short	*/
-/*  MAXTABLE is the maximum table size			*/
-/*  BITS_PER_WORD is the number of bits in a C unsigned	*/
-/*  WORDSIZE computes the number of words needed to	*/
-/*	store n bits					*/
-/*  BIT returns the value of the n-th bit starting	*/
-/*	from r (0-indexed)				*/
-/*  SETBIT sets the n-th bit starting from r		*/
+/*  MAXCHAR is the largest unsigned character value     */
+/*  MAXSHORT is the largest value of a C short          */
+/*  MINSHORT is the most negative value of a C short    */
+/*  MAXTABLE is the maximum table size                  */
+/*  BITS_PER_WORD is the number of bits in a C unsigned */
+/*  WORDSIZE computes the number of words needed to     */
+/*      store n bits                                    */
+/*  BIT returns the value of the n-th bit starting      */
+/*      from r (0-indexed)                              */
+/*  SETBIT sets the n-th bit starting from r            */
 
-#define	MAXCHAR		255
-#define	MAXSHORT	32767
-#define MINSHORT	-32768
-#define MAXTABLE	32500
-#define BITS_PER_WORD	32
-#define	WORDSIZE(n)	(((n)+(BITS_PER_WORD-1))/BITS_PER_WORD)
-#define	BIT(r, n)	((((r)[(n)>>5])>>((n)&31))&1)
-#define	SETBIT(r, n)	((r)[(n)>>5]|=((unsigned)1<<((n)&31)))
+#define MAXCHAR         255
+#define MAXSHORT        32767
+#define MINSHORT        -32768
+#define MAXTABLE        32500
+#define BITS_PER_WORD   32
+#define WORDSIZE(n)     (((n)+(BITS_PER_WORD-1))/BITS_PER_WORD)
+#define BIT(r, n)       ((((r)[(n)>>5])>>((n)&31))&1)
+#define SETBIT(r, n)    ((r)[(n)>>5]|=((unsigned)1<<((n)&31)))
 
 
 /*  character names  */
 
-#define	NUL		'\0'    /*  the null character  */
-#define	NEWLINE		'\n'    /*  line feed  */
-#define	SP		' '     /*  space  */
-#define	BS		'\b'    /*  backspace  */
-#define	HT		'\t'    /*  horizontal tab  */
-#define	VT		'\013'  /*  vertical tab  */
-#define	CR		'\r'    /*  carriage return  */
-#define	FF		'\f'    /*  form feed  */
-#define	QUOTE		'\''    /*  single quote  */
-#define	DOUBLE_QUOTE	'\"'    /*  double quote  */
-#define	BACKSLASH	'\\'    /*  backslash  */
+#define NUL             '\0'    /*  the null character  */
+#define NEWLINE         '\n'    /*  line feed  */
+#define SP              ' '     /*  space  */
+#define BS              '\b'    /*  backspace  */
+#define HT              '\t'    /*  horizontal tab  */
+#define VT              '\013'  /*  vertical tab  */
+#define CR              '\r'    /*  carriage return  */
+#define FF              '\f'    /*  form feed  */
+#define QUOTE           '\''    /*  single quote  */
+#define DOUBLE_QUOTE    '\"'    /*  double quote  */
+#define BACKSLASH       '\\'    /*  backslash  */
 
 
 /* defines for constructing filenames */
 
-#define CODE_SUFFIX	".code.c"
-#define	DEFINES_SUFFIX	".tab.h"
-#define	OUTPUT_SUFFIX	".tab.c"
-#define	VERBOSE_SUFFIX	".output"
+#define CODE_SUFFIX     ".code.c"
+#define DEFINES_SUFFIX  ".tab.h"
+#define OUTPUT_SUFFIX   ".tab.c"
+#define VERBOSE_SUFFIX  ".output"
 
 
 /* keyword codes */
@@ -93,25 +93,25 @@
 
 /*  character macros  */
 
-#define IS_IDENT(c)	(isalnum(c) || (c) == '_' || (c) == '.' || (c) == '$')
-#define	IS_OCTAL(c)	((c) >= '0' && (c) <= '7')
-#define	NUMERIC_VALUE(c)	((c) - '0')
+#define IS_IDENT(c)     (isalnum(c) || (c) == '_' || (c) == '.' || (c) == '$')
+#define IS_OCTAL(c)     ((c) >= '0' && (c) <= '7')
+#define NUMERIC_VALUE(c)        ((c) - '0')
 
 
 /*  symbol macros  */
 
-#define ISTOKEN(s)	((s) < start_symbol)
-#define ISVAR(s)	((s) >= start_symbol)
+#define ISTOKEN(s)      ((s) < start_symbol)
+#define ISVAR(s)        ((s) >= start_symbol)
 
 
 /*  storage allocation macros  */
 
-#define CALLOC(k,n)	(calloc((unsigned)(k),(unsigned)(n)))
-#define	FREE(x)		(free((char*)(x)))
-#define MALLOC(n)	(malloc((unsigned)(n)))
-#define	NEW(t)		((t*)allocate(sizeof(t)))
-#define	NEW2(n,t)	((t*)allocate((unsigned)((n)*sizeof(t))))
-#define REALLOC(p,n)	(realloc((char*)(p),(unsigned)(n)))
+#define CALLOC(k,n)     (calloc((unsigned)(k),(unsigned)(n)))
+#define FREE(x)         (free((char*)(x)))
+#define MALLOC(n)       (malloc((unsigned)(n)))
+#define NEW(t)          ((t*)allocate(sizeof(t)))
+#define NEW2(n,t)       ((t*)allocate((unsigned)((n)*sizeof(t))))
+#define REALLOC(p,n)    (realloc((char*)(p),(unsigned)(n)))
 
 
 /*  the structure of a symbol table entry  */

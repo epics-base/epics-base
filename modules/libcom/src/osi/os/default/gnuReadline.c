@@ -89,7 +89,7 @@ osdReadline (const char *prompt, struct readlineContext *context)
             }
             if ((linelen + 1) >= linesize) {
                 char *cp;
-    
+
                 linesize += 50;
                 cp = (char *)realloc(line, linesize);
                 if (cp == NULL) {

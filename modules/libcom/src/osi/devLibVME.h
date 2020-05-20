@@ -82,9 +82,9 @@ LIBCOM_API long devAddressMap(void);
  * \return 0, or an error status value.
  */
 LIBCOM_API long devBusToLocalAddr (
-		epicsAddressType addrType,
-		size_t busAddr,
-		volatile void **ppLocalAddr);
+    epicsAddressType    addrType,
+    size_t              busAddr,
+    volatile void       **ppLocalAddr);
 
 /** \brief Probe the bus for reading from a specific address.
  *
@@ -114,9 +114,9 @@ LIBCOM_API long devReadProbe (
  * \return 0 if no devices respond, or an error status value.
  */
 LIBCOM_API long devNoResponseProbe(
-			epicsAddressType addrType,
-			size_t base,
-			size_t size
+    epicsAddressType    addrType,
+    size_t              base,
+    size_t              size
 );
 
 /** \brief Probe the bus for writing to a specific address.
@@ -147,11 +147,11 @@ LIBCOM_API long devWriteProbe (
  * \return 0, or an error status.
  */
 LIBCOM_API long devRegisterAddress(
-			const char *pOwnerName,
-			epicsAddressType addrType,
-			size_t logicalBaseAddress,
-			size_t size,
-			volatile void **pPhysicalAddress);
+    const char          *pOwnerName,
+    epicsAddressType    addrType,
+    size_t              logicalBaseAddress,
+                        size_t size,
+    volatile void       **pPhysicalAddress);
 
 /** \brief Release a bus address range previously registered.
  *
@@ -163,9 +163,9 @@ LIBCOM_API long devRegisterAddress(
  * \return 0, or an error status.
  */
 LIBCOM_API long devUnregisterAddress(
-			epicsAddressType addrType,
-			size_t logicalBaseAddress,
-			const char *pOwnerName);
+    epicsAddressType    addrType,
+    size_t              logicalBaseAddress,
+    const char          *pOwnerName);
 
 /** \brief Allocate and register an unoccupied address block.
  *
@@ -186,11 +186,11 @@ LIBCOM_API long devUnregisterAddress(
  * \return 0, or an error status value.
  */
 LIBCOM_API long devAllocAddress(
-			const char *pOwnerName,
-			epicsAddressType addrType,
-			size_t size,
-			unsigned alignment, /*n ls bits zero in addr*/
-			volatile void **pLocalAddress);
+    const char          *pOwnerName,
+    epicsAddressType    addrType,
+    size_t              size,
+    unsigned            alignment, /*n ls bits zero in addr*/
+    volatile            void **pLocalAddress);
 
 /** \name VME Interrupt Management
  * Routines to manage VME interrupts.
@@ -212,9 +212,9 @@ LIBCOM_API long devAllocAddress(
  * \return 0, or an error status value.
  */
 LIBCOM_API long devConnectInterruptVME(
-			unsigned vectorNumber,
-			void (*pFunction)(void *),
-			void  *parameter);
+    unsigned            vectorNumber,
+    void                (*pFunction)(void *),
+    void                *parameter);
 
 /** \brief Disconnect an ISR from its VME interrupt vector.
  *
@@ -230,8 +230,8 @@ LIBCOM_API long devConnectInterruptVME(
  * \return 0, or an error status value.
  */
 LIBCOM_API long devDisconnectInterruptVME(
-			unsigned vectorNumber,
-			void (*pFunction)(void *));
+    unsigned            vectorNumber,
+    void                (*pFunction)(void *));
 
 /** \brief Determine if a VME interrupt vector is in use.
  *
@@ -320,9 +320,9 @@ LIBCOM_API void devLibA24Free(void *pBlock);
  * \return Returns success or error.
  */
 LIBCOM_API long devConnectInterruptISA(
-			unsigned interruptLevel,
-			void (*pFunction)(void *),
-			void  *parameter);
+    unsigned            interruptLevel,
+    void                (*pFunction)(void *),
+    void                *parameter);
 
 /**
  * Disconnect ISR from a ISA interrupt level.
@@ -332,8 +332,8 @@ LIBCOM_API long devConnectInterruptISA(
  * \return returns success or error.
  */
 LIBCOM_API long devDisconnectInterruptISA(
-			unsigned interruptLevel,
-			void (*pFunction)(void *));
+    unsigned            interruptLevel,
+    void                (*pFunction)(void *));
 
 /**
  * Determine if an ISA interrupt level is in use
@@ -374,10 +374,10 @@ typedef enum {intVME, intVXI, intISA} epicsInterruptType;
  * in a future release.
  */
 LIBCOM_API long devConnectInterrupt(
-			epicsInterruptType intType,
-			unsigned vectorNumber,
-			void (*pFunction)(void *),
-			void  *parameter);
+    epicsInterruptType  intType,
+    unsigned            vectorNumber,
+    void                (*pFunction)(void *),
+    void                *parameter);
 
 /**
  * \note This routine has been deprecated. It exists
@@ -387,9 +387,9 @@ LIBCOM_API long devConnectInterrupt(
  * be removed in a future release.
  */
 LIBCOM_API long devDisconnectInterrupt(
-			epicsInterruptType      intType,
-			unsigned                vectorNumber,
-			void		        (*pFunction)(void *));
+    epicsInterruptType  intType,
+    unsigned            vectorNumber,
+    void                (*pFunction)(void *));
 
 /**
  * \note This routine has been deprecated. It exists

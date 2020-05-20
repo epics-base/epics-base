@@ -156,7 +156,7 @@ int dbel ( const char *pname, unsigned level )
     if ( ! pname ) return DB_EVENT_OK;
     status = dbNameToAddr ( pname, &addr );
     if ( status != 0 ) {
-	    errMessage ( status, " dbNameToAddr failed" );
+        errMessage ( status, " dbNameToAddr failed" );
         return DB_EVENT_ERROR;
     }
 
@@ -165,7 +165,7 @@ int dbel ( const char *pname, unsigned level )
     pevent = (struct evSubscrip *) ellFirst ( &addr.precord->mlis );
 
     if ( ! pevent ) {
-	    printf ( "\"%s\": No PV event subscriptions ( monitors ).\n", pname );
+        printf ( "\"%s\": No PV event subscriptions ( monitors ).\n", pname );
         UNLOCKREC (addr.precord);
         return DB_EVENT_OK;
     }
@@ -177,14 +177,14 @@ int dbel ( const char *pname, unsigned level )
         pdbFldDes = dbChannelFldDes(pevent->chan);
 
         if ( level > 0 ) {
-	        printf ( "%4.4s", pdbFldDes->name );
+            printf ( "%4.4s", pdbFldDes->name );
 
-	        printf ( " { " );
-                if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
-                if ( pevent->select & DBE_LOG ) printf( "LOG " );
-                if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
-                if ( pevent->select & DBE_PROPERTY ) printf( "PROPERTY " );
-	        printf ( "}" );
+            printf ( " { " );
+            if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
+            if ( pevent->select & DBE_LOG ) printf( "LOG " );
+            if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
+            if ( pevent->select & DBE_PROPERTY ) printf( "PROPERTY " );
+            printf ( "}" );
 
             if ( pevent->npend ) {
                 printf ( " undelivered=%ld", pevent->npend );
@@ -239,7 +239,7 @@ int dbel ( const char *pname, unsigned level )
                     ( void * ) pevent->ev_que->evUser );
             }
 
-	        printf( "\n" );
+            printf( "\n" );
         }
 
             pevent = (struct evSubscrip *) ellNext ( &pevent->node );
@@ -371,7 +371,7 @@ void db_close_events (dbEventCtx ctx)
  */
 static struct event_que * create_ev_que ( struct event_user * const evUser )
 {
-    struct event_que * const ev_que = (struct event_que *) 
+    struct event_que * const ev_que = (struct event_que *)
         freeListCalloc ( dbevEventQueueFreeList );
     if ( ! ev_que ) {
         return NULL;
@@ -415,7 +415,7 @@ dbEventSubscription db_add_event (
     while ( TRUE ) {
         int success = 0;
         LOCKEVQUE ( ev_que );
-        success = ( ev_que->quota + ev_que->nCanceled < 
+        success = ( ev_que->quota + ev_que->nCanceled <
                                 EVENTQUESIZE - EVENTENTRIES );
         if ( success ) {
             ev_que->quota += EVENTENTRIES;
@@ -1097,7 +1097,7 @@ int db_start_events (
 /*
  * db_event_change_priority()
  */
-void db_event_change_priority ( dbEventCtx ctx, 
+void db_event_change_priority ( dbEventCtx ctx,
                                         unsigned epicsPriority )
 {
     struct event_user * const evUser = ( struct event_user * ) ctx;

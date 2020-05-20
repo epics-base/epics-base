@@ -85,56 +85,72 @@ support read routine normally returns the status from C<dbGetLink()>.
 
 =head3 Input Simulation Fields
 
-The B<SIMM> field controls simulation mode. It has either the value YES or NO.
-By setting this field to YES, the record can be switched into simulation mode
-of operation. While in simulation mode, input will be obtained from SIOL
-instead of INP.
+The B<SIMM> field controls simulation mode.
+By setting this field to YES or RAW, the record can be switched into
+simulation mode of operation.
+While in simulation mode, input will be obtained from SIOL instead of INP.
 
-Ths B<SIML> specifies the simulation mode location. This field can be a
+The B<SIML> field specifies the simulation mode location. This field can be a
 constant, a database link, or a channel access link. If SIML is a database or
 channel access link, then SIMM is read from SIML. If SIML is a constant link
-then SIMM is initialized with the constant value but can be changed via
-dbPuts.
+then SIMM is initialized with the constant value, but can be changed via
+database or channel access puts.
 
-Ths B<SVAL> field contains the simulation value. This is the record's input
+The B<SVAL> field contains the simulation value. This is the record's input
 value, in engineering units, when the record is switched into simulation mode,
-i.e. when SIMM is set to YES.
+i.e., SIMM is set to YES or RAW. If the record type supports conversion,
+setting SIMM to RAW causes SVAL to be written to RVAL and the conversion to
+be done.
 
 The B<SIOL> field is a link that can be used to fetch the simulation value. The
 link can be a constant, a database link, or a channel access link. If SIOL is a
 database or channel access link, then SVAL is read from SIOL. If SIOL is a
 constant link then SVAL is initialized with the constant value but can be
-changed via dbPuts.
+changed via database or channel access puts.
 
 The B<SIMS> field specifies the simulation mode alarm severity. When this
 field is set to a value other than NO_ALARM and the record is in simulation
-mode, it will be put into alarm with this severity and a status of SIMM.
+mode, it will be put into alarm with this severity and a status of SIMM_ALARM.
+
+The B<SDLY> field specifies a delay (in seconds) to implement asynchronous
+processing in simulation mode. A positive SDLY value will be used as delay
+between the first and second phase of processing in simulation mode.
+A negative value (default) specifies synchronous processing.
+
+The B<SSCN> field specifies the SCAN mechanism to be used in simulation mode.
+This is specifically useful for 'I/O Intr' scanned records, which would
+otherwise never be scanned in simulation mode.
 
 =head3 Simulation Mode for Input Records
 
 An input record can be switched into simulation mode of operation by setting
-the value of SIMM to YES or RAW. During simulation, the record will be put
-into alarm with a severity of SIMS and a status of SIMM_ALARM. While in
-simulation mode, input values will be read from SIOL instead of INP:
+the value of SIMM to YES or RAW.
+During simulation, the record will be put into alarm with a severity of SIMS
+and a status of SIMM_ALARM.
 
-           -- (SIMM = NO?) INP (if supported and directed by device support, -> RVAL -- convert -> VAL), (else -> VAL)
-         /
-
+           --  (SIMM = NO?)
+         /         (if supported and directed by device support,
+        /              INP -> RVAL -- convert -> VAL),
+                   (else INP -> VAL)
  SIML -> SIMM
 
          \
-          -- (SIMM = YES?) SIOL -> SVAL -> VAL
+           --  (SIMM = YES?) SIOL -> SVAL -> VAL
            \
              -- (SIMM = RAW?) SIOL -> SVAL -> RVAL -- convert -> VAL
 
-A record can be switched into simulation mode of operation by setting the
-value of SIMM to YES. During simulation, the record will be put into alarm
-with a severity of SIMS and a status of SIMM_ALARM. While in simulation mode,
-input values, in engineering units, will be obtained from SIOL instead of INP.
-Also, while the record is in simulation mode, there will be no raw value
-conversion and no calls to device support when the record is processed.
+If SIMM is set to YES, the input value, in engineering units, will be obtained
+from SIOL instead of INP and directly written to the VAL field.
+If SIMM is set to RAW, the value read through SIOL will be truncated and
+written to the RVAL field, followed by the regular raw value conversion.
+While the record is in simulation mode, there will be no calls to device
+support when the record is processed.
 
-Normally input records contain a private readValue() routine which performs
+If SIOL contains a link, a TSE setting of "time from device" (-2) is honored
+in simulation mode by taking the time stamp from the record that SIOL points
+to.
+
+Normally input records contain a private C<readValue()> routine which performs
 the following steps:
 
 =over
@@ -159,19 +175,30 @@ return code, and return.
 
 =item *
 
-If SIMM is YES, then call C<dbGetLink()> to read the input value from SIOL
-into SVAL. If success, then set VAL to SVAL and UDF to FALSE and set status to
-2 (don't convert) if input record supports conversion. If SIMS is greater than
-zero, set alarm status to SIMM and severity to SIMS. Set status to the return
-code from recGblGetLinkValue and return.
+If SIMM is YES or RAW, then
+
+=over
 
 =item *
 
-If SIMM is RAW, then call C<dbGetLink()> to read the input value from SIOL
-into SVAL. If success, then set RVAL to SVAL and UDF to FALSE and set status
-to 0 (convert) if input record supports conversion. If SIMS is greater than
-zero, set alarm status to SIMM and severity to SIMS. Set status to the return
-code from recGblGetLinkValue and return.
+Set alarm status to SIMM_ALARM and severity to SIMS,
+if SIMS is greater than zero.
+
+=item *
+
+If the record simulation processing is synchronous (SDLY < 0) or the record is
+in the second phase of an asynchronous processing, call C<dbGetLink()>
+to read the input value from SIOL into SVAL.
+Set status to the return code from C<dbGetLink()>.
+If the call succeeded and SIMM is YES, write the value to VAL and set the
+status to 2 (don't convert),
+if SIMM is RAW and the record type supports conversion, cast the value to RVAL
+and leave the status as 0 (convert).
+
+Otherwise (record is in first phase of an asynchronous processing), set up a
+callback processing with the delay specified in SDLY.
+
+=back
 
 =item *
 

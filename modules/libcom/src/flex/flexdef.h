@@ -43,11 +43,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#ifdef _WIN32
-#  include <io.h>
-#else
-#  include <unistd.h>
-#endif
+#include <osiUnistd.h>
 
 #ifdef __GNUC__
 #define NORETURN __attribute__((noreturn))
@@ -827,8 +823,4 @@ extern void stack1 (int, int, int, int);
 
 extern int yylex ();
 
-
-/* The Unix kernel calls used here */
-
 #endif /* INC_flexdef_H */
-

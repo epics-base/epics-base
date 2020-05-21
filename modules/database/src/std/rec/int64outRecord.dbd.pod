@@ -288,28 +288,20 @@ monitoring deadband functionality.
         interest(3)
     }
 
-=head3 Simulation Mode
+=head3 Simulation Mode Parameters
 
-The record provides several fields to support simulation of absent hardware.
-If the SIML field is set it is used to read a value into the SIMM field,
-which controls whether simulation is used or not:
+The following fields are used to operate the record in simulation mode.
 
-=over
+If SIMM (fetched through SIML) is YES, the record is put in SIMS
+severity and the value is written through SIOL.
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
 
-=item *
-SIMM must be zero (C<NO>) for the record to write a value to the device
-support.
+See L<Output Simulation Fields|dbCommonOutput/Output Simulation Fields>
+for more information on simulation mode and its fields.
 
-=item *
-If SIMM is C<YES> and the SIOL link field is set, the value in engineering
-units is written using the link.
-
-=back
-
-The SIMS field can be set to give the record an alarm severity while it is in
-simulation mode.
-
-=fields SIML, SIMM, SIOL, SIMS
+=fields SIML, SIMM, SIOL, SIMS, SDLY, SSCN
 
 =cut
 

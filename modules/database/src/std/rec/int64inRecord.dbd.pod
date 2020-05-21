@@ -247,29 +247,20 @@ monitoring deadband functionality.
         interest(3)
     }
 
-=head3 Simulation Mode
+=head3 Simulation Mode Parameters
 
-The record provides several fields to support simulation of absent hardware.
-If the SIML field is set it is used to read a value into the SIMM field, which
-controls whether simulation is used or not:
+The following fields are used to operate the record in simulation mode.
 
-=over
+If SIMM (fetched through SIML) is YES, the record is put in SIMS
+severity and the value is fetched through SIOL (buffered in SVAL).
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
 
-=item *
-SIMM must be zero (C<NO>) for the record to request a value from the device
-support.
+See L<Input Simulation Fields|dbCommonInput/Input Simulation Fields>
+for more information on simulation mode and its fields.
 
-=item *
-If SIMM is C<YES> and the SIOL link field is set, a simulated value in
-engineering units is read using the link into the SVAL field, from where it will
-subsequently be copied into the VAL field.
-
-=back
-
-The SIMS field can be set to give the record an alarm severity while it is in
-simulation mode.
-
-=fields SIML, SIMM, SIOL, SVAL, SIMS
+=fields SIML, SIMM, SIOL, SVAL, SIMS, SDLY, SSCN
 
 =cut
 
@@ -384,13 +375,29 @@ If PACT is FALSE, read the value, honoring simulation mode:
 =item * If SIMM is C<NO>,
 call the device support C<read_int64in> routine and return.
 
-=item * If SIMM is C<YES>,
-read the simulated value into SVAL using the SIOL link,
-then copy the value into VAL and set UDF to 0 on success.
+=item * If SIMM is C<YES>, then
+
+=over
+
+=item *
+
+Set alarm status to SIMM_ALARM and severity to SIMS,
+if SIMS is greater than zero.
+
+=item *
+
+If the record simulation processing is synchronous (SDLY < 0) or the record is
+in the second phase of an asynchronous processing, call C<dbGetLink()>
+to read the input value from SIOL into SVAL.
+Set status to the return code from C<dbGetLink()>.
+If the call succeeded, write the value to VAL and set UDF to 0.
+
+Otherwise (record is in first phase of an asynchronous processing), set up a
+callback processing with the delay specified in SDLY.
+
+=back
 
 =item * Raise an alarm for other values of SIMM.
-
-=item * Set the record to the severity configured in SIMS.
 
 =back
 

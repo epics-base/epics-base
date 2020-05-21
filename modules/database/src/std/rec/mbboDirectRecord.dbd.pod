@@ -163,7 +163,7 @@ description (DESC) fields.
         interest(1)
     }
 
-=head3 Run-time and Simulation Mode Parameters
+=head3 Run-time Parameters
 
 These parameters are used by the run-time code for processing the mbbo Direct
 record.
@@ -175,10 +175,20 @@ MLST holds the value when the last monitor for value change was triggered.
 
 =fields NOBT, ORAW, MASK, MLST
 
-The following fields are used to operate the mbboDirect record in the simulation
-mode. See L<Simulation Mode> for more information on the simulation mode fields.
+=head3 Simulation Mode Parameters
 
-=fields SIOL, SIML, SIMM, SIMS, SSCN, SDLY
+The following fields are used to operate the record in simulation mode.
+
+If SIMM (fetched through SIML) is YES, the record is put in SIMS
+severity and the value is written through SIOL, without conversion.
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
+
+See L<Output Simulation Fields|dbCommonOutput/Output Simulation Fields>
+for more information on simulation mode and its fields.
+
+=fields SIML, SIMM, SIOL, SIMS, SDLY, SSCN
 
 =cut
 

@@ -155,23 +155,31 @@ for more on the record name (NAME) and description (DESC) fields.
 
 =fields NAME, DESC
 
-=head3 Run-time and Simulation Mode Parameters
+=head3 Run-time Parameters
 
 The old value field (OVAL) of the string input is used to implement value change
 monitors for VAL. If VAL is not equal to OVAL, then monitors are triggered.
 
 =fields OVAL
 
-The following fields are used to operate the string output in the simulation
-mode. See
-L<Simulation Mode>
-for more information on these fields.
+=head3 Simulation Mode Parameters
 
-=fields SIOL, SIML, SIMM, SIMS, SSCN, SDLY
+The following fields are used to operate the record in simulation mode.
+
+If SIMM (fetched through SIML) is YES, the record is put in SIMS
+severity and the value is written through SIOL.
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
+
+See L<Output Simulation Fields|dbCommonOutput/Output Simulation Fields>
+for more information on simulation mode and its fields.
+
+=fields SIML, SIMM, SIOL, SIMS, SDLY, SSCN
 
 =cut
 
-	field(SIOL,DBF_OUTLINK) {
+        field(SIOL,DBF_OUTLINK) {
 		prompt("Simulation Output Link")
 		promptgroup("90 - Simulate")
 		interest(1)

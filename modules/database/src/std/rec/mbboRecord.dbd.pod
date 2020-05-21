@@ -145,7 +145,7 @@ common to all record types.
 
 =fields UNSV, COSV, IVOA, IVOV, ZRSV, ONSV, TWSV, THSV, FRSV, FVSV, SXSV, SVSV, EISV, NISV, TESV, ELSV, TVSV, TTSV, FTSV, FFSV
 
-=head3 Run-Time and Simulation Mode Parameters
+=head3 Run-Time Parameters
 
 These parameters are used by the run-time code for processing the multi-bit
 binary output.
@@ -164,15 +164,24 @@ for converting VAL to RVAL.
 
 =fields NOBT, ORAW, MASK, LALM, MLST, SDEF
 
-The following fields are used to operate the mbbo record in the simulation mode.
-See L<Fields Common to Many Record Types> for more information on the simulation
-mode fields.
+=head3 Simulation Mode Parameters
 
-=fields SIOL, SIML, SIMM, SIMS, SSCN, SDLY
+The following fields are used to operate the record in simulation mode.
+
+If SIMM (fetched through SIML) is YES, the record is put in SIMS
+severity and the value is written through SIOL, without conversion.
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
+
+See L<Output Simulation Fields|dbCommonOutput/Output Simulation Fields>
+for more information on simulation mode and its fields.
+
+=fields SIML, SIMM, SIOL, SIMS, SDLY, SSCN
 
 =cut
 
-	include "dbCommon.dbd"
+        include "dbCommon.dbd"
     %/* Declare Device Support Entry Table */
     %struct mbboRecord;
     %typedef struct mbbodset {

@@ -617,14 +617,24 @@ SDEF is used by record support to save time if no states are defined.
 
 =head3 Simulation Mode Parameters
 
-The following fields are used to operate the mbbi record in the simulation mode.
-See L<Fields Common to Many Record Types> for more information on these fields.
+The following fields are used to operate the record in simulation mode.
 
-=fields SIOL, SVAL, SIML, SIMM, SIMS, SSCN, SDLY
+If SIMM (fetched through SIML) is YES or RAW, the record is put in SIMS
+severity and the value is fetched through SIOL (buffered in SVAL).
+If SIMM is YES, SVAL is written to VAL without conversion,
+if SIMM is RAW, SVAL is trancated to RVAL and converted.
+SSCN sets a different SCAN mechanism to use in simulation mode.
+SDLY sets a delay (in sec) that is used for asynchronous simulation
+processing.
+
+See L<Input Simulation Fields|dbCommonInput/Input Simulation Fields>
+for more information on simulation mode and its fields.
+
+=fields SIML, SIMM, SIOL, SVAL, SIMS, SDLY, SSCN
 
 =cut
 
-	field(SIOL,DBF_INLINK) {
+        field(SIOL,DBF_INLINK) {
 		prompt("Simulation Input Link")
 		promptgroup("90 - Simulate")
 		interest(1)

@@ -142,27 +142,36 @@ If IVOA not one of the above, an error message is generated.
 =back
 
 
-=head3 Simulation Fields
+=head3 Output Simulation Fields
 
 The B<SIMM> field controls simulation mode. It has either the value YES or NO.
 By setting this field to YES, the record can be switched into simulation mode
 of operation. While in simulation mode, output will be forwarded through SIOL
 instead of OUT.
 
-Ths B<SIML> specifies the simulation mode location. This field can be a
+The B<SIML> field specifies the simulation mode location. This field can be a
 constant, a database link, or a channel access link. If SIML is a database or
 channel access link, then SIMM is read from SIML. If SIML is a constant link
-then SIMM is initialized with the constant value but can be changed via
-dbPuts.
+then SIMM is initialized with the constant value, but can be changed via
+database or channel access puts.
 
 The B<SIOL> field is a link that the output value is written to when the record
 is in simulation mode.
 
 The B<SIMS> field specifies the simulation mode alarm severity. When this
 field is set to a value other than NO_ALARM and the record is in simulation
-mode, it will be put into alarm with this severity and a status of SIMM.
+mode, it will be put into alarm with this severity and a status of SIMM_ALARM.
 
-=head3 Simulation Mode
+The B<SDLY> field specifies a delay (in seconds) to implement asynchronous
+processing in simulation mode. A positive SDLY value will be used as delay
+between the first and second phase of processing in simulation mode.
+A negative value (default) specifies synchronous processing.
+
+The B<SSCN> field specifies the SCAN mechanism to be used in simulation mode.
+This is specifically useful for 'I/O Intr' scanned records, which would
+otherwise never be scanned in simulation mode.
+
+=head3 Simulation Mode for Output Records
 
 An output record can be switched into simulation mode of operation by setting
 the value of SIMM to YES. During simulation, the record will be put into alarm
@@ -198,14 +207,33 @@ return code, and return.
 
 =item *
 
-If SIMM is YES, then call C<dbPutLink()> to write the output value from VAL or
-OVAL to SIOL. Set alarm status to SIMM and severity to SIMS, if SIMS is
-greater than zero. Set status to the return code from C<dbPutLink()> and
-return.
+If SIMM is YES, then
+
+=over
 
 =item *
 
-If SIMM not one of the above, a SOFT alarm with a severity of INVALID is
+Set alarm status to SIMM_ALARM and severity to SIMS,
+if SIMS is greater than zero.
+
+=item *
+
+If the record simulation processing is synchronous (SDLY < 0) or the record is
+in the second phase of an asynchronous processing, call C<dbPutLink()>
+to write the output value from VAL or OVAL to SIOL.
+
+Otherwise (record is in first phase of an asynchronous processing), set up a
+callback processing with the delay specified in SDLY.
+
+=item *
+
+Set status to the return code from C<dbPutLink()> and return.
+
+=back
+
+=item *
+
+If SIMM is not YES or NO, a SOFT alarm with a severity of INVALID is
 raised, and return status is set to -1.
 
 =back

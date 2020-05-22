@@ -223,7 +223,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
             return status;
 
         if (pnRequest && *pnRequest <= 0)
-            return S_db_emptyArray;
+            return S_db_badField;
     }
 
     if (!status && precord != dbChannelRecord(chan))

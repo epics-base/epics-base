@@ -958,7 +958,7 @@ long dbGet(DBADDR *paddr, short dbrType,
             DBADDR localAddr = *paddr; /* Structure copy */
 
             if (no_elements < 1) {
-                status = S_db_emptyArray;
+                status = S_db_badField;
                 goto done;
             }
 

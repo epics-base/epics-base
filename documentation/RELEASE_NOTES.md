@@ -14,6 +14,17 @@ release.
 
 ## EPICS Release 7.0.3.2
 
+### \*_API macros in headers
+
+Internally, the Com and ca libraries now express dllimport/export (Windows)
+and symbol visibility (GCC) with individual macros (eg. LIBCOM_API)
+instead of using epicsShare\*.  This change may effect user code which uses
+epicsShare\* macros without explicitly including the shareLib.h header.
+Such code should be changed to include shareLib.h directly.
+
+A new helper script makeAPIheader.pl and rules to generate \*API.h headers
+has been added.  Run 'makeAPIheader.pl -h' for application information.
+
 ### IOCsh usage messages
 
 `help <cmd>` now prints a descriptive usage message

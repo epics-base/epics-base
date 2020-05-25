@@ -15,7 +15,6 @@
 
 #include <stdexcept>
 #include <string.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -108,7 +107,7 @@ LIBCOM_API epicsMessageQueueId epicsStdCall epicsMessageQueueCreate(
 }
 
 static void
-freeEventNode(struct eventNode *enode)
+destroyEventNode(struct eventNode *enode)
 {
     epicsEventDestroy(enode->event);
     free(enode);
@@ -121,7 +120,7 @@ epicsMessageQueueDestroy(epicsMessageQueueId pmsg)
 
     while ((evp = reinterpret_cast < struct eventNode * >
             ( ellGet(&pmsg->eventFreeList) ) ) != NULL) {
-        freeEventNode(evp);
+        destroyEventNode(evp);
     }
     epicsMutexDestroy(pmsg->mutex);
     free(pmsg->buf);
@@ -147,6 +146,16 @@ getEventNode(epicsMessageQueueId pmsg)
     return evp;
 }
 
+static void
+freeEventNode(epicsMessageQueueId pmsg, eventNode *evp, epicsEventStatus status)
+{
+    if (status == epicsEventWaitTimeout) {
+        epicsEventSignal(evp->event);
+        epicsEventWait(evp->event);
+    }
+    ellAdd(&pmsg->eventFreeList, &evp->link);
+}
+
 static int
 mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
     double timeout)
@@ -165,7 +174,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
     if ((pmsg->numberOfSendersWaiting > 0)
      || (pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL))) {
         /*
-         * Return if not allowed to wait
+         * Return if not allowed to wait. NB -1 means wait forever.
          */
         if (timeout == 0) {
             epicsMutexUnlock(pmsg->mutex);
@@ -173,7 +182,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
         }
 
         /*
-         * Wait
+         * Indicate that we're waiting
          */
         struct threadNode threadNode;
         threadNode.evp = getEventNode(pmsg);
@@ -188,22 +197,25 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size,
 
         epicsMutexUnlock(pmsg->mutex);
 
-        epicsEventStatus status;
-        if (timeout > 0)
-            status = epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
-        else
-            status = epicsEventWait(threadNode.evp->event);
+        /*
+         * Wait for receiver to wake us
+         */
+        epicsEventStatus status = timeout < 0 ?
+            epicsEventWait(threadNode.evp->event) :
+            epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
 
         epicsMutexMustLock(pmsg->mutex);
 
-        if(!threadNode.eventSent)
+        if (!threadNode.eventSent) {
+            /* Receiver didn't take us off the sendQueue, do it ourselves */
             ellDelete(&pmsg->sendQueue, &threadNode.link);
-        pmsg->numberOfSendersWaiting--;
+            pmsg->numberOfSendersWaiting--;
+        }
 
-        ellAdd(&pmsg->eventFreeList, &threadNode.evp->link);
+        freeEventNode(pmsg, threadNode.evp, status);
 
-        if ((pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL)) ||
-            status != epicsEventOK) {
+        if (pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL)) {
+            /* State of the queue didn't change, exit */
             epicsMutexUnlock(pmsg->mutex);
             return -1;
         }
@@ -296,6 +308,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
          */
         if ((pthr = reinterpret_cast < struct threadNode * >
              ( ellGet(&pmsg->sendQueue) ) ) != NULL) {
+            pmsg->numberOfSendersWaiting--;
             pthr->eventSent = true;
             epicsEventSignal(pthr->evp->event);
         }
@@ -304,7 +317,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     }
 
     /*
-     * Return if not allowed to wait
+     * Return if not allowed to wait. NB -1 means wait forever.
      */
     if (timeout == 0) {
         epicsMutexUnlock(pmsg->mutex);
@@ -312,16 +325,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     }
 
     /*
-     * Wake up the oldest task waiting to send
-     */
-    if ((pthr = reinterpret_cast < struct threadNode * >
-         ( ellGet(&pmsg->sendQueue) ) ) != NULL) {
-        pthr->eventSent = true;
-        epicsEventSignal(pthr->evp->event);
-    }
-
-    /*
-     * Wait for message to arrive
+     * Indicate that we're waiting
      */
     struct threadNode threadNode;
     threadNode.evp = getEventNode(pmsg);
@@ -335,18 +339,32 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
     }
 
     ellAdd(&pmsg->receiveQueue, &threadNode.link);
+
+    /*
+     * Wake up the oldest task waiting to send
+     */
+    if ((pthr = reinterpret_cast < struct threadNode * >
+         ( ellGet(&pmsg->sendQueue) ) ) != NULL) {
+        pmsg->numberOfSendersWaiting--;
+        pthr->eventSent = true;
+        epicsEventSignal(pthr->evp->event);
+    }
+
     epicsMutexUnlock(pmsg->mutex);
 
-    if (timeout > 0)
+    /*
+     * Wait for a message to arrive
+     */
+    epicsEventStatus status = timeout < 0 ?
+        epicsEventWait(threadNode.evp->event) :
         epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
-    else
-        epicsEventWait(threadNode.evp->event);
 
     epicsMutexMustLock(pmsg->mutex);
 
     if (!threadNode.eventSent)
         ellDelete(&pmsg->receiveQueue, &threadNode.link);
-    ellAdd(&pmsg->eventFreeList, &threadNode.evp->link);
+
+    freeEventNode(pmsg, threadNode.evp, status);
 
     epicsMutexUnlock(pmsg->mutex);
 
@@ -398,7 +416,8 @@ epicsMessageQueuePending(epicsMessageQueueId pmsg)
 LIBCOM_API void epicsStdCall
 epicsMessageQueueShow(epicsMessageQueueId pmsg, int level)
 {
-    printf("Message Queue Used:%d  Slots:%lu", epicsMessageQueuePending(pmsg), pmsg->capacity);
+    printf("Message Queue Used:%d  Slots:%lu",
+        epicsMessageQueuePending(pmsg), pmsg->capacity);
     if (level >= 1)
         printf("  Maximum size:%lu", pmsg->maxMessageSize);
     printf("\n");

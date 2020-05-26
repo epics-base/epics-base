@@ -363,9 +363,15 @@ extern "C" void messageQueueTest(void *parm)
     sleepySender(0.009);
     sleepySender(0.010);
     sleepySender(0.011);
+#ifdef __rtems__
+    testTodoBegin("RTEMS failure expected");
+#endif
     sleepyReceiver(0.009);
     sleepyReceiver(0.010);
     sleepyReceiver(0.011);
+#ifdef __rtems__
+    testTodoEnd();
+#endif
 
     testDiag("Single receiver, single sender tests:");
     epicsThreadSetPriority(myThreadId, epicsThreadPriorityHigh);

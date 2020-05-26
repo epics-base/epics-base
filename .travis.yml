@@ -46,28 +46,24 @@ jobs:
   include:
 
 # Different configurations of default gcc and clang
-# (the DIST settings are just FYI on the travis-ci.org site)
   - dist: bionic
-    env: DIST=bionic
 
-  - env: DIST=xenial
+  - dist: xenial
 
   - dist: bionic
-    env: DIST=bionic EXTRA="CMD_CXXFLAGS=-std=c++11"
+    env: EXTRA="CMD_CXXFLAGS=-std=c++11"
 
   - dist: trusty
-    env: DIST=trusty STATIC=YES EXTRA="CMD_CXXFLAGS=-std=c++11"
+    env: STATIC=YES EXTRA="CMD_CXXFLAGS=-std=c++11"
 
   - dist: bionic
     compiler: clang
-    env: DIST=bionic
 
   - compiler: clang
-    env: DIST=xenial
 
   - dist: trusty
     compiler: clang
-    env: DIST=trusty STATIC=YES
+    env: STATIC=YES
 
 # Cross-compilations to Windows using MinGW and WINE
 

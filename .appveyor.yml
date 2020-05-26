@@ -29,9 +29,9 @@ clone_depth: 5
 skip_commits:
   files:
     - 'documentation/*'
-    - 'templates/*'
     - '**/*.html'
     - '**/*.md'
+    - '.travis.yml'
 
 #---------------------------------#
 #   build matrix configuration    #

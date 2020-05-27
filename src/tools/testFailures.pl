@@ -22,12 +22,17 @@ use warnings;
 die "Usage: testFailures.pl .tests-failed\n"
     unless @ARGV == 1;
 
+# No file means success.
 open FAILURES, '<', shift or
     exit 0;
-my @failures = <FAILURES>;
+chomp(my @failures = <FAILURES>);
 close FAILURES;
 
+# A file with just empty lines also mean success
+my @dirs = grep {$_} @failures;
+exit 0 unless @dirs;
+
 print "\nTest failures were reported in:\n",
-    (map {"    $_"} @failures), "\n";
+    (map {"    $_\n"} @dirs), "\n\n";
 
 exit 1;

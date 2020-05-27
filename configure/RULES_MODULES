@@ -23,7 +23,8 @@
 #           -include $(TOP)/../CONFIG_SITE.local
 
 # Add checked-out submodules to DIRS
-DIRS += $(subst /Makefile,,$(wildcard $(addsuffix /Makefile, $(SUBMODULES))))
+LIVE_SUBMODULES = $(subst /Makefile,,$(wildcard $(addsuffix /Makefile, $(SUBMODULES))))
+DIRS += $(LIVE_SUBMODULES)
 
 include $(CONFIG)/RULES_DIRS
 
@@ -45,3 +46,13 @@ realclean:
 	$(RM) $(wildcard RELEASE.*.local)
 
 .PHONY: RELEASE.host realclean
+
+# Append all our live submodule failure files
+FAILURE_FILES = $(addsuffix /$(TEST_FAILURE_FILENAME), $(LIVE_SUBMODULES))
+
+runtests: | $(addsuffix $(DIVIDER)runtests, $(LIVE_SUBMODULES))
+	@$(TOUCH) $(FAILURE_FILES)
+	@$(CAT) $(FAILURE_FILES) >> $(TEST_FAILURE_FILE)
+test-results: | $(addsuffix $(DIVIDER)test-results, $(LIVE_SUBMODULES))
+	@$(TOUCH) $(FAILURE_FILES)
+	@$(CAT) $(FAILURE_FILES) >> $(TEST_FAILURE_FILE)

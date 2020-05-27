@@ -9,7 +9,6 @@
 /configure/*.local
 /modules/RELEASE.*.local
 /modules/Makefile.local
-/.tests-failed
 O.*/
 /QtC-*
 *.orig

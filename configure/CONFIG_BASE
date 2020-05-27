@@ -68,6 +68,6 @@ TAPTOJUNIT                 = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
 PROVE                      = $(PERL) $(TOOLS)/epicsProve.pl
 PROVE.tap                  = $(PROVE) --ext .tap --exec "$(CAT)"
 
-TEST_FAILURE_FILENAME      = .tests-failed
+TEST_FAILURE_FILENAME      = .tests-failed.log
 TEST_FAILURE_FILE          = $(TOP)/$(TEST_FAILURE_FILENAME)
 PROVE_FAILURE              = echo $(abspath .)>> $(TEST_FAILURE_FILE)

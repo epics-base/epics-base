@@ -93,6 +93,12 @@ my $root = '../' x scalar @inpath;
 open my $out, '>', $opt_o or
     die "Can't create $opt_o: $!\n";
 
+$SIG{__DIE__} = sub {
+    die @_ if $^S;  # Ignore eval deaths
+    close $out;
+    unlink $opt_o;
+};
+
 my $podHtml = EPICS::PodHtml->new();
 
 $podHtml->html_css($root . 'style.css');

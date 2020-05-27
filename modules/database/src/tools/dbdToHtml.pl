@@ -108,6 +108,12 @@ if ($opt_D) {   # Output dependencies only
 open my $out, '>', $opt_o or
     die "Can't create $opt_o: $!\n";
 
+$SIG{__DIE__} = sub {
+    die @_ if $^S;  # Ignore eval deaths
+    close $out;
+    unlink $opt_o;
+};
+
 my $podHtml;
 my $idify;
 my $contentType =

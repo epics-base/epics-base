@@ -68,6 +68,12 @@ open my $inp, '<', $infile or
 open my $out, '>', $opt_o or
     die "podRemove.pl: Can't create $opt_o: $!\n";
 
+$SIG{__DIE__} = sub {
+    die @_ if $^S;  # Ignore eval deaths
+    close $out;
+    unlink $opt_o;
+};
+
 my $inPod = 0;
 while (<$inp>) {
     if (m/\A=[a-zA-Z]/) {

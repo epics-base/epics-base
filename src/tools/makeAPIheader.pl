@@ -126,6 +126,12 @@ my $guard = "INC_${stem}API_H";
 open my $o, '>', $outfile or
     die "makeAPIheader.pl: Can't create $outfile: $!\n";
 
+$SIG{__DIE__} = sub {
+    die @_ if $^S;  # Ignore eval deaths
+    close $o;
+    unlink $outfile;
+};
+
 print $o <<"__EOF__";
 /* This is a generated file, do not edit! */
 

@@ -48,7 +48,8 @@ recordtype(bo) {
 
 The binary output record has the standard fields for specifying under what
 circumstances the record will be processed. The fields are listed in
-L<Scan Fields>. In addition, L<Scanning Specification> explains how these
+
+L<Scan Fields|dbCommonRecord/Scan Fields>. In addition, L<Scanning Specification> explains how these
 fields are used. Note that I/O event scanning is only supported for those card
 types that interrupt.
 
@@ -147,8 +148,8 @@ corresponding to the VAL's state. So, if the value is 1, C<get_enum_str()>
 will return the string in the ONAM field: and if 0, C<get_enum_str()> will
 return the ZNAM string.
 
-See L<Fields Common to All Record Types> for more on the record name (NAME)
-and description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =fields ZNAM, ONAM, NAME, DESC
 
@@ -164,8 +165,8 @@ C<MAJOR>. The ZSV holds the severity for the zero state; OSV for the one
 state. COSV is used to cause an alarm whenever the state changes between
 states (0-1, 1-0) and its severity is configured as MINOR or MAJOR.
 
-See L<Invalid Alarm Output Action> for more information on the IVOA and
-IVOV fields. L<Alarm Fields> lists other fields related to alarms that are
+See L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields> for more information on the IVOA and
+IVOV fields. L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related to alarms that are
 common to all record types.
 
 =fields ZSV, OSV, COSV, IVOA, IVOV
@@ -493,7 +494,7 @@ Check alarms: This routine checks to see if the new VAL causes the alarm
 status and severity to change. If so, NSEV, NSTA, and LALM are set.
 
 =item 4.
-Check severity and write the new value. See L<Invalid Alarm Output Action>
+Check severity and write the new value. See L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>
 for more information on how INVALID alarms affect output.
 
 =item 5.

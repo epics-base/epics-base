@@ -4,36 +4,52 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 =title Array Subroutine Record (aSub)
 
-...
+The aSub record is an advanced variant of the 'sub' (subroutine) record which
+has a number of additional features:
+
+=over
+
+=item *
+
+It provides 20 different input and output fields which can hold array or
+scalar values.
+The types and array capacities of these are user configurable, and they all
+have an associated input or output link.
+
+=item *
+
+The name of the C or C++ subroutine to be called when the record processes
+can be changed dynamically while the IOC is running.
+The name can either be fetched from another record using an input link, or
+written directly into the SNAM field.
+
+=item *
+
+The user can choose whether monitor events should be posted for the output
+fields.
+
+=item *
+
+The VAL field is set to the return value from the user subroutine, which is
+treated as a status value and controls whether the output links will be used
+or not. The record can also raise an alarm with a chosen severity if the status
+value is non-zero.
+
+=back
 
 =head2 Record-specific Menus
 
 =head3 Menu aSubLFLG
 
-The LFLG field uses this menu to ...
+The LFLG menu field controls whether the SUBL link will be read to update
+the name of the subroutine to be called when the record processes.
 
 =menu aSubLFLG
-
-=head3 Menu aSubEFLG
-
-The EFLG field uses this menu to ...
-
-=menu aSubEFLG
-
-...
-
-=head2 Parameter Fields
-
-The record-specific fields are described below.
-
-=recordtype aSub
-
-...
 
 =cut
 
@@ -42,14 +58,69 @@ menu(aSubLFLG) {
 	choice(aSubLFLG_READ,"READ")
 }
 
+=head3 Menu aSubEFLG
+
+The EFLG menu field indicates whether monitor events should be posted for the
+VALA..VALU output value fields.
+
+=menu aSubEFLG
+
+=cut
+
 menu(aSubEFLG) {
 	choice(aSubEFLG_NEVER,"NEVER")
 	choice(aSubEFLG_ON_CHANGE,"ON CHANGE")
 	choice(aSubEFLG_ALWAYS,"ALWAYS")
 }
 
+=head2 Parameter Fields
+
+The record-specific fields are described below.
+
+=recordtype aSub
+
+=cut
+
 recordtype(aSub) {
 	include "dbCommon.dbd"
+
+=head3 Subroutine Fields
+
+The VAL field is set to the value returned by the user subroutine.
+The value is treated as an error status value where zero mean success.
+The output links OUTA ... OUTU will only be used to forward the associated
+output value fields when the subroutine has returned a zero status.
+If the return status was non-zero, the record will be put into C<SOFT_ALARM>
+state with severity given by the BRSV field.
+
+The INAM field may be used to name a subroutine that will be called once at
+IOC initialization time.
+
+LFLG tells the record whether to read or ignore the SUBL link.
+If the value is C<READ>, then the name of the subroutine to be called at
+process time is read from SUBL.
+If the value is C<IGNORE>, the name of the subroutine is that currently held
+in SNAM.
+
+A string is read from the SUBL link to fetch the name of the subroutine to
+be run during record processing.
+
+SNAM holds the name of the subroutine to be called when the record processes.
+The value in this field can be overwritten by the SUBL link if LFLG is set
+to C<READ>.
+
+The SADR field is only accessible from C code; it points to the subroutine
+to be called.
+
+The CADR field may be set by the user subroutine to point to another function
+that will be called immediately before setting the SADR field to some other
+routine. This allows the main user subroutine to allocate resources when it is
+first called and be able to release them again when they are no longer needed.
+
+=fields VAL, OVAL, INAM, LFLG, SUBL, SNAM, ONAM, SADR, CADR, BRSV
+
+=cut
+
 	field(VAL,DBF_LONG) {
 		prompt("Subr. return value")
 		asl(ASL0)
@@ -112,12 +183,34 @@ recordtype(aSub) {
 		interest(1)
 		menu(menuAlarmSevr)
 	}
+
+=head3 Operator Display Parameters
+
+The PREC field specifies the number of decimal places with which to display
+the values of the value fields A ... U and VALA ... VALU.
+Except when it doesn't.
+
+=cut
+
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
+
+=head3 Output Event Flag
+
+This field tells the record when to post change events on the output fields
+VALA ... VALU. If the value is C<NEVER>, events are never posted. If the value
+is C<ALWAYS>, events are posted every time the record processes. If the value
+is C<ON CHANGE>, events are posted when any element of an array changes value.
+This flag controls value, log (archive) and alarm change events.
+
+=fields EFLG
+
+=cut
+
 	field(EFLG,DBF_MENU) {
 		prompt("Output Event Flag")
 		promptgroup("50 - Output")
@@ -125,6 +218,16 @@ recordtype(aSub) {
 		menu(aSubEFLG)
 		initial("1")
 	}
+
+=head3 Input Link Fields
+
+The input links from where the values of A,...,U are fetched
+during record processing.
+
+=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL, INPM, INPN, INPO, INPP, INPQ, INPR, INPS, INPT, INPU
+
+=cut
+
 	field(INPA,DBF_INLINK) {
 		prompt("Input Link A")
 		promptgroup("41 - Input A-G")
@@ -231,9 +334,10 @@ recordtype(aSub) {
 		interest(1)
 	}
 
-=head3 Input Fields
+=head3 Input Value Fields
 
-...
+Thse fields hold the scalar or array values fetched through the input links
+INPA,...,INPU.
 
 =fields A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U
 
@@ -449,6 +553,16 @@ recordtype(aSub) {
 		#=write Yes
 		#=type Set by FTU
 	}
+
+=head3 Input Value Data Types
+
+Field types of the input value fields.
+The choices can be found by following the link to the menuFtype definition.
+
+=fields FTA, FTB, FTC, FTD, FTE, FTF, FTG, FTH, FTI, FTJ, FTK, FTL, FTM, FTN, FTO, FTP, FTQ, FTR, FTS, FTT, FTU
+
+=cut
+
 	field(FTA,DBF_MENU) {
 		prompt("Type of A")
 		promptgroup("41 - Input A-G")
@@ -617,6 +731,15 @@ recordtype(aSub) {
 		initial("DOUBLE")
 		menu(menuFtype)
 	}
+
+=head3 Input Value Array Capacity
+
+These fields specify how many array elements the input value fields may hold.
+
+=fields NOA, NOB, NOC, NOD, NOE, NOF, NOG, NOH, NOI, NOJ, NOK, NOL, NOM, NON, NOO, NOP, NOQ, NOR, NOS, NOT, NOU
+
+=cut
+
 	field(NOA,DBF_ULONG) {
 		prompt("Max. elements in A")
 		promptgroup("41 - Input A-G")
@@ -764,6 +887,16 @@ recordtype(aSub) {
 		interest(1)
 		initial("1")
 	}
+
+=head3 Input Value Array Size
+
+These fields specify how many array elements the input value fields currently
+contain.
+
+=fields NEA, NEB, NEC, NED, NEE, NEF, NEG, NEH, NEI, NEJ, NEK, NEL, NEM, NEN, NEO, NEP, NEQ, NER, NES, NET, NEU
+
+=cut
+
 	field(NEA,DBF_ULONG) {
 		prompt("Num. elements in A")
 		special(SPC_NOMOD)
@@ -890,6 +1023,15 @@ recordtype(aSub) {
 		interest(3)
 		initial("1")
 	}
+
+=head3 Output Link Fields
+
+The output links through which the VALA ... VALU field values are sent
+during record processing, provided the subroutine returned 0.
+
+=fields OUTA, OUTB, OUTC, OUTD, OUTE, OUTF, OUTG, OUTH, OUTI, OUTJ, OUTK, OUTL, OUTM, OUTN, OUTO, OUTP, OUTQ, OUTR, OUTS, OUTT, OUTU
+
+=cut
 	field(OUTA,DBF_OUTLINK) {
 		prompt("Output Link A")
 		promptgroup("51 - Output A-G")
@@ -996,9 +1138,10 @@ recordtype(aSub) {
 		interest(1)
 	}
 
-=head3 Value Fields
+=head3 Output Value Fields
 
-...
+These fields hold scalar or array data generated by the subroutine which will
+be sent through the OUTA ... OUTU links during record processing.
 
 =fields VALA, VALB, VALC, VALD, VALE, VALF, VALG, VALH, VALI, VALJ, VALK, VALL, VALM, VALN, VALO, VALP, VALQ, VALR, VALS, VALT, VALU
 
@@ -1214,6 +1357,16 @@ recordtype(aSub) {
 		#=write Yes
 		#=type Set by FTVU
 	}
+
+=head3 Old Value Fields
+
+The previous values of the output fields.
+These are used to determine when to post events if EFLG is set to C<ON CHANGE>.
+
+=fields VALA, VALB, VALC, VALD, VALE, VALF, VALG, VALH, VALI, VALJ, VALK, VALL, VALM, VALN, VALO, VALP, VALQ, VALR, VALS, VALT, VALU
+
+=cut
+
 	field(OVLA,DBF_NOACCESS) {
 		prompt("Old Output A")
 		asl(ASL0)
@@ -1361,6 +1514,16 @@ recordtype(aSub) {
 		interest(4)
 		extra("void *ovlu")
 	}
+
+=head3 Output Value Data Types
+
+Field types of the output value fields.
+The choices can be found by following a link to the menuFtype definition.
+
+=fields FTVA, FTVB, FTVC, FTVD, FTVE, FTVF, FTVG, FTVH, FTVI, FTVJ, FTVK, FTVL, FTVM, FTVN, FTVO, FTVP, FTVQ, FTVR, FTVS, FTVT, FTVU
+
+=cut
+
 	field(FTVA,DBF_MENU) {
 		prompt("Type of VALA")
 		promptgroup("51 - Output A-G")
@@ -1529,6 +1692,15 @@ recordtype(aSub) {
 		initial("DOUBLE")
 		menu(menuFtype)
 	}
+
+=head3 Output Value Array Capacity
+
+These fields specify how many array elements the output value fields may hold.
+
+=fields NOVA, NOVB, NOVC, NOVD, NOVE, NOVF, NOVG, NOVH, NOVI, NOVJ, NOVK, NOVL, NOVM, NOVN, NOVO, NOVP, NOVQ, NOVR, NOVS, NOVT, NOVU
+
+=cut
+
 	field(NOVA,DBF_ULONG) {
 		prompt("Max. elements in VALA")
 		promptgroup("51 - Output A-G")
@@ -1676,6 +1848,16 @@ recordtype(aSub) {
 		interest(1)
 		initial("1")
 	}
+
+=head3 Output Value Array Size
+
+These fields specify how many array elements the output value fields currently
+contain.
+
+=fields NEVA, NEVB, NEVC, NEVD, NEVE, NEVF, NEVG, NEVH, NEVI, NEVJ, NEVK, NEVL, NEVM, NEVN, NEVO, NEVP, NEVQ, NEVR, NEVS, NEVT, NEVU
+
+=cut
+
 	field(NEVA,DBF_ULONG) {
 		prompt("Num. elements in VALA")
 		special(SPC_NOMOD)
@@ -1802,6 +1984,16 @@ recordtype(aSub) {
 		interest(3)
 		initial("1")
 	}
+
+=head3 Old Value Array Size
+
+These fields specify how many array elements the old value fields currently
+contain.
+
+=fields ONVA, ONVB, ONVC, ONVD, ONVE, ONVF, ONVG, ONVH, ONVI, ONVJ, ONVK, ONVL, ONVM, ONVN, ONVO, ONVP, ONVQ, ONVR, ONVS, ONVT, ONVU
+
+=cut
+
 	field(ONVA,DBF_ULONG) {
 		prompt("Num. elements in OVLA")
 		special(SPC_NOMOD)
@@ -1928,4 +2120,305 @@ recordtype(aSub) {
 		interest(4)
 		initial("1")
 	}
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=head2 Record Support Routines
+
+=head3 init_record
+
+  long (*init_record)(struct dbCommon *precord, int pass)
+
+This routine is called twice at iocInit. On the first call it does the
+following:
+
+=over
+
+=item *
+
+Calloc sufficient space to hold the number of input scalars and/or arrays
+defined by the settings of the fields FTA-FTU and NOA-NOU. Initialize fields
+NE* to the values of the associated NO* field values.
+
+=item *
+
+Calloc sufficient space to hold the number of output scalars and/or arrays
+defined by  the settings of the fields FTVA-FTVU and NOVA-NOVU. For the output
+fields, also calloc space to  hold the previous value of a field. This is
+required when the decision is made on whether or not to post events.
+
+=back
+
+On the second call, it does the following:
+
+=over
+
+=item *
+
+Initializes SUBL if it is a constant link.
+
+=item *
+
+Initializes each constant input link.
+
+=item *
+
+If the field INAM is set, look-up the address of the routine and call it.
+
+=item *
+
+If the field LFLG is set to IGNORE and SNAM is defined, look up the address of
+the process routine.
+
+=back
+
+=head3 process
+
+  long (*process)(struct dbCommon *precord)
+
+This routine implements the following algorithm:
+
+=over
+
+=item *
+
+If PACT is FALSE, perform normal processing
+
+=item *
+
+If PACT is TRUE, perform asynchronous-completion processing
+
+=back
+
+Normal processing:
+
+=over
+
+=item *
+
+Set PACT to TRUE.
+
+=item *
+
+If the field LFLG is set to READ, get the subroutine name from the SUBL link.
+If the name is not NULL and it is not the same as the previous subroutine name,
+look up the subroutine address. Set the old subroutine name, ONAM, equal to the
+current name, SNAM.
+
+=item *
+
+Fetch the values from the input links.
+
+=item *
+
+Set PACT to FALSE
+
+=item *
+
+If all input-link fetches succeeded, call the routine specified by SNAM.
+
+=item *
+
+Set VAL equal to the return value from the routine specified by SNAM.
+
+=item *
+
+If the SNAM routine set PACT to TRUE, then return.  In this case, we presume
+the routine has arranged that process will be called at some later time for
+asynchronous completion.
+
+=item *
+
+Set PACT to TRUE.
+
+=item *
+
+If VAL is zero, write the output values using the output links.
+
+=item *
+
+Get the time of processing and put it into the timestamp field.
+
+=item *
+
+If VAL has changed, post a change-of value and log event for  this field.
+If EFLG is set to ALWAYS, post change-of-value and log events for every output
+field. If EFLG is set to ON CHANGE, post change-of-value and log events for
+every output field which has changed. In the case of an array, an event will be
+posted if any single element of the array has changed. If EFLG is set to NEVER,
+no change-of-value or log events are posted for the output fields.
+
+=item *
+
+Process the record on the end of the forward link, if one exists.
+
+=item *
+
+Set PACT to FALSE.
+
+=back
+
+Asynchronous-completion processing:
+
+=over
+
+=item *
+
+Call the routine specified by SNAM (again).
+
+=item *
+
+Set VAL equal to the return value from the routine specified by SNAM.
+
+=item *
+
+Set PACT to TRUE.
+
+=item *
+
+If VAL is zero, write the output values using the output links.
+
+=item *
+
+Get the time of processing and put it into the timestamp field.
+
+=item *
+
+If VAL has changed, post a change-of value and log event for this field. If
+EFLG is set to ALWAYS, post change-of-value and log events for every output
+field. If EFLG is set to ON CHANGE, post change-of-value and log events for
+every output field which has changed. In the case of an array, an event will
+be posted if any single element of the array has changed. If EFLG is set to
+NEVER, no  change-of-value or log events are posted for the output fields.
+
+=item *
+
+Process the record on the end of the forward link, if one exists.
+
+=item *
+
+Set PACT to FALSE.
+
+=back
+
+
+=begin html
+
+<br>
+<hr>
+<br>
+
+=end html
+
+=head2 Use of the aSub Record
+
+The aSub record has input-value fields (A-U) and output-value fields
+(VALA-VALU), which are completely independent.  The input-value fields have
+associated input links (INPA-INPU), and the output-value fields have associated
+output links (OUTA-OUTU).  Both inputs and outputs have type fields (FTA-FTU,
+FTVA-FTVU, which default to 'DOUBLE') and number-of-element fields (NOA-NOU,
+NOVA-NOVU, which default to '1'). The output links OUTA-OUTU will only be
+processed if the subroutine returns a zero (OK) status value.
+
+=head3 Example database fragment
+
+To use the A field to read an array from some other record, then, you would
+need a database fragment that might look something like this:
+
+    record(aSub,"my_asub_record") {
+        field(SNAM,"my_asub_routine")
+        ...
+        field(FTA, "LONG")
+        field(NOA, "100")
+        field(INPA, "myWaveform_1 NPP NMS")
+        ...
+    }
+
+If you wanted some other record to be able to write to the A field, then you
+would delete the input link above.  If you wanted the A field to hold a scalar
+value, you would either delete the NOA specification, or specify it as "1".
+
+=head3 Example subroutine fragment
+
+The associated subroutine code that uses the A field might look like this:
+
+    static long my_asub_routine(aSubRecord *prec) {
+        long i, *a;
+        double sum=0;
+        ...
+        a = (long *)prec->a;
+        for (i=0; i<prec->noa; i++) {
+            sum += a[i];
+        }
+        ...
+        return 0; /* process output links */
+    }
+
+Note that the subroutine code must always handle the value fields (A-U,
+VALA-VALU) as arrays, even if they contain only a single element.
+
+=head3 Required export code
+
+Aside from your own code, you must export and register your subroutines so the
+record can locate them.  The simplest way is as follows:
+
+    #include <registryFunction.h>
+    #include <epicsExport.h>
+    
+    static long my_asub_routine(aSubRecord *prec) {
+        ...
+    }
+    epicsRegisterFunction(my_asub_routine);
+
+=head3 Required database-definition code
+
+The .dbd file loaded by the ioc must then contain the following line, which
+tells the linker to include your object file in the IOC binary:
+
+    function(my_asub_routine)
+
+=head3 Device support, writing to hardware
+
+The aSub record does not call any device support routines. If you want to write
+to hardware, you might use your output fields and links to write to some other
+record that can write to hardware.
+
+=head3 Dynamically Changing the User Routine called during Record Processing
+
+The aSub record allows the user to dynamically change which routine is called
+when the record processes. This can be done in two ways:
+
+=over
+
+=item *
+
+The LFLG field can be set to READ so that the name of the routine is read from
+the SUBL link. Thus, whatever is feeding this link can change the name of the
+routine before the aSub record is processed. In this case, the record looks in
+the symbol table for the symbol name whenever the name of routine fetched from
+the link changes.
+
+=item *
+
+The LFLG field can be set to IGNORE. In this case, the routine called during
+record processing is that specified in the SNAM field. Under these conditions,
+the SNAM field can be changed by a Channel Access write to that field. During
+development when trying several versions of the routine, it is not necessary
+to reboot the IOC and reload the database. A new routine can be loaded with
+the vxWorks ld command, and Channel Access or the dbpf command used to put the
+name of the routine into the record's SNAM field. The record will look up the
+symbol name in the symbol table whenever the SNAM field gets modified. The
+same routine name can even be used as the vxWorks symbol lookup returns the
+latest version of the code to have been loaded.
+
+=back
+
+=cut
+
 }

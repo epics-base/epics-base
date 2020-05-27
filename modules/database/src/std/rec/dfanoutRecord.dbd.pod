@@ -16,32 +16,7 @@ device support.
 
 =head2 Parameter Fields
 
-The fields in this record can be classified into the following categories:
-
-=over
-
-=item *
-scan parameters
-
-=item *
-desired output parameters
-
-=item *
-write parameters
-
-=item *
-operator display parameters
-
-=item *
-alarm parameters
-
-=item *
-monitor parameters
-
-=item *
-run-time and simulation mode parameters
-
-=back
+The record-specific fields are described below, grouped by functionality.
 
 =recordtype dfanout
 
@@ -58,11 +33,8 @@ recordtype(dfanout) {
 =head3 Scan Parameters
 
 The data fanout record has the standard fields for specifying under what
-circumstances it will be processed. These fields are listed in
-L<Scan Fields>. In addition, L<Scanning Specification> explains how these
-fields are used. Since the data fanout record supports no direct interfaces
-to hardware, it cannot be scanned on I/O interrupt, so its SCAN field
-cannot be C<I/O Intr>.
+circumstances it will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Desired Output Parameters
 
@@ -131,8 +103,8 @@ displays. They apply to the VAL, HIHI, HIGH, LOW, and LOLO fields. The
 record support routines C<get_graphic_double()> and C<get_control_double()>
 retrieve HOPR and LOPR.
 
-See L<Fields Common to All Record Types> for more on the record name (NAME)
-and description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =fields EGU, HOPR, LOPR, NAME, DESC
 
@@ -148,7 +120,7 @@ NO_ALARM, MINOR, or MAJOR. In the hysteresis field (HYST) can be entered a
 number which serves as the deadband on the limit alarms.
 
 See L<Alarm Specification> for a complete explanation of alarms and these
-fields. L<Alarm Fields> lists other fields related to alarms that are
+fields. L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related to alarms that are
 common to all record types.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST

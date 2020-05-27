@@ -54,8 +54,8 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scan Parameters
 
 The string input record has the standard fields for specifying under what
-circumstances it will be processed. These fields are listed in L<Scan Fields>.
-In addition, L<Scanning Specification> explains how these fields are used.
+circumstances it will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Input Specification
 
@@ -66,8 +66,6 @@ string is read from the specified location each time the record is processed and
 placed in the VAL field. The maximum number of characters that the string in VAL
 can be is 40. In addition, the appropriate device support module must be entered
 into the DTYP field.
-
-See L<Address Specification> for information on specifying links.
 
 =fields VAL, INP, DTYP
 
@@ -109,16 +107,17 @@ APST is used for archiver monitors and MPST is for all other type of monitors.
 
 =head3 Operator Display Parameters
 
-See L<Fields Common to All Record Types> for more on the record name (NAME) and
-description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
+
 
 =fields NAME, DESC
 
 =head3 Alarm Parameters
 
 The string input record has the alarm parameters common to all record types.
-L<Alarm Fields> lists other fields related to a alarms that are common to all
-record types.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 =head3 Run-time Parameters
 
@@ -345,9 +344,13 @@ This routine must provide a new input value. It returns the following values:
 
 =over
 
-=item * 0: Success. A new ASCII string is stored into VAL.
+=item *
 
-=item * Other: Error.
+0: Success. A new ASCII string is stored into VAL.
+
+=item *
+
+Other: Error.
 
 =back
 
@@ -355,9 +358,10 @@ This routine must provide a new input value. It returns the following values:
 
 The C<<< Soft Channel >>> module reads a value directly into VAL.
 
-Device support for DTYP C<getenv> is provided for retrieving strings from environment variables.
-C<INST_IO> addressing C!!@<environment variable> !!is used on the C<INP> link field to select the
-desired environment variable.
+Device support for DTYP C<getenv> is provided for retrieving strings from
+environment variables.
+C<INST_IO> addressing C<<< @<environment variable> >>> is used in the INP
+link field to select the desired environment variable.
 
 =cut
 

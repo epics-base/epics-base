@@ -28,9 +28,8 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scan Parameters
 
 The mbbo record has the standard fields for specifying under what circumstances
-it will be processed. These fields are listed in L<Scan Fields>. In addition,
-L<Scanning Specification> explains how these fields are used. Note that I/O
-event scanning is only supported for those card types that interrupt.
+it will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Desired Output Parameters
 
@@ -64,8 +63,7 @@ constant, no value will be written.
 For records that write their values to hardware devices, the OUT output link
 must specify the address of the I/O card, and the DTYP field must specify
 the corresponding device support module. Be aware that the address format
-differs according to the I/O bus used. See L<Address Specification> for
-information on the format of hardware addresses.
+differs according to the I/O bus used.
 
 For mbbo records that write to hardware, the value written to the output
 location is the value contained in RVAL, which is converted from VAL, VAL
@@ -87,8 +85,7 @@ constant, then the DTYP field must specify either one of the two soft device
 support modules-- C<<< Soft Channel >>> or C<<< Raw Soft Channel >>>. C<<< Soft
 >>> C<<< Channel >>> writes the value of VAL to the output link, without any
 conversion, while C<<< Raw Soft Channel >>> writes the value from RVAL after it
-has undergone the above conversion. See L<Address Specification> for information
-on specifying links.
+has undergone the above conversion.
 
 Note also that when a string is retrieved as the desired output, a record
 support routine is provided (C<<< put_enum_str() >>>) that will check to see
@@ -108,8 +105,8 @@ C<<< get_enum_strs() >>> record routines retrieve these strings for the
 operator. C<<< get_enum_str() >>> gets the string corresponding to the value in
 VAL, and C<<< get_enum_strs() >>> retrieves all the strings.
 
-See L<Fields Common to All Record Types> for more on the record name (NAME) and
-description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =fields NAME, DESC, ZRST, ONST, TWST, THST, FRST, FVST, SXST, SVST, EIST, NIST, TEST, ELST, TVST, TTST, FTST, FFST
 
@@ -138,10 +135,10 @@ state changes, if set to MAJOR or MINOR.
 The state severity (ZRSV-FFSV) fields, when set to MAJOR or MINOR, trigger an
 alarm when VAL equals the corresponding field.
 
-See L<Alarm Specification> for a complete explanation of discrete alarms and
-these fields. See L<Invalid Alarm Output Action> for an explanation of the IVOA
-and IVOV fields. L<Alarm Fields> lists other fields related to a alarms that are
-common to all record types.
+See L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>
+for an explanation of the IVOA and IVOV fields.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 =fields UNSV, COSV, IVOA, IVOV, ZRSV, ONSV, TWSV, THSV, FRSV, FVSV, SXSV, SVSV, EISV, NISV, TESV, ELSV, TVSV, TTSV, FTSV, FFSV
 
@@ -705,7 +702,6 @@ for more information on simulation mode and its fields.
 		promptgroup("50 - Output")
 		interest(2)
 	}
-}
 
 =head2 Record Support
 
@@ -858,8 +854,10 @@ and severity to change. If so, NSEV, NSTA and LALM are set.
 
 =item 5.
 
-Check severity and write the new value. See L<Simulation Mode> and L<Invalid
-Alarm Output Action> for more information.
+Check severity and write the new value. See
+L<Output Simulation Fields|dbCommonOutput/Output Simulation Fields> and 
+L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields> for
+more information.
 
 =item 6.
 
@@ -944,7 +942,7 @@ given a value.
   get_ioint_info(int cmd,struct dbCommon *precord,IOSCANPVT *ppvt)
 
 This routine is called by the ioEventScan system each time the record is added
-or deleted from an I/O event scan list. cmd has the value (0,1) if the
+or deleted from an I/O event scan list. C<cmd> has the value (0,1) if the
 record is being (added to, deleted from) an I/O event list. It must be
 provided for any device type that can use the ioEvent scanner.
 
@@ -975,7 +973,7 @@ The C<<< Soft Channel >>> module writes the current value of VAL.
 If the OUT link type is PV_LINK, then dbCaAddInlink is called by
 C<init_record()>.
 
-write_mbbo calls recGblPutLinkValue to write the current value of VAL. See
+C<write_mbbo()> calls C<dbPutLink()> to write the current value of VAL. See
 L<Soft Output> for more information.
 
 =head4 Raw Soft Channel
@@ -984,3 +982,4 @@ This module writes RVAL to the location specified in the output link. It returns
 a 0.
 
 =cut
+}

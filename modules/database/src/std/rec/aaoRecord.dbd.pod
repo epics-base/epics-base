@@ -18,8 +18,6 @@ device support to allocate the array storage.
 
 =cut
 
-include "menuFtype.dbd"
-
 menu(aaoPOST) {
 	choice(aaoPOST_Always,"Always")
 	choice(aaoPOST_OnChange,"On Change")
@@ -54,13 +52,10 @@ The DTYP field must contain the name of the appropriate device support module. T
 values in the array referenced by are written to the location specified in the OUT
 field. (If the OUT link is a constant, no data are written.) NELM specifies the
 maximum number of elements that the array can hold, while FTVL specifies the data
-type of the elements.
+type of the elements (follow the link in the table below for a list of the
+available choices).
 
 =fields DTYP, OUT, NELM, FTVL
-
-=head4 Possible data types for FTVL
-
-=menu menuFtype
 
 =head3 Operator Display Parameters
 
@@ -81,8 +76,9 @@ The PREC field determines the floating point precision with which to display the
 array values. It is used whenever the C<<< get_precision >>> record support
 routine is called.
 
-See L<Fields Common to All Record Types> for more on the record name (NAME) and
-description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
+
 
 =fields EGU, HOPR, LOPR, PREC, NAME, DESC
 
@@ -109,7 +105,9 @@ duplicate data.
 
 =fields APST, MPST, HASH
 
-=head4 Menu choices for C<APST> and C<MPST> fields
+=head4 Menu aaoPOST
+
+These are the choices available for the C<APST> and C<MPST> fields
 
 =menu aaoPOST
 
@@ -434,7 +432,6 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		prompt("Hash of OnChange data.")
 		interest(3)
 	}
-}
 
 =head2 Device Support
 
@@ -475,7 +472,7 @@ with C<after> set to 1.
 
 =head4 init_record
 
-  init_record(dbCommon *precord)
+  long init_record(dbCommon *precord)
 
 This routine is optional. If provided, it is called by the record support
 C<init_record()> routine.
@@ -485,7 +482,7 @@ C<init_record()> routine.
   long get_ioint_info(int cmd, dbCommon *precord, IOSCANPVT *ppvt)
 
 This routine is called by the ioEventScan system each time the record is added
-or deleted from an I/O event scan list.  cmd has the value (0,1) if the
+or deleted from an I/O event scan list.  C<cmd> has the value (0,1) if the
 record is being (added to, deleted from) an I/O event list. It must be
 provided for any device type that can use the ioEvent scanner.
 
@@ -519,3 +516,4 @@ is written to the link. NORD is set to the number of items in the array.
 If the OUT link type is constant, then NORD is set to zero.
 
 =cut
+}

@@ -436,7 +436,7 @@ $(COMMON_DIR)/%.html: %.dbd.pod
 
 $(COMMON_DIR)/%.html: %.pod
 	@$(RM) $(notdir $@)
-	$(PODTOHTML) -o $(notdir $@) $<
+	$(PODTOHTML) -s -s -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.html: %.pm

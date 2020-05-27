@@ -31,10 +31,8 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scan Parameters
 
 The mbbiDirect record has the standard fields for specifying under what
-circumstances the record will be processed. These fields are listed in L<Scan
-Fields>. In addition, L<Scanning Specification> explains how these fields are
-used. Note that I/O event scanning is only supported for those card types
-that interrupt.
+circumstances the record will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read and Convert Parameters
 
@@ -42,8 +40,7 @@ The device support routines obtain the record's input from the device or link
 specified in the INP field. For records that obtain their input from devices,
 the INP field must contain the address of the I/O card, and the DTYP field
 must specify the proper device support module. Be aware that the address format
-differs according to the I/O bus used. See L<Address Specification> for
-information on the format of hardware addresses.
+differs according to the I/O bus used.
 
 Two soft device support modules can be specified in DTYP C<Soft Channel> and
 C<<< Raw Soft Channel >>>.
@@ -53,8 +50,7 @@ upon which the normal conversion process is undergone. C<<< Soft Channel >>>
 reads any unsigned integer directly into VAL. For a soft mbbiDirect record, the
 INP field can be a constant, a database, or a channel access link. If INP is a
 constant, then the VAL is initialized to the INP value but can be changed at
-run-time via dbPutField or dbPutLink. See L<Address Specification> for
-information on how to database links.
+run-time via dbPutField or dbPutLink.
 
 For records that don't use C<<< Soft Channel >>> device support, RVAL is used to
 determine VAL as follows:
@@ -77,8 +73,9 @@ Each of the fields, B0-BF and B10-B1F, represents one bit of the word.
 
 These parameters are used to present meaningful data to the operator.
 
-See L<Fields Common to All Record Types> for more on the record name (NAME) and
-description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
+
 
 =fields NAME, DESC
 
@@ -220,14 +217,13 @@ for more information on simulation mode and its fields.
 
 =head3 Alarm Parameters
 
-The possible alarm conditions for multi-bit binary input direct records  are the
-SCAN and READ alarms. These alarms are not configurable by the user  since they
-are always of MAJOR severity. See L<Alarm Specification> for a complete
-explanation of Scan and Read alarms. No fields exist for the mbbi direct record
+The possible alarm conditions for multi-bit binary input direct records are the
+SCAN and READ alarms. These alarms are not configurable by the user since they
+are always of MAJOR severity. No fields exist for the mbbi direct record
 to have state alarms.
 
-L<Alarm Fields> lists other fields related to a alarms that are common to all
-record types.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 =cut
 
@@ -545,7 +541,7 @@ also give SHFT a value.
   get_ioint_info(int cmd,struct dbCommon *precord,IOSCANPVT *ppvt)
 
 This routine is called by the ioEventScan system each time the record is added
-or deleted from an IE<sol>O event scan list. cmd has the value (0,1) if the
+or deleted from an IE<sol>O event scan list. C<cmd> has the value (0,1) if the
 record is being (added to, deleted from) an IE<sol>O event list. It must be
 provided for any device type that can use the ioEvent scanner.
 

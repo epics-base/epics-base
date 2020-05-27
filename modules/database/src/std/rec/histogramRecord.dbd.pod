@@ -52,16 +52,17 @@ These intervals are determined by dividing the range by NELM:
 
 These parameters are used to present meaningful data to the operator. These
 fields are used to display the value and other parameters of the histogram
-either textually or graphically. See L<Fields Common to All Record Types> for
-more on the record name (NAME) and description (DESC) fields.
+either textually or graphically. See
+L<Fields Common to All Record Types|dbCommonRecord/Operator Display Parameters>
+for more on the record name (NAME) and description (DESC) fields.
 
 =fields NAME, DESC
 
 =head3 Alarm Parameters
 
 The Histogram record has the alarm parameters common to all record types.
-L<Alarm Fields> lists other fields related to a alarms that are common to all
-record types.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 =head3 Monitor Parameters
 

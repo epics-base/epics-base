@@ -25,9 +25,8 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scan Parameters
 
 The subroutine record has the standard fields for specifying under what
-circumstances it will be processed. These fields are listed in
-L<Scan Fields>.  In addition, L<Scanning Specification>
-explains how these fields are used.
+circumstances it will be processed.
+These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read Parameters
 
@@ -39,7 +38,7 @@ The input links can be either channel access or database links, or constants.
 When constants, the corresponding value field for the link is initialized with
 the constant value and the field's value can be changed at run-time via dbPuts.
 Otherwise, the values for (A-F) are fetched from the input links when the record
-is processed. See L<Address Specification> for information on specifying links.
+is processed.
 
 =fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL, A, B, C, D, E, F, G, H, I, J, K, L
 
@@ -69,8 +68,8 @@ The PREC field determines the floating point precision with which to display
 VAL. It is used whenever the C<<< get_precision >>> record support routine is
 called.
 
-See L<Fields Common to All Record Types>
-for more on the record name (NAME) and description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =fields EGU, HOPR, LOPR, PREC, NAME, DESC
 
@@ -85,9 +84,10 @@ these fields, there is a corresponding severity field which can be either
 NO_ALARM, MINOR, or MAJOR.
 
 The BRSV field is where the user can set the alarm severity in case the
-subroutine returns a negative value. See L<Alarm Specification>
-for a complete explanation of alarms and these fields.  L<Alarm Fields>
-lists other fields related to a alarms that are common to all record types.
+subroutine returns a negative value.
+
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, BRSV, HYST
 
@@ -101,8 +101,7 @@ minimum delta which the change must surpass before the value-change monitors are
 invoked. If these fields have a value of zero, everytime the value changes, a
 monitor will be triggered; if they have a value of -1, everytime the record is
 processed, monitors are triggered. The ADEL field is used by archive monitors
-and the MDEL field for all other types of monitors. See L<Monitor Specification>
-for a complete explanation of monitors and deadbands.
+and the MDEL field for all other types of monitors.
 
 =fields ADEL, MDEL
 
@@ -142,7 +141,7 @@ The processing subroutine is located and its address stored in SADR.
 
   long (*process)(struct dbCommon *precord)
 
-See L<Record Processing>.
+See L</"Record Processing">.
 
 =head4 get_units
 
@@ -218,7 +217,12 @@ If return value is 1, return
 
 =item 3.
 
-Check alarms. This routine checks to see if the new VAL causes the alarm status and severity to change. If so, NSEV, NSTA and LALM are set. It also honors the alarm hysteresis factor (HYST). Thus the value must change by more than HYST before the alarm status and severity is lowered.
+Check alarms. This routine checks to see if the new VAL causes the alarm status
+and severity to change.
+If so, NSEV, NSTA and LALM are set.
+It also honors the alarm hysteresis factor (HYST).
+Thus the value must change by more than HYST before the alarm status and
+severity is lowered.
 
 =item 4.
 

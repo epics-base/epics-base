@@ -22,35 +22,7 @@ Wait record.
 
 =head2 Parameter Fields
 
-The fields in this record fall into these categories:
-
-=over 1
-
-=item *
-scan parameters
-
-=item *
-read parameters
-
-=item *
-expression parameters
-
-=item *
-output parameters
-
-=item *
-operator display parameters
-
-=item *
-alarm parameters
-
-=item *
-monitor parameters
-
-=item *
-run-time parameters
-
-=back
+The record-specific fields are described below, grouped by functionality.
 
 =recordtype calcout
 
@@ -80,11 +52,8 @@ recordtype(calcout) {
 =head3 Scan Parameters
 
 The Calcout record has the standard fields for specifying under what
-circumstances the record will be processed. The fields are listed in
-L<Scan Fields>. In addition, L<Scanning Specification> explains how these
-fields are used. Since the Calcout record supports no direct interfaces to
-hardware, it cannot be scanned on I/O interrupt, so its SCAN field cannot
-be C<I/O Intr>.
+circumstances the record will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read Parameters
 
@@ -98,9 +67,6 @@ INBV, ... INLV fields which indicate the status of the link fields, for
 example, whether or not the specified PV was found and a link to it
 established. See L<Operator Display Parameters> for an explanation of these
 fields.
-
-See L<Address Specification> for information on how to specify database
-links.
 
 =fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL
 
@@ -607,8 +573,8 @@ is set to one.
 
 The DLYA field is set to one during the delay specified in ODLY.
 
-See L<Fields Common to All Record Types> for more information on the record
-name (NAME) and description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =fields EGU, PREC, HOPR, LOPR, INAV, INBV, INCV, INDV, INEV, INFV, INGV, INHV, INIV, INJV, INKV, INLV, OUTV, CLCV, OCLV, DLYA, NAME, DESC
 

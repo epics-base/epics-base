@@ -15,27 +15,7 @@ handler routine for I/O Event-scanned records.
 
 =head2 Parameter Fields
 
-The records in this field fall into the following groups of parameters:
-
-=over
-
-=item *
-
-scan parameters
-
-=item *
-
-read parameters
-
-=item *
-
-event number parameters
-
-=item *
-
-simulation mode parameters
-
-=back
+The record-specific fields are described below, grouped by functionality.
 
 =recordtype event
 
@@ -59,9 +39,8 @@ recordtype(event) {
 The event record has the standard fields for specifying under what circumstances
 it will be processed. If the SCAN field specifies C<I/O Intr>, then device
 support will provide an interrupt handler, posting an event number when an I/O
-interrupt occurs. These fields are listed in L<Scan Fields>. In addition,
-L<Scanning Specification> explains how the scanning fields work. Note that I/O
-event scanning is only supported for those card types that interrupt.
+interrupt occurs.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Event Number Parameters
 
@@ -112,8 +91,9 @@ access link. For soft records, the DTYP field should specify C<Soft Channel>.
 
 =head3 Operator Display Parameters
 
-See L<Fields Common to All Record Types> for more on the record name (NAME) and
-description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
+
 
 =fields NAME, DESC
 
@@ -276,7 +256,7 @@ C<init_record()> routine.
   get_ioint_info(int cmd, struct dbCommon *precord, IOSCANPVT *ppvt)
 
 This routine is called by the ioEventScan system each time the record is added
-or deleted from an I/O event scan list. cmd has the value (0,1) if the record is
+or deleted from an I/O event scan list. C<cmd> has the value (0,1) if the record is
 being (added to, deleted from) an I/O event list. It must be provided for any
 device type that can use the ioEvent scanner.
 

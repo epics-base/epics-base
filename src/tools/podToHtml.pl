@@ -16,8 +16,7 @@ use warnings;
 use FindBin qw($Bin);
 use lib ("$Bin/../../lib/perl", $Bin);
 
-use Getopt::Std;
-$Getopt::Std::STANDARD_HELP_VERSION = 1;
+use EPICS::Getopts;
 
 use EPICS::PodHtml;
 
@@ -52,9 +51,10 @@ Help, display this document as text.
 
 =item B<-s>
 
-Indicates that the first component of the input file path is not part of the
+Indicates that one leading component of the input file path is not part of the
 final installation path, thus should be removed before calculating the relative
-path to the style-sheet file.
+path to the style-sheet file. This flag may be repeated as many times as needed
+to remove multiple leading components from the path to the style sheet.
 
 =item B<-o> file.html
 
@@ -87,7 +87,7 @@ if (!$opt_o) {
 }
 
 # Calculate path to style.css file
-shift @inpath if $opt_s; # Remove leading ..
+shift @inpath while $opt_s--; # Remove leading ..
 my $root = '../' x scalar @inpath;
 
 open my $out, '>', $opt_o or

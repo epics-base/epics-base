@@ -35,8 +35,8 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scan Parameters
 
 The sequence record has the standard fields for specifying under what
-circumstances it will be processed. These fields are listed in L<Scan Fields>.
-In addition, L<Scanning Specification> explains how these fields are used.
+circumstances it will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Desired Output Parameters
 
@@ -48,15 +48,13 @@ The sequence record can retrieve up to 16 values from 16 locations. The user
 specifies the locations in the Desired Output Link fields (DOL0-DOLF), which can
 be either constants, database links, or channel access links. If a Desired
 Output Link is a constant, the corresponding value field for that link is
-initialized to the constant value and ''cannot'' be changed via dbputs.
+initialized to the constant value.
 Otherwise, if the Desired Output Link is a database or channel access link, a
-value is fetched from the link each time the record is processed (provided that
-the output link is part of the record's selection algorithm). See L<Address
-Specification> for information on how to specify database links.
+value is fetched from the link each time the record is processed.
 
 The value fetched from the Desired Output Links are stored in the corresponding
 Desired Output Value fields (DO0-DOF). These fields can be initialized to a
-constant value, but they cannot be changed via dbPuts.
+constant value, and may subsequently be changed via dbPuts.
 
 =head4 Desired Output Link Fields
 
@@ -97,19 +95,23 @@ See L<Selection Algorithms Description> below;
 
 B<SELL - Link Selection Location>
 
-This field can be initialized as a CONSTANT or as a LINK to any other record. SELN will fetch its value from this field when the seq record is processed.
-Thus, when using I<Mask> or I<Specified> modes, the links that seq will process can be dinamically changed by the record pointed by SELL.
+This field can be initialized as a CONSTANT or as a LINK to any other record.
+SELN will fetch its value from this field when the seq record is processed.
+Thus, when using C<Mask> or C<Specified> modes, the links that seq will
+process can be dynamically changed by the record pointed by SELL.
 
 B<SELN - Link Selection>
 
-When B<C<SELM = Specified>> this is the index number of the link that will be processed, used in combination with the C<OFFS> field:
+When B<C<SELM = Specified>> this is the index number of the link that will be
+processed, used in combination with the C<OFFS> field:
 
   SELN = SELN + OFFS
 
 
 I<(By default, the OFFS is initalized to ZERO)>
 
-When B<C<SELM = Mask>> this field is the bitmask that will be used to determine which links will be processed by the seq record,
+When B<C<SELM = Mask>> this field is the bitmask that will be used to determine
+which links will be processed by the seq record,
 in combination with the C<SHFT> field:
 
   if (SHFT >= 0)
@@ -121,11 +123,15 @@ I<(By default, the SHFT is initalized to -1)>
 
 =head4 B<Note about SHFT and OFFS fields>
 
-The first versions of seq record had DO, DOL, LNK and DLY fields starting with index ONE (DO1, DOL1, LNK1 and DLY1).
-New version of the seq record now supports 16 links, starting by index ZERO (DO0, DOL0, LNK0 and DLY0). The SHFT and OFFS fields
-were introduced to keep compatibility of old databases that used seq record with its links indexed from one onwards.
+The first versions of seq record had DO, DOL, LNK and DLY fields starting with
+index ONE (DO1, DOL1, LNK1 and DLY1).
+Since EPICS 7 the seq record now supports 16 links, starting from index ZERO
+(DO0, DOL0, LNK0 and DLY0).
+The SHFT and OFFS fields were introduced to keep compatibility of old databases
+that used seq records with links indexed from one.
 
-B<If one wants to use DO0, DOL0, LNK0, DLY0 fields when SELM = Mask, SHFT field must be set to ZERO>
+B<To use the DO0, DOL0, LNK0, DLY0 fields when SELM = Mask, the SHFT field must
+be set to ZERO>
 
 =head4 Selection Algorithms Description
 
@@ -179,16 +185,17 @@ Precision field (PREC) determines the decimal precision for the VAL field when
 it is displayed. It is used when the C<<< get_precision >>> record routine is
 called.
 
-See L<Fields Common to All Record Types> for more on the record name (NAME) and
-description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
+
 
 =fields PREC, NAME, DESC
 
 =head3 Alarm Parameters
 
 The sequence record has the alarm parameters common to all record types.
-L<Alarm Fields> lists other fields related to a alarms that are common to all
-record types.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 =head2 Record Support
 

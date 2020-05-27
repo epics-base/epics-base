@@ -31,9 +31,7 @@ The record-specific fields are described below, grouped by functionality.
 
 The permissive record has the standard fields for specifying under what
 circumstances the record will be processed. These fields are listed in
-L<Scan Fields>. In addition, L<Scanning Specification> explains how these
-fields are used. Since the permissive record supports  no direct interfaces to
-hardware, its SCAN field cannot be C<<< I/O Intr >>>.
+L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Client-server Parameters
 
@@ -87,8 +85,8 @@ description (DESC) fields.
 =head3 Alarm Parameters
 
 The Permissive record has the alarm parameters common to all record types.
-L<Alarm Fields> lists other fields related to a alarms that are common to all
-record types.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 =head3 Run-time Parameters
 

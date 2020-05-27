@@ -74,10 +74,6 @@ that comes with Base.
 The OUT link field contains a database or channel access link or provides
 hardware address information that the device support uses to determine where the
 output data should be sent to.
-The format for the OUT field value depends on the device support layer that is
-selected by the DTYP field.
-See L<Address Specification|...> for a description of the various hardware
-address formats supported.
 
 =head3 Operator Display Parameters
 
@@ -463,7 +459,7 @@ by at least HYST between level alarm status and severity changes.
 
 =item 4.
 
-Check severity and write the new value. See L<Invalid Alarm Output Action>
+Check severity and write the new value. See L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>
 for details on how invalid alarms affect output records.
 
 =item 5.

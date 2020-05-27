@@ -17,8 +17,6 @@ types.
 
 =cut
 
-include "menuFtype.dbd"
-
 menu(waveformPOST) {
     choice(waveformPOST_Always,"Always")
     choice(waveformPOST_OnChange,"On Change")
@@ -33,10 +31,8 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scan Parameters
 
 The waveform record has the standard fields for specifying under what
-circumstances the record will be processed. These fields are listed in L<Scan
-Fields>. In addition, L<Scanning Specification> explains how these fields are
-used. Note that I/O event scanning is only supported for those card types that
-interrupt.
+circumstances the record will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read Parameters
 
@@ -45,9 +41,7 @@ record reads its data. How the INP field is configured determines where the
 waveform gets its input. It can be a hardware address, a channel access or
 database link, or a constant. Only in records that use soft device support can
 the INP field be a channel access link, a database link, or a constant.
-Otherwise, the INP field must be a hardware address. See L<Address
-Specification> for information on the format of hardware addresses and database
-links.
+Otherwise, the INP field must be a hardware address.
 
 =head4 Fields related to waveform reading
 
@@ -57,12 +51,11 @@ The DTYP field must contain the name of the appropriate device support module.
 The values retrieved from the input link are placed in an array referenced by
 VAL. (If the INP link is a constant, elements can be placed in the array via
 dbPuts.) NELM specifies the number of elements that the array will hold, while
-FTVL specifies the data type of the elements.
-The RARM field causes the device to re-arm when this field is set to 1.
+FTVL specifies the data type of the elements (follow the link in the table
+above for a list of the available choices).
 
-=head4 Possible data types for FTVL
-
-=menu menuFtype
+The RARM field used to cause some device types to re-arm when it was set to 1,
+but we don't know of any such devices any more.
 
 =head3 Operator Display Parameters
 
@@ -85,34 +78,36 @@ The PREC field determines the floating point precision with which to display the
 array values. It is used whenever the C<<< get_precision >>> record support
 routine is called.
 
-See L<Fields Common to All Record Types> for more on the record name (NAME) and
-description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 
 =head3 Alarm Parameters
 
-The waveform record has the alarm parameters common to all record types. L<Alarm
-Fields> lists other fields related to a alarms that are common to all record
-types.
+The waveform record has the alarm parameters common to all record types.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 =head3 Monitor Parameters
 
 These parameters are used to determine when to send monitors placed on the VAL
-field. The APST and MPST fields are a menu with choices "Always" and "On
-Change". The default is "Always", thus monitors will normally be sent every time
-the record processes. Selecting "On Change" causes a 32-bit hash of the VAL
+field.
+The APST and MPST fields are a menu with choices C<Always> and C<On Change>.
+The default is C<Always>, thus monitors will normally be sent every time
+the record processes.
+Selecting C<On Change> causes a 32-bit hash of the VAL
 field buffer to be calculated and compared with the previous hash value every
 time the record processes; the monitor will only be sent if the hash is
 different, indicating that the buffer has changed. Note that there is a small
 chance that two different value buffers might result in the same hash value, so
-for critical systems "Always" may be a better choice, even though it re-sends
+for critical systems C<Always> may be a better choice, even though it re-sends
 duplicate data.
-
-=head4 Record fields related to I<Monitor Parameters>
 
 =fields APST, MPST, HASH
 
-=head4 Menu choices for C<APST> and C<MPST> fields
+=head4 Menu waveformPOST
+
+This menu defines the possible choices for C<APST> and C<MPST> fields:
 
 =menu waveformPOST
 
@@ -179,7 +174,7 @@ If device support includes C<init_record()>, it is called.
 
   static long process(waveformRecord *prec)
 
-See L</"Record Processing"> section below.
+See L</Record Processing> section below.
 
 =head4 cvt_dbaddr
 
@@ -347,7 +342,7 @@ C<init_record()> routine.
   long get_ioint_info(int cmd, dbCommon *precord, IOSCANPVT *ppvt)
 
 This routine is called by the ioEventScan system each time the record is added
-or deleted from an I/O event scan list.  cmd has the value (0,1) if the
+or deleted from an I/O event scan list.  C<cmd> has the value (0,1) if the
 record is being (added to, deleted from) an I/O event list. It must be
 provided for any device type that can use the ioEvent scanner.
 

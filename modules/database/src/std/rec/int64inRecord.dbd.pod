@@ -43,10 +43,7 @@ that comes with Base.
 The INP link field contains a database or channel access link or provides
 hardware address information that the device support uses to determine where the
 input data should come from.
-The format for the INP field value depends on the device support layer that is
-selected by the DTYP field.
-See L<Address Specification|...> for a description of the various hardware
-address formats supported.
+
 
 =head3 Operator Display Parameters
 

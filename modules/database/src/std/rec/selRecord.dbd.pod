@@ -33,9 +33,8 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scan Parameters
 
 The select record has the standard fields for specifying under what
-circumstances the record will be processed. These fields are listed in
-L<Scan Fields>.  In addition, L<Scanning Specification>
-explains how these fields work.
+circumstances the record will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read Parameters
 
@@ -45,8 +44,7 @@ links configured by the user to be either constants, channel access links, or
 database links. If channel access or database links, a value is retrieved for
 each link and placed in the corresponding value field, A-L. If any input link is
 a constant, the value field for that link will be initialized with the constant
-value given to it and can be modified via dbPuts. See L<Address Specification>
-for information on how to specify database links.
+value given to it and can be modified via dbPuts.
 
 Any links not defined are ignored by the selection record and its algorithm. An
 undefined link is any constant link whose value is 0. At initialization time,
@@ -80,8 +78,7 @@ SELN's value. NVL is an input link from which a value for SELN can be retrieved,
 Like most other input links NVL can be a constant, or a channel access or
 database link. If NVL is a link, SELN is retrieved from the location in NVL. If
 a constant, SELN is initialized to the value given to the constant and can be
-changed via dbPuts. See L<Address Specification> for information on how to
-specify database links.
+changed via dbPuts.
 
 The C<<< High Signal >>>, C<<< Low Signal >>>, and C<<< Median Signal >>>
 algorithms do not use SELN or NVL. If C<<< High Signal >>> is chosen, VAL is set
@@ -113,8 +110,8 @@ The PREC field determines the floating point precision with which to display
 VAL. It is used whenever the C<<< get_precision >>> record support routine is
 called.
 
-See L<Fields Common to All Record Types> for more on the record name (NAME)
-and description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =fields EGU, HOPR, LOPR, PREC, NAME, DESC
 
@@ -125,9 +122,9 @@ alarms. The SCAN and READ alarms are called by the record or device support
 routines. The limit alarms are configured by the user in the HIHI, LOLO, HIGH,
 and LOW fields using numerical values. They specify conditions for the VAL
 field. For each of these fields, there is a corresponding severity field which
-can be either NO_ALARM, MINOR, or MAJOR. See L<Alarm Specification>
-for a complete explanation of alarms and these fields.  L<Alarm Fields>
-lists other fields related to a alarms that are common to all record types.
+can be either NO_ALARM, MINOR, or MAJOR.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST
 
@@ -138,8 +135,7 @@ archiver and monitor calls for the VAL field. Unless, VAL changes by more than
 the value specified by each, then the respective monitors will not be called. If
 these fields have a value of zero, everytime the VAL changes, monitors are
 triggered; if they have a value of -1, everytime the record is processed,
-monitors are triggered.  L<Monitor Specification>
-gives a complete explanation of alarms and deadbands.
+monitors are triggered.
 
 =fields ADEL, MDEL
 
@@ -183,7 +179,7 @@ is created.
 
   long (*process)(struct dbCommon *precord)
 
-See L<Record Processing>.
+See L</"Record Processing">.
 
 =head4 get_units
 

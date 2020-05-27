@@ -38,10 +38,8 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scan Parameters
 
 The multi-bit binary input record has the standard fields for specifying under
-what circumstances it will be processed. These fields are listed in L<Scan
-Fields>. In addition, L<Scanning Specification> explains how these fields are
-used. Note that I/O event scanning is only supported for those card types that
-interrupt.
+what circumstances it will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read and Convert Parameters
 
@@ -49,8 +47,7 @@ The device support routines obtain the record's input from the device or link
 specified in the INP field. For records that obtain their input from devices,
 the INP field must contain the address of the I/O card, and the DTYP field must
 specify the proper device support module. Be aware that the address format
-differs according to the I/O bus used. See L<Address Specification> for
-information on the format of hardware addresses.
+differs according to the I/O bus used.
 
 Two soft device support modules can be specified in DTYP C<Soft Channel> and
 C<<< Raw Soft Channel >>>.
@@ -60,8 +57,7 @@ upon which the normal conversion process is undergone. C<<< Soft Channel >>>
 reads any unsigned integer directly into VAL. For a soft mbbi record, the INP
 field can be a constant, a database, or a channel access link. If INP is a
 constant, then the VAL is initialized to the constant value but can be changed
-at run-time via dbPutField or dbPutLink. See L<Address Specification> for
-information on the format of database addresses.
+at run-time via dbPutField or dbPutLink.
 
 MASK is used by the raw soft channel read routine, and by typical device support
 read routines, to select only the desired bits when reading the hardware
@@ -111,8 +107,9 @@ record routines retrieve these strings for the operator. C<<< Get_enum_str >>>
 gets the string corresponding to the value set in VAL, and C<<< get_enum_strs
 >>> retrieves all the strings.
 
-See L<Fields Common to All Record Types> for more on the record name (NAME) and
-description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
+
 
 =fields NAME, DESC, ZRST, ONST, TWST, THST, FRST, FVST, SXST, SVST, EIST, NIST, TEST, ELST, TVST, TTST, FTST, FFST
 
@@ -417,7 +414,7 @@ state occurs, if set to MAJOR or MINOR.
 
 The other fields, when set to MAJOR or MINOR, trigger an alarm when VAL equals
 the corresponding state. See the See L<Alarm Specification> for a complete
-explanation of discrete alarms and these fields. L<Alarm Fields> lists other
+explanation of discrete alarms and these fields. L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other
 fields related to a alarms that are common to all record types.
 
 =fields UNSV, COSV, ZRSV, ONSV, TWSV, THSV, FRSV, FVSV, SXSV, SVSV, EISV, NISV, TESV, ELSV, TVSV, TTSV, FTSV, FFSV
@@ -885,7 +882,7 @@ also give SHFT a value.
   get_ioint_info(int cmd,struct dbCommon *precord,IOSCANPVT *ppvt)
 
 This routine is called by the ioEventScan system each time the record is added
-or deleted from an I/O event scan list. cmd has the value (0,1) if the record is
+or deleted from an I/O event scan list. C<cmd> has the value (0,1) if the record is
 being (added to, deleted from) an I/O event list. It must be provided for any
 device type that can use the I/O Event scanner.
 

@@ -44,8 +44,6 @@ The record-specific fields are described below.
 
 =recordtype compress
 
-...
-
 =cut
 
 menu(compressALG) {
@@ -70,7 +68,8 @@ The record-specific fields are described below, grouped by functionality.
 
 The compression record has the standard fields for specifying under what
 circumstances the record will be processed. These fields are listed in
-L<Scan Fields>. In addition, L<Scanning Specification>
+
+L<Scan Fields|dbCommonRecord/Scan Fields>. In addition, L<Scanning Specification>
 explains how these fields are used. Since  the compression record supports no
 direct interfaces to hardware, its SCAN field cannot specify C<<< I/O Intr >>>.
 
@@ -197,14 +196,14 @@ PREC controls the floating-point precision whenever C<<< get_precision >>> is
 called, and the field being referenced is the VAL field (i.e., one of the values
 contained in the circular buffer).
 
-See L<Fields Common to All Record Types>
-for more on the record name (NAME) and description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 
 =head3 Alarm Parameters
 
 The compression record has the alarm parameters common to all record types
-described in L<Alarm Fields>.
+described in L<Alarm Fields|dbCommonRecord/Alarm Fields>.
 
 =head3 Run-time Parameters
 
@@ -234,7 +233,7 @@ appropriate fields in the record.
 
   long process(struct dbCommon *precord)
 
-See L<Record Processing> below.
+See L</"Record Processing"> below.
 
   long special(struct dbAddr *paddr, int after)
 

@@ -19,15 +19,13 @@ The record-specific fields are described below, grouped by functionality.
 
 =cut
 
-include "menuIvoa.dbd"
-
 recordtype(lso) {
 
 =head3 Scan Parameters
 
 The long string output record has the standard fields for specifying under what
-circumstances it will be processed. These fields are listed in L<Scan Fields>.
-In addition, L<Scanning Specification> explains how these fields are used.
+circumstances it will be processed.
+These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Desired Output Parameters
 
@@ -49,8 +47,6 @@ interpreted as a CA link name. If you want to initialize your string output
 record, it is therefore best to use the VAL field. Note that if DOL is a
 constant, OMSL cannot be C<closed_loop>.
 
-See L<Address Specification> for information on specifying links.
-
 =fields VAL, SIZV, DOL, OMSL
 
 =head3 Output Specification
@@ -58,8 +54,6 @@ See L<Address Specification> for information on specifying links.
 The output link specified in the OUT field specifies where the long string
 output record is to write its string. The link can be a database or channel
 access link. If the OUT field is a constant, no output will be written.
-
-See L<Address Specification> for information on specifying links.
 
 In addition, the appropriate device support module must be entered into the DTYP
 field.
@@ -79,30 +73,22 @@ APST is used for archiver monitors and MPST  for all other type of monitors.
 
 =head3 Operator Display Parameters
 
-See L<Fields Common to All Record Types> for more on the record name (NAME) and
-description (DESC) fields.
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =fields NAME, DESC
 
 =head3 Alarm Parameters
 
-The long string input record has the alarm parameters common to all record
-types. L<Alarm Fields> lists other fields related to a alarms that are common to
-all record types.
+The long string input record has the same alarm parameters common to all record
+types. L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
+alarms that are common to all record types.
 
 The IVOA field specifies an action to take when the INVALID alarm is triggered.
-There are three possible actions:
-
-=head4 Menu menuIvoa
-
-=menu menuIvoa
-
 When C<<< Set output to IVOV >>>, the value contained in the IVOV field is
 written to the output link during an alarm condition. See
-L<Invalid Alarm Output Action>
+L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>
 for more information on the IVOA and IVOV fields.
-L<Alarm Fields>
-lists other fields related to a alarms that are common to all record types.
 
 =fields IVOA, IVOV
 
@@ -124,12 +110,18 @@ lists other fields related to a alarms that are common to all record types.
         pp(TRUE)
         special(SPC_DBADDR)
         extra("char *val")
+        #=type STRING or CHAR[SIZV]
+        #=read Yes
+        #=write Yes
     }
     field(OVAL,DBF_NOACCESS) {
         prompt("Previous Value")
         special(SPC_DBADDR)
         interest(3)
         extra("char *oval")
+        #=type STRING or [SIZV]
+        #=read Yes
+        #=write No
     }
     field(SIZV,DBF_USHORT) {
         prompt("Size of buffers")
@@ -266,26 +258,23 @@ for more information on simulation mode and its fields.
 }
 
 
-
 =head2 Device Support Interface
 
-The record requires device support to provide an entry table (dset) which
-defines the following members:
+The record defines a device support entry table type C<lsodset> in the generated
+lsoRecord.h file as follows:
 
- typedef struct {
-     long number;
-     long (*report)(int level);
-     long (*init)(int after);
-     long (*init_record)(lsoRecord *prec);
-     long (*get_ioint_info)(int cmd, lsoRecord *prec, IOSCANPVT *piosl);
-     long (*write_string)(lsoRecord *prec);
+ typedef struct lsodset {
+     dset common;
+     long (*write_string)(struct lsoRecord *prec);
  } lsodset;
+ #define HAS_lsodset
 
-The module must set C<number> to at least 5, and provide a pointer to its
-C<write_string()> routine; the other function pointers may be C<NULL> if their
-associated functionality is not required for this support layer.
-Most device supports also provide an C<init_record()> routine to configure the
-record instance and connect it to the hardware or driver support layer.
+The support module must set C<common.number> to at least 5, and provide a
+pointer to its C<write_string()> routine; the other function pointers may be
+C<NULL> if their associated functionality is not required for this support
+layer.
+Most device supports also provide a C<common.init_record()> routine to configure
+the record instance and connect it to the hardware or driver support layer.
 
 
 =head2 Device Support for Soft Records

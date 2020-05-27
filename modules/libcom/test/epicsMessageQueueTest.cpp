@@ -208,8 +208,14 @@ void sleepyReceiver(double delay)
         epicsThreadSleep(delay);
     }
 
+#ifdef __rtems__
+    testTodoBegin("RTEMS failure expected");
+#endif
     testOk(numSent == SLEEPY_TESTS, "Sent %d (should be %d)",
         numSent, SLEEPY_TESTS);
+#ifdef __rtems__
+    testTodoEnd();
+#endif
     testOk(numReceived == SLEEPY_TESTS, "Received %d (should be %d)",
         numReceived, SLEEPY_TESTS);
 
@@ -363,15 +369,9 @@ extern "C" void messageQueueTest(void *parm)
     sleepySender(0.009);
     sleepySender(0.010);
     sleepySender(0.011);
-#ifdef __rtems__
-    testTodoBegin("RTEMS failure expected");
-#endif
     sleepyReceiver(0.009);
     sleepyReceiver(0.010);
     sleepyReceiver(0.011);
-#ifdef __rtems__
-    testTodoEnd();
-#endif
 
     testDiag("Single receiver, single sender tests:");
     epicsThreadSetPriority(myThreadId, epicsThreadPriorityHigh);

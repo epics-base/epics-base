@@ -11,6 +11,7 @@ MKDIR = $(PERL) -MExtUtils::Command -e mkpath
 RMDIR = $(PERL) -MExtUtils::Command -e rm_rf
 NOP = $(PERL) -e ''
 CAT = $(PERL) -MExtUtils::Command -e cat
+TOUCH = $(PERL) -MExtUtils::Command -e touch
 
 WIND_HOST_TYPE = x86-win32
 OSITHREAD_USE_DEFAULT_STACK = NO

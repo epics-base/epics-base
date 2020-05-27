@@ -11,6 +11,7 @@ RM = rm -f
 MKDIR = mkdir -p
 RMDIR = rm -rf
 CAT = cat
+TOUCH = touch
 
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.UnixCommon.Common

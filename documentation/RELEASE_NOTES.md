@@ -8,22 +8,48 @@ which they were originally committed.** Thus it is important to read more than
 just the first section to understand everything that has changed in each
 release.
 
-The external PVA submodules each have their own separate set of release notes
-which should also be read to understand what has changed since an earlier
-release.
+The PVA submodules each have their own individual sets of release notes which
+should also be read to understand what has changed since earlier releases.
 
 ## EPICS Release 7.0.3.2
 
-### \*_API macros in headers
+### Bug fixes
+
+The following launchpad bugs have fixes included in this release:
+
+- [lp: 1812084](https://bugs.launchpad.net/bugs/1812084), Build failure on
+  RTEMS 4.10.2
+- [lp: 1829919](https://bugs.launchpad.net/bugs/1829919), IOC segfaults when
+  calling dbLoadRecords after iocInit
+- [lp: 1838792](https://bugs.launchpad.net/bugs/1838792), epicsCalc bit-wise
+  operators on aarch64
+- [lp: 1853148](https://bugs.launchpad.net/bugs/1853148), mingw compiler
+  problem with printf/scanf formats
+- [lp: 1852653](https://bugs.launchpad.net/bugs/1852653), USE_TYPED_DSET
+  incompatible with C++
+- [lp: 1862328](https://bugs.launchpad.net/bugs/1862328), Race condition on
+  IOC start leaves rsrv unresponsive
+- [lp: 1866651](https://bugs.launchpad.net/bugs/1866651), thread joinable race
+- [lp: 1868486](https://bugs.launchpad.net/bugs/1868486), epicsMessageQueue
+  lost messages
+- [lp: 1868680](https://bugs.launchpad.net/bugs/1868680), Access Security file
+  reload (asInit) fails
+
+### \*_API macros in EPICS headers
 
 Internally, the Com and ca libraries now express dllimport/export (Windows)
-and symbol visibility (GCC) with individual macros (eg. LIBCOM_API)
-instead of using epicsShare\*.  This change may effect user code which uses
-epicsShare\* macros without explicitly including the shareLib.h header.
-Such code should be changed to include shareLib.h directly.
+and symbol visibility (GCC) using library-specific macros (eg. `LIBCOM_API`)
+instead of the macros `epicsShareFunc`, `epicsShareClass`, `epicsShareDef` etc.
+that are defined in the `shareLib.h` header.
+This change may affect some user code which uses the `epicsShare*` macros
+without having explicitly included the `shareLib.h` header themselves.
+Such code should be changed to include `shareLib.h` directly.
 
-A new helper script makeAPIheader.pl and rules to generate \*API.h headers
-has been added.  Run 'makeAPIheader.pl -h' for application information.
+A new helper script `makeAPIheader.pl` and build rules to generate a
+library-specific `*API.h` header file has been added. Run `makeAPIheader.pl -h`
+for information on how to use this in your own applications, but note that the
+resulting sources will not be able to be compiled using earlier versions of
+EPICS Base.
 
 ### IOCsh usage messages
 

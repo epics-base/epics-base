@@ -20,12 +20,12 @@
  *
  * When creating the consumer thread also create an epicsEvent.
  \code
-   epicsEvent *pevent = new epicsEvent;
+   epicsEvent event;
  \endcode
  * The consumer thread has code containing:
  \code
        while(1) {
-           pevent->wait();
+           pevent.wait();
            while( {more work} ) {
                {process work}
            }
@@ -33,7 +33,7 @@
  \endcode
  * Producers create requests and issue the statement:
  \code
-       pevent->trigger();
+       pevent.trigger();
  \endcode
  **/
 

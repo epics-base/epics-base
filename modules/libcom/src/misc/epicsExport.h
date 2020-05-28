@@ -35,17 +35,7 @@ extern "C" {
 
 typedef void (*REGISTRAR)(void);
 
-/** \brief Generate a name for an export object.
- * \param typ Object's data type.
- * \param obj Object's name.
- * \return C identifier for the export object.
- */
 #define EPICS_EXPORT_POBJ(typ, obj) pvar_ ## typ ## _ ## obj
-
-/** \brief Generate a name for an export function object.
- * \param fun Function's name.
- * \return C identifier for the export object.
- */
 #define EPICS_EXPORT_PFUNC(fun) EPICS_EXPORT_POBJ(func, fun)
 
 /** \brief Declare an object for exporting.
@@ -79,6 +69,8 @@ typedef void (*REGISTRAR)(void);
  *
  * \param typ Object's data type.
  * \param obj Object's name.
+ *
+ * \note C++ code needs to wrap with @code extern "C" { } @endcode
  */
 #define epicsExportAddress(typ, obj) \
     epicsShareExtern typ *EPICS_EXPORT_POBJ(typ,obj); \
@@ -96,6 +88,8 @@ typedef void (*REGISTRAR)(void);
  \endcode
  *
  * \param fun Registrar function's name.
+ *
+ * \note C++ code needs to wrap with @code extern "C" { } @endcode
  */
 #define epicsExportRegistrar(fun) \
     epicsShareFunc REGISTRAR EPICS_EXPORT_PFUNC(fun) = (REGISTRAR) &fun
@@ -111,6 +105,8 @@ typedef void (*REGISTRAR)(void);
  \endcode
 *
  * \param fun Function's name
+ *
+ * \note C++ code needs to wrap with @code extern "C" { } @endcode
  */
 #define epicsRegisterFunction(fun) \
     static void register_func_ ## fun(void) \

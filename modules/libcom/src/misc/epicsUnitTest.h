@@ -88,14 +88,16 @@
 
 MAIN(iocTest)
 {
-    iocBuildIsolated() || iocRun();
-
-    ... test code ...
-
-    iocShutdown();
-    dbFreeBase(pdbbase);
-    registryFree();
-    pdbbase = NULL;
+    testPlan(0);
+    testdbPrepare();
+    testdbReadDatabase("<dbdname>.dbd", 0, 0);
+    <dbdname>_registerRecordDeviceDriver(pdbbase);
+    testdbReadDatabase("some.db", 0, 0);
+    ... test code before iocInit().  eg. dbGetString() ...
+    testIocInitOk();
+    ... test code with IOC running.  eg. dbGet()
+    testIocShutdownOk();
+    testdbCleanup();
     return testDone();
 }
 \endcode
@@ -235,6 +237,15 @@ LIBCOM_API int  testDiag(const char *fmt, ...)
  */
 LIBCOM_API int  testDone(void);
 
+/** \brief Return non-zero in shared/oversubscribed testing envrionments
+ *
+ * May be used to testSkip(), or select longer timeouts, for some cases
+ * when the test process may be preempted for arbitrarily long times.
+ * This is common in shared CI environments.
+ *
+ * The environment variable $EPICS_TEST_IMPRECISE_TIMING=YES should be
+ * set in by such testing environments.
+ */
 LIBCOM_API
 int testImpreciseTiming(void);
 

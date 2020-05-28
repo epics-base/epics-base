@@ -11,7 +11,7 @@ release.
 The PVA submodules each have their own individual sets of release notes which
 should also be read to understand what has changed since earlier releases.
 
-## EPICS Release 7.0.3.2
+## EPICS Release 7.0.4
 
 ### Bug fixes
 

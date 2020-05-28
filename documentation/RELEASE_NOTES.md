@@ -27,12 +27,15 @@ has been added.  Run 'makeAPIheader.pl -h' for application information.
 
 ### IOCsh usage messages
 
-`help <cmd>` now prints a descriptive usage message
-for many internal IOCsh commands.  Try `help *` to
-see them all.
+At the iocShell prompt `help <cmd>` now prints a descriptive usage message
+for many internal IOCsh commands in addition to the command parameters.
+Try `help *` to see all commands, or a glob pattern such as `help db*` to see
+a subset.
 
-External code which wishes to provide a usage message
-should do so through the new `iocshFuncDef::usage` member.
+External code may provide usage messages when registering commands using a
+new `const char *usage` member of the `iocshFuncDef` structure.
+The `iocsh.h` header also now defines a macro `IOCSHFUNCDEF_HAS_USAGE` which
+can be used to detect Base versions that support this feature at compile-time.
 
 ### Variable names in RELEASE files
 
@@ -62,7 +65,7 @@ the stdin/out of a process, like caget, which has spawned it in the
 background.  This has been known to cause problems in some cases when
 caget is itself being run from a shell script.
 
-caRepeater will now understand the '-v' argument to retain stdin/out/err
+caRepeater will now understand the `-v` argument to retain stdin/out/err
 which may be necessary to see any error messages it may emit.
 
 ### `state` record deprecated

@@ -89,7 +89,8 @@ git archive --prefix=$PREFIX $TOPREV | tar -C "$TDIR"/tar -x
 #
 # sub-modules appear in tree as eg.:
 #  160000 commit c3a6cfcf0dad4a4eeecf59b474710d06ff3eb68a  modules/ca
-git ls-tree -r $TOPREV | awk '/^[0-9]+ commit / {print $3, $4}' | \
+git ls-tree -r $TOPREV | \
+  awk '/^[0-9]+ commit / && $4 != ".ci" {print $3, $4}' | \
 while read HASH MODDIR
 do
     echo "Visiting $HASH $MODDIR"
@@ -105,13 +106,17 @@ sed -i -e 's|^\./||' "$TDIR"/list.1
 
 # Exclude files
 sed \
-  -e '/\/\.\?ci\//d' \
+  -e '/\/\.ci\//d' \
+  -e '/\/\.ci-local\//d' \
   -e '/\/\.tools\//d' \
   -e '/\/jenkins\//d' \
   -e '/\/\.git/d' \
+  -e '/\/\.hgtags$/d' \
+  -e '/\/\.cproject$/d' \
   -e '/\/\.project$/d' \
   -e '/\/\.travis\.yml$/d' \
   -e '/\/\.appveyor\.yml$/d' \
+  -e '/\/\.readthedocs\.yml$/d' \
   "$TDIR"/list.1 > "$TDIR"/list.2
 
 if ! diff -U 0 "$TDIR"/list.1 "$TDIR"/list.2

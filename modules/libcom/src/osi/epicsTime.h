@@ -155,10 +155,10 @@ public:
     static epicsTime getCurrent ();
     /** \brief Get current monotonic time
      *
-     * Returns an epicsTime containing the current monotonic time, a
-     * high-resolution OS clock that counts at a steady rate, never
-     * going backwards or jumping forwards. This time is only useful
-     * for measuring time differences.
+     * Returns an epicsTime containing the current monotonic time, an
+     * OS clock which never going backwards or jumping forwards.
+     * This time is has an undefined epoch, and is only useful for
+     * measuring time differences.
      */
     static epicsTime getMonotonic ();
 

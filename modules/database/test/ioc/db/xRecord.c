@@ -13,6 +13,8 @@
  *          Ralph Lange <Ralph.Lange@bessy.de>
  */
 
+#include <string.h>
+
 #include "dbAccessDefs.h"
 #include "recSup.h"
 #include "recGbl.h"

@@ -73,9 +73,7 @@
 /** \brief Size of a record name without the nil terminator */
 #define PVNAME_SZ (PVNAME_STRINGSZ - 1)
 
-/**
- * \def PVLINK_STRINGSZ
- * \brief Buffer size for the string representation of a DBF_*LINK field
+/** \brief Buffer size for the string representation of a DBF_*LINK field
  */
 #define PVLINK_STRINGSZ 1024
 

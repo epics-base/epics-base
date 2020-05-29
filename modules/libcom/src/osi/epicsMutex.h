@@ -19,12 +19,18 @@
  *
  * The typical C++ use of a mutual exclusion semaphore is:
  \code
-     epicsMutex *plock = new epicsMutex;
+     epicsMutex lock;
      ...
      ...
-     plock->lock();
-     // process resources
-     plock->unlock();
+     {
+         epicsMutex::guard_t G(lock); // lock
+         // process resources
+     } // unlock
+     // or for compatiblity
+     {
+         epicsGuard<epicsMutex> G(lock); // lock
+         // process resources
+     } // unlock
  \endcode
  *
  * \note The implementation:

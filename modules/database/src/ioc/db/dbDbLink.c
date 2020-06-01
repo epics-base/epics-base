@@ -221,9 +221,6 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
 
         if (status)
             return status;
-
-        if (pnRequest && *pnRequest <= 0)
-            return S_db_badField;
     }
 
     if (!status && precord != dbChannelRecord(chan))

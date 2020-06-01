@@ -553,7 +553,12 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
     dbCommon *prec = plink->precord;
     int i;
     long status;
-    FASTCONVERT conv = dbFastPutConvertRoutine[DBR_DOUBLE][dbrType];
+    FASTCONVERT conv;
+
+    if(INVALID_DB_REQ(dbrType))
+        return S_db_badDbrtype;
+
+    conv = dbFastPutConvertRoutine[DBR_DOUBLE][dbrType];
 
     /* Any link errors will trigger a LINK/INVALID alarm in the child link */
     for (i = 0; i < clink->nArgs; i++) {
@@ -624,7 +629,12 @@ static long lnkCalc_putValue(struct link *plink, short dbrType,
     dbCommon *prec = plink->precord;
     int i;
     long status;
-    FASTCONVERT conv = dbFastGetConvertRoutine[dbrType][DBR_DOUBLE];
+    FASTCONVERT conv;
+
+    if(INVALID_DB_REQ(dbrType))
+        return S_db_badDbrtype;
+
+    conv = dbFastGetConvertRoutine[dbrType][DBR_DOUBLE];
 
     /* Any link errors will trigger a LINK/INVALID alarm in the child link */
     for (i = 0; i < clink->nArgs; i++) {

@@ -142,7 +142,12 @@ static long lnkState_getValue(struct link *plink, short dbrType, void *pbuffer,
 {
     state_link *slink = CONTAINER(plink->value.json.jlink,
         struct state_link, jlink);
-    FASTCONVERT conv = dbFastPutConvertRoutine[DBR_SHORT][dbrType];
+    FASTCONVERT conv;
+
+    if(INVALID_DB_REQ(dbrType))
+        return S_db_badDbrtype;
+
+    conv = dbFastPutConvertRoutine[DBR_SHORT][dbrType];
 
     slink->val = slink->invert ^ dbStateGet(slink->state);
     return conv(&slink->val, pbuffer, NULL);

@@ -52,6 +52,9 @@
 #include "recGbl.h"
 #include "recSup.h"
 
+/* from dbAccessDefs.h which can't be included here */
+#define S_db_badDbrtype (M_dbAccess| 3)
+
 /* defined in dbContext.cpp
  * Setup local CA access
  */
@@ -456,6 +459,9 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
     long   status = 0;
     short  link_action = 0;
+
+    if(INVALID_DB_REQ(dbrType))
+        return S_db_badDbrtype;
 
     assert(pca);
     /* put the new value in */

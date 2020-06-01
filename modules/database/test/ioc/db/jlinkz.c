@@ -117,8 +117,13 @@ long z_putval(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest)
 {
     long ret;
-    long (*pconv)(epicsInt32 *, const void *, const dbAddr *) = dbFastPutConvertRoutine[DBF_LONG][dbrType];
+    long (*pconv)(epicsInt32 *, const void *, const dbAddr *);
     zpriv *priv = CONTAINER(plink->value.json.jlink, zpriv, base);
+
+    if(INVALID_DB_REQ(dbrType))
+        return S_db_badDbrtype;
+
+    pconv = dbFastPutConvertRoutine[DBF_LONG][dbrType];
 
     if(nRequest==0) return 0;
 

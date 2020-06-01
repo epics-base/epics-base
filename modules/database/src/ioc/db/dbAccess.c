@@ -736,6 +736,8 @@ long dbValueSize(short dbr_type)
         sizeof(epicsFloat64),        /* DOUBLE       */
         sizeof(epicsEnum16)};        /* ENUM         */
 
+    if(dbr_type>=NELEMENTS(size))
+        return 0;
     return(size[dbr_type]);
 }
 

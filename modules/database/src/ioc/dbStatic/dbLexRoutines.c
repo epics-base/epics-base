@@ -576,16 +576,20 @@ static void dbRecordtypeFieldItem(char *name,char *value)
             yyerror("Illegal Access Security value: Must be ASL0 or ASL1");
         }
         return;
-    } else if(strcmp(name,"initial")==0) {
+    }
+    if(strcmp(name,"initial")==0) {
         pdbFldDes->initial = epicsStrDup(value);
         return;
-    } else if(strcmp(name,"promptgroup")==0) {
+    }
+    if(strcmp(name,"promptgroup")==0) {
         pdbFldDes->promptgroup = findOrAddGuiGroup(value);
         return;
-    } else if(strcmp(name,"prompt")==0) {
+    }
+    if(strcmp(name,"prompt")==0) {
         pdbFldDes->prompt = epicsStrDup(value);
         return;
-    } else if(strcmp(name,"special")==0) {
+    }
+    if(strcmp(name,"special")==0) {
         int     i;
         for(i=0; i<SPC_NTYPES; i++) {
             if(strcmp(value,pamapspcType[i].strvalue)==0) {
@@ -598,7 +602,8 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         }
         yyerror("Illegal 'special' value.");
         return;
-    } else if(strcmp(name,"pp")==0) {
+    }
+    if(strcmp(name,"pp")==0) {
         if((strcmp(value,"YES")==0) || (strcmp(value,"TRUE")==0)) {
             pdbFldDes->process_passive = TRUE;
         } else if((strcmp(value,"NO")==0) || (strcmp(value,"FALSE")==0)) {
@@ -607,11 +612,13 @@ static void dbRecordtypeFieldItem(char *name,char *value)
             yyerror("Illegal 'pp' value, must be YES/NO/TRUE/FALSE");
         }
         return;
-    } else if(strcmp(name,"interest")==0) {
+    }
+    if(strcmp(name,"interest")==0) {
         if(sscanf(value,"%hd",&pdbFldDes->interest)!=1)
             yyerror("Illegal 'interest' value, must be integer");
         return;
-    } else if(strcmp(name,"base")==0) {
+    }
+    if(strcmp(name,"base")==0) {
         if(strcmp(value,"DECIMAL")==0) {
             pdbFldDes->base = CT_DECIMAL;
         } else if(strcmp(value,"HEX")==0) {
@@ -620,19 +627,23 @@ static void dbRecordtypeFieldItem(char *name,char *value)
             yyerror("Illegal 'base' value, must be DECIMAL/HEX");
         }
         return;
-    } else if(strcmp(name,"size")==0) {
+    }
+    if(strcmp(name,"size")==0) {
         if(sscanf(value,"%hd",&pdbFldDes->size)!=1)
             yyerror("Illegal 'size' value, must be integer");
         return;
-    } else if(strcmp(name,"extra")==0) {
+    }
+    if(strcmp(name,"extra")==0) {
         pdbFldDes->extra = epicsStrDup(value);
         return;
-    } else if(strcmp(name,"menu")==0) {
+    }
+    if(strcmp(name,"menu")==0) {
         pdbFldDes->ftPvt = (dbMenu *)dbFindMenu(pdbbase,value);
         if(!pdbbase->ignoreMissingMenus && !pdbFldDes->ftPvt)
             yyerrorAbort("menu not found");
         return;
-    } else if(strcmp(name,"prop")==0) {
+    }
+    if(strcmp(name,"prop")==0) {
         if(strcmp(value, "YES")==0)
             pdbFldDes->prop = 1;
         else

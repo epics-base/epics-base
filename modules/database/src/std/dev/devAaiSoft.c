@@ -60,9 +60,10 @@ static long init_record(dbCommon *pcommon)
         }
 
         status = dbLoadLinkArray(plink, prec->ftvl, prec->bptr, &nRequest);
-        if (!status && nRequest > 0) {
+        if (!status) {
             prec->nord = nRequest;
             prec->udf = FALSE;
+            return status;
         }
     }
     return 0;
@@ -74,7 +75,7 @@ static long readLocked(struct link *pinp, void *dummy)
     long nRequest = prec->nelm;
     long status = dbGetLink(pinp, prec->ftvl, prec->bptr, 0, &nRequest);
 
-    if (!status && nRequest > 0) {
+    if (!status) {
         prec->nord = nRequest;
         prec->udf = FALSE;
 
@@ -89,8 +90,12 @@ static long read_aai(aaiRecord *prec)
 {
     epicsUInt32 nord = prec->nord;
     struct link *pinp = prec->simm == menuYesNoYES ? &prec->siol : &prec->inp;
-    long status = dbLinkDoLocked(pinp, readLocked, NULL);
+    long status;
 
+    if (dbLinkIsConstant(pinp))
+        return 0;
+
+    status = dbLinkDoLocked(pinp, readLocked, NULL);
     if (status == S_db_noLSET)
         status = readLocked(pinp, NULL);
 

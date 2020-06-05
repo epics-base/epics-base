@@ -277,10 +277,9 @@ static long fetch_values(aSubRecord *prec)
         long nRequest = (&prec->noa)[i];
         status = dbGetLink(&(&prec->inpa)[i], (&prec->fta)[i], (&prec->a)[i], 0,
             &nRequest);
-        if (nRequest > 0)
-            (&prec->nea)[i] = nRequest;
         if (status)
             return status;
+        (&prec->nea)[i] = nRequest;
     }
     return 0;
 }

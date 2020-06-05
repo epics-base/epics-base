@@ -50,9 +50,11 @@ realclean:
 # Append all our live submodule failure files
 FAILURE_FILES = $(addsuffix /$(TEST_FAILURE_FILENAME), $(LIVE_SUBMODULES))
 
+define combine_failure_files
+	@$(TOUCH) $(FAILURE_FILES)
+	@$(CAT) $(FAILURE_FILES) >> $(TEST_FAILURE_FILE)
+endef
 runtests: | $(addsuffix $(DIVIDER)runtests, $(LIVE_SUBMODULES))
-	@$(TOUCH) $(FAILURE_FILES)
-	@$(CAT) $(FAILURE_FILES) >> $(TEST_FAILURE_FILE)
+	$(if $(FAILURE_FILES), $(combine_failure_files))
 test-results: | $(addsuffix $(DIVIDER)test-results, $(LIVE_SUBMODULES))
-	@$(TOUCH) $(FAILURE_FILES)
-	@$(CAT) $(FAILURE_FILES) >> $(TEST_FAILURE_FILE)
+	$(if $(FAILURE_FILES), $(combine_failure_files))

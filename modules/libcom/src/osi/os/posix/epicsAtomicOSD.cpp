@@ -2,6 +2,7 @@
 /*************************************************************************\
 * Copyright (c) 2011 LANS LLC, as Operator of
 *     Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/

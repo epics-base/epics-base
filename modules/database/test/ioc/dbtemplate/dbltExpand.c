@@ -1,6 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 * National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS Base is distributed subject to a Software License Agreement found
 * in the file LICENSE that is included with this distribution.
 \*************************************************************************/

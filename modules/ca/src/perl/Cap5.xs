@@ -1,3 +1,11 @@
+/*************************************************************************\
+* Copyright (c) 2005 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
+* SPDX-License-Identifier: EPICS
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
+
 /* Provides an EPICS Channel Access client interface for Perl5. */
 
 /* This macro disables perl's reentr.inc file, which we don't need

@@ -1,6 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2013 Brookhaven National Laboratory.
 * Copyright (c) 2013 ITER Organization.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
  \*************************************************************************/

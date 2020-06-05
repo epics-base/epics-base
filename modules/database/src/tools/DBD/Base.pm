@@ -1,3 +1,9 @@
+######################################################################
+# SPDX-License-Identifier: EPICS
+# EPICS BASE is distributed subject to a Software License Agreement
+# found in file LICENSE that is included with this distribution.
+######################################################################
+
 # Common utility functions used by the DBD components
 
 package DBD::Base;

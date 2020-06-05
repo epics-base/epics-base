@@ -6,6 +6,7 @@
 *     National Laboratory.
 * Copyright (c) 2003 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to the Software License Agreement
 * found in the file LICENSE that is included with this distribution.
 \*************************************************************************/

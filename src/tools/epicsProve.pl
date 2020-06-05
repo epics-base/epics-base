@@ -1,8 +1,11 @@
 #!/usr/bin/env perl
+#*************************************************************************
+# SPDX-License-Identifier: EPICS
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
 
-# Some Windows Perl installations provide a prove.bat file which
-# doesn't work properly. This also lets us make the output stand
-# out a bit more.
+# Portable test-runner to make the output stand out a bit more.
 
 use strict;
 use warnings;
@@ -14,9 +17,9 @@ my $path = abs_path('.');
 
 printf "\n%s\n%s\n", '-' x length($path), $path;
 
-my $app = App::Prove->new;
-$app->process_args(@ARGV);
-my $res = $app->run;
+my $prover = App::Prove->new;
+$prover->process_args(@ARGV);
+my $res = $prover->run;
 
 print "-------------------\n\n";
 

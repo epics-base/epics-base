@@ -1,5 +1,12 @@
 #!/usr/bin/env perl
-#
+#*************************************************************************
+# Copyright (c) 2005 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# SPDX-License-Identifier: EPICS
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
 # Tool to expand @VAR@ variables while copying a file.
 # The file will *not* be copied if it already exists.
 #

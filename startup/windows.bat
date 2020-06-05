@@ -4,6 +4,7 @@ rem  Copyright (c) 2017 UChicago Argonne LLC, as Operator of Argonne
 rem      National Laboratory.
 rem  Copyright (c) 2002 The Regents of the University of California, as
 rem      Operator of Los Alamos National Laboratory.
+rem  SPDX-License-Identifier: EPICS
 rem  EPICS BASE is distributed subject to a Software License Agreement found
 rem  in file LICENSE that is included with this distribution.
 rem *************************************************************************

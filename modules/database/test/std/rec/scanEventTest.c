@@ -1,5 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2018 Paul Scherrer Institut
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
  \*************************************************************************/

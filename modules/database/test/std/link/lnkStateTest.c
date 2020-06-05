@@ -1,5 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2018 Andrew Johnson
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in the file LICENSE that is included with this distribution.
 \*************************************************************************/

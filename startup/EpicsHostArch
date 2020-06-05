@@ -1,4 +1,10 @@
 #!/bin/sh
+#*************************************************************************
+# SPDX-License-Identifier: EPICS
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
 # Script to find and run the Perl EpicsHostArch.pl script.
 
 # This script is provided for backwards-compatibility only and may be

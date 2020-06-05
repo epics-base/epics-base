@@ -7,6 +7,7 @@
 *     as Operator of Los Alamos National Laboratory.
 * Copyright (c) 2006 The Board of Trustees of the Leland Stanford Junior
 *     University, as Operator of the Stanford Linear Accelerator Center.
+* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/

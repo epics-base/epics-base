@@ -2,7 +2,8 @@
 #*************************************************************************
 # Copyright (c) 2018 UChicago Argonne LLC, as Operator of Argonne
 # National Laboratory.
-# This file is distributed subject to a Software License Agreement found
+# SPDX-License-Identifier: EPICS
+# EPICS Base is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
 

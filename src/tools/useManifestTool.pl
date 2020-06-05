@@ -1,4 +1,9 @@
 #!/usr/bin/env perl
+#*************************************************************************
+# SPDX-License-Identifier: EPICS
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
 #
 # Use MS Visual C++ compiler version number to determine if
 # we want to use the Manifest Tool (status=1) or not (status=0)

@@ -363,8 +363,9 @@ long dbpf(const char *pname,const char *pvalue)
 {
     DBADDR addr;
     long status;
-    short dbrType;
-    size_t n = 1;
+    short dbrType = DBR_STRING;
+    long n = 1;
+    epicsOldString *array = NULL;
 
     if (!pname || !*pname || !pvalue) {
         printf("Usage: dbpf \"pv name\", \"value\"\n");
@@ -379,16 +380,36 @@ long dbpf(const char *pname,const char *pvalue)
         return -1;
     }
 
-    if (addr.no_elements > 1 &&
-        (addr.dbr_field_type == DBR_CHAR || addr.dbr_field_type == DBR_UCHAR)) {
-        dbrType = addr.dbr_field_type;
-        n = strlen(pvalue) + 1;
-    }
-    else {
-        dbrType = DBR_STRING;
-    }
+    if (addr.no_elements > 1) {
+        if (addr.dbr_field_type == DBR_CHAR || addr.dbr_field_type == DBR_UCHAR) {
+            dbrType = addr.dbr_field_type;
+            n = (long)strlen(pvalue) + 1;
+        } else {
+            const char *p = pvalue;
+            epicsOldString *array;
 
-    status = dbPutField(&addr, dbrType, pvalue, (long) n);
+            for (n = 0; *p && n < addr.no_elements; n++) {
+                while (isspace(*p)) p++;
+                while (*p && !isspace(*p)) {
+                    if (p[0] == '\\' && p[1]) p++;
+                    p++;
+                }
+            }
+            p = pvalue;
+            array = dbCalloc(n, sizeof(epicsOldString));
+            for (n = 0; *p && n < addr.no_elements; n++) {
+                char* c = array[n];
+                while (isspace(*p)) p++;
+                while (*p && !isspace(*p)) {
+                    if (p[0] == '\\' && p[1]) p++;
+                    *c++=*p++;
+                }
+            }
+            pvalue = (void*)array;
+        }
+    }
+    status = dbPutField(&addr, dbrType, pvalue, n);
+    free(array);
     dbgf(pname);
     return status;
 }

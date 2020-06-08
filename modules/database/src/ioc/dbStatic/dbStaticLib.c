@@ -2330,8 +2330,7 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
     }
 
     /* Link may be an array constant */
-    if (pstr[0] == '[' && pstr[len-1] == ']' &&
-        (strchr(pstr, ',') || strchr(pstr, '"'))) {
+    if (pstr[0] == '[' && pstr[len-1] == ']') {
         pinfo->ltype = CONSTANT;
         return 0;
     }

@@ -945,6 +945,11 @@ long dbGet(DBADDR *paddr, short dbrType,
     if (offset == 0 && (!nRequest || no_elements == 1)) {
         if (nRequest)
             *nRequest = 1;
+        else if (no_elements < 1) {
+            status = S_db_onlyOne;
+            goto done;
+        }
+
         if (!pfl || pfl->type == dbfl_type_rec) {
             status = dbFastGetConvertRoutine[field_type][dbrType]
                 (paddr->pfield, pbuf, paddr);

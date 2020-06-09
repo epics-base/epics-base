@@ -207,7 +207,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
                 pNewNode->addr.sa = pIfreqList->ifr_broadaddr;
                 ifDepenDebugPrintf ( ( "found broadcast addr = %x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
             } else {
-                ifDepenDebugPrintf ( ( "Ignoring broadcast addr = \n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
+                ifDepenDebugPrintf ( ( "Ignoring broadcast addr = %x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
                 free ( pNewNode );
                 continue;
             }

@@ -157,7 +157,7 @@ int main (int argc, char *argv[])
             }
             break;
         case 's':               /* ca_client_status interest level */
-            if (sscanf(optarg,"%du", &statLevel) != 1)
+            if (sscanf(optarg,"%u", &statLevel) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid interest level "
                         "- ignored. ('cainfo -h' for help.)\n", optarg);

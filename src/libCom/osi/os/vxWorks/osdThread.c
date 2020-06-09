@@ -348,8 +348,9 @@ epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
     while (noTasks == 0) {
         noTasks = taskIdListGet(taskIdList, taskIdListSize);
         if (noTasks == taskIdListSize) {
-            taskIdList = realloc(taskIdList, (taskIdListSize+ID_LIST_CHUNK)*sizeof(int));
-            assert(taskIdList);
+            int *newlist = realloc(taskIdList, (taskIdListSize+ID_LIST_CHUNK)*sizeof(int));
+            assert(newlist);
+            taskIdList = newlist;
             taskIdListSize += ID_LIST_CHUNK;
             noTasks = 0;
         }

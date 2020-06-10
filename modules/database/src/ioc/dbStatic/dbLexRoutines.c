@@ -479,12 +479,16 @@ static void dbMenuBody(void)
         return;
     }
     pnewMenu = (dbMenu *)popFirstTemp();
+    if(!pnewMenu)
+        return;
     pnewMenu->nChoice = nChoice = ellCount(&tempList)/2;
     pnewMenu->papChoiceName = dbCalloc(pnewMenu->nChoice,sizeof(char *));
     pnewMenu->papChoiceValue = dbCalloc(pnewMenu->nChoice,sizeof(char *));
     for(i=0; i<nChoice; i++) {
         pnewMenu->papChoiceName[i] = (char *)popFirstTemp();
         pnewMenu->papChoiceValue[i] = (char *)popFirstTemp();
+        if(!pnewMenu->papChoiceName[i] || !pnewMenu->papChoiceValue[i])
+            return;
     }
     if(ellCount(&tempList)) yyerrorAbort("dbMenuBody: tempList not empty");
     /* Add menu in sorted order */
@@ -705,6 +709,8 @@ static void dbRecordtypeBody(void)
         return;
     }
     pdbRecordType= (dbRecordType *)popFirstTemp();
+    if(!pdbRecordType)
+        return;
     pdbRecordType->no_fields = no_fields = ellCount(&tempList);
     pdbRecordType->papFldDes = dbCalloc(no_fields,sizeof(dbFldDes *));
     pdbRecordType->papsortFldName = dbCalloc(no_fields,sizeof(char *));
@@ -712,6 +718,8 @@ static void dbRecordtypeBody(void)
     no_prompt = no_links = 0;
     for(i=0; i<no_fields; i++) {
         pdbFldDes = (dbFldDes *)popFirstTemp();
+        if(!pdbFldDes)
+            return;
         pdbFldDes->pdbRecordType = pdbRecordType;
         pdbFldDes->indRecordType = i;
         pdbRecordType->papFldDes[i] = pdbFldDes;
@@ -976,6 +984,8 @@ static void dbBreakBody(void)
         return;
     }
     pnewbrkTable = (brkTable *)popFirstTemp();
+    if(!pnewbrkTable)
+        return;
     number = ellCount(&tempList);
     if (number % 2) {
         yyerrorAbort("breaktable: Raw value missing");
@@ -992,10 +1002,14 @@ static void dbBreakBody(void)
         char    *str;
 
         str = (char *)popFirstTemp();
+        if(!str)
+            return;
         (void) epicsScanDouble(str, &paBrkInt[i].raw);
         free(str);
 
         str = (char *)popFirstTemp();
+        if(!str)
+            return;
         (void) epicsScanDouble(str, &paBrkInt[i].eng);
         free(str);
     }

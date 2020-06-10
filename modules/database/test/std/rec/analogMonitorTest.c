@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "registryFunction.h"
+#include "iocshRegisterCommon.h"
 #include "osiFileName.h"
 #include "epicsThread.h"
 #include "epicsMath.h"
@@ -161,7 +162,10 @@ MAIN(analogMonitorTest)
             "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
         testAbort("Error reading database description 'analogMonitorTest.dbd'");
 
+    /* testing dynamic_registerRecordDeviceDriver() */
+    dynamic_registerRecordDeviceDriver(pdbbase);
     analogMonitorTest_registerRecordDeviceDriver(pdbbase);
+    dynamic_registerRecordDeviceDriver(pdbbase);
 
     if (dbReadDatabase(&pdbbase, "analogMonitorTest.db",
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))

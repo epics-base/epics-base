@@ -10,6 +10,7 @@
 #include "dbAccess.h"
 #include "errlog.h"
 #include "dbStaticLib.h"
+#include "iocshRegisterCommon.h"
 #include "dbUnitTest.h"
 #include "testMain.h"
 
@@ -69,7 +70,10 @@ MAIN(recMiscTest)
 
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
 
+    /* A smoke test of registerAllRecordDeviceDrivers to check for idempotence */
+    registerAllRecordDeviceDrivers(pdbbase);
     recTestIoc_registerRecordDeviceDriver(pdbbase);
+    registerAllRecordDeviceDrivers(pdbbase);
 
     testdbReadDatabase("recMiscTest.db", NULL, NULL);
 

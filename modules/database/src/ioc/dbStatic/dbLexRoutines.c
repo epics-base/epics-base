@@ -136,12 +136,14 @@ static void allocTemp(void *pvoid)
 static void *popFirstTemp(void)
 {
     tempListNode        *ptempListNode;
-    void                *ptemp;
+    void                *ptemp = NULL;
 
     ptempListNode = (tempListNode *)ellFirst(&tempList);
-    ptemp = ptempListNode->item;
-    ellDelete(&tempList,(ELLNODE *)ptempListNode);
-    freeListFree(freeListPvt,ptempListNode);
+    if(ptempListNode) {
+        ptemp = ptempListNode->item;
+        ellDelete(&tempList,(ELLNODE *)ptempListNode);
+        freeListFree(freeListPvt,ptempListNode);
+    }
     return(ptemp);
 }
 

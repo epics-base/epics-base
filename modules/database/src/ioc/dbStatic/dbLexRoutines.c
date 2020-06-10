@@ -1045,10 +1045,15 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         yyerrorAbort("dbRecordHead: Record name can't be empty");
         return;
     }
-    badch = strpbrk(name, " \"'.$");
+    badch = strpbrk(name, " \t\"'.$");
     if (badch) {
-        epicsPrintf("Bad character '%c' in record name \"%s\"\n",
+        epicsPrintf("Error: Bad character '%c' in record name \"%s\"\n",
             *badch, name);
+        yyerrorAbort(NULL);
+        return;
+    } else if((*name >= '0' && *name <= '9') || *name=='{') {
+        epicsPrintf("Warning: Bad character '%c' begins record name \"%s\"\n",
+            *name, name);
     }
 
     pdbentry = dbAllocEntry(pdbbase);

@@ -38,6 +38,7 @@
 #include "link.h"
 #include "recSup.h"
 #include "special.h"
+#include "alarm.h"
 
 typedef struct parseContext {
     dbChannel *chan;
@@ -619,6 +620,11 @@ long dbChannelOpen(dbChannel *chan)
     probe.field_type  = dbChannelExportType(chan);
     probe.no_elements = dbChannelElements(chan);
     probe.field_size  = dbChannelFieldSize(chan);
+    probe.sevr = NO_ALARM;
+    probe.stat = NO_ALARM;
+    probe.time.secPastEpoch = 0;
+    probe.time.nsec = 0;
+
     p = probe;
 
     /*

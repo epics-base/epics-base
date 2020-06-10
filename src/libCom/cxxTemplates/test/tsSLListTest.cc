@@ -46,6 +46,10 @@ int main ()
         tsSLIter<fred> iter1 = list.firstIter ();
 		tsSLIter<fred> iter2 = iter1;
 		tsSLIter<fred> iter3 = iter1;
+		tsSLIter<fred> itert = iter3++
+		assert ( iter1 == itert );
+		itert = ++iter2;
+		assert ( iter3 == itert );
 		assert ( iter1 == iter3++ );
 		assert ( iter3 == ++iter2 );
         list.remove ( *pFredII ); // removes pFred

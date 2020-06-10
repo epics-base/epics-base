@@ -438,7 +438,7 @@ int htoi(unsigned char *str)
 {
     int result;
 
-    (void) sscanf( (char *) str, "%x", &result );
+    (void) sscanf( (char *) str, "%x", (unsigned *) &result );
 
     return ( result );
     }
@@ -653,7 +653,7 @@ int otoi(Char *str)
 {
     int result;
 
-    (void) sscanf( (char *) str, "%o", &result );
+    (void) sscanf( (char *) str, "%o", (unsigned *) &result );
 
     return ( result );
     }

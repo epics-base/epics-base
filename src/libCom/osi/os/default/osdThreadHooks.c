@@ -72,6 +72,7 @@ epicsShareFunc int epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook)
         return 0;
     }
     fprintf(stderr, "epicsThreadHookAdd: Locking problem\n");
+    free(pHook);
     return -1;
 }
 

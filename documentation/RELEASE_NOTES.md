@@ -17,6 +17,36 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Support for empty arrays
+
+Several problems with empty arrays have been fixed.
+
+#### Changed dbr_size_n(TYPE,COUNT) macro
+
+When called with COUNT=0 the macro no longer returns the number of bytes
+required for a scalar (1 element) but for an empty array (0 elements).
+Make sure you don't call it with COUNT=0 when you really mean COUNT=1.
+
+#### Array records
+
+The soft supports of array records aai, waveform, and subArray as well as
+the aSub record type have been fixed to correctly report 0 elements read
+when reading empty arrays from an input link.
+
+#### Array support for dbpf
+
+The dbpf function now accepts arrays, including empty arrays, as a quoted
+whitespace separated list of values.
+
+#### Scalar records reading from empty arrays
+
+Scalar records reading from empty arrays via database links are now set to
+INVALID/LINK alarm status.
+Links have to call dbGet with pnRequest=NULL to be recognised as requests
+for scalars.
+This changes the semantics of pnRequest=NULL. It is now different from
+requesting 1 element, which is counted as an array request and may return
+a valid empty array.
 
 ## EPICS Release 7.0.4
 

@@ -382,7 +382,7 @@ The B<DPVT> field is is for private use of the device support modules.
 		prompt("DSET address")
 		special(SPC_NOMOD)
 		interest(4)
-        extra("unambiguous_dset                *dset")
+		extra("unambiguous_dset    *dset")
 	}
 	field(DPVT,DBF_NOACCESS) {
 		prompt("Device Private")
@@ -491,7 +491,7 @@ field which is then used to acquire a timestamp.
 		prompt("Break Point")
 		special(SPC_NOMOD)
 		interest(1)
-		extra("char                bkpt")
+		extra("epicsUInt8          bkpt")
 	}
 	field(UDF,DBF_UCHAR) {
 		prompt("Undefined")

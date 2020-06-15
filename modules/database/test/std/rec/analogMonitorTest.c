@@ -162,10 +162,10 @@ MAIN(analogMonitorTest)
             "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
         testAbort("Error reading database description 'analogMonitorTest.dbd'");
 
-    /* testing dynamic_registerRecordDeviceDriver() */
-    dynamic_registerRecordDeviceDriver(pdbbase);
+    /* testing registerAllRecordDeviceDrivers() */
+    registerAllRecordDeviceDrivers(pdbbase);
     analogMonitorTest_registerRecordDeviceDriver(pdbbase);
-    dynamic_registerRecordDeviceDriver(pdbbase);
+    registerAllRecordDeviceDrivers(pdbbase);
 
     if (dbReadDatabase(&pdbbase, "analogMonitorTest.db",
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))

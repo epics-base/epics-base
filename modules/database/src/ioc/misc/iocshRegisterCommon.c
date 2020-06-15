@@ -26,14 +26,14 @@
 #define quote(v) #v
 #define str(v) quote(v)
 
-/* dynamic_registerRecordDeviceDriver */
+/* registerAllRecordDeviceDrivers */
 static const iocshArg rrddArg0 = {"pdbbase", iocshArgPdbbase};
 static const iocshArg *rrddArgs[] = {&rrddArg0};
 static const iocshFuncDef rrddFuncDef =
-    {"dynamic_registerRecordDeviceDriver", 1, rrddArgs};
+    {"registerAllRecordDeviceDrivers", 1, rrddArgs};
 static void rrddCallFunc(const iocshArgBuf *args)
 {
-    iocshSetError(dynamic_registerRecordDeviceDriver(*iocshPpdbbase));
+    iocshSetError(registerAllRecordDeviceDrivers(*iocshPpdbbase));
 }
 
 void iocshRegisterCommon(void)

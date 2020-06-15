@@ -26,7 +26,7 @@ epicsShareFunc void iocshRegisterCommon(void);
 
 epicsShareFunc
 long
-dynamic_registerRecordDeviceDriver(struct dbBase *pdbbase);
+registerAllRecordDeviceDrivers(struct dbBase *pdbbase);
 
 epicsShareFunc
 void runRegistrarOnce(void (*reg_func)(void));

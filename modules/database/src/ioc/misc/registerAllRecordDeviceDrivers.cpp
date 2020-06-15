@@ -98,12 +98,12 @@ void clearRegistrarOnce()
 }
 
 long
-dynamic_registerRecordDeviceDriver(DBBASE *pdbbase)
+registerAllRecordDeviceDrivers(DBBASE *pdbbase)
 {
     DBENTRY entry;
 
     if(!pdbbase) {
-        fprintf(stderr, "Must call dbLoadRecords() before dynamic_registerRecordDeviceDriver(pdbbase)\n");
+        fprintf(stderr, "Must call dbLoadRecords() before registerAllRecordDeviceDrivers(pdbbase)\n");
         return 1;
     }
 

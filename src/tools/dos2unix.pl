@@ -6,7 +6,7 @@
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE Versions 3.13.7
 # and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 # Converts text file in DOS CR/LF format to unix ISO format
@@ -23,9 +23,9 @@ foreach( @files ) {
     open(OUTPUT, ">$_");
     binmode OUTPUT, ":raw";
     while(<INPUT>) {
-	# Remove CR-LF sequences
-	s/\r\n/\n/;
-	print OUTPUT;
+        # Remove CR-LF sequences
+        s/\r\n/\n/;
+        print OUTPUT;
     }
     close INPUT;
     close OUTPUT;

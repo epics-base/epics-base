@@ -51,10 +51,10 @@ jobs:
   - dist: xenial
 
   - dist: bionic
-    env: EXTRA="CMD_CXXFLAGS=-std=c++11"
+    env: STATIC=YES EXTRA="CMD_CXXFLAGS=-std=c++11"
 
   - dist: trusty
-    env: STATIC=YES EXTRA="CMD_CXXFLAGS=-std=c++11"
+    env: EXTRA="CMD_CXXFLAGS=-std=c++11"
 
   - dist: bionic
     compiler: clang

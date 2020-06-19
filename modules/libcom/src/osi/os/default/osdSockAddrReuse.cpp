@@ -22,6 +22,15 @@
 LIBCOM_API void epicsStdCall 
     epicsSocketEnableAddressReuseDuringTimeWaitState ( SOCKET s )
 {
+#ifdef _WIN32
+    /*
+     * Note: WINSOCK appears to assign a different functionality for
+     * SO_REUSEADDR compared to other OS. With WINSOCK SO_REUSEADDR indicates
+     * that simultaneously servers can bind to the same TCP port on the same host!
+     * Also, servers are always enabled to reuse a port immediately after
+     * they exit ( even if SO_REUSEADDR isnt set ).
+     */
+#else
     int yes = true;
     int status;
     status = setsockopt ( s, SOL_SOCKET, SO_REUSEADDR,
@@ -31,6 +40,7 @@ LIBCOM_API void epicsStdCall
             "epicsSocketEnableAddressReuseDuringTimeWaitState: "
             "unable to set SO_REUSEADDR?\n");
     }
+#endif
 }
 
 static

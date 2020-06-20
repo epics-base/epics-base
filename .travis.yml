@@ -35,6 +35,7 @@ addons:
     update: true
 
 install:
+  - ./.ci-local/travis-fixup.sh
   - ./.ci/travis/prepare.sh
 
 script:

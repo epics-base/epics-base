@@ -49,6 +49,7 @@ environment:
   # common / default variables for all jobs
   SETUP_PATH: .ci-local:.ci
   BASE: SELF
+  EPICS_TEST_IMPRECISE_TIMING: YES
 
   matrix:
   - CMP: vs2019

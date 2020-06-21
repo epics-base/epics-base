@@ -13,6 +13,7 @@ env:
   global:
     - SETUP_PATH=.ci-local:.ci
     - BASE=SELF
+    - EPICS_TEST_IMPRECISE_TIMING=YES
 
 addons:
   apt:

@@ -399,12 +399,18 @@ long dbpf(const char *pname,const char *pvalue)
             for (n = 0; *p && n < addr.no_elements; n++) {
                 char* c = array[n];
                 while (isspace(*p)) p++;
+                pvalue = p;
                 while (*p && !isspace(*p)) {
                     if (p[0] == '\\' && p[1]) p++;
+                    if (c >= array[n+1]-1) {
+                        printf("Value [%ld] %.*s too long\n", n, (int)(p-pvalue), pvalue);
+                        free(array);
+                        return -1;
+                    }
                     *c++=*p++;
                 }
             }
-            pvalue = (void*)array;
+            pvalue = array[0];
         }
     }
     status = dbPutField(&addr, dbrType, pvalue, n);

@@ -386,7 +386,6 @@ long dbpf(const char *pname,const char *pvalue)
             n = (long)strlen(pvalue) + 1;
         } else {
             const char *p = pvalue;
-            epicsOldString *array;
 
             for (n = 0; *p && n < addr.no_elements; n++) {
                 while (isspace(*p)) p++;

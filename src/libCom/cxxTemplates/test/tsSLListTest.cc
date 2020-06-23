@@ -50,8 +50,6 @@ int main ()
 		assert ( iter1 == itert );
 		itert = ++iter2;
 		assert ( iter3 == itert );
-		assert ( iter1 == iter3++ );
-		assert ( iter3 == ++iter2 );
         list.remove ( *pFredII ); // removes pFred
 	}
 	list.add ( *pFred );

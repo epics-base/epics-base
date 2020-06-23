@@ -6,6 +6,12 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
+### Change to the `junitfiles` self-test build target
+
+The names of the generated junit xml test output files have been changed
+from `<testname>.xml` to `<testname>-results.xml`, to allow better 
+distinction from other xml files. (I.e., for easy wildcard matching.)
+
 
 ## Changes made between 3.15.7 and 3.15.8
 
@@ -46,7 +52,7 @@ results; previously the `-k` flag to make was needed and even that didn't always
 work.
 
 Continuous Integration systems are recommended to run `make tapfiles` (or if
-they can read junittest output instead of TAP `make junitests`) followed by
+they can read junittest output instead of TAP `make junitfiles`) followed by
 `make -s test-results` to display the results of the tests. If multiple CPUs are
 available the `-j` flag can be used to run tests in parallel, giving the maximum
 jobs that should be allowed so `make -j4 tapfiles` for a system with 4 CPUs say.

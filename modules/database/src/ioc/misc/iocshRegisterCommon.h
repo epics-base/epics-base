@@ -24,6 +24,8 @@ struct dbBase;
 /* register many useful commands */
 epicsShareFunc void iocshRegisterCommon(void);
 
+#define HAS_registerAllRecordDeviceDrivers
+
 epicsShareFunc
 long
 registerAllRecordDeviceDrivers(struct dbBase *pdbbase);

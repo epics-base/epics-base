@@ -17,6 +17,19 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Add registerAllRecordDeviceDrivers()
+
+Addition of registerAllRecordDeviceDrivers() as an iocsh function
+and in iocshRegisterCommon.h.  This function uses dynamic lookup with epicsFindSymbol()
+to perform the same function as a generated \*_registerRecordDeviceDriver() function.
+This allows dynamic loading/linking of support modules without code generation.
+
+This feature is not intended for use by IOCs constructed using the standard EPICS application
+build process and booted from a startup script in an iocBoot subdirectory, although it might
+work in some of those cases (the IOC's registerRecordDeviceDriver.cpp file is still required
+to link everything into the executable). It also won't work with some static build
+configurations or where the symbol table has been stripped from the executable.
+
 ### Using a `{const:"string"}` to initialize an array of `DBF_CHAR`
 
 It is now possible to use a JSON Const link with a string value to initialize
@@ -37,7 +50,6 @@ aSub record inputs similarly configured as long strings.
 GNUmake added the directive `undefine` in version 3.82 to allow variables to
 be undefined. Support for this has been added to the EPICS Release file parser,
 so `undefine` can now be used in configure/RELEASE files to unset variables.
-
 
 ## EPICS Release 7.0.4.1
 

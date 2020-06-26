@@ -37,6 +37,9 @@ TESTS += arrayOpTest
 
 TESTPROD_HOST += recMiscTest
 recMiscTest_SRCS += recMiscTest.c
+ifeq (NO,$(STATIC_BUILD))
+recMiscTest_CFLAGS += -DLINK_DYNAMIC
+endif
 recMiscTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += recMiscTest.c
 TESTFILES += ../recMiscTest.db

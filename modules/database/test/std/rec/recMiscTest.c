@@ -64,16 +64,22 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(recMiscTest)
 {
-    testPlan(10);
+    testPlan(12);
 
     testdbPrepare();
 
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
 
+#ifdef LINK_DYNAMIC
     /* A smoke test of registerAllRecordDeviceDrivers to check for idempotence */
-    registerAllRecordDeviceDrivers(pdbbase);
+    testOk1(registerAllRecordDeviceDrivers(pdbbase)==0);
+#else
+    testSkip(2, "only testing registerAllRecordDeviceDrivers() with dynamic linking");
+#endif
     recTestIoc_registerRecordDeviceDriver(pdbbase);
-    registerAllRecordDeviceDrivers(pdbbase);
+#ifdef LINK_DYNAMIC
+    testOk1(registerAllRecordDeviceDrivers(pdbbase)==0);
+#endif
 
     testdbReadDatabase("recMiscTest.db", NULL, NULL);
 

@@ -119,7 +119,7 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
                 computeSizeOffset* sizeOffset = lookupAs<computeSizeOffset*>("pvar_func_", rtype->name, "RecordSizeOffset");
 
                 if(!prset || !*prset || !sizeOffset || !*sizeOffset) {
-                    fprintf(stderr, "Unable to find support for record type '%s' : %s",
+                    fprintf(stderr, "Unable to find support for record type '%s' : %s\n",
                             rtype->name, epicsLoadError());
                     return 1;
                 }
@@ -143,7 +143,7 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
                 dset** ptr = lookupAs<dset**>("pvar_dset_", devsup.name);
 
                 if(!ptr || !*ptr) {
-                    fprintf(stderr, "Unable to find dset for record type '%s' support '%s' : %s",
+                    fprintf(stderr, "Unable to find dset for record type '%s' support '%s' : %s\n",
                             rtype->name, devsup.name, epicsLoadError());
                     return 1;
                 }
@@ -163,7 +163,7 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
             drvet** ptr = lookupAs<drvet**>("pvar_drvet_", drv.name);
 
             if(!ptr || !*ptr) {
-                fprintf(stderr, "Unable to find drvet '%s' : %s", drv.name, epicsLoadError());
+                fprintf(stderr, "Unable to find drvet '%s' : %s\n", drv.name, epicsLoadError());
                 return 1;
             }
 
@@ -178,7 +178,7 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
             jlif** ptr = lookupAs<jlif**>("pvar_jlif_", lnk.jlif_name);
 
             if(!ptr || !*ptr) {
-                fprintf(stderr, "Unable to find link support '%s' : %s", lnk.jlif_name, epicsLoadError());
+                fprintf(stderr, "Unable to find link support '%s' : %s\n", lnk.jlif_name, epicsLoadError());
                 return 1;
             }
 
@@ -193,7 +193,7 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
             registrar* ptr = lookupAs<registrar*>("pvar_func_", reg.text);
 
             if(!ptr || !*ptr) {
-                fprintf(stderr, "Unable to find registar '%s' : %s", reg.text, epicsLoadError());
+                fprintf(stderr, "Unable to find registar '%s' : %s\n", reg.text, epicsLoadError());
                 return 1;
             }
 
@@ -210,7 +210,7 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
             void** ptr = lookupAs<void**>("pvar_", var.type, "_", var.name);
 
             if(!ptr || !*ptr) {
-                fprintf(stderr, "Unable to find variable '%s' : %s", var.name, epicsLoadError());
+                fprintf(stderr, "Unable to find variable '%s' : %s\n", var.name, epicsLoadError());
                 return 1;
             }
 
@@ -222,7 +222,7 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
             } else if(strcmp(var.type, "int")==0) {
                 vdef.def[0].type = iocshArgInt;
             } else {
-                fprintf(stderr, "Unsupported type %s of variable '%s' : %s", var.type, var.name, epicsLoadError());
+                fprintf(stderr, "Unsupported type %s of variable '%s' : %s\n", var.type, var.name, epicsLoadError());
                 return 1;
             }
             vdef.def[1].name = 0;

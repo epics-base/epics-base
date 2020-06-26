@@ -17,6 +17,19 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Add registerAllRecordDeviceDrivers()
+
+Addition of registerAllRecordDeviceDrivers() as an iocsh function
+and in iocshRegisterCommon.h.  This function uses dynamic lookup with epicsFindSymbol()
+to perform the same function as a generated \*_registerRecordDeviceDriver() function.
+This allows dynamic loading/linking of support modules without code generation.
+
+This feature is not intended for use by IOCs constructed using the standard EPICS application
+build process and booted from a startup script in an iocBoot subdirectory, although it might
+work in some of those cases (the IOC's registerRecordDeviceDriver.cpp file is still required
+to link everything into the executable). It also won't work with some static build
+configurations or where the symbol table has been stripped from the executable.
+
 ## EPICS Release 7.0.4.1
 
 ### ARM Architecture Changes

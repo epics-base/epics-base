@@ -24,3 +24,5 @@ MSI3_15                    = $(EPICS_DATABASE_HOST_BIN)/msi$(HOSTEXE)
 
 # Libraries needed to link a basic IOC
 EPICS_BASE_IOC_LIBS = dbRecStd dbCore ca Com
+
+HAS_registerAllRecordDeviceDrivers=YES

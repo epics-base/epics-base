@@ -1050,27 +1050,52 @@ static void dbBreakBody(void)
     }
     pgphentry->userPvt = pnewbrkTable;
 }
-
-static void dbRecordHead(char *recordType, char *name, int visible)
+
+static
+int dbRecordNameValidate(const char *name)
 {
-    char *badch;
-    DBENTRY *pdbentry;
-    long status;
+    size_t i=0u;
+    const char *pos = name;
 
     if (!*name) {
         yyerrorAbort("dbRecordHead: Record name can't be empty");
-        return;
+        return 1;
     }
-    badch = strpbrk(name, " \t\"'.$");
-    if (badch) {
-        epicsPrintf("Error: Bad character '%c' in record name \"%s\"\n",
-            *badch, name);
-        yyerrorAbort(NULL);
-        return;
-    } else if((*name >= '0' && *name <= '9') || *name=='{') {
-        epicsPrintf("Warning: Bad character '%c' begins record name \"%s\"\n",
-            *name, name);
+
+    for(; *pos; i++, pos++) {
+        char c = *pos;
+        if(i==0) {
+            /* first charactor restrictions */
+            if(c >= '0' && c <= '9') {
+                errlogPrintf("Warning: Record name '%s' should not begin with a number\n", name);
+
+            } else if(c=='-' || c=='+' || c=='[' || c=='{') {
+                errlogPrintf("Warning: Record name '%s' should not begin with '%c'\n", name, c);
+            }
+        }
+        /* any charactor restrictions */
+        if(c < ' ') {
+            errlogPrintf("Warning: Record name '%s' should not contain non-printable 0x%02u\n",
+                         name, (unsigned)c);
+
+        } else if(c==' ' || c=='\t' || c=='"' || c=='\'' || c=='.' || c=='$') {
+            epicsPrintf("Error: Bad character '%c' in record name \"%s\"\n",
+                c, name);
+            yyerrorAbort(NULL);
+            return 1;
+        }
     }
+
+    return 0;
+}
+
+static void dbRecordHead(char *recordType, char *name, int visible)
+{
+    DBENTRY *pdbentry;
+    long status;
+
+    if(dbRecordNameValidate(name))
+        return;
 
     pdbentry = dbAllocEntry(pdbbase);
     if (ellCount(&tempList))

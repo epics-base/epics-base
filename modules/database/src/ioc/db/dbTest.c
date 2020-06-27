@@ -365,7 +365,7 @@ long dbpf(const char *pname,const char *pvalue)
     long status;
     short dbrType = DBR_STRING;
     long n = 1;
-    epicsOldString *array = NULL;
+    char *array = NULL;
 
     if (!pname || !*pname || !pvalue) {
         printf("Usage: dbpf \"pv name\", \"value\"\n");
@@ -395,14 +395,14 @@ long dbpf(const char *pname,const char *pvalue)
                 }
             }
             p = pvalue;
-            array = dbCalloc(n, sizeof(epicsOldString));
+            array = dbCalloc(n, MAX_STRING_SIZE);
             for (n = 0; *p && n < addr.no_elements; n++) {
-                char* c = array[n];
+                char* c = &array[n*MAX_STRING_SIZE];
                 while (isspace(*p)) p++;
                 pvalue = p;
                 while (*p && !isspace(*p)) {
                     if (p[0] == '\\' && p[1]) p++;
-                    if (c >= array[n+1]-1) {
+                    if (c >= &array[(n+1)*MAX_STRING_SIZE]-1) {
                         printf("Value [%ld] %.*s too long\n", n, (int)(p-pvalue), pvalue);
                         free(array);
                         return -1;
@@ -410,7 +410,7 @@ long dbpf(const char *pname,const char *pvalue)
                     *c++=*p++;
                 }
             }
-            pvalue = array[0];
+            pvalue = array;
         }
     }
     status = dbPutField(&addr, dbrType, pvalue, n);

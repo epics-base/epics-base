@@ -1058,7 +1058,7 @@ int dbRecordNameValidate(const char *name)
     const char *pos = name;
 
     if (!*name) {
-        yyerrorAbort("dbRecordHead: Record name can't be empty");
+        yyerrorAbort("Error: Record/Alias name can't be empty");
         return 1;
     }
 
@@ -1067,16 +1067,16 @@ int dbRecordNameValidate(const char *name)
         if(i==0) {
             /* first character restrictions */
             if(c=='-' || c=='+' || c=='[' || c=='{') {
-                errlogPrintf("Warning: Record name '%s' should not begin with '%c'\n", name, c);
+                errlogPrintf("Warning: Record/Alias name '%s' should not begin with '%c'\n", name, c);
             }
         }
         /* any character restrictions */
         if(c < ' ') {
-            errlogPrintf("Warning: Record name '%s' should not contain non-printable 0x%02u\n",
+            errlogPrintf("Warning: Record/Alias name '%s' should not contain non-printable 0x%02u\n",
                          name, (unsigned)c);
 
         } else if(c==' ' || c=='\t' || c=='"' || c=='\'' || c=='.' || c=='$') {
-            epicsPrintf("Error: Bad character '%c' in record name \"%s\"\n",
+            epicsPrintf("Error: Bad character '%c' in Record/Alias name \"%s\"\n",
                 c, name);
             yyerrorAbort(NULL);
             return 1;
@@ -1223,10 +1223,9 @@ static void dbRecordAlias(char *name)
     tempListNode *ptempListNode;
     long status;
 
-    if (!*name) {
-        yyerrorAbort("dbRecordAlias: Alias name can't be empty");
+    if(dbRecordNameValidate(name))
         return;
-    }
+
     if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
@@ -1244,10 +1243,9 @@ static void dbAlias(char *name, char *alias)
     DBENTRY dbEntry;
     DBENTRY *pdbEntry = &dbEntry;
 
-    if (!*alias) {
-        yyerrorAbort("dbAlias: Alias name can't be empty");
+    if(dbRecordNameValidate(alias))
         return;
-    }
+
     dbInitEntry(pdbbase, pdbEntry);
     if (dbFindRecord(pdbEntry, name)) {
         epicsPrintf("Alias \"%s\" refers to unknown record \"%s\"\n",

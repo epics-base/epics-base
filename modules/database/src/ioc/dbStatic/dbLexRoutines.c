@@ -1065,15 +1065,12 @@ int dbRecordNameValidate(const char *name)
     for(; *pos; i++, pos++) {
         char c = *pos;
         if(i==0) {
-            /* first charactor restrictions */
-            if(c >= '0' && c <= '9') {
-                errlogPrintf("Warning: Record name '%s' should not begin with a number\n", name);
-
-            } else if(c=='-' || c=='+' || c=='[' || c=='{') {
+            /* first character restrictions */
+            if(c=='-' || c=='+' || c=='[' || c=='{') {
                 errlogPrintf("Warning: Record name '%s' should not begin with '%c'\n", name, c);
             }
         }
-        /* any charactor restrictions */
+        /* any character restrictions */
         if(c < ' ') {
             errlogPrintf("Warning: Record name '%s' should not contain non-printable 0x%02u\n",
                          name, (unsigned)c);

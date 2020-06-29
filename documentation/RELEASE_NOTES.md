@@ -40,13 +40,12 @@ whitespace separated list of values.
 
 #### Scalar records reading from empty arrays
 
-Scalar records reading from empty arrays via database links are now set to
-INVALID/LINK alarm status.
-Links have to call dbGet with pnRequest=NULL to be recognised as requests
+Scalar records reading from empty arrays are now set to INVALID/LINK alarm
+status.
+Links have to call dbGetLink with pnRequest=NULL to be recognised as requests
 for scalars.
 This changes the semantics of pnRequest=NULL. It is now different from
-requesting 1 element, which is counted as an array request and may return
-a valid empty array.
+requesting up to 1 array element, which may return a valid empty array.
 
 ## EPICS Release 7.0.4
 

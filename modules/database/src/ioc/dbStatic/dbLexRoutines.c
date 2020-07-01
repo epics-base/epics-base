@@ -136,12 +136,14 @@ static void allocTemp(void *pvoid)
 static void *popFirstTemp(void)
 {
     tempListNode        *ptempListNode;
-    void                *ptemp;
+    void                *ptemp = NULL;
 
     ptempListNode = (tempListNode *)ellFirst(&tempList);
-    ptemp = ptempListNode->item;
-    ellDelete(&tempList,(ELLNODE *)ptempListNode);
-    freeListFree(freeListPvt,ptempListNode);
+    if(ptempListNode) {
+        ptemp = ptempListNode->item;
+        ellDelete(&tempList,(ELLNODE *)ptempListNode);
+        freeListFree(freeListPvt,ptempListNode);
+    }
     return(ptemp);
 }
 
@@ -477,12 +479,16 @@ static void dbMenuBody(void)
         return;
     }
     pnewMenu = (dbMenu *)popFirstTemp();
+    if(!pnewMenu)
+        return;
     pnewMenu->nChoice = nChoice = ellCount(&tempList)/2;
     pnewMenu->papChoiceName = dbCalloc(pnewMenu->nChoice,sizeof(char *));
     pnewMenu->papChoiceValue = dbCalloc(pnewMenu->nChoice,sizeof(char *));
     for(i=0; i<nChoice; i++) {
         pnewMenu->papChoiceName[i] = (char *)popFirstTemp();
         pnewMenu->papChoiceValue[i] = (char *)popFirstTemp();
+        if(!pnewMenu->papChoiceName[i] || !pnewMenu->papChoiceValue[i])
+            return;
     }
     if(ellCount(&tempList)) yyerrorAbort("dbMenuBody: tempList not empty");
     /* Add menu in sorted order */
@@ -703,6 +709,8 @@ static void dbRecordtypeBody(void)
         return;
     }
     pdbRecordType= (dbRecordType *)popFirstTemp();
+    if(!pdbRecordType)
+        return;
     pdbRecordType->no_fields = no_fields = ellCount(&tempList);
     pdbRecordType->papFldDes = dbCalloc(no_fields,sizeof(dbFldDes *));
     pdbRecordType->papsortFldName = dbCalloc(no_fields,sizeof(char *));
@@ -710,6 +718,8 @@ static void dbRecordtypeBody(void)
     no_prompt = no_links = 0;
     for(i=0; i<no_fields; i++) {
         pdbFldDes = (dbFldDes *)popFirstTemp();
+        if(!pdbFldDes)
+            return;
         pdbFldDes->pdbRecordType = pdbRecordType;
         pdbFldDes->indRecordType = i;
         pdbRecordType->papFldDes[i] = pdbFldDes;
@@ -974,6 +984,8 @@ static void dbBreakBody(void)
         return;
     }
     pnewbrkTable = (brkTable *)popFirstTemp();
+    if(!pnewbrkTable)
+        return;
     number = ellCount(&tempList);
     if (number % 2) {
         yyerrorAbort("breaktable: Raw value missing");
@@ -990,10 +1002,14 @@ static void dbBreakBody(void)
         char    *str;
 
         str = (char *)popFirstTemp();
+        if(!str)
+            return;
         (void) epicsScanDouble(str, &paBrkInt[i].raw);
         free(str);
 
         str = (char *)popFirstTemp();
+        if(!str)
+            return;
         (void) epicsScanDouble(str, &paBrkInt[i].eng);
         free(str);
     }
@@ -1034,22 +1050,49 @@ static void dbBreakBody(void)
     }
     pgphentry->userPvt = pnewbrkTable;
 }
-
+
+static
+int dbRecordNameValidate(const char *name)
+{
+    size_t i=0u;
+    const char *pos = name;
+
+    if (!*name) {
+        yyerrorAbort("Error: Record/Alias name can't be empty");
+        return 1;
+    }
+
+    for(; *pos; i++, pos++) {
+        char c = *pos;
+        if(i==0) {
+            /* first character restrictions */
+            if(c=='-' || c=='+' || c=='[' || c=='{') {
+                errlogPrintf("Warning: Record/Alias name '%s' should not begin with '%c'\n", name, c);
+            }
+        }
+        /* any character restrictions */
+        if(c < ' ') {
+            errlogPrintf("Warning: Record/Alias name '%s' should not contain non-printable 0x%02u\n",
+                         name, (unsigned)c);
+
+        } else if(c==' ' || c=='\t' || c=='"' || c=='\'' || c=='.' || c=='$') {
+            epicsPrintf("Error: Bad character '%c' in Record/Alias name \"%s\"\n",
+                c, name);
+            yyerrorAbort(NULL);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 static void dbRecordHead(char *recordType, char *name, int visible)
 {
-    char *badch;
     DBENTRY *pdbentry;
     long status;
 
-    if (!*name) {
-        yyerrorAbort("dbRecordHead: Record name can't be empty");
+    if(dbRecordNameValidate(name))
         return;
-    }
-    badch = strpbrk(name, " \"'.$");
-    if (badch) {
-        epicsPrintf("Bad character '%c' in record name \"%s\"\n",
-            *badch, name);
-    }
 
     pdbentry = dbAllocEntry(pdbbase);
     if (ellCount(&tempList))
@@ -1180,10 +1223,9 @@ static void dbRecordAlias(char *name)
     tempListNode *ptempListNode;
     long status;
 
-    if (!*name) {
-        yyerrorAbort("dbRecordAlias: Alias name can't be empty");
+    if(dbRecordNameValidate(name))
         return;
-    }
+
     if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
@@ -1201,10 +1243,9 @@ static void dbAlias(char *name, char *alias)
     DBENTRY dbEntry;
     DBENTRY *pdbEntry = &dbEntry;
 
-    if (!*alias) {
-        yyerrorAbort("dbAlias: Alias name can't be empty");
+    if(dbRecordNameValidate(alias))
         return;
-    }
+
     dbInitEntry(pdbbase, pdbEntry);
     if (dbFindRecord(pdbEntry, name)) {
         epicsPrintf("Alias \"%s\" refers to unknown record \"%s\"\n",

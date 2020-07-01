@@ -1,0 +1,30 @@
+# CONFIG_SITE.linux-x86.linux-aarch64
+#
+# Site specific definitions for linux-x86 host - linux-aarch64 target builds
+#-------------------------------------------------------
+
+# Set GNU crosscompiler target name
+GNU_TARGET = aarch64-linux-gnu
+
+# Set GNU tools install path
+# Examples is the installation at the APS:
+GNU_DIR = /usr/local/Xilinx/SDK/2018.3/gnu/aarch64/lin/aarch64-linux
+
+# If cross-building shared libraries and the paths on the target machine are
+# different than on the build host, you should uncomment the lines below to
+# disable embedding compile-time library paths into the generated files.
+# You will need to provide another way for programs to find their shared
+# libraries at runtime, such as by setting LD_LIBRARY_PATH or (better) using
+# mechanisms related to /etc/ld.so.conf
+#SHRLIBDIR_RPATH_LDFLAGS_YES_NO =
+#PRODDIR_RPATH_LDFLAGS_YES_NO =
+# However it is usually simpler to set STATIC_BUILD=YES here and not
+# try to use shared libraries at all when cross-building, like this:
+STATIC_BUILD=YES
+SHARED_LIBRARIES=NO
+
+# To use libreadline, point this to its install prefix
+#READLINE_DIR = $(GNU_DIR)
+#READLINE_DIR = /tools/cross/linux-x86.linux-arm/readline
+# See CONFIG_SITE.Common.linux-arm for other COMMANDLINE_LIBRARY values
+#COMMANDLINE_LIBRARY = READLINE

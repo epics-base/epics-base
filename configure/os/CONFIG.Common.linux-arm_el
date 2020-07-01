@@ -1,9 +1,0 @@
-# CONFIG.Common.linux-arm_el
-#
-# Definitions for linux-arm_el (little endian) target builds
-# Sites may override these definitions in CONFIG_SITE.Common.linux-arm_el
-#-------------------------------------------------------
-
-# Include definitions common to all linux-arm targets
-include $(CONFIG)/os/CONFIG.Common.linux-arm
-

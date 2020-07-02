@@ -208,14 +208,8 @@ void sleepyReceiver(double delay)
         epicsThreadSleep(delay);
     }
 
-#ifdef __rtems__
-    testTodoBegin("RTEMS failure expected");
-#endif
     testOk(numSent == SLEEPY_TESTS, "Sent %d (should be %d)",
         numSent, SLEEPY_TESTS);
-#ifdef __rtems__
-    testTodoEnd();
-#endif
     testOk(numReceived == SLEEPY_TESTS, "Received %d (should be %d)",
         numReceived, SLEEPY_TESTS);
 

@@ -29,6 +29,9 @@
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
 
+#ifndef IPPORT_USERRESERVED
+#define IPPORT_USERRESERVED 5000
+#endif
 
 typedef int                     SOCKET;
 #define INVALID_SOCKET          (-1)

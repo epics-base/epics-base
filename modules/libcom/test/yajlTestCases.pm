@@ -8,6 +8,31 @@
 sub cases {
   my  $VAR1 = [
     {
+      name => "trailing_commas",
+      opts => [
+        -5
+      ],
+      input => [
+        "{\"array\":[1,2,],\"map\":{\"a\":1,},}",
+        ""
+      ],
+      gives => [
+        "map open '{'",
+        "key: 'array'",
+        "array open '['",
+        "integer: 1",
+        "integer: 2",
+        "array close ']'",
+        "key: 'map'",
+        "map open '{'",
+        "key: 'a'",
+        "integer: 1",
+        "map close '}'",
+        "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "difficult_json_c_test_case_with_comments",
       opts => [
         "-c"
@@ -2996,29 +3021,6 @@ sub cases {
         "string: '\346\235\276\346\261\237'",
         "key: 'asakusa'",
         "string: '\346\265\205\350\215\211'",
-        "map close '}'",
-        "memory leaks:\t0"
-      ]
-    },
-    {
-      name => "trailing_commas",
-      opts => [],
-      input => [
-        "{\"array\":[1,2,],\"map\":{\"a\":1,},}",
-        ""
-      ],
-      gives => [
-        "map open '{'",
-        "key: 'array'",
-        "array open '['",
-        "integer: 1",
-        "integer: 2",
-        "array close ']'",
-        "key: 'map'",
-        "map open '{'",
-        "key: 'a'",
-        "integer: 1",
-        "map close '}'",
         "map close '}'",
         "memory leaks:\t0"
       ]

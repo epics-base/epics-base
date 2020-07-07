@@ -332,7 +332,8 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
                 case yajl_tok_right_bracket: {
                     yajl_state s = yajl_bs_current(hand->stateStack);
                     if (s == yajl_state_array_start ||
-                        s == yajl_state_array_need_val)
+                        ((hand->flags & yajl_allow_json5) &&
+                        (s == yajl_state_array_need_val)))
                     {
                         if (hand->callbacks &&
                             hand->callbacks->yajl_end_array)
@@ -404,7 +405,8 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
                 case yajl_tok_right_brace: {
                     yajl_state s = yajl_bs_current(hand->stateStack);
                     if (s == yajl_state_map_start ||
-                        s == yajl_state_map_need_key) {
+                        ((hand->flags & yajl_allow_json5) &&
+                        (s == yajl_state_map_need_key))) {
                         if (hand->callbacks && hand->callbacks->yajl_end_map) {
                             _CC_CHK(hand->callbacks->yajl_end_map(hand->ctx));
                         }

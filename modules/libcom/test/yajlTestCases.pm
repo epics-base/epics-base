@@ -55,6 +55,37 @@ sub cases {
       ]
     },
     {
+      name => "simple_with_comments",
+      opts => [
+        -5
+      ],
+      input => [
+        "{",
+        "  \"this\": \"is\", // ignore this",
+        "  \"really\": \"simple\",",
+        "  /* ignore",
+        "this",
+        "too * / ",
+        "** //",
+        "(/",
+        "******/",
+        "  \"json\": \"right?\"",
+        "}",
+        ""
+      ],
+      gives => [
+        "map open '{'",
+        "key: 'this'",
+        "string: 'is'",
+        "key: 'really'",
+        "string: 'simple'",
+        "key: 'json'",
+        "string: 'right?'",
+        "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "trailing_commas",
       opts => [
         -5

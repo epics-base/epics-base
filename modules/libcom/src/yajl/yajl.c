@@ -95,6 +95,7 @@ yajl_config(yajl_handle h, int option, ...)
         case yajl_allow_trailing_garbage:
         case yajl_allow_multiple_values:
         case yajl_allow_partial_values:
+        case yajl_allow_json5:
             if (va_arg(ap, int)) h->flags |= opt;
             else h->flags &= ~opt;
             break;
@@ -128,7 +129,8 @@ yajl_parse(yajl_handle hand, const unsigned char * jsonText,
     if (hand->lexer == NULL) {
         hand->lexer = yajl_lex_alloc(&(hand->alloc),
                                      hand->flags & yajl_allow_comments,
-                                     !(hand->flags & yajl_dont_validate_strings));
+                                     !(hand->flags & yajl_dont_validate_strings),
+                                     hand->flags & yajl_allow_json5);
     }
     if (hand->lexer == NULL) {
         return yajl_status_error;
@@ -151,7 +153,8 @@ yajl_complete_parse(yajl_handle hand)
     if (hand->lexer == NULL) {
         hand->lexer = yajl_lex_alloc(&(hand->alloc),
                                      hand->flags & yajl_allow_comments,
-                                     !(hand->flags & yajl_dont_validate_strings));
+                                     !(hand->flags & yajl_dont_validate_strings),
+                                     hand->flags & yajl_allow_json5);
     }
 
     return yajl_do_finish(hand);

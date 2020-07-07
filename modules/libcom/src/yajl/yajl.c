@@ -82,11 +82,12 @@ yajl_alloc(const yajl_callbacks * callbacks,
 }
 
 int
-yajl_config(yajl_handle h, yajl_option opt, ...)
+yajl_config(yajl_handle h, int option, ...)
 {
+    yajl_option opt = option;   /* UB to use an enum in va_start */
     int rv = 1;
     va_list ap;
-    va_start(ap, opt);
+    va_start(ap, option);
 
     switch(opt) {
         case yajl_allow_comments:

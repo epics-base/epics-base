@@ -162,7 +162,7 @@ extern "C" {
      *  allocation (via yajl_alloc())
      *  \returns zero in case of errors, non-zero otherwise
      */
-    YAJL_API int yajl_config(yajl_handle h, yajl_option opt, ...);
+    YAJL_API int yajl_config(yajl_handle h, int option, ...);
 
     /** Free a parser handle */
     YAJL_API void yajl_free(yajl_handle handle);

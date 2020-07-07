@@ -48,11 +48,12 @@ struct yajl_gen_t
 };
 
 int
-yajl_gen_config(yajl_gen g, yajl_gen_option opt, ...)
+yajl_gen_config(yajl_gen g, int option, ...)
 {
+    yajl_gen_option opt = option;   /* UB to use an enum in va_start */
     int rv = 1;
     va_list ap;
-    va_start(ap, opt);
+    va_start(ap, option);
 
     switch(opt) {
         case yajl_gen_beautify:

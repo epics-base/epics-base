@@ -117,7 +117,7 @@ yajl_lex_alloc(yajl_alloc_funcs * alloc,
     lxr->buf = yajl_buf_alloc(alloc);
     lxr->allowComments = allowComments;
     lxr->validateUTF8 = validateUTF8;
-    lxr->allowJson5 = allowJson5;
+    lxr->allowJson5 = !!allowJson5;
     lxr->alloc = alloc;
     return lxr;
 }
@@ -385,27 +385,32 @@ yajl_lex_number(yajl_lexer lexer, const unsigned char * jsonText,
      *       is an ambiguous case for integers at EOF. */
 
     unsigned char c;
+    int numRd = 0;
 
     yajl_tok tok = yajl_tok_integer;
 
     RETURN_IF_EOF;
     c = readChar(lexer, jsonText, offset);
 
-    /* optional leading minus */
-    if (c == '-') {
+    /* optional leading plus/minus */
+    if (c == '-' || (lexer->allowJson5 && c == '+')) {
         RETURN_IF_EOF;
         c = readChar(lexer, jsonText, offset);
     }
 
     /* a single zero, or a series of integers */
     if (c == '0') {
+        numRd++;
         RETURN_IF_EOF;
         c = readChar(lexer, jsonText, offset);
     } else if (c >= '1' && c <= '9') {
         do {
+            numRd++;
             RETURN_IF_EOF;
             c = readChar(lexer, jsonText, offset);
         } while (c >= '0' && c <= '9');
+    } else if (lexer->allowJson5 && c == '.') {
+        goto got_decimal;
     } else {
         unreadChar(lexer, offset);
         lexer->error = yajl_lex_missing_integer_after_minus;
@@ -414,10 +419,10 @@ yajl_lex_number(yajl_lexer lexer, const unsigned char * jsonText,
 
     /* optional fraction (indicates this is floating point) */
     if (c == '.') {
-        int numRd = 0;
-
+    got_decimal:
         RETURN_IF_EOF;
         c = readChar(lexer, jsonText, offset);
+        if (!lexer->allowJson5) numRd = 0;
 
         while (c >= '0' && c <= '9') {
             numRd++;
@@ -607,6 +612,9 @@ yajl_lex_lex(yajl_lexer lexer, const unsigned char * jsonText,
                                       jsonTextLen, offset);
                 goto lexed;
             }
+            case '+': case '.':
+                if (!lexer->allowJson5)
+                    goto invalid;
             case '-':
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9': {
@@ -645,6 +653,7 @@ yajl_lex_lex(yajl_lexer lexer, const unsigned char * jsonText,
                 /* hit error or eof, bail */
                 goto lexed;
             default:
+            invalid:
                 lexer->error = yajl_lex_invalid_char;
                 tok = yajl_tok_error;
                 goto lexed;

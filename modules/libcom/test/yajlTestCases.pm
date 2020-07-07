@@ -8,6 +8,53 @@
 sub cases {
   my  $VAR1 = [
     {
+      name => "doubles",
+      opts => [
+        -5
+      ],
+      input => [
+        "[ .1e2, 10., +3.141569, -.1e4]",
+        ""
+      ],
+      gives => [
+        "array open '['",
+        "double: 10",
+        "double: 10",
+        "double: 3.14157",
+        "double: -1000",
+        "array close ']'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "integers",
+      opts => [
+        -5
+      ],
+      input => [
+        "[ +1,+2,+3,+4,+5,+6,+7,",
+        "  +123456789 , -123456789,",
+        "  +2147483647, -2147483647 ]",
+        ""
+      ],
+      gives => [
+        "array open '['",
+        "integer: 1",
+        "integer: 2",
+        "integer: 3",
+        "integer: 4",
+        "integer: 5",
+        "integer: 6",
+        "integer: 7",
+        "integer: 123456789",
+        "integer: -123456789",
+        "integer: 2147483647",
+        "integer: -2147483647",
+        "array close ']'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "trailing_commas",
       opts => [
         -5

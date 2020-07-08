@@ -32,9 +32,16 @@ sub cases {
         -5
       ],
       input => [
-        "[ +1,+2,+3,+4,+5,+6,+7,",
+        "[ +1,+2,+3,+4,+5,+6,+7,+8,+9,",
+        "  0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,",
+        "  0xa,0xb,0xc,0xd,0xe,0xf,",
+        "  0xA,0xB,0xC,0xD,0xE,0xF,",
+        "  +0xfedcba98, -0x6789ABCD,",
         "  +123456789 , -123456789,",
-        "  +2147483647, -2147483647 ]",
+        "  +2147483647, -2147483648,",
+        "  0x7fffFFFFffffFFFF, -0x7FFFffffFFFFffff,",
+        "  9223372036854775807, -9223372036854775807",
+        "]",
         ""
       ],
       gives => [
@@ -46,10 +53,39 @@ sub cases {
         "integer: 5",
         "integer: 6",
         "integer: 7",
+        "integer: 8",
+        "integer: 9",
+        "integer: 1",
+        "integer: 2",
+        "integer: 3",
+        "integer: 4",
+        "integer: 5",
+        "integer: 6",
+        "integer: 7",
+        "integer: 8",
+        "integer: 9",
+        "integer: 10",
+        "integer: 11",
+        "integer: 12",
+        "integer: 13",
+        "integer: 14",
+        "integer: 15",
+        "integer: 10",
+        "integer: 11",
+        "integer: 12",
+        "integer: 13",
+        "integer: 14",
+        "integer: 15",
+        "integer: 4275878552",
+        "integer: -1737075661",
         "integer: 123456789",
         "integer: -123456789",
         "integer: 2147483647",
-        "integer: -2147483647",
+        "integer: -2147483648",
+        "integer: 9223372036854775807",
+        "integer: -9223372036854775807",
+        "integer: 9223372036854775807",
+        "integer: -9223372036854775807",
         "array close ']'",
         "memory leaks:\t0"
       ]
@@ -2736,6 +2772,18 @@ sub cases {
         "key: 'U+10ABCD'",
         "string: '\364\212\257\215'",
         "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "hex",
+      opts => [],
+      input => [
+        "0x1",
+        ""
+      ],
+      gives => [
+        "lexical error: probable hex number found, JSON5 is not enabled.",
         "memory leaks:\t0"
       ]
     },

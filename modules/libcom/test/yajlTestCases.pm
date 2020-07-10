@@ -13,7 +13,7 @@ sub cases {
         -5
       ],
       input => [
-        "[ .1e2, 10., +3.141569, -.1e4]",
+        "[ .1e2, 10., +3.141569, -.1e4, NaN, Infinity, +Infinity, -Infinity ]",
         ""
       ],
       gives => [
@@ -22,6 +22,10 @@ sub cases {
         "double: 10",
         "double: 3.14157",
         "double: -1000",
+        "double: NaN",
+        "double: Infinity",
+        "double: Infinity",
+        "double: -Infinity",
         "array close ']'",
         "memory leaks:\t0"
       ]
@@ -2799,6 +2803,18 @@ sub cases {
       ]
     },
     {
+      name => "infinity",
+      opts => [],
+      input => [
+        "Infinity",
+        ""
+      ],
+      gives => [
+        "lexical error: special number Infinity or NaN found, JSON5 is not enabled.",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "integers",
       opts => [],
       input => [
@@ -2884,7 +2900,7 @@ sub cases {
         "string: 'blue'",
         "string: 'baby where are you?'",
         "string: 'oh boo hoo!'",
-        "lexical error: malformed number, a digit is required after the minus sign.",
+        "lexical error: malformed number, a digit is required after the plus/minus sign.",
         "memory leaks:\t0"
       ]
     },
@@ -2919,6 +2935,18 @@ sub cases {
       ],
       gives => [
         "parse error: unallowed token at this point in JSON text",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "minus_infinity",
+      opts => [],
+      input => [
+        "-Infinity",
+        ""
+      ],
+      gives => [
+        "lexical error: special number Infinity or NaN found, JSON5 is not enabled.",
         "memory leaks:\t0"
       ]
     },
@@ -2959,6 +2987,18 @@ sub cases {
         "map open '{'",
         "map close '}'",
         "parse error: trailing garbage",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "nan",
+      opts => [],
+      input => [
+        "NaN",
+        ""
+      ],
+      gives => [
+        "lexical error: special number Infinity or NaN found, JSON5 is not enabled.",
         "memory leaks:\t0"
       ]
     },

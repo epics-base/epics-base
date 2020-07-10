@@ -218,3 +218,27 @@ int yajl_string_validate_utf8(const unsigned char * s, size_t len)
 
     return 1;
 }
+
+int yajl_string_validate_identifier(const unsigned char * str, size_t len)
+{
+    const unsigned char * s = str;
+    int c;
+
+    if (!len || !str) return 0;
+
+    c = *s++;       /* First character [$_A-Za-z] */
+    if ((c != '$' && c < 'A') ||
+        (c > 'Z' && c != '_' && c < 'a') ||
+        (c > 'z'))
+        return 0;
+
+    while (--len) {
+        c = *s++;   /* Remaining characters [$_A-Za-z0-9] */
+        if ((c != '$' && c < '0') ||
+            (c > '9' && c < 'A') ||
+            (c > 'Z' && c != '_' && c < 'a') ||
+            (c > 'z'))
+            return 0;
+    }
+    return 1;
+}

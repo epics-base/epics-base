@@ -35,6 +35,8 @@ void yajl_string_decode(yajl_buf buf, const unsigned char * str,
 
 int yajl_string_validate_utf8(const unsigned char * s, size_t len);
 
+int yajl_string_validate_identifier(const unsigned char * str, size_t len);
+
 #ifdef __cplusplus
 }
 #endif

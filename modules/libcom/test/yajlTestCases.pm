@@ -95,6 +95,49 @@ sub cases {
       ]
     },
     {
+      name => "map_identifiers",
+      opts => [
+        -5
+      ],
+      input => [
+        "{",
+        "  \$:1,",
+        "  _:2,",
+        "  A:3,",
+        "  Z:4,",
+        "  a:5,",
+        "  z:6,",
+        "  \$1:7,",
+        "  _zz:8,",
+        "  ZZ9\$Zalpha:9",
+        "}",
+        ""
+      ],
+      gives => [
+        "map open '{'",
+        "key: '\$'",
+        "integer: 1",
+        "key: '_'",
+        "integer: 2",
+        "key: 'A'",
+        "integer: 3",
+        "key: 'Z'",
+        "integer: 4",
+        "key: 'a'",
+        "integer: 5",
+        "key: 'z'",
+        "integer: 6",
+        "key: '\$1'",
+        "integer: 7",
+        "key: '_zz'",
+        "integer: 8",
+        "key: 'ZZ9\$Zalpha'",
+        "integer: 9",
+        "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "simple_with_comments",
       opts => [
         -5

@@ -169,6 +169,37 @@ sub cases {
       ]
     },
     {
+      name => "strings",
+      opts => [
+        -5
+      ],
+      input => [
+        "[",
+        "  \"Hello\\!\",",
+        "  \"\\\"Evenin\\',\\\" said the barman.\",",
+        "  // The following string has 3 different escaped line-endings,",
+        "  // LF, CR, and CR+LF, which all disappear from the final string.",
+        "  \"Well \\",
+        "hi \\\rthere \\\r",
+        "y'all!\",",
+        "  \"\\b\\f\\n\\r\\t\\v\\\\\",",
+        "  \"\\A\\C\\/\\D\\C\",",
+        "]",
+        ""
+      ],
+      gives => [
+        "array open '['",
+        "string: 'Hello!'",
+        "string: '\"Evenin',\" said the barman.'",
+        "string: 'Well hi there y'all!'",
+        "string: '\b\f",
+        "\r\t\13\\'",
+        "string: 'AC/DC'",
+        "array close ']'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "trailing_commas",
       opts => [
         -5

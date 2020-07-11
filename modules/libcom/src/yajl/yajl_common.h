@@ -45,10 +45,12 @@ extern "C" {
  */
 #define EPICS_YAJL_VERSION VERSION_INT(2,1,0,0)
 
-/** Maximum generation depth for YAJL's JSON generation routines */
+/** A limit used by the generator API, YAJL_MAX_DEPTH is the maximum
+ *  depth to which arrays and maps may be nested.
+ */
 #define YAJL_MAX_DEPTH 128
 
-/** Symbol decoration for Microsoft builds */
+/** Marks a yajl routine for export from the DLL/shared library. */
 #define YAJL_API LIBCOM_API
 
 /** Pointer to a malloc() function, supporting client overriding memory
@@ -62,18 +64,18 @@ typedef void (*yajl_free_func)(void *ctx, void * ptr);
 /** Pointer to a realloc() function which can resize an allocation. */
 typedef void * (*yajl_realloc_func)(void *ctx, void * ptr, size_t sz);
 
-/** A structure which can be passed to yajl_*_alloc routines to allow the
+/** A structure which can be passed to yajl_*_alloc() routines to allow the
  *  client to specify memory allocation functions to be used. */
 typedef struct
 {
-    /** Pointer to a function that can allocate uninitialized memory */
+    /** Pointer to a function that can allocate uninitialized memory. */
     yajl_malloc_func malloc;
-    /** Pointer to a function that can resize memory allocations */
+    /** Pointer to a function that can resize memory allocations. */
     yajl_realloc_func realloc;
     /** Pointer to a function that can free memory allocated using
-     *  reallocFunction or mallocFunction */
+     *  the above realloc or malloc functions. */
     yajl_free_func free;
-    /** A context pointer that will be passed to above allocation routines */
+    /** A context pointer that will be passed to above allocation routines. */
     void * ctx;
 } yajl_alloc_funcs;
 

@@ -198,13 +198,61 @@ sub cases {
       ]
     },
     {
+      name => "spec_example",
+      opts => [
+        -5
+      ],
+      input => [
+        "{",
+        "  // comments",
+        "  unquoted: 'and you can quote me on that',",
+        "  singleQuotes: 'I can use \"double quotes\" here',",
+        "  lineBreaks: \"Look, Mom! \\",
+        "No \\\\n's!\",",
+        "  hexadecimal: 0xdecaf,",
+        "  leadingDecimalPoint: .8675309, andTrailing: 8675309.,",
+        "  positiveSign: +1,",
+        "  trailingComma: 'in objects', andIn: ['arrays',],",
+        "  \"backwardsCompatible\": \"with JSON\",",
+        "}",
+        ""
+      ],
+      gives => [
+        "map open '{'",
+        "key: 'unquoted'",
+        "string: 'and you can quote me on that'",
+        "key: 'singleQuotes'",
+        "string: 'I can use \"double quotes\" here'",
+        "key: 'lineBreaks'",
+        "string: 'Look, Mom! No \\n's!'",
+        "key: 'hexadecimal'",
+        "integer: 912559",
+        "key: 'leadingDecimalPoint'",
+        "double: 0.867531",
+        "key: 'andTrailing'",
+        "double: 8.67531e+06",
+        "key: 'positiveSign'",
+        "integer: 1",
+        "key: 'trailingComma'",
+        "string: 'in objects'",
+        "key: 'andIn'",
+        "array open '['",
+        "string: 'arrays'",
+        "array close ']'",
+        "key: 'backwardsCompatible'",
+        "string: 'with JSON'",
+        "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "strings",
       opts => [
         -5
       ],
       input => [
         "[",
-        "  \"Hello\\!\",",
+        "  'Hello\\!',",
         "  \"\\\"Evenin\\',\\\" said the barman.\",",
         "  // The following string has 3 different escaped line-endings,",
         "  // LF, CR, and CR+LF, which all disappear from the final string.",
@@ -212,7 +260,7 @@ sub cases {
         "hi \\\rthere \\\r",
         "y'all!\",",
         "  \"\\b\\f\\n\\r\\t\\v\\\\\",",
-        "  \"\\A\\C\\/\\D\\C\",",
+        "  '\\A\\C\\/\\D\\C',",
         "]",
         ""
       ],

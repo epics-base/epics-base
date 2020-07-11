@@ -205,6 +205,19 @@ extern "C" {
      *  intended to enable incremental JSON output. */
     YAJL_API void yajl_gen_clear(yajl_gen hand);
 
+    /** Reset the generator state. Allows a client to generate multiple
+     *  JSON entities in a stream.
+     *  \param hand The generator handle.
+     *  \param sep This string will be inserted to separate the previously
+     *             generated output from the following; passing \c NULL means
+     *             *no separation* of entites (beware that generating
+     *             multiple JSON numbers without a separator creates
+     *             ambiguous output).
+     *
+     *  Note: This call does not clear yajl's output buffer, which must be
+     *  accomplished explicitly by calling yajl_gen_clear(). */
+    YAJL_API void yajl_gen_reset(yajl_gen hand, const char * sep);
+
 #ifdef __cplusplus
 }
 #endif

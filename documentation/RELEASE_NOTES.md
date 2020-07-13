@@ -40,12 +40,20 @@ whitespace separated list of values.
 
 #### Scalar records reading from empty arrays
 
-Scalar records reading from empty arrays are now set to INVALID/LINK alarm
-status.
-Links have to call dbGetLink with pnRequest=NULL to be recognised as requests
+Records reading scalar fields from empty arrays are now set to INVALID/LINK
+alarm status.
+Links have to call dbGetLink with pnRequest=NULL to be recognized as requests
 for scalars.
 This changes the semantics of pnRequest=NULL. It is now different from
 requesting up to 1 array element, which may return a valid empty array.
+
+### Writing empty arrays to scalar records
+
+Witing an empty array to a scalar field now sets the target record to
+INVALID/LINK alarm but does not modify the value. Before, the value used
+to be set to 0 (without any alarm).
+A target field needs to have the SPC_DBADDR tag to be recognized as an array
+field and the record support must define a put_array_info method.
 
 ## EPICS Release 7.0.4
 

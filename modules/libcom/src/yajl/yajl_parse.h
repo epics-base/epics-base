@@ -183,7 +183,8 @@ extern "C" {
          * and object keys which are not permitted by the JSON standard.
          * Setting this flag tells yajl to accept JSON5 standard input.
          * This flag also enables \c yajl_allow_comments since comments are
-         * part of the JSON5 standard.
+         * part of the JSON5 standard. In the EPICS build this option is
+         * enabled by default, it must be turned off to disable JSON5.
          *
          * yajl_config() argument type: int (boolean)
          *

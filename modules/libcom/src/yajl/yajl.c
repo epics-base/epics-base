@@ -74,7 +74,7 @@ yajl_alloc(const yajl_callbacks * callbacks,
     hand->lexer = NULL;
     hand->bytesConsumed = 0;
     hand->decodeBuf = yajl_buf_alloc(&(hand->alloc));
-    hand->flags     = 0;
+    hand->flags     = yajl_allow_json5 | yajl_allow_comments;
     yajl_bs_init(hand->stateStack, &(hand->alloc));
     yajl_bs_push(hand->stateStack, yajl_state_start);
 

@@ -205,6 +205,9 @@ main(int argc, char ** argv)
     /* allocate the parser */
     hand = yajl_alloc(&callbacks, &allocFuncs, NULL);
 
+    /* turn off JSON5 (the EPICS default) */
+    yajl_config(hand, yajl_allow_json5, 0);
+
     /* check arguments.  We expect exactly one! */
     for (i=1;i<argc;i++) {
         if (!strcmp("-5", argv[i])) {

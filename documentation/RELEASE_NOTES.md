@@ -1329,6 +1329,15 @@ header and removed the need for dbScan.c to reach into the internals of its
 # Changes incorporated from the 3.15 branch
 
 
+## Changes made on the 3.15 branch since 3.15.8
+
+### Change to the `junitfiles` self-test build target
+
+The names of the generated junit xml test output files have been changed
+from `<testname>.xml` to `<testname>-results.xml`, to allow better
+distinction from other xml files. (I.e., for easy wildcard matching.)
+
+
 ## Changes made between 3.15.7 and 3.15.8
 
 ### Bug fixes
@@ -1352,7 +1361,6 @@ The following launchpad bugs have fixes included in this release:
 - [lp: 1868486](https://bugs.launchpad.net/epics-base/+bug/1868486),
   epicsMessageQueue lost messages
 
-
 ### Improvements to the self-test build targets
 
 This release contains changes that make it possible to integrate another test
@@ -1368,7 +1376,7 @@ results; previously the `-k` flag to make was needed and even that didn't always
 work.
 
 Continuous Integration systems are recommended to run `make tapfiles` (or if
-they can read junittest output instead of TAP `make junitests`) followed by
+they can read junittest output instead of TAP `make junitfiles`) followed by
 `make -s test-results` to display the results of the tests. If multiple CPUs are
 available the `-j` flag can be used to run tests in parallel, giving the maximum
 jobs that should be allowed so `make -j4 tapfiles` for a system with 4 CPUs say.
@@ -1616,8 +1624,8 @@ cases. This fixes
 Some documentation has been added to the `dbdToHtml.pl` script
 explaining how Perl POD (Plain Old Documentation) markup can be added to
 `.dbd` files to generate HTML documentation for the record types. To see
-these instructions, run `perl bin/<host>/dbdToHtml.pl -H`
-or `perldoc bin/<host>/dbdToHtml.pl`.
+these instructions, run `perl bin/<host>/dbdToHtml.pl -H`
+or `perldoc bin/<host>/dbdToHtml.pl`.
 
 ### Fix problem with numeric soft events
 

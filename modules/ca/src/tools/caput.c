@@ -437,6 +437,7 @@ int main (int argc, char *argv[])
     dbuf = calloc (count, sizeof(double));
     if(!sbuf || !dbuf) {
         fprintf(stderr, "Memory allocation failed\n");
+        free(sbuf); free(dbuf);
         return 1;
     }
 
@@ -450,6 +451,7 @@ int main (int argc, char *argv[])
         result = ca_pend_io(caTimeout);
         if (result == ECA_TIMEOUT) {
             fprintf(stderr, "Read operation timed out: ENUM data was not read.\n");
+            free(sbuf); free(dbuf);
             return 1;
         }
 
@@ -460,6 +462,7 @@ int main (int argc, char *argv[])
                 if (*(argv+optind+i) == pend) { /* Conversion didn't work */
                     fprintf(stderr, "Enum index value '%s' is not a number.\n",
                             *(argv+optind+i));
+                    free(sbuf); free(dbuf);
                     return 1;
                 }
                 if (dbuf[i] >= bufGrEnum.no_str) {
@@ -486,6 +489,7 @@ int main (int argc, char *argv[])
                     dbuf[i] = epicsStrtod(sbuf[i], &pend);
                     if (sbuf[i] == pend || enumAsString) {
                         fprintf(stderr, "Enum string value '%s' invalid.\n", sbuf[i]);
+                        free(sbuf); free(dbuf);
                         return 1;
                     }
                     if (dbuf[i] >= bufGrEnum.no_str) {
@@ -503,6 +507,7 @@ int main (int argc, char *argv[])
             ebuf = calloc(len, sizeof(char));
             if(!ebuf) {
                 fprintf(stderr, "Memory allocation failed\n");
+                free(sbuf); free(dbuf); free(ebuf);
                 return 1;
             }
             count = epicsStrnRawFromEscaped(ebuf, len, cbuf, len-1) + 1;
@@ -537,12 +542,14 @@ int main (int argc, char *argv[])
     }
     if (result != ECA_NORMAL) {
         fprintf(stderr, "Error from put operation: %s\n", ca_message(result));
+        free(sbuf); free(dbuf); free(ebuf);
         return 1;
     }
 
     result = ca_pend_io(caTimeout);
     if (result == ECA_TIMEOUT) {
         fprintf(stderr, "Write operation timed out: Data was not written.\n");
+        free(sbuf); free(dbuf); free(ebuf);
         return 1;
     }
     if (request == callback) {   /* Also wait for callbacks */
@@ -556,6 +563,7 @@ int main (int argc, char *argv[])
 
     if (result != ECA_NORMAL) {
         fprintf(stderr, "Error occured writing data: %s\n", ca_message(result));
+        free(sbuf); free(dbuf); free(ebuf);
         return 1;
     }
 
@@ -567,6 +575,7 @@ int main (int argc, char *argv[])
 
                                 /* Shut down Channel Access */
     ca_context_destroy();
+    free(sbuf); free(dbuf); free(ebuf);
 
     return result;
 }

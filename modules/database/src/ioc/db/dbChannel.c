@@ -603,6 +603,10 @@ long dbChannelOpen(dbChannel *chan)
     probe.no_elements = dbChannelElements(chan);
     probe.field_size  = dbChannelFieldSize(chan);
     probe.sevr = NO_ALARM;
+    probe.stat = NO_ALARM;
+    probe.time.secPastEpoch = 0;
+    probe.time.nsec = 0;
+
     p = probe;
 
     /*

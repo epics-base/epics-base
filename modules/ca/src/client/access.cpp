@@ -603,7 +603,7 @@ void epicsStdCall ca_signal_formated ( long ca_status, const char *pfilenm,
     }
     else {
         fprintf ( stderr, "CA exception in thread w/o CA ctx: status=%s file=%s line=%d: \n",
-            ca_message ( ca_status ), pfilenm, lineno );
+            ca_message ( ca_status ), pfilenm ? pfilenm : "<null>", lineno );
         if ( pFormat ) {
             vfprintf ( stderr, pFormat, theArgs );
         }

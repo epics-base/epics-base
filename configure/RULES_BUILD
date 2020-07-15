@@ -116,7 +116,7 @@ ifneq (,$(filter $(T_A), $(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
 RUNTESTS_ENABLED = YES
 TESTSCRIPTS.t = $(filter %.t, $(TESTSCRIPTS))
 TAPFILES.t += $(TESTSCRIPTS.t:.t=.tap)
-JUNITFILES.t += $(TESTSCRIPTS.t:.t=.xml)
+JUNITFILES.t += $(TESTSCRIPTS.t:.t=-results.xml)
 TAPFILES += $(TAPFILES.t)
 JUNITFILES += $(JUNITFILES.t)
 endif
@@ -390,7 +390,7 @@ ifdef RUNTESTS_ENABLED
 	$(PERL) $< -tap > $@
 endif
 
-$(JUNITFILES.t): %.xml: %.tap
+$(JUNITFILES.t): %-results.xml: %.tap
 	$(TAPTOJUNIT) --puretap --output $@ --input $< $*
 
 # If there's a perl test script (.plt) available, use it

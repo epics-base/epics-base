@@ -1339,7 +1339,7 @@ long dbPut(DBADDR *paddr, short dbrType,
         status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
             nRequest, no_elements, offset);
         /* update array info */
-        if (!status)
+        if (!status && prset->put_array_info)
             status = prset->put_array_info(paddr, nRequest);
     } else {
         if (nRequest < 1) {

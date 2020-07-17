@@ -40,6 +40,7 @@
 #include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
+#include "dbConvertJSON.h"
 
 #define MAXLINE 80
 #define MAXMESS 128
@@ -381,39 +382,19 @@ long dbpf(const char *pname,const char *pvalue)
     }
 
     if (addr.no_elements > 1) {
+        dbrType = addr.dbr_field_type;
         if (addr.dbr_field_type == DBR_CHAR || addr.dbr_field_type == DBR_UCHAR) {
-            dbrType = addr.dbr_field_type;
             n = (long)strlen(pvalue) + 1;
         } else {
-            const char *p = pvalue;
-
-            for (n = 0; *p && n < addr.no_elements; n++) {
-                while (isspace(*p)) p++;
-                while (*p && !isspace(*p)) {
-                    if (p[0] == '\\' && p[1]) p++;
-                    p++;
-                }
-            }
-            p = pvalue;
-            array = calloc(n, MAX_STRING_SIZE);
+            n = addr.no_elements;
+            array = calloc(n, dbValueSize(dbrType));
             if (!array) {
                 printf("Out of memory\n");
                 return -1;
             }
-            for (n = 0; *p && n < addr.no_elements; n++) {
-                char* c = &array[n*MAX_STRING_SIZE];
-                while (isspace(*p)) p++;
-                pvalue = p;
-                while (*p && !isspace(*p)) {
-                    if (p[0] == '\\' && p[1]) p++;
-                    if (c >= &array[(n+1)*MAX_STRING_SIZE]-1) {
-                        printf("Value [%ld] %.*s too long\n", n, (int)(p-pvalue), pvalue);
-                        free(array);
-                        return -1;
-                    }
-                    *c++=*p++;
-                }
-            }
+            status = dbPutConvertJSON(pvalue, dbrType, array, &n);
+            if (status)
+                return status;
             pvalue = array;
         }
     }

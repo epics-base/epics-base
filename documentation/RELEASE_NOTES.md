@@ -35,8 +35,7 @@ when reading empty arrays from an input link.
 
 #### Array support for dbpf
 
-The dbpf function now accepts arrays, including empty arrays, as a quoted
-whitespace separated list of values.
+The dbpf function now accepts arrays, including empty arrays as a JSON string.
 
 #### Scalar records reading from empty arrays
 

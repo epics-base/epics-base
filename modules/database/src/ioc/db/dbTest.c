@@ -395,7 +395,11 @@ long dbpf(const char *pname,const char *pvalue)
                 }
             }
             p = pvalue;
-            array = dbCalloc(n, MAX_STRING_SIZE);
+            array = calloc(n, MAX_STRING_SIZE);
+            if (!array) {
+                printf("Out of memory\n");
+                return -1;
+            }
             for (n = 0; *p && n < addr.no_elements; n++) {
                 char* c = &array[n*MAX_STRING_SIZE];
                 while (isspace(*p)) p++;

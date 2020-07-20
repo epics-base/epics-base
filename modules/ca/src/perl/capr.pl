@@ -280,7 +280,7 @@ sub caget {
             my $err = (@chans > 1) ? 'some PV(s)' : '"' . $chans[0]->name . '"';
             print "Channel connect timed out: $err not found.\n";
             foreach my $chan (@chans) {
-                $timed_out{$chan->name} = $chan->is_connected;
+                $timed_out{$chan->name} = !$chan->is_connected;
             }
             @chans = grep { $_->is_connected } @chans;
         } else {
@@ -346,15 +346,10 @@ sub printRecord {
         my $field  = $fields_pr[$i];
         my $fToGet = $readlist[$i];
         my ($fType, $data, $base);
-        if ($timed_out{$fToGet}) {
-            $fType = $fieldType{DBF_STRING};
-            $data  = '<timeout>';
-        }
-        else {
-            $fType  = $ftypes[$i];
-            $base   = $bases[$i];
-            $data   = $callback_data{$fToGet};
-        }
+        next if $timed_out{$fToGet};
+        $fType  = $ftypes[$i];
+        $base   = $bases[$i];
+        $data   = $callback_data{$fToGet};
         $col = printField($field, $data, $fType, $base, $col);
     }
     print("\n");  # Final newline

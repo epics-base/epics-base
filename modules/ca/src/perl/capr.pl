@@ -88,7 +88,7 @@ if (@ARGV) {
     printRecord($_, @ARGV);
 } else {
     if (m/^ \s* ([]+:;<>0-9A-Za-z[-]+) (?:\. \w+)? \s* , \s* (\d+) \s* $/x) {
-        # Recognizes ",n" as an interest leve, drops any ".FIELD" part
+        # Recognizes ",n" as an interest level, drops any ".FIELD" part
         printRecord($1, $2);
     } else {
         # Drop any ".FIELD" part
@@ -273,14 +273,15 @@ sub printField {
 sub caget {
     my @chans = map { CA->new($_); } @_;
 
-    #clear results;
+    #clear any previous results;
     %callback_data = ();
     %timed_out = ();
 
     eval { CA->pend_io($opt_w); };
     if ($@) {
         if ($@ =~ m/^ECA_TIMEOUT/) {
-            my $err = (@chans > 1) ? 'some PV(s)' : '"' . $chans[0]->name . '"';
+            my $name = $chans[0]->name;
+            my $err = (@chans > 1) ? 'some fields' : "'$name'";
             print "Channel connect timed out: $err not found.\n";
             foreach my $chan (@chans) {
                 $timed_out{$chan->name} = !$chan->is_connected;
@@ -292,14 +293,12 @@ sub caget {
     }
 
     map {
-        my $type;
-        $type = $_->field_type;
-        $_->get_callback(\&caget_callback, $type);
+        $_->get_callback(\&caget_callback, $_->field_type);
     } @chans;
 
-    my $fields_read = @chans;
-    $callback_incomplete = @chans;
-    CA->pend_event(0.1) while $callback_incomplete;
+    my $fields_read = $callback_incomplete = @chans;
+    CA->pend_event(0.1)
+        while $callback_incomplete;
     return $fields_read;
 }
 
@@ -328,9 +327,10 @@ sub printRecord {
     my @bases = ();     #bases, from parser
     foreach my $field (sort keys %{$record{$recType}}) {
         # Skip DTYP field if this rec type doesn't have device support defined
-        if ($field eq 'DTYP' && !(exists($device{$recType}))) { next; }
+        next if $field eq 'DTYP' && !exists($device{$recType});
 
         my ($fType, $fInterest, $base) = getFieldParams($recType, $field);
+        # FIXME: Support waveform.VAL fields etc.
         unless( $fType eq 'DBF_NOACCESS' ) {
             if ($interest >= $fInterest ) {
                 my $fToGet = "$name.$field";
@@ -385,8 +385,8 @@ sub printRecordList {
     if (exists($record{$type}) ) {
         print("Record type - $type\n");
         foreach my $fkey (sort keys %{$record{$type}}) {
-            printf('%-4s', $fkey);
-            printf("    interest = $record{$type}{$fkey}[$iIdx]");
+            printf('%-8s', $fkey);
+            printf("  interest = $record{$type}{$fkey}[$iIdx]");
             printf("    type = %-12s ",$record{$type}{$fkey}[$tIdx]);
             print ("    base = $record{$type}{$fkey}[$bIdx]\n");
         }

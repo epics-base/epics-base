@@ -35,9 +35,11 @@ my %fieldType = (
     DBF_DOUBLE   => 'DBF_FLOAT',
     DBF_FLOAT    => 'DBF_FLOAT',
     DBF_LONG     => 'DBF_LONG',
+    DBF_INT64    => 'DBF_FLOAT',
     DBF_SHORT    => 'DBF_LONG',
     DBF_ULONG    => 'DBF_LONG',
     DBF_USHORT   => 'DBF_LONG',
+    DBF_UINT64   => 'DBF_FLOAT',
     DBF_DEVICE   => 'DBF_STRING',
     DBF_ENUM     => 'DBF_STRING',
     DBF_FWDLINK  => 'DBF_STRING',
@@ -235,8 +237,9 @@ sub printField {
         $outStr = sprintf('%-5s %.8f', $field, $fieldData);
     } elsif ( $dataType eq 'DBF_CHAR' ) {
         $outStr = sprintf('%-5s %d', $field, ord($fieldData));
-    }else {
-        # DBF_LONG, DBF_SHORT, DBF_UCHAR, DBF_ULONG, DBF_USHORT
+    } else {
+        # DBF_INT64, DBF_LONG, DBF_SHORT,
+        # DBF_UINT64, DBF_ULONG, DBF_USHORT, DBF_UCHAR,
         $outStr = sprintf('%-5s %d', $field, $fieldData);
     }
 

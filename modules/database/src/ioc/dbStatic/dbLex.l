@@ -25,10 +25,15 @@ hexdigit    [0-9a-fA-F]
 unicodechar ({backslash}"u"{hexdigit}{4})
 jsonchar    ({normalchar}|{escapedchar}|{unicodechar})
 jsondqstr   ({doublequote}{jsonchar}*{doublequote})
-int         ("-"?([0-9]|[1-9][0-9]+))
+
+sign        ([+-]?)
+int         ({sign}([0-9]|[1-9][0-9]+))
 frac        ("."[0-9]+)
-exp         ([eE][+-]?[0-9]+)
-number      ({int}{frac}?{exp}?)
+exp         ([eE]{sign}[0-9]+)
+jsonnum     ({int}{frac}?{exp}?)
+intexp      ({int}"."{exp}?)
+fracexp     ({sign}{frac}{exp}?)
+number      ({jsonnum}|{intexp}|{fracexp})
 
 %{
 #undef YY_INPUT

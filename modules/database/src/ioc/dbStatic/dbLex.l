@@ -33,7 +33,10 @@ exp         ([eE]{sign}[0-9]+)
 jsonnum     ({int}{frac}?{exp}?)
 intexp      ({int}"."{exp}?)
 fracexp     ({sign}{frac}{exp}?)
-number      ({jsonnum}|{intexp}|{fracexp})
+
+zerox       ("0x"|"0X")
+hexint      ({sign}{zerox}{hexdigit}+)
+number      ({jsonnum}|{intexp}|{fracexp}|{hexint})
 
 %{
 #undef YY_INPUT

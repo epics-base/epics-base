@@ -73,4 +73,12 @@ record(x, "t1") {
     field(F64, -.123e4)
     field(F32, -123.e4)
     field(F64, -123.e4)
+    field(F32, Infinity)
+    field(F64, Infinity)
+    field(F32, +Infinity)
+    field(F64, +Infinity)
+    field(F32, -Infinity)
+    field(F64, -Infinity)
+    field(F32, Nan)
+    field(F64, Nan)
 }

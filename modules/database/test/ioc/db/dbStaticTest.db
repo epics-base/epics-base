@@ -81,4 +81,7 @@ record(x, "t1") {
     field(F64, -Infinity)
     field(F32, Nan)
     field(F64, Nan)
+
+    info(i1, {x:0, +x:1, -x:2, .x:3})
+    info(i2, Bare-word_string)
 }

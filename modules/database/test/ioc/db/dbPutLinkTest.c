@@ -255,7 +255,7 @@ typedef struct {
 } testHWDataT;
 
 static const testHWDataT testHWData[] = {
-    {"rJSON_LINK", JSON_LINK, "{\"x\":true}", {0}, "{\"x\":true}"},
+    {"rJSON_LINK", JSON_LINK, "{x:true}", {0}, "{x:true}"},
     {"rVME_IO", VME_IO, "#C100 S101 @parm VME_IO", {100, 101}, "parm VME_IO"},
     {"rCAMAC_IO", CAMAC_IO, "#B11 C12 N13 A14 F15 @parm CAMAC_IO", {11, 12, 13, 14, 15}, "parm CAMAC_IO"},
     {"rAB_IO", AB_IO, "#L21 A22 C23 S24 @parm AB_IO", {21, 22, 23, 24}, "parm AB_IO"},
@@ -585,7 +585,7 @@ void testJLink(void)
     testdbPutFieldOk("j2.PROC", DBF_LONG, 1);
     testdbPutFieldOk("j3.PROC", DBF_LONG, 1);
 
-    testdbGetFieldEqual("j1.INP", DBF_STRING, "{\"z\":{\"good\":1}}");
+    testdbGetFieldEqual("j1.INP", DBF_STRING, "{z:{good:1}}");
     testdbGetFieldEqual("j1.VAL", DBF_LONG, 1);
     testdbGetFieldEqual("j2.VAL", DBF_LONG, 2);
     testdbGetFieldEqual("j3.VAL", DBF_LONG, 3);

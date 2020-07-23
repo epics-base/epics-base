@@ -32,8 +32,8 @@ static int yyAbort = 0;
 
 %token jsonNULL jsonTRUE jsonFALSE
 %token <Str> jsonNUMBER jsonSTRING jsonBARE
-%type <Str> json_value json_object json_array
-%type <Str> json_members json_pair json_elements json_string
+%type <Str> json_value json_string json_object json_array
+%type <Str> json_members json_pair json_key json_elements
 
 %%
 
@@ -299,10 +299,21 @@ json_members: json_pair
     if (dbStaticDebug>2) printf("json %s\n", $$);
 };
 
-json_pair: json_string ':' json_value
+json_pair: json_key ':' json_value
 {
     $$ = dbmfStrcat3($1, ":", $3);
     dbmfFree($1); dbmfFree($3);
+    if (dbStaticDebug>2) printf("json %s\n", $$);
+};
+
+json_key: jsonSTRING
+    | jsonBARE
+{
+    /* A key containing any of these characters must be quoted for YAJL */
+    if (strcspn($1, "+-.") < strlen($1)) {
+        $$ = dbmfStrcat3("\"", $1, "\"");
+        dbmfFree($1);
+    }
     if (dbStaticDebug>2) printf("json %s\n", $$);
 };
 

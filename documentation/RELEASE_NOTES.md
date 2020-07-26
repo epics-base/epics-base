@@ -13,10 +13,33 @@ should also be read to understand what has changed since earlier releases.
 
 **This version of EPICS has not been released yet.**
 
-## Changes made on the 7.0 branch since 7.0.4
+## Changes made on the 7.0 branch since 7.0.4.1
 
 <!-- Insert new items immediately below here ... -->
 
+## EPICS Release 7.0.4.1
+
+### Bug fixes
+
+The following launchpad bugs have fixes included in this release:
+
+- [lp: 1884339](https://bugs.launchpad.net/epics-base/+bug/1884339), Inaccessible CA servers on Windows
+
+
+### Record Name Validation
+
+Historically, there have been very few restrictions on which characters
+may be present in record and alias names.  Base 3.14.12.3 added a warning
+for names containing space, single or double quote, period/dot, or
+dollar sign.
+
+```
+Bad character ' ' in record name "bad practice"
+```
+
+7.0.4.1 Turns this warning into an error, and adds a new warning
+if a record name begins with a minus, plus, left square bracket,
+or left curly bracket.
 
 ## EPICS Release 7.0.4
 

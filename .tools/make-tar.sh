@@ -2,7 +2,7 @@
 #
 # Make tar for git repo w/ one level of sub modules.
 #
-set -e -u
+set -e
 
 die() {
   echo "$1" >&2

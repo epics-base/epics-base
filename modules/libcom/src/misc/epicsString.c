@@ -83,38 +83,40 @@ int epicsStrnRawFromEscaped(char *dst, size_t dstlen, const char *src,
                 if (!srclen-- || !(c = *src++)) {
                     OUT(u); goto done;
                 }
-                if (c < '0' || c > '7') {
+                if (c < '0' || c > '7' || u > 037) {
                     OUT(u); goto input;
                 }
                 u = u << 3 | (c - '0');
-
-                if (u > 0377) {
-                    /* Undefined behaviour! */
-                }
                 OUT(u);
             }
             break;
 
         case 'x' :
-            { /* \xXXX... */
+            { /* \xXX */
                 unsigned int u = 0;
 
                 if (!srclen-- || !(c = *src++ & 0xff))
                     goto done;
 
-                while (isxdigit(c)) {
-                    u = u << 4 | ((c > '9') ? toupper(c) - 'A' + 10 : c - '0');
-                    if (u > 0xff) {
-                        /* Undefined behaviour! */
-                    }
-                    if (!srclen-- || !(c = *src++ & 0xff)) {
-                        OUT(u);
-                        goto done;
-                    }
+                if (!isxdigit(c))
+                    goto input;
+
+                u = u << 4 | ((c > '9') ? toupper(c) - 'A' + 10 : c - '0');
+
+                if (!srclen-- || !(c = *src++ & 0xff)) {
+                    OUT(u);
+                    goto done;
                 }
+
+                if (!isxdigit(c)) {
+                    OUT(u);
+                    goto input;
+                }
+
+                u = u << 4 | ((c > '9') ? toupper(c) - 'A' + 10 : c - '0');
                 OUT(u);
-                goto input;
             }
+            break;
 
         default:
             OUT(c);

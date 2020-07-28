@@ -88,7 +88,7 @@ MAIN(epicsStringTest)
     char *s;
     int status;
 
-    testPlan(406);
+    testPlan(416);
 
     testChars();
 
@@ -258,6 +258,19 @@ MAIN(epicsStringTest)
     testOk(result[status] == 0, "  0-terminated");
 
     memset(result, 'x', sizeof(result));
+    status = epicsStrnRawFromEscaped(result, 4, "\\377", 4);
+    testOk(status == 1,      "raw(\"\\377\", 4) -> %d (exp. 1)", status);
+    testOk((result[0] & 0xff) == 0377, "  Octal escape (got \\%03o)", result[0]);
+    testOk(result[status] == 0, "  0-terminated");
+
+    memset(result, 'x', sizeof(result));
+    status = epicsStrnRawFromEscaped(result, 4, "\\400", 4);
+    testOk(status == 2,      "raw(\"\\400\", 4) -> %d (exp. 2)", status);
+    testOk(result[0] == 040, "  Octal escape (got \\%03o)", result[0]);
+    testOk(result[1] == '0', "  Terminator char got '%c'", result[1]);
+    testOk(result[status] == 0, "  0-terminated");
+
+    memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\812", 2);
     testOk(status == 1,      "raw(\"\\812\", 2) -> %d (exp. 1)", status);
     testOk(result[0] == '8', "  Escaped '%c')", result[0]);
@@ -307,14 +320,17 @@ MAIN(epicsStringTest)
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x012", 5);
-    testOk(status == 1,      "raw(\"\\x012\", 5) -> %d (exp. 1)", status);
-    testOk(result[0] == 0x12,"  Hex escape (got \\x%x)", result[0]);
+    testOk(status == 2,      "raw(\"\\x012\", 5) -> %d (exp. 2)", status);
+    testOk(result[0] == 0x1,"  Hex escape (got \\x%x)", result[0]);
+    testOk(result[1] == '2', "  Terminator char got '%c'", result[1]);
     testOk(result[status] == 0, "  0-terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x0012", 6);
-    testOk(status == 1,      "raw(\"\\x0012\", 6) -> %d (exp. 1)", status);
-    testOk(result[0] == 0x12,"  Hex escape (got \\x%x)", result[0]);
+    testOk(status == 3,      "raw(\"\\x0012\", 6) -> %d (exp. 3)", status);
+    testOk(result[0] == 0,"  Hex escape (got \\x%x)", result[0]);
+    testOk(result[1] == '1', "  Terminator char got '%c'", result[1]);
+    testOk(result[2] == '2', "  Following char got '%c'", result[2]);
     testOk(result[status] == 0, "  0-terminated");
 
     memset(result, 'x', sizeof(result));

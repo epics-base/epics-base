@@ -27,6 +27,9 @@
 #include <net/if.h>
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
+#ifndef TCP_NODELAY
+#  include <netinet/tcp.h>
+#endif
 
 
 typedef int                     SOCKET;

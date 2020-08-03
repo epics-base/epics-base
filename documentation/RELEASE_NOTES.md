@@ -27,6 +27,7 @@ The following bugs/issues have fixes included in this release:
   Inaccessible CA servers on Windows
 - [github: 83](https://github.com/epics-base/epics-base/issues/83)
   osdTimeGetCurrent doesn't work for subprocess on macOS
+- Recent Cygwin build problem with a missing `TCP_NODELAY` declaration.
 
 ### Perl CA Bindings under Conda
 

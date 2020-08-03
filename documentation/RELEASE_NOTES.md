@@ -21,10 +21,25 @@ should also be read to understand what has changed since earlier releases.
 
 ### Bug fixes
 
-The following launchpad bugs have fixes included in this release:
+The following bugs/issues have fixes included in this release:
 
-- [lp: 1884339](https://bugs.launchpad.net/epics-base/+bug/1884339), Inaccessible CA servers on Windows
+- [lp: 1884339](https://bugs.launchpad.net/epics-base/+bug/1884339),
+  Inaccessible CA servers on Windows
+- [github: 83](https://github.com/epics-base/epics-base/issues/83)
+  osdTimeGetCurrent doesn't work for subprocess on macOS
 
+### Perl CA Bindings under Conda
+
+Builds of the Perl CA bindings weren't working properly when the Perl
+installation was from Conda. This release also fixed the capr.pl script
+to handle the INT64 data types, and to be able to properly handle missing
+fields, as happens if the IOC is running an older EPICS version for example.
+
+### epicsMessageQueue implementation on RTEMS
+
+The implementation of the `epicsMessageQueue` used on RTEMS has switched from
+the native RTEMS-specific one to the EPICS generic version, avoiding a bug
+in the RTEMS Kernel message queue code.
 
 ### Record Name Validation
 

@@ -265,6 +265,7 @@ void testSvalRead(const char *name,
                   const epicsTimeStamp *svtime)
 {
     epicsTimeStamp last;
+    double diff;
 
     if (strcmp(name, "histogram") == 0)
         strcpy(nameVAL, nameSGNL);
@@ -336,7 +337,8 @@ void testSvalRead(const char *name,
     }
 
     /* My timestamp must be later than simval's */
-    testOk(epicsTimeLessThan(svtime, mytime), "simval time < my time [TSE = 0]");
+    diff = epicsTimeDiffInSeconds(mytime, svtime);
+    testOk(diff >= 0.0, "simval time <= my time [TSE = 0] (%.9f sec)", diff);
 
     testDiag("for TSE=-2 (from device) and simmYES, take time stamp from IOC or input link");
 
@@ -352,7 +354,8 @@ void testSvalRead(const char *name,
     /* With TSE=-2 and no SIOL, timestamp is taken from IOC */
     testdbPutFieldOk(nameSIOL, DBR_STRING, "");
     testdbPutFieldOk(namePROC, DBR_LONG, 0);
-    testOk(epicsTimeLessThan(&last, mytime), "new time stamp from IOC [TSE = -2, no SIOL]");
+    diff = epicsTimeDiffInSeconds(mytime, &last);
+    testOk(diff >= 0.0, "new time stamp from IOC [TSE = -2, no SIOL] (%.9f sec)", diff);
 
     /* Reset TSE */
     testdbPutFieldOk(nameTSE, DBR_SHORT, 0);
@@ -367,6 +370,7 @@ void testSiolWrite(const char *name,
                    const epicsTimeStamp *mytime)
 {
     epicsTimeStamp now;
+    double diff;
 
     testDiag("## Writing through SIOL ##");
 
@@ -399,7 +403,8 @@ void testSiolWrite(const char *name,
     epicsTimeGetCurrent(&now);
     testdbPutFieldOk(nameTSE, DBR_SHORT, -2);
     testdbPutFieldOk(namePROC, DBR_LONG, 0);
-    testOk(epicsTimeLessThan(&now, mytime), "new time stamp from IOC [TSE = -2]");
+    diff = epicsTimeDiffInSeconds(mytime, &now);
+    testOk(diff >= 0.0, "new time stamp from IOC [TSE = -2] (%.9f sec)", diff);
 
     /* Reset TSE */
     testdbPutFieldOk(nameTSE, DBR_SHORT, 0);
@@ -416,6 +421,7 @@ void testSimmDelay(const char *name,
 {
     epicsTimeStamp now;
     const double delay = 0.01;  /* 10 ms */
+    double diff;
 
     testDiag("## Asynchronous processing with simm:DELAY ##");
 
@@ -428,7 +434,8 @@ void testSimmDelay(const char *name,
     epicsTimeGetCurrent(&now);
     testdbPutFieldOk(namePROC, DBR_LONG, 0);
     testdbGetFieldEqual(namePACT, DBR_USHORT, 0);
-    testOk(epicsTimeLessThan(&now, mytime), "time stamp is recent");
+    diff = epicsTimeDiffInSeconds(mytime, &now);
+    testOk(diff >= 0.0, "time stamp is recent (%.9f sec)", diff);
 
     /* Process in simmYES: asynchronous */
     testDiag("simm:DELAY and simmYES processes asynchronously");
@@ -440,7 +447,8 @@ void testSimmDelay(const char *name,
     if(testImpreciseTiming())
         testTodoBegin("imprecise");
     testdbGetFieldEqual(namePACT, DBR_USHORT, 0);
-    testOk(epicsTimeLessThan(&now, mytime), "time stamp taken from second pass processing");
+    diff = epicsTimeDiffInSeconds(mytime, &now);
+    testOk(diff >= 0.0, "time stamp is recent (%.9f sec)", diff);
     if(testImpreciseTiming())
         testTodoEnd();
 

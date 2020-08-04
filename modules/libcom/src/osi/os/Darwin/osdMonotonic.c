@@ -24,7 +24,7 @@ void osdMonotonicInit(void)
 
 epicsUInt64 epicsMonotonicResolution(void)
 {
-    return 1e-9 * tbinfo.numer / tbinfo.denom;
+    return tbinfo.numer / tbinfo.denom;
 }
 
 epicsUInt64 epicsMonotonicGet(void)

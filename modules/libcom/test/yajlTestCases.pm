@@ -8,6 +8,21 @@
 sub cases {
   my  $VAR1 = [
     {
+      name => "codepoints_from_hex",
+      opts => [
+        -5
+      ],
+      input => [
+        "\"\\x0a\\x07\\x21\\x40\\x7c\"",
+        ""
+      ],
+      gives => [
+        "string: '",
+        "\a!\@|'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "doubles",
       opts => [
         -5
@@ -91,6 +106,20 @@ sub cases {
         "integer: 9223372036854775807",
         "integer: -9223372036854775807",
         "array close ']'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "invalid_hex_char",
+      opts => [
+        -5
+      ],
+      input => [
+        "\"yabba dabba do \\x1g !!\"",
+        ""
+      ],
+      gives => [
+        "lexical error: invalid (non-hex) character occurs after '\\x' inside string.",
         "memory leaks:\t0"
       ]
     },

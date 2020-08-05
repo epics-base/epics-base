@@ -20,10 +20,11 @@ bareword    [a-zA-Z0-9_\-+:.\[\]<>;]
 punctuation [:,\[\]{}]
 normalchar  [^"\\\0-\x1f]
 barechar    [a-zA-Z0-9_\-+.]
-escapedchar ({backslash}["\\/bfnrt])
+escapedchar ({backslash}[^ux1-9])
 hexdigit    [0-9a-fA-F]
+latinchar   ({backslash}"x"{hexdigit}{2})
 unicodechar ({backslash}"u"{hexdigit}{4})
-jsonchar    ({normalchar}|{escapedchar}|{unicodechar})
+jsonchar    ({normalchar}|{escapedchar}|{latinchar}|{unicodechar})
 jsondqstr   ({doublequote}{jsonchar}*{doublequote})
 
 sign        ([+-]?)

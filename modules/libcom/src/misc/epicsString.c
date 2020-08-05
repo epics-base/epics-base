@@ -66,30 +66,7 @@ int epicsStrnRawFromEscaped(char *dst, size_t dstlen, const char *src,
         case '\\': OUT('\\'); break;
         case '\'': OUT('\''); break;
         case '\"': OUT('\"'); break;
-
-        case '0' :case '1' :case '2' :case '3' :
-        case '4' :case '5' :case '6' :case '7' :
-            { /* \ooo */
-                unsigned int u = c - '0';
-
-                if (!srclen-- || !(c = *src++)) {
-                    OUT(u); goto done;
-                }
-                if (c < '0' || c > '7') {
-                    OUT(u); goto input;
-                }
-                u = u << 3 | (c - '0');
-
-                if (!srclen-- || !(c = *src++)) {
-                    OUT(u); goto done;
-                }
-                if (c < '0' || c > '7' || u > 037) {
-                    OUT(u); goto input;
-                }
-                u = u << 3 | (c - '0');
-                OUT(u);
-            }
-            break;
+        case '0':  OUT('\0'); break;
 
         case 'x' :
             { /* \xXX */
@@ -139,6 +116,7 @@ int epicsStrnEscapedFromRaw(char *dst, size_t dstlen, const char *src,
         return -1;
 
     while (srclen--) {
+        static const char hex[] = "0123456789abcdef";
         int c = *src++;
         #define OUT(chr) ndst++; if (--rem > 0) *dst++ = chr
 
@@ -153,15 +131,15 @@ int epicsStrnEscapedFromRaw(char *dst, size_t dstlen, const char *src,
         case '\\': OUT('\\'); OUT('\\'); break;
         case '\'': OUT('\\'); OUT('\''); break;
         case '\"': OUT('\\'); OUT('\"'); break;
+        case '\0': OUT('\\'); OUT('0');  break;
         default:
             if (isprint(c & 0xff)) {
                 OUT(c);
                 break;
             }
-            OUT('\\');
-            OUT('0' + ((c & 0300) >> 6));
-            OUT('0' + ((c & 0070) >> 3));
-            OUT('0' +  (c & 0007));
+            OUT('\\'); OUT('x');
+            OUT(hex[(c >> 4) & 0x0f]);
+            OUT(hex[ c       & 0x0f]);
         }
         #undef OUT
     }
@@ -180,7 +158,7 @@ size_t epicsStrnEscapedFromRawSize(const char *src, size_t srclen)
         switch (c) {
         case '\a': case '\b': case '\f': case '\n':
         case '\r': case '\t': case '\v': case '\\':
-        case '\'': case '\"':
+        case '\'': case '\"': case '\0':
             ndst++;
             break;
         default:
@@ -260,7 +238,7 @@ int epicsStrPrintEscaped(FILE *fp, const char *s, size_t len)
            if (isprint(0xff & (int)c))
                nout += fprintf(fp, "%c", c);
            else
-               nout += fprintf(fp, "\\%03o", (unsigned char)c);
+               nout += fprintf(fp, "\\x%02x", (unsigned char)c);
            break;
        }
    }

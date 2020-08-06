@@ -75,7 +75,7 @@ static int initIPAddr ( struct in_addr ipAddr, unsigned port,
  * "pAddrString" does not contain an address of the form
  * "n.n.n.n:p or host:p"
  */
-LIBCOM_API int epicsStdCall 
+LIBCOM_API int epicsStdCall
 aToIPAddr( const char *pAddrString, unsigned short defaultPort,
                 struct sockaddr_in *pIP )
 {
@@ -89,6 +89,10 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
     char dummy[8];
     unsigned port;
     struct in_addr ina;
+
+    if ( pAddrString == NULL ) {
+        return -1;
+    }
 
     /*
      * dotted ip addresses

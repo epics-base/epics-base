@@ -90,6 +90,10 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
     unsigned port;
     struct in_addr ina;
 
+    if ( pAddrString == NULL ) {
+        return -1;
+    }
+
     /*
      * dotted ip addresses
      */

@@ -1173,7 +1173,7 @@ static void dbRecordField(char *name,char *value)
         return;
     }
 
-    if (*value == '"') {
+    if (*value == '"' || *value == '\'') {
         /* jsonSTRING values still have their quotes */
         value++;
         value[strlen(value) - 1] = 0;
@@ -1206,7 +1206,7 @@ static void dbRecordInfo(char *name, char *value)
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
 
-    if (*value == '"') {
+    if (*value == '"' || *value == '\'') {
         /* jsonSTRING values still have their quotes */
         value++;
         value[strlen(value) - 1] = 0;

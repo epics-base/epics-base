@@ -10,6 +10,7 @@
 
 newline     "\n"
 backslash   "\\"
+singlequote "'"
 doublequote "\""
 comment     "#"
 whitespace  [ \t\r\n]
@@ -18,14 +19,17 @@ stringchar  [^"\n\\]
 bareword    [a-zA-Z0-9_\-+:.\[\]<>;]
 
 punctuation [:,\[\]{}]
-normalchar  [^"\\\0-\x1f]
+normalchar  [^"'\\\0-\x1f]
 barechar    [a-zA-Z0-9_\-+.]
 escapedchar ({backslash}[^ux1-9])
 hexdigit    [0-9a-fA-F]
 latinchar   ({backslash}"x"{hexdigit}{2})
 unicodechar ({backslash}"u"{hexdigit}{4})
-jsonchar    ({normalchar}|{escapedchar}|{latinchar}|{unicodechar})
-jsondqstr   ({doublequote}{jsonchar}*{doublequote})
+jsondqchar  ({normalchar}|{singlequote}|{escapedchar}|{latinchar}|{unicodechar})
+jsondqstr   ({doublequote}{jsondqchar}*{doublequote})
+jsonsqchar  ({normalchar}|{doublequote}|{escapedchar}|{latinchar}|{unicodechar})
+jsonsqstr   ({singlequote}{jsonsqchar}*{singlequote})
+jsonstr     ({jsondqstr}|{jsonsqstr})
 
 sign        ([+-]?)
 int         ({sign}([0-9]|[1-9][0-9]+))
@@ -107,7 +111,7 @@ static int yyreset(void)
 
 <JSON>{punctuation}     return yytext[0];
 
-<JSON>{jsondqstr} {
+<JSON>{jsonstr} {
     yylval.Str = dbmfStrdup((char *) yytext);
     return jsonSTRING;
 }

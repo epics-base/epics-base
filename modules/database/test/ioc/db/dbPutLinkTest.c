@@ -67,6 +67,7 @@ static const struct testParseDataT {
     {" #B111 C112 N113 @cparam", {CAMAC_IO, "cparam", 0, "BCN", {111, 112, 113}}},
     {" @hello world ", {INST_IO, "hello world", 0, "", /*{}*/}},
     {" {\"x\":true} ", {JSON_LINK, "{\"x\":true}", 0, "", /*{}*/}},
+    {" {'x':true} ", {JSON_LINK, "{'x':true}", 0, "", /*{}*/}},
     {NULL}
 };
 
@@ -587,7 +588,9 @@ void testJLink(void)
 
     testdbGetFieldEqual("j1.INP", DBF_STRING, "{z:{good:1}}");
     testdbGetFieldEqual("j1.VAL", DBF_LONG, 1);
+    testdbGetFieldEqual("j2.INP", DBF_STRING, "{\"z\":{'good':2}}");
     testdbGetFieldEqual("j2.VAL", DBF_LONG, 2);
+    testdbGetFieldEqual("j2.TSEL", DBF_STRING, "j1.TIME NPP NMS");
     testdbGetFieldEqual("j3.VAL", DBF_LONG, 3);
 
     testNumZ(6);
@@ -596,7 +599,7 @@ void testJLink(void)
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
 
-    testdbPutFieldOk("j2.TSEL", DBF_STRING, "{\"z\":{\"good\":0}}");
+    testdbPutFieldOk("j2.TSEL", DBF_STRING, "{'z':{good:0}}");
     testdbPutFieldOk("j2.PROC", DBF_LONG, 1);
 
     testNumZ(7);
@@ -611,8 +614,8 @@ void testJLink(void)
     testNumZ(7);
 
     /* Check SDIS using a JSON link prevents processing */
-    testdbPutFieldOk("j1.SDIS", DBF_STRING, "{\"z\":{\"good\":1}}");
-    testdbPutFieldOk("j1.INP", DBF_STRING, "{\"z\":{\"good\":1}}");
+    testdbPutFieldOk("j1.SDIS", DBF_STRING, "{z:{good:1}}");
+    testdbPutFieldOk("j1.INP", DBF_STRING, "{z:{good:1}}");
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
 
@@ -697,7 +700,7 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(337);
+    testPlan(342);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

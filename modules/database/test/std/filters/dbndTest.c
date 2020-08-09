@@ -148,7 +148,7 @@ MAIN(dbndTest)
 
     testOk(!!(plug = dbFindFilter(dbnd, strlen(dbnd))), "plugin dbnd registered correctly");
 
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"dbnd\":{}}")), "dbChannel with plugin dbnd (delta=0) created");
+    testOk(!!(pch = dbChannelCreate("x.VAL{dbnd:{}}")), "dbChannel with plugin dbnd (delta=0) created");
     testOk((ellCount(&pch->filters) == 1), "channel has one plugin");
 
     /* Start the free-list */
@@ -202,7 +202,7 @@ MAIN(dbndTest)
     /* Delta = -1: pass any update */
 
     testHead("Delta = -1: pass any update");
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"dbnd\":{\"d\":-1.0}}")), "dbChannel with plugin dbnd (delta=-1) created");
+    testOk(!!(pch = dbChannelCreate("x.VAL{dbnd:{d:-1.0}}")), "dbChannel with plugin dbnd (delta=-1) created");
     testOk(!(dbChannelOpen(pch)), "dbChannel with plugin dbnd opened");
 
     pfl2 = db_create_read_log(pch);
@@ -220,7 +220,7 @@ MAIN(dbndTest)
     /* Delta = absolute */
 
     testHead("Delta = absolute");
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"dbnd\":{\"d\":3}}")), "dbChannel with plugin dbnd (delta=3) created");
+    testOk(!!(pch = dbChannelCreate("x.VAL{dbnd:{d:3}}")), "dbChannel with plugin dbnd (delta=3) created");
     testOk(!(dbChannelOpen(pch)), "dbChannel with plugin dbnd opened");
 
     pfl2 = db_create_read_log(pch);
@@ -254,7 +254,7 @@ MAIN(dbndTest)
     /* Delta = relative */
 
     testHead("Delta = relative");
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"dbnd\":{\"m\":\"rel\",\"d\":50}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{dbnd:{m:'rel',d:50}}")),
            "dbChannel with plugin dbnd (mode=rel, delta=50) created");
     testOk(!(dbChannelOpen(pch)), "dbChannel with plugin dbnd opened");
 

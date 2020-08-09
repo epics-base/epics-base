@@ -183,7 +183,7 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     /* dbChannelTest() allows but ignores field modifiers */
     testOk1(!dbChannelTest("x.NAME$"));
     testOk1(!dbChannelTest("x.{}"));
-    testOk1(!dbChannelTest("x.VAL{\"json\":true}"));
+    testOk1(!dbChannelTest("x.VAL{json:true}"));
 
     /* dbChannelCreate() accepts field modifiers */
     testOk1(!!(pch = dbChannelCreate("x.{}")));
@@ -212,34 +212,34 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     testOk(!dbChannelCreate("x.NOFIELD"), "Create, bad field");
     testOk(!dbChannelCreate("x.{not-json}"), "Create, bad JSON");
     eltc(0);
-    testOk(!dbChannelCreate("x.{\"none\":null}"), "Create, bad filter");
+    testOk(!dbChannelCreate("x.{none:null}"), "Create, bad filter");
     eltc(1);
 
     dbRegisterFilter("any", &testIf, NULL);
 
     /* Parser event rejection by filter */
     e = e_start;
-    testOk1(!dbChannelCreate("x.{\"any\":null}"));
+    testOk1(!dbChannelCreate("x.{any:null}"));
 
     r = e_start;
     e = e_start | e_null | e_abort;
-    testOk1(!dbChannelCreate("x.{\"any\":null}"));
+    testOk1(!dbChannelCreate("x.{any:null}"));
 
     r = e_start | e_null;
     e = e_start | e_null | e_end;
-    testOk1(!dbChannelCreate("x.{\"any\":null}"));
+    testOk1(!dbChannelCreate("x.{any:null}"));
 
     /* Successful parsing... */
     r = r_any;
     e = e_start | e_null | e_end;
-    testOk1(!!(pch = dbChannelCreate("x.{\"any\":null}")));
+    testOk1(!!(pch = dbChannelCreate("x.{any:null}")));
     e = e_close;
     if (pch) dbChannelDelete(pch);
 
     dbRegisterFilter("scalar", &testIf, NULL);
 
     e = e_start | e_null | e_end;
-    testOk1(!!(pch = dbChannelCreate("x.{\"scalar\":null}")));
+    testOk1(!!(pch = dbChannelCreate("x.{scalar:null}")));
 
     e = e_report;
     dbChannelShow(pch, 2, 2);
@@ -249,23 +249,23 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 
     e = e_start | e_start_array | e_boolean | e_integer | e_end_array
             | e_end;
-    testOk1(!!(pch = dbChannelCreate("x.{\"any\":[true,1]}")));
+    testOk1(!!(pch = dbChannelCreate("x.{any:[true,1]}")));
     e = e_close;
     if (pch) dbChannelDelete(pch);
 
     e = e_start | e_start_map | e_map_key | e_double | e_string | e_end_map
             | e_end;
-    testOk1(!!(pch = dbChannelCreate("x.{\"any\":{\"a\":2.7183,\"b\":\"c\"}}")));
+    testOk1(!!(pch = dbChannelCreate("x.{any:{a:2.7183,b:'c'}}")));
     e = e_close;
     if (pch) dbChannelDelete(pch);
 
     /* More event rejection */
     r = r_scalar;
     e = e_start | e_start_array | e_abort;
-    testOk1(!dbChannelCreate("x.{\"scalar\":[null]}"));
+    testOk1(!dbChannelCreate("x.{scalar:[null]}"));
 
     e = e_start | e_start_map | e_abort;
-    testOk1(!dbChannelCreate("x.{\"scalar\":{}}"));
+    testOk1(!dbChannelCreate("x.{scalar:{}}"));
 
     testIocShutdownOk();
     testdbCleanup();

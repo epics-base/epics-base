@@ -19,6 +19,13 @@ should also be read to understand what has changed since earlier releases.
 
 ## EPICS Release 7.0.4.1
 
+### ARM Architecture Changes
+
+Build configuration files for a new cross-build architecture `linux-aarch64`
+have been added, and the targets `linux-arm_el` and `linux-arm_eb` removed.
+The 64-bit ARM architecture target doesn't have build files for self-hosting
+yet but they should be relatively easy to add, contributions welcome!
+
 ### Bug fixes
 
 The following bugs/issues have fixes included in this release:

@@ -67,8 +67,7 @@
 #       linux-586               (linux-x86 host)
 #       linux-686               (linux-x86 host)
 #       linux-arm               (linux-x86 or -x86_64 host)
-#       linux-arm_eb            (linux-x86 host)
-#       linux-arm_el            (linux-x86 host)
+#       linux-aarch64           (linux-x86_64 host)
 #       linux-athlon            (linux-x86 host)
 #       linux-cris              (Axis GNU crosscompiler on linux-x86 host)
 #       linux-cris_v10          (Axis GNU crosscompiler on linux-x86 host)
@@ -76,9 +75,6 @@
 #       linux-microblaze
 #       linux-xscale_be
 #       vxWorks-486
-#       vxWorks-68040
-#       vxWorks-68040lc
-#       vxWorks-68060
 #       vxWorks-pentium
 #       vxWorks-ppc32           (32-bit PowerPC CPUs with full FPU)
 #       vxWorks-ppc32sf         (32-bit PowerPC CPUs without FPU)

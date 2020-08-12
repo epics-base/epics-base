@@ -76,6 +76,11 @@ integer conversions, DBR_FLOAT for floating-point conversions.
 Length Modifier 'C<l>' E<ndash> Reads link as DBR_LONG or DBR_ULONG for integer
 conversions, array of DBR_CHAR for string conversion.
 
+=item *
+
+Length Modifier 'C<ll>' E<ndash> Reads link as DBR_INT64 or DBR_UINT64 for
+integer conversions.
+
 =back
 
 

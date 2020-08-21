@@ -58,12 +58,32 @@ sub readRelease {
     while (<$IN>) {
         chomp;
         s/ \r $//x;             # Shouldn't need this, but sometimes...
+        s/^ \s+ //x;            # Remove leading whitespace
+        next if m/^ $/x;        # Skip blank lines
         s/ # .* $//x;           # Remove trailing comments
         s/ \s+ $//x;            # Remove trailing whitespace
-        next if m/^ \s* $/x;    # Skip blank lines
+
+        # Handle "undefine <variable>"
+        my ($uvar) = m/^ undefine \s+ ($MVAR)/x;
+        if ($uvar ne '') {
+            delete $Rmacros->{$uvar};
+            next;
+        }
+
+        # Handle "include <path>" and "-include <path>" syntax
+        my ($op, $path) = m/^ (-? include) \s+ (.*)/x;
+        if ($op ne '') {
+            $path = expandMacros($path, $Rmacros);
+            if (-e $path) {
+                &readRelease($path, $Rmacros, $Rapps, $Ractive);
+            } elsif ($op eq "include") {
+                warn "EPICS/Release.pm: Include file '$path' not found\n";
+            }
+            next;
+        }
 
         # Handle "<variable> = <path>" plus the := and ?= variants
-        my ($var, $op, $val) = m/^ \s* ($MVAR) \s* ([?:]?=) \s* (.*) /x;
+        my ($var, $op, $val) = m/^ ($MVAR) \s* ([?:]?=) \s* (.*) /x;
         if ($var ne '') {
             $var = 'TOP' if $var =~ m/^ INSTALL_LOCATION /x;
             if (exists $Rmacros->{$var}) {
@@ -74,14 +94,6 @@ sub readRelease {
             $val = expandMacros($val, $Rmacros) if $op eq ':=';
             $Rmacros->{$var} = $val;
             next;
-        }
-        # Handle "include <path>" and "-include <path>" syntax
-        my ($op, $path) = m/^ \s* (-? include) \s+ (.*)/x;
-        $path = expandMacros($path, $Rmacros);
-        if (-e $path) {
-            &readRelease($path, $Rmacros, $Rapps, $Ractive);
-        } elsif ($op eq "include") {
-            warn "EPICS/Release.pm: Include file '$path' not found\n";
         }
     }
     $Ractive->{$file}--;

@@ -17,6 +17,13 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### RELEASE files may use `undefine`
+
+GNUmake added the directive `undefine` in version 3.82 to allow variables to
+be undefined. Support for this has been added to the EPICS Release file parser,
+so `undefine` can now be used in configure/RELEASE files. 
+
+
 ## EPICS Release 7.0.4.1
 
 ### ARM Architecture Changes

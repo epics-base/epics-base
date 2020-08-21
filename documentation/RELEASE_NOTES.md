@@ -17,11 +17,26 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Using a `{const:"string"}` to initialize an array of `DBF_CHAR`
+
+It is now possible to use a JSON Const link with a string value to initialize
+an aai or waveform record that has `FTVL` set to `CHAR` through the INP link.
+The string length is not limited to 40 characters. This should also work for
+aSub record inputs similarly configured as long strings.
+
+```
+  record(waveform, "wf") {
+    field(NELM, 100)
+    field(FTVL, CHAR)
+    field(INP, {const:"This is a waveform and more than 40 characters"})
+  }
+```
+
 ### RELEASE files may use `undefine`
 
 GNUmake added the directive `undefine` in version 3.82 to allow variables to
 be undefined. Support for this has been added to the EPICS Release file parser,
-so `undefine` can now be used in configure/RELEASE files. 
+so `undefine` can now be used in configure/RELEASE files to unset variables.
 
 
 ## EPICS Release 7.0.4.1

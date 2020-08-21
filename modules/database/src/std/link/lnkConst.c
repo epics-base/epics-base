@@ -489,8 +489,17 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
     case sc40:
         if (clink->jlink.debug)
             printf("   sc40 '%s'\n", clink->value.scalar_string);
-        status = dbFastPutConvertRoutine[DBF_STRING][dbrType]
-            (clink->value.scalar_string, pbuffer, NULL);
+        if (dbrType != DBF_CHAR) {
+            status = dbFastPutConvertRoutine[DBF_STRING][dbrType]
+                (clink->value.scalar_string, pbuffer, NULL);
+        }
+        else {
+            /* Long string conversion */
+            strncpy(pbuffer, clink->value.scalar_string, *pnReq);
+            ((char *)pbuffer)[*pnReq] = 0;
+            nElems = strlen(pbuffer) + 1;
+            status = 0;
+        }
         break;
 
     case ai64:

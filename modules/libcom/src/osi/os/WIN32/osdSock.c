@@ -63,10 +63,10 @@ LIBCOM_API int epicsStdCall osiSockAttach()
         DWORD titleLength = GetConsoleTitle(title, sizeof(title));
         if (titleLength) {
             titleLength = strlen (title);
-            strncat (title, " " EPICS_VERSION_STRING, sizeof(title));
+            strncat (title, " " EPICS_VERSION_STRING, sizeof(title)-1);
         }
         else {
-            strncpy(title, EPICS_VERSION_STRING, sizeof(title));
+            strncpy(title, EPICS_VERSION_STRING, sizeof(title)-1);
         }
         title[sizeof(title)-1]= '\0';
         SetConsoleTitle(title);

@@ -1,6 +1,6 @@
 # Installation Instructions {#install}
 
-## EPICS Base Release 7.0.3.1
+## EPICS Base Release 7.0.4.1
 
 -----
 
@@ -237,7 +237,7 @@ Files in the base/startup directory have been provided to help set
 required path and other environment variables.
 
 * `EPICS_HOST_ARCH`
-Before you can build or use EPICS R3.15, the environment variable
+Before you can build or use this EPICS base, the environment variable
 `EPICS_HOST_ARCH` must be defined. A perl script EpicsHostArch.pl in
 the base/startup directory has been provided to help set
 `EPICS_HOST_ARCH.` You should have `EPICS_HOST_ARCH` set to your
@@ -263,7 +263,7 @@ ranlib in your path, and the C compiler may require as and ld in
 your path. On solaris systems you need uname in your path.
 
 * `LD_LIBRARY_PATH`
-R3.15 shared libraries and executables normally contain the full
+EPICS shared libraries and executables normally contain the full
 path to any libraries they require. However, if you move the EPICS
 files or directories from their build-time location then in order
 for the shared libraries to be found at runtime `LD_LIBRARY_PATH`
@@ -336,10 +336,10 @@ A perl tool, makeBaseApp.pl is included in the distribution file. This
 script will create a sample application that can be built and then
 executed to try out this release of base.
 
-Instructions for building and executing the 3.15 example application
+Instructions for building and executing the EPICS example application
 can be found in the section "Example Application" of Chapter 2,
-"Getting Started", in the "IOC Application Developer's Guide" for this
-release. The "Example IOC Application" section briefly explains how to
+"Getting Started", in the "EPICS Application Developer's Guide". 
+The "Example IOC Application" section briefly explains how to
 create and build an example application in a user created &lt;top>
 directory. It also explains how to run the example application on a
 vxWorks ioc or as a process on the host system. By running the example

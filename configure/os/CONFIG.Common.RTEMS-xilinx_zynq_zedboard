@@ -1,0 +1,43 @@
+#
+# CONFIG.Common.RTEMS-xilinx_zynq_zedboard
+# Author: Heinz Junkes <junkes@fhi-berlin.mpg.de> 
+#
+# All RTEMS targets use the same Makefile fragment
+#
+#EXE = .elf
+RTEMS_BSP = xilinx_zynq_zedboard
+RTEMS_TARGET_CPU = arm
+GNU_TARGET = arm-rtems5
+
+#ARCH_DEP_LDFLAGS = -qrtems -B$(RTEMS_BASE)/arm-rtems5/lib/ -B$(RTEMS_BASE)/arm-rtems5/xilinx_zynq_a9_qemu/lib/ -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=hard -mtune=cortex-a9 -ffunction-sections -fdata-sections -MMD -Wl,--gc-sections
+
+#OP_SYS_CFLAG@ = -qrtems -B$(RTEMS_BASE)/arm-rtems5/lib -B$(RTEMS_BASE)/arm-rtems5/xilinx_zynq_a9_qemu/lib/ -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=hard -mtune=cortex-a9 -ffunction-sections -fdata-sections -MMD -g -O2 -DHAVE_DLFCN_H=1 -DHAVE_MACHINE_RTEMS_BSD_SYSINIT_H=1 -I$(RTEMS_BASE)/arm-rtems5/xilinx_zynq_a9_qemu/arm-rtems5/xilinx_zynq_a9_qemu/lib/include
+#OP_SYS_LDFLAGS = -qrtems -B/home/h1/GSOC/RTEMS/5.0.0-m2003/arm-rtems5/lib/ -B/home/h1/GSOC/RTEMS/5.0.0-m2003/arm-rtems5/xilinx_zynq_a9_qemu/lib/ -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=hard -mtune=cortex-a9 -ffunction-sections -fdata-sections -MMD -Wl,--gc-sections -Wl,-Bstatic -Wl,-Bdynamic -L/home/h1/GSOC/RTEMS/5.0.0-m2003/arm-rtems5/xilinx_zynq_a9_qemu/arm-rtems5/xilinx_zynq_a9_qemu/lib
+
+#OP_SYS_LDLIBS += -lbspExt #does not use posix stuff ... want to ignore
+#ARCH_DEP_LDFLAGS = -mcpu=8540 -meabi -msdata=sysv -mstrict-align -mspe -mabi=spe -mfloat-gprs=double
+#ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/arm-rtems5/xilinx_zynq_a9_qemu/lib/
+#
+#
+#
+## optimization trouble in postfix.c
+#ARCH_DEP_CFLAGS += -DRTEMS_HAS_ALTIVEC
+#will use bootp
+#ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+
+#ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_MBUF_SPACE=2048
+#ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_CLUSTER_SPACE=5120
+
+#netbsdlib
+#ARCH_DEP_CFLAGS += -I$(RTEMS_BASE)/powerpc-rtems5/qoriq_e500/lib/include
+
+#OP_SYS_LDLIBS += -lbspExt #does not use posix stuff ... want to ignore
+OP_SYS_LDLIBS += -Wl,--gc-sections
+#ARCH_DEP_LDFLAGS = -mcpu=8540 -meabi -msdata=sysv -mstrict-align -mspe -mabi=spe -mfloat-gprs=double
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/arm-rtems5/xilinx_zynq_zedboard/lib/
+
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS
+
+
+

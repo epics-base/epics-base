@@ -1,6 +1,5 @@
 /*************************************************************************\
 * Copyright (c) 2014 Brookhaven National Laboratory.
-* SPDX-License-Identifier: EPICS
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -20,14 +19,6 @@ typedef struct {
     const epicsMemFile * const *files;
 } epicsMemFS;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int epicsMemFsLoad(const epicsMemFS *fs);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // EPICSMEMFS_H

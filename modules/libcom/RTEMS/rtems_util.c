@@ -1,8 +1,8 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
  * RTEMS utilitiy routines for EPICS
@@ -24,7 +24,7 @@
  * Like connect(), but with an explicit timeout
  */
 int connectWithTimeout (int sfd,
-                        struct sockaddr *addr,
+                        struct sockaddr *addr, 
                         int addrlen,
                         struct timeval *timeout)
 {

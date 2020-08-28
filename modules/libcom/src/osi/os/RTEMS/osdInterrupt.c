@@ -1,8 +1,8 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
  * RTEMS osdInterrupt.c
@@ -42,7 +42,7 @@ epicsInterruptUnlock (int key)
 int
 epicsInterruptIsInterruptContext (void)
 {
-    return rtems_interrupt_is_in_progress ();
+	return rtems_interrupt_is_in_progress ();
 }
 
 /*
@@ -84,11 +84,11 @@ InterruptContextMessageDaemon (void *unused)
             RTEMS_NO_TIMEOUT);
         if (sc != RTEMS_SUCCESSFUL) {
             errlogPrintf ("Can't receive message from interrupt context: %s\n", rtems_status_text (sc));
-            epicsThreadSuspendSelf ();
+	    epicsThreadSuspendSelf ();
         }
         if (size == sizeof message)
             syslog (LOG_ERR, "%s", message);
-        else
+	else
             errlogPrintf ("Received %u-byte message from interrupt context", (unsigned int)size);
     }
 }

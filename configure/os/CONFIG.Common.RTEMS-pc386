@@ -10,10 +10,7 @@ RTEMS_TARGET_CPU = i386
 
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
-	$(RM) $*.bin
-	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.bin
-	$(BIN2BOOT) $@ 0x00097E00 \
-	    $(PROJECT_RELEASE)/lib/start16.bin 0x00097C00 0 $*.bin 0x00100000 0
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $@ 
 endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS

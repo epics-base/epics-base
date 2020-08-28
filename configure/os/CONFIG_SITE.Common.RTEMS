@@ -6,8 +6,8 @@
 # Where to find RTEMS
 #
 # APS:
-RTEMS_VERSION = 4.10.2
-RTEMS_BASE = /usr/local/vw/rtems/rtems-$(RTEMS_VERSION)
+#RTEMS_VERSION = 4.10.2
+RTEMS_BASE = /home/h1/GSOC/RTEMS/
 
 # Cross-compile toolchain in $(RTEMS_TOOLS)/bin
 #

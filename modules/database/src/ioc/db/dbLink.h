@@ -282,6 +282,8 @@ typedef struct lset {
      * @param   status      where to put the alarm status (or NULL)
      * @param   severity    where to put the severity (or NULL)
      * @returns status value
+     *
+     * @note Link types which provide getAlarm should also provided getAlarmMsg().
      */
     long (*getAlarm)(const struct link *plink, epicsEnum16 *status,
             epicsEnum16 *severity);
@@ -361,6 +363,20 @@ typedef struct lset {
      * @returns status value
      */
     long (*doLocked)(struct link *plink, dbLinkUserCallback rtn, void *priv);
+
+    /** @brief Extended version of getAlarm
+     *
+     * Equivalent of getAlarm() and also copy out alarm message string.
+     * The msgbuf argument may be NULL and/or msgbuflen==0, in which case
+     * the call must be the same as a call to getAlarm().
+     *
+     * Implementations must write a trailing nil to msgbuf whenever
+     * @code msgbuf!=NULL && msgbuflen>0 @endcode .
+     *
+     * @since UNRELEASED
+     */
+    long (*getAlarmMsg)(const struct link *plink, epicsEnum16 *status,
+                        epicsEnum16 *severity, char *msgbuf, size_t msgbuflen);
 } lset;
 
 #define dbGetSevr(link, sevr) \
@@ -402,6 +418,14 @@ DBCORE_API long dbGetUnits(const struct link *plink, char *units,
         int unitsSize);
 DBCORE_API long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
         epicsEnum16 *severity);
+/** Get link alarm and message string.
+ * To ensure the complete message string is copied, ensure @code msgbuflen >= sizeof (dbCommon::amsg) @endcode .
+ * A trailing nil will be added whenever @code msgbuflen > 0 @endcode .
+ * @since UNRELEASED
+ */
+DBCORE_API long dbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
+        epicsEnum16 *severity, char *msgbuf, size_t msgbuflen);
+#define dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN) dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN)
 DBCORE_API long dbGetTimeStamp(const struct link *plink,
         epicsTimeStamp *pstamp);
 DBCORE_API long dbPutLink(struct link *plink, short dbrType,

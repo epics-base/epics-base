@@ -402,14 +402,23 @@ long dbGetUnits(const struct link *plink, char *units, int unitsSize)
 }
 
 long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
-        epicsEnum16 *severity)
+                epicsEnum16 *severity)
+{
+    return dbGetAlarmMsg(plink, status, severity, NULL, 0);
+}
+
+long dbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
+                   epicsEnum16 *severity, char *msgbuf, size_t msgbuflen)
 {
     lset *plset = plink->lset;
 
-    if (!plset || !plset->getAlarm)
+    if (plset && plset->getAlarmMsg) {
+        return plset->getAlarmMsg(plink, status, severity, msgbuf, msgbuflen);
+    } else if(plset && plset->getAlarm) {
+        return plset->getAlarm(plink, status, severity);
+    } else {
         return S_db_noLSET;
-
-    return plset->getAlarm(plink, status, severity);
+    }
 }
 
 long dbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)

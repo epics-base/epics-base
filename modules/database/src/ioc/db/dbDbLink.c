@@ -337,8 +337,8 @@ static long dbDbGetUnits(const struct link *plink, char *units, int unitsSize)
     return 0;
 }
 
-static long dbDbGetAlarm(const struct link *plink, epicsEnum16 *status,
-        epicsEnum16 *severity)
+static long dbDbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
+                            epicsEnum16 *severity, char *msgbuf, size_t msgbuflen)
 {
     dbChannel *chan = linkChannel(plink);
     dbCommon *precord = dbChannelRecord(chan);
@@ -346,7 +346,17 @@ static long dbDbGetAlarm(const struct link *plink, epicsEnum16 *status,
         *status = precord->stat;
     if (severity)
         *severity = precord->sevr;
+    if (msgbuf && msgbuflen) {
+        strncpy(msgbuf, precord->amsg, msgbuflen-1);
+        msgbuf[msgbuflen-1] = '\0';
+    }
     return 0;
+}
+
+static long dbDbGetAlarm(const struct link *plink, epicsEnum16 *status,
+        epicsEnum16 *severity)
+{
+    return dbDbGetAlarmMsg(plink, status, severity, NULL, 0u);
 }
 
 static long dbDbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
@@ -403,7 +413,8 @@ static lset dbDb_lset = {
     dbDbGetPrecision, dbDbGetUnits,
     dbDbGetAlarm, dbDbGetTimeStamp,
     dbDbPutValue, NULL,
-    dbDbScanFwdLink, doLocked
+    dbDbScanFwdLink, doLocked,
+    dbDbGetAlarmMsg,
 };
 
 

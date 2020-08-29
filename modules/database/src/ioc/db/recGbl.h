@@ -25,6 +25,14 @@
 extern "C" {
 #endif
 
+/** Feature test macro for alarm message (AMSG) field and support
+ *
+ * Covers addition of dbCommon::amsg, recGblSetSevrMsg(), lset::getAlarmMsg()
+ *
+ * @since UNRELEASED
+ */
+#define HAS_ALARM_MESSAGE 1
+
 /*************************************************************************/
 
 /* Structures needed for args */

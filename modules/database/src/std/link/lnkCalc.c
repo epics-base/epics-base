@@ -53,6 +53,7 @@ typedef struct calc_link {
     } pstate;
     epicsEnum16 stat;
     epicsEnum16 sevr;
+    char amsg[MAX_STRING_SIZE];
     short prec;
     char *expr;
     char *major;
@@ -385,9 +386,10 @@ static void lnkCalc_report(const jlink *pjlink, int level, int indent)
 
     if (level > 0) {
         if (clink->sevr)
-            printf("%*s  Alarm: %s, %s\n", indent, "",
+            printf("%*s  Alarm: %s, %s, \"%s\"\n", indent, "",
                 epicsAlarmSeverityStrings[clink->sevr],
-                epicsAlarmConditionStrings[clink->stat]);
+                epicsAlarmConditionStrings[clink->stat],
+                clink->amsg);
 
         if (clink->post_major)
             printf("%*s  Major expression: \"%s\"\n", indent, "",
@@ -583,6 +585,7 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
     }
     clink->stat = 0;
     clink->sevr = 0;
+    clink->amsg[0] = '\0';
 
     if (clink->post_expr) {
         status = calcPerform(clink->arg, &clink->val, clink->post_expr);
@@ -604,7 +607,8 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         if (!status && alval) {
             clink->stat = LINK_ALARM;
             clink->sevr = MAJOR_ALARM;
-            recGblSetSevr(prec, clink->stat, clink->sevr);
+            strcpy(clink->amsg, "post_major error");
+            recGblSetSevrMsg(prec, clink->stat, clink->sevr, "post_major error");
         }
     }
 
@@ -615,7 +619,8 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         if (!status && alval) {
             clink->stat = LINK_ALARM;
             clink->sevr = MINOR_ALARM;
-            recGblSetSevr(prec, clink->stat, clink->sevr);
+            strcpy(clink->amsg, "post_minor error");
+            recGblSetSevrMsg(prec, clink->stat, clink->sevr, "post_minor error");
         }
     }
 
@@ -659,6 +664,7 @@ static long lnkCalc_putValue(struct link *plink, short dbrType,
     }
     clink->stat = 0;
     clink->sevr = 0;
+    clink->amsg[0] = '\0';
 
     /* Get the value being output as VAL */
     status = conv(pbuffer, &clink->val, NULL);
@@ -673,7 +679,8 @@ static long lnkCalc_putValue(struct link *plink, short dbrType,
         if (!status && alval) {
             clink->stat = LINK_ALARM;
             clink->sevr = MAJOR_ALARM;
-            recGblSetSevr(prec, clink->stat, clink->sevr);
+            strcpy(clink->amsg, "post_major error");
+            recGblSetSevrMsg(prec, clink->stat, clink->sevr, "post_major error");
         }
     }
 
@@ -684,7 +691,8 @@ static long lnkCalc_putValue(struct link *plink, short dbrType,
         if (!status && alval) {
             clink->stat = LINK_ALARM;
             clink->sevr = MINOR_ALARM;
-            recGblSetSevr(prec, clink->stat, clink->sevr);
+            strcpy(clink->amsg, "post_major error");
+            recGblSetSevrMsg(prec, clink->stat, clink->sevr, "post_minor error");
         }
     }
 
@@ -718,8 +726,8 @@ static long lnkCalc_getUnits(const struct link *plink, char *units, int len)
     return 0;
 }
 
-static long lnkCalc_getAlarm(const struct link *plink, epicsEnum16 *status,
-    epicsEnum16 *severity)
+static long lnkCalc_getAlarmMsg(const struct link *plink, epicsEnum16 *status,
+                                epicsEnum16 *severity, char *msgbuf, size_t msgbuflen)
 {
     calc_link *clink = CONTAINER(plink->value.json.jlink,
         struct calc_link, jlink);
@@ -728,8 +736,18 @@ static long lnkCalc_getAlarm(const struct link *plink, epicsEnum16 *status,
         *status = clink->stat;
     if (severity)
         *severity = clink->sevr;
+    if (msgbuf && msgbuflen) {
+        strncpy(msgbuf, clink->amsg, msgbuflen-1);
+        msgbuf[msgbuflen-1] = '\0';
+    }
 
     return 0;
+}
+
+static long lnkCalc_getAlarm(const struct link *plink, epicsEnum16 *status,
+    epicsEnum16 *severity)
+{
+    return lnkCalc_getAlarmMsg(plink, status, severity, NULL, 0u);
 }
 
 static long lnkCalc_getTimestamp(const struct link *plink, epicsTimeStamp *pstamp)
@@ -763,7 +781,8 @@ static lset lnkCalc_lset = {
     lnkCalc_getPrecision, lnkCalc_getUnits,
     lnkCalc_getAlarm, lnkCalc_getTimestamp,
     lnkCalc_putValue, NULL,
-    NULL, doLocked
+    NULL, doLocked,
+    lnkCalc_getAlarmMsg,
 };
 
 static jlif lnkCalcIf = {

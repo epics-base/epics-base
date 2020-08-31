@@ -71,6 +71,7 @@ ifdef T_A
 
   #  Target architecture specific definitions
   #
+  -include $(CONFIG)/os/CONFIG_TOOLCHAIN.Common.$(T_A)
   -include $(CONFIG)/os/CONFIG.Common.$(T_A)
 
   #  Host-Target architecture specific definitions

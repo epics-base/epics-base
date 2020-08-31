@@ -15,7 +15,8 @@ include $(TOP)/configure/CONFIG
 TOOLS = $(TOP)/src/tools
 
 CONFIGS += $(subst ../,,$(wildcard ../CONFIG*))
-CONFIGS += $(subst ../,,$(wildcard ../os/CONFIG*))
+CONFIGS += $(subst ../,,$(wildcard ../os/CONFIG.*))
+CONFIGS += $(subst ../,,$(wildcard ../os/CONFIG_SITE.*))
 
 CONFIGS += $(subst ../,,$(wildcard ../RELEASE*))
 CONFIGS += $(subst ../,,$(wildcard ../RULES*))
@@ -31,3 +32,21 @@ CFG += CONFIG_DATABASE_VERSION
 
 include $(TOP)/configure/RULES
 
+ifdef T_A
+
+install: $(TOP)/configure/os/CONFIG_TOOLCHAIN.Common.$(T_A)
+
+$(TOP)/configure/os/CONFIG_TOOLCHAIN.Common.$(T_A): toolchain.c
+	$(PREPROCESS.cpp)
+
+else
+
+realclean: clean_toolchain
+clean: clean_toolchain
+
+clean_toolchain:
+	$(RM) $(wildcard os/CONFIG_TOOLCHAIN.Common.*)
+
+.PHONY: clean_toolchain
+
+endif # T_A

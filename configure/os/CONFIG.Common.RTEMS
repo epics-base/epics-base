@@ -41,7 +41,7 @@ include $(CONFIG.CC)
 # RTEMS cross-development tools
 CC = $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET) $(GCCSPECS) -fasm
 CCC = $(RTEMS_TOOLS)/bin/$(CXX)
-CPP = $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET) -x c -E
+CPP = $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET) -x c -E $(GCCSPECS)
 AR = $(RTEMS_TOOLS)/bin/$(AR_FOR_TARGET)
 LD = $(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -r
 

@@ -73,13 +73,16 @@ jobs:
 
   - env: WINE=32 TEST=NO BCFG=static
 
-  - env: WINE=32 TEST=NO
+#  - env: WINE=32 TEST=NO
 
 # Cross-compilation to RTEMS
 
-  - env: RTEMS=4.10
+#  - env: RTEMS=4.10
 
-  - env: RTEMS=4.9
+#  - env: RTEMS=4.9
+
+   - env: RTEMS=5
+#
 
 # MacOS build
 

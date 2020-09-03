@@ -7,7 +7,7 @@
 #
 RTEMS_BSP = pc686
 RTEMS_TARGET_CPU = i386
-GNU_TARGET = i386-rtems5
+GNU_TARGET = i386-rtems
 
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
@@ -15,7 +15,7 @@ define MUNCH_CMD
 endef
 
 OP_SYS_LDLIBS += -Wl,--gc-sections
-ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/i386-rtems5/pc686/lib/
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/pc686/lib/
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
 

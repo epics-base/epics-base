@@ -33,7 +33,7 @@ RTEMS_BSP ?= $(subst RTEMS-,,$(T_A))
 
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
-include $(RTEMS_BASE)/$(GNU_TARGET)/$(RTEMS_BSP)/Makefile.inc
+include $(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
 

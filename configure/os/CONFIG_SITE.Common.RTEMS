@@ -5,8 +5,8 @@
 
 # Where to find RTEMS
 #
-# APS:
-#RTEMS_VERSION = 4.10.2
+# FHI:
+RTEMS_VERSION = 5
 RTEMS_BASE = /home/h1/GSOC/RTEMS/
 
 # Cross-compile toolchain in $(RTEMS_TOOLS)/bin

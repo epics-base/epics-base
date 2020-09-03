@@ -7,12 +7,15 @@
 #
 RTEMS_BSP = pc386
 RTEMS_TARGET_CPU = i386
-GNU_TARGET = i386-rtems5
+GNU_TARGET = i386-rtems
 
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $@ 
 endef
+
+OP_SYS_LDLIBS += -Wl,--gc-sections
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/pc686/lib/
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
 

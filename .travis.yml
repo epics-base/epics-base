@@ -81,7 +81,7 @@ jobs:
 
 #  - env: RTEMS=4.9
 
-   - env: RTEMS=5
+  - env: RTEMS=5
 #
 
 # MacOS build

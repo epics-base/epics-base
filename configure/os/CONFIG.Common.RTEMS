@@ -107,6 +107,11 @@ OS_API = posix
 else
 OS_API = kernel
 endif
+
+# meantime we still use kernel for 4.9 and 4.10
+ifneq ($(RTEMS_API),5)
+OS_API = kernel
+endif
 #--------------------------------------------------
 # Operating system flags
 #OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -lnfs -lm

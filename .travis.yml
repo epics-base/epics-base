@@ -50,45 +50,45 @@ jobs:
   include:
 
 # Different configurations of default gcc and clang
-  - dist: bionic
+# - dist: bionic
 
-  - dist: xenial
+# - dist: xenial
 
-  - dist: bionic
-    env: BCFG=static EXTRA="CMD_CXXFLAGS=-std=c++11"
+# - dist: bionic
+#   env: BCFG=static EXTRA="CMD_CXXFLAGS=-std=c++11"
 
-  - dist: trusty
-    env: EXTRA="CMD_CXXFLAGS=-std=c++11"
+# - dist: trusty
+#   env: EXTRA="CMD_CXXFLAGS=-std=c++11"
 
-  - dist: bionic
-    compiler: clang
+# - dist: bionic
+#   compiler: clang
 
-  - compiler: clang
+# - compiler: clang
 
-  - dist: trusty
-    compiler: clang
-    env: BCFG=static
+# - dist: trusty
+#   compiler: clang
+#   env: BCFG=static
 
 # Cross-compilations to Windows using MinGW and WINE
 
-  - env: WINE=32 TEST=NO BCFG=static
+# - env: WINE=32 TEST=NO BCFG=static
 
 #  - env: WINE=32 TEST=NO
 
 # Cross-compilation to RTEMS
 
-#  - env: RTEMS=4.10
+  - env: RTEMS=4.10
 
-#  - env: RTEMS=4.9
+  - env: RTEMS=4.9
 
-  - env: RTEMS=5
+  - env: RTEMS=5 TEST=NO
 #
 
 # MacOS build
 
-  - os: osx
-    env:
-      - EXTRA="CMD_CFLAGS=-mmacosx-version-min=10.7"
-      - EXTRA1="CMD_CXXFLAGS=-mmacosx-version-min=10.7 -std=c++11 -stdlib=libc++"
-      - EXTRA2="CMD_LDXFLAGS=-mmacosx-version-min=10.7 -std=c++11 -stdlib=libc++"
-    compiler: clang
+# - os: osx
+#   env:
+#     - EXTRA="CMD_CFLAGS=-mmacosx-version-min=10.7"
+#     - EXTRA1="CMD_CXXFLAGS=-mmacosx-version-min=10.7 -std=c++11 -stdlib=libc++"
+#     - EXTRA2="CMD_LDXFLAGS=-mmacosx-version-min=10.7 -std=c++11 -stdlib=libc++"
+#   compiler: clang

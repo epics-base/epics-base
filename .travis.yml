@@ -77,9 +77,9 @@ jobs:
 
 # Cross-compilation to RTEMS
 
-  - env: RTEMS=4.10
+# - env: RTEMS=4.10 TEST=NO
 
-  - env: RTEMS=4.9
+#  - env: RTEMS=4.9
 
   - env: RTEMS=5 TEST=NO
 #

@@ -5,9 +5,9 @@
 
 # Where to find RTEMS
 #
-# APS:
-RTEMS_VERSION = 4.10.2
-RTEMS_BASE = /usr/local/vw/rtems/rtems-$(RTEMS_VERSION)
+# FHI:
+RTEMS_VERSION = 5
+RTEMS_BASE = /home/travis/.rtems
 
 # Cross-compile toolchain in $(RTEMS_TOOLS)/bin
 #

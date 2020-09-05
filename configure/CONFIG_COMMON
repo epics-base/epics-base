@@ -142,9 +142,10 @@ BUILDLIB_SUFFIX = $(BUILDLIB_SUFFIX_$(SHARED_LIBRARIES))
 #--------------------------------------------------
 # vpath directories
 POSIX_YES = os/posix
+OS_IMPL_DIRS = $(if $(OS_API),os/$(OS_CLASS)-$(OS_API),) os/$(OS_CLASS)
 GENERIC_SRC_DIRS = .. $(SRC_DIRS)
 OS_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
-       $(addprefix $(dir)/, os/$(OS_CLASS) $(POSIX_$(POSIX)) os/default ))
+       $(addprefix $(dir)/, $(OS_IMPL_DIRS) $(POSIX_$(POSIX)) os/default ))
 CMPLR_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
        $(addprefix $(dir)/, compiler/$(CMPLR_CLASS) compiler/default ))
 ALL_SRC_DIRS = $(CMPLR_SRC_DIRS) $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
@@ -306,7 +307,7 @@ LDLIBS = $(POSIX_LDLIBS) $(ARCH_DEP_LDLIBS) $(DEBUG_LDLIBS) $(OP_SYS_LDLIBS)\
 CPPFLAGS = $($(BUILD_CLASS)_CPPFLAGS) $(POSIX_CPPFLAGS) $(OPT_CPPFLAGS)\
  $(DEBUG_CPPFLAGS) $(WARN_CPPFLAGS) $(BASE_CPPFLAGS) $(TARGET_CPPFLAGS)\
  $(USR_CPPFLAGS) $(CMD_CPPFLAGS) $(ARCH_DEP_CPPFLAGS) $(OP_SYS_CPPFLAGS)\
- $(OP_SYS_INCLUDE_CPPFLAGS) $(CODE_CPPFLAGS) $(API_CPPFLAGS)
+ $(OP_SYS_INCLUDE_CPPFLAGS) $(CODE_CPPFLAGS)
 
 #--------------------------------------------------
 # ar definition default

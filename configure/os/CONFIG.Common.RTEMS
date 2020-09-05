@@ -33,7 +33,7 @@ RTEMS_BSP ?= $(subst RTEMS-,,$(T_A))
 
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
-include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
+include $(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
 
@@ -95,15 +95,45 @@ MODEXT=.obj
 OS_CLASS = RTEMS
 
 #--------------------------------------------------
+#print warning
+ifeq ($(RTEMS_HAS_POSIX_API),no)
+ifeq ($(EPICS_VERSION),7)
+        $(error Warning: Epics Version $(EPICS_VERSION) must not be used without POSIX enabled on RTEMS !!!)
+endif
+endif
+# operating system API (src/os/<os_class>-<os-api>)
+ifeq ($(RTEMS_HAS_POSIX_API),yes)
+OS_API = posix
+else
+OS_API = kernel
+endif
+
+#--------------------------------------------------
 # Operating system flags
-OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -lnfs -lm
-OP_SYS_LDFLAGS += $(CPU_CFLAGS) -u Init \
+#OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -lnfs -lm
+ifeq ($(RTEMS_API),5)
+OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
+#OP_SYS_LDLIBS += -lrtemsCom -lrtemscpu -lrtemsbsp -ltftpfs -ltelnetd -lbsd -lz -lm
+OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu  -ltftpfs -lbsd -lz -lm
+else
+OP_SYS_LDLIBS += -lrtemsCom -lrtemscpu -lrtemsbsp
+endif
+
+ifeq ($(RTEMS_HAS_NETWORKING),yes)
+OP_SYS_CFLAGS += -DRTEMS_LEGACY_STACK
+else
+OP_SYS_CFLAGS += -DHAVE_SOCKADDR_SA_LEN=1
+endif
+
+OP_SYS_LDFLAGS_posix += -u POSIX_Init
+OP_SYS_LDFLAGS_kernel += $(CPU_CFLAGS) -u Init \
                  $(PROJECT_RELEASE)/lib/no-dpmem.rel \
                  $(PROJECT_RELEASE)/lib/no-mp.rel \
                  $(PROJECT_RELEASE)/lib/no-part.rel \
                  $(PROJECT_RELEASE)/lib/no-signal.rel \
                  $(PROJECT_RELEASE)/lib/no-rtmon.rel
 
+OP_SYS_LDFLAGS += $(CPU_CFLAGS) $(OP_SYS_LDFLAGS_$(OS_API))
 MOD_SYS_LDFLAGS += $(CPU_CFLAGS) -Wl,-r -nostdlib
 
 # Do not link against libraries which are part of the Generic Image

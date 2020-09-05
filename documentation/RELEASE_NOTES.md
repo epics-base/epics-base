@@ -17,6 +17,24 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Support for RTEMS 5 (5.1 released aug 2020)
+
+The new major release of the RTEMS real-time OS contains many changes including
+the ability to support SMP systems. The earlier EPICS support for RTEMS made use
+of various RTEMS-specific kernel APIs which cannot be used on an SMP system, so
+the changes here required acompletely new port to the Posix real-time APIs that
+RTEMS-5 now recommends.
+A new RTEMS configuration variable RTEMS_SERIES has been added which should be
+set to the first two components of the OS version number, e.g. 4.9. When this
+is 4.12 or greater, true for 5.0 as well, the new libCom/osi/os/RTEMS-posix
+source files will be used; the older API source files can now be found in
+libCom/osi/os/RTEMS-kernel, and those which are common to both installations are
+in libCom/osi/os/RTEMS. The compiler options are read from the Makefile.inc of
+the corresponding BSP and set in the configuration files. It checks that the BSP
+was also built with the --enable-posix option. It also checks if the BSP was built
+with the legacy stack or libbsd.
+
+
 ### Add registerAllRecordDeviceDrivers()
 
 Addition of registerAllRecordDeviceDrivers() as an iocsh function

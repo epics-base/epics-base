@@ -11,22 +11,31 @@ TOP = ../../..
 include $(TOP)/configure/CONFIG
 include $(TOP)/configure/CONFIG_LIBCOM_VERSION
 
+# check check
+SRC_DIRS += ../$(OS_API)
+
 PERL_SCRIPTS += epicsMakeMemFs.pl
 
 INC += epicsRtemsInitHooks.h
 INC += epicsMemFs.h
+INC += epicsNtp.h
 
 ifeq ($(RTEMS_QEMU_FIXUPS),YES)
 rtems_init_CPPFLAGS += -DQEMU_FIXUPS
 endif
 rtemsCom_SRCS += rtems_init.c
 rtemsCom_SRCS += rtems_config.c
+ifeq ($(RTEMS_HAS_NETWORKING), yes)
 rtemsCom_SRCS += rtems_netconfig.c
+else
+rtemsCom_SRCS += libbsd_netconfig.c
+endif
 rtemsCom_SRCS += rtems_util.c
 rtemsCom_SRCS += setBootConfigFromNVRAM.c
 rtemsCom_SRCS += epicsRtemsInitHookPre.c
 rtemsCom_SRCS += epicsRtemsInitHookPost.c
 rtemsCom_SRCS += epicsMemFs.c
+rtemsCom_SRCS += epicsNtp.c
 
 ifeq ($(RTEMS_BSP),pc386)
 rtemsCom_SRCS += ne2kpci.c

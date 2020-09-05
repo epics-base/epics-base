@@ -71,9 +71,9 @@ jobs:
 
 # Cross-compilations to Windows using MinGW and WINE
 
-  - env: WINE=32 TEST=NO BCFG=static
+# - env: WINE=32 TEST=NO BCFG=static
 
-  - env: WINE=32 TEST=NO
+# - env: WINE=32 TEST=NO
 
 # Cross-compilation to RTEMS
 
@@ -81,7 +81,7 @@ jobs:
 
 # - env: RTEMS=4.9
 
-  - env: RTEMS=5
+  - env: RTEMS=5 TEST=NO
 
 # MacOS build
 

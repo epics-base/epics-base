@@ -47,6 +47,7 @@ int epicsNtpGetTime(char *ntpIp, struct timespec *now)
 
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_addr.s_addr = inet_addr(ntpIp);
+
   serv_addr.sin_port = htons( portno );
 
   // Call up the server using its IP address and port number.

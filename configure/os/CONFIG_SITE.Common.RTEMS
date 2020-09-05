@@ -7,7 +7,7 @@
 #
 # FHI:
 RTEMS_VERSION = 5
-RTEMS_BASE = /home/h1/GSOC/RTEMS/
+RTEMS_BASE = /home/travis/.rtems
 
 # Cross-compile toolchain in $(RTEMS_TOOLS)/bin
 #

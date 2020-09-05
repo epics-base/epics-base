@@ -3,7 +3,7 @@
 
 language: cpp
 compiler: gcc
-dist: xenial
+dist: bionic
 
 cache:
   directories:

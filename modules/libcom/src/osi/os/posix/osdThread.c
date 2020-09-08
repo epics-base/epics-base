@@ -25,7 +25,9 @@
 #include <unistd.h>
 
 #if defined(_POSIX_MEMLOCK) && _POSIX_MEMLOCK > 0
-#include <sys/mman.h>
+#ifndef RTEMS_LEGACY_STACK // seems to be part of libbsd?
+#include <sys/mman.h> 
+#endif // LEGACY STACK
 #endif
 
 #include "epicsStdio.h"
@@ -426,6 +428,7 @@ LIBCOM_API
 void epicsThreadRealtimeLock(void)
 {
 #if defined(_POSIX_MEMLOCK) && _POSIX_MEMLOCK > 0
+#ifndef RTEMS_LEGACY_STACK // seems to be part of libbsd?
     if (pcommonAttr->maxPriority > pcommonAttr->minPriority) {
         int status = mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -450,6 +453,7 @@ void epicsThreadRealtimeLock(void)
             }
         }
     }
+#endif // LEGACY STACK
 #endif
 }
 

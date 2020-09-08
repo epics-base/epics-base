@@ -44,8 +44,11 @@
 #include <sched.h>
 #include <rtems/libio.h>
 #include <rtems/rtc.h>
+#if __RTEMS_MAJOR__ > 4
 #include <rtems/tod.h>
-#include <rtems/sysinit.h>
+#else
+#include <rtems/score/tod.h>
+#endif
 
 #ifdef RTEMS_LEGACY_STACK
 #include <rtems/rtems_bsdnet.h>
@@ -59,8 +62,9 @@
 #endif
 
 #include <rtems/telnetd.h>
+#if __RTEMS_MAJOR__ > 4
 #include <rtems/printer.h>
-
+#endif
 #include "epicsVersion.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
@@ -86,6 +90,7 @@ epicsEventId 	dhcpDone;
 #endif
 
 
+#ifndef RTEMS_LEGACY_STACK
 /* these settings are needed by the rtems startup
  * may provide by dhcp/bootp
  * or environments from the "BIOS" like u-boot, motboot etc.
@@ -98,6 +103,7 @@ char bootp_boot_file_name_init[128] = "/Volumes/Epics/myExample/bin/RTEMS-qoriq_
 char *rtems_bsdnet_bootp_boot_file_name = bootp_boot_file_name_init;
 char bootp_cmdline_init[128] = "/Volumes/Epics/myExample/iocBoot/iocmyExample/st.cmd";
 char *rtems_bsdnet_bootp_cmdline = bootp_cmdline_init;
+#endif // not LEGACY Stack
 
 int  osdNTPGet(struct timespec *now)
 {
@@ -543,6 +549,7 @@ static void netStatCallFunc(const iocshArgBuf *args)
 static const iocshFuncDef heapSpaceFuncDef = {"heapSpace",0,NULL};
 static void heapSpaceCallFunc(const iocshArgBuf *args)
 {
+#if __RTEMS_MAJOR__ > 4
     Heap_Information_block info;
     double x;
 
@@ -553,6 +560,17 @@ static void heapSpaceCallFunc(const iocshArgBuf *args)
         printf("Heap space: %.1f MB\n", x / (1024 * 1024));
     else
         printf("Heap space: %.1f kB\n", x / 1024);
+#else
+    rtems_malloc_statistics_t s;
+    double x;
+
+    malloc_get_statistics(&s);
+    x = s.space_available - (unsigned long)(s.lifetime_allocated - s.lifetime_freed);
+    if (x >= 1024*1024)
+        printf("Heap space: %.1f MB\n", x / (1024 * 1024));
+    else
+        printf("Heap space: %.1f kB\n", x / 1024);
+#endif // RTEMS < 5
 }
 
 #ifndef OMIT_NFS_SUPPORT
@@ -609,7 +627,9 @@ static void iocshRegisterRTEMS (void)
 #endif
     iocshRegister(&zonesetFuncDef, &zonesetCallFunc);
     iocshRegister(&rtshellFuncDef, &rtshellCallFunc);
-    rtems_shell_init_environment();
+#if __RTEMS_MAJOR__ > 4
+    riocshRegisterRTEMStems_shell_init_environment();
+#endif
 }
 
 /*
@@ -645,6 +665,7 @@ exitHandler(void)
     rtems_shutdown_executive(0);
 }
 
+#ifndef RTEMS_LEGACY_STACK
 static char* getPrimaryNetworkInterface(void)
 {
     // lookup available network interfaces
@@ -771,7 +792,7 @@ default_network_dhcpcd(void)
     sc = rtems_dhcpcd_start(NULL);
     assert(sc == RTEMS_SUCCESSFUL);
 }
-
+#endif // not RTEMS_LEGACY_STACK
 /*
  * RTEMS Startup task
  */
@@ -847,14 +868,17 @@ POSIX_Init (void *argument)
     printf("\n***** RTEMS Version: %s *****\n",
         rtems_get_version_string());
       
-
-    printf("\n***** Initializing network (dhcp) *****\n");
+#ifndef RTEMS_LEGACY_STACK
+    /*
+     * Start network (libbsd)
+     */
+    printf("\n***** Initializing network (libbsd, dhcpcd) *****\n");
     rtems_bsd_setlogpriority("debug");
     on_exit(default_network_on_exit, NULL);
     /* Let other tasks run to complete background work */
     default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1U);
 
-    /* supress all output from bsd network initialization
+    /* supress all output from bsd network initialization (Info: to be switched on in production!)
     rtems_bsd_vprintf_handler bsd_vprintf_handler_old;
     bsd_vprintf_handler_old = rtems_bsd_set_vprintf_handler(rtems_bsd_vprintf_handler_mute);
     */
@@ -920,6 +944,25 @@ POSIX_Init (void *argument)
         printf("time from ntp : %s.%09ld UTC\n", timeBuff, now.tv_nsec);
       }
     }
+#else // Legacy stack, old network initialization
+    /*
+     * Start network
+     */
+    char *cp;
+    if ((cp = getenv("EPICS_TS_NTP_INET")) != NULL)
+        rtems_bsdnet_config.ntp_server[0] = cp;
+    if (rtems_bsdnet_config.network_task_priority == 0)
+    {
+        unsigned int p;
+        if (epicsThreadHighestPriorityLevelBelow(epicsThreadPriorityScanLow, &p)
+                                            == epicsThreadBooleanStatusSuccess)
+        {
+            rtems_bsdnet_config.network_task_priority = p;
+        }
+    }
+    printf("\n***** Initializing network (Legacy Stack)  *****\n");
+    rtems_bsdnet_initialize_network();
+#endif // not RTEMS_LEGACY_STACK
 
     printf("\n***** Setting up file system *****\n");
     initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
@@ -968,6 +1011,26 @@ POSIX_Init (void *argument)
 /* Override some hooks (weak symbols)
  * if BSP defaults aren't configured for running tests.
  */
+
+
+/* Ensure that stdio goes to serial (so it can be captured) */
+#if defined(__i386__) && !USE_COM1_AS_CONSOLE
+#include <uart.h>
+#if __RTEMS_MAJOR__ > 4
+#include <libchip/serial.h>
+#endif
+
+extern int BSPPrintkPort;
+void bsp_predriver_hook(void)
+{
+#if __RTEMS_MAJOR__ > 4
+    Console_Port_Minor = BSP_CONSOLE_PORT_COM1;
+#else
+    BSPConsolePort = BSP_CONSOLE_PORT_COM1;
+#endif
+    BSPPrintkPort = BSP_CONSOLE_PORT_COM1;
+}
+#endif
 
 /* reboot immediately when done. */
 #if defined(__i386__) && BSP_PRESS_KEY_FOR_RESET

@@ -34,22 +34,17 @@ COMMANDLINE_LIBRARY = $(strip $(if $(wildcard \
 #COMMANDLINE_LIBRARY = EPICS
 
 
+# WARNING: Variables that are set in $(CONFIG)/CONFIG.gnuCommon cannot be
+# overridden in this file for native builds, e.g. variables such as
+#    OPT_CFLAGS_YES, WARN_CFLAGS, SHRLIB_LDFLAGS
+# They must be set in CONFIG_SITE.linux-x86.linux-x86 instead.
+
 # Permit access to 64-bit file-systems
 OP_SYS_CFLAGS += -D_FILE_OFFSET_BITS=64
-
-
-# Uncomment the followings lines to build with CLANG instead of GCC.
-#
-#GNU         = NO
-#CMPLR_CLASS = clang
-#CC          = clang
-#CCC         = clang++
-
 
 # Tune GNU compiler output for a specific 32-bit cpu-type
 # (e.g. generic, native, i386, i686, pentium2/3/4, prescott, k6, athlon etc.)
 GNU_TUNE_CFLAGS = -mtune=generic
-
 
 # Developers using a suitable compiler may enable its address sanitizer:
 #ENABLE_ASAN = YES

@@ -16,3 +16,9 @@ COMMANDLINE_LIBRARY = READLINE_NCURSESW
 
 # No other libraries needed
 #COMMANDLINE_LIBRARY = READLINE
+
+
+# WARNING: Variables that are set in $(CONFIG)/CONFIG.gnuCommon cannot be
+# overridden in this file for native builds, e.g. variables such as
+#    OPT_CFLAGS_YES, WARN_CFLAGS, SHRLIB_LDFLAGS
+# They must be set in CONFIG_SITE.cygwin-x86.cygwin-x86 instead.

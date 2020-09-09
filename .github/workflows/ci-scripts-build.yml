@@ -34,6 +34,7 @@ jobs:
       WINE: ${{ matrix.wine }}
       RTEMS: ${{ matrix.rtems }}
       EXTRA: ${{ matrix.extra }}
+      TEST: ${{ matrix.test }}
     strategy:
       fail-fast: false
       matrix:
@@ -67,6 +68,12 @@ jobs:
             configuration: default
             extra: "CMD_CXXFLAGS=-std=c++11"
             name: "Ub-20 clang-10 C++11"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            rtems: "5"
+            test: NO
 
           - os: ubuntu-20.04
             cmp: gcc

@@ -125,3 +125,15 @@ extern "C" LIBCOM_API void
         ++wakeTime->tv_sec;
     }
 }
+
+#ifdef __rtems__
+int osdTickGet()
+{
+    return epicsMonotonicGet(); // ns
+}
+int  osdTickRateGet()
+{
+    return 1000000000;
+}
+void osdNTPReport() {}
+#endif

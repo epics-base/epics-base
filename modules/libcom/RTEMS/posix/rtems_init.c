@@ -45,6 +45,7 @@
 #include <rtems/libio.h>
 #include <rtems/rtc.h>
 #include <rtems/tod.h>
+#include <rtems/sysinit.h>
 
 #ifdef RTEMS_LEGACY_STACK
 #include <rtems/rtems_bsdnet.h>
@@ -967,20 +968,6 @@ POSIX_Init (void *argument)
 /* Override some hooks (weak symbols)
  * if BSP defaults aren't configured for running tests.
  */
-
-
-/* Ensure that stdio goes to serial (so it can be captured) */
-#if defined(__i386__) && !USE_COM1_AS_CONSOLE
-#include <uart.h>
-#include <libchip/serial.h>
-
-extern int BSPPrintkPort;
-void bsp_predriver_hook(void)
-{
-    Console_Port_Minor = BSP_CONSOLE_PORT_COM1;
-    BSPPrintkPort = BSP_CONSOLE_PORT_COM1;
-}
-#endif
 
 /* reboot immediately when done. */
 #if defined(__i386__) && BSP_PRESS_KEY_FOR_RESET

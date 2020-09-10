@@ -98,6 +98,11 @@ char *rtems_bsdnet_bootp_boot_file_name = bootp_boot_file_name_init;
 char bootp_cmdline_init[128] = "/Volumes/Epics/myExample/iocBoot/iocmyExample/st.cmd";
 char *rtems_bsdnet_bootp_cmdline = bootp_cmdline_init;
 
+int  osdNTPGet(struct timespec *now)
+{
+    return !epicsNtpGetTime(rtemsInit_NTP_server_ip, now);
+}
+
 /*
  * Prototypes for some functions not in header files
  */

@@ -95,28 +95,14 @@ MODEXT=.obj
 OS_CLASS = RTEMS
 
 #--------------------------------------------------
-#print warning
-ifeq ($(RTEMS_HAS_POSIX_API),no)
-ifeq ($(EPICS_VERSION),7)
-        $(error Warning: Epics Version $(EPICS_VERSION) must not be used without POSIX enabled on RTEMS !!!)
-endif
-endif
-# operating system API (src/os/<os_class>-<os-api>)
-ifeq ($(RTEMS_HAS_POSIX_API),yes)
-OS_API = posix
-else
-OS_API = kernel
-endif
-
-#--------------------------------------------------
 # Operating system flags
 #OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -lnfs -lm
-ifeq ($(RTEMS_API),5)
+ifeq ($(OS_API),posix)
 OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
 #OP_SYS_LDLIBS += -lrtemsCom -lrtemscpu -lrtemsbsp -ltftpfs -ltelnetd -lbsd -lz -lm
 OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu  -ltftpfs -lbsd -lz -lm
 else
-OP_SYS_LDLIBS += -lrtemsCom -lrtemscpu -lrtemsbsp
+OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -lnfs -lm
 endif
 
 ifeq ($(RTEMS_HAS_NETWORKING),yes)

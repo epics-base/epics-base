@@ -1,0 +1,8 @@
+# CONFIG.linux-aarch64.linux-aarch64
+#
+# Definitions for native linux-aarch64 builds
+# Override these definitions in CONFIG_SITE.linux-aarch64.linux-aarch64
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon

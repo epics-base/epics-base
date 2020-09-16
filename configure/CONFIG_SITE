@@ -22,6 +22,7 @@
 #	darwin-x86             (Intel based Apple running OSX)
 #	freebsd-x86            (GNU compiler used for host builds)
 #	freebsd-x86_64         (GNU compiler used for host builds)
+#	linux-aarch64          (GNU compiler used for host builds)
 #	linux-arm              (GNU compiler used for host builds)
 #	linux-ppc              (GNU compiler used for host builds)
 #	linux-ppc64            (GNU compiler used for host builds)
@@ -51,7 +52,6 @@
 #	windows-x64-debug      (MS Visual C++ compiler with debug option for host builds)
 
 
-#  EPICS_HOST_ARCH is a required environment variable
 #  Do not set EPICS_HOST_ARCH in this file. 
 #  Use base/startup files to set EPICS_HOST_ARCH or 
 #  provide EPICS_HOST_ARCH on the GNU make command line.

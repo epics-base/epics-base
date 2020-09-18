@@ -14,17 +14,18 @@
 #include "generalTimeSup.h"
 
 static unsigned char osdUsePrefCounter;
-static epicsUInt64 osdMonotonicResolution;
+static epicsUInt64 osdMonotonicResolution; /* timer resolution in nanoseconds */
+static double perfCounterScale; /* convert performance counter tics to nanoseconds */
 
 void osdMonotonicInit(void)
 {
     LARGE_INTEGER freq, val;
 
-    if(!QueryPerformanceFrequency(&freq) ||
-            !QueryPerformanceCounter(&val))
+    if(QueryPerformanceFrequency(&freq) &&
+            QueryPerformanceCounter(&val))
     {
-        double period = 1.0/freq.QuadPart;
-        osdMonotonicResolution = period*1e9;
+        perfCounterScale = 1e9 / freq.QuadPart;
+        osdMonotonicResolution = 1 + (int)perfCounterScale;
         osdUsePrefCounter = 1;
     } else {
         osdMonotonicResolution = 1e6; /* 1 ms TODO place holder */
@@ -44,9 +45,14 @@ epicsUInt64 epicsMonotonicGet(void)
             errMessage(errlogMinor, "Warning: failed to fetch performance counter\n");
             return 0;
         } else
-            return val.QuadPart;
+            return val.QuadPart * perfCounterScale;
     } else {
-        epicsUInt64 ret = GetTickCount();
+        epicsUInt64 ret =
+#if _WIN32_WINNT >= 0x0600 /* Windows Vista / Server 2008 and later */
+                   GetTickCount64();
+#else
+                   GetTickCount(); /* this wraps every 49.7 days */
+#endif /* _WIN32_WINNT >= 0x0600 */
         ret *= 1000000;
         return ret;
     }

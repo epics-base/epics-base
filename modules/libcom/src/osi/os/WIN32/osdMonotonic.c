@@ -29,6 +29,9 @@ void osdMonotonicInit(void)
         osdUsePrefCounter = 1;
     } else {
         osdMonotonicResolution = 1e6; /* 1 ms TODO place holder */
+#if _WIN32_WINNT < 0x0600 /* Older than Windows Vista / Server 2008 */
+        errMessage(errlogMinor, "Warning: using GetTickCount() so monotonic time will wrap every 49.7 days\n");
+#endif
     }
 }
 

@@ -101,7 +101,7 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
         (double) POSIX_TIME_AT_EPICS_EPOCH / this->time_tSecPerTick;
 
     if (this->time_tSecPerTick == 1.0 &&
-        this->epicsEpochOffset <= ULONG_MAX &&
+        this->epicsEpochOffset <= 0xffffffff &&
         this->epicsEpochOffset >= 0) {
         // We can use simpler code on Posix-compliant systems
         this->useDiffTimeOptimization = true;
@@ -151,7 +151,7 @@ epicsTime::epicsTime ( const time_t_wrapper & ansiTimeTicks )
     // faster on systems w/o hardware floating point and a simple integer type time_t.
     //
     if ( lti.useDiffTimeOptimization ) {
-        // LONG_MAX is used here and not ULONG_MAX because some systems (linux)
+        // LONG_MAX is used here and not 0xffffffff because some systems (linux)
         // still store time_t as a long.
         if ( ansiTimeTicks.ts > 0 && ansiTimeTicks.ts <= LONG_MAX ) {
             unsigned long ticks = static_cast < unsigned long > ( ansiTimeTicks.ts );
@@ -159,7 +159,7 @@ epicsTime::epicsTime ( const time_t_wrapper & ansiTimeTicks )
                 this->secPastEpoch = ticks - lti.epicsEpochOffsetAsAnUnsignedLong;
             }
             else {
-                this->secPastEpoch = ( ULONG_MAX - lti.epicsEpochOffsetAsAnUnsignedLong ) + ticks;
+                this->secPastEpoch = ( 0xffffffff - lti.epicsEpochOffsetAsAnUnsignedLong ) + ticks;
             }
             this->nSec = 0;
             return;
@@ -175,7 +175,7 @@ epicsTime::epicsTime ( const time_t_wrapper & ansiTimeTicks )
     //
     // map into the the EPICS time stamp range (which allows rollover)
     //
-    static double uLongMax = static_cast<double> (ULONG_MAX);
+    static double uLongMax = static_cast<double> (0xffffffff);
     if ( sec < 0.0 ) {
         if ( sec < -uLongMax ) {
             sec = sec + static_cast<unsigned long> ( -sec / uLongMax ) * uLongMax;
@@ -242,7 +242,7 @@ epicsTime::operator time_t_wrapper () const
     time_t_wrapper wrap;
 
     if ( lti.useDiffTimeOptimization ) {
-        if ( this->secPastEpoch < ULONG_MAX - lti.epicsEpochOffsetAsAnUnsignedLong ) {
+        if ( this->secPastEpoch < 0xffffffff - lti.epicsEpochOffsetAsAnUnsignedLong ) {
            wrap.ts = static_cast <time_t> ( this->secPastEpoch + lti.epicsEpochOffsetAsAnUnsignedLong );
            return wrap;
        }
@@ -522,7 +522,7 @@ static const char * fracFormatFind (
     unsigned long & fracFmtWidth )
 {
     assert ( prefixBufLen > 1 );
-    unsigned long width = ULONG_MAX;
+    unsigned long width = 0xffffffff;
     bool fracFound = false;
     const char * pAfter = pFormat;
     const char * pFmt = pFormat;
@@ -758,11 +758,11 @@ epicsTime epicsTime::operator + (const double &rhs) const
 // interpreted as rollover situations:
 //
 // when RHS is greater than THIS:
-// RHS-THIS > one half full scale => return THIS + (ULONG_MAX-RHS)
+// RHS-THIS > one half full scale => return THIS + (0xffffffff-RHS)
 // RHS-THIS <= one half full scale => return -(RHS-THIS)
 //
 // when THIS is greater than or equal to RHS
-// THIS-RHS > one half full scale => return -(RHS + (ULONG_MAX-THIS))
+// THIS-RHS > one half full scale => return -(RHS + (0xffffffff-THIS))
 // THIS-RHS <= one half full scale => return THIS-RHS
 //
 double epicsTime::operator - (const epicsTime &rhs) const
@@ -790,13 +790,13 @@ double epicsTime::operator - (const epicsTime &rhs) const
     //
     if (this->secPastEpoch<rhs.secPastEpoch) {
         secRes = rhs.secPastEpoch - this->secPastEpoch;
-        if (secRes > ULONG_MAX/2) {
+        if (secRes > 0xffffffff/2) {
             //
             // In this situation where the difference is more than
             // 68 years assume that the seconds counter has rolled
             // over and compute the "wrap around" difference
             //
-            secRes = 1 + (ULONG_MAX-secRes);
+            secRes = 1 + (0xffffffff-secRes);
             nSecRes = -nSecRes;
         }
         else {
@@ -805,13 +805,13 @@ double epicsTime::operator - (const epicsTime &rhs) const
     }
     else {
         secRes = this->secPastEpoch - rhs.secPastEpoch;
-        if (secRes > ULONG_MAX/2) {
+        if (secRes > 0xffffffff/2) {
             //
             // In this situation where the difference is more than
             // 68 years assume that the seconds counter has rolled
             // over and compute the "wrap around" difference
             //
-            secRes = 1 + (ULONG_MAX-secRes);
+            secRes = 1 + (0xffffffff-secRes);
             secRes = -secRes;
             nSecRes = -nSecRes;
         }
@@ -828,7 +828,7 @@ bool epicsTime::operator <= (const epicsTime &rhs) const
     bool rc;
 
     if (this->secPastEpoch<rhs.secPastEpoch) {
-        if (rhs.secPastEpoch-this->secPastEpoch < ULONG_MAX/2) {
+        if (rhs.secPastEpoch-this->secPastEpoch < 0xffffffff/2) {
             //
             // In this situation where the difference is less than
             // 69 years compute the expected result
@@ -845,7 +845,7 @@ bool epicsTime::operator <= (const epicsTime &rhs) const
         }
     }
     else if (this->secPastEpoch>rhs.secPastEpoch) {
-        if (this->secPastEpoch-rhs.secPastEpoch < ULONG_MAX/2) {
+        if (this->secPastEpoch-rhs.secPastEpoch < 0xffffffff/2) {
             //
             // In this situation where the difference is less than
             // 69 years compute the expected result
@@ -880,7 +880,7 @@ bool epicsTime::operator < (const epicsTime &rhs) const
     bool    rc;
 
     if (this->secPastEpoch<rhs.secPastEpoch) {
-        if (rhs.secPastEpoch-this->secPastEpoch < ULONG_MAX/2) {
+        if (rhs.secPastEpoch-this->secPastEpoch < 0xffffffff/2) {
             //
             // In this situation where the difference is less than
             // 69 years compute the expected result
@@ -897,7 +897,7 @@ bool epicsTime::operator < (const epicsTime &rhs) const
         }
     }
     else if (this->secPastEpoch>rhs.secPastEpoch) {
-        if (this->secPastEpoch-rhs.secPastEpoch < ULONG_MAX/2) {
+        if (this->secPastEpoch-rhs.secPastEpoch < 0xffffffff/2) {
             //
             // In this situation where the difference is less than
             // 69 years compute the expected result

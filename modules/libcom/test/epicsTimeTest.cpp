@@ -80,12 +80,21 @@ static void testMonotonic()
     testDiag("Small Delta %u ns", (unsigned)(B-A));
 }
 
+static void testRollover()
+{
+    epicsTimeStamp A = {0xffffffff, 0};
+    epicsTimeStamp B = {0x00000001, 0};
+
+    double diff = epicsTimeDiffInSeconds(&B, &A);
+    testOk(diff==2.0, "Rollover diff %f", diff);
+}
+
 MAIN(epicsTimeTest)
 {
     const int wasteTime = 100000;
     const int nTimes = 10;
 
-    testPlan(22 + nTimes * 19);
+    testPlan(23 + nTimes * 19);
 
     try {
         const epicsTimeStamp epochTS = {0, 0};
@@ -284,6 +293,7 @@ MAIN(epicsTimeTest)
     }
 
     testMonotonic();
+    testRollover();
 
     return testDone();
 }

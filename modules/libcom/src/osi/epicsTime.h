@@ -325,8 +325,8 @@ private:
     epicsTime ( const unsigned long secPastEpoch, const unsigned long nSec );
     void addNanoSec ( long nanoSecAdjust );
 
-    unsigned long secPastEpoch; /* seconds since O000 Jan 1, 1990 */
-    unsigned long nSec; /* nanoseconds within second */
+    epicsUInt32 secPastEpoch; /* seconds since O000 Jan 1, 1990 */
+    epicsUInt32 nSec; /* nanoseconds within second */
 };
 
 extern "C" {

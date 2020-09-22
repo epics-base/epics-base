@@ -114,7 +114,7 @@ endif
 OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
 ifeq ($(RTEMS_API),5)
 #OP_SYS_LDLIBS += -lrtemsCom -lrtemscpu -lrtemsbsp -ltftpfs -ltelnetd -lbsd -lz -lm
-Ot_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu  -ltftpfs -lbsd -lz -lm
+OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu  -ltftpfs -lbsd -lz -lm
 else
 OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lrtemsCom -lCom -lnfs -lm
 endif

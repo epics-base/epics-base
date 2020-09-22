@@ -628,7 +628,7 @@ static void iocshRegisterRTEMS (void)
     iocshRegister(&zonesetFuncDef, &zonesetCallFunc);
     iocshRegister(&rtshellFuncDef, &rtshellCallFunc);
 #if __RTEMS_MAJOR__ > 4
-    riocshRegisterRTEMStems_shell_init_environment();
+    rtems_shell_init_environment();
 #endif
 }
 

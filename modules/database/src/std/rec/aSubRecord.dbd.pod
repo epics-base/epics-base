@@ -90,7 +90,7 @@ The VAL field is set to the value returned by the user subroutine.
 The value is treated as an error status value where zero mean success.
 The output links OUTA ... OUTU will only be used to forward the associated
 output value fields when the subroutine has returned a zero status.
-If the return status was non-zero, the record will be put into C<SOFT_ALARM>
+If the return status was less than zero, the record will be put into C<SOFT_ALARM>
 state with severity given by the BRSV field.
 
 The INAM field may be used to name a subroutine that will be called once at

@@ -13,25 +13,23 @@
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
-static unsigned char osdUsePrefCounter;
 static epicsUInt64 osdMonotonicResolution; /* timer resolution in nanoseconds */
 static double perfCounterScale; /* convert performance counter tics to nanoseconds */
 
 void osdMonotonicInit(void)
 {
     LARGE_INTEGER freq, val;
-
+    /* QueryPerformanceCounter() is available on Windows 2000 and later, and guaranteed
+       to always succeed on Windows XP or later. On Windows 2000 it may
+       return 0 for freq.QuadPart if unavailable */
     if(QueryPerformanceFrequency(&freq) &&
-            QueryPerformanceCounter(&val))
+            QueryPerformanceCounter(&val) &&
+            freq.QuadPart != 0)
     {
         perfCounterScale = 1e9 / freq.QuadPart;
         osdMonotonicResolution = 1 + (int)perfCounterScale;
-        osdUsePrefCounter = 1;
     } else {
-        osdMonotonicResolution = 1e6; /* 1 ms TODO place holder */
-#if _WIN32_WINNT < 0x0600 /* Older than Windows Vista / Server 2008 */
-        errMessage(errlogMinor, "Warning: using GetTickCount() so monotonic time will wrap every 49.7 days\n");
-#endif
+        errMessage(errlogMajor, "Windows Performance Counter is not available\n");
     }
 }
 
@@ -43,20 +41,10 @@ epicsUInt64 epicsMonotonicResolution(void)
 epicsUInt64 epicsMonotonicGet(void)
 {
     LARGE_INTEGER val;
-    if(osdUsePrefCounter) {
-        if(!QueryPerformanceCounter(&val)) {
-            errMessage(errlogMinor, "Warning: failed to fetch performance counter\n");
-            return 0;
-        } else
-            return val.QuadPart * perfCounterScale;
+    if(!QueryPerformanceCounter(&val)) {
+        errMessage(errlogMinor, "Warning: failed to fetch performance counter\n");
+        return 0;
     } else {
-        epicsUInt64 ret =
-#if _WIN32_WINNT >= 0x0600 /* Windows Vista / Server 2008 and later */
-                   GetTickCount64();
-#else
-                   GetTickCount(); /* this wraps every 49.7 days */
-#endif /* _WIN32_WINNT >= 0x0600 */
-        ret *= 1000000;
-        return ret;
+        return val.QuadPart * perfCounterScale; /* return value in nanoseconds */
     }
 }

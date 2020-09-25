@@ -28,8 +28,9 @@ ifneq ($(CONFIG),$(TOP)/configure)
 endif
 
 #--------------------------------------------------
-# Set RTEMS_BSP from T_A if not already done
+# Set RTEMS_BSP and GNU_TARGET if not already done
 RTEMS_BSP ?= $(subst RTEMS-,,$(T_A))
+GNU_TARGET ?= $(RTEMS_TARGET_CPU)-rtems
 
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.

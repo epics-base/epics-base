@@ -3,11 +3,27 @@
 # Site-specific information for all RTEMS targets
 #-------------------------------------------------------
 
-# Where to find RTEMS
+# Where to find RTEMS, and what version is it
 #
-# FHI:
+# RTEMS_BASE must point to the specific installation of RTEMS to
+#    build the target code with.
+# RTEMS_VERSION is used in the path to the toolsets inside that
+#    installation. For RTEMS 5 only the major version number is
+#    used, but for RTEMS 4.10.2 say all 3 components are required.
+#
+# TRAVIS-CI:
 RTEMS_VERSION = 5
 RTEMS_BASE = /home/travis/.rtems
+
+# FHI:
+#RTEMS_VERSION = 5
+#RTEMS_BASE = /home/h1/DBG/rtems
+
+# APS:
+#RTEMS_VERSION = 4.10.2
+#RTEMS_BASE = /usr/local/vw/rtems/rtems-4.10.2
+#RTEMS_VERSION = 5
+#RTEMS_BASE = /usr/local/vw/rtems/rtems-5.1
 
 # Cross-compile toolchain in $(RTEMS_TOOLS)/bin
 #

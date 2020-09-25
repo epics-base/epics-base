@@ -1,7 +1,7 @@
 #ifdef _COMMENT_
 /* Extract compiler pre-defined macros as Make variables
  *
- * Expanded as configure/os/CONFIG_TOOLCHAIN.Common.$(T_A)
+ * Expanded as $(INSTALL_CFG)/TOOLCHAIN.$(EPICS_HOST_ARCH).$(T_A)
  *
  * Must be careful not to #include any C definitions
  * into what is really a Makefile snippet

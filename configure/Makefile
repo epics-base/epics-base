@@ -30,23 +30,9 @@ CFG += CONFIG_CA_VERSION
 CFG += CONFIG_DATABASE_MODULE
 CFG += CONFIG_DATABASE_VERSION
 
+CFG += TOOLCHAIN.$(EPICS_HOST_ARCH).$(T_A)
+
 include $(TOP)/configure/RULES
 
-ifdef T_A
-
-install: $(TOP)/configure/os/CONFIG_TOOLCHAIN.Common.$(T_A)
-
-$(TOP)/configure/os/CONFIG_TOOLCHAIN.Common.$(T_A): toolchain.c
+TOOLCHAIN.$(EPICS_HOST_ARCH).$(T_A): toolchain.c
 	$(PREPROCESS.cpp)
-
-else
-
-realclean: clean_toolchain
-clean: clean_toolchain
-
-clean_toolchain:
-	$(RM) $(wildcard os/CONFIG_TOOLCHAIN.Common.*)
-
-.PHONY: clean_toolchain
-
-endif # T_A

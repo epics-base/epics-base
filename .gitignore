@@ -7,7 +7,6 @@
 /include/
 /templates/
 /configure/*.local
-/configure/os/CONFIG_TOOLCHAIN.*
 /modules/RELEASE.*.local
 /modules/Makefile.local
 O.*/

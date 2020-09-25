@@ -62,6 +62,9 @@ include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).Common
 RELEASE_TOPS := $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops)
 
 ifdef T_A
+  # Information from the target's compiler
+  #
+  -include $(EPICS_BASE)/cfg/TOOLCHAIN.$(EPICS_HOST_ARCH).$(T_A)
 
   #  Cross compile specific definitions
   #
@@ -71,7 +74,6 @@ ifdef T_A
 
   #  Target architecture specific definitions
   #
-  -include $(CONFIG)/os/CONFIG_TOOLCHAIN.Common.$(T_A)
   -include $(CONFIG)/os/CONFIG.Common.$(T_A)
 
   #  Host-Target architecture specific definitions

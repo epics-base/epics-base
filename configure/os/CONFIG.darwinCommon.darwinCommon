@@ -30,8 +30,10 @@ ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 #
 # Special flags for Darwin
 #   No common blocks (as required when using shared libraries)
+#   OS provides socket address length
 #
 OP_SYS_CFLAGS += -fno-common
+OP_SYS_CFLAGS += -DHAVE_SOCKADDR_SA_LEN=1
 
 #
 # Darwin os definition

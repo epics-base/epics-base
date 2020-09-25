@@ -98,27 +98,29 @@ OS_CLASS = RTEMS
 #--------------------------------------------------
 # Operating system flags
 ifeq ($(OS_API),posix)
-OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
-OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -ltftpfs -lbsd -lz -lm
-else
-OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -lnfs -lm
+  OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
 endif
 
 ifeq ($(RTEMS_HAS_NETWORKING),yes)
-OP_SYS_CFLAGS += -DRTEMS_LEGACY_STACK
+  OP_SYS_CFLAGS += -DRTEMS_LEGACY_STACK
 else
-OP_SYS_CFLAGS += -DHAVE_SOCKADDR_SA_LEN=1
+  OP_SYS_CFLAGS += -DHAVE_SOCKADDR_SA_LEN=1
 endif
 
-OP_SYS_LDFLAGS_posix += -u POSIX_Init
-OP_SYS_LDFLAGS_kernel += $(CPU_CFLAGS) -u Init \
+OP_SYS_LDLIBS_posix = -ltftpfs -lbsd -lz
+OP_SYS_LDLIBS_kernel = -lCom -lnfs
+OP_SYS_LDLIBS += -lrtemsCom -lCom -lc -lrtemscpu $(OP_SYS_LDLIBS_$(OS_API)) -lm
+
+OP_SYS_LDFLAGS_posix = -u POSIX_Init
+OP_SYS_LDFLAGS_kernel = -u Init \
                  $(PROJECT_RELEASE)/lib/no-dpmem.rel \
                  $(PROJECT_RELEASE)/lib/no-mp.rel \
                  $(PROJECT_RELEASE)/lib/no-part.rel \
                  $(PROJECT_RELEASE)/lib/no-signal.rel \
                  $(PROJECT_RELEASE)/lib/no-rtmon.rel
-
 OP_SYS_LDFLAGS += $(CPU_CFLAGS) $(OP_SYS_LDFLAGS_$(OS_API))
+
+# Settings for GeSys
 MOD_SYS_LDFLAGS += $(CPU_CFLAGS) -Wl,-r -nostdlib
 
 # Do not link against libraries which are part of the Generic Image

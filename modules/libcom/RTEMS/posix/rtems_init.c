@@ -57,7 +57,6 @@
 #include <rtems/bsd/bsd.h>
 #include <rtems/bsd/modules.h>
 #include <rtems/dhcpcd.h>
-#include "libbsd_netconfig.h"
 #include <machine/rtems-bsd-commands.h>
 #endif
 
@@ -102,7 +101,7 @@ char *rtems_bsdnet_bootp_server_name = bootp_server_name_init;
 char bootp_boot_file_name_init[128] = "/Volumes/Epics/myExample/bin/RTEMS-qoriq_e500/myExample.boot";
 char *rtems_bsdnet_bootp_boot_file_name = bootp_boot_file_name_init;
 char bootp_cmdline_init[128] = "/Volumes/Epics/myExample/iocBoot/iocmyExample/st.cmd";
-char *rtems_bsdnet_bootp_cmdline = bootp_cmdline_init;
+char *rtems_bootp_cmdline = bootp_cmdline_init;
 #endif // not LEGACY Stack
 
 int  osdNTPGet(struct timespec *now)
@@ -230,9 +229,11 @@ epicsRtemsMountLocalFilesystem(char **argv)
 static int
 initialize_local_filesystem(char **argv)
 {
+    /*
     extern char _DownloadLocation[] __attribute__((weak));
     extern char _FlashBase[] __attribute__((weak));
     extern char _FlashSize[]  __attribute__((weak));
+    */
 
     argv[0] = rtems_bsdnet_bootp_boot_file_name;
     if (epicsRtemsMountLocalFilesystem(argv)==0) {
@@ -250,13 +251,13 @@ initialize_local_filesystem(char **argv)
                 printf("Can't unpack tar filesystem\n");
                 return 0;
             }
-            if ((fd = open(rtems_bsdnet_bootp_cmdline, 0)) >= 0) {
+            if ((fd = open(rtems_bootp_cmdline, 0)) >= 0) {
                 close(fd);
-                printf ("***** Found startup script (%s) in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
-                argv[1] = rtems_bsdnet_bootp_cmdline;
+                printf ("***** Found startup script (%s) in IMFS *****\n", rtems_bootp_cmdline);
+                argv[1] = rtems_bootp_cmdline;
                 return 1;
             }
-            printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
+            printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bootp_cmdline);
         }
     } */
     return 0;
@@ -335,7 +336,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
                                                 mount_point, strerror(errno));
             *cp = '/';
         }
-        argv[1] = rtems_bsdnet_bootp_cmdline;
+        argv[1] = rtems_bootp_cmdline;
     }
     else if (hasLocalFilesystem) {
         return;
@@ -347,23 +348,22 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
          * if the pathname does not begin with a '/'.  This allows
          * NFS and TFTP to have a similar view of the remote system.
          */
-        if (rtems_bsdnet_bootp_cmdline[0] == '/')
-            cp = rtems_bsdnet_bootp_cmdline + 1;
+        if (rtems_bootp_cmdline[0] == '/')
+            cp = rtems_bootp_cmdline + 1;
         else
-            cp = rtems_bsdnet_bootp_cmdline;
+            cp = rtems_bootp_cmdline;
         cp = strchr(cp, '/');
         if ((cp == NULL)
-         || ((l = cp - rtems_bsdnet_bootp_cmdline) == 0))
-            LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bsdnet_bootp_cmdline);
+         || ((l = cp - rtems_bootp_cmdline) == 0))
+            LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bootp_cmdline);
         cp = mustMalloc(l + 20, "NFS mount paths");
         server_path = cp;
-printf( " rtems_bootp_server_name: %s\n",rtems_bsdnet_bootp_server_name);
         server_name = rtems_bsdnet_bootp_server_name;
-        if (rtems_bsdnet_bootp_cmdline[0] == '/') {
+        if (rtems_bootp_cmdline[0] == '/') {
             mount_point = server_path;
-            strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
+            strncpy(mount_point, rtems_bootp_cmdline, l);
             mount_point[l] = '\0';
-            argv[1] = rtems_bsdnet_bootp_cmdline;
+            argv[1] = rtems_bootp_cmdline;
             /*
              * Its probably common to embed the mount point in the server
              * name so, when this is occurring, dont clobber the mount point
@@ -400,14 +400,14 @@ printf( " rtems_bootp_server_name: %s\n",rtems_bsdnet_bootp_server_name);
             }
         }
         else {
-            char *abspath = mustMalloc(strlen(rtems_bsdnet_bootp_cmdline)+2,"Absolute command path");
+            char *abspath = mustMalloc(strlen(rtems_bootp_cmdline)+2,"Absolute command path");
             strcpy(server_path, "/tftpboot/");
             mount_point = server_path + strlen(server_path);
-            strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
+            strncpy(mount_point, rtems_bootp_cmdline, l);
             mount_point[l] = '\0';
             mount_point--;
             strcpy(abspath, "/");
-            strcat(abspath, rtems_bsdnet_bootp_cmdline);
+            strcat(abspath, rtems_bootp_cmdline);
             argv[1] = abspath;
         }
     }
@@ -689,7 +689,7 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
 	(void)hook;
 
     char ifnamebuf[IF_NAMESIZE];
-    *ifnamebuf = getPrimaryNetworkInterface();
+    sprintf(ifnamebuf, "%s", getPrimaryNetworkInterface());
 
     while (*env != NULL) {
         name = strtok(*env,"=");
@@ -719,8 +719,8 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
             }
             if(!strncmp(name, "new_rtems_cmdline", 20)){
                 //printf(" new_rtems_cmdline : %s\n", value);
-                strncpy(rtems_bsdnet_bootp_cmdline,value, sizeof(bootp_cmdline_init));
-                printf(" rtems_bsdnet_bootp_cmdline : %s\n", rtems_bsdnet_bootp_cmdline);
+                strncpy(rtems_bootp_cmdline,value, sizeof(bootp_cmdline_init));
+                printf(" rtems_bootp_cmdline : %s\n", rtems_bootp_cmdline);
             }
             // printf("---> %s = %s\n", name, value);
         }
@@ -822,7 +822,8 @@ POSIX_Init (void *argument)
       // set time to 14.4.2014
       now.tv_sec = 1397460606;
       now.tv_nsec = 0;
-      if (clock_settime(CLOCK_REALTIME, &now) < 0)
+      sc = clock_settime(CLOCK_REALTIME, &now);
+      if (sc < 0)
         printf ("***** Can't set time: %s\n", rtems_status_text (sc));
     }
     if ( clock_gettime( CLOCK_REALTIME, &now) < 0) {
@@ -839,6 +840,8 @@ POSIX_Init (void *argument)
 
     /* TBD ...
      * Architecture-specific hooks
+     */
+#ifdef RTEMS_LEGACY_STACK
     if (epicsRtemsInitPreSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPreSetBootConfigFromNVRAM");
     if (rtems_bsdnet_config.bootp == NULL) {
@@ -848,8 +851,7 @@ POSIX_Init (void *argument)
     if (epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPostSetBootConfigFromNVRAM");
 
-     */
-
+#endif
     /*
      * Override RTEMS Posix configuration, it gets started with posix prio 2
      */
@@ -903,9 +905,6 @@ POSIX_Init (void *argument)
     // implement DHCP hook  ... and wait for acknowledge
     dhcpDone = epicsEventMustCreate(epicsEventEmpty);
     rtems_dhcpcd_add_hook(&dhcpcd_hook);
-
-    /* use /etc/rc.conf, /etc/dhclient.conf ... */
-    //epicsRtemsPrepareAndRunRCConfFile();
 
     // wait for dhcp done ... should be if SYNCDHCP is used
     epicsEventWaitStatus stat;
@@ -1027,6 +1026,7 @@ void bsp_predriver_hook(void)
     Console_Port_Minor = BSP_CONSOLE_PORT_COM1;
 #else
     BSPConsolePort = BSP_CONSOLE_PORT_COM1;
+
 #endif
     BSPPrintkPort = BSP_CONSOLE_PORT_COM1;
 }
@@ -1044,19 +1044,3 @@ void bsp_cleanup(void)
 #endif /* QEMU_FIXUPS */
 
 int cexpdebug __attribute__((weak));
-
-/* defines in rtems_config.c
-#define CONFIGURE_SHELL_COMMANDS_INIT
-#define CONFIGURE_SHELL_COMMANDS_ALL
-// exclude commands which won't work right with our configuration
-#define CONFIGURE_SHELL_NO_COMMAND_EXIT
-#define CONFIGURE_SHELL_NO_COMMAND_LOGOFF
-// exclude commands which unnecessarily pull in block driver
-#define CONFIGURE_SHELL_NO_COMMAND_MSDOSFMT
-#define CONFIGURE_SHELL_NO_COMMAND_BLKSYNC
-#define CONFIGURE_SHELL_NO_COMMAND_MKRFS
-#define CONFIGURE_SHELL_NO_COMMAND_DEBUGRFS
-#define CONFIGURE_SHELL_NO_COMMAND_FDISK
-
-#include <rtems/shellconfig.h>
-*/

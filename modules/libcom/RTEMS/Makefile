@@ -25,11 +25,7 @@ rtems_init_CPPFLAGS += -DQEMU_FIXUPS
 endif
 rtemsCom_SRCS += rtems_init.c
 rtemsCom_SRCS += rtems_config.c
-ifeq ($(RTEMS_HAS_NETWORKING), yes)
 rtemsCom_SRCS += rtems_netconfig.c
-else
-rtemsCom_SRCS += libbsd_netconfig.c
-endif
 rtemsCom_SRCS += rtems_util.c
 rtemsCom_SRCS += setBootConfigFromNVRAM.c
 rtemsCom_SRCS += epicsRtemsInitHookPre.c
@@ -38,6 +34,9 @@ rtemsCom_SRCS += epicsMemFs.c
 rtemsCom_SRCS += epicsNtp.c
 
 ifeq ($(RTEMS_TARGET_CPU),i386)
+rtemsCom_SRCS += ne2kpci.c
+endif
+ifeq ($(RTEMS_BSP),pc686)
 rtemsCom_SRCS += ne2kpci.c
 endif
 

@@ -116,7 +116,7 @@ ifeq ($(RTEMS_API),5)
 #OP_SYS_LDLIBS += -lrtemsCom -lrtemscpu -lrtemsbsp -ltftpfs -ltelnetd -lbsd -lz -lm
 OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu  -ltftpfs -lbsd -lz -lm
 else
-OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lrtemsCom -lCom -lnfs -lm
+OP_SYS_LDLIBS += -lrtemsCom -lc -lnfs -lm
 endif
 
 ifeq ($(RTEMS_HAS_NETWORKING),yes)

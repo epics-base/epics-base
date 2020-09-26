@@ -10,6 +10,7 @@
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "dbDefs.h"
 #include "errlog.h"
+#include "cantProceed.h"
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
@@ -29,7 +30,7 @@ void osdMonotonicInit(void)
         perfCounterScale = 1e9 / freq.QuadPart;
         osdMonotonicResolution = 1 + (int)perfCounterScale;
     } else {
-        errMessage(errlogMajor, "Windows Performance Counter is not available\n");
+        cantProceed("osdMonotonicInit: Windows Performance Counter is not available\n");
     }
 }
 
@@ -42,9 +43,9 @@ epicsUInt64 epicsMonotonicGet(void)
 {
     LARGE_INTEGER val;
     if(!QueryPerformanceCounter(&val)) {
-        errMessage(errlogMinor, "Warning: failed to fetch performance counter\n");
+        cantProceed("epicsMonotonicGet: Failed to read Windows Performance Counter\n");
         return 0;
     } else {
-        return val.QuadPart * perfCounterScale; /* return value in nanoseconds */
+        return (epicsUInt64)(val.QuadPart * perfCounterScale + 0.5); /* return value in nanoseconds */
     }
 }

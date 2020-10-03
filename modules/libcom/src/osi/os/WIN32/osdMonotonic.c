@@ -14,8 +14,10 @@
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
-static epicsUInt64 osdMonotonicResolution; /* timer resolution in nanoseconds */
-static double perfCounterScale; /* convert performance counter tics to nanoseconds */
+static epicsUInt64 osdMonotonicResolution;      /* timer resolution in nanoseconds */
+static epicsUInt64 perfCounterFrequency;        /* performance counter tics per second */
+static epicsUInt64 perfCounterOffset;           /* performance counter value at initialisation */
+static const epicsUInt64 sec2nsec = 1000000000; /* number of nanoseconds in a second */
 
 void osdMonotonicInit(void)
 {
@@ -27,8 +29,9 @@ void osdMonotonicInit(void)
             QueryPerformanceCounter(&val) &&
             freq.QuadPart != 0)
     {
-        perfCounterScale = 1e9 / freq.QuadPart;
-        osdMonotonicResolution = 1 + (int)perfCounterScale;
+        perfCounterFrequency = freq.QuadPart;
+        perfCounterOffset = val.QuadPart;
+        osdMonotonicResolution = sec2nsec / perfCounterFrequency + (sec2nsec % perfCounterFrequency != 0 ? 1 : 0);
     } else {
         cantProceed("osdMonotonicInit: Windows Performance Counter is not available\n");
     }
@@ -45,7 +48,7 @@ epicsUInt64 epicsMonotonicGet(void)
     if(!QueryPerformanceCounter(&val)) {
         cantProceed("epicsMonotonicGet: Failed to read Windows Performance Counter\n");
         return 0;
-    } else {
-        return (epicsUInt64)(val.QuadPart * perfCounterScale + 0.5); /* return value in nanoseconds */
+    } else { /* return value in nanoseconds */
+        return (epicsUInt64)((double)(val.QuadPart - perfCounterOffset) * sec2nsec / perfCounterFrequency + 0.5);
     }
 }

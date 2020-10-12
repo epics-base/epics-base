@@ -1363,7 +1363,7 @@ be sent through the OUTA ... OUTU links during record processing.
 The previous values of the output fields.
 These are used to determine when to post events if EFLG is set to C<ON CHANGE>.
 
-=fields VALA, VALB, VALC, VALD, VALE, VALF, VALG, VALH, VALI, VALJ, VALK, VALL, VALM, VALN, VALO, VALP, VALQ, VALR, VALS, VALT, VALU
+=fields OVLA, OVLB, OVLC, OVLD, OVLE, OVLF, OVLG, OVLH, OVLI, OVLJ, OVLK, OVLL, OVLM, OVLN, OVLO, OVLP, OVLQ, OVLR, OVLS, OVLT, OVLU
 
 =cut
 

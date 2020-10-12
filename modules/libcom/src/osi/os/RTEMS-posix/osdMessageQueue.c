@@ -3,9 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* SPDX-License-Identifier: EPICS
+* EPICS Base is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      Author  W. Eric Norum
@@ -34,14 +34,14 @@
 #include <mqueue.h>
 #include <fcntl.h>
 
+static int idCnt;
+
 LIBCOM_API epicsMessageQueueId epicsStdCall
 epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
 {
     struct mq_attr the_attr;
     epicsMessageQueueId id = (epicsMessageQueueId)calloc(1, sizeof(*id));
-    
-    epicsAtomicIncrIntT(&id->idCnt);
-    sprintf(id->name, "MQ_%01d", epicsAtomicGetIntT(&id->idCnt));
+    sprintf(id->name, "MQ_%0d", epicsAtomicIncrIntT(&idCnt));
     the_attr.mq_maxmsg = capacity;
     the_attr.mq_msgsize = maximumMessageSize;
     id->id = mq_open(id->name, O_RDWR | O_CREAT | O_EXCL, 0644, &the_attr);

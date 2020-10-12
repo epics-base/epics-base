@@ -793,6 +793,7 @@ default_network_dhcpcd(void)
     assert(sc == RTEMS_SUCCESSFUL);
 }
 #endif // not RTEMS_LEGACY_STACK
+
 /*
  * RTEMS Startup task
  */
@@ -826,7 +827,8 @@ POSIX_Init (void *argument)
       if (sc < 0)
         printf ("***** Can't set time: %s\n", rtems_status_text (sc));
     }
-    if ( clock_gettime( CLOCK_REALTIME, &now) < 0) {
+    sc = clock_gettime( CLOCK_REALTIME, &now);
+    if ( sc < 0) {
       printf ("***** Can't get time: %s\n", rtems_status_text (sc));
     } else {
       strftime(timeBuff, sizeof timeBuff, "%D %T", gmtime(&now.tv_sec));
@@ -850,7 +852,6 @@ POSIX_Init (void *argument)
     }
     if (epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPostSetBootConfigFromNVRAM");
-
 #endif
     /*
      * Override RTEMS Posix configuration, it gets started with posix prio 2
@@ -869,21 +870,26 @@ POSIX_Init (void *argument)
      */
     printf("\n***** RTEMS Version: %s *****\n",
         rtems_get_version_string());
-      
+
 #ifndef RTEMS_LEGACY_STACK
     /*
      * Start network (libbsd)
+     *
+     * start qemu like this
+     * qemu-system-i386 -m 64 -no-reboot -serial stdio -display none \
+     * -net nic,model=e1000,macaddr=0e:b0:ba:5e:ba:11 -net user,restrict=yes \
+     * -append "--video=off --console=/dev/com1" -kernel libComTestHarness
      */
     printf("\n***** Initializing network (libbsd, dhcpcd) *****\n");
     rtems_bsd_setlogpriority("debug");
     on_exit(default_network_on_exit, NULL);
+
     /* Let other tasks run to complete background work */
     default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1U);
 
-    /* supress all output from bsd network initialization (Info: to be switched on in production!)
+    /* supress all output from bsd network initialization */ 
     rtems_bsd_vprintf_handler bsd_vprintf_handler_old;
     bsd_vprintf_handler_old = rtems_bsd_set_vprintf_handler(rtems_bsd_vprintf_handler_mute);
-    */
 
     sc = rtems_bsd_initialize();
     assert(sc == RTEMS_SUCCESSFUL);
@@ -892,23 +898,25 @@ POSIX_Init (void *argument)
     sc = rtems_task_wake_after(2);
     assert(sc == RTEMS_SUCCESSFUL);
 
+    printf("\n***** ifconfig lo0 *****\n");
     rtems_bsd_ifconfig_lo0();
 
-    // if MY_BOOTP???
-    default_network_dhcpcd();
-
-    /* this seems to be hard coded in the BSP -> Sebastian Huber ?
-    printf("\n--Info (hpj)-- bsd task prio IRQS: %d  -----\n", rtems_bsd_get_task_priority("IRQS"));
-    printf("\n--Info (hpj)-- bsd task prio TIME: %d  -----\n", rtems_bsd_get_task_priority("TIME"));
-    */
-
-    // implement DHCP hook  ... and wait for acknowledge
+    printf("\n***** add dhcpcd hook *****\n");
     dhcpDone = epicsEventMustCreate(epicsEventEmpty);
     rtems_dhcpcd_add_hook(&dhcpcd_hook);
 
+    printf("\n***** Start default network dhcpcd *****\n");
+    // if MY_BOOTP???
+    default_network_dhcpcd();
+
+    /* this seems to be hard coded in the BSP -> Sebastian Huber ? */
+    printf("\n--Info (hpj)-- bsd task prio IRQS: %d  -----\n", rtems_bsd_get_task_priority("IRQS"));
+    printf("\n--Info (hpj)-- bsd task prio TIME: %d  -----\n", rtems_bsd_get_task_priority("TIME"));
+
+
     // wait for dhcp done ... should be if SYNCDHCP is used
     epicsEventWaitStatus stat;
-    int counter = 10;
+    int counter = 2;
     do {
 	printf("\n ---- Wait for DHCP done ...\n");
         stat = epicsEventWaitWithTimeout(dhcpDone, 5.0); 

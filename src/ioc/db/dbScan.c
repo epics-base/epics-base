@@ -998,7 +998,7 @@ static void addToList(struct dbCommon *precord, scan_list *psl)
         }
         ptemp = (scan_element *)ellPrevious(&ptemp->node);
     }
-    if (ptemp == NULL) ellAdd(&psl->list, (void *)pse);
+    if (ptemp == NULL) ellInsert(&psl->list, NULL, &pse->node);
     psl->modified = TRUE;
     epicsMutexUnlock(psl->lock);
 }
@@ -1024,7 +1024,7 @@ static void deleteFromList(struct dbCommon *precord, scan_list *psl)
         return;
     }
     pse->pscan_list = NULL;
-    ellDelete(&psl->list, (void *)pse);
+    ellDelete(&psl->list, &pse->node);
     psl->modified = TRUE;
     epicsMutexUnlock(psl->lock);
 }

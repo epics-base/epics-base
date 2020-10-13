@@ -992,13 +992,10 @@ static void addToList(struct dbCommon *precord, scan_list *psl)
     pse->pscan_list = psl;
     ptemp = (scan_element *)ellLast(&psl->list);
     while (ptemp) {
-        if (ptemp->precord->phas <= precord->phas) {
-            ellInsert(&psl->list, &ptemp->node, &pse->node);
-            break;
-        }
+        if (ptemp->precord->phas <= precord->phas) break;
         ptemp = (scan_element *)ellPrevious(&ptemp->node);
     }
-    if (ptemp == NULL) ellInsert(&psl->list, NULL, &pse->node);
+    ellInsert(&psl->list, (ptemp ? &ptemp->node : NULL), &pse->node);
     psl->modified = TRUE;
     epicsMutexUnlock(psl->lock);
 }

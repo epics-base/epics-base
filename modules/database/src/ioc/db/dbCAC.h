@@ -48,6 +48,17 @@
 #include "db_convert.h"
 #include "resourceLib.h"
 
+namespace ca {
+#if __cplusplus>=201103L
+template<typename T>
+using auto_ptr = std::unique_ptr<T>;
+#define PTRMOVE(AUTO) std::move(AUTO)
+#else
+using std::auto_ptr;
+#define PTRMOVE(AUTO) (AUTO)
+#endif
+}
+
 extern "C" int putNotifyPut ( processNotify *ppn, notifyPutType notifyPutType );
 extern "C" void putNotifyCompletion ( processNotify *ppn );
 
@@ -194,7 +205,7 @@ private:
     epicsMutex & mutex;
     epicsMutex & cbMutex;
     cacContextNotify & notify;
-    std::auto_ptr < cacContext > pNetContext;
+    ca::auto_ptr < cacContext > pNetContext;
     char * pStateNotifyCache;
     bool isolated;
 

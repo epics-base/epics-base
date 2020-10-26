@@ -40,6 +40,17 @@
 #include "repeaterSubscribeTimer.h"
 #include "SearchDest.h"
 
+namespace ca {
+#if __cplusplus>=201103L
+template<typename T>
+using auto_ptr = std::unique_ptr<T>;
+#define PTRMOVE(AUTO) std::move(AUTO)
+#else
+using std::auto_ptr;
+#define PTRMOVE(AUTO) (AUTO)
+#endif
+}
+
 extern "C" void cacRecvThreadUDP ( void *pParam );
 
 LIBCA_API void epicsStdCall caStartRepeaterIfNotInstalled (
@@ -161,7 +172,7 @@ private:
     epicsMutex & cacMutex;
     const unsigned nTimers;
     struct SearchArray {
-        typedef std::auto_ptr <searchTimer> value_type;
+        typedef ca::auto_ptr <searchTimer> value_type;
         value_type *arr;
         SearchArray(size_t n) : arr(new value_type[n]) {}
         ~SearchArray() { delete[] arr; }

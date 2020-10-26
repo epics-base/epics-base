@@ -71,7 +71,7 @@ dbContext::dbContext ( epicsMutex & cbMutexIn,
         epicsMutex & mutexIn, cacContextNotify & notifyIn ) :
     readNotifyCache ( mutexIn ), ctx ( 0 ),
     stateNotifyCacheSize ( 0 ), mutex ( mutexIn ), cbMutex ( cbMutexIn ),
-    notify ( notifyIn ), pNetContext ( 0 ), pStateNotifyCache ( 0 ),
+    notify ( notifyIn ), pStateNotifyCache ( 0 ),
     isolated(dbServiceIsolate)
 {
 }

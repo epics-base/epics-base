@@ -96,16 +96,13 @@ MODEXT=.obj
 OS_CLASS = RTEMS
 
 #--------------------------------------------------
-# Operating system flags
-ifeq ($(OS_API),posix)
-  OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
-endif
+# Operating system compile & link flags
+OP_SYS_CFLAGS_API_posix = -D__LINUX_ERRNO_EXTENSIONS__
+OP_SYS_CFLAGS += $(OP_SYS_CFLAGS_API_$(OS_API))
 
-ifeq ($(RTEMS_HAS_NETWORKING),yes)
-  OP_SYS_CFLAGS += -DRTEMS_LEGACY_STACK
-else
-  OP_SYS_CFLAGS += -DHAVE_SOCKADDR_SA_LEN=1
-endif
+OP_SYS_CFLAGS_NET_yes = -DRTEMS_LEGACY_STACK
+OP_SYS_CFLAGS_NET_no  = -DHAVE_SOCKADDR_SA_LEN=1
+OP_SYS_CFLAGS += $(OP_SYS_CFLAGS_NET_$(RTEMS_HAS_NETWORKING))
 
 OP_SYS_LDLIBS_posix = -ltftpfs -lbsd -lz
 OP_SYS_LDLIBS_kernel = -lCom -lnfs

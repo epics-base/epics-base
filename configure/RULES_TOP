@@ -33,7 +33,7 @@ UNINSTALL_DIRS += $(INSTALL_INCLUDE) $(INSTALL_TEMPLATES) $(DIRECTORY_TARGETS)
 ifneq ($(INSTALL_LOCATION),$(TOP))
   UNINSTALL_DIRS += $(INSTALL_CONFIG)
 endif
-uninstallDirs:
+uninstallDirs: | clean
 	$(RMDIR) $(UNINSTALL_DIRS)
 
   # Remove the bin and lib directories if they have no sub-directories
@@ -41,12 +41,12 @@ uninstallDirs:
 EMPTY_INSTALL_DIRS = \
     $(if $(wildcard $(INSTALL_LOCATION_BIN)/*),,$(INSTALL_LOCATION_BIN)) \
     $(if $(wildcard $(INSTALL_LOCATION_LIB)/*),,$(INSTALL_LOCATION_LIB))
-uninstall: archuninstall uninstallDirs
+uninstall: archuninstall uninstallDirs | clean
 	$(RMDIR) $(EMPTY_INSTALL_DIRS)
 
 archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 
-uninstall$(DIVIDER)%:
+uninstall$(DIVIDER)%: | clean
 	$(RMDIR) $(addsuffix /$(subst uninstall$(DIVIDER),,$@), \
 	    $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB))
 

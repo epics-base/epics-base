@@ -1048,7 +1048,11 @@ static void event_task (void *pParm)
     epicsEventDestroy(evUser->pflush_sem);
     epicsMutexDestroy(evUser->lock);
 
-    freeListFree(dbevEventUserFreeList, evUser);
+    if (dbevEventUserFreeList)
+        freeListFree(dbevEventUserFreeList, evUser);
+    else
+        fprintf(stderr, "%s exiting but dbevEventUserFreeList already NULL\n",
+                __FUNCTION__);
 
     taskwdRemove(epicsThreadGetIdSelf());
 

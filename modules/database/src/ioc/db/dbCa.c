@@ -411,9 +411,15 @@ long dbCaGetLink(struct link *plink, short dbrType, void *pdest,
         goto done;
     }
     newType = dbDBRoldToDBFnew[pca->dbrType];
-    if (!nelements || *nelements == 1) {
+    if (!nelements) {
         long (*fConvert)(const void *from, void *to, struct dbAddr *paddr);
 
+        if (pca->usedelements < 1) {
+            pca->sevr = INVALID_ALARM;
+            pca->stat = LINK_ALARM;
+            status = -1;
+            goto done;
+        }
         fConvert = dbFastGetConvertRoutine[newType][dbrType];
         assert(pca->pgetNative);
         status = fConvert(pca->pgetNative, pdest, 0);

@@ -133,7 +133,7 @@ void testCADisconn(void)
 
     startRegressTestIoc("badCaLink.db");
 
-    testdbPutFieldOk("ai:disconn.PROC", DBF_LONG, 1);
+    testdbPutFieldFail(-1, "ai:disconn.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("ai:disconn.SEVR", DBF_LONG, INVALID_ALARM);
     testdbGetFieldEqual("ai:disconn.STAT", DBF_LONG, LINK_ALARM);
 }

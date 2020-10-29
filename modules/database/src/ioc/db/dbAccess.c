@@ -946,6 +946,11 @@ long dbGet(DBADDR *paddr, short dbrType,
     if (offset == 0 && (!nRequest || no_elements == 1)) {
         if (nRequest)
             *nRequest = 1;
+        else if (no_elements < 1) {
+            status = S_db_onlyOne;
+            goto done;
+        }
+
         if (!pfl || pfl->type == dbfl_type_rec) {
             status = dbFastGetConvertRoutine[field_type][dbrType]
                 (paddr->pfield, pbuf, paddr);
@@ -1330,25 +1335,21 @@ long dbPut(DBADDR *paddr, short dbrType,
         status = prset->get_array_info(paddr, &dummy, &offset);
         /* paddr->pfield may be modified */
         if (status) goto done;
-    } else
-        offset = 0;
-
-    if (no_elements <= 1) {
-        status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
-            paddr->pfield, paddr);
-        nRequest = 1;
-    } else {
         if (no_elements < nRequest)
             nRequest = no_elements;
         status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
             nRequest, no_elements, offset);
-    }
-
-    /* update array info */
-    if (!status &&
-        paddr->pfldDes->special == SPC_DBADDR &&
-        prset && prset->put_array_info) {
-        status = prset->put_array_info(paddr, nRequest);
+        /* update array info */
+        if (!status && prset->put_array_info)
+            status = prset->put_array_info(paddr, nRequest);
+    } else {
+        if (nRequest < 1) {
+            recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        } else {
+            status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
+                paddr->pfield, paddr);
+            nRequest = 1;
+        }
     }
 
     /* Always do special processing if needed */

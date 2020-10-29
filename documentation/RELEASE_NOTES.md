@@ -17,11 +17,49 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Support for empty arrays
+
+Several problems with empty arrays have been fixed.
+
+#### Changed dbr_size_n(TYPE,COUNT) macro
+
+When called with COUNT=0 the macro no longer returns the number of bytes
+required for a scalar (1 element) but for an empty array (0 elements).
+Make sure you don't call it with COUNT=0 when you really mean COUNT=1.
+
+#### Array records
+
+The soft supports of array records aai, waveform, and subArray as well as
+the aSub record type have been fixed to correctly report 0 elements read
+when reading empty arrays from an input link.
+
+#### Array support for dbpf
+
+The dbpf function now accepts arrays, including empty arrays as a JSON string.
+
+#### Scalar records reading from empty arrays
+
+Records reading scalar fields from empty arrays are now set to INVALID/LINK
+alarm status.
+Links have to call dbGetLink with pnRequest=NULL to be recognized as requests
+for scalars.
+This changes the semantics of pnRequest=NULL. It is now different from
+requesting up to 1 array element, which may return a valid empty array.
+
+### Writing empty arrays to scalar records
+
+Witing an empty array to a scalar field now sets the target record to
+INVALID/LINK alarm but does not modify the value. Before, the value used
+to be set to 0 (without any alarm).
+A target field needs to have the SPC_DBADDR tag to be recognized as an array
+field and the record support must define a put_array_info method.
+
 ### Add registerAllRecordDeviceDrivers()
 
 Addition of registerAllRecordDeviceDrivers() as an iocsh function
-and in iocshRegisterCommon.h.  This function uses dynamic lookup with epicsFindSymbol()
-to perform the same function as a generated \*_registerRecordDeviceDriver() function.
+and in iocshRegisterCommon.h.  This function uses dynamic lookup with
+`epicsFindSymbol()` to perform the same function as a generated
+`*_registerRecordDeviceDriver()` function.
 This allows dynamic loading/linking of support modules without code generation.
 
 This feature is not intended for use by IOCs constructed using the standard EPICS application

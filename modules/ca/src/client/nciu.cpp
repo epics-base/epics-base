@@ -329,7 +329,7 @@ void nciu::write (
     if ( ! this->accessRightState.writePermit() ) {
         throw cacChannel::noWriteAccess();
     }
-    if ( countIn > this->count || countIn == 0 ) {
+    if ( countIn > this->count) {
         throw cacChannel::outOfBounds();
     }
     if ( type == DBR_STRING ) {
@@ -350,7 +350,7 @@ cacChannel::ioStatus nciu::write (
     if ( ! this->accessRightState.writePermit() ) {
         throw cacChannel::noWriteAccess();
     }
-    if ( countIn > this->count || countIn == 0 ) {
+    if ( countIn > this->count) {
         throw cacChannel::outOfBounds();
     }
     if ( type == DBR_STRING ) {

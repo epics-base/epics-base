@@ -17,6 +17,16 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Filters in database input links
+
+Input database links can now use channel filters, it is not necessary to
+make them CA links for the filters to work.
+
+### ai Soft Channel support
+
+The Soft Channel device support for ai records now returns failure when
+fetching the INP link fails.
+
 ### Support for zero-length arrays
 
 Several modifications have been made to properly support zero-length
@@ -372,16 +382,6 @@ also modified the order of some of the fields in the record definitions.*
 As long as all support modules and IOCs are rebuilt from source after updating
 them to use this release of EPICS Base, these changes should not have any
 affect.
-
-### Filters in database links
-
-Input links can now use filters, most importantly array element and sub array
-access, even if they are not channel access links.
-
-### ai Soft Channel support
-
-The Soft Channel device support for ai records now returns failure when
-fetching the INP link fails.
 
 ### logClient reliability
 

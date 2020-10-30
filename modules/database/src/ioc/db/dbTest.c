@@ -954,13 +954,13 @@ static void printBuffer(
     }
 
     /* Now print values */
-    if (no_elements == 0)
-        return;
-
     if (no_elements == 1)
         sprintf(pmsg, "DBF_%s: ", dbr[dbr_type]);
-    else
+    else {
         sprintf(pmsg, "DBF_%s[%ld]: ", dbr[dbr_type], no_elements);
+        if (no_elements == 0)
+            strcat(pmsg, "(empty)");
+    }
     dbpr_msgOut(pMsgBuff, tab_size);
 
     if (status != 0) {

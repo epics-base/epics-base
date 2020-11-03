@@ -43,6 +43,8 @@ skip_commits:
 #   build matrix configuration    #
 #---------------------------------#
 
+image: Visual Studio 2015
+
 # Build Configurations: dll/static, regular/debug
 configuration:
   - dynamic

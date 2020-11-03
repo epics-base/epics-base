@@ -1,6 +1,12 @@
 # .appveyor.yml for use with EPICS Base ci-scripts
 # (see: https://github.com/epics-base/ci-scripts)
 
+# branches to build
+branches:
+  # whitelist
+  only:
+    - 7.0
+
 # Version format
 version: base-{branch}-{build}
 

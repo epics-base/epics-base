@@ -249,7 +249,10 @@ int main(int argc, char *argv[])
 
         } else {
             if (loadedDb || ranScript) {
-                epicsThreadExitMain();
+                // non-interactive IOC.  spin forever
+                while(true) {
+                    epicsThreadSleep(1000.0);
+                }
 
             } else {
                 usage(argv[0], dbd_file);

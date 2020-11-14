@@ -5,6 +5,16 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
+=head1 Menu menuPost
+
+This menu is used by the long string record types to specify whether they
+should generate a monitor event only when their string value changes, or
+every time it gets written to even if the value is the same.
+
+=menu menuPost
+
+=cut
+
 menu(menuPost) {
     choice(menuPost_OnChange, "On Change")
     choice(menuPost_Always, "Always")

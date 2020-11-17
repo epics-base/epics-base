@@ -219,6 +219,8 @@ threadWrapper (rtems_task_argument arg)
  */
 void epicsThreadExitMain (void)
 {
+    cantProceed("epicsThreadExitMain() has been deprecated for lack of usage."
+                "  Please report if you see this message.");
 }
 
 static rtems_status_code

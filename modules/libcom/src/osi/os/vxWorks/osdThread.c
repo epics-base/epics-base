@@ -353,7 +353,8 @@ void epicsThreadResume(epicsThreadId id)
 
 void epicsThreadExitMain(void)
 {
-    errlogPrintf("epicsThreadExitMain was called for vxWorks. Why?\n");
+    cantProceed("epicsThreadExitMain() has been deprecated for lack of usage."
+                "  Please report if you see this message.");
 }
 
 unsigned int epicsThreadGetPriority(epicsThreadId id)

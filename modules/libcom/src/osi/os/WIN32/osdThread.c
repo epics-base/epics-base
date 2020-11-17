@@ -249,7 +249,8 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
  */
 LIBCOM_API void epicsStdCall epicsThreadExitMain ( void )
 {
-    _endthread ();
+    cantProceed("epicsThreadExitMain() has been deprecated for lack of usage."
+                "  Please report if you see this message.");
 }
 
 /*

@@ -79,9 +79,15 @@ static void expectRange(long start, long end)
     testdbGetArrFieldEqual("wf.VAL", DBF_DOUBLE, n+2, n, buf+start);
 }
 
+static void expectEmptyArray(void)
+{
+    testDiag("expecting empty array");
+    testdbGetFieldEqual("wf.NORD", DBF_LONG, 0);
+}
+
 MAIN(linkFilterTest)
 {
-    testPlan(83);
+    testPlan(102);
     startTestIoc("linkFilterTest.db");
 
     testDiag("PINI");
@@ -96,6 +102,8 @@ MAIN(linkFilterTest)
     testDiag("backward range");
     changeRange(5,3,0);
     expectProcFailure("ai");
+    expectProcSuccess("wf");
+    expectEmptyArray();
 
     testDiag("step 2");
     changeRange(1,6,2);
@@ -106,6 +114,8 @@ MAIN(linkFilterTest)
     testDiag("range start beyond src.NORD");
     changeRange(8,9,0);
     expectProcFailure("ai");
+    expectProcSuccess("wf");
+    expectEmptyArray();
 
     testDiag("range end beyond src.NORD");
     changeRange(3,9,0);
@@ -116,6 +126,7 @@ MAIN(linkFilterTest)
     testDiag("range start beyond src.NELM");
     changeRange(11,12,0);
     expectProcFailure("ai");
+    expectProcSuccess("wf");
 
     testDiag("range end beyond src.NELM");
     changeRange(4,12,0);
@@ -126,6 +137,8 @@ MAIN(linkFilterTest)
     testDiag("single value beyond src.NORD");
     changeRange(8,0,0);
     expectProcFailure("ai");
+    expectProcSuccess("wf");
+    expectEmptyArray();
 
     testDiag("single value");
     changeRange(5,0,0);
@@ -136,6 +149,8 @@ MAIN(linkFilterTest)
     testDiag("single beyond rec.NELM");
     changeRange(12,0,0);
     expectProcFailure("ai");
+    expectProcSuccess("wf");
+    expectEmptyArray();
 
     testIocShutdownOk();
     testdbCleanup();

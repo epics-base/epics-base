@@ -1,0 +1,122 @@
+# .github/workflows/ci-scripts-build.yml for use with EPICS Base ci-scripts
+# (see: https://github.com/epics-base/ci-scripts)
+
+# This is YAML - indentation levels are crucial
+
+# Set the 'name:' properties to values that work for you (pvxs)
+
+name: Base
+
+# Trigger on pushes and PRs to any branch
+on:
+  push:
+    paths-ignore:
+      - .appveyor.yml
+  pull_request:
+
+env:
+    SETUP_PATH: .ci-local:.ci
+    BASE: SELF
+    EPICS_TEST_IMPRECISE_TIMING: YES
+
+jobs:
+  build-base:
+    name: ${{ matrix.os }}/${{ matrix.cmp }}/${{ matrix.configuration }}/${{ matrix.wine }}${{ matrix.rtems }}/${{ matrix.extra }}
+    runs-on: ${{ matrix.os }}
+    # Set environment variables from matrix parameters
+    env:
+      CMP: ${{ matrix.cmp }}
+      BCFG: ${{ matrix.configuration }}
+      WINE: ${{ matrix.wine }}
+      RTEMS: ${{ matrix.rtems }}
+      EXTRA: ${{ matrix.extra }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            wine: "64"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: static
+            wine: "64"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: static
+            extra: "CMD_CXXFLAGS=-std=c++11"
+
+          - os: ubuntu-16.04
+            cmp: clang
+            configuration: default
+
+          - os: ubuntu-20.04
+            cmp: clang
+            configuration: default
+            extra: "CMD_CXXFLAGS=-std=c++11"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            rtems: "4.10"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            rtems: "4.9"
+
+          - os: ubuntu-16.04
+            cmp: gcc-4.8
+            utoolchain: true
+            configuration: default
+
+          - os: ubuntu-16.04
+            cmp: gcc-4.9
+            utoolchain: true
+            configuration: default
+
+          - os: ubuntu-20.04
+            cmp: gcc-8
+            utoolchain: true
+            configuration: default
+
+          - os: ubuntu-20.04
+            cmp: clang
+            configuration: default
+
+          - os: macos-latest
+            cmp: clang
+            configuration: default
+
+          - os: windows-2019
+            cmp: vs2019
+            configuration: default
+
+          - os: windows-2019
+            cmp: vs2019
+            configuration: static
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: "apt-get install"
+      run: sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
+      if: runner.os == 'Linux'
+    - name: "apt-get install ${{ matrix.cmp }}"
+      run: |
+        sudo apt-get -y install software-properties-common
+        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        sudo apt-get -y install ${{ matrix.cmp }}
+      if: matrix.utoolchain
+    - name: Prepare and compile dependencies
+      run: python .ci/cue.py prepare
+    - name: Build main module
+      run: python .ci/cue.py build
+    - name: Run main module tests
+      run: python .ci/cue.py test
+    - name: Collect and show test results
+      run: python .ci/cue.py test-results

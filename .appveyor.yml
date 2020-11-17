@@ -37,7 +37,7 @@ skip_commits:
     - 'documentation/*'
     - '**/*.html'
     - '**/*.md'
-    - '.travis.yml'
+    - '.github/*'
 
 #---------------------------------#
 #   build matrix configuration    #

@@ -123,8 +123,9 @@ recommended to set TSE to -2 and set the timestamp in the driver code.
 ### Add registerAllRecordDeviceDrivers()
 
 Addition of registerAllRecordDeviceDrivers() as an iocsh function
-and in iocshRegisterCommon.h.  This function uses dynamic lookup with epicsFindSymbol()
-to perform the same function as a generated \*_registerRecordDeviceDriver() function.
+and in iocshRegisterCommon.h.  This function uses dynamic lookup with
+`epicsFindSymbol()` to perform the same function as a generated
+`*_registerRecordDeviceDriver()` function.
 This allows dynamic loading/linking of support modules without code generation.
 
 This feature is not intended for use by IOCs constructed using the standard EPICS application

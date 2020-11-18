@@ -17,6 +17,95 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Filters in database input links
+
+Input database links can now use channel filters, it is not necessary to
+make them CA links for the filters to work.
+
+### ai Soft Channel support
+
+The Soft Channel device support for ai records now returns failure when
+fetching the INP link fails.
+
+### Support for zero-length arrays
+
+Several modifications have been made to properly support zero-length
+array values inside the IOC and over Channel Access. Some of these changes
+may affect external code that interfaces with the IOC, either directly or
+over the CA client API so we recommend thorough testing of any external
+code that handles array fields when upgrading to this release.
+
+Since these changes affect the Channel Access client-side API they will
+require rebuilding any CA Gateways against this version or Base to
+properly handle zero-length arrays. The `caget`, `caput` and `camonitor`
+client programs are known to work with empty arrays as long as they were
+built with this or a later version of EPICS.
+
+#### Change to the db_access.h `dbr_size_n(TYPE, COUNT)` macro
+
+When called with COUNT=0 this macro no longer returns the number of bytes
+required for a scalar (1 element) but for an empty array (0 elements).
+Make sure code that uses this doesn't call it with COUNT=0 when it really
+means COUNT=1.
+
+Note that the db_access.h header file is included by cadef.h so the change
+can impact Channel Access client programs that use this macro.
+
+#### Channel Access support for zero-length arrays
+
+The `ca_array_put()` and `ca_array_put_callback()` routines now accept an
+element count of zero, and will write a zero-length array to the PV if
+possible. No error will be raised if the target is a scalar field though,
+and the field's value will not be changed.
+
+The `ca_array_get_callback()` and `ca_create_subscription()` routines
+still accept a count of zero to mean fetch as many elements as the PV
+currently holds.
+
+Client programs should be prepared for the `count` fields of any
+`struct event_handler_args` or `struct exception_handler_args` passed to
+their callback routines to be zero.
+
+#### Array records
+
+The soft device support for the array records aai, waveform, and subArray
+as well as the aSub record type now correctly report reading 0 elements
+when getting an empty array from an input link.
+
+#### Array support for dbpf
+
+The dbpf command now accepts array values, including empty arrays, when
+provided as a JSON string. This must be enclosed in quotes so the iocsh
+argument parser sees the JSON as a single argument:
+
+```
+epics> dbpf wf10:i32 '[1, 2, 3, 4, 5]'
+DBF_LONG[5]:        1 = 0x1   2 = 0x2   3 = 0x3   4 = 0x4   5 = 0x5
+```
+
+#### Reading empty arrays as scalar values
+
+Record links that get a scalar value from an array that is currently
+empty will cause the record that has the link field to be set to an
+`INVALID/LINK` alarm status.
+The record code must call `dbGetLink()` with `pnRequest=NULL` for it to
+be recognized as a request for a scalar value though.
+
+This changes the semantics of passing `pnRequest=NULL` to `dbGetLink()`,
+which now behaves differently than passing it a pointer to a long integer
+containing the value 1, which was previously equivalent.
+The latter can successfully fetch a zero-element array without triggering
+a LINK alarm.
+
+#### Writing empty arrays to scalar fields
+
+Record links that put a zero-element array into a scalar field will now set
+the target record to `INVALID/LINK` alarm without changing the field's value.
+Previously the field was set to 0 in this case (with no alarm).
+The target field must be marked as `special(SPC_DBADDR)` to be recognized
+as an array field, and its record support must define a `put_array_info()`
+routine.
+
 ### Timestamp before processing output links
 The record processing code for records with output links has been modified
 to update the timestamp via recGblGetTimeStamp() before processing the

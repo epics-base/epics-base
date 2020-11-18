@@ -18,6 +18,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#define EPICS_PRIVATE_API
+
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "epicsString.h"
@@ -68,6 +70,7 @@ void dbChannelInit (void)
     freeListInitPvt(&dbChannelFreeList,  sizeof(dbChannel), 128);
     freeListInitPvt(&chFilterFreeList,  sizeof(chFilter), 64);
     freeListInitPvt(&dbchStringFreeList, sizeof(epicsOldString), 128);
+    db_init_event_freelists();
 }
 
 static void chf_value(parseContext *parser, parse_result *presult)

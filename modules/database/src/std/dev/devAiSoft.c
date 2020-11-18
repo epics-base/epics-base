@@ -86,9 +86,10 @@ static long read_ai(aiRecord *prec)
 
         prec->udf = FALSE;
         prec->dpvt = &devAiSoft;        /* Any non-zero value */
+        return 2;
     }
     else
         prec->dpvt = NULL;
 
-    return 2;
+    return status;
 }

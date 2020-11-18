@@ -946,13 +946,18 @@ long dbGet(DBADDR *paddr, short dbrType,
     if (offset == 0 && (!nRequest || no_elements == 1)) {
         if (nRequest)
             *nRequest = 1;
+        else if (no_elements < 1) {
+            status = S_db_onlyOne;
+            goto done;
+        }
+
         if (!pfl || pfl->type == dbfl_type_rec) {
             status = dbFastGetConvertRoutine[field_type][dbrType]
                 (paddr->pfield, pbuf, paddr);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
 
-            if (pfl->no_elements < 1) {
+            if (no_elements < 1) {
                 status = S_db_badField;
                 goto done;
             }
@@ -996,6 +1001,11 @@ long dbGet(DBADDR *paddr, short dbrType,
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
 
+            if (pfl->no_elements < 1) {
+                status = S_db_badField;
+                goto done;
+            }
+
             localAddr.field_type = pfl->field_type;
             localAddr.field_size = pfl->field_size;
             localAddr.no_elements = pfl->no_elements;
@@ -1037,7 +1047,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     short dbrType, const void *pbuffer, long nRequest)
 {
     dbLinkInfo  link_info;
-    DBADDR      *pdbaddr = NULL;
+    dbChannel   *chan = NULL;
     dbCommon    *precord = paddr->precord;
     dbCommon    *lockrecs[2];
     dbLocker    locker;
@@ -1075,16 +1085,11 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     if (link_info.ltype == PV_LINK &&
         (link_info.modifiers & (pvlOptCA | pvlOptCP | pvlOptCPP)) == 0) {
-        DBADDR tempaddr;
-
-        if (dbNameToAddr(link_info.target, &tempaddr)==0) {
-            /* This will become a DB link. */
-            pdbaddr = malloc(sizeof(*pdbaddr));
-            if (!pdbaddr) {
-                status = S_db_noMemory;
-                goto cleanup;
-            }
-            *pdbaddr = tempaddr; /* struct copy */
+        chan = dbChannelCreate(link_info.target);
+        if (chan && dbChannelOpen(chan) != 0) {
+            errlogPrintf("ERROR: dbPutFieldLink %s.%s=%s: dbChannelOpen() failed\n",
+                precord->name, pfldDes->name, link_info.target);
+            goto cleanup;
         }
     }
 
@@ -1093,7 +1098,7 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     memset(&locker, 0, sizeof(locker));
     lockrecs[0] = precord;
-    lockrecs[1] = pdbaddr ? pdbaddr->precord : NULL;
+    lockrecs[1] = chan ? dbChannelRecord(chan) : NULL;
     dbLockerPrepare(&locker, lockrecs, 2);
 
     dbScanLockMany(&locker);
@@ -1181,7 +1186,8 @@ static long dbPutFieldLink(DBADDR *paddr,
     case PV_LINK:
     case CONSTANT:
     case JSON_LINK:
-        dbAddLink(&locker, plink, pfldDes->field_type, pdbaddr);
+        dbAddLink(&locker, plink, pfldDes->field_type, chan);
+        chan = NULL; /* don't clean it up */
         break;
 
     case DB_LINK:
@@ -1211,6 +1217,8 @@ unlock:
     dbScanUnlockMany(&locker);
     dbLockerFinalize(&locker);
 cleanup:
+    if (chan)
+        dbChannelDelete(chan);
     free(link_info.target);
     return status;
 }
@@ -1330,25 +1338,21 @@ long dbPut(DBADDR *paddr, short dbrType,
         status = prset->get_array_info(paddr, &dummy, &offset);
         /* paddr->pfield may be modified */
         if (status) goto done;
-    } else
-        offset = 0;
-
-    if (no_elements <= 1) {
-        status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
-            paddr->pfield, paddr);
-        nRequest = 1;
-    } else {
         if (no_elements < nRequest)
             nRequest = no_elements;
         status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
             nRequest, no_elements, offset);
-    }
-
-    /* update array info */
-    if (!status &&
-        paddr->pfldDes->special == SPC_DBADDR &&
-        prset && prset->put_array_info) {
-        status = prset->put_array_info(paddr, nRequest);
+        /* update array info */
+        if (!status && prset->put_array_info)
+            status = prset->put_array_info(paddr, nRequest);
+    } else {
+        if (nRequest < 1) {
+            recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        } else {
+            status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
+                paddr->pfield, paddr);
+            nRequest = 1;
+        }
     }
 
     /* Always do special processing if needed */

@@ -27,7 +27,7 @@ struct dbLocker;
 
 epicsShareFunc long dbDbInitLink(struct link *plink, short dbfType);
 epicsShareFunc void dbDbAddLink(struct dbLocker *locker, struct link *plink,
-    short dbfType, DBADDR *ptarget);
+    short dbfType, dbChannel *ptarget);
 
 #ifdef __cplusplus
 }

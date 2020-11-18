@@ -144,7 +144,7 @@ void dbInitLink(struct link *plink, short dbfType)
 }
 
 void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
-    DBADDR *ptarget)
+    dbChannel *ptarget)
 {
     struct dbCommon *precord = plink->precord;
 

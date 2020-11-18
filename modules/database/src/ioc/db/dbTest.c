@@ -41,6 +41,7 @@
 #include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
+#include "dbConvertJSON.h"
 
 #define MAXLINE 80
 #define MAXMESS 128
@@ -364,8 +365,9 @@ long dbpf(const char *pname,const char *pvalue)
 {
     DBADDR addr;
     long status;
-    short dbrType;
-    size_t n = 1;
+    short dbrType = DBR_STRING;
+    long n = 1;
+    char *array = NULL;
 
     if (!pname || !*pname || !pvalue) {
         printf("Usage: dbpf \"pv name\", \"value\"\n");
@@ -380,16 +382,25 @@ long dbpf(const char *pname,const char *pvalue)
         return -1;
     }
 
-    if (addr.no_elements > 1 &&
-        (addr.dbr_field_type == DBR_CHAR || addr.dbr_field_type == DBR_UCHAR)) {
+    if (addr.no_elements > 1) {
         dbrType = addr.dbr_field_type;
-        n = strlen(pvalue) + 1;
+        if (addr.dbr_field_type == DBR_CHAR || addr.dbr_field_type == DBR_UCHAR) {
+            n = (long)strlen(pvalue) + 1;
+        } else {
+            n = addr.no_elements;
+            array = calloc(n, dbValueSize(dbrType));
+            if (!array) {
+                printf("Out of memory\n");
+                return -1;
+            }
+            status = dbPutConvertJSON(pvalue, dbrType, array, &n);
+            if (status)
+                return status;
+            pvalue = array;
+        }
     }
-    else {
-        dbrType = DBR_STRING;
-    }
-
-    status = dbPutField(&addr, dbrType, pvalue, (long) n);
+    status = dbPutField(&addr, dbrType, pvalue, n);
+    free(array);
     dbgf(pname);
     return status;
 }
@@ -943,13 +954,13 @@ static void printBuffer(
     }
 
     /* Now print values */
-    if (no_elements == 0)
-        return;
-
     if (no_elements == 1)
         sprintf(pmsg, "DBF_%s: ", dbr[dbr_type]);
-    else
+    else {
         sprintf(pmsg, "DBF_%s[%ld]: ", dbr[dbr_type], no_elements);
+        if (no_elements == 0)
+            strcat(pmsg, "(empty)");
+    }
     dbpr_msgOut(pMsgBuff, tab_size);
 
     if (status != 0) {

@@ -743,14 +743,14 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
             for(i=0; i<rtype->no_links; i++) {
                 dbFldDes *pdesc = rtype->papFldDes[rtype->link_ind[i]];
                 DBLINK *plink = (DBLINK*)((char*)prec + pdesc->offset);
-                DBADDR *ptarget;
+                dbChannel *chan;
                 lockRecord *lr;
 
                 if(plink->type!=DB_LINK)
                     continue;
 
-                ptarget = plink->value.pv_link.pvt;
-                lr = ptarget->precord->lset;
+                chan = plink->value.pv_link.pvt;
+                lr = dbChannelRecord(chan)->lset;
                 assert(lr);
 
                 if(lr->precord==pfirst) {

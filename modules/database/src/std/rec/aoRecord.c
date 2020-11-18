@@ -82,7 +82,7 @@ rset aoRSET={
     put_enum_str,
     get_graphic_double,
     get_control_double,
-	get_alarm_double
+    get_alarm_double
 };
 epicsExportAddress(rset,aoRSET);
 
@@ -187,6 +187,9 @@ static long process(struct dbCommon *pcommon)
                 }
         if(!status) convert(prec, value);
         prec->udf = isnan(prec->val);
+        /* Update the timestamp before writing output values so it
+         * will be uptodate if any downstream records fetch it via TSEL */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
     /* check for alarms */
@@ -220,7 +223,10 @@ static long process(struct dbCommon *pcommon)
     if ( !pact && prec->pact ) return(0);
     prec->pact = TRUE;
 
-    recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    if ( pact ) {
+        /* Update timestamp again for asynchronous devices */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
 
     /* check event list */
     monitor(prec);

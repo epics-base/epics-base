@@ -17,6 +17,20 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Timestamp before processing output links
+The record processing code for records with output links has been modified
+to update the timestamp via recGblGetTimeStamp() before processing the
+output links.  This ensures that other records which get processed via
+the output link can use TSEL links to fetch the timestamp which corresponds
+to the data processed by the output link.
+
+This change could result in a slightly earlier timestamp for records whose
+output link is handled by a device driver, but only if the device driver does
+not handle its own timestamping via TSE -2 and instead uses TSE 0 or TSE -1
+to get current time or best time, and the time spent in the device driver is
+greater than your timestamp provider resolution.  For these situations it is
+recommended to set TSE to -2 and set the timestamp in the driver code.
+
 ### Add registerAllRecordDeviceDrivers()
 
 Addition of registerAllRecordDeviceDrivers() as an iocsh function

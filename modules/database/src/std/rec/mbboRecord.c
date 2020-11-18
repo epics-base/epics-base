@@ -215,6 +215,10 @@ static long process(struct dbCommon *pcommon)
         prec->udf = FALSE;
         /* Convert VAL to RVAL */
         convert(prec);
+
+        /* Update the timestamp before writing output values so it
+         * will be uptodate if any downstream records fetch it via TSEL */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
 CONTINUE:
@@ -248,7 +252,11 @@ CONTINUE:
         return 0;
 
     prec->pact = TRUE;
-    recGblGetTimeStampSimm(prec, prec->simm, NULL);
+
+    if ( pact ) {
+        /* Update timestamp again for asynchronous devices */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
 
     monitor(prec);
 

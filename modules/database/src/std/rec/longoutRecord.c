@@ -146,6 +146,10 @@ static long process(struct dbCommon *pcommon)
             value = prec->val;
         }
         if (!status) convert(prec,value);
+
+        /* Update the timestamp before writing output values so it
+         * will be uptodate if any downstream records fetch it via TSEL */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
     /* check for alarms */
@@ -177,7 +181,10 @@ static long process(struct dbCommon *pcommon)
     if ( !pact && prec->pact ) return(0);
     prec->pact = TRUE;
 
-    recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    if ( pact ) {
+        /* Update timestamp again for asynchronous devices */
+        recGblGetTimeStampSimm(prec, prec->simm, NULL);
+    }
 
     /* check event list */
     monitor(prec);

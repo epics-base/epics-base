@@ -220,7 +220,7 @@ void udpSockFanoutTestRx(void* raw)
 #else
     struct timeval timeout;
     memset(&timeout, 0, sizeof(struct timeval));
-    timeout.tv_sec = 10;
+    timeout.tv_sec = 5;
     timeout.tv_usec = 0;
 #endif
     unsigned nremain = nrepeat;
@@ -234,7 +234,7 @@ void udpSockFanoutTestRx(void* raw)
         return;
     }
 
-    while(epicsTimeDiffInSeconds(&now, &start)<=5.0) {
+    while(!epicsTimeGetCurrent(&now) && epicsTimeDiffInSeconds(&now, &start)<=5.0) {
         union CASearchU buf;
         osiSockAddr src;
         osiSocklen_t srclen = sizeof(src);

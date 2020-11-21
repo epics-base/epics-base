@@ -72,7 +72,7 @@ typedef int osiSockOptMcastTTL_t;
 #   define SHUT_RDWR 2
 #endif
 
-#define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
+#define ifreq_size(pifreq) (pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name))
 
 #ifndef IPPORT_USERRESERVED
 #define IPPORT_USERRESERVED 5000

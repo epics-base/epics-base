@@ -104,12 +104,15 @@ jobs:
       with:
         submodules: true
     - name: "apt-get install"
-      run: sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
       if: runner.os == 'Linux'
     - name: "apt-get install ${{ matrix.cmp }}"
       run: |
         sudo apt-get -y install software-properties-common
         sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        sudo apt-get update
         sudo apt-get -y install ${{ matrix.cmp }}
       if: matrix.utoolchain
     - name: Prepare and compile dependencies

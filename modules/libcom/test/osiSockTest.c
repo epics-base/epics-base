@@ -214,6 +214,7 @@ void udpSockFanoutTestRx(void* raw)
 {
     struct TInfo *info = raw;
     epicsTimeStamp start, now;
+    unsigned nremain = nrepeat;
 #ifdef _WIN32
     /* ms */
     DWORD timeout = 10000;
@@ -223,7 +224,6 @@ void udpSockFanoutTestRx(void* raw)
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
 #endif
-    unsigned nremain = nrepeat;
 
     (void)epicsTimeGetCurrent(&start);
     now = start;

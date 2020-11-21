@@ -96,11 +96,9 @@ OS_CLASS = RTEMS
 
 #--------------------------------------------------
 # Operating system flags
-#OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -lnfs -lm
 ifeq ($(OS_API),posix)
 OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
-#OP_SYS_LDLIBS += -lrtemsCom -lrtemscpu -lrtemsbsp -ltftpfs -ltelnetd -lbsd -lz -lm
-OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu  -ltftpfs -lbsd -lz -lm
+OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -ltftpfs -lbsd -lz -lm
 else
 OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -lnfs -lm
 endif

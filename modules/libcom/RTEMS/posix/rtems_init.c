@@ -88,21 +88,23 @@
 epicsEventId 	dhcpDone;
 #endif
 
-
-#ifndef RTEMS_LEGACY_STACK
 /* these settings are needed by the rtems startup
  * may provide by dhcp/bootp
  * or environments from the "BIOS" like u-boot, motboot etc.
  */
-struct in_addr rtems_bsdnet_bootp_server_address;
-char rtemsInit_NTP_server_ip[16];
+char rtemsInit_NTP_server_ip[16] = "141.14.142.121";
 char bootp_server_name_init[128] = "1001.1001@141.14.128.9:/Volumes/Epics";
-char *rtems_bsdnet_bootp_server_name = bootp_server_name_init;
-char bootp_boot_file_name_init[128] = "/Volumes/Epics/myExample/bin/RTEMS-qoriq_e500/myExample.boot";
-char *rtems_bsdnet_bootp_boot_file_name = bootp_boot_file_name_init;
+char bootp_boot_file_name_init[128] = "/Volumes/Epics/myExample/bin/RTEMS-beatnik/myExample.boot";
 char bootp_cmdline_init[128] = "/Volumes/Epics/myExample/iocBoot/iocmyExample/st.cmd";
-char *rtems_bootp_cmdline = bootp_cmdline_init;
+
+struct in_addr rtems_bsdnet_bootp_server_address;
+//!! check rtems_bsdnet_bootp_cmdline
+#ifndef RTEMS_LEGACY_STACK
+char *rtems_bsdnet_bootp_server_name = bootp_server_name_init;
+char *rtems_bsdnet_bootp_boot_file_name = bootp_boot_file_name_init;
+char *rtems_bsdnet_bootp_cmdline = bootp_cmdline_init;
 #endif // not LEGACY Stack
+
 
 /*
  * Prototypes for some functions not in header files
@@ -246,13 +248,13 @@ initialize_local_filesystem(char **argv)
                 printf("Can't unpack tar filesystem\n");
                 return 0;
             }
-            if ((fd = open(rtems_bootp_cmdline, 0)) >= 0) {
+            if ((fd = open(rtems_bsdnet_bootp_cmdline, 0)) >= 0) {
                 close(fd);
-                printf ("***** Found startup script (%s) in IMFS *****\n", rtems_bootp_cmdline);
-                argv[1] = rtems_bootp_cmdline;
+                printf ("***** Found startup script (%s) in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
+                argv[1] = rtems_bsdnet_bootp_cmdline;
                 return 1;
             }
-            printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bootp_cmdline);
+            printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
         }
     } */
     return 0;
@@ -331,7 +333,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
                                                 mount_point, strerror(errno));
             *cp = '/';
         }
-        argv[1] = rtems_bootp_cmdline;
+        argv[1] = rtems_bsdnet_bootp_cmdline;
     }
     else if (hasLocalFilesystem) {
         return;
@@ -343,22 +345,22 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
          * if the pathname does not begin with a '/'.  This allows
          * NFS and TFTP to have a similar view of the remote system.
          */
-        if (rtems_bootp_cmdline[0] == '/')
-            cp = rtems_bootp_cmdline + 1;
+        if (rtems_bsdnet_bootp_cmdline[0] == '/')
+            cp = rtems_bsdnet_bootp_cmdline + 1;
         else
-            cp = rtems_bootp_cmdline;
+            cp = rtems_bsdnet_bootp_cmdline;
         cp = strchr(cp, '/');
         if ((cp == NULL)
-         || ((l = cp - rtems_bootp_cmdline) == 0))
-            LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bootp_cmdline);
+         || ((l = cp - rtems_bsdnet_bootp_cmdline) == 0))
+            LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bsdnet_bootp_cmdline);
         cp = mustMalloc(l + 20, "NFS mount paths");
         server_path = cp;
         server_name = rtems_bsdnet_bootp_server_name;
-        if (rtems_bootp_cmdline[0] == '/') {
+        if (rtems_bsdnet_bootp_cmdline[0] == '/') {
             mount_point = server_path;
-            strncpy(mount_point, rtems_bootp_cmdline, l);
+            strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
             mount_point[l] = '\0';
-            argv[1] = rtems_bootp_cmdline;
+            argv[1] = rtems_bsdnet_bootp_cmdline;
             /*
              * Its probably common to embed the mount point in the server
              * name so, when this is occurring, dont clobber the mount point
@@ -395,14 +397,14 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             }
         }
         else {
-            char *abspath = mustMalloc(strlen(rtems_bootp_cmdline)+2,"Absolute command path");
+            char *abspath = mustMalloc(strlen(rtems_bsdnet_bootp_cmdline)+2,"Absolute command path");
             strcpy(server_path, "/tftpboot/");
             mount_point = server_path + strlen(server_path);
-            strncpy(mount_point, rtems_bootp_cmdline, l);
+            strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
             mount_point[l] = '\0';
             mount_point--;
             strcpy(abspath, "/");
-            strcat(abspath, rtems_bootp_cmdline);
+            strcat(abspath, rtems_bsdnet_bootp_cmdline);
             argv[1] = abspath;
         }
     }
@@ -518,7 +520,9 @@ static void rtshellCallFunc(const iocshArgBuf *args)
 static void
 rtems_netstat (unsigned int level)
 {
-/*
+#ifndef RTEMS_LEGACY_STACK
+    printf ("***** Sorry not implemented yet with the new network stack (bsdlib)\n");
+#else
     rtems_bsdnet_show_if_stats ();
     rtems_bsdnet_show_mbuf_stats ();
     if (level >= 1) {
@@ -530,7 +534,7 @@ rtems_netstat (unsigned int level)
         rtems_bsdnet_show_udp_stats ();
         rtems_bsdnet_show_tcp_stats ();
     }
-*/
+#endif
 }
 
 static const iocshArg netStatArg0 = { "level",iocshArgInt};
@@ -714,8 +718,8 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
             }
             if(!strncmp(name, "new_rtems_cmdline", 20)){
                 //printf(" new_rtems_cmdline : %s\n", value);
-                strncpy(rtems_bootp_cmdline,value, sizeof(bootp_cmdline_init));
-                printf(" rtems_bootp_cmdline : %s\n", rtems_bootp_cmdline);
+                strncpy(rtems_bsdnet_bootp_cmdline,value, sizeof(bootp_cmdline_init));
+                printf(" rtems_bsdnet_bootp_cmdline : %s\n", rtems_bsdnet_bootp_cmdline);
             }
             // printf("---> %s = %s\n", name, value);
         }
@@ -947,12 +951,14 @@ POSIX_Init (void *argument)
       }
     }
 #else // Legacy stack, old network initialization
-    /*
-     * Start network
-     */
     char *cp;
     if ((cp = getenv("EPICS_TS_NTP_INET")) != NULL)
         rtems_bsdnet_config.ntp_server[0] = cp;
+
+    int rtems_bsdnet_ntpserver_count = 1;
+    struct in_addr rtems_bsdnet_ntpserver[1];
+    memcpy(rtems_bsdnet_ntpserver, rtems_bsdnet_config.ntp_server, sizeof(struct in_addr));
+
     if (rtems_bsdnet_config.network_task_priority == 0)
     {
         unsigned int p;
@@ -964,6 +970,9 @@ POSIX_Init (void *argument)
     }
     printf("\n***** Initializing network (Legacy Stack)  *****\n");
     rtems_bsdnet_initialize_network();
+    printf("\n***** Network Status  *****\n");
+    rtems_netstat(3);
+    rtems_bsdnet_synchronize_ntp (0, 0);
 #endif // not RTEMS_LEGACY_STACK
 
     printf("\n***** Setting up file system *****\n");

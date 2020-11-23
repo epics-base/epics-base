@@ -4,7 +4,7 @@
     branch = master
 [submodule "modules/pvAccess"]
     path = modules/pvAccess
-    url = https://github.com/epics-base/pvAccessCPP
+    url = https://github.com/mdavidsaver/pvAccessCPP
     branch = master
 [submodule "modules/normativeTypes"]
     path = modules/normativeTypes

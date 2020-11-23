@@ -28,7 +28,7 @@ char *env_nfsServer;
 char *env_nfsPath;
 char *env_nfsMountPoint;
 
-extern char* rtems_bootp_cmdline;
+extern char* rtems_bsdnet_bootp_cmdline;
 /*
  * Split argument string of form nfs_server:nfs_export:<path>
  * The nfs_export component will be used as:
@@ -47,7 +47,7 @@ splitRtemsBsdnetBootpCmdline(void)
 {
     char *cp1, *cp2, *cp3;
 
-    if ((cp1 = rtems_bootp_cmdline) == NULL)
+    if ((cp1 = rtems_bsdnet_bootp_cmdline) == NULL)
         return;
     if (((cp2 = strchr(cp1, ':')) != NULL)
      && (((cp3 = strchr(cp2+1, ' ')) != NULL)
@@ -61,7 +61,7 @@ splitRtemsBsdnetBootpCmdline(void)
             env_nfsServer = cp1;
             env_nfsMountPoint = env_nfsPath = epicsStrDup(cp2);
             *cp3 = '/';
-            rtems_bootp_cmdline = cp2;
+            rtems_bsdnet_bootp_cmdline = cp2;
         }
     }
 }
@@ -210,7 +210,7 @@ setBootConfigFromNVRAM(void)
 
     if ((rtems_bsdnet_bootp_boot_file_name = gev("mot-/dev/enet0-file", nvp)) == NULL)
         rtems_bsdnet_bootp_boot_file_name = motScriptParm(mot_script_boot, 'f');
-    rtems_bootp_cmdline = gev("epics-script", nvp);
+    rtems_bsdnet_bootp_cmdline = gev("epics-script", nvp);
     splitRtemsBsdnetBootpCmdline();
     splitNfsMountPath(gev("epics-nfsmount", nvp));
     rtems_bsdnet_config.ntp_server[0] = gev("epics-ntpserver", nvp);
@@ -316,7 +316,7 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.ifconfig->ip_netmask = addr(ip_netmask, nvram.SubnetIPAddressMask);
 
     rtems_bsdnet_bootp_boot_file_name = nvram.BootFilenameString;
-    rtems_bootp_cmdline = nvram.ArgumentFilenameString;
+    rtems_bsdnet_bootp_cmdline = nvram.ArgumentFilenameString;
     splitRtemsBsdnetBootpCmdline();
 }
 
@@ -355,7 +355,7 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.hostname = env("HOSTNAME", "iocNobody");
     rtems_bsdnet_config.ifconfig->ip_address = env("IPADDR0", "192.168.0.2");
     rtems_bsdnet_bootp_boot_file_name = env("BOOTFILE", "uC5282App.boot");
-    rtems_bootp_cmdline = env("CMDLINE", "epics/iocBoot/iocNobody/st.cmd");
+    rtems_bsdnet_bootp_cmdline = env("CMDLINE", "epics/iocBoot/iocNobody/st.cmd");
     splitNfsMountPath(env("NFSMOUNT", NULL));
     if ((cp1 = env("TZ", NULL)) != NULL)
         epicsEnvSet("TZ", cp1);

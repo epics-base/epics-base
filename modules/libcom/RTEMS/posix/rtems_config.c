@@ -132,6 +132,8 @@ extern void *POSIX_Init(void *argument);
 #define RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE (16 * 1024)
 #define RTEMS_BSD_CONFIG_SERVICE_FTPD
 #define RTEMS_BSD_CONFIG_FIREWALL_PF
+#else
+#include <rtems/shellconfig.h>
 #endif // not LEGACY_STACK
 
 #if __RTEMS_MAJOR__ < 5 // still needed in Version 4?

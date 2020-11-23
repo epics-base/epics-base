@@ -104,7 +104,7 @@ OP_SYS_CFLAGS_NET_yes = -DRTEMS_LEGACY_STACK
 OP_SYS_CFLAGS_NET_no  = -DHAVE_SOCKADDR_SA_LEN=1
 OP_SYS_CFLAGS += $(OP_SYS_CFLAGS_NET_$(RTEMS_HAS_NETWORKING))
 
-OP_SYS_LDLIBS_posix_NET_yes = -ltftpfs -lbsd -lz
+OP_SYS_LDLIBS_posix_NET_yes = -ltftpfs -lnfs -lz
 OP_SYS_LDLIBS_posix_NET_no = -ltftpfs -lbsd -lz
 OP_SYS_LDLIBS_kernel_NET_yes = -lCom -lnfs
 OP_SYS_LDLIBS_kernel_NET_no = -lCom -lnfs

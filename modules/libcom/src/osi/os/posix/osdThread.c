@@ -32,6 +32,7 @@
 #include "ellLib.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
+#include "osdPosixMutexPriv.h"
 #include "epicsString.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
@@ -327,10 +328,10 @@ static void once(void)
     int status;
 
     pthread_key_create(&getpthreadInfo,0);
-    status = pthread_mutex_init(&onceLock,0);
-    checkStatusOnceQuit(status,"pthread_mutex_init","epicsThreadInit");
-    status = pthread_mutex_init(&listLock,0);
-    checkStatusOnceQuit(status,"pthread_mutex_init","epicsThreadInit");
+    status = osdPosixMutexInit(&onceLock,0);
+    checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
+    status = osdPosixMutexInit(&listLock,0);
+    checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
     pcommonAttr = calloc(1,sizeof(commonAttr));
     if(!pcommonAttr) checkStatusOnceQuit(errno,"calloc","epicsThreadInit");
     status = pthread_attr_init(&pcommonAttr->attr);

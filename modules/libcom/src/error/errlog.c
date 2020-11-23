@@ -41,6 +41,28 @@
 /*Declare storage for errVerbose */
 int errVerbose = 0;
 
+#if defined(__GNUC__)
+/* Recursive calls to errlogPrint() typically arise from osdThread or osdMutex
+ * initialization failures.  Keep them from escalating to a stack overflow
+ * by detecting recursive calls to errlog entry points.
+ */
+static __thread char errlogRecurse=0;
+
+#define BEGIN_RECURSE do { \
+    if(errlogRecurse) { \
+        return 0; \
+    } \
+    errlogRecurse = 1; \
+    } while(0)
+
+#define END_RECURSE do{ errlogRecurse = 0; } while(0)
+
+#else
+#define BEGIN_RECURSE do{}while(0)
+#define END_RECURSE do{}while(0)
+
+#endif
+
 static void errlogExitHandler(void *);
 static void errlogThread(void);
 
@@ -107,13 +129,15 @@ int errlogPrintf(const char *pFormat, ...)
 {
     va_list pvar;
     char *pbuffer;
-    int nchar;
+    int nchar = 0;
     int isOkToBlock;
+
+    BEGIN_RECURSE;
 
     if (epicsInterruptIsInterruptContext()) {
         epicsInterruptContextMessage
             ("errlogPrintf called from interrupt level\n");
-        return 0;
+        goto cleanup;
     }
 
     errlogInit(0);
@@ -129,35 +153,41 @@ int errlogPrintf(const char *pFormat, ...)
     }
 
     if (pvtData.atExit)
-        return nchar;
+        goto cleanup;
 
     pbuffer = msgbufGetFree(isOkToBlock);
-    if (!pbuffer)
-        return 0;
+    if (!pbuffer) {
+        nchar = 0;
+        goto cleanup;
+    }
 
     va_start(pvar, pFormat);
     nchar = tvsnPrint(pbuffer, pvtData.maxMsgSize, pFormat?pFormat:"", pvar);
     va_end(pvar);
     msgbufSetSize(nchar);
+cleanup:
+    END_RECURSE;
     return nchar;
 }
 
 int errlogVprintf(const char *pFormat,va_list pvar)
 {
-    int nchar;
+    int nchar = 0;
     char *pbuffer;
     int isOkToBlock;
     FILE *console;
 
+    BEGIN_RECURSE;
+
     if (epicsInterruptIsInterruptContext()) {
         epicsInterruptContextMessage
             ("errlogVprintf called from interrupt level\n");
-        return 0;
+        goto cleanup;
     }
 
     errlogInit(0);
     if (pvtData.atExit)
-        return 0;
+        goto cleanup;
     isOkToBlock = epicsThreadIsOkToBlock();
 
     pbuffer = msgbufGetFree(isOkToBlock);
@@ -165,7 +195,7 @@ int errlogVprintf(const char *pFormat,va_list pvar)
         console = pvtData.console ? pvtData.console : stderr;
         vfprintf(console, pFormat, pvar);
         fflush(console);
-        return 0;
+        goto cleanup;
     }
 
     nchar = tvsnPrint(pbuffer, pvtData.maxMsgSize, pFormat?pFormat:"", pvar);
@@ -175,6 +205,8 @@ int errlogVprintf(const char *pFormat,va_list pvar)
         fflush(console);
     }
     msgbufSetSize(nchar);
+cleanup:
+    END_RECURSE;
     return nchar;
 }
 
@@ -189,13 +221,6 @@ int errlogPrintfNoConsole(const char *pFormat, ...)
     va_list pvar;
     int nchar;
 
-    if (epicsInterruptIsInterruptContext()) {
-        epicsInterruptContextMessage
-            ("errlogPrintfNoConsole called from interrupt level\n");
-        return 0;
-    }
-
-    errlogInit(0);
     va_start(pvar, pFormat);
     nchar = errlogVprintfNoConsole(pFormat, pvar);
     va_end(pvar);
@@ -204,25 +229,29 @@ int errlogPrintfNoConsole(const char *pFormat, ...)
 
 int errlogVprintfNoConsole(const char *pFormat, va_list pvar)
 {
-    int nchar;
+    int nchar = 0;
     char *pbuffer;
+
+    BEGIN_RECURSE;
 
     if (epicsInterruptIsInterruptContext()) {
         epicsInterruptContextMessage
             ("errlogVprintfNoConsole called from interrupt level\n");
-        return 0;
+        goto cleanup;
     }
 
     errlogInit(0);
     if (pvtData.atExit)
-        return 0;
+        goto cleanup;
 
     pbuffer = msgbufGetFree(1);
     if (!pbuffer)
-        return 0;
+        goto cleanup;
 
     nchar = tvsnPrint(pbuffer, pvtData.maxMsgSize, pFormat?pFormat:"", pvar);
     msgbufSetSize(nchar);
+cleanup:
+    END_RECURSE;
     return nchar;
 }
 
@@ -230,18 +259,20 @@ int errlogVprintfNoConsole(const char *pFormat, va_list pvar)
 int errlogSevPrintf(errlogSevEnum severity, const char *pFormat, ...)
 {
     va_list pvar;
-    int nchar;
+    int nchar = 0;
     int isOkToBlock;
+
+    BEGIN_RECURSE;
 
     if (epicsInterruptIsInterruptContext()) {
         epicsInterruptContextMessage
             ("errlogSevPrintf called from interrupt level\n");
-        return 0;
+        goto cleanup;
     }
 
     errlogInit(0);
     if (pvtData.sevToLog > severity)
-        return 0;
+        goto cleanup;
 
     isOkToBlock = epicsThreadIsOkToBlock();
     if (pvtData.atExit || (isOkToBlock && pvtData.toConsole)) {
@@ -257,30 +288,34 @@ int errlogSevPrintf(errlogSevEnum severity, const char *pFormat, ...)
     va_start(pvar, pFormat);
     nchar = errlogSevVprintf(severity, pFormat, pvar);
     va_end(pvar);
+cleanup:
+    END_RECURSE;
     return nchar;
 }
 
 int errlogSevVprintf(errlogSevEnum severity, const char *pFormat, va_list pvar)
 {
     char *pnext;
-    int nchar;
+    int nchar = 0;
     int totalChar = 0;
     int isOkToBlock;
+
+    BEGIN_RECURSE;
 
     if (epicsInterruptIsInterruptContext()) {
         epicsInterruptContextMessage
             ("errlogSevVprintf called from interrupt level\n");
-        return 0;
+        goto cleanup;
     }
 
     errlogInit(0);
     if (pvtData.atExit)
-        return 0;
+        goto cleanup;
 
     isOkToBlock = epicsThreadIsOkToBlock();
     pnext = msgbufGetFree(isOkToBlock);
     if (!pnext)
-        return 0;
+        goto cleanup;
 
     nchar = sprintf(pnext, "sevr=%s ", errlogGetSevEnumString(severity));
     pnext += nchar; totalChar += nchar;
@@ -291,6 +326,8 @@ int errlogSevVprintf(errlogSevEnum severity, const char *pFormat, va_list pvar)
         totalChar++;
     }
     msgbufSetSize(totalChar);
+cleanup:
+    END_RECURSE;
     return nchar;
 }
 

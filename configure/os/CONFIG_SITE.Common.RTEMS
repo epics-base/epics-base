@@ -7,7 +7,7 @@
 #
 # FHI:
 RTEMS_VERSION = 5
-RTEMS_BASE = /home/ad/MVME6100/rtems/$(RTEMS_VERSION)
+RTEMS_BASE = /home/heinz/MVME6100/rtems/$(RTEMS_VERSION)
 
 # Cross-compile toolchain in $(RTEMS_TOOLS)/bin
 #

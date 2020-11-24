@@ -1,6 +1,6 @@
 [submodule "modules/pvData"]
     path = modules/pvData
-    url = https://github.com/epics-base/pvDataCPP
+    url = https://github.com/mdavidsaver/pvDataCPP
     branch = master
 [submodule "modules/pvAccess"]
     path = modules/pvAccess

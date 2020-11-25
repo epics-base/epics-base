@@ -63,6 +63,7 @@
 #include <rtems/telnetd.h>
 #if __RTEMS_MAJOR__ > 4
 #include <rtems/printer.h>
+#include <rtems/telnetd.h>
 #endif
 #include "epicsVersion.h"
 #include "epicsThread.h"
@@ -76,6 +77,7 @@
 #include "osdTime.h"
 #include "epicsMemFs.h"
 #include "epicsEvent.h"
+#include "errlog.h"
 
 #include "epicsRtemsInitHooks.h"
 
@@ -793,6 +795,68 @@ default_network_dhcpcd(void)
 }
 #endif // not RTEMS_LEGACY_STACK
 
+#if __RTEMS_MAJOR__>4
+/*
+ ***********************************************************************
+ *                         TELNET DAEMON                               *
+ ***********************************************************************
+ */
+#define LINE_SIZE 256
+static void
+telnet_pseudoIocsh(char *name, void *arg)
+{
+  char line[LINE_SIZE];
+  int fid[3], save_fid[3];
+
+  printf("info:  pty dev name = %s\n", name);
+
+  save_fid[1] = dup2(1,1);
+  fid[1] = dup2( fileno(stdout), 1);
+  if (fid[1] == -1 ) printf("Can't dup stdout\n");
+  save_fid[2] = dup2(2,2);
+  fid[2] = dup2( fileno(stderr), 2);
+  if (fid[2] == -1 ) printf("Can't dup stderr\n");
+
+  const char *prompt = "tIocSh> ";
+
+  while (1) {
+    fputs(prompt, stdout);
+    fflush(stdout);
+    /* telnet close not detected ??? tbd */
+    if (fgets(line, LINE_SIZE, stdin) == NULL) {
+      dup2(save_fid[1],1);
++     dup2(save_fid[2],2);
+      return;
+    }
+    if (line[strlen(line)-1] == '\n') line[strlen(line)-1] = 0;
+    if (!strncmp( line, "bye",3)) {
+      printf( "%s", "Will end session\n");
+      dup2(save_fid[1],1);
+      dup2(save_fid[2],2);
+      return;
+     }
+     iocshCmd(line);
+   }
+}
+
+#define SHELL_ENTRY telnet_pseudoIocsh
+
+/*
+ *  Telnet daemon configuration
+ */
+rtems_telnetd_config_table rtems_telnetd_config = {
+  .command = SHELL_ENTRY,
+  .arg = NULL,
+  .priority = 99, // if RTEMS_NETWORK and .priority == 0 bsd_network_prio should be used ...
+  .stack_size = 0,
+  .client_maximum = 5, // should be 1, on RTEMS and Epics it makes only sense for one connection a time
+  .login_check = NULL,
+  .keep_stdio = false
+};
+
+#endif
+
+
 /*
  * RTEMS Startup task
  */
@@ -1004,6 +1068,13 @@ POSIX_Init (void *argument)
     /*/Volumes/Epics/myExample/bin/RTEMS-xilinx_zynq_a9_qemu
      * Run the EPICS startup script
      */
+#if __RTEMS_MAJOR__>4
+    // if telnetd is requested ...
+    printf(" Will try to start telnetd with prio %d ...\n", rtems_telnetd_config.priority);
+    result = rtems_telnetd_initialize();
+    printf (" telnetd initialized with result %d\n", result);
+#endif
+
     printf ("***** Preparing EPICS application *****\n");
     iocshRegisterRTEMS ();
     set_directory (argv[1]);

@@ -51,7 +51,6 @@ void testdbMetaDoubleSizes(void)
     testOffset(precision);
     testOffset(time);
     testOffset(utag);
-    testOffset(padTime);
     testOffset(upper_disp_limit);
     testOffset(lower_disp_limit);
     testOffset(upper_ctrl_limit);
@@ -177,7 +176,6 @@ void testdbMetaEnumSizes(void)
     testOffset(amsg);
     testOffset(time);
     testOffset(utag);
-    testOffset(padTime);
     testOffset(no_str);
     testOffset(padenumStrs);
     testOffset(strs);
@@ -315,7 +313,7 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
 {
-    testPlan(113);
+    testPlan(111);
     testdbPrepare();
 
     testdbMetaDoubleSizes();

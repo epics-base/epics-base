@@ -26,7 +26,7 @@ static
 void checkTime(void)
 {
     epicsTimeStamp stamp;
-    epicsInt32 tag;
+    epicsUTag tag;
 
     dbCommon* target = testdbRecordPtr("target");
     dbCommon* src = testdbRecordPtr("src");

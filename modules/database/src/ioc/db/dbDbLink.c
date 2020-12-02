@@ -359,7 +359,7 @@ static long dbDbGetAlarm(const struct link *plink, epicsEnum16 *status,
     return dbDbGetAlarmMsg(plink, status, severity, NULL, 0u);
 }
 
-static long dbDbGetTimeStampTag(const struct link *plink, epicsTimeStamp *pstamp, epicsInt32 *ptag)
+static long dbDbGetTimeStampTag(const struct link *plink, epicsTimeStamp *pstamp, epicsUTag *ptag)
 {
     dbChannel *chan = linkChannel(plink);
     dbCommon *precord = dbChannelRecord(chan);

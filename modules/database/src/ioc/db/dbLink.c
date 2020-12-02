@@ -427,7 +427,7 @@ long dbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
 }
 
 long dbGetTimeStampTag(const struct link *plink,
-                       epicsTimeStamp *pstamp, epicsInt32 *ptag)
+                       epicsTimeStamp *pstamp, epicsUTag *ptag)
 {
     lset *plset = plink->lset;
 

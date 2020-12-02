@@ -47,7 +47,7 @@ static int parse_ok(void *raw)
 static db_field_log* filter(void* raw, dbChannel *chan, db_field_log *pfl)
 {
     utagPvt *pvt = (utagPvt*)raw;
-    epicsInt32 utag = pfl->type==dbfl_type_rec ? dbChannelRecord(chan)->utag : pfl->utag;
+    epicsUTag utag = pfl->type==dbfl_type_rec ? dbChannelRecord(chan)->utag : pfl->utag;
     int drop = (utag&pvt->mask)!=pvt->value;
 
     if(pfl->ctx!=dbfl_context_event || pfl->mask&DBE_PROPERTY) {

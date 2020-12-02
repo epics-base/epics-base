@@ -19,7 +19,13 @@
 #include <string.h>
 
 #ifdef _WIN32
+#  include <windows.h>
 #  include <crtdbg.h>
+#  if !defined(_MSC_VER) || _MSC_VER>=1700
+#    include <errhandlingapi.h>
+/* provided by mingw and MSVC >= 2012 */
+#    define HAVE_SETERROMODE
+#  endif
 #endif
 
 #include "epicsThread.h"
@@ -90,6 +96,15 @@ static void testOnce(void *dummy) {
     testLock = epicsMutexMustCreate();
     perlHarness = (getenv("HARNESS_ACTIVE") != NULL);
 #ifdef _WIN32
+#ifdef HAVE_SETERROMODE
+    /* SEM_FAILCRITICALERRORS - Don't display modal dialog
+     * !SEM_NOALIGNMENTFAULTEXCEPT - auto-fix unaligned access
+     * !SEM_NOGPFAULTERRORBOX - enable Windows Error Reporting (also enables post-mortem debugger hooks)
+     * SEM_NOOPENFILEERRORBOX - Don't display modal dialog
+     */
+    SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);
+#endif
+    /* Disable dialog for assertion failures */
     _CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_FILE |_CRTDBG_MODE_DEBUG );
     _CrtSetReportFile( _CRT_ASSERT, _CRTDBG_FILE_STDERR );
     _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_FILE |_CRTDBG_MODE_DEBUG );

@@ -114,8 +114,7 @@ DBCORE_API extern int dbAccessDebugPUTF;
          * maintain 8-byte alignment. */
 #define DBRtime \
         epicsTimeStamp	time;		/* time stamp*/\
-        epicsInt32 utag;\
-        epicsInt32 padTime;
+        epicsUTag utag;
 #define DBRenumStrs \
         epicsUInt32     no_str;         /* number of strings*/\
         epicsInt32      padenumStrs;    /*padding to force 8 byte align*/\

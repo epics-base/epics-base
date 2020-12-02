@@ -67,7 +67,7 @@ typedef struct calc_link {
     struct link out;
     double arg[CALCPERFORM_NARGS];
     epicsTimeStamp time;
-    epicsInt32 utag;
+    epicsUTag utag;
     double val;
 } calc_link;
 
@@ -535,7 +535,7 @@ static long lnkCalc_getElements(const struct link *plink, long *nelements)
 struct lcvt {
     double *pval;
     epicsTimeStamp *ptime;
-    epicsInt32 *ptag;
+    epicsUTag *ptag;
 };
 
 static long readLocked(struct link *pinp, void *vvt)
@@ -754,7 +754,7 @@ static long lnkCalc_getAlarm(const struct link *plink, epicsEnum16 *status,
     return lnkCalc_getAlarmMsg(plink, status, severity, NULL, 0u);
 }
 
-static long lnkCalc_getTimestampTag(const struct link *plink, epicsTimeStamp *pstamp, epicsInt32 *ptag)
+static long lnkCalc_getTimestampTag(const struct link *plink, epicsTimeStamp *pstamp, epicsUTag *ptag)
 {
     calc_link *clink = CONTAINER(plink->value.json.jlink,
         struct calc_link, jlink);

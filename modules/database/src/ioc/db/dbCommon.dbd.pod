@@ -524,7 +524,7 @@ field which is then used to acquire a timestamp.
 		interest(2)
 		extra("epicsTimeStamp      time")
 	}
-	field(UTAG,DBF_LONG) {
+        field(UTAG,DBF_UINT64) {
 		prompt("Time Tag")
 		special(SPC_NOMOD)
 		interest(3)

@@ -390,18 +390,22 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         }
         if( (*options) & DBR_TIME ) {
             epicsUInt32 *ptime = (epicsUInt32 *)pbuffer;
+            epicsUInt64 *ptime64;
 
             if (!pfl) {
                 *ptime++ = pcommon->time.secPastEpoch;
                 *ptime++ = pcommon->time.nsec;
-                *ptime++ = pcommon->utag;
             } else {
                 *ptime++ = pfl->time.secPastEpoch;
                 *ptime++ = pfl->time.nsec;
-                *ptime++ = pfl->utag;
             }
-            *ptime++ = 0; /* padding */
-            pbuffer = (char *)ptime;
+            ptime64 = (epicsUInt64*)ptime;
+            if (!pfl || pfl->type == dbfl_type_rec) {
+                *ptime64++ = pcommon->utag;
+            } else {
+                *ptime64++ = pfl->utag;
+            }
+            pbuffer = (char *)ptime64;
         }
         if( (*options) & DBR_ENUM_STRS )
             get_enum_strs(paddr, &pbuffer, prset, options);

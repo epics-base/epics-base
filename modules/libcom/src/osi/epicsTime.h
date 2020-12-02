@@ -36,6 +36,10 @@ typedef struct epicsTimeStamp {
     epicsUInt32    nsec;           /**< \brief nanoseconds within second */
 } epicsTimeStamp;
 
+/** \brief Type of UTAG field (dbCommon::utag)
+ */
+typedef epicsUInt64     epicsUTag;
+
 /** \brief Old time-stamp data type, deprecated.
  * \deprecated TS_STAMP was provided for compatibility with Base-3.13 code.
  * It will be removed in some future release of EPICS 7.

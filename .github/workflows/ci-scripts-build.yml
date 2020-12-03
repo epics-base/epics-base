@@ -103,6 +103,8 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Automatic core dumper analysis
+      uses: mdavidsaver/ci-core-dumper@master
     - name: "apt-get install"
       run: |
         sudo apt-get update

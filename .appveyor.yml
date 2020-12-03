@@ -98,17 +98,22 @@ matrix:
 
 install:
   - cmd: git submodule update --init --recursive
+  - cmd: pip install git+https://github.com/mdavidsaver/ci-core-dumper#egg=ci-core-dumper
   - cmd: python .ci/cue.py prepare
 
 build_script:
   - cmd: python .ci/cue.py build
 
 test_script:
+  - cmd: python -m ci_core_dumper install
   - cmd: python .ci/cue.py test
 
 on_finish:
   - ps: Get-ChildItem *.tap -Recurse -Force | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
   - cmd: python .ci/cue.py build test-results -s
+
+on_failure:
+  - cmd: python -m ci_core_dumper report
 
 #---------------------------------#
 #         debugging               #

@@ -38,6 +38,7 @@ skip_commits:
     - 'templates/*'
     - '**/*.html'
     - '**/*.md'
+    - '.github/*'
 
 #---------------------------------#
 #   build matrix configuration    #

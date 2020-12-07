@@ -88,8 +88,8 @@ public:
 private:
     clientBufMemoryManager clientBufMemMgr;
     tsFreeList < casMonitor, 1024 > casMonitorFreeList;
-    tsDLList < casStrmClient > clientList;
-    tsDLList < casIntfOS > intfList;
+    ::tsDLList < casStrmClient > clientList;
+    ::tsDLList < casIntfOS > intfList;
     mutable epicsMutex mutex;
     mutable epicsMutex diagnosticCountersMutex;
     caServer & adapter;

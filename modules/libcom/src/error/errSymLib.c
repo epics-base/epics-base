@@ -132,7 +132,7 @@ int errSymbolAdd(long errNum, const char *name)
  ***************************************************************/
 static void errRawCopy(long statusToDecode, char *pBuf, size_t bufLength)
 {
-    epicsUInt16 modnum = (statusToDecode >>= 16) & 0xffff;
+    epicsUInt16 modnum = (statusToDecode >> 16) & 0xffff;
     epicsUInt16 errnum = statusToDecode & 0xffff;
 
     assert(bufLength > 20);

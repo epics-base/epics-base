@@ -290,11 +290,33 @@ static void testDbVerify(const char *record)
     dbFinishEntry(&entry);
 }
 
+static void testSoftChanDTYP(const char *record)
+{
+    DBENTRY entry;
+    epicsEnum16 *pdtyp;
+
+    testDiag("# # # # # # # testSoftChanDTYP('%s') # # # # # # # #", record);
+
+    dbInitEntry(pdbbase, &entry);
+    if (dbFindRecord(&entry, record) != 0)
+        testAbort("Can't find record '%s'", record);
+
+    dbFindField(&entry, "DTYP");
+    pdtyp = (epicsEnum16 *)entry.pfield;
+    if (!pdtyp)
+        testAbort("Can't find DTYP field in '%s'", record);
+
+    testOk(*pdtyp == 0, "Default DTYP is 0 (got %d)", *pdtyp);
+
+    dbPutString(&entry, "Soft Channel");
+    testOk(*pdtyp == 0, "Soft Channel is index 0 (got %d)", *pdtyp);
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbStaticTest)
 {
-    testPlan(310);
+    testPlan(312);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -313,6 +335,8 @@ MAIN(dbStaticTest)
     testRec2Entry("testalias");
     testRec2Entry("testalias2");
     testRec2Entry("testalias3");
+
+    testSoftChanDTYP("testrec");
 
     eltc(0);
     testIocInitOk();

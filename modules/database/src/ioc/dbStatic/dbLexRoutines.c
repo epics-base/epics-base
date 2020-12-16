@@ -789,7 +789,7 @@ static void dbDevice(char *recordtype,char *linktype,
     devSup              *pdevSup;
     dbRecordType        *pdbRecordType;
     GPHENTRY            *pgphentry;
-    int                 i,link_type;
+    int                 i,link_type,soft_channel;
     pgphentry = gphFind(pdbbase->pgpHash,recordtype,&pdbbase->recordTypeList);
     if(!pgphentry) {
         epicsPrintf("Record type \"%s\" not found for device \"%s\"\n",
@@ -815,6 +815,13 @@ static void dbDevice(char *recordtype,char *linktype,
     if(pgphentry) {
         return;
     }
+    soft_channel = strcmp(choicestring, "Soft Channel") == 0;
+    if (soft_channel && ellCount(&pdbRecordType->recList) > 0) {
+        epicsPrintf("%s device support defined after records loaded\n",
+                    choicestring);
+        yyerror(NULL);
+        return;
+    }
     pdevSup = dbCalloc(1,sizeof(devSup));
     pdevSup->name = epicsStrDup(dsetname);
     pdevSup->choice = epicsStrDup(choicestring);
@@ -825,7 +832,12 @@ static void dbDevice(char *recordtype,char *linktype,
     } else {
         pgphentry->userPvt = pdevSup;
     }
-    ellAdd(&pdbRecordType->devList,&pdevSup->node);
+    if (soft_channel && ellCount(&pdbRecordType->devList) > 0) {
+        ellInsert(&pdbRecordType->devList, NULL, &pdevSup->node);
+    }
+    else {
+        ellAdd(&pdbRecordType->devList, &pdevSup->node);
+    }
 }
 
 static void dbDriver(char *name)

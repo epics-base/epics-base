@@ -1,2 +1,7 @@
-device(x, CONSTANT, devxSoft, "Soft Channel")
 device(x, INST_IO , devxScanIO, "Scan I/O")
+
+# "Soft Channel" devices had to be loaded first so they become the
+# default for records that don't set DTYP. This is no longer needed.
+# dbStaticTest.c's testSoftChanDTYP() routine checks that loading it
+# second as we do here still causes it to have index 0 and be default.
+device(x, CONSTANT, devxSoft, "Soft Channel")

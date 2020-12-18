@@ -87,8 +87,10 @@ TAPTOJUNIT                 = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
 PROVE                      = $(PERL) $(TOOLS)/epicsProve.pl
 PROVE.tap                  = $(PROVE) --ext .tap --exec "$(CAT)"
 
-TEST_FAILURE_FILE          = $(TOP)/.tests-failed
+TEST_FAILURE_FILE          = $(abspath $(TOP)/.tests-failed)
 PROVE_FAILURE              = echo $(abspath .)>> $(TEST_FAILURE_FILE)
+TAPS_FAILURE_FILE          = .taps-failed
+TAPFILE_FAILURE            = echo $@>> $(TAPS_FAILURE_FILE)
 
 #---------------------------------------------------------------
 # private versions of lex/yacc from EPICS

@@ -4,30 +4,48 @@
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# This file may appear trivial, but it exists to let the build system
-# fail the 'make test-results' target with a nice output including a
-# summary of the directories where test failures were reported.
-# Test results are collected from the .tap files fed to epicsProve.pl
-# which returns with an exit status of 0 (success) if all tests passed
-# or 1 (failure) if any of the .tap files contained failed tests.
-# When epicsProve.pl indicates a failure, the directory that it was
-# running in is appended to the file $(TOP)/.tests-failed which this
-# program reads in after all the test directories have been visited.
+# This file lets the build system fail a top-level 'make test-results'
+# target with output showing the directories where test failures were
+# reported and the test programs that failed there.
+#
 # The exit status of this program is 1 (failure) if any tests failed,
 # otherwise 0 (success).
 
 use strict;
 use warnings;
 
-die "Usage: testFailures.pl .tests-failed\n"
+use File::Basename;
+
+die "Usage: testFailures.pl /path/to/base/.tests-failed\n"
     unless @ARGV == 1;
 
-open FAILURES, '<', shift or
-    exit 0;
-my @failures = <FAILURES>;
-close FAILURES;
+my $path = shift;
+my $base = dirname($path);
 
-print "\nTest failures were reported in:\n",
-    (map {"    $_"} @failures), "\n";
+open(my $failures, '<', $path) or
+    exit 0;
+my @failures = dedup(<$failures>);
+close $failures;
+chomp @failures;
+
+exit 0 unless @failures;
+
+print "\nTests failed:\n";
+for my $dir (@failures) {
+    my $reldir = $dir;
+    $reldir =~ s($base/)();
+    print "    In $reldir:\n";
+    open(my $taps, '<', "$dir/.taps-failed") or next;
+    my @taps = dedup(<$taps>);
+    close $taps;
+    chomp @taps;
+    print '', (map {"        $_\n"} @taps), "\n";
+}
 
 exit 1;
+
+sub dedup {
+    my %dedup;
+    $dedup{$_}++ for @_;
+    return sort keys %dedup;
+}

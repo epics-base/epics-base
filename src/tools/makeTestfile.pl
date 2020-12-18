@@ -36,8 +36,10 @@ use Cwd 'abs_path';
 
 if (\$^O eq 'MSWin32') {
     # Use system on Windows, exec doesn't work the same there and
-    # GNUmake thinks the test has finished as soon as Perl exits.
-    system('./$exe') == 0 or die "Can't run $exe: \$!\\n";
+    # GNUmake thinks the test has finished too soon.
+    my \$status = system('./$exe');
+    die "Can't run $exe: \$!\\n" if \$status == -1;
+    exit \$status >> 8;
 }
 else {
     exec './$exe' or die "Can't run $exe: \$!\\n";

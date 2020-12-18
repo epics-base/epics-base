@@ -3,9 +3,9 @@
 
 # This is YAML - indentation levels are crucial
 
-# Workflow name
+# Workflow name, shared by all branches
 
-name: Base-3.15
+name: Base
 
 # Trigger on pushes and PRs to any branch
 on:

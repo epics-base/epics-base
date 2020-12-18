@@ -3,15 +3,17 @@
 
 # This is YAML - indentation levels are crucial
 
-# Set the 'name:' properties to values that work for you
+# Workflow name
 
-name: Base
+name: Base-3.15
 
 # Trigger on pushes and PRs to any branch
 on:
   push:
     paths-ignore:
-      - .appveyor.yml
+      - '.appveyor.yml'
+      - 'documentation/*'
+      - 'startup/*'
   pull_request:
 
 env:

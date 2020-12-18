@@ -16,28 +16,30 @@ use warnings;
 
 use File::Basename;
 
-die "Usage: testFailures.pl /path/to/base/.tests-failed\n"
-    unless @ARGV == 1;
+die "Usage: testFailures.pl /path/to/top/.tests-failed.log .taps-failed.log\n"
+    unless @ARGV == 2;
 
-my $path = shift;
-my $base = dirname($path);
+my ($dirlog, $faillog) = @ARGV;
+my $top = dirname($dirlog);
 
-open(my $failures, '<', $path) or
+# No file means success.
+open(my $logfile, '<', $dirlog) or
     exit 0;
-my @failures = dedup(<$failures>);
-close $failures;
-chomp @failures;
+my @faildirs = dedup(<$logfile>);
+close $logfile;
+chomp @faildirs;
 
-exit 0 unless @failures;
+# Empty file also means success.
+exit 0 unless grep {$_} @faildirs;
 
-print "\nTests failed:\n";
-for my $dir (@failures) {
+print "\nTests failed in:\n";
+for my $dir (@faildirs) {
     my $reldir = $dir;
-    $reldir =~ s($base/)();
-    print "    In $reldir:\n";
-    open(my $taps, '<', "$dir/.taps-failed") or next;
-    my @taps = dedup(<$taps>);
-    close $taps;
+    $reldir =~ s($top/)();
+    print "    $reldir\n";
+    open(my $taplog, '<', "$dir/$faillog") or next;
+    my @taps = dedup(<$taplog>);
+    close $taplog;
     chomp @taps;
     print '', (map {"        $_\n"} @taps), "\n";
 }

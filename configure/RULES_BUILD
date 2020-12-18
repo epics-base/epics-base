@@ -339,8 +339,8 @@ runtests: run-tap-tests
 run-tap-tests: $(TESTSCRIPTS.t)
 ifneq ($(TESTSCRIPTS.t),)
 ifdef RUNTESTS_ENABLED
-	$(ECHO) "$(PROVE) --failures --color $^"
-	@$(PROVE) --failures --color $^ || $(PROVE_FAILURE)
+	$(ECHO) "$(PROVE) $^"
+	@$(PROVE) $^ || $(PROVE_FAILURE)
 endif
 endif
 
@@ -351,8 +351,8 @@ test-results: tap-results
 tap-results: $(TAPFILES)
 ifneq ($(strip $(TAPFILES)),)
 ifdef RUNTESTS_ENABLED
-	$(ECHO) "$(PROVE.tap) --failures --color $^"
-	@$(PROVE.tap) --failures --color $^ || $(PROVE_FAILURE)
+	$(ECHO) "$(PROVE.tap) $^"
+	@$(PROVE.tap) $^ || $(PROVE_FAILURE)
 endif
 
 CURRENT_TAPFILES := $(wildcard $(TAPFILES))
@@ -360,8 +360,8 @@ CURRENT_JUNITFILES := $(wildcard $(JUNITFILES))
 endif
 
 clean-tests:
-ifneq ($(CURRENT_TAPFILES),)
-	$(RM) $(CURRENT_TAPFILES) $(TAPS_FAILURE_FILE)
+ifneq ($(CURRENT_TAPFILES)$(TAPS_FAILED_LOG),)
+	$(RM) $(CURRENT_TAPFILES) $(TAPS_FAILED_LOG)
 endif
 ifneq ($(CURRENT_JUNITFILES),)
 	$(RM) $(CURRENT_JUNITFILES)

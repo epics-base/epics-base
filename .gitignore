@@ -7,7 +7,6 @@
 /include/
 /templates/
 /configure/*.local
-/.tests-failed
 O.*/
 /QtC-*
 *.orig

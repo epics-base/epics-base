@@ -37,9 +37,9 @@ uninstall$(DIVIDER)%:
 
 before-runtests before-test-results: rm-failure-file
 rm-failure-file:
-	@$(RM) $(TEST_FAILURE_FILE)
+	@$(RM) $(TESTS_FAILED_PATH)
 runtests test-results:
-	$(PERL) $(TOOLS)/testFailures.pl $(TEST_FAILURE_FILE)
+	$(SHOWTESTFAILURES)
 
 help:
 	@echo "Usage: gnumake [options] [target] ..."

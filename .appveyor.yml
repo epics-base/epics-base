@@ -68,7 +68,7 @@ environment:
   - CMP: vs2013
   - CMP: vs2012
   - CMP: vs2010
-  - CMP: mingw
+  - CMP: gcc
 
 # Platform: processor architecture
 platform:

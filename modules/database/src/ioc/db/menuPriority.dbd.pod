@@ -7,6 +7,20 @@
 # EPICS Base is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
+
+=head1 Menu menuPriority
+
+This menu is used for the C<PRIO> field of all record types. It controls
+the relative priority of records scheduled with C<SCAN=Event> or
+C<SCAN=I/O Intr>, and also of records that use asynchronous completion.
+
+=menu menuPriority
+
+The number of priorities is set in various other places in the code too,
+so adding new entries to this menu will probably break the IOC build.
+
+=cut
+
 menu(menuPriority) {
 	choice(menuPriorityLOW,"LOW")
 	choice(menuPriorityMEDIUM,"MEDIUM")

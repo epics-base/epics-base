@@ -64,10 +64,15 @@ DEPCLEAN = $(call FIND_TOOL,depclean.pl)
 
 #---------------------------------------------------------------
 # Tools for testing
-TAPTOJUNIT                 = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
-PROVE                      = $(PERL) $(TOOLS)/epicsProve.pl
-PROVE.tap                  = $(PROVE) --ext .tap --exec "$(CAT)"
+TAPS_FAILED_LOG       = .taps-failed.log
+TESTS_FAILED_LOG      = .tests-failed.log
+TESTS_FAILED_PATH     = $(abspath $(TOP)/$(TESTS_FAILED_LOG))
 
-TEST_FAILURE_FILENAME      = .tests-failed.log
-TEST_FAILURE_FILE          = $(TOP)/$(TEST_FAILURE_FILENAME)
-PROVE_FAILURE              = echo $(abspath .)>> $(TEST_FAILURE_FILE)
+TAPTOJUNIT            = $(PERL) $(TOOLS)/tap-to-junit-xml.pl
+PROVE                 = $(PERL) $(TOOLS)/epicsProve.pl --failures --color
+PROVE.tap             = $(PROVE) --ext .tap --exec "$(CAT)"
+TESTFAILURES          = $(PERL) $(TOOLS)/testFailures.pl
+SHOWTESTFAILURES      = $(TESTFAILURES) $(TESTS_FAILED_PATH) $(TAPS_FAILED_LOG)
+
+PROVE_FAILURE         = echo $(abspath .)>> $(TESTS_FAILED_PATH)
+TAPFILE_FAILURE       = echo $@>> $(TAPS_FAILED_LOG)

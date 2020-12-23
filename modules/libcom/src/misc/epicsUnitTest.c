@@ -227,7 +227,12 @@ int testDone(void) {
 
     epicsMutexMustLock(testLock);
     if (perlHarness) {
-        if (!planned) printf("1..%d\n", tested);
+        if (!planned)
+            printf("1..%d\n", tested);
+        else if (tested != planned)
+            status = 2;
+        if (failed)
+            status |= 1;
     } else {
         if (planned && tested > planned) {
             printf("\nRan %d tests but only planned for %d!\n", tested, planned);
@@ -242,7 +247,7 @@ int testDone(void) {
             if (bonus) testResult("Todo Passes", bonus);
             if (failed) {
                 testResult("Failed", failed);
-                status = 1;
+                status |= 1;
             }
             if (skipped) testResult("Skipped", skipped);
         }

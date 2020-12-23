@@ -47,14 +47,9 @@ realclean:
 
 .PHONY: RELEASE.host realclean
 
-# Append all our live submodule failure files
-FAILURE_FILES = $(addsuffix /$(TEST_FAILURE_FILENAME), $(LIVE_SUBMODULES))
-
-define combine_failure_files
-	@$(TOUCH) $(FAILURE_FILES)
-	@$(CAT) $(FAILURE_FILES) >> $(TEST_FAILURE_FILE)
-endef
-runtests: | $(addsuffix $(DIVIDER)runtests, $(LIVE_SUBMODULES))
-	$(if $(FAILURE_FILES), $(combine_failure_files))
-test-results: | $(addsuffix $(DIVIDER)test-results, $(LIVE_SUBMODULES))
-	$(if $(FAILURE_FILES), $(combine_failure_files))
+# Testing: Combine test failure logs from the live submodules
+TESTS_FAILED_LOGS = $(wildcard $(addsuffix /$(TESTS_FAILED_LOG), \
+    $(LIVE_SUBMODULES)))
+runtests test-results: % : | $(addsuffix $(DIVIDER)%, $(LIVE_SUBMODULES))
+	$(if $(TESTS_FAILED_LOGS), \
+	    @$(CAT) $(TESTS_FAILED_LOGS)>> $(TESTS_FAILED_PATH))

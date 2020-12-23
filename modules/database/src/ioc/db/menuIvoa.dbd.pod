@@ -9,7 +9,7 @@
 
 =head1 Menu menuIvoa
 
-This menu specifies the possibile actions to take when the INVALID alarm is
+This menu specifies the possible actions to take when the INVALID alarm is
 triggered. See individual record types for more information.
 
 =menu menuIvoa

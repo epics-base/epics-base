@@ -1,0 +1,66 @@
+#*************************************************************************
+# Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+=head1 Menu menuPini
+
+This menu defines the choices for the C<PINI> field, which controls whether
+and when each record should be processed during initialization or pausing
+of the IOC. Choices other than C<NO> cause record processing at the
+following initHook transitions:
+
+=over 4
+
+=item YES
+
+C<initHookAfterScanInit> E<mdash> All records and links have been
+initialized but the scan threads and CA server are not running yet, nor
+have CA links been connected up. The initHook C<initHookAfterInitialProcess>
+immediately follows this procssing.
+
+=item RUN
+
+C<initHookAtIocRun> E<mdash> The C<iocRun()> routine has just been called,
+although not necessarily for the first time.
+
+=item RUNNING
+
+C<initHookAfterIocRunning> E<mdash> All remaining initializations have
+taken place, C<interruptAccept> is enabled, the scan threads and CA server
+are running and the IOC is processing records. CA links might not have
+finished connecting though, and sequence programs won't usually have been
+started yet.
+
+=item PAUSE
+
+C<initHookAtIocPause> E<mdash> The C<iocPause()> routine has just been
+called and the IOC is about to suspend operations.
+
+=item PAUSED
+
+C<initHookAfterIocPaused> E<mdash> The CA server, CA link operations and
+the scan threads have been paused and C<interruptAccept> disabled.
+
+=back
+
+Note that the order in which records that have the same C<PINI> value get
+processed can be controlled by setting their C<PHAS> field, which is honored
+for C<PINI> processing as well as for regular scanning.
+
+=menu menuPini
+
+=cut
+
+menu(menuPini) {
+	choice(menuPiniNO,"NO")
+	choice(menuPiniYES,"YES")
+	choice(menuPiniRUN,"RUN")
+	choice(menuPiniRUNNING,"RUNNING")
+	choice(menuPiniPAUSE,"PAUSE")
+	choice(menuPiniPAUSED,"PAUSED")
+}

@@ -3,7 +3,7 @@
 
 # This is YAML - indentation levels are crucial
 
-# Set the 'name:' properties to values that work for you (pvxs)
+# Workflow name, shared by all branches
 
 name: Base
 
@@ -11,7 +11,9 @@ name: Base
 on:
   push:
     paths-ignore:
-      - .appveyor.yml
+      - '.appveyor.yml'
+      - 'documentation/*'
+      - 'startup/*'
   pull_request:
 
 env:
@@ -21,7 +23,7 @@ env:
 
 jobs:
   build-base:
-    name: ${{ matrix.os }}/${{ matrix.cmp }}/${{ matrix.configuration }}/${{ matrix.wine }}${{ matrix.rtems }}/${{ matrix.extra }}
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     # Set environment variables from matrix parameters
     env:
@@ -38,66 +40,80 @@ jobs:
             cmp: gcc
             configuration: default
             wine: "64"
+            name: "Ub-20 gcc-9 + MinGW"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: static
             wine: "64"
+            name: "Ub-20 gcc-9 + MinGW, static"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: static
             extra: "CMD_CXXFLAGS=-std=c++11"
+            name: "Ub-20 gcc-9 C++11, static"
 
           - os: ubuntu-16.04
             cmp: clang
             configuration: default
+            name: "Ub-16 clang-9"
 
           - os: ubuntu-20.04
             cmp: clang
             configuration: default
             extra: "CMD_CXXFLAGS=-std=c++11"
+            name: "Ub-20 clang-10 C++11"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
             rtems: "4.10"
+            name: "Ub-20 gcc-9 + RT-4.10"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
             rtems: "4.9"
+            name: "Ub-20 gcc-9 + RT-4.9"
 
           - os: ubuntu-16.04
             cmp: gcc-4.8
             utoolchain: true
             configuration: default
+            name: "Ub-16 gcc-4.8"
 
           - os: ubuntu-16.04
             cmp: gcc-4.9
             utoolchain: true
             configuration: default
+            name: "Ub-16 gcc-4.9"
 
           - os: ubuntu-20.04
             cmp: gcc-8
             utoolchain: true
             configuration: default
+            name: "Ub-20 gcc-8"
 
           - os: ubuntu-20.04
             cmp: clang
             configuration: default
+            name: "Ub-20 clang-10"
 
           - os: macos-latest
             cmp: clang
             configuration: default
+            name: "MacOS clang-12"
 
           - os: windows-2019
             cmp: vs2019
             configuration: default
+            name: "Win2019 MSC-19"
 
           - os: windows-2019
             cmp: vs2019
             configuration: static
+            name: "Win2019 MSC-19, static"
 
     steps:
     - uses: actions/checkout@v2

@@ -309,10 +309,10 @@ int          status;
     arg.ok = 0;
 
     status = pthread_create(&id, 0, find_pri_range, &arg);
-    checkStatusQuit(status, "pthread_create","epicsThreadInit");
+    checkStatusOnceQuit(status, "pthread_create","epicsThreadInit");
 
     status = pthread_join(id, &dummy);
-    checkStatusQuit(status, "pthread_join","epicsThreadInit");
+    checkStatusOnceQuit(status, "pthread_join","epicsThreadInit");
 
     a_p->minPriority = arg.min_pri;
     a_p->maxPriority = arg.max_pri;
@@ -328,9 +328,9 @@ static void once(void)
 
     pthread_key_create(&getpthreadInfo,0);
     status = pthread_mutex_init(&onceLock,0);
-    checkStatusQuit(status,"pthread_mutex_init","epicsThreadInit");
+    checkStatusOnceQuit(status,"pthread_mutex_init","epicsThreadInit");
     status = pthread_mutex_init(&listLock,0);
-    checkStatusQuit(status,"pthread_mutex_init","epicsThreadInit");
+    checkStatusOnceQuit(status,"pthread_mutex_init","epicsThreadInit");
     pcommonAttr = calloc(1,sizeof(commonAttr));
     if(!pcommonAttr) checkStatusOnceQuit(errno,"calloc","epicsThreadInit");
     status = pthread_attr_init(&pcommonAttr->attr);

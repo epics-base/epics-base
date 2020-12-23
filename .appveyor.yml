@@ -6,6 +6,7 @@ branches:
   # whitelist
   only:
     - 7.0
+    - /R7\.0\.\d+.*/
 
 # Version format
 version: base-{branch}-{build}
@@ -83,14 +84,17 @@ matrix:
     CMP: vs2012
   - platform: x64
     CMP: vs2010
-  - platform: x64
-    CMP: vs2008
   # Exclude more jobs to reduce build time
   # Skip 32-bit for "middle-aged" compilers
   - platform: x86
     CMP: vs2017
   - platform: x86
     CMP: vs2015
+  # MinGW debug builds use the same libraries, unlike VS
+  - configuration: dynamic-debug
+    CMP: gcc
+  - configuration: static-debug
+    CMP: gcc
 
 #---------------------------------#
 #     building & testing          #

@@ -83,7 +83,16 @@ $sem
 \$ENV{HARNESS_ACTIVE} = 1 if scalar \@ARGV && shift eq '-tap';
 \$ENV{TOP} = abs_path(\$ENV{TOP}) if exists \$ENV{TOP};
 
-system('$exec') == 0 or die "Can't run $exec: \$!\\n";
+if (\$^O eq 'MSWin32') {
+    # Use system on Windows, exec doesn't work the same there and
+    # GNUmake thinks the test has finished too soon.
+    my \$status = system('$exec');
+    die "Can't run $exec: \$!\\n" if \$status == -1;
+    exit \$status >> 8;
+}
+else {
+    exec '$exec' or die "Can't run $exec: \$!\\n";
+}
 EOF
 
 close $OUT or die "Can't close $target: $!\n";

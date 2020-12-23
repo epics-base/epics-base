@@ -5,35 +5,50 @@
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# This file may appear trivial, but it exists to let the build system
-# fail the 'make test-results' target with a nice output including a
-# summary of the directories where test failures were reported.
-# Test results are collected from the .tap files fed to epicsProve.pl
-# which returns with an exit status of 0 (success) if all tests passed
-# or 1 (failure) if any of the .tap files contained failed tests.
-# When epicsProve.pl indicates a failure, the directory that it was
-# running in is appended to the file $(TOP)/.tests-failed which this
-# program reads in after all the test directories have been visited.
+# This file lets the build system fail a top-level 'make test-results'
+# target with output showing the directories where test failures were
+# reported and the test programs that failed there.
+#
 # The exit status of this program is 1 (failure) if any tests failed,
 # otherwise 0 (success).
 
 use strict;
 use warnings;
 
-die "Usage: testFailures.pl .tests-failed\n"
-    unless @ARGV == 1;
+use File::Basename;
+
+die "Usage: testFailures.pl /path/to/top/.tests-failed.log .taps-failed.log\n"
+    unless @ARGV == 2;
+
+my ($dirlog, $faillog) = @ARGV;
+my $top = dirname($dirlog);
 
 # No file means success.
-open FAILURES, '<', shift or
+open(my $logfile, '<', $dirlog) or
     exit 0;
-chomp(my @failures = <FAILURES>);
-close FAILURES;
+my @faildirs = dedup(<$logfile>);
+close $logfile;
+chomp @faildirs;
 
-# A file with just empty lines also mean success
-my @dirs = grep {$_} @failures;
-exit 0 unless @dirs;
+# Empty file also means success.
+exit 0 unless grep {$_} @faildirs;
 
-print "\nTest failures were reported in:\n",
-    (map {"    $_\n"} @dirs), "\n\n";
+print "\nTests failed in:\n";
+for my $dir (@faildirs) {
+    my $reldir = $dir;
+    $reldir =~ s($top/)();
+    print "    $reldir\n";
+    open(my $taplog, '<', "$dir/$faillog") or next;
+    my @taps = dedup(<$taplog>);
+    close $taplog;
+    chomp @taps;
+    print '', (map {"        $_\n"} @taps), "\n";
+}
 
 exit 1;
+
+sub dedup {
+    my %dedup;
+    $dedup{$_}++ for @_;
+    return sort keys %dedup;
+}

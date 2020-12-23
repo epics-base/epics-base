@@ -358,7 +358,8 @@ runtests: run-tap-tests
 run-tap-tests: $(TESTSCRIPTS.t)
 ifneq ($(TESTSCRIPTS.t),)
 ifdef RUNTESTS_ENABLED
-	$(PROVE) --failures --color $^ || $(PROVE_FAILURE)
+	$(ECHO) "$(PROVE) $^"
+	@$(PROVE) $^ || $(PROVE_FAILURE)
 endif
 endif
 
@@ -369,7 +370,8 @@ test-results: tap-results
 tap-results: $(TAPFILES)
 ifneq ($(strip $(TAPFILES)),)
 ifdef RUNTESTS_ENABLED
-	$(PROVE.tap) --failures --color $^ || $(PROVE_FAILURE)
+	$(ECHO) "$(PROVE.tap) $^"
+	@$(PROVE.tap) $^ || $(PROVE_FAILURE)
 endif
 
 CURRENT_TAPFILES := $(wildcard $(TAPFILES))
@@ -377,8 +379,8 @@ CURRENT_JUNITFILES := $(wildcard $(JUNITFILES))
 endif
 
 clean-tests:
-ifneq ($(CURRENT_TAPFILES),)
-	$(RM) $(CURRENT_TAPFILES)
+ifneq ($(CURRENT_TAPFILES)$(TAPS_FAILED_LOG),)
+	$(RM) $(CURRENT_TAPFILES) $(TAPS_FAILED_LOG)
 endif
 ifneq ($(CURRENT_JUNITFILES),)
 	$(RM) $(CURRENT_JUNITFILES)
@@ -387,7 +389,8 @@ endif
 # A .tap file is the output from running the associated test script
 $(TAPFILES.t): %.tap: %.t
 ifdef RUNTESTS_ENABLED
-	$(PERL) $< -tap > $@
+	$(ECHO) "$(PERL) $< -tap > $@"
+	@$(PERL) $< -tap > $@ || $(TAPFILE_FAILURE)
 endif
 
 $(JUNITFILES.t): %-results.xml: %.tap

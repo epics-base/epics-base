@@ -50,8 +50,9 @@ uninstall$(DIVIDER)%: | clean
 	$(RMDIR) $(addsuffix /$(subst uninstall$(DIVIDER),,$@), \
 	    $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB))
 
+# Only run this at the top of the parent
 runtests test-results:
-	@$(PERL) $(TOOLS)/testFailures.pl $(TEST_FAILURE_FILE)
+	@$(SHOWTESTFAILURES)
 
 else
   #
@@ -63,10 +64,10 @@ else
 
 endif # DISABLE_TOP_RULES
 
+# Clean out old results
 before-runtests before-test-results: rm-failure-file
 rm-failure-file:
-	@$(RM) $(TEST_FAILURE_FILE)
-	@$(TOUCH) $(TEST_FAILURE_FILE)
+	$(RM) $(TESTS_FAILED_PATH)
 
 help:
 	@echo "Usage: gnumake [options] [target] ..."

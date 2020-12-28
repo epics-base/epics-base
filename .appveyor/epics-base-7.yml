@@ -1,5 +1,5 @@
-# .appveyor.yml for use with EPICS Base ci-scripts
-# (see: https://github.com/epics-base/ci-scripts)
+# Appveyor configuration file for EPICS Base 7 builds
+# (see also https://github.com/epics-base/ci-scripts)
 
 # branches to build
 branches:

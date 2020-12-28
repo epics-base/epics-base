@@ -56,7 +56,7 @@ website where these original reference chapters are now being published.
 * [Output Mode Select Menu](menuOmsl.html)
 * [Process at iocInit Menu](menuPini.html)
 * [Post Monitors Menu](menuPost.html)
-* [Priority Menu](menuPrio.html)
+* [Priority Menu](menuPriority.html)
 * [Scan Menu](menuScan.html)
 * [Simulation Mode Menu](menuSimm.html)
 * [Yes/No Menu](menuYesNo.html)

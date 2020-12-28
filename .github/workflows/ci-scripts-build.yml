@@ -11,9 +11,11 @@ name: Base
 on:
   push:
     paths-ignore:
-      - '.appveyor.yml'
       - 'documentation/*'
       - 'startup/*'
+      - '.appveyor/*'
+      - '**/*.html'
+      - '**/*.md'
   pull_request:
 
 env:

@@ -36,9 +36,10 @@ clone_depth: 5
 skip_commits:
   files:
     - 'documentation/*'
+    - 'startup/*'
+    - '.github/*'
     - '**/*.html'
     - '**/*.md'
-    - '.github/*'
 
 #---------------------------------#
 #   build matrix configuration    #

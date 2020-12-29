@@ -11,9 +11,11 @@ name: Base
 on:
   push:
     paths-ignore:
-      - '.appveyor.yml'
       - 'documentation/*'
       - 'startup/*'
+      - '.appveyor/*'
+      - '**/*.html'
+      - '**/*.md'
   pull_request:
 
 env:
@@ -35,6 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Job names also name artifacts, character limitations apply
         include:
           - os: ubuntu-20.04
             cmp: gcc
@@ -139,5 +142,10 @@ jobs:
       run: python .ci/cue.py build
     - name: Run main module tests
       run: python .ci/cue.py test
+    - name: Upload tapfiles Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: tapfiles ${{ matrix.name }}
+        path: '**/O.*/*.tap'
     - name: Collect and show test results
       run: python .ci/cue.py test-results

@@ -80,9 +80,9 @@ COMMON_DIR = ../O.Common
 IOCS_APPL_TOP               = $(shell $(FULLPATHNAME) $(INSTALL_LOCATION))
 
 #-------------------------------------------------------
-# Make echo output - suppress echoing if make's '-s' flag is set
+# Make echo output - suppress echoing if '-s' flag was given
 NOP = :
-ECHO = @$(if $(findstring s,$(MFLAGS)),$(NOP),echo)
+ECHO = @$(if $(filter -s,$(MFLAGS)),$(NOP),echo)
 
 #-------------------------------------------------------
 ifdef T_A

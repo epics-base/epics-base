@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/sysctl.h>
 
 #include <osiFileName.h>
 
@@ -43,6 +44,7 @@ char *epicsGetExecName(void)
 
     if(!ret) {
         int mib[4];
+        size_t cb = max;
         mib[0] = CTL_KERN;
         mib[1] = KERN_PROC;
         mib[2] = KERN_PROC_PATHNAME;

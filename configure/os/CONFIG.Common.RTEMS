@@ -104,6 +104,10 @@ OP_SYS_CFLAGS_NET_yes = -DRTEMS_LEGACY_STACK
 OP_SYS_CFLAGS_NET_no  = -DHAVE_SOCKADDR_SA_LEN=1
 OP_SYS_CFLAGS += $(OP_SYS_CFLAGS_NET_$(RTEMS_HAS_NETWORKING))
 
+ifeq ($(RTEMS_HAS_POSIX_API),yes)
+POSIX_CPPFLAGS = -D_GNU_SOURCE -D_DEFAULT_SOURCE
+endif
+
 OP_SYS_LDLIBS_posix_NET_yes = -ltftpfs -lnfs -lz -telnetd
 OP_SYS_LDLIBS_posix_NET_no = -ltftpfs -lbsd -lz
 OP_SYS_LDLIBS_kernel_NET_yes = -lCom -lnfs

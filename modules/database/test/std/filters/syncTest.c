@@ -225,19 +225,19 @@ MAIN(syncTest)
     testOk(!!(red = dbStateCreate("red")), "state 'red' created successfully");
 
     /* nonexisting state */
-    testOk(!(pch = dbChannelCreate("x.VAL{\"sync\":{\"m\":\"while\",\"s\":\"blue\"}}")),
+    testOk(!(pch = dbChannelCreate("x.VAL{sync:{m:'while',s:'blue'}}")),
            "dbChannel with sync (m='while' s='blue') (nonex state) failed");
     /* missing state */
-    testOk(!(pch = dbChannelCreate("x.VAL{\"sync\":{\"m\":\"while\"}}")),
+    testOk(!(pch = dbChannelCreate("x.VAL{sync:{m:'while'}}")),
            "dbChannel with sync (m='while') (no state) failed");
     /* missing mode */
-    testOk(!(pch = dbChannelCreate("x.VAL{\"sync\":{\"s\":\"red\"}}")),
+    testOk(!(pch = dbChannelCreate("x.VAL{sync:{s:'red'}}")),
            "dbChannel with sync (s='red') (no mode) failed");
 
     /* mode WHILE */
 
     testHead("Mode WHILE  (m='while', s='red')");
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"sync\":{\"m\":\"while\",\"s\":\"red\"}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{sync:{m:'while',s:'red'}}")),
            "dbChannel with plugin sync (m='while' s='red') created");
 
     /* Start the free-list */
@@ -274,7 +274,7 @@ MAIN(syncTest)
     /* mode UNLESS */
 
     testHead("Mode UNLESS  (m='unless', s='red')");
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"sync\":{\"m\":\"unless\",\"s\":\"red\"}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{sync:{m:'unless',s:'red'}}")),
            "dbChannel with plugin sync (m='unless' s='red') created");
 
     checkAndOpenChannel(pch, plug);
@@ -306,7 +306,7 @@ MAIN(syncTest)
     /* mode BEFORE */
 
     testHead("Mode BEFORE  (m='before', s='red')");
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"sync\":{\"m\":\"before\",\"s\":\"red\"}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{sync:{m:'before',s:'red'}}")),
            "dbChannel with plugin sync (m='before' s='red') created");
 
     checkAndOpenChannel(pch, plug);
@@ -340,7 +340,7 @@ MAIN(syncTest)
     /* mode FIRST */
 
     testHead("Mode FIRST  (m='first', s='red')");
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"sync\":{\"m\":\"first\",\"s\":\"red\"}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{sync:{m:'first',s:'red'}}")),
            "dbChannel with plugin sync (m='first' s='red') created");
 
     checkAndOpenChannel(pch, plug);
@@ -373,7 +373,7 @@ MAIN(syncTest)
     /* mode LAST */
 
     testHead("Mode LAST  (m='last', s='red')");
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"sync\":{\"m\":\"last\",\"s\":\"red\"}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{sync:{m:'last',s:'red'}}")),
            "dbChannel with plugin sync (m='last' s='red') created");
 
     checkAndOpenChannel(pch, plug);
@@ -407,7 +407,7 @@ MAIN(syncTest)
     /* mode AFTER */
 
     testHead("Mode AFTER  (m='after', s='red')");
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"sync\":{\"m\":\"after\",\"s\":\"red\"}}")),
+    testOk(!!(pch = dbChannelCreate("x.VAL{sync:{m:'after',s:'red'}}")),
            "dbChannel with plugin sync (m='after' s='red') created");
 
     checkAndOpenChannel(pch, plug);

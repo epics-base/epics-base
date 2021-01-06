@@ -75,18 +75,18 @@ static void testRetargetJLink(void)
 
     testdbGetFieldEqual("rec:j1", DBF_DOUBLE, 10.0);
     /* minimal args */
-    testLongStrEq("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":5}}");
+    testLongStrEq("rec:j1.INP$", "{calc:{expr:'A+5',args:5}}");
 
     /* with [] */
-    testPutLongStr("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":[7]}}");
+    testPutLongStr("rec:j1.INP$", "{calc:{expr:'A+5',args:[7]}}");
     testdbPutFieldOk("rec:j1.PROC", DBF_LONG, 1);
 
     /* with const */
-    testPutLongStr("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":[{\"const\":7}]}}");
+    testPutLongStr("rec:j1.INP$", "{calc:{expr:'A+5',args:[{const:7}]}}");
     testdbPutFieldOk("rec:j1.PROC", DBF_LONG, 1);
 
     testdbGetFieldEqual("rec:j1", DBF_DOUBLE, 12.0);
-    testLongStrEq("rec:j1.INP$", "{\"calc\":{\"expr\":\"A+5\",\"args\":[{\"const\":7}]}}");
+    testLongStrEq("rec:j1.INP$", "{calc:{expr:'A+5',args:[{const:7}]}}");
 }
 
 MAIN(linkRetargetLinkTest)

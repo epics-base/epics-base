@@ -178,7 +178,7 @@ static void check(short dbr_type) {
     /* Default: should not change anything */
 
     testHead("Ten %s elements from rec, increment 1, full size (default)", typname);
-    createAndOpen(valname, "{\"arr\":{}}", "(default)", &pch, 1);
+    createAndOpen(valname, "{arr:{}}", "(default)", &pch, 1);
     testOk(pch->final_type == valaddr.field_type,
            "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
     testOk(pch->final_no_elements == valaddr.no_elements,
@@ -188,7 +188,7 @@ static void check(short dbr_type) {
     dbChannelDelete(pch);
 
     testHead("Ten %s elements from rec, increment 1, out-of-bound start parameter", typname);
-    createAndOpen(valname, "{\"arr\":{\"s\":-500}}", "out-of-bound start", &pch, 1);
+    createAndOpen(valname, "{arr:{s:-500}}", "out-of-bound start", &pch, 1);
     testOk(pch->final_type == valaddr.field_type,
            "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
     testOk(pch->final_no_elements == valaddr.no_elements,
@@ -197,7 +197,7 @@ static void check(short dbr_type) {
     dbChannelDelete(pch);
 
     testHead("Ten %s elements from rec, increment 1, out-of-bound end parameter", typname);
-    createAndOpen(valname, "{\"arr\":{\"e\":500}}", "out-of-bound end", &pch, 1);
+    createAndOpen(valname, "{arr:{e:500}}", "out-of-bound end", &pch, 1);
     testOk(pch->final_type == valaddr.field_type,
            "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
     testOk(pch->final_no_elements == valaddr.no_elements,
@@ -206,7 +206,7 @@ static void check(short dbr_type) {
     dbChannelDelete(pch);
 
     testHead("Ten %s elements from rec, increment 1, zero increment parameter", typname);
-    createAndOpen(valname, "{\"arr\":{\"i\":0}}", "zero increment", &pch, 1);
+    createAndOpen(valname, "{arr:{i:0}}", "zero increment", &pch, 1);
     testOk(pch->final_type == valaddr.field_type,
            "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
     testOk(pch->final_no_elements == valaddr.no_elements,
@@ -215,7 +215,7 @@ static void check(short dbr_type) {
     dbChannelDelete(pch);
 
     testHead("Ten %s elements from rec, increment 1, invalid increment parameter", typname);
-    createAndOpen(valname, "{\"arr\":{\"i\":-30}}", "invalid increment", &pch, 1);
+    createAndOpen(valname, "{arr:{i:-30}}", "invalid increment", &pch, 1);
     testOk(pch->final_type == valaddr.field_type,
            "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
     testOk(pch->final_no_elements == valaddr.no_elements,
@@ -225,7 +225,7 @@ static void check(short dbr_type) {
 
 #define TEST5(Incr, Left, Right, Type) \
     testHead("Five %s elements from rec, increment " #Incr ", " Type " addressing", typname); \
-    createAndOpen(valname, "{\"arr\":{\"s\":" #Left ",\"e\":" #Right ",\"i\":" #Incr "}}", \
+    createAndOpen(valname, "{arr:{s:" #Left ",e:" #Right ",i:" #Incr "}}", \
                   "(" #Left ":" #Incr ":" #Right ")", &pch, 1); \
     testOk(pch->final_type == valaddr.field_type, \
            "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type); \
@@ -262,7 +262,7 @@ static void check(short dbr_type) {
 
 #define TEST5B(Incr, Left, Right, Type) \
     testHead("Five %s elements from buffer, increment " #Incr ", " Type " addressing", typname); \
-    createAndOpen(valname, "{\"arr\":{},\"arr\":{\"s\":" #Left ",\"e\":" #Right ",\"i\":" #Incr "}}", \
+    createAndOpen(valname, "{arr:{},arr:{s:" #Left ",e:" #Right ",i:" #Incr "}}", \
                   "(" #Left ":" #Incr ":" #Right ")", &pch, 2); \
     testOk(pch->final_type == valaddr.field_type, \
            "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type); \

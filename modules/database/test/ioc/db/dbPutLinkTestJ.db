@@ -7,8 +7,8 @@ record(x, "j1") {
 }
 
 record(x, "j2") {
-  field(INP, {z:{good:2}})
-  field(TSEL, "j1.TIME")
+  field(INP, {"z":{'good':2}})
+  field(TSEL, 'j1.TIME')
 }
 
 record(x, "j3") {

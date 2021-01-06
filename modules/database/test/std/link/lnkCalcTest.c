@@ -53,9 +53,9 @@ static void testCalc()
     {
         dbStateId red;
 
-        testPutLongStr("io.INPUT", "{\"calc\":{"
-            "\"expr\":\"a\","
-            "\"args\":[{\"state\":\"red\"}]"
+        testPutLongStr("io.INPUT", "{calc:{"
+            "expr:'a',"
+            "args:[{state:'red'}]"
             "}}");
         if (testOk1(pinp->type == JSON_LINK))
             testDiag("Link was set to '%s'", pinp->value.json.string);
@@ -78,11 +78,11 @@ static void testCalc()
         dbStateId minor = dbStateCreate("minor");
         epicsEnum16 stat, sevr;
 
-        testPutLongStr("io.INPUT", "{\"calc\":{"
-            "\"expr\":\"0\","
-            "\"major\":\"A\","
-            "\"minor\":\"B\","
-            "\"args\":[{\"state\":\"major\"},{\"state\":\"minor\"}]"
+        testPutLongStr("io.INPUT", "{calc:{"
+            "expr:'0',"
+            "major:'A',"
+            "minor:'B',"
+            "args:[{state:'major'},{state:'minor'}]"
             "}}");
         if (testOk1(pinp->type == JSON_LINK))
             testDiag("Link was set to '%s'", pinp->value.json.string);
@@ -114,12 +114,12 @@ static void testCalc()
         dbStateId red = dbStateFind("red");
         dbStateId out = dbStateCreate("out");
 
-        testPutLongStr("io.OUTPUT", "{\"calc\":{"
-            "\"expr\":\"!a\","
-            "\"out\":{\"state\":\"out\"},"
-            "\"args\":[{\"state\":\"red\"}],"
-            "\"units\":\"things\","
-            "\"prec\":3"
+        testPutLongStr("io.OUTPUT", "{calc:{"
+            "expr:'!a',"
+            "out:{state:'out'},"
+            "args:[{state:'red'}],"
+            "units:'things',"
+            "prec:3"
             "}}");
         if (testOk1(pout->type == JSON_LINK))
             testDiag("Link was set to '%s'", pout->value.json.string);

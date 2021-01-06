@@ -612,7 +612,7 @@ MAIN(chfPluginTest)
     /* tag i */
     e1 = e_alloc; c1 = 0;
     testOk(!(pch = dbChannelCreate(
-        "x.{\"alloc-fail\":{\"i\":1}}")),
+        "x.{'alloc-fail':{i:1}}")),
         "create channel for alloc-fail: allocPvt returning NULL");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
@@ -627,7 +627,7 @@ MAIN(chfPluginTest)
     /* tag D (t and d) and f */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"strict-tagged\":{\"D\":1.2e15,\"f\":false}}")),
+        "x.{'strict-tagged':{D:1.2e15,f:false}}")),
         "create channel for strict-tagged parsing: D (t and d) and f");
     testOk(checkValues(puser1, 3, 12, 0, 1.2e15, "hello", 0, 4),
         "guards intact, values correct");
@@ -641,7 +641,7 @@ MAIN(chfPluginTest)
     /* tag D2 (t and d) and f */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"strict-tagged\":{\"D2\":1.2e15,\"f\":false}}")),
+        "x.{'strict-tagged':{D2:1.2e15,f:false}}")),
         "create channel for strict-tagged parsing: D2 (t and d) and f");
     testOk(checkValues(puser1, 4, 12, 0, 1.2e15, "hello", 0, 4),
         "guards intact, values correct");
@@ -655,7 +655,7 @@ MAIN(chfPluginTest)
     /* tag F: (t and f), d missing) */
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
-        "x.{\"strict-tagged\":{\"F\":false}}")),
+        "x.{'strict-tagged':{F:false}}")),
         "create channel for strict-tagged parsing: F (t and f), d missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
@@ -663,7 +663,7 @@ MAIN(chfPluginTest)
     /* tag I: (t and i) and f, d missing) */
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
-        "x.{\"strict-tagged\":{\"I\":1,\"f\":false}}")),
+        "x.{'strict-tagged':{I:1,f:false}}")),
         "create channel for strict-tagged parsing: I (t and i) and f, d missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
@@ -676,7 +676,7 @@ MAIN(chfPluginTest)
     /* tag i */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"sloppy-tagged\":{\"I\":1}}")),
+        "x.{'sloppy-tagged':{I:1}}")),
         "create channel for sloppy-tagged parsing: I");
     testOk(checkValues(puser1, 1, 1, 1, 1.234e5, "hello", 0, 4),
         "guards intact, values correct");
@@ -690,7 +690,7 @@ MAIN(chfPluginTest)
     /* tag f */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"sloppy-tagged\":{\"F\":false}}")),
+        "x.{'sloppy-tagged':{F:false}}")),
         "create channel for sloppy-tagged parsing: F");
     testOk(checkValues(puser1, 2, 12, 0, 1.234e5, "hello", 0, 4),
         "guards intact, values correct");
@@ -704,7 +704,7 @@ MAIN(chfPluginTest)
     /* tag d */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"sloppy-tagged\":{\"D\":1.2e15}}")),
+        "x.{'sloppy-tagged':{D:1.2e15}}")),
         "create channel for sloppy-tagged parsing: D");
     testOk(checkValues(puser1, 3, 12, 1, 1.2e15, "hello", 0, 4),
         "guards intact, values correct");
@@ -718,7 +718,7 @@ MAIN(chfPluginTest)
     /* tag s */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"sloppy-tagged\":{\"S\":\"bar\"}}")),
+        "x.{'sloppy-tagged':{S:'bar'}}")),
         "create channel for sloppy-tagged parsing: S");
     testOk(checkValues(puser1, 4, 12, 1, 1.234e5, "bar", 0, 4),
         "guards intact, values correct");
@@ -732,7 +732,7 @@ MAIN(chfPluginTest)
     /* tag c */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"sloppy-tagged\":{\"C\":\"R\"}}")),
+        "x.{'sloppy-tagged':{C:'R'}}")),
         "create channel for sloppy-tagged parsing: C");
     testOk(checkValues(puser1, 5, 12, 1, 1.234e5, "hello", 0, 1),
         "guards intact, values correct");
@@ -749,7 +749,7 @@ MAIN(chfPluginTest)
     /* All perfect */
     testHead("STRICT parsing: all ok");
     e1 = e_alloc | e_ok; c1 = 0;
-    testOk(!!(pch = dbChannelCreate("x.{\"strict\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
+    testOk(!!(pch = dbChannelCreate("x.{strict:{i:1,f:false,d:1.2e15,s:'bar',c:'R'}}")),
            "create channel for strict parsing: JSON correct");
     testOk(checkValues(puser1, 99, 1, 0, 1.2e15, "bar", 0, 1),
         "guards intact, values correct");
@@ -765,35 +765,35 @@ MAIN(chfPluginTest)
     testHead("STRICT parsing: any missing parameter must fail");
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
-        "x.{\"strict\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\"}}")),
+        "x.{strict:{i:1,f:false,d:1.2e15,s:'bar'}}")),
         "create channel for strict parsing: c missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
-        "x.{\"strict\":{\"f\":false,\"i\":1,\"d\":1.2e15,\"c\":\"R\"}}")),
+        "x.{strict:{f:false,i:1,d:1.2e15,c:'R'}}")),
         "create channel for strict parsing: s missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
-        "x.{\"strict\":{\"i\":1,\"c\":\"R\",\"f\":false,\"s\":\"bar\"}}")),
+        "x.{strict:{i:1,c:'R',f:false,s:'bar'}}")),
         "create channel for strict parsing: d missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
-        "x.{\"strict\":{\"d\":1.2e15,\"c\":\"R\",\"i\":1,\"s\":\"bar\"}}")),
+        "x.{strict:{d:1.2e15,c:'R',i:1,s:'bar'}}")),
         "create channel for strict parsing: f missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
-        "x.{\"strict\":{\"c\":\"R\",\"s\":\"bar\",\"f\":false,\"d\":1.2e15}}")),
+        "x.{strict:{c:'R',s:'bar',f:false,d:1.2e15}}")),
         "create channel for strict parsing: i missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
@@ -805,7 +805,7 @@ MAIN(chfPluginTest)
     testHead("NOCONV parsing: missing parameters get default value");
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\"}}")),
+        "x.{noconv:{i:1,f:false,d:1.2e15,s:'bar'}}")),
         "create channel for noconv parsing: c missing");
     testOk(checkValues(puser1, 99, 1, 0, 1.2e15, "bar", 0, 4),
         "guards intact, values correct");
@@ -819,28 +819,28 @@ MAIN(chfPluginTest)
 
     e1 = e_any;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"c\":\"R\"}}")),
+        "x.{noconv:{i:1,f:false,d:1.2e15,c:'R'}}")),
         "create channel for noconv parsing: s missing");
     testOk(checkValues(puser1, 99, 1, 0, 1.2e15, "hello", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"noconv\":{\"i\":1,\"f\":false,\"s\":\"bar\",\"c\":\"R\"}}")),
+        "x.{noconv:{i:1,f:false,s:'bar',c:'R'}}")),
         "create channel for noconv parsing: d missing");
     testOk(checkValues(puser1, 99, 1, 0, 1.234e5, "bar", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"noconv\":{\"i\":1,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
+        "x.{noconv:{i:1,d:1.2e15,s:'bar',c:'R'}}")),
         "create channel for noconv parsing: f missing");
     testOk(checkValues(puser1, 99, 1, 1, 1.2e15, "bar", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"noconv\":{\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
+        "x.{noconv:{f:false,d:1.2e15,s:'bar',c:'R'}}")),
         "create channel for noconv parsing: i missing");
     testOk(checkValues(puser1, 99, 12, 0, 1.2e15, "bar", 0, 1),
         "guards intact, values correct");
@@ -849,7 +849,7 @@ MAIN(chfPluginTest)
     /* Reject wrong types */
 #define WRONGTYPETEST(Var, Val, Typ) \
     e1 = e_alloc | e_error | e_free; c1 = 0; \
-    testOk(!(pch = dbChannelCreate("x.{\"noconv\":{\""#Var"\":"#Val"}}")), \
+    testOk(!(pch = dbChannelCreate("x.{noconv:{'"#Var"':"#Val"}}")), \
         "create channel for noconv parsing: wrong type "#Typ" for "#Var); \
     testOk(!puser1, "user part cleaned up"); \
     if (!testOk(c1 == e1, "all expected calls happened")) \
@@ -877,8 +877,8 @@ MAIN(chfPluginTest)
 
 #define CONVTESTGOOD(Var, Val, Typ, Ival, Fval, Dval, Sval1, Sval2, Cval) \
     e1 = e_alloc | e_ok; c1 = 0; \
-    testDiag("Calling dbChannelCreate x.{\"sloppy\":{\""#Var"\":"#Val"}}"); \
-    testOk(!!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), \
+    testDiag("Calling dbChannelCreate x.{sloppy:{"#Var":"#Val"}}"); \
+    testOk(!!(pch = dbChannelCreate("x.{sloppy:{"#Var":"#Val"}}")), \
         "create channel for sloppy parsing: "#Typ" (good) for "#Var); \
     testOk(checkValues(puser1, 99, Ival, Fval, Dval, Sval1, Sval2, Cval), \
         "guards intact, values correct"); \
@@ -892,8 +892,8 @@ MAIN(chfPluginTest)
 
 #define CONVTESTBAD(Var, Val, Typ) \
     e1 = e_alloc | e_error | e_free; c1 = 0; \
-    testDiag("Calling dbChannelCreate x.{\"sloppy\":{\""#Var"\":"#Val"}}"); \
-    testOk(!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), \
+    testDiag("Calling dbChannelCreate x.{sloppy:{"#Var":"#Val"}}"); \
+    testOk(!(pch = dbChannelCreate("x.{sloppy:{"#Var":"#Val"}}")), \
         "create channel for sloppy parsing: "#Typ" (bad) for "#Var); \
     testOk(!puser1, "user part cleaned up"); \
     if (!testOk(c1 == e1, "create channel: all expected calls happened")) \
@@ -1018,36 +1018,36 @@ MAIN(chfPluginTest)
     if (!testOk(c1 == e1, "delete channel (1): all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1); \
     if (!testOk(c2 == e2, "delete channel (2): all expected calls happened")) testDiag("expected %#x - called %#x", e2, c2);
 
-    CHAINTEST1("1 pre", "{\"pre\":{}}", e_reg_pre, e_pre | e_dtor, 1);                                        /* One filter, pre chain */
-    CHAINTEST1("1 post", "{\"post\":{}}", e_reg_post, e_post | e_dtor, 1);                                   /* One filter, post chain */
-    CHAINTEST1("1 both", "{\"sloppy\":{}}", e_reg_pre | e_reg_post, e_pre | e_post | e_dtor, 2);                   /* One, both chains */
-    CHAINTEST2("2 pre", "{\"pre\":{},\"pre\":{}}", e_reg_pre, e_pre | e_dtor, e_reg_pre, e_pre, 2);          /* Two filters, pre chain */
-    CHAINTEST2("2 post", "{\"post\":{},\"post\":{}}", e_reg_post, e_post | e_dtor, e_reg_post, e_post, 2);  /* Two filters, post chain */
-    CHAINTEST2("2 both", "{\"sloppy\":{},\"sloppy\":{}}",                                                          /* Two, both chains */
+    CHAINTEST1("1 pre", "{pre:{}}", e_reg_pre, e_pre | e_dtor, 1);                                        /* One filter, pre chain */
+    CHAINTEST1("1 post", "{post:{}}", e_reg_post, e_post | e_dtor, 1);                                   /* One filter, post chain */
+    CHAINTEST1("1 both", "{sloppy:{}}", e_reg_pre | e_reg_post, e_pre | e_post | e_dtor, 2);                   /* One, both chains */
+    CHAINTEST2("2 pre", "{pre:{},pre:{}}", e_reg_pre, e_pre | e_dtor, e_reg_pre, e_pre, 2);          /* Two filters, pre chain */
+    CHAINTEST2("2 post", "{post:{},post:{}}", e_reg_post, e_post | e_dtor, e_reg_post, e_post, 2);  /* Two filters, post chain */
+    CHAINTEST2("2 both", "{sloppy:{},sloppy:{}}",                                                          /* Two, both chains */
                e_reg_pre | e_reg_post, e_pre | e_post | e_dtor, e_reg_pre | e_reg_post, e_pre | e_post, 4);
-    CHAINTEST2("1 pre, 1 post", "{\"pre\":{},\"post\":{}}", e_reg_pre, e_pre | e_dtor, e_reg_post, e_post, 2);   /* Two, pre then post */
-    CHAINTEST2("1 post, 1 pre", "{\"post\":{},\"pre\":{}}", e_reg_post, e_post, e_reg_pre, e_pre | e_dtor, 2);   /* Two, post then pre */
-    CHAINTEST2("1 pre, 1 both", "{\"pre\":{},\"sloppy\":{}}",                                                    /* Two, pre then both */
+    CHAINTEST2("1 pre, 1 post", "{pre:{},post:{}}", e_reg_pre, e_pre | e_dtor, e_reg_post, e_post, 2);   /* Two, pre then post */
+    CHAINTEST2("1 post, 1 pre", "{post:{},pre:{}}", e_reg_post, e_post, e_reg_pre, e_pre | e_dtor, 2);   /* Two, post then pre */
+    CHAINTEST2("1 pre, 1 both", "{pre:{},sloppy:{}}",                                                    /* Two, pre then both */
                e_reg_pre, e_pre | e_dtor, e_reg_pre | e_reg_post, e_pre | e_post, 3);
-    CHAINTEST2("1 both, 1 pre", "{\"sloppy\":{},\"pre\":{}}",                                                    /* Two, both then pre */
+    CHAINTEST2("1 both, 1 pre", "{sloppy:{},pre:{}}",                                                    /* Two, both then pre */
                e_reg_pre | e_reg_post, e_pre | e_post | e_dtor, e_reg_pre, e_pre, 3);
-    CHAINTEST2("1 post, 1 both", "{\"post\":{},\"sloppy\":{}}",                                                 /* Two, post then both */
+    CHAINTEST2("1 post, 1 both", "{post:{},sloppy:{}}",                                                 /* Two, post then both */
                e_reg_post, e_post, e_reg_pre | e_reg_post, e_pre | e_post | e_dtor, 3);
-    CHAINTEST2("1 both, 1 post", "{\"sloppy\":{},\"post\":{}}",                                                 /* Two, both then post */
+    CHAINTEST2("1 both, 1 post", "{sloppy:{},post:{}}",                                                 /* Two, both then post */
                e_reg_pre | e_reg_post, e_pre | e_post | e_dtor, e_reg_post, e_post, 3);
 
     /* Plugins dropping updates */
     drop = 0;
-    CHAINTEST2("2 both (drop at 0)", "{\"sloppy\":{},\"sloppy\":{}}",                            /* Two, both chains, drop at filter 0 */
+    CHAINTEST2("2 both (drop at 0)", "{sloppy:{},sloppy:{}}",                            /* Two, both chains, drop at filter 0 */
                e_reg_pre | e_reg_post, e_pre, e_reg_pre | e_reg_post, 0, -1);
     drop = 1;
-    CHAINTEST2("2 both (drop at 1)", "{\"sloppy\":{},\"sloppy\":{}}",                            /* Two, both chains, drop at filter 1 */
+    CHAINTEST2("2 both (drop at 1)", "{sloppy:{},sloppy:{}}",                            /* Two, both chains, drop at filter 1 */
                e_reg_pre | e_reg_post, e_pre, e_reg_pre | e_reg_post, e_pre, -1);
     drop = 2;
-    CHAINTEST2("2 both (drop at 2)", "{\"sloppy\":{},\"sloppy\":{}}",                            /* Two, both chains, drop at filter 2 */
+    CHAINTEST2("2 both (drop at 2)", "{sloppy:{},sloppy:{}}",                            /* Two, both chains, drop at filter 2 */
                e_reg_pre | e_reg_post, e_pre | e_post, e_reg_pre | e_reg_post, e_pre, -1);
     drop = 3;
-    CHAINTEST2("2 both (drop at 3)", "{\"sloppy\":{},\"sloppy\":{}}",                            /* Two, both chains, drop at filter 3 */
+    CHAINTEST2("2 both (drop at 3)", "{sloppy:{},sloppy:{}}",                            /* Two, both chains, drop at filter 3 */
                e_reg_pre | e_reg_post, e_pre | e_post, e_reg_pre | e_reg_post, e_pre | e_post, -1);
     drop = -1;
 

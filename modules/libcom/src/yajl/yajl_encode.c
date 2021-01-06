@@ -33,13 +33,22 @@ yajl_string_encode(const yajl_print_t print,
                    void * ctx,
                    const unsigned char * str,
                    size_t len,
-                   int escape_solidus)
+                   int escape_solidus,
+                   int output_json5)
 {
     size_t beg = 0;
     size_t end = 0;
     char hexBuf[7];
-    hexBuf[0] = '\\'; hexBuf[1] = 'u'; hexBuf[2] = '0'; hexBuf[3] = '0';
-    hexBuf[6] = 0;
+    char *hexAt;
+    if (output_json5) {
+        hexBuf[0] = '\\'; hexBuf[1] = 'x';
+        hexBuf[4] = 0;
+        hexAt = &hexBuf[2];
+    } else {
+        hexBuf[0] = '\\'; hexBuf[1] = 'u'; hexBuf[2] = '0'; hexBuf[3] = '0';
+        hexBuf[6] = 0;
+        hexAt = &hexBuf[4];
+    }
 
     while (end < len) {
         const char * escaped = NULL;
@@ -57,9 +66,20 @@ yajl_string_encode(const yajl_print_t print,
             case '\f': escaped = "\\f"; break;
             case '\b': escaped = "\\b"; break;
             case '\t': escaped = "\\t"; break;
+            case '\0':
+                if (output_json5) {
+                    escaped = "\\0"; break;
+                }
+                goto ashex;
+            case '\v':
+                if (output_json5) {
+                    escaped = "\\v"; break;
+                }
+                goto ashex;
             default:
                 if ((unsigned char) str[end] < 32) {
-                    CharToHex(str[end], hexBuf + 4);
+            ashex:
+                    CharToHex(str[end], hexAt);
                     escaped = hexBuf;
                 }
                 break;
@@ -75,10 +95,10 @@ yajl_string_encode(const yajl_print_t print,
     print(ctx, (const char *) (str + beg), end - beg);
 }
 
-static void hexToDigit(unsigned int * val, const unsigned char * hex)
+static void hexToDigit(unsigned int * val, unsigned int len, const unsigned char * hex)
 {
     unsigned int i;
-    for (i=0;i<4;i++) {
+    for (i=0;i<len;i++) {
         unsigned char c = hex[i];
         if (c >= 'A') c = (c & ~0x20) - 7;
         c -= '0';
@@ -128,21 +148,19 @@ void yajl_string_decode(yajl_buf buf, const unsigned char * str,
                 case 'r': unescaped = "\r"; break;
                 case 'n': unescaped = "\n"; break;
                 case '\\': unescaped = "\\"; break;
-                case '/': unescaped = "/"; break;
-                case '"': unescaped = "\""; break;
                 case 'f': unescaped = "\f"; break;
                 case 'b': unescaped = "\b"; break;
                 case 't': unescaped = "\t"; break;
                 case 'u': {
                     unsigned int codepoint = 0;
-                    hexToDigit(&codepoint, str + ++end);
+                    hexToDigit(&codepoint, 4, str + ++end);
                     end+=3;
                     /* check if this is a surrogate */
                     if ((codepoint & 0xFC00) == 0xD800) {
                         end++;
                         if (str[end] == '\\' && str[end + 1] == 'u') {
                             unsigned int surrogate = 0;
-                            hexToDigit(&surrogate, str + end + 2);
+                            hexToDigit(&surrogate, 4, str + end + 2);
                             codepoint =
                                 (((codepoint & 0x3F) << 10) |
                                  ((((codepoint >> 6) & 0xF) + 1) << 16) |
@@ -165,8 +183,33 @@ void yajl_string_decode(yajl_buf buf, const unsigned char * str,
 
                     break;
                 }
+                /* The following escapes are only valid when parsing JSON5.
+                 * The lexer catches them when allowJson5 is not set.
+                 */
+                case '\n': beg = ++end; continue;
+                case '\r':
+                    if (str[++end] == '\n') ++end;
+                    beg = end;
+                    continue;
+                case '0':
+                    utf8Buf[0] = '\0';
+                    yajl_buf_append(buf, utf8Buf, 1);
+                    beg = ++end;
+                    continue;
+                case 'v': unescaped = "\v"; break;
+                case 'x': {
+                    unsigned int codepoint = 0;
+                    hexToDigit(&codepoint, 2, str + ++end);
+                    end++;
+                    utf8Buf[0] = (char) codepoint;
+                    yajl_buf_append(buf, utf8Buf, 1);
+                    beg = ++end;
+                    continue;
+                }
                 default:
-                    assert("this should never happen" == NULL);
+                    utf8Buf[0] = str[end];
+                    utf8Buf[1] = 0;
+                    unescaped = utf8Buf;
             }
             yajl_buf_append(buf, unescaped, (unsigned int)strlen(unescaped));
             beg = ++end;
@@ -216,5 +259,29 @@ int yajl_string_validate_utf8(const unsigned char * s, size_t len)
         s++;
     }
 
+    return 1;
+}
+
+int yajl_string_validate_identifier(const unsigned char * str, size_t len)
+{
+    const unsigned char * s = str;
+    int c;
+
+    if (!len || !str) return 0;
+
+    c = *s++;       /* First character [$_A-Za-z] */
+    if ((c != '$' && c < 'A') ||
+        (c > 'Z' && c != '_' && c < 'a') ||
+        (c > 'z'))
+        return 0;
+
+    while (--len) {
+        c = *s++;   /* Remaining characters [$_A-Za-z0-9] */
+        if ((c != '$' && c < '0') ||
+            (c > '9' && c < 'A') ||
+            (c > 'Z' && c != '_' && c < 'a') ||
+            (c > 'z'))
+            return 0;
+    }
     return 1;
 }

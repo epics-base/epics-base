@@ -88,7 +88,7 @@ MAIN(epicsStringTest)
     char *s;
     int status;
 
-    testPlan(406);
+    testPlan(387);
 
     testChars();
 
@@ -159,7 +159,7 @@ MAIN(epicsStringTest)
     status = epicsStrnEscapedFromRawSize(ABCD, 4);
     testOk(status == 4, "size(\"ABCD\", 4) -> %d (exp. 4)", status);
     status = epicsStrnEscapedFromRawSize(ABCD, 5);
-    testOk(status == 8, "size(\"ABCD\", 5) -> %d (exp. 8)", status);
+    testOk(status == 6, "size(\"ABCD\", 5) -> %d (exp. 8)", status);
 
     testDiag("Testing esc = epicsStrnEscapedFromRaw(out, 4, ...)");
 
@@ -177,7 +177,7 @@ MAIN(epicsStringTest)
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnEscapedFromRaw(result, 4, ABCD, 5);
-    testOk(status == 8,      "esc(\"ABCD\", 5) -> %d (exp. 8)", status);
+    testOk(status == 6,      "esc(\"ABCD\", 5) -> %d (exp. 8)", status);
     testOk(result[3] == 0,   "  0-terminated");
     testOk(result[4] == 'x', "  No overrun");
 
@@ -235,49 +235,6 @@ MAIN(epicsStringTest)
     testOk(result[status] == 0, "  0-terminated");
 
     memset(result, 'x', sizeof(result));
-    status = epicsStrnRawFromEscaped(result, 4, "\\123", 1);
-    testOk(status == 0,      "raw(\"\\123\", 1) -> %d (exp. 0)", status);
-    testOk(result[status] == 0, "  0-terminated");
-
-    memset(result, 'x', sizeof(result));
-    status = epicsStrnRawFromEscaped(result, 4, "\\123", 2);
-    testOk(status == 1,      "raw(\"\\123\", 2) -> %d (exp. 1)", status);
-    testOk(result[0] == 1,   "  Octal escape (got \\%03o)", result[0]);
-    testOk(result[status] == 0, "  0-terminated");
-
-    memset(result, 'x', sizeof(result));
-    status = epicsStrnRawFromEscaped(result, 4, "\\123", 3);
-    testOk(status == 1,      "raw(\"\\123\", 3) -> %d (exp. 1)", status);
-    testOk(result[0] == 012, "  Octal escape (got \\%03o)", result[0]);
-    testOk(result[status] == 0, "  0-terminated");
-
-    memset(result, 'x', sizeof(result));
-    status = epicsStrnRawFromEscaped(result, 4, "\\123", 4);
-    testOk(status == 1,      "raw(\"\\123\", 4) -> %d (exp. 1)", status);
-    testOk(result[0] == 0123, "  Octal escape (got \\%03o)", result[0]);
-    testOk(result[status] == 0, "  0-terminated");
-
-    memset(result, 'x', sizeof(result));
-    status = epicsStrnRawFromEscaped(result, 4, "\\812", 2);
-    testOk(status == 1,      "raw(\"\\812\", 2) -> %d (exp. 1)", status);
-    testOk(result[0] == '8', "  Escaped '%c')", result[0]);
-    testOk(result[status] == 0, "  0-terminated");
-
-    memset(result, 'x', sizeof(result));
-    status = epicsStrnRawFromEscaped(result, 4, "\\182", 3);
-    testOk(status == 2,      "raw(\"\\182\", 3) -> %d (exp. 2)", status);
-    testOk(result[0] == 1,   "  Octal escape (got \\%03o)", result[0]);
-    testOk(result[1] == '8', "  Terminated with '%c'", result[1]);
-    testOk(result[status] == 0, "  0-terminated");
-
-    memset(result, 'x', sizeof(result));
-    status = epicsStrnRawFromEscaped(result, 4, "\\128", 4);
-    testOk(status == 2,      "raw(\"\\128\", 4) -> %d (exp. 2)", status);
-    testOk(result[0] == 012, "  Octal escape (got \\%03o)", result[0]);
-    testOk(result[1] == '8', "  Terminator char got '%c'", result[1]);
-    testOk(result[status] == 0, "  0-terminated");
-
-    memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x12", 1);
     testOk(status == 0,      "raw(\"\\x12\", 1) -> %d (exp. 0)", status);
     testOk(result[status] == 0, "  0-terminated");
@@ -307,14 +264,17 @@ MAIN(epicsStringTest)
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x012", 5);
-    testOk(status == 1,      "raw(\"\\x012\", 5) -> %d (exp. 1)", status);
-    testOk(result[0] == 0x12,"  Hex escape (got \\x%x)", result[0]);
+    testOk(status == 2,      "raw(\"\\x012\", 5) -> %d (exp. 2)", status);
+    testOk(result[0] == 0x1,"  Hex escape (got \\x%x)", result[0]);
+    testOk(result[1] == '2', "  Terminator char got '%c'", result[1]);
     testOk(result[status] == 0, "  0-terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x0012", 6);
-    testOk(status == 1,      "raw(\"\\x0012\", 6) -> %d (exp. 1)", status);
-    testOk(result[0] == 0x12,"  Hex escape (got \\x%x)", result[0]);
+    testOk(status == 3,      "raw(\"\\x0012\", 6) -> %d (exp. 3)", status);
+    testOk(result[0] == 0,"  Hex escape (got \\x%x)", result[0]);
+    testOk(result[1] == '1', "  Terminator char got '%c'", result[1]);
+    testOk(result[2] == '2', "  Following char got '%c'", result[2]);
     testOk(result[status] == 0, "  0-terminated");
 
     memset(result, 'x', sizeof(result));

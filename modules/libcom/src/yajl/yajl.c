@@ -74,7 +74,7 @@ yajl_alloc(const yajl_callbacks * callbacks,
     hand->lexer = NULL;
     hand->bytesConsumed = 0;
     hand->decodeBuf = yajl_buf_alloc(&(hand->alloc));
-    hand->flags     = 0;
+    hand->flags     = yajl_allow_json5 | yajl_allow_comments;
     yajl_bs_init(hand->stateStack, &(hand->alloc));
     yajl_bs_push(hand->stateStack, yajl_state_start);
 
@@ -82,13 +82,16 @@ yajl_alloc(const yajl_callbacks * callbacks,
 }
 
 int
-yajl_config(yajl_handle h, yajl_option opt, ...)
+yajl_config(yajl_handle h, int option, ...)
 {
+    yajl_option opt = option;   /* UB to use an enum in va_start */
     int rv = 1;
     va_list ap;
-    va_start(ap, opt);
+    va_start(ap, option);
 
     switch(opt) {
+        case yajl_allow_json5:
+            opt |= yajl_allow_comments; /* JSON5 allows comments */
         case yajl_allow_comments:
         case yajl_dont_validate_strings:
         case yajl_allow_trailing_garbage:
@@ -127,7 +130,8 @@ yajl_parse(yajl_handle hand, const unsigned char * jsonText,
     if (hand->lexer == NULL) {
         hand->lexer = yajl_lex_alloc(&(hand->alloc),
                                      hand->flags & yajl_allow_comments,
-                                     !(hand->flags & yajl_dont_validate_strings));
+                                     !(hand->flags & yajl_dont_validate_strings),
+                                     hand->flags & yajl_allow_json5);
     }
     if (hand->lexer == NULL) {
         return yajl_status_error;
@@ -150,7 +154,8 @@ yajl_complete_parse(yajl_handle hand)
     if (hand->lexer == NULL) {
         hand->lexer = yajl_lex_alloc(&(hand->alloc),
                                      hand->flags & yajl_allow_comments,
-                                     !(hand->flags & yajl_dont_validate_strings));
+                                     !(hand->flags & yajl_dont_validate_strings),
+                                     hand->flags & yajl_allow_json5);
     }
 
     return yajl_do_finish(hand);

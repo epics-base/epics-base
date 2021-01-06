@@ -50,7 +50,7 @@ static void testState()
     red = dbStateFind("red");
     testOk(!red, "No state red exists");
 
-    testdbPutFieldOk("io.INPUT", DBF_STRING, "{\"state\":\"red\"}");
+    testdbPutFieldOk("io.INPUT", DBF_STRING, "{state:'red'}");
     if (testOk1(pinp->type == JSON_LINK))
         testDiag("Link was set to '%s'", pinp->value.json.string);
     red = dbStateFind("red");
@@ -64,7 +64,7 @@ static void testState()
         testOk(!status, "dbGetLink succeeded (status = %ld)", status);
         testOk(i16, "Got TRUE");
 
-        testdbPutFieldOk("io.INPUT", DBF_STRING, "{\"state\":\"!red\"}");
+        testdbPutFieldOk("io.INPUT", DBF_STRING, "{state:'!red'}");
         if (testOk1(pinp->type == JSON_LINK))
             testDiag("Link was set to '%s'", pinp->value.json.string);
 
@@ -72,7 +72,7 @@ static void testState()
         testOk(!status, "dbGetLink succeeded (status = %ld)", status);
         testOk(!i16, "Got FALSE");
 
-        testdbPutFieldOk("io.OUTPUT", DBF_STRING, "{\"state\":\"red\"}");
+        testdbPutFieldOk("io.OUTPUT", DBF_STRING, "{state:'red'}");
         if (testOk1(pout->type == JSON_LINK))
             testDiag("Link was set to '%s'", pout->value.json.string);
 
@@ -106,7 +106,7 @@ static void testState()
         testOk(!status, "dbPutLink %g succeeded (status = %ld)", f64, status);
         testOk(dbStateGet(red), "state was set");
 
-        testdbPutFieldOk("io.OUTPUT", DBF_STRING, "{\"state\":\"!red\"}");
+        testdbPutFieldOk("io.OUTPUT", DBF_STRING, "{state:'!red'}");
         if (testOk1(pout->type == JSON_LINK))
             testDiag("Link was set to '%s'", pout->value.json.string);
 

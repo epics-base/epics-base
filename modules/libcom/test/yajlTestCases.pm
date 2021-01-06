@@ -8,6 +8,300 @@
 sub cases {
   my  $VAR1 = [
     {
+      name => "codepoints_from_hex",
+      opts => [
+        -5
+      ],
+      input => [
+        "\"\\x0a\\x07\\x21\\x40\\x7c\"",
+        ""
+      ],
+      gives => [
+        "string: '",
+        "\a!\@|'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "doubles",
+      opts => [
+        -5
+      ],
+      input => [
+        "[ .1e2, 10., +3.141569, -.1e4, NaN, Infinity, +Infinity, -Infinity ]",
+        ""
+      ],
+      gives => [
+        "array open '['",
+        "double: 10",
+        "double: 10",
+        "double: 3.14157",
+        "double: -1000",
+        "double: NaN",
+        "double: Infinity",
+        "double: Infinity",
+        "double: -Infinity",
+        "array close ']'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "integers",
+      opts => [
+        -5
+      ],
+      input => [
+        "[ +1,+2,+3,+4,+5,+6,+7,+8,+9,",
+        "  0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0x9,",
+        "  0xa,0xb,0xc,0xd,0xe,0xf,",
+        "  0xA,0xB,0xC,0xD,0xE,0xF,",
+        "  +0xfedcba98, -0x6789ABCD,",
+        "  +123456789 , -123456789,",
+        "  +2147483647, -2147483648,",
+        "  0x7fffFFFFffffFFFF, -0x7FFFffffFFFFffff,",
+        "  9223372036854775807, -9223372036854775807",
+        "]",
+        ""
+      ],
+      gives => [
+        "array open '['",
+        "integer: 1",
+        "integer: 2",
+        "integer: 3",
+        "integer: 4",
+        "integer: 5",
+        "integer: 6",
+        "integer: 7",
+        "integer: 8",
+        "integer: 9",
+        "integer: 1",
+        "integer: 2",
+        "integer: 3",
+        "integer: 4",
+        "integer: 5",
+        "integer: 6",
+        "integer: 7",
+        "integer: 8",
+        "integer: 9",
+        "integer: 10",
+        "integer: 11",
+        "integer: 12",
+        "integer: 13",
+        "integer: 14",
+        "integer: 15",
+        "integer: 10",
+        "integer: 11",
+        "integer: 12",
+        "integer: 13",
+        "integer: 14",
+        "integer: 15",
+        "integer: 4275878552",
+        "integer: -1737075661",
+        "integer: 123456789",
+        "integer: -123456789",
+        "integer: 2147483647",
+        "integer: -2147483648",
+        "integer: 9223372036854775807",
+        "integer: -9223372036854775807",
+        "integer: 9223372036854775807",
+        "integer: -9223372036854775807",
+        "array close ']'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "invalid_hex_char",
+      opts => [
+        -5
+      ],
+      input => [
+        "\"yabba dabba do \\x1g !!\"",
+        ""
+      ],
+      gives => [
+        "lexical error: invalid (non-hex) character occurs after '\\x' inside string.",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "map_identifiers",
+      opts => [
+        -5
+      ],
+      input => [
+        "{",
+        "  \$:1,",
+        "  _:2,",
+        "  A:3,",
+        "  Z:4,",
+        "  a:5,",
+        "  z:6,",
+        "  \$1:7,",
+        "  _zz:8,",
+        "  ZZ9\$Zalpha:9",
+        "}",
+        ""
+      ],
+      gives => [
+        "map open '{'",
+        "key: '\$'",
+        "integer: 1",
+        "key: '_'",
+        "integer: 2",
+        "key: 'A'",
+        "integer: 3",
+        "key: 'Z'",
+        "integer: 4",
+        "key: 'a'",
+        "integer: 5",
+        "key: 'z'",
+        "integer: 6",
+        "key: '\$1'",
+        "integer: 7",
+        "key: '_zz'",
+        "integer: 8",
+        "key: 'ZZ9\$Zalpha'",
+        "integer: 9",
+        "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "simple_with_comments",
+      opts => [
+        -5
+      ],
+      input => [
+        "{",
+        "  \"this\": \"is\", // ignore this",
+        "  \"really\": \"simple\",",
+        "  /* ignore",
+        "this",
+        "too * / ",
+        "** //",
+        "(/",
+        "******/",
+        "  \"json\": \"right?\"",
+        "}",
+        ""
+      ],
+      gives => [
+        "map open '{'",
+        "key: 'this'",
+        "string: 'is'",
+        "key: 'really'",
+        "string: 'simple'",
+        "key: 'json'",
+        "string: 'right?'",
+        "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "spec_example",
+      opts => [
+        -5
+      ],
+      input => [
+        "{",
+        "  // comments",
+        "  unquoted: 'and you can quote me on that',",
+        "  singleQuotes: 'I can use \"double quotes\" here',",
+        "  lineBreaks: \"Look, Mom! \\",
+        "No \\\\n's!\",",
+        "  hexadecimal: 0xdecaf,",
+        "  leadingDecimalPoint: .8675309, andTrailing: 8675309.,",
+        "  positiveSign: +1,",
+        "  trailingComma: 'in objects', andIn: ['arrays',],",
+        "  \"backwardsCompatible\": \"with JSON\",",
+        "}",
+        ""
+      ],
+      gives => [
+        "map open '{'",
+        "key: 'unquoted'",
+        "string: 'and you can quote me on that'",
+        "key: 'singleQuotes'",
+        "string: 'I can use \"double quotes\" here'",
+        "key: 'lineBreaks'",
+        "string: 'Look, Mom! No \\n's!'",
+        "key: 'hexadecimal'",
+        "integer: 912559",
+        "key: 'leadingDecimalPoint'",
+        "double: 0.867531",
+        "key: 'andTrailing'",
+        "double: 8.67531e+06",
+        "key: 'positiveSign'",
+        "integer: 1",
+        "key: 'trailingComma'",
+        "string: 'in objects'",
+        "key: 'andIn'",
+        "array open '['",
+        "string: 'arrays'",
+        "array close ']'",
+        "key: 'backwardsCompatible'",
+        "string: 'with JSON'",
+        "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "strings",
+      opts => [
+        -5
+      ],
+      input => [
+        "[",
+        "  'Hello\\!',",
+        "  \"\\\"Evenin\\',\\\" said the barman.\",",
+        "  // The following string has 3 different escaped line-endings,",
+        "  // LF, CR, and CR+LF, which all disappear from the final string.",
+        "  \"Well \\",
+        "hi \\\rthere \\\r",
+        "y'all!\",",
+        "  \"\\b\\f\\n\\r\\t\\v\\\\\",",
+        "  '\\A\\C\\/\\D\\C',",
+        "]",
+        ""
+      ],
+      gives => [
+        "array open '['",
+        "string: 'Hello!'",
+        "string: '\"Evenin',\" said the barman.'",
+        "string: 'Well hi there y'all!'",
+        "string: '\b\f",
+        "\r\t\13\\'",
+        "string: 'AC/DC'",
+        "array close ']'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "trailing_commas",
+      opts => [
+        -5
+      ],
+      input => [
+        "{\"array\":[1,2,],\"map\":{\"a\":1,},}",
+        ""
+      ],
+      gives => [
+        "map open '{'",
+        "key: 'array'",
+        "array open '['",
+        "integer: 1",
+        "integer: 2",
+        "array close ']'",
+        "key: 'map'",
+        "map open '{'",
+        "key: 'a'",
+        "integer: 1",
+        "map close '}'",
+        "map close '}'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "difficult_json_c_test_case_with_comments",
       opts => [
         "-c"
@@ -2637,6 +2931,18 @@ sub cases {
       ]
     },
     {
+      name => "hex",
+      opts => [],
+      input => [
+        "0x1",
+        ""
+      ],
+      gives => [
+        "lexical error: probable hex number found, JSON5 is not enabled.",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "high_overflow",
       opts => [],
       input => [
@@ -2644,6 +2950,18 @@ sub cases {
       ],
       gives => [
         "parse error: integer overflow",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "infinity",
+      opts => [],
+      input => [
+        "Infinity",
+        ""
+      ],
+      gives => [
+        "lexical error: special number Infinity or NaN found, JSON5 is not enabled.",
         "memory leaks:\t0"
       ]
     },
@@ -2733,7 +3051,7 @@ sub cases {
         "string: 'blue'",
         "string: 'baby where are you?'",
         "string: 'oh boo hoo!'",
-        "lexical error: malformed number, a digit is required after the minus sign.",
+        "lexical error: malformed number, a digit is required after the plus/minus sign.",
         "memory leaks:\t0"
       ]
     },
@@ -2768,6 +3086,18 @@ sub cases {
       ],
       gives => [
         "parse error: unallowed token at this point in JSON text",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "minus_infinity",
+      opts => [],
+      input => [
+        "-Infinity",
+        ""
+      ],
+      gives => [
+        "lexical error: special number Infinity or NaN found, JSON5 is not enabled.",
         "memory leaks:\t0"
       ]
     },
@@ -2808,6 +3138,18 @@ sub cases {
         "map open '{'",
         "map close '}'",
         "parse error: trailing garbage",
+        "memory leaks:\t0"
+      ]
+    },
+    {
+      name => "nan",
+      opts => [],
+      input => [
+        "NaN",
+        ""
+      ],
+      gives => [
+        "lexical error: special number Infinity or NaN found, JSON5 is not enabled.",
         "memory leaks:\t0"
       ]
     },
@@ -2996,29 +3338,6 @@ sub cases {
         "string: '\346\235\276\346\261\237'",
         "key: 'asakusa'",
         "string: '\346\265\205\350\215\211'",
-        "map close '}'",
-        "memory leaks:\t0"
-      ]
-    },
-    {
-      name => "trailing_commas",
-      opts => [],
-      input => [
-        "{\"array\":[1,2,],\"map\":{\"a\":1,},}",
-        ""
-      ],
-      gives => [
-        "map open '{'",
-        "key: 'array'",
-        "array open '['",
-        "integer: 1",
-        "integer: 2",
-        "array close ']'",
-        "key: 'map'",
-        "map open '{'",
-        "key: 'a'",
-        "integer: 1",
-        "map close '}'",
         "map close '}'",
         "memory leaks:\t0"
       ]

@@ -74,7 +74,7 @@ MAIN(tsTest)
 
     testOk(!!(plug = dbFindFilter(ts, strlen(ts))), "plugin ts registered correctly");
 
-    testOk(!!(pch = dbChannelCreate("x.VAL{\"ts\":{}}")), "dbChannel with plugin ts created");
+    testOk(!!(pch = dbChannelCreate("x.VAL{ts:{}}")), "dbChannel with plugin ts created");
     testOk((ellCount(&pch->filters) == 1), "channel has one plugin");
 
     memset(&fl, PATTERN, sizeof(fl));

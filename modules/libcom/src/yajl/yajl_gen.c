@@ -48,15 +48,17 @@ struct yajl_gen_t
 };
 
 int
-yajl_gen_config(yajl_gen g, yajl_gen_option opt, ...)
+yajl_gen_config(yajl_gen g, int option, ...)
 {
+    yajl_gen_option opt = option;   /* UB to use an enum in va_start */
     int rv = 1;
     va_list ap;
-    va_start(ap, opt);
+    va_start(ap, option);
 
     switch(opt) {
         case yajl_gen_beautify:
         case yajl_gen_validate_utf8:
+        case yajl_gen_json5:
             if (va_arg(ap, int)) g->flags |= opt;
             else g->flags &= ~opt;
             break;
@@ -125,6 +127,14 @@ yajl_gen_alloc(const yajl_alloc_funcs * afs)
 }
 
 void
+yajl_gen_reset(yajl_gen g, const char * sep)
+{
+    g->depth = 0;
+    memset((void *) &(g->state), 0, sizeof(g->state));
+    if (sep != NULL) g->print(g->ctx, sep, strlen(sep));
+}
+
+void
 yajl_gen_free(yajl_gen g)
 {
     if (g->print == (yajl_print_t)&yajl_buf_append) yajl_buf_free((yajl_buf)g->ctx);
@@ -132,17 +142,17 @@ yajl_gen_free(yajl_gen g)
 }
 
 #define INSERT_SEP \
-    if (g->state[g->depth] == yajl_gen_map_key ||               \
-        g->state[g->depth] == yajl_gen_in_array) {              \
-        g->print(g->ctx, ",", 1);                               \
-        if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, "\n", 1);               \
-    } else if (g->state[g->depth] == yajl_gen_map_val) {        \
-        g->print(g->ctx, ":", 1);                               \
-        if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, " ", 1);                \
-   }
+    if (g->state[g->depth] == yajl_gen_map_key ||                       \
+        g->state[g->depth] == yajl_gen_in_array) {                      \
+        g->print(g->ctx, ",", 1);                                       \
+        if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, "\n", 1);  \
+    } else if (g->state[g->depth] == yajl_gen_map_val) {                \
+        g->print(g->ctx, ":", 1);                                       \
+        if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, " ", 1);   \
+    }
 
-#define INSERT_WHITESPACE                                               \
-    if ((g->flags & yajl_gen_beautify)) {                                                    \
+#define INSERT_WHITESPACE \
+    if ((g->flags & yajl_gen_beautify)) {                               \
         if (g->state[g->depth] != yajl_gen_map_val) {                   \
             unsigned int _i;                                            \
             for (_i=0;_i<g->depth;_i++)                                 \
@@ -161,8 +171,8 @@ yajl_gen_free(yajl_gen g)
 /* check that we're not complete, or in error state.  in a valid state
  * to be generating */
 #define ENSURE_VALID_STATE \
-    if (g->state[g->depth] == yajl_gen_error) {   \
-        return yajl_gen_in_error_state;\
+    if (g->state[g->depth] == yajl_gen_error) {             \
+        return yajl_gen_in_error_state;                     \
     } else if (g->state[g->depth] == yajl_gen_complete) {   \
         return yajl_gen_generation_complete;                \
     }
@@ -192,8 +202,9 @@ yajl_gen_free(yajl_gen g)
             break;                                  \
     }                                               \
 
-#define FINAL_NEWLINE                                        \
-    if ((g->flags & yajl_gen_beautify) && g->state[g->depth] == yajl_gen_complete) \
+#define FINAL_NEWLINE \
+    if ((g->flags & yajl_gen_beautify) &&           \
+        g->state[g->depth] == yajl_gen_complete)    \
         g->print(g->ctx, "\n", 1);
 
 yajl_gen_status
@@ -212,10 +223,24 @@ yajl_gen_status
 yajl_gen_double(yajl_gen g, double number)
 {
     char i[32];
+    int special = 1;
     ENSURE_VALID_STATE; ENSURE_NOT_KEY;
-    if (isnan(number) || isinf(number)) return yajl_gen_invalid_number;
+    if (isnan(number)) {
+        strcpy(i, "NaN");
+    }
+    else if (isinf(number)) {
+        sprintf(i, "%cInfinity", number < 0 ? '-' : '+');
+    }
+    else {
+        special = 0;
+        sprintf(i, "%.17g", number);
+        if (strspn(i, "0123456789-") == strlen(i)) {
+            strcat(i, ".0");
+        }
+    }
+    if (special && !(g->flags & yajl_gen_json5))
+        return yajl_gen_invalid_number;
     INSERT_SEP; INSERT_WHITESPACE;
-    sprintf(i, "%.20g", number);
     g->print(g->ctx, i, (unsigned int)strlen(i));
     APPENDED_ATOM;
     FINAL_NEWLINE;
@@ -245,9 +270,19 @@ yajl_gen_string(yajl_gen g, const unsigned char * str,
         }
     }
     ENSURE_VALID_STATE; INSERT_SEP; INSERT_WHITESPACE;
-    g->print(g->ctx, "\"", 1);
-    yajl_string_encode(g->print, g->ctx, str, len, g->flags & yajl_gen_escape_solidus);
-    g->print(g->ctx, "\"", 1);
+    if (g->flags & yajl_gen_json5 &&
+        (g->state[g->depth] == yajl_gen_map_key ||
+         g->state[g->depth] == yajl_gen_map_start) &&
+        yajl_string_validate_identifier(str, len)) {
+        /* No need to quote this key */
+        g->print(g->ctx, (const char *) str, len);
+    }
+    else {
+        g->print(g->ctx, "\"", 1);
+        yajl_string_encode(g->print, g->ctx, str, len, g->flags & yajl_gen_escape_solidus,
+            g->flags & yajl_gen_json5);
+        g->print(g->ctx, "\"", 1);
+    }
     APPENDED_ATOM;
     FINAL_NEWLINE;
     return yajl_gen_status_ok;

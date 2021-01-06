@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <epicsMath.h>
 
 #include <yajl_parse.h>
 #include <yajl_gen.h>
@@ -85,7 +86,15 @@ static int test_yajl_integer(void *ctx, long long integerVal)
 
 static int test_yajl_double(void *ctx, double doubleVal)
 {
-    printf("double: %g\n", doubleVal);
+    if (isnan(doubleVal)) {
+        printf("double: NaN\n");
+    }
+    else if (isinf(doubleVal)) {
+        printf("double: %sInfinity\n", doubleVal > 0 ? "" : "-");
+    }
+    else {
+        printf("double: %g\n", doubleVal);
+    }
     return 1;
 }
 
@@ -154,6 +163,7 @@ static void usage(const char * progname)
             "usage:  %s [options]\n"
             "Parse input from stdin as JSON and ouput parsing details "
                                                           "to stdout\n"
+            "   -5  allow JSON5\n"
             "   -b  set the read buffer size\n"
             "   -c  allow comments\n"
             "   -g  allow *g*arbage after valid JSON text\n"
@@ -195,9 +205,14 @@ main(int argc, char ** argv)
     /* allocate the parser */
     hand = yajl_alloc(&callbacks, &allocFuncs, NULL);
 
+    /* turn off JSON5 (the EPICS default) */
+    yajl_config(hand, yajl_allow_json5, 0);
+
     /* check arguments.  We expect exactly one! */
     for (i=1;i<argc;i++) {
-        if (!strcmp("-c", argv[i])) {
+        if (!strcmp("-5", argv[i])) {
+            yajl_config(hand, yajl_allow_json5, 1);
+        } else if (!strcmp("-c", argv[i])) {
             yajl_config(hand, yajl_allow_comments, 1);
         } else if (!strcmp("-b", argv[i])) {
             if (++i >= argc) usage(argv[0]);

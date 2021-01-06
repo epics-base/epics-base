@@ -22,14 +22,17 @@ my $caseFile = 'yajlTestCases.pm';
 my @cases;
 
 for my $file (@files) {
-    $file =~ m|/([afn][cgmp]_)?([^/]*)\.json$|;
+    $file =~ m|/([afn][5cgmp]_)?([^/]*)\.json$|;
     my $allow = $1;
     my $name = $2;
     next if $name eq '';
 
     my $case = { name => $name };
 
-    if ($allow eq 'ac_') {
+    if ($allow eq 'a5_') {
+        $case->{opts} = ['-5'];
+    }
+    elsif ($allow eq 'ac_') {
         $case->{opts} = ['-c'];
     }
     elsif ($allow eq 'ag_') {

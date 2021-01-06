@@ -18,7 +18,7 @@ record(stringout, "rec:link2") {
 
 record(ai, "rec:j1") {
   field(INP, {calc:{
-                expr:"A+5",
+                expr:'A+5',
                 args:5
              }})
   field(PINI, "YES")

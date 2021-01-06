@@ -71,7 +71,7 @@ void testArrayLength1(void)
 }
 
 /*
- * https://bugs.launchpad.net/epics-base/+bug/1699445
+ * https://bugs.launchpad.net/epics-base/+bug/1699445 and 1887981
  */
 static
 void testHexConstantLinks(void)
@@ -81,7 +81,6 @@ void testHexConstantLinks(void)
     testdbGetFieldEqual("ai1", DBR_LONG, 0x10);
     testdbGetFieldEqual("li1", DBR_LONG, 0x10);
     testdbGetFieldEqual("mi1", DBR_LONG, 0x10);
-    testTodoBegin("Needs JSON5 for hex arrays");
     testdbGetFieldEqual("as1.A", DBR_LONG, 0x10);
     testdbGetFieldEqual("as1.B", DBR_LONG, 0x10);
     testdbGetFieldEqual("as1.C", DBR_LONG, 0x10);
@@ -90,7 +89,6 @@ void testHexConstantLinks(void)
     testdbGetFieldEqual("as1.F", DBR_LONG, 0x10);
     testdbGetFieldEqual("as1.G", DBR_LONG, 0x10);
     testdbGetFieldEqual("as1.H", DBR_LONG, 0x10);
-    testTodoEnd();
 
     testIocShutdownOk();
     testdbCleanup();

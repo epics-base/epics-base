@@ -148,26 +148,127 @@ static void testDbVerify(const char *record)
     if (dbFindRecord(&entry, record) != 0)
         testAbort("Can't find record '%s'", record);
 
-    dbFindField(&entry, "UDF");
+    dbFindField(&entry, "C8");
     verify(&entry, "0", NULL);
+    verify(&entry, "-128", NULL);
+    verify(&entry, "127", NULL);
+    verify(&entry, "128", "Number too large for field type");
+    verify(&entry, "0x7f", NULL);
+    verify(&entry, "0x80", "Number too large for field type");
+    verify(&entry, "None", "Not a valid integer");
+    verify(&entry, "1.2345", "Extraneous characters after number");
+
+    dbFindField(&entry, "U8");
+    verify(&entry, "0", NULL);
+    verify(&entry, "128", NULL);
     verify(&entry, "255", NULL);
     verify(&entry, "256", "Number too large for field type");
+    verify(&entry, "0xff", NULL);
     verify(&entry, "0x100", "Number too large for field type");
+    verify(&entry, "None", "Not a valid integer");
+    verify(&entry, "1.2345", "Extraneous characters after number");
 
-    dbFindField(&entry, "PHAS");
+    dbFindField(&entry, "I16");
     verify(&entry, "0", NULL);
     verify(&entry, "-32768", NULL);
     verify(&entry, "-32769", "Number too large for field type");
-    verify(&entry, "0x7fff", NULL);
     verify(&entry, "32768", "Number too large for field type");
+    verify(&entry, "-0x8000", NULL);
+    verify(&entry, "0x7fff", NULL);
+    verify(&entry, "0x8000", "Number too large for field type");
+    verify(&entry, "None", "Not a valid integer");
+    verify(&entry, "1.2345", "Extraneous characters after number");
 
-    dbFindField(&entry, "VAL");
+    dbFindField(&entry, "U16");
+    verify(&entry, "0", NULL);
+    verify(&entry, "-32768", NULL);
+    verify(&entry, "-65535", NULL);
+    verify(&entry, "-65536", "Number too large for field type");
+    verify(&entry, "65535", NULL);
+    verify(&entry, "0xffff", NULL);
+    verify(&entry, "0x10000", "Number too large for field type");
+    verify(&entry, "None", "Not a valid integer");
+    verify(&entry, "1.2345", "Extraneous characters after number");
+
+    dbFindField(&entry, "I32");
     verify(&entry, "0", NULL);
     verify(&entry, "-123456789", NULL);
     verify(&entry, "123456789", NULL);
+    verify(&entry, "-0x80000000", NULL);
+    verify(&entry, "-0x80000001", "Number too large for field type");
     verify(&entry, "0x1234FEDC", NULL);
+    verify(&entry, "0x7fffffff", NULL);
     verify(&entry, "0x100000000", "Number too large for field type");
+    verify(&entry, "None", "Not a valid integer");
     verify(&entry, "1.2345", "Extraneous characters after number");
+
+    dbFindField(&entry, "U32");
+    verify(&entry, "0", NULL);
+    verify(&entry, "-123456789", NULL);
+    verify(&entry, "123456789", NULL);
+    verify(&entry, "-0xffffffff", NULL);
+    verify(&entry, "-0x100000000", "Number too large for field type");
+    verify(&entry, "0x1234FEDC", NULL);
+    verify(&entry, "0xffffffff", NULL);
+    verify(&entry, "0x100000000", "Number too large for field type");
+    verify(&entry, "None", "Not a valid integer");
+    verify(&entry, "1.2345", "Extraneous characters after number");
+
+    dbFindField(&entry, "I64");
+    verify(&entry, "0", NULL);
+    verify(&entry, "-1234567890123456789", NULL);
+    verify(&entry, "1234567890123456789", NULL);
+    verify(&entry, "-0x8000000000000000", NULL);
+    verify(&entry, "-0x8000000000000001", "Number too large for field type");
+    verify(&entry, "0x123456780FEDCBA9", NULL);
+    verify(&entry, "0x7fffffffffffffff", NULL);
+    verify(&entry, "0x10000000000000000", "Number too large for field type");
+    verify(&entry, "None", "Not a valid integer");
+    verify(&entry, "1.2345", "Extraneous characters after number");
+
+    dbFindField(&entry, "U64");
+    verify(&entry, "0", NULL);
+    verify(&entry, "-1234567890123456789", NULL);
+    verify(&entry, "1234567890123456789", NULL);
+    verify(&entry, "-0xffffffffffffffff", NULL);
+    verify(&entry, "-0x10000000000000000", "Number too large for field type");
+    verify(&entry, "0x123456780FEDCBA9", NULL);
+    verify(&entry, "0x7fffffffffffffff", NULL);
+    verify(&entry, "0x10000000000000000", "Number too large for field type");
+    verify(&entry, "None", "Not a valid integer");
+    verify(&entry, "1.2345", "Extraneous characters after number");
+
+    dbFindField(&entry, "F32");
+    verify(&entry, "0", NULL);
+    verify(&entry, "1.2345", NULL);
+    verify(&entry, ".12345", NULL);
+    verify(&entry, "-.12345", NULL);
+    verify(&entry, "+.12345", NULL);
+    verify(&entry, "1.e23", NULL);
+    verify(&entry, "1.e-23", NULL);
+    verify(&entry, "Infinity", NULL);
+    verify(&entry, "-Infinity", NULL);
+    verify(&entry, "+Infinity", NULL);
+    verify(&entry, "Nan", NULL);
+    verify(&entry, "None", "Not a valid integer");
+    verify(&entry, "1.2e-345", "Number too small for field type");
+    verify(&entry, "1.2e345", "Number too large for field type");
+
+    dbFindField(&entry, "F64");
+    verify(&entry, "0", NULL);
+    verify(&entry, "1.2345", NULL);
+    verify(&entry, ".12345", NULL);
+    verify(&entry, "-.12345", NULL);
+    verify(&entry, "+.12345", NULL);
+    verify(&entry, "1.e234", NULL);
+    verify(&entry, "1.e-234", NULL);
+    verify(&entry, "Infinity", NULL);
+    verify(&entry, "-Infinity", NULL);
+    verify(&entry, "+Infinity", NULL);
+    verify(&entry, "Nan", NULL);
+    verify(&entry, "None", "Not a valid integer");
+    verify(&entry, "1.2e-345", "Number too small for field type");
+    verify(&entry, "1.2e345", "Number too large for field type");
 
     dbFindField(&entry, "DESC");
     verify(&entry, "", NULL);
@@ -193,7 +294,7 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbStaticTest)
 {
-    testPlan(223);
+    testPlan(310);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);

@@ -44,6 +44,9 @@
 #include <sched.h>
 #include <rtems/libio.h>
 #include <rtems/rtc.h>
+#include <time.h>
+#include <sys/unistd.h>
+
 #if __RTEMS_MAJOR__ > 4
 #include <rtems/tod.h>
 #else
@@ -93,6 +96,7 @@ epicsEventId 	dhcpDone;
 /* these settings are needed by the rtems startup
  * may provide by dhcp/bootp
  * or environments from the "BIOS" like u-boot, motboot etc.
+ * these are settings within FHI infrastructure (01/13/2021)
  */
 char rtemsInit_NTP_server_ip[16] = "141.14.142.121";
 char bootp_server_name_init[128] = "1001.1001@141.14.128.9:/Volumes/Epics";
@@ -100,13 +104,12 @@ char bootp_boot_file_name_init[128] = "/Volumes/Epics/myExample/bin/RTEMS-beatni
 char bootp_cmdline_init[128] = "/Volumes/Epics/myExample/iocBoot/iocmyExample/st.cmd";
 
 struct in_addr rtems_bsdnet_bootp_server_address;
-//!! check rtems_bsdnet_bootp_cmdline
+/* TODO check rtems_bsdnet_bootp_cmdline */
 #ifndef RTEMS_LEGACY_STACK
 char *rtems_bsdnet_bootp_server_name = bootp_server_name_init;
 char *rtems_bsdnet_bootp_boot_file_name = bootp_boot_file_name_init;
 char *rtems_bsdnet_bootp_cmdline = bootp_cmdline_init;
 #endif // not LEGACY Stack
-
 
 /*
  * Prototypes for some functions not in header files
@@ -144,7 +147,7 @@ delayedPanic (const char *msg)
 {
     rtems_task_wake_after (rtems_clock_get_ticks_per_second());
     rtems_task_wake_after (rtems_clock_get_ticks_per_second());
-    rtems_panic (msg);
+    rtems_panic ("%s", msg);
 }
 
 /*
@@ -228,17 +231,14 @@ epicsRtemsMountLocalFilesystem(char **argv)
 static int
 initialize_local_filesystem(char **argv)
 {
-    /*
     extern char _DownloadLocation[] __attribute__((weak));
     extern char _FlashBase[] __attribute__((weak));
     extern char _FlashSize[]  __attribute__((weak));
-    */
 
     argv[0] = rtems_bsdnet_bootp_boot_file_name;
     if (epicsRtemsMountLocalFilesystem(argv)==0) {
         return 1; /* FS setup successful */
-    }
-/* else if (_FlashSize && (_DownloadLocation || _FlashBase)) {
+    } else if (_FlashSize && (_DownloadLocation || _FlashBase)) {
         extern char _edata[];
         size_t flashIndex = _edata - _DownloadLocation;
         char *header = _FlashBase + flashIndex;
@@ -258,7 +258,7 @@ initialize_local_filesystem(char **argv)
             }
             printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
         }
-    } */
+    }
     return 0;
 }
 
@@ -276,7 +276,7 @@ nfsMount(char *uidhost, char *path, char *mntpoint)
     }
     sprintf(dev, "%s:%s", uidhost, path);
     printf("Mount %s on %s\n", dev, mntpoint);
-   rval = mount_and_make_target_path (
+    rval = mount_and_make_target_path (
         dev, mntpoint, RTEMS_FILESYSTEM_TYPE_NFS,
         RTEMS_FILESYSTEM_READ_WRITE, NULL );
    if(rval)
@@ -496,7 +496,12 @@ set_directory (const char *commandline)
 static const iocshArg rtshellArg0 = { "cmd", iocshArgString};
 static const iocshArg rtshellArg1 = { "args", iocshArgArgv};
 static const iocshArg * rtshellArgs[2] = { &rtshellArg0, &rtshellArg1};
-static const iocshFuncDef rtshellFuncDef = { "rt",2, rtshellArgs};
+static const iocshFuncDef rtshellFuncDef = { "rt",2, rtshellArgs
+#ifdef IOCSHFUNCDEF_HAS_USAGE
+                                            , "run rtems shell command"
+#endif
+                                           };
+
 static void rtshellCallFunc(const iocshArgBuf *args)
 {
     rtems_shell_cmd_t *cmd = rtems_shell_lookup_cmd(args[0].sval);
@@ -541,13 +546,21 @@ rtems_netstat (unsigned int level)
 
 static const iocshArg netStatArg0 = { "level",iocshArgInt};
 static const iocshArg * const netStatArgs[1] = {&netStatArg0};
-static const iocshFuncDef netStatFuncDef = {"netstat",1,netStatArgs};
+static const iocshFuncDef netStatFuncDef = {"netstat",1,netStatArgs
+#ifdef IOCSHFUNCDEF_HAS_USAGE
+                                            , "show network status"
+#endif
+                                           };
 static void netStatCallFunc(const iocshArgBuf *args)
 {
     rtems_netstat(args[0].ival);
 }
 
-static const iocshFuncDef heapSpaceFuncDef = {"heapSpace",0,NULL};
+static const iocshFuncDef heapSpaceFuncDef = {"heapSpace",0,NULL
+#ifdef IOCSHFUNCDEF_HAS_USAGE
+                                              , "show malloc statistic"
+#endif
+                                             };
 static void heapSpaceCallFunc(const iocshArgBuf *args)
 {
 #if __RTEMS_MAJOR__ > 4
@@ -580,7 +593,11 @@ static const iocshArg nfsMountArg1 = { "server path",iocshArgString};
 static const iocshArg nfsMountArg2 = { "mount point",iocshArgString};
 static const iocshArg * const nfsMountArgs[3] = {&nfsMountArg0,&nfsMountArg1,
                                                  &nfsMountArg2};
-static const iocshFuncDef nfsMountFuncDef = {"nfsMount",3,nfsMountArgs};
+static const iocshFuncDef nfsMountFuncDef = {"nfsMount",3,nfsMountArgs
+#ifdef IOCSHFUNCDEF_HAS_USAGE
+                                             , "mount nfs drive"
+#endif
+                                            };
 static void nfsMountCallFunc(const iocshArgBuf *args)
 {
     char *cp = args[2].sval;
@@ -609,7 +626,11 @@ void zoneset(const char *zone)
 
 static const iocshArg zonesetArg0 = {"zone string", iocshArgString};
 static const iocshArg * const zonesetArgs[1] = {&zonesetArg0};
-static const iocshFuncDef zonesetFuncDef = {"zoneset",1,zonesetArgs};
+static const iocshFuncDef zonesetFuncDef = {"zoneset",1,zonesetArgs
+#ifdef IOCSHFUNCDEF_HAS_USAGE
+                                           , "set timezone (obsolete?)"
+#endif
+                                           };
 static void zonesetCallFunc(const iocshArgBuf *args)
 {
     zoneset(args[0].sval);
@@ -803,7 +824,7 @@ default_network_dhcpcd(void)
  */
 #define LINE_SIZE 256
 static void
-telnet_pseudoIocsh(char *name, void *arg)
+telnet_pseudoIocsh(char *name, __attribute__((unused))void *arg)
 {
   char line[LINE_SIZE];
   int fid[3], save_fid[3];
@@ -825,7 +846,7 @@ telnet_pseudoIocsh(char *name, void *arg)
     /* telnet close not detected ??? tbd */
     if (fgets(line, LINE_SIZE, stdin) == NULL) {
       dup2(save_fid[1],1);
-+     dup2(save_fid[2],2);
+      dup2(save_fid[2],2);
       return;
     }
     if (line[strlen(line)-1] == '\n') line[strlen(line)-1] = 0;
@@ -861,7 +882,7 @@ rtems_telnetd_config_table rtems_telnetd_config = {
  * RTEMS Startup task
  */
 void *
-POSIX_Init (void *argument)
+POSIX_Init (__attribute__((unused)) void *argument)
 {
     int                	result;
     char               	*argv[3]         = { NULL, NULL, NULL };
@@ -940,7 +961,7 @@ POSIX_Init (void *argument)
      *
      * start qemu like this
      * qemu-system-i386 -m 64 -no-reboot -serial stdio -display none \
-     * -net nic,model=e1000,macaddr=0e:b0:ba:5e:ba:11 -net user,restrict=yes \
+     * -net nic,model=rtl8139,macaddr=0e:b0:ba:5e:ba:11 -net user,restrict=yes \
      * -append "--video=off --console=/dev/com1" -kernel libComTestHarness
      */
     printf("\n***** Initializing network (libbsd, dhcpcd) *****\n");
@@ -1020,7 +1041,7 @@ POSIX_Init (void *argument)
         rtems_bsdnet_config.ntp_server[0] = cp;
 
     int rtems_bsdnet_ntpserver_count = 1;
-    struct in_addr rtems_bsdnet_ntpserver[1];
+    struct in_addr rtems_bsdnet_ntpserver[rtems_bsdnet_ntpserver_count];
     memcpy(rtems_bsdnet_ntpserver, rtems_bsdnet_config.ntp_server, sizeof(struct in_addr));
 
     if (rtems_bsdnet_config.network_task_priority == 0)

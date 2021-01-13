@@ -103,7 +103,7 @@
 # Which target architectures to cross-compile for.
 #  Definitions in configure/os/CONFIG_SITE.<host>.Common
 #  may override this setting.
-CROSS_COMPILER_TARGET_ARCHS=
+CROSS_COMPILER_TARGET_ARCHS=RTEMS-beatnik
 #CROSS_COMPILER_TARGET_ARCHS=vxWorks-ppc32
 
 # If only some of your host architectures can compile the

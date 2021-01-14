@@ -967,10 +967,7 @@ long dbGet(DBADDR *paddr, short dbrType,
             localAddr.field_size = pfl->field_size;
             /* not used by dbFastConvert: */
             localAddr.no_elements = pfl->no_elements;
-            if (pfl->type == dbfl_type_val)
-                localAddr.pfield = (char *) &pfl->u.v.field;
-            else
-                localAddr.pfield = (char *)  pfl->u.r.field;
+            localAddr.pfield = dbfl_pfield(pfl);
             status = dbFastGetConvertRoutine[field_type][dbrType]
                 (localAddr.pfield, pbuf, &localAddr);
         }
@@ -1014,10 +1011,7 @@ long dbGet(DBADDR *paddr, short dbrType,
             localAddr.field_size = pfl->field_size;
             /* not used by dbConvert, it uses the passed capacity instead: */
             localAddr.no_elements = pfl->no_elements;
-            if (pfl->type == dbfl_type_val)
-                localAddr.pfield = (char *) &pfl->u.v.field;
-            else
-                localAddr.pfield = (char *)  pfl->u.r.field;
+            localAddr.pfield = dbfl_pfield(pfl);
             status = convert(&localAddr, pbuf, n, capacity, offset);
         }
 

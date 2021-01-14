@@ -134,6 +134,9 @@ typedef struct db_field_log {
 #define dbfl_has_copy(p)\
  ((p) && ((p)->type==dbfl_type_val || (p)->u.r.dtor || (p)->no_elements==0))
 
+#define dbfl_pfield(p)\
+ ((p)->type==dbfl_type_val ? &p->u.v.field : p->u.r.field)
+
 #ifdef __cplusplus
 }
 #endif

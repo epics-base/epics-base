@@ -1,0 +1,18 @@
+#
+# CONFIG.Common.RTEMS-beaglebineblack
+# Author: Heinz Junkes <junkes@fhi-berlin.mpg.de> 
+#
+# All RTEMS targets use the same Makefile fragment
+#
+#EXE = .elf
+RTEMS_BSP = beagleboneblack
+RTEMS_TARGET_CPU = arm
+GNU_TARGET = arm-rtems
+
+OP_SYS_LDLIBS += -Wl,--gc-sections
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/beagleboneblack/lib/
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS
+
+
+

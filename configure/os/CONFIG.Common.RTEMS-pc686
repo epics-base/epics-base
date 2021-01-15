@@ -1,21 +1,21 @@
-# CONFIG.Common.RTEMS-pc386
+# CONFIG.Common.RTEMS-pc686
 #
-# Definitions for the RTEMS-pc386 target, RTEMS 4.x only
-# Site-specific overrides go in CONFIG_SITE.Common.RTEMS-pc386
+# Definitions for the RTEMS-pc686 target, RTEMS 5.x only
+# Site-specific overrides go in CONFIG_SITE.Common.RTEMS-pc686
 #
 #-------------------------------------------------------
 
-RTEMS_BSP = pc386
+RTEMS_BSP = pc686
 RTEMS_TARGET_CPU = i386
 GNU_TARGET = i386-rtems
 
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
-	$(RM) $*.bin
-	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.bin
-	$(BIN2BOOT) $@ 0x00097E00 \
-	    $(PROJECT_RELEASE)/lib/start16.bin 0x00097C00 0 $*.bin 0x00100000 0
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $@ 
 endef
+
+OP_SYS_LDLIBS += -Wl,--gc-sections
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/pc686/lib/
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
 
@@ -25,8 +25,8 @@ include $(CONFIG)/os/CONFIG.Common.RTEMS
 OP_SYS_LDFLAGS += -Wl,-Ttext,0x100000
 
 # This check must appear after the above include
-ifeq ($(RTEMS_VERSION),5)
+ifneq ($(RTEMS_VERSION),5)
   $(info *** This target is not compatible with the configured RTEMS version.)
-  $(info *** Build the RTEMS-pc686 (-qemu) target for RTEMS 5.x)
+  $(info *** Build the RTEMS-pc386 (-qemu) target for RTEMS 4.x)
   $(error Can't continue)
 endif

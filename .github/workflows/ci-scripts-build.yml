@@ -33,7 +33,9 @@ jobs:
       BCFG: ${{ matrix.configuration }}
       WINE: ${{ matrix.wine }}
       RTEMS: ${{ matrix.rtems }}
+      RTEMS_TARGET: ${{ matrix.rtems_target }}
       EXTRA: ${{ matrix.extra }}
+      TEST: ${{ matrix.test }}
     strategy:
       fail-fast: false
       matrix:
@@ -71,14 +73,23 @@ jobs:
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
+            rtems: "5"
+            rtems_target: RTEMS-pc686-qemu
+            test: NO
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
             rtems: "4.10"
             name: "Ub-20 gcc-9 + RT-4.10"
+            rtems_target: RTEMS-pc386-qemu
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
             rtems: "4.9"
             name: "Ub-20 gcc-9 + RT-4.9"
+            rtems_target: RTEMS-pc386-qemu
 
           - os: ubuntu-16.04
             cmp: gcc-4.8

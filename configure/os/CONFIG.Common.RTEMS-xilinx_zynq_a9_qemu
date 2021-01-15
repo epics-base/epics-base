@@ -1,0 +1,20 @@
+#
+# CONFIG.Common.RTEMS-xilinx_zynq_a9_qemu
+# Author: Heinz Junkes <junkes@fhi-berlin.mpg.de> 
+#
+# All RTEMS targets use the same Makefile fragment
+#
+#EXE = .elf
+RTEMS_BSP = xilinx_zynq_a9_qemu
+RTEMS_TARGET_CPU = arm
+GNU_TARGET = arm-rtems
+
+#use dhcp/bootp
+ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+
+OP_SYS_LDLIBS += -Wl,--gc-sections
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/xilinx_zynq_a9_qemu/lib/
+
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS
+

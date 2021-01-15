@@ -157,7 +157,7 @@ static void testCalc()
 
 MAIN(lnkCalcTest)
 {
-    testPlan(0);
+    testPlan(30);
 
     testCalc();
 

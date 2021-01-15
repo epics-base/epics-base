@@ -1,6 +1,6 @@
-# CONFIG_SITE.Common.RTEMS-pc386-qemu
+# CONFIG_SITE.Common.RTEMS-pc686-qemu
 #
-# Site-specific overrides for the RTEMS-pc386-qemu target
+# Site-specific overrides for the RTEMS-pc686-qemu target
 #
 
 # If you're building this architecture you _probably_ want to

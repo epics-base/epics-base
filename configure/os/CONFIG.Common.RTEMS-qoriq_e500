@@ -9,7 +9,7 @@ RTEMS_BSP = qoriq_e500
 RTEMS_TARGET_CPU = powerpc
 GNU_TARGET = powerpc-rtems
 # optimization trouble in postfix.c
-#ARCH_DEP_CFLAGS += -DRTEMS_HAS_ALTIVEC
+ARCH_DEP_CFLAGS += -DRTEMS_HAS_ALTIVEC
 #will use bootp
 #ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 

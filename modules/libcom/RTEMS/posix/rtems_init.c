@@ -66,7 +66,6 @@
 #include <rtems/telnetd.h>
 #if __RTEMS_MAJOR__ > 4
 #include <rtems/printer.h>
-#include <rtems/telnetd.h>
 #endif
 #include "epicsVersion.h"
 #include "epicsThread.h"
@@ -238,6 +237,7 @@ initialize_local_filesystem(char **argv)
     argv[0] = rtems_bsdnet_bootp_boot_file_name;
     if (epicsRtemsMountLocalFilesystem(argv)==0) {
         return 1; /* FS setup successful */
+#ifdef RTEMS_LEGACY_STACK
     } else if (_FlashSize && (_DownloadLocation || _FlashBase)) {
         extern char _edata[];
         size_t flashIndex = _edata - _DownloadLocation;
@@ -258,6 +258,7 @@ initialize_local_filesystem(char **argv)
             }
             printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
         }
+#endif /* only with old stack, check check libbsd dependency! */
     }
     return 0;
 }
@@ -803,7 +804,9 @@ default_network_dhcpcd(void)
         "option ntp_servers\n" \
         "option rtems_cmdline\n" \
         "option tftp_server_name\n" \
-        "option bootfile_name";
+        "option bootfile_name\n" \
+        "define 129 string rtems_cmdline\n";
+        "vendopt 129 string rtems_cmdline";
 
     n = write(fd, fhi_cfg, sizeof(fhi_cfg) - 1);
     assert(n == (ssize_t) sizeof(fhi_cfg) - 1);
@@ -882,7 +885,7 @@ rtems_telnetd_config_table rtems_telnetd_config = {
  * RTEMS Startup task
  */
 void *
-POSIX_Init (__attribute__((unused)) void *argument)
+POSIX_Init ( void *argument __attribute__((unused)))
 {
     int                	result;
     char               	*argv[3]         = { NULL, NULL, NULL };
@@ -1060,8 +1063,11 @@ POSIX_Init (__attribute__((unused)) void *argument)
     rtems_bsdnet_synchronize_ntp (0, 0);
 #endif // not RTEMS_LEGACY_STACK
 
+    /* show messages from network after initialization ? good idea? */
+    rtems_bsd_set_vprintf_handler(bsd_vprintf_handler_old);
+
     printf("\n***** Setting up file system *****\n");
-    initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
+    //???initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
     fixup_hosts();
 
     /*
@@ -1091,9 +1097,9 @@ POSIX_Init (__attribute__((unused)) void *argument)
      */
 #if __RTEMS_MAJOR__>4
     // if telnetd is requested ...
-    printf(" Will try to start telnetd with prio %d ...\n", rtems_telnetd_config.priority);
-    result = rtems_telnetd_initialize();
-    printf (" telnetd initialized with result %d\n", result);
+   // printf(" Will try to start telnetd with prio %d ...\n", rtems_telnetd_config.priority);
+   // result = rtems_telnetd_initialize();
+   // printf (" telnetd initialized with result %d\n", result);
 #endif
 
     printf ("***** Preparing EPICS application *****\n");
@@ -1107,7 +1113,10 @@ POSIX_Init (__attribute__((unused)) void *argument)
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
     epicsExit(result);
-    return NULL;
+#if defined(__rtems__)
+    delayedPanic("will reset rtems ... end of POSIX_Init");
+#endif
+    exit(0);
 }
 
 #if defined(QEMU_FIXUPS)

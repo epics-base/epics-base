@@ -128,19 +128,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
             pfl->u.r.dtor = freeArray;
             pfl->u.r.pvt = my->arrayFreeList;
         }
-        /* Adjust no_elements to refer to the new pTarget.
-         *
-         * Setting pfl->no_elements outside of the "if" clause above is
-         * done to make requests fail if nTarget is zero, that is, if all
-         * elements selected by the filter are outside the array bounds.
-         * TODO:
-         * It would be possible to lift this restriction by interpreting
-         * a request with *no* number of elements (NULL pointer) as scalar
-         * (meaning: fail if we get less than one element); in contrast,
-         * a request that explicitly specifies one element would be
-         * interpreted as an array request, for which zero elements would
-         * be a normal expected result.
-         */
+        /* adjust no_elements (even if zero elements remain) */
         pfl->no_elements = nTarget;
         if (must_lock)
             dbScanUnlock(dbChannelRecord(chan));

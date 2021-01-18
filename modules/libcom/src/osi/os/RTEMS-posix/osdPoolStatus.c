@@ -13,6 +13,21 @@
 #define epicsExportSharedSymbols
 #include "osiPoolStatus.h"
 
+#if __RTEMS_MAJOR__<5
+/*
+ *  * osiSufficentSpaceInPool ()
+ *   */
+LIBCOM_API int epicsStdCall osiSufficentSpaceInPool ( size_t contiguousBlockSize )
+{
+	    rtems_malloc_statistics_t s;
+	        unsigned long n;
+
+		    malloc_get_statistics(&s);
+		        n = s.space_available - (unsigned long)(s.lifetime_allocated - s.lifetime_freed);
+			    return (n > (50000 + contiguousBlockSize));
+}
+
+#else
 /*
  * osiSufficentSpaceInPool ()
  */
@@ -25,3 +40,4 @@ LIBCOM_API int epicsStdCall osiSufficentSpaceInPool ( size_t contiguousBlockSize
     n = info.Stats.size - (unsigned long)(info.Stats.lifetime_allocated - info.Stats.lifetime_freed);
     return (n > (50000 + contiguousBlockSize));
 }
+#endif

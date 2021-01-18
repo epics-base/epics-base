@@ -96,9 +96,23 @@ MODEXT=.obj
 OS_CLASS = RTEMS
 
 #--------------------------------------------------
+ifeq ($(RTEMS_HAS_POSIX_API),no)
+ifeq ($(EPICS_VERSION),7)
+        $(error Warning: Epics Version $(EPICS_VERSION) must not be used without POSIX enabled on RTEMS !!!)
+endif
+endif
+
+# operating system API (src/os/<os_class>-<os-api>)
+ifeq ($(RTEMS_HAS_POSIX_API),yes)
+OS_API = posix
+POSIX_CPPFLAGS = -D_GNU_SOURCE -D_DEFAULT_SOURCE
+else
+OS_API = kernel
+endif
+
 # Operating system compile & link flags
-OP_SYS_CFLAGS_API_posix = -D__LINUX_ERRNO_EXTENSIONS__
 OP_SYS_CFLAGS += $(OP_SYS_CFLAGS_API_$(OS_API))
+OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
 
 OP_SYS_CFLAGS_NET_yes = -DRTEMS_LEGACY_STACK
 OP_SYS_CFLAGS_NET_no  = -DHAVE_SOCKADDR_SA_LEN=1
@@ -108,16 +122,22 @@ OP_SYS_LDLIBS_posix = -ltftpfs -lbsd -lz
 OP_SYS_LDLIBS_kernel = -lCom -lnfs
 OP_SYS_LDLIBS += -lrtemsCom -lCom -lc -lrtemscpu $(OP_SYS_LDLIBS_$(OS_API)) -lm
 
+ifeq ($(RTEMS_API),5)
+OP_SYS_LDLIBS_NET_yes := -lCom -ltelnetd -lnfs
+OP_SYS_LDLIBS_NET_no := -lbsd -lz
+OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -ltftps -lm
+OP_SYS_LDLIBS += $(OP_SYS_LDLIBS_NET_$(RTEMS_HAS_NETWORKING))
+else
+OP_SYS_LDLIBS += -lrtemsCom -lc -lnfs -lm
+endif
+
 OP_SYS_LDFLAGS_posix = -u POSIX_Init
-OP_SYS_LDFLAGS_kernel = -u Init \
                  $(PROJECT_RELEASE)/lib/no-dpmem.rel \
                  $(PROJECT_RELEASE)/lib/no-mp.rel \
                  $(PROJECT_RELEASE)/lib/no-part.rel \
                  $(PROJECT_RELEASE)/lib/no-signal.rel \
                  $(PROJECT_RELEASE)/lib/no-rtmon.rel
 OP_SYS_LDFLAGS += $(CPU_CFLAGS) $(OP_SYS_LDFLAGS_$(OS_API))
-
-# Settings for GeSys
 MOD_SYS_LDFLAGS += $(CPU_CFLAGS) -Wl,-r -nostdlib
 
 # Do not link against libraries which are part of the Generic Image

@@ -28,15 +28,25 @@
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
 
+#ifdef RTEMS_LEGACY_STACK
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+int select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, struct timeval *timeout);
+
+#ifdef __cplusplus
+}
+#endif
+#endif // LEGACY_STACK
 typedef int                     SOCKET;
 #define INVALID_SOCKET          (-1)
 #define SOCKERRNO               errno
 #define socket_ioctl(A,B,C)     ioctl(A,B,C)
 typedef int osiSockIoctl_t;
 typedef socklen_t osiSocklen_t;
-typedef int osiSockOptMcastLoop_t;
-typedef int osiSockOptMcastTTL_t;
+typedef char osiSockOptMcastLoop_t;
+typedef char osiSockOptMcastTTL_t;
 
 #define FD_IN_FDSET(FD) ((FD)<FD_SETSIZE)
 

@@ -31,23 +31,26 @@ extern void *POSIX_Init(void *argument);
 /* MINIMUM_STACK_SIZE == 8K */
 #define CONFIGURE_EXTRA_TASK_STACKS         (4000 * RTEMS_MINIMUM_STACK_SIZE)
 
+#if __RTEMS_MAJOR__ > 4
 #define CONFIGURE_FILESYSTEM_DEVFS
 #define CONFIGURE_FILESYSTEM_TFTPFS
+#endif
 #define CONFIGURE_FILESYSTEM_NFS
 #define CONFIGURE_FILESYSTEM_IMFS
-#define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 
+#ifndef RTEMS_LEGACY_STACK
+#define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 /*
  * Configure LibBSD.
  */
-#define RTEMS_BSD_CONFIG_NET_PF_UNIX
-#define RTEMS_BSD_CONFIG_NET_IF_BRIDGE
-#define RTEMS_BSD_CONFIG_NET_IF_LAGG
-#define RTEMS_BSD_CONFIG_NET_IF_VLAN
+//#define RTEMS_BSD_CONFIG_NET_PF_UNIX
+//#define RTEMS_BSD_CONFIG_NET_IF_BRIDGE
+//#define RTEMS_BSD_CONFIG_NET_IF_LAGG
+//#define RTEMS_BSD_CONFIG_NET_IF_VLAN
 #define RTEMS_BSD_CONFIG_BSP_CONFIG
 #define RTEMS_BSD_CONFIG_INIT
-
 #include <machine/rtems-bsd-config.h>
+#endif // not LEGACY_STACK
 
 /*
  * Configure RTEMS.
@@ -74,7 +77,7 @@ extern void *POSIX_Init(void *argument);
 #define CONFIGURE_BDBUF_MAX_READ_AHEAD_BLOCKS 4
 #define CONFIGURE_BDBUF_CACHE_MEMORY_SIZE (1 * 1024 * 1024)
 
-/* we are using POSIX_INIT
+/* we are using POSIX_INIT needed by V4
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 #define CONFIGURE_INIT_TASK_STACK_SIZE (32 * 1024)
 #define CONFIGURE_INIT_TASK_INITIAL_MODES RTEMS_DEFAULT_MODES
@@ -84,6 +87,7 @@ extern void *POSIX_Init(void *argument);
 //#define RTEMS_PCI_CONFIG_LIB
 //#define CONFIGURE_PCI_LIB PCI_LIB_AUTO
 
+#ifndef RTEMS_LEGACY_STACK
 #define CONFIGURE_SHELL_COMMANDS_INIT
 
 #include <bsp/irq-info.h>
@@ -127,6 +131,13 @@ extern void *POSIX_Init(void *argument);
 #define RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE (16 * 1024)
 #define RTEMS_BSD_CONFIG_SERVICE_FTPD
 #define RTEMS_BSD_CONFIG_FIREWALL_PF
+#else
+#include <rtems/shellconfig.h>
+#endif // not LEGACY_STACK
+
+#if __RTEMS_MAJOR__ < 5 // still needed in Version 4?
+#define CONFIGURE_MAXIMUM_TASKS             rtems_resource_unlimited(30)
+#endif
 
 #define CONFIGURE_MAXIMUM_DRIVERS 40
 

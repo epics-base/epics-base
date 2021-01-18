@@ -40,6 +40,9 @@ rtemsCom_SRCS += epicsNtp.c
 ifeq ($(RTEMS_TARGET_CPU),i386)
 rtemsCom_SRCS += ne2kpci.c
 endif
+ifeq ($(RTEMS_BSP),pc686)
+rtemsCom_SRCS += ne2kpci.c
+endif
 
 LIBRARY_RTEMS = rtemsCom
 

@@ -17,7 +17,7 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
-### Support for RTEMS 5
+### Support for RTEMS 5 (5.1 released aug 2020)
 
 The new major release of the RTEMS real-time OS contains many changes including
 the ability to support SMP systems. The earlier EPICS support for RTEMS made use

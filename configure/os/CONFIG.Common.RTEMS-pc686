@@ -5,6 +5,13 @@
 #
 #-------------------------------------------------------
 
+#
+# Author: W. Eric Norum
+#         Canadian Light Source
+#         eric@cls.usask.ca
+#
+# All RTEMS targets use the same Makefile fragment
+#
 RTEMS_BSP = pc686
 RTEMS_TARGET_CPU = i386
 GNU_TARGET = i386-rtems

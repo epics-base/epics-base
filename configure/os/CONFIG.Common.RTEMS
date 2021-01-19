@@ -115,7 +115,7 @@ OP_SYS_LDLIBS_kernel_NET_no = -lCom -lnfs
 OP_SYS_LDLIBS += -lrtemsCom -lCom -lc -lrtemscpu $(OP_SYS_LDLIBS_$(OS_API)_NET_$(RTEMS_HAS_NETWORKING)) -lm
 
 OP_SYS_LDFLAGS_posix = -u POSIX_Init
-OP_SYS_LDFLAGS_kernel = $(CPU_FLAGS) -u Init \
+OP_SYS_LDFLAGS_kernel = -u Init \
                  $(PROJECT_RELEASE)/lib/no-dpmem.rel \
                  $(PROJECT_RELEASE)/lib/no-mp.rel \
                  $(PROJECT_RELEASE)/lib/no-part.rel \

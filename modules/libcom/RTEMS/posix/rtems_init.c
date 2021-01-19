@@ -1064,7 +1064,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
 #endif // not RTEMS_LEGACY_STACK
 
     /* show messages from network after initialization ? good idea? */
-    rtems_bsd_set_vprintf_handler(bsd_vprintf_handler_old);
+    //rtems_bsd_set_vprintf_handler(bsd_vprintf_handler_old);
 
     printf("\n***** Setting up file system *****\n");
     //???initialize_remote_filesystem(argv, initialize_local_filesystem(argv));

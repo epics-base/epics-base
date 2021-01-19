@@ -44,7 +44,6 @@
 #include <sched.h>
 #include <rtems/libio.h>
 #include <rtems/rtc.h>
-#include <rtems/sysinit.h>
 #include <time.h>
 #include <sys/unistd.h>
 
@@ -112,11 +111,6 @@ char *rtems_bsdnet_bootp_server_name = bootp_server_name_init;
 char *rtems_bsdnet_bootp_boot_file_name = bootp_boot_file_name_init;
 char *rtems_bsdnet_bootp_cmdline = bootp_cmdline_init;
 #endif // not LEGACY Stack
-
-int  osdNTPGet(struct timespec *now)
-{
-    return !epicsNtpGetTime(rtemsInit_NTP_server_ip, now);
-}
 
 /*
  * Prototypes for some functions not in header files
@@ -1072,7 +1066,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
 #endif // not RTEMS_LEGACY_STACK
 
     /* show messages from network after initialization ? good idea? */
-    rtems_bsd_set_vprintf_handler(bsd_vprintf_handler_old);
+    //rtems_bsd_set_vprintf_handler(bsd_vprintf_handler_old);
 
     printf("\n***** Setting up file system *****\n");
     //???initialize_remote_filesystem(argv, initialize_local_filesystem(argv));

@@ -13,6 +13,7 @@
 /* Adapted to C++ by Eric Norum   Date: 18DEC2000 */
 
 #include <exception>
+#include <string>
 
 #include <stddef.h>
 #include <string.h>
@@ -32,6 +33,7 @@
 #include "registry.h"
 #include "epicsReadline.h"
 #include "cantProceed.h"
+#include "osiFileName.h"
 #include "iocsh.h"
 
 extern "C" {
@@ -650,6 +652,19 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             free(redirects);
             free(context);
             return -1;
+        }
+
+        if(const char *execdir = epicsGetExecDir()){
+            macPutValue(context->handle, "EPICS_EXEC_DIR", execdir);
+
+            // provide $TOP if not already defined (eg. envPaths not sourced)
+            const char *top = getenv("TOP");
+            if(!top || top[0]=='\0') {
+                // TOP = execdir/../..
+                //  epicsGetExecDir() always returns with a trailing separator
+                std::string top(std::string(execdir) + ".." OSI_PATH_SEPARATOR "..");
+                macPutValue(context->handle, "TOP", top.c_str());
+            }
         }
 
         epicsThreadPrivateSet(iocshContextId, (void *) context);

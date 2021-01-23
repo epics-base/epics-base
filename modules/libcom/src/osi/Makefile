@@ -72,6 +72,7 @@ Com_SRCS += epicsTime.cpp
 Com_SRCS += epicsMessageQueue.cpp
 Com_SRCS += epicsMath.cpp
 Com_SRCS += epicsAtomicOSD.cpp
+Com_SRCS += osiFileName.c
 
 Com_SRCS += epicsGeneralTime.c
 

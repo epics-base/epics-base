@@ -25,6 +25,7 @@ int epicsCalcTest(void);
 int epicsEllTest(void);
 int epicsEnvTest(void);
 int epicsErrlogTest(void);
+int epicsPathTest(void);
 int epicsEventTest(void);
 int epicsExitTest(void);
 int epicsMathTest(void);
@@ -83,6 +84,7 @@ void epicsRunLibComTests(void)
     runTest(epicsEllTest);
     runTest(epicsEnvTest);
     runTest(epicsErrlogTest);
+    runTest(epicsPathTest);
     runTest(epicsEventTest);
     runTest(epicsInlineTest);
     runTest(epicsMathTest);

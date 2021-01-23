@@ -21,7 +21,6 @@ INC += epicsString.h
 INC += epicsTypes.h
 INC += shareLib.h
 INC += epicsExport.h
-INC += unixFileName.h
 INC += locationException.h
 INC += ipAddrToAsciiAsynchronous.h
 INC += compilerDependencies.h

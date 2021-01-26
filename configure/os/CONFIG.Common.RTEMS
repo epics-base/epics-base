@@ -76,7 +76,7 @@ CPPFLAGS += $($(BUILD_CLASS)_CPPFLAGS) $(POSIX_CPPFLAGS) $(OPT_CPPFLAGS)\
  $(USR_CPPFLAGS) $(CMD_CPPFLAGS) $(ARCH_DEP_CPPFLAGS) $(OP_SYS_CPPFLAGS)\
  $(OP_SYS_INCLUDE_CPPFLAGS) $(CODE_CPPFLAGS)
 
-ECHO = @$(if $(findstring s,$(MFLAGS)),$(NOP),echo)
+ECHO = @$(if $(filter -s,$(MFLAGS)),$(NOP),echo)
 
 #--------------------------------------------------
 # Although RTEMS uses gcc, it wants to use gcc its own way

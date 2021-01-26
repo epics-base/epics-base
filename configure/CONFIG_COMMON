@@ -80,12 +80,12 @@ IOCS_APPL_TOP               = $(shell $(FULLPATHNAME) $(INSTALL_LOCATION))
 #-------------------------------------------------------
 # Silencing the build - suppress messages during 'make -s'
 NOP = :
-ECHO = @$(if $(findstring s,$(MFLAGS)),$(NOP),echo)
-QUIET_FLAG := $(if $(findstring s,$(MFLAGS)),-q,)
+ECHO = @$(if $(filter -s,$(MFLAGS)),$(NOP),echo)
+QUIET_FLAG := $(if $(filter -s,$(MFLAGS)),-q,)
 
 #-------------------------------------------------------
 # Convert 'make -q' flag into '-i' for genVersionHeader.pl
-QUESTION_FLAG := $(if $(findstring q,$(MFLAGS)),-i,)
+QUESTION_FLAG := $(if $(filter -q,$(MFLAGS)),-i,)
 
 #-------------------------------------------------------
 ifdef T_A

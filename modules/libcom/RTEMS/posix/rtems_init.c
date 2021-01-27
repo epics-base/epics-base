@@ -60,7 +60,6 @@
 #include <rtems/bsd/bsd.h>
 #include <rtems/bsd/modules.h>
 #include <rtems/dhcpcd.h>
-#include "libbsd_netconfig.h"
 #include <machine/rtems-bsd-commands.h>
 #endif
 

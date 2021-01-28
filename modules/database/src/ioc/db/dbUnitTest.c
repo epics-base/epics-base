@@ -61,12 +61,10 @@ void testdbReadDatabase(const char* file,
         path = "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
                 "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common";
     if(dbReadDatabase(&pdbbase, file, path, substitutions)) {
-        char buf[100];
-        const char *cwd = getcwd(buf, sizeof(buf));
-        if(!cwd)
-            cwd = "<directory too long>";
+        const char *cwd = epicsPathAllocCWD();
         testAbort("Failed to load test database\ndbReadDatabase(%s,%s,%s)\n from: \"%s\"",
                   file, path, substitutions, cwd);
+        free(cwd);
     }
 }
 

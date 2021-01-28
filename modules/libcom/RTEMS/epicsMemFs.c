@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
+#include <osiFileName.h>
 #include "epicsMemFs.h"
 
 #ifndef PATH_MAX
@@ -22,14 +23,10 @@
 
 int epicsMemFsLoad(const epicsMemFS *fs)
 {
-    char initdir[PATH_MAX];
+    char* initdir;
     const epicsMemFile * const *fileptr = fs->files;
 
-    if(getcwd(initdir, sizeof(initdir)-1)==NULL) {
-        perror("getcwd");
-        return errno;
-    }
-    initdir[sizeof(initdir)-1] = '\0';
+    initdir = epicsPathAllocCWD();
 
     for(;*fileptr; fileptr++) {
         const epicsMemFile *curfile = *fileptr;
@@ -42,7 +39,7 @@ int epicsMemFsLoad(const epicsMemFS *fs)
          */
         if(chdir(initdir)) {
             perror("chdir");
-            return errno;
+            goto onerrno;
         }
 
         printf("-> /");
@@ -58,17 +55,17 @@ int epicsMemFsLoad(const epicsMemFS *fs)
                 if(mkdir(*dir,0744)==-1) {
                     printf("\n");
                     perror("mkdir");
-                    return errno;
+                    goto onerrno;
                 }
                 if(chdir(*dir)==-1) {
                     printf("\n");
                     perror("chdir2");
-                    return errno;
+                    goto onerrno;
                 }
             } else if(ret==-1) {
                 printf("\n");
                 perror("chdir1");
-                return errno;
+                goto onerrno;
             }
         }
 
@@ -85,7 +82,7 @@ int epicsMemFsLoad(const epicsMemFS *fs)
         if(fd==-1) {
             printf("\n");
             perror("open");
-            return errno;
+            goto onerrno;
         }
 
         sofar = 0;
@@ -95,7 +92,7 @@ int epicsMemFsLoad(const epicsMemFS *fs)
             if(ret<=0) {
                 printf("\n");
                 perror("write");
-                return errno;
+                goto onerrno;
             }
             sofar += ret;
         }
@@ -107,5 +104,9 @@ int epicsMemFsLoad(const epicsMemFS *fs)
     if(chdir(initdir))
         perror("chdir");
 
+    free(initdir);
     return 0;
+onerrno:
+    free(initdir);
+    return errno;
 }

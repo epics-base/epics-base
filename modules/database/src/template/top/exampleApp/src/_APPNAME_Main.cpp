@@ -13,6 +13,9 @@
 
 int main(int argc,char *argv[])
 {
+#ifdef iocshMain
+    return iocshMain(argc, argv);
+#else
     if(argc>=2) {
         iocsh(argv[1]);
         epicsThreadSleep(.2);
@@ -20,4 +23,5 @@ int main(int argc,char *argv[])
     iocsh(NULL);
     epicsExit(0);
     return(0);
+#endif
 }

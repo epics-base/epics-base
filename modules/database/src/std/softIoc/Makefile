@@ -24,6 +24,8 @@ softIoc_SRCS += softIoc_registerRecordDeviceDriver.cpp
 softIoc_SRCS_DEFAULT += softMain.cpp
 softIoc_SRCS_vxWorks = -nil-
 
+softMain_CPPFLAGS += -I$(TOP)/modules/libcom/src/iocsh
+
 softIoc_LIBS = $(EPICS_BASE_IOC_LIBS)
 
 DB += softIocExit.db

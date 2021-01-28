@@ -86,6 +86,20 @@ LIBCOM_API const iocshVarDef * epicsStdCall iocshFindVariable(
 /* This should only be called when iocsh is no longer needed*/
 LIBCOM_API void epicsStdCall iocshFree(void);
 
+/** Helper for implementing main() for an IOC.
+ *
+ * @code
+ * int main(int argc,char *argv[]) {
+ *     return iocshMain(argc, argv);
+ * }
+ * @endcode
+ *
+ * see the 'ioc' template of makeBaseApp.pl for an example with compatibility
+ * for older Base.
+ *
+ * @since UNRELEASED
+ */
+LIBCOM_API int iocshMain(int argc,char *argv[]);
 /** shorthand for \code iocshLoad(pathname, NULL) \endcode */
 LIBCOM_API int epicsStdCall iocsh(const char *pathname);
 /** shorthand for \code iocshRun(cmd, NULL) \endcode */

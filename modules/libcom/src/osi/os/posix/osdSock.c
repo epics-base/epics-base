@@ -28,6 +28,14 @@
 #include "epicsAssert.h"
 #include "errlog.h"
 
+/* Linux and *BSD (at least) specific way to atomically set O_CLOEXEC */
+#ifdef SOCK_CLOEXEC
+/* with glibc, SOCK_CLOEXEC does not expand to a simple constant */
+#  define HAVE_SOCK_CLOEXEC
+#else
+#  define SOCK_CLOEXEC (0)
+#endif
+
 /*
  * Protect some routines which are not thread-safe
  */
@@ -71,7 +79,7 @@ void osiSockRelease()
 LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
     int domain, int type, int protocol )
 {
-    SOCKET sock = socket ( domain, type, protocol );
+    SOCKET sock = socket ( domain, type | SOCK_CLOEXEC, protocol );
     if ( sock < 0 ) {
         sock = INVALID_SOCKET;
     }
@@ -94,7 +102,11 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
 LIBCOM_API int epicsStdCall epicsSocketAccept ( 
     int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
 {
+#ifndef HAVE_SOCK_CLOEXEC
     int newSock = accept ( sock, pAddr, addrlen );
+#else
+    int newSock = accept4 ( sock, pAddr, addrlen, SOCK_CLOEXEC );
+#endif
     if ( newSock < 0 ) {
         newSock = INVALID_SOCKET;
     }

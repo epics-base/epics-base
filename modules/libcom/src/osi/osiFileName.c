@@ -128,16 +128,15 @@ char* epicsPathJoin(const char **fragments, size_t nfragments)
         if(epicsPathIsAbs(frag, flen)) {
             /* reset */
             firstfrag = i;
-            nfrags = 1;
+            nfrags = 0;
             totallen = 0;
-
-        } else {
-            nfrags++;
         }
 
         if(nfrags)
             totallen += 1; /* for separator */
+
         totallen += flen;
+        nfrags++;
     }
 
     ret = malloc(totallen + 1);
@@ -146,6 +145,7 @@ char* epicsPathJoin(const char **fragments, size_t nfragments)
 
         for(i=firstfrag, nfrags=0; i<nfragments; i++) {
             const char* frag = fragments[i];
+
             if(!frag|| frag[0]=='\0')
                 continue;
 
@@ -156,9 +156,11 @@ char* epicsPathJoin(const char **fragments, size_t nfragments)
 
             if(nfrags)
                 strcat(ret, OSI_PATH_SEPARATOR);
+
             strcat(ret, frag);
             nfrags++;
         }
+        assert(strlen(ret)==totallen);
     }
 
     free(cwd);

@@ -97,8 +97,7 @@ OS_CLASS = RTEMS
 
 #--------------------------------------------------
 # Operating system compile & link flags
-OP_SYS_CFLAGS_API_posix = -D__LINUX_ERRNO_EXTENSIONS__
-OP_SYS_CFLAGS += $(OP_SYS_CFLAGS_API_$(OS_API))
+OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
 
 OP_SYS_CFLAGS_NET_yes = -DRTEMS_LEGACY_STACK
 OP_SYS_CFLAGS_NET_no  = -DHAVE_SOCKADDR_SA_LEN=1

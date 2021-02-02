@@ -42,7 +42,7 @@
 #include "logClient.h"
 #include "osiUnistd.h"
 #include "iocsh.h"
-#include "osdTime.h"
+#include "../../src/osi/os/RTEMS-kernel/osdTime.h"
 #include "epicsMemFs.h"
 
 #include "epicsRtemsInitHooks.h"

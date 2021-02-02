@@ -32,12 +32,12 @@ vpath %.l $(USR_VPATH) $(ALL_SRC_DIRS)
 include $(CONFIG)/CONFIG_ADDONS
 
 #---------------------------------------------------------------
-# Set PROD, TESTPROD, OBJS, and LIBRARY
 
 SCRIPTS_HOST += $(PERL_SCRIPTS)
 # PERL_SCRIPTS are installed into existing $(INSTALL_BIN) for Host systems
 
-ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
+# Host targets can compile and run programs
+ifneq (,$(findstring Host,$(VALID_BUILDS)))
 LIBRARY += $(LIBRARY_HOST)
 LOADABLE_LIBRARY += $(LOADABLE_LIBRARY_HOST)
 OBJS += $(OBJS_HOST)
@@ -49,7 +49,21 @@ TESTSCRIPTS += $(TESTSCRIPTS_HOST)
 TESTPROD += $(TESTPROD_HOST)
 endif
 
-ifeq ($(findstring Ioc,$(VALID_BUILDS)),Ioc)
+# Command targets have a command line and support main()
+ifneq (,$(findstring Command,$(VALID_BUILDS)))
+LIBRARY += $(LIBRARY_CMD)
+LOADABLE_LIBRARY += $(LOADABLE_LIBRARY_CMD)
+OBJS += $(OBJS_CMD)
+PROD += $(PROD_CMD)
+SCRIPTS += $(SCRIPTS_CMD)
+TARGETS += $(TARGETS_CMD)
+TESTLIBRARY += $(TESTLIBRARY_CMD)
+TESTSCRIPTS += $(TESTSCRIPTS_CMD)
+TESTPROD += $(TESTPROD_CMD)
+endif
+
+# Ioc targets can run IOCs
+ifneq (,$(findstring Ioc,$(VALID_BUILDS)))
 LIBRARY += $(LIBRARY_IOC)
 LOADABLE_LIBRARY += $(LOADABLE_LIBRARY_IOC)
 OBJS += $(OBJS_IOC)

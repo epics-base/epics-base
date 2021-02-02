@@ -10,7 +10,7 @@ include $(CONFIG)/os/CONFIG.Common.linux-x86
 ARCH_DEP_CFLAGS = -march=i486
 
 ifeq ($(BUILD_CLASS),CROSS)
-   VALID_BUILDS = Ioc
+   VALID_BUILDS = Ioc Command
 endif
 
 # If your crosscompiler name has a GNU target prefix like <gnutarget>-gcc,

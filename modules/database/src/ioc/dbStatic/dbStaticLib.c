@@ -81,8 +81,6 @@ maplinkType pamaplinkType[LINK_NTYPES] = {
 };
 
 /*forward references for private routines*/
-static void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
-    EPICS_PRINTF_STYLE(2,3);
 static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
 /* internal routines*/
@@ -199,7 +197,6 @@ void dbMsgNCpy(DBENTRY *pdbentry, const char *msg, size_t len)
     pdbentry->message[len] = '\0';
 }
 
-static
 void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
 {
     va_list args;

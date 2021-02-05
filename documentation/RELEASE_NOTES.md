@@ -17,6 +17,26 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+
+
+### Build System: New `VALID_BUILDS` type "Command"
+
+Target architectures that support command-line programs that run the `main()`
+routine can now be marked as such in their `VALID_BUILDS` definition. This
+enables a new set of Makefile target variables `PROD_CMD` (similar to
+`PROD_HOST`), `LIBRARY_CMD` (like `LIBRARY_HOST`, etc.), `LOADABLE_LIBRARY_CMD`,
+`OBJS_CMD`, `SCRIPTS_CMD`, `TARGETS_CMD`, `TESTLIBRARY_CMD`, `TESTSCRIPTS_CMD`
+and `TESTPROD_CMD`. The CA client tools and programs such as `caRepeater` are now built for all such targets (previously they were built for all targets except where the OS was VxWorks, RTEMS and iOS).
+
+If you have created your own site-specific target architectures you may need to
+update the `VALID_BUILDS` variable if it gets set in your locally added
+`configure/os/CONFIG.Common.<arch>` files. This is usually only needed for
+cross-compiled targets though since `CONFIG.Common.UnixCommon` sets it.
+
+The other `VALID_BUILDS` types are "Host" for target architectures that can
+compile and run their own programs (`PROD_HOST` etc.), and "Ioc" for targets
+that can run IOCs (`PROD_IOC` etc.).
+
 ### Support for JSON5
 
 The YAJL parser and generator routines in libcom and in the IOC's dbStatic

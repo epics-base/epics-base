@@ -8,11 +8,11 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- * unixFileName.h
+ * osiFileName.h
  * Author: Jeff Hill
  */
-#ifndef unixFileNameH
-#define unixFileNameH
+#ifndef osiFileNameH
+#define osiFileNameH
 
 #include <libComAPI.h>
 
@@ -20,8 +20,13 @@
 extern "C" {
 #endif
 
-#define OSI_PATH_LIST_SEPARATOR ":"
-#define OSI_PATH_SEPARATOR "/"
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  define OSI_PATH_LIST_SEPARATOR ";"
+#  define OSI_PATH_SEPARATOR "\\"
+#else
+#  define OSI_PATH_LIST_SEPARATOR ":"
+#  define OSI_PATH_SEPARATOR "/"
+#endif
 
 /** Return the absolute path of the current executable.
  \return NULL or the path.  Caller must free()
@@ -39,4 +44,4 @@ char *epicsGetExecDir(void);
 }
 #endif
 
-#endif /* unixFileNameH */
+#endif /* osiFileNameH */

@@ -86,8 +86,10 @@ expand_clean:
 ASSEMBLE_TOOL ?= $(PERL) $(TOOLS)/assembleSnippets.pl
 
 define COMMON_ASSEMBLY_template
+ifneq '$$($1_PATTERN)' ''
 $1_SNIPPETS += $$(foreach dir, .. $$(SRC_DIRS), \
     $$(wildcard $$(dir)/$$($1_PATTERN)))
+endif
 $(COMMON_DIR)/$1: $$($1_SNIPPETS)
 	$(ECHO) "Assembling common file $$@ from snippets"
 	@$(RM) $1
@@ -98,8 +100,10 @@ $(foreach asy, $(COMMON_ASSEMBLIES), \
     $(eval $(call COMMON_ASSEMBLY_template,$(strip $(asy)))))
 
 define ASSEMBLY_template
+ifneq '$$($1_PATTERN)' ''
 $1_SNIPPETS += $$(foreach dir, .. $$(SRC_DIRS), \
     $$(wildcard $$(dir)/$$($1_PATTERN)))
+endif
 $1: $$($1_SNIPPETS)
 	$(ECHO) "Assembling file $$@ from snippets"
 	@$(RM) $$@

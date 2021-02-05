@@ -95,10 +95,7 @@ PROD_LIBS = ca Com
 # needed when its an object library build
 PROD_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
-PROD_DEFAULT += caRepeater catime acctst caConnTest casw caEventRate
-PROD_vxWorks = -nil-
-PROD_RTEMS = -nil-
-PROD_iOS = -nil-
+PROD_CMD += caRepeater catime acctst caConnTest casw caEventRate
 
 OBJS_vxWorks = catime acctst caConnTest casw caEventRate acctstRegister
 

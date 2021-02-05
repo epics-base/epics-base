@@ -15,7 +15,7 @@ include $(CONFIG)/os/CONFIG.Common.linuxCommon
 ARCH_CLASS = microblaze
 
 ifeq ($(BUILD_CLASS),CROSS)
-	VALID_BUILDS = Ioc
+	VALID_BUILDS = Ioc Command
 	GNU_TARGET = microblazeel-unknown-linux-gnu
 	CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
 endif

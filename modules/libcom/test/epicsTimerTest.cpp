@@ -37,7 +37,11 @@
     epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
 
 #if __cplusplus >= 201103L
+#ifdef HAS_HIGH_PREC_TIMERS
+const double timeTolerance { 1e-3 };
+#else
 const double timeTolerance { 1e-3 + epicsThreadSleepQuantum() };
+#endif
 
 class handler : public epicsTimerNotify
 {

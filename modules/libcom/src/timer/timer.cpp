@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include "epicsGuard.h"
+#include "osdTimer.h"
 #include "timerPrivate.h"
 #include "errlog.h"
 
@@ -65,7 +66,11 @@ void timer::start ( epicsTimerNotify & notify, const epicsTime & expire )
 void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
 {
     this->pNotify = & notify;
+#ifdef HAS_HIGH_PREC_TIMERS
+    this->exp = expire;
+#else
     this->exp = expire - ( this->queue.notify.quantum () / 2.0 );
+# endif
 
     bool reschedualNeeded = false;
     if ( this->curState == stateActive ) {

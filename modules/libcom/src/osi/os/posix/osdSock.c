@@ -28,8 +28,11 @@
 #include "epicsAssert.h"
 #include "errlog.h"
 
-/* Linux and *BSD (at least) specific way to atomically set O_CLOEXEC */
-#ifdef SOCK_CLOEXEC
+/* Linux and *BSD (at least) specific way to atomically set O_CLOEXEC.
+ * RTEMS 5.1 provides SOCK_CLOEXEC, but doesn't implement accept4()
+ * no point anyway since neither RTEMS nor vxWorks can execv().
+ */
+#if defined(SOCK_CLOEXEC) && !defined(__rtems__) && !defined(vxWorks)
 /* with glibc, SOCK_CLOEXEC does not expand to a simple constant */
 #  define HAVE_SOCK_CLOEXEC
 #else

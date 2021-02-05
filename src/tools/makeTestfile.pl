@@ -6,7 +6,7 @@
 #     Operator of Los Alamos National Laboratory.
 # SPDX-License-Identifier: EPICS
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 # The makeTestfile.pl script generates a file $target.t which is needed
@@ -41,11 +41,11 @@ elsif ($TA =~ /^windows-x64/ && $HA !~ /^win/) {
 elsif ($TA =~ /^RTEMS-pc[36]86-qemu$/) {
     # Run the pc386 and pc686 test harness w/ QEMU
     $exec = "qemu-system-i386 -m 64 -no-reboot "
-          . "-serial stdio -display none "
-          . "-net nic,model=rtl8139 -net nic,model=ne2k_pci "
-          . "-net user,restrict=yes "
-          . "-append --console=/dev/com1 "
-          . "-kernel $exe";
+        . "-serial stdio -display none "
+        . "-net nic,model=rtl8139 -net nic,model=ne2k_pci "
+        . "-net user,restrict=yes "
+        . "-append --console=/dev/com1 "
+        . "-kernel $exe";
     $error = "qemu-system-i386 ... -kernel $exe";
 }
 elsif ($TA =~ /^RTEMS-/) {
@@ -57,26 +57,52 @@ else {
     $error = $exec = "./$exe";
 }
 
-# Run the test program with system on Windows, exec elsewhere.
-# This is required by the Perl test harness.
-my $runtest = ($^O eq 'MSWin32') ?
-    "system('$exec') == 0" : "exec '$exec'";
+# Ensure that Windows interactive error handling is disabled.
+# This setting is inherited by the test process.
+# Set SEM_FAILCRITICALERRORS (1) Disable critical-error-handler dialog
+# Clear SEM_NOGPFAULTERRORBOX (2) Enabled WER to allow automatic post mortem debugging (AeDebug)
+# Clear SEM_NOALIGNMENTFAULTEXCEPT (4) Allow alignment fixups
+# Set SEM_NOOPENFILEERRORBOX (0x8000) Prevent dialog on some I/O errors
+# https://docs.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-seterrormode?redirectedfrom=MSDN
+my $sem = $^O ne 'MSWin32' ? '' : <<ENDBEGIN;
+BEGIN {
+  my \$sem = 'SetErrorMode';
+  eval {
+    require Win32::ErrorMode;
+    Win32::ErrorMode->import(\$sem);
+  };
+  eval {
+    require Win32API::File;
+    Win32API::File->import(\$sem);
+  } if \$@;
+  SetErrorMode(0x8001) unless \$@;
+}
+ENDBEGIN
 
 open my $OUT, '>', $target
     or die "Can't create $target: $!\n";
 
-print $OUT <<__EOF__;
+print $OUT <<EOF;
 #!/usr/bin/env perl
 
 use strict;
 use Cwd 'abs_path';
+$sem
 
-\$ENV{HARNESS_ACTIVE} = 1 if scalar \@ARGV && shift eq '-tap';
+    \$ENV{HARNESS_ACTIVE} = 1 if scalar \@ARGV && shift eq '-tap';
 \$ENV{TOP} = abs_path(\$ENV{TOP}) if exists \$ENV{TOP};
 
-$runtest
-    or die "Can't run $error: \$!\\n";
-__EOF__
+if (\$^O eq 'MSWin32') {
+    # Use system on Windows, exec doesn't work the same there and
+    # GNUmake thinks the test has finished too soon.
+    my \$status = system('$exec');
+    die "Can't run $exec: \$!\\n" if \$status == -1;
+    exit \$status >> 8;
+}
+else {
+    exec '$exec' or die "Can't run $exec: \$!\\n";
+}
+EOF
 
-close $OUT
+    close $OUT
     or die "Can't close $target: $!\n";

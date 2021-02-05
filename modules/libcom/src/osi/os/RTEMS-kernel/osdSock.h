@@ -72,7 +72,6 @@ typedef unsigned char osiSockOptMcastTTL_t;
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
 
-#define bzero(p,n) memset(p,0,n)
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>

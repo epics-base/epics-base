@@ -28,17 +28,6 @@
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
 
-#ifdef RTEMS_LEGACY_STACK
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, struct timeval *timeout);
-
-#ifdef __cplusplus
-}
-#endif
-#endif // LEGACY_STACK
 typedef int                     SOCKET;
 #define INVALID_SOCKET          (-1)
 #define SOCKERRNO               errno

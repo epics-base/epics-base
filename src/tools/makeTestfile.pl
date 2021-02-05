@@ -42,7 +42,7 @@ elsif ($TA =~ /^RTEMS-pc[36]86-qemu$/) {
     # Run the pc386 and pc686 test harness w/ QEMU
     $exec = "qemu-system-i386 -m 64 -no-reboot "
           . "-serial stdio -display none "
-          . "-net nic,model=e1000 -net nic,model=ne2k_pci "
+          . "-net nic,model=rtl8139 -net nic,model=ne2k_pci "
           . "-net user,restrict=yes "
           . "-append --console=/dev/com1 "
           . "-kernel $exe";

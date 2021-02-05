@@ -17,6 +17,7 @@
 
 #include "epicsUnitTest.h"
 #include "epicsString.h"
+#include "epicsMath.h"
 #include "testMain.h"
 
 static
@@ -74,6 +75,35 @@ void testGlob(void) {
     testOk1(epicsStrGlobMatch("hello","*"));
 }
 
+static
+void testDistance(void) {
+    double dist;
+    testDiag("testDistance()");
+
+#define TEST(EXPECT, A, B) dist = epicsStrSimilarity(A, B); testOk(fabs(dist-(EXPECT))<0.01, "distance \"%s\", \"%s\" %f ~= %f", A, B, dist, EXPECT)
+
+    TEST(1.00, "", "");
+    TEST(1.00, "A", "A");
+    TEST(0.00, "A", "B");
+    TEST(1.00, "exact", "exact");
+    TEST(0.90, "10 second", "10 seconds");
+    TEST(0.71, "Passive", "Pensive");
+    TEST(0.11, "10 second", "Pensive");
+    TEST(0.97, "Set output to IVOV", "Set output To IVOV");
+
+    /* we modify Levenshtein to give half weight to case insensitive matches */
+
+    /* totally unrelated except for 'i' ~= 'I' */
+    TEST(0.06, "Passive", "I/O Intr");
+    TEST(0.06, "I/O Intr", "Pensive");
+    /* 2x subst and 1x case subst, max distance 2xlen("YES") */
+    TEST(0.50, "YES", "yes");
+    TEST(0.00, "YES", "NO");
+    TEST(0.67, "YES", "Yes");
+    TEST(0.67, "Tes", "yes");
+#undef TEST
+}
+
 MAIN(epicsStringTest)
 {
     const char * const empty = "";
@@ -88,7 +118,7 @@ MAIN(epicsStringTest)
     char *s;
     int status;
 
-    testPlan(387);
+    testPlan(401);
 
     testChars();
 
@@ -283,6 +313,8 @@ MAIN(epicsStringTest)
     testOk(result[0] == 1, "  Hex escape (got \\x%x)", result[0]);
     testOk(result[1] == 'g', "  Terminator char got '%c'", result[1]);
     testOk(result[status] == 0, "  0-terminated");
+
+    testDistance();
 
     return testDone();
 }

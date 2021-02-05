@@ -37,6 +37,10 @@ int select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, str
 }
 #endif
 
+#ifndef IPPORT_USERRESERVED
+#define IPPORT_USERRESERVED 5000
+#endif 
+
 typedef int                     SOCKET;
 #define INVALID_SOCKET          (-1)
 #define SOCKERRNO               errno

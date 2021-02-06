@@ -33,16 +33,18 @@ DBCORE_API extern int dbAccessDebugPUTF;
 /*  The database field and request types are defined in dbFldTypes.h*/
 /* Data Base Request Options    */
 #define DBR_STATUS      0x00000001
-#define DBR_UNITS       0x00000002
-#define DBR_PRECISION   0x00000004
-#define DBR_TIME        0x00000008
-#define DBR_ENUM_STRS   0x00000010
-#define DBR_GR_LONG     0x00000020
-#define DBR_GR_DOUBLE   0x00000040
-#define DBR_CTRL_LONG   0x00000080
-#define DBR_CTRL_DOUBLE 0x00000100
-#define DBR_AL_LONG     0x00000200
-#define DBR_AL_DOUBLE   0x00000400
+#define DBR_AMSG        0x00000002
+#define DBR_UNITS       0x00000004
+#define DBR_PRECISION   0x00000008
+#define DBR_TIME        0x00000010
+#define DBR_UTAG        0x00000020
+#define DBR_ENUM_STRS   0x00000040
+#define DBR_GR_LONG     0x00000080
+#define DBR_GR_DOUBLE   0x00000100
+#define DBR_CTRL_LONG   0x00000200
+#define DBR_CTRL_DOUBLE 0x00000400
+#define DBR_AL_LONG     0x00000800
+#define DBR_AL_DOUBLE   0x00001000
 
 /**********************************************************************
  * The next page contains macros for defining requests.
@@ -99,8 +101,10 @@ DBCORE_API extern int dbAccessDebugPUTF;
         epicsUInt16     status;         /* alarm status */\
         epicsUInt16     severity;       /* alarm severity*/\
         epicsUInt16     acks;           /* alarm ack severity*/\
-        epicsUInt16     ackt;           /* Acknowledge transient alarms?*/\
-        char amsg[40];
+        epicsUInt16     ackt;           /* Acknowledge transient alarms?*/
+#define DB_AMSG_SIZE 40
+#define DBRamsg \
+        char amsg[DB_AMSG_SIZE];
 #define DB_UNITS_SIZE   16
 #define DBRunits \
         char            units[DB_UNITS_SIZE];   /* units        */
@@ -113,7 +117,8 @@ DBCORE_API extern int dbAccessDebugPUTF;
          * too late to change now.  DBRprecision must be padded to
          * maintain 8-byte alignment. */
 #define DBRtime \
-        epicsTimeStamp	time;		/* time stamp*/\
+        epicsTimeStamp	time;		/* time stamp*/
+#define DBRutag \
         epicsUTag utag;
 #define DBRenumStrs \
         epicsUInt32     no_str;         /* number of strings*/\

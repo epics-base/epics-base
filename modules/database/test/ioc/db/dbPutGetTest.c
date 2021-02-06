@@ -20,15 +20,17 @@
 
 typedef struct {
     DBRstatus
+    DBRamsg
     DBRunits
     DBRprecision
     DBRtime
+    DBRutag
     DBRgrDouble
     DBRctrlDouble
     DBRalDouble
 } dbMetaDouble;
 
-enum {dbMetaDoubleMask = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_TIME | DBR_GR_DOUBLE | DBR_CTRL_DOUBLE | DBR_AL_DOUBLE};
+enum {dbMetaDoubleMask = DBR_STATUS | DBR_AMSG | DBR_UNITS | DBR_PRECISION | DBR_TIME | DBR_UTAG | DBR_GR_DOUBLE | DBR_CTRL_DOUBLE | DBR_AL_DOUBLE};
 
 static
 void testdbMetaDoubleSizes(void)
@@ -153,7 +155,9 @@ void testdbMetaDoubleGet(void)
 
 typedef struct {
     DBRstatus
+    DBRamsg
     DBRtime
+    DBRutag
     DBRenumStrs
 } dbMetaEnum;
 

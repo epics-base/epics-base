@@ -359,6 +359,8 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
             *pushort++ = pcommon->acks;
             *pushort++ = pcommon->ackt;
             pbuffer = (char *)pushort;
+        }
+        if( (*options) & DBR_AMSG ) {
             if (!pfl || pfl->type == dbfl_type_rec) {
                 STATIC_ASSERT(sizeof(pcommon->amsg)==sizeof(pfl->amsg));
                 strncpy(pbuffer, pcommon->amsg, sizeof(pcommon->amsg)-1);
@@ -390,7 +392,6 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         }
         if( (*options) & DBR_TIME ) {
             epicsUInt32 *ptime = (epicsUInt32 *)pbuffer;
-            epicsUInt64 *ptime64;
 
             if (!pfl) {
                 *ptime++ = pcommon->time.secPastEpoch;
@@ -399,13 +400,16 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
                 *ptime++ = pfl->time.secPastEpoch;
                 *ptime++ = pfl->time.nsec;
             }
-            ptime64 = (epicsUInt64*)ptime;
+            pbuffer = (char *)ptime;
+        }
+        if( (*options) & DBR_UTAG ) {
+            epicsUInt64 *ptag = (epicsUInt64*)pbuffer;
             if (!pfl || pfl->type == dbfl_type_rec) {
-                *ptime64++ = pcommon->utag;
+                *ptag++ = pcommon->utag;
             } else {
-                *ptime64++ = pfl->utag;
+                *ptag++ = pfl->utag;
             }
-            pbuffer = (char *)ptime64;
+            pbuffer = (char *)ptag;
         }
         if( (*options) & DBR_ENUM_STRS )
             get_enum_strs(paddr, &pbuffer, prset, options);

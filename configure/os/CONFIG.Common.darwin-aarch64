@@ -2,8 +2,8 @@
 #
 # This file is maintained by the build community.
 #
-# Definitions for darwin-ppc target builds
-# Sites may override these definitions in CONFIG_SITE.Common.darwin-ppc
+# Definitions for darwin-aarch64 target builds
+# Sites may override these definitions in CONFIG_SITE.Common.darwin-aarch64
 #-------------------------------------------------------
 
 #

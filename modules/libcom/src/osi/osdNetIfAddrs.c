@@ -37,6 +37,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
     osiSockAddrNode *pNewNode;
+    struct ifaddrs *ifa;
 
     if ( pMatchAddr->sa.sa_family == AF_INET  ) {
         if ( pMatchAddr->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
@@ -60,7 +61,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         return;
     }
 
-    for ( struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next ) {
+    for ( ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next ) {
         if ( ifa->ifa_addr == NULL ) {
               continue;
         }

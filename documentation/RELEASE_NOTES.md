@@ -19,6 +19,11 @@ should also be read to understand what has changed since earlier releases.
 
 
 
+### Add epicsStrSimilarity()
+
+Add epicsStrSimilarity() to epicsString.h which uses edit distance as an approximate comparison.
+Enables a new "Did you mean ..." suggestion when a .db file provides an invalid value for a DBF_MENU or DBF_DEVICE field.
+
 ### Build System: New `VALID_BUILDS` type "Command"
 
 Target architectures that support command-line programs that run the `main()`

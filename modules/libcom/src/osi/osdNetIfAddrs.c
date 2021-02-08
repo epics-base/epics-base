@@ -166,14 +166,14 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
  */
 static void osiLocalAddrOnce (void *raw)
 {
-    struct ifaddrs *ifaddr;
+    struct ifaddrs *ifaddr, *ifa;
     int result = getifaddrs (&ifaddr);
     if ( result != 0 ) {
         errlogPrintf("osiLocalAddrOnce(): getifaddrs failed.\n");
         return;
     }
 
-    for ( struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next ) {
+    for ( ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next ) {
         if ( ifa->ifa_addr == NULL ) {
               continue;
         }

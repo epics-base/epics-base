@@ -95,12 +95,11 @@ epicsEventId 	dhcpDone;
 /* these settings are needed by the rtems startup
  * may provide by dhcp/bootp
  * or environments from the "BIOS" like u-boot, motboot etc.
- * these are settings within FHI infrastructure (01/13/2021)
  */
-char rtemsInit_NTP_server_ip[16] = "141.14.142.121";
-char bootp_server_name_init[128] = "1001.1001@141.14.128.9:/Volumes/Epics";
-char bootp_boot_file_name_init[128] = "/Volumes/Epics/myExample/bin/RTEMS-beatnik/myExample.boot";
-char bootp_cmdline_init[128] = "/Volumes/Epics/myExample/iocBoot/iocmyExample/st.cmd";
+char rtemsInit_NTP_server_ip[16] = "10.0.5.1";
+char bootp_server_name_init[128] = "1001.1001@10.0.5.1:/epics";
+char bootp_boot_file_name_init[128] = "/epics/myExample/bin/RTEMS-beatnik/myExample.boot";
+char bootp_cmdline_init[128] = "/epics/myExample/iocBoot/iocmyExample/st.cmd";
 
 struct in_addr rtems_bsdnet_bootp_server_address;
 /* TODO check rtems_bsdnet_bootp_cmdline */
@@ -767,10 +766,6 @@ default_network_on_exit(int exit_code, void *arg)
 
         rtems_print_printer_printf(&printer);
         rtems_stack_checker_report_usage_with_plugin(&printer);
-
-        if (exit_code == 0) {
-                puts("*** END OF TEST ***");
-        }
 }
 
 static void

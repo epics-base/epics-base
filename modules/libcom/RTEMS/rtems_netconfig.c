@@ -15,12 +15,9 @@
  */
 #include <stdio.h>
 #include <bsp.h>
+#include <epicsVersion.h>
 
-#ifndef VERSION_INT
-#  define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
-#endif
 #define RTEMS_VERSION_INT  VERSION_INT(__RTEMS_MAJOR__, __RTEMS_MINOR__, 0, 0)
-
 
 #ifdef RTEMS_LEGACY_STACK // old non libbsd stack
 #include <rtems/rtems_bsdnet.h>

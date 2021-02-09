@@ -1,8 +1,7 @@
 /*************************************************************************\
 * (C) 2014 David Lettier.
 * http://www.lettier.com/
-* EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* SPDX-License-Identifier: BSD-3-Clause
 \*************************************************************************/
 #ifndef EPICSNTP_H
 #define EPICSNTP_H

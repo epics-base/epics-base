@@ -188,7 +188,9 @@ RES=.res
 
 # MS Visual C++ doesn't recognize *.cc as a C++ source file,
 # so C++ compiles get the flag -TP
-COMPILER_CXXFLAGS = -TP
+# We want MSVC to report a reasonable C++ version in the __cplusplus macro so
+# we need to set -Zc:__cplusplus (this is at least required for MSVC 19.xx).
+COMPILER_CXXFLAGS = -TP -Zc:__cplusplus
 
 # Operating system flags
 OP_SYS_CFLAGS =

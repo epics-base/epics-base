@@ -715,43 +715,52 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
     sprintf(ifnamebuf, "%s", getPrimaryNetworkInterface());
 
     while (*env != NULL) {
+        char const * interface = "interface";
+        char const * reason = "reason";
+        char const * bound_str = "BOUND";
+        
         name = strtok_r(*env,"=", &env_position);
         value = strtok_r(NULL,"=", &env_position);
         printf("all out ---> %s = %s\n", name, value);
 
-        if (!strcmp(name, "interface") &&
+        if (!strncmp(name, interface, strlen(interface)) &&
             !strcmp(value,  ifnamebuf)) {
             snprintf(iName, sizeof(iName), "%s", value);
         }
 
-        if (!strcmp(name, "if_up") && !strcmp(value, "true")) {
-            printf ("Interface %s is up\n", iName);
-            bound = true;
+        if (!strncmp(name, reason, strlen(reason)) &&
+            !strncmp(value, bound_str, strlen(bound_str))) {
+            printf ("Interface %s bounded\n", iName);
+            bound = 1;
         }
         
         if (bound) {
             // as there is no ntp-support in rtems-libbsd, we call our own client
-            if (!strcmp(name, "new_ntp_servers"))
+            char const * new_ntp_servers = "new_ntp_servers";
+            char const * new_host_name = "new_host_name";
+            char const * new_tftp_server_name = "new_tftp_server_name";
+            
+            if (!strncmp(name, new_ntp_servers, strlen(new_ntp_servers)))
                 snprintf(rtemsInit_NTP_server_ip,
                          sizeof(rtemsInit_NTP_server_ip),
                          "%s", value);
             
-            if (!strcmp(name, "new_host_name"))
+            if (!strncmp(name, new_host_name, strlen(new_host_name)))
                 sethostname (value, strlen (value));
             
-            if (!strcmp(name, "new_tftp_server_name")) {
+            if (!strncmp(name, new_tftp_server_name, strlen(new_tftp_server_name))){
                 snprintf(rtems_bsdnet_bootp_server_name,
                          sizeof(bootp_server_name_init),
                          "%s", value);
                 printf(" rtems_bsdnet_bootp_server_name : %s\n", rtems_bsdnet_bootp_server_name);
             }
-            if(!strcmp(name, "new_bootfile_name")){
+            if(!strncmp(name, "new_bootfile_name", 20)){
                 snprintf(rtems_bsdnet_bootp_boot_file_name,
                          sizeof(bootp_boot_file_name_init),
                          "%s", value);
                 printf(" rtems_bsdnet_bootp_boot_file_name : %s\n", rtems_bsdnet_bootp_boot_file_name);
             }
-            if(!strcmp(name, "new_rtems_cmdline")){
+            if(!strncmp(name, "new_rtems_cmdline", 20)){
                 snprintf(rtems_bsdnet_bootp_cmdline,
                          sizeof(bootp_cmdline_init),
                          "%s", value);

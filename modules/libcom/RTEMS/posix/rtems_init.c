@@ -717,7 +717,7 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
     while (*env != NULL) {
         char const * interface = "interface";
         char const * reason = "reason";
-        char const * bound = "BOUND";
+        char const * bound_str = "BOUND";
         
         name = strtok_r(*env,"=", &env_position);
         value = strtok_r(NULL,"=", &env_position);
@@ -729,7 +729,7 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
         }
 
         if (!strncmp(name, reason, strlen(reason)) &&
-            !strncmp(value, bound, strlen(bound))) {
+            !strncmp(value, bound_str, strlen(bound_str))) {
             printf ("Interface %s bounded\n", iName);
             bound = 1;
         }

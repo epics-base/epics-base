@@ -707,50 +707,71 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
     char iName[16];
     char *name;
     char *value;
-
+    char * env_position;
+    
 	(void)hook;
 
     char ifnamebuf[IF_NAMESIZE];
     sprintf(ifnamebuf, "%s", getPrimaryNetworkInterface());
 
     while (*env != NULL) {
-        name = strtok(*env,"=");
-        value = strtok(NULL,"=");
+        char const * interface = "interface";
+        char const * reason = "reason";
+        char const * bound = "BOUND";
+        
+        name = strtok_r(*env,"=", &env_position);
+        value = strtok_r(NULL,"=", &env_position);
         printf("all out ---> %s = %s\n", name, value);
-        if (!strncmp(name, "interface", 9) && !strcmp(value,  ifnamebuf))
-			 strncpy(iName, value, 16);
-		if (!strncmp(name, "reason", 6) && !strncmp(value, "BOUND", 5)){
+
+        if (!strncmp(name, interface, strlen(interface)) &&
+            !strcmp(value,  ifnamebuf)) {
+            snprintf(iName, sizeof(iName), "%s", value);
+        }
+
+        if (!strncmp(name, reason, strlen(reason)) &&
+            !strncmp(value, bound, strlen(bound))) {
             printf ("Interface %s bounded\n", iName);
             bound = 1;
-		}
-		if (bound) {
+        }
+        
+        if (bound) {
             // as there is no ntp-support in rtems-libbsd, we call our own client
-            if(!strncmp(name, "new_ntp_servers", 15))
-                strcpy(rtemsInit_NTP_server_ip,value);
-            if(!strncmp(name, "new_host_name", 13))
+            char const * new_ntp_servers = "new_ntp_servers";
+            char const * new_host_name = "new_host_name";
+            char const * new_tftp_server_name = "new_tftp_server_name";
+            
+            if (!strncmp(name, new_ntp_servers, strlen(new_ntp_servers)))
+                snprintf(rtemsInit_NTP_server_ip,
+                         sizeof(rtemsInit_NTP_server_ip),
+                         "%s", value);
+            
+            if (!strncmp(name, new_host_name, strlen(new_host_name)))
                 sethostname (value, strlen (value));
-            if(!strncmp(name, "new_tftp_server_name", 20)){
-                //printf(" new_tftp_server_name : %s\n", value);
-                strncpy(rtems_bsdnet_bootp_server_name,value, sizeof(bootp_server_name_init));
+            
+            if (!strncmp(name, new_tftp_server_name, strlen(new_tftp_server_name))){
+                snprintf(rtems_bsdnet_bootp_server_name,
+                         sizeof(bootp_server_name_init),
+                         "%s", value);
                 printf(" rtems_bsdnet_bootp_server_name : %s\n", rtems_bsdnet_bootp_server_name);
             }
             if(!strncmp(name, "new_bootfile_name", 20)){
-                //printf(" new_bootfile_name : %s\n", value);
-                strncpy(rtems_bsdnet_bootp_boot_file_name,value, sizeof(bootp_boot_file_name_init));
+                snprintf(rtems_bsdnet_bootp_boot_file_name,
+                         sizeof(bootp_boot_file_name_init),
+                         "%s", value);
                 printf(" rtems_bsdnet_bootp_boot_file_name : %s\n", rtems_bsdnet_bootp_boot_file_name);
             }
             if(!strncmp(name, "new_rtems_cmdline", 20)){
-                //printf(" new_rtems_cmdline : %s\n", value);
-                strncpy(rtems_bsdnet_bootp_cmdline,value, sizeof(bootp_cmdline_init));
+                snprintf(rtems_bsdnet_bootp_cmdline,
+                         sizeof(bootp_cmdline_init),
+                         "%s", value);
                 printf(" rtems_bsdnet_bootp_cmdline : %s\n", rtems_bsdnet_bootp_cmdline);
             }
-            // printf("---> %s = %s\n", name, value);
-        }
-		++env;
-	}
+          }
+        ++env;
+    }
     if (bound)
         epicsEventSignal(dhcpDone);
-    }
+}
 
 static rtems_dhcpcd_hook dhcpcd_hook = {
 	.name = "ioc boot",

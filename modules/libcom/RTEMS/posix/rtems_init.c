@@ -882,13 +882,14 @@ telnet_pseudoIocsh(char *name, __attribute__((unused))void *arg)
 
 /*
  *  Telnet daemon configuration
+ * 0 or NULL for most fields in thsi struct indicate default values to RTEMS.
  */
 rtems_telnetd_config_table rtems_telnetd_config = {
   .command = SHELL_ENTRY,
   .arg = NULL,
-  .priority = 99, // if RTEMS_NETWORK and .priority == 0 bsd_network_prio should be used ...
+  .priority = 0,
   .stack_size = 0,
-  .client_maximum = 5, // should be 1, on RTEMS and Epics it makes only sense for one connection a time
+  .client_maximum = 0,
   .login_check = NULL,
   .keep_stdio = false
 };

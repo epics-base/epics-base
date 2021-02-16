@@ -822,7 +822,6 @@ default_network_dhcpcd(void)
         "option tftp_server_name\n" \
         "option bootfile_name\n" \
         "define 129 string rtems_cmdline\n";
-        "vendopt 129 string rtems_cmdline";
 
     n = write(fd, fhi_cfg, sizeof(fhi_cfg) - 1);
     assert(n == (ssize_t) sizeof(fhi_cfg) - 1);
@@ -991,8 +990,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
     default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1U);
 
     /* supress all output from bsd network initialization */ 
-    rtems_bsd_vprintf_handler bsd_vprintf_handler_old;
-    bsd_vprintf_handler_old = rtems_bsd_set_vprintf_handler(rtems_bsd_vprintf_handler_mute);
+    rtems_bsd_set_vprintf_handler(rtems_bsd_vprintf_handler_mute);
 
     sc = rtems_bsd_initialize();
     assert(sc == RTEMS_SUCCESSFUL);

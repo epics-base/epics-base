@@ -62,6 +62,7 @@
 #include "initHooks.h"
 #include "iocInit.h"
 #include "link.h"
+#include "dbLinkPvt.h"
 #include "menuConvert.h"
 #include "menuPini.h"
 #include "recGbl.h"
@@ -97,6 +98,9 @@ static void iterateRecords(recIterFunc func, void *user);
 
 int dbThreadRealtimeLock = 1;
 epicsExportAddress(int, dbThreadRealtimeLock);
+
+double dbLinkConnectionCheckDelay = 5.0;
+epicsExportAddress(double, dbLinkConnectionCheckDelay);
 
 enum iocStateEnum getIocState(void)
 {
@@ -182,6 +186,8 @@ static int iocBuild_2(void)
 
     initialProcess();
     initHookAnnounce(initHookAfterInitialProcess);
+
+    dbLinkCheckStart();
     return 0;
 }
 

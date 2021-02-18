@@ -45,6 +45,7 @@
 #include "dbStaticLib.h"
 #include "epicsExport.h"
 #include "link.h"
+#include "dbLinkPvt.h"
 #include "recSup.h"
 #include "dbUnitTest.h" /* for testSyncCallback() */
 
@@ -404,6 +405,24 @@ void callbackRequestProcessCallbackDelayed(epicsCallback *pcallback,
 {
     callbackSetProcess(pcallback, Priority, pRec);
     callbackRequestDelayed(pcallback, seconds);
+}
+
+static epicsTimerId linkCheck;
+
+static void checkLinks(void *unused)
+{
+    dbLinkConnCheck();
+    epicsTimerQueueDestroyTimer(timerQueue, linkCheck);
+}
+
+/* in callback.c for access to timerQueue */
+void dbLinkCheckStart(void)
+{
+    double delay = dbLinkConnectionCheckDelay;
+    if(delay < 0.0)
+        return;
+    linkCheck = epicsTimerQueueCreateTimer(timerQueue, &checkLinks, NULL);
+    epicsTimerStartDelay(linkCheck, 5.0);
 }
 
 /* Sync. process of testSyncCallback()

@@ -33,6 +33,7 @@
 #include "errlog.h"
 #include "epicsStdio.h"
 #include "epicsExit.h"
+#include "osiUnistd.h"
 
 
 #define MIN_BUFFER_SIZE 1280
@@ -87,6 +88,7 @@ static struct {
     int          atExit;
     int          sevToLog;
     int          toConsole;
+    int          ttyConsole;
     FILE         *console;
 
     /* A loop counter maintained by errlogThread. */
@@ -201,6 +203,79 @@ void errlogSequence(void)
 
     if(wakeNext)
         epicsEventMustTrigger(pvt.waitForSeq);
+}
+
+static
+int isATTY(FILE* fp)
+{
+    int ret = 0;
+#if !defined(_WIN32)
+    const char* term = getenv("TERM");
+    int fd = fileno(fp);
+
+    if(fd>=0 && isatty(fd)==1)
+        ret = 1;
+    /* We don't want to deal with the termcap database,
+     * so assume any non-empty $TERM implies at least some
+     * support for ANSI escapes
+     */
+    /* only attempt to use ANSI escapes if some terminal type is specified */
+    if(ret && (!term || !term[0]))
+        ret = 0;
+#endif
+    return ret;
+}
+
+/* in-place removal of ANSI terminal escape sequences.
+ * exported for use by unit-test only
+ */
+LIBCOM_API
+void errlogStripANSI(char *msg);
+
+void errlogStripANSI(char *msg)
+{
+    size_t pos = 0, shift = 0;
+
+    while(1) {
+        char c = msg[pos];
+
+        if(c=='\033') { /* ESC */
+            c = msg[++pos];
+            shift++;
+
+            if(c=='[') {
+                /* CSI escape sequence begins */
+                pos++;
+                shift++;
+
+                /* '\033' '[' [?;0=9]* [A-Za-z]
+                 */
+                while(1) {
+                    c = msg[pos];
+                    if(c=='?' || c==';' || (c>='0' && c<='9')) {
+                        pos++;
+                        shift++;
+
+                    } else {
+                        break;
+                    }
+                }
+                c = msg[pos];
+                if((c>='A' && c<='Z') || (c>='a' && c<='z')) {
+                    pos++;
+                    shift++;
+                }
+            }
+        }
+
+        if(shift)
+            msg[pos-shift] = c = msg[pos];
+
+        if(c=='\0')
+            break;
+
+        pos++;
+    }
 }
 
 int errlogPrintf(const char *pFormat, ...)
@@ -362,6 +437,7 @@ int errlogSetConsole(FILE *stream)
     errlogInit(0);
     epicsMutexMustLock(pvt.msgQueueLock);
     pvt.console = stream ? stream : stderr;
+    pvt.ttyConsole = isATTY(pvt.console);
     epicsMutexUnlock(pvt.msgQueueLock);
     /* make sure worker has stopped writing to the previous stream */
     errlogSequence();
@@ -436,6 +512,7 @@ static void errlogInitPvt(void *arg)
     ellInit(&pvt.listenerList);
     pvt.toConsole = TRUE;
     pvt.console = stderr;
+    pvt.ttyConsole = isATTY(stderr);
     pvt.waitForWork = epicsEventCreate(epicsEventEmpty);
     pvt.listenerLock = epicsMutexCreate();
     pvt.msgQueueLock = epicsMutexCreate();
@@ -522,6 +599,7 @@ static void errlogThread(void)
             /* snapshot and swap buffers for use while unlocked */
             size_t nLost = pvt.nLost;
             FILE *console = pvt.toConsole ? pvt.console : NULL;
+            int ttyConsole = pvt.ttyConsole;
             size_t pos = 0u;
             buffer_t *print;
 
@@ -536,8 +614,9 @@ static void errlogThread(void)
 
             while(pos < print->pos) {
                 listenerNode *plistenerNode;
-                const char* base = print->base + pos;
+                char* base = print->base + pos;
                 size_t mlen = epicsStrnLen(base+1u, pvt.bufSize - pos);
+                int stripped = 0;
 
                 if((base[0]&ERL_STATE_MASK) != ERL_STATE_READY || mlen>=pvt.bufSize - pos) {
                     fprintf(stderr, "Logic Error: errlog buffer corruption. %02x, %zu\n",
@@ -547,8 +626,15 @@ static void errlogThread(void)
                 }
 
                 if(base[0]&ERL_LOCALECHO && console) {
+                    if(!ttyConsole) {
+                        errlogStripANSI(base+1u);
+                        stripped = 1;
+                    }
                     fprintf(console, "%s", base+1u);
                 }
+
+                if(!stripped)
+                    errlogStripANSI(base+1u);
 
                 epicsMutexMustLock(pvt.listenerLock);
                 plistenerNode = (listenerNode *)ellFirst(&pvt.listenerList);

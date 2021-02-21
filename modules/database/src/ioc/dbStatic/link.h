@@ -68,6 +68,7 @@ epicsShareExtern maplinkType pamaplinkType[];
 #define pvlOptInpString  0x100  /*Input as string*/
 #define pvlOptOutNative  0x200  /*Output native*/
 #define pvlOptOutString  0x400  /*Output as string*/
+#define pvlOptDB         0x800  /*Force local database link*/
 
 /* DBLINK Flag bits */
 #define DBLINK_FLAG_INITIALIZED    1 /* dbInitLink() called */

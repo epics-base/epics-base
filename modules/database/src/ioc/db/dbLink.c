@@ -87,7 +87,6 @@ static void TSEL_modified(struct link *plink)
     }
 }
 
-
 /***************************** Generic Link API *****************************/
 
 void dbInitLink(struct link *plink, short dbfType)
@@ -120,6 +119,11 @@ void dbInitLink(struct link *plink, short dbfType)
         /* Make it a DB link if possible */
         if (!dbDbInitLink(plink, dbfType))
             return;
+
+        if(plink->value.pv_link.pvlMask & pvlOptDB) {
+            errlogPrintf("%s.XXX Warning: Unable to create DB link to \"%s\"\n",
+                         precord->name, plink->value.pv_link.pvname);
+        }
     }
 
     /* Make it a CA link */

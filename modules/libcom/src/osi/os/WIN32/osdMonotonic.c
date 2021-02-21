@@ -46,13 +46,11 @@ epicsUInt64 epicsMonotonicResolution(void)
 epicsUInt64 epicsMonotonicGet(void)
 {
     LARGE_INTEGER val;
+    double dval;
     if (!QueryPerformanceCounter(&val)) {
         cantProceed("epicsMonotonicGet: Failed to read Windows Performance Counter\n");
         return 0;
     }
-    else { /* return value in nanoseconds */
-        val.QuadPart -= perfCounterOffset;
-        double nsec = (double)(val.QuadPart) * sec2nsec / perfCounterFrequency;
-        return (epicsUInt64)(nsec + 0.5);
-    }
+    dval = val.QuadPart - perfCounterOffset;
+    return (epicsUInt64)(dval * sec2nsec / perfCounterFrequency + 0.5);
 }

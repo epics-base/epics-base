@@ -11,3 +11,6 @@
 
 # dbLexRoutines.c is included in dbYacc.c
 dbYacc.c: dbLex.c $(IOCDIR)/dbStatic/dbLexRoutines.c
+
+dbStaticLib$(DEP): ../epics-gdb-helper.py
+dbStaticLib$(OBJ): ../epics-gdb-helper.py

@@ -28,6 +28,7 @@
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "envDefs.h"
+#include "errSymTbl.h"
 #include "epicsExit.h"
 #include "epicsGeneralTime.h"
 #include "epicsPrint.h"
@@ -538,9 +539,10 @@ static long doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     dbFldDes **papFldDes = pdbRecordType->papFldDes;
     short *link_ind = pdbRecordType->link_ind;
     int j;
+    long ret = 0;
 
     /* For all the links in the record type... */
-    for (j = 0; j < pdbRecordType->no_links; j++) {
+    for (j = 0; !ret && j < pdbRecordType->no_links; j++) {
         dbFldDes *pdbFldDes = papFldDes[link_ind[j]];
         DBLINK *plink = (DBLINK*)((char*)precord + pdbFldDes->offset);
 
@@ -555,9 +557,9 @@ static long doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
             }
         }
 
-        dbInitLink(plink, pdbFldDes->field_type);
+        ret = dbInitLink(plink, pdbFldDes->field_type);
     }
-    return 0;
+    return ret;
 }
 
 static long doInitRecord1(dbRecordType *pdbRecordType, dbCommon *precord,

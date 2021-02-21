@@ -1111,6 +1111,13 @@ static long dbPutFieldLink(DBADDR *paddr,
                 precord->name, pfldDes->name, link_info.target, status);
             goto cleanup;
         }
+        if (!chan && (link_info.modifiers & pvlOptDB)) {
+            errlogPrintf("%s.%s " ERL_ERROR ": Unable to create DB link to \"%s\"\n",
+                         precord->name, dbLinkFieldName(plink),
+                         plink->value.pv_link.pvname);
+            status = S_dbLib_recNotFound;
+            goto cleanup;
+        }
     }
 
     isDevLink = ellCount(&precord->rdes->devList) > 0 &&

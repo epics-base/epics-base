@@ -258,6 +258,9 @@ void epicsMutexOsdUnlock(struct epicsMutexOSD *);
 epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD *);
 epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD *);
 void epicsMutexOsdShow(struct epicsMutexOSD *,unsigned  int level);
+#ifdef EPICS_PRIVATE_API
+void epicsMutexOsdShowAll(void);
+#endif
 
 #ifdef __cplusplus
 }

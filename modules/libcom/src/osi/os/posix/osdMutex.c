@@ -24,11 +24,14 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define EPICS_PRIVATE_API
+
 #include "epicsMutex.h"
 #include "osdPosixMutexPriv.h"
 #include "cantProceed.h"
 #include "epicsTime.h"
 #include "errlog.h"
+#include "epicsStdio.h"
 #include "epicsAssert.h"
 
 #define checkStatus(status,message) \
@@ -187,4 +190,15 @@ void epicsMutexOsdShow(struct epicsMutexOSD * pmutex, unsigned int level)
      * of the futex() syscall.  __lock is at offset 0 of the enclosing structures.
      */
     printf("    pthread_mutex_t* uaddr=%p\n", &pmutex->lock);
+}
+
+void epicsMutexOsdShowAll(void)
+{
+    int proto = -1;
+    int ret = pthread_mutexattr_getprotocol(&globalAttrRecursive, &proto);
+    if(ret) {
+        printf("PI maybe not enabled: %d\n", ret);
+    } else {
+        printf("PI is%s enabled\n", proto==PTHREAD_PRIO_INHERIT ? "" : " not");
+    }
 }

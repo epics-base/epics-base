@@ -26,6 +26,9 @@ The IOC needs to run with SCHED_FIFO engaged.
 Support for Posix implementations before POSIX.1-2001 (_XOPEN_SOURCE < 500,
 glibc version < 2.3.3) has been dropped.
 
+The epicsMutexShowAll() function (available through IOC shell)
+will print "PI is enabled" if both libc and kernel support is present.
+
 ### Add epicsStrSimilarity()
 
 Add epicsStrSimilarity() to epicsString.h which uses edit distance as an approximate comparison.

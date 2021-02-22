@@ -1115,10 +1115,20 @@ POSIX_Init ( void *argument __attribute__((unused)))
     atexit(exitHandler);
     errlogFlush();
     printf ("***** Starting EPICS application *****\n");
+
+#if 0
+// Start an rtems shell before main, for debugging RTEMS system issues
+    rtems_shell_init("SHLL", RTEMS_MINIMUM_STACK_SIZE * 4,
+                     100, "/dev/console",
+                     false, true,
+                     NULL);
+#endif
+
     result = main ((sizeof argv / sizeof argv[0]) - 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
     epicsExit(result);
+
 #if defined(__rtems__)
     delayedPanic("will reset rtems ... end of POSIX_Init");
 #endif

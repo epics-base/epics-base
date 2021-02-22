@@ -353,6 +353,7 @@ int eltc(int yesno)
     epicsMutexMustLock(pvt.msgQueueLock);
     pvt.toConsole = yesno;
     epicsMutexUnlock(pvt.msgQueueLock);
+    errlogFlush();
     return 0;
 }
 

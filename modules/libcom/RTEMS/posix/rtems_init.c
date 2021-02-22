@@ -715,52 +715,43 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
     sprintf(ifnamebuf, "%s", getPrimaryNetworkInterface());
 
     while (*env != NULL) {
-        char const * interface = "interface";
-        char const * reason = "reason";
-        char const * bound_str = "BOUND";
-        
         name = strtok_r(*env,"=", &env_position);
         value = strtok_r(NULL,"=", &env_position);
         printf("all out ---> %s = %s\n", name, value);
 
-        if (!strncmp(name, interface, strlen(interface)) &&
+        if (!strcmp(name, "interface") &&
             !strcmp(value,  ifnamebuf)) {
             snprintf(iName, sizeof(iName), "%s", value);
         }
 
-        if (!strncmp(name, reason, strlen(reason)) &&
-            !strncmp(value, bound_str, strlen(bound_str))) {
-            printf ("Interface %s bounded\n", iName);
-            bound = 1;
+        if (!strcmp(name, "if_up") && !strcmp(value, "true")) {
+            printf ("Interface %s is up\n", iName);
+            bound = true;
         }
         
         if (bound) {
             // as there is no ntp-support in rtems-libbsd, we call our own client
-            char const * new_ntp_servers = "new_ntp_servers";
-            char const * new_host_name = "new_host_name";
-            char const * new_tftp_server_name = "new_tftp_server_name";
-            
-            if (!strncmp(name, new_ntp_servers, strlen(new_ntp_servers)))
+            if (!strcmp(name, "new_ntp_servers"))
                 snprintf(rtemsInit_NTP_server_ip,
                          sizeof(rtemsInit_NTP_server_ip),
                          "%s", value);
             
-            if (!strncmp(name, new_host_name, strlen(new_host_name)))
+            if (!strcmp(name, "new_host_name"))
                 sethostname (value, strlen (value));
             
-            if (!strncmp(name, new_tftp_server_name, strlen(new_tftp_server_name))){
+            if (!strcmp(name, "new_tftp_server_name")) {
                 snprintf(rtems_bsdnet_bootp_server_name,
                          sizeof(bootp_server_name_init),
                          "%s", value);
                 printf(" rtems_bsdnet_bootp_server_name : %s\n", rtems_bsdnet_bootp_server_name);
             }
-            if(!strncmp(name, "new_bootfile_name", 20)){
+            if(!strcmp(name, "new_bootfile_name")){
                 snprintf(rtems_bsdnet_bootp_boot_file_name,
                          sizeof(bootp_boot_file_name_init),
                          "%s", value);
                 printf(" rtems_bsdnet_bootp_boot_file_name : %s\n", rtems_bsdnet_bootp_boot_file_name);
             }
-            if(!strncmp(name, "new_rtems_cmdline", 20)){
+            if(!strcmp(name, "new_rtems_cmdline")){
                 snprintf(rtems_bsdnet_bootp_cmdline,
                          sizeof(bootp_cmdline_init),
                          "%s", value);
@@ -815,13 +806,14 @@ default_network_dhcpcd(void)
     assert(n == (ssize_t) sizeof(default_cfg) - 1);
 
     static const char fhi_cfg[] =
-        "nodhcp6\n" \
-        "ipv4only\n" \
-        "option ntp_servers\n" \
-        "option rtems_cmdline\n" \
-        "option tftp_server_name\n" \
-        "option bootfile_name\n" \
-        "define 129 string rtems_cmdline\n";
+        "nodhcp6\n"
+        "ipv4only\n"
+        "option ntp_servers\n"
+        "option rtems_cmdline\n"
+        "option tftp_server_name\n"
+        "option bootfile_name\n"
+        "define 129 string rtems_cmdline\n"
+        "timeout 0";
 
     n = write(fd, fhi_cfg, sizeof(fhi_cfg) - 1);
     assert(n == (ssize_t) sizeof(fhi_cfg) - 1);
@@ -1018,13 +1010,12 @@ POSIX_Init ( void *argument __attribute__((unused)))
 
     // wait for dhcp done ... should be if SYNCDHCP is used
     epicsEventWaitStatus stat;
-    int counter = 2;
-    do {
-	printf("\n ---- Wait for DHCP done ...\n");
-        stat = epicsEventWaitWithTimeout(dhcpDone, 5.0); 
-    } while ((stat == epicsEventWaitTimeout) && (--counter > 0)); 
+    printf("\n ---- Waiting for DHCP ...\n");
+    stat = epicsEventWaitWithTimeout(dhcpDone, 600); 
     if (stat == epicsEventOK)
     	epicsEventDestroy(dhcpDone);
+    else if (stat == epicsEventWaitTimeout)
+        printf("\n ---- DHCP timed out!\n");
     else
 	printf("\n ---- dhcpDone Event Unknown state %d\n", stat);
 
@@ -1124,10 +1115,20 @@ POSIX_Init ( void *argument __attribute__((unused)))
     atexit(exitHandler);
     errlogFlush();
     printf ("***** Starting EPICS application *****\n");
+
+#if 0
+// Start an rtems shell before main, for debugging RTEMS system issues
+    rtems_shell_init("SHLL", RTEMS_MINIMUM_STACK_SIZE * 4,
+                     100, "/dev/console",
+                     false, true,
+                     NULL);
+#endif
+
     result = main ((sizeof argv / sizeof argv[0]) - 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
     epicsExit(result);
+
 #if defined(__rtems__)
     delayedPanic("will reset rtems ... end of POSIX_Init");
 #endif

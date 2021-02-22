@@ -325,7 +325,9 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
     /* test to see if send is possible (not EPERM) */
     ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &addr->sa, sizeof(*addr));
     if(ret!=(int)sizeof(buf.bytes)) {
-        testDiag("test sendto() error %d (%d)", ret, (int)SOCKERRNO);
+        char err[256] = {0};
+        strerror_r(errno, &err, sizeof(err));
+        testDiag("test sendto() error %d (%d): %s", ret, (int)SOCKERRNO, err);
         goto cleanup;
     }
 

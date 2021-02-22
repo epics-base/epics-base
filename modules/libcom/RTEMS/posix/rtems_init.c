@@ -806,13 +806,14 @@ default_network_dhcpcd(void)
     assert(n == (ssize_t) sizeof(default_cfg) - 1);
 
     static const char fhi_cfg[] =
-        "nodhcp6\n" \
-        "ipv4only\n" \
-        "option ntp_servers\n" \
-        "option rtems_cmdline\n" \
-        "option tftp_server_name\n" \
-        "option bootfile_name\n" \
-        "define 129 string rtems_cmdline\n";
+        "nodhcp6\n"
+        "ipv4only\n"
+        "option ntp_servers\n"
+        "option rtems_cmdline\n"
+        "option tftp_server_name\n"
+        "option bootfile_name\n"
+        "define 129 string rtems_cmdline\n"
+        "timeout 0";
 
     n = write(fd, fhi_cfg, sizeof(fhi_cfg) - 1);
     assert(n == (ssize_t) sizeof(fhi_cfg) - 1);
@@ -1009,13 +1010,12 @@ POSIX_Init ( void *argument __attribute__((unused)))
 
     // wait for dhcp done ... should be if SYNCDHCP is used
     epicsEventWaitStatus stat;
-    int counter = 2;
-    do {
-	printf("\n ---- Wait for DHCP done ...\n");
-        stat = epicsEventWaitWithTimeout(dhcpDone, 5.0); 
-    } while ((stat == epicsEventWaitTimeout) && (--counter > 0)); 
+    printf("\n ---- Waiting for DHCP ...\n");
+    stat = epicsEventWaitWithTimeout(dhcpDone, 600); 
     if (stat == epicsEventOK)
     	epicsEventDestroy(dhcpDone);
+    else if (stat == epicsEventWaitTimeout)
+        printf("\n ---- DHCP timed out!\n");
     else
 	printf("\n ---- dhcpDone Event Unknown state %d\n", stat);
 

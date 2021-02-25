@@ -1,0 +1,9 @@
+# CONFIG_SITE.Common.darwin-aarch64
+#
+# Site override definitions for darwin-aarch64 target builds
+#-------------------------------------------------------
+
+#
+#   arm64 devices:  Apple Silicon M1
+
+ARCH_CLASS = arm64

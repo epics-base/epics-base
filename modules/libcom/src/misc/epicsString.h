@@ -41,6 +41,16 @@ LIBCOM_API char * epicsStrtok_r(char *s, const char *delim, char **lasts);
 LIBCOM_API unsigned int epicsStrHash(const char *str, unsigned int seed);
 LIBCOM_API unsigned int epicsMemHash(const char *str, size_t length,
                                          unsigned int seed);
+/** Compare two strings and return a number in the range [0.0, 1.0] or -1.0 on error.
+ *
+ * Computes a normalized edit distance representing the similarity between two strings.
+ *
+ * @returns 1.0 when A and B are identical, down to 0.0 when A and B are unrelated,
+ *          or < 0.0 on error.
+ *
+ * @since UNRELEASED
+ */
+LIBCOM_API double epicsStrSimilarity(const char *A, const char *B);
 
 /* dbTranslateEscape is deprecated, use epicsStrnRawFromEscaped instead */
 LIBCOM_API int dbTranslateEscape(char *s, const char *ct);

@@ -42,6 +42,8 @@
 #endif
 #include <windows.h>
 
+#define EPICS_PRIVATE_API
+
 #include "libComAPI.h"
 #include "epicsMutex.h"
 #include "epicsAssert.h"
@@ -175,4 +177,6 @@ void epicsMutexOsdShow ( epicsMutexOSD * pSem, unsigned level )
             ( void * ) pSem->os.mutex );
     }
 }
+
+void epicsMutexOsdShowAll(void) {}
 

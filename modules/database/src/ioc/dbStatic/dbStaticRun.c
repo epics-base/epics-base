@@ -28,6 +28,7 @@
 #include "dbCommonPvt.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
+#include "dbAccess.h"
 #include "devSup.h"
 #include "special.h"
 
@@ -479,8 +480,17 @@ long dbPutStringNum(DBENTRY *pdbentry, const char *pstring)
                 epicsEnum16 value;
                 long status = epicsParseUInt16(pstring, &value, 0, NULL);
 
-                if (status)
+                if (status) {
+                    status = S_db_badChoice;
+                    if(pflddes->field_type==DBF_MENU) {
+                        dbMenu  *pdbMenu = (dbMenu *)pflddes->ftPvt;
+                        dbMsgPrint(pdbentry, "using menu %s", pdbMenu->name);
+
+                    } else if(pflddes->field_type==DBF_DEVICE) {
+                        dbMsgPrint(pdbentry, "no such device support for '%s' record type", pdbentry->precordType->name);
+                    }
                     return status;
+                }
 
                 index = dbGetNMenuChoices(pdbentry);
                 if (value > index && index > 0 && value < USHRT_MAX)

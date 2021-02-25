@@ -109,6 +109,8 @@ void epicsSpinUnlock(epicsSpinId spin) {
  *  POSIX MUTEX IMPLEMENTATION
  */
 
+#include <osdPosixMutexPriv.h>
+
 typedef struct epicsSpin {
     pthread_mutex_t lock;
 } epicsSpin;
@@ -121,8 +123,8 @@ epicsSpinId epicsSpinCreate(void) {
     if (!spin)
         goto fail;
 
-    status = pthread_mutex_init(&spin->lock, NULL);
-    checkStatus(status, "pthread_mutex_init");
+    status = osdPosixMutexInit(&spin->lock, 0);
+    checkStatus(status, "osdPosixMutexInit");
     if (status)
         goto fail;
 

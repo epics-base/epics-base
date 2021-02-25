@@ -1185,8 +1185,9 @@ static void dbRecordField(char *name,char *value)
         char msg[128];
 
         errSymLookup(status, msg, sizeof(msg));
-        epicsPrintf("Can't set \"%s.%s\" to \"%s\" %s\n",
-            dbGetRecordName(pdbentry), name, value, msg);
+        epicsPrintf("Can't set \"%s.%s\" to \"%s\" %s : %s\n",
+            dbGetRecordName(pdbentry), name, value, pdbentry->message ? pdbentry->message : "", msg);
+        dbPutStringSuggest(pdbentry, value);
         yyerror(NULL);
         return;
     }

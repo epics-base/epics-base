@@ -20,6 +20,7 @@
 /* The following not defined in an vxWorks header */
 int sysClkRateGet(void);
 
+#define EPICS_PRIVATE_API
 
 #include "epicsMutex.h"
 
@@ -47,3 +48,5 @@ void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int level)
 {
     semShow((SEM_ID)id,level);
 }
+
+void epicsMutexOsdShowAll(void) {}

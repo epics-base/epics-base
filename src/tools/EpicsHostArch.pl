@@ -46,8 +46,9 @@ sub HostArch {
         my ($kernel, $hostname, $release, $version, $cpu) = uname;
         if (m/^darwin/) {
             for ($cpu) {
-                return 'darwin-x86' if m/^(i386|x86_64)/;
-                return 'darwin-ppc' if m/Power Macintosh/;
+                return 'darwin-x86'     if m/^(i386|x86_64)/;
+                return 'darwin-ppc'     if m/Power Macintosh/;
+                return 'darwin-aarch64' if m/arm64/;
             }
             die "$0: macOS CPU type '$cpu' not recognized\n";
         }

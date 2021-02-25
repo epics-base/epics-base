@@ -77,13 +77,13 @@ void testTimerExpires() {
   testDiag("Timer expires");
   epicsTimerQueueActive &queue = epicsTimerQueueActive::allocate(false);
   {
-    handler h1(queue);
+    epicsEvent waitForExpire;
+    handler h1(queue, [&] { waitForExpire.trigger(); } );
     const double arbitrary_time { 0.3 };
     h1.start(arbitrary_time);
 
-    epicsThreadSleep(arbitrary_time + 0.1);
+    waitForExpire.wait();
 
-    testOk(h1.getExpireCount() == 1, "timer expired exactly once");
     verifyExpirationTime(h1.getDelay() - arbitrary_time, timeTolerance);
   } // destroy timer
   queue.release();
@@ -92,16 +92,20 @@ void testTimerExpires() {
 void testMultipleTimersExpire(std::vector<double> && sleepTime) {
   epicsTimerQueueActive &queue = epicsTimerQueueActive::allocate(false);
   {
+    std::atomic<int> count { 3 };
+    epicsEvent all_timers_expired;
     std::vector<handler> hv;
     hv.reserve(3);
     for (unsigned i = 0; i < 3; i++) {
-      hv.emplace_back(queue);
+      hv.emplace_back(queue, [&] {
+        if (!--count) { all_timers_expired.trigger(); }
+      });
     }
     for (unsigned i = 0; i < hv.size(); i++) {
       hv[i].start(sleepTime[i]);
     }
 
-    epicsThreadSleep(*std::max_element(sleepTime.cbegin(), sleepTime.cend()) + 0.1);
+    all_timers_expired.wait();
 
     for (unsigned i = 0; i < hv.size(); i++) {
       testOk(hv[i].getExpireCount() == 1, "timer expired exactly once");
@@ -125,15 +129,15 @@ void testTimerReschedule() {
   testDiag("Reschedule timer");
   epicsTimerQueueActive &queue = epicsTimerQueueActive::allocate(false);
   {
-    handler h1(queue);
+    epicsEvent waitForExpire;
+    handler h1(queue, [&] { waitForExpire.trigger(); } );
     double arbitrary_time { 10.0 };
     h1.start(arbitrary_time);
     arbitrary_time = 0.3;
     h1.start(arbitrary_time);
 
-    epicsThreadSleep(arbitrary_time + 0.1);
+    waitForExpire.wait();
 
-    testOk(h1.getExpireCount() == 1, "timer expired exactly once");
     verifyExpirationTime(h1.getDelay() - arbitrary_time, timeTolerance);
   } // destroy timer
   queue.release();
@@ -604,7 +608,7 @@ void testPeriodic ()
 
 MAIN(epicsTimerTest)
 {
-    testPlan(60);
+    testPlan(58);
 #if __cplusplus >= 201103L
     testTimerExpires();
     testMultipleTimersExpireFirstTimerExpiresFirst();
@@ -613,7 +617,7 @@ MAIN(epicsTimerTest)
     testCancelTimer();
     testCancelTimerWhileExpireIsRunning();
 #else
-    testSkip(19, "Test requires a compiler which supports C++11");
+    testSkip(17, "Test requires a compiler which supports C++11");
 #endif
     testRefCount();
     testAccuracy ();

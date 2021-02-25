@@ -801,35 +801,38 @@ default_network_set_self_prio(rtems_task_priority prio)
 static void
 default_network_dhcpcd(void)
 {
-    static const char default_cfg[] = "clientid FHI test client\n";
+    static const char default_cfg[] = "clientid test client\n";
     rtems_status_code sc;
     int fd;
     int rv;
     ssize_t n;
+    struct stat statbuf;
 
-    fd = open("/etc/dhcpcd.conf", O_CREAT | O_WRONLY,
-        S_IRWXU | S_IRWXG | S_IRWXO);
-    assert(fd >= 0);
+    if (ENOENT == stat("/etc/dhcpcd.conf", &statbuf)) {
+        fd = open("/etc/dhcpcd.conf", O_CREAT | O_WRONLY,
+                  S_IRWXU | S_IRWXG | S_IRWXO);
+        assert(fd >= 0);
 
-    n = write(fd, default_cfg, sizeof(default_cfg) - 1);
-    assert(n == (ssize_t) sizeof(default_cfg) - 1);
+        n = write(fd, default_cfg, sizeof(default_cfg) - 1);
+        assert(n == (ssize_t) sizeof(default_cfg) - 1);
 
-    static const char fhi_cfg[] =
-        "nodhcp6\n"
-        "ipv4only\n"
-        "option ntp_servers\n"
-        "option rtems_cmdline\n"
-        "option tftp_server_name\n"
-        "option bootfile_name\n"
-        "define 129 string rtems_cmdline\n"
-        "timeout 0";
+        static const char fhi_cfg[] =
+            "nodhcp6\n"
+            "ipv4only\n"
+            "option ntp_servers\n"
+            "option rtems_cmdline\n"
+            "option tftp_server_name\n"
+            "option bootfile_name\n"
+            "define 129 string rtems_cmdline\n"
+            "timeout 0";
 
-    n = write(fd, fhi_cfg, sizeof(fhi_cfg) - 1);
-    assert(n == (ssize_t) sizeof(fhi_cfg) - 1);
+        n = write(fd, fhi_cfg, sizeof(fhi_cfg) - 1);
+        assert(n == (ssize_t) sizeof(fhi_cfg) - 1);
 
-    rv = close(fd);
-    assert(rv == 0);
-
+        rv = close(fd);
+        assert(rv == 0);
+    }
+    
     sc = rtems_dhcpcd_start(NULL);
     assert(sc == RTEMS_SUCCESSFUL);
 }

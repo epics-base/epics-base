@@ -161,7 +161,6 @@ static long cvt_dbaddr(DBADDR *paddr)
 {
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
-    paddr->pfield = prec->bptr;
     paddr->no_elements = prec->malm;
     paddr->field_type = prec->ftvl;
     paddr->field_size = dbValueSize(prec->ftvl);
@@ -174,6 +173,7 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
+    paddr->pfield = prec->bptr;
     if (prec->udf)
        *no_elements = 0;
     else
@@ -293,7 +293,7 @@ static void monitor(subArrayRecord *prec)
     monitor_mask = recGblResetAlarms(prec);
     monitor_mask |= (DBE_LOG|DBE_VALUE);
 
-    db_post_events(prec, prec->bptr, monitor_mask);
+    db_post_events(prec, (void*)&prec->val, monitor_mask);
 
     return;
 }

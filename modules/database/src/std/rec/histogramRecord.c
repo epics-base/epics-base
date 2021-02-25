@@ -291,7 +291,7 @@ static void monitor(histogramRecord *prec)
     }
     /* send out monitors connected to the value field */
     if (monitor_mask)
-        db_post_events(prec, prec->bptr, monitor_mask);
+        db_post_events(prec, (void*)&prec->val, monitor_mask);
 
     return;
 }
@@ -300,7 +300,6 @@ static long cvt_dbaddr(DBADDR *paddr)
 {
     histogramRecord *prec = (histogramRecord *) paddr->precord;
 
-    paddr->pfield = prec->bptr;
     paddr->no_elements = prec->nelm;
     paddr->field_type = DBF_ULONG;
     paddr->field_size = sizeof(epicsUInt32);
@@ -312,6 +311,7 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
     histogramRecord *prec = (histogramRecord *) paddr->precord;
 
+    paddr->pfield = prec->bptr;
     *no_elements =  prec->nelm;
     *offset = 0;
     return 0;

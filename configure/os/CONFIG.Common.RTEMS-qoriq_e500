@@ -29,7 +29,7 @@ MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary $< $@
 	gzip -9 -f $@
-	mkimage -A ppc -O linux -T kernel -a 0x4000 -e 0x4000 -n $* -d $@.gz $*.img 
+        $(RTEMS_TOOLS)/bin/mkimage.py -A ppc -O linux -T kernel -a 0x4000 -e 0x4000 -n $* -d $@.gz $*.img
 endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS

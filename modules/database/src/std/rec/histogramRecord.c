@@ -111,7 +111,7 @@ static void wdogCallback(epicsCallback *arg)
     if (prec->mcnt > 0){
         dbScanLock((struct dbCommon *)prec);
         recGblGetTimeStamp(prec);
-        db_post_events(prec, prec->bptr, DBE_VALUE | DBE_LOG);
+        db_post_events(prec, (void*)&prec->val, DBE_VALUE | DBE_LOG);
         prec->mcnt = 0;
         dbScanUnlock((struct dbCommon *)prec);
     }

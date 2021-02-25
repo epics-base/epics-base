@@ -1082,7 +1082,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
     //rtems_bsd_set_vprintf_handler(bsd_vprintf_handler_old);
 
     printf("\n***** Setting up file system *****\n");
-    //???initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
+    initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
     fixup_hosts();
 
     /*

@@ -10,24 +10,31 @@
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "dbDefs.h"
 #include "errlog.h"
+#include "cantProceed.h"
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
-static unsigned char osdUsePrefCounter;
-static epicsUInt64 osdMonotonicResolution;
+static epicsUInt64 osdMonotonicResolution;      /* timer resolution in nanoseconds */
+static epicsUInt64 perfCounterFrequency;        /* performance counter tics per second */
+static LONGLONG perfCounterOffset;              /* performance counter value at initialisation */
+static const epicsUInt64 sec2nsec = 1000000000; /* number of nanoseconds in a second */
 
 void osdMonotonicInit(void)
 {
     LARGE_INTEGER freq, val;
-
-    if(!QueryPerformanceFrequency(&freq) ||
-            !QueryPerformanceCounter(&val))
-    {
-        double period = 1.0/freq.QuadPart;
-        osdMonotonicResolution = period*1e9;
-        osdUsePrefCounter = 1;
-    } else {
-        osdMonotonicResolution = 1e6; /* 1 ms TODO place holder */
+    /* QueryPerformanceCounter() is available on Windows 2000 and later, and is
+     * guaranteed to succeed on Windows XP or later. On Windows 2000 it may
+     * return 0 for freq.QuadPart if unavailable */
+    if (QueryPerformanceFrequency(&freq) &&
+            QueryPerformanceCounter(&val) &&
+            freq.QuadPart != 0) {
+        perfCounterFrequency = freq.QuadPart;
+        perfCounterOffset = val.QuadPart;
+        osdMonotonicResolution = sec2nsec / perfCounterFrequency +
+            !!(sec2nsec % perfCounterFrequency);
+    }
+    else {
+        cantProceed("osdMonotonicInit: Windows Performance Counter is not available\n");
     }
 }
 
@@ -39,15 +46,11 @@ epicsUInt64 epicsMonotonicResolution(void)
 epicsUInt64 epicsMonotonicGet(void)
 {
     LARGE_INTEGER val;
-    if(osdUsePrefCounter) {
-        if(!QueryPerformanceCounter(&val)) {
-            errMessage(errlogMinor, "Warning: failed to fetch performance counter\n");
-            return 0;
-        } else
-            return val.QuadPart;
-    } else {
-        epicsUInt64 ret = GetTickCount();
-        ret *= 1000000;
-        return ret;
+    double dval;
+    if (!QueryPerformanceCounter(&val)) {
+        cantProceed("epicsMonotonicGet: Failed to read Windows Performance Counter\n");
+        return 0;
     }
+    dval = val.QuadPart - perfCounterOffset;
+    return (epicsUInt64)(dval * sec2nsec / perfCounterFrequency + 0.5);
 }

@@ -93,19 +93,19 @@ jobs:
 
           - os: ubuntu-16.04
             cmp: gcc-4.8
-            utoolchain: true
+            utoolchain: "4.8"
             configuration: default
             name: "Ub-16 gcc-4.8"
 
           - os: ubuntu-16.04
             cmp: gcc-4.9
-            utoolchain: true
+            utoolchain: "4.9"
             configuration: default
             name: "Ub-16 gcc-4.9"
 
           - os: ubuntu-20.04
             cmp: gcc-8
-            utoolchain: true
+            utoolchain: "8"
             configuration: default
             name: "Ub-20 gcc-8"
 
@@ -142,10 +142,11 @@ jobs:
       if: runner.os == 'Linux'
     - name: "apt-get install ${{ matrix.cmp }}"
       run: |
+        sudo apt-get update
         sudo apt-get -y install software-properties-common
         sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
         sudo apt-get update
-        sudo apt-get -y install ${{ matrix.cmp }}
+        sudo apt-get -y install g++-${{ matrix.utoolchain }}
       if: matrix.utoolchain
     - name: Prepare and compile dependencies
       run: python .ci/cue.py prepare

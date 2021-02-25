@@ -107,6 +107,9 @@ CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 WARN_CXXFLAGS_YES = -W3 -w44355 -w44344 -w44251
 WARN_CXXFLAGS_NO  = -W1
 
+# Silence tr1 namespace deprecation warnings
+WARN_CXXFLAGS += -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING
+
 #
 # -Ox maximum optimizations
 # -GL whole program optimization

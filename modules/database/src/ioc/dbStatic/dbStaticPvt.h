@@ -36,6 +36,10 @@ char *dbRecordName(DBENTRY *pdbentry);
 char *dbGetStringNum(DBENTRY *pdbentry);
 long dbPutStringNum(DBENTRY *pdbentry,const char *pstring);
 
+void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...) EPICS_PRINTF_STYLE(2,3);
+
+void dbPutStringSuggest(DBENTRY *pdbentry, const char *pstring);
+
 struct jlink;
 
 typedef struct dbLinkInfo {

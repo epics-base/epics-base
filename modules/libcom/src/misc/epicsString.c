@@ -23,9 +23,11 @@
 #include <errno.h>
 #include <ctype.h>
 
+#include "epicsAssert.h"
 #include "epicsStdio.h"
 #include "cantProceed.h"
 #include "epicsString.h"
+#include "epicsMath.h"
 
 /* Deprecated, use epicsStrnRawFromEscaped() instead */
 int dbTranslateEscape(char *dst, const char *src)
@@ -357,4 +359,72 @@ unsigned int epicsMemHash(const char *str, size_t length, unsigned int seed)
         hash ^= (hash << 7) ^ *str++ ^ (hash >> 3);
     }
     return hash;
+}
+
+/* Compute normalized Levenshtein distance
+ *
+ * https://en.wikipedia.org/wiki/Levenshtein_distance
+ *
+ * We modify this to give half weight to case insensitive substitution.
+ * All normal integer weights are multiplied by two, with case
+ * insensitive added in as one.
+ */
+double epicsStrSimilarity(const char *A, const char *B)
+{
+    double ret = 0;
+    size_t lA, lB, a, b;
+    size_t norm;
+    size_t *dist0, *dist1, *stemp;
+
+    lA = strlen(A);
+    lB = strlen(B);
+
+    /* max number of edits to change A into B is max(lA, lB) */
+    norm = lA > lB ? lA : lB;
+    /* take into account our weighting */
+    norm *= 2u;
+
+    dist0 = calloc(1+lB, sizeof(*dist0));
+    dist1 = calloc(1+lB, sizeof(*dist1));
+    if(!dist0 || !dist1) {
+        ret = -1.0;
+        goto done;
+    }
+
+    for(b=0; b<1+lB; b++)
+        dist0[b] = 2*b;
+
+    for(a=0; a<lA; a++) {
+        dist1[0] = 2*(a+1);
+
+        for(b=0; b<lB; b++) {
+            size_t delcost = dist0[b+1] + 2,
+                   inscost = dist1[b] + 2,
+                   subcost = dist0[b],
+                   mincost = delcost;
+            char ca = A[a], cb = B[b];
+
+            if(ca!=cb)
+                subcost++;
+            if(toupper((int)ca)!=toupper((int)cb))
+                subcost++;
+
+            if(mincost > inscost)
+                mincost = inscost;
+            if(mincost > subcost)
+                mincost = subcost;
+
+            dist1[b+1] = mincost;
+        }
+
+        stemp = dist0;
+        dist0 = dist1;
+        dist1 = stemp;
+    }
+
+    ret = norm ? (norm - dist0[lB]) / (double)norm : 1.0;
+done:
+    free(dist0);
+    free(dist1);
+    return ret;
 }

@@ -81,8 +81,6 @@ maplinkType pamaplinkType[LINK_NTYPES] = {
 };
 
 /*forward references for private routines*/
-static void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
-    EPICS_PRINTF_STYLE(2,3);
 static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
 /* internal routines*/
@@ -199,7 +197,6 @@ void dbMsgNCpy(DBENTRY *pdbentry, const char *msg, size_t len)
     pdbentry->message[len] = '\0';
 }
 
-static
 void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
 {
     va_list args;
@@ -2633,6 +2630,52 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
         dbFinishEntry(&dbentry);
     }
     return(status);
+}
+
+void dbPutStringSuggest(DBENTRY *pdbentry, const char *pstring)
+{
+    dbFldDes    *pflddes = pdbentry->pflddes;
+
+    switch (pflddes->field_type) {
+    case DBF_MENU:
+    case DBF_DEVICE: {
+        int i, nchoices = 0;
+        char** choices = NULL;
+        const char *best = NULL;
+        double maxdist = 0.0; /* don't offer suggestions which have no similarity */
+
+        if(pflddes->field_type==DBF_MENU) {
+            dbMenu  *pdbMenu = (dbMenu *)pflddes->ftPvt;
+            if(!pdbMenu)
+                return;
+
+            choices = pdbMenu->papChoiceValue;
+            nchoices = pdbMenu->nChoice;
+
+        } else {
+            dbDeviceMenu *pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+            if(!pdbDeviceMenu)
+                return;
+
+            choices = pdbDeviceMenu->papChoice;
+            nchoices = pdbDeviceMenu->nChoice;
+        }
+
+        for(i=0; i<nchoices; i++) {
+            double dist = epicsStrSimilarity(pstring, choices[i]);
+            if(dist>maxdist) {
+                best = choices[i];
+                maxdist = dist;
+            }
+        }
+        if(best) {
+            epicsPrintf("    Did you mean \"%s\"?\n", best);
+        }
+    }
+        break;
+    default:
+        break;
+    }
 }
 
 char * dbVerify(DBENTRY *pdbentry, const char *pstring)

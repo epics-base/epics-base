@@ -22,6 +22,8 @@
 #include <rtems.h>
 #include <rtems/error.h>
 
+#define EPICS_PRIVATE_API
+
 #include "epicsStdio.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
@@ -193,3 +195,5 @@ LIBCOM_API void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int level)
 #endif
     epicsEventShow ((epicsEventId)id,level);
 }
+
+void epicsMutexOsdShowAll(void) {}

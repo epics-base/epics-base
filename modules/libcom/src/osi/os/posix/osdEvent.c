@@ -23,6 +23,7 @@
 #include "epicsEvent.h"
 #include "epicsTime.h"
 #include "errlog.h"
+#include "osdPosixMutexPriv.h"
 
 struct epicsEventOSD {
     pthread_mutex_t mutex;
@@ -50,11 +51,11 @@ LIBCOM_API epicsEventId epicsEventCreate(epicsEventInitialState init)
     epicsEventId pevent = malloc(sizeof(*pevent));
 
     if (pevent) {
-        int status = pthread_mutex_init(&pevent->mutex, 0);
+        int status = osdPosixMutexInit(&pevent->mutex, 0);
 
         pevent->isFull = (init == epicsEventFull);
         if (status) {
-            printStatus(status, "pthread_mutex_init", "epicsEventCreate");
+            printStatus(status, "osdPosixMutexInit", "epicsEventCreate");
         } else {
             status = pthread_cond_init(&pevent->cond, 0);
             if (!status)

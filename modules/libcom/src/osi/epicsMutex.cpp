@@ -17,6 +17,7 @@
  * currently safe to convert a thread id to a thread name because
  * the thread may have exited making the thread id invalid.
  */
+#define EPICS_PRIVATE_API
 
 #include <new>
 
@@ -223,6 +224,7 @@ void epicsStdCall epicsMutexShowAll(int onlyLocked,unsigned  int level)
 
     printf("ellCount(&mutexList) %d ellCount(&freeList) %d\n",
         ellCount(&mutexList),ellCount(&freeList));
+    epicsMutexOsdShowAll();
     epicsMutexLockStatus lockStat =
         epicsMutexOsdLock(epicsMutexGlobalLock);
     assert ( lockStat == epicsMutexLockOK );

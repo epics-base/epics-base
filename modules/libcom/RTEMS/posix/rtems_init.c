@@ -906,7 +906,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
 {
     int                	result;
     char               	*argv[3]         = { NULL, NULL, NULL };
- //   char               	*cp;
     rtems_status_code  	sc;
     struct timespec  	now;
     char timeBuff[100];

@@ -273,11 +273,9 @@ YACCOPT ?= $($*_YACCOPT)
 # are creating it
 #
 %.c: %.y
-	@$(RM) $*.tab.c
-	@$(RM) $*.tab.h
+	@$(RM) $*.c
+	@$(RM) $*.h
 	$(YACC) -b$* $(YACCOPT) $<
-	$(MV) $*.tab.c $*.c
-	$(if $(findstring -d, $(YACCOPT)),$(MV) $*.tab.h $*.h,)
 
 # must be a separate rule since when not using '-d' the
 # prefix for .h will be different then .c

@@ -65,12 +65,12 @@ private:
   std::function<void()> expireFct;
 };
 
-void verifyExpirationTime(double delta_t, double tolerance) {
-  if (!testOk(std::abs(delta_t) < tolerance, "timer expired at the expected "
-              "time (error = %f ms, tolerance = +/-%f ms)", 1000.0 * delta_t,
-              1000.0 * tolerance)) {
-    const char * msg = delta_t < 0.0 ? "early" : "late";
-    testDiag("delta t = %g ms (timer expired too %s)", 1000.0 * delta_t, msg);
+void verifyExpirationTime(double delta, double tolerance) {
+  if (!testOk(delta >= 0.0 && delta < tolerance, "timer expired at the expected"
+              " time (error = %f ms, tolerance = +%f/-0.0 ms)",
+              1000.0 * delta, 1000.0 * tolerance)) {
+    const char * msg = delta < 0.0 ? "early" : "late";
+    testDiag("delta t = %g ms (timer expired too %s)", 1000.0 * delta, msg);
   }
 }
 

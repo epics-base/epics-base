@@ -19,20 +19,45 @@ should also be read to understand what has changed since earlier releases.
 
 
 
-### Priority inversion safe posix mutexes
+### Priority inversion safe Posix mutexes
 
 On Posix systems, epicsMutex now support priority inheritance if available.
-The IOC needs to run with SCHED_FIFO engaged.
-Support for Posix implementations before POSIX.1-2001 (_XOPEN_SOURCE < 500,
-glibc version < 2.3.3) has been dropped.
+The IOC needs to run with SCHED_FIFO engaged to use these.
+Support for Posix implementations before POSIX.1-2001 (`_XOPEN_SOURCE < 500`,
+glibc version &lt; 2.3.3) has been dropped.
 
-The epicsMutexShowAll() function (available through IOC shell)
-will print "PI is enabled" if both libc and kernel support is present.
+The IOC shell's `epicsMutexShowAll` command prints "PI is enabled" if both
+libc and kernel support is present.
 
-### Add epicsStrSimilarity()
+### Fix for Periodic Scan threads hanging on Windows
 
-Add epicsStrSimilarity() to epicsString.h which uses edit distance as an approximate comparison.
-Enables a new "Did you mean ..." suggestion when a .db file provides an invalid value for a DBF_MENU or DBF_DEVICE field.
+Since 7.0.3.1 a Windows IOC could not run for more than 49.7 days; at that
+time the periodic scan threads would stop processing. This issue should now
+have been fixed and the Monotonic time functions on Windows should return
+values which count at nanosecond resolution. However we have not waited 49.7
+days to test the final software, so there is a small chance that it's still
+broken.
+
+This fixes [lauchpad bug #1896295](https://bugs.launchpad.net/bugs/1896295).
+
+### Support for Apple M1 (arm64) Processors
+
+Thanks to Jeong Han Lee this release comes with build support for Apple's new
+M1 CPUs running macOS, using the target name `darwin-aarch64`.
+
+It should also be possible to build universal binaries containing code for
+both the Intel and arm64 processors under either target name: In the
+appropriate `configure/os/CONFIG_SITE.Common.darwin-*` file add the other
+architecture class name to the `ARCH_CLASS` variable (after a space).
+
+### New String Comparison Routine `epicsStrSimilarity()`
+
+The new `epicsStrSimilarity()` routine in epicsString.h uses a modified
+Levenshtein distance to compare two strings, with a character case difference
+being half the weight of a full substitution. The double return value falls in
+the range 0.0 (identical) through 1.0 (no characters matching), or -1.0 for
+error. This is used to provide a new "Did you mean ..." suggestion when a .db
+file provides an invalid choice string for a `DBF_MENU` or `DBF_DEVICE` field.
 
 ### Build System: New `VALID_BUILDS` type "Command"
 
@@ -196,32 +221,35 @@ as an array field, and its record support must define a `put_array_info()`
 routine.
 
 ### Timestamp before processing output links
-The record processing code for records with output links has been modified
-to update the timestamp via recGblGetTimeStamp() before processing the
-output links.  This ensures that other records which get processed via
-the output link can use TSEL links to fetch the timestamp which corresponds
-to the data processed by the output link.
+
+The record processing code for records with output links has been modified to
+update the timestamp via recGblGetTimeStamp() _before_ processing the output
+links.  This ensures that other records which get processed via an output link
+can use TSEL links to fetch the timestamp corresponding to the data processed
+by the output link.
 
 This change could result in a slightly earlier timestamp for records whose
 output link is handled by a device driver, but only if the device driver does
-not handle its own timestamping via TSE -2 and instead uses TSE 0 or TSE -1
-to get current time or best time, and the time spent in the device driver is
+not handle its own timestamping via TSE -2 and instead uses TSE 0 or TSE -1 to
+get current time or best time, and the time spent in the device driver is
 greater than your timestamp provider resolution.  For these situations it is
 recommended to set TSE to -2 and set the timestamp in the driver code.
 
 ### Add registerAllRecordDeviceDrivers()
 
-Addition of registerAllRecordDeviceDrivers() as an iocsh function
-and in iocshRegisterCommon.h.  This function uses dynamic lookup with
-`epicsFindSymbol()` to perform the same function as a generated
-`*_registerRecordDeviceDriver()` function.
-This allows dynamic loading/linking of support modules without code generation.
+A new iocsh command `registerAllRecordDeviceDrivers` is provided and also
+defined as a function in iocshRegisterCommon.h. This uses dynamic symbol
+lookup with `epicsFindSymbol()` to perform the same function as a generated
+`*_registerRecordDeviceDriver()` function. This allows for an alternative
+approach to dynamic loading of support modules without code generation.
 
-This feature is not intended for use by IOCs constructed using the standard EPICS application
-build process and booted from a startup script in an iocBoot subdirectory, although it might
-work in some of those cases (the IOC's registerRecordDeviceDriver.cpp file is still required
-to link everything into the executable). It also won't work with some static build
-configurations or where the symbol table has been stripped from the executable.
+This feature is not intended for use by IOCs constructed using the standard
+EPICS application build process and booted from a startup script in an iocBoot
+subdirectory, although it might work in some of those cases &mdash; the
+generated registerRecordDeviceDriver.cpp file is normally required to link
+everything referred to in the DBD file into the IOC's executable. It also
+won't work with some static build configurations, or if the symbol table has
+been stripped from the executable.
 
 ### Using a `{const:"string"}` to initialize an array of `DBF_CHAR`
 

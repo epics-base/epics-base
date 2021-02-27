@@ -1,2 +1,2 @@
 include "xxxRecord.dbd"
-device(xxx,CONSTANT,devXxxSoft,"SoftChannel")
+device(xxx,CONSTANT,devXxxSoft,"Soft Channel")

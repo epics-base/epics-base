@@ -103,8 +103,8 @@ sub ParseDBD {
                 unquote($1, $2, $3, $4);
             my $rtyp = $dbd->recordtype($record_type);
             if (!defined $rtyp) {
-                my $msg = "Device '$choice' defined for unknown record type '$record_type'.";
-                dieContext($msg, "DBD files must be added in the correct order.")
+                my $msg = "Device '$choice' refers to unknown record type '$record_type'.";
+                dieContext($msg, "DBD files must be combined in the correct order.")
                     unless $allowAutoDeclarations;
                 warn "$msg\nRecord type '$record_type' declared.\n";
                 $rtyp = DBD::Recordtype->new($record_type);

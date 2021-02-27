@@ -31,7 +31,7 @@ my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 
 my ($file, $subname, $bldTop) = @ARGV;
 
-# Permit auto-declaration of record types for building runtime-loadable modules
+# Auto-declaration of record types is needed to build loadable modules
 $DBD::Parser::allowAutoDeclarations = 1;
 
 my $dbd = DBD->new();

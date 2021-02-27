@@ -18,6 +18,20 @@ should also be read to understand what has changed since earlier releases.
 <!-- Insert new items immediately below here ... -->
 
 
+### Prevent default DTYPs from changing
+
+[Kay Kasemir reported](https://bugs.launchpad.net/epics-base/+bug/1908305) that
+it is possible to change the Base record type's default DTYP if a `device()`
+entry is seen before the `recordtype()` definition to which it refers. The
+default DTYP is the first device loaded, which is normally the `Soft Channel`
+support from Base. A warning was being displayed by dbdExpand when a `device()`
+entry was see first, but that was easily missed.
+
+The DBD file parser in dbdExpand.pl has now been modified to make this an error,
+although the registerRecordDeviceDriver.pl script will still accept `device()`
+entries without having their `recordtype()` loaded since this is necessary to
+compile device supports as loadable modules.
+
 
 ### Priority inversion safe posix mutexes
 

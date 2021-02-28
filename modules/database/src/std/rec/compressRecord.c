@@ -106,7 +106,7 @@ static void monitor(compressRecord *prec)
         db_post_events(prec, &prec->nuse, monitor_mask);
         prec->ouse = prec->nuse;
     }
-    db_post_events(prec, prec->bptr, monitor_mask);
+    db_post_events(prec, (void*)&prec->val, monitor_mask);
 }
 
 static void put_value(compressRecord *prec, double *psource, int n)
@@ -404,7 +404,6 @@ static long cvt_dbaddr(DBADDR *paddr)
 {
     compressRecord *prec = (compressRecord *) paddr->precord;
 
-    paddr->pfield = prec->bptr;
     paddr->no_elements = prec->nsam;
     paddr->field_type = DBF_DOUBLE;
     paddr->field_size = sizeof(double);
@@ -425,6 +424,8 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
     compressRecord *prec = (compressRecord *) paddr->precord;
     epicsUInt32 off = prec->off;
     epicsUInt32 nuse = prec->nuse;
+
+    paddr->pfield = prec->bptr;
 
     if (prec->balg == bufferingALG_FIFO) {
         epicsUInt32 nsam = prec->nsam;

@@ -18,6 +18,21 @@ should also be read to understand what has changed since earlier releases.
 <!-- Insert new items immediately below here ... -->
 
 
+### Fix aai's Device Support Initialization
+
+Krisztian Loki [reported](https://github.com/epics-base/epics-base/issues/97)
+segfaults occurring when a Soft Channel aai record INP field was a DB link to
+an array field of a compress record. This was caused by the aai record's
+pass-0 device support initialization clashing with the semantics of the new
+link support API.
+
+The aai record
+[has been modified](https://github.com/epics-base/epics-base/pull/114) to
+allow the Soft Channel device support to request a pass-1 initialization
+callback. See the Device Support section of the Array Analogue Input Record
+Reference pages in this release for the API changes, which are fully backwards
+compatible for existing aai device support.
+
 ### Prevent default DTYPs from changing
 
 [Kay Kasemir reported](https://bugs.launchpad.net/epics-base/+bug/1908305) that

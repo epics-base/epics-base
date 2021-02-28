@@ -48,8 +48,8 @@ static long init_record(dbCommon *pcommon)
     DBLINK *plink = &prec->inp;
 
     /* Ask record to call us in pass 1 instead */
-    if (prec->pact != 2) {
-        return 2;
+    if (prec->pact != AAI_DEVINIT_PASS1) {
+        return AAI_DEVINIT_PASS1;
     }
 
     if (dbLinkIsConstant(plink)) {

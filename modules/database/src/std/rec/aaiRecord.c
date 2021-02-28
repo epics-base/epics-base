@@ -119,9 +119,9 @@ static long init_record(struct dbCommon *pcommon, int pass)
         if (pdset->common.init_record) {
             long status = pdset->common.init_record(pcommon);
 
-            if (status == 2) {
+            if (status == AAI_DEVINIT_PASS1) {
                 /* requesting pass 1 callback, remember to do that */
-                prec->pact = 2;
+                prec->pact = AAI_DEVINIT_PASS1;
             }
             else if (status)
                 return status;
@@ -134,7 +134,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return 0;
     }
 
-    if (prec->pact == 2) {
+    if (prec->pact == AAI_DEVINIT_PASS1) {
         /* device support asked for an init_record() callback in pass 1 */
         long status = pdset->common.init_record(pcommon);
         if (status)

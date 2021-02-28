@@ -155,8 +155,8 @@ If device support includes an C<init_record()> routine it is called, but unlike
 most record types this occurs in pass 0, which allows the device support to
 allocate the array buffer itself.
 
-Since EPICS 7.0.5 the device support may return 2 to request a second call to
-its C<init_record()> routine in pass 1.
+Since EPICS 7.0.5 the device support may return C<AAI_DEVINIT_PASS1> to request
+a second call to its C<init_record()> routine in pass 1.
 
 Checks if device support allocated array space. If not, space for the array is
 allocated using NELM and FTVL. The array address is stored in BPTR.
@@ -299,10 +299,11 @@ Scan forward link if necessary, set PACT FALSE, and return.
     %/* Declare Device Support Entry Table */
     %struct aaiRecord;
     %typedef struct aaidset {
-    %    dset common; /*init_record returns: (-1,0,2)=>(failure,success,callback)*/
+    %    dset common; /*init_record returns: (-1,0,AAI_DEVINIT_PASS1)=>(failure,success,callback)*/
     %    long (*read_aai)(struct aaiRecord *prec); /*returns: (-1,0)=>(failure,success)*/
     %} aaidset;
     %#define HAS_aaidset
+	%#define AAI_DEVINIT_PASS1 2
     %
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
@@ -484,8 +485,8 @@ The record will use C<calloc()> for this memory allocation if BPTR has not been
 set by this routine.
 The routine must return 0 for success, -1 or a error status on failure.
 
-Since EPICS 7.0.5 if this routine returns 2 in pass 0, it will be called again
-in pass 1 with the PACT field set to 2.
+Since EPICS 7.0.5 if this routine returns C<AAI_DEVINIT_PASS1> in pass 0, it
+will be called again in pass 1 with the PACT field set to C<AAI_DEVINIT_PASS1>.
 In pass 0 the PACT field is set to zero (FALSE).
 
 =head4 get_ioint_info

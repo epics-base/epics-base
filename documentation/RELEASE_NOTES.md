@@ -11,12 +11,7 @@ release.
 The PVA submodules each have their own individual sets of release notes which
 should also be read to understand what has changed since earlier releases.
 
-**This version of EPICS has not been released yet.**
-
-## Changes made on the 7.0 branch since 7.0.4.1
-
-<!-- Insert new items immediately below here ... -->
-
+## EPICS Release 7.0.5
 
 ### Fix aai's Device Support Initialization
 
@@ -301,6 +296,8 @@ GNUmake added the directive `undefine` in version 3.82 to allow variables to
 be undefined. Support for this has been added to the EPICS Release file parser,
 so `undefine` can now be used in configure/RELEASE files to unset variables.
 
+-----
+
 ## EPICS Release 7.0.4.1
 
 ### ARM Architecture Changes
@@ -347,6 +344,8 @@ Bad character ' ' in record name "bad practice"
 7.0.4.1 Turns this warning into an error, and adds a new warning
 if a record name begins with a minus, plus, left square bracket,
 or left curly bracket.
+
+-----
 
 ## EPICS Release 7.0.4
 
@@ -531,6 +530,8 @@ devLsiEtherIP = {
     lsi_read
 };
 ```
+
+-----
 
 ## EPICS Release 7.0.3.1
 
@@ -725,6 +726,8 @@ necessary, all RTEMS targets should now link although the IOC won't be able to
 be used with the VME I/O on those systems (that we don't have VMEbus I/O
 support for in libCom).
 
+-----
+
 ## EPICS Release 7.0.3
 
 ### `epicsTimeGetCurrent()` optimization
@@ -744,6 +747,8 @@ This may result in slightly fewer, but larger frames being sent.
 
 Report NOBT as "precision" through the dbAccess API. This is not accessible
 through CA, but is planned to be used through QSRV.
+
+-----
 
 ## EPICS Release 7.0.2.2
 
@@ -778,6 +783,8 @@ substantial than bug fixes.
 ### Drop `CLOCK_MONOTONIC_RAW` from posix/osdMonotonic.c
 
 Turns out this is ~10x slower to query than `CLOCK_MONOTONIC`.
+
+-----
 
 ## EPICS Release 7.0.2.1
 
@@ -830,6 +837,8 @@ rewrite of the link address parser code in dbStaticLib. This release fixes that
 issue, although in some cases the output may be slightly different than it used
 to be.
 
+-----
+
 ## EPICS Release 7.0.2
 
 ### Launchpad Bugs
@@ -846,6 +855,8 @@ create merge requests that contained changes in more than one of these
 modules. The layout of the source files has not changed at all however, so the
 source code for libcom, ca and the database are still found separately under
 the module subdirectory.
+
+-----
 
 ## EPICS Release 7.0.1.1
 
@@ -905,7 +916,11 @@ than is currently available, but as developers we generally much prefer to
 write code than documentation. Send questions to the tech-talk mailing list
 and we'll be happy to try and answer them!
 
-## Changes between 3.16.1 and 3.16.2
+-----
+
+## Changes made between 3.16.1 and 3.16.2
+
+### Launchpad Bugs
 
 The list of tracked bugs fixed in this release can be found on the
 [Launchpad Milestone page for EPICS Base 3.16.2](https://launchpad.net/epics-base/+milestone/3.16.2).
@@ -1111,6 +1126,8 @@ In the 3.16.1 release a crash can occur in the IOC's RSRV server when a large
 array is made even larger; the previous array buffer was not being released
 correctly. See Launchpad
 [bug #1706703](https://bugs.launchpad.net/epics-base/+bug/1706703).
+
+-----
 
 ## Changes made between 3.16.0.1 and 3.16.1
 
@@ -1548,6 +1565,7 @@ and then replace `(RECSUPFUN)` with `RECSUPFUN_CAST` when initializing the
 rset. Further changes might also be needed, e.g. to adapt `const`-ness of
 method parameters.
 
+-----
 
 ## Changes made between 3.15.3 and 3.16.0.1
 
@@ -1656,6 +1674,8 @@ header and removed the need for dbScan.c to reach into the internals of its
 `CALLBACK` objects.
 
 
+-----
+
 # Changes incorporated from the 3.15 branch
 
 
@@ -1667,6 +1687,7 @@ The names of the generated junit xml test output files have been changed
 from `<testname>.xml` to `<testname>-results.xml`, to allow better
 distinction from other xml files. (I.e., for easy wildcard matching.)
 
+-----
 
 ## Changes made between 3.15.7 and 3.15.8
 
@@ -1772,6 +1793,7 @@ don't provide it any more.
 If multiple IOCs were started at the same time, by systemd say, they could race
 to obtain the Channel Access TCP port number 5064. This issue has been fixed.
 
+-----
 
 ## Changes made between 3.15.6 and 3.15.7
 
@@ -1914,6 +1936,8 @@ into the htmls directory. Thanks to Tony Pietryla.
 ### CA client tools learned `-V` option
 
 This displays the version numbers of EPICS Base and the CA protocol.
+
+-----
 
 ## Changes made between 3.15.5 and 3.15.6
 
@@ -2140,6 +2164,8 @@ choice string cannot be parsed, the associated periodic scan thread will no
 longer be started by the IOC and a warning message will be displayed at iocInit
 time. The `scanppl` command will also flag the faulty menuScan value.
 
+-----
+
 ## Changes made between 3.15.4 and 3.15.5
 
 ### dbStatic Library Speedup and Cleanup
@@ -2271,6 +2297,8 @@ will be installed into the target bin directory, from where it can be copied
 into the appropriate systemd location and modified as necessary. Installation
 instructions are included as comments in the file.
 
+-----
+
 ## Changes made between 3.15.3 and 3.15.4
 
 ### New string input device support "getenv"
@@ -2375,6 +2403,8 @@ variable to a non-zero value before loading the file, like this:
 
 This was [Launchpad bug
 541119](https://bugs.launchpad.net/bugs/541119).
+
+-----
 
 ## Changes from the 3.14 branch between 3.15.3 and 3.15.4
 

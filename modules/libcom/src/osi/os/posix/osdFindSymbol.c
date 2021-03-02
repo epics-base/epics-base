@@ -9,25 +9,6 @@
 
 #include "epicsFindSymbol.h"
 
-/* RTEMS posix but without libbsd */
-#ifdef RTEMS_LEGACY_STACK
-LIBCOM_API void * epicsLoadLibrary(const char *name)
-{
-	    return 0;
-}
-
-LIBCOM_API const char *epicsLoadError(void)
-{
-	    return "epicsLoadLibrary not implemented";
-}
-
-LIBCOM_API void * epicsStdCall epicsFindSymbol(const char *name)
-{
-	    return 0;
-}
-
-#else
-
 #include <dlfcn.h>
 
 
@@ -51,4 +32,3 @@ LIBCOM_API void * epicsStdCall epicsFindSymbol(const char *name)
 {
     return dlsym(RTLD_DEFAULT, name);
 }
-#endif // RTEMS_LEGACY_STACK

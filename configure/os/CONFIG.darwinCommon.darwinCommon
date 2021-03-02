@@ -33,7 +33,6 @@ ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 #   OS provides socket address length
 #
 OP_SYS_CFLAGS += -fno-common
-OP_SYS_CFLAGS += -DHAVE_SOCKADDR_SA_LEN=1
 
 #
 # Darwin os definition

@@ -88,7 +88,7 @@ extern void *POSIX_Init(void *argument);
 //#define RTEMS_PCI_CONFIG_LIB
 //#define CONFIGURE_PCI_LIB PCI_LIB_AUTO
 
-#ifndef __RTEMS_MAJOR__ > 4
+#if __RTEMS_MAJOR__ > 4
 #define CONFIGURE_SHELL_COMMANDS_INIT
 
 #include <bsp/irq-info.h>

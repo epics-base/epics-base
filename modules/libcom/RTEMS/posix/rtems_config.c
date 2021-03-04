@@ -153,9 +153,9 @@ extern void *POSIX_Init(void *argument);
 #define CONFIGURE_APPLICATION_NEEDS_RTC_DRIVER
 #endif
 
-#if defined(LIBBSP_I386_PC386_BSP_H)
+#if defined(BSP_pc386) || defined(BSP_pc686)
 #define RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE (64 * 1024 * 1024)
-#elif defined(LIBBSP_POWERPC_QORIQ_BSP_H)
+#elif defined(BSP_qoriq_e500)
 #define RTEMS_BSD_CONFIG_DOMAIN_PAGE_MBUFS_SIZE (32 * 1024 * 1024)
 #endif
 

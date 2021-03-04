@@ -37,6 +37,8 @@ ifeq ($(RTEMS_TARGET_CPU),i386)
 rtemsCom_SRCS += ne2kpci.c
 endif
 
+rtems_config_CPPFLAGS += -DBSP_$(RTEMS_BSP)
+
 LIBRARY_RTEMS = rtemsCom
 
 # shared library ABI version.

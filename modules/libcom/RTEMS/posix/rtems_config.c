@@ -93,6 +93,7 @@ extern void *POSIX_Init(void *argument);
 
 #include <bsp/irq-info.h>
 
+#ifndef RTEMS_LEGACY_STACK
 #include <rtems/netcmds-config.h>
 
 #define CONFIGURE_SHELL_USER_COMMANDS \
@@ -105,6 +106,13 @@ extern void *POSIX_Init(void *argument);
   &rtems_shell_TCPDUMP_Command, \
   &rtems_shell_PFCTL_Command, \
   &rtems_shell_SYSCTL_Command
+#else // LEGACY_STACK:
+#define CONFIGURE_SHELL_USER_COMMANDS \
+  &bsp_interrupt_shell_command, \
+  &rtems_shell_PING_Command, \
+  &rtems_shell_ROUTE_Command, \
+  &rtems_shell_IFCONFIG_Command
+#endif
 
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
 #define CONFIGURE_SHELL_COMMAND_PERIODUSE

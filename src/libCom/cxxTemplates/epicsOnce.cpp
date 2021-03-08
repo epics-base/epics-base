@@ -38,18 +38,9 @@ private:
     static epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > freeList;
 };
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
 template class epicsSingleton < epicsMutex >;
 template class tsFreeList < class epicsOnceImpl, 16 >;
 template class epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 epicsSingleton < epicsMutex > epicsOnceImpl::mutex;
 epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > epicsOnceImpl::freeList;

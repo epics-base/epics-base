@@ -35,6 +35,7 @@
  */
 
 #include <ctype.h>
+#include <time.h>
 #include "flexdef.h"
 #include <assert.h>
 
@@ -380,8 +381,8 @@ typedef long time_t;
 
 char *flex_gettime(void)
 {
-    time_t t, time(time_t *);
-    char *result, *ctime(const time_t *), *copy_string(char *str);
+    time_t t;
+    char *result, *copy_string(char *str);
 
     t = time( NULL );
 

@@ -21,15 +21,6 @@
 #include "epicsGuard.h"
 #include "timerPrivate.h"
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
-
 template class tsFreeList < epicsTimerForC, 0x20 >;
 
 epicsTimer::~epicsTimer () {}

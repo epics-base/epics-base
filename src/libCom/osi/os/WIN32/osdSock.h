@@ -74,6 +74,6 @@ typedef BOOL osiSockOptMcastLoop_t;
  */
 #define FD_IN_FDSET(FD) (1)
 
-epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ();
+epicsShareFunc unsigned epicsShareAPI wsaMajorVersion (void);
 
 #endif /*osdSockH*/

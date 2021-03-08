@@ -5,7 +5,9 @@
 #define FLEX_SCANNER
 
 #include <stdio.h>
-
+#ifdef _WIN32
+#include <io.h>
+#endif
 
 /* cfront 1.2 defines "c_plusplus" instead of "__cplusplus" */
 #ifdef c_plusplus
@@ -2230,9 +2232,7 @@ int yywrap()
 
 /* set_input_file - open the given file (if NULL, stdin) for scanning */
 
-void set_input_file( file )
-char *file;
-
+void set_input_file( char *file )
     {
     if ( file )
 	{

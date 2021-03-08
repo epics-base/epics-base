@@ -170,11 +170,11 @@ static void logClientDestroy (logClientId id)
  * This method requires the pClient->mutex be owned already.
  */
 static void sendMessageChunk(logClient * pClient, const char * message) {
-    unsigned strSize;
+    size_t strSize;
 
     strSize = strlen ( message );
     while ( strSize ) {
-        unsigned msgBufBytesLeft = 
+        size_t msgBufBytesLeft = 
             sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
 
         if ( msgBufBytesLeft < strSize && pClient->nextMsgIndex != 0u && pClient->connected)
@@ -559,7 +559,7 @@ void epicsShareAPI iocLogPrefix(const char * prefix)
     }
 
     if (prefix) {
-        unsigned prefixLen = strlen(prefix);
+        size_t prefixLen = strlen(prefix);
         if (prefixLen > 0) {
             char * localCopy = malloc(prefixLen+1);
             strcpy(localCopy, prefix);

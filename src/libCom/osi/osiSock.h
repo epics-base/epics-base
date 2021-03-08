@@ -50,7 +50,7 @@ enum epicsSocketSystemCallInterruptMechanismQueryInfo {
     esscimqi_socketSigAlarmRequired /* NO LONGER USED/SUPPORTED */
 };
 epicsShareFunc enum epicsSocketSystemCallInterruptMechanismQueryInfo 
-        epicsSocketSystemCallInterruptMechanismQuery ();
+        epicsSocketSystemCallInterruptMechanismQuery (void);
 
 #ifdef EPICS_PRIVATE_API
 /*

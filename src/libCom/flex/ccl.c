@@ -137,10 +137,10 @@ void cclnegate(int cclp)
  * has a non-zero value in the set array.
  */
 
+
 void list_character_set(FILE *file, int cset[])
 {
     int i;
-    char *readable_form();
 
     putc( '[', file );
 

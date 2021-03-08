@@ -42,5 +42,5 @@ epicsShareFunc const char *epicsLoadError(void)
 
 epicsShareFunc void * epicsShareAPI epicsFindSymbol(const char *name)
 {
-    return GetProcAddress(0, name);
+    return (void*)GetProcAddress(0, name);
 }

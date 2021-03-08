@@ -464,7 +464,7 @@ epicsShareFunc unsigned int epicsShareAPI
     return stackSizeTable[stackSizeClass];
 }
 
-void epicsThreadCleanupWIN32 ()
+void epicsThreadCleanupWIN32 (void)
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -643,7 +643,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
 /*
  * epicsThreadSuspendSelf ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
+epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf (void)
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -698,7 +698,7 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id)
 /*
  * epicsThreadGetPrioritySelf ()
  */
-epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf () 
+epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf (void)
 { 
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
@@ -787,7 +787,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 /*
  * epicsThreadSleepQuantum ()
  */
-double epicsShareAPI epicsThreadSleepQuantum ()
+double epicsShareAPI epicsThreadSleepQuantum (void)
 { 
     /*
      * Its worth noting here that the sleep quantum on windows can
@@ -1056,7 +1056,7 @@ epicsShareFunc void epicsShareAPI epicsThreadOnce (
 /*
  * epicsThreadPrivateCreate ()
  */
-epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate ()
+epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate (void)
 {
     epicsThreadPrivateOSD *p = ( epicsThreadPrivateOSD * ) malloc ( sizeof ( *p ) );
     if ( p ) {

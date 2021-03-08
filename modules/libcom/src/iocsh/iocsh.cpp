@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "epicsMath.h"
 #include "errlog.h"
@@ -545,6 +546,16 @@ int iocshSetError(int err)
     return err;
 }
 
+void addPwdMacro(iocshContext *context) {
+    if (context != NULL) {
+        char buf[256];
+        char *pwd = getcwd ( buf, sizeof(buf) - 1 );
+        if ( pwd ) {
+            macPutValue(context->handle, "PWD", pwd);
+        }
+    }
+}
+
 /*
  * The body of the command interpreter
  */
@@ -579,7 +590,6 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     int ret = 0;
 
     iocshInit();
-
     /*
      * See if command interpreter is interactive
      */
@@ -652,6 +662,8 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             return -1;
         }
 
+        addPwdMacro(context);
+
         epicsThreadPrivateSet(iocshContextId, (void *) context);
     }
     MAC_HANDLE *handle = context->handle;
@@ -661,6 +673,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 
     macPushScope(handle);
     macInstallMacros(handle, defines);
+    //addPwdMacro();
 
     wasOkToBlock = epicsThreadIsOkToBlock();
     epicsThreadSetOkToBlock(1);

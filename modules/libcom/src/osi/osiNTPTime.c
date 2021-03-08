@@ -64,14 +64,21 @@ static void NTPTimeSync(void *dummy);
 /* NTPTime_Report iocsh command */
 static const iocshArg ReportArg0 = { "interest_level", iocshArgArgv};
 static const iocshArg * const ReportArgs[1] = { &ReportArg0 };
-static const iocshFuncDef ReportFuncDef = {"NTPTime_Report", 1, ReportArgs};
+static const iocshFuncDef ReportFuncDef = {"NTPTime_Report", 1, ReportArgs,
+                                           "Display time provider synchronization state\n"
+                                           "  interest_level - with level 1 it also shows:\n"
+                                           "                    * synchronization interval\n"
+                                           "                    * time when last synchronized\n"
+                                           "                    * nominal and measured system tick rates\n"
+                                           "                    * server address (vxWorks only)\n"};
 static void ReportCallFunc(const iocshArgBuf *args)
 {
     NTPTime_Report(args[0].ival);
 }
 
 /* NTPTime_Shutdown iocsh command */
-static const iocshFuncDef ShutdownFuncDef = {"NTPTime_Shutdown", 0, NULL};
+static const iocshFuncDef ShutdownFuncDef = {"NTPTime_Shutdown", 0, NULL,
+                                             "Shuts down NTP time synchronization thread\n"};
 static void ShutdownCallFunc(const iocshArgBuf *args)
 {
     NTPTime_Shutdown(NULL);

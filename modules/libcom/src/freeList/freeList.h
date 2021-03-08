@@ -14,6 +14,7 @@
  *
  * \brief Allocate and free ﬁxed size memory elements
  *
+ * \details
  * Describes routines to allocate and free ﬁxed size memory elements. 
  * Free elements are maintained on a free list rather then being returned to the heap via calls to free. 
  * When it is necessary to call malloc(), memory is allocated in multiples of the element size.

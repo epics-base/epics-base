@@ -1,4 +1,4 @@
-/*************************************************************************\
+﻿/*************************************************************************\
 * Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -7,12 +7,14 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*
- * Fast numeric to string conversions
+/**
+ * \file cvtFast.h
+ * author Bob Dalesio, Mark Anderson, Marty Kraimer
  *
- * Original Authors:
- *    Bob Dalesio, Mark Anderson and Marty Kraimer
- *    Date:            12 January 1993
+ * \brief Fast numeric to string conversions
+ *
+ * Provides routines for converting various numeric types into an ascii string. 
+ * They oﬀer a combination of speed and convenience not available with sprintf().
  */
 
 #ifndef INCcvtFasth
@@ -27,9 +29,7 @@
 extern "C" {
 #endif
 
-/*
- * All functions return the number of characters in the output
- */
+/** \brief All functions return the number of characters in the output */
 LIBCOM_API int
     cvtFloatToString(float val, char *pdest, epicsUInt16 prec);
 LIBCOM_API int

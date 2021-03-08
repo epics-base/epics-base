@@ -1487,7 +1487,7 @@ caStatus casStrmClient::hostNameAction ( epicsGuard < casClientMutex > & guard )
         }
         return S_cas_internal;
     }
-    strncpy ( pMalloc, pName, size - 1 );
+    memcpy ( pMalloc, pName, (size - 1)*sizeof(char));
     pMalloc[ size - 1 ]='\0';
 
     if ( this->pHostName ) {
@@ -1531,7 +1531,7 @@ caStatus casStrmClient::clientNameAction (
         }
         return S_cas_internal;
     }
-    strncpy ( pMalloc, pName, size - 1 );
+    memcpy ( pMalloc, pName, (size - 1)*sizeof(char));
     pMalloc[size-1]='\0';
 
     if ( this->pUserName ) {

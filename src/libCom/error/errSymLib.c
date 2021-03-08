@@ -162,7 +162,7 @@ static void errRawCopy ( long statusToDecode, char *pBuf, unsigned bufLength )
                 status = sprintf ( pBuf, "%d", errnum );
             }
             else {
-                strncpy ( pBuf,"<err copy fail>", bufLength );
+                memcpy(pBuf, "<err copy fail>", bufLength*sizeof(char) );
                 pBuf[bufLength-1] = '\0';
                 status = 0;
             }
@@ -181,8 +181,8 @@ static void errRawCopy ( long statusToDecode, char *pBuf, unsigned bufLength )
                     "(%d,%d)", modnum, errnum );
             }
             else {
-                strncpy ( pBuf, 
-                    "<err copy fail>", bufLength);
+                memcpy ( pBuf, 
+                    "<err copy fail>", bufLength*sizeof(char));
                 pBuf[bufLength-1] = '\0';
                 status = 0;
             }

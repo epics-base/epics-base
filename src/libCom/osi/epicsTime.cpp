@@ -658,7 +658,7 @@ size_t epicsTime::strftime (
                     if ( tmpLen >= bufLenLeft ) {
                         tmpLen = bufLenLeft - 1;
                     }
-                    strncpy ( pBufCur, pOVF, tmpLen );
+                    memcpy(pBufCur, pOVF, tmpLen*sizeof(char));
                     pBufCur[tmpLen] = '\0';
                     pBufCur += tmpLen;
                     bufLenLeft -= tmpLen;
@@ -670,7 +670,7 @@ size_t epicsTime::strftime (
                 if ( tmpLen >= bufLenLeft ) {
                     tmpLen = bufLenLeft - 1;
                 }
-                strncpy ( pBufCur, pDoesntFit, tmpLen );
+                memcpy(pBufCur, pDoesntFit, tmpLen*sizeof(char));
                 pBufCur[tmpLen] = '\0';
                 pBufCur += tmpLen;
                 bufLenLeft -= tmpLen;

@@ -5,7 +5,7 @@ ifdef T_A
 
 DOXYGEN=doxygen
 
-EXPAND = Doxyfile
+EXPAND = Doxyfile@
 
 EXPAND_ME += EPICS_VERSION
 EXPAND_ME += EPICS_REVISION
@@ -16,7 +16,7 @@ ME = documentation/O.$(T_A)/html
 
 install: doxygen
 
-doxygen: Doxyfile
+doxygen: Doxyfile ../mainpage.dox
 	$(DOXYGEN)
 	rsync -av $(TOP)/html/ html/
 

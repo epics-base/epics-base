@@ -5,6 +5,11 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
+%{
+#ifdef _WIN32
+#include <io.h> /* for read() */
+#endif /* _WIN32 */
+%}
 newline     "\n"
 backslash   "\\"
 doublequote "\""

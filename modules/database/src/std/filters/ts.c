@@ -12,21 +12,44 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <chfPlugin.h>
-#include <dbLock.h>
-#include <db_field_log.h>
-#include <epicsExport.h>
+#include "chfPlugin.h"
+#include "db_field_log.h"
+#include "dbExtractArray.h"
+#include "dbLock.h"
+#include "epicsExport.h"
+
+/*
+ * The size of the data is different for each channel, and can even
+ * change at runtime, so a freeList doesn't make much sense here.
+ */
+static void freeArray(db_field_log *pfl) {
+    free(pfl->u.r.field);
+}
 
 static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     epicsTimeStamp now;
     epicsTimeGetCurrent(&now);
 
-    /* If string or array, must make a copy (to ensure coherence between time and data) */
-    if (pfl->type == dbfl_type_rec) {
-        dbScanLock(dbChannelRecord(chan));
-        dbChannelMakeArrayCopy(pvt, pfl, chan);
-        dbScanUnlock(dbChannelRecord(chan));
+    /* If reference and not already copied,
+       must make a copy (to ensure coherence between time and data) */
+    if (pfl->type == dbfl_type_ref && !pfl->u.r.dtor) {
+        void *pTarget = calloc(pfl->no_elements, pfl->field_size);
+        void *pSource = pfl->u.r.field;
+        if (pTarget) {
+            long offset = 0;
+            long nSource = pfl->no_elements;
+            dbScanLock(dbChannelRecord(chan));
+            dbChannelGetArrayInfo(chan, &pSource, &nSource, &offset);
+            dbExtractArray(pSource, pTarget, pfl->field_size,
+                nSource, pfl->no_elements, offset, 1);
+            pfl->u.r.field = pTarget;
+            pfl->u.r.dtor = freeArray;
+            pfl->u.r.pvt = pvt;
+            dbScanUnlock(dbChannelRecord(chan));
+        }
     }
 
     pfl->time = now;

@@ -57,20 +57,31 @@ union native_value {
 struct db_field_log;
 typedef void (dbfl_freeFunc)(struct db_field_log *pfl);
 
-/* Types of db_field_log: rec = use record, val = val inside, ref = reference inside */
+/*
+ * A db_field_log has one of two types:
+ *
+ * dbfl_type_ref - Reference to value
+ *  Used for variable size (array) data types.  Meta-data
+ *  is stored in the field log, but value data is stored externally.
+ *  Only the dbfl_ref side of the data union is valid.
+ *
+ * dbfl_type_val - Internal value
+ *  Used to store small scalar data.  Meta-data and value are
+ *  present in this structure and no external references are used.
+ *  Only the dbfl_val side of the data union is valid.
+ */
 typedef enum dbfl_type {
-    dbfl_type_rec = 0,
     dbfl_type_val,
     dbfl_type_ref
 } dbfl_type;
 
 /* Context of db_field_log: event = subscription update, read = read reply */
 typedef enum dbfl_context {
-    dbfl_context_read = 0,
+    dbfl_context_read,
     dbfl_context_event
 } dbfl_context;
 
-#define dbflTypeStr(t) (t==dbfl_type_val?"val":t==dbfl_type_rec?"rec":"ref")
+#define dbflTypeStr(t) (t==dbfl_type_val?"val":"ref")
 
 struct dbfl_val {
     union native_value field; /* Field value */
@@ -82,6 +93,8 @@ struct dbfl_val {
  * db_delete_field_log().  Any code which changes a dbfl_type_ref
  * field log to another type, or to reference different data,
  * must explicitly call the dtor function.
+ * If the dtor is NULL and no_elements > 0, then this means the array
+ * data is still owned by a record. See the macro dbfl_has_copy below.
  */
 struct dbfl_ref {
     dbfl_freeFunc     *dtor;  /* Callback to free filter-allocated resources */
@@ -89,8 +102,11 @@ struct dbfl_ref {
     void              *field; /* Field value */
 };
 
+/*
+ * Note that field_size may be larger than MAX_STRING_SIZE.
+ */
 typedef struct db_field_log {
-    unsigned int     type:2;  /* type (union) selector */
+    unsigned int     type:1;  /* type (union) selector */
     /* ctx is used for all types */
     unsigned int      ctx:1;  /* context (operation type) */
     /* the following are used for value and reference types */
@@ -98,8 +114,8 @@ typedef struct db_field_log {
     unsigned short     stat;  /* Alarm Status */
     unsigned short     sevr;  /* Alarm Severity */
     short        field_type;  /* DBF type of data */
-    short        field_size;  /* Data size */
-    long        no_elements;  /* No of array elements */
+    short        field_size;  /* Size of a single element */
+    long        no_elements;  /* No of valid array elements */
     union {
         struct dbfl_val v;
         struct dbfl_ref r;
@@ -107,27 +123,19 @@ typedef struct db_field_log {
 } db_field_log;
 
 /*
- * A db_field_log will in one of three types:
- *
- * dbfl_type_rec - Reference to record
- *  The field log stores no data itself.  Data must instead be taken
- *  via the dbChannel* which must always be provided when along
- *  with the field log.
- *  For this type only the 'type' and 'ctx' members are used.
- *
- * dbfl_type_ref - Reference to outside value
- *  Used for variable size (array) data types.  Meta-data
- *  is stored in the field log, but value data is stored externally
- *  (see struct dbfl_ref).
- *  For this type all meta-data members are used.  The dbfl_ref side of the
- *  data union is used.
- *
- * dbfl_type_val - Internal value
- *  Used to store small scalar data.  Meta-data and value are
- *  present in this structure and no external references are used.
- *  For this type all meta-data members are used.  The dbfl_val side of the
- *  data union is used.
+ * Whether a db_field_log* owns the field data. If this is the case, then the
+ * db_field_log is fully decoupled from the record: there is no need to lock
+ * the record when accessing the data, nor to call any rset methods (like
+ * get_array_info) because this has already been done when we made the copy. A
+ * special case here is that of no (remaining) data (i.e. no_elements==0). In
+ * this case, making a copy is redundant, so we have no dtor. But conceptually
+ * the db_field_log still owns the (empty) data.
  */
+#define dbfl_has_copy(p)\
+ ((p) && ((p)->type==dbfl_type_val || (p)->u.r.dtor || (p)->no_elements==0))
+
+#define dbfl_pfield(p)\
+ ((p)->type==dbfl_type_val ? &p->u.v.field : p->u.r.field)
 
 #ifdef __cplusplus
 }

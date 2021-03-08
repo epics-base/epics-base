@@ -13,16 +13,14 @@
 
 #include <stdio.h>
 
-#include <freeList.h>
-#include <dbAccess.h>
-#include <dbExtractArray.h>
-#include <db_field_log.h>
-#include <dbLock.h>
-#include <recSup.h>
-#include <epicsExit.h>
-#include <special.h>
-#include <chfPlugin.h>
-#include <epicsExport.h>
+#include "chfPlugin.h"
+#include "dbAccessDefs.h"
+#include "dbExtractArray.h"
+#include "db_field_log.h"
+#include "dbLock.h"
+#include "epicsExit.h"
+#include "freeList.h"
+#include "epicsExport.h"
 
 typedef struct myStruct {
     epicsInt32 start;
@@ -46,6 +44,8 @@ static void * allocPvt(void)
     myStruct *my = (myStruct*) freeListCalloc(myStructFreeList);
     if (!my) return NULL;
 
+    /* defaults */
+    my->start = 0;
     my->incr = 1;
     my->end = -1;
     return (void *) my;
@@ -77,8 +77,6 @@ static void freeArray(db_field_log *pfl)
 static long wrapArrayIndices(long *start, const long increment, long *end,
     const long no_elements)
 {
-    long len = 0;
-
     if (*start < 0) *start = no_elements + *start;
     if (*start < 0) *start = 0;
     if (*start > no_elements) *start = no_elements;
@@ -87,85 +85,53 @@ static long wrapArrayIndices(long *start, const long increment, long *end,
     if (*end < 0) *end = 0;
     if (*end >= no_elements) *end = no_elements - 1;
 
-    if (*end - *start >= 0) len = 1 + (*end - *start) / increment;
-    return len;
+    if (*end - *start >= 0)
+        return 1 + (*end - *start) / increment;
+    else
+        return 0;
 }
 
 static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
 {
     myStruct *my = (myStruct*) pvt;
-    struct dbCommon *prec;
-    rset *prset;
+    int must_lock;
     long start = my->start;
     long end = my->end;
-    long nTarget = 0;
+    long nTarget;
+    void *pTarget;
     long offset = 0;
-    long nSource = dbChannelElements(chan);
-    long capacity = nSource;
-    void *pdst;
+    long nSource = pfl->no_elements;
+    void *pSource = pfl->u.r.field;
 
     switch (pfl->type) {
     case dbfl_type_val:
-        /* Only filter arrays */
+        /* TODO Treat scalars as arrays with 1 element */
         break;
 
-    case dbfl_type_rec:
-        /* Extract from record */
-        if (dbChannelSpecial(chan) == SPC_DBADDR &&
-            nSource > 1 &&
-            (prset = dbGetRset(&chan->addr)) &&
-            prset->get_array_info)
-        {
-            void *pfieldsave = dbChannelField(chan);
-            prec = dbChannelRecord(chan);
-            dbScanLock(prec);
-            prset->get_array_info(&chan->addr, &nSource, &offset);
-            nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
-            pfl->type = dbfl_type_ref;
-            pfl->stat = prec->stat;
-            pfl->sevr = prec->sevr;
-            pfl->time = prec->time;
-            pfl->field_type = dbChannelFieldType(chan);
-            pfl->field_size = dbChannelFieldSize(chan);
-            pfl->no_elements = nTarget;
-            if (nTarget) {
-                pdst = freeListCalloc(my->arrayFreeList);
-                if (pdst) {
-                    pfl->u.r.dtor = freeArray;
-                    pfl->u.r.pvt = my->arrayFreeList;
-                    offset = (offset + start) % dbChannelElements(chan);
-                    dbExtractArrayFromRec(&chan->addr, pdst, nTarget, capacity,
-                        offset, my->incr);
-                    pfl->u.r.field = pdst;
-                }
-            }
-            dbScanUnlock(prec);
-            dbChannelField(chan) = pfieldsave;
-        }
-        break;
-
-    /* Extract from buffer */
     case dbfl_type_ref:
-        pdst = NULL;
-        nSource = pfl->no_elements;
-        nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
-        pfl->no_elements = nTarget;
-        if (nTarget) {
-            /* Copy the data out */
-            void *psrc = pfl->u.r.field;
-
-            pdst = freeListCalloc(my->arrayFreeList);
-            if (!pdst) break;
-            offset = start;
-            dbExtractArrayFromBuf(psrc, pdst, pfl->field_size, pfl->field_type,
-                nTarget, nSource, offset, my->incr);
+        must_lock = !pfl->u.r.dtor;
+        if (must_lock) {
+            dbScanLock(dbChannelRecord(chan));
+            dbChannelGetArrayInfo(chan, &pSource, &nSource, &offset);
         }
-        if (pfl->u.r.dtor) pfl->u.r.dtor(pfl);
-        if (nTarget) {
+        nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
+        if (nTarget > 0) {
+            /* copy the data */
+            pTarget = freeListCalloc(my->arrayFreeList);
+            if (!pTarget) break;
+            /* must do the wrap-around with the original no_elements */
+            offset = (offset + start) % pfl->no_elements;
+            dbExtractArray(pSource, pTarget, pfl->field_size,
+                nTarget, pfl->no_elements, offset, my->incr);
+            if (pfl->u.r.dtor) pfl->u.r.dtor(pfl);
+            pfl->u.r.field = pTarget;
             pfl->u.r.dtor = freeArray;
             pfl->u.r.pvt = my->arrayFreeList;
-            pfl->u.r.field = pdst;
         }
+        /* adjust no_elements (even if zero elements remain) */
+        pfl->no_elements = nTarget;
+        if (must_lock)
+            dbScanUnlock(dbChannelRecord(chan));
         break;
     }
     return pfl;

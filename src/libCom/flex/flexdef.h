@@ -718,7 +718,7 @@ extern void skelout (void);
 extern void transition_struct_out (int, int);
 
 /* readable_form - return the the human-readable form of a character */
-extern char *readable_form(void);
+extern char *readable_form(int c);
 
 /* from file nfa.c */
 

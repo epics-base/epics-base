@@ -43,6 +43,9 @@ char copyright[] =
 #endif /* not lint */
 
 #include <time.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #define epicsExportSharedSymbols
 #include "epicsTempFile.h"

@@ -87,7 +87,8 @@ static void chdirCallFunc(const iocshArgBuf *args)
 }
 
 /* print current working directory */
-static const iocshFuncDef pwdFuncDef = { "pwd", 0, 0 };
+static const iocshFuncDef pwdFuncDef = {"pwd", 0, 0,
+                                        "Print name of current/working directory\n"};
 static void pwdCallFunc (const iocshArgBuf *args)
 {
     char buf[256];
@@ -101,7 +102,8 @@ static void pwdCallFunc (const iocshArgBuf *args)
 static const iocshArg epicsEnvSetArg0 = { "name",iocshArgString};
 static const iocshArg epicsEnvSetArg1 = { "value",iocshArgString};
 static const iocshArg * const epicsEnvSetArgs[2] = {&epicsEnvSetArg0,&epicsEnvSetArg1};
-static const iocshFuncDef epicsEnvSetFuncDef = {"epicsEnvSet",2,epicsEnvSetArgs};
+static const iocshFuncDef epicsEnvSetFuncDef = {"epicsEnvSet",2,epicsEnvSetArgs,
+                                                "Set environment variable name to value\n"};
 static void epicsEnvSetCallFunc(const iocshArgBuf *args)
 {
     char *name = args[0].sval;

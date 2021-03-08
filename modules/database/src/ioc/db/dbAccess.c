@@ -361,7 +361,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
             pbuffer = (char *)pushort;
         }
         if( (*options) & DBR_AMSG ) {
-            if (!pfl || pfl->type == dbfl_type_rec) {
+            if (!pfl) {
                 STATIC_ASSERT(sizeof(pcommon->amsg)==sizeof(pfl->amsg));
                 strncpy(pbuffer, pcommon->amsg, sizeof(pcommon->amsg)-1);
             } else {
@@ -404,7 +404,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         }
         if( (*options) & DBR_UTAG ) {
             epicsUInt64 *ptag = (epicsUInt64*)pbuffer;
-            if (!pfl || pfl->type == dbfl_type_rec) {
+            if (!pfl) {
                 *ptag++ = pcommon->utag;
             } else {
                 *ptag++ = pfl->utag;

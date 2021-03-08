@@ -7,7 +7,17 @@
 * EPICS Base is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* Author:  Marty Kraimer Date:    04-19-94     */
+/**
+ * \file freeList.h
+ * \author Marty Kraimer
+ *
+ * \brief Allocate and free fixed size memory elements.
+ *
+ * \details
+ * Describes routines to allocate and free fixed size memory elements.
+ * Free elements are maintained on a free list rather than being returned to the heap via calls to free.
+ * When it is necessary to call malloc(), memory is allocated in multiples of the element size.
+ */
 
 #ifndef INCfreeListh
 #define INCfreeListh
@@ -19,7 +29,7 @@
 extern "C" {
 #endif
 
-LIBCOM_API void epicsStdCall freeListInitPvt(void **ppvt,int size,int nmalloc);
+LIBCOM_API void epicsStdCall freeListInitPvt(void **ppvt, int size, int malloc);
 LIBCOM_API void * epicsStdCall freeListCalloc(void *pvt);
 LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt);
 LIBCOM_API void epicsStdCall freeListFree(void *pvt,void*pmem);
@@ -31,3 +41,4 @@ LIBCOM_API size_t epicsStdCall freeListItemsAvail(void *pvt);
 #endif
 
 #endif /*INCfreeListh*/
+ 

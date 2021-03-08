@@ -27,6 +27,30 @@
 #include "epicsGeneralTime.h"
 #include "libComRegister.h"
 
+/* Register the PWD environment variable when the cd IOC shell function is
+ * registered. This variable contains the current directory path.
+ */
+static void updatePWD() {
+    static int lasterror;
+    char buf[1024];
+    char *pwd = getcwd(buf, sizeof(buf));
+    if (pwd) {
+        pwd[sizeof(buf) - 1] = '\0';
+        lasterror = 0;
+        epicsEnvSet("PWD", buf);
+    } else {
+        if(lasterror!=errno) {
+            lasterror = errno;
+            if (errno == ERANGE) {
+                fprintf(stderr, "Warning: Current path exceeds %u characters\n",
+                                                              (unsigned)sizeof(buf));
+            } else {
+                perror("getcwd");
+            }
+            fprintf(stderr, "Warning: Unable to update $PWD\n");
+        }
+    }
+}
 
 /* date */
 void date(const char *format)
@@ -83,6 +107,8 @@ static void chdirCallFunc(const iocshArgBuf *args)
     if (args[0].sval == NULL ||
         iocshSetError(chdir(args[0].sval))) {
         fprintf(stderr, "Invalid directory path, ignored\n");
+    } else {
+        updatePWD();
     }
 }
 
@@ -91,9 +117,10 @@ static const iocshFuncDef pwdFuncDef = {"pwd", 0, 0,
                                         "Print name of current/working directory\n"};
 static void pwdCallFunc (const iocshArgBuf *args)
 {
-    char buf[256];
-    char *pwd = getcwd ( buf, sizeof(buf) - 1 );
+    char buf[1024];
+    char *pwd = getcwd ( buf, sizeof(buf) );
     if ( pwd ) {
+        buf[sizeof(buf)-1u] = '\0';
         printf ( "%s\n", pwd );
     }
 }
@@ -448,6 +475,8 @@ void epicsStdCall libComRegister(void)
     iocshRegister(&echoFuncDef, echoCallFunc);
     iocshRegister(&chdirFuncDef, chdirCallFunc);
     iocshRegister(&pwdFuncDef, pwdCallFunc);
+
+    updatePWD();
 
     iocshRegister(&epicsEnvSetFuncDef, epicsEnvSetCallFunc);
     iocshRegister(&epicsEnvUnsetFuncDef, epicsEnvUnsetCallFunc);

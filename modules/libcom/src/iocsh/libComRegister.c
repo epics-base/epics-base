@@ -46,7 +46,9 @@ void date(const char *format)
 
 static const iocshArg dateArg0 = { "format",iocshArgString};
 static const iocshArg * const dateArgs[] = {&dateArg0};
-static const iocshFuncDef dateFuncDef = {"date", 1, dateArgs};
+static const iocshFuncDef dateFuncDef = {"date", 1, dateArgs,
+                                         "Print current date and time\n"
+                                         "  (default) - '%Y/%m/%d %H:%M:%S.%06f'\n"};
 static void dateCallFunc (const iocshArgBuf *args)
 {
     date(args[0].sval);
@@ -64,7 +66,8 @@ IOCSH_STATIC_FUNC void echo(char* str)
 
 static const iocshArg echoArg0 = { "string",iocshArgString};
 static const iocshArg * const echoArgs[1] = {&echoArg0};
-static const iocshFuncDef echoFuncDef = {"echo",1,echoArgs};
+static const iocshFuncDef echoFuncDef = {"echo",1,echoArgs,
+                                         "Print any string (can aslo print EPICS environment variables)\n"};
 static void echoCallFunc(const iocshArgBuf *args)
 {
     echo(args[0].sval);
@@ -73,7 +76,8 @@ static void echoCallFunc(const iocshArgBuf *args)
 /* chdir */
 static const iocshArg chdirArg0 = { "directory name",iocshArgString};
 static const iocshArg * const chdirArgs[1] = {&chdirArg0};
-static const iocshFuncDef chdirFuncDef = {"cd",1,chdirArgs};
+static const iocshFuncDef chdirFuncDef = {"cd",1,chdirArgs,
+                                          "Change directory to new directory provided as parameter\n"};
 static void chdirCallFunc(const iocshArgBuf *args)
 {
     if (args[0].sval == NULL ||

@@ -23,7 +23,7 @@
 #include "epicsExport.h"
 
 typedef struct myStruct {
-    char name[50];  // arbitrary size, we better had dynamic strings 
+    char name[50];  /* arbitrary size, we better had dynamic strings */
     DBENTRY dbentry;
     int longstr;
 } myStruct;
@@ -59,7 +59,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
     myStruct *my = (myStruct*) pvt;
 
     if (pfl->type == dbfl_type_ref && pfl->u.r.dtor)
-    	pfl->u.r.dtor(pfl);
+        pfl->u.r.dtor(pfl);
     pfl->type = dbfl_type_ref;
     pfl->u.r.dtor = NULL;
     pfl->u.r.field = (void*)dbGetInfoString(&my->dbentry);
@@ -95,7 +95,7 @@ static void channelRegisterPre(dbChannel *chan, void *pvt,
     myStruct *my = (myStruct*) pvt;
     size_t len = strlen(dbGetInfoString(&my->dbentry)) + 1;
     if (my->longstr == 2) {
-    	my->longstr = len > MAX_STRING_SIZE;
+        my->longstr = len > MAX_STRING_SIZE;
     }
     if (my->longstr) {
         pfl->field_size = 1;

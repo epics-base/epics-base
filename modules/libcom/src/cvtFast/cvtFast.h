@@ -14,10 +14,10 @@
  * \brief Fast numeric to string conversions
  *
  * \details
- * Provides routines for converting various numeric types into an ascii string. 
- * They oﬀer a combination of speed and convenience not available with sprintf().
+ * Provides routines for converting various numeric types into an ascii string.
+ * They off a combination of speed and convenience not available with sprintf().
  */
- 
+
 #ifndef INCcvtFasth
 #define INCcvtFasth
 

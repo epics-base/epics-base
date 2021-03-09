@@ -3,16 +3,16 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* SPDX-License-Identifier: EPICS
-* EPICS Base is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* SPDX-License-Identifier: ePICS
+* ePICS Base is distributed subject to a Software License Agreement found
+* in file LICeNSe that is included with this distribution.
 \*************************************************************************/
 /**
  * \file freeList.h
  * \author Marty Kraimer
  *
  * \brief Allocate and free ﬁxed size memory elements
- *
+ * 
  * \details
  * Describes routines to allocate and free ﬁxed size memory elements. 
  * Free elements are maintained on a free list rather then being returned to the heap via calls to free. 

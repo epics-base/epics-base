@@ -23,7 +23,7 @@
  #define INCfreeListh
  
  #include <stddef.h>
- #include "libComApi.h"
+ #include "libComAPI.h"
  
  #ifdef __cplusplus
  extern "C" {

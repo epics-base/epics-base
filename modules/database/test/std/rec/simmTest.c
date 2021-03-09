@@ -63,6 +63,7 @@ static char *rawSupp[] = {
     "bi",
     "mbbi",
     "mbbiDirect",
+    "ao"
 };
 
 static
@@ -77,6 +78,7 @@ int hasRawSimmSupport(const char *rectype) {
 static char nameVAL[PVNAMELENGTH];
 static char nameB0[PVNAMELENGTH];
 static char nameRVAL[PVNAMELENGTH];
+static char nameROFF[PVNAMELENGTH];
 static char nameSGNL[PVNAMELENGTH];
 static char nameSIMM[PVNAMELENGTH];
 static char nameSIML[PVNAMELENGTH];
@@ -98,7 +100,7 @@ static char nameSimvalLEN[PVNAMELENGTH];
 static
 void setNames(const char *name)
 {
-    SETNAME(VAL); SETNAME(B0); SETNAME(RVAL); SETNAME(SGNL);
+    SETNAME(VAL); SETNAME(B0); SETNAME(RVAL); SETNAME(ROFF); SETNAME(SGNL);
     SETNAME(SVAL); SETNAME(SIMM); SETNAME(SIML); SETNAME(SIOL); SETNAME(SIMS);
     SETNAME(SCAN); SETNAME(PROC); SETNAME(PACT);
     SETNAME(STAT); SETNAME(SEVR); SETNAME(TSE);
@@ -399,6 +401,18 @@ void testSiolWrite(const char *name,
         testdbPutFieldOk(nameVAL, DBR_LONG, 1);
     testdbGetFieldEqual(nameSimval, DBR_USHORT, 1);
 
+    if(hasRawSimmSupport(name)){
+        testDiag("in simmRAW, RVAL should be written to SIOL");
+        testDiag("SIML overrides SIMM, disable it here");
+        testdbPutFieldOk(nameSIML, DBR_STRING, "");
+        testdbPutFieldOk(nameSIMM, DBR_STRING, "RAW");
+        testdbPutFieldOk(nameROFF, DBR_ULONG, 2);
+        testdbPutFieldOk(nameVAL, DBR_DOUBLE, 5.);
+        testdbGetFieldEqual(nameRVAL, DBR_LONG, 3);       
+        testdbGetFieldEqual(nameSimval, DBR_DOUBLE, 3.);
+        testdbPutFieldOk(nameSIML, DBR_STRING, nameSimmode);
+    }
+
     /* Set TSE to -2 (from device) and reprocess: timestamp is taken from IOC */
     epicsTimeGetCurrent(&now);
     testdbPutFieldOk(nameTSE, DBR_SHORT, -2);
@@ -502,7 +516,7 @@ void testAllRecTypes(void)
 
 MAIN(simmTest)
 {
-    testPlan(1176);
+    testPlan(1219);
     startSimmTestIoc("simmTest.db");
 
     testSimmSetup();

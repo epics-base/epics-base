@@ -1051,7 +1051,7 @@ int iocshMain(int argc,char *argv[])
 
 void iocshSetArgs(int argc, char *argv[])
 {
-    if(argc < 0) // should always be true, but don't blow up if it isn't
+    if(argc <= 0)
         return;
 
     free((void*)iocshStartDir);

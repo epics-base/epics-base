@@ -83,7 +83,7 @@ int epicsPathIsAbs(const char *path, size_t pathlen);
  * @since UNRELEASED
  */
 LIBCOM_API
-char* epicsPathJoin(const char **fragments, size_t nfragments);
+char* epicsPathJoin(const char * const *fragments, size_t nfragments);
 
 /** Special path fragment for epicsPathJoin() which will be replaced with the current directory
  *

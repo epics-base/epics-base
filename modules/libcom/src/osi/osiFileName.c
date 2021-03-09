@@ -97,7 +97,7 @@ int epicsPathIsAbs(const char *path, size_t pathlen)
     return 0;
 }
 
-char* epicsPathJoin(const char **fragments, size_t nfragments)
+char* epicsPathJoin(const char * const *fragments, size_t nfragments)
 {
     char* ret;
     char* cwd = NULL;

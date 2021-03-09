@@ -748,12 +748,6 @@ static long lnkCalc_getAlarmMsg(const struct link *plink, epicsEnum16 *status,
     return 0;
 }
 
-static long lnkCalc_getAlarm(const struct link *plink, epicsEnum16 *status,
-    epicsEnum16 *severity)
-{
-    return lnkCalc_getAlarmMsg(plink, status, severity, NULL, 0u);
-}
-
 static long lnkCalc_getTimestampTag(const struct link *plink, epicsTimeStamp *pstamp, epicsUTag *ptag)
 {
     calc_link *clink = CONTAINER(plink->value.json.jlink,
@@ -767,11 +761,6 @@ static long lnkCalc_getTimestampTag(const struct link *plink, epicsTimeStamp *ps
     }
 
     return -1;
-}
-
-static long lnkCalc_getTimestamp(const struct link *plink, epicsTimeStamp *pstamp)
-{
-    return lnkCalc_getTimestampTag(plink, pstamp, NULL);
 }
 
 static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
@@ -790,7 +779,7 @@ static lset lnkCalc_lset = {
     lnkCalc_getValue,
     NULL, NULL, NULL,
     lnkCalc_getPrecision, lnkCalc_getUnits,
-    lnkCalc_getAlarm, lnkCalc_getTimestamp,
+    NULL, NULL,
     lnkCalc_putValue, NULL,
     NULL, doLocked,
     lnkCalc_getAlarmMsg,

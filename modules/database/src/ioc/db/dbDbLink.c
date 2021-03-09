@@ -353,12 +353,6 @@ static long dbDbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
     return 0;
 }
 
-static long dbDbGetAlarm(const struct link *plink, epicsEnum16 *status,
-        epicsEnum16 *severity)
-{
-    return dbDbGetAlarmMsg(plink, status, severity, NULL, 0u);
-}
-
 static long dbDbGetTimeStampTag(const struct link *plink, epicsTimeStamp *pstamp, epicsUTag *ptag)
 {
     dbChannel *chan = linkChannel(plink);
@@ -367,11 +361,6 @@ static long dbDbGetTimeStampTag(const struct link *plink, epicsTimeStamp *pstamp
     if(ptag)
         *ptag = precord->utag;
     return 0;
-}
-
-static long dbDbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
-{
-    return dbDbGetTimeStampTag(plink, pstamp, NULL);
 }
 
 static long dbDbPutValue(struct link *plink, short dbrType,
@@ -418,7 +407,7 @@ static lset dbDb_lset = {
     dbDbGetValue,
     dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
     dbDbGetPrecision, dbDbGetUnits,
-    dbDbGetAlarm, dbDbGetTimeStamp,
+    NULL, NULL,
     dbDbPutValue, NULL,
     dbDbScanFwdLink, doLocked,
     dbDbGetAlarmMsg,

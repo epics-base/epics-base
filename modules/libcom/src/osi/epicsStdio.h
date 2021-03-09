@@ -7,8 +7,34 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-
-/* epicsStdio.h */
+/**
+ * \file epicsStdio.h
+ * \brief Standardizes the stdio behaviour within EPICS
+ *
+ * \details
+ * The `epicsStdio.h` first includes the operating system's `stdio.h` header.
+ * `epicsSnprintf` and `epicsVsnprintf` have the same semantics as the C99 
+ * functions `snprintf` and `vsnprintf`, whilst correcting for certain 
+ * implementations on some operating systems.
+ *
+ * \details
+ * The routines `epicsGetStdin`, `epicsGetStdout`, `epicsGetStderr`, 
+ * `epicsStdoutPrintf`, `epicsStdoutPuts`, and `epicsStdoutPutchar` are not normally
+ * named directly in user code. They are provided for the macros which redefine the C 
+ * identifiers.
+ * This is done so that any I/O through these standard streams can be redirected, 
+ * usually to or from a file. The primary use of this facility is `iocsh`, which allows
+ * redirection of the input and/or output streams when running commands. In order for
+ * the redirection to work, all modules involved in I/O must include `epicsStdio.h`
+ * instead of the system header `stdio.h`.
+ * The redirections are:
+ * - `stdin` becomes `epicsGetStdin()`
+ * - `stdout` becomes `epicsGetStdout()`
+ * - `stderr` becomes `epicsFetStderr()`
+ * - `printf` becomes `epicsStdoutPrintf`
+ * - `puts` becomes `epicsStdoutPuts`
+ * - `putchar` becomes `epicsStdoutPutchar`
+ */
 
 #ifndef epicsStdioh
 #define epicsStdioh

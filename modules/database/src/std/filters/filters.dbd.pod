@@ -285,3 +285,6 @@ once every minute:
  ...
 
 =cut
+
+registrar(infoInitialize)
+

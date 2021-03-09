@@ -81,6 +81,9 @@ rset longoutRSET={
 };
 epicsExportAddress(rset,longoutRSET);
 
+#define OUT_LINK_UNCHANGED   0
+#define OUT_LINK_CHANGED     1
+
 static void checkAlarms(longoutRecord *prec);
 static void monitor(longoutRecord *prec);
 static long writeValue(longoutRecord *prec);
@@ -120,7 +123,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     prec->mlst = prec->val;
     prec->alst = prec->val;
     prec->lalm = prec->val;
-    prec->oval = prec->val;
+    prec->pval = prec->val;
+    prec->outpvt = OUT_LINK_UNCHANGED;
     return 0;
 }
 
@@ -213,13 +217,12 @@ static long special(DBADDR *paddr, int after)
             return(0);
         }
 
-        /* If OOPT is "on change" we force a write operation */
+        /* Detect an output link re-direction (change)*/
         if (dbGetFieldIndex(paddr) == longoutRecordOUT) {
-            if ((!after) && (prec->oopt == longoutOOPT_On_Change))
-                prec->oopt = longoutOOPT_Write_Once_Then_On_Change;
-            return 0;
+            if (!after)
+                prec->outpvt = OUT_LINK_CHANGED;
+            return(0);
         }
-
 
     default:
         recGblDbaddrError(S_db_badChoice, paddr, "longout: special");
@@ -392,10 +395,7 @@ static void monitor(longoutRecord *prec)
 
 static long writeValue(longoutRecord *prec)
 {
-<<<<<<< HEAD
     longoutdset *pdset = (longoutdset *) prec->dset;
-=======
->>>>>>> 2b7ca9598 (Added OOPT to longout record)
     long status = 0;
 
     if (!prec->pact) {
@@ -435,7 +435,7 @@ static long writeValue(longoutRecord *prec)
 
 static void convert(longoutRecord *prec, epicsInt32 value)
 {
-        /* check drive limits */
+    /* check drive limits */
     if(prec->drvh > prec->drvl) {
         if (value > prec->drvh) value = prec->drvh;
         else if (value < prec->drvl) value = prec->drvl;
@@ -453,11 +453,15 @@ static long conditional_write(longoutRecord *prec)
     switch (prec->oopt) 
     {
     case longoutOOPT_On_Change:
-        doDevSupWrite = (prec->val != prec->oval);
+        /* Forces a write op if a change in the OUT field is detected */
+        if ((prec->ooch == menuYesNoYES) && (prec->outpvt == OUT_LINK_CHANGED)) {
+            doDevSupWrite = 1;
+        } else {
+            /* Only write if value is different from the previous one */ 
+            doDevSupWrite = (prec->val != prec->pval);
+        }
         break;
 
-    case longoutOOPT_Write_Once_Then_On_Change:
-        prec->oopt = longoutOOPT_On_Change;
     case longoutOOPT_Every_Time:
         doDevSupWrite = 1;
         break;
@@ -471,11 +475,11 @@ static long conditional_write(longoutRecord *prec)
         break;
 
     case longoutOOPT_Transition_To_Zero:
-        doDevSupWrite = ((prec->val == 0)&&(prec->oval != 0));
+        doDevSupWrite = ((prec->val == 0)&&(prec->pval != 0));
         break;
 
     case longoutOOPT_Transition_To_Non_zero:
-        doDevSupWrite = ((prec->val != 0)&&(prec->oval == 0));      
+        doDevSupWrite = ((prec->val != 0)&&(prec->pval == 0));      
         break;
 
     default:
@@ -485,6 +489,7 @@ static long conditional_write(longoutRecord *prec)
     if (doDevSupWrite)
         status = pdset->write_longout(prec);
 
-    prec->oval = prec->val;
+    prec->pval = prec->val;
+    prec->outpvt = OUT_LINK_UNCHANGED; /* reset status of OUT link */
     return status;
 }

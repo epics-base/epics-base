@@ -27,9 +27,7 @@ menu(longoutOOPT) {
 	choice(longoutOOPT_When_Non_zero,"When Non-zero")
 	choice(longoutOOPT_Transition_To_Zero,"Transition To Zero")
 	choice(longoutOOPT_Transition_To_Non_zero,"Transition To Non-zero")
-	choice(longoutOOPT_Write_Once_Then_On_Change, "Write Once Then On Change")
 }
-
 
 recordtype(longout) {
 
@@ -82,7 +80,45 @@ DTYP field must then specify the C<<< Soft Channel >>> device support routine.
 See L<Address Specification> for information on the format of hardware addresses
 and database links.
 
-=fields OUT, DTYP
+=fields OUT, DTYP, OOPT, OOCH
+
+=head4 Menu longoutOOPT
+
+The OOPT field determines the condition that causes the output link to be
+written to. It's a menu field that has six choices:
+
+=menu longoutOOPT
+
+=over
+
+=item *
+C<Every Time> -- write output every time record is processed. (DEFAULT)
+
+=item *
+C<On Change> -- write output every time VAL changes, i.e., every time the
+result of the expression changes.
+
+=item *
+C<When Zero> -- when record is processed, write output if VAL is zero.
+
+=item *
+C<When Non-zero> -- when record is processed, write output if VAL is
+non-zero.
+
+=item *
+C<Transition To Zero> -- when record is processed, write output only if VAL
+is zero and the last value was non-zero.
+
+=item *
+C<Transition To Non-zero> -- when record is processed, write output only if
+VAL is non-zero and last value was zero.
+
+=back
+
+=head4 Changes in OUT field when OOPT = On Change
+
+The OOCH field determines if a change in OUT field should cause a write operation
+even when the value is the same and OOPT = On Change. By default, OOCH is set to YES.
 
 =cut
 
@@ -372,7 +408,7 @@ for more information on simulation mode and its fields.
 		prompt("Sim. Mode Private")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("epicsCallback            *simpvt")
+		extra("epicsCallback       *simpvt")
 	}
 	field(IVOA,DBF_MENU) {
 		prompt("INVALID output action")
@@ -385,11 +421,21 @@ for more information on simulation mode and its fields.
 		promptgroup("50 - Output")
 		interest(2)
 	}
-	field(OVAL,DBF_LONG) {
-		prompt("Last Value Written")
-		promptgroup("50 - Output")
-		asl(ASL1)
+	field(PVAL,DBF_LONG) {
+		prompt("Previous Value")
+	}
+	field(OUTPVT,DBF_NOACCESS) {
+		prompt("Output Link Changed Private")
 		special(SPC_NOMOD)
+		interest(4)
+		extra("epicsEnum16         outpvt")
+	}
+	field(OOCH,DBF_MENU) {
+		prompt("Output Execute On Change")
+		promptgroup("50 - Output")
+		interest(1)
+		menu(menuYesNo)
+		initial("1")
 	}
 	field(OOPT,DBF_MENU) {
 		prompt("Output Execute Opt")

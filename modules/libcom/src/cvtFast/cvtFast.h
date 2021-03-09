@@ -1,4 +1,4 @@
-﻿/*************************************************************************\
+/*************************************************************************\
 * Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as

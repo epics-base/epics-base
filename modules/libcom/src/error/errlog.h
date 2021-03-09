@@ -44,9 +44,7 @@ extern "C" {
  */
 typedef void (*errlogListener)(void *pPrivate, const char *message);
 
-/**
- * errlog severity enums
- */
+/** errlog severity enums */
 typedef enum {
     errlogInfo,
     errlogMinor,
@@ -84,14 +82,10 @@ LIBCOM_API extern int errVerbose;
 #define errMessage(S, PM) \
      errPrintf(S, __FILE__, __LINE__, "%s", PM)
 
-/** 
- * epicsPrintf is an old name for errlog routines
- */
+/** epicsPrintf is an old name for errlog routines */
 #define epicsPrintf errlogPrintf
 
-/** 
- * epicsVprintf is an old name for errlog routines
- */
+/** epicsVprintf is an old name for errlog routines */
 #define epicsVprintf errlogVprintf
 
 /**
@@ -171,7 +165,7 @@ LIBCOM_API errlogSevEnum errlogGetSevToLog(void);
  * Any code can receive errlog message. This function will add a listener callback.
  *
  * \param listener Function pointer of type ::errlogListener
- * \param pPrivate
+ * \param pPrivate This will be passed as the first argument of listener()
  */
 LIBCOM_API void errlogAddListener(errlogListener listener, void *pPrivate);
 
@@ -179,7 +173,7 @@ LIBCOM_API void errlogAddListener(errlogListener listener, void *pPrivate);
  * This function will remove a listener callback.
  *
  * \param listener Function pointer of type ::errlogListener
- * \param pPrivate
+ * \param pPrivate This will be passed as the first argument of listener()
  */
 LIBCOM_API int errlogRemoveListeners(errlogListener listener,
     void *pPrivate);
@@ -218,9 +212,7 @@ LIBCOM_API int errlogInit(int bufsize);
  */
 LIBCOM_API int errlogInit2(int bufsize, int maxMsgSize);
 
-/**
- * Wakes up the errlog task and then waits until all messages are ﬂushed from the queue.
- */
+/** Wakes up the errlog task and then waits until all messages are ﬂushed from the queue. */
 LIBCOM_API void errlogFlush(void);
 
 /**

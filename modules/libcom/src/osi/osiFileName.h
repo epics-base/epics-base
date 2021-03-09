@@ -104,7 +104,7 @@ char* epicsPathAllocCWD(void);
 /** Return the absolute path of the current executable.
  \return NULL or the path.  Caller must free()
  *
- * @since 7.0.3.1
+ * @since UNRELEASED
  */
 LIBCOM_API
 char *epicsGetExecName(void);
@@ -112,7 +112,7 @@ char *epicsGetExecName(void);
 /** Return the absolute path of the directory containing the current executable.
  \return NULL or the path.  Caller must free()
  *
- * @since 7.0.3.1
+ * @since UNRELEASED
  */
 LIBCOM_API
 char *epicsGetExecDir(void);

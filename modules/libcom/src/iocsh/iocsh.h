@@ -86,6 +86,7 @@ LIBCOM_API const iocshVarDef * epicsStdCall iocshFindVariable(
 /* This should only be called when iocsh is no longer needed*/
 LIBCOM_API void epicsStdCall iocshFree(void);
 
+#define iocshMain iocshMain
 /** Helper for implementing main() for an IOC.
  *
  * @code

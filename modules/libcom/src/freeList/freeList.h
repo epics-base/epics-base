@@ -7,7 +7,6 @@
 * EPICS Base is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* Author:  Marty Kraimer Date:    04-19-94     */
 /**
  * \file freeList.h
  * \author Marty Kraimer

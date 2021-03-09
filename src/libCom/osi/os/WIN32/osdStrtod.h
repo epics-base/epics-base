@@ -24,7 +24,11 @@ extern "C" {
 #  define strtoull _strtoui64
 #endif
 
-#if (_MSC_VER < 1800) && defined(_MINGW)
+/*
+ * strtod works in MSVC 1900 and mingw, use
+ * the OS version in those and our own otherwise
+ */
+#if (_MSC_VER < 1900) && !defined(_MINGW)
 /*
  * epicsStrtod() for systems with broken strtod() routine
  */

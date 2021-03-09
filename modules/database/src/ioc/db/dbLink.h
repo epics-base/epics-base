@@ -282,8 +282,6 @@ typedef struct lset {
      * @param   status      where to put the alarm status (or NULL)
      * @param   severity    where to put the severity (or NULL)
      * @returns status value
-     *
-     * @note Link types which provide getAlarm should also provided getAlarmMsg().
      */
     long (*getAlarm)(const struct link *plink, epicsEnum16 *status,
             epicsEnum16 *severity);
@@ -368,7 +366,7 @@ typedef struct lset {
      *
      * Equivalent of getAlarm() and also copy out alarm message string.
      * The msgbuf argument may be NULL and/or msgbuflen==0, in which case
-     * the call must be the same as a call to getAlarm().
+     * the effect must be the same as a call to getAlarm().
      *
      * Implementations must write a trailing nil to msgbuf whenever
      * @code msgbuf!=NULL && msgbuflen>0 @endcode .

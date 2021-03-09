@@ -316,19 +316,8 @@ long dbTryGetLink(struct link *plink, short dbrType, void *pbuffer,
 static
 void setLinkAlarm(struct link* plink)
 {
-    struct dbCommon *precord = plink->precord;
-    dbRecordType *rdes = precord->rdes;
-    const char* amsg = NULL;
-    short i;
-
-    for(i=0; i<rdes->no_links; i++) {
-        dbFldDes *fdes = rdes->papFldDes[rdes->link_ind[i]];
-        if((char*)plink - (char*)precord == fdes->offset) {
-            amsg = fdes->name;
-        }
-    }
-
-    recGblSetSevrMsg(precord, LINK_ALARM, INVALID_ALARM, "field %s", amsg);
+    recGblSetSevrMsg(plink->precord, LINK_ALARM, INVALID_ALARM,
+                     "field %s", dbLinkFieldName(plink));
 }
 
 long dbGetLink(struct link *plink, short dbrType, void *pbuffer,

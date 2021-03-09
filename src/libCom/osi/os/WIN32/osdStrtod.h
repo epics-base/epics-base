@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-/*
- * epicsStrtod() for systems with broken strtod() routine
- */
-epicsShareFunc double epicsStrtod(const char *str, char **endp); 
 
 /*
  * Microsoft apparently added strto[u]ll() in VS2013
@@ -26,6 +22,15 @@ epicsShareFunc double epicsStrtod(const char *str, char **endp);
 #if !defined(_MINGW) && (_MSC_VER < 1800)
 #  define strtoll _strtoi64
 #  define strtoull _strtoui64
+#endif
+
+#if (_MSC_VER < 1800) && defined(_MINGW)
+/*
+ * epicsStrtod() for systems with broken strtod() routine
+ */
+epicsShareFunc double epicsStrtod(const char *str, char **endp);
+#else
+#  define epicsStrtod strtod
 #endif
 
 #ifdef __cplusplus

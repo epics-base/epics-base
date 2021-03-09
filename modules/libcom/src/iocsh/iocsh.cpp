@@ -546,7 +546,7 @@ int iocshSetError(int err)
     return err;
 }
 
-void addPwdMacro(iocshContext *context) {
+static void addPwdMacro(iocshContext *context) {
     if (context != NULL) {
         char buf[1024];
         char *pwd = getcwd(buf, sizeof(buf) - 1);

@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
-#include <unistd.h>
+#include "osiUnistd.h"
 
 #include "epicsMath.h"
 #include "errlog.h"
@@ -548,10 +548,14 @@ int iocshSetError(int err)
 
 void addPwdMacro(iocshContext *context) {
     if (context != NULL) {
-        char buf[256];
-        char *pwd = getcwd ( buf, sizeof(buf) - 1 );
-        if ( pwd ) {
+        char buf[1024];
+        char *pwd = getcwd(buf, sizeof(buf) - 1);
+        if (pwd) {
             macPutValue(context->handle, "PWD", pwd);
+        } else {
+            if (errno == ERANGE) {
+                perror("Current path is too long");
+            }
         }
     }
 }
@@ -590,6 +594,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     int ret = 0;
 
     iocshInit();
+
     /*
      * See if command interpreter is interactive
      */
@@ -673,7 +678,6 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 
     macPushScope(handle);
     macInstallMacros(handle, defines);
-    //addPwdMacro();
 
     wasOkToBlock = epicsThreadIsOkToBlock();
     epicsThreadSetOkToBlock(1);

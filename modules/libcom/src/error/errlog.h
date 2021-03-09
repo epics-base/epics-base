@@ -217,7 +217,7 @@ LIBCOM_API void errlogFlush(void);
 
 /**
  * Routine errPrintf is normally called as follows:
- * \code errPrintf(status, __FILE__, __LINE__,"<fmt>",...); \code
+ * `errPrintf(status, __FILE__, __LINE__,"<fmt>",...); `
  * 
  * Where status is deﬁned as:
  * - 0: Find latest vxWorks or Unix error.

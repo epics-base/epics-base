@@ -16,6 +16,8 @@
  * \details
  * Provides routines for converting various numeric types into an ascii string.
  * They off a combination of speed and convenience not available with sprintf().
+ *
+ * All functions return the number of characters in the output 
  */
 
 #ifndef INCcvtFasth
@@ -30,7 +32,6 @@
 extern "C" {
 #endif
 
-/** \brief All functions return the number of characters in the output */
 LIBCOM_API int
     cvtFloatToString(float val, char *pdest, epicsUInt16 prec);
 LIBCOM_API int

@@ -23,7 +23,7 @@
 #include "epicsExport.h"
 
 typedef struct myStruct {
-    char name[50];  /* arbitrary size, we better had dynamic strings */
+    char name[52];  /* arbitrary size, we better had dynamic strings */
     DBENTRY dbentry;
     int longstr;
 } myStruct;
@@ -52,6 +52,16 @@ static void * allocPvt(void)
 static void freePvt(void *pvt)
 {
     freeListFree(myStructFreeList, pvt);
+}
+
+static int parse_ok(void *pvt)
+{
+    myStruct *my = (myStruct*) pvt;
+    if (my->name[0] == 0) /* empty name */
+        return -1;
+    if (my->name[sizeof(my->name)-2] != 0) /* name buffer overrun */
+        return -1;
+    return 0;
 }
 
 static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
@@ -123,7 +133,7 @@ static chfPluginIf pif = {
     freePvt,
 
     NULL, /* parse_error, */
-    NULL, /* parse_ok, */
+    parse_ok,
 
     channel_open,
     channelRegisterPre,

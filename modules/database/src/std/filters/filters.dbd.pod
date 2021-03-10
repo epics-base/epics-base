@@ -301,6 +301,8 @@ This filter gives access to the info fields of a record.
 =item Name C<"name"> or C<"n">
 
 The name of the info field.
+Currently, there is an implementation limit of 50 chars
+for the name length.
 
 =item Long String Flag C<"longstr"> or C<"l">
 
@@ -315,7 +317,13 @@ and array of C<CHAR> for long values.
 
 =head4 Example
 
- $ caget 'test:channel.{"info":{"name":"infofield"}}
- $ caget -S 'test:channel.{"info":{"name":"infofield","l":"yes"}} 
+Assuming the record C<test:channel> has:
+
+ info(infofieldname, "value of the info field")
+
+To read the value of the info field:
+
+ $ caget 'test:channel.{"info":{"name":"infofieldname"}}
+ $ caget -S 'test:channel.{"info":{"name":"infofieldname","l":"yes"}} 
  
 =cut

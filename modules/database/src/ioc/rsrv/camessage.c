@@ -2459,7 +2459,15 @@ int camessage ( struct client *client )
             pBody = ( void * ) ( mp + 1 );
         }
 
-        /* ignore deprecated clients, but let newer clients identify themselves. */
+        /*
+         * ignore deprecated clients, but let newer clients identify themselves.
+         *
+         * Note: when the command is "CA_PROTO_VERSION", as that is the first message when creating a circuit
+         * "client->minor_version_number" will be 0, so we can not determine the protocol version using it.
+         * On the other hand, the header of a "CA_PROTO_VERSION" packet contains the minor protocol version
+         * number in the location of the "m_count" field which could be used, however that field is always 0
+         * for versions < CA_V49, so we can not rely that for detecting older, deprecated versions.
+         */
         if (msg.m_cmmd!=CA_PROTO_VERSION && !CA_VSUPPORTED(client->minor_version_number)) {
             if (client->proto==IPPROTO_TCP) {
                 /* log and error for too old clients, but keep the connection open to avoid a

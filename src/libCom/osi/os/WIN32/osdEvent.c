@@ -26,6 +26,8 @@
 #include "shareLib.h"
 #include "epicsEvent.h"
 
+#include "osdThreadPvt.h"
+
 typedef struct epicsEventOSD {
     HANDLE handle;
 } epicsEventOSD;
@@ -83,8 +85,6 @@ epicsShareFunc epicsEventStatus epicsEventWait ( epicsEventId pSem )
         return epicsEventError;
     }
 }
-
-extern HANDLE osdThreadGetTimer(void); /* from osdThread.c */
 
 /*
  * epicsEventWaitWithTimeout ()

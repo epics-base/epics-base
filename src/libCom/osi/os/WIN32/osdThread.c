@@ -30,6 +30,8 @@
 #include "ellLib.h"
 #include "epicsExit.h"
 
+#include "osdThreadPvt.h"
+
 epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
 
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
@@ -227,6 +229,19 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
     return pWin32ThreadGlobal;
 }
 
+static void epicsParmCleanupDataWIN32 ( win32ThreadParam * pParm )
+{
+    if ( pParm ) {
+        if ( pParm->handle ) {
+            CloseHandle ( pParm->handle );
+        }
+        if ( pParm->timer ) {
+            CloseHandle ( pParm->timer );
+        }
+        free ( pParm );
+    }
+}
+
 static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
@@ -241,10 +256,8 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
         ellDelete ( & pGbl->threadList, & pParm->node );
         LeaveCriticalSection ( & pGbl->mutex );
 
-        CloseHandle ( pParm->handle );
-        CloseHandle ( pParm->timer );
-        pParm->timer = NULL;
-        free ( pParm );
+        epicsParmCleanupDataWIN32 ( pParm );
+
         TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, 0 );
     }
 }
@@ -528,12 +541,14 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
         pParmWIN32->isSuspended = 0;
 #ifdef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
         pParmWIN32->timer = CreateWaitableTimerEx(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+#endif
         if (pParmWIN32->timer == NULL) {
             pParmWIN32->timer = CreateWaitableTimer(NULL, 0, NULL);
         }
-#else
-        pParmWIN32->timer = CreateWaitableTimer(NULL, 0, NULL);
-#endif
+        if (pParmWIN32->timer == NULL) {
+            free(pParmWIN32);
+            return NULL;
+        }
     }
     return pParmWIN32;
 }
@@ -616,7 +631,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
             CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION, 
             & threadId );
         if ( pParmWIN32->handle == 0 ) {
-            free ( pParmWIN32 );
+            epicsParmCleanupDataWIN32 ( pParmWIN32 );
             return NULL;
         }
         /* weird win32 interface threadId parameter inconsistency */
@@ -626,8 +641,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
     osdPriority = epicsThreadGetOsdPriorityValue (priority);
     bstat = SetThreadPriority ( pParmWIN32->handle, osdPriority );
     if (!bstat) {
-        CloseHandle ( pParmWIN32->handle ); 
-        free ( pParmWIN32 );
+        epicsParmCleanupDataWIN32 ( pParmWIN32 );
         return NULL;
     }
     
@@ -640,8 +654,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
 		    EnterCriticalSection ( & pGbl->mutex );
 		    ellDelete ( & pGbl->threadList, & pParmWIN32->node );
 		    LeaveCriticalSection ( & pGbl->mutex );
-        CloseHandle ( pParmWIN32->handle ); 
-        free ( pParmWIN32 );
+        epicsParmCleanupDataWIN32 ( pParmWIN32 );
         return NULL;
     }
 

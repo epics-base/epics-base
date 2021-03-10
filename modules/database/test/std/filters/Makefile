@@ -13,6 +13,9 @@ include $(TOP)/configure/CONFIG
 
 USR_CPPFLAGS += -DUSE_TYPED_RSET
 
+USR_CFLAGS += -ggdb -O0
+USR_CXXFLAGS += -ggdb -O0
+
 TESTLIBRARY = Recs
 
 Recs_SRCS += xRecord.c
@@ -64,6 +67,13 @@ decTest_SRCS += decTest.c
 decTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += decTest.c
 TESTS += decTest
+
+TESTPROD_HOST += infoTest
+infoTest_SRCS += infoTest.cpp
+infoTest_SRCS += filterTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += infoTest.cpp
+TESTFILES += ../infoTest.db
+TESTS += infoTest
 
 # epicsRunFilterTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunFilterTests.c

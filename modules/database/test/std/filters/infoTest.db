@@ -1,0 +1,4 @@
+record(x, "x") {
+    field(DESC, "Test record")
+    info("a","b")
+}

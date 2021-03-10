@@ -19,6 +19,7 @@ int dbndTest(void);
 int syncTest(void);
 int arrTest(void);
 int decTest(void);
+int infoTest(void);
 
 void epicsRunFilterTests(void)
 {
@@ -29,6 +30,7 @@ void epicsRunFilterTests(void)
     runTest(syncTest);
     runTest(arrTest);
     runTest(decTest);
+    runTest(infoTest);
 
     dbmfFreeChunks();
 

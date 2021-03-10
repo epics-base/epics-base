@@ -148,9 +148,9 @@ MAIN(arrTest)
     testOk(!!(plug = dbFindFilter(info, strlen(info))), "plugin 'info' registered correctly");
 
     testDiag("Testing failing info tag reads");
-    testOk(!(pch = dbChannelCreate("x.{info:{}}")), "dbChannel with plugin {info:{}} failed");
-    testOk(!(pch = dbChannelCreate("x.{info:{name:\"\"}}")), "dbChannel with plugin {info:{name:\"\"}} failed");
-    testOk(!(pch = dbChannelCreate("x.{info:{name:\"0123456789a123456789b123456789c123456789d123456789e\"}}")), "dbChannel with plugin {info:{name:\"<too long name>\"}} failed");
+    testOk(!dbChannelCreate("x.{info:{}}"), "dbChannel with plugin {info:{}} failed");
+    testOk(!dbChannelCreate("x.{info:{name:\"\"}}"), "dbChannel with plugin {info:{name:\"\"}} failed");
+    testOk(!dbChannelCreate("x.{info:{name:\"0123456789a123456789b123456789c123456789d123456789e\"}}"), "dbChannel with plugin {info:{name:\"<too long name>\"}} failed");
 
     testDiag("Testing non-existent tags");
     testOk(!!(pch = dbChannelCreate("x.{info:{name:\"non-existent\"}}")), "dbChannel with plugin {info:{name:\"non-existent\"}} created");

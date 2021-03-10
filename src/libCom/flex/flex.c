@@ -45,7 +45,7 @@ char copyright[] =
 #include <time.h>
 #ifndef _WIN32
 #include <unistd.h>
-#endif
+#endif /* _WIN32 */
 
 #define epicsExportSharedSymbols
 #include "epicsTempFile.h"

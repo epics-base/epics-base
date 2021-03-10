@@ -9,7 +9,7 @@
 #include <io.h>
 #else
 #include <unistd.h>
-#endif
+#endif /* _WIN32 */
 
 /* cfront 1.2 defines "c_plusplus" instead of "__cplusplus" */
 #ifdef c_plusplus

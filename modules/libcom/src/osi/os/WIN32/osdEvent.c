@@ -84,7 +84,7 @@ LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem )
     }
 }
 
-extern HANDLE osdThreadGetTimer();
+extern HANDLE osdThreadGetTimer(void); /* from osdThread.c */
 
 /*
  * epicsEventWaitWithTimeout ()
@@ -92,7 +92,7 @@ extern HANDLE osdThreadGetTimer();
 LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
 {
-    static const unsigned nSec100PerSec = 10000000;
+    static const unsigned nSec100PerSec = 10000000u;
     HANDLE handles[2];
     DWORD status;
     LARGE_INTEGER tmo;
@@ -102,14 +102,12 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
         tmo.QuadPart = 0u;
     }
     else {
-        tmo.QuadPart = -((LONGLONG)(timeOut * nSec100PerSec + 0.5));  // +0.99999999 ?
+        tmo.QuadPart = -((LONGLONG)(timeOut * nSec100PerSec + 0.5));
     }
 
     if (tmo.QuadPart < 0) {
         timer = osdThreadGetTimer();
-        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0))
-        {
-            printf("event error %d\n", GetLastError());
+        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0)) {
             return epicsEventError;
         }
         handles[0] = pSem->handle;
@@ -123,10 +121,11 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
         return epicsEventOK;
     }
     else if ( status == WAIT_OBJECT_0 + 1 || status == WAIT_TIMEOUT ) {
+        /* WaitForMultipleObjects will trigger WAIT_OBJECT_0 + 1,
+           WaitForSingleObject will trigger WAIT_TIMEOUT */
         return epicsEventWaitTimeout;
     }
     else {
-        printf("event error %d\n", GetLastError());
         return epicsEventError;
     }
 }

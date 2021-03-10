@@ -457,7 +457,7 @@ work with older Base releases.
 
 This would also be a good time to modify the device support to use the type-safe
 device support entry tables that were introduced in Base-3.16.2 -- see
-[#type-safe-device-and-driver-support-tables](this entry below) for the
+[this entry below](#type-safe-device-and-driver-support-tables) for the
 description of that change, which is also optional for now.
 
 Look at the aiRecord for example. Near the top of the generated `aiRecord.h`

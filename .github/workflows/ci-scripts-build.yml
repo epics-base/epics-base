@@ -99,6 +99,12 @@ jobs:
             name: "Ub-20 gcc-8"
 
           - os: ubuntu-20.04
+            cmp: gcc-9
+            utoolchain: "9"
+            configuration: default
+            name: "Ub-20 gcc-9"
+
+          - os: ubuntu-20.04
             cmp: clang
             configuration: default
             name: "Ub-20 clang-10"

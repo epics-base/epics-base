@@ -123,7 +123,8 @@ static void epicsEnvSetCallFunc(const iocshArgBuf *args)
 /* epicsEnvUnset */
 static const iocshArg epicsEnvUnsetArg0 = { "name",iocshArgString};
 static const iocshArg * const epicsEnvUnsetArgs[1] = {&epicsEnvUnsetArg0};
-static const iocshFuncDef epicsEnvUnsetFuncDef = {"epicsEnvUnset",1,epicsEnvUnsetArgs};
+static const iocshFuncDef epicsEnvUnsetFuncDef = {"epicsEnvUnset",1,epicsEnvUnsetArgs,
+                                                  "Remove variable name from the environment\n"};
 static void epicsEnvUnsetCallFunc(const iocshArgBuf *args)
 {
     char *name = args[0].sval;
@@ -141,14 +142,16 @@ IOCSH_STATIC_FUNC void epicsParamShow()
     epicsPrtEnvParams ();
 }
 
-static const iocshFuncDef epicsParamShowFuncDef = {"epicsParamShow",0,NULL};
+static const iocshFuncDef epicsParamShowFuncDef = {"epicsParamShow",0,NULL,
+                                                   "Show the environment variable parameters used by iocCore\n"};
 static void epicsParamShowCallFunc(const iocshArgBuf *args)
 {
     epicsParamShow ();
 }
 
 /* epicsPrtEnvParams */
-static const iocshFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,0};
+static const iocshFuncDef epicsPrtEnvParamsFuncDef = {"epicsPrtEnvParams",0,0,
+                                                      "Show the environment variable parameters used by iocCore\n"};
 static void epicsPrtEnvParamsCallFunc(const iocshArgBuf *args)
 {
     epicsPrtEnvParams ();
@@ -157,21 +160,29 @@ static void epicsPrtEnvParamsCallFunc(const iocshArgBuf *args)
 /* epicsEnvShow */
 static const iocshArg epicsEnvShowArg0 = { "[name]",iocshArgString};
 static const iocshArg * const epicsEnvShowArgs[1] = {&epicsEnvShowArg0};
-static const iocshFuncDef epicsEnvShowFuncDef = {"epicsEnvShow",1,epicsEnvShowArgs};
+static const iocshFuncDef epicsEnvShowFuncDef = {"epicsEnvShow",1,epicsEnvShowArgs,
+                                                 "Show environment variables on your system\n"
+                                                 "  (default) - show all environment variables\n"
+                                                 "   name     - show value of specific environment variable\n"};
 static void epicsEnvShowCallFunc(const iocshArgBuf *args)
 {
     epicsEnvShow (args[0].sval);
 }
 
 /* registryDump */
-static const iocshFuncDef registryDumpFuncDef = {"registryDump",0,NULL};
+static const iocshFuncDef registryDumpFuncDef = {"registryDump",0,NULL,
+                                                 "Dump a hash table of EPICS registry\n"};
 static void registryDumpCallFunc(const iocshArgBuf *args)
 {
     registryDump ();
 }
 
 /* iocLogInit */
-static const iocshFuncDef iocLogInitFuncDef = {"iocLogInit",0};
+static const iocshFuncDef iocLogInitFuncDef = {"iocLogInit",0,0,
+                                               "Initialize IOC logging\n"
+                                               "  * EPICS environment variable 'EPICS_IOC_LOG_INET' has to be defined\n"
+                                               "  * Logging controled via 'iocLogDisable' variable\n"
+                                               "       see 'setIocLogDisable' command\n"};
 static void iocLogInitCallFunc(const iocshArgBuf *args)
 {
     iocLogInit ();
@@ -185,7 +196,10 @@ IOCSH_STATIC_FUNC void setIocLogDisable(int val)
 
 static const iocshArg iocLogDisableArg0 = {"(0,1)=>(false,true)",iocshArgInt};
 static const iocshArg * const iocLogDisableArgs[1] = {&iocLogDisableArg0};
-static const iocshFuncDef iocLogDisableFuncDef = {"setIocLogDisable",1,iocLogDisableArgs};
+static const iocshFuncDef iocLogDisableFuncDef = {"setIocLogDisable",1,iocLogDisableArgs,
+                                                  "Controls the 'iocLogDisable' variable\n"
+                                                  "  0 - enable logging\n"
+                                                  "  1 - disable logging\n"};
 static void iocLogDisableCallFunc(const iocshArgBuf *args)
 {
     setIocLogDisable(args[0].ival);
@@ -194,7 +208,8 @@ static void iocLogDisableCallFunc(const iocshArgBuf *args)
 /* iocLogShow */
 static const iocshArg iocLogShowArg0 = {"level",iocshArgInt};
 static const iocshArg * const iocLogShowArgs[1] = {&iocLogShowArg0};
-static const iocshFuncDef iocLogShowFuncDef = {"iocLogShow",1,iocLogShowArgs};
+static const iocshFuncDef iocLogShowFuncDef = {"iocLogShow",1,iocLogShowArgs,
+                                               "Determine if a IOC Log Prefix has been set\n"};
 static void iocLogShowCallFunc(const iocshArgBuf *args)
 {
     iocLogShow (args[0].ival);
@@ -203,17 +218,22 @@ static void iocLogShowCallFunc(const iocshArgBuf *args)
 /* eltc */
 static const iocshArg eltcArg0 = {"(0,1)=>(false,true)",iocshArgInt};
 static const iocshArg * const eltcArgs[1] = {&eltcArg0};
-static const iocshFuncDef eltcFuncDef = {"eltc",1,eltcArgs};
+static const iocshFuncDef eltcFuncDef = {"eltc",1,eltcArgs,
+                                         "Control display of error log messages on console\n"
+                                         "  0 - no\n"
+                                         "  1 - yes (default)\n"};
 static void eltcCallFunc(const iocshArgBuf *args)
 {
     eltc(args[0].ival);
 }
 
 /* errlogInit */
-static const iocshArg errlogInitArg0 = { "bufsize",iocshArgInt};
+static const iocshArg errlogInitArg0 = { "bufSize",iocshArgInt};
 static const iocshArg * const errlogInitArgs[1] = {&errlogInitArg0};
 static const iocshFuncDef errlogInitFuncDef =
-    {"errlogInit",1,errlogInitArgs};
+    {"errlogInit",1,errlogInitArgs,
+     "Initialize error log client buffer size\n"
+     "  bufSize - size of circular buffer (default = 1280 bytes)\n"};
 static void errlogInitCallFunc(const iocshArgBuf *args)
 {
     errlogInit(args[0].ival);
@@ -225,7 +245,10 @@ static const iocshArg errlogInit2Arg1 = { "maxMsgSize",iocshArgInt};
 static const iocshArg * const errlogInit2Args[] =
     {&errlogInit2Arg0, &errlogInit2Arg1};
 static const iocshFuncDef errlogInit2FuncDef =
-    {"errlogInit2", 2, errlogInit2Args};
+    {"errlogInit2", 2, errlogInit2Args,
+     "Initialize error log client buffer size and maximum message size\n"
+     "  bufSize    - size of circular buffer       (default = 1280 bytes)\n"
+     "  maxMsgSize - maximum size of error message (default =  256 bytes)\n"};
 static void errlogInit2CallFunc(const iocshArgBuf *args)
 {
     errlogInit2(args[0].ival, args[1].ival);
@@ -239,7 +262,8 @@ IOCSH_STATIC_FUNC void errlog(const char *message)
 
 static const iocshArg errlogArg0 = { "message",iocshArgString};
 static const iocshArg * const errlogArgs[1] = {&errlogArg0};
-static const iocshFuncDef errlogFuncDef = {"errlog",1,errlogArgs};
+static const iocshFuncDef errlogFuncDef = {"errlog",1,errlogArgs,
+                                           "Send message to errlog\n"};
 static void errlogCallFunc(const iocshArgBuf *args)
 {
     errlog(args[0].sval);
@@ -249,7 +273,8 @@ static void errlogCallFunc(const iocshArgBuf *args)
 /* iocLogPrefix */
 static const iocshArg iocLogPrefixArg0 = { "prefix",iocshArgString};
 static const iocshArg * const iocLogPrefixArgs[1] = {&iocLogPrefixArg0};
-static const iocshFuncDef iocLogPrefixFuncDef = {"iocLogPrefix",1,iocLogPrefixArgs};
+static const iocshFuncDef iocLogPrefixFuncDef = {"iocLogPrefix",1,iocLogPrefixArgs,
+                                                 "Create the prefix for all messages going into IOC log\n"};
 static void iocLogPrefixCallFunc(const iocshArgBuf *args)
 {
     iocLogPrefix(args[0].sval);
@@ -259,7 +284,8 @@ static void iocLogPrefixCallFunc(const iocshArgBuf *args)
 static const iocshArg epicsThreadShowAllArg0 = { "level",iocshArgInt};
 static const iocshArg * const epicsThreadShowAllArgs[1] = {&epicsThreadShowAllArg0};
 static const iocshFuncDef epicsThreadShowAllFuncDef =
-    {"epicsThreadShowAll",1,epicsThreadShowAllArgs};
+    {"epicsThreadShowAll",1,epicsThreadShowAllArgs,
+     "Display info about all threads\n"};
 static void epicsThreadShowAllCallFunc(const iocshArgBuf *args)
 {
     epicsThreadShowAll(args[0].ival);
@@ -268,7 +294,8 @@ static void epicsThreadShowAllCallFunc(const iocshArgBuf *args)
 /* epicsThreadShow */
 static const iocshArg threadArg0 = { "[-level] [thread ...]", iocshArgArgv};
 static const iocshArg * const threadArgs[1] = { &threadArg0 };
-static const iocshFuncDef threadFuncDef = {"epicsThreadShow",1,threadArgs};
+static const iocshFuncDef threadFuncDef = {"epicsThreadShow",1,threadArgs,
+                                           "Display info about the specified thread\n"};
 static void threadCallFunc(const iocshArgBuf *args)
 {
     int i = 1;
@@ -314,7 +341,8 @@ static void threadCallFunc(const iocshArgBuf *args)
 static const iocshArg taskwdShowArg0 = { "level",iocshArgInt};
 static const iocshArg * const taskwdShowArgs[1] = {&taskwdShowArg0};
 static const iocshFuncDef taskwdShowFuncDef =
-    {"taskwdShow",1,taskwdShowArgs};
+    {"taskwdShow",1,taskwdShowArgs,
+     "Show number of tasks and monitors registered\n"};
 static void taskwdShowCallFunc(const iocshArgBuf *args)
 {
     taskwdShow(args[0].ival);

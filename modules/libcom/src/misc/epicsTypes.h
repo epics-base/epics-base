@@ -56,6 +56,11 @@ typedef double          epicsFloat64;
 typedef epicsInt32      epicsStatus;
  /** @} */
 
+#define MAX_STRING_SIZE 40
+
+/**
+ * \brief !! Dont use this - it may vanish in the future !!
+ */
 typedef struct {
     unsigned    length;
     char        *pString;
@@ -66,9 +71,7 @@ typedef struct {
  *
  * Provided only for backwards compatibility with
  * db_access.h
- *
  */
-#define MAX_STRING_SIZE 40
 typedef char            epicsOldString[MAX_STRING_SIZE];
 
 /**

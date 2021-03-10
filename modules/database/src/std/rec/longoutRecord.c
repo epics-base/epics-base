@@ -217,9 +217,9 @@ static long special(DBADDR *paddr, int after)
             return(0);
         }
 
-        /* Detect an output link re-direction (change)*/
+        /* Detect an output link re-direction (change) */
         if (dbGetFieldIndex(paddr) == longoutRecordOUT) {
-            if (!after)
+            if (after)
                 prec->outpvt = OUT_LINK_CHANGED;
             return(0);
         }

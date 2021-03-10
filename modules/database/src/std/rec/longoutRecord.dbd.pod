@@ -95,8 +95,7 @@ written to. It's a menu field that has six choices:
 C<Every Time> -- write output every time record is processed. (DEFAULT)
 
 =item *
-C<On Change> -- write output every time VAL changes, i.e., every time the
-result of the expression changes.
+C<On Change> -- write output every time VAL changes.
 
 =item *
 C<When Zero> -- when record is processed, write output if VAL is zero.
@@ -117,8 +116,10 @@ VAL is non-zero and last value was zero.
 
 =head4 Changes in OUT field when OOPT = On Change
 
-The OOCH field determines if a change in OUT field should cause a write operation
-even when the value is the same and OOPT = On Change. By default, OOCH is set to YES.
+If OOCH is C<YES> (its default value) and the OOPT field is C<On Change>,
+the record will write to the device support the first time the record gets
+processed after its OUT link is modified, even when the output value has
+not actually changed.
 
 =cut
 

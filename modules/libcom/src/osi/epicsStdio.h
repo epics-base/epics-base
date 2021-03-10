@@ -17,7 +17,6 @@
  * functions `snprintf` and `vsnprintf`, whilst correcting for certain 
  * implementations on some operating systems.
  *
- * \details
  * The routines `epicsGetStdin`, `epicsGetStdout`, `epicsGetStderr`, 
  * `epicsStdoutPrintf`, `epicsStdoutPuts`, and `epicsStdoutPutchar` are not normally
  * named directly in user code. They are provided for the macros which redefine the C 
@@ -34,6 +33,12 @@
  * - `printf` becomes `epicsStdoutPrintf`
  * - `puts` becomes `epicsStdoutPuts`
  * - `putchar` becomes `epicsStdoutPutchar`
+ *
+ * The `epicsSetThreadStdin`, `epicsSetThreadStdout`, and `epicsSetThreadStderr`, routines allow 
+ * the standard file streams to be redirected on a per thread basis, e.g. calling
+ * `epicsThreadStdout` will affect only the thread which calls it. To cancel a stream
+ * redirection, pass a NULL argument in another call to the same redirection routine
+ * that was used to set it.
  */
 
 #ifndef epicsStdioh
@@ -78,23 +83,72 @@ extern "C" {
 #  define putchar epicsStdoutPutchar
 #endif
 
+/**
+ * \brief `epicsSnprintf` is meant to have the same semantics as the C99 function `snprintf`
+ *
+ * \details
+ * This is provided because some architectures do not implement these functions, while 
+ * others implement them incorrectly.
+ * Standardized as a C99 function, `snprintf` acts like `sprintf` except that the `size`
+ * argument gives the maximum number of characters (including the trailing zero byte)
+ * that may be placed in `str`. 
+ * 
+ * On some operating systems though the implementation of this function does not always
+ * return the correct value. If the OS implementation does not correctly return the
+ * number of characters that would have been written when the output gets truncated, it
+ * is not worth trying to fix this as long as they return `size-1` instead; the resulting
+ * string must always be correctly terminated with a zero byte.
+ * 
+ * In some scenarios the `epicsSnprintf` implementation may not provide the correct 
+ * C99 semantics for the return value when `size` is given as zero. On these systems 
+ * `epicsSnprintf` can return an error (a value less than zero) when a buffer length 
+ * of zero is passed in, so callers should not use that technique to caclulate the 
+ * length of the buffer required.
+ * 
+ * \return The number of characters (not counting the terminating zero byte) that would
+ * be written to `str` if it was large enough to hold them all; the output has been truncated
+ * if the return value is `size` or more
+ */
 LIBCOM_API int epicsStdCall epicsSnprintf(
     char *str, size_t size, const char *format, ...) EPICS_PRINTF_STYLE(3,4);
+/**
+ * \brief `epicsVsnprintf` is meant to have the same semantics as the C99 function `vsnprintf`
+ *
+ * \details
+ * This is provided because some architectures do not implement these functions, while 
+ * others implement them incorrectly.
+ * Standardized as a C99 function, `vsnprintf` acts like `vsprintf` except that the `size`
+ * argument gives the maximum number of characters (including the trailing zero byte)
+ * that may be placed in `str`. 
+ * 
+ * On some operating systems though the implementation of this function does not always
+ * return the correct value. If the OS implementation does not correctly return the
+ * number of characters that would have been written when the output gets truncated, it
+ * is not worth trying to fix this as long as they return `size-1` instead; the resulting
+ * string must always be correctly terminated with a zero byte.
+ * 
+ * In some scenarios the `epicsSnprintf` implementation may not provide the correct 
+ * C99 semantics for the return value when `size` is given as zero. On these systems 
+ * `epicsSnprintf` can return an error (a value less than zero) when a buffer length 
+ * of zero is passed in, so callers should not use that technique to caclulate the 
+ * length of the buffer required.
+ * 
+ * \return The number of characters (not counting the terminating zero byte) that would
+ * be written to `str` if it was large enough to hold them all; the output has been truncated
+ * if the return value is `size` or more
+ */
 LIBCOM_API int epicsStdCall epicsVsnprintf(
     char *str, size_t size, const char *format, va_list ap);
 
-/*
- * truncate to specified size (we dont use truncate()
- * because it is not portable)
- *
- * pFileName - name (and optionally path) of file
- * size - the new file size (if file is curretly larger)
- *
- * returns TF_OK if the file is less than size bytes
- * or if it was successfully truncated. Returns
- * TF_ERROR if the file could not be truncated.
- */
 enum TF_RETURN {TF_OK=0, TF_ERROR=1};
+/**
+ * \brief Truncate to a specified size
+ * \note `truncate()` is not used as it is not portable
+ * \param pFileName Name (and optionally path) of file
+ * \param size The new file size (if files is currently larger)
+ * \return `TF_OK` if the file is less that size bytes of if it was successfully
+ * truncated; `TF_ERROR` if the file could not be truncated
+ */
 LIBCOM_API enum TF_RETURN truncateFile ( const char *pFileName, unsigned long size );
 
 /* The following are for redirecting stdin,stdout,stderr */

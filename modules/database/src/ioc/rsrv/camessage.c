@@ -2434,6 +2434,15 @@ int camessage ( struct client *client )
         msg.m_cid       = ntohl ( mp->m_cid );
         msg.m_available = ntohl ( mp->m_available );
 
+        /* disconnect clients that send an invalid command */
+        if (msg.m_cmmd > CA_PROTO_LAST_CMMD)
+        {
+            log_header ( "CAS: Invalid command rejected",
+                client, &msg, 0, nmsg );
+            status = RSRV_ERROR;
+            break;
+        }
+
         if ( CA_V49(client->minor_version_number) && msg.m_postsize == 0xffff  ) {
             ca_uint32_t *pLW = ( ca_uint32_t * ) ( mp + 1 );
             if ( bytes_left < sizeof(*mp) + 2 * sizeof(*pLW) ) {

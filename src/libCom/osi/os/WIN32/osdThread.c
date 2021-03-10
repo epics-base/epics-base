@@ -18,9 +18,6 @@
 
 #define VC_EXTRALEAN
 #define STRICT
-#ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x400 /* No support for W95 */
-#endif
 #include <windows.h>
 #include <process.h> /* for _endthread() etc */
 
@@ -53,6 +50,7 @@ typedef struct epicsThreadOSD {
     DWORD id;
     unsigned epicsPriority;
     char isSuspended;
+    HANDLE timer; /* waitable timer */
 } win32ThreadParam;
 
 typedef struct epicsThreadPrivateOSD {
@@ -244,6 +242,8 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
         LeaveCriticalSection ( & pGbl->mutex );
 
         CloseHandle ( pParm->handle );
+        CloseHandle ( pParm->timer );
+        pParm->timer = NULL;
         free ( pParm );
         TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, 0 );
     }
@@ -526,6 +526,11 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
         pParmWIN32->pName = (char *) ( pParmWIN32 + 1 );
         strcpy ( pParmWIN32->pName, pName );
         pParmWIN32->isSuspended = 0;
+#ifdef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+        pParmWIN32->timer = CreateWaitableTimerEx(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+#else
+        pParmWIN32->timer = CreateWaitableTimer(NULL, 0, NULL);
+#endif
     }
     return pParmWIN32;
 }
@@ -764,24 +769,50 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id )
     }
 }
 
+HANDLE osdThreadGetTimer()
+{
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm;
+
+    assert ( pGbl );
+
+    pParm = ( win32ThreadParam * )
+        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
+
+    return pParm->timer;
+}
+
 /*
  * epicsThreadSleep ()
  */
 epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 {
-    static const unsigned mSecPerSec = 1000;
-    DWORD milliSecDelay;
+    static const unsigned nSec100PerSec = 10000000;
+    LARGE_INTEGER tmo;
+    HANDLE timer;
 
-    if ( seconds > 0.0 ) {
-        seconds *= mSecPerSec;
-        seconds += 0.99999999;  /* 8 9s here is optimal */
-        milliSecDelay = ( seconds >= INFINITE ) ?
-            INFINITE - 1 : ( DWORD ) seconds;
+    if ( seconds <= 0.0 ) {
+        tmo.QuadPart = 0u;
     }
-    else {  /* seconds <= 0 or NAN */
-        milliSecDelay = 0u;
+    else {
+        tmo.QuadPart = -((LONGLONG)(seconds * nSec100PerSec + 0.5)); // +0.99999999 ?
     }
-    Sleep ( milliSecDelay );
+
+    if (tmo.QuadPart == 0) {
+        Sleep ( 0 );
+    }
+    else {
+        timer = osdThreadGetTimer();
+        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0))
+        {
+            printf("timer error %d\n", GetLastError());
+            return;
+        }
+        if (WaitForSingleObject(timer, INFINITE) != WAIT_OBJECT_0)
+        {
+            printf("timer error %d\n", GetLastError());
+        }
+    }
 }
 
 /*

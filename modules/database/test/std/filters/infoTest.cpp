@@ -51,79 +51,42 @@ extern "C" {
 
 const char *server_port = CA_SERVER_PORT;
 
-static int fl_equals_array(short type, const db_field_log *pfl1, void *p2) {
-    for (int i = 0; i < pfl1->no_elements; i++) {
-        switch (type) {
-        case DBR_DOUBLE:
-            if (((epicsFloat64*)pfl1->u.r.field)[i] != ((epicsInt32*)p2)[i]) {
-                testDiag("at index=%d: field log has %g, should be %d",
-                         i, ((epicsFloat64*)pfl1->u.r.field)[i], ((epicsInt32*)p2)[i]);
-                return 0;
-            }
-            break;
-        case DBR_LONG:
-            if (((epicsInt32*)pfl1->u.r.field)[i] != ((epicsInt32*)p2)[i]) {
-                testDiag("at index=%d: field log has %d, should be %d",
-                         i, ((epicsInt32*)pfl1->u.r.field)[i], ((epicsInt32*)p2)[i]);
-                return 0;
-            }
-            break;
-        case DBR_STRING:
-            if (strtol(&((const char*)pfl1->u.r.field)[i*MAX_STRING_SIZE], NULL, 0) != ((epicsInt32*)p2)[i]) {
-                testDiag("at index=%d: field log has '%s', should be '%d'",
-                         i, &((const char*)pfl1->u.r.field)[i*MAX_STRING_SIZE], ((epicsInt32*)p2)[i]);
-                return 0;
-            }
-            break;
-        default:
-            return 0;
-        }
-    }
-    return 1;
-}
+#define DEBUG(fmt, x) printf("DEBUG (%d): %s: " fmt "\n", __LINE__, #x, x)
 
-static void createAndOpen(const char *chan, const char *json, const char *type, dbChannel**pch, short no) {
-    ELLNODE *node;
-    char name[80];
+static void runSingleTest(const char *json, dbfType dbf_type, const char *type, const char *expected) {
+    dbChannel *pch;
+    db_field_log fl;
+    db_field_log *pfl;
+    char name[80] = "x.";
 
-    strncpy(name, chan, sizeof(name)-1);
     strncat(name, json, sizeof(name)-strlen(name)-1);
 
-    testOk(!!(*pch = dbChannelCreate(name)), "dbChannel with plugin arr %s created", type);
-    testOk((ellCount(&(*pch)->filters) == no), "channel has %d filter(s) in filter list", no);
+    testOk(!!(pch = dbChannelCreate(name)), "dbChannel with plugin %s successful", name);
+    testOk((ellCount(&pch->filters) == 1), "Channel has one plugin");
 
-    testOk(!(dbChannelOpen(*pch)), "dbChannel with plugin arr opened");
+    testOk(!(dbChannelOpen(pch)), "dbChannel with plugin info opened");
+    testOk(pch->final_type == dbf_type, "Channel type should be %s", type);
 
-    node = ellFirst(&(*pch)->pre_chain);
-    (void) CONTAINER(node, chFilter, pre_node);
-    testOk((ellCount(&(*pch)->pre_chain) == 0), "arr has no filter in pre chain");
+    memset(&fl, 0, sizeof(fl));
+    pfl = dbChannelRunPreChain(pch, &fl);
+    testOk(pfl->field_type == dbf_type, "Field type should be %s", type);
+    testOk(pfl->u.r.field && strcmp(expected, (const char *)pfl->u.r.field) == 0, "Info string matches expected '%s'", expected);
 
-    node = ellFirst(&(*pch)->post_chain);
-    (void) CONTAINER(node, chFilter, post_node);
-    testOk((ellCount(&(*pch)->post_chain) == no),
-           "arr has %d filter(s) in post chain", no);
+    dbChannelDelete(pch);
 }
-
-#define DEBUG(fmt, x) printf("DEBUG (%d): %s: " fmt "\n", __LINE__, #x, x)
 
 MAIN(arrTest)
 {
     dbChannel *pch;
-    chFilter *filter;
     const chFilterPlugin *plug;
     char info[] = "info";
-    ELLNODE *node;
-    chPostEventFunc *cb_out = NULL;
-    void *arg_out = NULL;
-    db_field_log fl;
-    db_field_log *pfl;
     dbEventCtx evtctx;
     DBENTRY dbentry;
     const char test_info_str[] = "xxxxxxxxxxxx";
     const char test_info_str_long[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     const char test_info_str_truncated[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-    testPlan(24);
+    testPlan(30);
 
     /* Prepare the IOC */
 
@@ -168,55 +131,16 @@ MAIN(arrTest)
 
 
     testDiag("Testing valid info tag");
-    testOk(!!(pch = dbChannelCreate("x.{info:{name:\"a\"}}")), "dbChannel with plugin {info:{name:\"a\"}} successful");
-    testOk((ellCount(&pch->filters) == 1), "Channel has one plugin");
-
-    testOk(!(dbChannelOpen(pch)), "dbChannel with plugin info opened");
-    testOk(pch->final_type == DBF_STRING, "Channel type should be DBF_STRING");
-
-    memset(&fl, 0, sizeof(fl));
-    pfl = dbChannelRunPreChain(pch, &fl);
-    testOk(pfl->field_type == DBF_STRING, "Field type is DBF_STRING");
-    testOk(pfl->u.r.field && strcmp(test_info_str, (const char *)pfl->u.r.field) == 0, "Info string matches");
-
-    dbChannelDelete(pch);
-
+    runSingleTest("{info:{name:\"a\"}}", DBF_STRING, "DBF_STRING", test_info_str);
 
     testDiag("Testing long string");
-    testOk(!!(pch = dbChannelCreate("x.{info:{name:\"a\",l:\"on\"}}")), "dbChannel requesting a long string successful");
-    
-    testOk(!(dbChannelOpen(pch)), "dbChannel with plugin info opened");
-    testOk(pch->final_type == DBF_CHAR, "Channel type should be DBF_CHAR");
-
-    memset(&fl, 0, sizeof(fl));
-    pfl = dbChannelRunPreChain(pch, &fl);
-    testOk(pfl->field_type == DBF_CHAR, "Field type is DBF_CHAR");
-    dbChannelDelete(pch);
-
+    runSingleTest("{info:{name:\"a\", l:\"on\"}}", DBF_CHAR, "DBF_CHAR", test_info_str);
 
     testDiag("Testing long string, full");
-
-    testOk(!!(pch = dbChannelCreate("x.{info:{name:\"b\",l:\"auto\"}}")), "dbChannel requesting long info");
-    testOk(!(dbChannelOpen(pch)), "dbChannelOpen with long string opened");
-
-    memset(&fl, 0, sizeof(fl));
-    pfl = dbChannelRunPreChain(pch, &fl);
-    testOk(pfl->field_type == DBF_CHAR, "auto long string should be DBF_CHAR for long strings");
-    testOk(pfl->u.r.field && strcmp(test_info_str_long, (const char *)pfl->u.r.field) == 0, "Info string matches");
-    dbChannelDelete(pch);
-
+    runSingleTest("{info:{name:\"b\", l:\"auto\"}}", DBF_CHAR, "DBF_CHAR", test_info_str_long);
 
     testDiag("Testing long string, truncated");
-
-    testOk(!!(pch = dbChannelCreate("x.{info:{name:\"b\",l:\"off\"}}")), "dbChannel requesting long info");
-    testOk(!(dbChannelOpen(pch)), "dbChannelOpen with long string opened");
-
-    memset(&fl, 0, sizeof(fl));
-    pfl = dbChannelRunPreChain(pch, &fl);
-    testOk(pfl->field_type == DBF_STRING, "Field type should be DBF_STRING");
-    testOk(pfl->u.r.field && strcmp(test_info_str_truncated, (const char *)pfl->u.r.field) == 0, "Info string matches");
-
-    dbChannelDelete(pch);
+    runSingleTest("{info:{name:\"b\", l:\"off\"}}", DBF_STRING, "DBF_STRING", test_info_str_truncated);
 
     db_close_events(evtctx);
 

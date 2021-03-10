@@ -528,6 +528,9 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
         pParmWIN32->isSuspended = 0;
 #ifdef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
         pParmWIN32->timer = CreateWaitableTimerEx(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+        if (pParmWIN32->timer == NULL) {
+            pParmWIN32->timer = CreateWaitableTimer(NULL, 0, NULL);
+        }
 #else
         pParmWIN32->timer = CreateWaitableTimer(NULL, 0, NULL);
 #endif
@@ -769,6 +772,10 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id )
     }
 }
 
+/**
+ * osdThreadGetTimer ()
+ * return stored waitable timer object for thread
+ */
 HANDLE osdThreadGetTimer()
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
@@ -787,7 +794,7 @@ HANDLE osdThreadGetTimer()
  */
 epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 {
-    static const unsigned nSec100PerSec = 10000000;
+    static const unsigned nSec100PerSec = 10000000u;
     LARGE_INTEGER tmo;
     HANDLE timer;
 
@@ -795,7 +802,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
         tmo.QuadPart = 0u;
     }
     else {
-        tmo.QuadPart = -((LONGLONG)(seconds * nSec100PerSec + 0.5)); // +0.99999999 ?
+        tmo.QuadPart = -((LONGLONG)(seconds * nSec100PerSec + 0.5));
     }
 
     if (tmo.QuadPart == 0) {
@@ -803,14 +810,12 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
     }
     else {
         timer = osdThreadGetTimer();
-        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0))
-        {
-            printf("timer error %d\n", GetLastError());
+        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0)) {
+            fprintf ( stderr, "epicsThreadSleep: SetWaitableTimer failed %lu\n", GetLastError() );
             return;
         }
-        if (WaitForSingleObject(timer, INFINITE) != WAIT_OBJECT_0)
-        {
-            printf("timer error %d\n", GetLastError());
+        if (WaitForSingleObject(timer, INFINITE) != WAIT_OBJECT_0) {
+            fprintf ( stderr, "epicsThreadSleep: WaitForSingleObject failed %lu\n", GetLastError() );
         }
     }
 }

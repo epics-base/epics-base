@@ -64,6 +64,11 @@ static int parse_ok(void *pvt)
     return 0;
 }
 
+static void dbfl_free(struct db_field_log *pfl)
+{
+    /* dummy needed for dbGet() to work correctly */
+}
+
 static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
 {
     myStruct *my = (myStruct*) pvt;
@@ -71,7 +76,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
     if (pfl->type == dbfl_type_ref && pfl->u.r.dtor)
         pfl->u.r.dtor(pfl);
     pfl->type = dbfl_type_ref;
-    pfl->u.r.dtor = NULL;
+    pfl->u.r.dtor = dbfl_free;
     pfl->u.r.field = (void*)dbGetInfoString(&my->dbentry);
 
     if (my->longstr) {

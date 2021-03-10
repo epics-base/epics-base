@@ -123,7 +123,7 @@ MAIN(arrTest)
     const char test_info_str_long[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     const char test_info_str_truncated[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-    testPlan(23);
+    testPlan(24);
 
     /* Prepare the IOC */
 
@@ -196,6 +196,7 @@ MAIN(arrTest)
 
     memset(&fl, 0, sizeof(fl));
     pfl = dbChannelRunPreChain(pch, &fl);
+    testOk(pfl->field_type == DBF_CHAR, "auto long string should be DBF_CHAR for long strings");
     testOk(pfl->u.r.field && strcmp(test_info_str_long, (const char *)pfl->u.r.field) == 0, "Info string matches");
     dbChannelDelete(pch);
 

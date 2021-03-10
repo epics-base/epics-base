@@ -147,10 +147,12 @@ MAIN(arrTest)
 
     testOk(!!(plug = dbFindFilter(info, strlen(info))), "plugin 'info' registered correctly");
 
+
     testDiag("Testing failing info tag reads");
     testOk(!dbChannelCreate("x.{info:{}}"), "dbChannel with plugin {info:{}} failed");
     testOk(!dbChannelCreate("x.{info:{name:\"\"}}"), "dbChannel with plugin {info:{name:\"\"}} failed");
     testOk(!dbChannelCreate("x.{info:{name:\"0123456789a123456789b123456789c123456789d123456789e\"}}"), "dbChannel with plugin {info:{name:\"<too long name>\"}} failed");
+
 
     testDiag("Testing non-existent tags");
     testOk(!!(pch = dbChannelCreate("x.{info:{name:\"non-existent\"}}")), "dbChannel with plugin {info:{name:\"non-existent\"}} created");
@@ -163,6 +165,7 @@ MAIN(arrTest)
     dbFindRecord(&dbentry,"x");
     dbPutInfo(&dbentry, "a", test_info_str);
     dbPutInfo(&dbentry, "b", test_info_str_long);
+
 
     testDiag("Testing valid info tag");
     testOk(!!(pch = dbChannelCreate("x.{info:{name:\"a\"}}")), "dbChannel with plugin {info:{name:\"a\"}} successful");
@@ -178,6 +181,7 @@ MAIN(arrTest)
 
     dbChannelDelete(pch);
 
+
     testDiag("Testing long string");
     testOk(!!(pch = dbChannelCreate("x.{info:{name:\"a\",l:\"on\"}}")), "dbChannel requesting a long string successful");
     
@@ -189,6 +193,7 @@ MAIN(arrTest)
     testOk(pfl->field_type == DBF_CHAR, "Field type is DBF_CHAR");
     dbChannelDelete(pch);
 
+
     testDiag("Testing long string, full");
 
     testOk(!!(pch = dbChannelCreate("x.{info:{name:\"b\",l:\"auto\"}}")), "dbChannel requesting long info");
@@ -199,6 +204,7 @@ MAIN(arrTest)
     testOk(pfl->field_type == DBF_CHAR, "auto long string should be DBF_CHAR for long strings");
     testOk(pfl->u.r.field && strcmp(test_info_str_long, (const char *)pfl->u.r.field) == 0, "Info string matches");
     dbChannelDelete(pch);
+
 
     testDiag("Testing long string, truncated");
 

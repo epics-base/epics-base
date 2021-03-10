@@ -300,7 +300,7 @@ static void makeSubstitutions(inputData * const inputPvt,
             char *pstart;
             char *pend;
             int  cmdind=-1;
-            int  i;
+            long unsigned int  i;
 
             for (i = 0; i < NELEMENTS(cmdNames); i++) {
                 if (strstr(command, cmdNames[i])) {

@@ -118,8 +118,12 @@ MAIN(arrTest)
     db_field_log fl;
     db_field_log *pfl;
     dbEventCtx evtctx;
+    DBENTRY dbentry;
+    const char test_info_str[] = "xxxxxxxxxxxx";
+    const char test_info_str_long[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    const char test_info_str_truncated[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-    testPlan(16);
+    testPlan(23);
 
     /* Prepare the IOC */
 
@@ -131,7 +135,7 @@ MAIN(arrTest)
 
     filterTest_registerRecordDeviceDriver(pdbbase);
 
-    testdbReadDatabase("infoTest.db", NULL, NULL);
+    testdbReadDatabase("xRecord.db", NULL, NULL);
 
     eltc(0);
     testIocInitOk();
@@ -152,6 +156,14 @@ MAIN(arrTest)
     testOk(!!(pch = dbChannelCreate("x.{info:{name:\"non-existent\"}}")), "dbChannel with plugin {info:{name:\"non-existent\"}} created");
     testOk(!!(dbChannelOpen(pch)), "dbChannel with non-existent info tag did not open");
 
+    /*
+     * Update the record to add the correct info record
+     */
+    dbInitEntry(pdbbase, &dbentry);
+    dbFindRecord(&dbentry,"x");
+    dbPutInfo(&dbentry, "a", test_info_str);
+    dbPutInfo(&dbentry, "b", test_info_str_long);
+
     testDiag("Testing valid info tag");
     testOk(!!(pch = dbChannelCreate("x.{info:{name:\"a\"}}")), "dbChannel with plugin {info:{name:\"a\"}} successful");
     testOk((ellCount(&pch->filters) == 1), "Channel has one plugin");
@@ -162,8 +174,8 @@ MAIN(arrTest)
     memset(&fl, 0, sizeof(fl));
     pfl = dbChannelRunPreChain(pch, &fl);
     testOk(pfl->field_type == DBF_STRING, "Field type is DBF_STRING");
-    // TODO: This should not be specified separately in the .db file and here. That's a bad idea.
-    testOk(strcmp("b", (const char *)pfl->u.r.field) == 0, "Info string matches");
+    testOk(pfl->u.r.field && strcmp(test_info_str, (const char *)pfl->u.r.field) == 0, "Info string matches");
+
     dbChannelDelete(pch);
 
     testDiag("Testing long string");
@@ -175,9 +187,29 @@ MAIN(arrTest)
     memset(&fl, 0, sizeof(fl));
     pfl = dbChannelRunPreChain(pch, &fl);
     testOk(pfl->field_type == DBF_CHAR, "Field type is DBF_CHAR");
-    // TODO: This should not be specified separately in the .db file and here. That's a bad idea.
     dbChannelDelete(pch);
 
+    testDiag("Testing long string, full");
+
+    testOk(!!(pch = dbChannelCreate("x.{info:{name:\"b\",l:\"auto\"}}")), "dbChannel requesting long info");
+    testOk(!(dbChannelOpen(pch)), "dbChannelOpen with long string opened");
+
+    memset(&fl, 0, sizeof(fl));
+    pfl = dbChannelRunPreChain(pch, &fl);
+    testOk(pfl->u.r.field && strcmp(test_info_str_long, (const char *)pfl->u.r.field) == 0, "Info string matches");
+    dbChannelDelete(pch);
+
+    testDiag("Testing long string, truncated");
+
+    testOk(!!(pch = dbChannelCreate("x.{info:{name:\"b\",l:\"off\"}}")), "dbChannel requesting long info");
+    testOk(!(dbChannelOpen(pch)), "dbChannelOpen with long string opened");
+
+    memset(&fl, 0, sizeof(fl));
+    pfl = dbChannelRunPreChain(pch, &fl);
+    testOk(pfl->field_type == DBF_STRING, "Field type should be DBF_STRING");
+    testOk(pfl->u.r.field && strcmp(test_info_str_truncated, (const char *)pfl->u.r.field) == 0, "Info string matches");
+
+    dbChannelDelete(pch);
 
     db_close_events(evtctx);
 

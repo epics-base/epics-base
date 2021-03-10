@@ -26,6 +26,8 @@
 #include "libComAPI.h"
 #include "epicsEvent.h"
 
+#include "osdThreadPvt.h"
+
 typedef struct epicsEventOSD {
     HANDLE handle;
 } epicsEventOSD;
@@ -83,8 +85,6 @@ LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem )
         return epicsEventError;
     }
 }
-
-extern HANDLE osdThreadGetTimer(void); /* from osdThread.c */
 
 /*
  * epicsEventWaitWithTimeout ()

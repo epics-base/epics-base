@@ -426,13 +426,13 @@ for more information on simulation mode and its fields.
 		prompt("Previous Value")
 	}
 	field(OUTPVT,DBF_NOACCESS) {
-		prompt("Output Link Changed Private")
+		prompt("Output Write Control Private")
 		special(SPC_NOMOD)
 		interest(4)
 		extra("epicsEnum16         outpvt")
 	}
 	field(OOCH,DBF_MENU) {
-		prompt("Output Execute On Change")
+		prompt("Output Exec. On Change (Opt)")
 		promptgroup("50 - Output")
 		interest(1)
 		menu(menuYesNo)

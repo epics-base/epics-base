@@ -222,12 +222,28 @@ static void test_changing_out_field(void){
     /* Test if the counter was processed once */
     testdbGetFieldEqual("counter_a", DBF_DOUBLE, 1.0);
 
-    //number of tests 24
+    /* reset rec processing counters */
+    testdbPutFieldOk("counter_a.VAL", DBF_DOUBLE, 0.0);
+
+    /* test if record with OOPT == On Change will 
+       write to output at its first process */
+    testdbPutFieldOk("longout_rec2.VAL", DBF_LONG, 16);
+
+    /* Test if the counter was processed once */
+    testdbGetFieldEqual("counter_a", DBF_DOUBLE, 1.0);
+
+    /* write the same value */
+    testdbPutFieldOk("longout_rec2.VAL", DBF_LONG, 16);
+
+    /* Test if the counter was not processed again */
+    testdbGetFieldEqual("counter_a", DBF_DOUBLE, 1.0);
+
+    //number of tests 29
 }
 
 MAIN(longoutTest) {
 
-    testPlan(6+8+8+8+9+8+24);
+    testPlan(6+8+8+8+9+8+29);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);

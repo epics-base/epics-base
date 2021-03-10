@@ -81,8 +81,8 @@ rset longoutRSET={
 };
 epicsExportAddress(rset,longoutRSET);
 
-#define OUT_LINK_UNCHANGED   0
-#define OUT_LINK_CHANGED     1
+#define DONT_EXEC_OUTPUT    0
+#define EXEC_OUTPUT         1
 
 static void checkAlarms(longoutRecord *prec);
 static void monitor(longoutRecord *prec);
@@ -124,7 +124,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     prec->alst = prec->val;
     prec->lalm = prec->val;
     prec->pval = prec->val;
-    prec->outpvt = OUT_LINK_UNCHANGED;
+    prec->outpvt = EXEC_OUTPUT;
+    
     return 0;
 }
 
@@ -219,8 +220,8 @@ static long special(DBADDR *paddr, int after)
 
         /* Detect an output link re-direction (change) */
         if (dbGetFieldIndex(paddr) == longoutRecordOUT) {
-            if (after)
-                prec->outpvt = OUT_LINK_CHANGED;
+            if ((after) && (prec->ooch == menuYesNoYES))
+                prec->outpvt = EXEC_OUTPUT;
             return(0);
         }
 
@@ -453,8 +454,8 @@ static long conditional_write(longoutRecord *prec)
     switch (prec->oopt) 
     {
     case longoutOOPT_On_Change:
-        /* Forces a write op if a change in the OUT field is detected */
-        if ((prec->ooch == menuYesNoYES) && (prec->outpvt == OUT_LINK_CHANGED)) {
+        /* Forces a write op if a change in the OUT field is detected OR is first process */
+        if (prec->outpvt == EXEC_OUTPUT) {
             doDevSupWrite = 1;
         } else {
             /* Only write if value is different from the previous one */ 
@@ -490,6 +491,6 @@ static long conditional_write(longoutRecord *prec)
         status = pdset->write_longout(prec);
 
     prec->pval = prec->val;
-    prec->outpvt = OUT_LINK_UNCHANGED; /* reset status of OUT link */
+    prec->outpvt = DONT_EXEC_OUTPUT; /* reset status */
     return status;
 }

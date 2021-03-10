@@ -15,3 +15,11 @@ record(longout, "longout_rec") {
     field(OUT, "counter_a.B PP")
     field(PINI, "YES")
 }
+
+record(longout, "longout_rec2") {
+    field(VAL,  "16")
+    field(OUT, "counter_a.B PP")
+    field(PINI, "NO")
+    field(OOPT, "On Change")
+}
+

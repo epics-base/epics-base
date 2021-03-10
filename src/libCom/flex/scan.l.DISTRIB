@@ -28,6 +28,12 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif /* _WIN32 */
+
 #undef yywrap
 
 #define ACTION_ECHO fprintf( temp_action_file, "%s", yytext )

@@ -65,7 +65,7 @@ typedef struct dbChannel {
 /* Prototype for the channel event function that is called in filter stacks
  *
  * When invoked the scan lock for the record associated with 'chan' _may_ be locked.
- * Unless dbfl_has_copy(pLog), it must call dbScanLock before accessing the data,
+ * Unless dbfl_is_owner(pLog), it must call dbScanLock before accessing the data,
  * as this indicates the data is still owned by the record.
  *
  * This function has ownership of the field log pLog, if it wishes to discard

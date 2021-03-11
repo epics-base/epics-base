@@ -2007,71 +2007,71 @@ static int clear_channel_reply ( caHdrLargeArray *mp,
  */
 static int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
-     struct channel_in_use  *pciu;
-     struct event_ext       *pevext;
-     int                    status;
+    struct channel_in_use  *pciu;
+    struct event_ext       *pevext;
+    int                    status;
 
-     /*
-      *
-      * Verify the channel
-      *
-      */
-     pciu = MPTOPCIU(mp);
-     if (pciu?pciu->client!=client:TRUE) {
-         logBadId ( client, mp, pPayload );
-         return RSRV_ERROR;
-     }
+    /*
+     *
+     * Verify the channel
+     *
+     */
+    pciu = MPTOPCIU(mp);
+    if (pciu?pciu->client!=client:TRUE) {
+        logBadId ( client, mp, pPayload );
+        return RSRV_ERROR;
+    }
 
-     /*
-      * search events on this channel for a match
-      * (there are usually very few monitors per channel)
-      */
-     epicsMutexMustLock(client->eventqLock);
-     for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
-            pevext; pevext = (struct event_ext *) ellNext(&pevext->node)){
+    /*
+     * search events on this channel for a match
+     * (there are usually very few monitors per channel)
+     */
+    epicsMutexMustLock(client->eventqLock);
+    for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
+           pevext; pevext = (struct event_ext *) ellNext(&pevext->node)){
 
-         if (pevext->msg.m_available == mp->m_available) {
-             ellDelete(&pciu->eventq, &pevext->node);
-             break;
-         }
-     }
-     epicsMutexUnlock(client->eventqLock);
+        if (pevext->msg.m_available == mp->m_available) {
+            ellDelete(&pciu->eventq, &pevext->node);
+            break;
+        }
+    }
+    epicsMutexUnlock(client->eventqLock);
 
-     /*
-      * Not Found- return an exception event
-      */
-     if(!pevext){
-         SEND_LOCK(client);
-         send_err(mp, ECA_BADMONID, client, RECORD_NAME(pciu->dbch));
-         SEND_UNLOCK(client);
-         return RSRV_ERROR;
-     }
+    /*
+     * Not Found- return an exception event
+     */
+    if(!pevext){
+        SEND_LOCK(client);
+        send_err(mp, ECA_BADMONID, client, RECORD_NAME(pciu->dbch));
+        SEND_UNLOCK(client);
+        return RSRV_ERROR;
+    }
 
-     /*
-      * cancel monitor activity in progress
-      */
-     if (pevext->pdbev) {
-         db_cancel_event (pevext->pdbev);
-     }
+    /*
+     * cancel monitor activity in progress
+     */
+    if (pevext->pdbev) {
+        db_cancel_event (pevext->pdbev);
+    }
 
-     /*
-      * send delete confirmed message
-      */
-     SEND_LOCK(client);
+    /*
+     * send delete confirmed message
+     */
+    SEND_LOCK(client);
 
-     status = cas_copy_in_header ( client, pevext->msg.m_cmmd,
-        0u, pevext->msg.m_dataType, pevext->msg.m_count, pevext->msg.m_cid,
-        pevext->msg.m_available, NULL );
-     if ( status != ECA_NORMAL ) {
-         SEND_UNLOCK(client);
-         return RSRV_ERROR;
-     }
-     cas_commit_msg ( client, 0 );
-     SEND_UNLOCK(client);
+    status = cas_copy_in_header ( client, pevext->msg.m_cmmd,
+       0u, pevext->msg.m_dataType, pevext->msg.m_count, pevext->msg.m_cid,
+       pevext->msg.m_available, NULL );
+    if ( status != ECA_NORMAL ) {
+        SEND_UNLOCK(client);
+        return RSRV_ERROR;
+    }
+    cas_commit_msg ( client, 0 );
+    SEND_UNLOCK(client);
 
-     freeListFree (rsrvEventFreeList, pevext);
+    freeListFree (rsrvEventFreeList, pevext);
 
-     return RSRV_OK;
+    return RSRV_OK;
 }
 
 /*

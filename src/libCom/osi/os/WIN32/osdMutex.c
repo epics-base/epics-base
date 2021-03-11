@@ -34,12 +34,7 @@
  * isnt going to be very useful unless we specify "delay 
  * loading" when we link with the DLL.
  *
- * It appears that the only entry point used here that causes
- * portability problems with W95\W98\WME is TryEnterCriticalSection.
  */
-#ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0400 
-#endif
 #include <windows.h>
 
 #define epicsExportSharedSymbols
@@ -50,13 +45,9 @@
 
 typedef struct epicsMutexOSD { 
     union {
-        HANDLE mutex;
         CRITICAL_SECTION criticalSection;
     } os;
 } epicsMutexOSD;
-
-static BOOL thisIsNT = FALSE;
-static LONG weHaveInitialized = 0;
 
 /*
  * epicsMutexCreate ()
@@ -64,28 +55,10 @@ static LONG weHaveInitialized = 0;
 epicsMutexOSD * epicsMutexOsdCreate ( void ) 
 {
     epicsMutexOSD * pSem;
-
-    if ( ! weHaveInitialized ) {
-        BOOL status;
-        OSVERSIONINFO osInfo;
-        osInfo.dwOSVersionInfoSize = sizeof ( OSVERSIONINFO );
-        status = GetVersionEx ( & osInfo );
-        thisIsNT = status && ( osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT );
-        weHaveInitialized = 1;
-    }
  
     pSem = malloc ( sizeof (*pSem) );
     if ( pSem ) {
-        if ( thisIsNT ) {
-            InitializeCriticalSection ( &pSem->os.criticalSection );
-        }
-        else {
-            pSem->os.mutex = CreateMutex ( NULL, FALSE, NULL );
-            if ( pSem->os.mutex == 0 ) {
-                free ( pSem );
-                pSem = 0;
-            }
-        }
+        InitializeCriticalSection ( &pSem->os.criticalSection );
     }    
     return pSem;
 }
@@ -95,12 +68,7 @@ epicsMutexOSD * epicsMutexOsdCreate ( void )
  */
 void epicsMutexOsdDestroy ( epicsMutexOSD * pSem ) 
 {    
-    if ( thisIsNT ) {
-        DeleteCriticalSection  ( &pSem->os.criticalSection );
-    }
-    else {
-        CloseHandle ( pSem->os.mutex );
-    }
+    DeleteCriticalSection  ( &pSem->os.criticalSection );
     free ( pSem );
 }
 
@@ -109,13 +77,7 @@ void epicsMutexOsdDestroy ( epicsMutexOSD * pSem )
  */
 void epicsMutexOsdUnlock ( epicsMutexOSD * pSem ) 
 {
-    if ( thisIsNT ) {
-        LeaveCriticalSection ( &pSem->os.criticalSection );
-    }
-    else {
-        BOOL success = ReleaseMutex ( pSem->os.mutex );
-        assert ( success );
-    }
+    LeaveCriticalSection ( &pSem->os.criticalSection );
 }
 
 /*
@@ -123,15 +85,7 @@ void epicsMutexOsdUnlock ( epicsMutexOSD * pSem )
  */
 epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem ) 
 {
-    if ( thisIsNT ) {
-        EnterCriticalSection ( &pSem->os.criticalSection );
-    }
-    else {
-        DWORD status = WaitForSingleObject ( pSem->os.mutex, INFINITE );
-        if ( status != WAIT_OBJECT_0 ) {
-            return epicsMutexLockError;
-        }
-    }
+    EnterCriticalSection ( &pSem->os.criticalSection );
     return epicsMutexLockOK;
 }
 
@@ -140,26 +94,12 @@ epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem )
  */
 epicsMutexLockStatus epicsMutexOsdTryLock ( epicsMutexOSD * pSem ) 
 { 
-    if ( thisIsNT ) {
-        if ( TryEnterCriticalSection ( &pSem->os.criticalSection ) ) {
-            return epicsMutexLockOK;
-        }
-        else {
-            return epicsMutexLockTimeout;
-        }
+    if ( TryEnterCriticalSection ( &pSem->os.criticalSection ) ) {
+        return epicsMutexLockOK;
     }
     else {
-        DWORD status = WaitForSingleObject ( pSem->os.mutex, 0 );
-        if ( status != WAIT_OBJECT_0 ) {
-            if (status == WAIT_TIMEOUT) {
-                return epicsMutexLockTimeout;
-            }
-            else {
-                return epicsMutexLockError;
-            }
-        }
+        return epicsMutexLockTimeout;
     }
-    return epicsMutexLockOK;
 }
 
 /*
@@ -167,13 +107,7 @@ epicsMutexLockStatus epicsMutexOsdTryLock ( epicsMutexOSD * pSem )
  */
 void epicsMutexOsdShow ( epicsMutexOSD * pSem, unsigned level ) 
 { 
-    if ( thisIsNT ) {
-        printf ("epicsMutex: win32 critical section at %p\n",
+    printf ("epicsMutex: win32 critical section at %p\n",
             (void * ) & pSem->os.criticalSection );
-    }
-    else {
-        printf ( "epicsMutex: win32 mutex at %p\n", 
-            ( void * ) pSem->os.mutex );
-    }
 }
 

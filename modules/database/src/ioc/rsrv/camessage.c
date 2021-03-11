@@ -2449,7 +2449,7 @@ int camessage ( struct client *client )
          *
          * Disconnect client that send an invalid payload size.
          */
-        if (CA_V49(client->minor_version_number) && msg.m_postsize == 0xffff && msg.m_count == 0) {
+        if (CA_V49(client->minor_version_number) && msg.m_postsize==0xffff && msg.m_count==0) {
             ca_uint32_t *pLW = ( ca_uint32_t * ) ( mp + 1 );
             if ( bytes_left < sizeof(*mp) + 2 * sizeof(*pLW) ) {
                 status = RSRV_OK;

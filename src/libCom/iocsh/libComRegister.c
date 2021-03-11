@@ -251,7 +251,7 @@ static void threadCallFunc(const iocshArgBuf *args)
     int level = 0;
     const char *cp;
     epicsThreadId tid;
-    unsigned long ltmp;
+    unsigned long long ltmp;
     int argc = args[0].aval.ac;
     char **argv = args[0].aval.av;
     char *endp;
@@ -266,7 +266,7 @@ static void threadCallFunc(const iocshArgBuf *args)
     }
     for ( ; i < argc ; i++) {
         cp = argv[i];
-        ltmp = strtoul (cp, &endp, 0);
+        ltmp = strtoull (cp, &endp, 0);
         if (*endp) {
             tid = epicsThreadGetId (cp);
             if (!tid) {
@@ -326,7 +326,7 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
     int i;
     const char *cp;
     epicsThreadId tid;
-    unsigned long ltmp;
+    unsigned long long ltmp;
     char nameBuf[64];
     int argc = args[0].aval.ac;
     char **argv = args[0].aval.av;
@@ -334,7 +334,7 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 
     for (i = 1 ; i < argc ; i++) {
         cp = argv[i];
-        ltmp = strtoul(cp, &endp, 0);
+        ltmp = strtoull(cp, &endp, 0);
         if (*endp) {
             tid = epicsThreadGetId(cp);
             if (!tid) {

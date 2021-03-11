@@ -2011,6 +2011,10 @@ static int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
     struct event_ext       *pevext;
     int                    status;
 
+    if ( INVALID_DB_REQ(mp->m_dataType) ) {
+        return RSRV_ERROR;
+    }
+
     /*
      *
      * Verify the channel

@@ -2435,8 +2435,7 @@ int camessage ( struct client *client )
         msg.m_available = ntohl ( mp->m_available );
 
         /* disconnect clients that send an invalid command */
-        if (msg.m_cmmd > CA_PROTO_LAST_CMMD)
-        {
+        if (msg.m_cmmd > CA_PROTO_LAST_CMMD) {
             log_header ( "CAS: Invalid command rejected",
                 client, &msg, 0, nmsg );
             status = RSRV_ERROR;

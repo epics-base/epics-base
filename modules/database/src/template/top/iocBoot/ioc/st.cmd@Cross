@@ -5,12 +5,15 @@
 
 #< envPaths
 
+# search path for dbLoadRecords()
+epicsEnvSet("EPICS_DB_INCLUDE_PATH", "${TOP}/db:${IOCSH_SCRIPT_DIR}")
+
 ## Register all support components
-dbLoadDatabase("../../dbd/_APPNAME_.dbd",0,0)
+dbLoadDatabase("${TOP}/dbd/_APPNAME_.dbd",0,0)
 _CSAFEAPPNAME__registerRecordDeviceDriver(pdbbase) 
 
 ## Load record instances
-dbLoadRecords("../../db/_APPNAME_.db","user=_USER_")
+dbLoadRecords("_APPNAME_.db","user=_USER_")
 
 iocInit()
 

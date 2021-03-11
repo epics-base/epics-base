@@ -1,14 +1,16 @@
 # Example substitutions file
 
-file "db/circle.db" {
+# file "..." uses EPICS_DB_INCLUDE_PATH
+
+file "circle.db" {
     { user = "_USER_" }
 }
 
-file "db/dbExample1.db" {
+file "dbExample1.db" {
     { user = "_USER_" }
 }
 
-file db/dbExample2.db {
+file "dbExample2.db" {
     pattern { user, no, scan }
         { "_USER_", 1, "1 second" }
         { "_USER_", 2, "2 second" }

@@ -26,7 +26,7 @@
 #include "dbAccess.h"
 #include "asDbLib.h"
 #include "iocInit.h"
-#include "iocsh.h"
+#include "iocshpvt.h"
 #include "osiFileName.h"
 #include "epicsInstallDir.h"
 
@@ -122,6 +122,7 @@ void lazy_dbd(const std::string& dbd_file) {
 
 int main(int argc, char *argv[])
 {
+    iocshSetArgs(argc, argv);
     try {
         std::string dbd_file(DBD_FILE),
                     exit_file(EXIT_FILE),

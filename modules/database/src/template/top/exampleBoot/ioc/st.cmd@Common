@@ -7,14 +7,17 @@
 
 cd "${TOP}"
 
+# search path for dbLoadRecords()
+epicsEnvSet("EPICS_DB_INCLUDE_PATH", "${TOP}/db:${IOCSH_SCRIPT_DIR}")
+
 ## Register all support components
-dbLoadDatabase "dbd/_APPNAME_.dbd"
+dbLoadDatabase "${TOP}/dbd/_APPNAME_.dbd"
 _CSAFEAPPNAME__registerRecordDeviceDriver pdbbase
 
 ## Load record instances
-dbLoadTemplate "db/user.substitutions"
-dbLoadRecords "db/_APPNAME_Version.db", "user=_USER_"
-dbLoadRecords "db/dbSubExample.db", "user=_USER_"
+dbLoadTemplate "${TOP}/db/user.substitutions"
+dbLoadRecords "_APPNAME_Version.db", "user=_USER_"
+dbLoadRecords "dbSubExample.db", "user=_USER_"
 
 #- Set this to see messages from mySub
 #var mySubDebug 1

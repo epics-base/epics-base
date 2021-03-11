@@ -13,6 +13,8 @@
 /* Adapted to C++ by Eric Norum   Date: 18DEC2000 */
 
 #include <exception>
+#include <string>
+#include <vector>
 
 #include <stddef.h>
 #include <string.h>
@@ -20,21 +22,30 @@
 #include <ctype.h>
 #include <errno.h>
 
+#include "osiUnistd.h"
 #include "epicsMath.h"
 #include "errlog.h"
 #include "macLib.h"
 #include "epicsStdio.h"
 #include "epicsString.h"
 #include "epicsStdlib.h"
+#include "epicsExit.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "envDefs.h"
 #include "registry.h"
 #include "epicsReadline.h"
 #include "cantProceed.h"
-#include "iocsh.h"
+#include "osiFileName.h"
+#include "iocshpvt.h"
 
 extern "C" {
+
+static
+const char* iocshArgv0 = 0;
+
+static
+const char* iocshStartDir = 0;
 
 /*
  * Global link to pdbbase
@@ -652,6 +663,19 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             return -1;
         }
 
+        if(const char *execdir = epicsGetExecDir()){
+            macPutValue(context->handle, "EPICS_EXEC_DIR", execdir);
+
+            // provide $TOP if not already defined (eg. envPaths not sourced)
+            const char *top = getenv("TOP");
+            if(!top || top[0]=='\0') {
+                // TOP = execdir/../..
+                //  epicsGetExecDir() always returns with a trailing separator
+                std::string top(std::string(execdir) + ".." OSI_PATH_SEPARATOR "..");
+                macPutValue(context->handle, "TOP", top.c_str());
+            }
+        }
+
         epicsThreadPrivateSet(iocshContextId, (void *) context);
     }
     MAC_HANDLE *handle = context->handle;
@@ -660,6 +684,14 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     context->scope = &scope;
 
     macPushScope(handle);
+    if(!commandLine) {
+        const char* script_name = pathname ? pathname : iocshArgv0;
+        const char* parts[] = {epicsPathJoinCurDir, script_name};
+        char *path = epicsPathJoin(parts, 2);
+
+        epicsPathDir(path, strlen(path));
+        macPutValue(handle, "IOCSH_SCRIPT_DIR", path);
+    }
     macInstallMacros(handle, defines);
 
     wasOkToBlock = epicsThreadIsOkToBlock();
@@ -1003,6 +1035,34 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         epicsReadlineEnd(readlineContext);
     epicsThreadSetOkToBlock(wasOkToBlock);
     return ret;
+}
+
+int iocshMain(int argc,char *argv[])
+{
+    iocshSetArgs(argc, argv);
+    if(argc>=2) {
+        iocsh(argv[1]);
+        epicsThreadSleep(.2);
+    }
+    iocsh(NULL);
+    epicsExit(0);
+    return(0);
+}
+
+void iocshSetArgs(int argc, char *argv[])
+{
+    if(argc <= 0)
+        return;
+
+    free((void*)iocshStartDir);
+    free((void*)iocshArgv0);
+    iocshStartDir = 0;
+    iocshArgv0 = 0;
+
+    if(char *cwd = epicsPathAllocCWD()) {
+        const char* parts[] = {cwd, argv[0]};
+        iocshArgv0 = epicsPathJoin(parts, 2);
+    }
 }
 
 /*

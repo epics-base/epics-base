@@ -79,6 +79,11 @@ epicsErrlogTest_SRCS += epicsErrlogTest.c
 testHarness_SRCS += epicsErrlogTest.c
 TESTS += epicsErrlogTest
 
+TESTPROD_HOST += epicsPathTest
+epicsPathTest_SRCS += epicsPathTest.cpp
+testHarness_SRCS += epicsPathTest.cpp
+TESTS += epicsPathTest
+
 TESTPROD_HOST += epicsStdioTest
 epicsStdioTest_SRCS += epicsStdioTest.c
 testHarness_SRCS += epicsStdioTest.c

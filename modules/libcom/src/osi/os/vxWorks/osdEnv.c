@@ -22,7 +22,6 @@
 #include <ctype.h>
 #include <envLib.h>
 
-#include "cantProceed.h"
 #include "epicsFindSymbol.h"
 #include "epicsStdio.h"
 #include "errlog.h"
@@ -35,25 +34,32 @@
  */
 LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
 {
-    char *cp;
+    size_t alen = (!name || !value) ? 2u : strlen(name) + strlen(value) + 2u; /* <NAME> '=' <VALUE> '\0' */
+    const int onstack = alen <= 512u; /* use on-stack dynamic array for small strings */
+    char stackarr[ onstack ? alen     : 1u]; /* gcc specific dynamic array */
+    char *allocd = onstack ? NULL     : malloc(alen);
+    char *cp     = onstack ? stackarr : allocd;
 
-    if (!name) {
+    if (!name || !value) {
         printf ("Usage: epicsEnvSet \"name\", \"value\"\n");
-        return;
-    }
 
-    iocshEnvClear(name);
+    } else if(!cp) {
+        errlogPrintf("epicsEnvSet(\"%s\", \"%s\" insufficient memory\n", name, value);
 
-    cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
-    strcpy (cp, name);
-    strcat (cp, "=");
-    strcat (cp, value);
-    if (putenv (cp) < 0) {
-        errPrintf(-1L, __FILE__, __LINE__,
-            "Failed to set environment parameter \"%s\" to \"%s\": %s\n",
-            name, value, strerror (errno));
-        free (cp);
+    } else {
+        int err;
+
+        strcpy (cp, name);
+        strcat (cp, "=");
+        strcat (cp, value);
+
+        iocshEnvClear(name);
+
+        if((err=putenv(cp)) < 0)
+            errlogPrintf("epicsEnvSet(\"%s\", \"%s\" -> %d\n", name, value, err);
     }
+    /* from at least vxWorks 5.5 putenv() is making a copy, so we can free */
+    free (allocd);
 }
 
 /*

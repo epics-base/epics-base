@@ -48,12 +48,10 @@ static void child(void *arg)
     epicsEnvSet(CHILD, CHILD);
 }
 
-MAIN(epicsEnvTest)
+static void testThreadEnv(void)
 {
     unsigned int stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
     const char *value;
-
-    testPlan(3);
 
     epicsEnvSet(PARENT, PARENT);
 
@@ -72,8 +70,43 @@ MAIN(epicsEnvTest)
     value = getenv(PARENT);
     testOk(value && (strcmp(value, PARENT) == 0),
             "PARENT environment variable not modified");
+}
 
-    testDone();
-    return 0;
+static void testChangeEnv(void)
+{
+    const char *foo = "foo", *bar = "bar", *name = "testChangeEnv";
+    const char *temp;
+    testDiag("Changing env");
+
+    temp = getenv("testChangeEnv");
+    testOk(!temp, "temp=\"%s\"", temp);
+
+    /* make sure that "foo" has been copied into environ instead of referencing
+     * our string constant
+     */
+    epicsEnvSet(name, foo);
+    temp = getenv("testChangeEnv");
+    testOk(temp && temp!=foo && temp!=name && strcmp(temp, foo)==0,
+           "env set temp=\"%s\" name=\"%s\" foo=\"%s\"", temp, name, foo);
+
+    /* check the same when changing */
+    epicsEnvSet(name, bar);
+    temp = getenv("testChangeEnv");
+    testOk(temp && temp!=foo && temp!=name && temp!=bar && strcmp(temp, bar)==0,
+           "env change temp=\"%s\" name=\"%s\" foo=\"%s\" bar=\"%s\"", temp, name, foo, bar);
+
+    epicsEnvUnset(name);
+
+    temp = getenv("testChangeEnv");
+    testOk(!temp, "temp=\"%s\"", temp);
+}
+
+MAIN(epicsEnvTest)
+{
+
+    testPlan(7);
+    testThreadEnv();
+    testChangeEnv();
+    return testDone();
 }
 

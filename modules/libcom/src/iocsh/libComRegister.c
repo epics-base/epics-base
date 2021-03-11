@@ -354,7 +354,10 @@ static const iocshArg epicsMutexShowAllArg1 = { "level",iocshArgInt};
 static const iocshArg * const epicsMutexShowAllArgs[2] =
     {&epicsMutexShowAllArg0,&epicsMutexShowAllArg1};
 static const iocshFuncDef epicsMutexShowAllFuncDef =
-    {"epicsMutexShowAll",2,epicsMutexShowAllArgs};
+    {"epicsMutexShowAll",2,epicsMutexShowAllArgs,
+     "Display information about all epicsMutex semaphores\n"
+     "  onlyLocked - non-zero to show only locked semaphores\n"
+     "  level      - desired information level to report\n"};
 static void epicsMutexShowAllCallFunc(const iocshArgBuf *args)
 {
     epicsMutexShowAll(args[0].ival,args[1].ival);
@@ -364,7 +367,8 @@ static void epicsMutexShowAllCallFunc(const iocshArgBuf *args)
 static const iocshArg epicsThreadSleepArg0 = { "seconds",iocshArgDouble};
 static const iocshArg * const epicsThreadSleepArgs[1] = {&epicsThreadSleepArg0};
 static const iocshFuncDef epicsThreadSleepFuncDef =
-    {"epicsThreadSleep",1,epicsThreadSleepArgs};
+    {"epicsThreadSleep",1,epicsThreadSleepArgs,
+     "Pause execution of IOC shell for <seconds> seconds\n"};
 static void epicsThreadSleepCallFunc(const iocshArgBuf *args)
 {
     epicsThreadSleep(args[0].dval);
@@ -373,7 +377,10 @@ static void epicsThreadSleepCallFunc(const iocshArgBuf *args)
 /* epicsThreadResume */
 static const iocshArg epicsThreadResumeArg0 = { "[thread ...]", iocshArgArgv};
 static const iocshArg * const epicsThreadResumeArgs[1] = { &epicsThreadResumeArg0 };
-static const iocshFuncDef epicsThreadResumeFuncDef = {"epicsThreadResume",1,epicsThreadResumeArgs};
+static const iocshFuncDef epicsThreadResumeFuncDef = {"epicsThreadResume",1,epicsThreadResumeArgs,
+                                                      "Resume a suspended thread.\n"
+                                                      "Only do this if you know that it is safe to "
+                                                      "resume a suspended thread\n"};
 static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 {
     int i;
@@ -415,14 +422,19 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 /* generalTimeReport */
 static const iocshArg generalTimeReportArg0 = { "interest_level", iocshArgArgv};
 static const iocshArg * const generalTimeReportArgs[1] = { &generalTimeReportArg0 };
-static const iocshFuncDef generalTimeReportFuncDef = {"generalTimeReport",1,generalTimeReportArgs};
+static const iocshFuncDef generalTimeReportFuncDef = {"generalTimeReport",1,generalTimeReportArgs,
+                                                      "Display time providers and their priority levels"
+                                                      " for current and event times\n"};
 static void generalTimeReportCallFunc(const iocshArgBuf *args)
 {
     generalTimeReport(args[0].ival);
 }
 
 /* installLastResortEventProvider */
-static const iocshFuncDef installLastResortEventProviderFuncDef = {"installLastResortEventProvider", 0, NULL};
+static const iocshFuncDef installLastResortEventProviderFuncDef = {"installLastResortEventProvider", 0, NULL,
+                                                                   "Installs the optional Last Resort event provider"
+                                                                   " at priority 999,\nwhich returns the current time"
+                                                                   " for every event number\n"};
 static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
 {
     installLastResortEventProvider();

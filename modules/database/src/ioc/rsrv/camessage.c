@@ -1671,7 +1671,7 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
         return RSRV_ERROR;
     }
 
-    if (mp->m_dataType > LAST_BUFFER_TYPE) {
+    if ( INVALID_DB_REQ(mp->m_dataType) ) {
         log_header ("bad put notify data type", client, mp, pPayload, 0);
         putNotifyErrorReply (client, mp, ECA_BADTYPE);
         return RSRV_ERROR;

@@ -2442,6 +2442,13 @@ int camessage ( struct client *client )
             break;
         }
 
+        /*
+         * Calculate the message size, and update the pointer to the message payload area.
+         * Also, if the message is using the extended form, extract the the correct payload size
+         * and data count from the extended message header, and update m_postsize and m_count.
+         *
+         * Disconnect client that send an invalid payload size.
+         */
         if ( CA_V49(client->minor_version_number) && msg.m_postsize == 0xffff  ) {
             ca_uint32_t *pLW = ( ca_uint32_t * ) ( mp + 1 );
             if ( bytes_left < sizeof(*mp) + 2 * sizeof(*pLW) ) {
@@ -2454,9 +2461,8 @@ int camessage ( struct client *client )
              * 0xffffffff bytes. The header is 0x18 bytes, so the maximum payload size is
              * 0xffffffe7.
              */
-            ca_uint32_t new_postsize = ntohl ( pLW[0] );
+            ca_uint32_t new_postsize = ntohl ( pLW[0] ); /* payload size on extended form headers */
             if (new_postsize > 0xffffffe7) {
-                /* Reject messages with bad payload size */
                 log_header ( "CAS: Invalid payload size rejected",
                     client, &msg, 0, nmsg );
                 status = RSRV_ERROR;
@@ -2464,7 +2470,7 @@ int camessage ( struct client *client )
             }
 
             msg.m_postsize  = new_postsize;
-            msg.m_count     = ntohl ( pLW[1] );
+            msg.m_count     = ntohl ( pLW[1] ); /* Data count on extended form headers */
             msgsize = msg.m_postsize + sizeof(*mp) + 2 * sizeof ( *pLW );
             pBody = ( void * ) ( pLW + 2 );
         }
@@ -2475,7 +2481,6 @@ int camessage ( struct client *client )
              * payload size is 0x3ff0.
              */
             if (msg.m_postsize > 0x3ff0) {
-                /* Reject messages with bad payload size */
                 log_header ( "CAS: Invalid payload size rejected",
                     client, &msg, 0, nmsg );
                 status = RSRV_ERROR;

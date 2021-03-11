@@ -86,6 +86,8 @@ CLEANS += epics-base-$(T_A).pc@
 
 include $(TOP)/configure/RULES
 
+inc: $(INSTALLS_PERL_MODULES) $(INSTALL_SCRIPTS)
+
 epics-base-$(T_A).pc@: ../epics-base-arch.pc@
 	@$(RM) $@
 	@$(CP) $< $@

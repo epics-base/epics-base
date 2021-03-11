@@ -45,7 +45,7 @@
 #include "yajl_encode.h"
 #include "yajl_bytestack.h"
 
-#include <osdStrtod.h>
+#include <epicsStdlib.h>
 
 unsigned char *
 yajl_render_error_string(yajl_handle hand, const unsigned char * jsonText,

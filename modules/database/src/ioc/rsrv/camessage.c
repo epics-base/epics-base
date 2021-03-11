@@ -2448,12 +2448,39 @@ int camessage ( struct client *client )
                 status = RSRV_OK;
                 break;
             }
-            msg.m_postsize  = ntohl ( pLW[0] );
+
+            /*
+             * For >= CA_V49 using the extended message form, the maximum message size is
+             * 0xffffffff bytes. The header is 0x18 bytes, so the maximum payload size is
+             * 0xffffffe7.
+             */
+            ca_uint32_t new_postsize = ntohl ( pLW[0] );
+            if (new_postsize > 0xffffffe7) {
+                /* Reject messages with bad payload size */
+                log_header ( "CAS: Invalid payload size rejected",
+                    client, &msg, 0, nmsg );
+                status = RSRV_ERROR;
+                break;
+            }
+
+            msg.m_postsize  = new_postsize;
             msg.m_count     = ntohl ( pLW[1] );
             msgsize = msg.m_postsize + sizeof(*mp) + 2 * sizeof ( *pLW );
             pBody = ( void * ) ( pLW + 2 );
         }
         else {
+            /*
+             * For < CA_V49, or higher but using the standard message form, the maximum
+             * message size is 0x4000 bytes. The header is 0x10 bytes, so the maximum
+             * payload size is 0x3ff0.
+             */
+            if (msg.m_postsize > 0x3ff0) {
+                /* Reject messages with bad payload size */
+                log_header ( "CAS: Invalid payload size rejected",
+                    client, &msg, 0, nmsg );
+                status = RSRV_ERROR;
+                break;
+            }
             msgsize = msg.m_postsize + sizeof(*mp);
             pBody = ( void * ) ( mp + 1 );
         }

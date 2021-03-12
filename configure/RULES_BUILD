@@ -86,9 +86,10 @@ endif
 #---------------------------------------------------------------
 # Include defines and rules for prod, library and test* targets
 
-#ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRARY) ))
+ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) \
+        $(LOADABLE_LIBRARY)))
 include $(CONFIG)/RULES_TARGET
-#endif
+endif
 
 #---------------------------------------------------------------
 # Read dependency files

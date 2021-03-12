@@ -29,6 +29,8 @@
 #include "yajl_encode.h"
 #include "yajl_bytestack.h"
 
+#include <epicsStdlib.h>
+
 #ifndef LLONG_MAX
 #define LLONG_MAX     0x7FFFFFFFFFFFFFFFLL
 #define LLONG_MIN     (-0x7FFFFFFFFFFFFFFFLL - 1)
@@ -334,7 +336,7 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
                             yajl_buf_clear(hand->decodeBuf);
                             yajl_buf_append(hand->decodeBuf, buf, bufLen);
                             buf = yajl_buf_data(hand->decodeBuf);
-                            d = strtod((char *) buf, NULL);
+                            d = epicsStrtod((char *) buf, NULL);
                             if ((d == HUGE_VAL || d == -HUGE_VAL) &&
                                 errno == ERANGE)
                             {

@@ -19,7 +19,10 @@ BPT_DBD += bptTypeJdegC.dbd
 BPT_DBD += bptTypeJdegF.dbd
 BPT_DBD += bptTypeKdegC.dbd
 BPT_DBD += bptTypeKdegF.dbd
+
+ifneq (inc,$(strip $(MAKECMDGOALS)))
 DBD += $(BPT_DBD)
+endif
 
 PROD_HOST += makeBpt
 

@@ -12,6 +12,14 @@ The names of the generated junit xml test output files have been changed
 from `<testname>.xml` to `<testname>-results.xml`, to allow better 
 distinction from other xml files. (I.e., for easy wildcard matching.)
 
+### Use waitable timers on Microsoft Windows
+
+The `epicsEventWaitWithTimeout` and `epicsThreadSleep` functions have
+been changed to use waitable timers. On Windows 10 version 1803 or higher
+they will use high resolution timers for more consistent timing.
+
+See https://groups.google.com/a/chromium.org/g/scheduler-dev/c/0GlSPYreJeY
+for a comparison of the performance of different timers.
 
 ## Changes made between 3.15.7 and 3.15.8
 

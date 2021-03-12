@@ -516,7 +516,7 @@ void testAllRecTypes(void)
 
 MAIN(simmTest)
 {
-    testPlan(1219);
+    testPlan(1199);
     startSimmTestIoc("simmTest.db");
 
     testSimmSetup();

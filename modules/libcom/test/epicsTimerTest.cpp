@@ -70,9 +70,9 @@ private:
 };
 
 void verifyExpirationTime(double delta, double tolerance) {
-  if (!testOk(delta >= 0.0 && delta < tolerance, "timer expired at the expected"
-              " time (error = %f ms, tolerance = +%f/-0.0 ms)",
-              1000.0 * delta, 1000.0 * tolerance)) {
+  if (!testOk(delta >= 0.0 && (testImpreciseTiming() || delta < tolerance),
+              "timer expired at the expected time (error = %f ms, "
+              "tolerance = +%f/-0.0 ms)", 1000.0 * delta, 1000.0 * tolerance)) {
     const char * msg = delta < 0.0 ? "early" : "late";
     testDiag("delta t = %g ms (timer expired too %s)", 1000.0 * delta, msg);
   }

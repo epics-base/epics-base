@@ -45,6 +45,8 @@
 #include "yajl_encode.h"
 #include "yajl_bytestack.h"
 
+#include <epicsStdlib.h>
+
 unsigned char *
 yajl_render_error_string(yajl_handle hand, const unsigned char * jsonText,
                          unsigned int jsonTextLen, int verbose)
@@ -67,14 +69,14 @@ yajl_render_error_string(yajl_handle hand, const unsigned char * jsonText,
     }
 
     {
-        unsigned int memneeded = 0;
+        size_t memneeded = 0;
         memneeded += strlen(errorType);
         memneeded += strlen(" error");
         if (errorText != NULL) {
             memneeded += strlen(": ");            
             memneeded += strlen(errorText);            
         }
-        str = (unsigned char *) YA_MALLOC(&(hand->alloc), memneeded + 2);
+        str = (unsigned char *) YA_MALLOC(&(hand->alloc), (unsigned int)(memneeded + 2));
         str[0] = 0;
         strcat((char *) str, errorType);
         strcat((char *) str, " error");    
@@ -263,7 +265,7 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
                             yajl_buf_clear(hand->decodeBuf);
                             yajl_buf_append(hand->decodeBuf, buf, bufLen);
                             buf = yajl_buf_data(hand->decodeBuf);
-                            d = strtod((char *) buf, NULL);
+                            d = epicsStrtod((char *) buf, NULL);
                             if ((d == HUGE_VAL || d == -HUGE_VAL) &&
                                 errno == ERANGE)
                             {

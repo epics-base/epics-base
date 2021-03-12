@@ -18,16 +18,7 @@
 #include "timerPrivate.h"
 #include "errlog.h"
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
 template class epicsSingleton < timerQueueActiveMgr >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 epicsSingleton < timerQueueActiveMgr > timerQueueMgrEPICS;
 

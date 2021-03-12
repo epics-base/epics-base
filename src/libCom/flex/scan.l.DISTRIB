@@ -28,6 +28,12 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif /* _WIN32 */
+
 #undef yywrap
 
 #define ACTION_ECHO fprintf( temp_action_file, "%s", yytext )
@@ -504,8 +510,7 @@ int yywrap()
 
 /* set_input_file - open the given file (if NULL, stdin) for scanning */
 
-void set_input_file( file )
-char *file;
+void set_input_file( char *file )
 
     {
     if ( file )

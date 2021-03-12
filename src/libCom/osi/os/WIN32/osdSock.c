@@ -39,7 +39,7 @@
 static unsigned nAttached = 0;
 static WSADATA WsaData; /* version of winsock */
 
-epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ()
+epicsShareFunc unsigned epicsShareAPI wsaMajorVersion (void)
 {
 	return (unsigned) LOBYTE( WsaData.wVersion );
 }
@@ -47,7 +47,7 @@ epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ()
 /*
  * osiSockAttach()
  */
-epicsShareFunc int epicsShareAPI osiSockAttach()
+epicsShareFunc int epicsShareAPI osiSockAttach(void)
 {
 	int status;
 
@@ -61,7 +61,7 @@ epicsShareFunc int epicsShareAPI osiSockAttach()
 	if (AllocConsole())
 	{
 		char title[256];
-		DWORD titleLength = GetConsoleTitle(title, sizeof(title));
+		size_t titleLength = GetConsoleTitle(title, sizeof(title));
 		if (titleLength) {
 			titleLength = strlen (title);
 			strncat (title, " " EPICS_VERSION_STRING, sizeof(title)-1);
@@ -101,7 +101,7 @@ epicsShareFunc int epicsShareAPI osiSockAttach()
 /*
  * osiSockRelease()
  */
-epicsShareFunc void epicsShareAPI osiSockRelease()
+epicsShareFunc void epicsShareAPI osiSockRelease(void)
 {
 	if (nAttached) {
 		if (--nAttached==0u) {
@@ -154,7 +154,7 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName
 	if (ent) {
         strncpy (pBuf, ent->h_name, bufSize);
         pBuf[bufSize-1] = '\0';
-        return strlen (pBuf);
+        return (unsigned)strlen (pBuf);
 	}
     return 0;
 }

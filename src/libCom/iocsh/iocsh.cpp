@@ -442,7 +442,7 @@ static void helpCallFunc(const iocshArgBuf *args)
     struct iocshCommand *pcmd;
 
     if (argc == 1) {
-        int l, col = 0;
+        size_t l, col = 0;
 
         fprintf(epicsGetStdout(),
             "Type 'help <command>' to see the arguments of <command>.\n");

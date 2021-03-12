@@ -60,17 +60,8 @@ private:
     ipAddrToAsciiTransactionPrivate ( const ipAddrToAsciiTransactionPrivate & );
 };
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
 template class tsFreeList 
     < ipAddrToAsciiTransactionPrivate, 0x80 >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 extern "C" {
 static void ipAddrToAsciiEngineGlobalMutexConstruct ( void * );

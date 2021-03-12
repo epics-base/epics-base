@@ -54,9 +54,9 @@ static int indent_level = 0; /* each level is 4 spaces */
 /* *everything* is done in terms of arrays starting at 1, so provide
  * a null entry for the zero element of all C arrays
  */
-static char C_short_decl[] = "static const short int %s[%d] =\n    {   0,\n";
-static char C_long_decl[] = "static const long int %s[%d] =\n    {   0,\n";
-static char C_state_decl[] =
+static const char *C_short_decl = "static const short int %s[%d] =\n    {   0,\n";
+static const char *C_long_decl = "static const long int %s[%d] =\n    {   0,\n";
+static const char *C_state_decl =
 	"static const yy_state_type %s[%d] =\n    {   0,\n";
 
 
@@ -223,7 +223,7 @@ void genctbl(void)
 void genecs(void)
 {
     int i, j;
-    static char C_char_decl[] = "static const %s %s[%d] =\n    {   0,\n";
+    static const char *C_char_decl = "static const %s %s[%d] =\n    {   0,\n";
     int numrows;
     Char clower();
 
@@ -245,7 +245,6 @@ void genecs(void)
 
     if ( trace )
 	{
-	char *readable_form();
 
 	fputs( "\n\nEquivalence Classes:\n\n", stderr );
 
@@ -734,7 +733,7 @@ void gentabs(void)
     /* *everything* is done in terms of arrays starting at 1, so provide
      * a null entry for the zero element of all C arrays
      */
-    static char C_char_decl[] =
+    static const char *C_char_decl =
 	"static const YY_CHAR %s[%d] =\n    {   0,\n";
 
     acc_array = allocate_integer_array( current_max_dfas );

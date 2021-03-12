@@ -42,6 +42,10 @@ char copyright[] =
  All rights reserved.\n";
 #endif /* not lint */
 
+#include <time.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif /* _WIN32 */
 
 #define epicsExportSharedSymbols
 #include "epicsTempFile.h"

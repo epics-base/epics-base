@@ -717,6 +717,8 @@ extern void skelout (void);
 /* output a yy_trans_info structure */
 extern void transition_struct_out (int, int);
 
+/* readable_form - return the the human-readable form of a character */
+extern char *readable_form(int c);
 
 /* from file nfa.c */
 
@@ -774,12 +776,12 @@ extern void synerr (char []);	/* report a syntax error */
 
 /* from file scan.l */
 
-extern int flexscan ();	/* the Flex-generated scanner for flex */
+extern int flexscan (void);	/* the Flex-generated scanner for flex */
 
 /* open the given file (if NULL, stdin) for scanning */
 extern void set_input_file (char*);
 
-extern int yywrap ();	/* wrapup a file in the lexical analyzer */
+extern int yywrap (void);	/* wrapup a file in the lexical analyzer */
 
 
 /* from file sym.c */
@@ -819,17 +821,7 @@ extern void stack1 (int, int, int, int);
 
 /* from file yylex.c */
 
-extern int yylex ();
-
-
-/* The Unix kernel calls used here */
-
-extern int read (int, char*, int);
-#ifndef _WIN32
-extern int unlink (char*);
-#endif
-extern int write (int, char*, int);
-
+extern int yylex (void);
 
 #endif /* INC_flexdef_H */
 

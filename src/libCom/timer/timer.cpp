@@ -24,16 +24,7 @@
 #include "timerPrivate.h"
 #include "errlog.h"
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
 template class tsFreeList < timer, 0x20 >;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 timer::timer ( timerQueue & queueIn ) :
     queue ( queueIn ), curState ( stateLimbo ), pNotify ( 0 ) 

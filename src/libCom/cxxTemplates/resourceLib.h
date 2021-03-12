@@ -285,7 +285,7 @@ inline resTable<T,ID>::resTable () :
 template <class T, class ID>
 inline unsigned resTable<T,ID>::resTableBitMask ( const unsigned nBits )
 {
-    return ( 1 << nBits ) - 1;
+    return ( 1u << nBits ) - 1u;
 }
 
 //
@@ -559,9 +559,9 @@ bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSizeIn )
         logBaseTwoTableSizeIn = 4;
     }
 
-    const unsigned newTableSize = 1 << logBaseTwoTableSizeIn;
+    const unsigned newTableSize = 1u << logBaseTwoTableSizeIn;
 #   if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
-        const unsigned oldTableSize = this->pTable ? 1 << this->logBaseTwoTableSize : 0;
+        const unsigned oldTableSize = this->pTable ? 1u << this->logBaseTwoTableSize : 0u;
 #   endif
     const unsigned oldTableOccupiedSize = this->tableSize ();
 
@@ -1103,7 +1103,7 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
     allocType (typeIn)
 {
     if (typeIn==copyString) {
-        unsigned nChars = strlen (idIn) + 1u;
+        size_t nChars = strlen (idIn) + 1u;
         this->pStr = new char [nChars];
         memcpy ( (void *) this->pStr, idIn, nChars );
     }

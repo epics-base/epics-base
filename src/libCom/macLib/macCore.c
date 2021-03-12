@@ -472,7 +472,7 @@ long                            /* 0 = OK; <0 = ERROR */
 epicsShareAPI macReportMacros(
     MAC_HANDLE  *handle )       /* opaque handle */
 {
-    const char *format = "%-1s %-16s %-16s %s\n";
+    static const char *format = "%-1s %-16s %-16s %s\n";
     MAC_ENTRY *entry;
 
     /* check handle */

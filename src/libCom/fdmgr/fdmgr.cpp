@@ -92,17 +92,8 @@ private:
 	oldFdmgr & operator = ( const oldFdmgr & );
 };
 
-#ifdef _MSC_VER
-#   pragma warning ( push )
-#   pragma warning ( disable:4660 )
-#endif
-
 template class chronIntIdResTable <timerForOldFdmgr>;
 template class resTable<timerForOldFdmgr, chronIntId>;
-
-#ifdef _MSC_VER
-#   pragma warning ( pop )
-#endif
 
 epicsShareFunc fdRegForOldFdmgr::fdRegForOldFdmgr 
     (const SOCKET fdIn, const fdRegType typeIn, 

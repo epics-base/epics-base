@@ -94,9 +94,11 @@ endif
 #---------------------------------------------------------------
 # Read dependency files
 
+ifneq (inc,$(strip $(MAKECMDGOALS)))
 ifneq (,$(strip $(HDEPENDS_FILES)))
 $(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): | $(COMMON_INC)
 -include $(HDEPENDS_FILES)
+endif
 endif
 
 #---------------------------------------------------------------
@@ -145,14 +147,14 @@ build: inc
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TARGETS) $(TESTSCRIPTS) $(INSTALL_LIB_INSTALLS)
 
-inc : $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS)
+inc : $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS) \
+	$(INSTALL_HTMLS)
 
 buildInstall : \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) $(INSTALL_MUNCHS) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) \
 	$(INSTALL_OBJS) \
 	$(INSTALL_DOCS) \
-	$(INSTALL_HTMLS) \
 	$(INSTALL_TEMPLATE) \
 	$(INSTALL_BIN_INSTALLS)
 

@@ -20,7 +20,11 @@
 /* casr */
 static const iocshArg casrArg0 = { "level",iocshArgInt};
 static const iocshArg * const casrArgs[1] = {&casrArg0};
-static const iocshFuncDef casrFuncDef = {"casr",1,casrArgs};
+static const iocshFuncDef casrFuncDef = {"casr",1,casrArgs,
+                                         "Channel Access Server Report with following levels:\n"
+                                         "  0 - server’s protocol version level and summary for each attached client\n"
+                                         "  1 - extends report with information about connected clients and beacons\n"
+                                         "  2 - extends report with specific channel names and UDP search requests\n"};
 static void casrCallFunc(const iocshArgBuf *args)
 {
     casr(args[0].ival);

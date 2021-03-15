@@ -401,23 +401,18 @@ static iocshVarDef asCheckClientIPDef[] = { { "asCheckClientIP", iocshArgInt, 0 
 // Register the PWD environment variable when the cd IOC shell function is 
 // registered. This variable contains the current directory path.
 static void registerPwd() {
-    // On Linux, the IOC already boots with the PWD env variable initialized.
-    // We check if it exists thinking about other OSs.
-    char* currentPwd = getenv("PWD");
-    if (currentPwd == NULL) {
-        char buf[1024];
-        char *pwd = getcwd(buf, sizeof(buf) - 1);
-        if (pwd) {
-            epicsEnvSet("PWD", buf);
-        } else {
-            if (errno == ERANGE) {
-                fprintf(stderr, "Current path exceeds %u characters and, so, ",
-                                                                  sizeof(buf));
-            }
-            fprintf(stderr, "env variable PWD (which contains the current path\
-                             ) could not be created. You can still use cd to \
-                             change directory and register PWD.\n");
+    char buf[1024];
+    char *pwd = getcwd(buf, sizeof(buf) - 1);
+    if (pwd) {
+        epicsEnvSet("PWD", buf);
+    } else {
+        if (errno == ERANGE) {
+            fprintf(stderr, "Current path exceeds %u characters and, so, ",
+                                                              sizeof(buf));
         }
+        fprintf(stderr, "env variable PWD (which contains the current path) \
+                         could not be created. You can still use cd to change \
+                         directory and register PWD.\n");
     }
 }
 

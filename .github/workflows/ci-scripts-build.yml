@@ -85,13 +85,13 @@ jobs:
             test: NO
             name: "Ub-20 gcc-9 + RT-5.1 beatnik"
 
-          - os: ubuntu-20.04
-            cmp: gcc
-            configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-mvme2100
-            test: NO
-            name: "Ub-20 gcc-9 + RT-5.1 mvme2100"
+          # - os: ubuntu-20.04
+          #   cmp: gcc
+          #   configuration: default
+          #   rtems: "5"
+          #   rtems_target: RTEMS-mvme2100
+          #   test: NO
+          #   name: "Ub-20 gcc-9 + RT-5.1 mvme2100"
 
           - os: ubuntu-20.04
             cmp: gcc
@@ -117,21 +117,21 @@ jobs:
             test: NO
             name: "Ub-20 gcc-9 + RT-5.1 xilinx_zynq_a9_qemu"
 
-          - os: ubuntu-20.04
-            cmp: gcc
-            configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-mvme167
-            test: NO
-            name: "Ub-20 gcc-9 + RT-5.1 mvme167"
+          # - os: ubuntu-20.04
+          #   cmp: gcc
+          #   configuration: default
+          #   rtems: "5"
+          #   rtems_target: RTEMS-mvme167
+          #   test: NO
+          #   name: "Ub-20 gcc-9 + RT-5.1 mvme167"
 
-          - os: ubuntu-20.04
-            cmp: gcc
-            configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-uC5282
-            test: NO
-            name: "Ub-20 gcc-9 + RT-5.1 uC5282"
+          # - os: ubuntu-20.04
+          #   cmp: gcc
+          #   configuration: default
+          #   rtems: "5"
+          #   rtems_target: RTEMS-uC5282
+          #   test: NO
+          #   name: "Ub-20 gcc-9 + RT-5.1 uC5282"
 
           - os: ubuntu-20.04
             cmp: gcc

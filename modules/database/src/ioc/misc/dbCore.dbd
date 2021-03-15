@@ -36,3 +36,8 @@ variable(dbThreadRealtimeLock,int)
 
 # show logClient network activity
 variable(logClientDebug,int)
+
+# Delay (sec) after iocInit of one time courtesy
+# check for dis-connected volatile (eg. CA) links.
+# Set to < 0.0 to disable.
+variable(dbLinkConnectionCheckDelay,double)

@@ -25,6 +25,7 @@
 #include "ellLib.h"
 #include "epicsTime.h"
 #include "errlog.h"
+#include "epicsStdio.h"
 
 #include "caeventmask.h"
 
@@ -39,7 +40,7 @@
 #include "db_field_log.h"
 #include "dbFldTypes.h"
 #include "dbJLink.h"
-#include "dbLink.h"
+#include "dbLinkPvt.h"
 #include "dbLock.h"
 #include "dbScan.h"
 #include "dbStaticLib.h"
@@ -514,4 +515,37 @@ long dbPutLinkLS(struct link *plink, char *pbuffer, epicsUInt32 len)
         return dbPutLink(plink, dtyp, pbuffer, len);
 
     return dbPutLink(plink, DBR_STRING, pbuffer, 1);
+}
+
+void dbLinkConnCheck(void)
+{
+    DBENTRY  dbentry;
+    long     status;
+    unsigned ndisconn = 0u;
+
+    dbInitEntry(pdbbase,&dbentry);
+
+    for (status = dbFirstRecordType(&dbentry); !status; status = dbNextRecordType(&dbentry)) {
+        for (status = dbFirstRecord(&dbentry); !status; status = dbNextRecord(&dbentry)) {
+            short j;
+            dbCommon* precord = (dbCommon *)dbentry.precnode->precord;
+            dbRecordType        *pdbRecordType = dbentry.precordType;
+
+            if(dbIsAlias(&dbentry))
+                continue;
+
+            dbScanLock(precord);
+            for (j=0; j<pdbRecordType->no_links; j++) {
+                dbFldDes *pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
+                DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+                if(!dbIsLinkConnected(plink))
+                    ndisconn++;
+            }
+            dbScanUnlock(precord);
+        }
+    }
+    dbFinishEntry(&dbentry);
+
+    if(ndisconn)
+        printf("Notice: %u link(s) have not yet connected\n", ndisconn);
 }

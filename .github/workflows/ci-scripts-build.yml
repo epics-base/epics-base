@@ -124,6 +124,11 @@ jobs:
             configuration: static
             name: "Win2019 MSC-19, static"
 
+          - os: windows-2019
+            cmp: gcc
+            configuration: default
+            name: "Win2019 mingw"
+
     steps:
     - uses: actions/checkout@v2
       with:

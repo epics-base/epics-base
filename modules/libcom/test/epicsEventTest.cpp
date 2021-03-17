@@ -172,7 +172,7 @@ static double eventWaitCheckDelayError( const epicsEventId &id, const double & d
 #define WAITCOUNT 21
 static void eventWaitTest()
 {
-#if defined(_WIN32) || defined(__rtems__) || defined(vxWorks)
+#if defined(__rtems__) || defined(vxWorks)
     testTodoBegin("Known issue with delay calculation");
 #endif
 
@@ -184,7 +184,7 @@ static void eventWaitTest()
         errorSum += eventWaitCheckDelayError ( event, delay );
     }
     double meanError = errorSum / WAITCOUNT;
-    testOk(meanError < 0.05, "Mean delay error was %.6f sec", meanError);
+    testOk(testImpreciseTiming() || meanError < 0.05, "Mean delay error was %.6f sec", meanError);
 
     testTodoEnd();
 

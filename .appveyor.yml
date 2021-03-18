@@ -53,6 +53,7 @@ environment:
   SETUP_PATH: .ci-local:.ci
   BASE: SELF
   EPICS_TEST_IMPRECISE_TIMING: YES
+  EPICS_TEST_TIMEOUT: 720
 
   matrix:
   - CMP: vs2019

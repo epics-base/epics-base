@@ -29,7 +29,11 @@
 #endif
 
 #include "epicsThread.h"
+#include "epicsEvent.h"
+#include "epicsStdlib.h"
 #include "epicsMutex.h"
+#include "epicsMath.h"
+#include "osiUnistd.h" /* for _exit() */
 #include "epicsUnitTest.h"
 #include "epicsExit.h"
 #include "epicsTime.h"
@@ -66,6 +70,10 @@ const char *testing = NULL;
 
 static epicsThreadOnceId onceFlag = EPICS_THREAD_ONCE_INIT;
 
+static epicsEventId timeoutEvent;
+static epicsThreadId timeoutThread;
+static double timeoutPeriod;
+
 #ifdef _WIN32
 /*
  * if we return FALSE, _CrtDbgReport is called to print to file etc
@@ -92,7 +100,24 @@ static int testReportHook(int reportType, char *message, int *returnValue)
 }
 #endif
 
+static void testTimeout(void *dummy)
+{
+    if(epicsEventWaitWithTimeout(timeoutEvent, timeoutPeriod)==epicsEventWaitTimeout) {
+        fprintf(stderr, "Test timeout\n");
+        fflush(stderr);
+        /* goodbye cruel world */
+        abort();
+        /* windows: in case test messed with abort() handling */
+        _exit(42);
+        /* probably paranoia */
+        *((char*)0) = 42;
+    }
+}
+
 static void testOnce(void *dummy) {
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+    const char *stimeout = getenv("EPICS_TEST_TIMEOUT");
+    double timeout = 0.0;
     testLock = epicsMutexMustCreate();
     perlHarness = (getenv("HARNESS_ACTIVE") != NULL);
 #ifdef _WIN32
@@ -113,6 +138,22 @@ static void testOnce(void *dummy) {
     _CrtSetReportFile( _CRT_WARN, _CRTDBG_FILE_STDERR );
     _CrtSetReportHook2( _CRT_RPTHOOK_INSTALL, testReportHook );
 #endif
+
+    if(stimeout && stimeout[0]!='\0' && epicsParseDouble(stimeout, &timeout, NULL)) {
+        fprintf(stderr, "Unable to set test timeout: %s\n", stimeout);
+    } else {
+        timeoutPeriod = timeout;
+    }
+    if(finite(timeoutPeriod) && timeoutPeriod>0.0) {
+        opts.joinable = 1;
+        opts.priority = epicsThreadPriorityMax;
+        opts.stackSize = epicsThreadStackSmall;
+        timeoutEvent = epicsEventCreate(epicsEventEmpty);
+        if(timeoutEvent)
+            timeoutThread = epicsThreadCreateOpt("testtimeout", &testTimeout, NULL, &opts);
+        if(!timeoutThread)
+            fprintf(stderr, "Unable to setup test timeout\n");
+    }
 }
 
 void testPlan(int plan) {
@@ -224,6 +265,16 @@ static void testResult(const char *result, int count) {
 
 int testDone(void) {
     int status = 0;
+
+    if(timeoutThread) {
+        epicsEventMustTrigger(timeoutEvent);
+        epicsThreadMustJoin(timeoutThread);
+        epicsEventDestroy(timeoutEvent);
+        timeoutEvent = NULL;
+        timeoutThread = NULL;
+        /* allows individual timeouts in test harness */
+        timeoutPeriod = 0.0;
+    }
 
     epicsMutexMustLock(testLock);
     if (perlHarness) {

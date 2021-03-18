@@ -67,7 +67,7 @@ IOCSH_STATIC_FUNC void echo(char* str)
 static const iocshArg echoArg0 = { "string",iocshArgString};
 static const iocshArg * const echoArgs[1] = {&echoArg0};
 static const iocshFuncDef echoFuncDef = {"echo",1,echoArgs,
-                                         "Print any string (can aslo print EPICS environment variables)\n"};
+                                         "Print string after expanding macros and environment variables\n"};
 static void echoCallFunc(const iocshArgBuf *args)
 {
     echo(args[0].sval);

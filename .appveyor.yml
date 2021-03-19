@@ -66,6 +66,7 @@ environment:
   - CMP: vs2012
   - CMP: vs2010
   - CMP: gcc
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
 
 # Platform: processor architecture
 platform:

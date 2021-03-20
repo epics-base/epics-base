@@ -82,7 +82,8 @@ if ($^O eq 'MSWin32') {
     ######################################## Code for Windows run-hosts
     print $OUT <<__WIN32__;
 
-use Win32::Job;
+use Win32::Process;
+use Win32;
 
 BEGIN {
   # Ensure that Windows interactive error handling is disabled.
@@ -104,19 +105,20 @@ BEGIN {
   SetErrorMode(0x8001) unless \$@;
 }
 
-my \$job = Win32::Job->new;
-die "\$tool: Can't create Win32::Job: \$^E\\n"
-    unless \$job;
-my \$pid = \$job->spawn(undef, '$exec');
-die "\$tool: Can't spawn Process '$exec': \$^E\\n"
-    unless defined(\$pid);
-
-if (! \$job->run(\$timeout)) {
+my \$proc;
+if (! Win32::Process::Create(\$proc, abs_path('$exec'),
+    '$exec', 1, NORMAL_PRIORITY_CLASS, '.')) {
+    my \$err = Win32::FormatMessage(Win32::GetLastError());
+    die "\$tool: Can't create Process for '$exec': \$err\\n";
+}
+if (! \$proc->Wait(1000 * \$timeout)) {
+    \$proc->Kill(1);
     print "\\n#### Test stopped by \$tool after \$timeout seconds\\n";
     die "\$tool: Timed out '$exec' after \$timeout seconds\\n";
 }
-my \$status = \$job->status();
-exit \$status->{\$pid}->{exitcode};
+my \$status;
+\$proc->GetExitCode(\$status);
+exit \$status;
 
 __WIN32__
 }

@@ -75,6 +75,9 @@ my \$tool = basename(\$0);
 \$ENV{HARNESS_ACTIVE} = 1 if scalar \@ARGV && shift eq '-tap';
 \$ENV{TOP} = abs_path(\$ENV{TOP}) if exists \$ENV{TOP};
 
+# The default timeout used below can be set in the Makefile that
+# generates this test script. Add this line and adjust the time:
+#   $target: EPICS_UNITTEST_TIMEOUT=$timeout
 my \$timeout = \$ENV{EPICS_UNITTEST_TIMEOUT} // $timeout;
 __EOT__
 

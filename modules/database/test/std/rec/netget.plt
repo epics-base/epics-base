@@ -38,7 +38,7 @@ $ioc->debug($debug);
 
 $SIG{__DIE__} = $SIG{INT} = $SIG{QUIT} = sub {
     $ioc->exit;
-    BAIL_OUT('Caught signal');
+    BAIL_OUT("Caught signal: $_[0]");
 };
 
 

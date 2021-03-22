@@ -12,7 +12,7 @@ use Test::More tests => 3;
 use EPICS::IOC;
 
 # Set to 1 to echo all IOC and client communications
-my $debug = 1;
+my $debug = 0;
 
 $ENV{HARNESS_ACTIVE} = 1 if scalar @ARGV && shift eq '-tap';
 

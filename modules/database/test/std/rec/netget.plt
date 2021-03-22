@@ -50,11 +50,21 @@ sub kill_bail {
 }
 
 sub watchdog (&$$) {
-    my ($do, $timeout, $abort) = @_;
-    $SIG{ALRM} = $abort;
-    alarm $timeout;
-    &$do;
-    alarm 0;
+    my ($code, $timeout, $fail) = @_;
+    my $bark = "Woof $$\n";
+    my $result;
+    eval {
+        local $SIG{__DIE__};
+        local $SIG{ALRM} = sub { die $bark };
+        alarm $timeout;
+        $result = &$code;
+        alarm 0;
+    };
+    if ($@) {
+        die if $@ ne $bark;
+        $result = &$fail;
+    }
+    return $result;
 }
 
 

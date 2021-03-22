@@ -28,7 +28,7 @@ my $tool = basename($0);
 
 # Test programs that need more than 5 minutes to run should have the
 # EPICS_UNITTEST_TIMEOUT environment variable set in their Makefile:
-#   longRunningTest.t: EPICS_UNITTEST_TIMEOUT=3600
+#   longRunningTest.t: export EPICS_UNITTEST_TIMEOUT=3600
 # The above embeds it into the .t file. It can also be set at runtime,
 # which will then override that compiled-in setting (so not recommended).
 my $timeout = $ENV{EPICS_UNITTEST_TIMEOUT} // 5*60;
@@ -75,9 +75,9 @@ my \$tool = basename(\$0);
 \$ENV{HARNESS_ACTIVE} = 1 if scalar \@ARGV && shift eq '-tap';
 \$ENV{TOP} = abs_path(\$ENV{TOP}) if exists \$ENV{TOP};
 
-# The default timeout used below can be set in the Makefile that
-# generates this test script. Add this line and adjust the time:
-#   $target: EPICS_UNITTEST_TIMEOUT=$timeout
+# The timeout value below can be set in the Makefile that builds
+# this test script. Add this line and adjust the value (in seconds):
+#   $target: export EPICS_UNITTEST_TIMEOUT=$timeout
 my \$timeout = \$ENV{EPICS_UNITTEST_TIMEOUT} // $timeout;
 __EOT__
 

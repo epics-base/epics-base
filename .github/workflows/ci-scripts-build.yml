@@ -163,7 +163,7 @@ jobs:
     - name: Build main module
       run: python .ci/cue.py build
     - name: Run main module tests
-      run: python .ci/cue.py test
+      run: python .ci/cue.py -T 20M test
     - name: Upload tapfiles Artifact
       if: ${{ always() }}
       uses: actions/upload-artifact@v2

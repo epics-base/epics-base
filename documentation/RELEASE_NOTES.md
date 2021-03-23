@@ -106,6 +106,33 @@ that the variables referenced by output pointers are initialized.
 ```
 
 
+### Timeouts for Unit Test Programs
+
+Most unit test programs that are run by the EPICS build system using
+`make runtests` or `make tapfiles` are now only allowed to run for a limited
+time period. If a test program runs for more than the timeout period (by
+default 5 minutes, 300 seconds) without exiting it will be killed after that
+period has elapsed. The limit can be extended (or shortened) for individual
+tests as necessary by adding a line to the Makefile which runs them, setting
+the environment variable `EPICS_UNITTEST_TIMEOUT` to a value in seconds while
+building the test (`.t`) script, like this:
+
+```
+  TESTSCRIPTS_HOST += hourLongTest.t
+  hourLongTest.t: export EPICS_UNITTEST_TIMEOUT=3600
+```
+
+The time limit only applies to tests that use `makeTestfile.pl` to generate a
+test (`.t`) script that runs the actual test program. Tests which are provided
+as a `.plt` script should implement their own timeout if they can hang while
+running in a Continuous Integration system (the Base "netget" test now does
+this in a way that works on Windows as well as Posix hosts).
+
+The same environment variable can be set while running the tests to override
+the time limit given in the Makefile, but it cannot be configured to provide a
+separate limit for each program when using `make runtests`. This feature may
+be useful for debugging purposes.
+
 -----
 
 ## EPICS Release 7.0.5

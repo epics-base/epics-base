@@ -2438,11 +2438,25 @@ int camessage ( struct client *client )
         msg.m_cid       = ntohl ( mp->m_cid );
         msg.m_available = ntohl ( mp->m_available );
 
-        /* disconnect clients that send an invalid command */
+        /* Reject invalid commands */
         if (msg.m_cmmd > CA_PROTO_LAST_CMMD) {
-            log_header ( "CAS: Invalid command rejected",
-                client, &msg, 0, nmsg );
-            status = RSRV_ERROR;
+            /* Log and send the error only to TCP clients. Silently ignore UDP clients */
+            if (client->proto == IPPROTO_TCP) {
+                SEND_LOCK(client);
+                send_err(&msg, ECA_NOSUPPORT, client, "CAS: Invalid command rejected");
+                SEND_UNLOCK(client);
+
+                /* By default, do not generate a log message for this type of error */
+                if (CASDEBUG > 0)
+                    log_header ( "CAS: Invalid command rejected",
+                    client, &msg, 0, nmsg );
+
+                client->recvBytesToDrain = msgsize - bytes_left;
+                client->recv.stk = client->recv.cnt;
+            }
+
+            /* Keep the connection open to avoid re-connect loops */
+            status = RSRV_OK;
             break;
         }
 

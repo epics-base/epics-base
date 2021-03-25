@@ -112,16 +112,18 @@ static long init_record(struct dbCommon *pcommon, int pass)
             prec->ftvl = DBF_UCHAR;
         prec->nord = (prec->nelm == 1);
 
-        /* we must call pdset->init_record in pass 0
-           because it may set prec->bptr which must
-           not change after links are established before pass 1
-        */
-
+        /* call pdset->init_record() in pass 0 so it can do its own
+         * memory allocation and set prec->bptr, which must be set by
+         * the end of pass 0.
+         */
         if (pdset->common.init_record) {
             long status = pdset->common.init_record(pcommon);
 
-            /* init_record may set the bptr to point to the data */
-            if (status)
+            if (status == AAI_DEVINIT_PASS1) {
+                /* requesting pass 1 callback, remember to do that */
+                prec->pact = AAI_DEVINIT_PASS1;
+            }
+            else if (status)
                 return status;
         }
         if (!prec->bptr) {
@@ -130,6 +132,14 @@ static long init_record(struct dbCommon *pcommon, int pass)
                 "aai: buffer calloc failed");
         }
         return 0;
+    }
+
+    if (prec->pact == AAI_DEVINIT_PASS1) {
+        /* device support asked for an init_record() callback in pass 1 */
+        long status = pdset->common.init_record(pcommon);
+        if (status)
+            return status;
+        prec->pact = FALSE;
     }
 
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);

@@ -38,6 +38,7 @@ ifeq ($(wildcard $(PERL_h)),)
 endif
 endif
 
+ifneq (inc,$(strip $(MAKECMDGOALS)))
 ifeq ($(T_A),$(EPICS_HOST_ARCH))                 # No cross-builds (wrong Perl!)
 ifeq ($(strip $(XSUBPP)),)
   $(warning Perl's xsubpp program was not found.)
@@ -57,6 +58,7 @@ ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),) # Doesn't build on WIN32
 
   HTMLS_DIR = .
   HTMLS = CA.html
+endif
 endif
 endif
 endif

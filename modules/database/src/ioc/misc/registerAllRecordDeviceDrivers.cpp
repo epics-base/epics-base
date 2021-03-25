@@ -185,6 +185,21 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
             registerJLinks(pdbbase, 1, ptr);
         }
 
+        // for each function()
+        for(ELLNODE *cur = ellFirst(&pdbbase->functionList); cur; cur = ellNext(cur)) {
+            dbText& reg = *CONTAINER(cur, dbText, node);
+
+            typedef void(*registrar)(void);
+            registrar* ptr = lookupAs<registrar*>("pvar_func_register_func_", reg.text);
+
+            if(!ptr || !*ptr) {
+                fprintf(stderr, "Unable to find function '%s' : %s\n", reg.text, epicsLoadError());
+                return 1;
+            }
+
+            runRegistrarOnce(*ptr);
+        }
+
         // for each registrar()
         for(ELLNODE *cur = ellFirst(&pdbbase->registrarList); cur; cur = ellNext(cur)) {
             dbText& reg = *CONTAINER(cur, dbText, node);
@@ -193,7 +208,7 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
             registrar* ptr = lookupAs<registrar*>("pvar_func_", reg.text);
 
             if(!ptr || !*ptr) {
-                fprintf(stderr, "Unable to find registar '%s' : %s\n", reg.text, epicsLoadError());
+                fprintf(stderr, "Unable to find registrar '%s' : %s\n", reg.text, epicsLoadError());
                 return 1;
             }
 

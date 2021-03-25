@@ -163,7 +163,12 @@ const iocshCmdDef * epicsStdCall iocshFindCommand(const char *name)
 static const iocshArg varCmdArg0 = { "[variable", iocshArgString};
 static const iocshArg varCmdArg1 = { "[value]]", iocshArgString};
 static const iocshArg *varCmdArgs[2] = {&varCmdArg0, &varCmdArg1};
-static const iocshFuncDef varFuncDef = {"var", 2, varCmdArgs};
+static const iocshFuncDef varFuncDef = {"var", 2, varCmdArgs,
+                                        "Print all, print single variable or set value to single variable\n"
+                                        "  (default) - print all variables and their values"
+                                        " defined in database definitions files\n"
+                                        "  variable  - if only parameter print value for this variable\n"
+                                        "  value     - set the value to variable\n"};
 
 void epicsStdCall iocshRegisterVariable (const iocshVarDef *piocshVarDef)
 {
@@ -1139,7 +1144,10 @@ static void varCallFunc(const iocshArgBuf *args)
 /* iocshCmd */
 static const iocshArg iocshCmdArg0 = { "command",iocshArgString};
 static const iocshArg *iocshCmdArgs[1] = {&iocshCmdArg0};
-static const iocshFuncDef iocshCmdFuncDef = {"iocshCmd",1,iocshCmdArgs};
+static const iocshFuncDef iocshCmdFuncDef = {"iocshCmd",1,iocshCmdArgs,
+                                             "Takes a single IOC shell command and executes it\n"
+                                             "  * This function is most useful to execute a single IOC shell command\n"
+                                             "    from vxWorks or RTEMS startup script (or command line)\n"};
 static void iocshCmdCallFunc(const iocshArgBuf *args)
 {
     iocshCmd(args[0].sval);
@@ -1149,7 +1157,9 @@ static void iocshCmdCallFunc(const iocshArgBuf *args)
 static const iocshArg iocshLoadArg0 = { "pathname",iocshArgString};
 static const iocshArg iocshLoadArg1 = { "macros", iocshArgString};
 static const iocshArg *iocshLoadArgs[2] = {&iocshLoadArg0, &iocshLoadArg1};
-static const iocshFuncDef iocshLoadFuncDef = {"iocshLoad",2,iocshLoadArgs};
+static const iocshFuncDef iocshLoadFuncDef = {"iocshLoad",2,iocshLoadArgs,
+                                              "Execute IOC shell commands provided in file from first parameter\n"
+                                              "  * (optional) replace macros within the file with provided values\n"};
 static void iocshLoadCallFunc(const iocshArgBuf *args)
 {
     iocshLoad(args[0].sval, args[1].sval);
@@ -1159,7 +1169,10 @@ static void iocshLoadCallFunc(const iocshArgBuf *args)
 static const iocshArg iocshRunArg0 = { "command",iocshArgString};
 static const iocshArg iocshRunArg1 = { "macros", iocshArgString};
 static const iocshArg *iocshRunArgs[2] = {&iocshRunArg0, &iocshRunArg1};
-static const iocshFuncDef iocshRunFuncDef = {"iocshRun",2,iocshRunArgs};
+static const iocshFuncDef iocshRunFuncDef = {"iocshRun",2,iocshRunArgs,
+                                             "Takes a single IOC shell command, replaces macros and executes it\n"
+                                             "  * This function is most useful to execute a single IOC shell command\n"
+                                             "    from vxWorks or RTEMS startup script (or command line)\n"};
 static void iocshRunCallFunc(const iocshArgBuf *args)
 {
     iocshRun(args[0].sval, args[1].sval);

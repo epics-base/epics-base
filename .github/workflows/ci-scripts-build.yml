@@ -14,9 +14,19 @@ on:
       - 'documentation/*'
       - 'startup/*'
       - '.appveyor/*'
+      - '.tools/*'
+      - '.gitattributes'
       - '**/*.html'
       - '**/*.md'
   pull_request:
+    paths-ignore:
+      - 'documentation/*'
+      - 'startup/*'
+      - '.appveyor/*'
+      - '.tools/*'
+      - '.gitattributes'
+      - '**/*.html'
+      - '**/*.md'
 
 env:
     SETUP_PATH: .ci-local:.ci
@@ -166,6 +176,12 @@ jobs:
             name: "Ub-20 gcc-8"
 
           - os: ubuntu-20.04
+            cmp: gcc-9
+            utoolchain: "9"
+            configuration: default
+            name: "Ub-20 gcc-9"
+
+          - os: ubuntu-20.04
             cmp: clang
             configuration: default
             name: "Ub-20 clang-10"
@@ -184,6 +200,11 @@ jobs:
             cmp: vs2019
             configuration: static
             name: "Win2019 MSC-19, static"
+
+          - os: windows-2019
+            cmp: gcc
+            configuration: default
+            name: "Win2019 mingw"
 
     steps:
     - uses: actions/checkout@v2
@@ -211,6 +232,7 @@ jobs:
     - name: Run main module tests
       run: python .ci/cue.py test
     - name: Upload tapfiles Artifact
+      if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: tapfiles ${{ matrix.name }}

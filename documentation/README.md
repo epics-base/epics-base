@@ -1,6 +1,6 @@
 # Installation Instructions {#install}
 
-## EPICS Base Release 7.0.4.1
+## EPICS Base Release 7.0.5
 
 -----
 
@@ -12,7 +12,6 @@
   - [Supported platforms](#0_0_4)
   - [Supported compilers](#0_0_5)
   - [Software requirements](#0_0_6)
-  - [Host system storage requirements](#0_0_7)
   - [Documentation](#0_0_8)
   - [Directory Structure](#0_0_10)
   - [Build related components](#0_0_11)
@@ -39,7 +38,7 @@ interfaces) of various types.
 Please check the `RELEASE_NOTES` file in the distribution for
 description of changes and release migration details.
 
-### <span id="0_0_3">Copyright</span>
+### <span id="0_0_3">Copyright Licenses</span>
 
 Please review the LICENSE file included in the distribution for legal
 terms of usage.
@@ -68,10 +67,10 @@ path to do EPICS builds; check the definitions of CC and CCC in
 
 **GNU make**
 You must use GNU make, gnumake, for any EPICS builds. Set your path so
-that a gnumake version 3.81 or later is available.
+that a gnumake version 4.1 or later is available.
 
 **Perl**
-You must have Perl version 5.8.1 or later installed. The EPICS
+You must have Perl version 5.10 or later installed. The EPICS
 configuration files do not specify the perl full pathname, so the perl
 executable must be found through your normal search path.
 
@@ -113,13 +112,6 @@ EPICS distribution. Comment out `COMMANDLINE_LIBRARY=READLINE` in
 installed on linux-x86. Command-line editing and history will then be
 those supplied by the os. On vxWorks the ledLib command-line input
 library is used instead.
-
-### <span id="0_0_7">Host system storage requirements</span>
-
-The compressed tar file is approximately 1.6 MB in size. The
-distribution source tree takes up approximately 12 MB. Each host
-target will need around 40 MB for build files, and each cross-compiled
-target around 20 MB.
 
 ### <span id="0_0_8">Documentation</span>
 
@@ -242,16 +234,12 @@ Before you can build or use this EPICS base, the environment variable
 the base/startup directory has been provided to help set
 `EPICS_HOST_ARCH.` You should have `EPICS_HOST_ARCH` set to your
 host operating system followed by a dash and then your host
-architecture, e.g. solaris-sparc. If you are not using the OS
+architecture, e.g. linux-x86_64. If you are not using the OS
 vendor's c/c++ compiler for host builds, you will need another dash
 followed by the alternate compiler name (e.g. "-gnu" for GNU c/c++
 compilers on a solaris host or "-mingw" for MinGW c/c++ compilers on
-a WIN32 host). See `configure/CONFIG_SITE` for a list of supported
+Windows). See `configure/CONFIG_SITE` for a list of supported
 `EPICS_HOST_ARCH` values.
-
-* `PERLLIB`
-On WIN32, some versions of Perl require that the environment
-variable PERLLIB be set to &lt;perl directory location>.
 
 * `PATH`
 As already mentioned, you must have the perl executable and you may

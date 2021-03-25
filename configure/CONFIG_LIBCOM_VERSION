@@ -1,8 +1,8 @@
 # Version number for the libcom APIs and shared library
 
 EPICS_LIBCOM_MAJOR_VERSION = 3
-EPICS_LIBCOM_MINOR_VERSION = 18
-EPICS_LIBCOM_MAINTENANCE_VERSION = 2
+EPICS_LIBCOM_MINOR_VERSION = 19
+EPICS_LIBCOM_MAINTENANCE_VERSION = 1
 
 # Development flag, set to zero for release versions
 

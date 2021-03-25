@@ -61,12 +61,18 @@ if ($opt_D) {   # Output dependencies only, to stdout
     print "$outfile: ", join(" \\\n    ", @uniqfiles), "\n\n";
     print map { "$_:\n" } @uniqfiles;
 } else {
+    our ($rn, $rtyp) = each %{$rtypes};
+    my $rtn = $rn;
+    $rtn .= 'Record' if $rn ne 'dbCommon';
+
     open OUTFILE, ">$outfile" or die "$tool: Can't open $outfile: $!\n";
-    print OUTFILE "/* $outbase generated from $inbase */\n\n",
+    print OUTFILE "/** \@file $outbase\n",
+        " * \@brief Declarations for the \@ref $rtn \"$rn\" record type.\n",
+        " *\n",
+        " * This header was generated from $inbase\n",
+        " */\n\n",
         "#ifndef $guard_name\n",
         "#define $guard_name\n\n";
-
-    our ($rn, $rtyp) = each %{$rtypes};
 
     print OUTFILE $rtyp->toCdefs;
 
@@ -111,31 +117,47 @@ if ($opt_D) {   # Output dependencies only, to stdout
 
 sub oldtables {
     # Output compatible with R3.14.x
+
+    my @fields = $rtyp->fields;
+    my $no_fields = scalar @fields;
+
+    print OUTFILE << "__EOF__";
+#include <epicsExport.h>
+#include <cantProceed.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+static int ${rn}RecordSizeOffset(dbRecordType *prt)
+{
+    ${rn}Record *prec = 0;
+
+    if (prt->no_fields != ${no_fields}) {
+        cantProceed("IOC build or installation error:\\n"
+            "    The ${rn}Record defined in the DBD file has %d fields,\\n"
+            "    but the record support code was built with ${no_fields}.\\n",
+            prt->no_fields);
+    }
+__EOF__
+
     print OUTFILE
-        "#include <epicsAssert.h>\n" .
-        "#include <epicsExport.h>\n" .
-        "#ifdef __cplusplus\n" .
-        "extern \"C\" {\n" .
-        "#endif\n" .
-        "static int ${rn}RecordSizeOffset(dbRecordType *prt)\n" .
-        "{\n" .
-        "    ${rn}Record *prec = 0;\n\n" .
-        "    assert(prt->no_fields == " . scalar($rtyp->fields) . ");\n" .
         join("\n", map {
-                "    prt->papFldDes[${rn}Record" . $_->name . "]->size = " .
-                "sizeof(prec->" . $_->C_name . ");"
-            } $rtyp->fields) . "\n" .
-        join("\n", map {
-                "    prt->papFldDes[${rn}Record" . $_->name . "]->offset = (unsigned short)(" .
-                "(char *)&prec->" . $_->C_name . " - (char *)prec);"
-            } $rtyp->fields) . "\n" .
-        "    prt->rec_size = sizeof(*prec);\n" .
-        "    return 0;\n" .
-        "}\n" .
-        "epicsExportRegistrar(${rn}RecordSizeOffset);\n\n" .
-        "#ifdef __cplusplus\n" .
-        "}\n" .
-        "#endif\n";
+            my $fn = $_->name;
+            my $cn = $_->C_name;
+                "    prt->papFldDes[${rn}Record${fn}]->size = " .
+                "sizeof(prec->${cn});\n" .
+                "    prt->papFldDes[${rn}Record${fn}]->offset = " .
+                "(unsigned short)((char *)&prec->${cn} - (char *)prec);"
+            } @fields), << "__EOF__";
+
+    prt->rec_size = sizeof(*prec);
+    return 0;
+}
+epicsExportRegistrar(${rn}RecordSizeOffset);
+
+#ifdef __cplusplus
+}
+#endif
+__EOF__
 }
 
 sub newtables {

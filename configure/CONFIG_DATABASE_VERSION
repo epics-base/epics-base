@@ -1,8 +1,8 @@
 # Version number for the database APIs and shared library
 
 EPICS_DATABASE_MAJOR_VERSION = 3
-EPICS_DATABASE_MINOR_VERSION = 18
-EPICS_DATABASE_MAINTENANCE_VERSION = 2
+EPICS_DATABASE_MINOR_VERSION = 19
+EPICS_DATABASE_MAINTENANCE_VERSION = 1
 
 # Development flag, set to zero for release versions
 

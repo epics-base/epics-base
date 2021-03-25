@@ -120,7 +120,9 @@ static void ascarCallFunc(const iocshArgBuf *args)
 }
 
 /* asDumpHash */
-static const iocshFuncDef asDumpHashFuncDef = {"asDumpHash",0,0};
+static const iocshFuncDef asDumpHashFuncDef = {"asDumpHash",0,0,
+                                               "Show the contents of the hash table used "
+                                               "to locate UAGs and HAGs.\n"};
 static void asDumpHashCallFunc(const iocshArgBuf *args)
 {
     asDumpHash();

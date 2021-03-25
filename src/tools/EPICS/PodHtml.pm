@@ -46,17 +46,20 @@ sub do_pod_link {
     return $ret;
 }
 
-# Generate the same section IDs as Pod::Simple::XHTML
+# Generate legal section IDs
 
 sub section_name_tidy {
-    my($self, $section) = @_;
-    $section =~ s/^\s+//;
-    $section =~ s/\s+$//;
-    $section =~ tr/ /-/;
-    $section =~ s/[[:cntrl:][:^ascii:]]//g; # drop crazy characters
-    $section = $self->unicode_escape_url($section);
-    $section = '_' unless length $section;
-    return $section;
+    my($self, $t) = @_;
+    for ($t) {
+        s/<[^>]+>//g;            # Strip HTML.
+        s/&[^;]+;//g;            # Strip entities.
+        s/^\s+//; s/\s+$//;      # Strip white space.
+        s/^([^a-zA-Z]+)$/pod$1/; # Prepend "pod" if no valid chars.
+        s/^[^a-zA-Z]+//;         # First char must be a letter.
+        s/[^-a-zA-Z0-9_:.]+/-/g; # All other chars must be valid.
+        s/[-:.]+$//;             # Strip trailing punctuation.
+    }
+    return $t;
 }
 
 1;

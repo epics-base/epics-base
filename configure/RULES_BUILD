@@ -103,16 +103,19 @@ include $(CONFIG)/RULES.Db
 #---------------------------------------------------------------
 # Include defines and rules for prod, library and test* targets
 
-#ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRARY) ))
+ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) \
+        $(LOADABLE_LIBRARY)))
 include $(CONFIG)/RULES_TARGET
-#endif
+endif
 
 #---------------------------------------------------------------
 # Read dependency files
 
+ifneq (inc,$(strip $(MAKECMDGOALS)))
 ifneq (,$(strip $(HDEPENDS_FILES)))
 $(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): | $(COMMON_INC)
 -include $(HDEPENDS_FILES)
+endif
 endif
 
 #---------------------------------------------------------------
@@ -161,12 +164,13 @@ build: inc
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TARGETS) $(TESTSCRIPTS) $(INSTALL_LIB_INSTALLS)
 
-inc: $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS)
+inc: $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS) $(INSTALLS_CFG) \
+	$(INSTALL_HTMLS) $(INSTALLS_PERL_MODULES) $(INSTALL_SCRIPTS)
 
 buildInstall: \
-	$(INSTALL_SCRIPTS) $(INSTALL_PROD) $(INSTALL_MUNCHS) \
+	$(INSTALL_PROD) $(INSTALL_MUNCHS) \
 	$(INSTALL_TCLLIBS) $(INSTALL_TCLINDEX) \
-	$(INSTALL_HTMLS) $(INSTALL_DOCS) \
+	$(INSTALL_DOCS) \
 	$(INSTALL_OBJS) \
 	$(INSTALL_TEMPLATE) \
 	$(INSTALL_BIN_INSTALLS)

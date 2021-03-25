@@ -47,18 +47,14 @@ static long init_record(dbCommon *pcommon)
     aaiRecord *prec = (aaiRecord *)pcommon;
     DBLINK *plink = &prec->inp;
 
-    /* This is pass 0, link hasn't been initialized yet */
-    dbInitLink(plink, DBF_INLINK);
+    /* Ask record to call us in pass 1 instead */
+    if (prec->pact != AAI_DEVINIT_PASS1) {
+        return AAI_DEVINIT_PASS1;
+    }
 
     if (dbLinkIsConstant(plink)) {
         long nRequest = prec->nelm;
         long status;
-
-        /* Allocate a buffer, record support hasn't done that yet */
-        if (!prec->bptr) {
-            prec->bptr = callocMustSucceed(nRequest, dbValueSize(prec->ftvl),
-                "devAaiSoft: buffer calloc failed");
-        }
 
         status = dbLoadLinkArray(plink, prec->ftvl, prec->bptr, &nRequest);
         if (!status) {

@@ -13,7 +13,7 @@ should also be read to understand what has changed since earlier releases.
 
 **This version of EPICS has not been released yet.**
 
-## Changes made on the 7.0 branch since 7.0.4.1
+## Changes made on the 7.0 branch since 7.0.5
 
 <!-- Insert new items immediately below here ... -->
 
@@ -56,21 +56,79 @@ Known Issues:
   issues with DHCP, but network stack usable.  Can load env from
   NVRAM.
 
+-----
 
-### Priority inversion safe posix mutexes
+## EPICS Release 7.0.5
+
+### Fix aai's Device Support Initialization
+
+Krisztian Loki [reported](https://github.com/epics-base/epics-base/issues/97)
+segfaults occurring when a Soft Channel aai record INP field was a DB link to
+an array field of a compress record. This was caused by the aai record's
+pass-0 device support initialization clashing with the semantics of the new
+link support API.
+
+The aai record
+[has been modified](https://github.com/epics-base/epics-base/pull/114) to
+allow the Soft Channel device support to request a pass-1 initialization
+callback. See the Device Support section of the Array Analogue Input Record
+Reference pages in this release for the API changes, which are fully backwards
+compatible for existing aai device support.
+
+### Prevent default DTYPs from changing
+
+[Kay Kasemir reported](https://bugs.launchpad.net/epics-base/+bug/1908305) that
+it is possible to change the Base record type's default DTYP if a `device()`
+entry is seen before the `recordtype()` definition to which it refers. The
+default DTYP is the first device loaded, which is normally the `Soft Channel`
+support from Base. A warning was being displayed by dbdExpand when a `device()`
+entry was see first, but that was easily missed.
+
+The DBD file parser in dbdExpand.pl has now been modified to make this an error,
+although the registerRecordDeviceDriver.pl script will still accept `device()`
+entries without having their `recordtype()` loaded since this is necessary to
+compile device supports as loadable modules.
+
+
+### Priority inversion safe Posix mutexes
 
 On Posix systems, epicsMutex now support priority inheritance if available.
-The IOC needs to run with SCHED_FIFO engaged.
-Support for Posix implementations before POSIX.1-2001 (_XOPEN_SOURCE < 500,
-glibc version < 2.3.3) has been dropped.
+The IOC needs to run with SCHED_FIFO engaged to use these.
+Support for Posix implementations before POSIX.1-2001 (`_XOPEN_SOURCE < 500`,
+glibc version &lt; 2.3.3) has been dropped.
 
-The epicsMutexShowAll() function (available through IOC shell)
-will print "PI is enabled" if both libc and kernel support is present.
+The IOC shell's `epicsMutexShowAll` command prints "PI is enabled" if both
+libc and kernel support is present.
 
-### Add epicsStrSimilarity()
+### Fix for Periodic Scan threads hanging on Windows
 
-Add epicsStrSimilarity() to epicsString.h which uses edit distance as an approximate comparison.
-Enables a new "Did you mean ..." suggestion when a .db file provides an invalid value for a DBF_MENU or DBF_DEVICE field.
+Since 7.0.3.1 a Windows IOC could not run for more than 49.7 days; at that
+time the periodic scan threads would stop processing. This issue should now
+have been fixed and the Monotonic time functions on Windows should return
+values which count at nanosecond resolution. However we have not waited 49.7
+days to test the final software, so there is a small chance that it's still
+broken.
+
+This fixes [lauchpad bug #1896295](https://bugs.launchpad.net/bugs/1896295).
+
+### Support for Apple M1 (arm64) Processors
+
+Thanks to Jeong Han Lee this release comes with build support for Apple's new
+M1 CPUs running macOS, using the target name `darwin-aarch64`.
+
+It should also be possible to build universal binaries containing code for
+both the Intel and arm64 processors under either target name: In the
+appropriate `configure/os/CONFIG_SITE.Common.darwin-*` file add the other
+architecture class name to the `ARCH_CLASS` variable (after a space).
+
+### New String Comparison Routine `epicsStrSimilarity()`
+
+The new `epicsStrSimilarity()` routine in epicsString.h uses a modified
+Levenshtein distance to compare two strings, with a character case difference
+being half the weight of a full substitution. The double return value falls in
+the range 0.0 (identical) through 1.0 (no characters matching), or -1.0 for
+error. This is used to provide a new "Did you mean ..." suggestion when a .db
+file provides an invalid choice string for a `DBF_MENU` or `DBF_DEVICE` field.
 
 ### Build System: New `VALID_BUILDS` type "Command"
 
@@ -234,32 +292,35 @@ as an array field, and its record support must define a `put_array_info()`
 routine.
 
 ### Timestamp before processing output links
-The record processing code for records with output links has been modified
-to update the timestamp via recGblGetTimeStamp() before processing the
-output links.  This ensures that other records which get processed via
-the output link can use TSEL links to fetch the timestamp which corresponds
-to the data processed by the output link.
+
+The record processing code for records with output links has been modified to
+update the timestamp via recGblGetTimeStamp() _before_ processing the output
+links.  This ensures that other records which get processed via an output link
+can use TSEL links to fetch the timestamp corresponding to the data processed
+by the output link.
 
 This change could result in a slightly earlier timestamp for records whose
 output link is handled by a device driver, but only if the device driver does
-not handle its own timestamping via TSE -2 and instead uses TSE 0 or TSE -1
-to get current time or best time, and the time spent in the device driver is
+not handle its own timestamping via TSE -2 and instead uses TSE 0 or TSE -1 to
+get current time or best time, and the time spent in the device driver is
 greater than your timestamp provider resolution.  For these situations it is
 recommended to set TSE to -2 and set the timestamp in the driver code.
 
 ### Add registerAllRecordDeviceDrivers()
 
-Addition of registerAllRecordDeviceDrivers() as an iocsh function
-and in iocshRegisterCommon.h.  This function uses dynamic lookup with
-`epicsFindSymbol()` to perform the same function as a generated
-`*_registerRecordDeviceDriver()` function.
-This allows dynamic loading/linking of support modules without code generation.
+A new iocsh command `registerAllRecordDeviceDrivers` is provided and also
+defined as a function in iocshRegisterCommon.h. This uses dynamic symbol
+lookup with `epicsFindSymbol()` to perform the same function as a generated
+`*_registerRecordDeviceDriver()` function. This allows for an alternative
+approach to dynamic loading of support modules without code generation.
 
-This feature is not intended for use by IOCs constructed using the standard EPICS application
-build process and booted from a startup script in an iocBoot subdirectory, although it might
-work in some of those cases (the IOC's registerRecordDeviceDriver.cpp file is still required
-to link everything into the executable). It also won't work with some static build
-configurations or where the symbol table has been stripped from the executable.
+This feature is not intended for use by IOCs constructed using the standard
+EPICS application build process and booted from a startup script in an iocBoot
+subdirectory, although it might work in some of those cases &mdash; the
+generated registerRecordDeviceDriver.cpp file is normally required to link
+everything referred to in the DBD file into the IOC's executable. It also
+won't work with some static build configurations, or if the symbol table has
+been stripped from the executable.
 
 ### Using a `{const:"string"}` to initialize an array of `DBF_CHAR`
 
@@ -281,6 +342,8 @@ aSub record inputs similarly configured as long strings.
 GNUmake added the directive `undefine` in version 3.82 to allow variables to
 be undefined. Support for this has been added to the EPICS Release file parser,
 so `undefine` can now be used in configure/RELEASE files to unset variables.
+
+-----
 
 ## EPICS Release 7.0.4.1
 
@@ -328,6 +391,8 @@ Bad character ' ' in record name "bad practice"
 7.0.4.1 Turns this warning into an error, and adds a new warning
 if a record name begins with a minus, plus, left square bracket,
 or left curly bracket.
+
+-----
 
 ## EPICS Release 7.0.4
 
@@ -430,7 +495,7 @@ work with older Base releases.
 
 This would also be a good time to modify the device support to use the type-safe
 device support entry tables that were introduced in Base-3.16.2 -- see
-[#type-safe-device-and-driver-support-tables](this entry below) for the
+[this entry below](#type-safe-device-and-driver-support-tables) for the
 description of that change, which is also optional for now.
 
 Look at the aiRecord for example. Near the top of the generated `aiRecord.h`
@@ -512,6 +577,8 @@ devLsiEtherIP = {
     lsi_read
 };
 ```
+
+-----
 
 ## EPICS Release 7.0.3.1
 
@@ -706,6 +773,8 @@ necessary, all RTEMS targets should now link although the IOC won't be able to
 be used with the VME I/O on those systems (that we don't have VMEbus I/O
 support for in libCom).
 
+-----
+
 ## EPICS Release 7.0.3
 
 ### `epicsTimeGetCurrent()` optimization
@@ -725,6 +794,8 @@ This may result in slightly fewer, but larger frames being sent.
 
 Report NOBT as "precision" through the dbAccess API. This is not accessible
 through CA, but is planned to be used through QSRV.
+
+-----
 
 ## EPICS Release 7.0.2.2
 
@@ -759,6 +830,8 @@ substantial than bug fixes.
 ### Drop `CLOCK_MONOTONIC_RAW` from posix/osdMonotonic.c
 
 Turns out this is ~10x slower to query than `CLOCK_MONOTONIC`.
+
+-----
 
 ## EPICS Release 7.0.2.1
 
@@ -811,6 +884,8 @@ rewrite of the link address parser code in dbStaticLib. This release fixes that
 issue, although in some cases the output may be slightly different than it used
 to be.
 
+-----
+
 ## EPICS Release 7.0.2
 
 ### Launchpad Bugs
@@ -827,6 +902,8 @@ create merge requests that contained changes in more than one of these
 modules. The layout of the source files has not changed at all however, so the
 source code for libcom, ca and the database are still found separately under
 the module subdirectory.
+
+-----
 
 ## EPICS Release 7.0.1.1
 
@@ -886,7 +963,11 @@ than is currently available, but as developers we generally much prefer to
 write code than documentation. Send questions to the tech-talk mailing list
 and we'll be happy to try and answer them!
 
-## Changes between 3.16.1 and 3.16.2
+-----
+
+## Changes made between 3.16.1 and 3.16.2
+
+### Launchpad Bugs
 
 The list of tracked bugs fixed in this release can be found on the
 [Launchpad Milestone page for EPICS Base 3.16.2](https://launchpad.net/epics-base/+milestone/3.16.2).
@@ -1092,6 +1173,8 @@ In the 3.16.1 release a crash can occur in the IOC's RSRV server when a large
 array is made even larger; the previous array buffer was not being released
 correctly. See Launchpad
 [bug #1706703](https://bugs.launchpad.net/epics-base/+bug/1706703).
+
+-----
 
 ## Changes made between 3.16.0.1 and 3.16.1
 
@@ -1529,6 +1612,7 @@ and then replace `(RECSUPFUN)` with `RECSUPFUN_CAST` when initializing the
 rset. Further changes might also be needed, e.g. to adapt `const`-ness of
 method parameters.
 
+-----
 
 ## Changes made between 3.15.3 and 3.16.0.1
 
@@ -1637,6 +1721,8 @@ header and removed the need for dbScan.c to reach into the internals of its
 `CALLBACK` objects.
 
 
+-----
+
 # Changes incorporated from the 3.15 branch
 
 
@@ -1648,6 +1734,7 @@ The names of the generated junit xml test output files have been changed
 from `<testname>.xml` to `<testname>-results.xml`, to allow better
 distinction from other xml files. (I.e., for easy wildcard matching.)
 
+-----
 
 ## Changes made between 3.15.7 and 3.15.8
 
@@ -1753,6 +1840,7 @@ don't provide it any more.
 If multiple IOCs were started at the same time, by systemd say, they could race
 to obtain the Channel Access TCP port number 5064. This issue has been fixed.
 
+-----
 
 ## Changes made between 3.15.6 and 3.15.7
 
@@ -1895,6 +1983,8 @@ into the htmls directory. Thanks to Tony Pietryla.
 ### CA client tools learned `-V` option
 
 This displays the version numbers of EPICS Base and the CA protocol.
+
+-----
 
 ## Changes made between 3.15.5 and 3.15.6
 
@@ -2121,6 +2211,8 @@ choice string cannot be parsed, the associated periodic scan thread will no
 longer be started by the IOC and a warning message will be displayed at iocInit
 time. The `scanppl` command will also flag the faulty menuScan value.
 
+-----
+
 ## Changes made between 3.15.4 and 3.15.5
 
 ### dbStatic Library Speedup and Cleanup
@@ -2252,6 +2344,8 @@ will be installed into the target bin directory, from where it can be copied
 into the appropriate systemd location and modified as necessary. Installation
 instructions are included as comments in the file.
 
+-----
+
 ## Changes made between 3.15.3 and 3.15.4
 
 ### New string input device support "getenv"
@@ -2356,6 +2450,8 @@ variable to a non-zero value before loading the file, like this:
 
 This was [Launchpad bug
 541119](https://bugs.launchpad.net/bugs/541119).
+
+-----
 
 ## Changes from the 3.14 branch between 3.15.3 and 3.15.4
 

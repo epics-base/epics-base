@@ -48,7 +48,7 @@ LIBCOM_API unsigned int epicsMemHash(const char *str, size_t length,
  * @returns 1.0 when A and B are identical, down to 0.0 when A and B are unrelated,
  *          or < 0.0 on error.
  *
- * @since UNRELEASED
+ * @since EPICS 7.0.5
  */
 LIBCOM_API double epicsStrSimilarity(const char *A, const char *B);
 

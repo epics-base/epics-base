@@ -151,10 +151,15 @@ for more information on simulation mode and its fields.
 
    static long init_record(aaiRecord *prec, int pass)
 
-If device support includes C<init_record()>, it is called.
+If device support includes an C<init_record()> routine it is called, but unlike
+most record types this occurs in pass 0, which allows the device support to
+allocate the array buffer itself.
+
+Since EPICS 7.0.5 the device support may return C<AAI_DEVINIT_PASS1> to request
+a second call to its C<init_record()> routine in pass 1.
 
 Checks if device support allocated array space. If not, space for the array is
-allocated using NELM and FTVL. The array address is stored in the record.
+allocated using NELM and FTVL. The array address is stored in BPTR.
 
 This routine initializes SIMM with the value of SIML if SIML type is CONSTANT
 link or creates a channel access link if SIML type is PV_LINK. VAL is likewise
@@ -294,10 +299,11 @@ Scan forward link if necessary, set PACT FALSE, and return.
     %/* Declare Device Support Entry Table */
     %struct aaiRecord;
     %typedef struct aaidset {
-    %    dset common; /*init_record returns: (-1,0)=>(failure,success)*/
+    %    dset common; /*init_record returns: (-1,0,AAI_DEVINIT_PASS1)=>(failure,success,callback)*/
     %    long (*read_aai)(struct aaiRecord *prec); /*returns: (-1,0)=>(failure,success)*/
     %} aaidset;
     %#define HAS_aaidset
+	%#define AAI_DEVINIT_PASS1 2
     %
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
@@ -469,8 +475,19 @@ with C<after> set to 1.
 
   long init_record(dbCommon *precord)
 
-This routine is optional. If provided, it is called by the record support
-C<init_record()> routine.
+This routine is optional.
+If provided, it is called by the record support's C<init_record()> routine in
+pass 0.
+The device support may allocate memory for the VAL field's array (enough space
+for NELM elements of type FTVA) from its own memory pool if desired, and store
+the pointer to this buffer in the BPTR field.
+The record will use C<calloc()> for this memory allocation if BPTR has not been
+set by this routine.
+The routine must return 0 for success, -1 or a error status on failure.
+
+Since EPICS 7.0.5 if this routine returns C<AAI_DEVINIT_PASS1> in pass 0, it
+will be called again in pass 1 with the PACT field set to C<AAI_DEVINIT_PASS1>.
+In pass 0 the PACT field is set to zero (FALSE).
 
 =head4 get_ioint_info
 
@@ -485,7 +502,8 @@ provided for any device type that can use the ioEvent scanner.
 
   long read_aai(dbCommon *precord)
 
-This routine must provide a new input value. It returns the following values:
+This routine should provide a new input value.
+It returns the following values:
 
 =over
 
@@ -501,16 +519,15 @@ Other: Error.
 
 =head3 Device Support For Soft Records
 
-The C<<< Soft Channel >>> device support module is provided to read values from
-other records and store them in arrays. If INP is a constant link, then read_aai
-does nothing. In this case, the record can be used to hold arrays written via
-dbPuts. If INP is a database or channel access link, the new array value is read
-from the link. NORD is set.
+The C<<< Soft Channel >>> device support is provided to read values from other
+records via the INP link, or to hold array values that are written into it.
 
-This module places a value directly in VAL and NORD is set to the number of items
-in the array.
+If INP is a constant link the array value gets loaded from the link constant by
+the C<record_init()> routine, which also sets NORD.
+The C<read_aai()> routine does nothing in this case.
 
-If the INP link type is constant, then NORD is set to zero.
+If INP is a database or channel access link, the C<read_aai()> routine gets a
+new array value from the link and sets NORD.
 
 =cut
 }

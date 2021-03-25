@@ -52,14 +52,12 @@ typedef struct parseContext {
 
 static void *dbChannelFreeList;
 static void *chFilterFreeList;
-static void *dbchStringFreeList;
 
 void dbChannelExit(void)
 {
     freeListCleanup(dbChannelFreeList);
     freeListCleanup(chFilterFreeList);
-    freeListCleanup(dbchStringFreeList);
-    dbChannelFreeList = chFilterFreeList = dbchStringFreeList = NULL;
+    dbChannelFreeList = chFilterFreeList = NULL;
 }
 
 void dbChannelInit (void)
@@ -69,7 +67,6 @@ void dbChannelInit (void)
 
     freeListInitPvt(&dbChannelFreeList,  sizeof(dbChannel), 128);
     freeListInitPvt(&chFilterFreeList,  sizeof(chFilter), 64);
-    freeListInitPvt(&dbchStringFreeList, sizeof(epicsOldString), 128);
     db_init_event_freelists();
 }
 
@@ -449,28 +446,6 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
     return status;
 }
 
-/* Stolen from dbAccess.c: */
-static short mapDBFToDBR[DBF_NTYPES] =
-    {
-    /* DBF_STRING   => */DBR_STRING,
-    /* DBF_CHAR     => */DBR_CHAR,
-    /* DBF_UCHAR    => */DBR_UCHAR,
-    /* DBF_SHORT    => */DBR_SHORT,
-    /* DBF_USHORT   => */DBR_USHORT,
-    /* DBF_LONG     => */DBR_LONG,
-    /* DBF_ULONG    => */DBR_ULONG,
-    /* DBF_INT64    => */DBR_INT64,
-    /* DBF_UINT64   => */DBR_UINT64,
-    /* DBF_FLOAT    => */DBR_FLOAT,
-    /* DBF_DOUBLE   => */DBR_DOUBLE,
-    /* DBF_ENUM,    => */DBR_ENUM,
-    /* DBF_MENU,    => */DBR_ENUM,
-    /* DBF_DEVICE   => */DBR_ENUM,
-    /* DBF_INLINK   => */DBR_STRING,
-    /* DBF_OUTLINK  => */DBR_STRING,
-    /* DBF_FWDLINK  => */DBR_STRING,
-    /* DBF_NOACCESS => */DBR_NOACCESS };
-
 dbChannel * dbChannelCreate(const char *name)
 {
     const char *pname = name;
@@ -743,37 +718,24 @@ void dbChannelDelete(dbChannel *chan)
     freeListFree(dbChannelFreeList, chan);
 }
 
-static void freeArray(db_field_log *pfl) {
-    if (pfl->field_type == DBF_STRING && pfl->no_elements == 1) {
-        freeListFree(dbchStringFreeList, pfl->u.r.field);
-    } else {
-        free(pfl->u.r.field);
-    }
-}
-
-void dbChannelMakeArrayCopy(void *pvt, db_field_log *pfl, dbChannel *chan)
+/*
+ * Helper function to adjust no_elements, offset, and pfield
+ * when copying an array from a record.
+ */
+void dbChannelGetArrayInfo(dbChannel *chan,
+    void **pfield, long *no_elements, long *offset)
 {
-    void *p;
-    struct dbCommon *prec = dbChannelRecord(chan);
-
-    if (pfl->type != dbfl_type_rec) return;
-
-    pfl->type = dbfl_type_ref;
-    pfl->stat = prec->stat;
-    pfl->sevr = prec->sevr;
-    pfl->time = prec->time;
-    pfl->field_type  = chan->addr.field_type;
-    pfl->no_elements = chan->addr.no_elements;
-    pfl->field_size  = chan->addr.field_size;
-    pfl->u.r.dtor = freeArray;
-    pfl->u.r.pvt = pvt;
-    if (pfl->field_type == DBF_STRING && pfl->no_elements == 1) {
-        p = freeListCalloc(dbchStringFreeList);
-    } else {
-        p = calloc(pfl->no_elements, pfl->field_size);
+    rset *prset;
+    if (dbChannelSpecial(chan) == SPC_DBADDR &&
+        (prset = dbGetRset(&chan->addr)) &&
+        prset->get_array_info)
+    {
+        void *pfieldsave = dbChannelField(chan);
+        /* it is expected that this call always succeeds */
+        prset->get_array_info(&chan->addr, no_elements, offset);
+        *pfield = dbChannelField(chan);
+        dbChannelField(chan) = pfieldsave;
     }
-    if (p) dbGet(&chan->addr, mapDBFToDBR[pfl->field_type], p, NULL, &pfl->no_elements, NULL);
-    pfl->u.r.field = p;
 }
 
 /* FIXME: Do these belong in a different file? */

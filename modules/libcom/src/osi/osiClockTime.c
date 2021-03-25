@@ -58,14 +58,26 @@ static void ClockTimeSync(void *dummy);
 /* ClockTime_Report iocsh command */
 static const iocshArg ReportArg0 = { "interest_level", iocshArgArgv};
 static const iocshArg * const ReportArgs[1] = { &ReportArg0 };
-static const iocshFuncDef ReportFuncDef = {"ClockTime_Report", 1, ReportArgs};
+static const iocshFuncDef ReportFuncDef = {"ClockTime_Report", 1, ReportArgs,
+                                           "Reports clock synchronization status:\n"
+                                           "  - On vxWorks and RTEMS:\n"
+                                           "      * synchronization state\n"
+                                           "      * last synchronization time with provider\n"
+                                           "      * synchronization interval\n"
+                                           "  - On workstation (WIN,*NIX):\n"
+                                           "      * minimal report\n"};
 static void ReportCallFunc(const iocshArgBuf *args)
 {
     ClockTime_Report(args[0].ival);
 }
 
 /* ClockTime_Shutdown iocsh command */
-static const iocshFuncDef ShutdownFuncDef = {"ClockTime_Shutdown", 0, NULL};
+static const iocshFuncDef ShutdownFuncDef = {"ClockTime_Shutdown", 0, NULL,
+                                             "Stops the OS synchronization thread\n"
+                                             "  - On vxWorks and RTEMS:\n"
+                                             "     * OS clock will free run\n"
+                                             "  - On workstation (WIN,*NIX):\n"
+                                             "     * no change\n"};
 static void ShutdownCallFunc(const iocshArgBuf *args)
 {
     ClockTime_Shutdown(NULL);

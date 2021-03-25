@@ -30,10 +30,12 @@ is_deeply $menu->choice(2), undef, 'Third choice undefined';
 
 like $menu->toDeclaration, qr/ ^
     \s* \# \s* ifndef \s+ test_NUM_CHOICES \s* \n
+    \s* \/\*\* [^*]* \*\/ \s* \n
     \s* typedef \s+ enum \s+ \{ \s* \n
-    \s*     ch1 \s+ \/\* [^*]* \*\/, \s* \n
-    \s*     ch2 \s+ \/\* [^*]* \*\/ \s* \n
+    \s*     ch1 \s+ \/\*\* [^*]* \*\/, \s* \n
+    \s*     ch2 \s+ \/\*\* [^*]* \*\/ \s* \n
     \s* \} \s* test \s* ; \s* \n
+    \s* \/\*\* [^*]* \*\/ \s* \n
     \s* \# \s* define \s+ test_NUM_CHOICES \s+ 2 \s* \n
     \s* \# \s* endif \s* \n
     \s* $ /x, 'C declaration';

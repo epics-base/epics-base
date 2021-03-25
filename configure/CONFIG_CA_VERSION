@@ -2,7 +2,7 @@
 
 EPICS_CA_MAJOR_VERSION = 4
 EPICS_CA_MINOR_VERSION = 13
-EPICS_CA_MAINTENANCE_VERSION = 8
+EPICS_CA_MAINTENANCE_VERSION = 9
 
 # Development flag, set to zero for release versions
 

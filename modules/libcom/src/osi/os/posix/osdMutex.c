@@ -194,6 +194,7 @@ void epicsMutexOsdShow(struct epicsMutexOSD * pmutex, unsigned int level)
 
 void epicsMutexOsdShowAll(void)
 {
+#if defined _POSIX_THREAD_PRIO_INHERIT
     int proto = -1;
     int ret = pthread_mutexattr_getprotocol(&globalAttrRecursive, &proto);
     if(ret) {
@@ -201,4 +202,7 @@ void epicsMutexOsdShowAll(void)
     } else {
         printf("PI is%s enabled\n", proto==PTHREAD_PRIO_INHERIT ? "" : " not");
     }
+#else
+    printf("PI not supported\n");
+#endif
 }

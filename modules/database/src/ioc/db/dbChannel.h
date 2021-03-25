@@ -65,8 +65,8 @@ typedef struct dbChannel {
 /* Prototype for the channel event function that is called in filter stacks
  *
  * When invoked the scan lock for the record associated with 'chan' _may_ be locked.
- * If pLog->type==dbfl_type_rec then dbScanLock() must be called before copying
- * data out of the associated record.
+ * Unless dbfl_has_copy(pLog), it must call dbScanLock before accessing the data,
+ * as this indicates the data is still owned by the record.
  *
  * This function has ownership of the field log pLog, if it wishes to discard
  * this update it should free the field log with db_delete_field_log() and
@@ -225,7 +225,8 @@ DBCORE_API void dbRegisterFilter(const char *key, const chFilterIf *fif, void *p
 DBCORE_API db_field_log* dbChannelRunPreChain(dbChannel *chan, db_field_log *pLogIn);
 DBCORE_API db_field_log* dbChannelRunPostChain(dbChannel *chan, db_field_log *pLogIn);
 DBCORE_API const chFilterPlugin * dbFindFilter(const char *key, size_t len);
-DBCORE_API void dbChannelMakeArrayCopy(void *pvt, db_field_log *pfl, dbChannel *chan);
+DBCORE_API void dbChannelGetArrayInfo(dbChannel *chan,
+        void **pfield, long *no_elements, long *offset);
 
 #ifdef __cplusplus
 }

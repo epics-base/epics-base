@@ -14,9 +14,19 @@ on:
       - 'documentation/*'
       - 'startup/*'
       - '.appveyor/*'
+      - '.tools/*'
+      - '.gitattributes'
       - '**/*.html'
       - '**/*.md'
   pull_request:
+    paths-ignore:
+      - 'documentation/*'
+      - 'startup/*'
+      - '.appveyor/*'
+      - '.tools/*'
+      - '.gitattributes'
+      - '**/*.html'
+      - '**/*.md'
 
 env:
     SETUP_PATH: .ci-local:.ci

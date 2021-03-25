@@ -38,6 +38,8 @@ skip_commits:
     - 'documentation/*'
     - 'startup/*'
     - '.github/*'
+    - '.tools/*'
+    - '.gitattributes'
     - '**/*.html'
     - '**/*.md'
 

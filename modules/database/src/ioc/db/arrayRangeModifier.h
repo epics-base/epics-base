@@ -5,32 +5,7 @@
 #ifndef ARRAYRANGEMODIFIER_H
 #define ARRAYRANGEMODIFIER_H
 
-#ifdef epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#   define INCLarrayRangeModifierhExporting
-#endif
-
 #include "dbAddrModifier.h"
-
-#ifdef INCLarrayRangeModifierhExporting
-#   define epicsExportSharedSymbols
-#endif
-
-#include "shareLib.h"
-
-/** @brief The array range address modifier. */
-
-/** @brief Given a number of elements, convert negative start and end indices
- *         to non-negative ones by counting from the end of the array.
- *
- * @param start         Pointer to possibly negative start index
- * @param increment     Increment
- * @param end           Pointer to possibly negative end index
- * @param no_elements   Number of array elements
- * @return              Final number of elements
- */
-epicsShareFunc
-long wrapArrayIndices(long *start, long increment, long *end, long no_elements);
 
 /** @brief Create an array range modifier from start index, increment, and end index
  *

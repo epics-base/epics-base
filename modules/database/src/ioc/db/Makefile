@@ -11,7 +11,6 @@
 
 SRC_DIRS += $(IOCDIR)/db
 
-INC += arrayRangeModifier.h
 INC += callback.h
 INC += dbAccess.h
 INC += dbAccessDefs.h
@@ -44,6 +43,7 @@ INC += dbState.h
 INC += db_access_routines.h
 INC += db_convert.h
 INC += dbUnitTest.h
+INC += wrapArrayIndices.h
 
 # Generate menuGlobal.dbd, not really by concatenation, see RULES
 DBDCAT += menuGlobal.dbd

@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 
-#include "arrayRangeModifier.h"
+#include "wrapArrayIndices.h"
 #include "chfPlugin.h"
 #include "dbAccessDefs.h"
 #include "dbExtractArray.h"

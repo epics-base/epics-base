@@ -50,21 +50,6 @@ static void expectProcSuccess(struct pv *pv)
     testdbGetFieldEqual(fieldname, DBF_LONG, NO_ALARM);
 }
 
-#if 0
-static void expectProcFailure(struct pv *pv)
-{
-    char fieldname[20];
-    testdbPutFieldOk("reset.PROC", DBF_LONG, 1);
-    testDiag("expecting failure S_db_badField %#x from %s", S_db_badField, pv->name);
-    sprintf(fieldname, "%s.PROC", pv->name);
-    testdbPutFieldFail(S_db_badField, fieldname, DBF_LONG, 1);
-    sprintf(fieldname, "%s.SEVR", pv->name);
-    testdbGetFieldEqual(fieldname, DBF_LONG, INVALID_ALARM);
-    sprintf(fieldname, "%s.STAT", pv->name);
-    testdbGetFieldEqual(fieldname, DBF_LONG, LINK_ALARM);
-}
-#endif
-
 static double initial[] = {0,1,2,3,4,5,6,7,8,9};
 static double buf[10];
 
@@ -98,15 +83,6 @@ static void expectRange(double *values, long start, long incr, long end)
     testdbGetFieldEqual("tgt.STAT", DBF_LONG, NO_ALARM);
     testdbGetArrFieldEqual("tgt.VAL", DBF_DOUBLE, 10, 8, buf);
 }
-
-#if 0
-static void expectEmptyArray(void)
-{
-    /* empty arrays are now allowed at the moment */
-    testDiag("expecting empty array");
-    testdbGetFieldEqual("tgt.NORD", DBF_LONG, 0);
-}
-#endif
 
 struct pv ao_pv = {"ao",1,{20,0,0,0}};
 struct pv src_pv = {"src",4,{30,40,50,60}};

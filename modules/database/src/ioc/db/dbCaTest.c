@@ -27,7 +27,6 @@
 #include "epicsStdio.h"
 
 #include "dbStaticLib.h"
-#undef epicsExportSharedSymbols
 /*definitions needed because of old vs new database access*/
 #undef DBR_SHORT
 #undef DBR_PUT_ACKT

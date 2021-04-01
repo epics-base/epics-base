@@ -20,16 +20,7 @@
 #ifndef INCLdbEventh
 #define INCLdbEventh
 
-#ifdef epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#   define INCLdbEventhExporting
-#endif
-
 #include "epicsThread.h"
-
-#ifdef INCLdbEventhExporting
-#   define epicsExportSharedSymbols
-#endif
 
 #include "dbCoreAPI.h"
 

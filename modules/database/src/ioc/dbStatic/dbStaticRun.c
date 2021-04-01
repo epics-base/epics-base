@@ -30,6 +30,7 @@
 #include "dbAccess.h"
 #include "devSup.h"
 #include "special.h"
+#include "epicsExport.h"
 
 int dbConvertStrict = 0;
 epicsExportAddress(int, dbConvertStrict);

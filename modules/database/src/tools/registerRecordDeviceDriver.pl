@@ -77,6 +77,7 @@ print $out (<< "END");
 #include "iocshRegisterCommon.h"
 #include "registryCommon.h"
 #include "recSup.h"
+#include "shareLib.h"
 
 END
 

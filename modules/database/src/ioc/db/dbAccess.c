@@ -61,6 +61,7 @@
 #include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
+#include "epicsExport.h"
 
 struct dbBase *pdbbase = 0;
 volatile int interruptAccept=FALSE;

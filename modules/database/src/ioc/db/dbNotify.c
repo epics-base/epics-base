@@ -33,7 +33,6 @@
 #include "errlog.h"
 #include "errMdef.h"
 
-#define epicsExportSharedSymbols
 #include "callback.h"
 #include "dbAccessDefs.h"
 #include "dbBase.h"

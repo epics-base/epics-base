@@ -36,7 +36,6 @@
 #include "osiSock.h"
 
 #ifdef rsrvRestore_epicsExportSharedSymbols
-#define epicsExportSharedSymbols
 #endif
 
 /* a modified ca header with capacity for large arrays */

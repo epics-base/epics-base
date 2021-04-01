@@ -11,7 +11,6 @@
 #include "osiSock.h"
 #include "iocsh.h"
 
-#define epicsExportSharedSymbols
 #include "rsrv.h"
 #include "server.h"
 #include "epicsExport.h"

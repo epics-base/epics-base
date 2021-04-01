@@ -18,7 +18,7 @@
 #include <limits.h>
 
 #include "menuScan.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 #include "compilerDependencies.h"
 #include "devSup.h"
 
@@ -50,37 +50,37 @@ typedef struct scanOnceQueueStats {
     int numOverflow;
 } scanOnceQueueStats;
 
-epicsShareFunc long scanInit(void);
-epicsShareFunc void scanRun(void);
-epicsShareFunc void scanPause(void);
-epicsShareFunc void scanStop(void);
-epicsShareFunc void scanCleanup(void);
+DBCORE_API long scanInit(void);
+DBCORE_API void scanRun(void);
+DBCORE_API void scanPause(void);
+DBCORE_API void scanStop(void);
+DBCORE_API void scanCleanup(void);
 
-epicsShareFunc EVENTPVT eventNameToHandle(const char* event);
-epicsShareFunc void postEvent(EVENTPVT epvt);
-epicsShareFunc void post_event(int event);
-epicsShareFunc void scanAdd(struct dbCommon *);
-epicsShareFunc void scanDelete(struct dbCommon *);
-epicsShareFunc double scanPeriod(int scan);
-epicsShareFunc int scanOnce(struct dbCommon *);
-epicsShareFunc int scanOnceCallback(struct dbCommon *, once_complete cb, void *usr);
-epicsShareFunc int scanOnceSetQueueSize(int size);
-epicsShareFunc int scanOnceQueueStatus(const int reset, scanOnceQueueStats *result);
-epicsShareFunc void scanOnceQueueShow(const int reset);
+DBCORE_API EVENTPVT eventNameToHandle(const char* event);
+DBCORE_API void postEvent(EVENTPVT epvt);
+DBCORE_API void post_event(int event);
+DBCORE_API void scanAdd(struct dbCommon *);
+DBCORE_API void scanDelete(struct dbCommon *);
+DBCORE_API double scanPeriod(int scan);
+DBCORE_API int scanOnce(struct dbCommon *);
+DBCORE_API int scanOnceCallback(struct dbCommon *, once_complete cb, void *usr);
+DBCORE_API int scanOnceSetQueueSize(int size);
+DBCORE_API int scanOnceQueueStatus(const int reset, scanOnceQueueStats *result);
+DBCORE_API void scanOnceQueueShow(const int reset);
 
 /*print periodic lists*/
-epicsShareFunc int scanppl(double rate);
+DBCORE_API int scanppl(double rate);
 
 /*print event lists*/
-epicsShareFunc int scanpel(const char *event_name);
+DBCORE_API int scanpel(const char *event_name);
 
 /*print io_event list*/
-epicsShareFunc int scanpiol(void);
+DBCORE_API int scanpiol(void);
 
-epicsShareFunc void scanIoInit(IOSCANPVT *ppios);
-epicsShareFunc unsigned int scanIoRequest(IOSCANPVT pios);
-epicsShareFunc unsigned int scanIoImmediate(IOSCANPVT pios, int prio);
-epicsShareFunc void scanIoSetComplete(IOSCANPVT, io_scan_complete, void *usr);
+DBCORE_API void scanIoInit(IOSCANPVT *ppios);
+DBCORE_API unsigned int scanIoRequest(IOSCANPVT pios);
+DBCORE_API unsigned int scanIoImmediate(IOSCANPVT pios, int prio);
+DBCORE_API void scanIoSetComplete(IOSCANPVT, io_scan_complete, void *usr);
 
 #ifdef __cplusplus
 }

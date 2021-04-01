@@ -28,7 +28,7 @@
 #include <stddef.h>
 
 #include "ellLib.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,14 +118,14 @@ typedef struct dbServer {
  * This should only be called once for each server layer.
  * @param psrv Server information structure for the server
  */
-epicsShareFunc int dbRegisterServer(dbServer *psrv);
+DBCORE_API int dbRegisterServer(dbServer *psrv);
 
 /** @brief Unregister a server layer
  *
  * This should only be called when the servers are inactive.
  * @param psrv Server information structure for the server
  */
-epicsShareFunc int dbUnregisterServer(dbServer *psrv);
+DBCORE_API int dbUnregisterServer(dbServer *psrv);
 
 /** @brief Print dbServer Reports.
 *
@@ -133,7 +133,7 @@ epicsShareFunc int dbUnregisterServer(dbServer *psrv);
  * This routine is provided as an IOC Shell command.
  * @param level Interest level, specifies how much detail to print.
  */
-epicsShareFunc void dbsr(unsigned level);
+DBCORE_API void dbsr(unsigned level);
 
 /** @brief Query servers for client's identity.
  *
@@ -143,31 +143,31 @@ epicsShareFunc void dbsr(unsigned level);
  *  of the calling thread is printed along with the record name whenever
  *  the record is subsequently processed.
  */
-epicsShareFunc int dbServerClient(char *pBuf, size_t bufSize);
+DBCORE_API int dbServerClient(char *pBuf, size_t bufSize);
 
 /** @brief Initialize all registered servers.
  *
  * Calls all dbServer::init() methods.
  */
-epicsShareFunc void dbInitServers(void);
+DBCORE_API void dbInitServers(void);
 
 /** @brief Run all registered servers.
  *
  * Calls all dbServer::run() methods.
  */
-epicsShareFunc void dbRunServers(void);
+DBCORE_API void dbRunServers(void);
 
 /** @brief Pause all registered servers.
  *
  * Calls all dbServer::pause() methods.
  */
-epicsShareFunc void dbPauseServers(void);
+DBCORE_API void dbPauseServers(void);
 
 /** @brief Stop all registered servers.
  *
  * Calls all dbServer::stop() methods.
  */
-epicsShareFunc void dbStopServers(void);
+DBCORE_API void dbStopServers(void);
 
 #ifdef __cplusplus
 }

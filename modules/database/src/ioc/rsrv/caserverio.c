@@ -30,7 +30,6 @@
 #include "caerr.h"
 #include "net_convert.h"
 
-#define epicsExportSharedSymbols
 #include "server.h"
 
 /*

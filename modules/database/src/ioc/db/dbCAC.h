@@ -36,7 +36,7 @@
 
 #ifdef dbCACh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
-#   include "shareLib.h"
+#   include "dbCoreAPI.h"
 #endif
 
 #include "db_access.h"

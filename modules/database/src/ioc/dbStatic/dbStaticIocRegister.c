@@ -10,7 +10,6 @@
 
 #include "iocsh.h"
 
-#define epicsExportSharedSymbols
 #include "dbStaticIocRegister.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"

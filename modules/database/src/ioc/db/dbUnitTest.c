@@ -23,7 +23,6 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccess.h"
 #include "dbBase.h"
 #include "dbChannel.h"

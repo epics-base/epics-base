@@ -28,7 +28,6 @@
 #include "gpHash.h"
 #include "macLib.h"
 
-#define epicsExportSharedSymbols
 #include "dbBase.h"
 #include "dbFldTypes.h"
 #include "dbStaticLib.h"

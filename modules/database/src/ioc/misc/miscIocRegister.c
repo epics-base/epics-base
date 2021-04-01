@@ -13,7 +13,6 @@
 #include "iocsh.h"
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "iocInit.h"
 #include "epicsExport.h"
 #include "epicsRelease.h"

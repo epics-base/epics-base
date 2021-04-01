@@ -21,7 +21,7 @@
 #define INCdevSuph 1
 
 #include "errMdef.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 /* structures defined elsewhere */
 struct dbCommon;
@@ -158,12 +158,12 @@ typedef dset unambiguous_dset;
  *
  * Recommended for use in device support init_record()
  */
-epicsShareFunc struct link* dbGetDevLink(struct dbCommon* prec);
+DBCORE_API struct link* dbGetDevLink(struct dbCommon* prec);
 
-epicsShareExtern dsxt devSoft_DSXT;  /* Allow anything table */
+DBCORE_API extern dsxt devSoft_DSXT;  /* Allow anything table */
 
-epicsShareFunc void devExtend(dsxt *pdsxt);
-epicsShareFunc void dbInitDevSup(struct devSup *pdevSup, dset *pdset);
+DBCORE_API void devExtend(dsxt *pdsxt);
+DBCORE_API void dbInitDevSup(struct devSup *pdevSup, dset *pdset);
 
 
 #define S_dev_noDevSup      (M_devSup| 1) /*SDR_DEVSUP: Device support missing*/

@@ -18,7 +18,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 #include "dbFldTypes.h"
 #include "dbBase.h"
 #include "link.h"
@@ -43,192 +43,192 @@ typedef struct dbEntry {
 } DBENTRY;
 
 /* Static database access routines*/
-epicsShareFunc DBBASE * dbAllocBase(void);
-epicsShareFunc void dbFreeBase(DBBASE *pdbbase);
-epicsShareFunc DBENTRY * dbAllocEntry(DBBASE *pdbbase);
-epicsShareFunc void dbFreeEntry(DBENTRY *pdbentry);
-epicsShareFunc void dbInitEntry(DBBASE *pdbbase,
+DBCORE_API DBBASE * dbAllocBase(void);
+DBCORE_API void dbFreeBase(DBBASE *pdbbase);
+DBCORE_API DBENTRY * dbAllocEntry(DBBASE *pdbbase);
+DBCORE_API void dbFreeEntry(DBENTRY *pdbentry);
+DBCORE_API void dbInitEntry(DBBASE *pdbbase,
     DBENTRY *pdbentry);
 
-epicsShareFunc void dbFinishEntry(DBENTRY *pdbentry);
-epicsShareFunc DBENTRY * dbCopyEntry(DBENTRY *pdbentry);
-epicsShareFunc void dbCopyEntryContents(DBENTRY *pfrom,
+DBCORE_API void dbFinishEntry(DBENTRY *pdbentry);
+DBCORE_API DBENTRY * dbCopyEntry(DBENTRY *pdbentry);
+DBCORE_API void dbCopyEntryContents(DBENTRY *pfrom,
     DBENTRY *pto);
 
-epicsShareExtern int dbBptNotMonotonic;
+DBCORE_API extern int dbBptNotMonotonic;
 
-epicsShareFunc long dbReadDatabase(DBBASE **ppdbbase,
+DBCORE_API long dbReadDatabase(DBBASE **ppdbbase,
     const char *filename, const char *path, const char *substitutions);
-epicsShareFunc long dbReadDatabaseFP(DBBASE **ppdbbase,
+DBCORE_API long dbReadDatabaseFP(DBBASE **ppdbbase,
     FILE *fp, const char *path, const char *substitutions);
-epicsShareFunc long dbPath(DBBASE *pdbbase, const char *path);
-epicsShareFunc long dbAddPath(DBBASE *pdbbase, const char *path);
-epicsShareFunc char * dbGetPromptGroupNameFromKey(DBBASE *pdbbase,
+DBCORE_API long dbPath(DBBASE *pdbbase, const char *path);
+DBCORE_API long dbAddPath(DBBASE *pdbbase, const char *path);
+DBCORE_API char * dbGetPromptGroupNameFromKey(DBBASE *pdbbase,
     const short key);
-epicsShareFunc short dbGetPromptGroupKeyFromName(DBBASE *pdbbase,
+DBCORE_API short dbGetPromptGroupKeyFromName(DBBASE *pdbbase,
     const char *name);
-epicsShareFunc long dbWriteRecord(DBBASE *ppdbbase,
+DBCORE_API long dbWriteRecord(DBBASE *ppdbbase,
     const char *filename, const char *precordTypename, int level);
-epicsShareFunc long dbWriteRecordFP(DBBASE *ppdbbase,
+DBCORE_API long dbWriteRecordFP(DBBASE *ppdbbase,
     FILE *fp, const char *precordTypename, int level);
-epicsShareFunc long dbWriteMenu(DBBASE *pdbbase,
+DBCORE_API long dbWriteMenu(DBBASE *pdbbase,
     const char *filename, const char *menuName);
-epicsShareFunc long dbWriteMenuFP(DBBASE *pdbbase,
+DBCORE_API long dbWriteMenuFP(DBBASE *pdbbase,
     FILE *fp, const char *menuName);
-epicsShareFunc long dbWriteRecordType(DBBASE *pdbbase,
+DBCORE_API long dbWriteRecordType(DBBASE *pdbbase,
     const char *filename, const char *recordTypeName);
-epicsShareFunc long dbWriteRecordTypeFP(DBBASE *pdbbase,
+DBCORE_API long dbWriteRecordTypeFP(DBBASE *pdbbase,
     FILE *fp, const char *recordTypeName);
-epicsShareFunc long dbWriteDevice(DBBASE *pdbbase,
+DBCORE_API long dbWriteDevice(DBBASE *pdbbase,
     const char *filename);
-epicsShareFunc long dbWriteDeviceFP(DBBASE *pdbbase, FILE *fp);
-epicsShareFunc long dbWriteDriver(DBBASE *pdbbase,
+DBCORE_API long dbWriteDeviceFP(DBBASE *pdbbase, FILE *fp);
+DBCORE_API long dbWriteDriver(DBBASE *pdbbase,
     const char *filename);
-epicsShareFunc long dbWriteDriverFP(DBBASE *pdbbase, FILE *fp);
-epicsShareFunc long dbWriteLinkFP(DBBASE *pdbbase, FILE *fp);
-epicsShareFunc long dbWriteRegistrarFP(DBBASE *pdbbase, FILE *fp);
-epicsShareFunc long dbWriteFunctionFP(DBBASE *pdbbase, FILE *fp);
-epicsShareFunc long dbWriteVariableFP(DBBASE *pdbbase, FILE *fp);
-epicsShareFunc long dbWriteBreaktable(DBBASE *pdbbase,
+DBCORE_API long dbWriteDriverFP(DBBASE *pdbbase, FILE *fp);
+DBCORE_API long dbWriteLinkFP(DBBASE *pdbbase, FILE *fp);
+DBCORE_API long dbWriteRegistrarFP(DBBASE *pdbbase, FILE *fp);
+DBCORE_API long dbWriteFunctionFP(DBBASE *pdbbase, FILE *fp);
+DBCORE_API long dbWriteVariableFP(DBBASE *pdbbase, FILE *fp);
+DBCORE_API long dbWriteBreaktable(DBBASE *pdbbase,
     const char *filename);
-epicsShareFunc long dbWriteBreaktableFP(DBBASE *pdbbase,
+DBCORE_API long dbWriteBreaktableFP(DBBASE *pdbbase,
     FILE *fp);
 
-epicsShareFunc long dbFindRecordType(DBENTRY *pdbentry,
+DBCORE_API long dbFindRecordType(DBENTRY *pdbentry,
     const char *recordTypename);
-epicsShareFunc long dbFirstRecordType(DBENTRY *pdbentry);
-epicsShareFunc long dbNextRecordType(DBENTRY *pdbentry);
-epicsShareFunc char * dbGetRecordTypeName(DBENTRY *pdbentry);
-epicsShareFunc int  dbGetNRecordTypes(DBENTRY *pdbentry);
-epicsShareFunc long dbPutRecordAttribute(DBENTRY *pdbentry,
+DBCORE_API long dbFirstRecordType(DBENTRY *pdbentry);
+DBCORE_API long dbNextRecordType(DBENTRY *pdbentry);
+DBCORE_API char * dbGetRecordTypeName(DBENTRY *pdbentry);
+DBCORE_API int  dbGetNRecordTypes(DBENTRY *pdbentry);
+DBCORE_API long dbPutRecordAttribute(DBENTRY *pdbentry,
     const char *name, const char*value);
-epicsShareFunc long dbGetRecordAttribute(DBENTRY *pdbentry,
+DBCORE_API long dbGetRecordAttribute(DBENTRY *pdbentry,
     const char *name);
-epicsShareFunc long dbGetAttributePart(DBENTRY *pdbentry,
+DBCORE_API long dbGetAttributePart(DBENTRY *pdbentry,
     const char **ppname);
 
-epicsShareFunc long dbFirstField(DBENTRY *pdbentry, int dctonly);
-epicsShareFunc long dbNextField(DBENTRY *pdbentry, int dctonly);
-epicsShareFunc int  dbGetNFields(DBENTRY *pdbentry, int dctonly);
-epicsShareFunc char * dbGetFieldName(DBENTRY *pdbentry);
-epicsShareFunc int dbGetFieldDbfType(DBENTRY *pdbentry);
-epicsShareFunc char * dbGetDefault(DBENTRY *pdbentry);
-epicsShareFunc char * dbGetPrompt(DBENTRY *pdbentry);
-epicsShareFunc int dbGetPromptGroup(DBENTRY *pdbentry);
+DBCORE_API long dbFirstField(DBENTRY *pdbentry, int dctonly);
+DBCORE_API long dbNextField(DBENTRY *pdbentry, int dctonly);
+DBCORE_API int  dbGetNFields(DBENTRY *pdbentry, int dctonly);
+DBCORE_API char * dbGetFieldName(DBENTRY *pdbentry);
+DBCORE_API int dbGetFieldDbfType(DBENTRY *pdbentry);
+DBCORE_API char * dbGetDefault(DBENTRY *pdbentry);
+DBCORE_API char * dbGetPrompt(DBENTRY *pdbentry);
+DBCORE_API int dbGetPromptGroup(DBENTRY *pdbentry);
 
-epicsShareFunc long dbCreateRecord(DBENTRY *pdbentry,
+DBCORE_API long dbCreateRecord(DBENTRY *pdbentry,
     const char *pname);
-epicsShareFunc long dbDeleteRecord(DBENTRY *pdbentry);
-epicsShareFunc long dbFreeRecords(DBBASE *pdbbase);
-epicsShareFunc long dbFindRecordPart(DBENTRY *pdbentry,
+DBCORE_API long dbDeleteRecord(DBENTRY *pdbentry);
+DBCORE_API long dbFreeRecords(DBBASE *pdbbase);
+DBCORE_API long dbFindRecordPart(DBENTRY *pdbentry,
     const char **ppname);
-epicsShareFunc long dbFindRecord(DBENTRY *pdbentry,
+DBCORE_API long dbFindRecord(DBENTRY *pdbentry,
     const char *pname);
 
-epicsShareFunc long dbFirstRecord(DBENTRY *pdbentry);
-epicsShareFunc long dbNextRecord(DBENTRY *pdbentry);
-epicsShareFunc int  dbGetNRecords(DBENTRY *pdbentry);
-epicsShareFunc int  dbGetNAliases(DBENTRY *pdbentry);
-epicsShareFunc char * dbGetRecordName(DBENTRY *pdbentry);
-epicsShareFunc long dbCopyRecord(DBENTRY *pdbentry,
+DBCORE_API long dbFirstRecord(DBENTRY *pdbentry);
+DBCORE_API long dbNextRecord(DBENTRY *pdbentry);
+DBCORE_API int  dbGetNRecords(DBENTRY *pdbentry);
+DBCORE_API int  dbGetNAliases(DBENTRY *pdbentry);
+DBCORE_API char * dbGetRecordName(DBENTRY *pdbentry);
+DBCORE_API long dbCopyRecord(DBENTRY *pdbentry,
     const char *newRecordName, int overWriteOK);
 
-epicsShareFunc long dbVisibleRecord(DBENTRY *pdbentry);
-epicsShareFunc long dbInvisibleRecord(DBENTRY *pdbentry);
-epicsShareFunc int dbIsVisibleRecord(DBENTRY *pdbentry);
+DBCORE_API long dbVisibleRecord(DBENTRY *pdbentry);
+DBCORE_API long dbInvisibleRecord(DBENTRY *pdbentry);
+DBCORE_API int dbIsVisibleRecord(DBENTRY *pdbentry);
 
-epicsShareFunc long dbCreateAlias(DBENTRY *pdbentry,
+DBCORE_API long dbCreateAlias(DBENTRY *pdbentry,
     const char *paliasName);
-epicsShareFunc int dbIsAlias(DBENTRY *pdbentry);
+DBCORE_API int dbIsAlias(DBENTRY *pdbentry);
 /* Follow alias to actual record */
-epicsShareFunc int dbFollowAlias(DBENTRY *pdbentry);
-epicsShareFunc long dbDeleteAliases(DBENTRY *pdbentry);
+DBCORE_API int dbFollowAlias(DBENTRY *pdbentry);
+DBCORE_API long dbDeleteAliases(DBENTRY *pdbentry);
 
-epicsShareFunc long dbFindFieldPart(DBENTRY *pdbentry,
+DBCORE_API long dbFindFieldPart(DBENTRY *pdbentry,
     const char **ppname);
-epicsShareFunc long dbFindField(DBENTRY *pdbentry,
+DBCORE_API long dbFindField(DBENTRY *pdbentry,
     const char *pfieldName);
-epicsShareFunc int dbFoundField(DBENTRY *pdbentry);
-epicsShareFunc char * dbGetString(DBENTRY *pdbentry);
-epicsShareFunc long dbPutString(DBENTRY *pdbentry,
+DBCORE_API int dbFoundField(DBENTRY *pdbentry);
+DBCORE_API char * dbGetString(DBENTRY *pdbentry);
+DBCORE_API long dbPutString(DBENTRY *pdbentry,
     const char *pstring);
-epicsShareFunc char * dbVerify(DBENTRY *pdbentry,
+DBCORE_API char * dbVerify(DBENTRY *pdbentry,
     const char *pstring);
-epicsShareFunc int  dbIsDefaultValue(DBENTRY *pdbentry);
+DBCORE_API int  dbIsDefaultValue(DBENTRY *pdbentry);
 
-epicsShareFunc long dbFirstInfo(DBENTRY *pdbentry);
-epicsShareFunc long dbNextInfo(DBENTRY *pdbentry);
-epicsShareFunc long dbFindInfo(DBENTRY *pdbentry,
+DBCORE_API long dbFirstInfo(DBENTRY *pdbentry);
+DBCORE_API long dbNextInfo(DBENTRY *pdbentry);
+DBCORE_API long dbFindInfo(DBENTRY *pdbentry,
     const char *name);
-epicsShareFunc long dbNextMatchingInfo(DBENTRY *pdbentry,
+DBCORE_API long dbNextMatchingInfo(DBENTRY *pdbentry,
     const char *pattern);
-epicsShareFunc long dbDeleteInfo(DBENTRY *pdbentry);
-epicsShareFunc const char * dbGetInfoName(DBENTRY *pdbentry);
-epicsShareFunc const char * dbGetInfoString(DBENTRY *pdbentry);
-epicsShareFunc long dbPutInfoString(DBENTRY *pdbentry,
+DBCORE_API long dbDeleteInfo(DBENTRY *pdbentry);
+DBCORE_API const char * dbGetInfoName(DBENTRY *pdbentry);
+DBCORE_API const char * dbGetInfoString(DBENTRY *pdbentry);
+DBCORE_API long dbPutInfoString(DBENTRY *pdbentry,
     const char *string);
-epicsShareFunc long dbPutInfoPointer(DBENTRY *pdbentry,
+DBCORE_API long dbPutInfoPointer(DBENTRY *pdbentry,
     void *pointer);
-epicsShareFunc void * dbGetInfoPointer(DBENTRY *pdbentry);
-epicsShareFunc const char * dbGetInfo(DBENTRY *pdbentry,
+DBCORE_API void * dbGetInfoPointer(DBENTRY *pdbentry);
+DBCORE_API const char * dbGetInfo(DBENTRY *pdbentry,
     const char *name);
-epicsShareFunc long dbPutInfo(DBENTRY *pdbentry,
+DBCORE_API long dbPutInfo(DBENTRY *pdbentry,
     const char *name, const char *string);
 
-epicsShareFunc brkTable * dbFindBrkTable(DBBASE *pdbbase,
+DBCORE_API brkTable * dbFindBrkTable(DBBASE *pdbbase,
     const char *name);
 
-epicsShareFunc const char * dbGetFieldTypeString(int dbfType);
-epicsShareFunc int dbFindFieldType(const char *type);
+DBCORE_API const char * dbGetFieldTypeString(int dbfType);
+DBCORE_API int dbFindFieldType(const char *type);
 
-epicsShareFunc dbMenu * dbFindMenu(DBBASE *pdbbase,
+DBCORE_API dbMenu * dbFindMenu(DBBASE *pdbbase,
     const char *name);
-epicsShareFunc char ** dbGetMenuChoices(DBENTRY *pdbentry);
-epicsShareFunc int  dbGetMenuIndex(DBENTRY *pdbentry);
-epicsShareFunc long dbPutMenuIndex(DBENTRY *pdbentry, int index);
-epicsShareFunc int  dbGetNMenuChoices(DBENTRY *pdbentry);
-epicsShareFunc char * dbGetMenuStringFromIndex(DBENTRY *pdbentry,
+DBCORE_API char ** dbGetMenuChoices(DBENTRY *pdbentry);
+DBCORE_API int  dbGetMenuIndex(DBENTRY *pdbentry);
+DBCORE_API long dbPutMenuIndex(DBENTRY *pdbentry, int index);
+DBCORE_API int  dbGetNMenuChoices(DBENTRY *pdbentry);
+DBCORE_API char * dbGetMenuStringFromIndex(DBENTRY *pdbentry,
     int index);
-epicsShareFunc int dbGetMenuIndexFromString(DBENTRY *pdbentry,
+DBCORE_API int dbGetMenuIndexFromString(DBENTRY *pdbentry,
     const char *choice);
 
-epicsShareFunc drvSup * dbFindDriver(dbBase *pdbbase,
+DBCORE_API drvSup * dbFindDriver(dbBase *pdbbase,
     const char *name);
-epicsShareFunc char * dbGetRelatedField(DBENTRY *pdbentry);
+DBCORE_API char * dbGetRelatedField(DBENTRY *pdbentry);
 
-epicsShareFunc linkSup * dbFindLinkSup(dbBase *pdbbase,
+DBCORE_API linkSup * dbFindLinkSup(dbBase *pdbbase,
     const char *name);
 
-epicsShareFunc int  dbGetNLinks(DBENTRY *pdbentry);
-epicsShareFunc long dbGetLinkField(DBENTRY *pdbentry, int index);
+DBCORE_API int  dbGetNLinks(DBENTRY *pdbentry);
+DBCORE_API long dbGetLinkField(DBENTRY *pdbentry, int index);
 
 /* Dump routines */
-epicsShareFunc void dbDumpPath(DBBASE *pdbbase);
-epicsShareFunc void dbDumpRecord(DBBASE *pdbbase,
+DBCORE_API void dbDumpPath(DBBASE *pdbbase);
+DBCORE_API void dbDumpRecord(DBBASE *pdbbase,
     const char *precordTypename, int level);
-epicsShareFunc void dbDumpMenu(DBBASE *pdbbase,
+DBCORE_API void dbDumpMenu(DBBASE *pdbbase,
     const char *menuName);
-epicsShareFunc void dbDumpRecordType(DBBASE *pdbbase,
+DBCORE_API void dbDumpRecordType(DBBASE *pdbbase,
     const char *recordTypeName);
-epicsShareFunc void dbDumpField(DBBASE *pdbbase,
+DBCORE_API void dbDumpField(DBBASE *pdbbase,
     const char *recordTypeName, const char *fname);
-epicsShareFunc void dbDumpDevice(DBBASE *pdbbase,
+DBCORE_API void dbDumpDevice(DBBASE *pdbbase,
     const char *recordTypeName);
-epicsShareFunc void dbDumpDriver(DBBASE *pdbbase);
-epicsShareFunc void dbDumpLink(DBBASE *pdbbase);
-epicsShareFunc void dbDumpRegistrar(DBBASE *pdbbase);
-epicsShareFunc void dbDumpFunction(DBBASE *pdbbase);
-epicsShareFunc void dbDumpVariable(DBBASE *pdbbase);
-epicsShareFunc void dbDumpBreaktable(DBBASE *pdbbase,
+DBCORE_API void dbDumpDriver(DBBASE *pdbbase);
+DBCORE_API void dbDumpLink(DBBASE *pdbbase);
+DBCORE_API void dbDumpRegistrar(DBBASE *pdbbase);
+DBCORE_API void dbDumpFunction(DBBASE *pdbbase);
+DBCORE_API void dbDumpVariable(DBBASE *pdbbase);
+DBCORE_API void dbDumpBreaktable(DBBASE *pdbbase,
     const char *name);
-epicsShareFunc void dbPvdDump(DBBASE *pdbbase, int verbose);
-epicsShareFunc void dbReportDeviceConfig(DBBASE *pdbbase,
+DBCORE_API void dbPvdDump(DBBASE *pdbbase, int verbose);
+DBCORE_API void dbReportDeviceConfig(DBBASE *pdbbase,
     FILE *report);
 
 /* Misc useful routines*/
 #define dbCalloc(nobj,size) callocMustSucceed(nobj,size,"dbCalloc")
 #define dbMalloc(size) mallocMustSucceed(size,"dbMalloc")
-epicsShareFunc void dbCatString(char **string, int *stringLength,
+DBCORE_API void dbCatString(char **string, int *stringLength,
     char *pnew, char *separator);
 
 extern int dbStaticDebug;

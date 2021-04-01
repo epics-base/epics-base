@@ -9,13 +9,13 @@
 #ifndef INC_dbtoolsIocRegister_H
 #define INC_dbtoolsIocRegister_H
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc void dbtoolsIocRegister(void);
+DBCORE_API void dbtoolsIocRegister(void);
 
 #ifdef __cplusplus
 }

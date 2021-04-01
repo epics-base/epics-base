@@ -13,14 +13,14 @@
 #define INCdbConvertFasth
 
 #include "dbFldTypes.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareExtern long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])();
-epicsShareExtern long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])();
+DBCORE_API extern long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])();
+DBCORE_API extern long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])();
 
 #ifdef __cplusplus
 }

@@ -20,7 +20,6 @@
 #include "cadef.h" // this can be eliminated when the callbacks use the new interface
 #include "db_access.h" // should be eliminated here in the future
 
-#define epicsExportSharedSymbols
 
 #include "db_access_routines.h"
 #include "dbCAC.h"

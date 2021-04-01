@@ -29,7 +29,6 @@
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbStaticLib.h"
 #include "dbAddr.h"

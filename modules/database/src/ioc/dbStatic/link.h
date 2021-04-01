@@ -18,7 +18,7 @@
 
 #include "dbDefs.h"
 #include "ellLib.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ typedef struct maplinkType {
     int  value;
 } maplinkType;
 
-epicsShareExtern maplinkType pamaplinkType[];
+DBCORE_API extern maplinkType pamaplinkType[];
 
 #define VXIDYNAMIC      0
 #define VXISTATIC       1

@@ -11,7 +11,6 @@
 #include "asLib.h"
 #include "iocsh.h"
 
-#define epicsExportSharedSymbols
 #include "asCa.h"
 #include "asDbLib.h"
 #include "asIocRegister.h"

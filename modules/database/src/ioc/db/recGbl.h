@@ -16,7 +16,7 @@
 #define INCrecGblh 1
 
 #include "epicsTypes.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,43 +37,43 @@ struct dbCommon;
 
 typedef void (*RECGBL_ALARM_HOOK_ROUTINE)(struct dbCommon *prec,
     epicsEnum16 prev_sevr, epicsEnum16 prev_stat);
-epicsShareExtern RECGBL_ALARM_HOOK_ROUTINE recGblAlarmHook;
+DBCORE_API extern RECGBL_ALARM_HOOK_ROUTINE recGblAlarmHook;
 
 /* Global Record Support Routines */
 
-epicsShareFunc void recGblDbaddrError(long status, const struct dbAddr *paddr,
+DBCORE_API void recGblDbaddrError(long status, const struct dbAddr *paddr,
     const char *pcaller_name);
-epicsShareFunc void recGblRecordError(long status, void *precord,
+DBCORE_API void recGblRecordError(long status, void *precord,
     const char *pcaller_name);
-epicsShareFunc void recGblRecSupError(long status, const struct dbAddr *paddr,
+DBCORE_API void recGblRecSupError(long status, const struct dbAddr *paddr,
     const char *pcaller_name, const char *psupport_name);
-epicsShareFunc void recGblGetGraphicDouble(const struct dbAddr *paddr,
+DBCORE_API void recGblGetGraphicDouble(const struct dbAddr *paddr,
     struct dbr_grDouble *pgd);
-epicsShareFunc void recGblGetControlDouble(
+DBCORE_API void recGblGetControlDouble(
     const struct dbAddr *paddr, struct dbr_ctrlDouble *pcd);
-epicsShareFunc void recGblGetAlarmDouble(const struct dbAddr *paddr,
+DBCORE_API void recGblGetAlarmDouble(const struct dbAddr *paddr,
     struct dbr_alDouble *pad);
-epicsShareFunc void recGblGetPrec(const struct dbAddr *paddr,
+DBCORE_API void recGblGetPrec(const struct dbAddr *paddr,
     long *pprecision);
-epicsShareFunc int  recGblInitConstantLink(struct link *plink,
+DBCORE_API int  recGblInitConstantLink(struct link *plink,
     short dbftype, void *pdest);
-epicsShareFunc unsigned short recGblResetAlarms(void *precord);
-epicsShareFunc int recGblSetSevr(void *precord, epicsEnum16 new_stat,
+DBCORE_API unsigned short recGblResetAlarms(void *precord);
+DBCORE_API int recGblSetSevr(void *precord, epicsEnum16 new_stat,
     epicsEnum16 new_sevr);
-epicsShareFunc void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
+DBCORE_API void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
     epicsEnum16 sevr);
-epicsShareFunc void recGblFwdLink(void *precord);
-epicsShareFunc void recGblGetTimeStamp(void *precord);
-epicsShareFunc void recGblGetTimeStampSimm(void *prec, const epicsEnum16 simm, struct link *siol);
-epicsShareFunc void recGblCheckDeadband(epicsFloat64 *poldval, const epicsFloat64 newval,
+DBCORE_API void recGblFwdLink(void *precord);
+DBCORE_API void recGblGetTimeStamp(void *precord);
+DBCORE_API void recGblGetTimeStampSimm(void *prec, const epicsEnum16 simm, struct link *siol);
+DBCORE_API void recGblCheckDeadband(epicsFloat64 *poldval, const epicsFloat64 newval,
     const epicsFloat64 deadband, unsigned *monitor_mask, const unsigned add_mask);
-epicsShareFunc void recGblSaveSimm(const epicsEnum16 sscn,
+DBCORE_API void recGblSaveSimm(const epicsEnum16 sscn,
     epicsEnum16 *poldsimm, const epicsEnum16 simm);
-epicsShareFunc void recGblCheckSimm(struct dbCommon *prec, epicsEnum16 *psscn,
+DBCORE_API void recGblCheckSimm(struct dbCommon *prec, epicsEnum16 *psscn,
     const epicsEnum16 oldsimm, const epicsEnum16 simm);
-epicsShareFunc void recGblInitSimm(struct dbCommon *prec, epicsEnum16 *psscn,
+DBCORE_API void recGblInitSimm(struct dbCommon *prec, epicsEnum16 *psscn,
     epicsEnum16 *poldsimm, epicsEnum16 *psimm, struct link *psiml);
-epicsShareFunc long recGblGetSimm(struct dbCommon *prec, epicsEnum16 *psscn,
+DBCORE_API long recGblGetSimm(struct dbCommon *prec, epicsEnum16 *psscn,
     epicsEnum16 *poldsimm, epicsEnum16 *psimm, struct link *psiml);
 
 #ifdef __cplusplus

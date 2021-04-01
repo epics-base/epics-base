@@ -18,7 +18,6 @@
 #include "envDefs.h"
 #include "epicsStdio.h"
 
-#define epicsExportSharedSymbols
 #include "dbServer.h"
 
 static ELLLIST serverList = ELLLIST_INIT;

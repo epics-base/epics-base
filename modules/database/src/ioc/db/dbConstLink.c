@@ -19,7 +19,6 @@
 #include "dbDefs.h"
 #include "epicsStdlib.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbCommon.h"

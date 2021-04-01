@@ -33,7 +33,6 @@
 #include "db_access.h"
 #undef db_accessHFORdb_accessC
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "db_access_routines.h"
 #include "dbBase.h"

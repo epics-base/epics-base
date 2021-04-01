@@ -13,7 +13,7 @@
 #ifndef INCiocshRegisterCommonH
 #define INCiocshRegisterCommonH
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,19 +22,19 @@ extern "C" {
 struct dbBase;
 
 /* register many useful commands */
-epicsShareFunc void iocshRegisterCommon(void);
+DBCORE_API void iocshRegisterCommon(void);
 
 #define HAS_registerAllRecordDeviceDrivers
 
-epicsShareFunc
+DBCORE_API
 long
 registerAllRecordDeviceDrivers(struct dbBase *pdbbase);
 
-epicsShareFunc
+DBCORE_API
 void runRegistrarOnce(void (*reg_func)(void));
 
 #ifdef EPICS_PRIVATE_API
-epicsShareFunc
+DBCORE_API
 void clearRegistrarOnce(void);
 #endif
 

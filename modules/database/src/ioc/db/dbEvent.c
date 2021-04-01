@@ -37,7 +37,6 @@
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
@@ -333,7 +332,7 @@ fail:
 }
 
 
-epicsShareFunc void db_cleanup_events(void)
+DBCORE_API void db_cleanup_events(void)
 {
     if(dbevEventUserFreeList) freeListCleanup(dbevEventUserFreeList);
     dbevEventUserFreeList = NULL;

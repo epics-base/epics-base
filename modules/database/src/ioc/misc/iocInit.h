@@ -12,7 +12,7 @@
 #ifndef INCiocInith
 #define INCiocInith
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 enum iocStateEnum {
     iocVoid, iocBuilding, iocBuilt, iocRunning, iocPaused
@@ -22,13 +22,13 @@ enum iocStateEnum {
 extern "C" {
 #endif
 
-epicsShareFunc enum iocStateEnum getIocState(void);
-epicsShareFunc int iocInit(void);
-epicsShareFunc int iocBuild(void);
-epicsShareFunc int iocBuildIsolated(void);
-epicsShareFunc int iocRun(void);
-epicsShareFunc int iocPause(void);
-epicsShareFunc int iocShutdown(void);
+DBCORE_API enum iocStateEnum getIocState(void);
+DBCORE_API int iocInit(void);
+DBCORE_API int iocBuild(void);
+DBCORE_API int iocBuildIsolated(void);
+DBCORE_API int iocRun(void);
+DBCORE_API int iocPause(void);
+DBCORE_API int iocShutdown(void);
 
 #ifdef __cplusplus
 }

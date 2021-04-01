@@ -26,7 +26,6 @@
 #include "epicsPrint.h"
 #include "epicsStdio.h"
 
-#define epicsExportSharedSymbols
 #include "dbStaticLib.h"
 #undef epicsExportSharedSymbols
 /*definitions needed because of old vs new database access*/
@@ -42,7 +41,6 @@
 /*define DB_CONVERT_GBLSOURCE because db_access.c does not include db_access.h*/
 #define DB_CONVERT_GBLSOURCE
 
-#define epicsExportSharedSymbols
 #include "db_access.h"
 #include "db_access_routines.h"
 #include "dbCa.h"

@@ -13,13 +13,13 @@
 
 #include "dbBase.h"
 #include "dbJLink.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc int registryJLinkAdd(DBBASE *pbase, jlif *pjlif);
+DBCORE_API int registryJLinkAdd(DBBASE *pbase, jlif *pjlif);
 
 #ifdef __cplusplus
 }

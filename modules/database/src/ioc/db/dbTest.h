@@ -11,42 +11,42 @@
 #ifndef INC_dbTest_H
 #define INC_dbTest_H
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /*dbAddr info */
-epicsShareFunc long dba(const char *pname);
+DBCORE_API long dba(const char *pname);
 /*list records*/
-epicsShareFunc long dbl(
+DBCORE_API long dbl(
     const char *precordTypename,const char *fields);
 /*list number of records of each type*/
-epicsShareFunc long dbnr(int verbose);
+DBCORE_API long dbnr(int verbose);
 /* list aliases */
-epicsShareFunc long dbla(const char *pmask);
+DBCORE_API long dbla(const char *pmask);
 /* list infos */
-epicsShareFunc long dbli(const char *patern);
+DBCORE_API long dbli(const char *patern);
 /*list records with mask*/
-epicsShareFunc long dbgrep(const char *pmask);
+DBCORE_API long dbgrep(const char *pmask);
 /*get field value*/
-epicsShareFunc long dbgf(const char *pname);
+DBCORE_API long dbgf(const char *pname);
 /*put field value*/
-epicsShareFunc long dbpf(const char *pname,const char *pvalue);
+DBCORE_API long dbpf(const char *pname,const char *pvalue);
 /*print record*/
-epicsShareFunc long dbpr(const char *pname,int interest_level);
+DBCORE_API long dbpr(const char *pname,int interest_level);
 /*test record*/
-epicsShareFunc long dbtr(const char *pname);
+DBCORE_API long dbtr(const char *pname);
 /*test get field*/
-epicsShareFunc long dbtgf(const char *pname);
+DBCORE_API long dbtgf(const char *pname);
 /*test put field*/
-epicsShareFunc long dbtpf(const char *pname,const char *pvalue);
+DBCORE_API long dbtpf(const char *pname,const char *pvalue);
 /*I/O report */
-epicsShareFunc long dbior(
+DBCORE_API long dbior(
     const char *pdrvName,int interest_level);
 /*Hardware Configuration Report*/
-epicsShareFunc int dbhcr(void);
+DBCORE_API int dbhcr(void);
 
 #ifdef __cplusplus
 }

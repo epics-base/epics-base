@@ -31,7 +31,6 @@
 #include "caerr.h" // this needs to be eliminated
 #include "db_access.h" // this needs to be eliminated
 
-#define epicsExportSharedSymbols
 #include "dbCAC.h"
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"

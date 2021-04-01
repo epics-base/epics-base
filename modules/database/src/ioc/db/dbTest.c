@@ -23,7 +23,6 @@
 #include "epicsString.h"
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "callback.h"
 #include "dbAccessDefs.h"
 #include "dbAddr.h"

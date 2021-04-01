@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-#include "shareLib.h"
-epicsShareFunc int coreRelease(void);
+#include "dbCoreAPI.h"
+DBCORE_API int coreRelease(void);
 
 #ifdef __cplusplus
 }

@@ -11,20 +11,19 @@
 
 /* Author:  Marty Kraimer Date:    08JUN99 */
 
-#define epicsExportSharedSymbols
 #include "registry.h"
 #include "registryDriverSupport.h"
 
 static void *registryID = "driver support";
 
 
-epicsShareFunc int registryDriverSupportAdd(
+DBCORE_API int registryDriverSupportAdd(
     const char *name, struct drvet *pdrvet)
 {
     return registryAdd(registryID, name, pdrvet);
 }
 
-epicsShareFunc struct drvet * registryDriverSupportFind(
+DBCORE_API struct drvet * registryDriverSupportFind(
     const char *name)
 {
     return registryFind(registryID, name);

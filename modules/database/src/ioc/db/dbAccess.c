@@ -35,7 +35,6 @@
 #include "errlog.h"
 #include "errMdef.h"
 
-#include "epicsExport.h" /* #define epicsExportSharedSymbols */
 #include "caeventmask.h"
 #include "callback.h"
 #include "dbAccessDefs.h"

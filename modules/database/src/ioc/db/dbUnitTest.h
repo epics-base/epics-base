@@ -22,7 +22,7 @@
 #include "dbAddr.h"
 #include "dbCommon.h"
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,31 +32,31 @@ extern "C" {
  *
  * @see @ref dbtestskel
  */
-epicsShareFunc void testdbPrepare(void);
+DBCORE_API void testdbPrepare(void);
 /** Read .dbd or .db file
  *
  * @see @ref dbtestskel
  */
-epicsShareFunc void testdbReadDatabase(const char* file,
+DBCORE_API void testdbReadDatabase(const char* file,
                                        const char* path,
                                        const char* substitutions);
 /** Assert success of iocInit()
  *
  * @see @ref dbtestskel
  */
-epicsShareFunc void testIocInitOk(void);
+DBCORE_API void testIocInitOk(void);
 /** Shutdown test database processing.
  *
  * eg. Stops scan threads
  *
  * @see @ref dbtestskel
  */
-epicsShareFunc void testIocShutdownOk(void);
+DBCORE_API void testIocShutdownOk(void);
 /** Final step in test database cleanup
  *
  * @see @ref dbtestskel
  */
-epicsShareFunc void testdbCleanup(void);
+DBCORE_API void testdbCleanup(void);
 
 /** Assert that a dbPutField() scalar operation will complete successfully.
  *
@@ -66,19 +66,19 @@ epicsShareFunc void testdbCleanup(void);
  *
  * @see @ref dbtestactions
  */
-epicsShareFunc void testdbPutFieldOk(const char* pv, int dbrType, ...);
+DBCORE_API void testdbPutFieldOk(const char* pv, int dbrType, ...);
 
 /** Assert that a dbPutField() operation will fail with a certain S_\* code
  *
  * @see @ref dbtestactions
  */
-epicsShareFunc void testdbPutFieldFail(long status, const char* pv, int dbrType, ...);
+DBCORE_API void testdbPutFieldFail(long status, const char* pv, int dbrType, ...);
 
 /** Assert that a dbPutField() scalar operation will complete successfully.
  *
  * @see @ref dbtestactions
  */
-epicsShareFunc long testdbVPutField(const char* pv, short dbrType, va_list ap);
+DBCORE_API long testdbVPutField(const char* pv, short dbrType, va_list ap);
 
 /** Assert that a dbGetField() scalar operation will complete successfully, with the provided value.
  *
@@ -88,13 +88,13 @@ epicsShareFunc long testdbVPutField(const char* pv, short dbrType, va_list ap);
  *
  * @see @ref dbtestactions
  */
-epicsShareFunc void testdbGetFieldEqual(const char* pv, int dbrType, ...);
+DBCORE_API void testdbGetFieldEqual(const char* pv, int dbrType, ...);
 
 /** Assert that a dbGetField() scalar operation will complete successfully, with the provided value.
  *
  * @see @ref dbtestactions
  */
-epicsShareFunc void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
+DBCORE_API void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
 
 /** Assert that a dbPutField() array operation will complete successfully.
  *
@@ -110,7 +110,7 @@ epicsShareFunc void testdbVGetFieldEqual(const char* pv, short dbrType, va_list 
  *
  * @see @ref dbtestactions
  */
-epicsShareFunc void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long count, const void *pbuf);
+DBCORE_API void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long count, const void *pbuf);
 
 /**
  * @param pv PV name string
@@ -127,7 +127,7 @@ epicsShareFunc void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned 
  * nRequest < pbufcnt always fails.
  * nRequest ==pbufcnt checks prefix (actual may be longer than expected)
  */
-epicsShareFunc void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long pbufcnt, const void *pbuf);
+DBCORE_API void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long pbufcnt, const void *pbuf);
 
 /** Obtain pointer to record.
  *
@@ -135,19 +135,19 @@ epicsShareFunc void testdbGetArrFieldEqual(const char* pv, short dbfType, long n
  *
  * @note Remember to dbScanLock() when accessing mutable fields.
  */
-epicsShareFunc dbCommon* testdbRecordPtr(const char* pv);
+DBCORE_API dbCommon* testdbRecordPtr(const char* pv);
 
 typedef struct testMonitor testMonitor;
 
 /** Setup monitoring the named PV for changes */
-epicsShareFunc testMonitor* testMonitorCreate(const char* pvname, unsigned dbe_mask, unsigned opt);
+DBCORE_API testMonitor* testMonitorCreate(const char* pvname, unsigned dbe_mask, unsigned opt);
 /** Stop monitoring */
-epicsShareFunc void testMonitorDestroy(testMonitor*);
+DBCORE_API void testMonitorDestroy(testMonitor*);
 /** Return immediately if it has been updated since create, last wait,
  * or reset (count w/ reset=1).
  * Otherwise, block until the value of the target PV is updated.
  */
-epicsShareFunc void testMonitorWait(testMonitor*);
+DBCORE_API void testMonitorWait(testMonitor*);
 /** Return the number of monitor events which have occured since create,
  * or a pervious reset (called reset=1).
  * Calling w/ reset=0 only returns the count.
@@ -155,26 +155,26 @@ epicsShareFunc void testMonitorWait(testMonitor*);
  * wait will block unless subsequent events occur.  Returns the previous
  * count.
  */
-epicsShareFunc unsigned testMonitorCount(testMonitor*, unsigned reset);
+DBCORE_API unsigned testMonitorCount(testMonitor*, unsigned reset);
 
 /** Synchronize the shared callback queues.
  *
  * Block until all callback queue jobs which were queued, or running,
  * have completed.
  */
-epicsShareFunc void testSyncCallback(void);
+DBCORE_API void testSyncCallback(void);
 
 /** Lock Global convenience mutex for use by test code.
  *
  * @see @ref dbtestmutex
  */
-epicsShareFunc void testGlobalLock(void);
+DBCORE_API void testGlobalLock(void);
 
 /** Unlock Global convenience mutex for use by test code.
  *
  * @see @ref dbtestmutex
  */
-epicsShareFunc void testGlobalUnlock(void);
+DBCORE_API void testGlobalUnlock(void);
 
 #ifdef __cplusplus
 }

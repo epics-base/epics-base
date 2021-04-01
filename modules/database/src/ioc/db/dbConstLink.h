@@ -16,7 +16,7 @@
 #ifndef INC_dbConstLink_H
 #define INC_dbConstLink_H
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,8 +24,8 @@ extern "C" {
 
 struct link;
 
-epicsShareFunc void dbConstInitLink(struct link *plink);
-epicsShareFunc void dbConstAddLink(struct link *plink);
+DBCORE_API void dbConstInitLink(struct link *plink);
+DBCORE_API void dbConstAddLink(struct link *plink);
 
 #ifdef __cplusplus
 }

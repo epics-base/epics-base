@@ -26,7 +26,6 @@
 #include "compilerDependencies.h"
 
 #ifdef dbPutNotifyBlockerh_restore_epicsExportSharedSymbols
-#define epicsExportSharedSymbols
 #endif
 
 class dbPutNotifyBlocker : public dbBaseIO {

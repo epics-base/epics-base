@@ -11,20 +11,19 @@
 
 /* Author:  Marty Kraimer Date:    08JUN99 */
 
-#define epicsExportSharedSymbols
 #include "registry.h"
 #include "registryRecordType.h"
 
 static void * const registryID = "record type";
 
 
-epicsShareFunc int registryRecordTypeAdd(
+DBCORE_API int registryRecordTypeAdd(
     const char *name, const recordTypeLocation *prtl)
 {
     return registryAdd(registryID, name, (void *)prtl);
 }
 
-epicsShareFunc recordTypeLocation * registryRecordTypeFind(
+DBCORE_API recordTypeLocation * registryRecordTypeFind(
     const char *name)
 {
     return registryFind(registryID, name);

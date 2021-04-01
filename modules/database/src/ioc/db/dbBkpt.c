@@ -53,7 +53,6 @@
 #include "errlog.h"
 #include "errMdef.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"

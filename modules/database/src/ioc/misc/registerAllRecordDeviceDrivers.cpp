@@ -17,7 +17,6 @@
 
 #include <epicsStdio.h>
 #include <epicsFindSymbol.h>
-#define epicsExportSharedSymbols
 #include <registryRecordType.h>
 #include <registryDeviceSupport.h>
 #include <registryDriverSupport.h>

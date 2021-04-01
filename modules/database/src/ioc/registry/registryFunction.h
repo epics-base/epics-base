@@ -11,7 +11,7 @@
 #ifndef INC_registryFunction_H
 #define INC_registryFunction_H
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,11 +25,11 @@ typedef struct registryFunctionRef {
 } registryFunctionRef;
 
 
-epicsShareFunc int registryFunctionAdd(
+DBCORE_API int registryFunctionAdd(
     const char *name, REGISTRYFUNCTION func);
-epicsShareFunc REGISTRYFUNCTION registryFunctionFind(
+DBCORE_API REGISTRYFUNCTION registryFunctionFind(
     const char *name);
-epicsShareFunc int registryFunctionRefAdd(
+DBCORE_API int registryFunctionRefAdd(
    registryFunctionRef ref[], int nfunctions);
 
 #ifdef __cplusplus

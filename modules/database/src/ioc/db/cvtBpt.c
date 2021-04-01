@@ -17,7 +17,6 @@
 
 #include "epicsPrint.h"
 
-#define epicsExportSharedSymbols
 #include "cvtTable.h"
 #include "dbAccess.h"
 #include "dbBase.h"

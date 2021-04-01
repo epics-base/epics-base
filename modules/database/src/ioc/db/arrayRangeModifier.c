@@ -56,8 +56,8 @@ static long handleArrayRangeModifier(DBADDR *paddr, short dbrType, const void
             nRequest = n;
         for (i = 0, j = (offset + start) % paddr->no_elements; i < nRequest;
             i++, j = (j + pmod->incr) % paddr->no_elements) {
-            status = putCvt(pbuffer + (i * dbr_size),
-                paddr->pfield + (j * paddr->field_size), paddr);
+            status = putCvt((char*)pbuffer + (i * dbr_size),
+                (char*)paddr->pfield + (j * paddr->field_size), paddr);
         }
     } else {
         offset = (offset + start) % paddr->no_elements;

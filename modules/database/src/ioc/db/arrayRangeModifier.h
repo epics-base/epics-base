@@ -5,7 +5,17 @@
 #ifndef ARRAYRANGEMODIFIER_H
 #define ARRAYRANGEMODIFIER_H
 
+#ifdef epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#   define INCLarrayRangeModifierhExporting
+#endif
+
 #include "dbAddrModifier.h"
+
+#ifdef INCLarrayRangeModifierhExporting
+#   define epicsExportSharedSymbols
+#endif
+
 #include "shareLib.h"
 
 /** @brief The array range address modifier. */
@@ -30,7 +40,6 @@ long wrapArrayIndices(long *start, long increment, long *end, long no_elements);
  * @param end           End index (possibly negative)
  * @return              Status
  */
-epicsShareFunc
 long createArrayRangeModifier(dbAddrModifier *pmod, long start, long incr, long end);
 
 /** @brief Alternative creation function that parses the data from a string.
@@ -41,7 +50,6 @@ long createArrayRangeModifier(dbAddrModifier *pmod, long start, long incr, long 
  * @param pstring       Pointer to string to parse (in/out)
  * @return              0 (success) or -1 (failure)
  */
-epicsShareFunc
 long parseArrayRange(dbAddrModifier *pmod, const char **pstring);
 
 /** @brief Extract the private data
@@ -54,7 +62,6 @@ long parseArrayRange(dbAddrModifier *pmod, const char **pstring);
  * @param pincr         Increment (out)
  * @param pend          End index (out)
  */
-epicsShareFunc
 void getArrayRange(dbAddrModifier *pmod, long *pstart, long *pincr, long *pend);
 
 /** @brief Free private memory associated with an array range modifier
@@ -63,7 +70,6 @@ void getArrayRange(dbAddrModifier *pmod, long *pstart, long *pincr, long *pend);
  *
  * @param pmod          Pointer to address modifier (user allocated)
  */
-epicsShareFunc
 void deleteArrayRangeModifier(dbAddrModifier *pmod);
 
 #endif /* ARRAYRANGEMODIFIER_H */

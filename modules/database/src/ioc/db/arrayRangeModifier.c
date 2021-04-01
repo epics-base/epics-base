@@ -7,10 +7,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "arrayRangeModifier.h"
+#include "epicsExport.h" /* #define epicsExportSharedSymbols */
 #include "dbAccessDefs.h"
 #include "dbConvertFast.h"
 #include "dbConvert.h"
+#include "arrayRangeModifier.h"
 
 typedef struct {
     long start;

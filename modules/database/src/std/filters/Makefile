@@ -11,6 +11,9 @@ SRC_DIRS += $(STDDIR)/filters
 
 DBD += filters.dbd
 
+# Allow access to private headers in db/
+USR_CPPFLAGS += -I $(CURDIR)/../../../src/ioc/db
+
 dbRecStd_SRCS += ts.c
 dbRecStd_SRCS += dbnd.c
 dbRecStd_SRCS += arr.c

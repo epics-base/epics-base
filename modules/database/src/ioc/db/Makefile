@@ -43,7 +43,6 @@ INC += dbState.h
 INC += db_access_routines.h
 INC += db_convert.h
 INC += dbUnitTest.h
-INC += wrapArrayIndices.h
 
 # Generate menuGlobal.dbd, not really by concatenation, see RULES
 DBDCAT += menuGlobal.dbd

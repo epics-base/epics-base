@@ -392,6 +392,7 @@ void db_close_events (dbEventCtx ctx)
         epicsEventSignal(evUser->ppendsem);
         /* wait for task to exit */
         epicsEventMustWait(evUser->pexitsem);
+        epicsThreadMustJoin(evUser->taskid);
 
         epicsMutexMustLock ( evUser->lock );
     }
@@ -1116,6 +1117,11 @@ int db_start_events (
     void *init_func_arg, unsigned osiPriority )
 {
      struct event_user * const evUser = (struct event_user *) ctx;
+     epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+
+     opts.stackSize = epicsThreadGetStackSize(epicsThreadStackMedium);
+     opts.priority = osiPriority;
+     opts.joinable = 1;
 
      epicsMutexMustLock ( evUser->lock );
 
@@ -1133,10 +1139,8 @@ int db_start_events (
      if (!taskname) {
          taskname = EVENT_PEND_NAME;
      }
-     evUser->taskid = epicsThreadCreate (
-         taskname, osiPriority, 
-         epicsThreadGetStackSize(epicsThreadStackMedium),
-         event_task, (void *)evUser);
+     evUser->taskid = epicsThreadCreateOpt (
+         taskname, event_task, (void *)evUser, &opts);
      if (!evUser->taskid) {
          epicsMutexUnlock ( evUser->lock );
          return DB_EVENT_ERROR;

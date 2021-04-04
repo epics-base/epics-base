@@ -881,10 +881,10 @@ static void eventCallback(struct event_handler_args arg)
         if (precord) {
             if (arg.status != ECA_NORDACCESS &&
                 arg.status != ECA_GETFAIL)
-                errlogPrintf("dbCa: eventCallback record %s error %s\n",
+                errlogPrintf("dbCa: eventCallback record %s " ERL_ERROR " %s\n",
                     precord->name, ca_message(arg.status));
         } else {
-            errlogPrintf("dbCa: eventCallback error %s\n",
+            errlogPrintf("dbCa: eventCallback " ERL_ERROR " %s\n",
                 ca_message(arg.status));
         }
         goto done;
@@ -1029,10 +1029,10 @@ static void getAttribEventCallback(struct event_handler_args arg)
     if (arg.status != ECA_NORMAL) {
         dbCommon *precord = plink->precord;
         if (precord) {
-            errlogPrintf("dbCa: getAttribEventCallback record %s error %s\n",
+            errlogPrintf("dbCa: getAttribEventCallback record %s " ERL_ERROR " %s\n",
                 precord->name, ca_message(arg.status));
         } else {
-            errlogPrintf("dbCa: getAttribEventCallback error %s\n",
+            errlogPrintf("dbCa: getAttribEventCallback " ERL_ERROR " %s\n",
                 ca_message(arg.status));
         }
         epicsMutexUnlock(pca->lock);

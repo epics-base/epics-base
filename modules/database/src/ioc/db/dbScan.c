@@ -817,7 +817,7 @@ static void periodicTask(void *arg)
             epicsTimeAddSeconds(&next, delay);
             if (++overruns >= 10 &&
                 epicsTimeDiffInSeconds(&now, &reported) > report_delay) {
-                errlogPrintf("\ndbScan warning from '%s' scan thread:\n"
+                errlogPrintf("\ndbScan " ERL_WARNING " from '%s' scan thread:\n"
                     "\tScan processing averages %.3f seconds (%.3f .. %.3f).\n"
                     "\tOver-runs have now happened %u times in a row.\n"
                     "\tTo fix this, move some records to a slower scan rate.\n",

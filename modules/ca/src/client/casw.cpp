@@ -188,7 +188,7 @@ int main ( int argc, char ** argv )
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
             epicsSocketDestroy ( sock );
-            errlogPrintf ("casw: error from recv was = \"%s\"\n",
+            errlogPrintf ("casw: " ERL_ERROR " from recv was = \"%s\"\n",
                 sockErrBuf );
             return -1;
         }

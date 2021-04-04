@@ -247,6 +247,40 @@ LIBCOM_API int errlogVprintfNoConsole(const char *pformat,va_list pvar);
  */
 LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
 
+/** @defgroup colormacros Color macros
+ *
+ * @brief Colorize string constants with ANSI terminal escapes.
+ *
+ * The ANSI_ESC_\* family of macros expand to individual escape sequences.
+ * The ANSI_\* family expand around a string constant to prepend a color, and append a RESET.
+ *
+ * @code
+ * // equivalent
+ * errlogPrintf(ERL_ERROR ": something is amiss\n");
+ * errlogPrintf(ANSI_RED("ERROR") ": something is amiss\n");
+ * errlogPrintf(ANSI_ESC_RED "ERROR" ANSI_ESC_RESET ": something is amiss\n");
+ * @endcode
+ *
+ * @see errlogPrintf()
+ * @{
+ */
+#define ANSI_ESC_RED "\033[31;1m"
+#define ANSI_ESC_GREEN "\033[32;1m"
+#define ANSI_ESC_YELLOW "\033[33;1m"
+#define ANSI_ESC_BLUE "\033[34;1m"
+#define ANSI_ESC_MAGENTA "\033[35;1m"
+#define ANSI_ESC_CYAN "\033[36;1m"
+#define ANSI_ESC_RESET "\033[0m"
+#define ANSI_RED(STR)     ANSI_ESC_RED     STR ANSI_ESC_RESET
+#define ANSI_GREEN(STR)   ANSI_ESC_GREEN   STR ANSI_ESC_RESET
+#define ANSI_YELLOW(STR)  ANSI_ESC_YELLOW  STR ANSI_ESC_RESET
+#define ANSI_BLUE(STR)    ANSI_ESC_BLUE    STR ANSI_ESC_RESET
+#define ANSI_MAGENTA(STR) ANSI_ESC_MAGENTA STR ANSI_ESC_RESET
+#define ANSI_CYAN(STR)    ANSI_ESC_CYAN    STR ANSI_ESC_RESET
+#define ERL_ERROR ANSI_RED("ERROR")
+#define ERL_WARNING ANSI_MAGENTA("WARNING")
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif

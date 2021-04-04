@@ -88,12 +88,12 @@ static epicsThreadOSD *createImplicit(void);
 
 #define checkStatus(status,message) \
 if((status))  {\
-    errlogPrintf("%s error %s\n",(message),strerror((status))); \
+    errlogPrintf("%s " ERL_ERROR " %s\n",(message),strerror((status))); \
 }
 
 #define checkStatusQuit(status,message,method) \
 if(status) { \
-    errlogPrintf("%s  error %s\n",(message),strerror((status))); \
+    errlogPrintf("%s  " ERL_ERROR " %s\n",(message),strerror((status))); \
     cantProceed((method)); \
 }
 

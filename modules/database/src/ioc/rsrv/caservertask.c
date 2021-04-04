@@ -86,7 +86,7 @@ static void req_server (void *pParm)
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAS: Client accept error: %s (%d)\n",
+            errlogPrintf("CAS: Client accept " ERL_ERROR ": %s (%d)\n",
                 sockErrBuf, (int)addLen );
             epicsThreadSleep(15.0);
             continue;
@@ -131,7 +131,7 @@ int tryBind(SOCKET sock, const osiSockAddr* addr, const char *name)
         {
             epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ( "CAS: %s bind error: %s\n",
+            errlogPrintf ( "CAS: %s bind " ERL_ERROR ": %s\n",
                            name, sockErrBuf );
             epicsThreadSuspendSelf ();
         }
@@ -196,7 +196,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                         char sockErrBuf[64];
                         epicsSocketConvertErrnoToString (
                             sockErrBuf, sizeof ( sockErrBuf ) );
-                        errlogPrintf ( "CAS: getsockname error: %s\n",
+                        errlogPrintf ( "CAS: getsockname " ERL_ERROR ": %s\n",
                             sockErrBuf );
                         epicsThreadSuspendSelf ();
                         ok = 0;
@@ -576,12 +576,12 @@ void rsrv_init (void)
 
         if ( sport != ca_server_port ) {
             ca_server_port = sport;
-            errlogPrintf ( "cas warning: Configured TCP port was unavailable.\n");
-            errlogPrintf ( "cas warning: Using dynamically assigned TCP port %hu,\n",
+            errlogPrintf ( "cas " ERL_WARNING ": Configured TCP port was unavailable.\n");
+            errlogPrintf ( "cas " ERL_WARNING ": Using dynamically assigned TCP port %hu,\n",
                 ca_server_port );
-            errlogPrintf ( "cas warning: but now two or more servers share the same UDP port.\n");
-            errlogPrintf ( "cas warning: Depending on your IP kernel this server may not be\n" );
-            errlogPrintf ( "cas warning: reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
+            errlogPrintf ( "cas " ERL_WARNING ": but now two or more servers share the same UDP port.\n");
+            errlogPrintf ( "cas " ERL_WARNING ": Depending on your IP kernel this server may not be\n" );
+            errlogPrintf ( "cas " ERL_WARNING ": reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
         }
     }
 

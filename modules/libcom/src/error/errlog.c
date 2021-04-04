@@ -12,6 +12,11 @@
  *      Date:            07JAN1998
  */
 
+#ifdef _WIN32
+#  define VC_EXTRALEAN
+#  include <windows.h>
+#endif
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -205,11 +210,11 @@ void errlogSequence(void)
         epicsEventMustTrigger(pvt.waitForSeq);
 }
 
+#if !defined(_WIN32)
 static
 int isATTY(FILE* fp)
 {
     int ret = 0;
-#if !defined(_WIN32)
     const char* term = getenv("TERM");
     int fd = fileno(fp);
 
@@ -222,9 +227,33 @@ int isATTY(FILE* fp)
     /* only attempt to use ANSI escapes if some terminal type is specified */
     if(ret && (!term || !term[0]))
         ret = 0;
-#endif
     return ret;
 }
+
+#else /* _WIN32 */
+static
+int isATTY(FILE* fp)
+{
+    HANDLE hand = NULL;
+    DWORD mode = 0;
+    if(fp==stdout)
+        hand = GetStdHandle(STD_OUTPUT_HANDLE);
+    else if(fp==stderr)
+        hand = GetStdHandle(STD_ERROR_HANDLE);
+#ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+    if(hand && GetConsoleMode(hand, &mode)) {
+        (void)SetConsoleMode(hand, mode|ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+        mode = 0u;
+        if(GetConsoleMode(hand, &mode) && (mode&ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+            return 1;
+    }
+#else
+    (void)hand;
+    (void)mode;
+#endif
+    return 0;
+}
+#endif
 
 /* in-place removal of ANSI terminal escape sequences.
  * exported for use by unit-test only

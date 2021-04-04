@@ -58,7 +58,7 @@ void camsgtask ( void *pParm )
 
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAS: FIONREAD error: %s\n",
+            errlogPrintf("CAS: FIONREAD " ERL_ERROR ": %s\n",
                 sockErrBuf);
             cas_send_bs_msg(client, TRUE);
         }

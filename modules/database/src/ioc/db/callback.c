@@ -85,7 +85,7 @@ static epicsEventId startStopEvent;
 static char *threadNamePrefix[NUM_CALLBACK_PRIORITIES] = {
     "cbLow", "cbMedium", "cbHigh"
 };
-#define FULL_MSG(name) "callbackRequest: " name " ring buffer full\n"
+#define FULL_MSG(name) "callbackRequest: " ERL_ERROR " " name " ring buffer full\n"
 static char *fullMessage[NUM_CALLBACK_PRIORITIES] = {
     FULL_MSG("cbLow"), FULL_MSG("cbMedium"), FULL_MSG("cbHigh")
 };
@@ -326,17 +326,17 @@ int callbackRequest(epicsCallback *pcallback)
     cbQueueSet *mySet;
 
     if (!pcallback) {
-        epicsInterruptContextMessage("callbackRequest: pcallback was NULL\n");
+        epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " pcallback was NULL\n");
         return S_db_notInit;
     }
     priority = pcallback->priority;
     if (priority < 0 || priority >= NUM_CALLBACK_PRIORITIES) {
-        epicsInterruptContextMessage("callbackRequest: Bad priority\n");
+        epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " Bad priority\n");
         return S_db_badChoice;
     }
     mySet = &callbackQueue[priority];
     if (!mySet->queue) {
-        epicsInterruptContextMessage("callbackRequest: Callbacks not initialized\n");
+        epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " Callbacks not initialized\n");
         return S_db_notInit;
     }
     if (mySet->queueOverflow) return S_db_bufFull;

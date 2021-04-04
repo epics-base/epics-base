@@ -445,14 +445,45 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
     return status;
 }
 
+static long installTimestampFilter(dbChannel* pchan, chFilterPlugin const *plug) {
+    chFilter *filter;
+    parse_result result;
+
+    filter = freeListCalloc(chFilterFreeList);
+    if (!filter) {
+        return S_db_noMemory;
+    }
+
+    filter->chan = pchan;
+    filter->plug = plug;
+    filter->puser = NULL;
+
+    TRY(filter->plug->fif->parse_start, (filter));
+    TRY(filter->plug->fif->parse_start_map, (filter));
+    TRY(filter->plug->fif->parse_map_key, (filter, "num", 3));
+    TRY(filter->plug->fif->parse_string, (filter, "dbl", 4));
+    TRY(filter->plug->fif->parse_end_map, (filter));
+    TRY(filter->plug->fif->parse_end, (filter));
+
+    ellAdd(&pchan->filters, &filter->list_node);
+    return 0;
+
+ failure:
+    /* We are parsing hardcoded data, so it had better not fail */
+    assert(0);
+    freeListFree(chFilterFreeList, filter);
+    return S_dbLib_fieldNotFound;
+}
+
 dbChannel * dbChannelCreate(const char *name)
 {
     const char *pname = name;
     DBENTRY dbEntry;
     dbChannel *chan = NULL;
-    char *cname;
+    char *cname = NULL;
     dbAddr *paddr;
     long status;
+    chFilterPlugin const *ts_filter = NULL;
 
     if (!name || !*name || !pdbbase)
         return NULL;
@@ -461,15 +492,36 @@ dbChannel * dbChannelCreate(const char *name)
     if (status)
         goto finish;
 
-    chan = freeListCalloc(dbChannelFreeList);
-    if (!chan)
-        goto finish;
     cname = malloc(strlen(name) + 1);
     if (!cname)
         goto finish;
 
-    strcpy(cname, name);
+    if (strcmp(dbEntry.pflddes->name, "TIME")) {
+        strcpy(cname, name);
+    } else {
+        /* If the timestamp filter is available, intercept requests for the TIME
+           field and divert to the VAL field. */
+        ts_filter = dbFindFilter("ts", 2);
+        if (ts_filter) {
+            size_t const cpy_size = pname - name - 4;
+            memcpy(cname, name, cpy_size);
+            /* Keep also the trailing part to allow additional filters. */
+            strcpy(cname + cpy_size, pname);
+
+            dbFinishEntry(&dbEntry);
+            pname = cname;
+            status = pvNameLookup(&dbEntry, &pname);
+            if (status)
+                goto finish;
+        }
+    }
+
+    chan = freeListCalloc(dbChannelFreeList);
+    if (!chan)
+        goto finish;
+
     chan->name = cname;
+    cname = NULL;
     ellInit(&chan->filters);
     ellInit(&chan->pre_chain);
     ellInit(&chan->post_chain);
@@ -478,6 +530,12 @@ dbChannel * dbChannelCreate(const char *name)
     status = dbEntryToAddr(&dbEntry, paddr);
     if (status)
         goto finish;
+
+    if (ts_filter) {
+        status = installTimestampFilter(chan, ts_filter);
+        if (status)
+            goto finish;
+    }
 
     /* Handle field modifiers */
     if (*pname) {
@@ -527,6 +585,8 @@ finish:
         dbChannelDelete(chan);
         chan = NULL;
     }
+    if (cname)
+        free(cname);
     dbFinishEntry(&dbEntry);
     return chan;
 }

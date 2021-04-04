@@ -465,7 +465,10 @@ The B<RPRO> field specifies a reprocessing of the record when current
 processing completes.
 
 The B<TIME> field contains the time when this record was last processed in
-standard format.
+standard format. Reading this field will return a value of type DOUBLE
+representing fractional number of seconds since the epoch. Note that the value
+obtained this way cannot have nanosecond precision. The L<"ts" channel
+filter|filters> can be used to retreive the timestamp with full precision.
 
 The B<TSE> field indicates the mechanism to use to get the time stamp. '0' -
 call get time as before '-1' - call the time stamp driver and use the best

@@ -17,6 +17,57 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Extended timestamp channel filter
+
+The `"ts"` filter can now retrieve the record's timestamp in several numeric
+and string formats, some of which support full nanosecond precision.
+
+    Hal$ caget -a test:channel
+    test:channel                   2021-03-11 18:23:48.265386 42
+    Hal$ caget -f9 'test:channel.{"ts": {"num": "dbl"}}'
+    test:channel.{"ts": {"num": "dbl"}} 984331428.265386105
+    Hal$ caget 'test:channel.{"ts": {"str": "iso"}}'
+    test:channel.{"ts": {"str": "iso"}} 2021-03-11T18:23:48.265386+0100
+    Hal$ caget -f1 'test:channel.{"ts": {"num": "ts"}}'
+    test:channel.{"ts": {"num": "ts"}} 2 984331428.0 265386163.0
+
+More information is included in the filters documentation, which can be found in
+the `html/filters.html` document that is generated during the build.
+
+### Allow access to the TIME field of a record
+
+Accessing the TIME field no longer fails, but instead accesses the timestamp via
+the `"ts"` channel filter, giving the non-integral number of seconds since
+epoch as DOUBLE.
+
+Example:
+
+```
+record(longin, "test:record1") {
+    field(SCAN, "1 second")
+}
+
+record(longin, "test:record2") {
+    field(SCAN, "2 second")
+}
+
+record(calc, "test:timediff") {
+    field(SCAN, "1 second")
+    field(CALC, "A - B")
+    field(INPA, "test:record1.TIME")
+    field(INPB, "test:record2.TIME")
+}
+```
+
+```
+Hal$ camonitor test:timediff
+test:timediff                  2021-03-12 14:59:41.915976 1.00684
+test:timediff                  2021-03-12 14:59:42.915920 0.00693679
+test:timediff                  2021-03-12 14:59:43.916152 1.00705
+test:timediff                  2021-03-12 14:59:44.915869 0.00690341
+```
+
+This fixes [launchpad bug #1182091](https://bugs.launchpad.net/epics-base/+bug/1182091).
 
 -----
 

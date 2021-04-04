@@ -59,22 +59,91 @@ registrar(tsInitialize)
 
 =head3 TimeStamp Filter C<"ts">
 
-This filter is used to set the timestamp of the value fetched through
-the channel to the time the value was fetched (or an update was sent),
-rather than the time the record last
-processed which could have been days or even weeks ago for some records, or set
-to the EPICS epoch if the record has never processed.
+This filter is used for two purposes:
+
+=over
+
+=item * to retrieve the timestamp of the record as a value in several different
+        formats;
+
+=item * to retrieve the record value as normal, but replace the timestamp with
+        the time the value was fetched.
+
+=back
 
 =head4 Parameters
 
-None, use an empty pair of braces.
+=head4 No parameters (an empty pair of braces)
 
-=head4 Example
+Retrieve the record value as normal, but replace the timestamp with the time the
+value was fetched. This is useful for clients that can't handle timestamps that
+are in the past.
 
- Hal$ caget -a 'test:channel.{"ts":{}}'
- test:channel.{"ts":{}}   2012-08-28 22:10:31.192547 0 UDF INVALID
- Hal$ caget -a 'test:channel'
- test:channel             <undefined> 0 UDF INVALID
+=head4 Numeric type C<"num">
+
+The following values are accepted for this parameter:
+
+=over
+
+=item * C<"dbl"> requests the timestamp as C<epicsFloat64> representing the
+        non-integral number of seconds since epoch. This format is convenient,
+        but loses precision, depending on which epoch is used.
+
+=item * C<"sec"> requests the number of seconds since epoch as C<epicsUInt32>.
+
+=item * C<"nsec"> requests the number of nanoseconds since epoch as
+        C<epicsUInt32>.
+
+=item * C<"ts"> requests the entire timestamp. It is provided as a two-element
+        array of C<epicsUInt32> representing seconds and nanoseconds.
+
+=back
+
+Note that C<epicsUInt32> cannot be transferred over Channel Access; in that
+case, the value will be converted to C<epicsFloat64>.
+
+=head4 String type C<"str">
+
+The following values are accepted for this parameter:
+
+=over
+
+=item * C<"epics"> requests the timestamp as a string in the format used by
+        tools such as C<caget>.
+
+=item * C<"iso"> requests the timestamp as a string in the ISO8601 format.
+
+=back
+
+=head4 Epoch adjustment C<"epoch">
+
+The following values are accepted for this parameter:
+
+=over
+
+=item * C<"epics"> keeps the EPICS epoch (1990-01-01) and is the default if the
+        C<"epoch"> parameter is not specified.
+
+=item * C<"unix"> converts the timestamp to the UNIX/POSIX epoch (1970-01-01).
+
+=head4 Examples
+
+ Hal$ caget -a 'test:invalid_ts.{"ts":{}}'
+ test:invalid_ts.{"ts":{}}      2012-08-28 22:10:31.192547 0 UDF INVALID
+ Hal$ caget -a 'test:invalid_ts'
+ test:invalid_ts                <undefined> 0 UDF INVALID
+ Hal$ caget -a test:channel
+ test:channel                   2021-03-11 18:23:48.265386 42
+ Hal$ caget 'test:channel.{"ts": {"str": "epics"}}'
+ test:channel.{"ts": {"str": "epics"}} 2021-03-11 18:23:48.265386
+ Hal$ caget 'test:channel.{"ts": {"str": "iso"}}'
+ test:channel.{"ts": {"str": "iso"}} 2021-03-11T18:23:48.265386+0100
+ Hal$ caget -f9 'test:channel.{"ts": {"num": "dbl"}}'
+ test:channel.{"ts": {"num": "dbl"}} 984331428.265386105
+ Hal$ caget -f1 'test:channel.{"ts": {"num": "ts"}}'
+ test:channel.{"ts": {"num": "ts"}} 2 984331428.0 265386163.0
+ Hal$ caget -f1 'test:channel.{"ts": {"num": "ts", "epoch": "unix"}}'
+ test:channel.{"ts": {"num": "ts", "epoch": "unix"}} 2 1615483428.0 265386163.0
 
 =cut
 

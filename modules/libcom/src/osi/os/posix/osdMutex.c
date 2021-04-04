@@ -36,12 +36,12 @@
 
 #define checkStatus(status,message) \
     if((status)) { \
-        errlogPrintf("epicsMutex %s failed: error %s\n", \
+        errlogPrintf("epicsMutex %s failed: " ERL_ERROR " %s\n", \
             (message), strerror((status))); \
     }
 #define checkStatusQuit(status,message,method) \
     if(status) { \
-        errlogPrintf("epicsMutex %s failed: error %s\n", \
+        errlogPrintf("epicsMutex %s failed: " ERL_ERROR " %s\n", \
             (message), strerror((status))); \
         cantProceed((method)); \
     }

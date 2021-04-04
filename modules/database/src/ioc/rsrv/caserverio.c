@@ -139,7 +139,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
                             char sockErrBuf[64];
                             epicsSocketConvertErrnoToString (
                                 sockErrBuf, sizeof ( sockErrBuf ) );
-                            errlogPrintf ("CAS: Socket shutdown error: %s\n",
+                            errlogPrintf ("CAS: Socket shutdown " ERL_ERROR ": %s\n",
                                 sockErrBuf );
                         }
                     }

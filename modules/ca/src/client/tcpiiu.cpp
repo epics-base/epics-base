@@ -178,7 +178,7 @@ void tcpSendThread::run ()
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
                     sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf ("CAC TCP clean socket shutdown error was %s\n",
+                errlogPrintf ("CAC TCP clean socket shutdown " ERL_ERROR " was %s\n",
                     sockErrBuf );
             }
         }
@@ -194,7 +194,7 @@ void tcpSendThread::run ()
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ("CAC TCP clean socket shutdown error was %s\n",
+            errlogPrintf ("CAC TCP clean socket shutdown " ERL_ERROR " was %s\n",
                 sockErrBuf );
         }
     }
@@ -283,7 +283,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
                     sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf ( "CAC: unexpected TCP send error: %s\n",
+                errlogPrintf ( "CAC: unexpected TCP send " ERL_ERROR ": %s\n",
                     sockErrBuf );
             }
 
@@ -957,7 +957,7 @@ void tcpiiu::initiateAbortShutdown (
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ( "CAC TCP socket linger set error was %s\n",
+            errlogPrintf ( "CAC TCP socket linger set " ERL_ERROR " was %s\n",
                 sockErrBuf );
         }
         this->discardingPendingData = true;
@@ -988,7 +988,7 @@ void tcpiiu::initiateAbortShutdown (
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
-                    errlogPrintf ("CAC TCP socket shutdown error was %s\n",
+                    errlogPrintf ("CAC TCP socket shutdown " ERL_ERROR " was %s\n",
                         sockErrBuf );
                 }
             }

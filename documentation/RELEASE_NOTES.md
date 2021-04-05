@@ -17,6 +17,11 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### IOCsh sets `${PWD}`
+
+IOC shell will now ensure `${PWD}` is set on startup,
+and updated by the `cd` iocsh function.
+
 
 -----
 

@@ -22,6 +22,89 @@ should also be read to understand what has changed since earlier releases.
 IOC shell will now ensure `${PWD}` is set on startup,
 and updated by the `cd` iocsh function.
 
+### Add Alarm Message and Time Tag Fields
+
+Two new fields have been added to `dbCommon` so will be present in all
+records: `AMSG` and `UTAG`.
+
+#### `AMSG`
+
+`AMSG` can hold an arbitrary 40-character string, providing additional
+information about the alarm condition indicated in `STAT` and `SEVR`. With no
+alarm it will hold an empty string. The new `recGblSetSevrMsg()` function can
+be used in place of `recGblSetSevr()` to signal an alarm while providing a
+message.
+
+For example, a device support's `read_bi()` routine for a hypothetical
+multi-channel ethernet attached device might flag a communication error
+between the IOC and controller, or an error involving a certain channel like
+this:
+
+```c
+static long read_bi(biRecord* prec) {
+    ...
+    if (!priv->connected) {
+        recGblSetSevrMsg(prec, COMM_ALARM, INVALID_ALARM,
+            "No controller connected");
+        return S_dev_noDevice;
+    }
+    if (!priv->err) {
+        recGblSetSevrMsg(prec, READ_ALARM, INVALID_ALARM,
+            "Channel %u disconnexted", priv->chan);
+        return S_dev_noDevice;
+    }
+    return status;
+}
+```
+
+#### `UTAG`
+
+`UTAG` holds an `epicsUInt64` value which is semantically part of the record's
+timestamp (`TIME`). The value defaults to zero if not explicitly set. Device
+support or an event time provider which supports this feature may write a tag
+value directly to the `dbCommon::utag` field.
+
+`TSEL` links will copy both `TIME` and `UTAG` between records if the link type
+supports this (CA links do not).
+
+A `utag` server side channel filter has been added which can be configured to
+filter out monitor updates which don't pass the test `(UTAG & M) == V` where
+`M` and `V` are client specified integers. For example running the command
+`camonitor BPM0:X.{utag:{M:1,V:1}}` will only show updates for which
+`(UTAG & 1) == 1` i.e. the least significant bit of the `UTAG` field is set.
+
+This feature is intended for use by intelligent devices which can provide
+contextual information along with a value/alarm/time.  For example, a beam
+diagnostic device which is aware of whether a beam signal should be present
+(eg. from a global timing system).
+
+#### Link Support
+
+Two new optional methods have been added to the Link Support Entry Table
+(`struct lset`): `lset::getAlarmMsg()` and `lset::getTimeStampTag()`. See
+comments in dbLink.h for details on implementing these.
+
+Two new accessor functions have also been added which call these methods:
+`dbGetAlarmMsg()` and `dbGetTimeStampTag()`.
+
+#### Compatibility
+
+User code wishing to call these interfaces while maintaining compatibility with older
+versions of Base may add some of the following macro definitions, and ensure
+that the variables referenced by output pointers are initialized.
+
+```c
+#ifndef HAS_ALARM_MESSAGE
+#  recGblSetSevrMsg(REC, STAT, SEVR, ...) recGblSetSevr(REC, STAT, SEVR)
+#endif
+#ifndef dbGetAlarmMsg
+#  define dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN) dbGetAlarm(LINK, STAT, SEVR)
+#endif
+#ifndef dbGetTimeStampTag
+#  define dbGetTimeStampTag(LINK, STAMP, TAG) dbGetTimeStamp(LINK, STAMP)
+#endif
+```
+
 
 -----
 

@@ -53,7 +53,7 @@ typedef struct calc_link {
     } pstate;
     epicsEnum16 stat;
     epicsEnum16 sevr;
-    char amsg[MAX_STRING_SIZE];
+    char amsg[DB_AMSG_SIZE];
     short prec;
     char *expr;
     char *major;

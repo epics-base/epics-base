@@ -26,6 +26,20 @@
 #include "epicsMutex.h"
 #include "freeList.h"
 #include "adjustment.h"
+#include "errlog.h"
+#include "epicsString.h"
+#include "epicsAtomic.h"
+#include "epicsExport.h"
+
+/* Bypass free list and directly call malloc() every time? */
+int freeListBypass
+#ifdef EPICS_FREELIST_DEBUG
+    = 1;
+#else
+    = 2; /* checks environment $EPICS_FREELIST_DEBUG */
+#endif
+
+epicsExportAddress(int, freeListBypass);
 
 typedef struct allocMem {
     struct allocMem     *next;
@@ -44,10 +58,25 @@ LIBCOM_API void epicsStdCall
     freeListInitPvt(void **ppvt,int size,int nmalloc)
 {
     FREELISTPVT *pfl;
+    int bypass = epicsAtomicGetIntT(&freeListBypass);
+
+    if(bypass==2) {
+        const char *str = getenv("EPICS_FREELIST_DEBUG");
+
+        if(str && epicsStrCaseCmp(str, "YES")==0) {
+            bypass = 1;
+        } else if(!str || str[0]=='\0' || epicsStrCaseCmp(str, "NO")==0) {
+            bypass = 0;
+        } else {
+            errlogPrintf("Warning: EPICS_FREELIST_DEBUG expected to be YES, NO, or empty.  Not \"%s\"\n", str);
+        }
+        epicsAtomicSetIntT(&freeListBypass, bypass);
+    }
 
     pfl = callocMustSucceed(1,sizeof(FREELISTPVT), "freeListInitPvt");
     pfl->size = adjustToWorstCaseAlignment(size);
-    pfl->nmalloc = nmalloc;
+    if(!bypass)
+        pfl->nmalloc = nmalloc; /* nmalloc==0 to bypass */
     pfl->head = NULL;
     pfl->mallochead = NULL;
     pfl->nBlocksAvailable = 0u;
@@ -60,27 +89,25 @@ LIBCOM_API void epicsStdCall
 LIBCOM_API void * epicsStdCall freeListCalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
-#   ifdef EPICS_FREELIST_DEBUG
-    return callocMustSucceed(1,pfl->size,"freeList Debug Calloc");
-#   else
     void        *ptemp;
 
-    ptemp = freeListMalloc(pvt);
-    if(ptemp) memset((char *)ptemp,0,pfl->size);
+    if(!pfl->nmalloc)
+        ptemp = calloc(1u, pfl->size);
+    else if(!!(ptemp = freeListMalloc(pvt)))
+        memset((char *)ptemp,0,pfl->size);
     return(ptemp);
-#   endif
 }
 
 LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
-#   ifdef EPICS_FREELIST_DEBUG
-    return callocMustSucceed(1,pfl->size,"freeList Debug Malloc");
-#   else
     void        *ptemp;
     void        **ppnext;
     allocMem    *pallocmem;
     int         i;
+
+    if(!pfl->nmalloc)
+        return malloc(pfl->size);
 
     epicsMutexMustLock(pfl->lock);
     ptemp = pfl->head;
@@ -125,17 +152,17 @@ LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt)
     VALGRIND_MEMPOOL_FREE(pfl, ptemp);
     VALGRIND_MEMPOOL_ALLOC(pfl, ptemp, pfl->size);
     return(ptemp);
-#   endif
 }
 
 LIBCOM_API void epicsStdCall freeListFree(void *pvt,void*pmem)
 {
     FREELISTPVT *pfl = pvt;
-#   ifdef EPICS_FREELIST_DEBUG
-    memset ( pmem, 0xdd, pfl->size );
-    free(pmem);
-#   else
     void        **ppnext;
+
+    if(!pfl->nmalloc) {
+        free(pmem);
+        return;
+    }
 
     VALGRIND_MEMPOOL_FREE(pvt, pmem);
     VALGRIND_MEMPOOL_ALLOC(pvt, pmem, sizeof(void*));
@@ -146,7 +173,6 @@ LIBCOM_API void epicsStdCall freeListFree(void *pvt,void*pmem)
     pfl->head = pmem;
     pfl->nBlocksAvailable++;
     epicsMutexUnlock(pfl->lock);
-#   endif
 }
 
 LIBCOM_API void epicsStdCall freeListCleanup(void *pvt)

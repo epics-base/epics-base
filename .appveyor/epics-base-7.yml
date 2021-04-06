@@ -113,11 +113,11 @@ build_script:
 
 test_script:
   - cmd: python -m ci_core_dumper install
-  - cmd: python .ci/cue.py test
+  - cmd: python .ci/cue.py -T 20M test
 
 on_finish:
   - ps: Get-ChildItem *.tap -Recurse -Force | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
-  - cmd: python .ci/cue.py build test-results -s
+  - cmd: python .ci/cue.py -T 1M test-results
 
 on_failure:
   - cmd: python -m ci_core_dumper report

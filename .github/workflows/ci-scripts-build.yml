@@ -171,4 +171,5 @@ jobs:
         name: tapfiles ${{ matrix.name }}
         path: '**/O.*/*.tap'
     - name: Collect and show test results
-      run: python .ci/cue.py test-results
+      if: ${{ always() }}
+      run: python .ci/cue.py -T 1M test-results

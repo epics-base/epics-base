@@ -17,8 +17,6 @@
 #  Currently Supporting:
 #	cygwin-x86             (cygwin compiler used for host builds)
 #	cygwin-x86_64          (cygwin compiler used for host builds)
-#	darwin-ppc             (PowerPC based Apple running OSX)
-#	darwin-ppcx86          (Universal binaries for both CPUs)
 #	darwin-x86             (Intel based Apple running OSX)
 #	freebsd-x86            (GNU compiler used for host builds)
 #	freebsd-x86_64         (GNU compiler used for host builds)

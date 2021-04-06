@@ -1,8 +1,0 @@
-# CONFIG.darwin-ppc.Common
-#
-# Definitions for darwin-ppc host builds
-# Sites may override these definitions in CONFIG_SITE.darwin-ppc.Common
-#-------------------------------------------------------
-
-#Include definitions common to unix hosts
-include $(CONFIG)/os/CONFIG.UnixCommon.Common

@@ -81,7 +81,6 @@
 #       vxWorks-ppc604_altivec
 #       vxWorks-mpc8540
 #       vxWorks-mpc8548
-#       RTEMS-at91rm9200ek
 #       RTEMS-beagleboneblack
 #       RTEMS-beatnik
 #       RTEMS-gen68360
@@ -93,7 +92,6 @@
 #       RTEMS-mvme5500
 #       RTEMS-pc386
 #	RTEMS-pc686
-#       RTEMS-psim
 #	RTEMS-qoriq_e500
 #       RTEMS-uC5282
 #	RTEMS-xilinx-zynq_a9_qemu

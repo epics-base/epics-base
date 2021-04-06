@@ -68,9 +68,6 @@
 #       linux-arm               (linux-x86 or -x86_64 host)
 #       linux-aarch64           (linux-x86_64 host)
 #       linux-athlon            (linux-x86 host)
-#       linux-cris              (Axis GNU crosscompiler on linux-x86 host)
-#       linux-cris_v10          (Axis GNU crosscompiler on linux-x86 host)
-#       linux-cris_v32          (Axis GNU crosscompiler on linux-x86 host)
 #       linux-microblaze
 #       linux-xscale_be
 #       vxWorks-486

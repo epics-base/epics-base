@@ -17,7 +17,8 @@
 #  Currently Supporting:
 #	cygwin-x86             (cygwin compiler used for host builds)
 #	cygwin-x86_64          (cygwin compiler used for host builds)
-#	darwin-x86             (Intel based Apple running OSX)
+#	darwin-aarch64         (M1 based Apple using CLANG compiler)
+#	darwin-x86             (Intel based Apple using CLANG compiler)
 #	freebsd-x86            (GNU compiler used for host builds)
 #	freebsd-x86_64         (GNU compiler used for host builds)
 #	linux-aarch64          (GNU compiler used for host builds)

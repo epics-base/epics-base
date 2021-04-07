@@ -665,10 +665,6 @@ long dbChannelGet(dbChannel *chan, short dbrType, void *pbuffer,
             unsigned short dbfType = addr.field_type;
 
             if (INVALID_DB_REQ(dbrType)) {
-                char message[80];
-
-                sprintf(message, "dbChannelGet: Request type is %d\n", dbrType);
-                recGblDbaddrError(S_db_badDbrtype, &addr, message);
                 return S_db_badDbrtype;
             }
 

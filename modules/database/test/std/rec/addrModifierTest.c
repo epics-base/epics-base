@@ -51,7 +51,6 @@ static void expectProcSuccess(struct pv *pv)
 }
 
 static double initial[] = {0,1,2,3,4,5,6,7,8,9};
-static double buf[10];
 
 static void changeRange(struct pv *pv, long start, long incr, long end)
 {
@@ -71,17 +70,18 @@ static void changeRange(struct pv *pv, long start, long incr, long end)
 
 static void expectRange(double *values, long start, long incr, long end)
 {
+    static double buf[NELEMENTS(initial)];
     int i,j;
     if (!incr)
         incr = 1;
-    for (i=0; i<10; i++)
+    for (i=0; i<NELEMENTS(initial); i++)
         buf[i] = initial[i];
     for (i=0, j=start; j<=end; i++, j+=incr)
         buf[j] = values[i];
     testdbGetFieldEqual("tgt.NORD", DBF_LONG, 8);
     testdbGetFieldEqual("tgt.SEVR", DBF_LONG, NO_ALARM);
     testdbGetFieldEqual("tgt.STAT", DBF_LONG, NO_ALARM);
-    testdbGetArrFieldEqual("tgt.VAL", DBF_DOUBLE, 10, 8, buf);
+    testdbGetArrFieldEqual("tgt.VAL", DBF_DOUBLE, NELEMENTS(initial), 8, buf);
 }
 
 struct pv ao_pv = {"ao",1,{20,0,0,0}};

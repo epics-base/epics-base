@@ -39,6 +39,7 @@ INC += epicsGeneralTime.h
 INC += osdTime.h
 INC += generalTimeSup.h
 INC += osiClockTime.h
+INC += osdTimer.h
 INC += epicsSignal.h
 INC += osiProcess.h
 INC += osiUnistd.h

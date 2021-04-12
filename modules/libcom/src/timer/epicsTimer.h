@@ -19,6 +19,7 @@
 #include "libComAPI.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
+#include "osdTimer.h"
 
 #ifdef __cplusplus
 

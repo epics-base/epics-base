@@ -26,6 +26,8 @@
 #include "libComAPI.h"
 #include "epicsEvent.h"
 
+#include "osdThreadPvt.h"
+
 typedef struct epicsEventOSD {
     HANDLE handle;
 } epicsEventOSD;
@@ -90,27 +92,37 @@ LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem )
 LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
 {
-    static const unsigned mSecPerSec = 1000;
+    static const unsigned nSec100PerSec = 10000000u;
+    HANDLE handles[2];
     DWORD status;
-    DWORD tmo;
+    LARGE_INTEGER tmo;
+    HANDLE timer;
 
     if ( timeOut <= 0.0 ) {
-        tmo = 0u;
-    }
-    else if ( timeOut >= INFINITE / mSecPerSec ) {
-        tmo = INFINITE - 1;
+        tmo.QuadPart = 0u;
     }
     else {
-        tmo = ( DWORD ) ( ( timeOut * mSecPerSec ) + 0.5 );
-        if ( tmo == 0 ) {
-            tmo = 1;
-        }
+        tmo.QuadPart = -((LONGLONG)(timeOut * nSec100PerSec + 0.5));
     }
-    status = WaitForSingleObject ( pSem->handle, tmo );
+
+    if (tmo.QuadPart < 0) {
+        timer = osdThreadGetTimer();
+        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0)) {
+            return epicsEventError;
+        }
+        handles[0] = pSem->handle;
+        handles[1] = timer;
+        status = WaitForMultipleObjects (2, handles, FALSE, INFINITE);
+    }
+    else {
+        status = WaitForSingleObject(pSem->handle, 0);
+    }
     if ( status == WAIT_OBJECT_0 ) {
         return epicsEventOK;
     }
-    else if ( status == WAIT_TIMEOUT ) {
+    else if ( status == WAIT_OBJECT_0 + 1 || status == WAIT_TIMEOUT ) {
+        /* WaitForMultipleObjects will trigger WAIT_OBJECT_0 + 1,
+           WaitForSingleObject will trigger WAIT_TIMEOUT */
         return epicsEventWaitTimeout;
     }
     else {

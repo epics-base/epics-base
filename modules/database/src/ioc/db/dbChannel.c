@@ -446,76 +446,57 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
     return status;
 }
 
-static long installTimestampFilter(dbChannel* pchan, chFilterPlugin const *plug) {
-    chFilter *filter;
-    parse_result result;
-
-    filter = freeListCalloc(chFilterFreeList);
-    if (!filter) {
-        return S_db_noMemory;
-    }
-
-    filter->chan = pchan;
-    filter->plug = plug;
-    filter->puser = NULL;
-
-    TRY(filter->plug->fif->parse_start, (filter));
-    TRY(filter->plug->fif->parse_start_map, (filter));
-    TRY(filter->plug->fif->parse_map_key, (filter, "num", 3));
-    TRY(filter->plug->fif->parse_string, (filter, "dbl", 4));
-    TRY(filter->plug->fif->parse_end_map, (filter));
-    TRY(filter->plug->fif->parse_end, (filter));
-
-    ellAdd(&pchan->filters, &filter->list_node);
-    return 0;
-
- failure:
-    /* We are parsing hardcoded data, so it had better not fail */
-    assert(0);
-    freeListFree(chFilterFreeList, filter);
-    return S_dbLib_fieldNotFound;
-}
-
 dbChannel * dbChannelCreate(const char *name)
 {
     const char *pname = name;
     DBENTRY dbEntry;
     dbChannel *chan = NULL;
     char *cname = NULL;
+    char *time_field;
     dbAddr *paddr;
     long status;
-    chFilterPlugin const *ts_filter = NULL;
 
     if (!name || !*name || !pdbbase)
         return NULL;
 
+    if (!(time_field = strstr(name, ".TIME")) || !dbFindFilter("ts", 2)) {
+        cname = malloc(strlen(name) + 1);
+        if (!cname)
+            goto finish;
+        strcpy(cname, name);
+    } else {
+        /* The timestamp filter is available, so intercept the request for the
+           TIME field and insert the "ts" filter. */
+        static const char* time_filter = "{\"ts\": {\"num\": \"dbl\"}}";
+        const size_t time_filter_len = strlen(time_filter);
+        const size_t namelen = strlen(name);
+        cname = malloc(namelen + time_filter_len + 1);
+        if (!cname)
+            goto finish;
+
+        size_t const cpy_size = time_field - name + 1;
+        memcpy(cname, name, time_field - name + 1);
+        strcpy(cname + cpy_size, time_filter);
+        char *trailing = cname + cpy_size + time_filter_len - 1;
+
+        char const *eof = time_field + strlen(".TIME");
+        int const has_trailing = eof - name < namelen;
+        int const has_filters = has_trailing && *eof == '{';
+        if (has_filters) {
+            /* Append trailing filters to the "ts" filter */
+            *trailing++ = ',';
+        }
+
+        if (has_trailing) {
+            /* Always append trailing chars to avoid masking syntax errors */
+            strcpy(trailing, eof + 1);
+        }
+    }
+
+    pname = cname;
     status = pvNameLookup(&dbEntry, &pname);
     if (status)
         goto finish;
-
-    cname = malloc(strlen(name) + 1);
-    if (!cname)
-        goto finish;
-
-    if (strcmp(dbEntry.pflddes->name, "TIME")) {
-        strcpy(cname, name);
-    } else {
-        /* If the timestamp filter is available, intercept requests for the TIME
-           field and divert to the VAL field. */
-        ts_filter = dbFindFilter("ts", 2);
-        if (ts_filter) {
-            size_t const cpy_size = pname - name - 4;
-            memcpy(cname, name, cpy_size);
-            /* Keep also the trailing part to allow additional filters. */
-            strcpy(cname + cpy_size, pname);
-
-            dbFinishEntry(&dbEntry);
-            pname = cname;
-            status = pvNameLookup(&dbEntry, &pname);
-            if (status)
-                goto finish;
-        }
-    }
 
     chan = freeListCalloc(dbChannelFreeList);
     if (!chan)
@@ -531,12 +512,6 @@ dbChannel * dbChannelCreate(const char *name)
     status = dbEntryToAddr(&dbEntry, paddr);
     if (status)
         goto finish;
-
-    if (ts_filter) {
-        status = installTimestampFilter(chan, ts_filter);
-        if (status)
-            goto finish;
-    }
 
     /* Handle field modifiers */
     if (*pname) {

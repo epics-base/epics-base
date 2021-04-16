@@ -1126,17 +1126,26 @@ static void varHandler(const iocshVarDef *v, const char *setString)
 static void varCallFunc(const iocshArgBuf *args)
 {
     struct iocshVariable *v;
-    if(args[0].sval == NULL) {
+    const char *name = args[0].sval;
+    const char *value = args[1].sval;
+
+    if (!value) {
+        int found = 0;
         for (v = iocshVariableHead ; v != NULL ; v = v->next)
-            varHandler(v->pVarDef, args[1].sval);
+            if (!name || epicsStrGlobMatch(v->pVarDef->name, name) != 0) {
+                varHandler(v->pVarDef, NULL);
+                found = 1;
+            }
+        if (!found && name != NULL)
+            fprintf(epicsGetStderr(), "No var matching %s found.\n", name);
     }
     else {
         v = (iocshVariable *)registryFind(iocshVarID, args[0].sval);
         if (v == NULL) {
-            fprintf(epicsGetStderr(), "Var %s not found.\n", args[0].sval);
+            fprintf(epicsGetStderr(), "Var %s not found.\n", name);
         }
         else {
-            varHandler(v->pVarDef, args[1].sval);
+            varHandler(v->pVarDef, value);
         }
     }
 }

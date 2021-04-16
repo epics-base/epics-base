@@ -17,6 +17,11 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Glob pattern allowed in `var` command
+
+When used with one argument, the `var` command can be used with a glob pattern
+for printing matching variables.
+
 ### IOCsh sets `${PWD}`
 
 IOC shell will now ensure `${PWD}` is set on startup,

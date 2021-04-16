@@ -1130,6 +1130,16 @@ static void varCallFunc(const iocshArgBuf *args)
         for (v = iocshVariableHead ; v != NULL ; v = v->next)
             varHandler(v->pVarDef, args[1].sval);
     }
+    else if(args[1].sval == NULL) {
+        int found = 0;
+        for (v = iocshVariableHead ; v != NULL ; v = v->next)
+            if (epicsStrGlobMatch(v->pVarDef->name, args[0].sval) != 0) {
+                varHandler(v->pVarDef, NULL);
+                found = 1;
+            }
+        if (!found)
+            fprintf(epicsGetStderr(), "No var matching %s found.\n", args[0].sval);
+    }
     else {
         v = (iocshVariable *)registryFind(iocshVarID, args[0].sval);
         if (v == NULL) {

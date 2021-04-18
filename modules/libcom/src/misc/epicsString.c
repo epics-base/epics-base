@@ -259,35 +259,40 @@ size_t epicsStrnLen(const char *s, size_t maxlen)
     return i;
 }
 
-int epicsStrGlobMatch(const char *str, const char *pattern)
+int epicsStrnGlobMatch(const char *str, size_t len, const char *pattern)
 {
-    const char *cp = NULL, *mp = NULL;
+    const char *mp = NULL;
+    size_t cp = 0, i = 0;
 
-    while ((*str) && (*pattern != '*')) {
-        if ((*pattern != *str) && (*pattern != '?'))
+    while ((i < len) && (str[i]) && (*pattern != '*')) {
+        if ((*pattern != str[i]) && (*pattern != '?'))
             return 0;
         pattern++;
-        str++;
+        i++;
     }
-    while (*str) {
+    while ((i < len) && str[i]) {
         if (*pattern == '*') {
             if (!*++pattern)
                 return 1;
             mp = pattern;
-            cp = str+1;
+            cp = i+1;
         }
-        else if ((*pattern == *str) || (*pattern == '?')) {
+        else if ((*pattern == str[i]) || (*pattern == '?')) {
             pattern++;
-            str++;
+            i++;
         }
         else {
             pattern = mp;
-            str = cp++;
+            i = cp++;
         }
     }
     while (*pattern == '*')
         pattern++;
     return !*pattern;
+}
+
+int epicsStrGlobMatch(const char *str, const char *pattern) {
+    return epicsStrnGlobMatch(str, (size_t)-1, pattern);
 }
 
 char * epicsStrtok_r(char *s, const char *delim, char **lasts)

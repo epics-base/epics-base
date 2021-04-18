@@ -36,6 +36,7 @@ LIBCOM_API char * epicsStrnDup(const char *s, size_t len);
 LIBCOM_API int epicsStrPrintEscaped(FILE *fp, const char *s, size_t n);
 #define epicsStrSnPrintEscaped epicsStrnEscapedFromRaw
 LIBCOM_API size_t epicsStrnLen(const char *s, size_t maxlen);
+LIBCOM_API int epicsStrnGlobMatch(const char *str, size_t len, const char *pattern);
 LIBCOM_API int epicsStrGlobMatch(const char *str, const char *pattern);
 LIBCOM_API char * epicsStrtok_r(char *s, const char *delim, char **lasts);
 LIBCOM_API unsigned int epicsStrHash(const char *str, unsigned int seed);

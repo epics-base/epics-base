@@ -16,16 +16,17 @@
 /* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
 #define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
 
-#include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
+#include <string.h>
 #include <ctype.h>
 #include <envLib.h>
 
 #include "epicsFindSymbol.h"
 #include "epicsStdio.h"
+#include "epicsString.h"
 #include "errlog.h"
 #include "iocsh.h"
+
 
 /*
  * Set the value of an environment variable
@@ -86,14 +87,12 @@ LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
  */
 LIBCOM_API void epicsStdCall epicsEnvShow (const char *name)
 {
-    if (name == NULL) {
-        envShow (0);
-    }
-    else {
-        const char *cp = getenv (name);
-        if (cp == NULL)
-            printf ("%s is not an environment variable.\n", name);
-        else
-            printf ("%s=%s\n", name, cp);
+    extern char **ppGlobalEnviron; /* Used in 'environ' macro but not declared in envLib.h */
+    char **sp;
+
+    for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++) {
+        if (!**sp) continue; /* skip unset environment variables */
+        if (!name || epicsStrnGlobMatch(*sp, strchr(*sp, '=') - *sp, name))
+            printf ("%s\n", *sp);
     }
 }

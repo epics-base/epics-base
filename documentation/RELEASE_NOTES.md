@@ -17,6 +17,16 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### epicsEnvShow accepts glob pattern
+
+The optional argument to epicsEnvShow can now be a glob pattern.
+
+### New function `epicsStrnGlobMatch()`
+
+The function `epicsStrnGlobMatch(char* str, size_t len, char* pattern)`
+works exactly the same as `epicsStrGlobMatch()` but takes an additional
+length arguments which limits the number of characters of `str` to match.
+
 ### Automatic fallback to thread when unable to exec caRepeater
 
 A process using libca which does not find an existing caRepeater process

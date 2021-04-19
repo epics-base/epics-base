@@ -17,6 +17,22 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Automatic fallback to thread when unable to exec caRepeater
+
+A process using libca which does not find an existing caRepeater process
+will attempt to start one by running the caRepeater executable.
+This is not always possible, usually when caRepeater is not in `$PATH`.
+Now, instead of printing a warning, an internal caRepeater thread
+will be started (as is done be RTEMS and vxWorks targets).
+
+If this fallback occurs, the lifetime of the caRepeater thread
+may be shorter than the lifetime of a separate caRepeater process
+would have been.
+
+It remains the recommended practice to explicitly start a caRepeater
+instance.  Examples of both systemd (`caRepeater.service`) and sysv
+(`S99caRepeater`) scripts may be found under `bin/`.
+
 ### Glob pattern allowed in `var` command
 
 When used with one argument, the `var` command can be used with a glob pattern

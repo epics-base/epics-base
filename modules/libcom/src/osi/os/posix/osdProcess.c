@@ -63,7 +63,11 @@ LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
     (const char *pProcessName, const char *pBaseExecutableName)
 {
     int status;
+    int silent = pProcessName && pProcessName[0]=='!';
     int fds[2]; /* [reader, writer] */
+
+    if(silent)
+        pProcessName++; /* skip '!' */
 
     if(pipe(fds))
         return osiSpawnDetachedProcessFail;
@@ -137,7 +141,7 @@ LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
      * Run the specified executable
      */
     status = execlp (pBaseExecutableName, pBaseExecutableName, (char *)NULL);
-    if ( status < 0 ) {
+    if ( status < 0 && !silent ) {
         fprintf ( stderr, "**** The executable \"%s\" couldn't be located\n", pBaseExecutableName );
         fprintf ( stderr, "**** because of errno = \"%s\".\n", strerror (errno) );
         fprintf ( stderr, "**** You may need to modify your PATH environment variable.\n" );

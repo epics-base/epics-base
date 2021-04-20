@@ -117,7 +117,7 @@ test_script:
 
 on_finish:
   - ps: Get-ChildItem *.tap -Recurse -Force | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
-  - cmd: python .ci/cue.py -T 1M test-results
+  - cmd: python .ci/cue.py -T 5M test-results
 
 on_failure:
   - cmd: python -m ci_core_dumper report

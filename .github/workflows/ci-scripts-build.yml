@@ -172,4 +172,4 @@ jobs:
         path: '**/O.*/*.tap'
     - name: Collect and show test results
       if: ${{ always() }}
-      run: python .ci/cue.py -T 1M test-results
+      run: python .ci/cue.py -T 5M test-results

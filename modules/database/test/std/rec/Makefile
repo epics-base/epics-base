@@ -175,8 +175,12 @@ dbHeaderTestxx_SRCS += dbHeaderTestxx.cpp
 
 ifeq ($(T_A),$(EPICS_HOST_ARCH))
 # Host-only tests of softIoc/softIocPVA, caget and pvget (if present)
+# Unfortunately hangs too often on CI systems:
+ifndef CI
 TESTS += netget
 endif
+endif
+
 # epicsRunRecordTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunRecordTests.c
 

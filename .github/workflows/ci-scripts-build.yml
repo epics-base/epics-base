@@ -135,6 +135,11 @@ jobs:
             name: "Win2019 MSC-19, static"
 
           - os: windows-2019
+            cmp: vs2019
+            configuration: debug
+            name: "Win2019 MSC-19, debug"
+
+          - os: windows-2019
             cmp: gcc
             configuration: default
             name: "Win2019 mingw"

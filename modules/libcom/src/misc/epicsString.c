@@ -23,6 +23,15 @@
 #include <errno.h>
 #include <ctype.h>
 
+#ifndef vxWorks
+#include <stdint.h>
+#else
+/* VxWorks automaticaly includes stdint.h defining SIZE_MAX in 6.9 but not earlier */
+#ifndef SIZE_MAX
+#define SIZE_MAX (size_t)-1
+#endif
+#endif
+
 #include "epicsAssert.h"
 #include "epicsStdio.h"
 #include "cantProceed.h"
@@ -292,7 +301,7 @@ int epicsStrnGlobMatch(const char *str, size_t len, const char *pattern)
 }
 
 int epicsStrGlobMatch(const char *str, const char *pattern) {
-    return epicsStrnGlobMatch(str, (size_t)-1, pattern);
+    return epicsStrnGlobMatch(str, SIZE_MAX, pattern);
 }
 
 char * epicsStrtok_r(char *s, const char *delim, char **lasts)

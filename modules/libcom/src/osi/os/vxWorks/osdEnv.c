@@ -87,7 +87,7 @@ LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
  */
 LIBCOM_API void epicsStdCall epicsEnvShow (const char *name)
 {
-    extern char **ppGlobalEnviron;
+    extern char **ppGlobalEnviron; /* Used in 'environ' macro but not declared in envLib.h */
     char **sp;
 
     for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++) {

@@ -9,8 +9,6 @@
 #       leave the line empty.
 #
 
--include $(TOP)/configure/os/CONFIG_SITE.Common.Common
-
 # If objects were compiled with different default runtime libraries
 # (not a good idea), specify which one you want to use in the product
 # by making it the default and the others nodefault.  Use

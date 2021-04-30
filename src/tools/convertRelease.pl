@@ -113,6 +113,9 @@ EOF
 #
 sub releaseTops {
     my @includes = grep !m/^ (TOP | TEMPLATE_TOP) $/x, @apps;
+    if (!@includes) {
+        die "No variables defined in RELEASE*s";
+    }
     print join(' ', @includes), "\n";
 }
 
@@ -256,6 +259,9 @@ sub checkRelease {
     }
 
     my @modules = grep(!m/^(RULES|TOP|TEMPLATE_TOP)$/, @apps);
+    if (!@modules) {
+        die "No variables defined in RELEASE*s";
+    }
     my $app = shift @modules;
     my $latest = AbsPath($macros{$app});
     my %paths = ($latest => $app);

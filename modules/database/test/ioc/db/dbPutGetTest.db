@@ -46,3 +46,5 @@ record(arr, "arr") {
 }
 
 record(x, "recmeta") {}
+
+record(x, "special") {}

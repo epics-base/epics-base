@@ -313,11 +313,29 @@ void testPutArr(void)
     testdbGetArrFieldEqual("arr", DBR_LONG, 4, 3, buf);
 }
 
+static
+void testPutSpecial(void)
+{
+    const char val[] = "special";
+    const char sfx[] = "special.SFX";
+    testDiag("testPutSpecial()");
+
+    testdbPutFieldOk(val, DBR_LONG, 1);
+    testdbPutFieldOk(sfx, DBR_LONG, SFX_Before);    /* Reject early */
+    testdbPutFieldFail(S_db_Blocked, val, DBR_LONG, 2);
+    testdbGetFieldEqual(val, DBR_LONG, 1);          /* Wasn't modified */
+    testdbPutFieldOk(sfx, DBR_LONG, SFX_After);     /* Reject late */
+    testdbPutFieldFail(S_db_Blocked, val, DBR_LONG, 3);
+    testdbPutFieldOk(sfx, DBR_LONG, SFX_None);
+    testdbPutFieldOk(val, DBR_LONG, 4);
+}
+
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
 {
-    testPlan(111);
+    testPlan(119);
     testdbPrepare();
 
     testdbMetaDoubleSizes();
@@ -342,6 +360,8 @@ MAIN(dbPutGet)
     testLongField();
 
     testPutArr();
+
+    testPutSpecial();
 
     testIocShutdownOk();
 

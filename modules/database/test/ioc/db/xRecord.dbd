@@ -47,6 +47,7 @@ recordtype(x) {
   }
   field(INP, DBF_INLINK) {
     prompt("Input Link")
+    special(SPC_MOD)
   }
   field(CLBK, DBF_NOACCESS) {
     prompt("Processing callback")

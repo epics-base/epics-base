@@ -79,7 +79,8 @@ static long process(struct dbCommon *pcommon)
 static long special(struct dbAddr *paddr, int after)
 {
     struct xRecord *prec = (struct xRecord *) paddr->precord;
-    if (dbGetFieldIndex(paddr) != xRecordVAL) {
+    if (dbGetFieldIndex(paddr) != xRecordVAL &&
+        dbGetFieldIndex(paddr) != xRecordINP) {
         recGblRecordError(S_db_badField, prec, "x: special");
         return S_db_badField;
     }

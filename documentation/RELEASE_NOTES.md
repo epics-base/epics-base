@@ -1805,6 +1805,15 @@ header and removed the need for dbScan.c to reach into the internals of its
 
 ## Changes made on the 3.15 branch since 3.15.8
 
+### Use waitable timers on Microsoft Windows
+
+The `epicsEventWaitWithTimeout` and `epicsThreadSleep` functions have
+been changed to use waitable timers. On Windows 10 version 1803 or higher
+they will use high resolution timers for more consistent timing.
+
+See https://groups.google.com/a/chromium.org/g/scheduler-dev/c/0GlSPYreJeY
+for a comparison of the performance of different timers.
+
 ### Change to the `junitfiles` self-test build target
 
 The names of the generated junit xml test output files have been changed

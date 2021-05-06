@@ -1376,7 +1376,8 @@ long dbPut(DBADDR *paddr, short dbrType,
     /* Always do special processing if needed */
     if (special) {
         long status2 = dbPutSpecial(paddr, 1);
-        if (status2) goto done;
+        if (status2)
+            status = status2;
     }
     if (status) goto done;
 

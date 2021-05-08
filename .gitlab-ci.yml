@@ -1,0 +1,124 @@
+# .gitlab-ci.yml for EPICS Base jobs on different versions of CentOS
+# (see: https://github.com/epics-base/ci-scripts)
+
+variables:
+  GIT_SUBMODULE_STRATEGY: "recursive"
+  SETUP_PATH: ".ci:.ci-local"
+  CMP: "gcc"
+  BGFC: "default"
+  BASE: "SELF"
+  EPICS_TEST_IMPRECISE_TIMING: "YES"
+
+# Install prerequisites: common and release specific parts
+.yum_common: &yum_common |-
+  yum -y install gcc gcc-c++ make git perl epel-release
+  yum -y install clang perl-Test-Simple perl-Test-Harness perl-ExtUtils-ParseXS
+  yum -y install p7zip
+
+# Template jobs for builds
+.build_rh6:
+  image: centos:6
+  stage: build
+  before_script:
+    - cp .ci/centos6-eol.repo /etc/yum.repos.d/CentOS-Base.repo
+    - *yum_common
+    - yum -y install scl-utils centos-release-scl-rh
+    - yum -y install python27
+    - echo python .ci/cue.py prepare | scl enable python27 -
+  script:
+    - echo python .ci/cue.py build | scl enable python27 -
+    - echo python .ci/cue.py test | scl enable python27 -
+    - echo python .ci/cue.py test-results | scl enable python27 -
+
+.build_rh7:
+  image: centos:7
+  stage: build
+  before_script:
+    - *yum_common
+    - yum -y install python python-libs
+    - python .ci/cue.py prepare
+  script:
+    - python .ci/cue.py build
+    - python .ci/cue.py test
+    - python .ci/cue.py test-results
+
+.build_rh8:
+  image: centos:8
+  stage: build
+  before_script:
+    - *yum_common
+    - yum -y install python3 python3-libs
+    - python3 .ci/cue.py prepare
+  script:
+    - python3 .ci/cue.py build
+    - python3 .ci/cue.py test
+    - python3 .ci/cue.py test-results
+
+############
+# CentOS 6 #
+############
+
+rh6_gcc:
+  extends: .build_rh6
+
+rh6_gcc_st_dbg:
+  extends: .build_rh6
+  variables:
+    BCFG: "static-debug"
+
+rh6_clang:
+  extends: .build_rh6
+  variables:
+    CMP: "clang"
+
+rh6_clang_st_dbg:
+  extends: .build_rh6
+  variables:
+    CMP: "clang"
+    BCFG: "static-debug"
+
+############
+# CentOS 7 #
+############
+
+rh7_gcc:
+  extends: .build_rh7
+
+rh7_gcc_st_dbg:
+  extends: .build_rh7
+  variables:
+    BCFG: "static-debug"
+
+rh7_clang:
+  extends: .build_rh7
+  variables:
+    CMP: "clang"
+
+rh7_clang_st_dbg:
+  extends: .build_rh7
+  variables:
+    CMP: "clang"
+    BCFG: "static-debug"
+
+############
+# CentOS 8 #
+############
+
+rh8_gcc:
+  extends: .build_rh8
+
+rh8_gcc_st_dbg:
+  extends: .build_rh8
+  variables:
+    BCFG: "static-debug"
+
+rh8_clang:
+  extends: .build_rh8
+  variables:
+    CMP: "clang"
+
+rh8_clang_st_dbg:
+  extends: .build_rh8
+  variables:
+    CMP: "clang"
+    BCFG: "static-debug"

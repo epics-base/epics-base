@@ -1177,7 +1177,44 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     if (!status) status = dbSetLink(plink, &link_info, new_devsup);
 
-    if (!status && special) status = dbPutSpecial(paddr, 1);
+    if (status) {
+        if (isDevLink) {
+            precord->dset = NULL;
+            precord->pact = TRUE;
+        }
+        goto postScanEvent;
+    }
+
+    /* We need to initialize any links with a link support layer, i.e.
+     * any CONSTANT, JSON_LINK, or PV_LINK types. However for a PV_LINK
+     * when isDevLink is set (i.e. this is the record's INP or OUT link)
+     * we must wait until after calling dsxt->add_record(). This allows
+     * the Async Soft Channel input supports to change it to a PN_LINK.
+     * For other cases we initialize the link before the second call to
+     * dbPutSpecial() because some record types such as calcout need to
+     * be able to call link support methods from prset->special().
+     */
+
+    switch (plink->type) { /* New type */
+    case PV_LINK:
+        if (isDevLink)
+            break;
+        /* else fall through */
+    case CONSTANT:
+    case JSON_LINK:
+        dbAddLink(&locker, plink, pfldDes->field_type, chan);
+        chan = NULL; /* we used it, don't clean it up */
+    }
+
+    if (special) status = dbPutSpecial(paddr, 1);
+
+    if (!status && isDevLink) {
+        precord->dpvt = NULL;
+        precord->dset = new_dset;
+        precord->pact = FALSE;
+
+        status = new_dsxt->add_record(precord);
+    }
 
     if (status) {
         if (isDevLink) {
@@ -1187,29 +1224,21 @@ static long dbPutFieldLink(DBADDR *paddr,
         goto postScanEvent;
     }
 
-    if (isDevLink) {
-        precord->dpvt = NULL;
-        precord->dset = new_dset;
-        precord->pact = FALSE;
-
-        status = new_dsxt->add_record(precord);
-        if (status) {
-            precord->dset = NULL;
-            precord->pact = TRUE;
-            goto postScanEvent;
-        }
-    }
-
     switch (plink->type) { /* New link type */
-    case PV_LINK:
     case CONSTANT:
+    case CA_LINK:
+    case DB_LINK:
+    case PN_LINK:
     case JSON_LINK:
-        dbAddLink(&locker, plink, pfldDes->field_type, chan);
-        chan = NULL; /* don't clean it up */
         break;
 
-    case DB_LINK:
-    case CA_LINK:
+    case PV_LINK:
+        if (isDevLink) {
+            dbAddLink(&locker, plink, pfldDes->field_type, chan);
+            chan = NULL; /* we used it, don't clean it up */
+        }
+        break;
+
     case MACRO_LINK:
         break;  /* should never get here */
 
@@ -1218,7 +1247,6 @@ static long dbPutFieldLink(DBADDR *paddr,
             status = S_db_badHWaddr;
             goto postScanEvent;
         }
-        break;
     }
     db_post_events(precord, plink, DBE_VALUE | DBE_LOG);
 

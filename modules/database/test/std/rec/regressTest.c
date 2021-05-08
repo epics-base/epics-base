@@ -134,15 +134,63 @@ void testCADisconn(void)
     testdbPutFieldFail(-1, "ai:disconn.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("ai:disconn.SEVR", DBF_LONG, INVALID_ALARM);
     testdbGetFieldEqual("ai:disconn.STAT", DBF_LONG, LINK_ALARM);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
+/* lp:1824277 Regression in calcout, setting links at runtime */
+static void
+testSpecialLinks(void)
+{
+    testDiag("In testSpecialLinks()");
+
+    startRegressTestIoc("regressCalcout.db");
+
+    testdbPutFieldOk("cout.INPA", DBF_STRING, "10");
+    testdbGetFieldEqual("cout.A", DBF_LONG, 10);
+    testdbGetFieldEqual("cout.INAV", DBF_LONG, calcoutINAV_CON);
+    testdbPutFieldOk("cout.A", DBF_LONG, 15);
+    testdbPutFieldOk("cout.INPB", DBF_STRING, "{\"const\":20}");
+    testdbGetFieldEqual("cout.B", DBF_LONG, 20);
+    testdbGetFieldEqual("cout.INBV", DBF_LONG, calcoutINAV_CON);
+    testdbPutFieldOk("cout.B", DBF_LONG, 25);
+    testdbPutFieldOk("cout.INPC", DBF_STRING, "cout.A");
+    testdbGetFieldEqual("cout.C", DBF_LONG, 99);
+    testdbGetFieldEqual("cout.INCV", DBF_LONG, calcoutINAV_LOC);
+    testdbPutFieldOk("cout.INPD", DBF_STRING, "no-such-pv");
+    testdbGetFieldEqual("cout.D", DBF_LONG, 99);
+    testdbGetFieldEqual("cout.INDV", DBF_LONG, calcoutINAV_EXT_NC);
+
+    eltc(0);
+    testdbPutFieldOk("ain.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "ain.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("bin.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "bin.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("iin.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "iin.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("lin.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "lin.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("min.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "min.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("din.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "din.INP", DBF_STRING, "{\"const\":1}");
+    testdbPutFieldOk("sin.INP", DBF_STRING, "cout");
+    testdbPutFieldFail(S_db_badField, "sin.INP", DBF_STRING, "{\"const\":1}");
+    eltc(1);
+
+    testIocShutdownOk();
+    testdbCleanup();
 }
 
 
 MAIN(regressTest)
 {
-    testPlan(34);
+    testPlan(62);
     testArrayLength1();
     testHexConstantLinks();
     testLinkMS();
     testCADisconn();
+    testSpecialLinks();
     return testDone();
 }

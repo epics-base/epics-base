@@ -24,5 +24,5 @@ iocLogServer_SYS_LIBS_WIN32   += user32 ws2_32 dbghelp
 SCRIPTS_HOST = S99logServer
 
 EXPAND += S99logServer@
-EXPAND_VARS = INSTALL_BIN=$(abspath $(INSTALL_BIN))
+EXPAND_VARS = INSTALL_BIN=$(FINAL_LOCATION)/bin/$(T_A)
 

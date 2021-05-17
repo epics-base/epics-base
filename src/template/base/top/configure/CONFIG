@@ -13,9 +13,13 @@ ifdef T_A
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 endif
 
-# Check for proper EPICS_BASE
+# Check EPICS_BASE is set properly
 ifneq (file,$(origin EPICS_BASE))
- $(error EPICS_BASE must be defined in configure/RELEASE or a similar file or it will not be correctly read by convertRelease.pl!)
+  $(error EPICS_BASE must be set in a configure/RELEASE file)
+else
+  ifeq ($(wildcard $(EPICS_BASE)/configure/CONFIG_BASE),)
+    $(error EPICS_BASE does not point to an EPICS installation)
+  endif
 endif
 
 CONFIG = $(RULES)/configure

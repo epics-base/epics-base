@@ -227,6 +227,12 @@ sub envPaths {
 # Check RELEASE file consistency with support modules
 #
 sub checkRelease {
+    die "\nEPICS_BASE must be set in a configure/RELEASE file.\n\n"
+        unless grep(m/^(EPICS_BASE)$/, @apps) &&
+            exists $macros{EPICS_BASE} &&
+            $macros{EPICS_BASE} ne '' &&
+            -f "$macros{EPICS_BASE}/configure/CONFIG_BASE";
+
     my $status = 0;
     delete $macros{RULES};
     delete $macros{TOP};
@@ -256,9 +262,6 @@ sub checkRelease {
     }
 
     my @modules = grep(!m/^(RULES|TOP|TEMPLATE_TOP)$/, @apps);
-    if (!@modules) {
-        die "No variables defined in RELEASE*s";
-    }
     my $app = shift @modules;
     my $latest = AbsPath($macros{$app});
     my %paths = ($latest => $app);

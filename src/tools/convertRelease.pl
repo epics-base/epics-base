@@ -113,9 +113,6 @@ EOF
 #
 sub releaseTops {
     my @includes = grep !m/^ (TOP | TEMPLATE_TOP) $/x, @apps;
-    if (!@includes) {
-        die "No variables defined in RELEASE*s";
-    }
     print join(' ', @includes), "\n";
 }
 

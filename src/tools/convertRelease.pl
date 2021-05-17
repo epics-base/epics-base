@@ -227,6 +227,12 @@ sub envPaths {
 # Check RELEASE file consistency with support modules
 #
 sub checkRelease {
+    die "\nEPICS_BASE must be set in a configure/RELEASE file.\n\n"
+        unless grep(m/^(EPICS_BASE)$/, @apps) &&
+            exists $macros{EPICS_BASE} &&
+            $macros{EPICS_BASE} ne '' &&
+            -f "$macros{EPICS_BASE}/configure/CONFIG_BASE";
+
     my $status = 0;
     delete $macros{RULES};
     delete $macros{TOP};

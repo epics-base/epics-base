@@ -93,16 +93,23 @@ epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
 { 
     static const unsigned nSec100PerSec = 10000000u;
+    static const unsigned mSecPerSec = 1000u;
     HANDLE handles[2];
     DWORD status;
     LARGE_INTEGER tmo;
     HANDLE timer;
+    LONGLONG nSec100;
 
     if ( timeOut <= 0.0 ) {
         tmo.QuadPart = 0u;
     }
+    else if ( timeOut >= INFINITE / mSecPerSec  ) {
+        nSec100 = (LONGLONG)(INFINITE - 1) * (nSec100PerSec / mSecPerSec); /* for compatibility with old approach */
+        tmo.QuadPart = -nSec100;
+    }
     else {
-        tmo.QuadPart = -((LONGLONG)(timeOut * nSec100PerSec + 0.5));
+        nSec100 = (LONGLONG)(timeOut * nSec100PerSec + 0.999999);
+        tmo.QuadPart = -nSec100;
     }
 
     if (tmo.QuadPart < 0) {

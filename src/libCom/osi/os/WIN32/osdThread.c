@@ -808,14 +808,21 @@ HANDLE osdThreadGetTimer()
 epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 {
     static const unsigned nSec100PerSec = 10000000u;
+    static const unsigned mSecPerSec = 1000u;
     LARGE_INTEGER tmo;
     HANDLE timer;
+    LONGLONG nSec100;
 
     if ( seconds <= 0.0 ) {
         tmo.QuadPart = 0u;
     }
+    else if ( seconds >= INFINITE / mSecPerSec  ) {
+        nSec100 = (LONGLONG)(INFINITE - 1) * (nSec100PerSec / mSecPerSec); /* for compatibility with old approach */
+        tmo.QuadPart = -nSec100;
+    }
     else {
-        tmo.QuadPart = -((LONGLONG)(seconds * nSec100PerSec + 0.5));
+        nSec100 = (LONGLONG)(seconds * nSec100PerSec + 0.999999);
+        tmo.QuadPart = -nSec100;
     }
 
     if (tmo.QuadPart == 0) {

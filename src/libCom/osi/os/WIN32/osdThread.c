@@ -807,22 +807,25 @@ HANDLE osdThreadGetTimer()
  */
 epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 {
-    static const unsigned nSec100PerSec = 10000000u; /* number of 100ns intervals per second */
-    static const unsigned mSecPerSec = 1000u;
+    /* waitable timers use 100 nanosecond intervals, like FILETIME */
+    static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
+    static const unsigned mSecPerSec = 1000u;     /* milliseconds per second */
     LARGE_INTEGER tmo;
     HANDLE timer;
-    LONGLONG nSec100;
+    LONGLONG nIvals; /* number of intervals */
 
     if ( seconds <= 0.0 ) {
         tmo.QuadPart = 0u;
     }
-    else if ( seconds >= INFINITE / mSecPerSec  ) {
-        nSec100 = (LONGLONG)(INFINITE - 1) * (nSec100PerSec / mSecPerSec); /* for compatibility with old approach */
-        tmo.QuadPart = -nSec100; /* negative value means a relative time offset for timer */
+    else if ( seconds >= INFINITE / mSecPerSec  ) { 
+        /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
+           to be compatible with previous WaitForSingleObject() implementation */    
+        nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
+        tmo.QuadPart = -nIvals; /* negative value means a relative time offset for timer */
     }
     else {
-        nSec100 = (LONGLONG)(seconds * nSec100PerSec + 0.999999);
-        tmo.QuadPart = -nSec100;
+        nIvals = (LONGLONG)(seconds * ivalPerSec + 0.999999);
+        tmo.QuadPart = -nIvals;
     }
 
     if (tmo.QuadPart == 0) {

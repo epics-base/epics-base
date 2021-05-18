@@ -92,7 +92,7 @@ epicsShareFunc epicsEventStatus epicsEventWait ( epicsEventId pSem )
 epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
 { 
-    static const unsigned nSec100PerSec = 10000000u;
+    static const unsigned nSec100PerSec = 10000000u; /* number of 100ns intervals per second */
     static const unsigned mSecPerSec = 1000u;
     HANDLE handles[2];
     DWORD status;
@@ -105,7 +105,7 @@ epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout (
     }
     else if ( timeOut >= INFINITE / mSecPerSec  ) {
         nSec100 = (LONGLONG)(INFINITE - 1) * (nSec100PerSec / mSecPerSec); /* for compatibility with old approach */
-        tmo.QuadPart = -nSec100;
+        tmo.QuadPart = -nSec100;  /* negative value means a relative time offset for timer */
     }
     else {
         nSec100 = (LONGLONG)(timeOut * nSec100PerSec + 0.999999);

@@ -807,7 +807,7 @@ HANDLE osdThreadGetTimer()
  */
 epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
 {
-    static const unsigned nSec100PerSec = 10000000u;
+    static const unsigned nSec100PerSec = 10000000u; /* number of 100ns intervals per second */
     static const unsigned mSecPerSec = 1000u;
     LARGE_INTEGER tmo;
     HANDLE timer;
@@ -818,7 +818,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
     }
     else if ( seconds >= INFINITE / mSecPerSec  ) {
         nSec100 = (LONGLONG)(INFINITE - 1) * (nSec100PerSec / mSecPerSec); /* for compatibility with old approach */
-        tmo.QuadPart = -nSec100;
+        tmo.QuadPart = -nSec100; /* negative value means a relative time offset for timer */
     }
     else {
         nSec100 = (LONGLONG)(seconds * nSec100PerSec + 0.999999);

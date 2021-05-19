@@ -17,6 +17,30 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Formalize/fix `FINAL_LOCATION`
+
+The `FINAL_LOCATION` make variable has for some time been an undocumented
+means of performing a staged build.  This is a build which "installs" to
+a temporary location, which will later be moved to a final location.
+
+This has now been added to `configure/CONFIG_SITE`.
+
+Usage analogous to the autotools recipe
+
+```sh
+./configure --prefix=/usr/lib/epics
+make install DESTDIR=/tmp/build
+```
+
+would be
+
+```sh
+make INSTALL_LOCATION=/tmp/build FINAL_LOCATION=/usr/lib/epics
+```
+
+`FINAL_LOCATION` is now correctly used in systemd and sysv init scripts
+`caRepeater.service`, `S99caRepeater`, and `S99logServer`.
+
 ### IOCsh sets `${PWD}`
 
 IOC shell will now ensure `${PWD}` is set on startup,

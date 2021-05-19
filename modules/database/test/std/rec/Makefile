@@ -15,6 +15,7 @@ USR_CPPFLAGS += -DUSE_TYPED_DSET
 
 TESTLIBRARY = dbRecStdTest
 
+dbRecStdTest_SRCS += arroutRecord.c
 dbRecStdTest_SRCS += asTestLib.c
 dbRecStdTest_LIBS += dbRecStd dbCore ca Com
 
@@ -23,6 +24,7 @@ PROD_LIBS = dbRecStdTest dbRecStd dbCore ca Com
 TARGETS += $(COMMON_DIR)/recTestIoc.dbd
 DBDDEPENDS_FILES += recTestIoc.dbd$(DEP)
 recTestIoc_DBD = base.dbd
+recTestIoc_DBD += arroutRecord.dbd
 TESTFILES += $(COMMON_DIR)/recTestIoc.dbd
 
 testHarness_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
@@ -166,6 +168,13 @@ testHarness_SRCS += linkFilterTest.c
 TESTFILES += ../linkFilterTest.db
 TESTS += linkFilterTest
 
+TESTPROD_HOST += addrModifierTest
+addrModifierTest_SRCS += addrModifierTest.c
+addrModifierTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += addrModifierTest.c
+TESTFILES += ../addrModifierTest.db
+TESTS += addrModifierTest
+
 # dbHeader* is only a compile test
 # no need to actually run
 TESTPROD += dbHeaderTest
@@ -202,6 +211,8 @@ TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
 endif
 
 include $(TOP)/configure/RULES
+
+arroutRecord$(DEP): $(COMMON_DIR)/arroutRecord.h
 
 rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
 	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)

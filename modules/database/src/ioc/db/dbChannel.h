@@ -23,6 +23,7 @@
 #include "epicsTypes.h"
 #include "errMdef.h"
 #include "db_field_log.h"
+#include "dbAddrModifier.h"
 #include "dbEvent.h"
 #include "dbCoreAPI.h"
 
@@ -54,6 +55,8 @@ typedef struct chFilter chFilter;
 typedef struct dbChannel {
     const char *name;
     dbAddr addr;              /* address structure for record/field */
+    dbAddrModifier addrModifier;
+                              /* optional: which indices are targeted */
     long  final_no_elements;  /* final number of elements (arrays) */
     short final_field_size;   /* final size of element */
     short final_type;         /* final type of database field */

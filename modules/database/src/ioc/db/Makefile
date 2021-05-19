@@ -15,6 +15,7 @@ INC += callback.h
 INC += dbAccess.h
 INC += dbAccessDefs.h
 INC += dbAddr.h
+INC += dbAddrModifier.h
 INC += dbBkpt.h
 INC += dbCa.h
 INC += dbChannel.h
@@ -66,6 +67,7 @@ HTMLS += dbCommonRecord.html
 HTMLS += dbCommonInput.html
 HTMLS += dbCommonOutput.html
 
+dbCore_SRCS += arrayRangeModifier.c
 dbCore_SRCS += dbLock.c
 dbCore_SRCS += dbAccess.c
 dbCore_SRCS += dbBkpt.c

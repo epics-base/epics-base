@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 
+#include "wrapArrayIndices.h"
 #include "chfPlugin.h"
 #include "dbAccessDefs.h"
 #include "dbExtractArray.h"
@@ -72,23 +73,6 @@ static void freeArray(db_field_log *pfl)
     if (pfl->type == dbfl_type_ref) {
         freeListFree(pfl->u.r.pvt, pfl->u.r.field);
     }
-}
-
-static long wrapArrayIndices(long *start, const long increment, long *end,
-    const long no_elements)
-{
-    if (*start < 0) *start = no_elements + *start;
-    if (*start < 0) *start = 0;
-    if (*start > no_elements) *start = no_elements;
-
-    if (*end < 0) *end = no_elements + *end;
-    if (*end < 0) *end = 0;
-    if (*end >= no_elements) *end = no_elements - 1;
-
-    if (*end - *start >= 0)
-        return 1 + (*end - *start) / increment;
-    else
-        return 0;
 }
 
 static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)

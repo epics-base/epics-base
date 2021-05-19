@@ -369,9 +369,8 @@ static long dbDbPutValue(struct link *plink, short dbrType,
     struct pv_link *ppv_link = &plink->value.pv_link;
     dbChannel *chan = linkChannel(plink);
     struct dbCommon *psrce = plink->precord;
-    DBADDR *paddr = &chan->addr;
     dbCommon *pdest = dbChannelRecord(chan);
-    long status = dbPut(paddr, dbrType, pbuffer, nRequest);
+    long status = dbChannelPut(chan, dbrType, pbuffer, nRequest);
 
     recGblInheritSevr(ppv_link->pvlMask & pvlOptMsMode, pdest, psrce->nsta,
         psrce->nsev);

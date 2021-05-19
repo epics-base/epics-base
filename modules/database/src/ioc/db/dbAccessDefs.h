@@ -19,7 +19,9 @@
 
 #include "dbBase.h"
 #include "dbAddr.h"
+#include "dbAddrModifier.h"
 #include "recSup.h"
+#include "db_field_log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -250,6 +252,13 @@ DBCORE_API long dbPutField(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
 DBCORE_API long dbPut(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
+
+DBCORE_API long dbPutFieldModifier(
+    struct dbAddr *,short dbrType,const void *pbuffer,long nRequest,
+    dbAddrModifier *pmod);
+DBCORE_API long dbPutModifier(
+    struct dbAddr *,short dbrType,const void *pbuffer,long nRequest,
+    dbAddrModifier *pmod);
 
 typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
 /*dbSpcAsRegisterCallback called by access security */

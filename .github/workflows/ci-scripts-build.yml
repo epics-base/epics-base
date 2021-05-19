@@ -129,10 +129,12 @@ jobs:
       if: runner.os == 'Linux'
     - name: "apt-get install ${{ matrix.cmp }}"
       run: |
+        export GCC_NAME="${{ matrix.cmp }}"
+        sudo apt-get update
         sudo apt-get -y install software-properties-common
         sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
         sudo apt-get update
-        sudo apt-get -y install ${{ matrix.cmp }}
+        sudo apt-get -y install g++-${GCC_NAME#gcc-}
       if: matrix.utoolchain
     - name: Prepare and compile dependencies
       run: python .ci/cue.py prepare

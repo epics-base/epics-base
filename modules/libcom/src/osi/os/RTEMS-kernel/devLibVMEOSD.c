@@ -20,6 +20,7 @@
 #include "devLibVME.h"
 #include <epicsInterrupt.h>
 #include <epicsMMIO.h>
+#include <string.h>
 
 #if defined(__PPC__) || defined(__mcf528x__)
 

@@ -19,12 +19,16 @@
 #include <bsp.h>
 #include "devLibVME.h"
 #include <epicsInterrupt.h>
+#include <epicsMMIO.h>
+#include <string.h>
 
 #if defined(__PPC__) || defined(__mcf528x__)
+/* EPICS VME support requires various routines to be provided by the
+ * BSP. Most MVME PowerPC BSPs provide them, plus the uC5282.
+ */
 
 #if defined(__PPC__)
 #include <bsp/VME.h>
-#include <bsp/bspExt.h>
 #endif
 
 
@@ -126,8 +130,7 @@ static long
 rtemsDevInit(void)
 {
     /* assume the vme bridge has been initialized by bsp */
-    /* init BSP extensions [memProbe etc.] */
-    return bspExtInit();
+    return 0;
 }
 
 /*
@@ -245,18 +248,70 @@ static long rtemsDevMapAddr (epicsAddressType addrType, unsigned options,
     return 0;
 }
 
+#if defined(__m68k__)
+/* All RTEMS m68k BSPs define this, m68k/shared/[misc/]memProbe.c */
+extern
+rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval);
+#else
+
+static
+rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval)
+{
+    rtems_interrupt_level flags;
+    rtems_status_code ret = RTEMS_SUCCESSFUL;
+    epicsUInt32 val;
+
+    /* bspExt allows caller to write uninitialized values, we don't */
+    if(write && !pval)
+        return RTEMS_INVALID_NUMBER;
+
+    switch(size) {
+    case 1:
+    case 2:
+    case 4:
+        break;
+    default:
+        return RTEMS_INVALID_SIZE;
+    }
+
+    if(write)
+        memcpy(&val, pval, size);
+
+    rtems_interrupt_disable(flags);
+    _BSP_clear_hostbridge_errors(0,1);
+
+    if(!write) {
+        switch(size) {
+        case 1: val = ioread8(addr)<<24; break;
+        case 2: val = nat_ioread16(addr)<<16; break;
+        case 4: val = nat_ioread32(addr); break;
+        }
+    } else {
+        switch(size) {
+        case 1: iowrite8(addr, val>>24); break;
+        case 2: nat_iowrite16(addr, val>>16); break;
+        case 4: nat_iowrite32(addr, val); break;
+        }
+    }
+
+    ret = _BSP_clear_hostbridge_errors(0,1);
+    rtems_interrupt_enable(flags);
+
+    if(!write && pval)
+        memcpy(pval, &val, size);
+
+    return ret;
+}
+#endif
+
 /*
  * a bus error safe "wordSize" read at the specified address which returns
  * unsuccessful status if the device isnt present
  */
-rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval);
 static long rtemsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
     long status;
 
-    /*
-     * this global variable exists in the nivxi library
-     */
     status = bspExtMemProbe ((void*)ptr, 0/*read*/, wordSize, pValue);
     if (status!=RTEMS_SUCCESSFUL) {
         return S_dev_noDevice;
@@ -273,9 +328,6 @@ static long rtemsDevWriteProbe (unsigned wordSize, volatile void *ptr, const voi
 {
     long status;
 
-    /*
-     * this global variable exists in the nivxi library
-     */
     status = bspExtMemProbe ((void*)ptr, 1/*write*/, wordSize, (void*)pValue);
     if (status!=RTEMS_SUCCESSFUL) {
         return S_dev_noDevice;
@@ -359,7 +411,7 @@ devLibVME *pdevLibVME;
 #endif /* defined(__PPC__) || defined(__mcf528x__) */
 
 /*
- * Some vxWorks convenience routines
+ * Some convenience routines
  */
 void
 bcopyLongs(char *source, char *destination, int nlongs)

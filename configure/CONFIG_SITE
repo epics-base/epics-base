@@ -86,6 +86,7 @@
 #       vxWorks-mpc8540
 #       vxWorks-mpc8548
 #       RTEMS-at91rm9200ek
+#       RTEMS-beagleboneblack
 #       RTEMS-beatnik
 #       RTEMS-gen68360
 #       RTEMS-mcp750
@@ -95,8 +96,12 @@
 #       RTEMS-mvme3100
 #       RTEMS-mvme5500
 #       RTEMS-pc386
+#	RTEMS-pc686
 #       RTEMS-psim
+#	RTEMS-qoriq_e500
 #       RTEMS-uC5282
+#	RTEMS-xilinx-zynq_a9_qemu
+#	RTEMS-xilinx_zynq_zedboad
 #       win32-x86-mingw         (linux-x86 or -x86_64 host)
 #
 
@@ -104,7 +109,6 @@
 #  Definitions in configure/os/CONFIG_SITE.<host>.Common
 #  may override this setting.
 CROSS_COMPILER_TARGET_ARCHS=
-#CROSS_COMPILER_TARGET_ARCHS=vxWorks-ppc32
 
 # If only some of your host architectures can compile the
 #  above CROSS_COMPILER_TARGET_ARCHS specify those host

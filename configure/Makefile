@@ -15,7 +15,8 @@ include $(TOP)/configure/CONFIG
 TOOLS = $(TOP)/src/tools
 
 CONFIGS += $(subst ../,,$(wildcard ../CONFIG*))
-CONFIGS += $(subst ../,,$(wildcard ../os/CONFIG*))
+CONFIGS += $(subst ../,,$(wildcard ../os/CONFIG.*))
+CONFIGS += $(subst ../,,$(wildcard ../os/CONFIG_SITE.*))
 
 CONFIGS += $(subst ../,,$(wildcard ../RELEASE*))
 CONFIGS += $(subst ../,,$(wildcard ../RULES*))
@@ -29,5 +30,9 @@ CFG += CONFIG_CA_VERSION
 CFG += CONFIG_DATABASE_MODULE
 CFG += CONFIG_DATABASE_VERSION
 
+CFG += TOOLCHAIN.$(EPICS_HOST_ARCH).$(T_A)
+
 include $(TOP)/configure/RULES
 
+TOOLCHAIN.$(EPICS_HOST_ARCH).$(T_A): toolchain.c
+	$(PREPROCESS.cpp)

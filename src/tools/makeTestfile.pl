@@ -6,7 +6,7 @@
 #     Operator of Los Alamos National Laboratory.
 # SPDX-License-Identifier: EPICS
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 # The makeTestfile.pl script generates a file $target.t which is needed
@@ -36,29 +36,37 @@ my $tool = basename($0);
 my $timeout = $ENV{EPICS_UNITTEST_TIMEOUT} // 500; # 8 min 20 sec
 
 my ($TA, $HA, $target, $exe) = @ARGV;
-my $exec;
+my ($exec, $error);
 
-# Use WINE to run windows target executables on non-windows host
-if( $TA =~ /^win32-x86/ && $HA !~ /^win/ ) {
-  # new deb. derivatives have wine32 and wine64
-  # older have wine and wine64
-  # prefer wine32 if present
-  my $wine32 = "/usr/bin/wine32";
-  $wine32 = "/usr/bin/wine" if ! -x $wine32;
-  $exec = "$wine32 $exe";
-} elsif( $TA =~ /^windows-x64/ && $HA !~ /^win/ ) {
-  $exec = "wine64 $exe";
-
-# Run pc386 test harness w/ QEMU
-} elsif( $TA =~ /^RTEMS-pc386-qemu$/ ) {
-  $exec = "qemu-system-i386 -m 64 -no-reboot -serial stdio -display none -net nic,model=ne2k_pci -net user,restrict=yes -kernel $exe";
-
-# Explicitly fail for other RTEMS targets
-} elsif( $TA =~ /^RTEMS-/ ) {
-  die "$tool: I don't know how to create scripts for testing $TA on $HA\n";
-
-} else {
-  $exec = "./$exe";
+if ($TA =~ /^win32-x86/ && $HA !~ /^win/) {
+    # Use WINE to run win32-x86 executables on non-windows hosts.
+    # New Debian derivatives have wine32 and wine64, older ones have
+    # wine and wine64. We prefer wine32 if present.
+    my $wine32 = "/usr/bin/wine32";
+    $wine32 = "/usr/bin/wine" if ! -x $wine32;
+    $error = $exec = "$wine32 $exe";
+}
+elsif ($TA =~ /^windows-x64/ && $HA !~ /^win/) {
+    # Use WINE to run windows-x64 executables on non-windows hosts.
+    $error = $exec = "wine64 $exe";
+}
+elsif ($TA =~ /^RTEMS-pc[36]86-qemu$/) {
+    # Run the pc386 and pc686 test harness w/ QEMU
+    $exec = "qemu-system-i386 -m 64 -no-reboot "
+        . "-serial stdio -display none "
+        . "-net nic,model=e1000 -net nic,model=ne2k_pci "
+        . "-net user,restrict=yes "
+        . "-append --console=/dev/com1 "
+        . "-kernel $exe";
+    $error = "qemu-system-i386 ... -kernel $exe";
+}
+elsif ($TA =~ /^RTEMS-/) {
+    # Explicitly fail for other RTEMS targets
+    die "$tool: I don't know how to create scripts for testing $TA on $HA\n";
+}
+else {
+    # Assume it's directly executable on other targets
+    $error = $exec = "./$exe";
 }
 
 # Create the $target.t file
@@ -114,12 +122,12 @@ my \$proc;
 if (! Win32::Process::Create(\$proc, abs_path('$exec'),
     '$exec', 1, NORMAL_PRIORITY_CLASS, '.')) {
     my \$err = Win32::FormatMessage(Win32::GetLastError());
-    die "\$tool: Can't create Process for '$exec': \$err\\n";
+    die "\$tool: Can't create Process for '$error': \$err\\n";
 }
 if (! \$proc->Wait(1000 * \$timeout)) {
     \$proc->Kill(1);
     print "\\n#### Test stopped by \$tool after \$timeout seconds\\n";
-    die "\$tool: Timed out '$exec' after \$timeout seconds\\n";
+    die "\$tool: Timed out '$error' after \$timeout seconds\\n";
 }
 my \$status;
 \$proc->GetExitCode(\$status);
@@ -132,7 +140,7 @@ else {
     print $OUT <<__UNIX__;
 
 my \$pid = fork();
-die "\$tool: Can't fork for '$exec': \$!\\n"
+die "\$tool: Can't fork for '$error': \$!\\n"
     unless defined \$pid;
 
 if (\$pid) {
@@ -141,7 +149,7 @@ if (\$pid) {
         # Time's up, kill the child
         kill 9, \$pid;
         print "\\n#### Test stopped by \$tool after \$timeout seconds\\n";
-        die "\$tool: Timed out '$exec' after \$timeout seconds\\n";
+        die "\$tool: Timed out '$error' after \$timeout seconds\\n";
     };
 
     alarm \$timeout;
@@ -152,7 +160,7 @@ if (\$pid) {
 else {
     # Child process
     exec '$exec'
-        or die "\$tool: Can't run '$exec': \$!\\n";
+        or die "\$tool: Can't run '$error': \$!\\n";
 }
 __UNIX__
 }

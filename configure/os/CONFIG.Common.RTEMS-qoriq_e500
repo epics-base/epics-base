@@ -1,0 +1,48 @@
+#
+# CONFIG.Common.RTEMS-qoriq_e500
+# Author: Heinz Junkes <junkes@fhi-berlin.mpg.de> 
+#
+# All RTEMS targets use the same Makefile fragment
+#
+EXE = .elf
+RTEMS_BSP = qoriq_e500
+RTEMS_TARGET_CPU = powerpc
+GNU_TARGET = powerpc-rtems
+# optimization trouble in postfix.c
+ARCH_DEP_CFLAGS += -DRTEMS_HAS_ALTIVEC
+#will use bootp
+#ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+
+#ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_MBUF_SPACE=2048
+#ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_CLUSTER_SPACE=5120
+
+#netbsdlib
+#ARCH_DEP_CFLAGS += -I$(RTEMS_BASE)/powerpc-rtems5/qoriq_e500/lib/include
+
+#OP_SYS_LDLIBS += -lbspExt #does not use posix stuff ... want to ignore
+OP_SYS_LDLIBS += -Wl,--gc-sections
+#ARCH_DEP_LDFLAGS = -mcpu=8540 -meabi -msdata=sysv -mstrict-align -mspe -mabi=spe -mfloat-gprs=double 
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/powerpc-rtems5/qoriq_e500/lib  
+
+MUNCH_SUFFIX = .img
+MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
+define MUNCH_CMD
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary $< $@
+	gzip -9 -f $@
+        $(RTEMS_TOOLS)/bin/mkimage.py -A ppc -O linux -T kernel -a 0x4000 -e 0x4000 -n $* -d $@.gz $*.img
+endef
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS
+
+RTEMSSYMS=$(PRODNAME:%$(EXE)=%.sym)
+RTEMSIMGS=$(PRODNAME:%$(EXE)=%.bin)
+INSTALL_RTEMSSYMS=$(RTEMSSYMS:%=$(INSTALL_BIN)/%)
+INSTALL_RTEMSIMGS=$(RTEMSIMGS:%=$(INSTALL_BIN)/%)
+
+%.sym: %$(EXE)
+	$(XSYMS) $^ $@
+
+%.bin: %$(EXE)
+	$(OBJCOPY) -Obinary $^ $@
+
+#PRODTARGETS+=$(INSTALL_RTEMSSYMS) $(INSTALL_RTEMSIMGS)

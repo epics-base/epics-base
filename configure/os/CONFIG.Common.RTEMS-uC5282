@@ -9,6 +9,10 @@ RTEMS_BSP = uC5282
 RTEMS_TARGET_CPU = m68k
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 
+# Hopefully a temporary fix:
+ARCH_DEP_CXXFLAGS_5 = -std=c++98
+ARCH_DEP_CXXFLAGS += $(ARCH_DEP_CXXFLAGS_$(RTEMS_VERSION))
+
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $@

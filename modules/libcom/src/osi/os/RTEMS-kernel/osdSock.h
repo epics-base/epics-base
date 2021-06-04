@@ -37,6 +37,10 @@ int select(int  n,  fd_set  *readfds,  fd_set  *writefds, fd_set *exceptfds, str
 }
 #endif
 
+#ifndef IPPORT_USERRESERVED
+#define IPPORT_USERRESERVED 5000
+#endif 
+
 typedef int                     SOCKET;
 #define INVALID_SOCKET          (-1)
 #define SOCKERRNO               errno
@@ -68,7 +72,6 @@ typedef unsigned char osiSockOptMcastTTL_t;
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
 
-#define bzero(p,n) memset(p,0,n)
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>

@@ -209,6 +209,7 @@ arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
 dbCaLinkTest$(DEP): $(COMMON_DIR)/xRecord.h $(COMMON_DIR)/arrRecord.h
 dbDbLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
+dbPutGetTest$(DEP): $(COMMON_DIR)/xRecord.h
 dbStressLock$(DEP): $(COMMON_DIR)/xRecord.h
 devx$(DEP): $(COMMON_DIR)/xRecord.h
 scanIoTest$(DEP): $(COMMON_DIR)/xRecord.h

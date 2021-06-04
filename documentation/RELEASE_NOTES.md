@@ -17,7 +17,62 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
-### epicsEnvShow accepts glob pattern
+### Experimental Support for RTEMS 5
+
+The new major release of the RTEMS real-time OS contains many changes
+including the ability to support SMP systems. This release of EPICS
+can still be built with RTEMS 4.9.x or 4.10.x and should work just
+the same as earlier releases, although due to code having moved around
+we recommend thorough testing before this release is first used in
+production systems.
+
+This release of EPICS comes with support for several new RTEMS targets
+running on RTEMS 5:
+
+- RTEMS-beagleboneblack
+- RTEMS-pc686
+- RTEMS-qoriq_e500 (MVME2500)
+- RTEMS-xilinx-zynq-a9_qemu
+- RTEMS-xilinx_zynq_zedboard
+
+The EPICS support for RTEMS 4 has always relied on RTEMS-specific
+kernel APIs which cannot be used on an SMP system, so a new port was
+created to use the Posix real-time APIs that are now recommended for
+RTEMS 5. Note that a single installation of EPICS cannot build both
+RTEMS 4 and RTEMS 5 targets, if you need to support targets running
+on both versions you must use a separate installation, and be sure
+to run `make distclean` if switching a single source tree from one
+to the other (both header files and dependency files are different
+between the two and must be cleaned out).
+
+The configuration variable RTEMS_VERSION in the EPICS config file
+`configure/os/CONFIG_SITE.Common.RTEMS` must be set to the full 3-
+part version number for RTEMS 4 releases, e.g. `4.9.1`, `4.10.2`
+but for RTEMS 5.1 and later it must only contain the major version
+number e.g. `5`.
+
+Some RTEMS BSPs can be built and may work with the newer libbsd
+network stack which RTEMS is moving over to, but most of the MVME
+boards (and the uC5282) still require the legacy network stack.
+
+The dependency on bspExt has been removed, EPICS now provides its
+own routine for VMEbus probing (or uses one built into the BSP).
+
+Anyone using this release on RTEMS is advised to discuss problems
+building or running it on either the tech-talk or core-talk email
+lists so the core developers can help with and find out about any
+problems with the old or new port.
+
+Known Issues:
+- MVME2100 and MVME2700 need changes to the RTEMS 5 BSP to build.
+- VMEBus support is not yet available for the MVME2500 BSP.
+- There are some known issues with floating point on MVME2500,
+  probably related to its newer e500 FPU.
+- Changed network driver for beatnik to work with libbsd.  Some
+  issues with DHCP, but network stack usable.  Can load env from
+  NVRAM.
+
+### `epicsEnvShow` accepts a glob pattern
 
 The optional argument to epicsEnvShow can now be a glob pattern.
 
@@ -187,44 +242,6 @@ speeds, so allow enough head-room for slower systems to complete the test.
 Test programs written directly in Perl as a `.plt` script should implement a
 similar timeout for themselves. The "netget" test in Base does this in a way
 that works on Windows as well as Unix-like hosts.
-
-### Experimental Support for RTEMS 5                                                                                                                                                                                             
-The new major release of the RTEMS real-time OS contains many changes
-including the ability to support SMP systems and support for several
-new targets:
-
-- RTEMS-beagleboneblack
-- RTEMS-pc686
-- RTEMS-qoriq_e500
-- RTEMS-xilinx-zynq-a9_qemu
-- RTEMS-xilinx_zynq_zedboard  
-                                              
-The earlier EPICS support for RTEMS made use of various
-RTEMS-specific kernel APIs which cannot be used on an SMP system, so
-the changes here required a completely new port to the Posix
-real-time APIs that RTEMS-5 now recommends.
-                                                                                                                                                                      
-A new RTEMS configuration variable RTEMS_VERSION has been added which
-should be set to the OS version number, e.g. 4.9. When this is 4.12
-or greater, true for 5.1 as well, the new libCom/osi/os/RTEMS-posix
-source files will be used; the older API source files can now be
-found in libCom/osi/os/RTEMS-kernel, and those which are common to
-both installations are in libCom/osi/os/RTEMS. The compiler options
-are read from the Makefile.inc of the corresponding BSP and set in
-the configuration files. It checks that the BSP was also built with
-the --enable-posix option. It also checks if the BSP was built with
-the legacy stack or libbsd.
-                                                                                                                                                                                                                    
-The dependency on bspExt has been removed.  RTEMS 5 provides the bus
-support natively now.
-
-Known Issues:
-- MVME2100, MVME167, and uC5282 have not yet been updated to compile for RTEMS 5.
-- VMEBus support is not available for all powerpc BSPs.
-- There are some known issues with floating point on MVME2500
-- Changed network driver for beatnik to work with libbsd.  Some
-  issues with DHCP, but network stack usable.  Can load env from
-  NVRAM.
 
 -----
 

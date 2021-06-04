@@ -83,10 +83,7 @@
 
 #include "epicsRtemsInitHooks.h"
 
-#ifdef RTEMS_LEGACY_STACK
-#pragma message "RTEMS uses legacy stack"
-#else
-#pragma message "RTEMS uses libbsd stack"
+#ifndef RTEMS_LEGACY_STACK
 // setup own ntp-client to get time
 #include "epicsNtp.h"
 epicsEventId 	dhcpDone;

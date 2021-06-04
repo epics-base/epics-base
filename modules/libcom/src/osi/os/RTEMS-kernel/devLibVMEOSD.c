@@ -23,6 +23,9 @@
 #include <string.h>
 
 #if defined(__PPC__) || defined(__mcf528x__)
+/* EPICS VME support requires various routines to be provided by the
+ * BSP. Most MVME PowerPC BSPs provide them, plus the uC5282.
+ */
 
 #if defined(__PPC__)
 #include <bsp/VME.h>
@@ -245,6 +248,12 @@ static long rtemsDevMapAddr (epicsAddressType addrType, unsigned options,
     return 0;
 }
 
+#if defined(__m68k__)
+/* All RTEMS m68k BSPs define this, m68k/shared/[misc/]memProbe.c */
+extern
+rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval);
+#else
+
 static
 rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval)
 {
@@ -293,6 +302,7 @@ rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval)
 
     return ret;
 }
+#endif
 
 /*
  * a bus error safe "wordSize" read at the specified address which returns

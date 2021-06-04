@@ -312,9 +312,6 @@ static long rtemsDevReadProbe (unsigned wordSize, volatile const void *ptr, void
 {
     long status;
 
-    /*
-     * this global variable exists in the nivxi library
-     */
     status = bspExtMemProbe ((void*)ptr, 0/*read*/, wordSize, pValue);
     if (status!=RTEMS_SUCCESSFUL) {
         return S_dev_noDevice;
@@ -331,9 +328,6 @@ static long rtemsDevWriteProbe (unsigned wordSize, volatile void *ptr, const voi
 {
     long status;
 
-    /*
-     * this global variable exists in the nivxi library
-     */
     status = bspExtMemProbe ((void*)ptr, 1/*write*/, wordSize, (void*)pValue);
     if (status!=RTEMS_SUCCESSFUL) {
         return S_dev_noDevice;
@@ -417,7 +411,7 @@ devLibVME *pdevLibVME;
 #endif /* defined(__PPC__) || defined(__mcf528x__) */
 
 /*
- * Some vxWorks convenience routines
+ * Some convenience routines
  */
 void
 bcopyLongs(char *source, char *destination, int nlongs)

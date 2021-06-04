@@ -113,7 +113,7 @@ SCRIPTS_Linux = caRepeater.service
 
 EXPAND += S99caRepeater@
 EXPAND += caRepeater.service@
-EXPAND_VARS = INSTALL_BIN=$(abspath $(INSTALL_BIN))
+EXPAND_VARS = INSTALL_BIN=$(FINAL_LOCATION)/bin/$(T_A)
 
 SRC_DIRS += $(CURDIR)/test
 PROD_HOST += ca_test

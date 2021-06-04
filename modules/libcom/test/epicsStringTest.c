@@ -73,6 +73,43 @@ void testGlob(void) {
     testOk1(epicsStrGlobMatch("hello","he*"));
     testOk1(epicsStrGlobMatch("hello","*lo"));
     testOk1(epicsStrGlobMatch("hello","*"));
+
+/* epicsStrnGlobMatch */
+
+    testOk1(epicsStrnGlobMatch("xyzq",3,"xyz"));
+    testOk1(!epicsStrnGlobMatch("xyzq",3,"xyzm"));
+    testOk1(!epicsStrnGlobMatch("xyzm",3,"xyzm"));
+    testOk1(!epicsStrnGlobMatch("xyzm",0,"xyzm"));
+    testOk1(!epicsStrnGlobMatch("xyzq",3,""));
+    testOk1(epicsStrnGlobMatch("xyz",0,""));
+
+    testOk1(epicsStrnGlobMatch("xyz",0,"*"));
+    testOk1(!epicsStrnGlobMatch("xyz",0,"?"));
+    testOk1(!epicsStrnGlobMatch("xyz",0,"?*"));
+
+    testOk1(epicsStrnGlobMatch("hello!",5,"h*o"));
+    testOk1(!epicsStrnGlobMatch("hello!",5,"h*x"));
+    testOk1(!epicsStrnGlobMatch("hellxo",5,"h*o"));
+
+    testOk1(epicsStrnGlobMatch("hello!",5,"he?lo"));
+    testOk1(!epicsStrnGlobMatch("hello!",5,"he?xo"));
+    testOk1(epicsStrnGlobMatch("hello!",5,"he??o"));
+    testOk1(!epicsStrnGlobMatch("helllo!",5,"he?lo"));
+
+    testOk1(!epicsStrnGlobMatch("hello world!",10,"he*o w*d"));
+    testOk1(epicsStrnGlobMatch("hello world!",11,"he*o w*d"));
+    testOk1(!epicsStrnGlobMatch("hello world!",12,"he*o w*d"));
+    testOk1(!epicsStrnGlobMatch("hello_world!",11,"he*o w*d"));
+    testOk1(epicsStrnGlobMatch("hello world!",11,"he**d"));
+
+    testOk1(epicsStrnGlobMatch("hello hello world!!!!!!!!!!!!!!!!!!!!",17,"he*o w*d"));
+
+    testOk1(!epicsStrnGlobMatch("hello hello world",15,"he*o w*d"));
+
+    testOk1(epicsStrnGlobMatch("hello!!",5,"he*"));
+    testOk1(epicsStrnGlobMatch("hello!!",5,"*lo"));
+    testOk1(epicsStrnGlobMatch("hello!!",5,"*"));
+
 }
 
 static
@@ -118,7 +155,7 @@ MAIN(epicsStringTest)
     char *s;
     int status;
 
-    testPlan(401);
+    testPlan(427);
 
     testChars();
 

@@ -155,6 +155,14 @@ CROSS_WARN=YES
 #  different location then uncomment and set this.
 #INSTALL_LOCATION=<fullpathname>
 
+# The location from which files placed in INSTALL_LOCATION will actually run.
+# This path is compiled into executables, and so should be an absolute.
+#  May be used to achieve the effect of autotools.  eg.
+#   ./configure --prefix=<FINAL_LOCATION>
+#   make DESTDIR=<INSTALL_LOCATION>
+# Defaults to the absolute expansion of $(INSTALL_LOCATION)
+#FINAL_LOCATION=
+
 # Use POSIX thread priority scheduling (if available).
 #  Must be either YES or NO
 USE_POSIX_THREAD_PRIORITY_SCHEDULING = YES

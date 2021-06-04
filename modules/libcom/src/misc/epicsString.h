@@ -36,7 +36,30 @@ LIBCOM_API char * epicsStrnDup(const char *s, size_t len);
 LIBCOM_API int epicsStrPrintEscaped(FILE *fp, const char *s, size_t n);
 #define epicsStrSnPrintEscaped epicsStrnEscapedFromRaw
 LIBCOM_API size_t epicsStrnLen(const char *s, size_t maxlen);
+
+/** Matches a string against a pattern.
+ *
+ * Checks if str matches the glob style pattern, which may contain ? or * wildcards.
+ * A ? matches any single character.
+ * A * matched any sub-string.
+ *
+ * @returns 1 if str matches the pattern, 0 if not.
+ *
+ * @since EPICS 3.14.7
+ */
 LIBCOM_API int epicsStrGlobMatch(const char *str, const char *pattern);
+
+/** Matches a string against a pattern.
+ *
+ * Like epicsStrGlobMatch but with limited string length.
+ * If the length of str is less than len, the full string is matched.
+ *
+ * @returns 1 if the first len characters of str match the pattern, 0 if not.
+ *
+ * @since UNRELEASED
+ */
+LIBCOM_API int epicsStrnGlobMatch(const char *str, size_t len, const char *pattern);
+
 LIBCOM_API char * epicsStrtok_r(char *s, const char *delim, char **lasts);
 LIBCOM_API unsigned int epicsStrHash(const char *str, unsigned int seed);
 LIBCOM_API unsigned int epicsMemHash(const char *str, size_t length,

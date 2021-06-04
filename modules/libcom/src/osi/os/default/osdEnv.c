@@ -15,11 +15,11 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 
 #include "epicsStdio.h"
+#include "epicsString.h"
 #include "epicsVersion.h"
 #include "errlog.h"
 #include "envDefs.h"
@@ -68,18 +68,11 @@ LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
  */
 LIBCOM_API void epicsStdCall epicsEnvShow (const char *name)
 {
-    if (name == NULL) {
-        extern char **environ;
-        char **sp;
+    extern char **environ;
+    char **sp;
 
-        for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++)
+    for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++) {
+        if (!name || epicsStrnGlobMatch(*sp, strchr(*sp, '=') - *sp, name))
             printf ("%s\n", *sp);
-    }
-    else {
-        const char *cp = getenv (name);
-        if (cp == NULL)
-            printf ("%s is not an environment variable.\n", name);
-        else
-            printf ("%s=%s\n", name, cp);
     }
 }

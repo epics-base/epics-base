@@ -690,6 +690,10 @@ LIBCOM_API void epicsStdCall epicsThreadExitMain(void)
     epicsThreadOSD *pthreadInfo;
 
     epicsThreadInit();
+
+    cantProceed("epicsThreadExitMain() has been deprecated for lack of usage."
+                "  Please report if you see this message.");
+
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo==NULL)
         pthreadInfo = createImplicit();

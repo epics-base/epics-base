@@ -17,6 +17,61 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### epicsEnvShow accepts glob pattern
+
+The optional argument to epicsEnvShow can now be a glob pattern.
+
+### New function `epicsStrnGlobMatch()`
+
+The function `epicsStrnGlobMatch(char* str, size_t len, char* pattern)`
+works exactly the same as `epicsStrGlobMatch()` but takes an additional
+length arguments which limits the number of characters of `str` to match.
+
+### Automatic fallback to thread when unable to exec caRepeater
+
+A process using libca which does not find an existing caRepeater process
+will attempt to start one by running the caRepeater executable.
+This is not always possible, usually when caRepeater is not in `$PATH`.
+Now, instead of printing a warning, an internal caRepeater thread
+will be started (as is done be RTEMS and vxWorks targets).
+
+If this fallback occurs, the lifetime of the caRepeater thread
+may be shorter than the lifetime of a separate caRepeater process
+would have been.
+
+It remains the recommended practice to explicitly start a caRepeater
+instance.  Examples of both systemd (`caRepeater.service`) and sysv
+(`S99caRepeater`) scripts may be found under `bin/`.
+
+### Glob pattern allowed in `var` command
+
+When used with one argument, the `var` command can be used with a glob pattern
+for printing matching variables.
+
+### Formalize/fix `FINAL_LOCATION`
+
+The `FINAL_LOCATION` make variable has for some time been an undocumented
+means of performing a staged build.  This is a build which "installs" to
+a temporary location, which will later be moved to a final location.
+
+This has now been added to `configure/CONFIG_SITE`.
+
+Usage analogous to the autotools recipe
+
+```sh
+./configure --prefix=/usr/lib/epics
+make install DESTDIR=/tmp/build
+```
+
+would be
+
+```sh
+make INSTALL_LOCATION=/tmp/build FINAL_LOCATION=/usr/lib/epics
+```
+
+`FINAL_LOCATION` is now correctly used in systemd and sysv init scripts
+`caRepeater.service`, `S99caRepeater`, and `S99logServer`.
+
 ### IOCsh sets `${PWD}`
 
 IOC shell will now ensure `${PWD}` is set on startup,

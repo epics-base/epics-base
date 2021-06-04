@@ -260,7 +260,8 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
  */
 LIBCOM_API void epicsStdCall epicsThreadExitMain ( void )
 {
-    _endthread ();
+    cantProceed("epicsThreadExitMain() has been deprecated for lack of usage."
+                "  Please report if you see this message.");
 }
 
 /*
@@ -818,15 +819,25 @@ HANDLE osdThreadGetTimer()
  */
 LIBCOM_API void epicsStdCall epicsThreadSleep ( double seconds )
 {
-    static const unsigned nSec100PerSec = 10000000u;
+    /* waitable timers use 100 nanosecond intervals, like FILETIME */
+    static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
+    static const unsigned mSecPerSec = 1000u;     /* milliseconds per second */
     LARGE_INTEGER tmo;
     HANDLE timer;
+    LONGLONG nIvals; /* number of intervals */
 
     if ( seconds <= 0.0 ) {
         tmo.QuadPart = 0u;
     }
+    else if ( seconds >= INFINITE / mSecPerSec  ) { 
+        /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
+           to be compatible with previous WaitForSingleObject() implementation */    
+        nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
+        tmo.QuadPart = -nIvals; /* negative value means a relative time offset for timer */
+    }
     else {
-        tmo.QuadPart = -((LONGLONG)(seconds * nSec100PerSec + 0.5));
+        nIvals = (LONGLONG)(seconds * ivalPerSec + 0.999999);
+        tmo.QuadPart = -nIvals;
     }
 
     if (tmo.QuadPart == 0) {

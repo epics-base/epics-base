@@ -2,5 +2,5 @@
 #include "os/RTEMS-score/devLibVMEOSD.c"
 #else
 #pragma message "\n VME Support requires the RTEMS Legacy stack\n" 
-#include "default/devLibVMEOSD.c"
+#include "os/default/devLibVMEOSD.c"
 #endif

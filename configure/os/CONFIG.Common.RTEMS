@@ -108,14 +108,14 @@ endif
 
 OP_SYS_LDLIBS_posix_NET_yes = -ltftpfs -lnfs -lz -ltelnetd
 OP_SYS_LDLIBS_posix_NET_no = -ltftpfs -lbsd -lz
-OP_SYS_LDLIBS_kernel_NET_yes = -lnfs
-OP_SYS_LDLIBS_kernel_NET_no = -lnfs
+OP_SYS_LDLIBS_score_NET_yes = -lnfs
+OP_SYS_LDLIBS_score_NET_no = -lnfs
 OP_SYS_LDLIBS += -lrtemsCom -lCom
 OP_SYS_LDLIBS += $(OP_SYS_LDLIBS_$(OS_API)_NET_$(RTEMS_HAS_NETWORKING))
 OP_SYS_LDLIBS += -lrtemscpu -lc -lm
 
 OP_SYS_LDFLAGS_posix = -u POSIX_Init
-OP_SYS_LDFLAGS_kernel = -u Init \
+OP_SYS_LDFLAGS_score = -u Init \
                  $(PROJECT_RELEASE)/lib/no-dpmem.rel \
                  $(PROJECT_RELEASE)/lib/no-mp.rel \
                  $(PROJECT_RELEASE)/lib/no-part.rel \

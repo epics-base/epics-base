@@ -32,6 +32,6 @@ MSVC_VER = _MSC_VER
 #  if __RTEMS_MAJOR__>=5
 OS_API = posix
 #  else
-OS_API = kernel
+OS_API = score
 #  endif
 #endif

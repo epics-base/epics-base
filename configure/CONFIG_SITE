@@ -17,9 +17,8 @@
 #  Currently Supporting:
 #	cygwin-x86             (cygwin compiler used for host builds)
 #	cygwin-x86_64          (cygwin compiler used for host builds)
-#	darwin-ppc             (PowerPC based Apple running OSX)
-#	darwin-ppcx86          (Universal binaries for both CPUs)
-#	darwin-x86             (Intel based Apple running OSX)
+#	darwin-aarch64         (M1 based Apple using CLANG compiler)
+#	darwin-x86             (Intel based Apple using CLANG compiler)
 #	freebsd-x86            (GNU compiler used for host builds)
 #	freebsd-x86_64         (GNU compiler used for host builds)
 #	linux-aarch64          (GNU compiler used for host builds)
@@ -62,16 +61,8 @@
 
 #       ios-arm                 (darwin-x86 host)
 #       ios-386                 (darwin-x86 host)
-#       linux-386               (linux-x86 host)
-#       linux-486               (linux-x86 host)
-#       linux-586               (linux-x86 host)
-#       linux-686               (linux-x86 host)
 #       linux-arm               (linux-x86 or -x86_64 host)
 #       linux-aarch64           (linux-x86_64 host)
-#       linux-athlon            (linux-x86 host)
-#       linux-cris              (Axis GNU crosscompiler on linux-x86 host)
-#       linux-cris_v10          (Axis GNU crosscompiler on linux-x86 host)
-#       linux-cris_v32          (Axis GNU crosscompiler on linux-x86 host)
 #       linux-microblaze
 #       linux-xscale_be
 #       vxWorks-486
@@ -85,23 +76,20 @@
 #       vxWorks-ppc604_altivec
 #       vxWorks-mpc8540
 #       vxWorks-mpc8548
-#       RTEMS-at91rm9200ek
 #       RTEMS-beagleboneblack
 #       RTEMS-beatnik
-#       RTEMS-gen68360
-#       RTEMS-mcp750
-#       RTEMS-mvme167
 #       RTEMS-mvme2100
 #       RTEMS-mvme2700
 #       RTEMS-mvme3100
 #       RTEMS-mvme5500
-#       RTEMS-pc386
-#	RTEMS-pc686
-#       RTEMS-psim
-#	RTEMS-qoriq_e500
+#       RTEMS-pc386             (RTEMS 4)
+#       RTEMS-pc386-qemu        (RTEMS 4)
+#       RTEMS-pc686             (RTEMS 5)
+#       RTEMS-pc686-qemu        (RTEMS 5)
+#       RTEMS-qoriq_e500
 #       RTEMS-uC5282
-#	RTEMS-xilinx-zynq_a9_qemu
-#	RTEMS-xilinx_zynq_zedboad
+#       RTEMS-xilinx-zynq-a9_qemu
+#       RTEMS-xilinx_zynq_zedboard
 #       win32-x86-mingw         (linux-x86 or -x86_64 host)
 #
 

@@ -4,14 +4,12 @@
 #-------------------------------------------------------
 
 # Select which CPU architecture(s) to include in your MacOS binaries:
-#   i386, x86_64, or both (fat binaries).
+#   x86_64 only, or arm64 as well (fat binaries).
 
-#ARCH_CLASS = i386
 ARCH_CLASS = x86_64
-#ARCH_CLASS = i386 x86_64
+#ARCH_CLASS = arm64 x86_64
 
-#
-# Uncomment the following 3 lines to build with Apple's GCC instead of CLANG.
+# Uncomment the following 3 lines to build with GCC instead of CLANG.
 #
 #CMPLR_CLASS = gcc
 #CC  = gcc

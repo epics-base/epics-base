@@ -17,6 +17,16 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Support for obsolete architectures removed
+
+These target architectures have been removed:
+
++ darwin-ppc, darwin-ppcx86
++ linux-386, linux-486, linux-586, linux-686, linux-athlon (cross-build)
++ linux-cris, linux-cris_v10, linux-cris_v32 (cross-build)
++ RTEMS-at91rm9200ek, RTEMS-gen68360, RTEMS-mcp750, RTEMS-mvme167,
+RTEMS-psim (cross-build)
+
 ### Experimental Support for RTEMS 5
 
 The new major release of the RTEMS real-time OS contains many changes

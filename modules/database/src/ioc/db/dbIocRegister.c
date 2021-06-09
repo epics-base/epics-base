@@ -10,7 +10,6 @@
 
 #include "iocsh.h"
 
-#define epicsExportSharedSymbols
 #include "callback.h"
 #include "dbAccess.h"
 #include "dbBkpt.h"
@@ -26,7 +25,7 @@
 #include "db_test.h"
 #include "dbTest.h"
 
-epicsShareExtern int callbackParallelThreadsDefault;
+DBCORE_API extern int callbackParallelThreadsDefault;
 
 /* dbLoadDatabase */
 static const iocshArg dbLoadDatabaseArg0 = { "file name",iocshArgString};

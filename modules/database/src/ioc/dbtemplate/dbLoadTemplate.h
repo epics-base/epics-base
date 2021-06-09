@@ -12,13 +12,13 @@
 #ifndef INCdbLoadTemplateh
 #define INCdbLoadTemplateh
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc int dbLoadTemplate(
+DBCORE_API int dbLoadTemplate(
     const char *sub_file, const char *cmd_collect);
 
 #ifdef __cplusplus

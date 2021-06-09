@@ -19,11 +19,6 @@
 #ifndef dbCACh
 #define dbCACh
 
-#ifdef epicsExportSharedSymbols
-#   define dbCACh_restore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include "stdlib.h"
 
 #include <memory> // std::auto_ptr
@@ -34,10 +29,7 @@
 #include "cacIO.h"
 #include "compilerDependencies.h"
 
-#ifdef dbCACh_restore_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
+#include "dbCoreAPI.h"
 
 #include "db_access.h"
 #include "dbNotify.h"

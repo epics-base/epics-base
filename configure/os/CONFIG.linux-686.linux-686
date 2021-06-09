@@ -1,9 +1,0 @@
-#  CONFIG.linux-686.linux-686
-#
-# Definitions for linux-686 host - linux-686 target builds
-# Sites may override these definitions in CONFIG_SITE.linux-686.linux-686
-#-------------------------------------------------------
-
-# Include linux-x86 compiler definitions
-include $(CONFIG)/os/CONFIG.linux-x86.linux-x86
-

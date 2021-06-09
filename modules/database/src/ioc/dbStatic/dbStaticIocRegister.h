@@ -11,13 +11,13 @@
 #ifndef INC_dbStaticIocRegister_H
 #define INC_dbStaticIocRegister_H
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc void dbStaticIocRegister(void);
+DBCORE_API void dbStaticIocRegister(void);
 
 #ifdef __cplusplus
 }

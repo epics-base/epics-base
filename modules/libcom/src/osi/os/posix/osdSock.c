@@ -36,6 +36,7 @@
 /* with glibc, SOCK_CLOEXEC does not expand to a simple constant */
 #  define HAVE_SOCK_CLOEXEC
 #else
+#  undef SOCK_CLOEXEC
 #  define SOCK_CLOEXEC (0)
 #endif
 

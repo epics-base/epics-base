@@ -26,6 +26,8 @@
 #include "libComAPI.h"
 #include "epicsEvent.h"
 
+#include "osdThreadPvt.h"
+
 typedef struct epicsEventOSD {
     HANDLE handle;
 } epicsEventOSD;
@@ -90,27 +92,47 @@ LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem )
 LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
 {
-    static const unsigned mSecPerSec = 1000;
+    /* waitable timers use 100 nanosecond intervals, like FILETIME */
+    static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
+    static const unsigned mSecPerSec = 1000u;     /* milliseconds per second */
+    HANDLE handles[2];
     DWORD status;
-    DWORD tmo;
+    LARGE_INTEGER tmo;
+    HANDLE timer;
+    LONGLONG nIvals;  /* number of intervals */
 
     if ( timeOut <= 0.0 ) {
-        tmo = 0u;
+        tmo.QuadPart = 0u;
     }
-    else if ( timeOut >= INFINITE / mSecPerSec ) {
-        tmo = INFINITE - 1;
+    else if ( timeOut >= INFINITE / mSecPerSec  ) {
+        /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
+           to be compatible with previous WaitForSingleObject() implementation */    
+        nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
+        tmo.QuadPart = -nIvals;  /* negative value means a relative time offset for timer */
     }
     else {
-        tmo = ( DWORD ) ( ( timeOut * mSecPerSec ) + 0.5 );
-        if ( tmo == 0 ) {
-            tmo = 1;
-        }
+        nIvals = (LONGLONG)(timeOut * ivalPerSec + 0.999999);
+        tmo.QuadPart = -nIvals;
     }
-    status = WaitForSingleObject ( pSem->handle, tmo );
+
+    if (tmo.QuadPart < 0) {
+        timer = osdThreadGetTimer();
+        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0)) {
+            return epicsEventError;
+        }
+        handles[0] = pSem->handle;
+        handles[1] = timer;
+        status = WaitForMultipleObjects (2, handles, FALSE, INFINITE);
+    }
+    else {
+        status = WaitForSingleObject(pSem->handle, 0);
+    }
     if ( status == WAIT_OBJECT_0 ) {
         return epicsEventOK;
     }
-    else if ( status == WAIT_TIMEOUT ) {
+    else if ( status == WAIT_OBJECT_0 + 1 || status == WAIT_TIMEOUT ) {
+        /* WaitForMultipleObjects will trigger WAIT_OBJECT_0 + 1,
+           WaitForSingleObject will trigger WAIT_TIMEOUT */
         return epicsEventWaitTimeout;
     }
     else {

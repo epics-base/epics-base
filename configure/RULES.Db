@@ -196,12 +196,12 @@ endif
 #---------------------------------------------------------------
 # build dependancies, clean rule
 
-inc: $(COMMON_INC) $(INSTALL_INC)
+inc: $(COMMON_INC) $(INSTALL_INC) $(COMMON_DBDS) $(COMMON_DBDCATS) \
+	$(INSTALL_DBDS) $(INSTALL_DBD_INSTALLS)
 
-build: $(COMMON_DBDS) $(COMMON_DBS) $(COMMON_DBDCATS) \
-	$(INSTALL_DBDS) $(INSTALL_DBS) \
+build: $(COMMON_DBS) $(INSTALL_DBS) \
 	$(DBDDEPENDS_FILES) $(TARGETS) \
-	$(INSTALL_DB_INSTALLS) $(INSTALL_DBD_INSTALLS)
+	$(INSTALL_DB_INSTALLS)
 
 clean: db_clean
 

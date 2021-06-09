@@ -20,21 +20,21 @@
 extern "C" {
 #endif
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
-epicsShareExtern struct dbBase *pdbbase;
-epicsShareExtern volatile int interruptAccept;
+DBCORE_API extern struct dbBase *pdbbase;
+DBCORE_API extern volatile int interruptAccept;
 
 
 /*
  * Adaptors for db_access users
  */
-epicsShareFunc struct dbChannel * dbChannel_create(const char *pname);
-epicsShareFunc int dbChannel_get(struct dbChannel *chan,
+DBCORE_API struct dbChannel * dbChannel_create(const char *pname);
+DBCORE_API int dbChannel_get(struct dbChannel *chan,
     int buffer_type, void *pbuffer, long no_elements, void *pfl);
-epicsShareFunc int dbChannel_put(struct dbChannel *chan, int src_type,
+DBCORE_API int dbChannel_put(struct dbChannel *chan, int src_type,
     const void *psrc, long no_elements);
-epicsShareFunc int dbChannel_get_count(struct dbChannel *chan,
+DBCORE_API int dbChannel_get_count(struct dbChannel *chan,
     int buffer_type, void *pbuffer, long *nRequest, void *pfl);
 
 

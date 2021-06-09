@@ -8,9 +8,19 @@ RULES = $(EPICS_BASE)
 # RELEASE files point to other application tops
 include $(TOP)/configure/RELEASE
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).Common
+
 ifdef T_A
--include $(TOP)/configure/RELEASE.Common.$(T_A)
--include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+  -include $(TOP)/configure/RELEASE.Common.$(T_A)
+  -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+endif
+
+# Check EPICS_BASE is set properly
+ifneq (file,$(origin EPICS_BASE))
+  $(error EPICS_BASE must be set in a configure/RELEASE file)
+else
+  ifeq ($(wildcard $(EPICS_BASE)/configure/CONFIG_BASE),)
+    $(error EPICS_BASE does not point to an EPICS installation)
+  endif
 endif
 
 CONFIG = $(RULES)/configure
@@ -19,11 +29,17 @@ include $(CONFIG)/CONFIG
 # Override the Base definition:
 INSTALL_LOCATION = $(TOP)
 
-# CONFIG_SITE files contain other build configuration settings
+# CONFIG_SITE files contain local build configuration settings
 include $(TOP)/configure/CONFIG_SITE
+
+# Host-arch specific settings
 -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
+
 ifdef T_A
+  # Target-arch specific settings
  -include $(TOP)/configure/CONFIG_SITE.Common.$(T_A)
+
+  #  Host & target specific settings
  -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 endif
 

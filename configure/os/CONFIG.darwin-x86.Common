@@ -3,6 +3,6 @@
 # Definitions for darwin-x86 host builds
 # Sites may override these definitions in CONFIG_SITE.darwin-x86.Common
 #-------------------------------------------------------
-
+#support for IPv6 etc.
 #Include definitions common to unix hosts
 include $(CONFIG)/os/CONFIG.UnixCommon.Common

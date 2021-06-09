@@ -17,7 +17,7 @@
 #define INC_dbLink_H
 
 #include "link.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 #include "epicsTypes.h"
 #include "epicsTime.h"
 #include "dbAddr.h"
@@ -361,64 +361,99 @@ typedef struct lset {
      * @returns status value
      */
     long (*doLocked)(struct link *plink, dbLinkUserCallback rtn, void *priv);
+
+    /** @brief Extended version of getAlarm
+     *
+     * Equivalent of getAlarm() and also copy out alarm message string.
+     * The msgbuf argument may be NULL and/or msgbuflen==0, in which case
+     * the effect must be the same as a call to getAlarm().
+     *
+     * Implementations must write a trailing nil to msgbuf whenever
+     * @code msgbuf!=NULL && msgbuflen>0 @endcode .
+     *
+     * @since UNRELEASED
+     */
+    long (*getAlarmMsg)(const struct link *plink, epicsEnum16 *status,
+                        epicsEnum16 *severity, char *msgbuf, size_t msgbuflen);
+
+    /** @brief Extended version of getTimeStamp
+     *
+     * Equivalent of getTimeStamp() and also copy out time tag.
+     * ptag may be NULL.
+     *
+     * @since Added after UNRELEASED
+     */
+    long (*getTimeStampTag)(const struct link *plink, epicsTimeStamp *pstamp, epicsUTag *ptag);
 } lset;
 
 #define dbGetSevr(link, sevr) \
     dbGetAlarm(link, NULL, sevr)
 
-epicsShareFunc const char * dbLinkFieldName(const struct link *plink);
+DBCORE_API const char * dbLinkFieldName(const struct link *plink);
 
-epicsShareFunc void dbInitLink(struct link *plink, short dbfType);
-epicsShareFunc void dbAddLink(struct dbLocker *locker, struct link *plink,
+DBCORE_API void dbInitLink(struct link *plink, short dbfType);
+DBCORE_API void dbAddLink(struct dbLocker *locker, struct link *plink,
         short dbfType, dbChannel *ptarget);
 
-epicsShareFunc void dbLinkOpen(struct link *plink);
-epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct link *plink);
+DBCORE_API void dbLinkOpen(struct link *plink);
+DBCORE_API void dbRemoveLink(struct dbLocker *locker, struct link *plink);
 
-epicsShareFunc int dbLinkIsDefined(const struct link *plink);  /* 0 or 1 */
-epicsShareFunc int dbLinkIsConstant(const struct link *plink); /* 0 or 1 */
-epicsShareFunc int dbLinkIsVolatile(const struct link *plink); /* 0 or 1 */
+DBCORE_API int dbLinkIsDefined(const struct link *plink);  /* 0 or 1 */
+DBCORE_API int dbLinkIsConstant(const struct link *plink); /* 0 or 1 */
+DBCORE_API int dbLinkIsVolatile(const struct link *plink); /* 0 or 1 */
 
-epicsShareFunc long dbLoadLink(struct link *plink, short dbrType,
+DBCORE_API long dbLoadLink(struct link *plink, short dbrType,
         void *pbuffer);
-epicsShareFunc long dbLoadLinkArray(struct link *, short dbrType, void *pbuffer,
+DBCORE_API long dbLoadLinkArray(struct link *, short dbrType, void *pbuffer,
         long *pnRequest);
 
-epicsShareFunc long dbGetNelements(const struct link *plink, long *pnElements);
-epicsShareFunc int dbIsLinkConnected(const struct link *plink); /* 0 or 1 */
-epicsShareFunc int dbGetLinkDBFtype(const struct link *plink);
-epicsShareFunc long dbTryGetLink(struct link *, short dbrType, void *pbuffer,
+DBCORE_API long dbGetNelements(const struct link *plink, long *pnElements);
+DBCORE_API int dbIsLinkConnected(const struct link *plink); /* 0 or 1 */
+DBCORE_API int dbGetLinkDBFtype(const struct link *plink);
+DBCORE_API long dbTryGetLink(struct link *, short dbrType, void *pbuffer,
         long *nRequest);
-epicsShareFunc long dbGetLink(struct link *, short dbrType, void *pbuffer,
+DBCORE_API long dbGetLink(struct link *, short dbrType, void *pbuffer,
         long *options, long *nRequest);
-epicsShareFunc long dbGetControlLimits(const struct link *plink, double *low,
+DBCORE_API long dbGetControlLimits(const struct link *plink, double *low,
         double *high);
-epicsShareFunc long dbGetGraphicLimits(const struct link *plink, double *low,
+DBCORE_API long dbGetGraphicLimits(const struct link *plink, double *low,
         double *high);
-epicsShareFunc long dbGetAlarmLimits(const struct link *plink, double *lolo,
+DBCORE_API long dbGetAlarmLimits(const struct link *plink, double *lolo,
         double *low, double *high, double *hihi);
-epicsShareFunc long dbGetPrecision(const struct link *plink, short *precision);
-epicsShareFunc long dbGetUnits(const struct link *plink, char *units,
+DBCORE_API long dbGetPrecision(const struct link *plink, short *precision);
+DBCORE_API long dbGetUnits(const struct link *plink, char *units,
         int unitsSize);
-epicsShareFunc long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
+DBCORE_API long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
         epicsEnum16 *severity);
-epicsShareFunc long dbGetTimeStamp(const struct link *plink,
+/** Get link alarm and message string.
+ * To ensure the complete message string is copied, ensure @code msgbuflen >= sizeof (dbCommon::amsg) @endcode .
+ * A trailing nil will be added whenever @code msgbuflen > 0 @endcode .
+ * @since UNRELEASED
+ */
+DBCORE_API long dbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
+        epicsEnum16 *severity, char *msgbuf, size_t msgbuflen);
+#define dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN) dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN)
+DBCORE_API long dbGetTimeStamp(const struct link *plink,
         epicsTimeStamp *pstamp);
-epicsShareFunc long dbPutLink(struct link *plink, short dbrType,
+/** @since UNRELEASED */
+DBCORE_API long dbGetTimeStampTag(const struct link *plink,
+        epicsTimeStamp *pstamp, epicsUTag *ptag);
+#define dbGetTimeStampTag(LINK, STAMP, TAG) dbGetTimeStampTag(LINK, STAMP, TAG)
+DBCORE_API long dbPutLink(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest);
-epicsShareFunc void dbLinkAsyncComplete(struct link *plink);
-epicsShareFunc long dbPutLinkAsync(struct link *plink, short dbrType,
+DBCORE_API void dbLinkAsyncComplete(struct link *plink);
+DBCORE_API long dbPutLinkAsync(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest);
-epicsShareFunc void dbScanFwdLink(struct link *plink);
+DBCORE_API void dbScanFwdLink(struct link *plink);
 
-epicsShareFunc long dbLinkDoLocked(struct link *plink, dbLinkUserCallback rtn,
+DBCORE_API long dbLinkDoLocked(struct link *plink, dbLinkUserCallback rtn,
         void *priv);
 
-epicsShareFunc long dbLoadLinkLS(struct link *plink, char *pbuffer,
+DBCORE_API long dbLoadLinkLS(struct link *plink, char *pbuffer,
         epicsUInt32 size, epicsUInt32 *plen);
-epicsShareFunc long dbGetLinkLS(struct link *plink, char *pbuffer,
+DBCORE_API long dbGetLinkLS(struct link *plink, char *pbuffer,
         epicsUInt32 buffer_size, epicsUInt32 *plen);
-epicsShareFunc long dbPutLinkLS(struct link *plink, char *pbuffer,
+DBCORE_API long dbPutLinkLS(struct link *plink, char *pbuffer,
         epicsUInt32 len);
 
 #ifdef __cplusplus

@@ -24,7 +24,6 @@
 #include "errlog.h"
 #include "epicsEvent.h"
 
-#define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbChannel.h"
 #include "dbCommon.h"

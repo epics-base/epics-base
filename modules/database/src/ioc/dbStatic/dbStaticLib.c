@@ -34,7 +34,6 @@
 #define DBFLDTYPES_GBLSOURCE
 #define SPECIAL_GBLSOURCE
 
-#define epicsExportSharedSymbols
 #include "dbChannel.h"
 #include "dbFldTypes.h"
 #include "dbStaticLib.h"

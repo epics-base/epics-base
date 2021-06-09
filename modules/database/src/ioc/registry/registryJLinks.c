@@ -8,13 +8,12 @@
 /* registryJLinks.c */
 
 #include "registry.h"
-#define epicsExportSharedSymbols
 #include "dbBase.h"
 #include "dbStaticLib.h"
 #include "registryJLinks.h"
 #include "dbJLink.h"
 
-epicsShareFunc int registryJLinkAdd(DBBASE *pbase, struct jlif *pjlif)
+DBCORE_API int registryJLinkAdd(DBBASE *pbase, struct jlif *pjlif)
 {
     linkSup *plinkSup = dbFindLinkSup(pbase, pjlif->name);
 

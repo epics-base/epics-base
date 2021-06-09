@@ -31,7 +31,6 @@
 #include "osiSock.h"
 #include "taskwd.h"
 
-#define epicsExportSharedSymbols
 #include "server.h"
 
 /*

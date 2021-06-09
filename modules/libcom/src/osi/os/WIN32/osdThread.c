@@ -19,9 +19,6 @@
 
 #define VC_EXTRALEAN
 #define STRICT
-#ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x400 /* No support for W95 */
-#endif
 #include <windows.h>
 #include <process.h> /* for _endthread() etc */
 
@@ -33,6 +30,7 @@
 #include "ellLib.h"
 #include "epicsExit.h"
 #include "epicsAtomic.h"
+#include "osdThreadPvt.h"
 
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 
@@ -55,6 +53,7 @@ typedef struct epicsThreadOSD {
     unsigned epicsPriority;
     char isSuspended;
     int joinable;
+    HANDLE timer; /* waitable timer */
 } win32ThreadParam;
 
 typedef struct epicsThreadPrivateOSD {
@@ -221,6 +220,19 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
     return pWin32ThreadGlobal;
 }
 
+static void epicsParmCleanupDataWIN32 ( win32ThreadParam * pParm )
+{
+    if ( pParm ) {
+        if ( pParm->handle ) {
+            CloseHandle ( pParm->handle );
+        }
+        if ( pParm->timer ) {
+            CloseHandle ( pParm->timer );
+        }
+        free ( pParm );
+    }
+}
+
 static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
@@ -239,8 +251,7 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
         ellDelete ( & pGbl->threadList, & pParm->node );
         LeaveCriticalSection ( & pGbl->mutex );
 
-        CloseHandle ( pParm->handle );
-        free ( pParm );
+        epicsParmCleanupDataWIN32 ( pParm );
     }
 }
 
@@ -249,7 +260,8 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
  */
 LIBCOM_API void epicsStdCall epicsThreadExitMain ( void )
 {
-    _endthread ();
+    cantProceed("epicsThreadExitMain() has been deprecated for lack of usage."
+                "  Please report if you see this message.");
 }
 
 /*
@@ -470,10 +482,10 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     }
 
     epicsExitCallAtThreadExits ();
+
     /*
      * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!
      */
-
     if ( pGbl )  {
         TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, (void*)0xdeadbeef );
     }
@@ -493,6 +505,16 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
         strcpy ( pParmWIN32->pName, pName );
         pParmWIN32->isSuspended = 0;
         epicsAtomicIncrIntT(&pParmWIN32->refcnt);
+#ifdef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+        pParmWIN32->timer = CreateWaitableTimerEx(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+#endif
+        if (pParmWIN32->timer == NULL) {
+            pParmWIN32->timer = CreateWaitableTimer(NULL, 0, NULL);
+        }
+        if (pParmWIN32->timer == NULL) {
+            free(pParmWIN32);
+            return NULL;
+        }
     }
     return pParmWIN32;
 }
@@ -590,7 +612,7 @@ epicsThreadId epicsThreadCreateOpt (
             CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION,
             & threadId );
         if ( pParmWIN32->handle == 0 ) {
-            free ( pParmWIN32 );
+            epicsParmCleanupDataWIN32 ( pParmWIN32 );
             return NULL;
         }
         /* weird win32 interface threadId parameter inconsistency */
@@ -600,8 +622,7 @@ epicsThreadId epicsThreadCreateOpt (
     osdPriority = epicsThreadGetOsdPriorityValue (opts->priority);
     bstat = SetThreadPriority ( pParmWIN32->handle, osdPriority );
     if (!bstat) {
-        CloseHandle ( pParmWIN32->handle );
-        free ( pParmWIN32 );
+        epicsParmCleanupDataWIN32 ( pParmWIN32 );
         return NULL;
     }
 
@@ -611,11 +632,10 @@ epicsThreadId epicsThreadCreateOpt (
 
     wstat =  ResumeThread ( pParmWIN32->handle );
     if (wstat==0xFFFFFFFF) {
-            EnterCriticalSection ( & pGbl->mutex );
-            ellDelete ( & pGbl->threadList, & pParmWIN32->node );
-            LeaveCriticalSection ( & pGbl->mutex );
-        CloseHandle ( pParmWIN32->handle );
-        free ( pParmWIN32 );
+        EnterCriticalSection ( & pGbl->mutex );
+        ellDelete ( & pGbl->threadList, & pParmWIN32->node );
+        LeaveCriticalSection ( & pGbl->mutex );
+        epicsParmCleanupDataWIN32 ( pParmWIN32 );
         return NULL;
     }
 
@@ -777,24 +797,62 @@ LIBCOM_API int epicsStdCall epicsThreadIsSuspended ( epicsThreadId id )
     }
 }
 
+/**
+ * osdThreadGetTimer ()
+ * return stored waitable timer object for thread
+ */
+HANDLE osdThreadGetTimer()
+{
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm;
+
+    assert ( pGbl );
+
+    pParm = ( win32ThreadParam * )
+        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
+
+    return pParm->timer;
+}
+
 /*
  * epicsThreadSleep ()
  */
 LIBCOM_API void epicsStdCall epicsThreadSleep ( double seconds )
 {
-    static const unsigned mSecPerSec = 1000;
-    DWORD milliSecDelay;
+    /* waitable timers use 100 nanosecond intervals, like FILETIME */
+    static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
+    static const unsigned mSecPerSec = 1000u;     /* milliseconds per second */
+    LARGE_INTEGER tmo;
+    HANDLE timer;
+    LONGLONG nIvals; /* number of intervals */
 
-    if ( seconds > 0.0 ) {
-        seconds *= mSecPerSec;
-        seconds += 0.99999999;  /* 8 9s here is optimal */
-        milliSecDelay = ( seconds >= INFINITE ) ?
-            INFINITE - 1 : ( DWORD ) seconds;
+    if ( seconds <= 0.0 ) {
+        tmo.QuadPart = 0u;
     }
-    else {  /* seconds <= 0 or NAN */
-        milliSecDelay = 0u;
+    else if ( seconds >= INFINITE / mSecPerSec  ) { 
+        /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
+           to be compatible with previous WaitForSingleObject() implementation */    
+        nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
+        tmo.QuadPart = -nIvals; /* negative value means a relative time offset for timer */
     }
-    Sleep ( milliSecDelay );
+    else {
+        nIvals = (LONGLONG)(seconds * ivalPerSec + 0.999999);
+        tmo.QuadPart = -nIvals;
+    }
+
+    if (tmo.QuadPart == 0) {
+        Sleep ( 0 );
+    }
+    else {
+        timer = osdThreadGetTimer();
+        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0)) {
+            fprintf ( stderr, "epicsThreadSleep: SetWaitableTimer failed %lu\n", GetLastError() );
+            return;
+        }
+        if (WaitForSingleObject(timer, INFINITE) != WAIT_OBJECT_0) {
+            fprintf ( stderr, "epicsThreadSleep: WaitForSingleObject failed %lu\n", GetLastError() );
+        }
+    }
 }
 
 /*

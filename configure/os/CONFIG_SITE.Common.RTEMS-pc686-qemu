@@ -1,0 +1,9 @@
+# CONFIG_SITE.Common.RTEMS-pc686-qemu
+#
+# Site-specific overrides for the RTEMS-pc686-qemu target
+#
+
+# If you're building this architecture you _probably_ want to
+# run the tests for it under QEMU, but if not you can turn
+# them off here by commenting out this line:
+CROSS_COMPILER_RUNTEST_ARCHS += $(T_A)

@@ -301,11 +301,11 @@ static void makeSubstitutions(inputData * const inputPvt,
             char *pstart;
             char *pend;
             int  cmdind=-1;
-            int  i;
+            size_t  i;
 
             for (i = 0; i < NELEMENTS(cmdNames); i++) {
                 if (strstr(command, cmdNames[i])) {
-                    cmdind = i;
+                    cmdind = (int)i;
                 }
             }
             if (cmdind < 0) goto endcmd;

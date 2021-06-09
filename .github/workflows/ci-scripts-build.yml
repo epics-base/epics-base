@@ -14,9 +14,19 @@ on:
       - 'documentation/*'
       - 'startup/*'
       - '.appveyor/*'
+      - '.tools/*'
+      - '.gitattributes'
       - '**/*.html'
       - '**/*.md'
   pull_request:
+    paths-ignore:
+      - 'documentation/*'
+      - 'startup/*'
+      - '.appveyor/*'
+      - '.tools/*'
+      - '.gitattributes'
+      - '**/*.html'
+      - '**/*.md'
 
 env:
     SETUP_PATH: .ci-local:.ci
@@ -33,7 +43,9 @@ jobs:
       BCFG: ${{ matrix.configuration }}
       WINE: ${{ matrix.wine }}
       RTEMS: ${{ matrix.rtems }}
+      RTEMS_TARGET: ${{ matrix.rtems_target }}
       EXTRA: ${{ matrix.extra }}
+      TEST: ${{ matrix.test }}
     strategy:
       fail-fast: false
       matrix:
@@ -71,14 +83,63 @@ jobs:
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
+            rtems: "5"
+            rtems_target: RTEMS-pc686-qemu
+            name: "Ub-20 gcc-9 + RT-5.1 pc686"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            rtems: "5"
+            rtems_target: RTEMS-beatnik
+            test: NO
+            name: "Ub-20 gcc-9 + RT-5.1 beatnik"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            rtems: "5"
+            rtems_target: RTEMS-mvme3100
+            test: NO
+            name: "Ub-20 gcc-9 + RT-5.1 mvme3100"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            rtems: "5"
+            rtems_target: RTEMS-qoriq_e500
+            test: NO
+            name: "Ub-20 gcc-9 + RT-5.1 qoriq_e500"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            rtems: "5"
+            rtems_target: RTEMS-xilinx_zynq_a9_qemu
+            test: NO
+            name: "Ub-20 gcc-9 + RT-5.1 xilinx_zynq_a9_qemu"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            rtems: "5"
+            rtems_target: RTEMS-uC5282
+            test: NO
+            name: "Ub-20 gcc-9 + RT-5.1 uC5282"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
             rtems: "4.10"
             name: "Ub-20 gcc-9 + RT-4.10"
+            rtems_target: RTEMS-pc386-qemu
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
             rtems: "4.9"
             name: "Ub-20 gcc-9 + RT-4.9"
+            rtems_target: RTEMS-pc386-qemu
 
           - os: ubuntu-16.04
             cmp: gcc-4.8
@@ -99,6 +160,12 @@ jobs:
             name: "Ub-20 gcc-8"
 
           - os: ubuntu-20.04
+            cmp: gcc-9
+            utoolchain: "9"
+            configuration: default
+            name: "Ub-20 gcc-9"
+
+          - os: ubuntu-20.04
             cmp: clang
             configuration: default
             name: "Ub-20 clang-10"
@@ -117,6 +184,16 @@ jobs:
             cmp: vs2019
             configuration: static
             name: "Win2019 MSC-19, static"
+
+          - os: windows-2019
+            cmp: vs2019
+            configuration: debug
+            name: "Win2019 MSC-19, debug"
+
+          - os: windows-2019
+            cmp: gcc
+            configuration: default
+            name: "Win2019 mingw"
 
     steps:
     - uses: actions/checkout@v2
@@ -142,11 +219,13 @@ jobs:
     - name: Build main module
       run: python .ci/cue.py build
     - name: Run main module tests
-      run: python .ci/cue.py test
+      run: python .ci/cue.py -T 20M test
     - name: Upload tapfiles Artifact
+      if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: tapfiles ${{ matrix.name }}
         path: '**/O.*/*.tap'
     - name: Collect and show test results
-      run: python .ci/cue.py test-results
+      if: ${{ always() }}
+      run: python .ci/cue.py -T 5M test-results

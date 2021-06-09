@@ -19,7 +19,6 @@
 #include "epicsString.h"
 #include "iocsh.h"
 
-#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "dbState.h"
 #include "dbStaticLib.h"

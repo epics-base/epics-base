@@ -629,8 +629,8 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
          * repeater's port)
          */
         osiSpawnDetachedProcessReturn osptr =
-            osiSpawnDetachedProcess ( "CA Repeater", "caRepeater" );
-        if ( osptr == osiSpawnDetachedProcessNoSupport ) {
+            osiSpawnDetachedProcess ( "!CA Repeater", "caRepeater" );
+        if ( osptr != osiSpawnDetachedProcessSuccess ) {
             epicsThreadId tid;
 
             tid = epicsThreadCreate ( "CAC-repeater", epicsThreadPriorityLow,
@@ -638,9 +638,6 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
             if ( tid == 0 ) {
                 fprintf ( stderr, "caStartRepeaterIfNotInstalled : unable to create CA repeater daemon thread\n" );
             }
-        }
-        else if ( osptr == osiSpawnDetachedProcessFail ) {
-            fprintf ( stderr, "caStartRepeaterIfNotInstalled (): unable to start CA repeater daemon detached process\n" );
         }
     }
 }

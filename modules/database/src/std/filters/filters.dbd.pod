@@ -16,6 +16,8 @@ The following filters are available in this release:
 
 =item * L<Decimation|/"Decimation Filter dec">
 
+=item * L<UTag|/"UTag Filter utag">
+
 =back
 
 =head2 Using Filters
@@ -283,5 +285,28 @@ once every minute:
 
  Hal$ camonitor 'test:channel' 'test:channel.{"dec":{"n":60}}'
  ...
+
+=cut
+
+registrar(utagInitialize)
+
+=head3 UTag Filter C<"utag">
+
+This filter applies a test UTAG&M==V to the value taken from the UTAG record field
+and drops those updates which evaluate as false.
+
+=head4 Parameters
+
+=over
+
+=item Mask C<"M">
+
+Bit mask.
+
+=item Value C<"V">
+
+Required value.
+
+=back
 
 =cut

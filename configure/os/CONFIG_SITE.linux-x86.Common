@@ -3,7 +3,5 @@
 # Site override definitions for linux-x86 host builds
 #-------------------------------------------------------
 
-# JBA test override values
-#CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040 solaris-sparc
-#CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040
-#CROSS_COMPILER_TARGET_ARCHS = RTEMS-mvme2100 RTEMS-pc386 # RTEMS-mvme5500 RTEMS-mvme167
+#CROSS_COMPILER_TARGET_ARCHS = vxWorks-ppc32
+#CROSS_COMPILER_TARGET_ARCHS = RTEMS-mvme2100 RTEMS-pc386-qemu

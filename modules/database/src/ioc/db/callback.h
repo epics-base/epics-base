@@ -18,7 +18,7 @@
 #ifndef INCcallbackh
 #define INCcallbackh 1
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,23 +69,23 @@ typedef struct callbackQueueStats {
 #define callbackGetUser(USER, PCALLBACK) \
     ( (USER) = (PCALLBACK)->user )
 
-epicsShareFunc void callbackInit(void);
-epicsShareFunc void callbackStop(void);
-epicsShareFunc void callbackCleanup(void);
-epicsShareFunc int callbackRequest(epicsCallback *pCallback);
-epicsShareFunc void callbackSetProcess(
+DBCORE_API void callbackInit(void);
+DBCORE_API void callbackStop(void);
+DBCORE_API void callbackCleanup(void);
+DBCORE_API int callbackRequest(epicsCallback *pCallback);
+DBCORE_API void callbackSetProcess(
     epicsCallback *pcallback, int Priority, void *pRec);
-epicsShareFunc int callbackRequestProcessCallback(
+DBCORE_API int callbackRequestProcessCallback(
     epicsCallback *pCallback,int Priority, void *pRec);
-epicsShareFunc void callbackRequestDelayed(
+DBCORE_API void callbackRequestDelayed(
     epicsCallback *pCallback,double seconds);
-epicsShareFunc void callbackCancelDelayed(epicsCallback *pcallback);
-epicsShareFunc void callbackRequestProcessCallbackDelayed(
+DBCORE_API void callbackCancelDelayed(epicsCallback *pcallback);
+DBCORE_API void callbackRequestProcessCallbackDelayed(
     epicsCallback *pCallback, int Priority, void *pRec, double seconds);
-epicsShareFunc int callbackSetQueueSize(int size);
-epicsShareFunc int callbackQueueStatus(const int reset, callbackQueueStats *result);
-epicsShareFunc void callbackQueueShow(const int reset);
-epicsShareFunc int callbackParallelThreads(int count, const char *prio);
+DBCORE_API int callbackSetQueueSize(int size);
+DBCORE_API int callbackQueueStatus(const int reset, callbackQueueStats *result);
+DBCORE_API void callbackQueueShow(const int reset);
+DBCORE_API int callbackParallelThreads(int count, const char *prio);
 
 #ifdef __cplusplus
 }

@@ -27,6 +27,7 @@
 #include "dbAccess.h"
 #include "epicsStdio.h"
 #include "dbEvent.h"
+#include "shareLib.h"
 
 /* Declarations from cadef.h and db_access.h which we can't include here */
 typedef void * chid;

@@ -34,7 +34,6 @@
 #include "errMdef.h"
 #include "taskwd.h"
 
-#define epicsExportSharedSymbols
 #include "callback.h"
 #include "dbAccessDefs.h"
 #include "dbAddr.h"

@@ -21,7 +21,6 @@ $(foreach target, $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRA
 
 #-----------------------------------------------------------------------
 
-# This define block requires GNU make 3.81
 define PROD_template
 ifeq ($$(strip $$($(1)_OBJS) $$($(1)_SRCS) $$(PRODUCT_OBJS)),)
 $(1)_OBJS = $(1)$$(OBJ)

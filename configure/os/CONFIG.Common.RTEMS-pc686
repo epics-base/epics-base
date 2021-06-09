@@ -1,0 +1,39 @@
+# CONFIG.Common.RTEMS-pc686
+#
+# Definitions for the RTEMS-pc686 target, RTEMS 5.x only
+# Site-specific overrides go in CONFIG_SITE.Common.RTEMS-pc686
+#
+#-------------------------------------------------------
+#
+# Author: W. Eric Norum
+#         Canadian Light Source
+#         eric@cls.usask.ca
+#
+# All RTEMS targets use the same Makefile fragment
+#
+RTEMS_BSP = pc686
+RTEMS_TARGET_CPU = i386
+GNU_TARGET = i386-rtems
+
+MUNCH_SUFFIX = .boot
+define MUNCH_CMD
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $@ 
+endef
+
+OP_SYS_LDLIBS += -Wl,--gc-sections
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/pc686/lib/
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS
+
+#
+# Put text segment where it will work with etherboot
+#
+OP_SYS_LDFLAGS += -Wl,-Ttext,0x100000
+
+
+# This check must appear after the above include
+ifneq ($(RTEMS_VERSION),5)
+  $(info *** This target is not compatible with the configured RTEMS version.)
+  $(info *** Build the RTEMS-pc386 (-qemu) target for RTEMS 4.x)
+  $(error Can't continue)
+endif

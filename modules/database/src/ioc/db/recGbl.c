@@ -24,12 +24,12 @@
 #include "epicsMath.h"
 #include "epicsPrint.h"
 #include "epicsStdlib.h"
+#include "epicsStdio.h"
 #include "epicsTime.h"
 #include "errlog.h"
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbStaticLib.h"
 #include "dbAddr.h"
@@ -185,6 +185,11 @@ unsigned short recGblResetAlarms(void *precord)
     if (new_sevr > INVALID_ALARM)
         new_sevr = INVALID_ALARM;
 
+    if(strcmp(pdbc->namsg, pdbc->amsg)!=0) {
+        strcpy(pdbc->amsg, pdbc->namsg);
+        stat_mask = DBE_ALARM;
+    }
+
     pdbc->stat = new_stat;
     pdbc->sevr = new_sevr;
     pdbc->nsta = 0;
@@ -199,6 +204,7 @@ unsigned short recGblResetAlarms(void *precord)
     }
     if (stat_mask) {
         db_post_events(pdbc, &pdbc->stat, stat_mask);
+        db_post_events(pdbc, &pdbc->amsg, stat_mask);
         val_mask = DBE_ALARM;
 
         if (!pdbc->ackt || new_sevr >= pdbc->acks) {
@@ -212,16 +218,42 @@ unsigned short recGblResetAlarms(void *precord)
     }
     return val_mask;
 }
+int recGblSetSevrMsg(void *precord, epicsEnum16 new_stat,
+                     epicsEnum16 new_sevr,
+                     const char *msg, ...)
+{
+    int ret;
+    va_list args;
+    va_start(args, msg);
+    ret = recGblSetSevrVMsg(precord, new_stat, new_sevr, msg, args);
+    va_end(args);
+    return ret;
+}
 
-int recGblSetSevr(void *precord, epicsEnum16 new_stat, epicsEnum16 new_sevr)
+int recGblSetSevrVMsg(void *precord, epicsEnum16 new_stat,
+                     epicsEnum16 new_sevr,
+                     const char *msg, va_list args)
 {
     struct dbCommon *prec = precord;
     if (prec->nsev < new_sevr) {
         prec->nsta = new_stat;
         prec->nsev = new_sevr;
+        if(msg) {
+            epicsVsnprintf(prec->namsg, sizeof(prec->namsg)-1, msg, args);
+            prec->namsg[sizeof(prec->namsg)-1] = '\0';
+
+        } else {
+            prec->namsg[0] = '\0';
+        }
+        prec->namsg[sizeof(prec->namsg)-1] = '\0';
         return TRUE;
     }
     return FALSE;
+}
+
+int recGblSetSevr(void *precord, epicsEnum16 new_stat, epicsEnum16 new_sevr)
+{
+    return recGblSetSevrMsg(precord, new_stat, new_sevr, NULL);
 }
 
 void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
@@ -272,7 +304,7 @@ void recGblGetTimeStampSimm(void *pvoid, const epicsEnum16 simm, struct link *si
 
     if (!dbLinkIsConstant(plink)) {
         if (plink->flags & DBLINK_FLAG_TSELisTIME) {
-            if (dbGetTimeStamp(plink, &prec->time))
+            if (dbGetTimeStampTag(plink, &prec->time, &prec->utag))
                 errlogPrintf("recGblGetTimeStamp: dbGetTimeStamp failed for %s.TSEL\n",
                     prec->name);
             return;

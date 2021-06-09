@@ -1,0 +1,11 @@
+# CONFIG.Common.RTEMS-pc686-qemu
+#
+# Definitions for the RTEMS-pc686-qemu target
+# Site-specific overrides go in CONFIG_SITE.Common.RTEMS-pc686-qemu
+#
+#-------------------------------------------------------
+
+# Include definitions from RTEMS-pc686
+include $(CONFIG)/os/CONFIG.Common.RTEMS-pc686
+
+RTEMS_QEMU_FIXUPS = YES

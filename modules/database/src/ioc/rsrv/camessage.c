@@ -38,7 +38,6 @@
 #include "caerr.h"
 #include "net_convert.h"
 
-#define epicsExportSharedSymbols
 #include "asDbLib.h"
 #include "callback.h"
 #include "db_access.h"

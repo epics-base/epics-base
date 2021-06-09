@@ -12,18 +12,10 @@
 #ifndef INCdbAccessDefsh
 #define INCdbAccessDefsh
 
-#ifdef epicsExportSharedSymbols
-#   define INCLdb_accessh_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include "epicsTypes.h"
 #include "epicsTime.h"
 
-#ifdef INCLdb_accessh_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#   include "shareLib.h"
-#endif
+#include "dbCoreAPI.h"
 
 #include "dbBase.h"
 #include "dbAddr.h"
@@ -34,23 +26,25 @@ extern "C" {
 #endif
 
 
-epicsShareExtern struct dbBase *pdbbase;
-epicsShareExtern volatile int interruptAccept;
-epicsShareExtern int dbAccessDebugPUTF;
+DBCORE_API extern struct dbBase *pdbbase;
+DBCORE_API extern volatile int interruptAccept;
+DBCORE_API extern int dbAccessDebugPUTF;
 
 /*  The database field and request types are defined in dbFldTypes.h*/
 /* Data Base Request Options    */
 #define DBR_STATUS      0x00000001
-#define DBR_UNITS       0x00000002
-#define DBR_PRECISION   0x00000004
-#define DBR_TIME        0x00000008
-#define DBR_ENUM_STRS   0x00000010
-#define DBR_GR_LONG     0x00000020
-#define DBR_GR_DOUBLE   0x00000040
-#define DBR_CTRL_LONG   0x00000080
-#define DBR_CTRL_DOUBLE 0x00000100
-#define DBR_AL_LONG     0x00000200
-#define DBR_AL_DOUBLE   0x00000400
+#define DBR_AMSG        0x00000002
+#define DBR_UNITS       0x00000004
+#define DBR_PRECISION   0x00000008
+#define DBR_TIME        0x00000010
+#define DBR_UTAG        0x00000020
+#define DBR_ENUM_STRS   0x00000040
+#define DBR_GR_LONG     0x00000080
+#define DBR_GR_DOUBLE   0x00000100
+#define DBR_CTRL_LONG   0x00000200
+#define DBR_CTRL_DOUBLE 0x00000400
+#define DBR_AL_LONG     0x00000800
+#define DBR_AL_DOUBLE   0x00001000
 
 /**********************************************************************
  * The next page contains macros for defining requests.
@@ -108,6 +102,9 @@ epicsShareExtern int dbAccessDebugPUTF;
         epicsUInt16     severity;       /* alarm severity*/\
         epicsUInt16     acks;           /* alarm ack severity*/\
         epicsUInt16     ackt;           /* Acknowledge transient alarms?*/
+#define DB_AMSG_SIZE 40
+#define DBRamsg \
+        char amsg[DB_AMSG_SIZE];
 #define DB_UNITS_SIZE   16
 #define DBRunits \
         char            units[DB_UNITS_SIZE];   /* units        */
@@ -120,7 +117,9 @@ epicsShareExtern int dbAccessDebugPUTF;
          * too late to change now.  DBRprecision must be padded to
          * maintain 8-byte alignment. */
 #define DBRtime \
-        epicsTimeStamp  time;           /* time stamp*/
+        epicsTimeStamp	time;		/* time stamp*/
+#define DBRutag \
+        epicsUTag utag;
 #define DBRenumStrs \
         epicsUInt32     no_str;         /* number of strings*/\
         epicsInt32      padenumStrs;    /*padding to force 8 byte align*/\
@@ -207,67 +206,67 @@ struct dbr_alDouble     {DBRalDouble};
 
 struct dbEntry;
 
-epicsShareFunc long dbPutSpecial(struct dbAddr *paddr,int pass);
-epicsShareFunc rset * dbGetRset(const struct dbAddr *paddr);
-epicsShareFunc long dbPutAttribute(
+DBCORE_API long dbPutSpecial(struct dbAddr *paddr,int pass);
+DBCORE_API rset * dbGetRset(const struct dbAddr *paddr);
+DBCORE_API long dbPutAttribute(
     const char *recordTypename,const char *name,const char*value);
-epicsShareFunc int dbIsValueField(const struct dbFldDes *pdbFldDes);
-epicsShareFunc int dbGetFieldIndex(const struct dbAddr *paddr);
-epicsShareFunc long dbScanPassive(
+DBCORE_API int dbIsValueField(const struct dbFldDes *pdbFldDes);
+DBCORE_API int dbGetFieldIndex(const struct dbAddr *paddr);
+DBCORE_API long dbScanPassive(
     struct dbCommon *pfrom,struct dbCommon *pto);
-epicsShareFunc long dbProcess(struct dbCommon *precord);
-epicsShareFunc long dbNameToAddr(const char *pname, struct dbAddr *paddr);
+DBCORE_API long dbProcess(struct dbCommon *precord);
+DBCORE_API long dbNameToAddr(const char *pname, struct dbAddr *paddr);
 
 /** Initialize DBADDR from a dbEntry
  * Also handles SPC_DBADDR processing. This is really an internal
  * routine for use by dbNameToAddr() and dbChannelCreate().
  */
-epicsShareFunc long dbEntryToAddr(const struct dbEntry *pdbentry,
+DBCORE_API long dbEntryToAddr(const struct dbEntry *pdbentry,
     struct dbAddr *paddr);
 
 /** Initialize DBENTRY from a valid dbAddr*
  * Constant time equivalent of dbInitEntry() then dbFindRecord(),
  * and finally dbFollowAlias().
  */
-epicsShareFunc void dbInitEntryFromAddr(struct dbAddr *paddr,
+DBCORE_API void dbInitEntryFromAddr(struct dbAddr *paddr,
     struct dbEntry *pdbentry);
 
 /** Initialize DBENTRY from a valid record (dbCommon*)
  * Constant time equivalent of dbInitEntry() then dbFindRecord(),
  * and finally dbFollowAlias() when no field is specified.
  */
-epicsShareFunc void dbInitEntryFromRecord(struct dbCommon *prec,
+DBCORE_API void dbInitEntryFromRecord(struct dbCommon *prec,
     struct dbEntry *pdbentry);
 
-epicsShareFunc devSup* dbDTYPtoDevSup(dbRecordType *prdes, int dtyp);
-epicsShareFunc devSup* dbDSETtoDevSup(dbRecordType *prdes, dset *pdset);
-epicsShareFunc long dbGetField(
+DBCORE_API devSup* dbDTYPtoDevSup(dbRecordType *prdes, int dtyp);
+DBCORE_API devSup* dbDSETtoDevSup(dbRecordType *prdes, dset *pdset);
+DBCORE_API long dbGetField(
     struct dbAddr *,short dbrType,void *pbuffer,long *options,
     long *nRequest,void *pfl);
-epicsShareFunc long dbGet(
+DBCORE_API long dbGet(
     struct dbAddr *,short dbrType,void *pbuffer,long *options,
     long *nRequest,void *pfl);
-epicsShareFunc long dbPutField(
+DBCORE_API long dbPutField(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
-epicsShareFunc long dbPut(
+DBCORE_API long dbPut(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
 
 typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
 /*dbSpcAsRegisterCallback called by access security */
-epicsShareFunc void dbSpcAsRegisterCallback(SPC_ASCALLBACK func);
-epicsShareFunc long dbBufferSize(
+DBCORE_API void dbSpcAsRegisterCallback(SPC_ASCALLBACK func);
+DBCORE_API long dbBufferSize(
     short dbrType,long options,long nRequest);
-epicsShareFunc long dbValueSize(short dbrType);
+DBCORE_API long dbValueSize(short dbrType);
 
 /* Hook Routine */
 
 typedef void (*DB_LOAD_RECORDS_HOOK_ROUTINE)(const char* filename,
     const char* substitutions);
-epicsShareExtern DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook;
+DBCORE_API extern DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook;
 
-epicsShareFunc int  dbLoadDatabase(
+DBCORE_API int  dbLoadDatabase(
     const char *filename, const char *path, const char *substitutions);
-epicsShareFunc int dbLoadRecords(
+DBCORE_API int dbLoadRecords(
     const char* filename, const char* substitutions);
 
 #ifdef __cplusplus

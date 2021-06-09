@@ -37,7 +37,6 @@
 
 #include "epicsExport.h"
 
-#define epicsExportSharedSymbols
 #include "dbChannel.h"
 #include "dbCommon.h"
 #include "dbEvent.h"

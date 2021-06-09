@@ -432,7 +432,7 @@ static void convert(aiRecord *prec)
 
         default: /* must use breakpoint table */
             if (cvtRawToEngBpt(&val,prec->linr,prec->init,(void *)&prec->pbrk,&prec->lbrk)!=0) {
-                recGblSetSevr(prec,SOFT_ALARM,MAJOR_ALARM);
+                recGblSetSevrMsg(prec,SOFT_ALARM,MAJOR_ALARM, "BPT Error");
             }
     }
 

@@ -16,6 +16,8 @@
 #include "epicsFindSymbol.h"
 #include "epicsThread.h"
 
+#include "epicsInstallDir.h"
+
 namespace {
 
 void loadBad()
@@ -52,9 +54,9 @@ void loadCA()
         std::ostringstream strm;
         // running in eg. modules/libcom/test/O.linux-x86_64-debug
 #ifdef _WIN32
-        strm<<"..\\..\\..\\..\\bin\\"<<envGetConfigParamPtr(&EPICS_BUILD_TARGET_ARCH)<<"\\ca.dll";
+        strm<<EPICS_BASE "\\bin\\"<<envGetConfigParamPtr(&EPICS_BUILD_TARGET_ARCH)<<"\\ca.dll";
 #else
-        strm<<"../../../../lib/"<<envGetConfigParamPtr(&EPICS_BUILD_TARGET_ARCH)<<"/";
+        strm<<EPICS_BASE "/lib/"<<envGetConfigParamPtr(&EPICS_BUILD_TARGET_ARCH)<<"/";
 #  ifdef __APPLE__
         strm<<"libca.dylib";
 #  else

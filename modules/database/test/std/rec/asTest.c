@@ -37,6 +37,8 @@
 
 #include "testMain.h"
 
+#include "shareLib.h"
+
 epicsShareFunc void testRestore(void);
 
 #include "epicsExport.h"

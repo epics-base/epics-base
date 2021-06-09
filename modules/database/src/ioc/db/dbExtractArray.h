@@ -16,7 +16,7 @@
 
 #include "dbFldTypes.h"
 #include "dbAddr.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,7 @@ extern "C" {
  * @param offset        Wrap-around point in source array.
  * @param increment     Copy only every increment'th element.
  */
-epicsShareFunc void dbExtractArray(const void *pfrom, void *pto,
+DBCORE_API void dbExtractArray(const void *pfrom, void *pto,
     short field_size, long nRequest, long no_elements, long offset,
     long increment);
 

@@ -10,16 +10,16 @@
 #ifndef INC_dbConvertJSON_H
 #define INC_dbConvertJSON_H
 
-#include <shareLib.h>
+#include <dbCoreAPI.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* This name should probably be changed to inclue "array" */
-epicsShareFunc long dbPutConvertJSON(const char *json, short dbrType,
+DBCORE_API long dbPutConvertJSON(const char *json, short dbrType,
     void *pdest, long *psize);
-epicsShareFunc long dbLSConvertJSON(const char *json, char *pdest,
+DBCORE_API long dbLSConvertJSON(const char *json, char *pdest,
     epicsUInt32 size, epicsUInt32 *plen);
 #ifdef __cplusplus
 }

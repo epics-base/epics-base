@@ -19,7 +19,7 @@
 #define rsrvh
 
 #include <stddef.h>
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #define RSRV_OK 0
 #define RSRV_ERROR (-1)
@@ -28,12 +28,12 @@
 extern "C" {
 #endif
 
-epicsShareFunc void rsrv_register_server(void);
+DBCORE_API void rsrv_register_server(void);
 
-epicsShareFunc void casr (unsigned level);
-epicsShareFunc int casClientInitiatingCurrentThread (
+DBCORE_API void casr (unsigned level);
+DBCORE_API int casClientInitiatingCurrentThread (
                         char * pBuf, size_t bufSize );
-epicsShareFunc void casStatsFetch (
+DBCORE_API void casStatsFetch (
                         unsigned *pChanCount, unsigned *pConnCount );
 
 #ifdef __cplusplus

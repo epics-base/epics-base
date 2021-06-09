@@ -3,13 +3,16 @@
 use strict;
 use warnings;
 
+use if $^O eq 'MSWin32', "Win32::Process";
+use if $^O eq 'MSWin32', "Win32";
+
 use lib '@TOP@/lib/perl';
 
 use Test::More tests => 3;
 use EPICS::IOC;
 
 # Set to 1 to echo all IOC and client communications
-my $debug = 1;
+my $debug = 0;
 
 $ENV{HARNESS_ACTIVE} = 1 if scalar @ARGV && shift eq '-tap';
 
@@ -35,7 +38,7 @@ $ioc->debug($debug);
 
 $SIG{__DIE__} = $SIG{INT} = $SIG{QUIT} = sub {
     $ioc->exit;
-    BAIL_OUT('Caught signal');
+    BAIL_OUT("Caught signal: $_[0]");
 };
 
 
@@ -50,11 +53,21 @@ sub kill_bail {
 }
 
 sub watchdog (&$$) {
-    my ($do, $timeout, $abort) = @_;
-    $SIG{ALRM} = $abort;
-    alarm $timeout;
-    &$do;
-    alarm 0;
+    my ($code, $timeout, $fail) = @_;
+    my $bark = "Woof $$\n";
+    my $result;
+    eval {
+        local $SIG{__DIE__};
+        local $SIG{ALRM} = sub { die $bark };
+        alarm $timeout;
+        $result = &$code;
+        alarm 0;
+    };
+    if ($@) {
+        die if $@ ne $bark;
+        $result = &$fail;
+    }
+    return $result;
 }
 
 
@@ -90,19 +103,6 @@ like($version, qr/^ \d+ \. \d+ \. \d+ /x,
     "Got BaseVersion '$version' from iocsh");
 
 
-# Client Tests
-
-my $client = EPICS::IOC->new;
-$client->debug($debug);
-
-sub close_client {
-    my $doing = shift;
-    return sub {
-        diag("Timeout $doing");
-        $client->close;
-    }
-}
-
 # Channel Access
 
 SKIP: {
@@ -119,17 +119,9 @@ SKIP: {
 
     # CA Client test
 
-    watchdog {
-        $client->start($caget, '-w5', $pv);
-        my $caVersion = $client->_getline;
-        like($caVersion, qr/^ $pv \s+ \Q$version\E $/x,
-            'Got same BaseVersion from caget');
-        my @errors = $client->_geterrors;
-        note("Errors from caget:\n",
-            map("  $_\n", @errors))
-            if scalar @errors;
-        $client->close;
-    } 15, close_client('doing caget');
+    my $caVersion = qx_timeout(15, "$caget -w5 $pv");
+    like($caVersion, qr/^ $pv \s+ \Q$version\E $/x,
+        'Got same BaseVersion from caget');
 }
 
 
@@ -152,17 +144,71 @@ SKIP: {
 
     # PVA Client test
 
-    watchdog {
-        $client->start($pvget, '-w5', $pv);
-        my $pvaVersion = $client->_getline;
-        like($pvaVersion, qr/^ $pv \s .* \Q$version\E \s* $/x,
-            'Got same BaseVersion from pvget');
-        my @errors = $client->_geterrors;
-        note("Errors from pvget:\n",
-            map("  $_\n", @errors))
-            if scalar @errors;
-        $client->close;
-    } 10, close_client('doing pvget');
+    my $pvaVersion = qx_timeout(15, "$pvget -w5 $pv");
+    like($pvaVersion, qr/^ $pv \s .* \Q$version\E \s* $/x,
+        'Got same BaseVersion from pvget');
 }
 
 $ioc->exit;
+
+
+# Process timeout utilities
+
+sub system_timeout {
+    my ($timeout, $cmdline) = @_;
+    my $status;
+    if ($^O eq 'MSWin32') {
+        my $proc;
+        (my $app) = split ' ', $cmdline;
+        if (! Win32::Process::Create($proc, $app, $cmdline,
+            1, &Win32::Process::NORMAL_PRIORITY_CLASS, '.')) {
+            my $err = Win32::FormatMessage(Win32::GetLastError());
+            die "Can't create Process for '$cmdline': $err\n";
+        }
+        if (! $proc->Wait(1000 * $timeout)) {
+            $proc->Kill(1);
+            note("Timed out '$cmdline' after $timeout seconds\n");
+        }
+        my $status;
+        $proc->GetExitCode($status);
+        return $status;
+    }
+    else {
+        my $pid;
+        $status = watchdog {
+            $pid = fork();
+            die "Can't fork: $!\n"
+                unless defined $pid;
+            exec $cmdline
+                or die "Can't exec: $!\n"
+                unless $pid;
+            waitpid $pid, 0;
+            return $? >> 8;
+        } $timeout, sub {
+            kill 9, $pid if $pid;
+            note("Timed out '$cmdline' after $timeout seconds\n");
+            return -2;
+        };
+    }
+    return $status;
+}
+
+sub qx_timeout {
+    my ($timeout, $cmdline) = @_;
+    open(my $stdout, '>&STDOUT')
+        or die "Can't save STDOUT: $!\n";
+    my $outfile = "stdout-$$.txt";
+    unlink $outfile;
+    open STDOUT, '>', $outfile;
+    my $text;
+    if (system_timeout($timeout, $cmdline) == 0 && -r $outfile) {
+        open(my $file, '<', $outfile)
+            or die "Can't open $outfile: $!\n";
+        $text = join '', <$file>;
+        close $file;
+    }
+    open(STDOUT, '>&', $stdout)
+        or die "Can't restore STDOUT: $!\n";
+    unlink $outfile;
+    return $text;
+}

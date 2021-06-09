@@ -7,9 +7,10 @@
 \*************************************************************************/
 /* osi/os/posix/osdFindSymbol.c */
 
+#include "epicsFindSymbol.h"
+
 #include <dlfcn.h>
 
-#include "epicsFindSymbol.h"
 
 /* non-POSIX extension available on Linux (glibc at least) and OSX.
  */

@@ -19,37 +19,37 @@ extern "C" {
 #endif
 
 typedef void (*dbCaCallback)(void *userPvt);
-epicsShareFunc void dbCaCallbackProcess(void *usrPvt);
+DBCORE_API void dbCaCallbackProcess(void *usrPvt);
 
-epicsShareFunc void dbCaLinkInit(void); /* internal initialization for iocBuild()  */
-epicsShareFunc void dbCaLinkInitIsolated(void); /* internal initialization for iocBuildIsolated()  */
-epicsShareFunc void dbCaRun(void);
-epicsShareFunc void dbCaPause(void);
-epicsShareFunc void dbCaShutdown(void);
+DBCORE_API void dbCaLinkInit(void); /* internal initialization for iocBuild()  */
+DBCORE_API void dbCaLinkInitIsolated(void); /* internal initialization for iocBuildIsolated()  */
+DBCORE_API void dbCaRun(void);
+DBCORE_API void dbCaPause(void);
+DBCORE_API void dbCaShutdown(void);
 
 struct dbLocker;
-epicsShareFunc void dbCaAddLinkCallback(struct link *plink,
+DBCORE_API void dbCaAddLinkCallback(struct link *plink,
     dbCaCallback connect, dbCaCallback monitor, void *userPvt);
-epicsShareFunc long dbCaAddLink(struct dbLocker *locker, struct link *plink, short dbfType);
-epicsShareFunc void dbCaRemoveLink(struct dbLocker *locker, struct link *plink);
+DBCORE_API long dbCaAddLink(struct dbLocker *locker, struct link *plink, short dbfType);
+DBCORE_API void dbCaRemoveLink(struct dbLocker *locker, struct link *plink);
 
-epicsShareFunc long dbCaGetLink(struct link *plink,
+DBCORE_API long dbCaGetLink(struct link *plink,
     short dbrType, void *pbuffer, long *nRequest);
 
-epicsShareFunc long dbCaGetAttributes(const struct link *plink,
+DBCORE_API long dbCaGetAttributes(const struct link *plink,
     dbCaCallback callback, void *userPvt);
 
-epicsShareFunc long dbCaPutLinkCallback(struct link *plink,
+DBCORE_API long dbCaPutLinkCallback(struct link *plink,
     short dbrType, const void *pbuffer,long nRequest,
     dbCaCallback callback, void *userPvt);
-epicsShareFunc long dbCaPutLink(struct link *plink,short dbrType,
+DBCORE_API long dbCaPutLink(struct link *plink,short dbrType,
     const void *pbuffer,long nRequest);
 
 extern struct ca_client_context * dbCaClientContext;
 
 #ifdef EPICS_DBCA_PRIVATE_API
-epicsShareFunc void dbCaSync(void);
-epicsShareFunc unsigned long dbCaGetUpdateCount(struct link *plink);
+DBCORE_API void dbCaSync(void);
+DBCORE_API unsigned long dbCaGetUpdateCount(struct link *plink);
 #endif
 
 /* These macros are for backwards compatibility */

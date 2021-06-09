@@ -12,15 +12,15 @@
 #define INC_registryDriverSupport_H
 
 #include "drvSup.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc int registryDriverSupportAdd(
+DBCORE_API int registryDriverSupportAdd(
     const char *name, struct drvet *pdrvet);
-epicsShareFunc struct drvet * registryDriverSupportFind(
+DBCORE_API struct drvet * registryDriverSupportFind(
     const char *name);
 
 #ifdef __cplusplus

@@ -35,7 +35,6 @@
 #include "errlog.h"
 #include "errMdef.h"
 
-#include "epicsExport.h" /* #define epicsExportSharedSymbols */
 #include "caeventmask.h"
 #include "callback.h"
 #include "dbAccessDefs.h"
@@ -62,6 +61,7 @@
 #include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
+#include "epicsExport.h"
 
 struct dbBase *pdbbase = 0;
 volatile int interruptAccept=FALSE;
@@ -360,6 +360,16 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
             *pushort++ = pcommon->ackt;
             pbuffer = (char *)pushort;
         }
+        if( (*options) & DBR_AMSG ) {
+            if (!pfl) {
+                STATIC_ASSERT(sizeof(pcommon->amsg)==sizeof(pfl->amsg));
+                strncpy(pbuffer, pcommon->amsg, sizeof(pcommon->amsg)-1);
+            } else {
+                strncpy(pbuffer, pfl->amsg,sizeof(pfl->amsg)-1);
+            }
+            pbuffer[sizeof(pcommon->amsg)-1] = '\0';
+            pbuffer += sizeof(pcommon->amsg);
+        }
         if( (*options) & DBR_UNITS ) {
             memset(pbuffer,'\0',dbr_units_size);
             if( prset && prset->get_units ){
@@ -391,6 +401,15 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
                 *ptime++ = pfl->time.nsec;
             }
             pbuffer = (char *)ptime;
+        }
+        if( (*options) & DBR_UTAG ) {
+            epicsUInt64 *ptag = (epicsUInt64*)pbuffer;
+            if (!pfl) {
+                *ptag++ = pcommon->utag;
+            } else {
+                *ptag++ = pfl->utag;
+            }
+            pbuffer = (char *)ptag;
         }
         if( (*options) & DBR_ENUM_STRS )
             get_enum_strs(paddr, &pbuffer, prset, options);
@@ -523,7 +542,7 @@ long dbProcess(dbCommon *precord)
             (precord->lcnt++ < MAX_LOCK) ||
             (precord->sevr >= INVALID_ALARM)) goto all_done;
 
-        recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
+        recGblSetSevrMsg(precord, SCAN_ALARM, INVALID_ALARM, "Async in progress");
         monitor_mask = recGblResetAlarms(precord);
         monitor_mask |= DBE_VALUE|DBE_LOG;
         pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];
@@ -1357,7 +1376,8 @@ long dbPut(DBADDR *paddr, short dbrType,
     /* Always do special processing if needed */
     if (special) {
         long status2 = dbPutSpecial(paddr, 1);
-        if (status2) goto done;
+        if (status2)
+            status = status2;
     }
     if (status) goto done;
 

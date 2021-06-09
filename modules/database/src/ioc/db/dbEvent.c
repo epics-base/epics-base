@@ -37,7 +37,6 @@
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
@@ -333,7 +332,7 @@ fail:
 }
 
 
-epicsShareFunc void db_cleanup_events(void)
+DBCORE_API void db_cleanup_events(void)
 {
     if(dbevEventUserFreeList) freeListCleanup(dbevEventUserFreeList);
     dbevEventUserFreeList = NULL;
@@ -676,7 +675,10 @@ static db_field_log* db_create_field_log (struct dbChannel *chan, int use_val)
         struct dbCommon  *prec = dbChannelRecord(chan);
         pLog->stat = prec->stat;
         pLog->sevr = prec->sevr;
+        strncpy(pLog->amsg, prec->amsg, sizeof(pLog->amsg)-1);
+        pLog->amsg[sizeof(pLog->amsg)-1] = '\0';
         pLog->time = prec->time;
+        pLog->utag = prec->utag;
         pLog->field_type  = dbChannelFieldType(chan);
         pLog->field_size  = dbChannelFieldSize(chan);
         pLog->no_elements = dbChannelElements(chan);
@@ -715,6 +717,7 @@ db_field_log* db_create_event_log (struct evSubscrip *pevent)
 {
     db_field_log *pLog = db_create_field_log(pevent->chan, pevent->useValque);
     if (pLog) {
+        pLog->mask = pevent->select;
         pLog->ctx  = dbfl_context_event;
     }
     return pLog;

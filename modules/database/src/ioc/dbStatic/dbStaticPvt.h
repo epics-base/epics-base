@@ -66,7 +66,7 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec);
 /* Parse link string.  no record locks needed.
  * on success caller must free pinfo->target
  */
-epicsShareFunc long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo);
+DBCORE_API long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo);
 /* Check if link type allow the parsed link value pinfo
  * to be assigned to the given link.
  * Record containing plink must be locked.
@@ -79,7 +79,7 @@ long dbCanSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup);
  */
 long dbSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *dset);
 /* Free dbLinkInfo storage */
-epicsShareFunc void dbFreeLinkInfo(dbLinkInfo *pinfo);
+DBCORE_API void dbFreeLinkInfo(dbLinkInfo *pinfo);
 
 /* The following is for path */
 typedef struct dbPathNode {
@@ -101,7 +101,7 @@ typedef struct{
     dbRecordType    *precordType;
     dbRecordNode    *precnode;
 }PVDENTRY;
-epicsShareFunc int dbPvdTableSize(int size);
+DBCORE_API int dbPvdTableSize(int size);
 extern int dbStaticDebug;
 void dbPvdInitPvt(DBBASE *pdbbase);
 PVDENTRY *dbPvdFind(DBBASE *pdbbase,const char *name,size_t lenname);

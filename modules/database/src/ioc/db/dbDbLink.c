@@ -52,7 +52,6 @@
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
@@ -338,8 +337,8 @@ static long dbDbGetUnits(const struct link *plink, char *units, int unitsSize)
     return 0;
 }
 
-static long dbDbGetAlarm(const struct link *plink, epicsEnum16 *status,
-        epicsEnum16 *severity)
+static long dbDbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
+                            epicsEnum16 *severity, char *msgbuf, size_t msgbuflen)
 {
     dbChannel *chan = linkChannel(plink);
     dbCommon *precord = dbChannelRecord(chan);
@@ -347,14 +346,20 @@ static long dbDbGetAlarm(const struct link *plink, epicsEnum16 *status,
         *status = precord->stat;
     if (severity)
         *severity = precord->sevr;
+    if (msgbuf && msgbuflen) {
+        strncpy(msgbuf, precord->amsg, msgbuflen-1);
+        msgbuf[msgbuflen-1] = '\0';
+    }
     return 0;
 }
 
-static long dbDbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
+static long dbDbGetTimeStampTag(const struct link *plink, epicsTimeStamp *pstamp, epicsUTag *ptag)
 {
     dbChannel *chan = linkChannel(plink);
     dbCommon *precord = dbChannelRecord(chan);
     *pstamp = precord->time;
+    if(ptag)
+        *ptag = precord->utag;
     return 0;
 }
 
@@ -402,9 +407,11 @@ static lset dbDb_lset = {
     dbDbGetValue,
     dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
     dbDbGetPrecision, dbDbGetUnits,
-    dbDbGetAlarm, dbDbGetTimeStamp,
+    NULL, NULL,
     dbDbPutValue, NULL,
-    dbDbScanFwdLink, doLocked
+    dbDbScanFwdLink, doLocked,
+    dbDbGetAlarmMsg,
+    dbDbGetTimeStampTag,
 };
 
 

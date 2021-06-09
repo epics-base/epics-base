@@ -71,6 +71,8 @@ INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
 INSTALL_DB                  = $(INSTALL_LOCATION)/db
 INSTALL_CONFIG              = $(INSTALL_LOCATION)/configure
 
+FINAL_LOCATION = $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
+
 # Directory for OS independant build created files
 COMMON_DIR = ../O.Common
 
@@ -142,9 +144,10 @@ BUILDLIB_SUFFIX = $(BUILDLIB_SUFFIX_$(SHARED_LIBRARIES))
 #--------------------------------------------------
 # vpath directories
 POSIX_YES = os/posix
+OS_IMPL_DIRS = $(if $(OS_API),os/$(OS_CLASS)-$(OS_API),) os/$(OS_CLASS)
 GENERIC_SRC_DIRS = .. $(SRC_DIRS)
 OS_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
-       $(addprefix $(dir)/, os/$(OS_CLASS) $(POSIX_$(POSIX)) os/default ))
+       $(addprefix $(dir)/, $(OS_IMPL_DIRS) $(POSIX_$(POSIX)) os/default ))
 CMPLR_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
        $(addprefix $(dir)/, compiler/$(CMPLR_CLASS) compiler/default ))
 ALL_SRC_DIRS = $(CMPLR_SRC_DIRS) $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)

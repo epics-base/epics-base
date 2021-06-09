@@ -28,12 +28,13 @@ ifneq ($(CONFIG),$(TOP)/configure)
 endif
 
 #--------------------------------------------------
-# Set RTEMS_BSP from T_A if not already done
+# Set RTEMS_BSP and GNU_TARGET if not already done
 RTEMS_BSP ?= $(subst RTEMS-,,$(T_A))
+GNU_TARGET ?= $(RTEMS_TARGET_CPU)-rtems
 
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
-include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
+include $(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
 
@@ -41,7 +42,7 @@ include $(CONFIG.CC)
 # RTEMS cross-development tools
 CC = $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET) $(GCCSPECS) -fasm
 CCC = $(RTEMS_TOOLS)/bin/$(CXX)
-CPP = $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET) -x c -E
+CPP = $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET) -x c -E $(GCCSPECS)
 AR = $(RTEMS_TOOLS)/bin/$(AR_FOR_TARGET)
 LD = $(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -r
 
@@ -95,20 +96,39 @@ MODEXT=.obj
 OS_CLASS = RTEMS
 
 #--------------------------------------------------
-# Operating system flags
-OP_SYS_LDLIBS += -lrtemsCom -lc -lrtemscpu -lCom -lnfs -lm
-OP_SYS_LDFLAGS += $(CPU_CFLAGS) -u Init \
+# Operating system compile & link flags
+OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
+
+OP_SYS_CFLAGS_NET_yes = -DRTEMS_LEGACY_STACK
+OP_SYS_CFLAGS += $(OP_SYS_CFLAGS_NET_$(RTEMS_HAS_NETWORKING))
+
+ifeq ($(RTEMS_HAS_POSIX_API),yes)
+POSIX_CPPFLAGS = -D_GNU_SOURCE -D_DEFAULT_SOURCE
+endif
+
+OP_SYS_LDLIBS_posix_NET_yes = -ltftpfs -lnfs -lz -ltelnetd
+OP_SYS_LDLIBS_posix_NET_no = -ltftpfs -lbsd -lz
+OP_SYS_LDLIBS_score_NET_yes = -lnfs
+OP_SYS_LDLIBS_score_NET_no = -lnfs
+OP_SYS_LDLIBS += -lrtemsCom -lCom
+OP_SYS_LDLIBS += $(OP_SYS_LDLIBS_$(OS_API)_NET_$(RTEMS_HAS_NETWORKING))
+OP_SYS_LDLIBS += -lrtemscpu -lc -lm
+
+OP_SYS_LDFLAGS_posix = -u POSIX_Init
+OP_SYS_LDFLAGS_score = -u Init \
                  $(PROJECT_RELEASE)/lib/no-dpmem.rel \
                  $(PROJECT_RELEASE)/lib/no-mp.rel \
                  $(PROJECT_RELEASE)/lib/no-part.rel \
                  $(PROJECT_RELEASE)/lib/no-signal.rel \
                  $(PROJECT_RELEASE)/lib/no-rtmon.rel
+OP_SYS_LDFLAGS += $(CPU_CFLAGS) $(OP_SYS_LDFLAGS_$(OS_API))
 
+# Settings for GeSys
 MOD_SYS_LDFLAGS += $(CPU_CFLAGS) -Wl,-r -nostdlib
 
 # Do not link against libraries which are part of the Generic Image
 GESYS_LIBS += -lgcc
-GESYS_LIBS += -lc -lm -lrtemscpu -lrtemsbsp -lrtems++ -lbspExt
+GESYS_LIBS += -lc -lm -lrtemscpu -lrtemsbsp -lrtems++
 GESYS_LIBS += -lcexp -ltecla_r -lspencer_regexp -lpmelf -lpmbfd
 GESYS_LIBS += -lnfs -ltelnetd -lrtems-gdb-stub
 

@@ -29,7 +29,6 @@
 #include "gpHash.h"
 #include "yajl_parse.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbBase.h"
 #include "dbChannel.h"

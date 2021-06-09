@@ -27,7 +27,6 @@
 #include "epicsTypes.h"
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "chfPlugin.h"
 #include "dbStaticLib.h"
 

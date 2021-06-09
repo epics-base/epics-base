@@ -36,6 +36,7 @@ sub HostArch {
         return 'linux-x86'      if m/^i[3-6]86-linux/;
         return 'linux-arm'      if m/^arm-linux/;
         return 'linux-aarch64'  if m/^aarch64-linux/;
+        return 'linux-ppc64'    if m/^powerpc64-linux/;
         return 'windows-x64'    if m/^MSWin32-x64/;
         return 'win32-x86'      if m/^MSWin32-x86/;
         return "cygwin-x86_64"  if m/^x86_64-cygwin/;
@@ -46,9 +47,8 @@ sub HostArch {
         my ($kernel, $hostname, $release, $version, $cpu) = uname;
         if (m/^darwin/) {
             for ($cpu) {
-                return 'darwin-x86'     if m/^(i386|x86_64)/;
-                return 'darwin-ppc'     if m/Power Macintosh/;
-                return 'darwin-aarch64' if m/arm64/;
+                return 'darwin-x86'     if m/^x86_64/;
+                return 'darwin-aarch64' if m/^arm64/;
             }
             die "$0: macOS CPU type '$cpu' not recognized\n";
         }

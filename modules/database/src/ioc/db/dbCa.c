@@ -40,7 +40,6 @@
 /* We can't include dbStaticLib.h here */
 #define dbCalloc(nobj,size) callocMustSucceed(nobj,size,"dbCalloc")
 
-#define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbCa.h"
 #include "dbCaPvt.h"
@@ -233,7 +232,7 @@ void dbCaSync(void)
     epicsEventDestroy(wake);
 }
 
-epicsShareFunc unsigned long dbCaGetUpdateCount(struct link *plink)
+DBCORE_API unsigned long dbCaGetUpdateCount(struct link *plink)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
     unsigned long ret;

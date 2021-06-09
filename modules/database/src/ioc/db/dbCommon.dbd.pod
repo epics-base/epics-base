@@ -279,6 +279,11 @@ support routines which write to the VAL field are responsible for setting UDF.
 		special(SPC_NOMOD)
 		menu(menuAlarmSevr)
 	}
+	field(AMSG,DBF_STRING) {
+		prompt("Alarm Message")
+		special(SPC_NOMOD)
+                size(40)
+	}
 	field(NSTA,DBF_MENU) {
 		prompt("New Alarm Status")
 		special(SPC_NOMOD)
@@ -290,6 +295,11 @@ support routines which write to the VAL field are responsible for setting UDF.
 		special(SPC_NOMOD)
 		interest(2)
 		menu(menuAlarmSevr)
+	}
+	field(NAMSG,DBF_STRING) {
+		prompt("New Alarm Message")
+		special(SPC_NOMOD)
+		size(40)
 	}
 	field(ACKS,DBF_MENU) {
 		prompt("Alarm Ack Severity")
@@ -513,6 +523,11 @@ field which is then used to acquire a timestamp.
 		special(SPC_NOMOD)
 		interest(2)
 		extra("epicsTimeStamp      time")
+	}
+        field(UTAG,DBF_UINT64) {
+		prompt("Time Tag")
+		special(SPC_NOMOD)
+		interest(3)
 	}
 	field(FLNK,DBF_FWDLINK) {
 		prompt("Forward Process Link")

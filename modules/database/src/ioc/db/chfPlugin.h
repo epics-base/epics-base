@@ -17,7 +17,7 @@
 #ifndef CHFPLUGIN_H
 #define CHFPLUGIN_H
 
-#include <shareLib.h>
+#include <dbCoreAPI.h>
 #include <dbDefs.h>
 #include <epicsTypes.h>
 #include <dbChannel.h>
@@ -302,7 +302,7 @@ typedef struct chfPluginArgDef {
  * @param def String to be returned when 'i' isn't a valid Enum index.
  * @return The string associated with 'i'.
  */
-epicsShareFunc const char* chfPluginEnumString(const chfPluginEnumType *Enums, int i, const char* def);
+DBCORE_API const char* chfPluginEnumString(const chfPluginEnumType *Enums, int i, const char* def);
 
 /** @brief Register a plugin.
  *
@@ -310,7 +310,7 @@ epicsShareFunc const char* chfPluginEnumString(const chfPluginEnumType *Enums, i
  * @param pif Pointer to the plugin's interface.
  * @param opts Pointer to the configuration argument description table.
  */
-epicsShareFunc int chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts);
+DBCORE_API int chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts);
 
 #ifdef __cplusplus
 }

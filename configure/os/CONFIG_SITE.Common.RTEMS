@@ -3,11 +3,26 @@
 # Site-specific information for all RTEMS targets
 #-------------------------------------------------------
 
-# Where to find RTEMS
+# Where to find RTEMS, and what version is it
 #
+# RTEMS_BASE must point to the specific installation of RTEMS to
+#    build the target code with.
+# RTEMS_VERSION is used in the path to the toolsets inside that
+#    installation. For RTEMS 5 only the major version number is
+#    used, but for RTEMS 4.10.2 say all 3 components are required.
+#
+
+# FHI:
+#RTEMS_VERSION = 5
+#RTEMS_BASE = /home/h1/DBG/rtems
+#RTEMS_BASE = /home/ad/MVME6100/rtems/$(RTEMS_VERSION)
+#RTEMS_BASE = /opt/RTEMS/qoriq/rtems/$(RTEMS_VERSION)
+
 # APS:
-RTEMS_VERSION = 4.10.2
-RTEMS_BASE = /usr/local/vw/rtems/rtems-$(RTEMS_VERSION)
+#RTEMS_VERSION = 4.10.2
+#RTEMS_BASE = /usr/local/vw/rtems/rtems-4.10.2
+#RTEMS_VERSION = 5
+#RTEMS_BASE = /usr/local/vw/rtems/rtems-5.1
 
 # Cross-compile toolchain in $(RTEMS_TOOLS)/bin
 #

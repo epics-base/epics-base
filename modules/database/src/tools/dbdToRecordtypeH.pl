@@ -61,12 +61,18 @@ if ($opt_D) {   # Output dependencies only, to stdout
     print "$outfile: ", join(" \\\n    ", @uniqfiles), "\n\n";
     print map { "$_:\n" } @uniqfiles;
 } else {
+    our ($rn, $rtyp) = each %{$rtypes};
+    my $rtn = $rn;
+    $rtn .= 'Record' if $rn ne 'dbCommon';
+
     open OUTFILE, ">$outfile" or die "$tool: Can't open $outfile: $!\n";
-    print OUTFILE "/* $outbase generated from $inbase */\n\n",
+    print OUTFILE "/** \@file $outbase\n",
+        " * \@brief Declarations for the \@ref $rtn \"$rn\" record type.\n",
+        " *\n",
+        " * This header was generated from $inbase\n",
+        " */\n\n",
         "#ifndef $guard_name\n",
         "#define $guard_name\n\n";
-
-    our ($rn, $rtyp) = each %{$rtypes};
 
     print OUTFILE $rtyp->toCdefs;
 

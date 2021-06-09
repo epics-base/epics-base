@@ -8,9 +8,11 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*
- *      Author:     Jeff Hill
- *      Date:           5-95
+/**
+ * \file epicsTypes.h
+ * \author: Jeff Hill
+ * 
+ * \brief The core data types used by epics
  */
 
 #ifndef INC_epicsTypes_H
@@ -32,9 +34,12 @@ typedef enum {
     epicsTrue  = 1
 } epicsBoolean EPICS_DEPRECATED;
 
-/*
+/**
+ * \name epicsTypes
  * Architecture Independent Data Types
+ * 
  * These are sufficient for all our current archs
+ * @{
  */
 typedef char            epicsInt8;
 typedef unsigned char   epicsUInt8;
@@ -49,25 +54,28 @@ typedef epicsUInt16     epicsEnum16;
 typedef float           epicsFloat32;
 typedef double          epicsFloat64;
 typedef epicsInt32      epicsStatus;
+ /** @} */
 
+#define MAX_STRING_SIZE 40
 
+/**
+ * \brief !! Dont use this - it may vanish in the future !!
+ */
 typedef struct {
     unsigned    length;
     char        *pString;
 } epicsString;
 
-/*
- * !! Dont use this - it may vanish in the future !!
+/**
+ * \brief !! Dont use this - it may vanish in the future !!
  *
  * Provided only for backwards compatibility with
  * db_access.h
- *
  */
-#define MAX_STRING_SIZE 40
 typedef char            epicsOldString[MAX_STRING_SIZE];
 
-/*
- * union of all types
+/**
+ * \brief Union of all types
  *
  * Strings included here as pointers only so that we support
  * large string types.
@@ -90,11 +98,11 @@ typedef union epics_any {
     epicsString     string;
 } epicsAny;
 
-/*
- * Corresponding Type Codes
+/**
+ * \brief Corresponding Type Codes
  * (this enum must start at zero)
  *
- * !! Update epicsTypeToDBR_XXXX[] and DBR_XXXXToEpicsType
+ * !! Update \ref epicsTypeToDBR_XXXX[] and \ref DBR_XXXXToEpicsType
  *  in db_access.h if you edit this enum !!
  */
 typedef enum {
@@ -116,8 +124,9 @@ typedef enum {
 #define invalidEpicsType(x) ((x<firstEpicsType) || (x>lastEpicsType))
 
 
-/*
- * The enumeration "epicsType" is an index to this array
+/**
+ * \brief An array providing the names for each type
+ * The enumeration \ref epicsType is an index to this array
  * of type name strings.
  */
 #ifdef epicsTypesGLOBAL
@@ -138,8 +147,9 @@ const char *epicsTypeNames [lastEpicsType+1] = {
 LIBCOM_API extern const char *epicsTypeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
-/*
- * The enumeration "epicsType" is an index to this array
+/**
+ * \brief An array providing the names for each type code
+ * The enumeration \ref epicsType is an index to this array
  * of type code name strings.
  */
 #ifdef epicsTypesGLOBAL
@@ -160,6 +170,11 @@ const char *epicsTypeCodeNames [lastEpicsType+1] = {
 LIBCOM_API extern const char *epicsTypeCodeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
+/**
+ * \brief An array providing the sizes for each type
+ * The enumeration \ref epicsType is an index to this array
+ * of type code name strings.
+ */
 #ifdef epicsTypesGLOBAL
 const unsigned epicsTypeSizes [lastEpicsType+1] = {
     sizeof (epicsInt8),
@@ -178,10 +193,6 @@ const unsigned epicsTypeSizes [lastEpicsType+1] = {
 LIBCOM_API extern const unsigned epicsTypeSizes [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
-/*
- * The enumeration "epicsType" is an index to this array
- * of type class identifiers.
- */
 typedef enum {
     epicsIntC,
     epicsUIntC,
@@ -191,6 +202,11 @@ typedef enum {
     epicsOldStringC
 } epicsTypeClass;
 
+/**
+ * \brief An array providing the class of each type
+ * The enumeration \ref epicsType is an index to this array
+ * of type class identifiers.
+ */
 #ifdef epicsTypesGLOBAL
 const epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
     epicsIntC,
@@ -209,7 +225,11 @@ const epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
 LIBCOM_API extern const epicsTypeClass epicsTypeClasses [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
-
+/**
+ * \brief An array providing the field name for each type
+ * The enumeration \ref epicsType is an index to this array
+ * of type code name strings.
+ */
 #ifdef epicsTypesGLOBAL
 const char *epicsTypeAnyFieldName [lastEpicsType+1] = {
     "int8",

@@ -85,6 +85,7 @@ jobs:
             configuration: default
             rtems: "5"
             rtems_target: RTEMS-pc686-qemu
+            test: NO
             name: "Ub-20 gcc-9 + RT-5.1 pc686"
 
           - os: ubuntu-20.04
@@ -95,21 +96,24 @@ jobs:
             test: NO
             name: "Ub-20 gcc-9 + RT-5.1 beatnik"
 
-          - os: ubuntu-20.04
-            cmp: gcc
-            configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-mvme3100
-            test: NO
-            name: "Ub-20 gcc-9 + RT-5.1 mvme3100"
-
-          - os: ubuntu-20.04
-            cmp: gcc
-            configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-qoriq_e500
-            test: NO
-            name: "Ub-20 gcc-9 + RT-5.1 qoriq_e500"
+          # Only build one RTEMS target per CPU family
+          # unless it's running the tests
+          #
+          # - os: ubuntu-20.04
+          #   cmp: gcc
+          #   configuration: default
+          #   rtems: "5"
+          #   rtems_target: RTEMS-mvme3100
+          #   test: NO
+          #   name: "Ub-20 gcc-9 + RT-5.1 mvme3100"
+          #
+          # - os: ubuntu-20.04
+          #   cmp: gcc
+          #   configuration: default
+          #   rtems: "5"
+          #   rtems_target: RTEMS-qoriq_e500
+          #   test: NO
+          #   name: "Ub-20 gcc-9 + RT-5.1 qoriq_e500"
 
           - os: ubuntu-20.04
             cmp: gcc

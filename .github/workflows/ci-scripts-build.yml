@@ -230,6 +230,7 @@ jobs:
       with:
         name: tapfiles ${{ matrix.name }}
         path: '**/O.*/*.tap'
+        if-no-files-found: ignore
     - name: Collect and show test results
       if: ${{ always() }}
       run: python .ci/cue.py -T 5M test-results

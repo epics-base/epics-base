@@ -168,7 +168,7 @@ sub get_commandline_opts { #no args
     Cleanup(0) if $opt_h;
 
     # Locate epics_base
-    my ($command) = UnixPath($0);
+    my ($command) = UnixPath(AbsPath($0));
     if ($opt_b) {		# first choice is -b base
         $epics_base = UnixPath($opt_b);
     } elsif ($release{"EPICS_BASE"}) { # second choice is configure/RELEASE

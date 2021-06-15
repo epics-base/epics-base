@@ -93,7 +93,7 @@ epicsEventId 	dhcpDone;
  * may provide by dhcp/bootp
  * or environments from the "BIOS" like u-boot, motboot etc.
  */
-char rtemsInit_NTP_server_ip[16] = "10.0.5.1";
+char rtemsInit_NTP_server_ip[16] = "";
 char bootp_server_name_init[128] = "1001.1001@10.0.5.1:/epics";
 char bootp_boot_file_name_init[128] = "/epics/myExample/bin/RTEMS-beatnik/myExample.boot";
 char bootp_cmdline_init[128] = "/epics/myExample/iocBoot/iocmyExample/st.cmd";
@@ -685,89 +685,76 @@ exitHandler(void)
 }
 
 #ifndef RTEMS_LEGACY_STACK
-static char* getPrimaryNetworkInterface(void)
-{
-    // lookup available network interfaces
-    char ifnamebuf[IF_NAMESIZE];
-    char *ifname;
-    // get primary network interface
-    ifname = if_indextoname(1, &ifnamebuf[0]);
-    if (ifname == NULL) return (NULL);
-    printf("\n***** Primary Network interface : %s *****\n", ifname);
-    return (ifname);
-}
-
 static void
 dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
 {
     int bound = 0;
-    char iName[16];
-    char *name;
-    char *value;
-    char * env_position;
-    
-	(void)hook;
+    char interface[16] = "?";
+    char reason[16] = "?";
+    char new_host_name[32] = "RTEMShost";
+    struct dhcp_vars_t {
+        const char * const name;
+        char* var;
+        size_t varsize;
+    } dhcp_vars[] = {
+#define DEFVAR(N) { #N, N, sizeof(N) }
+        DEFVAR(interface),
+        DEFVAR(reason),
+        DEFVAR(new_host_name),
+#undef DEFVAR
+#define DEFVAR(N, V) { N, V, sizeof(V) }
+        DEFVAR("new_ntp_servers", rtemsInit_NTP_server_ip),
+        DEFVAR("new_tftp_server_name", bootp_server_name_init),
+        DEFVAR("new_bootfile_name", bootp_boot_file_name_init),
+        DEFVAR("new_rtems_cmdline", bootp_cmdline_init),
+#undef DEFVAR
+        {NULL}
+    };
+    (void)hook;
 
-    char ifnamebuf[IF_NAMESIZE];
-    sprintf(ifnamebuf, "%s", getPrimaryNetworkInterface());
-
-    while (*env != NULL) {
-        char const * interface = "interface";
-        char const * reason = "reason";
-        char const * bound_str = "BOUND";
+    printf("\n");
+    for (;NULL != *env;++env) {
+        printf("dhcpcd ---> '%s'\n", *env);
         
-        name = strtok_r(*env,"=", &env_position);
-        value = strtok_r(NULL,"=", &env_position);
-        printf("all out ---> %s = %s\n", name, value);
+        for(const struct dhcp_vars_t* var = dhcp_vars; var->name; var++) {
+            size_t namelen = strlen(var->name);
 
-        if (!strncmp(name, interface, strlen(interface)) &&
-            !strcmp(value,  ifnamebuf)) {
-            snprintf(iName, sizeof(iName), "%s", value);
-        }
+            // assume "KEY=value" with no whitespace around '='
+            if(strncmp(*env, var->name, namelen)!=0 || (*env)[namelen]!='=')
+                continue;
 
-        if (!strncmp(name, reason, strlen(reason)) &&
-            !strncmp(value, bound_str, strlen(bound_str))) {
-            printf ("Interface %s bounded\n", iName);
-            bound = 1;
+            const char* value = *env + namelen+1;
+            size_t valuelen = strlen(value);
+
+            // require ordering of keys:
+            // interface=
+            // reason=
+            // all others...
+            if(var->var!=reason && var->var!=interface && !bound) {
+                // ignore others if !BOUND
+
+            } else if(valuelen >= var->varsize) {
+                printf("  Not enough space for value string.  Expand buffer and recompile.\n");
+
+            } else {
+                memcpy(var->var, value, valuelen);
+                var->var[valuelen] = '\0';
+                printf("  '%s' = '%s'\n", var->name, var->var);
+
+                if(var->var==reason && strcmp(reason, "BOUND")==0) {
+                    printf("  is BOUND\n");
+                    bound = 1;
+                }
+            }
+            break;
         }
-        
-        if (bound) {
-            // as there is no ntp-support in rtems-libbsd, we call our own client
-            char const * new_ntp_servers = "new_ntp_servers";
-            char const * new_host_name = "new_host_name";
-            char const * new_tftp_server_name = "new_tftp_server_name";
-            
-            if (!strncmp(name, new_ntp_servers, strlen(new_ntp_servers)))
-                snprintf(rtemsInit_NTP_server_ip,
-                         sizeof(rtemsInit_NTP_server_ip),
-                         "%s", value);
-            
-            if (!strncmp(name, new_host_name, strlen(new_host_name)))
-                sethostname (value, strlen (value));
-            
-            if (!strncmp(name, new_tftp_server_name, strlen(new_tftp_server_name))){
-                snprintf(rtems_bsdnet_bootp_server_name,
-                         sizeof(bootp_server_name_init),
-                         "%s", value);
-                printf(" rtems_bsdnet_bootp_server_name : %s\n", rtems_bsdnet_bootp_server_name);
-            }
-            if(!strncmp(name, "new_bootfile_name", 20)){
-                snprintf(rtems_bsdnet_bootp_boot_file_name,
-                         sizeof(bootp_boot_file_name_init),
-                         "%s", value);
-                printf(" rtems_bsdnet_bootp_boot_file_name : %s\n", rtems_bsdnet_bootp_boot_file_name);
-            }
-            if(!strncmp(name, "new_rtems_cmdline", 20)){
-                snprintf(rtems_bsdnet_bootp_cmdline,
-                         sizeof(bootp_cmdline_init),
-                         "%s", value);
-                printf(" rtems_bsdnet_bootp_cmdline : %s\n", rtems_bsdnet_bootp_cmdline);
-            }
-          }
-        ++env;
     }
-    if (bound)
+
+    if(bound) {
+        sethostname (new_host_name, strlen (new_host_name));
         epicsEventSignal(dhcpDone);
+        printf("dhcpd BOUND\n");
+    }
 }
 
 static rtems_dhcpcd_hook dhcpcd_hook = {
@@ -816,10 +803,10 @@ default_network_dhcpcd(void)
         static const char fhi_cfg[] =
             "nodhcp6\n"
             "ipv4only\n"
-            "option ntp_servers\n"
+            "option ntp-servers\n"
             "option rtems_cmdline\n"
-            "option tftp_server_name\n"
-            "option bootfile_name\n"
+            "option tftp-server-name\n"
+            "option bootfile-name\n"
             "define 129 string rtems_cmdline\n"
             "timeout 0";
 
@@ -1042,7 +1029,9 @@ POSIX_Init ( void *argument __attribute__((unused)))
     /* until now there is no NTP support in libbsd -> Sebastian Huber ... */
     printf("\n***** Until now no NTP support in RTEMS 5 with rtems-libbsd *****\n");
     printf("\n***** Ask ntp server once... *****\n");
-    if (epicsNtpGetTime(rtemsInit_NTP_server_ip, &now) < 0) {
+    if (rtemsInit_NTP_server_ip[0]=='\0') {
+      printf ("***** No NTP server ...\n");
+    } else if (epicsNtpGetTime(rtemsInit_NTP_server_ip, &now) < 0) {
       printf ("***** Can't get time from ntp ...\n");
     } else {
       if (clock_settime(CLOCK_REALTIME, &now) < 0){

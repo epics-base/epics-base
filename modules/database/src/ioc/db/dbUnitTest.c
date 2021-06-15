@@ -266,7 +266,7 @@ done:
 void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long count, const void *pbuf)
 {
     dbChannel *chan = dbChannelCreate(pv);
-    long status;
+    long status = -1;
 
     if(!chan || (status=dbChannelOpen(chan))) {
         testFail("Channel error (%p, %ld) : %s", chan, status, pv);
@@ -289,7 +289,7 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
     const long vSize = dbValueSize(dbfType);
     const long nStore = vSize * nRequest;
     long status = S_dbLib_recNotFound;
-    char *gbuf, *gstore;
+    char *gbuf, *gstore = NULL;
     const char *pbuf = pbufraw;
 
     if(!chan || (status=dbChannelOpen(chan))) {

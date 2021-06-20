@@ -24,7 +24,12 @@
 #include <sched.h>
 #include <unistd.h>
 
-#define USE_MEMLOCK (defined(_POSIX_MEMLOCK) && (_POSIX_MEMLOCK > 0) && !defined(__rtems__))
+#if (defined(_POSIX_MEMLOCK) && (_POSIX_MEMLOCK > 0) && !defined(__rtems__))
+#  define USE_MEMLOCK 1
+#else
+#  define USE_MEMLOCK 0
+#endif
+
 #if USE_MEMLOCK
 #include <sys/mman.h> 
 #endif

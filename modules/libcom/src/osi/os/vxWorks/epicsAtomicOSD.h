@@ -24,6 +24,33 @@
 #include "vxWorks.h" /* obtain the version of vxWorks */
 #include "epicsAssert.h"
 
+#include "vxLib.h"
+#include "intLib.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+#ifndef EPICS_ATOMIC_LOCK
+#define EPICS_ATOMIC_LOCK
+
+typedef struct EpicsAtomicLockKey { int m_key; } EpicsAtomicLockKey;
+
+EPICS_ATOMIC_INLINE void epicsAtomicLock ( EpicsAtomicLockKey * pKey )
+{
+    pKey->m_key = intLock ();
+}
+
+EPICS_ATOMIC_INLINE void epicsAtomicUnlock ( EpicsAtomicLockKey * pKey )
+{
+    intUnlock ( pKey->m_key );
+}
+#endif
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif /* __cplusplus */
+
 /*
  * With vxWorks 6.6 and later we need to use vxAtomicLib
  * to implement this functionality correctly on SMP systems
@@ -123,26 +150,6 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 }
 #endif
 
-#ifndef EPICS_ATOMIC_CAS_SIZET
-#define EPICS_ATOMIC_CAS_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget,
-                            size_t oldVal, size_t newVal )
-{
-    atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
-    return ( size_t ) vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
-}
-#endif
-
-#ifndef EPICS_ATOMIC_CAS_PTRT
-#define EPICS_ATOMIC_CAS_PTRT
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget,
-                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
-{
-    atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
-    return (EpicsAtomicPtrT) vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
-}
-#endif
-
 #else /* ULONG_MAX == UINT_MAX */
 
 /*
@@ -190,15 +197,6 @@ EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
 }
 #endif
 
-#ifndef EPICS_ATOMIC_CAS_INTT
-#define EPICS_ATOMIC_CAS_INTT
-EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
-                                            int oldVal, int newVal )
-{
-    atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
-    return ( int ) vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
-}
-#endif
 
 #ifdef __cplusplus
 } /* end of extern "C" */
@@ -214,22 +212,6 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#ifndef EPICS_ATOMIC_LOCK
-#define EPICS_ATOMIC_LOCK
-
-typedef struct EpicsAtomicLockKey { int m_key; } EpicsAtomicLockKey;
-
-EPICS_ATOMIC_INLINE void epicsAtomicLock ( EpicsAtomicLockKey * pKey )
-{
-    pKey->m_key = intLock ();
-}
-
-EPICS_ATOMIC_INLINE void epicsAtomicUnlock ( EpicsAtomicLockKey * pKey )
-{
-    intUnlock ( pKey->m_key );
-}
-#endif
 
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 #define EPICS_ATOMIC_READ_MEMORY_BARRIER

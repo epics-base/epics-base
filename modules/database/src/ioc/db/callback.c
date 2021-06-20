@@ -263,7 +263,9 @@ void callbackCleanup(void)
 
         assert(epicsAtomicGetIntT(&mySet->threadsRunning)==0);
         epicsEventDestroy(mySet->semWakeUp);
+        mySet->semWakeUp = NULL;
         epicsRingPointerDelete(mySet->queue);
+        mySet->queue = NULL;
     }
 
     epicsTimerQueueRelease(timerQueue);
@@ -333,6 +335,10 @@ int callbackRequest(epicsCallback *pcallback)
         return S_db_badChoice;
     }
     mySet = &callbackQueue[priority];
+    if (!mySet->queue) {
+        epicsInterruptContextMessage("callbackRequest: Callbacks not initialized\n");
+        return S_db_notInit;
+    }
     if (mySet->queueOverflow) return S_db_bufFull;
 
     pushOK = epicsRingPointerPush(mySet->queue, pcallback);

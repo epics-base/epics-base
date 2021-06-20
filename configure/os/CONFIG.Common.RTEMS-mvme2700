@@ -1,7 +1,7 @@
 #
 # Author: Matt Rippa
 #
-RTEMS_BSP = mvme2700
+RTEMS_BSP = mvme2307
 RTEMS_TARGET_CPU = powerpc
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
@@ -15,6 +15,7 @@ define MUNCH_CMD
 		 $(PROJECT_RELEASE)/lib/bootloader.o \
 		--just-symbols=$< \
 		-b binary rtems.gz \
+                --no-warn-mismatch \
 		-T $(PROJECT_RELEASE)/lib/ppcboot.lds \
 		-Map $<.map
 	rm -f rtems.gz

@@ -11,14 +11,19 @@
 #ifndef dbAddrh
 #define dbAddrh
 
+#include <ellLib.h>
+
 struct dbCommon;
 struct dbFldDes;
+struct VFieldType;
 
 typedef struct dbAddr {
         struct dbCommon *precord;   /* address of record                     */
         void    *pfield;            /* address of field                      */
         struct dbFldDes *pfldDes;   /* address of struct fldDes              */
+        const ELLLIST* vfields;     /* list of VFieldTypeNode, vtypes to try with rset::get/put_vfield  */
         long    no_elements;        /* number of elements (arrays)           */
+        unsigned ro:1;              /* dbPut permitted? */
         short   field_type;         /* type of database field                */
         short   field_size;         /* size of the field being accessed      */
         short   special;            /* special processing                    */

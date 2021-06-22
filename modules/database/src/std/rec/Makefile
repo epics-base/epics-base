@@ -46,6 +46,8 @@ stdRecords += subRecord
 stdRecords += subArrayRecord
 stdRecords += waveformRecord
 
+stdRecords += stdstringinRecord
+
 DBDINC += $(stdRecords)
 
 # Generate stdRecords.dbd, not really by concatenation, see RULES

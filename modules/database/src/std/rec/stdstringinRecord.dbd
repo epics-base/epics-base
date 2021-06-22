@@ -1,0 +1,49 @@
+#*************************************************************************
+# Copyright (c) 2020 Michael Davidsaver
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+recordtype(stdstringin) {
+    include "dbCommon.dbd"
+    %/* Declare Device Support Entry Table */
+    %#include <string>
+    %#include <dbAccess.h>
+    %#include <shareLib.h>
+    %#ifdef __cplusplus
+    %extern "C" {
+    %#endif
+    %struct stdstringinRecord;
+    %epicsShareExtern VFieldType vfStdString;
+    %struct VString {
+    %    const VFieldType* vtype;
+    %    std::string value;
+    %};
+    %typedef struct stdstringindset {
+    %    dset common; /*init_record returns: (-1,0)=>(failure,success)*/
+    %    long (*read_stdstringin)(struct stdstringinRecord *prec); /*returns: (-1,0)=>(failure,success)*/
+    %} stdstringindset;
+    %#define HAS_stdstringindset
+    %#ifdef __cplusplus
+    %}
+    %#endif
+    field(VAL,DBF_NOACCESS) {
+            prompt("Current Value")
+            promptgroup("40 - Input")
+            asl(ASL0)
+            pp(TRUE)
+            special(SPC_DBADDR)
+            extra("std::string val")
+    }
+    field(OVAL,DBF_NOACCESS) {
+            prompt("Previous Value")
+            interest(3)
+            special(SPC_DBADDR)
+            extra("std::string oval")
+    }
+    field(INP,DBF_INLINK) {
+            prompt("Input Specification")
+            promptgroup("40 - Input")
+            interest(1)
+    }
+}

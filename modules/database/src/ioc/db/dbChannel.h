@@ -199,6 +199,9 @@ DBCORE_API extern unsigned short dbDBRnewToDBRold[];
 /* evaluates to short */
 #define dbChannelSpecial(pChan) ((pChan)->addr.special)
 
+/* evaluates to const ELLLIST* containing VFieldTypeNode::node */
+#define dbChannelVFields(pChan) ((pChan)->addr.vfields)
+
 /* Channel filters do not get to interpose here since there are many
  * places where the field pointer is compared with the address of a
  * specific record field, so they can't modify the pointer value.

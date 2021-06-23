@@ -233,7 +233,7 @@ void callbackStop(void)
 {
     int i;
 
-    if (epicsAtomicCmpAndSwapIntT(&cbState, cbRun, cbStop)!=cbRun) return;
+    if (!epicsAtomicCompareAndSwapIntT(&cbState, cbRun, cbStop)) return;
 
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
         epicsAtomicSetIntT(&callbackQueue[i].shutdown, 1);
@@ -254,7 +254,7 @@ void callbackCleanup(void)
 {
     int i;
 
-    if(epicsAtomicCmpAndSwapIntT(&cbState, cbStop, cbInit)!=cbStop) {
+    if (!epicsAtomicCompareAndSwapIntT(&cbState, cbStop, cbInit)) {
         fprintf(stderr, "callbackCleanup() but not stopped\n");
     }
 
@@ -278,7 +278,7 @@ void callbackInit(void)
     int j;
     char threadName[32];
 
-    if (epicsAtomicCmpAndSwapIntT(&cbState, cbInit, cbRun)!=cbInit) {
+    if (!epicsAtomicCompareAndSwapIntT(&cbState, cbInit, cbRun)) {
         fprintf(stderr, "Warning: callbackInit called again before callbackCleanup\n");
         return;
     }

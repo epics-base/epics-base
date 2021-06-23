@@ -125,21 +125,21 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 
 #ifndef EPICS_ATOMIC_CAS_SIZET
 #define EPICS_ATOMIC_CAS_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget,
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapSizeT ( size_t * pTarget,
                             size_t oldVal, size_t newVal )
 {
     atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
-    return ( size_t ) vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
+    return vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
 }
 #endif
 
 #ifndef EPICS_ATOMIC_CAS_PTRT
 #define EPICS_ATOMIC_CAS_PTRT
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget,
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapPtrT ( EpicsAtomicPtrT * pTarget,
                             EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
     atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
-    return (EpicsAtomicPtrT) vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
+    return vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
 }
 #endif
 
@@ -192,11 +192,11 @@ EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
 
 #ifndef EPICS_ATOMIC_CAS_INTT
 #define EPICS_ATOMIC_CAS_INTT
-EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapIntT ( int * pTarget,
                                             int oldVal, int newVal )
 {
     atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
-    return ( int ) vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
+    return vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
 }
 #endif
 

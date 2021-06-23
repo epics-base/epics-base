@@ -130,10 +130,10 @@ EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
 }
 
 #define EPICS_ATOMIC_CAS_INTT
-EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapIntT ( int * pTarget,
                                         int oldVal, int newVal )
 {
-    return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
+    return __sync_bool_compare_and_swap ( pTarget, oldVal, newVal);
 }
 
 #endif /* if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T */
@@ -166,18 +166,18 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 }
 
 #define EPICS_ATOMIC_CAS_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget,
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapSizeT ( size_t * pTarget,
                                         size_t oldVal, size_t newVal )
 {
-    return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
+    return __sync_bool_compare_and_swap ( pTarget, oldVal, newVal);
 }
 
 #define EPICS_ATOMIC_CAS_PTRT
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapPtrT (
                             EpicsAtomicPtrT * pTarget,
                             EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
-    return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
+    return __sync_bool_compare_and_swap ( pTarget, oldVal, newVal);
 }
 
 #endif /* if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T */

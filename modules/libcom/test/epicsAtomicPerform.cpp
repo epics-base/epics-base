@@ -355,7 +355,7 @@ void AtomicCmpAndSwap < T > :: diagnostic ( double delay )
     delay /= 10.0;
     delay *= 1e6;
     const char * const pName = typeid ( T ) . name ();
-    testDiag ( "epicsAtomicCmpAndSwap of \"%s\" takes %f microseconds",
+    testDiag ( "epicsAtomicCompareAndSwap of \"%s\" takes %f microseconds",
                          pName, delay );
 }
 

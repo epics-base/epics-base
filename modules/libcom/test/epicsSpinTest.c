@@ -138,7 +138,7 @@ static void verifyTryLockThread(void *pArg)
     while(epicsAtomicGetIntT(&pVerify->main->flag)==0) {
         int ret = epicsSpinTryLock(pVerify->main->spin);
         if(ret!=0) {
-            epicsAtomicCmpAndSwapIntT(&pVerify->main->flag, 0, ret);
+            epicsAtomicCompareAndSwapIntT(&pVerify->main->flag, 0, ret);
             break;
         } else
             epicsSpinUnlock(pVerify->main->spin);

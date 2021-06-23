@@ -80,14 +80,14 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT *
  * lock out other smp processors from accessing the target,
  * load target into cache, if target is equal to oldVal set target
  * to newVal, flush cache to target, allow other smp processors
- * to access the target, return the original value stored in the
- * target
+ * to access the target, and return 1 (true),
+ * otherwise do not modify target and return 0 (false)
  */
-EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget,
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapSizeT ( size_t * pTarget,
                                             size_t oldVal, size_t newVal );
-EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapIntT ( int * pTarget,
                                             int oldVal, int newVal );
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapPtrT (
                                             EpicsAtomicPtrT * pTarget,
                                             EpicsAtomicPtrT oldVal,
                                             EpicsAtomicPtrT newVal );
@@ -192,22 +192,22 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT get ( const EpicsAtomicPtrT & v )
 }
 
 /************* cas ***************/
-EPICS_ATOMIC_INLINE size_t compareAndSwap ( size_t & v,
+EPICS_ATOMIC_INLINE bool compareAndSwap ( size_t & v,
                                           size_t oldVal, size_t newVal )
 {
-    return epicsAtomicCmpAndSwapSizeT ( & v, oldVal, newVal );
+    return epicsAtomicCompareAndSwapSizeT ( & v, oldVal, newVal );
 }
 
-EPICS_ATOMIC_INLINE int compareAndSwap ( int & v, int oldVal, int newVal )
+EPICS_ATOMIC_INLINE bool compareAndSwap ( int & v, int oldVal, int newVal )
 {
-    return epicsAtomicCmpAndSwapIntT ( & v, oldVal, newVal );
+    return epicsAtomicCompareAndSwapIntT ( & v, oldVal, newVal );
 }
 
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT compareAndSwap ( EpicsAtomicPtrT & v,
+EPICS_ATOMIC_INLINE bool compareAndSwap ( EpicsAtomicPtrT & v,
                                                    EpicsAtomicPtrT oldVal,
                                                    EpicsAtomicPtrT newVal )
 {
-    return epicsAtomicCmpAndSwapPtrT ( & v, oldVal, newVal );
+    return epicsAtomicCompareAndSwapPtrT ( & v, oldVal, newVal );
 }
 
 } /* end of name space atomic */

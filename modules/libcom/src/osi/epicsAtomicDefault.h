@@ -189,7 +189,8 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT
  * cmp and swap
  */
 #ifndef EPICS_ATOMIC_CAS_INTT
-EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget, int oldval, int newval )
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapIntT ( int * pTarget,
+                                int oldval, int newval )
 {
     EpicsAtomicLockKey key;
     int cur;
@@ -200,12 +201,12 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget, int oldval, i
         *pTarget = newval;
     }
     epicsAtomicUnlock ( & key );
-    return cur;
+    return cur == oldval;
 }
 #endif
 
 #ifndef EPICS_ATOMIC_CAS_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget,
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapSizeT ( size_t * pTarget,
                                 size_t oldval, size_t newval )
 {
     EpicsAtomicLockKey key;
@@ -217,12 +218,12 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget,
         *pTarget = newval;
     }
     epicsAtomicUnlock ( & key );
-    return cur;
+    return cur == oldval;
 }
 #endif
 
 #ifndef EPICS_ATOMIC_CAS_PTRT
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
+EPICS_ATOMIC_INLINE int epicsAtomicCompareAndSwapPtrT (
                             EpicsAtomicPtrT * pTarget,
                             EpicsAtomicPtrT oldval, EpicsAtomicPtrT newval )
 {
@@ -235,7 +236,7 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
         *pTarget = newval;
     }
     epicsAtomicUnlock ( & key );
-    return cur;
+    return cur == oldval;
 }
 #endif
 

@@ -337,13 +337,13 @@ static void testClassify()
     testDiag("Use default epicsAtomicGetPtrT()");
 #endif
 #ifndef EPICS_ATOMIC_CAS_INTT
-    testDiag("Use default epicsAtomicCmpAndSwapIntT()");
+    testDiag("Use default epicsAtomicCompareAndSwapIntT()");
 #endif
 #ifndef EPICS_ATOMIC_CAS_SIZET
-    testDiag("Use default epicsAtomicCmpAndSwapSizeT()");
+    testDiag("Use default epicsAtomicCompareAndSwapSizeT()");
 #endif
 #ifndef EPICS_ATOMIC_CAS_PTRT
-    testDiag("Use default epicsAtomicCmpAndSwapPtrT()");
+    testDiag("Use default epicsAtomicCompareAndSwapPtrT()");
 #endif
 #endif /* __GNUC__ */
 }
@@ -388,17 +388,17 @@ void testBasic()
     testOk1(get(Int)==-44);
     testOk1(get(Sizet)==40);
 
-    testOk1(compareAndSwap(Int, -34, -10)==-44);
-    testOk1(compareAndSwap(Sizet, 34, 10)==40);
-    testOk1(compareAndSwap(voidp, NULL, (void*)&Sizet)==(void*)&voidp);
+    testOk1(!compareAndSwap(Int, -34, -10));
+    testOk1(!compareAndSwap(Sizet, 34, 10));
+    testOk1(!compareAndSwap(voidp, NULL, (void*)&Sizet));
 
     testOk1(get(Int)==-44);
     testOk1(get(Sizet)==40);
     testOk1(get(voidp)==(void*)&voidp);
 
-    testOk1(compareAndSwap(Int, -44, -10)==-44);
-    testOk1(compareAndSwap(Sizet, 40, 10)==40);
-    testOk1(compareAndSwap(voidp, (void*)&voidp, (void*)&Sizet)==(void*)&voidp);
+    testOk1(compareAndSwap(Int, -44, -10));
+    testOk1(compareAndSwap(Sizet, 40, 10));
+    testOk1(compareAndSwap(voidp, (void*)&voidp, (void*)&Sizet));
 
     testOk1(get(Int)==-10);
     testOk1(get(Sizet)==10);

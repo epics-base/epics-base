@@ -648,7 +648,7 @@ void epicsThreadMustJoin(epicsThreadId id)
 
     if(!id) {
         /* no-op */
-    } else if(epicsAtomicCmpAndSwapIntT(&id->joinable, 1, 0)!=1) {
+    } else if(!epicsAtomicCompareAndSwapIntT(&id->joinable, 1, 0)) {
         if(epicsThreadGetIdSelf()==id) {
             fprintf(stderr, "Warning: %s thread self-join of unjoinable\n", pParmWIN32->pName);
 

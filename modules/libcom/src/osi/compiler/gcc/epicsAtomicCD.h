@@ -23,50 +23,36 @@
 
 #define EPICS_ATOMIC_CMPLR_NAME "GCC"
 
+/* expands __GCC_HAVE_SYNC_COMPARE_AND_SWAP_ concatentating the numeric value __SIZEOF_*__ */
 #define GCC_ATOMIC_CONCAT( A, B ) GCC_ATOMIC_CONCATR(A,B)
 #define GCC_ATOMIC_CONCATR( A, B ) ( A ## B )
+
+/*
+ * As of GCC 8, the __sync_synchronize() is inlined for all
+ * known targets (aarch64, arm, i386, powerpc, and x86_64)
+ * except for arm <=6.
+ * Note that i386 inlines __sync_synchronize() but does not
+ * define __GCC_HAVE_SYNC_COMPARE_AND_SWAP_*
+ */
+#define GCC_ATOMIC_INTRINSICS_AVAIL_SYNC \
+    defined(GCC_ATOMIC_INTRINSICS_AVAIL_INT_T) || defined(GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T) || defined(__i386)
 
 #define GCC_ATOMIC_INTRINSICS_AVAIL_INT_T \
     GCC_ATOMIC_CONCAT ( \
         __GCC_HAVE_SYNC_COMPARE_AND_SWAP_, \
         __SIZEOF_INT__ )
 
+/* we assume __SIZEOF_POINTER__ == __SIZEOF_SIZE_T__ */
 #define GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T \
     GCC_ATOMIC_CONCAT ( \
         __GCC_HAVE_SYNC_COMPARE_AND_SWAP_, \
         __SIZEOF_SIZE_T__ )
 
-#define GCC_ATOMIC_INTRINSICS_MIN_X86 \
-    ( defined ( __i486 ) || defined ( __pentium ) || \
-    defined ( __pentiumpro ) || defined ( __MMX__ ) )
-
-#define GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER \
-    ( ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 401 )
-
-#define GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER \
-    ( GCC_ATOMIC_INTRINSICS_MIN_X86 && \
-    GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER )
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*
- * We are optimistic that __sync_synchronize is implemented
- * in all version four gcc invariant of target. The gnu doc
- * seems to say that when not supported by architecture a call
- * to an external function is generated but in practice
- * this isn`t the case for some of the atomic intrinsics, and
- * so there is an undefined symbol. So far we have not seen
- * that with __sync_synchronize, but we can only guess based
- * on experimental evidence.
- *
- * For example we know that when generating object code for
- * 386 most of the atomic intrinsics are not present and
- * we see undefined symbols with mingw, but we don`t have
- * troubles with __sync_synchronize.
- */
-#if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER
+#if GCC_ATOMIC_INTRINSICS_AVAIL_SYNC
 
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 #define EPICS_ATOMIC_READ_MEMORY_BARRIER
@@ -84,32 +70,9 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 }
 #endif
 
-#else
-
-#ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
-#if GCC_ATOMIC_INTRINSICS_MIN_X86
-#define EPICS_ATOMIC_READ_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)
-{
-    asm("mfence;");
-}
-#endif
 #endif
 
-#ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
-#if GCC_ATOMIC_INTRINSICS_MIN_X86
-#define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
-{
-    asm("mfence;");
-}
-#endif
-#endif
-
-#endif /* if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER */
-
-#if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T \
-    || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
+#if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T
 
 #define EPICS_ATOMIC_INCR_INTT
 EPICS_ATOMIC_INLINE int epicsAtomicIncrIntT ( int * pTarget )
@@ -136,10 +99,9 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
     return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
 }
 
-#endif /* if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T */
+#endif
 
-#if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T \
-    || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
+#if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T
 
 #define EPICS_ATOMIC_INCR_SIZET
 EPICS_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
@@ -180,7 +142,7 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
     return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
 }
 
-#endif /* if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T */
+#endif
 
 #ifdef __cplusplus
 } /* end of extern "C" */

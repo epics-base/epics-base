@@ -123,7 +123,7 @@ bswap32(epicsUInt32 value)
 #elif EPICS_BYTE_ORDER == EPICS_ENDIAN_LITTLE
 
 /* Get hton[sl] declarations: */
-#include <osdSock.h>
+#include <osiSock.h>
 
 /** @ingroup mmio
  *@{

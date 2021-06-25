@@ -18,7 +18,7 @@
 #define INC_caProto_H
 
 // Pick up definition of IPPORT_USERRESERVED
-#include <osdSock.h>
+#include <osiSock.h>
 
 #define capStrOf(A) #A
 #define capStrOfX(A) capStrOf ( A )

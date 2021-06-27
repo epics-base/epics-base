@@ -18,6 +18,9 @@
  * Extensive tests so far only with qemu.
  */
 
+/* trigger sys/syslog.h to emit prioritynames[] */
+#define SYSLOG_NAMES
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/syslog.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
@@ -633,6 +637,42 @@ static void zonesetCallFunc(const iocshArgBuf *args)
     zoneset(args[0].sval);
 }
 
+#ifndef RTEMS_LEGACY_STACK
+static int bsd_log_to_erl(int level, const char *fmt, va_list ap)
+{
+    return errlogVprintf(fmt, ap);
+}
+#endif // RTEMS_LEGACY_STACK
+
+static void setlogmaskCallFunc(const iocshArgBuf *args)
+{
+    const char* name = args[0].sval;
+    const CODE* cur;
+    if(!name) {
+        printf("Usage: setlogmask <level>\n"
+               "\n"
+               "  Level names:\n");
+        for(cur = prioritynames; cur->c_name; cur++) {
+            printf("    %s\n", cur->c_name);
+        }
+    } else {
+        for(cur = prioritynames; cur->c_name; cur++) {
+            if(strcmp(name, cur->c_name)!=0)
+                continue;
+
+            (void)setlogmask(LOG_MASK(cur->c_val));
+#ifndef RTEMS_LEGACY_STACK
+            rtems_bsd_setlogpriority(name);
+#endif
+            return;
+        }
+        printf("Error: unknown log level.\n");
+    }
+}
+static const iocshArg setlogmaskArg0 = {"level name", iocshArgString};
+static const iocshArg * const setlogmaskArgs[1] = {&setlogmaskArg0};
+static const iocshFuncDef setlogmaskFuncDef = {"setlogmask",1,setlogmaskArgs,
+                                            "Set syslog() threshold level"};
 
 /*
  * Register RTEMS-specific commands
@@ -646,6 +686,7 @@ static void iocshRegisterRTEMS (void)
 #endif
     iocshRegister(&zonesetFuncDef, &zonesetCallFunc);
     iocshRegister(&rtshellFuncDef, &rtshellCallFunc);
+    iocshRegister(&setlogmaskFuncDef, &setlogmaskCallFunc);
 #if __RTEMS_MAJOR__ > 4
     rtems_shell_init_environment();
 #endif
@@ -977,9 +1018,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
     /* Let other tasks run to complete background work */
     default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1U);
 
-    /* suppress all output from bsd network initialization */ 
-    rtems_bsd_set_vprintf_handler(rtems_bsd_vprintf_handler_mute);
-
     sc = rtems_bsd_initialize();
     assert(sc == RTEMS_SUCCESSFUL);
 
@@ -1066,9 +1104,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
     rtems_bsdnet_synchronize_ntp (0, 0);
 #endif // not RTEMS_LEGACY_STACK
 
-    /* show messages from network after initialization ? good idea? */
-    //rtems_bsd_set_vprintf_handler(bsd_vprintf_handler_old);
-
     printf("\n***** Setting up file system *****\n");
     initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
     fixup_hosts();
@@ -1112,6 +1147,12 @@ POSIX_Init ( void *argument __attribute__((unused)))
     atexit(exitHandler);
     errlogFlush();
     printf ("***** Starting EPICS application *****\n");
+
+
+#ifndef RTEMS_LEGACY_STACK
+    // switch OS to async logging
+    rtems_bsd_set_vprintf_handler(bsd_log_to_erl);
+#endif
 
 #if 0
 // Start an rtems shell before main, for debugging RTEMS system issues

@@ -383,6 +383,8 @@ endif
 
 tapfiles: $(TAPFILES)
 junitfiles: $(JUNITFILES)
+# prevent deletion of partial output from failing tests
+.PRECIOUS: $(TAPFILES) $(JUNITFILES)
 
 test-results: tap-results
 tap-results: $(TAPFILES)

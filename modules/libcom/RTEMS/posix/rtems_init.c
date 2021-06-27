@@ -1003,12 +1003,19 @@ POSIX_Init ( void *argument __attribute__((unused)))
         rtems_get_version_string());
 
 #ifndef RTEMS_LEGACY_STACK
+#if defined(QEMU_FIXUPS) && defined(__i386__)
+    // glorious hack to stub out useless EEPROM check
+    // which takes sooooo longggg w/ QEMU
+    // Writes a 'ret' instruction to immediatly return to the caller
+    extern void _bsd_e1000_validate_nvm_checksum(void);
+    *(char*)&_bsd_e1000_validate_nvm_checksum = 0xc3;
+#endif
     /*
      * Start network (libbsd)
      *
      * start qemu like this
      * qemu-system-i386 -m 64 -no-reboot -serial stdio -display none \
-     * -net nic,model=rtl8139,macaddr=0e:b0:ba:5e:ba:11 -net user,restrict=yes \
+     * -net nic,model=e1000 -net user,restrict=yes \
      * -append "--video=off --console=/dev/com1" -kernel libComTestHarness
      */
     printf("\n***** Initializing network (libbsd, dhcpcd) *****\n");

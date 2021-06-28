@@ -37,7 +37,7 @@
 #include "recGbl.h"
 #include "menuConvert.h"
 #include "menuOmsl.h"
-#include "menuYesNo.h"
+#include "menuSimm.h"
 #include "menuIvoa.h"
 
 #define GEN_SIZE_OFFSET
@@ -561,15 +561,24 @@ static long writeValue(aoRecord *prec)
     }
 
     switch (prec->simm) {
-    case menuYesNoNO:
+    case menuSimmNO:
         status = pdset->write_ao(prec);
         break;
 
-    case menuYesNoYES: {
+    case menuSimmYES:
+    case menuSimmRAW:
+    {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        if (prec->pact || (prec->sdly < 0.)) {
-            status = dbPutLink(&prec->siol, DBR_DOUBLE, &prec->oval, 1);
-            prec->pact = FALSE;
+        if (prec->pact || (prec->sdly < 0.)) {            
+            if(prec->simm == menuSimmYES){
+                /* don't convert */
+                status = dbPutLink(&prec->siol, DBR_DOUBLE, &prec->oval, 1);
+            }
+            else { /* prec->simm == menuSimmRAW*/
+                /* convert */
+                status = dbPutLink(&prec->siol, DBR_LONG, &prec->rval, 1);
+            }
+                prec->pact = FALSE;
         } else { /* !prec->pact && delay >= 0. */
             epicsCallback *pvt = prec->simpvt;
             if (!pvt) {

@@ -66,6 +66,7 @@ typedef DWORD osiSockOptMcastTTL_t;
 #define SOCK_SHUTDOWN WSAESHUTDOWN
 #define SOCK_ENOTSOCK WSAENOTSOCK
 #define SOCK_EBADF WSAENOTSOCK
+#define SOCK_EMSGSIZE WSAEMSGSIZE
 
 /*
  *  Under WIN32, FD_SETSIZE is the max. number of sockets,

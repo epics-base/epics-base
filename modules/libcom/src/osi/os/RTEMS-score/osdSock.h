@@ -71,6 +71,7 @@ typedef unsigned char osiSockOptMcastTTL_t;
 #define SOCK_SHUTDOWN EPIPE
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
+#define SOCK_EMSGSIZE EMSGSIZE
 
 #include <sys/time.h>
 #include <sys/types.h>

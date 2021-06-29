@@ -71,6 +71,7 @@ typedef int osiSockOptMcastTTL_t;
 #define SOCK_SHUTDOWN ESHUTDOWN
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
+#define SOCK_EMSGSIZE EMSGSIZE
 
 #define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
 

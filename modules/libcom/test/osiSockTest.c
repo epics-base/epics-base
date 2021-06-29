@@ -243,6 +243,9 @@ void udpSockFanoutTestRx(void* raw)
         buf.bytes[sizeof(buf.bytes)-1] = '\0';
 
         if(n<0) {
+            if(SOCKERRNO==SOCK_EMSGSIZE || SOCKERRNO==SOCK_EINTR)
+                continue;
+
             testDiag("recvfrom error (%d)", (int)SOCKERRNO);
             break;
         } else if((n==sizeof(buf.bytes)) && buf.msg.cmd==htons(6) && buf.msg.size==htons(16)

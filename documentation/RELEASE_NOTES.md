@@ -42,7 +42,7 @@ running on RTEMS 5:
 - RTEMS-beagleboneblack
 - RTEMS-pc686
 - RTEMS-qoriq_e500 (MVME2500)
-- RTEMS-xilinx-zynq-a9_qemu
+- RTEMS-xilinx_zynq_a9_qemu
 - RTEMS-xilinx_zynq_zedboard
 
 The EPICS support for RTEMS 4 has always relied on RTEMS-specific
@@ -215,7 +215,7 @@ that the variables referenced by output pointers are initialized.
 
 ```c
 #ifndef HAS_ALARM_MESSAGE
-#  recGblSetSevrMsg(REC, STAT, SEVR, ...) recGblSetSevr(REC, STAT, SEVR)
+#  define recGblSetSevrMsg(REC, STAT, SEVR, ...) recGblSetSevr(REC, STAT, SEVR)
 #endif
 #ifndef dbGetAlarmMsg
 #  define dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN) dbGetAlarm(LINK, STAT, SEVR)

@@ -144,6 +144,11 @@ epicsThreadPoolTest_SRCS += epicsThreadPoolTest.c
 testHarness_SRCS += epicsThreadPoolTest.c
 TESTS += epicsThreadPoolTest
 
+TESTPROD_HOST += initHookTest
+initHookTest_SRCS += initHookTest.c
+testHarness_SRCS += initHookTest.c
+TESTS += initHookTest
+
 TESTPROD_HOST += epicsExitTest
 epicsExitTest_SRCS += epicsExitTest.c
 testHarness_SRCS += epicsExitTest.c

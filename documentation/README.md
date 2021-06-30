@@ -6,22 +6,23 @@
 
 ### Table of Contents
 
-  - [What is EPICS base?](#0_0_1)
-  - [What is new in this release?](#0_0_2)
-  - [Copyright](#0_0_3)
-  - [Supported platforms](#0_0_4)
-  - [Supported compilers](#0_0_5)
-  - [Software requirements](#0_0_6)
-  - [Documentation](#0_0_8)
-  - [Directory Structure](#0_0_10)
-  - [Build related components](#0_0_11)
-  - [Building EPICS base (Unix and Win32)](#0_0_12)
-  - [Example application and extension](#0_0_13)
-  - [Multiple host platforms](#0_0_14)
+  - [What is EPICS base?](#what-is-epics-base?)
+  - [What is new in this release?](#what-is-new-in-this-release?)
+  - [Copyright](#copyright)
+  - [Supported platforms](#supported-platforms)
+  - [Supported compilers](#supported-compilers)
+  - [Software requirements](#software-requirements)
+  - [Host system storage requirements](#host-system-storage-requirements)
+  - [Documentation](#documentation)
+  - [Directory Structure](#directory-structure)
+  - [Site-specific build configuration](#site-specific-build-configuration)
+  - [Building EPICS base](#building-epics-base)
+  - [Example application and extension](#example-application-and-extension)
+  - [Multiple host platforms](#multiple-host-platforms)
 
 -----
 
-### <span id="0_0_1">What is EPICS base?</span>
+### What is EPICS base?
 
 The Experimental Physics and Industrial Control Systems (EPICS) is an
 extensible set of software components and tools with which application
@@ -33,17 +34,17 @@ function. EPICS base allows an arbitrary number of target systems,
 IOCs (input/output controllers), and host systems, OPIs (operator
 interfaces) of various types.
 
-### <span id="0_0_2">What is new in this release?</span>
+### What is new in this release?
 
-Please check the `RELEASE_NOTES` file in the distribution for
+Please check the `documentation/RELEASE_NOTES.md` file for
 description of changes and release migration details.
 
-### <span id="0_0_3">Copyright Licenses</span>
+### Copyright
 
-Please review the LICENSE file included in the distribution for legal
-terms of usage.
+Please review the `LICENSE` file included in the distribution for
+legal terms of usage.
 
-### <span id="0_0_4">Supported platforms</span>
+### Supported platforms
 
 The list of platforms supported by this version of EPICS base is given
 in the `configure/CONFIG_SITE` file. If you are trying to build EPICS
@@ -54,7 +55,7 @@ base/configure/os/directory. You can start by copying existing
 configuration files in the configure/os directory and then make
 changes for your new platforms.
 
-### <span id="0_0_5">Supported compilers</span>
+### Supported compilers
 
 This version of EPICS base has been built and tested using the host
 vendor's C and C++ compilers, as well as the GNU gcc and g++
@@ -63,27 +64,33 @@ targets. You may need the C and C++ compilers to be in your search
 path to do EPICS builds; check the definitions of CC and CCC in
 `base/configure/os/CONFIG.<host>.<host>` if you have problems.
 
-### <span id="0_0_6">Software requirements</span>
+### Software requirements
 
-**GNU make**
-You must use GNU make, gnumake, for any EPICS builds. Set your path so
-that a gnumake version 4.1 or later is available.
+#### GNU make
 
-**Perl**
+You must use the GNU version of `make` for EPICS builds. Set your path
+so that version 4.1 or later is available. The macOS version of `make`
+is older but does still work.
+
+#### Perl
+
 You must have Perl version 5.10 or later installed. The EPICS
 configuration files do not specify the perl full pathname, so the perl
 executable must be found through your normal search path.
 
-**Unzip and tar (Winzip on WIN32 systems)**
+#### Unzip and tar (Winzip on WIN32 systems)
+
 You must have tools available to unzip and untar the EPICS base
 distribution file.
 
-**Target systems**
+#### Target systems
+
 EPICS supports IOCs running on embedded platforms such as VxWorks and
 RTEMS built using a cross-compiler, and also supports soft IOCs
 running as processes on the host platform.
 
-**vxWorks**
+#### vxWorks
+
 You must have vxWorks 6.8 or later installed if any of your target
 systems are vxWorks systems; the C++ compiler from older versions cannot
 compile recently developed code. The vxWorks installation provides the
@@ -96,127 +103,146 @@ Consult the [vxWorks 6.x](https://epics.anl.gov/base/vxWorks6.php) EPICS
 web pages about and the vxWorks documentation for information about
 configuring your vxWorks operating system for use with EPICS.
 
-**RTEMS**
+#### RTEMS
+
 For RTEMS targets, you need RTEMS core and toolset version 4.9.x or
-4.10.x (4.11 or 5.x are not yet supported).
+4.10.x. RTEMS 5 is experimental in EPICS 7.0.6.
 
-**GNU readline or Tecla library**
-GNU readline and Tecla libraries can be used by the IOC shell to
-provide command line editing and command line history recall and edit.
-GNU readline (or Tecla library) must be installed on your target
-system when `COMMANDLINE_LIBRARY` is set to READLINE (or TECLA) for
-that target. EPICS (EPICS shell) is the default specified in
-`CONFIG_COMMON`. A READLINE override is defined for linux-x86 in the
-EPICS distribution. Comment out `COMMANDLINE_LIBRARY=READLINE` in
-`configure/os/CONFIG_SITE.Common.linux-x86` if readline is not
-installed on linux-x86. Command-line editing and history will then be
-those supplied by the os. On vxWorks the ledLib command-line input
-library is used instead.
+#### Command Line Editing
 
-### <span id="0_0_8">Documentation</span>
+GNU readline and other similar libraries can be used by the IOC shell
+to provide command line editing and command line history recall. The
+GNU readline development package (or Apple's emulator on macOS) must
+be installed for a target when its build configuration variable
+`COMMANDLINE_LIBRARY` is set to `READLINE`. The default specified in
+`CONFIG_COMMON` is `EPICS`, but most linux target builds can detect if
+readline is available and will then use it. RTEMS targets may be
+configured to use `LIBTECLA` if available, and on vxWorks the OS's
+ledLib line-editing library is normally used.
 
-EPICS documentation is available through the [EPICS
-website](https://epics.anl.gov/) at Argonne.
+### Host system storage requirements
+
+The compressed tar file is approximately 3 MB in size. The
+distribution source tree takes up approximately 21 MB. A 64-bit host
+architecture may need around 610 MB to compile, while cross-compiled
+targets are somewhat smaller.
+
+### Documentation
+
+EPICS documentation is available through the [EPICS website](https://epics.anl.gov/) at Argonne.
 
 Release specific documentation can also be found in the
-base/documentation directory of the distribution.
+`base/documentation` directory of the distribution.
 
-### <span id="0_0_10">Directory Structure</span>
+### Directory Structure
 
-#### Distribution directory structure:
-
-```
-        base                    Root directory of the base distribution
-        base/configure          Operating system independent build config files
-        base/configure/os       Operating system dependent build config files
-        base/documentation      Distribution documentation
-        base/src                Source code in various subdirectories
-        base/startup            Scripts for setting up path and environment
-```
-
-#### Install directories created by the build:
+#### Distribution directory structure
 
 ```
-        bin                     Installed scripts and executables in subdirs
-        cfg                     Installed build configuration files
-        db                      Installed data bases
-        dbd                     Installed data base definitions
-        doc                     Installed documentation files
-        html                    Installed html documentation
-        include                 Installed header files
-        include/os              Installed os specific header files in subdirs
-        include/compiler        Installed compiler-specific header files
-        lib                     Installed libraries in arch subdirectories
-        lib/perl                Installed perl modules
-        templates               Installed templates
+    base                Root directory of the distribution
+    base/configure      Build rules and OS-independent config files
+    base/configure/os   OS-dependent build config files
+    base/documentation  Distribution documentation
+    base/src            Source code in various subdirectories
+    base/startup        Scripts for setting up path and environment
 ```
 
-### <span id="0_0_11">Build related components</span>
+#### Directories created by the build
 
-#### base/documentation directory - contains setup, build, and install documents
-
-```
-        README.md            Instructions for setup and building epics base
-        README.darwin.html   Installation notes for Mac OS X (Darwin)
-        RELEASE_NOTES.html   Notes on release changes
-        KnownProblems.html   List of known problems and workarounds
-```
-
-#### base/startup directory - contains scripts to set environment and path
+These are created in the root directory of the installation (`base`
+above) or under the directory pointed to by the `INSTALL_LOCATION`
+configuration variable if that has been set.
 
 ```
-        EpicsHostArch       Shell script to set EPICS_HOST_ARCH env variable
-        unix.csh            C shell script to set path and env variables
-        unix.sh             Bourne shell script to set path and env variables
-        win32.bat           Bat file example to configure win32-x86 target
-        windows.bat         Bat file example to configure windows-x64 target
+    bin               Installed scripts and executables in subdirs
+    cfg               Installed build configuration files
+    db                Installed database files
+    dbd               Installed database definition files
+    html              Installed html documentation
+    include           Installed header files
+    include/os        Installed OS-specific header files in subdirs
+    include/compiler  Installed compiler-specific header files
+    lib               Installed libraries in arch subdirectories
+    lib/perl          Installed perl modules
+    templates         Installed templates
 ```
 
-#### base/configure directory - contains build definitions and rules
+#### `base/documentation` Directory
+
+This contains documents on how to setup, build, and install EPICS.
 
 ```
-        CONFIG                Includes configure files and allows variable overrides
-        CONFIG.CrossCommon    Cross build definitions
-        CONFIG.gnuCommon      Gnu compiler build definitions for all archs
-        CONFIG_ADDONS         Definitions for <osclass> and DEFAULT options
-        CONFIG_APP_INCLUDE
-        CONFIG_BASE           EPICS base tool and location definitions
-        CONFIG_BASE_VERSION   Definitions for EPICS base version number
-        CONFIG_COMMON         Definitions common to all builds
-        CONFIG_ENV            Definitions of EPICS environment variables
-        CONFIG_FILE_TYPE
-        CONFIG_SITE           Site specific make definitions
-        CONFIG_SITE_ENV       Site defaults for EPICS environment variables
-        MAKEFILE              Installs CONFIG* RULES* creates
-        RELEASE               Location of external products
-        RULES                 Includes appropriate rules file
-        RULES.Db              Rules for database and database definition files
-        RULES.ioc             Rules for application iocBoot/ioc* directory
-        RULES_ARCHS           Definitions and rules for building architectures
-        RULES_BUILD           Build and install rules and definitions
-        RULES_DIRS            Definitions and rules for building subdirectories
-        RULES_EXPAND
-        RULES_FILE_TYPE
-        RULES_TARGET
-        RULES_TOP             Rules specific to a <top> dir (uninstall and tar)
-        Sample.Makefile       Sample makefile with comments
+    README.md           This file
+    RELEASE_NOTES.md    Notes on release changes
+    KnownProblems.html  List of known problems and workarounds
 ```
 
-#### base/configure/os directory - contains os-arch specific definitions
+#### `base/startup` Directory
+
+This contains several example scripts that show how to set up the
+build environment and PATH for using EPICS. Sites would usually copy and/or modify these files as appropriate for their environment; they are not used by the build system at all.
 
 ```
-        CONFIG.<host>.<target>      Specific host-target build definitions
-        CONFIG.Common.<target>      Specific target definitions for all hosts
-        CONFIG.<host>.Common        Specific host definitions for all targets
-        CONFIG.UnixCommon.Common    Definitions for Unix hosts and all targets
-        CONFIG.Common.UnixCommon    Definitions for Unix targets and all hosts
-        CONFIG.Common.vxWorksCommon Specific host definitions for all vx targets
-        CONFIG_SITE.<host>.<target> Site specific host-target definitions
-        CONFIG_SITE.Common.<target> Site specific target defs for all hosts
-        CONFIG_SITE.<host>.Common   Site specific host defs for all targets
+    EpicsHostArch  Shell script to set EPICS_HOST_ARCH env variable
+    unix.csh       C shell script to set path and env variables
+    unix.sh        Bourne shell script to set path and env variables
+    win32.bat      Bat file example to configure win32-x86 target
+    windows.bat    Bat file example to configure windows-x64 target
 ```
 
-### <span id="0_0_12">Building EPICS base (Unix and Win32)</span>
+#### `base/configure` directory
+
+This contains build-system files providing definitions and rules
+required by GNU Make to build EPICS. Users should only need to modify the `CONFIG_SITE` files to configure the EPICS build.
+
+```
+    CONFIG               Main entry point for building EPICS
+    CONFIG.CrossCommon   Cross build definitions
+    CONFIG.gnuCommon     Gnu compiler build definitions for all archs
+    CONFIG_ADDONS        Definitions for <osclass> and DEFAULT options
+    CONFIG_APP_INCLUDE
+    CONFIG_BASE          EPICS base tool and location definitions
+    CONFIG_BASE_VERSION  Definitions for EPICS base version number
+    CONFIG_COMMON        Definitions common to all builds
+    CONFIG_ENV           Definitions of EPICS environment variables
+    CONFIG_FILE_TYPE
+    CONFIG_SITE          Site specific make definitions
+    CONFIG_SITE_ENV      Site defaults for EPICS environment variables
+    MAKEFILE             Installs CONFIG* RULES* creates
+    RELEASE              Location of external products
+    RULES                Includes appropriate rules file
+    RULES.Db             Rules for database and database definition files
+    RULES.ioc            Rules for application iocBoot/ioc* directory
+    RULES_ARCHS          Definitions and rules for building architectures
+    RULES_BUILD          Build and install rules and definitions
+    RULES_DIRS           Definitions and rules for building subdirectories
+    RULES_EXPAND
+    RULES_FILE_TYPE
+    RULES_TARGET
+    RULES_TOP            Rules specific to a <top> dir only
+    Sample.Makefile      Sample makefile with comments
+```
+
+#### `base/configure/os` Directory
+
+Files in here provide definitions that are shared by or specific to particular host and/or target architectures. Users should only need to modify the `CONFIG_SITE` files in this directory to configure the EPICS build.
+
+```
+    CONFIG.<host>.<target>            Definitions for a specific host-target combination
+    CONFIG.Common.<target>            Definitions for a specific target, any host
+    CONFIG.<host>.Common              Definitions for a specific host, any target
+    CONFIG.UnixCommon.Common          Definitions for Unix hosts, any target
+    CONFIG.Common.UnixCommon          Definitions for Unix targets, any host
+    CONFIG.Common.RTEMS               Definitions for all RTEMS targets, any host
+    CONFIG.Common.vxWorksCommon       Definitions for all vxWorks targets, any host
+    CONFIG_SITE.<host>.<target>       Local settings for a specific host-target combination
+    CONFIG_SITE.Common.<target>       Local settings for a specific target, any host
+    CONFIG_SITE.<host>.Common         Local settings for a specific host, any target
+    CONFIG_SITE.Common.RTEMS          Local settings for all RTEMS targets, any host
+    CONFIG_SITE.Common.vxWorksCommon  Local settings for all vxWorks targets, any host
+```
+
+### Building EPICS base
 
 #### Unpack file
 
@@ -228,74 +254,79 @@ systems.
 Files in the base/startup directory have been provided to help set
 required path and other environment variables.
 
-* `EPICS_HOST_ARCH`
-Before you can build or use this EPICS base, the environment variable
-`EPICS_HOST_ARCH` must be defined. A perl script EpicsHostArch.pl in
-the base/startup directory has been provided to help set
-`EPICS_HOST_ARCH.` You should have `EPICS_HOST_ARCH` set to your
-host operating system followed by a dash and then your host
-architecture, e.g. linux-x86_64. If you are not using the OS
-vendor's c/c++ compiler for host builds, you will need another dash
-followed by the alternate compiler name (e.g. "-gnu" for GNU c/c++
-compilers on a solaris host or "-mingw" for MinGW c/c++ compilers on
-Windows). See `configure/CONFIG_SITE` for a list of supported
-`EPICS_HOST_ARCH` values.
+* **`EPICS_HOST_ARCH`**
 
-* `PATH`
-As already mentioned, you must have the perl executable and you may
-need C and C++ compilers in your search path. For building base you
-also must have echo in your search path. For Unix host builds you
-also need ln, cpp, cp, rm, mv, and mkdir in your search path and
-/bin/chmod must exist. On some Unix systems you may also need ar and
-ranlib in your path, and the C compiler may require as and ld in
-your path. On solaris systems you need uname in your path.
+Some host builds of EPICS require that the environment variable
+`EPICS_HOST_ARCH` be defined. The perl script `EpicsHostArch.pl` in the
+`base/startup` directory prints the value which the build will use if
+the variable is not set before the build starts. Architecture names
+start with the operating system followed by a dash and the host CPU
+architecture, e.g. `linux-x86_64`. Some architecture names have another
+dash followed by another keyword, for example when building for Windows
+but using the MinGW compiler the name must be `windows-x64-mingw`. See
+`configure/CONFIG_SITE` for a list of supported host architecture names.
 
-* `LD_LIBRARY_PATH`
-EPICS shared libraries and executables normally contain the full
-path to any libraries they require. However, if you move the EPICS
-files or directories from their build-time location then in order
-for the shared libraries to be found at runtime `LD_LIBRARY_PATH`
-must include the full pathname to
-`$(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH)` when invoking
-executables, or some equivalent OS-specific mechanism (such as
-/etc/ld.so.conf on Linux) must be used. Shared libraries are now
-built by default on all Unix type hosts.
+* **`PATH`**
+As already mentioned, you must have the `perl` executable and you may
+need C and C++ compilers in your search path. When building base you
+must have `echo` in your search path. For Unix host builds you will
+also need `cp`, `rm`, `mv`, and `mkdir` in your search path. Some Unix
+systems may also need `ar` and `ranlib`, and the C/C++ compilers may
+require `as` and `ld` in your path. On Solaris systems you need
+`uname` in your path.
 
-#### Do site-specific build configuration
+* **`LD_LIBRARY_PATH`**
+EPICS shared libraries and executables normally contain the full path
+to any libraries they require, so setting this variable is not usually
+necessary. However, if you move the EPICS installation to a new
+location after building it then in order for the shared libraries to
+be found at runtime it may need to be set, or some equivalent
+OS-specific mechanism such as `/etc/ld.so.conf` on Linux must be used.
+Shared libraries are now built by default on all Unix type hosts.
 
-**Site configuration**
-To configure EPICS, you may want to modify the default definitions
-in the following files:
+### Site-specific build configuration
 
-```
-        configure/CONFIG_SITE      Build choices. Specify target archs.
-        configure/CONFIG_SITE_ENV  Environment variable defaults
-        configure/RELEASE          TORNADO2 full path location
-```
+#### Site configuration
 
-**Host configuration**
-To configure each host system, you may override the default
-definitions by adding a new file in the configure/os directory with
-override definitions. The new file should have the same name as the
-distribution file to be overridden except with CONFIG in the name
-changed to `CONFIG_SITE`.
+To configure EPICS, you may want to modify some values set in the
+following files:
+>>>>>>> mirror/3.15
 
 ```
-        configure/os/CONFIG.<host>.<host>      Host build settings
-        configure/os/CONFIG.<host>.Common      Host common build settings
+    configure/CONFIG_SITE      Build settings. Specify target archs.
+    configure/CONFIG_SITE_ENV  Environment variable defaults
 ```
 
-**Target configuration**
+#### Host configuration
+
+To configure each host system, you can override the default
+definitions by adding a new settings file (or editing an existing
+settings file) in the `configure/os` directory with your override
+definitions. The settings file has the same name as the definitions
+file to be overridden except with `CONFIG` in the name changed to
+`CONFIG_SITE`.
+
+```
+    configure/os/CONFIG.<host>.<host>       Host self-build definitions
+    configure/os/CONFIG.<host>.Common       Host common build definitions
+    configure/os/CONFIG_SITE.<host>.<host>  Host self-build overrides
+    configure/os/CONFIG_SITE.<host>.Common  Host common build overrides
+```
+
+#### Target configuration
+
 To configure each target system, you may override the default
-definitions by adding a new file in the configure/os directory with
-override definitions. The new file should have the same name as the
-distribution file to be overridden except with CONFIG in the name
-replaced by `CONFIG_SITE`. This step is necessary even if the host
-system is the only target system.
+definitions by adding a new settings file (or editing an existing
+settings file) in the `configure/os` directory with your override
+definitions. The settings file has the same name as the definitions
+file to be overridden except with `CONFIG` in the name changed to
+`CONFIG_SITE`.
 
 ```
-        configure/os/CONFIG.Common.<target>     Target common settings
-        configure/os/CONFIG.<host>.<target>     Host-target settings
+    configure/os/CONFIG.Common.<target>       Target common definitions
+    configure/os/CONFIG.<host>.<target>       Host-target definitions
+    configure/os/CONFIG_SITE.Common.<target>  Target common overrides
+    configure/os/CONFIG_SITE.<host>.<target>  Host-target overrides
 ```
 
 #### Build EPICS base
@@ -305,24 +336,29 @@ by issuing the following commands in the distribution's root
 directory (base):
 
 ```
-        gnumake clean uninstall
-        gnumake
+    make distclean
+    make
 ```
 
-The command "gnumake clean uninstall" will remove all files and
-directories generated by a previous build. The command "gnumake"
+The command `make distclean` will remove all files and
+directories generated by a previous build. The command `make`
 will build and install everything for the configured host and
 targets.
 
-It is recommended that you do a "gnumake clean uninstall" at the
+It is recommended that you do a `make distclean` at the
 root directory of an EPICS directory structure before each complete
 rebuild to ensure that all components will be rebuilt.
 
-### <span id="0_0_13">Example application and extension</span>
+In some cases GNU Make may have been installed as `gmake` or
+`gnumake`, in which case the above commands will have to be adjusted
+to match.
 
-A perl tool, makeBaseApp.pl is included in the distribution file. This
-script will create a sample application that can be built and then
-executed to try out this release of base.
+### Example application and extension
+
+A perl tool `makeBaseApp.pl` and several template applications are
+included in the distribution. This script instantiates the selected
+template into an empty directory to provide an example application
+that can be built and then executed to try out this release of base.
 
 Instructions for building and executing the EPICS example application
 can be found in the section "Example Application" of Chapter 2,
@@ -335,26 +371,30 @@ application as a host-based IOC, you will be able to quickly implement
 a complete EPICS system and be able to run channel access clients on
 the host system.
 
-A perl script, makeBaseExt.pl, is included in the distribution file.
-This script will create a sample extension that can be built and
-executed. The makeBaseApp.pl and makeBaseExt.pl scripts are installed
-into the install location `bin/<hostarch>` directory during the base
-build.
+Another perl script `makeBaseExt.pl` is also included in the
+distribution file for creating an extensions tree and sample
+application that can also be built and executed. Both these scripts
+are installed into the install location `bin/<hostarch>` directory
+during the base build.
 
-### <span id="0_0_14">Multiple host platforms</span>
+### Multiple host platforms
 
 You can build using a single EPICS directory structure on multiple
 host systems and for multiple cross target systems. The intermediate
 and binary files generated by the build will be created in separate
 subdirectories and installed into the appropriate separate host/target
-install directories. EPICS executables and perl scripts are installed
-into the `$(INSTALL_LOCATION)/bin/<arch>` directories. Libraries are
-installed into $`(INSTALL_LOCATION)/lib/<arch>`. The default
-definition for `$(INSTALL_LOCATION)` is `$(TOP)` which is the root
-directory in the distribution directory structure, base. Created
-object files are stored in `O.<arch>` source subdirectories, This
-allows objects for multiple cross target architectures to be
-maintained at the same time. To build EPICS base for a specific
+install directories.
+
+EPICS executables and perl scripts are installed into the
+`$(INSTALL_LOCATION)/bin/<arch>` directories. Libraries are installed
+into $`(INSTALL_LOCATION)/lib/<arch>`. The default definition for
+`$(INSTALL_LOCATION)` is `$(TOP)` which is the root directory in the
+distribution directory structure, `base`. Intermediate object files
+are stored in `O.<arch>` source subdirectories during the build
+process, to allow objects for multiple cross target architectures
+to be maintained at the same time.
+
+To build EPICS base for a specific
 host/target combination you must have the proper host/target C/C++
 cross compiler and target header files and the base/configure/os
 directory must have the appropriate configure files.

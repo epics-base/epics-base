@@ -1923,16 +1923,36 @@ header and removed the need for dbScan.c to reach into the internals of its
 # Changes incorporated from the 3.15 branch
 
 
-## Changes made on the 3.15 branch since 3.15.8
+## Changes from the 3.15 branch since 3.15.9
+
+
+## Changes made between 3.15.8 and 3.15.9
 
 ### Use waitable timers on Microsoft Windows
 
-The `epicsEventWaitWithTimeout` and `epicsThreadSleep` functions have
+The `epicsEventWaitWithTimeout()` and `epicsThreadSleep()` functions have
 been changed to use waitable timers. On Windows 10 version 1803 or higher
 they will use high resolution timers for more consistent timing.
 
-See https://groups.google.com/a/chromium.org/g/scheduler-dev/c/0GlSPYreJeY
+See [this Google Groups thread](https://groups.google.com/a/chromium.org/g/scheduler-dev/c/0GlSPYreJeY)
 for a comparison of the performance of different timers.
+
+### Build target for documentation
+
+The build target `inc` now works again after a very long hiatus. It now
+generates and installs just the dbd, header and html files, without compiling
+any C/C++ code. This can be used to speed up CI jobs that only generate
+documentation.
+
+### Bug fixes
+
+- The error status returned by a record support's `special()` method is now propagated out of the `dbPut()` routine again (broken since 3.15.0).
+- [gh: #80](https://github.com/epics-base/epics-base/issues/80), VS-2015 and
+later have working strtod()
+- [lp: #1776141](https://bugs.launchpad.net/epics-base/+bug/1776141), Catch
+buffer overflow from long link strings
+- [lp: #1899697](https://bugs.launchpad.net/epics-base/+bug/1899697), Records
+in wrong PHAS order
 
 ### Change to the `junitfiles` self-test build target
 
@@ -1940,7 +1960,9 @@ The names of the generated junit xml test output files have been changed
 from `<testname>.xml` to `<testname>-results.xml`, to allow better
 distinction from other xml files. (I.e., for easy wildcard matching.)
 
------
+### Fixes and code cleanups
+
+Issues reported by various static code checkers.
 
 ## Changes made between 3.15.7 and 3.15.8
 

@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <loadLib.h>
+#include <ioLib.h>
 
 #include "dbmf.h"
 #include "epicsString.h"

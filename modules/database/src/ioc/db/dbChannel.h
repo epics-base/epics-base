@@ -50,6 +50,8 @@ typedef struct evSubscrip {
 
 typedef struct chFilter chFilter;
 
+typedef long fastConvert(void *from, void *to, const dbAddr *paddr);
+
 /* A dbChannel points to a record field, and can have multiple filters */
 typedef struct dbChannel {
     const char *name;
@@ -60,6 +62,9 @@ typedef struct dbChannel {
     ELLLIST filters;          /* list of filters as created from JSON */
     ELLLIST pre_chain;        /* list of filters to be called pre-event-queue */
     ELLLIST post_chain;       /* list of filters to be called post-event-queue */
+    /* Support for optimizing scalar requests */
+    fastConvert *getCvt;      /* fast get conversion function */
+    short lastGetdbrType;     /* last dbChannelGet dbrType */
 } dbChannel;
 
 /* Prototype for the channel event function that is called in filter stacks
@@ -208,9 +213,9 @@ DBCORE_API extern unsigned short dbDBRnewToDBRold[];
 
 
 DBCORE_API long dbChannelGet(dbChannel *chan, short type,
-        void *pbuffer, long *options, long *nRequest, void *pfl);
+        void *pbuffer, long *options, long *nRequest, db_field_log *pfl);
 DBCORE_API long dbChannelGetField(dbChannel *chan, short type,
-        void *pbuffer, long *options, long *nRequest, void *pfl);
+        void *pbuffer, long *options, long *nRequest, db_field_log *pfl);
 DBCORE_API long dbChannelPut(dbChannel *chan, short type,
         const void *pbuffer, long nRequest);
 DBCORE_API long dbChannelPutField(dbChannel *chan, short type,

@@ -78,15 +78,12 @@ struct macro_link {
 };
 
 struct dbCommon;
-typedef long (*LINKCVT)();
 
 struct pv_link {
     ELLNODE     backlinknode;
     char        *pvname;        /* pvname link points to */
     void        *pvt;           /* CA or DB private */
-    LINKCVT     getCvt;         /* input conversion function */
     short       pvlMask;        /* Options mask */
-    short       lastGetdbrType; /* last dbrType for DB or CA get */
 };
 
 struct jlink;

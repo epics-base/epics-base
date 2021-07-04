@@ -33,10 +33,12 @@
 #include "dbBase.h"
 #include "dbChannel.h"
 #include "dbCommon.h"
+#include "dbConvertFast.h"
 #include "dbEvent.h"
 #include "dbLock.h"
 #include "dbStaticLib.h"
 #include "link.h"
+#include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
 #include "alarm.h"
@@ -629,14 +631,57 @@ long dbChannelOpen(dbChannel *chan)
 }
 
 /* Only use dbChannelGet() if the record is already locked. */
-long dbChannelGet(dbChannel *chan, short type, void *pbuffer,
-        long *options, long *nRequest, void *pfl)
+long dbChannelGet(dbChannel *chan, short dbrType, void *pbuffer,
+        long *options, long *nRequest, db_field_log *pfl)
 {
-    return dbGet(&chan->addr, type, pbuffer, options, nRequest, pfl);
+    dbAddr addr = chan->addr; /* structure copy */
+
+    if (pfl) {
+        addr.field_size = pfl->field_size;
+        addr.field_type = pfl->field_type;
+        addr.no_elements = pfl->no_elements;
+        addr.pfield = dbfl_pfield(pfl);
+    }
+
+    /*
+     * Try to optimize scalar requests by caching (just) the conversion
+     * routine. This is possible only if we have no options, the field and the
+     * request have exactly one element, we have no special processing to do,
+     * and the field type is not DBF_DEVICE or larger.
+     * Note that if the db_field_log has already copied the data, dbGet
+     * does not call get_array_info.
+     */
+    if (!(options && *options)
+        && addr.no_elements == 1
+        && (!nRequest || *nRequest == 1)
+        && (dbfl_has_copy(pfl) || addr.special != SPC_DBADDR)
+        && addr.special != SPC_ATTRIBUTE
+        && addr.field_type <= DBF_DEVICE)
+    {
+        if (chan->getCvt && chan->lastGetdbrType == dbrType) {
+            return chan->getCvt(addr.pfield, pbuffer, &addr);
+        } else {
+            unsigned short dbfType = addr.field_type;
+
+            if (INVALID_DB_REQ(dbrType)) {
+                return S_db_badDbrtype;
+            }
+
+            chan->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
+            chan->lastGetdbrType = dbrType;
+            if (nRequest)
+                *nRequest = addr.no_elements;
+            return chan->getCvt(addr.pfield, pbuffer, &addr);
+        }
+    } else {
+        /* non-optimized case */
+        chan->getCvt = NULL;
+        return dbGet(&addr, dbrType, pbuffer, options, nRequest, pfl);
+    }
 }
 
 long dbChannelGetField(dbChannel *chan, short dbrType, void *pbuffer,
-        long *options, long *nRequest, void *pfl)
+        long *options, long *nRequest, db_field_log *pfl)
 {
     dbCommon *precord = chan->addr.precord;
     long status = 0;

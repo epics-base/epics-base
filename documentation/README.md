@@ -1,6 +1,6 @@
 # Installation Instructions {#install}
 
-## EPICS Base Release 7.0.5
+## EPICS Base Release 7.0.x
 
 -----
 

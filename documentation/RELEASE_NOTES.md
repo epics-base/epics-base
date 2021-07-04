@@ -2,20 +2,16 @@
 
 These release notes describe changes that have been made since the previous
 release of this series of EPICS Base. **Note that changes which were merged up
-from commits to new releases in an older Base series are not described at the
-top of this file but have entries that appear lower down, under the series to
-which they were originally committed.** Thus it is important to read more than
-just the first section to understand everything that has changed in each
-release.
+from commits to the 3.15 branch are not described at the top of this file but
+lower down, under the 3.15 release to which they were originally committed.**
+Thus it is important to read more than just the first section to understand
+everything that has changed in each release.
 
 The PVA submodules each have their own individual sets of release notes which
 should also be read to understand what has changed since earlier releases.
 
-**This version of EPICS has not been released yet.**
 
-## Changes made on the 7.0 branch since 7.0.5
-
-<!-- Insert new items immediately below here ... -->
+## EPICS Release 7.0.6
 
 ### Support for obsolete architectures removed
 

@@ -371,7 +371,7 @@ typedef struct lset {
      * Implementations must write a trailing nil to msgbuf whenever
      * @code msgbuf!=NULL && msgbuflen>0 @endcode .
      *
-     * @since UNRELEASED
+     * @since 7.0.6
      */
     long (*getAlarmMsg)(const struct link *plink, epicsEnum16 *status,
                         epicsEnum16 *severity, char *msgbuf, size_t msgbuflen);
@@ -381,7 +381,7 @@ typedef struct lset {
      * Equivalent of getTimeStamp() and also copy out time tag.
      * ptag may be NULL.
      *
-     * @since Added after UNRELEASED
+     * @since Added after 7.0.6
      */
     long (*getTimeStampTag)(const struct link *plink, epicsTimeStamp *pstamp, epicsUTag *ptag);
 } lset;
@@ -428,14 +428,14 @@ DBCORE_API long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
 /** Get link alarm and message string.
  * To ensure the complete message string is copied, ensure @code msgbuflen >= sizeof (dbCommon::amsg) @endcode .
  * A trailing nil will be added whenever @code msgbuflen > 0 @endcode .
- * @since UNRELEASED
+ * @since 7.0.6
  */
 DBCORE_API long dbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
         epicsEnum16 *severity, char *msgbuf, size_t msgbuflen);
 #define dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN) dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN)
 DBCORE_API long dbGetTimeStamp(const struct link *plink,
         epicsTimeStamp *pstamp);
-/** @since UNRELEASED */
+/** @since 7.0.6 */
 DBCORE_API long dbGetTimeStampTag(const struct link *plink,
         epicsTimeStamp *pstamp, epicsUTag *ptag);
 #define dbGetTimeStampTag(LINK, STAMP, TAG) dbGetTimeStampTag(LINK, STAMP, TAG)

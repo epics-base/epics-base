@@ -29,7 +29,7 @@ extern "C" {
  *
  * Covers addition of dbCommon::amsg, recGblSetSevrMsg(), lset::getAlarmMsg()
  *
- * @since UNRELEASED
+ * @since 7.0.6
  */
 #define HAS_ALARM_MESSAGE 1
 

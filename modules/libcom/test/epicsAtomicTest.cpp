@@ -285,15 +285,15 @@ static void testClassify()
 #endif
 
 #ifdef __GNUC__
-#if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER
+#if GCC_ATOMIC_INTRINSICS_AVAIL_SYNC
     testDiag("GCC using atomic builtin memory barrier");
 #else
     testDiag("GCC using asm memory barrier");
 #endif
-#if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
+#if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T
     testDiag("GCC use builtin for int");
 #endif
-#if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
+#if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T
     testDiag("GCC use builtin for size_t");
 #endif
 

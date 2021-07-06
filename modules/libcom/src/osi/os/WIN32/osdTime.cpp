@@ -510,8 +510,8 @@ static unsigned __stdcall _pllThreadEntry ( void * pCurrentTimeIn )
 epicsTime::operator FILETIME () const
 {
     LARGE_INTEGER ftTicks;
-    ftTicks.QuadPart = ( this->secPastEpoch * FILE_TIME_TICKS_PER_SEC ) +
-        ( this->nSec / ET_TICKS_PER_FT_TICK );
+    ftTicks.QuadPart = ( this->ts.secPastEpoch * FILE_TIME_TICKS_PER_SEC ) +
+        ( this->ts.nsec / ET_TICKS_PER_FT_TICK );
     ftTicks.QuadPart += epicsEpochInFileTime;
     FILETIME ts;
     ts.dwLowDateTime = ftTicks.LowPart;
@@ -527,15 +527,15 @@ epicsTime::epicsTime ( const FILETIME & ts )
     if ( lift.QuadPart > epicsEpochInFileTime ) {
         LONGLONG fileTimeTicksSinceEpochEPICS =
             lift.QuadPart - epicsEpochInFileTime;
-        this->secPastEpoch = static_cast < epicsUInt32 >
+        this->ts.secPastEpoch = static_cast < epicsUInt32 >
             ( fileTimeTicksSinceEpochEPICS / FILE_TIME_TICKS_PER_SEC );
-        this->nSec = static_cast < epicsUInt32 >
+        this->ts.nsec = static_cast < epicsUInt32 >
             ( ( fileTimeTicksSinceEpochEPICS % FILE_TIME_TICKS_PER_SEC ) *
             ET_TICKS_PER_FT_TICK );
     }
     else {
-        this->secPastEpoch = 0;
-        this->nSec = 0;
+        this->ts.secPastEpoch = 0;
+        this->ts.nsec = 0;
     }
 }
 

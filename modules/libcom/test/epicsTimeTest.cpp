@@ -10,6 +10,9 @@
 /*
  * Authors: Jeff Hill, Marty Kraimer and Andrew Johnson
  */
+#include <iostream>
+
+#include <cstdlib>
 #include <cstddef>
 #include <cstdio>
 #include <ctime>
@@ -17,6 +20,7 @@
 #include <climits>
 #include <cstring>
 
+#include "envDefs.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "errlog.h"
@@ -29,15 +33,44 @@ using namespace std;
  * routines is incorporated into epicsTimeTest () below.
  */
 
-struct l_fp { /* NTP time stamp */
-    epicsUInt32 l_ui; /* sec past NTP epoch */
-    epicsUInt32 l_uf; /* fractional seconds */
-};
-
 static const unsigned mSecPerSec = 1000u;
 static const unsigned uSecPerSec = 1000u * mSecPerSec;
 static const unsigned nSecPerSec = 1000u * uSecPerSec;
 static const double precisionEPICS = 1.0 / nSecPerSec;
+
+static void testAdd(epicsUInt32 lhsSec, epicsUInt32 lhsNS,
+                    double rhs,
+                    epicsUInt32 expectSec, epicsUInt32 expectNS)
+{
+    epicsTimeStamp lhs = {lhsSec, lhsNS};
+    epicsTimeStamp expect = {expectSec, expectNS};
+    epicsTimeStamp actual = lhs;
+
+
+    epicsTimeAddSeconds(&actual, rhs);
+    testOk(epicsTimeEqual(&actual, &expect),
+           "testAdd(%u:%u + %.9f -> %u:%u == %u:%u)",
+           unsigned(lhs.secPastEpoch), unsigned(lhs.nsec),
+           rhs,
+           unsigned(actual.secPastEpoch), unsigned(actual.nsec),
+           unsigned(expect.secPastEpoch), unsigned(expect.nsec));
+}
+
+static void testDiff(epicsUInt32 lhsSec, epicsUInt32 lhsNS,
+                     epicsUInt32 rhsSec, epicsUInt32 rhsNS,
+                     double expect)
+{
+    epicsTimeStamp lhs = {lhsSec, lhsNS};
+    epicsTimeStamp rhs = {rhsSec, rhsNS};
+    double actual = epicsTimeDiffInSeconds(&lhs, &rhs);
+    double diff = actual - expect;
+
+    testOk(fabs(diff)<precisionEPICS,
+           "testDiff(%u:%u - %u:%u) -> %.9f ~= %.9f (%g)",
+           unsigned(lhs.secPastEpoch), unsigned(lhs.nsec),
+           unsigned(rhs.secPastEpoch), unsigned(rhs.nsec),
+           actual, expect, diff);
+}
 
 static void crossCheck(double delay)
 {
@@ -80,12 +113,91 @@ static void testMonotonic()
     testDiag("Small Delta %u ns", (unsigned)(B-A));
 }
 
+static void testTMGames()
+{
+    testDiag("testTMGames()");
+
+    epicsTimeStamp now;
+    testOk1(!epicsTimeGetCurrent(&now));
+    now.nsec = 0; // not relevant
+
+    tm gtm, ltm;
+    epicsTimeToTM(&ltm, 0, &now);
+    epicsTimeToGMTM(&gtm, 0, &now);
+
+    // we can't do any tests on the decomposed time without knowing the current TZ
+    testDiag("LTM mday=%u hour=%u min=%u sec=%u", ltm.tm_mday, ltm.tm_hour, ltm.tm_min, ltm.tm_sec);
+    testDiag("GTM mday=%u hour=%u min=%u sec=%u", gtm.tm_mday, gtm.tm_hour, gtm.tm_min, gtm.tm_sec);
+
+    epicsTimeStamp gtime, ltime;
+    epicsTimeFromTM(&ltime, &ltm, 0);
+    epicsTimeFromGMTM(&gtime, &gtm, 0);
+
+    testOk(now.secPastEpoch==ltime.secPastEpoch, "localtime %u == %u",
+           unsigned(now.secPastEpoch), unsigned(ltime.secPastEpoch));
+
+    testOk(now.secPastEpoch==gtime.secPastEpoch, "gmtime %u == %u",
+           unsigned(now.secPastEpoch), unsigned(ltime.secPastEpoch));
+}
+
 MAIN(epicsTimeTest)
 {
     const int wasteTime = 100000;
     const int nTimes = 10;
 
-    testPlan(22 + nTimes * 19);
+    testPlan(52 + nTimes * 19);
+
+    testDiag("$TZ = \"%s\"", getenv("TZ"));
+    testDiag("EPICS_TZ = \"%s\"", envGetConfigParamPtr(&EPICS_TZ));
+
+#if !defined(_WIN32) && !defined(vxWorks)
+    {
+        // at least glibc doesn't initialize tzname[2] until some time.h function needs the time zone
+        time_t junk = 0;
+        (void)localtime(&junk);
+        testDiag("Local TZ names \"%s\", \"%s\"", tzname[0], tzname[1]);
+    }
+#endif
+
+    // sec:ns + double == sec:ns
+    testAdd(0,0, 0.0, 0,0);
+    testAdd(1,1, 0.0, 1,1);
+    testAdd(1,999999999, 0.000000001, 2,0);
+    testAdd(1,1, 2.000000002, 3,3);
+    testAdd(1,0, -1.0, 0,0);
+    testAdd(0,1, -0.000000001, 0,0);
+    testAdd(1,1, -1.000000001, 0,0);
+    testAdd(0xffffffff,0, -1.0, 0xfffffffe,0);
+    testAdd(0x7fffffff,0, 1.0, 0x80000000,0);
+    testAdd(0x7fffffff,999999999, 0.000000001, 0x80000000,0);
+
+    // sec:ns - sec:ns == double
+    testDiff(0,0, 0,0, 0.0);
+
+    testDiff(0,1, 0,1, 0.0);
+    testDiff(1,0, 1,0, 0.0);
+    testDiff(1,1, 1,1, 0.0);
+
+    testDiff(2,0, 1,999999999, 0.000000001);
+    testDiff(1,999999999, 2,0, -0.000000001);
+
+    testDiff(1,0, 0xffffffff,0, 2.0);
+    testDiff(0xffffffff,0, 1,0, -2.0);
+
+    testDiff(1,999999999, 0xffffffff,999999999, 2.0);
+    testDiff(0xffffffff,999999999, 1,999999999, -2.0);
+
+    testDiff(0,999999999, 0xffffffff,0, 1.999999999);  // 0.99999.. - -1.0
+    testDiff(0xffffffff,0, 0,999999999, -1.999999999); // -1.0 - 0.999..
+
+    testDiff(0x80000000,0, 0x7fffffff,0, 1.0);
+    testDiff(0x7fffffff,0, 0x80000000,0, -1.0);
+
+    testDiff(0x80000000,0, 0x7fffffff,999999999, 0.000000001);
+    testDiff(0x7fffffff,999999999, 0x80000000,0, -0.000000001);
+
+    testDiff(0x80000000,999999999, 0x7fffffff,0, 1.999999999);
+    testDiff(0x7fffffff,0, 0x80000000,999999999, -1.999999999);
 
     try {
         const epicsTimeStamp epochTS = {0, 0};
@@ -113,7 +225,7 @@ MAIN(epicsTimeTest)
             ts.strftime(buf, sizeof(buf), pFormat);
             testFail("nanosecond overflow returned \"%s\"", buf);
         }
-        catch ( ... ) {
+        catch ( std::exception& ) {
             testPass("nanosecond overflow throws");
         }
     }
@@ -178,18 +290,9 @@ MAIN(epicsTimeTest)
         now = epicsTime::getCurrent();
         testPass("default time provider");
     }
-    catch ( ... ) {
+    catch ( std::exception& ) {
         testFail("epicsTime::getCurrent() throws");
         testAbort("Can't continue, check your time provider");
-    }
-
-    {
-        l_fp ntp = now;
-        epicsTime tsf = ntp;
-        const double diff = fabs(tsf - now);
-        // the difference in the precision of the two time formats
-        static const double precisionNTP = 1.0 / (1.0 + 0xffffffff);
-        testOk1(diff <= precisionEPICS + precisionNTP);
     }
 
     testDiag("Running %d loops", nTimes);
@@ -225,6 +328,7 @@ MAIN(epicsTimeTest)
                "now - begin ~= diff");
 
         testOk1(begin + 0 == begin);
+        std::cout<<"# begin + diff ("<<(begin + diff)<<") == now ("<<now<<")\n";
         testOk1(begin + diff == now);
         testOk1(now - 0 == now);
         testOk1(now - diff == begin);
@@ -284,6 +388,7 @@ MAIN(epicsTimeTest)
     }
 
     testMonotonic();
+    testTMGames();
 
     return testDone();
 }

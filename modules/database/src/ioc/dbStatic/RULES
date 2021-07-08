@@ -11,3 +11,11 @@
 
 # dbLexRoutines.c is included in dbYacc.c
 dbYacc.c: dbLex.c $(IOCDIR)/dbStatic/dbLexRoutines.c
+
+# Parser debugging hints:
+# set dbStaticDebug global (in dbStaticLib.c)
+# Emit dbYacc.output with parser state info
+#dbYacc_YACCOPT = -v
+# Enable conditional debug prints.
+# at runtime set $YYDEBUG=9
+#dbYacc_CPPFLAGS = -DYYDEBUG

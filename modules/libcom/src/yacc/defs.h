@@ -46,8 +46,8 @@
 /* defines for constructing filenames */
 
 #define CODE_SUFFIX     ".code.c"
-#define DEFINES_SUFFIX  ".tab.h"
-#define OUTPUT_SUFFIX   ".tab.c"
+#define DEFINES_SUFFIX  ".h"
+#define OUTPUT_SUFFIX   ".c"
 #define VERBOSE_SUFFIX  ".output"
 
 

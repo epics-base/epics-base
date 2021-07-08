@@ -62,11 +62,24 @@ database_item:  include
     |   alias
     ;
 
-include:    tokenINCLUDE tokenSTRING
+include:    tokenINCLUDE tokenSTRING include_mac_list
 {
-    if(dbStaticDebug>2) printf("include : %s\n",$2);
+    if(dbStaticDebug>2) printf("including : %s\n",$2);
     dbIncludeNew($2); dbmfFree($2);
-};
+}
+    | tokenINCLUDE '(' tokenSTRING include_mac_list ')'
+{
+    if(dbStaticDebug>2) printf("including : %s\n",$3);
+    dbIncludeNew($3); dbmfFree($3);
+}
+    ;
+
+include_mac_list: /* empty */
+    | include_mac_list ',' tokenSTRING
+{
+    if(dbStaticDebug>2) printf("  with %s\n",$3);
+    dbIncludeMacro($3); dbmfFree($3);
+}
 
 path:   tokenPATH tokenSTRING
 {
@@ -364,6 +377,8 @@ json_value: jsonNULL    { $$ = dbmfStrdup("null"); }
 
 %%
 
+static int yywrap(void);
+#define yywrap() yywrap()
 #include "dbLex.c"
 
 
@@ -380,18 +395,36 @@ static int yyerror(char *str)
     }
     return(0);
 }
+#undef yywrap
+static int yywrap(void)
+{
+    parserFrame *frame = fileStack;
+    fileStack = frame->prev;
+    if(frame->prev) {
+        macPopScope(macHandle);
+        yy_switch_to_buffer(fileStack->state);
+    }
+    freeFrame(frame);
+    if(dbStaticDebug)
+        printf("dbYacc wrap %d\n", fileStack==NULL);
+    return fileStack==NULL;
+}
+
 static long pvt_yy_parse(void)
 {
-    static int  FirstFlag = 1;
     long        rtnval;
 
-    if (!FirstFlag) {
-        yyAbort = FALSE;
-        yyFailed = FALSE;
-        yyreset();
-        yyrestart(NULL);
-    }
-    FirstFlag = 0;
+    assert(fileStack);
+
+    yyAbort = FALSE;
+    yyFailed = FALSE;
+    yyreset();
+
+    yy_switch_to_buffer(fileStack->state);
     rtnval = yyparse();
-    if(rtnval!=0 || yyFailed) return(-1); else return(0);
+    if(rtnval!=0 || yyFailed)
+        return(-1);
+    else
+        return(0);
+    (void)&yyrestart;
 }

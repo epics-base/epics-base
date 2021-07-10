@@ -1,0 +1,25 @@
+record(calc, "counter_a") {
+    field(INPA, "counter_a")
+    field(CALC, "A+1")
+    field(SCAN, "Passive")
+}
+
+record(calc, "counter_b") {
+    field(INPA, "counter_b")
+    field(CALC, "A+1")
+    field(SCAN, "Passive")
+}
+
+record(longout, "longout_rec") {
+    field(VAL,  "0")
+    field(OUT, "counter_a.B PP")
+    field(PINI, "YES")
+}
+
+record(longout, "longout_rec2") {
+    field(VAL,  "16")
+    field(OUT, "counter_a.B PP")
+    field(PINI, "NO")
+    field(OOPT, "On Change")
+}
+

@@ -34,7 +34,7 @@ env:
     EPICS_TEST_IMPRECISE_TIMING: YES
 
 jobs:
-  build-base:
+  native:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     # Set environment variables from matrix parameters
@@ -69,10 +69,10 @@ jobs:
             extra: "CMD_CXXFLAGS=-std=c++11"
             name: "Ub-20 gcc-9 C++11, static"
 
-          - os: ubuntu-16.04
+          - os: ubuntu-20.04
             cmp: clang
             configuration: default
-            name: "Ub-16 clang-9"
+            name: "Ub-20 clang-10"
 
           - os: ubuntu-20.04
             cmp: clang
@@ -145,35 +145,6 @@ jobs:
             name: "Ub-20 gcc-9 + RT-4.9"
             rtems_target: RTEMS-pc386-qemu
 
-          - os: ubuntu-16.04
-            cmp: gcc-4.8
-            utoolchain: "4.8"
-            configuration: default
-            name: "Ub-16 gcc-4.8"
-
-          - os: ubuntu-16.04
-            cmp: gcc-4.9
-            utoolchain: "4.9"
-            configuration: default
-            name: "Ub-16 gcc-4.9"
-
-          - os: ubuntu-20.04
-            cmp: gcc-8
-            utoolchain: "8"
-            configuration: default
-            name: "Ub-20 gcc-8"
-
-          - os: ubuntu-20.04
-            cmp: gcc-9
-            utoolchain: "9"
-            configuration: default
-            name: "Ub-20 gcc-9"
-
-          - os: ubuntu-20.04
-            cmp: clang
-            configuration: default
-            name: "Ub-20 clang-10"
-
           - os: macos-latest
             cmp: clang
             configuration: default
@@ -210,14 +181,91 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
       if: runner.os == 'Linux'
-    - name: "apt-get install ${{ matrix.cmp }}"
+    - name: Prepare and compile dependencies
+      run: python .ci/cue.py prepare
+    - name: Build main module
+      run: python .ci/cue.py build
+    - name: Run main module tests
+      run: python .ci/cue.py -T 20M test
+    - name: Upload tapfiles Artifact
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: tapfiles ${{ matrix.name }}
+        path: '**/O.*/*.tap'
+        if-no-files-found: ignore
+    - name: Collect and show test results
+      if: ${{ always() }}
+      run: python .ci/cue.py -T 5M test-results
+
+  docker:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.image }}
+    # Set environment variables from matrix parameters
+    env:
+      CMP: ${{ matrix.cmp }}
+      BCFG: ${{ matrix.configuration }}
+      EXTRA: ${{ matrix.extra }}
+      TEST: ${{ matrix.test }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Job names also name artifacts, character limitations apply
+        include:
+          - name: "CentOS-7"
+            image: centos:7
+            cmp: gcc
+            configuration: default
+
+          - name: "CentOS-8"
+            image: centos:8
+            cmp: gcc
+            configuration: default
+
+          - name: "Fedora-33"
+            image: fedora:33
+            cmp: gcc
+            configuration: default
+
+          - name: "Fedora-latest"
+            image: fedora:latest
+            cmp: gcc
+            configuration: default
+
+    steps:
+    - name: "Build newer Git"
+      # actions/checkout@v2 wants git >=2.18
+      # centos:7 has 1.8
+      if: matrix.image=='centos:7'
       run: |
-        sudo apt-get update
-        sudo apt-get -y install software-properties-common
-        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-        sudo apt-get update
-        sudo apt-get -y install g++-${{ matrix.utoolchain }}
-      if: matrix.utoolchain
+        yum -y install curl make gcc curl-devel expat-devel gettext-devel openssl-devel zlib-devel perl-ExtUtils-MakeMaker
+        curl https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.29.0.tar.gz | tar -xz
+        cd git-*
+        make -j2 prefix=/usr/local all
+        make prefix=/usr/local install
+        cd ..
+        rm -rf git-*
+        type -a git
+        git --version
+    - name: "Redhat setup"
+      run: |
+        dnfyum() {
+            dnf -y "$@" || yum -y "$@"
+            return $?
+        }
+        dnfyum install python3 gdb make perl gcc-c++ glibc-devel readline-devel ncurses-devel perl-devel perl-Test-Simple
+        git --version || dnfyum install git
+        # rather than just bite the bullet and link python3 -> python,
+        # people would rather just break all existing scripts...
+        [ -e /usr/bin/python ] || ln -sf python3 /usr/bin/python
+        python --version
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Automatic core dumper analysis
+      uses: mdavidsaver/ci-core-dumper@master
     - name: Prepare and compile dependencies
       run: python .ci/cue.py prepare
     - name: Build main module

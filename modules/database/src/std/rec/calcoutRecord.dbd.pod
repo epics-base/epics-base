@@ -1218,7 +1218,7 @@ honors the alarm hysteresis factor (HYST). Thus the value must change by at
 least HYST before the alarm status and severity changes.
 
 =item 4.
-Determine if the Output Execution Option (OOPT) is met. If it met, either
+Determine if the Output Execution Option (OOPT) is met. If met, either
 execute the output link (and output event) immediately (if ODLY = 0), or
 schedule a callback after the specified interval. See the explanation for
 the C<execOutput()> routine below.

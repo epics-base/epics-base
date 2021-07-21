@@ -120,9 +120,18 @@ at run-time.
 VAL references the array where the waveform stores its data. The BPTR field
 holds the address of the array.
 
-The NORD field holds a counter of the number of elements that have been read
-into the array. It is reset to 0 when the device is rearmed. The BUSY field
-indicates if the device is armed but has not yet been digitized.
+The NORD field indicates the number of elements that were read into the array.
+
+The BUSY field permits asynchronous device support to collect array elements
+sequentially in multiple read cycles which may call the record's C<process()>
+method many times before completing a read operation. Such a device would set
+BUSY to TRUE along with setting PACT at the start of acquisition (it could also
+set NORD to 0 and use it to keep track of how many elements have been received).
+After receiving the last element the C<read_wf()> routine would clear BUSY which
+informs the record's C<process()> method that the read has finished. Note that
+CA clients that perform gets of the VAL field can see partially filled arrays
+when this type of device support is used, so the BUSY field is almost never used
+today.
 
 =fields VAL, BPTR, NORD, BUSY
 
@@ -367,14 +376,14 @@ Other: Error.
 =head3 Device Support For Soft Records
 
 The C<<< Soft Channel >>> device support module is provided to read values from
-other records and store them in arrays. If INP is a constant link, then read_wf
-does nothing. In this case, the record can be used to hold arrays written via
-dbPuts. If INP is a database or channel access link, the new array value is read
-from the link. NORD is set to the number of items in the array.
+other records and store them in the VAL field. If INP is a constant link, then
+C<read_wf()> does nothing. In this case, the record can be used to hold a fixed
+set of data or array values written from elsewhere. If INP is a valid link, the
+new array value is read from that link. NORD is set to the number of items
+received.
 
-This module places a value directly in VAL.
-
-If the INP link type is constant, then NORD is set to zero.
+If the INP link type is constant, VAL is set from it in the C<init_record()>
+routine and NORD is also set at that time.
 
 =cut
 

@@ -613,8 +613,10 @@ long dbtpn(char *pname, char *pvalue)
     ptpnInfo = dbCalloc(1, sizeof(tpnInfo));
     ptpnInfo->ppn = ppn;
     ptpnInfo->callbackDone = epicsEventCreate(epicsEventEmpty);
-    strncpy(ptpnInfo->buffer, pvalue, 80);
-    ptpnInfo->buffer[79] = 0;
+    if (pvalue) {
+        strncpy(ptpnInfo->buffer, pvalue, sizeof(ptpnInfo->buffer));
+        ptpnInfo->buffer[sizeof(ptpnInfo->buffer)-1] = 0;
+    }
 
     ppn->usrPvt = ptpnInfo;
     epicsThreadCreate("dbtpn", epicsThreadPriorityHigh,

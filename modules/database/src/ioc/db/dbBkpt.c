@@ -331,6 +331,7 @@ long dbb(const char *record_name)
      if (pnode->ex_sem == NULL) {
         printf("   BKPT> Out of memory\n");
         dbScanUnlock(precord);
+        free(pnode);
         epicsMutexUnlock(bkpt_stack_sem);
         return(1);
      }

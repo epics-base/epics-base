@@ -108,6 +108,7 @@ static long add_record(dbCommon *pcommon)
 
         recGblRecordError(status, (void *)prec,
             "devSiSoftCallback (add_record) linked record not found");
+        free(pdevPvt);
         return status;
     }
 

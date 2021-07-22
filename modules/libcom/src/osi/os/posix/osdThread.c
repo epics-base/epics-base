@@ -956,8 +956,10 @@ LIBCOM_API epicsThreadPrivateId epicsStdCall epicsThreadPrivateCreate(void)
         return NULL;
     status = pthread_key_create(key,0);
     checkStatus(status,"pthread_key_create epicsThreadPrivateCreate");
-    if(status)
+    if(status) {
+        free(key);
         return NULL;
+    }
     return((epicsThreadPrivateId)key);
 }
 

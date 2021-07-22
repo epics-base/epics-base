@@ -113,6 +113,7 @@ int main(void)
 
     pserver->pfdctx = (void *) fdmgr_init();
     if (!pserver->pfdctx) {
+        free(pserver);
         fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
         return IOCLS_ERROR;
     }

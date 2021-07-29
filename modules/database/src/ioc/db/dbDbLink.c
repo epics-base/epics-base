@@ -57,7 +57,6 @@
 #include "dbBase.h"
 #include "dbBkpt.h"
 #include "dbCommonPvt.h"
-#include "dbConvertFast.h"
 #include "dbConvert.h"
 #include "db_field_log.h"
 #include "db_access_routines.h"
@@ -134,9 +133,7 @@ static void dbDbRemoveLink(struct dbLocker *locker, struct link *plink)
     /* locker is NULL when an isolated IOC is closing its links */
     if (locker) {
         plink->value.pv_link.pvt = 0;
-        plink->value.pv_link.getCvt = 0;
         plink->value.pv_link.pvlMask = 0;
-        plink->value.pv_link.lastGetdbrType = 0;
         ellDelete(&precord->bklnk, &plink->value.pv_link.backlinknode);
         dbLockSetSplit(locker, plink->precord, precord);
     }
@@ -166,7 +163,6 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
 {
     struct pv_link *ppv_link = &plink->value.pv_link;
     dbChannel *chan = linkChannel(plink);
-    DBADDR *paddr = &chan->addr;
     dbCommon *precord = plink->precord;
     db_field_log *pfl = NULL;
     long status;
@@ -178,49 +174,19 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
             return status;
     }
 
-    if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType)
-    {
-        /* shortcut: scalar with known conversion, no filter */
-        status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
+    /* If filters are involved in a read, create field log and run filters */
+    if (ellCount(&chan->filters)) {
+        pfl = db_create_read_log(chan);
+        if (!pfl)
+            return S_db_noMemory;
+        pfl = dbChannelRunPreChain(chan, pfl);
+        pfl = dbChannelRunPostChain(chan, pfl);
     }
-    else if (dbChannelFinalElements(chan) == 1 && (!pnRequest || *pnRequest == 1)
-                && dbChannelSpecial(chan) != SPC_DBADDR
-                && dbChannelSpecial(chan) != SPC_ATTRIBUTE
-                && ellCount(&chan->filters) == 0)
-    {
-        /* simple scalar: set up shortcut */
-        unsigned short dbfType = dbChannelFinalFieldType(chan);
-
-        if (dbrType < 0 || dbrType > DBR_ENUM || dbfType > DBF_DEVICE)
-            return S_db_badDbrtype;
-
-        ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
-        ppv_link->lastGetdbrType = dbrType;
-        status = ppv_link->getCvt(dbChannelField(chan), pbuffer, paddr);
-    }
-    else
-    {
-        /* filter, array, or special */
-        ppv_link->getCvt = NULL;
-
-        if (ellCount(&chan->filters)) {
-            /* If filters are involved in a read, create field log and run filters */
-            pfl = db_create_read_log(chan);
-            if (!pfl)
-                return S_db_noMemory;
-
-            pfl = dbChannelRunPreChain(chan, pfl);
-            pfl = dbChannelRunPostChain(chan, pfl);
-        }
-
-        status = dbChannelGet(chan, dbrType, pbuffer, NULL, pnRequest, pfl);
-
-        if (pfl)
-            db_delete_field_log(pfl);
-
-        if (status)
-            return status;
-    }
+    status = dbChannelGet(chan, dbrType, pbuffer, NULL, pnRequest, pfl);
+    if (pfl)
+        db_delete_field_log(pfl);
+    if (status)
+        return status;
 
     if (!status && precord != dbChannelRecord(chan))
         recGblInheritSevr(plink->value.pv_link.pvlMask & pvlOptMsMode,

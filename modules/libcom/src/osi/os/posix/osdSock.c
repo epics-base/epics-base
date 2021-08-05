@@ -99,6 +99,22 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
             close ( sock );
             sock = INVALID_SOCKET;
         }
+
+#ifdef __linux__
+#  ifndef IP_MULTICAST_ALL
+#    define IP_MULTICAST_ALL		49
+#  endif
+        /* Enable compliant filtering of multicasts on Linux.  cf. 'man 7 ip' */
+        if(domain==AF_INET && type==SOCK_DGRAM){
+            static int logged;
+            int val = 0;
+            if(setsockopt(sock, IPPROTO_IP, IP_MULTICAST_ALL, (char*)&val, sizeof(val)) && !logged) {
+                logged = 1;
+                errlogPrintf("Warning: Unable to clear IP_MULTICAST_ALL (err=%d).  This may cause problems on multi-homed hosts.\n",
+                             SOCKERRNO);
+            }
+        }
+#endif
     }
     return sock;
 }

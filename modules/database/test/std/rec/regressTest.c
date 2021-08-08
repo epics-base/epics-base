@@ -23,6 +23,8 @@ void regressTest_registerRecordDeviceDriver(struct dbBase *);
 static
 void startRegressTestIoc(const char *dbfile)
 {
+    testDiag("Testing with %s", dbfile);
+
     testdbPrepare();
     testdbReadDatabase("regressTest.dbd", NULL, NULL);
     regressTest_registerRecordDeviceDriver(pdbbase);
@@ -134,6 +136,9 @@ void testCADisconn(void)
     testdbPutFieldFail(-1, "ai:disconn.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("ai:disconn.SEVR", DBF_LONG, INVALID_ALARM);
     testdbGetFieldEqual("ai:disconn.STAT", DBF_LONG, LINK_ALARM);
+
+    testIocShutdownOk();
+    testdbCleanup();
 }
 
 

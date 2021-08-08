@@ -141,13 +141,36 @@ void testCADisconn(void)
     testdbCleanup();
 }
 
+/* https://github.com/epics-base/epics-base/issues/194 */
+static
+void testLongCalc(void)
+{
+    startRegressTestIoc("regressLongCalc.db");
+
+    testdbGetFieldEqual("test_calc.CALC", DBF_STRING, "RNDM*100");
+
+    testdbPutArrFieldOk("test_calc.CALC$", DBF_CHAR, 4, "300\0");
+    testdbGetFieldEqual("test_calc.CALC", DBF_STRING, "300");
+    testdbPutFieldOk("test_calc.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("test_calc", DBF_DOUBLE, 300.0);
+
+    const char small[] = "0.0000000000000000000000000000000000000001";
+    testdbPutArrFieldOk("test_calc.CALC$", DBF_CHAR, sizeof(small), small);
+    testdbGetFieldEqual("test_calc.CALC", DBF_STRING, "0.0000000000000000000000000000000000000");
+    testdbPutFieldOk("test_calc.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("test_calc", DBF_DOUBLE, 1e-40);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
 
 MAIN(regressTest)
 {
-    testPlan(34);
+    testPlan(43);
     testArrayLength1();
     testHexConstantLinks();
     testLinkMS();
     testCADisconn();
+    testLongCalc();
     return testDone();
 }

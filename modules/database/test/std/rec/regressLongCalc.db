@@ -1,0 +1,5 @@
+record(calc, "test_calc")
+{
+    field(SCAN, "1 second")
+    field(CALC, "RNDM*100")
+}

@@ -413,9 +413,12 @@ The change of state severity (COSV) field triggers an alarm when any change of
 state occurs, if set to MAJOR or MINOR.
 
 The other fields, when set to MAJOR or MINOR, trigger an alarm when VAL equals
-the corresponding state. See the See L<Alarm Specification> for a complete
-explanation of discrete alarms and these fields. L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other
-fields related to a alarms that are common to all record types.
+the corresponding state.
+
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+for a complete explanation of record alarms and of the standard fields.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
+to alarms that are common to all record types.
 
 =fields UNSV, COSV, ZRSV, ONSV, TWSV, THSV, FRSV, FVSV, SXSV, SVSV, EISV, NISV, TESV, ELSV, TVSV, TTSV, FTSV, FFSV
 

@@ -90,23 +90,37 @@ Thus if SELN==5, OUTC and OUTA will be used.
 
 =head3 Operator Display Parameters
 
-These parameters are used to present meaningful data to the operator. They
-display the value and other parameters of the data fanout record either
-textually or graphically.
+These parameters are used to present meaningful data to the operator.
+They do not affect the functioning of the record at all.
 
-The EGU field can contain a string of up to 16 characters describing the
-value on the VAL field.
+=over
 
-The HOPR and LOPR fields determine the upper and lower display limits for
-graphic displays and the upper and lower control limits for control
-displays. They apply to the VAL, HIHI, HIGH, LOW, and LOLO fields. The
-record support routines C<get_graphic_double()> and C<get_control_double()>
-retrieve HOPR and LOPR.
+=item *
+NAME is the record's name, and can be useful when the PV name that a client
+knows is an alias for the record.
+
+=item *
+DESC is a string that is usually used to briefly describe the record.
+
+=item *
+EGU is a string of up to 16 characters naming the engineering units that the VAL
+field represents.
+
+=item *
+The HOPR and LOPR fields set the upper and lower display limits for the VAL,
+HIHI, HIGH, LOW, and LOLO fields.
+
+=item *
+The PREC field determines the floating point precision (i.e. the number of
+digits to show after the decimal point) with which to display VAL and the other
+DOUBLE fields.
+
+=back
 
 See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
-Parameters> for more on the record name (NAME) and description (DESC) fields.
+Parameters> for more about the record name (NAME) and description (DESC) fields.
 
-=fields EGU, HOPR, LOPR, NAME, DESC
+=fields NAME, DESC, EGU, HOPR, LOPR, PREC
 
 =head3 Alarm Parameters
 
@@ -119,9 +133,10 @@ in the corresponding field (HHSV, LLSV, HSV, LSV) and can be either
 NO_ALARM, MINOR, or MAJOR. In the hysteresis field (HYST) can be entered a
 number which serves as the deadband on the limit alarms.
 
-See L<Alarm Specification> for a complete explanation of alarms and these
-fields. L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related to alarms that are
-common to all record types.
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+for a complete explanation of record alarms and of the standard fields.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
+to alarms that are common to all record types.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST
 

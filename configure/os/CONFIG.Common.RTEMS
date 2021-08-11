@@ -79,6 +79,9 @@ CPPFLAGS += $($(BUILD_CLASS)_CPPFLAGS) $(POSIX_CPPFLAGS) $(OPT_CPPFLAGS)\
 
 ECHO = @$(if $(filter -s,$(MFLAGS)),$(NOP),echo)
 
+# Originally set in os/CONFIG.UnixCommon.Common
+MKDIR = mkdir -p
+
 #--------------------------------------------------
 # Although RTEMS uses gcc, it wants to use gcc its own way
 CROSS_CPPFLAGS =

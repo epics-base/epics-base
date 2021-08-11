@@ -285,16 +285,17 @@ static void testClassify()
 #endif
 
 #ifdef __GNUC__
-#if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER
-    testDiag("GCC using atomic builtin memory barrier");
+    /* Also applies to CLANG */
+#if GCC_ATOMIC_INTRINSICS_AVAIL_SYNC
+    testDiag("Use " EPICS_ATOMIC_CMPLR_NAME " atomic builtin memory barrier");
 #else
-    testDiag("GCC using asm memory barrier");
+    testDiag("Use default memory barrier");
 #endif
-#if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
-    testDiag("GCC use builtin for int");
+#if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T
+    testDiag("Use " EPICS_ATOMIC_CMPLR_NAME " builtins for int");
 #endif
-#if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
-    testDiag("GCC use builtin for size_t");
+#if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T
+    testDiag("Use " EPICS_ATOMIC_CMPLR_NAME " builtins for size_t");
 #endif
 
 #ifndef EPICS_ATOMIC_INCR_INTT

@@ -65,6 +65,10 @@ INC += osdVME.h
 INC += epicsMMIO.h
 INC += epicsMMIODef.h
 
+INC_clang += epicsAtomicGCC.h
+INC_gcc   += epicsAtomicGCC.h
+INC += $(INC_$(CMPLR_CLASS))
+
 Com_SRCS += epicsThread.cpp
 Com_SRCS += epicsMutex.cpp
 Com_SRCS += epicsEvent.cpp

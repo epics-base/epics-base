@@ -5,6 +5,8 @@
 * in file LICENSE that is included with this distribution.
  \*************************************************************************/
 
+#define EPICS_DBCA_PRIVATE_API
+
 #include <dbUnitTest.h>
 #include <testMain.h>
 #include <dbAccess.h>
@@ -165,13 +167,52 @@ void testLongCalc(void)
     testdbCleanup();
 }
 
+/* https://github.com/epics-base/epics-base/issues/183 */
+static
+void testLinkSevr(void)
+{
+    dbChannel *chan;
+    startRegressTestIoc("regressLinkSevr.db");
+    dbCaSync(); /* wait for CA links to connect */
+    dbCaSync(); /* wait for initial update */
+
+    chan = dbChannelCreate("ai.SEVR");
+    if(!chan)
+        testAbort("Can't create channel for ai.SEVR");
+    testOk1(!dbChannelOpen(chan));
+
+#define testType(FN, TYPE) testOk(FN(chan)==TYPE, #FN "() -> (%d) == " #TYPE " (%d)", FN(chan), TYPE)
+    testType(dbChannelExportType, DBF_ENUM);
+    testType(dbChannelFieldType, DBF_MENU);
+    testType(dbChannelFinalFieldType, DBF_ENUM);
+#undef testType
+
+    dbChannelDelete(chan);
+
+    testdbGetFieldEqual("ai.SEVR", DBF_LONG, INVALID_ALARM);
+    testdbGetFieldEqual("ai.SEVR", DBF_STRING, "INVALID");
+
+    testdbPutFieldOk("si1.PROC", DBF_LONG, 1);
+
+    testdbGetFieldEqual("si1", DBF_STRING, "INVALID");
+    testdbGetFieldEqual("li1", DBF_LONG, INVALID_ALARM);
+    testTodoBegin("Not working");
+    testdbGetFieldEqual("si2", DBF_STRING, "INVALID");
+    testTodoEnd();
+    testdbGetFieldEqual("li2", DBF_LONG, INVALID_ALARM);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
 MAIN(regressTest)
 {
-    testPlan(43);
+    testPlan(54);
     testArrayLength1();
     testHexConstantLinks();
     testLinkMS();
     testCADisconn();
     testLongCalc();
+    testLinkSevr();
     return testDone();
 }

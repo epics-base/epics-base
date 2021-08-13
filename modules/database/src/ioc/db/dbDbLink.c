@@ -188,8 +188,11 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
                 && dbChannelSpecial(chan) != SPC_ATTRIBUTE
                 && ellCount(&chan->filters) == 0)
     {
-        /* simple scalar: set up shortcut */
-        unsigned short dbfType = dbChannelFinalFieldType(chan);
+        /* Simple scalar w/o filters, so *Final* type has no additional information.
+         * Needed to correctly handle DBF_MENU fields, which become DBF_ENUM during
+         * probe of dbChannelOpen().
+         */
+        unsigned short dbfType = dbChannelFieldType(chan);
 
         if (dbrType < 0 || dbrType > DBR_ENUM || dbfType > DBF_DEVICE)
             return S_db_badDbrtype;

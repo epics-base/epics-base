@@ -90,7 +90,7 @@ struct event_user {
     void                *extralabor_arg;/* parameter to above */
 
     epicsThreadId       taskid;         /* event handler task id */
-    struct evSubscrip   *pSuicideEvent; /* event that is deleteing itself */
+    struct evSubscrip   *pSuicideEvent; /* event that is deleting itself */
     unsigned            queovr;         /* event que overflow count */
     unsigned char       pendexit;       /* exit pend task */
     unsigned char       extra_labor;    /* if set call extra labor func */
@@ -102,7 +102,7 @@ struct event_user {
 
 /*
  * Reliable intertask communication requires copying the current value of the
- * channel for later queing so 3 stepper motor steps of 10 each do not turn
+ * channel for later queuing so 3 stepper motor steps of 10 each do not turn
  * into only 10 or 20 total steps part of the time.
  */
 
@@ -585,7 +585,7 @@ void db_cancel_event (dbEventSubscription event)
     /*
      * flag the event as canceled by NULLing out the callback handler
      *
-     * make certain that the event isnt being accessed while
+     * make certain that the event isn't being accessed while
      * its call back changes
      */
     LOCKEVQUE (pevent->ev_que);
@@ -811,7 +811,7 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
         pevent->nreplace++;
         /*
          * the event task has already been notified about
-         * this so we dont need to post the semaphore
+         * this so we don't need to post the semaphore
          */
         firstEventFlag = 0;
     }
@@ -844,7 +844,7 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
     UNLOCKEVQUE (ev_que);
 
     /*
-     * its more efficent to notify the event handler
+     * its more efficient to notify the event handler
      * only after the event is ready and the lock
      * is off in case it runs at a higher priority
      * than the caller here.
@@ -974,7 +974,7 @@ static int event_read ( struct event_que *ev_que )
          * Next event pointer can be used by event tasks to determine
          * if more events are waiting in the queue
          *
-         * Must remove the lock here so that we dont deadlock if
+         * Must remove the lock here so that we don't deadlock if
          * this calls dbGetField() and blocks on the record lock,
          * dbPutField() is in progress in another task, it has the
          * record lock, and it is calling db_post_events() waiting

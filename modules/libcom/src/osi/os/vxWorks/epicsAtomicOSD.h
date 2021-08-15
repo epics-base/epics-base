@@ -154,11 +154,11 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 
 /*
  * if its 64 bit SMP vxWorks and the compiler doesnt
- * have an intrinsic then maybe there isnt any way to
+ * have an intrinsic then maybe there isn't any way to
  * implement these without using a global lock because
  * size_t is maybe bigger than atomic_t
  *
- * I dont yet have access to vxWorks manuals for
+ * I don't yet have access to vxWorks manuals for
  * 64 bit systems so this is still undecided, but is
  * defaulting now to a global lock
  */
@@ -216,7 +216,7 @@ extern "C" {
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 #define EPICS_ATOMIC_READ_MEMORY_BARRIER
 /*
- * no need for memory barrior since prior to vxWorks 6.6 it is a single cpu system
+ * no need for memory barrier since prior to vxWorks 6.6 it is a single cpu system
  * (we are not protecting against multiple access to memory mapped IO)
  */
 EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void) {}
@@ -225,7 +225,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void) {}
 #ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 #define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 /*
- * no need for memory barrior since prior to vxWorks 6.6 it is a single cpu system
+ * no need for memory barrier since prior to vxWorks 6.6 it is a single cpu system
  * (we are not protecting against multiple access to memory mapped IO)
  */
 EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void) {}

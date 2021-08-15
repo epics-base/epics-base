@@ -116,13 +116,13 @@ BOOL WINAPI DllMain (
 
     case DLL_THREAD_ATTACH:
         /*
-         * Dont allow user's explicitly calling FreeLibrary for Com.dll to yank
+         * Don't allow user's explicitly calling FreeLibrary for Com.dll to yank
          * the carpet out from under EPICS threads that are still using Com.dll
          */
 #if _WIN32_WINNT >= 0x0501
         /*
          * Only in WXP
-         * Thats a shame because this is probably much faster
+         * That's a shame because this is probably much faster
          */
         success = GetModuleHandleEx (
             GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
@@ -653,7 +653,7 @@ void epicsThreadMustJoin(epicsThreadId id)
             fprintf(stderr, "Warning: %s thread self-join of unjoinable\n", pParmWIN32->pName);
 
         } else {
-            /* try to error nicely, however in all likelyhood de-ref of
+            /* try to error nicely, however in all likelihood de-ref of
              * 'id' has already caused SIGSEGV as we are racing thread exit,
              * which free's 'id'.
              */

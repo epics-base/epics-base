@@ -168,7 +168,7 @@ fastSender(void *arg)
     epicsMessageQueue *q = (epicsMessageQueue *)arg;
     numSent = 0;
 
-    // Send first withough timeout
+    // Send first without timeout
     q->send((void *)msg1, 4);
     numSent++;
 

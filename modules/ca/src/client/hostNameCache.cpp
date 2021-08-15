@@ -53,7 +53,7 @@ void hostNameCache::transactionComplete ( const char * pHostNameIn )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     // a few legacy clients have a direct pointer to this buffer so we
-    // set the entrire string to nill terminators before we start copying
+    // set the entire string to nill terminators before we start copying
     // in the name (this reduces the chance that another thread will see
     // garbage characters).
     size_t newNameLen = strlen ( pHostNameIn );

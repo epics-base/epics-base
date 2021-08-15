@@ -16,7 +16,7 @@
 
 /*
  * winsock2.h changes the structure alignment to 4 if
- * WIN32 isnt set which can be a source of confusion
+ * WIN32 isn't set which can be a source of confusion
  */
 #ifndef WIN32
 #   define WIN32
@@ -72,7 +72,7 @@ typedef DWORD osiSockOptMcastTTL_t;
  *  Under WIN32, FD_SETSIZE is the max. number of sockets,
  *  not the max. fd value that you use in select().
  *
- *  Therefore, it is difficult to detemine if any given
+ *  Therefore, it is difficult to determine if any given
  *  fd can be used with FD_SET(), FD_CLR(), and FD_ISSET().
  */
 #define FD_IN_FDSET(FD) (1)

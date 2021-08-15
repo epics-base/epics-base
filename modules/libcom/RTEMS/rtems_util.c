@@ -5,7 +5,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- * RTEMS utilitiy routines for EPICS
+ * RTEMS utility routines for EPICS
  *      Author: W. Eric Norum
  *              eric@cls.usask.ca
  *              (306) 966-6055

@@ -15,7 +15,7 @@
  * \brief C++ and C descriptions for a thread.
  *
  * The epicsThread API is meant as a somewhat minimal interface for
- * multithreaded applications. It can be implementedon a wide variety of
+ * multithreaded applications. It can be implemented on a wide variety of
  * systems with the restriction that the system MUST support a
  * multithreaded environment.
  * A POSIX pthreads version is provided.

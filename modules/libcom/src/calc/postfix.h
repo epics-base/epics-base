@@ -122,7 +122,7 @@ extern "C" {
  * \param perror Place to return an error code
  * \return Non-zero value in event of error
  *
- * It is the callers's responsibility to ensure that \c ppostfix points
+ * It is the caller's responsibility to ensure that \c ppostfix points
  * to sufficient storage to hold the postfix expression. The macro
  * INFIX_TO_POSTFIX_SIZE(n) can be used to calculate an appropriate
  * postfix buffer size from the length of the infix buffer.
@@ -212,7 +212,7 @@ extern "C" {
  *
  * -# ***Algebraic Functions***
  *  Various algebraic functions are available which take parameters inside
- *  parentheses. The parameter seperator is a comma.
+ *  parentheses. The parameter separator is a comma.
  *
  *    - Absolute value: abs(a)
  *    - Exponential ea: exp(a)
@@ -291,7 +291,7 @@ extern "C" {
  *        - a < 360 ? a+1 : 0
  *
  * -# ***Parentheses***
- * Sub-expressions can be placed within parentheses to override operator precence rules.
+ * Sub-expressions can be placed within parentheses to override operator presence rules.
  * Parentheses can be nested to any depth, but the intermediate value stack used by
  * the expression evaluation engine is limited to 80 results (which require an
  * expression at least 321 characters long to reach).
@@ -323,7 +323,7 @@ LIBCOM_API long
  * bitmaps which return that information to the caller. Passing a NULL value
  * for either of these pointers is legal if only the other is needed.
  *
- * The least signficant bit (bit 0) of the bitmap at \c *pinputs will be set
+ * The least significant bit (bit 0) of the bitmap at \c *pinputs will be set
  * if the expression depends on the argument A, and so on through bit 11 for
  * the argument L. An argument that is not used until after a value has been
  * assigned to it will not be set in the pinputs bitmap, thus the bits can

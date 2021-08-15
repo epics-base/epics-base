@@ -50,7 +50,7 @@
 /** \brief Find parent object from a member pointer
  *
  * Subtracts the byte offset of the member in the structure from the
- * pointer to the member itself, giving a pointer to parent strucure.
+ * pointer to the member itself, giving a pointer to parent structure.
  * \param ptr Pointer to a member data field of a structure
  * \param structure Type name of the parent structure
  * \param member Field name of the data member

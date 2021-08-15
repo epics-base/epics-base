@@ -267,7 +267,7 @@ setBootConfigFromNVRAM(void)
         return;
 
     /*
-     * Get network configuation from PPCBUG.
+     * Get network configuration from PPCBUG.
      * The 'correct' way to do this would be to issue a .NETCFIG PPCBUG
      * system call.  Unfortunately it is very difficult to issue such a
      * call once RTEMS is up and running so we just copy from the 'known'

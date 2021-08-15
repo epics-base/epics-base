@@ -55,9 +55,9 @@
 /* Task priorities */
 #define SCANONCE_PRI    129      /* scan one time */
 /*DO NOT RUN ANY RECORD PROCESSING TASKS AT HIGHER PRIORITY THAN _netTask=50*/
-#define CALLBACK_PRI_LOW 140      /* callback task - generall callback task */
-#define CALLBACK_PRI_MEDIUM 135     /* callback task - generall callback task */
-#define CALLBACK_PRI_HIGH 128      /* callback task - generall callback task */
+#define CALLBACK_PRI_LOW 140      /* callback task - general callback task */
+#define CALLBACK_PRI_MEDIUM 135     /* callback task - general callback task */
+#define CALLBACK_PRI_HIGH 128      /* callback task - general callback task */
 #define EVENTSCAN_PRI   129      /* Event Scanner - Runs on a global event */
 #define SMCMD_PRI       120      /* Stepper Motor Command Task - Waits for cmds */
 #define SMRESP_PRI      121      /* Stepper Motor Resp Task - Waits for resps */

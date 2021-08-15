@@ -50,7 +50,7 @@ void camsgtask ( void *pParm )
         int status;
 
         /*
-         * allow message to batch up if more are comming
+         * allow message to batch up if more are coming
          */
         status = socket_ioctl (client->sock, FIONREAD, &check_nchars);
         if (status < 0) {

@@ -206,7 +206,7 @@ size_t epicsStdCall epicsTimeToStrftime (char *pBuff, size_t bufLength, const ch
             bufLenLeft -= strftimeNumChar;
         }
 
-        // fractional seconds formating
+        // fractional seconds formatting
         if ( fracFmtFound && bufLenLeft > 1 ) {
             if ( fracWid > nSecFracDigits ) {
                 fracWid = nSecFracDigits;
@@ -296,7 +296,7 @@ int epicsStdCall epicsTimeToTime_t (time_t *pDest, const epicsTimeStamp *pSrc)
 {
     STATIC_ASSERT(sizeof(*pDest) >= sizeof(pSrc->secPastEpoch));
 
-    // widen to 64-bit to (eventually) accomidate 64-bit time_t
+    // widen to 64-bit to (eventually) accommodate 64-bit time_t
     *pDest = epicsUInt64(pSrc->secPastEpoch) + POSIX_TIME_AT_EPICS_EPOCH;
     return epicsTimeOK;
 }

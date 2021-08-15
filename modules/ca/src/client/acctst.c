@@ -494,7 +494,7 @@ void verifyConnectionHandlerConnect ( appChan *pChans, unsigned chanCount,
 /*
  * verifyBlockingConnect ()
  *
- * 1) verify that we dont print a disconnect message when
+ * 1) verify that we don't print a disconnect message when
  * we delete the last channel
  *
  * 2) verify that we delete the connection to the IOC
@@ -645,7 +645,7 @@ void verifyBlockingConnect ( appChan *pChans, unsigned chanCount,
         status = ca_pend_io ( 1e-16 );
         if ( status == ECA_TIMEOUT ) {
             /*
-             * we end up here if the channel isnt on the same host
+             * we end up here if the channel isn't on the same host
              */
             epicsThreadSleep ( 0.1 );
             ca_poll ();
@@ -1112,7 +1112,7 @@ void verifyHighThroughputRead ( chid chan, unsigned interestLevel )
     unsigned i;
 
     /*
-     * verify we dont jam up on many uninterrupted
+     * verify we don't jam up on many uninterrupted
      * solicitations
      */
     if ( ca_read_access (chan) ) {
@@ -1152,7 +1152,7 @@ void verifyHighThroughputWrite ( chid chan, unsigned interestLevel  )
 }
 
 /*
- * verify we dont jam up on many uninterrupted
+ * verify we don't jam up on many uninterrupted
  * get callback requests
  */
 void verifyHighThroughputReadCallback ( chid chan, unsigned interestLevel )
@@ -1181,7 +1181,7 @@ void verifyHighThroughputReadCallback ( chid chan, unsigned interestLevel )
 }
 
 /*
- * verify we dont jam up on many uninterrupted
+ * verify we don't jam up on many uninterrupted
  * put callback request
  */
 void verifyHighThroughputWriteCallback ( chid chan, unsigned interestLevel )
@@ -1239,7 +1239,7 @@ void verifyBadString ( chid chan, unsigned interestLevel  )
         verify ( status == ECA_NORMAL );
         if ( strcmp ( stimStr, respStr ) ) {
             printf (
-    "Test fails if stim \"%s\" isnt roughly equiv to resp \"%s\"\n",
+    "Test fails if stim \"%s\" isn't roughly equiv to resp \"%s\"\n",
                 stimStr, respStr);
         }
         showProgressEnd ( interestLevel );
@@ -1395,7 +1395,7 @@ static void multiSubscrDestroyNoLateCallbackThread ( void * pParm )
 
         /*
          * raise the priority of the current thread hoping to improve our
-         * likelyhood of detecting a bug
+         * likelihood of detecting a bug
          */
         priorityOfTestThread = epicsThreadGetPrioritySelf ();
         epicsThreadSetPriority ( epicsThreadGetIdSelf(), epicsThreadPriorityHigh );
@@ -1445,7 +1445,7 @@ static void multiSubscrDestroyNoLateCallbackThread ( void * pParm )
 }
 
 /*
- * verify that, in a preemtive callback mode client, a subscription callback never
+ * verify that, in a preemptive callback mode client, a subscription callback never
  * comes after the subscription is destroyed
  */
 static void multiSubscrDestroyNoLateCallbackTest ( const char *pName, unsigned interestLevel )
@@ -1563,7 +1563,7 @@ void multiSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
 /*
  * singleSubscriptionDeleteTest
  *
- * verify that we dont fail when we repeatedly create
+ * verify that we don't fail when we repeatedly create
  * and delete only one subscription with a high level of
  * traffic on it
  */
@@ -1617,7 +1617,7 @@ void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
 /*
  * channelClearWithEventTrafficTest
  *
- * verify that we can delete a channel that has subcriptions
+ * verify that we can delete a channel that has subscriptions
  * attached with heavy update traffic
  */
 void channelClearWithEventTrafficTest ( const char *pName, unsigned interestLevel )
@@ -2481,7 +2481,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
     showProgress ( interestLevel );
 
     /*
-     * attempt to uncover problems where the last event isnt sent
+     * attempt to uncover problems where the last event isn't sent
      * and hopefully get into a flow control situation
      */
     prevPassCount = 0u;
@@ -2522,7 +2522,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
             ca_poll (); /* emulate typical GUI */
             for ( j = 0; j < NELEMENTS ( test ); j++ ) {
                 /*
-                 * we shouldnt see old monitors because
+                 * we shouldn't see old monitors because
                  * we resubscribed
                  */
                 verify ( test[j].count <= i + 2 );
@@ -3016,7 +3016,7 @@ void testMultithreadSubscr ( void * pParm )
 }
 
 /*
- * test installation of subscriptions similar to usage paterns
+ * test installation of subscriptions similar to usage patterns
  * employed by modern versions of the sequencer
  */
 void verifyMultithreadSubscr ( const char * pName, unsigned interestLevel )
@@ -3111,7 +3111,7 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
     status = ca_flush_io ();
     verify ( status == ECA_NORMAL );
 
-    /* look for infinite loop in fd manager schedualing */
+    /* look for infinite loop in fd manager scheduling */
     epicsTimeGetCurrent ( & begin );
     eventCount = 0u;
     while ( 1 ) {
@@ -3175,7 +3175,7 @@ void verifyConnectWithDisconnectedChannels (
      * we should be able to connect to a valid
      * channel within a reasonable delay even
      * though there is one permanently
-     * diasconnected channel
+     * disconnected channel
      */
     status = ca_pend_io ( timeoutToPendIO );
     verify ( status == ECA_NORMAL );
@@ -3491,7 +3491,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
 
     /*
      * CA pend event delay accuracy test
-     * (CA asssumes that search requests can be sent
+     * (CA assumes that search requests can be sent
      * at least every 25 mS on all supported os)
      */
     printf ( "\n" );

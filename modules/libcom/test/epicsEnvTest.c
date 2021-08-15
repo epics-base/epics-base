@@ -18,7 +18,7 @@
  * configured to maintain separate, totally independent sets
  * of environment variables for each thread. This configuration
  * is not supported by EPICS which expects child threads to at
- * least inherit the partent thread's environment variables.
+ * least inherit the parent thread's environment variables.
  */
 
 #include <stdlib.h>

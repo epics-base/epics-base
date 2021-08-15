@@ -16,7 +16,7 @@
 
 static epicsUInt64 osdMonotonicResolution;      /* timer resolution in nanoseconds */
 static epicsUInt64 perfCounterFrequency;        /* performance counter tics per second */
-static LONGLONG perfCounterOffset;              /* performance counter value at initialisation */
+static LONGLONG perfCounterOffset;              /* performance counter value at initialization */
 static const epicsUInt64 sec2nsec = 1000000000; /* number of nanoseconds in a second */
 
 void osdMonotonicInit(void)

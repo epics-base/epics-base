@@ -45,7 +45,7 @@ bool comBuf::flushToWire ( wireSendAdapter & wire, const epicsTime & currentTime
     return true;
 }
 
-// throwing the exception from a function that isnt inline
+// throwing the exception from a function that isn't inline
 // shrinks the GNU compiled object code
 void comBuf::throwInsufficentBytesException ()
 {

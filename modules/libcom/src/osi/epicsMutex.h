@@ -27,7 +27,7 @@
          epicsMutex::guard_t G(lock); // lock
          // process resources
      } // unlock
-     // or for compatiblity
+     // or for compatibility
      {
          epicsGuard<epicsMutex> G(lock); // lock
          // process resources
@@ -99,7 +99,7 @@ public:
 
     /**\brief Display information about the semaphore.
      *
-     * \note Results are architecture dependant.
+     * \note Results are architecture dependent.
      *
      * \param level Desired information level to report
      **/
@@ -229,7 +229,7 @@ LIBCOM_API epicsMutexLockStatus epicsStdCall epicsMutexTryLock(
 
 /**\brief Display information about the semaphore.
  *
- * \note Results are architecture dependant.
+ * \note Results are architecture dependent.
  *
  * \param id The mutex identifier.
  * \param level Desired information level to report
@@ -239,7 +239,7 @@ LIBCOM_API void epicsStdCall epicsMutexShow(
 
 /**\brief Display information about all epicsMutex semaphores.
  *
- * \note Results are architecture dependant.
+ * \note Results are architecture dependent.
  *
  * \param onlyLocked Non-zero to show only locked semaphores.
  * \param level Desired information level to report

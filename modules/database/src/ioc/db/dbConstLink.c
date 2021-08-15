@@ -63,7 +63,7 @@ cvt_st_ ## TYPE(const char *from, void *pfield, const dbAddr *paddr) { \
     return epicsParse##TYPE(from, to, 0, &end); \
 }
 
-/* Instanciate for CHAR, UCHAR, SHORT, USHORT and LONG */
+/* Instantiate for CHAR, UCHAR, SHORT, USHORT and LONG */
 cvt_st_int(Int8)
 cvt_st_int(UInt8)
 cvt_st_int(Int16)
@@ -99,7 +99,7 @@ static long cvt_st_UInt32(const char *from, void *pfield, const dbAddr *paddr)
     return status;
 }
 
-/* Instanciate for INT64 and UINT64 */
+/* Instantiate for INT64 and UINT64 */
 cvt_st_int(Int64)
 cvt_st_int(UInt64)
 
@@ -117,7 +117,7 @@ cvt_st_ ## TYPE(const char *from, void *pfield, const dbAddr *paddr) { \
     return epicsParse##TYPE(from, to, &end); \
 }
 
-/* Instanciate for FLOAT32 and FLOAT64 */
+/* Instantiate for FLOAT32 and FLOAT64 */
 cvt_st_float(Float32)
 cvt_st_float(Float64)
 

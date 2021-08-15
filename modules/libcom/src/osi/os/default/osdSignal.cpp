@@ -11,7 +11,7 @@
 #include "epicsSignal.h"
 
 /*
- * All NOOPs if the os isnt POSIX
+ * All NOOPs if the os isn't POSIX
  */
 LIBCOM_API void epicsStdCall epicsSignalInstallSigHupIgnore ( void ) {}
 LIBCOM_API void epicsStdCall epicsSignalInstallSigPipeIgnore ( void ) {}

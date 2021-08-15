@@ -272,7 +272,7 @@ int           low, try;
          * at all. However, we still must return
          * a priority range accepted by the SCHED_FIFO
          * policy. Otherwise, epicsThreadCreate() cannot
-         * detect the unsufficient permission (EPERM)
+         * detect the insufficient permission (EPERM)
          * and fall back to a non-RT thread (because
          * pthread_attr_setschedparam would fail with
          * EINVAL due to the bad priority).
@@ -651,7 +651,7 @@ void epicsThreadMustJoin(epicsThreadId id)
             errlogPrintf("Warning: %s thread self-join of unjoinable\n", id->name);
 
         } else {
-            /* try to error nicely, however in all likelyhood de-ref of
+            /* try to error nicely, however in all likelihood de-ref of
              * 'id' has already caused SIGSEGV as we are racing thread exit,
              * which free's 'id'.
              */

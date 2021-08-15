@@ -49,7 +49,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
 {
     STATIC_ASSERT ( sizeof ( MS_LONG ) == sizeof ( int ) );
     MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
-    /* we dont use InterlockedAdd because only latest windows is supported */
+    /* we don't use InterlockedAdd because only latest windows is supported */
     return delta + ( int ) MS_InterlockedExchangeAdd ( pTarg,
                                             ( MS_LONG ) delta );
 }
@@ -101,7 +101,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget,
                                                     size_t delta )
 {
     MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
-    /* we dont use InterlockedAdd because only latest windows is supported */
+    /* we don't use InterlockedAdd because only latest windows is supported */
     return delta + ( size_t ) MS_InterlockedExchangeAdd ( pTarg,
                                                  ( MS_LONG ) delta );
 }
@@ -113,7 +113,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 {
     MS_LONG * const pTarg = ( MS_LONG * ) ( pTarget );
     MS_LONG ldelta = (MS_LONG) delta;
-    /* we dont use InterlockedAdd because only latest windows is supported */
+    /* we don't use InterlockedAdd because only latest windows is supported */
     return ( ( size_t ) MS_InterlockedExchangeAdd ( pTarg, -ldelta ) ) - delta;
 }
 #endif
@@ -172,7 +172,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta )
 {
     MS_LONGLONG * const pTarg = ( MS_LONGLONG * ) ( pTarget );
-    /* we dont use InterlockedAdd64 because only latest windows is supported */
+    /* we don't use InterlockedAdd64 because only latest windows is supported */
     return delta + ( size_t ) MS_InterlockedExchangeAdd64 ( pTarg,
                                         ( MS_LONGLONG ) delta );
 }
@@ -184,7 +184,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 {
     MS_LONGLONG * const pTarg = ( MS_LONGLONG * ) ( pTarget );
     MS_LONGLONG ldelta = (MS_LONGLONG) delta;
-    /* we dont use InterlockedAdd64 because only latest windows is supported */
+    /* we don't use InterlockedAdd64 because only latest windows is supported */
     return (( size_t ) MS_InterlockedExchangeAdd64 ( pTarg, -ldelta )) - delta;
 }
 #endif

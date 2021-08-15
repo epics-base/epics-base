@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- *  list fuctions attached to the interrupt vector table
+ *  list functions attached to the interrupt vector table
  *
  *  Created 28Mar89     Jeffrey O. Hill
  *  johill@lanl.gov

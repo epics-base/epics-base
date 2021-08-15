@@ -7,7 +7,7 @@
  \*************************************************************************/
 
 /** @file dbUnitTest.h
- * @brief Helpers for unitests of process database
+ * @brief Helpers for unittests of process database
  * @author Michael Davidsaver, Ralph Lange
  *
  * @see @ref dbunittest
@@ -149,7 +149,7 @@ DBCORE_API void testMonitorDestroy(testMonitor*);
  */
 DBCORE_API void testMonitorWait(testMonitor*);
 /** Return the number of monitor events which have occured since create,
- * or a pervious reset (called reset=1).
+ * or a previous reset (called reset=1).
  * Calling w/ reset=0 only returns the count.
  * Calling w/ reset=1 resets the count to zero and ensures that the next
  * wait will block unless subsequent events occur.  Returns the previous

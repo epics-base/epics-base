@@ -147,14 +147,14 @@ void nciu::connect ( unsigned nativeType,
             guard, this->accessRightState );
     }
 
-    // channel uninstal routine grabs the callback lock so
+    // channel uninstall routine grabs the callback lock so
     // a channel will not be deleted while a call back is
     // in progress
     //
     // the callback lock is also taken when a channel
     // disconnects to prevent a race condition with the
     // code below - ie we hold the callback lock here
-    // so a chanel cant be destroyed out from under us.
+    // so a channel cant be destroyed out from under us.
     this->notify().connectNotify ( guard );
 }
 

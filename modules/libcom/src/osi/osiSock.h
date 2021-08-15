@@ -71,7 +71,7 @@ LIBCOM_API int epicsSocketUnsentCount(SOCKET sock);
  *
  * returns the number of character elements stored in buffer not
  * including the null termination, but always writes at least a
- * null ternminater in the string (if bufSize >= 1)
+ * null terminator in the string (if bufSize >= 1)
  */
 LIBCOM_API unsigned epicsStdCall sockAddrToA (
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
@@ -83,7 +83,7 @@ LIBCOM_API unsigned epicsStdCall sockAddrToA (
  *
  * returns the number of character elements stored in buffer not
  * including the null termination, but always writes at least a
- * null ternminater in the string (if bufSize >= 1)
+ * null terminator in the string (if bufSize >= 1)
  */
 LIBCOM_API unsigned epicsStdCall ipAddrToA (
     const struct sockaddr_in * pInetAddr, char * pBuf, unsigned bufSize );
@@ -94,7 +94,7 @@ LIBCOM_API unsigned epicsStdCall ipAddrToA (
  *
  * returns the number of character elements stored in buffer not
  * including the null termination, but always writes at least a
- * null ternminater in the string (if bufSize >= 1)
+ * null terminator in the string (if bufSize >= 1)
  */
 LIBCOM_API unsigned epicsStdCall sockAddrToDottedIP ( 
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
@@ -105,7 +105,7 @@ LIBCOM_API unsigned epicsStdCall sockAddrToDottedIP (
  *
  * returns the number of character elements stored in buffer not
  * including the null termination, but always writes at least a
- * null ternminater in the string (if bufSize >= 1)
+ * null terminator in the string (if bufSize >= 1)
  */
 LIBCOM_API unsigned epicsStdCall ipAddrToDottedIP ( 
     const struct sockaddr_in * paddr, char * pBuf, unsigned bufSize );
@@ -179,7 +179,7 @@ LIBCOM_API int epicsStdCall sockAddrAreIdentical
  *  a destination port number, and a match address. When the
  *  routine returns there will be one additional entry
  *  (an osiSockAddrNode) in the list for each network interface found that
- *  is up and isnt a loop back interface (match addr is INADDR_ANY),
+ *  is up and isn't a loop back interface (match addr is INADDR_ANY),
  *  or only the interfaces that match the specified addresses (match addr
  *  is other than INADDR_ANY). If the interface supports broadcasting
  *  then add its broadcast address to the list. If the interface is a
@@ -203,7 +203,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
  * repeater would not always allow the loopback address
  * as a local client address so current clients alternate
  * between the address of the first non-loopback interface
- * found and the loopback addresss when subscribing with
+ * found and the loopback address when subscribing with
  * the CA repeater until all CA repeaters have been updated
  * to current code. After all CA repeaters have been restarted
  * this osi interface can be eliminated.

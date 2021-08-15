@@ -6,7 +6,7 @@
 * in file LICENSE that is included with this distribution.
  \*************************************************************************/
 /*
- * Part of dbCaLinkTest, compiled seperately to avoid
+ * Part of dbCaLinkTest, compiled separately to avoid
  * dbAccess.h vs. db_access.h conflicts
  */
 

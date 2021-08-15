@@ -56,7 +56,7 @@ static const double CA_CONN_VERIFY_PERIOD = 30.0; /* (sec) how often to request 
  * monitor flow control
  *
  * turning this down effects maximum throughput
- * because we dont get an optimal number of bytes
+ * because we don't get an optimal number of bytes
  * per network frame
  */
 static const unsigned contiguousMsgCountWhichTriggersFlowControl = 10u;

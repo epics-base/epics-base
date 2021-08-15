@@ -22,7 +22,7 @@
 // With future CA protocols user defined payload composition will be
 // supported and we will need to move away from a naturally aligned
 // protocol (because pad byte overhead will probably be excessive when
-// maintaining 8 byte natural alignment if the user isnt thinking about
+// maintaining 8 byte natural alignment if the user isn't thinking about
 // placing like sized elements together).
 //
 // Nevertheless, the R3.14 protocol continues to be naturally aligned,
@@ -152,7 +152,7 @@ union WireAlias < epicsFloat32 > {
 //
 // Missaligned unsigned wire format get/set can be implemented generically
 // w/o performance penalty. Attempts to improve this on architectures that
-// dont have alignement requirements will probably get into trouble with
+// don't have alignment requirements will probably get into trouble with
 // over-aggressive optimization under strict aliasing rules.
 //
 

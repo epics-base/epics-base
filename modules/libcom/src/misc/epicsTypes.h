@@ -59,7 +59,7 @@ typedef epicsInt32      epicsStatus;
 #define MAX_STRING_SIZE 40
 
 /**
- * \brief !! Dont use this - it may vanish in the future !!
+ * \brief !! Don't use this - it may vanish in the future !!
  */
 typedef struct {
     unsigned    length;
@@ -67,7 +67,7 @@ typedef struct {
 } epicsString;
 
 /**
- * \brief !! Dont use this - it may vanish in the future !!
+ * \brief !! Don't use this - it may vanish in the future !!
  *
  * Provided only for backwards compatibility with
  * db_access.h

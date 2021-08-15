@@ -99,7 +99,7 @@ static void testOnce(void *dummy) {
 #ifdef HAVE_SETERROMODE
     /* SEM_FAILCRITICALERRORS - Don't display modal dialog
      * !SEM_NOALIGNMENTFAULTEXCEPT - auto-fix unaligned access
-     * !SEM_NOGPFAULTERRORBOX - enable Windows Error Reporting (also enables post-mortem debugger hooks)
+     * !SEM_NOGPFAULTERRORBOX - enable Windows Error Reporting (also enables postmortem debugger hooks)
      * SEM_NOOPENFILEERRORBOX - Don't display modal dialog
      */
     SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);

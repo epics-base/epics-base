@@ -6,7 +6,7 @@
 \*************************************************************************/
 
 /* This test includes all public headers from libCom and database modules
- * to ensure they are all syntaxtically correct in both C and C++
+ * to ensure they are all syntactically correct in both C and C++
  */
 
 #include <aaiRecord.h>

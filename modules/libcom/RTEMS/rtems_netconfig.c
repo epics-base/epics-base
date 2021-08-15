@@ -10,7 +10,7 @@
  *              eric.norum@usask.ca
  *              (306) 966-5394
  *
- * This file can be copied to an application source dirctory
+ * This file can be copied to an application source directory
  * and modified to override the values shown below.
  */
 #include <stdio.h>

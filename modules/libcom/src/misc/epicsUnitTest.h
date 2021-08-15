@@ -47,7 +47,7 @@
  * be recorded as failures.
  *
  * Additional information can be supplied using the testDiag() routine, which
- * displays the relevent information as a comment in the result output. None of
+ * displays the relevant information as a comment in the result output. None of
  * the printable strings passed to any testXxx() routine should contain a newline
  * '\n' character, newlines will be added by the test routines as part of the
  * Test Anything Protocol. For multiple lines of diagnostic output, call
@@ -80,7 +80,7 @@
  * server) can not be shut down cleanly. The function iocBuildIsolated() allows
  * to start an IOC without its Channel Access parts, so that it can be shutdown
  * quite cleanly using iocShutdown(). This feature is only intended to be used
- * from test programs, do not use it on productional IOCs. After building the
+ * from test programs, do not use it on production IOCs. After building the
  * IOC using iocBuildIsolated() or iocBuild(), it has to be started by calling
  * iocRun(). The suggested call sequence in a test program that needs to run the
  * IOC without Channel Access is:
@@ -238,7 +238,7 @@ LIBCOM_API int  testDiag(const char *fmt, ...)
  */
 LIBCOM_API int  testDone(void);
 
-/** \brief Return non-zero in shared/oversubscribed testing envrionments
+/** \brief Return non-zero in shared/oversubscribed testing environments
  *
  * May be used to testSkip(), or select longer timeouts, for some cases
  * when the test process may be preempted for arbitrarily long times.

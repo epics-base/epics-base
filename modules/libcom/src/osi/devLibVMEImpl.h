@@ -31,7 +31,7 @@ extern "C" {
  * \brief A table of function pointers for devLibVME implementations
  *
  * The global virtual OS table \ref pdevLibVME controls
- * the behaviour of the functions defined in devLib.h.
+ * the behavior of the functions defined in devLib.h.
  * All of which call into the functions found in this table
  * to perform system specific tasks.
  */

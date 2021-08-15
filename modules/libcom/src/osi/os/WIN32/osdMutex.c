@@ -31,7 +31,7 @@
  * are used. The code does have run time switches so
  * that the more advanced calls are not called unless
  * they are available in the windows OS, but this feature
- * isnt going to be very useful unless we specify "delay
+ * isn't going to be very useful unless we specify "delay
  * loading" when we link with the DLL.
  *
  * It appears that the only entry point used here that causes

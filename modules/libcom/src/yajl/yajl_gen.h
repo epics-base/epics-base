@@ -194,7 +194,7 @@ extern "C" {
     YAJL_API yajl_gen_status yajl_gen_array_close(yajl_gen hand);
 
     /** Access the zero-terminated generator buffer. If incrementally
-     *  outputing JSON, one should call yajl_gen_clear() to clear the
+     *  outputting JSON, one should call yajl_gen_clear() to clear the
      *  buffer. This allows stream generation. */
     YAJL_API yajl_gen_status yajl_gen_get_buf(yajl_gen hand,
                                               const unsigned char ** buf,
@@ -210,7 +210,7 @@ extern "C" {
      *  \param hand The generator handle.
      *  \param sep This string will be inserted to separate the previously
      *             generated output from the following; passing \c NULL means
-     *             *no separation* of entites (beware that generating
+     *             *no separation* of entities (beware that generating
      *             multiple JSON numbers without a separator creates
      *             ambiguous output).
      *

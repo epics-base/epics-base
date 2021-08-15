@@ -74,7 +74,7 @@
  *
  * By default shareLib.h sets the DLL import / export keywords to import from
  * a DLL so that, for DLL consumers (users), nothing special must be done. However,
- * DLL implementors must set epicsExportSharedSymbols as above to specify
+ * DLL implementers must set epicsExportSharedSymbols as above to specify
  * which functions are exported from the DLL and which of them are imported
  * from other DLLs.
  *

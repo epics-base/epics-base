@@ -30,7 +30,7 @@ extern "C" {
  * space is usually necessary to keep the system running reliably.
  * On vxWorks this returns True if at least 100000 bytes is free.
  *
- * \note This routine is called quite frequently by the IOC so an efficent
+ * \note This routine is called quite frequently by the IOC so an efficient
  * implementation is important.
  *
  * \param contiguousBlockSize Block size to check.

@@ -152,7 +152,7 @@ void timer::cancel ()
             this->curState = timer::stateLimbo;
             if ( this->queue.processThread != epicsThreadGetIdSelf() ) {
                 // make certain timer expire() does not run after cancel () returns,
-                // but dont require that lock is applied while calling expire()
+                // but don't require that lock is applied while calling expire()
                 while ( this->queue.cancelPending &&
                         this->queue.pExpireTmr == this ) {
                     epicsGuardRelease < epicsMutex > autoRelease ( locker );
@@ -174,7 +174,7 @@ void timer::cancel ()
 epicsTimer::expireInfo timer::getExpireInfo () const
 {
     // taking a lock here guarantees that users will not
-    // see brief intervals when a timer isnt active because
+    // see brief intervals when a timer isn't active because
     // it is is canceled when start is called
     epicsGuard < epicsMutex > locker ( this->queue.mutex );
     if ( this->curState == statePending || this->curState == stateActive ) {

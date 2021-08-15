@@ -317,7 +317,7 @@ void searchTimer :: show ( unsigned level ) const
 
 //
 // Reset the delay to the next search request if we get
-// at least one response. However, dont reset this delay if we
+// at least one response. However, don't reset this delay if we
 // get a delayed response to an old search request.
 //
 void searchTimer::uninstallChanDueToSuccessfulSearchResponse (

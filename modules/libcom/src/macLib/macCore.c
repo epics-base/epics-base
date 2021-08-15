@@ -54,7 +54,7 @@ typedef struct mac_entry {
 /*** Local function prototypes ***/
 
 /*
- * These static functions peform low-level operations on macro entries
+ * These static functions perform low-level operations on macro entries
  */
 static MAC_ENTRY *first   ( MAC_HANDLE *handle );
 static MAC_ENTRY *last    ( MAC_HANDLE *handle );

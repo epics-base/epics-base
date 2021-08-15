@@ -63,7 +63,7 @@ public:
     };
     friend class reference;
     epicsSingleton () {}
-    // mutex lock/unlock pair overhead incured
+    // mutex lock/unlock pair overhead incurred
     // when either of these are called
     reference getReference ();
     const reference getReference () const;
@@ -168,12 +168,12 @@ inline void * SingletonUntyped :: pInstance () const
 
 inline SingletonUntyped :: ~SingletonUntyped ()
 {
-    // we dont assert fail on non-zero _refCount
+    // we don't assert fail on non-zero _refCount
     // and or non nill _pInstance here because this
-    // is designed to tolarate situations where
+    // is designed to tolerate situations where
     // file scope epicsSingleton objects (which
-    // theoretically dont have storage lifespan
-    // issues) are deleted in a non-determanistic
+    // theoretically don't have storage lifespan
+    // issues) are deleted in a non-deterministic
     // order
 #   if 0
         assert ( _refCount == 0 );

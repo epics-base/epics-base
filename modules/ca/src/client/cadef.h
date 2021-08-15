@@ -129,7 +129,7 @@ typedef unsigned CA_SYNC_GID;
 #define CA_OP_CONN_UP       6
 #define CA_OP_CONN_DOWN     7
 
-/* depricated */
+/* deprecated */
 #define CA_OP_SEARCH        2
 
 /*
@@ -464,7 +464,7 @@ LIBCA_API int epicsStdCall ca_array_get_callback
 /*  Specify a function to be executed whenever significant changes      */
 /*  occur to a channel.                                                 */
 /*  NOTES:                                                              */
-/*  1)  Evid may be omited by passing a NULL pointer                    */
+/*  1)  Evid may be omitted by passing a NULL pointer                    */
 /*                                                                      */
 /*  2)  An array count of zero specifies the native db count            */
 /*                                                                      */
@@ -837,7 +837,7 @@ LIBCA_API double epicsStdCall ca_beacon_period (chid chan);
 LIBCA_API double epicsStdCall ca_receive_watchdog_delay (chid chan);
 
 /*
- * used when an auxillary thread needs to join a CA client context started
+ * used when an auxiliary thread needs to join a CA client context started
  * by another thread
  */
 LIBCA_API struct ca_client_context * epicsStdCall ca_current_context ();

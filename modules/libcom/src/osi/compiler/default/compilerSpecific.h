@@ -17,7 +17,7 @@
 #ifndef compilerSpecific_h
 #define compilerSpecific_h
 
-/* The 'inline' key work, possibily with compiler
+/* The 'inline' keyword, possibly with compiler
  * dependent flags to force inlineing where it would
  * otherwise not be done.
  *

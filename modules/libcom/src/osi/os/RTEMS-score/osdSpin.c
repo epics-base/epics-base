@@ -16,7 +16,7 @@
  *          Andrew Johnson <anj@aps.anl.gov>
  *          Michael Davidsaver <mdavidsaver@bnl.gov>
  *
- * Inspired by Linux UP spinlocks implemention
+ * Inspired by Linux UP spinlocks implementation
  *   include/linux/spinlock_api_up.h
  */
 

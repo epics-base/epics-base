@@ -318,7 +318,7 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_delete (fdctx *pfdctx)
 }
 
 /*
- * depricated interface
+ * deprecated interface
  */
 extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_fd (fdctx *pfdctx, SOCKET fd)
 {
@@ -326,7 +326,7 @@ extern "C" LIBCOM_API int epicsStdCall fdmgr_clear_fd (fdctx *pfdctx, SOCKET fd)
 }
 
 /*
- * depricated interface
+ * deprecated interface
  */
 extern "C" LIBCOM_API int epicsStdCall fdmgr_add_fd ( 
     fdctx   *pfdctx, SOCKET  fd, void (*pfunc)(void *pParam), void *param)

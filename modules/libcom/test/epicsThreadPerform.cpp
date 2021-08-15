@@ -73,7 +73,7 @@ static double measureSleepQuantum (
     for ( unsigned i = 0u; i < iterations; i++ ) {
         // try to guarantee a uniform probability density function
         // by intentionally burning some CPU until we are less
-        // likely to be aligned with the schedualing clock
+        // likely to be aligned with the scheduling clock
         double interval = rand ();
         interval /= RAND_MAX;
         interval *= testInterval;

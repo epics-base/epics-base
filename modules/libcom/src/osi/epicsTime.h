@@ -231,7 +231,7 @@ LIBCOM_API size_t epicsStdCall epicsTimeToStrftime (
 LIBCOM_API void epicsStdCall epicsTimeShow (
     const epicsTimeStamp *, unsigned interestLevel );
 
-/** \name Reentrant time_t to struct tm conversions
+/** \name Re-entrant time_t to struct tm conversions
  * OS-specific reentrant versions of the ANSI C interface because the
  * vxWorks \c gmtime_r interface does not match POSIX standards
  * @{ */
@@ -480,7 +480,7 @@ public:
      * @{ */
     /** \brief Convert to Windows <tt>struct _FILETIME</tt> */
     operator struct _FILETIME () const;
-    /** \brief Constuct from Windows <tt>struct _FILETIME</tt> */
+    /** \brief Construct from Windows <tt>struct _FILETIME</tt> */
     epicsTime ( const struct _FILETIME & );
     /** \brief Assign from Windows <tt>struct _FILETIME</tt> */
     epicsTime & operator = ( const struct _FILETIME & );

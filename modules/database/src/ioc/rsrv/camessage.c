@@ -97,7 +97,7 @@ typedef struct rsrv_put_notify {
 /*
  * casCalloc()
  *
- * (dont drop below some max block threshold)
+ * (don't drop below some max block threshold)
  */
 static void *casCalloc(size_t count, size_t size)
 {
@@ -341,7 +341,7 @@ static int bad_tcp_cmd_action ( caHdrLargeArray *mp, void *pPayload,
     log_header ( pCtx, client, mp, pPayload, 0 );
 
     /*
-     *  by default, clients dont recover
+     *  by default, clients don't recover
      *  from this
      */
     SEND_LOCK (client);
@@ -503,7 +503,7 @@ static void read_reply ( void *pArg, struct dbChannel *dbch,
     cid = ECA_NORMAL;
 
     /* If the client has requested a zero element count we interpret this as a
-     * request for all avaiable elements.  In this case we initialise the
+     * request for all available elements.  In this case we initialize the
      * header with the maximum element size specified by the database. */
     autosize = pevext->msg.m_count == 0;
     item_count =
@@ -870,7 +870,7 @@ static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
     }
 
     /*
-     * user name will not change if there isnt enough memory
+     * user name will not change if there isn't enough memory
      */
     pMalloc = malloc(size);
     if(!pMalloc){
@@ -949,7 +949,7 @@ static int client_name_action ( caHdrLargeArray *mp, void *pPayload,
     }
 
     /*
-     * user name will not change if there isnt enough memory
+     * user name will not change if there isn't enough memory
      */
     pMalloc = malloc(size);
     if(!pMalloc){
@@ -1016,7 +1016,7 @@ unsigned    cid
      * NOTE: This detects the case where the PV id wraps
      * around and we attempt to have two resources on the same id.
      * The lock is applied here because on some architectures the
-     * ++ operator isnt atomic.
+     * ++ operator isn't atomic.
      */
     LOCK_CLIENTQ;
 
@@ -1436,7 +1436,7 @@ static void write_notify_reply ( struct client * pClient )
             msgtmp.m_available, 0 );
         if ( localStatus != ECA_NORMAL ) {
             /*
-             * inability to aquire buffer space
+             * inability to acquire buffer space
              * Indicates corruption
              */
             errlogPrintf("CA server corrupted - put call back(s) discarded\n");
@@ -1570,7 +1570,7 @@ static int rsrvExpandPutNotify (
 
     if ( sizeNeeded > pNotify->valueSize ) {
         /*
-         * try to use the union embeded in the free list
+         * try to use the union embedded in the free list
          * item, but allocate a random sized block if they
          * writing a vector.
          */
@@ -1625,7 +1625,7 @@ void rsrvFreePutNotify ( client *pClient,
         epicsMutexUnlock ( pClient->putNotifyLock );
 
         /*
-         * if any possiblity that the put notify is
+         * if any possibility that the put notify is
          * outstanding then cancel it
          */
         if ( busyTmp ) {
@@ -1736,7 +1736,7 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
         if ( ! pciu->pPutNotify ) {
             /*
              * send error and go to next request
-             * if there isnt enough memory left
+             * if there isn't enough memory left
              */
             log_header ( "no memory to initiate put notify",
                 client, mp, pPayload, 0 );
@@ -2144,7 +2144,7 @@ int rsrv_version_reply ( struct client *client )
     SEND_LOCK ( client );
     /*
      * sequence number is specified zero when we copy in the
-     * header because we dont know it until we receive a datagram
+     * header because we don't know it until we receive a datagram
      * from the client
      */
     status = cas_copy_in_header ( client, CA_PROTO_VERSION,
@@ -2210,7 +2210,7 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
      * starting with V4.4 the count field is used (abused)
      * to store the minor version number of the client.
      *
-     * New versions dont alloc the channel in response
+     * New versions don't alloc the channel in response
      * to a search request.
      * For these, allocation has been moved to claim_ciu_action().
      *
@@ -2285,7 +2285,7 @@ static int search_reply_tcp (
     }
 
     /*
-     * stop further use of server if memory becomes scarse
+     * stop further use of server if memory becomes scarce
      */
     spaceAvailOnFreeList =     freeListItemsAvail ( rsrvChanFreeList ) > 0
                             && freeListItemsAvail ( rsrvEventFreeList ) > reasonableMonitorSpace;
@@ -2397,7 +2397,7 @@ int camessage ( struct client *client )
 
     assert(pCaBucket);
 
-    /* drain remnents of large messages that will not fit */
+    /* drain remnants of large messages that will not fit */
     if ( client->recvBytesToDrain ) {
         if ( client->recvBytesToDrain >= client->recv.cnt ) {
             client->recvBytesToDrain -= client->recv.cnt;
@@ -2472,7 +2472,7 @@ int camessage ( struct client *client )
         }
 
         /*
-         * disconnect clients that dont send 8 byte
+         * disconnect clients that don't send 8 byte
          * aligned payloads
          */
         if ( msgsize & 0x7 ) {

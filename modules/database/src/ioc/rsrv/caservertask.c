@@ -545,7 +545,7 @@ void rsrv_init (void)
     beacon_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     castcp_ctl = ctlPause;
 
-    /* Thread priorites
+    /* Thread priorities
      * Now starting per interface
      *  TCP Listener: epicsThreadPriorityCAServerLow-2
      *  Name receiver: epicsThreadPriorityCAServerLow-4
@@ -1204,7 +1204,7 @@ void destroy_tcp_client ( struct client *client )
         assert ( ! status );
 
         /*
-         * wait for extra labor in progress to comple
+         * wait for extra labor in progress to complete
          */
         db_flush_extra_labor_event ( client->evuser );
     }
@@ -1229,7 +1229,7 @@ struct client * create_client ( SOCKET sock, int proto )
     size_t        spaceNeeded;
 
     /*
-     * stop further use of server if memory becomes scarse
+     * stop further use of server if memory becomes scarce
      */
     spaceAvailOnFreeList =     freeListItemsAvail ( rsrvClientFreeList ) > 0
                             && freeListItemsAvail ( rsrvSmallBufFreeListTCP ) > 0;

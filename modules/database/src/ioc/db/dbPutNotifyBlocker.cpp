@@ -110,7 +110,7 @@ extern "C" void putNotifyCompletion ( processNotify *ppn )
     if ( pNtfy ) {
         pBlocker->pNotify = 0;
         // Its necessary to signal the initiators now before we call
-        // the user callback. This is less efficent, and potentially
+        // the user callback. This is less efficient, and potentially
         // causes more thread context switching, but its probably
         // unavoidable because its possible that the use callback
         // might destroy this object.

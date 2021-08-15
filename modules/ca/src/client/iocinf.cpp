@@ -189,7 +189,7 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
     int             yes;
 
     /*
-     * dont load the list twice
+     * don't load the list twice
      */
     assert ( ellCount (pList) == 0 );
 

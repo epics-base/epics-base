@@ -529,7 +529,7 @@ long dbProcess(dbCommon *precord)
         }
     }
 
-    /* If already active dont process */
+    /* If already active don't process */
     if (precord->pact) {
         unsigned short monitor_mask;
 
@@ -931,7 +931,7 @@ long dbGet(DBADDR *paddr, short dbrType,
         no_elements = capacity = pfl->no_elements;
     }
 
-    /* Update field info from record (if neccessary);
+    /* Update field info from record (if necessary);
      * may modify paddr->pfield.
      */
     if (!dbfl_has_copy(pfl) &&

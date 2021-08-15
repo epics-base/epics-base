@@ -10,7 +10,7 @@
 
 /* epicsStdioRedirect.h */
 
-/* This file is now obselete, and is likely to be
+/* This file is now obsolete, and is likely to be
  * deleted in a future release of EPICS Base.
  *
  * Use the epicsStdio.h header file instead.

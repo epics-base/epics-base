@@ -9,7 +9,7 @@
 /*
  * Lockset stress test.
  *
- * The test stratagy is for N threads to contend for M records.
+ * The test strategy is for N threads to contend for M records.
  * Each thread will perform one of three operations:
  * 1) Lock a single record.
  * 2) Lock several records.

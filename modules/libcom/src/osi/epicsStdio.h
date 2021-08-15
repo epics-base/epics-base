@@ -9,14 +9,14 @@
 \*************************************************************************/
 /**
  * \file epicsStdio.h
- * \brief Standardize the behaviour of stdio across EPICS targets
+ * \brief Standardize the behavior of stdio across EPICS targets
  *
  * \details
  * The `epicsStdio.h` header includes the operating system's `stdio.h` header
  * and if used should replace it.
  *
  * epicsSnprintf() and epicsVsnprintf() have the same semantics as the C99
- * functions snprintf() and vsnprintf(), but correct the behaviour of the
+ * functions snprintf() and vsnprintf(), but correct the behavior of the
  * implementations on some operating systems.
  *
  * The routines epicsGetStdin(), epicsGetStdout(), epicsGetStderr(),

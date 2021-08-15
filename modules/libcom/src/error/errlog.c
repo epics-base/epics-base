@@ -535,7 +535,7 @@ void errlogFlush(void)
     if (pvtData.atExit)
         return;
 
-   /*If nothing in queue dont wake up errlogThread*/
+   /*If nothing in queue don't wake up errlogThread*/
     epicsMutexMustLock(pvtData.msgQueueLock);
     count = ellCount(&pvtData.msgQueue);
     epicsMutexUnlock(pvtData.msgQueueLock);

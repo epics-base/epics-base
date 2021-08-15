@@ -497,7 +497,7 @@ long epicsStdCall asCompute(ASCLIENTPVT asClientPvt)
     return(status);
 }
 
-/*The dump routines do not lock. Thus they may get inconsistant data.*/
+/*The dump routines do not lock. Thus they may get inconsistent data.*/
 /*HOWEVER if they did lock and a user interrupts one of then then BAD BAD*/
 static const char *asAccessName[] = {"NONE","READ","WRITE"};
 static const char *asTrapOption[] = {"NOTRAPWRITE","TRAPWRITE"};

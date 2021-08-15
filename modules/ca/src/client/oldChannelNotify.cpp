@@ -571,7 +571,7 @@ int epicsStdCall ca_create_subscription (
             oldSubscription  (
                 guard, *pChan, pChan->io, tmpType, count, mask,
                 pCallBack, pCallBackArg, monixptr );
-        // dont touch object created after above new because
+        // don't touch object created after above new because
         // the first callback might have canceled, and therefore
         // destroyed, it
         return ECA_NORMAL;

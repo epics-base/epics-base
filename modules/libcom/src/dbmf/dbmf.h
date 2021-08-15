@@ -21,7 +21,7 @@
  *
  * Routines whin iocCore like dbLoadDatabase() have the following attributes:
  * 	- They repeatedly call malloc() followed soon afterwards by a call to
- * 	free() the temporaryily allocated storage.
+ * 	free() the temporarily allocated storage.
  * 	- Between those calls to malloc() and free(), additional calls to
  * 	malloc() are made that do NOT have an associated free().
  *

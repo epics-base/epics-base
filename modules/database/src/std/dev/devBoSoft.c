@@ -43,7 +43,7 @@ static long init_record(dbCommon *pcommon)
 {
    long status=0;
 
-    /* dont convert */
+    /* don't convert */
    status=2;
    return status;
 

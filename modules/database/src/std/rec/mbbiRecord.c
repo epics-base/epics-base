@@ -40,7 +40,7 @@
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
 
-/* Hysterisis for alarm filtering: 1-1/e */
+/* Hysteresis for alarm filtering: 1-1/e */
 #define THRESHOLD 0.6321
 
 /* Create RSET - Record Support Entry Table*/
@@ -177,7 +177,7 @@ static long process(struct dbCommon *pcommon)
 
         if (prec->sdef) {
             pstate_values = &(prec->zrvl);
-            prec->val = 65535;         /* Initalize to unknown state*/
+            prec->val = 65535;         /* Initialize to unknown state*/
             for (i = 0; i < 16; i++) {
                 if (*pstate_values == rval) {
                     prec->val = i;

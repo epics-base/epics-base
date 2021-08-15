@@ -176,7 +176,7 @@ void tcpRecvWatchdog::sendBacklogProgressNotify (
 {
     guard.assertIdenticalMutex ( this->mutex );
 
-    // We dont set "beaconAnomaly" to be false here because, after we see a
+    // We don't set "beaconAnomaly" to be false here because, after we see a
     // beacon anomaly (which could be transiently detecting a reboot) we will
     // not trust the beacon as an indicator of a healthy server until we
     // receive at least one message from the server.

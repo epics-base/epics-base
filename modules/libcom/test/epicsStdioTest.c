@@ -132,7 +132,7 @@ MAIN(epicsStdioTest)
     testPlan(163);
     testEpicsSnprintf();
 #ifdef __rtems__
-    /* ensure there is a writeable area */
+    /* ensure there is a writable area */
     mkdir( "/tmp", S_IRWXU );
     testStdoutRedir("/tmp/report");
 #else

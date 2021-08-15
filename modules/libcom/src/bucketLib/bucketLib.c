@@ -347,7 +347,7 @@ static int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const v
     assert ((hashid & ~prb->hashIdMask) == 0);
     ppi = &prb->pTable[hashid];
     /*
-     * Dont reuse a resource id !
+     * Don't reuse a resource id !
      */
     ppiExists = (*pBSET->pCompare) (ppi, pId);
     if (ppiExists) {

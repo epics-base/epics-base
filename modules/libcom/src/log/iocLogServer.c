@@ -261,7 +261,7 @@ static int seekLatestLine (struct ioc_log_server *pserver)
                 static const int tm_epoch_year = 1900;
                 if (theDate.tm_year>tm_epoch_year) {
                     theDate.tm_year -= tm_epoch_year;
-                    theDate.tm_isdst = -1; /* dont know */
+                    theDate.tm_isdst = -1; /* don't know */
                     lineTime = mktime (&theDate);
                     if ( lineTime != invalidTime ) {
                         if (theLatestTime == invalidTime ||
@@ -590,7 +590,7 @@ static void writeMessagesToLog (struct iocLogClient *pclient)
          * find the first carrage return and create
          * an entry in the log for the message associated
          * with it. If a carrage return does not exist and
-         * the buffer isnt full then move the partial message
+         * the buffer isn't full then move the partial message
          * to the front of the buffer and wait for a carrage
          * return to arrive. If the buffer is full and there
          * is no carrage return then force the message out and

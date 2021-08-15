@@ -194,7 +194,7 @@ static void NTPTimeSync(void *dummy)
         diff = epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.clockTime);
         if (diff >= 0.0) {
             NTPTimePvt.ticksToSkip = 0;
-        } else { /* dont go back in time */
+        } else { /* don't go back in time */
             NTPTimePvt.ticksToSkip = -diff * osdTickRateGet();
         }
         NTPTimePvt.clockTick = tickNow;

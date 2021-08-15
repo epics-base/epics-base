@@ -128,7 +128,7 @@ void check_trailing_context(int *nfa_states, int num_states, int *accset, int na
 
 /* dump_associated_rules - list the rules associated with a DFA state
  *
- * synopisis
+ * synopsis
  *     int ds;
  *     FILE *file;
  *     dump_associated_rules( file, ds );
@@ -179,7 +179,7 @@ void dump_associated_rules(FILE *file, int ds)
 
 /* dump_transitions - list the transitions associated with a DFA state
  *
- * synopisis
+ * synopsis
  *     int state[numecs];
  *     FILE *file;
  *     dump_transitions( file, state );
@@ -449,7 +449,7 @@ void ntod(void)
      * since for them we don't have a simple state number lying around with
      * which to index the table.  We also don't bother doing it for scanners
      * unless (1) NUL is in its own equivalence class (indicated by a
-     * positive value of ecgroup[NUL]), (2) NUL's equilvalence class is
+     * positive value of ecgroup[NUL]), (2) NUL's equivalence class is
      * the last equivalence class, and (3) the number of equivalence classes
      * is the same as the number of characters.  This latter case comes about
      * when useecs is false or when its true but every character still

@@ -130,8 +130,8 @@ bool bhe::updatePeriod (
     guard.assertIdenticalMutex ( this->mutex );
 
     //
-    // this block is enetered if the beacon was created as a side effect of
-    // creating a connection and so we dont yet know the first beacon time
+    // this block is entered if the beacon was created as a side effect of
+    // creating a connection and so we don't yet know the first beacon time
     // and  sequence number
     //
     if ( this->timeStamp == epicsTime () ) {
@@ -154,7 +154,7 @@ bool bhe::updatePeriod (
         return false;
     }
 
-    // 1) detect beacon duplications due to redundant routes
+    // 1) detect beacon duplication due to redundant routes
     // 2) detect lost beacons due to input queue overrun or damage
     if ( CA_V410 ( protocolRevision ) ) {
         unsigned beaconSeqAdvance;
@@ -175,7 +175,7 @@ bool bhe::updatePeriod (
 
         // throw out sequence numbers that jump forward by only a few numbers
         // (this situation is probably caused by a duplicate route
-        // or a beacon due to input queue overun)
+        // or a beacon due to input queue overrun)
         if ( beaconSeqAdvance > 1 &&  beaconSeqAdvance < 4 ) {
             logBeaconDiscard ( beaconSeqAdvance, currentTime );
             return false;
@@ -244,8 +244,8 @@ bool bhe::updatePeriod (
         /*
          * Is this an IOC seen because of an IOC reboot
          * (beacon come at a higher rate just after the
-         * IOC reboots). Lower tolarance here because we
-         * dont have to worry about lost beacons.
+         * IOC reboots). Lower tolerance here because we
+         * don't have to worry about lost beacons.
          *
          * It may be possible to get false triggers here
          * if the client is busy, but this does not cause

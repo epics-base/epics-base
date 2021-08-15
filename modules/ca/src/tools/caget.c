@@ -256,7 +256,7 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
     for (n = 0; n < nPvs; n++) {
 
         switch (format) {
-        case plain:             /* Emulate old caget behaviour */
+        case plain:             /* Emulate old caget behavior */
             if (pvs[n].nElems <= 1 && fieldSeparator == ' ') printf("%-30s", pvs[n].name);
             else                                               printf("%s", pvs[n].name);
             printf("%c", fieldSeparator);

@@ -20,7 +20,7 @@
 #ifndef INC_epicsAtomicGCC_H
 #define INC_epicsAtomicGCC_H
 
-/* expands __GCC_HAVE_SYNC_COMPARE_AND_SWAP_ concatentating
+/* expands __GCC_HAVE_SYNC_COMPARE_AND_SWAP_ concatenating
  * the numeric value __SIZEOF_*__
  */
 #define GCC_ATOMIC_CONCAT( A, B ) GCC_ATOMIC_CONCATR(A,B)

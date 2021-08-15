@@ -285,7 +285,7 @@ cac::~cac ()
     // this blocks until the UDP thread exits so that
     // it will not sneak in any new clients
     //
-    // lock intentionally not held here so that we dont deadlock
+    // lock intentionally not held here so that we don't deadlock
     // waiting for the UDP thread to exit while it is waiting to
     // get the lock.
     {
@@ -312,7 +312,7 @@ cac::~cac ()
     //
     // wait for all tcp threads to exit
     //
-    // this will block for oustanding sends to go out so dont
+    // this will block for outstanding sends to go out so don't
     // hold a lock while waiting
     //
     {
@@ -411,7 +411,7 @@ void cac::show (
 
     ::printf ( "Channel Access Client Context at %p for user %s\n",
         static_cast <const void *> ( this ), this->pUserName );
-    // this also supresses the "defined, but not used"
+    // this also suppresses the "defined, but not used"
     // warning message
     ::printf ( "\trevision \"%s\"\n", pVersionCAC );
 

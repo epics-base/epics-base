@@ -88,7 +88,7 @@ const char * ca_message_text []
 "Bad event subscription (monitor) identifier",
 "Remote channel has new network address",
 "New or resumed network connection",
-"Specified task isnt a member of a CA context",
+"Specified task isn't a member of a CA context",
 "Attempt to use defunct CA feature failed",
 
 "The supplied string is empty",
@@ -324,7 +324,7 @@ int epicsStdCall ca_create_channel (
         *chanptr = pChanNotify;
         pChanNotify->initiateConnect ( guard );
         // no need to worry about a connect preempting here because
-        // the connect sequence will not start untill initiateConnect()
+        // the connect sequence will not start until initiateConnect()
         // is called
     }
     catch ( cacChannel::badString & ) {
@@ -384,9 +384,9 @@ int epicsStdCall ca_clear_channel ( chid pChan )
         // we will definately stall out here if all of the
         // following are true
         //
-        // o user creates non-preemtive mode client library context
+        // o user creates non-preemptive mode client library context
         // o user doesnt periodically call a ca function
-        // o user calls this function from an auxiillary thread
+        // o user calls this function from an auxiliary thread
         //
         CallbackGuard cbGuard ( cac.cbMutex );
         epicsGuard < epicsMutex > guard ( cac.mutex );
@@ -720,7 +720,7 @@ int epicsStdCall ca_context_status ( ca_client_context * pcac, unsigned level )
 /*
  * ca_current_context ()
  *
- * used when an auxillary thread needs to join a CA client context started
+ * used when an auxiliary thread needs to join a CA client context started
  * by another thread
  */
 // extern "C"
@@ -740,7 +740,7 @@ struct ca_client_context * epicsStdCall ca_current_context ()
 /*
  * ca_attach_context ()
  *
- * used when an auxillary thread needs to join a CA client context started
+ * used when an auxiliary thread needs to join a CA client context started
  * by another thread
  */
 // extern "C"

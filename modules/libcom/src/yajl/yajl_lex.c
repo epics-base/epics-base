@@ -66,7 +66,7 @@ tokToStr(yajl_tok tok)
  */
 
 struct yajl_lexer_t {
-    /* the overal line and char offset into the data */
+    /* the overall line and char offset into the data */
     size_t lineOff;
     size_t charOff;
 

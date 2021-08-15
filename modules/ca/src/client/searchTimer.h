@@ -82,8 +82,8 @@ private:
     double framesPerTry; /* # of UDP frames per search try */
     double framesPerTryCongestThresh; /* one half N tries w congest */
     unsigned retry;
-    unsigned searchAttempts; /* num search tries after last timer experation */
-    unsigned searchResponses; /* num search resp after last timer experation */
+    unsigned searchAttempts; /* num search tries after last timer expiration */
+    unsigned searchResponses; /* num search resp after last timer expiration */
     const unsigned index;
     ca_uint32_t dgSeqNoAtTimerExpireBegin;
     ca_uint32_t dgSeqNoAtTimerExpireEnd;

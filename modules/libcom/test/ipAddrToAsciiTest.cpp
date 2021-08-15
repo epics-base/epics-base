@@ -155,7 +155,7 @@ MAIN(ipAddrToAsciiTest)
     }
     doCancel();
     // TODO: somehow test cancel of in-progress callback
-    // allow time for any un-canceled transcations to crash us...
+    // allow time for any un-canceled transactions to crash us...
     epicsThreadSleep(1.0);
 
 #ifdef __linux__

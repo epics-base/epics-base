@@ -196,7 +196,7 @@ static long process(struct dbCommon *pcommon)
         convert(prec);
 
         /* Update the timestamp before writing output values so it
-         * will be uptodate if any downstream records fetch it via TSEL */
+         * will be up to date if any downstream records fetch it via TSEL */
         recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 

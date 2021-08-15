@@ -362,7 +362,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             argv[1] = rtems_bsdnet_bootp_cmdline;
             /*
              * Its probably common to embed the mount point in the server
-             * name so, when this is occurring, dont clobber the mount point
+             * name so, when this is occurring, don't clobber the mount point
              * by appending the first node from the command path. This allows
              * the mount point to be a different path then the server's mount
              * path.
@@ -883,7 +883,7 @@ telnet_pseudoIocsh(char *name, __attribute__((unused))void *arg)
 
 /*
  *  Telnet daemon configuration
- * 0 or NULL for most fields in thsi struct indicate default values to RTEMS.
+ * 0 or NULL for most fields in this struct indicate default values to RTEMS.
  */
 rtems_telnetd_config_table rtems_telnetd_config = {
   .command = SHELL_ENTRY,
@@ -990,7 +990,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
     /* Let other tasks run to complete background work */
     default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1U);
 
-    /* supress all output from bsd network initialization */ 
+    /* suppress all output from bsd network initialization */ 
     rtems_bsd_set_vprintf_handler(rtems_bsd_vprintf_handler_mute);
 
     sc = rtems_bsd_initialize();

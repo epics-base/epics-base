@@ -1063,7 +1063,7 @@ int dbRecordNameValidate(const char *name)
     }
 
     for(; *pos; i++, pos++) {
-        char c = *pos;
+        unsigned char c = *pos;
         if(i==0) {
             /* first character restrictions */
             if(c=='-' || c=='+' || c=='[' || c=='{') {
@@ -1072,8 +1072,8 @@ int dbRecordNameValidate(const char *name)
         }
         /* any character restrictions */
         if(c < ' ') {
-            errlogPrintf("Warning: Record/Alias name '%s' should not contain non-printable 0x%02u\n",
-                         name, (unsigned)c);
+            errlogPrintf("Warning: Record/Alias name '%s' should not contain non-printable 0x%02x\n",
+                         name, c);
 
         } else if(c==' ' || c=='\t' || c=='"' || c=='\'' || c=='.' || c=='$') {
             epicsPrintf("Error: Bad character '%c' in Record/Alias name \"%s\"\n",

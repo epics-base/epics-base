@@ -1174,7 +1174,7 @@ void db_event_flow_ctrl_mode_on (dbEventCtx ctx)
      * notify the event handler task
      */
     epicsEventSignal(evUser->ppendsem);
-#ifdef DEBUG
+#if defined(DEBUG) && defined(vxWorks)
     printf("fc on %lu\n", tickGet());
 #endif
 }
@@ -1193,7 +1193,7 @@ void db_event_flow_ctrl_mode_off (dbEventCtx ctx)
      * notify the event handler task
      */
     epicsEventSignal (evUser->ppendsem);
-#ifdef DEBUG
+#if defined(DEBUG) && defined(vxWorks)
     printf("fc off %lu\n", tickGet());
 #endif
 }

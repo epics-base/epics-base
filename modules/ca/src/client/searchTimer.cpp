@@ -279,8 +279,8 @@ epicsTimerNotify::expireStatus searchTimer::expire (
         if ( this->searchAttempts ) {
             char buf[64];
             currentTime.strftime ( buf, sizeof(buf), "%M:%S.%09f");
-            debugPrintf ( ("sent %u delay sec=%f Rts=%s\n",
-                nFrameSent, this->period(), buf ) );
+            debugPrintf ( ("sent %u delay Rts=%s\n",
+                nFrameSent, buf ) );
         }
 #   endif
 

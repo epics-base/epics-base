@@ -104,7 +104,6 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
     field(OMSL,DBF_MENU) {
         prompt("Output Mode Select")
         promptgroup("50 - Output")
-        special(SPC_RESET)
         pp(TRUE)
         interest(1)
         menu(menuOmsl)
@@ -154,6 +153,11 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
         special(SPC_NOMOD)
         interest(3)
     }
+    field(OBIT,DBF_LONG) {
+        prompt("Last Bit mask Monitored")
+        special(SPC_NOMOD)
+        interest(3)
+    }
     field(SHFT,DBF_USHORT) {
         prompt("Shift")
         promptgroup("50 - Output")
@@ -169,6 +173,7 @@ MASK is used by device support routine to read the hardware register. Record
 support sets low order NOBT bits. Device support can shift this value.
 
 MLST holds the value when the last monitor for value change was triggered.
+OBIT has similar role wrt. the B* fields.
 
 =fields NOBT, ORAW, MASK, MLST
 

@@ -168,12 +168,11 @@ testHarness_SRCS += linkFilterTest.c
 TESTFILES += ../linkFilterTest.db
 TESTS += linkFilterTest
 
-# dbHeader* is only a compile test
-# no need to actually run
-TESTPROD += dbHeaderTest
-dbHeaderTest_SRCS += dbHeaderTest.cpp
-TESTPROD += dbHeaderTestxx
-dbHeaderTestxx_SRCS += dbHeaderTestxx.cpp
+# These are compile-time tests, no need to link or run
+TARGETS += dbHeaderTest$(OBJ)
+TARGET_SRCS += dbHeaderTest.cpp
+TARGETS += dbHeaderTestxx$(OBJ)
+TARGET_SRCS += dbHeaderTestxx.cpp
 
 ifeq ($(T_A),$(EPICS_HOST_ARCH))
 # Host-only tests of softIoc/softIocPVA, caget and pvget (if present)

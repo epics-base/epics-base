@@ -28,6 +28,7 @@
 # be set at runtime, which will override any compiled-in setting but the
 # 'make runtests' command can't give a different timeout for each test.
 
+use 5.10.1;   # This script uses the defined-or operator //
 use strict;
 
 use File::Basename;

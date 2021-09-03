@@ -74,7 +74,7 @@ is older but does still work.
 
 #### Perl
 
-You must have Perl version 5.10 or later installed. The EPICS
+You must have Perl version 5.10.1 or later installed. The EPICS
 configuration files do not specify the perl full pathname, so the perl
 executable must be found through your normal search path.
 

@@ -477,21 +477,6 @@ epicsShareFunc unsigned int epicsShareAPI
     return stackSizeTable[stackSizeClass];
 }
 
-void epicsThreadCleanupWIN32 ()
-{
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    if ( ! pGbl )  {
-        fprintf ( stderr, "epicsThreadCleanupWIN32: unable to find ctx\n" );
-        return;
-    }
-
-    pParm = ( win32ThreadParam * ) 
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-    epicsParmCleanupWIN32 ( pParm );
-}
-
 /*
  * epicsWin32ThreadEntry()
  */
@@ -662,13 +647,12 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
 }
 
 /*
- * epicsThreadSuspendSelf ()
+ * epicsThreadGetParamWIN32 ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
+static void* epicsThreadGetParamWIN32 ( void )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
-    DWORD stat;
 
     assert ( pGbl );
 
@@ -677,6 +661,18 @@ epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
     }
+    return pParm;
+}
+
+/*
+ * epicsThreadSuspendSelf ()
+ */
+epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
+{
+    DWORD stat;
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
+
     if ( pParm ) {
         EnterCriticalSection ( & pGbl->mutex );
         pParm->isSuspended = 1;
@@ -721,16 +717,8 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id)
  */
 epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf () 
 { 
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
+    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
 
-    assert ( pGbl );
-
-    pParm = ( win32ThreadParam * ) 
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-    if ( ! pParm ) {
-        pParm = epicsThreadImplicitCreate ();
-    }
     if ( pParm ) {
         return pParm->epicsPriority;
     }
@@ -791,14 +779,7 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id )
  */
 HANDLE osdThreadGetTimer()
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    assert ( pGbl );
-
-    pParm = ( win32ThreadParam * )
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-
+    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
     return pParm->timer;
 }
 
@@ -880,17 +861,8 @@ double epicsShareAPI epicsThreadSleepQuantum ()
  */
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf (void) 
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    assert ( pGbl );
-
-    pParm = ( win32ThreadParam * ) TlsGetValue ( 
-        pGbl->tlsIndexThreadLibraryEPICS );
-    if ( ! pParm ) {
-        pParm = epicsThreadImplicitCreate ();
-        assert ( pParm ); /* very dangerous to allow non-unique thread id into use */
-    }
+    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
+    assert ( pParm ); /* very dangerous to allow non-unique thread id into use */
     return ( epicsThreadId ) pParm;
 }
 
@@ -927,19 +899,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char * pName
  */
 epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf (void)
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    if ( ! pGbl ) {
-        return "thread library not initialized";
-    }
-
-    pParm = ( win32ThreadParam * ) 
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-    if ( ! pParm ) {
-        pParm = epicsThreadImplicitCreate ();
-    }
-
+    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
     if ( pParm ) {
         if ( pParm->pName ) {
             return pParm->pName;

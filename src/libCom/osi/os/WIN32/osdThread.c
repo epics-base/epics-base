@@ -780,7 +780,11 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id )
 HANDLE osdThreadGetTimer()
 {
     win32ThreadParam * pParm = epicsThreadGetParamWIN32();
-    return pParm->timer;
+    if (pParam) {
+        return pParm->timer;
+    } else {
+	return NULL;
+    }
 }
 
 /*

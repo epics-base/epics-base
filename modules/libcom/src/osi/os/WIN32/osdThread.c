@@ -810,8 +810,14 @@ HANDLE osdThreadGetTimer()
 
     pParm = ( win32ThreadParam * )
         TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-
-    return pParm->timer;
+    if ( !pParm ) {
+        pParm = epicsThreadImplicitCreate();
+    }
+    if ( pParm ) {
+        return pParm->timer;
+    } else {
+        return NULL;
+    }
 }
 
 /*

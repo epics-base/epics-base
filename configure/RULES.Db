@@ -429,26 +429,26 @@ $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 ##################################################### HTML files
 
 $(COMMON_DIR)/%.html: %.dbd.pod $(TOOLS)/dbdToHtml.pl
-	@$(RM) $(notdir $@)
+	@$(RM) $@ $(notdir $@)
 	$(PERL) $(TOOLS)/dbdToHtml.pl $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.html: %.pod $(TOOLS)/podToHtml.pl
-	@$(RM) $(notdir $@)
+	@$(RM) $@ $(notdir $@)
 	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.html: %.pm $(TOOLS)/podToHtml.pl
-	@$(RM) $(notdir $@)
+	@$(RM) $@ $(notdir $@)
 	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.html: ../%.pm $(TOOLS)/podToHtml.pl
-	@$(RM) $(notdir $@)
+	@$(RM) $@ $(notdir $@)
 	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-.PRECIOUS: $(COMMON_DIR)/%.html %.html
+.PRECIOUS: $(COMMON_DIR)/%.html
 
 ##################################################### DB files
 

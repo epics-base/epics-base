@@ -498,16 +498,16 @@ $(INSTALL_DOC)/%: ../%
 	$(ECHO) "Installing doc $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(INSTALL_DOC)
 
+$(INSTALL_HTML)/$(HTMLS_DIR)/%: $(COMMON_DIR)/%
+	$(ECHO) "Installing generated html $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: %
 	$(ECHO) "Installing html $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
 	$(ECHO) "Installing html $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
-
-$(INSTALL_HTML)/$(HTMLS_DIR)/%: $(COMMON_DIR)/%
-	$(ECHO) "Installing generated html $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_TEMPLATES_SUBDIR)/%: ../%

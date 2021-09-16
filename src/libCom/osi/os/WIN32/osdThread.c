@@ -647,14 +647,16 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
 }
 
 /*
- * epicsThreadGetParamWIN32 ()
+ * getMyWin32ThreadParam ()
  */
-static void* epicsThreadGetParamWIN32 ( void )
+static void* getMyWin32ThreadParam ( win32ThreadGlobal * pGbl )
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
 
-    assert ( pGbl );
+    if ( ! pGbl ) {
+        pGbl = fetchWin32ThreadGlobal ();
+        assert ( pGbl );
+    }
 
     pParm = ( win32ThreadParam * ) 
         TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
@@ -671,7 +673,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf ()
 {
     DWORD stat;
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( pGbl );
 
     if ( pParm ) {
         EnterCriticalSection ( & pGbl->mutex );
@@ -717,7 +719,7 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id)
  */
 epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf () 
 { 
-    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
 
     if ( pParm ) {
         return pParm->epicsPriority;
@@ -779,7 +781,7 @@ epicsShareFunc int epicsShareAPI epicsThreadIsSuspended ( epicsThreadId id )
  */
 HANDLE osdThreadGetTimer()
 {
-    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
     if (pParm) {
         return pParm->timer;
     } else {
@@ -865,7 +867,7 @@ double epicsShareAPI epicsThreadSleepQuantum ()
  */
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf (void) 
 {
-    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
     assert ( pParm ); /* very dangerous to allow non-unique thread id into use */
     return ( epicsThreadId ) pParm;
 }
@@ -903,7 +905,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char * pName
  */
 epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf (void)
 {
-    win32ThreadParam * pParm = epicsThreadGetParamWIN32();
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
     if ( pParm ) {
         if ( pParm->pName ) {
             return pParm->pName;

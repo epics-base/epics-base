@@ -1927,6 +1927,13 @@ header and removed the need for dbScan.c to reach into the internals of its
 
 ## Changes from the 3.15 branch since 3.15.9
 
+### Fix timers on MS Windows for non-EPICS threads
+
+The waitable timer changes in 3.15.9 broke calls to `epicsThreadSleep()` and
+similar routines that used timers (including `ca_pend_event()`) when made from
+threads that were not started using the epicsThread APIs.
+[This problem](https://github.com/epics-base/epics-base/pull/200)
+[has now been fixed](https://github.com/epics-base/epics-base/pull/201).
 
 ## Changes made between 3.15.8 and 3.15.9
 

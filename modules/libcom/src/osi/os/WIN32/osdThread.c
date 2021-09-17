@@ -674,21 +674,34 @@ void epicsThreadMustJoin(epicsThreadId id)
 }
 
 /*
- * epicsThreadSuspendSelf ()
+ * getMyWin32ThreadParam ()
  */
-LIBCOM_API void epicsStdCall epicsThreadSuspendSelf ()
+static void* getMyWin32ThreadParam ( win32ThreadGlobal * pGbl )
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
-    DWORD stat;
 
-    assert ( pGbl );
+    if ( ! pGbl ) {
+        pGbl = fetchWin32ThreadGlobal ();
+        assert ( pGbl );
+    }
 
     pParm = ( win32ThreadParam * )
         TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
     }
+    return pParm;
+}
+
+/*
+ * epicsThreadSuspendSelf ()
+ */
+LIBCOM_API void epicsStdCall epicsThreadSuspendSelf ()
+{
+    DWORD stat;
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( pGbl );
+
     if ( pParm ) {
         EnterCriticalSection ( & pGbl->mutex );
         pParm->isSuspended = 1;
@@ -732,17 +745,9 @@ LIBCOM_API unsigned epicsStdCall epicsThreadGetPriority (epicsThreadId id)
  * epicsThreadGetPrioritySelf ()
  */
 LIBCOM_API unsigned epicsStdCall epicsThreadGetPrioritySelf () 
-{
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
+{ 
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
 
-    assert ( pGbl );
-
-    pParm = ( win32ThreadParam * )
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-    if ( ! pParm ) {
-        pParm = epicsThreadImplicitCreate ();
-    }
     if ( pParm ) {
         return pParm->epicsPriority;
     }
@@ -803,15 +808,12 @@ LIBCOM_API int epicsStdCall epicsThreadIsSuspended ( epicsThreadId id )
  */
 HANDLE osdThreadGetTimer()
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    assert ( pGbl );
-
-    pParm = ( win32ThreadParam * )
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-
-    return pParm->timer;
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
+    if (pParm) {
+        return pParm->timer;
+    } else {
+        return NULL;
+    }
 }
 
 /*
@@ -892,17 +894,8 @@ double epicsStdCall epicsThreadSleepQuantum ()
  */
 LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetIdSelf (void) 
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    assert ( pGbl );
-
-    pParm = ( win32ThreadParam * ) TlsGetValue (
-        pGbl->tlsIndexThreadLibraryEPICS );
-    if ( ! pParm ) {
-        pParm = epicsThreadImplicitCreate ();
-        assert ( pParm ); /* very dangerous to allow non-unique thread id into use */
-    }
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
+    assert ( pParm ); /* Don't return a NULL thread id */
     return ( epicsThreadId ) pParm;
 }
 
@@ -939,18 +932,7 @@ LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetId ( const char * pName )
  */
 LIBCOM_API const char * epicsStdCall epicsThreadGetNameSelf (void)
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    win32ThreadParam * pParm;
-
-    if ( ! pGbl ) {
-        return "thread library not initialized";
-    }
-
-    pParm = ( win32ThreadParam * )
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
-    if ( ! pParm ) {
-        pParm = epicsThreadImplicitCreate ();
-    }
+    win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
 
     if ( pParm ) {
         if ( pParm->pName ) {

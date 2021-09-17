@@ -455,7 +455,7 @@ $(COMMON_DIR)/%.html: ../%.pl
 	$(PODTOHTML) -s -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-.PRECIOUS: $(COMMON_DIR)/%.html %.html
+.PRECIOUS: $(COMMON_DIR)/%.html
 
 #---------------------------------------------------------------
 # DB files

@@ -71,22 +71,23 @@ SELM is a menu, with three choices:
 
 =menu dfanoutSELM
 
-If SELM=="All", then all output links are used, and the values of
+If SELM is C<All>, then all output links are used, and the values of
 SELL and SELN are ignored.
 
-If SELM=="Specified", then the value of SELN is used to specify a single
+If SELM is C<Specified>, then the value of SELN is used to specify a single
 link which will be used. If SELN==0, then no link will be used; if SELN==1,
 then OUTA will be used, and so on.
 
-SELN can either have its value set directly, or have its values retrieved
-from another EPICS PV. If SELL is a valid PV link, then SELN will be set to
-the values of the linked PV.
+SELN can either have its value set directly, or have it retrieved from
+another EPICS PV. If SELL is a valid PV link, then SELN will be read from
+the linked PV.
 
-If SELM=="Mask", then SELN will be treated as a bit mask. If bit one of
-SELN is set, then OUTA will be used, if bit two is set, OUTB will be used.
-Thus if SELN==5, OUTC and OUTA will be used.
+If SELM is C<Mask>, then SELN will be treated as a bit mask. If bit zero
+(the LSB) of SELN is set, then OUTA will be written to; if bit one is set,
+OUTB will be written to, and so on. Thus when SELN==5, both OUTC and OUTA
+will be written to.
 
-=fields OUTA, OUTB, OUTC, OUTD, OUTE, OUTF, OUTG, OUTH
+=fields SELL, SELM, SELN, OUTA, OUTB, OUTC, OUTD, OUTE, OUTF, OUTG, OUTH
 
 =head3 Operator Display Parameters
 

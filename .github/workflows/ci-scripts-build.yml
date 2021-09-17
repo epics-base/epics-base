@@ -17,6 +17,12 @@ on:
       - '**/*.html'
       - '**/*.md'
   pull_request:
+    paths-ignore:
+      - 'documentation/*'
+      - 'startup/*'
+      - '.appveyor/*'
+      - '**/*.html'
+      - '**/*.md'
 
 env:
     SETUP_PATH: .ci-local:.ci
@@ -57,11 +63,6 @@ jobs:
             extra: "CMD_CXXFLAGS=-std=c++11"
             name: "Ub-20 gcc-9 C++11, static"
 
-          - os: ubuntu-16.04
-            cmp: clang
-            configuration: default
-            name: "Ub-16 clang-9"
-
           - os: ubuntu-20.04
             cmp: clang
             configuration: default
@@ -79,18 +80,6 @@ jobs:
             configuration: default
             rtems: "4.9"
             name: "Ub-20 gcc-9 + RT-4.9"
-
-          - os: ubuntu-16.04
-            cmp: gcc-4.8
-            utoolchain: true
-            configuration: default
-            name: "Ub-16 gcc-4.8"
-
-          - os: ubuntu-16.04
-            cmp: gcc-4.9
-            utoolchain: true
-            configuration: default
-            name: "Ub-16 gcc-4.9"
 
           - os: ubuntu-20.04
             cmp: gcc-8
@@ -143,9 +132,12 @@ jobs:
     - name: Run main module tests
       run: python .ci/cue.py test
     - name: Upload tapfiles Artifact
+      if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: tapfiles ${{ matrix.name }}
         path: '**/O.*/*.tap'
+        if-no-files-found: ignore
     - name: Collect and show test results
+      if: ${{ always() }}
       run: python .ci/cue.py test-results

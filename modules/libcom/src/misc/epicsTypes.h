@@ -102,8 +102,8 @@ typedef union epics_any {
  * \brief Corresponding Type Codes
  * (this enum must start at zero)
  *
- * !! Update \ref epicsTypeToDBR_XXXX[] and \ref DBR_XXXXToEpicsType
- *  in db_access.h if you edit this enum !!
+ * \note Update \a epicsTypeToDBR_XXXX[] and \a DBR_XXXXToEpicsType
+ *  in db_access.h if you edit this enum
  */
 typedef enum {
     epicsInt8T,

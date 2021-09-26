@@ -99,7 +99,7 @@ DBCORE_API void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
 /** Assert that a dbPutField() array operation will complete successfully.
  *
  * @param pv a PV name, possibly including filter expression
- * @param a DBF_\* type code (cf. dbfType in dbFldTypes.h)
+ * @param dbrType a DBF_\* type code (cf. dbfType in dbFldTypes.h)
  * @param count Number of elements in pbuf array
  * @param pbuf Array of values to write
  *
@@ -114,7 +114,7 @@ DBCORE_API void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long
 
 /**
  * @param pv PV name string
- * @param dbfType One of the DBF_* macros from dbAccess.h
+ * @param dbfType One of the DBF_\* macros from dbAccess.h
  * @param nRequest Number of elements to request from pv
  * @param pbufcnt  Number of elements pointed to be pbuf
  * @param pbuf     Expected value buffer

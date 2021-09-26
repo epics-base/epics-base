@@ -49,7 +49,7 @@
  * Additional information can be supplied using the testDiag() routine, which
  * displays the relevant information as a comment in the result output. None of
  * the printable strings passed to any testXxx() routine should contain a newline
- * '\n' character, newlines will be added by the test routines as part of the
+ * '\\n' character, newlines will be added by the test routines as part of the
  * Test Anything Protocol. For multiple lines of diagnostic output, call
  * testDiag() as many times as necessary.
  *
@@ -176,8 +176,8 @@ LIBCOM_API void testPlan(int tests);
  */
 LIBCOM_API int  testOk(int pass, const char *fmt, ...)
     EPICS_PRINTF_STYLE(2, 3);
-/** \brief Test result using condition as description
- * \param cond Condition to be evaluated and displayed.
+/** \brief Test result using expression as description
+ * \param cond Expression to be evaluated and displayed.
  * \return The value of \p cond.
  */
 #define testOk1(cond) testOk(cond, "%s", #cond)
@@ -204,7 +204,7 @@ LIBCOM_API void testFail(const char *fmt, ...)
 /** @} */
 
 /** \name Missing or Failing Tests
- * \brief Routines for handling special situations.
+ * Routines for handling special situations.
  */
 /** @{ */
 
@@ -261,7 +261,13 @@ typedef int (*TESTFUNC)(void);
 /** \brief Initialize test harness
  */
 LIBCOM_API void testHarness(void);
+/** \brief End of testing
+ */
 LIBCOM_API void testHarnessExit(void *dummy);
+/** \brief Run a single test program
+ * \param name Program name
+ * \param func Function implementing test program
+ */
 LIBCOM_API void runTestFunc(const char *name, TESTFUNC func);
 
 /** \brief Run a test program

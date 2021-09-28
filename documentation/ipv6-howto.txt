@@ -1,0 +1,32 @@
+Start using IPv6:
+  caget, camonitor can work via IPV6 like this:
+  $ export EPICS_CA_AUTO_ADDR_LIST=NO
+  $ export EPICS_CA_ADDR_LIST='[2001:db8:1:0:0:1:2:3]'
+  cainfo IOC:m1
+
+  Using link local addresses:
+    Find out the link-local address of your IOC.
+    e.g. fe80::3958:418:65b8:230c
+    Find out the interface of your client, sitting on the same network
+    switch as the IOC.
+    $ ifconfig
+    # or
+    $ ip addr show
+    in my case it is "en0"
+    # ping the IOC:
+    $ ping6 fe80::3958:418:65b8:230c
+      ping6: sendmsg: No route to host
+    # That didn't work, we new this.
+    # Compose a proper adress, combining the remote IPv6 with
+    # our local interface name:
+    $ ping6 fe80::3958:418:65b8:230c%en0
+    16 bytes from fe80::3958:418:65b8:230c%en0
+    # with this knowledge, we can use cainfo:
+    $ export EPICS_CA_AUTO_ADDR_LIST=NO
+    $ export EPICS_CA_ADDR_LIST='[fe80::3958:418:65b8:230c%en0]'
+    $ cainfo IOC:m1
+
+
+  Using multicast addresses:
+    The following should work, if en0 is a valid IPv6 interface:
+    $ EPICS_CA_ADDR_LIST=[ff02::1%en0]  EPICS_CA_AUTO_ADDR_LIST=NO   camonitor IOC:m1

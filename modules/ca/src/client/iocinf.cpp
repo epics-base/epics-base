@@ -35,6 +35,7 @@
 #include "addrList.h"
 #include "iocinf.h"
 
+#include "osiSock.h" /* EPICS_HAS_IPV6, NETDEBUG */
 /*
  * getToken()
  */
@@ -78,8 +79,8 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
     osiSockAddrNode *pNewNode;
     const char *pStr;
     const char *pToken;
-    struct sockaddr_in addr;
-    char buf[32u]; /* large enough to hold an IP address */
+    osiSockAddr46 addr46;
+    char buf[64u]; /* large enough to hold an IP address */
     int status, ret = -1;
 
     pStr = envGetConfigParamPtr (pEnv);
@@ -88,24 +89,38 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
     }
 
     while ( ( pToken = getToken (&pStr, buf, sizeof (buf) ) ) ) {
-        status = aToIPAddr ( pToken, port, &addr );
+      int flags = 0;
+      status = aToIPAddr46 ( pToken, port, &addr46, flags );
         if (status<0) {
             fprintf ( stderr, "%s: Parsing '%s'\n", __FILE__, pEnv->name);
             fprintf ( stderr, "\tBad internet address or host name: '%s'\n", pToken);
             continue;
         }
 
-        if ( ignoreNonDefaultPort && ntohs ( addr.sin_port ) != port ) {
+        if ( ignoreNonDefaultPort && epicsSocket46portFromAddress(&addr46) != port ) {
+#ifdef NETDEBUG
+            char buf[64];
+            sockAddrToDottedIP(&addr46.sa, buf, sizeof(buf));
+            errlogPrintf ("addAddrToChannelAccessAddressList: ignore addr='%s' port=%u\n",
+                          buf, port);
+#endif
             continue;
         }
-
+#ifdef NETDEBUG
+        {
+          char buf[64];
+          sockAddrToDottedIP(&addr46.sa, buf, sizeof(buf));
+          errlogPrintf ("addAddrToChannelAccessAddressList: add addr='%s'\n",
+                        buf );
+        }
+#endif
         pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
         if (pNewNode==NULL) {
             fprintf ( stderr, "addAddrToChannelAccessAddressList(): no memory available for configuration\n");
             break;
         }
 
-        pNewNode->addr.ia = addr;
+        pNewNode->addr46 = addr46;
 
         /*
          * LOCK applied externally
@@ -130,23 +145,20 @@ extern "C" void epicsStdCall removeDuplicateAddresses
         osiSockAddrNode *pNode = reinterpret_cast <osiSockAddrNode *> ( pRawNode );
         osiSockAddrNode *pTmpNode;
 
-        if ( pNode->addr.sa.sa_family == AF_INET ) {
+        if ( epicsSocket46IsAF_INETorAF_INET6 (pNode->addr46.sa.sa_family ) ) {
 
             pTmpNode = (osiSockAddrNode *) ellFirst (pDestList);
             while ( pTmpNode ) {
-                if (pTmpNode->addr.sa.sa_family == AF_INET) {
-                    if ( pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr &&
-                            pNode->addr.ia.sin_port == pTmpNode->addr.ia.sin_port ) {
-                        if ( ! silent ) {
-                            char buf[64];
-                            ipAddrToDottedIP ( &pNode->addr.ia, buf, sizeof (buf) );
-                            fprintf ( stderr,
-                                "Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
-                        }
-                        free (pNode);
-                        pNode = NULL;
-                        break;
+                if ( sockAddrAreIdentical46(&pTmpNode->addr46, &pNode->addr46 ) ) {
+                    if ( ! silent ) {
+                        char buf[64];
+                        sockAddrToDottedIP (&pNode->addr46.sa, buf, sizeof (buf) );
+                        fprintf ( stderr,
+                                  "Warning: Duplicate EPICS CA Address list entry \"%s\" discarded\n", buf );
                     }
+                    free (pNode);
+                    pNode = NULL;
+                    break;
                 }
                 pTmpNode = (osiSockAddrNode *) ellNext (&pTmpNode->node);
             }
@@ -169,8 +181,12 @@ static void  forcePort ( ELLLIST *pList, unsigned short port )
 
     pNode  = ( osiSockAddrNode * ) ellFirst ( pList );
     while ( pNode ) {
-        if ( pNode->addr.sa.sa_family == AF_INET ) {
-            pNode->addr.ia.sin_port = htons ( port );
+        if ( pNode->addr46.sa.sa_family == AF_INET ) {
+            pNode->addr46.ia.sin_port = htons ( port );
+#if EPICS_HAS_IPV6
+        } else if ( pNode->addr46.sa.sa_family == AF_INET6 ) {
+            pNode->addr46.in6.sin6_port = htons ( port );
+#endif
         }
         pNode = ( osiSockAddrNode * ) ellNext ( &pNode->node );
     }
@@ -185,8 +201,8 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
 {
     ELLLIST         tmpList;
     char            *pstr;
-    char            yesno[32u];
-    int             yes;
+    char            addrautolistascii[32u];
+    int             addrautolistIPversion;
 
     /*
      * don't load the list twice
@@ -200,25 +216,44 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
      * initializing the search b-cast list
      * from the interfaces found.
      */
-    yes = true;
+    addrautolistIPversion = 4; /* IPv4 is used when EPICS_CA_AUTO_ADDR_LIST is not defined */
     pstr = envGetConfigParam ( &EPICS_CA_AUTO_ADDR_LIST,
-            sizeof (yesno), yesno );
+                               sizeof (addrautolistascii), addrautolistascii );
     if ( pstr ) {
-        if ( strstr ( pstr, "no" ) || strstr ( pstr, "NO" ) ) {
-            yes = false;
-        }
+      if ( strstr ( pstr, "no" ) || strstr ( pstr, "NO" ) ) {
+        addrautolistIPversion = 0;
+      } else if ( strstr ( pstr, "yes" ) || strstr ( pstr, "YES" ) ) {
+        addrautolistIPversion = 0;
+      } else if ( !strcmp( pstr, "4" ) ) {
+        addrautolistIPversion = 4;
+      } else if ( !strcmp( pstr, "6" ) ) {
+        addrautolistIPversion = 6;
+      } else if ( !strcmp( pstr, "46" ) ) {
+        addrautolistIPversion = 46;
+      } else {
+        errlogPrintf ( "EPICS_CA_AUTO_ADDR_LIST is invalid('%s'); IPv4 is used\n",
+                       pstr);
+      }
     }
 
     /*
      * LOCK is for piiu->destAddr list
      * (lock outside because this is used by the server also)
      */
-    if (yes) {
+    if (addrautolistIPversion) {
         ELLLIST bcastList;
-        osiSockAddr addr;
+        osiSockAddr46 match46;
         ellInit ( &bcastList );
-        addr.ia.sin_family = AF_UNSPEC;
-        osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &addr );
+        memset(&match46, 0, sizeof(match46));
+        match46.ia.sin_family = AF_INET; /* This is the default */
+#if EPICS_HAS_IPV6
+        if (addrautolistIPversion == 46) {
+          match46.ia.sin_family = AF_UNSPEC; /* Both v6 and v4 */
+        } else if (addrautolistIPversion == 6) {
+          match46.ia.sin_family = AF_INET6; /* v6 only */
+        }
+#endif
+        osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &match46 );
         forcePort ( &bcastList, port );
         removeDuplicateAddresses ( &tmpList, &bcastList, 1 );
         if ( ellCount ( &tmpList ) == 0 ) {
@@ -229,9 +264,9 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
                  * if no interfaces found then look for local channels
                  * with the loop back interface
                  */
-                pNewNode->addr.ia.sin_family = AF_INET;
-                pNewNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-                pNewNode->addr.ia.sin_port = htons ( port );
+                pNewNode->addr46.ia.sin_family = AF_INET;
+                pNewNode->addr46.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+                pNewNode->addr46.ia.sin_port = htons ( port );
                 ellAdd ( &tmpList, &pNewNode->node );
             }
             else {
@@ -256,7 +291,7 @@ extern "C" void epicsStdCall printChannelAccessAddressList ( const ELLLIST *pLis
     pNode = (osiSockAddrNode *) ellFirst ( pList );
     while (pNode) {
         char buf[64];
-        ipAddrToA ( &pNode->addr.ia, buf, sizeof ( buf ) );
+        ipAddrToA ( &pNode->addr46.ia, buf, sizeof ( buf ) );
         ::printf ( "%s\n", buf );
         pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
     }

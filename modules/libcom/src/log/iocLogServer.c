@@ -90,7 +90,6 @@ static int sighupPipe[2];
  */
 int main(void)
 {
-    struct sockaddr_in serverAddr;  /* server's address */
     struct timeval timeout;
     int status;
     struct ioc_log_server *pserver;
@@ -122,7 +121,8 @@ int main(void)
      * Open the socket. Use ARPA Internet address format and stream
      * sockets. Format described in <sys/socket.h>.
      */
-    pserver->sock = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
+    pserver->sock = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(),
+                                        SOCK_STREAM, 0);
     if (pserver->sock == INVALID_SOCKET) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -133,15 +133,8 @@ int main(void)
 
     epicsSocketEnableAddressReuseDuringTimeWaitState ( pserver->sock );
 
-    /* Zero the sock_addr structure */
-    memset((void *)&serverAddr, 0, sizeof serverAddr);
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(ioc_log_port);
+    status = epicsSocket46BindLocalPort(pserver->sock, ioc_log_port);
 
-    /* get server's Internet address */
-    status = bind ( pserver->sock,
-            (struct sockaddr *)&serverAddr,
-            sizeof (serverAddr) );
     if (status < 0) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -401,8 +394,7 @@ static void acceptNewClient ( void *pParam )
 {
     struct ioc_log_server *pserver = (struct ioc_log_server *) pParam;
     struct iocLogClient *pclient;
-    osiSocklen_t addrSize;
-    struct sockaddr_in addr;
+    osiSockAddr46 addr46;
     int status;
     osiSockIoctl_t optval;
 
@@ -411,9 +403,8 @@ static void acceptNewClient ( void *pParam )
         return;
     }
 
-    addrSize = sizeof ( addr );
-    pclient->insock = epicsSocketAccept ( pserver->sock, (struct sockaddr *)&addr, &addrSize );
-    if ( pclient->insock==INVALID_SOCKET || addrSize < sizeof (addr) ) {
+    pclient->insock = epicsSocket46Accept ( pserver->sock, &addr46 );
+    if ( pclient->insock==INVALID_SOCKET ) {
         static unsigned acceptErrCount;
         static int lastErrno;
         int thisErrno;
@@ -455,7 +446,7 @@ static void acceptNewClient ( void *pParam )
     pclient->pserver = pserver;
     pclient->nChar = 0u;
 
-    ipAddrToA (&addr, pclient->name, sizeof(pclient->name));
+    sockAddrToA (&addr46.sa, pclient->name, sizeof(pclient->name));
 
     logTime(pclient);
 

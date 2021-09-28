@@ -269,13 +269,13 @@ is used.</p>
       <th>Default</th>
     </tr>
     <tr>
-      <td>EPICS_CA_ADDR_LIST</td>
-      <td>{N.N.N.N N.N.N.N:P ...}</td>
+      <td>EPICS_CA_ADDR_LIST  (IPv6 must use[])</td>
+      <td>{N.N.N.N N.N.N.N:P [ipv6] [ipv6local%en0]...}</td>
       <td>&lt;none&gt;</td>
     </tr>
     <tr>
       <td>EPICS_CA_AUTO_ADDR_LIST</td>
-      <td>{YES, NO}</td>
+      <td>{YES, NO, 4, 6, 46}</td>
       <td>YES</td>
     </tr>
     <tr>
@@ -498,6 +498,11 @@ This automatic server address list initialization can be disabled if the EPICS
 environment variable EPICS_CA_AUTO_ADDR_LIST exists and its value is either
 "no" or "NO". The typical default is to enable network interface introspection
 driven initialization with EPICS_CA_AUTO_ADDR_LIST set to "YES" or "yes".</p>
+
+<p>Using IPv6:
+Set EPICS_CA_AUTO_ADDR_LIST to "46" to use both IPv4 and IPv6 in parallel.
+Set EPICS_CA_AUTO_ADDR_LIST to "6" to use only IPv6.
+Set EPICS_CA_AUTO_ADDR_LIST to "4" to use only IPv4, this is the same as "YES".</p>
 
 <p>Following network interface introspection, any IP addresses specified in the
 EPICS environment variable EPICS_CA_ADDR_LIST are added to the list of

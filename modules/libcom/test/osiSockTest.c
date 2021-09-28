@@ -93,7 +93,7 @@ void udpSockTest(void)
 static
 int doBind(int expect, SOCKET S, unsigned* port)
 {
-    osiSockAddr addr;
+    osiSockAddr46 addr;
     int ret;
 
     memset(&addr, 0, sizeof(addr));
@@ -101,7 +101,7 @@ int doBind(int expect, SOCKET S, unsigned* port)
     addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     addr.ia.sin_port = htons(*port);
 
-    ret = bind(S, &addr.sa, sizeof(addr.ia));
+    ret = epicsSocket46Bind(S, &addr.sa, sizeof(addr.ia));
     if(ret) {
         testOk(expect==1, "bind() to %u error %d, %d", *port, ret, SOCKERRNO);
         return 1;
@@ -236,10 +236,9 @@ void udpSockFanoutTestRx(void* raw)
 
     while(!epicsTimeGetCurrent(&now) && epicsTimeDiffInSeconds(&now, &start)<=5.0) {
         union CASearchU buf;
-        osiSockAddr src;
-        osiSocklen_t srclen = sizeof(src);
+        osiSockAddr46 src;
 
-        int n = recvfrom(info->sock, buf.bytes, sizeof(buf.bytes), 0, &src.sa, &srclen);
+        int n = epicsSocket46Recvfrom(info->sock, buf.bytes, sizeof(buf.bytes), 0, &src);
         buf.bytes[sizeof(buf.bytes)-1] = '\0';
 
         if(n<0) {
@@ -271,7 +270,7 @@ void udpSockFanoutTestRx(void* raw)
 }
 
 static
-void udpSockFanoutTestIface(const osiSockAddr* addr)
+void udpSockFanoutTestIface(const osiSockAddr46* addr)
 {
     SOCKET sender;
     struct TInfo rx1, rx2;
@@ -279,7 +278,7 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
     epicsThreadOpts topts = EPICS_THREAD_OPTS_INIT;
     int opt = 1;
     unsigned i;
-    osiSockAddr any;
+    osiSockAddr46 any;
     epicsUInt32 key = 0xdeadbeef ^ ntohl(addr->ia.sin_addr.s_addr);
     union CASearchU buf;
     int ret;
@@ -320,9 +319,9 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
     epicsSocketEnableAddressUseForDatagramFanout(rx1.sock);
     epicsSocketEnableAddressUseForDatagramFanout(rx2.sock);
 
-    if(bind(rx1.sock, &any.sa, sizeof(any)))
+    if(epicsSocket46Bind(rx1.sock, &any.sa, sizeof(any)))
         testFail("Can't bind test socket rx1 %d", (int)SOCKERRNO);
-    if(bind(rx2.sock, &any.sa, sizeof(any)))
+    if(epicsSocket46Bind(rx2.sock, &any.sa, sizeof(any)))
         testFail("Can't bind test socket rx2 %d", (int)SOCKERRNO);
 
     /* test to see if send is possible (not EPERM) */
@@ -370,7 +369,7 @@ void udpSockFanoutTest()
     ELLLIST ifaces = ELLLIST_INIT;
     ELLNODE *cur;
     SOCKET dummy;
-    osiSockAddr match;
+    osiSockAddr46 match;
     int foundNotLo = 0;
 
     testDiag("udpSockFanoutTest()");
@@ -388,16 +387,16 @@ void udpSockFanoutTest()
         char name[64];
         osiSockAddrNode* node = CONTAINER(cur, osiSockAddrNode, node);
 
-        node->addr.ia.sin_port = htons(5064);
-        (void)sockAddrToDottedIP(&node->addr.sa, name, sizeof(name));
+        node->addr46.ia.sin_port = htons(5064);
+        (void)sockAddrToDottedIP(&node->addr46.sa, name, sizeof(name));
 
         testDiag("Interface %s", name);
-        if(node->addr.ia.sin_addr.s_addr!=htonl(INADDR_LOOPBACK)) {
+        if(node->addr46.ia.sin_addr.s_addr!=htonl(INADDR_LOOPBACK)) {
             testDiag("Not LO");
             foundNotLo = 1;
         }
 
-        udpSockFanoutTestIface(&node->addr);
+        udpSockFanoutTestIface(&node->addr46);
     }
 
     ellFree(&ifaces);

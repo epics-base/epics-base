@@ -35,6 +35,7 @@ extern "C" {
 #endif
 
 #include "libComAPI.h"
+#include "osiSock.h"
 
 /**
  * \brief A structure to hold a single environment parameter
@@ -135,7 +136,7 @@ LIBCOM_API long epicsStdCall
  * \return 0, or -1 if an error is encountered
  */
 LIBCOM_API long epicsStdCall
-    envGetInetAddrConfigParam(const ENV_PARAM *pParam, struct in_addr *pAddr);
+    envGetInetAddrConfigParam46(const ENV_PARAM *pParam, osiSockAddr46 *pAddr46);
 
 /**
  * \brief Get value of a double configuration parameter.

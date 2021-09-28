@@ -613,9 +613,9 @@ void tcpRecvThread::connect (
         int status;
         {
             epicsGuardRelease < epicsMutex > unguard ( guard );
-            osiSockAddr tmp = this->iiu.address ();
-            status = ::connect ( this->iiu.sock,
-                            & tmp.sa, sizeof ( tmp.sa ) );
+            osiSockAddr46 tmp = this->iiu.address ();
+            status = epicsSocket46Connect ( this->iiu.sock,
+                                        & tmp );
         }
 
         if ( this->iiu.state != tcpiiu::iiucs_connecting ) {
@@ -666,12 +666,12 @@ void tcpRecvThread::connect (
 tcpiiu::tcpiiu (
         cac & cac, epicsMutex & mutexIn, epicsMutex & cbMutexIn,
         cacContextNotify & ctxNotifyIn, double connectionTimeout,
-        epicsTimerQueue & timerQueue, const osiSockAddr & addrIn,
+        epicsTimerQueue & timerQueue, const osiSockAddr46 & addrIn,
         comBufMemoryManager & comBufMemMgrIn,
         unsigned minorVersion, ipAddrToAsciiEngine & engineIn,
         const cacChannel::priLev & priorityIn,
         SearchDestTCP * pSearchDestIn ) :
-    caServerID ( addrIn.ia, priorityIn ),
+    caServerID ( addrIn, priorityIn ),
     hostNameCacheInstance ( addrIn, engineIn ),
     recvThread ( *this, cbMutexIn, ctxNotifyIn, "CAC-TCP-recv",
         epicsThreadGetStackSize ( epicsThreadStackBig ),
@@ -717,7 +717,8 @@ tcpiiu::tcpiiu (
     if(!pCurData)
         throw std::bad_alloc();
 
-    this->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
+    this->sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(),
+                                     SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
         freeListFree(this->cacRef.tcpSmallRecvBufFreeList, this->pCurData);
         char sockErrBuf[64];
@@ -1767,7 +1768,7 @@ void tcpiiu::decrementBlockingForFlushCount (
     }
 }
 
-osiSockAddr tcpiiu::getNetworkAddress (
+osiSockAddr46 tcpiiu::getNetworkAddress (
     epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -2134,7 +2135,7 @@ bool tcpiiu::searchMsg (
 }
 
 SearchDestTCP :: SearchDestTCP (
-    cac & cacIn, const osiSockAddr & addrIn ) :
+    cac & cacIn, const osiSockAddr46 & addrIn ) :
     _ptcpiiu ( NULL ),
     _cac ( cacIn ),
     _addr ( addrIn ),
@@ -2198,7 +2199,7 @@ void tcpiiu :: searchRespNotify (
      * the type field is abused to carry the port number
      * so that we can have multiple servers on one host
      */
-    osiSockAddr serverAddr;
+    osiSockAddr46 serverAddr;
     if ( msg.m_cid != INADDR_BROADCAST ) {
         serverAddr.ia.sin_family = AF_INET;
         serverAddr.ia.sin_addr.s_addr = htonl ( msg.m_cid );

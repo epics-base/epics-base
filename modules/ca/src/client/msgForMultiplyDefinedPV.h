@@ -47,7 +47,7 @@ public:
         callbackForMultiplyDefinedPV &, const char * pChannelName,
         const char * pAcc );
     virtual ~msgForMultiplyDefinedPV ();
-    void ioInitiate ( const osiSockAddr & rej );
+    void ioInitiate ( const osiSockAddr46 & rej );
     void * operator new ( size_t size, tsFreeList < class msgForMultiplyDefinedPV, 16 > & );
     epicsPlacementDeleteOperator (( void *, tsFreeList < class msgForMultiplyDefinedPV, 16 > & ))
 private:
@@ -61,7 +61,7 @@ private:
     void operator delete ( void * );
 };
 
-inline void msgForMultiplyDefinedPV::ioInitiate ( const osiSockAddr & rej )
+inline void msgForMultiplyDefinedPV::ioInitiate ( const osiSockAddr46 & rej )
 {
     this->dnsTransaction.ipAddrToAscii ( rej, *this );
 }

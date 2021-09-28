@@ -54,8 +54,11 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
 
     if ( pclient->disconnect ) {
         if ( CASDEBUG > 2 ) {
-            errlogPrintf ( "CAS: msg Discard for sock %d addr %x\n",
-                (int)pclient->sock, (unsigned) pclient->addr.sin_addr.s_addr );
+            char buf[64];
+            sockAddrToDottedIP ( &pclient->addr46.sa, buf, sizeof(buf) );
+
+            errlogPrintf ( "CAS: msg Discard for sock %d addr '%s'\n",
+                (int)pclient->sock, buf );
         }
         pclient->send.stk = 0u;
         if(lock_needed)
@@ -100,7 +103,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
                 continue;
             }
 
-            ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
+            sockAddrToDottedIP ( &pclient->addr46.sa, buf, sizeof(buf) );
 
             if (
                 anerrno == SOCK_ECONNABORTED ||
@@ -200,8 +203,8 @@ void cas_send_dg_msg ( struct client * pclient )
         sizeDG -= sizeof (caHdr);
     }
 
-    status = sendto ( pclient->sock, pDG, sizeDG, 0,
-       (struct sockaddr *)&pclient->addr, sizeof(pclient->addr) );
+    status = epicsSocket46Sendto ( pclient->sock, pDG, sizeDG, 0,
+                                   &pclient->addr46 );
     if ( status >= 0 ) {
         if ( status >= sizeDG ) {
             epicsTimeGetCurrent ( &pclient->time_at_last_send );
@@ -216,7 +219,7 @@ void cas_send_dg_msg ( struct client * pclient )
         char buf[128];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
+        sockAddrToDottedIP ( &pclient->addr46.sa, buf, sizeof(buf) );
         errlogPrintf( "CAS: UDP send to %s failed: %s\n",
             buf, sockErrBuf);
     }

@@ -280,7 +280,7 @@ static void log_header (
     struct channel_in_use *pciu;
     char hostName[256];
 
-    ipAddrToDottedIP (&client->addr, hostName, sizeof(hostName));
+    sockAddrToDottedIP (&client->addr46.sa, hostName, sizeof(hostName));
 
     pciu = MPTOPCIU(mp);
 

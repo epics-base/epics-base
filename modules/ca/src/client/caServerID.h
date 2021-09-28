@@ -27,28 +27,26 @@
 
 class caServerID {
 public:
-    caServerID ( const struct sockaddr_in & addrIn, unsigned priority );
+    caServerID ( const osiSockAddr46 & addr46, unsigned priority );
     bool operator == ( const caServerID & ) const;
     resTableIndex hash () const;
-    osiSockAddr address () const;
+    osiSockAddr46 address () const;
     unsigned priority () const;
 private:
-    struct sockaddr_in addr;
+    osiSockAddr46 addr46;
     ca_uint8_t pri;
 };
 
 inline caServerID::caServerID (
-    const struct sockaddr_in & addrIn, unsigned priorityIn ) :
-    addr ( addrIn ), pri ( static_cast <ca_uint8_t> ( priorityIn ) )
+    const osiSockAddr46 & addrIn46, unsigned priorityIn ) :
+    addr46 ( addrIn46 ), pri ( static_cast <ca_uint8_t> ( priorityIn ) )
 {
     assert ( priorityIn <= 0xff );
 }
 
 inline bool caServerID::operator == ( const caServerID & rhs ) const
 {
-    if (    this->addr.sin_addr.s_addr == rhs.addr.sin_addr.s_addr &&
-            this->addr.sin_port == rhs.addr.sin_port &&
-            this->pri == rhs.pri ) {
+    if ( sockAddrAreIdentical46 ( &this->addr46, &rhs.addr46 ) ) {
         return true;
     }
     return false;
@@ -63,18 +61,29 @@ inline resTableIndex caServerID::hash () const
     const unsigned caServerMaxIndexBitWidth = 32u;
 
     unsigned index;
-    index = this->addr.sin_addr.s_addr;
-    index ^= this->addr.sin_port;
-    index ^= this->addr.sin_port >> 8u;
-    index ^= this->pri;
+#if EPICS_HAS_IPV6
+    if ( this->addr46.sa.sa_family == AF_INET6 ) {
+        index = this->addr46.in6.sin6_addr.s6_addr[15];
+        index ^= this->addr46.in6.sin6_addr.s6_addr[14] << 8;
+        index ^= this->addr46.in6.sin6_addr.s6_addr[13] << 16;
+        index ^= this->addr46.in6.sin6_addr.s6_addr[12] << 24;
+        index ^= this->addr46.in6.sin6_port;
+    } else
+#endif
+    {
+        index = this->addr46.ia.sin_addr.s_addr;
+        index ^= this->addr46.ia.sin_port;
+        index ^= this->addr46.ia.sin_port >> 8u;
+        index ^= this->pri;
+    }
     return integerHash ( caServerMinIndexBitWidth,
         caServerMaxIndexBitWidth, index );
 }
 
-inline osiSockAddr caServerID::address () const
+inline osiSockAddr46 caServerID::address () const
 {
-    osiSockAddr tmp;
-    tmp.ia = this->addr;
+    osiSockAddr46 tmp;
+    tmp = this->addr46;
     return tmp;
 }
 

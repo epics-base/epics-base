@@ -27,7 +27,7 @@ struct SearchDest :
         virtual ~Callback () {};
         virtual void notify (
             const caHdr & msg, const void * pPayload,
-            const osiSockAddr & addr, const epicsTime & ) = 0;
+            const osiSockAddr46 & addr46, const epicsTime & ) = 0;
         virtual void show (
             epicsGuard < epicsMutex > &, unsigned level ) const = 0;
     };

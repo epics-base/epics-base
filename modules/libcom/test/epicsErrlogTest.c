@@ -416,7 +416,7 @@ static void testLogPrefix(void) {
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(0);
 
-    status = bind (sock, (struct sockaddr *)&serverAddr,
+    status = epicsSocket46Bind (sock, (struct sockaddr *)&serverAddr,
                    sizeof (serverAddr) );
     if (status < 0) {
         testAbort("bind failed; all ports in use?");
@@ -479,13 +479,11 @@ static void testPrefixLogandCompare( const char* logmessage ) {
 
 static void acceptNewClient ( void *pParam )
 {
-    osiSocklen_t addrSize;
-    struct sockaddr_in addr;
+    osiSockAddr46 addr46;
     int status;
 
-    addrSize = sizeof ( addr );
-    insock = epicsSocketAccept ( sock, (struct sockaddr *)&addr, &addrSize );
-    testOk(insock != INVALID_SOCKET && addrSize >= sizeof (addr),
+    insock = epicsSocket46Accept ( sock, &addr46 );
+    testOk(insock != INVALID_SOCKET ,
         "Accepted new client");
 
     status = fdmgr_add_callback(pfdctx, insock, fdi_read,

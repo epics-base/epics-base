@@ -116,10 +116,10 @@ const char * netiiu::pHostName (
     return pHostNameNetIIU;
 }
 
-osiSockAddr netiiu::getNetworkAddress (
+osiSockAddr46 netiiu::getNetworkAddress (
     epicsGuard < epicsMutex > & ) const
 {
-    osiSockAddr addr;
+    osiSockAddr46 addr;
     addr.sa.sa_family = AF_UNSPEC;
     return addr;
 }

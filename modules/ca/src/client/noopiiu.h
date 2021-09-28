@@ -72,7 +72,7 @@ public:
         epicsGuard < epicsMutex > & );
     void requestRecvProcessPostponedFlush (
         epicsGuard < epicsMutex > & );
-    osiSockAddr getNetworkAddress (
+    osiSockAddr46 getNetworkAddress (
         epicsGuard < epicsMutex > & ) const;
     void uninstallChan (
         epicsGuard < epicsMutex > & mutex,

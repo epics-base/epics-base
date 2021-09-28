@@ -119,13 +119,10 @@ void cast_server(void *pParm)
     int                 status;
     int                 count=0;
     int                 mysocket=0;
-    struct sockaddr_in  new_recv_addr;
-    osiSocklen_t        recv_addr_size;
+    osiSockAddr46       new_recv_addr46;
     osiSockIoctl_t      nchars;
     SOCKET              recv_sock, reply_sock;
     struct client      *client;
-
-    recv_addr_size = sizeof(new_recv_addr);
 
     reply_sock = conf->udp;
 
@@ -164,13 +161,12 @@ void cast_server(void *pParm)
     epicsEventSignal(casudp_startStopEvent);
 
     while (TRUE) {
-        status = recvfrom (
+        status = epicsSocket46Recvfrom (
             recv_sock,
             client->recv.buf,
             client->recv.maxstk,
             0,
-            (struct sockaddr *)&new_recv_addr,
-            &recv_addr_size);
+            &new_recv_addr46);
         if (status < 0) {
             if (SOCKERRNO != SOCK_EINTR) {
                 char sockErrBuf[64];
@@ -183,9 +179,9 @@ void cast_server(void *pParm)
 
         } else {
             size_t idx;
-            for(idx=0; casIgnoreAddrs[idx]; idx++)
+            for(idx=0; casIgnoreAddrs46[idx].ia.sin_port; idx++)
             {
-                if(new_recv_addr.sin_addr.s_addr==casIgnoreAddrs[idx]) {
+                if (sockIPsAreIdentical46(&new_recv_addr46, &casIgnoreAddrs46[idx])) {
                     status = -1; /* ignore */
                     break;
                 }
@@ -206,24 +202,22 @@ void cast_server(void *pParm)
              * see if the next message is for this same client.
              */
             if (client->send.stk>sizeof(caHdr)) {
-                status = memcmp(&client->addr,
-                    &new_recv_addr, recv_addr_size);
-                if(status){
+                if (!(sockAddrAreIdentical46( &client->addr46, &new_recv_addr46))) {
                     /*
                      * if the address is different
                      */
                     cas_send_dg_msg(client);
-                    client->addr = new_recv_addr;
+                    client->addr46 = new_recv_addr46;
                 }
             }
             else {
-                client->addr = new_recv_addr;
+                client->addr46 = new_recv_addr46;
             }
 
             if (CASDEBUG>1) {
-                char    buf[40];
+                char    buf[64];
 
-                ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
+                sockAddrToDottedIP (&client->addr46.sa, buf, sizeof(buf));
                 errlogPrintf ("CAS: cast server msg of %d bytes from addr %s\n",
                     client->recv.cnt, buf);
             }
@@ -237,7 +231,7 @@ void cast_server(void *pParm)
                     client->recv.stk){
                     char buf[40];
 
-                    ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
+                    sockAddrToDottedIP (&client->addr46.sa, buf, sizeof(buf));
 
                     epicsPrintf ("CAS: partial (damaged?) UDP msg of %d bytes from %s ?\n",
                         client->recv.cnt - client->recv.stk, buf);
@@ -250,7 +244,7 @@ void cast_server(void *pParm)
             else if (CASDEBUG>0){
                 char buf[40];
 
-                ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
+                sockAddrToDottedIP (&client->addr46.sa, buf, sizeof(buf));
 
                 epicsPrintf ("CAS: invalid (damaged?) UDP request from %s ?\n", buf);
 

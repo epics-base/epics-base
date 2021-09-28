@@ -147,7 +147,7 @@ void camsgtask ( void *pParm )
             /*
              * disconnect when there are severe message errors
              */
-            ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
+            sockAddrToDottedIP (&client->addr46.sa, buf, sizeof(buf));
             epicsPrintf ("CAS: forcing disconnect from %s\n", buf);
                 break;
         }

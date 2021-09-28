@@ -21,34 +21,142 @@
 #include "errlog.h"
 #include "epicsThread.h"
 
-#ifdef DEBUG
+#ifdef NETDEBUG
 #   define ifDepenDebugPrintf(argsInParen) printf argsInParen
 #else
 #   define ifDepenDebugPrintf(argsInParen)
 #endif
 
-static osiSockAddr      osiLocalAddrResult;
+static osiSockAddr46     osiLocalAddrResult;
 static epicsThreadOnceId osiLocalAddrId = EPICS_THREAD_ONCE_INIT;
+
+
+
+static int matchMatchAddress(const osiSockAddr46 *pAddrToMatch46,
+                             const osiSockAddr46 *pAddr46)
+{
+    int match_ret = 0;
+#ifdef NETDEBUG
+    char buf1[64];
+    char buf2[64];
+    const static char* fname = "osiSockDiscoverBroadcastAddresses()";
+    epicsSocket46IpOnlyToDotted(&pAddrToMatch46->sa, buf1, sizeof(buf1));
+    epicsSocket46IpOnlyToDotted(&pAddr46->sa, buf2, sizeof(buf2));
+#endif
+    if ( ( pAddrToMatch46->sa.sa_family == AF_INET ) &&
+         ( pAddr46->sa.sa_family == AF_INET ) ) {
+        if ( pAddrToMatch46->ia.sin_addr.s_addr == htonl (INADDR_ANY) ) {
+            /* INADDR_ANY will match all interfaces/addresses */
+            match_ret = 1;
+        } else {
+            const struct sockaddr_in *pInetAddr = &pAddr46->ia;
+            if ( pInetAddr->sin_addr.s_addr == pAddrToMatch46->ia.sin_addr.s_addr ) {
+                match_ret = 1;
+            } else {
+                ifDepenDebugPrintf ( ("%s %s:%d: '%s did not match '%s'\n",
+                                      fname, __FILE__, __LINE__,
+                                      buf1, buf2) );
+            }
+        }
+    }
+#if EPICS_HAS_IPV6
+    else if ( ( pAddrToMatch46->sa.sa_family == AF_INET6 ) &&
+              ( pAddr46->sa.sa_family == AF_INET6 ) ) {
+        if ( !memcmp(&pAddrToMatch46->in6.sin6_addr, &in6addr_any, sizeof(in6addr_any)) ) {
+            /*
+             * in6addr_any will match all interfaces/addresses
+             * TODO, may be:  match scope_id */
+            match_ret = 1;
+        } else {
+            const struct sockaddr_in6 *pInetAddr6 = &pAddrToMatch46->in6;
+            if (memcmp(&pAddrToMatch46->in6.sin6_addr,
+                        &pInetAddr6->sin6_addr,
+                        sizeof(pInetAddr6->sin6_addr) ) ) {
+                match_ret = 1;
+            } else {
+                ifDepenDebugPrintf ( ("%s %s:%d: '%s did not match '%s'\n",
+                                      fname, __FILE__, __LINE__,
+                                      buf1, buf2 ) );
+            }
+        }
+    }
+#endif
+    return match_ret;
+}
+
+static int copyRemoteAddressOK(osiSockAddrNode *pNewNode,
+                               osiSockAddr46 *pRemoteAddr46,
+                               const char* broadOrDstName)
+{
+    char buf[64];
+    int ret_ok = 0;
+#ifdef NETDEBUG
+    const static char* fname = "osiSockDiscoverBroadcastAddresses()";
+#endif
+    if  ( ! pRemoteAddr46 ) {
+        snprintf ( buf, sizeof(buf), "%s", "<NULL>" );
+    } else if ( ( pRemoteAddr46->sa.sa_family == AF_INET ) &&
+                ( pRemoteAddr46->ia.sin_addr.s_addr != INADDR_ANY ) ) {
+        pNewNode->addr46.ia = pRemoteAddr46->ia; /* struct copy */
+        ret_ok = 1;
+    }
+#if EPICS_HAS_IPV6
+    else if ( ( pRemoteAddr46 ) && ( pRemoteAddr46->sa.sa_family == AF_INET6 ) ) {
+        pNewNode->addr46.in6 = pRemoteAddr46->in6;  /* struct copy */
+        ret_ok = 1;
+    }
+#endif
+#ifdef NETDEBUG
+    {
+        if (pRemoteAddr46) {
+            epicsSocket46IpOnlyToDotted(&pRemoteAddr46->sa, buf, sizeof(buf));
+        }
+        ifDepenDebugPrintf (("%s %s:%d:  %s='%s' ret_ok=%d\n",
+                             fname, __FILE__, __LINE__,
+                             broadOrDstName, buf, ret_ok));
+    }
+#endif
+    return ret_ok;
+}
+
 
 /*
  * osiSockDiscoverBroadcastAddresses ()
  */
+#ifdef NETDEBUG
+LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddressesFL
+     (const char* filename, int lineno,
+      ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
+#else
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
-     (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
+     (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
+#endif
 {
     osiSockAddrNode *pNewNode;
     struct ifaddrs *ifa;
+#ifdef NETDEBUG
+    const static char* fname = "osiSockDiscoverBroadcastAddresses()";
+#endif
+#ifdef NETDEBUG
+    {
+        char buf[64];
+        epicsSocket46IpOnlyToDotted(&pMatchAddr46->sa, buf, sizeof(buf));
+        ifDepenDebugPrintf (("%s %s:%d   enter(%lu) : pMatchAddr46= '%s'\n",
+                             fname, filename, lineno,
+                             (unsigned long)socket, buf));
+    }
+#endif
 
-    if ( pMatchAddr->sa.sa_family == AF_INET  ) {
-        if ( pMatchAddr->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
+    if ( pMatchAddr46->sa.sa_family == AF_INET  ) {
+        if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
             pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
             if ( pNewNode == NULL ) {
                 errlogPrintf ( "osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n" );
                 return;
             }
-            pNewNode->addr.ia.sin_family = AF_INET;
-            pNewNode->addr.ia.sin_port = htons ( 0 );
-            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            pNewNode->addr46.ia.sin_family = AF_INET;
+            pNewNode->addr46.ia.sin_port = htons ( 0 );
+            pNewNode->addr46.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
             ellAdd ( pList, &pNewNode->node );
             return;
         }
@@ -66,39 +174,72 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
               continue;
         }
 
-        ifDepenDebugPrintf (("osiSockDiscoverBroadcastAddresses(): found IFACE: %s\n",
-            ifa->ifa_name));
-
         /*
          * If its not an internet interface then don't use it
          */
-        if ( ifa->ifa_addr->sa_family != AF_INET ) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): interface \"%s\" was not AF_INET\n", ifa->ifa_name) );
+        if ( ! ( epicsSocket46IsAF_INETorAF_INET6 ( ifa->ifa_addr->sa_family ) ) ) {
+#if 0
+             ifDepenDebugPrintf ( ("%s %s:%d: interface \"%s\" was not AF_INET(6)\n",
+                                   fname, __FILE__, __LINE__,
+                                   ifa->ifa_name) );
+#endif
              continue;
         }
+        ifDepenDebugPrintf (("%s %s:%d: found IFACE: %s flags=0x%08x family=%d%s%s interfaceIndex=%u\n",
+                             fname, __FILE__, __LINE__,
+                             ifa->ifa_name, ifa->ifa_flags, ifa->ifa_addr->sa_family,
+                             ifa->ifa_addr->sa_family == AF_INET ? " (AF_INET)" : "",
+                             ifa->ifa_addr->sa_family == AF_INET6 ? " (AF_INET6)" : "",
+                             if_nametoindex (ifa->ifa_name)));
 
+#ifdef NETDEBUG
+        {
+            const struct sockaddr *pSockAddr = (struct sockaddr *) ifa->ifa_addr;
+            char buf[64];
+            epicsSocket46IpOnlyToDotted(pSockAddr, buf, sizeof(buf));
+            ifDepenDebugPrintf (("%s %s:%d: interface  \"%s\" has addr '%s'\n",
+                                 fname, __FILE__, __LINE__,
+                                 ifa->ifa_name, buf));
+        }
+#endif
         /*
          * if it isn't a wildcarded interface then look for
          * an exact match
          */
-        if ( pMatchAddr->sa.sa_family != AF_UNSPEC ) {
-            if ( pMatchAddr->sa.sa_family != AF_INET ) {
+        if ( pMatchAddr46->sa.sa_family != AF_UNSPEC ) {
+            osiSockAddr46 addr46;
+            int match_ok = 0;
+            memset(&addr46, 0, sizeof(addr46));
+            if (ifa->ifa_addr->sa_family == AF_INET) {
+                 struct sockaddr_in *pInetAddr = (struct sockaddr_in *) ifa->ifa_addr;
+                 addr46.ia = *pInetAddr;
+                 match_ok = matchMatchAddress(pMatchAddr46, &addr46);
+            }
+#if EPICS_HAS_IPV6
+            else if (ifa->ifa_addr->sa_family == AF_INET6) {
+                struct sockaddr_in6 *pInetAddr6 = (struct sockaddr_in6 *) ifa->ifa_addr;
+                addr46.in6 = *pInetAddr6;
+                /* TB: Need to verify, if this is OK */
+                addr46.in6.sin6_scope_id = if_nametoindex (ifa->ifa_name);
+                match_ok = matchMatchAddress(pMatchAddr46, &addr46);
+            }
+#endif
+            if (!match_ok) {
+                ifDepenDebugPrintf ( ("%s %s:%d: net intf \"%s\" did not match\n",
+                                      fname, __FILE__, __LINE__,
+                                      ifa->ifa_name) );
                 continue;
             }
-            if ( pMatchAddr->ia.sin_addr.s_addr != htonl (INADDR_ANY) ) {
-                 struct sockaddr_in *pInetAddr = (struct sockaddr_in *) ifa->ifa_addr;
-                 if ( pInetAddr->sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr ) {
-                     ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" didnt match\n", ifa->ifa_name) );
-                     continue;
-                 }
-            }
+
         }
 
         /*
          * don't bother with interfaces that have been disabled
          */
         if ( ! ( ifa->ifa_flags & IFF_UP ) ) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" was down\n", ifa->ifa_name) );
+             ifDepenDebugPrintf ( ("%s %s:%d: net intf \"%s\" was down\n",
+                                   fname, __FILE__, __LINE__,
+                                   ifa->ifa_name) );
              continue;
         }
 
@@ -106,7 +247,9 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
          * don't use the loop back interface
          */
         if ( ifa->ifa_flags & IFF_LOOPBACK ) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): ignoring loopback interface: \"%s\"\n", ifa->ifa_name) );
+             ifDepenDebugPrintf ( ("%s %s:%d: ignoring loopback interface: \"%s\"\n",
+                                   fname, __FILE__, __LINE__,
+                                   ifa->ifa_name) );
              continue;
         }
 
@@ -116,7 +259,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             freeifaddrs ( ifaddr );
             return;
         }
-
+        pNewNode->interfaceIndex = if_nametoindex (ifa->ifa_name);
         /*
          * If this is an interface that supports
          * broadcast use the broadcast address.
@@ -128,30 +271,70 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
          * interface.
          */
         if ( ifa->ifa_flags & IFF_BROADCAST ) {
-            osiSockAddr baddr;
-            baddr.sa = *ifa->ifa_broadaddr;
-            if (baddr.ia.sin_family==AF_INET && baddr.ia.sin_addr.s_addr != INADDR_ANY) {
-                pNewNode->addr.sa = *ifa->ifa_broadaddr;
-                ifDepenDebugPrintf ( ( "found broadcast addr = %08x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
-            } else {
-                ifDepenDebugPrintf ( ( "Ignoring broadcast addr = %08x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
-                free ( pNewNode );
-                continue;
+            if ( ifa->ifa_addr->sa_family == AF_INET )  {
+                osiSockAddr46 addrBroadcast46;
+                memset(&addrBroadcast46, 0, sizeof(addrBroadcast46));
+                 /* struct copy below */
+                addrBroadcast46.ia = *(struct sockaddr_in *)ifa->ifa_broadaddr;
+                addrBroadcast46.ia.sin_family = ifa->ifa_addr->sa_family;
+                if (!copyRemoteAddressOK(pNewNode,
+                                         &addrBroadcast46,
+                                         "broadcastaddr") ) {
+                  free ( pNewNode );
+                  pNewNode = NULL;
+                }
             }
+#if EPICS_HAS_IPV6
+            else if ( ifa->ifa_addr->sa_family == AF_INET6 )  {
+              /*
+               * IPv6 has no broadcast, even if IFF_BROADCAST is set
+               * we need to use multicast
+               */
+                osiSockAddr46 addrMulticast46;
+                if (epicsSocket46addr6toMulticastOK((osiSockAddr46 *)ifa->ifa_addr,
+                                                    &addrMulticast46)) {
+                    pNewNode->addr46 = addrMulticast46; /* struct copy */
+                    pNewNode->addr46.in6.sin6_scope_id = pNewNode->interfaceIndex;
+                    pNewNode->addr46.sa.sa_family = ifa->ifa_addr->sa_family;
+                } else {
+                  free ( pNewNode );
+                  pNewNode = NULL;
+                }
+            }
+#endif
         }
 #if defined (IFF_POINTOPOINT)
-        else if ( ifa->ifa_flags & IFF_POINTOPOINT ) {
-            pNewNode->addr.sa = *ifa->ifa_dstaddr;
+        else if ( ifa->ifa_flags & IFF_POINTOPOINT )  {
+          /*
+           * It is point-to-point, ifa->ifa_dstaddr is != NULL and
+           * the family is valid
+           */
+          if (!copyRemoteAddressOK(pNewNode,
+                                   (osiSockAddr46 *)ifa->ifa_dstaddr,
+                                   "POINTOPOINTdestaddr") ) {
+                free ( pNewNode );
+                pNewNode = NULL;
+            }
         }
 #endif
         else {
-            ifDepenDebugPrintf ( ( "osiSockDiscoverBroadcastAddresses(): net intf \"%s\": not point to point or bcast?\n", ifa->ifa_name ) );
             free ( pNewNode );
-            continue;
+            pNewNode = NULL;
         }
-
-        ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" found\n", ifa->ifa_name) );
-
+        if ( pNewNode == NULL ) {
+            ifDepenDebugPrintf ( ( "%s %s:%d: IFACE '%s': ignored, no point to point or bcast?\n",
+                                   fname, __FILE__, __LINE__,
+                                   ifa->ifa_name ) );
+            continue;
+        } else {
+            const struct sockaddr *pSockAddr = &pNewNode->addr46.sa;
+            char buf[64];
+            epicsSocket46IpOnlyToDotted(pSockAddr, buf, sizeof(buf));
+            ifDepenDebugPrintf (("%s %s:%d: IFACE '%s': added to list, family=%d interfaceIndex=%u addr='%s'\n",
+                                 fname, __FILE__, __LINE__,
+                                 ifa->ifa_name, ifa->ifa_addr->sa_family,
+                                 pNewNode->interfaceIndex, buf));
+        }
         /*
          * LOCK applied externally
          */
@@ -179,12 +362,8 @@ static void osiLocalAddrOnce (void *raw)
         }
 
         if ( ! ( ifa->ifa_flags & IFF_UP ) ) {
-            ifDepenDebugPrintf ( ("osiLocalAddrOnce(): net intf %s was down\n", ifa->ifa_name) );
-            continue;
-        }
-
-        if ( ifa->ifa_addr->sa_family != AF_INET ) {
-            ifDepenDebugPrintf ( ("osiLocalAddrOnce(): interface %s was not AF_INET\n", ifa->ifa_name) );
+            ifDepenDebugPrintf ( ("osiLocalAddrOnce(): net intf %s was down\n",
+                                  ifa->ifa_name) );
             continue;
         }
 
@@ -192,7 +371,14 @@ static void osiLocalAddrOnce (void *raw)
          * don't use the loop back interface
          */
         if ( ifa->ifa_flags & IFF_LOOPBACK ) {
-            ifDepenDebugPrintf ( ("osiLocalAddrOnce(): ignoring loopback interface: %s\n", ifa->ifa_name) );
+            ifDepenDebugPrintf ( ("osiLocalAddrOnce(): ignoring loopback interface: '%s' family=%d\n",
+                                  ifa->ifa_name, ifa->ifa_addr->sa_family) );
+            continue;
+        }
+
+        if ( ! ( epicsSocket46IsAF_INETorAF_INET6 ( ifa->ifa_addr->sa_family ) ) ) {
+            ifDepenDebugPrintf ( ("osiLocalAddrOnce(): interface \"%s\" was not AF_INET/AF_INET6 (%d/%d) but %d\n",
+                                  ifa->ifa_name, AF_INET, AF_INET6, ifa->ifa_addr->sa_family) );
             continue;
         }
 
@@ -206,7 +392,7 @@ static void osiLocalAddrOnce (void *raw)
     errlogPrintf (
         "osiLocalAddr(): only loopback found\n");
     /* fallback to loopback */
-    osiSockAddr addr;
+    osiSockAddr46 addr;
     memset ( (void *) &addr, '\0', sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -216,7 +402,7 @@ static void osiLocalAddrOnce (void *raw)
 }
 
 
-LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
+LIBCOM_API osiSockAddr46 epicsStdCall osiLocalAddr (SOCKET socket)
 {
     epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, &socket);
     return osiLocalAddrResult;

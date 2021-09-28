@@ -122,7 +122,7 @@ public:
     void transferChanToVirtCircuit (
         unsigned cid, unsigned sid,
         ca_uint16_t typeCode, arrayElementCount count,
-        unsigned minorVersionNumber, const osiSockAddr &,
+        unsigned minorVersionNumber, const osiSockAddr46 &,
         const epicsTime & currentTime );
     cacChannel & createChannel (
         epicsGuard < epicsMutex > & guard, const char * pChannelName,
@@ -172,7 +172,7 @@ public:
     void registerSearchDest (
         epicsGuard < epicsMutex > &, SearchDest & req );
     bool findOrCreateVirtCircuit (
-        epicsGuard < epicsMutex > &, const osiSockAddr &,
+        epicsGuard < epicsMutex > &, const osiSockAddr46 &,
         unsigned, tcpiiu *&, unsigned, SearchDestTCP * pSearchDest = NULL );
 
     // diagnostics

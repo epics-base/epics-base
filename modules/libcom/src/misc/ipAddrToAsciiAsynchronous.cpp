@@ -41,17 +41,17 @@ class ipAddrToAsciiTransactionPrivate :
 public:
     ipAddrToAsciiTransactionPrivate ( class ipAddrToAsciiEnginePrivate & engineIn );
     virtual ~ipAddrToAsciiTransactionPrivate ();
-    osiSockAddr address () const;
+    osiSockAddr46 address () const;
     void show ( unsigned level ) const;
     void * operator new ( size_t size, tsFreeList
         < ipAddrToAsciiTransactionPrivate, 0x80 > & );
     epicsPlacementDeleteOperator (( void *, tsFreeList
         < ipAddrToAsciiTransactionPrivate, 0x80 > & ))
-    osiSockAddr addr;
+    osiSockAddr46 addr;
     ipAddrToAsciiEnginePrivate & engine;
     ipAddrToAsciiCallBack * pCB;
     bool pending;
-    void ipAddrToAscii ( const osiSockAddr &, ipAddrToAsciiCallBack & );
+    void ipAddrToAscii ( const osiSockAddr46 &, ipAddrToAsciiCallBack & );
     void release ();
     void operator delete ( void * );
 private:
@@ -308,7 +308,7 @@ void ipAddrToAsciiGlobal::run ()
             if ( ! pItem ) {
                 break;
             }
-            osiSockAddr addr = pItem->addr;
+            osiSockAddr46 addr = pItem->addr;
             this->pCurrent = pItem;
 
             if ( this->exitFlag )
@@ -418,7 +418,7 @@ ipAddrToAsciiTransactionPrivate::~ipAddrToAsciiTransactionPrivate ()
 }
 
 void ipAddrToAsciiTransactionPrivate::ipAddrToAscii (
-    const osiSockAddr & addrIn, ipAddrToAsciiCallBack & cbIn )
+    const osiSockAddr46 & addrIn, ipAddrToAsciiCallBack & cbIn )
 {
     bool success;
     ipAddrToAsciiGlobal *pGlobal = this->engine.pEngine;
@@ -454,7 +454,7 @@ void ipAddrToAsciiTransactionPrivate::ipAddrToAscii (
     }
 }
 
-osiSockAddr ipAddrToAsciiTransactionPrivate::address () const
+osiSockAddr46 ipAddrToAsciiTransactionPrivate::address () const
 {
     return this->addr;
 }

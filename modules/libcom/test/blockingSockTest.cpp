@@ -167,7 +167,7 @@ server::server ( const address & addrIn ) :
 
     // setup server side
     osiSocklen_t slen = sizeof ( this->srvaddr );
-    int status = bind ( this->sock, & this->srvaddr.sa, slen );
+    int status = epicsSocket46Bind ( this->sock, & this->srvaddr.sa, slen );
     if ( status ) {
         testDiag ( "bind to server socket failed, status = %d", status );
     }

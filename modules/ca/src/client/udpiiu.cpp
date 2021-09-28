@@ -40,6 +40,7 @@
 #include "inetAddrID.h"
 #include "cac.h"
 #include "disconnectGovernorTimer.h"
+#include "osiSock.h" // EPICS_HAS_IPV6 and NETDEBUG
 
 // UDP protocol dispatch table
 const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
@@ -168,7 +169,8 @@ udpiiu::udpiiu (
         envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT,
                                     static_cast <unsigned short> (CA_REPEATER_PORT) );
 
-    this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    this->sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(),
+                                     SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
@@ -186,7 +188,7 @@ udpiiu::udpiiu (
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAC: failed to set mcast loopback\n");
+            errlogPrintf("CAC: failed to set mcast loopback sock=%ld\n", (long)this->sock);
         }
     }
 #endif
@@ -202,7 +204,7 @@ udpiiu::udpiiu (
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAC: failed to set mcast ttl %d\n", ttl);
+            errlogPrintf("CAC: failed to set mcast ttl %d sock=%ld\n", ttl, (long)this->sock);
         }
     }
 #endif
@@ -241,12 +243,22 @@ udpiiu::udpiiu (
     // force a bind to an unconstrained address so we can obtain
     // the local port number below
     static const unsigned short PORT_ANY = 0u;
-    osiSockAddr addr;
-    memset ( (char *)&addr, 0 , sizeof (addr) );
-    addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-    addr.ia.sin_port = htons ( PORT_ANY );
-    status = bind (this->sock, &addr.sa, sizeof (addr) );
+    osiSockAddr46 addr46;
+    int addressFamily = epicsSocket46GetDefaultAddressFamily();
+    memset ( (char *)&addr46, 0 , sizeof (addr46) );
+    addr46.sa.sa_family = addressFamily;
+#if EPICS_HAS_IPV6
+    if ( addressFamily == AF_INET6 ) {
+        addr46.in6.sin6_addr = in6addr_any;
+        addr46.in6.sin6_port = htons ( PORT_ANY );
+    }
+    else
+#endif
+    {
+        addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+        addr46.ia.sin_port = htons ( PORT_ANY );
+    }
+    status = epicsSocket46Bind (this->sock, &addr46.sa, sizeof (addr46) );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
@@ -258,7 +270,7 @@ udpiiu::udpiiu (
     }
 
     {
-        osiSockAddr tmpAddr;
+        osiSockAddr46 tmpAddr;
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         status = getsockname ( this->sock, &tmpAddr.sa, &saddr_length );
         if ( status < 0 ) {
@@ -269,7 +281,7 @@ udpiiu::udpiiu (
             errlogPrintf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
-        if ( tmpAddr.sa.sa_family != AF_INET) {
+        if ( ! epicsSocket46IsAF_INETorAF_INET6 ( tmpAddr.sa.sa_family ) ) {
             epicsSocketDestroy ( this->sock );
             errlogPrintf ( "CAC: UDP socket was not inet addr family\n" );
             throwWithLocation ( noSocket () );
@@ -286,10 +298,31 @@ udpiiu::udpiiu (
     configureChannelAccessAddressList ( & dest, this->sock, this->serverPort );
     while ( osiSockAddrNode *
         pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
-        SearchDestUDP & searchDest = *
-            new SearchDestUDP ( pNode->addr, *this );
-        _searchDestList.add ( searchDest );
-        free ( pNode );
+#ifdef NETDEBUG
+      {
+          char buf[64];
+          sockAddrToDottedIP(&pNode->addr46.sa, buf, sizeof(buf));
+          epicsPrintf("%s:%d:udpiiu::udpiiu  address='%s'\n",
+                      __FILE__, __LINE__,
+                     buf);
+      }
+#endif
+#if EPICS_HAS_IPV6
+      if (pNode->addr46.sa.sa_family == AF_INET6)
+      {
+           /*
+            * The user must specify the interface like this:
+            * export EPICS_CA_ADDR_LIST='[fe80::3958:418:65b8:230c%en0]'
+            * The %en0 will become the scope id, which IPV6_MULTICAST_IF needs
+            */
+           unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
+           epicsSocket46optIPv6MultiCast(this->sock, interfaceIndex);
+      }
+#endif
+      SearchDestUDP & searchDest = *
+        new SearchDestUDP ( pNode->addr46, *this );
+      _searchDestList.add ( searchDest );
+      free ( pNode );
     }
 
     /* add list of tcp name service addresses */
@@ -404,11 +437,10 @@ void udpRecvThread::run ()
     }
 
     do {
-        osiSockAddr src;
-        osiSocklen_t src_size = sizeof ( src );
-        int status = recvfrom ( this->iiu.sock,
+        osiSockAddr46 src;
+        int status = epicsSocket46Recvfrom ( this->iiu.sock,
             this->iiu.recvBuf, sizeof ( this->iiu.recvBuf ), 0,
-            & src.sa, & src_size );
+            & src);
 
         if ( status <= 0 ) {
 
@@ -465,7 +497,7 @@ void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned a
 void epicsStdCall caRepeaterRegistrationMessage ( 
            SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
 {
-    osiSockAddr saddr;
+    osiSockAddr46 saddr46;
     caHdr msg;
     int status;
     int len;
@@ -492,31 +524,31 @@ void epicsStdCall caRepeaterRegistrationMessage (
      * by local address (the first non-loopback address found)
      */
     if ( attemptNumber & 1 ) {
-        saddr = osiLocalAddr ( sock );
-        if ( saddr.sa.sa_family != AF_INET ) {
+        saddr46 = osiLocalAddr ( sock );
+        if ( saddr46.sa.sa_family != AF_INET ) {
             /*
              * use the loop back address to communicate with the CA repeater
              * if this os does not have interface query capabilities
              *
              * this will only work with 3.13 beta 12 CA repeaters or later
              */
-            saddr.ia.sin_family = AF_INET;
-            saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-            saddr.ia.sin_port = htons ( port );
+            saddr46.ia.sin_family = AF_INET;
+            saddr46.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+            saddr46.ia.sin_port = htons ( port );
         }
         else {
-            saddr.ia.sin_port = htons ( port );
+            saddr46.ia.sin_port = htons ( port );
         }
     }
     else {
-        saddr.ia.sin_family = AF_INET;
-        saddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-        saddr.ia.sin_port = htons ( port );
+        saddr46.ia.sin_family = AF_INET;
+        saddr46.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+        saddr46.ia.sin_port = htons ( port );
     }
 
     memset ( (char *) &msg, 0, sizeof (msg) );
     AlignedWireRef < epicsUInt16 > ( msg.m_cmmd ) = REPEATER_REGISTER;
-    msg.m_available = saddr.ia.sin_addr.s_addr;
+    msg.m_available = saddr46.ia.sin_addr.s_addr;
 
     /*
      * Intentionally sending a zero length message here
@@ -531,8 +563,8 @@ void epicsStdCall caRepeaterRegistrationMessage (
         len = 0;
 #   endif
 
-    status = sendto ( sock, (char *) &msg, len, 0,
-                      &saddr.sa, sizeof ( saddr ) );
+    status = epicsSocket46Sendto ( sock, (char *) &msg, len, 0,
+                                   &saddr46 );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
         /*
@@ -584,24 +616,27 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     bool installed = false;
     int status;
     SOCKET tmpSock;
-    union {
-        struct sockaddr_in ia;
-        struct sockaddr sa;
-    } bd;
+    osiSockAddr46 addr46;
 
     if ( repeaterPort > 0xffff ) {
         fprintf ( stderr, "caStartRepeaterIfNotInstalled () : strange repeater port specified\n" );
         return;
     }
 
-    tmpSock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    tmpSock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, IPPROTO_UDP );
     if ( tmpSock != INVALID_SOCKET ) {
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
-        memset ( (char *) &bd, 0, sizeof ( bd ) );
-        bd.ia.sin_family = AF_INET;
-        bd.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        bd.ia.sin_port = htons ( port );
-        status = bind ( tmpSock, &bd.sa, sizeof ( bd ) );
+        memset ( (char *)&addr46, 0 , sizeof (addr46) );
+#if EPICS_HAS_IPV6
+        addr46.in6.sin6_family = AF_INET6;
+        addr46.in6.sin6_addr = in6addr_any;
+        addr46.in6.sin6_port = htons ( port );
+#else
+        addr46.ia.sin_family = AF_INET;
+        addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+        addr46.ia.sin_port = htons ( port );
+#endif
+        status = epicsSocket46Bind ( tmpSock, &addr46.sa, sizeof ( addr46 ) );
         if ( status < 0 ) {
             if ( SOCKERRNO == SOCK_EADDRINUSE ) {
                 installed = true;
@@ -643,7 +678,7 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
 }
 
 bool udpiiu::badUDPRespAction (
-    const caHdr &msg, const osiSockAddr &netAddr, const epicsTime &currentTime )
+    const caHdr &msg, const osiSockAddr46 &netAddr, const epicsTime &currentTime )
 {
     char buf[64];
     sockAddrToDottedIP ( &netAddr.sa, buf, sizeof ( buf ) );
@@ -655,7 +690,7 @@ bool udpiiu::badUDPRespAction (
 }
 
 bool udpiiu::versionAction (
-    const caHdr & hdr, const osiSockAddr &, const epicsTime & /* currentTime */ )
+    const caHdr & hdr, const osiSockAddr46 &, const epicsTime & /* currentTime */ )
 {
     epicsGuard < epicsMutex > guard ( this->cacMutex );
 
@@ -669,14 +704,22 @@ bool udpiiu::versionAction (
 }
 
 bool udpiiu :: searchRespAction (
-    const caHdr & msg, const osiSockAddr & addr,
+    const caHdr & msg, const osiSockAddr46 & addr,
     const epicsTime & currentTime )
 {
     /*
      * we don't currently know what to do with channel's
      * found to be at non-IP type addresses
      */
-    if ( addr.sa.sa_family != AF_INET ) {
+#ifdef NETDEBUG
+    {
+        char buf[64];
+        sockAddrToDottedIP(&addr.sa, buf, sizeof(buf));
+        epicsPrintf ("%s:%d: CAC: udpiiu::searchRespAction recvfromAddr='%s'\n",
+                     __FILE__, __LINE__, buf );
+    }
+#endif
+    if ( ! ( epicsSocket46IsAF_INETorAF_INET6(addr.sa.sa_family ) ) ) {
         return true;
     }
 
@@ -705,26 +748,34 @@ bool udpiiu :: searchRespAction (
      * the type field is abused to carry the port number
      * so that we can have multiple servers on one host
      */
-    osiSockAddr serverAddr;
-    serverAddr.ia.sin_family = AF_INET;
-    if ( CA_V48 ( minorVersion ) ) {
-        if ( msg.m_cid != INADDR_BROADCAST ) {
-            serverAddr.ia.sin_addr.s_addr = htonl ( msg.m_cid );
+    osiSockAddr46 serverAddr = addr; /* struct assigment */
+    if (serverAddr.ia.sin_family == AF_INET) {
+        if ( CA_V48 ( minorVersion ) ) {
+            if ( msg.m_cid != INADDR_BROADCAST ) {
+                serverAddr.ia.sin_addr.s_addr = htonl ( msg.m_cid );
+            }
+            else {
+                serverAddr.ia.sin_addr = addr.ia.sin_addr;
+            }
+            serverAddr.ia.sin_port = htons ( msg.m_dataType );
         }
-        else {
+        else if ( CA_V45 (minorVersion) ) {
+            serverAddr.ia.sin_port = htons ( msg.m_dataType );
             serverAddr.ia.sin_addr = addr.ia.sin_addr;
         }
-        serverAddr.ia.sin_port = htons ( msg.m_dataType );
+        else {
+            serverAddr.ia.sin_port = htons ( this->serverPort );
+            serverAddr.ia.sin_addr = addr.ia.sin_addr;
+        }
     }
-    else if ( CA_V45 (minorVersion) ) {
-        serverAddr.ia.sin_port = htons ( msg.m_dataType );
-        serverAddr.ia.sin_addr = addr.ia.sin_addr;
+#ifdef NETDEBUG
+    {
+        char buf[64];
+        sockAddrToDottedIP(&serverAddr.sa, buf, sizeof(buf));
+        epicsPrintf ("%s:%d: CAC: udpiiu::searchRespAction myserverAddr='%s'\n",
+                     __FILE__, __LINE__, buf );
     }
-    else {
-        serverAddr.ia.sin_port = htons ( this->serverPort );
-        serverAddr.ia.sin_addr = addr.ia.sin_addr;
-    }
-
+#endif
     if ( CA_V42 ( minorVersion ) ) {
        cacRef.transferChanToVirtCircuit
             ( msg.m_available, msg.m_cid, 0xffff,
@@ -741,13 +792,19 @@ bool udpiiu :: searchRespAction (
 
 bool udpiiu::beaconAction (
     const caHdr & msg,
-    const osiSockAddr & net_addr, const epicsTime & currentTime )
+    const osiSockAddr46 & net_addr, const epicsTime & currentTime )
 {
-    struct sockaddr_in ina;
+    osiSockAddr46 addr46;
 
-    memset(&ina, 0, sizeof(struct sockaddr_in));
-
-    if ( net_addr.sa.sa_family != AF_INET ) {
+    memset(&addr46, 0, sizeof(addr46));
+    {
+        char buf[64];
+        sockAddrToDottedIP(&net_addr.sa, buf, sizeof(buf));
+        errlogPrintf("%s:%d: udpiiu::beaconAction addr='%s'\n",
+                     __FILE__, __LINE__,
+                     buf);
+    }
+    if ( ! ( epicsSocket46IsAF_INETorAF_INET6 ( net_addr.sa.sa_family ) ) ) {
         return false;
     }
 
@@ -765,30 +822,30 @@ bool udpiiu::beaconAction (
      * field is set to something that isn't INADDR_ANY
      * then it is the overriding IP address of the server.
      */
-    ina.sin_family = AF_INET;
-    ina.sin_addr.s_addr = htonl ( msg.m_available );
+    addr46.ia.sin_family = AF_INET;
+    addr46.ia.sin_addr.s_addr = htonl ( msg.m_available );
     if ( msg.m_count != 0 ) {
-        ina.sin_port = htons ( msg.m_count );
+        addr46.ia.sin_port = htons ( msg.m_count );
     }
     else {
         /*
          * old servers don't supply this and the
          * default port must be assumed
          */
-        ina.sin_port = htons ( this->serverPort );
+        addr46.ia.sin_port = htons ( this->serverPort );
     }
     unsigned protocolRevision = msg.m_dataType;
     ca_uint32_t beaconNumber = msg.m_cid;
 
-    this->cacRef.beaconNotify ( ina, currentTime,
-        beaconNumber, protocolRevision );
+    this->cacRef.beaconNotify ( addr46, currentTime,
+                                beaconNumber, protocolRevision );
 
     return true;
 }
 
 bool udpiiu::repeaterAckAction (
     const caHdr &,
-    const osiSockAddr &, const epicsTime &)
+    const osiSockAddr46 &, const epicsTime &)
 {
     this->repeaterSubscribeTmr.confirmNotify ();
     return true;
@@ -796,14 +853,14 @@ bool udpiiu::repeaterAckAction (
 
 bool udpiiu::notHereRespAction (
     const caHdr &,
-        const osiSockAddr &, const epicsTime & )
+        const osiSockAddr46 &, const epicsTime & )
 {
     return true;
 }
 
 bool udpiiu::exceptionRespAction (
     const caHdr &msg,
-    const osiSockAddr & net_addr, const epicsTime & currentTime )
+    const osiSockAddr46 & net_addr, const epicsTime & currentTime )
 {
     const caHdr &reqMsg = * ( &msg + 1 );
     char name[64];
@@ -827,7 +884,7 @@ bool udpiiu::exceptionRespAction (
 }
 
 void udpiiu::postMsg (
-              const osiSockAddr & net_addr,
+              const osiSockAddr46 & net_addr,
               char * pInBuf, arrayElementCount blockSize,
               const epicsTime & currentTime )
 {
@@ -860,13 +917,12 @@ void udpiiu::postMsg (
         pCurMsg->m_available = AlignedWireRef < epicsUInt32 > ( pCurMsg->m_available );
         pCurMsg->m_cid = AlignedWireRef < epicsUInt32 > ( pCurMsg->m_cid );
 
-#if 0
-        printf ( "UDP Cmd=%3d Type=%3d Count=%4d Size=%4d",
+#ifdef NETDEBUG
+        printf ( "UDP Cmd=%03d Type=%04d Count=%04d Size=%04d Avail=0x%08x Cid=%06d\n",
             pCurMsg->m_cmmd,
             pCurMsg->m_dataType,
             pCurMsg->m_count,
-            pCurMsg->m_postsize );
-        printf (" Avail=%8x Cid=%6d\n",
+            pCurMsg->m_postsize,
             pCurMsg->m_available,
             pCurMsg->m_cid );
 #endif
@@ -957,7 +1013,7 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
 }
 
 udpiiu :: SearchDestUDP :: SearchDestUDP (
-    const osiSockAddr & destAddr, udpiiu & udpiiuIn ) :
+    const osiSockAddr46 & destAddr, udpiiu & udpiiuIn ) :
     _lastError (0u), _destAddr ( destAddr ), _udpiiu ( udpiiuIn )
 {
 }
@@ -970,8 +1026,8 @@ void udpiiu :: SearchDestUDP :: searchRequest (
     int bufSizeAsInt = static_cast < int > ( bufSize );
     while ( true ) {
         // This const_cast is needed for vxWorks:
-        int status = sendto ( _udpiiu.sock, const_cast<char *>(pBuf), bufSizeAsInt, 0,
-                & _destAddr.sa, sizeof ( _destAddr.sa ) );
+        int status = epicsSocket46Sendto ( _udpiiu.sock, const_cast<char *>(pBuf), bufSizeAsInt, 0,
+                                           & _destAddr );
         if ( status == bufSizeAsInt ) {
             if ( _lastError ) {
                 char buf[64];
@@ -1041,7 +1097,7 @@ udpiiu :: SearchRespCallback :: SearchRespCallback ( udpiiu & udpiiuIn ) :
 
 void udpiiu :: SearchRespCallback :: notify (
     const caHdr & msg, const void * pPayloadUntyped,
-        const osiSockAddr & addr, const epicsTime & currentTime )
+        const osiSockAddr46 & addr, const epicsTime & currentTime )
 {
     /*
      * we don't currently know what to do with channel's
@@ -1075,7 +1131,7 @@ void udpiiu :: SearchRespCallback :: notify (
      * the type field is abused to carry the port number
      * so that we can have multiple servers on one host
      */
-    osiSockAddr serverAddr;
+    osiSockAddr46 serverAddr;
     serverAddr.ia.sin_family = AF_INET;
     if ( CA_V48 ( minorVersion ) ) {
         if ( msg.m_cid != INADDR_BROADCAST ) {
@@ -1184,15 +1240,26 @@ bool udpiiu::wakeupMsg ()
     AlignedWireRef < epicsUInt32 > ( msg.m_cid ) = 0u;
     AlignedWireRef < epicsUInt16 > ( msg.m_postsize ) = 0u;
 
-    osiSockAddr addr;
-    addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-    addr.ia.sin_port = htons ( this->localPort );
-
-    // send a wakeup msg so the UDP recv thread will exit
-    int status = sendto ( this->sock, reinterpret_cast < char * > ( &msg ),
-            sizeof (msg), 0, &addr.sa, sizeof ( addr.sa ) );
-    return status == sizeof (msg);
+    osiSockAddr46 addr46;
+    int defaultFamily = epicsSocket46GetDefaultAddressFamily();
+    int status;
+    int flags = 0;
+    if ( defaultFamily == AF_INET ) {
+      flags |= EPICSSOCKET_CONNECT_IPV4;
+    }
+#if EPICS_HAS_IPV6
+    else if ( defaultFamily == AF_INET6 ) {
+      flags |= EPICSSOCKET_CONNECT_IPV6;
+    }
+#endif
+    status = aToIPAddr46("localhost", this->localPort, &addr46, flags);
+    if ( ! status) {
+      // send a wakeup msg so the UDP recv thread will exit
+      status = epicsSocket46Sendto ( this->sock, reinterpret_cast < char * > ( &msg ),
+                                     sizeof (msg), 0, &addr46 );
+      return status == sizeof (msg);
+    }
+    return false;
 }
 
 void udpiiu::beaconAnomalyNotify (
@@ -1430,7 +1497,7 @@ void udpiiu::requestRecvProcessPostponedFlush (
     netiiu::requestRecvProcessPostponedFlush ( guard );
 }
 
-osiSockAddr udpiiu::getNetworkAddress (
+osiSockAddr46 udpiiu::getNetworkAddress (
     epicsGuard < epicsMutex > & guard ) const
 {
     return netiiu::getNetworkAddress ( guard );

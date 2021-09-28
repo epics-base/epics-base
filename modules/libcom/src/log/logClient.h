@@ -28,8 +28,8 @@ extern "C" {
 #endif
 
 typedef void *logClientId;
-LIBCOM_API logClientId epicsStdCall logClientCreate (
-    struct in_addr server_addr, unsigned short server_port);
+LIBCOM_API logClientId epicsStdCall logClientCreate46 (
+    osiSockAddr46 *pAddr46, unsigned short server_port);
 LIBCOM_API void epicsStdCall logClientSend (logClientId id, const char *message);
 LIBCOM_API void epicsStdCall logClientShow (logClientId id, unsigned level);
 LIBCOM_API void epicsStdCall logClientFlush (logClientId id);

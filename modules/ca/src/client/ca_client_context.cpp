@@ -87,7 +87,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         }
     }
 
-    this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    this->sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -116,12 +116,22 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     // force a bind to an unconstrained address so we can obtain
     // the local port number below
     {
-        osiSockAddr addr;
-        memset ( (char *)&addr, 0 , sizeof ( addr ) );
-        addr.ia.sin_family = AF_INET;
-        addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        addr.ia.sin_port = htons ( PORT_ANY );
-        int status = bind (this->sock, &addr.sa, sizeof (addr) );
+        osiSockAddr46 addr46;
+        memset ( (char *)&addr46, 0 , sizeof ( addr46 ) );
+        addr46.sa.sa_family = epicsSocket46GetDefaultAddressFamily();
+#if EPICS_HAS_IPV6
+        if ( addr46.sa.sa_family  == AF_INET6 ) {
+            addr46.in6.sin6_addr = in6addr_any;
+            addr46.in6.sin6_port = htons ( PORT_ANY );
+        }
+        else
+#endif
+        {
+            addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+            addr46.ia.sin_port = htons ( PORT_ANY );
+        }
+
+        int status = epicsSocket46Bind (this->sock, &addr46.sa, sizeof (addr46) );
         if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -135,9 +145,9 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     }
 
     {
-        osiSockAddr tmpAddr;
-        osiSocklen_t saddr_length = sizeof ( tmpAddr );
-        int status = getsockname ( this->sock, & tmpAddr.sa, & saddr_length );
+        osiSockAddr46 tmpAddr46;
+        osiSocklen_t saddr_length = sizeof ( tmpAddr46 );
+        int status = getsockname ( this->sock, & tmpAddr46.sa, & saddr_length );
         if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -145,12 +155,13 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
             this->printFormated ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
-        if ( tmpAddr.sa.sa_family != AF_INET) {
+        if ( ! epicsSocket46IsAF_INETorAF_INET6 ( tmpAddr46.sa.sa_family ) ) {
             epicsSocketDestroy ( this->sock );
-            this->printFormated ( "CAC: UDP socket was not inet addr family\n" );
+            this->printFormated ( "CAC: UDP socket was not inet addr family=%d\n",
+                                  tmpAddr46.sa.sa_family);
             throwWithLocation ( noSocket () );
         }
-        this->localPort = htons ( tmpAddr.ia.sin_port );
+        this->localPort = epicsSocket46portFromAddress ( &tmpAddr46 ) ;
     }
 
     ca::auto_ptr < CallbackGuard > pCBGuard;
@@ -547,13 +558,12 @@ int ca_client_context::pendEvent ( const double & timeout )
 
             // remove short udp message sent to wake
             // up a file descriptor manager
-            osiSockAddr tmpAddr;
-            osiSocklen_t addrSize = sizeof ( tmpAddr.sa );
+            osiSockAddr46 tmpAddr46;
             char buf = 0;
             int status = 0;
             do {
-                status = recvfrom ( this->sock, & buf, sizeof ( buf ),
-                        0, & tmpAddr.sa, & addrSize );
+                status = epicsSocket46Recvfrom ( this->sock, & buf, sizeof ( buf ),
+                                                 0, & tmpAddr46 );
             } while ( status > 0 );
         }
         while ( this->callbackThreadsPending > 0 ) {
@@ -621,13 +631,24 @@ void ca_client_context :: _sendWakeupMsg ()
 {
     // send short udp message to wake up a file descriptor manager
     // when a message arrives
-    osiSockAddr tmpAddr;
-    tmpAddr.ia.sin_family = AF_INET;
-    tmpAddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-    tmpAddr.ia.sin_port = htons ( this->localPort );
+    osiSockAddr46 addr46;
+    int defaultFamily = epicsSocket46GetDefaultAddressFamily();
+    int status;
+    int flags = 0;
     char buf = 0;
-    sendto ( this->sock, & buf, sizeof ( buf ),
-            0, & tmpAddr.sa, sizeof ( tmpAddr.sa ) );
+    if ( defaultFamily == AF_INET ) {
+      flags |= EPICSSOCKET_CONNECT_IPV4;
+    }
+#if EPICS_HAS_IPV6
+    else if ( defaultFamily == AF_INET6 ) {
+      flags |= EPICSSOCKET_CONNECT_IPV6;
+    }
+#endif
+    status = aToIPAddr46("localhost", this->localPort, &addr46, flags);
+    if ( ! status) {
+      epicsSocket46Sendto ( this->sock, & buf, sizeof ( buf ),
+                            0, & addr46 );
+    }
 }
 
 void ca_client_context::callbackProcessingCompleteNotify ()

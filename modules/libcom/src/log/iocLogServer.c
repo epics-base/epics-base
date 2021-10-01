@@ -681,12 +681,6 @@ static void freeLogClient(struct iocLogClient     *pclient)
 {
     int     status;
 
-#   ifdef   DEBUG
-    if(length == 0){
-        fprintf(stderr, "iocLogServer: nil message disconnect\n");
-    }
-#   endif
-
     /*
      * flush any left overs
      */

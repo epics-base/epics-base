@@ -1245,8 +1245,8 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
         return RSRV_OK;
     }
 
-    DLOG ( 2, ("CAS: claim_ciu_action found '%s', count %ld\n",
-        pName, dbChannelElements(dbch)) );
+    DLOG ( 2, ("CAS: claim_ciu_action found '%s', type %d, count %ld\n",
+        pName, dbChannelExportCAType(dbch), dbChannelElements(dbch)) );
 
     pciu = casCreateChannel (
             client,

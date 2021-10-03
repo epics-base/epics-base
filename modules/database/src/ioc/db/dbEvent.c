@@ -886,6 +886,8 @@ unsigned int    caEventMask
         if ( (dbChannelField(pevent->chan) == (void *)pField || pField==NULL) &&
             (caEventMask & pevent->select)) {
             db_field_log *pLog = db_create_event_log(pevent);
+            if(pLog)
+                pLog->mask = caEventMask & pevent->select;
             pLog = dbChannelRunPreChain(pevent->chan, pLog);
             if (pLog) db_queue_event_log(pevent, pLog);
         }

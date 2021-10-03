@@ -139,7 +139,24 @@ static long init_record(struct dbCommon *pcommon, int pass)
             status = 0;
     }
 
-    bitsFromVAL(prec);
+    if (!prec->udf)
+        bitsFromVAL(prec);
+    else {
+        /* Did user set any of the B0-B1F fields? */
+        epicsUInt8 *pBn = &prec->b0;
+        epicsUInt32 val = 0, bit = 1;
+        int i;
+
+        for (i = 0; i < NUM_BITS; i++, bit <<= 1)
+            if (*pBn++)
+                val |= bit;
+
+        if (val) {  /* Yes! */
+            prec->val = val;
+            prec->udf = FALSE;
+        }
+    }
+
     prec->mlst = prec->val;
     prec->oraw = prec->rval;
     prec->orbv = prec->rbv;

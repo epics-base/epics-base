@@ -255,7 +255,6 @@ static long special(DBADDR *paddr, int after)
         /* Adjust VAL corresponding to the bit changed */
         epicsUInt8 *pBn = (epicsUInt8 *) paddr->pfield;
         epicsUInt32 bit = 1 << (pBn - &prec->b0);
-        epicsUInt32 oobit = prec->obit;
 
         /* Because this is !(VAL and PP), dbPut() will always post a monitor on this B* field
          * after we return.  We must keep track of this change separately from MLST to handle
@@ -270,12 +269,9 @@ static long special(DBADDR *paddr, int after)
             prec->val &= ~bit;
             prec->obit &= ~bit;
         }
-        if(oobit!=prec->obit)
-            db_post_events(prec, &prec->obit, DBE_VALUE|DBE_LOG);
 
         prec->udf = FALSE;
         convert(prec);
-
     }
 
     return 0;
@@ -298,7 +294,6 @@ static void monitor(mbboDirectRecord *prec)
     if (prec->mlst != prec->val) {
         events |= DBE_VALUE | DBE_LOG;
         prec->mlst = prec->val;
-        db_post_events(prec, &prec->mlst, events);
     }
     if (events) {
         db_post_events(prec, &prec->val, events);
@@ -314,7 +309,6 @@ static void monitor(mbboDirectRecord *prec)
             }
         }
         prec->obit = prec->val;
-        db_post_events(prec, &prec->obit, events);
     }
 
     events |= DBE_VALUE | DBE_LOG;

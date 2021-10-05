@@ -9,11 +9,14 @@
 
 =title Multi-Bit Binary Output Direct Record (mbboDirect)
 
-The mbboDirect record performs the opposite function to that of the mbbiDirect
-record. It accumulates bits (in the fields B0 - BF) as unsigned characters, and
-converts them to a word which is then written out to hardware. If a bit field is
-non-zero, it is interpreted as a binary 1. On the other hand, if it is zero, it
-is interpreted as a binary 0.
+The mbboDirect record performs roughly the opposite function to that of the
+L<mbbiDirect record|mbbiDirectRecord>.
+
+It can accept boolean values in its 32 bit fields (B0-B9, BA-BF, B10-B19 and
+B1A-B1F), and converts them to a 32-bit signed integer in VAL which is provided
+to the device support. A zero value in a bit field becomes a zero bit in VAL, a
+non-zero value in a bit field becomes a one bit in VAL, with B0 being the least
+signficant bit and B1F the MSB/sign bit.
 
 =recordtype mbboDirect
 
@@ -33,23 +36,50 @@ These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Desired Output Parameters
 
-The mbboDirect record, like all output records, must specify where its output
-originates. The output mode select field (OMSL) determines whether the output
-originates from another record or from database access. When set to C<<<
-closed_loop >>>, the desired output is retrieved from the link specified in the
-desired output (DOL) field--which can specify either a database or channel
-access link--and placed into the VAL field. When set to C<<< supervisory >>>,
-the DOL field is ignored and the current value of VAL is used. The desired
-output can be written into the VAL field via dpPuts at run-time when the record
-is in C<<< supervisory >>> mode. DOL can also be a constant, in which case VAL
-is initialized to the constant value. Note that OMSL cannot be C<<< closed_loop
->>> when DOL is a constant.
+Like all output records, the mbboDirect record must specify where its output
+should originate when it gets processed. The Output Mode SeLect field (OMSL)
+determines whether the output value should be read from another record or not.
+When set to C<<< closed_loop >>>, a 32-bit integer value (the "desired output")
+will be read from a link specified in the Desired Output Link (DOL) field and
+placed into the VAL field.
 
-VAL is then converted to RVAL in the routine described in the next section.
-However, the C<<< Soft Channel >>> device support module for the mbboDirect
-record writes the VAL field's value without any conversion.
+When OMSL is set to C<<< supervisory >>>, the DOL field is ignored during
+processing and the contents of VAL are used. A value to be output may thus be
+written direcly into the VAL field from elsewhere as long as the record is in
+C<<< supervisory >>> mode.
 
 =fields OMSL, DOL, VAL
+
+=head4 Bit Fields
+
+The fields B0 through BF and B10 through B1F provide an alternative way to set
+the individual bits of the VAL field when the record is in C<<< supervisory >>>
+mode. Writing to one of these fields will then modify the corresponding bit in
+VAL, and writing to VAL will update these bit fields from that value.
+
+The VAL field is signed so it can be accessed through Channel Access as an
+integer; if it were made unsigned (a C<DBF_ULONG>) its representation through
+Channel Access would become a C<double>, which could cause problems with some
+client programs.
+
+Prior to the EPICS 7.0.6.1 release the individual bit fields were not updated
+while the record was in C<<< closed_loop >>> mode with VAL being set from the
+DOL link, and writing to the bit fields in that mode could cause the record to
+process but the actual field values would not affect VAL at all. Changing the
+OMSL field from C<<< closed_loop >>> to C<<< supervisory >>> would set the bit
+fields from VAL at that time and trigger a monitor event for the bits that
+changed at that time. At record initialization if VAL is defined and the OMSL
+field is C<<< supervisory >>> the bit fields would be set from VAL.
+
+From EPICS 7.0.6.1 the bit fields get updated from VAL during record processing
+and monitors are triggered on them in either mode. Attempts to write to the bit
+fields while in C<<< closed_loop >>> mode will be rejected by the C<special()>
+routine which may trigger an error from the client that wrote to them. During
+initialization if the record is still undefined (UDF) after DOL has been read
+and the device support initialized but at least one of the B0-B1F fields is
+non-zero, the VAL field will be set from those fields and UDF will be cleared.
+
+=fields B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, BA, BB, BC, BD, BE, BF, B10, B11, B12, B13, B14, B15, B16, B17, B18, B19, B1A, B1B, B1C, B1D, B1E, B1F
 
 =head3 Convert and Write Parameters
 
@@ -173,9 +203,9 @@ MASK is used by device support routine to read the hardware register. Record
 support sets low order NOBT bits. Device support can shift this value.
 
 MLST holds the value when the last monitor for value change was triggered.
-OBIT has similar role wrt. the B* fields.
+OBIT has a similar role for bits held in the B0-B1F fields.
 
-=fields NOBT, ORAW, MASK, MLST
+=fields NOBT, ORAW, MASK, MLST, OBIT
 
 =head3 Simulation Mode Parameters
 

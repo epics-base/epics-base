@@ -68,8 +68,9 @@ For soft records, the OUT output link can be a constant, a database link, or a
 channel access link. If the link is a constant, the result is no output. The
 DTYP field must then specify the C<<< Soft Channel >>> device support routine.
 
-See L<Address Specification> for information on the format of hardware addresses
-and database links.
+See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on the format of hardware addresses and database links.
 
 =fields OUT, DTYP
 

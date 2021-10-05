@@ -31,6 +31,8 @@ The mbboDirect record has the standard fields for specifying under what
 circumstances it will be processed.
 These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
+=fields SCAN, PHAS, EVNT, PRIO, PINI
+
 =head3 Desired Output Parameters
 
 The mbboDirect record, like all output records, must specify where its output
@@ -56,25 +58,32 @@ record writes the VAL field's value without any conversion.
 For records that are to write values to hardware devices, the OUT output link
 must contain the address of the I/O card, and the DTYP field must specify
 the proper device support module. Be aware that the address format differs
-according to the I/O bus used. See L<Address Specification> for information
-on the format of hardware addresses.
+according to the I/O bus used. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on the format of hardware addresses.
 
-If the mbboDirect record does not use the C<<< Soft Channel >>> device support
-module, then VAL is converted to RVAL, and RVAL is the actual 16-bit word sent
-out. RVAL is set equal to VAL and then shifted left by the number of bits
-specified in the SHFT field (the SHFT value is set by device support and is not
-configurable by the user). RVAL is then sent out to the location specified in
-the OUT field.
+During record processing VAL is converted into RVAL, which is the actual 32-bit
+word to be sent out. RVAL is set to VAL shifted left by the number of bits
+specified in the SHFT field (SHFT is normally set by device support). RVAL is
+then sent out to the location specified in the OUT field.
 
-For mbboDirect records that specify a database link, a channel access link, or a
-constant, the DTYP field must specify either one of two soft device support
-routines--{Soft Channel} or C<<< Raw Soft Channel >>>. The difference between
-the two is that C<<< Soft Channel >>> writes the desired output value from VAL
-directly to the output link while C<<< Raw Soft Channel >>> writes the value
-from RVAL to the output link after it has undergone the conversion described
-above.
+The fields NOBT and MASK can be used by device support to force some of the
+output bits written by that support to be zero. By default all 32 bits can be
+sent, but the NOBT field can be set to specify a smaller number of contiguous
+bits, or MASK can specify a non-contiguous set of bits. When setting MASK it is
+often necessary to set NOBT to a non-zero value as well, although in this case
+the actual value of NOBT may be ignored by the device support. If a device
+support sets the SHFT field it will also left-shift the value of MASK at the
+same time.
 
-=fields OUT, RVAL, SHFT, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, BA, BB, BC, BD, BE, BF
+For mbboDirect records writing to a link instead of to hardware, the DTYP field
+must select one of the soft device support routines C<<< Soft Channel >>> or
+C<<< Raw Soft Channel >>>. The C<<< Soft Channel >>> support writes the contents
+of the VAL field to the output link. The C<<< Raw Soft Channel >>> support
+allows SHFT to be set in the DB file, and sends the result of ANDing the shifted
+MASK with the RVAL field's value.
+
+=fields OUT, RVAL, SHFT, MASK, NOBT
 
 =head3 Operator Display Parameters
 
@@ -166,7 +175,8 @@ These parameters are used by the run-time code for processing the mbbo Direct
 record.
 
 MASK is used by device support routine to read the hardware register. Record
-support sets low order NOBT bits. Device support can shift this value.
+support sets the low order NOBT bits of MASK at initialization, and device
+support is allowed to shift this value.
 
 MLST holds the value when the last monitor for value change was triggered.
 

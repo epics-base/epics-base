@@ -59,8 +59,9 @@ undergoes no conversions before it is sent out to the output links.
 =head3 Write Parameters
 
 The OUTA-OUTH fields specify where VAL is to be sent. Each field that is to
-forward data must specify an address to another record. See 
-L<Address Specification> for information on specifying links.
+forward data must specify an address to another record. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on specifying links.
 
 The SELL, SELM, and SELN fields specify which output links are to be
 used.

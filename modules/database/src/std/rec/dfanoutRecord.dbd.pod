@@ -43,7 +43,7 @@ originates, i.e., the data which is to be fowarded to the records in its
 output links. The output mode select (OMSL) field determines whether the
 output originates from another record or from run-time database access.
 When set to C<closed_loop>, the desired output is retrieved from the link
-specified in the desired output (DOL) field, which can specify either a
+specified in the Desired Output Link (DOL) field, which can specify either a
 database or a channel access link, and placed into the VAL field. When set
 to C<supervisory>, the desired output can be written to the VAL field via
 dbPuts at run-time.
@@ -228,7 +228,7 @@ hysteresis factors for monitor callbacks.
 		interest(1)
 	}
 	field(DOL,DBF_INLINK) {
-		prompt("Desired Output Loc")
+		prompt("Desired Output Link")
 		promptgroup("40 - Input")
 		interest(1)
 	}

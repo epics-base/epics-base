@@ -307,7 +307,7 @@ for more information on simulation mode and its fields.
         interest(1)
     }
     field(DOL,DBF_INLINK) {
-        prompt("Desired Output Loc")
+        prompt("Desired Output Link")
         promptgroup("40 - Input")
         interest(1)
     }

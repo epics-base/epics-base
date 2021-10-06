@@ -194,7 +194,7 @@ LIBCOM_API void epicsStdCall epicsTimeAddSeconds (
     epicsTimeStamp * pDest, double secondsToAdd ); /* adds seconds to *pDest */
 /** \brief Time difference between \p left and \p right, as a signed integer
  * number of nanoseconds.
- * @since UNRELEASED
+ * @since EPICS 7.0.6.1
  */
 LIBCOM_API epicsInt64 epicsStdCall epicsTimeDiffInNS (
     const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight);

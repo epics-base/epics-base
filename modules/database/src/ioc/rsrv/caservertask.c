@@ -192,17 +192,6 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                             __FILE__, __LINE__,  buf);
             }
 #endif
-            scratch46.sa.sa_family = ifaceAddr.sa.sa_family;
-#if EPICS_HAS_IPV6
-            if ( scratch46.ia.sin_family == AF_INET6 ) {
-                scratch46.in6.sin6_addr = ifaceAddr.in6.sin6_addr;
-            }
-            else
-#endif
-            {
-                scratch46.ia.sin_addr = ifaceAddr.ia.sin_addr;
-            }
-
             tcpsock = socks[i] = epicsSocket46Create (scratch46.ia.sin_family,
                                                       SOCK_STREAM, 0);
             if(tcpsock==INVALID_SOCKET)

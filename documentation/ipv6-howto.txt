@@ -27,6 +27,17 @@ Start using IPv6:
     $ cainfo IOC:m1
 
 
-  Using multicast addresses:
-    The following should work, if en0 is a valid IPv6 interface:
-    $ EPICS_CA_ADDR_LIST=[ff02::1%en0]  EPICS_CA_AUTO_ADDR_LIST=NO   camonitor IOC:m1
+  Running an IOC on a Mac:
+    When using a "wireless only", there are different IPv6 interfaces.
+    The wireless itself :"en0",
+    An interface called "en3" (not sure what this is good for)
+    "awdl0" "llw0" (and some "utun0" and "utun1")
+    It seems as if our code does not handle this situation correctly (yet).
+    In order to use the wireless:
+    $  export EPICS_CAS_BEACON_ADDR_LIST='[ff02::1%en0]'
+    This will put out beacons on all IPv4 addresses.
+    IPv6 beacons are send out on en0.
+
+  Running an IOC on Linux:
+    $  export EPICS_CAS_AUTO_BEACON_ADDR_LIST=46
+    This sends out beacons on all IPv4 and IPv6 interfaces

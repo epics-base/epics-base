@@ -54,6 +54,16 @@ LIBCOM_API void * mallocMustSucceed(size_t size, const char *msg)
 LIBCOM_API void cantProceed(const char *msg, ...)
 {
     va_list pvar;
+#if defined(__GNUC__)
+    static __thread char dead = 0;
+    if(dead) {
+        /* Probably here after a failure in OSD early initialization.
+         * So we don't know which, if any, of the OSI primitives are usable.
+         */
+        abort();
+    }
+    dead = 1;
+#endif
     va_start(pvar, msg);
     if (msg)
         errlogVprintf(msg, pvar);

@@ -308,7 +308,9 @@ void rsrv_build_addr_lists(void)
         pstr = envGetConfigParam ( &EPICS_CAS_AUTO_BEACON_ADDR_LIST,
                                    sizeof (beaconlistascii), beaconlistascii );
         if ( pstr ) {
-            if ( !strcmp( pstr, "6" ) ) {
+            if ( !strcmp( pstr, "4" ) ) {
+                autobeaconlist = 1;
+            } else if ( !strcmp( pstr, "6" ) ) {
                 autobeaconlist = 6;
             } else if ( !strcmp( pstr, "46" ) ) {
                 autobeaconlist = 46;
@@ -316,9 +318,11 @@ void rsrv_build_addr_lists(void)
                 envGetBoolConfigParam(&EPICS_CAS_AUTO_BEACON_ADDR_LIST, &autobeaconlist);
             }
         }
+        epicsPrintf("%s:%d:rsrv_build_addr_lists EPICS_CAS_AUTO_BEACON_ADDR_LIST='%s' autobeaconlist=%d\n",
+                    __FILE__, __LINE__,
+                    pstr ? pstr : "" , autobeaconlist);
+
     }
-    epicsPrintf("%s:%d:rsrv_build_addr_lists autobeaconlist=%d\n",
-                            __FILE__, __LINE__,  autobeaconlist);
 
     ellInit ( &casIntfAddrList );
     ellInit ( &beaconAddrList );

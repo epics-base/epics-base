@@ -10,11 +10,7 @@ everything that has changed in each release.
 The PVA submodules each have their own individual sets of release notes which
 should also be read to understand what has changed since earlier releases.
 
-**This version of EPICS has not been released yet.**
-
-## Changes made on the 7.0 branch since 7.0.6
-
-<!-- Insert new items immediately below here ... -->
+## EPICS Release 7.0.6.1
 
 ### `mbboDirectRecord` enhancements
 

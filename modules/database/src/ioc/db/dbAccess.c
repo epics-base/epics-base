@@ -934,7 +934,7 @@ long dbGet(DBADDR *paddr, short dbrType,
     /* Update field info from record (if necessary);
      * may modify paddr->pfield.
      */
-    if (!dbfl_has_copy(pfl) &&
+    if (!dbfl_is_owner(pfl) &&
         paddr->pfldDes->special == SPC_DBADDR &&
         (prset = dbGetRset(paddr)) &&
         prset->get_array_info) {
@@ -971,7 +971,7 @@ long dbGet(DBADDR *paddr, short dbrType,
             goto done;
         }
 
-        if (!dbfl_has_copy(pfl)) {
+        if (!dbfl_is_owner(pfl)) {
             status = dbFastGetConvertRoutine[field_type][dbrType]
                 (paddr->pfield, pbuf, paddr);
         } else {
@@ -1016,7 +1016,7 @@ long dbGet(DBADDR *paddr, short dbrType,
         /* convert data into the caller's buffer */
         if (n <= 0) {
             ;                           /*do nothing */
-        } else if (!dbfl_has_copy(pfl)) {
+        } else if (!dbfl_is_owner(pfl)) {
             status = convert(paddr, pbuf, n, capacity, offset);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */

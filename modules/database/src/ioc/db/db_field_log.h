@@ -107,6 +107,7 @@ struct dbfl_ref {
  */
 typedef struct db_field_log {
     unsigned int     type:1;  /* type (union) selector */
+    unsigned int is_owner:1;  /* whether we own the data */
     /* ctx is used for all types */
     unsigned int      ctx:1;  /* context (operation type) */
     /* only for dbfl_context_event */
@@ -135,8 +136,9 @@ typedef struct db_field_log {
  * this case, making a copy is redundant, so we have no dtor. But conceptually
  * the db_field_log still owns the (empty) data.
  */
-#define dbfl_has_copy(p)\
- ((p) && ((p)->type==dbfl_type_val || (p)->u.r.dtor || (p)->no_elements==0))
+#define dbfl_is_owner(p)\
+ ((p) && ((p)->type==dbfl_type_val || (p)->u.r.dtor || (p)->no_elements==0\
+ || (p)->is_owner))
 
 #define dbfl_pfield(p)\
  ((p)->type==dbfl_type_val ? &p->u.v.field : p->u.r.field)

@@ -20,7 +20,7 @@
 #include "osdSock.h"
 #include "ellLib.h"
 
-#define NETDEBUG
+//#define NETDEBUG
 
 #ifndef EPICS_HAS_IPV6
 #define EPICS_HAS_IPV6 1

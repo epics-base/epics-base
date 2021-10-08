@@ -101,7 +101,7 @@ unsigned epicsStdCall sockAddrToA (
 #endif
     if ( paddr->sa_family != AF_INET ) {
         static const char * pErrStr = "<Ukn Addr Type>";
-        unsigned len = strlen ( pErrStr );
+        unsigned len = ( unsigned ) strlen ( pErrStr );
         if ( len < bufSize ) {
             strcpy ( pBuf, pErrStr );
             return len;
@@ -158,7 +158,7 @@ unsigned epicsStdCall sockAddrToDottedIP (
 #endif
                                               )  {
         const char * pErrStr = "<Ukn Addr Type>";
-        unsigned errStrLen = strlen ( pErrStr );
+        unsigned errStrLen = ( unsigned ) strlen ( pErrStr );
         if ( errStrLen < bufSize ) {
             strcpy ( pBuf, pErrStr );
             return errStrLen;
@@ -221,7 +221,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
                                    ntohs(pAddr6->sin6_port));
         } else {
             status = epicsSnprintf (pBuf, bufSize,
-                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%u]:%hu",
+                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%lu]:%hu",
                                     (pAddr6->sin6_addr.s6_addr[0] << 8) +
                                     pAddr6->sin6_addr.s6_addr[1],
                                     (pAddr6->sin6_addr.s6_addr[2] << 8) +
@@ -247,7 +247,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
          *  https://datatracker.ietf.org/doc/html/rfc3493
          *  2 fam, 2 port, 4 flowinfo, 16 Ipv6, 4 scope 
          */
-        uint8_t *pRawBytes =(uint8_t *)pAddr;
+        unsigned char *pRawBytes =(unsigned char *)pAddr;
         status = epicsSnprintf(pBuf, bufSize, "%02x%02x %02x%02x %02x%02x%02x%02x %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
                                pRawBytes[0],  pRawBytes[1],
                                pRawBytes[2],  pRawBytes[3],
@@ -270,7 +270,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
             return strLen;
         }
     }
-    strLen = strlen ( pErrStr );
+    strLen = ( unsigned ) strlen ( pErrStr );
     if ( strLen < bufSize ) {
         strcpy ( pBuf, pErrStr );
         return strLen;
@@ -409,9 +409,9 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
     osiSockAddr46 addr46Output;
     int status;
 #if EPICS_HAS_IPV6
-    osiSocklen_t socklen = sizeof(addr46Output.in6);
+    osiSocklen_t socklen = ( osiSocklen_t ) sizeof(addr46Output.in6);
 #else
-    osiSocklen_t socklen = sizeof(addr46Output.ia);
+    osiSocklen_t socklen = ( osiSocklen_t ) sizeof(addr46Output.ia);
 #endif
     osiSockIPv4toIPv6(pAddr46, &addr46Output);
     /* Now we have an IPv6 address. use the size of it when calling sendto() */
@@ -672,7 +672,7 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                    pIn6->sin6_addr.s6_addr[15]);
         } else {
             status = epicsSnprintf (pBuf, bufSize,
-                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%u]",
+                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%lu]",
                                     (pIn6->sin6_addr.s6_addr[0] << 8) +
                                     pIn6->sin6_addr.s6_addr[1],
                                     (pIn6->sin6_addr.s6_addr[2] << 8) +
@@ -699,7 +699,7 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
          *  See https://datatracker.ietf.org/doc/html/rfc3493
          *  2 fam, 2 port, 4 flowinfo, 16 Ipv6, 4 scope 
          */
-        uint8_t *pRawBytes =(uint8_t *)pAddr;
+        unsigned char *pRawBytes =(unsigned char *)pAddr;
         status = epicsSnprintf(pBuf, bufSize, "%02x%02x %02x%02x %02x%02x%02x%02x %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
                                pRawBytes[0],  pRawBytes[1],
                                pRawBytes[2],  pRawBytes[3],
@@ -735,7 +735,7 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
 #if EPICS_HAS_IPV6
     {
         int status = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
-                                &interfaceIndex, sizeof(interfaceIndex));
+                                (char*)&interfaceIndex, sizeof(interfaceIndex));
 #ifndef NETDEBUG
         if ( status )
 #endif
@@ -751,9 +751,8 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
     {
         int hops = 1;
         /* Set TTL of multicast packet */
-        int status = setsockopt(sock, IPPROTO_IPV6,
-                                IPV6_MULTICAST_HOPS,
-                                &hops, sizeof(hops));
+        int status = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+                                (char*)&hops, sizeof(hops));
 #ifndef NETDEBUG
         if ( status )
 #endif
@@ -769,9 +768,8 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
     }
     {
         int loop_on = 1;
-        int status = setsockopt(sock, IPPROTO_IPV6,
-                                IPV6_MULTICAST_LOOP,
-                                &loop_on, sizeof(loop_on));
+        int status = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
+                                (char*)&loop_on, sizeof(loop_on));
 #ifndef NETDEBUG
         if ( status )
 #endif
@@ -799,7 +797,7 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
                sizeof(group.ipv6mr_multiaddr.s6_addr));
         group.ipv6mr_interface = interfaceIndex;
         status = setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP,
-                            &group, sizeof(group));
+                            (char*)&group, sizeof(group));
 #ifndef NETDEBUG
         if ( status )
 #endif
@@ -812,8 +810,8 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
                          status, status < 0 ? sockErrBuf : "");
             if ( ( status ) && (sizeof(group) >= 20 ) )
             {
-                uint8_t *pRawBytes = (uint8_t *)&group;
-                epicsPrintf("%s:%d: rawBytes=%02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x\n",
+                unsigned char *pRawBytes = (unsigned char *)&group;
+                epicsPrintf("%s:%d: rawBytesGroup=%02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x\n",
                                   __FILE__, __LINE__,
                                   pRawBytes[0],
                                   pRawBytes[1],

@@ -252,11 +252,21 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
             }
         }
     } else {
-        pPort = strchr(hostName, ':');
-        if (pPort) {
-            *pPort = '\0';
-            pPort++;
-        }
+        /* IPv4 */
+        int status;
+        memset ( pAddr46, 0, sizeof(*pAddr46) ) ;
+        pAddr46->sa.sa_family = AF_INET;
+        status = aToIPAddr( pAddrString, defaultPort, &pAddr46->ia);
+#ifdef NETDEBUG
+        {
+            char buf[64];
+            sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
+            epicsPrintf("%s:%d: aToIPAddr46 pAddrString='%s' status=%d addr46='%s'\n",
+                        __FILE__, __LINE__,
+                        pAddrString, status, buf);
+                }
+#endif
+        return status;
     }
     if (!strlen(hostName) && pPort) {
         errlogPrintf("%s:%d: aToIPAddr46 invalid, probably missing []. pAddrString='%s' hostname='' pPort='%s'\n",

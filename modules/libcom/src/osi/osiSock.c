@@ -238,7 +238,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
                                     pAddr6->sin6_addr.s6_addr[13],
                                     (pAddr6->sin6_addr.s6_addr[14] << 8) +
                                     pAddr6->sin6_addr.s6_addr[15],
-                                    pAddr6->sin6_scope_id,
+                                    (unsigned long)pAddr6->sin6_scope_id,
                                     ntohs(pAddr6->sin6_port));
         }
     } else {
@@ -689,7 +689,7 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                     pIn6->sin6_addr.s6_addr[13],
                                     (pIn6->sin6_addr.s6_addr[14] << 8) +
                                     pIn6->sin6_addr.s6_addr[15],
-                                    pIn6->sin6_scope_id);
+                                    (unsigned long)pIn6->sin6_scope_id);
         }
     }
 #if EPICS_HAS_IPV6

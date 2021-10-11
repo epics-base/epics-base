@@ -387,10 +387,10 @@ MAIN(epicsErrlogTest)
  * This code is a reduced version of the code in iocLogServer.
  */
 static void testLogPrefix(void) {
-    struct sockaddr_in serverAddr;
+    osiSockAddr46 serverAddr46;
     int status;
     struct timeval timeout;
-    struct sockaddr_in actualServerAddr;
+    osiSockAddr46 actualServerAddr46;
     osiSocklen_t actualServerAddrSize;
     char portstring[16];
 
@@ -406,18 +406,13 @@ static void testLogPrefix(void) {
     errlogPrintfNoConsole(".");
     errlogFlush();
 
-    sock = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
+    sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_STREAM, 0);
     if (sock == INVALID_SOCKET) {
         testAbort("epicsSocketCreate failed.");
     }
 
     /* We listen on a an available port. */
-    memset((void *)&serverAddr, 0, sizeof serverAddr);
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(0);
-
-    status = epicsSocket46Bind (sock, (struct sockaddr *)&serverAddr,
-                   sizeof (serverAddr) );
+    status = epicsSocket46BindLocalPort ( sock , 0 );
     if (status < 0) {
         testAbort("bind failed; all ports in use?");
     }
@@ -428,15 +423,15 @@ static void testLogPrefix(void) {
     }
 
     /* Determine the port that the OS chose */
-    actualServerAddrSize = sizeof actualServerAddr;
-    memset((void *)&actualServerAddr, 0, sizeof serverAddr);
-    status = getsockname(sock, (struct sockaddr *) &actualServerAddr,
+    actualServerAddrSize = ( osiSocklen_t ) sizeof ( actualServerAddr46 );
+    memset((void *)&actualServerAddr46, 0, sizeof serverAddr46);
+    status = getsockname(sock, (struct sockaddr *) &actualServerAddr46,
          &actualServerAddrSize);
     if (status < 0) {
         testAbort("Can't find port number!");
     }
 
-    sprintf(portstring, "%d", ntohs(actualServerAddr.sin_port));
+    sprintf(portstring, "%d", ntohs(actualServerAddr46.ia.sin_port));
     testDiag("Listening on port %s", portstring);
 
     /* Set the EPICS environment variables for logging. */
@@ -449,7 +444,7 @@ static void testLogPrefix(void) {
     }
 
     status = fdmgr_add_callback(pfdctx, sock, fdi_read,
-        acceptNewClient, &serverAddr);
+        acceptNewClient, &serverAddr46);
 
     if (status < 0) {
         testAbort("fdmgr_add_callback failed!");

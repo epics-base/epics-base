@@ -286,7 +286,7 @@ static void logClientMakeSock (logClient *pClient)
     /*
      * allocate a socket
      */
-    pClient->sock = epicsSocket46Create ( AF_INET, SOCK_STREAM, 0 );
+    pClient->sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_STREAM, 0 );
     if ( pClient->sock == INVALID_SOCKET ) {
         char sockErrBuf[128];
         epicsSocketConvertErrnoToString (
@@ -459,7 +459,8 @@ logClientId epicsStdCall logClientCreate46 (
     if (pClient==NULL) {
         return NULL;
     }
-    /* TODO: Do we need the port number ?*/
+    pClient->addr46 = *pAddr46;
+    pClient->addr46.ia.sin_port = htons(server_port);
     sockAddrToA (&pClient->addr46.sa, pClient->name, sizeof(pClient->name));
 
     pClient->mutex = epicsMutexCreate ();

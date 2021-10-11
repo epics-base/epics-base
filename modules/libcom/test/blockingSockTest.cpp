@@ -18,11 +18,6 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
-union address {
-    struct sockaddr_in ia;
-    struct sockaddr sa;
-};
-
 class circuit {
 public:
     circuit ( SOCKET );
@@ -50,20 +45,20 @@ private:
 
 class clientCircuit : public circuit {
 public:
-    clientCircuit ( const address & );
+    clientCircuit ( const osiSockAddr46 & );
 private:
     const char * pName ();
 };
 
 class server {
 public:
-    server ( const address & );
+    server ( const osiSockAddr46 & );
     void start ();
     void daemon ();
     void stop ();
-    address addr () const;
+    osiSockAddr46 addr46 () const;
 protected:
-    address srvaddr;
+    osiSockAddr46 srvaddr46;
     SOCKET sock;
     epicsThreadId id;
     bool exit;
@@ -131,12 +126,12 @@ extern "C" void socketRecvTest ( void * pParm )
     pCir->recvTest ();
 }
 
-clientCircuit::clientCircuit ( const address & addrIn ) :
-    circuit ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) )
+clientCircuit::clientCircuit ( const osiSockAddr46 & addr46 ) :
+    circuit ( epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_STREAM, IPPROTO_TCP ) )
 {
-    address tmpAddr = addrIn;
-    int status = ::connect (
-        this->sock, & tmpAddr.sa, sizeof ( tmpAddr ) );
+    osiSockAddr46 tmpAddr46 = addr46;
+    int status = epicsSocket46Connect (
+        this->sock, & tmpAddr46 );
     testOk ( status == 0, "Client end connected" );
 
     circuit * pCir = this;
@@ -158,20 +153,20 @@ extern "C" void serverDaemon ( void * pParam ) {
     pSrv->daemon ();
 }
 
-server::server ( const address & addrIn ) :
-    srvaddr ( addrIn ),
-    sock ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ),
+server::server ( const osiSockAddr46 & addr46 ) :
+    srvaddr46 ( addr46 ),
+    sock ( epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_STREAM, IPPROTO_TCP ) ),
     id ( 0 ), exit ( false )
 {
     testOk ( this->sock != INVALID_SOCKET, "Server socket valid" );
 
     // setup server side
-    osiSocklen_t slen = sizeof ( this->srvaddr );
-    int status = epicsSocket46Bind ( this->sock, & this->srvaddr.sa, slen );
+    osiSocklen_t slen = ( osiSocklen_t ) sizeof ( this->srvaddr46 );
+    int status = epicsSocket46Bind ( this->sock, & this->srvaddr46.sa, slen);
     if ( status ) {
         testDiag ( "bind to server socket failed, status = %d", status );
     }
-    if ( getsockname(this->sock, & this->srvaddr.sa, & slen) != 0 ) {
+    if ( getsockname(this->sock, & this->srvaddr46.sa, & slen) != 0 ) {
         testAbort ( "Failed to read socket address" );
     }
     status = listen ( this->sock, 10 );
@@ -191,10 +186,8 @@ void server::daemon ()
 {
     while ( ! this->exit ) {
         // accept client side
-        address addr;
-        osiSocklen_t addressSize = sizeof ( addr );
-        SOCKET ns = accept ( this->sock,
-            & addr.sa, & addressSize );
+        osiSockAddr46 addr46;
+        SOCKET ns = epicsSocket46Accept ( this->sock, &addr46 );
         if ( this->exit )
             break;
         testOk ( ns != INVALID_SOCKET, "Accepted socket valid" );
@@ -209,9 +202,9 @@ void server::stop ()
     epicsSocketDestroy ( this->sock );
 }
 
-address server::addr () const
+osiSockAddr46 server::addr46 () const
 {
-    return this->srvaddr;
+    return this->srvaddr46;
 }
 
 serverCircuit::serverCircuit ( SOCKET sockIn ) :
@@ -254,16 +247,21 @@ MAIN(blockingSockTest)
     testPlan(13);
     osiSockAttach();
 
-    address addr;
-    memset ( (char *) & addr, 0, sizeof ( addr ) );
-    addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-    addr.ia.sin_port = 0;
+    osiSockAddr46 addr46;
+    memset ( (char *) & addr46, 0, sizeof ( addr46 ) );
+    /* memset sets port to 0 already */
+#if EPICS_HAS_IPV6
+    addr46.in6.sin6_family = AF_INET6;
+    addr46.in6.sin6_addr = in6addr_loopback;
+#else
+    addr46.ia.sin_family = AF_INET;
+    addr46.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+#endif
 
-    server srv ( addr );
+    server srv ( addr46 );
     srv.start ();
-    addr = srv.addr ();
-    clientCircuit client ( addr );
+    addr46 = srv.addr46 ();
+    clientCircuit client ( addr46 );
 
     epicsThreadSleep ( 1.0 );
     testOk ( ! client.recvWakeupDetected (), "Client is asleep" );

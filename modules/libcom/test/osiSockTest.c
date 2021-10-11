@@ -93,26 +93,21 @@ void udpSockTest(void)
 static
 int doBind(int expect, SOCKET S, unsigned* port)
 {
-    osiSockAddr46 addr;
+    osiSockAddr46 addr46;
     int ret;
 
-    memset(&addr, 0, sizeof(addr));
-    addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    addr.ia.sin_port = htons(*port);
-
-    ret = epicsSocket46Bind(S, &addr.sa, sizeof(addr.ia));
+    ret = epicsSocket46BindLocalPort(S, *port);
     if(ret) {
         testOk(expect==1, "bind() to %u error %d, %d", *port, ret, SOCKERRNO);
         return 1;
     } else {
-        osiSocklen_t slen = sizeof(addr);
-        ret = getsockname(S, &addr.sa, &slen);
+        osiSocklen_t slen = sizeof(addr46);
+        ret = getsockname(S, &addr46.sa, &slen);
         if(ret) {
             testFail("Unable to find sock name after binding");
             return 1;
         } else {
-            *port = ntohs(addr.ia.sin_port);
+            *port = ntohs(addr46.ia.sin_port);
             testOk(expect==0, "bind() to port %u", *port);
             return 0;
         }

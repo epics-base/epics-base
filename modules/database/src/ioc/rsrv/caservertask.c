@@ -423,6 +423,14 @@ void rsrv_build_addr_lists(void)
                 match46.in6.sin6_port = htons(ca_beacon_port);
             }
 #endif
+#ifdef NETDEBUG
+            {
+                char buf[64];
+                sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
+                epicsPrintf("%s/%d: calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                            __FILE__, __LINE__, buf);
+            }
+#endif
             osiSockDiscoverBroadcastAddresses(&beaconAddrList, beaconSocket, &match46);
         }
 
@@ -468,6 +476,14 @@ void rsrv_build_addr_lists(void)
 #endif
             match46.ia.sin_port = htons(ca_beacon_port);
 
+#ifdef NETDEBUG
+            {
+                char buf[64];
+                sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
+                epicsPrintf("%s/%d: calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                            __FILE__, __LINE__, buf);
+            }
+#endif
             osiSockDiscoverBroadcastAddresses(&temp, beaconSocket, &match46);
         }
 
@@ -744,6 +760,14 @@ void rsrv_init (void)
                 ELLLIST bcastList = ELLLIST_INIT;
                 osiSockAddrNode *pNode;
 
+#ifdef NETDEBUG
+                {
+                    char buf[64];
+                    sockAddrToDottedIP(&conf->udpAddr46.sa, buf, sizeof(buf));
+                    epicsPrintf("%s/%d: calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                                __FILE__, __LINE__, buf);
+            }
+#endif
                 osiSockDiscoverBroadcastAddresses (&bcastList,
                                                    conf->udp, &conf->udpAddr46); // match addr
 

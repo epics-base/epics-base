@@ -253,6 +253,14 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
           match46.ia.sin_family = AF_INET6; /* v6 only */
         }
 #endif
+#ifdef NETDEBUG
+        {
+            char buf[64];
+            sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
+            ::printf ("%s/%d: calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                      __FILE__, __LINE__, buf);
+        }
+#endif
         osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &match46 );
         forcePort ( &bcastList, port );
         removeDuplicateAddresses ( &tmpList, &bcastList, 1 );

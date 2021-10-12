@@ -123,30 +123,14 @@ static int copyRemoteAddressOK(osiSockAddrNode *pNewNode,
 /*
  * osiSockDiscoverBroadcastAddresses ()
  */
-#ifdef NETDEBUG
-LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddressesFL
-     (const char* filename, int lineno,
-      ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
-#else
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
-#endif
 {
     osiSockAddrNode *pNewNode;
     struct ifaddrs *ifa;
 #ifdef NETDEBUG
     const static char* fname = "osiSockDiscoverBroadcastAddresses()";
 #endif
-#ifdef NETDEBUG
-    {
-        char buf[64];
-        epicsSocket46IpOnlyToDotted(&pMatchAddr46->sa, buf, sizeof(buf));
-        ifDepenDebugPrintf (("%s %s:%d   enter(%lu) : pMatchAddr46= '%s'\n",
-                             fname, filename, lineno,
-                             (unsigned long)socket, buf));
-    }
-#endif
-
     if ( pMatchAddr46->sa.sa_family == AF_INET  ) {
         if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
             pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );

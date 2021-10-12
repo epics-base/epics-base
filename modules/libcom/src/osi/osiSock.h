@@ -20,7 +20,7 @@
 #include "osdSock.h"
 #include "ellLib.h"
 
-//#define NETDEBUG
+#define NETDEBUG
 
 #ifndef EPICS_HAS_IPV6
 #define EPICS_HAS_IPV6 1
@@ -317,15 +317,8 @@ LIBCOM_API int epicsStdCall sockAddrAreIdentical
  *  Any mutex locking required to protect pList is applied externally.
  *
  */
-#ifdef NETDEBUG
-LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddressesFL
-     (const char* filename, int lineno,
-      ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr);
-#define osiSockDiscoverBroadcastAddresses(a,b,c) osiSockDiscoverBroadcastAddressesFL(__FILE__, __LINE__, a, b, c)
-#else
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr);
-#endif
 
 
 /*

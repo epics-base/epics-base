@@ -256,13 +256,8 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
          */
         if ( ifa->ifa_flags & IFF_BROADCAST ) {
             if ( ifa->ifa_addr->sa_family == AF_INET )  {
-                osiSockAddr46 addrBroadcast46;
-                memset(&addrBroadcast46, 0, sizeof(addrBroadcast46));
-                 /* struct copy below */
-                addrBroadcast46.ia = *(struct sockaddr_in *)ifa->ifa_broadaddr;
-                addrBroadcast46.ia.sin_family = ifa->ifa_addr->sa_family;
                 if (!copyRemoteAddressOK(pNewNode,
-                                         &addrBroadcast46,
+                                         (osiSockAddr46 *)ifa->ifa_broadaddr,
                                          "broadcastaddr") ) {
                   free ( pNewNode );
                   pNewNode = NULL;

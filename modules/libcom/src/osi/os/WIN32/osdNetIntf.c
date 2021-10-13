@@ -40,6 +40,12 @@
 #include "epicsThread.h"
 #include "epicsVersion.h"
 
+#ifdef NETDEBUG
+#   define ifDepenDebugPrintf(argsInParen) printf argsInParen
+#else
+#   define ifDepenDebugPrintf(argsInParen)
+#endif
+
 static osiSockAddr46     osiLocalAddrResult;
 static epicsThreadOnceId osiLocalAddrId = EPICS_THREAD_ONCE_INIT;
 
@@ -57,6 +63,9 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
     DWORD               cbBytesReturned;
     osiSockAddrNode     *pNewNode;
 
+#ifdef NETDEBUG
+    const static char* fname = "osiSockDiscoverBroadcastAddresses()";
+#endif
     if ( pMatchAddr46->sa.sa_family == AF_INET  ) {
         if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
             pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
@@ -97,6 +106,17 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
     numifs = cbBytesReturned/sizeof(INTERFACE_INFO);
     for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
 
+#ifdef NETDEBUG
+        const struct sockaddr *pSockAddr = (struct sockaddr *) &pIfinfo->iiAddress.Address;
+	const char *if_name = "";
+        {
+            char buf[64];
+            epicsSocket46IpOnlyToDotted(pSockAddr, buf, sizeof(buf));
+            ifDepenDebugPrintf (("%s %s:%d: interface %s has addr '%s'\n",
+                                 fname, __FILE__, __LINE__,
+                                 if_name, buf));
+        }
+#endif
         /*
          * don't bother with interfaces that have been disabled
          */

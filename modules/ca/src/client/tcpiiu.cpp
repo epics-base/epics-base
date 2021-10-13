@@ -1059,7 +1059,7 @@ void tcpiiu::show ( unsigned level ) const
             this->_receiveThreadIsBusy );
     }
     if ( level > 2u ) {
-        ::printf ( "\tvirtual circuit socket identifier %d\n", this->sock );
+        ::printf ( "\tvirtual circuit socket identifier %d\n", (int)this->sock );
         ::printf ( "\tsend thread flush signal:\n" );
         this->sendThreadFlushEvent.show ( level-2u );
         ::printf ( "\tsend thread:\n" );

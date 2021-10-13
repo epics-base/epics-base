@@ -1,4 +1,4 @@
-/*************************************************************************\
+/************************************************************************* \
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -204,7 +204,7 @@ udpiiu::udpiiu (
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAC: failed to set mcast ttl %d sock=%ld\n", ttl, (long)this->sock);
+            errlogPrintf("CAC: failed to set mcast ttl %d sock=%d\n", ttl, (int)this->sock);
         }
     }
 #endif

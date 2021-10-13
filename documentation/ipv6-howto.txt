@@ -41,3 +41,18 @@ Start using IPv6:
   Running an IOC on Linux:
     $  export EPICS_CAS_AUTO_BEACON_ADDR_LIST=46
     This sends out beacons on all IPv4 and IPv6 interfaces
+
+
+Windows (Mingw)
+  While Windows as such supports IPv6, the current code does not work here:
+    epicsSocketCreate(../udpiiu.cpp:172) (AF_INET6) socket=512
+    CAC: failed to set mcast loopback sock=512
+    CAC: failed to set mcast ttl 1 sock=512
+    ../udpiiu.cpp:261: bind(512) address='[0:0:0:0:0:0:0:0%0]:0' socklenIn=28 socklenOut=28 status=0:
+    ../iocinf.cpp/240: EPICS_CA_AUTO_ADDR_LIST='YES' addrautolistIPversion=4
+    ../iocinf.cpp/268: calling osiSockDiscoverBroadcastAddresses: sock=512 match46='0.0.0.0:0'
+    WSAIoctl SIO_GET_INTERFACE_LIST failed 10022
+
+  More investigations are needed.
+  Which version of Windows do we want to support ?
+  XP ? Vista ? Windows 10 ?

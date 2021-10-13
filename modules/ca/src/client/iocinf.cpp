@@ -264,8 +264,8 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
         {
             char buf[64];
             sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-            ::printf ("%s/%d: calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
-                      __FILE__, __LINE__, buf);
+            ::printf ("%s/%d: calling osiSockDiscoverBroadcastAddresses: sock=%d match46='%s'\n",
+                      __FILE__, __LINE__, (int)sock, buf);
         }
 #endif
         osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &match46 );

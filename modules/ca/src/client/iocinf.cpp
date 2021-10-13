@@ -223,7 +223,7 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
       if ( strstr ( pstr, "no" ) || strstr ( pstr, "NO" ) ) {
         addrautolistIPversion = 0;
       } else if ( strstr ( pstr, "yes" ) || strstr ( pstr, "YES" ) ) {
-        addrautolistIPversion = 0;
+        addrautolistIPversion = 4;
       } else if ( !strcmp( pstr, "4" ) ) {
         addrautolistIPversion = 4;
       } else if ( !strcmp( pstr, "6" ) ) {
@@ -235,6 +235,13 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
                        pstr);
       }
     }
+#ifdef NETDEBUG
+    ::printf ("%s/%d: EPICS_CA_AUTO_ADDR_LIST='%s' addrautolistIPversion=%d\n",
+	      __FILE__, __LINE__,
+	      pstr ? pstr : "",
+	      addrautolistIPversion);
+
+#endif
 
     /*
      * LOCK is for piiu->destAddr list

@@ -44,91 +44,6 @@ static osiSockAddr      osiLocalAddrResult;
 static epicsThreadOnceId osiLocalAddrId = EPICS_THREAD_ONCE_INIT;
 
 /*
- * osiLocalAddr ()
- */
-static void osiLocalAddrOnce ( void *raw )
-{
-    SOCKET              *psocket = raw;
-    osiSockAddr         addr;
-    int                 status;
-    INTERFACE_INFO      *pIfinfo;
-    INTERFACE_INFO      *pIfinfoList = NULL;
-    unsigned            nelem;
-    DWORD               numifs;
-    DWORD               cbBytesReturned;
-
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
-    addr.sa.sa_family = AF_UNSPEC;
-
-    /* only valid for winsock 2 and above */
-    if ( wsaMajorVersion() < 2 ) {
-        goto fail;
-    }
-
-    nelem = 100;
-    pIfinfoList = (INTERFACE_INFO *) calloc ( nelem, sizeof (INTERFACE_INFO) );
-    if (!pIfinfoList) {
-        errlogPrintf ("calloc failed\n");
-        goto fail;
-    }
-
-    status = WSAIoctl (*psocket, SIO_GET_INTERFACE_LIST, NULL, 0,
-                       (LPVOID)pIfinfoList, nelem*sizeof(INTERFACE_INFO),
-                       &cbBytesReturned, NULL, NULL);
-
-    if (status != 0 || cbBytesReturned == 0) {
-        errlogPrintf ("WSAIoctl SIO_GET_INTERFACE_LIST failed %d\n",WSAGetLastError());
-        goto fail;
-    }
-
-    numifs = cbBytesReturned / sizeof(INTERFACE_INFO);
-    for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
-
-        /*
-         * don't use interfaces that have been disabled
-         */
-        if (!(pIfinfo->iiFlags & IFF_UP)) {
-            continue;
-        }
-
-        /*
-         * don't use the loop back interface
-         */
-        if (pIfinfo->iiFlags & IFF_LOOPBACK) {
-            continue;
-        }
-
-        addr.sa = pIfinfo->iiAddress.Address;
-
-        /* Work around MS Winsock2 bugs */
-        if (addr.sa.sa_family == 0) {
-            addr.sa.sa_family = AF_INET;
-        }
-
-        osiLocalAddrResult = addr;
-        free ( pIfinfoList );
-        return;
-    }
-
-    errlogPrintf (
-                "osiLocalAddr(): only loopback found\n");
-fail:
-    /* fallback to loopback */
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
-    addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    osiLocalAddrResult = addr;
-
-    free ( pIfinfoList );
-}
-
-LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
-{
-    epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, (void*)&socket);
-    return osiLocalAddrResult;
-}
-
-/*
  * osiSockDiscoverBroadcastAddresses ()
  */
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
@@ -251,3 +166,90 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
 
     free (pIfinfoList);
 }
+
+/*
+ * osiLocalAddrOnce ()
+ */
+static void osiLocalAddrOnce (void *raw)
+{
+    SOCKET              *psocket = raw;
+    osiSockAddr         addr;
+    int                 status;
+    INTERFACE_INFO      *pIfinfo;
+    INTERFACE_INFO      *pIfinfoList = NULL;
+    unsigned            nelem;
+    DWORD               numifs;
+    DWORD               cbBytesReturned;
+
+    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    addr.sa.sa_family = AF_UNSPEC;
+
+    /* only valid for winsock 2 and above */
+    if ( wsaMajorVersion() < 2 ) {
+        goto fail;
+    }
+
+    nelem = 100;
+    pIfinfoList = (INTERFACE_INFO *) calloc ( nelem, sizeof (INTERFACE_INFO) );
+    if (!pIfinfoList) {
+        errlogPrintf ("calloc failed\n");
+        goto fail;
+    }
+
+    status = WSAIoctl (*psocket, SIO_GET_INTERFACE_LIST, NULL, 0,
+                       (LPVOID)pIfinfoList, nelem*sizeof(INTERFACE_INFO),
+                       &cbBytesReturned, NULL, NULL);
+
+    if (status != 0 || cbBytesReturned == 0) {
+        errlogPrintf ("WSAIoctl SIO_GET_INTERFACE_LIST failed %d\n",WSAGetLastError());
+        goto fail;
+    }
+
+    numifs = cbBytesReturned / sizeof(INTERFACE_INFO);
+    for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
+
+        /*
+         * don't use interfaces that have been disabled
+         */
+        if (!(pIfinfo->iiFlags & IFF_UP)) {
+            continue;
+        }
+
+        /*
+         * don't use the loop back interface
+         */
+        if (pIfinfo->iiFlags & IFF_LOOPBACK) {
+            continue;
+        }
+
+        addr.sa = pIfinfo->iiAddress.Address;
+
+        /* Work around MS Winsock2 bugs */
+        if (addr.sa.sa_family == 0) {
+            addr.sa.sa_family = AF_INET;
+        }
+
+        osiLocalAddrResult = addr;
+        free ( pIfinfoList );
+        return;
+    }
+
+    errlogPrintf (
+                "osiLocalAddr(): only loopback found\n");
+fail:
+    /* fallback to loopback */
+    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    addr.ia.sin_family = AF_INET;
+    addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    osiLocalAddrResult = addr;
+
+    free ( pIfinfoList );
+}
+
+
+LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
+{
+    epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, (void*)&socket);
+    return osiLocalAddrResult;
+}
+

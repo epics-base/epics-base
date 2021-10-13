@@ -20,10 +20,14 @@
 #include "osdSock.h"
 #include "ellLib.h"
 
-#define NETDEBUG
+/* Enable it for debugging */
+/* #define NETDEBUG */
 
+/* We assume that UNIX-ish OS can handle IPv6 with the current code base */
+#ifdef UNIX
 #ifndef EPICS_HAS_IPV6
 #define EPICS_HAS_IPV6 1
+#endif
 #endif
 
 #ifdef __cplusplus

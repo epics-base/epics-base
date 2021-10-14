@@ -34,6 +34,7 @@
 #include "locationException.h"
 #include "errlog.h"
 #include "epicsExport.h"
+#include "epicsStdio.h"
 
 #include "addrList.h"
 #include "iocinf.h"
@@ -470,9 +471,9 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
         char buf[64];
         addr.name ( buf, sizeof ( buf ) );
 
-        errlogPrintf("%s:%d: cac::beaconNotify addr='%s' pBHE=%p\n",
-                     __FILE__, __LINE__,
-                     buf, pBHE);
+        epicsPrintf("%s:%d: cac::beaconNotify addr='%s' pBHE=%p\n",
+                    __FILE__, __LINE__,
+                    buf, pBHE);
     }
 #endif
     if ( pBHE ) {
@@ -1322,9 +1323,9 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     const char * pChannelName, const char * pAcc, const char * pRej )
 {
     char buf[320];
-    snprintf ( buf, sizeof(buf),
-               "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
-               pChannelName, pAcc, pRej );
+    epicsSnprintf ( buf, sizeof(buf),
+                    "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
+                    pChannelName, pAcc, pRej );
     {
         callbackManager mgr ( this->notify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );

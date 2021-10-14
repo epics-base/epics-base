@@ -66,7 +66,7 @@ static struct ifreq * ifreqNext ( struct ifreq *pifreq )
  * osiSockDiscoverBroadcastAddresses ()
  */
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
-     (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr)
+     (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
 {
     static const unsigned           nelem = 100;
     int                             status;
@@ -77,16 +77,16 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
     struct ifreq                    *pnextifreq;
     osiSockAddrNode                 *pNewNode;
 
-    if ( pMatchAddr->sa.sa_family == AF_INET  ) {
-        if ( pMatchAddr->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
+    if ( pMatchAddr46->sa.sa_family == AF_INET  ) {
+        if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
             pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
             if ( pNewNode == NULL ) {
                 errlogPrintf ( "osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n" );
                 return;
             }
-            pNewNode->addr.ia.sin_family = AF_INET;
-            pNewNode->addr.ia.sin_port = htons ( 0 );
-            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            pNewNode->addr46.ia.sin_family = AF_INET;
+            pNewNode->addr46.ia.sin_port = htons ( 0 );
+            pNewNode->addr46.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
             ellAdd ( pList, &pNewNode->node );
             return;
         }
@@ -146,13 +146,13 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
          * if it isn't a wildcarded interface then look for
          * an exact match
          */
-        if ( pMatchAddr->sa.sa_family != AF_UNSPEC ) {
-            if ( pMatchAddr->sa.sa_family != AF_INET ) {
+        if ( pMatchAddr46->sa.sa_family != AF_UNSPEC ) {
+            if ( pMatchAddr46->sa.sa_family != AF_INET ) {
                 continue;
             }
-            if ( pMatchAddr->ia.sin_addr.s_addr != htonl (INADDR_ANY) ) {
+            if ( pMatchAddr46->ia.sin_addr.s_addr != htonl (INADDR_ANY) ) {
                  struct sockaddr_in *pInetAddr = (struct sockaddr_in *) &pIfreqList->ifr_addr;
-                 if ( pInetAddr->sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr ) {
+                 if ( pInetAddr->sin_addr.s_addr != pMatchAddr46->ia.sin_addr.s_addr ) {
                      ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" didnt match\n", pIfreqList->ifr_name) );
                      continue;
                  }
@@ -209,7 +209,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             }
             baddr.sa = pIfreqList->ifr_broadaddr;
             if (baddr.ia.sin_family==AF_INET && baddr.ia.sin_addr.s_addr != INADDR_ANY) {
-                pNewNode->addr.sa = pIfreqList->ifr_broadaddr;
+                pNewNode->addr46.sa = pIfreqList->ifr_broadaddr;
                 ifDepenDebugPrintf ( ( "found broadcast addr = %x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
             } else {
                 ifDepenDebugPrintf ( ( "Ignoring broadcast addr = %x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
@@ -225,7 +225,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
                 free ( pNewNode );
                 continue;
             }
-            pNewNode->addr.sa = pIfreqList->ifr_dstaddr;
+            pNewNode->addr46.sa = pIfreqList->ifr_dstaddr;
         }
 #endif
         else {

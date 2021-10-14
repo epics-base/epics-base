@@ -29,7 +29,7 @@ public:
     void incrRefCount ( PBuild );
     typedef void ( * PDestroy ) ( void * );
     void decrRefCount ( PDestroy );
-    void * pInstance () const;
+    inline void * pInstance () const;
 private:
     void * _pInstance;
     std :: size_t _refCount;

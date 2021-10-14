@@ -21,10 +21,10 @@
 #include "ellLib.h"
 
 /* Enable it for debugging */
-/* #define NETDEBUG */
+#define NETDEBUG
 
 /* We assume that UNIX-ish OS can handle IPv6 with the current code base */
-#ifdef UNIX
+#if defined ( darwin ) || defined ( linux )
 #ifndef EPICS_HAS_IPV6
 #define EPICS_HAS_IPV6 1
 #endif

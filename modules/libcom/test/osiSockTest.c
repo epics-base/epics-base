@@ -73,7 +73,7 @@ void udpSockTest(void)
 
     testDiag("udpSockTest()");
 
-    s = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
+    s = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
     testOk(s != INVALID_SOCKET, "epicsSocketCreate INET, DGRAM, 0");
 
     udpBroadcast(s, 1);

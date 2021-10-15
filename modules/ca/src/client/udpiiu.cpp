@@ -258,7 +258,7 @@ udpiiu::udpiiu (
         addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         addr46.ia.sin_port = htons ( PORT_ANY );
     }
-    status = epicsSocket46Bind (this->sock, &addr46.sa, sizeof (addr46) );
+    status = epicsSocket46Bind (this->sock, &addr46);
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
@@ -636,7 +636,7 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         addr46.ia.sin_port = htons ( port );
 #endif
-        status = epicsSocket46Bind ( tmpSock, &addr46.sa, sizeof ( addr46 ) );
+        status = epicsSocket46Bind ( tmpSock, &addr46 );
         if ( status < 0 ) {
             if ( SOCKERRNO == SOCK_EADDRINUSE ) {
                 installed = true;

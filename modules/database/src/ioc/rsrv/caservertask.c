@@ -123,7 +123,7 @@ static void req_server (void *pParm)
 static
 int tryBind(SOCKET sock, const osiSockAddr46* pAddr46, const char *name)
 {
-    if(epicsSocket46Bind(sock, &pAddr46->sa, sizeof(*pAddr46))<0) {
+    if(epicsSocket46Bind(sock, pAddr46)<0) {
         char sockErrBuf[64];
         if(SOCKERRNO!=SOCK_EADDRINUSE)
         {
@@ -199,7 +199,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
 
             epicsSocketEnableAddressReuseDuringTimeWaitState ( tcpsock );
 
-            if(epicsSocket46Bind(tcpsock, &scratch46.sa, sizeof(scratch46))==0 && listen(tcpsock, 20)==0) {
+            if(epicsSocket46Bind(tcpsock, &scratch46)==0 && listen(tcpsock, 20)==0) {
                 if(scratch46.ia.sin_port==0) {
                     /* use first socket to pick a random port */
                     osiSocklen_t alen = sizeof(ifaceAddr);

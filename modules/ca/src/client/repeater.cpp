@@ -115,7 +115,7 @@ static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
         addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         addr46.ia.sin_port = htons ( port );
 #endif
-        status = epicsSocket46Bind ( sock, &addr46.sa, (int) sizeof(addr46) );
+        status = epicsSocket46Bind ( sock, &addr46 );
         if ( status < 0 ) {
             status = SOCKERRNO;
             epicsSocketDestroy ( sock );
@@ -401,7 +401,7 @@ static void register_new_client ( osiSockAddr46 & from,
             addr.ia.sin_port = PORT_ANY;
 
             /* we can only bind to a local address */
-            status = epicsSocket46Bind ( testSock, &addr.sa, sizeof ( addr ) );
+            status = epicsSocket46Bind ( testSock, &addr );
             if ( status ) {
                 return;
             }

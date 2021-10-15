@@ -21,7 +21,7 @@
 #include "ellLib.h"
 
 /* Enable it for debugging */
-#define NETDEBUG
+/* #define NETDEBUG */
 
 /* We assume that UNIX-ish OS can handle IPv6 with the current code base */
 #if defined ( darwin ) || defined ( linux )
@@ -111,9 +111,8 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
  */
 LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno,
                                                 SOCKET sock,
-                                                const struct sockaddr *pAddrSa,
-                                                osiSocklen_t socklen);
-#define epicsSocket46Bind(a,b,c) epicsSocket46BindFL(__FILE__, __LINE__, a,b,c)
+                                                const osiSockAddr46 *pAddr46);
+#define epicsSocket46Bind(a,b) epicsSocket46BindFL(__FILE__, __LINE__, a,b)
 
 LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char* filename, int lineno,
                                                    SOCKET sock,

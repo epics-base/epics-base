@@ -310,34 +310,25 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
  * Make sure that the right length is passed into bind()
  */
 LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno,
-                                            SOCKET sock,
-                                            const struct sockaddr *pAddr,
-                                            osiSocklen_t socklenIn)
+                                                SOCKET sock,
+                                                const osiSockAddr46 *pAddr46)
 {
-    osiSocklen_t socklenOut = socklenIn;
-    int status;
-    /*
-     * For IPv4: socklen is the the length of an "struct sockaddr"
-     * or "struct sockaddr_in". We use "struct sockaddr" here,
-     * since this is what EPICS always did and should work
-     * For IPv6 "struct sockaddr" is to short - we must use
-     * sizeof(struct sockaddr_in6)
-     */
-    if ((pAddr->sa_family == AF_INET6) &&
-        (socklenIn < sizeof(struct sockaddr_in6))) {
-        socklenOut = sizeof(struct sockaddr_in6);
-    }
-    status = bind(sock, pAddr, socklenOut);
+#if EPICS_HAS_IPV6
+    osiSocklen_t socklen = ( osiSocklen_t ) sizeof(pAddr46->in6);
+#else
+    osiSocklen_t socklen = ( osiSocklen_t ) sizeof(pAddr46->ia);
+#endif
+    int status = bind(sock, &pAddr46->sa, socklen);
 #ifdef NETDEBUG
     /* if (status < 0) */ {
         char buf[64];
 	char sockErrBuf[64];
 	epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        sockAddrToDottedIP(pAddr, buf, sizeof(buf));
-        epicsPrintf("%s:%d: bind(%lu) address='%s' socklenIn=%u socklenOut=%u status=%d: %s\n",
+        sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
+        epicsPrintf("%s:%d: bind(%lu) address='%s' socklen=%u status=%d: %s\n",
                      filename, lineno,
                      (unsigned long)sock,
-                     buf, (unsigned)socklenIn, (unsigned)socklenOut,
+                     buf, (unsigned)socklen,
                      status, status < 0 ? sockErrBuf : "");
     }
 #endif
@@ -346,7 +337,7 @@ LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno
 
 
 LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, int lineno,
-                                                     SOCKET sock, unsigned short port)
+                                                         SOCKET sock, unsigned short port)
 
 {
     osiSockAddr46 addr46;
@@ -364,7 +355,7 @@ LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, i
         addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         addr46.ia.sin_port = htons ( port );
     }
-    return epicsSocket46BindFL(filename, lineno, sock, &addr46.sa, sizeof(addr46));
+    return epicsSocket46BindFL(filename, lineno, sock, &addr46);
 }
 
 

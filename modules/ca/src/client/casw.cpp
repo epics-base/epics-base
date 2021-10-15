@@ -129,7 +129,7 @@ int main ( int argc, char ** argv )
         addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         addr46.ia.sin_port = htons ( PORT_ANY );
     }
-    status = epicsSocket46Bind ( sock, &addr46.sa, sizeof (addr46) );
+    status = epicsSocket46Bind ( sock, &addr46 );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (

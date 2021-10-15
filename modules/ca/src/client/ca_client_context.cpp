@@ -131,7 +131,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
             addr46.ia.sin_port = htons ( PORT_ANY );
         }
 
-        int status = epicsSocket46Bind (this->sock, &addr46.sa, sizeof (addr46) );
+        int status = epicsSocket46Bind (this->sock, &addr46);
         if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );

@@ -134,7 +134,7 @@ double timerQueue::process ( const epicsTime & currentTime )
             epicsGuardRelease < epicsMutex > unguard ( guard );
 
             debugPrintf ( ( "%5u expired \"%s\" with error %f sec\n",
-                N++, typeid ( this->pExpireTmr->notify ).name (),
+                N++, typeid ( this->pExpireTmr->pNotify ).name (),
                 currentTime - this->pExpireTmr->exp ) );
             try {
                 expStat = pTmpNotify->expire ( currentTime );

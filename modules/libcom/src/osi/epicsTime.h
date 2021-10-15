@@ -184,7 +184,7 @@ LIBCOM_API int epicsStdCall epicsTimeFromTimeval (
 
 /** \name Arithmetic operations
  * Arithmetic operations on epicsTimeStamp objects and time differences
- * which are always expressed as a \c double in seconds.
+ * which are normally expressed as a \c double in seconds.
  * @{ */
 /** \brief Time difference between \p left and \p right in seconds. */
 LIBCOM_API double epicsStdCall epicsTimeDiffInSeconds (
@@ -192,13 +192,13 @@ LIBCOM_API double epicsStdCall epicsTimeDiffInSeconds (
 /** \brief Add some number of seconds to \p dest */
 LIBCOM_API void epicsStdCall epicsTimeAddSeconds (
     epicsTimeStamp * pDest, double secondsToAdd ); /* adds seconds to *pDest */
-/** @} */
-
-/** \brief Return difference LHS-RHS as signed integer nanoseconds.
- * @since UNRELEASED
+/** \brief Time difference between \p left and \p right, as a signed integer
+ * number of nanoseconds.
+ * @since EPICS 7.0.6.1
  */
-LIBCOM_API
-epicsInt64 epicsStdCall epicsTimeDiffInNS (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight);
+LIBCOM_API epicsInt64 epicsStdCall epicsTimeDiffInNS (
+    const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight);
+/** @} */
 
 /** \name Comparison operators
  * Comparisons between epicsTimeStamp objects, returning 0=false, 1=true.

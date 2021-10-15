@@ -1245,8 +1245,8 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
         return RSRV_OK;
     }
 
-    DLOG ( 2, ("CAS: claim_ciu_action found '%s', type %d, count %d\n",
-        pName, dbChannelCAType(dbch), dbChannelElements(dbch)) );
+    DLOG ( 2, ("CAS: claim_ciu_action found '%s', type %d, count %ld\n",
+        pName, dbChannelExportCAType(dbch), dbChannelElements(dbch)) );
 
     pciu = casCreateChannel (
             client,
@@ -1874,7 +1874,7 @@ static int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client 
      * messages sent by the server).
      */
 
-    DLOG ( 3, ("event_add_action: db_post_single_event (0x%X)\n",
+    DLOG ( 3, ("event_add_action: db_post_single_event (%p)\n",
         pevext->pdbev) );
     db_post_single_event(pevext->pdbev);
 
@@ -2191,7 +2191,7 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
 
     /* Exit quickly if channel not on this node */
     if (dbChannelTest(pName)) {
-        DLOG ( 2, ( "CAS: Lookup for channel \"%s\" failed\n", pPayLoad ) );
+        DLOG ( 2, ( "CAS: Lookup for channel \"%s\" failed\n", pName ) );
         return RSRV_OK;
     }
 
@@ -2278,7 +2278,7 @@ static int search_reply_tcp (
 
     /* Exit quickly if channel not on this node */
     if (dbChannelTest(pName)) {
-        DLOG ( 2, ( "CAS: Lookup for channel \"%s\" failed\n", pPayLoad ) );
+        DLOG ( 2, ( "CAS: Lookup for channel \"%s\" failed\n", pName ) );
         if (mp->m_dataType == DOREPLY)
             search_fail_reply ( mp, pPayload, client );
         return RSRV_OK;
@@ -2410,7 +2410,7 @@ int camessage ( struct client *client )
         }
     }
 
-    DLOG ( 2, ( "CAS: Parsing %d(decimal) bytes\n", recv->cnt ) );
+    DLOG ( 2, ( "CAS: Parsing %d(decimal) bytes\n", client->recv.cnt ) );
 
     while ( 1 )
     {

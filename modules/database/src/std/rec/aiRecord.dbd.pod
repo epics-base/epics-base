@@ -45,8 +45,9 @@ hardware address information that the device support uses to determine where the
 input data should come from.
 The format for the INP field value depends on the device support layer that is
 selected by the DTYP field.
-See L<Address Specification|...> for a description of the various hardware
-address formats supported.
+See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for a description of the various hardware address formats supported.
 
 =head3 Units Conversion
 

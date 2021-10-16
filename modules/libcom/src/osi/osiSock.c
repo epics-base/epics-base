@@ -561,7 +561,7 @@ LIBCOM_API int epicsStdCall sockAddrAreIdentical46FL(const char *filename, int l
         ret = 1;
 #endif
     }
-#ifdef NETDEBUG
+#ifdef NETDEBUGX2
     {
         char buf1[64];
         char buf2[64];
@@ -664,7 +664,9 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                (addr >> 16) & 0xFF,
                                (addr >> 8) & 0xFF,
                                (addr) & 0xFF);
-    } else if (pAddr->sa_family == AF_INET6) {
+    }
+#if EPICS_HAS_IPV6
+    else if (pAddr->sa_family == AF_INET6) {
         const struct sockaddr_in6 *pIn6 = (const struct sockaddr_in6 *)pAddr;
         if (IN6_IS_ADDR_V4MAPPED(&pIn6->sin6_addr)) {
             /* https://datatracker.ietf.org/doc/html/rfc5156 */
@@ -694,9 +696,7 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                     pIn6->sin6_addr.s6_addr[15],
                                     (unsigned long)pIn6->sin6_scope_id);
         }
-    }
-#if EPICS_HAS_IPV6
-    else {
+    } else {
         /*
          *  This is for debugging only, assuming a struct defined
          *  See https://datatracker.ietf.org/doc/html/rfc3493
@@ -718,6 +718,22 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                pRawBytes[22], pRawBytes[23]
                                );
     }
+#else
+    else {
+        /*
+         *  This is for debugging only, assuming a struct defined
+         *  See https://datatracker.ietf.org/doc/html/rfc3493
+         *  2 fam, 2 port, 4 IPv4
+         */
+        unsigned char *pRawBytes =(unsigned char *)pAddr;
+        status = epicsSnprintf(pBuf, bufSize, "%02x%02x %02x%02x %02x%02x%02x%02x",
+                               pRawBytes[0],  pRawBytes[1],
+                               pRawBytes[2],  pRawBytes[3],
+                               pRawBytes[4],  pRawBytes[5],
+                               pRawBytes[6],  pRawBytes[7]
+                               );
+    }
+
 #endif
     if (status > 0) {
         strLen = (unsigned) status;
@@ -739,9 +755,8 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
     {
         int status = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
                                 (char*)&interfaceIndex, sizeof(interfaceIndex));
-#ifndef NETDEBUG
+
         if ( status )
-#endif
         {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
@@ -756,9 +771,8 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
         /* Set TTL of multicast packet */
         int status = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
                                 (char*)&hops, sizeof(hops));
-#ifndef NETDEBUG
+
         if ( status )
-#endif
         {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
@@ -773,9 +787,7 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
         int loop_on = 1;
         int status = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
                                 (char*)&loop_on, sizeof(loop_on));
-#ifndef NETDEBUG
         if ( status )
-#endif
         {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
@@ -873,7 +885,7 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
         pAddr6->sin6_addr.s6_addr[14] = 0;
         pAddr6->sin6_addr.s6_addr[15] = 1;
     }
-#ifdef NETDEBUG
+#ifdef NETDEBUGX2
     {
         char bufIn[64];
         char bufOut[64];

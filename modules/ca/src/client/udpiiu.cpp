@@ -307,7 +307,9 @@ udpiiu::udpiiu (
                      buf);
       }
 #endif
+#if defined ( linux )
 #if EPICS_HAS_IPV6
+      /* Binding a socket to "multihomed" works under Linux */
       if (pNode->addr46.sa.sa_family == AF_INET6)
       {
            /*
@@ -318,6 +320,7 @@ udpiiu::udpiiu (
            unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
            epicsSocket46optIPv6MultiCast(this->sock, interfaceIndex);
       }
+#endif
 #endif
       SearchDestUDP & searchDest = *
         new SearchDestUDP ( pNode->addr46, *this );
@@ -1025,6 +1028,15 @@ void udpiiu :: SearchDestUDP :: searchRequest (
     assert ( bufSize <= INT_MAX );
     int bufSizeAsInt = static_cast < int > ( bufSize );
     while ( true ) {
+#if ! defined ( linux )
+#if EPICS_HAS_IPV6
+        /* put the socket into the multicast group before sendto() recvfrom() */
+        if ( _destAddr.sa.sa_family == AF_INET6 ) {
+           unsigned int interfaceIndex = (unsigned int)_destAddr.in6.sin6_scope_id;
+           epicsSocket46optIPv6MultiCast(_udpiiu.sock, interfaceIndex);
+        }
+#endif
+#endif
         // This const_cast is needed for vxWorks:
         int status = epicsSocket46Sendto ( _udpiiu.sock, const_cast<char *>(pBuf), bufSizeAsInt, 0,
                                            & _destAddr );

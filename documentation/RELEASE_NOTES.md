@@ -16,6 +16,33 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Colorized Messages for errlog
+
+Many internal error messages now emit ANSI escape sequences to highlight the
+words "ERROR" and "WARNING" in an attempt to make occurrences more noticeable
+during IOC startup.
+
+The macros `ERL_ERROR` and `ERL_WARNING` are defined for external usage,
+and expand as string constants.  eg.
+
+```c
+#include <errlog.h>
+#ifndef ERL_ERROR
+#  define ERL_ERROR "ERROR"
+#endif
+void fn() {
+   ...
+   errlogPrintf(ERL_ERROR ": something bad happens :(\n");
+```
+
+ANSI escapes are automatically removed from errlog output not destined
+for a terminal.  For example, for logClient, if stderr is redirected,
+or if unsupported (`$TERM` not set, or Windows < 10).
+
+### `dbnd` filter pass through DBE_ALARM|DBE_PROPERTY
+
+The `dbnd` server side filter now passes through alarm and property
+change events, even when not exceeding the deadband.
 
 ## EPICS Release 7.0.6.1
 

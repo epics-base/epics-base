@@ -21,7 +21,7 @@
 #include "ellLib.h"
 
 /* Enable it for debugging */
-//#define NETDEBUG
+/* #define NETDEBUG */
 
 /* We assume that darwin and linux can handle IPv6 with the current code base */
 #if defined ( darwin ) || defined ( linux )
@@ -70,10 +70,14 @@ LIBCOM_API void epicsStdCall
  * Prototypes for the generic wrapper with IPv6 (and debug)
  */
 
+#ifdef NETDEBUG
 LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL ( 
     const char *filename, int lineno,
     int domain, int type, int protocol );
 #define epicsSocket46Create(a,b,c) epicsSocket46CreateFL(__FILE__, __LINE__,a,b,c)
+#else
+#define epicsSocket46Create(a,b,c) epicsSocketCreate(a,b,c)
+#endif
 
 LIBCOM_API int epicsStdCall epicsSocket46AcceptFL (
     const char *filename, int lineno,

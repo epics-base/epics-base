@@ -287,6 +287,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
  * the socket will be closed if the user uses exec()
  * as is the case with third party tools such as TCL/TK
  */
+#ifdef NETDEBUG
 LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL ( 
     const char *filename, int lineno,
     int domain, int type, int protocol )
@@ -298,12 +299,11 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
         domain_family_str = "(AF_INET6)";
     }
     SOCKET sock = epicsSocketCreate( domain, type, protocol );
-#ifdef NETDEBUG
     epicsPrintf ("epicsSocketCreate(%s:%d) %s socket=%lu\n",
                  filename, lineno, domain_family_str, (unsigned long)sock);
-#endif
     return sock;
 }
+#endif
 
 /*
  * Wrapper around bind()

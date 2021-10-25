@@ -137,6 +137,7 @@ jobs:
             rtems: "4.10"
             name: "Ub-20 gcc-9 + RT-4.10"
             rtems_target: RTEMS-pc386-qemu
+            test: NO
 
           - os: ubuntu-20.04
             cmp: gcc
@@ -144,6 +145,7 @@ jobs:
             rtems: "4.9"
             name: "Ub-20 gcc-9 + RT-4.9"
             rtems_target: RTEMS-pc386-qemu
+            test: NO
 
           - os: macos-latest
             cmp: clang

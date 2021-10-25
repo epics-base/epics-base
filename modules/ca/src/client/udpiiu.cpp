@@ -278,7 +278,7 @@ udpiiu::udpiiu (
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
             epicsSocketDestroy ( this->sock );
-            errlogPrintf ( "CAC: getsockname () error was \"%s\"\n", sockErrBuf );
+            errlogPrintf ( "CAC: getsockname () " ERL_ERROR " was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
         if ( ! epicsSocket46IsAF_INETorAF_INET6 ( tmpAddr.sa.sa_family ) ) {
@@ -463,7 +463,7 @@ void udpRecvThread::run ()
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
-                    errlogPrintf ( "CAC: UDP recv error was \"%s\"\n",
+                    errlogPrintf ( "CAC: UDP recv " ERL_ERROR " was \"%s\"\n",
                         sockErrBuf );
                 }
             }

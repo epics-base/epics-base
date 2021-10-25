@@ -13,6 +13,7 @@
 
 #include <string.h>
 
+#include "dbAccess.h"
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
 #include "db_field_log.h"
@@ -46,6 +47,7 @@ static void fl_setup(dbChannel *chan, db_field_log *pfl) {
     pfl->stat = prec->stat;
     pfl->sevr = prec->sevr;
     pfl->time = prec->time;
+    pfl->mask = DBE_VALUE;
     pfl->field_type  = dbChannelFieldType(chan);
     pfl->field_size  = dbChannelFieldSize(chan);
     pfl->no_elements = dbChannelElements(chan);

@@ -322,8 +322,8 @@ LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno
 #ifdef NETDEBUG
     /* if (status < 0) */ {
         char buf[64];
-	char sockErrBuf[64];
-	epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
         epicsPrintf("%s:%d: bind(%lu) address='%s' socklen=%u status=%d: %s\n",
                      filename, lineno,
@@ -381,8 +381,8 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
     {
         char bufIn[64];
         char bufOut[64];
-	char sockErrBuf[64];
-	epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
         sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
         epicsPrintf("%s:%d: connect(%lu) address='%s' (%s) status=%d %s\n",
@@ -390,7 +390,7 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
                     (unsigned long)sock,
                     bufIn,
                     pAddr46->sa.sa_family != addr46Output.sa.sa_family ? bufOut : "",
-		    status, status < 0 ? sockErrBuf : "");
+                    status, status < 0 ? sockErrBuf : "");
     }
 #endif
     return status;
@@ -416,8 +416,8 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
     {
         char bufIn[64];
         char bufOut[64];
-	char sockErrBuf[64];
-	epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
         sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
         epicsPrintf("%s:%d: sendto(%lu) address='%s' (%s) len=%u status=%d %s\n",
@@ -426,7 +426,7 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
                     bufIn,
                     pAddr46->sa.sa_family != addr46Output.sa.sa_family ? bufOut : "",
                     (unsigned)len,
-		    status, status < 0 ? sockErrBuf : "");
+                    status, status < 0 ? sockErrBuf : "");
     }
 #endif
     return status;
@@ -444,14 +444,14 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvfromFL(const char *filename, int li
 #ifdef NETDEBUG
     {
         char bufDotted[64];
-	char sockErrBuf[64];
-	epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufDotted, sizeof(bufDotted));
         epicsPrintf("%s:%d: recvfrom(%lu) buflen=%u address='%s' status=%d %s\n",
-		    filename, lineno,
-		    (unsigned long)sock,
-		    (unsigned)len, bufDotted,
-		    status, status < 0 ? sockErrBuf : "");
+                    filename, lineno,
+                    (unsigned long)sock,
+                    (unsigned)len, bufDotted,
+                    status, status < 0 ? sockErrBuf : "");
     }
 #endif
 #if EPICS_HAS_IPV6
@@ -472,14 +472,14 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvfromFL(const char *filename, int li
 #ifdef NETDEBUG_V4MAPPED
             {
                 char bufDotted[64];
-		char sockErrBuf[64];
-		epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+                char sockErrBuf[64];
+                epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
                 sockAddrToDottedIP(&pAddr46->sa, bufDotted, sizeof(bufDotted));
                 epicsPrintf("%s:%d: recvfrom(%lu) buflen=%u IPv4address='%s' status=%d %s\n",
                             filename, lineno,
                             (unsigned long)sock,
                             (unsigned)len, bufDotted,
-			    status, status < 0 ? sockErrBuf : "");
+                            status, status < 0 ? sockErrBuf : "");
             }
 #endif
         }
@@ -499,14 +499,14 @@ LIBCOM_API int epicsStdCall epicsSocket46AcceptFL(const char *filename, int line
 #ifdef NETDEBUG
     {
         char buf[64];
-	char sockErrBuf[64];
-	epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
         epicsPrintf("%s:%d: accept(%lu) address='%s' status=%d (%s)\n",
-		    filename, lineno,
-		    (unsigned long)sock,
-		    buf,
-		    status, status < 0 ? sockErrBuf : "");
+                    filename, lineno,
+                    (unsigned long)sock,
+                    buf,
+                    status, status < 0 ? sockErrBuf : "");
     }
 #endif
     return status;

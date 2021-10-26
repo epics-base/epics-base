@@ -16,6 +16,10 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Fix for `undefined` in configure/RELEASE files
+
+Prevents `Use of uninitialized value` warnings from convertRelease.pl.
+
 ### Colorized Messages for errlog
 
 Many internal error messages now emit ANSI escape sequences to highlight the

@@ -42,6 +42,20 @@
 #include "disconnectGovernorTimer.h"
 #include "osiSock.h" // EPICS_HAS_IPV6 and NETDEBUG
 
+/*
+ * There are 2 flavors how IPv6 (with link-local addresses) is handled
+ * through the socket interface
+ * Lets call them LINUX and BSD
+ */
+#if EPICS_HAS_IPV6
+#if defined ( linux )
+#define EPICS_HAS_IPV6_LINUX
+#else
+#define EPICS_HAS_IPV6_BSD
+#include <poll.h>
+#endif
+#endif
+
 // UDP protocol dispatch table
 const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
 {
@@ -145,6 +159,8 @@ udpiiu::udpiiu (
     sequenceNumber ( 0 ),
     lastReceivedSeqNo ( 0 ),
     sock ( 0 ),
+    pPollFds ( 0 ),
+    numPollFds ( 0 ),
     repeaterPort ( 0 ),
     serverPort ( port ),
     localPort ( 0 ),
@@ -296,8 +312,20 @@ udpiiu::udpiiu (
     ELLLIST dest;
     ellInit ( & dest );
     configureChannelAccessAddressList ( & dest, this->sock, this->serverPort );
+#ifdef EPICS_HAS_IPV6_BSD
+    unsigned searchDestList_count = (unsigned)dest.count;
+    pPollFds = (pollfd*)callocMustSucceed(searchDestList_count + 1, /* one for this.socket */
+                                          sizeof(struct pollfd),
+                                          "udpiiu::udpiiu");
+
+    /* this.socket must be added to the polling list */
+    pPollFds[numPollFds].fd = this->sock;
+    pPollFds[numPollFds].events = POLLIN;
+    numPollFds++;
+#endif
     while ( osiSockAddrNode *
         pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
+        SOCKET socket46 = this->sock;
 #ifdef NETDEBUG
       {
           char buf[64];
@@ -307,24 +335,31 @@ udpiiu::udpiiu (
                      buf);
       }
 #endif
-#if defined ( linux )
-#if EPICS_HAS_IPV6
-      /* Binding a socket to "multihomed" works under Linux */
-      if (pNode->addr46.sa.sa_family == AF_INET6)
-      {
-           /*
-            * The user must specify the interface like this:
-            * export EPICS_CA_ADDR_LIST='[fe80::3958:418:65b8:230c%en0]'
-            * The %en0 will become the scope id, which IPV6_MULTICAST_IF needs
-            */
-           unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
+#ifdef EPICS_HAS_IPV6
+      if (pNode->addr46.sa.sa_family == AF_INET6) {
+          unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
+#ifdef EPICS_HAS_IPV6_LINUX
            epicsSocket46optIPv6MultiCast(this->sock, interfaceIndex);
+#else
+          /*
+           * The user must specify the interface like this:
+           * export EPICS_CA_ADDR_LIST='[fe80::3958:418:65b8:230c%en0]'
+           * The %en0 will become the scope id, which IPV6_MULTICAST_IF needs
+           * BSD/non-Linux system need a own socket per scope_id
+           */
+          socket46 = epicsSocket46Create ( AF_INET6, SOCK_DGRAM, IPPROTO_UDP );
+          pPollFds[numPollFds].fd = socket46;
+          pPollFds[numPollFds].events = POLLIN;
+          numPollFds++;
+#endif
+          epicsSocket46optIPv6MultiCast(socket46, interfaceIndex);
       }
 #endif
-#endif
-      SearchDestUDP & searchDest = *
-        new SearchDestUDP ( pNode->addr46, *this );
-      _searchDestList.add ( searchDest );
+      {
+        SearchDestUDP & searchDest = *
+          new SearchDestUDP ( pNode->addr46, *this, socket46 );
+        _searchDestList.add ( searchDest );
+      }
       free ( pNode );
     }
 
@@ -363,6 +398,15 @@ udpiiu::~udpiiu ()
         delete & curr;
     }
 
+#ifdef EPICS_HAS_IPV6_BSD
+    if ( pPollFds && numPollFds > 1 ) {
+        for ( unsigned idx = 1; idx < numPollFds; idx++ ) {
+            epicsSocketDestroy ( pPollFds[idx].fd );
+        }
+        numPollFds = 0;
+        free ( pPollFds );
+    }
+#endif
     epicsSocketDestroy ( this->sock );
 }
 
@@ -439,9 +483,45 @@ void udpRecvThread::run ()
             this->iiu.cacRef, ECA_NOSEARCHADDR, NULL );
     }
 
+#ifdef NETDEBUG
+    {
+        epicsPrintf ("%s:%d: udpRecvThread::run this->iiu.pPollFds=%p this->iiu.numPollFds=%d\n",
+                     __FILE__, __LINE__,
+                     this->iiu.pPollFds, this->iiu.numPollFds);
+    }
+#endif
+
     do {
+        SOCKET sock = this->iiu.sock;
+#ifdef EPICS_HAS_IPV6_BSD
+        pollagain:
+        if ( this->iiu.pPollFds && this->iiu.numPollFds >= 1 ) {
+            int pollres = poll ( this->iiu.pPollFds, this->iiu.numPollFds, -1 );
+            if ( pollres < 0 ) {
+                char sockErrBuf[64];
+                epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsPrintf("%s:%d: udpRecvThread::run pollres =%d: %s\n",
+                            __FILE__, __LINE__, pollres, sockErrBuf);
+                if ( this->iiu.shutdownCmd ) {
+                    return; /* Do not end up in an endless loop */
+                }
+                goto pollagain;
+            }
+            for ( unsigned idx = 0; idx < this->iiu.numPollFds; idx++ ) {
+#ifdef NETDEBUG
+                epicsPrintf ("%s:%d: udpRecvThread::run idx=%u socket=%d revents=0x%x\n",
+                              __FILE__, __LINE__,
+                               idx, (int)this->iiu.pPollFds[idx].fd, this->iiu.pPollFds[idx].revents);
+#endif
+                if (this->iiu.pPollFds[idx].revents) {
+                    sock = this->iiu.pPollFds[idx].fd;
+                }
+            }
+        }
+#endif
+
         osiSockAddr46 src;
-        int status = epicsSocket46Recvfrom ( this->iiu.sock,
+        int status = epicsSocket46Recvfrom ( sock,
             this->iiu.recvBuf, sizeof ( this->iiu.recvBuf ), 0,
             & src);
 
@@ -1016,8 +1096,8 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
 }
 
 udpiiu :: SearchDestUDP :: SearchDestUDP (
-    const osiSockAddr46 & destAddr, udpiiu & udpiiuIn ) :
-    _lastError (0u), _destAddr ( destAddr ), _udpiiu ( udpiiuIn )
+    const osiSockAddr46 & destAddr, udpiiu & udpiiuIn, SOCKET socketIn) :
+    _lastError (0u), _destAddr ( destAddr ), _udpiiu ( udpiiuIn ), _sock46 ( socketIn )
 {
 }
 
@@ -1028,17 +1108,8 @@ void udpiiu :: SearchDestUDP :: searchRequest (
     assert ( bufSize <= INT_MAX );
     int bufSizeAsInt = static_cast < int > ( bufSize );
     while ( true ) {
-#if ! defined ( linux )
-#if EPICS_HAS_IPV6
-        /* put the socket into the multicast group before sendto() recvfrom() */
-        if ( _destAddr.sa.sa_family == AF_INET6 ) {
-           unsigned int interfaceIndex = (unsigned int)_destAddr.in6.sin6_scope_id;
-           epicsSocket46optIPv6MultiCast(_udpiiu.sock, interfaceIndex);
-        }
-#endif
-#endif
         // This const_cast is needed for vxWorks:
-        int status = epicsSocket46Sendto ( _udpiiu.sock, const_cast<char *>(pBuf), bufSizeAsInt, 0,
+        int status = epicsSocket46Sendto ( _sock46, const_cast<char *>(pBuf), bufSizeAsInt, 0,
                                            & _destAddr );
         if ( status == bufSizeAsInt ) {
             if ( _lastError ) {

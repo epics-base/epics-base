@@ -120,7 +120,7 @@ private:
     class SearchDestUDP :
         public SearchDest {
     public:
-        SearchDestUDP ( const osiSockAddr46 &, udpiiu & );
+        SearchDestUDP ( const osiSockAddr46 &, udpiiu & , SOCKET);
         void searchRequest (
             epicsGuard < epicsMutex > &, const char * pBuf, size_t bufLen );
         void show (
@@ -129,6 +129,7 @@ private:
         int _lastError;
         osiSockAddr46 _destAddr;
         udpiiu & _udpiiu;
+        SOCKET _sock46;
     };
     class SearchRespCallback :
         public SearchDest :: Callback {
@@ -186,6 +187,8 @@ private:
     ca_uint32_t sequenceNumber;
     ca_uint32_t lastReceivedSeqNo;
     SOCKET sock;
+    struct pollfd *pPollFds;
+    unsigned numPollFds;
     ca_uint16_t repeaterPort;
     ca_uint16_t serverPort;
     ca_uint16_t localPort;

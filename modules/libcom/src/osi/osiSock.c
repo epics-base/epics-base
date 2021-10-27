@@ -293,14 +293,20 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
     int domain, int type, int protocol )
 {
     char *domain_family_str = "";
+    char *type_str = "";
     if (domain == AF_INET) {
-        domain_family_str = "(AF_INET)";
+        domain_family_str = "AF_INET";
     } else if (domain == AF_INET6) {
-        domain_family_str = "(AF_INET6)";
+        domain_family_str = "AF_INET6";
+    }
+    if (type == SOCK_DGRAM) {
+        type_str = "DGRAM";
+    } else if (type == SOCK_STREAM) {
+        type_str = "STREAM";
     }
     SOCKET sock = epicsSocketCreate( domain, type, protocol );
-    epicsPrintf ("epicsSocketCreate(%s:%d) %s socket=%lu\n",
-                 filename, lineno, domain_family_str, (unsigned long)sock);
+    epicsPrintf ("epicsSocketCreate(%s:%d) (%s %s) socket=%lu\n",
+                 filename, lineno, domain_family_str, type_str, (unsigned long)sock);
     return sock;
 }
 #endif

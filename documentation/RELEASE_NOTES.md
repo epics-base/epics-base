@@ -43,10 +43,12 @@ ANSI escapes are automatically removed from errlog output not destined
 for a terminal.  For example, for logClient, if stderr is redirected,
 or if unsupported (`$TERM` not set, or Windows < 10).
 
-### `dbnd` filter pass through DBE_ALARM|DBE_PROPERTY
+### `dbnd` filter pass through `DBE_ALARM|DBE_PROPERTY`
 
 The `dbnd` server side filter now passes through alarm and property
 change events, even when not exceeding the deadband.
+
+-----
 
 ## EPICS Release 7.0.6.1
 

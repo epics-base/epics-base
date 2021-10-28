@@ -197,7 +197,6 @@ void testLinkSevr(void)
 
     testdbPutFieldOk("si1.PROC", DBF_LONG, 1);
     testMonitorWait(mon);
-    dbCaSync(); /* wait for update */
 
     testdbGetFieldEqual("si1", DBF_STRING, "INVALID");
     testdbGetFieldEqual("li1", DBF_LONG, INVALID_ALARM);

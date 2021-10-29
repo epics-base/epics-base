@@ -159,7 +159,7 @@ typedef struct {
 } rsrv_iface_config;
 
 typedef struct {
-    SOCKET sock;
+    SOCKET *pSockets;
 } rsrv_online_notify_config;
 
 enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};

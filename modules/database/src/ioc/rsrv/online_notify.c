@@ -43,7 +43,7 @@ void rsrv_online_notify_task(void *pParm)
     double                      maxdelay;
     long                        longStatus;
     double                      maxPeriod;
-    SOCKET                      sock = pConf->sock;
+    SOCKET                      *pSockets = pConf->pSockets;
     caHdr                       msg;
     int                         status;
     ca_uint32_t                 beaconCounter = 0;
@@ -86,7 +86,7 @@ void rsrv_online_notify_task(void *pParm)
         for(i=0, cur=ellFirst(&beaconAddrList); cur; i++, cur=ellNext(cur))
         {
             osiSockAddrNode *pAddr = CONTAINER(cur, osiSockAddrNode, node);
-            status = epicsSocket46Sendto (sock, (char *)&msg, sizeof(msg), 0,
+            status = epicsSocket46Sendto (pSockets[i], (char *)&msg, sizeof(msg), 0,
                                           &pAddr->addr46 );
             if (status < 0) {
                 int err = SOCKERRNO;

@@ -49,6 +49,7 @@
 
 epicsThreadPrivateId rsrvCurrentClient;
 static SOCKET        beaconSocket4;
+static rsrv_online_notify_config conf;
 
 /*
  *
@@ -518,6 +519,29 @@ void rsrv_build_addr_lists(void)
     if (ellCount(&beaconAddrList)==0)
         fprintf(stderr, "Warning: RSRV has empty beacon address list\n");
 
+    conf.pSockets = callocMustSucceed( ellCount(&beaconAddrList), sizeof(SOCKET), "rsrv_init" );
+    {
+        ELLNODE *cur;
+        unsigned i;
+
+        /* send beacon to each interface */
+        for(i=0, cur=ellFirst(&beaconAddrList); cur; i++, cur=ellNext(cur))
+        {
+            osiSockAddrNode *pNode = CONTAINER(cur, osiSockAddrNode, node);
+            conf.pSockets[i] = beaconSocket4; /* the default */
+#if EPICS_HAS_IPV6
+            if (pNode->addr46.sa.sa_family == AF_INET6) {
+                SOCKET sock = epicsSocket46Create (AF_INET6, SOCK_DGRAM, 0);
+                if (sock != INVALID_SOCKET) {
+                    unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
+                    epicsSocket46optIPv6MultiCast(sock, interfaceIndex);
+                    conf.pSockets[i] = sock;
+                }
+            }
+#endif
+        }
+    }
+
     {
         osiSockAddrNode *node;
         ELLLIST temp = ELLLIST_INIT,
@@ -844,9 +868,6 @@ void rsrv_init (void)
 
     /* servers list is considered read-only from this point */
     {
-        /* static allocated struct */
-        static rsrv_online_notify_config conf;
-        conf.sock = beaconSocket4;
         epicsThreadMustCreate("CAS-beacon", threadPrios[3],
                               epicsThreadGetStackSize(epicsThreadStackSmall),
                               &rsrv_online_notify_task, &conf);

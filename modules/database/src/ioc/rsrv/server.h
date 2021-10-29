@@ -158,6 +158,10 @@ typedef struct {
     unsigned int startbcast:1;
 } rsrv_iface_config;
 
+typedef struct {
+    SOCKET sock;
+} rsrv_online_notify_config;
+
 enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 
 /*  NOTE: external used so they remember the state across loads */
@@ -184,7 +188,6 @@ GLBLTYPE unsigned short     ca_server_port, ca_udp_port, ca_beacon_port;
 GLBLTYPE ELLLIST            clientQ             GLBLTYPE_INIT(ELLLIST_INIT);
 GLBLTYPE ELLLIST            servers; /* rsrv_iface_config::node, read-only after rsrv_init() */
 GLBLTYPE ELLLIST            beaconAddrList;
-GLBLTYPE SOCKET             beaconSocket;
 GLBLTYPE ELLLIST            casIntfAddrList, casMCastAddrList;
 GLBLTYPE osiSockAddr46      *casIgnoreAddrs46;
 GLBLTYPE epicsMutexId       clientQlock;

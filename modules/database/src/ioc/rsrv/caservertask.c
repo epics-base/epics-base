@@ -48,6 +48,7 @@
 #include "server.h"
 
 epicsThreadPrivateId rsrvCurrentClient;
+static SOCKET        beaconSocket4;
 
 /*
  *
@@ -322,20 +323,20 @@ void rsrv_build_addr_lists(void)
      */
 
     // The family must match the address used in rsrv/online_notify.c:88
-    beaconSocket = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
-    if (beaconSocket==INVALID_SOCKET)
+    beaconSocket4 = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
+    if (beaconSocket4==INVALID_SOCKET)
         cantProceed("socket allocation failed during address list expansion");
 
     {
         int intTrue = 1;
-        if (setsockopt (beaconSocket, SOL_SOCKET, SO_BROADCAST,
+        if (setsockopt (beaconSocket4, SOL_SOCKET, SO_BROADCAST,
                         (char *)&intTrue, sizeof(intTrue))<0) {
             cantProceed("CAS: online socket set up error\n");
         }
 #ifdef IP_ADD_MEMBERSHIP
         {
             osiSockOptMcastLoop_t flag = 1;
-            if (setsockopt(beaconSocket, IPPROTO_IP, IP_MULTICAST_LOOP,
+            if (setsockopt(beaconSocket4, IPPROTO_IP, IP_MULTICAST_LOOP,
                            (char *)&flag, sizeof(flag))<0) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
@@ -353,7 +354,7 @@ void rsrv_build_addr_lists(void)
         if(envGetLongConfigParam(&EPICS_CA_MCAST_TTL, &val))
             val =1;
         ttl = val;
-        if ( setsockopt(beaconSocket, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof(ttl))) {
+        if ( setsockopt(beaconSocket4, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof(ttl))) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
@@ -431,7 +432,7 @@ void rsrv_build_addr_lists(void)
                             __FILE__, __LINE__, buf);
             }
 #endif
-            osiSockDiscoverBroadcastAddresses(&beaconAddrList, beaconSocket, &match46);
+            osiSockDiscoverBroadcastAddresses(&beaconAddrList, beaconSocket4, &match46);
         }
 
         if (foundWildcard && ellCount(&casIntfAddrList) != 1) {
@@ -484,7 +485,7 @@ void rsrv_build_addr_lists(void)
                             __FILE__, __LINE__, buf);
             }
 #endif
-            osiSockDiscoverBroadcastAddresses(&temp, beaconSocket, &match46);
+            osiSockDiscoverBroadcastAddresses(&temp, beaconSocket4, &match46);
         }
 
         /* set the port for any automatically discovered destinations. */
@@ -506,7 +507,7 @@ void rsrv_build_addr_lists(void)
 #if EPICS_HAS_IPV6
             if ( pNode->addr46.sa.sa_family == AF_INET6 ) {
                 ca_uint32_t interfaceIndex = pNode->addr46.in6.sin6_scope_id;
-                epicsSocket46optIPv6MultiCast(beaconSocket, interfaceIndex);
+                epicsSocket46optIPv6MultiCast(beaconSocket4, interfaceIndex);
             }
 #endif
         }
@@ -842,11 +843,14 @@ void rsrv_init (void)
     }
 
     /* servers list is considered read-only from this point */
-
-    epicsThreadMustCreate("CAS-beacon", threadPrios[3],
-            epicsThreadGetStackSize(epicsThreadStackSmall),
-            &rsrv_online_notify_task, NULL);
-
+    {
+        /* static allocated struct */
+        static rsrv_online_notify_config conf;
+        conf.sock = beaconSocket4;
+        epicsThreadMustCreate("CAS-beacon", threadPrios[3],
+                              epicsThreadGetStackSize(epicsThreadStackSmall),
+                              &rsrv_online_notify_task, &conf);
+    }
     epicsEventMustWait(beacon_startStopEvent);
 }
 

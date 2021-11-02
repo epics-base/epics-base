@@ -279,29 +279,6 @@ void dbCaSync(void)
     epicsEventDestroy(wake);
 }
 
-DBCORE_API unsigned long dbCaGetUpdateCount(struct link *plink)
-{
-    caLink *pca;
-    unsigned long ret;
-
-    dbScanLock(plink->precord);
-    pca= (caLink *)plink->value.pv_link.pvt;
-
-    if (!pca) {
-        dbScanUnlock(plink->precord);
-        return (unsigned long)-1;
-    }
-
-    epicsMutexMustLock(pca->lock);
-
-    ret = pca->nUpdate;
-
-    epicsMutexUnlock(pca->lock);
-    dbScanUnlock(plink->precord);
-
-    return ret;
-}
-
 void dbCaCallbackProcess(void *userPvt)
 {
     struct link *plink = (struct link *)userPvt;

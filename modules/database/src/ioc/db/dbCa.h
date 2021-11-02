@@ -48,8 +48,12 @@ DBCORE_API long dbCaPutLink(struct link *plink,short dbrType,
 extern struct ca_client_context * dbCaClientContext;
 
 #ifdef EPICS_DBCA_PRIVATE_API
+/* Wait CA link work queue to become empty.  eg. after from dbPut() to OUT */
 DBCORE_API void dbCaSync(void);
+/* Get current number of data updates received. */
 DBCORE_API unsigned long dbCaGetUpdateCount(struct link *plink);
+/* Wait for the data update counter to reach the specified value. */
+DBCORE_API void testdbCaWaitForUpdateCount(DBLINK *plink, unsigned long cnt);
 #endif
 
 /* These macros are for backwards compatibility */

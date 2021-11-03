@@ -247,6 +247,32 @@ static void testCADBSet(void)
     testdbCleanup();
 }
 
+static
+void testDBMod(void)
+{
+    testDiag("\n# Checking DB link modifier\n#");
+    testdbPrepare();
+
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("dbPutLinkTest.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    testdbPutFieldOk("x1.INP", DBF_STRING, "x2 DB");
+    testdbGetFieldEqual("x1.INP", DBF_STRING, "x2 NPP NMS DB");
+    testdbPutFieldFail(S_dbLib_recNotFound, "x1.INP", DBF_STRING, "notrec DB");
+    testdbGetFieldEqual("x1.INP", DBF_STRING, "x2 NPP NMS DB");
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+}
+
 typedef struct {
     const char * const recname;
     short ltype;
@@ -700,10 +726,11 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(342);
+    testPlan(346);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();
+    testDBMod();
     testHWInitSet();
     testHWMod();
     testLinkInitFail();

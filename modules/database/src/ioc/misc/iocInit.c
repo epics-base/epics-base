@@ -83,7 +83,7 @@ static void initDrvSup(void);
 static void initRecSup(void);
 static void initDevSup(void);
 static void finishDevSup(void);
-static void initDatabase(void);
+static long initDatabase(void);
 static void initialProcess(void);
 static void exitDatabase(void *dummy);
 
@@ -91,9 +91,9 @@ static void exitDatabase(void *dummy);
  * Iterate through all record instances (but not aliases),
  * calling a function for each one.
  */
-typedef void (*recIterFunc)(dbRecordType *rtyp, dbCommon *prec, void *user);
+typedef long (*recIterFunc)(dbRecordType *rtyp, dbCommon *prec, void *user);
 
-static void iterateRecords(recIterFunc func, void *user);
+static long iterateRecords(recIterFunc func, void *user);
 
 int dbThreadRealtimeLock = 1;
 epicsExportAddress(int, dbThreadRealtimeLock);
@@ -143,13 +143,14 @@ static int iocBuild_1(void)
     return 0;
 }
 
-static void prepareLinks(dbRecordType *rtyp, dbCommon *prec, void *junk)
+static long prepareLinks(dbRecordType *rtyp, dbCommon *prec, void *junk)
 {
-    dbInitRecordLinks(rtyp, prec);
+    return dbInitRecordLinks(rtyp, prec);
 }
 
 static int iocBuild_2(void)
 {
+    long ret;
     initHookAnnounce(initHookAfterCaLinkInit);
 
     initDrvSup();
@@ -164,7 +165,10 @@ static int iocBuild_2(void)
     iterateRecords(prepareLinks, NULL);
 
     dbLockInitRecords(pdbbase);
-    initDatabase();
+    if((ret = initDatabase())!=0) {
+        fprintf(stderr, ERL_ERROR " iocBuild: initDatabase Failed.\n");
+        return ret;
+    }
     dbBkptInit();
     initHookAnnounce(initHookAfterInitDatabase); /* used by autosave pass 1 */
 
@@ -172,9 +176,9 @@ static int iocBuild_2(void)
     initHookAnnounce(initHookAfterFinishDevSup);
 
     scanInit();
-    if (asInit()) {
-        errlogPrintf(ERL_ERROR " iocBuild: asInit Failed.\n");
-        return -1;
+    if ((ret = asInit())!=0) {
+        fprintf(stderr, ERL_ERROR " iocBuild: asInit Failed.\n");
+        return ret;
     }
     dbProcessNotifyInit();
     epicsThreadSleep(.5);
@@ -468,9 +472,10 @@ static void finishDevSup(void)
     }
 }
 
-static void iterateRecords(recIterFunc func, void *user)
+static long iterateRecords(recIterFunc func, void *user)
 {
     dbRecordType *pdbRecordType;
+    long ret = 0;
 
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;
@@ -481,24 +486,30 @@ static void iterateRecords(recIterFunc func, void *user)
              pdbRecordNode;
              pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
             dbCommon *precord = pdbRecordNode->precord;
+            long status;
 
             if (!precord->name[0] ||
                 pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
                 continue;
 
-            func(pdbRecordType, precord, user);
+            status = func(pdbRecordType, precord, user);
+            if (!ret)
+                ret = status; /* latch first error */
         }
     }
-    return;
+    return ret;
 }
 
-static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
+static long doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
     rset *prset = pdbRecordType->prset;
     devSup *pdevSup;
 
-    if (!prset) return;         /* unlikely */
+    if (!prset) {
+        fprintf(stderr, ERL_ERROR " %sRecord missing rset\n", pdbRecordType->name);
+        return S_dbLib_noRecSup;
+    }
 
     precord->rset = prset;
     precord->mlok = epicsMutexMustCreate();
@@ -517,9 +528,10 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
 
     if (prset->init_record)
         prset->init_record(precord, 0);
+    return 0;
 }
 
-static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
+static long doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
     dbFldDes **papFldDes = pdbRecordType->papFldDes;
@@ -544,28 +556,37 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
 
         dbInitLink(plink, pdbFldDes->field_type);
     }
+    return 0;
 }
 
-static void doInitRecord1(dbRecordType *pdbRecordType, dbCommon *precord,
-    void *user)
+static long doInitRecord1(dbRecordType *pdbRecordType, dbCommon *precord, void *user)
 {
     rset *prset = pdbRecordType->prset;
 
-    if (!prset) return;         /* unlikely */
+    if (!prset) return S_dbLib_noRecSup; /* already printed by doInitRecord0() */
 
     if (prset->init_record)
         prset->init_record(precord, 1);
+    return 0;
 }
 
-static void initDatabase(void)
+static long initDatabase(void)
 {
+    long status, ret = 0;
     dbChannelInit();
-    iterateRecords(doInitRecord0, NULL);
-    iterateRecords(doResolveLinks, NULL);
-    iterateRecords(doInitRecord1, NULL);
-
-    epicsAtExit(exitDatabase, NULL);
-    return;
+    status = iterateRecords(doInitRecord0, NULL);
+    if (!ret)
+        ret = status; /* latch first error */
+    status = iterateRecords(doResolveLinks, NULL);
+    if (!ret)
+        ret = status;
+    status = iterateRecords(doInitRecord1, NULL);
+    if (!ret)
+        ret = status;
+    status = epicsAtExit(exitDatabase, NULL);
+    if (!ret)
+        ret = status;
+    return ret;
 }
 
 /*
@@ -578,12 +599,12 @@ typedef struct {
     epicsEnum16 pini;
 } phaseData_t;
 
-static void doRecordPini(dbRecordType *rtype, dbCommon *precord, void *user)
+static long doRecordPini(dbRecordType *rtype, dbCommon *precord, void *user)
 {
     phaseData_t *pphase = (phaseData_t *)user;
     int phas;
 
-    if (precord->pini != pphase->pini) return;
+    if (precord->pini != pphase->pini) return 0;
 
     phas = precord->phas;
     if (phas == pphase->this) {
@@ -592,6 +613,7 @@ static void doRecordPini(dbRecordType *rtype, dbCommon *precord, void *user)
         dbScanUnlock(precord);
     } else if (phas > pphase->this && phas < pphase->next)
         pphase->next = phas;
+    return 0;
 }
 
 static void piniProcess(int pini)
@@ -649,7 +671,7 @@ static void initialProcess(void)
  * set DB_LINK and CA_LINK to PV_LINK
  * Delete record scans
  */
-static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
+static long doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
     devSup *pdevSup;
@@ -688,9 +710,10 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
         precord->pact = TRUE;
         dbScanUnlock(precord);
     }
+    return 0;
 }
 
-static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
+static long doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
     int j;
@@ -705,6 +728,7 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
 
     epicsMutexDestroy(precord->mlok);
     free(precord->ppnr); /* may be allocated in dbNotify.c */
+    return 0;
 }
 
 int iocShutdown(void)

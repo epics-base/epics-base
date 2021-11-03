@@ -393,9 +393,11 @@ typedef struct lset {
 
 DBCORE_API const char * dbLinkFieldName(const struct link *plink);
 
-DBCORE_API void dbInitLink(struct link *plink, short dbfType);
-DBCORE_API void dbAddLink(struct dbLocker *locker, struct link *plink,
-        short dbfType, dbChannel *ptarget);
+#ifdef EPICS_PRIVATE_API
+void dbInitLink(struct link *plink, short dbfType);
+void dbAddLink(struct dbLocker *locker, struct link *plink,
+               short dbfType, dbChannel *ptarget);
+#endif /* EPICS_PRIVATE_API */
 
 DBCORE_API void dbLinkOpen(struct link *plink);
 DBCORE_API void dbRemoveLink(struct dbLocker *locker, struct link *plink);

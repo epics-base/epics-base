@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define EPICS_PRIVATE_API
+
 #include "alarm.h"
 #include "cantProceed.h"
 #include "cvtFast.h"

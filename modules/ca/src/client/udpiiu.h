@@ -186,7 +186,7 @@ private:
     unsigned beaconAnomalyTimerIndex;
     ca_uint32_t sequenceNumber;
     ca_uint32_t lastReceivedSeqNo;
-    SOCKET sock;
+    SOCKET sock4;
     struct pollfd *pPollFds;
     unsigned numPollFds;
     ca_uint16_t repeaterPort;

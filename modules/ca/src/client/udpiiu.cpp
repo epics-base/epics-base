@@ -158,7 +158,7 @@ udpiiu::udpiiu (
     beaconAnomalyTimerIndex ( 0 ),
     sequenceNumber ( 0 ),
     lastReceivedSeqNo ( 0 ),
-    sock ( 0 ),
+    sock4 ( 0 ),
     pPollFds ( 0 ),
     numPollFds ( 0 ),
     repeaterPort ( 0 ),
@@ -185,9 +185,8 @@ udpiiu::udpiiu (
         envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT,
                                     static_cast <unsigned short> (CA_REPEATER_PORT) );
 
-    this->sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(),
-                                     SOCK_DGRAM, IPPROTO_UDP );
-    if ( this->sock == INVALID_SOCKET ) {
+    this->sock4 = epicsSocket46Create ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    if ( this->sock4 == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
@@ -199,12 +198,12 @@ udpiiu::udpiiu (
 #ifdef IP_ADD_MEMBERSHIP
     {
         osiSockOptMcastLoop_t flag = 1;
-        if ( setsockopt ( this->sock, IPPROTO_IP, IP_MULTICAST_LOOP,
+        if ( setsockopt ( this->sock4, IPPROTO_IP, IP_MULTICAST_LOOP,
                           (char *) &flag, sizeof ( flag ) ) == -1 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAC: failed to set mcast loopback sock=%ld\n", (long)this->sock);
+            errlogPrintf("CAC: failed to set mcast loopback sock=%d\n", (int)this->sock4);
         }
     }
 #endif
@@ -216,17 +215,17 @@ udpiiu::udpiiu (
         if(envGetLongConfigParam(&EPICS_CA_MCAST_TTL, &val))
             val =1;
         ttl = val;
-        if ( setsockopt(this->sock, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof(ttl))) {
+        if ( setsockopt(this->sock4, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof(ttl))) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAC: failed to set mcast ttl %d sock=%d\n", ttl, (int)this->sock);
+            errlogPrintf("CAC: failed to set mcast ttl %d sock=%d\n", ttl, (int)this->sock4);
         }
     }
 #endif
 
     int boolValue = true;
-    int status = setsockopt ( this->sock, SOL_SOCKET, SO_BROADCAST,
+    int status = setsockopt ( this->sock4, SOL_SOCKET, SO_BROADCAST,
                 (char *) &boolValue, sizeof ( boolValue ) );
     if ( status < 0 ) {
         char sockErrBuf[64];
@@ -245,7 +244,7 @@ udpiiu::udpiiu (
          * bump up the UDP recv buffer
          */
         int size = 1u<<15u;
-        status = setsockopt ( this->sock, SOL_SOCKET, SO_RCVBUF,
+        status = setsockopt ( this->sock4, SOL_SOCKET, SO_RCVBUF,
                 (char *)&size, sizeof (size) );
         if (status<0) {
             char sockErrBuf[64];
@@ -259,12 +258,17 @@ udpiiu::udpiiu (
     // force a bind to an unconstrained address so we can obtain
     // the local port number below
     static const unsigned short PORT_ANY = 0u;
-    status = epicsSocket46BindLocalPort ( this->sock, PORT_ANY );
+    osiSockAddr addr;
+    memset ( (char *)&addr, 0 , sizeof (addr) );
+    addr.ia.sin_family = AF_INET;
+    addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+    addr.ia.sin_port = htons ( PORT_ANY );
+    status = bind (this->sock4, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsSocketDestroy (this->sock);
+        epicsSocketDestroy (this->sock4);
         errlogPrintf ( "CAC: unable to bind to an unconstrained address because = \"%s\"\n",
             sockErrBuf );
         throwWithLocation ( noSocket () );
@@ -273,17 +277,17 @@ udpiiu::udpiiu (
     {
         osiSockAddr46 tmpAddr;
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
-        status = getsockname ( this->sock, &tmpAddr.sa, &saddr_length );
+        status = getsockname ( this->sock4, &tmpAddr.sa, &saddr_length );
         if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            epicsSocketDestroy ( this->sock );
+            epicsSocketDestroy ( this->sock4 );
             errlogPrintf ( "CAC: getsockname () " ERL_ERROR " was \"%s\"\n", sockErrBuf );
             throwWithLocation ( noSocket () );
         }
-        if ( ! epicsSocket46IsAF_INETorAF_INET6 ( tmpAddr.sa.sa_family ) ) {
-            epicsSocketDestroy ( this->sock );
+        if ( tmpAddr.sa.sa_family != AF_INET) {
+            epicsSocketDestroy ( this->sock4 );
             errlogPrintf ( "CAC: UDP socket was not inet addr family\n" );
             throwWithLocation ( noSocket () );
         }
@@ -296,7 +300,7 @@ udpiiu::udpiiu (
      */
     ELLLIST dest;
     ellInit ( & dest );
-    configureChannelAccessAddressList ( & dest, this->sock, this->serverPort );
+    configureChannelAccessAddressList ( & dest, this->sock4, this->serverPort );
 #ifdef EPICS_HAS_IPV6_BSD
     unsigned searchDestList_count = (unsigned)dest.count;
     pPollFds = (pollfd*)callocMustSucceed(searchDestList_count + 1, /* one for this.socket */
@@ -304,13 +308,13 @@ udpiiu::udpiiu (
                                           "udpiiu::udpiiu");
 
     /* this.socket must be added to the polling list */
-    pPollFds[numPollFds].fd = this->sock;
+    pPollFds[numPollFds].fd = this->sock4;
     pPollFds[numPollFds].events = POLLIN;
     numPollFds++;
 #endif
     while ( osiSockAddrNode *
         pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
-        SOCKET socket46 = this->sock;
+        SOCKET socket46 = this->sock4;
 #ifdef NETDEBUG
       {
           char buf[64];
@@ -324,7 +328,7 @@ udpiiu::udpiiu (
       if (pNode->addr46.sa.sa_family == AF_INET6) {
           unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
 #ifdef EPICS_HAS_IPV6_LINUX
-           epicsSocket46optIPv6MultiCast(this->sock, interfaceIndex);
+           epicsSocket46optIPv6MultiCast(this->sock4, interfaceIndex);
 #else
           /*
            * The user must specify the interface like this:
@@ -392,7 +396,7 @@ udpiiu::~udpiiu ()
         free ( pPollFds );
     }
 #endif
-    epicsSocketDestroy ( this->sock );
+    epicsSocketDestroy ( this->sock4 );
 }
 
 void udpiiu::shutdown (
@@ -477,7 +481,7 @@ void udpRecvThread::run ()
 #endif
 
     do {
-        SOCKET sock = this->iiu.sock;
+        SOCKET sock = this->iiu.sock4;
 #ifdef EPICS_HAS_IPV6_BSD
         pollagain:
         if ( this->iiu.pPollFds && this->iiu.numPollFds >= 1 ) {
@@ -554,7 +558,7 @@ udpiiu::M_repeaterTimerNotify::~M_repeaterTimerNotify ()
 void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned attemptNumber )
 {
     epicsGuard < epicsMutex > cbGuard ( m_udpiiu.cacMutex );
-    caRepeaterRegistrationMessage ( m_udpiiu.sock, m_udpiiu.repeaterPort, attemptNumber );
+    caRepeaterRegistrationMessage ( m_udpiiu.sock4, m_udpiiu.repeaterPort, attemptNumber );
 }
 
 /*
@@ -631,8 +635,8 @@ void epicsStdCall caRepeaterRegistrationMessage (
         len = 0;
 #   endif
 
-    status = epicsSocket46Sendto ( sock, (char *) &msg, len, 0,
-                                   &saddr46 );
+    status = sendto ( sock, (char *) &msg, len, 0,
+                      &saddr46.sa, sizeof ( saddr46.ia ) );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
         /*
@@ -654,6 +658,7 @@ void epicsStdCall caRepeaterRegistrationMessage (
         }
     }
 }
+
 
 /*
  *  caStartRepeaterIfNotInstalled ()
@@ -1272,7 +1277,7 @@ void udpiiu :: show ( unsigned level ) const
         }
     }
     if ( level > 2u ) {
-        ::printf ("\tsocket identifier %d\n", int(this->sock) );
+        ::printf ("\tsocket identifier %d\n", int(this->sock4) );
         ::printf ("\tbytes in xmit buffer %u\n", this->nBytesInXmitBuf );
         ::printf ("\tshut down command bool %u\n", this->shutdownCmd );
         ::printf ( "\trecv thread exit signal:\n" );
@@ -1303,7 +1308,7 @@ bool udpiiu::wakeupMsg ()
     addr46.ia.sin_port = htons ( this->localPort );
 
     // send a wakeup msg so the UDP recv thread will exit
-    int status = epicsSocket46Sendto ( this->sock, reinterpret_cast < char * > ( &msg ),
+    int status = epicsSocket46Sendto ( this->sock4, reinterpret_cast < char * > ( &msg ),
                                        sizeof (msg), 0, &addr46 );
     return status == sizeof (msg);
 }

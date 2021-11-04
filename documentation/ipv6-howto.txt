@@ -1,58 +1,35 @@
 Start using IPv6:
-  caget, camonitor can work via IPV6 like this:
-  $ export EPICS_CA_AUTO_ADDR_LIST=NO
-  $ export EPICS_CA_ADDR_LIST='[2001:db8:1:0:0:1:2:3]'
-  cainfo IOC:m1
-
-  Using link local addresses:
-    Find out the link-local address of your IOC.
-    e.g. fe80::3958:418:65b8:230c
-    Find out the interface of your client, sitting on the same network
-    switch as the IOC.
-    $ ifconfig
-    # or
-    $ ip addr show
-    in my case it is "en0"
-    # ping the IOC:
-    $ ping6 fe80::3958:418:65b8:230c
-      ping6: sendmsg: No route to host
-    # That didn't work, we new this.
-    # Compose a proper adress, combining the remote IPv6 with
-    # our local interface name:
-    $ ping6 fe80::3958:418:65b8:230c%en0
-    16 bytes from fe80::3958:418:65b8:230c%en0
-    # with this knowledge, we can use cainfo:
+  Using global IPv6 addresses:
+    caget, camonitor can work via IPV6 like this:
     $ export EPICS_CA_AUTO_ADDR_LIST=NO
-    $ export EPICS_CA_ADDR_LIST='[fe80::3958:418:65b8:230c%en0]'
-    $ cainfo IOC:m1
+    $ export EPICS_CA_ADDR_LIST='[2001:db8:1:0:0:1:2:3]'
+    cainfo IOC:m1
 
+  Using IPv6 with link local addresses:
+    # On the IOC
+      # Disable IPv4:
+      $ export EPICS_CA_AUTO_ADDR_LIST=NO
+      # enable IPv6:
+      $ export EPICS_CAS_AUTO_BEACON_ADDR_LIST=6
+      # start the IOC:
+      $ st.cmd
 
-  Running an IOC on a Mac:
-    When using a "wireless only", there are different IPv6 interfaces.
-    The wireless itself :"en0",
-    An interface called "en3" (not sure what this is good for)
-    "awdl0" "llw0" (and some "utun0" and "utun1")
-    It seems as if our code does not handle this situation correctly (yet).
-    In order to use the wireless:
-    $  export EPICS_CAS_BEACON_ADDR_LIST='[ff02::1%en0]'
-    This will put out beacons on all IPv4 addresses.
-    IPv6 beacons are send out on en0.
+    # On the client, use something like this:
+      $ export EPICS_CA_AUTO_ADDR_LIST=NO
+      $ export EPICS_CA_AUTO_ADDR_LIST=6
+      $ cainfo IOC:m1
+      
 
-  Running an IOC on Linux:
+Running an IOC with IPv6:
     $  export EPICS_CAS_AUTO_BEACON_ADDR_LIST=46
     This sends out beacons on all IPv4 and IPv6 interfaces
 
 
 Windows (Mingw)
-  While Windows as such supports IPv6, the current code does not work here:
-    epicsSocketCreate(../udpiiu.cpp:172) (AF_INET6) socket=512
-    CAC: failed to set mcast loopback sock=512
-    CAC: failed to set mcast ttl 1 sock=512
-    ../udpiiu.cpp:261: bind(512) address='[0:0:0:0:0:0:0:0%0]:0' socklenIn=28 socklenOut=28 status=0:
-    ../iocinf.cpp/240: EPICS_CA_AUTO_ADDR_LIST='YES' addrautolistIPversion=4
-    ../iocinf.cpp/268: calling osiSockDiscoverBroadcastAddresses: sock=512 match46='0.0.0.0:0'
-    WSAIoctl SIO_GET_INTERFACE_LIST failed 10022
-
   More investigations are needed.
   Which version of Windows do we want to support ?
   XP ? Vista ? Windows 10 ?
+
+
+Further reading:
+  https://datatracker.ietf.org/doc/html/rfc3493

@@ -42,18 +42,8 @@
 #include "disconnectGovernorTimer.h"
 #include "osiSock.h" // EPICS_HAS_IPV6 and NETDEBUG
 
-/*
- * There are 2 flavors how IPv6 (with link-local addresses) is handled
- * through the socket interface
- * Lets call them LINUX and BSD
- */
 #if EPICS_HAS_IPV6
-#if defined ( linux )
-#define EPICS_HAS_IPV6_LINUX
-#else
-#define EPICS_HAS_IPV6_BSD
 #include <poll.h>
-#endif
 #endif
 
 // UDP protocol dispatch table
@@ -327,9 +317,6 @@ udpiiu::udpiiu (
 #ifdef EPICS_HAS_IPV6
       if (pNode->addr46.sa.sa_family == AF_INET6) {
           unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
-#ifdef EPICS_HAS_IPV6_LINUX
-           epicsSocket46optIPv6MultiCast(this->sock4, interfaceIndex);
-#else
           /*
            * The user must specify the interface like this:
            * export EPICS_CA_ADDR_LIST='[fe80::3958:418:65b8:230c%en0]'
@@ -340,7 +327,6 @@ udpiiu::udpiiu (
           pPollFds[numPollFds].fd = socket46;
           pPollFds[numPollFds].events = POLLIN;
           numPollFds++;
-#endif
           epicsSocket46optIPv6MultiCast(socket46, interfaceIndex);
       }
 #endif

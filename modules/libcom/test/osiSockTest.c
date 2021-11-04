@@ -122,8 +122,8 @@ void tcpSockReuseBindTest(int reuse)
 
     testDiag("tcpSockReuseBindTest(%d)", reuse);
 
-    A = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_STREAM, 0);
-    B = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_STREAM, 0);
+    A = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
+    B = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
 
     if(A==INVALID_SOCKET || B==INVALID_SOCKET)
         testAbort("Insufficient sockets");

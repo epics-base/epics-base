@@ -417,30 +417,25 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
                                                   const void* buf, size_t len, int flags,
                                                   const osiSockAddr46 *pAddr46)
 {
-    osiSockAddr46 addr46Output;
+    osiSocklen_t socklen = ( osiSocklen_t ) sizeof ( pAddr46->ia ) ;
     int status;
 #if EPICS_HAS_IPV6
-    osiSocklen_t socklen = ( osiSocklen_t ) sizeof(addr46Output.in6);
-#else
-    osiSocklen_t socklen = ( osiSocklen_t ) sizeof(addr46Output.ia);
+    if (pAddr46->sa.sa_family == AF_INET6) {
+      socklen = ( osiSocklen_t ) sizeof ( pAddr46->in6 ) ;
+    }
 #endif
-    osiSockIPv4toIPv6(pAddr46, &addr46Output);
-    /* Now we have an IPv6 address. use the size of it when calling sendto() */
-    status = sendto(sock, buf, len, flags, &addr46Output.sa, socklen);
+    status = sendto(sock, buf, len, flags, &pAddr46->sa, socklen ) ;
 
 #ifdef NETDEBUG
     {
         char bufIn[64];
-        char bufOut[64];
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
-        sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
-        epicsPrintf("%s:%d: sendto(%lu) address='%s' (%s) len=%u status=%d %s\n",
+        epicsPrintf("%s:%d: sendto(%lu) address='%s' len=%u status=%d %s\n",
                     filename, lineno,
                     (unsigned long)sock,
                     bufIn,
-                    pAddr46->sa.sa_family != addr46Output.sa.sa_family ? bufOut : "",
                     (unsigned)len,
                     status, status < 0 ? sockErrBuf : "");
     }
@@ -468,37 +463,6 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvfromFL(const char *filename, int li
                     (unsigned long)sock,
                     (unsigned)len, bufDotted,
                     status, status < 0 ? sockErrBuf : "");
-    }
-#endif
-#if EPICS_HAS_IPV6
-    {
-        /* Turn mapped IPv4 addresses into real ones */
-        struct sockaddr_in6 *pAddr6 = &pAddr46->in6;
-        struct sockaddr_in  *pAddr4 = &pAddr46->ia;
-        if (IN6_IS_ADDR_V4MAPPED(&pAddr6->sin6_addr)) {
-            unsigned short port = ntohs(pAddr6->sin6_port);
-            unsigned int ipv4addr = (pAddr6->sin6_addr.s6_addr[12] << 24) +
-                (pAddr6->sin6_addr.s6_addr[13] << 16) +
-                (pAddr6->sin6_addr.s6_addr[14] << 8) +
-                (pAddr6->sin6_addr.s6_addr[15]);
-            memset(pAddr46, 0, sizeof(*pAddr46));
-            pAddr4->sin_family = AF_INET;
-            pAddr4->sin_addr.s_addr = htonl(ipv4addr);
-            pAddr4->sin_port = htons(port);
-#ifdef NETDEBUG_V4MAPPED
-            {
-                char bufDotted[64];
-                char sockErrBuf[64];
-                epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                sockAddrToDottedIP(&pAddr46->sa, bufDotted, sizeof(bufDotted));
-                epicsPrintf("%s:%d: recvfrom(%lu) buflen=%u IPv4address='%s' status=%d %s\n",
-                            filename, lineno,
-                            (unsigned long)sock,
-                            (unsigned)len, bufDotted,
-                            status, status < 0 ? sockErrBuf : "");
-            }
-#endif
-        }
     }
 #endif
     return status;

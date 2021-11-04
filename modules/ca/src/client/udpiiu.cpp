@@ -291,7 +291,7 @@ udpiiu::udpiiu (
     ELLLIST dest;
     ellInit ( & dest );
     configureChannelAccessAddressList ( & dest, this->sock4, this->serverPort );
-#ifdef EPICS_HAS_IPV6_BSD
+#ifdef EPICS_HAS_IPV6
     unsigned searchDestList_count = (unsigned)dest.count;
     pPollFds = (pollfd*)callocMustSucceed(searchDestList_count + 1, /* one for this.socket */
                                           sizeof(struct pollfd),
@@ -373,7 +373,7 @@ udpiiu::~udpiiu ()
         delete & curr;
     }
 
-#ifdef EPICS_HAS_IPV6_BSD
+#ifdef EPICS_HAS_IPV6
     if ( pPollFds && numPollFds > 1 ) {
         for ( unsigned idx = 1; idx < numPollFds; idx++ ) {
             epicsSocketDestroy ( pPollFds[idx].fd );
@@ -468,7 +468,7 @@ void udpRecvThread::run ()
 
     do {
         SOCKET sock = this->iiu.sock4;
-#ifdef EPICS_HAS_IPV6_BSD
+#ifdef EPICS_HAS_IPV6
         pollagain:
         if ( this->iiu.pPollFds && this->iiu.numPollFds >= 1 ) {
             int pollres = poll ( this->iiu.pPollFds, this->iiu.numPollFds, -1 );

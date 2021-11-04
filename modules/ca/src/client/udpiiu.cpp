@@ -259,22 +259,7 @@ udpiiu::udpiiu (
     // force a bind to an unconstrained address so we can obtain
     // the local port number below
     static const unsigned short PORT_ANY = 0u;
-    osiSockAddr46 addr46;
-    int addressFamily = epicsSocket46GetDefaultAddressFamily();
-    memset ( (char *)&addr46, 0 , sizeof (addr46) );
-    addr46.sa.sa_family = addressFamily;
-#if EPICS_HAS_IPV6
-    if ( addressFamily == AF_INET6 ) {
-        addr46.in6.sin6_addr = in6addr_any;
-        addr46.in6.sin6_port = htons ( PORT_ANY );
-    }
-    else
-#endif
-    {
-        addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        addr46.ia.sin_port = htons ( PORT_ANY );
-    }
-    status = epicsSocket46Bind (this->sock, &addr46);
+    status = epicsSocket46BindLocalPort ( this->sock, PORT_ANY );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
@@ -699,7 +684,6 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     bool installed = false;
     int status;
     SOCKET tmpSock;
-    osiSockAddr46 addr46;
 
     if ( repeaterPort > 0xffff ) {
         fprintf ( stderr, "caStartRepeaterIfNotInstalled () : strange repeater port specified\n" );
@@ -709,17 +693,7 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     tmpSock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, IPPROTO_UDP );
     if ( tmpSock != INVALID_SOCKET ) {
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
-        memset ( (char *)&addr46, 0 , sizeof (addr46) );
-#if EPICS_HAS_IPV6
-        addr46.in6.sin6_family = AF_INET6;
-        addr46.in6.sin6_addr = in6addr_any;
-        addr46.in6.sin6_port = htons ( port );
-#else
-        addr46.ia.sin_family = AF_INET;
-        addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        addr46.ia.sin_port = htons ( port );
-#endif
-        status = epicsSocket46Bind ( tmpSock, &addr46 );
+        status = epicsSocket46BindLocalPort ( tmpSock, port );
         if ( status < 0 ) {
             if ( SOCKERRNO == SOCK_EADDRINUSE ) {
                 installed = true;

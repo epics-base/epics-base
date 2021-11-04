@@ -1298,25 +1298,14 @@ bool udpiiu::wakeupMsg ()
     AlignedWireRef < epicsUInt16 > ( msg.m_postsize ) = 0u;
 
     osiSockAddr46 addr46;
-    int defaultFamily = epicsSocket46GetDefaultAddressFamily();
-    int status;
-    int flags = 0;
-    if ( defaultFamily == AF_INET ) {
-      flags |= EPICSSOCKET_CONNECT_IPV4;
-    }
-#if EPICS_HAS_IPV6
-    else if ( defaultFamily == AF_INET6 ) {
-      flags |= EPICSSOCKET_CONNECT_IPV6;
-    }
-#endif
-    status = aToIPAddr46("localhost", this->localPort, &addr46, flags);
-    if ( ! status) {
-      // send a wakeup msg so the UDP recv thread will exit
-      status = epicsSocket46Sendto ( this->sock, reinterpret_cast < char * > ( &msg ),
-                                     sizeof (msg), 0, &addr46 );
-      return status == sizeof (msg);
-    }
-    return false;
+    addr46.ia.sin_family = AF_INET;
+    addr46.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+    addr46.ia.sin_port = htons ( this->localPort );
+
+    // send a wakeup msg so the UDP recv thread will exit
+    int status = epicsSocket46Sendto ( this->sock, reinterpret_cast < char * > ( &msg ),
+                                       sizeof (msg), 0, &addr46 );
+    return status == sizeof (msg);
 }
 
 void udpiiu::beaconAnomalyNotify (

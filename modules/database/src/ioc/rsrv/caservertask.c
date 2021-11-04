@@ -324,7 +324,7 @@ void rsrv_build_addr_lists(void)
      */
 
     // The family must match the address used in rsrv/online_notify.c:88
-    beaconSocket4 = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
+    beaconSocket4 = epicsSocket46Create(AF_INET, SOCK_DGRAM, 0);
     if (beaconSocket4==INVALID_SOCKET)
         cantProceed("socket allocation failed during address list expansion");
 

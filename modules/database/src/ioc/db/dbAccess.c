@@ -1104,9 +1104,9 @@ static long dbPutFieldLink(DBADDR *paddr,
     if (link_info.ltype == PV_LINK &&
         (link_info.modifiers & (pvlOptCA | pvlOptCP | pvlOptCPP)) == 0) {
         chan = dbChannelCreate(link_info.target);
-        if (chan && dbChannelOpen(chan) != 0) {
-            errlogPrintf("ERROR: dbPutFieldLink %s.%s=%s: dbChannelOpen() failed\n",
-                precord->name, pfldDes->name, link_info.target);
+        if (chan && (status = dbChannelOpen(chan)) != 0) {
+            errlogPrintf(ERL_ERROR ": dbPutFieldLink %s.%s=%s: dbChannelOpen() failed w/ 0x%lx\n",
+                precord->name, pfldDes->name, link_info.target, status);
             goto cleanup;
         }
     }

@@ -67,6 +67,7 @@ sub readRelease {
         my ($uvar) = m/^ undefine \s+ ($MVAR)/x;
         if ($uvar ne '') {
             delete $Rmacros->{$uvar};
+            @$Rapps = grep($_ ne $uvar, @$Rapps);
             next;
         }
 

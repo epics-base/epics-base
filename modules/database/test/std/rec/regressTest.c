@@ -171,13 +171,13 @@ void testLongCalc(void)
 static
 void testLinkSevr(void)
 {
-    testMonitor *mon;
     dbChannel *chan;
-    startRegressTestIoc("regressLinkSevr.db");
-    dbCaSync(); /* wait for CA links to connect */
-    dbCaSync(); /* wait for initial update */
 
-    mon = testMonitorCreate("cnt", DBE_VALUE, 0);
+    startRegressTestIoc("regressLinkSevr.db");
+
+    /* wait for CA links to connect and receive an initial update */
+    testdbCaWaitForUpdateCount(dbGetDevLink(testdbRecordPtr("si2")), 1);
+    testdbCaWaitForUpdateCount(dbGetDevLink(testdbRecordPtr("li2")), 1);
 
     chan = dbChannelCreate("ai.SEVR");
     if(!chan)
@@ -196,8 +196,6 @@ void testLinkSevr(void)
     testdbGetFieldEqual("ai.SEVR", DBF_STRING, "INVALID");
 
     testdbPutFieldOk("si1.PROC", DBF_LONG, 1);
-    testMonitorWait(mon);
-    dbCaSync(); /* wait for update */
 
     testdbGetFieldEqual("si1", DBF_STRING, "INVALID");
     testdbGetFieldEqual("li1", DBF_LONG, INVALID_ALARM);
@@ -205,8 +203,6 @@ void testLinkSevr(void)
     testdbGetFieldEqual("si2", DBF_STRING, "INVALID");
     testTodoEnd();
     testdbGetFieldEqual("li2", DBF_LONG, INVALID_ALARM);
-
-    testMonitorDestroy(mon);
 
     testIocShutdownOk();
     testdbCleanup();

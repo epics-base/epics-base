@@ -196,6 +196,53 @@ static void caLinkDec(caLink *pca)
     if (callback) callback(userPvt);
 }
 
+struct waitPvt {
+    caLink *pca;
+    epicsEventId evt;
+};
+
+static
+void testdbCaWaitForUpdateCountCB(void *raw)
+{
+    struct waitPvt *pvt = raw;
+
+    epicsMutexMustLock(pvt->pca->lock);
+    epicsEventMustTrigger(pvt->evt);
+    epicsMutexUnlock(pvt->pca->lock);
+}
+
+void testdbCaWaitForUpdateCount(DBLINK *plink, unsigned long cnt)
+{
+
+    caLink *pca;
+    epicsEventId evt = epicsEventMustCreate(epicsEventEmpty);
+
+    dbScanLock(plink->precord);
+
+    pca = (caLink *)plink->value.pv_link.pvt;
+
+    assert(plink->type==CA_LINK);
+    epicsMutexMustLock(pca->lock);
+    assert(!pca->monitor && !pca->userPvt);
+
+    while(pca->nUpdate < cnt) {
+        struct waitPvt pvt = {pca, evt};
+        pca->monitor = &testdbCaWaitForUpdateCountCB;
+        pca->userPvt = &pvt;
+        epicsMutexUnlock(pca->lock);
+        dbScanUnlock(plink->precord);
+        epicsEventMustWait(evt);
+        dbScanLock(plink->precord);
+        epicsMutexMustLock(pca->lock);
+        pca->monitor = NULL;
+        pca->userPvt = NULL;
+    }
+
+    epicsEventDestroy(evt);
+    epicsMutexUnlock(pca->lock);
+    dbScanUnlock(plink->precord);
+}
+
 /* Block until worker thread has processed all previously queued actions.
  * Does not prevent additional actions from being queued.
  */
@@ -230,22 +277,6 @@ void dbCaSync(void)
 
     epicsMutexDestroy(templink.lock);
     epicsEventDestroy(wake);
-}
-
-DBCORE_API unsigned long dbCaGetUpdateCount(struct link *plink)
-{
-    caLink *pca = (caLink *)plink->value.pv_link.pvt;
-    unsigned long ret;
-
-    if (!pca) return (unsigned long)-1;
-
-    epicsMutexMustLock(pca->lock);
-
-    ret = pca->nUpdate;
-
-    epicsMutexUnlock(pca->lock);
-
-    return ret;
 }
 
 void dbCaCallbackProcess(void *userPvt)
@@ -1058,6 +1089,7 @@ static void getAttribEventCallback(struct event_handler_args arg)
 
 static void dbCaTask(void *arg)
 {
+    epicsEventId requestSync = NULL;
     taskwdInsert(0, NULL, NULL);
     SEVCHK(ca_context_create(ca_enable_preemptive_callback),
         "dbCaTask calling ca_context_create");
@@ -1078,13 +1110,20 @@ static void dbCaTask(void *arg)
 
             epicsMutexMustLock(workListLock);
             if (!(pca = (caLink *)ellGet(&workList))){  /* Take off list head */
+                if(requestSync) {
+                    /* dbCaSync() requires workListLock to be held here */
+                    epicsEventMustTrigger(requestSync);
+                    requestSync = NULL;
+                }
                 epicsMutexUnlock(workListLock);
                 if (dbCaCtl == ctlExit) goto shutdown;
                 break; /* workList is empty */
             }
             link_action = pca->link_action;
-            if (link_action&CA_SYNC)
-                epicsEventMustTrigger((epicsEventId)pca->userPvt); /* dbCaSync() requires workListLock to be held here */
+            if (link_action&CA_SYNC) {
+                assert(!requestSync);
+                requestSync = pca->userPvt;
+            }
             pca->link_action = 0;
             if (link_action & CA_CLEAR_CHANNEL) --removesOutstanding;
             epicsMutexUnlock(workListLock);         /* Give back immediately */

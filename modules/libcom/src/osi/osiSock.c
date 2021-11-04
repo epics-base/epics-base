@@ -220,8 +220,18 @@ unsigned epicsStdCall ipAddrToDottedIP (
                                    pAddr6->sin6_addr.s6_addr[15],
                                    ntohs(pAddr6->sin6_port));
         } else {
+#ifdef IF_NAMESIZE
+            char if_name_or_number[IF_NAMESIZE];
+            if ( ! if_indextoname((unsigned int)pAddr6->sin6_scope_id, &if_name_or_number[0]) ) {
+#else
+            char if_name_or_number[16];
+            {
+#endif
+                snprintf(if_name_or_number, sizeof(if_name_or_number),
+                         "%u", (unsigned int)pAddr6->sin6_scope_id);
+            }
             status = epicsSnprintf (pBuf, bufSize,
-                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%lu]:%hu",
+                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%s]:%hu",
                                     (pAddr6->sin6_addr.s6_addr[0] << 8) +
                                     pAddr6->sin6_addr.s6_addr[1],
                                     (pAddr6->sin6_addr.s6_addr[2] << 8) +
@@ -238,7 +248,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
                                     pAddr6->sin6_addr.s6_addr[13],
                                     (pAddr6->sin6_addr.s6_addr[14] << 8) +
                                     pAddr6->sin6_addr.s6_addr[15],
-                                    (unsigned long)pAddr6->sin6_scope_id,
+                                    if_name_or_number,
                                     ntohs(pAddr6->sin6_port));
         }
     } else {
@@ -682,8 +692,18 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                    pIn6->sin6_addr.s6_addr[14],
                                    pIn6->sin6_addr.s6_addr[15]);
         } else {
+#ifdef IF_NAMESIZE
+            char if_name_or_number[IF_NAMESIZE];
+            if ( ! if_indextoname((unsigned int)pIn6->sin6_scope_id, &if_name_or_number[0]) ) {
+#else
+            char if_name_or_number[16];
+            {
+#endif
+                snprintf(if_name_or_number, sizeof(if_name_or_number),
+                         "%u", (unsigned int)pIn6->sin6_scope_id);
+            }
             status = epicsSnprintf (pBuf, bufSize,
-                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%lu]",
+                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%s]",
                                     (pIn6->sin6_addr.s6_addr[0] << 8) +
                                     pIn6->sin6_addr.s6_addr[1],
                                     (pIn6->sin6_addr.s6_addr[2] << 8) +
@@ -700,7 +720,7 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                     pIn6->sin6_addr.s6_addr[13],
                                     (pIn6->sin6_addr.s6_addr[14] << 8) +
                                     pIn6->sin6_addr.s6_addr[15],
-                                    (unsigned long)pIn6->sin6_scope_id);
+                                    if_name_or_number);
         }
     } else {
         /*

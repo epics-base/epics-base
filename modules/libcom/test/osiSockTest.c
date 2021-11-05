@@ -93,21 +93,26 @@ void udpSockTest(void)
 static
 int doBind(int expect, SOCKET S, unsigned* port)
 {
-    osiSockAddr46 addr46;
+    osiSockAddr addr;
     int ret;
 
-    ret = epicsSocket46BindLocalPort(S, *port);
+    memset(&addr, 0, sizeof(addr));
+    addr.ia.sin_family = AF_INET;
+    addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.ia.sin_port = htons(*port);
+
+    ret = bind(S, &addr.sa, sizeof(addr.ia));
     if(ret) {
-        testOk(expect==1, "bind() to %u error %d, %d (%s)", *port, ret, SOCKERRNO, strerror(SOCKERRNO));
+        testOk(expect==1, "bind() to %u error %d, %d", *port, ret, SOCKERRNO);
         return 1;
     } else {
-        osiSocklen_t slen = sizeof(addr46);
-        ret = getsockname(S, &addr46.sa, &slen);
+        osiSocklen_t slen = sizeof(addr);
+        ret = getsockname(S, &addr.sa, &slen);
         if(ret) {
             testFail("Unable to find sock name after binding");
             return 1;
         } else {
-            *port = ntohs(addr46.ia.sin_port);
+            *port = ntohs(addr.ia.sin_port);
             testOk(expect==0, "bind() to port %u", *port);
             return 0;
         }
@@ -151,9 +156,9 @@ void udpSockFanoutBindTest(void)
 
     testDiag("udpSockFanoutBindTest()");
 
-    A = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
-    B = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
-    C = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
+    A = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+    B = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+    C = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
 
     if(A==INVALID_SOCKET || B==INVALID_SOCKET || C==INVALID_SOCKET)
         testAbort("Insufficient sockets");
@@ -231,9 +236,10 @@ void udpSockFanoutTestRx(void* raw)
 
     while(!epicsTimeGetCurrent(&now) && epicsTimeDiffInSeconds(&now, &start)<=5.0) {
         union CASearchU buf;
-        osiSockAddr46 src;
+        osiSockAddr src;
+        osiSocklen_t srclen = sizeof(src);
 
-        int n = epicsSocket46Recvfrom(info->sock, buf.bytes, sizeof(buf.bytes), 0, &src);
+        int n = recvfrom(info->sock, buf.bytes, sizeof(buf.bytes), 0, &src.sa, &srclen);
         buf.bytes[sizeof(buf.bytes)-1] = '\0';
 
         if(n<0) {
@@ -273,11 +279,20 @@ void udpSockFanoutTestIface(const osiSockAddr46* pAddr46)
     epicsThreadOpts topts = EPICS_THREAD_OPTS_INIT;
     int opt = 1;
     unsigned i;
+    osiSockAddr any;
     epicsUInt32 key = 0xdeadbeef ^ ntohl(pAddr46->ia.sin_addr.s_addr);
     union CASearchU buf;
     int ret;
 
     topts.joinable = 1;
+
+    /* we bind to any for lack of a portable way to find the
+     * interface address from the interface broadcast address
+     */
+    memset(&any, 0, sizeof(any));
+    any.ia.sin_family = AF_INET;
+    any.ia.sin_addr.s_addr = htonl(INADDR_ANY);
+    any.ia.sin_port = pAddr46->ia.sin_port;
 
     buf.msg.cmd = htons(6);
     buf.msg.size = htons(16);
@@ -286,9 +301,9 @@ void udpSockFanoutTestIface(const osiSockAddr46* pAddr46)
     /* .p1 and .p2 set below */
     memcpy(buf.msg.body, "tota" "llyi" "nval" "id\0\0", 16);
 
-    sender = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
-    rx1.sock = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
-    rx2.sock = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0);
+    sender = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+    rx1.sock = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+    rx2.sock = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
     if((sender==INVALID_SOCKET) || (rx1.sock==INVALID_SOCKET) || (rx2.sock==INVALID_SOCKET))
         testAbort("Unable to allocate test socket(s)");
 
@@ -305,16 +320,13 @@ void udpSockFanoutTestIface(const osiSockAddr46* pAddr46)
     epicsSocketEnableAddressUseForDatagramFanout(rx1.sock);
     epicsSocketEnableAddressUseForDatagramFanout(rx2.sock);
 
-    /* we bind to any for lack of a portable way to find the
-     * interface address from the interface broadcast address
-     */
-    if(epicsSocket46BindLocalPort(rx1.sock, ntohs(pAddr46->ia.sin_port)))
+    if(bind(rx1.sock, &any.sa, sizeof(any)))
         testFail("Can't bind test socket rx1 %d", (int)SOCKERRNO);
-    if(epicsSocket46BindLocalPort(rx2.sock, ntohs(pAddr46->ia.sin_port)))
+    if(bind(rx2.sock, &any.sa, sizeof(any)))
         testFail("Can't bind test socket rx2 %d", (int)SOCKERRNO);
 
     /* test to see if send is possible (not EPERM) */
-    ret = epicsSocket46Sendto(sender, buf.bytes, sizeof(buf.bytes), 0, pAddr46);
+    ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &pAddr46->sa, sizeof(pAddr46->ia));
     if(ret!=(int)sizeof(buf.bytes)) {
         testDiag("test sendto() error %d (%d)", ret, (int)SOCKERRNO);
         goto cleanup;
@@ -328,7 +340,7 @@ void udpSockFanoutTestIface(const osiSockAddr46* pAddr46)
         epicsThreadSleep(0.5);
 
         buf.msg.p1 = buf.msg.p2 = htonl(key + i);
-        ret = epicsSocket46Sendto(sender, buf.bytes, sizeof(buf.bytes), 0, pAddr46);
+        ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &pAddr46->sa, sizeof(pAddr46->ia));
         if(ret!=(int)sizeof(buf.bytes))
             testDiag("sendto() error %d (%d)", ret, (int)SOCKERRNO);
     }
@@ -367,7 +379,7 @@ void udpSockFanoutTest()
     match.ia.sin_family = AF_INET;
     match.ia.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if((dummy = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, 0))==INVALID_SOCKET)
+    if((dummy = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0))==INVALID_SOCKET)
         testAbort("Unable to allocate discovery socket");
 
     osiSockDiscoverBroadcastAddresses(&ifaces, dummy, &match);

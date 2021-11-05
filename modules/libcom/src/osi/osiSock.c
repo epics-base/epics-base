@@ -23,6 +23,12 @@
 #include "errlog.h"
 #include "osiSock.h"
 
+#if EPICS_HAS_IPV6
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#endif
+
 #define nDigitsDottedIP 4u
 #define chunkSize 8u
 
@@ -96,7 +102,18 @@ unsigned epicsStdCall sockAddrToA (
     }
 #if EPICS_HAS_IPV6
     if ( paddr->sa_family == AF_INET6 ) {
-        return sockAddrToDottedIP ( paddr, pBuf, bufSize );
+        unsigned ret;
+        int gai_ecode = getnameinfo(paddr, sizeof(struct sockaddr_in6), pBuf, bufSize,
+                                    NULL, 0,  NI_NAMEREQD);
+        if (!gai_ecode) {
+            return (unsigned)strlen(pBuf);
+        }
+        ret = sockAddrToDottedIP ( paddr, pBuf, bufSize );
+#ifdef NETDEBUG
+        fprintf (stdout,  "getnameinfo(%s) failed: %s\n",
+                      pBuf, gai_strerror(gai_ecode) );
+#endif
+        return ret;
     } else
 #endif
     if ( paddr->sa_family != AF_INET ) {

@@ -755,9 +755,11 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
                                                  SOCKET sock,
                                                  unsigned int interfaceIndex)
 {
+#ifdef NETDEBUG
     epicsPrintf("%s:%d: epicsSocket46optIPv6MultiCast(%lu) interfaceIndex=%u\n",
                 filename, lineno,
                 (unsigned long)sock, interfaceIndex);
+#endif
 #if EPICS_HAS_IPV6
     {
         int status = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,

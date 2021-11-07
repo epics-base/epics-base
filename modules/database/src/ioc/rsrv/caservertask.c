@@ -505,12 +505,6 @@ void rsrv_build_addr_lists(void)
             if(pNode->addr46.ia.sin_port==0) {
                 pNode->addr46.ia.sin_port = htons(ca_beacon_port);
             }
-#if EPICS_HAS_IPV6
-            if ( pNode->addr46.sa.sa_family == AF_INET6 ) {
-                ca_uint32_t interfaceIndex = pNode->addr46.in6.sin6_scope_id;
-                epicsSocket46optIPv6MultiCast(beaconSocket4, interfaceIndex);
-            }
-#endif
         }
 
         removeDuplicateAddresses(&beaconAddrList, &temp, 0);

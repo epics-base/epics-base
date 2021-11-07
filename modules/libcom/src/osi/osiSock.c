@@ -346,12 +346,14 @@ LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno
                                                 SOCKET sock,
                                                 const osiSockAddr46 *pAddr46)
 {
+    osiSocklen_t socklen = ( osiSocklen_t ) sizeof ( pAddr46->ia ) ;
+    int status;
 #if EPICS_HAS_IPV6
-    osiSocklen_t socklen = ( osiSocklen_t ) sizeof(pAddr46->in6);
-#else
-    osiSocklen_t socklen = ( osiSocklen_t ) sizeof(pAddr46->ia);
+    if (pAddr46->sa.sa_family == AF_INET6) {
+      socklen = ( osiSocklen_t ) sizeof ( pAddr46->in6 ) ;
+    }
 #endif
-    int status = bind(sock, &pAddr46->sa, socklen);
+    status = bind(sock, &pAddr46->sa, socklen);
 #ifdef NETDEBUG
     /* if (status < 0) */ {
         char buf[64];

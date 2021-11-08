@@ -411,7 +411,7 @@ private:
     caPrintfFunc * pVPrintfFunc;
     CAFDHANDLER * fdRegFunc;
     void * fdRegArg;
-    SOCKET sock;
+    SOCKET sock46;
     unsigned pndRecvCnt;
     unsigned ioSeqNo;
     unsigned callbackThreadsPending;

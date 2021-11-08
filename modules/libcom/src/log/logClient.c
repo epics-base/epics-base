@@ -40,7 +40,7 @@ epicsExportAddress (int, logClientDebug);
 
 typedef struct {
     char                msgBuf[0x4000];
-    struct sockaddr_in  addr;
+    osiSockAddr46       addr46;
     char                name[64];
     epicsMutexId        mutex;
     SOCKET              sock;
@@ -286,7 +286,7 @@ static void logClientMakeSock (logClient *pClient)
     /*
      * allocate a socket
      */
-    pClient->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, 0 );
+    pClient->sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_STREAM, 0 );
     if ( pClient->sock == INVALID_SOCKET ) {
         char sockErrBuf[128];
         epicsSocketConvertErrnoToString (
@@ -318,8 +318,7 @@ static void logClientConnect (logClient *pClient)
     }
 
     while ( 1 ) {
-        status = connect (pClient->sock,
-            (struct sockaddr *)&pClient->addr, sizeof(pClient->addr));
+        status = epicsSocket46Connect (pClient->sock, &pClient->addr46);
         if ( status >= 0 ) {
             break;
         }
@@ -451,8 +450,8 @@ static void logClientRestart ( logClientId id )
 /*
  *  logClientCreate()
  */
-logClientId epicsStdCall logClientCreate (
-    struct in_addr server_addr, unsigned short server_port)
+logClientId epicsStdCall logClientCreate46 (
+    osiSockAddr46 *pAddr46, unsigned short server_port)
 {
     logClient *pClient;
 
@@ -460,11 +459,9 @@ logClientId epicsStdCall logClientCreate (
     if (pClient==NULL) {
         return NULL;
     }
-
-    pClient->addr.sin_family = AF_INET;
-    pClient->addr.sin_addr = server_addr;
-    pClient->addr.sin_port = htons(server_port);
-    ipAddrToDottedIP (&pClient->addr, pClient->name, sizeof(pClient->name));
+    pClient->addr46 = *pAddr46;
+    pClient->addr46.ia.sin_port = htons(server_port);
+    sockAddrToA (&pClient->addr46.sa, pClient->name, sizeof(pClient->name));
 
     pClient->mutex = epicsMutexCreate ();
     if ( ! pClient->mutex ) {

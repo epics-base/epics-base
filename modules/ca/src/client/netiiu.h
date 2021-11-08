@@ -31,7 +31,7 @@
 class netWriteNotifyIO;
 class netReadNotifyIO;
 class netSubscription;
-union osiSockAddr;
+union osiSockAddr46;
 class cac;
 class nciu;
 
@@ -80,7 +80,7 @@ public:
         epicsGuard < epicsMutex > & ) = 0;
     virtual void requestRecvProcessPostponedFlush (
         epicsGuard < epicsMutex > & ) = 0;
-    virtual osiSockAddr getNetworkAddress (
+    virtual osiSockAddr46 getNetworkAddress (
         epicsGuard < epicsMutex > & ) const = 0;
     virtual void uninstallChan (
         epicsGuard < epicsMutex > &, nciu & ) = 0;

@@ -309,7 +309,7 @@ int epicsStdCall ca_create_channel (
             }
         }
         if ( pFunc ) {
-            ( *pFunc ) ( pArg, pcac->sock, true );
+            ( *pFunc ) ( pArg, pcac->sock46, true );
         }
     }
 

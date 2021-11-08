@@ -543,15 +543,15 @@ void ca_repeater ()
             pNode = (osiSockAddrNode*)ellNext(&pNode->node))
         {
 
-            if(pNode->addr.ia.sin_family==AF_INET) {
-                epicsUInt32 top = ntohl(pNode->addr.ia.sin_addr.s_addr)>>24;
+            if(pNode->addr46.ia.sin_family==AF_INET) {
+                epicsUInt32 top = ntohl(pNode->addr46.ia.sin_addr.s_addr)>>24;
                 if(top>=224 && top<=239) {
 
                     /* This is a multi-cast address */
                     struct ip_mreq mreq;
 
                     memset(&mreq, 0, sizeof(mreq));
-                    mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
+                    mreq.imr_multiaddr = pNode->addr46.ia.sin_addr;
                     mreq.imr_interface.s_addr = INADDR_ANY;
 
                     if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
@@ -559,7 +559,7 @@ void ca_repeater ()
                         char name[40];
                         char sockErrBuf[64];
                         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                        ipAddrToDottedIP (&pNode->addr.ia, name, sizeof(name));
+                        ipAddrToDottedIP (&pNode->addr46.ia, name, sizeof(name));
                         errlogPrintf("caR: Socket mcast join to %s failed: %s\n", name, sockErrBuf );
                     }
                 }

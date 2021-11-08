@@ -271,7 +271,7 @@ void udpSockFanoutTestRx(void* raw)
 }
 
 static
-void udpSockFanoutTestIface(const osiSockAddr* addr)
+void udpSockFanoutTestIface(const osiSockAddr46* pAddr46)
 {
     SOCKET sender;
     struct TInfo rx1, rx2;
@@ -280,7 +280,7 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
     int opt = 1;
     unsigned i;
     osiSockAddr any;
-    epicsUInt32 key = 0xdeadbeef ^ ntohl(addr->ia.sin_addr.s_addr);
+    epicsUInt32 key = 0xdeadbeef ^ ntohl(pAddr46->ia.sin_addr.s_addr);
     union CASearchU buf;
     int ret;
 
@@ -292,7 +292,7 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
     memset(&any, 0, sizeof(any));
     any.ia.sin_family = AF_INET;
     any.ia.sin_addr.s_addr = htonl(INADDR_ANY);
-    any.ia.sin_port = addr->ia.sin_port;
+    any.ia.sin_port = pAddr46->ia.sin_port;
 
     buf.msg.cmd = htons(6);
     buf.msg.size = htons(16);
@@ -326,7 +326,7 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
         testFail("Can't bind test socket rx2 %d", (int)SOCKERRNO);
 
     /* test to see if send is possible (not EPERM) */
-    ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &addr->sa, sizeof(*addr));
+    ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &pAddr46->sa, sizeof(pAddr46->ia));
     if(ret!=(int)sizeof(buf.bytes)) {
         testDiag("test sendto() error %d (%d)", ret, (int)SOCKERRNO);
         goto cleanup;
@@ -340,7 +340,7 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
         epicsThreadSleep(0.5);
 
         buf.msg.p1 = buf.msg.p2 = htonl(key + i);
-        ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &addr->sa, sizeof(*addr));
+        ret = sendto(sender, buf.bytes, sizeof(buf.bytes), 0, &pAddr46->sa, sizeof(pAddr46->ia));
         if(ret!=(int)sizeof(buf.bytes))
             testDiag("sendto() error %d (%d)", ret, (int)SOCKERRNO);
     }
@@ -370,7 +370,7 @@ void udpSockFanoutTest()
     ELLLIST ifaces = ELLLIST_INIT;
     ELLNODE *cur;
     SOCKET dummy;
-    osiSockAddr match;
+    osiSockAddr46 match;
     int foundNotLo = 0;
 
     testDiag("udpSockFanoutTest()");
@@ -388,16 +388,16 @@ void udpSockFanoutTest()
         char name[64];
         osiSockAddrNode* node = CONTAINER(cur, osiSockAddrNode, node);
 
-        node->addr.ia.sin_port = htons(5064);
-        (void)sockAddrToDottedIP(&node->addr.sa, name, sizeof(name));
+        node->addr46.ia.sin_port = htons(5064);
+        (void)sockAddrToDottedIP(&node->addr46.sa, name, sizeof(name));
 
         testDiag("Interface %s", name);
-        if(node->addr.ia.sin_addr.s_addr!=htonl(INADDR_LOOPBACK)) {
+        if(node->addr46.ia.sin_addr.s_addr!=htonl(INADDR_LOOPBACK)) {
             testDiag("Not LO");
             foundNotLo = 1;
         }
 
-        udpSockFanoutTestIface(&node->addr);
+        udpSockFanoutTestIface(&node->addr46);
     }
 
     ellFree(&ifaces);

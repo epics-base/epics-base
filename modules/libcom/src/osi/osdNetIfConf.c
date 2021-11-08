@@ -24,13 +24,13 @@
 #include "errlog.h"
 #include "epicsThread.h"
 
-#ifdef DEBUG
+#ifdef NETDEBUG
 #   define ifDepenDebugPrintf(argsInParen) printf argsInParen
 #else
 #   define ifDepenDebugPrintf(argsInParen)
 #endif
 
-static osiSockAddr      osiLocalAddrResult;
+static osiSockAddr46     osiLocalAddr46Result;
 static epicsThreadOnceId osiLocalAddrId = EPICS_THREAD_ONCE_INIT;
 
 /*
@@ -66,7 +66,7 @@ static struct ifreq * ifreqNext ( struct ifreq *pifreq )
  * osiSockDiscoverBroadcastAddresses ()
  */
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
-     (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
+     (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
 {
     static const unsigned           nelem = 100;
     int                             status;
@@ -77,16 +77,16 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
     struct ifreq                    *pnextifreq;
     osiSockAddrNode                 *pNewNode;
 
-    if ( pMatchAddr->sa.sa_family == AF_INET  ) {
-        if ( pMatchAddr->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
+    if ( pMatchAddr46->sa.sa_family == AF_INET  ) {
+        if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
             pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
             if ( pNewNode == NULL ) {
                 errlogPrintf ( "osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n" );
                 return;
             }
-            pNewNode->addr.ia.sin_family = AF_INET;
-            pNewNode->addr.ia.sin_port = htons ( 0 );
-            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            pNewNode->addr46.ia.sin_family = AF_INET;
+            pNewNode->addr46.ia.sin_port = htons ( 0 );
+            pNewNode->addr46.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
             ellAdd ( pList, &pNewNode->node );
             return;
         }
@@ -146,13 +146,13 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
          * if it isn't a wildcarded interface then look for
          * an exact match
          */
-        if ( pMatchAddr->sa.sa_family != AF_UNSPEC ) {
-            if ( pMatchAddr->sa.sa_family != AF_INET ) {
+        if ( pMatchAddr46->sa.sa_family != AF_UNSPEC ) {
+            if ( pMatchAddr46->sa.sa_family != AF_INET ) {
                 continue;
             }
-            if ( pMatchAddr->ia.sin_addr.s_addr != htonl (INADDR_ANY) ) {
+            if ( pMatchAddr46->ia.sin_addr.s_addr != htonl (INADDR_ANY) ) {
                  struct sockaddr_in *pInetAddr = (struct sockaddr_in *) &pIfreqList->ifr_addr;
-                 if ( pInetAddr->sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr ) {
+                 if ( pInetAddr->sin_addr.s_addr != pMatchAddr46->ia.sin_addr.s_addr ) {
                      ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" didnt match\n", pIfreqList->ifr_name) );
                      continue;
                  }
@@ -200,7 +200,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
          * interface.
          */
         if ( pIfreqList->ifr_flags & IFF_BROADCAST ) {
-            osiSockAddr baddr;
+            osiSockAddr46 baddr;
             status = socket_ioctl (socket, SIOCGIFBRDADDR, pIfreqList);
             if ( status ) {
                 errlogPrintf ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\": bcast addr fetch fail\n", pIfreqList->ifr_name);
@@ -209,7 +209,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             }
             baddr.sa = pIfreqList->ifr_broadaddr;
             if (baddr.ia.sin_family==AF_INET && baddr.ia.sin_addr.s_addr != INADDR_ANY) {
-                pNewNode->addr.sa = pIfreqList->ifr_broadaddr;
+                pNewNode->addr46.sa = pIfreqList->ifr_broadaddr;
                 ifDepenDebugPrintf ( ( "found broadcast addr = %x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
             } else {
                 ifDepenDebugPrintf ( ( "Ignoring broadcast addr = %x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
@@ -225,7 +225,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
                 free ( pNewNode );
                 continue;
             }
-            pNewNode->addr.sa = pIfreqList->ifr_dstaddr;
+            pNewNode->addr46.sa = pIfreqList->ifr_dstaddr;
         }
 #endif
         else {
@@ -252,7 +252,7 @@ static void osiLocalAddrOnce (void *raw)
 {
     SOCKET *psocket = raw;
     const unsigned          nelem = 100;
-    osiSockAddr             addr;
+    osiSockAddr46           addr46;
     int                     status;
     struct ifconf           ifconf;
     struct ifreq            *pIfreqList;
@@ -260,8 +260,8 @@ static void osiLocalAddrOnce (void *raw)
     struct ifreq            *pIfreqListEnd;
     struct ifreq            *pnextifreq;
 
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
-    addr.sa.sa_family = AF_UNSPEC;
+    memset ( (void *) &addr46, '\0', sizeof ( addr46 ) );
+    addr46.sa.sa_family = AF_UNSPEC;
 
     pIfreqList = (struct ifreq *) calloc ( nelem, sizeof(*pIfreqList) );
     if ( ! pIfreqList ) {
@@ -286,7 +286,7 @@ static void osiLocalAddrOnce (void *raw)
     pIfreqListEnd--;
 
     for ( pifreq = ifconf.ifc_req; pifreq <= pIfreqListEnd; pifreq = pnextifreq ) {
-        osiSockAddr addrCpy;
+        osiSockAddr46 addrCpy;
         uint32_t  current_ifreqsize;
 
         /*
@@ -327,7 +327,7 @@ static void osiLocalAddrOnce (void *raw)
 
         ifDepenDebugPrintf ( ("osiLocalAddr(): net intf %s found\n", pIfreqList->ifr_name) );
 
-        osiLocalAddrResult = addrCpy;
+        osiLocalAddr46Result = addrCpy;
         free ( pIfreqList );
         return;
     }
@@ -336,17 +336,17 @@ static void osiLocalAddrOnce (void *raw)
         "osiLocalAddr(): only loopback found\n");
 fail:
     /* fallback to loopback */
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
-    addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    osiLocalAddrResult = addr;
+    memset ( (void *) &addr46, '\0', sizeof ( addr46 ) );
+    addr46.ia.sin_family = AF_INET;
+    addr46.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    osiLocalAddr46Result = addr46;
 
     free ( pIfreqList );
 }
 
 
-LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
+LIBCOM_API osiSockAddr46 epicsStdCall osiLocalAddr (SOCKET socket)
 {
     epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, &socket);
-    return osiLocalAddrResult;
+    return osiLocalAddr46Result;
 }

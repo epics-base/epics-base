@@ -34,6 +34,7 @@
 #include "locationException.h"
 #include "errlog.h"
 #include "epicsExport.h"
+#include "epicsStdio.h"
 
 #include "addrList.h"
 #include "iocinf.h"
@@ -263,7 +264,7 @@ cac::cac (
     while ( osiSockAddrNode *
         pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
         tcpiiu * piiu = NULL;
-        SearchDestTCP * pdst = new SearchDestTCP ( *this, pNode->addr );
+        SearchDestTCP * pdst = new SearchDestTCP ( *this, pNode->addr46 );
         this->registerSearchDest ( guard, * pdst );
         /* Initially assume that servers listed in EPICS_CA_NAME_SERVERS support at least minor
          * version 11.  This causes tcpiiu to send the user and host name authentication
@@ -271,7 +272,7 @@ cac::cac (
          * be overwrite this assumption.
          */
         bool newIIU = findOrCreateVirtCircuit (
-            guard, pNode->addr, cacChannel::priorityDefault,
+            guard, pNode->addr46, cacChannel::priorityDefault,
             piiu, 11, pdst );
         free ( pNode );
         if ( newIIU ) {
@@ -465,6 +466,16 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
      * look for it in the hash table
      */
     bhe *pBHE = this->beaconTable.lookup ( addr );
+#ifdef NETDEBUG
+    {
+        char buf[64];
+        addr.name ( buf, sizeof ( buf ) );
+
+        epicsPrintf("%s:%d: cac::beaconNotify addr='%s' pBHE=%p\n",
+                    __FILE__, __LINE__,
+                    buf, pBHE);
+    }
+#endif
     if ( pBHE ) {
         /*
          * return if the beacon period has not changed significantly
@@ -534,7 +545,7 @@ cacChannel & cac::createChannel (
 }
 
 bool cac::findOrCreateVirtCircuit (
-    epicsGuard < epicsMutex > & guard, const osiSockAddr & addr,
+    epicsGuard < epicsMutex > & guard, const osiSockAddr46 & addr46,
     unsigned priority, tcpiiu *& piiu, unsigned minorVersionNumber,
     SearchDestTCP * pSearchDest )
 {
@@ -552,13 +563,13 @@ bool cac::findOrCreateVirtCircuit (
                     this->freeListVirtualCircuit,
                     new ( this->freeListVirtualCircuit ) tcpiiu (
                         *this, this->mutex, this->cbMutex, this->notify, this->connTMO,
-                        this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber,
+                        this->timerQueue, addr46, this->comBufMemMgr, minorVersionNumber,
                         this->ipToAEngine, priority, pSearchDest ) );
 
-            bhe * pBHE = this->beaconTable.lookup ( addr.ia );
+            bhe * pBHE = this->beaconTable.lookup ( addr46 );
             if ( ! pBHE ) {
                 pBHE = new ( this->bheFreeList )
-                                    bhe ( this->mutex, epicsTime (), 0u, addr.ia );
+                                    bhe ( this->mutex, epicsTime (), 0u, addr46 );
                 if ( this->beaconTable.add ( *pBHE ) < 0 ) {
                     return newIIU;
                 }
@@ -588,10 +599,10 @@ bool cac::findOrCreateVirtCircuit (
 void cac::transferChanToVirtCircuit (
     unsigned cid, unsigned sid,
     ca_uint16_t typeCode, arrayElementCount count,
-    unsigned minorVersionNumber, const osiSockAddr & addr,
+    unsigned minorVersionNumber, const osiSockAddr46 & addr46,
     const epicsTime & currentTime )
 {
-    if ( addr.sa.sa_family != AF_INET ) {
+    if ( ! ( epicsSocket46IsAF_INETorAF_INET6 ( addr46.sa.sa_family ) ) ){
         return;
     }
 
@@ -615,10 +626,10 @@ void cac::transferChanToVirtCircuit (
     /*
      * Ignore duplicate search replies
      */
-    osiSockAddr chanAddr = pChan->getPIIU(guard)->getNetworkAddress (guard);
+    osiSockAddr46 chanAddr = pChan->getPIIU(guard)->getNetworkAddress (guard);
 
     if ( chanAddr.sa.sa_family != AF_UNSPEC ) {
-        if ( ! sockAddrAreIdentical ( &addr, &chanAddr ) ) {
+        if ( ! sockAddrAreIdentical46 ( &addr46, &chanAddr ) ) {
             char acc[64];
             pChan->getPIIU(guard)->getHostName ( guard, acc, sizeof ( acc ) );
             msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
@@ -632,16 +643,16 @@ void cac::transferChanToVirtCircuit (
             // must release the primary mutex here to avoid a lock
             // hierarchy inversion.
             epicsGuardRelease < epicsMutex > unguard ( guard );
-            pMsg->ioInitiate ( addr );
+            pMsg->ioInitiate ( addr46 );
         }
         return;
     }
 
-    caServerID servID ( addr.ia, pChan->getPriority(guard) );
+    caServerID servID ( addr46, pChan->getPriority(guard) );
     tcpiiu * piiu = this->serverTable.lookup ( servID );
 
     bool newIIU = findOrCreateVirtCircuit (
-        guard, addr,
+        guard, addr46,
         pChan->getPriority(guard), piiu, minorVersionNumber );
 
     // must occur before moving to new iiu
@@ -1236,9 +1247,9 @@ void cac::destroyIIU ( tcpiiu & iiu )
             iiu.getHostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
             genLocalExcep ( mgr.cbGuard, guard, *this, ECA_DISCONN, hostNameTmp );
         }
-        osiSockAddr addr = iiu.getNetworkAddress ( guard );
-        if ( addr.sa.sa_family == AF_INET ) {
-            inetAddrID tmp ( addr.ia );
+        osiSockAddr46 addr46 = iiu.getNetworkAddress ( guard );
+        if ( epicsSocket46IsAF_INETorAF_INET6 ( addr46.sa.sa_family ) ) {
+            inetAddrID tmp ( addr46 );
             bhe * pBHE = this->beaconTable.lookup ( tmp );
             if ( pBHE ) {
                 pBHE->unregisterIIU ( guard, iiu );
@@ -1277,9 +1288,9 @@ double cac::beaconPeriod (
 {
     const netiiu * pIIU = chan.getConstPIIU ( guard );
     if ( pIIU ) {
-        osiSockAddr addr = pIIU->getNetworkAddress ( guard );
-        if ( addr.sa.sa_family == AF_INET ) {
-            inetAddrID tmp ( addr.ia );
+        osiSockAddr46 addr46 = pIIU->getNetworkAddress ( guard );
+        if ( epicsSocket46IsAF_INETorAF_INET6 ( addr46.sa.sa_family ) ) {
+            inetAddrID tmp ( addr46 );
             bhe *pBHE = this->beaconTable.lookup ( tmp );
             if ( pBHE ) {
                 return pBHE->period ( guard );
@@ -1311,9 +1322,10 @@ void cacComBufMemoryManager::release ( void * pCadaver )
 void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     const char * pChannelName, const char * pAcc, const char * pRej )
 {
-    char buf[256];
-    sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
-            pChannelName, pAcc, pRej );
+    char buf[320];
+    epicsSnprintf ( buf, sizeof(buf),
+                    "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
+                    pChannelName, pAcc, pRej );
     {
         callbackManager mgr ( this->notify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );

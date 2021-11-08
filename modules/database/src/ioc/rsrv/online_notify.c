@@ -38,10 +38,12 @@
  */
 void rsrv_online_notify_task(void *pParm)
 {
+    rsrv_online_notify_config   *pConf = pParm;
     double                      delay;
     double                      maxdelay;
     long                        longStatus;
     double                      maxPeriod;
+    SOCKET                      *pSockets = pConf->pSockets;
     caHdr                       msg;
     int                         status;
     ca_uint32_t                 beaconCounter = 0;
@@ -84,16 +86,16 @@ void rsrv_online_notify_task(void *pParm)
         for(i=0, cur=ellFirst(&beaconAddrList); cur; i++, cur=ellNext(cur))
         {
             osiSockAddrNode *pAddr = CONTAINER(cur, osiSockAddrNode, node);
-            status = sendto (beaconSocket, (char *)&msg, sizeof(msg), 0,
-                             &pAddr->addr.sa, sizeof(pAddr->addr));
+            status = epicsSocket46Sendto (pSockets[i], (char *)&msg, sizeof(msg), 0,
+                                          &pAddr->addr46 );
             if (status < 0) {
                 int err = SOCKERRNO;
                 if(err != lastError[i]) {
                     char sockErrBuf[64];
-                    char sockDipBuf[22];
+                    char sockDipBuf[64];
 
                     epicsSocketConvertErrorToString(sockErrBuf, sizeof(sockErrBuf), err);
-                    ipAddrToDottedIP(&pAddr->addr.ia, sockDipBuf, sizeof(sockDipBuf));
+                    sockAddrToDottedIP(&pAddr->addr46.sa, sockDipBuf, sizeof(sockDipBuf));
                     errlogPrintf ( "CAS: CA beacon send to %s " ERL_ERROR ": %s\n",
                         sockDipBuf, sockErrBuf);
 
@@ -103,9 +105,9 @@ void rsrv_online_notify_task(void *pParm)
             else {
                 assert (status == sizeof(msg));
                 if(lastError[i]) {
-                    char sockDipBuf[22];
+                    char sockDipBuf[64];
 
-                    ipAddrToDottedIP(&pAddr->addr.ia, sockDipBuf, sizeof(sockDipBuf));
+                    sockAddrToDottedIP(&pAddr->addr46.sa, sockDipBuf, sizeof(sockDipBuf));
                     errlogPrintf ( "CAS: CA beacon send to %s ok\n",
                         sockDipBuf);
                 }

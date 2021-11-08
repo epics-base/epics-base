@@ -78,7 +78,7 @@ typedef struct client {
   ELLLIST               chanList;
   ELLLIST               chanPendingUpdateARList;
   ELLLIST               putNotifyQue;
-  struct sockaddr_in    addr; /* peer address, TCP only */
+  osiSockAddr46         addr46; /* peer address, TCP only */
   epicsTimeStamp        time_at_last_send;
   epicsTimeStamp        time_at_last_recv;
   void                  *evuser;
@@ -149,14 +149,18 @@ struct event_ext {
 
 typedef struct {
     ELLNODE node;
-    osiSockAddr tcpAddr, /* TCP listener endpoint */
-                udpAddr, /* UDP name unicast receiver endpoint */
-                udpbcastAddr; /* UDP name broadcast receiver endpoint */
+    osiSockAddr46 tcpAddr46, /* TCP listener endpoint */
+                  udpAddr46, /* UDP name unicast receiver endpoint */
+                  udpbcastAddr46; /* UDP name broadcast receiver endpoint */
     SOCKET tcp, udp, udpbcast;
     struct client *client, *bclient;
 
     unsigned int startbcast:1;
 } rsrv_iface_config;
+
+typedef struct {
+    SOCKET *pSockets;
+} rsrv_online_notify_config;
 
 enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 
@@ -184,9 +188,8 @@ GLBLTYPE unsigned short     ca_server_port, ca_udp_port, ca_beacon_port;
 GLBLTYPE ELLLIST            clientQ             GLBLTYPE_INIT(ELLLIST_INIT);
 GLBLTYPE ELLLIST            servers; /* rsrv_iface_config::node, read-only after rsrv_init() */
 GLBLTYPE ELLLIST            beaconAddrList;
-GLBLTYPE SOCKET             beaconSocket;
 GLBLTYPE ELLLIST            casIntfAddrList, casMCastAddrList;
-GLBLTYPE epicsUInt32        *casIgnoreAddrs;
+GLBLTYPE osiSockAddr46      *casIgnoreAddrs46;
 GLBLTYPE epicsMutexId       clientQlock;
 GLBLTYPE BUCKET             *pCaBucket; /* locked by clientQlock */
 GLBLTYPE void               *rsrvClientFreeList;
@@ -226,7 +229,7 @@ void rsrv_online_notify_task (void *);
 void cast_server (void *);
 struct client *create_client ( SOCKET sock, int proto );
 void destroy_client ( struct client * );
-struct client *create_tcp_client ( SOCKET sock, const osiSockAddr* peerAddr );
+struct client *create_tcp_client ( SOCKET sock, const osiSockAddr46* peerAddr );
 void destroy_tcp_client ( struct client * );
 void casAttachThreadToClient ( struct client * );
 int camessage ( struct client *client );

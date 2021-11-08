@@ -29,8 +29,8 @@ public:
 class LIBCOM_API ipAddrToAsciiTransaction {
 public:
     virtual void release () = 0;
-    virtual void ipAddrToAscii ( const osiSockAddr &, ipAddrToAsciiCallBack & ) = 0;
-    virtual osiSockAddr address () const  = 0;
+    virtual void ipAddrToAscii ( const osiSockAddr46 &, ipAddrToAsciiCallBack & ) = 0;
+    virtual osiSockAddr46 address () const  = 0;
     virtual void show ( unsigned level ) const = 0;
 protected:
     virtual ~ipAddrToAsciiTransaction () = 0;

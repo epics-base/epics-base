@@ -33,15 +33,16 @@
 #include "epicsExport.h"
 
 static
-void testmbbioFields(const char* rec, unsigned int value)
+void testmbbioFields(char dir, unsigned n, unsigned int value)
 {
     char field[40];
     unsigned int i;
 
-    testdbGetFieldEqual(rec, DBF_ULONG, value);
+    sprintf(field,"d%c%d", dir, n);
+    testdbGetFieldEqual(field, DBF_ULONG, value);
     for (i=0; i < 32; i++)
     {
-        sprintf(field,"%s.B%X", rec, i);
+        sprintf(field,"d%c%d.B%X", dir, n, i);
         testdbGetFieldEqual(field, DBF_ULONG, (value>>i)&1);
     }
 }
@@ -49,16 +50,14 @@ void testmbbioFields(const char* rec, unsigned int value)
 static
 void testmbbioRecords(unsigned int count, unsigned int value)
 {
-    char rec[40];
     unsigned int i;
 
     for (i = 1; i <= count; i++)
     {
-        sprintf(rec, "do%d", i);
-        testDiag("  ### %s ###", rec);
-        testmbbioFields(rec, value);
-        sprintf(rec, "di%d", i);
-        testmbbioFields(rec, value);
+        testDiag("  ### do%d ###", i);
+        testmbbioFields('o', i, value);
+        testDiag("  ### di%d ###", i);
+        testmbbioFields('i', i, value);
     }
 }
 

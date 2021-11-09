@@ -2275,7 +2275,7 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
         }
 
         /* generalized extraction of ID character and integer pairs (eg. "#C15 S14") */
-        ret = sscanf(pinfo->target, "# %c%d %c%d %c%d %c%d %c%d %c",
+        ret = sscanf(pinfo->target, "# %c%i %c%i %c%i %c%i %c%i %c",
                      &pinfo->hwid[0], &pinfo->hwnums[0],
                      &pinfo->hwid[1], &pinfo->hwnums[1],
                      &pinfo->hwid[2], &pinfo->hwnums[2],

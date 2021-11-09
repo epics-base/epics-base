@@ -85,7 +85,6 @@ jobs:
             configuration: default
             rtems: "5"
             rtems_target: RTEMS-pc686-qemu
-            test: NO
             name: "Ub-20 gcc-9 + RT-5.1 pc686"
 
           - os: ubuntu-20.04
@@ -145,7 +144,6 @@ jobs:
             rtems: "4.9"
             name: "Ub-20 gcc-9 + RT-4.9"
             rtems_target: RTEMS-pc386-qemu
-            test: NO
 
           - os: macos-latest
             cmp: clang
@@ -188,7 +186,7 @@ jobs:
     - name: Build main module
       run: python .ci/cue.py build
     - name: Run main module tests
-      run: python .ci/cue.py -T 20M test
+      run: python .ci/cue.py -T 60M test
     - name: Upload tapfiles Artifact
       if: ${{ always() }}
       uses: actions/upload-artifact@v2

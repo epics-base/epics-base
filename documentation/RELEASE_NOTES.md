@@ -16,6 +16,13 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Allow hexadecimal and octal numbers in hardware links
+
+Several types of hardware links (`VME_IO`, `CAMAC_IO`, etc) now accept
+hexadecimal and octal numbers. (Hexadecimal numbers had already been valid
+up to EPICS R3.15.) This change may introduce incompatibilities when using
+numbers with leading `0` as they will now be parsed as octal.
+
 ### Fix for `undefined` in configure/RELEASE files
 
 Prevents `Use of uninitialized value` warnings from convertRelease.pl.

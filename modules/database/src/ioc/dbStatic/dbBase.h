@@ -118,6 +118,10 @@ typedef struct dbRecordNode {
     char            *recordname;
     ELLLIST         infoList;       /*LIST head of info nodes*/
     int             flags;
+    /** Parse order of this record()
+     *  @since UNRELEASED
+     */
+    unsigned        order;
     struct dbRecordNode *aliasedRecnode; /* NULL unless flags|DBRN_FLAGS_ISALIAS */
 }dbRecordNode;
 
@@ -184,5 +188,9 @@ typedef struct dbBase {
     struct gphPvt   *pgpHash;
     short           ignoreMissingMenus;
     short           loadCdefs;
+    /** Total number of records.
+     *  @since UNRELEASED
+     */
+    unsigned        no_records;
 }dbBase;
 #endif

@@ -1445,6 +1445,7 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     pdbentry->precnode = pNewRecNode;
     ppvd = dbPvdAdd(pdbentry->pdbbase,precordType,pNewRecNode);
     if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
+    pNewRecNode->order = pdbentry->pdbbase->no_records++;
     return(0);
 }
 
@@ -1686,6 +1687,7 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     }
 
     ellAdd(&precordType->recList, &pnewnode->node);
+    pnewnode->order = pdbentry->pdbbase->no_records++;
     precordType->no_aliases++;
 
     return 0;

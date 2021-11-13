@@ -330,12 +330,29 @@ int          status;
     a_p->usePolicy = arg.ok;
 }
 #endif
-
+
+/* 0 - In the process which loads libCom.
+ * 1 - In a newly fork()'d child process
+ * 2 - In a child which has been warned
+ */
+static int childAfterFork;
+
+static void childHook(void)
+{
+    epicsAtomicSetIntT(&childAfterFork, 1);
+}
 
 static void once(void)
 {
     epicsThreadOSD *pthreadInfo;
     int status;
+
+#ifdef __rtems__
+    (void)childHook;
+#else
+    status = pthread_atfork(NULL, NULL, &childHook);
+    checkStatusOnce(status, "pthread_atfork");
+#endif
 
     pthread_key_create(&getpthreadInfo,0);
     status = osdPosixMutexInit(&onceLock,PTHREAD_MUTEX_DEFAULT);
@@ -431,6 +448,11 @@ static void epicsThreadInit(void)
     static pthread_once_t once_control = PTHREAD_ONCE_INIT;
     int status = pthread_once(&once_control,once);
     checkStatusQuit(status,"pthread_once","epicsThreadInit");
+
+    if(epicsAtomicGetIntT(&childAfterFork)==1 &&  epicsAtomicCmpAndSwapIntT(&childAfterFork, 1, 2)==1) {
+        fprintf(stderr, "Warning: Undefined Behavior!\n"
+                        "         Detected use of epicsThread from child process after fork()\n");
+    }
 }
 
 LIBCOM_API

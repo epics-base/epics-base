@@ -34,6 +34,10 @@
 #include <sys/mman.h> 
 #endif
 
+/* epicsStdio uses epicsThreadOnce(), require explicit use to avoid unexpected recursion */
+#define epicsStdioStdStreams
+#define epicsStdioStdPrintfEtc
+
 #include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
@@ -942,7 +946,7 @@ LIBCOM_API void epicsStdCall epicsThreadShow(epicsThreadId showThread, unsigned 
     checkStatus(status,"pthread_mutex_unlock epicsThreadShowAll");
     if(status) return;
     if (!found)
-        printf("Thread %#lx (%lu) not found.\n", (unsigned long)showThread, (unsigned long)showThread);
+        epicsStdoutPrintf("Thread %#lx (%lu) not found.\n", (unsigned long)showThread, (unsigned long)showThread);
 }
 
 LIBCOM_API epicsThreadPrivateId epicsStdCall epicsThreadPrivateCreate(void)

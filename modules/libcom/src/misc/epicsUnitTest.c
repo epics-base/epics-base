@@ -163,7 +163,7 @@ int testOkV(int pass, const char *fmt, va_list pvar) {
     vprintf(fmt, pvar);
     if (todo)
         printf(" # TODO %s", todo);
-    putchar('\n');
+    printf("\n");
     fflush(stdout);
     epicsMutexUnlock(testLock);
     return pass;
@@ -219,7 +219,7 @@ int testDiag(const char *fmt, ...) {
     epicsMutexMustLock(testLock);
     printf("# ");
     vprintf(fmt, pvar);
-    putchar('\n');
+    printf("\n");
     fflush(stdout);
     epicsMutexUnlock(testLock);
     va_end(pvar);
@@ -231,7 +231,7 @@ void testAbort(const char *fmt, ...) {
     va_start(pvar, fmt);
     printf("Bail out! ");
     vprintf(fmt, pvar);
-    putchar('\n');
+    printf("\n");
     fflush(stdout);
     va_end(pvar);
     abort();

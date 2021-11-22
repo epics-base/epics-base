@@ -588,7 +588,7 @@ static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, int special )
     }
     if ( (special == FALSE) && (entry == NULL) &&
          (handle->flags & FLAG_USE_ENVIRONMENT) ) {
-        char *value = getenv(name);
+        char *value = name && *name ? getenv(name) : NULL;
         if (value) {
             entry = create( handle, name, FALSE );
             if ( entry ) {

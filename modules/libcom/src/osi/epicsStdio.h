@@ -36,6 +36,7 @@
  * - `printf` becomes epicsStdoutPrintf()
  * - `puts` becomes epicsStdoutPuts()
  * - `putchar` becomes epicsStdoutPutchar()
+ * - `vprintf` becomes epicsStdoutVPrintf()
  *
  * The epicsSetThreadStdin(), epicsSetThreadStdout() and epicsSetThreadStderr()
  * routines allow the standard file streams to be redirected on a per thread
@@ -74,6 +75,11 @@ extern "C" {
 #    undef printf
 #  endif
 #  define printf epicsStdoutPrintf
+
+#  ifdef vprintf
+#    undef vprintf
+#  endif
+#  define vprintf epicsStdoutVPrintf
 
 #  ifdef puts
 #    undef puts
@@ -172,6 +178,8 @@ LIBCOM_API void  epicsStdCall epicsSetThreadStderr(FILE *);
 
 LIBCOM_API int epicsStdCall epicsStdoutPrintf(
     const char *pformat, ...) EPICS_PRINTF_STYLE(1,2);
+LIBCOM_API int epicsStdCall epicsStdoutVPrintf(
+    const char *pformat, va_list ap);
 LIBCOM_API int epicsStdCall epicsStdoutPuts(const char *str);
 LIBCOM_API int epicsStdCall epicsStdoutPutchar(int c);
 
@@ -185,6 +193,7 @@ using ::epicsGetStdin;
 using ::epicsGetStdout;
 using ::epicsGetStderr;
 using ::epicsStdoutPrintf;
+using ::epicsStdoutVPrintf;
 using ::epicsStdoutPuts;
 using ::epicsStdoutPutchar;
 }

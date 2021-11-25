@@ -1,4 +1,4 @@
-/*************************************************************************\
+/************************************************************************* \
 * Copyright (c) 2016 Michael Davidsaver
 * Copyright (c) 2015 Brookhaven Science Assoc. as operator of Brookhaven
 *               National Laboratory.
@@ -32,6 +32,7 @@
 #include "freeList.h"
 #include "osiPoolStatus.h"
 #include "osiSock.h"
+#include "osiDebugPrint.h"
 #include "taskwd.h"
 #include "cantProceed.h"
 
@@ -190,8 +191,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
             {
                 char buf[64];
                 sockAddrToDottedIP(&ifaceAddr.sa, buf, sizeof(buf));
-                epicsPrintf("%s:%d:rsrv_grab_tcp  ifaceAddr='%s'\n",
-                            __FILE__, __LINE__,  buf);
+                osiDebugPrint("rsrv_grab_tcp  ifaceAddr='%s'\n", buf);
             }
 #endif
             tcpsock = socks[i] = epicsSocket46Create (scratch46.ia.sin_family,
@@ -429,8 +429,8 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-                epicsPrintf("%s/%d: calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
-                            __FILE__, __LINE__, buf);
+                osiDebugPrint("calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                              buf);
             }
 #endif
             osiSockDiscoverBroadcastAddresses(&beaconAddrList, beaconSocket4, &match46);
@@ -482,8 +482,8 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-                epicsPrintf("%s/%d: calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
-                            __FILE__, __LINE__, buf);
+                osiDebugPrint("calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                              buf);
             }
 #endif
             osiSockDiscoverBroadcastAddresses(&temp, beaconSocket4, &match46);
@@ -498,8 +498,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&pNode->addr46.sa, buf, sizeof(buf));
-                epicsPrintf("%s:%d:rsrv_XXXX addr='%s'\n",
-                            __FILE__, __LINE__,  buf);
+                osiDebugPrint("rsrv_XXXX addr='%s'\n", buf);
             }
 #endif
             if(pNode->addr46.ia.sin_port==0) {
@@ -783,8 +782,8 @@ void rsrv_init (void)
                 {
                     char buf[64];
                     sockAddrToDottedIP(&conf->udpAddr46.sa, buf, sizeof(buf));
-                    epicsPrintf("%s/%d: calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
-                                __FILE__, __LINE__, buf);
+                    osiDebugPrint("calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                                  buf);
             }
 #endif
                 osiSockDiscoverBroadcastAddresses (&bcastList,

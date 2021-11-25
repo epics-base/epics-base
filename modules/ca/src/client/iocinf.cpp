@@ -36,6 +36,7 @@
 #include "iocinf.h"
 
 #include "osiSock.h" /* EPICS_HAS_IPV6, NETDEBUG */
+#include "osiDebugPrint.h"
 /*
  * getToken()
  */
@@ -101,8 +102,8 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
 #ifdef NETDEBUG
             char buf[64];
             sockAddrToDottedIP(&addr46.sa, buf, sizeof(buf));
-            errlogPrintf ("addAddrToChannelAccessAddressList: ignore addr='%s' port=%u\n",
-                          buf, port);
+            osiDebugPrint ("addAddrToChannelAccessAddressList: ignore addr='%s' port=%u\n",
+                               buf, port);
 #endif
             continue;
         }
@@ -110,7 +111,7 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
         {
           char buf[64];
           sockAddrToDottedIP(&addr46.sa, buf, sizeof(buf));
-          errlogPrintf ("addAddrToChannelAccessAddressList: add addr='%s'\n",
+          osiDebugPrint ("addAddrToChannelAccessAddressList: add addr='%s'\n",
                         buf );
         }
 #endif
@@ -236,10 +237,9 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
       }
     }
 #ifdef NETDEBUG
-    ::printf ("%s/%d: EPICS_CA_AUTO_ADDR_LIST='%s' addrautolistIPversion=%d\n",
-	      __FILE__, __LINE__,
-	      pstr ? pstr : "",
-	      addrautolistIPversion);
+    osiDebugPrint ("EPICS_CA_AUTO_ADDR_LIST='%s' addrautolistIPversion=%d\n",
+                   pstr ? pstr : "",
+                   addrautolistIPversion);
 
 #endif
 
@@ -264,8 +264,8 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
         {
             char buf[64];
             sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-            ::printf ("%s/%d: calling osiSockDiscoverBroadcastAddresses: sock=%d match46='%s'\n",
-                      __FILE__, __LINE__, (int)sock, buf);
+            osiDebugPrint ("calling osiSockDiscoverBroadcastAddresses: sock=%d match46='%s'\n",
+                           (int)sock, buf);
         }
 #endif
         osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &match46 );

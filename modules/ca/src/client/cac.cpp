@@ -51,6 +51,7 @@
 #include "net_convert.h"
 #include "autoPtrFreeList.h"
 #include "noopiiu.h"
+#include "osiDebugPrint.h"
 
 static const char pVersionCAC[] =
     "@(#) " EPICS_VERSION_STRING
@@ -471,9 +472,8 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
         char buf[64];
         addr.name ( buf, sizeof ( buf ) );
 
-        epicsPrintf("%s:%d: cac::beaconNotify addr='%s' pBHE=%p\n",
-                    __FILE__, __LINE__,
-                    buf, pBHE);
+        osiDebugPrint("cac::beaconNotify addr='%s' pBHE=%p\n",
+                      buf, pBHE);
     }
 #endif
     if ( pBHE ) {

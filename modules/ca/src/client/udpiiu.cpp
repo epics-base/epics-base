@@ -1,4 +1,4 @@
-/************************************************************************* \
+/*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -41,6 +41,7 @@
 #include "cac.h"
 #include "disconnectGovernorTimer.h"
 #include "osiSock.h" // EPICS_HAS_IPV6 and NETDEBUG
+#include "osiDebugPrint.h"
 
 #if EPICS_HAS_IPV6
 #include <poll.h>
@@ -309,9 +310,7 @@ udpiiu::udpiiu (
       {
           char buf[64];
           sockAddrToDottedIP(&pNode->addr46.sa, buf, sizeof(buf));
-          epicsPrintf("%s:%d:udpiiu::udpiiu  address='%s'\n",
-                      __FILE__, __LINE__,
-                     buf);
+          osiDebugPrint("udpiiu::udpiiu  address='%s'\n", buf);
       }
 #endif
 #ifdef EPICS_HAS_IPV6
@@ -460,9 +459,8 @@ void udpRecvThread::run ()
 
 #ifdef NETDEBUG
     {
-        epicsPrintf ("%s:%d: udpRecvThread::run this->iiu.pPollFds=%p this->iiu.numPollFds=%d\n",
-                     __FILE__, __LINE__,
-                     this->iiu.pPollFds, this->iiu.numPollFds);
+        osiDebugPrint ("udpRecvThread::run this->iiu.pPollFds=%p this->iiu.numPollFds=%d\n",
+                       this->iiu.pPollFds, this->iiu.numPollFds);
     }
 #endif
 
@@ -475,8 +473,8 @@ void udpRecvThread::run ()
             if ( pollres < 0 ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                epicsPrintf("%s:%d: udpRecvThread::run pollres =%d: %s\n",
-                            __FILE__, __LINE__, pollres, sockErrBuf);
+                osiDebugPrint("udpRecvThread::run pollres =%d: %s\n",
+                              pollres, sockErrBuf);
                 if ( this->iiu.shutdownCmd ) {
                     return; /* Do not end up in an endless loop */
                 }
@@ -484,8 +482,7 @@ void udpRecvThread::run ()
             }
             for ( unsigned idx = 0; idx < this->iiu.numPollFds; idx++ ) {
 #ifdef NETDEBUG
-                epicsPrintf ("%s:%d: udpRecvThread::run idx=%u socket=%d revents=0x%x\n",
-                              __FILE__, __LINE__,
+                osiDebugPrint ("udpRecvThread::run idx=%u socket=%d revents=0x%x\n",
                                idx, (int)this->iiu.pPollFds[idx].fd, this->iiu.pPollFds[idx].revents);
 #endif
                 if (this->iiu.pPollFds[idx].revents) {
@@ -763,8 +760,8 @@ bool udpiiu :: searchRespAction (
     {
         char buf[64];
         sockAddrToDottedIP(&addr.sa, buf, sizeof(buf));
-        epicsPrintf ("%s:%d: CAC: udpiiu::searchRespAction recvfromAddr='%s'\n",
-                     __FILE__, __LINE__, buf );
+        osiDebugPrint ("CAC: udpiiu::searchRespAction recvfromAddr='%s'\n",
+                       buf );
     }
 #endif
     if ( ! ( epicsSocket46IsAF_INETorAF_INET6(addr.sa.sa_family ) ) ) {
@@ -820,8 +817,8 @@ bool udpiiu :: searchRespAction (
     {
         char buf[64];
         sockAddrToDottedIP(&serverAddr.sa, buf, sizeof(buf));
-        epicsPrintf ("%s:%d: CAC: udpiiu::searchRespAction myserverAddr='%s'\n",
-                     __FILE__, __LINE__, buf );
+        osiDebugPrint ("CAC: udpiiu::searchRespAction myserverAddr='%s'\n",
+                       buf );
     }
 #endif
     if ( CA_V42 ( minorVersion ) ) {

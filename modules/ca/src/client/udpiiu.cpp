@@ -842,13 +842,13 @@ bool udpiiu::beaconAction (
     osiSockAddr46 addr46;
 
     memset(&addr46, 0, sizeof(addr46));
+#ifdef NETDEBUGXX
     {
         char buf[64];
         sockAddrToDottedIP(&net_addr.sa, buf, sizeof(buf));
-        errlogPrintf("%s:%d: udpiiu::beaconAction addr='%s'\n",
-                     __FILE__, __LINE__,
-                     buf);
+        osiDebugPrint("udpiiu::beaconAction addr='%s'\n", buf);
     }
+#endif
     if ( ! ( epicsSocket46IsAF_INETorAF_INET6 ( net_addr.sa.sa_family ) ) ) {
         return false;
     }
@@ -962,8 +962,8 @@ void udpiiu::postMsg (
         pCurMsg->m_available = AlignedWireRef < epicsUInt32 > ( pCurMsg->m_available );
         pCurMsg->m_cid = AlignedWireRef < epicsUInt32 > ( pCurMsg->m_cid );
 
-#ifdef NETDEBUG
-        printf ( "UDP Cmd=%03d Type=%04d Count=%04d Size=%04d Avail=0x%08x Cid=%06d\n",
+#ifdef NETDEBUGXX
+        osiDebugPrint ( "UDP Cmd=%03d Type=%04d Count=%04d Size=%04d Avail=0x%08x Cid=%06d\n",
             pCurMsg->m_cmmd,
             pCurMsg->m_dataType,
             pCurMsg->m_count,

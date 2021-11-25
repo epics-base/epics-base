@@ -442,6 +442,48 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
     return status;
 }
 
+LIBCOM_API int epicsStdCall epicsSocket46RecvFL(const char *filename, int lineno,
+                                                SOCKET sock,
+                                                const void* buf, size_t len, int flags)
+{
+    int status;
+    status = recv(sock, buf, len, flags ) ;
+
+#ifdef NETDEBUG
+    {
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+        osiDebugPrint("%s:%d: recv(%lu) len=%u status=%d %s\n",
+                      osiDebugStripPath(filename), lineno,
+                      (unsigned long)sock,
+                      (unsigned)len,
+                      status, status < 0 ? sockErrBuf : "");
+    }
+#endif
+    return status;
+}
+
+LIBCOM_API int epicsStdCall epicsSocket46SendFL(const char *filename, int lineno,
+                                                SOCKET sock,
+                                                const void* buf, size_t len, int flags)
+{
+    int status;
+    status = send(sock, buf, len, flags ) ;
+
+#ifdef NETDEBUG
+    {
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+        osiDebugPrint("%s:%d: send(%lu) len=%u status=%d %s\n",
+                      osiDebugStripPath(filename), lineno,
+                      (unsigned long)sock,
+                      (unsigned)len,
+                      status, status < 0 ? sockErrBuf : "");
+    }
+#endif
+    return status;
+}
+
 LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int lineno,
                                                   SOCKET sock,
                                                   const void* buf, size_t len, int flags,

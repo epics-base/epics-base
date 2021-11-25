@@ -136,6 +136,26 @@ LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, i
 
 
 /*
+ * Wrapper around recv()
+ * Make sure that the right length is passed into bind()
+ */
+LIBCOM_API int epicsStdCall epicsSocket46RecvFL(const char* filename, int lineno,
+                                                SOCKET sock,
+                                                const void* buf, size_t len,
+                                                int flags);
+
+#define epicsSocket46Recv(a,b,c,d)  epicsSocket46RecvFL(__FILE__, __LINE__, a,b,c,d)
+
+/*
+ * Wrapper around send()
+ */
+LIBCOM_API int epicsStdCall epicsSocket46SendFL(const char* filename, int lineno,
+                                                SOCKET sock,
+                                                const void* buf, size_t len,
+                                                int flags);
+
+#define epicsSocket46Send(a,b,c,d)  epicsSocket46SendFL(__FILE__, __LINE__, a,b,c,d)
+/*
  * Wrapper around sendto()
  * Make sure that the right length is passed into bind()
  */

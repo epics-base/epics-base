@@ -56,6 +56,7 @@ GNU_DIR = /usr
 # Directories
 
 INSTALL_LOCATION            = $(TOP)
+INSTALL_ABSOLUTE            = $(abspath $(INSTALL_LOCATION))
 
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
 INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
@@ -71,13 +72,14 @@ INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
 INSTALL_DB                  = $(INSTALL_LOCATION)/db
 INSTALL_CONFIG              = $(INSTALL_LOCATION)/configure
 
-FINAL_LOCATION = $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
+#-------------------------------------------------------
+# These are default settings that may be overridden later
 
-# Directory for OS independant build created files
-COMMON_DIR = ../O.Common
+# Eventual install path (to be compiled into binaries)
+FINAL_LOCATION              = $(INSTALL_ABSOLUTE)
 
-# IOC's absolute path to $(TOP), may be overridden inside the application
-IOCS_APPL_TOP               = $(shell $(FULLPATHNAME) $(INSTALL_LOCATION))
+# IOC's view of install path
+IOCS_APPL_TOP               = $(INSTALL_ABSOLUTE)
 
 #-------------------------------------------------------
 # Silencing the build - suppress messages during 'make -s'
@@ -153,6 +155,9 @@ CMPLR_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
 ALL_SRC_DIRS = $(CMPLR_SRC_DIRS) $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 
 #--------------------------------------------------
+# Directory for OS independant build created files
+COMMON_DIR = ../O.Common
+
 # compile line include directories
 INSTALL_INCLUDES += \
        -I$(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS) \

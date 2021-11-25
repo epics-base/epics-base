@@ -67,7 +67,7 @@ GNU = NO
 # Darwin shared libraries
 #
 SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined dynamic_lookup \
-    -install_name $(shell $(FULLPATHNAME) $(INSTALL_LIB))/$@ \
+    -install_name $(abspath $(INSTALL_LIB))/$@ \
     $(addprefix -compatibility_version , $(SHRLIB_VERSION)) \
     $(addprefix -current_version , $(SHRLIB_VERSION))
 SHRLIB_SUFFIX_BASE = .dylib

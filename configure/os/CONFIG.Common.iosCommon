@@ -77,7 +77,7 @@ OP_SYS_LDFLAGS += -dynamic -Z -L$(SDK_DIR)/usr/lib -L$(SDK_DIR)/usr/lib/system
 # Shared libraries
 SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
-       -install_name $(shell $(FULLPATHNAME) $(INSTALL_LIB))/$@ \
+       -install_name $(abspath $(INSTALL_LIB))/$@ \
        -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
        -current_version $(SHRLIB_VERSION)
 SHRLIB_SUFFIX_BASE = .dylib

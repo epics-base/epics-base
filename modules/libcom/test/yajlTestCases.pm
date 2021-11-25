@@ -3355,6 +3355,18 @@ sub cases {
       ]
     },
     {
+      name => "truncated_surrogate",
+      opts => [],
+      input => [
+        "\"\\uDBFF\360\237\222\200\"",
+        ""
+      ],
+      gives => [
+        "string: '?\360\237\222\200'",
+        "memory leaks:\t0"
+      ]
+    },
+    {
       name => "unescaped_bulgarian",
       opts => [],
       input => [

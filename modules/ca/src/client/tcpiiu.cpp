@@ -238,7 +238,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
     this->sendDog.start ( currentTime );
 
     while ( true ) {
-        int status = ::send ( this->sock,
+        int status = epicsSocket46Send ( this->sock,
             static_cast < const char * > (pBuf), (int) nBytesInBuf, 0 );
         if ( status > 0 ) {
             nBytes = static_cast <unsigned> ( status );
@@ -303,7 +303,7 @@ void tcpiiu::recvBytes (
     assert ( nBytesInBuf <= INT_MAX );
 
     while ( true ) {
-        int status = ::recv ( this->sock, static_cast <char *> ( pBuf ),
+        int status = epicsSocket46Recv ( this->sock, static_cast <char *> ( pBuf ),
             static_cast <int> ( nBytesInBuf ), 0 );
 
         if ( status > 0 ) {

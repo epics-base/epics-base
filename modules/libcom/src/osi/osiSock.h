@@ -141,7 +141,7 @@ LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, i
  */
 LIBCOM_API int epicsStdCall epicsSocket46RecvFL(const char* filename, int lineno,
                                                 SOCKET sock,
-                                                const void* buf, size_t len,
+                                                void* buf, size_t len,
                                                 int flags);
 
 #define epicsSocket46Recv(a,b,c,d)  epicsSocket46RecvFL(__FILE__, __LINE__, a,b,c,d)

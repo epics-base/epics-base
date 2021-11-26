@@ -50,5 +50,22 @@
                         __VA_ARGS__);                                \
     }
 
+#define osiDebugPrintFL(fmt, fileName, lineNo, ...)                  \
+    {                                                                \
+        epicsTimeStamp now;                                          \
+        char nowText[25];                                            \
+        size_t rtn;                                                  \
+        nowText[0] = 0;                                              \
+        rtn = epicsTimeGetCurrent(&now);                             \
+        if (!rtn) {                                                  \
+            epicsTimeToStrftime(nowText,sizeof(nowText),             \
+                                "%Y/%m/%d %H:%M:%S.%03f ",&now);     \
+        }                                                            \
+        osiDebugDoPrint("%s " fmt,                                   \
+                        nowText,                                     \
+                        osiDebugStripPath(fileName), lineNo,         \
+                        __VA_ARGS__);                                \
+    }
+
 
 #endif

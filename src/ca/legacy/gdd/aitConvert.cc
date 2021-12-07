@@ -50,14 +50,16 @@ bool getStringAsDouble ( const char * pString,
         ftmp = itmp;
     }
     else {
-	    int j = epicsScanDouble( pString, &ftmp );
-	    if ( j != 1 ) {
-		    j = sscanf ( pString,"%x", &itmp );
-            if ( j == 1 ) {
-                ftmp = itmp;
-            }
-            else {
-                return false;
+        int j = epicsScanDouble ( pString, &ftmp );
+        if ( j != 1 ) {
+            j = sscanf ( pString, "%lf", &ftmp );
+            if ( j != 1 ) {
+                j = sscanf ( pString, "%x", &itmp );
+                if ( j == 1 ) {
+                    ftmp = itmp;
+                } else {
+                    return false;
+                }
             }
         }
     }

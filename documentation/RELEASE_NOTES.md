@@ -16,6 +16,17 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Make sure epicsInt8 is signed on all architectures
+
+So far, `epicsInt8` and thus `DBF_CHAR` used to be unsigned on architectures
+where `char` is unsigned, for example on many PPC architectures.
+This had led to different behavior between architectures when converting
+`DBF_CHAR` to signed integer or to floating point types.
+
+WARNING: This fix may change behavior of existing databases on on architectures
+with unsigned `char` (many PPC) when using input links to read from `CHAR`
+waveforms. Architectures with signed `char` (usually x86) are unaffected.
+
 ### Fix for `undefined` in configure/RELEASE files
 
 Prevents `Use of uninitialized value` warnings from convertRelease.pl.

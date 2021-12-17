@@ -41,7 +41,7 @@ typedef enum {
  * These are sufficient for all our current archs
  * @{
  */
-typedef char            epicsInt8;
+typedef signed char     epicsInt8;
 typedef unsigned char   epicsUInt8;
 typedef short           epicsInt16;
 typedef unsigned short  epicsUInt16;

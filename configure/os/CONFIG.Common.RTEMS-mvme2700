@@ -1,6 +1,7 @@
 #
 # Author: Matt Rippa
 #
+EXE = .elf
 RTEMS_BSP = mvme2307
 RTEMS_TARGET_CPU = powerpc
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
@@ -8,17 +9,26 @@ ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
 ARCH_DEP_CFLAGS += -DNVRAM_INDIRECT
 
 MUNCH_SUFFIX = .boot
+
+# cf. description in CONFIG.Common.RTEMS-mvme2100
+#
+# Our process after creation of $< (eg. "iocfoo.elf")
+# 1. Extract executable code as "iocfoo.dir/rtems"
+# 2. Compress as "iocfoo.dir/rtems.gz"
+# 3. Link w/ bootloader to produce "iocfoo.boot.elf"
+# 4. Extract as "iocfoo.boot"
 define MUNCH_CMD
-	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems
-	gzip -f9 rtems
-	$(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o $@ \
+	@$(MKDIR) $*.dir
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.dir/rtems
+	gzip -f9 $*.dir/rtems
+	$(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o $@.elf \
 		 $(PROJECT_RELEASE)/lib/bootloader.o \
 		--just-symbols=$< \
-		-b binary rtems.gz \
+		-b binary $*.dir/rtems.gz \
                 --no-warn-mismatch \
 		-T $(PROJECT_RELEASE)/lib/ppcboot.lds \
-		-Map $<.map
-	rm -f rtems.gz
+		-Map $@.map
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary  -S $@.elf $@
 endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS

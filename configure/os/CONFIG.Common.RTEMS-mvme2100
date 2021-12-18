@@ -12,17 +12,31 @@ ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
 
 MUNCH_SUFFIX = .boot
+
+# The mvme2100 BSP (and others of the "motorola_powerpc" family
+# use a chain bootloader to relocate our executable from wherever
+# PPCBUG leaves it.  This bootloader includes our executable in
+# compressed form.
+#
+# Note that the file name "rtems.gz" is hard-coded in ppcboot.lds
+# so we create it in a sub-directory to avoid problems w/ parallel
+# make.
+#
+# Our process after creation of $< (eg. "iocfoo.elf")
+# 1. Extract executable code as "iocfoo.dir/rtems"
+# 2. Compress as "iocfoo.dir/rtems.gz"
+# 3. Link w/ bootloader to produce "iocfoo.boot" (which is an ELF executable)
 define MUNCH_CMD
-	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems
-	gzip -f9 rtems
+	@$(MKDIR) $*.dir
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.dir/rtems
+	gzip -f9 $*.dir/rtems
 	$(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o $@ \
 		 $(PROJECT_RELEASE)/lib/bootloader.o \
 		--just-symbols=$< \
-		-b binary rtems.gz \
+		-b binary $*.dir/rtems.gz \
                 --no-warn-mismatch \
 		-T $(PROJECT_RELEASE)/lib/ppcboot.lds \
-		-Map $<.map
-	rm -f rtems.gz
+		-Map $@.map
 endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS

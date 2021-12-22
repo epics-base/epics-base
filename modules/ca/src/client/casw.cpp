@@ -62,9 +62,8 @@ int main ( int argc, char ** argv )
     epicsTime programBeginTime = epicsTime::getCurrent();
     bool validCommandLine = false;
     unsigned interest = 0u;
-    SOCKET sock4;
+    SOCKET sock;
     osiSockAddr46 addr46;
-    osiSocklen_t addrSize;
     char buf [0x4000];
     const char *pCurBuf;
     const caHdr *pCurMsg;
@@ -105,8 +104,8 @@ int main ( int argc, char ** argv )
 
     caStartRepeaterIfNotInstalled ( repeaterPort );
 
-    sock4 = epicsSocket46Create ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-    if ( sock4 == INVALID_SOCKET ) {
+    sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, IPPROTO_UDP );
+    if ( sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
@@ -116,27 +115,38 @@ int main ( int argc, char ** argv )
     }
 
     memset ( (char *) &addr46, 0 , sizeof (addr46) );
-    addr46.ia.sin_family = AF_INET;
-    addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-    addr46.ia.sin_port = htons ( 0 ); // any port
-    status = epicsSocket46Bind ( sock4, &addr46 );
+    addr46.ia.sin_family = epicsSocket46GetDefaultAddressFamily();
+#if EPICS_HAS_IPV6
+    if ( addr46.ia.sin_family == AF_INET6 ) {
+        static const unsigned short PORT_ANY = 0u;
+        addr46.in6.sin6_addr = in6addr_any;
+        addr46.in6.sin6_port = htons ( PORT_ANY );
+    }
+    else
+#endif
+    {
+        static const unsigned short PORT_ANY = 0u;
+        addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+        addr46.ia.sin_port = htons ( PORT_ANY );
+    }
+    status = epicsSocket46Bind ( sock, &addr46 );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsSocketDestroy ( sock4 );
+        epicsSocketDestroy ( sock );
         errlogPrintf ( "casw: unable to bind to an unconstrained address because = \"%s\"\n",
             sockErrBuf );
         return -1;
     }
 
     osiSockIoctl_t yes = true;
-    status = socket_ioctl ( sock4, FIONBIO, &yes );
+    status = socket_ioctl ( sock, FIONBIO, &yes );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsSocketDestroy ( sock4 );
+        epicsSocketDestroy ( sock );
         errlogPrintf ( "casw: unable to set socket to nonblocking state because \"%s\"\n",
             sockErrBuf );
         return -1;
@@ -144,11 +154,10 @@ int main ( int argc, char ** argv )
 
     unsigned attemptNumber = 0u;
     while ( true ) {
-        caRepeaterRegistrationMessage ( sock4, repeaterPort, attemptNumber );
+        caRepeaterRegistrationMessage ( sock, repeaterPort, attemptNumber );
         epicsThreadSleep ( 0.1 );
-        addrSize = ( osiSocklen_t ) sizeof ( addr46.ia );
-        status = recvfrom ( sock4, buf, sizeof ( buf ), 0,
-                            &addr46.sa, &addrSize);
+        status = epicsSocket46Recvfrom ( sock, buf, sizeof ( buf ), 0,
+                                         &addr46);
         if ( status >= static_cast <int> ( sizeof ( *pCurMsg ) ) ) {
             pCurMsg = reinterpret_cast < caHdr * > ( buf );
             epicsUInt16 cmmd = AlignedWireRef < const epicsUInt16 > ( pCurMsg->m_cmmd );
@@ -159,19 +168,19 @@ int main ( int argc, char ** argv )
 
         attemptNumber++;
         if ( attemptNumber > 100 ) {
-            epicsSocketDestroy ( sock4 );
+            epicsSocketDestroy ( sock );
             errlogPrintf ( "casw: unable to register with the CA repeater\n" );
             return -1;
         }
     }
 
     osiSockIoctl_t no = false;
-    status = socket_ioctl ( sock4, FIONBIO, &no );
+    status = socket_ioctl ( sock, FIONBIO, &no );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsSocketDestroy ( sock4 );
+        epicsSocketDestroy ( sock );
         errlogPrintf ( "casw: unable to set socket to blocking state because \"%s\"\n",
             sockErrBuf );
         return -1;
@@ -180,14 +189,13 @@ int main ( int argc, char ** argv )
     resTable < bhe, inetAddrID > beaconTable;
     while ( true ) {
 
-        addrSize = ( osiSocklen_t ) sizeof ( addr46.ia );
-        status = recvfrom ( sock4, buf, sizeof ( buf ), 0,
-                            &addr46.sa, &addrSize );
+        status = epicsSocket46Recvfrom ( sock, buf, sizeof ( buf ), 0,
+                                         &addr46 );
         if ( status <= 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            epicsSocketDestroy ( sock4 );
+            epicsSocketDestroy ( sock );
             errlogPrintf ("casw: " ERL_ERROR " from recv was = \"%s\"\n",
                 sockErrBuf );
             return -1;

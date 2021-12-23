@@ -683,7 +683,7 @@ void ca_repeater ()
                 sockErrBuf );
             continue;
         }
-        if ( from46.sa.sa_family != AF_INET ) {
+        if ( ! epicsSocket46IsAF_INETorAF_INET6 ( from46.sa.sa_family ) ) {
 #ifdef NETDEBUG
             {
                 char buf[64];
@@ -715,9 +715,22 @@ void ca_repeater ()
                 }
             }
             else if ( AlignedWireRef < epicsUInt16 > ( pMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
-                if ( pMsg->m_available == 0u ) {
+                if ( ( pMsg->m_available == 0u ) && ( from46.sa.sa_family == AF_INET ) ) {
                     pMsg->m_available = from46.ia.sin_addr.s_addr;
                 }
+#if EPICS_HAS_IPV6
+                else if (from46.sa.sa_family == AF_INET6 ) {
+                    if ( (size_t)size >= (sizeof (caHdr) + sizeof(ca_msg_IPv6_RSRV_IS_UP_type) ) ) {
+                        ca_msg_IPv6_RSRV_IS_UP_type * pMsgIPv6 = (ca_msg_IPv6_RSRV_IS_UP_type *)&pBuf[sizeof(caHdr)];
+#ifdef NETDEBUG
+                        osiDebugPrint("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
+                                      (unsigned)pMsgIPv6->m_size,
+                                      pMsgIPv6->m_typ_magic[0], pMsgIPv6->m_typ_magic[1],
+                                      pMsgIPv6->m_typ_magic[2], pMsgIPv6->m_typ_magic[3]);
+#endif
+                    }
+                }
+#endif
             }
         }
         else if ( size == 0 ) {

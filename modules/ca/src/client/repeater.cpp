@@ -159,7 +159,10 @@ bool repeaterClient::connect ()
 {
     int status;
 
-    if ( int sockerrno = makeSocket ( this->from46.sa.sa_family, PORT_ANY, false, & this->sock ) ) {
+    // epicsSocket46Connect() needs the socket to be created with
+    // epicsSocket46GetDefaultAddressFamily()
+    if ( int sockerrno = makeSocket ( epicsSocket46GetDefaultAddressFamily(),
+                                      PORT_ANY, false, & this->sock ) ) {
         char sockErrBuf[64];
         epicsSocketConvertErrorToString (
             sockErrBuf, sizeof ( sockErrBuf ), sockerrno );

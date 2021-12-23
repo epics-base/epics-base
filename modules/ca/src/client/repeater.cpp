@@ -543,6 +543,9 @@ void ca_repeater ()
     {
         ELLLIST casBeaconAddrList = ELLLIST_INIT;
         ELLLIST casMergeAddrList = ELLLIST_INIT;
+#ifdef EPICS_HAS_IPV6
+        configureChannelAccessAddressList ( & casMergeAddrList, sock4, port);
+#endif
 
         /*
          * collect user specified beacon address list;

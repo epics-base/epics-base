@@ -44,7 +44,10 @@ void rsrv_online_notify_task(void *pParm)
     long                        longStatus;
     double                      maxPeriod;
     SOCKET                      *pSockets = pConf->pSockets;
-    caHdr                       msg;
+    struct {
+        caHdr                       hdr;
+        ca_msg_IPv6_RSRV_IS_UP_type ca_msg_IPv6_RSRV_IS_UP;
+    }  msg;
     int                         status;
     ca_uint32_t                 beaconCounter = 0;
     int *lastError;
@@ -69,9 +72,14 @@ void rsrv_online_notify_task(void *pParm)
     maxdelay = maxPeriod;
 
     memset((char *)&msg, 0, sizeof msg);
-    msg.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
-    msg.m_count = htons (ca_server_port);
-    msg.m_dataType = htons (CA_MINOR_PROTOCOL_REVISION);
+    msg.hdr.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
+    msg.hdr.m_count = htons (ca_server_port);
+    msg.hdr.m_dataType = htons (CA_MINOR_PROTOCOL_REVISION);
+    msg.ca_msg_IPv6_RSRV_IS_UP.m_size = (ca_uint32_t)sizeof(msg.ca_msg_IPv6_RSRV_IS_UP);
+    msg.ca_msg_IPv6_RSRV_IS_UP.m_typ_magic[0] = 'I';
+    msg.ca_msg_IPv6_RSRV_IS_UP.m_typ_magic[1] = 'P';
+    msg.ca_msg_IPv6_RSRV_IS_UP.m_typ_magic[2] = 'v';
+    msg.ca_msg_IPv6_RSRV_IS_UP.m_typ_magic[3] = '6';
 
     /* beaconAddrList should not change after rsrv_init(), which then starts this thread */
     lastError = callocMustSucceed(ellCount(&beaconAddrList), sizeof(*lastError), "rsrv_online_notify_task lastError");
@@ -123,7 +131,7 @@ void rsrv_online_notify_task(void *pParm)
             }
         }
 
-        msg.m_cid = htonl ( beaconCounter++ ); /* expected to overflow */
+        msg.hdr.m_cid = htonl ( beaconCounter++ ); /* expected to overflow */
 
         while (beacon_ctl == ctlPause) {
             epicsThreadSleep(0.1);

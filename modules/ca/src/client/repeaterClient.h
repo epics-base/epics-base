@@ -53,7 +53,7 @@ public:
     epicsPlacementDeleteOperator (( void *,
         tsFreeList < repeaterClient, 0x20 > & ))
 private:
-    osiSockAddr46 from;
+    osiSockAddr46 from46;
     SOCKET sock;
     unsigned short port () const;
     void operator delete ( void * );

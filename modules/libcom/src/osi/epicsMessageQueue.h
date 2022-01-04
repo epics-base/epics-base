@@ -84,6 +84,9 @@ public:
 
     /**
      *  \brief Send a message or timeout.
+     *  \param timeout The timeout delay in seconds. A timeout of zero is
+     *  equivalent to calling trySend(); NaN or any value too large to be
+     *  represented to the target OS is equivalent to no timeout.
      *  \returns 0 if the message was sent to a receiver or queued for
      *  future delivery.
      *  \returns -1 if the timeout was reached before the
@@ -124,12 +127,16 @@ public:
     int receive ( void *message, unsigned int size );
 
     /**
-     *  \brief Wait for a message to be queued.
-     *  Wait up to \p timeout seconds for a message to be sent if the queue
-     *  is empty, then move the first message to the specified location.
+     *  \brief Wait for and fetch the next message.
+     *  \param timeout The timeout delay in seconds. A timeout of zero is
+     *  equivalent to calling tryReceive(); NaN or any value too large to
+     *  be represented to the target OS is equivalent to no timeout.
      *
-     *  If the received message is larger than the specified
-     *  messageBufferSize it may either return -1, or truncate the
+     *  Waits up to \p timeout seconds for a message to arrive if the queue
+     *  is empty, then moves the first message to the specified location.
+     *
+     *  If the received message is larger than the specified message size
+     *  the implementation may either return -1, or truncate the
      *  message. It is most efficient if the messageBufferSize is equal
      *  to the maximumMessageSize with which the message queue was
      *  created.

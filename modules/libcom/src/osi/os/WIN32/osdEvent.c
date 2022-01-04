@@ -90,7 +90,7 @@ LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem )
  * epicsEventWaitWithTimeout ()
  */
 LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
-    epicsEventId pSem, double timeOut )
+    epicsEventId pSem, double timeout )
 {
     /* waitable timers use 100 nanosecond intervals, like FILETIME */
     static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
@@ -101,17 +101,17 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
     HANDLE timer;
     LONGLONG nIvals;  /* number of intervals */
 
-    if ( timeOut <= 0.0 ) {
+    if ( timeout <= 0.0 ) {
         tmo.QuadPart = 0u;
     }
-    else if ( timeOut >= INFINITE / mSecPerSec  ) {
+    else if ( timeout >= INFINITE / mSecPerSec  ) {
         /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
            to be compatible with previous WaitForSingleObject() implementation */    
         nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
         tmo.QuadPart = -nIvals;  /* negative value means a relative time offset for timer */
     }
     else {
-        nIvals = (LONGLONG)(timeOut * ivalPerSec + 0.999999);
+        nIvals = (LONGLONG)(timeout * ivalPerSec + 0.999999);
         tmo.QuadPart = -nIvals;
     }
 

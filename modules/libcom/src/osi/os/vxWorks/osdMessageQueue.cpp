@@ -30,15 +30,15 @@ LIBCOM_API int epicsStdCall epicsMessageQueueSendWithTimeout(
     if (timeout <= 0.0) {
         ticks = 0;
     }
-    else if (timeOut < (double) INT_MAX / rate) {
+    else if (timeout < (double) INT_MAX / rate) {
         ticks = timeout * rate;
         if (ticks == 0) {
-            /* 0 < timeOut < 1/rate; round up */
+            /* 0 < timeout < 1/rate; round up */
             ticks = 1;
         }
     }
     else {
-        /* timeOut is NaN or too big to represent in ticks */
+        /* timeout is NaN or too big to represent in ticks */
         ticks = WAIT_FOREVER;
     }
 
@@ -57,15 +57,15 @@ LIBCOM_API int epicsStdCall epicsMessageQueueReceiveWithTimeout(
     if (timeout <= 0.0) {
         ticks = 0;
     }
-    else if (timeOut < (double) INT_MAX / rate) {
+    else if (timeout < (double) INT_MAX / rate) {
         ticks = timeout * rate;
         if (ticks == 0) {
-            /* 0 < timeOut < 1/rate, round up */
+            /* 0 < timeout < 1/rate, round up */
             ticks = 1;
         }
     }
     else {
-        /* timeOut is NaN or too big to represent in ticks */
+        /* timeout is NaN or too big to represent in ticks */
         ticks = WAIT_FOREVER;
     }
 

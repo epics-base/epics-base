@@ -122,17 +122,17 @@ epicsEventWait(epicsEventId id)
 }
 
 epicsEventStatus
-epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
+epicsEventWaitWithTimeout(epicsEventId id, double timeout)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
     rtems_interval delay;
     extern double rtemsTicksPerSecond_double;
 
-    if (timeOut <= 0.0)
+    if (timeout <= 0.0)
         return epicsEventTryWait(id);
     SEMSTAT(1)
-    delay = timeOut * rtemsTicksPerSecond_double;
+    delay = timeout * rtemsTicksPerSecond_double;
     if (delay == 0)
         delay++;
     sc = rtems_semaphore_obtain (sid, RTEMS_WAIT, delay);

@@ -62,7 +62,7 @@ epicsEventWait(epicsEventId pSem)
 }
 
 LIBCOM_API epicsEventStatus
-epicsEventWaitWithTimeout(epicsEventId pSem, double timeOut)
+epicsEventWaitWithTimeout(epicsEventId pSem, double timeout)
 {
     int sc;
     rtems_interval delay;
@@ -71,22 +71,22 @@ epicsEventWaitWithTimeout(epicsEventId pSem, double timeOut)
     if (!rate)
         return epicsEventError;
 
-    if (timeOut <= 0.0) {
+    if (timeout <= 0.0) {
         sc = rtems_binary_semaphore_try_wait(&pSem->rbs);
         if (!sc)
             return epicsEventOK;
         else
             return epicsEventWaitTimeout;
     }
-    else if (timeOut < (double) UINT32_MAX / rate) {
-        delay = timeOut * rate;
+    else if (timeout < (double) UINT32_MAX / rate) {
+        delay = timeout * rate;
         if (delay == 0) {
-            /* 0 < timeOut < 1/rate; round up */
+            /* 0 < timeout < 1/rate; round up */
             delay = 1;
         }
     }
     else {
-        /* timeOut is NaN or too big to represent; wait forever */
+        /* timeout is NaN or too big to represent; wait forever */
         delay = RTEMS_NO_TIMEOUT;
     }
 

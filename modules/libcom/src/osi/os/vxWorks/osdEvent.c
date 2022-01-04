@@ -42,12 +42,17 @@ epicsEventStatus epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
 
     if (timeOut <= 0.0) {
         ticks = 0;
-    } else if (timeOut >= (double) INT_MAX / rate) {
-        ticks = WAIT_FOREVER;
-    } else {
+    }
+    else if (timeOut < (double) INT_MAX / rate) {
         ticks = timeOut * rate;
-        if (ticks <= 0)
+        if (ticks == 0) {
+            /* 0 < timeOut < 1/rate; round up */
             ticks = 1;
+        }
+    }
+    else {
+        /* timeOut is NaN or too big to represent in ticks */
+        ticks = WAIT_FOREVER;
     }
     status = semTake((SEM_ID)id, ticks);
     if (status == OK)

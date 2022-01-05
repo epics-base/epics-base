@@ -20,6 +20,7 @@
 #define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 1
 
 #include <stdio.h>
+#include <stdint.h>
 #include <rtems.h>
 #include <rtems/error.h>
 
@@ -132,9 +133,17 @@ epicsEventWaitWithTimeout(epicsEventId id, double timeout)
     if (timeout <= 0.0)
         return epicsEventTryWait(id);
     SEMSTAT(1)
-    delay = timeout * rtemsTicksPerSecond_double;
-    if (delay == 0)
-        delay++;
+    if (timeout < (double) UINT32_MAX / rtemsTicksPerSecond_double) {
+        delay = timeout * rtemsTicksPerSecond_double;
+        if (delay == 0) {
+            /* 0 < timeout < 1/rtemsTicksPerSecond, round up */
+            delay++;
+        }
+    }
+    else {
+        /* timeout is NaN or too big to represent in ticks */
+        delay = RTEMS_NO_TIMEOUT;
+    }
     sc = rtems_semaphore_obtain (sid, RTEMS_WAIT, delay);
     if (sc == RTEMS_SUCCESSFUL)
         return epicsEventOK;

@@ -369,6 +369,7 @@ LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno
     /* if (status < 0) */ {
         char buf[64];
         char sockErrBuf[64];
+        int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
         osiDebugPrintFL("%s:%d: bind(%lu) address='%s' socklen=%u status=%d: %s\n",
@@ -376,6 +377,7 @@ LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno
                         (unsigned long)sock,
                         buf, (unsigned)socklen,
                         status, status < 0 ? sockErrBuf : "");
+        errno = save_errno;
     }
 #endif
     return status;
@@ -428,6 +430,7 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
         char bufIn[64];
         char bufOut[64];
         char sockErrBuf[64];
+        int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
         sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
@@ -437,6 +440,7 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
                         bufIn,
                         pAddr46->sa.sa_family != addr46Output.sa.sa_family ? bufOut : "",
                         status, status < 0 ? sockErrBuf : "");
+        errno = save_errno;
     }
 #endif
     return status;
@@ -472,11 +476,13 @@ LIBCOM_API int epicsStdCall epicsSocket46SendFL(const char *filename, int lineno
 #ifdef NETDEBUG
     {
         char sockErrBuf[64];
+        int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         osiDebugPrintFL("%s:%d: send(%lu) len=%u status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock, (unsigned)len,
                         status, status < 0 ? sockErrBuf : "");
+        errno = save_errno;
     }
 #endif
     return status;
@@ -500,12 +506,14 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
     {
         char bufIn[64];
         char sockErrBuf[64];
+        int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
         osiDebugPrintFL("%s:%d: sendto(%lu) address='%s' len=%u status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock, bufIn, (unsigned)len,
                         status, status < 0 ? sockErrBuf : "");
+        errno = save_errno;
     }
 #endif
     return status;
@@ -524,12 +532,14 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvfromFL(const char *filename, int li
     {
         char bufDotted[64];
         char sockErrBuf[64];
+        int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufDotted, sizeof(bufDotted));
         osiDebugPrintFL("%s:%d: recvfrom(%lu) buflen=%u address='%s' status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock, (unsigned)len, bufDotted,
                         status, status < 0 ? sockErrBuf : "");
+        errno = save_errno;
     }
 #endif
     return status;
@@ -547,12 +557,14 @@ LIBCOM_API int epicsStdCall epicsSocket46AcceptFL(const char *filename, int line
     {
         char buf[64];
         char sockErrBuf[64];
+        int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
         osiDebugPrintFL("%s:%d: accept(%lu) address='%s' status=%d (%s)\n",
                         filename, lineno,
                         (unsigned long)sock, buf,
                         status, status < 0 ? sockErrBuf : "");
+        errno = save_errno;
     }
 #endif
     return status;

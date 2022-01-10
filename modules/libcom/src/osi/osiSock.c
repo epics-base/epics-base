@@ -45,33 +45,6 @@ void osiSockPrint(const char *fileName, int lineNo, const char *format, ...)
     va_end(pVar);
 }
 
-static void osiSockIPv4toIPv6(const osiSockAddr46 *pAddr46Input,
-                              osiSockAddr46 *pAddr46Output)
-{
-#if EPICS_HAS_IPV6
-    if (pAddr46Input->sa.sa_family == AF_INET) {
-        const struct sockaddr_in * paddrInput4 = (const struct sockaddr_in *) pAddr46Input;
-        struct sockaddr_in6 *pOut6 = (struct sockaddr_in6 *)pAddr46Output;
-
-        unsigned int ipv4addr = htonl ( paddrInput4->sin_addr.s_addr );
-        /* RFC3493: IPv4-mapped IPv6 address from RFC 2373 */
-        memset(pAddr46Output, 0, sizeof(*pAddr46Output));
-        pOut6->sin6_addr.s6_addr[10] = 0xFF;
-        pOut6->sin6_addr.s6_addr[11] = 0xFF;
-        pOut6->sin6_addr.s6_addr[12] = (ipv4addr >> 24) & 0xFF;
-        pOut6->sin6_addr.s6_addr[13] = (ipv4addr >> 16) & 0xFF;
-        pOut6->sin6_addr.s6_addr[14] = (ipv4addr >>  8) & 0xFF;
-        pOut6->sin6_addr.s6_addr[15] = ipv4addr & 0xFF;
-        pOut6->sin6_family = AF_INET6;
-        pOut6->sin6_port = paddrInput4->sin_port;
-    }
-    else
-#endif
-    {
-        memcpy(pAddr46Output, pAddr46Input, sizeof(*pAddr46Output));
-    }
-}
-
 
 /*
  * sockAddrAreIdentical()

@@ -414,31 +414,27 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
                                                    SOCKET sock,
                                                    const osiSockAddr46 *pAddr46)
 {
-    osiSockAddr46 addr46Output;
     int status;
+    osiSocklen_t socklen = sizeof(pAddr46->ia);
 #if EPICS_HAS_IPV6
-    osiSocklen_t socklen = sizeof(addr46Output.in6);
-#else
-    osiSocklen_t socklen = sizeof(addr46Output.ia);
+    if (pAddr46->sa.sa_family == AF_INET6) {
+        socklen = sizeof(pAddr46->in6);
+    }
 #endif
-    osiSockIPv4toIPv6(pAddr46, &addr46Output);
-    /* Now we have an IPv6 address. use the size of it when calling connect() */
-    status = connect(sock, &addr46Output.sa, socklen);
+
+    status = connect(sock, &pAddr46->sa, socklen);
 
 #ifdef NETDEBUG
     {
-        char bufIn[64];
-        char bufOut[64];
+        char buf[64];
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
-        sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
-        osiDebugPrintFL("%s:%d: connect(%lu) address='%s' (%s) status=%d %s\n",
+        sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
+        osiDebugPrintFL("%s:%d: connect(%lu) address='%s' status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock,
-                        bufIn,
-                        pAddr46->sa.sa_family != addr46Output.sa.sa_family ? bufOut : "",
+                        buf,
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }

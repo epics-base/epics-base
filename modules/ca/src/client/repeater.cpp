@@ -159,9 +159,7 @@ bool repeaterClient::connect ()
 {
     int status;
 
-    // epicsSocket46Connect() needs the socket to be created with
-    // epicsSocket46GetDefaultAddressFamily()
-    if ( int sockerrno = makeSocket ( epicsSocket46GetDefaultAddressFamily(),
+    if ( int sockerrno = makeSocket ( this->from46.sa.sa_family,
                                       PORT_ANY, false, & this->sock ) ) {
         char sockErrBuf[64];
         epicsSocketConvertErrorToString (
@@ -216,7 +214,12 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize )
 {
     int status;
 
+#ifdef NETDEBUG
+    // Use the send() function with builtin debug print
+    status = epicsSocket46Send ( this->sock, (char *) pBuf, bufSize, 0 );
+#else
     status = send ( this->sock, (char *) pBuf, bufSize, 0 );
+#endif
     if ( status >= 0 ) {
         assert ( static_cast <unsigned> ( status ) == bufSize );
 #ifdef DEBUG
@@ -715,22 +718,39 @@ void ca_repeater ()
                 }
             }
             else if ( AlignedWireRef < epicsUInt16 > ( pMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
+#if EPICS_HAS_IPV6
+                if (from46.sa.sa_family == AF_INET6 ) {
+                    size_t needed_size = sizeof(ca_msg_IPv6_RSRV_IS_UP_type);
+                    if ( (size_t)size >= needed_size ) {
+                        int good_IPv6_magic_and_len = 0;
+                        ca_ext_IPv6_RSRV_IS_UP_type * pMsgIPv6 = (ca_ext_IPv6_RSRV_IS_UP_type *)&pBuf[sizeof(caHdr)];
+                        if (pMsgIPv6->m_typ_magic[0] == 'I' &&
+                            pMsgIPv6->m_typ_magic[1] == 'P' &&
+                            pMsgIPv6->m_typ_magic[2] == 'v' &&
+                            pMsgIPv6->m_typ_magic[3] == '6' &&
+                            ntohl(pMsgIPv6->m_size) == sizeof(*pMsgIPv6)) {
+                            /* Copy the "from" address into the data, so that we can forward it */
+                            memcpy(&pMsgIPv6->m_s6_addr,
+                                   &from46.in6.sin6_addr.s6_addr,
+                                   sizeof(pMsgIPv6->m_s6_addr));
+                            pMsgIPv6->m_sin6_scope_id = from46.in6.sin6_scope_id;
+                            good_IPv6_magic_and_len = 1;
+                        }
+#ifdef NETDEBUGXX
+                        osiDebugPrint("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c' good_IPv6_magic_and_len=%d\n",
+                                      (unsigned)ntohl(pMsgIPv6->m_size),
+                                      isprint(pMsgIPv6->m_typ_magic[0]) ? pMsgIPv6->m_typ_magic[0] : '?',
+                                      isprint(pMsgIPv6->m_typ_magic[1]) ? pMsgIPv6->m_typ_magic[1] : '?',
+                                      isprint(pMsgIPv6->m_typ_magic[2]) ? pMsgIPv6->m_typ_magic[2] : '?',
+                                      isprint(pMsgIPv6->m_typ_magic[3]) ? pMsgIPv6->m_typ_magic[3] : '?',
+                                      good_IPv6_magic_and_len);
+#endif
+                    }
+                } else
+#endif
                 if ( ( pMsg->m_available == 0u ) && ( from46.sa.sa_family == AF_INET ) ) {
                     pMsg->m_available = from46.ia.sin_addr.s_addr;
                 }
-#if EPICS_HAS_IPV6
-                else if (from46.sa.sa_family == AF_INET6 ) {
-                    if ( (size_t)size >= (sizeof (caHdr) + sizeof(ca_msg_IPv6_RSRV_IS_UP_type) ) ) {
-                        ca_msg_IPv6_RSRV_IS_UP_type * pMsgIPv6 = (ca_msg_IPv6_RSRV_IS_UP_type *)&pBuf[sizeof(caHdr)];
-#ifdef NETDEBUG
-                        osiDebugPrint("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
-                                      (unsigned)pMsgIPv6->m_size,
-                                      pMsgIPv6->m_typ_magic[0], pMsgIPv6->m_typ_magic[1],
-                                      pMsgIPv6->m_typ_magic[2], pMsgIPv6->m_typ_magic[3]);
-#endif
-                    }
-                }
-#endif
             }
         }
         else if ( size == 0 ) {

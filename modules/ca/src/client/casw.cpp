@@ -105,7 +105,7 @@ int main ( int argc, char ** argv )
 
     caStartRepeaterIfNotInstalled ( repeaterPort );
 
-    sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, IPPROTO_UDP );
+    sock = epicsSocket46Create ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
@@ -116,20 +116,13 @@ int main ( int argc, char ** argv )
     }
 
     memset ( (char *) &addr46, 0 , sizeof (addr46) );
-    addr46.ia.sin_family = epicsSocket46GetDefaultAddressFamily();
-#if EPICS_HAS_IPV6
-    if ( addr46.ia.sin_family == AF_INET6 ) {
-        static const unsigned short PORT_ANY = 0u;
-        addr46.in6.sin6_addr = in6addr_any;
-        addr46.in6.sin6_port = htons ( PORT_ANY );
-    }
-    else
+    addr46.ia.sin_family = AF_INET;
+#if 0
+    // memset() from above has done all this
+    static const unsigned short PORT_ANY = 0u;
+    addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+    addr46.ia.sin_port = htons ( PORT_ANY );
 #endif
-    {
-        static const unsigned short PORT_ANY = 0u;
-        addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        addr46.ia.sin_port = htons ( PORT_ANY );
-    }
     status = epicsSocket46Bind ( sock, &addr46 );
     if ( status < 0 ) {
         char sockErrBuf[64];

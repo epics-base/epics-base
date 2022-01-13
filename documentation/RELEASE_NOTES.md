@@ -67,7 +67,7 @@ monitors posted on the bit fields.
 Some scripts now make use of features that were introduced to this Perl version
 that was released in 2009.
 
-### DB Links to DBF_MENU fields fixed
+### DB Links to `DBF_MENU` fields fixed
 
 [GH:183](https://github.com/epics-base/epics-base/issues/183)
 These were broken in a previous release, but now work again.

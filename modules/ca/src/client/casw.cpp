@@ -30,6 +30,7 @@
 #include "bhe.h"
 #include "udpiiu.h"
 #include "inetAddrID.h"
+#include "osiDebugPrint.h"
 
 // using a wrapper class around the free list avoids
 // Tornado 2.0.1 GNU compiler bugs
@@ -236,8 +237,63 @@ int main ( int argc, char ** argv )
                  * then it is the overriding IP address of the server.
                  */
                 memset ( &addr46, 0, sizeof(addr46) );
-                addr46.ia.sin_family = AF_INET;
-                addr46.ia.sin_addr.s_addr = pCurMsg->m_available;
+                // keep the zeroed memory for the memcmp() below
+                int good_IPv6_magic_and_len = 0;
+#if EPICS_HAS_IPV6
+                if (pstSize + sizeof ( *pCurMsg )  == sizeof(ca_msg_IPv6_RSRV_IS_UP_type)) {
+                    ca_ext_IPv6_RSRV_IS_UP_type * pMsgIPv6 = (ca_ext_IPv6_RSRV_IS_UP_type *)&pCurBuf[sizeof(caHdr)];
+                    if (pMsgIPv6->m_typ_magic[0] == 'I' &&
+                        pMsgIPv6->m_typ_magic[1] == 'P' &&
+                        pMsgIPv6->m_typ_magic[2] == 'v' &&
+                        pMsgIPv6->m_typ_magic[3] == '6' &&
+                        ntohl(pMsgIPv6->m_size) == sizeof(*pMsgIPv6)) {
+                        good_IPv6_magic_and_len = 1;
+                        if (memcmp(&addr46.in6.sin6_addr.s6_addr,
+                                   &pMsgIPv6->m_s6_addr[0],
+                                   sizeof(addr46.in6.sin6_addr.s6_addr))) {
+                            good_IPv6_magic_and_len = 2;
+                        }
+                    }
+#ifdef NETDEBUGXXX
+                    osiDebugPrint("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c' %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x sizeof(pMsgIPv6->m_s6_addr)=%u good_IPv6_magic_and_len=%d\n",
+                                  (unsigned)ntohl(pMsgIPv6->m_size),
+                                  isprint(pMsgIPv6->m_typ_magic[0]) ? pMsgIPv6->m_typ_magic[0] : '?',
+                                  isprint(pMsgIPv6->m_typ_magic[1]) ? pMsgIPv6->m_typ_magic[1] : '?',
+                                  isprint(pMsgIPv6->m_typ_magic[2]) ? pMsgIPv6->m_typ_magic[2] : '?',
+                                  isprint(pMsgIPv6->m_typ_magic[3]) ? pMsgIPv6->m_typ_magic[3] : '?',
+                                  pMsgIPv6->m_s6_addr[0],
+                                  pMsgIPv6->m_s6_addr[1],
+                                  pMsgIPv6->m_s6_addr[2],
+                                  pMsgIPv6->m_s6_addr[3],
+                                  pMsgIPv6->m_s6_addr[4],
+                                  pMsgIPv6->m_s6_addr[5],
+                                  pMsgIPv6->m_s6_addr[6],
+                                  pMsgIPv6->m_s6_addr[7],
+                                  pMsgIPv6->m_s6_addr[8],
+                                  pMsgIPv6->m_s6_addr[9],
+                                  pMsgIPv6->m_s6_addr[10],
+                                  pMsgIPv6->m_s6_addr[11],
+                                  pMsgIPv6->m_s6_addr[12],
+                                  pMsgIPv6->m_s6_addr[13],
+                                  pMsgIPv6->m_s6_addr[14],
+                                  pMsgIPv6->m_s6_addr[15],
+                                  (unsigned)sizeof(pMsgIPv6->m_s6_addr),
+                                  good_IPv6_magic_and_len);
+#endif
+
+                    if (good_IPv6_magic_and_len == 2) {
+                      addr46.ia.sin_family = AF_INET6;
+                      memcpy(&addr46.in6.sin6_addr.s6_addr,
+                             pMsgIPv6->m_s6_addr,
+                             sizeof(addr46.in6.sin6_addr.s6_addr));
+                      addr46.in6.sin6_scope_id = pMsgIPv6->m_sin6_scope_id;
+                    }
+                }
+#endif
+                if (good_IPv6_magic_and_len != 2) {
+                    addr46.ia.sin_family = AF_INET;
+                    addr46.ia.sin_addr.s_addr = pCurMsg->m_available;
+                }
 
                 if ( pCurMsg->m_count != 0 ) {
                     addr46.ia.sin_port = pCurMsg->m_count;

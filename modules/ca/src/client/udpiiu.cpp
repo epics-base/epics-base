@@ -846,7 +846,7 @@ bool udpiiu::beaconAction (
     {
         char buf[64];
         sockAddrToDottedIP(&net_addr.sa, buf, sizeof(buf));
-        osiDebugPrint("udpiiu::beaconAction addr='%s'\n", buf);
+        osiDebugPrint("udpiiu::beaconAction addr='%s' m_postsize=%u\n", buf, (unsigned)msg.m_postsize);
     }
 #endif
     if ( ! ( epicsSocket46IsAF_INETorAF_INET6 ( net_addr.sa.sa_family ) ) ) {
@@ -867,7 +867,6 @@ bool udpiiu::beaconAction (
      * field is set to something that isn't INADDR_ANY
      * then it is the overriding IP address of the server.
      */
-    addr46.ia.sin_family = AF_INET;
     addr46.ia.sin_addr.s_addr = htonl ( msg.m_available );
     if ( msg.m_count != 0 ) {
         addr46.ia.sin_port = htons ( msg.m_count );
@@ -879,6 +878,63 @@ bool udpiiu::beaconAction (
          */
         addr46.ia.sin_port = htons ( this->serverPort );
     }
+    int good_IPv6_magic_and_len = 0;
+#if EPICS_HAS_IPV6
+    if ((sizeof (msg) +  msg.m_postsize) >= sizeof(ca_msg_IPv6_RSRV_IS_UP_type)) {
+        const ca_msg_IPv6_RSRV_IS_UP_type *pMsgIPv6;
+        pMsgIPv6 = reinterpret_cast < const ca_msg_IPv6_RSRV_IS_UP_type *>(&msg);
+        const ca_ext_IPv6_RSRV_IS_UP_type *pExtIPv6 = &pMsgIPv6->ca_ext_IPv6_RSRV_IS_UP;
+        if (pExtIPv6->m_typ_magic[0] == 'I' &&
+            pExtIPv6->m_typ_magic[1] == 'P' &&
+            pExtIPv6->m_typ_magic[2] == 'v' &&
+            pExtIPv6->m_typ_magic[3] == '6' &&
+            ntohl(pExtIPv6->m_size) == sizeof(*pExtIPv6)) {
+            good_IPv6_magic_and_len = 1;
+            if (memcmp(&addr46.in6.sin6_addr.s6_addr,
+                       &pExtIPv6->m_s6_addr[0],
+                       sizeof(addr46.in6.sin6_addr.s6_addr))) {
+              good_IPv6_magic_and_len = 2;
+            }
+        }
+#ifdef NETDEBUG
+      osiDebugPrint("size=%u magic='%c%c%c%c' %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x sizeof(pMsgIPv6->m_s6_addr)=%u good_IPv6_magic_and_len=%d\n",
+                    (unsigned)ntohl(pExtIPv6->m_size),
+                    isprint(pExtIPv6->m_typ_magic[0]) ? pExtIPv6->m_typ_magic[0] : '?',
+                    isprint(pExtIPv6->m_typ_magic[1]) ? pExtIPv6->m_typ_magic[1] : '?',
+                    isprint(pExtIPv6->m_typ_magic[2]) ? pExtIPv6->m_typ_magic[2] : '?',
+                    isprint(pExtIPv6->m_typ_magic[3]) ? pExtIPv6->m_typ_magic[3] : '?',
+                    pExtIPv6->m_s6_addr[0],
+                    pExtIPv6->m_s6_addr[1],
+                    pExtIPv6->m_s6_addr[2],
+                    pExtIPv6->m_s6_addr[3],
+                    pExtIPv6->m_s6_addr[4],
+                    pExtIPv6->m_s6_addr[5],
+                    pExtIPv6->m_s6_addr[6],
+                    pExtIPv6->m_s6_addr[7],
+                    pExtIPv6->m_s6_addr[8],
+                    pExtIPv6->m_s6_addr[9],
+                    pExtIPv6->m_s6_addr[10],
+                    pExtIPv6->m_s6_addr[11],
+                    pExtIPv6->m_s6_addr[12],
+                    pExtIPv6->m_s6_addr[13],
+                    pExtIPv6->m_s6_addr[14],
+                    pExtIPv6->m_s6_addr[15],
+                    (unsigned)sizeof(pExtIPv6->m_s6_addr),
+                    good_IPv6_magic_and_len);
+#endif
+      if (good_IPv6_magic_and_len == 2) {
+        addr46.ia.sin_family = AF_INET6;
+        memcpy(&addr46.in6.sin6_addr.s6_addr,
+               pExtIPv6->m_s6_addr,
+               sizeof(addr46.in6.sin6_addr.s6_addr));
+        addr46.in6.sin6_scope_id = pExtIPv6->m_sin6_scope_id;
+      }
+    }
+#endif
+    if (good_IPv6_magic_and_len != 2) {
+        addr46.ia.sin_family = AF_INET;
+    }
+
     unsigned protocolRevision = msg.m_dataType;
     ca_uint32_t beaconNumber = msg.m_cid;
 

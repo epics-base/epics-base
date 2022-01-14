@@ -722,7 +722,6 @@ void ca_repeater ()
                 if (from46.sa.sa_family == AF_INET6 ) {
                     size_t needed_size = sizeof(ca_msg_IPv6_RSRV_IS_UP_type);
                     if ( (size_t)size >= needed_size ) {
-                        int good_IPv6_magic_and_len = 0;
                         ca_ext_IPv6_RSRV_IS_UP_type * pMsgIPv6 = (ca_ext_IPv6_RSRV_IS_UP_type *)&pBuf[sizeof(caHdr)];
                         if (pMsgIPv6->m_typ_magic[0] == 'I' &&
                             pMsgIPv6->m_typ_magic[1] == 'P' &&
@@ -734,16 +733,14 @@ void ca_repeater ()
                                    &from46.in6.sin6_addr.s6_addr,
                                    sizeof(pMsgIPv6->m_s6_addr));
                             pMsgIPv6->m_sin6_scope_id = from46.in6.sin6_scope_id;
-                            good_IPv6_magic_and_len = 1;
                         }
 #ifdef NETDEBUGXX
-                        osiDebugPrint("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c' good_IPv6_magic_and_len=%d\n",
+                        osiDebugPrint("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
                                       (unsigned)ntohl(pMsgIPv6->m_size),
                                       isprint(pMsgIPv6->m_typ_magic[0]) ? pMsgIPv6->m_typ_magic[0] : '?',
                                       isprint(pMsgIPv6->m_typ_magic[1]) ? pMsgIPv6->m_typ_magic[1] : '?',
                                       isprint(pMsgIPv6->m_typ_magic[2]) ? pMsgIPv6->m_typ_magic[2] : '?',
-                                      isprint(pMsgIPv6->m_typ_magic[3]) ? pMsgIPv6->m_typ_magic[3] : '?',
-                                      good_IPv6_magic_and_len);
+                                      isprint(pMsgIPv6->m_typ_magic[3]) ? pMsgIPv6->m_typ_magic[3] : '?');
 #endif
                     }
                 } else

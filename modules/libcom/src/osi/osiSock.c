@@ -45,6 +45,33 @@ void osiSockPrint(const char *fileName, int lineNo, const char *format, ...)
     va_end(pVar);
 }
 
+static void osiSockIPv4toIPv6(const osiSockAddr46 *pAddr46Input,
+                              osiSockAddr46 *pAddr46Output)
+{
+#if EPICS_HAS_IPV6
+    if (pAddr46Input->sa.sa_family == AF_INET) {
+        const struct sockaddr_in * paddrInput4 = (const struct sockaddr_in *) pAddr46Input;
+        struct sockaddr_in6 *pOut6 = (struct sockaddr_in6 *)pAddr46Output;
+
+        unsigned int ipv4addr = htonl ( paddrInput4->sin_addr.s_addr );
+        /* RFC3493: IPv4-mapped IPv6 address from RFC 2373 */
+        memset(pAddr46Output, 0, sizeof(*pAddr46Output));
+        pOut6->sin6_addr.s6_addr[10] = 0xFF;
+        pOut6->sin6_addr.s6_addr[11] = 0xFF;
+        pOut6->sin6_addr.s6_addr[12] = (ipv4addr >> 24) & 0xFF;
+        pOut6->sin6_addr.s6_addr[13] = (ipv4addr >> 16) & 0xFF;
+        pOut6->sin6_addr.s6_addr[14] = (ipv4addr >>  8) & 0xFF;
+        pOut6->sin6_addr.s6_addr[15] = ipv4addr & 0xFF;
+        pOut6->sin6_family = AF_INET6;
+        pOut6->sin6_port = paddrInput4->sin_port;
+    }
+    else
+#endif
+    {
+        memcpy(pAddr46Output, pAddr46Input, sizeof(*pAddr46Output));
+    }
+}
+
 
 /*
  * sockAddrAreIdentical()
@@ -382,32 +409,44 @@ LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, i
 
 /*
  * Wrapper around connect()
+ * Allows to connect to an IPv4 address on an IPv6 socket
  */
 LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lineno,
                                                    SOCKET sock,
+                                                   int sockets_family,
                                                    const osiSockAddr46 *pAddr46)
 {
+    osiSockAddr46 addr46Output = *pAddr46; /* struct copying */
     int status;
-    osiSocklen_t socklen = sizeof(pAddr46->ia);
+    osiSocklen_t socklen = sizeof(addr46Output.ia);
 #if EPICS_HAS_IPV6
-    if (pAddr46->sa.sa_family == AF_INET6) {
-        socklen = sizeof(pAddr46->in6);
+    /*  If needed (socket is created with AF_INET6),
+        convert an IPv4 address into a IPv4 mapped address */
+    if (sockets_family == AF_INET6 && pAddr46->sa.sa_family == AF_INET) {
+        osiSockIPv4toIPv6(pAddr46, &addr46Output);
+    }
+    if (addr46Output.sa.sa_family == AF_INET6) {
+        socklen = sizeof(addr46Output.in6);
     }
 #endif
 
-    status = connect(sock, &pAddr46->sa, socklen);
+    /* Now we have an IPv6 address. use the size of it when calling connect() */
+    status = connect(sock, &addr46Output.sa, socklen);
 
 #ifdef NETDEBUG
     {
-        char buf[64];
+        char bufIn[64];
+        char bufOut[64];
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-        osiDebugPrintFL("%s:%d: connect(%lu) address='%s' status=%d %s\n",
+        sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
+        sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
+        osiDebugPrintFL("%s:%d: connect(%lu) address='%s' (%s) status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock,
-                        buf,
+                        bufIn,
+                        pAddr46->sa.sa_family != addr46Output.sa.sa_family ? bufOut : "",
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }

@@ -613,9 +613,10 @@ void tcpRecvThread::connect (
         int status;
         {
             epicsGuardRelease < epicsMutex > unguard ( guard );
-            osiSockAddr46 tmp = this->iiu.address ();
+            osiSockAddr46 addr46 = this->iiu.address ();
             status = epicsSocket46Connect ( this->iiu.sock,
-                                        & tmp );
+                                            epicsSocket46GetDefaultAddressFamily(),
+                                            & addr46 );
         }
 
         if ( this->iiu.state != tcpiiu::iiucs_connecting ) {
@@ -718,7 +719,7 @@ tcpiiu::tcpiiu (
         throw std::bad_alloc();
 
     this->sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(),
-                                     SOCK_STREAM, IPPROTO_TCP );
+                                       SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
         freeListFree(this->cacRef.tcpSmallRecvBufFreeList, this->pCurData);
         char sockErrBuf[64];

@@ -200,9 +200,13 @@ struct waitPvt {
     caLink *pca;
     epicsEventId evt;
 };
+enum testEvent {
+    testEventConnect,
+    testEventCount,
+};
 
 static
-void testdbCaWaitForUpdateCountCB(void *raw)
+void testdbCaWaitForEventCB(void *raw)
 {
     struct waitPvt *pvt = raw;
 
@@ -211,29 +215,35 @@ void testdbCaWaitForUpdateCountCB(void *raw)
     epicsMutexUnlock(pvt->pca->lock);
 }
 
-void testdbCaWaitForUpdateCount(DBLINK *plink, unsigned long cnt)
+static
+void testdbCaWaitForEvent(DBLINK *plink, unsigned long cnt, enum testEvent event)
 {
-
     caLink *pca;
     epicsEventId evt = epicsEventMustCreate(epicsEventEmpty);
 
     dbScanLock(plink->precord);
 
+    assert(plink->type==CA_LINK);
     pca = (caLink *)plink->value.pv_link.pvt;
 
-    assert(plink->type==CA_LINK);
     epicsMutexMustLock(pca->lock);
-    assert(!pca->monitor && !pca->userPvt);
+    assert(!pca->monitor && !pca->connect && !pca->userPvt);
 
-    while(pca->nUpdate < cnt) {
+    while(!pca->isConnected || (event==testEventCount && pca->nUpdate < cnt)) {
         struct waitPvt pvt = {pca, evt};
-        pca->monitor = &testdbCaWaitForUpdateCountCB;
+        pca->connect = &testdbCaWaitForEventCB;
+        pca->monitor = &testdbCaWaitForEventCB;
         pca->userPvt = &pvt;
+
         epicsMutexUnlock(pca->lock);
         dbScanUnlock(plink->precord);
+
         epicsEventMustWait(evt);
+
         dbScanLock(plink->precord);
         epicsMutexMustLock(pca->lock);
+
+        pca->connect = NULL;
         pca->monitor = NULL;
         pca->userPvt = NULL;
     }
@@ -241,6 +251,16 @@ void testdbCaWaitForUpdateCount(DBLINK *plink, unsigned long cnt)
     epicsEventDestroy(evt);
     epicsMutexUnlock(pca->lock);
     dbScanUnlock(plink->precord);
+}
+
+void testdbCaWaitForConnect(DBLINK *plink)
+{
+    testdbCaWaitForEvent(plink, 0, testEventConnect);
+}
+
+void testdbCaWaitForUpdateCount(DBLINK *plink, unsigned long cnt)
+{
+    testdbCaWaitForEvent(plink, cnt, testEventCount);
 }
 
 /* Block until worker thread has processed all previously queued actions.
@@ -816,6 +836,8 @@ static void connectionCallback(struct connection_handler_args arg)
     caLink *pca;
     short link_action = 0;
     struct link *plink;
+    dbCaCallback connect = 0;
+    void *userPvt = 0;
 
     pca = ca_puser(arg.chid);
     assert(pca);
@@ -882,11 +904,16 @@ static void connectionCallback(struct connection_handler_args arg)
     }
     pca->gotAttributes = 0;
     if (pca->dbrType != DBR_STRING) {
+        /* will run connect() callback later */
         link_action |= CA_GET_ATTRIBUTES;
+    } else {
+        connect = pca->connect;
+        userPvt = pca->userPvt;
     }
 done:
     if (link_action) addAction(pca, link_action);
     epicsMutexUnlock(pca->lock);
+    if (connect) connect(userPvt);
 }
 
 static void eventCallback(struct event_handler_args arg)

@@ -288,6 +288,8 @@ static
 void rsrv_build_addr_lists(void)
 {
     int autobeaconlist = 1;
+    int useIPv4 = 1;
+    int useIPv6 = 0;
 
     /* the UDP ports are known at this point, but the TCP port is not */
     assert(ca_beacon_port!=0);
@@ -303,16 +305,19 @@ void rsrv_build_addr_lists(void)
                 autobeaconlist = 1;
             } else if ( !strcmp( pstr, "6" ) ) {
                 autobeaconlist = 6;
+                useIPv4 = 0;
+                useIPv6 = 1;
             } else if ( !strcmp( pstr, "46" ) ) {
                 autobeaconlist = 46;
+                useIPv6 = 1;
             } else {
                 envGetBoolConfigParam(&EPICS_CAS_AUTO_BEACON_ADDR_LIST, &autobeaconlist);
             }
         }
-        epicsPrintf("%s:%d:rsrv_build_addr_lists EPICS_CAS_AUTO_BEACON_ADDR_LIST='%s' autobeaconlist=%d\n",
+        epicsPrintf("%s:%d:rsrv_build_addr_lists EPICS_CAS_AUTO_BEACON_ADDR_LIST='%s' autobeaconlist=%d useIPv4=%d useIPv6=%d\n",
                     __FILE__, __LINE__,
-                    pstr ? pstr : "" , autobeaconlist);
-
+                    pstr ? pstr : "" , autobeaconlist,
+                    useIPv4, useIPv6);
     }
 
     ellInit ( &casIntfAddrList );
@@ -415,12 +420,16 @@ void rsrv_build_addr_lists(void)
             memset(&match46, 0, sizeof(match46));
 
             if(pNode->addr46.ia.sin_family==AF_INET) {
+                if (!useIPv4)
+                    continue;
                 match46.ia.sin_family = AF_INET;
                 match46.ia.sin_addr.s_addr = pNode->addr46.ia.sin_addr.s_addr;
                 match46.ia.sin_port = htons(ca_beacon_port);
             }
 #if EPICS_HAS_IPV6
-            else if(pNode->addr46.ia.sin_family==AF_INET6) {
+            else if (pNode->addr46.ia.sin_family == AF_INET6) {
+                if (!useIPv6)
+                    continue;
                 memcpy(&match46, &pNode->addr46, sizeof(match46));
                 match46.in6.sin6_port = htons(ca_beacon_port);
             }

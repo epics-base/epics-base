@@ -28,6 +28,7 @@ static int yyAbort = 0;
 %token tokenFIELD tokenINFO tokenREGISTRAR
 %token tokenDEVICE tokenDRIVER tokenLINK tokenBREAKTABLE
 %token tokenRECORD tokenGRECORD tokenVARIABLE tokenFUNCTION
+%token tokenSET
 %token <Str> tokenSTRING tokenCDEFS
 
 %token jsonNULL jsonTRUE jsonFALSE
@@ -60,6 +61,7 @@ database_item:  include
     |   tokenRECORD record_head record_body
     |   tokenGRECORD grecord_head record_body
     |   alias
+    |   set
     ;
 
 include:    tokenINCLUDE tokenSTRING
@@ -277,6 +279,25 @@ alias: tokenALIAS '(' tokenSTRING ',' tokenSTRING ')'
     if(dbStaticDebug>2) printf("alias %s %s\n",$3,$5);
     dbAlias($3,$5); dbmfFree($3); dbmfFree($5);
 };
+
+set: tokenSET '(' tokenSTRING set_args ')'
+{
+    if(dbStaticDebug>2) printf("set(%s\n",$3);
+    dbSet($3); dbmfFree($3);
+    /* dbSet() empties tempList */
+};
+
+set_args:
+{
+    if (ellCount(&tempList))
+        yyerrorAbort("dbSet: tempList not empty");
+}
+    | set_args ',' tokenSTRING
+{
+    if(dbStaticDebug>2) printf("  %s,\n",$3);
+    allocTemp($3); /* takes ownership of $3 */
+}
+    ;
 
 json_object: '{' '}'
 {

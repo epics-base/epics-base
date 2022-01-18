@@ -1519,6 +1519,29 @@ static void dbAlias(char *name, char *alias)
     dbFinishEntry(pdbEntry);
 }
 
+static void warnSetUnknown(const char *name)
+{
+    fprintf(stderr, ERL_WARNING " Unknown name in set(\"%s\", ...)\n", name);
+    dbIncludePrint();
+}
+
+static void dbSet(const char *name)
+{
+    warnSetUnknown(name);
+
+    /* clean up unused arguments */
+    while(ellCount(&tempList))
+        dbmfFree(popFirstTemp());
+}
+
+unsigned dbLinkScopeDefault(void)
+{
+    int ret = pvlOptSrcAuto;
+    if(pinputFileNow)
+        ret = pinputFileNow->linkDefLoc;
+    return ret;
+}
+
 static void dbRecordBody(void)
 {
     DBENTRY *pdbentry;

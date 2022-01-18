@@ -17,7 +17,7 @@
 
 #include "epicsTypes.h"
 #include "osiSock.h"
-#include "osiDebugPrint.h"
+#include "epicsBaseDebugLog.h"
 #include "epicsStdio.h"
 #include "errlog.h"
 
@@ -220,7 +220,7 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         return -1;
     }
 #ifdef NETDEBUG
-    osiDebugPrint("aToIPAddr46 pAddrString='%s' defaultPort=%u flags=0x%x\n",
+    epicsBaseDebugLog("aToIPAddr46 pAddrString='%s' defaultPort=%u flags=0x%x\n",
                   pAddrString, defaultPort, flags);
 #endif
     if (*pAddrString != '[') {
@@ -233,7 +233,7 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         {
             char buf[64];
             sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-            osiDebugPrint("aToIPAddr46 pAddrString='%s' status=%d addr46='%s'\n",
+            epicsBaseDebugLog("aToIPAddr46 pAddrString='%s' status=%d addr46='%s'\n",
                           pAddrString, status, buf);
         }
 #endif
@@ -269,13 +269,13 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
             return -1;
         }
 #ifdef NETDEBUG
-        osiDebugPrint("aToIPAddr46 hostName='%s' pPort='%s' portAscii='%s'\n",
+        epicsBaseDebugLog("aToIPAddr46 hostName='%s' pPort='%s' portAscii='%s'\n",
                       hostName, pPort ? pPort : "NULL", portAscii);
 #endif
         /* After the printout, set pPort to a valid value */
         if (!pPort) pPort = portAscii;
 #ifdef NETDEBUG
-        osiDebugPrint("aToIPAddr46 hostName='%s' pPort='%s'\n",
+        epicsBaseDebugLog("aToIPAddr46 hostName='%s' pPort='%s'\n",
                       hostName, pPort ? pPort : "NULL");
 #endif
         /* we could find both IPv4 and Ipv6 addresses, but see below */
@@ -292,7 +292,7 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         gai = getaddrinfo(hostName, pPort, &hints, &ai);
         if (gai) {
 #ifdef NETDEBUG
-          osiDebugPrint("unable to look up pAddrString '%s' '%s:%s' (%s)\n",
+          epicsBaseDebugLog("unable to look up pAddrString '%s' '%s:%s' (%s)\n",
                         pAddrString, hostName, pPort,
                         gai_strerror(gai));
 #endif
@@ -306,7 +306,7 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
                 {
                     char buf[128];
                     sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-                    osiDebugPrint("aToIPAddr46 pAddrString='%s' res=%s socklen=%u\n",
+                    epicsBaseDebugLog("aToIPAddr46 pAddrString='%s' res=%s socklen=%u\n",
                                   pAddrString, buf, (unsigned)socklen);
                 }
 #endif

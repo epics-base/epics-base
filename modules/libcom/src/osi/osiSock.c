@@ -24,7 +24,7 @@
 #include "epicsStdlib.h"
 #include "errlog.h"
 #include "osiSock.h"
-#include "osiDebugPrint.h"
+#include "epicsBaseDebugLog.h"
 
 #if EPICS_HAS_IPV6
 #include <sys/types.h>
@@ -120,7 +120,7 @@ unsigned epicsStdCall sockAddrToA (
         }
         ret = sockAddrToDottedIP ( paddr, pBuf, bufSize );
 #ifdef NETDEBUG
-        osiDebugPrint ( "getnameinfo(%s) failed: %s\n",
+        epicsBaseDebugLog ( "getnameinfo(%s) failed: %s\n",
                         pBuf, gai_strerror(gai_ecode) );
 #endif
         return ret;
@@ -342,7 +342,7 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
         type_str = "STREAM";
     }
     SOCKET sock = epicsSocketCreate( domain, type, protocol );
-    osiDebugPrintFL("epicsSocketCreate(%s:%d) (%s %s) socket=%lu\n",
+    epicsBaseDebugLogFL("epicsSocketCreate(%s:%d) (%s %s) socket=%lu\n",
                     filename, lineno,
                     domain_family_str, type_str, (unsigned long)sock);
     return sock;
@@ -372,7 +372,7 @@ LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-        osiDebugPrintFL("%s:%d: bind(%lu) address='%s' socklen=%u status=%d: %s\n",
+        epicsBaseDebugLogFL("%s:%d: bind(%lu) address='%s' socklen=%u status=%d: %s\n",
                         filename, lineno,
                         (unsigned long)sock,
                         buf, (unsigned)socklen,
@@ -442,7 +442,7 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
         sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
-        osiDebugPrintFL("%s:%d: connect(%lu) address='%s' (%s) status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: connect(%lu) address='%s' (%s) status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock,
                         bufIn,
@@ -465,7 +465,7 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvFL(const char *filename, int lineno
     {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        osiDebugPrintFL("%s:%d: recv(%lu) len=%u status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: recv(%lu) len=%u status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock, (unsigned)len,
                         status, status < 0 ? sockErrBuf : "");
@@ -486,7 +486,7 @@ LIBCOM_API int epicsStdCall epicsSocket46SendFL(const char *filename, int lineno
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        osiDebugPrintFL("%s:%d: send(%lu) len=%u status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: send(%lu) len=%u status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock, (unsigned)len,
                         status, status < 0 ? sockErrBuf : "");
@@ -517,7 +517,7 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
-        osiDebugPrintFL("%s:%d: sendto(%lu) address='%s' len=%u status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: sendto(%lu) address='%s' len=%u status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock, bufIn, (unsigned)len,
                         status, status < 0 ? sockErrBuf : "");
@@ -543,7 +543,7 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvfromFL(const char *filename, int li
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufDotted, sizeof(bufDotted));
-        osiDebugPrintFL("%s:%d: recvfrom(%lu) buflen=%u address='%s' status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: recvfrom(%lu) buflen=%u address='%s' status=%d %s\n",
                         filename, lineno,
                         (unsigned long)sock, (unsigned)len, bufDotted,
                         status, status < 0 ? sockErrBuf : "");
@@ -568,7 +568,7 @@ LIBCOM_API int epicsStdCall epicsSocket46AcceptFL(const char *filename, int line
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-        osiDebugPrintFL("%s:%d: accept(%lu) address='%s' status=%d (%s)\n",
+        epicsBaseDebugLogFL("%s:%d: accept(%lu) address='%s' status=%d (%s)\n",
                         filename, lineno,
                         (unsigned long)sock, buf,
                         status, status < 0 ? sockErrBuf : "");
@@ -601,7 +601,7 @@ LIBCOM_API int epicsStdCall sockIPsAreIdentical46FL(const char *filename, int li
         char buf2[64];
         sockAddrToDottedIP(&pAddr1->sa, buf1, sizeof(buf1));
         sockAddrToDottedIP(&pAddr2->sa, buf2, sizeof(buf2));
-        osiDebugPrintFL("%s:%d: sockIPsAreIdentical46 addr1='%s' addr2='%s' ret=%d\n",
+        epicsBaseDebugLogFL("%s:%d: sockIPsAreIdentical46 addr1='%s' addr2='%s' ret=%d\n",
                         filename, lineno,
                         buf1, buf2, ret);
     }
@@ -633,7 +633,7 @@ LIBCOM_API int epicsStdCall sockAddrAreIdentical46FL(const char *filename, int l
         char buf2[64];
         sockAddrToDottedIP(&pAddr1->sa, buf1, sizeof(buf1));
         sockAddrToDottedIP(&pAddr2->sa, buf2, sizeof(buf2));
-        osiDebugPrintFL("%s:%d: sockAddrAreIdentical46 addr1='%s' addr2='%s' ret=%d\n",
+        epicsBaseDebugLogFL("%s:%d: sockAddrAreIdentical46 addr1='%s' addr2='%s' ret=%d\n",
                         filename, lineno,
                         buf1, buf2, ret);
     }
@@ -651,7 +651,7 @@ LIBCOM_API int epicsStdCall sockPortAreIdentical46FL(const char *filename, int l
         char buf2[64];
         sockAddrToDottedIP(&pAddr1->sa, buf1, sizeof(buf1));
         sockAddrToDottedIP(&pAddr2->sa, buf2, sizeof(buf2));
-        osiDebugPrintFL("%s:%d: sockPortAreIdentical46 addr1='%s' addr2='%s'\n",
+        epicsBaseDebugLogFL("%s:%d: sockPortAreIdentical46 addr1='%s' addr2='%s'\n",
                         filename, lineno,
                         buf1, buf2);
     }
@@ -678,7 +678,7 @@ LIBCOM_API int epicsStdCall epicsSocket46portFromAddress(osiSockAddr46 *paddr)
 #endif
     }
 #ifndef NETDEBUG
-    osiDebugPrint("epicsSocket46portFromAddress invalid family: %d\n",
+    epicsBaseDebugLog("epicsSocket46portFromAddress invalid family: %d\n",
                   paddr->ia.sin_family);
 #endif
     return -1;
@@ -824,7 +824,7 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
                                                  unsigned int interfaceIndex)
 {
 #ifdef NETDEBUG
-    osiDebugPrintFL("%s:%d: epicsSocket46optIPv6MultiCast(%lu) interfaceIndex=%u\n",
+    epicsBaseDebugLogFL("%s:%d: epicsSocket46optIPv6MultiCast(%lu) interfaceIndex=%u\n",
                     filename, lineno,
                     (unsigned long)sock, interfaceIndex);
 #endif
@@ -896,7 +896,7 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
         {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-            osiDebugPrintFL("%s:%d: epicsSocket46optIPv6MultiCast_GROUP(%lu) sizeof(group)=%u status=%d %s\n",
+            epicsBaseDebugLogFL("%s:%d: epicsSocket46optIPv6MultiCast_GROUP(%lu) sizeof(group)=%u status=%d %s\n",
                             filename, lineno,
                             (unsigned long)sock, (unsigned)sizeof(group),
                             status, status < 0 ? sockErrBuf : "");
@@ -968,9 +968,9 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
         char bufOut[64];
         sockAddrToDottedIP(&pAddrInterface->sa, bufIn, sizeof(bufIn));
         sockAddrToDottedIP(&pAddrMulticast->sa, bufOut, sizeof(bufOut));
-        osiDebugPrintFL("%s:%d: epicsSocket46addr6toMulticastOK address='%s' multicast='%s'\n",
-                        filename, lineno,
-                        bufIn, bufOut);
+        epicsBaseDebugLogFL("%s:%d: epicsSocket46addr6toMulticastOK address='%s' multicast='%s'\n",
+                            filename, lineno,
+                            bufIn, bufOut);
     }
 #endif
     if (pAddrInterface->sa.sa_family != AF_INET6) {

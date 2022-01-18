@@ -77,7 +77,7 @@
 #include "addrList.h"
 #include "osiSock.h"
 
-#include "osiDebugPrint.h"
+#include "epicsBaseDebugLog.h"
 #if EPICS_HAS_IPV6
 #include "cantProceed.h"
 #include <poll.h>
@@ -586,7 +586,7 @@ void ca_repeater ()
             {
                 char buf[64];
                 sockAddrToDottedIP(&pNode->addr46.sa, buf, sizeof(buf));
-                osiDebugPrint ("repeater: node='%s'\n", buf );
+                epicsBaseDebugLog ("repeater: node='%s'\n", buf );
             }
 #endif
 #ifdef IP_ADD_MEMBERSHIP
@@ -640,7 +640,7 @@ void ca_repeater ()
 
     debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
 #ifdef NETDEBUG
-    osiDebugPrint ("repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
+    epicsBaseDebugLog ("repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
                    pPollFds, searchDestList_count, numPollFds);
 #endif
 
@@ -653,13 +653,13 @@ void ca_repeater ()
             if ( pollres < 0 ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                osiDebugPrint("repeater pollres =%d: %s\n",
+                epicsBaseDebugLog("repeater pollres =%d: %s\n",
                               pollres, sockErrBuf);
                 goto pollagain;
             }
             for ( unsigned idx = 0; idx < numPollFds; idx++ ) {
 #ifdef NETDEBUG
-                osiDebugPrint ("repeater idx=%u socket=%d revents=0x%x\n",
+                epicsBaseDebugLog ("repeater idx=%u socket=%d revents=0x%x\n",
                                idx, (int)pPollFds[idx].fd, pPollFds[idx].revents);
 #endif
                 if (pPollFds[idx].revents) {
@@ -736,12 +736,12 @@ void ca_repeater ()
                             pMsgIPv6->m_sin6_scope_id = from46.in6.sin6_scope_id;
                         }
 #ifdef NETDEBUGXX
-                        osiDebugPrint("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
-                                      (unsigned)ntohl(pMsgIPv6->m_size),
-                                      isprint(pMsgIPv6->m_typ_magic[0]) ? pMsgIPv6->m_typ_magic[0] : '?',
-                                      isprint(pMsgIPv6->m_typ_magic[1]) ? pMsgIPv6->m_typ_magic[1] : '?',
-                                      isprint(pMsgIPv6->m_typ_magic[2]) ? pMsgIPv6->m_typ_magic[2] : '?',
-                                      isprint(pMsgIPv6->m_typ_magic[3]) ? pMsgIPv6->m_typ_magic[3] : '?');
+                        epicsBaseDebugLog("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
+                                          (unsigned)ntohl(pMsgIPv6->m_size),
+                                          isprint(pMsgIPv6->m_typ_magic[0]) ? pMsgIPv6->m_typ_magic[0] : '?',
+                                          isprint(pMsgIPv6->m_typ_magic[1]) ? pMsgIPv6->m_typ_magic[1] : '?',
+                                          isprint(pMsgIPv6->m_typ_magic[2]) ? pMsgIPv6->m_typ_magic[2] : '?',
+                                          isprint(pMsgIPv6->m_typ_magic[3]) ? pMsgIPv6->m_typ_magic[3] : '?');
 #endif
                     }
                 } else

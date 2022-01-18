@@ -14,7 +14,6 @@ INC += compilerSpecific.h
 
 INC += osiFileName.h
 INC += osiSock.h
-INC += osiDebugPrint.h
 INC += osdSock.h
 INC += epicsInterrupt.h
 INC += osdInterrupt.h

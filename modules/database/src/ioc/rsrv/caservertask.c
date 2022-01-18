@@ -32,7 +32,7 @@
 #include "freeList.h"
 #include "osiPoolStatus.h"
 #include "osiSock.h"
-#include "osiDebugPrint.h"
+#include "epicsBaseDebugLog.h"
 #include "taskwd.h"
 #include "cantProceed.h"
 
@@ -191,7 +191,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
             {
                 char buf[64];
                 sockAddrToDottedIP(&ifaceAddr.sa, buf, sizeof(buf));
-                osiDebugPrint("rsrv_grab_tcp  ifaceAddr='%s'\n", buf);
+                epicsBaseDebugLog("rsrv_grab_tcp  ifaceAddr='%s'\n", buf);
             }
 #endif
             tcpsock = socks[i] = epicsSocket46Create (scratch46.ia.sin_family,
@@ -429,7 +429,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-                osiDebugPrint("calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                epicsBaseDebugLog("calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
                               buf);
             }
 #endif
@@ -482,7 +482,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-                osiDebugPrint("calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                epicsBaseDebugLog("calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
                               buf);
             }
 #endif
@@ -498,7 +498,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&pNode->addr46.sa, buf, sizeof(buf));
-                osiDebugPrint("rsrv_XXXX addr='%s'\n", buf);
+                epicsBaseDebugLog("rsrv_XXXX addr='%s'\n", buf);
             }
 #endif
             if(pNode->addr46.ia.sin_port==0) {
@@ -782,8 +782,8 @@ void rsrv_init (void)
                 {
                     char buf[64];
                     sockAddrToDottedIP(&conf->udpAddr46.sa, buf, sizeof(buf));
-                    osiDebugPrint("calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
-                                  buf);
+                    epicsBaseDebugLog("calling osiSockDiscoverBroadcastAddresses: match46='%s'\n",
+                                      buf);
             }
 #endif
                 osiSockDiscoverBroadcastAddresses (&bcastList,

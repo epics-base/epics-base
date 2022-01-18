@@ -30,7 +30,7 @@
 #include "bhe.h"
 #include "udpiiu.h"
 #include "inetAddrID.h"
-#include "osiDebugPrint.h"
+#include "epicsBaseDebugLog.h"
 
 // using a wrapper class around the free list avoids
 // Tornado 2.0.1 GNU compiler bugs
@@ -248,7 +248,7 @@ int main ( int argc, char ** argv )
                         }
                     }
 #ifdef NETDEBUG
-                    osiDebugPrint("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c' %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x sizeof(pExtIPv6->m_s6_addr)=%u good_IPv6_magic_and_len=%d\n",
+                    epicsBaseDebugLog("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c' %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x sizeof(pExtIPv6->m_s6_addr)=%u good_IPv6_magic_and_len=%d\n",
                                   (unsigned)ntohl(pExtIPv6->m_size),
                                   isprint(pExtIPv6->m_typ_magic[0]) ? pExtIPv6->m_typ_magic[0] : '?',
                                   isprint(pExtIPv6->m_typ_magic[1]) ? pExtIPv6->m_typ_magic[1] : '?',

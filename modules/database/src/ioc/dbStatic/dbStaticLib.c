@@ -2738,6 +2738,9 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
                 free(plink->text);
                 plink->text = epicsStrDup(pstring);
                 dbFreeLinkInfo(&link_info);
+                /* capture default link scope */
+                plink->flags &= -pvlOptSrcMask;
+                plink->flags |= dbLinkScopeDefault();
             } else {
                 /* assignment after init (eg. autosave restore) */
                 struct dbCommon *prec = pdbentry->precnode->precord;

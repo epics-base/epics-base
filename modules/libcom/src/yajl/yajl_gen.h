@@ -83,6 +83,9 @@ extern "C" {
          *
          * yajl_gen_config() argument type: const char *
          *
+         * The pointer argument passed is stored (not copied) and must remain
+         * valid for the lifetime of the handle, or until replaced.
+         *
          * Example: \code{.cpp}
          * yajl_gen_config(g, yajl_gen_indent_string, "  "); // 2 spaces
          * \endcode

@@ -44,7 +44,6 @@
 #include "errlog.h"
 #include "freeList.h"
 #include "osiSock.h"
-#include "epicsBaseDebugLog.h"
 #include "taskwd.h"
 
 #include "rsrv.h"
@@ -124,14 +123,7 @@ void cast_server(void *pParm)
     osiSockIoctl_t      nchars;
     SOCKET              recv_sock, reply_sock;
     struct client      *client;
-#if EPICS_HAS_IPV6
-    unsigned int useIPv4 = conf->useIPv4;
-    unsigned int useIPv6 = conf->useIPv6;
-#ifdef NETDEBUG
-    epicsBaseDebugLog("cast_server conf: useIPv4=%d useIPv6=%d\n",
-                      useIPv4, useIPv6);
-#endif
-#endif
+
     reply_sock = conf->udp;
 
     /*
@@ -187,13 +179,6 @@ void cast_server(void *pParm)
 
         } else {
             size_t idx;
-#if EPICS_HAS_IPV6
-            if ((new_recv_addr46.sa.sa_family == AF_INET) && !useIPv4)
-                break;
-            if ((new_recv_addr46.sa.sa_family == AF_INET6) && !useIPv6)
-                break;
-#endif
-            // TODO: Ignore IPv6 on IPv4 only
             for(idx=0; casIgnoreAddrs46[idx].ia.sin_port; idx++)
             {
                 if (sockIPsAreIdentical46(&new_recv_addr46, &casIgnoreAddrs46[idx])) {

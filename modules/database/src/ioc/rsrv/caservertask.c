@@ -51,8 +51,6 @@
 epicsThreadPrivateId rsrvCurrentClient;
 static SOCKET        beaconSocket4;
 static rsrv_online_notify_config conf;
-static unsigned int useIPv4 = 1;
-static unsigned int useIPv6 = 0;
 
 /*
  *
@@ -290,6 +288,8 @@ static
 void rsrv_build_addr_lists(void)
 {
     int autobeaconlist = 1;
+    int useIPv4 = 1;
+    int useIPv6 = 0;
 
     /* the UDP ports are known at this point, but the TCP port is not */
     assert(ca_beacon_port!=0);
@@ -705,10 +705,9 @@ void rsrv_init (void)
             rsrv_iface_config *conf;
 
             conf = callocMustSucceed(1, sizeof(*conf), "rsrv_init");
-            conf->useIPv4 = useIPv4;
+
             conf->tcpAddr46 = ((osiSockAddrNode *)cur)->addr46;
 #if EPICS_HAS_IPV6
-            conf->useIPv6 = useIPv6;
             if ( conf->tcpAddr46.sa.sa_family == AF_INET6 ) {
                 conf->tcpAddr46.in6.sin6_port = htons ( ca_server_port );
             }

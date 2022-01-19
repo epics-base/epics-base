@@ -156,8 +156,6 @@ typedef struct {
     struct client *client, *bclient;
 
     unsigned int startbcast:1;
-    unsigned int useIPv4:1;
-    unsigned int useIPv6:1;
 } rsrv_iface_config;
 
 typedef struct {

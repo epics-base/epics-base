@@ -247,7 +247,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
                                    pAddr6->sin6_addr.s6_addr[15],
                                    ntohs(pAddr6->sin6_port));
         } else {
-#ifdef IF_NAMESIZE
+#ifdef IF_NAMESIZE_XX_DOES_NOT_ALWAYS_WORK
             char if_name_or_number[IF_NAMESIZE];
             if ( ! if_indextoname((unsigned int)pAddr6->sin6_scope_id, &if_name_or_number[0]) ) {
 #else

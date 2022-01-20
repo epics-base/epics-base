@@ -44,6 +44,7 @@
 #include "errlog.h"
 #include "freeList.h"
 #include "osiSock.h"
+#include "epicsBaseDebugLog.h"
 #include "taskwd.h"
 
 #include "rsrv.h"
@@ -123,7 +124,67 @@ void cast_server(void *pParm)
     osiSockIoctl_t      nchars;
     SOCKET              recv_sock, reply_sock;
     struct client      *client;
+#if EPICS_HAS_IPV6
+    unsigned int useIPv4 = 0;
+    unsigned int useIPv6 = 0;
+    /*
+     *                            EPICS_CAS_AUTO_BEACON_ADDR_LIST
+     *  EPICS_CA_AUTO_ADDR_LIST | NO        '',4,YES  6         46
+     *   -----------------------+---------------------------------
+     *           NO             | 4         4        46         46
+     *           YES            | 4         4        46         46
+     *           4              | 4         4        46         46
+     *           6              | 6        46         6         46
+     *           46             | 46       46        46         46
+     */
+    {
+        char            addrautolistascii[32u];
+        char            addrautobeaconlistascii[32u];
+        char            *pAutoAddrList;
+        char            *pAutoBeacon;
+        char            *pstr;
+        memset(addrautolistascii, 0, sizeof (addrautolistascii));
+        memset(addrautobeaconlistascii, 0, sizeof (addrautobeaconlistascii));
+        /* EPICS_CA_AUTO_ADDR_LIST can enable/disable IPv4/IPv6 */
+        pAutoAddrList = envGetConfigParam ( &EPICS_CA_AUTO_ADDR_LIST,
+                                            sizeof (addrautolistascii), addrautolistascii );
+        if (!pAutoAddrList) {
+            pAutoAddrList = "";
+        }
+        pAutoBeacon = envGetConfigParam ( &EPICS_CAS_AUTO_BEACON_ADDR_LIST,
+                                          sizeof (addrautobeaconlistascii), addrautobeaconlistascii );
+        if (!pAutoBeacon) {
+            pAutoBeacon = "";
+        }
+        /* Look at EPICS_CA_AUTO_ADDR_LIST. IPv4 is the default */
+        if ( !strcmp( pAutoAddrList, "6" ) ) {
+            useIPv4 = 0;
+            useIPv6 = 1;
+        } else if ( !strcmp( pstr, "46" ) ) {
+            useIPv4 = 1;
+            useIPv6 = 1;
+        } else {
+            useIPv4 = 1;
+            useIPv6 = 0;
+        }
+        /* Look at EPICS_CAS_AUTO_BEACON_ADDR_LIST. For each protocol that has beacons,
+           we accept connections */
+        if ( !strcmp( pstr, "4" ) ) {
+            useIPv4 = 1;
+        }  else if ( !strcmp( pAutoBeacon, "6" ) ) {
+            useIPv6 = 1;
+        } else if ( !strcmp( pstr, "46" ) ) {
+            useIPv4 = 1;
+            useIPv6 = 1;
+        }
 
+#ifdef NETDEBUG
+        epicsBaseDebugLog("cast_server conf: EPICS_CA_AUTO_ADDR_LIST='%s' EPICS_CAS_AUTO_BEACON_ADDR_LIST='%s' useIPv4=%d useIPv6=%d\n",
+                          addrautolistascii, addrautobeaconlistascii,
+                          useIPv4, useIPv6);
+#endif
+    }
+#endif
     reply_sock = conf->udp;
 
     /*
@@ -179,6 +240,31 @@ void cast_server(void *pParm)
 
         } else {
             size_t idx;
+#if EPICS_HAS_IPV6
+            if ((new_recv_addr46.sa.sa_family == AF_INET) && !useIPv4) {
+#ifdef NETDEBUG
+                char buf[64];
+                sockAddrToDottedIP(&new_recv_addr46.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("cast_server ignore request from '%s'\n",
+                                  buf);
+#endif
+                continue;
+            }
+            if (new_recv_addr46.sa.sa_family == AF_INET6) {
+                int useThisIp;
+                useThisIp = (IN6_IS_ADDR_V4MAPPED(&new_recv_addr46.in6.sin6_addr)) ? useIPv4 : useIPv6;
+                if (!useThisIp)
+                {
+#ifdef NETDEBUG
+                    char buf[64];
+                    sockAddrToDottedIP(&new_recv_addr46.sa, buf, sizeof(buf));
+                    epicsBaseDebugLog("cast_server ignore request from '%s'\n",
+                                      buf);
+#endif
+                    continue;
+                }
+            }
+#endif
             for(idx=0; casIgnoreAddrs46[idx].ia.sin_port; idx++)
             {
                 if (sockIPsAreIdentical46(&new_recv_addr46, &casIgnoreAddrs46[idx])) {

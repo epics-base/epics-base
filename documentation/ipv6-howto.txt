@@ -1,35 +1,57 @@
 Start using IPv6:
+
+  Using IPv6:
+################################################################
+    # On the IOC, enable IPv6 and IPv4:
+      $ EPICS_CAS_AUTO_BEACON_ADDR_LIST=46
+      $ iocsh.cmd # or however your start script is called)
+
+################################################################
+    # On the client, use something like this:
+      $ cainfo IOC:m1
+IOC:m1
+    State:            connected
+    Host:             192.168.88.154:5064
+    Access:           read, write
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_DOUBLE
+    Element count:    1
+
+################################################################
+    # On the client, use IPv6:
+      $ cainfo IOC:m1 EPICS_CA_AUTO_ADDR_LIST='6' cainfo   IOC:m1
+IOC:m1
+    State:            connected
+    Host:             [fe80:0:0:0:cdc:863f:2e6e:b4c7%eno1]:5064
+    Access:           read, write
+    Native data type: DBF_DOUBLE
+    Request type:     DBR_DOUBLE
+    Element count:    1
+################################################################
+    # On the client, use IPv4 and IPv6 on interface "eno1"
+
+        $ EPICS_CA_ADDR_LIST='[ff02::1%eno1]' camonitor IOC:m1
+IOC:m1                         2022-01-20 14:42:46.525723 99.99
+CA.Client.Exception...............................................
+    Warning: "Identical process variable names on multiple servers"
+    Context: "Channel: "IOC:m1", Connecting to:  [fe80:0:0:0:cdc:863f:2e6e:b4c7%eno1]:5064, Ignored: 192.168.88.154:5064"
+    Source File: ../cac.cpp line 1331
+    Current Time: Thu Jan 20 2022 14:42:55.135494324
+..................................................................
+IOC:m1                         2022-01-20 14:43:06.178869 14
+
+
+
+
+
+################################################################
   Using global IPv6 addresses:
     caget, camonitor can work via IPV6 like this:
-    $ export EPICS_CA_AUTO_ADDR_LIST=NO
     $ export EPICS_CA_ADDR_LIST='[2001:db8:1:0:0:1:2:3]'
     cainfo IOC:m1
 
-  Using IPv6 with link local addresses:
-    # On the IOC
-      # Disable IPv4:
-      $ export EPICS_CA_AUTO_ADDR_LIST=NO
-      # enable IPv6:
-      $ export EPICS_CAS_AUTO_BEACON_ADDR_LIST=6
-      # start the IOC:
-      $ st.cmd
 
-    # On the client, use something like this:
-      $ export EPICS_CA_AUTO_ADDR_LIST=NO
-      $ export EPICS_CA_AUTO_ADDR_LIST=6
-      $ cainfo IOC:m1
-      
-
-Running an IOC with IPv6:
-    $  export EPICS_CAS_AUTO_BEACON_ADDR_LIST=46
-    This sends out beacons on all IPv4 and IPv6 interfaces
-
-
-Windows (Mingw)
-  More investigations are needed.
-  Which version of Windows do we want to support ?
-  XP ? Vista ? Windows 10 ?
-
+################################################################
 
 Further reading:
   https://datatracker.ietf.org/doc/html/rfc3493

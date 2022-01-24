@@ -559,19 +559,19 @@ LIBCA_API chid epicsStdCall ca_evid_to_chid ( evid id );
 /*
  * ca_pend_event()
  *
- * timeOut  R   wait for this delay in seconds
+ * timeout  R   wait for this delay in seconds
  */
-LIBCA_API int epicsStdCall ca_pend_event (ca_real timeOut);
+LIBCA_API int epicsStdCall ca_pend_event (ca_real timeout);
 #define ca_poll() ca_pend_event(1e-12)
 
 /*
  * ca_pend_io()
  *
- * timeOut  R   wait for this delay in seconds but return early
+ * timeout  R   wait for this delay in seconds but return early
  *              if all get requests (or search requests with null
  *              connection handler pointer have completed)
  */
-LIBCA_API int epicsStdCall ca_pend_io (ca_real timeOut);
+LIBCA_API int epicsStdCall ca_pend_io (ca_real timeout);
 
 /* calls ca_pend_io() if early is true otherwise ca_pend_event() is called */
 LIBCA_API int epicsStdCall ca_pend (ca_real timeout, int early);

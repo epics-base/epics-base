@@ -16,6 +16,17 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Fix embedded implementations of `epicsEvent`
+
+[GH:202](https://github.com/epics-base/epics-base/issues/202) and
+[GH:206](https://github.com/epics-base/epics-base/pull/206)
+
+Heinz Junkes provided a new implementation of the `epicsEvent` API suitable for
+RTEMS Posix targets (RTEMS 5.1 and later). In review a few issues related to
+overflow of timeout values surfaced in this and other embedded implementations,
+and these were also been fixed in this Pull Request. The API documentation for
+this and some other routines has also been updated.
+
 
 ### Breakpoint Table Names
 

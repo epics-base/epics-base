@@ -70,9 +70,9 @@ void epicsEvent::wait ()
     }
 }
 
-bool epicsEvent::wait (double timeOut)
+bool epicsEvent::wait (double timeout)
 {
-    epicsEventStatus status = epicsEventWaitWithTimeout (this->id, timeOut);
+    epicsEventStatus status = epicsEventWaitWithTimeout (this->id, timeout);
 
     if (status == epicsEventOK) {
         return true;

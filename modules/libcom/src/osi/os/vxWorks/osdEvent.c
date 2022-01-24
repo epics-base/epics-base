@@ -34,20 +34,25 @@ void epicsEventDestroy(epicsEventId id)
     semDelete((SEM_ID)id);
 }
 
-epicsEventStatus epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
+epicsEventStatus epicsEventWaitWithTimeout(epicsEventId id, double timeout)
 {
     int rate = sysClkRateGet();
     int status;
     int ticks;
 
-    if (timeOut <= 0.0) {
+    if (timeout <= 0.0) {
         ticks = 0;
-    } else if (timeOut >= (double) INT_MAX / rate) {
-        ticks = WAIT_FOREVER;
-    } else {
-        ticks = timeOut * rate;
-        if (ticks <= 0)
+    }
+    else if (timeout < (double) INT_MAX / rate) {
+        ticks = timeout * rate;
+        if (ticks == 0) {
+            /* 0 < timeout < 1/rate; round up */
             ticks = 1;
+        }
+    }
+    else {
+        /* timeout is NaN or too big to represent in ticks */
+        ticks = WAIT_FOREVER;
     }
     status = semTake((SEM_ID)id, ticks);
     if (status == OK)

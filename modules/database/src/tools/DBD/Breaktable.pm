@@ -11,6 +11,8 @@ our @ISA = qw(DBD::Base);
 use Carp;
 use strict;
 
+my $warned;
+
 sub init {
     my ($this, $name) = @_;
     $this->SUPER::init($name, "breakpoint table");

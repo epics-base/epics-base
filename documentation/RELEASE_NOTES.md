@@ -16,6 +16,14 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+
+### Breakpoint Table Names
+
+The names of breakpoint tables were made unnecessarily strict when DBD file
+processing was moved to Perl for the 3.15 release series. Table names may now
+contain the special characters `_` `-` `:` `;` `.` `[` `]` `<` `>` in addition
+to letters and digits.
+
 ### Fix for `undefined` in configure/RELEASE files
 
 Prevents `Use of uninitialized value` warnings from convertRelease.pl.

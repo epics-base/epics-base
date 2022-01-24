@@ -20,6 +20,20 @@ sub init {
     return $this;
 }
 
+# Override, breaktable names don't have to be strict
+sub identifier {
+    my ($this, $id, $what) = @_;
+    confess "DBD::Breaktable::identifier: $what undefined!"
+        unless defined $id;
+    if ($id !~ m/^$RXname$/) {
+        my @message;
+        push @message, "A $what should contain only letters, digits and these",
+            "special characters: _ - : . [ ] < > ;" unless $warned++;
+        warnContext("Deprecated $what '$id'", @message);
+    }
+    return $id;
+}
+
 sub add_point {
     my ($this, $raw, $eng) = @_;
     confess "DBD::Breaktable::add_point: Raw value undefined!"

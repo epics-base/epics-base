@@ -16,6 +16,16 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+
+### Allow hexadecimal and octal numbers in hardware links
+
+[GH:213](https://github.com/epics-base/epics-base/pull/213)
+
+Several types of hardware links (`VME_IO`, `CAMAC_IO`, etc) now accept
+hexadecimal and octal numbers. (Hexadecimal numbers had already been valid
+up to EPICS R3.15.) This change may introduce incompatibilities when using
+numbers with leading `0` as they will now be parsed as octal.
+
 ### Fix embedded implementations of `epicsEvent`
 
 [GH:202](https://github.com/epics-base/epics-base/issues/202) and
@@ -26,7 +36,6 @@ RTEMS Posix targets (RTEMS 5.1 and later). In review a few issues related to
 overflow of timeout values surfaced in this and other embedded implementations,
 and these were also been fixed in this Pull Request. The API documentation for
 this and some other routines has also been updated.
-
 
 ### Breakpoint Table Names
 

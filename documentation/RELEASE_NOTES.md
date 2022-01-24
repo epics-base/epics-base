@@ -17,6 +17,19 @@ should also be read to understand what has changed since earlier releases.
 <!-- Insert new items immediately below here ... -->
 
 
+### Make `epicsInt8` signed on all architectures
+
+The `epicsInt8` and thus `DBF_CHAR` types have always been unsigned on
+architectures where `char` is unsigned, for example on many PowerPC CPU
+architectures. This was counter-intuitive, and resulted in IOC behavior
+differing between architectures when converting `DBF_CHAR` values into a
+signed integer or floating point type.
+
+**WARNING**: This fix may change behavior of existing databases on target
+architectures with unsigned `char` (mainly PowerPC) when using input links to
+read from `CHAR` arrays. Architectures with signed `char` (usually x86) should
+be unaffected, although some compilers might generate new warnings.
+
 ### Allow hexadecimal and octal numbers in hardware links
 
 [GH:213](https://github.com/epics-base/epics-base/pull/213)

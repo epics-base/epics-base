@@ -46,7 +46,7 @@ void comQueRecv::clear ()
     this->nBytesPending = 0u;
 }
 
-unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes )
+unsigned comQueRecv::copyOutBytes ( char *pBuf, unsigned nBytes )
 {
     unsigned totalBytes = 0u;
     do {

@@ -88,6 +88,7 @@ public:
     bool push ( const T & value );
     template < class T >
     unsigned push ( const T * pValue, unsigned nElem );
+    unsigned push ( const char * pValue, unsigned nElem );
     unsigned push ( const epicsInt8 * pValue, unsigned nElem );
     unsigned push ( const epicsUInt8 * pValue, unsigned nElem );
     unsigned push ( const epicsOldString * pValue, unsigned nElem );
@@ -204,6 +205,11 @@ inline unsigned comBuf :: push ( const epicsInt8 *pValue, unsigned nElem )
 }
 
 inline unsigned comBuf :: push ( const epicsUInt8 *pValue, unsigned nElem )
+{
+    return copyInBytes ( pValue, nElem );
+}
+
+inline unsigned comBuf :: push ( const char *pValue, unsigned nElem )
 {
     return copyInBytes ( pValue, nElem );
 }

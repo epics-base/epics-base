@@ -177,12 +177,9 @@ void cast_server(void *pParm)
             useIPv4 = 1;
             useIPv6 = 1;
         }
-
-#ifdef NETDEBUG
-        epicsBaseDebugLog("cast_server conf: EPICS_CA_AUTO_ADDR_LIST='%s' EPICS_CAS_AUTO_BEACON_ADDR_LIST='%s' useIPv4=%d useIPv6=%d\n",
-                          addrautolistascii, addrautobeaconlistascii,
-                          useIPv4, useIPv6);
-#endif
+        epicsPrintf ("cast_server: EPICS_CA_AUTO_ADDR_LIST='%s' EPICS_CAS_AUTO_BEACON_ADDR_LIST='%s' useIPv4=%d useIPv6=%d\n",
+                     addrautolistascii, addrautobeaconlistascii,
+                     useIPv4, useIPv6);
     }
 #endif
     reply_sock = conf->udp;

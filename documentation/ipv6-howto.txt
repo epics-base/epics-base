@@ -1,57 +1,171 @@
 Start using IPv6:
-
-  Using IPv6:
-################################################################
-    # On the IOC, enable IPv6 and IPv4:
-      $ EPICS_CAS_AUTO_BEACON_ADDR_LIST=46
-      $ iocsh.cmd # or however your start script is called)
-
-################################################################
-    # On the client, use something like this:
-      $ cainfo IOC:m1
-IOC:m1
-    State:            connected
-    Host:             192.168.88.154:5064
-    Access:           read, write
-    Native data type: DBF_DOUBLE
-    Request type:     DBR_DOUBLE
-    Element count:    1
-
-################################################################
-    # On the client, use IPv6:
-      $ cainfo IOC:m1 EPICS_CA_AUTO_ADDR_LIST='6' cainfo   IOC:m1
-IOC:m1
-    State:            connected
-    Host:             [fe80:0:0:0:cdc:863f:2e6e:b4c7%eno1]:5064
-    Access:           read, write
-    Native data type: DBF_DOUBLE
-    Request type:     DBR_DOUBLE
-    Element count:    1
-################################################################
-    # On the client, use IPv4 and IPv6 on interface "eno1"
-
-        $ EPICS_CA_ADDR_LIST='[ff02::1%eno1]' camonitor IOC:m1
-IOC:m1                         2022-01-20 14:42:46.525723 99.99
-CA.Client.Exception...............................................
-    Warning: "Identical process variable names on multiple servers"
-    Context: "Channel: "IOC:m1", Connecting to:  [fe80:0:0:0:cdc:863f:2e6e:b4c7%eno1]:5064, Ignored: 192.168.88.154:5064"
-    Source File: ../cac.cpp line 1331
-    Current Time: Thu Jan 20 2022 14:42:55.135494324
-..................................................................
-IOC:m1                         2022-01-20 14:43:06.178869 14
-
-
-
-
-
-################################################################
   Using global IPv6 addresses:
     caget, camonitor can work via IPV6 like this:
+    $ export EPICS_CA_AUTO_ADDR_LIST=NO
     $ export EPICS_CA_ADDR_LIST='[2001:db8:1:0:0:1:2:3]'
     cainfo IOC:m1
 
+  Using IPv6 with link local addresses:
+    # On the IOC
+      # Disable IPv4:
+      $ export EPICS_CA_AUTO_ADDR_LIST=NO
+      # enable IPv6:
+      $ export EPICS_CAS_AUTO_BEACON_ADDR_LIST=6
+      # start the IOC:
+      $ st.cmd
 
-################################################################
+    # On the client, use something like this:
+      $ export EPICS_CA_AUTO_ADDR_LIST=NO
+      $ export EPICS_CA_AUTO_ADDR_LIST=6
+      $ cainfo IOC:m1
+
+Running an IOC with IPv6:
+    $  export EPICS_CAS_AUTO_BEACON_ADDR_LIST=46
+    This sends out beacons on all IPv4 and IPv6 interfaces
+
+
+########################################################
+Further reading:
+Running IOCs:
+    - Run IPv4 (this is the default)
+      When EPICS base has been compiled with EPICS_HAS_IPV6, you should see
+      one line in the ioc log.
+      $ st.cmd
+       []
+       cast_server: EPICS_CA_AUTO_ADDR_LIST='YES' EPICS_CAS_AUTO_BEACON_ADDR_LIST='' useIPv4=1 useIPv6=0
+       []
+    - Enable IPv6, IPv6 beacons and IPv4 and IPv4 beacons in parallel:
+      $ export EPICS_CAS_AUTO_BEACON_ADDR_LIST=46
+      $ st.cmd
+       []
+       cast_server: EPICS_CA_AUTO_ADDR_LIST='YES' EPICS_CAS_AUTO_BEACON_ADDR_LIST='46' useIPv4=1 useIPv6=1
+       []
+
+     - Enable IPv6 with beacons, Disable IPv4
+      $ export EPICS_CA_AUTO_ADDR_LIST=6
+      $ export EPICS_CAS_AUTO_BEACON_ADDR_LIST=6
+      $ st.cmd
+       []
+       cast_server: EPICS_CA_AUTO_ADDR_LIST='6' EPICS_CAS_AUTO_BEACON_ADDR_LIST='6' useIPv4=0 useIPv6=1
+       []
+
+     - Enable IPv6 without beacons, Disable IPv4
+      $ export EPICS_CA_AUTO_ADDR_LIST=6
+      $ export EPICS_CAS_AUTO_BEACON_ADDR_LIST=NO
+      $ st.cmd
+       []
+       cast_server: EPICS_CA_AUTO_ADDR_LIST='6' EPICS_CAS_AUTO_BEACON_ADDR_LIST='NO' useIPv4=0 useIPv6=1
+       []
+
+########################################
+Further reading:
+Using clients:
+      - Use both IPv6 and IPv4:
+      $ EPI
+     CS_CA_AUTO_ADDR_LIST=46  camonitor IOC:m1
+
+      - Use both IPv6 and IPv4:
+      $ EPICS_CA_AUTO_ADDR_LIST=46  camonitor IOC:m1
+      (In my test setup, you get this:)
+        CA.Client.Exception...............................................
+            Warning: "Identical process variable names on multiple servers"
+            Context: "Channel: "IOC:m1", Connecting to: 192.168.88.154:5064, Ignored: [fe80:0:0:0:cdc:863f:2e6e:b4c7%2]:5064"
+            Source File: ../cac.cpp line 1331
+            Current Time: Wed Jan 26 2022 16:42:14.093087755
+
+      - Use both IPv6 and IPv4:
+        $ EPICS_CA_AUTO_ADDR_LIST=4  camonitor IOC:m1
+        (In my test setup, you get this:)
+          CA.Client.Exception...............................................
+              Warning: "Identical process variable names on multiple servers"
+              Context: "Channel: "IOC:m1", Connecting to: 192.168.88.154:5064, Ignored: [fe80:0:0:0:cdc:863f:2e6e:b4c7%2]:5064"
+              Source File: ../cac.cpp line 1331
+              Current Time: Wed Jan 26 2022 16:42:14.093087755
+      - Use only IPv4:
+        $ EPICS_CA_AUTO_ADDR_LIST=4  cainfo IOC:m1
+        (which is the same as)
+        $ EPICS_CA_AUTO_ADDR_LIST=YES  cainfo IOC:m1
+        (which is the same as)
+        $ cainfo IOC:m1
+          IOC:m1
+              State:            connected
+              Host:             192.168.88.154:5064
+              Access:           read, write
+              Native data type: DBF_DOUBLE
+              Request type:     DBR_DOUBLE
+              Element count:    1
+
+      - Use only IPv6:
+        $ EPICS_CA_AUTO_ADDR_LIST=6 cainfo IOC:m1
+          IOC:m1
+              State:            connected
+              Host:             [fe80:0:0:0:cdc:863f:2e6e:b4c7%2]:5064
+              Access:           read, write
+              Native data type: DBF_DOUBLE
+              Request type:     DBR_DOUBLE
+              Element count:    1
+      ##################
+      #
+      # Multihomed
+      # Assume that the IOC and the client both have 2 interfaces
+      # (ethernet and wireless)
+      # The ethernet interfaces are connected to the same switch
+      # The wireless interafaces are connected to the same WLAN
+      # WLAN and ethernet are using different IP networks.
+      # So, here we go:
+      #
+          EPICS_CA_AUTO_ADDR_LIST=6 camonitor IOC:m1
+          IOC:m1                         2022-01-26 16:42:10.382339 99.99 STATE MAJOR
+          CA.Client.Exception...............................................
+              Warning: "Identical process variable names on multiple servers"
+              Context: "Channel: "IOC:m1", Connecting to: [fe80:0:0:0:cdc:863f:2e6e:b4c7%2]:5064, Ignored: [fe80:0:0:0:1882:ede9:32db:e952%3]:5064"
+              Source File: ../cac.cpp line 1331
+              Current Time: Wed Jan 26 2022 16:49:00.410159895
+          ..................................................................
+      ##################
+      That is good, but too much.
+      - Restrict searched to ethernet, "eno1"
+      $ EPICS_CA_AUTO_ADDR_LIST=NO EPICS_CA_ADDR_LIST='[ff02::1%eno1]' camonitor IOC:m1
+          IOC:m1                         2022-01-26 16:42:10.382339 99.99 STATE MAJOR
+      - Restrict search to wireless, "wlp1s0"
+      $ EPICS_CA_AUTO_ADDR_LIST=NO EPICS_CA_ADDR_LIST='[ff02::1%wlp1s0]' camonitor IOC:m1
+          IOC:m1                         2022-01-26 16:42:10.382339 99.99 STATE MAJOR
+      ####
+      #
+      # Use cainfo
+      #
+      - Using ethernet:
+       $ EPICS_CA_AUTO_ADDR_LIST=NO EPICS_CA_ADDR_LIST='[ff02::1%eno1]' cainfo IOC:m1
+         IOC:m1
+             State:            connected
+             Host:             [fe80:0:0:0:cdc:863f:2e6e:b4c7%2]:5064
+             Access:           read, write
+             Native data type: DBF_DOUBLE
+             Request type:     DBR_DOUBLE
+             Element count:    1
+
+      - Using the wireless:
+      $ EPICS_CA_AUTO_ADDR_LIST=NO EPICS_CA_ADDR_LIST='[ff02::1%wlp1s0]' cainfo IOC:m1
+         IOC:m1
+             State:            connected
+             Host:             [fe80:0:0:0:1882:ede9:32db:e952%3]:5064
+             Access:           read, write
+             Native data type: DBF_DOUBLE
+             Request type:     DBR_DOUBLE
+             Element count:    1
+      #
+      # So what does this all mean ?
+      #
+
+
+
+
+
+Windows (Mingw)
+  More investigations are needed.
+  Which version of Windows do we want to support ?
+  XP ? Vista ? Windows 10 ?
+
 
 Further reading:
   https://datatracker.ietf.org/doc/html/rfc3493

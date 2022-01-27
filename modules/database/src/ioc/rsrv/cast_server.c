@@ -173,7 +173,7 @@ void cast_server(void *pParm)
             useIPv4 = 1;
         }  else if ( !strcmp( pAutoBeacon, "6" ) ) {
             useIPv6 = 1;
-        } else if ( !strcmp( pstr, "46" ) ) {
+        } else if ( !strcmp( pAutoBeacon, "46" ) ) {
             useIPv4 = 1;
             useIPv6 = 1;
         }
@@ -312,7 +312,7 @@ void cast_server(void *pParm)
             if(status == RSRV_OK){
                 if(client->recv.cnt !=
                     client->recv.stk){
-                    char buf[40];
+                    char buf[64];
 
                     sockAddrToDottedIP (&client->addr46.sa, buf, sizeof(buf));
 
@@ -325,7 +325,7 @@ void cast_server(void *pParm)
                 }
             }
             else if (CASDEBUG>0){
-                char buf[40];
+                char buf[64];
 
                 sockAddrToDottedIP (&client->addr46.sa, buf, sizeof(buf));
 

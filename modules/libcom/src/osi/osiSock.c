@@ -235,54 +235,25 @@ unsigned epicsStdCall ipAddrToDottedIP (
                                 pBuf, bufSize, "%u.%u.%u.%u:%hu",
                                 chunk[3], chunk[2], chunk[1], chunk[0],
                                 ntohs ( pAddr->sin_port ) );
-#if EPICS_HAS_IPV6
+#if EPICS_HAS_IPV6 && defined(NI_MAXHOST) && defined(NI_MAXSERV)
     } else if (pAddr->sin_family == AF_INET6) {
-        struct sockaddr_in6 *pAddr6 = (struct sockaddr_in6 *)pAddr;
-        if (IN6_IS_ADDR_V4MAPPED(&pAddr6->sin6_addr)) {
-            /* https://datatracker.ietf.org/doc/html/rfc5156 */
-            status = epicsSnprintf(pBuf, bufSize, "::FFFF:%u.%u.%u.%u:%hu",
-                                   pAddr6->sin6_addr.s6_addr[12],
-                                   pAddr6->sin6_addr.s6_addr[13],
-                                   pAddr6->sin6_addr.s6_addr[14],
-                                   pAddr6->sin6_addr.s6_addr[15],
-                                   ntohs(pAddr6->sin6_port));
-        } else {
-#ifdef IF_NAMESIZE_XX_DOES_NOT_ALWAYS_WORK
-            char if_name_or_number[IF_NAMESIZE];
-            if ( ! if_indextoname((unsigned int)pAddr6->sin6_scope_id, &if_name_or_number[0]) ) {
-#else
-            char if_name_or_number[16];
-            {
-#endif
-                snprintf(if_name_or_number, sizeof(if_name_or_number),
-                         "%u", (unsigned int)pAddr6->sin6_scope_id);
-            }
-            status = epicsSnprintf (pBuf, bufSize,
-                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%s]:%hu",
-                                    (pAddr6->sin6_addr.s6_addr[0] << 8) +
-                                    pAddr6->sin6_addr.s6_addr[1],
-                                    (pAddr6->sin6_addr.s6_addr[2] << 8) +
-                                    pAddr6->sin6_addr.s6_addr[3],
-                                    (pAddr6->sin6_addr.s6_addr[4] << 8) +
-                                    pAddr6->sin6_addr.s6_addr[5],
-                                    (pAddr6->sin6_addr.s6_addr[6] << 8) +
-                                    pAddr6->sin6_addr.s6_addr[7],
-                                    (pAddr6->sin6_addr.s6_addr[8] << 8) +
-                                    pAddr6->sin6_addr.s6_addr[9],
-                                    (pAddr6->sin6_addr.s6_addr[10] << 8) +
-                                    pAddr6->sin6_addr.s6_addr[11],
-                                    (pAddr6->sin6_addr.s6_addr[12] << 8) +
-                                    pAddr6->sin6_addr.s6_addr[13],
-                                    (pAddr6->sin6_addr.s6_addr[14] << 8) +
-                                    pAddr6->sin6_addr.s6_addr[15],
-                                    if_name_or_number,
-                                    ntohs(pAddr6->sin6_port));
+        const struct sockaddr * paddr = (const struct sockaddr * )pAddr;
+        char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
+        int flags = NI_NUMERICHOST | NI_NUMERICSERV;
+        int gai_ecode;
+        gai_ecode = getnameinfo(paddr, sizeof(struct sockaddr_in6),
+                                hbuf, sizeof(hbuf), sbuf, sizeof(sbuf), flags);
+        if (gai_ecode) {
+            snprintf(pBuf, bufSize, "getnameinfo error %s", gai_strerror(gai_ecode));
+            return (unsigned)strlen(pBuf);
         }
+        snprintf(pBuf, bufSize, "[%s]:%s", hbuf, sbuf);
+        return (unsigned)strlen(pBuf);
     } else {
         /*
          *  This is for debugging only, assuming a struct defined in
          *  https://datatracker.ietf.org/doc/html/rfc3493
-         *  2 fam, 2 port, 4 flowinfo, 16 Ipv6, 4 scope 
+         *  2 fam, 2 port, 4 flowinfo, 16 Ipv6, 4 scope
          */
         unsigned char *pRawBytes =(unsigned char *)pAddr;
         status = epicsSnprintf(pBuf, bufSize, "%02x%02x %02x%02x %02x%02x%02x%02x %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -730,47 +701,20 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                (addr >> 8) & 0xFF,
                                (addr) & 0xFF);
     }
-#if EPICS_HAS_IPV6
+#if EPICS_HAS_IPV6 && defined(NI_MAXHOST)
     else if (pAddr->sa_family == AF_INET6) {
-        const struct sockaddr_in6 *pIn6 = (const struct sockaddr_in6 *)pAddr;
-        if (IN6_IS_ADDR_V4MAPPED(&pIn6->sin6_addr)) {
-            /* https://datatracker.ietf.org/doc/html/rfc5156 */
-            status = epicsSnprintf(pBuf, bufSize, "::FFFF:%u.%u.%u.%u",
-                                   pIn6->sin6_addr.s6_addr[12],
-                                   pIn6->sin6_addr.s6_addr[13],
-                                   pIn6->sin6_addr.s6_addr[14],
-                                   pIn6->sin6_addr.s6_addr[15]);
-        } else {
-#ifdef IF_NAMESIZE
-            char if_name_or_number[IF_NAMESIZE];
-            if ( ! if_indextoname((unsigned int)pIn6->sin6_scope_id, &if_name_or_number[0]) ) {
-#else
-            char if_name_or_number[16];
-            {
-#endif
-                snprintf(if_name_or_number, sizeof(if_name_or_number),
-                         "%u", (unsigned int)pIn6->sin6_scope_id);
-            }
-            status = epicsSnprintf (pBuf, bufSize,
-                                    "[%x:%x:%x:%x:%x:%x:%x:%x%%%s]",
-                                    (pIn6->sin6_addr.s6_addr[0] << 8) +
-                                    pIn6->sin6_addr.s6_addr[1],
-                                    (pIn6->sin6_addr.s6_addr[2] << 8) +
-                                    pIn6->sin6_addr.s6_addr[3],
-                                    (pIn6->sin6_addr.s6_addr[4] << 8) +
-                                    pIn6->sin6_addr.s6_addr[5],
-                                    (pIn6->sin6_addr.s6_addr[6] << 8) +
-                                    pIn6->sin6_addr.s6_addr[7],
-                                    (pIn6->sin6_addr.s6_addr[8] << 8) +
-                                    pIn6->sin6_addr.s6_addr[9],
-                                    (pIn6->sin6_addr.s6_addr[10] << 8) +
-                                    pIn6->sin6_addr.s6_addr[11],
-                                    (pIn6->sin6_addr.s6_addr[12] << 8) +
-                                    pIn6->sin6_addr.s6_addr[13],
-                                    (pIn6->sin6_addr.s6_addr[14] << 8) +
-                                    pIn6->sin6_addr.s6_addr[15],
-                                    if_name_or_number);
+        const struct sockaddr * paddr = (const struct sockaddr * )pAddr;
+        char hbuf[NI_MAXHOST];
+        int flags = NI_NUMERICHOST;
+        int gai_ecode;
+        gai_ecode = getnameinfo(paddr, sizeof(struct sockaddr_in6),
+                                hbuf, sizeof(hbuf), NULL, 0, flags);
+        if (gai_ecode) {
+            snprintf(pBuf, bufSize, "getnameinfo error %s", gai_strerror(gai_ecode));
+            return (unsigned)strlen(pBuf);
         }
+        snprintf(pBuf, bufSize, "[%s]", hbuf);
+        return (unsigned)strlen(pBuf);
     } else {
         /*
          *  This is for debugging only, assuming a struct defined

@@ -1,4 +1,4 @@
-/*************************************************************************\
+/************************************************************************* \
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -130,6 +130,14 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
     struct ifaddrs *ifa;
 #ifdef NETDEBUG
     const static char* fname = "osiSockDiscoverBroadcastAddresses()";
+    {
+        char buf[64];
+        epicsSocket46IpOnlyToDotted(&pMatchAddr46->sa, buf, sizeof(buf));
+        ifDepenDebugPrintf (("%s %s:%d: pMatchAddr46='%s'\n",
+                             fname, __FILE__, __LINE__,
+                             buf));
+
+    }
 #endif
     if ( pMatchAddr46->sa.sa_family == AF_INET  ) {
         if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
@@ -169,6 +177,32 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
 #endif
              continue;
         }
+#if EPICS_HAS_IPV6
+        if (ifa->ifa_addr->sa_family == AF_INET6) {
+            const struct sockaddr_in6 *pInetAddr6 = (const struct sockaddr_in6 *)ifa->ifa_addr;
+            /* rfc 4291 defines "Link-local".
+               If there are 1 ore more global addresses on the same interface
+               we can ignore them all.
+               We only need to add one and only one address to the list.
+               Since there is no broadcast in IPv6, the address will
+               be changed to the multicast address anyway */
+            if ((pInetAddr6->sin6_addr.s6_addr[0] == 0xfe) &&
+                (pInetAddr6->sin6_addr.s6_addr[1] == 0x80) &&
+                (pInetAddr6->sin6_addr.s6_addr[2] == 0x00) &&
+                (pInetAddr6->sin6_addr.s6_addr[3] == 0x00) &&
+                (pInetAddr6->sin6_addr.s6_addr[4] == 0x00) &&
+                (pInetAddr6->sin6_addr.s6_addr[5] == 0x00) &&
+                (pInetAddr6->sin6_addr.s6_addr[6] == 0x00) &&
+                (pInetAddr6->sin6_addr.s6_addr[7] == 0x00)) {
+                ;
+            } else {
+                ifDepenDebugPrintf ( ("%s %s:%d: net intf \"%s\" ignore a non link-local IPv6 address\n",
+                                      fname, __FILE__, __LINE__,
+                                      ifa->ifa_name) );
+                continue;
+            }
+        }
+#endif
         ifDepenDebugPrintf (("%s %s:%d: found IFACE: %s flags=0x%08x family=%d%s%s interfaceIndex=%u\n",
                              fname, __FILE__, __LINE__,
                              ifa->ifa_name, ifa->ifa_flags, ifa->ifa_addr->sa_family,

@@ -219,11 +219,6 @@ jobs:
             cmp: gcc
             configuration: default
 
-          - name: "CentOS-8"
-            image: centos:8
-            cmp: gcc
-            configuration: default
-
           - name: "Fedora-33"
             image: fedora:33
             cmp: gcc

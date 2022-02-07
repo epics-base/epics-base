@@ -642,7 +642,6 @@ void epicsStdCall caRepeaterRegistrationMessage (
     }
 }
 
-
 /*
  *  caStartRepeaterIfNotInstalled ()
  *

@@ -1,4 +1,4 @@
-/************************************************************************* \
+/*************************************************************************\
 * Copyright (c) 2016 Michael Davidsaver
 * Copyright (c) 2015 Brookhaven Science Assoc. as operator of Brookhaven
 *               National Laboratory.

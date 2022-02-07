@@ -38,10 +38,6 @@
 extern "C" {
 #endif
 
-#define EPICSSOCKET_CONNECT_IPV4            (1<<4)
-#define EPICSSOCKET_CONNECT_IPV6            (1<<6)
-
-
 struct sockaddr;
 struct sockaddr_in;
 struct in_addr;

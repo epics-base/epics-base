@@ -37,14 +37,6 @@
 
 #define makeMask(NBITS) ( ( 1u << ( (unsigned) NBITS) ) - 1u )
 
-void osiSockPrint(const char *fileName, int lineNo, const char *format, ...)
-{
-    va_list pVar;
-    va_start(pVar, format);
-    vfprintf(stdout, format, pVar);
-    va_end(pVar);
-}
-
 static void osiSockIPv4toIPv6(const osiSockAddr46 *pAddr46Input,
                               osiSockAddr46 *pAddr46Output)
 {

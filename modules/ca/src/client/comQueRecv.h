@@ -33,7 +33,7 @@ public:
     comQueRecv ( comBufMemoryManager & );
     ~comQueRecv ();
     unsigned occupiedBytes () const;
-    unsigned copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes );
+    unsigned copyOutBytes ( char *pBuf, unsigned nBytes );
     unsigned removeBytes ( unsigned nBytes );
     void pushLastComBufReceived ( comBuf & );
     void clear ();

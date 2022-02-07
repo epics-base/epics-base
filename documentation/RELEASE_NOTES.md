@@ -16,6 +16,47 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+
+### Make `epicsInt8` signed on all architectures
+
+The `epicsInt8` and thus `DBF_CHAR` types have always been unsigned on
+architectures where `char` is unsigned, for example on many PowerPC CPU
+architectures. This was counter-intuitive, and resulted in IOC behavior
+differing between architectures when converting `DBF_CHAR` values into a
+signed integer or floating point type.
+
+**WARNING**: This fix may change behavior of existing databases on target
+architectures with unsigned `char` (mainly PowerPC) when using input links to
+read from `CHAR` arrays. Architectures with signed `char` (usually x86) should
+be unaffected, although some compilers might generate new warnings.
+
+### Allow hexadecimal and octal numbers in hardware links
+
+[GH:213](https://github.com/epics-base/epics-base/pull/213)
+
+Several types of hardware links (`VME_IO`, `CAMAC_IO`, etc) now accept
+hexadecimal and octal numbers. (Hexadecimal numbers had already been valid
+up to EPICS R3.15.) This change may introduce incompatibilities when using
+numbers with leading `0` as they will now be parsed as octal.
+
+### Fix embedded implementations of `epicsEvent`
+
+[GH:202](https://github.com/epics-base/epics-base/issues/202) and
+[GH:206](https://github.com/epics-base/epics-base/pull/206)
+
+Heinz Junkes provided a new implementation of the `epicsEvent` API suitable for
+RTEMS Posix targets (RTEMS 5.1 and later). In review a few issues related to
+overflow of timeout values surfaced in this and other embedded implementations,
+and these were also been fixed in this Pull Request. The API documentation for
+this and some other routines has also been updated.
+
+### Breakpoint Table Names
+
+The names of breakpoint tables were made unnecessarily strict when DBD file
+processing was moved to Perl for the 3.15 release series. Table names may now
+contain the special characters `_` `-` `:` `;` `.` `[` `]` `<` `>` in addition
+to letters and digits.
+
 ### Fix for `undefined` in configure/RELEASE files
 
 Prevents `Use of uninitialized value` warnings from convertRelease.pl.
@@ -67,7 +108,7 @@ monitors posted on the bit fields.
 Some scripts now make use of features that were introduced to this Perl version
 that was released in 2009.
 
-### DB Links to DBF_MENU fields fixed
+### DB Links to `DBF_MENU` fields fixed
 
 [GH:183](https://github.com/epics-base/epics-base/issues/183)
 These were broken in a previous release, but now work again.

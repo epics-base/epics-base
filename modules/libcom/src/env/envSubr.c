@@ -255,8 +255,7 @@ osiSockAddr46   *pAddr46/* O pointer to struct to receive inet addr */
 
     ptext = envGetConfigParam(pParam, sizeof text, text);
     if (ptext) {
-        int flags = 0;
-        status = aToIPAddr46 (text, 0u, &addr46, flags);
+        status = aToIPAddr46 (text, 0u, &addr46);
         if (status == 0) {
             *pAddr46 = addr46;
             return 0;

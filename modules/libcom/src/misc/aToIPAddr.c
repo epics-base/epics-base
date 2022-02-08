@@ -213,15 +213,14 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
  */
 LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
                                         unsigned short defaultPort,
-                                        osiSockAddr46 *pAddr46,
-                                        int flags)
+                                        osiSockAddr46 *pAddr46)
 {
     if (pAddrString == NULL) {
         return -1;
     }
 #ifdef NETDEBUG
-    epicsBaseDebugLog("aToIPAddr46 pAddrString='%s' defaultPort=%u flags=0x%x\n",
-                  pAddrString, defaultPort, flags);
+    epicsBaseDebugLog("aToIPAddr46 pAddrString='%s' defaultPort=%u\n",
+                  pAddrString, defaultPort);
 #endif
     if (*pAddrString != '[') {
         /* IPv4 */
@@ -278,17 +277,16 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         epicsBaseDebugLog("aToIPAddr46 hostName='%s' pPort='%s'\n",
                       hostName, pPort ? pPort : "NULL");
 #endif
-        /* we could find both IPv4 and Ipv6 addresses, but see below */
         memset(&hints, 0, sizeof(hints));
-
+        hints.ai_family = AF_INET; /* Default */
         if (sizeof(*pAddr46) < sizeof(struct sockaddr_in6)) {
             hints.ai_socktype = AF_INET;
-            hints.ai_family = AF_INET;
-        } else if (flags & EPICSSOCKET_CONNECT_IPV4) {
-            hints.ai_family = AF_INET;
-        } else if (flags & EPICSSOCKET_CONNECT_IPV6) {
+        }
+#if EPICS_HAS_IPV6
+        else if (pClosingBracket) {
             hints.ai_family = AF_INET6;
         }
+#endif
         gai = getaddrinfo(hostName, pPort, &hints, &ai);
         if (gai) {
 #ifdef NETDEBUG

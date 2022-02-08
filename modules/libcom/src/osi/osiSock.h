@@ -106,8 +106,7 @@ LIBCOM_API int epicsStdCall epicsSocket46portFromAddress(osiSockAddr46 *paddr);
  */
 LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
                                         unsigned short defaultPort,
-                                        osiSockAddr46 *pAddr,
-                                        int flags);
+                                        osiSockAddr46 *pAddr);
 
 /*
  * Wrapper around bind()

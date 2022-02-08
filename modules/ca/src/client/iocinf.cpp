@@ -90,8 +90,7 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
     }
 
     while ( ( pToken = getToken (&pStr, buf, sizeof (buf) ) ) ) {
-      int flags = 0;
-      status = aToIPAddr46 ( pToken, port, &addr46, flags );
+      status = aToIPAddr46 ( pToken, port, &addr46);
         if (status<0) {
             fprintf ( stderr, "%s: Parsing '%s'\n", __FILE__, pEnv->name);
             fprintf ( stderr, "\tBad internet address or host name: '%s'\n", pToken);

@@ -320,13 +320,6 @@ typedef struct osiSockAddrNode {
 } osiSockAddrNode;
 
 /*
- * sockAddrAreIdentical()
- * (returns true if addresses are identical)
- */
-LIBCOM_API int epicsStdCall sockAddrAreIdentical 
-    ( const osiSockAddr * plhs, const osiSockAddr * prhs );
-
-/*
  *  osiSockDiscoverBroadcastAddresses ()
  *  Returns the broadcast addresses of each network interface found.
  *

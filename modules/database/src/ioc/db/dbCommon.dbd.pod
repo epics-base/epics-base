@@ -230,6 +230,8 @@ The B<SPVT> field is for internal use by the scanning system.
 	}
 	field(DISP,DBF_UCHAR) {
 		prompt("Disable putField")
+		promptgroup("10 - Common")
+		interest(1)
 	}
 	field(PROC,DBF_UCHAR) {
 		prompt("Force Processing")
@@ -456,9 +458,10 @@ record. If left empty, the record is placed in group C<DEFAULT>.
 
 The B<ASP> field is private for use by the access security system.
 
-The B<DISP> field controls whether puts from outside the IOC are allowed to
-modify the fields of this record at all. If the field is set to TRUE all puts
-directed to this record are ignored, except for puts to the field DISP itself.
+The B<DISP> field can be set to a non-zero value to reject puts from outside of
+the IOC (i.e. via Channel Access or PV Access) to any field of the record other
+than to the DISP field itself. Field changes and record processing can still be
+instigated from inside the IOC using DB links and the IOC scan mechanisms.
 
 The B<DTYP> field specifies the device type for the record. Most record types
 have their own set of device types which are specified in the IOC's database

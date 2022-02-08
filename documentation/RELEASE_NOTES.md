@@ -17,6 +17,13 @@ should also be read to understand what has changed since earlier releases.
 <!-- Insert new items immediately below here ... -->
 
 
+### Document `DISP` as design-time field
+
+The DISP field can be set to a non-zero value to prevent records being changed
+from outside the IOC (this is ancient behavior), but has never been documented
+as being usable at design-time (DCT=Yes in the Record Reference tables). This
+has now been changed.
+
 ### Make `epicsInt8` signed on all architectures
 
 The `epicsInt8` and thus `DBF_CHAR` types have always been unsigned on

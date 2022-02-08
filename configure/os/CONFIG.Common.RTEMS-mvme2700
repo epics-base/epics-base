@@ -13,18 +13,19 @@ MUNCH_SUFFIX = .boot
 # cf. description in CONFIG.Common.RTEMS-mvme2100
 #
 # Our process after creation of $< (eg. "iocfoo.elf")
-# 1. Extract executable code as "iocfoo.dir/rtems"
-# 2. Compress as "iocfoo.dir/rtems.gz"
-# 3. Link w/ bootloader to produce "iocfoo.boot.elf"
-# 4. Extract as "iocfoo.boot"
+# 1. Extract executable code as "iocfoo.app.bin"
+# 2. Compress as "iocfoo.app.bin.gz"
+# 3. Assemble iocfoo.boot.o with the verbatim contents of iocfoo.app.bin.gz
+# 4. Link w/ bootloader to produce "iocfoo.boot.elf"
+# 5. Extract as "iocfoo.boot"
 define MUNCH_CMD
-	@$(MKDIR) $*.dir
-	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.dir/rtems
-	gzip -f9 $*.dir/rtems
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.app.bin
+	gzip -f9 $*.app.bin
+	$(COMPILE.c) -IRTEMS_GZ=$*.app.bin.gz -c ppc_bug.S -o $*.boot.o
 	$(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o $@.elf \
 		 $(PROJECT_RELEASE)/lib/bootloader.o \
 		--just-symbols=$< \
-		-b binary $*.dir/rtems.gz \
+		-b binary $*.boot.o \
                 --no-warn-mismatch \
 		-T $(PROJECT_RELEASE)/lib/ppcboot.lds \
 		-Map $@.map

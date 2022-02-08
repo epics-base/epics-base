@@ -18,22 +18,19 @@ MUNCH_SUFFIX = .boot
 # PPCBUG leaves it.  This bootloader includes our executable in
 # compressed form.
 #
-# Note that the file name "rtems.gz" is hard-coded in ppcboot.lds
-# so we create it in a sub-directory to avoid problems w/ parallel
-# make.
-#
 # Our process after creation of $< (eg. "iocfoo.elf")
-# 1. Extract executable code as "iocfoo.dir/rtems"
-# 2. Compress as "iocfoo.dir/rtems.gz"
-# 3. Link w/ bootloader to produce "iocfoo.boot" (which is an ELF executable)
+# 1. Extract executable code as "iocfoo.app.bin"
+# 2. Compress as "iocfoo.app.bin.gz"
+# 3. Assemble iocfoo.boot.o with the verbatim contents of iocfoo.app.bin.gz
+# 4. Link w/ bootloader to produce "iocfoo.boot" (which is an ELF executable)
 define MUNCH_CMD
-	@$(MKDIR) $*.dir
-	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.dir/rtems
-	gzip -f9 $*.dir/rtems
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.app.bin
+	gzip -f9 $*.app.bin
+	$(COMPILE.c) -IRTEMS_GZ=$*.app.bin.gz -c ppc_bug.S -o $*.boot.o
 	$(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o $@ \
 		 $(PROJECT_RELEASE)/lib/bootloader.o \
 		--just-symbols=$< \
-		-b binary $*.dir/rtems.gz \
+		-b binary $*.boot.o \
                 --no-warn-mismatch \
 		-T $(PROJECT_RELEASE)/lib/ppcboot.lds \
 		-Map $@.map

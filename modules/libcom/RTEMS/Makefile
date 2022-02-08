@@ -11,6 +11,8 @@ TOP = ../../..
 include $(TOP)/configure/CONFIG
 include $(TOP)/configure/CONFIG_LIBCOM_VERSION
 
+vpath %.S $(USR_VPATH) $(ALL_SRC_DIRS)
+
 # check check
 SRC_DIRS += ../$(OS_API)
 
@@ -19,6 +21,9 @@ PERL_SCRIPTS += epicsMakeMemFs.pl
 INC += epicsRtemsInitHooks.h
 INC += epicsMemFs.h
 INC += epicsNtp.h
+
+# really only needed by BSPs in the motorola_powerpc family
+INC_RTEMS += ppc_bug.S
 
 ifeq ($(RTEMS_QEMU_FIXUPS),YES)
 rtems_init_CPPFLAGS += -DQEMU_FIXUPS

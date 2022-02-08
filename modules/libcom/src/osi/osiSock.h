@@ -80,10 +80,8 @@ LIBCOM_API int epicsStdCall epicsSocket46AcceptFL (
     SOCKET sock, osiSockAddr46 *pAddr46 );
 #define epicsSocket46Accept(a,b) epicsSocket46AcceptFL(__FILE__, __LINE__,a,b)
 
-LIBCOM_API int epicsStdCall sockIPsAreIdentical46FL(const char *filename, int lineno,
-                                                    const osiSockAddr46 *pAddr1,
+LIBCOM_API int epicsStdCall sockIPsAreIdentical46(const osiSockAddr46 *pAddr1,
                                                     const osiSockAddr46 *pAddr2);
-#define sockIPsAreIdentical46(a,b) sockIPsAreIdentical46FL(__FILE__, __LINE__, a, b)
 
 LIBCOM_API int epicsStdCall sockAddrAreIdentical46(const osiSockAddr46 *pAddr1,
                                                      const osiSockAddr46 *pAddr2);

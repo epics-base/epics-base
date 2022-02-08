@@ -366,6 +366,7 @@ $(COMMON_DIR)/menu%.h: ../menu%.dbd
 # DBD files
 
 $(COMMON_DIR)/bpt%.dbd: bpt%.data
+	$(ECHO) "Converting data from $<"
 	@$(RM) $(notdir $@)
 	$(MAKEBPT) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@

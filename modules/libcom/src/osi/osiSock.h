@@ -85,16 +85,11 @@ LIBCOM_API int epicsStdCall sockIPsAreIdentical46FL(const char *filename, int li
                                                     const osiSockAddr46 *pAddr2);
 #define sockIPsAreIdentical46(a,b) sockIPsAreIdentical46FL(__FILE__, __LINE__, a, b)
 
-LIBCOM_API int epicsStdCall sockAddrAreIdentical46FL(const char *filename, int lineno,
-                                                     const osiSockAddr46 *pAddr1,
+LIBCOM_API int epicsStdCall sockAddrAreIdentical46(const osiSockAddr46 *pAddr1,
                                                      const osiSockAddr46 *pAddr2);
 
-#define sockAddrAreIdentical46(a,b) sockAddrAreIdentical46FL(__FILE__, __LINE__, a, b)
-
-LIBCOM_API int epicsStdCall sockPortAreIdentical46FL(const char *filename, int lineno,
-                                                     const osiSockAddr46 *pAddr1,
+LIBCOM_API int epicsStdCall sockPortAreIdentical46(const osiSockAddr46 *pAddr1,
                                                      const osiSockAddr46 *pAddr2);
-#define sockPortAreIdentical46(a,b) sockPortAreIdentical46FL(__FILE__, __LINE__, a, b)
 
 LIBCOM_API int epicsStdCall epicsSocket46portFromAddress(osiSockAddr46 *paddr);
 

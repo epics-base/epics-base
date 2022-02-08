@@ -544,53 +544,28 @@ LIBCOM_API int epicsStdCall sockIPsAreIdentical46FL(const char *filename, int li
     return ret;
 }
 
-LIBCOM_API int epicsStdCall sockAddrAreIdentical46FL(const char *filename, int lineno,
-                                                     const osiSockAddr46 *pAddr1,
+LIBCOM_API int epicsStdCall sockAddrAreIdentical46(const osiSockAddr46 *pAddr1,
                                                      const osiSockAddr46 *pAddr2)
 {
-    int ret = 0;
     if (pAddr1->sa.sa_family == AF_INET && pAddr2->sa.sa_family == AF_INET &&
         pAddr1->ia.sin_addr.s_addr == pAddr2->ia.sin_addr.s_addr &&
         pAddr1->ia.sin_port == pAddr2->ia.sin_port) {
-        ret = 1;
+        return 1;
 #if EPICS_HAS_IPV6
     } else if (pAddr1->sa.sa_family == AF_INET6 && pAddr2->sa.sa_family == AF_INET6 &&
                !memcmp(&pAddr1->in6.sin6_addr, &pAddr2->in6.sin6_addr,
                        sizeof(pAddr2->in6.sin6_addr)) &&
                pAddr1->in6.sin6_port == pAddr2->in6.sin6_port &&
                pAddr1->in6.sin6_scope_id == pAddr2->in6.sin6_scope_id) {
-        ret = 1;
+        return 1;
 #endif
     }
-#ifdef NETDEBUGX2
-    {
-        char buf1[64];
-        char buf2[64];
-        sockAddrToDottedIP(&pAddr1->sa, buf1, sizeof(buf1));
-        sockAddrToDottedIP(&pAddr2->sa, buf2, sizeof(buf2));
-        epicsBaseDebugLogFL("%s:%d: sockAddrAreIdentical46 addr1='%s' addr2='%s' ret=%d\n",
-                        filename, lineno,
-                        buf1, buf2, ret);
-    }
-#endif
-    return ret;
+    return 0;
 }
 
-LIBCOM_API int epicsStdCall sockPortAreIdentical46FL(const char *filename, int lineno,
-                                                     const osiSockAddr46 *pAddr1,
+LIBCOM_API int epicsStdCall sockPortAreIdentical46(const osiSockAddr46 *pAddr1,
                                                      const osiSockAddr46 *pAddr2)
 {
-#ifdef NETDEBUG
-    {
-        char buf1[64];
-        char buf2[64];
-        sockAddrToDottedIP(&pAddr1->sa, buf1, sizeof(buf1));
-        sockAddrToDottedIP(&pAddr2->sa, buf2, sizeof(buf2));
-        epicsBaseDebugLogFL("%s:%d: sockPortAreIdentical46 addr1='%s' addr2='%s'\n",
-                        filename, lineno,
-                        buf1, buf2);
-    }
-#endif
     if (pAddr1->sa.sa_family == AF_INET && pAddr2->sa.sa_family == AF_INET &&
         pAddr1->ia.sin_port == pAddr2->ia.sin_port) {
         return 1;

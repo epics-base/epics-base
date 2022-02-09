@@ -1,0 +1,39 @@
+Status and to do of EPICS base:
+
+- Channel Access:
+   - Cannel name resolution:
+     working: using link-local IPv6 addresses or global IPv6 addresses.
+     todo: test with a DNS name (AAAA record)
+   - beacons:
+     are send out via IPv6 link local addresses
+     Use EPICS_CAS_AUTO_BEACON_ADDR_LIST=6 (or 46)
+   - Revers name resolution
+     aToIPAddr does not handle IPv6 (and needs to be replace)
+     Some problems to convert interface index into a name
+     (The #%en0" part of the IPv6 address)
+     Needs to be investigated (may be not thread-save ?)
+   - Channel access via TCP/IPv6
+     working
+- pvAccess:
+   Nothing done yet.
+   Probably we can steal/reuse code from channel access.
+   However, I would kike to see channel acces more tested before starting
+   with pvAccess
+
+- Linux, MacOs, Windows, vxWorks, RTEMS, BSD
+  Testing on Linux and Mac looks good. Need to re-run FreeBSD.
+  Windows: (Which "Windows" ? Visual Studio ? cygwin (seems obsolete) Mingw
+  vxWorks, RTEMS: Testing needed.
+
+- pyepics (with the latest ca library)
+  First tests look good ("PYEPICS_LIBCA" is your friend)
+
+- pvapy: to be done
+- JCA: to be done
+- EPICS gateways: to be done
+
+Other planned todo (unorderedd)
+- Clean up the debug printing
+- Clean up the compiler flag EPICS_HAS_IPV6 (suggested by Michael)
+- More code review
+- write automated tests

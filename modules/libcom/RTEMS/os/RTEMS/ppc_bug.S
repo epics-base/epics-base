@@ -14,7 +14,7 @@
 #define STRINGIFY1(x) #x
 #define STRINGIFY(x)     STRINGIFY1(x)
 
-.section ".data"
+.section ".rodata"
 
 .global _binary_rtems_gz_start
 .global _binary_rtems_gz_end

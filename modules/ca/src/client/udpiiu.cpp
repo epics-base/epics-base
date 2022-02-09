@@ -541,16 +541,16 @@ udpiiu::M_repeaterTimerNotify::~M_repeaterTimerNotify ()
 void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned attemptNumber )
 {
     epicsGuard < epicsMutex > cbGuard ( m_udpiiu.cacMutex );
-    caRepeaterRegistrationMessage ( m_udpiiu.sock4, m_udpiiu.repeaterPort, attemptNumber );
+    caRepeaterRegistrationMessage4 ( m_udpiiu.sock4, m_udpiiu.repeaterPort, attemptNumber );
 }
 
 /*
- *  caRepeaterRegistrationMessage ()
+ *  caRepeaterRegistrationMessage4 ()
  *
  *  register with the repeater
  */
-void epicsStdCall caRepeaterRegistrationMessage ( 
-           SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
+void epicsStdCall caRepeaterRegistrationMessage4 ( 
+           SOCKET sock4, unsigned repeaterPort, unsigned attemptNumber )
 {
     osiSockAddr46 saddr46;
     caHdr msg;
@@ -579,7 +579,7 @@ void epicsStdCall caRepeaterRegistrationMessage (
      * by local address (the first non-loopback address found)
      */
     if ( attemptNumber & 1 ) {
-        saddr46 = osiLocalAddr ( sock );
+        saddr46 = osiLocalAddr ( sock4 );
         if ( saddr46.sa.sa_family != AF_INET ) {
             /*
              * use the loop back address to communicate with the CA repeater
@@ -618,7 +618,7 @@ void epicsStdCall caRepeaterRegistrationMessage (
         len = 0;
 #   endif
 
-    status = sendto ( sock, (char *) &msg, len, 0,
+    status = sendto ( sock4, (char *) &msg, len, 0,
                       &saddr46.sa, sizeof ( saddr46.ia ) );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;

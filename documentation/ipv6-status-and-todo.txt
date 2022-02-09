@@ -5,8 +5,9 @@ Status and to do of EPICS base:
      working: using link-local IPv6 addresses or global IPv6 addresses.
      todo: test with a DNS name (AAAA record)
    - beacons:
-     are send out via IPv6 link local addresses
-     Use EPICS_CAS_AUTO_BEACON_ADDR_LIST=6 (or 46)
+     Are send out via IPv6 link local addresses if configured
+     with EPICS_CAS_AUTO_BEACON_ADDR_LIST=6 (or 46)
+     The beacons use an extended message for CA_PROTO_RSRV_IS_UP
    - Revers name resolution
      aToIPAddr does not handle IPv6 (and needs to be replace)
      Some problems to convert interface index into a name
@@ -14,6 +15,10 @@ Status and to do of EPICS base:
      Needs to be investigated (may be not thread-save ?)
    - Channel access via TCP/IPv6
      working
+   - repeater
+     Handles only registrations via IPv4
+     Does forward beacons with the extended "CA_PROTO_RSRV_IS_UP" format
+
 - pvAccess:
    Nothing done yet.
    Probably we can steal/reuse code from channel access.
@@ -31,6 +36,7 @@ Status and to do of EPICS base:
 - pvapy: to be done
 - JCA: to be done
 - EPICS gateways: to be done
+- asyn: I had done a working prototype. Need to dig out the source code.
 
 Other planned todo (unorderedd)
 - Clean up the debug printing

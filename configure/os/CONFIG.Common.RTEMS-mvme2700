@@ -21,7 +21,7 @@ MUNCH_SUFFIX = .boot
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $*.app.bin
 	gzip -f9 $*.app.bin
-	$(COMPILE.c) -IRTEMS_GZ=$*.app.bin.gz -c ppc_bug.S -o $*.boot.o
+	$(COMPILE.c) -DRTEMS_GZ=$*.app.bin.gz -c ppc_bug.S -o $*.boot.o
 	$(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o $@.elf \
 		 $(PROJECT_RELEASE)/lib/bootloader.o \
 		--just-symbols=$< \

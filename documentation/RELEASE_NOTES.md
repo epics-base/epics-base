@@ -17,6 +17,10 @@ should also be read to understand what has changed since earlier releases.
 <!-- Insert new items immediately below here ... -->
 
 
+### Fix `CHECK_RELEASE = WARN`
+
+This now works again, it was broken in 2019 (7.0.3.1) by an errant commit.
+
 ### Document `DISP` as design-time field
 
 The DISP field can be set to a non-zero value to prevent records being changed

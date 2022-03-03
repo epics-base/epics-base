@@ -16,6 +16,8 @@
 #ifndef INCdbStaticPvth
 #define INCdbStaticPvth 1
 
+#include "dbStaticLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

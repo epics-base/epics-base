@@ -155,7 +155,7 @@ static void *getLastTemp(void)
     return(ptempListNode->item);
 }
 
-static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
+const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
 {
     ELLLIST     *ppathList = (ELLLIST *)pdbbase->pathPvt;
     dbPathNode  *pdbPathNode;

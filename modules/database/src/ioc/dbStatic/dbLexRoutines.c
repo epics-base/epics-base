@@ -223,8 +223,10 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         epicsPrintf("dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
     }
 
-    if (getIocState() != iocVoid)
-        return -2;
+    if (getIocState() != iocVoid) {
+        status = -2;
+        goto cleanup;
+    }
 
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;
@@ -277,6 +279,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         pinputFile->fp = fp1;
     } else {
         pinputFile->fp = fp;
+        fp = NULL;
     }
     pinputFile->line_num = 0;
     pinputFileNow = pinputFile;
@@ -332,6 +335,8 @@ cleanup:
     if(my_buffer) free((void *)my_buffer);
     my_buffer = NULL;
     freeInputFileList();
+    if(fp)
+        fclose(fp);
     return(status);
 }
 

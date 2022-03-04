@@ -37,7 +37,11 @@
 #include "special.h"
 #include "iocInit.h"
 
-
+/* This file is included from dbYacc.y
+ * Duplicate some declarations to avoid warnings from analysis tools which don't know about this.
+ */
+static int yyerror(char *str);
+static long pvt_yy_parse(void);
 
 /*global declarations*/
 char *makeDbdDepends=0;
@@ -99,8 +103,8 @@ static char *my_buffer_ptr=NULL;
 static MAC_HANDLE *macHandle = NULL;
 typedef struct inputFile{
     ELLNODE     node;
-    char        *path;
-    char        *filename;
+    const char  *path;
+    const char  *filename;
     FILE        *fp;
     int         line_num;
 }inputFile;
@@ -271,7 +275,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         if (!pinputFile->filename || !fp1) {
             errPrintf(0, __FILE__, __LINE__,
                 "dbRead opening file %s",pinputFile->filename);
-            free(pinputFile->filename);
+            free((char*)pinputFile->filename);
             free(pinputFile);
             status = -1;
             goto cleanup;

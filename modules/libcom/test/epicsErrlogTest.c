@@ -446,7 +446,9 @@ static void testLogPrefix(void) {
     }
 
     /* We listen on a an available port. */
-    status = epicsSocket46BindLocalPort ( sock , 0 );
+    status = epicsSocket46BindLocalPort ( sock ,
+                                          epicsSocket46GetDefaultAddressFamily(),
+                                          0 );
     if (status < 0) {
         testAbort("bind failed; all ports in use?");
     }

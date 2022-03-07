@@ -680,7 +680,9 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     tmpSock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, IPPROTO_UDP );
     if ( tmpSock != INVALID_SOCKET ) {
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
-        status = epicsSocket46BindLocalPort ( tmpSock, port );
+        status = epicsSocket46BindLocalPort ( tmpSock,
+                                              epicsSocket46GetDefaultAddressFamily(),
+                                              port );
         if ( status < 0 ) {
             if ( SOCKERRNO == SOCK_EADDRINUSE ) {
                 installed = true;

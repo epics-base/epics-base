@@ -133,7 +133,9 @@ int main(void)
 
     epicsSocketEnableAddressReuseDuringTimeWaitState ( pserver->sock );
 
-    status = epicsSocket46BindLocalPort(pserver->sock, ioc_log_port);
+    status = epicsSocket46BindLocalPort(pserver->sock,
+                                        epicsSocket46GetDefaultAddressFamily(),
+                                        ioc_log_port);
 
     if (status < 0) {
         char sockErrBuf[64];

@@ -320,15 +320,16 @@ LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno
 
 
 LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, int lineno,
-                                                         SOCKET sock, unsigned short port)
+                                                         SOCKET sock,
+                                                         int sockets_family,
+                                                         unsigned short port)
 
 {
     osiSockAddr46 addr46;
-    int addressFamily = epicsSocket46GetDefaultAddressFamily();
     memset ( (char *)&addr46, 0 , sizeof (addr46) );
-    addr46.sa.sa_family = addressFamily;
+    addr46.sa.sa_family = sockets_family;
 #if EPICS_HAS_IPV6
-    if ( addressFamily == AF_INET6 ) {
+    if ( sockets_family == AF_INET6 ) {
         addr46.in6.sin6_addr = in6addr_any;
         addr46.in6.sin6_port = htons ( port );
     }

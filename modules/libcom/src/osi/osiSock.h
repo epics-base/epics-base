@@ -120,8 +120,10 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char* filename, int lin
  * bind a port to a local port
  */
 LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, int lineno,
-                                                         SOCKET sock, unsigned short port);
-#define epicsSocket46BindLocalPort(a,b) epicsSocket46BindLocalPortFL(__FILE__, __LINE__, a,b)
+                                                         SOCKET sock,
+                                                         int sockets_family,
+                                                         unsigned short port);
+#define epicsSocket46BindLocalPort(a,b,c) epicsSocket46BindLocalPortFL(__FILE__, __LINE__, a,b,c)
 
 
 /*

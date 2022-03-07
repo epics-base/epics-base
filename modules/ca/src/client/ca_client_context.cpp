@@ -116,7 +116,9 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     // force a bind to an unconstrained address so we can obtain
     // the local port number below
     {
-      int status = epicsSocket46BindLocalPort(this->sock46, PORT_ANY);
+      int status = epicsSocket46BindLocalPort(this->sock46,
+                                              epicsSocket46GetDefaultAddressFamily(),
+                                              PORT_ANY);
         if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );

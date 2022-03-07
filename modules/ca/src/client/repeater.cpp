@@ -119,20 +119,7 @@ static int makeSocket ( int family, unsigned short port, bool reuseAddr, SOCKET 
         int status;
         osiSockAddr46 addr46;
         memset ( (char *)&addr46, 0 , sizeof (addr46) );
-#if EPICS_HAS_IPV6
-        if ( family == AF_INET6 ) {
-            addr46.in6.sin6_family = AF_INET6;
-            addr46.in6.sin6_addr = in6addr_any;
-            addr46.in6.sin6_port = htons ( port );
-        } else
-#endif
-        {
-            addr46.ia.sin_family = AF_INET;
-            addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-            addr46.ia.sin_port = htons ( port );
-        }
-
-        status = epicsSocket46Bind ( sock, &addr46 );
+        status = epicsSocket46BindLocalPort(sock, family, port);
         if ( status < 0 ) {
             status = SOCKERRNO;
             epicsSocketDestroy ( sock );
@@ -627,12 +614,9 @@ void ca_repeater ()
                 pPollFds[numPollFds].events = POLLIN;
                 numPollFds++;
                 epicsSocket46optIPv6MultiCast(socket46, interfaceIndex);
-#if 0
-                //(void)epicsSocket46BindLocalPort(socket46, port);
-#else
-                pNode->addr46.in6.sin6_port = htons ( port );
-                (void)epicsSocket46Bind ( socket46, &pNode->addr46 );
-#endif
+                (void)epicsSocket46BindLocalPort(socket46,
+                                                 pNode->addr46.sa.sa_family,
+                                                 port);
             }
 #endif
         }

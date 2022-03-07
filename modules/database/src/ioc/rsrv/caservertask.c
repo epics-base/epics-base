@@ -733,7 +733,9 @@ void rsrv_init (void)
 
             epicsSocketEnableAddressUseForDatagramFanout ( conf->udp );
 
-            if (epicsSocket46BindLocalPort(conf->udp, ca_server_port))
+            if (epicsSocket46BindLocalPort(conf->udp,
+                                           epicsSocket46GetDefaultAddressFamily(),
+                                           ca_server_port))
                 goto cleanup;
 
 #ifdef IP_ADD_MEMBERSHIP

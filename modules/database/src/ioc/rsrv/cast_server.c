@@ -142,7 +142,6 @@ void cast_server(void *pParm)
         char            addrautobeaconlistascii[32u];
         char            *pAutoAddrList;
         char            *pAutoBeacon;
-        char            *pstr;
         memset(addrautolistascii, 0, sizeof (addrautolistascii));
         memset(addrautobeaconlistascii, 0, sizeof (addrautobeaconlistascii));
         /* EPICS_CA_AUTO_ADDR_LIST can enable/disable IPv4/IPv6 */
@@ -160,16 +159,20 @@ void cast_server(void *pParm)
         if ( !strcmp( pAutoAddrList, "6" ) ) {
             useIPv4 = 0;
             useIPv6 = 1;
-        } else if ( !strcmp( pstr, "46" ) ) {
+        } else if ( !strcmp( pAutoAddrList, "46" ) ) {
             useIPv4 = 1;
             useIPv6 = 1;
+        } else if ( ( !strcmp( pAutoAddrList, "NO" ) ) ||
+                    ( !strcmp( pAutoAddrList, "no" ) ) ) {
+            useIPv4 = 0;
+            useIPv6 = 0;
         } else {
             useIPv4 = 1;
             useIPv6 = 0;
         }
         /* Look at EPICS_CAS_AUTO_BEACON_ADDR_LIST. For each protocol that has beacons,
            we accept connections */
-        if ( !strcmp( pstr, "4" ) ) {
+        if ( !strcmp( pAutoBeacon, "4" ) ) {
             useIPv4 = 1;
         }  else if ( !strcmp( pAutoBeacon, "6" ) ) {
             useIPv6 = 1;

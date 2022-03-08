@@ -64,6 +64,34 @@ static void osiSockIPv4toIPv6(const osiSockAddr46 *pAddr46Input,
     }
 }
 
+
+/*
+ * sockAddrAreIdentical()
+ * (returns true if addresses are identical)
+ */
+int epicsStdCall sockAddrAreIdentical 
+            ( const osiSockAddr *plhs, const osiSockAddr *prhs )
+{
+    int match;
+
+    if ( plhs->sa.sa_family != prhs->sa.sa_family ) {
+        match = 0;
+    }
+    else if ( plhs->sa.sa_family != AF_INET ) {
+        match = 0;
+    }
+    else if ( plhs->ia.sin_addr.s_addr != prhs->ia.sin_addr.s_addr ) {
+        match = 0;
+    }
+    else if ( plhs->ia.sin_port != prhs->ia.sin_port ) {
+        match = 0;
+    }
+    else {
+        match = 1;
+    }
+    return match;
+}
+
 /*
  * sockAddrToA()
  * (convert socket address to ASCII host name)

@@ -207,7 +207,7 @@ endif
 checkRelease:
 	+$(CONVERTRELEASE) checkRelease
 warnRelease:
-	$(CONVERTRELEASE) checkRelease
+	-$(CONVERTRELEASE) checkRelease
 noCheckRelease:
 ifeq ($(EPICS_HOST_ARCH),$(T_A))
 	$(info Warning: RELEASE file consistency checks have been disabled)

@@ -1,0 +1,21 @@
+# CONFIG.Common.vxWorks-e500v2
+#
+# Definitions for vxWorks-e500v2 target archs (MVME2500)
+# Sites may override these definitions in CONFIG_SITE.Common.vxWorks-e500v2
+#-------------------------------------------------------
+
+# Include definitions common to all vxWorks target archs
+include $(CONFIG)/os/CONFIG.Common.vxWorksCommon
+
+# Vx GNU cross compiler suffix
+CMPLR_SUFFIX = ppc
+
+ARCH_CLASS = ppc
+
+# Architecture specific build flags
+ARCH_DEP_CFLAGS += -te500v2 -mhard-float
+ARCH_DEP_CPPFLAGS += -DCPU=PPC85XX
+ARCH_DEP_CFLAGS += -DCPU_VARIANT=_ppc85XX_e500v2
+ARCH_DEP_CFLAGS += -mlongcall
+
+GNU_TARGET = powerpc-wrs-vxworks

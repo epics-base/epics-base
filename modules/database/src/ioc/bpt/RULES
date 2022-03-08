@@ -11,5 +11,6 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-$(patsubst %,$(COMMON_DIR)/%,$(BPT_DBD)) : \
-    $(COMMON_DIR)/bpt%.dbd : $(MAKEBPT)
+$(addprefix $(COMMON_DIR)/,$(BPT_DBD)) : $(COMMON_DIR)/bpt%.dbd : \
+    $(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)
+# Don't try to use $(MAKEBPT) above

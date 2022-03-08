@@ -441,6 +441,9 @@ void dbFreeBase(dbBase *pdbbase)
     DBENTRY             dbentry;
     long status;
 
+    if(!pdbbase)
+        return;
+
     dbInitEntry(pdbbase,&dbentry);
     status = dbFirstRecordType(&dbentry);
     while(!status) {

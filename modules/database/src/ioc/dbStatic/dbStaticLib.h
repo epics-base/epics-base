@@ -57,8 +57,26 @@ DBCORE_API void dbCopyEntryContents(DBENTRY *pfrom,
 
 DBCORE_API extern int dbBptNotMonotonic;
 
+/** \brief Open .dbd or .db file and read definitions.
+ *  \param ppdbbase The database.  Typically the "pdbbase" global
+ *  \param filename Filename to read/search.  May be absolute, or relative.
+ *  \param path If !NULL, search path when filename is relative, of for 'include' statements.
+ *         Split by ':' or ';' (cf. OSI_PATH_LIST_SEPARATOR)
+ *  \param substitutions If !NULL, macro definitions like "NAME=VAL,OTHER=SOME"
+ *  \return 0 on success
+ */
 DBCORE_API long dbReadDatabase(DBBASE **ppdbbase,
     const char *filename, const char *path, const char *substitutions);
+/** \brief Read definitions from already opened .dbd or .db file.
+ *  \param ppdbbase The database.  Typically the "&pdbbase" global
+ *  \param fp FILE* from which to read definitions.  Will always be fclose()'d
+ *  \param path If !NULL, search path when filename is relative, of for 'include' statements.
+ *         Split by ':' or ';' (cf. OSI_PATH_LIST_SEPARATOR)
+ *  \param substitutions If !NULL, macro definitions like "NAME=VAL,OTHER=SOME"
+ *  \return 0 on success
+ *
+ *  \note This function will always close the provided 'fp'.
+ */
 DBCORE_API long dbReadDatabaseFP(DBBASE **ppdbbase,
     FILE *fp, const char *path, const char *substitutions);
 DBCORE_API long dbPath(DBBASE *pdbbase, const char *path);

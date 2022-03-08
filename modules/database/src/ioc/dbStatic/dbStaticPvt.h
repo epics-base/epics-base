@@ -16,6 +16,9 @@
 #ifndef INCdbStaticPvth
 #define INCdbStaticPvth 1
 
+#include "dbCoreAPI.h"
+#include "dbStaticLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,6 +42,9 @@ long dbPutStringNum(DBENTRY *pdbentry,const char *pstring);
 void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...) EPICS_PRINTF_STYLE(2,3);
 
 void dbPutStringSuggest(DBENTRY *pdbentry, const char *pstring);
+
+DBCORE_API
+const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp);
 
 struct jlink;
 

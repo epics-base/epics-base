@@ -230,6 +230,8 @@ The B<SPVT> field is for internal use by the scanning system.
 	}
 	field(DISP,DBF_UCHAR) {
 		prompt("Disable putField")
+		promptgroup("10 - Common")
+		interest(1)
 	}
 	field(PROC,DBF_UCHAR) {
 		prompt("Force Processing")
@@ -456,9 +458,10 @@ record. If left empty, the record is placed in group C<DEFAULT>.
 
 The B<ASP> field is private for use by the access security system.
 
-The B<DISP> field controls whether puts from outside the IOC are allowed to
-modify the fields of this record at all. If the field is set to TRUE all puts
-directed to this record are ignored, except for puts to the field DISP itself.
+The B<DISP> field can be set to a non-zero value to reject puts from outside of
+the IOC (i.e. via Channel Access or PV Access) to any field of the record other
+than to the DISP field itself. Field changes and record processing can still be
+instigated from inside the IOC using DB links and the IOC scan mechanisms.
 
 The B<DTYP> field specifies the device type for the record. Most record types
 have their own set of device types which are specified in the IOC's database
@@ -489,17 +492,37 @@ The B<TIME> field holds the time stamp when this record was last processed.
 The B<UTAG> field can be used to hold a site-specific 64-bit User Tag value
 that is associated with the record's time stamp.
 
-The B<TSE> field indicates the mechanism to use to get the time stamp. '0' -
-call get time as before '-1' - call the time stamp driver and use the best
-source available. '-2' - the device support sets the time stamp and optional
-user tag from the hardware. Values between 1-255 request the time of the last
-occurance of a generalTime event.
+The B<TSE> field value indicates the mechanism to use to get the time stamp:
+
+=over
+
+=item *
+
+C< 0> E<mdash> Get the current time as normal
+
+=item *
+
+C<-1> E<mdash> Ask the time stamp driver for its best source of the current time, if
+available.
+
+=item *
+
+C<-2> E<mdash> Device support sets the time stamp and the optional User Tag from the
+hardware.
+
+=item *
+
+Positive values (normally between 1-255) get the time of the last occurance of
+the numbered generalTime event.
+
+=back
 
 The B<TSEL> field contains an input link for obtaining the time stamp. If this
-link points to the TIME field of a record then the time stamp and user tag of
+link points to the TIME field of a record then the time stamp and User Tag of
 that record are copied directly into this record (Channel Access links can only
-copy the time stamp). If the link points to any other field, that field's value
-is read and stored in the TSE field which is then used to acquire a time stamp.
+copy the time stamp, not the User Tag). If the link points to any other field,
+that field's value is read and stored in the TSE field which is then used to
+provide the time stamp as described above.
 
 =fields ASG, ASP, DISP, DTYP, MLOK, MLIS, PPN, PPNR, PUTF, RDES, RPRO, TIME, UTAG, TSE, TSEL
 

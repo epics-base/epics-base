@@ -1,0 +1,50 @@
+# Configuration for lgtm.com
+#
+
+path_classifiers:
+  test:
+    - exclude: /
+    - test
+    - "modules/*/test*"
+  library:
+    - modules/libcom/src/yacc
+    - modules/libcom/src/flex
+  template:
+    - src/template
+    - modules/ca/src/template
+    - modules/database/src/template
+
+extraction:
+  cpp:
+    prepare:
+      packages:
+        - "libreadline-dev"
+    index:
+      build_command:
+        - "g++ --version"
+        - "make --version"
+        - "perl --version"
+        - "make -sj2 || echo '*** Build failed, ignored for lgtm ***'"
+
+  python:
+    index:
+      include:
+        - src/tools
+
+  # Interpreted languages to be excluded
+  javascript:
+    index:
+      exclude:
+        - "*"
+
+  # Compiled languages to be excluded
+  java:
+    index:
+      build_command: "echo No Java code in this project"
+  csharp:
+    index:
+      build_command: "echo No C# code in this project"
+  go:
+    index:
+      build_command: "echo No Go code in this project"
+

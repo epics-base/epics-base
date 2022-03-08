@@ -604,7 +604,8 @@ void ca_repeater ()
 #endif
 #ifdef EPICS_HAS_IPV6
             if (pNode->addr46.sa.sa_family == AF_INET6) {
-                unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
+                osiSockAddr46 addr46 = pNode->addr46; // struct copy
+                unsigned int interfaceIndex = (unsigned int)addr46.in6.sin6_scope_id;
                 /*
                  * The %en0 will become the scope id, which IPV6_MULTICAST_IF needs
                  * BSD/non-Linux system need a own socket per scope_id
@@ -614,9 +615,8 @@ void ca_repeater ()
                 pPollFds[numPollFds].events = POLLIN;
                 numPollFds++;
                 epicsSocket46optIPv6MultiCast(socket46, interfaceIndex);
-                (void)epicsSocket46BindLocalPort(socket46,
-                                                 pNode->addr46.sa.sa_family,
-                                                 port);
+                addr46.in6.sin6_port = htons ( port );
+                (void)epicsSocket46Bind(socket46, &addr46);
             }
 #endif
         }

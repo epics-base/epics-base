@@ -244,7 +244,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                  */
                 if (errcode != SOCK_EADDRINUSE &&
                     errcode != SOCK_EACCES) {
-                    char name[40];
+                    char name[64];
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );

@@ -408,13 +408,10 @@ static void register_new_client ( osiSockAddr46 & from46,
          * to current code.
          */
         if ( testSock != INVALID_SOCKET ) {
-            osiSockAddr46 addr46;
-
-            addr46 = from46;
-            addr46.ia.sin_port = PORT_ANY;
-
             /* we can only bind to a local address */
-            status = epicsSocket46Bind ( testSock, &addr46 );
+            status = epicsSocket46BindLocalPort ( testSock,
+                                                  from46.sa.sa_family,
+                                                  PORT_ANY);
             if ( status ) {
                 return;
             }

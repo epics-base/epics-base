@@ -64,12 +64,12 @@ static rsrv_online_notify_config conf;
  */
 static void req_server (void *pParm)
 {
-    rsrv_iface_config *conf = pParm;
+    rsrv_iface_config *pConf = pParm;
     SOCKET IOC_sock;
 
     taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
 
-    IOC_sock = conf->tcp;
+    IOC_sock = pConf->tcp;
 
     epicsEventSignal(castcp_startStopEvent);
 

@@ -367,24 +367,21 @@ static void register_new_client ( osiSockAddr & from,
 
     /*
      * the repeater and its clients must be on the same host
+     * If we receive a registration send to 1.2.3.4
+     * thatis OK, if, and only if, we have 1.2.3.4 on one interface
+     * Try to bind to this interface to check this.
+     * This is IPv4 only. Add a check here in preparation for IPv6
      */
-    if ( INADDR_LOOPBACK != ntohl ( from.ia.sin_addr.s_addr ) ) {
-        static SOCKET testSock = INVALID_SOCKET;
-        static bool init = false;
-
-        if ( ! init ) {
-            SOCKET sock;
-            if ( int sockerrno = makeSocket ( PORT_ANY, true, & sock ) ) {
-                char sockErrBuf[64];
-                epicsSocketConvertErrorToString (
-                    sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
-                fprintf ( stderr, "%s: Unable to create repeater bind test socket because \"%s\"\n",
+    if ( ( from.sa.sa_family == AF_INET ) &&
+         ( INADDR_LOOPBACK != ntohl ( from.ia.sin_addr.s_addr ) ) ) {
+        SOCKET sock;
+        if ( int sockerrno = makeSocket ( PORT_ANY, true, & sock ) ) {
+          char sockErrBuf[64];
+          epicsSocketConvertErrorToString (
+                      sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
+          fprintf ( stderr, "%s: Unable to create repeater bind test socket because \"%s\"\n",
                     __FILE__, sockErrBuf );
-            }
-            else {
-                testSock = sock;
-            }
-            init = true;
+          return;
         }
 
         /*
@@ -396,20 +393,16 @@ static void register_new_client ( osiSockAddr & from,
          * the CA repeater until all CA repeaters have been updated
          * to current code.
          */
-        if ( testSock != INVALID_SOCKET ) {
-            osiSockAddr addr;
+        osiSockAddr addr;
 
-            addr = from;
-            addr.ia.sin_port = PORT_ANY;
+        addr = from;
+        addr.ia.sin_port = PORT_ANY;
 
-            /* we can only bind to a local address */
-            status = bind ( testSock, &addr.sa, sizeof ( addr ) );
-            if ( status ) {
-                return;
-            }
-        }
-        else {
-            return;
+        /* If bind() succeeds, this IP is one of our local addresses */
+        status = bind ( sock, &addr.sa, sizeof ( addr ) );
+        epicsSocketDestroy ( sock );
+        if ( status ) {
+          return;
         }
     }
 

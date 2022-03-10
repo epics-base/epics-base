@@ -124,8 +124,6 @@ static int makeSocket ( int family, unsigned short port, bool reuseAddr, SOCKET 
      */
     if ( port != PORT_ANY ) {
         int status;
-        osiSockAddr46 addr46;
-        memset ( (char *)&addr46, 0 , sizeof (addr46) );
         status = epicsSocket46BindLocalPort(sock, family, port);
         if ( status < 0 ) {
             status = SOCKERRNO;
@@ -392,7 +390,8 @@ static void register_new_client ( osiSockAddr46 & from46,
      * Try to bind to this interface to check this.
      * This is IPv4 only, check this in preparation for IPv6
      */
-    if ( INADDR_LOOPBACK != ntohl ( from46.ia.sin_addr.s_addr ) ) {
+    if ( ( from46.sa.sa_family == AF_INET ) &&
+         ( INADDR_LOOPBACK != ntohl ( from46.ia.sin_addr.s_addr ) ) ) {
         static SOCKET testSock = INVALID_SOCKET;
         static bool init = false;
 
@@ -421,10 +420,13 @@ static void register_new_client ( osiSockAddr46 & from46,
          * to current code.
          */
         if ( testSock != INVALID_SOCKET ) {
+            osiSockAddr46 addr46;
+
+            addr46 = from46;
+            addr46.ia.sin_port = PORT_ANY;
+
             /* we can only bind to a local address */
-            status = epicsSocket46BindLocalPort ( testSock,
-                                                  from46.sa.sa_family,
-                                                  PORT_ANY);
+            status = bind ( testSock, &addr46.sa, sizeof ( addr46.ia ) );
             if ( status ) {
                 return;
             }

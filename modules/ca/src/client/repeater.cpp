@@ -83,6 +83,13 @@
 #include <poll.h>
 #endif
 
+#ifdef NETDEBUG
+#define SEND_FROM_REPEATER(a,b,c,d) send(a,b,c,d)
+#else
+// Use the send() function with builtin debug print
+#define SEND_FROM_REPEATER(a,b,c,d) epicsSocket46Send(a,b,c,d)
+#endif
+
 /*
  *  these can be external since there is only one instance
  *  per machine so we don't care about reentrancy
@@ -180,8 +187,8 @@ bool repeaterClient::sendConfirm ()
     if ( this->from46.sa.sa_family == AF_INET ) {
         confirm.m_available = this->from46.ia.sin_addr.s_addr;
     }
-    status = send ( this->sock, (char *) &confirm,
-                    sizeof (confirm), 0 );
+    status = SEND_FROM_REPEATER ( this->sock,  (char *) &confirm,
+                                 sizeof (confirm), 0 );
     if ( status >= 0 ) {
         assert ( status == sizeof ( confirm ) );
         return true;
@@ -202,12 +209,7 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize )
 {
     int status;
 
-#ifdef NETDEBUG
-    // Use the send() function with builtin debug print
-    status = epicsSocket46Send ( this->sock, (char *) pBuf, bufSize, 0 );
-#else
-    status = send ( this->sock, (char *) pBuf, bufSize, 0 );
-#endif
+    status = SEND_FROM_REPEATER ( this->sock, (char *) pBuf, bufSize, 0 );
     if ( status >= 0 ) {
         assert ( static_cast <unsigned> ( status ) == bufSize );
 #ifdef DEBUG
@@ -372,12 +374,23 @@ static void register_new_client ( osiSockAddr46 & from46,
     bool newClient = false;
     int status;
 
-    if ( from46.sa.sa_family != AF_INET ) {
+#ifdef NETDEBUG
+    {
+      char buf[64];
+      sockAddrToDottedIP(&from46.sa, buf, sizeof(buf));
+      epicsBaseDebugLog ("repeater: register_new_client='%s'\n", buf );
+    }
+#endif
+    if ( ! epicsSocket46IsAF_INETorAF_INET6 ( from46.sa.sa_family ) ) {
         return;
     }
 
     /*
      * the repeater and its clients must be on the same host
+     * If we receive a registration send to 1.2.3.4, that
+     * may be OK, if, and only if, we have 1.2.3.4 as an interface
+     * Try to bind to this interface to check this.
+     * This is IPv4 only, check this in preparation for IPv6
      */
     if ( INADDR_LOOPBACK != ntohl ( from46.ia.sin_addr.s_addr ) ) {
         static SOCKET testSock = INVALID_SOCKET;

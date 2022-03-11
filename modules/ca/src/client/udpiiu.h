@@ -57,6 +57,10 @@ LIBCA_API void epicsStdCall caStartRepeaterIfNotInstalled (
     unsigned repeaterPort );
 LIBCA_API void epicsStdCall caRepeaterRegistrationMessage (
     SOCKET sock, unsigned repeaterPort, unsigned attemptNumber );
+#if EPICS_HAS_IPV6
+LIBCA_API void epicsStdCall caRepeaterRegistrationMessageIPv6 (
+    SOCKET sock6, unsigned repeaterPort);
+#endif
 extern "C" LIBCA_API void caRepeaterThread (
     void * pDummy );
 LIBCA_API void ca_repeater ( void );
@@ -187,11 +191,13 @@ private:
     ca_uint32_t sequenceNumber;
     ca_uint32_t lastReceivedSeqNo;
     SOCKET sock4;
+    SOCKET sock6;
     struct pollfd *pPollFds;
     unsigned numPollFds;
     ca_uint16_t repeaterPort;
     ca_uint16_t serverPort;
-    ca_uint16_t localPort;
+    ca_uint16_t localPort4;
+    ca_uint16_t localPort6;
     bool shutdownCmd;
     bool lastReceivedSeqNoIsValid;
 

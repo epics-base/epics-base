@@ -124,7 +124,12 @@ static int makeSocket ( int family, unsigned short port, bool reuseAddr, SOCKET 
      */
     if ( port != PORT_ANY ) {
         int status;
+#ifdef NETDEBUG
+        status = epicsSocket46BindLocalPortFL(filename, lineno,
+                                              sock, family, port);
+#else
         status = epicsSocket46BindLocalPort(sock, family, port);
+#endif
         if ( status < 0 ) {
             status = SOCKERRNO;
             epicsSocketDestroy ( sock );
@@ -311,6 +316,24 @@ bool repeaterClient::verify ()
         fprintf ( stderr, "CA Repeater: Bind test error \"%s\"\n",
             sockErrBuf );
     }
+#ifdef EPICS_HAS_IPV6
+    sockerrno = makeSocket ( AF_INET6, this->port (), false, & tmpSock );
+    if ( sockerrno == SOCK_EADDRINUSE ) {
+        // Normal result, client using port
+        return true;
+    }
+    if ( sockerrno == 0 ) {
+        // Client went away, released port
+        epicsSocketDestroy ( tmpSock );
+    }
+    else {
+        char sockErrBuf[64];
+        epicsSocketConvertErrorToString (
+            sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
+        fprintf ( stderr, "CA Repeater: Bind6 test error \"%s\"\n",
+            sockErrBuf );
+    }
+#endif
     return false;
 }
 
@@ -463,6 +486,9 @@ static void register_new_client ( osiSockAddr46 & from46,
         newClient = true;
     }
 
+#ifdef NETDEBUG
+    epicsBaseDebugLog ("repeater: register_new_client pNewClient=%p\n", pNewClient );
+#endif
     if ( ! pNewClient->sendConfirm () ) {
         client_list.remove ( *pNewClient );
         pNewClient->~repeaterClient ();
@@ -508,6 +534,7 @@ void ca_repeater ()
     tsFreeList < repeaterClient, 0x20 > freeList;
     int size;
     SOCKET sock4;
+    SOCKET sock46;
     osiSockAddr46 from46;
     unsigned short port;
     char * pBuf;
@@ -523,10 +550,21 @@ void ca_repeater ()
         bool success = osiSockAttach();
         assert ( success );
     }
+    if ( int sockerrno = makeSocket ( AF_INET, PORT_ANY, true, & sock4 ) ) {
+      char sockErrBuf[64];
+      epicsSocketConvertErrorToString ( sockErrBuf,
+                                        sizeof ( sockErrBuf ),
+                                        sockerrno );
+      fprintf ( stderr, "%s: Unable to create sock4 because \"%s\" - fatal\n",
+                __FILE__, sockErrBuf );
+      return;
+    }
 
     port = envGetInetPortConfigParam ( & EPICS_CA_REPEATER_PORT,
                                        static_cast <unsigned short> (CA_REPEATER_PORT) );
-    if ( int sockerrno = makeSocket ( AF_INET, port, true, & sock4 ) ) {
+
+    if ( int sockerrno = makeSocket ( epicsSocket46GetDefaultAddressFamily(),
+                                      port, true, & sock46 ) ) {
         /*
          * test for server was already started
          */
@@ -566,11 +604,14 @@ void ca_repeater ()
 
 #ifdef EPICS_HAS_IPV6
         searchDestList_count = (unsigned)casBeaconAddrList.count;
-        pPollFds = (pollfd*)callocMustSucceed(searchDestList_count + 1, /* one for this.socket */
+        pPollFds = (pollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock46 */
                                               sizeof(struct pollfd),
                                               "ca_repeater");
 
         /* this.socket must be added to the polling list */
+        pPollFds[numPollFds].fd = sock46;
+        pPollFds[numPollFds].events = POLLIN;
+        numPollFds++;
         pPollFds[numPollFds].fd = sock4;
         pPollFds[numPollFds].events = POLLIN;
         numPollFds++;

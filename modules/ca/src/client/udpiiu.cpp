@@ -334,6 +334,11 @@ udpiiu::udpiiu (
         }
         this->localPort4 = ntohs ( tmpAddr.ia.sin_port );
     }
+#ifdef NETDEBUG
+   epicsBaseDebugLog("udpiiu::udpiiu sock4=%d sock6=%d\n",
+                     (int)this->sock4, (int)this->sock6);
+#endif
+
     if (this->sock4 == INVALID_SOCKET && this->sock6 == INVALID_SOCKET) {
             throwWithLocation ( noSocket () );
 }
@@ -368,7 +373,7 @@ udpiiu::udpiiu (
 #endif
     while ( osiSockAddrNode *
         pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
-        SOCKET socket46 = INVALID_SOCKET;
+        SOCKET socket46 = this->sock4;
 #ifdef NETDEBUG
       {
           char buf[64];

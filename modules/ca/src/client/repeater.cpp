@@ -334,6 +334,11 @@ bool repeaterClient::verify ()
             sockErrBuf );
     }
 #endif
+#ifdef NETDEBUG
+    epicsBaseDebugLog ("repeaterClient::verify false port=%u\n",
+                       this->port () );
+#endif
+
     return false;
 }
 
@@ -695,7 +700,7 @@ void ca_repeater ()
                 goto pollagain;
             }
             for ( unsigned idx = 0; idx < numPollFds; idx++ ) {
-#ifdef NETDEBUG
+#ifdef NETDEBUGXX
                 epicsBaseDebugLog ("repeater idx=%u socket=%d revents=0x%x\n",
                                idx, (int)pPollFds[idx].fd, pPollFds[idx].revents);
 #endif

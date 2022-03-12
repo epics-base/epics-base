@@ -50,7 +50,7 @@
 
 epicsThreadPrivateId rsrvCurrentClient;
 static SOCKET        beaconSocket4;
-static rsrv_online_notify_config conf;
+static rsrv_online_notify_config static_notify_conf;
 
 /*
  *
@@ -64,12 +64,12 @@ static rsrv_online_notify_config conf;
  */
 static void req_server (void *pParm)
 {
-    rsrv_iface_config *pConf = pParm;
+    rsrv_iface_config *conf = pParm;
     SOCKET IOC_sock;
 
     taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
 
-    IOC_sock = pConf->tcp;
+    IOC_sock = conf->tcp;
 
     epicsEventSignal(castcp_startStopEvent);
 
@@ -521,7 +521,7 @@ void rsrv_build_addr_lists(void)
     if (ellCount(&beaconAddrList)==0)
         fprintf(stderr, "Warning: RSRV has empty beacon address list\n");
 
-    conf.pSockets = callocMustSucceed( ellCount(&beaconAddrList), sizeof(SOCKET), "rsrv_init" );
+    static_notify_conf.pSockets = callocMustSucceed( ellCount(&beaconAddrList), sizeof(SOCKET), "rsrv_init" );
     {
         ELLNODE *cur;
         unsigned i;
@@ -530,14 +530,14 @@ void rsrv_build_addr_lists(void)
         for(i=0, cur=ellFirst(&beaconAddrList); cur; i++, cur=ellNext(cur))
         {
             osiSockAddrNode *pNode = CONTAINER(cur, osiSockAddrNode, node);
-            conf.pSockets[i] = beaconSocket4; /* the default */
+            static_notify_conf.pSockets[i] = beaconSocket4; /* the default */
 #if EPICS_HAS_IPV6
             if (pNode->addr46.sa.sa_family == AF_INET6) {
                 SOCKET sock = epicsSocket46Create (AF_INET6, SOCK_DGRAM, 0);
                 if (sock != INVALID_SOCKET) {
                     unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
                     epicsSocket46optIPv6MultiCast(sock, interfaceIndex);
-                    conf.pSockets[i] = sock;
+                    static_notify_conf.pSockets[i] = sock;
                 }
             }
 #endif
@@ -874,7 +874,7 @@ void rsrv_init (void)
     {
         epicsThreadMustCreate("CAS-beacon", threadPrios[3],
                               epicsThreadGetStackSize(epicsThreadStackSmall),
-                              &rsrv_online_notify_task, &conf);
+                              &rsrv_online_notify_task, &static_notify_conf);
     }
     epicsEventMustWait(beacon_startStopEvent);
 }

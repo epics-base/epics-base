@@ -1,4 +1,4 @@
-/*************************************************************************\
+/************************************************************************* \
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -305,9 +305,9 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
         type_str = "STREAM";
     }
     SOCKET sock = epicsSocketCreate( domain, type, protocol );
-    epicsBaseDebugLogFL("epicsSocketCreate(%s:%d) (%s %s) socket=%lu\n",
+    epicsBaseDebugLogFL("epicsSocketCreate(%s:%d) (%s %s) socket=%d\n",
                     filename, lineno,
-                    domain_family_str, type_str, (unsigned long)sock);
+                    domain_family_str, type_str, (int)sock);
     return sock;
 }
 #endif
@@ -335,9 +335,9 @@ LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-        epicsBaseDebugLogFL("%s:%d: bind(%lu) address='%s' socklen=%u status=%d: %s\n",
+        epicsBaseDebugLogFL("%s:%d: bind(%d) address='%s' socklen=%u status=%d: %s\n",
                         filename, lineno,
-                        (unsigned long)sock,
+                        (int)sock,
                         buf, (unsigned)socklen,
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
@@ -406,9 +406,9 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
         sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
-        epicsBaseDebugLogFL("%s:%d: connect(%lu) address='%s' (%s) status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: connect(%d) address='%s' (%s) status=%d %s\n",
                         filename, lineno,
-                        (unsigned long)sock,
+                        (int)sock,
                         bufIn,
                         pAddr46->sa.sa_family != addr46Output.sa.sa_family ? bufOut : "",
                         status, status < 0 ? sockErrBuf : "");
@@ -429,9 +429,9 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvFL(const char *filename, int lineno
     {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsBaseDebugLogFL("%s:%d: recv(%lu) len=%u status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: recv(%d) len=%u status=%d %s\n",
                         filename, lineno,
-                        (unsigned long)sock, (unsigned)len,
+                        (int)sock, (unsigned)len,
                         status, status < 0 ? sockErrBuf : "");
     }
 #endif
@@ -450,9 +450,9 @@ LIBCOM_API int epicsStdCall epicsSocket46SendFL(const char *filename, int lineno
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsBaseDebugLogFL("%s:%d: send(%lu) len=%u status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: send(%d) len=%u status=%d %s\n",
                         filename, lineno,
-                        (unsigned long)sock, (unsigned)len,
+                        (int)sock, (unsigned)len,
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }
@@ -481,9 +481,9 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
-        epicsBaseDebugLogFL("%s:%d: sendto(%lu) address='%s' len=%u status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: sendto(%d) address='%s' len=%u status=%d %s\n",
                         filename, lineno,
-                        (unsigned long)sock, bufIn, (unsigned)len,
+                        (int)sock, bufIn, (unsigned)len,
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }
@@ -507,9 +507,9 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvfromFL(const char *filename, int li
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, bufDotted, sizeof(bufDotted));
-        epicsBaseDebugLogFL("%s:%d: recvfrom(%lu) buflen=%u address='%s' status=%d %s\n",
+        epicsBaseDebugLogFL("%s:%d: recvfrom(%d) buflen=%u address='%s' status=%d %s\n",
                         filename, lineno,
-                        (unsigned long)sock, (unsigned)len, bufDotted,
+                        (int)sock, (unsigned)len, bufDotted,
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }
@@ -532,9 +532,9 @@ LIBCOM_API int epicsStdCall epicsSocket46AcceptFL(const char *filename, int line
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-        epicsBaseDebugLogFL("%s:%d: accept(%lu) address='%s' status=%d (%s)\n",
+        epicsBaseDebugLogFL("%s:%d: accept(%d) address='%s' status=%d (%s)\n",
                         filename, lineno,
-                        (unsigned long)sock, buf,
+                        (int)sock, buf,
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }
@@ -723,9 +723,9 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
                                                  unsigned int interfaceIndex)
 {
 #ifdef NETDEBUG
-    epicsBaseDebugLogFL("%s:%d: epicsSocket46optIPv6MultiCast(%lu) interfaceIndex=%u\n",
+    epicsBaseDebugLogFL("%s:%d: epicsSocket46optIPv6MultiCast(%d) interfaceIndex=%u\n",
                     filename, lineno,
-                    (unsigned long)sock, interfaceIndex);
+                    (int)sock, interfaceIndex);
 #endif
 #if EPICS_HAS_IPV6
     {
@@ -736,9 +736,9 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
         {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-            epicsPrintf("%s:%d: epicsSocket46optIPv6MultiCast_IF(%lu)status=%d %s\n",
+            epicsPrintf("%s:%d: epicsSocket46optIPv6MultiCast_IF(%d)status=%d %s\n",
                          filename, lineno,
-                         (unsigned long)sock,
+                         (int)sock,
                          status, status < 0 ? sockErrBuf : "");
         }
     }
@@ -752,9 +752,9 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
         {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-            epicsPrintf("%s:%d: epicsSocket46optIPv6MultiCast_HOPS(%lu) hops=%d status=%d %s\n",
+            epicsPrintf("%s:%d: epicsSocket46optIPv6MultiCast_HOPS(%d) hops=%d status=%d %s\n",
                          filename, lineno,
-                         (unsigned long)sock,
+                         (int)sock,
                          hops,
                          status, status < 0 ? sockErrBuf : "");
         }
@@ -767,9 +767,9 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
         {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-            epicsPrintf("%s:%d: epicsSocket46optIPv6MultiCast_LOOP(%lu) loop_on=%d status=%d %s\n",
+            epicsPrintf("%s:%d: epicsSocket46optIPv6MultiCast_LOOP(%d) loop_on=%d status=%d %s\n",
                          filename, lineno,
-                         (unsigned long)sock,
+                         (int)sock,
                          loop_on,
                          status, status < 0 ? sockErrBuf : "");
         }
@@ -795,9 +795,9 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
         {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-            epicsBaseDebugLogFL("%s:%d: epicsSocket46optIPv6MultiCast_GROUP(%lu) sizeof(group)=%u status=%d %s\n",
+            epicsBaseDebugLogFL("%s:%d: epicsSocket46optIPv6MultiCast_GROUP(%d) sizeof(group)=%u status=%d %s\n",
                             filename, lineno,
-                            (unsigned long)sock, (unsigned)sizeof(group),
+                            (int)sock, (unsigned)sizeof(group),
                             status, status < 0 ? sockErrBuf : "");
             if ( ( status ) && (sizeof(group) >= 20 ) )
             {

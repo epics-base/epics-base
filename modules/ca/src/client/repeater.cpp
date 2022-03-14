@@ -274,6 +274,11 @@ void repeaterClient::operator delete ( void *pCadaver,
 }
 #endif
 
+unsigned short repeaterClient::get_family () const
+{
+    return this->from46.sa.sa_family;
+}
+
 inline unsigned short repeaterClient::port () const
 {
     return ntohs ( this->from46.ia.sin_port );
@@ -378,7 +383,14 @@ static void fanOut ( const osiSockAddr46 & from46, const void * pMsg,
         if ( pclient->identicalAddress ( from46 ) ) {
             continue;
         }
+        if ( pclient->get_family() == AF_INET && from46.sa.sa_family != AF_INET ) {
+#ifdef NETDEBUG
+            epicsBaseDebugLog ("repeater: fanOut ignored: pclient=%p get_family=%d from46.sa.sa_family=%d\n",
+                               pclient, pclient->get_family(), from46.sa.sa_family);
+#endif
 
+            continue;
+        }
         if ( ! pclient->sendMessage ( pMsg, msgSize ) ) {
             if ( ! pclient->verify () ) {
                 theClients.remove ( *pclient );

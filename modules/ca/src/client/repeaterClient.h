@@ -48,6 +48,7 @@ public:
     bool verify ();
     bool identicalAddress ( const osiSockAddr46 &from );
     bool identicalPort ( const osiSockAddr46 &from );
+    unsigned short get_family () const ;
     void * operator new ( size_t size,
         tsFreeList < repeaterClient, 0x20 > & );
     epicsPlacementDeleteOperator (( void *,

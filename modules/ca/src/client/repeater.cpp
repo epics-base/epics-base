@@ -785,20 +785,25 @@ void ca_repeater ()
                                    &from46.in6.sin6_addr.s6_addr,
                                    sizeof(pMsgIPv6->m_s6_addr));
                             pMsgIPv6->m_sin6_scope_id = from46.in6.sin6_scope_id;
-                        }
-#ifdef NETDEBUGXX
-                        epicsBaseDebugLog("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
-                                          (unsigned)ntohl(pMsgIPv6->m_size),
-                                          isprint(pMsgIPv6->m_typ_magic[0]) ? pMsgIPv6->m_typ_magic[0] : '?',
-                                          isprint(pMsgIPv6->m_typ_magic[1]) ? pMsgIPv6->m_typ_magic[1] : '?',
-                                          isprint(pMsgIPv6->m_typ_magic[2]) ? pMsgIPv6->m_typ_magic[2] : '?',
-                                          isprint(pMsgIPv6->m_typ_magic[3]) ? pMsgIPv6->m_typ_magic[3] : '?');
+                        } else {
+#ifdef NETDEBUG
+                            epicsBaseDebugLog("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
+                                              (unsigned)ntohl(pMsgIPv6->m_size),
+                                              isprint(pMsgIPv6->m_typ_magic[0]) ? pMsgIPv6->m_typ_magic[0] : '?',
+                                              isprint(pMsgIPv6->m_typ_magic[1]) ? pMsgIPv6->m_typ_magic[1] : '?',
+                                              isprint(pMsgIPv6->m_typ_magic[2]) ? pMsgIPv6->m_typ_magic[2] : '?',
+                                              isprint(pMsgIPv6->m_typ_magic[3]) ? pMsgIPv6->m_typ_magic[3] : '?');
 #endif
+                        }
                     }
                 } else
 #endif
                 if ( ( pMsg->m_available == 0u ) && ( from46.sa.sa_family == AF_INET ) ) {
+                    /* Shorten the message to what clients expect for IPv4 beacons */
+                    pMsg->m_postsize = 0;
                     pMsg->m_available = from46.ia.sin_addr.s_addr;
+                    fanOut ( from46, pMsg, sizeof ( caHdr ) , freeList );
+                    continue;
                 }
             }
         }

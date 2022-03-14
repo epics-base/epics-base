@@ -549,7 +549,7 @@ void udpRecvThread::run ()
                 goto pollagain;
             }
             for ( unsigned idx = 0; idx < this->iiu.numPollFds; idx++ ) {
-#ifdef NETDEBUG
+#ifdef NETDEBUGXX
                 epicsBaseDebugLog ("udpRecvThread::run idx=%u socket=%d revents=0x%x\n",
                                idx, (int)this->iiu.pPollFds[idx].fd, this->iiu.pPollFds[idx].revents);
 #endif
@@ -610,7 +610,7 @@ void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned a
 {
     epicsGuard < epicsMutex > cbGuard ( m_udpiiu.cacMutex );
 #if EPICS_HAS_IPV6
-    if (!(attemptNumber & 2) && (m_udpiiu.sock6 != INVALID_SOCKET))
+    if ( ( attemptNumber < 5) && (m_udpiiu.sock6 != INVALID_SOCKET ) )
         caRepeaterRegistrationMessageIPv6 ( m_udpiiu.sock6, m_udpiiu.repeaterPort);
     else
 #endif
@@ -697,7 +697,7 @@ void epicsStdCall caRepeaterRegistrationMessage (
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         tmpAddr.in6.sin6_port = 0;
         (void)getsockname ( sock, &tmpAddr.sa, &saddr_length );
-        epicsBaseDebugLog ("CAC: udpiiu::caRepeaterRegistrationMessage port=%u\n",
+        epicsBaseDebugLog ("udpiiu: sending caRepeaterRegistrationMessageIPv4 port=%u\n",
                            ntohs ( tmpAddr.in6.sin6_port ) );
      }
 #endif
@@ -764,7 +764,7 @@ void epicsStdCall caRepeaterRegistrationMessageIPv6 (
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         tmpAddr.in6.sin6_port = 0;
         (void)getsockname ( sock6, &tmpAddr.sa, &saddr_length );
-        epicsBaseDebugLog ("CAC: udpiiu::caRepeaterRegistrationMessageIPv6 port=%u\n",
+        epicsBaseDebugLog ("udpiiu: sending caRepeaterRegistrationMessageIPv6 port=%u\n",
                            ntohs ( tmpAddr.in6.sin6_port ) );
      }
 #endif

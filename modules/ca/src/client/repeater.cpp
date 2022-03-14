@@ -539,11 +539,11 @@ void ca_repeater ()
     tsFreeList < repeaterClient, 0x20 > freeList;
     int size;
     SOCKET sock4;
-    SOCKET sock46;
     osiSockAddr46 from46;
     unsigned short port;
     char * pBuf;
 #ifdef EPICS_HAS_IPV6
+    SOCKET sock6;
     struct pollfd *pPollFds = NULL;
     unsigned numPollFds = 0;
     unsigned searchDestList_count = 0;
@@ -555,21 +555,11 @@ void ca_repeater ()
         bool success = osiSockAttach();
         assert ( success );
     }
-    if ( int sockerrno = makeSocket ( AF_INET, PORT_ANY, true, & sock4 ) ) {
-      char sockErrBuf[64];
-      epicsSocketConvertErrorToString ( sockErrBuf,
-                                        sizeof ( sockErrBuf ),
-                                        sockerrno );
-      fprintf ( stderr, "%s: Unable to create sock4 because \"%s\" - fatal\n",
-                __FILE__, sockErrBuf );
-      return;
-    }
 
     port = envGetInetPortConfigParam ( & EPICS_CA_REPEATER_PORT,
                                        static_cast <unsigned short> (CA_REPEATER_PORT) );
 
-    if ( int sockerrno = makeSocket ( epicsSocket46GetDefaultAddressFamily(),
-                                      port, true, & sock46 ) ) {
+    if ( int sockerrno = makeSocket ( AF_INET, port, true, & sock4 ) ) {
         /*
          * test for server was already started
          */
@@ -582,12 +572,31 @@ void ca_repeater ()
         char sockErrBuf[64];
         epicsSocketConvertErrorToString (
             sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
-        fprintf ( stderr, "%s: Unable to create repeater socket because \"%s\" - fatal\n",
+        fprintf ( stderr, "%s: Unable to create repeater sock4 because \"%s\" - fatal\n",
             __FILE__, sockErrBuf );
         osiSockRelease ();
         delete [] pBuf;
         return;
     }
+#ifdef EPICS_HAS_IPV6
+    /* Create a socket for registrations via [::1] */
+    if ( int sockerrno = makeSocket ( AF_INET6, PORT_ANY, true, & sock6 ) ) {
+      char sockErrBuf[64];
+      epicsSocketConvertErrorToString ( sockErrBuf,
+                                        sizeof ( sockErrBuf ),
+                                        sockerrno );
+      fprintf ( stderr, "%s: Unable to create sock6 because \"%s\" - fatal\n",
+                __FILE__, sockErrBuf );
+      return;
+    } else {
+        osiSockAddr46 addr46;
+        memset ( (char *) &addr46, 0 , sizeof (addr46) );
+        addr46.in6.sin6_family = AF_INET6;
+        addr46.in6.sin6_addr = in6addr_loopback;
+        addr46.in6.sin6_port = htons ( port );
+        (void)epicsSocket46Bind(sock6, &addr46);
+    }
+#endif
 
     {
         ELLLIST casBeaconAddrList = ELLLIST_INIT;
@@ -609,12 +618,12 @@ void ca_repeater ()
 
 #ifdef EPICS_HAS_IPV6
         searchDestList_count = (unsigned)casBeaconAddrList.count;
-        pPollFds = (pollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock46 */
+        pPollFds = (pollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock6 */
                                               sizeof(struct pollfd),
                                               "ca_repeater");
 
         /* this.socket must be added to the polling list */
-        pPollFds[numPollFds].fd = sock46;
+        pPollFds[numPollFds].fd = sock6;
         pPollFds[numPollFds].events = POLLIN;
         numPollFds++;
         pPollFds[numPollFds].fd = sock4;

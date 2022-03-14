@@ -19,7 +19,7 @@ Start using IPv6:
       $ export EPICS_CA_AUTO_ADDR_LIST=6
       $ cainfo IOC:m1
 
-Running an IOC with IPv6:
+Running an IOC with IPv4 and IPv6:
     $  export EPICS_CAS_AUTO_BEACON_ADDR_LIST=46
     This sends out beacons on all IPv4 and IPv6 interfaces
 

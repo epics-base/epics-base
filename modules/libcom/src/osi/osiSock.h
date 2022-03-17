@@ -23,6 +23,9 @@
 /* Enable it for debugging */
 /* #define NETDEBUG */
 
+/* Needed to compile external modules, like pcas */
+#define EPICS_BASE_HAS_OSISOCKADDR46
+
 /* We assume that darwin and linux can handle IPv6 with the current code base */
 #if defined ( darwin ) || defined ( linux )
 #ifndef RTEMS_LEGACY_STACK

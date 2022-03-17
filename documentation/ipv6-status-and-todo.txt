@@ -24,6 +24,10 @@ Status and to do of EPICS base:
    Probably we can steal/reuse code from channel access.
    However, I would kike to see channel acces more tested before starting
    with pvAccess
+- Other modules:
+  pcas:
+      Work ongoing. Added patched so that pcas be compiled against latest base
+      Support for IPv6 must be added.
 
 - Linux, MacOs, Windows, vxWorks, RTEMS, BSD
   Testing on Linux and Mac looks good. Need to re-run FreeBSD.

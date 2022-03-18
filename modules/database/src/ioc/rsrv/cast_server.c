@@ -124,7 +124,7 @@ void cast_server(void *pParm)
     osiSockIoctl_t      nchars;
     SOCKET              recv_sock, reply_sock;
     struct client      *client;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     unsigned int useIPv4 = 0;
     unsigned int useIPv6 = 0;
     /*
@@ -240,7 +240,7 @@ void cast_server(void *pParm)
 
         } else {
             size_t idx;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
             if ((new_recv_addr46.sa.sa_family == AF_INET) && !useIPv4) {
 #ifdef NETDEBUG
                 char buf[64];

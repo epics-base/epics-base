@@ -43,6 +43,5 @@ Status and to do of EPICS base:
 
 Other planned todo (unorderedd)
 - Clean up the debug printing
-- Clean up the compiler flag EPICS_HAS_IPV6 (suggested by Michael)
 - More code review
 - write automated tests

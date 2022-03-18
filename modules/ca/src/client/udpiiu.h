@@ -57,7 +57,7 @@ LIBCA_API void epicsStdCall caStartRepeaterIfNotInstalled (
     unsigned repeaterPort );
 LIBCA_API void epicsStdCall caRepeaterRegistrationMessage (
     SOCKET sock, unsigned repeaterPort, unsigned attemptNumber );
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
 LIBCA_API void epicsStdCall caRepeaterRegistrationMessageIPv6 (
     SOCKET sock6, unsigned repeaterPort);
 #endif

@@ -26,7 +26,7 @@
 #include "osiSock.h"
 #include "epicsBaseDebugLog.h"
 
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -40,7 +40,7 @@
 static void osiSockIPv4toIPv6(const osiSockAddr46 *pAddr46Input,
                               osiSockAddr46 *pAddr46Output)
 {
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     if (pAddr46Input->sa.sa_family == AF_INET) {
         const struct sockaddr_in * paddrInput4 = (const struct sockaddr_in *) pAddr46Input;
         struct sockaddr_in6 *pOut6 = (struct sockaddr_in6 *)pAddr46Output;
@@ -102,7 +102,7 @@ unsigned epicsStdCall sockAddrToA (
     if ( bufSize < 1 ) {
         return 0;
     }
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     if ( paddr->sa_family == AF_INET6 ) {
         unsigned ret;
         int gai_ecode = getnameinfo(paddr, sizeof(struct sockaddr_in6), pBuf, bufSize,
@@ -172,7 +172,7 @@ unsigned epicsStdCall sockAddrToDottedIP (
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
     if ( ( paddr->sa_family != AF_INET )
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
          && ( paddr->sa_family != AF_INET6 )
 #endif
                                               )  {
@@ -227,7 +227,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
                                 pBuf, bufSize, "%u.%u.%u.%u:%hu",
                                 chunk[3], chunk[2], chunk[1], chunk[0],
                                 ntohs ( pAddr->sin_port ) );
-#if EPICS_HAS_IPV6 && defined(NI_MAXHOST) && defined(NI_MAXSERV)
+#if defined(AF_INET6) && defined(NI_MAXHOST) && defined(NI_MAXSERV)
     } else if (pAddr->sin_family == AF_INET6) {
         const struct sockaddr * paddr = (const struct sockaddr * )pAddr;
         char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
@@ -296,8 +296,10 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
     char *type_str = "";
     if (domain == AF_INET) {
         domain_family_str = "AF_INET";
+#ifdef AF_INET6
     } else if (domain == AF_INET6) {
         domain_family_str = "AF_INET6";
+#endif
     }
     if (type == SOCK_DGRAM) {
         type_str = "DGRAM";
@@ -322,7 +324,7 @@ LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno
 {
     osiSocklen_t socklen = ( osiSocklen_t ) sizeof ( pAddr46->ia ) ;
     int status;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     if (pAddr46->sa.sa_family == AF_INET6) {
       socklen = ( osiSocklen_t ) sizeof ( pAddr46->in6 ) ;
     }
@@ -356,7 +358,7 @@ LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, i
     osiSockAddr46 addr46;
     memset ( (char *)&addr46, 0 , sizeof (addr46) );
     addr46.sa.sa_family = sockets_family;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     if ( sockets_family == AF_INET6 ) {
         addr46.in6.sin6_addr = in6addr_any;
         addr46.in6.sin6_port = htons ( port );
@@ -383,7 +385,7 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
     osiSockAddr46 addr46Output = *pAddr46; /* struct copying */
     int status;
     osiSocklen_t socklen = sizeof(addr46Output.ia);
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     /*  If needed (socket is created with AF_INET6),
         convert an IPv4 address into a IPv4 mapped address */
     if (sockets_family == AF_INET6 && pAddr46->sa.sa_family == AF_INET) {
@@ -394,7 +396,6 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
     }
 #endif
 
-    /* Now we have an IPv6 address. use the size of it when calling connect() */
     status = connect(sock, &addr46Output.sa, socklen);
 
 #ifdef NETDEBUG
@@ -467,7 +468,7 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
 {
     osiSocklen_t socklen = ( osiSocklen_t ) sizeof ( pAddr46->ia ) ;
     int status;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     if (pAddr46->sa.sa_family == AF_INET6) {
       socklen = ( osiSocklen_t ) sizeof ( pAddr46->in6 ) ;
     }
@@ -549,7 +550,7 @@ LIBCOM_API int epicsStdCall sockIPsAreIdentical46(const osiSockAddr46 *pAddr1,
     if (pAddr1->sa.sa_family == AF_INET && pAddr2->sa.sa_family == AF_INET &&
         pAddr1->ia.sin_addr.s_addr == pAddr2->ia.sin_addr.s_addr) {
         return 1;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     } else if (pAddr1->sa.sa_family == AF_INET6 && pAddr2->sa.sa_family == AF_INET6 &&
                !memcmp(&pAddr1->in6.sin6_addr, &pAddr2->in6.sin6_addr,
                        sizeof(pAddr2->in6.sin6_addr))&&
@@ -567,7 +568,7 @@ LIBCOM_API int epicsStdCall sockAddrAreIdentical46(const osiSockAddr46 *pAddr1,
         pAddr1->ia.sin_addr.s_addr == pAddr2->ia.sin_addr.s_addr &&
         pAddr1->ia.sin_port == pAddr2->ia.sin_port) {
         return 1;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     } else if (pAddr1->sa.sa_family == AF_INET6 && pAddr2->sa.sa_family == AF_INET6 &&
                !memcmp(&pAddr1->in6.sin6_addr, &pAddr2->in6.sin6_addr,
                        sizeof(pAddr2->in6.sin6_addr)) &&
@@ -585,7 +586,7 @@ LIBCOM_API int epicsStdCall sockPortAreIdentical46(const osiSockAddr46 *pAddr1,
     if (pAddr1->sa.sa_family == AF_INET && pAddr2->sa.sa_family == AF_INET &&
         pAddr1->ia.sin_port == pAddr2->ia.sin_port) {
         return 1;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     } else if (pAddr1->sa.sa_family == AF_INET6 && pAddr2->sa.sa_family == AF_INET6 &&
                pAddr1->in6.sin6_port == pAddr2->in6.sin6_port) {
         return 1;
@@ -598,7 +599,7 @@ LIBCOM_API int epicsStdCall epicsSocket46portFromAddress(osiSockAddr46 *paddr)
 {
     if (paddr->ia.sin_family == AF_INET) {
         return ntohs(paddr->ia.sin_port);
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     } else if (paddr->in6.sin6_family == AF_INET6) {
         return ntohs(paddr->in6.sin6_port);
 #endif
@@ -615,7 +616,7 @@ LIBCOM_API int epicsStdCall epicsSocket46portFromAddress(osiSockAddr46 *paddr)
  */
 LIBCOM_API int epicsStdCall epicsSocket46GetDefaultAddressFamily(void)
 {
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     return AF_INET6;
 #else
     return AF_INET;
@@ -624,12 +625,11 @@ LIBCOM_API int epicsStdCall epicsSocket46GetDefaultAddressFamily(void)
 
 /*
  * The family is AF_INET or AF_INET6
- * When EPICS_HAS_IPV6 os not set: Only AF_INET
  */
 LIBCOM_API int epicsStdCall epicsSocket46IsAF_INETorAF_INET6(int family)
 {
     if (family == AF_INET) return 1;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     if (family == AF_INET6) return 1;
 #endif
     return 0;
@@ -656,7 +656,7 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                (addr >> 8) & 0xFF,
                                (addr) & 0xFF);
     }
-#if EPICS_HAS_IPV6 && defined(NI_MAXHOST)
+#if defined(AF_INET6) && defined(NI_MAXHOST)
     else if (pAddr->sa_family == AF_INET6) {
         const struct sockaddr * paddr = (const struct sockaddr * )pAddr;
         char hbuf[NI_MAXHOST];
@@ -727,7 +727,7 @@ LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int linen
                     filename, lineno,
                     (int)sock, interfaceIndex);
 #endif
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     {
         int status = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
                                 (char*)&interfaceIndex, sizeof(interfaceIndex));
@@ -835,7 +835,7 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
                                                  const osiSockAddr46 *pAddrInterface,
                                                  osiSockAddr46 *pAddrMulticast)
 {
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     struct sockaddr_in6 *pAddr6 = &pAddrMulticast->in6;
     memcpy(pAddrMulticast, pAddrInterface, sizeof(*pAddrMulticast));
     if (pAddrInterface->sa.sa_family == AF_INET6) {

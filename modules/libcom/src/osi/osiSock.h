@@ -26,17 +26,6 @@
 /* Needed to compile external modules, like pcas */
 #define EPICS_BASE_HAS_OSISOCKADDR46
 
-/* We assume that darwin and linux can handle IPv6 with the current code base */
-#if defined ( darwin ) || defined ( linux )
-#ifndef RTEMS_LEGACY_STACK
-
-#ifndef EPICS_HAS_IPV6
-#define EPICS_HAS_IPV6 1
-#endif
-
-#endif
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,8 +37,8 @@ struct in_addr;
 typedef union osiSockAddr46 {
     struct sockaddr_in  ia;
     struct sockaddr     sa;
-#if EPICS_HAS_IPV6
-    struct sockaddr_in6 in6 /* in6 for IPv6 */;
+#ifdef AF_INET6
+    struct sockaddr_in6 in6;
 #endif
 } osiSockAddr46;
 
@@ -181,7 +170,6 @@ LIBCOM_API int epicsStdCall epicsSocket46GetDefaultAddressFamily(void);
 
 /*
  * The family is AF_INET or AF_INET6
- * When EPICS_HAS_IPV6 os not set: Only AF_INET
  */
 LIBCOM_API int epicsStdCall epicsSocket46IsAF_INETorAF_INET6(int family);
 

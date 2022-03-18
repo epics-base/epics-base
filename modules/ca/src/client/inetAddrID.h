@@ -53,7 +53,7 @@ inline resTableIndex inetAddrID::hash () const
     const unsigned inetAddrMinIndexBitWidth = 8u;
     const unsigned inetAddrMaxIndexBitWidth = 32u;
     unsigned index;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     if ( this->addr46.sa.sa_family == AF_INET6 ) {
         index = this->addr46.in6.sin6_addr.s6_addr[15];
         index ^= this->addr46.in6.sin6_addr.s6_addr[14] << 8;

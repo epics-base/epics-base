@@ -17,6 +17,10 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Add FMOD as CALC Expression
+
+The floating point modulo function `FMOD(NUM,DEN)` is added.
+
 ## EPICS Release 7.0.7
 
 ### Doxygen Annotations

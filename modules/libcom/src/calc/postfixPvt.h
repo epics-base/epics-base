@@ -71,6 +71,7 @@ typedef enum {
     /* Numeric */
     CEIL,
     FLOOR,
+    FMOD,
     FINITE,
     ISINF,
     ISNAN,

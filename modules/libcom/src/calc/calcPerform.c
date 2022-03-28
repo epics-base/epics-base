@@ -240,6 +240,11 @@ LIBCOM_API long
             *ptop = floor(*ptop);
             break;
 
+        case FMOD:
+            top = *ptop--;
+            *ptop = fmod(*ptop, top);
+            break;
+
         case FINITE:
             nargs = *pinst++;
             top = finite(*ptop);

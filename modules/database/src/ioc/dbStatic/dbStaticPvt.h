@@ -44,7 +44,7 @@ void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...) EPICS_PRINTF_STYLE(2,3)
 void dbPutStringSuggest(DBENTRY *pdbentry, const char *pstring);
 
 DBCORE_API
-const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp);
+const char *dbOpenFile(DBBASE **ppdbbase,const char *filename,FILE **fp);
 
 struct jlink;
 

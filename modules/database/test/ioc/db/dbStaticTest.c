@@ -304,7 +304,7 @@ MAIN(dbStaticTest)
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
     dbPath(pdbbase,"." OSI_PATH_LIST_SEPARATOR "..");
-    if(!(ldir = dbOpenFile(pdbbase, "dbStaticTest.db", &fp))) {
+    if(!(ldir = dbOpenFile(&pdbbase, "dbStaticTest.db", &fp))) {
         testAbort("Unable to read dbStaticTest.db");
     }
     if(dbReadDatabaseFP(&pdbbase, fp, NULL, NULL)) {

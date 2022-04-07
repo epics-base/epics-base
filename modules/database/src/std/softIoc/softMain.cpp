@@ -29,6 +29,7 @@
 #include "iocsh.h"
 #include "osiFileName.h"
 #include "epicsInstallDir.h"
+#include "dbStaticPvt.h"
 
 extern "C" int softIoc_registerRecordDeviceDriver(struct dbBase *pdbbase);
 
@@ -37,6 +38,8 @@ extern "C" int softIoc_registerRecordDeviceDriver(struct dbBase *pdbbase);
 #  define EPICS_BASE "/"
 #  error -DEPICS_BASE required
 #endif
+
+
 
 #define DBD_BASE "dbd" OSI_PATH_SEPARATOR "softIoc.dbd"
 #define EXIT_BASE "db" OSI_PATH_SEPARATOR "softIocExit.db"
@@ -53,14 +56,15 @@ static void exitSubroutine(subRecord *precord) {
     epicsExitLater((precord->a == 0.0) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
-void usage(const char *arg0, const std::string& base_dbd) {
+void usage(const char *arg0, const std::string& base_dbd, const std::string& prefix) {
     std::cout<<"Usage: "<<arg0<<
                " [-D softIoc.dbd] [-h] [-S] [-s] [-v] [-a ascf]\n"
                "[-m macro=value,macro2=value2] [-d file.db]\n"
                "[-x prefix] [st.cmd]\n"
                "\n"
-               "    -D <dbd>  If used, must come first. Specify the path to the softIoc.dbdfile."
+               "    -D <dbd>  If used, must come first. Specify the path to the softIoc.dbdfile.\n"
                "        The compile-time install location is saved in the binary as a default.\n"
+               "        If the compile-time default is not found, EPICS_BASE/dbd will also be tried.\n"
                "\n"
                "    -h  Print this mesage and exit.\n"
                "\n"
@@ -92,7 +96,10 @@ void usage(const char *arg0, const std::string& base_dbd) {
                "interactive IOC shell.\n"
                "\n"
                "Compiled-in path to softIoc.dbd is:\n"
-               "\t"<<base_dbd.c_str()<<"\n";
+               "\t"<<prefix+DBD_FILE_REL<<std::endl;
+               if(base_dbd == prefix+DBD_FILE_REL){
+                   std::cout<<"If it can't be located here, EPICS_BASE/dbd/softIoc.dbd will also be tried."<<std::endl;
+               }
 }
 
 void errIf(int ret, const std::string& msg)
@@ -103,17 +110,27 @@ void errIf(int ret, const std::string& msg)
 
 bool lazy_dbd_loaded;
 
-void lazy_dbd(const std::string& dbd_file) {
+void lazy_dbd(const std::string& dbd_file, const std::string& prefix) {
     if(lazy_dbd_loaded) return;
     lazy_dbd_loaded = true;
-
+    std::string loaded_file;
+    FILE *fp = NULL;
+    std::string dbd_relative_to_epics_base(DBD_FILE);
+    loaded_file = dbd_file;
+    dbOpenFile(&pdbbase, dbd_file.c_str(), &fp);
+    if(verbose)
+        std::cout<<"dbOpenFile(&pdbbase"<<dbd_file<<",&fp)"<<std::endl;
+    if((!fp) && dbd_file==prefix+DBD_FILE_REL){
+        loaded_file=dbd_relative_to_epics_base;
+        if(verbose)
+            std::cout<<"dbOpenFile(&pdbbase"<<dbd_relative_to_epics_base<<",&fp)"<<std::endl;
+        dbOpenFile(&pdbbase,dbd_relative_to_epics_base.c_str(),&fp);
+    }
+    if(fp && dbReadDatabaseFP(&pdbbase, fp, NULL, NULL)){
+        std::cerr<<"Failed to read "<<loaded_file<<", but it was found and loaded."<<std::endl;
+    }
     if (verbose)
-        std::cout<<"dbLoadDatabase(\""<<dbd_file<<"\")\n";
-    errIf(dbLoadDatabase(dbd_file.c_str(), NULL, NULL),
-          std::string("Failed to load DBD file: ")+dbd_file);
-
-    if (verbose)
-        std::cout<<"softIoc_registerRecordDeviceDriver(pdbbase)\n";
+        std::cout<<"softIoc_registerRecordDeviceDriver(pdbbase)"<<std::endl;
     errIf(softIoc_registerRecordDeviceDriver(pdbbase),
           "Failed to initialize database");
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
@@ -133,38 +150,36 @@ int main(int argc, char *argv[])
         bool ranScript = false;
 
         // attempt to compute relative paths
-        {
-            std::string prefix;
-            char *cprefix = epicsGetExecDir();
-            if(cprefix) {
-                try {
-                    prefix = cprefix;
-                    free(cprefix);
-                } catch(...) {
-                    free(cprefix);
-                    throw;
-                }
+        std::string prefix;
+        char *cprefix = epicsGetExecDir();
+        if(cprefix) {
+            try {
+                prefix = cprefix;
+                free(cprefix);
+            } catch(...) {
+                free(cprefix);
+                throw;
             }
-
-            dbd_file = prefix + DBD_FILE_REL;
-            exit_file = prefix + EXIT_FILE_REL;
         }
+
+        dbd_file = prefix + DBD_FILE_REL;
+        exit_file = prefix + EXIT_FILE_REL;
 
         int opt;
 
         while ((opt = getopt(argc, argv, "ha:D:d:m:Ssx:v")) != -1) {
             switch (opt) {
             case 'h':               /* Print usage */
-                usage(argv[0], dbd_file);
+                usage(argv[0], dbd_file, prefix);
                 epicsExit(0);
                 return 0;
             default:
-                usage(argv[0], dbd_file);
+                usage(argv[0], dbd_file, prefix);
                 std::cerr<<"Unknown argument: -"<<char(opt)<<"\n";
                 epicsExit(2);
                 return 2;
             case 'a':
-                lazy_dbd(dbd_file);
+                lazy_dbd(dbd_file, prefix);
                 if (!macros.empty()) {
                     if (verbose)
                         std::cout<<"asSetSubstitutions(\""<<macros<<"\")\n";
@@ -183,7 +198,7 @@ int main(int argc, char *argv[])
                 dbd_file = optarg;
                 break;
             case 'd':
-                lazy_dbd(dbd_file);
+                lazy_dbd(dbd_file, prefix);
                 if (verbose) {
                     std::cout<<"dbLoadRecords(\""<<optarg<<"\"";
                     if(!macros.empty())
@@ -206,20 +221,26 @@ int main(int argc, char *argv[])
                 verbose = true;
                 break;
             case 'x':
-                lazy_dbd(dbd_file);
+                lazy_dbd(dbd_file, prefix);
                 xmacro  = "IOC=";
                 xmacro += optarg;
-                if (verbose) {
-                    std::cout<<"dbLoadRecords(\""<<exit_file<<"\", \""<<xmacro<<"\")\n";
+                FILE *fp;
+                if(verbose)
+                    std::cout<<"dbOpenFile(\""<<exit_file<<"\", \""<<xmacro<<"\")\n";
+                dbOpenFile(&pdbbase, exit_file.c_str(), &fp);
+                if(!fp){
+                    dbOpenFile(&pdbbase, EXIT_FILE, &fp);
+                    if(verbose)
+                        std::cout<<"dbOpenFile(\""<<EXIT_FILE<<"\", \""<<xmacro<<"\")\n";
                 }
-                errIf(dbLoadRecords(exit_file.c_str(), xmacro.c_str()),
-                      std::string("Failed to load: ")+exit_file);
+                errIf(fp && dbLoadRecords(exit_file.c_str(), xmacro.c_str()),
+                      std::string("Failed to read: ")+exit_file+", but it was found and loaded.\n");
                 loadedDb = true;
                 break;
             }
         }
 
-        lazy_dbd(dbd_file);
+        lazy_dbd(dbd_file, prefix);
 
         if(optind<argc)  {
             // run script
@@ -259,7 +280,7 @@ int main(int argc, char *argv[])
                 }
 
             } else {
-                usage(argv[0], dbd_file);
+                usage(argv[0], dbd_file, prefix);
                 std::cerr<<"Nothing to do!\n";
                 epicsExit(1);
                 return 1;

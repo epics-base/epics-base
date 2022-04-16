@@ -79,6 +79,10 @@ DBCORE_API long dbReadDatabase(DBBASE **ppdbbase,
  */
 DBCORE_API long dbReadDatabaseFP(DBBASE **ppdbbase,
     FILE *fp, const char *path, const char *substitutions);
+#ifdef EPICS_PRIVATE_API
+DBCORE_API long dbReadDatabaseMem(DBBASE **ppdbbase,
+                                  const char* contents, epicsUInt32 flags);
+#endif
 DBCORE_API long dbPath(DBBASE *pdbbase, const char *path);
 DBCORE_API long dbAddPath(DBBASE *pdbbase, const char *path);
 DBCORE_API char * dbGetPromptGroupNameFromKey(DBBASE *pdbbase,

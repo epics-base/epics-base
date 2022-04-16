@@ -11,6 +11,7 @@
 /* Author:  Marty Kraimer Date:    13JUL95*/
 
 /*The routines in this module are serially reusable NOT reentrant*/
+#define EPICS_PRIVATE_API
 
 #include <ctype.h>
 #include <epicsStdlib.h>
@@ -351,6 +352,26 @@ long dbReadDatabase(DBBASE **ppdbbase,const char *filename,
 long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
         const char *path,const char *substitutions)
 {return (dbReadCOM(ppdbbase,0,fp,path,substitutions));}
+
+long dbReadDatabaseMem(DBBASE **ppdbbase, const char* contents, epicsUInt32 flags)
+{
+    if(flags&0xffff) {
+        return -1; /* use of reserved mandatory flag */
+    }
+#if _POSIX_C_SOURCE >= 200809L
+    FILE *fp = fmemopen((char*)contents, strlen(contents), "r");
+    if(!fp)
+        return -1;
+    return dbReadDatabaseFP(ppdbbase, fp, NULL, NULL);
+#else
+    (void)ppdbbase;
+    (void)contents;
+#  ifdef __GNUC__
+#    warning dbReadDatabaseMem() No Mechanism
+#  endif
+    return S_dbLib_noRecSup;
+#endif
+}
 
 static int db_yyinput(char *buf, int max_size)
 {

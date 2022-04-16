@@ -35,7 +35,8 @@ my ($file, $subname, $bldTop) = @ARGV;
 $DBD::Parser::allowAutoDeclarations = 1;
 
 my $dbd = DBD->new();
-ParseDBD($dbd, Readfile($file, "", \@path));
+my $content = Readfile($file, "", \@path);
+ParseDBD($dbd, $content);
 
 if ($opt_D) {   # Output dependencies only
     my %filecount;
@@ -71,11 +72,13 @@ print $out (<< "END");
 #ifndef USE_TYPED_RSET
 #  define USE_TYPED_RSET
 #endif
+#define EPICS_PRIVATE_API
 #include "compilerDependencies.h"
 #include "epicsStdlib.h"
 #include "iocsh.h"
 #include "iocshRegisterCommon.h"
 #include "registryCommon.h"
+#include "dbAccess.h"
 #include "recSup.h"
 #include "shareLib.h"
 
@@ -215,6 +218,21 @@ if (%variables) {
 # Now for actual registration routine
 
 print $out (<< "END");
+static const char* contents =
+END
+
+for my $line (split /\n/, $content) {
+    $line =~ s/"/\\"/g;
+    print $out "  \"$line\\n\"\n";
+}
+
+print $out (<< "END");
+;
+static long loadDefaultDatabase(struct dbBase **ppdb)
+{
+    return dbReadDatabaseMem(ppdb, contents, 0u);
+}
+
 int $subname(DBBASE *pbase)
 {
     static int executed = 0;
@@ -291,6 +309,8 @@ static void rrddCallFunc(const iocshArgBuf *)
 static int Registration() {
     iocshRegisterCommon();
     iocshRegister(&rrddFuncDef, rrddCallFunc);
+    if(!iocshDefaultDatabaseHook)
+        iocshDefaultDatabaseHook = &loadDefaultDatabase;
     return 0;
 }
 

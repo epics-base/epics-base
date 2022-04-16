@@ -116,6 +116,13 @@ LIBCOM_API void epicsStdCall iocshEnvClear(const char *name);
 /* 'weak' link to pdbbase */
 LIBCOM_API extern struct dbBase **iocshPpdbbase;
 
+#ifdef EPICS_PRIVATE_API
+/* Hook to allow for implicit creation of a DBD just before 'pdbbase'
+ * is passed for the first time.  (eg. to an rRDD function)
+ */
+LIBCOM_API extern long (*iocshDefaultDatabaseHook)(struct dbBase **);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

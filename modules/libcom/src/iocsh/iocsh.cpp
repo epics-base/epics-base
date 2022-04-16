@@ -12,6 +12,8 @@
 /* Heavily modified by Eric Norum   Date: 03MAY2000 */
 /* Adapted to C++ by Eric Norum   Date: 18DEC2000 */
 
+#define EPICS_PRIVATE_API
+
 #include <exception>
 
 #include <stddef.h>
@@ -40,6 +42,8 @@ extern "C" {
  * Global link to pdbbase
  */
 struct dbBase **iocshPpdbbase;
+
+long (*iocshDefaultDatabaseHook)(struct dbBase **);
 
 /*
  * File-local information
@@ -334,6 +338,10 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
     case iocshArgPdbbase:
         /* Argument must be missing or 0 or pdbbase */
         if(!arg || !*arg || (*arg == '0') || (strcmp(arg, "pdbbase") == 0)) {
+            if((!iocshPpdbbase || !*iocshPpdbbase) && iocshDefaultDatabaseHook) {
+                if((*iocshDefaultDatabaseHook)(iocshPpdbbase))
+                    return 0;
+            }
             if(!iocshPpdbbase || !*iocshPpdbbase) {
                 showError(filename, lineno, "pdbbase not present");
                 return 0;

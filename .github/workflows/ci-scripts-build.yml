@@ -187,6 +187,9 @@ jobs:
       run: python .ci/cue.py prepare
     - name: Build main module
       run: python .ci/cue.py build
+    - name: Build main module (repeat?)
+      # repeat in "question mode" to ensure a repeated 'make' is a no-op.
+      run: python .ci/cue.py build -- -q
     - name: Run main module tests
       run: python .ci/cue.py -T 60M test
     - name: Upload tapfiles Artifact

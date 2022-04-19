@@ -44,6 +44,7 @@
 #include "special.h"
 #include "cantProceed.h"
 #include "menuYesNo.h"
+#include "menuOmsl.h"
 
 #define GEN_SIZE_OFFSET
 #include "aaoRecord.h"
@@ -92,6 +93,7 @@ rset aaoRSET={
 epicsExportAddress(rset,aaoRSET);
 
 static void monitor(aaoRecord *);
+static long fetchValue(aaoRecord *, int);
 static long writeValue(aaoRecord *);
 
 static long init_record(struct dbCommon *pcommon, int pass)
@@ -142,7 +144,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         recGblRecordError(S_dev_missingSup, prec, "aao: init_record");
         return S_dev_missingSup;
     }
-    return 0;
+    return fetchValue(prec, 1);
 }
 
 static long process(struct dbCommon *pcommon)
@@ -160,6 +162,9 @@ static long process(struct dbCommon *pcommon)
 
     if ( !pact ) {
         prec->udf = FALSE;
+
+        if(!!(status = fetchValue(prec, 0)))
+            return status;
 
         /* Update the timestamp before writing output values so it
          * will be up to date if any downstream records fetch it via TSEL */
@@ -337,6 +342,34 @@ static void monitor(aaoRecord *prec)
 
     if (monitor_mask)
         db_post_events(prec, &prec->val, monitor_mask);
+}
+
+static long fetchValue(aaoRecord *prec, int init)
+{
+    int isConst;
+    long status;
+    long nReq = prec->nelm;
+
+    if(prec->omsl!=menuOmslclosed_loop)
+        return 0;
+
+    isConst = dbLinkIsConstant(&prec->dol);
+
+    if(init && isConst) {
+        status = dbLoadLinkArray(&prec->dol, prec->ftvl, prec->bptr, &nReq);
+
+    } else if(!init && !isConst) {
+        status = dbGetLink(&prec->dol, prec->ftvl, prec->bptr, 0, &nReq);
+
+    } else {
+        return 0;
+    }
+
+    if(!status) {
+        prec->nord = nReq;
+        prec->udf = FALSE;
+    }
+    return status;
 }
 
 static long writeValue(aaoRecord *prec)

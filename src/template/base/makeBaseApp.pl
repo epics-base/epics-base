@@ -2,8 +2,8 @@
 
 # Authors: Ralph Lange, Marty Kraimer, Andrew Johnson and Janet Anderson
 
-use FindBin qw($Bin);
-use lib ("$Bin/../../lib/perl");
+use FindBin qw($RealBin);
+use lib ("$RealBin/../../lib/perl");
 
 use Cwd;
 use Getopt::Std;

@@ -125,7 +125,28 @@ BPTR field holds the address of the array.
 The NORD field holds a counter of the number of elements that have been written to
 the output,
 
-=fields VAL, BPTR, NORD
+=fields VAL, BPTR, NORD, OMSL, DOL
+
+The following steps are performed in order during record processing.
+
+=head4 Fetch Value
+
+The OMSL menu field is used to determine whether the DOL link
+field should be used during processing or not:
+
+=over
+
+=item *
+If OMSL is C<supervisory> the DOL field are not used.
+The new output value is taken from the VAL field, which may have been set from
+elsewhere.
+
+=item *
+If OMSL is C<closed_loop> the DOL link field is read to obtain a value.
+
+=back
+
+OMSL and DOL were added to aaoRecord with Base UNRELEASED.
 
 =head3 Simulation Mode Parameters
 
@@ -326,6 +347,17 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		prompt("Output Specification")
 		promptgroup("50 - Output")
 		interest(1)
+	}
+	field(DOL,DBF_INLINK) {
+		prompt("Desired Output Link")
+		promptgroup("40 - Input")
+		interest(1)
+	}
+	field(OMSL,DBF_MENU) {
+		prompt("Output Mode Select")
+		promptgroup("50 - Output")
+		interest(1)
+		menu(menuOmsl)
 	}
 	field(EGU,DBF_STRING) {
 		prompt("Engineering Units")

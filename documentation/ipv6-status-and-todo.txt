@@ -5,10 +5,11 @@ Status and to do of EPICS base:
      working: using link-local IPv6 addresses or global IPv6 addresses.
      todo: test with a DNS name (AAAA record)
    - beacons:
-     are send out via IPv6 link local addresses
-     Use EPICS_CAS_AUTO_BEACON_ADDR_LIST=6 (or 46)
+     Are send out via IPv6 link local addresses if configured
+     with EPICS_CAS_AUTO_BEACON_ADDR_LIST=6 (or 46)
+     The beacons use an extended message for CA_PROTO_RSRV_IS_UP
    - Revers name resolution
-     aToIPAddr does not handle IPv6 (and needs to be replace)
+     aToIPAddr does not handle IPv6 (and needs to be replaced)
      Some problems to convert interface index into a name
      (The #%en0" part of the IPv6 address)
      Needs to be investigated (may be not thread-save ?)
@@ -19,15 +20,16 @@ Status and to do of EPICS base:
      Start the repeater like this:
      `killall caRepeater ; EPICS_CA_AUTO_ADDR_LIST=46 caRepeater`
      For IOCs and clients using IPv4, IPv6 or both see ipv6-howto.txt
+
 - pvAccess:
    Nothing done yet.
    Probably we can steal/reuse code from channel access.
-   However, I would kike to see channel acces more tested before starting
+   However, I would like to see channel access more tested before starting
    with pvAccess
 - Other modules:
   pcas:
-      Work ongoing. Added patched so that pcas be compiled against latest base
-      Support for IPv6 must be added.
+    Work ongoing. Added patches so that pcas be compiled against latest base
+    Support for IPv6 must be added.
 
 - Linux, MacOs, Windows, vxWorks, RTEMS, BSD
   Testing on Linux and Mac looks good. Need to re-run FreeBSD.
@@ -40,8 +42,12 @@ Status and to do of EPICS base:
 - pvapy: to be done
 - JCA: to be done
 - EPICS gateways: to be done
+-  asyn:
+  Prototype working.
+  It seems that asyn can support IPv6 independent of EPICS base,
+  there is not really any common code.
 
-Other planned todo (unorderedd)
+Other todo (unorderedd)
 - Clean up the debug printing
 - More code review
 - write automated tests

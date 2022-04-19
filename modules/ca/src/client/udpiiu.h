@@ -55,7 +55,7 @@ extern "C" void cacRecvThreadUDP ( void *pParam );
 
 LIBCA_API void epicsStdCall caStartRepeaterIfNotInstalled (
     unsigned repeaterPort );
-LIBCA_API void epicsStdCall caRepeaterRegistrationMessage (
+LIBCA_API void epicsStdCall caRepeaterRegistrationMessage4 (
     SOCKET sock, unsigned repeaterPort, unsigned attemptNumber );
 #ifdef AF_INET6
 LIBCA_API void epicsStdCall caRepeaterRegistrationMessageIPv6 (

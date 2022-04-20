@@ -26,15 +26,6 @@
 /* Needed to compile external modules, like pcas */
 #define EPICS_BASE_HAS_OSISOCKADDR46
 
-/* Needed for different sock functions */
-#define EPICSSOCKET_PRINT_DEBUG_FLAG        (1<<0)
-#define EPICSSOCKET_ENABLEADDRESSREUSE_FLAG (1<<1)
-#define EPICSSOCKET_ENABLEBROADCASTS_FLAG   (1<<2)
-#define EPICSSOCKET_BIND_LOCALPORT_FLAG     (1<<3)
-#define EPICSSOCKET_CONNECT_IPV4            (1<<4)
-/* leave out 5 */
-#define EPICSSOCKET_CONNECT_IPV6            (1<<6)
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -117,24 +108,7 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char* filename, int lin
                                                    const osiSockAddr46 *pAddr46);
 #define epicsSocket46Connect(a,b,c) epicsSocket46ConnectFL(__FILE__, __LINE__, a,b,c)
 
-
-LIBCOM_API SOCKET epicsStdCall
-epicsSocket46CreateBindErrMsg (int domain, int type, int protocol,
-                               unsigned short     localPort,
-                               int                flags,
-                               char               *pErrorMessage,
-                               size_t             errorMessageSize);
-
-LIBCOM_API SOCKET epicsStdCall
-epicsSocket46CreateBindConnect (int domain, int type, int protocol,
-                                const char         *hostname,
-                                unsigned short     port,
-                                unsigned short     localPort,
-                                int                flags,
-                                char               *pErrorMessage,
-                                size_t             errorMessageSize);
-
- /*
+/*
  * bind a port to a local port
  */
 LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, int lineno,

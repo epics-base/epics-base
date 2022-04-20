@@ -528,7 +528,7 @@ void udpRecvThread::run ()
 #ifdef NETDEBUG
     {
         epicsBaseDebugLog ("udpRecvThread::run this->iiu.pPollFds=%p this->iiu.numPollFds=%d\n",
-                       this->iiu.pPollFds, this->iiu.numPollFds);
+                           this->iiu.pPollFds, this->iiu.numPollFds);
     }
 #endif
 
@@ -542,7 +542,7 @@ void udpRecvThread::run ()
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
                 epicsBaseDebugLog("udpRecvThread::run pollres =%d: %s\n",
-                              pollres, sockErrBuf);
+                                  pollres, sockErrBuf);
                 if ( this->iiu.shutdownCmd ) {
                     return; /* Do not end up in an endless loop */
                 }
@@ -551,7 +551,8 @@ void udpRecvThread::run ()
             for ( unsigned idx = 0; idx < this->iiu.numPollFds; idx++ ) {
 #ifdef NETDEBUGXX
                 epicsBaseDebugLog ("udpRecvThread::run idx=%u socket=%d revents=0x%x\n",
-                               idx, (int)this->iiu.pPollFds[idx].fd, this->iiu.pPollFds[idx].revents);
+                                   idx, (int)this->iiu.pPollFds[idx].fd,
+                                   this->iiu.pPollFds[idx].revents);
 #endif
                 if (this->iiu.pPollFds[idx].revents) {
                     sock = this->iiu.pPollFds[idx].fd;
@@ -696,13 +697,8 @@ void epicsStdCall caRepeaterRegistrationMessage4 (
         osiSockAddr46 tmpAddr;
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         tmpAddr.in6.sin6_port = 0;
-<<<<<<< HEAD
-        (void)getsockname ( sock, &tmpAddr.sa, &saddr_length );
-        epicsBaseDebugLog ("udpiiu: sending caRepeaterRegistrationMessageIPv4 port=%u\n",
-=======
         (void)getsockname ( sock4, &tmpAddr.sa, &saddr_length );
         epicsBaseDebugLog ("CAC: udpiiu::caRepeaterRegistrationMessage port=%u\n",
->>>>>>> 211005-1138-IPv6-osiSockAddr46-V2
                            ntohs ( tmpAddr.in6.sin6_port ) );
      }
 #endif

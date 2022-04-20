@@ -78,7 +78,7 @@
 #include "osiSock.h"
 
 #include "epicsBaseDebugLog.h"
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
 #include "cantProceed.h"
 #include <poll.h>
 #endif
@@ -321,7 +321,7 @@ bool repeaterClient::verify ()
         fprintf ( stderr, "CA Repeater: Bind test error \"%s\"\n",
             sockErrBuf );
     }
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
     sockerrno = makeSocket ( AF_INET6, this->port (), false, & tmpSock );
     if ( sockerrno == SOCK_EADDRINUSE ) {
         // Normal result, client using port
@@ -554,7 +554,7 @@ void ca_repeater ()
     osiSockAddr46 from46;
     unsigned short port;
     char * pBuf;
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
     SOCKET sock6;
     struct pollfd *pPollFds = NULL;
     unsigned numPollFds = 0;
@@ -590,7 +590,7 @@ void ca_repeater ()
         delete [] pBuf;
         return;
     }
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
     /* Create a socket for registrations via [::1] */
     if ( int sockerrno = makeSocket ( AF_INET6, PORT_ANY, true, & sock6 ) ) {
       char sockErrBuf[64];
@@ -613,7 +613,7 @@ void ca_repeater ()
     {
         ELLLIST casBeaconAddrList = ELLLIST_INIT;
         ELLLIST casMergeAddrList = ELLLIST_INIT;
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
         configureChannelAccessAddressList ( & casMergeAddrList, sock4, port);
 #endif
 
@@ -628,7 +628,7 @@ void ca_repeater ()
         /* First clean up */
         removeDuplicateAddresses(&casBeaconAddrList, &casMergeAddrList , 0);
 
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
         searchDestList_count = (unsigned)casBeaconAddrList.count;
         pPollFds = (pollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock6 */
                                               sizeof(struct pollfd),
@@ -681,7 +681,7 @@ void ca_repeater ()
                 }
             }
 #endif
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
             if (pNode->addr46.sa.sa_family == AF_INET6) {
                 osiSockAddr46 addr46 = pNode->addr46; // struct copy
                 unsigned int interfaceIndex = (unsigned int)addr46.in6.sin6_scope_id;
@@ -709,7 +709,7 @@ void ca_repeater ()
 
     while ( true ) {
         SOCKET sock = sock4;
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
         pollagain:
         if ( pPollFds && numPollFds >= 1 ) {
             int pollres = poll ( pPollFds, numPollFds, -1 );
@@ -782,7 +782,7 @@ void ca_repeater ()
                 }
             }
             else if ( AlignedWireRef < epicsUInt16 > ( pMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
                 if (from46.sa.sa_family == AF_INET6 ) {
                     size_t needed_size = sizeof(ca_msg_IPv6_RSRV_IS_UP_type);
                     if ( (size_t)size >= needed_size ) {

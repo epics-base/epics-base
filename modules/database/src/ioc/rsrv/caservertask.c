@@ -162,7 +162,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
     memset(&scratch46, 0, sizeof(scratch46));
     scratch46.ia.sin_family = epicsSocket46GetDefaultAddressFamily();
     scratch46.ia.sin_port = htons(*port);
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     /*
      * the port handling below assumes that the port is on the same
      * location for both IPv4 and IPv6
@@ -426,7 +426,7 @@ void rsrv_build_addr_lists(void)
                 match46.ia.sin_addr.s_addr = pNode->addr46.ia.sin_addr.s_addr;
                 match46.ia.sin_port = htons(ca_beacon_port);
             }
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
             else if (pNode->addr46.ia.sin_family == AF_INET6) {
                 if (!useIPv6)
                     continue;
@@ -478,7 +478,7 @@ void rsrv_build_addr_lists(void)
             osiSockAddr46 match46;
             memset(&match46, 0, sizeof(match46));
             match46.ia.sin_family = AF_INET; /* This is the default */
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
             if (autobeaconlist == 46) {
                 match46.ia.sin_family = AF_UNSPEC; /* Both v6 and v4 */
             } else if (autobeaconlist == 6) {
@@ -531,7 +531,7 @@ void rsrv_build_addr_lists(void)
         {
             osiSockAddrNode *pNode = CONTAINER(cur, osiSockAddrNode, node);
             static_notify_conf.pSockets[i] = beaconSocket4; /* the default */
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
             if (pNode->addr46.sa.sa_family == AF_INET6) {
                 SOCKET sock = epicsSocket46Create (AF_INET6, SOCK_DGRAM, 0);
                 if (sock != INVALID_SOCKET) {
@@ -707,7 +707,7 @@ void rsrv_init (void)
             conf = callocMustSucceed(1, sizeof(*conf), "rsrv_init");
 
             conf->tcpAddr46 = ((osiSockAddrNode *)cur)->addr46;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
             if ( conf->tcpAddr46.sa.sa_family == AF_INET6 ) {
                 conf->tcpAddr46.in6.sin6_port = htons ( ca_server_port );
             }

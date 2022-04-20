@@ -40,10 +40,10 @@
 #include "inetAddrID.h"
 #include "cac.h"
 #include "disconnectGovernorTimer.h"
-#include "osiSock.h" // EPICS_HAS_IPV6 and NETDEBUG
+#include "osiSock.h" // NETDEBUG
 #include "epicsBaseDebugLog.h"
 
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
 #include <poll.h>
 #endif
 
@@ -248,7 +248,7 @@ udpiiu::udpiiu (
     }
 #endif
 
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
     this->sock6 = epicsSocket46Create ( AF_INET6, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock6 == INVALID_SOCKET ) {
         char sockErrBuf[64];
@@ -350,7 +350,7 @@ udpiiu::udpiiu (
     ELLLIST dest;
     ellInit ( & dest );
     configureChannelAccessAddressList ( & dest, this->sock4, this->serverPort );
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
     unsigned searchDestList_count = (unsigned)dest.count;
     unsigned numSocketsToPoll = searchDestList_count;
     if (this->sock4 != INVALID_SOCKET) numSocketsToPoll++;
@@ -381,7 +381,7 @@ udpiiu::udpiiu (
           epicsBaseDebugLog("udpiiu::udpiiu  address='%s'\n", buf);
       }
 #endif
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
       if (pNode->addr46.sa.sa_family == AF_INET6) {
           unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
           /*
@@ -440,7 +440,7 @@ udpiiu::~udpiiu ()
         delete & curr;
     }
 
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
     if ( pPollFds && numPollFds > 1 ) {
         for ( unsigned idx = 1; idx < numPollFds; idx++ ) {
             epicsSocketDestroy ( pPollFds[idx].fd );
@@ -534,7 +534,7 @@ void udpRecvThread::run ()
 
     do {
         SOCKET sock = this->iiu.sock4;
-#ifdef EPICS_HAS_IPV6
+#ifdef AF_INET6
         pollagain:
         if ( this->iiu.pPollFds && this->iiu.numPollFds >= 1 ) {
             int pollres = poll ( this->iiu.pPollFds, this->iiu.numPollFds, -1 );
@@ -609,21 +609,21 @@ udpiiu::M_repeaterTimerNotify::~M_repeaterTimerNotify ()
 void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned attemptNumber )
 {
     epicsGuard < epicsMutex > cbGuard ( m_udpiiu.cacMutex );
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     if ( ( attemptNumber < 5) && (m_udpiiu.sock6 != INVALID_SOCKET ) )
         caRepeaterRegistrationMessageIPv6 ( m_udpiiu.sock6, m_udpiiu.repeaterPort);
     else
 #endif
-    caRepeaterRegistrationMessage ( m_udpiiu.sock4, m_udpiiu.repeaterPort, attemptNumber );
+    caRepeaterRegistrationMessage4 ( m_udpiiu.sock4, m_udpiiu.repeaterPort, attemptNumber );
 }
 
 /*
- *  caRepeaterRegistrationMessage ()
+ *  caRepeaterRegistrationMessage4 ()
  *
  *  register with the repeater
  */
-void epicsStdCall caRepeaterRegistrationMessage ( 
-           SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
+void epicsStdCall caRepeaterRegistrationMessage4 ( 
+           SOCKET sock4, unsigned repeaterPort, unsigned attemptNumber )
 {
     osiSockAddr46 saddr46;
     caHdr msg;
@@ -652,7 +652,7 @@ void epicsStdCall caRepeaterRegistrationMessage (
      * by local address (the first non-loopback address found)
      */
     if ( attemptNumber & 1 ) {
-        saddr46 = osiLocalAddr ( sock );
+        saddr46 = osiLocalAddr ( sock4 );
         if ( saddr46.sa.sa_family != AF_INET ) {
             /*
              * use the loop back address to communicate with the CA repeater
@@ -696,12 +696,17 @@ void epicsStdCall caRepeaterRegistrationMessage (
         osiSockAddr46 tmpAddr;
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         tmpAddr.in6.sin6_port = 0;
+<<<<<<< HEAD
         (void)getsockname ( sock, &tmpAddr.sa, &saddr_length );
         epicsBaseDebugLog ("udpiiu: sending caRepeaterRegistrationMessageIPv4 port=%u\n",
+=======
+        (void)getsockname ( sock4, &tmpAddr.sa, &saddr_length );
+        epicsBaseDebugLog ("CAC: udpiiu::caRepeaterRegistrationMessage port=%u\n",
+>>>>>>> 211005-1138-IPv6-osiSockAddr46-V2
                            ntohs ( tmpAddr.in6.sin6_port ) );
      }
 #endif
-    status = epicsSocket46Sendto ( sock, (char *) &msg, len, 0,
+    status = epicsSocket46Sendto ( sock4, (char *) &msg, len, 0,
                                    &saddr46);
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
@@ -730,7 +735,7 @@ void epicsStdCall caRepeaterRegistrationMessage (
  *
  *  register with the repeater
  */
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
 void epicsStdCall caRepeaterRegistrationMessageIPv6 ( 
            SOCKET sock6, unsigned repeaterPort)
 {
@@ -1030,7 +1035,7 @@ bool udpiiu::beaconAction (
         addr46.ia.sin_port = htons ( this->serverPort );
     }
     int good_IPv6_magic_and_len = 0;
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     if ((sizeof (msg) +  msg.m_postsize) >= sizeof(ca_msg_IPv6_RSRV_IS_UP_type)) {
         const ca_msg_IPv6_RSRV_IS_UP_type *pMsgIPv6;
         pMsgIPv6 = reinterpret_cast < const ca_msg_IPv6_RSRV_IS_UP_type *>(&msg);

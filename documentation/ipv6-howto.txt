@@ -28,7 +28,7 @@ Running an IOC with IPv4 and IPv6:
 Further reading:
 Running IOCs:
     - Run IPv4 (this is the default)
-      When EPICS base has been compiled with EPICS_HAS_IPV6, you should see
+      When your platform has support for IPv6, you should see
       one line in the ioc log.
       $ st.cmd
        []

@@ -622,7 +622,7 @@ void ca_client_context :: _sendWakeupMsg ()
     char buf = 0;
 
     memset ( &addr46, 0, sizeof(addr46) );
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
     addr46.in6.sin6_family = AF_INET6;
     addr46.in6.sin6_addr = in6addr_loopback;
     addr46.in6.sin6_port = htons ( this->localPort );

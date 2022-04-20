@@ -35,7 +35,7 @@
 #include "addrList.h"
 #include "iocinf.h"
 
-#include "osiSock.h" /* EPICS_HAS_IPV6, NETDEBUG */
+#include "osiSock.h" /* NETDEBUG */
 #include "epicsBaseDebugLog.h"
 /*
  * getToken()
@@ -183,7 +183,7 @@ static void  forcePort ( ELLLIST *pList, unsigned short port )
     while ( pNode ) {
         if ( pNode->addr46.sa.sa_family == AF_INET ) {
             pNode->addr46.ia.sin_port = htons ( port );
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
         } else if ( pNode->addr46.sa.sa_family == AF_INET6 ) {
             pNode->addr46.in6.sin6_port = htons ( port );
 #endif
@@ -252,7 +252,7 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
         ellInit ( &bcastList );
         memset(&match46, 0, sizeof(match46));
         match46.ia.sin_family = AF_INET; /* This is the default */
-#if EPICS_HAS_IPV6
+#ifdef AF_INET6
         if (addrautolistIPversion == 46) {
           match46.ia.sin_family = AF_UNSPEC; /* Both v6 and v4 */
         } else if (addrautolistIPversion == 6) {

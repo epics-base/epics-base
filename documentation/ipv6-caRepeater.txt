@@ -1,0 +1,106 @@
+Case study, how the repeater works:
+(Compile EPICS base with NETDEBUG enabled in osiSock.h
+to see what is going on)
+
+killall caRepeater ; EPICS_CA_AUTO_ADDR_LIST=46 caRepeater -v
+
+We have 2 physical interfaces on this machine.
+"eno1" and "wlp1s0" which have IPv4 addresses:
+192.168.88.153 and 192.168.11.115
+
+First of all, the repeater opens 2 sockets to listen for registrations,
+one for IPv4 and on for IPv6.
+
+socket #3 is bound to 0.0.0.0:5065
+socket #4 is bound to [::1]:5065
+
+socket #3 will recieve both IPv4 beacons and registrations via IPv4
+socket #4 will receive registrations of IPv6 enabled clients
+
+To receive IPv6 beacons we must open 2 more sockets,
+and let them join their multicast group.
+
+socket #5 is bound to [ff02::1%eno1]:5065
+socket #6 is bound to [ff02::1%wlps0]:5065
+Both join their multicast group, and receive beacons.
+
+(old) clients that register via IPv4 will not see any IPv6 beacons,
+fanout() will skip forwarding IPv6 beacons to IPv4 clients.
+
+==================================
+The message format:
+
+The channel access header looks like this:
+    ca_uint16_t m_cmmd;         /* operation to be performed */
+    ca_uint16_t m_postsize;     /* size of payload */
+    ca_uint16_t m_dataType;     /* operation data type */
+    ca_uint16_t m_count;        /* operation data count */
+    ca_uint32_t m_cid;          /* channel identifier */
+    ca_uint32_t m_available;    /* protocol stub dependent */
+
+All fields are in network byte order.
+
+For an IPv4 beacon we see:
+m_cmmd           CA_PROTO_RSRV_IS_UP
+m_postsize       0 for IPv4
+m_dataType       CA_MINOR_PROTOCOL_REVISION
+m_count          ca_server_port
+m_cid            beaconCounter++
+m_available      IPv4 address of the server
+
+For an IPv6 beacon a longer message is used:
+m_cmmd           CA_PROTO_RSRV_IS_UP
+m_postsize       IPv6 see below
+m_dataType       CA_MINOR_PROTOCOL_REVISION
+m_count          ca_server_port
+m_cid            beaconCounter++
+m_available      0
+struct ca_ext_IPv6_RSRV_IS_UP_type {
+  ca_uint32_t m_size;         /* size of this struct, net byte order */
+  ca_uint8_t  m_typ_magic[4]; /* 'I' 'P' 'v' '6' */
+  ca_uint32_t m_sin6_scope_id;/* scope id, host byte order */
+  ca_uint8_t  m_s6_addr[16];  /* IPV6 address */
+}
+
+Bote that the "m_available" and "ca_ext_IPv6_RSRV_IS_UP_type"
+are filled in by the repeater.
+Those values are determined by recvfrom().
+
+The "scope id" is only valid on this host; that is OK since the repeater
+and the client are running on the same host.
+
+The IPv6 address is typically link-local ("fe80:"),
+we will not see any global IPv6 addresses here.
+
+Note that we haven't implemented code to translate link-local
+addresses into host names.
+The (local) DNS server does not maintain any link-local addresses.
+Getting the hostname is possible via ICMP requests,
+may be, investigations needed.
+
+I am tempted to add another extension that carries the host name
+inside the beacon messages.
+It needs to be determined only once, and then it is fixed.
+See .../modules/database/src/ioc/rsrv/online_notify.c
+
+Alternative solution for beacon messages ( do we need it ?)
+
+Use a different (and new defined) message type instead of
+changing CA_PROTO_RSRV_IS_UP.
+May be CA_PROTO_RSRV_IS_UP_IPV6 or so.
+
+
+Alternative solution for registration messages:
+Today old and "IPv4 only" clients register on IPv4,
+"new and IPv6" capable clients register via IPv6.
+
+The IPv4 version alternates between 0.0.0.0 and the first IPv4
+address of the machine (due to legacy).
+It would be nice to make things more elegant, an IPV6 client should
+be able to register via IPv4 or IPv6.
+
+Possible solution:
+Use a longer message for REPEATER_REGISTER.
+Would this break any old servers ?
+
+

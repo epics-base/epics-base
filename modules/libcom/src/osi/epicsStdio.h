@@ -61,6 +61,7 @@
 #include <stdarg.h>
 
 #include "libComAPI.h"
+#include "epicsTypes.h"
 #include "compilerDependencies.h"
 #include "epicsTempFile.h"
 
@@ -192,6 +193,134 @@ LIBCOM_API int epicsStdCall epicsStdoutVPrintf(
     const char *pformat, va_list ap);
 LIBCOM_API int epicsStdCall epicsStdoutPuts(const char *str);
 LIBCOM_API int epicsStdCall epicsStdoutPutchar(int c);
+
+/**
+ * \brief Open file from memory or disk.
+ * \param pathname Path of file to open.
+ * \param mode Open Mode.  For a memory file only "r" or "rb" are accepted.
+ * \returns NULL on error and sets `errno`
+ *
+ * If `pathname` is prefixed with `app://`, then an entry
+ * previously passed to epicsFMount() may be returned.
+ * Otherwise, the call is forwarded to the OS fopen().
+ *
+ * \note `app://` files can only be opened for read-only access,
+ *       and may not have an associated file descriptor.
+ *
+ * \note `app://` is not available on vxWorks.
+ *
+ * \since UNRELEASED
+ */
+LIBCOM_API
+FILE* epicsFOpen(const char *pathname, const char *mode);
+
+/**
+ * \brief Open file memory file.
+ * \param pathname Path of file to open.
+ * \param mode Open Mode.  Only "r" or "rb" are accepted.
+ * \returns NULL on error and sets `errno`
+ *
+ * `pathname` must not be prefixed with `app://`.
+ *
+ * \since UNRELEASED
+ */
+LIBCOM_API
+FILE* epicsMemOpen(const char *pathname, const char *mode);
+
+typedef enum {
+    /** Content array is raw bytes (uncompressed) */
+    epicsIMFRaw,
+    /** Content array is zlib compressed */
+    epicsIMFZ,
+} epicsIMFEncoding;
+
+/** \brief Information about a memory file
+ */
+typedef struct epicsIMF {
+    /** Absolute path with which this file should be associated
+     *  under the `app://` in-memory file system.
+     */
+    const char *path;
+    /** \brief File contents */
+    const char *content;
+    /** \brief Length of file contents in bytes */
+    size_t contentLen;
+    /** \brief Actual/uncompressed content length in bytes.
+     *
+     * If `encoding==epicsIMFRaw`
+     * then `contentLen==actualLen`.
+     * Otherwise, `contentLen` is the compressed size,
+     * and `actualLen` is the uncompressed size.
+     *
+     * @warning `contentLen==actualLen` does not imply uncompressed data!
+     */
+    size_t actualLen;
+    /** Indicate how the content array is encoded. */
+    epicsIMFEncoding encoding;
+    /** Request that `epicsMemMount()` not copy epicsIMF::content .
+     *  This array pointed to must never be `free()`d.
+     *  An optimization when the content array is a compile time constant.
+     */
+    unsigned nocopy:1;
+} epicsIMF;
+
+/** Print extended error information to `epicsGetStderr()`. */
+#define EPICS_MEM_MOUNT_VERBOSE (0x100)
+
+/**
+ * \brief Attach memory files
+ * \param files Base of an array of `epicsIMF`.
+ *              The last element must have a NULL path.
+ * \param flags bitwise "or" of zero or more of `EPICS_MEM_MOUNT_*`.
+ * \return zero if all files were successfully mounted.
+ *         non-zero if any file could not be mounted.
+ *         (pass `flags = EPICS_MEM_MOUNT_VERBOSE` for details)
+ *
+ * Attach some files to the in-memory `app://` file system.
+ *
+ * The `epicsIMF` structure and the path string will always be copied,
+ * and need not remain valid after this function returns.
+ * If `epicsIMF::nocopy` is set, then the `epicsIMF::content`
+ * array must remain valid in perpetuity.  Otherwise, `content`
+ * is copied as well.
+ *
+ * \since UNRELEASED
+ */
+LIBCOM_API
+int epicsMemMount(const epicsIMF* files,
+                  epicsUInt64 flags);
+
+/**
+ * \brief Detach a memory file
+ * \param path One of the path strings passed through epicsMemMount()
+ * \param flags Currently unused.  Set to zero.
+ * \return zero on success
+ */
+LIBCOM_API
+int epicsMemUnmount(const char *path, epicsUInt64 flags);
+
+LIBCOM_API
+void epicsMemFileShow(void);
+
+#ifdef EPICS_PRIVATE_API
+
+/**
+ * \brief Iteration of memory files
+ * \param func Callback function pointer
+ * \param arg Passed to callback function
+ *
+ * The provided callback will be called for each of the currently
+ * mounted memory files.
+ *
+ * \note Callbacks are made with an internal local held which
+ *       prevents concurrent operations on memory files.
+ *       Callbacks may not call epicsMemMount() or epicsMemUnmount()
+ */
+LIBCOM_API
+void epicsMemFileForEach(void (*func)(void *, const epicsIMF *),
+                         void *arg);
+
+#endif /* EPICS_PRIVATE_API */
 
 #ifdef  __cplusplus
 }

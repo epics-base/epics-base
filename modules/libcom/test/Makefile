@@ -251,6 +251,14 @@ osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
+TESTPROD_HOST += epicsMemFileTest
+epicsMemFileTest_SRCS += epicsMemFileTest.cpp
+ifeq (YES,$(HAVE_ZLIB))
+epicsMemFileTest_CXXFLAGS += -DIMF_HAS_ZLIB
+endif
+testHarness_SRCS += epicsMemFileTest.cpp
+TESTS += epicsMemFileTest
+
 TESTPROD_HOST += testexecname
 testexecname_SRCS += testexecname.c
 # no point in including in testHarness.  Not implemented for RTEMS/vxWorks.

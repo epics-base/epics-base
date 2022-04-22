@@ -182,7 +182,7 @@ jobs:
     - name: "apt-get install"
       run: |
         sudo apt-get update
-        sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
+        sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb libz-dev
       if: runner.os == 'Linux'
     - name: Prepare and compile dependencies
       run: python .ci/cue.py prepare
@@ -253,7 +253,7 @@ jobs:
             dnf -y "$@" || yum -y "$@"
             return $?
         }
-        dnfyum install python3 gdb make perl gcc-c++ glibc-devel readline-devel ncurses-devel perl-devel perl-Test-Simple
+        dnfyum install python3 gdb make perl gcc-c++ glibc-devel readline-devel ncurses-devel perl-devel perl-Test-Simple zlib-devel
         git --version || dnfyum install git
         # rather than just bite the bullet and link python3 -> python,
         # people would rather just break all existing scripts...

@@ -7,6 +7,9 @@
  * into what is really a Makefile snippet
  *
  * cf. https://sourceforge.net/p/predef/wiki/Home/
+ *
+ * clang, GCC, and newer MSVC have __has_include()
+ * which becomes standard with c++17
  */
 /* GCC preprocessor drops C comments from output.
  * MSVC preprocessor emits C comments in output
@@ -43,6 +46,12 @@ COMMANDLINE_LIBRARY ?= LIBTECLA
 COMMANDLINE_LIBRARY ?= READLINE
 #  else
 COMMANDLINE_LIBRARY ?= EPICS
+#  endif
+#  if __has_include(<zlib.h>)
+HAVE_ZLIB = YES
+PROD_SYS_LIBS += z
+LIB_SYS_LIBS += z
+EMEM_FLAGS += -z
 #  endif
 #else
 COMMANDLINE_LIBRARY ?= $(strip $(if $(wildcard $(if $(GNU_DIR),$(GNU_DIR)/include/readline/readline.h)), READLINE, EPICS))

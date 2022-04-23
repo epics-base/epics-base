@@ -20,6 +20,10 @@
 #include <ctype.h>
 #include <errno.h>
 
+#define epicsStdioStdPrintfEtc
+#define epicsStdioStdStreams
+
+#include <epicsStdio.h>
 #include <dbDefs.h>
 #include <macLib.h>
 #include <errlog.h>
@@ -507,14 +511,14 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
     }
     else if (pathList.empty() || strchr(filename, '/')){
         STEPS("Opening ", filename);
-        fp = fopen(filename, "r");
+        fp = epicsFOpen(filename, "r");
     }
     else {
         pathIt = pathList.begin();
         while(pathIt != pathList.end()) {
             fullname = *pathIt + "/" + filename;
             STEPS("Trying", filename);
-            fp = fopen(fullname.c_str(), "r");
+            fp = epicsFOpen(fullname.c_str(), "r");
             if (fp)
                 break;
             ++pathIt;
@@ -670,7 +674,7 @@ static void substituteOpen(subInfo **ppvt, const std::string& substitutionName)
     psubFile = new subFile;
     psubInfo->psubFile = psubFile;
 
-    fp = fopen(substitutionName.c_str(), "r");
+    fp = epicsFOpen(substitutionName.c_str(), "r");
     if (!fp) {
         fprintf(stderr, "msi: Can't open file '%s'\n", substitutionName.c_str());
         abortExit(1);

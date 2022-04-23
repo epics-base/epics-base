@@ -13,6 +13,10 @@
 #include <stddef.h>
 #include <string.h>
 
+#define epicsStdioStdPrintfEtc
+#define epicsStdioStdStreams
+
+#include "epicsStdio.h"
 #include "osiUnistd.h"
 #include "macLib.h"
 #include "dbmf.h"
@@ -342,7 +346,7 @@ int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
         return -1;
     }
 
-    fp = fopen(sub_file, "r");
+    fp = epicsFOpen(sub_file, "r");
     if (!fp) {
         fprintf(stderr, "dbLoadTemplate: error opening sub file %s\n", sub_file);
         return -1;

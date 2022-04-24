@@ -392,9 +392,19 @@ void ca_client_context :: vSignal (
     }
 
     epicsTime current = epicsTime::getCurrent ();
-    char date[64];
-    current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
-    this->printFormated ( "    Current Time: %s\n", date );
+    try {
+        char date[64];
+        current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
+        this->printFormated ( "    Current Time: %s\n", date );
+    }
+    catch ( std::exception & except ) {
+        errlogPrintf (
+            "CA client library thread \"%s\" caught C++ exception \"%s\"\n",
+            epicsThreadGetNameSelf (), except.what () );
+        epicsTimeStamp now = current;
+        this->printFormated ( "    Current Time: %u.%u\n",
+                now.secPastEpoch, now.nsec );
+    }
 
     /*
      *  Terminate execution if unsuccessful

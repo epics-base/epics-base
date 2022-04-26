@@ -114,9 +114,9 @@ which links will be processed by the seq record,
 in combination with the C<SHFT> field:
 
   if (SHFT >= 0)
-    SELN = SELN << -SHFT
-  else
     SELN = SELN >> SHFT
+  else
+    SELN = SELN << -SHFT
 
 I<(By default, the SHFT field is initialized to -1)>
 

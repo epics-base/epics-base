@@ -55,6 +55,7 @@ struct taskVar {
     int                joinable;
     EPICSTHREADFUNC              funptr;
     void                *parm;
+    unsigned            mapMask;
     unsigned int        threadVariableCapacity;
     void                **threadVariables;
 };
@@ -224,7 +225,7 @@ void epicsThreadExitMain (void)
 
 static rtems_status_code
 setThreadInfo(rtems_id tid, const char *name, EPICSTHREADFUNC funptr,
-    void *parm, int joinable)
+              void *parm, int joinable, unsigned mapMask)
 {
     struct taskVar *v;
     uint32_t note;
@@ -237,6 +238,7 @@ setThreadInfo(rtems_id tid, const char *name, EPICSTHREADFUNC funptr,
     v->parm = parm;
     v->joinable = joinable;
     v->refcnt = joinable ? 2 : 1;
+    v->mapMask = mapMask;
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
     if (joinable) {
@@ -290,7 +292,7 @@ epicsThreadInit (void)
         if (!onceMutex || !taskVarMutex)
             cantProceed("epicsThreadInit() can't create global mutexes\n");
         rtems_task_ident (RTEMS_SELF, 0, &tid);
-        if(setThreadInfo (tid, "_main_", NULL, NULL, 0) != RTEMS_SUCCESSFUL)
+        if(setThreadInfo (tid, "_main_", NULL, NULL, 0, EPICS_THREAD_MAP_MAIN) != RTEMS_SUCCESSFUL)
             cantProceed("epicsThreadInit() unable to setup _main_");
         osdThreadHooksRunMain((epicsThreadId)tid);
         initialized = 1;
@@ -344,7 +346,7 @@ epicsThreadCreateOpt (
             name, rtems_status_text(sc));
         return 0;
     }
-    sc = setThreadInfo (tid, name, funptr, parm, opts->joinable);
+    sc = setThreadInfo (tid, name, funptr, parm, opts->joinable, EPICS_THREAD_MAP_EPICS);
     if (sc != RTEMS_SUCCESSFUL) {
         errlogPrintf ("epicsThreadCreate create failure during setup for %s: %s\n",
             name, rtems_status_text(sc));
@@ -819,9 +821,12 @@ void epicsThreadShow (epicsThreadId id, unsigned int level)
     fprintf(epicsGetStdout(),"*** Thread %x does not exist.\n", (unsigned int)id);
 }
 
-void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
+void epicsThreadMap2(EPICS_THREAD_MAP_ROUTINE func, void *ptr, size_t mask)
 {
     struct taskVar *v;
+
+    if(!( mask & EPICS_THREAD_MAP_EPICS ))
+        return;
 
     taskVarLock ();
     /*
@@ -830,7 +835,8 @@ void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
     for (v = taskVarHead ; v != NULL && v->forw != NULL ; v = v->forw)
         continue;
     while (v) {
-        func ((epicsThreadId)v->id);
+        if((v->mapMask & mask)!=0)
+            func ((epicsThreadId)v->id, ptr);
         v = v->back;
     }
     taskVarUnlock ();

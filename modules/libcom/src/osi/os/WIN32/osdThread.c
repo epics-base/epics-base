@@ -51,6 +51,7 @@ typedef struct epicsThreadOSD {
     char * pName;
     DWORD id;
     unsigned epicsPriority;
+    unsigned mapMask;
     char isSuspended;
     int joinable;
     HANDLE timer; /* waitable timer */
@@ -547,6 +548,7 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
 
         pParm->handle = handle;
         pParm->id = id;
+        pParm->mapMask = EPICS_THREAD_MAP_IMPLICIT & ~EPICS_THREAD_MAP_MAIN;
         win32ThreadPriority = GetThreadPriority ( pParm->handle );
         assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
         pParm->epicsPriority = epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
@@ -598,6 +600,7 @@ epicsThreadId epicsThreadCreateOpt (
     pParmWIN32->funptr = pFunc;
     pParmWIN32->parm = pParm;
     pParmWIN32->epicsPriority = opts->priority;
+    pParmWIN32->mapMask = EPICS_THREAD_MAP_EPICS;
     if(opts->joinable) {
         pParmWIN32->joinable = 1;
         epicsAtomicIncrIntT(&pParmWIN32->refcnt);
@@ -1017,14 +1020,14 @@ static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
 }
 
 /*
- * epicsThreadMap ()
+ * epicsThreadMap2 ()
  */
-LIBCOM_API void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+LIBCOM_API void epicsThreadMap2 ( EPICS_THREAD_MAP_ROUTINE func, void *ptr, size_t mask )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
 
-    if ( ! pGbl ) {
+    if ( ! pGbl || !( mask & EPICS_THREAD_MAP_EPICS ) ) {
         return;
     }
 
@@ -1032,7 +1035,7 @@ LIBCOM_API void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 
     for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList );
             pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {
-        func ( ( epicsThreadId ) pParm );
+        func ( ( epicsThreadId ) pParm, ptr );
     }
 
     LeaveCriticalSection ( & pGbl->mutex );

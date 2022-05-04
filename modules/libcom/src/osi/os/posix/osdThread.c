@@ -406,6 +406,7 @@ static void once(void)
 
     pthreadInfo = init_threadInfo("_main_",0,epicsThreadGetStackSize(epicsThreadStackSmall),0,0,0);
     assert(pthreadInfo!=NULL);
+    pthreadInfo->mapMask = EPICS_THREAD_MAP_MAIN;
     status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
     checkStatusOnceQuit(status,"pthread_setspecific","epicsThreadInit");
     status = mutexLock(&listLock);
@@ -590,7 +591,7 @@ epicsThreadCreateOpt(const char * name,
     if (pthreadInfo==0)
         return 0;
 
-    pthreadInfo->isEpicsThread = 1;
+    pthreadInfo->mapMask = EPICS_THREAD_MAP_EPICS;
     setSchedulingPolicy(pthreadInfo, SCHED_FIFO);
     pthreadInfo->isRealTimeScheduled = 1;
 
@@ -610,7 +611,7 @@ epicsThreadCreateOpt(const char * name,
         if (pthreadInfo==0)
             return 0;
 
-        pthreadInfo->isEpicsThread = 1;
+        pthreadInfo->mapMask = EPICS_THREAD_MAP_EPICS;
         status = pthread_create(&pthreadInfo->tid, &pthreadInfo->attr,
             start_routine, pthreadInfo);
     }
@@ -646,6 +647,7 @@ static epicsThreadOSD *createImplicit(void)
     assert(pthreadInfo);
     pthreadInfo->tid = tid;
     pthreadInfo->osiPriority = 0;
+    pthreadInfo->mapMask = EPICS_THREAD_MAP_IMPLICIT & ~EPICS_THREAD_MAP_MAIN;
 
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     if(pthread_getschedparam(tid,&pthreadInfo->schedPolicy,&pthreadInfo->schedParam) == 0) {
@@ -663,6 +665,8 @@ static epicsThreadOSD *createImplicit(void)
         free_threadInfo(pthreadInfo);
         return NULL;
     }
+    ellAdd(&pthreadList,&pthreadInfo->node);
+    pthreadInfo->isOnThreadList = 1;
     return pthreadInfo;
 }
 
@@ -757,7 +761,7 @@ LIBCOM_API void epicsStdCall epicsThreadSetPriority(epicsThreadId pthreadInfo,un
 
     assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
-    if(!pthreadInfo->isEpicsThread) {
+    if(!(pthreadInfo->mapMask & EPICS_THREAD_MAP_EPICS)) {
         fprintf(stderr,"epicsThreadSetPriority called by non epics thread\n");
         return;
     }
@@ -900,7 +904,7 @@ LIBCOM_API void epicsStdCall epicsThreadGetName(epicsThreadId pthreadInfo, char 
     name[size-1] = '\0';
 }
 
-LIBCOM_API void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
+void epicsThreadMap2(EPICS_THREAD_MAP_ROUTINE func, void *ptr, size_t mask)
 {
     epicsThreadOSD *pthreadInfo;
     int status;
@@ -912,7 +916,8 @@ LIBCOM_API void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
         return;
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while (pthreadInfo) {
-        func(pthreadInfo);
+        if((mask & pthreadInfo->mapMask)!=0)
+            func(pthreadInfo, ptr);
         pthreadInfo = (epicsThreadOSD *)ellNext(&pthreadInfo->node);
     }
     status = pthread_mutex_unlock(&listLock);

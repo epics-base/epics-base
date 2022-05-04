@@ -43,6 +43,18 @@ epicsThreadId epicsStdCall epicsThreadCreate (
     return epicsThreadCreateOpt(name, funptr, parm, &opts);
 }
 
+static
+void mapadapt(epicsThreadId thread, void *raw)
+{
+    EPICS_THREAD_HOOK_ROUTINE func = (EPICS_THREAD_HOOK_ROUTINE)raw;
+    (*func)(thread);
+}
+
+void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
+{
+    epicsThreadMap2(mapadapt, (void*)func, EPICS_THREAD_MAP_EPICS|EPICS_THREAD_MAP_MAIN);
+}
+
 epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::run () {}
 void epicsThreadRunable::show ( unsigned int ) const {}

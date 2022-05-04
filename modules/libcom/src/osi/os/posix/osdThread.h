@@ -31,7 +31,7 @@ typedef struct epicsThreadOSD {
     void              *createArg;
     epicsEventId       suspendEvent;
     int                isSuspended;
-    int                isEpicsThread;
+    unsigned           mapMask;
     int                isRealTimeScheduled;
     int                isOnThreadList;
     unsigned int       osiPriority;

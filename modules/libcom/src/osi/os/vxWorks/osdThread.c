@@ -458,11 +458,14 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     name[size-1] = '\0';
 }
 
-LIBCOM_API void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+LIBCOM_API void epicsThreadMap2 ( EPICS_THREAD_MAP_ROUTINE func, void *ptr, size_t mask )
 {
     int noTasks = 0;
     int i;
     int result;
+
+    if(!( mask & EPICS_THREAD_MAP_EPICS ))
+        return;
 
     result = semTake(epicsThreadListMutex, WAIT_FOREVER);
     assert(result == OK);
@@ -477,7 +480,7 @@ LIBCOM_API void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
         }
     }
     for (i = 0; i < noTasks; i++) {
-        func ((epicsThreadId)taskIdList[i]);
+        func ((epicsThreadId)taskIdList[i], ptr);
     }
     semGive(epicsThreadListMutex);
 }

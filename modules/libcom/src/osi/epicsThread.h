@@ -307,6 +307,9 @@ LIBCOM_API void epicsStdCall epicsThreadShow(
  **/
 typedef void (*EPICS_THREAD_HOOK_ROUTINE)(epicsThreadId id);
 
+/** See epicsThreadMap2() */
+typedef void (*EPICS_THREAD_MAP_ROUTINE)(epicsThreadId id, void* ptr);
+
 /**
  * Register a routine to be called by every new thread before the thread
  * function gets run. Hook routines will often register a thread exit
@@ -327,8 +330,42 @@ LIBCOM_API void epicsThreadHooksShow(void);
 
 /**
  * Call func once for every known thread.
+ *
+ * Equivalent to:
+ * \code
+ * epicsThreadMap2(func, NULL, EPICS_THREAD_MAP_EPICS|EPICS_THREAD_MAP_MAIN);
+ * \endcode
  **/
 LIBCOM_API void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func);
+
+/** Include EPICS threads created by epicsThreadCreate*() */
+#define EPICS_THREAD_MAP_EPICS (1u)
+
+/** Include the "main" thread.
+ *  On targets where this is significant.
+ *  The first non-EPICS thread to call one of the epicsThread*() functions.
+ *  Usually, but not always, the same as process main() function.
+ */
+#define EPICS_THREAD_MAP_MAIN (2u)
+
+/** Include non-EPICS threads which have called some epicsThread*() functions.
+ *  This include the "main" thread.
+ */
+#define EPICS_THREAD_MAP_IMPLICIT (6u)
+
+/** \brief Call func(thr, ptr) once for every known thread.
+ *  \param func The callback function pointer.
+ *  \param ptr  Arbitrary pointer passed through to callback function.
+ *  \param flags Bitwise "or" of one or more EPICS_THREAD_MAP_*
+ *
+ *  \warning Callbacks are invoked while holding the internal mutex used
+ *           to guard the thread list.
+ *
+ *  \since UNRELEASED
+ **/
+LIBCOM_API void epicsThreadMap2(EPICS_THREAD_MAP_ROUTINE func,
+                                void* ptr,
+                                size_t flags);
 
 /** Thread local storage */
 typedef struct epicsThreadPrivateOSD * epicsThreadPrivateId;

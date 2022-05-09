@@ -32,7 +32,13 @@ static const iocshArg    *acctstArgs[] =
     &acctstArg3,
     &acctstArg4
 };
-static const iocshFuncDef acctstFuncDef = {"acctst", 5, acctstArgs};
+static const iocshFuncDef acctstFuncDef = {
+    "acctst",
+    5,
+    acctstArgs,
+    "Execute a Channel Access regression test.\n\n"
+    "For more information, see the 'acctst' documentation in the Channel Access reference.\n",
+};
 
 
 /* Wrapper called by iocsh, selects the argument types that print needs */

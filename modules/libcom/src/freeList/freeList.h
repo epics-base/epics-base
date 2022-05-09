@@ -41,4 +41,3 @@ LIBCOM_API size_t epicsStdCall freeListItemsAvail(void *pvt);
 #endif
 
 #endif /*INCfreeListh*/
- 

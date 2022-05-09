@@ -276,8 +276,15 @@ print $out (<< "END");
 /* $subname */
 static const iocshArg rrddArg0 = {"pdbbase", iocshArgPdbbase};
 static const iocshArg *rrddArgs[] = {&rrddArg0};
-static const iocshFuncDef rrddFuncDef =
-    {"$subname", 1, rrddArgs};
+static const iocshFuncDef rrddFuncDef = {
+    "$subname",
+    1,
+    rrddArgs,
+    "Register the various records, devices, for this DBD.\\n\\n"
+    "These are registered into the database given as first argument,\\n"
+    "which should always be 'pdbbase'.\\n\\n"
+    "Example: $subname pdbbase\\n",
+};
 static void rrddCallFunc(const iocshArgBuf *)
 {
     iocshSetError($subname(*iocshPpdbbase));

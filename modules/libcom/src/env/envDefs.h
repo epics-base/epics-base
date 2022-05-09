@@ -30,12 +30,13 @@
 #ifndef envDefsH
 #define envDefsH
 
+#include "osiSock.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "libComAPI.h"
-#include "osiSock.h"
 
 /**
  * \brief A structure to hold a single environment parameter

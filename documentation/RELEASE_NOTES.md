@@ -23,6 +23,20 @@ SIMM=RAW support has been added for the relevant output record types
 RAW simulation mode will have those records do the appropriate conversion
 and write RVAL to the location pointed to by SIOL.
 
+### Fixed leak from a non-EPICS thread
+
+On some targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.
+
+Prior to this release, on POSIX and WIN32 targets, this
+struct would not be `free()`d, resulting in a memory leak.
+
+This release fixed the leak on POSIX targets.
+
+See the associated github [issue 241](https://github.com/epics-base/epics-base/issues/241)
+for WIN32 status.
+
 ### Fix `CHECK_RELEASE = WARN`
 
 This now works again, it was broken in 2019 (7.0.3.1) by an errant commit.

@@ -26,12 +26,6 @@
 #include "osiSock.h"
 #include "epicsBaseDebugLog.h"
 
-#ifdef AF_INET6
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#endif
-
 #define nDigitsDottedIP 4u
 #define chunkSize 8u
 

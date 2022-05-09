@@ -1,3 +1,3 @@
 on error break
-<iocshTestBadArg.cmd
+<app:///iocshTestBadArg.cmd
 position after_error_1

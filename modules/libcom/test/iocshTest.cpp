@@ -9,6 +9,7 @@
 #include <fstream>
 #include <set>
 
+#include <epicsStdio.h>
 #include <osiUnistd.h>
 #include <osiFileName.h>
 #include <dbDefs.h>
@@ -20,30 +21,6 @@
 #include <testMain.h>
 
 namespace {
-void findTestData()
-{
-    const char *locations[] = {
-        ".",
-        "..",
-        ".." OSI_PATH_LIST_SEPARATOR "O.Common",
-        "O.Common",
-    };
-
-    for(size_t i=0; i<NELEMENTS(locations); i++) {
-        std::string path(locations[i]);
-        path += OSI_PATH_SEPARATOR "iocshTestSuccess.cmd";
-
-        std::ifstream strm(path.c_str());
-        if(strm.good()) {
-            testDiag("Found test data in %s", locations[i]);
-            if(chdir(locations[i])!=0)
-                testAbort("Unable to cd \"%s\"", locations[i]);
-            return;
-        }
-    }
-
-    testAbort("Failed to find test data");
-}
 
 void testFile(const char *fname, bool expect=true)
 {
@@ -85,20 +62,23 @@ void assertCallFunc(const iocshArgBuf *args)
 
 } // namespace
 
+extern "C"
+const epicsIMF iocshTest_imf[];
+
 MAIN(iocshTest)
 {
     testPlan(19);
+    epicsMemMount(iocshTest_imf, 0);
     libComRegister();
     iocshRegister(&positionFuncDef, &positionCallFunc);
     iocshRegister(&assertFuncDef, &assertCallFunc);
-    findTestData();
 
-    testFile("iocshTestSuccess.cmd");
+    testFile("app:///iocshTestSuccess.cmd");
     testPosition("success");
     reached.clear();
     testPosition("success", false);
 
-    testCmd("<iocshTestSuccess.cmd");
+    testCmd("<app:///iocshTestSuccess.cmd");
     testPosition("success");
     reached.clear();
 
@@ -118,12 +98,12 @@ MAIN(iocshTest)
 
     testDiag("successful indirection");
 
-    testFile("iocshTestSuccessIndirect.cmd");
+    testFile("app:///iocshTestSuccessIndirect.cmd");
     testPosition("success");
     testPosition("after_success");
     reached.clear();
 
-    testFile("iocshTestBadArgIndirect.cmd", false);
+    testFile("app:///iocshTestBadArgIndirect.cmd", false);
     testPosition("before_error");
     testPosition("after_error", false);
     testPosition("after_error_1", false);

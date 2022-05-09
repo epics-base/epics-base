@@ -17,29 +17,15 @@
  *
  */
 
+#ifndef _WIN32_WINNT
+#   define _WIN32_WINNT 0x0600
+#endif
+
 #include <stdio.h>
 #include <limits.h>
 
 #define VC_EXTRALEAN
 #define STRICT
-/*
- * Defining this allows the *much* faster critical
- * section mutex primitive to be used. Unfortunately,
- * using certain of these functions drops support for W95\W98\WME
- * unless we specify "delay loading" when we link with the
- * DLL so that DLL entry points are not resolved until they
- * are used. The code does have run time switches so
- * that the more advanced calls are not called unless
- * they are available in the windows OS, but this feature
- * isn't going to be very useful unless we specify "delay
- * loading" when we link with the DLL.
- *
- * It appears that the only entry point used here that causes
- * portability problems with W95\W98\WME is TryEnterCriticalSection.
- */
-#ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0400
-#endif
 #include <windows.h>
 
 #define EPICS_PRIVATE_API

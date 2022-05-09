@@ -12,6 +12,12 @@
  * Author: Jeff Hill
  */
 
+#ifndef _WIN32_WINNT
+#   define _WIN32_WINNT 0x0600
+#elif _WIN32_WINNT < 0x0600
+#   error Minimum supported is Windows Vista
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -119,7 +125,6 @@ BOOL WINAPI DllMain (
          * Don't allow user's explicitly calling FreeLibrary for Com.dll to yank
          * the carpet out from under EPICS threads that are still using Com.dll
          */
-#if _WIN32_WINNT >= 0x0501
         /*
          * Only in WXP
          * That's a shame because this is probably much faster
@@ -127,22 +132,7 @@ BOOL WINAPI DllMain (
         success = GetModuleHandleEx (
             GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
             ( LPCTSTR ) DllMain, & dllHandle );
-#else
-        {
-            char name[256];
-            DWORD nChar = GetModuleFileName (
-                hModule, name, sizeof ( name ) );
-            if ( nChar && nChar < sizeof ( name ) ) {
-                dllHandle = LoadLibrary ( name );
-                if ( ! dllHandle ) {
-                    success = FALSE;
-                }
-            }
-            else {
-                success = FALSE;
-            }
-        }
-#endif
+
         if ( success ) {
             success = TlsSetValue ( dllHandleIndex, dllHandle );
         }

@@ -567,18 +567,15 @@ static long writeValue(aoRecord *prec)
 
     case menuSimmYES:
     case menuSimmRAW:
-    {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        if (prec->pact || (prec->sdly < 0.)) {            
-            if(prec->simm == menuSimmYES){
+        if (prec->pact || (prec->sdly < 0.)) {
+            if (prec->simm == menuSimmYES)
                 /* don't convert */
                 status = dbPutLink(&prec->siol, DBR_DOUBLE, &prec->oval, 1);
-            }
-            else { /* prec->simm == menuSimmRAW*/
+            else /* prec->simm == menuSimmRAW*/
                 /* convert */
                 status = dbPutLink(&prec->siol, DBR_LONG, &prec->rval, 1);
-            }
-                prec->pact = FALSE;
+            prec->pact = FALSE;
         } else { /* !prec->pact && delay >= 0. */
             epicsCallback *pvt = prec->simpvt;
             if (!pvt) {
@@ -589,7 +586,6 @@ static long writeValue(aoRecord *prec)
             prec->pact = TRUE;
         }
         break;
-    }
 
     default:
         recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);

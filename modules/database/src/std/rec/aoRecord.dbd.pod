@@ -265,6 +265,7 @@ The following fields are used to operate the record in simulation mode.
 
 If SIMM (fetched through SIML, if populated) is YES, the record is put in SIMS
 severity and the value is written through SIOL, without conversion.
+If SIMM is RAW, the value is converted and RVAL is written.
 SSCN sets a different SCAN mechanism to use in simulation mode.
 SDLY sets a delay (in sec) that is used for asynchronous simulation
 processing.

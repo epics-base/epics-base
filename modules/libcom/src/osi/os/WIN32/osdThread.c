@@ -27,6 +27,7 @@
 #define STRICT
 #include <windows.h>
 #include <process.h> /* for _endthread() etc */
+#include <fibersapi.h>
 
 #include "epicsStdio.h"
 #include "libComAPI.h"
@@ -41,11 +42,12 @@
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
+static void epicsParmCleanupWIN32 ( void * praw );
 
 typedef struct win32ThreadGlobal {
     CRITICAL_SECTION mutex;
     ELLLIST threadList;
-    DWORD tlsIndexThreadLibraryEPICS;
+    DWORD flsIndexThreadLibraryEPICS;
 } win32ThreadGlobal;
 
 typedef struct epicsThreadOSD {
@@ -197,8 +199,8 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
 
     InitializeCriticalSection ( & pWin32ThreadGlobal->mutex );
     ellInit ( & pWin32ThreadGlobal->threadList );
-    pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS = TlsAlloc();
-    if ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS == 0xFFFFFFFF ) {
+    pWin32ThreadGlobal->flsIndexThreadLibraryEPICS = FlsAlloc(&epicsParmCleanupWIN32);
+    if ( pWin32ThreadGlobal->flsIndexThreadLibraryEPICS == FLS_OUT_OF_INDEXES ) {
         DeleteCriticalSection ( & pWin32ThreadGlobal->mutex );
         free ( pWin32ThreadGlobal );
         pWin32ThreadGlobal = 0;
@@ -223,10 +225,14 @@ static void epicsParmCleanupDataWIN32 ( win32ThreadParam * pParm )
     }
 }
 
-static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
+static void epicsParmCleanupWIN32 ( void * praw )
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    if ( ! pGbl )  {
+    win32ThreadParam * pParm = praw;
+    win32ThreadGlobal * pGbl;
+    if(!praw)
+        return;
+
+    if ( ! (pGbl = fetchWin32ThreadGlobal ()) )  {
         fprintf ( stderr, "epicsParmCleanupWIN32: unable to find ctx\n" );
         return;
     }
@@ -455,7 +461,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     if ( pGbl )  {
         setThreadName ( pParm->id, pParm->pName );
 
-        success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
+        success = FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, pParm );
         if ( success ) {
             osdThreadHooksRun ( ( epicsThreadId ) pParm );
             /* printf ( "starting thread %d\n", pParm->id ); */
@@ -473,14 +479,13 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 
     epicsExitCallAtThreadExits ();
 
-    /*
-     * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!
+    /* On Windows we could omit this and rely on the callback given to FlsAlloc() to free.
+     * However, WINE doesn't implement this fully.  So for EPICS threads, we explicitly
+     * free() here.
      */
-    if ( pGbl )  {
-        TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, (void*)0xdeadbeef );
+    if(pGbl && FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, NULL )) {
+        epicsParmCleanupWIN32 ( pParm );
     }
-
-    epicsParmCleanupWIN32 ( pParm );
 
     return retStat; /* this indirectly closes the thread handle */
 }
@@ -541,7 +546,7 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
         win32ThreadPriority = GetThreadPriority ( pParm->handle );
         assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
         pParm->epicsPriority = epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
-        success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
+        success = FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, pParm );
         if ( ! success ) {
             epicsParmCleanupWIN32 ( pParm );
             pParm = 0;
@@ -629,6 +634,8 @@ epicsThreadId epicsThreadCreateOpt (
         return NULL;
     }
 
+    /* after this point, new thread is responsible to free(pParmWIN32) */
+
     return ( epicsThreadId ) pParmWIN32;
 }
 
@@ -676,7 +683,7 @@ static void* getMyWin32ThreadParam ( win32ThreadGlobal * pGbl )
     }
 
     pParm = ( win32ThreadParam * )
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
+        FlsGetValue ( pGbl->flsIndexThreadLibraryEPICS );
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
     }

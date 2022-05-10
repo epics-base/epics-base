@@ -13,6 +13,7 @@
 #include "epicsMath.h"
 
 #include "aiRecord.h"
+#include "waveformRecord.h"
 #include "compressRecord.h"
 
 #define testDEq(A,B,D) testOk(fabs((A)-(B))<(D), #A " (%f) ~= " #B " (%f)", A, B)
@@ -100,9 +101,9 @@ void testFIFOCirc(void)
 
     recTestIoc_registerRecordDeviceDriver(pdbbase);
 
-    testdbReadDatabase("compressTest.db", NULL, "ALG=Circular Buffer,BALG=FIFO Buffer,NSAM=4");
+    testdbReadDatabase("compressTest.db", NULL, "INP=ai,ALG=Circular Buffer,BALG=FIFO Buffer,NSAM=4");
 
-    vrec = (aiRecord*)testdbRecordPtr("val");
+    vrec = (aiRecord*)testdbRecordPtr("ai");
     crec = (compressRecord*)testdbRecordPtr("comp");
 
     eltc(0);
@@ -230,9 +231,9 @@ void testLIFOCirc(void)
     recTestIoc_registerRecordDeviceDriver(pdbbase);
 
     testdbReadDatabase("compressTest.db", NULL,
-        "ALG=Circular Buffer,BALG=LIFO Buffer,NSAM=4");
+        "INP=ai,ALG=Circular Buffer,BALG=LIFO Buffer,NSAM=4");
 
-    vrec = (aiRecord*)testdbRecordPtr("val");
+    vrec = (aiRecord*)testdbRecordPtr("ai");
     crec = (compressRecord*)testdbRecordPtr("comp");
 
     eltc(0);
@@ -346,10 +347,90 @@ void testLIFOCirc(void)
     testdbCleanup();
 }
 
+void
+writeToWaveform(DBADDR *addr, long count, ...) {
+    va_list args;
+    long i;
+    double values[count];
+
+    va_start(args, count);
+    for (i=0; i< count; i++) {
+        values[i] = va_arg(args, double);
+    }
+    va_end(args);
+
+    testOk1(dbPut(addr, DBF_DOUBLE, values, count)==0);
+}
+
+void
+testNto1Average(void) {
+    double buf;
+    long nReq;
+    DBADDR wfaddr, caddr;
+
+    testDiag("Test Average");
+
+    testdbPrepare();
+
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=N to 1 Average,BALG=FIFO Buffer,NSAM=1,N=4");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    if (dbNameToAddr("wf", &wfaddr))
+        testAbort("Failed to get 'wf'");
+    if (dbNameToAddr("comp", &caddr))
+        testAbort("Failed to get 'comp'");
+
+    testDiag("Test incomplete input data");
+
+    dbScanLock(wfaddr.precord);
+    writeToWaveform(&wfaddr, 3, 1., 2., 3.);
+    dbScanUnlock(wfaddr.precord);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+
+    nReq = 1;
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 0., 0.01);
+
+    dbScanUnlock(caddr.precord);
+
+    testDiag("Test complete input data");
+
+    dbScanLock(wfaddr.precord);
+    writeToWaveform(&wfaddr, 4, 1., 2., 3., 4.);
+    dbScanUnlock(wfaddr.precord);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+
+    nReq = 1;
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 2.5, 0.01);
+
+    dbScanUnlock(caddr.precord);
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+}
+
 MAIN(compressTest)
 {
-    testPlan(116);
+    testPlan(120);
     testFIFOCirc();
     testLIFOCirc();
+    testNto1Average();
     return testDone();
 }

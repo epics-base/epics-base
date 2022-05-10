@@ -66,7 +66,8 @@ static char *rawSupp[] = {
     "mbbi",
     "mbbiDirect",
     "ao",
-    "bo"
+    "bo",
+    "mbbo"
 };
 
 static
@@ -80,6 +81,7 @@ int hasRawSimmSupport(const char *rectype) {
 #define PVNAMELENGTH 60
 static char nameVAL[PVNAMELENGTH];
 static char nameB0[PVNAMELENGTH];
+static char nameONVL[PVNAMELENGTH];
 static char nameRVAL[PVNAMELENGTH];
 static char nameROFF[PVNAMELENGTH];
 static char nameSGNL[PVNAMELENGTH];
@@ -103,7 +105,8 @@ static char nameSimvalLEN[PVNAMELENGTH];
 static
 void setNames(const char *name)
 {
-    SETNAME(VAL); SETNAME(B0); SETNAME(RVAL); SETNAME(ROFF); SETNAME(SGNL);
+    SETNAME(VAL); SETNAME(B0); SETNAME(ONVL);
+    SETNAME(RVAL); SETNAME(ROFF); SETNAME(SGNL);
     SETNAME(SVAL); SETNAME(SIMM); SETNAME(SIML); SETNAME(SIOL); SETNAME(SIMS);
     SETNAME(SCAN); SETNAME(PROC); SETNAME(PACT);
     SETNAME(STAT); SETNAME(SEVR); SETNAME(TSE);
@@ -421,6 +424,11 @@ void testSiolWrite(const char *name,
             testdbPutFieldOk(nameVAL, DBR_USHORT, 1);
             testdbGetFieldEqual(nameRVAL, DBR_ULONG, 0x55);
             testdbGetFieldEqual(nameSimval, DBR_ULONG, 0x55);
+        } else if (strcmp(name, "mbbo") == 0) {
+            testdbPutFieldOk(nameONVL, DBR_ULONG, 5);
+            testdbPutFieldOk(nameVAL, DBR_UCHAR, 1);
+            testdbGetFieldEqual(nameRVAL, DBR_ULONG, 5);
+            testdbGetFieldEqual(nameSimval, DBR_UCHAR, 5);
         }
         testdbPutFieldOk(nameSIML, DBR_STRING, nameSimmode);
     }
@@ -542,7 +550,7 @@ void testAllRecTypes(void)
 
 MAIN(simmTest)
 {
-    testPlan(1221);
+    testPlan(1244);
     startSimmTestIoc("simmTest.db");
 
     testSimmSetup();

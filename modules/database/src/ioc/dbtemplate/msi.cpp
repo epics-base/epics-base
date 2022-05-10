@@ -176,7 +176,7 @@ int main(int argc,char **argv)
     else {
         subInfo *substitutePvt;
         char *filename = 0;
-        bool isGlobal, isFile;
+        bool isGlobal, isFile = false;
 
         STEPS("Substitutions from file", substitutionName.c_str());
         substituteOpen(&substitutePvt, substitutionName);

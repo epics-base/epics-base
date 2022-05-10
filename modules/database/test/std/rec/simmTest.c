@@ -67,7 +67,8 @@ static char *rawSupp[] = {
     "mbbiDirect",
     "ao",
     "bo",
-    "mbbo"
+    "mbbo",
+    "mbboDirect"
 };
 
 static
@@ -84,6 +85,7 @@ static char nameB0[PVNAMELENGTH];
 static char nameONVL[PVNAMELENGTH];
 static char nameRVAL[PVNAMELENGTH];
 static char nameROFF[PVNAMELENGTH];
+static char nameSHFT[PVNAMELENGTH];
 static char nameSGNL[PVNAMELENGTH];
 static char nameSIMM[PVNAMELENGTH];
 static char nameSIML[PVNAMELENGTH];
@@ -106,7 +108,7 @@ static
 void setNames(const char *name)
 {
     SETNAME(VAL); SETNAME(B0); SETNAME(ONVL);
-    SETNAME(RVAL); SETNAME(ROFF); SETNAME(SGNL);
+    SETNAME(RVAL); SETNAME(ROFF); SETNAME(SHFT); SETNAME(SGNL);
     SETNAME(SVAL); SETNAME(SIMM); SETNAME(SIML); SETNAME(SIOL); SETNAME(SIMS);
     SETNAME(SCAN); SETNAME(PROC); SETNAME(PACT);
     SETNAME(STAT); SETNAME(SEVR); SETNAME(TSE);
@@ -429,6 +431,11 @@ void testSiolWrite(const char *name,
             testdbPutFieldOk(nameVAL, DBR_UCHAR, 1);
             testdbGetFieldEqual(nameRVAL, DBR_ULONG, 5);
             testdbGetFieldEqual(nameSimval, DBR_UCHAR, 5);
+        } else if (strcmp(name, "mbboDirect") == 0) {
+            testdbPutFieldOk(nameSHFT, DBR_ULONG, 2);
+            testdbPutFieldOk(nameB0, DBR_UCHAR, 1);
+            testdbGetFieldEqual(nameRVAL, DBR_ULONG, 4);
+            testdbGetFieldEqual(nameSimval, DBR_UCHAR, 4);
         }
         testdbPutFieldOk(nameSIML, DBR_STRING, nameSimmode);
     }
@@ -550,7 +557,7 @@ void testAllRecTypes(void)
 
 MAIN(simmTest)
 {
-    testPlan(1244);
+    testPlan(1267);
     startSimmTestIoc("simmTest.db");
 
     testSimmSetup();

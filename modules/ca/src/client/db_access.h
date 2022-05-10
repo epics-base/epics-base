@@ -63,8 +63,8 @@ typedef epicsOldString dbr_class_name_t;
 #define DBF_DOUBLE      6
 #define DBF_NO_ACCESS   7
 #define LAST_TYPE       DBF_DOUBLE
-#define VALID_DB_FIELD(x)       ((x >= 0) && (x <= LAST_TYPE))
-#define INVALID_DB_FIELD(x)     ((x < 0) || (x > LAST_TYPE))
+#define VALID_DB_FIELD(x)       (((unsigned)(x) <= LAST_TYPE))
+#define INVALID_DB_FIELD(x)     (!VALID_DB_FIELD(x))
 
 /* data request buffer types */
 #define DBR_STRING      DBF_STRING
@@ -112,8 +112,8 @@ typedef epicsOldString dbr_class_name_t;
 #define DBR_STSACK_STRING DBR_PUT_ACKS + 1
 #define DBR_CLASS_NAME DBR_STSACK_STRING + 1
 #define LAST_BUFFER_TYPE        DBR_CLASS_NAME
-#define VALID_DB_REQ(x) ((x >= 0) && (x <= LAST_BUFFER_TYPE))
-#define INVALID_DB_REQ(x)       ((x < 0) || (x > LAST_BUFFER_TYPE))
+#define VALID_DB_REQ(x)         ((unsigned)(x) <= LAST_BUFFER_TYPE)
+#define INVALID_DB_REQ(x)       (!VALID_DB_REQ(x))
 
 /*
  * The enumeration "epicsType" is an index to this array
@@ -676,7 +676,7 @@ union db_access_val{
                  (type)%(LAST_TYPE+1) == DBR_DOUBLE)
 
 #define dbf_type_to_text(type)   \
-    (  ((type) >= -1 && (type) < dbf_text_dim-2) ? \
+    (  ((type+1) >= 0 && (type) < dbf_text_dim-2) ? \
         dbf_text[type+1] : dbf_text_invalid  )
 
 #define dbf_text_to_type(text, type)   \

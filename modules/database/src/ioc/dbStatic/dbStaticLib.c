@@ -2116,7 +2116,7 @@ char *dbGetStringNum(DBENTRY *pdbentry)
                 return message;
             }
             choice_ind = *((epicsEnum16 *) pdbentry->pfield);
-            if (!pdbMenu || choice_ind < 0 || choice_ind >= pdbMenu->nChoice)
+            if (!pdbMenu || choice_ind >= pdbMenu->nChoice)
                 return NULL;
             pchoice = pdbMenu->papChoiceValue[choice_ind];
             dbMsgCpy(pdbentry, pchoice);
@@ -2136,7 +2136,7 @@ char *dbGetStringNum(DBENTRY *pdbentry)
             if (!pdbDeviceMenu)
                 return NULL;
             choice_ind = *((epicsEnum16 *) pdbentry->pfield);
-            if (choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
+            if (choice_ind >= pdbDeviceMenu->nChoice)
                 return NULL;
             pchoice = pdbDeviceMenu->papChoice[choice_ind];
             dbMsgCpy(pdbentry, pchoice);

@@ -36,6 +36,13 @@ struct in_addr;
 
 /*!
  * \brief Create a socket object
+ *
+ * Ask the operating system to create a socket and return its file descriptor.
+ *
+ * \param domain The socket domain, e.g. PF_INET
+ * \param type The type of socket, e.g. SOCK_STREAM (tcp) or SOCK_DGRAM (udp)
+ * \param protocol Typically unused and set to 0.
+ * \return A file descriptor referring to the socket, or -1 on error.
  */
 LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
     int domain, int type, int protocol );
@@ -50,7 +57,7 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
  * \param sock socket with pending connections to accept
  * \param pAddr If not NULL, this socket contains the address of the peer whose connection is being accepted
  * \param[in,out] addrlen Length of the structure pointed to by @p pAddr, or NULL if \p pAddr is NULL.
- * \return A new socket used for communicating with the peer just accepted
+ * \return A new socket used for communicating with the peer just accepted, or -1 on error.
  */
 LIBCOM_API int epicsStdCall epicsSocketAccept ( 
     int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen );

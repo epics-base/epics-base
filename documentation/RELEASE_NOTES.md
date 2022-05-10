@@ -63,6 +63,41 @@ The compress record now supports the use of partially-filled buffers when using
 any of the N-to-one algorithms. This is achieved by setting the new field `PBUF`
 to `YES`.
 
+### Allow access to the TIME field of a record
+
+Accessing the TIME field no longer fails, but instead accesses the timestamp via
+the `"ts"` channel filter, giving the non-integral number of seconds since
+epoch as DOUBLE.
+
+Example:
+
+```
+record(longin, "test:record1") {
+    field(SCAN, "1 second")
+}
+
+record(longin, "test:record2") {
+    field(SCAN, "2 second")
+}
+
+record(calc, "test:timediff") {
+    field(SCAN, "1 second")
+    field(CALC, "A - B")
+    field(INPA, "test:record1.TIME")
+    field(INPB, "test:record2.TIME")
+}
+```
+
+```
+Hal$ camonitor test:timediff
+test:timediff                  2021-03-12 14:59:41.915976 1.00684
+test:timediff                  2021-03-12 14:59:42.915920 0.00693679
+test:timediff                  2021-03-12 14:59:43.916152 1.00705
+test:timediff                  2021-03-12 14:59:44.915869 0.00690341
+```
+
+This fixes [launchpad bug #1182091](https://bugs.launchpad.net/epics-base/+bug/1182091).
+
 ### Extended timestamp channel filter
 
 The `"ts"` filter can now retrieve the record's timestamp in several numeric

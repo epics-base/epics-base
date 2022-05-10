@@ -12,6 +12,8 @@
  * \file epicsGuard.h
  * \brief Provides classes for RAII style locking and unlocking of mutexes
  *
+ * Provides classes for RAII style locking and unlocking of mutexes
+ *
  **/
 
 #ifndef epicsGuardh
@@ -30,13 +32,14 @@ template < class T > class epicsGuardRelease;
 /*!
  * \brief Provides an RAII style lock/unlock of a mutex.
  *
- * When this object is created, it attempts to lock the mutex it was given.
- * When control leaves the scope where this was created, the destructor unlocks
- * the mutex.
+ * Provides an RAII style lock/unlock of a mutex.  When this object is created,
+ * it attempts to lock the mutex it was given.  When control leaves the scope
+ * where this was created, the destructor unlocks the mutex.
  *
  * This class is also useful in situations where C++ exceptions are possible.
  *
- * \section Example
+ * Example
+ * =======
  * \code{.cpp}
  * epicsMutex mutex;
  * {
@@ -52,11 +55,13 @@ public:
     typedef epicsGuardRelease<T> release_t;
 
     /*!
+     * \brief Guard a mutex based on scope.
+     *
      * Constructs an epicsGuard, locking the mutex for the scope of this object.
      *
-     * @param T A mutex-like object to be lock()'ed and unlock()'ed
+     * @param mutexIn A mutex-like object to be lock()'ed and unlock()'ed
      */
-    epicsGuard ( T & );
+    epicsGuard ( T & mutexIn);
     void assertIdenticalMutex ( const T & ) const;
     ~epicsGuard ();
 private:
@@ -70,13 +75,14 @@ private:
 /*!
  * \brief RAII style unlocking of an epicsGuard object
  *
- * This class can be used while a epicsGuard is active to temporarily release
- * the mutex and automatically re-apply the lock when this object goes out of
- * scope.
+ * RAII style unlocking of an epicsGuard object This class can be used while a
+ * epicsGuard is active to temporarily release the mutex and automatically
+ * re-apply the lock when this object goes out of scope.
  *
  * This class is also useful in situations where C++ exceptions are possible.
  *
- * \section Example
+ * Example
+ * =======
  * \code{.cpp}
  * epicsMutex mutex;
  * {
@@ -99,11 +105,14 @@ template < class T >
 class epicsGuardRelease {
 public:
     typedef epicsGuard<T> guard_t;
-        /*!
-         * \brief Constructs an epicsGuardRelease, unlocking the given epicsGuard
-         * \param guardIn The epicsGuard object to be temporarily released.
-         */
-    epicsGuardRelease ( epicsGuard < T > & );
+    /*!
+     * \brief Constructs an epicsGuardRelease, unlocking the given epicsGuard
+     *
+     * Constructs an epicsGuardRelease, unlocking the given epicsGuard for the duration of this object.
+     *
+     * \param guardIn The epicsGuard object to be temporarily released.
+    */
+    epicsGuardRelease ( epicsGuard < T > & guardIn);
     ~epicsGuardRelease ();
 private:
     epicsGuard < T > & _guard;

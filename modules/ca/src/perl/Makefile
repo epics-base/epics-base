@@ -20,6 +20,11 @@ ifdef T_A
   PERLBIN := $(shell $(PERL) ../perlConfig.pl binexp)
   XSUBPP := $(firstword $(wildcard $(PERLBIN)/xsubpp $(EXTUTILS)/xsubpp))
 
+ifdef CLANG_12
+  # Turn off noisy warnings from Clang 12 or later
+  CODE_CFLAGS = -Wno-compound-token-split-by-macro
+endif
+
 # Special settings for Darwin:
 ifeq ($(OS_CLASS),Darwin)
   # Use hdepends command (not GNU compiler flags)

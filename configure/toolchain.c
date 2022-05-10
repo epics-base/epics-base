@@ -23,6 +23,34 @@ CLANG_MAJOR = __clang_major__
 CLANG_MINOR = __clang_minor__
 CLANG_PATCH = __clang_patchlevel__
 
+#ifdef _COMMENT_
+/* CLANG version detection, similar scheme as used for BASE_3_15 etc.
+ * Needed to disable warnings added in later Clang versions.
+ * In a Makefile
+ *   ifdef CLANG_12
+ *     means the compiler is Clang 12.x or later,
+ *   ifeq ($(CLANG_12),1)
+ *     means the compiler is Clang 12.x.
+ * Add other versions as needed.
+ */
+#endif
+
+#if __clang_major__ >= 12
+  #if __clang_major__ == 12
+    CLANG_12 = 1
+  #else
+    CLANG_12 = 0
+    #if __clang_major__ == 13
+      CLANG_13 = 1
+    #else
+      CLANG_13 = 0
+      #if __clang_major__ == 14
+        CLANG_14 = 1
+      #endif
+    #endif
+  #endif
+#endif
+
 #elif defined(_MSC_VER)
 MSVC_VER = _MSC_VER
 #endif

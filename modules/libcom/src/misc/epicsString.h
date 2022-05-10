@@ -34,11 +34,11 @@ extern "C" {
  * 
  * Copies characters from string to an output buffer and converts C-style escape sequences to 
  * their binary form.  Since the output string can never be longer than the source, it is legal for 
- * @p inbuf and @p outbuf to point to the same buffer and @p outsize and @p inlen
+ * \p inbuf and \p outbuf to point to the same buffer and \p outsize and \p inlen
  * be equal, thus performing the character translation in-place.
  * 
  * \param outbuf  buffer to copy string to. The resulting string will be zero-terminated as long as 
- *                @p outsize is non-zero. 
+ *                \p outsize is non-zero. 
  * \param outsize length of output buffer not including the null-terminator. 
  * \param inbuf   buffer to copy from. Null byte terminates the string.
  * \param inlen   maximum number of characters to copy from input buffer.
@@ -55,7 +55,7 @@ LIBCOM_API int epicsStrnRawFromEscaped(char *outbuf,      size_t outsize,
  * than the input string.
  *
  * The following escaped character constants will be used in the output:
- * \a \b \f \n \r \t \v \\ \’ \" \0
+ * \verbatim  \a \b \f \n \r \t \v \\ \’ \" \0  \endverbatim
  * All other non-printable characters appear in form \xHH where HH are two hex digits.
  * Non-printable characters are determined by the C runtime library’s isprint() function.
  *
@@ -66,7 +66,7 @@ LIBCOM_API int epicsStrnRawFromEscaped(char *outbuf,      size_t outsize,
  * \param inlen   Number of characters to copy from input buffer.
  *
  * \return number of characters that would have been stored in the output buffer if it were large enough, 
- * or a negative value if dst == src. 
+ * or a negative value if \p outbuf == \p inbuf. 
  *
  */
 LIBCOM_API int epicsStrnEscapedFromRaw(char *outbuf,      size_t outsize,
@@ -76,7 +76,7 @@ LIBCOM_API int epicsStrnEscapedFromRaw(char *outbuf,      size_t outsize,
  *
  * Scans up to \p len characters of the string that may contain non-printable characters, and returns 
  * the size of the output buffer that would be needed to escape that string. 
- * This routine is faster than calling epicsStrnEscapedFromRaw with a zero length output buffer; both 
+ * This routine is faster than calling epicsStrnEscapedFromRaw() with a zero length output buffer; both 
  * should return the same result.
  *
  *\param buf string to scan
@@ -101,13 +101,13 @@ LIBCOM_API int epicsStrnCaseCmp(const char *s1, const char *s2, size_t len);
 
 /** \brief Duplicates a string
  *
- * Implements strdup from the C standard library.  Calls mallocMustSucceed to allocate memory
+ * Implements strdup from the C standard library.  Calls mallocMustSucceed() to allocate memory
  */
 LIBCOM_API char * epicsStrDup(const char *s);
 
 /** \brief Duplicates a string
  *
- * implements strndup from the C standard library. Calls mallocMustSucceed to allocate memory
+ * implements strndup from the C standard library. Calls mallocMustSucceed() to allocate memory
  */
 LIBCOM_API char * epicsStrnDup(const char *s, size_t len);
 
@@ -144,7 +144,7 @@ LIBCOM_API int epicsStrGlobMatch(const char *str, const char *pattern);
 
 /** \brief Matches a string against a pattern.
  *
- * Like epicsStrGlobMatch but with limited string length.
+ * Like epicsStrGlobMatch() but with limited string length.
  * If the length of str is less than len, the full string is matched.
  *
  * @returns 1 if the first len characters of str match the pattern, 0 if not.
@@ -198,7 +198,7 @@ LIBCOM_API unsigned int epicsMemHash(const char *str, size_t length,
 LIBCOM_API double epicsStrSimilarity(const char *A, const char *B);
 
 /** \brief DEPRECATED
- * \deprecated dbTranslateEscape is deprecated, use epicsStrnRawFromEscaped instead 
+ * \deprecated dbTranslateEscape is deprecated, use epicsStrnRawFromEscaped() instead 
  */
 LIBCOM_API int dbTranslateEscape(char *s, const char *ct);
 

@@ -43,10 +43,6 @@
 #include "osiSock.h" // NETDEBUG
 #include "epicsBaseDebugLog.h"
 
-#ifdef AF_INET6
-#include <poll.h>
-#endif
-
 // UDP protocol dispatch table
 const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
 {
@@ -537,7 +533,7 @@ void udpRecvThread::run ()
 #ifdef AF_INET6
         pollagain:
         if ( this->iiu.pPollFds && this->iiu.numPollFds >= 1 ) {
-            int pollres = poll ( this->iiu.pPollFds, this->iiu.numPollFds, -1 );
+            int pollres = osiSockPoll ( this->iiu.pPollFds, this->iiu.numPollFds, -1 );
             if ( pollres < 0 ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );

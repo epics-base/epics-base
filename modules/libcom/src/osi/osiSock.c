@@ -872,3 +872,55 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
 #endif
     return 1;
 }
+
+/*
+ * Support for poll(), which is not available on every system
+ * Implement a wrapper that uses select()
+ */
+#ifdef USE_OSISOCKET_POLL_VIA_SELECT
+int osiSockPoll(struct pollfd fds[], int nfds, int timeout)
+{
+    fd_set fdset_rd;
+    struct timeval tv, *ptv = NULL;
+    int i;
+    int highest_fd = 0;
+    int ret;
+
+    assert(nfds > 0);
+    FD_ZERO(&fdset_rd);
+    for (i = 0; i < nfds; i++) {
+        int fd = fds[i].fd;
+        if (fd > highest_fd) {
+            highest_fd = fd;
+        }
+        fds[i].revents = 0;
+        if (fds[i].events & POLLIN) {
+            FD_SET(fd, &fdset_rd);
+        }
+    }
+    if (timeout >= 0) {
+        tv.tv_sec = timeout / 1000;
+        tv.tv_usec = (timeout % 1000) * 1000;
+        ptv = &tv;
+    }
+    ret = select(highest_fd + 1, &fdset_rd, NULL, NULL, ptv);
+#ifdef NETDEBUG
+        epicsBaseDebugLog ( "osiSockPoll nfds=%i timeout=%d ret=%d\n",
+                            nfds, timeout, ret);
+#endif
+    if (ret <= 0) {
+        return ret; /* Error or no descriptor ready: timeout */
+    }
+    /* fill out revent */
+    for (i = 0; i < nfds; i++) {
+        int fd = fds[i].fd;
+        if (FD_ISSET (fd, &fdset_rd)) {
+            fds[i].revents |= POLLIN;
+        }
+    }
+    return ret; /* both poll() and select return the number of "ready fd" */
+}
+
+#endif
+
+

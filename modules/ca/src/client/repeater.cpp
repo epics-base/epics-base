@@ -79,8 +79,7 @@
 
 #include "epicsBaseDebugLog.h"
 #ifdef AF_INET6
-#include "cantProceed.h"
-#include <poll.h>
+#include "cantProceed.h" /* callocMustSucceed */
 #endif
 
 #ifdef NETDEBUG
@@ -712,7 +711,7 @@ void ca_repeater ()
 #ifdef AF_INET6
         pollagain:
         if ( pPollFds && numPollFds >= 1 ) {
-            int pollres = poll ( pPollFds, numPollFds, -1 );
+            int pollres = osiSockPoll ( pPollFds, numPollFds, -1 );
             if ( pollres < 0 ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );

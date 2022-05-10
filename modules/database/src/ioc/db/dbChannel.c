@@ -450,12 +450,42 @@ dbChannel * dbChannelCreate(const char *name)
     const char *pname = name;
     DBENTRY dbEntry;
     dbChannel *chan = NULL;
-    char *cname;
+    char *cname = NULL;
     dbAddr *paddr;
     long status;
 
     if (!name || !*name || !pdbbase)
         return NULL;
+
+    /* If the timestamp filter is available, intercept requests for the TIME
+       field and replace the field with a channel filter string. */
+    {
+        static char const tsfilter[] = ".{\"ts\":{\"num\":\"dbl\"}}";
+        static int exists_ts = -1;
+
+        size_t namelen = strlen(name);
+        size_t reclen = namelen - 5; /* subtract strlen(".TIME"), MSVC won't optimize */
+        int has_time = reclen > 0 && !strcmp(name + reclen, ".TIME");
+
+        if (exists_ts == -1) {
+            /* Only look for the filter on first use. */
+            exists_ts = dbFindFilter("ts", 2) != NULL;
+        }
+
+        if (has_time && exists_ts) {
+            cname = malloc(reclen + strlen(tsfilter) + 1);
+            if (!cname)
+                goto finish;
+            strncpy(cname, name, reclen);
+            strcpy(cname + reclen, tsfilter);
+            pname = cname;
+        } else {
+            cname = malloc(namelen + 1);
+            if (!cname)
+                goto finish;
+            strcpy(cname, name);
+        }
+    }
 
     status = pvNameLookup(&dbEntry, &pname);
     if (status)
@@ -464,12 +494,9 @@ dbChannel * dbChannelCreate(const char *name)
     chan = freeListCalloc(dbChannelFreeList);
     if (!chan)
         goto finish;
-    cname = malloc(strlen(name) + 1);
-    if (!cname)
-        goto finish;
 
-    strcpy(cname, name);
     chan->name = cname;
+    cname = NULL;
     ellInit(&chan->filters);
     ellInit(&chan->pre_chain);
     ellInit(&chan->post_chain);
@@ -527,6 +554,8 @@ finish:
         dbChannelDelete(chan);
         chan = NULL;
     }
+    if (cname)
+        free(cname);
     dbFinishEntry(&dbEntry);
     return chan;
 }

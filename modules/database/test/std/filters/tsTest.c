@@ -246,6 +246,7 @@ MAIN(tsTest) {
     const chFilterPlugin *plug;
 
     static TestSpec const tests[] = {
+        {"x.TIME",                                             type_check_double,   value_check_double},
         {"x.VAL{ts:{\"num\": \"dbl\"}}",                       type_check_double,   value_check_double},
         {"x.VAL{ts:{\"num\": \"sec\"}}",                       type_check_sec_nsec, value_check_sec},
         {"x.VAL{ts:{\"num\": \"nsec\"}}",                      type_check_sec_nsec, value_check_nsec},

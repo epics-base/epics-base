@@ -487,7 +487,11 @@ The B<RDES> field contains the address of dbRecordType
 The B<RPRO> field specifies a reprocessing of the record when current
 processing completes.
 
-The B<TIME> field holds the time stamp when this record was last processed.
+The B<TIME> field contains the time when this record was last processed in
+standard format. Reading this field will return a value of type DOUBLE
+representing fractional number of seconds since the epoch. Note that the value
+obtained this way cannot have nanosecond precision. The L<"ts" channel
+filter|filters> can be used to retreive the timestamp with full precision.
 
 The B<UTAG> field can be used to hold a site-specific 64-bit User Tag value
 that is associated with the record's time stamp.

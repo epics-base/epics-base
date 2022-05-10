@@ -17,6 +17,8 @@
 #include "compressRecord.h"
 
 #define testDEq(A,B,D) testOk(fabs((A)-(B))<(D), #A " (%f) ~= " #B " (%f)", A, B)
+#define fetchRecordOrDie(recname, addr)     if (dbNameToAddr(recname, &addr)) {testAbort("Unknown PV '%s'", recname);}
+
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
@@ -34,8 +36,7 @@ void checkArrD(const char *pv, long elen, double a, double b, double c, double d
     expect[2] = c;
     expect[3] = d;
 
-    if (dbNameToAddr(pv, &addr))
-        testAbort("Unknown PV '%s'", pv);
+    fetchRecordOrDie(pv, addr);
 
     if (dbGet(&addr, DBR_DOUBLE, buf, NULL, &nReq, NULL))
         testAbort("Failed to get '%s'", pv);
@@ -67,8 +68,7 @@ void checkArrI(const char *pv, long elen, epicsInt32 a, epicsInt32 b, epicsInt32
     expect[2] = c;
     expect[3] = d;
 
-    if (dbNameToAddr(pv, &addr))
-        testAbort("Unknown PV '%s'", pv);
+    fetchRecordOrDie(pv, addr);
 
     if (dbGet(&addr, DBR_LONG, buf, NULL, &nReq, NULL))
         testAbort("Failed to get '%s'", pv);
@@ -359,13 +359,15 @@ writeToWaveform(DBADDR *addr, long count, ...) {
     }
     va_end(args);
 
+    dbScanLock(addr->precord);
     testOk1(dbPut(addr, DBF_DOUBLE, values, count)==0);
+    dbScanUnlock(addr->precord);
 }
 
 void
 testNto1Average(void) {
-    double buf;
-    long nReq;
+    double buf = 0.0;
+    long nReq = 1;
     DBADDR wfaddr, caddr;
 
     testDiag("Test Average");
@@ -382,55 +384,81 @@ testNto1Average(void) {
     testIocInitOk();
     eltc(1);
 
-    if (dbNameToAddr("wf", &wfaddr))
-        testAbort("Failed to get 'wf'");
-    if (dbNameToAddr("comp", &caddr))
-        testAbort("Failed to get 'comp'");
+    fetchRecordOrDie("wf", wfaddr);
+    fetchRecordOrDie("comp", caddr);
 
     testDiag("Test incomplete input data");
 
-    dbScanLock(wfaddr.precord);
     writeToWaveform(&wfaddr, 3, 1., 2., 3.);
-    dbScanUnlock(wfaddr.precord);
 
     dbScanLock(caddr.precord);
     dbProcess(caddr.precord);
-
-    nReq = 1;
     if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
         testAbort("dbGet failed on compress record");
 
+    testOk1(nReq == 0);
     testDEq(buf, 0., 0.01);
-
     dbScanUnlock(caddr.precord);
 
     testDiag("Test complete input data");
 
-    dbScanLock(wfaddr.precord);
     writeToWaveform(&wfaddr, 4, 1., 2., 3., 4.);
-    dbScanUnlock(wfaddr.precord);
 
     dbScanLock(caddr.precord);
     dbProcess(caddr.precord);
-
     nReq = 1;
     if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
         testAbort("dbGet failed on compress record");
 
     testDEq(buf, 2.5, 0.01);
-
     dbScanUnlock(caddr.precord);
 
     testIocShutdownOk();
+    testdbCleanup();
+}
 
+void
+testNto1AveragePartial(void) {
+    double buf = 0.0;
+    long nReq = 1;
+    DBADDR wfaddr, caddr;
+
+    testDiag("Test Average");
+
+    testdbPrepare();
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=N to 1 Average,BALG=FIFO Buffer,NSAM=1,N=4,PBUF=YES");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    testDiag("Test incomplete input data");
+
+    fetchRecordOrDie("wf", wfaddr);
+    fetchRecordOrDie("comp", caddr);
+
+    writeToWaveform(&wfaddr, 3, 1., 2., 3.);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 2.0, 0.01);
+    dbScanUnlock(caddr.precord);
+
+    testIocShutdownOk();
     testdbCleanup();
 }
 
 MAIN(compressTest)
 {
-    testPlan(120);
+    testPlan(123);
     testFIFOCirc();
     testLIFOCirc();
     testNto1Average();
+    testNto1AveragePartial();
     return testDone();
 }

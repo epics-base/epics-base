@@ -393,7 +393,15 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		interest(1)
 		menu(compressALG)
 	}
- 	field(BALG,DBF_MENU) {
+	field(PBUF,DBF_MENU) {
+		prompt("Use Partial buffers")
+		promptgroup("30 - Action")
+		special(SPC_RESET)
+		interest(1)
+		menu(menuYesNo)
+		initial("NO")
+	}
+	field(BALG,DBF_MENU) {
 		prompt("Buffering Algorithm")
 		promptgroup("30 - Action")
 		special(SPC_RESET)

@@ -351,9 +351,9 @@ udpiiu::udpiiu (
     unsigned numSocketsToPoll = searchDestList_count;
     if (this->sock4 != INVALID_SOCKET) numSocketsToPoll++;
     if (this->sock6 != INVALID_SOCKET) numSocketsToPoll++;
-    pPollFds = (pollfd*)callocMustSucceed(numSocketsToPoll,
-                                          sizeof(struct pollfd),
-                                          "udpiiu::udpiiu");
+    pPollFds = (osiSockPollfd*)callocMustSucceed(numSocketsToPoll,
+                                                 sizeof(struct osiSockPollfd),
+                                                 "udpiiu::udpiiu");
 
     /* this.socket must be added to the polling list */
     if (this->sock4 != INVALID_SOCKET) {

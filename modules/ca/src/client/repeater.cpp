@@ -555,7 +555,7 @@ void ca_repeater ()
     char * pBuf;
 #ifdef AF_INET6
     SOCKET sock6;
-    struct pollfd *pPollFds = NULL;
+    struct osiSockPollfd *pPollFds = NULL;
     unsigned numPollFds = 0;
     unsigned searchDestList_count = 0;
 #endif
@@ -629,8 +629,8 @@ void ca_repeater ()
 
 #ifdef AF_INET6
         searchDestList_count = (unsigned)casBeaconAddrList.count;
-        pPollFds = (pollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock6 */
-                                              sizeof(struct pollfd),
+        pPollFds = (osiSockPollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock6 */
+                                              sizeof(struct osiSockPollfd),
                                               "ca_repeater");
 
         /* this.socket must be added to the polling list */

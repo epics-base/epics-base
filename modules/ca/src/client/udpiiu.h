@@ -192,7 +192,7 @@ private:
     ca_uint32_t lastReceivedSeqNo;
     SOCKET sock4;
     SOCKET sock6;
-    struct pollfd *pPollFds;
+    struct osiSockPollfd *pPollFds;
     unsigned numPollFds;
     ca_uint16_t repeaterPort;
     ca_uint16_t serverPort;

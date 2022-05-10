@@ -877,8 +877,8 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
  * Support for poll(), which is not available on every system
  * Implement a wrapper that uses select()
  */
-#ifdef USE_OSISOCKET_POLL_VIA_SELECT
-int osiSockPoll(struct pollfd fds[], int nfds, int timeout)
+#ifdef AF_INET6
+int osiSockPoll(struct osiSockPollfd fds[], int nfds, int timeout)
 {
     fd_set fdset_rd;
     struct timeval tv, *ptv = NULL;

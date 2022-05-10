@@ -65,7 +65,8 @@ static char *rawSupp[] = {
     "bi",
     "mbbi",
     "mbbiDirect",
-    "ao"
+    "ao",
+    "bo"
 };
 
 static
@@ -403,15 +404,24 @@ void testSiolWrite(const char *name,
         testdbPutFieldOk(nameVAL, DBR_LONG, 1);
     testdbGetFieldEqual(nameSimval, DBR_USHORT, 1);
 
-    if(hasRawSimmSupport(name)){
+    if (hasRawSimmSupport(name)) {
         testDiag("in simmRAW, RVAL should be written to SIOL");
         testDiag("SIML overrides SIMM, disable it here");
         testdbPutFieldOk(nameSIML, DBR_STRING, "");
         testdbPutFieldOk(nameSIMM, DBR_STRING, "RAW");
-        testdbPutFieldOk(nameROFF, DBR_ULONG, 2);
-        testdbPutFieldOk(nameVAL, DBR_DOUBLE, 5.);
-        testdbGetFieldEqual(nameRVAL, DBR_LONG, 3);       
-        testdbGetFieldEqual(nameSimval, DBR_DOUBLE, 3.);
+        if (strcmp(name, "ao") == 0) {
+            testdbPutFieldOk(nameROFF, DBR_ULONG, 2);
+            testdbPutFieldOk(nameVAL, DBR_DOUBLE, 5.);
+            testdbGetFieldEqual(nameRVAL, DBR_LONG, 3);
+            testdbGetFieldEqual(nameSimval, DBR_DOUBLE, 3.);
+        } else if (strcmp(name, "bo") == 0) {
+            boRecord *prec;
+            prec = (boRecord *) testdbRecordPtr("bo");
+            prec->mask = 0x55;
+            testdbPutFieldOk(nameVAL, DBR_USHORT, 1);
+            testdbGetFieldEqual(nameRVAL, DBR_ULONG, 0x55);
+            testdbGetFieldEqual(nameSimval, DBR_ULONG, 0x55);
+        }
         testdbPutFieldOk(nameSIML, DBR_STRING, nameSimmode);
     }
 
@@ -532,7 +542,7 @@ void testAllRecTypes(void)
 
 MAIN(simmTest)
 {
-    testPlan(1199);
+    testPlan(1221);
     startSimmTestIoc("simmTest.db");
 
     testSimmSetup();

@@ -59,7 +59,7 @@ public:
      *
      * Constructs an epicsGuard, locking the mutex for the scope of this object.
      *
-     * @param mutexIn A mutex-like object to be lock()'ed and unlock()'ed
+     * \param mutexIn A mutex-like object to be lock()'ed and unlock()'ed
      */
     epicsGuard ( T & mutexIn);
     void assertIdenticalMutex ( const T & ) const;

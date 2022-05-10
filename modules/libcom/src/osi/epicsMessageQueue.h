@@ -84,6 +84,8 @@ public:
 
     /**
      *  \brief Send a message or timeout.
+     *  \param message Pointer to the message to be sent
+     *  \param messageSize The size of \p message
      *  \param timeout The timeout delay in seconds. A timeout of zero is
      *  equivalent to calling trySend(); NaN or any value too large to be
      *  represented to the target OS is equivalent to no timeout.
@@ -128,6 +130,8 @@ public:
 
     /**
      *  \brief Wait for and fetch the next message.
+     *  \param[out] message Output buffer to store the received message
+     *  \param size Size of the buffer pointed to by \p message
      *  \param timeout The timeout delay in seconds. A timeout of zero is
      *  equivalent to calling tryReceive(); NaN or any value too large to
      *  be represented to the target OS is equivalent to no timeout.

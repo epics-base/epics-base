@@ -9,13 +9,15 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*
+#ifndef INC_dbChannel_H
+#define INC_dbChannel_H
+
+/** \file dbChannel.h
+ * @brief Declarations fir the @ref dbChannel "dbChannel" record type
+ *
  *  Author: Andrew Johnson <anj@aps.anl.gov>
  *          Ralph Lange <Ralph.Lange@bessy.de>
  */
-
-#ifndef INC_dbChannel_H
-#define INC_dbChannel_H
 
 #include "dbDefs.h"
 #include "dbAddr.h"

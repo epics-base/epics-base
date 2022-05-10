@@ -178,5 +178,10 @@ LINKER_USE_RPATH = YES
 # All root directories are considered to be the same.
 LINKER_ORIGIN_ROOT = $(INSTALL_LOCATION)
 
+# Make Perl hash iteration reproducible.
+#  Uncomment to enable reproducible builds.
+#  See: https://reproducible-builds.org/docs/stable-outputs/
+#export PERL_HASH_SEED = 0
+
 # Overrides for the settings above may appear in a CONFIG_SITE.local file
 -include $(CONFIG)/CONFIG_SITE.local

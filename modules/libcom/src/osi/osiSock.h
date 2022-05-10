@@ -281,6 +281,7 @@ LIBCOM_API void epicsStdCall osiSockRelease (void);
  * \brief convert socket error numbers to a string
  *
  * There are several system functions which set errno on failure.  This function
+ * converts that error number into a string describing the error.
  *
  * \param[out] pBuf Pointer to char array where the error string will be stored
  * \param bufSize Length of the array pointed to by pBuf
@@ -294,7 +295,8 @@ LIBCOM_API void epicsSocketConvertErrorToString (
  * \brief Convert the currently set errno to a string
  *
  * errno is a global integer that gets set when certain functions return an
- * error.  This function converts that error value into a human readable string.
+ * error.  This function converts that error value into a string describing the
+ * error.
  *
  * \param[out] pBuf Pointer to char array where the error string will be stored
  * \param bufSize Length of the array pointed to by pBuf
@@ -337,7 +339,7 @@ LIBCOM_API int epicsStdCall sockAddrAreIdentical
 /*!
  * \brief Add available broadcast addresses to a list
  *
- *  Add available broadcast addresses to a list This routine is provided with
+ *  Add available broadcast addresses to a list. This routine is provided with
  *  the address of an ELLLIST, a socket, and a match address. When the routine
  *  returns there will be one additional entry in the list for each network
  *  interface found that is up and isn't a loop back interface (match addr is

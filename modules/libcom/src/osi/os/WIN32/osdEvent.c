@@ -86,38 +86,15 @@ LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem )
     }
 }
 
-/*
- * epicsEventWaitWithTimeout ()
- */
-LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
-    epicsEventId pSem, double timeout )
+static epicsEventStatus doWaitWithTimeout(epicsEventId pSem, LARGE_INTEGER *tmo)
 {
-    /* waitable timers use 100 nanosecond intervals, like FILETIME */
-    static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
-    static const unsigned mSecPerSec = 1000u;     /* milliseconds per second */
     HANDLE handles[2];
-    DWORD status;
-    LARGE_INTEGER tmo;
     HANDLE timer;
-    LONGLONG nIvals;  /* number of intervals */
+    DWORD  status;
 
-    if ( timeout <= 0.0 ) {
-        tmo.QuadPart = 0u;
-    }
-    else if ( timeout >= INFINITE / mSecPerSec  ) {
-        /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
-           to be compatible with previous WaitForSingleObject() implementation */    
-        nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
-        tmo.QuadPart = -nIvals;  /* negative value means a relative time offset for timer */
-    }
-    else {
-        nIvals = (LONGLONG)(timeout * ivalPerSec + 0.999999);
-        tmo.QuadPart = -nIvals;
-    }
-
-    if (tmo.QuadPart < 0) {
+    if (tmo->QuadPart != 0) {
         timer = osdThreadGetTimer();
-        if (!SetWaitableTimer(timer, &tmo, 0, NULL, NULL, 0)) {
+        if (!SetWaitableTimer(timer, tmo, 0, NULL, NULL, 0)) {
             return epicsEventError;
         }
         handles[0] = pSem->handle;
@@ -138,6 +115,57 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
     else {
         return epicsEventError;
     }
+}
+
+/*
+ * epicsEventWaitWithTimeout ()
+ */
+LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
+    epicsEventId pSem, double timeout )
+{
+    /* waitable timers use 100 nanosecond intervals, like FILETIME */
+    static const unsigned ivalPerSec = 10000000u; /* number of 100ns intervals per second */
+    static const unsigned mSecPerSec = 1000u;     /* milliseconds per second */
+    LARGE_INTEGER tmo;
+    LONGLONG nIvals;  /* number of intervals */
+
+    if ( timeout <= 0.0 ) {
+        tmo.QuadPart = 0u;
+    }
+    else if ( timeout >= INFINITE / mSecPerSec  ) {
+        /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
+           to be compatible with previous WaitForSingleObject() implementation */    
+        nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
+        tmo.QuadPart = -nIvals;  /* negative value means a relative time offset for timer */
+    }
+    else {
+        nIvals = (LONGLONG)(timeout * ivalPerSec + 0.999999);
+        tmo.QuadPart = -nIvals;
+    }
+    return doWaitWithTimeout( pSem, &tmo );
+}
+
+/*
+ * epicsEventWaitWithAbsTimeout ()
+ */
+LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout (
+    epicsEventId pSem, struct timespec *abs_timeout)
+{
+    /* waitable timers use 100 nanosecond intervals, like FILETIME */
+    static const LONGLONG unixEpochInFileTime = 0x019DB1DED53E8000;
+    static const unsigned ivalPerSec  = 10000000u; /* number of 100ns intervals per second */
+    static const unsigned nSecPerIval = 100u;      /* nanoseconds per second */
+    LARGE_INTEGER tmo;
+    LONGLONG nIvals;  /* number of intervals */
+
+    nIvals  = abs_timeout->tv_sec;
+    nIvals *= ivalPerSec;
+    nIvals += abs_timeout->tv_nsec / nsecPerIval;
+    nIvals += unixEpochInFileTime;
+
+    tmo.QuadPart = nIvals;
+
+    return doWaitWithTimeout( pSem, &tmo );
 }
 
 /*

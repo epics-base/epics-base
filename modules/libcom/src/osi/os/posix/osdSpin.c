@@ -123,8 +123,8 @@ epicsSpinId epicsSpinCreate(void) {
     if (!spin)
         goto fail;
 
-    status = osdPosixMutexInit(&spin->lock, PTHREAD_MUTEX_DEFAULT);
-    checkStatus(status, "osdPosixMutexInit");
+    status = osdPosixMutexInitDefault(&spin->lock);
+    checkStatus(status, "osdPosixMutexInitDefault");
     if (status)
         goto fail;
 

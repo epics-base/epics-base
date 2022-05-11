@@ -109,6 +109,11 @@ int osdPosixMutexInit (pthread_mutex_t *m, int mutextype)
     return pthread_mutex_init(m, atts);
 }
 
+int osdPosixMutexInitDefault (pthread_mutex_t *m)
+{
+    return osdPosixMutexInit(m, PTHREAD_MUTEX_DEFAULT);
+}
+
 static int mutexLock(pthread_mutex_t *id)
 {
     int status;

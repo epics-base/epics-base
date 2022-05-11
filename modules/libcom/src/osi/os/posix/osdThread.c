@@ -355,10 +355,10 @@ static void once(void)
 #endif
 
     pthread_key_create(&getpthreadInfo,0);
-    status = osdPosixMutexInit(&onceLock,PTHREAD_MUTEX_DEFAULT);
-    checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
-    status = osdPosixMutexInit(&listLock,PTHREAD_MUTEX_DEFAULT);
-    checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
+    status = osdPosixMutexInitDefault(&onceLock);
+    checkStatusOnceQuit(status,"osdPosixMutexInitDefault","epicsThreadInit");
+    status = osdPosixMutexInitDefault(&listLock);
+    checkStatusOnceQuit(status,"osdPosixMutexInitDefault","epicsThreadInit");
     pcommonAttr = calloc(1,sizeof(commonAttr));
     if(!pcommonAttr) checkStatusOnceQuit(errno,"calloc","epicsThreadInit");
     status = pthread_attr_init(&pcommonAttr->attr);

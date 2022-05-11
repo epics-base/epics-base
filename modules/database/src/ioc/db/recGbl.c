@@ -44,8 +44,11 @@
 #include "dbScan.h"
 #include "devSup.h"
 #include "link.h"
-#include "recGbl.h"
 
+/* avoid warning about NULL format argument to recGblSetSevrMsg */
+#undef EPICS_PRINTF_STYLE
+#define EPICS_PRINTF_STYLE(a,b)
+#include "recGbl.h"
 
 /* Hook Routines */
 

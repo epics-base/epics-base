@@ -121,8 +121,7 @@ void dbLockIncRef(lockSet* ls)
 {
     int cnt = epicsAtomicIncrIntT(&ls->refcount);
     if(cnt<=1) {
-        errlogPrintf("dbLockIncRef(%p) on dead lockSet. refs: %d\n", ls, cnt);
-        cantProceed(NULL);
+        cantProceed("dbLockIncRef(%p) on dead lockSet. refs: %d\n", ls, cnt);
     }
 }
 
@@ -145,9 +144,8 @@ void dbLockDecRef(lockSet *ls)
     epicsMutexMustLock(ls->lock);
 
     if(ellCount(&ls->lockRecordList)!=0) {
-        errlogPrintf("dbLockDecRef(%p) would free lockSet with %d records\n",
+        cantProceed("dbLockDecRef(%p) would free lockSet with %d records\n",
                      ls, ellCount(&ls->lockRecordList));
-        cantProceed(NULL);
     }
 
     epicsMutexUnlock(ls->lock);
@@ -421,9 +419,8 @@ retry:
 #ifdef LOCKSET_DEBUG
         if(plock->owner) {
             if(plock->owner!=myself || plock->ownercount<1) {
-                errlogPrintf("dbScanLockMany(%p) ownership violation %p (%p) %u\n",
+                cantProceed("dbScanLockMany(%p) ownership violation %p (%p) %u\n",
                              locker, plock->owner, myself, plock->ownercount);
-                cantProceed(NULL);
             }
             plock->ownercount++;
         } else {
@@ -444,8 +441,7 @@ retry:
         /* if we have at least one lockRecord, then we will always lock
          * at least its present lockSet
          */
-        errlogPrintf("dbScanLockMany(%p) didn't lock anything\n", locker);
-        cantProceed(NULL);
+        cantProceed("dbScanLockMany(%p) didn't lock anything\n", locker);
     }
 }
 
@@ -602,17 +598,15 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 
 #ifdef LOCKSET_DEBUG
     if(locker && (A->owner!=myself || B->owner!=myself)) {
-        errlogPrintf("dbLockSetMerge(%p,\"%s\",\"%s\") ownership violation %p %p (%p)\n",
+        cantProceed("dbLockSetMerge(%p,\"%s\",\"%s\") ownership violation %p %p (%p)\n",
                      locker, pfirst->name, psecond->name,
                      A->owner, B->owner, myself);
-        cantProceed(NULL);
     }
 #endif
     if(locker && (A->ownerlocker!=locker || B->ownerlocker!=locker)) {
-        errlogPrintf("dbLockSetMerge(%p,\"%s\",\"%s\") locker ownership violation %p %p (%p)\n",
+        cantProceed("dbLockSetMerge(%p,\"%s\",\"%s\") locker ownership violation %p %p (%p)\n",
                      locker, pfirst->name, psecond->name,
                      A->ownerlocker, B->ownerlocker, locker);
-        cantProceed(NULL);
     }
 
     if(A==B)
@@ -688,19 +682,17 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 
 #ifdef LOCKSET_DEBUG
     if(ls->owner!=myself || psecond->lset->plockSet->owner!=myself) {
-        errlogPrintf("dbLockSetSplit(%p,\"%s\",\"%s\") ownership violation %p %p (%p)\n",
+        cantProceed("dbLockSetSplit(%p,\"%s\",\"%s\") ownership violation %p %p (%p)\n",
                      locker, pfirst->name, psecond->name,
                      ls->owner, psecond->lset->plockSet->owner, myself);
-        cantProceed(NULL);
     }
 #endif
 
     /* lockset consistency violation */
     if(ls!=psecond->lset->plockSet) {
-        errlogPrintf("dbLockSetSplit(%p,\"%s\",\"%s\") consistency violation %p %p\n",
+        cantProceed("dbLockSetSplit(%p,\"%s\",\"%s\") consistency violation %p %p\n",
                      locker, pfirst->name, psecond->name,
                      pfirst->lset->plockSet, psecond->lset->plockSet);
-        cantProceed(NULL);
     }
 
 

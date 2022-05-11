@@ -21,6 +21,11 @@
 # build doesn't fail to link the readline library.  If none of them work,
 # comment them all out to build without readline support.
 
+# Use GNU Readline if the header file is installed
+COMMANDLINE_LIBRARY = $(strip $(if $(wildcard \
+    $(firstword $(READLINE_DIR) $(GNU_DIR))/include/readline/readline.h), \
+  READLINE, EPICS))
+
 # No other libraries needed (recent Fedora, Ubuntu etc.):
 #COMMANDLINE_LIBRARY = READLINE
 

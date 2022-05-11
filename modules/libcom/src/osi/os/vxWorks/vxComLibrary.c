@@ -17,6 +17,11 @@
  * modules top be loaded
  */
 
+/* avoid "deprecated" warnings for this internal use of symFindByNameEPICS */
+#include "compilerDependencies.h"
+#undef EPICS_DEPRECATED
+#define EPICS_DEPRECATED
+
 #include "epicsDynLink.h"
 extern int logMsgToErrlog(void);
 extern int veclist(int);

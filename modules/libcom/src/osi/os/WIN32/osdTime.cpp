@@ -152,6 +152,16 @@ int epicsStdCall epicsTime_localtime (
     }
 }
 
+void epicsStdCall epicsTimeToFileTime ( FILETIME *pDest, const epicsTimeStamp * pSrc )
+{
+    LARGE_INTEGER ftTicks;
+    ftTicks.QuadPart = ( pSrc->secPastEpoch * FILE_TIME_TICKS_PER_SEC ) +
+        ( pSrc->nsec / ET_TICKS_PER_FT_TICK );
+    ftTicks.QuadPart += epicsEpochInFileTime;
+    pDest->dwLowDateTime = ftTicks.LowPart;
+    pDest->dwHighDateTime = ftTicks.HighPart;
+}
+
 currentTime::currentTime () :
     lastPerfCounter ( 0 ),
     perfCounterFreq ( 0 ),
@@ -509,13 +519,8 @@ static unsigned __stdcall _pllThreadEntry ( void * pCurrentTimeIn )
 
 epicsTime::operator FILETIME () const
 {
-    LARGE_INTEGER ftTicks;
-    ftTicks.QuadPart = ( this->ts.secPastEpoch * FILE_TIME_TICKS_PER_SEC ) +
-        ( this->ts.nsec / ET_TICKS_PER_FT_TICK );
-    ftTicks.QuadPart += epicsEpochInFileTime;
     FILETIME ts;
-    ts.dwLowDateTime = ftTicks.LowPart;
-    ts.dwHighDateTime = ftTicks.HighPart;
+    epicsTimeToFileTime( &ts, &this->ts );
     return ts;
 }
 

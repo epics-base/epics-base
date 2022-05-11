@@ -6,3 +6,8 @@
 
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
+
+STATIC_LDFLAGS_YES= -Wl,-Bstatic
+STATIC_LDFLAGS_NO=
+STATIC_LDLIBS_YES= -Wl,-Bdynamic
+STATIC_LDLIBS_NO=

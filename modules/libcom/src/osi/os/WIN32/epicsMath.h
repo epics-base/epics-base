@@ -31,8 +31,8 @@
 extern "C" {
 #endif
 
-LIBCOM_API extern float epicsNAN;
-LIBCOM_API extern float epicsINF;
+LIBCOM_API extern const float epicsNAN;
+LIBCOM_API extern const float epicsINF;
 
 #ifdef __cplusplus
 }

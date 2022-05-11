@@ -65,6 +65,10 @@ static char *rawSupp[] = {
     "bi",
     "mbbi",
     "mbbiDirect",
+    "ao",
+    "bo",
+    "mbbo",
+    "mbboDirect"
 };
 
 static
@@ -78,7 +82,10 @@ int hasRawSimmSupport(const char *rectype) {
 #define PVNAMELENGTH 60
 static char nameVAL[PVNAMELENGTH];
 static char nameB0[PVNAMELENGTH];
+static char nameONVL[PVNAMELENGTH];
 static char nameRVAL[PVNAMELENGTH];
+static char nameROFF[PVNAMELENGTH];
+static char nameSHFT[PVNAMELENGTH];
 static char nameSGNL[PVNAMELENGTH];
 static char nameSIMM[PVNAMELENGTH];
 static char nameSIML[PVNAMELENGTH];
@@ -100,7 +107,8 @@ static char nameSimvalLEN[PVNAMELENGTH];
 static
 void setNames(const char *name)
 {
-    SETNAME(VAL); SETNAME(B0); SETNAME(RVAL); SETNAME(SGNL);
+    SETNAME(VAL); SETNAME(B0); SETNAME(ONVL);
+    SETNAME(RVAL); SETNAME(ROFF); SETNAME(SHFT); SETNAME(SGNL);
     SETNAME(SVAL); SETNAME(SIMM); SETNAME(SIML); SETNAME(SIOL); SETNAME(SIMS);
     SETNAME(SCAN); SETNAME(PROC); SETNAME(PACT);
     SETNAME(STAT); SETNAME(SEVR); SETNAME(TSE);
@@ -401,6 +409,37 @@ void testSiolWrite(const char *name,
         testdbPutFieldOk(nameVAL, DBR_LONG, 1);
     testdbGetFieldEqual(nameSimval, DBR_USHORT, 1);
 
+    if (hasRawSimmSupport(name)) {
+        testDiag("in simmRAW, RVAL should be written to SIOL");
+        testDiag("SIML overrides SIMM, disable it here");
+        testdbPutFieldOk(nameSIML, DBR_STRING, "");
+        testdbPutFieldOk(nameSIMM, DBR_STRING, "RAW");
+        if (strcmp(name, "ao") == 0) {
+            testdbPutFieldOk(nameROFF, DBR_ULONG, 2);
+            testdbPutFieldOk(nameVAL, DBR_DOUBLE, 5.);
+            testdbGetFieldEqual(nameRVAL, DBR_LONG, 3);
+            testdbGetFieldEqual(nameSimval, DBR_DOUBLE, 3.);
+        } else if (strcmp(name, "bo") == 0) {
+            boRecord *prec;
+            prec = (boRecord *) testdbRecordPtr("bo");
+            prec->mask = 0x55;
+            testdbPutFieldOk(nameVAL, DBR_USHORT, 1);
+            testdbGetFieldEqual(nameRVAL, DBR_ULONG, 0x55);
+            testdbGetFieldEqual(nameSimval, DBR_ULONG, 0x55);
+        } else if (strcmp(name, "mbbo") == 0) {
+            testdbPutFieldOk(nameONVL, DBR_ULONG, 5);
+            testdbPutFieldOk(nameVAL, DBR_UCHAR, 1);
+            testdbGetFieldEqual(nameRVAL, DBR_ULONG, 5);
+            testdbGetFieldEqual(nameSimval, DBR_UCHAR, 5);
+        } else if (strcmp(name, "mbboDirect") == 0) {
+            testdbPutFieldOk(nameSHFT, DBR_ULONG, 2);
+            testdbPutFieldOk(nameB0, DBR_UCHAR, 1);
+            testdbGetFieldEqual(nameRVAL, DBR_ULONG, 4);
+            testdbGetFieldEqual(nameSimval, DBR_UCHAR, 4);
+        }
+        testdbPutFieldOk(nameSIML, DBR_STRING, nameSimmode);
+    }
+
     /* Set TSE to -2 (from device) and reprocess: timestamp is taken from IOC */
     epicsTimeGetCurrent(&now);
     testdbPutFieldOk(nameTSE, DBR_SHORT, -2);
@@ -518,7 +557,7 @@ void testAllRecTypes(void)
 
 MAIN(simmTest)
 {
-    testPlan(1176);
+    testPlan(1267);
     startSimmTestIoc("simmTest.db");
 
     testSimmSetup();

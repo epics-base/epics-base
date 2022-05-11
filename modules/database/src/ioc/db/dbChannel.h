@@ -13,7 +13,7 @@
 #define INC_dbChannel_H
 
 /** \file dbChannel.h
- * @brief Declarations fir the @ref dbChannel "dbChannel" record type
+ * @brief Declarations for the @ref dbChannel "dbChannel" record type
  *
  *  Author: Andrew Johnson <anj@aps.anl.gov>
  *          Ralph Lange <Ralph.Lange@bessy.de>
@@ -64,7 +64,8 @@ typedef struct dbChannel {
     ELLLIST post_chain;       /* list of filters to be called post-event-queue */
 } dbChannel;
 
-/* Prototype for the channel event function that is called in filter stacks
+/**
+ * Prototype for the channel event function that is called in filter stacks
  *
  * When invoked the scan lock for the record associated with 'chan' _may_ be locked.
  * Unless dbfl_has_copy(pLog), it must call dbScanLock before accessing the data,
@@ -76,29 +77,30 @@ typedef struct dbChannel {
  */
 typedef db_field_log* (chPostEventFunc)(void *pvt, dbChannel *chan, db_field_log *pLog);
 
-/* Return values from chFilterIf->parse_* routines: */
+/** Return values from chFilterIf->parse_*- routines: */
 typedef enum {
     parse_stop, parse_continue
 } parse_result;
 
-/* These routines must be implemented by each filter plug-in */
+/** These routines must be implemented by each filter plug-in */
 typedef struct chFilterIf {
-    /* cleanup pointer passed to dbRegisterFilter().
-     * Called during DB shutdown
-     */
+/** 
+ * cleanup pointer passed to ::dbRegisterFilter ().
+ * Called during DB shutdown
+ */
     void (* priv_free)(void *puser);
-    /* Parsing event handlers: */
+    /** Parsing event handlers: */
     parse_result (* parse_start)(chFilter *filter);
-    /* If parse_start() returns parse_continue for a filter, one of
+    /** If parse_start() returns parse_continue for a filter, one of
      * parse_abort() or parse_end() will later be called for that same
      * filter.
      */
     void (* parse_abort)(chFilter *filter);
-    /* If parse_abort() is called it should release any memory allocated
+    /** If parse_abort() is called it should release any memory allocated
      * for this filter; no further parse_...() calls will be made;
      */
     parse_result (* parse_end)(chFilter *filter);
-    /* If parse_end() returns parse_stop it should have released any
+    /** If parse_end() returns parse_stop it should have released any
      * memory allocated for this filter; no further parse_...() calls will
      * be made in this case.
      */
@@ -118,7 +120,7 @@ typedef struct chFilterIf {
     parse_result (* parse_start_array)(chFilter *filter);
     parse_result (* parse_end_array)(chFilter *filter);
 
-    /* Channel operations: */
+    /** Channel operations: */
     long (* channel_open)(chFilter *filter);
     void (* channel_register_pre) (chFilter *filter, chPostEventFunc **cb_out, void **arg_out, db_field_log *probe);
     void (* channel_register_post)(chFilter *filter, chPostEventFunc **cb_out, void **arg_out, db_field_log *probe);
@@ -126,7 +128,7 @@ typedef struct chFilterIf {
     void (* channel_close)(chFilter *filter);
 } chFilterIf;
 
-/* A chFilterPlugin holds data for a filter plugin */
+/** A chFilterPlugin holds data for a filter plugin */
 typedef struct chFilterPlugin {
     ELLNODE node;
     const char *name;
@@ -134,7 +136,7 @@ typedef struct chFilterPlugin {
     void *puser;
 } chFilterPlugin;
 
-/* A chFilter holds data for a single filter instance */
+/** A chFilter holds data for a single filter instance */
 struct chFilter {
     ELLNODE list_node;
     ELLNODE pre_node;
@@ -157,55 +159,55 @@ DBCORE_API long dbChannelTest(const char *name);
 DBCORE_API dbChannel * dbChannelCreate(const char *name);
 DBCORE_API long dbChannelOpen(dbChannel *chan);
 
-/*Following is also defined in db_convert.h*/
+/**Following is also defined in db_convert.h*/
 DBCORE_API extern unsigned short dbDBRnewToDBRold[];
 
-/* In the following macros pChan is dbChannel* */
+/** In the following macros pChan is dbChannel* */
 
-/* evaluates to const char* */
+/** evaluates to const char* */
 #define dbChannelName(pChan) ((pChan)->name)
 
-/* evaluates to struct dbCommon* */
+/** evaluates to struct dbCommon* */
 #define dbChannelRecord(pChan) ((pChan)->addr.precord)
 
-/* evaluates to struct dbFldDes* */
+/** evaluates to struct dbFldDes* */
 #define dbChannelFldDes(pChan) ((pChan)->addr.pfldDes)
 
-/* evaluates to long */
+/** evaluates to long */
 #define dbChannelElements(pChan) ((pChan)->addr.no_elements)
 
-/* evaluates to short */
+/** evaluates to short */
 #define dbChannelFieldType(pChan) ((pChan)->addr.field_type)
 
-/* evaluates to short */
+/** evaluates to short */
 #define dbChannelExportType(pChan) ((pChan)->addr.dbr_field_type)
 
-/* evaluates to short */
+/** evaluates to short */
 #define dbChannelExportCAType(pChan) (dbDBRnewToDBRold[dbChannelExportType(pChan)])
 
-/* evaluates to short */
+/** evaluates to short */
 #define dbChannelFieldSize(pChan) ((pChan)->addr.field_size)
 
-/* evaluates to long */
+/** evaluates to long */
 #define dbChannelFinalElements(pChan) ((pChan)->final_no_elements)
 
-/* evaluates to short */
+/** evaluates to short */
 #define dbChannelFinalFieldType(pChan) ((pChan)->final_type)
 
-/* evaluates to short */
+/** evaluates to short */
 #define dbChannelFinalCAType(pChan) (dbDBRnewToDBRold[(pChan)->final_type])
 
-/* evaluates to short */
+/** evaluates to short */
 #define dbChannelFinalFieldSize(pChan) ((pChan)->final_field_size)
 
-/* evaluates to short */
+/** evaluates to short */
 #define dbChannelSpecial(pChan) ((pChan)->addr.special)
 
-/* Channel filters do not get to interpose here since there are many
+/** Channel filters do not get to interpose here since there are many
  * places where the field pointer is compared with the address of a
  * specific record field, so they can't modify the pointer value.
  */
-/* evaluates to void* */
+/** evaluates to void* */
 #define dbChannelField(pChan) ((pChan)->addr.pfield)
 
 

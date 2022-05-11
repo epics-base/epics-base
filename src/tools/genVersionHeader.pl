@@ -16,6 +16,8 @@ use lib "$Bin/../../lib/perl";
 
 use EPICS::Getopts;
 use POSIX qw(strftime);
+use Time::ParseDate;
+use Date::Parse;
 
 use strict;
 
@@ -29,7 +31,11 @@ our $opt_t = '.';
 our $opt_N = 'VCSVERSION';
 our $opt_V = $now;
 
+our $opt_T = 'VCSREVISION';
+our $opt_C = $now;
+
 my $vcs;
+my $cv;
 
 getopts('dhivqt:N:V:') && @ARGV == 1
     or HELP_MESSAGE();
@@ -53,6 +59,9 @@ if (!$vcs && -d "$opt_t/_darcs") { # Darcs
         my $hasmod = `darcs whatsnew --repodir="$opt_t" -l`;
         $opt_V .= '-dirty' unless $?;
     }
+    $cv = `darcs optimize --reorder; darcs changes --context | sort | md5sum`;
+#    $cm = `darcs show repo --no-files`;
+#    $cm = `darcs pull --dry-run`;
 }
 if (!$vcs && -d "$opt_t/.hg") { # Mercurial
     print "== Found <top>/.hg directory\n" if $opt_v;
@@ -69,6 +78,7 @@ if (!$vcs && -d "$opt_t/.hg") { # Mercurial
         chomp $hasmod;
         $opt_V .= '-dirty' if $hasmod ne '';
     }
+    $cv = `hg log -l1 --template '{date(date, "%s")}'`
 }
 if (!$vcs && -d "$opt_t/.git") { # Git
     print "== Found <top>/.git directory\n" if $opt_v;
@@ -82,6 +92,7 @@ if (!$vcs && -d "$opt_t/.git") { # Git
         $opt_V = $result;
         $vcs = 'Git';
     }
+    $cv = `git log -1 --format=%ct HEAD`;
 }
 if (!$vcs && -d "$opt_t/.svn") { # Subversion
     print "== Found <top>/.svn directory\n" if $opt_v;
@@ -97,6 +108,7 @@ if (!$vcs && -d "$opt_t/.svn") { # Subversion
         chomp $hasmod;
         $opt_V .= '-dirty' if $hasmod ne '';
     }
+    $cv = `svn info --show-item revision`; # this is untested
 }
 if (!$vcs && -d "$opt_t/.bzr") { # Bazaar
     print "== Found <top>/.bzr directory\n" if $opt_v;
@@ -108,6 +120,7 @@ if (!$vcs && -d "$opt_t/.bzr") { # Bazaar
         $opt_V = $result;
         $vcs = 'Bazaar';
     }
+    # bzr is skipped here
 }
 if (!$vcs) {
     print "== No VCS directories\n" if $opt_v;
@@ -120,6 +133,9 @@ if (!$vcs) {
     }
 }
 
+chomp $cv;
+$opt_C=$cv;
+
 my $output = << "__END";
 /* Generated file, do not edit! */
 
@@ -128,12 +144,16 @@ my $output = << "__END";
 #ifndef $opt_N
   #define $opt_N \"$opt_V\"
 #endif
+#ifndef $opt_T
+  #define ${opt_N}_DATE $opt_C
+#endif
 __END
 
 print "== Want:\n$output==\n" if $opt_v;
 
 my $DST;
 if (open($DST, '+<', $outfile)) {
+
     my $actual = join('', <$DST>);
     print "== Current:\n$actual==\n" if $opt_v;
 
@@ -190,4 +210,3 @@ Usage:
 EOF
     exit $opt_h ? 0 : 1;
 }
-

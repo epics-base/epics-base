@@ -200,6 +200,20 @@ LIBCOM_API void epicsEventMustWait(epicsEventId id);
 LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout(
     epicsEventId id, double timeout);
 
+/**\brief Wait an the event or until the specified time.
+ * \note Blocks until full or timeout.
+ * \param id The event identifier.
+ * \param timeout The absolute timeout. If the timeout has already
+ * expired then this is equivalent to calling epicsEventTryWait().
+ * Note that the time is measured by the underlying system (realtime)
+ * clock (and not any epics time provider). To emphasize this fact the
+ * argument is a struct timespec.
+ *
+ * \return Status indicator.
+ **/
+LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout(
+    epicsEventId id, const struct timespec * abs_timeout);
+
 /**\brief Similar to wait() except that if the event is currently empty the
  * call will return immediately with status \c epicsEventWaitTimeout.
  * \param id The event identifier.

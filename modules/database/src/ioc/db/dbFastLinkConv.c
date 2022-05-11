@@ -188,7 +188,7 @@ static long cvt_st_ul(
         status = epicsParseFloat64(from, &dval, &end);
         if (!status &&
             dval >=0 &&
-            dval <= ULONG_MAX)
+            dval <= 0xffffffffUL)
             *to = dval;
     }
     return status;

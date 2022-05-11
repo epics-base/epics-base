@@ -28,6 +28,8 @@
 #include "dbEvent.h"
 #include "dbFldTypes.h"
 #include "errMdef.h"
+#include "menuYesNo.h"
+#include "menuAlarmStat.h"
 #include "special.h"
 #include "recSup.h"
 #include "recGbl.h"
@@ -166,9 +168,9 @@ static int compress_array(compressRecord *prec,
     }
     if (prec->n <= 0)
         prec->n = 1;
-    n = prec->n;
-    if (no_elements < n)
+    if (no_elements < prec->n && prec->pbuf != menuYesNoYES)
         return 1; /*dont do anything*/
+    n = no_elements;
 
     /* determine number of samples to take */
     if (no_elements < nsam * n)
@@ -272,7 +274,7 @@ static int array_average(compressRecord *prec,
     prec->inx = 0;
     return 0;
 }
-
+
 static int compress_scalar(struct compressRecord *prec,double *psource)
 {
     double value = *psource;
@@ -302,7 +304,7 @@ static int compress_scalar(struct compressRecord *prec,double *psource)
         break;
     }
     inx++;
-    if (inx >= prec->n) {
+    if (inx >= prec->n || prec->pbuf == menuYesNoYES) {
         put_value(prec,pdest,1);
         prec->inx = 0;
         return 0;

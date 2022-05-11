@@ -437,7 +437,7 @@ testNto1AveragePartial(void) {
     long nReq = 1;
     DBADDR wfaddr, caddr;
 
-    testDiag("Test Average");
+    testDiag("Test Average, Partial");
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -480,7 +480,7 @@ testNto1AveragePartial(void) {
 
 MAIN(compressTest)
 {
-    testPlan(123);
+    testPlan(127);
     testFIFOCirc();
     testLIFOCirc();
     testNto1Average();

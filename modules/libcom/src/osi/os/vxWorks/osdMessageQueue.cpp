@@ -31,7 +31,7 @@ LIBCOM_API int epicsStdCall epicsMessageQueueSendWithTimeout(
         ticks = 0;
     }
     else if (timeout < (double) INT_MAX / rate) {
-        ticks = timeout * rate;
+        ticks = (int) (timeout * rate);
         if (ticks == 0) {
             /* 0 < timeout < 1/rate; round up */
             ticks = 1;
@@ -58,7 +58,7 @@ LIBCOM_API int epicsStdCall epicsMessageQueueReceiveWithTimeout(
         ticks = 0;
     }
     else if (timeout < (double) INT_MAX / rate) {
-        ticks = timeout * rate;
+        ticks = (int) (timeout * rate);
         if (ticks == 0) {
             /* 0 < timeout < 1/rate, round up */
             ticks = 1;

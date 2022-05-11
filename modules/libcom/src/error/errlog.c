@@ -648,8 +648,8 @@ static void errlogThread(void)
                 int stripped = 0;
 
                 if((base[0]&ERL_STATE_MASK) != ERL_STATE_READY || mlen>=pvt.bufSize - pos) {
-                    fprintf(stderr, "Logic Error: errlog buffer corruption. %02x, %zu\n",
-                            (unsigned)base[0], mlen);
+                    fprintf(stderr, "Logic Error: errlog buffer corruption. %02x, %lu\n",
+                            (unsigned)base[0], (unsigned long)mlen);
                     /* try to reset and recover */
                     break;
                 }
@@ -680,7 +680,7 @@ static void errlogThread(void)
             print->pos = 0u;
 
             if(nLost && console)
-                fprintf(console, "errlog: lost %zu messages\n", nLost);
+                fprintf(console, "errlog: lost %lu messages\n", (unsigned long) nLost);
 
             if(console)
                 fflush(console);

@@ -404,7 +404,7 @@ MAIN(epicsErrlogTest)
     testDiag("Logged %u messages", pvt.count);
     epicsEventMustWait(pvt.done);
     /* Expect N+1 messages +- 1 depending on impl */
-    testOk(pvt.count >= N && pvt.count<=N+2, "Logged %u messages, expected %zu", pvt.count, N+1);
+    testOk(pvt.count >= N && pvt.count<=N+2, "Logged %u messages, expected %lu", pvt.count, (unsigned long)N+1);
 
     /* Clean up */
     testOk(1 == errlogRemoveListeners(&logClient, &pvt),

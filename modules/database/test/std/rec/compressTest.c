@@ -365,6 +365,38 @@ writeToWaveform(DBADDR *addr, long count, ...) {
     dbScanUnlock(addr->precord);
 }
 
+void testArrayAverage(void) {
+    DBADDR wfaddr, caddr;
+    
+    testDiag("Test Array Average");
+    testdbPrepare();
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=Average,BALG=FIFO Buffer,NSAM=4,N=2");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    fetchRecordOrDie("wf", wfaddr);
+    fetchRecordOrDie("comp", caddr);
+
+    writeToWaveform(&wfaddr, 4, 1., 2., 3., 4.);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+
+    writeToWaveform(&wfaddr, 4, 2., 4., 6., 8.);
+
+    dbProcess(caddr.precord);
+
+    checkArrD("comp", 4, 1.5, 3., 4.5, 6.);
+    dbScanUnlock(caddr.precord);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
 void
 testNto1Average(void) {
     double buf = 0.0;
@@ -531,6 +563,7 @@ testNto1LowValue(void) {
     if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
         testAbort("dbGet failed on compress record");
 
+    // We confirm that this hasn't changed i.e. the dbProcess above did nothing
     testDEq(buf, 1.0, 0.01);
     dbScanUnlock(caddr.precord);
 
@@ -594,9 +627,10 @@ testAIPartialAverage(void) {
 
 MAIN(compressTest)
 {
-    testPlan(142);
+    testPlan(145);
     testFIFOCirc();
     testLIFOCirc();
+    testArrayAverage();
     testNto1Average();
     testNto1AveragePartial();
     testAIPartialAverage();

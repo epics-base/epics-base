@@ -1,7 +1,7 @@
 record(ai, "ai") {}
 record(waveform, "wf") {
   field(FTVL, "DOUBLE")
-  field(NELM, "$(N=1)")
+  field(NELM, "4")
 }
 record(compress, "comp") {
   field(INP, "$(INP) NPP")

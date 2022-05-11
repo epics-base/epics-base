@@ -413,6 +413,20 @@ testNto1Average(void) {
     testDEq(buf, 2.5, 0.01);
     dbScanUnlock(caddr.precord);
 
+    testDiag("Test single input data");
+
+    writeToWaveform(&wfaddr, 1, 5.);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    nReq = 1;
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    // Assert that nothing has changed from before
+    testDEq(buf, 2.5, 0.01);
+    dbScanUnlock(caddr.precord);
+
     testIocShutdownOk();
     testdbCleanup();
 }
@@ -428,7 +442,7 @@ testNto1AveragePartial(void) {
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
     recTestIoc_registerRecordDeviceDriver(pdbbase);
-    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=N to 1 Average,BALG=FIFO Buffer,NSAM=1,N=4,PBUF=YES");
+    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=N to 1 Average,BALG=FIFO Buffer,NSAM=1,N=4,PARTIAL=YES");
 
     eltc(0);
     testIocInitOk();
@@ -447,6 +461,17 @@ testNto1AveragePartial(void) {
         testAbort("dbGet failed on compress record");
 
     testDEq(buf, 2.0, 0.01);
+    dbScanUnlock(caddr.precord);
+
+
+    writeToWaveform(&wfaddr, 1, 6.);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 6.0, 0.01);
     dbScanUnlock(caddr.precord);
 
     testIocShutdownOk();

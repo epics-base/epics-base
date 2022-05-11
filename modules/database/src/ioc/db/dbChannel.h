@@ -13,7 +13,7 @@
 #define INC_dbChannel_H
 
 /** \file dbChannel.h
- * @brief Declarations for the @ref dbChannel "dbChannel" record type
+ * \brief Declarations for the \ref dbChannel "dbChannel" record type
  *
  *  Author: Andrew Johnson <anj@aps.anl.gov>
  *          Ralph Lange <Ralph.Lange@bessy.de>
@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-/*
+/**
  * event subscription
  */
 typedef struct evSubscrip {
@@ -42,8 +42,8 @@ typedef struct evSubscrip {
     void                    *user_arg;
     struct event_que        *ev_que;
     db_field_log            **pLastLog;
-    unsigned long           npend;  /* n times this event is on the queue */
-    unsigned long           nreplace;  /* n times replacing event on the queue */
+    unsigned long           npend;  /** \brief n times this event is on the queue */
+    unsigned long           nreplace;  /** \brief n times replacing event on the queue */
     unsigned char           select;
     char                    useValque;
     char                    callBackInProgress;
@@ -52,16 +52,16 @@ typedef struct evSubscrip {
 
 typedef struct chFilter chFilter;
 
-/* A dbChannel points to a record field, and can have multiple filters */
+/** A dbChannel points to a record field, and can have multiple filters */
 typedef struct dbChannel {
     const char *name;
-    dbAddr addr;              /* address structure for record/field */
-    long  final_no_elements;  /* final number of elements (arrays) */
-    short final_field_size;   /* final size of element */
-    short final_type;         /* final type of database field */
-    ELLLIST filters;          /* list of filters as created from JSON */
-    ELLLIST pre_chain;        /* list of filters to be called pre-event-queue */
-    ELLLIST post_chain;       /* list of filters to be called post-event-queue */
+    dbAddr addr;              /** \brief address structure for record/field */
+    long  final_no_elements;  /** \brief final number of elements (arrays) */
+    short final_field_size;   /** \brief final size of element */
+    short final_type;         /** \brief final type of database field */
+    ELLLIST filters;          /** \brief list of filters as created from JSON */
+    ELLLIST pre_chain;        /** \brief list of filters to be called pre-event-queue */
+    ELLLIST post_chain;       /** \brief list of filters to be called post-event-queue */
 } dbChannel;
 
 /**
@@ -110,11 +110,11 @@ typedef struct chFilterIf {
     parse_result (* parse_integer)(chFilter *filter, long integerVal);
     parse_result (* parse_double)(chFilter *filter, double doubleVal);
     parse_result (* parse_string)(chFilter *filter, const char *stringVal,
-            size_t stringLen); /* NB: stringVal is not zero-terminated: */
+            size_t stringLen); /** \brief NB: stringVal is not zero-terminated: */
 
     parse_result (* parse_start_map)(chFilter *filter);
     parse_result (* parse_map_key)(chFilter *filter, const char *key,
-            size_t stringLen); /* NB: key is not zero-terminated: */
+            size_t stringLen); /** \brief NB: key is not zero-terminated: */
     parse_result (* parse_end_map)(chFilter *filter);
 
     parse_result (* parse_start_array)(chFilter *filter);

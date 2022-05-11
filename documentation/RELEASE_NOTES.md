@@ -17,6 +17,13 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Simulation Mode RAW Support for Output Record Types
+
+SIMM=RAW support has been added for the relevant output record types
+(ao, bo, mbbo, mbboDirect).
+RAW simulation mode will have those records do the appropriate conversion
+and write RVAL to the location pointed to by SIOL.
+
 ### Support for obsolete architectures removed
 
 These target architectures have been removed:
@@ -1327,7 +1334,7 @@ editing and history. This functionality has now been restored, see Launchpad
 ### Constant link types
 
 Constant links can now hold 64-bit integer values, either as scalars or
-arrays. Only base 10 is supported by the JSON parser though, the JSON standard
+    arrays. Only base 10 is supported by the JSON parser though, the JSON standard
 doesn't allow for hexadecimal numbers.
 
 ### Upgraded the YAJL JSON Library

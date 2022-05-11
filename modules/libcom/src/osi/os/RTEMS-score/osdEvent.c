@@ -154,31 +154,28 @@ epicsEventWaitWithTimeout(epicsEventId id, double timeout)
 }
 
 epicsEventStatus
-epicsEventWaitWithAbsTimeout(epicsEventId id, const struct timespec *abs_timeout)
+epicsEventWaitWithAbsTimeout(epicsEventId id, const epicsTimeStamp *abs_timeout)
 {
-    struct timespec   now;
+    struct timespec   now, ts;
     double            delay;
 
     /* RTEMS-4 does not support scheduling timers in absolute time;
      * pthread_cond_timedwait() also converts the abs_timeout to a
      * relative one and sleeps. It doesn't even disable preemption.
      */
-    if ( clock_gettime (CLOCK_REALTIME, &now) || abs_timeout->tv_nsec < 0 || abs_timeout->tv_nsec > 1000000000L ) {
+
+    if ( epicsTimeToTimespec( &ts, abs_timeout ) ) {
         return epicsEventError;
     }
 
-    delay  = (double)(abs_timeout->tv_nsec - now.tv_nsec);
-    delay /= 1.0E9;
-    delay += (double)(abs_timeout->tv_sec  - now.tv_sec);
-
-    if ( delay <= 0.0 ) {
-        /* consistency with pthread_cond_timedwait(); if the timeout has
-         * already expired the return value reflects a timeout and a possibly
-         * pending event may be consumed.
-         */
-        epicsEventTryWait(id);
-        return epicsEventWaitTimeout;
+    if ( clock_gettime (CLOCK_REALTIME, &now) || ts.tv_nsec < 0 || ts.tv_nsec > 1000000000L ) {
+        return epicsEventError;
     }
+
+    delay  = (double)(ts.tv_nsec - now.tv_nsec);
+    delay /= 1.0E9;
+    delay += (double)(ts.tv_sec  - now.tv_sec);
+
     return epicsEventWaitWithTimeout(id, delay);
 }
 

@@ -145,15 +145,23 @@ release:
 }
 
 LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout(epicsEventId pevent,
-    const struct timespec * abs_timeout)
+    const epicsTimeStamp * abs_timeout)
 {
     epicsEventStatus result = epicsEventOK;
-    int status = pthread_mutex_lock(&pevent->mutex);
+    struct timespec  ts;
+    int status;
+
+    if ( epicsTimeToTimespec(&ts, abs_timeout) ) {
+        /* I don't think this can actually fail */
+        return epicsEventError;
+    }    
+
+    status = pthread_mutex_lock(&pevent->mutex);
 
     checkStatusReturn(status, "pthread_mutex_lock", "epicsEventWaitWithAbsTimeout");
     if (!pevent->isFull) {
         while (!status && !pevent->isFull) {
-            status = pthread_cond_timedwait(&pevent->cond, &pevent->mutex, abs_timeout);
+            status = pthread_cond_timedwait(&pevent->cond, &pevent->mutex, &ts);
         }
         if (status) {
             result = (status == ETIMEDOUT) ?

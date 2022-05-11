@@ -149,21 +149,16 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
  * epicsEventWaitWithAbsTimeout ()
  */
 LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout (
-    epicsEventId pSem, struct timespec *abs_timeout)
+    epicsEventId pSem, const epicsTimeStamp *abs_timeout)
 {
     /* waitable timers use 100 nanosecond intervals, like FILETIME */
-    static const LONGLONG unixEpochInFileTime = 0x019DB1DED53E8000;
-    static const unsigned ivalPerSec  = 10000000u; /* number of 100ns intervals per second */
-    static const unsigned nSecPerIval = 100u;      /* nanoseconds per second */
+    FILETIME      ts;
     LARGE_INTEGER tmo;
-    LONGLONG nIvals;  /* number of intervals */
 
-    nIvals  = abs_timeout->tv_sec;
-    nIvals *= ivalPerSec;
-    nIvals += abs_timeout->tv_nsec / nsecPerIval;
-    nIvals += unixEpochInFileTime;
+    epicsTimeToFileTime( &ts, abs_timeout );
 
-    tmo.QuadPart = nIvals;
+    tmo.LowPart  = ts.dwLowDateTime;
+    tmo.HighPart = ts.dwHighDateTime;
 
     return doWaitWithTimeout( pSem, &tmo );
 }

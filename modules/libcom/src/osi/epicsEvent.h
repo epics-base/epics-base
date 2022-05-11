@@ -42,6 +42,7 @@
 #define epicsEventh
 
 #include "libComAPI.h"
+#include "epicsTime.h"
 
 /** \brief An identifier for an epicsEvent for use with the C API */
 typedef struct epicsEventOSD *epicsEventId;
@@ -212,7 +213,7 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout(
  * \return Status indicator.
  **/
 LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout(
-    epicsEventId id, const struct timespec * abs_timeout);
+    epicsEventId id, const epicsTimeStamp * abs_timeout);
 
 /**\brief Similar to wait() except that if the event is currently empty the
  * call will return immediately with status \c epicsEventWaitTimeout.

@@ -47,8 +47,7 @@ static void     *fetch_pointer(unsigned char *);
 int veclist(int all)
 {
     int         vec;
-    int         value;
-    SYM_TYPE    type;
+    FUNCPTR     value;
     char        name[MAX_SYS_SYM_LEN];
     char        function_type[10];
     FUNCPTR     proutine;
@@ -57,6 +56,11 @@ int veclist(int all)
     void        *pparam;
     int         status;
     unsigned    i;
+#if _WRS_VXWORKS_MAJOR*100 + _WRS_VXWORKS_MINOR < 609
+    SYM_TYPE    type;
+#else
+    SYMBOL_DESC symDesc = {0};
+#endif
 
     for(vec=0; vec<NVEC; vec++){
         proutine = intVecGet((FUNCPTR *)INUM_TO_IVEC(vec));
@@ -73,13 +77,23 @@ int veclist(int all)
             pCISR = NULL;
         }
 
+#if _WRS_VXWORKS_MAJOR*100 + _WRS_VXWORKS_MINOR < 609
         status = symFindByValue(
                 sysSymTbl,
                 (int)proutine,
                 name,
-                &value,
+                (int*)&value,
                 &type);
-        if(status<0 || value != (int)proutine){
+#else
+        symDesc.mask = SYM_FIND_BY_VALUE;
+        symDesc.name = name;
+        symDesc.nameLen = sizeof(name);
+        symDesc.value = (SYM_VALUE) proutine;
+
+        status = symFind(sysSymTbl, &symDesc);
+        value = (FUNCPTR)symDesc.value;
+#endif
+        if(status<0 || value != proutine){
             sprintf(name, "0x%X", (unsigned int) proutine);
         }
         else if(!all){

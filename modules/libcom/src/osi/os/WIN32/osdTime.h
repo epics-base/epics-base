@@ -25,16 +25,6 @@
 #    include <time.h>
 #  else
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-LIBCOM_API void epicsStdCall epicsTimeToFileTime ( FILETIME *pDest, const epicsTimeStamp * pSrc );
-
-#ifdef __cplusplus
-}
-#endif
-
 #define __struct_timespec_defined 1
 #define _TIMESPEC_DEFINED 1
 struct timespec {
@@ -45,5 +35,14 @@ struct timespec {
 #  endif /* _MSC_VER */
 #endif /* ! defined(_MINGW) || ! defined(_TIMESPEC_DEFINED) */
 
-#endif /* ifndef INC_osdTime_H */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+LIBCOM_API void epicsStdCall epicsTimeToFileTime ( FILETIME *pDest, const epicsTimeStamp * pSrc );
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ifndef INC_osdTime_H */

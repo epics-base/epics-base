@@ -144,6 +144,31 @@ release:
     return result;
 }
 
+LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout(epicsEventId pevent,
+    const struct timespec * abs_timeout)
+{
+    epicsEventStatus result = epicsEventOK;
+    int status = pthread_mutex_lock(&pevent->mutex);
+
+    checkStatusReturn(status, "pthread_mutex_lock", "epicsEventWaitWithAbsTimeout");
+    if (!pevent->isFull) {
+        while (!status && !pevent->isFull) {
+            status = pthread_cond_timedwait(&pevent->cond, &pevent->mutex, abs_timeout);
+        }
+        if (status) {
+            result = (status == ETIMEDOUT) ?
+                epicsEventWaitTimeout : epicsEventError;
+            goto release;
+        }
+    }
+    pevent->isFull = 0;
+release:
+    status = pthread_mutex_unlock(&pevent->mutex);
+    checkStatusReturn(status, "pthread_mutex_unlock", "epicsEventWaitWithAbsTimeout");
+    return result;
+}
+
+
 LIBCOM_API epicsEventStatus epicsEventTryWait(epicsEventId id)
 {
     return epicsEventWaitWithTimeout(id, 0.0);

@@ -33,6 +33,7 @@
 //
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "epicsTime.h"
+#include "osdTimePvt.h"
 #include "generalTimeSup.h"
 #include "epicsTimer.h"
 #include "errlog.h"

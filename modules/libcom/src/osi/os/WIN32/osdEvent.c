@@ -25,7 +25,7 @@
 
 #include "libComAPI.h"
 #include "epicsEvent.h"
-
+#include "osdTimePvt.h"
 #include "osdThreadPvt.h"
 
 typedef struct epicsEventOSD {

@@ -55,8 +55,12 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
  * communicate with the listener.
  *
  * \param sock socket with pending connections to accept
- * \param pAddr If not NULL, this socket contains the address of the peer whose connection is being accepted
- * \param[in,out] addrlen Length of the structure pointed to by @p pAddr, or NULL if \p pAddr is NULL.
+ * \param pAddr If not NULL, this socket contains the address of the peer whose
+ * connection is being accepted
+ * \param[in,out] addrlen Caller must initialize this to the length of the
+ * structure pointed to by \p pAddr, or set to NULL if \p pAddr is NULL.  This
+ * function will update the value of this parameter to the actual size of the
+ * peer address.
  * \return A new socket used for communicating with the peer just accepted, or -1 on error.
  */
 LIBCOM_API int epicsStdCall epicsSocketAccept ( 
@@ -112,11 +116,17 @@ LIBCOM_API void epicsStdCall
  * Fortunately, on most systems the combination of a shutdown of both directions
  * and/or a signal is sufficent to interrupt a blocking send, receive, or
  * connect call. For odd ball systems this is stubbed out in the osi area.
+ *
  */
 enum epicsSocketSystemCallInterruptMechanismQueryInfo {
+    //! Calling close() required to interrupt
     esscimqi_socketCloseRequired,
+
+    //! calling shutdown() for both read and write required to interrupt
     esscimqi_socketBothShutdownRequired,
-    esscimqi_socketSigAlarmRequired /* NO LONGER USED/SUPPORTED */
+
+    //! NO LONGER USED/SUPPORTED
+    esscimqi_socketSigAlarmRequired
 };
 
 /*!
@@ -172,8 +182,8 @@ LIBCOM_API unsigned epicsStdCall sockAddrToA (
  * 1) look for matching host name and add trailing port
  * 2) convert to raw dotted IP address with trailing port
  *
- * \param pInetAddr sockaddr_in structure to convert to address:port string
- * \param[out] pBuf Pointer to the char array where the address:port string will be stored
+ * \param pInetAddr sockaddr_in structure to convert to address string
+ * \param[out] pBuf Pointer to the char array where the address string will be stored
  * \param bufSize Length of the array to which pBuf points
  * \return The number of character elements stored in buffer not including the
  * null termination, but always writes at least a null terminator in the string
@@ -271,7 +281,7 @@ LIBCOM_API int epicsStdCall osiSockAttach (void); /* returns T if success, else 
 /*!
  * \brief release BSD socket library
  *
- * Release the BSD socket library.if the OS requires it.  For platforms that do
+ * Release the BSD socket library if the OS requires it.  For platforms that do
  * not require attaching and releasing to use the socket library, this function
  * does nothing.
  */
@@ -285,8 +295,7 @@ LIBCOM_API void epicsStdCall osiSockRelease (void);
  *
  * \param[out] pBuf Pointer to char array where the error string will be stored
  * \param bufSize Length of the array pointed to by pBuf
- * \param error error number to convert to a string
- * will convert such an errno to a human readable string.
+ * \param error The error number to describe in string form
  */
 LIBCOM_API void epicsSocketConvertErrorToString (
         char * pBuf, unsigned bufSize, int error );
@@ -371,6 +380,8 @@ LIBCOM_API int epicsStdCall sockAddrAreIdentical
  *      sockAddrToDottedIP(&node->addr.sa, name, sizeof(name);
  *      fprintf(stderr, "Node is %s", name);
  *  }
+    ellFree(&ifaces);
+    epicsSocketDestroy(dummy);
  *  \endcode
  *
  *  \param[out] pList Pointer to a list where network interfaces will be added as new osiSockAddrNode's

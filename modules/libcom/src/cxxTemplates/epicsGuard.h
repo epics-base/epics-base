@@ -91,13 +91,10 @@ private:
  *     {
  *         epicsGuardRelease grelease(guard);
  *         printf("mutex is unlocked");
- *
  *     }
-       printf("mutex is locked");
-
-       }
- * printf("mutex is unlocked");
+ *     printf("mutex is locked");
  * }
+ * printf("mutex is unlocked");
  * \endcode
  *
  */

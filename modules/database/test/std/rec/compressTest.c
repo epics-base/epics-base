@@ -551,13 +551,90 @@ testNto1LowValue(void) {
     testdbCleanup();
 }
 
+void
+testAIPartialAverage(void) {
+    double buf = 0.0;
+    long nReq = 1;
+    DBADDR aiaddr, caddr;
+
+    testDiag("Test 'N to 1 Low Value'");
+
+    testdbPrepare();
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+    testdbReadDatabase("compressTest.db", NULL, "INP=ai,ALG=N to 1 Average,BALG=FIFO Buffer,NSAM=1,N=4,PBUF=YES");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    fetchRecordOrDie("ai", aiaddr);
+    fetchRecordOrDie("comp", caddr);
+
+    buf = 1.;
+    dbScanLock(aiaddr.precord);
+    dbPut(&aiaddr, DBF_FLOAT, &buf, nReq);
+    dbScanUnlock(aiaddr.precord);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+    dbScanUnlock(caddr.precord);
+
+    testDEq(buf, 1., 0.01);
+
+    buf = 2.;
+    dbScanLock(aiaddr.precord);
+    dbPut(&aiaddr, DBF_FLOAT, &buf, nReq);
+    dbScanUnlock(aiaddr.precord);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 1.5, 0.01);
+    dbScanUnlock(caddr.precord);
+
+    buf = 3.;
+    dbScanLock(aiaddr.precord);
+    dbPut(&aiaddr, DBF_FLOAT, &buf, nReq);
+    dbScanUnlock(aiaddr.precord);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 2., 0.01);
+    dbScanUnlock(caddr.precord);
+
+    buf = 4.;
+    dbScanLock(aiaddr.precord);
+    dbPut(&aiaddr, DBF_FLOAT, &buf, nReq);
+    dbScanUnlock(aiaddr.precord);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 2.5, 0.01);
+    dbScanUnlock(caddr.precord);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
 MAIN(compressTest)
 {
-    testPlan(134);
+    testPlan(138);
     testFIFOCirc();
     testLIFOCirc();
     testNto1Average();
     testNto1AveragePartial();
+    testAIPartialAverage();
     testNto1LowValue();
     return testDone();
 }

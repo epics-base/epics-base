@@ -11,6 +11,7 @@
 #include "errlog.h"
 #include "dbAccess.h"
 #include "epicsMath.h"
+#include "menuYesNo.h"
 
 #include "aiRecord.h"
 #include "waveformRecord.h"
@@ -463,6 +464,7 @@ testNto1AveragePartial(void) {
     testDEq(buf, 2.0, 0.01);
     dbScanUnlock(caddr.precord);
 
+    testDiag("Test single entry from wf record");
 
     writeToWaveform(&wfaddr, 1, 6.);
 
@@ -478,12 +480,84 @@ testNto1AveragePartial(void) {
     testdbCleanup();
 }
 
+void
+testNto1LowValue(void) {
+    double buf = 0.0;
+    long nReq = 1;
+    DBADDR wfaddr, caddr;
+
+    testDiag("Test 'N to 1 Low Value'");
+
+    testdbPrepare();
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=N to 1 Low Value,BALG=FIFO Buffer,NSAM=1,N=4");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    fetchRecordOrDie("wf", wfaddr);
+    fetchRecordOrDie("comp", caddr);
+
+    testDiag("Test full array");
+
+    writeToWaveform(&wfaddr, 4, 1., 2., 3., 4.);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 1.0, 0.01);
+    dbScanUnlock(caddr.precord);
+
+    writeToWaveform(&wfaddr, 4, 4., 3., 2., 1.);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 1.0, 0.01);
+    dbScanUnlock(caddr.precord);
+
+    testDiag("Test partial data with PBUF set to NO");
+
+    writeToWaveform(&wfaddr, 3, 5., 6., 7.);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 1.0, 0.01);
+    dbScanUnlock(caddr.precord);
+
+    testDiag("Test partial data with PBUF set to YES");
+
+    ((compressRecord *)caddr.precord)->pbuf = menuYesNoYES;
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+        testAbort("dbGet failed on compress record");
+
+    testDEq(buf, 5.0, 0.01);
+    dbScanUnlock(caddr.precord);
+
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
 MAIN(compressTest)
 {
-    testPlan(127);
+    testPlan(134);
     testFIFOCirc();
     testLIFOCirc();
     testNto1Average();
     testNto1AveragePartial();
+    testNto1LowValue();
     return testDone();
 }

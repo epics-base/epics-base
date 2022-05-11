@@ -133,3 +133,5 @@ int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
     gmtime_r(pAnsiTime, pTM);
     return epicsTimeOK;
 }
+
+#include "../posix/convertDoubleToWakeTime.c"

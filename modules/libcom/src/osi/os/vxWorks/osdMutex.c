@@ -50,3 +50,5 @@ void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int level)
 }
 
 void epicsMutexOsdShowAll(void) {}
+
+#include "../posix/osdPosixMutexPriv.c"

@@ -20,6 +20,9 @@
 extern "C" {
 #endif
 
+LIBCOM_API void epicsStdCall
+    convertDoubleToWakeTime(double timeout,struct timespec *wakeTime);
+
 void osdNTPInit(void);
 int  osdNTPGet(struct timespec *);
 void osdNTPReport(void);

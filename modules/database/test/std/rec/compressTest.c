@@ -361,7 +361,7 @@ writeToWaveform(DBADDR *addr, long count, ...) {
     va_end(args);
 
     dbScanLock(addr->precord);
-    testOk1(dbPut(addr, DBF_DOUBLE, values, count)==0);
+    testOk1(dbPut(addr, DBR_DOUBLE, values, count)==0);
     dbScanUnlock(addr->precord);
 }
 
@@ -443,7 +443,7 @@ testNto1AveragePartial(void) {
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
     recTestIoc_registerRecordDeviceDriver(pdbbase);
-    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=N to 1 Average,BALG=FIFO Buffer,NSAM=1,N=4,PARTIAL=YES");
+    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=N to 1 Average,BALG=FIFO Buffer,NSAM=1,N=4,PBUF=YES");
 
     eltc(0);
     testIocInitOk();
@@ -553,8 +553,11 @@ testNto1LowValue(void) {
 
 void
 testAIPartialAverage(void) {
-    double buf = 0.0;
+    double buf = 0.;
+    double data[4] = {1., 2., 3., 4.};
+    double expected[4] = {1., 1.5, 2., 2.5};
     long nReq = 1;
+    int i;
     DBADDR aiaddr, caddr;
 
     testDiag("Test 'N to 1 Low Value'");
@@ -571,57 +574,19 @@ testAIPartialAverage(void) {
     fetchRecordOrDie("ai", aiaddr);
     fetchRecordOrDie("comp", caddr);
 
-    buf = 1.;
-    dbScanLock(aiaddr.precord);
-    dbPut(&aiaddr, DBF_FLOAT, &buf, nReq);
-    dbScanUnlock(aiaddr.precord);
+    for (i = 0; i < 4; i++) {
+        dbScanLock(aiaddr.precord);
+        testOk1(dbPut(&aiaddr, DBR_DOUBLE, &data[i], 1) == 0);
+        dbScanUnlock(aiaddr.precord);
 
-    dbScanLock(caddr.precord);
-    dbProcess(caddr.precord);
-    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
-        testAbort("dbGet failed on compress record");
-    dbScanUnlock(caddr.precord);
+        dbScanLock(caddr.precord);
+        dbProcess(caddr.precord);
+        if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
+            testAbort("dbGet failed on compress record");
+        dbScanUnlock(caddr.precord);
 
-    testDEq(buf, 1., 0.01);
-
-    buf = 2.;
-    dbScanLock(aiaddr.precord);
-    dbPut(&aiaddr, DBF_FLOAT, &buf, nReq);
-    dbScanUnlock(aiaddr.precord);
-
-    dbScanLock(caddr.precord);
-    dbProcess(caddr.precord);
-    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
-        testAbort("dbGet failed on compress record");
-
-    testDEq(buf, 1.5, 0.01);
-    dbScanUnlock(caddr.precord);
-
-    buf = 3.;
-    dbScanLock(aiaddr.precord);
-    dbPut(&aiaddr, DBF_FLOAT, &buf, nReq);
-    dbScanUnlock(aiaddr.precord);
-
-    dbScanLock(caddr.precord);
-    dbProcess(caddr.precord);
-    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
-        testAbort("dbGet failed on compress record");
-
-    testDEq(buf, 2., 0.01);
-    dbScanUnlock(caddr.precord);
-
-    buf = 4.;
-    dbScanLock(aiaddr.precord);
-    dbPut(&aiaddr, DBF_FLOAT, &buf, nReq);
-    dbScanUnlock(aiaddr.precord);
-
-    dbScanLock(caddr.precord);
-    dbProcess(caddr.precord);
-    if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
-        testAbort("dbGet failed on compress record");
-
-    testDEq(buf, 2.5, 0.01);
-    dbScanUnlock(caddr.precord);
+        testDEq(buf, expected[i], 0.01);
+    }
 
     testIocShutdownOk();
     testdbCleanup();
@@ -629,7 +594,7 @@ testAIPartialAverage(void) {
 
 MAIN(compressTest)
 {
-    testPlan(138);
+    testPlan(142);
     testFIFOCirc();
     testLIFOCirc();
     testNto1Average();

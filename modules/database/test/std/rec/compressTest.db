@@ -6,7 +6,7 @@ record(waveform, "wf") {
 record(compress, "comp") {
   field(INP, "$(INP) NPP")
   field(ALG, "$(ALG)")
-  field(PBUF,"$(PARTIAL=NO)")
+  field(PBUF,"$(PBUF=NO)")
   field(BALG,"$(BALG)")
   field(NSAM,"$(NSAM)")
   field(N,   "$(N=1)")

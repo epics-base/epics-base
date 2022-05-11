@@ -10,7 +10,7 @@
  *              eric.norum@usask.ca
  *              (306) 966-5394
  *
- * This file can be copied to an application source dirctory
+ * This file can be copied to an application source directory
  * and modified to override the values shown below.
  */
 #include <stdio.h>
@@ -32,7 +32,7 @@
  * Ticket URL: <http://devel.rtems.org/ticket/2375#comment:23>
  */
 
-#if RTEMS_VERSION_INT<=VERSION_INT(4,10,0,0)
+#if RTEMS_VERSION_INT<VERSION_INT(4,11,0,0)
 extern void rtems_bsdnet_loopattach();
 static struct rtems_bsdnet_ifconfig loopback_config = {
     "lo0",                          /* name */
@@ -58,7 +58,7 @@ rtems_ne2kpci_driver_attach (struct rtems_bsdnet_ifconfig *config, int attach);
 static struct rtems_bsdnet_ifconfig ne2k_driver_config = {
     "ne2",                             /* name */
     rtems_ne2kpci_driver_attach,       /* attach function */
-#if RTEMS_VERSION_INT<=VERSION_INT(4,10,0,0)
+#if RTEMS_VERSION_INT<VERSION_INT(4,11,0,0)
     &loopback_config,                   /* link to next interface */
 #else
     NULL,
@@ -96,7 +96,7 @@ static struct rtems_bsdnet_ifconfig e3c509_driver_config = {
 static struct rtems_bsdnet_ifconfig netdriver_config = {
     RTEMS_BSP_NETWORK_DRIVER_NAME,      /* name */
     RTEMS_BSP_NETWORK_DRIVER_ATTACH,    /* attach function */
-#if RTEMS_VERSION_INT<=VERSION_INT(4,10,0,0)
+#if RTEMS_VERSION_INT<VERSION_INT(4,11,0,0)
     &loopback_config,                   /* link to next interface */
 #endif
 };

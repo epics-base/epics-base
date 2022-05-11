@@ -16,7 +16,7 @@
  *  Improvements
  *  ------------
  *  .01
- *  Dont send channel found message unless there is memory, a task slot,
+ *  Don't send channel found message unless there is memory, a task slot,
  *  and a TCP socket available. Send a diagnostic instead.
  *  Or ... make the timeout shorter? This is only a problem if
  *  they persist in trying to make a connection after getting no
@@ -269,9 +269,9 @@ void cast_server(void *pParm)
         }
 
         /*
-         * allow messages to batch up if more are comming
+         * allow messages to batch up if more are coming
          */
-        nchars = 0; /* supress purify warning */
+        nchars = 0; /* suppress purify warning */
         status = socket_ioctl(recv_sock, FIONREAD, &nchars);
         if (status<0) {
             errlogPrintf ("CA cast server: Unable to fetch N characters pending\n");

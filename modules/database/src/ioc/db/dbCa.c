@@ -196,6 +196,73 @@ static void caLinkDec(caLink *pca)
     if (callback) callback(userPvt);
 }
 
+struct waitPvt {
+    caLink *pca;
+    epicsEventId evt;
+};
+enum testEvent {
+    testEventConnect,
+    testEventCount,
+};
+
+static
+void testdbCaWaitForEventCB(void *raw)
+{
+    struct waitPvt *pvt = raw;
+
+    epicsMutexMustLock(pvt->pca->lock);
+    epicsEventMustTrigger(pvt->evt);
+    epicsMutexUnlock(pvt->pca->lock);
+}
+
+static
+void testdbCaWaitForEvent(DBLINK *plink, unsigned long cnt, enum testEvent event)
+{
+    caLink *pca;
+    epicsEventId evt = epicsEventMustCreate(epicsEventEmpty);
+
+    dbScanLock(plink->precord);
+
+    assert(plink->type==CA_LINK);
+    pca = (caLink *)plink->value.pv_link.pvt;
+
+    epicsMutexMustLock(pca->lock);
+    assert(!pca->monitor && !pca->connect && !pca->userPvt);
+
+    while(!pca->isConnected || (event==testEventCount && pca->nUpdate < cnt)) {
+        struct waitPvt pvt = {pca, evt};
+        pca->connect = &testdbCaWaitForEventCB;
+        pca->monitor = &testdbCaWaitForEventCB;
+        pca->userPvt = &pvt;
+
+        epicsMutexUnlock(pca->lock);
+        dbScanUnlock(plink->precord);
+
+        epicsEventMustWait(evt);
+
+        dbScanLock(plink->precord);
+        epicsMutexMustLock(pca->lock);
+
+        pca->connect = NULL;
+        pca->monitor = NULL;
+        pca->userPvt = NULL;
+    }
+
+    epicsEventDestroy(evt);
+    epicsMutexUnlock(pca->lock);
+    dbScanUnlock(plink->precord);
+}
+
+void testdbCaWaitForConnect(DBLINK *plink)
+{
+    testdbCaWaitForEvent(plink, 0, testEventConnect);
+}
+
+void testdbCaWaitForUpdateCount(DBLINK *plink, unsigned long cnt)
+{
+    testdbCaWaitForEvent(plink, cnt, testEventCount);
+}
+
 /* Block until worker thread has processed all previously queued actions.
  * Does not prevent additional actions from being queued.
  */
@@ -230,22 +297,6 @@ void dbCaSync(void)
 
     epicsMutexDestroy(templink.lock);
     epicsEventDestroy(wake);
-}
-
-DBCORE_API unsigned long dbCaGetUpdateCount(struct link *plink)
-{
-    caLink *pca = (caLink *)plink->value.pv_link.pvt;
-    unsigned long ret;
-
-    if (!pca) return (unsigned long)-1;
-
-    epicsMutexMustLock(pca->lock);
-
-    ret = pca->nUpdate;
-
-    epicsMutexUnlock(pca->lock);
-
-    return ret;
 }
 
 void dbCaCallbackProcess(void *userPvt)
@@ -785,6 +836,8 @@ static void connectionCallback(struct connection_handler_args arg)
     caLink *pca;
     short link_action = 0;
     struct link *plink;
+    dbCaCallback connect = 0;
+    void *userPvt = 0;
 
     pca = ca_puser(arg.chid);
     assert(pca);
@@ -851,11 +904,16 @@ static void connectionCallback(struct connection_handler_args arg)
     }
     pca->gotAttributes = 0;
     if (pca->dbrType != DBR_STRING) {
+        /* will run connect() callback later */
         link_action |= CA_GET_ATTRIBUTES;
+    } else {
+        connect = pca->connect;
+        userPvt = pca->userPvt;
     }
 done:
     if (link_action) addAction(pca, link_action);
     epicsMutexUnlock(pca->lock);
+    if (connect) connect(userPvt);
 }
 
 static void eventCallback(struct event_handler_args arg)
@@ -881,10 +939,10 @@ static void eventCallback(struct event_handler_args arg)
         if (precord) {
             if (arg.status != ECA_NORDACCESS &&
                 arg.status != ECA_GETFAIL)
-                errlogPrintf("dbCa: eventCallback record %s error %s\n",
+                errlogPrintf("dbCa: eventCallback record %s " ERL_ERROR " %s\n",
                     precord->name, ca_message(arg.status));
         } else {
-            errlogPrintf("dbCa: eventCallback error %s\n",
+            errlogPrintf("dbCa: eventCallback " ERL_ERROR " %s\n",
                 ca_message(arg.status));
         }
         goto done;
@@ -1029,10 +1087,10 @@ static void getAttribEventCallback(struct event_handler_args arg)
     if (arg.status != ECA_NORMAL) {
         dbCommon *precord = plink->precord;
         if (precord) {
-            errlogPrintf("dbCa: getAttribEventCallback record %s error %s\n",
+            errlogPrintf("dbCa: getAttribEventCallback record %s " ERL_ERROR " %s\n",
                 precord->name, ca_message(arg.status));
         } else {
-            errlogPrintf("dbCa: getAttribEventCallback error %s\n",
+            errlogPrintf("dbCa: getAttribEventCallback " ERL_ERROR " %s\n",
                 ca_message(arg.status));
         }
         epicsMutexUnlock(pca->lock);
@@ -1058,6 +1116,7 @@ static void getAttribEventCallback(struct event_handler_args arg)
 
 static void dbCaTask(void *arg)
 {
+    epicsEventId requestSync = NULL;
     taskwdInsert(0, NULL, NULL);
     SEVCHK(ca_context_create(ca_enable_preemptive_callback),
         "dbCaTask calling ca_context_create");
@@ -1078,13 +1137,20 @@ static void dbCaTask(void *arg)
 
             epicsMutexMustLock(workListLock);
             if (!(pca = (caLink *)ellGet(&workList))){  /* Take off list head */
+                if(requestSync) {
+                    /* dbCaSync() requires workListLock to be held here */
+                    epicsEventMustTrigger(requestSync);
+                    requestSync = NULL;
+                }
                 epicsMutexUnlock(workListLock);
                 if (dbCaCtl == ctlExit) goto shutdown;
                 break; /* workList is empty */
             }
             link_action = pca->link_action;
-            if (link_action&CA_SYNC)
-                epicsEventMustTrigger((epicsEventId)pca->userPvt); /* dbCaSync() requires workListLock to be held here */
+            if (link_action&CA_SYNC) {
+                assert(!requestSync);
+                requestSync = pca->userPvt;
+            }
             pca->link_action = 0;
             if (link_action & CA_CLEAR_CHANNEL) --removesOutstanding;
             epicsMutexUnlock(workListLock);         /* Give back immediately */

@@ -32,9 +32,10 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scan Parameters
 
 The array analog output record has the standard fields for specifying under what
-circumstances the record will be processed. These fields are listed in L<Scan
-Fields>. In addition, L<Scanning Specification> explains how these fields are
-used. I/O event scanning is only available when supported by device support.
+circumstances the record will be processed.
+These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
+
+=fields SCAN, PHAS, EVNT, PRIO, PINI
 
 =head3 Write Parameters
 
@@ -43,8 +44,9 @@ writes its data. The OUT field determines where the array analog output writes i
 output. It can be a hardware address, a channel access or database link, or a
 constant. Only in records that use soft device support can the OUT field be a
 channel access link, a database link, or a constant. Otherwise, the OUT field must
-be a hardware address. See L<Address Specification> for information on the format
-of hardware addresses and database links.
+be a hardware address. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on the format of hardware addresses and database links.
 
 =head4 Fields related to array writing
 

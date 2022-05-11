@@ -151,7 +151,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
                 epicsUInt32 *pstate_values = &prec->zrvl;
                 int i;
 
-                prec->val = 65535;        /* initalize to unknown state */
+                prec->val = 65535;        /* initialize to unknown state */
                 for (i = 0; i < 16; i++) {
                     if (*pstate_values == rval) {
                         prec->val = i;
@@ -217,7 +217,7 @@ static long process(struct dbCommon *pcommon)
         convert(prec);
 
         /* Update the timestamp before writing output values so it
-         * will be uptodate if any downstream records fetch it via TSEL */
+         * will be up to date if any downstream records fetch it via TSEL */
         recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 

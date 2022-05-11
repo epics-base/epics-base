@@ -529,7 +529,7 @@ long dbProcess(dbCommon *precord)
         }
     }
 
-    /* If already active dont process */
+    /* If already active don't process */
     if (precord->pact) {
         unsigned short monitor_mask;
 
@@ -931,7 +931,7 @@ long dbGet(DBADDR *paddr, short dbrType,
         no_elements = capacity = pfl->no_elements;
     }
 
-    /* Update field info from record (if neccessary);
+    /* Update field info from record (if necessary);
      * may modify paddr->pfield.
      */
     if (!dbfl_has_copy(pfl) &&
@@ -1104,9 +1104,9 @@ static long dbPutFieldLink(DBADDR *paddr,
     if (link_info.ltype == PV_LINK &&
         (link_info.modifiers & (pvlOptCA | pvlOptCP | pvlOptCPP)) == 0) {
         chan = dbChannelCreate(link_info.target);
-        if (chan && dbChannelOpen(chan) != 0) {
-            errlogPrintf("ERROR: dbPutFieldLink %s.%s=%s: dbChannelOpen() failed\n",
-                precord->name, pfldDes->name, link_info.target);
+        if (chan && (status = dbChannelOpen(chan)) != 0) {
+            errlogPrintf(ERL_ERROR ": dbPutFieldLink %s.%s=%s: dbChannelOpen() failed w/ 0x%lx\n",
+                precord->name, pfldDes->name, link_info.target, status);
             goto cleanup;
         }
     }
@@ -1325,7 +1325,6 @@ long dbPut(DBADDR *paddr, short dbrType,
     void *pfieldsave  = paddr->pfield;
     rset *prset = dbGetRset(paddr);
     long status = 0;
-    long offset;
     dbFldDes *pfldDes;
     int isValueField;
 
@@ -1349,20 +1348,25 @@ long dbPut(DBADDR *paddr, short dbrType,
         if (status) return status;
     }
 
-    if (paddr->pfldDes->special == SPC_DBADDR &&
-        prset && prset->get_array_info) {
-        long dummy;
+    if (nRequest>1 || paddr->pfldDes->special == SPC_DBADDR) {
+        long offset = 0;
+        if (paddr->pfldDes->special == SPC_DBADDR &&
+            prset && prset->get_array_info) {
+            long dummy;
 
-        status = prset->get_array_info(paddr, &dummy, &offset);
-        /* paddr->pfield may be modified */
-        if (status) goto done;
+            status = prset->get_array_info(paddr, &dummy, &offset);
+            /* paddr->pfield may be modified */
+            if (status) goto done;
+        }
         if (no_elements < nRequest)
             nRequest = no_elements;
         status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
             nRequest, no_elements, offset);
         /* update array info */
-        if (!status && prset->put_array_info)
+        if (!status && paddr->pfldDes->special == SPC_DBADDR &&
+                prset && prset->put_array_info) {
             status = prset->put_array_info(paddr, nRequest);
+        }
     } else {
         if (nRequest < 1) {
             recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);

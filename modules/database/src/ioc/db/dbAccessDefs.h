@@ -73,7 +73,7 @@ DBCORE_API extern int dbAccessDebugPUTF;
  *      options has a bit set for each option that was accepted
  *      number_elements is actual number of elements obtained
  *
- * The individual items can be refered to by the expressions::
+ * The individual items can be referred to by the expressions::
  *
  * buffer.status
  * buffer.severity

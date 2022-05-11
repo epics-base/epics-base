@@ -92,13 +92,13 @@ LIBCOM_API int epicsStdCall iocsh(const char *pathname);
 LIBCOM_API int epicsStdCall iocshCmd(const char *cmd);
 /** Read and evaluate IOC shell commands from the given file.
  * \param pathname Path to script file
- * \param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
+ * \param macros NULL or a comma separated list of macro definitions.  eg. "VAR1=x,VAR2=y"
  * \return 0 on success, non-zero on error
  */
 LIBCOM_API int epicsStdCall iocshLoad(const char *pathname, const char* macros);
 /** Evaluate a single IOC shell command
  * \param cmd Command string.  eg. "echo \"something or other\""
- * \param macros NULL or a comma seperated list of macro definitions.  eg. "VAR1=x,VAR2=y"
+ * \param macros NULL or a comma separated list of macro definitions.  eg. "VAR1=x,VAR2=y"
  * \return 0 on success, non-zero on error
  */
 LIBCOM_API int epicsStdCall iocshRun(const char *cmd, const char* macros);

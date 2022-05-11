@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <errlog.h>
+#include <osiFileName.h>
 #include <dbAccess.h>
 #include <dbStaticLib.h>
 #include <dbStaticPvt.h>
@@ -294,12 +295,22 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbStaticTest)
 {
+    const char *ldir;
+    FILE *fp = NULL;
+
     testPlan(310);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
-    testdbReadDatabase("dbStaticTest.db", NULL, NULL);
+    dbPath(pdbbase,"." OSI_PATH_LIST_SEPARATOR "..");
+    if(!(ldir = dbOpenFile(pdbbase, "dbStaticTest.db", &fp))) {
+        testAbort("Unable to read dbStaticTest.db");
+    }
+    if(dbReadDatabaseFP(&pdbbase, fp, NULL, NULL)) {
+        testAbort("Unable to load %s%sdbStaticTest.db",
+                  ldir, OSI_PATH_LIST_SEPARATOR);
+    }
 
     testEntry("testrec.VAL");
     testEntry("testalias.VAL");

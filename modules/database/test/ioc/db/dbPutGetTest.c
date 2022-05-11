@@ -313,11 +313,39 @@ void testPutArr(void)
     testdbGetArrFieldEqual("arr", DBR_LONG, 4, 3, buf);
 }
 
+static
+void testPutSpecial(void)
+{
+    const char val[] = "special";
+    const char inp[] = "special.INP";
+    const char sfx[] = "special.SFX";
+    testDiag("testPutSpecial()");
+
+    /* There are separate sets of calls to dbPutSpecial() in
+     * dbPut() and in dbPutFieldLink() so we need to check
+     * both regular fields and link fields.
+     */
+    testdbPutFieldOk(val, DBR_LONG, 1);
+    testdbPutFieldOk(inp, DBR_STRING, "1.0");
+    testdbPutFieldOk(sfx, DBR_LONG, SFX_Before);    /* Reject early */
+    testdbPutFieldFail(S_db_Blocked, val, DBR_LONG, 2);
+    testdbGetFieldEqual(val, DBR_LONG, 1);          /* Wasn't modified */
+    testdbPutFieldFail(S_db_Blocked, inp, DBR_STRING, "2.0");
+    testdbGetFieldEqual(inp, DBR_STRING, "1.0");    /* Wasn't modified */
+    testdbPutFieldOk(sfx, DBR_LONG, SFX_After);     /* Reject late */
+    testdbPutFieldFail(S_db_Blocked, val, DBR_LONG, 3);
+    testdbPutFieldFail(S_db_Blocked, inp, DBR_STRING, "3.0");
+    testdbPutFieldOk(sfx, DBR_LONG, SFX_None);
+    testdbPutFieldOk(val, DBR_LONG, 4);
+    testdbPutFieldOk(inp, DBR_STRING, "4.0");
+}
+
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
 {
-    testPlan(111);
+    testPlan(124);
     testdbPrepare();
 
     testdbMetaDoubleSizes();
@@ -342,6 +370,8 @@ MAIN(dbPutGet)
     testLongField();
 
     testPutArr();
+
+    testPutSpecial();
 
     testIocShutdownOk();
 

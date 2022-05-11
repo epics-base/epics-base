@@ -70,12 +70,12 @@ $(EXPANDED_COM): %: %@
 	@$(RM) $@
 	$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
 $(EXPANDED_COMMON): $(COMMON_DIR)/%: %
-	@$(MV) $< $@
+	@$(CP) $< $@
 
 clean: expand_clean
 
 expand_clean:
-	@$(RM) $(EXPANDED) $(EXPANDED_COMMON)
+	@$(RM) $(EXPANDED) $(EXPANDED_COMMON) $(EXPANDED_COM)
 
 .PRECIOUS: $(EXPANDED) $(EXPANDED_COMMON)
 .PHONY: expand_clean

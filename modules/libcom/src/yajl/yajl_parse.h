@@ -39,7 +39,7 @@ extern "C" {
         yajl_status_error
     } yajl_status;
 
-    /** Return a human readable, english, string for an error. */
+    /** Return a human readable, English, string for an error. */
     YAJL_API const char * yajl_status_to_string(yajl_status code);
 
     /** An opaque handle to a parser. */
@@ -151,7 +151,7 @@ extern "C" {
         yajl_allow_trailing_garbage = 0x04,
         /**
          * Allow multiple values to be parsed by a single handle. The entire
-         * text must be valid JSON, and values can be seperated by any kind of
+         * text must be valid JSON, and values can be separated by any kind of
          * whitespace. This flag will change the behavior of the parser, and
          * cause it to continue parsing after a value is parsed, rather than
          * transitioning into a complete state. This option can be useful when

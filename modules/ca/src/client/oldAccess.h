@@ -591,16 +591,16 @@ void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO (
         io.destroy ( *this->pCallbackGuard.get(), guard );
     }
     else {
-        // dont reverse the lock hierarchy
+        // don't reverse the lock hierarchy
         epicsGuardRelease < epicsMutex > guardRelease ( guard );
         {
             //
             // we will definately stall out here if all of the
             // following are true
             //
-            // o user creates non-preemtive mode client library context
+            // o user creates non-preemptive mode client library context
             // o user doesnt periodically call a ca function
-            // o user calls this function from an auxiillary thread
+            // o user calls this function from an auxiliary thread
             //
             CallbackGuard cbGuard ( this->cbMutex );
             epicsGuard < epicsMutex > guard ( this->mutex );

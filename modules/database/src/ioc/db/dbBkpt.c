@@ -97,7 +97,7 @@ static long FIND_CONT_NODE(
  *    processing in that lockset to this task.  The separate task is
  *    used so that locksets that do not have breakpoints are isolated
  *    from locksets that do.  This allows the processing of other
- *    locksets to continue uninterupted, even if they exist on the same
+ *    locksets to continue uninterrupted, even if they exist on the same
  *    scan list as a lockset containing a breakpoint.
  *
  *  An entrypoint is the first record that gets processed in a lockset.
@@ -250,7 +250,7 @@ static long FIND_CONT_NODE(
 }
 
 /*
- *  Initialise the breakpoint stack
+ *  Initialize the breakpoint stack
  */
 void dbBkptInit(void)
 {
@@ -331,6 +331,7 @@ long dbb(const char *record_name)
      if (pnode->ex_sem == NULL) {
         printf("   BKPT> Out of memory\n");
         dbScanUnlock(precord);
+        free(pnode);
         epicsMutexUnlock(bkpt_stack_sem);
         return(1);
      }

@@ -46,7 +46,7 @@ void comQueRecv::clear ()
     this->nBytesPending = 0u;
 }
 
-unsigned comQueRecv::copyOutBytes ( epicsInt8 *pBuf, unsigned nBytes )
+unsigned comQueRecv::copyOutBytes ( char *pBuf, unsigned nBytes )
 {
     unsigned totalBytes = 0u;
     do {
@@ -196,7 +196,7 @@ epicsUInt16 comQueRecv::popUInt16 ()
     if ( ! pComBuf ) {
         comBuf::throwInsufficentBytesException ();
     }
-    // try first for all in one buffer efficent version
+    // try first for all in one buffer efficient version
     epicsUInt16 tmp = 0;
     comBuf::popStatus status = pComBuf->pop ( tmp );
     if ( status.success ) {
@@ -215,7 +215,7 @@ epicsUInt32 comQueRecv::popUInt32 ()
     if ( ! pComBuf ) {
         comBuf::throwInsufficentBytesException ();
     }
-    // try first for all in one buffer efficent version
+    // try first for all in one buffer efficient version
     epicsUInt32 tmp = 0;
     comBuf::popStatus status = pComBuf->pop ( tmp );
     if ( status.success ) {
@@ -230,7 +230,7 @@ epicsUInt32 comQueRecv::popUInt32 ()
 
 bool comQueRecv::popOldMsgHeader ( caHdrLargeArray & msg )
 {
-    // try first for all in one buffer efficent version
+    // try first for all in one buffer efficient version
     comBuf * pComBuf = this->bufs.first ();
     if ( ! pComBuf ) {
         return false;

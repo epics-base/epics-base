@@ -180,7 +180,7 @@ union value {
     struct vmeio        vmeio;          /* vme io point */
     struct camacio      camacio;        /* camac io point */
     struct rfio         rfio;           /* CEBAF RF buffer interface */
-    struct abio         abio;           /* allen-bradley io point */
+    struct abio         abio;           /* Allen-Bradley io point */
     struct gpibio       gpibio;
     struct bitbusio     bitbusio;
     struct instio       instio;         /* instrument io link */

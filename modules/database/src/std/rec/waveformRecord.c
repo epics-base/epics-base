@@ -139,6 +139,7 @@ static long process(struct dbCommon *pcommon)
     if (!pact && prec->pact)
         return 0;
 
+    prec->pact = TRUE;
     prec->udf = FALSE;
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 

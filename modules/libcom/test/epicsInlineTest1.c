@@ -6,7 +6,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* This test checks the variations on inline function defintions.
+/* This test checks the variations on inline function definitions.
  *
  *  "static inline int func(void) {...}"
  *

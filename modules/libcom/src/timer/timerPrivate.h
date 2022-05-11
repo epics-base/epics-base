@@ -48,7 +48,7 @@ protected:
     timerQueue & queue;
 private:
     enum state { statePending = 45, stateActive = 56, stateLimbo = 78 };
-    epicsTime exp; // experation time
+    epicsTime exp; // expiration time
     state curState; // current state
     epicsTimerNotify * pNotify; // callback
     void privateStart ( epicsTimerNotify & notify, const epicsTime & );

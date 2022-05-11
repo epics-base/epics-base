@@ -81,13 +81,13 @@ static long rtemsDevMapAddr (epicsAddressType addrType, unsigned options,
 
 /*
  * a bus error safe "wordSize" read at the specified address which returns
- * unsuccessful status if the device isnt present
+ * unsuccessful status if the device isn't present
  */
 static long rtemsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue);
 
 /*
  * a bus error safe "wordSize" write at the specified address which returns
- * unsuccessful status if the device isnt present
+ * unsuccessful status if the device isn't present
  */
 static long rtemsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue);
 
@@ -306,7 +306,7 @@ rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval)
 
 /*
  * a bus error safe "wordSize" read at the specified address which returns
- * unsuccessful status if the device isnt present
+ * unsuccessful status if the device isn't present
  */
 static long rtemsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
@@ -322,7 +322,7 @@ static long rtemsDevReadProbe (unsigned wordSize, volatile const void *ptr, void
 
 /*
  * a bus error safe "wordSize" write at the specified address which returns
- * unsuccessful status if the device isnt present
+ * unsuccessful status if the device isn't present
  */
 static long rtemsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
 {

@@ -288,7 +288,7 @@ LIBCOM_API long
             break;
 
         /* Be VERY careful converting double to int in case bit 31 is set!
-         * Out-of-range errors give very different results on different sytems.
+         * Out-of-range errors give very different results on different systems.
          * Convert negative doubles to signed and positive doubles to unsigned
          * first to avoid overflows if bit 32 is set.
          * The result is always signed, values with bit 31 set are negative

@@ -15,7 +15,7 @@
 
 /** 
  * \file epicsStdlib.h
- * \brief Functions to convert strings to primative types
+ * \brief Functions to convert strings to primitive types
  *
  * These routines convert a string into an integer of the indicated type and 
  * number base, or into a floating point type. The units pointer argument may 
@@ -163,7 +163,7 @@ LIBCOM_API int
 #define epicsParseFloat64(str, to, units) epicsParseDouble(str, to, units)
 
 /* These macros return 1 if successful, 0 on failure.
- * This is analagous to the return value from sscanf()
+ * This is analogous to the return value from sscanf()
  */
 
 /**  

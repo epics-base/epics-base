@@ -16,8 +16,8 @@
 
 use strict;
 
-use FindBin qw($Bin);
-use lib ("$Bin/../../lib/perl");
+use FindBin qw($RealBin);
+use lib ("$RealBin/../../lib/perl");
 
 use Getopt::Std;
 use EPICS::Path;
@@ -26,7 +26,7 @@ use CA;
 ######### Globals ##########
 
 our ($opt_h, $opt_f, $opt_r);
-our $opt_d = $ENV{EPICS_CAPR_DBD_FILE} || "$Bin/../../dbd/softIoc.dbd";
+our $opt_d = $ENV{EPICS_CAPR_DBD_FILE} || "$RealBin/../../dbd/softIoc.dbd";
 our $opt_w = 1;
 
 my %record = ();    # Empty hash to put dbd data in

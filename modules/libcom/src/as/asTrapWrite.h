@@ -30,8 +30,8 @@ extern "C" {
  * \brief The message passed to registered listeners.
  */
 typedef struct asTrapWriteMessage {
-    const char *userid; /**< \brief Userid of whoever orginated the request. */
-    const char *hostid; /**< \brief Hostid of whoever orginated the request. */
+    const char *userid; /**< \brief Userid of whoever originated the request. */
+    const char *hostid; /**< \brief Hostid of whoever originated the request. */
     /** \brief A field for use by the server.
      *
      * Any listener that uses this field must know what type of

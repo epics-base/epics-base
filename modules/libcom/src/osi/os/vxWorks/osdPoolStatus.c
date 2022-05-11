@@ -16,8 +16,8 @@
 
 /*
  * It turns out that memPartInfoGet() and memFindMax() are very CPU intensive on vxWorks
- * so we must spawn off a thread that periodically polls. Although this isnt 100% safe, I
- * dont see what else to do.
+ * so we must spawn off a thread that periodically polls. Although this isn't 100% safe, I
+ * don't see what else to do.
  *
  * It takes about 30 uS to call memPartInfoGet() on a pcPentium I vxWorks system.
  *

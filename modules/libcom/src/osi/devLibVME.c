@@ -149,7 +149,7 @@ long devBusToLocalAddr(
     volatile void *localAddress;
 
     /*
-     * Make sure that devLib has been intialized
+     * Make sure that devLib has been initialized
      */
     if (!devLibInitFlag) {
         status = devLibInit();
@@ -264,7 +264,7 @@ long devRegisterAddress(
  * devReadProbe()
  *
  * a bus error safe "wordSize" read at the specified address which returns
- * unsuccessful status if the device isnt present
+ * unsuccessful status if the device isn't present
  */
 long devReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
@@ -284,7 +284,7 @@ long devReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
  * devWriteProbe
  *
  * a bus error safe "wordSize" write at the specified address which returns
- * unsuccessful status if the device isnt present
+ * unsuccessful status if the device isn't present
  */
 long devWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
 {
@@ -1112,7 +1112,7 @@ long locationProbe (epicsAddressType addrType, char *pLocation)
 
 /******************************************************************************
  *
- * The follwing may, or may not be present in the BSP for the CPU in use.
+ * The following may, or may not be present in the BSP for the CPU in use.
  *
  */
 /******************************************************************************

@@ -1,6 +1,6 @@
-# CONFIG_SITE.linux-x86.linux-aarch64
+# CONFIG_SITE.linux-x86_64.linux-aarch64
 #
-# Site specific definitions for linux-x86 host - linux-aarch64 target builds
+# Site specific definitions for linux-x86_64 host - linux-aarch64 target builds
 #-------------------------------------------------------
 
 # Set GNU crosscompiler target name

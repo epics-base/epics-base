@@ -160,7 +160,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
             prec->bptr = calloc(prec->nelm, sizeof(epicsUInt32));
         }
 
-        /* calulate width of array element */
+        /* calculate width of array element */
         prec->wdth = (prec->ulim - prec->llim) / prec->nelm;
         return 0;
     }

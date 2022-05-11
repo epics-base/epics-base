@@ -366,6 +366,7 @@ $(COMMON_DIR)/menu%.h: ../menu%.dbd
 # DBD files
 
 $(COMMON_DIR)/bpt%.dbd: bpt%.data
+	$(ECHO) "Converting data from $<"
 	@$(RM) $(notdir $@)
 	$(MAKEBPT) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@
@@ -455,7 +456,7 @@ $(COMMON_DIR)/%.html: ../%.pl
 	$(PODTOHTML) -s -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-.PRECIOUS: $(COMMON_DIR)/%.html %.html
+.PRECIOUS: $(COMMON_DIR)/%.html
 
 #---------------------------------------------------------------
 # DB files

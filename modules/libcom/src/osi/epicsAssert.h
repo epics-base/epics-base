@@ -34,7 +34,7 @@
  *
  * This header also provides a compile-time assertion macro STATIC_ASSERT()
  * which can be used to check a constant-expression at compile-time. The C or
- * C++ compiler will flag an error if the expresstion evaluates to 0. The
+ * C++ compiler will flag an error if the expression evaluates to 0. The
  * STATIC_ASSERT() macro can only be used where a \c typedef is syntactically
  * legal.
  **/

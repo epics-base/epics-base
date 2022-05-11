@@ -77,12 +77,12 @@ A set of periodic scan intervals
 =back
 
 Additional periodic scan rates may be defined for individual IOCs by making a
-local copy of menuScan.dbd and adding more choices as required. Scan rates
-should normally be defined in order, with the fastest rates appearing first.
-Scan periods may now be specified in seconds, minutes, hours or Hertz/Hz, and
-plural time units will also be accepted (seconds are used if no unit is
-mentioned in the choice string). For example the rates given below are all
-valid:
+local copy of menuScan.dbd and adding more choices as required. Periodic scan
+rates should normally be defined in order following the other scan types, with
+the longest periods appearing first. Scan periods can be specified with a unit
+string of C<second>/C<seconds>, C<minute>/C<minutes>, C<hour>/C<hours> or
+C<Hertz>/C<Hz>. Seconds are used if no unit is included in the choice string.
+For example these rates are all valid:
 
  1 hour
  0.5 hours
@@ -97,7 +97,7 @@ initialization (before the normal scan tasks are started).
 
 The B<PHAS> field orders the records within a specific SCAN group. This is not
 meaningful for passive records. All records of a specified phase are processed
-before those with higher phase number. Whenever possible it is better to use
+before those with higher phase number. It is generally better practice to use
 linked passive records to enforce the order of processing rather than a phase
 number.
 
@@ -109,22 +109,22 @@ The call to post_event is: post_event(short event_number).
 The B<PRIO> field specifies the scheduling priority for processing records
 with SCAN=C<I/O Event> and asynchronous record completion tasks.
 
-The B<DISV> field specifies a "disable value". Record processing is
-immediately terminated if the value of this field is equal to the value of the
-DISA field, i.e. the record is disabled. Note that field values of a record
-can be changed by database  put or Channel Access, even if a record is
+The B<DISV> field specifies a "disable value". Record processing cannot
+begin when the value of this field is equal to the value of the DISA
+field, meaning the record is disabled. Note that field values of a record
+can be changed by database or Channel Access puts, even if the record is
 disabled.
 
-The B<DISA> field contains the value that is compared with DISV to determine
-if the record is disabled. The value of the DISA field is obtained via SDIS if
-SDIS is a database or channel access link. If SDIS is not a database or
-channel access link, then DISA can be set via dbPutField or dbPutLink.
-
-If the B<PROC> field of a record is written to, the record is processed.
+The B<DISA> field contains the value that is compared with DISV to determine if
+the record is disabled. A value is obtained for the DISA field from the B<SDIS>
+link field before the IOC tries to process the record. If SDIS is not set, DISA
+may be set by some other method to enable and disable the record.
 
 The B<DISS> field defines the record's "disable severity". If this field is
 not NO_ALARM and the record is disabled, the record will be put into alarm
 with this severity and a status of DISABLE_ALARM.
+
+If the B<PROC> field of a record is written to, the record is processed.
 
 The B<LSET> field contains the lock set to which this record belongs. All
 records linked in any way via input, output, or forward database links belong
@@ -135,15 +135,18 @@ The B<LCNT> field counts the number of times dbProcess finds the record active
 during successive scans, i.e. PACT is TRUE. If dbProcess finds the record
 active MAX_LOCK times (currently set to 10) it raises a SCAN_ALARM.
 
-The B<PACT> field is TRUE while the record is being processed. For
+The B<PACT> field is TRUE while the record is active (being processed). For
 asynchronous records PACT can be TRUE from the time record processing is
 started until the asynchronous completion occurs. As long as PACT is TRUE,
 dbProcess will not call the record processing routine. See Application
 Developers Guide for details on usage of PACT.
 
-The B<FLNK> field is a database link to another record (the "target" record).
-Processing a record with a specified FLNK field will force processing of the
-target record, provided the target record's SCAN field is set to C<Passive>.
+The B<FLNK> field is a link pointing to another record (the "target" record).
+Processing a record with the FLNK field set will trigger processing of the
+target record towards the end of processing the first record (but before PACT is
+cleared), provided the target record's SCAN field is set to C<Passive>. If the
+FLNK field is a Channel Access link it must point to the PROC field of the
+target record.
 
 The B<SPVT> field is for internal use by the scanning system.
 
@@ -227,6 +230,8 @@ The B<SPVT> field is for internal use by the scanning system.
 	}
 	field(DISP,DBF_UCHAR) {
 		prompt("Disable putField")
+		promptgroup("10 - Common")
+		interest(1)
 	}
 	field(PROC,DBF_UCHAR) {
 		prompt("Force Processing")
@@ -236,35 +241,46 @@ The B<SPVT> field is for internal use by the scanning system.
 
 =head3 Alarm Fields
 
-These fields indicate the status and severity of alarms, or else determine the
+Alarm fields indicate the status and severity of record alarms, or determine
 how and when alarms are triggered. Of course, many records have alarm-related
-fields not common to all records. These fields are listed and explained in the
+fields not common to all records. Those fields are listed and explained in the
 appropriate section on each record.
 
 The B<STAT> field contains the current alarm status.
 
 The B<SEVR> field contains the current alarm severity.
 
-These two fields are seen outside database access. The B<NSTA> and B<NSEV>
-fields are used by  the database access, record support, and device support
-routines to set new alarm status and severity values. Whenever any software
-component discovers an alarm condition, it uses the following macro function:
-recGblSetSevr(precord,new_status,new_severity) This ensures that the current
-alarm severity is set equal to the highest outstanding alarm. The file alarm.h
-defines all allowed alarm status and severity values.
+The B<AMSG> string field may contain more detailed information about the alarm.
+
+The STAT, SEVR and AMSG fields hold alarm information as seen outside of the
+database. The B<NSTA>, B<NSEV> and B<NAMSG> fields are used during record
+processing by the database access, record support, and device support routines
+to set new alarm status and severity values and message text. Whenever any
+software component discovers an alarm condition, it calls one of these routines
+to register the alarm:
+
+ recGblSetSevr(precord, new_status, new_severity);
+ recGblSetSevrMsg(precord, new_status, new_severity, "Message", ...);
+
+These check the current alarm severity and update the NSTA, NSEV and NAMSG
+fields if appropriate so they always relate to the highest severity alarm seen
+so far during record processing. The file alarm.h defines the allowed alarm
+status and severity values. Towards the end of record processing these fields
+are copied into the STAT, SEVR and AMSG fields and alarm monitors triggered.
 
 The B<ACKS> field contains the highest unacknowledged alarm severity.
 
-The B<ACKT> field specifies if it is necessary to acknowledge transient
+The B<ACKT> field specifies whether it is necessary to acknowledge transient
 alarms.
 
-The B<UDF> indicates if the record's value is B<U>nB<D>eB<F>ined. Typically
-this is caused by a failure in device support, the fact that the record has
-never been processed, or that the VAL field currently contains a NaN (not a
-number). UDF is initialized to TRUE at IOC initialization. Record and device
-support routines which write to the VAL field are responsible for setting UDF.
+The B<UDF> indicates if the record's value is B<U>nB<D>eB<F>ined. Typically this
+is caused by a failure in device support, the fact that the record has never
+been processed, or that the VAL field currently contains a NaN (not a number) or
+Inf (Infinite) value. UDF defaults to TRUE but can be set in a database file.
+Record and device support routines which write to the VAL field are generally
+responsible for setting and clearing UDF.
 
-=fields STAT, SEVR, NSTA, NSEV, ACKS, ACKT, UDF
+=fields STAT, SEVR, AMSG, NSTA, NSEV, NAMSG, ACKS, ACKT, UDF
 
 =cut
 
@@ -422,9 +438,11 @@ The B<DPVT> field is is for private use of the device support modules.
 
 =head3 Debugging Fields
 
-The B<TPRO> field is used for trace processing. If this field is non-zero a
-message is printed whenever this record is processed, and when any other
-record in the same lock-set is processed by a database link from this record.
+The B<TPRO> field can be used to trace record processing. When this field is
+non-zero and the record is processed, a trace message will be be printed for
+this record and any other record in the same lock-set that is triggered by a
+database link from this record. The trace message includes the name of the
+thread doing the processing, and the name of the record being processed.
 
 The B<BKPT> field indicates if there is a breakpoint set at this record. This
 supports setting a debug breakpoint in the record processing. STEP through
@@ -435,32 +453,27 @@ database processing can be supported using this.
 
 =head3 Miscellaneous Fields
 
-The B<ASG> field contains a character string value defining the access
-security group for this record. If left empty, the record is placed in group
-DEFAULT.
+The B<ASG> string field sets the name of the access security group used for this
+record. If left empty, the record is placed in group C<DEFAULT>.
 
-The B<ASP> field is a field for private use of the access security system.
+The B<ASP> field is private for use by the access security system.
 
-The B<DISP> field controls dbPutFields to this record which are normally
-issued by channel access. If the field is set to TRUE all dbPutFields
-directed to this record are ignored except to the field DISP itself.
+The B<DISP> field can be set to a non-zero value to reject puts from outside of
+the IOC (i.e. via Channel Access or PV Access) to any field of the record other
+than to the DISP field itself. Field changes and record processing can still be
+instigated from inside the IOC using DB links and the IOC scan mechanisms.
 
-The B<DTYP> field specifies the device type for the record. Each record type
-has its own set of device support routines which are specified in
-devSup.ASCII. If a record type does not have any associated device support,
-DTYP and DSET are meaningless.
+The B<DTYP> field specifies the device type for the record. Most record types
+have their own set of device types which are specified in the IOC's database
+definition file. If a record type does not call any device support routines,
+the DTYP and DSET fields are not used.
 
-The B<MLOK> field contains the monitor lock. The lock used by the monitor
-routines when the monitor list is being used. The list is locked whenever
-monitors are being scheduled, invoked, or when monitors are being added to or
-removed from the list. This field is accessed only by the dbEvent routines.
+The B<MLOK> field contains a mutex which is locked by the monitor routines in
+dbEvent.c whenever the monitor list for this record is accessed.
 
-The B<MLIS> field is the head of the list of monitors connected to this
+The B<MLIS> field holds a linked list of client monitors connected to this
 record. Each record support module is responsible for triggering monitors for
-any fields that change as a result of record processing. Monitors are present
-if mlis count is greater than zero. The call to trigger monitors is:
-db_post_event(precord,&data,mask), where "mask" is some combination of
-DBE_ALARM, DBE_VALUE, and DBE_LOG.
+any fields that change as a result of record processing.
 
 The B<PPN> field contains the address of a putNotify callback.
 
@@ -474,23 +487,44 @@ The B<RDES> field contains the address of dbRecordType
 The B<RPRO> field specifies a reprocessing of the record when current
 processing completes.
 
-The B<TIME> field contains the time when this record was last processed in
-standard format.
+The B<TIME> field holds the time stamp when this record was last processed.
 
-The B<TSE> field indicates the mechanism to use to get the time stamp. '0' -
-call get time as before '-1' - call the time stamp driver and use the best
-source available. '-2' - the device support provides the time stamp from the
-hardware. Values between 1-255 request the time of the last occurance of a
-generalTime event.
+The B<UTAG> field can be used to hold a site-specific 64-bit User Tag value
+that is associated with the record's time stamp.
+
+The B<TSE> field value indicates the mechanism to use to get the time stamp:
+
+=over
+
+=item *
+
+C< 0> E<mdash> Get the current time as normal
+
+=item *
+
+C<-1> E<mdash> Ask the time stamp driver for its best source of the current time, if
+available.
+
+=item *
+
+C<-2> E<mdash> Device support sets the time stamp and the optional User Tag from the
+hardware.
+
+=item *
+
+Positive values (normally between 1-255) get the time of the last occurance of
+the numbered generalTime event.
+
+=back
 
 The B<TSEL> field contains an input link for obtaining the time stamp. If this
-link references the .TIME field of a record then the time stamp of the
-referenced record becomes the time stamp for this record as well. In this
-case, an internal flag is set and ".TIME" is then overwritten by ".VAL". If
-any other field is referenced, the field value is read and stored in the .TSE
-field which is then used to acquire a timestamp.
+link points to the TIME field of a record then the time stamp and User Tag of
+that record are copied directly into this record (Channel Access links can only
+copy the time stamp, not the User Tag). If the link points to any other field,
+that field's value is read and stored in the TSE field which is then used to
+provide the time stamp as described above.
 
-=fields ASG, ASP, DISP, DTYP, MLOK, MLIS, PPN, PPNR, PUTF, RDES, RPRO, TIME, TSE, TSEL
+=fields ASG, ASP, DISP, DTYP, MLOK, MLIS, PPN, PPNR, PUTF, RDES, RPRO, TIME, UTAG, TSE, TSEL
 
 =cut
 

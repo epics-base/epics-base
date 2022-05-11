@@ -76,6 +76,20 @@ static long process(struct dbCommon *pcommon)
     return ret;
 }
 
+static long special(struct dbAddr *paddr, int after)
+{
+    struct xRecord *prec = (struct xRecord *) paddr->precord;
+    if (dbGetFieldIndex(paddr) != xRecordVAL &&
+        dbGetFieldIndex(paddr) != xRecordINP) {
+        recGblRecordError(S_db_badField, prec, "x: special");
+        return S_db_badField;
+    }
+    if (prec->sfx == after) {
+        return S_db_Blocked;
+    }
+    return 0;
+}
+
 long get_units(struct dbAddr *paddr, char *units)
 {
     if(dbGetFieldIndex(paddr)==xRecordOTST) {
@@ -125,7 +139,6 @@ long get_alarm_double(struct dbAddr *paddr, struct dbr_alDouble *p)
 
 #define report NULL
 #define initialize NULL
-#define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL

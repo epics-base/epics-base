@@ -297,7 +297,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             argv[1] = rtems_bsdnet_bootp_cmdline;
             /*
              * Its probably common to embed the mount point in the server
-             * name so, when this is occurring, dont clobber the mount point
+             * name so, when this is occurring, don't clobber the mount point
              * by appending the first node from the command path. This allows
              * the mount point to be a different path then the server's mount
              * path.

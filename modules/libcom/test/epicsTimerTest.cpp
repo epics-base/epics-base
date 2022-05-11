@@ -109,17 +109,14 @@ inline double delayVerify::delay () const
 
 double delayVerify::checkError () const
 {
-    const double messageThresh = 5.0; // percent
-    double actualDelay =  this->expireStamp - this->beginStamp;
-    double measuredError = actualDelay - this->expectedDelay;
-    double percentError = 100.0 * fabs ( measuredError ) / this->expectedDelay;
-    if(testImpreciseTiming())
-        testTodoBegin("imprecise");
-    testOk ( percentError < messageThresh, "%f < %f, delay = %f s, error = %f s (%.1f %%)",
-             percentError, messageThresh,
-             this->expectedDelay, measuredError, percentError  );
-    if(testImpreciseTiming())
-        testTodoEnd();
+    const double minError = testImpreciseTiming() ? 0.25 : 0.05;
+    double measuredDelay = this->expireStamp - this->beginStamp;
+    double measuredError = measuredDelay - this->expectedDelay;
+    double absoluteError = fabs(measuredError);
+    double percentError = 100.0 * measuredError / this->expectedDelay;
+    testOk(absoluteError < minError,
+           "Delay %.3f s, error = %+.6f ms (%+.3f %%)",
+           this->expectedDelay, measuredError * 1000, percentError);
     return measuredError;
 }
 

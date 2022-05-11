@@ -31,21 +31,21 @@ These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 The long string output record must specify from where it gets its desired output
 string. The first field that determines where the desired output originates is
-the output mode select (OMSL) field, which can have two possible value:
-C<closed_loop> or C<supervisory>. If C<supervisory> is specified, DOL is
-ignored, the current value of VAL is written, and VAL can be changed externally
-via dbPuts at run-time. If C<closed_loop> is specified, the VAL field's value is
-obtained from the address specified in the desired output location field (DOL)
-which can be either a database link or a channel access link.
+the output mode select (OMSL) field, which can have two possible values:
+C<closed_loop> or C<supervisory>. If C<closed_loop> is specified, the VAL
+field's value is fetched from the address specified in the Desired Output Link
+field (DOL) which can be either a database link or a channel access link. If
+C<supervisory> is specified, DOL is ignored, the current value of VAL is
+written, and VAL can be changed externally via dbPuts at run-time.
 
 The maximum number of characters in VAL is given by SIZV, and cannot be larger
 than 65535.
 
-DOL can also be a constant in addition to a link, in which case VAL is
-initialized to the constant value. Your string constant, however, may be
-interpreted as a CA link name. If you want to initialize your string output
-record, it is therefore best to use the VAL field. Note that if DOL is a
-constant, OMSL cannot be C<closed_loop>.
+DOL can also be a constant instead of a link, in which case VAL is initialized
+to the constant value. Most simple string constants are likely to be interpreted
+as a CA link name though. To initialize a string output record it is simplest
+to set the VAL field directly; alternatively use a JSON constant link type in
+the DOL field.
 
 =fields VAL, SIZV, DOL, OMSL
 

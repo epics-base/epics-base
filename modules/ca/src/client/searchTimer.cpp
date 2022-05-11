@@ -279,8 +279,8 @@ epicsTimerNotify::expireStatus searchTimer::expire (
         if ( this->searchAttempts ) {
             char buf[64];
             currentTime.strftime ( buf, sizeof(buf), "%M:%S.%09f");
-            debugPrintf ( ("sent %u delay sec=%f Rts=%s\n",
-                nFrameSent, this->period(), buf ) );
+            debugPrintf ( ("sent %u delay Rts=%s\n",
+                nFrameSent, buf ) );
         }
 #   endif
 
@@ -317,7 +317,7 @@ void searchTimer :: show ( unsigned level ) const
 
 //
 // Reset the delay to the next search request if we get
-// at least one response. However, dont reset this delay if we
+// at least one response. However, don't reset this delay if we
 // get a delayed response to an old search request.
 //
 void searchTimer::uninstallChanDueToSuccessfulSearchResponse (

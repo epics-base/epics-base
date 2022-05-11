@@ -37,10 +37,10 @@ recordtype(event) {
 =head3 Scan Parameters
 
 The event record has the standard fields for specifying under what circumstances
-it will be processed. If the SCAN field specifies C<I/O Intr>, then device
-support will provide an interrupt handler, posting an event number when an I/O
-interrupt occurs.
-These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
+it will be processed.
+These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
+
+=fields SCAN, PHAS, EVNT, PRIO, PINI
 
 =head3 Event Number Parameters
 
@@ -73,8 +73,9 @@ The device support routines use the address in this record to obtain input. For
 records that provide an interrupt handler, the INP field should specify the
 address of the I/O card, and the DTYP field should specify a valid device
 support module. Be aware that the address format differs according to the card
-type  used. See L<Address Specification> for information on the format of
-hardware addresses and specifying links.
+type  used. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on the format of hardware addresses and specifying links.
 
 For soft records, the INP field can be a constant, a database link, or a channel
 access link. For soft records, the DTYP field should specify C<Soft Channel>.

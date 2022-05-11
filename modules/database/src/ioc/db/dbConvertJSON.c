@@ -98,7 +98,7 @@ static int dblsj_string(void *ctx, const unsigned char *val, size_t len) {
     char *pdest = parser->pdest;
 
     if (parser->dbrType != DBF_STRING) {
-        errlogPrintf("dbConvertJSON: dblsj_string dbrType error\n");
+        errlogPrintf("dbConvertJSON: dblsj_string dbrType " ERL_ERROR "\n");
         return 0; /* Illegal */
     }
 

@@ -23,8 +23,8 @@
 /*
  * epicsTmpFile
  *
- * allow the teporary file directory to be set with the
- * TMP environment varianble
+ * allow the temporary file directory to be set with the
+ * TMP environment variable
  */
 LIBCOM_API FILE * epicsStdCall epicsTempFile ()
 {

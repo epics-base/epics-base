@@ -56,7 +56,7 @@ SHRLIB_LDLIBS = $(addprefix -l, $($*_LDLIBS) $(LIB_LIBS) $(USR_LIBS)) \
 
 SHRLIB_DEPLIB_DIRS = $(foreach word, \
     $(sort $(INSTALL_LIB)/ $(dir $($*_DEPLIBS) $(SHRLIB_DEPLIBS))), \
-    $(shell $(FULLPATHNAME) $(word)))
+    $(abspath $(word)))
 
 SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-L%)
 
@@ -85,7 +85,7 @@ PROD_LDLIBS += $($(firstword $(LDLIBS_STATIC_$(STATIC_BUILD)) \
 
 PROD_DEPLIB_DIRS = $(foreach word, \
     $(sort $(INSTALL_LIB)/ $(dir $($*_DEPLIBS) $(PROD_DEPLIBS))), \
-    $(shell $(FULLPATHNAME) $(word)))
+    $(abspath $(word)))
 
 PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-L%)
 

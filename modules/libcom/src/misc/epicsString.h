@@ -56,7 +56,7 @@ LIBCOM_API int epicsStrGlobMatch(const char *str, const char *pattern);
  *
  * @returns 1 if the first len characters of str match the pattern, 0 if not.
  *
- * @since UNRELEASED
+ * @since 7.0.6
  */
 LIBCOM_API int epicsStrnGlobMatch(const char *str, size_t len, const char *pattern);
 

@@ -44,7 +44,7 @@
 //
 // NOTES:
 //
-// 1) A NOOP mutex class may be specified if mutual exclusion isnt required
+// 1) A NOOP mutex class may be specified if mutual exclusion isn't required
 //
 // 2) If you wish to force use of the new operator, then declare your class's
 // destructor as a protected member function.

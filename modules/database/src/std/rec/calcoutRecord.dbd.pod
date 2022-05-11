@@ -535,13 +535,13 @@ the user and which describes the values being operated upon. The string is
 retrieved whenever the routine C<get_units()> is called. The EGU string is
 solely for an operator's sake and does not have to be used.
 
-The HOPR and LOPR fields on;y refer to the limits if the VAL, HIHI, HIGH,
+The HOPR and LOPR fields only refer to the limits of the VAL, HIHI, HIGH,
 LOW, and LOLO fields. PREC controls the precision of the VAL field.
 
 =head4 Menu calcoutINAV
 
 The INAV-INLV fields indicate the status of the link to the PVs specified
-in the INPA-INPL fields, respectfully. These field can have four possible
+in the INPA-INPL fields respectively. These fields can have four possible
 values:
 
 =menu calcoutINAV
@@ -568,7 +568,7 @@ The OUTV field indicates the status of the OUT link. If has the same
 possible values as the INAV-INLV fields.
 
 The CLCV and OLCV fields indicate the validity of the expression in the
-CALC and OCAL fields respectfully. If the expression in invalid, the field
+CALC and OCAL fields respectively. If the expression in invalid, the field
 is set to one.
 
 The DLYA field is set to one during the delay specified in ODLY.
@@ -590,10 +590,12 @@ The following alarm parameters, which are configured by the user, define the
 limit alarms for the VAL field and the severity corresponding to those
 conditions.
 
-The HYST field defines an alarm deadband for each limit. See
-L<Alarm Specification> for a complete explanation of alarms and these
-fields. C<Alarm Fields> lists other fields related to alarms that are
-common to all record types.
+The HYST field defines an alarm deadband for each limit.
+
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+for a complete explanation of record alarms and of the standard fields.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
+to alarms that are common to all record types.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST
 
@@ -1218,7 +1220,7 @@ honors the alarm hysteresis factor (HYST). Thus the value must change by at
 least HYST before the alarm status and severity changes.
 
 =item 4.
-Determine if the Output Execution Option (OOPT) is met. If it met, either
+Determine if the Output Execution Option (OOPT) is met. If met, either
 execute the output link (and output event) immediately (if ODLY = 0), or
 schedule a callback after the specified interval. See the explanation for
 the C<execOutput()> routine below.

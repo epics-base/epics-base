@@ -54,7 +54,7 @@ typedef struct mac_entry {
 /*** Local function prototypes ***/
 
 /*
- * These static functions peform low-level operations on macro entries
+ * These static functions perform low-level operations on macro entries
  */
 static MAC_ENTRY *first   ( MAC_HANDLE *handle );
 static MAC_ENTRY *last    ( MAC_HANDLE *handle );
@@ -588,7 +588,7 @@ static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, int special )
     }
     if ( (special == FALSE) && (entry == NULL) &&
          (handle->flags & FLAG_USE_ENVIRONMENT) ) {
-        char *value = getenv(name);
+        char *value = name && *name ? getenv(name) : NULL;
         if (value) {
             entry = create( handle, name, FALSE );
             if ( entry ) {

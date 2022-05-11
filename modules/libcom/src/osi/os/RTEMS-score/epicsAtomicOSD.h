@@ -35,11 +35,11 @@ extern "C" {
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)
 {
-    epicsAtomicMemoryBarrierFallback();
+    rbarr();
 }
 #endif
 
-#ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
+#ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 {
     rwbarr();

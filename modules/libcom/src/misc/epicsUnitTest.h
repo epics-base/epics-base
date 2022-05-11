@@ -47,9 +47,9 @@
  * be recorded as failures.
  *
  * Additional information can be supplied using the testDiag() routine, which
- * displays the relevent information as a comment in the result output. None of
+ * displays the relevant information as a comment in the result output. None of
  * the printable strings passed to any testXxx() routine should contain a newline
- * '\n' character, newlines will be added by the test routines as part of the
+ * '\\n' character, newlines will be added by the test routines as part of the
  * Test Anything Protocol. For multiple lines of diagnostic output, call
  * testDiag() as many times as necessary.
  *
@@ -80,7 +80,7 @@
  * server) can not be shut down cleanly. The function iocBuildIsolated() allows
  * to start an IOC without its Channel Access parts, so that it can be shutdown
  * quite cleanly using iocShutdown(). This feature is only intended to be used
- * from test programs, do not use it on productional IOCs. After building the
+ * from test programs, do not use it on production IOCs. After building the
  * IOC using iocBuildIsolated() or iocBuild(), it has to be started by calling
  * iocRun(). The suggested call sequence in a test program that needs to run the
  * IOC without Channel Access is:
@@ -176,8 +176,8 @@ LIBCOM_API void testPlan(int tests);
  */
 LIBCOM_API int  testOk(int pass, const char *fmt, ...)
     EPICS_PRINTF_STYLE(2, 3);
-/** \brief Test result using condition as description
- * \param cond Condition to be evaluated and displayed.
+/** \brief Test result using expression as description
+ * \param cond Expression to be evaluated and displayed.
  * \return The value of \p cond.
  */
 #define testOk1(cond) testOk(cond, "%s", #cond)
@@ -204,7 +204,7 @@ LIBCOM_API void testFail(const char *fmt, ...)
 /** @} */
 
 /** \name Missing or Failing Tests
- * \brief Routines for handling special situations.
+ * Routines for handling special situations.
  */
 /** @{ */
 
@@ -238,7 +238,7 @@ LIBCOM_API int  testDiag(const char *fmt, ...)
  */
 LIBCOM_API int  testDone(void);
 
-/** \brief Return non-zero in shared/oversubscribed testing envrionments
+/** \brief Return non-zero in shared/oversubscribed testing environments
  *
  * May be used to testSkip(), or select longer timeouts, for some cases
  * when the test process may be preempted for arbitrarily long times.
@@ -261,7 +261,13 @@ typedef int (*TESTFUNC)(void);
 /** \brief Initialize test harness
  */
 LIBCOM_API void testHarness(void);
+/** \brief End of testing
+ */
 LIBCOM_API void testHarnessExit(void *dummy);
+/** \brief Run a single test program
+ * \param name Program name
+ * \param func Function implementing test program
+ */
 LIBCOM_API void runTestFunc(const char *name, TESTFUNC func);
 
 /** \brief Run a test program

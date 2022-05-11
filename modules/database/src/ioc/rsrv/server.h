@@ -239,7 +239,7 @@ void initializePutNotifyFreeList (void);
 unsigned rsrvSizeOfPutNotify ( struct rsrv_put_notify *pNotify );
 
 /*
- * inclming protocol maintetnance
+ * incoming protocol maintenance
  */
 void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size );
 

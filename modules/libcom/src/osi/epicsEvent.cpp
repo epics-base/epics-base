@@ -34,7 +34,7 @@ const char * epicsEvent::invalidSemaphore::what () const throw ()
 
 //
 // Its probably preferable to not make these inline because they are in
-// the sharable library interface. The use of inline or not here is probably
+// the shareable library interface. The use of inline or not here is probably
 // not an issue because all of this ends up in the operating system in system
 // calls
 //
@@ -70,9 +70,9 @@ void epicsEvent::wait ()
     }
 }
 
-bool epicsEvent::wait (double timeOut)
+bool epicsEvent::wait (double timeout)
 {
-    epicsEventStatus status = epicsEventWaitWithTimeout (this->id, timeOut);
+    epicsEventStatus status = epicsEventWaitWithTimeout (this->id, timeout);
 
     if (status == epicsEventOK) {
         return true;

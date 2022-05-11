@@ -39,9 +39,9 @@ void ellAdd (ELLLIST *pList, ELLNODE *pNode)
 }
 /****************************************************************************
  *
- * This function concatinates the second linked list to the end of the first
+ * This function concatenates the second linked list to the end of the first
  * list.  The second list is left empty.  Either list (or both) lists may
- * be empty at the begining of the operation.
+ * be empty at the beginning of the operation.
  *
  *****************************************************************************/
 void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)

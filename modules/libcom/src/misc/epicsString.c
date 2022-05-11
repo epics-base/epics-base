@@ -26,7 +26,7 @@
 #ifndef vxWorks
 #include <stdint.h>
 #else
-/* VxWorks automaticaly includes stdint.h defining SIZE_MAX in 6.9 but not earlier */
+/* VxWorks automatically includes stdint.h defining SIZE_MAX in 6.9 but not earlier */
 #ifndef SIZE_MAX
 #define SIZE_MAX (size_t)-1
 #endif

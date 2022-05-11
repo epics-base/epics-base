@@ -234,7 +234,7 @@ static const iocshArg dbtgfArg0 = { "record name",iocshArgString};
 static const iocshArg * const dbtgfArgs[1] = {&dbtgfArg0};
 static const iocshFuncDef dbtgfFuncDef = {"dbtgf",1,dbtgfArgs,
                                           "Database Test Get Field.\n"
-                                          "Get field with different DBR_* types"};
+                                          "Get field with different DBR_* types\n"};
 static void dbtgfCallFunc(const iocshArgBuf *args) { dbtgf(args[0].sval);}
 
 /* dbtpf */
@@ -283,7 +283,7 @@ static const iocshArg * const dbtpnArgs[2] = {&dbtpnArg0,&dbtpnArg1};
 static const iocshFuncDef dbtpnFuncDef = {"dbtpn",2,dbtpnArgs,
                                           "Database Put Notify\n"
                                           "Without value, begin async. processing and get\n"
-                                          "With value, begin put, process, and get"};
+                                          "With value, begin put, process, and get\n"};
 static void dbtpnCallFunc(const iocshArgBuf *args)
 { dbtpn(args[0].sval,args[1].sval);}
 

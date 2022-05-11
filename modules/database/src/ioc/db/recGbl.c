@@ -318,7 +318,7 @@ void recGblGetTimeStampSimm(void *pvoid, const epicsEnum16 simm, struct link *si
     } else {
         if (simm != menuSimmNO) {
             if (siol && !dbLinkIsConstant(siol)) {
-                if (dbGetTimeStamp(siol, &prec->time))
+                if (dbGetTimeStampTag(siol, &prec->time, &prec->utag))
                     errlogPrintf("recGblGetTimeStampSimm: dbGetTimeStamp (sim mode) failed, %s.SIOL = %s\n",
                         prec->name, siol->value.pv_link.pvname);
                 return;

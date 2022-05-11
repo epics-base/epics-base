@@ -7,7 +7,7 @@
  \*************************************************************************/
 
 /** @file dbUnitTest.h
- * @brief Helpers for unitests of process database
+ * @brief Helpers for unittests of process database
  * @author Michael Davidsaver, Ralph Lange
  *
  * @see @ref dbunittest
@@ -99,7 +99,7 @@ DBCORE_API void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
 /** Assert that a dbPutField() array operation will complete successfully.
  *
  * @param pv a PV name, possibly including filter expression
- * @param a DBF_\* type code (cf. dbfType in dbFldTypes.h)
+ * @param dbrType a DBF_\* type code (cf. dbfType in dbFldTypes.h)
  * @param count Number of elements in pbuf array
  * @param pbuf Array of values to write
  *
@@ -114,7 +114,7 @@ DBCORE_API void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long
 
 /**
  * @param pv PV name string
- * @param dbfType One of the DBF_* macros from dbAccess.h
+ * @param dbfType One of the DBF_\* macros from dbAccess.h
  * @param nRequest Number of elements to request from pv
  * @param pbufcnt  Number of elements pointed to be pbuf
  * @param pbuf     Expected value buffer
@@ -149,7 +149,7 @@ DBCORE_API void testMonitorDestroy(testMonitor*);
  */
 DBCORE_API void testMonitorWait(testMonitor*);
 /** Return the number of monitor events which have occured since create,
- * or a pervious reset (called reset=1).
+ * or a previous reset (called reset=1).
  * Calling w/ reset=0 only returns the count.
  * Calling w/ reset=1 resets the count to zero and ensures that the next
  * wait will block unless subsequent events occur.  Returns the previous

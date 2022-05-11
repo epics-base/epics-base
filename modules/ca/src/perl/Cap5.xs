@@ -606,12 +606,12 @@ void CA_put(SV *ca_ref, SV *val, ...) {
         }
     } else {
         union {
+            void         *dbr;
             dbr_char_t   *dbr_char;
             dbr_long_t   *dbr_long;
             dbr_double_t *dbr_double;
             char         *dbr_string;
-            void         *dbr;
-        } p;
+        } p = {0};
         int i;
         chtype type = best_type(pch);
 
@@ -699,12 +699,12 @@ void CA_put_callback(SV *ca_ref, SV *sub, SV *val, ...) {
         }
     } else {
         union {
+            void         *dbr;
             dbr_char_t   *dbr_char;
             dbr_long_t   *dbr_long;
             dbr_double_t *dbr_double;
             char         *dbr_string;
-            void         *dbr;
-        } p;
+        } p = {0};
         int i;
         chtype type = best_type(pch);
 

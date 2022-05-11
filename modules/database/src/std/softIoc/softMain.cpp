@@ -114,7 +114,8 @@ void lazy_dbd(const std::string& dbd_file) {
 
     if (verbose)
         std::cout<<"softIoc_registerRecordDeviceDriver(pdbbase)\n";
-    softIoc_registerRecordDeviceDriver(pdbbase);
+    errIf(softIoc_registerRecordDeviceDriver(pdbbase),
+          "Failed to initialize database");
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
 }
 

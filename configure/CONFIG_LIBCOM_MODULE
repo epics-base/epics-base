@@ -5,9 +5,10 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# Set location of locally generated tools
-YACC = $(abspath $(EPICS_BASE)/bin/$(EPICS_HOST_ARCH))/antelope$(HOSTEXE)
-LEX = $(abspath $(EPICS_BASE)/bin/$(EPICS_HOST_ARCH))/e_flex$(HOSTEXE) \
+# Our locally-built tools
+# Windows can need these paths to be quoted
+YACC = "$(EPICS_BASE_HOST_BIN)/antelope$(HOSTEXE)"
+LEX  = "$(EPICS_BASE_HOST_BIN)/e_flex$(HOSTEXE)" \
         -S$(EPICS_BASE)/include/flex.skel.static
 
 # Default stack size for osiThread

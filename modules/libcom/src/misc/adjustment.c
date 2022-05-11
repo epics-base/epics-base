@@ -18,7 +18,7 @@
 /* Up to now epicsShareThings have been declared as imports
  *   (Appropriate for other stuff)
  * After setting the following they will be declared as exports
- *   (Appropriate for what we implenment)
+ *   (Appropriate for what we implement)
  */
 #include "adjustment.h"
 

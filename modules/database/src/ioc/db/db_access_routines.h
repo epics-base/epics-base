@@ -27,7 +27,7 @@ DBCORE_API extern volatile int interruptAccept;
 
 
 /*
- * Adaptors for db_access users
+ * Adapters for db_access users
  */
 DBCORE_API struct dbChannel * dbChannel_create(const char *pname);
 DBCORE_API int dbChannel_get(struct dbChannel *chan,

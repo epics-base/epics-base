@@ -33,7 +33,7 @@
 #ifdef __cplusplus
 
 /*
- * in general we dont like ifdefs but they do allow us to check the
+ * in general we don't like ifdefs but they do allow us to check the
  * compiler version and make the optimistic assumption that
  * standards incompliance issues will be fixed by future compiler
  * releases

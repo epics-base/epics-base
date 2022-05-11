@@ -18,6 +18,9 @@
  * Extensive tests so far only with qemu.
  */
 
+/* trigger sys/syslog.h to emit prioritynames[] */
+#define SYSLOG_NAMES
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/syslog.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
@@ -93,7 +97,7 @@ epicsEventId 	dhcpDone;
  * may provide by dhcp/bootp
  * or environments from the "BIOS" like u-boot, motboot etc.
  */
-char rtemsInit_NTP_server_ip[16] = "10.0.5.1";
+char rtemsInit_NTP_server_ip[16] = "";
 char bootp_server_name_init[128] = "1001.1001@10.0.5.1:/epics";
 char bootp_boot_file_name_init[128] = "/epics/myExample/bin/RTEMS-beatnik/myExample.boot";
 char bootp_cmdline_init[128] = "/epics/myExample/iocBoot/iocmyExample/st.cmd";
@@ -362,7 +366,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             argv[1] = rtems_bsdnet_bootp_cmdline;
             /*
              * Its probably common to embed the mount point in the server
-             * name so, when this is occurring, dont clobber the mount point
+             * name so, when this is occurring, don't clobber the mount point
              * by appending the first node from the command path. This allows
              * the mount point to be a different path then the server's mount
              * path.
@@ -633,6 +637,42 @@ static void zonesetCallFunc(const iocshArgBuf *args)
     zoneset(args[0].sval);
 }
 
+#ifndef RTEMS_LEGACY_STACK
+static int bsd_log_to_erl(int level, const char *fmt, va_list ap)
+{
+    return errlogVprintf(fmt, ap);
+}
+#endif // RTEMS_LEGACY_STACK
+
+static void setlogmaskCallFunc(const iocshArgBuf *args)
+{
+    const char* name = args[0].sval;
+    const CODE* cur;
+    if(!name) {
+        printf("Usage: setlogmask <level>\n"
+               "\n"
+               "  Level names:\n");
+        for(cur = prioritynames; cur->c_name; cur++) {
+            printf("    %s\n", cur->c_name);
+        }
+    } else {
+        for(cur = prioritynames; cur->c_name; cur++) {
+            if(strcmp(name, cur->c_name)!=0)
+                continue;
+
+            (void)setlogmask(LOG_MASK(cur->c_val));
+#ifndef RTEMS_LEGACY_STACK
+            rtems_bsd_setlogpriority(name);
+#endif
+            return;
+        }
+        printf("Error: unknown log level.\n");
+    }
+}
+static const iocshArg setlogmaskArg0 = {"level name", iocshArgString};
+static const iocshArg * const setlogmaskArgs[1] = {&setlogmaskArg0};
+static const iocshFuncDef setlogmaskFuncDef = {"setlogmask",1,setlogmaskArgs,
+                                            "Set syslog() threshold level"};
 
 /*
  * Register RTEMS-specific commands
@@ -646,6 +686,7 @@ static void iocshRegisterRTEMS (void)
 #endif
     iocshRegister(&zonesetFuncDef, &zonesetCallFunc);
     iocshRegister(&rtshellFuncDef, &rtshellCallFunc);
+    iocshRegister(&setlogmaskFuncDef, &setlogmaskCallFunc);
 #if __RTEMS_MAJOR__ > 4
     rtems_shell_init_environment();
 #endif
@@ -685,89 +726,76 @@ exitHandler(void)
 }
 
 #ifndef RTEMS_LEGACY_STACK
-static char* getPrimaryNetworkInterface(void)
-{
-    // lookup available network interfaces
-    char ifnamebuf[IF_NAMESIZE];
-    char *ifname;
-    // get primary network interface
-    ifname = if_indextoname(1, &ifnamebuf[0]);
-    if (ifname == NULL) return (NULL);
-    printf("\n***** Primary Network interface : %s *****\n", ifname);
-    return (ifname);
-}
-
 static void
 dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
 {
     int bound = 0;
-    char iName[16];
-    char *name;
-    char *value;
-    char * env_position;
-    
-	(void)hook;
+    char interface[16] = "?";
+    char reason[16] = "?";
+    char new_host_name[32] = "RTEMShost";
+    struct dhcp_vars_t {
+        const char * const name;
+        char* var;
+        size_t varsize;
+    } dhcp_vars[] = {
+#define DEFVAR(N) { #N, N, sizeof(N) }
+        DEFVAR(interface),
+        DEFVAR(reason),
+        DEFVAR(new_host_name),
+#undef DEFVAR
+#define DEFVAR(N, V) { N, V, sizeof(V) }
+        DEFVAR("new_ntp_servers", rtemsInit_NTP_server_ip),
+        DEFVAR("new_tftp_server_name", bootp_server_name_init),
+        DEFVAR("new_bootfile_name", bootp_boot_file_name_init),
+        DEFVAR("new_rtems_cmdline", bootp_cmdline_init),
+#undef DEFVAR
+        {NULL}
+    };
+    (void)hook;
 
-    char ifnamebuf[IF_NAMESIZE];
-    sprintf(ifnamebuf, "%s", getPrimaryNetworkInterface());
-
-    while (*env != NULL) {
-        char const * interface = "interface";
-        char const * reason = "reason";
-        char const * bound_str = "BOUND";
+    printf("\n");
+    for (;NULL != *env;++env) {
+        printf("dhcpcd ---> '%s'\n", *env);
         
-        name = strtok_r(*env,"=", &env_position);
-        value = strtok_r(NULL,"=", &env_position);
-        printf("all out ---> %s = %s\n", name, value);
+        for(const struct dhcp_vars_t* var = dhcp_vars; var->name; var++) {
+            size_t namelen = strlen(var->name);
 
-        if (!strncmp(name, interface, strlen(interface)) &&
-            !strcmp(value,  ifnamebuf)) {
-            snprintf(iName, sizeof(iName), "%s", value);
-        }
+            // assume "KEY=value" with no whitespace around '='
+            if(strncmp(*env, var->name, namelen)!=0 || (*env)[namelen]!='=')
+                continue;
 
-        if (!strncmp(name, reason, strlen(reason)) &&
-            !strncmp(value, bound_str, strlen(bound_str))) {
-            printf ("Interface %s bounded\n", iName);
-            bound = 1;
+            const char* value = *env + namelen+1;
+            size_t valuelen = strlen(value);
+
+            // require ordering of keys:
+            // interface=
+            // reason=
+            // all others...
+            if(var->var!=reason && var->var!=interface && !bound) {
+                // ignore others if !BOUND
+
+            } else if(valuelen >= var->varsize) {
+                printf("  Not enough space for value string.  Expand buffer and recompile.\n");
+
+            } else {
+                memcpy(var->var, value, valuelen);
+                var->var[valuelen] = '\0';
+                printf("  '%s' = '%s'\n", var->name, var->var);
+
+                if(var->var==reason && strcmp(reason, "BOUND")==0) {
+                    printf("  is BOUND\n");
+                    bound = 1;
+                }
+            }
+            break;
         }
-        
-        if (bound) {
-            // as there is no ntp-support in rtems-libbsd, we call our own client
-            char const * new_ntp_servers = "new_ntp_servers";
-            char const * new_host_name = "new_host_name";
-            char const * new_tftp_server_name = "new_tftp_server_name";
-            
-            if (!strncmp(name, new_ntp_servers, strlen(new_ntp_servers)))
-                snprintf(rtemsInit_NTP_server_ip,
-                         sizeof(rtemsInit_NTP_server_ip),
-                         "%s", value);
-            
-            if (!strncmp(name, new_host_name, strlen(new_host_name)))
-                sethostname (value, strlen (value));
-            
-            if (!strncmp(name, new_tftp_server_name, strlen(new_tftp_server_name))){
-                snprintf(rtems_bsdnet_bootp_server_name,
-                         sizeof(bootp_server_name_init),
-                         "%s", value);
-                printf(" rtems_bsdnet_bootp_server_name : %s\n", rtems_bsdnet_bootp_server_name);
-            }
-            if(!strncmp(name, "new_bootfile_name", 20)){
-                snprintf(rtems_bsdnet_bootp_boot_file_name,
-                         sizeof(bootp_boot_file_name_init),
-                         "%s", value);
-                printf(" rtems_bsdnet_bootp_boot_file_name : %s\n", rtems_bsdnet_bootp_boot_file_name);
-            }
-            if(!strncmp(name, "new_rtems_cmdline", 20)){
-                snprintf(rtems_bsdnet_bootp_cmdline,
-                         sizeof(bootp_cmdline_init),
-                         "%s", value);
-                printf(" rtems_bsdnet_bootp_cmdline : %s\n", rtems_bsdnet_bootp_cmdline);
-            }
-          }
-        ++env;
     }
-    if (bound)
+
+    if(bound) {
+        sethostname (new_host_name, strlen (new_host_name));
         epicsEventSignal(dhcpDone);
+        printf("dhcpd BOUND\n");
+    }
 }
 
 static rtems_dhcpcd_hook dhcpcd_hook = {
@@ -816,10 +844,10 @@ default_network_dhcpcd(void)
         static const char fhi_cfg[] =
             "nodhcp6\n"
             "ipv4only\n"
-            "option ntp_servers\n"
+            "option ntp-servers\n"
             "option rtems_cmdline\n"
-            "option tftp_server_name\n"
-            "option bootfile_name\n"
+            "option tftp-server-name\n"
+            "option bootfile-name\n"
             "define 129 string rtems_cmdline\n"
             "timeout 0";
 
@@ -883,7 +911,7 @@ telnet_pseudoIocsh(char *name, __attribute__((unused))void *arg)
 
 /*
  *  Telnet daemon configuration
- * 0 or NULL for most fields in thsi struct indicate default values to RTEMS.
+ * 0 or NULL for most fields in this struct indicate default values to RTEMS.
  */
 rtems_telnetd_config_table rtems_telnetd_config = {
   .command = SHELL_ENTRY,
@@ -975,12 +1003,19 @@ POSIX_Init ( void *argument __attribute__((unused)))
         rtems_get_version_string());
 
 #ifndef RTEMS_LEGACY_STACK
+#if defined(QEMU_FIXUPS) && defined(__i386__)
+    // glorious hack to stub out useless EEPROM check
+    // which takes sooooo longggg w/ QEMU
+    // Writes a 'ret' instruction to immediatly return to the caller
+    extern void _bsd_e1000_validate_nvm_checksum(void);
+    *(char*)&_bsd_e1000_validate_nvm_checksum = 0xc3;
+#endif
     /*
      * Start network (libbsd)
      *
      * start qemu like this
      * qemu-system-i386 -m 64 -no-reboot -serial stdio -display none \
-     * -net nic,model=rtl8139,macaddr=0e:b0:ba:5e:ba:11 -net user,restrict=yes \
+     * -net nic,model=e1000 -net user,restrict=yes \
      * -append "--video=off --console=/dev/com1" -kernel libComTestHarness
      */
     printf("\n***** Initializing network (libbsd, dhcpcd) *****\n");
@@ -989,9 +1024,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
 
     /* Let other tasks run to complete background work */
     default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1U);
-
-    /* supress all output from bsd network initialization */ 
-    rtems_bsd_set_vprintf_handler(rtems_bsd_vprintf_handler_mute);
 
     sc = rtems_bsd_initialize();
     assert(sc == RTEMS_SUCCESSFUL);
@@ -1042,7 +1074,9 @@ POSIX_Init ( void *argument __attribute__((unused)))
     /* until now there is no NTP support in libbsd -> Sebastian Huber ... */
     printf("\n***** Until now no NTP support in RTEMS 5 with rtems-libbsd *****\n");
     printf("\n***** Ask ntp server once... *****\n");
-    if (epicsNtpGetTime(rtemsInit_NTP_server_ip, &now) < 0) {
+    if (rtemsInit_NTP_server_ip[0]=='\0') {
+      printf ("***** No NTP server ...\n");
+    } else if (epicsNtpGetTime(rtemsInit_NTP_server_ip, &now) < 0) {
       printf ("***** Can't get time from ntp ...\n");
     } else {
       if (clock_settime(CLOCK_REALTIME, &now) < 0){
@@ -1076,9 +1110,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
     rtems_netstat(3);
     rtems_bsdnet_synchronize_ntp (0, 0);
 #endif // not RTEMS_LEGACY_STACK
-
-    /* show messages from network after initialization ? good idea? */
-    //rtems_bsd_set_vprintf_handler(bsd_vprintf_handler_old);
 
     printf("\n***** Setting up file system *****\n");
     initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
@@ -1123,6 +1154,12 @@ POSIX_Init ( void *argument __attribute__((unused)))
     atexit(exitHandler);
     errlogFlush();
     printf ("***** Starting EPICS application *****\n");
+
+
+#ifndef RTEMS_LEGACY_STACK
+    // switch OS to async logging
+    rtems_bsd_set_vprintf_handler(bsd_log_to_erl);
+#endif
 
 #if 0
 // Start an rtems shell before main, for debugging RTEMS system issues

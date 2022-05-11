@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-/* This name should probably be changed to inclue "array" */
+/* This name should probably be changed to include "array" */
 DBCORE_API long dbPutConvertJSON(const char *json, short dbrType,
     void *pdest, long *psize);
 DBCORE_API long dbLSConvertJSON(const char *json, char *pdest,

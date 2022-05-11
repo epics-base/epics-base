@@ -294,19 +294,13 @@ static int compress_scalar(struct compressRecord *prec,double *psource)
     /* for scalars, Median not implemented => use average */
     case (compressALG_N_to_1_Average):
     case (compressALG_N_to_1_Median):
-        if (inx == 0)
-            *pdest = value;
-        else {
-            *pdest += value;
-            if (inx + 1 >= prec->n)
-                *pdest = *pdest / (inx + 1);
-        }
+        *pdest = (inx * (*pdest) + value) / (inx + 1);
         break;
     }
     inx++;
-    if (inx >= prec->n || prec->pbuf == menuYesNoYES) {
+    if ((inx >= prec->n) || (prec->pbuf == menuYesNoYES)) {
         put_value(prec,pdest,1);
-        prec->inx = 0;
+        prec->inx = (inx >= prec->n) ? 0 : inx;
         return 0;
     } else {
         prec->inx = inx;

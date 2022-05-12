@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "epicsAtomic.h"
 #include "epicsTimer.h"
 #include "epicsEvent.h"
 #include "epicsAssert.h"
@@ -84,7 +85,7 @@ private:
     delayVerify & operator = ( const delayVerify & );
 };
 
-static volatile unsigned expireCount;
+static size_t expireCount;
 static epicsEvent expireEvent;
 
 delayVerify::delayVerify ( double expectedDelayIn, epicsTimerQueue &queueIn ) :
@@ -128,7 +129,7 @@ inline void delayVerify::start ( const epicsTime &expireTime )
 epicsTimerNotify::expireStatus delayVerify::expire ( const epicsTime &currentTime )
 {
     this->expireStamp = currentTime;
-    if ( --expireCount == 0u ) {
+    if ( epics::atomic::decrement(expireCount) == 0u ) {
         expireEvent.signal ();
     }
     return noRestart;
@@ -161,7 +162,7 @@ void testAccuracy ()
         pTimers[i]->setBegin ( cur );
         pTimers[i]->start ( cur + pTimers[i]->delay () );
     }
-    while ( expireCount != 0u ) {
+    while ( epics::atomic::get(expireCount) != 0u ) {
         expireEvent.wait ();
     }
     double averageMeasuredError = 0.0;

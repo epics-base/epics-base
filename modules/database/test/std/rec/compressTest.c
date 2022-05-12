@@ -590,8 +590,12 @@ testNto1LowValue(void) {
 void
 testAIAveragePartial(void) {
     double buf = 0.;
-    double data[4] = {1., 2., 3., 4.};
-    double expected[4] = {1., 1.5, 2., 2.5};
+    double data[5] = {1., 2., 3., 4., 5.};
+    /* 
+     * Note that the fifth dbPut essentially resets the circular buffer, so the
+     * average is once again the average of the _first_ entry alone.
+     */
+    double expected[5] = {1., 1.5, 2., 2.5, 5.};
     long nReq = 1;
     int i;
     DBADDR aiaddr, caddr;
@@ -610,7 +614,7 @@ testAIAveragePartial(void) {
     fetchRecordOrDie("ai", aiaddr);
     fetchRecordOrDie("comp", caddr);
 
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 5; i++) {
         dbScanLock(aiaddr.precord);
         dbPut(&aiaddr, DBR_DOUBLE, &data[i], 1);
         dbScanUnlock(aiaddr.precord);
@@ -630,7 +634,7 @@ testAIAveragePartial(void) {
 
 MAIN(compressTest)
 {
-    testPlan(131);
+    testPlan(132);
     testFIFOCirc();
     testLIFOCirc();
     testArrayAverage();

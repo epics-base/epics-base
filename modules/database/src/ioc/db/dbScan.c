@@ -59,6 +59,35 @@ static epicsEventId startStopEvent;
 
 static volatile enum ctl scanCtl;
 
+/* epicsTime does not support addition/subtraction of epicsTimeStamp
+ * but we want to do integer arithmetic...
+ */
+typedef struct epicsPeriod {
+    epicsTimeStamp ts;
+} epicsPeriod;
+
+#define ONE_SEC (1000UL * 1000UL * 1000UL)
+
+/* a += p */
+static void tsAddPeriod(epicsTimeStamp *a, const epicsPeriod *p)
+{
+    a->secPastEpoch += p->ts.secPastEpoch;
+    a->nsec         += p->ts.nsec;
+    if ( a->nsec >= ONE_SEC ) {
+        a->nsec         -= ONE_SEC;
+        a->secPastEpoch += 1;
+    }
+}
+
+static epicsPeriod periodFromDouble(double d)
+{
+epicsPeriod p;
+	p.ts.secPastEpoch = 0;
+	p.ts.nsec         = 0;
+    epicsTimeAddSeconds( &p.ts, d );
+    return p;
+}
+
 /* SCAN ONCE */
 
 static int onceQueueSize = 1000;
@@ -782,12 +811,13 @@ static void periodicTask(void *arg)
     double overtime = 0.0;
     double over_min = 0.0;
     double over_max = 0.0;
-    const double penalty = (ppsl->period >= 2) ? 1 : (ppsl->period / 2);
+    const epicsPeriod penalty = periodFromDouble((ppsl->period >= 2) ? 1 : (ppsl->period / 2));
+    const epicsPeriod period  = periodFromDouble( ppsl->period );
 
     taskwdInsert(0, NULL, NULL);
     epicsEventSignal(startStopEvent);
 
-    epicsTimeGetMonotonic(&next);
+    epicsTimeGetCurrent(&next);
     reported = next;
 
     while (ppsl->scanCtl != ctlExit) {
@@ -797,8 +827,8 @@ static void periodicTask(void *arg)
         if (ppsl->scanCtl == ctlRun)
             scanList(&ppsl->scan_list);
 
-        epicsTimeAddSeconds(&next, ppsl->period);
-        epicsTimeGetMonotonic(&now);
+        tsAddPeriod(&next, &period);
+        epicsTimeGetCurrent(&now);
         delay = epicsTimeDiffInSeconds(&next, &now);
         if (delay <= 0.0) {
             if (overtime == 0.0) {
@@ -811,10 +841,9 @@ static void periodicTask(void *arg)
                 if (over_max + delay < 0)
                     over_max = -delay;
             }
-            delay = penalty;
             ppsl->overruns++;
             next = now;
-            epicsTimeAddSeconds(&next, delay);
+            tsAddPeriod( &next, &penalty );
             if (++overruns >= 10 &&
                 epicsTimeDiffInSeconds(&now, &reported) > report_delay) {
                 errlogPrintf("\ndbScan " ERL_WARNING " from '%s' scan thread:\n"
@@ -837,7 +866,7 @@ static void periodicTask(void *arg)
             overtime = 0.0;
         }
 
-        epicsEventWaitWithTimeout(ppsl->loopEvent, delay);
+        epicsEventWaitWithAbsTimeout(ppsl->loopEvent, &next);
     }
 
     taskwdRemove(0);

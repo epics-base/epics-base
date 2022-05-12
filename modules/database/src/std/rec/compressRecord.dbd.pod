@@ -212,18 +212,26 @@ described in L<Alarm Fields|dbCommonRecord/Alarm Fields>.
 
 These parameters are used by the run-time code for processing the data
 compression algorithm. They are not configurable by the user, though some are
-accessible at run-time. They can represent the current state of the waveform or
+accessible at run-time. They can represent the current state of the algorithm or
 of the record whose field is referenced by the INP field.
 
 =fields NUSE, OUSE, BPTR, SPTR, WPTR, CVB, INPN, INX
 
 NUSE and OUSE hold the current and previous number of elements stored in VAL.
 
-BPTR is a pointer that refers to the buffer referenced by VAL.
+BPTR points to the buffer referenced by VAL.
 
 SPTR points to an array that is used for array averages.
 
-WPTR is used by the dbGetlinks routines.
+WPTR points to the buffer containing data referenced by INP.
+
+CVB stores the current compressed value for C<<< N to 1 >>> algorithms when INP
+references a scalar.
+
+INPN is updated when the record processes; if INP references an array and the
+size changes, the WPTR buffer is reallocated.
+
+INX counts the number of readings collected.
 
 =head2 Record Support
 
@@ -482,7 +490,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		interest(3)
 	}
 	field(INX,DBF_ULONG) {
-		prompt("Compressed Array Inx")
+		prompt("Current number of readings")
 		special(SPC_NOMOD)
 		interest(3)
 	}

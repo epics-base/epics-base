@@ -326,8 +326,7 @@ static long get_enum_str(const DBADDR *paddr, char *pstring)
     }
     else if (val <= 15) {
         const char *pstate = prec->zrst + val * sizeof(prec->zrst);
-
-        strncpy(pstring, pstate, sizeof(prec->zrst));
+        sprintf(pstring, "%.*s", MAX_STRING_SIZE-1, pstate);
     }
     else {
         strcpy(pstring, "Illegal Value");
@@ -344,7 +343,7 @@ static long get_enum_strs(const DBADDR *paddr, struct dbr_enumStrs *pes)
     memset(pes->strs, '\0', sizeof(pes->strs));
     pstate = prec->zrst;
     for (i = 0; i < 16; i++) {
-        strncpy(pes->strs[i], pstate, sizeof(prec->zrst));
+        strncpy(pes->strs[i], pstate, sizeof(pes->strs[i])-1);
         if (*pstate)
             states = i + 1;
         pstate += sizeof(prec->zrst);

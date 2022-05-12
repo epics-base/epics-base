@@ -328,11 +328,9 @@ static long get_enum_str(const DBADDR *paddr, char *pstring)
     if(index!=indexof(VAL)) {
         strcpy(pstring,"Illegal_Value");
     } else if(*pfield==0) {
-        strncpy(pstring,prec->znam,sizeof(prec->znam));
-        pstring[sizeof(prec->znam)] = 0;
+        sprintf(pstring, "%.*s", MAX_STRING_SIZE-1, prec->znam);
     } else if(*pfield==1) {
-        strncpy(pstring,prec->onam,sizeof(prec->onam));
-        pstring[sizeof(prec->onam)] = 0;
+        sprintf(pstring, "%.*s", MAX_STRING_SIZE-1, prec->onam);
     } else {
         strcpy(pstring,"Illegal_Value");
     }
@@ -346,9 +344,9 @@ static long get_enum_strs(const DBADDR *paddr,struct dbr_enumStrs *pes)
     /*SETTING no_str=0 breaks channel access clients*/
     pes->no_str = 2;
     memset(pes->strs,'\0',sizeof(pes->strs));
-    strncpy(pes->strs[0],prec->znam,sizeof(pes->strs[0]));
+    strncpy(pes->strs[0],prec->znam,sizeof(pes->strs[0])-1);
     if(*prec->znam!=0) pes->no_str=1;
-    strncpy(pes->strs[1],prec->onam,sizeof(pes->strs[1]));
+    strncpy(pes->strs[1],prec->onam,sizeof(pes->strs[1])-1);
     if(*prec->onam!=0) pes->no_str=2;
     return(0);
 }

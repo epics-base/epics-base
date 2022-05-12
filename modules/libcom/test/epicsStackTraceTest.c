@@ -88,13 +88,7 @@ void epicsStackTraceRecurseGbl(int lvl)
 static void logClient(void *ptr, const char *msg)
 {
     TestData td = ptr;
-    size_t sz = strlen(msg);
-    size_t mx = sizeof(td->buf) - td->pos - 1;
-
-    if ( sz > mx )
-        sz = mx;
-    strncpy( td->buf+td->pos, msg, sz );
-    td->pos += sz;
+    td->pos += sprintf(td->buf+td->pos, "%.*s", (int)(sizeof(td->buf) - td->pos - 1), msg);
 }
 
 static int

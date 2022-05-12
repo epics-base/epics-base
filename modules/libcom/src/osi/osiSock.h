@@ -374,12 +374,9 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
  * For the moment use the same code on all platforms
  */
 
-#ifdef AF_INET6
 # define USE_OSISOCKET_POLL_VIA_SELECT
-#endif
 
-#ifdef USE_OSISOCKET_POLL_VIA_SELECT
-#include <sys/select.h>
+#ifndef POLLIN
 #define POLLIN  0x1
 //#define POLLOUT 0x2 not implemented yet
 struct pollfd {
@@ -387,12 +384,9 @@ struct pollfd {
     short events;
     short revents;
 };
+#endif
 
 int osiSockPoll(struct pollfd fds[], int nfds, int timeout);
-#else
-# include <sys/poll.h>
-# define osiSockPoll(a,b,c) poll(a,b,c)
-#endif
 
 
 #ifdef __cplusplus

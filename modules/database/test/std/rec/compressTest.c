@@ -87,6 +87,23 @@ void checkArrI(const char *pv, long elen, epicsInt32 a, epicsInt32 b, epicsInt32
     }
 }
 
+void
+writeToWaveform(DBADDR *addr, long count, ...) {
+    va_list args;
+    long i;
+    double values[count];
+
+    va_start(args, count);
+    for (i=0; i< count; i++) {
+        values[i] = va_arg(args, double);
+    }
+    va_end(args);
+
+    dbScanLock(addr->precord);
+    dbPut(addr, DBR_DOUBLE, values, count);
+    dbScanUnlock(addr->precord);
+}
+
 static
 void testFIFOCirc(void)
 {
@@ -349,25 +366,9 @@ void testLIFOCirc(void)
 }
 
 void
-writeToWaveform(DBADDR *addr, long count, ...) {
-    va_list args;
-    long i;
-    double values[count];
-
-    va_start(args, count);
-    for (i=0; i< count; i++) {
-        values[i] = va_arg(args, double);
-    }
-    va_end(args);
-
-    dbScanLock(addr->precord);
-    testOk1(dbPut(addr, DBR_DOUBLE, values, count)==0);
-    dbScanUnlock(addr->precord);
-}
-
-void testArrayAverage(void) {
+testArrayAverage(void) {
     DBADDR wfaddr, caddr;
-    
+
     testDiag("Test Array Average");
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -565,13 +566,11 @@ testNto1LowValue(void) {
 
     // We confirm that this hasn't changed i.e. the dbProcess above did nothing
     testDEq(buf, 1.0, 0.01);
-    dbScanUnlock(caddr.precord);
 
     testDiag("Test partial data with PBUF set to YES");
 
     ((compressRecord *)caddr.precord)->pbuf = menuYesNoYES;
 
-    dbScanLock(caddr.precord);
     dbProcess(caddr.precord);
     if (dbGet(&caddr, DBR_DOUBLE, &buf, NULL, &nReq, NULL))
         testAbort("dbGet failed on compress record");
@@ -585,7 +584,7 @@ testNto1LowValue(void) {
 }
 
 void
-testAIPartialAverage(void) {
+testAIAveragePartial(void) {
     double buf = 0.;
     double data[4] = {1., 2., 3., 4.};
     double expected[4] = {1., 1.5, 2., 2.5};
@@ -593,7 +592,7 @@ testAIPartialAverage(void) {
     int i;
     DBADDR aiaddr, caddr;
 
-    testDiag("Test 'N to 1 Low Value'");
+    testDiag("Test 'N to 1 Average' with analog in, PBUF=YES");
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -609,7 +608,7 @@ testAIPartialAverage(void) {
 
     for (i = 0; i < 4; i++) {
         dbScanLock(aiaddr.precord);
-        testOk1(dbPut(&aiaddr, DBR_DOUBLE, &data[i], 1) == 0);
+        dbPut(&aiaddr, DBR_DOUBLE, &data[i], 1);
         dbScanUnlock(aiaddr.precord);
 
         dbScanLock(caddr.precord);
@@ -627,13 +626,13 @@ testAIPartialAverage(void) {
 
 MAIN(compressTest)
 {
-    testPlan(145);
+    testPlan(131);
     testFIFOCirc();
     testLIFOCirc();
     testArrayAverage();
     testNto1Average();
     testNto1AveragePartial();
-    testAIPartialAverage();
+    testAIAveragePartial();
     testNto1LowValue();
     return testDone();
 }

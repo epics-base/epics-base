@@ -155,33 +155,38 @@ static void eventWakeupTest(void)
 
 } // extern "C"
 
-static double eventWaitCheckDelayError( const epicsEventId &id, const double & delay )
+static double eventWaitCheckDelayError( const epicsEventId &id, const double & delay, int absWait )
 {
     epicsEventWaitWithTimeout ( id, 0.000001 );
 
     epicsTime beg = epicsTime::getMonotonic();
-    epicsEventWaitWithTimeout ( id, delay );
+    if ( absWait ) {
+        epicsTimeStamp ts = epicsTime::getCurrent() + delay;
+        epicsEventWaitWithAbsTimeout ( id, &ts );
+    } else {
+        epicsEventWaitWithTimeout ( id, delay );
+    }
     epicsTime end = epicsTime::getMonotonic();
     double meas = end - beg;
     double error = meas - delay;
-    testOk(error >= 0, "epicsEventWaitWithTimeout(%.6f)  delay error %.6f sec",
-        delay, error);
+    testOk(error >= 0, "epicsEventWaitWith%sTimeout(%s%.6f)  delay error %.6f sec",
+        absWait ? "Abs" : "", absWait ? "now + " : "", delay, error);
     return fabs(error);
 }
 
 #define WAITCOUNT 21
-static void eventWaitTest()
+static void eventWaitTest(int absWait)
 {
 #if defined(_WIN32) || defined(__rtems__) || defined(vxWorks)
     testTodoBegin("Known issue with delay calculation");
 #endif
 
     epicsEventId event = epicsEventMustCreate(epicsEventEmpty);
-    double errorSum = eventWaitCheckDelayError(event, 0.0);
+    double errorSum = eventWaitCheckDelayError(event, 0.0, absWait);
 
     for (int i = 0; i < WAITCOUNT - 1; i++) {
         double delay = ldexp ( 1.0 , -i );
-        errorSum += eventWaitCheckDelayError ( event, delay );
+        errorSum += eventWaitCheckDelayError ( event, delay, absWait );
     }
     double meanError = errorSum / WAITCOUNT;
     testOk(meanError < 0.05, "Mean delay error was %.6f sec", meanError);
@@ -200,7 +205,7 @@ MAIN(epicsEventTest)
     epicsEventId event;
     int status;
 
-    testPlan(13 + SLEEPERCOUNT + WAITCOUNT);
+    testPlan(12 + SLEEPERCOUNT + (1+WAITCOUNT)*2);
 
     event = epicsEventMustCreate(epicsEventEmpty);
 
@@ -257,7 +262,8 @@ MAIN(epicsEventTest)
     epicsEventMustTrigger(pinfo->event);
     epicsThreadSleep(1.0);
 
-    eventWaitTest();
+    eventWaitTest(0);
+    eventWaitTest(1);
     eventWakeupTest();
 
     free(name);

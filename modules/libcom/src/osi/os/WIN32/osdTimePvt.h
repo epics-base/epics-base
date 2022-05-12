@@ -21,4 +21,4 @@ LIBCOM_API void epicsStdCall epicsTimeToFileTime ( FILETIME *pDest, const epicsT
 }
 #endif
 
-#endif /* ifndef INC_osdTime_H */
+#endif /* ifndef INC_osdTimePvt_H */

@@ -26,9 +26,14 @@ extern "C" {
 
 /**
 * The inithooks facility allows application functions to be called at various states during ioc initialization. 
-* This enum must agree with the array of names defined in initHookName() */
+* This enum must agree with the array of names defined in initHookName() \n
+*
+ * Deprecated states, provided for backwards compatibility.
+ * These states are announced at the same point they were before,
+ * but will not be repeated if the IOC gets paused and restarted.
+ */
 typedef enum {
-    initHookAtIocBuild = 0,         /** \brief Start of iocBuild/iocInit commands */
+    initHookAtIocBuild = 0,         /**< \brief Start of iocBuild/iocInit commands */
     initHookAtBeginning,
     initHookAfterCallbackInit,
     initHookAfterCaLinkInit,
@@ -40,60 +45,55 @@ typedef enum {
     initHookAfterScanInit,
     initHookAfterInitialProcess,
     initHookAfterCaServerInit,
-    initHookAfterIocBuilt,          /** \brief End of iocBuild command */
+    initHookAfterIocBuilt,          /**< \brief End of iocBuild command */
 
-    initHookAtIocRun,               /** \brief Start of iocRun command */
+    initHookAtIocRun,               /**< \brief Start of iocRun command */
     initHookAfterDatabaseRunning,
     initHookAfterCaServerRunning,
-    initHookAfterIocRunning,        /** \brief End of iocRun/iocInit commands */
+    initHookAfterIocRunning,        /**< \brief End of iocRun/iocInit commands */
 
-    initHookAtIocPause,             /** \brief Start of iocPause command */
+    initHookAtIocPause,             /**< \brief Start of iocPause command */
     initHookAfterCaServerPaused,
     initHookAfterDatabasePaused,
-    initHookAfterIocPaused,         /** \brief End of iocPause command */
+    initHookAfterIocPaused,         /**< \brief End of iocPause command */
 
-    initHookAtShutdown,             /** \brief Start of iocShutdown commands */
+    initHookAtShutdown,             /**< \brief Start of iocShutdown commands */
     initHookAfterCloseLinks,
-    initHookAfterStopScan,          /** \brief triggered only by unittest code.   testIocShutdownOk() */
-    initHookAfterStopCallback,      /** \brief triggered only by unittest code.   testIocShutdownOk() */
+    initHookAfterStopScan,          /**< \brief triggered only by unittest code.   testIocShutdownOk() */
+    initHookAfterStopCallback,      /**< \brief triggered only by unittest code.   testIocShutdownOk() */
     initHookAfterStopLinks,
-    initHookBeforeFree,             /** \brief triggered only by unittest code.   testIocShutdownOk() */
-    initHookAfterShutdown,          /** \brief End of iocShutdown commands */
-
-/**
- * Deprecated states, provided for backwards compatibility.
- * These states are announced at the same point they were before,
- * but will not be repeated if the IOC gets paused and restarted.
- */
-    initHookAfterInterruptAccept,   /** \brief After initHookAfterDatabaseRunning */
-    initHookAtEnd,                  /** \brief Before initHookAfterIocRunning */
+    initHookBeforeFree,             /**< \brief triggered only by unittest code.   testIocShutdownOk() */
+    initHookAfterShutdown,          /**< \brief End of iocShutdown commands */
+    initHookAfterInterruptAccept,   /**< \brief After initHookAfterDatabaseRunning */
+    initHookAtEnd,                  /**< \brief Before initHookAfterIocRunning */
 } initHookState;
 
-/** 
+/** \code {.cpp}
  * Any functions that are registered before iocInit reaches the desired state will be called when it reaches that state. 
  * The initHookName function returns a static string representation of the state passed into it which is intended for printing. The following skeleton code shows how to use this facility:
- *\n
- * static initHookFunction myHookFunction; \n
- *\n
- *int myHookInit(void) \n
- * { \n
- *  return(initHookRegister(myHookFunction)); \n
- *} \n
- * \n
- * static void myHookFunction(initHookState state) \n
- * { \n
- *  switch(state) { \n 
- *    case initHookAfterInitRecSup: \n
- *      ... \n
- *      break; \n
- *   case initHookAfterInterruptAccept: \n
- *      ... \n
- *      break; \n
- *    default: \n
- *      break; \n
- *  } \n
- * } \n
- * An arbitrary number of functions can be registered.
+ *
+ * static initHookFunction myHookFunction; 
+ *
+ *int myHookInit(void) 
+ * { 
+ *  return(initHookRegister(myHookFunction)); 
+ *} 
+ * 
+ * static void myHookFunction(initHookState state) 
+ * { 
+ *  switch(state) { 
+ *    case initHookAfterInitRecSup: 
+ *      ... 
+ *      break; 
+ *   case initHookAfterInterruptAccept: 
+ *      ... 
+ *      break; 
+ *    default: 
+ *      break; 
+ *  } 
+ * } 
+ * An arbitrary number of functions can be registered. 
+ * \endcode 
  */
 
 

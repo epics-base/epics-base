@@ -42,7 +42,7 @@
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
-static void epicsParmCleanupWIN32 ( void * praw );
+static void WINAPI epicsParmCleanupWIN32 ( void * praw );
 
 typedef struct win32ThreadGlobal {
     CRITICAL_SECTION mutex;
@@ -225,7 +225,7 @@ static void epicsParmCleanupDataWIN32 ( win32ThreadParam * pParm )
     }
 }
 
-static void epicsParmCleanupWIN32 ( void * praw )
+static void WINAPI epicsParmCleanupWIN32 ( void * praw )
 {
     win32ThreadParam * pParm = praw;
     win32ThreadGlobal * pGbl;

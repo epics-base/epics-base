@@ -66,17 +66,7 @@ unsigned epicsStdCall sockAddrToA (
     }
 
     if ( paddr->sa_family != AF_INET ) {
-        static const char * pErrStr = "<Ukn Addr Type>";
-        unsigned len = strlen ( pErrStr );
-        if ( len < bufSize ) {
-            strcpy ( pBuf, pErrStr );
-            return len;
-        }
-        else {
-            strncpy ( pBuf, "<Ukn Addr Type>", bufSize-1 );
-            pBuf[bufSize-1] = '\0';
-            return bufSize-1;
-        }
+        return sprintf(pBuf, "%.*s", (int)(bufSize-1), "<Ukn Addr Type>");
     }
     else {
         const struct sockaddr_in * paddr_in =
@@ -119,18 +109,7 @@ unsigned epicsStdCall sockAddrToDottedIP (
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
     if ( paddr->sa_family != AF_INET ) {
-        const char * pErrStr = "<Ukn Addr Type>";
-        unsigned errStrLen = strlen ( pErrStr );
-        if ( errStrLen < bufSize ) {
-            strcpy ( pBuf, pErrStr );
-            return errStrLen;
-        }
-        else {
-            unsigned reducedSize = bufSize - 1u;
-            strncpy ( pBuf, pErrStr, reducedSize );
-            pBuf[reducedSize] = '\0';
-            return reducedSize;
-        }
+        return sprintf(pBuf, "%.*s", (int)(bufSize-1), "<Ukn Addr Type>");
     }
     else {
         const struct sockaddr_in *paddr_in = ( const struct sockaddr_in * ) paddr;
@@ -144,7 +123,6 @@ unsigned epicsStdCall sockAddrToDottedIP (
 unsigned epicsStdCall ipAddrToDottedIP ( 
     const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize )
 {
-    static const char * pErrStr = "<IPA>";
     unsigned chunk[nDigitsDottedIP];
     unsigned addr = ntohl ( paddr->sin_addr.s_addr );
     unsigned strLen;
@@ -174,15 +152,6 @@ unsigned epicsStdCall ipAddrToDottedIP (
             return strLen;
         }
     }
-    strLen = strlen ( pErrStr );
-    if ( strLen < bufSize ) {
-        strcpy ( pBuf, pErrStr );
-        return strLen;
-    }
-    else {
-        strncpy ( pBuf, pErrStr, bufSize );
-        pBuf[bufSize-1] = '\0';
-        return bufSize - 1u;
-    }
+    return sprintf(pBuf, "%.*s", (int)(bufSize-1), "<IPA>");
 }
 

@@ -250,25 +250,13 @@ size_t epicsStdCall epicsTimeToStrftime (char *pBuff, size_t bufLength, const ch
                     }
                 }
                 else {
-                    static const char pOVF [] = "OVF";
-                    size_t tmpLen = sizeof ( pOVF ) - 1;
-                    if ( tmpLen >= bufLenLeft ) {
-                        tmpLen = bufLenLeft - 1;
-                    }
-                    strncpy ( pBufCur, pOVF, tmpLen );
-                    pBufCur[tmpLen] = '\0';
+                    size_t tmpLen = sprintf ( pBufCur, "%.*s", (int)(bufLenLeft-1), "OVF");
                     pBufCur += tmpLen;
                     bufLenLeft -= tmpLen;
                 }
             }
             else {
-                static const char pDoesntFit [] = "************";
-                size_t tmpLen = sizeof ( pDoesntFit ) - 1;
-                if ( tmpLen >= bufLenLeft ) {
-                    tmpLen = bufLenLeft - 1;
-                }
-                strncpy ( pBufCur, pDoesntFit, tmpLen );
-                pBufCur[tmpLen] = '\0';
+                size_t tmpLen = sprintf ( pBufCur, "%.*s", (int)(bufLenLeft-1), "************");
                 pBufCur += tmpLen;
                 bufLenLeft -= tmpLen;
                 break;

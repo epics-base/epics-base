@@ -5,6 +5,9 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+#include <stdlib.h>
+
+#include "cantProceed.h"
 #include "dbUnitTest.h"
 #include "testMain.h"
 #include "dbLock.h"
@@ -91,7 +94,7 @@ void
 writeToWaveform(DBADDR *addr, long count, ...) {
     va_list args;
     long i;
-    double values[count];
+    double *values = (double *)callocMustSucceed(count, sizeof(double), "writeToWaveform");
 
     va_start(args, count);
     for (i=0; i< count; i++) {
@@ -102,6 +105,7 @@ writeToWaveform(DBADDR *addr, long count, ...) {
     dbScanLock(addr->precord);
     dbPut(addr, DBR_DOUBLE, values, count);
     dbScanUnlock(addr->precord);
+    free(values);
 }
 
 static

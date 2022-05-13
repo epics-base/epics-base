@@ -128,6 +128,11 @@ sub add_record {
 sub record_names {
     return @{shift->{RECORDS}};
 }
+sub sort_records {
+    my $this = shift;
+    my @sorted = sort @{$this->{RECORDS}};
+    $this->{RECORDS} = \@sorted;
+}
 
 sub registrars {
     return shift->{'DBD::Registrar'};

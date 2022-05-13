@@ -375,7 +375,6 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
  */
 
 #ifdef AF_INET6
-#include <sys/select.h>
 #define POLLIN  0x1
 //#define POLLOUT 0x2 not implemented yet
 struct osiSockPollfd {

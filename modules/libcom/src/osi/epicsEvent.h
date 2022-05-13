@@ -212,7 +212,7 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout(
  *
  * \return Status indicator.
  **/
-LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout(
+LIBCOM_API epicsEventStatus epicsEventWaitUntil(
     epicsEventId id, const epicsTimeStamp * abs_timeout);
 
 /**\brief Similar to wait() except that if the event is currently empty the

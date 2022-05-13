@@ -154,7 +154,7 @@ epicsEventWaitWithTimeout(epicsEventId id, double timeout)
 }
 
 epicsEventStatus
-epicsEventWaitWithAbsTimeout(epicsEventId id, const epicsTimeStamp *abs_timeout)
+epicsEventWaitUntil(epicsEventId id, const epicsTimeStamp *abs_timeout)
 {
     struct timespec   now, ts;
     double            delay;

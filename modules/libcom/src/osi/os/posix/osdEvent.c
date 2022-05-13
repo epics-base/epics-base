@@ -144,7 +144,7 @@ release:
     return result;
 }
 
-LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout(epicsEventId pevent,
+LIBCOM_API epicsEventStatus epicsEventWaitUntil(epicsEventId pevent,
     const epicsTimeStamp * abs_timeout)
 {
     epicsEventStatus result = epicsEventOK;
@@ -158,7 +158,7 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout(epicsEventId pevent,
 
     status = pthread_mutex_lock(&pevent->mutex);
 
-    checkStatusReturn(status, "pthread_mutex_lock", "epicsEventWaitWithAbsTimeout");
+    checkStatusReturn(status, "pthread_mutex_lock", "epicsEventWaitUntil");
     if (!pevent->isFull) {
         while (!status && !pevent->isFull) {
             status = pthread_cond_timedwait(&pevent->cond, &pevent->mutex, &ts);
@@ -172,7 +172,7 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout(epicsEventId pevent,
     pevent->isFull = 0;
 release:
     status = pthread_mutex_unlock(&pevent->mutex);
-    checkStatusReturn(status, "pthread_mutex_unlock", "epicsEventWaitWithAbsTimeout");
+    checkStatusReturn(status, "pthread_mutex_unlock", "epicsEventWaitUntil");
     return result;
 }
 

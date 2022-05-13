@@ -146,9 +146,9 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
 }
 
 /*
- * epicsEventWaitWithAbsTimeout ()
+ * epicsEventWaitUntil ()
  */
-LIBCOM_API epicsEventStatus epicsEventWaitWithAbsTimeout (
+LIBCOM_API epicsEventStatus epicsEventWaitUntil (
     epicsEventId pSem, const epicsTimeStamp *abs_timeout)
 {
     /* waitable timers use 100 nanosecond intervals, like FILETIME */

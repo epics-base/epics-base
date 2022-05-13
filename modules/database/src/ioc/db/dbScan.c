@@ -86,7 +86,6 @@ epicsPeriod    p;
 epicsTimeStamp ts;
     ts.secPastEpoch = 0;
     ts.nsec         = 0;
-	p.nsec = 0;
     epicsTimeAddSeconds( &ts, d );
 	p.sec  = (epicsInt32)ts.secPastEpoch;
     p.nsec = (epicsInt32)ts.nsec;
@@ -871,7 +870,7 @@ static void periodicTask(void *arg)
             overtime = 0.0;
         }
 
-        epicsEventWaitWithAbsTimeout(ppsl->loopEvent, &next);
+        epicsEventWaitUntil(ppsl->loopEvent, &next);
     }
 
     taskwdRemove(0);

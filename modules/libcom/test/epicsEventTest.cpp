@@ -162,7 +162,7 @@ static double eventWaitCheckDelayError( const epicsEventId &id, const double & d
     epicsTime beg = epicsTime::getMonotonic();
     if ( absWait ) {
         epicsTimeStamp ts = epicsTime::getCurrent() + delay;
-        epicsEventWaitWithAbsTimeout ( id, &ts );
+        epicsEventWaitUntil ( id, &ts );
     } else {
         epicsEventWaitWithTimeout ( id, delay );
     }

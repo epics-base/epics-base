@@ -16,6 +16,15 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### `dbExpand.pl` Sorts by Record Name
+
+Records are now output by this program in order, sorted by name. The new flag
+`-s` can be given to output the records in the same order they were read in,
+instead of sorting them.
+
+Note that there are currently no build rules provided with Base which make use
+of this program.
+
 ### Simulation Mode RAW Support for Output Record Types
 
 SIMM=RAW support has been added for the relevant output record types

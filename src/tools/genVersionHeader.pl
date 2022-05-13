@@ -89,7 +89,7 @@ if (!$vcs && -d "$opt_t/.git") { # Git
         $opt_V = $result;
         $vcs = 'Git';
     }
-    $cv = `git log -1 --format=%ct HEAD`;
+    $cv = `git show -s --format=%ci HEAD`;
 }
 if (!$vcs && -d "$opt_t/.svn") { # Subversion
     print "== Found <top>/.svn directory\n" if $opt_v;
@@ -131,7 +131,7 @@ if (!$vcs) {
 }
 
 chomp $cv;
-$opt_C=$cv;
+$opt_C=$vcs . ': ' . $cv;
 
 my $output = << "__END";
 /* Generated file, do not edit! */

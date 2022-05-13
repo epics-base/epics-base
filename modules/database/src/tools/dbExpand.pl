@@ -22,10 +22,10 @@ use EPICS::Getopts;
 use EPICS::Readfile;
 use EPICS::macLib;
 
-our ($opt_D, @opt_I, @opt_S, $opt_o, $opt_V);
+our ($opt_D, @opt_I, @opt_S, $opt_o, $opt_s, $opt_V);
 
-getopts('DI@S@o:V') or
-    die "Usage: dbExpand [-D] [-I dir] [-S macro=val] [-o out.db] in.dbd in.db ...";
+getopts('DI@S@so:V') or
+    die "Usage: dbExpand [-D] [-I dir] [-S macro=val] [-s] [-o out.db] in.dbd in.db ...";
 
 my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 my $macros = EPICS::macLib->new(@opt_S);
@@ -73,6 +73,9 @@ if ($opt_D) {   # Output dependencies only, ignore errors
 }
 
 die "dbExpand.pl: Exiting due to errors\n" if $errors;
+
+$dbd->sort_records
+    unless $opt_s;
 
 my $out;
 if ($opt_o) {

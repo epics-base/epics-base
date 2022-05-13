@@ -42,7 +42,7 @@ sub OutputDBD {
 
 sub OutputDB {
     my ($out, $dbd) = @_;
-    OutputRecords($out, $dbd->records);
+    OutputRecords($out, $dbd);
 }
 
 sub OutputMenus {
@@ -123,9 +123,11 @@ sub OutputBreaktables {
 }
 
 sub OutputRecords {
-    my ($out, $records) = @_;
-    while (my ($name, $rec) = each %{$records}) {
-        next if $name ne $rec->name; # Alias
+    my ($out, $dbd) = @_;
+    foreach my $name ($dbd->record_names) {
+        my $rec = $dbd->record($name);
+        die "No record '$name'"
+            unless $rec && $rec->isa('DBD::Record');
         printf $out "record(%s, \"%s\") {\n", $rec->recordtype->name, $name;
         printf $out "    alias(\"%s\")\n", $_
             foreach $rec->aliases;

@@ -57,8 +57,7 @@ if (!$vcs && -d "$opt_t/_darcs") { # Darcs
         my $hasmod = `darcs whatsnew --repodir="$opt_t" -l`;
         $opt_V .= '-dirty' unless $?;
     }
-    # this is untested
-    $cv = `darcs optimize --reorder; darcs changes --context | sort | md5sum`;
+    $cv = `darcs optimize --reorder; darcs changes --context | sort | md5sum`; # this is untested
 }
 if (!$vcs && -d "$opt_t/.hg") { # Mercurial
     print "== Found <top>/.hg directory\n" if $opt_v;

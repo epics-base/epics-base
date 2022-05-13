@@ -15,12 +15,12 @@ ca_version = configure_file(
 
 perl_prog = find_program('perl', required: true)
 api_header = custom_target(
- 'libCaAPI',
- input: ['../../src/tools/makeAPIheader.pl'],
- output: 'libCaAPI.h',
- command: [perl_prog, '@INPUT0@', '-o', '@OUTPUT@', 'libCa'],
- install: true,
- install_dir: get_option('includedir'),
+  'libCaAPI',
+  input: ['../../src/tools/makeAPIheader.pl'],
+  output: 'libCaAPI.h',
+  command: [perl_prog, '@INPUT0@', '-o', '@OUTPUT@', 'libCa'],
+  install: true,
+  install_dir: get_option('includedir'),
 )
 
 headers = [
@@ -109,7 +109,7 @@ foreach e : [
   ['camonitor', 'src/tools/camonitor.c'],
 ]
   executable(
-    e[0],
+    [e[0], api_header],
     [e[1], 'src/tools/tool_lib.c'],
     include_directories: 'src/tools',
     dependencies: [epics_ca_dep, epics_com_dep],

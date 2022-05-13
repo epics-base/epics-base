@@ -16,8 +16,6 @@ use lib "$Bin/../../lib/perl";
 
 use EPICS::Getopts;
 use POSIX qw(strftime);
-use Time::ParseDate;
-use Date::Parse;
 
 use strict;
 
@@ -59,9 +57,8 @@ if (!$vcs && -d "$opt_t/_darcs") { # Darcs
         my $hasmod = `darcs whatsnew --repodir="$opt_t" -l`;
         $opt_V .= '-dirty' unless $?;
     }
+    # this is untested
     $cv = `darcs optimize --reorder; darcs changes --context | sort | md5sum`;
-#    $cm = `darcs show repo --no-files`;
-#    $cm = `darcs pull --dry-run`;
 }
 if (!$vcs && -d "$opt_t/.hg") { # Mercurial
     print "== Found <top>/.hg directory\n" if $opt_v;
@@ -78,7 +75,7 @@ if (!$vcs && -d "$opt_t/.hg") { # Mercurial
         chomp $hasmod;
         $opt_V .= '-dirty' if $hasmod ne '';
     }
-    $cv = `hg log -l1 --template '{date(date, "%s")}'`
+    $cv = `hg log -l1 --template '{date(date, "%s")}'` # this is untested
 }
 if (!$vcs && -d "$opt_t/.git") { # Git
     print "== Found <top>/.git directory\n" if $opt_v;
@@ -120,7 +117,7 @@ if (!$vcs && -d "$opt_t/.bzr") { # Bazaar
         $opt_V = $result;
         $vcs = 'Bazaar';
     }
-    # bzr is skipped here
+    $cv = `bzr version-info -q -timestamp`;  # this is untested
 }
 if (!$vcs) {
     print "== No VCS directories\n" if $opt_v;
@@ -145,7 +142,7 @@ my $output = << "__END";
   #define $opt_N \"$opt_V\"
 #endif
 #ifndef $opt_T
-  #define ${opt_N}_DATE $opt_C
+  #define ${opt_N}_DATE \"$opt_C\"
 #endif
 __END
 

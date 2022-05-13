@@ -68,13 +68,14 @@ typedef enum {
     initHookAtEnd,                  /**< \brief Before initHookAfterIocRunning */
 } initHookState;
 
-/** \code {.cpp}
+/** 
  * Any functions that are registered before iocInit reaches the desired state will be called when it reaches that state. 
  * The initHookName function returns a static string representation of the state passed into it which is intended for printing. The following skeleton code shows how to use this facility:
  *
  * static initHookFunction myHookFunction; 
  *
- *int myHookInit(void) 
+ * \code{.cpp}
+ * int myHookInit(void) 
  * { 
  *  return(initHookRegister(myHookFunction)); 
  *} 
@@ -92,8 +93,8 @@ typedef enum {
  *      break; 
  *  } 
  * } 
- * An arbitrary number of functions can be registered. 
  * \endcode 
+ * An arbitrary number of functions can be registered.
  */
 
 

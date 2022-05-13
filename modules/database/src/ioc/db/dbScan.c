@@ -63,7 +63,8 @@ static volatile enum ctl scanCtl;
  * but we want to do integer arithmetic...
  */
 typedef struct epicsPeriod {
-    epicsTimeStamp ts;
+    epicsInt32 sec;
+    epicsInt32 nsec;
 } epicsPeriod;
 
 #define ONE_SEC (1000UL * 1000UL * 1000UL)
@@ -71,8 +72,8 @@ typedef struct epicsPeriod {
 /* a += p */
 static void tsAddPeriod(epicsTimeStamp *a, const epicsPeriod *p)
 {
-    a->secPastEpoch += p->ts.secPastEpoch;
-    a->nsec         += p->ts.nsec;
+    a->secPastEpoch += p->sec;
+    a->nsec         += p->nsec;
     if ( a->nsec >= ONE_SEC ) {
         a->nsec         -= ONE_SEC;
         a->secPastEpoch += 1;
@@ -81,10 +82,14 @@ static void tsAddPeriod(epicsTimeStamp *a, const epicsPeriod *p)
 
 static epicsPeriod periodFromDouble(double d)
 {
-epicsPeriod p;
-	p.ts.secPastEpoch = 0;
-	p.ts.nsec         = 0;
-    epicsTimeAddSeconds( &p.ts, d );
+epicsPeriod    p;
+epicsTimeStamp ts;
+    ts.secPastEpoch = 0;
+    ts.nsec         = 0;
+	p.nsec = 0;
+    epicsTimeAddSeconds( &ts, d );
+	p.sec  = (epicsInt32)ts.secPastEpoch;
+    p.nsec = (epicsInt32)ts.nsec;
     return p;
 }
 

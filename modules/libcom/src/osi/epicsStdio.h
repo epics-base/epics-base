@@ -19,6 +19,9 @@
  * functions snprintf() and vsnprintf(), but correct the behavior of the
  * implementations on some operating systems.
  *
+ * @note Define `epicsStdioStdStreams` and/or `epicsStdioStdPrintfEtc`
+ *       to opt out of the redirection described below.
+ *
  * The routines epicsGetStdin(), epicsGetStdout(), epicsGetStderr(),
  * epicsStdoutPrintf(), epicsStdoutPuts(), and epicsStdoutPutchar()
  * are not normally named directly in user code. They are provided for use by
@@ -43,6 +46,12 @@
  * basis, e.g. calling epicsThreadStdout() will affect only the thread which
  * calls it. To cancel a stream redirection, pass a NULL argument in another
  * call to the same redirection routine that was used to set it.
+ *
+ * @since 3.15.6 define `epicsStdioStdPrintfEtc` to opt out of redefinition
+ *        for `printf`, `vprintf`, `puts`, and `putchar`.
+ *
+ * @since 3.15.0 define `epicsStdioStdStreams` to opt out of redefinition
+ *        of `stdin`, `stdout`, and `stderr`.
  */
 
 #ifndef epicsStdioh

@@ -182,8 +182,9 @@ The WPDT field is a private field for honoring seconds to hold HIGH.
 
 The following fields are used to operate the record in simulation mode.
 
-If SIMM (fetched through SIML) is YES, the record is put in SIMS
-severity and the value is written through SIOL.
+If SIMM (fetched through SIML, if populated) is YES, the record is put
+in SIMS severity and the unconverted value is written through SIOL.
+If SIMM is RAW, the value is converted and RVAL is written.
 SSCN sets a different SCAN mechanism to use in simulation mode.
 SDLY sets a delay (in sec) that is used for asynchronous simulation
 processing.
@@ -328,7 +329,7 @@ for more information on simulation mode and its fields.
 		prompt("Simulation Mode")
 		special(SPC_MOD)
 		interest(1)
-		menu(menuYesNo)
+                menu(menuSimm)
 	}
 	field(SIMS,DBF_MENU) {
 		prompt("Simulation Mode Severity")

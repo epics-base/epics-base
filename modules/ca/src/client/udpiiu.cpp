@@ -208,7 +208,7 @@ udpiiu::udpiiu (
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAC: failed to set mcast ttl %d sock=%d\n", ttl, (int)this->sock4);
+          errlogPrintf("CAC: failed to set mcast ttl %d sock=%d\n", (int)ttl, (int)this->sock4);
         }
     }
 #endif

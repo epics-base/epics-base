@@ -79,7 +79,7 @@ for each desired output link. Only those that are defined are used.
 When the sequence record is processed, it uses a selection algorithm similar to
 that of the selection record to decide which links to process.The select
 mechanism field (SELM) has three algorithms to choose from: C<<< All >>>,
-C<<<Specified >>> or C<<< Mask >>>.
+C<<< Specified >>> or C<<< Mask >>>.
 
 =head4 Record fields related to the Selection Algorithm
 
@@ -102,23 +102,26 @@ process can be dynamically changed by the record pointed by SELL.
 
 B<SELN - Link Selection>
 
-When B<C<SELM = Specified>> this is the index number of the link that will be
-processed, used in combination with the C<OFFS> field:
+When B<SELM> has the value C<Specified> the B<SELN> field sets the index number
+of the link that will be processed, after adding the B<OFFS> field:
 
-  SELN = SELN + OFFS
+=over
 
-I<(By default, the OFFS field is initialized to ZERO)>
+LNKI<n> where I<n> = C<SELN + OFFS>
 
-When B<C<SELM = Mask>> this field is the bitmask that will be used to determine
-which links will be processed by the seq record,
-in combination with the C<SHFT> field:
+=back
+
+I<(If not set, the OFFS field is ZERO)>
+
+When B<SELM> has the value C<Mask> the B<SELN> field provides the bitmask that
+determines which links will be processed, after shifting by B<SHFT> bits:
 
   if (SHFT >= 0)
-    SELN = SELN << -SHFT
+    bits = SELN >> SHFT
   else
-    SELN = SELN >> SHFT
+    bits = SELN << -SHFT
 
-I<(By default, the SHFT field is initialized to -1)>
+I<(If not set, the SHFT field is -1 so bits from SELN are shifted left by 1)>
 
 =head4 B<Note about SHFT and OFFS fields>
 

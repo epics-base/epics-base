@@ -461,8 +461,6 @@ static void helpCallFunc(const iocshArgBuf *args)
     if (argc == 1) {
         int l, col = 0;
 
-        fprintf(epicsGetStdout(),
-            "Type 'help <command>' to see the arguments of <command>.\n");
         iocshTableLock ();
         for (pcmd = iocshCommandHead ; pcmd != NULL ; pcmd = pcmd->next) {
             piocshFuncDef = pcmd->def.pFuncDef;
@@ -487,6 +485,10 @@ static void helpCallFunc(const iocshArgBuf *args)
         if (col)
             fputc('\n', epicsGetStdout());
         iocshTableUnlock ();
+
+        fprintf(epicsGetStdout(),
+                "\n"
+                "Type 'help <command>' to see the arguments of <command>.  eg. 'help db*'\n");
     }
     else {
         for (int iarg = 1 ; iarg < argc ; iarg++) {
@@ -496,7 +498,10 @@ static void helpCallFunc(const iocshArgBuf *args)
                     if(piocshFuncDef->usage) {
                         fputs("\nUsage: ", epicsGetStdout());
                     }
-                    fputs(piocshFuncDef->name, epicsGetStdout());
+                    fprintf(epicsGetStdout(),
+                            ANSI_BOLD("%s"),
+                            piocshFuncDef->name);
+
                     for (int a = 0 ; a < piocshFuncDef->nargs ; a++) {
                         const char *cp = piocshFuncDef->arg[a]->name;
                         if ((piocshFuncDef->arg[a]->type == iocshArgArgv)

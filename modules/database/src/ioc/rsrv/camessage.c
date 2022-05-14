@@ -2421,16 +2421,16 @@ int validate_camessage ( caHdrLargeArray msg )
             break;
         case CA_PROTO_WRITE:
         case CA_PROTO_WRITE_NOTIFY:
-            if ( msg.m_dataType > LAST_BUFFER_TYPE + 16 ) return 0; 
+            if ( msg.m_dataType > LAST_BUFFER_TYPE + 16 ) return 0;
             break;
         case CA_PROTO_SEARCH:
             // m.count is interpreted as version minor for CA_PROTO_SEARCH
-            if ( msg.m_count > CA_LAST_MINOR + 3 ) return 0; 
+            if ( msg.m_count > CA_LAST_MINOR + 3 ) return 0;
             break;
         case CA_PROTO_CREATE_CHAN:
         case CA_PROTO_CLIENT_NAME:
         case CA_PROTO_HOST_NAME:
-            if ( msg.m_dataType != 0 ) return 0; 
+            if ( msg.m_dataType != 0 ) return 0;
             break;
         case CA_PROTO_ERROR:
         case CA_PROTO_RSRV_IS_UP:
@@ -2550,7 +2550,6 @@ int camessage ( struct client *client )
                 status = RSRV_OK;
                 break;
             }
-
             msg.m_postsize  = ntohl ( pLW[0] ); /* payload size on extended form headers */
             msg.m_count     = ntohl ( pLW[1] ); /* Data count on extended form headers */
             msgsize = msg.m_postsize + sizeof(*mp) + 2 * sizeof ( *pLW );

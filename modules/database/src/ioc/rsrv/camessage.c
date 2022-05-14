@@ -2551,9 +2551,7 @@ int camessage ( struct client *client )
                 break;
             }
 
-            ca_uint32_t new_postsize = ntohl ( pLW[0] ); /* payload size on extended form headers */
-
-            msg.m_postsize  = new_postsize;
+            msg.m_postsize  = ntohl ( pLW[0] ); /* payload size on extended form headers */
             msg.m_count     = ntohl ( pLW[1] ); /* Data count on extended form headers */
             msgsize = msg.m_postsize + sizeof(*mp) + 2 * sizeof ( *pLW );
             pBody = ( void * ) ( pLW + 2 );

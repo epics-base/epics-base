@@ -2391,6 +2391,75 @@ static const pProtoStubUDP udpJumpTable[] =
 };
 
 /*
+ * validate_camessage()
+ *
+ * Returns zero if message header is invalid.
+ * The function accepts 16 more commands, 16 more buffer types, and 3 more
+ * minor protocol versions then what is implemented currently to accomodate
+ * newer versions of clients to access the server without being disconnected. 
+ */
+int validate_camessage ( caHdrLargeArray msg )
+{
+    if (msg.m_cmmd > CA_PROTO_LAST_CMMD + 16) {
+        return 0;
+    }
+
+    switch ( msg.m_cmmd ) {
+        case CA_PROTO_VERSION:
+        case CA_PROTO_EVENT_CANCEL:
+        case CA_PROTO_READ:
+        case CA_PROTO_EVENTS_OFF:
+        case CA_PROTO_EVENTS_ON:
+        case CA_PROTO_READ_SYNC:
+        case CA_PROTO_CLEAR_CHANNEL:
+        case CA_PROTO_READ_NOTIFY:
+        case CA_PROTO_ECHO:
+        case REPEATER_REGISTER:
+            if ( msg.m_postsize != 0 ) return 0;
+            break;
+        case CA_PROTO_EVENT_ADD:
+            if ( msg.m_postsize != 16 ) return 0;
+            break;
+        case CA_PROTO_WRITE:
+        case CA_PROTO_WRITE_NOTIFY:
+            if ( msg.m_dataType > LAST_BUFFER_TYPE + 16 ) return 0; 
+            break;
+        case CA_PROTO_SEARCH:
+            // m.count is interpreted as version minor for CA_PROTO_SEARCH
+            if ( msg.m_count > CA_LAST_MINOR + 3 ) return 0; 
+            break;
+        case CA_PROTO_CREATE_CHAN:
+        case CA_PROTO_CLIENT_NAME:
+        case CA_PROTO_HOST_NAME:
+            if ( msg.m_dataType != 0 ) return 0; 
+            break;
+        case CA_PROTO_ERROR:
+        case CA_PROTO_RSRV_IS_UP:
+        case CA_PROTO_NOT_FOUND:
+        case REPEATER_CONFIRM:
+        case CA_PROTO_ACCESS_RIGHTS:
+        case CA_PROTO_CREATE_CH_FAIL:
+        case CA_PROTO_SERVER_DISCONN:
+            // These commands are only sent from server to client, so receiving it
+            // here may indicate a non-CA client trying to access the server.
+            return 0;
+            break;
+        // We accept deprecated commands as valids for the point of view of message
+        // header validation. These are a weakness, as a non-CA client sending a
+        // message that, by chance, corresponds to the commands below will succeed
+        // on having the message further processed.
+        case CA_PROTO_SNAPSHOT:
+        case CA_PROTO_BUILD:
+        case CA_PROTO_READ_BUILD:
+        case CA_PROTO_SIGNAL:
+            return 1;
+            break;
+    }
+
+    return 1;
+}
+
+/*
  * CAMESSAGE()
  */
 int camessage ( struct client *client )
@@ -2438,6 +2507,14 @@ int camessage ( struct client *client )
         msg.m_cid       = ntohl ( mp->m_cid );
         msg.m_available = ntohl ( mp->m_available );
 
+        /* Disconnect if a non-CA client is trying to communicate */
+        if ( ! validate_camessage(msg) ) {
+            log_header ( "CAS: Invalid channel access message rejected",
+                client, &msg, 0, nmsg );
+            status = RSRV_ERROR;
+            break;
+        }
+
         /* Reject invalid commands */
         if (msg.m_cmmd > CA_PROTO_LAST_CMMD) {
             /* Log and send the error only to TCP clients. Silently ignore UDP clients */
@@ -2462,10 +2539,11 @@ int camessage ( struct client *client )
 
         /*
          * Calculate the message size, and update the pointer to the message payload area.
-         * Also, if the message is using the extended form, extract the the correct payload size
+         * Also, if the message is using the extended form, extract the correct payload size
          * and data count from the extended message header, and update m_postsize and m_count.
          *
-         * Disconnect client that send an invalid payload size.
+         * As the last protocol specification states, to identify extended messages,
+         * m_postsize must be set at 0xffff and m_count to zero.
          */
         if (CA_V49(client->minor_version_number) && msg.m_postsize==0xffff && msg.m_count==0) {
             ca_uint32_t *pLW = ( ca_uint32_t * ) ( mp + 1 );
@@ -2474,18 +2552,7 @@ int camessage ( struct client *client )
                 break;
             }
 
-            /*
-             * For >= CA_V49 using the extended message form, the maximum message size is
-             * 0xffffffff bytes. The header is 0x18 bytes, so the maximum payload size is
-             * 0xffffffe7.
-             */
             ca_uint32_t new_postsize = ntohl ( pLW[0] ); /* payload size on extended form headers */
-            if (new_postsize > 0xffffffe7) {
-                log_header ( "CAS: Invalid payload size rejected",
-                    client, &msg, 0, nmsg );
-                status = RSRV_ERROR;
-                break;
-            }
 
             msg.m_postsize  = new_postsize;
             msg.m_count     = ntohl ( pLW[1] ); /* Data count on extended form headers */
@@ -2493,17 +2560,6 @@ int camessage ( struct client *client )
             pBody = ( void * ) ( pLW + 2 );
         }
         else {
-            /*
-             * For < CA_V49, or higher but using the standard message form, the maximum
-             * message size is 0x4000 bytes. The header is 0x10 bytes, so the maximum
-             * payload size is 0x3ff0.
-             */
-            if (msg.m_postsize > 0x3ff0) {
-                log_header ( "CAS: Invalid payload size rejected",
-                    client, &msg, 0, nmsg );
-                status = RSRV_ERROR;
-                break;
-            }
             msgsize = msg.m_postsize + sizeof(*mp);
             pBody = ( void * ) ( mp + 1 );
         }

@@ -12,15 +12,15 @@
 #define INC_registryDeviceSupport_H
 
 #include "devSup.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc int registryDeviceSupportAdd(
+DBCORE_API int registryDeviceSupportAdd(
     const char *name, const dset *pdset);
-epicsShareFunc dset * registryDeviceSupportFind(
+DBCORE_API dset * registryDeviceSupportFind(
     const char *name);
 
 #ifdef __cplusplus

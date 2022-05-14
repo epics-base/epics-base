@@ -67,11 +67,12 @@ The record-specific fields are described below, grouped by functionality.
 =head3 Scanning Parameters
 
 The compression record has the standard fields for specifying under what
-circumstances the record will be processed. These fields are listed in
+circumstances the record will be processed. Since  the compression record
+supports no direct interfaces to hardware, its SCAN field cannot be set to C<<<
+I/O Intr >>>.
+These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
-L<Scan Fields|dbCommonRecord/Scan Fields>. In addition, L<Scanning Specification>
-explains how these fields are used. Since  the compression record supports no
-direct interfaces to hardware, its SCAN field cannot specify C<<< I/O Intr >>>.
+=fields SCAN, PHAS, EVNT, PRIO, PINI
 
 =head3 Algorithms and Related Parameters
 
@@ -88,9 +89,11 @@ The following fields determine what channel to read and how to compress the data
 
 As stated above, the ALG field specifies which algorithm to be performed on the data.
 
-The INP should be a database or channel access link. Though INP can be a constant,
-the data compression algorithms are supported only when INP is a database link. See
-L<Address Specification> for information on specifying links.
+The INP should be a database or channel access link. Though INP can be a
+constant, the data compression algorithms are supported only when INP is a
+database link. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on specifying links.
 
 
 IHIL and ILIL can be set to provide an initial value filter on the input array.

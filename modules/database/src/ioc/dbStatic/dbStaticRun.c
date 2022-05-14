@@ -23,7 +23,6 @@
 #include "epicsTypes.h"
 #include "errMdef.h"
 
-#include "epicsExport.h" /* #define epicsExportSharedSymbols */
 #include "dbBase.h"
 #include "dbCommonPvt.h"
 #include "dbStaticLib.h"
@@ -31,6 +30,7 @@
 #include "dbAccess.h"
 #include "devSup.h"
 #include "special.h"
+#include "epicsExport.h"
 
 int dbConvertStrict = 0;
 epicsExportAddress(int, dbConvertStrict);
@@ -217,7 +217,7 @@ char *dbRecordName(DBENTRY *pdbentry)
 
 int dbIsMacroOk(DBENTRY *pdbentry) { return(FALSE); }
 
-epicsShareFunc int dbIsDefaultValue(DBENTRY *pdbentry)
+DBCORE_API int dbIsDefaultValue(DBENTRY *pdbentry)
 {
     dbFldDes *pflddes = pdbentry->pflddes;
     void *pfield = pdbentry->pfield;
@@ -508,7 +508,7 @@ long dbPutStringNum(DBENTRY *pdbentry, const char *pstring)
     }
 }
 
-epicsShareFunc int dbGetMenuIndex(DBENTRY *pdbentry)
+DBCORE_API int dbGetMenuIndex(DBENTRY *pdbentry)
 {
     dbFldDes *pflddes = pdbentry->pflddes;
     void *pfield = pdbentry->pfield;
@@ -527,7 +527,7 @@ epicsShareFunc int dbGetMenuIndex(DBENTRY *pdbentry)
     return -1;
 }
 
-epicsShareFunc long dbPutMenuIndex(DBENTRY *pdbentry, int index)
+DBCORE_API long dbPutMenuIndex(DBENTRY *pdbentry, int index)
 {
     dbFldDes *pflddes = pdbentry->pflddes;
     epicsEnum16 *pfield = pdbentry->pfield;

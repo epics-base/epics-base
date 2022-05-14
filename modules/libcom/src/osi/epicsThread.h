@@ -15,7 +15,7 @@
  * \brief C++ and C descriptions for a thread.
  *
  * The epicsThread API is meant as a somewhat minimal interface for
- * multithreaded applications. It can be implementedon a wide variety of
+ * multithreaded applications. It can be implemented on a wide variety of
  * systems with the restriction that the system MUST support a
  * multithreaded environment.
  * A POSIX pthreads version is provided.
@@ -59,6 +59,7 @@
 #include <stddef.h>
 
 #include "libComAPI.h"
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -142,8 +143,12 @@ LIBCOM_API void epicsThreadRealtimeLock(void);
  * call this routine. This should be the last call in main, except the
  * final return. On most systems epicsThreadExitMain never returns.This
  * must only be called by the main thread.
+ *
+ * @deprecated Deprecated for lack of use.  Please report any usage.
+ * Recommended replacement is loop + epicsThreadSleep(),
+ * epicsEventMustWait(), or similar.
  **/
-LIBCOM_API void epicsStdCall epicsThreadExitMain(void);
+LIBCOM_API void epicsStdCall epicsThreadExitMain(void) EPICS_DEPRECATED;
 
 /** For use with epicsThreadCreateOpt() */
 typedef struct epicsThreadOpts {

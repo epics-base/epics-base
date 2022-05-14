@@ -8,8 +8,11 @@
 
 #include <string.h>
 
+#define EPICS_DBCA_PRIVATE_API
+
 #include "dbAccess.h"
 #include "dbStaticLib.h"
+#include "dbCa.h"
 #include "dbTest.h"
 #include "dbUnitTest.h"
 #include "epicsThread.h"
@@ -60,14 +63,17 @@ void testGroup0(void)
 
     testDiag("============ Starting %s ============", EPICS_FUNCTION);
 
-    testdbPutFieldOk("source", DBR_LONG, 1);
-    /* The above put sends CA monitors to all of the CA links, but
-     * doesn't trigger record processing (the links are not CP/CPP).
-     * How could we wait until all of those monitors have arrived,
-     * instead of just waiting for an arbitrary time period?
-     */
-    epicsThreadSleep(1.0);  /* FIXME: Wait here? */
     for (rec = records; *rec; rec++) {
+        DBLINK* plink = dbGetDevLink(testdbRecordPtr(*rec));
+        if(plink->type==CA_LINK)
+            testdbCaWaitForUpdateCount(plink, 1);
+    }
+
+    testdbPutFieldOk("source", DBR_LONG, 1);
+    for (rec = records; *rec; rec++) {
+        DBLINK* plink = dbGetDevLink(testdbRecordPtr(*rec));
+        if(plink->type==CA_LINK)
+            testdbCaWaitForUpdateCount(plink, 2);
         if (strncmp(*rec, "lsi0", 4) != 0)
             testdbGetFieldEqual(*rec, DBR_LONG, 0);
         checkDtyp(*rec);
@@ -76,8 +82,10 @@ void testGroup0(void)
     }
 
     testdbPutFieldOk("source", DBR_LONG, 0);
-    epicsThreadSleep(1.0);  /* FIXME: Wait here as above */
     for (rec = records; *rec; rec++) {
+        DBLINK* plink = dbGetDevLink(testdbRecordPtr(*rec));
+        if(plink->type==CA_LINK)
+            testdbCaWaitForUpdateCount(plink, 3);
         doProcess(*rec);
         testdbGetFieldEqual(*rec, DBR_LONG, 0);
     }

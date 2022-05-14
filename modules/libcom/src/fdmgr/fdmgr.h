@@ -117,7 +117,7 @@ void            *param      /* first parameter passed to the func   */
 
 /*
  *
- * Clear nterest in a type of file descriptor activity (IO).
+ * Clear interest in a type of file descriptor activity (IO).
  *
  */
 LIBCOM_API int epicsStdCall fdmgr_clear_callback(

@@ -118,6 +118,11 @@ int epicsStdCall epicsStdoutPrintf(const char *pFormat, ...)
     return nchar;
 }
 
+int epicsStdCall epicsStdoutVPrintf(const char *pformat, va_list ap)
+{
+    return vfprintf(epicsGetStdout(), pformat, ap);
+}
+
 int epicsStdCall epicsStdoutPuts(const char *str)
 {
     return fprintf(epicsGetStdout(), "%s\n", str);

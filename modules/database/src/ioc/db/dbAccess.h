@@ -18,7 +18,7 @@
 #include "dbFldTypes.h"
 #include "link.h"
 #include "dbBase.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 #include "dbAddr.h"
 #include "dbLock.h"
 #include "dbAccessDefs.h"

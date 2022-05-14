@@ -92,9 +92,9 @@ extern "C" {
 #endif
 
 /* These are exported for testing only */
-epicsShareFunc lockSet* dbLockGetRef(lockRecord *lr); /* lookup lockset and increment ref count */
-epicsShareFunc void dbLockIncRef(lockSet* ls);
-epicsShareFunc void dbLockDecRef(lockSet *ls);
+DBCORE_API lockSet* dbLockGetRef(lockRecord *lr); /* lookup lockset and increment ref count */
+DBCORE_API void dbLockIncRef(lockSet* ls);
+DBCORE_API void dbLockDecRef(lockSet *ls);
 
 /* Calling dbLockerPrepare directly is an internal
  * optimization used when dbLocker on the stack.

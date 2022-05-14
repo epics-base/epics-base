@@ -79,7 +79,7 @@ for each desired output link. Only those that are defined are used.
 When the sequence record is processed, it uses a selection algorithm similar to
 that of the selection record to decide which links to process.The select
 mechanism field (SELM) has three algorithms to choose from: C<<< All >>>,
-C<<<Specified >>> or C<<< Mask >>>.
+C<<< Specified >>> or C<<< Mask >>>.
 
 =head4 Record fields related to the Selection Algorithm
 
@@ -102,24 +102,26 @@ process can be dynamically changed by the record pointed by SELL.
 
 B<SELN - Link Selection>
 
-When B<C<SELM = Specified>> this is the index number of the link that will be
-processed, used in combination with the C<OFFS> field:
+When B<SELM> has the value C<Specified> the B<SELN> field sets the index number
+of the link that will be processed, after adding the B<OFFS> field:
 
-  SELN = SELN + OFFS
+=over
 
+LNKI<n> where I<n> = C<SELN + OFFS>
 
-I<(By default, the OFFS is initalized to ZERO)>
+=back
 
-When B<C<SELM = Mask>> this field is the bitmask that will be used to determine
-which links will be processed by the seq record,
-in combination with the C<SHFT> field:
+I<(If not set, the OFFS field is ZERO)>
+
+When B<SELM> has the value C<Mask> the B<SELN> field provides the bitmask that
+determines which links will be processed, after shifting by B<SHFT> bits:
 
   if (SHFT >= 0)
-    SELN = SELN << -SHFT
+    bits = SELN >> SHFT
   else
-    SELN = SELN >> SHFT
+    bits = SELN << -SHFT
 
-I<(By default, the SHFT is initalized to -1)>
+I<(If not set, the SHFT field is -1 so bits from SELN are shifted left by 1)>
 
 =head4 B<Note about SHFT and OFFS fields>
 
@@ -131,7 +133,7 @@ The SHFT and OFFS fields were introduced to keep compatibility of old databases
 that used seq records with links indexed from one.
 
 B<To use the DO0, DOL0, LNK0, DLY0 fields when SELM = Mask, the SHFT field must
-be set to ZERO>
+be explicitly set to ZERO>
 
 =head4 Selection Algorithms Description
 
@@ -208,29 +210,37 @@ Routine process implements the following algorithm:
 =item 1.
 
 First, PACT is set to TRUE, and the link selection is fetched. Depending on the
-selection mechanism, the link selection output links are processed in order from
-LNK0 to LNKF. When LNKI<x> is processed, the corresponding DLYI<x> value is
-used to generate a delay via watchdog timer.
+selection mechanism chosen, the appropriate set of link groups will be
+processed. If multiple link groups need to be processed they are done in
+increasing numerical order, from LNK0 to LNKF.
 
 =item 2.
 
-After DLYI<x> seconds have expired, the input value is fetched from DOI<x> (if
-DOLI<x> is constant) or DOLI<x> (if DOLI<x> is a database link or channel
-access link) and written to LNKI<x>.
+When LNKI<x> is to be processed, the corresponding DLYI<x> value is first used
+to generate the requested time delay, using the IOC's Callback subsystem to
+perform subsequent operations. This means that although PACT remains TRUE, the
+lockset that the sequence record belongs to will be unlocked for the duration of
+the delay time (an unlock occurs even when the delay is zero).
 
 =item 3.
 
-When all links are completed, an asynchronous completion call back to dbProcess
-is made (see the Application Developer's Guide for more information on
-asynchronous processing.)
+After DLYI<x> seconds have expired, the value in DOI<x> is saved locally and a
+new value is read into DOI<x> through the link DOLI<x> (if the link is valid).
+Next the record's timestamp is set, and the value in DOI<x> is written through
+the LNKI<x> output link. If the value of DOI<x> was changed when it was read in
+a monitor event is triggered on that field.
 
 =item 4.
 
-Then UDF is set to FALSE.
+If any link groups remain to be processed, the next group is selected and the
+operations for that group are executed again from step 2 above.
+
+If the last link group has been processed, UDF is set to FALSE and the record's
+timestamp is set.
 
 =item 5.
 
-Monitors are checked.
+Monitors are posted on VAL and SELN.
 
 =item 6.
 
@@ -238,12 +248,11 @@ The forward link is scanned, PACT is set FALSE, and the process routine returns.
 
 =back
 
-For the delay mechanism to operate properly, the record is processed
+For the delay mechanism to operate properly, the record is normally processed
 asynchronously. The only time the record will not be processed asynchronously is
-when there are no non-NULL output links selected (i.e. when it has nothing to
-do.) The processing of the links is done via callback tasks at the priority set
-in the PRIO field in dbCommon (see the Application Developer's Guide for more
-information on call
+if it has nothing to do, because no link groups or only empty link groups are
+selected for processing (groups where both DOLI<x> and LNKI<x> are unset or
+contain only a constant value).
 
 =cut
 

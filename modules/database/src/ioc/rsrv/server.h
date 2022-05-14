@@ -16,11 +16,6 @@
 #ifndef INCLserverh
 #define INCLserverh
 
-#ifdef epicsExportSharedSymbols
-#   define rsrvRestore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif /* ifdef epicsExportSharedSymbols */
-
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
@@ -34,10 +29,6 @@
 #include "epicsTime.h"
 #include "epicsAssert.h"
 #include "osiSock.h"
-
-#ifdef rsrvRestore_epicsExportSharedSymbols
-#define epicsExportSharedSymbols
-#endif
 
 /* a modified ca header with capacity for large arrays */
 typedef struct caHdrLargeArray {
@@ -248,7 +239,7 @@ void initializePutNotifyFreeList (void);
 unsigned rsrvSizeOfPutNotify ( struct rsrv_put_notify *pNotify );
 
 /*
- * inclming protocol maintetnance
+ * incoming protocol maintenance
  */
 void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size );
 

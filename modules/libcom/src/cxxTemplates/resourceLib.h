@@ -13,7 +13,7 @@
  *      indexing is implemented with a hash lookup. The identifier type
  *      implements the hash algorithm (or derives from one of the supplied
  *      identifier types which provide a hashing routine). The table expands
- *      dynamically depending on load, and without introducing non-determanistic
+ *      dynamically depending on load, and without introducing non-deterministic
  *      latency.
  *
  *      Unsigned integer and string identifier classes are supplied here.
@@ -86,13 +86,13 @@ public:
     void removeAll ( tsSLList<T> & destination ); // remove all entries
     T * lookup ( const ID &idIn ) const; // locate entry
     // Call (pT->*pCB) () for each entry but expect poor performance
-    // with sparcely populated tables
+    // with sparsely populated tables
     void traverse ( void (T::*pCB)() );
     void traverseConst ( void (T::*pCB)() const ) const;
     unsigned numEntriesInstalled () const;
     void setTableSize ( const unsigned newTableSize );
     // iterate through all entries but expect poor performance
-    // with sparcely populated tables
+    // with sparsely populated tables
     typedef resTableIter < T, ID > iterator;
     typedef resTableIterConst < T, ID > iteratorConst;
     iterator firstIter ();
@@ -523,7 +523,7 @@ inline unsigned resTable<T,ID>::tableSize () const
     }
 }
 
-// it will be more efficent to call this once prior to installing
+// it will be more efficient to call this once prior to installing
 // the first entry
 template <class T, class ID>
 void resTable<T,ID>::setTableSize ( const unsigned newTableSize )
@@ -550,12 +550,12 @@ void resTable<T,ID>::setTableSize ( const unsigned newTableSize )
 template <class T, class ID>
 bool resTable<T,ID>::setTableSizePrivate ( unsigned logBaseTwoTableSizeIn )
 {
-    // dont shrink
+    // don't shrink
     if ( this->logBaseTwoTableSize >= logBaseTwoTableSizeIn ) {
         return true;
     }
 
-    // dont allow ridiculously small tables
+    // don't allow ridiculously small tables
     if ( logBaseTwoTableSizeIn < 4 ) {
         logBaseTwoTableSizeIn = 4;
     }
@@ -1036,14 +1036,14 @@ inline resTableIndex integerHash ( unsigned MIN_INDEX_WIDTH,
     resTableIndex hashid = static_cast <resTableIndex> ( id );
 
     //
-    // the intent here is to gurantee that all components of the
+    // the intent here is to guarantee that all components of the
     // integer contribute even if the resTableIndex returned might
     // index a small table.
     //
     // On most compilers the optimizer will unroll this loop so this
     // is actually a very small inline function
     //
-    // Experiments using the microsoft compiler show that this isnt
+    // Experiments using the microsoft compiler show that this isn't
     // slower than switching on the architecture size and unrolling the
     // loop explicitly (that solution has resulted in portability
     // problems in the past).
@@ -1142,7 +1142,7 @@ stringId::~stringId()
             // each cast away of const, but in this case
             // it cant be avoided.
             //
-            // The DEC compiler complains that const isnt
+            // The DEC compiler complains that const isn't
             // really significant in a cast if it is present.
             //
             // I hope that deleting a pointer to "char"

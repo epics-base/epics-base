@@ -13,42 +13,49 @@
 #include "iocsh.h"
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "iocInit.h"
 #include "epicsExport.h"
 #include "epicsRelease.h"
 #include "miscIocRegister.h"
 
 /* iocInit */
-static const iocshFuncDef iocInitFuncDef = {"iocInit",0,NULL};
+static const iocshFuncDef iocInitFuncDef = {"iocInit",0,NULL,
+             "Initializes the various epics components and starts the IOC running.\n"};
 static void iocInitCallFunc(const iocshArgBuf *args)
 {
     iocshSetError(iocInit());
 }
 
 /* iocBuild */
-static const iocshFuncDef iocBuildFuncDef = {"iocBuild",0,NULL};
+static const iocshFuncDef iocBuildFuncDef = {"iocBuild",0,NULL,
+             "First step of the IOC initialization, puts the IOC into a ready-to-run (quiescent) state.\n"
+             "Needs iocRun() to make the IOC live.\n"};
 static void iocBuildCallFunc(const iocshArgBuf *args)
 {
     iocshSetError(iocBuild());
 }
 
 /* iocRun */
-static const iocshFuncDef iocRunFuncDef = {"iocRun",0,NULL};
+static const iocshFuncDef iocRunFuncDef = {"iocRun",0,NULL, 
+             "Bring the IOC out of its initial quiescent state to the running state.\n"
+             "See more: iocBuild, iocPause"};
 static void iocRunCallFunc(const iocshArgBuf *args)
 {
     iocshSetError(iocRun());
 }
 
 /* iocPause */
-static const iocshFuncDef iocPauseFuncDef = {"iocPause",0,NULL};
+static const iocshFuncDef iocPauseFuncDef = {"iocPause",0,NULL,
+             "Brings a running IOC to a quiescent state with all record processing frozen.\n"
+             "See more: iocBuild, iocRub, iocInit"};
 static void iocPauseCallFunc(const iocshArgBuf *args)
 {
     iocshSetError(iocPause());
 }
 
 /* coreRelease */
-static const iocshFuncDef coreReleaseFuncDef = {"coreRelease",0,NULL};
+static const iocshFuncDef coreReleaseFuncDef = {"coreRelease",0,NULL,
+             "Print release information for iocCore.\n"};
 static void coreReleaseCallFunc(const iocshArgBuf *args)
 {
     coreRelease ();
@@ -75,7 +82,11 @@ void miscIocRegister(void)
 #ifndef SYSTEM_UNAVAILABLE
 static const iocshArg systemArg0 = { "command string",iocshArgString};
 static const iocshArg * const systemArgs[] = {&systemArg0};
-static const iocshFuncDef systemFuncDef = {"system",1,systemArgs};
+static const iocshFuncDef systemFuncDef = {"system",1,systemArgs,
+             "Send command string to the system command interpreter for execution.\n"
+             "Not available on all OSs.\n"
+             "To enable this command, add registrar(iocshSystemCommand) to an application dbd file,\n" 
+             "or include system.dbd\n"};
 static void systemCallFunc(const iocshArgBuf *args)
 {
     iocshSetError(system(args[0].sval));

@@ -44,3 +44,7 @@ record(arr, "arr") {
     field(FTVL, "ULONG")
     field(NELM, "10")
 }
+
+record(x, "recmeta") {}
+
+record(x, "special") {}

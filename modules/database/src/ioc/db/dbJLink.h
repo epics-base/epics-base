@@ -22,7 +22,7 @@ typedef enum {
     jlif_continue = 1
 } jlif_result;
 
-epicsShareExtern const char *jlif_result_name[2];
+DBCORE_API extern const char *jlif_result_name[2];
 
 typedef enum {
     jlif_key_stop = jlif_stop,
@@ -30,7 +30,7 @@ typedef enum {
     jlif_key_child_inlink, jlif_key_child_outlink, jlif_key_child_fwdlink
 } jlif_key_result;
 
-epicsShareExtern const char *jlif_key_result_name[5];
+DBCORE_API extern const char *jlif_key_result_name[5];
 
 struct link;
 struct lset;

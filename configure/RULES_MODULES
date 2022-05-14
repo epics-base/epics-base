@@ -28,7 +28,6 @@ DIRS += $(LIVE_SUBMODULES)
 
 include $(CONFIG)/RULES_DIRS
 
-INSTALL_LOCATION_ABS := $(abspath $(INSTALL_LOCATION))
 RELEASE_LOCAL := RELEASE.$(EPICS_HOST_ARCH).local
 
 # Ensure that RELEASE.<host>.local exists before doing anything else
@@ -40,8 +39,8 @@ RELEASE.host: $(RELEASE_LOCAL)
 
 $(RELEASE_LOCAL): Makefile CONFIG_SITE.local
 	$(ECHO) Creating $@ with
-	$(ECHO) "    $(PARENT_MODULE) = $(INSTALL_LOCATION_ABS)"
-	@echo $(PARENT_MODULE) = $(INSTALL_LOCATION_ABS)> $@
+	$(ECHO) "    $(PARENT_MODULE) = $(INSTALL_ABSOLUTE)"
+	@echo $(PARENT_MODULE) = $(INSTALL_ABSOLUTE)> $@
 realclean:
 	$(RM) $(wildcard RELEASE.*.local)
 

@@ -31,10 +31,12 @@ endif # BASE_TOP
 # Where to find the installed build tools
 #   Windows does not like commands with relative paths starting ../
 #   so TOOLS must be an absolute path, although Perl scripts are OK.
-#   FIND_TOOL is for scripts run before the build reaches src/tools.
+#   FIND_TOOL is for scripts run before the build reaches src/tools
+#   and must also work in submodules when EPICS_BASE is not built.
 
 TOOLS = $(abspath $(EPICS_BASE_HOST_BIN))
-FIND_TOOL = $(firstword $(wildcard $(TOOLS)/$(1) $(EPICS_BASE)/src/tools/$(1)))
+FIND_TOOL = $(firstword $(wildcard $(TOOLS)/$(1) \
+    $(TOP)/src/tools/$(1)) $(EPICS_BASE)/src/tools/$(1))
 
 #---------------------------------------------------------------
 # EPICS Base build tools and tool flags

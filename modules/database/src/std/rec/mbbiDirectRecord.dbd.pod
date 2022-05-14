@@ -14,7 +14,8 @@ an array of 32 unsigned characters, each representing a bit of the word.
 These fields (B0-B9, BA-BF, B10-B19, B1A-B1F) are set to 1 if the corresponding
 bit is set, and 0 if not.
 
-This record's operation is similar to that of the multi-bit binary input record,
+This record's operation is similar to that of the
+L<multi-bit binary input record|mbbiRecord>,
 and it has many fields in common with it. This record also has two available
 soft device support modules: C<Soft Channel> and C<Raw Soft Channel>.
 

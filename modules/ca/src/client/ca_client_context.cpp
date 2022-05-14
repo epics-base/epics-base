@@ -224,7 +224,7 @@ void ca_client_context::changeExceptionEvent (
     epicsGuard < epicsMutex > guard ( this->mutex );
     this->ca_exception_func = pfunc;
     this->ca_exception_arg = arg;
-// should block here until releated callback in progress completes
+// should block here until related callback in progress completes
 }
 
 void ca_client_context::replaceErrLogHandler (
@@ -237,7 +237,7 @@ void ca_client_context::replaceErrLogHandler (
     else {
         this->pVPrintfFunc = epicsVprintf;
     }
-// should block here until releated callback in progress completes
+// should block here until related callback in progress completes
 }
 
 void ca_client_context::registerForFileDescriptorCallBack (
@@ -252,7 +252,7 @@ void ca_client_context::registerForFileDescriptorCallBack (
         // w/o having sent the wakeup message
         this->_sendWakeupMsg ();
     }
-// should block here until releated callback in progress completes
+// should block here until related callback in progress completes
 }
 
 int ca_client_context :: printFormated (
@@ -392,9 +392,19 @@ void ca_client_context :: vSignal (
     }
 
     epicsTime current = epicsTime::getCurrent ();
-    char date[64];
-    current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
-    this->printFormated ( "    Current Time: %s\n", date );
+    try {
+        char date[64];
+        current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
+        this->printFormated ( "    Current Time: %s\n", date );
+    }
+    catch ( std::exception & except ) {
+        errlogPrintf (
+            "CA client library thread \"%s\" caught C++ exception \"%s\"\n",
+            epicsThreadGetNameSelf (), except.what () );
+        epicsTimeStamp now = current;
+        this->printFormated ( "    Current Time: %u.%u\n",
+                now.secPastEpoch, now.nsec );
+    }
 
     /*
      *  Terminate execution if unsuccessful
@@ -768,9 +778,9 @@ LIBCA_API int epicsStdCall ca_clear_subscription ( evid pMon )
       // we will definately stall out here if all of the
       // following are true
       //
-      // o user creates non-preemtive mode client library context
+      // o user creates non-preemptive mode client library context
       // o user doesnt periodically call a ca function
-      // o user calls this function from an auxiillary thread
+      // o user calls this function from an auxiliary thread
       //
       CallbackGuard cbGuard ( cac.cbMutex );
       epicsGuard < epicsMutex > guard ( cac.mutex );

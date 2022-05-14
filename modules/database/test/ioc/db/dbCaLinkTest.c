@@ -27,6 +27,7 @@
 #include "dbAccess.h"
 #include "epicsStdio.h"
 #include "dbEvent.h"
+#include "shareLib.h"
 
 /* Declarations from cadef.h and db_access.h which we can't include here */
 typedef void * chid;
@@ -48,13 +49,6 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static epicsEventId waitEvent;
 static unsigned waitCounter;
-
-static
-void waitForUpdateN(DBLINK *plink, unsigned long n)
-{
-    while(dbCaGetUpdateCount(plink)<n)
-        epicsThreadSleep(0.01);
-}
 
 static
 void putLink(DBLINK *plink, short dbr, const void*buf, long nReq)
@@ -132,14 +126,14 @@ static void testNativeLink(void)
 
     testOk1(psrclnk->type==CA_LINK);
 
-    waitForUpdateN(psrclnk, 1);
+    testdbCaWaitForUpdateCount(psrclnk, 1);
 
     dbScanLock((dbCommon*)ptarg);
     ptarg->val = 42;
     db_post_events(ptarg, &ptarg->val, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
     dbScanUnlock((dbCommon*)ptarg);
 
-    waitForUpdateN(psrclnk, 2);
+    testdbCaWaitForUpdateCount(psrclnk, 2);
 
     dbScanLock((dbCommon*)psrc);
     /* local CA_LINK connects immediately */
@@ -217,14 +211,14 @@ static void testStringLink(void)
 
     testOk1(psrclnk->type==CA_LINK);
 
-    waitForUpdateN(psrclnk, 1);
+    testdbCaWaitForUpdateCount(psrclnk, 1);
 
     dbScanLock((dbCommon*)ptarg);
     strcpy(ptarg->desc, "hello");
     db_post_events(ptarg, &ptarg->desc, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
     dbScanUnlock((dbCommon*)ptarg);
 
-    waitForUpdateN(psrclnk, 2);
+    testdbCaWaitForUpdateCount(psrclnk, 2);
 
     dbScanLock((dbCommon*)psrc);
     /* local CA_LINK connects immediately */
@@ -399,7 +393,7 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     testIocInitOk();
     eltc(1);
 
-    waitForUpdateN(psrclnk, 1);
+    testdbCaWaitForUpdateCount(psrclnk, 1);
 
     bufsrc = psrc->bptr;
     buftarg= ptarg->bptr;
@@ -420,7 +414,7 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     db_post_events(ptarg, &ptarg->val, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
     dbScanUnlock((dbCommon*)ptarg);
 
-    waitForUpdateN(psrclnk, 2);
+    testdbCaWaitForUpdateCount(psrclnk, 2);
 
     dbScanLock((dbCommon*)psrc);
     testDiag("fetch source.INP into source.BPTR");

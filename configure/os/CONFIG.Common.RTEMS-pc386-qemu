@@ -6,6 +6,7 @@
 #-------------------------------------------------------
 
 # Include definitions from RTEMS-pc386
+# For Tests overwrite it with pc686
 include $(CONFIG)/os/CONFIG.Common.RTEMS-pc386
 
 RTEMS_QEMU_FIXUPS = YES

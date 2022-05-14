@@ -301,11 +301,11 @@ static void makeSubstitutions(inputData * const inputPvt,
             char *pstart;
             char *pend;
             int  cmdind=-1;
-            int  i;
+            size_t  i;
 
             for (i = 0; i < NELEMENTS(cmdNames); i++) {
                 if (strstr(command, cmdNames[i])) {
-                    cmdind = i;
+                    cmdind = (int)i;
                 }
             }
             if (cmdind < 0) goto endcmd;
@@ -317,7 +317,7 @@ static void makeSubstitutions(inputData * const inputPvt,
             pstart = ++p;
             /*Look for end quote*/
             while (*p && (*p != '"')) {
-                /*allow escape for embeded quote*/
+                /*allow escape for embedded quote*/
                 if ((p[0] == '\\') && p[1] == '"') {
                     p += 2;
                     continue;
@@ -1028,7 +1028,7 @@ static tokenType subGetNextToken(subFile *psubFile)
                 subFileErrPrint(psubFile, "Strings must be on single line\n");
                 abortExit(1);
             }
-            /*allow  escape for embeded quote*/
+            /*allow  escape for embedded quote*/
             if ((p[0] == '\\') && p[1] == '"') {
                 *pto++ = *p++;
                 *pto++ = *p++;

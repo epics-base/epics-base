@@ -12,7 +12,7 @@
 #ifndef INCdbNotifyh
 #define INCdbNotifyh
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 #include "ellLib.h"
 
 #ifdef __cplusplus
@@ -70,32 +70,32 @@ typedef struct processNotify {
 
 
 /* dbProcessNotify and dbNotifyCancel are called by user*/
-epicsShareFunc void dbProcessNotify(processNotify *pprocessNotify);
-epicsShareFunc void dbNotifyCancel(processNotify *pprocessNotify);
+DBCORE_API void dbProcessNotify(processNotify *pprocessNotify);
+DBCORE_API void dbNotifyCancel(processNotify *pprocessNotify);
 
 /* dbProcessNotifyInit called by iocInit */
-epicsShareFunc void dbProcessNotifyInit(void);
-epicsShareFunc void dbProcessNotifyExit(void);
+DBCORE_API void dbProcessNotifyInit(void);
+DBCORE_API void dbProcessNotifyExit(void);
 
 /*dbNotifyAdd called by dbScanPassive and dbScanLink*/
-epicsShareFunc void dbNotifyAdd(
+DBCORE_API void dbNotifyAdd(
     struct dbCommon *pfrom,struct dbCommon *pto);
 /*dbNotifyCompletion called by recGblFwdLink  or dbAccess*/
-epicsShareFunc void dbNotifyCompletion(struct dbCommon *precord);
+DBCORE_API void dbNotifyCompletion(struct dbCommon *precord);
 
 /* db_put_process defined here since it requires dbNotify.
  * src_type is the old DBR type
  * This is called by a dbNotify putCallback that uses oldDbr types
  */
-epicsShareFunc int db_put_process(
+DBCORE_API int db_put_process(
     processNotify *processNotify,notifyPutType type,
     int src_type,const void *psrc, int no_elements);
 
 /* dbtpn is test routine for dbNotify putProcessRequest */
-epicsShareFunc long dbtpn(char *recordname,char *value);
+DBCORE_API long dbtpn(char *recordname,char *value);
 
 /* dbNotifyDump is an INVASIVE debug utility. Don't use this needlessly*/
-epicsShareFunc int dbNotifyDump(void);
+DBCORE_API int dbNotifyDump(void);
 
 /* This module provides code to handle process notify.
  * client code semantics are:
@@ -130,7 +130,7 @@ epicsShareFunc int dbNotifyDump(void);
  * if a process request is issued and also calls the client callbacks.
  *
  * A process request is issued if any of the following is true.
- * 1) The requester has issued a processs request and record is passive.
+ * 1) The requester has issued a process request and record is passive.
  * 2) The requester is doing a put, the record is passive, and either
  *     a) The field description is process passive.
  *     b) The field is PROC.
@@ -156,7 +156,7 @@ epicsShareFunc int dbNotifyDump(void);
  *              As soon as a record completes processing the field is set NULL
  *      ppnr    pointer to processNotifyRecord, which is a private structure
  *              owned by dbNotify.
- *              dbNotify is reponsible for this structure.
+ *              dbNotify is responsible for this structure.
  *
  */
 #ifdef __cplusplus

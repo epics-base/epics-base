@@ -1,9 +1,16 @@
 # This is a minimal record definition
 
+menu(xSFX) {
+  choice(SFX_Before, "Before")
+  choice(SFX_After, "After")
+  choice(SFX_None, "None")
+}
+
 recordtype(x) {
   include "dbCommon.dbd"
   field(VAL, DBF_LONG) {
     prompt("Value")
+    special(SPC_MOD)
   }
   field(C8, DBF_CHAR) {
     prompt("Char")
@@ -40,10 +47,20 @@ recordtype(x) {
   }
   field(INP, DBF_INLINK) {
     prompt("Input Link")
+    special(SPC_MOD)
   }
   field(CLBK, DBF_NOACCESS) {
     prompt("Processing callback")
     special(SPC_NOMOD)
     extra("void (*clbk)(struct xRecord*)")
+  }
+  field(OTST, DBF_DOUBLE) {
+    prompt("dbGet() options test")
+    special(SPC_NOMOD)
+  }
+  field(SFX, DBF_MENU) {
+    prompt("Special effects")
+    menu(xSFX)
+    initial("None")
   }
 }

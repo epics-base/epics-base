@@ -73,7 +73,7 @@ help:
 	@echo "Usage: gnumake [options] [target] ..."
 	@echo "Targets supported by all Makefiles:"
 	@echo "     all            - Same as install (default rule)"
-	@echo "     inc            - Installs header files"
+	@echo "     inc            - Installs header, dbd and html files"
 	@echo "     build          - Builds and installs all targets"
 	@echo "     install        - Builds and installs all targets"
 	@echo "     buildInstall   - Same as install (deprecated)"

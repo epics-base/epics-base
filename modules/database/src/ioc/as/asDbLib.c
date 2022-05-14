@@ -25,7 +25,6 @@
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
 #include "asCa.h"
 #include "asDbLib.h"
 #include "callback.h"

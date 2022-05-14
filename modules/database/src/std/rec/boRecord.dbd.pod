@@ -15,29 +15,6 @@ values into other records via database or channel access links. This record
 can implement both latched and momentary binary outputs depending on how
 the HIGH field is configured.
 
-=head2 Parameter Fields
-
-The binary output's fields fall into the following categories:
-
-=over 1
-
-=item *
-scan parameters
-
-=item *
-convert and write parameters
-
-=item *
-operator display parameters
-
-=item *
-alarm parameters
-
-=item *
-run-time parameters
-
-=back
-
 =recordtype bo
 
 =cut
@@ -47,13 +24,10 @@ recordtype(bo) {
 =head3 Scan Parameters
 
 The binary output record has the standard fields for specifying under what
-circumstances the record will be processed. The fields are listed in
+circumstances the record will be processed.
+These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
-L<Scan Fields|dbCommonRecord/Scan Fields>. In addition, L<Scanning Specification> explains how these
-fields are used. Note that I/O event scanning is only supported for those card
-types that interrupt.
-
-=fields SCAN
+=fields SCAN, PHAS, EVNT, PRIO, PINI
 
 =head3 Desired Output Parameters
 
@@ -65,14 +39,14 @@ output mode select (OMSL) field, which can have two possible values:
 C<losed_loop> or C<supervisory>. If C<supervisory> is specified, the value
 in the VAL field can be set externally via dbPuts at run-time. If
 C<closed_loop> is specified, the VAL field's value is obtained from the
-address specified in the desired output location (DOL) field which can be a
+address specified in the Desired Output Link (DOL) field which can be a
 database link or a channel access link, but not a constant. To achieve
 continuous control, a database link to a control algorithm record should be
 entered in the DOL field.
 
-L<Address Specification> presents more information on database addresses
-and links. L<Scanning Specification> explaines the effect of database
-linkage on scanning.
+See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on hardware addresses and links.
 
 =fields DOL, OMSL
 
@@ -130,15 +104,17 @@ The OUT field specifies where the binary output record writes its output.
 It must specify the address of an I/O card if the record sends its output
 to hardware, and the DTYP field must contain the corresponding device
 support module. Be aware that the address format differs according to the
-I/O bus used. See L<Address Specification> for information on the format of
-hardware addresses.
+I/O bus used. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on the format of hardware addresses.
 
-Otherwise, if the record is configured to use the soft device support
-modules, then it can be either a database link, a channel access link, or a
-constant. Be aware that nothing will be written when OUT is a constant. See
-L<Address Specification> for information on the format of the database and
-channel access addresses. Also, see L<Device Support For Soft Records> in
-this chapter for more on output to other records.
+Otherwise, if the record is configured to use the soft device support modules,
+then it can be either a database link, a channel access link, or a constant. Be
+aware that nothing will be written when OUT is a constant. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on the format of the database and channel access addresses.
+Also, see L<Device Support For Soft Records> in this chapter for more on output
+to other records.
 
 =head3 Operator Display Parameters
 
@@ -242,7 +218,7 @@ for more information on simulation mode and its fields.
 		menu(menuOmsl)
 	}
 	field(DOL,DBF_INLINK) {
-		prompt("Desired Output Loc")
+		prompt("Desired Output Link")
 		promptgroup("40 - Input")
 		interest(1)
 	}

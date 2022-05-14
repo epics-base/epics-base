@@ -23,7 +23,6 @@
 #include "epicsString.h"
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "callback.h"
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
@@ -1301,7 +1300,7 @@ static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,size_t len,int tab_size)
     current_len = strlen(pMsgBuff->out_buff);
     tot_line = current_len + len;
 
-    /* flush buffer if overflow would occor */
+    /* flush buffer if overflow would occur */
     if (tot_line > MAXLINE)
         dbpr_msg_flush(pMsgBuff, tab_size);
 

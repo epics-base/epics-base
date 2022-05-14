@@ -12,13 +12,6 @@
 /* epicsTime.cpp */
 /* Author Jeffrey O. Hill */
 
-// Notes:
-// 1) The epicsTime::nSec field is not public and so it could be
-// changed to work more like the fractional seconds field in the NTP time
-// stamp. That would significantly improve the precision of epicsTime on
-// 64 bit architectures.
-//
-
 #include <stdexcept>
 
 #include <ctype.h>
@@ -29,196 +22,41 @@
 #include <float.h>
 #include <string> // vxWorks 6.0 requires this include
 
-#include "locationException.h"
+#include "errSymTbl.h"
 #include "epicsAssert.h"
 #include "epicsVersion.h"
+#include "epicsStdlib.h"
+#include "epicsMath.h"
 #include "envDefs.h"
 #include "epicsTime.h"
 #include "osiSock.h" /* pull in struct timeval */
 #include "epicsStdio.h"
 
-static const char pEpicsTimeVersion[] =
-    "@(#) " EPICS_VERSION_STRING ", Common Utilities Library";
-
-//
-// useful public constants
-//
-static const unsigned mSecPerSec = 1000u;
-static const unsigned uSecPerMSec = 1000u;
-static const unsigned uSecPerSec = uSecPerMSec * mSecPerSec;
-static const unsigned nSecPerUSec = 1000u;
-static const unsigned nSecPerSec = nSecPerUSec * uSecPerSec;
+static const epicsUInt32 nSecPerSec = 1000000000u;
 static const unsigned nSecFracDigits = 9u;
 
 
-// Timescale conversion data
-
-static const unsigned long NTP_TIME_AT_POSIX_EPOCH = 2208988800ul;
-static const unsigned long NTP_TIME_AT_EPICS_EPOCH =
-    NTP_TIME_AT_POSIX_EPOCH + POSIX_TIME_AT_EPICS_EPOCH;
-
-//
-// epicsTime (const unsigned long secIn, const unsigned long nSecIn)
-//
-inline epicsTime::epicsTime (const unsigned long secIn, const unsigned long nSecIn) :
-    secPastEpoch ( secIn ), nSec ( nSecIn )
+void epicsTime::throwError(int code)
 {
-    if (nSecIn >= nSecPerSec) {
-        this->secPastEpoch += nSecIn / nSecPerSec;
-        this->nSec = nSecIn % nSecPerSec;
-    }
-}
-
-//
-// epicsTimeLoadTimeInit
-//
-class epicsTimeLoadTimeInit {
-public:
-    epicsTimeLoadTimeInit ();
-    double epicsEpochOffset; // seconds
-    double time_tSecPerTick; // seconds (both NTP and EPICS use int sec)
-    unsigned long epicsEpochOffsetAsAnUnsignedLong;
-    bool useDiffTimeOptimization;
-};
-
-//
-// epicsTimeLoadTimeInit ()
-//
-epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
-{
-    // All we know about time_t is that it is an arithmetic type.
-    time_t t_zero = static_cast<time_t> (0);
-    time_t t_one  = static_cast<time_t> (1);
-    this->time_tSecPerTick = difftime (t_one, t_zero);
-
-    /* The EPICS epoch (1/1/1990 00:00:00UTC) was 631152000 seconds after
-     * the ANSI epoch (1/1/1970 00:00:00UTC)
-     * Convert this offset into time_t units, however this must not be
-     * calculated using local time (i.e. using mktime() or similar), since
-     * in the UK the ANSI Epoch had daylight saving time in effect, and
-     * the value calculated would be 3600 seconds wrong.*/
-    this->epicsEpochOffset =
-        (double) POSIX_TIME_AT_EPICS_EPOCH / this->time_tSecPerTick;
-
-    if (this->time_tSecPerTick == 1.0 &&
-        this->epicsEpochOffset <= ULONG_MAX &&
-        this->epicsEpochOffset >= 0) {
-        // We can use simpler code on Posix-compliant systems
-        this->useDiffTimeOptimization = true;
-        this->epicsEpochOffsetAsAnUnsignedLong =
-            static_cast<unsigned long>(this->epicsEpochOffset);
-    } else {
-        // Forced to use the slower but correct code
-        this->useDiffTimeOptimization = false;
-        this->epicsEpochOffsetAsAnUnsignedLong = 0;
-    }
-}
-
-//
-// private epicsTime::addNanoSec ()
-//
-// Most formats keep the nSec value as an unsigned long, so are +ve.
-// struct timeval's tv_usec may be -1, but I think that means error,
-// so this private method never needs to handle -ve offsets.
-//
-void epicsTime :: addNanoSec ( long nSecAdj )
-{
-    if (nSecAdj <= 0)
+    if(code==epicsTimeOK)
         return;
-
-    if (static_cast<unsigned long>(nSecAdj) >= nSecPerSec) {
-        this->secPastEpoch += nSecAdj / nSecPerSec;
-        nSecAdj %= nSecPerSec;
-    }
-
-    this->nSec += nSecAdj;  // Can't overflow
-    if (this->nSec >= nSecPerSec) {
-        this->secPastEpoch++;
-        this->nSec -= nSecPerSec;
-    }
+    throw std::logic_error(errSymMsg(code));
 }
 
-//
-// epicsTime (const time_t_wrapper &tv)
-//
-epicsTime::epicsTime ( const time_t_wrapper & ansiTimeTicks )
-{
-    // avoid c++ static initialization order issues
-    static epicsTimeLoadTimeInit & lti = * new epicsTimeLoadTimeInit ();
 
-    //
-    // try to directly map time_t into an unsigned long integer because this is
-    // faster on systems w/o hardware floating point and a simple integer type time_t.
-    //
-    if ( lti.useDiffTimeOptimization ) {
-        // LONG_MAX is used here and not ULONG_MAX because some systems (linux)
-        // still store time_t as a long.
-        if ( ansiTimeTicks.ts > 0 && ansiTimeTicks.ts <= LONG_MAX ) {
-            unsigned long ticks = static_cast < unsigned long > ( ansiTimeTicks.ts );
-            if ( ticks >= lti.epicsEpochOffsetAsAnUnsignedLong ) {
-                this->secPastEpoch = ticks - lti.epicsEpochOffsetAsAnUnsignedLong;
-            }
-            else {
-                this->secPastEpoch = ( ULONG_MAX - lti.epicsEpochOffsetAsAnUnsignedLong ) + ticks;
-            }
-            this->nSec = 0;
-            return;
-        }
-    }
-
-    //
-    // otherwise map time_t, which ANSI C and POSIX define as any arithmetic type,
-    // into type double
-    //
-    double sec = ansiTimeTicks.ts * lti.time_tSecPerTick - lti.epicsEpochOffset;
-
-    //
-    // map into the the EPICS time stamp range (which allows rollover)
-    //
-    static double uLongMax = static_cast<double> (ULONG_MAX);
-    if ( sec < 0.0 ) {
-        if ( sec < -uLongMax ) {
-            sec = sec + static_cast<unsigned long> ( -sec / uLongMax ) * uLongMax;
-        }
-        sec += uLongMax;
-    }
-    else if ( sec > uLongMax ) {
-        sec = sec - static_cast<unsigned long> ( sec / uLongMax ) * uLongMax;
-    }
-
-    this->secPastEpoch = static_cast <unsigned long> ( sec );
-    this->nSec = static_cast <unsigned long> ( ( sec-this->secPastEpoch ) * nSecPerSec );
+epicsTime::epicsTime ( const epicsTimeStamp & replace ) {
+    ts = replace;
+    if(ts.nsec >= nSecPerSec)
+        throw std::logic_error("epicsTimeStamp has overflow in nano-seconds field");
 }
-
-epicsTime::epicsTime (const epicsTimeStamp &ts)
-{
-    if ( ts.nsec < nSecPerSec ) {
-        this->secPastEpoch = ts.secPastEpoch;
-        this->nSec = ts.nsec;
-    }
-    else {
-        throw std::logic_error (
-            "epicsTimeStamp has overflow in nano-seconds field" );
-    }
-}
-
-epicsTime::epicsTime () :
-    secPastEpoch(0u), nSec(0u) {}
 
 epicsTime epicsTime::getCurrent ()
 {
     epicsTimeStamp current;
     int status = epicsTimeGetCurrent (&current);
     if (status) {
-        throwWithLocation ( unableToFetchCurrentTime () );
+        throw unableToFetchCurrentTime ("Unable to fetch Current Time");
     }
-    return epicsTime ( current );
-}
-
-epicsTime epicsTime::getMonotonic()
-{
-    epicsTimeStamp current;
-    epicsTimeGetMonotonic (&current); // can't fail
     return epicsTime ( current );
 }
 
@@ -227,282 +65,33 @@ epicsTime epicsTime::getEvent (const epicsTimeEvent &event)
     epicsTimeStamp current;
     int status = epicsTimeGetEvent (&current, event);
     if (status) {
-        throwWithLocation ( unableToFetchCurrentTime () );
+        throw unableToFetchCurrentTime ("Unable to fetch Event Time");
     }
     return epicsTime ( current );
 }
 
-//
-// operator time_t_wrapper ()
-//
-epicsTime::operator time_t_wrapper () const
-{
-    // avoid c++ static initialization order issues
-    static epicsTimeLoadTimeInit & lti = * new epicsTimeLoadTimeInit ();
-    time_t_wrapper wrap;
-
-    if ( lti.useDiffTimeOptimization ) {
-        if ( this->secPastEpoch < ULONG_MAX - lti.epicsEpochOffsetAsAnUnsignedLong ) {
-           wrap.ts = static_cast <time_t> ( this->secPastEpoch + lti.epicsEpochOffsetAsAnUnsignedLong );
-           return wrap;
-       }
-    }
-
-    //
-    // map type double into time_t which ansi C defines as some arithmetic type
-    //
-    double tmp = (this->secPastEpoch + lti.epicsEpochOffset) / lti.time_tSecPerTick;
-    tmp += (this->nSec / lti.time_tSecPerTick) / nSecPerSec;
-
-    wrap.ts = static_cast <time_t> ( tmp );
-
-    return wrap;
+epicsTime::operator struct timeval () const {
+    timeval ret;
+    epicsTimeToTimeval(&ret, &ts);
+    return ret;
 }
 
-//
-// convert to ANSI C struct tm (with nano seconds) adjusted for the local time zone
-//
-epicsTime::operator local_tm_nano_sec () const
-{
-    time_t_wrapper ansiTimeTicks = *this;
-
-    local_tm_nano_sec tm;
-
-    int status = epicsTime_localtime ( &ansiTimeTicks.ts, &tm.ansi_tm );
-    if ( status ) {
-        throw std::logic_error ( "epicsTime_localtime failed" );
-    }
-
-    tm.nSec = this->nSec;
-
-    return tm;
+epicsTime::epicsTime ( const struct timeval & replace) {
+    throwError(epicsTimeFromTimeval(&ts, &replace));
 }
 
-//
-// convert to ANSI C struct tm (with nano seconds) adjusted for UTC
-//
-epicsTime::operator gm_tm_nano_sec () const
-{
-    time_t_wrapper ansiTimeTicks = *this;
-
-    gm_tm_nano_sec tm;
-
-    int status = epicsTime_gmtime ( &ansiTimeTicks.ts, &tm.ansi_tm );
-    if ( status ) {
-        throw std::logic_error ( "epicsTime_gmtime failed" );
-    }
-
-    tm.nSec = this->nSec;
-
-    return tm;
+epicsTime & epicsTime::operator = ( const struct timeval & replace) {
+    throwError(epicsTimeFromTimeval(&ts, &replace));
+    return *this;
 }
 
-//
-// epicsTime (const local_tm_nano_sec &tm)
-//
-epicsTime::epicsTime (const local_tm_nano_sec &tm)
+std::ostream& operator<<(std::ostream& strm, const epicsTime& ts)
 {
-    struct tm tmp = tm.ansi_tm;
-    time_t_wrapper ansiTimeTicks = { mktime (&tmp) };
+    char temp[64];
 
-    static const time_t mktimeError = static_cast <time_t> (-1);
-    if (ansiTimeTicks.ts == mktimeError) {
-        throwWithLocation ( formatProblemWithStructTM () );
-    }
-
-    *this = epicsTime(ansiTimeTicks);
-    this->addNanoSec(tm.nSec);
-}
-
-//
-// epicsTime (const gm_tm_nano_sec &tm)
-//
-
-// do conversion avoiding the timezone mechanism
-static inline int is_leap(int year)
-{
-    if (year % 400 == 0)
-        return 1;
-    if (year % 100 == 0)
-        return 0;
-    if (year % 4 == 0)
-        return 1;
-    return 0;
-}
-
-static inline int days_from_0(int year)
-{
-    year--;
-    return 365 * year + (year / 400) - (year / 100) + (year / 4);
-}
-
-static inline int days_from_1970(int year)
-{
-    static const int days_from_0_to_1970 = days_from_0(1970);
-    return days_from_0(year) - days_from_0_to_1970;
-}
-
-static inline int days_from_1jan(int year, int month, int day)
-{
-    static const int days[2][12] =
-    {
-        { 0,31,59,90,120,151,181,212,243,273,304,334},
-        { 0,31,60,91,121,152,182,213,244,274,305,335}
-    };
-    return days[is_leap(year)][month-1] + day - 1;
-}
-
-epicsTime::epicsTime (const gm_tm_nano_sec &tm)
-{
-    int year = tm.ansi_tm.tm_year + 1900;
-    int month = tm.ansi_tm.tm_mon;
-    if (month > 11) {
-        year += month / 12;
-        month %= 12;
-    } else if (month < 0) {
-        int years_diff = (-month + 11) / 12;
-        year  -= years_diff;
-        month += 12 * years_diff;
-    }
-    month++;
-
-    int day = tm.ansi_tm.tm_mday;
-    int day_of_year = days_from_1jan(year, month, day);
-    int days_since_epoch = days_from_1970(year) + day_of_year;
-
-    time_t_wrapper ansiTimeTicks;
-    ansiTimeTicks.ts = ((days_since_epoch
-        * 24 + tm.ansi_tm.tm_hour)
-        * 60 + tm.ansi_tm.tm_min)
-        * 60 + tm.ansi_tm.tm_sec;
-
-    *this = epicsTime(ansiTimeTicks);
-    this->addNanoSec(tm.nSec);
-}
-
-//
-// operator struct timespec ()
-//
-epicsTime::operator struct timespec () const
-{
-    struct timespec ts;
-    time_t_wrapper ansiTimeTicks;
-
-    ansiTimeTicks = *this;
-    ts.tv_sec = ansiTimeTicks.ts;
-    ts.tv_nsec = static_cast<long> (this->nSec);
-    return ts;
-}
-
-//
-// epicsTime (const struct timespec &ts)
-//
-epicsTime::epicsTime (const struct timespec &ts)
-{
-    time_t_wrapper ansiTimeTicks;
-
-    ansiTimeTicks.ts = ts.tv_sec;
-    *this = epicsTime (ansiTimeTicks);
-    this->addNanoSec (ts.tv_nsec);
-}
-
-//
-// operator struct timeval ()
-//
-epicsTime::operator struct timeval () const
-{
-    struct timeval ts;
-    time_t_wrapper ansiTimeTicks;
-
-    ansiTimeTicks = *this;
-    // On Posix systems timeval :: tv_sec is a time_t so this can be
-    // a direct assignment. On other systems I dont know that we can
-    // guarantee that time_t and timeval :: tv_sec will have the
-    // same epoch or have the same scaling factor to discrete seconds.
-    // For example, on windows time_t changed recently to a 64 bit
-    // quantity but timeval is still a long. That can cause problems
-    // on 32 bit systems. So technically, we should have an os
-    // dependent conversion between time_t and timeval :: tv_sec?
-    ts.tv_sec = ansiTimeTicks.ts;
-    ts.tv_usec = static_cast < long > ( this->nSec / nSecPerUSec );
-    return ts;
-}
-
-//
-// epicsTime (const struct timeval &ts)
-//
-epicsTime::epicsTime (const struct timeval &ts)
-{
-    time_t_wrapper ansiTimeTicks;
-    // On Posix systems timeval :: tv_sec is a time_t so this can be
-    // a direct assignment. On other systems I dont know that we can
-    // guarantee that time_t and timeval :: tv_sec will have the
-    // same epoch or have the same scaling factor to discrete seconds.
-    // For example, on windows time_t changed recently to a 64 bit
-    // quantity but timeval is still a long. That can cause problems
-    // on 32 bit systems. So technically, we should have an os
-    // dependent conversion between time_t and timeval :: tv_sec?
-    ansiTimeTicks.ts = ts.tv_sec;
-    *this = epicsTime (ansiTimeTicks);
-    this->addNanoSec (ts.tv_usec * nSecPerUSec);
-}
-
-
-static const double NTP_FRACTION_DENOMINATOR = 1.0 + 0xffffffff;
-
-struct l_fp { /* NTP time stamp */
-    epicsUInt32 l_ui; /* sec past NTP epoch */
-    epicsUInt32 l_uf; /* fractional seconds */
-};
-
-//
-// epicsTime::l_fp ()
-//
-epicsTime::operator l_fp () const
-{
-    l_fp ts;
-    ts.l_ui = this->secPastEpoch + NTP_TIME_AT_EPICS_EPOCH;
-    ts.l_uf = static_cast < unsigned long >
-        ( ( this->nSec * NTP_FRACTION_DENOMINATOR ) / nSecPerSec );
-    return ts;
-}
-
-//
-// epicsTime::epicsTime ( const l_fp & ts )
-//
-epicsTime::epicsTime ( const l_fp & ts )
-{
-    this->secPastEpoch = ts.l_ui - NTP_TIME_AT_EPICS_EPOCH;
-    this->nSec = static_cast < unsigned long >
-        ( ( ts.l_uf / NTP_FRACTION_DENOMINATOR ) * nSecPerSec );
-}
-
-epicsTime::operator epicsTimeStamp () const
-{
-    if ( this->nSec >= nSecPerSec ) {
-        throw std::logic_error (
-            "epicsTimeStamp has overflow in nano-seconds field?" );
-    }
-    epicsTimeStamp ts;
-    //
-    // truncation by design
-    // -------------------
-    // epicsTime::secPastEpoch is based on ulong and has much greater range
-    // on 64 bit hosts than the original epicsTimeStamp::secPastEpoch. The
-    // epicsTimeStamp::secPastEpoch is based on epicsUInt32 so that it will
-    // match the original network protocol. Of course one can anticipate
-    // that eventually, a epicsUInt64 based network time stamp will be
-    // introduced when 64 bit architectures are more ubiquitous.
-    //
-    // Truncation usually works fine here because the routines in this code
-    // that compute time stamp differences and compare time stamps produce
-    // good results when the operands are on either side of a time stamp
-    // rollover as long as the difference between the operands does not exceed
-    // 1/2 of full range.
-    //
-    ts.secPastEpoch = static_cast < epicsUInt32 > ( this->secPastEpoch );
-    ts.nsec = static_cast < epicsUInt32 > ( this->nSec );
-    return ts;
+    (void)ts.strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M:%S.%09f");
+    temp[sizeof(temp)-1u] = '\0';
+    return strm<<temp;
 }
 
 // Break up a format string into "<strftime prefix>%0<nnn>f<postfix>"
@@ -522,7 +111,7 @@ static const char * fracFormatFind (
     unsigned long & fracFmtWidth )
 {
     assert ( prefixBufLen > 1 );
-    unsigned long width = ULONG_MAX;
+    unsigned long width = 0xffffffff;
     bool fracFound = false;
     const char * pAfter = pFormat;
     const char * pFmt = pFormat;
@@ -576,15 +165,14 @@ static const char * fracFormatFind (
 //
 // size_t epicsTime::strftime ()
 //
-size_t epicsTime::strftime (
-    char * pBuff, size_t bufLength, const char * pFormat ) const
+size_t epicsStdCall epicsTimeToStrftime (char *pBuff, size_t bufLength, const char *pFormat, const epicsTimeStamp *pTS)
 {
     if ( bufLength == 0u ) {
         return 0u;
     }
 
     // presume that EPOCH date is an uninitialized time stamp
-    if ( this->secPastEpoch == 0 && this->nSec == 0u ) {
+    if ( pTS->secPastEpoch == 0 && pTS->nsec == 0u ) {
         strncpy ( pBuff, "<undefined>", bufLength );
         pBuff[bufLength-1] = '\0';
         return strlen ( pBuff );
@@ -609,15 +197,16 @@ size_t epicsTime::strftime (
         }
         // all but fractional seconds use strftime formatting
         if ( strftimePrefixBuf[0] != '\0' ) {
-            local_tm_nano_sec tmns = *this;
+            tm tm;
+            (void)epicsTimeToTM(&tm, 0, pTS);
             size_t strftimeNumChar = :: strftime (
-                pBufCur, bufLenLeft, strftimePrefixBuf, & tmns.ansi_tm );
+                pBufCur, bufLenLeft, strftimePrefixBuf, &tm );
             pBufCur [ strftimeNumChar ] = '\0';
             pBufCur += strftimeNumChar;
             bufLenLeft -= strftimeNumChar;
         }
 
-        // fractional seconds formating
+        // fractional seconds formatting
         if ( fracFmtFound && bufLenLeft > 1 ) {
             if ( fracWid > nSecFracDigits ) {
                 fracWid = nSecFracDigits;
@@ -625,8 +214,9 @@ size_t epicsTime::strftime (
             // verify that there are enough chars left for the fractional seconds
             if ( fracWid < bufLenLeft )
             {
-                local_tm_nano_sec tmns = *this;
-                if ( tmns.nSec < nSecPerSec ) {
+                tm tm;
+                (void)epicsTimeToTM(&tm, 0, pTS);
+                if ( pTS->nsec < nSecPerSec ) {
                     // divisors for fraction (see below)
                     static const unsigned long div[] = {
                         static_cast < unsigned long > ( 1e9 ),
@@ -641,7 +231,7 @@ size_t epicsTime::strftime (
                         static_cast < unsigned long > ( 1e0 )
                     };
                     // round without overflowing into whole seconds
-                    unsigned long frac = tmns.nSec + div[fracWid] / 2;
+                    unsigned long frac = pTS->nsec + div[fracWid] / 2;
                     if (frac >= nSecPerSec)
                         frac = nSecPerSec - 1;
                     // convert nanosecs to integer of correct range
@@ -691,449 +281,199 @@ size_t epicsTime::strftime (
 //
 // epicsTime::show (unsigned)
 //
-void epicsTime::show ( unsigned level ) const
+void epicsStdCall epicsTimeShow (const epicsTimeStamp *pTS, unsigned level)
 {
     char bigBuffer[256];
 
-    size_t numChar = this->strftime ( bigBuffer, sizeof ( bigBuffer ),
-                    "%a %b %d %Y %H:%M:%S.%09f" );
+    size_t numChar = epicsTimeToStrftime( bigBuffer, sizeof ( bigBuffer ),
+                    "%a %b %d %Y %H:%M:%S.%09f", pTS );
     if ( numChar > 0 ) {
         printf ( "epicsTime: %s\n", bigBuffer );
     }
-
-    if ( level > 1 ) {
-        // this also suppresses the "defined, but not used"
-        // warning message
-        printf ( "epicsTime: revision \"%s\"\n",
-            pEpicsTimeVersion );
-    }
-
 }
 
-//
-// epicsTime::operator + (const double &rhs)
-//
-// rhs has units seconds
-//
-epicsTime epicsTime::operator + (const double &rhs) const
+int epicsStdCall epicsTimeToTime_t (time_t *pDest, const epicsTimeStamp *pSrc)
 {
-    unsigned long newSec, newNSec, secOffset, nSecOffset;
-    double fnsec;
+    STATIC_ASSERT(sizeof(*pDest) >= sizeof(pSrc->secPastEpoch));
 
-    if (rhs >= 0) {
-        secOffset = static_cast <unsigned long> (rhs);
-        fnsec = rhs - secOffset;
-        nSecOffset = static_cast <unsigned long> ( (fnsec * nSecPerSec) + 0.5 );
-
-        newSec = this->secPastEpoch + secOffset; // overflow expected
-        newNSec = this->nSec + nSecOffset;
-        if (newNSec >= nSecPerSec) {
-            newSec++; // overflow expected
-            newNSec -= nSecPerSec;
-        }
-    }
-    else {
-        secOffset = static_cast <unsigned long> (-rhs);
-        fnsec = rhs + secOffset;
-        nSecOffset = static_cast <unsigned long> ( (-fnsec * nSecPerSec) + 0.5 );
-
-        newSec = this->secPastEpoch - secOffset; // underflow expected
-        if (this->nSec>=nSecOffset) {
-            newNSec = this->nSec - nSecOffset;
-        }
-        else {
-            // borrow
-            newSec--; // underflow expected
-            newNSec = this->nSec + (nSecPerSec - nSecOffset);
-        }
-    }
-    return epicsTime (newSec, newNSec);
+    // widen to 64-bit to (eventually) accommodate 64-bit time_t
+    *pDest = epicsUInt64(pSrc->secPastEpoch) + POSIX_TIME_AT_EPICS_EPOCH;
+    return epicsTimeOK;
 }
 
-//
-// operator -
-//
-// To make this code robust during timestamp rollover events
-// time stamp differences greater than one half full scale are
-// interpreted as rollover situations:
-//
-// when RHS is greater than THIS:
-// RHS-THIS > one half full scale => return THIS + (ULONG_MAX-RHS)
-// RHS-THIS <= one half full scale => return -(RHS-THIS)
-//
-// when THIS is greater than or equal to RHS
-// THIS-RHS > one half full scale => return -(RHS + (ULONG_MAX-THIS))
-// THIS-RHS <= one half full scale => return THIS-RHS
-//
-double epicsTime::operator - (const epicsTime &rhs) const
+int epicsStdCall epicsTimeFromTime_t (epicsTimeStamp *pDest, time_t src)
 {
-    double nSecRes, secRes;
-
-    //
-    // first compute the difference between the nano-seconds members
-    //
-    // nano sec member is not allowed to be greater that 1/2 full scale
-    // so the unsigned to signed conversion is ok
-    //
-    if (this->nSec>=rhs.nSec) {
-        nSecRes = this->nSec - rhs.nSec;
-    }
-    else {
-        nSecRes = rhs.nSec - this->nSec;
-        nSecRes = -nSecRes;
-    }
-
-    //
-    // next compute the difference between the seconds members
-    // and invert the sign of the nano seconds result if there
-    // is a range violation
-    //
-    if (this->secPastEpoch<rhs.secPastEpoch) {
-        secRes = rhs.secPastEpoch - this->secPastEpoch;
-        if (secRes > ULONG_MAX/2) {
-            //
-            // In this situation where the difference is more than
-            // 68 years assume that the seconds counter has rolled
-            // over and compute the "wrap around" difference
-            //
-            secRes = 1 + (ULONG_MAX-secRes);
-            nSecRes = -nSecRes;
-        }
-        else {
-            secRes = -secRes;
-        }
-    }
-    else {
-        secRes = this->secPastEpoch - rhs.secPastEpoch;
-        if (secRes > ULONG_MAX/2) {
-            //
-            // In this situation where the difference is more than
-            // 68 years assume that the seconds counter has rolled
-            // over and compute the "wrap around" difference
-            //
-            secRes = 1 + (ULONG_MAX-secRes);
-            secRes = -secRes;
-            nSecRes = -nSecRes;
-        }
-    }
-
-    return secRes + nSecRes/nSecPerSec;
+    pDest->secPastEpoch = epicsInt64(src) - POSIX_TIME_AT_EPICS_EPOCH;
+    pDest->nsec = 0;
+    return epicsTimeOK;
 }
 
-//
-// operator <=
-//
-bool epicsTime::operator <= (const epicsTime &rhs) const
+int epicsStdCall epicsTimeToTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
 {
-    bool rc;
-
-    if (this->secPastEpoch<rhs.secPastEpoch) {
-        if (rhs.secPastEpoch-this->secPastEpoch < ULONG_MAX/2) {
-            //
-            // In this situation where the difference is less than
-            // 69 years compute the expected result
-            //
-            rc = true;
-        }
-        else {
-            //
-            // In this situation where the difference is more than
-            // 69 years assume that the seconds counter has rolled
-            // over and compute the "wrap around" result
-            //
-            rc = false;
-        }
-    }
-    else if (this->secPastEpoch>rhs.secPastEpoch) {
-        if (this->secPastEpoch-rhs.secPastEpoch < ULONG_MAX/2) {
-            //
-            // In this situation where the difference is less than
-            // 69 years compute the expected result
-            //
-            rc = false;
-        }
-        else {
-            //
-            // In this situation where the difference is more than
-            // 69 years assume that the seconds counter has rolled
-            // over and compute the "wrap around" result
-            //
-            rc = true;
-        }
-    }
-    else {
-        if (this->nSec<=rhs.nSec) {
-            rc = true;
-        }
-        else {
-            rc = false;
-        }
-    }
-    return rc;
+    time_t temp;
+    int err;
+    err = epicsTimeToTime_t(&temp, pSrc);
+    if(!err)
+        err = epicsTime_localtime(&temp, pDest);
+    if(!err && pNSecDest)
+        *pNSecDest = pSrc->nsec;
+    return err;
 }
 
-//
-// operator <
-//
-bool epicsTime::operator < (const epicsTime &rhs) const
+int epicsStdCall epicsTimeToGMTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
 {
-    bool    rc;
-
-    if (this->secPastEpoch<rhs.secPastEpoch) {
-        if (rhs.secPastEpoch-this->secPastEpoch < ULONG_MAX/2) {
-            //
-            // In this situation where the difference is less than
-            // 69 years compute the expected result
-            //
-            rc = true;
-        }
-        else {
-            //
-            // In this situation where the difference is more than
-            // 69 years assume that the seconds counter has rolled
-            // over and compute the "wrap around" result
-            //
-            rc = false;
-        }
-    }
-    else if (this->secPastEpoch>rhs.secPastEpoch) {
-        if (this->secPastEpoch-rhs.secPastEpoch < ULONG_MAX/2) {
-            //
-            // In this situation where the difference is less than
-            // 69 years compute the expected result
-            //
-            rc = false;
-        }
-        else {
-            //
-            // In this situation where the difference is more than
-            // 69 years assume that the seconds counter has rolled
-            // over and compute the "wrap around" result
-            //
-            rc = true;
-        }
-    }
-    else {
-        if (this->nSec<rhs.nSec) {
-            rc = true;
-        }
-        else {
-            rc = false;
-        }
-    }
-    return rc;
+    time_t temp;
+    int err;
+    err = epicsTimeToTime_t(&temp, pSrc);
+    if(!err)
+        err = epicsTime_gmtime(&temp, pDest);
+    if(!err && pNSecDest)
+        *pNSecDest = pSrc->nsec;
+    return err;
 }
 
-extern "C" {
-    //
-    // ANSI C interface
-    //
-    // its too bad that these cant be implemented with inline functions
-    // at least when running the GNU compiler
-    //
-    LIBCOM_API int epicsStdCall epicsTimeToTime_t (time_t *pDest, const epicsTimeStamp *pSrc)
-    {
-        try {
-            time_t_wrapper dst = epicsTime (*pSrc);
-            *pDest = dst.ts;
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
+int epicsStdCall epicsTimeFromTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
+{
+    tm temp = *pSrc; // mktime() modifies (at least) tm_wday and tm_yday
+    time_t tsrc = mktime(&temp);
+    int err = epicsTimeFromTime_t(pDest, tsrc);
+    if(!err)
+        pDest->nsec = nSecSrc;
+    return err;
+}
+
+#ifdef _WIN32
+#  define timegm _mkgmtime
+
+#elif defined(__rtems__) || defined(vxWorks)
+
+static
+time_t timegm(tm* gtm)
+{
+    // ugly hack for targets without timegm(tm*), but which have mktime(tm*).
+    // probably has issues near start/end of DST
+
+    // translate to seconds as if a local time.  off by TZ offset
+    time_t fakelocal = mktime(gtm);
+    // now use gmtime() which applies the TZ offset again, but with the wrong sign
+    tm wrongtm;
+    epicsTime_gmtime(&fakelocal, &wrongtm);
+    // translate this to seconds
+    time_t fakex2 = mktime(&wrongtm);
+
+    // tzoffset = fakelocal - fakex2;
+
+    return epicsInt64(fakelocal)*2 - fakex2;
+}
+
+#endif
+
+int epicsStdCall epicsTimeFromGMTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
+{
+    tm temp = *pSrc; // timegm() may modify (at least) tm_wday and tm_yday
+    time_t tsrc = timegm(&temp);
+    int err = epicsTimeFromTime_t(pDest, tsrc);
+    if(!err)
+        pDest->nsec = nSecSrc;
+    return err;
+}
+
+int epicsStdCall epicsTimeToTimespec (struct timespec *pDest, const epicsTimeStamp *pSrc)
+{
+    int err = epicsTimeToTime_t(&pDest->tv_sec, pSrc);
+    if(!err)
+        pDest->tv_nsec = pSrc->nsec;
+    return err;
+}
+
+int epicsStdCall epicsTimeFromTimespec (epicsTimeStamp *pDest, const struct timespec *pSrc)
+{
+    int err = epicsTimeFromTime_t(pDest, pSrc->tv_sec);
+    if(!err)
+        pDest->nsec = pSrc->tv_nsec;
+    return err;
+}
+
+int epicsStdCall epicsTimeToTimeval (struct timeval *pDest, const epicsTimeStamp *pSrc)
+{
+    time_t temp;
+    int err = epicsTimeToTime_t(&temp, pSrc);
+    if(!err) {
+        pDest->tv_sec = temp; // tv_sec is not time_t on windows
+        pDest->tv_usec = pSrc->nsec/1000u;
     }
-    LIBCOM_API int epicsStdCall epicsTimeFromTime_t (epicsTimeStamp *pDest, time_t src)
-    {
-        try {
-            time_t_wrapper dst;
-            dst.ts = src;
-            *pDest = epicsTime ( dst );
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
-    }
-    LIBCOM_API int epicsStdCall epicsTimeToTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
-    {
-        try {
-            local_tm_nano_sec tmns = epicsTime (*pSrc);
-            *pDest = tmns.ansi_tm;
-            if (pNSecDest)
-                *pNSecDest = tmns.nSec;
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
-    }
-    LIBCOM_API int epicsStdCall epicsTimeToGMTM (struct tm *pDest, unsigned long *pNSecDest, const epicsTimeStamp *pSrc)
-    {
-        try {
-            gm_tm_nano_sec gmtmns = epicsTime (*pSrc);
-            *pDest = gmtmns.ansi_tm;
-            if (pNSecDest)
-                *pNSecDest = gmtmns.nSec;
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
-    }
-    LIBCOM_API int epicsStdCall epicsTimeFromTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
-    {
-        try {
-            local_tm_nano_sec tmns;
-            tmns.ansi_tm = *pSrc;
-            tmns.nSec = nSecSrc;
-            *pDest = epicsTime (tmns);
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
-    }
-    LIBCOM_API int epicsStdCall epicsTimeFromGMTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
-    {
-        try {
-            gm_tm_nano_sec tmns;
-            tmns.ansi_tm = *pSrc;
-            tmns.nSec = nSecSrc;
-            *pDest = epicsTime (tmns);
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
-    }
-    LIBCOM_API int epicsStdCall epicsTimeToTimespec (struct timespec *pDest, const epicsTimeStamp *pSrc)
-    {
-        try {
-            *pDest = epicsTime (*pSrc);
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
-    }
-    LIBCOM_API int epicsStdCall epicsTimeFromTimespec (epicsTimeStamp *pDest, const struct timespec *pSrc)
-    {
-        try {
-            *pDest = epicsTime (*pSrc);
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
-    }
-    LIBCOM_API int epicsStdCall epicsTimeToTimeval (struct timeval *pDest, const epicsTimeStamp *pSrc)
-    {
-        try {
-            *pDest = epicsTime (*pSrc);
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
-    }
-    LIBCOM_API int epicsStdCall epicsTimeFromTimeval (epicsTimeStamp *pDest, const struct timeval *pSrc)
-    {
-        try {
-            *pDest = epicsTime (*pSrc);
-        }
-        catch (...) {
-            return S_time_conversion;
-        }
-        return epicsTimeOK;
-    }
-    LIBCOM_API double epicsStdCall epicsTimeDiffInSeconds (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
-    {
-        try {
-            return epicsTime (*pLeft) - epicsTime (*pRight);
-        }
-        catch (...) {
-            return - DBL_MAX;
-        }
-    }
-    LIBCOM_API void epicsStdCall epicsTimeAddSeconds (epicsTimeStamp *pDest, double seconds)
-    {
-        try {
-            *pDest = epicsTime (*pDest) + seconds;
-        }
-        catch ( ... ) {
-            *pDest = epicsTime ();
-        }
-    }
-    LIBCOM_API int epicsStdCall epicsTimeEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
-    {
-        try {
-            return epicsTime (*pLeft) == epicsTime (*pRight);
-        }
-        catch ( ... ) {
-            return 0;
-        }
-    }
-    LIBCOM_API int epicsStdCall epicsTimeNotEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
-    {
-        try {
-            return epicsTime (*pLeft) != epicsTime (*pRight);
-        }
-        catch ( ... ) {
-            return 1;
-        }
-    }
-    LIBCOM_API int epicsStdCall epicsTimeLessThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
-    {
-        try {
-            return epicsTime (*pLeft) < epicsTime (*pRight);
-        }
-        catch ( ... ) {
-            return 0;
-        }
-    }
-    LIBCOM_API int epicsStdCall epicsTimeLessThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
-    {
-        try {
-            return epicsTime (*pLeft) <= epicsTime (*pRight);
-        }
-        catch ( ... ) {
-            return 0;
-        }
-    }
-    LIBCOM_API int epicsStdCall epicsTimeGreaterThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
-    {
-        try {
-            return epicsTime (*pLeft) > epicsTime (*pRight);
-        }
-        catch ( ... ) {
-            return 0;
-        }
-    }
-    LIBCOM_API int epicsStdCall epicsTimeGreaterThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
-    {
-        try {
-            return epicsTime (*pLeft) >= epicsTime (*pRight);
-        }
-        catch ( ... ) {
-            return 0;
-        }
-    }
-    LIBCOM_API size_t epicsStdCall epicsTimeToStrftime (char *pBuff, size_t bufLength, const char *pFormat, const epicsTimeStamp *pTS)
-    {
-        try {
-            return epicsTime(*pTS).strftime (pBuff, bufLength, pFormat);
-        }
-        catch ( ... ) {
-            return 0;
-        }
-    }
-    LIBCOM_API void epicsStdCall epicsTimeShow (const epicsTimeStamp *pTS, unsigned interestLevel)
-    {
-        try {
-            epicsTime(*pTS).show (interestLevel);
-        }
-        catch ( ... ) {
-            printf ( "Invalid epicsTimeStamp\n" );
-        }
-    }
+    return err;
+}
+
+int epicsStdCall epicsTimeFromTimeval (epicsTimeStamp *pDest, const struct timeval *pSrc)
+{
+    int err = epicsTimeFromTime_t(pDest, pSrc->tv_sec);
+    if(!err)
+        pDest->nsec = pSrc->tv_usec*1000u;
+    return err;
+}
+
+double epicsStdCall epicsTimeDiffInSeconds (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+{
+    /* double(*pLeft - *pRight)
+     *
+     * 0xffffffff*1000000000 < 2**62
+     * 0x200000000*1000000002 < 2**63
+     * so there is (just barely) space to add 2 TSs as signed 64-bit integers without overflow
+     */
+
+    // handle over/underflow as u32 when subtracting
+    epicsInt64 nsec = epicsInt32(pLeft->secPastEpoch - pRight->secPastEpoch);
+    nsec *= nSecPerSec;
+    nsec += epicsInt32(pLeft->nsec) - epicsInt32(pRight->nsec);
+
+    return double(nsec)*1e-9;
+}
+
+void epicsStdCall epicsTimeAddSeconds (epicsTimeStamp *pDest, double seconds)
+{
+    epicsInt64 nsec = pDest->secPastEpoch;
+    nsec *= nSecPerSec;
+    nsec += epicsInt64(pDest->nsec);
+    nsec += epicsInt64(seconds*1e9 + (seconds>=0.0 ? 0.5 : -0.5));
+    pDest->secPastEpoch = nsec/nSecPerSec;
+    pDest->nsec         = (nsec>=0 ? nsec : -nsec)%nSecPerSec;
+}
+
+int epicsStdCall epicsTimeEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+{
+    return pLeft->secPastEpoch == pRight->secPastEpoch && pLeft->nsec == pRight->nsec;
+}
+
+int epicsStdCall epicsTimeNotEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+{
+    return !epicsTimeEqual(pLeft, pRight);
+}
+
+epicsInt64 epicsStdCall epicsTimeDiffInNS (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+{
+    epicsInt64 delta = epicsInt64(pLeft->secPastEpoch) - pRight->secPastEpoch;
+    delta *= nSecPerSec;
+    delta += epicsInt64(pLeft->nsec) - pRight->nsec;
+    return delta;
+}
+
+int epicsStdCall epicsTimeLessThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+{
+    return epicsTimeDiffInNS(pLeft, pRight) < 0;
+}
+
+int epicsStdCall epicsTimeLessThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+{
+    return epicsTimeDiffInNS(pLeft, pRight) <= 0;
+}
+
+int epicsStdCall epicsTimeGreaterThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+{
+    return epicsTimeDiffInNS(pLeft, pRight) > 0;
+}
+
+int epicsStdCall epicsTimeGreaterThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
+{
+    return epicsTimeDiffInNS(pLeft, pRight) >= 0;
 }

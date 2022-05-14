@@ -40,7 +40,7 @@
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
 
-/* Hysterisis for alarm filtering: 1-1/e */
+/* Hysteresis for alarm filtering: 1-1/e */
 #define THRESHOLD 0.6321
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -359,16 +359,16 @@ static void checkAlarms(int64inRecord *prec, epicsTimeStamp *timeLast)
 }
 
 /* DELTA calculates the absolute difference between its arguments
- * expressed as an unsigned 32-bit integer */
+ * expressed as an unsigned 64-bit integer */
 #define DELTA(last, val) \
-    ((epicsUInt32) ((last) > (val) ? (last) - (val) : (val) - (last)))
+    ((epicsUInt64) ((last) > (val) ? (last) - (val) : (val) - (last)))
 
 static void monitor(int64inRecord *prec)
 {
     unsigned short monitor_mask = recGblResetAlarms(prec);
 
     if (prec->mdel < 0 ||
-        DELTA(prec->mlst, prec->val) > (epicsUInt32) prec->mdel) {
+        DELTA(prec->mlst, prec->val) > (epicsUInt64) prec->mdel) {
         /* post events for value change */
         monitor_mask |= DBE_VALUE;
         /* update last value monitored */
@@ -376,7 +376,7 @@ static void monitor(int64inRecord *prec)
     }
 
     if (prec->adel < 0 ||
-        DELTA(prec->alst, prec->val) > (epicsUInt32) prec->adel) {
+        DELTA(prec->alst, prec->val) > (epicsUInt64) prec->adel) {
         /* post events for archive value change */
         monitor_mask |= DBE_LOG;
         /* update last archive value monitored */

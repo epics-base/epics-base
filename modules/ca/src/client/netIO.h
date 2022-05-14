@@ -32,7 +32,7 @@
 // destructor is virtual (therefore it is protected).
 // I assume that SUNPRO will fix this in future versions.
 // With other compilers we get warnings (and
-// potential problems) if we dont make the baseNMIU
+// potential problems) if we don't make the baseNMIU
 // destructor virtual.
 #if defined ( __SUNPRO_CC ) && ( __SUNPRO_CC <= 0x540 )
 #   define NETIO_VIRTUAL_DESTRUCTOR

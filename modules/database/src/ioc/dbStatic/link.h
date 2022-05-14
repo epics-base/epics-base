@@ -18,7 +18,7 @@
 
 #include "dbDefs.h"
 #include "ellLib.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ typedef struct maplinkType {
     int  value;
 } maplinkType;
 
-epicsShareExtern maplinkType pamaplinkType[];
+DBCORE_API extern maplinkType pamaplinkType[];
 
 #define VXIDYNAMIC      0
 #define VXISTATIC       1
@@ -180,7 +180,7 @@ union value {
     struct vmeio        vmeio;          /* vme io point */
     struct camacio      camacio;        /* camac io point */
     struct rfio         rfio;           /* CEBAF RF buffer interface */
-    struct abio         abio;           /* allen-bradley io point */
+    struct abio         abio;           /* Allen-Bradley io point */
     struct gpibio       gpibio;
     struct bitbusio     bitbusio;
     struct instio       instio;         /* instrument io link */

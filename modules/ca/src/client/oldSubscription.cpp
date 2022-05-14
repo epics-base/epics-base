@@ -41,7 +41,7 @@ oldSubscription::oldSubscription  (
         *pEventId = this;
     }
     io.subscribe ( guard, type, nElem, mask, *this, &this->id );
-    // Dont touch this pointer after this point because the
+    // Don't touch this pointer after this point because the
     // 1st update callback might cancel the subscription and
     // thereby destroy this object.
 }

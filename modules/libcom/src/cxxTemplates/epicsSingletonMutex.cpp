@@ -23,6 +23,8 @@
 #   define SIZE_MAX UINT_MAX
 #endif
 
+namespace {
+
 static epicsThreadOnceId epicsSigletonOnceFlag ( EPICS_THREAD_ONCE_INIT );
 static epicsMutex * pEPICSSigletonMutex = 0;
 
@@ -33,6 +35,8 @@ extern "C" void SingletonMutexOnce ( void * /* pParm */ )
     // is never destroyed.
     pEPICSSigletonMutex = newEpicsMutex;
 }
+
+} // namespace
 
 void SingletonUntyped :: incrRefCount ( PBuild pBuild )
 {

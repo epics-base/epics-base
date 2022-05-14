@@ -49,9 +49,9 @@ OPT_CFLAGS_YES_NO = -Ox -Oy-
 OPT_CFLAGS_YES = $(OPT_CFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
-# -Zi generate program database for debugging information
+# -Z7 generate C7 compatible debugging information (inside .obj)
 # -RTCsu enable run-time error checks
-OPT_CFLAGS_NO = -Zi -RTCsu
+OPT_CFLAGS_NO = -Z7 -RTCsu
 
 # specify object file name and location
 OBJ_CFLAG = -Fo
@@ -119,9 +119,9 @@ OPT_CXXFLAGS_YES_NO = -Ox -Oy-
 OPT_CXXFLAGS_YES = $(OPT_CXXFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
-# -Zi generate program database for debugging information
+# -Z7 generate C7 compatible debugging information (inside .obj)
 # -RTCsu enable run-time error checks
-OPT_CXXFLAGS_NO = -RTCsu -Zi
+OPT_CXXFLAGS_NO = -RTCsu -Z7
 
 # specify object file name and location
 OBJ_CXXFLAG = -Fo
@@ -143,20 +143,6 @@ STATIC_LDLIBS_NO=
 STATIC_LDFLAGS=
 RANLIB=
 
-#
-# option needed for parallel builds with Visual Studio 2013 onward
-# VS2012 and above have VisualStudioVersion, so just need to exclude 2012 (11.0)
-# -FS Force Synchronous PDB Writes
-#
-ifneq ($(VisualStudioVersion),)
-ifneq ($(VisualStudioVersion),11.0)
-  OPT_CXXFLAGS_NO += -FS
-  OPT_CFLAGS_NO += -FS
-endif
-endif
-
-
-#
 # add -profile here to run the ms profiler
 # -LTCG whole program optimization
 # -incremental:no full linking

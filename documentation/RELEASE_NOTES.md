@@ -2,21 +2,409 @@
 
 These release notes describe changes that have been made since the previous
 release of this series of EPICS Base. **Note that changes which were merged up
-from commits to new releases in an older Base series are not described at the
-top of this file but have entries that appear lower down, under the series to
-which they were originally committed.** Thus it is important to read more than
-just the first section to understand everything that has changed in each
-release.
+from commits to the 3.15 branch are not described at the top of this file but
+lower down, under the 3.15 release to which they were originally committed.**
+Thus it is important to read more than just the first section to understand
+everything that has changed in each release.
 
 The PVA submodules each have their own individual sets of release notes which
 should also be read to understand what has changed since earlier releases.
 
 **This version of EPICS has not been released yet.**
 
-## Changes made on the 7.0 branch since 7.0.5
+## Changes made on the 7.0 branch since 7.0.6.1
 
 <!-- Insert new items immediately below here ... -->
 
+
+### Fix `CHECK_RELEASE = WARN`
+
+This now works again, it was broken in 2019 (7.0.3.1) by an errant commit.
+
+### Document `DISP` as design-time field
+
+The DISP field can be set to a non-zero value to prevent records being changed
+from outside the IOC (this is ancient behavior), but has never been documented
+as being usable at design-time (DCT=Yes in the Record Reference tables). This
+has now been changed.
+
+### Make `epicsInt8` signed on all architectures
+
+The `epicsInt8` and thus `DBF_CHAR` types have always been unsigned on
+architectures where `char` is unsigned, for example on many PowerPC CPU
+architectures. This was counter-intuitive, and resulted in IOC behavior
+differing between architectures when converting `DBF_CHAR` values into a
+signed integer or floating point type.
+
+**WARNING**: This fix may change behavior of existing databases on target
+architectures with unsigned `char` (mainly PowerPC) when using input links to
+read from `CHAR` arrays. Architectures with signed `char` (usually x86) should
+be unaffected, although some compilers might generate new warnings.
+
+### Allow hexadecimal and octal numbers in hardware links
+
+[GH:213](https://github.com/epics-base/epics-base/pull/213)
+
+Several types of hardware links (`VME_IO`, `CAMAC_IO`, etc) now accept
+hexadecimal and octal numbers. (Hexadecimal numbers had already been valid
+up to EPICS R3.15.) This change may introduce incompatibilities when using
+numbers with leading `0` as they will now be parsed as octal.
+
+### Fix embedded implementations of `epicsEvent`
+
+[GH:202](https://github.com/epics-base/epics-base/issues/202) and
+[GH:206](https://github.com/epics-base/epics-base/pull/206)
+
+Heinz Junkes provided a new implementation of the `epicsEvent` API suitable for
+RTEMS Posix targets (RTEMS 5.1 and later). In review a few issues related to
+overflow of timeout values surfaced in this and other embedded implementations,
+and these were also been fixed in this Pull Request. The API documentation for
+this and some other routines has also been updated.
+
+### Breakpoint Table Names
+
+The names of breakpoint tables were made unnecessarily strict when DBD file
+processing was moved to Perl for the 3.15 release series. Table names may now
+contain the special characters `_` `-` `:` `;` `.` `[` `]` `<` `>` in addition
+to letters and digits.
+
+### Fix for `undefined` in configure/RELEASE files
+
+Prevents `Use of uninitialized value` warnings from convertRelease.pl.
+
+### Colorized Messages for errlog
+
+Many internal error messages now emit ANSI escape sequences to highlight the
+words "ERROR" and "WARNING" in an attempt to make occurrences more noticeable
+during IOC startup.
+
+The macros `ERL_ERROR` and `ERL_WARNING` are defined for external usage,
+and expand as string constants.  eg.
+
+```c
+#include <errlog.h>
+#ifndef ERL_ERROR
+#  define ERL_ERROR "ERROR"
+#endif
+void fn() {
+   ...
+   errlogPrintf(ERL_ERROR ": something bad happens :(\n");
+```
+
+ANSI escapes are automatically removed from errlog output not destined
+for a terminal.  For example, for logClient, if stderr is redirected,
+or if unsupported (`$TERM` not set, or Windows < 10).
+
+### `dbnd` filter pass through `DBE_ALARM|DBE_PROPERTY`
+
+The `dbnd` server side filter now passes through alarm and property
+change events, even when not exceeding the deadband.
+
+-----
+
+## EPICS Release 7.0.6.1
+
+### `mbboDirectRecord` enhancements
+
+The bit fields `B0` - `B1F` of this record are now always updated and have a
+monitor posted when the `VAL` field is set and the record processed. It is now
+possible to initialize the record's value by setting the bit fields inside a
+database file as long as no other method was used to initialize it (suc as
+setting `VAL` directly, using `DOL`, or by an initial readback from device
+support). A new internal field `OBIT` was added to store information about
+monitors posted on the bit fields.
+
+### Minimum Perl Version is now 5.10.1
+
+Some scripts now make use of features that were introduced to this Perl version
+that was released in 2009.
+
+### DB Links to `DBF_MENU` fields fixed
+
+[GH:183](https://github.com/epics-base/epics-base/issues/183)
+These were broken in a previous release, but now work again.
+
+### Long String access to CALC fields fixed
+
+[GH:194](https://github.com/epics-base/epics-base/issues/194)
+This was broken in a previous release, but now works again.
+
+### Minor Changes
+
++ Many code comments have been spell-checked and corrected.
++ Passing a `-DDEBUG` compiler flag no longer breaks the build.
++ Parallel builds of RTEMS-mvme2100 and RTEMS-mvme2700 targets now work.
++ Illegal characters seen in JSON strings in a database file should now get a
+better error message.
+
+### Other Launchpad Bugs and GitHub Issues Fixed
+
++ [lp:1938459](https://bugs.launchpad.net/epics-base/+bug/1938459)
+  [GH:191](https://github.com/epics-base/epics-base/pull/191) int64in only
+  checks lower 32 bits for change
++ [lp:1941875](https://bugs.launchpad.net/epics-base/+bug/1941875) Buggy
+  warning message "Record/Alias name '...' should not contain non-printable ...
++ [GH:187](https://github.com/epics-base/epics-base/issues/187) waveformRecord
+  missing PACT=true?
++ [GH:189](https://github.com/epics-base/epics-base/pull/189) Fix a couple
+  memory leaks and a segfault
++ [GH:200](https://github.com/epics-base/epics-base/pull/200) and
+  [GH:201](https://github.com/epics-base/epics-base/pull/201) Fix timers on MS
+  Windows for non-EPICS threads
+
+### Compiler interface for epicsAtomic tidied up
+
+[GH:192](https://github.com/epics-base/epics-base/pull/192)
+Both GCC and CLANG compiler intrisics used for the epicsAtomic APIs have been revised; implementations using CLANG should now run faster as they now use the compiler's built-in atomic functions instead of taking a mutex.
+
+### The epicsTime code has been reimplemented
+
+[GH:185](https://github.com/epics-base/epics-base/pull/185)
+This was done to simplify the code and may have improved performance slightly for some uses. Support for the old NTP-specific `struct l_fp` has been dropped but all other routines and methods of the `class epicsTime` function as before.
+
+### Updates to Record Reference documentation
+
+Many of the built-in record types have had improvements to their documentation with additional fields added to the tables, rewrites of descriptions and links to other documents added or fixed.
+
+-----
+
+## EPICS Release 7.0.6
+
+### Support for obsolete architectures removed
+
+These target architectures have been removed:
+
++ darwin-ppc, darwin-ppcx86
++ linux-386, linux-486, linux-586, linux-686, linux-athlon (cross-build)
++ linux-cris, linux-cris_v10, linux-cris_v32 (cross-build)
++ RTEMS-at91rm9200ek, RTEMS-gen68360, RTEMS-mcp750, RTEMS-mvme167,
+RTEMS-psim (cross-build)
+
+### Experimental Support for RTEMS 5
+
+The new major release of the RTEMS real-time OS contains many changes
+including the ability to support SMP systems. This release of EPICS
+can still be built with RTEMS 4.9.x or 4.10.x and should work just
+the same as earlier releases, although due to code having moved around
+we recommend thorough testing before this release is first used in
+production systems.
+
+This release of EPICS comes with support for several new RTEMS targets
+running on RTEMS 5:
+
+- RTEMS-beagleboneblack
+- RTEMS-pc686
+- RTEMS-qoriq_e500 (MVME2500)
+- RTEMS-xilinx_zynq_a9_qemu
+- RTEMS-xilinx_zynq_zedboard
+
+The EPICS support for RTEMS 4 has always relied on RTEMS-specific
+kernel APIs which cannot be used on an SMP system, so a new port was
+created to use the Posix real-time APIs that are now recommended for
+RTEMS 5. Note that a single installation of EPICS cannot build both
+RTEMS 4 and RTEMS 5 targets, if you need to support targets running
+on both versions you must use a separate installation, and be sure
+to run `make distclean` if switching a single source tree from one
+to the other (both header files and dependency files are different
+between the two and must be cleaned out).
+
+The configuration variable RTEMS_VERSION in the EPICS config file
+`configure/os/CONFIG_SITE.Common.RTEMS` must be set to the full 3-
+part version number for RTEMS 4 releases, e.g. `4.9.1`, `4.10.2`
+but for RTEMS 5.1 and later it must only contain the major version
+number e.g. `5`.
+
+Some RTEMS BSPs can be built and may work with the newer libbsd
+network stack which RTEMS is moving over to, but most of the MVME
+boards (and the uC5282) still require the legacy network stack.
+
+The dependency on bspExt has been removed, EPICS now provides its
+own routine for VMEbus probing (or uses one built into the BSP).
+
+Anyone using this release on RTEMS is advised to discuss problems
+building or running it on either the tech-talk or core-talk email
+lists so the core developers can help with and find out about any
+problems with the old or new port.
+
+Known Issues:
+- MVME2100 and MVME2700 need changes to the RTEMS 5 BSP to build.
+- VMEBus support is not yet available for the MVME2500 BSP.
+- There are some known issues with floating point on MVME2500,
+  probably related to its newer e500 FPU.
+- Changed network driver for beatnik to work with libbsd.  Some
+  issues with DHCP, but network stack usable.  Can load env from
+  NVRAM.
+
+### `epicsEnvShow` accepts a glob pattern
+
+The optional argument to epicsEnvShow can now be a glob pattern.
+
+### New function `epicsStrnGlobMatch()`
+
+The function `epicsStrnGlobMatch(char* str, size_t len, char* pattern)`
+works exactly the same as `epicsStrGlobMatch()` but takes an additional
+length arguments which limits the number of characters of `str` to match.
+
+### Automatic fallback to thread when unable to exec caRepeater
+
+A process using libca which does not find an existing caRepeater process
+will attempt to start one by running the caRepeater executable.
+This is not always possible, usually when caRepeater is not in `$PATH`.
+Now, instead of printing a warning, an internal caRepeater thread
+will be started (as is done be RTEMS and vxWorks targets).
+
+If this fallback occurs, the lifetime of the caRepeater thread
+may be shorter than the lifetime of a separate caRepeater process
+would have been.
+
+It remains the recommended practice to explicitly start a caRepeater
+instance.  Examples of both systemd (`caRepeater.service`) and sysv
+(`S99caRepeater`) scripts may be found under `bin/`.
+
+### Glob pattern allowed in `var` command
+
+When used with one argument, the `var` command can be used with a glob pattern
+for printing matching variables.
+
+### Formalize/fix `FINAL_LOCATION`
+
+The `FINAL_LOCATION` make variable has for some time been an undocumented
+means of performing a staged build.  This is a build which "installs" to
+a temporary location, which will later be moved to a final location.
+
+This has now been added to `configure/CONFIG_SITE`.
+
+Usage analogous to the autotools recipe
+
+```sh
+./configure --prefix=/usr/lib/epics
+make install DESTDIR=/tmp/build
+```
+
+would be
+
+```sh
+make INSTALL_LOCATION=/tmp/build FINAL_LOCATION=/usr/lib/epics
+```
+
+`FINAL_LOCATION` is now correctly used in systemd and sysv init scripts
+`caRepeater.service`, `S99caRepeater`, and `S99logServer`.
+
+### IOCsh sets `${PWD}`
+
+IOC shell will now ensure `${PWD}` is set on startup,
+and updated by the `cd` iocsh function.
+
+### Add Alarm Message and Time Tag Fields
+
+Two new fields have been added to `dbCommon` so will be present in all
+records: `AMSG` and `UTAG`.
+
+#### `AMSG`
+
+`AMSG` can hold an arbitrary 40-character string, providing additional
+information about the alarm condition indicated in `STAT` and `SEVR`. With no
+alarm it will hold an empty string. The new `recGblSetSevrMsg()` function can
+be used in place of `recGblSetSevr()` to signal an alarm while providing a
+message.
+
+For example, a device support's `read_bi()` routine for a hypothetical
+multi-channel ethernet attached device might flag a communication error
+between the IOC and controller, or an error involving a certain channel like
+this:
+
+```c
+static long read_bi(biRecord* prec) {
+    ...
+    if (!priv->connected) {
+        recGblSetSevrMsg(prec, COMM_ALARM, INVALID_ALARM,
+            "No controller connected");
+        return S_dev_noDevice;
+    }
+    if (!priv->err) {
+        recGblSetSevrMsg(prec, READ_ALARM, INVALID_ALARM,
+            "Channel %u disconnexted", priv->chan);
+        return S_dev_noDevice;
+    }
+    return status;
+}
+```
+
+#### `UTAG`
+
+`UTAG` holds an `epicsUInt64` value which is semantically part of the record's
+timestamp (`TIME`). The value defaults to zero if not explicitly set. Device
+support or an event time provider which supports this feature may write a tag
+value directly to the `dbCommon::utag` field.
+
+`TSEL` links will copy both `TIME` and `UTAG` between records if the link type
+supports this (CA links do not).
+
+A `utag` server side channel filter has been added which can be configured to
+filter out monitor updates which don't pass the test `(UTAG & M) == V` where
+`M` and `V` are client specified integers. For example running the command
+`camonitor BPM0:X.{utag:{M:1,V:1}}` will only show updates for which
+`(UTAG & 1) == 1` i.e. the least significant bit of the `UTAG` field is set.
+
+This feature is intended for use by intelligent devices which can provide
+contextual information along with a value/alarm/time.  For example, a beam
+diagnostic device which is aware of whether a beam signal should be present
+(eg. from a global timing system).
+
+#### Link Support
+
+Two new optional methods have been added to the Link Support Entry Table
+(`struct lset`): `lset::getAlarmMsg()` and `lset::getTimeStampTag()`. See
+comments in dbLink.h for details on implementing these.
+
+Two new accessor functions have also been added which call these methods:
+`dbGetAlarmMsg()` and `dbGetTimeStampTag()`.
+
+#### Compatibility
+
+User code wishing to call these interfaces while maintaining compatibility with older
+versions of Base may add some of the following macro definitions, and ensure
+that the variables referenced by output pointers are initialized.
+
+```c
+#ifndef HAS_ALARM_MESSAGE
+#  define recGblSetSevrMsg(REC, STAT, SEVR, ...) recGblSetSevr(REC, STAT, SEVR)
+#endif
+#ifndef dbGetAlarmMsg
+#  define dbGetAlarmMsg(LINK, STAT, SEVR, BUF, BUFLEN) dbGetAlarm(LINK, STAT, SEVR)
+#endif
+#ifndef dbGetTimeStampTag
+#  define dbGetTimeStampTag(LINK, STAMP, TAG) dbGetTimeStamp(LINK, STAMP)
+#endif
+```
+
+
+### Timeouts for Unit Test Programs
+
+The unit test programs that are run by the `make runtests` or `make tapfiles`
+commands get executed by a `.t` wrapper script which is normally generated by
+the EPICS `makeTestfile.pl` program. Those generated wrapper scripts now
+impose a time-limit on the test program they execute, and will kill it if it
+runs for longer than 500 seconds (8 minutes 20) without exiting. That
+time-limit can be changed for any such test by modifying the Makefile which
+creates and runs the `.t` wrapper script.
+
+Setting the environment variable `EPICS_UNITTEST_TIMEOUT` to the desired
+number of seconds while the Makefile is generating the test script changes the
+timeout in that script. For example:
+
+```
+  TESTSCRIPTS_HOST += hourLongTest.t
+  hourLongTest.t: export EPICS_UNITTEST_TIMEOUT=3600
+```
+
+When selecting such a timeout remember that different Continuous Integration
+systems such as GitHub Actions and Appveyor run on processors with different
+speeds, so allow enough head-room for slower systems to complete the test.
+
+Test programs written directly in Perl as a `.plt` script should implement a
+similar timeout for themselves. The "netget" test in Base does this in a way
+that works on Windows as well as Unix-like hosts.
 
 -----
 
@@ -457,7 +845,7 @@ work with older Base releases.
 
 This would also be a good time to modify the device support to use the type-safe
 device support entry tables that were introduced in Base-3.16.2 -- see
-[#type-safe-device-and-driver-support-tables](this entry below) for the
+[this entry below](#type-safe-device-and-driver-support-tables) for the
 description of that change, which is also optional for now.
 
 Look at the aiRecord for example. Near the top of the generated `aiRecord.h`
@@ -1688,7 +2076,43 @@ header and removed the need for dbScan.c to reach into the internals of its
 # Changes incorporated from the 3.15 branch
 
 
-## Changes made on the 3.15 branch since 3.15.8
+## Changes from the 3.15 branch since 3.15.9
+
+### Fix timers on MS Windows for non-EPICS threads
+
+The waitable timer changes in 3.15.9 broke calls to `epicsThreadSleep()` and
+similar routines that used timers (including `ca_pend_event()`) when made from
+threads that were not started using the epicsThread APIs.
+[This problem](https://github.com/epics-base/epics-base/pull/200)
+[has now been fixed](https://github.com/epics-base/epics-base/pull/201).
+
+## Changes made between 3.15.8 and 3.15.9
+
+### Use waitable timers on Microsoft Windows
+
+The `epicsEventWaitWithTimeout()` and `epicsThreadSleep()` functions have
+been changed to use waitable timers. On Windows 10 version 1803 or higher
+they will use high resolution timers for more consistent timing.
+
+See [this Google Groups thread](https://groups.google.com/a/chromium.org/g/scheduler-dev/c/0GlSPYreJeY)
+for a comparison of the performance of different timers.
+
+### Build target for documentation
+
+The build target `inc` now works again after a very long hiatus. It now
+generates and installs just the dbd, header and html files, without compiling
+any C/C++ code. This can be used to speed up CI jobs that only generate
+documentation.
+
+### Bug fixes
+
+- The error status returned by a record support's `special()` method is now propagated out of the `dbPut()` routine again (broken since 3.15.0).
+- [gh: #80](https://github.com/epics-base/epics-base/issues/80), VS-2015 and
+later have working strtod()
+- [lp: #1776141](https://bugs.launchpad.net/epics-base/+bug/1776141), Catch
+buffer overflow from long link strings
+- [lp: #1899697](https://bugs.launchpad.net/epics-base/+bug/1899697), Records
+in wrong PHAS order
 
 ### Change to the `junitfiles` self-test build target
 
@@ -1696,7 +2120,9 @@ The names of the generated junit xml test output files have been changed
 from `<testname>.xml` to `<testname>-results.xml`, to allow better
 distinction from other xml files. (I.e., for easy wildcard matching.)
 
------
+### Fixes and code cleanups
+
+Issues reported by various static code checkers.
 
 ## Changes made between 3.15.7 and 3.15.8
 

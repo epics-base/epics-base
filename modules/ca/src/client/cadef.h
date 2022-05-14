@@ -129,7 +129,7 @@ typedef unsigned CA_SYNC_GID;
 #define CA_OP_CONN_UP       6
 #define CA_OP_CONN_DOWN     7
 
-/* depricated */
+/* deprecated */
 #define CA_OP_SEARCH        2
 
 /*
@@ -464,7 +464,7 @@ LIBCA_API int epicsStdCall ca_array_get_callback
 /*  Specify a function to be executed whenever significant changes      */
 /*  occur to a channel.                                                 */
 /*  NOTES:                                                              */
-/*  1)  Evid may be omited by passing a NULL pointer                    */
+/*  1)  Evid may be omitted by passing a NULL pointer                    */
 /*                                                                      */
 /*  2)  An array count of zero specifies the native db count            */
 /*                                                                      */
@@ -559,19 +559,19 @@ LIBCA_API chid epicsStdCall ca_evid_to_chid ( evid id );
 /*
  * ca_pend_event()
  *
- * timeOut  R   wait for this delay in seconds
+ * timeout  R   wait for this delay in seconds
  */
-LIBCA_API int epicsStdCall ca_pend_event (ca_real timeOut);
+LIBCA_API int epicsStdCall ca_pend_event (ca_real timeout);
 #define ca_poll() ca_pend_event(1e-12)
 
 /*
  * ca_pend_io()
  *
- * timeOut  R   wait for this delay in seconds but return early
+ * timeout  R   wait for this delay in seconds but return early
  *              if all get requests (or search requests with null
  *              connection handler pointer have completed)
  */
-LIBCA_API int epicsStdCall ca_pend_io (ca_real timeOut);
+LIBCA_API int epicsStdCall ca_pend_io (ca_real timeout);
 
 /* calls ca_pend_io() if early is true otherwise ca_pend_event() is called */
 LIBCA_API int epicsStdCall ca_pend (ca_real timeout, int early);
@@ -837,7 +837,7 @@ LIBCA_API double epicsStdCall ca_beacon_period (chid chan);
 LIBCA_API double epicsStdCall ca_receive_watchdog_delay (chid chan);
 
 /*
- * used when an auxillary thread needs to join a CA client context started
+ * used when an auxiliary thread needs to join a CA client context started
  * by another thread
  */
 LIBCA_API struct ca_client_context * epicsStdCall ca_current_context ();

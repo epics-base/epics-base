@@ -14,17 +14,17 @@
 
 #include <stdio.h>
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc void asCaStart(void);
-epicsShareFunc void asCaStop(void);
-epicsShareFunc int ascar(int level);
-epicsShareFunc int ascarFP(FILE *fp, int level);
-epicsShareFunc void ascaStats(int *pchans, int *pdiscon);
+DBCORE_API void asCaStart(void);
+DBCORE_API void asCaStop(void);
+DBCORE_API int ascar(int level);
+DBCORE_API int ascarFP(FILE *fp, int level);
+DBCORE_API void ascaStats(int *pchans, int *pdiscon);
 
 #ifdef __cplusplus
 }

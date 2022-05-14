@@ -50,9 +50,13 @@ LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigne
 LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess 
     ( const char *pProcessName, const char *pBaseExecutableName )
 {
+    BOOL silent = pProcessName && pProcessName[0]=='!';
     BOOL status;
     STARTUPINFO startupInfo;
     PROCESS_INFORMATION processInfo;
+
+    if(silent)
+        pProcessName++; /* skip '!' */
 
     GetStartupInfo ( &startupInfo );
     startupInfo.lpReserved = NULL;
@@ -67,7 +71,7 @@ LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
         NULL, /* pointer to thread security attributes */
         FALSE, /* handle inheritance flag */
         CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS, /* creation flags */
-        NULL, /* pointer to new environment block (defaults to caller's environement) */
+        NULL, /* pointer to new environment block (defaults to caller's environment) */
         NULL, /* pointer to current directory name  (defaults to caller's current directory) */
         &startupInfo, /* pointer to STARTUPINFO */
         &processInfo /* pointer to PROCESS_INFORMATION */
@@ -115,7 +119,7 @@ LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
             /* Free the buffer. */
             LocalFree (errStrMsgBuf);
         }
-        else {
+        else if(!silent) {
             fprintf (stderr, "!!WARNING!!\n");
             fprintf (stderr, "Unable to locate executable \"%s\".\n", pBaseExecutableName);
             fprintf (stderr, "You may need to modify your \"path\" environment variable.\n");

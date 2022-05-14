@@ -736,6 +736,10 @@ The choices can be found by following the link to the menuFtype definition.
 
 These fields specify how many array elements the input value fields may hold.
 
+Note that access to the C<NOT> field from C code must use the field name in
+upper case, e.g. C<< prec->NOT >> since the lower-case C<not> is a reserved
+word in C++ and cannot be used as an identifier.
+
 =fields NOA, NOB, NOC, NOD, NOE, NOF, NOG, NOH, NOI, NOJ, NOK, NOL, NOM, NON, NOO, NOP, NOQ, NOR, NOS, NOT, NOU
 
 =cut

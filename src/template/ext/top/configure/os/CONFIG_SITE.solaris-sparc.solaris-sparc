@@ -7,8 +7,6 @@
 #       leave the line empty.
 #
 
--include $(TOP)/configure/os/CONFIG_SITE.Common.Common
-
 # sun X11
 X11_LIB = /usr/openwin/lib
 X11_INC = /usr/openwin/include

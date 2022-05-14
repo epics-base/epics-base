@@ -23,7 +23,6 @@
 
 #include "epicsTypes.h"
 
-#define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "dbExtractArray.h"
 

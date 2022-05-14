@@ -16,7 +16,7 @@
 #ifndef INC_dbDbLink_H
 #define INC_dbDbLink_H
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,8 +25,8 @@ extern "C" {
 struct link;
 struct dbLocker;
 
-epicsShareFunc long dbDbInitLink(struct link *plink, short dbfType);
-epicsShareFunc void dbDbAddLink(struct dbLocker *locker, struct link *plink,
+DBCORE_API long dbDbInitLink(struct link *plink, short dbfType);
+DBCORE_API void dbDbAddLink(struct dbLocker *locker, struct link *plink,
     short dbfType, dbChannel *ptarget);
 
 #ifdef __cplusplus

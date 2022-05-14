@@ -135,7 +135,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             (unsigned)current_ifreqsize));
 
         /*
-         * If its not an internet interface then dont use it
+         * If its not an internet interface then don't use it
          */
         if ( pIfreqList->ifr_addr.sa_family != AF_INET ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): interface \"%s\" was not AF_INET\n", pIfreqList->ifr_name) );
@@ -143,7 +143,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         }
 
         /*
-         * if it isnt a wildcarded interface then look for
+         * if it isn't a wildcarded interface then look for
          * an exact match
          */
         if ( pMatchAddr->sa.sa_family != AF_UNSPEC ) {
@@ -167,7 +167,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" flags: %x\n", pIfreqList->ifr_name, pIfreqList->ifr_flags) );
 
         /*
-         * dont bother with interfaces that have been disabled
+         * don't bother with interfaces that have been disabled
          */
         if ( ! ( pIfreqList->ifr_flags & IFF_UP ) ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" was down\n", pIfreqList->ifr_name) );
@@ -175,7 +175,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         }
 
         /*
-         * dont use the loop back interface
+         * don't use the loop back interface
          */
         if ( pIfreqList->ifr_flags & IFF_LOOPBACK ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): ignoring loopback interface: \"%s\"\n", pIfreqList->ifr_name) );
@@ -318,7 +318,7 @@ static void osiLocalAddrOnce (void *raw)
         }
 
         /*
-         * dont use the loop back interface
+         * don't use the loop back interface
          */
         if ( pIfreqList->ifr_flags & IFF_LOOPBACK ) {
             ifDepenDebugPrintf ( ("osiLocalAddr(): ignoring loopback interface: %s\n", pIfreqList->ifr_name) );

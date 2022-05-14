@@ -25,7 +25,9 @@ recordtype(printf) {
 
 The printf record has the standard fields for specifying under what
 circumstances it will be processed.
-These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
+These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
+
+=fields SCAN, PHAS, EVNT, PRIO, PINI
 
 =head3 String Generation Parameters
 
@@ -144,7 +146,8 @@ which type of the data is requested through the appropriate input link. As with
 C<printf()> a C<*> character may be used in the format to specify width and/or
 precision instead of numeric literals, in which case additional input links are
 used to provide the necessary integer parameter or parameters. See L<Address
-Specification> for information on specifying links.
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on specifying links.
 
 The formatted string is written to the VAL field.  The maximum number of
 characters in VAL is given by SIZV, and cannot be larger than 65535. The LEN

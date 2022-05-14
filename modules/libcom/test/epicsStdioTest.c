@@ -64,6 +64,15 @@ static void testEpicsSnprintf(void) {
     }
 }
 
+void checkVPrintf(const char *pFormat, ...)
+{
+    va_list     pvar;
+
+    va_start(pvar, pFormat);
+    vprintf(pFormat, pvar);
+    va_end(pvar);
+}
+
 void testStdoutRedir (const char *report)
 {
     FILE *realStdout = stdout;
@@ -85,7 +94,8 @@ void testStdoutRedir (const char *report)
     testOk1(stdout == stream);
 
     printf(LINE_1);
-    printf(LINE_2);
+    putchar('\n');
+    checkVPrintf(LINE_2);
 
     epicsSetThreadStdout(0);
     testOk1(epicsGetStdout() == realStdout);
@@ -113,15 +123,21 @@ void testStdoutRedir (const char *report)
         fclose(stream);
         return;
     }
-    testOk(strcmp(linebuf, LINE_1) == 0, "First line correct");
+    testOk(strcmp(linebuf, LINE_1) == 0, "printf() line correct");
 
     if (!testOk1(fgets(linebuf, buflen, stream) != NULL)) {
         testDiag("File read error: %s", strerror(errno));
-        testSkip(1, "No line to compare.");
+        testSkip(1, "Nothing to compare.");
     } else
-        testOk(strcmp(linebuf, LINE_2) == 0, "Second line");
+        testOk(strcmp(linebuf, "\n") == 0, "putchar() line correct");
 
-    testOk(!fgets(linebuf, buflen, stream), "File ends");
+    if (!testOk1(fgets(linebuf, buflen, stream) != NULL)) {
+        testDiag("File read error: %s", strerror(errno));
+        testSkip(1, "Nothing to compare.");
+    } else
+        testOk(strcmp(linebuf, LINE_2) == 0, "vprintf() line correct");
+
+    testOk(!fgets(linebuf, buflen, stream) && feof(stream), "End of file");
 
     if (!testOk1(!fclose(stream)))
         testDiag("fclose error: %s\n", strerror(errno));
@@ -129,10 +145,10 @@ void testStdoutRedir (const char *report)
 
 MAIN(epicsStdioTest)
 {
-    testPlan(163);
+    testPlan(165);
     testEpicsSnprintf();
 #ifdef __rtems__
-    /* ensure there is a writeable area */
+    /* ensure there is a writable area */
     mkdir( "/tmp", S_IRWXU );
     testStdoutRedir("/tmp/report");
 #else

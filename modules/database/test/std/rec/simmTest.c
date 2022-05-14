@@ -12,9 +12,11 @@
 #include <testMain.h>
 #include <dbAccess.h>
 #include <epicsTime.h>
+#include <epicsEvent.h>
 #include <epicsThread.h>
 #include <errlog.h>
 #include <alarm.h>
+#include <callback.h>
 
 #include "recSup.h"
 #include "aiRecord.h"
@@ -414,6 +416,15 @@ void testSiolWrite(const char *name,
  * Asynchronous processing using simm:DELAY
  */
 
+static void
+ping(CALLBACK *pcb)
+{
+    epicsEventId ev;
+    callbackGetUser(ev, pcb);
+
+    epicsEventMustTrigger(ev);
+}
+
 static
 void testSimmDelay(const char *name,
                    epicsFloat64 *psdly,
@@ -422,6 +433,14 @@ void testSimmDelay(const char *name,
     epicsTimeStamp now;
     const double delay = 0.01;  /* 10 ms */
     double diff;
+    epicsEventId poked;
+    CALLBACK cb;
+
+    memset(&cb, 0, sizeof(CALLBACK));
+    poked = epicsEventMustCreate(epicsEventEmpty);
+    callbackSetCallback(ping, &cb);
+    callbackSetPriority(priorityLow, &cb);
+    callbackSetUser(poked, &cb);
 
     testDiag("## Asynchronous processing with simm:DELAY ##");
 
@@ -443,14 +462,11 @@ void testSimmDelay(const char *name,
     testdbPutFieldOk(namePROC, DBR_LONG, 0);
     testdbGetFieldEqual(namePACT, DBR_USHORT, 1);
     epicsTimeGetCurrent(&now);
-    epicsThreadSleep(1.75*delay);
-    if(testImpreciseTiming())
-        testTodoBegin("imprecise");
+    callbackRequestDelayed(&cb, 1.5 * delay);
+    epicsEventWait(poked);
     testdbGetFieldEqual(namePACT, DBR_USHORT, 0);
     diff = epicsTimeDiffInSeconds(mytime, &now);
     testOk(diff >= 0.0, "time stamp is recent (%.9f sec)", diff);
-    if(testImpreciseTiming())
-        testTodoEnd();
 
     /* Reset delay */
     *psdly = -1.;

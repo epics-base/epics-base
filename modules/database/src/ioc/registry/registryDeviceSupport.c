@@ -11,20 +11,19 @@
 
 /* Author:  Marty Kraimer Date:    08JUN99 */
 
-#define epicsExportSharedSymbols
 #include "registry.h"
 #include "registryDeviceSupport.h"
 
 static void *registryID = "device support";
 
 
-epicsShareFunc int registryDeviceSupportAdd(
+DBCORE_API int registryDeviceSupportAdd(
     const char *name, const dset *pdset)
 {
     return registryAdd(registryID, name, (void *)pdset);
 }
 
-epicsShareFunc dset * registryDeviceSupportFind(
+DBCORE_API dset * registryDeviceSupportFind(
     const char *name)
 {
     return registryFind(registryID, name);

@@ -24,9 +24,19 @@
 #include <sched.h>
 #include <unistd.h>
 
-#if defined(_POSIX_MEMLOCK) && _POSIX_MEMLOCK > 0
-#include <sys/mman.h>
+#if (defined(_POSIX_MEMLOCK) && (_POSIX_MEMLOCK > 0) && !defined(__rtems__))
+#  define USE_MEMLOCK 1
+#else
+#  define USE_MEMLOCK 0
 #endif
+
+#if USE_MEMLOCK
+#include <sys/mman.h> 
+#endif
+
+/* epicsStdio uses epicsThreadOnce(), require explicit use to avoid unexpected recursion */
+#define epicsStdioStdStreams
+#define epicsStdioStdPrintfEtc
 
 #include "epicsStdio.h"
 #include "ellLib.h"
@@ -88,12 +98,12 @@ static epicsThreadOSD *createImplicit(void);
 
 #define checkStatus(status,message) \
 if((status))  {\
-    errlogPrintf("%s error %s\n",(message),strerror((status))); \
+    errlogPrintf("%s " ERL_ERROR " %s\n",(message),strerror((status))); \
 }
 
 #define checkStatusQuit(status,message,method) \
 if(status) { \
-    errlogPrintf("%s  error %s\n",(message),strerror((status))); \
+    errlogPrintf("%s  " ERL_ERROR " %s\n",(message),strerror((status))); \
     cantProceed((method)); \
 }
 
@@ -266,7 +276,7 @@ int           low, try;
          * at all. However, we still must return
          * a priority range accepted by the SCHED_FIFO
          * policy. Otherwise, epicsThreadCreate() cannot
-         * detect the unsufficient permission (EPERM)
+         * detect the insufficient permission (EPERM)
          * and fall back to a non-RT thread (because
          * pthread_attr_setschedparam would fail with
          * EINVAL due to the bad priority).
@@ -320,12 +330,29 @@ int          status;
     a_p->usePolicy = arg.ok;
 }
 #endif
-
+
+/* 0 - In the process which loads libCom.
+ * 1 - In a newly fork()'d child process
+ * 2 - In a child which has been warned
+ */
+static int childAfterFork;
+
+static void childHook(void)
+{
+    epicsAtomicSetIntT(&childAfterFork, 1);
+}
 
 static void once(void)
 {
     epicsThreadOSD *pthreadInfo;
     int status;
+
+#ifdef __rtems__
+    (void)childHook;
+#else
+    status = pthread_atfork(NULL, NULL, &childHook);
+    checkStatusOnce(status, "pthread_atfork");
+#endif
 
     pthread_key_create(&getpthreadInfo,0);
     status = osdPosixMutexInit(&onceLock,PTHREAD_MUTEX_DEFAULT);
@@ -421,12 +448,18 @@ static void epicsThreadInit(void)
     static pthread_once_t once_control = PTHREAD_ONCE_INIT;
     int status = pthread_once(&once_control,once);
     checkStatusQuit(status,"pthread_once","epicsThreadInit");
+
+    if(epicsAtomicGetIntT(&childAfterFork)==1 &&  epicsAtomicCmpAndSwapIntT(&childAfterFork, 1, 2)==1) {
+        fprintf(stderr, "Warning: Undefined Behavior!\n"
+                        "         Detected use of epicsThread from child process after fork()\n");
+    }
 }
 
 LIBCOM_API
 void epicsThreadRealtimeLock(void)
 {
-#if defined(_POSIX_MEMLOCK) && _POSIX_MEMLOCK > 0
+#if USE_MEMLOCK
+#ifndef RTEMS_LEGACY_STACK // seems to be part of libbsd?
     if (pcommonAttr->maxPriority > pcommonAttr->minPriority) {
         int status = mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -451,6 +484,7 @@ void epicsThreadRealtimeLock(void)
             }
         }
     }
+#endif // LEGACY STACK
 #endif
 }
 
@@ -643,7 +677,7 @@ void epicsThreadMustJoin(epicsThreadId id)
             errlogPrintf("Warning: %s thread self-join of unjoinable\n", id->name);
 
         } else {
-            /* try to error nicely, however in all likelyhood de-ref of
+            /* try to error nicely, however in all likelihood de-ref of
              * 'id' has already caused SIGSEGV as we are racing thread exit,
              * which free's 'id'.
              */
@@ -687,6 +721,10 @@ LIBCOM_API void epicsStdCall epicsThreadExitMain(void)
     epicsThreadOSD *pthreadInfo;
 
     epicsThreadInit();
+
+    cantProceed("epicsThreadExitMain() has been deprecated for lack of usage."
+                "  Please report if you see this message.");
+
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo==NULL)
         pthreadInfo = createImplicit();
@@ -930,7 +968,7 @@ LIBCOM_API void epicsStdCall epicsThreadShow(epicsThreadId showThread, unsigned 
     checkStatus(status,"pthread_mutex_unlock epicsThreadShowAll");
     if(status) return;
     if (!found)
-        printf("Thread %#lx (%lu) not found.\n", (unsigned long)showThread, (unsigned long)showThread);
+        epicsStdoutPrintf("Thread %#lx (%lu) not found.\n", (unsigned long)showThread, (unsigned long)showThread);
 }
 
 LIBCOM_API epicsThreadPrivateId epicsStdCall epicsThreadPrivateCreate(void)
@@ -944,8 +982,10 @@ LIBCOM_API epicsThreadPrivateId epicsStdCall epicsThreadPrivateCreate(void)
         return NULL;
     status = pthread_key_create(key,0);
     checkStatus(status,"pthread_key_create epicsThreadPrivateCreate");
-    if(status)
+    if(status) {
+        free(key);
         return NULL;
+    }
     return((epicsThreadPrivateId)key);
 }
 

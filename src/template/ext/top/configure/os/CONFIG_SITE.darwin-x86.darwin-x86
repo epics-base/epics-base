@@ -7,8 +7,6 @@
 #       leave the line empty.
 #
 
--include $(TOP)/configure/os/CONFIG_SITE.Common.Common
-
 PYTHON_DIR=/usr/lib/python2.2
 PYTHON_INCLUDE=/System/Library/Frameworks/Python.framework/Versions/2.3/include/python2.3
 

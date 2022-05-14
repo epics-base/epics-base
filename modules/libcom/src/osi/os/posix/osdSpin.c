@@ -34,7 +34,7 @@
 
 #define checkStatus(status,message) \
     if ((status)) { \
-        errlogPrintf("epicsSpin %s failed: error %s\n", \
+        errlogPrintf("epicsSpin %s failed: " ERL_ERROR " %s\n", \
             (message), strerror((status))); \
     }
 

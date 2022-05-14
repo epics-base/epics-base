@@ -54,7 +54,7 @@ typedef struct myPvt {
     int resultFail;
 } myPvt;
 
-epicsEventId finished;
+static epicsEventId finished;
 
 
 static void myCallback(epicsCallback *pCallback)

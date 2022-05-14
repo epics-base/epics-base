@@ -81,7 +81,7 @@ void tcpSendThread::run ()
 
         while ( true ) {
 
-            // dont wait if there is still labor to be done below
+            // don't wait if there is still labor to be done below
             if ( ! laborPending ) {
                 epicsGuardRelease < epicsMutex > unguard ( guard );
                 this->iiu.sendThreadFlushEvent.wait ();
@@ -124,7 +124,7 @@ void tcpSendThread::run ()
                 }
                 else {
                     // This wakes up the resp thread so that it can call
-                    // the connect callback. This isnt maximally efficent
+                    // the connect callback. This isn't maximally efficient
                     // but it has the excellent side effect of not requiring
                     // that the UDP thread take the callback lock. There are
                     // almost no V42 servers left at this point.
@@ -178,7 +178,7 @@ void tcpSendThread::run ()
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
                     sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf ("CAC TCP clean socket shutdown error was %s\n",
+                errlogPrintf ("CAC TCP clean socket shutdown " ERL_ERROR " was %s\n",
                     sockErrBuf );
             }
         }
@@ -194,7 +194,7 @@ void tcpSendThread::run ()
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ("CAC TCP clean socket shutdown error was %s\n",
+            errlogPrintf ("CAC TCP clean socket shutdown " ERL_ERROR " was %s\n",
                 sockErrBuf );
         }
     }
@@ -204,7 +204,7 @@ void tcpSendThread::run ()
 
     while ( ! this->iiu.recvThread.exitWait ( 30.0 ) ) {
         // it is possible to get stuck here if the user calls
-        // ca_context_destroy() when a circuit isnt known to
+        // ca_context_destroy() when a circuit isn't known to
         // be unresponsive, but is. That situation is probably
         // rare, and the IP kernel might have a timeout for
         // such situations, nevertheless we will attempt to deal
@@ -283,7 +283,7 @@ unsigned tcpiiu::sendBytes ( const void *pBuf,
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
                     sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf ( "CAC: unexpected TCP send error: %s\n",
+                errlogPrintf ( "CAC: unexpected TCP send " ERL_ERROR ": %s\n",
                     sockErrBuf );
             }
 
@@ -322,7 +322,7 @@ void tcpiiu::recvBytes (
                 return;
             }
 
-            // if the circuit was locally aborted then supress
+            // if the circuit was locally aborted then suppress
             // warning messages about bad file descriptor etc
             if ( this->state != iiucs_connected &&
                     this->state != iiucs_clean_shutdown ) {
@@ -358,9 +358,9 @@ void tcpiiu::recvBytes (
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
 
-            // the replacable printf handler isnt called here
-            // because it reqires a callback lock which probably
-            // isnt appropriate here
+            // the replaceable printf handler isn't called here
+            // because it requires a callback lock which probably
+            // isn't appropriate here
             char name[64];
             this->hostNameCacheInstance.getName (
                 name, sizeof ( name ) );
@@ -535,11 +535,11 @@ void tcpRecvThread::run ()
             }
 
             //
-            // we dont feel comfortable calling this with a lock applied
+            // we don't feel comfortable calling this with a lock applied
             // (it might block for longer than we like)
             //
-            // we would prefer to improve efficency by trying, first, a
-            // recv with the new MSG_DONTWAIT flag set, but there isnt
+            // we would prefer to improve efficiency by trying, first, a
+            // recv with the new MSG_DONTWAIT flag set, but there isn't
             // universal support
             //
             bool bytesArePending = this->iiu.bytesArePendingInOS ();
@@ -957,7 +957,7 @@ void tcpiiu::initiateAbortShutdown (
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ( "CAC TCP socket linger set error was %s\n",
+            errlogPrintf ( "CAC TCP socket linger set " ERL_ERROR " was %s\n",
                 sockErrBuf );
         }
         this->discardingPendingData = true;
@@ -988,7 +988,7 @@ void tcpiiu::initiateAbortShutdown (
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
-                    errlogPrintf ("CAC TCP socket shutdown error was %s\n",
+                    errlogPrintf ("CAC TCP socket shutdown " ERL_ERROR " was %s\n",
                         sockErrBuf );
                 }
             }
@@ -1002,7 +1002,7 @@ void tcpiiu::initiateAbortShutdown (
         };
 
         //
-        // wake up the send thread if it isnt blocking in send()
+        // wake up the send thread if it isn't blocking in send()
         //
         this->sendThreadFlushEvent.signal ();
         this->flushBlockEvent.signal ();
@@ -1058,7 +1058,7 @@ void tcpiiu::show ( unsigned level ) const
             this->_receiveThreadIsBusy );
     }
     if ( level > 2u ) {
-        ::printf ( "\tvirtual circuit socket identifier %d\n", this->sock );
+        ::printf ( "\tvirtual circuit socket identifier %d\n", (int)this->sock );
         ::printf ( "\tsend thread flush signal:\n" );
         this->sendThreadFlushEvent.show ( level-2u );
         ::printf ( "\tsend thread:\n" );
@@ -1580,7 +1580,7 @@ void tcpiiu::subscriptionRequest (
         maxBytes = MAX_TCP;
     }
     unsigned dataType = subscr.getType ( guard );
-    // data type bounds checked when sunscription created
+    // data type bounds checked when subscription created
     arrayElementCount maxElem = ( maxBytes - dbr_size[dataType] ) / dbr_value_size[dataType];
     if ( nElem > maxElem ) {
         throw cacChannel::msgBodyCacheTooSmall ();
@@ -1633,7 +1633,7 @@ void tcpiiu::subscriptionUpdateRequest (
         throw cacChannel::msgBodyCacheTooSmall ();
     }
     comQueSendMsgMinder minder ( this->sendQue, guard );
-    // nElem boounds checked above
+    // nElem bounds checked above
     this->sendQue.insertRequestHeader (
         CA_PROTO_READ_NOTIFY, 0u,
         static_cast < ca_uint16_t > ( dataType ),
@@ -1712,7 +1712,7 @@ void tcpiiu :: flush ( epicsGuard < epicsMutex > & guard )
     this->flushRequest ( guard );
     // the process thread is not permitted to flush as this
     // can result in a push / pull deadlock on the TCP pipe.
-    // Instead, the process thread scheduals the flush with the
+    // Instead, the process thread schedules the flush with the
     // send thread which runs at a higher priority than the
     // receive thread. The same applies to the UDP thread for
     // locking hierarchy reasons.
@@ -1817,7 +1817,7 @@ void tcpiiu::disconnectAllChannels (
     }
 
     while ( nciu * pChan = this->createRespPend.get () ) {
-        // we dont yet know the server's id so we cant
+        // we don't yet know the server's id so we cant
         // send a channel delete request and will instead
         // trust that the server can do the proper cleanup
         // when the circuit disconnects
@@ -1848,7 +1848,7 @@ void tcpiiu::disconnectAllChannels (
 
     while ( nciu * pChan = this->unrespCircuit.get () ) {
         // if we know that the circuit is unresponsive
-        // then we dont send a channel delete request and
+        // then we don't send a channel delete request and
         // will instead trust that the server can do the
         // proper cleanup when the circuit disconnects
         pChan->disconnectAllIO ( cbGuard, guard );
@@ -1883,7 +1883,7 @@ void tcpiiu::unlinkAllChannels (
     while ( nciu * pChan = this->createRespPend.get () ) {
         pChan->channelNode::listMember =
             channelNode::cs_none;
-        // we dont yet know the server's id so we cant
+        // we don't yet know the server's id so we cant
         // send a channel delete request and will instead
         // trust that the server can do the proper cleanup
         // when the circuit disconnects
@@ -1921,7 +1921,7 @@ void tcpiiu::unlinkAllChannels (
             channelNode::cs_none;
         pChan->disconnectAllIO ( cbGuard, guard );
         // if we know that the circuit is unresponsive
-        // then we dont send a channel delete request and
+        // then we don't send a channel delete request and
         // will instead trust that the server can do the
         // proper cleanup when the circuit disconnects
         pChan->serviceShutdownNotify ( cbGuard, guard );
@@ -1951,7 +1951,7 @@ void tcpiiu::installChannel (
     this->channelCountTot++;
     chan.channelNode::listMember = channelNode::cs_createReqPend;
     chan.searchReplySetUp ( *this, sidIn, typeIn, countIn, guard );
-    // The tcp send thread runs at apriority below the udp thread
+    // The tcp send thread runs at a priority below the udp thread
     // so that this will not send small packets
     this->sendThreadFlushEvent.signal ();
 }
@@ -2060,7 +2060,7 @@ bool tcpiiu::bytesArePendingInOS () const
     }
     return false;
 #else
-    osiSockIoctl_t bytesPending = 0; /* shut up purifys yapping */
+    osiSockIoctl_t bytesPending = 0; /* shut up Purify's yapping */
     int status = socket_ioctl ( this->sock,
                             FIONREAD, & bytesPending );
     if ( status >= 0 ) {

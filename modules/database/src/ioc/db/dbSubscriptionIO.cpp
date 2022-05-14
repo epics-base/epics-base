@@ -27,7 +27,6 @@
 #include "cadef.h" // this can be eliminated when the callbacks use the new interface
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "dbCAC.h"
 #include "dbChannelIO.h"
 #include "db_access_routines.h"

@@ -120,14 +120,25 @@ const char *initHookName(int state)
         "initHookAfterInitialProcess",
         "initHookAfterCaServerInit",
         "initHookAfterIocBuilt",
+
         "initHookAtIocRun",
         "initHookAfterDatabaseRunning",
         "initHookAfterCaServerRunning",
         "initHookAfterIocRunning",
+
         "initHookAtIocPause",
         "initHookAfterCaServerPaused",
         "initHookAfterDatabasePaused",
         "initHookAfterIocPaused",
+
+        "initHookAtShutdown",
+        "initHookAfterCloseLinks",
+        "initHookAfterStopScan",
+        "initHookAfterStopCallback",
+        "initHookAfterStopLinks",
+        "initHookBeforeFree",
+        "initHookAfterShutdown",
+
         "initHookAfterInterruptAccept",
         "initHookAtEnd"
     };

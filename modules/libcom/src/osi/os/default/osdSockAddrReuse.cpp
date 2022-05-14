@@ -28,7 +28,7 @@ LIBCOM_API void epicsStdCall
      * SO_REUSEADDR compared to other OS. With WINSOCK SO_REUSEADDR indicates
      * that simultaneously servers can bind to the same TCP port on the same host!
      * Also, servers are always enabled to reuse a port immediately after
-     * they exit ( even if SO_REUSEADDR isnt set ).
+     * they exit ( even if SO_REUSEADDR isn't set ).
      */
 #else
     int yes = true;

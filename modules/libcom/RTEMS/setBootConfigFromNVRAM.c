@@ -12,7 +12,9 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <unistd.h>
+#ifdef RTEMS_LEGACY_STACK
 #include <rtems/rtems_bsdnet.h>
+#endif
 #include <bsp.h>
 #include <string.h>
 #include <ctype.h>
@@ -26,6 +28,7 @@ char *env_nfsServer;
 char *env_nfsPath;
 char *env_nfsMountPoint;
 
+extern char* rtems_bsdnet_bootp_cmdline;
 /*
  * Split argument string of form nfs_server:nfs_export:<path>
  * The nfs_export component will be used as:
@@ -264,7 +267,7 @@ setBootConfigFromNVRAM(void)
         return;
 
     /*
-     * Get network configuation from PPCBUG.
+     * Get network configuration from PPCBUG.
      * The 'correct' way to do this would be to issue a .NETCFIG PPCBUG
      * system call.  Unfortunately it is very difficult to issue such a
      * call once RTEMS is up and running so we just copy from the 'known'

@@ -37,7 +37,6 @@
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
@@ -85,12 +84,13 @@ struct event_user {
     epicsMutexId        lock;
     epicsEventId        ppendsem;       /* Wait while empty */
     epicsEventId        pflush_sem;     /* wait for flush */
+    epicsEventId        pexitsem;       /* wait for event task to join */
 
     EXTRALABORFUNC      *extralabor_sub;/* off load to event task */
     void                *extralabor_arg;/* parameter to above */
 
     epicsThreadId       taskid;         /* event handler task id */
-    struct evSubscrip   *pSuicideEvent; /* event that is deleteing itself */
+    struct evSubscrip   *pSuicideEvent; /* event that is deleting itself */
     unsigned            queovr;         /* event que overflow count */
     unsigned char       pendexit;       /* exit pend task */
     unsigned char       extra_labor;    /* if set call extra labor func */
@@ -102,7 +102,7 @@ struct event_user {
 
 /*
  * Reliable intertask communication requires copying the current value of the
- * channel for later queing so 3 stepper motor steps of 10 each do not turn
+ * channel for later queuing so 3 stepper motor steps of 10 each do not turn
  * into only 10 or 20 total steps part of the time.
  */
 
@@ -122,6 +122,8 @@ static void *dbevFieldLogFreeList;
 static char *EVENT_PEND_NAME = "eventTask";
 
 static struct evSubscrip canceledEvent;
+
+static epicsMutexId stopSync;
 
 static unsigned short ringSpace ( const struct event_que *pevq )
 {
@@ -261,6 +263,10 @@ int dbel ( const char *pname, unsigned level )
  */
 void db_init_event_freelists (void)
 {
+    if (!stopSync) {
+        stopSync = epicsMutexMustCreate();
+    }
+
     if (!dbevEventUserFreeList) {
         freeListInitPvt(&dbevEventUserFreeList,
             sizeof(struct event_user),8);
@@ -300,6 +306,9 @@ dbEventCtx db_init_events (void)
         return NULL;
     }
 
+    /* Flag will be cleared when event task starts */
+    evUser->pendexit = TRUE;
+
     evUser->firstque.evUser = evUser;
     evUser->firstque.writelock = epicsMutexCreate();
     if (!evUser->firstque.writelock)
@@ -313,6 +322,9 @@ dbEventCtx db_init_events (void)
         goto fail;
     evUser->lock = epicsMutexCreate();
     if (!evUser->lock)
+        goto fail;
+    evUser->pexitsem = epicsEventCreate(epicsEventEmpty);
+    if (!evUser->pexitsem)
         goto fail;
 
     evUser->flowCtrlMode = FALSE;
@@ -328,12 +340,14 @@ fail:
         epicsEventDestroy (evUser->ppendsem);
     if(evUser->pflush_sem)
         epicsEventDestroy (evUser->pflush_sem);
+    if(evUser->pexitsem)
+        epicsEventDestroy (evUser->pexitsem);
     freeListFree(dbevEventUserFreeList,evUser);
     return NULL;
 }
 
 
-epicsShareFunc void db_cleanup_events(void)
+DBCORE_API void db_cleanup_events(void)
 {
     if(dbevEventUserFreeList) freeListCleanup(dbevEventUserFreeList);
     dbevEventUserFreeList = NULL;
@@ -348,6 +362,7 @@ epicsShareFunc void db_cleanup_events(void)
     dbevFieldLogFreeList = NULL;
 }
 
+    /* intentionally leak stopSync to avoid possible shutdown races */
 /*
  *  DB_CLOSE_EVENTS()
  *
@@ -369,15 +384,31 @@ void db_close_events (dbEventCtx ctx)
      * hazardous to the system's health.
      */
     epicsMutexMustLock ( evUser->lock );
-    evUser->pendexit = TRUE;
+    if(!evUser->pendexit) { /* event task running */
+        evUser->pendexit = TRUE;
+        epicsMutexUnlock ( evUser->lock );
+
+        /* notify the waiting task */
+        epicsEventSignal(evUser->ppendsem);
+        /* wait for task to exit */
+        epicsEventMustWait(evUser->pexitsem);
+        epicsThreadMustJoin(evUser->taskid);
+
+        epicsMutexMustLock ( evUser->lock );
+    }
+
     epicsMutexUnlock ( evUser->lock );
 
-    /* notify the waiting task */
-    epicsEventSignal(evUser->ppendsem);
+    epicsMutexMustLock (stopSync);
 
-    if(evUser->taskid)
-        epicsThreadMustJoin(evUser->taskid);
-    /* evUser has been deleted by the worker */
+    epicsEventDestroy(evUser->pexitsem);
+    epicsEventDestroy(evUser->ppendsem);
+    epicsEventDestroy(evUser->pflush_sem);
+    epicsMutexDestroy(evUser->lock);
+
+    epicsMutexUnlock (stopSync);
+
+    freeListFree(dbevEventUserFreeList, evUser);
 }
 
 /*
@@ -554,7 +585,7 @@ void db_cancel_event (dbEventSubscription event)
     /*
      * flag the event as canceled by NULLing out the callback handler
      *
-     * make certain that the event isnt being accessed while
+     * make certain that the event isn't being accessed while
      * its call back changes
      */
     LOCKEVQUE (pevent->ev_que);
@@ -676,7 +707,10 @@ static db_field_log* db_create_field_log (struct dbChannel *chan, int use_val)
         struct dbCommon  *prec = dbChannelRecord(chan);
         pLog->stat = prec->stat;
         pLog->sevr = prec->sevr;
+        strncpy(pLog->amsg, prec->amsg, sizeof(pLog->amsg)-1);
+        pLog->amsg[sizeof(pLog->amsg)-1] = '\0';
         pLog->time = prec->time;
+        pLog->utag = prec->utag;
         pLog->field_type  = dbChannelFieldType(chan);
         pLog->field_size  = dbChannelFieldSize(chan);
         pLog->no_elements = dbChannelElements(chan);
@@ -715,6 +749,7 @@ db_field_log* db_create_event_log (struct evSubscrip *pevent)
 {
     db_field_log *pLog = db_create_field_log(pevent->chan, pevent->useValque);
     if (pLog) {
+        pLog->mask = pevent->select;
         pLog->ctx  = dbfl_context_event;
     }
     return pLog;
@@ -776,7 +811,7 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
         pevent->nreplace++;
         /*
          * the event task has already been notified about
-         * this so we dont need to post the semaphore
+         * this so we don't need to post the semaphore
          */
         firstEventFlag = 0;
     }
@@ -809,7 +844,7 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
     UNLOCKEVQUE (ev_que);
 
     /*
-     * its more efficent to notify the event handler
+     * its more efficient to notify the event handler
      * only after the event is ready and the lock
      * is off in case it runs at a higher priority
      * than the caller here.
@@ -851,6 +886,8 @@ unsigned int    caEventMask
         if ( (dbChannelField(pevent->chan) == (void *)pField || pField==NULL) &&
             (caEventMask & pevent->select)) {
             db_field_log *pLog = db_create_event_log(pevent);
+            if(pLog)
+                pLog->mask = caEventMask & pevent->select;
             pLog = dbChannelRunPreChain(pevent->chan, pLog);
             if (pLog) db_queue_event_log(pevent, pLog);
         }
@@ -939,7 +976,7 @@ static int event_read ( struct event_que *ev_que )
          * Next event pointer can be used by event tasks to determine
          * if more events are waiting in the queue
          *
-         * Must remove the lock here so that we dont deadlock if
+         * Must remove the lock here so that we don't deadlock if
          * this calls dbGetField() and blocks on the record lock,
          * dbPutField() is in progress in another task, it has the
          * record lock, and it is calling db_post_events() waiting
@@ -1060,17 +1097,16 @@ static void event_task (void *pParm)
         }
     }
 
-    epicsEventDestroy(evUser->ppendsem);
-    epicsEventDestroy(evUser->pflush_sem);
-    epicsMutexDestroy(evUser->lock);
-
-    if (dbevEventUserFreeList)
-        freeListFree(dbevEventUserFreeList, evUser);
-    else
-        fprintf(stderr, "%s exiting but dbevEventUserFreeList already NULL\n",
-                __FUNCTION__);
-
     taskwdRemove(epicsThreadGetIdSelf());
+
+    /* use stopSync to ensure pexitsem is not destroy'd
+     * until epicsEventSignal() has returned.
+     */
+    epicsMutexMustLock (stopSync);
+
+    epicsEventSignal(evUser->pexitsem);
+
+    epicsMutexUnlock(stopSync);
 
     return;
 }
@@ -1111,6 +1147,7 @@ int db_start_events (
          epicsMutexUnlock ( evUser->lock );
          return DB_EVENT_ERROR;
      }
+     evUser->pendexit = FALSE;
      epicsMutexUnlock ( evUser->lock );
      return DB_EVENT_OK;
 }
@@ -1139,9 +1176,6 @@ void db_event_flow_ctrl_mode_on (dbEventCtx ctx)
      * notify the event handler task
      */
     epicsEventSignal(evUser->ppendsem);
-#ifdef DEBUG
-    printf("fc on %lu\n", tickGet());
-#endif
 }
 
 /*
@@ -1158,9 +1192,6 @@ void db_event_flow_ctrl_mode_off (dbEventCtx ctx)
      * notify the event handler task
      */
     epicsEventSignal (evUser->ppendsem);
-#ifdef DEBUG
-    printf("fc off %lu\n", tickGet());
-#endif
 }
 
 /*

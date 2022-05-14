@@ -15,17 +15,24 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 
 #include "epicsStdio.h"
+#include "epicsString.h"
 #include "errlog.h"
-#include "cantProceed.h"
 #include "envDefs.h"
 #include "osiUnistd.h"
 #include "epicsFindSymbol.h"
 #include "iocsh.h"
+
+static
+void setEnv(const char *name, const char *value)
+{
+    errno_t err = _putenv_s(name, value);
+    if(err)
+        errlogPrintf("Can't set environment %s=\"%s\" : %d\n", name, value, (int)err);
+}
 
 /*
  * Set the value of an environment variable
@@ -34,25 +41,8 @@
  */
 LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
 {
-    char *cp;
-
     iocshEnvClear(name);
-
-    cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
-    strcpy (cp, name);
-    strcat (cp, "=");
-    strcat (cp, value);
-    if (putenv (cp) < 0) {
-        errPrintf(
-                -1L,
-                __FILE__,
-                __LINE__,
-                "Failed to set environment parameter \"%s\" to \"%s\": %s\n",
-                name,
-                value,
-                strerror (errno));
-        free (cp);
-    }
+    setEnv(name, value);
 }
 
 /*
@@ -63,8 +53,7 @@ LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
 LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
 {
     iocshEnvClear(name);
-    if (getenv(name) != NULL)
-        epicsEnvSet((char*)name, "");
+    setEnv(name, "");
 }
 
 /*
@@ -72,18 +61,10 @@ LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
  */
 LIBCOM_API void epicsStdCall epicsEnvShow (const char *name)
 {
-    if (name == NULL) {
-        extern char **environ;
-        char **sp;
+    char **sp;
 
-        for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++)
+    for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++) {
+        if (!name || epicsStrnGlobMatch(*sp, strchr(*sp, '=') - *sp, name))
             printf ("%s\n", *sp);
-    }
-    else {
-        const char *cp = getenv (name);
-        if (cp == NULL)
-            printf ("%s is not an environment variable.\n", name);
-        else
-            printf ("%s=%s\n", name, cp);
     }
 }

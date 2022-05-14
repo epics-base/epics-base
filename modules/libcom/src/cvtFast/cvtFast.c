@@ -93,7 +93,7 @@ int cvtFloatToString(float flt_value, char *pdest,
 
     /* fraction */
     if (precision > 0){
-    /* convert fractional portional to ASCII */
+    /* convert fractional portion to ASCII */
         *pdest = '.';
         pdest++;
         for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){
@@ -174,7 +174,7 @@ int cvtDoubleToString(
 
     /* fraction */
     if (precision > 0){
-    /* convert fractional portional to ASCII */
+    /* convert fractional portion to ASCII */
         *pdest = '.';
         pdest++;
         for (fplace /= 10, i = precision; i > 0; fplace /= 10,i--){

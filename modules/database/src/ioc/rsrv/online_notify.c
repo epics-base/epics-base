@@ -31,7 +31,6 @@
 #include "osiSock.h"
 #include "taskwd.h"
 
-#define epicsExportSharedSymbols
 #include "server.h"
 
 /*
@@ -95,7 +94,7 @@ void rsrv_online_notify_task(void *pParm)
 
                     epicsSocketConvertErrorToString(sockErrBuf, sizeof(sockErrBuf), err);
                     ipAddrToDottedIP(&pAddr->addr.ia, sockDipBuf, sizeof(sockDipBuf));
-                    errlogPrintf ( "CAS: CA beacon send to %s error: %s\n",
+                    errlogPrintf ( "CAS: CA beacon send to %s " ERL_ERROR ": %s\n",
                         sockDipBuf, sockErrBuf);
 
                     lastError[i] = err;

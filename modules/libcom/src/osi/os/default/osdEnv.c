@@ -15,17 +15,29 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 
 #include "epicsStdio.h"
+#include "epicsString.h"
+#include "epicsVersion.h"
 #include "errlog.h"
-#include "cantProceed.h"
 #include "envDefs.h"
 #include "osiUnistd.h"
 #include "epicsFindSymbol.h"
 #include "iocsh.h"
+
+#ifdef __rtems__
+#  include <rtems.h>
+#  define RTEMS_VERSION_INT VERSION_INT(__RTEMS_MAJOR__, __RTEMS_MINOR__, 0, 0)
+#endif
+
+#if defined(__RTEMS_MAJOR__) && RTEMS_VERSION_INT<VERSION_INT(4,10,0,0)
+   /* newlib w/ RTEMS <=4.9 returns void */
+#  define unSetEnv(name) ({unsetenv(name); 0;})
+#else
+#  define unSetEnv(name) unsetenv(name)
+#endif
 
 /*
  * Set the value of an environment variable
@@ -34,26 +46,9 @@
  */
 LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
 {
-    char *cp;
-
-    if (!name) return;
     iocshEnvClear(name);
-
-    cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
-    strcpy (cp, name);
-    strcat (cp, "=");
-    strcat (cp, value);
-    if (putenv (cp) < 0) {
-        errPrintf(
-                -1L,
-                __FILE__,
-                __LINE__,
-                "Failed to set environment parameter \"%s\" to \"%s\": %s\n",
-                name,
-                value,
-                strerror (errno));
-        free (cp);
-    }
+    if(setenv(name, value, 1))
+        errlogPrintf("setenv(\"%s\", \"%s\") -> %d\n", name, value, errno);
 }
 
 /*
@@ -64,8 +59,8 @@ LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
 LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
 {
     iocshEnvClear(name);
-    if (getenv(name) != NULL)
-        putenv((char*)name);
+    if(unSetEnv(name))
+        errlogPrintf("unsetenv(\"%s\") -> %d\n", name, errno);
 }
 
 /*
@@ -73,18 +68,11 @@ LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
  */
 LIBCOM_API void epicsStdCall epicsEnvShow (const char *name)
 {
-    if (name == NULL) {
-        extern char **environ;
-        char **sp;
+    extern char **environ;
+    char **sp;
 
-        for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++)
+    for (sp = environ ; (sp != NULL) && (*sp != NULL) ; sp++) {
+        if (!name || epicsStrnGlobMatch(*sp, strchr(*sp, '=') - *sp, name))
             printf ("%s\n", *sp);
-    }
-    else {
-        const char *cp = getenv (name);
-        if (cp == NULL)
-            printf ("%s is not an environment variable.\n", name);
-        else
-            printf ("%s=%s\n", name, cp);
     }
 }

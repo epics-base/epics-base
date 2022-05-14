@@ -35,7 +35,6 @@
 #include "errlog.h"
 #include "errMdef.h"
 
-#include "epicsExport.h" /* #define epicsExportSharedSymbols */
 #include "caeventmask.h"
 #include "callback.h"
 #include "dbAccessDefs.h"
@@ -62,6 +61,7 @@
 #include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
+#include "epicsExport.h"
 
 struct dbBase *pdbbase = 0;
 volatile int interruptAccept=FALSE;
@@ -360,6 +360,16 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
             *pushort++ = pcommon->ackt;
             pbuffer = (char *)pushort;
         }
+        if( (*options) & DBR_AMSG ) {
+            if (!pfl) {
+                STATIC_ASSERT(sizeof(pcommon->amsg)==sizeof(pfl->amsg));
+                strncpy(pbuffer, pcommon->amsg, sizeof(pcommon->amsg)-1);
+            } else {
+                strncpy(pbuffer, pfl->amsg,sizeof(pfl->amsg)-1);
+            }
+            pbuffer[sizeof(pcommon->amsg)-1] = '\0';
+            pbuffer += sizeof(pcommon->amsg);
+        }
         if( (*options) & DBR_UNITS ) {
             memset(pbuffer,'\0',dbr_units_size);
             if( prset && prset->get_units ){
@@ -391,6 +401,15 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
                 *ptime++ = pfl->time.nsec;
             }
             pbuffer = (char *)ptime;
+        }
+        if( (*options) & DBR_UTAG ) {
+            epicsUInt64 *ptag = (epicsUInt64*)pbuffer;
+            if (!pfl) {
+                *ptag++ = pcommon->utag;
+            } else {
+                *ptag++ = pfl->utag;
+            }
+            pbuffer = (char *)ptag;
         }
         if( (*options) & DBR_ENUM_STRS )
             get_enum_strs(paddr, &pbuffer, prset, options);
@@ -510,7 +529,7 @@ long dbProcess(dbCommon *precord)
         }
     }
 
-    /* If already active dont process */
+    /* If already active don't process */
     if (precord->pact) {
         unsigned short monitor_mask;
 
@@ -523,7 +542,7 @@ long dbProcess(dbCommon *precord)
             (precord->lcnt++ < MAX_LOCK) ||
             (precord->sevr >= INVALID_ALARM)) goto all_done;
 
-        recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
+        recGblSetSevrMsg(precord, SCAN_ALARM, INVALID_ALARM, "Async in progress");
         monitor_mask = recGblResetAlarms(precord);
         monitor_mask |= DBE_VALUE|DBE_LOG;
         pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];
@@ -912,7 +931,7 @@ long dbGet(DBADDR *paddr, short dbrType,
         no_elements = capacity = pfl->no_elements;
     }
 
-    /* Update field info from record (if neccessary);
+    /* Update field info from record (if necessary);
      * may modify paddr->pfield.
      */
     if (!dbfl_has_copy(pfl) &&
@@ -1085,9 +1104,9 @@ static long dbPutFieldLink(DBADDR *paddr,
     if (link_info.ltype == PV_LINK &&
         (link_info.modifiers & (pvlOptCA | pvlOptCP | pvlOptCPP)) == 0) {
         chan = dbChannelCreate(link_info.target);
-        if (chan && dbChannelOpen(chan) != 0) {
-            errlogPrintf("ERROR: dbPutFieldLink %s.%s=%s: dbChannelOpen() failed\n",
-                precord->name, pfldDes->name, link_info.target);
+        if (chan && (status = dbChannelOpen(chan)) != 0) {
+            errlogPrintf(ERL_ERROR ": dbPutFieldLink %s.%s=%s: dbChannelOpen() failed w/ 0x%lx\n",
+                precord->name, pfldDes->name, link_info.target, status);
             goto cleanup;
         }
     }
@@ -1306,7 +1325,6 @@ long dbPut(DBADDR *paddr, short dbrType,
     void *pfieldsave  = paddr->pfield;
     rset *prset = dbGetRset(paddr);
     long status = 0;
-    long offset;
     dbFldDes *pfldDes;
     int isValueField;
 
@@ -1330,20 +1348,25 @@ long dbPut(DBADDR *paddr, short dbrType,
         if (status) return status;
     }
 
-    if (paddr->pfldDes->special == SPC_DBADDR &&
-        prset && prset->get_array_info) {
-        long dummy;
+    if (nRequest>1 || paddr->pfldDes->special == SPC_DBADDR) {
+        long offset = 0;
+        if (paddr->pfldDes->special == SPC_DBADDR &&
+            prset && prset->get_array_info) {
+            long dummy;
 
-        status = prset->get_array_info(paddr, &dummy, &offset);
-        /* paddr->pfield may be modified */
-        if (status) goto done;
+            status = prset->get_array_info(paddr, &dummy, &offset);
+            /* paddr->pfield may be modified */
+            if (status) goto done;
+        }
         if (no_elements < nRequest)
             nRequest = no_elements;
         status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
             nRequest, no_elements, offset);
         /* update array info */
-        if (!status && prset->put_array_info)
+        if (!status && paddr->pfldDes->special == SPC_DBADDR &&
+                prset && prset->put_array_info) {
             status = prset->put_array_info(paddr, nRequest);
+        }
     } else {
         if (nRequest < 1) {
             recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
@@ -1357,7 +1380,8 @@ long dbPut(DBADDR *paddr, short dbrType,
     /* Always do special processing if needed */
     if (special) {
         long status2 = dbPutSpecial(paddr, 1);
-        if (status2) goto done;
+        if (status2)
+            status = status2;
     }
     if (status) goto done;
 

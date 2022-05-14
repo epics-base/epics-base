@@ -1,0 +1,18 @@
+record(ai, "ai") {}
+
+record(stringin, "si1") {
+  field(INP, "ai.SEVR")
+  field(FLNK, "li1")
+}
+record(longin, "li1") {
+  field(INP, "ai.SEVR")
+  field(FLNK, "si2")
+}
+
+record(stringin, "si2") {
+  field(INP, "ai.SEVR CA")
+  field(FLNK, "li2")
+}
+record(longin, "li2") {
+  field(INP, "ai.SEVR CA")
+}

@@ -144,6 +144,11 @@ epicsThreadPoolTest_SRCS += epicsThreadPoolTest.c
 testHarness_SRCS += epicsThreadPoolTest.c
 TESTS += epicsThreadPoolTest
 
+TESTPROD_HOST += initHookTest
+initHookTest_SRCS += initHookTest.c
+testHarness_SRCS += initHookTest.c
+TESTS += initHookTest
+
 TESTPROD_HOST += epicsExitTest
 epicsExitTest_SRCS += epicsExitTest.c
 testHarness_SRCS += epicsExitTest.c
@@ -337,3 +342,10 @@ include $(TOP)/configure/RULES
 
 rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
 	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)
+
+epicsLoadTest$(DEP): epicsInstallDir.h
+
+# use INSTALL_LOCATION instead of FINAL_LOCATION since test executables are not installed.
+epicsInstallDir.h: $(TOP)/configure/CONFIG_SITE*
+	$(ECHO) "INSTALL_LOCATION=$(INSTALL_LOCATION)"
+	$(PERL) $(TOP)/modules/database/src/std/softIoc/makeInstallDir.pl "$(INSTALL_LOCATION)" > $@

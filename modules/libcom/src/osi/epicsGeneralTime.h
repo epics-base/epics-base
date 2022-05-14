@@ -56,7 +56,7 @@ extern "C" {
  **/
 #define NUM_TIME_EVENTS 256
 
-/**\brief Initialise the framework.
+/**\brief Initialize the framework.
  *
  * This routine is called automatically by any function that requires the
  * framework. It does not need to be called explicitly.

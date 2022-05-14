@@ -236,7 +236,7 @@ static long process(struct dbCommon *pcommon)
         }
         if (fetch_values(prec) == 0) {
             if (calcPerform(&prec->a, &prec->val, prec->rpcl)) {
-                recGblSetSevr(prec, CALC_ALARM, INVALID_ALARM);
+                recGblSetSevrMsg(prec, CALC_ALARM, INVALID_ALARM, "calcPerform");
             } else {
                 prec->udf = isnan(prec->val);
             }
@@ -245,7 +245,7 @@ static long process(struct dbCommon *pcommon)
 
         if ( !pact ) {
             /* Update the timestamp before writing output values so it
-             * will be uptodate if any downstream records fetch it via TSEL */
+             * will be up to date if any downstream records fetch it via TSEL */
             recGblGetTimeStamp(prec);
         }
         /* check for output link execution */
@@ -610,7 +610,7 @@ static void execOutput(calcoutRecord *prec)
         break;
     case calcoutDOPT_Use_OVAL:
         if (calcPerform(&prec->a, &prec->oval, prec->orpc)) {
-            recGblSetSevr(prec, CALC_ALARM, INVALID_ALARM);
+            recGblSetSevrMsg(prec, CALC_ALARM, INVALID_ALARM, "OCAL calcPerform");
         } else {
             prec->udf = isnan(prec->oval);
         }
@@ -770,7 +770,7 @@ static long writeValue(calcoutRecord *prec)
 
     if (!pcalcoutDSET || !pcalcoutDSET->write) {
         errlogPrintf("%s DSET write does not exist\n", prec->name);
-        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        recGblSetSevrMsg(prec, SOFT_ALARM, INVALID_ALARM, "DSET write does not exist");
         prec->pact = TRUE;
         return(-1);
     }

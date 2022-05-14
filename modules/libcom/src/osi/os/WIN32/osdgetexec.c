@@ -48,7 +48,7 @@ char *epicsGetExecDir(void)
     if(ret) {
         char *sep = strrchr(ret, '\\');
         if(sep) {
-            /* nil the charactor after the / */
+            /* nil the character after the / */
             sep[1] = '\0';
         }
     }

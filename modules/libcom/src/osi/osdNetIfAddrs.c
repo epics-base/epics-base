@@ -70,7 +70,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             ifa->ifa_name));
 
         /*
-         * If its not an internet interface then dont use it
+         * If its not an internet interface then don't use it
          */
         if ( ifa->ifa_addr->sa_family != AF_INET ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): interface \"%s\" was not AF_INET\n", ifa->ifa_name) );
@@ -78,7 +78,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         }
 
         /*
-         * if it isnt a wildcarded interface then look for
+         * if it isn't a wildcarded interface then look for
          * an exact match
          */
         if ( pMatchAddr->sa.sa_family != AF_UNSPEC ) {
@@ -95,7 +95,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         }
 
         /*
-         * dont bother with interfaces that have been disabled
+         * don't bother with interfaces that have been disabled
          */
         if ( ! ( ifa->ifa_flags & IFF_UP ) ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" was down\n", ifa->ifa_name) );
@@ -103,7 +103,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         }
 
         /*
-         * dont use the loop back interface
+         * don't use the loop back interface
          */
         if ( ifa->ifa_flags & IFF_LOOPBACK ) {
              ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): ignoring loopback interface: \"%s\"\n", ifa->ifa_name) );
@@ -189,7 +189,7 @@ static void osiLocalAddrOnce (void *raw)
         }
 
         /*
-         * dont use the loop back interface
+         * don't use the loop back interface
          */
         if ( ifa->ifa_flags & IFF_LOOPBACK ) {
             ifDepenDebugPrintf ( ("osiLocalAddrOnce(): ignoring loopback interface: %s\n", ifa->ifa_name) );

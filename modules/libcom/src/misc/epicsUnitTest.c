@@ -28,6 +28,13 @@
 #  endif
 #endif
 
+#ifdef __rtems__
+#  include <syslog.h>
+#  ifndef RTEMS_LEGACY_STACK
+#    include <rtems/bsd/bsd.h>
+#  endif
+#endif
+
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsUnitTest.h"
@@ -95,11 +102,23 @@ static int testReportHook(int reportType, char *message, int *returnValue)
 static void testOnce(void *dummy) {
     testLock = epicsMutexMustCreate();
     perlHarness = (getenv("HARNESS_ACTIVE") != NULL);
+#ifdef __rtems__
+    // syslog() on RTEMS prints to stdout, which will interfere with test output.
+    // setlogmask() ignores empty mask, so must allow at least one level.
+    (void)setlogmask(LOG_MASK(LOG_CRIT));
+    printf("# mask syslog() output\n");
+#ifndef RTEMS_LEGACY_STACK
+    // with libbsd  setlogmask() is a no-op :(
+    // name strings in sys/syslog.h
+    rtems_bsd_setlogpriority("crit");
+#endif
+#endif
+
 #ifdef _WIN32
 #ifdef HAVE_SETERROMODE
     /* SEM_FAILCRITICALERRORS - Don't display modal dialog
      * !SEM_NOALIGNMENTFAULTEXCEPT - auto-fix unaligned access
-     * !SEM_NOGPFAULTERRORBOX - enable Windows Error Reporting (also enables post-mortem debugger hooks)
+     * !SEM_NOGPFAULTERRORBOX - enable Windows Error Reporting (also enables postmortem debugger hooks)
      * SEM_NOOPENFILEERRORBOX - Don't display modal dialog
      */
     SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOOPENFILEERRORBOX);

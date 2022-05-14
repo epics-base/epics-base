@@ -65,8 +65,8 @@ the output mode select (OMSL) field, which can have two possible value: C<<<
 closed_loop >>> or C<<< supervisory >>>. If C<<< supervisory >>> is specified,
 DOL is ignored, the current value of VAL is written, and the VAL can be changed
 externally via dbPuts at run-time. If C<<< closed_loop >>> is specified, the VAL
-field's value is obtained from the address specified in the desired output
-location field (DOL) which can be either a database link or a channel access
+field's value is obtained from the address specified in the Desired Output
+Link field (DOL) which can be either a database link or a channel access
 link.
 
 DOL can also be a constant, in which case VAL will be initialized to the
@@ -80,7 +80,7 @@ cannot be C<<< closed_loop >>>.
 =cut
 
 	field(DOL,DBF_INLINK) {
-		prompt("Desired Output Loc")
+		prompt("Desired Output Link")
 		promptgroup("40 - Input")
 		interest(1)
 	}

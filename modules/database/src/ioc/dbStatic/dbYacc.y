@@ -374,7 +374,7 @@ static int yyerror(char *str)
     else
         epicsPrintf("Error");
     if (!yyFailed) {    /* Only print this stuff once */
-        epicsPrintf(" at or before \"%s\"", yytext);
+        epicsPrintf(" at or before '%s'", yytext);
         dbIncludePrint();
         yyFailed = TRUE;
     }

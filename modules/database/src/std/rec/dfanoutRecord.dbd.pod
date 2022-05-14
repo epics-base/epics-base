@@ -43,7 +43,7 @@ originates, i.e., the data which is to be fowarded to the records in its
 output links. The output mode select (OMSL) field determines whether the
 output originates from another record or from run-time database access.
 When set to C<closed_loop>, the desired output is retrieved from the link
-specified in the desired output (DOL) field, which can specify either a
+specified in the Desired Output Link (DOL) field, which can specify either a
 database or a channel access link, and placed into the VAL field. When set
 to C<supervisory>, the desired output can be written to the VAL field via
 dbPuts at run-time.
@@ -59,8 +59,9 @@ undergoes no conversions before it is sent out to the output links.
 =head3 Write Parameters
 
 The OUTA-OUTH fields specify where VAL is to be sent. Each field that is to
-forward data must specify an address to another record. See 
-L<Address Specification> for information on specifying links.
+forward data must specify an address to another record. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on specifying links.
 
 The SELL, SELM, and SELN fields specify which output links are to be
 used.
@@ -71,42 +72,57 @@ SELM is a menu, with three choices:
 
 =menu dfanoutSELM
 
-If SELM=="All", then all output links are used, and the values of
+If SELM is C<All>, then all output links are used, and the values of
 SELL and SELN are ignored.
 
-If SELM=="Specified", then the value of SELN is used to specify a single
+If SELM is C<Specified>, then the value of SELN is used to specify a single
 link which will be used. If SELN==0, then no link will be used; if SELN==1,
 then OUTA will be used, and so on.
 
-SELN can either have its value set directly, or have its values retrieved
-from another EPICS PV. If SELL is a valid PV link, then SELN will be set to
-the values of the linked PV.
+SELN can either have its value set directly, or have it retrieved from
+another EPICS PV. If SELL is a valid PV link, then SELN will be read from
+the linked PV.
 
-If SELM=="Mask", then SELN will be treated as a bit mask. If bit one of
-SELN is set, then OUTA will be used, if bit two is set, OUTB will be used.
-Thus if SELN==5, OUTC and OUTA will be used.
+If SELM is C<Mask>, then SELN will be treated as a bit mask. If bit zero
+(the LSB) of SELN is set, then OUTA will be written to; if bit one is set,
+OUTB will be written to, and so on. Thus when SELN==5, both OUTC and OUTA
+will be written to.
 
-=fields OUTA, OUTB, OUTC, OUTD, OUTE, OUTF, OUTG, OUTH
+=fields SELL, SELM, SELN, OUTA, OUTB, OUTC, OUTD, OUTE, OUTF, OUTG, OUTH
 
 =head3 Operator Display Parameters
 
-These parameters are used to present meaningful data to the operator. They
-display the value and other parameters of the data fanout record either
-textually or graphically.
+These parameters are used to present meaningful data to the operator.
+They do not affect the functioning of the record at all.
 
-The EGU field can contain a string of up to 16 characters describing the
-value on the VAL field.
+=over
 
-The HOPR and LOPR fields determine the upper and lower display limits for
-graphic displays and the upper and lower control limits for control
-displays. They apply to the VAL, HIHI, HIGH, LOW, and LOLO fields. The
-record support routines C<get_graphic_double()> and C<get_control_double()>
-retrieve HOPR and LOPR.
+=item *
+NAME is the record's name, and can be useful when the PV name that a client
+knows is an alias for the record.
+
+=item *
+DESC is a string that is usually used to briefly describe the record.
+
+=item *
+EGU is a string of up to 16 characters naming the engineering units that the VAL
+field represents.
+
+=item *
+The HOPR and LOPR fields set the upper and lower display limits for the VAL,
+HIHI, HIGH, LOW, and LOLO fields.
+
+=item *
+The PREC field determines the floating point precision (i.e. the number of
+digits to show after the decimal point) with which to display VAL and the other
+DOUBLE fields.
+
+=back
 
 See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
-Parameters> for more on the record name (NAME) and description (DESC) fields.
+Parameters> for more about the record name (NAME) and description (DESC) fields.
 
-=fields EGU, HOPR, LOPR, NAME, DESC
+=fields NAME, DESC, EGU, HOPR, LOPR, PREC
 
 =head3 Alarm Parameters
 
@@ -119,9 +135,10 @@ in the corresponding field (HHSV, LLSV, HSV, LSV) and can be either
 NO_ALARM, MINOR, or MAJOR. In the hysteresis field (HYST) can be entered a
 number which serves as the deadband on the limit alarms.
 
-See L<Alarm Specification> for a complete explanation of alarms and these
-fields. L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related to alarms that are
-common to all record types.
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+for a complete explanation of record alarms and of the standard fields.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
+to alarms that are common to all record types.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST
 
@@ -211,7 +228,7 @@ hysteresis factors for monitor callbacks.
 		interest(1)
 	}
 	field(DOL,DBF_INLINK) {
-		prompt("Desired Output Loc")
+		prompt("Desired Output Link")
 		promptgroup("40 - Input")
 		interest(1)
 	}

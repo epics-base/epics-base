@@ -11,14 +11,14 @@
 #ifndef INC_dbCaTest_H
 #define INC_dbCaTest_H
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareFunc long dbcar(char *recordname,int level);
-epicsShareFunc void dbcaStats(int *pchans, int *pdiscon);
+DBCORE_API long dbcar(char *recordname,int level);
+DBCORE_API void dbcaStats(int *pchans, int *pdiscon);
 
 #ifdef __cplusplus
 }

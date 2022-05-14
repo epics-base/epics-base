@@ -47,7 +47,7 @@ extern "C" {
  * ***YAJL 2.2.0***
  *   This version adds support for JSON5 parsing and generation.
  *   The upstream YAJL repository is no longer being maintained and the
- *   original author no longer responds to messsages, so while this code
+ *   original author no longer responds to messages, so while this code
  *   has been offered for merging into the upstream it is unlikely that
  *   will ever happen. The version number here is thus an EPICS-specific
  *   construct.

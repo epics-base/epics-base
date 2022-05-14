@@ -21,7 +21,7 @@
 #define INCdevSuph 1
 
 #include "errMdef.h"
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 /* structures defined elsewhere */
 struct dbCommon;
@@ -77,7 +77,7 @@ typedef struct typed_dset {
     long (*init_record)(struct dbCommon *prec);
     /** Called when SCAN="I/O Intr" on startup, or after SCAN is changed.
      *
-     * Caller must assign the third arguement (IOCSCANPVT*).  eg.
+     * Caller must assign the third argument (IOCSCANPVT*).  eg.
      @code
      struct mpvt {
         IOSCANPVT drvlist;
@@ -158,12 +158,12 @@ typedef dset unambiguous_dset;
  *
  * Recommended for use in device support init_record()
  */
-epicsShareFunc struct link* dbGetDevLink(struct dbCommon* prec);
+DBCORE_API struct link* dbGetDevLink(struct dbCommon* prec);
 
-epicsShareExtern dsxt devSoft_DSXT;  /* Allow anything table */
+DBCORE_API extern dsxt devSoft_DSXT;  /* Allow anything table */
 
-epicsShareFunc void devExtend(dsxt *pdsxt);
-epicsShareFunc void dbInitDevSup(struct devSup *pdevSup, dset *pdset);
+DBCORE_API void devExtend(dsxt *pdsxt);
+DBCORE_API void dbInitDevSup(struct devSup *pdevSup, dset *pdset);
 
 
 #define S_dev_noDevSup      (M_devSup| 1) /*SDR_DEVSUP: Device support missing*/
@@ -173,7 +173,7 @@ epicsShareFunc void dbInitDevSup(struct devSup *pdevSup, dset *pdset);
 #define S_dev_badOutType    (M_devSup| 9) /*Bad OUT link type*/
 #define S_dev_badInitRet    (M_devSup|11) /*Bad init_rec return value */
 #define S_dev_badBus        (M_devSup|13) /*Illegal bus type*/
-#define S_dev_badCard       (M_devSup|15) /*Illegal or nonexistant module*/
+#define S_dev_badCard       (M_devSup|15) /*Illegal or nonexistent module*/
 #define S_dev_badSignal     (M_devSup|17) /*Illegal signal*/
 #define S_dev_NoInit        (M_devSup|19) /*No init*/
 #define S_dev_Conflict      (M_devSup|21) /*Multiple records accessing same signal*/

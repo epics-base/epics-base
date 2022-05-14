@@ -29,6 +29,8 @@
 #include "yajl_encode.h"
 #include "yajl_bytestack.h"
 
+#include <epicsStdlib.h>
+
 #ifndef LLONG_MAX
 #define LLONG_MAX     0x7FFFFFFFFFFFFFFFLL
 #define LLONG_MIN     (-0x7FFFFFFFFFFFFFFFLL - 1)
@@ -169,7 +171,7 @@ yajl_render_error_string(yajl_handle hand, const unsigned char * jsonText,
     return str;
 }
 
-/* check for client cancelation */
+/* check for client cancellation */
 #define _CC_CHK(x)                                                \
     if (!(x)) {                                                   \
         yajl_bs_set(hand->stateStack, yajl_state_parse_error);    \
@@ -247,7 +249,7 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
             /* for arrays and maps, we advance the state for this
              * depth, then push the state of the next depth.
              * If an error occurs during the parsing of the nesting
-             * enitity, the state at this level will not matter.
+             * entity, the state at this level will not matter.
              * a state that needs pushing will be anything other
              * than state_start */
 
@@ -334,7 +336,7 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
                             yajl_buf_clear(hand->decodeBuf);
                             yajl_buf_append(hand->decodeBuf, buf, bufLen);
                             buf = yajl_buf_data(hand->decodeBuf);
-                            d = strtod((char *) buf, NULL);
+                            d = epicsStrtod((char *) buf, NULL);
                             if ((d == HUGE_VAL || d == -HUGE_VAL) &&
                                 errno == ERANGE)
                             {

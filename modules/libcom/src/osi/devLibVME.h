@@ -67,7 +67,7 @@ extern "C" {
 
 /** \brief Print a map of registered bus addresses.
  *
- * Display a table of registsred bus address ranges, including the owner of
+ * Display a table of registered bus address ranges, including the owner of
  * each registered address.
  * \return 0, or an error status value
  */
@@ -246,7 +246,7 @@ LIBCOM_API int devInterruptInUseVME (unsigned vectorNumber);
 /** \brief Enable a VME interrupt level onto the CPU.
  *
  * The VMEbus allows multiple CPU boards to be installed in the same
- * backplane. When this is done, the differente VME interrupt levels
+ * backplane. When this is done, the different VME interrupt levels
  * must be assigned to the CPUs since they cannot be shared. This
  * routine tells the VME interface that it should connect interrupts
  * from the indicated interrupt level to a CPU interrupt line.

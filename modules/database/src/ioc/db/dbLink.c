@@ -28,7 +28,6 @@
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
@@ -314,10 +313,16 @@ long dbTryGetLink(struct link *plink, short dbrType, void *pbuffer,
     return plset->getValue(plink, dbrType, pbuffer, pnRequest);
 }
 
+static
+void setLinkAlarm(struct link* plink)
+{
+    recGblSetSevrMsg(plink->precord, LINK_ALARM, INVALID_ALARM,
+                     "field %s", dbLinkFieldName(plink));
+}
+
 long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
         long *poptions, long *pnRequest)
 {
-    struct dbCommon *precord = plink->precord;
     long status;
 
     if (poptions && *poptions) {
@@ -329,7 +334,7 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
     if (status == S_db_noLSET)
         return -1;
     if (status)
-        recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        setLinkAlarm(plink);
 
     return status;
 }
@@ -386,24 +391,42 @@ long dbGetUnits(const struct link *plink, char *units, int unitsSize)
 }
 
 long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
-        epicsEnum16 *severity)
+                epicsEnum16 *severity)
+{
+    return dbGetAlarmMsg(plink, status, severity, NULL, 0);
+}
+
+long dbGetAlarmMsg(const struct link *plink, epicsEnum16 *status,
+                   epicsEnum16 *severity, char *msgbuf, size_t msgbuflen)
 {
     lset *plset = plink->lset;
 
-    if (!plset || !plset->getAlarm)
+    if (plset && plset->getAlarmMsg) {
+        return plset->getAlarmMsg(plink, status, severity, msgbuf, msgbuflen);
+    } else if(plset && plset->getAlarm) {
+        return plset->getAlarm(plink, status, severity);
+    } else {
         return S_db_noLSET;
-
-    return plset->getAlarm(plink, status, severity);
+    }
 }
 
 long dbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
 {
+    return dbGetTimeStampTag(plink, pstamp, NULL);
+}
+
+long dbGetTimeStampTag(const struct link *plink,
+                       epicsTimeStamp *pstamp, epicsUTag *ptag)
+{
     lset *plset = plink->lset;
 
-    if (!plset || !plset->getTimeStamp)
+    if (plset && plset->getTimeStampTag) {
+        return plset->getTimeStampTag(plink, pstamp, ptag);
+    } else if(plset && plset->getTimeStamp) {
+        return plset->getTimeStamp(plink, pstamp);
+    } else {
         return S_db_noLSET;
-
-    return plset->getTimeStamp(plink, pstamp);
+    }
 }
 
 long dbPutLink(struct link *plink, short dbrType, const void *pbuffer,
@@ -417,9 +440,7 @@ long dbPutLink(struct link *plink, short dbrType, const void *pbuffer,
 
     status = plset->putValue(plink, dbrType, pbuffer, nRequest);
     if (status) {
-        struct dbCommon *precord = plink->precord;
-
-        recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        setLinkAlarm(plink);
     }
     return status;
 }
@@ -444,9 +465,7 @@ long dbPutLinkAsync(struct link *plink, short dbrType, const void *pbuffer,
 
     status = plset->putAsync(plink, dbrType, pbuffer, nRequest);
     if (status) {
-        struct dbCommon *precord = plink->precord;
-
-        recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        setLinkAlarm(plink);
     }
     return status;
 }

@@ -28,6 +28,11 @@
 #include "envDefs.h"
 #include "osiSock.h"
 #include "fdmgr.h"
+#include "epicsString.h"
+
+/* private between errlog.c and this test */
+LIBCOM_API
+void errlogStripANSI(char *msg);
 
 #define LOGBUFSIZE 2048
 
@@ -167,13 +172,40 @@ void logClient(void* raw, const char* msg)
     epicsEventSignal(pvt->done);
 }
 
+static
+void testANSIStrip(void)
+{
+    char scratch[64];
+    char actual[128];
+    char input[128];
+#define testEscape(INP, EXPECT) \
+    strcpy(scratch, INP); \
+    epicsStrnEscapedFromRaw(input, sizeof(input), INP, sizeof(INP)); \
+    errlogStripANSI(scratch); \
+    epicsStrnEscapedFromRaw(actual, sizeof(actual), scratch, epicsStrnLen(scratch, sizeof(scratch))); \
+    testOk(strcmp(scratch, EXPECT)==0, "input \"%s\" expect \"%s\" actual \"%s\"", input, EXPECT, actual)
+
+    testEscape("", "");
+    testEscape("hello", "hello");
+    testEscape("he\033[31;1mllo", "hello");
+    testEscape("\033[31;1mhello", "hello");
+    testEscape("hello\033[31;1m", "hello");
+    testEscape("hello\033[31;1", "hello");
+    testEscape("hello\033[", "hello");
+    testEscape("hello\033", "hello");
+
+#undef testEscape
+}
+
 MAIN(epicsErrlogTest)
 {
     size_t mlen, i, N;
     char msg[256];
     clientPvt pvt, pvt2;
 
-    testPlan(40);
+    testPlan(48);
+
+    testANSIStrip();
 
     strcpy(msg, truncmsg);
 
@@ -211,10 +243,11 @@ MAIN(epicsErrlogTest)
 
     errlogAddListener(&logClient, &pvt2);
 
+    /* logClient will not see ANSI escape sequences */
     pvt2.expect = pvt.expect = "Testing2";
     pvt2.checkLen = pvt.checkLen = strlen(pvt.expect);
 
-    errlogPrintfNoConsole("%s", pvt.expect);
+    errlogPrintfNoConsole("%s", ANSI_RED("Testing2"));
     errlogFlush();
 
     epicsEventMustWait(pvt.done);
@@ -370,7 +403,8 @@ MAIN(epicsErrlogTest)
 
     testDiag("Logged %u messages", pvt.count);
     epicsEventMustWait(pvt.done);
-    testEqInt(pvt.count, N+1);
+    /* Expect N+1 messages +- 1 depending on impl */
+    testOk(pvt.count >= N && pvt.count<=N+2, "Logged %u messages, expected %zu", pvt.count, N+1);
 
     /* Clean up */
     testOk(1 == errlogRemoveListeners(&logClient, &pvt),

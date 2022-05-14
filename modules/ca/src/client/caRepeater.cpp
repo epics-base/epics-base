@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
     (void)detachinout;
 #endif
 
-    chdir ( "/" );
+    (void)! chdir ( "/" );
     ca_repeater ();
     return ( 0 );
 }

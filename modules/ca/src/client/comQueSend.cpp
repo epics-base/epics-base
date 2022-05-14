@@ -27,17 +27,17 @@
 // 1) Allow sufficent headroom so that users will be able to perform
 // a reasonable amount of IO within CA callbacks without experiencing
 // a push/pull deadlock. If a potential push/pull deadlock situation
-// occurs then detect and avoid it and provide diagnotic to the user
+// occurs then detect and avoid it and provide diagnostic to the user
 // via special status.
-// 2) Return status to the user when there is insufficent memory to
+// 2) Return status to the user when there is insufficient memory to
 // queue a complete message.
 // 3) return status to the user when a message cant be flushed because
 // a connection dropped.
-// 4) Do not allocate too much memory in exception situatons (such as
+// 4) Do not allocate too much memory in exception situations (such as
 // after a circuit disconnect).
 // 5) Avoid allocating more memory than is absolutely necessary to meet
 // the above requirements.
-// 6) Message fragments must never be sent to the IOC when there isnt
+// 6) Message fragments must never be sent to the IOC when there isn't
 // enough memory to queue part of a message (we also must not force
 // a disconnect because the client is starved for memory).
 // 7) avoid the need to check status for each byte pushed into the
@@ -45,7 +45,7 @@
 //
 // Implementation:
 // 1) When queuing a complete message, first test to see if a flush is
-// required. If it is a receive thread scheduals the flush with the
+// required. If it is a receive thread schedules the flush with the
 // send thread, and otherwise directly execute the system call. The
 // send thread must run at a higher priority than the receive thread
 // if we are to minimize memory consumption.
@@ -58,9 +58,9 @@
 //      a) A user is queuing more requests that demand a response from a
 //      callback than are removed by the response that initiated the
 //      callback, and this situation persists for many callbacks until
-//      all buffering in the system is exausted.
+//      all buffering in the system is exhausted.
 //      b) A user is queuing many requests that demand a response from one
-//      callback until all buffering in the system is exausted.
+//      callback until all buffering in the system is exhausted.
 //      c) Some combination of both (a) nad (b).
 //
 //

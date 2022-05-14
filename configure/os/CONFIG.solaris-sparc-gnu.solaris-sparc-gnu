@@ -18,6 +18,6 @@ STATIC_LDLIBS_NO=
 
 OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 
-SHRLIB_LDFLAGS += -Wl,-z,defs -Wl,-z,text -Wl,-h,$@
-LOADABLE_SHRLIB_LDFLAGS += -Wl,-z,text -Wl,-h,$@
+SHRLIB_LDFLAGS += -Wl,-z,defs -Wl,-z,text
+LOADABLE_SHRLIB_LDFLAGS += -Wl,-z,text
 GNU_LDLIBS_YES += -lc

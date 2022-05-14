@@ -45,8 +45,9 @@ hardware address information that the device support uses to determine where the
 input data should come from.
 The format for the INP field value depends on the device support layer that is
 selected by the DTYP field.
-See L<Address Specification|...> for a description of the various hardware
-address formats supported.
+See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for a description of the various hardware address formats supported.
 
 =head3 Units Conversion
 
@@ -158,6 +159,10 @@ They do not affect the functioning of the record at all.
 =over
 
 =item *
+NAME is the record's name, and can be useful when the PV name that a client
+knows is an alias for the record.
+
+=item *
 DESC is a string that is usually used to briefly describe the record.
 
 =item *
@@ -175,7 +180,10 @@ DOUBLE fields.
 
 =back
 
-=fields DESC, EGU, HOPR, LOPR, PREC
+See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
+Parameters> for more about the record name (NAME) and description (DESC) fields.
+
+=fields NAME, DESC, EGU, HOPR, LOPR, PREC
 
 =head3 Alarm Limits
 
@@ -197,6 +205,11 @@ time since the record last processed in its calculation. Setting AFTC to a
 positive number of seconds will delay the record going into or out of a minor
 alarm severity or from minor to major severity until the input signal has been
 in the alarm range for that number of seconds.
+
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+for a complete explanation of record alarms and of the standard fields.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
+to alarms that are common to all record types.
 
 =fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, AFTC, LALM
 

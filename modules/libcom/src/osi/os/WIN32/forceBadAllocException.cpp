@@ -19,7 +19,7 @@
 #include <new>
 #include <new.h>
 
-// instruct loader to call this gllobal object
+// instruct loader to call this global object
 // constructor before user global object constructors
 #pragma warning (disable: 4073)
 #pragma init_seg(lib)

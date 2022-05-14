@@ -279,7 +279,7 @@ skip_rest:
 
     /*
      * wait for the operation to complete
-     * (outstabnding decrements to zero)
+     * (outstanding decrements to zero)
      */
     while(ntries){
         ca_pend_event(1.0);

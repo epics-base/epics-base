@@ -13,7 +13,6 @@
 #include "iocsh.h"
 #include "libComRegister.h"
 
-#define epicsExportSharedSymbols
 #include "asIocRegister.h"
 #include "dbAccess.h"
 #include "dbIocRegister.h"

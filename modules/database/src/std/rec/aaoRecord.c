@@ -162,7 +162,7 @@ static long process(struct dbCommon *pcommon)
         prec->udf = FALSE;
 
         /* Update the timestamp before writing output values so it
-         * will be uptodate if any downstream records fetch it via TSEL */
+         * will be up to date if any downstream records fetch it via TSEL */
         recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
@@ -357,7 +357,7 @@ static long writeValue(aaoRecord *prec)
     case menuYesNoYES: {
         recGblSetSevr(prec, SIMM_ALARM, prec->sims);
         if (prec->pact || (prec->sdly < 0.)) {
-            /* Device suport is responsible for buffer
+            /* Device support is responsible for buffer
                which might be write-only so we may not be
                allowed to call dbPutLink on it.
                Maybe also device support has an advanced

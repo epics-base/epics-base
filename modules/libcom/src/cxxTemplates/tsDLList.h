@@ -434,7 +434,7 @@ inline void tsDLList<T>::push (T &item)
 
 //
 // tsDLList<T>::find ()
-// returns -1 if the item isnt on the list
+// returns -1 if the item isn't on the list
 // and the node number (beginning with zero if
 // it is)
 //

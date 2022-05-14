@@ -7,11 +7,185 @@
 #include <string.h>
 
 #include <errlog.h>
+#include <alarm.h>
 #include <dbAccess.h>
 #include <dbStaticLib.h>
 #include <dbStaticPvt.h>
+#include <dbChannel.h>
+#include <dbEvent.h>
 #include <dbUnitTest.h>
 #include <testMain.h>
+
+#include "xRecord.h"
+
+typedef struct {
+    DBRstatus
+    DBRamsg
+    DBRunits
+    DBRprecision
+    DBRtime
+    DBRutag
+    DBRgrDouble
+    DBRctrlDouble
+    DBRalDouble
+} dbMetaDouble;
+
+enum {dbMetaDoubleMask = DBR_STATUS | DBR_AMSG | DBR_UNITS | DBR_PRECISION | DBR_TIME | DBR_UTAG | DBR_GR_DOUBLE | DBR_CTRL_DOUBLE | DBR_AL_DOUBLE};
+
+static
+void testdbMetaDoubleSizes(void)
+{
+    dbMetaDouble meta;
+    size_t pos=0;
+
+    testDiag("dbMetaDouble may not have padding");
+#define testOffset(FLD) do {\
+    testOk(offsetof(dbMetaDouble, FLD)==pos, "offset(meta, " #FLD "), %u == %u", (unsigned)offsetof(dbMetaDouble, FLD), (unsigned)pos); \
+    pos += sizeof(meta.FLD); \
+}while(0)
+
+    testOffset(status);
+    testOffset(severity);
+    testOffset(acks);
+    testOffset(ackt);
+    testOffset(amsg);
+    testOffset(units);
+    testOffset(precision);
+    testOffset(time);
+    testOffset(utag);
+    testOffset(upper_disp_limit);
+    testOffset(lower_disp_limit);
+    testOffset(upper_ctrl_limit);
+    testOffset(lower_ctrl_limit);
+    testOffset(upper_alarm_limit);
+    testOffset(upper_warning_limit);
+    testOffset(lower_warning_limit);
+    testOffset(lower_alarm_limit);
+#undef testOffset
+    testOk(sizeof(dbMetaDouble)==pos, "sizeof(dbMetaDouble), %u == %u", (unsigned)sizeof(dbMetaDouble), (unsigned)pos);
+}
+
+static
+void checkDoubleGet(dbChannel *chan, db_field_log* pfl)
+{
+    dbMetaDouble meta;
+    long options = (long)dbMetaDoubleMask;
+    long nReq = 0;
+    long status;
+
+    status=dbChannelGet(chan, DBF_DOUBLE, &meta, &options, &nReq, pfl);
+    testOk(status==0, "dbGet OTST : %ld", status);
+
+    testOk1(meta.severity==INVALID_ALARM);
+    testOk1(meta.status==UDF_ALARM);
+    testOk1(meta.acks==MAJOR_ALARM);
+    testOk1(meta.ackt==1);
+    testOk1(strncmp(meta.amsg, "oops", DB_UNITS_SIZE)==0);
+    testOk1(meta.time.secPastEpoch==0x12345678);
+    testOk1(meta.time.nsec==0x90abcdef);
+    testOk1(meta.utag==0x10203040);
+    testOk1(meta.precision.dp==0x12345678);
+    testOk1(strncmp(meta.units, "arbitrary", DB_UNITS_SIZE)==0);
+#define limitEq(UL, FL, VAL) testOk(meta.UL ## _ ## FL ## _limit == (VAL), #UL "_" #FL "_limit (%f) == %f", meta.UL ## _ ## FL ## _limit, VAL)
+    limitEq(lower, disp, 10000000.0-1.0);
+    limitEq(upper, disp, 10000000.0+1.0);
+    limitEq(lower, ctrl, 10000000.0-2.0);
+    limitEq(upper, ctrl, 10000000.0+2.0);
+    limitEq(lower, alarm, 10000000.0-3.0);
+    limitEq(lower, warning, 10000000.0-4.0);
+    limitEq(upper, warning, 10000000.0+4.0);
+    limitEq(upper, alarm, 10000000.0+3.0);
+#undef limitEq
+
+}
+
+static
+void testdbMetaDoubleGet(void)
+{
+    xRecord* prec = (xRecord*)testdbRecordPtr("recmeta");
+    dbChannel *chan = dbChannelCreate("recmeta.OTST");
+    db_field_log *pfl;
+    evSubscrip evsub;
+    long status;
+    dbMetaDouble meta;
+
+    STATIC_ASSERT(sizeof(meta.amsg)==sizeof(prec->amsg));
+    STATIC_ASSERT(sizeof(meta.amsg)==sizeof(pfl->amsg));
+
+    if(!chan)
+        testAbort("Missing recmeta OTST");
+    if((status=dbChannelOpen(chan))!=0)
+        testAbort("can't open recmeta OTST : %ld", status);
+
+    dbScanLock((dbCommon*)prec);
+    /* ensure that all meta-data has different non-zero values */
+    prec->otst = 10000000.0;
+    prec->sevr = INVALID_ALARM;
+    prec->stat = UDF_ALARM;
+    strcpy(prec->amsg, "oops");
+    prec->acks = MAJOR_ALARM;
+    prec->time.secPastEpoch = 0x12345678;
+    prec->time.nsec = 0x90abcdef;
+    prec->utag = 0x10203040;
+
+    testDiag("dbGet directly from record");
+    checkDoubleGet(chan, NULL);
+
+    testDiag("dbGet from field log");
+
+    /* bare minimum init for db_create_event_log() */
+    memset(&evsub, 0, sizeof(evsub));
+    evsub.chan = chan;
+    evsub.useValque = 1;
+    pfl = db_create_event_log(&evsub);
+    /* spoil things which should now come from field log */
+    prec->sevr = 0;
+    prec->stat = 0;
+    strcpy(prec->amsg, "invalid");
+    prec->time.secPastEpoch = 0xdeadbeef;
+    prec->time.nsec = 0xdeadbeef;
+    prec->utag = 0xdeadbeef;
+
+    /* never any filters, so skip pre/post */
+    checkDoubleGet(chan, pfl);
+    db_delete_field_log(pfl);
+
+    dbScanUnlock((dbCommon*)prec);
+}
+
+typedef struct {
+    DBRstatus
+    DBRamsg
+    DBRtime
+    DBRutag
+    DBRenumStrs
+} dbMetaEnum;
+
+static
+void testdbMetaEnumSizes(void)
+{
+    dbMetaEnum meta;
+    size_t pos=0;
+
+    testDiag("dbMetaEnum may not have implicit padding");
+#define testOffset(FLD) do {\
+    testOk(offsetof(dbMetaEnum, FLD)==pos, "offset(meta, " #FLD "), %u == %u", (unsigned)offsetof(dbMetaEnum, FLD), (unsigned)pos); \
+    pos += sizeof(meta.FLD); \
+}while(0)
+
+    testOffset(status);
+    testOffset(severity);
+    testOffset(acks);
+    testOffset(ackt);
+    testOffset(amsg);
+    testOffset(time);
+    testOffset(utag);
+    testOffset(no_str);
+    testOffset(padenumStrs);
+    testOffset(strs);
+#undef testOffset
+    testOk(sizeof(dbMetaEnum)==pos, "sizeof(dbMetaEnum), %u == %u", (unsigned)sizeof(dbMetaEnum), (unsigned)pos);
+}
 
 static
 void testdbGetStringEqual(const char *pv, const char *expected)
@@ -139,12 +313,43 @@ void testPutArr(void)
     testdbGetArrFieldEqual("arr", DBR_LONG, 4, 3, buf);
 }
 
+static
+void testPutSpecial(void)
+{
+    const char val[] = "special";
+    const char inp[] = "special.INP";
+    const char sfx[] = "special.SFX";
+    testDiag("testPutSpecial()");
+
+    /* There are separate sets of calls to dbPutSpecial() in
+     * dbPut() and in dbPutFieldLink() so we need to check
+     * both regular fields and link fields.
+     */
+    testdbPutFieldOk(val, DBR_LONG, 1);
+    testdbPutFieldOk(inp, DBR_STRING, "1.0");
+    testdbPutFieldOk(sfx, DBR_LONG, SFX_Before);    /* Reject early */
+    testdbPutFieldFail(S_db_Blocked, val, DBR_LONG, 2);
+    testdbGetFieldEqual(val, DBR_LONG, 1);          /* Wasn't modified */
+    testdbPutFieldFail(S_db_Blocked, inp, DBR_STRING, "2.0");
+    testdbGetFieldEqual(inp, DBR_STRING, "1.0");    /* Wasn't modified */
+    testdbPutFieldOk(sfx, DBR_LONG, SFX_After);     /* Reject late */
+    testdbPutFieldFail(S_db_Blocked, val, DBR_LONG, 3);
+    testdbPutFieldFail(S_db_Blocked, inp, DBR_STRING, "3.0");
+    testdbPutFieldOk(sfx, DBR_LONG, SFX_None);
+    testdbPutFieldOk(val, DBR_LONG, 4);
+    testdbPutFieldOk(inp, DBR_STRING, "4.0");
+}
+
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
 {
-    testPlan(44);
+    testPlan(124);
     testdbPrepare();
+
+    testdbMetaDoubleSizes();
+    testdbMetaEnumSizes();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
@@ -158,11 +363,15 @@ MAIN(dbPutGet)
     testIocInitOk();
     eltc(1);
 
+    testdbMetaDoubleGet();
+
     testLongLink();
     testLongAttr();
     testLongField();
 
     testPutArr();
+
+    testPutSpecial();
 
     testIocShutdownOk();
 

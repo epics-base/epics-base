@@ -16,7 +16,6 @@
 
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "registryCommon.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"

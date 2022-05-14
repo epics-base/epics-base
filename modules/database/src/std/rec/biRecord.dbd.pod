@@ -37,6 +37,8 @@ The binary input record has the standard fields for specifying under what
 circumstances the record will be processed.
 These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
+=fields SCAN, PHAS, EVNT, PRIO, PINI
+
 =head3 Read and Convert Parameters
 
 The read and convert fields determine where the binary input gets its
@@ -44,14 +46,15 @@ input from and how to convert the raw signal to engineering units. The INP
 field contains the address from where device support retrieves the value.
 If the binary input record gets its value from hardware, the address of the
 card must be entered in the INP field, and the name of the device support
-module must be entered in the DTYP field. See L<Address Specification> for
-information on the format of the hardware address. Be aware that the format
-differs between types of cards.
+module must be entered in the DTYP field. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on the format of the hardware address.
 
 For records that specify C<Soft Channel> or C<Raw Soft Channel> device
 support routines, the INP field can be a channel or a database link, or a
-constant. If a constant, VAL can be changed directly by dbPuts. See
-L<Address Specification> for information on the format of database and
+constant. If a constant, VAL can be changed directly by dbPuts. See L<Address
+Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+for information on the format of database and
 channel access addresses. Also, see L<Device Support for Soft Records> in
 this chapter for information on soft device support.
 
@@ -102,9 +105,10 @@ C<MAJOR>. The ZSV field holds the severity for the zero state; OSV, for
 the one state.  COSV causes an alarm whenever the state changes between
 0 and 1 and the severity is configured as MINOR or MAJOR.
 
-See L<Alarm Specification> for a complete explanation of the discrete alarm
-states. L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related to alarms that are
-common to all record types.
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+for a complete explanation of record alarms and of the standard fields.
+L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
+to alarms that are common to all record types.
 
 =fields ZSV, OSV, COSV
 

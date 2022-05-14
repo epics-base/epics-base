@@ -15,11 +15,10 @@
 #include "epicsStdio.h"
 #include "epicsVersion.h"
 
-#define epicsExportSharedSymbols
 #include "epicsRelease.h"
 #include "epicsVCS.h"
 
-epicsShareFunc int coreRelease(void)
+DBCORE_API int coreRelease(void)
 {
     printf ( "############################################################################\n" );
     printf ( "## %s\n", epicsReleaseVersion );

@@ -8,7 +8,6 @@
 
 #include "iocsh.h"
 
-#define epicsExportSharedSymbols
 #include "dbtoolsIocRegister.h"
 #include "dbLoadTemplate.h"
 

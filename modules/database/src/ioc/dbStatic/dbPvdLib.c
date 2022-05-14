@@ -21,7 +21,6 @@
 #include "epicsStdio.h"
 #include "epicsString.h"
 
-#define epicsExportSharedSymbols
 #include "dbBase.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"

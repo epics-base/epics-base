@@ -188,7 +188,7 @@ int main ( int argc, char ** argv )
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
             epicsSocketDestroy ( sock );
-            errlogPrintf ("casw: error from recv was = \"%s\"\n",
+            errlogPrintf ("casw: " ERL_ERROR " from recv was = \"%s\"\n",
                 sockErrBuf );
             return -1;
         }
@@ -224,7 +224,7 @@ int main ( int argc, char ** argv )
                  *   always set this field to INADDR_ANY
                  *
                  * clients always assume that if this
-                 * field is set to something that isnt INADDR_ANY
+                 * field is set to something that isn't INADDR_ANY
                  * then it is the overriding IP address of the server.
                  */
                 ina.sin_family = AF_INET;
@@ -235,7 +235,7 @@ int main ( int argc, char ** argv )
                 }
                 else {
                     /*
-                     * old servers dont supply this and the
+                     * old servers don't supply this and the
                      * default port must be assumed
                      */
                     ina.sin_port = htons ( serverPort );

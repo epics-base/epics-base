@@ -63,6 +63,7 @@ typedef int osiSockOptMcastTTL_t;
 #define SOCK_SHUTDOWN ESHUTDOWN
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
+#define SOCK_EMSGSIZE EMSGSIZE
 
 #ifndef SHUT_RD
 #   define SHUT_RD 0

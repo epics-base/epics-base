@@ -10,7 +10,6 @@
 
 #include "iocsh.h"
 
-#define epicsExportSharedSymbols
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
 #include "registryFunction.h"

@@ -1,5 +1,25 @@
 .ci/          export-ignore
 .tools/       export-ignore
+.github/      export-ignore
+.appveyor/    export-ignore
 .appveyor.yml export-ignore
-.travis.yml   export-ignore
 README        export-subst
+
+#Which files need CRLF handling
+# default to automatic
+* text=auto
+
+# batch script parser on windows requires CRLF
+*.bat text eol=crlf
+
+# extensions for scripts which may be executable via. "#!..." must have LF
+*.pl text eol=lf
+*.plt text eol=lf
+*.sh text eol=lf
+*.cmd text eol=lf
+# .cmd in unexpanded templates
+*.cmd@* text eol=lf
+# executable scripts w/o extensions
+modules/ca/src/client/S99caRepeater@ text eol=lf
+modules/libcom/src/log/S99logServer@ text eol=lf
+startup/EpicsHostArch text eol=lf

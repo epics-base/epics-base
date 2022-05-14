@@ -95,7 +95,7 @@ long z_getval(struct link *plink, short dbrType, void *pbuffer,
     return ret;
 }
 
-/* TODO: atomicly get value and alarm */
+/* TODO: atomically get value and alarm */
 static
 long z_getalarm(const struct link *plink, epicsEnum16 *status,
         epicsEnum16 *severity)

@@ -62,7 +62,7 @@ void timerQueue ::
         strcpy ( date, "UKN DATE" );
     }
     if ( delay >= exceptMsgMinPeriod ) {
-        // we dont touch the typeid for the timer expiration
+        // we don't touch the typeid for the timer expiration
         // notify interface here because they might have
         // destroyed the timer during its callback
         errlogPrintf (
@@ -97,7 +97,7 @@ double timerQueue::process ( const epicsTime & currentTime )
     }
 
     //
-    // Tag current epired tmr so that we can detect if call back
+    // Tag current expired tmr so that we can detect if call back
     // is in progress when canceling the timer.
     //
     if ( this->timerList.first () ) {
@@ -134,7 +134,7 @@ double timerQueue::process ( const epicsTime & currentTime )
             epicsGuardRelease < epicsMutex > unguard ( guard );
 
             debugPrintf ( ( "%5u expired \"%s\" with error %f sec\n",
-                N++, typeid ( this->pExpireTmr->notify ).name (),
+                N++, typeid ( this->pExpireTmr->pNotify ).name (),
                 currentTime - this->pExpireTmr->exp ) );
             try {
                 expStat = pTmpNotify->expire ( currentTime );
@@ -155,7 +155,7 @@ double timerQueue::process ( const epicsTime & currentTime )
             // 1) if another thread is canceling then cancel() waits for
             // the event below
             // 2) if this thread is canceling in the timer callback then
-            // dont touch timer or notify here because the cancel might
+            // don't touch timer or notify here because the cancel might
             // have occurred because they destroyed the timer in the
             // callback
             this->cancelPending = false;

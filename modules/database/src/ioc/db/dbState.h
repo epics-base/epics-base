@@ -14,7 +14,7 @@
 #ifndef INCdbStateH
 #define INCdbStateH
 
-#include "shareLib.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,14 +45,14 @@ typedef struct dbState *dbStateId;
  * @param name Db state name.
  * @return Id of db state, NULL for failure.
  */
-epicsShareFunc dbStateId dbStateCreate(const char *name);
+DBCORE_API dbStateId dbStateCreate(const char *name);
 
 /** @brief Find db state.
  *
  * @param name Db state name.
  * @return Id of db state, NULL if not found.
  */
-epicsShareFunc dbStateId dbStateFind(const char *name);
+DBCORE_API dbStateId dbStateFind(const char *name);
 
 /** @brief Set db state to TRUE.
  *
@@ -60,7 +60,7 @@ epicsShareFunc dbStateId dbStateFind(const char *name);
  *
  * @param id Db state id.
  */
-epicsShareFunc void dbStateSet(dbStateId id);
+DBCORE_API void dbStateSet(dbStateId id);
 
 /** @brief Set db state to FALSE.
  *
@@ -68,14 +68,14 @@ epicsShareFunc void dbStateSet(dbStateId id);
  *
  * @param id Db state id.
  */
-epicsShareFunc void dbStateClear(dbStateId id);
+DBCORE_API void dbStateClear(dbStateId id);
 
 /** @brief Get db state.
  *
  * @param id Db state id.
  * @return Current db state (0|1).
  */
-epicsShareFunc int dbStateGet(dbStateId id);
+DBCORE_API int dbStateGet(dbStateId id);
 
 /** @brief Print info about db state.
  *
@@ -84,7 +84,7 @@ epicsShareFunc int dbStateGet(dbStateId id);
  * @param id Db state id.
  * @param level Interest level.
  */
-epicsShareFunc void dbStateShow(dbStateId id, unsigned int level);
+DBCORE_API void dbStateShow(dbStateId id, unsigned int level);
 
 /** @brief Print info about all db states.
  *
@@ -92,7 +92,7 @@ epicsShareFunc void dbStateShow(dbStateId id, unsigned int level);
  *
  * @param level Interest level.
  */
-epicsShareFunc void dbStateShowAll(unsigned int level);
+DBCORE_API void dbStateShowAll(unsigned int level);
 
 
 #ifdef __cplusplus

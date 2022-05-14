@@ -21,14 +21,14 @@
 extern "C" {
 #endif
 
-/*NOTE  Do NOT add aditional definitions with out modifying dbLexRoutines.c */
+/*NOTE  Do NOT add additional definitions with out modifying dbLexRoutines.c */
 /* types 1-99 are global. Record specific must start with 100 */
 #define SPC_NOMOD       1       /*Field must not be modified*/
 #define SPC_DBADDR      2       /*db_name_to_addr must call cvt_dbaddr*/
 #define SPC_SCAN        3       /*A scan related field is being changed*/
 #define SPC_ALARMACK    5       /*Special Alarm Acknowledgement*/
 #define SPC_AS          6       /* Access Security*/
-#define SPC_ATTRIBUTE   7       /* psuedo field, i.e. attribute field*/
+#define SPC_ATTRIBUTE   7       /* pseudo field, i.e. attribute field*/
 /* useful when record support must be notified of a field changing value*/
 #define SPC_MOD         100
 /* used by all records that support a reset field*/

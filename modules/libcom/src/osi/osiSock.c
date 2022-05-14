@@ -161,7 +161,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
     }
 
     /*
-     * inet_ntoa() isnt used because it isnt thread safe
+     * inet_ntoa() isn't used because it isn't thread safe
      * (and the replacements are not standardized)
      */
     status = epicsSnprintf (

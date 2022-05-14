@@ -25,7 +25,6 @@
 #include "db_access.h"
 #include "errlog.h"
 
-#define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbCAC.h"
 #include "dbChannelIO.h"

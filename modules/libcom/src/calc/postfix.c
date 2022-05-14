@@ -27,6 +27,10 @@
 #include "postfixPvt.h"
 #include "libComAPI.h"
 
+#ifdef RTEMS_HAS_ALTIVEC
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+#endif
 
 /* declarations for postfix */
 
@@ -626,3 +630,6 @@ LIBCOM_API void
         }
     }
 }
+#ifdef RTEMS_HAS_ALTIVEC
+#pragma GCC pop_options
+#endif

@@ -1,12 +1,13 @@
+# CONFIG.Common.RTEMS-pc386
 #
-# Author: W. Eric Norum
-#         Canadian Light Source
-#         eric@cls.usask.ca
+# Definitions for the RTEMS-pc386 target, RTEMS 4.x only
+# Site-specific overrides go in CONFIG_SITE.Common.RTEMS-pc386
 #
-# All RTEMS targets use the same Makefile fragment
-#
+#-------------------------------------------------------
+
 RTEMS_BSP = pc386
 RTEMS_TARGET_CPU = i386
+GNU_TARGET = i386-rtems
 
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
@@ -22,3 +23,10 @@ include $(CONFIG)/os/CONFIG.Common.RTEMS
 # Put text segment where it will work with etherboot
 #
 OP_SYS_LDFLAGS += -Wl,-Ttext,0x100000
+
+# This check must appear after the above include
+ifeq ($(RTEMS_VERSION),5)
+  $(info *** This target is not compatible with the configured RTEMS version.)
+  $(info *** Build the RTEMS-pc686 (-qemu) target for RTEMS 5.x)
+  $(error Can't continue)
+endif

@@ -43,7 +43,7 @@
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
 
-/* Hysterisis for alarm filtering: 1-1/e */
+/* Hysteresis for alarm filtering: 1-1/e */
 #define THRESHOLD 0.6321
 
 /* Create RSET - Record Support Entry Table*/
@@ -432,7 +432,7 @@ static void convert(aiRecord *prec)
 
         default: /* must use breakpoint table */
             if (cvtRawToEngBpt(&val,prec->linr,prec->init,(void *)&prec->pbrk,&prec->lbrk)!=0) {
-                recGblSetSevr(prec,SOFT_ALARM,MAJOR_ALARM);
+                recGblSetSevrMsg(prec,SOFT_ALARM,MAJOR_ALARM, "BPT Error");
             }
     }
 

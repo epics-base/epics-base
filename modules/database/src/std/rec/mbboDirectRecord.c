@@ -88,6 +88,14 @@ static long writeValue(mbboDirectRecord *);
 
 #define NUM_BITS 32
 
+static
+void bitsFromVAL(mbboDirectRecord *prec)
+{
+    unsigned i;
+    for(i=0; i<NUM_BITS; i++)
+        (&prec->b0)[i] = !!(prec->val&(1u<<i));
+}
+
 static long init_record(struct dbCommon *pcommon, int pass)
 {
     struct mbboDirectRecord *prec = (struct mbboDirectRecord *)pcommon;
@@ -131,16 +139,21 @@ static long init_record(struct dbCommon *pcommon, int pass)
             status = 0;
     }
 
-    if (!prec->udf &&
-        prec->omsl == menuOmslsupervisory) {
-        /* Set initial B0 - B1F from VAL */
-        epicsUInt32 val = prec->val;
+    if (!prec->udf)
+        bitsFromVAL(prec);
+    else {
+        /* Did user set any of the B0-B1F fields? */
         epicsUInt8 *pBn = &prec->b0;
+        epicsUInt32 val = 0, bit = 1;
         int i;
 
-        for (i = 0; i < NUM_BITS; i++) {
-            *pBn++ = !! (val & 1);
-            val >>= 1;
+        for (i = 0; i < NUM_BITS; i++, bit <<= 1)
+            if (*pBn++)
+                val |= bit;
+
+        if (val) {  /* Yes! */
+            prec->val = val;
+            prec->udf = FALSE;
         }
     }
 
@@ -174,29 +187,18 @@ static long process(struct dbCommon *pcommon)
             }
             prec->val = val;
         }
-        else if (prec->omsl == menuOmslsupervisory) {
-            epicsUInt8 *pBn = &prec->b0;
-            epicsUInt32 val = 0;
-            epicsUInt32 bit = 1;
-            int i;
-
-            /* Construct VAL from B0 - B1F */
-            for (i = 0; i < NUM_BITS; i++, bit <<= 1)
-                if (*pBn++)
-                    val |= bit;
-            prec->val = val;
-        }
         else if (prec->udf) {
-            recGblSetSevr(prec, UDF_ALARM, prec->udfs);
+            recGblSetSevrMsg(prec, UDF_ALARM, prec->udfs, "UDFS");
             goto CONTINUE;
         }
 
         prec->udf = FALSE;
+        bitsFromVAL(prec);
         /* Convert VAL to RVAL */
         convert(prec);
 
         /* Update the timestamp before writing output values so it
-         * will be uptodate if any downstream records fetch it via TSEL */
+         * will be up to date if any downstream records fetch it via TSEL */
         recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
@@ -234,6 +236,9 @@ CONTINUE:
         recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
+    /* update bits to reflect any change made by dset */
+    bitsFromVAL(prec);
+
     monitor(prec);
 
     /* Wrap up */
@@ -255,60 +260,37 @@ static long special(DBADDR *paddr, int after)
         return 0;
     }
 
-    if (!after)
-        return 0;
-
-    switch (paddr->special) {
-    case SPC_MOD:   /* Bn field modified */
-        if (prec->omsl == menuOmslsupervisory) {
-            /* Adjust VAL corresponding to the bit changed */
-            epicsUInt8 *pBn = (epicsUInt8 *) paddr->pfield;
-            epicsUInt32 bit = 1 << (pBn - &prec->b0);
-
-            if (*pBn)
-                prec->val |= bit;
-            else
-                prec->val &= ~bit;
-
-            prec->udf = FALSE;
-            convert(prec);
+    if(after==0 && fieldIndex >= mbboDirectRecordB0 && fieldIndex <= mbboDirectRecordB1F) {
+        if(prec->omsl == menuOmslclosed_loop) {
+            /* To avoid confusion, reject changes to bit fields while in closed loop.
+             * Not a 100% solution as confusion can still arise if dset overwrites VAL.
+             */
+            return S_db_noMod;
         }
-        break;
 
-    case SPC_RESET: /* OMSL field modified */
-        if (prec->omsl == menuOmslclosed_loop) {
-            /* Construct VAL from B0 - B1F */
-            epicsUInt8 *pBn = &prec->b0;
-            epicsUInt32 val = 0, bit = 1;
-            int i;
+    } else if(after==1 && fieldIndex >= mbboDirectRecordB0 && fieldIndex <= mbboDirectRecordB1F) {
+        /* Adjust VAL corresponding to the bit changed */
+        epicsUInt8 *pBn = (epicsUInt8 *) paddr->pfield;
+        epicsUInt32 bit = 1 << (pBn - &prec->b0);
 
-            for (i = 0; i < NUM_BITS; i++, bit <<= 1)
-                if (*pBn++)
-                    val |= bit;
-            prec->val = val;
+        /* Because this is !(VAL and PP), dbPut() will always post a monitor on this B* field
+         * after we return.  We must keep track of this change separately from MLST to handle
+         * situations where VAL and B* are changed prior to next monitor().  eg. by dset to
+         * reflect bits actually written.  This is the role of OBIT.
+         */
+
+        if (*pBn) {
+            prec->val |= bit;
+            prec->obit |= bit;
+        } else {
+            prec->val &= ~bit;
+            prec->obit &= ~bit;
         }
-        else if (prec->omsl == menuOmslsupervisory) {
-            /* Set B0 - B1F from VAL and post monitors */
-            epicsUInt32 val = prec->val;
-            epicsUInt8 *pBn = &prec->b0;
-            int i;
 
-            for (i = 0; i < NUM_BITS; i++, pBn++, val >>= 1) {
-                epicsUInt8 oBn = *pBn;
-
-                *pBn = !! (val & 1);
-                if (oBn != *pBn)
-                    db_post_events(prec, pBn, DBE_VALUE | DBE_LOG);
-            }
-        }
-        break;
-
-    default:
-        recGblDbaddrError(S_db_badChoice, paddr, "mbboDirect: special");
-        return S_db_badChoice;
+        prec->udf = FALSE;
+        convert(prec);
     }
 
-    prec->udf = FALSE;
     return 0;
 }
 
@@ -330,8 +312,21 @@ static void monitor(mbboDirectRecord *prec)
         events |= DBE_VALUE | DBE_LOG;
         prec->mlst = prec->val;
     }
-    if (events)
+    if (events) {
         db_post_events(prec, &prec->val, events);
+    }
+    {
+        unsigned i;
+        epicsUInt32 bitsChanged = prec->obit ^ (epicsUInt32)prec->val;
+
+        for(i=0; i<NUM_BITS; i++) {
+            /* post bit when value or alarm severity changes */
+            if((events&~(DBE_VALUE|DBE_LOG)) || (bitsChanged&(1u<<i))) {
+                db_post_events(prec, (&prec->b0)+i, events | DBE_VALUE | DBE_LOG);
+            }
+        }
+        prec->obit = prec->val;
+    }
 
     events |= DBE_VALUE | DBE_LOG;
     if (prec->oraw != prec->rval) {

@@ -20,16 +20,7 @@
 #ifndef dbChannelIOh
 #define dbChannelIOh
 
-#ifdef epicsExportSharedSymbols
-#   define dbChannelIOh_restore_epicsExportSharedSymbols
-#   undef epicsExportSharedSymbols
-#endif
-
 #include "compilerDependencies.h"
-
-#ifdef dbChannelIOh_restore_epicsExportSharedSymbols
-#   define epicsExportSharedSymbols
-#endif
 
 class dbChannelIO : public cacChannel, public dbContextPrivateListOfIO {
 public:

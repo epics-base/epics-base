@@ -192,7 +192,7 @@ int caget (pv *pvs, int nPvs, OutputT format,
     for (n = 0; n < nPvs; n++) {
 
         switch (format) {
-        case plain:             /* Emulate old caput behaviour */
+        case plain:             /* Emulate old caput behavior */
             if (pvs[n].reqElems <= 1 && fieldSeparator == ' ') printf("%-30s", pvs[n].name);
             else                                               printf("%s", pvs[n].name);
             printf("%c", fieldSeparator);

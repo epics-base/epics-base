@@ -24,12 +24,10 @@ or indirectly calls an `epicsThread*()` function, a specific tracking struct
 is allocated.
 
 Prior to this release, on POSIX and WIN32 targets, this
-struct would not be `free()`d, resulting in a memory leak.
+allocation would not be `free()`d, resulting in a memory leak.
 
-This release fixed the leak on POSIX targets.
-
-See the associated github [issue 241](https://github.com/epics-base/epics-base/issues/241)
-for WIN32 status.
+This release fixed the leak on POSIX and WIN32 targets (excluding
+MSVC before vs2012, and the WINE runtime).
 
 ### Fix `CHECK_RELEASE = WARN`
 

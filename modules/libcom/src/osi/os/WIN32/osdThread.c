@@ -13,7 +13,11 @@
  */
 
 #ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0600
+#  ifdef _WIN32_WINNT_WIN8
+#    define _WIN32_WINNT _WIN32_WINNT_WIN8
+#  else
+#    define _WIN32_WINNT _WIN32_WINNT_VISTA
+#  endif
 #elif _WIN32_WINNT < 0x0600
 #   error Minimum supported is Windows Vista
 #endif
@@ -27,7 +31,6 @@
 #define STRICT
 #include <windows.h>
 #include <process.h> /* for _endthread() etc */
-#include <fibersapi.h>
 
 #include "epicsStdio.h"
 #include "libComAPI.h"
@@ -38,6 +41,30 @@
 #include "epicsExit.h"
 #include "epicsAtomic.h"
 #include "osdThreadPvt.h"
+
+/* Ensure that SDK >=8 (or mingw equivalent) is available and selected. */
+#if _WIN32_WINNT < _WIN32_WINNT_WIN8
+/* Fiber local storage requires is documented as >= Vista (SDK 7).
+ * However, it has been found that the declarations are missing until (SDK 8).
+ *
+ * To accomidate <=vs2010 fall back to Tls*() which will build and run
+ * correctly for epicsThread s, but means that TLS allocations from
+ * epicsThreadImplicitCreate() will continue to leak (for non-EPICS threads).
+ *
+ * Also, WINE circa 5.0.3 provides the FLS storage functions, but doesn't
+ * actually run the dtor function.
+ */
+typedef void (WINAPI *xPFLS_CALLBACK_FUNCTION) (void*);
+static
+DWORD xFlsAlloc(xPFLS_CALLBACK_FUNCTION *dtor) {
+    (void)dtor;
+    return TlsAlloc();
+}
+#define FlsAlloc xFlsAlloc
+#define FlsSetValue TlsSetValue
+#define FlsGetValue TlsGetValue
+#define USE_TLSALLOC_FALLBACK
+#endif
 
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 
@@ -479,7 +506,8 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     epicsExitCallAtThreadExits ();
 
     /* On Windows we could omit this and rely on the callback given to FlsAlloc() to free.
-     * However, WINE doesn't implement this fully.  So for EPICS threads, we explicitly
+     * However, <=vs2010 doesn't implement FLS at all, and WINE (circa 5.0.3) doesn't
+     * implement fully (dtor never runs).  So for EPICS threads, we explicitly
      * free() here.
      */
     if(pGbl && FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, NULL )) {
@@ -1042,6 +1070,12 @@ LIBCOM_API void epicsStdCall epicsThreadShowAll ( unsigned level )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
+
+#ifdef USE_TLSALLOC_FALLBACK
+    fprintf(epicsGetStdout(), "Warning: For this target, use of epicsThread* from non-EPICS threads\n"
+                              "         May leak memory.  Recommend to upgrade to >= Window Vista and\n"
+                              "         build with Windows SDK >= 8.\n");
+#endif
 
     if ( ! pGbl ) {
         return;

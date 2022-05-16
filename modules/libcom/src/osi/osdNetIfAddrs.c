@@ -39,7 +39,7 @@ static int matchMatchAddress(const osiSockAddr46 *pAddrToMatch46,
 #ifdef NETDEBUG
     char buf1[64];
     char buf2[64];
-    const static char* fname = "osiSockDiscoverBroadcastAddresses()";
+    const static char* fname = "osiSockBroadcastMulticastAddresses46()";
     epicsSocket46IpOnlyToDotted(&pAddrToMatch46->sa, buf1, sizeof(buf1));
     epicsSocket46IpOnlyToDotted(&pAddr46->sa, buf2, sizeof(buf2));
 #endif
@@ -91,18 +91,18 @@ static int copyRemoteAddressOK(osiSockAddrNode *pNewNode,
     char buf[64];
     int ret_ok = 0;
 #ifdef NETDEBUG
-    const static char* fname = "osiSockDiscoverBroadcastAddresses()";
+    const static char* fname = "osiSockBroadcastMulticastAddresses46()";
 #endif
     if  ( ! pRemoteAddr46 ) {
         snprintf ( buf, sizeof(buf), "%s", "<NULL>" );
     } else if ( ( pRemoteAddr46->sa.sa_family == AF_INET ) &&
                 ( pRemoteAddr46->ia.sin_addr.s_addr != INADDR_ANY ) ) {
-        pNewNode->addr46.ia = pRemoteAddr46->ia; /* struct copy */
+        pNewNode->addr.ia = pRemoteAddr46->ia; /* struct copy */
         ret_ok = 1;
     }
 #ifdef AF_INET6
     else if ( ( pRemoteAddr46 ) && ( pRemoteAddr46->sa.sa_family == AF_INET6 ) ) {
-        pNewNode->addr46.in6 = pRemoteAddr46->in6;  /* struct copy */
+        pNewNode->addr.in6 = pRemoteAddr46->in6;  /* struct copy */
         ret_ok = 1;
     }
 #endif
@@ -121,15 +121,15 @@ static int copyRemoteAddressOK(osiSockAddrNode *pNewNode,
 
 
 /*
- * osiSockDiscoverBroadcastAddresses ()
+ * osiSockBroadcastMulticastAddresses46 ()
  */
-LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
+LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
      (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
 {
     osiSockAddrNode *pNewNode;
     struct ifaddrs *ifa;
 #ifdef NETDEBUG
-    const static char* fname = "osiSockDiscoverBroadcastAddresses()";
+    const static char* fname = "osiSockBroadcastMulticastAddresses46()";
     {
         char buf[64];
         epicsSocket46IpOnlyToDotted(&pMatchAddr46->sa, buf, sizeof(buf));
@@ -143,12 +143,12 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
             pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
             if ( pNewNode == NULL ) {
-                errlogPrintf ( "osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n" );
+                errlogPrintf ( "osiSockBroadcastMulticastAddresses46(): no memory available for configuration\n" );
                 return;
             }
-            pNewNode->addr46.ia.sin_family = AF_INET;
-            pNewNode->addr46.ia.sin_port = htons ( 0 );
-            pNewNode->addr46.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            pNewNode->addr.ia.sin_family = AF_INET;
+            pNewNode->addr.ia.sin_port = htons ( 0 );
+            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
             ellAdd ( pList, &pNewNode->node );
             return;
         }
@@ -157,7 +157,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
     struct ifaddrs *ifaddr;
     int result = getifaddrs (&ifaddr);
     if ( result != 0 ) {
-        errlogPrintf("osiSockDiscoverBroadcastAddresses(): getifaddrs failed.\n");
+        errlogPrintf("osiSockBroadcastMulticastAddresses46(): getifaddrs failed.\n");
         return;
     }
 
@@ -306,9 +306,9 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
                 osiSockAddr46 addrMulticast46;
                 if (epicsSocket46addr6toMulticastOK((osiSockAddr46 *)ifa->ifa_addr,
                                                     &addrMulticast46)) {
-                    pNewNode->addr46 = addrMulticast46; /* struct copy */
-                    pNewNode->addr46.in6.sin6_scope_id = pNewNode->interfaceIndex;
-                    pNewNode->addr46.sa.sa_family = ifa->ifa_addr->sa_family;
+                    pNewNode->addr = addrMulticast46; /* struct copy */
+                    pNewNode->addr.in6.sin6_scope_id = pNewNode->interfaceIndex;
+                    pNewNode->addr.sa.sa_family = ifa->ifa_addr->sa_family;
                 } else {
                   free ( pNewNode );
                   pNewNode = NULL;
@@ -340,7 +340,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
                                    ifa->ifa_name ) );
             continue;
         } else {
-            const struct sockaddr *pSockAddr = &pNewNode->addr46.sa;
+            const struct sockaddr *pSockAddr = &pNewNode->addr.sa;
             char buf[64];
             epicsSocket46IpOnlyToDotted(pSockAddr, buf, sizeof(buf));
             ifDepenDebugPrintf (("%s %s:%d: IFACE '%s': added to list, family=%d interfaceIndex=%u addr='%s'\n",

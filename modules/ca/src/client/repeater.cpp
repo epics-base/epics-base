@@ -650,7 +650,7 @@ void ca_repeater ()
 #ifdef NETDEBUG
             {
                 char buf[64];
-                sockAddrToDottedIP(&pNode->addr46.sa, buf, sizeof(buf));
+                sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
                 epicsBaseDebugLog ("repeater: node='%s'\n", buf );
             }
 #endif
@@ -658,15 +658,15 @@ void ca_repeater ()
             /*
              * join UDP socket to any multicast groups
              */
-            if(pNode->addr46.ia.sin_family==AF_INET) {
-                epicsUInt32 top = ntohl(pNode->addr46.ia.sin_addr.s_addr)>>24;
+            if(pNode->addr.ia.sin_family==AF_INET) {
+                epicsUInt32 top = ntohl(pNode->addr.ia.sin_addr.s_addr)>>24;
                 if(top>=224 && top<=239) {
 
                     /* This is a multi-cast address */
                     struct ip_mreq mreq;
 
                     memset(&mreq, 0, sizeof(mreq));
-                    mreq.imr_multiaddr = pNode->addr46.ia.sin_addr;
+                    mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
                     mreq.imr_interface.s_addr = INADDR_ANY;
 
                     if (setsockopt(sock4, IPPROTO_IP, IP_ADD_MEMBERSHIP,
@@ -674,15 +674,15 @@ void ca_repeater ()
                         char name[64];
                         char sockErrBuf[64];
                         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                        sockAddrToDottedIP (&pNode->addr46.sa, name, sizeof(name));
+                        sockAddrToDottedIP (&pNode->addr.sa, name, sizeof(name));
                         errlogPrintf("caR: Socket mcast join to %s failed: %s\n", name, sockErrBuf );
                     }
                 }
             }
 #endif
 #ifdef AF_INET6
-            if (pNode->addr46.sa.sa_family == AF_INET6) {
-                osiSockAddr46 addr46 = pNode->addr46; // struct copy
+            if (pNode->addr.sa.sa_family == AF_INET6) {
+                osiSockAddr46 addr46 = pNode->addr; // struct copy
                 unsigned int interfaceIndex = (unsigned int)addr46.in6.sin6_scope_id;
                 /*
                  * The %en0 will become the scope id, which IPV6_MULTICAST_IF needs

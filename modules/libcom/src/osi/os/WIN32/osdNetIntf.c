@@ -50,9 +50,9 @@ static osiSockAddr46     osiLocalAddrResult;
 static epicsThreadOnceId osiLocalAddrId = EPICS_THREAD_ONCE_INIT;
 
 /*
- * osiSockDiscoverBroadcastAddresses ()
+ * osiSockBroadcastMulticastAddresses46 ()
  */
-LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
+LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
      (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
 {
     int                 status;
@@ -64,7 +64,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
     osiSockAddrNode     *pNewNode;
 
 #ifdef NETDEBUG
-    const static char* fname = "osiSockDiscoverBroadcastAddresses()";
+    const static char* fname = "osiSockBroadcastMulticastAddresses46()";
 #endif
     if ( pMatchAddr46->sa.sa_family == AF_INET  ) {
         if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
@@ -72,9 +72,9 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             if ( pNewNode == NULL ) {
                 return;
             }
-            pNewNode->addr46.ia.sin_family = AF_INET;
-            pNewNode->addr46.ia.sin_port = htons ( 0 );
-            pNewNode->addr46.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            pNewNode->addr.ia.sin_family = AF_INET;
+            pNewNode->addr.ia.sin_port = htons ( 0 );
+            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
             ellAdd ( pList, &pNewNode->node );
             return;
         }
@@ -160,7 +160,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
 
         pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
         if (pNewNode==NULL) {
-            errlogPrintf ("osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n");
+            errlogPrintf ("osiSockBroadcastMulticastAddresses46(): no memory available for configuration\n");
             return;
         }
 
@@ -170,12 +170,12 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             const unsigned bcast = pIfinfo->iiBroadcastAddress.AddressIn.sin_addr.s_addr;
             const unsigned addr = pIfinfo->iiAddress.AddressIn.sin_addr.s_addr;
             unsigned result = (addr & mask) | (bcast &~mask);
-            pNewNode->addr46.ia.sin_family = AF_INET;
-            pNewNode->addr46.ia.sin_addr.s_addr = result;
-            pNewNode->addr46.ia.sin_port = htons ( 0 );
+            pNewNode->addr.ia.sin_family = AF_INET;
+            pNewNode->addr.ia.sin_addr.s_addr = result;
+            pNewNode->addr.ia.sin_port = htons ( 0 );
         }
         else {
-            pNewNode->addr46.sa = pIfinfo->iiBroadcastAddress.Address;
+            pNewNode->addr.sa = pIfinfo->iiBroadcastAddress.Address;
         }
 
         /*

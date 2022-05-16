@@ -924,3 +924,10 @@ int osiSockPoll(struct osiSockPollfd fds[], int nfds, int timeout)
 #endif
 
 
+LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
+     (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
+{
+    osiSockAddr46 addr46;
+    addr46.ia = pMatchAddr->ia; /* struct copy */
+    return osiSockBroadcastMulticastAddresses46( pList, socket, &addr46);
+}

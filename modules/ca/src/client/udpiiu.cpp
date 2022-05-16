@@ -373,13 +373,13 @@ udpiiu::udpiiu (
 #ifdef NETDEBUG
       {
           char buf[64];
-          sockAddrToDottedIP(&pNode->addr46.sa, buf, sizeof(buf));
+          sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
           epicsBaseDebugLog("udpiiu::udpiiu  address='%s'\n", buf);
       }
 #endif
 #ifdef AF_INET6
-      if (pNode->addr46.sa.sa_family == AF_INET6) {
-          unsigned int interfaceIndex = (unsigned int)pNode->addr46.in6.sin6_scope_id;
+      if (pNode->addr.sa.sa_family == AF_INET6) {
+          unsigned int interfaceIndex = (unsigned int)pNode->addr.in6.sin6_scope_id;
           /*
            * The user must specify the interface like this:
            * export EPICS_CA_ADDR_LIST='[fe80::3958:418:65b8:230c%en0]'
@@ -395,7 +395,7 @@ udpiiu::udpiiu (
 #endif
       {
         SearchDestUDP & searchDest = *
-          new SearchDestUDP ( pNode->addr46, *this, socket46 );
+          new SearchDestUDP ( pNode->addr, *this, socket46 );
         _searchDestList.add ( searchDest );
       }
       free ( pNode );

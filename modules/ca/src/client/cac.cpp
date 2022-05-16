@@ -265,7 +265,7 @@ cac::cac (
     while ( osiSockAddrNode *
         pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
         tcpiiu * piiu = NULL;
-        SearchDestTCP * pdst = new SearchDestTCP ( *this, pNode->addr46 );
+        SearchDestTCP * pdst = new SearchDestTCP ( *this, pNode->addr );
         this->registerSearchDest ( guard, * pdst );
         /* Initially assume that servers listed in EPICS_CA_NAME_SERVERS support at least minor
          * version 11.  This causes tcpiiu to send the user and host name authentication
@@ -273,7 +273,7 @@ cac::cac (
          * be overwrite this assumption.
          */
         bool newIIU = findOrCreateVirtCircuit (
-            guard, pNode->addr46, cacChannel::priorityDefault,
+            guard, pNode->addr, cacChannel::priorityDefault,
             piiu, 11, pdst );
         free ( pNode );
         if ( newIIU ) {

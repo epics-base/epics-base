@@ -63,9 +63,9 @@ static struct ifreq * ifreqNext ( struct ifreq *pifreq )
 
 
 /*
- * osiSockDiscoverBroadcastAddresses ()
+ * osiSockBroadcastMulticastAddresses46 ()
  */
-LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
+LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
      (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
 {
     static const unsigned           nelem = 100;
@@ -81,7 +81,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
             pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
             if ( pNewNode == NULL ) {
-                errlogPrintf ( "osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n" );
+                errlogPrintf ( "osiSockBroadcastMulticastAddresses46(): no memory available for configuration\n" );
                 return;
             }
             pNewNode->addr46.ia.sin_family = AF_INET;
@@ -100,7 +100,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      */
     pIfreqList = (struct ifreq *) calloc ( nelem, sizeof(*pifreq) );
     if (!pIfreqList) {
-        errlogPrintf ("osiSockDiscoverBroadcastAddresses(): no memory to complete request\n");
+        errlogPrintf ("osiSockBroadcastMulticastAddresses46(): no memory to complete request\n");
         return;
     }
 
@@ -108,7 +108,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
     ifconf.ifc_req = pIfreqList;
     status = socket_ioctl (socket, SIOCGIFCONF, &ifconf);
     if (status < 0 || ifconf.ifc_len == 0) {
-        errlogPrintf ("osiSockDiscoverBroadcastAddresses(): unable to fetch network interface configuration (%d)\n", status);
+        errlogPrintf ("osiSockBroadcastMulticastAddresses46(): unable to fetch network interface configuration (%d)\n", status);
         free (pIfreqList);
         return;
     }
@@ -129,7 +129,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         /* copy current ifreq to aligned bufferspace (to start of pIfreqList buffer) */
         memmove(pIfreqList, pifreq, current_ifreqsize);
 
-        ifDepenDebugPrintf (("osiSockDiscoverBroadcastAddresses(): found IFACE: %s len: 0x%x current_ifreqsize: 0x%x \n",
+        ifDepenDebugPrintf (("osiSockBroadcastMulticastAddresses46(): found IFACE: %s len: 0x%x current_ifreqsize: 0x%x \n",
             pIfreqList->ifr_name,
             (unsigned)ifreq_size(pifreq),
             (unsigned)current_ifreqsize));
@@ -138,7 +138,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
          * If its not an internet interface then don't use it
          */
         if ( pIfreqList->ifr_addr.sa_family != AF_INET ) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): interface \"%s\" was not AF_INET\n", pIfreqList->ifr_name) );
+             ifDepenDebugPrintf ( ("osiSockBroadcastMulticastAddresses46(): interface \"%s\" was not AF_INET\n", pIfreqList->ifr_name) );
              continue;
         }
 
@@ -153,7 +153,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             if ( pMatchAddr46->ia.sin_addr.s_addr != htonl (INADDR_ANY) ) {
                  struct sockaddr_in *pInetAddr = (struct sockaddr_in *) &pIfreqList->ifr_addr;
                  if ( pInetAddr->sin_addr.s_addr != pMatchAddr46->ia.sin_addr.s_addr ) {
-                     ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" didnt match\n", pIfreqList->ifr_name) );
+                     ifDepenDebugPrintf ( ("osiSockBroadcastMulticastAddresses46(): net intf \"%s\" didnt match\n", pIfreqList->ifr_name) );
                      continue;
                  }
             }
@@ -161,16 +161,16 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
 
         status = socket_ioctl ( socket, SIOCGIFFLAGS, pIfreqList );
         if ( status ) {
-            errlogPrintf ("osiSockDiscoverBroadcastAddresses(): net intf flags fetch for \"%s\" failed\n", pIfreqList->ifr_name);
+            errlogPrintf ("osiSockBroadcastMulticastAddresses46(): net intf flags fetch for \"%s\" failed\n", pIfreqList->ifr_name);
             continue;
         }
-        ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" flags: %x\n", pIfreqList->ifr_name, pIfreqList->ifr_flags) );
+        ifDepenDebugPrintf ( ("osiSockBroadcastMulticastAddresses46(): net intf \"%s\" flags: %x\n", pIfreqList->ifr_name, pIfreqList->ifr_flags) );
 
         /*
          * don't bother with interfaces that have been disabled
          */
         if ( ! ( pIfreqList->ifr_flags & IFF_UP ) ) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" was down\n", pIfreqList->ifr_name) );
+             ifDepenDebugPrintf ( ("osiSockBroadcastMulticastAddresses46(): net intf \"%s\" was down\n", pIfreqList->ifr_name) );
              continue;
         }
 
@@ -178,13 +178,13 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
          * don't use the loop back interface
          */
         if ( pIfreqList->ifr_flags & IFF_LOOPBACK ) {
-             ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): ignoring loopback interface: \"%s\"\n", pIfreqList->ifr_name) );
+             ifDepenDebugPrintf ( ("osiSockBroadcastMulticastAddresses46(): ignoring loopback interface: \"%s\"\n", pIfreqList->ifr_name) );
              continue;
         }
 
         pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
         if ( pNewNode == NULL ) {
-            errlogPrintf ( "osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n" );
+            errlogPrintf ( "osiSockBroadcastMulticastAddresses46(): no memory available for configuration\n" );
             free ( pIfreqList );
             return;
         }
@@ -203,7 +203,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
             osiSockAddr46 baddr;
             status = socket_ioctl (socket, SIOCGIFBRDADDR, pIfreqList);
             if ( status ) {
-                errlogPrintf ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\": bcast addr fetch fail\n", pIfreqList->ifr_name);
+                errlogPrintf ("osiSockBroadcastMulticastAddresses46(): net intf \"%s\": bcast addr fetch fail\n", pIfreqList->ifr_name);
                 free ( pNewNode );
                 continue;
             }
@@ -221,7 +221,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         else if ( pIfreqList->ifr_flags & IFF_POINTOPOINT ) {
             status = socket_ioctl ( socket, SIOCGIFDSTADDR, pIfreqList);
             if ( status ) {
-                ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\": pt to pt addr fetch fail\n", pIfreqList->ifr_name) );
+                ifDepenDebugPrintf ( ("osiSockBroadcastMulticastAddresses46(): net intf \"%s\": pt to pt addr fetch fail\n", pIfreqList->ifr_name) );
                 free ( pNewNode );
                 continue;
             }
@@ -229,12 +229,12 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         }
 #endif
         else {
-            ifDepenDebugPrintf ( ( "osiSockDiscoverBroadcastAddresses(): net intf \"%s\": not point to point or bcast?\n", pIfreqList->ifr_name ) );
+            ifDepenDebugPrintf ( ( "osiSockBroadcastMulticastAddresses46(): net intf \"%s\": not point to point or bcast?\n", pIfreqList->ifr_name ) );
             free ( pNewNode );
             continue;
         }
 
-        ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" found\n", pIfreqList->ifr_name) );
+        ifDepenDebugPrintf ( ("osiSockBroadcastMulticastAddresses46(): net intf \"%s\" found\n", pIfreqList->ifr_name) );
 
         /*
          * LOCK applied externally

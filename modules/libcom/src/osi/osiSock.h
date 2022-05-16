@@ -301,7 +301,7 @@ typedef union osiSockAddr {
 
 typedef struct osiSockAddrNode {
     ELLNODE node;
-    osiSockAddr46 addr46;
+    osiSockAddr46 addr;
     unsigned int interfaceIndex; /* Needed for IPv6 only */
 } osiSockAddrNode;
 
@@ -331,7 +331,34 @@ LIBCOM_API int epicsStdCall sockAddrAreIdentical
  *
  */
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
-     (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr);
+     (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr);
+
+/*
+ *  osiSockBroadcastMulticastAddresses46 ()
+ *  Returns the broadcast addresses of each IPv4 interface found.
+ *  Returns the multicast addresses of each IPv6 interface found.
+ *
+ *  pMatchAddr->ia.sin_family = selects if IPv4, IPv6 or both are returned:
+ *  AF_INET:      IPv4 broadcast (same as osiSockDiscoverBroadcastAddresses)
+ *  AF_INET6:     IPv6 multicast
+ *  AF_UNSPEC:    both IPv4 broadcast and IPv6 multicast
+ *
+ *  This routine is provided with the address of an ELLLIST, a socket,
+ *  a destination port number, and a match address. When the
+ *  routine returns there will be one additional entry
+ *  (an osiSockAddrNode) in the list for each network interface found that
+ *  is up and isn't a loop back interface (match addr is INADDR_ANY),
+ *  or only the interfaces that match the specified addresses (match addr
+ *  is other than INADDR_ANY). If the interface supports broadcasting
+ *  then add its broadcast address to the list. If the interface is a
+ *  point to point link then add the destination address of the point to
+ *  point link to the list.
+ *
+ *  Any mutex locking required to protect pList is applied externally.
+ *
+ */
+LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
+     (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46);
 
 
 /*

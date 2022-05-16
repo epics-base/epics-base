@@ -21,38 +21,48 @@
  * -------------
  *
  * \code{.cpp}
- * struct MyResult: ipAddrToAsciiCallBack
+ * class ConvertIPAddr: ipAddrToAsciiCallBack
  * {
+ *      ipAddrToAsciiTransaction & trans;
+ *
+ * public:
+ *      epicsEvent complete;
+ *
+ *      ConvertIPAddr(ipAddrToAsciiEngine & engine, osiSockAddr & addr):
+ *          trans(engine.createTransaction())
+ *      {
+ *          trans.ipAddrToAscii(addr, *this);
+ *      }
+ *
  *      virtual void transactionComplete (char const * node) override
  *      {
  *          printf("Address is %s\n", node);
+ *          complete.signal();
  *      }
  *
  *      virtual void show(unsigned level) override const
  *      {
- *          printf("This is a MyResult class object.");
+ *          printf("This is a ConvertIPAddr class object.");
+ *      }
+ *
+ *      virtual ~ConvertIPAddr()
+ *      {
+ *          trans.release();
  *      }
  * };
  *
  * ipAddrToAsciiEngine & engine(ipAddrToAsciiEngine::allocate());
- * ipAddrToAsciiTransaction & trans(engine.createTransaction());
  *
  * osiSockAddr addr;
  * addr.ia.sin_family = AF_INET;
  * addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
  * addr.ia.sin_port = htons(8080);
  *
- * MyResult results;
- * trans.ipAddrToAscii(addr, results);
+ * ConvertIPAddr result(engine, addr);
  *
- * // Do other work and wait for results to finish.
- * // Note that typically you would use an epicsEvent or similar to coordinate
- * // making sure the result is ready from your callback.  For this example,
- * // we'll ignore that complexity and use a naive sleep call instead.
- * sleep(2);
+ * // Do other work here before waiting on the result
  *
- *
- * trans.release();
+ * result.complete.wait(2.0);
  * engine.release();
  * \endcode
  */
@@ -98,17 +108,20 @@ public:
 
     /** \brief Convert an IP address to ascii, asynchronously
      *
-     * \param osiSockAddr Reference to the address to convert
-     * \param ipAddrToAsciiCallBack Reference to the user supplied callbacks to call when the result is available
+     * \note The ipAddrToAsciiCallBack referenced must remain valid until release() is called on this transaction.
+     * \param addrIn Reference to the address to convert
+     * \param cbIn Reference to the user supplied callbacks to call when the result is available
      */
-    virtual void ipAddrToAscii ( const osiSockAddr &, ipAddrToAsciiCallBack & ) = 0;
+    virtual void ipAddrToAscii ( const osiSockAddr & addrIn, ipAddrToAsciiCallBack & cbIn ) = 0;
 
     /** \brief Get the conversion address currently set
      * \return Get the last (or current) address converted to ascii
      */
     virtual osiSockAddr address () const  = 0;
 
-    /* \brief Prints the converted IP address
+    /**
+     * \brief Prints the converted IP address
+     *
      * Prints to stdout
      *
      * \param level 0 prints basic info, greater than 0 prints information from the callback's show() method too
@@ -124,12 +137,15 @@ public:
     /// Cancel any pending transactions and destroy this ipAddrToAsciiEngine object.
     virtual void release () = 0;
 
-    /** \brief Create a new transaction object used to do IP address conversions
+    /**
+     * \brief Create a new transaction object used to do IP address conversions
+     * \note Caller must release() the returned transaction
      * \return The newly created transaction object
      */
     virtual ipAddrToAsciiTransaction & createTransaction () = 0;
 
-    /* \brief Print information about this engine object and how many requests its processing
+    /**
+     * \brief Print information about this engine object and how many requests its processing
      *
      * Prints to stdout
      *
@@ -137,8 +153,9 @@ public:
      */
     virtual void show ( unsigned level ) const = 0;
 
-    /** \brief Creates a new ipAddrToAsciiEngine to convert IP addresses
-     *
+    /**
+     * \brief Creates a new ipAddrToAsciiEngine to convert IP addresses
+     * \note Caller must release() this engine.
      * \return Newly created engine object
      */
     static ipAddrToAsciiEngine & allocate ();

@@ -572,6 +572,7 @@ void rsrv_init (void)
 
     {
         unsigned short sport = ca_server_port;
+        char buf[6]; /* space for 0 - 65535 */
         socks = rsrv_grab_tcp(&sport);
 
         if ( sport != ca_server_port ) {
@@ -583,6 +584,10 @@ void rsrv_init (void)
             errlogPrintf ( "cas " ERL_WARNING ": Depending on your IP kernel this server may not be\n" );
             errlogPrintf ( "cas " ERL_WARNING ": reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
         }
+
+        epicsSnprintf(buf, sizeof(buf)-1u, "%u", ca_server_port);
+        buf[sizeof(buf)-1u] = '\0';
+        epicsEnvSet("RSRV_SERVER_PORT", buf);
     }
 
     /* start servers (TCP and UDP(s) for each interface.

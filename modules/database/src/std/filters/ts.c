@@ -167,6 +167,7 @@ static db_field_log *replace_fl_value(tsPrivate const *pvt,
     /* Get rid of the old value */
     if (pfl->type == dbfl_type_ref && pfl->u.r.dtor) {
         pfl->u.r.dtor(pfl);
+        pfl->u.r.dtor = NULL;
     }
     pfl->no_elements = 1;
     pfl->type = dbfl_type_val;
@@ -304,6 +305,7 @@ static void channelRegisterPost(dbChannel *chan, void *pvt,
        datatype */
     if (probe->type == dbfl_type_ref && probe->u.r.dtor) {
         probe->u.r.dtor(probe);
+        probe->u.r.dtor = NULL;
     }
     probe->no_elements = 1;
     probe->type = dbfl_type_val;

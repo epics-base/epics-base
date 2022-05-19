@@ -214,12 +214,17 @@ static void ts_double(tsPrivate const *settings, db_field_log *pfl) {
 static void ts_array(tsPrivate const *settings, db_field_log *pfl) {
     pfl->field_type = DBF_ULONG;
     pfl->field_size = sizeof(epicsUInt32);
-    pfl->no_elements = 2;
     pfl->type = dbfl_type_ref;
     pfl->u.r.pvt = NULL;
     pfl->u.r.field = allocTsArray();
-    pfl->u.r.dtor = freeTsArray;
-    ts_to_array(settings, &pfl->time, (epicsUInt32*)pfl->u.r.field);
+    if (pfl->u.r.field) {
+        pfl->no_elements = 2;
+        pfl->u.r.dtor = freeTsArray;
+        ts_to_array(settings, &pfl->time, (epicsUInt32*)pfl->u.r.field);
+    } else {
+        pfl->no_elements = 0;
+        pfl->u.r.dtor = NULL;
+    }
 }
 
 static void ts_string(tsPrivate const *settings, db_field_log *pfl) {
@@ -232,6 +237,13 @@ static void ts_string(tsPrivate const *settings, db_field_log *pfl) {
     pfl->type = dbfl_type_ref;
     pfl->u.r.pvt = NULL;
     pfl->u.r.field = allocString();
+
+    if (!pfl->u.r.field) {
+        pfl->no_elements = 0;
+        pfl->u.r.dtor = NULL;
+        return;
+    }
+
     pfl->u.r.dtor = freeString;
 
     switch (settings->str) {

@@ -232,6 +232,7 @@ static int type_check_string(const db_field_log *pfl) {
 static int value_check_string(const db_field_log *pfl, const epicsTimeStamp *ts) {
     /* We can only verify the type, not the value, because using strptime()
        might be problematic. */
+    (void)ts;
     return pfl->type == dbfl_type_ref
         && pfl->u.r.field != NULL
         && pfl->u.r.dtor != NULL

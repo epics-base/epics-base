@@ -268,6 +268,7 @@ static void ts_string(tsPrivate const *settings, db_field_log *pfl) {
 
 static db_field_log *filter(void *pvt, dbChannel *chan, db_field_log *pfl) {
     tsPrivate *settings = (tsPrivate *)pvt;
+    (void)chan;
 
     switch (settings->mode) {
     case tsModeDouble:
@@ -295,6 +296,10 @@ static void channelRegisterPre(dbChannel * chan, void *pvt,
                                chPostEventFunc **cb_out, void **arg_out,
                                db_field_log *probe) {
     tsPrivate *settings = (tsPrivate *)pvt;
+    (void)chan;
+    (void)arg_out;
+    (void)probe;
+
     *cb_out = settings->mode == tsModeGenerate ? generate : NULL;
 }
 
@@ -304,6 +309,7 @@ static void channelRegisterPost(dbChannel *chan, void *pvt,
                                 chPostEventFunc **cb_out, void **arg_out,
                                 db_field_log *probe) {
     tsPrivate *settings = (tsPrivate *)pvt;
+    (void)chan;
 
     if (settings->mode == tsModeGenerate || settings->mode == tsModeInvalid) {
         *cb_out = NULL;
@@ -348,6 +354,9 @@ static void channelRegisterPost(dbChannel *chan, void *pvt,
 static void channel_report(dbChannel *chan, void *pvt, int level, const unsigned short indent)
 {
     tsPrivate *settings = (tsPrivate *)pvt;
+    (void)chan;
+    (void)level;
+
     printf("%*sTimestamp (ts): mode: %d, epoch: %d, str: %d\n",
            indent, "", settings->mode, settings->epoch, settings->str);
 }

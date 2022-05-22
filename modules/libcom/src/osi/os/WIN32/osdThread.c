@@ -13,7 +13,7 @@
  */
 
 #ifndef _WIN32_WINNT
-#    define _WIN32_WINNT _WIN32_WINNT_VISTA
+#   define _WIN32_WINNT _WIN32_WINNT_VISTA
 #endif
 
 #include <string.h>
@@ -48,22 +48,32 @@
  * actually run the dtor function.
  *
  * we check for existance of _WIN32_WINNT_WIN8 which will only be defined
- * in SDK 8 and above
+ * in SDK 8 and above. If Visa is detected and SDK < 8 we will supply
+ * the missing prototypes
  */
 
-#if _WIN32_WINNT >= _WIN32_WINNT_VISTA && defined(_WIN32_WINNT_WIN8) 
-#include <fibersapi.h>
+#if _WIN32_WINNT >= _WIN32_WINNT_VISTA
+#   ifdef _WIN32_WINNT_WIN8
+#       include <fibersapi.h>
+#   else
+#       include <winnt.h> /* for PFLS_CALLBACK_FUNCTION */
+/* the fibers api exists in vista and above, but no header is provided until SDK 8 */
+        WINBASEAPI DWORD WINAPI FlsAlloc(PFLS_CALLBACK_FUNCTION);
+        WINBASEAPI PVOID WINAPI FlsGetValue(DWORD);
+        WINBASEAPI BOOL WINAPI FlsSetValue(DWORD , PVOID);
+        WINBASEAPI BOOL WINAPI FlsFree(DWORD);
+#   endif
 #else
-typedef void (WINAPI *xPFLS_CALLBACK_FUNCTION) (void*);
-static
-DWORD xFlsAlloc(xPFLS_CALLBACK_FUNCTION *dtor) {
-    (void)dtor;
-    return TlsAlloc();
-}
-#define FlsAlloc xFlsAlloc
-#define FlsSetValue TlsSetValue
-#define FlsGetValue TlsGetValue
-#define USE_TLSALLOC_FALLBACK
+    typedef void (WINAPI *xPFLS_CALLBACK_FUNCTION) (void*);
+    static
+    DWORD xFlsAlloc(xPFLS_CALLBACK_FUNCTION *dtor) {
+        (void)dtor;
+        return TlsAlloc();
+    }
+#   define FlsAlloc xFlsAlloc
+#   define FlsSetValue TlsSetValue
+#   define FlsGetValue TlsGetValue
+#   define USE_TLSALLOC_FALLBACK
 #endif
 
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);

@@ -12,10 +12,6 @@
  * Author: Jeff Hill
  */
 
-#ifndef _WIN32_WINNT
-#   define _WIN32_WINNT _WIN32_WINNT_VISTA
-#endif
-
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -52,8 +48,8 @@
  * the missing prototypes
  */
 
-#if _WIN32_WINNT >= _WIN32_WINNT_VISTA
-#   ifdef _WIN32_WINNT_WIN8
+#if _WIN32_WINNT >= 0x0600 /* VISTA */
+#   ifdef _WIN32_WINNT_WIN8 /* Existance means using SDK 8 or higher */
 #       include <fibersapi.h>
 #   else
 #       include <winnt.h> /* for PFLS_CALLBACK_FUNCTION */
@@ -63,7 +59,7 @@
         WINBASEAPI BOOL WINAPI FlsSetValue(DWORD , PVOID);
         WINBASEAPI BOOL WINAPI FlsFree(DWORD);
 #   endif
-#else
+#elif _WIN32_WINNT >= 0x0501 /* Windows XP */
     typedef void (WINAPI *xPFLS_CALLBACK_FUNCTION) (void*);
     static
     DWORD xFlsAlloc(xPFLS_CALLBACK_FUNCTION *dtor) {
@@ -74,6 +70,8 @@
 #   define FlsSetValue TlsSetValue
 #   define FlsGetValue TlsGetValue
 #   define USE_TLSALLOC_FALLBACK
+#else
+#   error Minimum supported is Windows XP
 #endif
 
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);

@@ -17,16 +17,15 @@
  *
  */
 
-#ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0600
-#endif
-
 #include <stdio.h>
 #include <limits.h>
 
 #define VC_EXTRALEAN
 #define STRICT
 #include <windows.h>
+#if _WIN32_WINNT < 0x0501
+#   error Minimum supported is Windows XP
+#endif
 
 #define EPICS_PRIVATE_API
 

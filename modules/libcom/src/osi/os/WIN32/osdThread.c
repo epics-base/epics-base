@@ -13,13 +13,7 @@
  */
 
 #ifndef _WIN32_WINNT
-#  ifdef _WIN32_WINNT_WIN8
-#    define _WIN32_WINNT _WIN32_WINNT_WIN8
-#  else
 #    define _WIN32_WINNT _WIN32_WINNT_VISTA
-#  endif
-#elif _WIN32_WINNT < 0x0600
-#   error Minimum supported is Windows Vista
 #endif
 
 #include <string.h>
@@ -42,18 +36,24 @@
 #include "epicsAtomic.h"
 #include "osdThreadPvt.h"
 
-/* Ensure that SDK >=8 (or mingw equivalent) is available and selected. */
-#if _WIN32_WINNT < _WIN32_WINNT_WIN8
-/* Fiber local storage requires is documented as >= Vista (SDK 7).
- * However, it has been found that the declarations are missing until (SDK 8).
- *
- * To accomidate <=vs2010 fall back to Tls*() which will build and run
- * correctly for epicsThread s, but means that TLS allocations from
+/* Windows Vista and higher supports fibre functions, but the
+ * prototypes only appear in the windows SDK 8 and above.
+ * VS2010 supplies sdk 7, but can be upgraded to later SDK 
+
+ * To accomodate this fall back to Tls*() which will build and run
+ * correctly for epicsThreads, but means that TLS allocations from
  * epicsThreadImplicitCreate() will continue to leak (for non-EPICS threads).
  *
  * Also, WINE circa 5.0.3 provides the FLS storage functions, but doesn't
  * actually run the dtor function.
+ *
+ * we check for existance of _WIN32_WINNT_WIN8 which will only be defined
+ * in SDK 8 and above
  */
+
+#if _WIN32_WINNT >= _WIN32_WINNT_VISTA && defined(_WIN32_WINNT_WIN8) 
+#include <fibersapi.h>
+#else
 typedef void (WINAPI *xPFLS_CALLBACK_FUNCTION) (void*);
 static
 DWORD xFlsAlloc(xPFLS_CALLBACK_FUNCTION *dtor) {
@@ -506,7 +506,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     epicsExitCallAtThreadExits ();
 
     /* On Windows we could omit this and rely on the callback given to FlsAlloc() to free.
-     * However, <=vs2010 doesn't implement FLS at all, and WINE (circa 5.0.3) doesn't
+     * However < vista doesn't implement FLS at all, and WINE (circa 5.0.3) doesn't
      * implement fully (dtor never runs).  So for EPICS threads, we explicitly
      * free() here.
      */

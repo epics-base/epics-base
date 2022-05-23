@@ -12,6 +12,16 @@
  * Author: Jeff Hill
  */
 
+/* pull in _WIN32_WINNT* definitions, and hopefully nothing else */
+#include <sdkddkver.h>
+
+/* When not specified, prefer SDK circa Windows 8 when available,
+ * to pick up support for FlsAlloc().
+ */
+#if !defined(_WIN32_WINNT) && defined(_WIN32_WINNT_WIN8)
+#  define _WIN32_WINNT _WIN32_WINNT_WIN8
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -32,14 +42,39 @@
 #include "epicsAtomic.h"
 #include "osdThreadPvt.h"
 
+/* When SDK >= 8 is unavailable, or unselected */
+#if !defined(_WIN32_WINNT_WIN8) || _WIN32_WINNT < _WIN32_WINNT_WIN8
+/* Fiber local storage is documented as requiring >= Vista (SDK 7).
+ * However, it has been found that the declarations are missing until (SDK 8).
+ *
+ * To accommodate < SDK 8, fall back to Tls*() which will build and run
+ * correctly for epicsThread s, but will leak TLS allocations from
+ * epicsThreadImplicitCreate().  aka non-EPICS threads.
+ *
+ * Also, WINE circa 5.0.3 provides the FLS storage functions, but doesn't
+ * actually run the dtor function.
+ */
+typedef void (WINAPI *xPFLS_CALLBACK_FUNCTION) (void*);
+static
+DWORD xFlsAlloc(xPFLS_CALLBACK_FUNCTION *dtor) {
+    (void)dtor;
+    return TlsAlloc();
+}
+#define FlsAlloc xFlsAlloc
+#define FlsSetValue TlsSetValue
+#define FlsGetValue TlsGetValue
+#define USE_TLSALLOC_FALLBACK
+#endif
+
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
 
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
+static void WINAPI epicsParmCleanupWIN32 ( void * praw );
 
 typedef struct win32ThreadGlobal {
     CRITICAL_SECTION mutex;
     ELLLIST threadList;
-    DWORD tlsIndexThreadLibraryEPICS;
+    DWORD flsIndexThreadLibraryEPICS;
 } win32ThreadGlobal;
 
 typedef struct epicsThreadOSD {
@@ -207,8 +242,8 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
 
     InitializeCriticalSection ( & pWin32ThreadGlobal->mutex );
     ellInit ( & pWin32ThreadGlobal->threadList );
-    pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS = TlsAlloc();
-    if ( pWin32ThreadGlobal->tlsIndexThreadLibraryEPICS == 0xFFFFFFFF ) {
+    pWin32ThreadGlobal->flsIndexThreadLibraryEPICS = FlsAlloc(&epicsParmCleanupWIN32);
+    if ( pWin32ThreadGlobal->flsIndexThreadLibraryEPICS == FLS_OUT_OF_INDEXES ) {
         DeleteCriticalSection ( & pWin32ThreadGlobal->mutex );
         free ( pWin32ThreadGlobal );
         pWin32ThreadGlobal = 0;
@@ -233,10 +268,14 @@ static void epicsParmCleanupDataWIN32 ( win32ThreadParam * pParm )
     }
 }
 
-static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
+static void NTAPI epicsParmCleanupWIN32 ( void * praw )
 {
-    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
-    if ( ! pGbl )  {
+    win32ThreadParam * pParm = praw;
+    win32ThreadGlobal * pGbl;
+    if(!praw)
+        return;
+
+    if ( ! (pGbl = fetchWin32ThreadGlobal ()) )  {
         fprintf ( stderr, "epicsParmCleanupWIN32: unable to find ctx\n" );
         return;
     }
@@ -464,7 +503,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     if ( pGbl )  {
         setThreadName ( pParm->id, pParm->pName );
 
-        success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
+        success = FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, pParm );
         if ( success ) {
             osdThreadHooksRun ( ( epicsThreadId ) pParm );
             /* printf ( "starting thread %d\n", pParm->id ); */
@@ -482,14 +521,13 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 
     epicsExitCallAtThreadExits ();
 
-    /*
-     * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!
+    /* On Windows we could omit this and rely on the callback given to FlsAlloc() to free.
+     * However, < SDK 8 does not provide FLS, and WINE (circa 5.0.3) doesn't implement fully
+     * (dtor never runs).  So for EPICS threads, we explicitly free() here.
      */
-    if ( pGbl )  {
-        TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, (void*)0xdeadbeef );
+    if(pGbl && FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, NULL )) {
+        epicsParmCleanupWIN32 ( pParm );
     }
-
-    epicsParmCleanupWIN32 ( pParm );
 
     return retStat; /* this indirectly closes the thread handle */
 }
@@ -550,7 +588,7 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
         win32ThreadPriority = GetThreadPriority ( pParm->handle );
         assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
         pParm->epicsPriority = epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
-        success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
+        success = FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, pParm );
         if ( ! success ) {
             epicsParmCleanupWIN32 ( pParm );
             pParm = 0;
@@ -638,6 +676,8 @@ epicsThreadId epicsThreadCreateOpt (
         return NULL;
     }
 
+    /* after this point, new thread is responsible to free(pParmWIN32) */
+
     return ( epicsThreadId ) pParmWIN32;
 }
 
@@ -685,7 +725,7 @@ static void* getMyWin32ThreadParam ( win32ThreadGlobal * pGbl )
     }
 
     pParm = ( win32ThreadParam * )
-        TlsGetValue ( pGbl->tlsIndexThreadLibraryEPICS );
+        FlsGetValue ( pGbl->flsIndexThreadLibraryEPICS );
     if ( ! pParm ) {
         pParm = epicsThreadImplicitCreate ();
     }
@@ -1045,6 +1085,12 @@ LIBCOM_API void epicsStdCall epicsThreadShowAll ( unsigned level )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;
+
+#ifdef USE_TLSALLOC_FALLBACK
+    fprintf(epicsGetStdout(), "Warning: For this target, use of epicsThread* from non-EPICS threads\n"
+                              "         May leak memory.  Recommend to upgrade to >= Window Vista and\n"
+                              "         build with Windows SDK >= 8.\n");
+#endif
 
     if ( ! pGbl ) {
         return;

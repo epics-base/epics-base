@@ -20,7 +20,7 @@
 
 
 static void setThreadNameVS ( DWORD dwThreadID, LPCSTR szThreadName );
-typedef HRESULT (* WINAPI setDesc_t)(HANDLE, PCWSTR);
+typedef HRESULT (WINAPI* setDesc_t)(HANDLE, PCWSTR);
 
 extern "C" void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName )
 {

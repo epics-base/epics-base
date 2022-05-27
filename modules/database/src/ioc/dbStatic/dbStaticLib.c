@@ -3296,11 +3296,11 @@ void dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
         printf("name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
             pdbRecordType->name,pdbRecordType->no_fields,
             pdbRecordType->no_prompt,pdbRecordType->no_links);
-        printf("index name\tsortind sortname\n");
+        printf("index offset size name\tsortind sortname\n");
         for(i=0; i<pdbRecordType->no_fields; i++) {
             pdbFldDes = pdbRecordType->papFldDes[i];
-            printf("%5d %s\t%7d %s\n",
-                i,pdbFldDes->name,
+            printf("%5d %6u %4u %s\t%7d %s\n",
+                i,pdbFldDes->offset,pdbFldDes->size, pdbFldDes->name,
                 pdbRecordType->sortFldInd[i],pdbRecordType->papsortFldName[i]);
         }
         printf("link_ind ");

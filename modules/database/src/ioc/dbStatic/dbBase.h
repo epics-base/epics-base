@@ -7,6 +7,14 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
+/** \file dbBase.h
+ *
+ * \brief Definitions of the structures used to store an EPICS database
+ *
+ * This file contains the definitions of structures to store an EPICS database
+ *
+ */
+
 /*
  *      Current Author:         Marty Kraimer
  *      Date:                   03-19-92
@@ -22,20 +30,23 @@
 #include "recSup.h"
 #include "devSup.h"
 
+/**Structure for the db menu */
 typedef struct dbMenu {
+    //**Structure for the doubly-linked list node   */
     ELLNODE         node;
     char            *name;
     int             nChoice;
     char            **papChoiceName;
     char            **papChoiceValue;
 }dbMenu;
-
+/**Structure for driver support */
 typedef struct drvSup {
     ELLNODE         node;
     char            *name;
+    /**Structure for the driver entry table */
     struct drvet    *pdrvet;
 }drvSup;
-
+/**Structure for device support */
 typedef struct devSup {
     ELLNODE         node;
     char            *name;
@@ -43,131 +54,176 @@ typedef struct devSup {
     int             link_type;
     /*Following only available on run time system*/
     dset            *pdset;
-    struct dsxt     *pdsxt;       /* Extended device support */
+    /**Structure for the extended device support */
+    struct dsxt     *pdsxt;       
 }devSup;
-
+/**Structure for link support */
 typedef struct linkSup {
     ELLNODE         node;
     char            *name;
     char            *jlif_name;
     struct jlif     *pjlif;
 } linkSup;
-
+/**Structure for db device menu */
 typedef struct dbDeviceMenu {
     int             nChoice;
     char            **papChoice;
 }dbDeviceMenu;
 
-/* conversion types*/
+/**Conversion enum types*/
 typedef enum {CT_DECIMAL,CT_HEX} ctType;
-/* access level types */
+/**Access level enum types*/
 typedef enum {ASL0,ASL1} asLevel;
 
-/*Breakpoint Tables */
-typedef struct brkInt{ /* breakpoint interval */
-    double          raw;            /*raw value for beginning of interval   */
-    double          slope;          /*slope for interval                    */
-    double          eng;            /*converted value for beginning of interval*/
+/**Structure for the breakpoint interval */
+typedef struct brkInt{ 
+    /**Raw value for beginning of interval   */
+    double          raw;            
+    /**Slope for interval                    */
+    double          slope;          
+    /**Converted value for beginning of interval*/
+    double          eng;            
 }brkInt;
 
-typedef struct brkTable { /* breakpoint table */
+/**Structure for the breakpoint table */
+typedef struct brkTable { 
     ELLNODE         node;
-    char            *name;          /*breakpoint table name                 */
-    long            number;         /*number of brkInt in this table        */
-    struct brkInt   *paBrkInt;      /* ptr to array of brkInts              */
+    /**Breakpoint table name                 */
+    char            *name;          
+    /**Number of brkInt in this table        */
+    long            number;         
+    /**Pointer to array of brkInts              */
+    struct brkInt   *paBrkInt;      
 }brkTable;
 
-typedef struct dbFldDes{  /* field description */
-    char            *prompt;        /*Prompt string for DCT                 */
-    char            *name;          /*Field name                            */
-    char            *extra;         /*C def for DBF_NOACCESS                */
+/**Structure for the field description */
+typedef struct dbFldDes{  
+    /**Prompt string for DCT                 */
+    char            *prompt;        
+    /**Field name                            */
+    char            *name;          
+    /**C def for DBF_NOACCESS                */
+    char            *extra;         
     struct dbRecordType *pdbRecordType;
-    short           indRecordType;  /*within dbRecordType.papFldDes */
-    short           special;        /*Special processing requirements       */
-    dbfType         field_type;     /*Field type as defined in dbFldTypes.h */
-    unsigned int    process_passive:1;/*should dbPutField process passive   */
-    unsigned int    prop:1;         /*field is a metadata, post DBE_PROPERTY on change*/
-    unsigned int    isDevLink:1;    /* true for INP/OUT fields              */
-    ctType          base;           /*base for integer to string conversions*/
-    short           promptgroup;    /*prompt, i.e. gui group                */
-    short           interest;       /*interest level                        */
-    asLevel         as_level;       /*access security level                 */
-    char            *initial;       /*initial value                         */
-    /*If (DBF_MENU,DBF_DEVICE) ftPvt is (pdbMenu,pdbDeviceMenu)             */
+    /**Within dbRecordType.papFldDes */
+    short           indRecordType;  
+    /**Special processing requirements       */
+    short           special;        
+    /**Field type as defined in dbFldTypes.h */
+    dbfType         field_type;     
+    /**Should dbPutField process passive   */
+    unsigned int    process_passive:1;
+    /**Field is a metadata, post DBE_PROPERTY on change*/
+    unsigned int    prop:1;         
+    /**True for INP/OUT fields              */
+    unsigned int    isDevLink:1;    
+    /**Base for integer to string conversions*/
+    ctType          base;           
+    /**Prompt, i.e. gui group                */
+    short           promptgroup;    
+    /**Interest level                        */
+    short           interest;       
+    /**Access security level                 */
+    asLevel         as_level;       
+    /**Initial value                         */
+    char            *initial;       
+    /**If (DBF_MENU,DBF_DEVICE) ftPvt is (pdbMenu,pdbDeviceMenu)             */
     void            *ftPvt;
-    /*On no runtime following only set for STRING                           */
-    short           size;           /*length in bytes of a field element    */
-    /*The following are only available on run time system*/
-    unsigned short  offset;         /*Offset in bytes from beginning of record*/
+    /**On no runtime following only set for STRING.                           
+     * Length in bytes of a field element.    */
+    short           size;           
+    /**Only available on run time system.
+     * Offset in bytes from beginning of record.*/
+    unsigned short  offset;         
 }dbFldDes;
-
-typedef struct dbInfoNode {         /*non-field per-record information*/
+/**Structure for the db information node. non-field per-record information*/
+typedef struct dbInfoNode {         
     ELLNODE         node;
     char            *name;
     char            *string;
     void            *pointer;
 }dbInfoNode;
 
-#define DBRN_FLAGS_VISIBLE 1
-#define DBRN_FLAGS_ISALIAS 2
-#define DBRN_FLAGS_HASALIAS 4
-
+#define DBRN_FLAGS_VISIBLE 1    /*If db is visible    */
+#define DBRN_FLAGS_ISALIAS 2    /*If db is a alias  */
+#define DBRN_FLAGS_HASALIAS 4   /*if db has aliases  */
+/**Structure for the db record node */
 typedef struct dbRecordNode {
     ELLNODE         node;
     void            *precord;
     char            *recordname;
-    ELLLIST         infoList;       /*LIST head of info nodes*/
+    /**List head of info nodes*/
+    ELLLIST         infoList;       
     int             flags;
-    struct dbRecordNode *aliasedRecnode; /* NULL unless flags|DBRN_FLAGS_ISALIAS */
+    /**NULL unless flags|DBRN_FLAGS_ISALIAS */
+    struct dbRecordNode *aliasedRecnode; 
 }dbRecordNode;
 
-/*dbRecordAttribute is for "psuedo" fields */
-/*pdbFldDes is so that other access routines work correctly*/
-/*Until base supports char * value MUST be fixed length string*/
+/**dbRecordAttribute is for "psuedo" fields.
+ *pdbFldDes is so that other access routines work correctly.
+ *Until base supports char * value MUST be fixed length string.*/
 typedef struct dbRecordAttribute {
     ELLNODE         node;
     char            *name;
     dbFldDes        *pdbFldDes;
     char            value[MAX_STRING_SIZE];
 }dbRecordAttribute;
-
+/**Structure for the db text   */
 typedef struct dbText {
     ELLNODE         node;
     char            *text;
 }dbText;
-
+/**Structure for the definition of db variable */
 typedef struct dbVariableDef {
     ELLNODE         node;
     char            *name;
     char            *type;
 
 }dbVariableDef;
-
+/**Strcuture for the record type of db */
 typedef struct dbRecordType {
     ELLNODE         node;
-    ELLLIST         attributeList;  /*LIST head of attributes*/
-    ELLLIST         recList;        /*LIST head of sorted dbRecordNodes*/
-    ELLLIST         devList;        /*List of associated device support*/
-    ELLLIST         cdefList;       /*LIST of Cdef text items*/
+    /**List head of attributes*/
+    ELLLIST         attributeList;
+    /**List head of sorted dbRecordNodes*/  
+    ELLLIST         recList;    
+    /**List of associated device support*/    
+    ELLLIST         devList;        
+    /**List of Cdef text items*/
+    ELLLIST         cdefList;       
     char            *name;
-    short           no_fields;      /* number of fields defined     */
-    short           no_prompt;      /* number of fields to configure*/
-    short           no_links;       /* number of links              */
-    short           no_aliases;     /* number of aliases in recList */
-    short           *link_ind;      /* addr of array of ind in papFldDes*/
-    char            **papsortFldName;/* ptr to array of ptr to fld names*/
-    short           *sortFldInd;    /* addr of array of ind in papFldDes*/
-    dbFldDes        *pvalFldDes;    /*pointer dbFldDes for VAL field*/
-    short           indvalFlddes;   /*ind in papFldDes*/
-    dbFldDes        **papFldDes;    /* ptr to array of ptr to fldDes*/
-    /*The following are only available on run time system*/
+    /**Number of fields defined     */
+    short           no_fields;      
+    /**Number of fields to configure*/
+    short           no_prompt;      
+    /**Number of links              */
+    short           no_links;       
+    /**Number of aliases in recList */
+    short           no_aliases;     
+    /**Addr of array of ind in papFldDes*/
+    short           *link_ind;      
+    /**Ptr to array of ptr to fld names*/
+    char            **papsortFldName;
+    /**Addr of array of ind in papFldDes*/
+    short           *sortFldInd;    
+    /**Pointer dbFldDes for VAL field*/
+    dbFldDes        *pvalFldDes;   
+    /**Ind in papFldDes*/ 
+    short           indvalFlddes;  
+    /**Ptr to array of ptr to fldDes*/ 
+    dbFldDes        **papFldDes;    
+    /* The following are only available on run time system*/
     rset            *prset;
-    int             rec_size;       /*record size in bytes          */
+    /**Record size in bytes          */
+    int             rec_size;       
 }dbRecordType;
 
-struct dbPvd;           /* Contents private to dbPvdLib code */
-struct gphPvt;          /* Contents private to gpHashLib code */
+/**Contents private to dbPvdLib code */
+struct dbPvd;           
+/**Contents private to gpHashLib code */
+struct gphPvt;          
 
+/**Struct for the list of dbBase */
 typedef struct dbBase {
     ELLLIST         menuList;
     ELLLIST         recordTypeList;

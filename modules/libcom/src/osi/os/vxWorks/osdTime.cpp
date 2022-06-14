@@ -63,15 +63,18 @@ static int timeRegister(void)
     // Define EPICS_TS_FORCE_NTPTIME to force use of NTPTime provider
     bool useNTP = getenv("EPICS_TS_FORCE_NTPTIME") != NULL;
 
-    if (!useNTP &&
-        (taskNameToId(sntp_sync_task) != ERROR ||
-         taskNameToId(ntp_daemon) != ERROR)) {
-        // A VxWorks 6 SNTP/NTP sync task is running
-        struct timespec clockNow;
+    if (!useNTP) {
+        if (taskNameToId(sntp_sync_task) != ERROR ||
+            taskNameToId(ntp_daemon) != ERROR) {
+            // A VxWorks 6 SNTP/NTP sync task is running
+            struct timespec clockNow;
 
-        useNTP = clock_gettime(CLOCK_REALTIME, &clockNow) != OK ||
-            clockNow.tv_sec < BUILD_TIME;
-            // Assumes VxWorks and the host OS have the same epoch
+            useNTP = clock_gettime(CLOCK_REALTIME, &clockNow) != OK ||
+                clockNow.tv_sec < BUILD_TIME;
+                // Assumes VxWorks and the host OS have the same epoch
+        }
+        else
+            useNTP = 1;
     }
 
     if (useNTP) {

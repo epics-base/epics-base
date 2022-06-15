@@ -23,7 +23,7 @@ extern "C" {
 void osdNTPInit(void);
 int  osdNTPGet(struct timespec *);
 void osdNTPReport(void);
-void osdClockReport(void);
+void osdClockReport(int level);
 
 #define osdTickRateGet sysClkRateGet
 #define osdTickGet tickGet

@@ -29,13 +29,13 @@
 
 static struct {
     int             synchronize;
-    int             synchronized;
-    epicsEventId    loopEvent;
-    epicsTimeStamp  startTime;
-    epicsTimeStamp  syncTime;
     double          ClockTimeSyncInterval;
-    int             syncFromPriority;
+    epicsEventId    loopEvent;
     epicsMutexId    lock;
+    int             synchronized;     /* Protected by lock */
+    int             syncFromPriority; /* Protected by lock */
+    epicsTimeStamp  startTime;        /* Protected by lock */
+    epicsTimeStamp  syncTime;         /* Protected by lock */
 } ClockTimePvt;
 
 static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
@@ -102,7 +102,6 @@ static void ClockTime_InitOnce(void *pfirst)
 
     ClockTimePvt.loopEvent   = epicsEventMustCreate(epicsEventEmpty);
     ClockTimePvt.lock        = epicsMutexCreate();
-    ClockTimePvt.ClockTimeSyncInterval = ClockTimeSyncInterval_initial;
 
     epicsAtExit(ClockTime_Shutdown, NULL);
 
@@ -130,6 +129,8 @@ void ClockTime_Init(int synchronize)
 #if defined(vxWorks) || defined(__rtems__)
             /* Start synchronizing */
             ClockTimePvt.synchronize = CLOCKTIME_SYNC;
+            ClockTimePvt.ClockTimeSyncInterval = ClockTimeSyncInterval_initial;
+            ClockTimePvt.syncFromPriority = -1;
 
             epicsThreadCreate("ClockTimeSync", epicsThreadPriorityHigh,
                 epicsThreadGetStackSize(epicsThreadStackSmall),

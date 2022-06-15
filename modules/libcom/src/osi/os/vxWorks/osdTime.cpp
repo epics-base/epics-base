@@ -71,7 +71,9 @@ static int timeRegister(void)
 
             useNTP = clock_gettime(CLOCK_REALTIME, &clockNow) != OK ||
                 clockNow.tv_sec < BUILD_TIME;
-                // Assumes VxWorks and the host OS have the same epoch
+
+            if (!useNTP) // Clock is set so we can run this:
+                tz2timezone();
         }
         else
             useNTP = 1;

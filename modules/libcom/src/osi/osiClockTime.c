@@ -292,7 +292,10 @@ int ClockTime_Report(int level)
         epicsTimeToStrftime(timebuf, sizeof(timebuf),
             "%Y-%m-%d %H:%M:%S.%06f", &ClockTimePvt.startTime);
         printf("Program started at %s\n", timebuf);
-        printf("OS Clock synchronization thread not running.\n");
+        printf("OS Clock synchronization thread is not running.\n");
     }
+#ifdef osdClockReport
+    osdClockReport();
+#endif
     return 0;
 }

@@ -120,6 +120,20 @@ void osdNTPReport(void)
         printf("NTP Server = %s\n", pserverAddr);
 }
 
+void osdClockReport(void)
+{
+    const char * ntpTask;
+
+    if (taskNameToId(sntp_sync_task) != ERROR)
+        ntpTask = sntp_sync_task;
+    else if (taskNameToId(ntp_daemon) != ERROR)
+        ntpTask = ntp_daemon;
+    else {
+        printf("No VxWorks OS clock sync tasks are running\n");
+        return;
+    }
+    printf("VxWorks OS clock sync task '%s' is running\n", ntpTask);
+}
 
 // Other Time Routines
 

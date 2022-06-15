@@ -120,7 +120,7 @@ void osdNTPReport(void)
         printf("NTP Server = %s\n", pserverAddr);
 }
 
-void osdClockReport(void)
+void osdClockReport(int level)
 {
     const char * ntpTask;
 

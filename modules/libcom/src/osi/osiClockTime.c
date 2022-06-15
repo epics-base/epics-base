@@ -308,7 +308,7 @@ int ClockTime_Report(int level)
         printf("OS Clock synchronization thread is not running.\n");
     }
 #ifdef osdClockReport
-    osdClockReport();
+    osdClockReport(level);
 #endif
     return 0;
 }

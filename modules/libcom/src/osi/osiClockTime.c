@@ -53,34 +53,44 @@ int osdTimeGetCurrent(epicsTimeStamp *pDest);
 
 #if defined(vxWorks) || defined(__rtems__)
 static void ClockTimeSync(void *dummy);
+
+/* ClockTime_Init iocsh command */
+static const iocshArg InitArg0 = { "enable_sync", iocshArgArgv};
+static const iocshArg * const InitArgs[1] = { &InitArg0 };
+static const iocshFuncDef InitFuncDef = {
+    "ClockTime_Init", 1, InitArgs,
+    "Starts or stops periodic synchronization of the OS clock\n"
+    "with the higest priority working time provider.\n"};
+static void InitCallFunc(const iocshArgBuf *args)
+{
+    ClockTime_Init(args[0].ival);
+}
+
+/* ClockTime_Shutdown iocsh command */
+static const iocshFuncDef ShutdownFuncDef = {
+    "ClockTime_Shutdown", 0, NULL,
+    "Stops the OS clock synchronization thread.\n"};
+static void ShutdownCallFunc(const iocshArgBuf *args)
+{
+    ClockTime_Shutdown(NULL);
+}
 #endif
 
 /* ClockTime_Report iocsh command */
 static const iocshArg ReportArg0 = { "interest_level", iocshArgArgv};
 static const iocshArg * const ReportArgs[1] = { &ReportArg0 };
-static const iocshFuncDef ReportFuncDef = {"ClockTime_Report", 1, ReportArgs,
-                                           "Reports clock synchronization status:\n"
-                                           "  - On vxWorks and RTEMS:\n"
-                                           "      * synchronization state\n"
-                                           "      * last synchronization time with provider\n"
-                                           "      * synchronization interval\n"
-                                           "  - On workstation (WIN,*NIX):\n"
-                                           "      * minimal report\n"};
+static const iocshFuncDef ReportFuncDef = {
+    "ClockTime_Report", 1, ReportArgs,
+    "Reports the OS clock synchronization status:\n"
+    "  - On VxWorks and RTEMS:\n"
+    "      * synchronization state\n"
+    "      * last synchronization time with provider\n"
+    "      * synchronization interval\n"
+    "  - On workstations (Posix):\n"
+    "      * minimal report\n"};
 static void ReportCallFunc(const iocshArgBuf *args)
 {
     ClockTime_Report(args[0].ival);
-}
-
-/* ClockTime_Shutdown iocsh command */
-static const iocshFuncDef ShutdownFuncDef = {"ClockTime_Shutdown", 0, NULL,
-                                             "Stops the OS synchronization thread\n"
-                                             "  - On vxWorks and RTEMS:\n"
-                                             "     * OS clock will free run\n"
-                                             "  - On workstation (WIN,*NIX):\n"
-                                             "     * no change\n"};
-static void ShutdownCallFunc(const iocshArgBuf *args)
-{
-    ClockTime_Shutdown(NULL);
 }
 
 
@@ -97,8 +107,11 @@ static void ClockTime_InitOnce(void *pfirst)
     epicsAtExit(ClockTime_Shutdown, NULL);
 
     /* Register the iocsh commands */
-    iocshRegister(&ReportFuncDef, ReportCallFunc);
+#if defined(vxWorks) || defined(__rtems__)
+    iocshRegister(&InitFuncDef, InitCallFunc);
     iocshRegister(&ShutdownFuncDef, ShutdownCallFunc);
+#endif
+    iocshRegister(&ReportFuncDef, ReportCallFunc);
 
     /* Register as a time provider */
     generalTimeRegisterCurrentProvider("OS Clock", LAST_RESORT_PRIORITY,
@@ -111,12 +124,12 @@ void ClockTime_Init(int synchronize)
 
     epicsThreadOnce(&onceId, ClockTime_InitOnce, &firstTime);
 
-    if (synchronize == CLOCKTIME_SYNC) {
+    if (synchronize) {
         if (ClockTimePvt.synchronize == CLOCKTIME_NOSYNC) {
 
 #if defined(vxWorks) || defined(__rtems__)
             /* Start synchronizing */
-            ClockTimePvt.synchronize = synchronize;
+            ClockTimePvt.synchronize = CLOCKTIME_SYNC;
 
             epicsThreadCreate("ClockTimeSync", epicsThreadPriorityHigh,
                 epicsThreadGetStackSize(epicsThreadStackSmall),

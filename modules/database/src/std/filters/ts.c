@@ -23,11 +23,13 @@
 #include "db_field_log.h"
 #include "epicsExport.h"
 #include "freeList.h"
-#include "cantProceed.h"
+#include "errlog.h"
 
 /* Allocation size for freelists */
 #define ALLOC_NUM_ELEMENTS 32
 
+#define logicErrorMessage() \
+    errMessage(-1, "Logic error: invalid state encountered in ts filter")
 
 /* Filter settings */
 
@@ -162,8 +164,8 @@ static db_field_log* generate(void* pvt, dbChannel *chan, db_field_log *pfl) {
 
 static db_field_log *replace_fl_value(tsPrivate const *pvt,
                                       db_field_log *pfl,
-                                      void (*func)(tsPrivate const *,
-                                                   db_field_log *)) {
+                                      int (*func)(tsPrivate const *,
+                                                  db_field_log *)) {
     /* Get rid of the old value */
     if (pfl->type == dbfl_type_ref && pfl->u.r.dtor) {
         pfl->u.r.dtor(pfl);
@@ -172,7 +174,11 @@ static db_field_log *replace_fl_value(tsPrivate const *pvt,
     pfl->no_elements = 1;
     pfl->type = dbfl_type_val;
 
-    func(pvt, pfl);
+    if (func(pvt, pfl)) {
+        db_delete_field_log(pfl);
+        pfl = NULL;
+    }
+
     return pfl;
 }
 
@@ -187,31 +193,34 @@ static void ts_to_array(tsPrivate const *settings,
     }
 }
 
-static void ts_seconds(tsPrivate const *settings, db_field_log *pfl) {
+static int ts_seconds(tsPrivate const *settings, db_field_log *pfl) {
     epicsUInt32 arr[2];
     ts_to_array(settings, &pfl->time, arr);
     pfl->field_type = DBF_ULONG;
     pfl->field_size = sizeof(epicsUInt32);
     pfl->u.v.field.dbf_ulong = arr[0];
+    return 0;
 }
 
-static void ts_nanos(tsPrivate const *settings, db_field_log *pfl) {
+static int ts_nanos(tsPrivate const *settings, db_field_log *pfl) {
     epicsUInt32 arr[2];
     ts_to_array(settings, &pfl->time, arr);
     pfl->field_type = DBF_ULONG;
     pfl->field_size = sizeof(epicsUInt32);
     pfl->u.v.field.dbf_ulong = arr[1];
+    return 0;
 }
 
-static void ts_double(tsPrivate const *settings, db_field_log *pfl) {
+static int ts_double(tsPrivate const *settings, db_field_log *pfl) {
     epicsUInt32 arr[2];
     ts_to_array(settings, &pfl->time, arr);
     pfl->field_type = DBF_DOUBLE;
     pfl->field_size = sizeof(epicsFloat64);
     pfl->u.v.field.dbf_double = arr[0] + arr[1] * 1e-9;
+    return 0;
 }
 
-static void ts_array(tsPrivate const *settings, db_field_log *pfl) {
+static int ts_array(tsPrivate const *settings, db_field_log *pfl) {
     pfl->field_type = DBF_ULONG;
     pfl->field_size = sizeof(epicsUInt32);
     pfl->type = dbfl_type_ref;
@@ -225,26 +234,13 @@ static void ts_array(tsPrivate const *settings, db_field_log *pfl) {
         pfl->no_elements = 0;
         pfl->u.r.dtor = NULL;
     }
+    return 0;
 }
 
-static void ts_string(tsPrivate const *settings, db_field_log *pfl) {
+static int ts_string(tsPrivate const *settings, db_field_log *pfl) {
     char const *fmt;
     char *field;
     size_t n;
-
-    pfl->field_type = DBF_STRING;
-    pfl->field_size = MAX_STRING_SIZE;
-    pfl->type = dbfl_type_ref;
-    pfl->u.r.pvt = NULL;
-    pfl->u.r.field = allocString();
-
-    if (!pfl->u.r.field) {
-        pfl->no_elements = 0;
-        pfl->u.r.dtor = NULL;
-        return;
-    }
-
-    pfl->u.r.dtor = freeString;
 
     switch (settings->str) {
     case tsStringEpics:
@@ -255,15 +251,31 @@ static void ts_string(tsPrivate const *settings, db_field_log *pfl) {
         break;
     case tsStringInvalid:
     default:
-        fmt = "";  // Silence compiler warning.
-        cantProceed("Logic error: invalid state encountered in ts filter");
+        logicErrorMessage();
+        return 1;
     }
+
+    pfl->field_type = DBF_STRING;
+    pfl->field_size = MAX_STRING_SIZE;
+    pfl->type = dbfl_type_ref;
+    pfl->u.r.pvt = NULL;
+    pfl->u.r.field = allocString();
+
+    if (!pfl->u.r.field) {
+        pfl->no_elements = 0;
+        pfl->u.r.dtor = NULL;
+        return 0;
+    }
+
+    pfl->u.r.dtor = freeString;
 
     field = (char *)pfl->u.r.field;
     n = epicsTimeToStrftime(field, MAX_STRING_SIZE, fmt, &pfl->time);
     if (!n) {
         field[0] = 0;
     }
+
+    return 0;
 }
 
 static db_field_log *filter(void *pvt, dbChannel *chan, db_field_log *pfl) {
@@ -283,7 +295,10 @@ static db_field_log *filter(void *pvt, dbChannel *chan, db_field_log *pfl) {
         return replace_fl_value(pvt, pfl, ts_string);
     case tsModeGenerate:
     case tsModeInvalid:
-        cantProceed("Logic error: invalid state encountered in ts filter");
+    default:
+        logicErrorMessage();
+        db_delete_field_log(pfl);
+        pfl = NULL;
     }
 
     return pfl;
@@ -347,7 +362,10 @@ static void channelRegisterPost(dbChannel *chan, void *pvt,
         break;
     case tsModeGenerate:
     case tsModeInvalid:
-        cantProceed("Logic error: invalid state encountered in ts filter");
+        // Already handled above, added here for completeness.
+    default:
+        logicErrorMessage();
+        *cb_out = NULL;
     }
 }
 

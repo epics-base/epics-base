@@ -64,15 +64,17 @@ static int timeRegister(void)
     bool useNTP = getenv("EPICS_TS_FORCE_NTPTIME") != NULL;
 
     if (!useNTP) {
-        if (taskNameToId(sntp_sync_task) != ERROR ||
-            taskNameToId(ntp_daemon) != ERROR) {
-            // A VxWorks 6 SNTP/NTP sync task is running
+        int tid;
+        if ((tid = taskNameToId(sntp_sync_task)) != ERROR ||
+            (tid = taskNameToId(ntp_daemon)) != ERROR) {
+            // A VxWorks 6 SNTP/NTP sync task exists
             struct timespec clockNow;
 
-            useNTP = clock_gettime(CLOCK_REALTIME, &clockNow) != OK ||
+            useNTP = taskIsSuspended(tid) ||
+                clock_gettime(CLOCK_REALTIME, &clockNow) != OK ||
                 clockNow.tv_sec < BUILD_TIME;
 
-            if (!useNTP) // Clock is set so we can run this:
+            if (!useNTP) // Clock should be sync'd so we can run this:
                 tz2timezone();
         }
         else
@@ -123,16 +125,18 @@ void osdNTPReport(void)
 void osdClockReport(int level)
 {
     const char * ntpTask;
+    int tid;
 
-    if (taskNameToId(sntp_sync_task) != ERROR)
+    if ((tid = taskNameToId(sntp_sync_task)) != ERROR)
         ntpTask = sntp_sync_task;
-    else if (taskNameToId(ntp_daemon) != ERROR)
+    else if ((tid = taskNameToId(ntp_daemon)) != ERROR)
         ntpTask = ntp_daemon;
     else {
-        printf("No VxWorks OS clock sync tasks are running\n");
+        printf("No VxWorks OS clock sync tasks exist\n");
         return;
     }
-    printf("VxWorks OS clock sync task '%s' is running\n", ntpTask);
+    printf("VxWorks OS clock sync task '%s' is %s\n", ntpTask,
+        taskIsSuspended(tid) ? "suspended" : "running");
 }
 
 // Other Time Routines

@@ -39,8 +39,21 @@ static CLOCKTIME_SYNCHOOK prevHook;
 extern char* sysBootLine;
 
 static void timeSync(int synchronized) {
-    if (!tz2timezone())
-        ClockTime_syncHook = prevHook; /* Don't call me again */
+    if (prevHook)
+        prevHook(synchronized);
+
+    if (synchronized) {
+        struct timespec tsNow;
+        if (clock_gettime(CLOCK_REALTIME, &tsNow) != OK)
+            return;
+
+        struct tm tmNow;
+        localtime_r(&tsNow.tv_sec, &tmNow);
+
+        static int lastYear = 0;
+        if (tmNow.tm_year > lastYear && !tz2timezone())
+            lastYear = tmNow.tm_year;
+    }
 }
 
 static int timeRegister(void)
@@ -52,7 +65,7 @@ static int timeRegister(void)
         if (tz && *tz) {
             epicsEnvSet("TZ", tz);
 
-            /* Call tz2timezone() once we know what year it is */
+            /* Call tz2timezone() from the sync thread, needs the year */
             prevHook = ClockTime_syncHook;
             ClockTime_syncHook = timeSync;
         }

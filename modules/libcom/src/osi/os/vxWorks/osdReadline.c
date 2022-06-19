@@ -16,6 +16,8 @@
 #include <string.h>
 #include <ledLib.h>
 
+#include "epicsReadlinePvt.h"
+
 /* FIXME: Remove line-lenth limitation */
 #define LEDLIB_LINESIZE 1000
 

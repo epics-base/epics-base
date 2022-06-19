@@ -34,6 +34,27 @@
 #include "cantProceed.h"
 #include "iocsh.h"
 
+#include "epicsReadlinePvt.h"
+
+#if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
+#  include <readline/readline.h>
+#  define USE_READLINE
+/* libedit also provides readline.h, but isn't fully compatible with
+ * GNU readline.  It also doesn't specifically identify itself.
+ *
+ * libedit pretends to be GNU readline 4.2 (circa 2001), but lacks
+ * some definitions found in that GNU release, but has others not
+ * added until later GNU releases.
+ */
+#  if RL_READLINE_VERSION == 0x402 && !defined(RL_STATE_NONE)
+/* actual GNU readline 4.2 defines RL_STATE_NONE, but libedit.h
+ * circa libedit-39 (aka. CVS 1.33) does not.  It also does not
+ * provide rl_basic_quote_characters
+ */
+static const char *rl_basic_quote_characters;
+#  endif
+#endif
+
 extern "C" {
 
 /*
@@ -156,6 +177,114 @@ const iocshCmdDef * epicsStdCall iocshFindCommand(const char *name)
 {
     return (iocshCmdDef *) registryFind(iocshCmdID, name);
 }
+
+namespace {
+#ifdef USE_READLINE
+
+char* iocsh_complete_command(const char* word, int notfirst)
+{
+    // ick! ... readline is not re-entrant anyway
+    static const iocshCommand *next;
+
+    if(!notfirst) { // aka. first call
+        next = iocshCommandHead;
+    }
+
+    const size_t wlen = strlen(word);
+
+    while(next) {
+        const iocshCommand *cur = next;
+        next = next->next;
+
+        if(strncmp(word, cur->def.pFuncDef->name, wlen)==0) {
+            return strdup(cur->def.pFuncDef->name);
+        }
+    }
+
+    return NULL;
+}
+
+char** iocsh_attempt_completion(const char* word, int start, int end)
+{
+    const char *line = rl_line_buffer;
+
+    if(!line || !word || start<0 || end <0 || start>end)
+        return NULL; // paranoia
+
+    // skip any leading space
+    while(isspace(*line)) {
+        line++;
+        start--;
+        end--;
+    }
+
+    if(start==0) { // complete command name
+        return rl_completion_matches(word, iocsh_complete_command);
+
+    } else { // complete some argument
+        return NULL;
+    }
+}
+#endif
+
+struct ReadlineContext {
+    void *context;
+#ifdef USE_READLINE
+    // readline on BSD/OSX missing 'rl_completion_func_t' typedef, and 'const'
+    char* prev_rl_readline_name;
+    char* prev_rl_basic_word_break_characters;
+    char* prev_rl_completer_word_break_characters;
+    char* prev_rl_basic_quote_characters;
+    char* prev_rl_completer_quote_characters;
+    //rl_completion_func_t* prev_rl_attempted_completion_function;
+    char** (*prev_rl_attempted_completion_function)(const char* word, int start, int end);
+#endif
+
+    ReadlineContext()
+        :context(NULL)
+    {}
+
+    bool setup(FILE *fp) {
+        context = epicsReadlineBegin(fp);
+#ifdef USE_READLINE
+        if(context) {
+            prev_rl_readline_name = (char*)rl_readline_name;
+            prev_rl_basic_word_break_characters = (char*)rl_basic_word_break_characters;
+            prev_rl_completer_word_break_characters = rl_completer_word_break_characters;
+            prev_rl_basic_quote_characters = (char*)rl_basic_quote_characters;
+            prev_rl_completer_quote_characters = (char*)rl_completer_quote_characters;
+            prev_rl_attempted_completion_function = rl_attempted_completion_function;
+
+            rl_readline_name = (char*)"iocsh";
+            rl_basic_word_break_characters = (char*)"\t (),";
+            rl_completer_word_break_characters = (char*)"\t (),";
+            rl_basic_quote_characters = (char*)"\"";
+            rl_completer_quote_characters = (char*)"\"";
+            rl_attempted_completion_function = &iocsh_attempt_completion;
+            rl_bind_key('\t', rl_complete);
+        }
+#endif
+        return context;
+    }
+
+    ~ReadlineContext() {
+        if(context) {
+#ifdef USE_READLINE
+            rl_readline_name = prev_rl_readline_name;
+            rl_basic_word_break_characters = prev_rl_basic_word_break_characters;
+            rl_completer_word_break_characters = prev_rl_completer_word_break_characters;
+            rl_basic_quote_characters = prev_rl_basic_quote_characters;
+            rl_completer_quote_characters = prev_rl_completer_quote_characters;
+            rl_attempted_completion_function = prev_rl_attempted_completion_function;
+            // cf. osdReadlineBegin() in gnuReadline.c
+            rl_bind_key('\t', rl_insert);
+#endif
+            epicsReadlineEnd(context);
+        }
+    }
+};
+
+} // namespace
 
 /*
  * Register the "var" command and any variable(s)
@@ -580,7 +709,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     iocshArgBuf *argBuf = NULL;
     int argBufCapacity = 0;
     struct iocshCommand *found;
-    void *readlineContext = NULL;
+    ReadlineContext readline;
     int wasOkToBlock;
     static const char * pairs[] = {"", "environ", NULL, NULL};
     iocshScope scope;
@@ -617,7 +746,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         /*
          * Create a command-line input context
          */
-        if ((readlineContext = epicsReadlineBegin(fp)) == NULL) {
+        if (!readline.setup(fp)) {
             fprintf(epicsGetStderr(), "Can't allocate command-line object.\n");
             if (fp)
                 fclose(fp);
@@ -711,7 +840,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             raw = commandLine;
         }
         else {
-            if ((raw = epicsReadline(prompt, readlineContext)) == NULL)
+            if ((raw = epicsReadline(prompt, readline.context)) == NULL)
                 break;
         }
         lineno++;
@@ -1009,8 +1138,6 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     free (argv);
     free (argBuf);
     errlogFlush();
-    if (readlineContext)
-        epicsReadlineEnd(readlineContext);
     epicsThreadSetOkToBlock(wasOkToBlock);
     return ret;
 }

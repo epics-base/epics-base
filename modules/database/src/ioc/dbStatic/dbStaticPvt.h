@@ -115,6 +115,9 @@ PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecordType *precordType,dbRecordNode *precn
 void dbPvdDelete(DBBASE *pdbbase,dbRecordNode *precnode);
 void dbPvdFreeMem(DBBASE *pdbbase);
 
+DBCORE_API
+char** dbCompleteRecord(const char *word);
+
 #ifdef __cplusplus
 }
 #endif

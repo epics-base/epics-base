@@ -17,7 +17,7 @@ IOCSH_STATIC_FUNC void dlload(const char* name)
     }
 }
 
-static const iocshArg dlloadArg0 = { "path/library.so", iocshArgString};
+static const iocshArg dlloadArg0 = { "path/library.so", iocshArgStringPath};
 static const iocshArg * const dlloadArgs[] = {&dlloadArg0};
 static const iocshFuncDef dlloadFuncDef = {
     "dlload",

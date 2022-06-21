@@ -23,6 +23,8 @@
 #include <ctype.h>
 #include <errno.h>
 
+#define EPICS_PRIVATE_API
+
 #include "epicsMath.h"
 #include "errlog.h"
 #include "macLib.h"
@@ -215,6 +217,8 @@ showError (const char *filename, int lineno, const char *msg, ...)
     fputc ('\n', epicsGetStderr());
     va_end (ap);
 }
+
+char** (*iocshCompleteRecord)(const char *word) = NULL;
 
 namespace {
 
@@ -495,6 +499,74 @@ char** iocsh_attempt_completion(const char* word, int start, int end)
         return rl_completion_matches(word, iocsh_complete_command);
 
     } else { // complete some argument
+        // make a copy as split() will insert nils
+        size_t linelen = strlen(line);
+        std::vector<char> lbuf(linelen+1u);
+        memcpy(&lbuf[0], line, linelen);
+        lbuf[linelen] = '\0';
+
+        int pos = 0;
+        while(isspace(lbuf[pos]))
+            pos++;
+
+        Tokenize tokenize;
+        // don't complain about "Unbalanced quote when completing
+        tokenize.noise = false;
+        bool err = tokenize.split(NULL, -1, &lbuf[0], pos);
+
+        if(!err)
+            err = tokenize.empty() && tokenize.redirects.empty();
+
+        // look up command name
+        iocshCmdDef *def = NULL;
+        if(!err)
+            err = !(def = (iocshCmdDef *) registryFind(iocshCmdID, tokenize.argv[0]));
+
+        // Find out which argument 'start' is.
+        // arg is index into tokenize.argv[]
+        // argv[0] is command name, argv[1] would be first argument.
+        size_t arg;
+        if(!err) {
+            for(arg=1; arg<tokenize.size(); arg++) {
+                // BUG: does not work with eg. 'dbpr("X")' as split()
+                //      has rewritten lbuf to make this 'dbpr "X"'
+                size_t soffset = tokenize.argv[arg]-&lbuf[0];
+                size_t eoffset = soffset + strlen(tokenize.argv[arg]);
+                if(soffset >= size_t(start) && eoffset <= size_t(end)) {
+                    break;
+                }
+            }
+            err = arg-1u >= size_t(def->pFuncDef->nargs);
+        }
+
+        if(!err) {
+            // we are being asked to complete a valid command,
+            // for which we have split argument strings.
+
+            const iocshArg * argdef = def->pFuncDef->arg[arg-1u];
+
+            // known argument type
+            rl_attempted_completion_over = 1;
+
+            if(argdef->type==iocshArgStringRecord && iocshCompleteRecord) {
+                return (*iocshCompleteRecord)(word);
+
+            } else if(argdef->type==iocshArgStringPath) {
+                // use default completion (filesystem)
+                rl_attempted_completion_over = 0;
+
+            } else if(argdef->type==iocshArgPdbbase) {
+                char **ret = (char**)calloc(2, sizeof(*ret));
+                if(ret)
+                    ret[0] = strdup("pdbbase");
+                return ret;
+
+            } else if(arg==1 && strcmp(def->pFuncDef->name, "help")==0) {
+                return rl_completion_matches(word, iocsh_complete_command);
+            }
+
+        }
+
         return NULL;
     }
 }
@@ -701,6 +773,8 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
         break;
 
     case iocshArgString:
+    case iocshArgStringRecord:
+    case iocshArgStringPath:
         argBuf->sval = arg;
         break;
 

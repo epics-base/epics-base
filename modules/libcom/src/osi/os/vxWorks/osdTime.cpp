@@ -23,6 +23,7 @@
 #include "osiClockTime.h"
 #include "generalTimeSup.h"
 #include "envDefs.h"
+#include "epicsFindSymbol.h"
 
 #define NTP_REQUEST_TIMEOUT 4 /* seconds */
 
@@ -31,7 +32,7 @@ extern "C" {
 }
 
 static char sntp_sync_task[] = "ipsntps";
-static char ntp_daemon[] = "ipntpd";
+typedef int (*ipcom_ipd_kill_t)(const char *);
 
 static const char *pserverAddr = NULL;
 static CLOCKTIME_SYNCHOOK prevHook;
@@ -65,7 +66,7 @@ static int timeRegister(void)
         if (tz && *tz) {
             epicsEnvSet("TZ", tz);
 
-            /* Call tz2timezone() from the sync thread, needs the year */
+            // Call tz2timezone() from the sync thread, needs the year
             prevHook = ClockTime_syncHook;
             ClockTime_syncHook = timeSync;
         }
@@ -76,29 +77,37 @@ static int timeRegister(void)
     // Define EPICS_TS_FORCE_NTPTIME to force use of NTPTime provider
     bool useNTP = getenv("EPICS_TS_FORCE_NTPTIME") != NULL;
 
-    if (!useNTP) {
-        int tid;
-        if ((tid = taskNameToId(sntp_sync_task)) != ERROR ||
-            (tid = taskNameToId(ntp_daemon)) != ERROR) {
-            // A VxWorks 6 SNTP/NTP sync task exists
-            struct timespec clockNow;
+    // VxWorks 6 may have a clock sync task running
+    int tid = taskNameToId(sntp_sync_task);
+    struct timespec clockNow;
+    if (tid != ERROR &&
+        clock_gettime(CLOCK_REALTIME, &clockNow) == OK &&
+        clockNow.tv_sec > BUILD_TIME) {
+        // Clock appears set
+        tz2timezone();
+    }
+    else {
+        // No clock sync task or it's broken, start our own
+        useNTP = 1;
+    }
 
-            useNTP = taskIsSuspended(tid) ||
-                clock_gettime(CLOCK_REALTIME, &clockNow) != OK ||
-                clockNow.tv_sec < BUILD_TIME;
+    if (useNTP && tid != ERROR) {
+        // EPICS_TS_FORCE_NTPTIME was set, stop the OS sync task
+        ipcom_ipd_kill_t ipcom_ipd_kill =
+            (ipcom_ipd_kill_t) epicsFindSymbol("ipcom_ipd_kill");
 
-            if (!useNTP) // Clock should be sync'd so we can run this:
-                tz2timezone();
+        if (ipcom_ipd_kill && !taskIsSuspended(tid)) {
+            printf("timeRegister: Stopping VxWorks clock sync task\n");
+            ipcom_ipd_kill("ipsntp");
         }
-        else
-            useNTP = 1;
     }
 
     if (useNTP) {
         // Start NTP first so it can be used to sync ClockTime
         NTPTime_Init(100);
         ClockTime_Init(CLOCKTIME_SYNC);
-    } else {
+    }
+    else {
         ClockTime_Init(CLOCKTIME_NOSYNC);
     }
     osdMonotonicInit();
@@ -138,17 +147,10 @@ void osdNTPReport(void)
 void osdClockReport(int level)
 {
     const char * ntpTask;
-    int tid;
+    int tid = taskNameToId(sntp_sync_task);
 
-    if ((tid = taskNameToId(sntp_sync_task)) != ERROR)
-        ntpTask = sntp_sync_task;
-    else if ((tid = taskNameToId(ntp_daemon)) != ERROR)
-        ntpTask = ntp_daemon;
-    else {
-        printf("No VxWorks OS clock sync tasks exist\n");
-        return;
-    }
-    printf("VxWorks OS clock sync task '%s' is %s\n", ntpTask,
+    printf("VxWorks clock sync task '%s' is %s\n", sntp_sync_task,
+        (tid == ERROR) ? "not running" :
         taskIsSuspended(tid) ? "suspended" : "running");
 }
 

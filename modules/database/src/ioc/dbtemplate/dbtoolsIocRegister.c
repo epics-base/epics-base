@@ -13,7 +13,7 @@
 
 
 /* dbLoadTemplate */
-static const iocshArg dbLoadTemplateArg0 = {"filename", iocshArgString};
+static const iocshArg dbLoadTemplateArg0 = {"filename", iocshArgStringPath};
 static const iocshArg dbLoadTemplateArg1 = {"var1=value1,var2=value2", iocshArgString};
 static const iocshArg * const dbLoadTemplateArgs[2] = {
     &dbLoadTemplateArg0, &dbLoadTemplateArg1

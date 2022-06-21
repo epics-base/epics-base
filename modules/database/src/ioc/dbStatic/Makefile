@@ -28,5 +28,6 @@ dbCore_SRCS += dbYacc.c
 dbCore_SRCS += dbPvdLib.c
 dbCore_SRCS += dbStaticRun.c
 dbCore_SRCS += dbStaticIocRegister.c
+dbCore_SRCS += dbCompleteRecord.cpp
 
 CLEANS += dbLex.c dbYacc.c

@@ -8,10 +8,13 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+#define EPICS_PRIVATE_API
+
 #include "iocsh.h"
 
 #include "callback.h"
 #include "dbAccess.h"
+#include "dbStaticPvt.h"
 #include "dbBkpt.h"
 #include "dbCaTest.h"
 #include "dbEvent.h"
@@ -28,8 +31,8 @@
 DBCORE_API extern int callbackParallelThreadsDefault;
 
 /* dbLoadDatabase */
-static const iocshArg dbLoadDatabaseArg0 = { "file name",iocshArgString};
-static const iocshArg dbLoadDatabaseArg1 = { "path",iocshArgString};
+static const iocshArg dbLoadDatabaseArg0 = { "file name",iocshArgStringPath};
+static const iocshArg dbLoadDatabaseArg1 = { "path",iocshArgStringPath};
 static const iocshArg dbLoadDatabaseArg2 = { "substitutions",iocshArgString};
 static const iocshArg * const dbLoadDatabaseArgs[3] =
 {
@@ -49,7 +52,7 @@ static void dbLoadDatabaseCallFunc(const iocshArgBuf *args)
 }
 
 /* dbLoadRecords */
-static const iocshArg dbLoadRecordsArg0 = { "file name",iocshArgString};
+static const iocshArg dbLoadRecordsArg0 = { "file name",iocshArgStringPath};
 static const iocshArg dbLoadRecordsArg1 = { "substitutions",iocshArgString};
 static const iocshArg * const dbLoadRecordsArgs[2] = {&dbLoadRecordsArg0,&dbLoadRecordsArg1};
 static const iocshFuncDef dbLoadRecordsFuncDef = {
@@ -66,28 +69,28 @@ static void dbLoadRecordsCallFunc(const iocshArgBuf *args)
 }
 
 /* dbb */
-static const iocshArg dbbArg0 = { "record name",iocshArgString};
+static const iocshArg dbbArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbbArgs[1] = {&dbbArg0};
 static const iocshFuncDef dbbFuncDef = {"dbb",1,dbbArgs,
                                         "Add breakpoint to a lock set.\n"};
 static void dbbCallFunc(const iocshArgBuf *args) { dbb(args[0].sval);}
 
 /* dbd */
-static const iocshArg dbdArg0 = { "record name",iocshArgString};
+static const iocshArg dbdArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbdArgs[1] = {&dbdArg0};
 static const iocshFuncDef dbdFuncDef = {"dbd",1,dbdArgs,
                                         "Remove breakpoint from a record.\n"};
 static void dbdCallFunc(const iocshArgBuf *args) { dbd(args[0].sval);}
 
 /* dbc */
-static const iocshArg dbcArg0 = { "record name",iocshArgString};
+static const iocshArg dbcArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbcArgs[1] = {&dbcArg0};
 static const iocshFuncDef dbcFuncDef = {"dbc",1,dbcArgs,
                                         "Continue processing in a lock set.\n"};
 static void dbcCallFunc(const iocshArgBuf *args) { dbc(args[0].sval);}
 
 /* dbs */
-static const iocshArg dbsArg0 = { "record name",iocshArgString};
+static const iocshArg dbsArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbsArgs[1] = {&dbsArg0};
 static const iocshFuncDef dbsFuncDef = {"dbs",1,dbsArgs,
                                         "Step through record processing.\n"};
@@ -99,7 +102,7 @@ static const iocshFuncDef dbstatFuncDef = {"dbstat",0,0,
 static void dbstatCallFunc(const iocshArgBuf *args) { dbstat();}
 
 /* dbp */
-static const iocshArg dbpArg0 = { "record name",iocshArgString};
+static const iocshArg dbpArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbpArg1 = { "interest level",iocshArgInt};
 static const iocshArg * const dbpArgs[2] = {&dbpArg0,&dbpArg1};
 static const iocshFuncDef dbpFuncDef = {"dbp",2,dbpArgs,
@@ -108,7 +111,7 @@ static void dbpCallFunc(const iocshArgBuf *args)
 { dbp(args[0].sval,args[1].ival);}
 
 /* dbap */
-static const iocshArg dbapArg0 = { "record name",iocshArgString};
+static const iocshArg dbapArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbapArgs[1] = {&dbapArg0};
 static const iocshFuncDef dbapFuncDef = {"dbap",1,dbapArgs,
                                          "toggle printing after processing a certain record.\n"};
@@ -122,7 +125,7 @@ static const iocshFuncDef dbsrFuncDef = {"dbsr",1,dbsrArgs,
 static void dbsrCallFunc(const iocshArgBuf *args) { dbsr(args[0].ival);}
 
 /* dbcar */
-static const iocshArg dbcarArg0 = { "record name",iocshArgString};
+static const iocshArg dbcarArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbcarArg1 = { "level",iocshArgInt};
 static const iocshArg * const dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
 static const iocshFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs,
@@ -137,7 +140,7 @@ static void dbcarCallFunc(const iocshArgBuf *args)
 }
 
 /* dbjlr */
-static const iocshArg dbjlrArg0 = { "record name",iocshArgString};
+static const iocshArg dbjlrArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbjlrArg1 = { "level",iocshArgInt};
 static const iocshArg * const dbjlrArgs[2] = {&dbjlrArg0,&dbjlrArg1};
 static const iocshFuncDef dbjlrFuncDef = {"dbjlr",2,dbjlrArgs,
@@ -148,7 +151,7 @@ static void dbjlrCallFunc(const iocshArgBuf *args)
 }
 
 /* dbel */
-static const iocshArg dbelArg0 = { "record name",iocshArgString};
+static const iocshArg dbelArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbelArg1 = { "level",iocshArgInt};
 static const iocshArg * const dbelArgs[2] = {&dbelArg0,&dbelArg1};
 static const iocshFuncDef dbelFuncDef = {"dbel",2,dbelArgs,
@@ -160,7 +163,7 @@ static void dbelCallFunc(const iocshArgBuf *args)
 }
 
 /* dba */
-static const iocshArg dbaArg0 = { "record name",iocshArgString};
+static const iocshArg dbaArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbaArgs[1] = {&dbaArg0};
 static const iocshFuncDef dbaFuncDef = {"dba",1,dbaArgs,
                                         "dbAddr info.\n"};
@@ -194,21 +197,21 @@ static const iocshFuncDef dbliFuncDef = {"dbli",1,dbliArgs,
 static void dbliCallFunc(const iocshArgBuf *args) { dbli(args[0].sval);}
 
 /* dbla */
-static const iocshArg dblaArg0 = { "pattern",iocshArgString};
+static const iocshArg dblaArg0 = { "pattern",iocshArgStringRecord};
 static const iocshArg * const dblaArgs[1] = {&dblaArg0};
 static const iocshFuncDef dblaFuncDef = {"dbla",1,dblaArgs,
                                          "List record alias()s by alias name pattern.\n"};
 static void dblaCallFunc(const iocshArgBuf *args) { dbla(args[0].sval);}
 
 /* dbgrep */
-static const iocshArg dbgrepArg0 = { "pattern",iocshArgString};
+static const iocshArg dbgrepArg0 = { "pattern",iocshArgStringRecord};
 static const iocshArg * const dbgrepArgs[1] = {&dbgrepArg0};
 static const iocshFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs,
                                            "List record names matching pattern.\n"};
 static void dbgrepCallFunc(const iocshArgBuf *args) { dbgrep(args[0].sval);}
 
 /* dbgf */
-static const iocshArg dbgfArg0 = { "record name",iocshArgString};
+static const iocshArg dbgfArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbgfArgs[1] = {&dbgfArg0};
 static const iocshFuncDef dbgfFuncDef = {"dbgf",1,dbgfArgs,
                                          "Database Get Field.\n"
@@ -216,7 +219,7 @@ static const iocshFuncDef dbgfFuncDef = {"dbgf",1,dbgfArgs,
 static void dbgfCallFunc(const iocshArgBuf *args) { dbgf(args[0].sval);}
 
 /* dbpf */
-static const iocshArg dbpfArg0 = { "record name",iocshArgString};
+static const iocshArg dbpfArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbpfArg1 = { "value",iocshArgString};
 static const iocshArg * const dbpfArgs[2] = {&dbpfArg0,&dbpfArg1};
 static const iocshFuncDef dbpfFuncDef = {"dbpf",2,dbpfArgs,
@@ -226,7 +229,7 @@ static void dbpfCallFunc(const iocshArgBuf *args)
 { dbpf(args[0].sval,args[1].sval);}
 
 /* dbpr */
-static const iocshArg dbprArg0 = { "record name",iocshArgString};
+static const iocshArg dbprArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbprArg1 = { "interest level",iocshArgInt};
 static const iocshArg * const dbprArgs[2] = {&dbprArg0,&dbprArg1};
 static const iocshFuncDef dbprFuncDef = {"dbpr",2,dbprArgs,
@@ -236,14 +239,14 @@ static void dbprCallFunc(const iocshArgBuf *args)
 { dbpr(args[0].sval,args[1].ival);}
 
 /* dbtr */
-static const iocshArg dbtrArg0 = { "record name",iocshArgString};
+static const iocshArg dbtrArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbtrArgs[1] = {&dbtrArg0};
 static const iocshFuncDef dbtrFuncDef = {"dbtr",1,dbtrArgs,
                                          "Process record and then some fields.\n"};
 static void dbtrCallFunc(const iocshArgBuf *args) { dbtr(args[0].sval);}
 
 /* dbtgf */
-static const iocshArg dbtgfArg0 = { "record name",iocshArgString};
+static const iocshArg dbtgfArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbtgfArgs[1] = {&dbtgfArg0};
 static const iocshFuncDef dbtgfFuncDef = {"dbtgf",1,dbtgfArgs,
                                           "Database Test Get Field.\n"
@@ -251,7 +254,7 @@ static const iocshFuncDef dbtgfFuncDef = {"dbtgf",1,dbtgfArgs,
 static void dbtgfCallFunc(const iocshArgBuf *args) { dbtgf(args[0].sval);}
 
 /* dbtpf */
-static const iocshArg dbtpfArg0 = { "record name",iocshArgString};
+static const iocshArg dbtpfArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbtpfArg1 = { "value",iocshArgString};
 static const iocshArg * const dbtpfArgs[2] = {&dbtpfArg0,&dbtpfArg1};
 static const iocshFuncDef dbtpfFuncDef = {"dbtpf",2,dbtpfArgs,
@@ -274,14 +277,14 @@ static const iocshFuncDef dbhcrFuncDef = {"dbhcr",0,0,
 static void dbhcrCallFunc(const iocshArgBuf *args) { dbhcr();}
 
 /* gft */
-static const iocshArg gftArg0 = { "record name",iocshArgString};
+static const iocshArg gftArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const gftArgs[1] = {&gftArg0};
 static const iocshFuncDef gftFuncDef = {"gft",1,gftArgs,
                                         "Report dbChannel info and value.\n"};
 static void gftCallFunc(const iocshArgBuf *args) { gft(args[0].sval);}
 
 /* pft */
-static const iocshArg pftArg0 = { "record name",iocshArgString};
+static const iocshArg pftArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg pftArg1 = { "value",iocshArgString};
 static const iocshArg * const pftArgs[2] = {&pftArg0,&pftArg1};
 static const iocshFuncDef pftFuncDef = {"pft",2,pftArgs,
@@ -290,7 +293,7 @@ static void pftCallFunc(const iocshArgBuf *args)
 { pft(args[0].sval,args[1].sval);}
 
 /* dbtpn */
-static const iocshArg dbtpnArg0 = { "record name",iocshArgString};
+static const iocshArg dbtpnArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbtpnArg1 = { "value",iocshArgString};
 static const iocshArg * const dbtpnArgs[2] = {&dbtpnArg0,&dbtpnArg1};
 static const iocshFuncDef dbtpnFuncDef = {"dbtpn",2,dbtpnArgs,
@@ -318,7 +321,7 @@ static void dbPutAttrCallFunc(const iocshArgBuf *args)
 { dbPutAttribute(args[0].sval,args[1].sval,args[2].sval);}
 
 /* tpn */
-static const iocshArg tpnArg0 = { "record name",iocshArgString};
+static const iocshArg tpnArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg tpnArg1 = { "value",iocshArgString};
 static const iocshArg * const tpnArgs[2] = {&tpnArg0,&tpnArg1};
 static const iocshFuncDef tpnFuncDef = {"tpn",2,tpnArgs,
@@ -327,7 +330,7 @@ static void tpnCallFunc(const iocshArgBuf *args)
 { tpn(args[0].sval,args[1].sval);}
 
 /* dblsr */
-static const iocshArg dblsrArg0 = { "record name",iocshArgString};
+static const iocshArg dblsrArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dblsrArg1 = { "interest level",iocshArgInt};
 static const iocshArg * const dblsrArgs[2] = {&dblsrArg0,&dblsrArg1};
 static const iocshFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs,
@@ -500,6 +503,8 @@ static void dbStateShowAllCallFunc (const iocshArgBuf *args)
 
 void dbIocRegister(void)
 {
+    iocshCompleteRecord = &dbCompleteRecord;
+
     iocshRegister(&dbbFuncDef,dbbCallFunc);
     iocshRegister(&dbdFuncDef,dbdCallFunc);
     iocshRegister(&dbcFuncDef,dbcCallFunc);

@@ -26,6 +26,7 @@
 #include "epicsTime.h"
 #include "errlog.h"
 #include "osiSock.h"
+#include "epicsSock.h"
 
 #include "caerr.h"
 #include "net_convert.h"

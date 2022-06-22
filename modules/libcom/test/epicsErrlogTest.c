@@ -27,6 +27,7 @@
 #include "logClient.h"
 #include "envDefs.h"
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "fdmgr.h"
 #include "epicsString.h"
 

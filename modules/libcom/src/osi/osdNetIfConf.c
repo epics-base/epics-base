@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "epicsAssert.h"
 #include "errlog.h"
 #include "epicsThread.h"

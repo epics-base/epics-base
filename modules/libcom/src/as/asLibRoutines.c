@@ -16,6 +16,7 @@
 #include <ctype.h>
 
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "epicsTypes.h"
 #include "epicsStdio.h"
 #include "dbDefs.h"

@@ -22,6 +22,7 @@
 #define INC_caServerID_H
 
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "resourceLib.h"
 #include "caProto.h"
 

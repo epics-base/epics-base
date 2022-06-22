@@ -32,6 +32,7 @@
 #include "freeList.h"
 #include "osiPoolStatus.h"
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "epicsBaseDebugLog.h"
 #include "taskwd.h"
 #include "cantProceed.h"

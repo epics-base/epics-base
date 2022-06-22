@@ -28,6 +28,7 @@
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "epicsAssert.h"
 #include "epicsExit.h"
 #include "epicsSignal.h"

@@ -36,6 +36,7 @@
 #include "iocinf.h"
 
 #include "osiSock.h" /* NETDEBUG */
+#include "epicsSock.h"
 #include "epicsBaseDebugLog.h"
 /*
  * getToken()

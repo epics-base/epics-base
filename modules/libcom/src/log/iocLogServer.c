@@ -34,6 +34,7 @@
 #include    "fdmgr.h"
 #include    "envDefs.h"
 #include    "osiSock.h"
+#include    "epicsSock.h"
 #include    "epicsStdio.h"
 
 static unsigned short ioc_log_port;

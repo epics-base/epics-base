@@ -23,6 +23,7 @@
 #define INC_inetAddrID_H
 
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "resourceLib.h"
 
 class inetAddrID {

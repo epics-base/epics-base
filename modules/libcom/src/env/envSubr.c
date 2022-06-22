@@ -48,6 +48,7 @@
 #include "envDefs.h"
 #include "epicsAssert.h"
 #include "osiSock.h"
+#include "epicsSock.h"
 
 
 /*+/subr**********************************************************************

@@ -29,6 +29,7 @@
 #include "envDefs.h"
 #include "errlog.h"
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "taskwd.h"
 
 #include "server.h"

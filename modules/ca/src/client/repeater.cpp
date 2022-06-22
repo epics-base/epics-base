@@ -76,6 +76,7 @@
 #include "repeaterClient.h"
 #include "addrList.h"
 #include "osiSock.h"
+#include "epicsSock.h"
 
 #include "epicsBaseDebugLog.h"
 #ifdef AF_INET6

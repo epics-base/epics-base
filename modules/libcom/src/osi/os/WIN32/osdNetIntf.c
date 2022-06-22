@@ -36,6 +36,7 @@
  * EPICS
  */
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "errlog.h"
 #include "epicsThread.h"
 #include "epicsVersion.h"

@@ -44,6 +44,7 @@
 #include "errlog.h"
 #include "freeList.h"
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "epicsBaseDebugLog.h"
 #include "taskwd.h"
 

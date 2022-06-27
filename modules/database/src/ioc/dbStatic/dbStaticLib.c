@@ -233,7 +233,7 @@ static void ulongToHexString(epicsUInt32 source, char *pdest)
 static void realToString(double value, char *preturn, int isdouble)
 {
     static const double delta[2] = {1e-6, 1e-15};
-    static const int precision[2] = {6, 14};
+    static const size_t precision[2] = {6, 14};
     double  absvalue;
     int     logval,prec;
     size_t  end;
@@ -2711,7 +2711,7 @@ char * dbVerify(DBENTRY *pdbentry, const char *pstring)
     {
         size_t length = strlen(pstring);
 
-        if (length >= pflddes->size) {
+        if (length >= (size_t)pflddes->size) {
             sprintf(message, "String too long, max %d characters",
                 pflddes->size - 1);
             return message;
@@ -3035,7 +3035,7 @@ const char * dbGetFieldTypeString(int dbfType)
     int i;
 
     for (i=0; i < DBF_NTYPES; i++) {
-        if (pamapdbfType[i].value == dbfType) {
+        if ((int)pamapdbfType[i].value == dbfType) {
             return pamapdbfType[i].strvalue;
         }
     }
@@ -3435,14 +3435,14 @@ void  dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
                     " - init_record()",
                     " - get_ioint_info()"
                 };
-                int i, n = pdevSup->pdset->number;
+                unsigned int i, n = pdevSup->pdset->number;
                 DEVSUPFUN *pfunc = &pdevSup->pdset->report;
 
                 printf("\t    number: %d\n", n);
                 for (i = 0; i < n; ++i, ++pfunc) {
                     const char *name = (i < NELEMENTS(names)) ? names[i] : "";
 
-                    printf("\t    func %d: %p%s\n", i, (void *)*pfunc, name);
+                    printf("\t    func %u: %p%s\n", i, (void *)*pfunc, name);
                 }
             }
             printf("\tpdsxt:     %p\n",(void *)pdevSup->pdsxt);

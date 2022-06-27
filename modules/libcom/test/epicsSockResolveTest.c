@@ -51,7 +51,7 @@ static const char * baddata[] = {
 
 MAIN(epicsSockResolveTest)
 {
-    int i;
+    size_t i;
 
     testPlan(3*NELEMENTS(okdata) + NELEMENTS(baddata));
     osiSockAttach();

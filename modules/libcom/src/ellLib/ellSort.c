@@ -31,7 +31,7 @@ static void ellMoveN(ELLLIST* pTo, ELLLIST* pFrom, int count )
 void ellSortStable(ELLLIST *pList, pListCmp cmp)
 {
     ELLLIST INP, P, Q;
-    size_t insize = 1; /* initial sub-list size */
+    int insize = 1; /* initial sub-list size */
     if(ellCount(pList)<=1)
         return;
 

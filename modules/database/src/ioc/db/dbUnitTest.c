@@ -319,8 +319,8 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
         testFail("dbGetField(\"%s\", %d, ...) -> %#lx", pv, dbfType, status);
 
     } else {
-        unsigned match = nRequest==cnt;
-        long n, N = nRequest < cnt ? nRequest : cnt;
+        unsigned match = (unsigned long)nRequest==cnt;
+        unsigned long n, N = (unsigned long)nRequest < cnt ? (unsigned long)nRequest : cnt;
 
         if(!match)
             testDiag("Length mis-match.  expected=%lu actual=%lu", cnt, nRequest);

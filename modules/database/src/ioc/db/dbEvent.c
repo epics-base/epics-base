@@ -503,7 +503,7 @@ dbEventSubscription db_add_event (
      */
     if (dbChannelElements(chan) == 1 &&
         dbChannelSpecial(chan) != SPC_DBADDR &&
-        dbChannelFieldSize(chan) <= sizeof(union native_value)) {
+        (size_t)dbChannelFieldSize(chan) <= sizeof(union native_value)) {
         pevent->useValque = TRUE;
     }
     else {
@@ -764,7 +764,7 @@ db_field_log* db_create_read_log (struct dbChannel *chan)
     db_field_log *pLog = db_create_field_log(chan,
         dbChannelElements(chan) == 1 &&
         dbChannelSpecial(chan) != SPC_DBADDR &&
-        dbChannelFieldSize(chan) <= sizeof(union native_value));
+        (size_t)dbChannelFieldSize(chan) <= sizeof(union native_value));
     if (pLog) {
         pLog->ctx  = dbfl_context_read;
     }

@@ -116,8 +116,8 @@ static int
 findNumOcc(const char *buf)
 {
     void *ptrs[MAXP];
-    int n_ptrs = 0;
-    int i,j;
+    size_t n_ptrs = 0;
+    size_t i,j;
     int rval = 0;
 
     while ( n_ptrs < sizeof(ptrs)/sizeof(ptrs[0]) && (buf=strchr(buf,'[')) ) {

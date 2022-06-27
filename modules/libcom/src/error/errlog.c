@@ -370,7 +370,7 @@ int errlogSevPrintf(errlogSevEnum severity, const char *pFormat, ...)
 
 int errlogSevVprintf(errlogSevEnum severity, const char *pFormat, va_list pvar)
 {
-    int nchar = 0;
+    size_t nchar = 0;
     char *buf = msgbufAlloc();
 
     if(buf) {
@@ -477,7 +477,7 @@ void errPrintf(long status, const char *pFileName, int lineno,
     const char *pformat, ...)
 {
     va_list pvar;
-    int     nchar = 0;
+    size_t  nchar = 0;
     char *buf = msgbufAlloc();
 
     va_start(pvar, pformat);

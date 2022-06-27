@@ -17,7 +17,7 @@
 
 char *epicsGetExecName(void)
 {
-    size_t max = PATH_MAX;
+    ssize_t max = PATH_MAX;
     char *ret = NULL;
     ssize_t n;
 

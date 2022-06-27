@@ -36,8 +36,8 @@ static void testEpicsSnprintf(void) {
     const char *svalue = "OneTwoThreeFour";
     const char *format = "int %d float %8.2e string %s";
     const char *expected = exbuffer;
-    int size;
-    int rtn, rlen;
+    unsigned int size;
+    unsigned int rtn, rlen;
 
 #ifdef _WIN32
 #if (defined(_MSC_VER) && _MSC_VER < 1900) || \
@@ -53,14 +53,14 @@ static void testEpicsSnprintf(void) {
 
     for (size = 1; size < strlen(expected) + 5; ++size) {
         rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
-        testOk(rtn <= rlen-1, "epicsSnprintf(size=%d) = %d", size, rtn);
+        testOk(rtn <= rlen-1, "epicsSnprintf(size=%u) = %u", size, rtn);
         if (rtn != rlen-1)
             testDiag("Return value does not indicate buffer size needed");
         testOk(strncmp(buffer, expected, size - 1) == 0,
             "buffer = '%s'", buffer);
         rtn = strlen(buffer);
         testOk(rtn == (size < rlen ? size : rlen) - 1,
-            "length = %d", rtn);
+            "length = %u", rtn);
     }
 }
 

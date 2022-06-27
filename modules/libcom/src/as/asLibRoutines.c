@@ -217,7 +217,7 @@ static int myInputFunction(char *buf, int max_size)
         if(fgetsRtn==NULL) return(0);
         my_buffer_ptr = my_buffer;
     }
-    l = strlen(my_buffer_ptr);
+    l = (int)strlen(my_buffer_ptr);
     n = (l<=max_size ? l : max_size);
     memcpy(buf,my_buffer_ptr,n);
     my_buffer_ptr += n;
@@ -367,7 +367,7 @@ long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
 {
     ASGMEMBER   *pasgmember = asMemberPvt;
     ASGCLIENT   *pasgclient;
-    int         len, i;
+    size_t      len, i;
 
     long        status;
     if(!asActive) return(S_asLib_asNotActive);
@@ -395,7 +395,7 @@ long epicsStdCall asChangeClient(
 {
     ASGCLIENT   *pasgclient = asClientPvt;
     long        status;
-    int         len, i;
+    size_t      len, i;
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);

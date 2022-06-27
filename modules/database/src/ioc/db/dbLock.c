@@ -724,7 +724,7 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
             lockRecord *lr=CONTAINER(cur,lockRecord,compnode);
             dbCommon *prec=lr->precord;
             dbRecordType *rtype = prec->rdes;
-            size_t i;
+            int i;
             ELLNODE *bcur;
 
             ellAdd(&newLS, cur);

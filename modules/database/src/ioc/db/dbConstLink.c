@@ -168,7 +168,7 @@ static long dbConstLoadScalar(struct link *plink, short dbrType, void *pbuffer)
         return dbPutConvertJSON(pstr, dbrType, pbuffer, &nReq);
     }
 
-    if(dbrType>=NELEMENTS(convert))
+    if((size_t)dbrType>=NELEMENTS(convert))
         return S_db_badDbrtype;
 
     return convert[dbrType](pstr, pbuffer, NULL);

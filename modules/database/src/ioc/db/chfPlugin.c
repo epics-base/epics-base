@@ -274,7 +274,7 @@ store_string_value(const chfPluginArgDef *opt, char *user, const char *val,
         return epicsParseDouble(val, dval, &end);
 
     case chfPluginArgString:
-        i = opt->size-1 < len ? opt->size-1 : (int) len;
+        i = opt->size-1 < len ? opt->size-1 : len;
         sval = user + opt->dataOffset;
         strncpy(sval, val, i);
         sval[i] = '\0';
@@ -365,7 +365,7 @@ static parse_result parse_end(chFilter *filter)
 {
     chfPlugin *p = (chfPlugin*) filter->plug->puser;
     chfFilter *f = (chfFilter*) filter->puser;
-    int i;
+    size_t i;
 
     /* Check if all required arguments were supplied */
     for(i = 0; i < (p->nopts/32)+1; i++) {

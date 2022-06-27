@@ -142,7 +142,7 @@ const char *initHookName(int state)
         "initHookAfterInterruptAccept",
         "initHookAtEnd"
     };
-    if (state < 0 || state >= NELEMENTS(stateName)) {
+    if (state < 0 || state >= (int)NELEMENTS(stateName)) {
         return "Not an initHookState";
     }
     return stateName[state];

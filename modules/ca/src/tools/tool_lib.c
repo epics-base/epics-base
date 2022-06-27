@@ -504,7 +504,8 @@ char *dbr2str (const void *value, unsigned type)
 void print_time_val_sts (pv* pv, unsigned long reqElems)
 {
     char timeText[2*TIMETEXTLEN+2];
-    int i, printAbs;
+    unsigned long i;
+    int printAbs;
     void* value = pv->value;
     epicsTimeStamp *ptsRefC, *ptsRefS;  /* Reference timestamps (client, server) */
     epicsTimeStamp *ptsNewC, *ptsNewS;  /* Update timestamps (client, server) */

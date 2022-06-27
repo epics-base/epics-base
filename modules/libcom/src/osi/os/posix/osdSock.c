@@ -199,7 +199,7 @@ LIBCOM_API int epicsStdCall hostToIPAddr
     lockInfo ();
     phe = gethostbyname (pHostName);
     if (phe && phe->h_addr_list[0]) {
-        if (phe->h_addrtype==AF_INET && phe->h_length<=sizeof(struct in_addr)) {
+        if (phe->h_addrtype==AF_INET && (size_t)phe->h_length<=sizeof(struct in_addr)) {
             struct in_addr *pInAddrIn = (struct in_addr *) phe->h_addr_list[0];
 
             *pIPA = *pInAddrIn;

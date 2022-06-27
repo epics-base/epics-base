@@ -239,7 +239,7 @@ void testSort(const input_t *inp, size_t ninp)
 
     ellSortStable(&list, &myItemCmp);
 
-    testOk(ellCount(&list)==ninp, "output length %u == %u", (unsigned)ellCount(&list), (unsigned)ninp);
+    testOk((size_t)ellCount(&list)==ninp, "output length %u == %u", (unsigned)ellCount(&list), (unsigned)ninp);
     if(ellCount(&list)==0) {
         testSkip(ninp-1, "all items lost");
     }

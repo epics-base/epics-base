@@ -695,7 +695,7 @@ static long addrVerify(epicsAddressType addrType, size_t base, size_t size)
 static long devLibInit (void)
 {
     rangeItem   *pRange;
-    int         i;
+    size_t      i;
 
 
     if(devLibInitFlag) return(SUCCESS);
@@ -746,7 +746,7 @@ long devAddressMap(void)
 static long devListAddressMap(ELLLIST *pRangeList)
 {
     rangeItem *pri;
-    int i;
+    size_t i;
     long s;
 
     if (!devLibInitFlag) {

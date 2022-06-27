@@ -151,7 +151,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
 {
     SOCKET *socks;
     osiSockAddr scratch;
-    unsigned i;
+    int i;
 
     socks = mallocMustSucceed(ellCount(&casIntfAddrList)*sizeof(*socks), "rsrv_grab_tcp");
     for(i=0; i<ellCount(&casIntfAddrList); i++)
@@ -1032,7 +1032,7 @@ void casr (unsigned level)
         printf( "    %u small (%u byte) buffers, %u jumbo (%u byte) buffers\n",
             (unsigned int) freeListItemsAvail ( rsrvSmallBufFreeListTCP ),
             MAX_TCP,
-            (unsigned int)(rsrvLargeBufFreeListTCP ? freeListItemsAvail ( rsrvLargeBufFreeListTCP ) : -1),
+            (unsigned int)(rsrvLargeBufFreeListTCP ? freeListItemsAvail ( rsrvLargeBufFreeListTCP ) : 0),
             rsrvSizeofLargeBufTCP );
         printf( "Server resource id table:\n");
         LOCK_CLIENTQ;

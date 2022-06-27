@@ -570,7 +570,7 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
             dbAddr.pfield = pca->pputNative;
             /*Following only used for DBF_STRING*/
             dbAddr.field_size = MAX_STRING_SIZE;
-            if(nRequest>pca->nelements)
+            if((unsigned long)nRequest>pca->nelements)
                 nRequest = pca->nelements;
             status = aConvert(&dbAddr, pbuffer, nRequest, pca->nelements, 0);
             pca->putnelements = nRequest;
@@ -762,7 +762,7 @@ static long getUnits(const struct link *plink,
 
     pcaGetCheck
     gotAttributes = pca->gotAttributes;
-    if (unitsSize > sizeof(pca->units)) unitsSize = sizeof(pca->units);
+    if ((size_t)unitsSize > sizeof(pca->units)) unitsSize = sizeof(pca->units);
     if (gotAttributes) strncpy(units, pca->units, unitsSize);
     units[unitsSize-1] = 0;
     epicsMutexUnlock(pca->lock);
@@ -948,7 +948,7 @@ static void eventCallback(struct event_handler_args arg)
         goto done;
     }
     assert(arg.dbr);
-    assert(arg.count<=pca->nelements);
+    assert((unsigned long)arg.count<=pca->nelements);
     size = arg.count * dbr_value_size[arg.type];
     if (arg.type == DBR_TIME_STRING &&
         ca_field_type(pca->chid) == DBR_ENUM) {

@@ -389,7 +389,7 @@ static int db_yyinput(char *buf, int max_size)
         my_buffer_ptr = &my_buffer[0];
     }
     l = strlen(my_buffer_ptr);
-    n = (l<=max_size ? l : max_size);
+    n = (l<=(size_t)max_size ? l : (size_t)max_size);
     memcpy(buf,my_buffer_ptr,n);
     my_buffer_ptr += n;
     return (int)n;

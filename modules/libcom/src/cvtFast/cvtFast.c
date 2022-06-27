@@ -371,7 +371,7 @@ size_t
     if (val > 0)
         return UInt32ToDec(val, pdest);
 
-    if (val == -0x80000000) {
+    if (val == (epicsInt32)-0x80000000) {
         strcpy(pdest, "-2147483648");
         return strlen(pdest);
     }
@@ -405,7 +405,7 @@ size_t
     if (val > 0)
         return UInt64ToDec(val, pdest);
 
-    if (val == -0x8000000000000000LL) {
+    if (val == (epicsInt64)-0x8000000000000000LL) {
         strcpy(pdest, "-9223372036854775808");
         return strlen(pdest);
     }
@@ -433,7 +433,7 @@ size_t
     if (val > 0)
         return 2 + UInt32ToBase(val, pdest, 16);
 
-    if (val == -0x80000000) {
+    if (val == (epicsInt32)-0x80000000) {
         strcpy(pdest, "80000000");
         return 11;
     }
@@ -470,7 +470,7 @@ size_t
         return 1 + UInt32ToBase(val, pdest, 8);
     }
 
-    if (val == -0x80000000) {
+    if (val == (epicsInt32)-0x80000000) {
         strcpy(pdest, "-020000000000");
         return strlen(pdest);
     }
@@ -498,7 +498,7 @@ size_t
     if (val > 0)
         return 2 + UInt64ToBase(val, pdest, 16);
 
-    if (val == -0x8000000000000000LL) {
+    if (val == (epicsInt64)-0x8000000000000000LL) {
         strcpy(pdest, "8000000000000000");
         return 19;
     }

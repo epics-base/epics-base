@@ -43,7 +43,7 @@ typedef struct mac_entry {
     char        *type;          /* entry type */
     char        *rawval;        /* raw (unexpanded) value */
     char        *value;         /* expanded macro value */
-    size_t      length;         /* length of value */
+    long        length;         /* length of value */
     int         error;          /* error expanding value? */
     int         visited;        /* ever been visited? */
     int         special;        /* special (internal) entry? */

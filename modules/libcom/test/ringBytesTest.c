@@ -53,7 +53,7 @@ static void check(epicsRingBytesId ring, int expectedFree,
 
 MAIN(ringBytesTest)
 {
-    int i, n;
+    unsigned int i, n;
     info *pinfo;
     epicsEventId consumerEvent;
     char put[RINGSIZE+1];

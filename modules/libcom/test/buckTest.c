@@ -30,7 +30,7 @@ MAIN(buckTest)
     unsigned i;
     epicsTimeStamp start, finish;
     double duration;
-    const int LOOPS = 500000;
+    const unsigned int LOOPS = 500000;
 
     pb = bucketCreate(8);
     if (!pb) {

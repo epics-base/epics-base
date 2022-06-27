@@ -866,7 +866,7 @@ void CA_get_callback(SV *ca_ref, SV *sub, ...) {
     SV *get_sub = newSVsv(sub);
     int status;
     chtype type = best_type(pch);
-    int count = 0;
+    unsigned long count = 0;
     int i = 2;
     const char *croak_msg;
 
@@ -934,7 +934,7 @@ SV * CA_create_subscription(SV *ca_ref, const char *mask_str, SV *sub, ...) {
     SV *mon_ref = newSViv(0);
     SV *mon_obj = newSVrv(mon_ref, "CA::Subscription");
     chtype type = best_type(pch);
-    int count = ca_element_count(pch->chan);
+    unsigned long count = ca_element_count(pch->chan);
     int i = 3;
     int mask = 0;
     evid event;

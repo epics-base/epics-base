@@ -339,7 +339,7 @@ long dbgf(const char *pname)
         return -1;
     }
 
-    no_elements = MIN(addr.no_elements, sizeof(buffer)/addr.field_size);
+    no_elements = MIN((size_t)addr.no_elements, sizeof(buffer)/addr.field_size);
     if (addr.dbr_field_type == DBR_ENUM) {
         long status = dbGetField(&addr, DBR_STRING, pbuffer,
             &options, &no_elements, NULL);
@@ -506,62 +506,62 @@ long dbtgf(const char *pname)
     ret_options=0;
 
     dbr_type = DBR_STRING;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/MAX_STRING_SIZE);
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/MAX_STRING_SIZE);
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_CHAR;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsInt8)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsInt8)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_UCHAR;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsUInt8)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsUInt8)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_SHORT;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsInt16)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsInt16)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_USHORT;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsUInt16)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsUInt16)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_LONG;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsInt32)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsInt32)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_ULONG;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsUInt32)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsUInt32)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_INT64;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsInt64)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsInt64)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_UINT64;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsUInt64)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsUInt64)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_FLOAT;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsFloat32)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsFloat32)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_DOUBLE;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsFloat64)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsFloat64)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_ENUM;
-    no_elements = MIN(addr.no_elements,sizeof(buffer)/(sizeof(epicsEnum16)));
+    no_elements = MIN((size_t)addr.no_elements,sizeof(buffer)/(sizeof(epicsEnum16)));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
@@ -657,7 +657,7 @@ long dbtpf(const char *pname, const char *pvalue)
             }
             else {
                 long options = 0;
-                long no_elements = MIN(addr.no_elements,
+                long no_elements = MIN((size_t)addr.no_elements,
                     ((sizeof(buffer))/addr.field_size));
 
                 printf("Put as DBR_%-6s Ok, result as ", dbr[put_type]);
@@ -852,11 +852,12 @@ static void printBuffer(
     if (reqOptions & DBR_ENUM_STRS) {
         if (retOptions & DBR_ENUM_STRS) {
             struct dbr_enumStrs *pdbr_enumStrs = (void *)pbuffer;
+            epicsUInt32 j;
 
             printf("no_strs = %u:\n",
                 pdbr_enumStrs->no_str);
-            for (i = 0; i < pdbr_enumStrs->no_str; i++)
-                printf("\t\"%s\"\n", pdbr_enumStrs->strs[i]);
+            for (j = 0; j < pdbr_enumStrs->no_str; j++)
+                printf("\t\"%s\"\n", pdbr_enumStrs->strs[j]);
         }
         else {
             printf("enum strings not returned\n");
@@ -1221,7 +1222,7 @@ static int dbpr_report(
                 short i;
                 unsigned int value;
 
-                if (n > sizeof(temp_buf)/3) n = sizeof(temp_buf)/3;
+                if (n > (short)sizeof(temp_buf)/3) n = sizeof(temp_buf)/3;
                 for (i=0; i<n; i++, ptemp_buf += 3, pchar++) {
                         value = (unsigned int)*pchar;
                         sprintf(ptemp_buf, "%02x ", value);

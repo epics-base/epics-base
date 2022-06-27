@@ -733,7 +733,7 @@ void grEnumTest ( chid chan, unsigned interestLevel )
     status = ca_pend_io (timeoutToPendIO);
     verify (status == ECA_NORMAL);
 
-    verify ( ge.no_str >= 0 && ge.no_str < NELEMENTS(ge.strs) );
+    verify ( ge.no_str >= 0 && (unsigned)ge.no_str < NELEMENTS(ge.strs) );
     if ( ge.no_str > 0 ) {
         printf ("Enum state str = {");
         count = (unsigned) ge.no_str;
@@ -2951,7 +2951,7 @@ void testMultithreadSubscrConnHandler ( struct connection_handler_args args )
     epicsMutexMustLock ( pMultiThreadSubscrTest->m_mutex );
     if ( !pMultiThreadSubscrTest->m_testInitiated &&
             args.op == CA_OP_CONN_UP ) {
-        int i;
+        unsigned i;
         pMultiThreadSubscrTest->m_testInitiated = TRUE;
         for ( i = 0; i < pMultiThreadSubscrTest->m_nUpdatesRequired; i++ ) {
             char threadname[64];

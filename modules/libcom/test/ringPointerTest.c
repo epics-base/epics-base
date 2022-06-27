@@ -51,7 +51,7 @@ size_t ptr2int(void *p)
 
 static void testSingle(void)
 {
-    int i;
+    unsigned int i;
     const int rsize = 100;
     void *addr = 0;
     epicsRingPointerId ring = epicsRingPointerCreate(rsize);

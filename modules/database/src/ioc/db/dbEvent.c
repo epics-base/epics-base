@@ -789,6 +789,18 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
 
     LOCKEVQUE (ev_que);
 
+    /* if we have an event on the queue and both the last
+     * event on the queue and the current event reference
+     * a record field, simply ignore duplicate events.
+     */
+    if (pevent->npend > 0u
+            && !dbfl_has_copy(*pevent->pLastLog)
+            && !dbfl_has_copy(pLog)) {
+        db_delete_field_log(pLog);
+        UNLOCKEVQUE (ev_que);
+        return;
+    }
+
     /*
      * add to task local event que
      */

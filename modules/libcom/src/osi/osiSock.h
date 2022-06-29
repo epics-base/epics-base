@@ -267,27 +267,6 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
                                                  osiSockAddr46 *pAddrMulticast);
 #define epicsSocket46addr6toMulticastOK(a,b) epicsSocket46addr6toMulticastOKFL(__FILE__, __LINE__,a,b)
 
-
-/*
- * Support for poll(), which is not available on every system
- * Implement a very minimal wrapper that uses select()
- * We could use the native poll() on e.g. Linux or MacOs
- * and may be windows, WSAPoll
- * For the moment use the same code on all platforms
- */
-
-#ifdef AF_INET6
-#define POLLIN  0x1
-//#define POLLOUT 0x2 not implemented yet
-struct osiSockPollfd {
-    int   fd;
-    short events;
-    short revents;
-};
-
-int osiSockPoll(struct osiSockPollfd fds[], int nfds, int timeout);
-#endif
-
 #ifdef __cplusplus
 }
 #endif

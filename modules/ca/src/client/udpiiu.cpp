@@ -351,19 +351,19 @@ udpiiu::udpiiu (
     unsigned numSocketsToPoll = searchDestList_count;
     if (this->sock4 != INVALID_SOCKET) numSocketsToPoll++;
     if (this->sock6 != INVALID_SOCKET) numSocketsToPoll++;
-    pPollFds = (osiSockPollfd*)callocMustSucceed(numSocketsToPoll,
-                                                 sizeof(struct osiSockPollfd),
-                                                 "udpiiu::udpiiu");
+    pPollFds = (epicsSockPollfd*)callocMustSucceed(numSocketsToPoll,
+                                                   sizeof(struct epicsSockPollfd),
+                                                   "udpiiu::udpiiu");
 
     /* this.socket must be added to the polling list */
     if (this->sock4 != INVALID_SOCKET) {
         pPollFds[numPollFds].fd = this->sock4;
-        pPollFds[numPollFds].events = POLLIN;
+        pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
         numPollFds++;
     }
     if (this->sock6 != INVALID_SOCKET) {
         pPollFds[numPollFds].fd = this->sock6;
-        pPollFds[numPollFds].events = POLLIN;
+        pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
         numPollFds++;
     }
 #endif
@@ -388,7 +388,7 @@ udpiiu::udpiiu (
            */
           socket46 = epicsSocket46Create ( AF_INET6, SOCK_DGRAM, IPPROTO_UDP );
           pPollFds[numPollFds].fd = socket46;
-          pPollFds[numPollFds].events = POLLIN;
+          pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
           numPollFds++;
           epicsSocket46optIPv6MultiCast(socket46, interfaceIndex);
       }
@@ -533,7 +533,7 @@ void udpRecvThread::run ()
 #ifdef AF_INET6
         pollagain:
         if ( this->iiu.pPollFds && this->iiu.numPollFds >= 1 ) {
-            int pollres = osiSockPoll ( this->iiu.pPollFds, this->iiu.numPollFds, -1 );
+            int pollres = epicsSockPoll ( this->iiu.pPollFds, this->iiu.numPollFds, -1 );
             if ( pollres < 0 ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );

@@ -23,6 +23,26 @@
 extern "C" {
 #endif
 
+    /*
+ * Support for poll(), which is not available on every system
+ * Implement a very minimal wrapper that uses select()
+ * We could use the native poll() on e.g. Linux or MacOs
+ * and may be windows, WSAPoll
+ * For the moment use the same code on all platforms
+ */
+
+#ifdef AF_INET6
+#define EPICSSOCK_POLLIN  0x1
+//#define POLLOUT 0x2 not implemented yet
+struct epicsSockPollfd {
+    int   fd;
+    short events;
+    short revents;
+};
+
+int epicsSockPoll(struct epicsSockPollfd fds[], int nfds, int timeout);
+#endif
+
 #ifdef NETDEBUG
 LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
     const char *filename, int lineno,

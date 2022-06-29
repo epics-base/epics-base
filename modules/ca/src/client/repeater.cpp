@@ -556,7 +556,7 @@ void ca_repeater ()
     char * pBuf;
 #ifdef AF_INET6
     SOCKET sock6;
-    struct osiSockPollfd *pPollFds = NULL;
+    struct epicsSockPollfd *pPollFds = NULL;
     unsigned numPollFds = 0;
     unsigned searchDestList_count = 0;
 #endif
@@ -630,16 +630,16 @@ void ca_repeater ()
 
 #ifdef AF_INET6
         searchDestList_count = (unsigned)casBeaconAddrList.count;
-        pPollFds = (osiSockPollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock6 */
-                                              sizeof(struct osiSockPollfd),
-                                              "ca_repeater");
+        pPollFds = (epicsSockPollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock6 */
+                                                       sizeof(struct epicsSockPollfd),
+                                                       "ca_repeater");
 
         /* this.socket must be added to the polling list */
         pPollFds[numPollFds].fd = sock6;
-        pPollFds[numPollFds].events = POLLIN;
+        pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
         numPollFds++;
         pPollFds[numPollFds].fd = sock4;
-        pPollFds[numPollFds].events = POLLIN;
+        pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
         numPollFds++;
 #endif
         osiSockAddrNode *pNode;
@@ -691,7 +691,7 @@ void ca_repeater ()
                  */
                 SOCKET socket46 = epicsSocket46Create ( AF_INET6, SOCK_DGRAM, IPPROTO_UDP );
                 pPollFds[numPollFds].fd = socket46;
-                pPollFds[numPollFds].events = POLLIN;
+                pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
                 numPollFds++;
                 epicsSocket46optIPv6MultiCast(socket46, interfaceIndex);
                 addr46.in6.sin6_port = htons ( port );
@@ -712,7 +712,7 @@ void ca_repeater ()
 #ifdef AF_INET6
         pollagain:
         if ( pPollFds && numPollFds >= 1 ) {
-            int pollres = osiSockPoll ( pPollFds, numPollFds, -1 );
+            int pollres = epicsSockPoll ( pPollFds, numPollFds, -1 );
             if ( pollres < 0 ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );

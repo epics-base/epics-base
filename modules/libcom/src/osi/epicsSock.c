@@ -650,9 +650,12 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
 /*
  * Support for poll(), which is not available on every system
  * Implement a wrapper that uses select()
+ * In principle, this wrapper is not needed under Linux (and other OS)
+ * and poll() can be used directly. Having it here makes sure that
+ * this code is tested and working under all supported platforms
  */
 #ifdef AF_INET6
-int osiSockPoll(struct osiSockPollfd fds[], int nfds, int timeout)
+int epicsSockPoll(struct epicsSockPollfd fds[], int nfds, int timeout)
 {
     fd_set fdset_rd;
     struct timeval tv, *ptv = NULL;
@@ -668,7 +671,7 @@ int osiSockPoll(struct osiSockPollfd fds[], int nfds, int timeout)
             highest_fd = fd;
         }
         fds[i].revents = 0;
-        if (fds[i].events & POLLIN) {
+        if (fds[i].events & EPICSSOCK_POLLIN) {
             FD_SET(fd, &fdset_rd);
         }
     }
@@ -679,7 +682,7 @@ int osiSockPoll(struct osiSockPollfd fds[], int nfds, int timeout)
     }
     ret = select(highest_fd + 1, &fdset_rd, NULL, NULL, ptv);
 #ifdef NETDEBUG
-        epicsBaseDebugLog ( "osiSockPoll nfds=%i timeout=%d ret=%d\n",
+        epicsBaseDebugLog ( "epicsSockPoll nfds=%i timeout=%d ret=%d\n",
                             nfds, timeout, ret);
 #endif
     if (ret <= 0) {
@@ -689,7 +692,7 @@ int osiSockPoll(struct osiSockPollfd fds[], int nfds, int timeout)
     for (i = 0; i < nfds; i++) {
         int fd = fds[i].fd;
         if (FD_ISSET (fd, &fdset_rd)) {
-            fds[i].revents |= POLLIN;
+            fds[i].revents |= EPICSSOCK_POLLIN;
         }
     }
     return ret; /* both poll() and select return the number of "ready fd" */

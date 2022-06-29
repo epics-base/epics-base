@@ -77,12 +77,13 @@ static void req_server (void *pParm)
     while (TRUE) {
         SOCKET clientSock;
         osiSockAddr46       sockAddr46;
+        osiSocklen_t        addLen = sizeof(sockAddr46);
 
         while (castcp_ctl == ctlPause) {
             epicsThreadSleep(0.1);
         }
 
-        clientSock = epicsSocket46Accept ( IOC_sock, &sockAddr46 );
+        clientSock = epicsSocket46Accept ( IOC_sock, &sockAddr46.sa, &addLen );
         if ( clientSock == INVALID_SOCKET ||
              ( !epicsSocket46IsAF_INETorAF_INET6 ( sockAddr46.sa.sa_family ) ) ) {
             char sockErrBuf[64];

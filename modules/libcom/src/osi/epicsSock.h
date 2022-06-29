@@ -32,10 +32,14 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
 #define epicsSocket46Create(a,b,c) epicsSocketCreate(a,b,c)
 #endif
 
+#ifdef NETDEBUG
 LIBCOM_API int epicsStdCall epicsSocket46AcceptFL (
     const char *filename, int lineno,
-    SOCKET sock, osiSockAddr46 *pAddr46 );
-#define epicsSocket46Accept(a,b) epicsSocket46AcceptFL(__FILE__, __LINE__,a,b)
+    SOCKET sock, struct sockaddr *pAddr, osiSocklen_t *pAddrlen);
+#define epicsSocket46Accept(a,b,c) epicsSocket46AcceptFL(__FILE__, __LINE__,a,b,c)
+#else
+#define epicsSocket46Accept(a,b,c) epicsSocketAccept(a,b,c)
+#endif
 
 LIBCOM_API int epicsStdCall sockIPsAreIdentical46(const osiSockAddr46 *pAddr1,
                                                     const osiSockAddr46 *pAddr2);

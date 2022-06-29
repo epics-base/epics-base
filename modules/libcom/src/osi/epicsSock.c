@@ -288,30 +288,29 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvfromFL(const char *filename, int li
 }
 
 
+#ifdef NETDEBUG
 LIBCOM_API int epicsStdCall epicsSocket46AcceptFL(const char *filename, int lineno,
                                                   SOCKET sock,
-                                                  osiSockAddr46 *pAddr46)
+                                                  struct sockaddr *pAddr,
+                                                  osiSocklen_t *pAddrlen)
 {
     int status;
-    osiSocklen_t socklen = sizeof(*pAddr46);
-    status = epicsSocketAccept(sock, &pAddr46->sa, &socklen);
-#ifdef NETDEBUG
+    status = epicsSocketAccept(sock, pAddr, pAddrlen);
     {
         char buf[64];
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
+        sockAddrToDottedIP(pAddr, buf, sizeof(buf));
         epicsBaseDebugLogFL("%s:%d: accept(%d) address='%s' status=%d (%s)\n",
                         filename, lineno,
                         (int)sock, buf,
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }
-#endif
     return status;
 }
-
+#endif
 
 LIBCOM_API int epicsStdCall sockIPsAreIdentical46(const osiSockAddr46 *pAddr1,
                                                   const osiSockAddr46 *pAddr2)

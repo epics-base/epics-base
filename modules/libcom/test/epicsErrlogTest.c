@@ -512,9 +512,10 @@ static void testPrefixLogandCompare( const char* logmessage ) {
 static void acceptNewClient ( void *pParam )
 {
     osiSockAddr46 addr46;
+    osiSocklen_t  addLen = sizeof(addr46);
     int status;
 
-    insock = epicsSocket46Accept ( sock, &addr46 );
+    insock = epicsSocket46Accept ( sock, &addr46.sa, &addLen );
     testOk(insock != INVALID_SOCKET ,
         "Accepted new client");
 

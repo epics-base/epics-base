@@ -398,6 +398,7 @@ static void acceptNewClient ( void *pParam )
     struct ioc_log_server *pserver = (struct ioc_log_server *) pParam;
     struct iocLogClient *pclient;
     osiSockAddr46 addr46;
+    osiSocklen_t  addLen = sizeof(addr46);
     int status;
     osiSockIoctl_t optval;
 
@@ -406,7 +407,7 @@ static void acceptNewClient ( void *pParam )
         return;
     }
 
-    pclient->insock = epicsSocket46Accept ( pserver->sock, &addr46 );
+    pclient->insock = epicsSocket46Accept ( pserver->sock, &addr46.sa, &addLen );
     if ( pclient->insock==INVALID_SOCKET ) {
         static unsigned acceptErrCount;
         static int lastErrno;

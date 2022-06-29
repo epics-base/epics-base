@@ -168,6 +168,19 @@ LIBCOM_API int epicsStdCall epicsSocket46IsAF_INETorAF_INET6(int family);
 LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
                                            char *pBuf, unsigned bufSize);
 
+/*
+ * Set the multicast option for an IPv6 socket
+ */
+LIBCOM_API void epicsSocket46optIPv6MultiCast_FL(const char* filename, int lineno,
+                                                 SOCKET sock,
+                                                 unsigned int interfaceIndex);
+#define epicsSocket46optIPv6MultiCast(a,b) epicsSocket46optIPv6MultiCast_FL(__FILE__, __LINE__,a,b)
+
+LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int lineno,
+                                                 const osiSockAddr46 *pAddrInterface,
+                                                 osiSockAddr46 *pAddrMulticast);
+#define epicsSocket46addr6toMulticastOK(a,b) epicsSocket46addr6toMulticastOKFL(__FILE__, __LINE__,a,b)
+
 #ifdef __cplusplus
 }
 #endif

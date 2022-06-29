@@ -13,6 +13,10 @@
 
 /*
  * Prototypes for the generic wrapper with IPv6 (and debug)
+ * All functions use the name "epicsSocket46", to make clear that
+ * callers are prepared to use IPv6 (or IPv4 of course)
+ * Defining the macro NETDEBUG will enable printouts about socket
+ * creation, send(), recv() ... and allows learning and debugging
  */
 
 #ifdef __cplusplus

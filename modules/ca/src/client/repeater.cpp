@@ -606,7 +606,7 @@ void ca_repeater ()
         addr46.in6.sin6_family = AF_INET6;
         addr46.in6.sin6_addr = in6addr_loopback;
         addr46.in6.sin6_port = htons ( port );
-        (void)epicsSocket46Bind(sock6, &addr46);
+        (void)epicsSocket46Bind(sock6, &addr46.sa, (osiSocklen_t)sizeof(addr46));
     }
 #endif
 
@@ -695,7 +695,7 @@ void ca_repeater ()
                 numPollFds++;
                 epicsSocket46optIPv6MultiCast(socket46, interfaceIndex);
                 addr46.in6.sin6_port = htons ( port );
-                (void)epicsSocket46Bind(socket46, &addr46);
+                (void)epicsSocket46Bind(socket46, &addr46.sa, (osiSocklen_t)sizeof(addr46));
             }
 #endif
         }

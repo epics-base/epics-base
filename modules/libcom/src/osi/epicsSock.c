@@ -85,35 +85,53 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
 
 /*
  * Wrapper around bind()
- * Make sure that the right length is passed into bind()
+ * Make sure that the right length is passed into bind(),
+ * depending on the address family:
+ * AF_INET :      sizeof(struct sockaddr_in)
+ * AF_INET6 :     sizeof(struct sockaddr_in6)
+ * (else) :       0; bind() should fail
  */
 LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno,
                                                 SOCKET sock,
-                                                const osiSockAddr46 *pAddr46)
+                                                struct sockaddr *pAddr,
+                                                osiSocklen_t addrlen)
 {
-    osiSocklen_t socklen = ( osiSocklen_t ) sizeof ( pAddr46->ia ) ;
     int status;
+    osiSocklen_t socklen = 0; /* default: Should error out further down */
+    if (pAddr->sa_family == AF_INET) {
+        if (addrlen >= sizeof(struct sockaddr_in)) {
+            socklen = (osiSocklen_t) sizeof(struct sockaddr_in);
+        }
+    }
 #ifdef AF_INET6
-    if (pAddr46->sa.sa_family == AF_INET6) {
-      socklen = ( osiSocklen_t ) sizeof ( pAddr46->in6 ) ;
+    else if (pAddr->sa_family == AF_INET6) {
+        if (addrlen >= sizeof(struct sockaddr_in6)) {
+            socklen = (osiSocklen_t) sizeof(struct sockaddr_in6);
+        }
     }
 #endif
-    status = bind(sock, &pAddr46->sa, socklen);
-#ifdef NETDEBUG
-    /* if (status < 0) */ {
+    status = bind(sock, pAddr, socklen);
+#ifndef NETDEBUG
+    /*
+     * When NETDEBUG is defined, print always.
+     *  Otherwise print only on failure of bind()
+     *  Note: preserve errno, as the print may change it
+     */
+    if (status < 0)
+#endif
+    {
         char buf[64];
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-        epicsBaseDebugLogFL("%s:%d: bind(%d) address='%s' socklen=%u status=%d: %s\n",
+        sockAddrToDottedIP(pAddr, buf, sizeof(buf));
+        epicsBaseDebugLogFL("%s:%d: bind(%d) address='%s' addrlen=%u socklen=%u status=%d: %s\n",
                         filename, lineno,
                         (int)sock,
-                        buf, (unsigned)socklen,
+                            buf, (unsigned) addrlen, (unsigned)socklen,
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }
-#endif
     return status;
 }
 
@@ -138,7 +156,7 @@ LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, i
         addr46.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         addr46.ia.sin_port = htons ( port );
     }
-    return epicsSocket46BindFL(filename, lineno, sock, &addr46);
+    return epicsSocket46BindFL(filename, lineno, sock, &addr46.sa, sizeof(addr46));
 }
 
 

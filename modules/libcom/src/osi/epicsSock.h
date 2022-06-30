@@ -84,12 +84,13 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
 
 /*
  * Wrapper around bind()
- * Make sure that the right length is passed inti bind()
+ * Make sure that the right length is passed into bind()
  */
 LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno,
                                                 SOCKET sock,
-                                                const osiSockAddr46 *pAddr46);
-#define epicsSocket46Bind(a,b) epicsSocket46BindFL(__FILE__, __LINE__, a,b)
+                                                struct sockaddr *pAddr,
+                                                osiSocklen_t addrlen);
+#define epicsSocket46Bind(a,b,c) epicsSocket46BindFL(__FILE__, __LINE__, a,b,c)
 
 LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char* filename, int lineno,
                                                    SOCKET sock,

@@ -118,7 +118,7 @@ int main ( int argc, char ** argv )
     memset ( (char *) &addr46, 0 , sizeof (addr46) );
     addr46.ia.sin_family = AF_INET;
     /* repeaterRegistrationMessage() needs this bind() */
-    status = epicsSocket46Bind ( sock4, &addr46 );
+    status = epicsSocket46Bind ( sock4, &addr46.sa, (osiSocklen_t)sizeof(&addr46) );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (

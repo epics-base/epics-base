@@ -37,6 +37,9 @@ LIBCOM_API int epicsStrPrintEscaped(FILE *fp, const char *s, size_t n);
 #define epicsStrSnPrintEscaped epicsStrnEscapedFromRaw
 LIBCOM_API size_t epicsStrnLen(const char *s, size_t maxlen);
 
+/* Behaves identically to strncpy except that it always NULL terminates dest */
+LIBCOM_API char* epicsStrnCpy(char* dest, const char* src, size_t destSize);
+
 /** Matches a string against a pattern.
  *
  * Checks if str matches the glob style pattern, which may contain ? or * wildcards.
@@ -80,6 +83,15 @@ LIBCOM_API int dbTranslateEscape(char *s, const char *ct);
 
 #ifdef __cplusplus
 }
+#endif
+
+#if __cplusplus >= 201103L
+
+template<size_t N>
+static inline char* epicsStrnCpy(char(&dest)[N], const char* src) {
+    return epicsStrnCpy(dest, src, N);
+}
+
 #endif
 
 #endif /* INC_epicsString_H */

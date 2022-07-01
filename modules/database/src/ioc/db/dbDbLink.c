@@ -337,6 +337,7 @@ static long dbDbGetUnits(const struct link *plink, char *units, int unitsSize)
         return status;
 
     strncpy(units, buffer.units, unitsSize);
+    units[unitsSize-1] = 0;
     return 0;
 }
 

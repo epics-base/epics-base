@@ -442,3 +442,11 @@ done:
     free(dist1);
     return ret;
 }
+
+/* Identical to strncpy but ensures dest is terminated */
+char* epicsStrnCpy(char* dest, const char* src, size_t destSize)
+{
+    char* ret = strncpy(dest, src, destSize);
+    dest[destSize-1] = 0;
+    return ret;
+}

@@ -212,7 +212,7 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
             return jlif_stop;
 
         strncpy(str, val, len);
-        str[len] = '\0';
+        str[len-1] = '\0';
         clink->type = sc40;
         clink->value.scalar_string = str;
         break;
@@ -229,7 +229,7 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
             return jlif_stop;
 
         strncpy(str, val, len);
-        str[len] = '\0';
+        str[len-1] = '\0';
         vec[clink->nElems] = str;
         clink->value.pstrings = vec;
         break;
@@ -496,7 +496,7 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         else {
             /* Long string conversion */
             strncpy(pbuffer, clink->value.scalar_string, *pnReq);
-            ((char *)pbuffer)[*pnReq] = 0;
+            ((char *)pbuffer)[*pnReq-1] = 0;
             nElems = strlen(pbuffer) + 1;
             status = 0;
         }

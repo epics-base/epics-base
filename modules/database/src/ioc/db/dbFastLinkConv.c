@@ -1351,6 +1351,7 @@ static long cvt_menu_st(
         return(S_db_badChoice);
     }
     strncpy(to,pchoice,MAX_STRING_SIZE);
+    to[MAX_STRING_SIZE-1] = 0;
     return(0);
  }
 
@@ -1376,6 +1377,7 @@ static long cvt_device_st(
         return(S_db_badChoice);
     }
     strncpy(to,pchoice,MAX_STRING_SIZE);
+    to[MAX_STRING_SIZE-1] = 0;
     return(0);
  }
 

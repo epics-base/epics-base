@@ -647,8 +647,10 @@ int dbChannel_get_count(
             no_str = newSt.no_str;
             if (no_str>16) no_str=16;
             pold->no_str = no_str;
-            for (i = 0; i < no_str; i++)
+            for (i = 0; i < no_str; i++) {
                 strncpy(pold->strs[i], newSt.strs[i], sizeof(pold->strs[i]));
+                pold->strs[i][sizeof(pold->strs[i])-1] = '\0';
+            }
             /*now get values*/
             options = 0;
             status = dbChannelGet(chan, DBR_ENUM, &pold->value, &options,

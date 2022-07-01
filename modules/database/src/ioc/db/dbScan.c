@@ -510,8 +510,10 @@ event_list *eventNameToHandle(const char *eventname)
             sprintf(pel->eventname, "%i", (int)eventnumber);
             pevent_list[(int)eventnumber] = pel;
         }
-        else
+        else {
             strncpy(pel->eventname, eventname, namelength);
+            pel->eventname[namelength-1] = '\0';
+        }
         for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
             callbackSetUser(&pel->scan_list[prio], &pel->callback[prio]);
             callbackSetPriority(prio, &pel->callback[prio]);

@@ -881,6 +881,7 @@ static long getMenuString(const dbAddr *paddr,
         return(S_db_badChoice);
     }
     strncpy(pdst, pchoice, MAX_STRING_SIZE);
+    pdst[MAX_STRING_SIZE-1] = 0;
     return 0;
 }
 
@@ -907,6 +908,7 @@ static long getDeviceString(const dbAddr *paddr,
         return(S_db_badChoice);
     }
     strncpy(pdst, pchoice, MAX_STRING_SIZE);
+    pdst[MAX_STRING_SIZE-1] = 0;
     return 0;
 }
 

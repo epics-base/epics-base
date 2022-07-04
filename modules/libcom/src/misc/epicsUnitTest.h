@@ -191,7 +191,6 @@ LIBCOM_API int  testOkV(int pass, const char *fmt, va_list pvar);
 /** \brief Passing test result with printf-style description.
  * \param fmt A printf-style format string describing the test.
  * \param ... Any parameters required for the format string.
- * \return The value of \p pass.
  */
 LIBCOM_API void testPass(const char *fmt, ...)
     EPICS_PRINTF_STYLE(1, 2);

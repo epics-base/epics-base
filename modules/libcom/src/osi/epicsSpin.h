@@ -48,37 +48,37 @@ LIBCOM_API epicsSpinId epicsSpinMustCreate(void);
  *  
  *  Destroys the spin lock
  *
- * \param epicsSpinId  handle to the spin lock
+ * \param lockId identifies the spinlock
  */
-LIBCOM_API void epicsSpinDestroy(epicsSpinId);
+LIBCOM_API void epicsSpinDestroy(epicsSpinId lockId);
 
 /** \brief Acquires the spin lock
  * 
  * Acquires the lock.  Blocks if lock is unavailable 
  *
- * \param epicsSpinId  handle to the spin lock
+ * \param lockId  identifies the spinlock
 */
-LIBCOM_API void epicsSpinLock(epicsSpinId);
+LIBCOM_API void epicsSpinLock(epicsSpinId lockId);
 
 /** \brief Tries to acquire the spin lock    
  *
  * Tries to acquire the lock. If failed, return immediately
  * with non-zero error code.
  *
- * \param epicsSpinId handle to the spin lock
+ * \param lockId identifies the spinlock
  * 
  * \return 0 if lock was acquired.  1 if failed because acquired by another thread.
  * Otherwise returns non-zero OS specific return code if failed for any other reason
  */
-LIBCOM_API int epicsSpinTryLock(epicsSpinId);
+LIBCOM_API int epicsSpinTryLock(epicsSpinId lockId);
 
 /** \brief Releases spin lock
  *
  * Releases spin lock
  * 
- * \param epicsSpinId handle to spin lock
+ * \param lockId identifies the spinlock
  */
-LIBCOM_API void epicsSpinUnlock(epicsSpinId);
+LIBCOM_API void epicsSpinUnlock(epicsSpinId lockId);
 
 #ifdef __cplusplus
 }

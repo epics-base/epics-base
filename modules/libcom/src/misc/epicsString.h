@@ -56,7 +56,7 @@ LIBCOM_API int epicsStrnRawFromEscaped(char *outbuf,      size_t outsize,
  *
  * The following escaped character constants will be used in the output:
  * \verbatim  \a \b \f \n \r \t \v \\ \’ \" \0  \endverbatim
- * All other non-printable characters appear in form \xHH where HH are two hex digits.
+ * All other non-printable characters appear in form `\xHH` where HH are two hex digits.
  * Non-printable characters are determined by the C runtime library’s isprint() function.
  *
  * \param outbuf  buffer to copy string to. The resulting string will be zero-terminated as long as 

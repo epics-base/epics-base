@@ -12,6 +12,13 @@
  * here and just generates unnecessary compiler warnings. */
 #define REENTRINC
 
+/* Clang-12 and later generates many warnings about compound token */
+#ifdef __has_warning
+#  if __has_warning("-Wcompound-token-split-by-macro")
+#    pragma clang diagnostic ignored "-Wcompound-token-split-by-macro"
+#  endif
+#endif
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"

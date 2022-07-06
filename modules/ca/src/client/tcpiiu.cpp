@@ -616,7 +616,7 @@ void tcpRecvThread::connect (
             osiSockAddr46 addr46 = this->iiu.address ();
             status = epicsSocket46Connect ( this->iiu.sock,
                                             epicsSocket46GetDefaultAddressFamily(),
-                                            & addr46 );
+                                            &addr46.sa, sizeof(addr46) );
         }
 
         if ( this->iiu.state != tcpiiu::iiucs_connecting ) {

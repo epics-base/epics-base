@@ -24,12 +24,12 @@
 extern "C" {
 #endif
 
-static void osiSockIPv4toIPv6(const osiSockAddr46 *pAddr46Input,
-                              osiSockAddr46 *pAddr46Output)
+static void epicsSockIPv4toIPv6(const struct sockaddr *pAddrInput,
+                                osiSockAddr46 *pAddr46Output)
 {
 #ifdef AF_INET6
-    if (pAddr46Input->sa.sa_family == AF_INET) {
-        const struct sockaddr_in * paddrInput4 = (const struct sockaddr_in *) pAddr46Input;
+    if (pAddrInput->sa_family == AF_INET) {
+        const struct sockaddr_in * paddrInput4 = (const struct sockaddr_in *) pAddrInput;
         struct sockaddr_in6 *pOut6 = (struct sockaddr_in6 *)pAddr46Output;
 
         unsigned int ipv4addr = htonl ( paddrInput4->sin_addr.s_addr );
@@ -47,7 +47,7 @@ static void osiSockIPv4toIPv6(const osiSockAddr46 *pAddr46Input,
     else
 #endif
     {
-        memcpy(pAddr46Output, pAddr46Input, sizeof(*pAddr46Output));
+        memcpy(pAddr46Output, pAddrInput, sizeof(*pAddr46Output));
     }
 }
 
@@ -167,23 +167,26 @@ LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, i
 LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lineno,
                                                    SOCKET sock,
                                                    int sockets_family,
-                                                   const osiSockAddr46 *pAddr46)
+                                                   const struct sockaddr *pAddr,
+                                                   osiSocklen_t addrlen)
 {
-    osiSockAddr46 addr46Output = *pAddr46; /* struct copying */
+    osiSockAddr46 addr46Output;
     int status;
-    osiSocklen_t socklen = sizeof(addr46Output.ia);
+    memcpy(&addr46Output, pAddr, sizeof(addr46Output));
 #ifdef AF_INET6
     /*  If needed (socket is created with AF_INET6),
         convert an IPv4 address into a IPv4 mapped address */
-    if (sockets_family == AF_INET6 && pAddr46->sa.sa_family == AF_INET) {
-        osiSockIPv4toIPv6(pAddr46, &addr46Output);
+    if (sockets_family == AF_INET6 && pAddr->sa_family == AF_INET) {
+        epicsSockIPv4toIPv6(pAddr, &addr46Output);
     }
     if (addr46Output.sa.sa_family == AF_INET6) {
-        socklen = sizeof(addr46Output.in6);
+        addrlen = sizeof(addr46Output.in6);
     }
 #endif
-
-    status = connect(sock, &addr46Output.sa, socklen);
+    if (addr46Output.sa.sa_family == AF_INET) {
+        addrlen = sizeof(addr46Output.ia);
+    }
+    status = connect(sock, &addr46Output.sa, addrlen);
 
 #ifdef NETDEBUG
     {

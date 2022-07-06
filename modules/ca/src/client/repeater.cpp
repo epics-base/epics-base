@@ -167,7 +167,7 @@ bool repeaterClient::connect ()
     }
 
     status = epicsSocket46Connect ( this->sock, this->from46.sa.sa_family,
-                                    &this->from46 );
+                                    &this->from46.sa, sizeof(this->from46 ));
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (

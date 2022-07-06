@@ -321,7 +321,8 @@ static void logClientConnect (logClient *pClient)
     while ( 1 ) {
         status = epicsSocket46Connect (pClient->sock,
                                        epicsSocket46GetDefaultAddressFamily(),
-                                       &pClient->addr46);
+                                       &pClient->addr46.sa,
+                                       sizeof(pClient->addr46));
         if ( status >= 0 ) {
             break;
         }

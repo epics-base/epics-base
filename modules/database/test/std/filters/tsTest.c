@@ -72,7 +72,10 @@ MAIN(tsTest)
 
     evtctx = db_init_events();
 
-    testOk(!!(plug = dbFindFilter(ts, strlen(ts))), "plugin ts registered correctly");
+    plug = dbFindFilter(ts, strlen(ts));
+    if (!plug)
+        testAbort("plugin '%s' not registered", ts);
+    testPass("plugin '%s' registered correctly", ts);
 
     testOk(!!(pch = dbChannelCreate("x.VAL{ts:{}}")), "dbChannel with plugin ts created");
     testOk((ellCount(&pch->filters) == 1), "channel has one plugin");

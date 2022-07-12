@@ -188,6 +188,10 @@ LIBCOM_API epicsThreadId epicsThreadCreateOpt (
 LIBCOM_API epicsThreadId epicsStdCall epicsThreadCreate (
     const char * name, unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void * parm );
+/** Short-hand for epicsThreadCreateOpt() to create a joinable thread. */
+LIBCOM_API epicsThreadId epicsStdCall epicsThreadCreateJoinable (
+    const char * name, unsigned int priority, unsigned int stackSize,
+    EPICSTHREADFUNC funptr,void * parm );
 /** Short-hand for epicsThreadCreateOpt() to create an un-joinable thread.
  * On error calls cantProceed()
  */

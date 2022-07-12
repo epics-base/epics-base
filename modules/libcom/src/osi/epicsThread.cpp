@@ -43,6 +43,18 @@ epicsThreadId epicsStdCall epicsThreadCreate (
     return epicsThreadCreateOpt(name, funptr, parm, &opts);
 }
 
+epicsThreadId epicsStdCall epicsThreadCreateJoinable (
+    const char * name, unsigned int priority, unsigned int stackSize,
+    EPICSTHREADFUNC funptr,void * parm )
+{
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+    opts.priority = priority;
+    opts.stackSize = stackSize;
+    opts.joinable = 1;
+
+    return epicsThreadCreateOpt(name, funptr, parm, &opts);
+}
+
 epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::run () {}
 void epicsThreadRunable::show ( unsigned int ) const {}

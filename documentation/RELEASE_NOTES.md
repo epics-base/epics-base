@@ -16,6 +16,11 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Perl CA support for empty long strings
+
+The Perl CA bindings have been fixed to handle zero-length long string data
+properly.
+
 ### `aao` gains `OMSL` and `DOL`
 
 The `aao` record types gains the same `DOL` functionality found

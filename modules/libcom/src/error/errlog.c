@@ -525,11 +525,6 @@ static void errlogInitPvt(void *arg)
 {
     struct initArgs *pconfig = (struct initArgs *) arg;
     epicsThreadId tid = NULL;
-    epicsThreadOpts topts = EPICS_THREAD_OPTS_INIT;
-
-    topts.priority = epicsThreadPriorityLow;
-    topts.stackSize = epicsThreadStackSmall;
-    topts.joinable = 1;
 
     /* Use of *Must* alloc functions would recurse on failure since
      * cantProceed() calls us.
@@ -560,7 +555,7 @@ static void errlogInitPvt(void *arg)
             && pvt.log->base
             && pvt.print->base
             ) {
-        tid = epicsThreadCreateOpt("errlog", (EPICSTHREADFUNC)errlogThread, 0, &topts);
+        tid = epicsThreadCreateJoinable("errlog", epicsThreadPriorityLow, epicsThreadStackSmall, (EPICSTHREADFUNC)errlogThread, 0);
     }
     if (tid) {
         pvt.errlogInitFailed = FALSE;

@@ -276,15 +276,12 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
     SOCKET sender;
     struct TInfo rx1, rx2;
     epicsThreadId trx1, trx2;
-    epicsThreadOpts topts = EPICS_THREAD_OPTS_INIT;
     int opt = 1;
     unsigned i;
     osiSockAddr any;
     epicsUInt32 key = 0xdeadbeef ^ ntohl(addr->ia.sin_addr.s_addr);
     union CASearchU buf;
     int ret;
-
-    topts.joinable = 1;
 
     /* we bind to any for lack of a portable way to find the
      * interface address from the interface broadcast address
@@ -332,8 +329,8 @@ void udpSockFanoutTestIface(const osiSockAddr* addr)
         goto cleanup;
     }
 
-    trx1 = epicsThreadCreateOpt("rx1", &udpSockFanoutTestRx, &rx1, &topts);
-    trx2 = epicsThreadCreateOpt("rx2", &udpSockFanoutTestRx, &rx2, &topts);
+    trx1 = epicsThreadCreateJoinable("rx1", epicsThreadPriorityLow, epicsThreadStackMedium, &udpSockFanoutTestRx, &rx1);
+    trx2 = epicsThreadCreateJoinable("rx2", epicsThreadPriorityLow, epicsThreadStackMedium, &udpSockFanoutTestRx, &rx2);
 
     for(i=0; i<nrepeat; i++) {
         /* don't spam */

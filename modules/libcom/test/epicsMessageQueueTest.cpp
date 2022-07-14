@@ -134,12 +134,11 @@ fastReceiver(void *arg)
 
 void sleepySender(double delay)
 {
-    epicsThreadOpts opts = {epicsThreadPriorityMedium, epicsThreadStackMedium, 1};
     epicsThreadId rxThread;
 
     testDiag("sleepySender: sending every %.3f seconds", delay);
     epicsMessageQueue q(4, 20);
-    rxThread = epicsThreadCreateOpt("Fast Receiver", fastReceiver, &q, &opts);
+    rxThread = epicsThreadCreateJoinable("Fast Receiver", epicsThreadPriorityMedium, epicsThreadStackMedium, fastReceiver, &q);
     if (!rxThread)
         testAbort("Task create failed");
 
@@ -183,8 +182,6 @@ fastSender(void *arg)
 
 void sleepyReceiver(double delay)
 {
-    epicsThreadOpts opts = {epicsThreadPriorityMedium,
-        epicsThreadStackMedium, 1};
     epicsThreadId txThread;
 
     testDiag("sleepyReceiver: acquiring every %.3f seconds", delay);
@@ -195,7 +192,8 @@ void sleepyReceiver(double delay)
         q.send((void *)msg1, 4);
     }
 
-    txThread = epicsThreadCreateOpt("Fast Sender", fastSender, &q, &opts);
+    txThread = epicsThreadCreateJoinable("Fast Sender", epicsThreadPriorityMedium,
+                                         epicsThreadStackMedium, fastSender, &q);
     if (!txThread)
         testAbort("Task create failed");
     epicsThreadSleep(0.5);
@@ -246,8 +244,6 @@ extern "C" void messageQueueTest(void *parm)
     epicsThreadId myThreadId = epicsThreadGetIdSelf();
     epicsThreadId rxThread;
     epicsThreadId senderId[NUM_SENDERS];
-    epicsThreadOpts opts = {epicsThreadPriorityMedium,
-        epicsThreadStackMedium, 1};
 
     unsigned int i;
     char cbuf[80];
@@ -357,7 +353,8 @@ extern "C" void messageQueueTest(void *parm)
     testOk1(q1.pending() == 0);
 
     testDiag("Single receiver with invalid size, single sender tests:");
-    rxThread = epicsThreadCreateOpt("Bad Receiver", badReceiver, &q1, &opts);
+    rxThread = epicsThreadCreateJoinable("Bad Receiver", epicsThreadPriorityMedium,
+                                         epicsThreadStackMedium, badReceiver, &q1);
     if (!rxThread)
         testAbort("epicsThreadCreate failed");
     epicsThreadSleep(1.0);
@@ -379,7 +376,8 @@ extern "C" void messageQueueTest(void *parm)
 
     testDiag("Single receiver, single sender tests:");
     epicsThreadSetPriority(myThreadId, epicsThreadPriorityHigh);
-    rxThread = epicsThreadCreateOpt("Receiver one", receiver, &q1, &opts);
+    rxThread = epicsThreadCreateJoinable("Receiver one", epicsThreadPriorityMedium,
+                                         epicsThreadStackMedium, receiver, &q1);
     if (!rxThread)
         testAbort("epicsThreadCreate failed");
     for (pass = 1 ; pass <= 3 ; pass++) {
@@ -422,8 +420,7 @@ extern "C" void messageQueueTest(void *parm)
             epicsThreadPriorityHigh
         };
         sprintf(name, "Sender %d", i+1);
-        opts.priority = pri[i];
-        senderId[i] = epicsThreadCreateOpt(name, sender, &q1, &opts);
+        senderId[i] = epicsThreadCreateJoinable(name, pri[i], epicsThreadStackMedium, sender, &q1);
         if (!senderId[i])
             testAbort("epicsThreadCreate failed");
     }
@@ -444,17 +441,12 @@ extern "C" void messageQueueTest(void *parm)
 
 MAIN(epicsMessageQueueTest)
 {
-    epicsThreadOpts opts = {
-        epicsThreadPriorityMedium,
-        epicsThreadStackMedium,
-        1
-    };
     epicsThreadId testThread;
 
     testPlan(70 + NUM_SENDERS);
 
-    testThread = epicsThreadCreateOpt("messageQueueTest",
-        messageQueueTest, NULL, &opts);
+    testThread = epicsThreadCreateJoinable("messageQueueTest", epicsThreadPriorityMedium,
+                                            epicsThreadStackMedium, messageQueueTest, NULL);
     if (!testThread)
         testAbort("epicsThreadCreate failed");
 

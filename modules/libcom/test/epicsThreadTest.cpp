@@ -195,6 +195,10 @@ void testJoining()
     stuff.opts = &opts2;
     epicsThreadCreateOpt("parent", &joinTests, &stuff, &opts1);
     testOk(finished.wait(10.0), "Join tests #2 completed");
+
+    // Test shorthand function for creating joinable threads
+    epicsThreadCreateJoinable("parent", 40, epicsThreadStackMedium, &joinTests, &stuff);
+    testOk(finished.wait(10.0), "Join tests #3 completed");
 }
 
 } // namespace
@@ -243,7 +247,7 @@ static void testOkToBlock()
 
 MAIN(epicsThreadTest)
 {
-    testPlan(17);
+    testPlan(20);
 
     unsigned int ncpus = epicsThreadGetCPUs();
     testDiag("System has %u CPUs", ncpus);

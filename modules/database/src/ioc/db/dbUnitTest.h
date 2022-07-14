@@ -297,11 +297,8 @@ DBCORE_API void testGlobalUnlock(void);
  * @code
  * epicsEventId evt;
  * void thread1() {
- *     epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
- *     epicsThreadId t2;
- *     opts.joinable = 1;
  *     evt = epicsEventMustCreate(...);
- *     t2 = epicsThreadCreateOpt("thread2", &thread2, NULL, &opts);
+ *     epicsThreadId t2 = epicsThreadCreateJoinable("thread2", epicsThreadPriorityLow, epicsThreadStackMedium, &thread2, NULL);
  *     assert(t2);
  *     epicsEventMustWait(evt);
  *     epicsThreadMustJoin(t2);

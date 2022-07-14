@@ -319,11 +319,6 @@ void dbCaShutdown(void)
 
 static void dbCaLinkInitImpl(int isolate)
 {
-    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
-
-    opts.stackSize = epicsThreadGetStackSize(epicsThreadStackBig);
-    opts.priority = epicsThreadPriorityMedium;
-    opts.joinable = 1;
 
     dbServiceIsolate = isolate;
     dbServiceIOInit();
@@ -337,7 +332,9 @@ static void dbCaLinkInitImpl(int isolate)
         startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     dbCaCtl = ctlPause;
 
-    dbCaWorker = epicsThreadCreateOpt("dbCaLink", dbCaTask, NULL, &opts);
+    dbCaWorker = epicsThreadCreateJoinable("dbCaLink", epicsThreadPriorityMedium,
+                        epicsThreadStackBig, dbCaTask, NULL);
+    
     /* wait for worker to startup and initialize dbCaClientContext */
     epicsEventMustWait(startStopEvent);
 }

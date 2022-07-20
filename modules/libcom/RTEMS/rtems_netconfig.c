@@ -54,10 +54,10 @@ static struct rtems_bsdnet_ifconfig loopback_config = {
  */
 #if defined(__i386__)
 extern int
-rtems_ne2kpci_driver_attach (struct rtems_bsdnet_ifconfig *config, int attach);
+rtems_ne2kpci_driver_attach (struct rtems_bsdnet_ifconfig *config);
 static struct rtems_bsdnet_ifconfig ne2k_driver_config = {
     "ne2",                             /* name */
-    rtems_ne2kpci_driver_attach,       /* attach function */
+    (void*)&rtems_ne2kpci_driver_attach,       /* attach function */
 #if RTEMS_VERSION_INT<VERSION_INT(4,11,0,0)
     &loopback_config,                   /* link to next interface */
 #else

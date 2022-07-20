@@ -16,6 +16,58 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Time Synchronization on VxWorks
+
+VxWorks 6.9 can do its own OS clock time synchronization, if it has been
+configured by setting `SNTPC_PRIMARY_IPV4_ADDR`. Since EPICS 3.15.3 the
+IOC time support code has checked for the existence of the VxWorks time
+synchronization task and avoided starting the EPICS one if the OS task
+exists and the OS clock gives a "recent" time (i.e. after when EPICS was
+compiled), unless the environment variable `EPICS_TS_FORCE_NTPTIME` is
+also set. However a logic error in that code required the environment
+variable to be set in more cases than it should have.
+
+This error has been fixed and the IOC should work normally if the VxWorks
+task is configured and running. The `TIMEZONE` value for the year is also
+now calculated at initialization in this configuration, previously it was
+only done when the IOC synchronzation task was used. Setting the above
+environment variable will now cause the IOC support code to shut down the
+VxWorks synchronization thread (if running) before starting the EPICS one.
+
+Running the iocsh command `ClockTime_Report` now shows whether the VxWorks
+task is running as well as giving the state of the IOC synchronization task.
+The `ClockTime_Init` command can also be used to stop or restart the IOC
+time synchronization task while the IOC is running, depending on the `0` or
+`1` parameter passed to it. This last change also applies to RTEMS IOCs.
+
+### Incompatible change to `struct db_field_log`
+
+This change may cause channel filters which manipulate array updates
+to fail to compile.
+
+To avoid potential speculation issues arising from overlapping code pointers
+with data values, `union dbfl_ref` is modified to remove the `dtor` member.
+`dtor` is moved out into the enclosing `struct db_field_log`.
+
+So eg. using a `db_field_log* p`, the expression `p->u.r.dtor` must be
+changed to `(p)->dtor`.
+
+### Fix undef ts on first camonitor update of NORD from waveformRecord
+
+The order over operations when processing a waveformRecord is adjusted
+so that updates to NORD is posted with the correct timestamp.
+
+### Automatic COMMANDLINE_LIBRARY w/ newer compilers
+
+When built with a compiler supporting `__has_include<>`, the presence
+of the `<readline/readline.h>` will be used to automatically determine
+a default value for `COMMANDLINE_LIBRARY`.
+
+Mingw builds with readline support now link `-ltermcap` instead of `-lcurses`.
+
+This should not effect sites which set explicitly set `COMMANDLINE_LIBRARY`
+as the only definition in Base now has the form `COMMANDLINE_LIBRARY ?= ...`.
+
 ### Perl CA support for empty long strings
 
 The Perl CA bindings have been fixed to handle zero-length long string data

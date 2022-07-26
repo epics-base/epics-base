@@ -162,6 +162,11 @@ long dbPutConvertJSON(const char *json, short dbrType,
     if(INVALID_DB_REQ(dbrType))
         return S_db_badDbrtype;
 
+    if (!jlen) {
+        *pnRequest = 0;
+        return 0;
+    }
+
     parser->depth = 0;
     parser->dbrType = dbrType;
     parser->dbrSize = dbValueSize(dbrType);

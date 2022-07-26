@@ -191,7 +191,7 @@ long dbPutConvertJSON(const char *json, short dbrType,
     case yajl_status_error: {
         unsigned char *err = yajl_get_error(yh, 1,
             (const unsigned char *) json, jlen);
-        fprintf(stderr, "dbConvertJSON: %s\n", err);
+        errlogPrintf("dbConvertJSON: %s\n", err);
         yajl_free_error(yh, err);
         }
         /* fall through */
@@ -247,7 +247,7 @@ long dbLSConvertJSON(const char *json, char *pdest, epicsUInt32 size,
     case yajl_status_error: {
         unsigned char *err = yajl_get_error(yh, 1,
             (const unsigned char *) json, jlen);
-        fprintf(stderr, "dbLoadLS_JSON: %s\n", err);
+        errlogPrintf("dbLoadLS_JSON: %s\n", err);
         yajl_free_error(yh, err);
         }
         /* fall through */

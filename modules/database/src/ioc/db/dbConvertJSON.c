@@ -30,10 +30,12 @@ typedef struct parseContext {
 } parseContext;
 
 static int dbcj_null(void *ctx) {
+    errlogPrintf("dbConvertJSON: Null objects not supported\n");
     return 0;    /* Illegal */
 }
 
 static int dbcj_boolean(void *ctx, int val) {
+    errlogPrintf("dbConvertJSON: Boolean not supported\n");
     return 0;    /* Illegal */
 }
 
@@ -51,6 +53,7 @@ static int dbcj_integer(void *ctx, long long num) {
 }
 
 static int dblsj_integer(void *ctx, long long num) {
+    errlogPrintf("dbLSConvertJSON: Numeric value %lli provided, string expected\n", num);
     return 0;    /* Illegal */
 }
 
@@ -67,6 +70,7 @@ static int dbcj_double(void *ctx, double num) {
 }
 
 static int dblsj_double(void *ctx, double num) {
+    errlogPrintf("dbLSConvertJSON: Numeric value %g provided, string expected\n", num);
     return 0;    /* Illegal */
 }
 
@@ -78,7 +82,8 @@ static int dbcj_string(void *ctx, const unsigned char *val, size_t len) {
      * metadata about the field than we have available at the moment.
      */
     if (parser->dbrType != DBF_STRING) {
-        errlogPrintf("dbConvertJSON: String provided, numeric value(s) expected\n");
+        errlogPrintf("dbConvertJSON: String \"%.*s\" provided, numeric value expected\n",
+            (int)len, val);
         return 0; /* Illegal */
     }
 
@@ -159,8 +164,10 @@ long dbPutConvertJSON(const char *json, short dbrType,
     size_t jlen = strlen(json);
     long status;
 
-    if(INVALID_DB_REQ(dbrType))
+    if (INVALID_DB_REQ(dbrType)) {
+        errlogPrintf("dbConvertJSON: Invalid dbrType %d\n", dbrType);
         return S_db_badDbrtype;
+    }
 
     if (!jlen) {
         *pnRequest = 0;
@@ -175,8 +182,10 @@ long dbPutConvertJSON(const char *json, short dbrType,
 
     yajl_set_default_alloc_funcs(&dbcj_alloc);
     yh = yajl_alloc(&dbcj_callbacks, &dbcj_alloc, parser);
-    if (!yh)
+    if (!yh) {
+        errlogPrintf("dbConvertJSON: out of memory\n");
         return S_db_noMemory;
+    }
 
     ys = yajl_parse(yh, (const unsigned char *) json, jlen);
     if (ys == yajl_status_ok)
@@ -188,15 +197,13 @@ long dbPutConvertJSON(const char *json, short dbrType,
         status = 0;
         break;
 
-    case yajl_status_error: {
-        unsigned char *err = yajl_get_error(yh, 1,
-            (const unsigned char *) json, jlen);
-        errlogPrintf("dbConvertJSON: %s\n", err);
-        yajl_free_error(yh, err);
+    default: {
+            unsigned char *err = yajl_get_error(yh, 1,
+                (const unsigned char *) json, jlen);
+            errlogPrintf("dbConvertJSON: %s", err);
+            yajl_free_error(yh, err);
+            status = S_db_badField;
         }
-        /* fall through */
-    default:
-        status = S_db_badField;
     }
 
     yajl_free(yh);
@@ -233,8 +240,10 @@ long dbLSConvertJSON(const char *json, char *pdest, epicsUInt32 size,
 
     yajl_set_default_alloc_funcs(&dbcj_alloc);
     yh = yajl_alloc(&dblsj_callbacks, &dbcj_alloc, parser);
-    if (!yh)
+    if (!yh) {
+        errlogPrintf("dbLSConvertJSON: out of memory\n");
         return S_db_noMemory;
+    }
 
     ys = yajl_parse(yh, (const unsigned char *) json, jlen);
 
@@ -244,15 +253,13 @@ long dbLSConvertJSON(const char *json, char *pdest, epicsUInt32 size,
         status = 0;
         break;
 
-    case yajl_status_error: {
-        unsigned char *err = yajl_get_error(yh, 1,
-            (const unsigned char *) json, jlen);
-        errlogPrintf("dbLoadLS_JSON: %s\n", err);
-        yajl_free_error(yh, err);
+    default: {
+            unsigned char *err = yajl_get_error(yh, 1,
+                (const unsigned char *) json, jlen);
+            errlogPrintf("dbLSConvertJSON: %s", err);
+            yajl_free_error(yh, err);
+            status = S_db_badField;
         }
-        /* fall through */
-    default:
-        status = S_db_badField;
     }
 
     yajl_free(yh);

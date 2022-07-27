@@ -186,8 +186,8 @@ static long dbConstLoadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
 
     status = dbLSConvertJSON(pstr, pbuffer, size, plen);
     if (status)
-        errlogPrintf("... while parsing link %s.%s %s\n",
-            plink->precord->name, dbLinkFieldName(plink), pstr);
+        errlogPrintf("... while parsing link %s.%s\n",
+            plink->precord->name, dbLinkFieldName(plink));
     return status;
 }
 
@@ -206,8 +206,8 @@ static long dbConstLoadArray(struct link *plink, short dbrType, void *pbuffer,
 
     status = dbPutConvertJSON(pstr, dbrType, pbuffer, pnReq);
     if (status)
-        errlogPrintf("... while parsing link %s.%s %s\n",
-            plink->precord->name, dbLinkFieldName(plink), pstr);
+        errlogPrintf("... while parsing link %s.%s\n",
+            plink->precord->name, dbLinkFieldName(plink));
     return status;
 }
 

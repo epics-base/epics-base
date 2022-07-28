@@ -32,6 +32,8 @@
 
 extern "C" int softIoc_registerRecordDeviceDriver(struct dbBase *pdbbase);
 
+extern "C" const epicsIMF softIoc_imf[];
+
 #ifndef EPICS_BASE
 // so IDEs knows EPICS_BASE is a string constant
 #  define EPICS_BASE "/"
@@ -119,6 +121,14 @@ void lazy_dbd(const std::string& dbd_file) {
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
 }
 
+// fstat() may not be portable
+bool isReadableFile(const char* fname) {
+    FILE *fp = epicsFOpen(fname, "rb");
+    if(fp)
+        (void)fclose(fp);
+    return fp;
+}
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -148,6 +158,18 @@ int main(int argc, char *argv[])
 
             dbd_file = prefix + DBD_FILE_REL;
             exit_file = prefix + EXIT_FILE_REL;
+        }
+
+        if(epicsMemMount(softIoc_imf, EPICS_MEM_MOUNT_VERBOSE)) {
+            fprintf(stderr, "Warning: Unable to mount app:// .  Default to %s\n",
+                    dbd_file.c_str());
+
+        } else {
+            // use compiled in version only if we can't reach the on-disk
+            if(!isReadableFile(dbd_file.c_str()))
+                dbd_file = "app:///softIoc.dbd";
+            if(!isReadableFile(exit_file.c_str()))
+                exit_file = "app:///softIocExit.db";
         }
 
         int opt;

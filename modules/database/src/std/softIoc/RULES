@@ -21,3 +21,5 @@ epicsInstallDir.h: $(TOP)/configure/CONFIG_SITE*
 	$(ECHO) "FINAL_LOCATION=$(FINAL_LOCATION)"
 	$(PERL) $(STDDIR)/softIoc/makeInstallDir.pl "$(FINAL_LOCATION)" > $@
 
+softIoc_emem.c: $(softIoc_emem_FILES) $(TOOLS)/epicsMakeMemFs.pl
+	$(PERL) $(TOOLS)/epicsMakeMemFs.pl -f imf $(EMEM_FLAGS) -T ../softIoc $@ softIoc $(softIoc_emem_FILES)

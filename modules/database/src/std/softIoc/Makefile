@@ -22,7 +22,11 @@ softIoc_DBD += system.dbd
 
 softIoc_SRCS += softIoc_registerRecordDeviceDriver.cpp
 softIoc_SRCS_DEFAULT += softMain.cpp
+softIoc_SRCS_DEFAULT += softIoc_emem.c
 softIoc_SRCS_vxWorks = -nil-
+
+softIoc_emem_FILES += $(COMMON_DIR)/softIoc.dbd
+softIoc_emem_FILES += ../softIoc/softIocExit.db
 
 softIoc_LIBS = $(EPICS_BASE_IOC_LIBS)
 

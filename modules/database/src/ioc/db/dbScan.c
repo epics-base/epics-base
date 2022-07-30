@@ -168,9 +168,13 @@ void scanStop(void)
         epicsEventSignal(ppsl->loopEvent);
         epicsEventWait(startStopEvent);
     }
+    for (i = 0; i < nPeriodic; i++) {
+        epicsThreadMustJoin(periodicTaskId[i]);
+    }
 
     scanOnce((dbCommon *)&exitOnce);
     epicsEventWait(startStopEvent);
+    epicsThreadMustJoin(onceTaskId);
 }
 
 void scanCleanup(void)
@@ -762,7 +766,7 @@ void scanOnceQueueShow(const int reset)
 static void initOnce(void)
 {
     epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
-    opts.joinable = 0;
+    opts.joinable = 1;
     opts.priority = epicsThreadPriorityScanLow + nPeriodic;
     opts.stackSize = epicsThreadStackBig;
     if ((onceQ = epicsRingBytesLockedCreate(sizeof(onceEntry)*onceQueueSize)) == NULL) {
@@ -935,7 +939,7 @@ static void spawnPeriodic(int ind)
     periodic_scan_list *ppsl = papPeriodic[ind];
     char taskName[20];
     epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
-    opts.joinable = 0;
+    opts.joinable = 1;
     opts.priority = epicsThreadPriorityScanLow + ind;
     opts.stackSize = epicsThreadStackBig;
 

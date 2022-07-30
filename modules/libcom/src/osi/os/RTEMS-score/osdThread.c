@@ -371,6 +371,9 @@ void epicsThreadMustJoin(epicsThreadId id)
     rtems_id target_tid = (rtems_id)id, self_tid;
     struct taskVar *v = 0;
 
+    if(!id)
+        return;
+
     rtems_task_ident (RTEMS_SELF, 0, &self_tid);
 
     {

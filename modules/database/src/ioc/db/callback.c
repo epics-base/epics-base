@@ -301,13 +301,16 @@ void callbackInit(void)
             callbackQueue[i].threadsConfigured = callbackThreadsDefault;
 
         for (j = 0; j < callbackQueue[i].threadsConfigured; j++) {
+            epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+            opts.joinable = 0;
+            opts.priority = threadPriority[i];
+            opts.stackSize = epicsThreadStackBig;
             if (callbackQueue[i].threadsConfigured > 1 )
                 sprintf(threadName, "%s-%d", threadNamePrefix[i], j);
             else
                 strcpy(threadName, threadNamePrefix[i]);
-            tid = epicsThreadCreate(threadName, threadPriority[i],
-                epicsThreadGetStackSize(epicsThreadStackBig),
-                (EPICSTHREADFUNC)callbackTask, &priorityValue[i]);
+            tid = epicsThreadCreateOpt(threadName,
+                (EPICSTHREADFUNC)callbackTask, &priorityValue[i], &opts);
             if (tid == 0) {
                 cantProceed("Failed to spawn callback thread %s\n", threadName);
             } else {

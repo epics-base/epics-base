@@ -95,9 +95,9 @@ typedef enum {
 
     initHookAtShutdown,             /**< Start of iocShutdown() (unit tests only) */
     initHookAfterCloseLinks,        /**< Links disabled/deleted */
-    initHookAfterStopScan,          /**< Scan tasks stopped */
+    initHookAfterStopScan,          /**< Scan tasks stopped.  Prior to UNRELEASED, triggered only by unittest code. */
     initHookAfterStopCallback,      /**< Callback tasks stopped */
-    initHookAfterStopLinks,         /**< CA links stopped */
+    initHookAfterStopLinks,         /**< CA links stopped.  Prior to UNRELEASED, triggered only by unittest code. */
     initHookBeforeFree,             /**< Resource cleanup about to happen */
     initHookAfterShutdown,          /**< End of iocShutdown() */
 

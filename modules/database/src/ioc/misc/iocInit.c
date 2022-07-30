@@ -716,13 +716,13 @@ int iocShutdown(void)
     iterateRecords(doCloseLinks, NULL);
     initHookAnnounce(initHookAfterCloseLinks);
 
-    if (iocBuildMode == buildIsolated) {
-        /* stop and "join" threads */
-        scanStop();
-        initHookAnnounce(initHookAfterStopScan);
-        callbackStop();
-        initHookAnnounce(initHookAfterStopCallback);
-    } else {
+    /* stop and "join" threads */
+    scanStop();
+    initHookAnnounce(initHookAfterStopScan);
+    callbackStop();
+    initHookAnnounce(initHookAfterStopCallback);
+
+    if (iocBuildMode != buildIsolated) {
         dbStopServers();
     }
 

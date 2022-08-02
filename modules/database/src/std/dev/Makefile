@@ -48,6 +48,8 @@ dbRecStd_SRCS += devSiSoft.c
 dbRecStd_SRCS += devSoSoft.c
 dbRecStd_SRCS += devWfSoft.c
 
+dbRecStd_SRCS += devSSiSoft.c
+
 dbRecStd_SRCS += devAiSoftCallback.c
 dbRecStd_SRCS += devBiSoftCallback.c
 dbRecStd_SRCS += devI64inSoftCallback.c

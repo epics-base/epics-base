@@ -194,6 +194,8 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
          */
         unsigned short dbfType = dbChannelFieldType(chan);
 
+        if (dbrType==DBR_VFIELD && paddr->vfields) {}
+        else
         if (dbrType < 0 || dbrType > DBR_ENUM || dbfType > DBF_DEVICE)
             return S_db_badDbrtype;
 

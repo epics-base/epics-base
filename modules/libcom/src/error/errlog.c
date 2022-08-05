@@ -71,6 +71,7 @@ typedef struct listenerNode{
 typedef struct {
     char *base;
     int pos;
+    int nchar;
 } buffer_t;
 
 static struct {
@@ -125,9 +126,14 @@ char* msgbufAlloc(void)
 
     errlogInit(0);
     epicsMutexMustLock(pvt.msgQueueLock); /* matched in msgbufCommit() */
-    if(pvt.bufSize - pvt.log->pos >= 1+pvt.maxMsgSize) {
+    if(pvt.bufSize - pvt.log->pos - pvt.log->nchar >= 1+pvt.maxMsgSize) {
         /* there is enough space for the worst cast */
         ret = pvt.log->base + pvt.log->pos;
+        if (pvt.log->nchar) {
+            /* append to last message */
+            return ret + 1 + pvt.log->nchar;
+        }
+        /* new message */
         ret[0] = ERL_STATE_WRITE;
         ret++;
     }
@@ -145,7 +151,7 @@ int msgbufCommit(int nchar, int localEcho)
     int isOkToBlock = epicsThreadIsOkToBlock();
     int wasEmpty = pvt.log->pos==0;
     int atExit = pvt.atExit;
-    char *start = pvt.log->base + pvt.log->pos;
+    char *start = pvt.log->base + pvt.log->pos + pvt.log->nchar;
 
     /* nchar returned by snprintf() is >= maxMsgSize when truncated */
     if(nchar >= pvt.maxMsgSize) {
@@ -164,15 +170,20 @@ int msgbufCommit(int nchar, int localEcho)
          */
         fprintf(pvt.console, "%s", start);
 
-    } else {
-        start[0] = ERL_STATE_READY | (localEcho ? ERL_LOCALECHO : 0);
+    } else if (start[nchar] != '\n') {
+        /* incomplete message, prepare to append */
+        pvt.log->nchar += nchar;
 
-        pvt.log->pos += 1 + nchar + 1;
+    } else {
+        pvt.log->base[pvt.log->pos] = ERL_STATE_READY | (localEcho ? ERL_LOCALECHO : 0);
+
+        pvt.log->pos += 1 + pvt.log->nchar + nchar + 1;
+        pvt.log->nchar = 0;
     }
 
     epicsMutexUnlock(pvt.msgQueueLock); /* matched in msgbufAlloc() */
 
-    if(wasEmpty && !atExit)
+    if(wasEmpty && !atExit && !pvt.log->nchar)
         epicsEventMustTrigger(pvt.waitForWork);
 
     if(localEcho && isOkToBlock && !atExit)

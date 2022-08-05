@@ -70,14 +70,14 @@ typedef struct listenerNode{
 
 typedef struct {
     char *base;
-    size_t pos;
+    int pos;
 } buffer_t;
 
 static struct {
     /* const after errlogInit() */
-    size_t maxMsgSize;
+    int maxMsgSize;
     /* alloc size of both buffer_t::base */
-    size_t bufSize;
+    int bufSize;
     int    errlogInitFailed;
 
     epicsMutexId listenerLock;
@@ -98,8 +98,8 @@ static struct {
 
     /* A loop counter maintained by errlogThread. */
     epicsUInt32 flushSeq;
-    size_t nFlushers;
-    size_t nLost;
+    unsigned long nFlushers;
+    unsigned long nLost;
 
     /* 'log' and 'print' combine to form a double buffer. */
     buffer_t *log;
@@ -140,7 +140,7 @@ char* msgbufAlloc(void)
 }
 
 static
-size_t msgbufCommit(size_t nchar, int localEcho)
+int msgbufCommit(int nchar, int localEcho)
 {
     int isOkToBlock = epicsThreadIsOkToBlock();
     int wasEmpty = pvt.log->pos==0;
@@ -150,13 +150,13 @@ size_t msgbufCommit(size_t nchar, int localEcho)
     /* nchar returned by snprintf() is >= maxMsgSize when truncated */
     if(nchar >= pvt.maxMsgSize) {
         const char *trunc = "<<TRUNCATED>>\n";
-        nchar = pvt.maxMsgSize - 1u;
+        nchar = pvt.maxMsgSize - 1;
 
-        strcpy(start + 1u + nchar - strlen(trunc), trunc);
-        /* assert(strlen(start+1u)==nchar); */
+        strcpy(start + 1 + nchar - strlen(trunc), trunc);
+        /* assert(strlen(start+1)==nchar); */
     }
 
-    start[1u + nchar] = '\0';
+    start[1 + nchar] = '\0';
 
     if(localEcho && isOkToBlock && atExit) {
         /* errlogThread is not running, so we print directly
@@ -165,9 +165,9 @@ size_t msgbufCommit(size_t nchar, int localEcho)
         fprintf(pvt.console, "%s", start);
 
     } else {
-        start[0u] = ERL_STATE_READY | (localEcho ? ERL_LOCALECHO : 0);
+        start[0] = ERL_STATE_READY | (localEcho ? ERL_LOCALECHO : 0);
 
-        pvt.log->pos += 1u + nchar + 1u;
+        pvt.log->pos += 1 + nchar + 1;
     }
 
     epicsMutexUnlock(pvt.msgQueueLock); /* matched in msgbufAlloc() */
@@ -185,7 +185,7 @@ static
 void errlogSequence(void)
 {
     int wakeNext = 0;
-    size_t seq;
+    epicsUInt32 seq;
 
     if (pvt.atExit)
         return;
@@ -203,7 +203,7 @@ void errlogSequence(void)
     }
 
     pvt.nFlushers--;
-    wakeNext = pvt.nFlushers!=0u;
+    wakeNext = pvt.nFlushers!=0;
     epicsMutexUnlock(pvt.msgQueueLock);
 
     if(wakeNext)
@@ -243,7 +243,7 @@ int isATTY(FILE* fp)
 #ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
     if(hand && GetConsoleMode(hand, &mode)) {
         (void)SetConsoleMode(hand, mode|ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-        mode = 0u;
+        mode = 0;
         if(GetConsoleMode(hand, &mode) && (mode&ENABLE_VIRTUAL_TERMINAL_PROCESSING))
             return 1;
     }
@@ -263,7 +263,7 @@ void errlogStripANSI(char *msg);
 
 void errlogStripANSI(char *msg)
 {
-    size_t pos = 0, shift = 0;
+    int pos = 0, shift = 0;
 
     while(1) {
         char c = msg[pos];
@@ -517,8 +517,8 @@ static void errlogExitHandler(void *raw)
 }
 
 struct initArgs {
-    size_t bufsize;
-    size_t maxMsgSize;
+    int bufsize;
+    int maxMsgSize;
 };
 
 static void errlogInitPvt(void *arg)
@@ -616,7 +616,7 @@ static void errlogThread(void)
     while (!pvt.atExit) {
         pvt.flushSeq++;
 
-        if(pvt.log->pos==0u) {
+        if(pvt.log->pos==0) {
             int wakeFlusher = pvt.nFlushers!=0;
             epicsMutexUnlock(pvt.msgQueueLock);
             if(wakeFlusher)
@@ -626,10 +626,10 @@ static void errlogThread(void)
 
         } else {
             /* snapshot and swap buffers for use while unlocked */
-            size_t nLost = pvt.nLost;
+            unsigned long nLost = pvt.nLost;
             FILE *console = pvt.toConsole ? pvt.console : NULL;
             int ttyConsole = pvt.ttyConsole;
-            size_t pos = 0u;
+            int pos = 0;
             buffer_t *print;
 
             {
@@ -638,17 +638,17 @@ static void errlogThread(void)
                 pvt.print = print = temp;
             }
 
-            pvt.nLost = 0u;
+            pvt.nLost = 0;
             epicsMutexUnlock(pvt.msgQueueLock);
 
             while(pos < print->pos) {
                 listenerNode *plistenerNode;
                 char* base = print->base + pos;
-                size_t mlen = epicsStrnLen(base+1u, pvt.bufSize - pos);
+                int mlen = (int)epicsStrnLen(base+1, pvt.bufSize - pos);
                 int stripped = 0;
 
                 if((base[0]&ERL_STATE_MASK) != ERL_STATE_READY || mlen>=pvt.bufSize - pos) {
-                    fprintf(stderr, "Logic Error: errlog buffer corruption. %02x, %zu\n",
+                    fprintf(stderr, "Logic Error: errlog buffer corruption. %02x, %u\n",
                             (unsigned)base[0], mlen);
                     /* try to reset and recover */
                     break;
@@ -656,31 +656,31 @@ static void errlogThread(void)
 
                 if(base[0]&ERL_LOCALECHO && console) {
                     if(!ttyConsole) {
-                        errlogStripANSI(base+1u);
+                        errlogStripANSI(base+1);
                         stripped = 1;
                     }
-                    fprintf(console, "%s", base+1u);
+                    fprintf(console, "%s", base+1);
                 }
 
                 if(!stripped)
-                    errlogStripANSI(base+1u);
+                    errlogStripANSI(base+1);
 
                 epicsMutexMustLock(pvt.listenerLock);
                 plistenerNode = (listenerNode *)ellFirst(&pvt.listenerList);
                 while (plistenerNode) {
-                    (*plistenerNode->listener)(plistenerNode->pPrivate, base+1u);
+                    (*plistenerNode->listener)(plistenerNode->pPrivate, base+1);
                     plistenerNode = (listenerNode *)ellNext(&plistenerNode->node);
                 }
                 epicsMutexUnlock(pvt.listenerLock);
 
-                pos += 1u + mlen+1u;
+                pos += 1 + mlen + 1;
             }
 
             memset(print->base, 0, pvt.bufSize);
-            print->pos = 0u;
+            print->pos = 0;
 
             if(nLost && console)
-                fprintf(console, "errlog: lost %zu messages\n", nLost);
+                fprintf(console, "errlog: lost %lu messages\n", nLost);
 
             if(console)
                 fflush(console);

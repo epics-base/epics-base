@@ -234,22 +234,19 @@ int isATTY(FILE* fp)
 static
 int isATTY(FILE* fp)
 {
+#ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
     HANDLE hand = NULL;
     DWORD mode = 0;
     if(fp==stdout)
         hand = GetStdHandle(STD_OUTPUT_HANDLE);
     else if(fp==stderr)
         hand = GetStdHandle(STD_ERROR_HANDLE);
-#ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
     if(hand && GetConsoleMode(hand, &mode)) {
         (void)SetConsoleMode(hand, mode|ENABLE_VIRTUAL_TERMINAL_PROCESSING);
         mode = 0;
         if(GetConsoleMode(hand, &mode) && (mode&ENABLE_VIRTUAL_TERMINAL_PROCESSING))
             return 1;
     }
-#else
-    (void)hand;
-    (void)mode;
 #endif
     return 0;
 }

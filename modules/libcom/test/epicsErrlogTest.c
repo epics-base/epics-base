@@ -97,14 +97,16 @@ static SOCKET sock;
 static SOCKET insock;
 
 static const char* prefixactualmsg[]= {
-                     "A message without prefix",
-                     "A message with prefix",
-                     "DONE"
+                     "A message without prefix\n with leftovers",
+                     "A message with \na second prefix\n",
+                     "DONE\n"
                      };
 static const char *prefixstring = "fac=LI21 ";
-static const char prefixexpectedmsg[] = "A message without prefix"
-                     "fac=LI21 A message with prefix"
-                     "fac=LI21 DONE"
+static const char prefixexpectedmsg[] = "A message without prefix\n"
+                     " with leftovers"
+                     "fac=LI21 A message with \n"
+                     "fac=LI21 a second prefix\n"
+                     "fac=LI21 DONE\n"
                      ;
 static char prefixmsgbuffer[1024];
 

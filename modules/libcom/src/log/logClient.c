@@ -53,6 +53,7 @@ typedef struct {
     unsigned            connected;
     unsigned            shutdown;
     unsigned            shutdownConfirm;
+    unsigned            atEoL;
     int                 connFailStatus;
 } logClient;
 
@@ -167,10 +168,7 @@ static void logClientDestroy (logClientId id)
 /*
  * This method requires the pClient->mutex be owned already.
  */
-static void sendMessageChunk(logClient * pClient, const char * message) {
-    unsigned strSize;
-
-    strSize = strlen ( message );
+static void sendMessageChunk(logClient * pClient, const char * message, unsigned strSize) {
     while ( strSize ) {
         unsigned msgBufBytesLeft =
             sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
@@ -201,6 +199,8 @@ static void sendMessageChunk(logClient * pClient, const char * message) {
 void epicsStdCall logClientSend ( logClientId id, const char * message )
 {
     logClient * pClient = ( logClient * ) id;
+    const char* const prefix = logClientPrefix;
+    const size_t plen = prefix ? strlen(prefix) : 0u;
 
     if ( ! pClient || ! message ) {
         return;
@@ -208,10 +208,32 @@ void epicsStdCall logClientSend ( logClientId id, const char * message )
 
     epicsMutexMustLock ( pClient->mutex );
 
-    if (logClientPrefix) {
-        sendMessageChunk(pClient, logClientPrefix);
+    while(*message) {
+        const char* line = message;
+        char c;
+
+        if(pClient->atEoL && prefix) {
+            sendMessageChunk(pClient, prefix, plen);
+        }
+
+        // find EoL
+        for(c = *message; c!='\0' && c!='\n' && c!='\r'; c = *++message) {}
+        // message points to first char in set "\0\n\r"
+        if(c!='\0') { // found EoL
+            // find first char after EoL
+            for(; c=='\n' || c=='\r'; c = *++message) {}
+            pClient->atEoL = 1;
+
+        } else {
+            // Found EoS w/o EoL.
+            // set atEoL anyway when no prefix, to correctly handle
+            // first line if prefix later set.
+            pClient->atEoL = !prefix;
+        }
+        // message points to char not in set "\n\r"
+
+        sendMessageChunk(pClient, line, message-line);
     }
-    sendMessageChunk(pClient, message);
 
     epicsMutexUnlock (pClient->mutex);
 }
@@ -477,6 +499,7 @@ logClientId epicsStdCall logClientCreate (
     pClient->connFailStatus = 0;
     pClient->shutdown = 0;
     pClient->shutdownConfirm = 0;
+    pClient->atEoL = 1;
 
     epicsAtExit (logClientDestroy, (void*) pClient);
 

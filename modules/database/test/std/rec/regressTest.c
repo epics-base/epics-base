@@ -76,11 +76,29 @@ void testArrayLength1(void)
 
 /*
  * https://bugs.launchpad.net/epics-base/+bug/1699445 and 1887981
+ *
+ * also https://github.com/epics-base/epics-base/issues/284
  */
 static
 void testHexConstantLinks(void)
 {
     startRegressTestIoc("regressHex.db");
+
+    testdbGetFieldEqual("ai1", DBR_LONG, 0x10);
+    testdbGetFieldEqual("li1", DBR_LONG, 0x10);
+    testdbGetFieldEqual("mi1", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.A", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.B", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.C", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.D", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.E", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.F", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.G", DBR_LONG, 0x10);
+    testdbGetFieldEqual("as1.H", DBR_LONG, 0x10);
+
+    testdbPutFieldOk("ai1.PROC", DBR_LONG, 1);
+    testdbPutFieldOk("li1.PROC", DBR_LONG, 1);
+    testdbPutFieldOk("as1.PROC", DBR_LONG, 1);
 
     testdbGetFieldEqual("ai1", DBR_LONG, 0x10);
     testdbGetFieldEqual("li1", DBR_LONG, 0x10);
@@ -210,7 +228,7 @@ void testLinkSevr(void)
 
 MAIN(regressTest)
 {
-    testPlan(54);
+    testPlan(68);
     testArrayLength1();
     testHexConstantLinks();
     testLinkMS();

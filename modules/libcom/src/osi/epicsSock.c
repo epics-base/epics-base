@@ -195,13 +195,13 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
+        sockAddrToDottedIP(pAddr, bufIn, sizeof(bufIn));
         sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
         epicsBaseDebugLogFL("%s:%d: connect(%d) address='%s' (%s) status=%d %s\n",
                         filename, lineno,
                         (int)sock,
                         bufIn,
-                        pAddr46->sa.sa_family != addr46Output.sa.sa_family ? bufOut : "",
+                        pAddr->sa_family != addr46Output.sa.sa_family ? bufOut : "",
                         status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }

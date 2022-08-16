@@ -731,8 +731,9 @@ void ca_repeater ()
             }
         }
 #endif
+        osiSocklen_t addrSize = sizeof ( from46 );
         size = epicsSocket46Recvfrom ( sock, pBuf, MAX_UDP_RECV, 0,
-                                       &from46 );
+                                       &from46.sa, &addrSize );
         if ( size < 0 ) {
             int errnoCpy = SOCKERRNO;
             // Avoid spurious ECONNREFUSED bug in linux

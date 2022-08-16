@@ -205,7 +205,7 @@ void cas_send_dg_msg ( struct client * pclient )
     }
 
     status = epicsSocket46Sendto ( pclient->sock, pDG, sizeDG, 0,
-                                   &pclient->addr46 );
+                                   &pclient->addr46.sa, sizeof(pclient->addr46) );
     if ( status >= 0 ) {
         if ( status >= sizeDG ) {
             epicsTimeGetCurrent ( &pclient->time_at_last_send );

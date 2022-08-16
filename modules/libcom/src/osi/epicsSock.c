@@ -254,16 +254,24 @@ LIBCOM_API int epicsStdCall epicsSocket46SendFL(const char *filename, int lineno
 LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int lineno,
                                                   SOCKET sock,
                                                   const void* buf, size_t len, int flags,
-                                                  const osiSockAddr46 *pAddr46)
+                                                  const struct sockaddr *pAddr,
+                                                  osiSocklen_t addrlen)
 {
-    osiSocklen_t socklen = ( osiSocklen_t ) sizeof ( pAddr46->ia ) ;
+    osiSocklen_t socklen = 0; /* default: Should error out further down */
     int status;
+    if (pAddr->sa_family == AF_INET) {
+        if (addrlen >= sizeof(struct sockaddr_in)) {
+            socklen = (osiSocklen_t) sizeof(struct sockaddr_in);
+        }
+    }
 #ifdef AF_INET6
-    if (pAddr46->sa.sa_family == AF_INET6) {
-      socklen = ( osiSocklen_t ) sizeof ( pAddr46->in6 ) ;
+    else if (pAddr->sa_family == AF_INET6) {
+        if (addrlen >= sizeof(struct sockaddr_in6)) {
+            socklen = (osiSocklen_t) sizeof(struct sockaddr_in6);
+        }
     }
 #endif
-    status = sendto(sock, buf, len, flags, &pAddr46->sa, socklen ) ;
+    status = sendto(sock, buf, len, flags, pAddr, socklen ) ;
 
 #ifdef NETDEBUG
     {
@@ -271,7 +279,7 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        sockAddrToDottedIP(&pAddr46->sa, bufIn, sizeof(bufIn));
+        sockAddrToDottedIP(pAddr, bufIn, sizeof(bufIn));
         epicsBaseDebugLogFL("%s:%d: sendto(%d) address='%s' len=%u status=%d %s\n",
                         filename, lineno,
                         (int)sock, bufIn, (unsigned)len,

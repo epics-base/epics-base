@@ -137,9 +137,10 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char* filename, int line
                                                   SOCKET sock,
                                                   const void* buf, size_t len,
                                                   int flags,
-                                                  const osiSockAddr46 *pAddr46);
+                                                  const struct sockaddr *pAddr,
+                                                  osiSocklen_t addrlen);
 
-#define epicsSocket46Sendto(a,b,c,d,e)  epicsSocket46SendtoFL(__FILE__, __LINE__, a,b,c,d,e)
+#define epicsSocket46Sendto(a,b,c,d,e,f)  epicsSocket46SendtoFL(__FILE__, __LINE__, a,b,c,d,e,f)
 
 /*
  * Wrapper around recvfrom()

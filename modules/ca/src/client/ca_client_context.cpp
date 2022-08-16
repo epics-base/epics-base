@@ -642,7 +642,7 @@ void ca_client_context :: _sendWakeupMsg ()
     addr46.ia.sin_port = htons ( this->localPort );
 #endif
     epicsSocket46Sendto ( this->sock46, & buf, sizeof ( buf ),
-                            0, & addr46 );
+                          0, & addr46.sa, sizeof(addr46));
 }
 
 void ca_client_context::callbackProcessingCompleteNotify ()

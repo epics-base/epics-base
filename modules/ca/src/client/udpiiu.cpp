@@ -699,7 +699,7 @@ void epicsStdCall caRepeaterRegistrationMessage4 (
      }
 #endif
     status = epicsSocket46Sendto ( sock4, (char *) &msg, len, 0,
-                                   &saddr46);
+                                   &saddr46.sa, sizeof ( saddr46 ) );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
         /*
@@ -765,7 +765,7 @@ void epicsStdCall caRepeaterRegistrationMessageIPv6 (
                            ntohs ( tmpAddr.in6.sin6_port ) );
      }
 #endif
-    status = epicsSocket46Sendto ( sock6, (char *) &msg, len, 0, &addr46 );
+    status = epicsSocket46Sendto ( sock6, (char *) &msg, len, 0, &addr46.sa, sizeof(addr46) );
     if ( status < 0 ) {
         int errnoCpy = SOCKERRNO;
         /*
@@ -1276,7 +1276,7 @@ void udpiiu :: SearchDestUDP :: searchRequest (
     while ( true ) {
         // This const_cast is needed for vxWorks:
         int status = epicsSocket46Sendto ( _sock46, const_cast<char *>(pBuf), bufSizeAsInt, 0,
-                                           & _destAddr );
+                                           & _destAddr.sa, sizeof(_destAddr) );
         if ( status == bufSizeAsInt ) {
             if ( _lastError ) {
                 char buf[64];
@@ -1496,7 +1496,7 @@ bool udpiiu::wakeupMsg ()
 
     // send a wakeup msg so the UDP recv thread will exit
     int status = epicsSocket46Sendto ( this->sock4, reinterpret_cast < char * > ( &msg ),
-                                       sizeof (msg), 0, &addr46 );
+                                       sizeof (msg), 0, &addr46.sa, sizeof(addr46) );
     return status == sizeof (msg);
 }
 

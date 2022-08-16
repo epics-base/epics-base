@@ -94,7 +94,7 @@ void rsrv_online_notify_task(void *pParm)
         {
             osiSockAddrNode *pAddr = CONTAINER(cur, osiSockAddrNode, node);
             status = epicsSocket46Sendto (pSockets[i], (char *)&msg, sizeof(msg), 0,
-                                          &pAddr->addr );
+                                          &pAddr->addr.sa, sizeof(pAddr->addr) );
             if (status < 0) {
                 int err = SOCKERRNO;
                 if(err != lastError[i]) {

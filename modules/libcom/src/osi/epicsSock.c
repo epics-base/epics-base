@@ -93,7 +93,7 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
  */
 LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno,
                                                 SOCKET sock,
-                                                struct sockaddr *pAddr,
+                                                const struct sockaddr *pAddr,
                                                 osiSocklen_t addrlen)
 {
     int status;

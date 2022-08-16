@@ -88,7 +88,7 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
  */
 LIBCOM_API int epicsStdCall epicsSocket46BindFL(const char* filename, int lineno,
                                                 SOCKET sock,
-                                                struct sockaddr *pAddr,
+                                                const struct sockaddr *pAddr,
                                                 osiSocklen_t addrlen);
 #define epicsSocket46Bind(a,b,c) epicsSocket46BindFL(__FILE__, __LINE__, a,b,c)
 

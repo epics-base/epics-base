@@ -16,6 +16,16 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Enhancements to `capr.pl`
+
+The `capr.pl` script can now display records from older Base versions to
+which fields have since been added, and shows long strings and array data
+up to 10 elements, use the new `-n` option to increase that number.
+The script is fully event-driven and prints all the field data received by
+the end of the CA wait time (`-w` option which defaults to 2 seconds).
+The interest level can now be specified using the `-l` option before the
+PV name, and the new `-D` flag outputs debugging information.
+
 ### Time Synchronization on VxWorks
 
 VxWorks 6.9 can do its own OS clock time synchronization, if it has been

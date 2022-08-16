@@ -22,10 +22,9 @@ Status and to do of EPICS base:
      For IOCs and clients using IPv4, IPv6 or both see ipv6-howto.txt
 
 - pvAccess:
-   Nothing done yet.
-   Probably we can steal/reuse code from channel access.
-   However, I would like to see channel access more tested before starting
-   with pvAccess
+   It looks as if pvxs will replace pvAccess
+   https://github.com/mdavidsaver/pvxs
+
 - Other modules:
   pcas:
     Work ongoing. Added patches so that pcas be compiled against latest base
@@ -40,7 +39,7 @@ Status and to do of EPICS base:
   First tests look good ("PYEPICS_LIBCA" is your friend)
 
 - pvapy: to be done
-- JCA: to be done
+- JCA: needed ? CSS/phoebus is working on IPv6
 - EPICS gateways: to be done
 -  asyn:
   Prototype working.
@@ -51,3 +50,58 @@ Other todo (unorderedd)
 - Clean up the debug printing
 - More code review
 - write automated tests
+
+
+====================
+Socket usage IPv4/IPv6
+Trying to sumarize which sockets are used in EPICS base
+(Just to be clear: socket here means either a TCP or UDP socket)
+
+IOC (server):
+ca_client_context.cpp:90 epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM
+                         _sendWakeupMsg() needs a socket, any port number.
+                         TODO: check if this could be IPv4 ?
+
+caservertask.c:334       AF_INET DGRAM
+                         socket for sending server beacons (IPv4)
+                         Also used for NIC introspection
+
+caservertask.c:538       AF_INET6 DGRAM
+                         beacons for IPv6. One socket for each interface
+
+caservertask.c:200       epicsSocket46GetDefaultAddressFamily STREAM
+                         Listening socket for rsrv.
+                         Typically [::]:5064 for IPv6 capable IOCs
+                         Otherwise 0.0.0.0:5064 for IPv4 only IOCs
+                         Additionally/as an alternative:
+                         one for each interface in EPICS_CAS_INTF_ADDR_LIST
+
+caservertask.c:732       AF_INET6 DGRAM
+                         Channel access via UDP (search requests?)
+                         Typically [::]:5064 for IPv6 capable IOCs
+
+
+caRepeater:
+repeater.cpp:574          (AF_INET DGRAM) 0.0.0.0:5065
+repeater.cpp:595          (AF_INET6 DGRAM) [::1]:5065
+
+caget:
+ca_client_context.cpp:90  (AF_INET6 DGRAM) '[::]:0
+                          (Same wakeupmsg as server)
+udpiiu.cpp:177            (AF_INET DGRAM)  this->sock4:
+                           search requests via IPv4 0.0.0.0:0
+                           send wakeup msg
+                           repeater registrations ?
+udpiiu.cpp:248            (AF_INET6 DGRAM) this->sock6: [::1]:0
+                          repeater registrations via IPv6
+udpiiu.cpp:389            (AF_INET6 DGRAM) search requests via IPv6
+                          One socket for each IPv6 interface,
+                          e.g. '[ff02::1%en0]:5064'
+udpiiu.cpp:827            (AF_INET6 DGRAM) check if the repeater is running
+                          '[::]:5065'
+
+tcpiiu.cpp:722             (AF_INET6 STREAM)
+                           Will be used to connect() after a search response
+                           Note: Since the socket is created early (and with
+                           AF_INET6) epicsSocket46Connect() is used, which
+                           can translate IPv4 into "mapped IPv6"

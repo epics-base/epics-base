@@ -146,7 +146,6 @@ void osdNTPReport(void)
 
 void osdClockReport(int level)
 {
-    const char * ntpTask;
     int tid = taskNameToId(sntp_sync_task);
 
     printf("VxWorks clock sync task '%s' is %s\n", sntp_sync_task,

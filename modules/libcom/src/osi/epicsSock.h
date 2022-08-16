@@ -150,9 +150,10 @@ LIBCOM_API int epicsStdCall epicsSocket46RecvfromFL(const char* filename, int li
                                                     SOCKET sock,
                                                     void* buf, size_t len,
                                                     int flags,
-                                                    osiSockAddr46 *pAddr46);
+                                                    struct sockaddr *pAddr,
+                                                    osiSocklen_t *pAddrlen);
 
-#define epicsSocket46Recvfrom(a,b,c,d,e)  epicsSocket46RecvfromFL(__FILE__, __LINE__, a,b,c,d,e)
+#define epicsSocket46Recvfrom(a,b,c,d,e,f)  epicsSocket46RecvfromFL(__FILE__, __LINE__, a,b,c,d,e,f)
 
 /*
  * AF_INET or AF_INET6

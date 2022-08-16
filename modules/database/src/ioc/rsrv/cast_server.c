@@ -223,12 +223,13 @@ void cast_server(void *pParm)
     epicsEventSignal(casudp_startStopEvent);
 
     while (TRUE) {
+        osiSocklen_t addrSize = ( osiSocklen_t ) sizeof ( new_recv_addr46 );
         status = epicsSocket46Recvfrom (
             recv_sock,
             client->recv.buf,
             client->recv.maxstk,
             0,
-            &new_recv_addr46);
+            &new_recv_addr46.sa, &addrSize);
         if (status < 0) {
             if (SOCKERRNO != SOCK_EINTR) {
                 char sockErrBuf[64];

@@ -143,10 +143,12 @@ int main ( int argc, char ** argv )
 
     unsigned attemptNumber = 0u;
     while ( true ) {
+        osiSocklen_t addrSize;
         caRepeaterRegistrationMessage4 ( sock4, repeaterPort, attemptNumber );
         epicsThreadSleep ( 0.1 );
+        addrSize = ( osiSocklen_t ) sizeof ( addr46 );
         status = epicsSocket46Recvfrom ( sock4, buf, sizeof ( buf ), 0,
-                                         &addr46);
+                                         &addr46.sa, &addrSize);
         if ( status >= static_cast <int> ( sizeof ( *pCurMsg ) ) ) {
             pCurMsg = reinterpret_cast < caHdr * > ( buf );
             epicsUInt16 cmmd = AlignedWireRef < const epicsUInt16 > ( pCurMsg->m_cmmd );
@@ -177,9 +179,9 @@ int main ( int argc, char ** argv )
 
     resTable < bhe, inetAddrID > beaconTable;
     while ( true ) {
-
+        osiSocklen_t addrSize = ( osiSocklen_t ) sizeof ( addr46 );
         status = epicsSocket46Recvfrom ( sock4, buf, sizeof ( buf ), 0,
-                                         &addr46 );
+                                         &addr46.sa, &addrSize  );
         if ( status <= 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (

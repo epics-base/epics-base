@@ -294,18 +294,18 @@ LIBCOM_API int epicsStdCall epicsSocket46SendtoFL(const char *filename, int line
 LIBCOM_API int epicsStdCall epicsSocket46RecvfromFL(const char *filename, int lineno,
                                                     SOCKET sock,
                                                     void* buf, size_t len, int flags,
-                                                    osiSockAddr46 *pAddr46)
+                                                    struct sockaddr *pAddr,
+                                                    osiSocklen_t *pAddrlen)
 {
     int status;
-    osiSocklen_t socklen = sizeof(*pAddr46);
-    status = recvfrom(sock, buf, len, flags, &pAddr46->sa, &socklen);
+    status = recvfrom(sock, buf, len, flags, pAddr, pAddrlen);
 #ifdef NETDEBUG
     {
         char bufDotted[64];
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-        sockAddrToDottedIP(&pAddr46->sa, bufDotted, sizeof(bufDotted));
+        sockAddrToDottedIP(pAddr, bufDotted, sizeof(bufDotted));
         epicsBaseDebugLogFL("%s:%d: recvfrom(%d) buflen=%u address='%s' status=%d %s\n",
                         filename, lineno,
                         (int)sock, (unsigned)len, bufDotted,

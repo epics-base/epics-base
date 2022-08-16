@@ -558,9 +558,10 @@ void udpRecvThread::run ()
 #endif
 
         osiSockAddr46 src;
+        osiSocklen_t addrSize = ( osiSocklen_t ) sizeof ( src );
         int status = epicsSocket46Recvfrom ( sock,
             this->iiu.recvBuf, sizeof ( this->iiu.recvBuf ), 0,
-            & src);
+            & src.sa, &addrSize);
 
         if ( status <= 0 ) {
 

@@ -556,11 +556,13 @@ int ca_client_context::pendEvent ( const double & timeout )
             // remove short udp message sent to wake
             // up a file descriptor manager
             osiSockAddr46 tmpAddr46;
+            osiSocklen_t addrSize = sizeof ( tmpAddr46 );
+
             char buf = 0;
             int status = 0;
             do {
                 status = epicsSocket46Recvfrom ( this->sock46, & buf, sizeof ( buf ),
-                                                 0, & tmpAddr46 );
+                                                 0, & tmpAddr46.sa, & addrSize );
             } while ( status > 0 );
         }
         while ( this->callbackThreadsPending > 0 ) {

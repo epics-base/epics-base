@@ -21,6 +21,9 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include <vector>
+#include <exception>
+
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
@@ -28,45 +31,13 @@
 
 #include "envDefs.h"
 #include "epicsAssert.h"
+#include "epicsString.h"
 #include "epicsStdioRedirect.h"
 #include "errlog.h"
 #include "osiWireFormat.h"
 
 #include "addrList.h"
 #include "iocinf.h"
-
-/*
- * getToken()
- */
-static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
-{
-    bool tokenFound = false;
-    const char *pToken;
-    unsigned i;
-
-    pToken = *ppString;
-    while ( isspace (*pToken) && *pToken ){
-        pToken++;
-    }
-
-    for ( i=0u; i<bufSIze; i++ ) {
-        if ( isspace (pToken[i]) || pToken[i]=='\0' ) {
-            pBuf[i] = '\0';
-            *ppString = &pToken[i];
-            if ( i != 0 ) {
-                tokenFound = true;
-            }
-            break;
-        }
-        pBuf[i] = pToken[i];
-    }
-
-    if ( tokenFound ) {
-        pBuf[bufSIze-1] = '\0';
-        return pBuf;
-    }
-    return NULL;
-}
 
 /*
  * addAddrToChannelAccessAddressList ()
@@ -77,9 +48,7 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
 {
     osiSockAddrNode *pNewNode;
     const char *pStr;
-    const char *pToken;
     struct sockaddr_in addr;
-    char buf[256u]; /* large enough to hold an IP address or hostname */
     int status, ret = -1;
 
     pStr = envGetConfigParamPtr (pEnv);
@@ -87,31 +56,45 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
         return ret;
     }
 
-    while ( ( pToken = getToken (&pStr, buf, sizeof (buf) ) ) ) {
-        status = aToIPAddr ( pToken, port, &addr );
-        if (status<0) {
-            fprintf ( stderr, "%s: Parsing '%s'\n", __FILE__, pEnv->name);
-            fprintf ( stderr, "\tBad internet address or host name: '%s'\n", pToken);
-            continue;
+    try {
+        std::vector<char> scratch(pStr, pStr+strlen(pStr)+1); // copy chars and trailing nil
+
+        char *save = NULL;
+        for(const char *pToken = epicsStrtok_r(&scratch[0], " \t\n\r", &save);
+            pToken;
+            pToken = epicsStrtok_r(NULL, " \t\n\r", &save))
+        {
+            if(!pToken[0]) {
+                continue;
+            }
+
+            status = aToIPAddr ( pToken, port, &addr );
+            if (status<0) {
+                fprintf ( stderr, "%s: Parsing '%s'\n", __FILE__, pEnv->name);
+                fprintf ( stderr, "\tBad internet address or host name: '%s'\n", pToken);
+                continue;
+            }
+
+            if ( ignoreNonDefaultPort && ntohs ( addr.sin_port ) != port ) {
+                continue;
+            }
+
+            pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
+            if (pNewNode==NULL) {
+                fprintf ( stderr, "addAddrToChannelAccessAddressList(): no memory available for configuration\n");
+                break;
+            }
+
+            pNewNode->addr.ia = addr;
+
+            /*
+             * LOCK applied externally
+             */
+            ellAdd (pList, &pNewNode->node);
+            ret = 0; /* success if anything is added to the list */
         }
-
-        if ( ignoreNonDefaultPort && ntohs ( addr.sin_port ) != port ) {
-            continue;
-        }
-
-        pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
-        if (pNewNode==NULL) {
-            fprintf ( stderr, "addAddrToChannelAccessAddressList(): no memory available for configuration\n");
-            break;
-        }
-
-        pNewNode->addr.ia = addr;
-
-        /*
-         * LOCK applied externally
-         */
-        ellAdd (pList, &pNewNode->node);
-        ret = 0; /* success if anything is added to the list */
+    } catch(std::exception&) { // only bad_alloc currently possible
+        ret = -1;
     }
 
     return ret;

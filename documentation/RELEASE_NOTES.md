@@ -6,6 +6,12 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
+### Set thread names on Windows
+
+On MS Windows, epicsThread names are made available to the OS and debugger
+using `SetThreadDescription()` if available as well as using the older
+exception mechanism.
+
 ### Fix timers on MS Windows for non-EPICS threads
 
 The waitable timer changes in 3.15.9 broke calls to `epicsThreadSleep()` and

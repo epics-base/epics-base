@@ -152,7 +152,6 @@ void testTok(const char *inp,
     char *allocSave = !save ? NULL : strdup(save);
     char *actualSave = allocSave;
     char *actualTok;
-    int ok;
 
     if((!inp || scratch) && (!save || allocSave)) {
 

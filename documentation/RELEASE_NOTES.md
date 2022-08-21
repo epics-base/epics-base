@@ -574,10 +574,10 @@ broken.
 
 This fixes [lauchpad bug #1896295](https://bugs.launchpad.net/bugs/1896295).
 
-### Support for Apple M1 (arm64) Processors
+### Support for Apple M1/M2 (arm64) Processors
 
 Thanks to Jeong Han Lee this release comes with build support for Apple's new
-M1 CPUs running macOS, using the target name `darwin-aarch64`.
+M1/M2 CPUs running macOS, using the target name `darwin-aarch64`.
 
 It should also be possible to build universal binaries containing code for
 both the Intel and arm64 processors under either target name: In the
@@ -2190,6 +2190,17 @@ header and removed the need for dbScan.c to reach into the internals of its
 
 
 ## Changes from the 3.15 branch since 3.15.9
+
+### Support for Apple M1/M2 (arm64) Processors
+
+Thanks to Jeong Han Lee this release comes with build support for Apple's new
+M1/M2 CPUs running macOS, using the target name `darwin-aarch64`.
+
+### Set thread names on Windows
+
+On MS Windows, epicsThread names are made available to the OS and debugger
+using `SetThreadDescription()` if available as well as using the older
+exception mechanism.
 
 ### Fix timers on MS Windows for non-EPICS threads
 

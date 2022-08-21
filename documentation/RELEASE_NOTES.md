@@ -6,6 +6,11 @@ This version of EPICS Base has not been released yet.
 
 <!-- Insert new items immediately below here ... -->
 
+### Support for Apple M1/M2 (arm64) Processors
+
+Thanks to Jeong Han Lee this release comes with build support for Apple's new
+M1 CPUs running macOS, using the target name `darwin-aarch64`.
+
 ### Set thread names on Windows
 
 On MS Windows, epicsThread names are made available to the OS and debugger

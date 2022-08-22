@@ -274,7 +274,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
             pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp1);
         if (!pinputFile->filename || !fp1) {
             errPrintf(0, __FILE__, __LINE__,
-                "dbRead opening file %s",pinputFile->filename);
+                "dbRead opening file %s\n",pinputFile->filename);
             free((char*)pinputFile->filename);
             free(pinputFile);
             status = -1;

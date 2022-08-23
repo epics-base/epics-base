@@ -64,7 +64,7 @@ if (-d '_darcs') { # Darcs
         $opt_V .= '-dirty' unless $?;
     }
     $cv = `darcs log --last 1`;
-    $cv =~ s/\A .* Date: \s+ (\N+) .* \z/$1/sx;
+    $cv =~ s/\A .* Date: \s+ ( [^\n]+ ) .* \z/$1/sx;
 }
 elsif (-d '.hg') { # Mercurial
     print "== Found <top>/.hg directory\n" if $opt_v;

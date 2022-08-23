@@ -74,7 +74,7 @@ if (!$vcs && -d "$opt_t/.hg") { # Mercurial
         chomp $hasmod;
         $opt_V .= '-dirty' if $hasmod ne '';
     }
-    $cv = `hg log -l1 --template '{date|isodate}'` # this is untested
+    $cv = `hg log -l1 --template '{date|isodate}'`
 }
 if (!$vcs && -d "$opt_t/.git") { # Git
     print "== Found <top>/.git directory\n" if $opt_v;
@@ -104,7 +104,7 @@ if (!$vcs && -d "$opt_t/.svn") { # Subversion
         chomp $hasmod;
         $opt_V .= '-dirty' if $hasmod ne '';
     }
-    $cv = `svn info --show-item last-changed-date`; # this is untested
+    $cv = `svn info --show-item last-changed-date`;
 }
 if (!$vcs && -d "$opt_t/.bzr") { # Bazaar
     print "== Found <top>/.bzr directory\n" if $opt_v;

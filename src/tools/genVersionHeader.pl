@@ -56,7 +56,8 @@ if (!$vcs && -d "$opt_t/_darcs") { # Darcs
         my $hasmod = `darcs whatsnew --repodir="$opt_t" -l`;
         $opt_V .= '-dirty' unless $?;
     }
-    $cv = ""; # ToDo
+    $cv = `darcs log --last 1`;
+    $cv =~ s/\A .* Date: \s+ (\N+) .* \z/$1/sx;
 }
 if (!$vcs && -d "$opt_t/.hg") { # Mercurial
     print "== Found <top>/.hg directory\n" if $opt_v;

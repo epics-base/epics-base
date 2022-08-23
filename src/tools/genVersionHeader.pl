@@ -29,7 +29,10 @@ our $opt_t = '.';
 our $opt_N = 'VCSVERSION';
 our $opt_V = $now;
 
+our $RevDate = $now;
+
 my $vcs;
+my $cv;
 
 getopts('dhivqt:N:V:') && @ARGV == 1
     or HELP_MESSAGE();
@@ -53,6 +56,7 @@ if (!$vcs && -d "$opt_t/_darcs") { # Darcs
         my $hasmod = `darcs whatsnew --repodir="$opt_t" -l`;
         $opt_V .= '-dirty' unless $?;
     }
+    $cv = ""; # ToDo
 }
 if (!$vcs && -d "$opt_t/.hg") { # Mercurial
     print "== Found <top>/.hg directory\n" if $opt_v;
@@ -69,6 +73,7 @@ if (!$vcs && -d "$opt_t/.hg") { # Mercurial
         chomp $hasmod;
         $opt_V .= '-dirty' if $hasmod ne '';
     }
+    $cv = `hg log -l1 --template '{date|isodate}'` # this is untested
 }
 if (!$vcs && -d "$opt_t/.git") { # Git
     print "== Found <top>/.git directory\n" if $opt_v;
@@ -82,6 +87,7 @@ if (!$vcs && -d "$opt_t/.git") { # Git
         $opt_V = $result;
         $vcs = 'Git';
     }
+    $cv = `git show -s --format=%ci HEAD`;
 }
 if (!$vcs && -d "$opt_t/.svn") { # Subversion
     print "== Found <top>/.svn directory\n" if $opt_v;
@@ -97,6 +103,7 @@ if (!$vcs && -d "$opt_t/.svn") { # Subversion
         chomp $hasmod;
         $opt_V .= '-dirty' if $hasmod ne '';
     }
+    $cv = `svn info --show-item last-changed-date`; # this is untested
 }
 if (!$vcs && -d "$opt_t/.bzr") { # Bazaar
     print "== Found <top>/.bzr directory\n" if $opt_v;
@@ -108,6 +115,7 @@ if (!$vcs && -d "$opt_t/.bzr") { # Bazaar
         $opt_V = $result;
         $vcs = 'Bazaar';
     }
+    $cv = `bzr version-info -q --custom --template='{date}'`;
 }
 if (!$vcs) {
     print "== No VCS directories\n" if $opt_v;
@@ -120,6 +128,9 @@ if (!$vcs) {
     }
 }
 
+chomp $cv;
+$RevDate=$vcs . ': ' . $cv;
+
 my $output = << "__END";
 /* Generated file, do not edit! */
 
@@ -128,12 +139,16 @@ my $output = << "__END";
 #ifndef $opt_N
   #define $opt_N \"$opt_V\"
 #endif
+#ifndef ${opt_N}_DATE
+  #define ${opt_N}_DATE \"$RevDate\"
+#endif
 __END
 
 print "== Want:\n$output==\n" if $opt_v;
 
 my $DST;
 if (open($DST, '+<', $outfile)) {
+
     my $actual = join('', <$DST>);
     print "== Current:\n$actual==\n" if $opt_v;
 
@@ -190,4 +205,3 @@ Usage:
 EOF
     exit $opt_h ? 0 : 1;
 }
-

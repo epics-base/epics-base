@@ -79,7 +79,7 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
     const char *pStr;
     const char *pToken;
     struct sockaddr_in addr;
-    char buf[32u]; /* large enough to hold an IP address */
+    char buf[256u]; /* large enough to hold an IP address or hostname */
     int status, ret = -1;
 
     pStr = envGetConfigParamPtr (pEnv);

@@ -43,7 +43,6 @@ my $outfile = shift
 
 # Where are we?
 my $top = AbsPath($opt_t);
-print "TOP = $top\n" if $opt_d;
 
 # Read RELEASE file into vars
 my %vars = (TOP => $top);
@@ -56,20 +55,30 @@ $vars{'ARCH'} = $opt_a if $opt_a;
 while ($_ = shift @opt_D) {
     m/^ (\w+) \s* = \s* (.*) $/x;
     $vars{$1} = $2;
-    print "$1 = $2\n" if $opt_d;
 }
+
+print "Variables defined:\n",
+    map "  $_ = $vars{$_}\n", sort keys %vars
+    if $opt_d;
 
 # Generate the expanded output
 open(my $SRC, '<', $infile)
     or die "$! reading $infile\n";
+
+my $vf=0;
+my %nf;
 my $output = join '', map {
     # Substitute any @VARS@ in the text
     s{@([A-Za-z0-9_]+)@}
-     {exists $vars{$1} ? $vars{$1} : "\@$1\@"}eg;
+     {exists $vars{$1} ? (++$vf, $vars{$1}) : (++$nf{$1}, "\@$1\@")}eg;
     $_
     } <$SRC>;
 close $SRC;
-print "expandVars.pl: $infile expands to:\n$output\n" if $opt_d;
+
+my $vn = scalar %nf;
+print "Expanded $infile => $outfile with $vf successes, $vn failures\n",
+    map {"  \@$_\@ - " . $nf{$_} . " instance(s)\n"} keys %nf
+    if $opt_d;
 
 # Check if the output file matches
 my $DST;

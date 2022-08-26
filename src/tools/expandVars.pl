@@ -8,7 +8,8 @@
 #*************************************************************************
 
 # Tool to expand @VAR@ variables while copying a file.
-# The file will *not* be copied if it already exists.
+# The output file will *not* be written to if it already
+# exists and the expansion would leave the file unchanged.
 #
 # Author: Andrew Johnson <anj@aps.anl.gov>
 # Date: 10 February 2005
@@ -22,11 +23,10 @@ use lib ("$Bin/../../lib/perl");
 use EPICS::Getopts;
 use EPICS::Path;
 use EPICS::Release;
-use EPICS::Copy;
 
 # Process command line options
-our ($opt_a, $opt_d, @opt_D, $opt_h, $opt_t);
-getopts('a:dD@ht:')
+our ($opt_a, $opt_d, @opt_D, $opt_h, $opt_q, $opt_t);
+getopts('a:dD@hqt:')
     or HELP_MESSAGE();
 
 # Handle the -h command
@@ -59,17 +59,50 @@ while ($_ = shift @opt_D) {
     print "$1 = $2\n" if $opt_d;
 }
 
-# Do it!
-copyFile($infile, $outfile, \%vars);
+# Generate the expanded output
+open(my $SRC, '<', $infile)
+    or die "$! reading $infile\n";
+my $output = join '', map {
+    # Substitute any @VARS@ in the text
+    s{@([A-Za-z0-9_]+)@}
+     {exists $vars{$1} ? $vars{$1} : "\@$1\@"}eg;
+    $_
+    } <$SRC>;
+close $SRC;
+print "expandVars.pl: $infile expands to:\n$output\n" if $opt_d;
 
-##### File contains subroutines only below here
+# Check if the output file matches
+my $DST;
+if (open($DST, '+<', $outfile)) {
+
+    my $actual = join('', <$DST>);
+
+    if ($actual eq $output) {
+        close $DST;
+        print "expandVars.pl: Keeping existing output file $outfile\n"
+            unless $opt_q;
+        exit 0;
+    }
+
+    seek $DST, 0, 0;
+    truncate $DST, 0;
+} else {
+    open($DST, '>', $outfile)
+        or die "Can't create $outfile: $!\n";
+}
+
+print $DST $output;
+close $DST;
+exit 0;
+
+##### Subroutines only below here
 
 sub HELP_MESSAGE {
     print STDERR <<EOF;
 Usage:
     expandVars.pl -h
         Display this Usage message
-    expandVars.pl -t /path/to/top [-a arch] -D var=val ... infile outfile
+    expandVars.pl -t /path/to/top [-a arch] -D var=val ... [-q] infile outfile
         Expand vars in infile to generate outfile
 EOF
     exit $opt_h ? 0 : 1;

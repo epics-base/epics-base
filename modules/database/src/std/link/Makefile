@@ -15,5 +15,6 @@ dbRecStd_SRCS += lnkConst.c
 dbRecStd_SRCS += lnkCalc.c
 dbRecStd_SRCS += lnkState.c
 dbRecStd_SRCS += lnkDebug.c
+dbRecStd_SRCS += lnkFS.c
 
 HTMLS += links.html

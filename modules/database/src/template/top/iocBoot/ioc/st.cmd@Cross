@@ -10,7 +10,7 @@ dbLoadDatabase "../../dbd/_APPNAME_.dbd"
 _CSAFEAPPNAME__registerRecordDeviceDriver(pdbbase) 
 
 ## Load record instances
-dbLoadRecords("../../db/_APPNAME_.db","user=_USER_")
+#dbLoadRecords("../../db/_APPNAME_.db","user=_USER_")
 
 iocInit()
 

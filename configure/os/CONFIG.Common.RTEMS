@@ -37,9 +37,11 @@ GNU_TARGET ?= $(RTEMS_TARGET_CPU)-rtems
 include $(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
-#not set in RTEMS_BSD.cfg until now
+ifeq ($(RTEMS_VERSION),6)
+# not set in RTEMS_BSD.cfg until now, stupid workaround
 RTEMS_HAS_NETWORKING = no
 RTEMS_HAS_POSIX_API = yes
+endif
 
 #-------------------------------------------------------
 # RTEMS cross-development tools

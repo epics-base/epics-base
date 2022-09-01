@@ -1062,7 +1062,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
      * -append "--video=off --console=/dev/com1" -kernel libComTestHarness
      */
     printf("\n***** Initializing network (libbsd) *****\n");
-    if(0) rtems_bsd_setlogpriority("debug");
+    rtems_bsd_setlogpriority("debug");
     on_exit(default_network_on_exit, NULL);
 
     /* Let other tasks run to complete background work */

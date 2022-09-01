@@ -1192,7 +1192,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
     tzset();
     printf(" check for time registered , C++ initialization ...\n");
     //osdTimeRegister();
-#if __RTEMS_MAJOR__>4
+#if __RTEMS_MAJOR__ > 5
    printf(" Will try to start telnetd with prio %d ...\n", rtems_telnetd_config.priority);
    result = rtems_telnetd_initialize();
    printf (" telnetd initialized with result %d\n", result);

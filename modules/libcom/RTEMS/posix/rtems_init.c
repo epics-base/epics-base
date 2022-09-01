@@ -290,11 +290,13 @@ nfsMount(char *uidhost, char *path, char *mntpoint)
     int retries = 0;
     const char *mount_options = NULL;
 
+#if __RTEMS_MAJOR__ > 5
 #ifndef RTEMS_LEGACY_STACK
     const char *options = NET_CFG_NFS_MOUNT_OPTIONS;
     if (strlen(options) != 0) {
         mount_options = options;
     }
+#endif
 #endif
     sprintf(dev, "%s:%s", uidhost, path);
     printf("mount: %s -> %s options:%s\n",

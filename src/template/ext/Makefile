@@ -5,6 +5,7 @@ include $(TOP)/configure/CONFIG
 TEMPLATES_DIR = makeBaseExt
 
 TEMPLATES += top/Makefile
+TEMPLATES += top/.gitignore
 TEMPLATES += top/README
 TEMPLATES += top/configure/CONFIG
 TEMPLATES += top/configure/CONFIG_SITE

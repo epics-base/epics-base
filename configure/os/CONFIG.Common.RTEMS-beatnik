@@ -13,8 +13,21 @@ ARCH_DEP_CFLAGS += -DRTEMS_HAS_ALTIVEC
 #will use bootp
 #ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_MOTLOAD
+ifneq ($(RTEMS_VERSION),6)
 ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_MBUF_SPACE=2048
 ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_CLUSTER_SPACE=5120
+endif
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS
+# This check must appear after the above include
+ifeq ($(RTEMS_VERSION),6)
+# Which nfs version to use
+ARCH_DEP_CFLAGS += -DNET_CFG_NFS_MOUNT_OPTIONS=\"nfsv4,minorversion=1\"
+#ABI Flags etc, I have tried to read in the stuff via pkgconfig into
+# CONFIG.Common.RTEMS, but have not been able to do it due to lack of gMake knowledge.
+ARCH_DEP_CFLAGS += -mcpu=7400 
+ARCH_DEP_LDFLAGS += -B$(RTEMS_TOOLS)/powerpc-rtems6/beatnik/lib -qrtems -Wl,--gc-sections
+endif
 
 MUNCH_SUFFIX = .boot
 MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))

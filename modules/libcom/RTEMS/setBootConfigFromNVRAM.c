@@ -12,9 +12,7 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <unistd.h>
-#ifdef RTEMS_LEGACY_STACK
 #include <rtems/rtems_bsdnet.h>
-#endif
 #include <bsp.h>
 #include <string.h>
 #include <ctype.h>
@@ -23,12 +21,45 @@
 #include <epicsStdio.h>
 #include <epicsString.h>
 #include <envDefs.h>
+#include <stdio.h>
 
 char *env_nfsServer;
 char *env_nfsPath;
 char *env_nfsMountPoint;
 
-extern char* rtems_bsdnet_bootp_cmdline;
+#ifndef RTEMS_LEGACY_STACK
+struct rtems_static_ifconfig {
+   char *ip_address;
+   char *ip_netmask;
+};
+extern struct rtems_static_ifconfig rtems_static_ifconfig; 
+#endif
+
+/* ************
+EPICS Application Developer Guide:
+
+2.8.3 Motorola MOTLOAD boot parameters
+Motrola single-board computers which employ MOTLOAD should have their network `Global Environment Variable' parameters set up like:
+
+mot-/dev/enet0-cipa=`Dotted-decimal' IP address of IOC
+mot-/dev/enet0-sipa=`Dotted-decimal' IP address of TFTP/NFS server
+mot-/dev/enet0-snma=`Dotted-decimal' IP address of subnet mask (255.255.255.0 for class C subnet)
+mot-/dev/enet0-gipa=`Dotted-decimal' IP address of network gateway (omit if none)
+mot-/dev/enet0-file=Path to application bootable image (..../bin/RTEMS-mvme5500/test.boot)
+rtems-client-name=IOC name (mot-/dev/enet0-cipa will be used if this parameter is missing)
+rtems-dns-server='Dotted-decimal' IP address of domain name server (omit if none)
+rtems-dns-domainname=Domain name (if this parameter is omitted the compiled-in value will be used)
+epics-script=Path to application startup script (..../iocBoot/ioctest/st.cmd)
+
+The mot-script-boot parameter should be set up like:
+
+tftpGet -a4000000 -cxxx -sxxx -mxxx -gxxx -d/dev/enet0
+        -f..../bin/RTEMS-mvme5500/test.boot
+netShut
+go -a4000000
+where the -c, -s, -m and -g values should match the cipa, sipa, snma and gipa values, respectively and the -f value should match the file value.
+*/
+
 /*
  * Split argument string of form nfs_server:nfs_export:<path>
  * The nfs_export component will be used as:
@@ -166,7 +197,7 @@ setBootConfigFromNVRAM(void)
     char *nvp;
 
 # if defined(BSP_NVRAM_BASE_ADDR)
-    nvp = (volatile unsigned char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
+    nvp =(char *) (unsigned char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
 # elif defined(BSP_I2C_VPD_EEPROM_DEV_NAME)
     char gev_buf[3592];
     int fd;
@@ -188,25 +219,43 @@ setBootConfigFromNVRAM(void)
     if (rtems_bsdnet_config.bootp != NULL)
         return;
     mot_script_boot = gev("mot-script-boot", nvp);
+
     if ((rtems_bsdnet_bootp_server_name = gev("mot-/dev/enet0-sipa", nvp)) == NULL)
         rtems_bsdnet_bootp_server_name = motScriptParm(mot_script_boot, 's');
+
     if ((rtems_bsdnet_config.gateway = gev("mot-/dev/enet0-gipa", nvp)) == NULL)
         rtems_bsdnet_config.gateway = motScriptParm(mot_script_boot, 'g');
-    if  ((rtems_bsdnet_config.ifconfig->ip_netmask = gev("mot-/dev/enet0-snma", nvp)) == NULL)
-        rtems_bsdnet_config.ifconfig->ip_netmask = motScriptParm(mot_script_boot, 'm');
 
+#ifdef RTEMS_LEGACY_STACK
+    if ((rtems_bsdnet_config.ifconfig->ip_netmask = gev("mot-/dev/enet0-snma", nvp)) == NULL)
+        rtems_bsdnet_config.ifconfig->ip_netmask = motScriptParm(mot_script_boot, 'm');
+#else
+    if  ((rtems_static_ifconfig.ip_netmask = gev("mot-/dev/enet0-snma", nvp)) == NULL)
+         rtems_static_ifconfig.ip_netmask = motScriptParm(mot_script_boot, 'm');
+#endif
     rtems_bsdnet_config.name_server[0] = gev("rtems-dns-server", nvp);
     if (rtems_bsdnet_config.name_server[0] == NULL)
         rtems_bsdnet_config.name_server[0] = rtems_bsdnet_bootp_server_name;
+
     cp = gev("rtems-dns-domainname", nvp);
     if (cp)
         rtems_bsdnet_config.domainname = cp;
 
+#ifdef RTEMS_LEGACY_STACK
     if ((rtems_bsdnet_config.ifconfig->ip_address = gev("mot-/dev/enet0-cipa", nvp)) == NULL)
         rtems_bsdnet_config.ifconfig->ip_address = motScriptParm(mot_script_boot, 'c');
+#else
+    if  ((rtems_static_ifconfig.ip_address = gev("mot-/dev/enet0-cipa", nvp)) == NULL)
+         rtems_static_ifconfig.ip_address = motScriptParm(mot_script_boot, 'c');
+#endif
+
     rtems_bsdnet_config.hostname = gev("rtems-client-name", nvp);
     if (rtems_bsdnet_config.hostname == NULL)
+#ifdef RTEMS_LEGACY_STACK
         rtems_bsdnet_config.hostname = rtems_bsdnet_config.ifconfig->ip_address;
+#else
+        rtems_bsdnet_config.hostname = rtems_static_ifconfig.ip_address;
+#endif
 
     if ((rtems_bsdnet_bootp_boot_file_name = gev("mot-/dev/enet0-file", nvp)) == NULL)
         rtems_bsdnet_bootp_boot_file_name = motScriptParm(mot_script_boot, 'f');

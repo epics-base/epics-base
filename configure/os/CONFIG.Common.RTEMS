@@ -37,6 +37,9 @@ GNU_TARGET ?= $(RTEMS_TARGET_CPU)-rtems
 include $(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
+#not set in RTEMS_BSD.cfg until now
+RTEMS_HAS_NETWORKING = no
+RTEMS_HAS_POSIX_API = yes
 
 #-------------------------------------------------------
 # RTEMS cross-development tools
@@ -115,7 +118,12 @@ OP_SYS_LDLIBS_score_NET_yes = -lnfs
 OP_SYS_LDLIBS_score_NET_no = -lnfs
 OP_SYS_LDLIBS += -lrtemsCom -lCom
 OP_SYS_LDLIBS += $(OP_SYS_LDLIBS_$(OS_API)_NET_$(RTEMS_HAS_NETWORKING))
+ifneq ($(RTEMS_VERSION),6)
 OP_SYS_LDLIBS += -lrtemscpu -lc -lm
+endif
+ifeq ($(RTEMS_VERSION),6)
+OP_SYS_LDLIBS += -ltelnetd
+endif
 
 OP_SYS_LDFLAGS_posix = -u POSIX_Init
 OP_SYS_LDFLAGS_score = -u Init \

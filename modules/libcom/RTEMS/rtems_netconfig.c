@@ -17,10 +17,11 @@
 #include <bsp.h>
 #include <epicsVersion.h>
 
+#include <rtems/rtems_bsdnet.h>
+
 #define RTEMS_VERSION_INT  VERSION_INT(__RTEMS_MAJOR__, __RTEMS_MINOR__, 0, 0)
 
 #ifdef RTEMS_LEGACY_STACK // old non libbsd stack
-#include <rtems/rtems_bsdnet.h>
 
 /*
  * Comment (by sebastian.huber):
@@ -150,10 +151,16 @@ struct rtems_bsdnet_config rtems_bsdnet_config = {
     MY_DOMAINNAME,         /* Domain name */
 };
 #else // libbsd "new" stack
-// nothing to do??
+/*
+ * Network configuration with ifconfig
+ */
+
+struct rtems_static_ifconfig {
+   char *ip_address;
+   char *ip_netmask;
+};
+
+struct rtems_static_ifconfig rtems_static_ifconfig; 
+struct rtems_bsdnet_config rtems_bsdnet_config;
+
 #endif // RTEMS_LEGACY_STACK
-
-
-
-
-

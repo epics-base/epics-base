@@ -13,8 +13,8 @@
 #
 
 # FHI:
-#RTEMS_VERSION = 5
-#RTEMS_BASE = /home/h1/DBG/rtems
+RTEMS_VERSION = 6
+RTEMS_BASE = /home/rtems/MVME6100_WORK/rtems/$(RTEMS_VERSION)
 #RTEMS_BASE = /home/ad/MVME6100/rtems/$(RTEMS_VERSION)
 #RTEMS_BASE = /opt/RTEMS/qoriq/rtems/$(RTEMS_VERSION)
 

@@ -988,9 +988,13 @@ POSIX_Init ( void *argument __attribute__((unused)))
      * It is very likely that other time synchronization facilities in EPICS
      * will soon override this value.
      */
-    /* check for RTC ... unfortunately seems to be missing with libbsd and qemu ? */
+    /* check for RTC available */
+#ifdef HAS_RTC
     if (checkRealTime() >= 0) {
       setRealTimeToRTEMS();
+#else
+    if(0) {
+#endif
     } else {
       // set time to 14.4.2014
       now.tv_sec = 1397460606;

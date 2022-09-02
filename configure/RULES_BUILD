@@ -372,7 +372,7 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 #---------------------------------------------------------------
 # Automated testing
 
-runtests: run-tap-tests
+runtests: build run-tap-tests
 run-tap-tests: $(TESTSCRIPTS.t)
 ifneq ($(TESTSCRIPTS.t),)
 ifdef RUNTESTS_ENABLED

@@ -2,6 +2,16 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
+#
+#   modules/CONFIG_SITE.local
+#
+# Despite the .local in its name, this file *is* included in EPICS Base
+# sources and should *not* be modified by sites. This trick is necessary
+# to allow external submodules to be placed inside the modules directory
+# without having to modify them, as long as their configure/CONFIG_SITE
+# file includes the standard line
+#       -include $(TOP)/../CONFIG_SITE.local
+# that causes this file to be read in during submodule builds.
 
 # The name our submodules know us by:
 PARENT_MODULE = EPICS_BASE

@@ -16,6 +16,24 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Build System updates
+
+The top-level make targets `uninstall`, `archuninstall` and similar no
+longer trigger the `clean` target which empties build directories, this
+was a bug introduced in 7.0.5.
+
+The `make distclean` target now properly deletes the generated file(s)
+`modules/RELEASE.<host>.local` which are essential to build the external
+submodules under the `modules` directory, and should not crash if the
+build is configured with `INSTALL_LOCATION` pointing to an empty external directory (i.e. if you run `make distclean` twice in succession). When
+`INSTALL_LOCATION` is set in the files `configure/CONFIG_SITE` or
+`configure/CONFIG_SITE.local` the `modules/RELEASE.<host>.local` file
+will now be regenerated in case the install path has been modified.
+
+Note that passing `INSTALL_LOCATION=<path>` on the make command-line will
+only work if you have run `make distclean` immediately beforehand, as the
+`modules/RELEASE.<host>.local` file must be recreated using the new path.
+
 ### Enhancements to `capr.pl`
 
 The `capr.pl` script can now display records from older Base versions to

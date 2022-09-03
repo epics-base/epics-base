@@ -1110,14 +1110,10 @@ static void dbRecordHead(char *recordType, char *name, int visible)
     allocTemp(pdbentry);
 
     if (recordType[0] == '*' && recordType[1] == 0) {
-        if (dbRecordsOnceOnly)
-            epicsPrintf("Record-type \"*\" not valid with dbRecordsOnceOnly\n");
-        else {
-            status = dbFindRecord(pdbentry, name);
-            if (status == 0)
-                return; /* done */
-            epicsPrintf("Record \"%s\" not found\n", name);
-        }
+        status = dbFindRecord(pdbentry, name);
+        if (status == 0)
+            return; /* done */
+        epicsPrintf(ERL_ERROR ": Record \"%s\" not found\n", name);
         yyerror(NULL);
         duplicate = TRUE;
         return;
@@ -1136,15 +1132,16 @@ static void dbRecordHead(char *recordType, char *name, int visible)
     status = dbCreateRecord(pdbentry,name);
     if (status == S_dbLib_recExists) {
         if (strcmp(recordType, dbGetRecordTypeName(pdbentry)) != 0) {
-            epicsPrintf("Record \"%s\" of type \"%s\" redefined with new type "
+            epicsPrintf(ERL_ERROR ": Record \"%s\" of type \"%s\" redefined with new type "
                 "\"%s\"\n", name, dbGetRecordTypeName(pdbentry), recordType);
             yyerror(NULL);
             duplicate = TRUE;
             return;
         }
         else if (dbRecordsOnceOnly) {
-            epicsPrintf("Record \"%s\" already defined (dbRecordsOnceOnly is "
-                "set)\n", name);
+            epicsPrintf(ERL_ERROR ": Record \"%s\" already defined and dbRecordsOnceOnly set.\n"
+                        "Used record type \"*\" to append.\n",
+                name);
             yyerror(NULL);
             duplicate = TRUE;
         }

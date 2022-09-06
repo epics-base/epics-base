@@ -7,13 +7,45 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/** \file initHooks.h 
- *  \brief Facility to call functions during ioc init
+
+/**
+ * \file initHooks.h
  *
- *      Authors:        Benjamin Franksen (BESY) and Marty Kraimer
- *      Date:           06-01-91
- *      major Revision: 07JuL97
+ * \author Benjamin Franksen (BESSY)
+ * \author Marty Kraimer (ANL)
+ *
+ * \brief Facility to call functions during iocInit()
+ *
+ * The initHooks facility allows application functions to be called at various
+ * stages/states during IOC initialization, pausing, restart and shutdown.
+ *
+ * All registered application functions will be called whenever the IOC
+ * initialization, pause/resume or shutdown process reaches a new state.
+ *
+ * The following C++ example shows how to use this facility:
+ *
+ * \code{.cpp}
+ * static void myHookFunction(initHookState state)
+ * {
+ *     switch (state) {
+ *     case initHookAfterInitRecSup:
+ *         ...
+ *         break;
+ *     case initHookAfterDatabaseRunning:
+ *         ...
+ *         break;
+ *     default:
+ *         break;
+ *     }
+ * }
+ *
+ * // A static constructor registers hook function at startup:
+ * static int myHookStatus = initHookRegister(myHookFunction);
+ * \endcode
+ *
+ * An arbitrary number of functions can be registered.
  */
+
 
 #ifndef INC_initHooks_H
 #define INC_initHooks_H
@@ -24,84 +56,90 @@
 extern "C" {
 #endif
 
-/**
-* The inithooks facility allows application functions to be called at various states during ioc initialization. 
-* This enum must agree with the array of names defined in initHookName() \n
-*
- * Deprecated states, provided for backwards compatibility.
- * These states are announced at the same point they were before,
- * but will not be repeated if the IOC gets paused and restarted.
+/** \brief Initialization stages
+ *
+ * The enum states must agree with the names in the initHookName() function.
+ * New states may be added in the future if extra facilities get incorporated
+ * into the IOC. The numerical value of any state enum may change between
+ * EPICS releases; states are not guaranteed to appear in numerical order.
+ *
+ * Some states were deprecated when iocPause() and iocRun() were added, but
+ * are still provided for backwards compatibility. These deprecated states
+ * are announced at the same point they were before, but will not be repeated
+ * if the IOC is later paused and restarted.
  */
 typedef enum {
-    initHookAtIocBuild = 0,         /**< \brief Start of iocBuild/iocInit commands */
-    initHookAtBeginning,
-    initHookAfterCallbackInit,
-    initHookAfterCaLinkInit,
-    initHookAfterInitDrvSup,
-    initHookAfterInitRecSup,
-    initHookAfterInitDevSup,
-    initHookAfterInitDatabase,
-    initHookAfterFinishDevSup,
-    initHookAfterScanInit,
-    initHookAfterInitialProcess,
-    initHookAfterCaServerInit,
-    initHookAfterIocBuilt,          /**< \brief End of iocBuild command */
+    initHookAtIocBuild = 0,         /**< Start of iocBuild() / iocInit() */
+    initHookAtBeginning,            /**< Database sanity checks passed */
+    initHookAfterCallbackInit,      /**< Callbacks, generalTime & taskwd init */
+    initHookAfterCaLinkInit,        /**< CA links init */
+    initHookAfterInitDrvSup,        /**< Driver support init */
+    initHookAfterInitRecSup,        /**< Record support init */
+    initHookAfterInitDevSup,        /**< Device support init pass 0 */
+    initHookAfterInitDatabase,      /**< Records and locksets init */
+    initHookAfterFinishDevSup,      /**< Device support init pass 1 */
+    initHookAfterScanInit,          /**< Scan, AS, ProcessNotify init */
+    initHookAfterInitialProcess,    /**< Records with PINI = YES processsed */
+    initHookAfterCaServerInit,      /**< RSRV init */
+    initHookAfterIocBuilt,          /**< End of iocBuild() */
 
-    initHookAtIocRun,               /**< \brief Start of iocRun command */
-    initHookAfterDatabaseRunning,
-    initHookAfterCaServerRunning,
-    initHookAfterIocRunning,        /**< \brief End of iocRun/iocInit commands */
+    initHookAtIocRun,               /**< Start of iocRun() */
+    initHookAfterDatabaseRunning,   /**< Scan tasks and CA links running */
+    initHookAfterCaServerRunning,   /**< RSRV running */
+    initHookAfterIocRunning,        /**< End of iocRun() / iocInit() */
 
-    initHookAtIocPause,             /**< \brief Start of iocPause command */
-    initHookAfterCaServerPaused,
-    initHookAfterDatabasePaused,
-    initHookAfterIocPaused,         /**< \brief End of iocPause command */
+    initHookAtIocPause,             /**< Start of iocPause() */
+    initHookAfterCaServerPaused,    /**< RSRV paused */
+    initHookAfterDatabasePaused,    /**< CA links and scan tasks paused */
+    initHookAfterIocPaused,         /**< End of iocPause() */
 
-    initHookAtShutdown,             /**< \brief Start of iocShutdown commands */
-    initHookAfterCloseLinks,
-    initHookAfterStopScan,          /**< \brief triggered only by unittest code.   testIocShutdownOk() */
-    initHookAfterStopCallback,      /**< \brief triggered only by unittest code.   testIocShutdownOk() */
-    initHookAfterStopLinks,
-    initHookBeforeFree,             /**< \brief triggered only by unittest code.   testIocShutdownOk() */
-    initHookAfterShutdown,          /**< \brief End of iocShutdown commands */
-    initHookAfterInterruptAccept,   /**< \brief After initHookAfterDatabaseRunning */
-    initHookAtEnd,                  /**< \brief Before initHookAfterIocRunning */
+    initHookAtShutdown,             /**< Start of iocShutdown() (unit tests only) */
+    initHookAfterCloseLinks,        /**< Links disabled/deleted */
+    initHookAfterStopScan,          /**< Scan tasks stopped */
+    initHookAfterStopCallback,      /**< Callback tasks stopped */
+    initHookAfterStopLinks,         /**< CA links stopped */
+    initHookBeforeFree,             /**< Resource cleanup about to happen */
+    initHookAfterShutdown,          /**< End of iocShutdown() */
+
+    /* Deprecated states: */
+    initHookAfterInterruptAccept,   /**< After initHookAfterDatabaseRunning */
+    initHookAtEnd,                  /**< Before initHookAfterIocRunning */
 } initHookState;
 
-/** 
- * Any functions that are registered before iocInit reaches the desired state will be called when it reaches that state. 
- * The initHookName function returns a static string representation of the state passed into it which is intended for printing. The following skeleton code shows how to use this facility:
+/** \brief Type for application callback functions
  *
- * static initHookFunction myHookFunction; 
- *
- * \code{.cpp}
- * int myHookInit(void) 
- * { 
- *  return(initHookRegister(myHookFunction)); 
- *} 
- * 
- * static void myHookFunction(initHookState state) 
- * { 
- *  switch(state) { 
- *    case initHookAfterInitRecSup: 
- *      ... 
- *      break; 
- *   case initHookAfterInterruptAccept: 
- *      ... 
- *      break; 
- *    default: 
- *      break; 
- *  } 
- * } 
- * \endcode 
- * An arbitrary number of functions can be registered.
+ * Application callback functions must match this typdef.
+ * \param state initHook enumeration value
  */
-
-
 typedef void (*initHookFunction)(initHookState state);
+
+/** \brief Register a function for initHook notifications
+ *
+ * Registers \p func for initHook notifications
+ * \param func Pointer to application's notification function.
+ * \return 0 if Ok, -1 on error (memory allocation failure).
+ */
 LIBCOM_API int initHookRegister(initHookFunction func);
+
+/** \brief Routine called by iocInit() to trigger notifications.
+ *
+ * Calls registered callbacks announcing \p state
+ * \param state initHook enumeration value
+ */
 LIBCOM_API void initHookAnnounce(initHookState state);
+
+/** \brief Returns printable representation of \p state
+ *
+ * Static string representation of \p state for printing
+ * \param state enum value of an initHook
+ * \return Pointer to name string
+ */
 LIBCOM_API const char *initHookName(int state);
+
+/** \brief Forget all registered application functions
+ *
+ * This cleanup routine is called by unit test programs between IOC runs.
+ */
 LIBCOM_API void initHookFree(void);
 
 #ifdef __cplusplus

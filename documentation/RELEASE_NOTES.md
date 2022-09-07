@@ -2,19 +2,22 @@
 
 These release notes describe changes that have been made since the previous
 release of this series of EPICS Base. **Note that changes which were merged up
-from commits to the 3.15 branch are not described at the top of this file but
-lower down, under the 3.15 release to which they were originally committed.**
-Thus it is important to read more than just the first section to understand
-everything that has changed in each release.
+from commits to the 3.15 branch are described
+[further down this file](#changes-incorporated-from-the-315-branch)
+under the 3.15 release to which they were originally committed.** Thus it is
+important to read more than just the first section to understand everything that
+has changed in each release.
 
 The PVA submodules each have their own individual sets of release notes which
 should also be read to understand what has changed since earlier releases.
 
-**This version of EPICS has not been released yet.**
 
-## Changes made on the 7.0 branch since 7.0.6.1
+## EPICS Release 7.0.7
 
-<!-- Insert new items immediately below here ... -->
+### Doxygen Annotations
+
+Thanks to several attendees at the 2022 EPICS Codeathon the number of header
+files with Doxygen annotations in the EPICS Core has again increased.
 
 ### Build System updates
 

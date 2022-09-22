@@ -442,11 +442,9 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             argv[1] = abspath;
         }
     }
-/* libbsd mount can't subdir mount points? */
-
     errlogPrintf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
                  server_name, server_path, mount_point);
-    nfsMount(server_name, server_path, "/Volumes");
+    nfsMount(server_name, server_path, mount_point);
 #endif
 }
 
@@ -1190,9 +1188,10 @@ POSIX_Init ( void *argument __attribute__((unused)))
 
     }
     tzset();
-    printf(" check for time registered , C++ initialization ...\n");
-    //osdTimeRegister();
-#if __RTEMS_MAJOR__ > 5
+#ifdef RTEMS_LEGACY_STACK
+    osdTimeRegister();
+#endif
+#if __RTEMS_MAJOR__ > 4
    printf(" Will try to start telnetd with prio %d ...\n", rtems_telnetd_config.priority);
    result = rtems_telnetd_initialize();
    printf (" telnetd initialized with result %d\n", result);

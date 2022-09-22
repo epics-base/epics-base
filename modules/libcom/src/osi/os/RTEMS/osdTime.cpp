@@ -9,7 +9,9 @@
 /*
  * Author: W. Eric Norum
  */
-#define __BSD_VISIBLE 1
+#if defined(__rtems__)
+#  define __BSD_VISIBLE 1
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -21,7 +23,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if __RTEMS_MAJOR__ < 5
 #include <rtems/rtems_bsdnet_internal.h>
+#endif
 #include "epicsTime.h"
 #include "osdTime.h"
 #include "osiNTPTime.h"
@@ -29,20 +33,26 @@
 #include "generalTimeSup.h"
 
 extern "C" {
-
 extern rtems_interval rtemsTicksPerSecond;
+#ifdef RTEMS_LEGACY_STACK
 int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
 static int ntpSocket = -1;
+#endif
+
 
 void osdTimeRegister(void)
 {
     /* Init NTP first so it can be used to sync ClockTime */
+#ifdef RTEMS_LEGACY_STACK
     NTPTime_Init(100);
     ClockTime_Init(CLOCKTIME_SYNC);
-
+#else
+printf(" OsdTimeRegister Not implemented yet for new libbsd ...\n");
+#endif
     osdMonotonicInit();
 }
 
+#ifdef RTEMS_LEGACY_STACK
 int osdNTPGet(struct timespec *ts)
 {
     static unsigned bequiet;
@@ -83,7 +93,12 @@ void osdNTPInit(void)
 {
     struct sockaddr_in myAddr;
 
+#if __RTEMS_MAJOR__ > 4
+    ntpSocket = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+#else
     ntpSocket = socket (AF_INET, SOCK_DGRAM, 0);
+#endif
+
     if (ntpSocket < 0) {
         printf("osdNTPInit() Can't create socket: %s\n", strerror (errno));
         return;
@@ -98,7 +113,7 @@ void osdNTPInit(void)
         ntpSocket = -1;
     }
 }
-
+#endif
 void osdNTPReport(void)
 {
 }
@@ -106,7 +121,11 @@ void osdNTPReport(void)
 int osdTickGet(void)
 {
     rtems_interval t;
+#if __RTEMS_MAJOR__ > 4
+    t = rtems_clock_get_ticks_per_second();
+#else 
     rtems_clock_get (RTEMS_CLOCK_GET_TICKS_SINCE_BOOT, &t);
+#endif
     return t;
 }
 
@@ -142,9 +161,7 @@ int epicsTime_localtime ( const time_t *clock, struct tm *result )
 
 rtems_interval rtemsTicksPerSecond;
 double rtemsTicksPerSecond_double, rtemsTicksPerTwoSeconds_double;
-
 } // extern "C"
-
 /*
  * Static constructors are run too early in a standalone binary
  * to be able to initialize the NTP time provider (the network
@@ -156,7 +173,12 @@ double rtemsTicksPerSecond_double, rtemsTicksPerTwoSeconds_double;
  */
 static int staticTimeRegister(void)
 {
+#if __RTEMS_MAJOR__ > 4
+    rtemsTicksPerSecond = rtems_clock_get_ticks_per_second();
+#else 
     rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &rtemsTicksPerSecond);
+#endif
+
     rtemsTicksPerSecond_double = rtemsTicksPerSecond;
     rtemsTicksPerTwoSeconds_double = rtemsTicksPerSecond_double * 2.0;
 
@@ -164,9 +186,12 @@ static int staticTimeRegister(void)
      * are executed then we are probably run-time loaded and it's
      * OK to osdTimeRegister() at this point.
      */
-    if (rtems_bsdnet_ticks_per_second != 0)
+/* this does not work if we use DHCP. TBD! */
+/* We should check that the interface is up ... */
+#if __RTEMS_MAJOR__ < 5
+    if (rtems_clock_get_ticks_per_second != 0)
         osdTimeRegister();
-
+#endif
     return 1;
 }
 static int done = staticTimeRegister();

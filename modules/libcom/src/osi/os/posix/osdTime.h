@@ -31,14 +31,6 @@ extern "C" {
 LIBCOM_API void epicsStdCall
     convertDoubleToWakeTime(double timeout,struct timespec *wakeTime);
 
-#ifdef __rtems__
-void osdNTPInit(void);
-int  osdNTPGet(struct timespec *now);
-int osdTickGet(void);
-int  osdTickRateGet(void);
-void osdNTPReport(void);
-#endif
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

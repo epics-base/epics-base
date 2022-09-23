@@ -23,6 +23,7 @@
 #include "osiClockTime.h"
 #include "generalTimeSup.h"
 #include "envDefs.h"
+#include "epicsFindSymbol.h"
 
 #define NTP_REQUEST_TIMEOUT 4 /* seconds */
 
@@ -31,7 +32,7 @@ extern "C" {
 }
 
 static char sntp_sync_task[] = "ipsntps";
-static char ntp_daemon[] = "ipntpd";
+typedef int (*ipcom_ipd_kill_t)(const char *);
 
 static const char *pserverAddr = NULL;
 static CLOCKTIME_SYNCHOOK prevHook;
@@ -39,8 +40,21 @@ static CLOCKTIME_SYNCHOOK prevHook;
 extern char* sysBootLine;
 
 static void timeSync(int synchronized) {
-    if (!tz2timezone())
-        ClockTime_syncHook = prevHook; /* Don't call me again */
+    if (prevHook)
+        prevHook(synchronized);
+
+    if (synchronized) {
+        struct timespec tsNow;
+        if (clock_gettime(CLOCK_REALTIME, &tsNow) != OK)
+            return;
+
+        struct tm tmNow;
+        localtime_r(&tsNow.tv_sec, &tmNow);
+
+        static int lastYear = 0;
+        if (tmNow.tm_year > lastYear && !tz2timezone())
+            lastYear = tmNow.tm_year;
+    }
 }
 
 static int timeRegister(void)
@@ -52,7 +66,7 @@ static int timeRegister(void)
         if (tz && *tz) {
             epicsEnvSet("TZ", tz);
 
-            /* Call tz2timezone() once we know what year it is */
+            // Call tz2timezone() from the sync thread, needs the year
             prevHook = ClockTime_syncHook;
             ClockTime_syncHook = timeSync;
         }
@@ -63,22 +77,37 @@ static int timeRegister(void)
     // Define EPICS_TS_FORCE_NTPTIME to force use of NTPTime provider
     bool useNTP = getenv("EPICS_TS_FORCE_NTPTIME") != NULL;
 
-    if (!useNTP &&
-        (taskNameToId(sntp_sync_task) != ERROR ||
-         taskNameToId(ntp_daemon) != ERROR)) {
-        // A VxWorks 6 SNTP/NTP sync task is running
-        struct timespec clockNow;
+    // VxWorks 6 may have a clock sync task running
+    int tid = taskNameToId(sntp_sync_task);
+    struct timespec clockNow;
+    if (tid != ERROR &&
+        clock_gettime(CLOCK_REALTIME, &clockNow) == OK &&
+        clockNow.tv_sec > BUILD_TIME) {
+        // Clock appears set
+        tz2timezone();
+    }
+    else {
+        // No clock sync task or it's broken, start our own
+        useNTP = 1;
+    }
 
-        useNTP = clock_gettime(CLOCK_REALTIME, &clockNow) != OK ||
-            clockNow.tv_sec < BUILD_TIME;
-            // Assumes VxWorks and the host OS have the same epoch
+    if (useNTP && tid != ERROR) {
+        // EPICS_TS_FORCE_NTPTIME was set, stop the OS sync task
+        ipcom_ipd_kill_t ipcom_ipd_kill =
+            (ipcom_ipd_kill_t) epicsFindSymbol("ipcom_ipd_kill");
+
+        if (ipcom_ipd_kill && !taskIsSuspended(tid)) {
+            printf("timeRegister: Stopping VxWorks clock sync task\n");
+            ipcom_ipd_kill("ipsntp");
+        }
     }
 
     if (useNTP) {
         // Start NTP first so it can be used to sync ClockTime
         NTPTime_Init(100);
         ClockTime_Init(CLOCKTIME_SYNC);
-    } else {
+    }
+    else {
         ClockTime_Init(CLOCKTIME_NOSYNC);
     }
     osdMonotonicInit();
@@ -115,6 +144,14 @@ void osdNTPReport(void)
         printf("NTP Server = %s\n", pserverAddr);
 }
 
+void osdClockReport(int level)
+{
+    int tid = taskNameToId(sntp_sync_task);
+
+    printf("VxWorks clock sync task '%s' is %s\n", sntp_sync_task,
+        (tid == ERROR) ? "not running" :
+        taskIsSuspended(tid) ? "suspended" : "running");
+}
 
 // Other Time Routines
 

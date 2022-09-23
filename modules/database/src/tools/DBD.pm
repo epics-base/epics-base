@@ -35,6 +35,7 @@ sub new {
         'DBD::Record'     => {},
         'DBD::Registrar'  => {},
         'DBD::Variable'   => {},
+        'RECORDS'         => [],
         'COMMENTS'        => [],
         'POD'             => []
     };
@@ -118,6 +119,19 @@ sub records {
 sub record {
     my ($this, $record_name) = @_;
     return $this->{'DBD::Record'}->{$record_name};
+}
+
+sub add_record {
+    my ($this, $record_name) = @_;
+    push @{$this->{RECORDS}}, $record_name;
+}
+sub record_names {
+    return @{shift->{RECORDS}};
+}
+sub sort_records {
+    my $this = shift;
+    my @sorted = sort @{$this->{RECORDS}};
+    $this->{RECORDS} = \@sorted;
 }
 
 sub registrars {

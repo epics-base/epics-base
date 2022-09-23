@@ -42,12 +42,13 @@ sub OutputDBD {
 
 sub OutputDB {
     my ($out, $dbd) = @_;
-    OutputRecords($out, $dbd->records);
+    OutputRecords($out, $dbd);
 }
 
 sub OutputMenus {
     my ($out, $menus) = @_;
-    while (my ($name, $menu) = each %{$menus}) {
+    foreach my $name (sort keys %{$menus}) {
+        my $menu = $menus->{$name};
         printf $out "menu(%s) {\n", $name;
         printf $out "    choice(%s, \"%s\")\n", @{$_}
             foreach $menu->choices;
@@ -57,7 +58,8 @@ sub OutputMenus {
 
 sub OutputRecordtypes {
     my ($out, $recordtypes) = @_;
-    while (my ($name, $recordtype) = each %{$recordtypes}) {
+    foreach my $name (sort keys %{$recordtypes}) {
+        my $recordtype = $recordtypes->{$name};
         printf $out "recordtype(%s) {\n", $name;
         print $out "    %$_\n"
             foreach $recordtype->cdefs;
@@ -83,12 +85,13 @@ sub OutputRecordtypes {
 sub OutputDrivers {
     my ($out, $drivers) = @_;
     printf $out "driver(%s)\n", $_
-        foreach keys %{$drivers};
+        foreach sort keys %{$drivers};
 }
 
 sub OutputLinks {
     my ($out, $links) = @_;
-    while (my ($name, $link) = each %{$links}) {
+    foreach my $name (sort keys %{$links}) {
+        my $link = $links->{$name};
         printf $out "link(%s, %s)\n", $link->key, $name;
     }
 }
@@ -96,25 +99,27 @@ sub OutputLinks {
 sub OutputRegistrars {
     my ($out, $registrars) = @_;
     printf $out "registrar(%s)\n", $_
-        foreach keys %{$registrars};
+        foreach sort keys %{$registrars};
 }
 
 sub OutputFunctions {
     my ($out, $functions) = @_;
     printf $out "function(%s)\n", $_
-        foreach keys %{$functions};
+        foreach sort keys %{$functions};
 }
 
 sub OutputVariables {
     my ($out, $variables) = @_;
-    while (my ($name, $variable) = each %{$variables}) {
+    foreach my $name (sort keys %{$variables}) {
+        my $variable = $variables->{$name};
         printf $out "variable(%s, %s)\n", $name, $variable->var_type;
     }
 }
 
 sub OutputBreaktables {
     my ($out, $breaktables) = @_;
-    while (my ($name, $breaktable) = each %{$breaktables}) {
+    foreach my $name (sort keys %{$breaktables}) {
+        my $breaktable = $breaktables->{$name};
         printf $out "breaktable(\"%s\") {\n", $name;
         printf $out "    %s, %s\n", @{$_}
             foreach $breaktable->points;
@@ -123,9 +128,11 @@ sub OutputBreaktables {
 }
 
 sub OutputRecords {
-    my ($out, $records) = @_;
-    while (my ($name, $rec) = each %{$records}) {
-        next if $name ne $rec->name; # Alias
+    my ($out, $dbd) = @_;
+    foreach my $name ($dbd->record_names) {
+        my $rec = $dbd->record($name);
+        die "No record '$name'"
+            unless $rec && $rec->isa('DBD::Record');
         printf $out "record(%s, \"%s\") {\n", $rec->recordtype->name, $name;
         printf $out "    alias(\"%s\")\n", $_
             foreach $rec->aliases;

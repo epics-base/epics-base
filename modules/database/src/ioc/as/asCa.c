@@ -241,7 +241,7 @@ void asCaStart(void)
                                      epicsThreadGetStackSize(epicsThreadStackBig),
                                      (EPICSTHREADFUNC)asCaTask,0);
         if(threadid==0) {
-            errMessage(0,"asCaStart: taskSpawn Failure\n");
+            errMessage(0,"asCaStart: taskSpawn Failure");
         }
     }
     epicsMutexMustLock(asCaTaskLock);

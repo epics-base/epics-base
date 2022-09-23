@@ -28,7 +28,14 @@ int traceIocInit(void) {
 }
 
 
-static const iocshFuncDef traceInitFuncDef = {"traceIocInit", 0, NULL};
+static const iocshFuncDef traceInitFuncDef = {
+    "traceIocInit",
+    0,
+    NULL,
+    "Setup the 'iocInit' function to trace its different stages.\n"
+    "This function must be called before 'iocInit'.\n\n"
+    "Example: traceIocInit\n",
+};
 static void traceInitFunc(const iocshArgBuf *args) {
     traceIocInit();
 }

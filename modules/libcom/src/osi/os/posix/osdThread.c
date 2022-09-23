@@ -217,8 +217,9 @@ static epicsThreadOSD * init_threadInfo(const char *name,
     return(pthreadInfo);
 }
 
-static void free_threadInfo(epicsThreadOSD *pthreadInfo)
+static void free_threadInfo(void* raw)
 {
+    epicsThreadOSD *pthreadInfo = raw;
     int status;
 
     if(epicsAtomicDecrIntT(&pthreadInfo->refcnt) > 0) return;
@@ -354,7 +355,8 @@ static void once(void)
     checkStatusOnce(status, "pthread_atfork");
 #endif
 
-    pthread_key_create(&getpthreadInfo,0);
+    checkStatusOnceQuit(pthread_key_create(&getpthreadInfo,&free_threadInfo),
+                        "pthread_key_create","epicsThreadInit");
     status = osdPosixMutexInit(&onceLock,PTHREAD_MUTEX_DEFAULT);
     checkStatusOnceQuit(status,"osdPosixMutexInit","epicsThreadInit");
     status = osdPosixMutexInit(&listLock,PTHREAD_MUTEX_DEFAULT);
@@ -439,7 +441,6 @@ static void * start_routine(void *arg)
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
     epicsExitCallAtThreadExits ();
-    free_threadInfo(pthreadInfo);
     return(0);
 }
 
@@ -722,8 +723,7 @@ LIBCOM_API void epicsStdCall epicsThreadExitMain(void)
 
     epicsThreadInit();
 
-    cantProceed("epicsThreadExitMain() has been deprecated for lack of usage."
-                "  Please report if you see this message.");
+    cantProceed("epicsThreadExitMain() must no longer be used.\n");
 
     pthreadInfo = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
     if(pthreadInfo==NULL)
@@ -733,7 +733,6 @@ LIBCOM_API void epicsStdCall epicsThreadExitMain(void)
         cantProceed("epicsThreadExitMain");
     }
     else {
-    free_threadInfo(pthreadInfo);
     pthread_exit(0);
     }
 }

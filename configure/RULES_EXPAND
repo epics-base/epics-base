@@ -47,7 +47,7 @@ vpath %@ $(USR_VPATH) $(ALL_SRC_DIRS)
 #        INC += myVersion.h
 
 # Default settings
-EXPAND_TOOL ?= $(PERL) $(TOOLS)/expandVars.pl
+EXPAND_TOOL ?= $(PERL) $(TOOLS)/expandVars.pl $(QUIET_FLAG)
 
 EXPANDARCH = -a $(T_A)
 EXPANDFLAGS += -t $(INSTALL_LOCATION)
@@ -55,27 +55,22 @@ EXPANDFLAGS += $(addprefix -D ,$(EXPAND_VARS) $($@_EXPAND_VARS))
 EXPANDFLAGS += $(foreach var, $(EXPAND_ME) $($@_EXPAND_ME), \
     -D$(var)="$(strip $($(var)))")
 
-# The names of files to be expanded must end with '@'
+# Output files
 EXPANDED = $(EXPAND:%@=%)
-EXPANDED_COM = $(EXPAND_COMMON:%@=%)
-EXPANDED_COMMON = $(EXPANDED_COM:%=$(COMMON_DIR)/%)
+EXPANDED_COMMON = $(EXPAND_COMMON:%@=$(COMMON_DIR)/%)
 
 $(EXPANDED): %: %@
 	$(ECHO) "Expanding $< to $@"
-	@$(RM) $@
 	$(EXPAND_TOOL) $(EXPANDARCH) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
 
-$(EXPANDED_COM): %: %@
+$(EXPANDED_COMMON): $(COMMON_DIR)/%: %@
 	$(ECHO) "Expanding $< to $(COMMON_DIR)/$@"
-	@$(RM) $@
 	$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
-$(EXPANDED_COMMON): $(COMMON_DIR)/%: %
-	@$(CP) $< $@
 
 clean: expand_clean
 
 expand_clean:
-	@$(RM) $(EXPANDED) $(EXPANDED_COMMON) $(EXPANDED_COM)
+	@$(RM) $(EXPANDED) $(EXPANDED_COMMON)
 
 .PRECIOUS: $(EXPANDED) $(EXPANDED_COMMON)
 .PHONY: expand_clean

@@ -302,7 +302,7 @@ static db_field_log * pre(void *user, dbChannel *chan, db_field_log *pLog) {
     pLog->field_type++;
 
     if (my->offpre == 0) {  /* The first one registers a dtor and saves pfl */
-        pLog->u.r.dtor = dtor;
+        pLog->dtor = dtor;
         dtorpfl = pLog;
     }
 
@@ -345,7 +345,7 @@ static db_field_log * post(void *user, dbChannel *chan, db_field_log *pLog) {
     pLog->field_type++;
 
     if (my->offpost == 0) { /* The first one registers a dtor and saves pfl */
-        pLog->u.r.dtor = dtor;
+        pLog->dtor = dtor;
         dtorpfl = pLog;
     }
 

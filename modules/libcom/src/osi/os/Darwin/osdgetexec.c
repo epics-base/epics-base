@@ -21,8 +21,7 @@ char *epicsGetExecName(void)
         if(!temp) {
             /* we treat alloc failure as terminal */
             free(ret);
-            ret = NULL;
-            break;
+            return NULL;
         }
         ret = temp;
 
@@ -35,9 +34,11 @@ char *epicsGetExecName(void)
         /* max has been updated with required size */
     }
 
-    /* TODO: _NSGetExecutablePath() doesn't follow symlinks */
+    /* Resolve soft-links */
+    char *res = realpath(ret, NULL);
+    free(ret);
 
-    return ret;
+    return res;
 }
 
 char *epicsGetExecDir(void)

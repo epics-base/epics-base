@@ -731,7 +731,7 @@ static db_field_log* db_create_field_log (struct dbChannel *chan, int use_val)
             /* don't make a copy yet, just reference the field value */
             pLog->u.r.field = dbChannelField(chan);
             /* indicate field value still owned by record */
-            pLog->u.r.dtor = NULL;
+            pLog->dtor = NULL;
             /* no private data yet, may be set by a filter */
             pLog->u.r.pvt = NULL;
         }
@@ -788,6 +788,18 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
      */
 
     LOCKEVQUE (ev_que);
+
+    /* if we have an event on the queue and both the last
+     * event on the queue and the current event reference
+     * a record field, simply ignore duplicate events.
+     */
+    if (pevent->npend > 0u
+            && !dbfl_has_copy(*pevent->pLastLog)
+            && !dbfl_has_copy(pLog)) {
+        db_delete_field_log(pLog);
+        UNLOCKEVQUE (ev_que);
+        return;
+    }
 
     /*
      * add to task local event que
@@ -1201,7 +1213,7 @@ void db_delete_field_log (db_field_log *pfl)
 {
     if (pfl) {
         /* Free field if reference type field log and dtor is set */
-        if (pfl->type == dbfl_type_ref && pfl->u.r.dtor) pfl->u.r.dtor(pfl);
+        if (pfl->type == dbfl_type_ref && pfl->dtor) pfl->dtor(pfl);
         /* Free the field log chunk */
         freeListFree(dbevFieldLogFreeList, pfl);
     }

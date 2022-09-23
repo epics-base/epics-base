@@ -275,8 +275,11 @@ static long fetch_values(aSubRecord *prec)
 
     /* Get the input link values */
     for (i = 0; i < NUM_ARGS; i++) {
+        DBLINK *plink = &(&prec->inpa)[i];
         long nRequest = (&prec->noa)[i];
-        status = dbGetLink(&(&prec->inpa)[i], (&prec->fta)[i], (&prec->a)[i], 0,
+        if(dbLinkIsConstant(plink))
+            continue;
+        status = dbGetLink(plink, (&prec->fta)[i], (&prec->a)[i], 0,
             &nRequest);
         if (status)
             return status;

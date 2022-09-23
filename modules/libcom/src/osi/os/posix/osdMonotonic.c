@@ -47,7 +47,7 @@ clockid_t ids[] = {
         return;
     }
 
-    errMessage(errlogMinor, "Warning: failed to setup monotonic time source\n");
+    errMessage(errlogMinor, "Warning: failed to setup monotonic time source");
 }
 
 epicsUInt64 epicsMonotonicResolution(void)

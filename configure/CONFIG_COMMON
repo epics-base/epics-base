@@ -82,14 +82,20 @@ FINAL_LOCATION              = $(INSTALL_ABSOLUTE)
 IOCS_APPL_TOP               = $(INSTALL_ABSOLUTE)
 
 #-------------------------------------------------------
-# Silencing the build - suppress messages during 'make -s'
-NOP = :
-ECHO = @$(if $(filter -s,$(MFLAGS)),$(NOP),echo)
-QUIET_FLAG := $(if $(filter -s,$(MFLAGS)),-q,)
+# How to portably check the flags to make
+define checkflags
+  make-$1 = $(findstring $1,$(filter-out --%,$(MAKEFLAGS)))
+endef
+# This is extensible to most single letter flags:
+$(foreach flag,s q, $(eval $(call checkflags,$(flag))))
 
-#-------------------------------------------------------
+# Silent builds - suppress messages during 'make -s'
+NOP = :
+ECHO = @$(if $(make-s),$(NOP),echo)
+QUIET_FLAG := $(if $(make-s),-q,)
+
 # Convert 'make -q' flag into '-i' for genVersionHeader.pl
-QUESTION_FLAG := $(if $(filter -q,$(MFLAGS)),-i,)
+QUESTION_FLAG := $(if $(make-q),-i,)
 
 #-------------------------------------------------------
 ifdef T_A
@@ -267,6 +273,7 @@ WARN_CXXFLAGS = $(WARN_CXXFLAGS_$($(BUILD_CLASS)_WARN))
 OPT_CPPFLAGS = $(OPT_CPPFLAGS_$($(BUILD_CLASS)_OPT))
 OPT_CFLAGS = $(OPT_CFLAGS_$($(BUILD_CLASS)_OPT))
 OPT_CXXFLAGS = $(OPT_CXXFLAGS_$($(BUILD_CLASS)_OPT))
+OPT_LDFLAGS = $(OPT_LDFLAGS_$($(BUILD_CLASS)_OPT))
 
 # Static build flags
 STATIC_CFLAGS = $(STATIC_CFLAGS_$(STATIC_BUILD))
@@ -288,7 +295,6 @@ TARGET_LIB_LDFLAGS = $(if $(findstring $*, $(LOADABLE_LIBRARY)), \
 
 #--------------------------------------------------
 # Command-line input support default
-COMMANDLINE_LIBRARY = EPICS
 OP_SYS_LDLIBS += $(LDLIBS_$(COMMANDLINE_LIBRARY))
 OP_SYS_LDFLAGS += $(LDFLAGS_$(COMMANDLINE_LIBRARY))
 RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(COMMANDLINE_LIBRARY))

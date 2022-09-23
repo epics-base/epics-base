@@ -373,11 +373,11 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 # Automated testing
 
 runtests: run-tap-tests
-run-tap-tests: $(TESTSCRIPTS.t)
+run-tap-tests: | build
 ifneq ($(TESTSCRIPTS.t),)
 ifdef RUNTESTS_ENABLED
-	$(ECHO) "$(PROVE) $^"
-	@$(PROVE) $^ || $(PROVE_FAILURE)
+	$(ECHO) "$(PROVE) $(TESTSCRIPTS.t)"
+	@$(PROVE) $(TESTSCRIPTS.t) || $(PROVE_FAILURE)
 endif
 endif
 
@@ -390,8 +390,8 @@ test-results: tap-results
 tap-results: $(TAPFILES)
 ifneq ($(strip $(TAPFILES)),)
 ifdef RUNTESTS_ENABLED
-	$(ECHO) "$(PROVE.tap) $^"
-	@$(PROVE.tap) $^ || $(PROVE_FAILURE)
+	$(ECHO) "$(PROVE.tap) $(TAPFILES)"
+	@$(PROVE.tap) $(TAPFILES) || $(PROVE_FAILURE)
 endif
 
 CURRENT_TAPFILES := $(wildcard $(TAPFILES))
@@ -407,7 +407,7 @@ ifneq ($(CURRENT_JUNITFILES),)
 endif
 
 # A .tap file is the output from running the associated test script
-$(TAPFILES.t): %.tap: %.t
+$(TAPFILES.t): %.tap: %.t | build
 ifdef RUNTESTS_ENABLED
 	$(ECHO) "$(PERL) $< -tap > $@"
 	@$(PERL) $< -tap > $@ || $(TAPFILE_FAILURE)

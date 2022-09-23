@@ -1366,10 +1366,17 @@ static long cvt_device_st(
    char                 **papChoice;
    char                 *pchoice;
 
-    if(!paddr
-    || !(pdbFldDes = paddr->pfldDes)
-    || !(pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt)
-    || *from>=pdbDeviceMenu->nChoice
+    if (!paddr
+    || !(pdbFldDes = paddr->pfldDes)) {
+        recGblDbaddrError(S_db_errArg, paddr, "dbFastLinkConv(cvt_device_st)");
+        return S_db_errArg;
+    }
+    if (!(pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt)) {
+        /* Valid, record type has no device support */
+        *to = '\0';
+        return 0;
+    }
+    if (*from >= pdbDeviceMenu->nChoice
     || !(papChoice= pdbDeviceMenu->papChoice)
     || !(pchoice=papChoice[*from])) {
         recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_device_st)");

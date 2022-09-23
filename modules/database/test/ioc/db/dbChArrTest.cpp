@@ -179,7 +179,7 @@ static void check(short dbr_type) {
     pfl->field_type = DBF_CHAR; \
     pfl->field_size = 1; \
     pfl->no_elements = 26; \
-    pfl->u.r.dtor = freeArray; \
+    pfl->dtor = freeArray; \
     pfl->u.r.field = epicsStrDup("abcdefghijklmnopqrsstuvwxyz"); \
     testOk(!dbChannelGetField(pch, DBR_LONG, buf, NULL, &req, pfl), "Got Field value"); \
     testOk(req == Size, "Got %ld elements (expected %d)", req, Size); \

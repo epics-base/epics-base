@@ -527,15 +527,15 @@ $(foreach file, $(DB_INSTALLS), $(eval $(call DB_INSTALLS_template, $(file))))
 #---------------------------------------------------------------
 # register record,device,driver support
 
-%_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd
+%_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
 	@$(RM) $@
 	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOCS_APPL_TOP)
 
-%_registerRecordDeviceDriver.cpp: %.dbd
+%_registerRecordDeviceDriver.cpp: %.dbd $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
 	@$(RM) $@
 	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOCS_APPL_TOP)
 
-%_registerRecordDeviceDriver.cpp: ../%.dbd
+%_registerRecordDeviceDriver.cpp: ../%.dbd $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
 	@$(RM) $@
 	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOCS_APPL_TOP)
 

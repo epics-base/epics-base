@@ -321,7 +321,10 @@ MAIN(arrTest)
 
     evtctx = db_init_events();
 
-    testOk(!!(plug = dbFindFilter(arr, strlen(arr))), "plugin arr registered correctly");
+    plug = dbFindFilter(arr, strlen(arr));
+    if (!plug)
+        testAbort("plugin '%s' not registered", arr);
+    testPass("plugin '%s' registered correctly", arr);
 
     check(DBR_LONG);
     check(DBR_DOUBLE);

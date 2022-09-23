@@ -2,19 +2,133 @@
 
 These release notes describe changes that have been made since the previous
 release of this series of EPICS Base. **Note that changes which were merged up
-from commits to the 3.15 branch are not described at the top of this file but
-lower down, under the 3.15 release to which they were originally committed.**
-Thus it is important to read more than just the first section to understand
-everything that has changed in each release.
+from commits to the 3.15 branch are described
+[further down this file](#changes-incorporated-from-the-315-branch)
+under the 3.15 release to which they were originally committed.** Thus it is
+important to read more than just the first section to understand everything that
+has changed in each release.
 
 The PVA submodules each have their own individual sets of release notes which
 should also be read to understand what has changed since earlier releases.
 
-**This version of EPICS has not been released yet.**
 
-## Changes made on the 7.0 branch since 7.0.6.1
+## EPICS Release 7.0.7
 
-<!-- Insert new items immediately below here ... -->
+### Doxygen Annotations
+
+Thanks to several attendees at the 2022 EPICS Codeathon the number of header
+files with Doxygen annotations in the EPICS Core has again increased.
+
+### Build System updates
+
+The top-level make targets `uninstall`, `archuninstall` and similar no
+longer trigger the `clean` target which empties build directories, this
+was a bug introduced in 7.0.5.
+
+The `make distclean` target now properly deletes the generated file(s)
+`modules/RELEASE.<host>.local` which are essential to build the external
+submodules under the `modules` directory, and should not crash if the
+build is configured with `INSTALL_LOCATION` pointing to an empty external directory (i.e. if you run `make distclean` twice in succession). When
+`INSTALL_LOCATION` is set in the files `configure/CONFIG_SITE` or
+`configure/CONFIG_SITE.local` the `modules/RELEASE.<host>.local` file
+will now be regenerated in case the install path has been modified.
+
+Note that passing `INSTALL_LOCATION=<path>` on the make command-line will
+only work if you have run `make distclean` immediately beforehand, as the
+`modules/RELEASE.<host>.local` file must be recreated using the new path.
+
+### Enhancements to `capr.pl`
+
+The `capr.pl` script can now display records from older Base versions to
+which fields have since been added, and shows long strings and array data
+up to 10 elements, use the new `-n` option to increase that number.
+The script is fully event-driven and prints all the field data received by
+the end of the CA wait time (`-w` option which defaults to 2 seconds).
+The interest level can now be specified using the `-l` option before the
+PV name, and the new `-D` flag outputs debugging information.
+
+### Time Synchronization on VxWorks
+
+VxWorks 6.9 can do its own OS clock time synchronization, if it has been
+configured by setting `SNTPC_PRIMARY_IPV4_ADDR`. Since EPICS 3.15.3 the
+IOC time support code has checked for the existence of the VxWorks time
+synchronization task and avoided starting the EPICS one if the OS task
+exists and the OS clock gives a "recent" time (i.e. after when EPICS was
+compiled), unless the environment variable `EPICS_TS_FORCE_NTPTIME` is
+also set. However a logic error in that code required the environment
+variable to be set in more cases than it should have.
+
+This error has been fixed and the IOC should work normally if the VxWorks
+task is configured and running. The `TIMEZONE` value for the year is also
+now calculated at initialization in this configuration, previously it was
+only done when the IOC synchronzation task was used. Setting the above
+environment variable will now cause the IOC support code to shut down the
+VxWorks synchronization thread (if running) before starting the EPICS one.
+
+Running the iocsh command `ClockTime_Report` now shows whether the VxWorks
+task is running as well as giving the state of the IOC synchronization task.
+The `ClockTime_Init` command can also be used to stop or restart the IOC
+time synchronization task while the IOC is running, depending on the `0` or
+`1` parameter passed to it. This last change also applies to RTEMS IOCs.
+
+### Incompatible change to `struct db_field_log`
+
+This change may cause channel filters which manipulate array updates
+to fail to compile.
+
+To avoid potential speculation issues arising from overlapping code pointers
+with data values, `union dbfl_ref` is modified to remove the `dtor` member.
+`dtor` is moved out into the enclosing `struct db_field_log`.
+
+So eg. using a `db_field_log* p`, the expression `p->u.r.dtor` must be
+changed to `(p)->dtor`.
+
+### Fix undef ts on first camonitor update of NORD from waveformRecord
+
+The order over operations when processing a waveformRecord is adjusted
+so that updates to NORD is posted with the correct timestamp.
+
+### Automatic COMMANDLINE_LIBRARY w/ newer compilers
+
+When built with a compiler supporting `__has_include<>`, the presence
+of the `<readline/readline.h>` will be used to automatically determine
+a default value for `COMMANDLINE_LIBRARY`.
+
+Mingw builds with readline support now link `-ltermcap` instead of `-lcurses`.
+
+This should not effect sites which set explicitly set `COMMANDLINE_LIBRARY`
+as the only definition in Base now has the form `COMMANDLINE_LIBRARY ?= ...`.
+
+### Perl CA support for empty long strings
+
+The Perl CA bindings have been fixed to handle zero-length long string data
+properly.
+
+### `aao` gains `OMSL` and `DOL`
+
+The `aao` record types gains the same `DOL` functionality found
+in other output record types (`ao`, `longout`, etc.)
+
+### Server exports `RSRV_SERVER_PORT`
+
+During `iocInit()`, the environment variable `RSRV_SERVER_PORT` is set
+with the TCP port number selected.
+
+### `dbdExpand.pl` sorts all items by name
+
+DBD files generated by the `dbdExpand.pl` script are now sorted within each
+item type by the primary name of the item. The result should resolve any
+issues with reproducable builds. No option is provided to prevent the sorting,
+previously the order was essentially random and varied each time.
+
+### `dbExpand.pl` sorts records by name
+
+Records are now output by this program in order, sorted by name. The new flag
+`-s` can be given to output the records in the same order they were read in,
+instead of sorting them.
+
+Note that there are currently no build rules provided with Base which make use
+of this program.
 
 ### Simulation Mode RAW Support for Output Record Types
 
@@ -22,6 +136,20 @@ SIMM=RAW support has been added for the relevant output record types
 (ao, bo, mbbo, mbboDirect).
 RAW simulation mode will have those records do the appropriate conversion
 and write RVAL to the location pointed to by SIOL.
+
+### Fixed leak from a non-EPICS thread
+
+On some targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.
+
+Prior to this release, on POSIX and WIN32 targets, this
+struct would not be `free()`d, resulting in a memory leak.
+
+This release fixed the leak on POSIX targets.
+
+See the associated github [issue 241](https://github.com/epics-base/epics-base/issues/241)
+for WIN32 status.
 
 ### Fix `CHECK_RELEASE = WARN`
 
@@ -467,10 +595,10 @@ broken.
 
 This fixes [lauchpad bug #1896295](https://bugs.launchpad.net/bugs/1896295).
 
-### Support for Apple M1 (arm64) Processors
+### Support for Apple M1/M2 (arm64) Processors
 
 Thanks to Jeong Han Lee this release comes with build support for Apple's new
-M1 CPUs running macOS, using the target name `darwin-aarch64`.
+M1/M2 CPUs running macOS, using the target name `darwin-aarch64`.
 
 It should also be possible to build universal binaries containing code for
 both the Intel and arm64 processors under either target name: In the
@@ -2083,6 +2211,17 @@ header and removed the need for dbScan.c to reach into the internals of its
 
 
 ## Changes from the 3.15 branch since 3.15.9
+
+### Support for Apple M1/M2 (arm64) Processors
+
+Thanks to Jeong Han Lee this release comes with build support for Apple's new
+M1/M2 CPUs running macOS, using the target name `darwin-aarch64`.
+
+### Set thread names on Windows
+
+On MS Windows, epicsThread names are made available to the OS and debugger
+using `SetThreadDescription()` if available as well as using the older
+exception mechanism.
 
 ### Fix timers on MS Windows for non-EPICS threads
 

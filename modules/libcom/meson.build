@@ -432,7 +432,7 @@ if system == 'linux'
   ]
 endif
 
-libcom = both_libraries(
+libcom = library(
   'epics-com',
   [sources, api_header, epics_version],
   include_directories: include_directories,

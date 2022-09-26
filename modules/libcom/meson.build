@@ -11,9 +11,6 @@ valgrind_dep = dependency('valgrind')
 
 perl_prog = find_program('perl', required: true)
 
-env = environment()
-env.append('PERL5LIB', join_paths(meson.current_source_dir(), '../../src/tools'))
-
 api_header = custom_target(
  'libComAPI',
  input: ['../../src/tools/makeAPIheader.pl'],
@@ -40,12 +37,12 @@ env_data = custom_target(
   output: 'envData.c',
   command: [
     perl_prog,
+    '-I', join_paths(meson.current_source_dir(), '../../src/tools'),
     '@INPUT0@',
     '-o', '@OUTPUT@',
     '-e', '@INPUT1@',
     join_paths(meson.current_source_dir(), '../../configure'),
   ],
-  env: env,
 )
 
 epics_version = custom_target(

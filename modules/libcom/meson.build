@@ -77,6 +77,7 @@ subdir('src/yacc')
 subdir('src/flex')
 
 headers = [
+  'src/as/asLib.h',
   'src/as/asTrapWrite.h',
 
   'src/bucketLib/bucketLib.h',

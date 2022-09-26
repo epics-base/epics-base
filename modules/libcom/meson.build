@@ -7,7 +7,6 @@ system = host_machine.system()
 dl_dep = cc.find_library('dl', required: false)
 math_dep = cc.find_library('m', required: false)
 thread_dep = dependency('threads')
-valgrind_dep = dependency('valgrind')
 
 perl_prog = find_program('perl', required: true)
 
@@ -351,6 +350,8 @@ include_directories = [
   'src/ring',
   'src/taskwd',
   'src/timer',
+  # For valgrind/valgrind.h
+  'src',
 ]
 
 if compiler_id == 'gcc'
@@ -435,7 +436,7 @@ libcom = both_libraries(
   'epics-com',
   [sources, api_header, epics_version],
   include_directories: include_directories,
-  dependencies: [dl_dep, math_dep, thread_dep, valgrind_dep],
+  dependencies: [dl_dep, math_dep, thread_dep],
   install: true,
 )
 

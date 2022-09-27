@@ -40,7 +40,7 @@ struct epicsSockPollfd {
     short revents;
 };
 
-int epicsSockPoll(struct epicsSockPollfd fds[], int nfds, int timeout);
+LIBCOM_API int epicsStdCall epicsSockPoll(struct epicsSockPollfd fds[], int nfds, int timeout);
 #endif
 
 #ifdef NETDEBUG

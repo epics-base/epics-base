@@ -684,7 +684,7 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
  * this code is tested and working under all supported platforms
  */
 #ifdef AF_INET6
-int epicsSockPoll(struct epicsSockPollfd fds[], int nfds, int timeout)
+LIBCOM_API int epicsStdCall epicsSockPoll(struct epicsSockPollfd fds[], int nfds, int timeout)
 {
     fd_set fdset_rd;
     struct timeval tv, *ptv = NULL;

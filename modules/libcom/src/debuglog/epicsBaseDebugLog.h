@@ -16,11 +16,8 @@
 extern "C" {
 #endif
 
-    void epicsBaseDoDebugLog(const char *, ...) EPICS_PRINTF_STYLE(1,2);
-    void epicsBaseDoDebugLog(const char *format, ...);
-
-    const char *epicsBaseDebugStripPath(const char *file);
-
+LIBCOM_API const char * epicsStdCall epicsBaseDebugStripPath(const char *file);
+LIBCOM_API void epicsStdCall epicsBaseDoDebugLog(const char *, ...) EPICS_PRINTF_STYLE(1,2);
 
 #define epicsBaseDebugLog(fmt, ...)                                  \
     {                                                                \

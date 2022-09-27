@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-    const char *epicsBaseDebugStripPath(const char *file)
+LIBCOM_API const char * epicsStdCall epicsBaseDebugStripPath(const char *file)
     {
         const char *ret = strrchr(file, '/');
         if (ret) return ret + 1;
@@ -28,7 +28,7 @@ extern "C" {
     }
 
 
-    void epicsBaseDoDebugLog(const char *format, ...)
+LIBCOM_API void epicsStdCall epicsBaseDoDebugLog(const char *format, ...)
     {
         va_list pVar;
         va_start(pVar, format);

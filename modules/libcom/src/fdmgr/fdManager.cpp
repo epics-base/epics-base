@@ -29,10 +29,26 @@
 
 using std :: max;
 
-fdManager fileDescriptorManager;
-
 const unsigned mSecPerSec = 1000u;
 const unsigned uSecPerSec = 1000u * mSecPerSec;
+
+static
+fdManager *theFDM;
+
+static
+epicsThreadOnceId onceFDM = EPICS_THREAD_ONCE_INIT;
+
+static
+void initFDM(void *)
+{
+    theFDM = new fdManager;
+}
+
+fdManager& fileDescriptorManagerInstance()
+{
+    epicsThreadOnce(&onceFDM, &initFDM, 0);
+    return *theFDM;
+}
 
 //
 // fdManager::fdManager()
@@ -346,6 +362,19 @@ fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn,
         const bool onceOnlyIn, fdManager &managerIn) :
     fdRegId (fdIn,typIn), state (limbo),
     onceOnly (onceOnlyIn), manager (managerIn)
+{
+    if (!FD_IN_FDSET(fdIn)) {
+        fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n",
+            __FILE__);
+        return;
+    }
+    this->manager.installReg (*this);
+}
+
+fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn,
+        const bool onceOnlyIn) :
+    fdRegId (fdIn,typIn), state (limbo),
+    onceOnly (onceOnlyIn), manager (fileDescriptorManagerInstance())
 {
     if (!FD_IN_FDSET(fdIn)) {
         fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n",

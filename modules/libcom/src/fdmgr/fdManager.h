@@ -113,7 +113,9 @@ private:
 //
 // default file descriptor manager
 //
-LIBCOM_API extern fdManager fileDescriptorManager;
+LIBCOM_API
+fdManager& fileDescriptorManagerInstance();
+#define fileDescriptorManager fileDescriptorManagerInstance()
 
 //
 // fdReg
@@ -127,7 +129,9 @@ class LIBCOM_API fdReg :
 public:
 
     fdReg (const SOCKET fdIn, const fdRegType type,
-        const bool onceOnly=false, fdManager &manager = fileDescriptorManager);
+        const bool onceOnly=false);
+    fdReg (const SOCKET fdIn, const fdRegType type,
+        const bool onceOnly, fdManager &manager);
     virtual ~fdReg ();
 
     virtual void show (unsigned level) const;

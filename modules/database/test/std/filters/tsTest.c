@@ -207,7 +207,7 @@ static int value_check_array(const db_field_log *pfl, const epicsTimeStamp *ts) 
     epicsUInt32 *arr = (epicsUInt32*)pfl->u.r.field;
     return pfl->type == dbfl_type_ref
         && pfl->u.r.field != NULL
-        && pfl->u.r.dtor != NULL
+        && pfl->dtor != NULL
         && pfl->u.r.pvt == NULL
         && ts->secPastEpoch == arr[0]
         && ts->nsec == arr[1];
@@ -217,7 +217,7 @@ static int value_check_unix(const db_field_log *pfl, const epicsTimeStamp *ts) {
     epicsUInt32 *arr = (epicsUInt32 *)pfl->u.r.field;
     return pfl->type == dbfl_type_ref
         && pfl->u.r.field != NULL
-        && pfl->u.r.dtor != NULL
+        && pfl->dtor != NULL
         && pfl->u.r.pvt == NULL
         && ts->secPastEpoch == arr[0] - POSIX_TIME_AT_EPICS_EPOCH
         && ts->nsec == arr[1];
@@ -235,7 +235,7 @@ static int value_check_string(const db_field_log *pfl, const epicsTimeStamp *ts)
     (void)ts;
     return pfl->type == dbfl_type_ref
         && pfl->u.r.field != NULL
-        && pfl->u.r.dtor != NULL
+        && pfl->dtor != NULL
         && pfl->u.r.pvt == NULL;
 }
 

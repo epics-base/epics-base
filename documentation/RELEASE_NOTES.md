@@ -48,6 +48,23 @@ The compress record now supports the use of partially-filled buffers when using
 any of the N-to-one algorithms. This is achieved by setting the new field `PBUF`
 to `YES`.
 
+### Extended timestamp channel filter
+
+The `"ts"` filter can now retrieve the record's timestamp in several numeric
+and string formats, some of which support full nanosecond precision.
+
+    Hal$ caget -a test:channel
+    test:channel                   2021-03-11 18:23:48.265386 42
+    Hal$ caget -f9 'test:channel.{"ts": {"num": "dbl"}}'
+    test:channel.{"ts": {"num": "dbl"}} 984331428.265386105
+    Hal$ caget 'test:channel.{"ts": {"str": "iso"}}'
+    test:channel.{"ts": {"str": "iso"}} 2021-03-11T18:23:48.265386+0100
+    Hal$ caget -f1 'test:channel.{"ts": {"num": "ts"}}'
+    test:channel.{"ts": {"num": "ts"}} 2 984331428.0 265386163.0
+
+More information is included in the filters documentation, which can be found in
+the `html/filters.html` document that is generated during the build
+
 ### Add conditional output (OOPT) to the longout record
 
 The longout record can now be configured using its new OOPT and OOCH fields

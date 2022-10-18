@@ -167,9 +167,9 @@ static db_field_log *replace_fl_value(tsPrivate const *pvt,
                                       int (*func)(tsPrivate const *,
                                                   db_field_log *)) {
     /* Get rid of the old value */
-    if (pfl->type == dbfl_type_ref && pfl->u.r.dtor) {
-        pfl->u.r.dtor(pfl);
-        pfl->u.r.dtor = NULL;
+    if (pfl->type == dbfl_type_ref && pfl->dtor) {
+        pfl->dtor(pfl);
+        pfl->dtor = NULL;
     }
     pfl->no_elements = 1;
     pfl->type = dbfl_type_val;
@@ -228,11 +228,11 @@ static int ts_array(tsPrivate const *settings, db_field_log *pfl) {
     pfl->u.r.field = allocTsArray();
     if (pfl->u.r.field) {
         pfl->no_elements = 2;
-        pfl->u.r.dtor = freeTsArray;
+        pfl->dtor = freeTsArray;
         ts_to_array(settings, &pfl->time, (epicsUInt32*)pfl->u.r.field);
     } else {
         pfl->no_elements = 0;
-        pfl->u.r.dtor = NULL;
+        pfl->dtor = NULL;
     }
     return 0;
 }
@@ -263,11 +263,11 @@ static int ts_string(tsPrivate const *settings, db_field_log *pfl) {
 
     if (!pfl->u.r.field) {
         pfl->no_elements = 0;
-        pfl->u.r.dtor = NULL;
+        pfl->dtor = NULL;
         return 0;
     }
 
-    pfl->u.r.dtor = freeString;
+    pfl->dtor = freeString;
 
     field = (char *)pfl->u.r.field;
     n = epicsTimeToStrftime(field, MAX_STRING_SIZE, fmt, &pfl->time);
@@ -336,9 +336,9 @@ static void channelRegisterPost(dbChannel *chan, void *pvt,
 
     /* Get rid of the value of the probe because we will be changing the
        datatype */
-    if (probe->type == dbfl_type_ref && probe->u.r.dtor) {
-        probe->u.r.dtor(probe);
-        probe->u.r.dtor = NULL;
+    if (probe->type == dbfl_type_ref && probe->dtor) {
+        probe->dtor(probe);
+        probe->dtor = NULL;
     }
     probe->no_elements = 1;
     probe->type = dbfl_type_val;

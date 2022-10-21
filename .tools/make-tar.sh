@@ -140,10 +140,12 @@ sed \
   -e '/\/\.ci-local\//d' \
   -e '/\/\.tools\//d' \
   -e '/\/jenkins\//d' \
-  -e '/\/\.git/d' \
+  -e '/\/\.github\//d' \
+  -e '/\/\.gitmodules$/d' \
   -e '/\/\.hgtags$/d' \
   -e '/\/\.cproject$/d' \
   -e '/\/\.project$/d' \
+  -e '/\/\.lgtm\.yml$/d' \
   -e '/\/\.travis\.yml$/d' \
   -e '/\/\.appveyor\.yml$/d' \
   -e '/\/\.readthedocs\.yml$/d' \

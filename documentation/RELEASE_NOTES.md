@@ -2,19 +2,45 @@
 
 These release notes describe changes that have been made since the previous
 release of this series of EPICS Base. **Note that changes which were merged up
-from commits to the 3.15 branch are not described at the top of this file but
-lower down, under the 3.15 release to which they were originally committed.**
-Thus it is important to read more than just the first section to understand
-everything that has changed in each release.
+from commits to the 3.15 branch are described
+[further down this file](#changes-incorporated-from-the-315-branch)
+under the 3.15 release to which they were originally committed.** Thus it is
+important to read more than just the first section to understand everything that
+has changed in each release.
 
 The PVA submodules each have their own individual sets of release notes which
 should also be read to understand what has changed since earlier releases.
 
 **This version of EPICS has not been released yet.**
 
-## Changes made on the 7.0 branch since 7.0.6.1
+## Changes made on the 7.0 branch since 7.0.7
 
 <!-- Insert new items immediately below here ... -->
+
+## EPICS Release 7.0.7
+
+### Doxygen Annotations
+
+Thanks to several attendees at the 2022 EPICS Codeathon the number of header
+files with Doxygen annotations in the EPICS Core has again increased.
+
+### Build System updates
+
+The top-level make targets `uninstall`, `archuninstall` and similar no
+longer trigger the `clean` target which empties build directories, this
+was a bug introduced in 7.0.5.
+
+The `make distclean` target now properly deletes the generated file(s)
+`modules/RELEASE.<host>.local` which are essential to build the external
+submodules under the `modules` directory, and should not crash if the
+build is configured with `INSTALL_LOCATION` pointing to an empty external directory (i.e. if you run `make distclean` twice in succession). When
+`INSTALL_LOCATION` is set in the files `configure/CONFIG_SITE` or
+`configure/CONFIG_SITE.local` the `modules/RELEASE.<host>.local` file
+will now be regenerated in case the install path has been modified.
+
+Note that passing `INSTALL_LOCATION=<path>` on the make command-line will
+only work if you have run `make distclean` immediately beforehand, as the
+`modules/RELEASE.<host>.local` file must be recreated using the new path.
 
 ### Enhancements to `capr.pl`
 

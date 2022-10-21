@@ -266,7 +266,7 @@ LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
  * errlogPrintf(ANSI_ESC_RED "ERROR" ANSI_ESC_RESET ": something is amiss\n");
  * @endcode
  *
- * @since UNRELEASED
+ * @since EPICS 7.0.7
  *
  * @see errlogPrintf()
  * @{

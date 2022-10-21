@@ -1191,10 +1191,12 @@ POSIX_Init ( void *argument __attribute__((unused)))
 #ifdef RTEMS_LEGACY_STACK
     osdTimeRegister();
 #endif
+# if defined(__PPC)
 #if __RTEMS_MAJOR__ > 4
    printf(" Will try to start telnetd with prio %d ...\n", rtems_telnetd_config.priority);
    result = rtems_telnetd_initialize();
    printf (" telnetd initialized with result %d\n", result);
+#endif
 #endif
 
     /*

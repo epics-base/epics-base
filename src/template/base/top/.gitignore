@@ -1,0 +1,29 @@
+# Install directories
+/bin/
+/cfg/
+/db/
+/dbd/
+/html/
+/include/
+/lib/
+/templates/
+
+# Local configuration files
+/configure/*.local
+
+# iocBoot generated files
+/iocBoot/*ioc*/cdCommands
+/iocBoot/*ioc*/dllPath.bat
+/iocBoot/*ioc*/envPaths
+/iocBoot/*ioc*/relPaths.sh
+
+# Build directories
+O.*/
+
+# Common files created by other tools
+/QtC-*
+/.vscode/
+*.orig
+*.log
+.*.swp
+.DS_Store

@@ -996,8 +996,12 @@ static void printBuffer(
                 i = 0;
                 while (len > 0) {
                     int chunk = (len > MAXLINE - 5) ? MAXLINE - 5 : len;
-
-                    sprintf(pmsg, "\"%.*s\"", chunk, (char *)pbuffer + i);
+                    strcpy(pmsg, "\"");
+                    while (epicsStrnEscapedFromRawSize((char *)pbuffer + i, chunk) >= MAXLINE - 5)
+                        chunk--;
+                    epicsStrnEscapedFromRaw(pmsg+1, MAXLINE - 5,
+                        (char *)pbuffer + i, chunk);
+                    strcat(pmsg, "\"");
                     len -= chunk; i += chunk;
                     if (len > 0)
                         strcat(pmsg, " +");

@@ -23,35 +23,42 @@ ifndef DISABLE_TOP_RULES
   # Rules for a regular application top directory
   #
 
-distclean: realclean cvsclean realuninstall
+  # When run by 'make distclean' the realuninstall target also
+  # removes any modules/RELEASE.<host>.local files
+  distclean: realclean cvsclean realuninstall
 
-realuninstall: uninstallDirs
+  realuninstall: uninstallDirs
 	$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB)
+  ifeq (modules,$(filter modules,$(DIRS)))
+    ifeq (distclean,$(filter distclean,$(MAKECMDGOALS)))
+	$(RM) $(wildcard modules/RELEASE.*.local)
+    endif
+  endif
 
-UNINSTALL_DIRS += $(INSTALL_DB) $(INSTALL_DBD) $(INSTALL_DOC) $(INSTALL_HTML)
-UNINSTALL_DIRS += $(INSTALL_INCLUDE) $(INSTALL_TEMPLATES) $(DIRECTORY_TARGETS)
-ifneq ($(INSTALL_LOCATION),$(TOP))
-  UNINSTALL_DIRS += $(INSTALL_CONFIG)
-endif
-uninstallDirs: | clean
+  UNINSTALL_DIRS += $(INSTALL_DB) $(INSTALL_DBD) $(INSTALL_DOC) $(INSTALL_HTML)
+  UNINSTALL_DIRS += $(INSTALL_INCLUDE) $(INSTALL_TEMPLATES) $(DIRECTORY_TARGETS)
+  ifneq ($(INSTALL_LOCATION),$(TOP))
+    UNINSTALL_DIRS += $(INSTALL_CONFIG)
+  endif
+  uninstallDirs:
 	$(RMDIR) $(UNINSTALL_DIRS)
 
   # Remove the bin and lib directories if they have no sub-directories
   #
-EMPTY_INSTALL_DIRS = \
-    $(if $(wildcard $(INSTALL_LOCATION_BIN)/*),,$(INSTALL_LOCATION_BIN)) \
-    $(if $(wildcard $(INSTALL_LOCATION_LIB)/*),,$(INSTALL_LOCATION_LIB))
-uninstall: archuninstall uninstallDirs | clean
+  EMPTY_INSTALL_DIRS = \
+      $(if $(wildcard $(INSTALL_LOCATION_BIN)/*),,$(INSTALL_LOCATION_BIN)) \
+      $(if $(wildcard $(INSTALL_LOCATION_LIB)/*),,$(INSTALL_LOCATION_LIB))
+  uninstall: archuninstall uninstallDirs
 	$(RMDIR) $(EMPTY_INSTALL_DIRS)
 
-archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
+  archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
 
-uninstall$(DIVIDER)%: | clean
+  uninstall$(DIVIDER)%:
 	$(RMDIR) $(addsuffix /$(subst uninstall$(DIVIDER),,$@), \
 	    $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB))
 
-# Only run this at the top of the parent
-runtests test-results:
+  # Only run this at the top of the parent
+  runtests test-results:
 	@$(SHOWTESTFAILURES)
 
 else
@@ -76,7 +83,6 @@ help:
 	@echo "     inc            - Installs header, dbd and html files"
 	@echo "     build          - Builds and installs all targets"
 	@echo "     install        - Builds and installs all targets"
-	@echo "     buildInstall   - Same as install (deprecated)"
 	@echo "     clean          - Removes the O.<arch> dirs created by running make"
 	@echo "                      In O.<arch> dir, clean removes build created files"
 	@echo "     realclean      - Removes ALL O.<arch> dirs"
@@ -101,7 +107,8 @@ ifndef DISABLE_TOP_RULES
 	@echo "     uninstall$(DIVIDER)<arch> - Remove bin & lib directories for <arch> only."
 	@echo "     uninstall      - Remove install directories created by this hostarch."
 	@echo "     realuninstall  - Removes ALL install dirs"
-	@echo "     distclean      - Same as realclean cvsclean realuninstall."
+	@echo "     distclean      - Does realclean cvsclean realuninstall and deletes any"
+	@echo "                      generated modules/RELEASE.<host>.local files"
 endif
 	@echo "     help           - Prints this list of valid make targets "
 	@echo "Object targets are supported by the O.<arch> level Makefile .e.g"

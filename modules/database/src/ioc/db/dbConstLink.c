@@ -27,6 +27,7 @@
 #include "dbFldTypes.h"
 #include "dbLink.h"
 #include "link.h"
+#include "errlog.h"
 
 /**************************** Convert functions ****************************/
 
@@ -178,17 +179,23 @@ static long dbConstLoadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
     epicsUInt32 *plen)
 {
     const char *pstr = plink->value.constantStr;
+    long status;
 
     if (!pstr)
         return S_db_badField;
 
-    return dbLSConvertJSON(pstr, pbuffer, size, plen);
+    status = dbLSConvertJSON(pstr, pbuffer, size, plen);
+    if (status)
+        errlogPrintf("... while parsing link %s.%s\n",
+            plink->precord->name, dbLinkFieldName(plink));
+    return status;
 }
 
 static long dbConstLoadArray(struct link *plink, short dbrType, void *pbuffer,
         long *pnReq)
 {
     const char *pstr = plink->value.constantStr;
+    long status;
 
     if (!pstr)
         return S_db_badField;
@@ -197,7 +204,11 @@ static long dbConstLoadArray(struct link *plink, short dbrType, void *pbuffer,
     if (dbrType == DBF_MENU || dbrType == DBF_ENUM || dbrType == DBF_DEVICE)
         dbrType = DBF_USHORT;
 
-    return dbPutConvertJSON(pstr, dbrType, pbuffer, pnReq);
+    status = dbPutConvertJSON(pstr, dbrType, pbuffer, pnReq);
+    if (status)
+        errlogPrintf("... while parsing link %s.%s\n",
+            plink->precord->name, dbLinkFieldName(plink));
+    return status;
 }
 
 static long dbConstGetNelements(const struct link *plink, long *nelements)

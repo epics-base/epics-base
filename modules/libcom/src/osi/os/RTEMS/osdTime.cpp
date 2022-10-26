@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <string.h>
 #if __RTEMS_MAJOR__ < 5
 #include <rtems/rtems_bsdnet_internal.h>
 #endif

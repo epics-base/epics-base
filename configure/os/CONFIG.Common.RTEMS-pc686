@@ -15,6 +15,8 @@ RTEMS_BSP = pc686
 RTEMS_TARGET_CPU = i386
 GNU_TARGET = i386-rtems
 
+ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+
 MUNCH_SUFFIX = .boot
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $@ 

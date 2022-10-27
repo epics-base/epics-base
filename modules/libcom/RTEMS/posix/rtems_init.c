@@ -36,6 +36,7 @@
 #include <sys/syslog.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <assert.h>
 #include <rtems.h>
 #include <rtems/malloc.h>
@@ -968,6 +969,29 @@ rtems_telnetd_config_table rtems_telnetd_config = {
 
 #endif
 
+/*
+ * check for active network interface other then the loopback
+ */
+int checkForNetInterfaces()
+{
+    struct ifaddrs *ifap, *ifa;
+    struct sockaddr_in *sa;
+    char *addr;
+    int count =0;
+
+    getifaddrs (&ifap);
+    for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET) {
+            sa = (struct sockaddr_in *) ifa->ifa_addr;
+            addr = inet_ntoa(sa->sin_addr);
+            // printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, addr);
+            // printf("Interface: %s\tAddress: %s (Flags: 0x%x)\n", ifa->ifa_name, addr, ifa->ifa_flags);
+	    if ((ifa->ifa_flags & (IFF_LOOPBACK | IFF_UP)) == IFF_UP ) count++;
+        }
+    }
+    freeifaddrs(ifap);
+    return count;
+}
 
 /*
  * RTEMS Startup task
@@ -1162,10 +1186,12 @@ POSIX_Init ( void *argument __attribute__((unused)))
     rtems_bsdnet_initialize_network();
     printf("\n***** Network Status  *****\n");
     rtems_netstat(3);
-    rtems_bsdnet_synchronize_ntp (0, 0);
+    if (checkForNetInterfaces())
+    	rtems_bsdnet_synchronize_ntp (0, 0);
 #endif // not RTEMS_LEGACY_STACK
 
-    printf("\n***** Setting up file system *****\n");
+if (checkForNetInterfaces()) {
+    printf("\n***** Setting up remote file system *****\n");
     initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
 
     /*
@@ -1191,6 +1217,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
 #ifdef RTEMS_LEGACY_STACK
     osdTimeRegister();
 #endif
+}
 # if defined(__PPC)
 #if __RTEMS_MAJOR__ > 4
    printf(" Will try to start telnetd with prio %d ...\n", rtems_telnetd_config.priority);

@@ -72,7 +72,8 @@ static struct rtems_bsdnet_ifconfig fxp_driver_config = {
     rtems_fxp_attach,                   /* attach function */
     &ne2k_driver_config,             /* link to next interface */
 };
-extern int rtems_3c509_driver_attach (struct rtems_bsdnet_ifconfig *, int);
+// is defined in bsp.4 target pc686
+//extern int rtems_3c509_driver_attach (struct rtems_bsdnet_ifconfig *, int);
 static struct rtems_bsdnet_ifconfig e3c509_driver_config = {
     "ep0",                              /* name */
     rtems_3c509_driver_attach,          /* attach function */

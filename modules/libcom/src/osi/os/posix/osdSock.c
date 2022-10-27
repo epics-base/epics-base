@@ -27,6 +27,7 @@
 #include "osiSock.h"
 #include "epicsAssert.h"
 #include "errlog.h"
+#include "epicsAtomic.h"
 
 /* Linux and *BSD (at least) specific way to atomically set O_CLOEXEC.
  * RTEMS 5.1 provides SOCK_CLOEXEC, but doesn't implement accept4()
@@ -60,19 +61,18 @@ static void unlockInfo (void)
     epicsMutexUnlock (infoMutex);
 }
 
-/*
- * NOOP
- */
+
+static size_t nAttached;
+
 int osiSockAttach()
 {
+    epicsAtomicIncrSizeT(&nAttached);
     return 1;
 }
 
-/*
- * NOOP
- */
 void osiSockRelease()
 {
+    epicsAtomicDecrSizeT(&nAttached);
 }
 
 /*
@@ -83,6 +83,11 @@ void osiSockRelease()
 LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
     int domain, int type, int protocol )
 {
+    static unsigned char warnAttached;
+    if(!epicsAtomicGetSizeT(&nAttached) && !warnAttached) {
+        warnAttached = 1;
+        errlogPrintf(ERL_WARNING ": epicsSocketCreate() without osiSockAttach() is not portable\n");
+    }
     SOCKET sock = socket ( domain, type | SOCK_CLOEXEC, protocol );
     if ( sock < 0 ) {
         sock = INVALID_SOCKET;

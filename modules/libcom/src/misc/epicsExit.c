@@ -183,7 +183,7 @@ LIBCOM_API int epicsAtExit3(epicsExitFunc func, void *arg, const char* name)
 LIBCOM_API void epicsExit(int status)
 {
     epicsExitCallAtExits();
-    epicsThreadSleep(0.1);
+    epicsThreadSleep(0.3);
     exit(status);
 }
 

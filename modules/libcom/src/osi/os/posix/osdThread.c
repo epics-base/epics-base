@@ -757,12 +757,12 @@ LIBCOM_API void epicsStdCall epicsThreadSetPriority(epicsThreadId pthreadInfo,un
 
     assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
-/*
     if(!pthreadInfo->isEpicsThread) {
-        fprintf(stderr,"epicsThreadSetPriority called by non epics thread\n");
+        fprintf(stderr,"epicsThreadSetPriority called by non epics thread (ignored with RTEMS)\n");
+#if !defined(__rtems__)
         return;
+#endif
     }
-*/
     pthreadInfo->osiPriority = priority;
     if(!pthreadInfo->isRealTimeScheduled) return;
 

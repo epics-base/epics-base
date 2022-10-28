@@ -15,6 +15,7 @@
 #include "epicsTypes.h"
 #include "testMain.h"
 #include "epicsAssert.h"
+#include <unistd.h>
 
 /*
  * Might as well check at compile-time too, since we can.
@@ -35,6 +36,7 @@ MAIN(epicsTypesTest)
 {
     testPlan(10);
 
+sleep(2);
     testOk1(sizeof(epicsInt8) == 1);
     testOk1(sizeof(epicsUInt8) == 1);
 
@@ -49,6 +51,6 @@ MAIN(epicsTypesTest)
 
     testOk1(sizeof(epicsFloat32) == 4);
     testOk1(sizeof(epicsFloat64) == 8);
-
+sleep(2);
     return testDone();
 }

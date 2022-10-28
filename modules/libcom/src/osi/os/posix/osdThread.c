@@ -758,6 +758,9 @@ LIBCOM_API void epicsStdCall epicsThreadSetPriority(epicsThreadId pthreadInfo,un
     assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
     if(!pthreadInfo->isEpicsThread) {
+        /* not allowed to avoid dealing with (potentially) different scheduling
+         * policies (FIFO vs. RR vs. OTHER vs. ...)
+         */
         fprintf(stderr,"epicsThreadSetPriority called by non epics thread\n");
         return;
     }

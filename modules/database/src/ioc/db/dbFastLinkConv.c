@@ -14,7 +14,6 @@
  */
 
 #include <stddef.h>
-#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <float.h>
@@ -24,6 +23,7 @@
 #include "dbDefs.h"
 #include "epicsConvert.h"
 #include "epicsStdlib.h"
+#include "epicsStdio.h"
 #include "errlog.h"
 #include "errMdef.h"
 
@@ -1335,24 +1335,26 @@ static long cvt_menu_st(
      epicsEnum16 *from,
      char *to,
      const dbAddr *paddr)
- {
-   dbFldDes             *pdbFldDes;
-   dbMenu               *pdbMenu;
-   char                 **papChoiceValue;
-   char                 *pchoice;
+{
+    dbFldDes *pdbFldDes;
+    dbMenu *pdbMenu;
 
-    if(! paddr
-    || !(pdbFldDes = paddr->pfldDes)
-    || !(pdbMenu = (dbMenu *)pdbFldDes->ftPvt)
-    || *from>=pdbMenu->nChoice
-    || !(papChoiceValue = pdbMenu->papChoiceValue)
-    || !(pchoice=papChoiceValue[*from])) {
-        recGblDbaddrError(S_db_badChoice,paddr,"dbFastLinkConv(cvt_menu_st)");
-        return(S_db_badChoice);
+    if (!paddr ||
+        !(pdbFldDes = paddr->pfldDes) ||
+        !(pdbMenu = (dbMenu *)pdbFldDes->ftPvt)) {
+        recGblDbaddrError(S_db_badChoice, paddr, "dbFastLinkConv(cvt_menu_st)");
+        return S_db_badChoice;
     }
-    strncpy(to,pchoice,MAX_STRING_SIZE);
-    return(0);
- }
+
+    if (*from < pdbMenu->nChoice) {
+        strncpy(to, pdbMenu->papChoiceValue[*from], MAX_STRING_SIZE);
+    }
+    else {
+        /* Convert out-of-range values to numeric strings */
+        epicsSnprintf(to, MAX_STRING_SIZE, "%u", *from);
+    }
+    return 0;
+}
 
 
 /* Get Device to String */

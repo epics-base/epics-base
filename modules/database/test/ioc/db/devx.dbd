@@ -1,2 +1,2 @@
 device(x, CONSTANT, devxSoft, "Soft Channel")
-device(x, INST_IO , devxScanIO, "Scan I/O")
+device(x, INST_IO,  devxScanIO_excessively_long_symbol_name_for_testing_code_generation, "Scan I/O")

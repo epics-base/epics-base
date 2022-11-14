@@ -164,10 +164,13 @@ size_t msgbufCommit(size_t nchar, int localEcho)
          */
         fprintf(pvt.console, "%s", start);
 
-    } else {
+    } else if(!atExit) {
         start[0u] = ERL_STATE_READY | (localEcho ? ERL_LOCALECHO : 0);
 
         pvt.log->pos += 1u + nchar + 1u;
+
+    } else {
+        /* listeners will not see messages logged during errlog shutdown */
     }
 
     epicsMutexUnlock(pvt.msgQueueLock); /* matched in msgbufAlloc() */
@@ -612,12 +615,15 @@ void errlogFlush(void)
 
 static void errlogThread(void)
 {
+    int wakeFlusher;
     epicsMutexMustLock(pvt.msgQueueLock);
-    while (!pvt.atExit) {
+    while (1) {
         pvt.flushSeq++;
 
         if(pvt.log->pos==0u) {
-            int wakeFlusher = pvt.nFlushers!=0;
+            if(pvt.atExit)
+                break;
+            wakeFlusher = pvt.nFlushers!=0;
             epicsMutexUnlock(pvt.msgQueueLock);
             if(wakeFlusher)
                 epicsEventMustTrigger(pvt.waitForSeq);
@@ -689,5 +695,8 @@ static void errlogThread(void)
 
         }
     }
+    wakeFlusher = pvt.nFlushers!=0;
     epicsMutexUnlock(pvt.msgQueueLock);
+    if(wakeFlusher)
+        epicsEventMustTrigger(pvt.waitForSeq);
 }

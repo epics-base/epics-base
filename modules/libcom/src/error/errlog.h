@@ -178,6 +178,9 @@ LIBCOM_API void errlogAddListener(errlogListener listener, void *pPrivate);
  *
  * \param listener Function pointer of type ::errlogListener
  * \param pPrivate This will be passed as the first argument of listener()
+ *
+ * \since UNRELEASED Safe to call from a listener callback.
+ * \until UNRELEASED Self-removal from a listener callback caused corruption.
  */
 LIBCOM_API int errlogRemoveListeners(errlogListener listener,
     void *pPrivate);

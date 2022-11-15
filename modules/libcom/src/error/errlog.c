@@ -66,6 +66,8 @@ typedef struct listenerNode{
     ELLNODE node;
     errlogListener listener;
     void *pPrivate;
+    unsigned active:1;
+    unsigned removed:1;
 } listenerNode;
 
 typedef struct {
@@ -442,9 +444,15 @@ int errlogRemoveListeners(errlogListener listener, void *pPrivate)
         listenerNode *pnext = (listenerNode *)ellNext(&plistenerNode->node);
 
         if (plistenerNode->listener == listener &&
-            plistenerNode->pPrivate == pPrivate) {
-            ellDelete(&pvt.listenerList, &plistenerNode->node);
-            free(plistenerNode);
+            plistenerNode->pPrivate == pPrivate)
+        {
+            if(plistenerNode->active) { /* callback removing itself */
+                plistenerNode->removed = 1;
+
+            } else {
+                ellDelete(&pvt.listenerList, &plistenerNode->node);
+                free(plistenerNode);
+            }
             ++count;
         }
         plistenerNode = pnext;
@@ -674,8 +682,19 @@ static void errlogThread(void)
                 epicsMutexMustLock(pvt.listenerLock);
                 plistenerNode = (listenerNode *)ellFirst(&pvt.listenerList);
                 while (plistenerNode) {
+                    listenerNode *next;
+
+                    plistenerNode->active = 1;
                     (*plistenerNode->listener)(plistenerNode->pPrivate, base+1u);
-                    plistenerNode = (listenerNode *)ellNext(&plistenerNode->node);
+                    plistenerNode->active = 0;
+
+                    next = (listenerNode *)ellNext(&plistenerNode->node);
+                    if(plistenerNode->removed) {
+                        /* listener() called errlogRemoveListeners() */
+                        ellDelete(&pvt.listenerList, &plistenerNode->node);
+                        free(plistenerNode);
+                    }
+                    plistenerNode = next;
                 }
                 epicsMutexUnlock(pvt.listenerLock);
 

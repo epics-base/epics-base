@@ -41,7 +41,8 @@ FIND_TOOL = $(firstword $(wildcard $(TOOLS)/$(1) \
 #---------------------------------------------------------------
 # EPICS Base build tools and tool flags
 
-PODTOHTML        = $(PERL) $(TOOLS)/podToHtml.pl
+PODTOHTML_pl     = $(TOOLS)/podToHtml.pl
+PODTOHTML        = $(PERL) $(PODTOHTML_pl)
 CONVERTRELEASE   = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FULLPATHNAME     = $(PERL) $(TOOLS)/fullPathName.pl
 GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG) $(QUESTION_FLAG)

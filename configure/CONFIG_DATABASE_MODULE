@@ -5,14 +5,21 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# Our locally-built tools
-DBEXPAND                   = $(PERL) $(EPICS_BASE_HOST_BIN)/dbdExpand.pl
-DBTORECORDTYPEH            = $(PERL) $(EPICS_BASE_HOST_BIN)/dbdToRecordtypeH.pl
-DBTOMENUH                  = $(PERL) $(EPICS_BASE_HOST_BIN)/dbdToMenuH.pl
-DBDTOHTML                  = $(PERL) $(EPICS_BASE_HOST_BIN)/dbdToHtml.pl
-REGISTERRECORDDEVICEDRIVER = $(PERL) $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
+# Installed perl scripts for dependency
+DBDEXPAND_pl     = $(EPICS_BASE_HOST_BIN)/dbdExpand.pl
+DBDTORECTYPEH_pl = $(EPICS_BASE_HOST_BIN)/dbdToRecordtypeH.pl
+DBDTOMENUH_pl    = $(EPICS_BASE_HOST_BIN)/dbdToMenuH.pl
+DBDTOHTML_pl     = $(EPICS_BASE_HOST_BIN)/dbdToHtml.pl
+REGRECDEVDRV_pl  = $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
 
-# Windows can need these paths to be quoted
+# Commands for running scripts in recipes
+DBEXPAND                   = $(PERL) $(DBDEXPAND_pl)
+DBTORECORDTYPEH            = $(PERL) $(DBDTORECTYPEH_pl)
+DBTOMENUH                  = $(PERL) $(DBDTOMENUH_pl)
+DBDTOHTML                  = $(PERL) $(DBDTOHTML_pl)
+REGISTERRECORDDEVICEDRIVER = $(PERL) $(REGRECDEVDRV_pl)
+
+# Installed binary executables, quoted for running on Windows
 MAKEBPT = "$(EPICS_BASE_HOST_BIN)/makeBpt$(HOSTEXE)"
 MSI3_15 = "$(EPICS_BASE_HOST_BIN)/msi$(HOSTEXE)"
 

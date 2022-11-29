@@ -481,6 +481,29 @@ char* iocsh_complete_command(const char* word, int notfirst)
     return NULL;
 }
 
+char* iocsh_complete_variable(const char* word, int notfirst)
+{
+    // ick! ... readline is not re-entrant anyway
+    static const iocshVariable *next;
+
+    if(!notfirst) { // aka. first call
+        next = iocshVariableHead;
+    }
+
+    const size_t wlen = strlen(word);
+
+    while(next) {
+        const iocshVariable *cur = next;
+        next = next->next;
+
+        if(strncmp(word, cur->pVarDef->name, wlen)==0) {
+            return strdup(cur->pVarDef->name);
+        }
+    }
+
+    return NULL;
+}
+
 char** iocsh_attempt_completion(const char* word, int start, int end)
 {
     const char *line = rl_line_buffer;
@@ -563,6 +586,9 @@ char** iocsh_attempt_completion(const char* word, int start, int end)
 
             } else if(arg==1 && strcmp(def->pFuncDef->name, "help")==0) {
                 return rl_completion_matches(word, iocsh_complete_command);
+
+            } else if(arg==1 && strcmp(def->pFuncDef->name, "var")==0) {
+                return rl_completion_matches(word, iocsh_complete_variable);
             }
 
         }

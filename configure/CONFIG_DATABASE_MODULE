@@ -5,12 +5,17 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# Installed perl scripts for dependency
-DBDEXPAND_pl     = $(EPICS_BASE_HOST_BIN)/dbdExpand.pl
-DBDTORECTYPEH_pl = $(EPICS_BASE_HOST_BIN)/dbdToRecordtypeH.pl
-DBDTOMENUH_pl    = $(EPICS_BASE_HOST_BIN)/dbdToMenuH.pl
-DBDTOHTML_pl     = $(EPICS_BASE_HOST_BIN)/dbdToHtml.pl
-REGRECDEVDRV_pl  = $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
+# Installed perl scripts and dependent modules that have
+# a significant effect on the script's output
+DBDEXPAND_pl      = $(EPICS_BASE_HOST_BIN)/dbdExpand.pl
+DBDTORECTYPEH_pl  = $(EPICS_BASE_HOST_BIN)/dbdToRecordtypeH.pl
+DBDTORECTYPEH_dep = $(DBDTORECTYPEH_pl) $(call FIND_PM,DBD/Rec*.pm)
+DBDTOMENUH_pl     = $(EPICS_BASE_HOST_BIN)/dbdToMenuH.pl
+DBDTOMENUH_dep    = $(DBDTOMENUH_pl) $(call FIND_PM,DBD/Menu.pm)
+DBDTOHTML_pl      = $(EPICS_BASE_HOST_BIN)/dbdToHtml.pl
+DBDTOHTML_dep     = $(DBDTOHTML_pl) $(call FIND_PM,EPICS/Pod*Html.pm)
+REGRECDEVDRV_pl   = $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
+REGRECDEVDRV_dep  = $(REGRECDEVDRV_pl)
 
 # Commands for running scripts in recipes
 DBEXPAND                   = $(PERL) $(DBDEXPAND_pl)

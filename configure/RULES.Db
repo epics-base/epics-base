@@ -251,17 +251,17 @@ menu%.h$(DEP): ../menu%.dbd $(DBDTOMENUH_pl)
 	@$(RM) $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" > $@
 
-%.dbd$(DEP): %Include.dbd $(DBDEXPAND_pl)
+%.dbd$(DEP): %Include.dbd
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-%.dbd$(DEP): ../%Include.dbd $(DBDEXPAND_pl)
+%.dbd$(DEP): ../%Include.dbd
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-%.dbd$(DEP): $(DBDEXPAND_pl)
+%.dbd$(DEP): $($*_DBD)
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $($*_DBD) > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
@@ -376,13 +376,13 @@ $(COMMON_DIR)/%.dbd: %.dbd.pod
 	$(PERL) $(TOOLS)/podRemove.pl -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.dbd: %Include.dbd $(DBDEXPAND_pl)
+$(COMMON_DIR)/%.dbd: %Include.dbd
 	$(ECHO) "Expanding dbd file $<"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.dbd: ../%Include.dbd $(DBDEXPAND_pl)
+$(COMMON_DIR)/%.dbd: ../%Include.dbd
 	$(ECHO) "Expanding dbd file $<"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
@@ -400,7 +400,7 @@ $(COMMON_DBDCATS):$(COMMON_DIR)/%.dbd:
 	$(DBDCAT_COMMAND)
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.dbd: $(DBDEXPAND_pl)
+$(COMMON_DIR)/%.dbd: $($*_DBD)
 	$(ECHO) "Creating dbd file $(notdir $@)"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $($*_DBD)

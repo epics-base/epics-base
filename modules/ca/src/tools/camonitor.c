@@ -219,6 +219,8 @@ int main (int argc, char *argv[])
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
+    use_ca_timeout_env ( &caTimeout);
+
     while ((opt = getopt(argc, argv, ":nhVm:sSe:f:g:l:#:0:w:t:p:F:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
@@ -251,11 +253,16 @@ int main (int argc, char *argv[])
             }
             break;
         case 'w':               /* Set CA timeout value */
+            /*
+             * epicsScanDouble is a macro defined as epicsParseDouble,
+             * (found in modules/libcom/src/misc) which will only
+             * change caTimeout here if it finds an acceptable value.
+             */
             if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
-                        "- ignored. ('camonitor -h' for help.)\n", optarg);
-                caTimeout = DEFAULT_TIMEOUT;
+                        "- ignored, using '%.1f'. ('camonitor -h' for help.)\n",
+                        optarg, caTimeout);
             }
             break;
         case '#':               /* Array count */

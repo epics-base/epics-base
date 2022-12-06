@@ -28,6 +28,7 @@
 
 #include <alarm.h>
 #include <epicsTime.h>
+#include <epicsStdlib.h>
 #include <epicsString.h>
 #include <cadef.h>
 
@@ -53,7 +54,7 @@ char fieldSeparator = ' ';          /* OFS default is whitespace */
 
 int enumAsNr = 0;        /* used for -n option - get DBF_ENUM as number */
 int charArrAsStr = 0;    /* used for -S option - treat char array as (long) string */
-double caTimeout = 1.0;  /* wait time default (see -w option) */
+double caTimeout = DEFAULT_TIMEOUT;  /* wait time default (see -w option) */
 capri caPriority = DEFAULT_CA_PRIORITY;  /* CA Priority */
 
 #define TIMETEXTLEN 28          /* Length of timestamp text buffer */
@@ -638,4 +639,23 @@ int connect_pvs (pv* pvs, int nPvs)
         }
     }
     return returncode;
+}
+
+
+/* Set the timeout to EPICS_CLI_TIMEOUT */
+void use_ca_timeout_env ( double* timeout)
+{
+    const char* tmoStr;            /* contents of environment var */
+
+    if ((tmoStr = getenv("EPICS_CLI_TIMEOUT")) != NULL && timeout != NULL)
+    {
+        if(epicsScanDouble(tmoStr, timeout) != 1)
+        {
+            fprintf(stderr, "'%s' is not a valid timeout value "
+                "(from 'EPICS_CLI_TIMEOUT' in the environment) - "
+                "ignored. (use '-h' for help.)\n", tmoStr);
+            *timeout = DEFAULT_TIMEOUT;
+        }
+
+    }
 }

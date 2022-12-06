@@ -87,8 +87,8 @@ LIBCOM_API int
  * \brief Convert a string to a double type
  *
  * \param str Pointer to a constant character array
- * \param to Pointer to the specified type (this will be set during the conversion)
- * \param units Pointer to a char * (this will be set with the units string)
+ * \param to Pointer to the specified type (this will be set only upon successful conversion)
+ * \param units Pointer to a char * (this will be set with the units string only upon successful conversion)
  * \return Status code (0=OK, see macro definitions for possible errors)
  */
 LIBCOM_API int

@@ -284,6 +284,8 @@ int main (int argc, char *argv[])
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
     putenv("POSIXLY_CORRECT="); /* Behave correct on GNU getopt systems */
 
+    use_ca_timeout_env ( &caTimeout);
+
     while ((opt = getopt(argc, argv, ":cnlhatsVS#:w:p:F:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
@@ -318,11 +320,16 @@ int main (int argc, char *argv[])
             request = callback;
             break;
         case 'w':               /* Set CA timeout value */
+            /*
+             * epicsScanDouble is a macro defined as epicsParseDouble,
+             * (found in modules/libcom/src/misc) which will only
+             * change caTimeout here if it finds an acceptable value.
+             */
             if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
-                        "- ignored. ('caput -h' for help.)\n", optarg);
-                caTimeout = DEFAULT_TIMEOUT;
+                        "- ignored, using '%.1f'. ('caput -h' for help.)\n",
+                        optarg, caTimeout);
             }
             break;
         case '#':               /* Array count */
@@ -337,7 +344,7 @@ int main (int argc, char *argv[])
             if (sscanf(optarg,"%u", &caPriority) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid CA priority "
-                        "- ignored. ('caget -h' for help.)\n", optarg);
+                        "- ignored. ('caput -h' for help.)\n", optarg);
                 caPriority = DEFAULT_CA_PRIORITY;
             }
             if (caPriority > CA_PRIORITY_MAX) caPriority = CA_PRIORITY_MAX;

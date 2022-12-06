@@ -19,6 +19,8 @@
  *     Added field separators
  *  2009/04/01 Ralph Lange (HZB/BESSY)
  *     Added support for long strings (array of char) and quoting of nonprintable characters
+ *  2022/12/06 Doug Murray (SLAC)
+ *     Changed caTimeout from 1.0 to DEFAULT_TIMEOUT
  *
  */
 
@@ -53,7 +55,7 @@ char fieldSeparator = ' ';          /* OFS default is whitespace */
 
 int enumAsNr = 0;        /* used for -n option - get DBF_ENUM as number */
 int charArrAsStr = 0;    /* used for -S option - treat char array as (long) string */
-double caTimeout = 1.0;  /* wait time default (see -w option) */
+double caTimeout = DEFAULT_TIMEOUT;  /* wait time default (see -w option) */
 capri caPriority = DEFAULT_CA_PRIORITY;  /* CA Priority */
 
 #define TIMETEXTLEN 28          /* Length of timestamp text buffer */

@@ -16,6 +16,8 @@
  *  Modification History
  *  2009/03/31 Larry Hoff (BNL)
  *     Added field separators
+ *  2022/12/06 Doug Murray (SLAC)
+ *      Added CA timeout environment variable definition
  *
  */
 
@@ -49,6 +51,7 @@
 
 #define DEFAULT_CA_PRIORITY 0  /* Default CA priority */
 #define DEFAULT_TIMEOUT 1.0     /* Default CA timeout */
+#define DEFAULT_TIMEOUT_ENV "EPICS_CLI_TIMEOUT" /* CA timeout environment var */
 
 #ifndef _WIN32
 #  define LINE_BUFFER(stream) setvbuf(stream, NULL, _IOLBF, BUFSIZ)

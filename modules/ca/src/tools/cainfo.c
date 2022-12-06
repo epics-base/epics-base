@@ -19,6 +19,8 @@
  *     Updated usage info
  *  2009/04/01 Ralph Lange (HZB/BESSY)
  *     Clarified output for native data type
+ *  2022/12/06 Doug Murray (SLAC)
+ *     Added CA timeout environment variable
  *
  */
 
@@ -138,8 +140,20 @@ int main (int argc, char *argv[])
 
     int nPvs;                   /* Number of PVs */
     pv* pvs;                    /* Array of PV structures */
+    const char* tmo;            /* timeout from environment var */
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
+
+    if ((tmo = getenv(DEFAULT_TIMEOUT_ENV)) != NULL)
+    {
+    if(epicsScanDouble(tmo, &caTimeout) != 1)
+            {
+                fprintf(stderr, "'%s' is not a valid timeout value "
+                        "(from '%s' in the environment) - ignored. ('caget -h' for help.)\n", tmo, DEFAULT_TIMEOUT_ENV);
+                caTimeout = DEFAULT_TIMEOUT;
+            }
+
+    }
 
     while ((opt = getopt(argc, argv, ":nhVw:s:p:")) != -1) {
         switch (opt) {
@@ -150,11 +164,15 @@ int main (int argc, char *argv[])
             printf( "\nEPICS Version %s, CA Protocol version %s\n", EPICS_VERSION_STRING, ca_version() );
             return 0;
         case 'w':               /* Set CA timeout value */
-            if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
-                fprintf(stderr, "'%s' is not a valid timeout value "
-                        "- ignored. ('cainfo -h' for help.)\n", optarg);
-                caTimeout = DEFAULT_TIMEOUT;
+                double prevTimeout = caTimeout;
+                if(epicsScanDouble(optarg, &caTimeout) != 1)
+                {
+                    caTimeout = prevTimeout;
+                    fprintf(stderr, "'%s' is not a valid timeout value "
+                            "- ignored, using '%.1f'. ('caget -h' for help.)\n",
+                            optarg, caTimeout);
+                }
             }
             break;
         case 's':               /* ca_client_status interest level */

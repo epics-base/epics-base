@@ -27,8 +27,6 @@
  *     Added field separators
  *  2009/04/01 Ralph Lange (HZB/BESSY)
  *     Added support for long strings (array of char) and quoting of nonprintable characters
- *  2022/12/06 Doug Murray (SLAC)
- *     Added CA timeout environment variable
  *
  */
 
@@ -279,7 +277,6 @@ int main (int argc, char *argv[])
     int len = 0;
     int waitStatus;
     struct dbr_gr_enum bufGrEnum;
-    const char *tmo;            /* timeout from environment var */
 
     int nPvs;                   /* Number of PVs */
     pv* pvs;                /* Array of PV structures */
@@ -287,16 +284,7 @@ int main (int argc, char *argv[])
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
     putenv("POSIXLY_CORRECT="); /* Behave correct on GNU getopt systems */
 
-    if ((tmo = getenv(DEFAULT_TIMEOUT_ENV)) != NULL)
-    {
-    if(epicsScanDouble(tmo, &caTimeout) != 1)
-            {
-                fprintf(stderr, "'%s' is not a valid timeout value "
-                        "(from '%s' in the environment) - ignored. ('caget -h' for help.)\n", tmo, DEFAULT_TIMEOUT_ENV);
-                caTimeout = DEFAULT_TIMEOUT;
-            }
-
-    }
+    use_ca_timeout_env ( &caTimeout);
 
     while ((opt = getopt(argc, argv, ":cnlhatsVS#:w:p:F:")) != -1) {
         switch (opt) {
@@ -338,7 +326,7 @@ int main (int argc, char *argv[])
                 {
                     caTimeout = prevTimeout;
                     fprintf(stderr, "'%s' is not a valid timeout value "
-                            "- ignored, using '%.1f'. ('caget -h' for help.)\n",
+                            "- ignored, using '%.1f'. ('caput -h' for help.)\n",
                             optarg, caTimeout);
                 }
             }
@@ -355,7 +343,7 @@ int main (int argc, char *argv[])
             if (sscanf(optarg,"%u", &caPriority) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid CA priority "
-                        "- ignored. ('caget -h' for help.)\n", optarg);
+                        "- ignored. ('caput -h' for help.)\n", optarg);
                 caPriority = DEFAULT_CA_PRIORITY;
             }
             if (caPriority > CA_PRIORITY_MAX) caPriority = CA_PRIORITY_MAX;

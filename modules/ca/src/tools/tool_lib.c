@@ -19,8 +19,6 @@
  *     Added field separators
  *  2009/04/01 Ralph Lange (HZB/BESSY)
  *     Added support for long strings (array of char) and quoting of nonprintable characters
- *  2022/12/06 Doug Murray (SLAC)
- *     Changed caTimeout from 1.0 to DEFAULT_TIMEOUT
  *
  */
 
@@ -30,6 +28,7 @@
 
 #include <alarm.h>
 #include <epicsTime.h>
+#include <epicsStdlib.h>
 #include <epicsString.h>
 #include <cadef.h>
 
@@ -640,4 +639,33 @@ int connect_pvs (pv* pvs, int nPvs)
         }
     }
     return returncode;
+}
+
+
+/*+**************************************************************************
+ *
+ * Function:    use_ca_timeout_env
+ *
+ * Description: Set the variable at the given address to the
+ *              value of the CA timeout environment variable
+ *
+ * Arg(s) In:   timeout - Pointer to double
+ *
+ **************************************************************************-*/
+
+void use_ca_timeout_env ( double* timeout)
+{
+    const char* tmoStr;            /* contents of environment var */
+
+    if ((tmoStr = getenv("EPICS_CLI_TIMEOUT")) != NULL && timeout != NULL)
+    {
+        if(epicsScanDouble(tmoStr, timeout) != 1)
+        {
+            fprintf(stderr, "'%s' is not a valid timeout value "
+                "(from 'EPICS_CLI_TIMEOUT' in the environment) - "
+                "ignored. (use '-h' for help.)\n", tmoStr);
+            *timeout = DEFAULT_TIMEOUT;
+        }
+
+    }
 }

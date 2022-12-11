@@ -21,8 +21,6 @@
  *     Added field separators
  *  2009/04/01 Ralph Lange (HZB/BESSY)
  *     Added support for long strings (array of char) and quoting of nonprintable characters
- *  2022/12/06 Doug Murray (SLAC)
- *     Added CA timeout environment variable
  *
  */
 
@@ -218,20 +216,10 @@ int main (int argc, char *argv[])
 
     int nPvs;                   /* Number of PVs */
     pv* pvs;                    /* Array of PV structures */
-    const char* tmo;            /* timeout from environment var */
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
-    if ((tmo = getenv(DEFAULT_TIMEOUT_ENV)) != NULL)
-    {
-    if(epicsScanDouble(tmo, &caTimeout) != 1)
-            {
-                fprintf(stderr, "'%s' is not a valid timeout value "
-                        "(from '%s' in the environment) - ignored. ('caget -h' for help.)\n", tmo, DEFAULT_TIMEOUT_ENV);
-                caTimeout = DEFAULT_TIMEOUT;
-            }
-
-    }
+    use_ca_timeout_env ( &caTimeout);
 
     while ((opt = getopt(argc, argv, ":nhVm:sSe:f:g:l:#:0:w:t:p:F:")) != -1) {
         switch (opt) {
@@ -271,7 +259,7 @@ int main (int argc, char *argv[])
                 {
                     caTimeout = prevTimeout;
                     fprintf(stderr, "'%s' is not a valid timeout value "
-                            "- ignored, using '%.1f'. ('caget -h' for help.)\n",
+                            "- ignored, using '%.1f'. ('camonitor -h' for help.)\n",
                             optarg, caTimeout);
                 }
             }

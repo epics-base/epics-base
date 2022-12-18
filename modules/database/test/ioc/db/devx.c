@@ -131,13 +131,15 @@ static long xscanio_read(xRecord *prec)
     return 0;
 }
 
-static xdset devxScanIO = {
+static xdset
+  devxScanIO_excessively_long_symbol_name_for_testing_code_generation = {
     5, NULL, NULL,
     &xscanio_init_record,
     &xscanio_get_ioint_info,
     &xscanio_read
 };
-epicsExportAddress(dset, devxScanIO);
+epicsExportAddress(dset,
+  devxScanIO_excessively_long_symbol_name_for_testing_code_generation);
 
 /* basic DTYP="Soft Channel" */
 static long xsoft_init_record(xRecord *prec)

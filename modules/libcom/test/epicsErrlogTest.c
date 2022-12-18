@@ -410,7 +410,9 @@ MAIN(epicsErrlogTest)
     testOk(1 == errlogRemoveListeners(&logClient, &pvt),
         "Removed 1 listener");
 
+    osiSockAttach();
     testLogPrefix();
+    osiSockRelease();
 
     return testDone();
 }

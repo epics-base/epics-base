@@ -46,6 +46,7 @@ if ($opt_D) {   # Output dependencies only
 }
 
 $Text::Wrap::columns = 75;
+$Text::Wrap::huge = 'overflow';
 
 # Eliminate chars not allowed in C symbol names
 my $c_bad_ident_chars = '[^0-9A-Za-z_]';

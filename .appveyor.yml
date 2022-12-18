@@ -68,6 +68,8 @@ environment:
   - CMP: vs2010
   - CMP: gcc
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    # TODO: static linking w/ readline isn't working.  Bypass auto-detect
+    COMMANDLINE_LIBRARY: EPICS
 
 # Platform: processor architecture
 platform:

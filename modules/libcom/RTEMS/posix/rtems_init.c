@@ -330,7 +330,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
 
     /* Note: rtems_bsdnet_bootp_cmdline is "Argument File Name" in PPCBUG on
      * the mvme2100 CPU. */
-    if (strstr(rtems_bsdnet_bootp_cmdline, "/TFTP/BOOTP_HOST:")==rtems_bsdnet_bootp_cmdline)
+    if (strstr(env_nfsServer, "/TFTP/BOOTP_HOST")==env_nfsServer)
       { /* use tftp */
 
         printf ("***** Initializing TFTP *****\n");

@@ -17,6 +17,16 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Tab completion for IOC shell
+
+When built with optional libreadline support, the interactive IOC shell will perform tab
+completion for command names as well as some arguments of built-in commands.
+eg. the record name argument of `dbpr`, and the path name argument of `cd`.
+
+Externally defined commands have a limited ability to opt into completion with
+the newly added `iocshArgStringRecord` and `iocshArgStringPath` argument types.
+Both function identically to `iocshArgString` with an added hint about completion.
+
 ### Add FMOD as CALC Expression
 
 The floating point modulo function `FMOD(NUM,DEN)` is added.

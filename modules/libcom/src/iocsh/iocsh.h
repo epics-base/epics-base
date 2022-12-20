@@ -66,7 +66,13 @@ typedef enum {
     iocshArgPdbbase,
     iocshArgArgv,
     iocshArgPersistentString,
+    /** Equivalent to iocshArgString with a hint for tab completion as a record name.
+     *  @since UNRELEASED
+     */
     iocshArgStringRecord,
+    /** Equivalent to iocshArgString with a hint for tab completion as a file system path.
+     *  @since UNRELEASED
+     */
     iocshArgStringPath,
 }iocshArgType;
 

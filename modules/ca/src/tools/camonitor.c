@@ -253,15 +253,16 @@ int main (int argc, char *argv[])
             }
             break;
         case 'w':               /* Set CA timeout value */
+            /*
+             * epicsScanDouble is a macro defined as epicsParseDouble,
+             * (found in modules/libcom/src/misc) which will only
+             * change caTimeout here if it finds an acceptable value.
+             */
+            if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
-                double prevTimeout = caTimeout;
-                if(epicsScanDouble(optarg, &caTimeout) != 1)
-                {
-                    caTimeout = prevTimeout;
-                    fprintf(stderr, "'%s' is not a valid timeout value "
-                            "- ignored, using '%.1f'. ('camonitor -h' for help.)\n",
-                            optarg, caTimeout);
-                }
+                fprintf(stderr, "'%s' is not a valid timeout value "
+                        "- ignored, using '%.1f'. ('camonitor -h' for help.)\n",
+                        optarg, caTimeout);
             }
             break;
         case '#':               /* Array count */

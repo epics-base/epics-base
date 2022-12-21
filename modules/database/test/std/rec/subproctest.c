@@ -41,10 +41,10 @@ MAIN(subproctest)
 
     testdbPutFieldFail(-1, "InvalidINPARec.PROC", DBF_LONG, 1);
 
-    // Since the put to PROC above fails, subproc() never runs
-    // and the value of PROC will not be set by subproc().  However,
-    // the testdbPutField call above goes through, so we get a partial
-    // result of the PROC field being left as 1.
+    /* Since the put to PROC above fails, subproc() never runs
+     * and the value of PROC will not be set by subproc().  However,
+     * the testdbPutField call above goes through, so we get a partial
+     * result of the PROC field being left as 1. */
     testdbGetFieldEqual("InvalidINPARec.PROC", DBF_LONG, 1);
     
     testIocShutdownOk();

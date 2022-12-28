@@ -2,32 +2,43 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "7.0", "3.13", "3.14", "3.15", "3.16" ]
+    branches: 7.0
+    tags: 'R7.0.*'
   pull_request:
-    branches: [ "7.0" ]
-  schedule:
-    - cron: "2 10 * * 0"
+    branches: 7.0
+    paths-ignore:
+      - '.appveyor/*'
+      - '.tools/*'
+      - 'documentation/*'
+      - 'startup/*'
+      - '**/*.md'
+      - '**/*.html'
 
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on:
+      - ubuntu-latest
+    # - windows-latest
+    # Supported by CodeQL which would check the Windows
+    # port, but needs more work here to set it up
+
     permissions:
-      actions: read
-      contents: read
+      # Required for all workflows:
       security-events: write
 
     strategy:
       fail-fast: false
       matrix:
-        language: [ python, cpp ]
+        language: [ cpp ]
 
     steps:
-      - name: Checkout
+      - name: Checkout Repositories
         uses: actions/checkout@v3
+        with:
+          submodules: true
 
-      - name: Install Packages (cpp)
-        if: ${{ matrix.language == 'cpp' }}
+      - name: Install Packages
         run: |
           sudo apt-get update
           sudo apt-get install --yes libreadline-dev
@@ -36,20 +47,14 @@ jobs:
         uses: github/codeql-action/init@v2
         with:
           languages: ${{ matrix.language }}
-          config-file: ./.github/codeql.yml
           queries: +security-and-quality
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
-        if: ${{ matrix.language == 'python' }}
-
-      - name: Build cpp
-        if: ${{ matrix.language == 'cpp' }}
+      - name: Build C/C++
         run: |
           g++ --version
           make --version
           perl --version
-          make -sj2 || echo '*** Build failed, ignored for lgtm ***'
+          make -sj2 || echo '*** Ignoring build failure for CodeQL ***'
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2

@@ -3,7 +3,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 Fields Common to All Record Types
+=title Fields Common to All Record Types
 
 This section contains a description of the fields that are common to all record
 types. These fields are defined in dbCommon.dbd.

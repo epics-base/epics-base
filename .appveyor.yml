@@ -33,7 +33,6 @@ skip_commits:
     - '.github/*'
     - '.tools/*'
     - '.gitattributes'
-    - '.lgtm.yml'
     - '**/*.html'
     - '**/*.md'
 

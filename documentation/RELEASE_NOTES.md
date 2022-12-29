@@ -16,6 +16,13 @@ should also be read to understand what has changed since earlier releases.
 ## Changes made on the 7.0 branch since 7.0.7
 
 <!-- Insert new items immediately below here ... -->
+### Extend longout conditions to write the OUT link (OOPT field)
+
+The longout record has now the capacity to condition its output write operation to
+different options, using the OOPT field (similar to calcout record). This is 
+the first output record to have such feature as a result of the 
+[Make output records only write on change](https://bugs.launchpad.net/epics-base/+bug/1398215)
+issue on Launchpad.
 
 ### Tab completion for IOC shell
 

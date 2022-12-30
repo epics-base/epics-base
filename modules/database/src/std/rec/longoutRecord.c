@@ -396,7 +396,6 @@ static void monitor(longoutRecord *prec)
 
 static long writeValue(longoutRecord *prec)
 {
-    longoutdset *pdset = (longoutdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {

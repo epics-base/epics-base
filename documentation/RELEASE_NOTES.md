@@ -31,17 +31,23 @@ please send feedback about the feature to tech-talk.
 
 ### Tab completion for IOC shell
 
-When built with optional libreadline support, the interactive IOC shell will perform tab
-completion for command names as well as some arguments of built-in commands.
-eg. the record name argument of `dbpr`, and the path name argument of `cd`.
+When built with optional GNU libreadline support, the interactive IOC shell
+will perform tab completion for command names as well as for some arguments
+of the built-in commands. For example, the record name argument of `dbpr`,
+and the path name argument of `cd`.
 
-Externally defined commands have a limited ability to opt into completion with
-the newly added `iocshArgStringRecord` and `iocshArgStringPath` argument types.
-Both function identically to `iocshArgString` with an added hint about completion.
+Externally defined commands have a limited ability to opt into completion by
+using the new `iocshArgStringRecord` and `iocshArgStringPath` argument types.
+Both function identically to `iocshArgString` but indicate how to suggest
+completion strings.
 
 ### Add FMOD as CALC Expression
 
-The floating point modulo function `FMOD(NUM,DEN)` is added.
+The floating point modulo function `FMOD(NUM,DEN)` has been added to the CALC
+expression engine and is available to all software using that (calc and calcout
+record types, access security library and some extensions).
+
+-----
 
 ## EPICS Release 7.0.7
 

@@ -14,16 +14,22 @@
 /** \file epicsExport.h
  *  \brief Exporting IOC objects.
  *
- * This header is unique, as it defines epicsExportSharedSymbols and thus
- * triggers a transition between importing declarations from other libraries,
- * to exporting symbols from our own library. The comments in shareLib.h
- * provide more information.
+ * This header defines macros that allow registering IOC shell commands,
+ * subroutines, device support, etc.
  *
- * This header should be included with a trailing comment to make it stand
- * out from other includes, something like this:
- \code
-    #include <epicsExport.h>  // defines epicsExportSharedSymbols
- \endcode
+ * Because this header defines the `epicsExportSharedSymbols` macro, it triggers
+ * a transition between importing declarations from other libraries, to
+ * exporting symbols from our own library. For this reason, it must be included
+ * *last*, after all other EPICS-related includes. The comments in shareLib.h
+ * provide more information. It is recommended to mark this with a comment, e.g.
+ * \code
+ *    #include <epicsExport.h>  // defines epicsExportSharedSymbols, do not move
+ * \endcode
+ *
+ * \note Do not use this header solely to enable exporting of symbols. If you
+ * are implementing a library and need to handle the differences in shared
+ * libraries between Linux and Windows, refer to the documentation within
+ * [**makeAPIheader.pl**](makeAPIheader.html) or run `makeAPIheader.pl -h`.
  */
 
 #define epicsExportSharedSymbols

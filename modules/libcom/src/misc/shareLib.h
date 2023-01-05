@@ -19,6 +19,12 @@
  *
  * These are needed to properly create DLLs on MS Windows.
  *
+ * \note This header file is deprecated. A newer mechanism is available that
+ * automatically handles the differences in shared libraries between Linux and
+ * Windows while avoiding the pitfalls of the `epicsExportSharedSymbols` macro.
+ * If you are implementing a library, refer to the documentation within
+ * [**makeAPIheader.pl**](makeAPIheader.html) or run `makeAPIheader.pl -h`.
+ *
  * ### USAGE
  *
  * There are two distinct classes of keywords in this file:

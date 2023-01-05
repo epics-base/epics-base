@@ -26,6 +26,12 @@
 #include <string.h>
 #if __RTEMS_MAJOR__ < 5
 #include <rtems/rtems_bsdnet_internal.h>
+#else
+#ifdef RTEMS_LEGACY_STACK
+#include <rtems/rtems_bsdnet.h>
+#include <rtems/bsdnet/servers.h>
+#endif
+#include <arpa/inet.h>
 #endif
 #include "epicsTime.h"
 #include "osdTime.h"
@@ -35,11 +41,6 @@
 
 extern "C" {
 extern rtems_interval rtemsTicksPerSecond;
-#ifdef RTEMS_LEGACY_STACK
-int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
-static int ntpSocket = -1;
-#endif
-
 
 void osdTimeRegister(void)
 {
@@ -48,12 +49,13 @@ void osdTimeRegister(void)
     NTPTime_Init(100);
     ClockTime_Init(CLOCKTIME_SYNC);
 #else
-printf(" OsdTimeRegister Not implemented yet for new libbsd ...\n");
+printf(" osdTimeRegister: not implemented for non RTEMS_LEGACY_STACK\n");
 #endif
     osdMonotonicInit();
 }
 
 #ifdef RTEMS_LEGACY_STACK
+static int ntpSocket = -1;
 int osdNTPGet(struct timespec *ts)
 {
     static unsigned bequiet;
@@ -94,12 +96,7 @@ void osdNTPInit(void)
 {
     struct sockaddr_in myAddr;
 
-#if __RTEMS_MAJOR__ > 4
-    ntpSocket = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-#else
     ntpSocket = socket (AF_INET, SOCK_DGRAM, 0);
-#endif
-
     if (ntpSocket < 0) {
         printf("osdNTPInit() Can't create socket: %s\n", strerror (errno));
         return;
@@ -114,10 +111,17 @@ void osdNTPInit(void)
         ntpSocket = -1;
     }
 }
-#endif
+
 void osdNTPReport(void)
 {
+
+    printf("osdNTPReport: ntpSocket used : %d\n", ntpSocket);
+    for (int i = 0; i < rtems_bsdnet_ntpserver_count; i++) {
+        printf("osdNTPReport: NTP Server = %s\n", inet_ntoa(rtems_bsdnet_ntpserver[i]));
+    }
+
 }
+#endif
 
 int osdTickGet(void)
 {

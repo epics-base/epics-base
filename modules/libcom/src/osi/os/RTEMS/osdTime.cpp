@@ -24,15 +24,15 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
-#if __RTEMS_MAJOR__ < 5
-#include <rtems/rtems_bsdnet_internal.h>
-#else
-#ifdef RTEMS_LEGACY_STACK
+//#if __RTEMS_MAJOR__ < 5
+//#include <rtems/rtems_bsdnet_internal.h>
+//#else
+//#ifdef RTEMS_LEGACY_STACK
 #include <rtems/rtems_bsdnet.h>
 #include <rtems/bsdnet/servers.h>
-#endif
+//#endif
 #include <arpa/inet.h>
-#endif
+//#endif
 #include "epicsTime.h"
 #include "osdTime.h"
 #include "osiNTPTime.h"

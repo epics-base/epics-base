@@ -24,9 +24,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
-#if __RTEMS_MAJOR__ < 5
-#include <rtems/rtems_bsdnet_internal.h>
-#endif
 #ifdef RTEMS_LEGACY_STACK
 #include <rtems/rtems_bsdnet.h>
 #include <rtems/bsdnet/servers.h>
@@ -194,8 +191,7 @@ static int staticTimeRegister(void)
 /* this does not work if we use DHCP. TBD! */
 /* We should check that the interface is up ... */
 #if __RTEMS_MAJOR__ < 5
-    if (rtems_clock_get_ticks_per_second != 0)
-        osdTimeRegister();
+     osdTimeRegister();
 #endif
     return 1;
 }

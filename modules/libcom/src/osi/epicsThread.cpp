@@ -339,32 +339,6 @@ void epicsThread :: show ( unsigned level ) const throw ()
 }
 
 extern "C" {
-    static epicsThreadOnceId okToBlockOnce = EPICS_THREAD_ONCE_INIT;
-    epicsThreadPrivateId okToBlockPrivate;
-    static const int okToBlockNo = 0;
-    static const int okToBlockYes = 1;
-
-    static void epicsThreadOnceIdInit(void *)
-    {
-        okToBlockPrivate = epicsThreadPrivateCreate();
-    }
-
-    int epicsStdCall epicsThreadIsOkToBlock(void)
-    {
-        const int *pokToBlock;
-        epicsThreadOnce(&okToBlockOnce, epicsThreadOnceIdInit, NULL);
-        pokToBlock = (int *) epicsThreadPrivateGet(okToBlockPrivate);
-        return (pokToBlock ? *pokToBlock : 0);
-    }
-
-    void epicsStdCall epicsThreadSetOkToBlock(int isOkToBlock)
-    {
-        const int *pokToBlock;
-        epicsThreadOnce(&okToBlockOnce, epicsThreadOnceIdInit, NULL);
-        pokToBlock = (isOkToBlock) ? &okToBlockYes : &okToBlockNo;
-        epicsThreadPrivateSet(okToBlockPrivate, (void *)pokToBlock);
-    }
-
     epicsThreadId epicsStdCall epicsThreadMustCreate (
         const char *name, unsigned int priority, unsigned int stackSize,
         EPICSTHREADFUNC funptr,void *parm)
@@ -375,12 +349,3 @@ extern "C" {
         return id;
     }
 } // extern "C"
-
-static epicsThreadId initMainThread(void) {
-    epicsThreadId main = epicsThreadGetIdSelf();
-    epicsThreadSetOkToBlock(1);
-    return main;
-}
-
-// Ensure the main thread gets a unique ID and allows blocking I/O
-epicsThreadId epicsThreadMainId = initMainThread();

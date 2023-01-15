@@ -1652,6 +1652,7 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     dbRecordNode *pnewnode;
     DBENTRY tempEntry;
     PVDENTRY *ppvd;
+    long status;
 
     if (!precordType)
         return S_dbLib_recordTypeNotFound;
@@ -1664,9 +1665,10 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
         return S_dbLib_recNotFound;
 
     dbInitEntry(pdbentry->pdbbase, &tempEntry);
-    if (!dbFindRecord(&tempEntry, alias))
-        return S_dbLib_recExists;
+    status = dbFindRecord(&tempEntry, alias);
     dbFinishEntry(&tempEntry);
+    if (!status)
+        return S_dbLib_recExists;
 
     pnewnode = dbCalloc(1, sizeof(dbRecordNode));
     pnewnode->recordname = epicsStrDup(alias);
@@ -1676,14 +1678,15 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     precnode->flags |= DBRN_FLAGS_HASALIAS;
     ellInit(&pnewnode->infoList);
 
-    ellAdd(&precordType->recList, &pnewnode->node);
-    precordType->no_aliases++;
-
     ppvd = dbPvdAdd(pdbentry->pdbbase, precordType, pnewnode);
     if (!ppvd) {
         errMessage(-1, "dbCreateAlias: Add to PVD failed");
+        free(pnewnode);
         return -1;
     }
+
+    ellAdd(&precordType->recList, &pnewnode->node);
+    precordType->no_aliases++;
 
     return 0;
 }

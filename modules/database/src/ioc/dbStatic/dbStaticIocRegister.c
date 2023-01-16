@@ -9,6 +9,7 @@
 \*************************************************************************/
 
 #include "iocsh.h"
+#include "errSymTbl.h"
 
 #include "dbStaticIocRegister.h"
 #include "dbStaticLib.h"
@@ -217,6 +218,40 @@ static void dbReportDeviceConfigCallFunc(const iocshArgBuf *args)
     dbReportDeviceConfig(*iocshPpdbbase,stdout);
 }
 
+
+static const iocshArg dbCreateAliasArg0 = { "record",iocshArgStringRecord};
+static const iocshArg dbCreateAliasArg1 = { "alias",iocshArgStringRecord};
+static const iocshArg * const dbCreateAliasArgs[] = {&argPdbbase,&dbCreateAliasArg0, &dbCreateAliasArg1};
+static const iocshFuncDef dbCreateAliasFuncDef = {
+    "dbCreateAlias",
+    3,
+    dbCreateAliasArgs,
+    "Add a new record alias.\n"
+    "\n"
+    "Example: dbCreateAlias pdbbase record:name new:alias\n",
+};
+static void dbCreateAliasCallFunc(const iocshArgBuf *args)
+{
+    DBENTRY ent;
+    long status;
+
+    dbInitEntry(*iocshPpdbbase, &ent);
+    if(!args[1].sval || !args[2].sval) {
+        status = S_dbLib_recNotFound;
+
+    } else {
+        status = dbFindRecord(&ent, args[1].sval);
+        if(!status) {
+            status = dbCreateAlias(&ent, args[2].sval);
+        }
+    }
+    dbFinishEntry(&ent);
+    if(status) {
+        fprintf(stderr, "Error: %ld %s\n", status, errSymMsg(status));
+        iocshSetError(1);
+    }
+}
+
 void dbStaticIocRegister(void)
 {
     iocshRegister(&dbDumpPathFuncDef, dbDumpPathCallFunc);
@@ -234,4 +269,5 @@ void dbStaticIocRegister(void)
     iocshRegister(&dbPvdDumpFuncDef, dbPvdDumpCallFunc);
     iocshRegister(&dbPvdTableSizeFuncDef,dbPvdTableSizeCallFunc);
     iocshRegister(&dbReportDeviceConfigFuncDef, dbReportDeviceConfigCallFunc);
+    iocshRegister(&dbCreateAliasFuncDef, dbCreateAliasCallFunc);
 }

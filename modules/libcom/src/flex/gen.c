@@ -237,7 +237,7 @@ void genecs(void)
 
     if ( trace )
         {
-        char *readable_form();
+        char *readable_form(int);
 
         fputs( "\n\nEquivalence Classes:\n\n", stderr );
 

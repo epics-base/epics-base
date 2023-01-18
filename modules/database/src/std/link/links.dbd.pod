@@ -1,4 +1,4 @@
-=head1 Extensible Links
+=title Extensible IOC Database Links
 
 The extensible link mechanism allows new kinds of record links to be created,
 using JSON for the link address syntax.
@@ -24,13 +24,11 @@ The following additional link types are available in this release:
 =head2 Using JSON Links
 
 When setting a record link field to a JSON link address, the link specification
-must appear inside a pair of braces C< {} > expressed as a JSON (L<JavaScript
-Object Notation|http://www.json.org/>) object, which allows link parameters to
-be defined as needed by the particular link type. When link fields are set from
-an IOC database file at initialization time, the field definitions may take
-advantage of a "relaxed JSON" syntax that reduces the number of double-quote
-characters required and maintains backwards compatibility with the older
-database file syntax.
+must appear inside a pair of braces C< {} > expressed as a JSON5 (L<JavaScript
+Object Notation|https://spec.json5.org/>) object, which allows link parameters
+to be defined as needed by the particular link type. When link fields are set in
+an IOC database file, the field value may take advantage of the JSON5 syntax to
+reduce the number of double-quote characters required.
 
 
 =head2 Link Type Reference
@@ -68,10 +66,10 @@ results in an error.
  {const: "Pi"}
  {const: [1, 2.718281828459, 3.14159265358979]}
  {const: ["One", "e", "Pi"]}
+ {const:[Inf, -Inf]})
 
-The JSON syntax does not support Infinity or NaN values when parsing numbers,
-but (for scalars) it is possible to provide these in a string which will be
-converted to the desired double value at initialization, for example:
+The newer JSON5 syntax supports Infinity values when parsing numbers, so it is
+no longer necessary to quote these in a string, although that still works:
 
  field(INP, {const:"Inf"})
 

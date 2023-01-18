@@ -65,7 +65,15 @@ typedef enum {
     iocshArgString,
     iocshArgPdbbase,
     iocshArgArgv,
-    iocshArgPersistentString
+    iocshArgPersistentString,
+    /** Equivalent to iocshArgString with a hint for tab completion as a record name.
+     *  @since UNRELEASED
+     */
+    iocshArgStringRecord,
+    /** Equivalent to iocshArgString with a hint for tab completion as a file system path.
+     *  @since UNRELEASED
+     */
+    iocshArgStringPath,
 }iocshArgType;
 
 /**
@@ -296,6 +304,12 @@ LIBCOM_API void epicsStdCall iocshEnvClear(const char *name);
 
 /* 'weak' link to pdbbase */
 LIBCOM_API extern struct dbBase **iocshPpdbbase;
+
+#ifdef EPICS_PRIVATE_API
+
+LIBCOM_API
+extern char** (*iocshCompleteRecord)(const char *word);
+#endif
 
 #ifdef __cplusplus
 }

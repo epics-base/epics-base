@@ -81,10 +81,14 @@ rset longoutRSET={
 };
 epicsExportAddress(rset,longoutRSET);
 
+#define DONT_EXEC_OUTPUT    0
+#define EXEC_OUTPUT         1
+
 static void checkAlarms(longoutRecord *prec);
 static void monitor(longoutRecord *prec);
 static long writeValue(longoutRecord *prec);
 static void convert(longoutRecord *prec, epicsInt32 value);
+static long conditional_write(longoutRecord *prec);
 
 static long init_record(struct dbCommon *pcommon, int pass)
 {
@@ -119,6 +123,9 @@ static long init_record(struct dbCommon *pcommon, int pass)
     prec->mlst = prec->val;
     prec->alst = prec->val;
     prec->lalm = prec->val;
+    prec->pval = prec->val;
+    prec->outpvt = EXEC_OUTPUT;
+    
     return 0;
 }
 
@@ -210,6 +217,14 @@ static long special(DBADDR *paddr, int after)
                 recGblCheckSimm((dbCommon *)prec, &prec->sscn, prec->oldsimm, prec->simm);
             return(0);
         }
+
+        /* Detect an output link re-direction (change) */
+        if (dbGetFieldIndex(paddr) == longoutRecordOUT) {
+            if ((after) && (prec->ooch == menuYesNoYES))
+                prec->outpvt = EXEC_OUTPUT;
+            return(0);
+        }
+
     default:
         recGblDbaddrError(S_db_badChoice, paddr, "longout: special");
         return(S_db_badChoice);
@@ -381,7 +396,6 @@ static void monitor(longoutRecord *prec)
 
 static long writeValue(longoutRecord *prec)
 {
-    longoutdset *pdset = (longoutdset *) prec->dset;
     long status = 0;
 
     if (!prec->pact) {
@@ -391,7 +405,7 @@ static long writeValue(longoutRecord *prec)
 
     switch (prec->simm) {
     case menuYesNoNO:
-        status = pdset->write_longout(prec);
+        status = conditional_write(prec);
         break;
 
     case menuYesNoYES: {
@@ -421,10 +435,61 @@ static long writeValue(longoutRecord *prec)
 
 static void convert(longoutRecord *prec, epicsInt32 value)
 {
-        /* check drive limits */
+    /* check drive limits */
     if(prec->drvh > prec->drvl) {
         if (value > prec->drvh) value = prec->drvh;
         else if (value < prec->drvl) value = prec->drvl;
     }
     prec->val = value;
+}
+
+/* Evaluate OOPT field to perform the write operation */
+static long conditional_write(longoutRecord *prec)
+{
+    struct longoutdset *pdset = (struct longoutdset *) prec->dset;
+    long status = 0;
+    int doDevSupWrite = 0;
+
+    switch (prec->oopt) 
+    {
+    case longoutOOPT_On_Change:
+        /* Forces a write op if a change in the OUT field is detected OR is first process */
+        if (prec->outpvt == EXEC_OUTPUT) {
+            doDevSupWrite = 1;
+        } else {
+            /* Only write if value is different from the previous one */ 
+            doDevSupWrite = (prec->val != prec->pval);
+        }
+        break;
+
+    case longoutOOPT_Every_Time:
+        doDevSupWrite = 1;
+        break;
+
+    case longoutOOPT_When_Zero:
+        doDevSupWrite = (prec->val == 0);
+        break;
+
+    case longoutOOPT_When_Non_zero:
+        doDevSupWrite = (prec->val != 0);
+        break;
+
+    case longoutOOPT_Transition_To_Zero:
+        doDevSupWrite = ((prec->val == 0)&&(prec->pval != 0));
+        break;
+
+    case longoutOOPT_Transition_To_Non_zero:
+        doDevSupWrite = ((prec->val != 0)&&(prec->pval == 0));      
+        break;
+
+    default:
+        break;
+    }
+
+    if (doDevSupWrite)
+        status = pdset->write_longout(prec);
+
+    prec->pval = prec->val;
+    prec->outpvt = DONT_EXEC_OUTPUT; /* reset status */
+    return status;
 }

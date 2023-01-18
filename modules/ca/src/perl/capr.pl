@@ -150,6 +150,7 @@ sub parseDbd {
             $thisField = $1;
             $thisType = $2;
             $isAfield = 1;
+            $thisSize = 1024 if $thisType =~ m/^ DBF_(IN|OUT|FWD)LINK $/x;
         }
         elsif ( m/interest \s* \( \s* (\w+) \s* \)/x ) {
             die "File format error at line $i of file\n    $opt_d\n"

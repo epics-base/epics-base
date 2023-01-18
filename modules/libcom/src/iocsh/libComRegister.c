@@ -98,7 +98,7 @@ static void echoCallFunc(const iocshArgBuf *args)
 }
 
 /* chdir */
-static const iocshArg chdirArg0 = { "directory name",iocshArgString};
+static const iocshArg chdirArg0 = { "directory name",iocshArgStringPath};
 static const iocshArg * const chdirArgs[1] = {&chdirArg0};
 static const iocshFuncDef chdirFuncDef = {"cd",1,chdirArgs,
                                           "Change directory to new directory provided as parameter\n"};

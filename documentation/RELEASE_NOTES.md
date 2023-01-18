@@ -17,6 +17,46 @@ should also be read to understand what has changed since earlier releases.
 
 <!-- Insert new items immediately below here ... -->
 
+### Add conditional output (OOPT) to the longout record
+
+The longout record can now be configured using its new OOPT and OOCH fields
+to (not) write to its output link depending on the contents of VAL, in a
+similar manner to the calcout record. More information can be found on the
+reference page for the longout record type that accompanies this release.
+
+This functionality was suggested in
+[lp# 1398215](https://bugs.launchpad.net/epics-base/+bug/1398215) and may
+be added to other output record types if the community finds it useful,
+please send feedback about the feature to tech-talk.
+
+### Tab completion for IOC shell
+
+When built with optional GNU libreadline support, the interactive IOC shell
+will perform tab completion for command names as well as for some arguments
+of the built-in commands. For example, the record name argument of `dbpr`,
+and the path name argument of `cd`.
+
+Externally defined commands have a limited ability to opt into completion by
+using the new `iocshArgStringRecord` and `iocshArgStringPath` argument types.
+Both function identically to `iocshArgString` but indicate how to suggest
+completion strings.
+
+Builds on macOS (darwin-x86 or darwin-aarch64 targets) normally use Apple's
+libedit library in readline compatibility mode, which doesn't support the tab
+completion API that GNU readline provides. You can use Homebrew or some other
+third-party package manager to install the GNU readline package, then edit the
+configure/os/CONFIG_SITE.darwinCommon.darwinCommon file to have EPICS use the
+real thing to get tab completion in the IOC shell. The default settings in that
+file currently look for and use a Homebrew-installed readline if present.
+
+### Add FMOD as CALC Expression
+
+The floating point modulo function `FMOD(NUM,DEN)` has been added to the CALC
+expression engine and is available to all software using that (calc and calcout
+record types, access security library and some extensions).
+
+-----
+
 ## EPICS Release 7.0.7
 
 ### Doxygen Annotations

@@ -1,17 +1,28 @@
-# Record Reference Documentation  {#recordrefmanual}
+# EPICS Reference Manual  {#recordrefmanual}
 
-The documentation below for the record types and menus included with Base was
-converted from the old EPICS Wiki pages and updated. This list only includes the
-record types supplied with Base. The first two links below are to an external
-website where these original reference chapters are now being published.
+This document provides reference information about the record types,
+menus, link types and channel filters included with Base.
+
+Many details about the record and menu definitions are derived automatically
+from the source code at build time.
+
+## Introduction and IOC Concepts
+
+These links point to an external website where introductory and overview
+documentation is now being published.
 
 * [Introduction to EPICS](https://docs.epics-controls.org/en/latest/guides/EPICS_Intro.html)
 * [Process Database Concepts](https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html)
+
+## Record Type Definitions
+
+These sections describe common aspects of the record types:
+
 * [Fields Common to All Record Types](dbCommonRecord.html)
 * [Fields Common to Input Record Types](dbCommonInput.html)
 * [Fields Common to Output Record Types](dbCommonOutput.html)
 
-## Record Types
+These are the record types supplied with EPICS Base:
 
 * [Analog Array Input Record (aai)](aaiRecord.html)
 * [Analog Array Output Record (aao)](aaoRecord.html)
@@ -27,8 +38,8 @@ website where these original reference chapters are now being published.
 * [Event Record (event)](eventRecord.html)
 * [Fanout Record (fanout)](fanoutRecord.html)
 * [Histogram Record (histogram)](histogramRecord.html)
-* [64bit Integer Input Record (int64in)](int64inRecord.html)
-* [64bit Integer Output Record (int64out)](int64outRecord.html)
+* [64-bit Integer Input Record (int64in)](int64inRecord.html)
+* [64-bit Integer Output Record (int64out)](int64outRecord.html)
 * [Long Input Record (longin)](longinRecord.html)
 * [Long Output Record (longout)](longoutRecord.html)
 * [Long String Input Record (lsi)](lsiRecord.html)
@@ -50,6 +61,9 @@ website where these original reference chapters are now being published.
 
 ## Menu Definitions
 
+Menu field choices are documented with the record type that defines them, or
+here for the global menus that are used by multiple record types:
+
 * [Alarm Severity Menu](menuAlarmSevr.html)
 * [Alarm Status Menu](menuAlarmStat.html)
 * [Analog Conversions Menu](menuConvert.html)
@@ -62,6 +76,14 @@ website where these original reference chapters are now being published.
 * [Scan Menu](menuScan.html)
 * [Simulation Mode Menu](menuSimm.html)
 * [Yes/No Menu](menuYesNo.html)
+
+## Other Definitions
+
+EPICS Base also comes with extensible sets of link types and channel filters
+which are described here:
+
+* [Link Types](links.html)
+* [Channel Filters](filters.html)
 
 ## Corrections and Updates
 

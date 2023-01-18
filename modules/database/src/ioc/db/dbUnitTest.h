@@ -105,7 +105,7 @@ DBCORE_API void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
  *
  * @code
  * static const epicsUInt32 putval[] = {1,2,3};
- * testdbVGetFieldEqual("some:wf", DBF_ULONG, NELEMENTS(putval), putval);
+ * testdbPutArrFieldOk("some:wf", DBF_ULONG, NELEMENTS(putval), putval);
  * @endcode
  *
  * @see @ref dbtestactions

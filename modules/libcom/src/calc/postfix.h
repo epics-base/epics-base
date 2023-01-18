@@ -203,10 +203,10 @@ extern "C" {
  *  unary minus.
  *
  *    - Examples:
- *      - e:=a%10;
- *      - d:=a/10%10;
- *      - c:=a/100%10;
- *      - b:=a/1000%10;
+ *      - e:=a%10
+ *      - d:=a/10%10
+ *      - c:=a/100%10
+ *      - b:=a/1000%10
  *      - b*4096+c*256+d*16+e
  *      - sqrt(a**2 + b**2)
  *
@@ -221,6 +221,8 @@ extern "C" {
  *    - n parameter maximum value: max(a, b, ...)
  *    - n parameter minimum value: min(a, b, ...)
  *    - Square root: sqr(a) or sqrt(a)
+ *    - Floating point modulo: fmod(num, den)
+ *  \since The fmod() function was added in UNRELEASED
  *
  * -# ***Trigonometric Functions***
  *  Standard circular trigonometric functions, with angles expressed in radians:
@@ -261,16 +263,21 @@ extern "C" {
  *    - Boolean not: !a
  *
  * -# ***Bitwise Operators***
- * The bitwise operators convert their arguments to an integer (by truncation),
- * perform the appropriate bitwise operation and convert back to a floating point
- * value. Unlike in C though, ^ is not a bitwise exclusive-or operator.
+ * Most bitwise operators convert their arguments to 32-bit signed integer (by
+ * truncation), perform the appropriate bitwise operation, then convert back
+ * to a floating point value. The arithmetic right shift operator >> thus
+ * retains the sign bit of the left-hand argument. The logical right shift
+ * operator >>> is performed on an unsigned integer though, so injects zeros
+ * while shifting. The right-hand shift argument is masked so only the lower
+ * 5 bits are used. Unlike in C, ^ is not a bitwise exclusive-or operator.
  *
  *    - Bitwise and: a & b or a and b
  *    - Bitwise or: a | b or a or b
  *    - Bitwise exclusive or: a xor b
  *    - Bitwise not (ones complement): ~a or not a
- *    - Bitwise left shift: a << b
- *    - Bitwise right shift: a >> b
+ *    - Arithmetic left shift: a << b
+ *    - Arithmetic right shift: a >> b
+ *    - Logical right shift: a >>> b
  *
  * -# ***Relational Operators***
  *  Standard numeric comparisons between two values:

@@ -209,6 +209,9 @@ int main(int argc, char *argv[])
                 lazy_dbd(dbd_file);
                 xmacro  = "IOC=";
                 xmacro += optarg;
+                if (verbose) {
+                    std::cout<<"dbLoadRecords(\""<<exit_file<<"\", \""<<xmacro<<"\")\n";
+                }
                 errIf(dbLoadRecords(exit_file.c_str(), xmacro.c_str()),
                       std::string("Failed to load: ")+exit_file);
                 loadedDb = true;

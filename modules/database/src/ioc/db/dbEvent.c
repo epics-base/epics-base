@@ -76,6 +76,7 @@ struct event_que {
     unsigned short          quota;          /* the number of assigned entries*/
     unsigned short          nDuplicates;    /* N events duplicated on this q */
     unsigned short          nCanceled;      /* the number of canceled entries */
+    unsigned                possibleStall;
 };
 
 struct event_user {
@@ -934,6 +935,7 @@ void db_post_single_event (dbEventSubscription event)
 static int event_read ( struct event_que *ev_que )
 {
     db_field_log *pfl;
+    int notifiedRemaining = 0;
     void ( *user_sub ) ( void *user_arg, struct dbChannel *chan,
             int eventsRemaining, db_field_log *pfl );
 
@@ -1012,6 +1014,7 @@ static int event_read ( struct event_que *ev_que )
                 /* Issue user callback */
                 ( *user_sub ) ( pevent->user_arg, pevent->chan,
                                 eventsRemaining, pfl );
+                notifiedRemaining = eventsRemaining;
             }
             LOCKEVQUE (ev_que);
 
@@ -1036,6 +1039,11 @@ static int event_read ( struct event_que *ev_que )
             }
         }
         db_delete_field_log(pfl);
+    }
+
+    if(notifiedRemaining && !ev_que->possibleStall) {
+        ev_que->possibleStall = 1;
+        errlogPrintf(ERL_WARNING " dbEvent possible queue stall\n");
     }
 
     UNLOCKEVQUE (ev_que);

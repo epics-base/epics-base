@@ -955,6 +955,7 @@ static int event_read ( struct event_que *ev_que )
 
     while ( ev_que->evque[ev_que->getix] != EVENTQEMPTY ) {
         struct evSubscrip *pevent = ev_que->evque[ev_que->getix];
+        int eventsRemaining;
 
         pfl = ev_que->valque[ev_que->getix];
         if ( pevent == &canceledEvent ) {
@@ -977,6 +978,7 @@ static int event_read ( struct event_que *ev_que )
 
         event_remove ( ev_que, ev_que->getix, EVENTQEMPTY );
         ev_que->getix = RNGINC ( ev_que->getix );
+        eventsRemaining = ev_que->evque[ev_que->getix] != EVENTQEMPTY && !ev_que->nCanceled;
 
         /*
          * create a local copy of the call back parameters while
@@ -1009,7 +1011,7 @@ static int event_read ( struct event_que *ev_que )
             if (pfl) {
                 /* Issue user callback */
                 ( *user_sub ) ( pevent->user_arg, pevent->chan,
-                                ev_que->evque[ev_que->getix] != EVENTQEMPTY, pfl );
+                                eventsRemaining, pfl );
             }
             LOCKEVQUE (ev_que);
 

@@ -47,6 +47,7 @@ jobs:
       RTEMS: ${{ matrix.rtems }}
       RTEMS_TARGET: ${{ matrix.rtems_target }}
       EXTRA: ${{ matrix.extra }}
+      EXTRA1: ${{ matrix.extra1 }}
       TEST: ${{ matrix.test }}
     strategy:
       fail-fast: false
@@ -70,6 +71,13 @@ jobs:
             configuration: static
             extra: "CMD_CXXFLAGS=-std=c++11"
             name: "Ub-20 gcc-9 C++11, static"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: static
+            extra: "CMD_CFLAGS=-funsigned-char"
+            extra1: "CMD_CXXFLAGS=-funsigned-char"
+            name: "Ub-20 gcc-9 unsigned char"
 
           - os: ubuntu-20.04
             cmp: clang

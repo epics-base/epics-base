@@ -1,0 +1,10 @@
+# CONFIG.Common.linux-loongarch64
+#
+# Definitions for linux-loongarch64 target builds
+# Override these settings in CONFIG_SITE.Common.linux-loongarch64
+#-------------------------------------------------------
+
+# Include definitions common to all Linux targets
+include $(CONFIG)/os/CONFIG.Common.linuxCommon
+
+ARCH_CLASS = loongarch64

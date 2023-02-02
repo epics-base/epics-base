@@ -1,0 +1,8 @@
+# CONFIG.linux-loongarch64.linux-loongarch64
+#
+# Definitions for native linux-loongarch64 builds
+# Override these definitions in CONFIG_SITE.linux-loongarch64.linux-loongarch64
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon

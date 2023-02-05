@@ -157,7 +157,7 @@ else { # Regular HTML
 my $pod = join "\n",
     '=for html <div class="pod">',
     '',
-    'L<EPICS Reference Manual|RecordReference>',
+    'L<EPICS Component Reference Manual|ComponentReference>',
     '',
     '=for html <hr>',
     '',
@@ -188,7 +188,7 @@ my $pod = join "\n",
     } $dbd->pod,
     '=for html </div><hr>',
     '',
-    'L<EPICS Reference Manual|RecordReference>',
+    'L<EPICS Component Reference Manual|ComponentReference>',
     '';
 
 $podHtml->force_title($podHtml->encode_entities($title));

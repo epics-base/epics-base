@@ -285,8 +285,8 @@ void casPVI::postEvent ( const casEventMask & select, const gdd & event )
 	}
 }
 
-caStatus casPVI::installMonitor ( 
-    casMonitor & mon, tsDLList < casMonitor > & monitorList )
+caStatus casPVI::installMonitor (
+    casMonitor & mon, ::tsDLList < casMonitor > & monitorList )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     assert ( this->nMonAttached < UINT_MAX );
@@ -301,8 +301,8 @@ caStatus casPVI::installMonitor (
     }
 }
 
-casMonitor * casPVI::removeMonitor ( 
-    tsDLList < casMonitor > & list, ca_uint32_t clientIdIn )
+casMonitor * casPVI::removeMonitor (
+    ::tsDLList < casMonitor > & list, ca_uint32_t clientIdIn )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     casMonitor * pMon = 0;
@@ -357,10 +357,10 @@ void casPVI::installChannel ( chanIntfForPV & chan )
     epicsGuard < epicsMutex > guard ( this->mutex );
 	this->chanList.add ( chan );
 }
- 
-void casPVI::removeChannel ( 
-    chanIntfForPV & chan, tsDLList < casMonitor > & src, 
-    tsDLList < casMonitor > & dest )
+
+void casPVI::removeChannel (
+    chanIntfForPV & chan, ::tsDLList < casMonitor > & src,
+    ::tsDLList < casMonitor > & dest )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     src.removeAll ( dest );
@@ -374,7 +374,7 @@ void casPVI::removeChannel (
     }
 }
 
-void casPVI::clearOutstandingReads ( tsDLList < casAsyncIOI > & ioList )
+void casPVI::clearOutstandingReads ( ::tsDLList < casAsyncIOI > & ioList )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 
@@ -394,7 +394,7 @@ void casPVI::clearOutstandingReads ( tsDLList < casAsyncIOI > & ioList )
 	}
 }
 
-void casPVI::destroyAllIO ( tsDLList < casAsyncIOI > & ioList )
+void casPVI::destroyAllIO ( ::tsDLList < casAsyncIOI > & ioList )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 	while ( casAsyncIOI * pIO = ioList.get() ) {
@@ -405,8 +405,8 @@ void casPVI::destroyAllIO ( tsDLList < casAsyncIOI > & ioList )
 	}
 }
 
-void casPVI::installIO ( 
-    tsDLList < casAsyncIOI > & ioList, casAsyncIOI & io )
+void casPVI::installIO (
+    ::tsDLList < casAsyncIOI > & ioList, casAsyncIOI & io )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     ioList.add ( io );
@@ -414,8 +414,8 @@ void casPVI::installIO (
     this->nIOAttached++;
 }
 
-void casPVI::uninstallIO ( 
-    tsDLList < casAsyncIOI > & ioList, casAsyncIOI & io )
+void casPVI::uninstallIO (
+    ::tsDLList < casAsyncIOI > & ioList, casAsyncIOI & io )
 {
     {
         epicsGuard < epicsMutex > guard ( this->mutex );

@@ -49,21 +49,21 @@ public:
     caStatus attachToServer ( caServerI & cas );
     aitIndex nativeCount ();
     bool ioIsPending () const;
-	void clearOutstandingReads ( tsDLList < class casAsyncIOI > &);
+    void clearOutstandingReads ( ::tsDLList < class casAsyncIOI > &);
     void destroyAllIO ( 
-        tsDLList < casAsyncIOI > & );
+        ::tsDLList < casAsyncIOI > & );
     void installIO (
-        tsDLList < casAsyncIOI > &, casAsyncIOI & );
+        ::tsDLList < casAsyncIOI > &, casAsyncIOI & );
     void uninstallIO ( 
-        tsDLList < casAsyncIOI > &, casAsyncIOI & );
+        ::tsDLList < casAsyncIOI > &, casAsyncIOI & );
     void installChannel ( chanIntfForPV & chan );
     void removeChannel ( 
-        chanIntfForPV & chan, tsDLList < casMonitor > & src,
-        tsDLList < casMonitor > & dest );
+        chanIntfForPV & chan, ::tsDLList < casMonitor > & src,
+        ::tsDLList < casMonitor > & dest );
     caStatus installMonitor ( 
-        casMonitor & mon, tsDLList < casMonitor > & monitorList );
+        casMonitor & mon, ::tsDLList < casMonitor > & monitorList );
     casMonitor * removeMonitor ( 
-        tsDLList < casMonitor > & list, ca_uint32_t clientIdIn );
+        ::tsDLList < casMonitor > & list, ca_uint32_t clientIdIn );
     void deleteSignal ();
     void postEvent ( const casEventMask & select, const gdd & event );
     caServer * getExtServer () const;
@@ -84,7 +84,7 @@ public:
 
 private:
     mutable epicsMutex mutex;
-    tsDLList < chanIntfForPV > chanList;
+    ::tsDLList < chanIntfForPV > chanList;
     gddEnumStringTable enumStrTbl;
     caServerI * pCAS;
     casPV * pPV;

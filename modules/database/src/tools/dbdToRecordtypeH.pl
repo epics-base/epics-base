@@ -146,7 +146,7 @@ __EOF__
                 "    prt->papFldDes[${rn}Record${fn}]->size = " .
                 "sizeof(prec->${cn});\n" .
                 "    prt->papFldDes[${rn}Record${fn}]->offset = " .
-                "(unsigned short)((char *)&prec->${cn} - (char *)prec);"
+                "(unsigned short)offsetof(${rn}Record, ${cn});"
             } @fields), << "__EOF__";
 
     prt->rec_size = sizeof(*prec);

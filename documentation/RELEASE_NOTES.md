@@ -15,7 +15,11 @@ should also be read to understand what has changed since earlier releases.
 
 ## Changes made on the 7.0 branch since 7.0.7
 
-<!-- Insert new items immediately below here ... -->
+### `compress` record enhancement
+
+The compress record now supports the use of partially-filled buffers when using
+any of the N-to-one algorithms. This is achieved by setting the new field `PBUF`
+to `YES`.
 
 ### Add conditional output (OOPT) to the longout record
 

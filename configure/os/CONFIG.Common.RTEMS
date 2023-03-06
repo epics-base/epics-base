@@ -36,6 +36,13 @@ GNU_TARGET ?= $(RTEMS_TARGET_CPU)-rtems
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
 include $(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
 include $(RTEMS_CUSTOM)
+ifeq ($(RTEMS_VERSION),6)
+# hpj
+# Very simple fix. I am just not a Makefile professional
+# in RTEMS 6 there is now a header file link.h and this collides with the EPICS link.h
+# I.e. the system include path must not be included before the EPICS include path.
+CPU_DEFINES = -isystem $(exec_prefix)/$(RTEMS_BSP)/lib/include
+endif
 include $(CONFIG.CC)
 ifeq ($(RTEMS_VERSION),6)
 # not set in RTEMS_BSD.cfg until now, stupid workaround

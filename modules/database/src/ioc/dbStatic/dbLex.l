@@ -15,7 +15,8 @@ doublequote "\""
 comment     "#"
 whitespace  [ \t\r\n]
 escape      {backslash}.
-stringchar  [^"\n\\]
+sqschar     [^'\n\\]
+dqschar     [^"\n\\]
 bareword    [a-zA-Z0-9_\-+:.\[\]<>;]
 
 punctuation [:,\[\]{}]
@@ -84,7 +85,7 @@ static int yyreset(void)
     return(tokenSTRING);
 }
 
-{doublequote}({stringchar}|{escape})*{doublequote} { /* quoted string */
+{doublequote}({dqschar}|{escape})*{doublequote} { /* quoted string */
     yylval.Str = dbmfStrdup((char *) yytext+1);
     yylval.Str[strlen(yylval.Str)-1] = '\0';
     return(tokenSTRING);
@@ -129,14 +130,14 @@ static int yyreset(void)
 
   /* Error patterns */
 
-{doublequote}({stringchar}|{escape})*{newline} {
+{doublequote}({dqschar}|{escape})*{newline} {
     yyerrorAbort("Newline in string, closing quote missing");
 }
 
-<JSON>{doublequote}({stringchar}|{escape})*{doublequote} {
+<JSON>{doublequote}({dqschar}|{escape})*{doublequote} {
     yyerrorAbort("Bad character in JSON string");
 }
-<JSON>{singlequote}({stringchar}|{escape})*{singlequote} {
+<JSON>{singlequote}({sqschar}|{escape})*{singlequote} {
     yyerrorAbort("Bad character in JSON string");
 }
 

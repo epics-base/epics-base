@@ -17,7 +17,7 @@ TEMPL_SUFFIX ?= .template
 # vpath
 
 vpath %.pm $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
-vpath %.pod $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
+vpath %.pod $(USR_VPATH) $(SRC_DIRS) .. $(dir $(DBD))
 vpath %.dbd $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
 vpath %.db $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
 vpath %.vdb $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))

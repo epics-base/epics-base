@@ -266,16 +266,16 @@ struct Tokenize {
         int icout = 0;
         bool inword = false;
         bool backslash = false;
-        char quote = EOF;
+        char quote = 0;
 
         for (;;) {
             char c = line[icin++];
             if (c == '\0')
                 break;
 
-            bool sep = (quote == EOF) && !backslash && (strchr (" \t(),\r", c));
+            bool sep = !quote && !backslash && (strchr (" \t(),\r", c));
 
-            if ((quote == EOF) && !backslash) {
+            if (!quote && !backslash) {
                 int redirectFd = 1;
                 if (c == '\\') {
                     backslash = true;
@@ -310,10 +310,10 @@ struct Tokenize {
             }
             if (inword) {
                 if (c == quote) {
-                    quote = EOF;
+                    quote = 0;
                 }
                 else {
-                    if ((quote == EOF) && !backslash) {
+                    if (!quote && !backslash) {
                         if (sep) {
                             inword = false;
                             // this "closes" a sub-string which was previously
@@ -347,7 +347,7 @@ struct Tokenize {
                     else {
                         argv.push_back(line + icout);
                     }
-                    if (quote == EOF)
+                    if (!quote)
                         line[icout++] = c;
                     inword = true;
                 }
@@ -364,7 +364,7 @@ struct Tokenize {
                 showError(filename, lineno, "Illegal redirection.");
             return true;
         }
-        if (quote != EOF) {
+        if (quote) {
             if(noise)
                 showError(filename, lineno, "Unbalanced quote.");
             return true;

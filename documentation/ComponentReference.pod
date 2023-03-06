@@ -1,0 +1,170 @@
+=head1 EPICS Component Reference Manual
+
+This document provides reference information about the record types,
+menus, link types and channel filters included with EPICS Base.
+
+Many details about the record and menu definitions are derived automatically
+from the source code at build time.
+
+
+=head2 Introduction and IOC Concepts
+
+These links point to an external website where introductory and overview
+documentation is now being published.
+
+=over
+
+=item * L<Introduction to EPICS|https://docs.epics-controls.org/en/latest/guides/EPICS_Intro.html>
+
+=item * L<Process Database Concepts|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html>
+
+=back
+
+
+=head2 Record Type Definitions
+
+These sections describe common aspects of the record types:
+
+=over
+
+=item * L<Fields Common to All Record Types|dbCommonRecord>
+
+=item * L<Fields Common to Input Record Types|dbCommonInput>
+
+=item * L<Fields Common to Output Record Types|dbCommonOutput>
+
+=back
+
+
+These are the record types supplied with EPICS Base:
+
+=over
+
+=item * L<Analog Array Input Record (aai)|aaiRecord>
+
+=item * L<Analog Array Output Record (aao)|aaoRecord>
+
+=item * L<Analog Input Record (ai)|aiRecord>
+
+=item * L<Analog Output Record (ao)|aoRecord>
+
+=item * L<Array Subroutine Record (aSub)|aSubRecord>
+
+=item * L<Binary Input Record (bi)|biRecord>
+
+=item * L<Binary Output Record (bo)|boRecord>
+
+=item * L<Calculation Output Record (calcout)|calcoutRecord>
+
+=item * L<Calculation Record (calc)|calcRecord>
+
+=item * L<Compression Record (compress)|compressRecord>
+
+=item * L<Data Fanout Record (dfanout)|dfanoutRecord>
+
+=item * L<Event Record (event)|eventRecord>
+
+=item * L<Fanout Record (fanout)|fanoutRecord>
+
+=item * L<Histogram Record (histogram)|histogramRecord>
+
+=item * L<64-bit Integer Input Record (int64in)|int64inRecord>
+
+=item * L<64-bit Integer Output Record (int64out)|int64outRecord>
+
+=item * L<Long Input Record (longin)|longinRecord>
+
+=item * L<Long Output Record (longout)|longoutRecord>
+
+=item * L<Long String Input Record (lsi)|lsiRecord>
+
+=item * L<Long String Output Record (lso)|lsoRecord>
+
+=item * L<Multi-Bit Binary Input Direct Record (mbbiDirect)|mbbiDirectRecord>
+
+=item * L<Multi-Bit Binary Input Record (mbbi)|mbbiRecord>
+
+=item * L<Multi-Bit Binary Output Direct Record (mbboDirect)|mbboDirectRecord>
+
+=item * L<Multi-Bit Binary Output Record (mbbo)|mbboRecord>
+
+=item * L<Permissive Record (permissive)|permissiveRecord>
+
+=item * L<Printf Record (printf)|printfRecord>
+
+=item * L<Select Record (sel)|selRecord>
+
+=item * L<Sequence Record (seq)|seqRecord>
+
+=item * L<State Record (state)|stateRecord>
+
+=item * L<String Input Record (stringin)|stringinRecord>
+
+=item * L<String Output Record (stringout)|stringoutRecord>
+
+=item * L<Sub-Array Record (subArray)|subArrayRecord>
+
+=item * L<Subroutine Record (sub)|subRecord>
+
+=item * L<Waveform Record (waveform)|waveformRecord>
+
+=back
+
+
+=head2 Menu Definitions
+
+Menu field choices are documented with the record type that defines them, or
+here for the global menus that are used by multiple record types:
+
+=over
+
+=item * L<Alarm Severity Menu|menuAlarmSevr>
+
+=item * L<Alarm Status Menu|menuAlarmStat>
+
+=item * L<Analog Conversions Menu|menuConvert>
+
+=item * L<Field Type Menu|menuFtype>
+
+=item * L<Invalid Value Output Action Menu|menuIvoa>
+
+=item * L<Output Mode Select Menu|menuOmsl>
+
+=item * L<Process at iocInit Menu|menuPini>
+
+=item * L<Post Monitors Menu|menuPost>
+
+=item * L<Priority Menu|menuPriority>
+
+=item * L<Scan Menu|menuScan>
+
+=item * L<Simulation Mode Menu|menuSimm>
+
+=item * L<YesE<sol>No Menu|menuYesNo>
+
+=back
+
+
+=head2 Other Components
+
+EPICS Base also comes with extensible sets of server Channel Filters and IOC
+Database Link types, which are documented here:
+
+=over
+
+=item * L<Channel Filters|filters>
+
+=item * L<IOC Database Link Types|links>
+
+=back
+
+
+=head2 Corrections and Updates
+
+Corrections to these documents can be submitted as patch files to the EPICS
+core developers, or as GitHub  pull requests to the 7.0 branch of Base.
+These document sources can be found under `modules/database/src` tree, mostly
+in the `std/rec` and `ioc/db` directories in files with extension `.dbd.pod`.
+The documentation source format is a combination of the EPICS DBD file format
+with an extended version of Perl's POD (plain old documentation); run `perldoc
+pod` for details of POD.

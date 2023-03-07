@@ -20,6 +20,15 @@ limits.
 
 =cut
 
+menu(longoutOOPT) {
+	choice(longoutOOPT_Every_Time,"Every Time")
+	choice(longoutOOPT_On_Change,"On Change")
+	choice(longoutOOPT_When_Zero,"When Zero")
+	choice(longoutOOPT_When_Non_zero,"When Non-zero")
+	choice(longoutOOPT_Transition_To_Zero,"Transition To Zero")
+	choice(longoutOOPT_Transition_To_Non_zero,"Transition To Non-zero")
+}
+
 recordtype(longout) {
 
 =head2 Parameter Fields
@@ -72,7 +81,50 @@ See L<Address
 Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses and database links.
 
-=fields OUT, DTYP
+=fields OUT, DTYP, OOPT, OOCH
+
+=head4 Menu longoutOOPT
+
+The OOPT field was added in EPICS UNRELEASED.
+
+It determines the condition that causes the output link to be
+written to. It's a menu field that has six choices:
+
+=menu longoutOOPT
+
+=over
+
+=item *
+C<Every Time> -- write output every time record is processed. (DEFAULT)
+
+=item *
+C<On Change> -- write output every time VAL changes.
+
+=item *
+C<When Zero> -- when record is processed, write output if VAL is zero.
+
+=item *
+C<When Non-zero> -- when record is processed, write output if VAL is
+non-zero.
+
+=item *
+C<Transition To Zero> -- when record is processed, write output only if VAL
+is zero and the last value was non-zero.
+
+=item *
+C<Transition To Non-zero> -- when record is processed, write output only if
+VAL is non-zero and last value was zero.
+
+=back
+
+=head4 Changes in OUT field when OOPT = On Change
+
+The OOCH field was added in EPICS UNRELEASED.
+
+If OOCH is C<YES> (its default value) and the OOPT field is C<On Change>,
+the record will write to the device support the first time the record gets
+processed after its OUT link is modified, even when the output value has
+not actually changed.
 
 =cut
 
@@ -94,6 +146,7 @@ for information on the format of hardware addresses and database links.
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
+		special(SPC_MOD)
 		promptgroup("50 - Output")
 		interest(1)
 	}
@@ -365,7 +418,7 @@ for more information on simulation mode and its fields.
 		prompt("Sim. Mode Private")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("epicsCallback            *simpvt")
+		extra("epicsCallback       *simpvt")
 	}
 	field(IVOA,DBF_MENU) {
 		prompt("INVALID output action")
@@ -377,6 +430,29 @@ for more information on simulation mode and its fields.
 		prompt("INVALID output value")
 		promptgroup("50 - Output")
 		interest(2)
+	}
+	field(PVAL,DBF_LONG) {
+		prompt("Previous Value")
+	}
+	field(OUTPVT,DBF_NOACCESS) {
+		prompt("Output Write Control Private")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("epicsEnum16         outpvt")
+	}
+	field(OOCH,DBF_MENU) {
+		prompt("Output Exec. On Change (Opt)")
+		promptgroup("50 - Output")
+		interest(1)
+		menu(menuYesNo)
+		initial("1")
+	}
+	field(OOPT,DBF_MENU) {
+		prompt("Output Execute Opt")
+		promptgroup("50 - Output")
+		interest(1)
+		menu(longoutOOPT)
+		initial("0")
 	}
 
 

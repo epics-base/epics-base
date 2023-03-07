@@ -15,10 +15,6 @@
 #    to inform the system of the shared library location.
 
 
-# Use GNU Readline if the header file is installed
-COMMANDLINE_LIBRARY = $(strip $(if $(wildcard \
-    $(GNU_DIR)/include/readline/readline.h), READLINE, EPICS))
-
 # If libreadline needs additional libraries to be linked with it, try
 # uncommenting each of the lines below in turn, starting with the top
 # one and working downwards, until the build succeeds. Do a 'make rebuild'

@@ -33,8 +33,8 @@ static float makeINF ( void )
 #endif
 
 extern "C" {
-float epicsNAN = NAN;
-float epicsINF = INFINITY;
+const float epicsNAN = NAN;
+const float epicsINF = INFINITY;
 }
 
 #ifdef _MSC_VER

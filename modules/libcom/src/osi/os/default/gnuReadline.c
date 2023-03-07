@@ -17,6 +17,8 @@
 #include <readline/history.h>
 
 #include "epicsExit.h"
+#include "envDefs.h"
+#include "epicsReadlinePvt.h"
 
 static struct osdContext {
     char dummy; /* Required for older compilers */

@@ -39,9 +39,15 @@ FIND_TOOL = $(firstword $(wildcard $(TOOLS)/$(1) \
     $(TOP)/src/tools/$(1)) $(EPICS_BASE)/src/tools/$(1))
 
 #---------------------------------------------------------------
+# Find Perl modules for dependencies
+FIND_PM = $(wildcard $(EPICS_BASE)/lib/perl/$(1))
+
+#---------------------------------------------------------------
 # EPICS Base build tools and tool flags
 
-PODTOHTML        = $(PERL) $(TOOLS)/podToHtml.pl
+PODTOHTML_pl     = $(TOOLS)/podToHtml.pl
+PODTOHTML_dep    = $(PODTOHTML_pl) $(call FIND_PM,EPICS/PodHtml.pm)
+PODTOHTML        = $(PERL) $(PODTOHTML_pl)
 CONVERTRELEASE   = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FULLPATHNAME     = $(PERL) $(TOOLS)/fullPathName.pl
 GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG) $(QUESTION_FLAG)

@@ -297,6 +297,7 @@ sub parse_record {
         }
         elsif (m/\G \}/xgc) {
             print " Record-End:\n" if $debug;
+            $dbd->add_record($record_name);
             $dbd->add($rec);
             popContext("record($record_type, $record_name)");
             return;

@@ -141,6 +141,60 @@ void testDistance(void) {
 #undef TEST
 }
 
+static
+void testTok(const char *inp,
+             const char *delim,
+             const char *save,
+             const char *expectTok,
+             const char *expectSave)
+{
+    char *scratch = !inp ? NULL : strdup(inp);
+    char *allocSave = !save ? NULL : strdup(save);
+    char *actualSave = allocSave;
+    char *actualTok;
+
+    if((!inp || scratch) && (!save || allocSave)) {
+
+        actualTok = epicsStrtok_r(scratch, delim, &actualSave);
+
+#define COMPSTR(A, B) ((!(A) && !(B)) || ((A) && (B) && strcmp(A,B)==0))
+
+#define ORNIL(S) (S ? S : "(nil)")
+
+        testOk(COMPSTR(expectSave, actualSave) && COMPSTR(expectTok, actualTok),
+               "inp: \"%s\" delim: \"%s\" tok: \"%s\"==\"%s\" save: \"%s\"==\"%s\"",
+               ORNIL(inp), ORNIL(delim), ORNIL(expectTok), ORNIL(actualTok), ORNIL(expectSave), ORNIL(actualSave));
+#undef COMPSTR
+#undef ORNIL
+
+    } else {
+        testFail("nomem");
+    }
+    free(scratch);
+    free(allocSave);
+}
+
+static
+void testStrTok(void)
+{
+    testDiag("testStrTok()");
+
+    testTok("", " \t", NULL, NULL, NULL);
+    testTok("  \t", " \t", NULL, NULL, NULL);
+    testTok(NULL, " \t", "", NULL, NULL);
+    testTok(NULL, " \t", " ", NULL, NULL);
+    testTok(NULL, " \t", "  \t", NULL, NULL);
+
+    testTok("a", " \t", NULL, "a", NULL);
+    testTok("  a", " \t", NULL, "a", NULL);
+    testTok("a  ", " \t", NULL, "a", " ");
+    testTok("\ta  ", " \t", NULL, "a", " ");
+
+    testTok("aaa bbb ", " \t", NULL, "aaa", "bbb ");
+    testTok("aaa\tbbb ", " \t", NULL, "aaa", "bbb ");
+    testTok(NULL, " \t", "bbb ", "bbb", "");
+}
+
 MAIN(epicsStringTest)
 {
     const char * const empty = "";
@@ -155,7 +209,7 @@ MAIN(epicsStringTest)
     char *s;
     int status;
 
-    testPlan(427);
+    testPlan(439);
 
     testChars();
 
@@ -352,6 +406,7 @@ MAIN(epicsStringTest)
     testOk(result[status] == 0, "  0-terminated");
 
     testDistance();
+    testStrTok();
 
     return testDone();
 }

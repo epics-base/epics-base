@@ -104,6 +104,7 @@ static const ELEMENT operands[] = {
 {"F",           0, 0,   1,      OPERAND,        FETCH_F},
 {"FINITE",      7, 8,   0,      VARARG_OPERATOR,FINITE},
 {"FLOOR",       7, 8,   0,      UNARY_OPERATOR, FLOOR},
+{"FMOD",        7, 8,   -1,     UNARY_OPERATOR, FMOD},
 {"G",           0, 0,   1,      OPERAND,        FETCH_G},
 {"H",           0, 0,   1,      OPERAND,        FETCH_H},
 {"I",           0, 0,   1,      OPERAND,        FETCH_I},

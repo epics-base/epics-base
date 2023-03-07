@@ -14,6 +14,7 @@
 #include <dbDefs.h>
 #include <iocsh.h>
 #include <libComRegister.h>
+#include <dbmf.h>
 
 #include <epicsUnitTest.h>
 #include <testMain.h>
@@ -128,5 +129,7 @@ MAIN(iocshTest)
     testPosition("after_error_1", false);
     reached.clear();
 
+    // cleanup after macLib to avoid valgrind false positives
+    dbmfFreeChunks();
     return testDone();
 }

@@ -97,7 +97,6 @@ struct dbfl_val {
  * data is still owned by a record. See the macro dbfl_has_copy below.
  */
 struct dbfl_ref {
-    dbfl_freeFunc     *dtor;  /* Callback to free filter-allocated resources */
     void              *pvt;   /* Private pointer */
     void              *field; /* Field value */
 };
@@ -120,6 +119,7 @@ typedef struct db_field_log {
     short        field_type;  /* DBF type of data */
     short        field_size;  /* Size of a single element */
     long        no_elements;  /* No of valid array elements */
+    dbfl_freeFunc     *dtor;  /* Callback to free filter-allocated resources */
     union {
         struct dbfl_val v;
         struct dbfl_ref r;
@@ -136,7 +136,7 @@ typedef struct db_field_log {
  * the db_field_log still owns the (empty) data.
  */
 #define dbfl_has_copy(p)\
- ((p) && ((p)->type==dbfl_type_val || (p)->u.r.dtor || (p)->no_elements==0))
+ ((p) && ((p)->type==dbfl_type_val || (p)->dtor || (p)->no_elements==0))
 
 #define dbfl_pfield(p)\
  ((p)->type==dbfl_type_val ? &p->u.v.field : p->u.r.field)

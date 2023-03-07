@@ -73,6 +73,8 @@ LIBCOM_API extern int errVerbose;
  * the status symbol and string values, and the name of the task which invoked errMessage.
  * It also prints the name of the source file and the line number from which the call was issued.
  *
+ * The message to print should not include a newline as one is added implicitly.
+ *
  * The status code used for the 1st argument is:
  * - 0: Find latest vxWorks or Unix error (errno value).
  * - -1: Don't report status.
@@ -82,7 +84,7 @@ LIBCOM_API extern int errVerbose;
  * \param PM The message to print
  */
 #define errMessage(S, PM) \
-     errPrintf(S, __FILE__, __LINE__, "%s", PM)
+     errPrintf(S, __FILE__, __LINE__, " %s\n", PM)
 
 /** epicsPrintf is an old name for errlog routines */
 #define epicsPrintf errlogPrintf
@@ -176,6 +178,9 @@ LIBCOM_API void errlogAddListener(errlogListener listener, void *pPrivate);
  *
  * \param listener Function pointer of type ::errlogListener
  * \param pPrivate This will be passed as the first argument of listener()
+ *
+ * \since UNRELEASED Safe to call from a listener callback.
+ * \until UNRELEASED Self-removal from a listener callback caused corruption.
  */
 LIBCOM_API int errlogRemoveListeners(errlogListener listener,
     void *pPrivate);
@@ -264,7 +269,7 @@ LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
  * errlogPrintf(ANSI_ESC_RED "ERROR" ANSI_ESC_RESET ": something is amiss\n");
  * @endcode
  *
- * @since UNRELEASED
+ * @since EPICS 7.0.7
  *
  * @see errlogPrintf()
  * @{
@@ -275,6 +280,7 @@ LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
 #define ANSI_ESC_BLUE "\033[34;1m"
 #define ANSI_ESC_MAGENTA "\033[35;1m"
 #define ANSI_ESC_CYAN "\033[36;1m"
+#define ANSI_ESC_BOLD "\033[1m"
 #define ANSI_ESC_RESET "\033[0m"
 #define ANSI_RED(STR)     ANSI_ESC_RED     STR ANSI_ESC_RESET
 #define ANSI_GREEN(STR)   ANSI_ESC_GREEN   STR ANSI_ESC_RESET
@@ -282,6 +288,7 @@ LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
 #define ANSI_BLUE(STR)    ANSI_ESC_BLUE    STR ANSI_ESC_RESET
 #define ANSI_MAGENTA(STR) ANSI_ESC_MAGENTA STR ANSI_ESC_RESET
 #define ANSI_CYAN(STR)    ANSI_ESC_CYAN    STR ANSI_ESC_RESET
+#define ANSI_BOLD(STR)    ANSI_ESC_BOLD    STR ANSI_ESC_RESET
 #define ERL_ERROR ANSI_RED("ERROR")
 #define ERL_WARNING ANSI_MAGENTA("WARNING")
 /** @} */

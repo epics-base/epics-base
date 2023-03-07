@@ -12,7 +12,7 @@ ARCH_CLASS = x86
 POSIX = NO
 
 #  Definitions used when COMMANDLINE_LIBRARY is READLINE
-LDLIBS_READLINE = -lreadline -lcurses
+LDLIBS_READLINE = -lreadline -ltermcap
 
 ARCH_DEP_CFLAGS += -m32
 ARCH_DEP_LDFLAGS += -m32

@@ -35,3 +35,15 @@ OS_API = posix
 OS_API = score
 #  endif
 #endif
+
+#ifdef __has_include
+#  if defined(__rtems__) && __RTEMS_MAJOR__<5 && __has_include(<libtecla.h>)
+COMMANDLINE_LIBRARY ?= LIBTECLA
+#  elif __has_include(<readline/readline.h>)
+COMMANDLINE_LIBRARY ?= READLINE
+#  else
+COMMANDLINE_LIBRARY ?= EPICS
+#  endif
+#else
+COMMANDLINE_LIBRARY ?= EPICS
+#endif

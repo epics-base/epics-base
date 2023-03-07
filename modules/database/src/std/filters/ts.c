@@ -35,7 +35,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
 
     /* If reference and not already copied,
        must make a copy (to ensure coherence between time and data) */
-    if (pfl->type == dbfl_type_ref && !pfl->u.r.dtor) {
+    if (pfl->type == dbfl_type_ref && !pfl->dtor) {
         void *pTarget = calloc(pfl->no_elements, pfl->field_size);
         void *pSource = pfl->u.r.field;
         if (pTarget) {
@@ -46,7 +46,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             dbExtractArray(pSource, pTarget, pfl->field_size,
                 nSource, pfl->no_elements, offset, 1);
             pfl->u.r.field = pTarget;
-            pfl->u.r.dtor = freeArray;
+            pfl->dtor = freeArray;
             pfl->u.r.pvt = pvt;
             dbScanUnlock(dbChannelRecord(chan));
         }

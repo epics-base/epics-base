@@ -145,8 +145,10 @@ MAIN(decTest)
 
     evtctx = db_init_events();
 
-    testOk(!!(plug = dbFindFilter(myname, strlen(myname))),
-        "plugin '%s' registered correctly", myname);
+    plug = dbFindFilter(myname, strlen(myname));
+    if (!plug)
+        testAbort("Plugin '%s' not registered", myname);
+    testPass("plugin '%s' registered correctly", myname);
 
     /* N < 1 */
     testOk(!(pch = dbChannelCreate("x.VAL{dec:{n:-1}}")),

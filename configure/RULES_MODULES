@@ -22,9 +22,11 @@
 #    7. Submodules must have a configure/CONFIG_SITE file that contains
 #           -include $(TOP)/../CONFIG_SITE.local
 
-# Add checked-out submodules to DIRS
-LIVE_SUBMODULES = $(subst /Makefile,,$(wildcard $(addsuffix /Makefile, $(SUBMODULES))))
-DIRS += $(LIVE_SUBMODULES)
+# Add checked-out submodules to DIRS, unless INSTALL_LOCATION is empty
+LIVE_SUBMODULES = $(subst /Makefile,, \
+    $(wildcard $(addsuffix /Makefile, $(SUBMODULES))))
+live = $(if $(wildcard $(INSTALL_CONFIG)/RULES_TOP),LIVE,DEAD)
+DIRS += $($(live)_SUBMODULES)
 
 include $(CONFIG)/RULES_DIRS
 
@@ -37,14 +39,13 @@ all host $(DIRS) $(ARCHS) $(ACTIONS) $(dirActionTargets) $(dirArchTargets) \
 # Convenience target
 RELEASE.host: $(RELEASE_LOCAL)
 
-$(RELEASE_LOCAL): Makefile CONFIG_SITE.local
+$(RELEASE_LOCAL): Makefile $(CONFIG)/CONFIG_SITE \
+    $(wildcard $(CONFIG)/CONFIG_SITE.local)
 	$(ECHO) Creating $@ with
 	$(ECHO) "    $(PARENT_MODULE) = $(INSTALL_ABSOLUTE)"
 	@echo $(PARENT_MODULE) = $(INSTALL_ABSOLUTE)> $@
-realclean:
-	$(RM) $(wildcard RELEASE.*.local)
 
-.PHONY: RELEASE.host realclean
+.PHONY: RELEASE.host
 
 # Testing: Combine test failure logs from the live submodules
 TESTS_FAILED_LOGS = $(wildcard $(addsuffix /$(TESTS_FAILED_LOG), \

@@ -34,6 +34,11 @@ ifeq ($(origin EPICS_HOST_ARCH), undefined)
   EHA :=
 endif
 
+# Make Perl hash iteration reproducible.
+# See: https://reproducible-builds.org/docs/stable-outputs/
+#
+export PERL_HASH_SEED = 0
+
 -include $(CONFIG)/RELEASE
 -include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH)
 -include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH).Common

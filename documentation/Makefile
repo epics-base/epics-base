@@ -1,24 +1,24 @@
 TOP = ..
 include $(TOP)/configure/CONFIG
 
-ifeq ($(T_A),$(EPICS_HOST_ARCH))
-
-DOXYGEN=doxygen
-
 EXPAND = Doxyfile@
-
 EXPAND_ME += EPICS_VERSION
 EXPAND_ME += EPICS_REVISION
 EXPAND_ME += EPICS_MODIFICATION
 EXPAND_ME += EPICS_PATCH_LEVEL
 EXPAND_ME += OS_CLASS CMPLR_CLASS
 
+HTMLS += ComponentReference.html
+
+TARGETS += doxygen
+
+DOXYGEN = doxygen
 ME = documentation/O.$(T_A)/html
 GH_FILES = $(ME)/ $(ME)/.nojekyll $(ME)/*.* $(ME)/*/*.*
 
-install: doxygen
+include $(TOP)/configure/RULES
 
-doxygen: Doxyfile ../mainpage.dox
+doxygen: Doxyfile ../mainpage.dox $(INSTALL_HTMLS)
 	$(DOXYGEN)
 	rsync -av $(TOP)/html/ html/
 
@@ -29,7 +29,3 @@ commit: doxygen
 	(cd $(TOP) && $(CURDIR)/../commit-gh.sh $(GH_FILES))
 
 .PHONY: commit
-
-endif # EPICS_HOST_ARCH
-
-include $(TOP)/configure/RULES

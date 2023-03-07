@@ -10,9 +10,9 @@
 =title Array Analog Output (aao)
 
 The array analog output record type is used to write array data. The array data
-can contain any of the supported data types. The record is in many ways similar to
-the waveform record but outputs arrays instead of reading them. It also allows the
-device support to allocate the array storage.
+can contain any of the supported data types. The record is in many ways similar
+to the waveform record but outputs arrays instead of reading them. It also
+allows the device support to allocate the array storage.
 
 =recordtype aao
 
@@ -40,22 +40,22 @@ These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 =head3 Write Parameters
 
 These fields are configurable by the user to specify how and where to the record
-writes its data. The OUT field determines where the array analog output writes its
-output. It can be a hardware address, a channel access or database link, or a
-constant. Only in records that use soft device support can the OUT field be a
-channel access link, a database link, or a constant. Otherwise, the OUT field must
-be a hardware address. See L<Address
+writes its data. The OUT field determines where the array analog output writes
+its output. It can be a hardware address, a channel access or database link, or
+a constant. Only in records that use soft device support can the OUT field be a
+channel access link, a database link, or a constant. Otherwise, the OUT field
+must be a hardware address. See L<Address
 Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses and database links.
 
 =head4 Fields related to array writing
 
-The DTYP field must contain the name of the appropriate device support module. The
-values in the array referenced by are written to the location specified in the OUT
-field. (If the OUT link is a constant, no data are written.) NELM specifies the
-maximum number of elements that the array can hold, while FTVL specifies the data
-type of the elements (follow the link in the table below for a list of the
-available choices).
+The DTYP field must contain the name of the appropriate device support module.
+The values in the array referenced by are written to the location specified in
+the OUT field. (If the OUT link is a constant, no data are written.) NELM
+specifies the maximum number of elements that the array can hold, while FTVL
+specifies the data type of the elements (follow the link in the table below for
+a list of the available choices).
 
 =fields DTYP, OUT, NELM, FTVL
 
@@ -119,13 +119,34 @@ These parameters are used by the run-time code for processing the array analog
 output record. They are not configured using a configuration tool. Only the VAL
 field is modifiable at run-time.
 
-VAL references the array where the array analog output record stores its data. The
-BPTR field holds the address of the array.
+VAL references the array where the array analog output record stores its data.
+The BPTR field holds the address of the array.
 
-The NORD field holds a counter of the number of elements that have been written to
-the output,
+The NORD field holds a counter of the number of elements that have been written
+to the output,
 
-=fields VAL, BPTR, NORD
+=fields VAL, BPTR, NORD, OMSL, DOL
+
+The following steps are performed in order during record processing.
+
+=head4 Fetch Value
+
+The OMSL menu field is used to determine whether the DOL link
+field should be used during processing or not:
+
+=over
+
+=item *
+If OMSL is C<supervisory> the DOL field are not used.
+The new output value is taken from the VAL field, which may have been set from
+elsewhere.
+
+=item *
+If OMSL is C<closed_loop> the DOL link field is read to obtain a value.
+
+=back
+
+Note: The OMSL and DOL fields were added to the aaoRecord in Base 7.0.7.
 
 =head3 Simulation Mode Parameters
 
@@ -327,6 +348,17 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		promptgroup("50 - Output")
 		interest(1)
 	}
+	field(DOL,DBF_INLINK) {
+		prompt("Desired Output Link")
+		promptgroup("40 - Input")
+		interest(1)
+	}
+	field(OMSL,DBF_MENU) {
+		prompt("Output Mode Select")
+		promptgroup("50 - Output")
+		interest(1)
+		menu(menuOmsl)
+	}
 	field(EGU,DBF_STRING) {
 		prompt("Engineering Units")
 		promptgroup("80 - Display")
@@ -440,9 +472,9 @@ Scan forward link if necessary, set PACT FALSE, and return.
 =head3 Fields Of Interest To Device Support
 
 Each array analog output record record must have an associated set of device
-support routines. The primary responsibility of the device support routines is to
-write the array data value whenever C<write_aao()> is called. The device support
-routines are primarily interested in the following fields:
+support routines. The primary responsibility of the device support routines is
+to write the array data value whenever C<write_aao()> is called. The device
+support routines are primarily interested in the following fields:
 
 =fields PACT, DPVT, NSEV, NSTA, OUT, NELM, FTVL, BPTR, NORD
 
@@ -492,7 +524,8 @@ provided for any device type that can use the ioEvent scanner.
 
   long write_aao(dbCommon *precord)
 
-This routine must write the array data to output. It returns the following values:
+This routine must write the array data to output. It returns the following
+values:
 
 =over
 

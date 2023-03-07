@@ -2041,13 +2041,17 @@ char *dbGetStringNum(DBENTRY *pdbentry)
 {
     dbFldDes    *pflddes = pdbentry->pflddes;
     void        *pfield = pdbentry->pfield;
-    char        *message;
+    char        *message = getpMessage(pdbentry);
     unsigned char cvttype;
+
+    if (!pfield) {
+        dbMsgCpy(pdbentry, "Field not found");
+        return message;
+    }
 
     /* the following assumes that messagesize is large enough
      * to hold the base 10 encoded value of a 32-bit integer.
      */
-    message = getpMessage(pdbentry);
     cvttype = pflddes->base;
     switch (pflddes->field_type) {
     case DBF_CHAR:
@@ -2109,37 +2113,34 @@ char *dbGetStringNum(DBENTRY *pdbentry)
         {
             dbMenu *pdbMenu = (dbMenu *)pflddes->ftPvt;
             epicsEnum16 choice_ind;
-            char *pchoice;
 
-            if (!pfield) {
-                dbMsgCpy(pdbentry, "Field not found");
-                return message;
-            }
-            choice_ind = *((epicsEnum16 *) pdbentry->pfield);
-            if (!pdbMenu || choice_ind < 0 || choice_ind >= pdbMenu->nChoice)
+            if (!pdbMenu)
                 return NULL;
-            pchoice = pdbMenu->papChoiceValue[choice_ind];
-            dbMsgCpy(pdbentry, pchoice);
+
+            choice_ind = *((epicsEnum16 *) pdbentry->pfield);
+            if (choice_ind >= pdbMenu->nChoice) {
+                dbMsgPrint(pdbentry, "%u", choice_ind);
+            }
+            else {
+                dbMsgCpy(pdbentry, pdbMenu->papChoiceValue[choice_ind]);
+            }
         }
         break;
     case DBF_DEVICE:
         {
-            dbDeviceMenu *pdbDeviceMenu;
+            dbDeviceMenu *pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
             epicsEnum16 choice_ind;
-            char *pchoice;
 
-            if (!pfield) {
-                dbMsgCpy(pdbentry, "Field not found");
-                return message;
+            if (!pdbDeviceMenu) {
+                dbMsgCpy(pdbentry, "");
+                break;
             }
-            pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
-            if (!pdbDeviceMenu)
-                return NULL;
+
             choice_ind = *((epicsEnum16 *) pdbentry->pfield);
-            if (choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
+            if (choice_ind>=pdbDeviceMenu->nChoice)
                 return NULL;
-            pchoice = pdbDeviceMenu->papChoice[choice_ind];
-            dbMsgCpy(pdbentry, pchoice);
+
+            dbMsgCpy(pdbentry, pdbDeviceMenu->papChoice[choice_ind]);
         }
         break;
     default:
@@ -3296,11 +3297,11 @@ void dbDumpRecordType(DBBASE *pdbbase,const char *recordTypeName)
         printf("name(%s) no_fields(%hd) no_prompt(%hd) no_links(%hd)\n",
             pdbRecordType->name,pdbRecordType->no_fields,
             pdbRecordType->no_prompt,pdbRecordType->no_links);
-        printf("index name\tsortind sortname\n");
+        printf("index offset size name\tsortind sortname\n");
         for(i=0; i<pdbRecordType->no_fields; i++) {
             pdbFldDes = pdbRecordType->papFldDes[i];
-            printf("%5d %s\t%7d %s\n",
-                i,pdbFldDes->name,
+            printf("%5d %6u %4u %s\t%7d %s\n",
+                i,pdbFldDes->offset,pdbFldDes->size, pdbFldDes->name,
                 pdbRecordType->sortFldInd[i],pdbRecordType->papsortFldName[i]);
         }
         printf("link_ind ");

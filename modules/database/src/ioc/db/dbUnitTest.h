@@ -105,7 +105,7 @@ DBCORE_API void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
  *
  * @code
  * static const epicsUInt32 putval[] = {1,2,3};
- * testdbVGetFieldEqual("some:wf", DBF_ULONG, NELEMENTS(putval), putval);
+ * testdbPutArrFieldOk("some:wf", DBF_ULONG, NELEMENTS(putval), putval);
  * @endcode
  *
  * @see @ref dbtestactions
@@ -190,6 +190,7 @@ DBCORE_API void testGlobalUnlock(void);
  *
  * @code
  * #include <dbUnitTest.h>
+ * #include <testMain.h>
  *
  * int mytest_registerRecordDeviceDriver(DBBASE *pbase);
  * void testCase(void) {
@@ -204,7 +205,7 @@ DBCORE_API void testGlobalUnlock(void);
  * }
  *
  * MAIN(mytestmain) {
- *     testPlan(0);
+ *     testPlan(0); // adjust number of tests
  *     testCase();
  *     testCase(); // may be repeated if desirable.
  *     return testDone();
@@ -212,6 +213,9 @@ DBCORE_API void testGlobalUnlock(void);
  * @endcode
  *
  * @code
+ * TOP = ..
+ * include $(TOP)/configure/CONFIG
+ *
  * TARGETS += $(COMMON_DIR)/mytest.dbd
  * DBDDEPENDS_FILES += mytest.dbd$(DEP)
  * TESTFILES += $(COMMON_DIR)/mytest.dbd
@@ -222,6 +226,8 @@ DBCORE_API void testGlobalUnlock(void);
  * mytest_SRCS += mytestmain.c # see above
  * mytest_SRCS += mytest_registerRecordDeviceDriver.cpp
  * TESTFILES += some.db
+ *
+ * include $(TOP)/configure/RULES
  * @endcode
  *
  * @section dbtestactions Actions

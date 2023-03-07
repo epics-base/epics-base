@@ -30,7 +30,7 @@
   #define HOST_GETCLOCK
   #define TIMESPEC struct timespec
   #define CLOCK_GETTIME(ts) clock_gettime(CLOCK_REALTIME, ts)
-  #define TP_NAME "OS Clock"
+  #define TP_NAME "macOS Clock"
 #endif
 
 #define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE

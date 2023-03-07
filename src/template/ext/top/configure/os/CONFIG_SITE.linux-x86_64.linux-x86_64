@@ -18,13 +18,6 @@ MOTIF_INC=/usr/include
 #MOTIF_LIB=/usr/X11R6/lib64
 #MOTIF_INC=/usr/X11R6/include
 
-# testing pre-compiled versions
-CLAPACK_LIB    = /usr/local/oag/3rdParty/ATLAS/Linux_Core2Duo64SSE3/lib
-ATLAS_LIB      = /usr/local/oag/3rdParty/ATLAS/Linux_Core2Duo64SSE3/lib
-ATLAS_INCLUDE  = /usr/local/oag/3rdParty/ATLAS/Linux_Core2Duo64SSE3/include
-
-JAVA_DIR=/usr
-
 # Sciplot and XRTgraph used by medm
 SCIPLOT=YES
 #XRTGRAPH_EXTENSIONS = YES

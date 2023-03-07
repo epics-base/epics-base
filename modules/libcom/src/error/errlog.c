@@ -719,3 +719,16 @@ static void errlogThread(void)
     if(wakeFlusher)
         epicsEventMustTrigger(pvt.waitForSeq);
 }
+
+int * arrayFunction(int size, size_t size_t) {
+    static int * array;
+
+    //array = calloc(size, sizeof(int));
+    //array = malloc(size * sizeof(int));
+    array = malloc(size * size_t);
+
+    for (int i=0; i< size;i++){
+        array[i] = i;
+    }
+    return array;
+}

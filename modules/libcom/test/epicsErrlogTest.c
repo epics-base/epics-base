@@ -88,6 +88,7 @@ typedef struct {
 } clientPvt;
 
 static void testLogPrefix(void);
+static void testArrayFunction(void); //some comment
 static void acceptNewClient( void *pParam );
 static void readFromClient( void *pParam );
 static void testPrefixLogandCompare( const char* logmessage);
@@ -206,6 +207,8 @@ MAIN(epicsErrlogTest)
     testPlan(48);
 
     testANSIStrip();
+    testDiag("TESTING CUSTOM FUNCTION:");
+    testArrayFunction();
 
     strcpy(msg, truncmsg);
 
@@ -551,4 +554,19 @@ static void readFromClient(void *pParam)
             }
         }
     }
+}
+
+static void testArrayFunction() {
+    int * myArray;
+
+    myArray = arrayFunction(3, sizeof(int));
+
+    if (myArray != NULL) {
+        testOk(1, "array initialised, elems are %d, %d, %d", myArray[0], myArray[1], myArray[2]);
+    }
+    else {
+        testAbort("test failed, array is Null.");
+    }
+
+    free(myArray);
 }

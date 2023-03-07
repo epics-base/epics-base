@@ -252,7 +252,9 @@ static const iocshArg dbtgfArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbtgfArgs[1] = {&dbtgfArg0};
 static const iocshFuncDef dbtgfFuncDef = {"dbtgf",1,dbtgfArgs,
                                           "Database Test Get Field.\n"
-                                          "Get field with different DBR_* types\n"};
+                                          "Get and print the specified field with all possible DBR_* types\n"
+                                          "Example: dbtgf aitest\n"
+                                          "Example: dbtgf aitest.VAL\n"};
 static void dbtgfCallFunc(const iocshArgBuf *args) { dbtgf(args[0].sval);}
 
 /* dbtpf */
@@ -260,7 +262,10 @@ static const iocshArg dbtpfArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbtpfArg1 = { "value",iocshArgString};
 static const iocshArg * const dbtpfArgs[2] = {&dbtpfArg0,&dbtpfArg1};
 static const iocshFuncDef dbtpfFuncDef = {"dbtpf",2,dbtpfArgs,
-                                          "Database Test Put Field.\n"};
+                                          "Database Test Put Field.\n"
+                                          "Put the given value to the given PV, then get the value\n"
+                                          "for all possible DBR_* types\n"
+                                          "Example: dbtpf aitest 5.0"};
 static void dbtpfCallFunc(const iocshArgBuf *args)
 { dbtpf(args[0].sval,args[1].sval);}
 
@@ -307,9 +312,11 @@ static const iocshArg dbtpnArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbtpnArg1 = { "value",iocshArgString};
 static const iocshArg * const dbtpnArgs[2] = {&dbtpnArg0,&dbtpnArg1};
 static const iocshFuncDef dbtpnFuncDef = {"dbtpn",2,dbtpnArgs,
-                                          "Database Put Notify\n"
+                                          "Database Test Process Notify\n"
                                           "Without value, begin async. processing and get\n"
-                                          "With value, begin put, process, and get\n"};
+                                          "With value, begin put, process, and get\n"
+                                          "Example: dbtpn aitest\n"
+                                          "Example: dbtpn aitest 5.0\n"};
 static void dbtpnCallFunc(const iocshArgBuf *args)
 { dbtpn(args[0].sval,args[1].sval);}
 

@@ -12,15 +12,10 @@
  * Author: Jeff Hill
  */
 
-/* pull in _WIN32_WINNT* definitions, and hopefully nothing else */
-#include <sdkddkver.h>
-
-/* When not specified, prefer SDK circa Windows 8 when available,
- * to pick up support for FlsAlloc().
+/* pull in _WIN32_WINNT* definitions, if _WIN32_WINNT
+ * is not already defined it is set to max supported by SDK
  */
-#if !defined(_WIN32_WINNT) && defined(_WIN32_WINNT_WIN8)
-#  define _WIN32_WINNT _WIN32_WINNT_WIN8
-#endif
+#include <sdkddkver.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -1092,8 +1087,7 @@ LIBCOM_API void epicsStdCall epicsThreadShowAll ( unsigned level )
 
 #ifdef USE_TLSALLOC_FALLBACK
     fprintf(epicsGetStdout(), "Warning: For this target, use of epicsThread* from non-EPICS threads\n"
-                              "         May leak memory.  Recommend to upgrade to >= Window Vista and\n"
-                              "         build with Windows SDK >= 8.\n");
+                              "         May leak memory.  Recommend to upgrade to >= Window Vista\n"
 #endif
 
     if ( ! pGbl ) {

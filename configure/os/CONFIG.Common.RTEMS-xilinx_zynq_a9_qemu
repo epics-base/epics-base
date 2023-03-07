@@ -12,9 +12,16 @@ GNU_TARGET = arm-rtems
 #use dhcp/bootp
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 
-OP_SYS_LDLIBS += -Wl,--gc-sections
-ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/xilinx_zynq_a9_qemu/lib/
-
+#OP_SYS_LDLIBS += -Wl,--gc-sections
+#ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/xilinx_zynq_a9_qemu/lib/
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
+
+ifeq ($(RTEMS_VERSION),6)
+# Which nfs version to use
+ARCH_DEP_CFLAGS += -DNET_CFG_NFS_MOUNT_OPTIONS=\"nfsv4,minorversion=1\"
+#
+ARCH_DEP_LDFLAGS += -B$(RTEMS_TOOLS)/arm-rtems6/xilinx_zynq_a9_qemu/lib -qrtems -Wl,--gc-sections
+endif
+
 

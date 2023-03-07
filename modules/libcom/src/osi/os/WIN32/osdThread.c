@@ -12,6 +12,16 @@
  * Author: Jeff Hill
  */
 
+/* pull in _WIN32_WINNT* definitions, and hopefully nothing else */
+#include <sdkddkver.h>
+
+/* When not specified, prefer SDK circa Windows 8 when available,
+ * to pick up support for FlsAlloc().
+ */
+#if !defined(_WIN32_WINNT) && defined(_WIN32_WINNT_WIN8)
+#  define _WIN32_WINNT _WIN32_WINNT_WIN8
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -36,7 +46,8 @@
  * prototypes only appear in the windows SDK 8 and above.
  * VS2010 supplies sdk 7, but can be upgraded to later SDK 
 
- * To accomodate this fall back to Tls*() which will build and run
+ * To accomodate this we suuply prototypes on, for XP
+ * fall back to Tls*() which will build and run
  * correctly for epicsThreads, but means that TLS allocations from
  * epicsThreadImplicitCreate() will continue to leak (for non-EPICS threads).
  *

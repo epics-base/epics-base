@@ -1441,7 +1441,7 @@ static const iocshFuncDef onFuncDef = {"on", 1, onArgs,
                                        "  continue (default) - Ignores error and continue with next commands.\n"
                                        "  break - Return to caller without executing futher commands.\n"
                                        "  halt - Suspend process.\n"
-                                       "  wait - stall process for [value] seconds, the continue.\n"};
+                                       "  wait - stall process for [value] seconds, then continue.\n"};
 static void onCallFunc(const iocshArgBuf *args)
 {
     iocshContext *context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);

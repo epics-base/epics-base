@@ -162,13 +162,15 @@ jobs:
 
           - os: windows-2019
             cmp: vs2019
-            configuration: default
+            configuration: debug
             name: "Win2019 MSC-19"
+            extra: "CMD_CXXFLAGS=-analysis"
 
           - os: windows-2019
             cmp: vs2019
-            configuration: static
+            configuration: static-debug
             name: "Win2019 MSC-19, static"
+            extra: "CMD_CXXFLAGS=-analysis"
 
           - os: windows-2019
             cmp: vs2019

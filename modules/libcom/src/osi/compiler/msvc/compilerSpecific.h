@@ -44,5 +44,9 @@
 
 #endif /* __cplusplus */
 
+/*
+ * Enable format-string checking if possible
+ */
+#define EPICS_PRINTF_STYLE_ANNOTATION _Printf_format_string_
 
 #endif  /* ifndef compilerSpecific_h */

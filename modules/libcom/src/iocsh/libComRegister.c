@@ -190,7 +190,9 @@ static const iocshArg * const epicsEnvShowArgs[1] = {&epicsEnvShowArg0};
 static const iocshFuncDef epicsEnvShowFuncDef = {"epicsEnvShow",1,epicsEnvShowArgs,
                                                  "Show environment variables on your system\n"
                                                  "  (default) - show all environment variables\n"
-                                                 "   name     - show value of specific environment variable\n"};
+                                                 "   name     - show value of specific environment variable\n"
+                                                 "Example: epicsEnvShow\n"
+                                                 "Example: epicsEnvShow PATH"};
 static void epicsEnvShowCallFunc(const iocshArgBuf *args)
 {
     epicsEnvShow (args[0].sval);

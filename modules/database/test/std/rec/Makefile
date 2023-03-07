@@ -93,6 +93,13 @@ testHarness_SRCS += longoutTest.c
 TESTFILES += ../longoutTest.db
 TESTS += longoutTest
 
+TESTPROD_HOST += boTest
+boTest_SRCS += boTest.c
+boTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += boTest.c
+TESTFILES += ../boTest.db
+TESTS += boTest
+
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
 asTestIoc_DBD += base.dbd

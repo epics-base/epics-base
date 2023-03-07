@@ -447,7 +447,7 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 }
 
 /* generalTimeReport */
-static const iocshArg generalTimeReportArg0 = { "interest_level", iocshArgArgv};
+static const iocshArg generalTimeReportArg0 = { "interest_level", iocshArgInt};
 static const iocshArg * const generalTimeReportArgs[1] = { &generalTimeReportArg0 };
 static const iocshFuncDef generalTimeReportFuncDef = {"generalTimeReport",1,generalTimeReportArgs,
                                                       "Display time providers and their priority levels"

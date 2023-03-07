@@ -7,10 +7,16 @@
 * EPICS Base is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* epicsTimer.h */
 
-/* Authors: Marty Kraimer, Jeff Hill */
-
+/**
+ * \file epicsTimer.h
+ * \brief An API for managing timers.
+ * \author  Marty Kraimer, Jeff Hill
+ *
+ * API for managing timers with different characteristics and scheduling 
+ * mechanisms, through the use of callback functions.
+ * The epicsTimer does not hold its lock when calling callbacks.
+ */
 #ifndef epicsTimerH
 #define epicsTimerH
 
@@ -22,12 +28,9 @@
 
 #ifdef __cplusplus
 
-/*
- * Notes:
- * 1) epicsTimer does not hold its lock when calling callbacks.
- */
-
-/* code using a timer must implement epicsTimerNotify */
+/** \brief Defining the callback function to be called when a timer expires, and its return value.
+ * Any code that uses the timer must implement this class.
+ * returning "noRestart" or "expireStatus ( restart, 30.0 ) */
 class LIBCOM_API epicsTimerNotify {
 public:
     enum restart_t { noRestart, restart };
@@ -40,23 +43,21 @@ public:
     private:
         double delay;
     };
-
     virtual ~epicsTimerNotify () = 0;
-    /* return "noRestart" or "expireStatus ( restart, 30.0 )" */
     virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
     virtual void show ( unsigned int level ) const;
 };
 
+/** \brief Defining the methods for managing a timer.
+ * Its member functions include start, cancel, and destroy.
+ * WARNING: A deadlock will occur if you hold a lock while
+ * calling this function that you also take within the timer
+ * expiration callback. */
 class LIBCOM_API epicsTimer {
 public:
-    /* calls cancel (see warning below) and then destroys the timer */
     virtual void destroy () = 0;
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
-    /* WARNING: A deadlock will occur if you hold a lock while
-     * calling this function that you also take within the timer
-     * expiration callback.
-     */
     virtual void cancel () = 0;
     struct expireInfo {
         expireInfo ( bool active, const epicsTime & expireTime );
@@ -67,9 +68,11 @@ public:
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
 protected:
-    virtual ~epicsTimer () = 0; /* protected => delete() must not be called */
+    virtual ~epicsTimer () = 0;
 };
 
+/** \brief Defining the interface for a timer queue,
+ * which holds the set of timers and schedules them for execution. */
 class epicsTimerQueue {
 public:
     virtual epicsTimer & createTimer () = 0;
@@ -78,6 +81,9 @@ protected:
     LIBCOM_API virtual ~epicsTimerQueue () = 0;
 };
 
+/** \brief Derived from epicsTimerQueue, providing the implementation
+ * of an active timer queue, which runs as a thread and schedules timers
+ * based on their expiration times. */
 class epicsTimerQueueActive
     : public epicsTimerQueue {
 public:
@@ -88,24 +94,27 @@ protected:
     LIBCOM_API virtual ~epicsTimerQueueActive () = 0;
 };
 
+/** \brief Defining the interface for a callback function to be called when
+ * a timer is inserted into the queue and the delay to the next expire has changed
+ * or when a timer is removed from the queue.
+ * If there is a quantum in the scheduling of timer intervals
+ * return this quantum in seconds. If unknown then return zero.*/
 class epicsTimerQueueNotify {
 public:
-    /* called when a new timer is inserted into the queue and the */
-    /* delay to the next expire has changed */
     virtual void reschedule () = 0;
-    /* if there is a quantum in the scheduling of timer intervals */
-    /* return this quantum in seconds. If unknown then return zero. */
     virtual double quantum () = 0;
 protected:
     LIBCOM_API virtual ~epicsTimerQueueNotify () = 0;
 };
 
+/** \brief Derived from epicsTimerQueue, providing a passive timer queue,
+ * which is driven by the caller and processes timers one at a time. */
 class epicsTimerQueuePassive
     : public epicsTimerQueue {
 public:
     static LIBCOM_API epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );
-    LIBCOM_API virtual ~epicsTimerQueuePassive () = 0; /* ok to call delete */
-    virtual double process ( const epicsTime & currentTime ) = 0; /* returns delay to next expire */
+    LIBCOM_API virtual ~epicsTimerQueuePassive () = 0;
+    virtual double process ( const epicsTime & currentTime ) = 0;
 };
 
 inline epicsTimer::expireInfo::expireInfo ( bool activeIn,
@@ -128,12 +137,14 @@ inline double epicsTimer::getExpireDelay ()
 }
 
 extern "C" {
-#endif /* __cplusplus */
+#endif
 
+/** \brief pointer to identifz the timer */
 typedef struct epicsTimerForC * epicsTimerId;
+/** \brief pointer to callback function, called after expire */
 typedef void ( *epicsTimerCallback ) ( void *pPrivate );
 
-/* thread managed timer queue */
+/** \brief A thread-managed queue for active timers */
 typedef struct epicsTimerQueueActiveForC * epicsTimerQueueId;
 LIBCOM_API epicsTimerQueueId epicsStdCall
     epicsTimerQueueAllocate ( int okToShare, unsigned int threadPriority );
@@ -147,7 +158,7 @@ LIBCOM_API void epicsStdCall
 LIBCOM_API void  epicsStdCall 
     epicsTimerQueueShow ( epicsTimerQueueId id, unsigned int level );
 
-/* passive timer queue */
+/** \brief A passive queue for timers that are driven by the caller */
 typedef struct epicsTimerQueuePassiveForC * epicsTimerQueuePassiveId;
 typedef void ( * epicsTimerQueueNotifyReschedule ) ( void * pPrivate );
 typedef double ( * epicsTimerQueueNotifyQuantum ) ( void * pPrivate );
@@ -166,7 +177,6 @@ LIBCOM_API double epicsStdCall
 LIBCOM_API void  epicsStdCall 
     epicsTimerQueuePassiveShow ( epicsTimerQueuePassiveId id, unsigned int level );
 
-/* timer */
 LIBCOM_API void epicsStdCall 
     epicsTimerStartTime ( epicsTimerId id, const epicsTimeStamp *pTime );
 LIBCOM_API void epicsStdCall 
@@ -180,6 +190,6 @@ LIBCOM_API void  epicsStdCall
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif
 
 #endif /* epicsTimerH */

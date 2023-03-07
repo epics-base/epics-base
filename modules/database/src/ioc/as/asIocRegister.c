@@ -112,7 +112,11 @@ static void astacCallFunc(const iocshArgBuf *args)
 static const iocshArg ascarArg0 = { "level",iocshArgInt};
 static const iocshArg * const ascarArgs[] = {&ascarArg0};
 static const iocshFuncDef ascarFuncDef = {"ascar",1,ascarArgs,
-                                          "Report status of PVs used in INP*() Access Security rules.\n"};
+                                          "Report status of PVs used in INP*() Access Security rules.\n"
+                                          "Level 0 - Summary report\n"
+                                          "      1 - Summary report plus details on unconnected channels\n"
+                                          "      2 - Summary report plus detail report on each channel\n"
+                                          "Example: ascar 1\n"};
 static void ascarCallFunc(const iocshArgBuf *args)
 {
     ascar(args[0].ival);

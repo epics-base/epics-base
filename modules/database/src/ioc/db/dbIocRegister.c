@@ -158,7 +158,9 @@ static const iocshArg dbelArg1 = { "level",iocshArgInt};
 static const iocshArg * const dbelArgs[2] = {&dbelArg0,&dbelArg1};
 static const iocshFuncDef dbelFuncDef = {"dbel",2,dbelArgs,
                                          "Database event list.\n"
-                                         "Show information on dbEvent subscriptions.\n"};
+                                         "Show information on dbEvent subscriptions.\n"
+                                         "Higher level shows more information (0 - 4)\n"
+                                         "Example: dbel aitest 2\n"};
 static void dbelCallFunc(const iocshArgBuf *args)
 {
     dbel(args[0].sval, args[1].ival);

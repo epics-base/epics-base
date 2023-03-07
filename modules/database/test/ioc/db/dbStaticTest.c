@@ -291,6 +291,18 @@ static void testDbVerify(const char *record)
     dbFinishEntry(&entry);
 }
 
+static void testWrongAliasRecord(const char *filename)
+{
+    FILE *fp = NULL;
+    dbPath(pdbbase,"." OSI_PATH_LIST_SEPARATOR "..");
+    dbOpenFile(pdbbase, filename, &fp);
+    if(!fp) {
+        testAbort("Unable to read %s", filename);
+    }
+    testOk(dbReadDatabaseFP(&pdbbase, fp, NULL, NULL) != 0,
+           "Wrong alias record in %s is expected to fail", filename);
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbStaticTest)
@@ -298,19 +310,23 @@ MAIN(dbStaticTest)
     const char *ldir;
     FILE *fp = NULL;
 
-    testPlan(310);
+    testPlan(312);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
     dbPath(pdbbase,"." OSI_PATH_LIST_SEPARATOR "..");
-    if(!(ldir = dbOpenFile(pdbbase, "dbStaticTest.db", &fp))) {
+    ldir = dbOpenFile(pdbbase, "dbStaticTest.db", &fp);
+    if(!fp) {
         testAbort("Unable to read dbStaticTest.db");
     }
     if(dbReadDatabaseFP(&pdbbase, fp, NULL, NULL)) {
         testAbort("Unable to load %s%sdbStaticTest.db",
                   ldir, OSI_PATH_LIST_SEPARATOR);
     }
+
+    testWrongAliasRecord("dbStaticTestAlias1.db");
+    testWrongAliasRecord("dbStaticTestAlias2.db");
 
     testEntry("testrec.VAL");
     testEntry("testalias.VAL");

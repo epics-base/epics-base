@@ -339,7 +339,7 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
                 break;
             }
 #define OP(DBR,Type,pat) case DBR: {Type expect = *(Type*)pbuf, actual = *(Type*)gbuf; assert(vSize==sizeof(Type)); match &= expect==actual; \
-    if(expect!=actual) testDiag("[%lu] expected=" pat " actual=" pat, n, expect, actual); break;}
+    if(expect!=actual) {testDiag("[%lu] expected=" pat " actual=" pat, n, expect, actual);} break;}
 
             OP(DBR_CHAR, char, "%c");
             OP(DBR_UCHAR, unsigned char, "%u");

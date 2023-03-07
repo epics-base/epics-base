@@ -13,7 +13,6 @@
 #include "menuAlarmSevr.h"
 #include "menuIvoa.h"
 
-
 #include "boRecord.h"
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
@@ -34,7 +33,11 @@ static void test_soft_output(void){
 
 static void test_high(void){
     const int high_time = 2;
-    const int high_wait_time = high_time + 1;
+    testMonitor* test_mon = NULL;
+    epicsTimeStamp startTime;
+    epicsTimeStamp endTime;
+    double diffTime = 0;
+    double diffTimeTolerance = 0.1;
 
     /* set soft channel */
     testdbPutFieldOk("test_bo_rec.DTYP", DBF_STRING, "Soft Channel");
@@ -43,16 +46,28 @@ static void test_high(void){
     /* set HIGH to 2 seconds */
     testdbPutFieldOk("test_bo_rec.HIGH", DBF_SHORT, high_time);
 
+    /* Create test monitor */
+    test_mon = testMonitorCreate("test_bo_rec.VAL", DBR_SHORT, 0);
+
+    /* Get start time */
+    epicsTimeGetCurrent(&startTime);
+
     /* set VAL to process record */
     testdbPutFieldOk("test_bo_rec.VAL", DBF_SHORT, TRUE);
 
-    /* verify that OUT record is updated */
-    testdbGetFieldEqual("test_bo_link_rec.VAL", DBF_SHORT, TRUE);
+    /* wait and verfiy time */
+    testMonitorWait(test_mon);
+    epicsTimeGetCurrent(&endTime);
 
-    /* Wait and verfiy that both records are set back to 0 */
-    sleep(high_wait_time);
+    /* EPICS timers have a tendency to trip slightly early, hence the test tolerance is added here to avoid false positives in testing */
+    diffTime = epicsTimeDiffInSeconds(&endTime, &startTime) + diffTimeTolerance;
+    testOk(diffTime >= high_time, "HIGH time %lf", diffTime);
+
+    /* verfiy that both records are set back to 0 */
     testdbGetFieldEqual("test_bo_rec.VAL", DBF_SHORT, FALSE);
     testdbGetFieldEqual("test_bo_link_rec.VAL", DBF_SHORT, FALSE);
+
+    testMonitorDestroy(test_mon);
     // number of tests = 7
 }
 

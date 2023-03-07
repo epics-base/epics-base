@@ -280,7 +280,9 @@ static void dbhcrCallFunc(const iocshArgBuf *args) { dbhcr();}
 static const iocshArg gftArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const gftArgs[1] = {&gftArg0};
 static const iocshFuncDef gftFuncDef = {"gft",1,gftArgs,
-                                        "Report dbChannel info and value.\n"};
+                                        "Report dbChannel info and value.\n"
+                                        "Example: gft aitest\n"
+                                        "Example: gft aitest.VAL\n"};
 static void gftCallFunc(const iocshArgBuf *args) { gft(args[0].sval);}
 
 /* pft */
@@ -288,7 +290,8 @@ static const iocshArg pftArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg pftArg1 = { "value",iocshArgString};
 static const iocshArg * const pftArgs[2] = {&pftArg0,&pftArg1};
 static const iocshFuncDef pftFuncDef = {"pft",2,pftArgs,
-                                        "dbChannel put value.\n"};
+                                        "dbChannel put value.\n"
+                                        "Example: pft aitest 5.0"};
 static void pftCallFunc(const iocshArgBuf *args)
 { pft(args[0].sval,args[1].sval);}
 
@@ -325,7 +328,8 @@ static const iocshArg tpnArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg tpnArg1 = { "value",iocshArgString};
 static const iocshArg * const tpnArgs[2] = {&tpnArg0,&tpnArg1};
 static const iocshFuncDef tpnFuncDef = {"tpn",2,tpnArgs,
-                                        "Begin async. process and get.\n"};
+                                        "Test Process Notify.\n"
+                                        "Example: tpn aitest 5.0\n"};
 static void tpnCallFunc(const iocshArgBuf *args)
 { tpn(args[0].sval,args[1].sval);}
 

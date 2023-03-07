@@ -1,0 +1,4 @@
+record(x, "testrec2alias2") {
+}
+
+alias("testrec2alias2", "testalias5.NAME")

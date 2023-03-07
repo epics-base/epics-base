@@ -1257,7 +1257,7 @@ static void dbAlias(char *name, char *alias)
     DBENTRY dbEntry;
     DBENTRY *pdbEntry = &dbEntry;
 
-    if(dbRecordNameValidate(alias))
+    if(dbRecordNameValidate(alias) || dbRecordNameValidate(name))
         return;
 
     dbInitEntry(pdbbase, pdbEntry);

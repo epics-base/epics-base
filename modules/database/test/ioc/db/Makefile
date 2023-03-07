@@ -181,6 +181,8 @@ dbStaticTest_SRCS += dbStaticTest.c
 dbStaticTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbStaticTest.c
 TESTFILES += ../dbStaticTest.db
+TESTFILES += ../dbStaticTestAlias1.db
+TESTFILES += ../dbStaticTestAlias2.db
 TESTS += dbStaticTest
 
 # This runs all the test programs in a known working order:

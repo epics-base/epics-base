@@ -13,7 +13,7 @@
  * \brief Functions for interrupt handling.
  * \author likely Marty Kraimer
  *
- * Support for allocation of common device resources
+ * Defining functions handling Interrupts.
  */
 #ifndef epicsInterrupth
 #define epicsInterrupth

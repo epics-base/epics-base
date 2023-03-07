@@ -8,11 +8,8 @@
 
 #include "dbUnitTest.h"
 #include "testMain.h"
-//#include "dbLock.h"
 #include "errlog.h"
 #include "dbAccess.h"
-//#include "epicsMath.h"
-//#include "menuYesNo.h"
 #include "menuAlarmSevr.h"
 #include "menuIvoa.h"
 
@@ -37,6 +34,7 @@ static void test_soft_output(void){
 
 static void test_high(void){
     const int high_time = 2;
+    const int high_wait_time = high_time + 1;
 
     /* set soft channel */
     testdbPutFieldOk("test_bo_rec.DTYP", DBF_STRING, "Soft Channel");
@@ -52,7 +50,7 @@ static void test_high(void){
     testdbGetFieldEqual("test_bo_link_rec.VAL", DBF_SHORT, TRUE);
 
     /* Wait and verfiy that both records are set back to 0 */
-    sleep(high_time);
+    sleep(high_wait_time);
     testdbGetFieldEqual("test_bo_rec.VAL", DBF_SHORT, FALSE);
     testdbGetFieldEqual("test_bo_link_rec.VAL", DBF_SHORT, FALSE);
     // number of tests = 7

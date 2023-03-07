@@ -128,12 +128,14 @@ static void dbsrCallFunc(const iocshArgBuf *args) { dbsr(args[0].ival);}
 static const iocshArg dbcarArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbcarArg1 = { "level",iocshArgInt};
 static const iocshArg * const dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
-static const iocshFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs,
-                                          "Database Channel Access Report.\n"
-                                          "Shows status of Channel Access links (CA_LINK).\n"
-                                          "interest level 0 - Shows statistics for all links.\n"
-                                          "               1 - Shows info. of only disconnected links.\n"
-                                          "               2 - Shows info. for all links.\n"};
+static const iocshFuncDef dbcarFuncDef = {
+    "dbcar",2,dbcarArgs,
+    "Database Channel Access Report.\n"
+    "Shows status of Channel Access links (CA_LINK).\n"
+    "interest level 0 - Shows statistics for all links.\n"
+    "               1 - Shows info. of only disconnected links.\n"
+    "               2 - Shows info. for all links.\n"
+};
 static void dbcarCallFunc(const iocshArgBuf *args)
 {
     dbcar(args[0].sval,args[1].ival);
@@ -273,7 +275,12 @@ static void dbiorCallFunc(const iocshArgBuf *args)
 
 /* dbhcr */
 static const iocshFuncDef dbhcrFuncDef = {"dbhcr",0,0,
-                                          "Database Report Device Config.\n"};
+                                          "Database Hardware Configuration Report.\n"
+                                          "Produce a report of all hardware links.\n"
+                                          "The produced report will probably not be in the sort order desired.\n"
+                                          "Use the UNIX sort command:\n"
+                                          "dbhcr > report\n"
+                                          "sort report > report.sorted\n"};
 static void dbhcrCallFunc(const iocshArgBuf *args) { dbhcr();}
 
 /* gft */
@@ -337,8 +344,15 @@ static void tpnCallFunc(const iocshArgBuf *args)
 static const iocshArg dblsrArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dblsrArg1 = { "interest level",iocshArgInt};
 static const iocshArg * const dblsrArgs[2] = {&dblsrArg0,&dblsrArg1};
-static const iocshFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs,
-                                          "Database Lockset report.\n"};
+static const iocshFuncDef dblsrFuncDef = {
+    "dblsr",2,dblsrArgs,
+    "Database Lockset report.\n"
+    "Generate a report showing the lock set to which each record belongs.\n"
+    "interest level 0 - Show lock set information only.\n"
+    "               1 - Show each record in the lock set.\n"
+    "               2 - Show each record and all database links in the lock set.\n"
+    "Example: dblsr aitest 2\n"
+};
 static void dblsrCallFunc(const iocshArgBuf *args)
 { dblsr(args[0].sval,args[1].ival);}
 
@@ -347,7 +361,10 @@ static const iocshArg dbLockShowLockedArg0 = { "interest level",iocshArgInt};
 static const iocshArg * const dbLockShowLockedArgs[1] = {&dbLockShowLockedArg0};
 static const iocshFuncDef dbLockShowLockedFuncDef =
     {"dbLockShowLocked",1,dbLockShowLockedArgs,
-     "Show Locksets which are currently locked.\n"};
+     "Show Locksets which are currently locked.\n"
+     "interest level argument is passed to epicsMutexShow to adjust reported\n"
+     "information.\n"
+     "Example: dbLockShowLocked 0\n"};
 static void dbLockShowLockedCallFunc(const iocshArgBuf *args)
 { dbLockShowLocked(args[0].ival);}
 

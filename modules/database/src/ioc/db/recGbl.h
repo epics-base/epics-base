@@ -75,7 +75,7 @@ DBCORE_API void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
     epicsEnum16 sevr);
 DBCORE_API int recGblSetSevrMsg(void *precord, epicsEnum16 new_stat,
                                 epicsEnum16 new_sevr,
-                                const char *msg, ...) EPICS_PRINTF_STYLE(4,5);
+                                EPICS_PRINTF_FMT(const char *msg), ...) EPICS_PRINTF_STYLE(4,5);
 DBCORE_API int recGblSetSevrVMsg(void *precord, epicsEnum16 new_stat,
                                  epicsEnum16 new_sevr,
                                  const char *msg, va_list args);

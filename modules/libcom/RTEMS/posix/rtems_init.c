@@ -321,7 +321,6 @@ nfsMount(char *uidhost, char *path, char *mntpoint)
 #define NFS_INIT
 #endif
 
-
 static void
 initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
 {
@@ -331,12 +330,16 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
     char *cp;
     int l = 0;
 
+/*
+ * Unfortunately, I have not yet understood why we run into 
+ * this at all when we have a local file system.
+ */
+
     printf ("***** Initializing remote filesystem  *****\n");
 
     /* Note: rtems_bsdnet_bootp_cmdline is "Argument File Name" in PPCBUG on
      * the mvme2100 CPU. */
 
-printf(" env_nfsServer string -> %p", env_nfsServer);
 if(env_nfsServer != 0){
 
     if (strstr(env_nfsServer, "/TFTP/BOOTP_HOST")==env_nfsServer)
@@ -351,13 +354,11 @@ if(env_nfsServer != 0){
         if (!hasLocalFilesystem) {
             char *path;
             int pathsize = 200;
-            //int l;
-
             path = mustMalloc(pathsize, "Command path name ");
             strcpy(path, rtems_bsdnet_bootp_cmdline); 
             argv[1] = path;
         }
-      } else {
+      } else { /* use nfs */
 
         if (env_nfsServer && env_nfsPath && env_nfsMountPoint) {
             server_name = env_nfsServer;
@@ -374,11 +375,9 @@ if(env_nfsServer != 0){
             }
             argv[1] = rtems_bsdnet_bootp_cmdline;
         } 
-if (hasLocalFilesystem) {
+	else if (hasLocalFilesystem) {
             return;
-        } 
-}
-}// env_nfsServer not set???? 
+        } else { 
             /*
              * Use first component of nvram/bootp command line pathname
              * to set up initial NFS mount.  A "/tftpboot/" is prepended
@@ -451,6 +450,9 @@ if (hasLocalFilesystem) {
         errlogPrintf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
                      server_name, server_path, mount_point);
         nfsMount(server_name, server_path, mount_point);
+    }
+}
+} /* check for env_nfsServer != 0 */ 
 }
 
 static
@@ -1018,6 +1020,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
      * It is very likely that other time synchronization facilities in EPICS
      * will soon override this value.
      */
+
     /* check for RTC available */
 #ifdef HAS_RTC
     if (checkRealTime() >= 0) {
@@ -1076,7 +1079,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
     printf("\n***** RTEMS Version: %s *****\n",
     rtems_get_version_string());
 
-#ifndef RTEMS_LEGACY_STACK //use new libbsd
 #if defined(QEMU_FIXUPS) && defined(__i386__)
     // glorious hack to stub out useless EEPROM check
     // which takes sooooo longggg w/ QEMU
@@ -1084,6 +1086,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
     extern void _bsd_e1000_validate_nvm_checksum(void);
     *(char*)&_bsd_e1000_validate_nvm_checksum = 0xc3;
 #endif
+#ifndef RTEMS_LEGACY_STACK //use new libbsd
     /*
      * Start network (libbsd)
      *
@@ -1224,9 +1227,9 @@ if (checkForNetInterfaces()) {
 
     }
     tzset();
-#ifdef RTEMS_LEGACY_STACK
+//#ifdef RTEMS_LEGACY_STACK
     osdTimeRegister();
-#endif
+//#endif
 }
 # if defined(__PPC)
 #if __RTEMS_MAJOR__ > 4

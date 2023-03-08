@@ -259,10 +259,9 @@ static void eltcCallFunc(const iocshArgBuf *args)
 /* errlogInit */
 static const iocshArg errlogInitArg0 = { "bufSize",iocshArgInt};
 static const iocshArg * const errlogInitArgs[1] = {&errlogInitArg0};
-static const iocshFuncDef errlogInitFuncDef =
-    {"errlogInit",1,errlogInitArgs,
-     "Initialize error log client buffer size\n"
-     "  bufSize - size of circular buffer (default = 1280 bytes)\n"};
+static const iocshFuncDef errlogInitFuncDef = {"errlogInit",1,errlogInitArgs,
+                                               "Initialize error log client buffer size\n"
+                                               "  bufSize - size of circular buffer (default = 1280 bytes)\n"};
 static void errlogInitCallFunc(const iocshArgBuf *args)
 {
     errlogInit(args[0].ival);
@@ -273,11 +272,10 @@ static const iocshArg errlogInit2Arg0 = { "bufSize",iocshArgInt};
 static const iocshArg errlogInit2Arg1 = { "maxMsgSize",iocshArgInt};
 static const iocshArg * const errlogInit2Args[] =
     {&errlogInit2Arg0, &errlogInit2Arg1};
-static const iocshFuncDef errlogInit2FuncDef =
-    {"errlogInit2", 2, errlogInit2Args,
-     "Initialize error log client buffer size and maximum message size\n"
-     "  bufSize    - size of circular buffer       (default = 1280 bytes)\n"
-     "  maxMsgSize - maximum size of error message (default =  256 bytes)\n"};
+static const iocshFuncDef errlogInit2FuncDef = {"errlogInit2", 2, errlogInit2Args,
+                                                "Initialize error log client buffer size and maximum message size\n"
+                                                "  bufSize    - size of circular buffer       (default = 1280 bytes)\n"
+                                                "  maxMsgSize - maximum size of error message (default =  256 bytes)\n"};
 static void errlogInit2CallFunc(const iocshArgBuf *args)
 {
     errlogInit2(args[0].ival, args[1].ival);
@@ -312,9 +310,8 @@ static void iocLogPrefixCallFunc(const iocshArgBuf *args)
 /* epicsThreadShowAll */
 static const iocshArg epicsThreadShowAllArg0 = { "level",iocshArgInt};
 static const iocshArg * const epicsThreadShowAllArgs[1] = {&epicsThreadShowAllArg0};
-static const iocshFuncDef epicsThreadShowAllFuncDef =
-    {"epicsThreadShowAll",1,epicsThreadShowAllArgs,
-     "Display info about all threads\n"};
+static const iocshFuncDef epicsThreadShowAllFuncDef = {"epicsThreadShowAll",1,epicsThreadShowAllArgs,
+                                                       "Display info about all threads\n"};
 static void epicsThreadShowAllCallFunc(const iocshArgBuf *args)
 {
     epicsThreadShowAll(args[0].ival);
@@ -369,9 +366,8 @@ static void threadCallFunc(const iocshArgBuf *args)
 /* taskwdShow */
 static const iocshArg taskwdShowArg0 = { "level",iocshArgInt};
 static const iocshArg * const taskwdShowArgs[1] = {&taskwdShowArg0};
-static const iocshFuncDef taskwdShowFuncDef =
-    {"taskwdShow",1,taskwdShowArgs,
-     "Show number of tasks and monitors registered\n"};
+static const iocshFuncDef taskwdShowFuncDef = {"taskwdShow",1,taskwdShowArgs,
+                                               "Show number of tasks and monitors registered\n"};
 static void taskwdShowCallFunc(const iocshArgBuf *args)
 {
     taskwdShow(args[0].ival);
@@ -382,11 +378,10 @@ static const iocshArg epicsMutexShowAllArg0 = { "onlyLocked",iocshArgInt};
 static const iocshArg epicsMutexShowAllArg1 = { "level",iocshArgInt};
 static const iocshArg * const epicsMutexShowAllArgs[2] =
     {&epicsMutexShowAllArg0,&epicsMutexShowAllArg1};
-static const iocshFuncDef epicsMutexShowAllFuncDef =
-    {"epicsMutexShowAll",2,epicsMutexShowAllArgs,
-     "Display information about all epicsMutex semaphores\n"
-     "  onlyLocked - non-zero to show only locked semaphores\n"
-     "  level      - desired information level to report\n"};
+static const iocshFuncDef epicsMutexShowAllFuncDef = {"epicsMutexShowAll",2,epicsMutexShowAllArgs,
+                                                      "Display information about all epicsMutex semaphores\n"
+                                                      "  onlyLocked - non-zero to show only locked semaphores\n"
+                                                      "  level      - desired information level to report\n"};
 static void epicsMutexShowAllCallFunc(const iocshArgBuf *args)
 {
     epicsMutexShowAll(args[0].ival,args[1].ival);
@@ -395,9 +390,8 @@ static void epicsMutexShowAllCallFunc(const iocshArgBuf *args)
 /* epicsThreadSleep */
 static const iocshArg epicsThreadSleepArg0 = { "seconds",iocshArgDouble};
 static const iocshArg * const epicsThreadSleepArgs[1] = {&epicsThreadSleepArg0};
-static const iocshFuncDef epicsThreadSleepFuncDef =
-    {"epicsThreadSleep",1,epicsThreadSleepArgs,
-     "Pause execution of IOC shell for <seconds> seconds\n"};
+static const iocshFuncDef epicsThreadSleepFuncDef = {"epicsThreadSleep",1,epicsThreadSleepArgs,
+                                                     "Pause execution of IOC shell for <seconds> seconds\n"};
 static void epicsThreadSleepCallFunc(const iocshArgBuf *args)
 {
     epicsThreadSleep(args[0].dval);
@@ -452,18 +446,18 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 static const iocshArg generalTimeReportArg0 = { "interest_level", iocshArgArgv};
 static const iocshArg * const generalTimeReportArgs[1] = { &generalTimeReportArg0 };
 static const iocshFuncDef generalTimeReportFuncDef = {"generalTimeReport",1,generalTimeReportArgs,
-                                                      "Display time providers and their priority levels"
-                                                      " for current and event times\n"};
+                                                      "Display time providers information for given interest level.\n"
+                                                      "interest level 0 - List providers and their priorities.\n"
+                                                      "               1 - Additionally show current time obtained from each provider.\n"};
 static void generalTimeReportCallFunc(const iocshArgBuf *args)
 {
     generalTimeReport(args[0].ival);
 }
 
 /* installLastResortEventProvider */
-static const iocshFuncDef installLastResortEventProviderFuncDef = {"installLastResortEventProvider", 0, NULL,
-                                                                   "Installs the optional Last Resort event provider"
-                                                                   " at priority 999,\nwhich returns the current time"
-                                                                   " for every event number\n"};
+static const iocshFuncDef installLastResortEventProviderFuncDef = {"installLastResortEventProvider",0,NULL,
+                                                                   "Installs the optional Last Resort event provider at priority 999,\n"
+                                                                   "which returns the current time for every event number\n"};
 static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
 {
     installLastResortEventProvider();

@@ -582,7 +582,7 @@ Init (rtems_task_argument ignored)
     if (epicsRtemsInitPreSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPreSetBootConfigFromNVRAM");
     if (rtems_bsdnet_config.bootp == NULL) {
-        extern void setBootConfigFromNVRAM(void);
+        extern int setBootConfigFromNVRAM(void);
         setBootConfigFromNVRAM();
     }
     if (epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)

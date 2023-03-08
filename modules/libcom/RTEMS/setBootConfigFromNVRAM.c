@@ -189,7 +189,7 @@ motScriptParm(const char *mot_script_boot, char parm)
     return NULL;
 }
 
-void
+int
 setBootConfigFromNVRAM(void)
 {
     char *cp;
@@ -203,12 +203,12 @@ setBootConfigFromNVRAM(void)
     int fd;
     if ((fd = open(BSP_I2C_VPD_EEPROM_DEV_NAME, 0)) < 0) {
         printf("Can't open %s: %s\n", BSP_I2C_VPD_EEPROM_DEV_NAME, strerror(errno));
-        return;
+        return(1);
     }
     lseek(fd, 0x10f8, SEEK_SET);
     if (read(fd, gev_buf, sizeof gev_buf) != sizeof gev_buf) {
         printf("Can't read %s: %s\n", BSP_I2C_VPD_EEPROM_DEV_NAME, strerror(errno));
-        return;
+        return(1);
     }
     close(fd);
     nvp = gev_buf;
@@ -217,7 +217,7 @@ setBootConfigFromNVRAM(void)
 # endif
 
     if (rtems_bsdnet_config.bootp != NULL)
-        return;
+        return(1);
     mot_script_boot = gev("mot-script-boot", nvp);
 
     if ((rtems_bsdnet_bootp_server_name = gev("mot-/dev/enet0-sipa", nvp)) == NULL)
@@ -267,6 +267,7 @@ setBootConfigFromNVRAM(void)
         rtems_bsdnet_config.ntp_server[0] = rtems_bsdnet_bootp_server_name;
     if ((cp = gev("epics-tz", nvp)) != NULL)
         epicsEnvSet("TZ", cp);
+    return(0);
 }
 
 #elif defined(HAVE_PPCBUG)
@@ -303,7 +304,7 @@ static char *addr(char *cbuf, uint32_t addr)
     return (char *)inet_ntop(AF_INET, &a, cbuf, INET_ADDRSTRLEN);
 }
 
-void
+int
 setBootConfigFromNVRAM(void)
 {
     static struct ppcbug_nvram nvram;
@@ -313,7 +314,7 @@ setBootConfigFromNVRAM(void)
     static char gateway[INET_ADDRSTRLEN];
 
     if (rtems_bsdnet_config.bootp != NULL)
-        return;
+        return(1);
 
     /*
      * Get network configuration from PPCBUG.
@@ -367,6 +368,7 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_bootp_boot_file_name = nvram.BootFilenameString;
     rtems_bsdnet_bootp_cmdline = nvram.ArgumentFilenameString;
     splitRtemsBsdnetBootpCmdline();
+    return(0);
 }
 
 #elif defined(__mcf528x__)
@@ -385,13 +387,13 @@ env(const char *parm, const char *defaultValue)
     return epicsStrDup(cp);
 }
 
-void
+int
 setBootConfigFromNVRAM(void)
 {
     const char *cp1;
 
     if (rtems_bsdnet_config.bootp != NULL)
-        return;
+        return(1);
     rtems_bsdnet_config.gateway = env("GATEWAY", NULL);
     rtems_bsdnet_config.ifconfig->ip_netmask = env("NETMASK", "255.255.252.0");
 
@@ -408,16 +410,67 @@ setBootConfigFromNVRAM(void)
     splitNfsMountPath(env("NFSMOUNT", NULL));
     if ((cp1 = env("TZ", NULL)) != NULL)
         epicsEnvSet("TZ", cp1);
+    return(0);
+}
+
+#elif defined(EPICS_IS_QEMU)
+int
+setBootConfigFromNVRAM(void)
+{
+    printf("This is Qemu (will not use DHCP)!\n");
+    printf("Will set fix-adresse...\n");
+
+    //mot_script_boot = gev("mot-script-boot", nvp);
+
+    rtems_bsdnet_bootp_server_name = "1001.1001@10.0.0.1:/Volumes/Epics"; 
+    rtems_bsdnet_config.gateway = "10.0.0.1"; 
+
+#ifdef RTEMS_LEGACY_STACK
+    rtems_bsdnet_config.ifconfig->ip_netmask = "255.0.0.0"; 
+#else
+    rtems_static_ifconfig.ip_netmask = "255.0.0.0";
+#endif
+    rtems_bsdnet_config.name_server[0] = "10.0.0.1";
+    if (rtems_bsdnet_config.name_server[0] == NULL)
+        rtems_bsdnet_config.name_server[0] = rtems_bsdnet_bootp_server_name;
+
+    rtems_bsdnet_config.domainname = "MY_NET";
+
+#ifdef RTEMS_LEGACY_STACK
+    rtems_bsdnet_config.ifconfig->ip_address = "10.0.0.42"; 
+#else
+    rtems_static_ifconfig.ip_address = "10.0.0.42"; 
+#endif
+
+    rtems_bsdnet_config.hostname = "MY_TARGET";
+    if (rtems_bsdnet_config.hostname == NULL)
+#ifdef RTEMS_LEGACY_STACK
+        rtems_bsdnet_config.hostname = rtems_bsdnet_config.ifconfig->ip_address;
+#else
+        rtems_bsdnet_config.hostname = rtems_static_ifconfig.ip_address;
+#endif
+
+    rtems_bsdnet_bootp_boot_file_name = 
+             "/Volumes/Epics/XILINX_ZYNQ_A9_QEMU/nfsTest/bin/RTEMS-xilinx_zynq_a9_qemu/nfsTest.boot"; 
+    rtems_bsdnet_bootp_cmdline = "/Volumes/Epics/XILINX_ZYNQ_A9_QEMU/nfsTest/iocBoot/iocnfsTest/st.cmd";
+    splitRtemsBsdnetBootpCmdline();
+    //splitNfsMountPath(gev("epics-nfsmount", nvp));
+    rtems_bsdnet_config.ntp_server[0] = "10.0.0.0";
+    if (rtems_bsdnet_config.ntp_server[0] == NULL)
+        rtems_bsdnet_config.ntp_server[0] = rtems_bsdnet_bootp_server_name;
+    epicsEnvSet("TZ", "MSZ-1");
+    return(0);
 }
 
 #else
 /*
  * Placeholder for systems without NVRAM
  */
-void
+int
 setBootConfigFromNVRAM(void)
 {
     printf("SYSTEM HAS NO NON-VOLATILE RAM!\n");
     printf("YOU MUST USE SOME OTHER METHOD TO OBTAIN NETWORK CONFIGURATION\n");
+    return(1);
 }
 #endif

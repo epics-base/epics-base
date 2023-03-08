@@ -9,8 +9,13 @@ RTEMS_BSP = xilinx_zynq_a9_qemu
 RTEMS_TARGET_CPU = arm
 GNU_TARGET = arm-rtems
 
-#use dhcp/bootp
-ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+#use dhcp/bootp on LEGACY_STACK
+#ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+
+#Do not use dhcp
+ARCH_DEP_CFLAGS += -DEPICS_IS_QEMU=1
+
+### ??? how to define static network parameters here elegant?
 
 #OP_SYS_LDLIBS += -Wl,--gc-sections
 #ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/xilinx_zynq_a9_qemu/lib/

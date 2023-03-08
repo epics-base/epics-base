@@ -92,7 +92,7 @@ extern char *env_nfsServer;
 extern char *env_nfsPath;
 extern char *env_nfsMountPoint;
 
-extern void setBootConfigFromNVRAM(void);
+extern int setBootConfigFromNVRAM(void);
 
 #ifndef RTEMS_LEGACY_STACK
 
@@ -240,13 +240,16 @@ epicsRtemsMountLocalFilesystem(char **argv)
 static int
 initialize_local_filesystem(char **argv)
 {
+#ifdef RTEMS_LEGACY_STACK
     extern char _DownloadLocation[] __attribute__((weak));
     extern char _FlashBase[] __attribute__((weak));
     extern char _FlashSize[]  __attribute__((weak));
+#endif
 
     argv[0] = rtems_bsdnet_bootp_boot_file_name;
     if (epicsRtemsMountLocalFilesystem(argv)==0) {
         return 1; /* FS setup successful */
+
 #ifdef RTEMS_LEGACY_STACK
     } else if (_FlashSize && (_DownloadLocation || _FlashBase)) {
         extern char _edata[];
@@ -328,8 +331,14 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
     char *cp;
     int l = 0;
 
+    printf ("***** Initializing remote filesystem  *****\n");
+
     /* Note: rtems_bsdnet_bootp_cmdline is "Argument File Name" in PPCBUG on
      * the mvme2100 CPU. */
+
+printf(" env_nfsServer string -> %p", env_nfsServer);
+if(env_nfsServer != 0){
+
     if (strstr(env_nfsServer, "/TFTP/BOOTP_HOST")==env_nfsServer)
       { /* use tftp */
 
@@ -342,18 +351,14 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
         if (!hasLocalFilesystem) {
             char *path;
             int pathsize = 200;
-            int l;
+            //int l;
 
             path = mustMalloc(pathsize, "Command path name ");
             strcpy(path, rtems_bsdnet_bootp_cmdline); 
             argv[1] = path;
         }
-      }
-    else
-      {
+      } else {
 
-        printf ("***** Initializing NFS *****\n");
-        NFS_INIT
         if (env_nfsServer && env_nfsPath && env_nfsMountPoint) {
             server_name = env_nfsServer;
             server_path = env_nfsPath;
@@ -368,11 +373,12 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
                 *cp = '/';
             }
             argv[1] = rtems_bsdnet_bootp_cmdline;
-        }
-        else if (hasLocalFilesystem) {
+        } 
+if (hasLocalFilesystem) {
             return;
-        }
-        else {
+        } 
+}
+}// env_nfsServer not set???? 
             /*
              * Use first component of nvram/bootp command line pathname
              * to set up initial NFS mount.  A "/tftpboot/" is prepended
@@ -429,8 +435,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
                         free ( pServerPath );
                     }
                 }
-            }
-            else {
+            } else {
                 char *abspath = mustMalloc(strlen(rtems_bsdnet_bootp_cmdline)+2,"Absolute command path");
                 strcpy(server_path, "/tftpboot/");
                 mount_point = server_path + strlen(server_path);
@@ -441,11 +446,11 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
                 strcat(abspath, rtems_bsdnet_bootp_cmdline);
                 argv[1] = abspath;
             }
-        }
+        printf ("***** Initializing NFS *****\n");
+        NFS_INIT
         errlogPrintf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
                      server_name, server_path, mount_point);
         nfsMount(server_name, server_path, mount_point);
-      }
 }
 
 static
@@ -983,6 +988,7 @@ int checkForNetInterfaces()
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET) {
             sa = (struct sockaddr_in *) ifa->ifa_addr;
             addr = inet_ntoa(sa->sin_addr);
+	    (void)addr;
             // printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, addr);
             // printf("Interface: %s\tAddress: %s (Flags: 0x%x)\n", ifa->ifa_name, addr, ifa->ifa_flags);
 	    if ((ifa->ifa_flags & (IFF_LOOPBACK | IFF_UP)) == IFF_UP ) count++;
@@ -1003,6 +1009,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
     rtems_status_code  	sc;
     struct timespec  	now;
     char timeBuff[100];
+    int use_dhcp = 0;
 
     initConsole ();
 
@@ -1045,7 +1052,10 @@ POSIX_Init ( void *argument __attribute__((unused)))
     if (epicsRtemsInitPreSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPreSetBootConfigFromNVRAM");
     if (rtems_bsdnet_config.bootp == NULL) {
-        setBootConfigFromNVRAM();
+        if (setBootConfigFromNVRAM()){
+	    printf(" Warning! could not get the network parameter ...\n");  
+            use_dhcp = 1;
+        }
     }
     if (epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPostSetBootConfigFromNVRAM");
@@ -1102,7 +1112,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
     /*
      * dhcp if no settings vom NVRAM ...
      */
-    int use_dhcp = 1;
     if (rtems_static_ifconfig.ip_address != NULL && rtems_static_ifconfig.ip_netmask !=NULL) {
         /* lookup primary network interface */
         char ifnamebuf[IF_NAMESIZE];
@@ -1126,7 +1135,8 @@ POSIX_Init ( void *argument __attribute__((unused)))
         // wait for dhcp done ... should be if SYNCDHCP is used
         epicsEventWaitStatus stat;
         printf("\n ---- Waiting for DHCP ...\n");
-        stat = epicsEventWaitWithTimeout(dhcpDone, 600); 
+	// check for qemu???
+        stat = epicsEventWaitWithTimeout(dhcpDone, 60); 
         if (stat == epicsEventOK)
     	    epicsEventDestroy(dhcpDone);
         else if (stat == epicsEventWaitTimeout)
@@ -1192,6 +1202,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
 if (checkForNetInterfaces()) {
     printf("\n***** Setting up remote file system *****\n");
     initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
+    printf("\n***** Setting up remote file system done *****\n");
 
     /*
      * More environment: iocsh prompt and hostname
@@ -1299,4 +1310,3 @@ void bsp_cleanup(void)
 
 #endif /* QEMU_FIXUPS */
 
-int cexpdebug __attribute__((weak));

@@ -156,7 +156,8 @@ static const iocshArg dbjlrArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbjlrArg1 = { "level",iocshArgInt};
 static const iocshArg * const dbjlrArgs[2] = {&dbjlrArg0,&dbjlrArg1};
 static const iocshFuncDef dbjlrFuncDef = {"dbjlr",2,dbjlrArgs,
-                                          "Database JSON link Report.\n"};
+                                          "Database JSON link Report.\n"
+                                          "List all JSON links in a record. If no record is specified, print for all\n"};
 static void dbjlrCallFunc(const iocshArgBuf *args)
 {
     dbjlr(args[0].sval,args[1].ival);
@@ -180,7 +181,10 @@ static void dbelCallFunc(const iocshArgBuf *args)
 static const iocshArg dbaArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbaArgs[1] = {&dbaArg0};
 static const iocshFuncDef dbaFuncDef = {"dba",1,dbaArgs,
-                                        "dbAddr info.\n"};
+                                        "Database Address.\n"
+                                        "Print information in the dbAddr structure for a specific field.\n"
+                                        "If no field is specified, VAL is assumed.\n\n"
+                                        "Example: dba(\"aitest.HIGH\")\n"};
 static void dbaCallFunc(const iocshArgBuf *args) { dba(args[0].sval);}
 
 /* dbl */

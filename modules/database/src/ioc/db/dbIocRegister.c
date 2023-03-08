@@ -72,7 +72,9 @@ static void dbLoadRecordsCallFunc(const iocshArgBuf *args)
 static const iocshArg dbbArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbbArgs[1] = {&dbbArg0};
 static const iocshFuncDef dbbFuncDef = {"dbb",1,dbbArgs,
-                                        "Add breakpoint to a lock set.\n"};
+                                        "Set Breakpoint on a record\n"
+                                        "This command spawns one breakpoint continuation task per lockset,"
+                                        " in which further record execution is run\n"};
 static void dbbCallFunc(const iocshArgBuf *args) { dbb(args[0].sval);}
 
 /* dbd */
@@ -86,19 +88,20 @@ static void dbdCallFunc(const iocshArgBuf *args) { dbd(args[0].sval);}
 static const iocshArg dbcArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbcArgs[1] = {&dbcArg0};
 static const iocshFuncDef dbcFuncDef = {"dbc",1,dbcArgs,
-                                        "Continue processing in a lock set.\n"};
+                                        "Continue processing in a lockset until next breakpoint is found.\n"};
 static void dbcCallFunc(const iocshArgBuf *args) { dbc(args[0].sval);}
 
 /* dbs */
 static const iocshArg dbsArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbsArgs[1] = {&dbsArg0};
 static const iocshFuncDef dbsFuncDef = {"dbs",1,dbsArgs,
-                                        "Step through record processing.\n"};
+                                        "Step through record processing within a lockset.\n"
+                                        "If called without an argument, automatically steps with the last breakpoint.\n"};
 static void dbsCallFunc(const iocshArgBuf *args) { dbs(args[0].sval);}
 
 /* dbstat */
 static const iocshFuncDef dbstatFuncDef = {"dbstat",0,0,
-                                           "print list of stopped records, and breakpoints set in locksets.\n"};
+                                           "Print list of suspended records, and breakpoints set in locksets.\n"};
 static void dbstatCallFunc(const iocshArgBuf *args) { dbstat();}
 
 /* dbp */
@@ -106,7 +109,12 @@ static const iocshArg dbpArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbpArg1 = { "interest level",iocshArgInt};
 static const iocshArg * const dbpArgs[2] = {&dbpArg0,&dbpArg1};
 static const iocshFuncDef dbpFuncDef = {"dbp",2,dbpArgs,
-                                        "print stopped record.\n"};
+                                        "Print Fields of a currently suspended record by a breakpoint.\n"
+                                        "interest level 0 - Fields of interest to an Application developer and that can be changed as a result of record processing.\n"
+                                        "               1 - Fields of interest to an Application developer and that do not change during record processing.\n"
+                                        "               2 - Fields of major interest to a System developer.\n"
+                                        "               3 - Fields of minor interest to a System developer.\n"
+                                        "               4 - Internal record fields.\n"};
 static void dbpCallFunc(const iocshArgBuf *args)
 { dbp(args[0].sval,args[1].ival);}
 
@@ -114,7 +122,8 @@ static void dbpCallFunc(const iocshArgBuf *args)
 static const iocshArg dbapArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbapArgs[1] = {&dbapArg0};
 static const iocshFuncDef dbapFuncDef = {"dbap",1,dbapArgs,
-                                         "toggle printing after processing a certain record.\n"};
+                                         "Auto Print.\n"
+                                         "Toggle automatic printing after processing a record that has a breakpoint.\n"};
 static void dbapCallFunc(const iocshArgBuf *args) { dbap(args[0].sval);}
 
 /* dbsr */

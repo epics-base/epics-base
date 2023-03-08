@@ -39,7 +39,7 @@ typedef struct errnumnode {
     long               pad;
 } ERRNUMNODE;
 
-static ERRNUMNODE **hashtable;
+static ERRNUMNODE *hashtable[NHASH];
 static int initialized = 0;
 extern ERRSYMTAB_ID errSymTbl;
 
@@ -58,9 +58,6 @@ int errSymBld(void)
 
     if (initialized)
         return(0);
-
-    hashtable = (ERRNUMNODE**)callocMustSucceed
-        (NHASH, sizeof(ERRNUMNODE*),"errSymBld");
 
     for (i = 0; i < errSymTbl->nsymbols; i++, errArray++) {
         if (errSymbolAdd(errArray->errNum, errArray->name)) {

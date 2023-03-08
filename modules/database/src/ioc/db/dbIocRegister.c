@@ -304,7 +304,7 @@ static const iocshFuncDef dbtpfFuncDef = {"dbtpf",2,dbtpfArgs,
                                           "Database Test Put Field.\n"
                                           "Put the given value to the given PV, then get the value\n"
                                           "for all possible DBR_* types\n\n"
-                                          "Example: dbtpf aitest 5.0"\n};
+                                          "Example: dbtpf aitest 5.0\n"};
 static void dbtpfCallFunc(const iocshArgBuf *args)
 { dbtpf(args[0].sval,args[1].sval);}
 

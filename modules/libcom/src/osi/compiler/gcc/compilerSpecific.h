@@ -62,15 +62,29 @@
 #define EPICS_UNUSED __attribute__((unused))
 
 /*
- * Memory checker.
+ * Memory checker, checks that the function returns a valid pointer with a specific size.
+ * valid meaning, the storage it points to is not already filled.
+ * First argument is the function which should be called to free memory pointer, or the deallocator.
+ * Second argument denotes the positional argument to which when the pointer is passed in calls to deallocator has the effect of deallocating it.
+ * Remaining arguments are passed in to alloc_size, and must multiply to give the allocated size in memory.
  */
 #if __GNUC__ >= 11
-    #define EPICS_MEMORY_CHECKER(...) __attribute__((alloc_size(__VA_ARGS__), malloc(free, 1)))
+    #define EPICS_SIZED_MEM_CHECK(freeMem, freeMemArg, ...) __attribute__((alloc_size(__VA_ARGS__), malloc(freeMem, freeMemArg)))
 #elif __GNUC__ >= 4
-    #define EPICS_MEMORY_CHECKER(...) __attribute__((alloc_size(__VA_ARGS__), malloc))
+    #define EPICS_SIZED_MEM_CHECK(freeMem, freeMemArg, ...) __attribute__((alloc_size(__VA_ARGS__), malloc))
 #elif __GNUC__ >= 3
-    #define EPICS_MEMORY_CHECKER(...) __attribute__((malloc))
+    #define EPICS_SIZED_MEM_CHECK(freeMem, freeMemArg, ...) __attribute__((malloc))
 #endif
 
+
+/* 
+ * Memory checker, checks that any input to a function is a non-null pointer, and that the function returns
+ * a valid pointer.
+ * Valid meaning, the storage it points to is not already filled.
+ * Any arguments passed in should be pointers, and are checked for non-null status.
+ */
+#if __GNUC__
+    #define EPICS_MEM_CHECK(...) __THROW __attribute_malloc__ __nonnull((__VA_ARGS__))
+#endif
 
 #endif  /* ifndef compilerSpecific_h */

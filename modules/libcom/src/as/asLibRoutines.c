@@ -29,6 +29,8 @@
 #include "postfix.h"
 #include "asLib.h"
 
+#undef ECHO /* from termios.h */
+
 int asCheckClientIP;
 
 static epicsMutexId asLock;

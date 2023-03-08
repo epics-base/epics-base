@@ -210,7 +210,7 @@ static const iocshArg dbnrArg0 = { "verbose",iocshArgInt};
 static const iocshArg * const dbnrArgs[1] = {&dbnrArg0};
 static const iocshFuncDef dbnrFuncDef = {"dbnr",1,dbnrArgs,
                                          "List number of records and aliases by type.\n"
-                                         "If verbose, list all record types regardless of being instanced\n\n"};
+                                         "If verbose, list all record types regardless of being instanced\n"};
 static void dbnrCallFunc(const iocshArgBuf *args) { dbnr(args[0].ival);}
 
 /* dbli */
@@ -299,8 +299,8 @@ static const iocshArg * const dbtpfArgs[2] = {&dbtpfArg0,&dbtpfArg1};
 static const iocshFuncDef dbtpfFuncDef = {"dbtpf",2,dbtpfArgs,
                                           "Database Test Put Field.\n"
                                           "Put the given value to the given PV, then get the value\n"
-                                          "for all possible DBR_* types\n"
-                                          "Example: dbtpf aitest 5.0"};
+                                          "for all possible DBR_* types\n\n"
+                                          "Example: dbtpf aitest 5.0"\n};
 static void dbtpfCallFunc(const iocshArgBuf *args)
 { dbtpf(args[0].sval,args[1].sval);}
 
@@ -338,7 +338,7 @@ static const iocshArg pftArg1 = { "value",iocshArgString};
 static const iocshArg * const pftArgs[2] = {&pftArg0,&pftArg1};
 static const iocshFuncDef pftFuncDef = {"pft",2,pftArgs,
                                         "dbChannel put value.\n"
-                                        "Example: pft aitest 5.0"};
+                                        "Example: pft aitest 5.0\n"};
 static void pftCallFunc(const iocshArgBuf *args)
 { pft(args[0].sval,args[1].sval);}
 
@@ -377,7 +377,7 @@ static const iocshArg tpnArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg tpnArg1 = { "value",iocshArgString};
 static const iocshArg * const tpnArgs[2] = {&tpnArg0,&tpnArg1};
 static const iocshFuncDef tpnFuncDef = {"tpn",2,tpnArgs,
-                                        "Test Process Notify.\n"
+                                        "Test Process Notify.\n\n"
                                         "Example: tpn aitest 5.0\n"};
 static void tpnCallFunc(const iocshArgBuf *args)
 { tpn(args[0].sval,args[1].sval);}
@@ -392,7 +392,7 @@ static const iocshFuncDef dblsrFuncDef = {
     "Generate a report showing the lock set to which each record belongs.\n"
     "interest level 0 - Show lock set information only.\n"
     "               1 - Show each record in the lock set.\n"
-    "               2 - Show each record and all database links in the lock set.\n"
+    "               2 - Show each record and all database links in the lock set.\n\n"
     "Example: dblsr aitest 2\n"
 };
 static void dblsrCallFunc(const iocshArgBuf *args)
@@ -405,7 +405,7 @@ static const iocshFuncDef dbLockShowLockedFuncDef =
     {"dbLockShowLocked",1,dbLockShowLockedArgs,
      "Show Locksets which are currently locked.\n"
      "interest level argument is passed to epicsMutexShow to adjust reported\n"
-     "information.\n"
+     "information.\n\n"
      "Example: dbLockShowLocked 0\n"};
 static void dbLockShowLockedCallFunc(const iocshArgBuf *args)
 { dbLockShowLocked(args[0].ival);}

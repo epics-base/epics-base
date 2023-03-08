@@ -26,6 +26,7 @@ ERR_S_FILES += $(LIBCOM)/as/asLib.h
 ERR_S_FILES += $(LIBCOM)/misc/epicsStdlib.h
 ERR_S_FILES += $(LIBCOM)/pool/epicsThreadPool.h
 ERR_S_FILES += $(LIBCOM)/error/errMdef.h
+ERR_S_FILES += $(LIBCOM)/error/errSymTbl.h
 ERR_S_FILES += $(TOP)/modules/database/src/ioc/db/dbAccessDefs.h
 ERR_S_FILES += $(TOP)/modules/database/src/ioc/dbStatic/dbStaticLib.h
 

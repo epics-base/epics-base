@@ -16,6 +16,9 @@
 #include "libComAPI.h"
 #include "epicsTypes.h"
 
+#define S_err_invCode (M_err | 1)       /* Invalid error symbol code */
+#define S_err_codeExists (M_err | 2)    /* Error code already exists */
+
 /* ERRSYMBOL - entry in symbol table */
 typedef struct {
     long errNum;        /* errMessage symbol number */

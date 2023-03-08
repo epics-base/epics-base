@@ -32,6 +32,7 @@
 #define M_stdlib        (504 << 16) /* EPICS Standard library */
 #define M_pool          (505 << 16) /* Thread pool */
 #define M_time          (506 << 16) /* epicsTime */
+#define M_err           (507 << 16) /* Error */
 
 /* ioc */
 #define M_dbAccess      (511 << 16) /* Database Access Routines */

@@ -33,14 +33,12 @@
 static epicsUInt16 errhash(long errNum);
 
 typedef struct errnumnode {
-    ELLNODE            node;
     long               errNum;
     struct errnumnode *hashnode;
     const char        *message;
     long               pad;
 } ERRNUMNODE;
 
-static ELLLIST errnumlist = ELLLIST_INIT;
 static ERRNUMNODE **hashtable;
 static int initialized = 0;
 extern ERRSYMTAB_ID errSymTbl;
@@ -56,44 +54,20 @@ extern ERRSYMTAB_ID errSymTbl;
 int errSymBld(void)
 {
     ERRSYMBOL      *errArray = errSymTbl->symbols;
-    ERRNUMNODE     *perrNumNode = NULL;
-    ERRNUMNODE     *pNextNode = NULL;
-    ERRNUMNODE    **phashnode = NULL;
     int             i;
-    int             modnum;
 
     if (initialized)
         return(0);
 
     hashtable = (ERRNUMNODE**)callocMustSucceed
         (NHASH, sizeof(ERRNUMNODE*),"errSymBld");
-    for (i = 0; i < errSymTbl->nsymbols; i++, errArray++) {
-        modnum = errArray->errNum >> 16;
-        if (modnum < 501) {
-            fprintf(stderr, "errSymBld: ERROR - Module number in errSymTbl < 501 was Module=%lx Name=%s\n",
-                errArray->errNum, errArray->name);
-            continue;
-        }
-        if ((errSymbolAdd(errArray->errNum, errArray->name)) < 0) {
-            fprintf(stderr, "errSymBld: ERROR - errSymbolAdd() failed \n");
-            continue;
-        }
-    }
-    perrNumNode = (ERRNUMNODE *) ellFirst(&errnumlist);
-    while (perrNumNode) {
-        /* hash each perrNumNode->errNum */
-        epicsUInt16 hashInd = errhash(perrNumNode->errNum);
 
-        phashnode = (ERRNUMNODE**)&hashtable[hashInd];
-        pNextNode = (ERRNUMNODE*) *phashnode;
-        /* search for last node (NULL) of hashnode linked list */
-        while (pNextNode) {
-            phashnode = &pNextNode->hashnode;
-            pNextNode = *phashnode;
+    for (i = 0; i < errSymTbl->nsymbols; i++, errArray++) {
+        if (errSymbolAdd(errArray->errNum, errArray->name)) {
+            fprintf(stderr, "errSymBld: ERROR - errSymbolAdd() failed \n");
         }
-        *phashnode = perrNumNode;
-        perrNumNode = (ERRNUMNODE *) ellNext((ELLNODE *) perrNumNode);
     }
+
     initialized = 1;
     return(0);
 }
@@ -114,16 +88,38 @@ static epicsUInt16 errhash(long errNum)
 
 /****************************************************************
  * ERRSYMBOLADD
- * adds symbols to the master errnumlist as compiled from errSymTbl.c
+ * adds symbols to the global error symbol hash table
  ***************************************************************/
 int errSymbolAdd(long errNum, const char *name)
 {
-    ERRNUMNODE *pNew = (ERRNUMNODE*) callocMustSucceed(1,
-        sizeof(ERRNUMNODE), "errSymbolAdd");
+    ERRNUMNODE *pNextNode = NULL;
+    ERRNUMNODE **phashnode = NULL;
+    ERRNUMNODE *pNew = NULL;
+    int modnum = (epicsUInt16) (errNum >> 16);
 
+    if (modnum < 501)
+        return S_err_invCode;
+
+    epicsUInt16 hashInd = errhash(errNum);
+
+    phashnode = (ERRNUMNODE**)&hashtable[hashInd];
+    pNextNode = (ERRNUMNODE*) *phashnode;
+
+    /* search for last node (NULL) of hashnode linked list */
+    while (pNextNode) {
+        if (pNextNode->errNum == errNum) {
+            return S_err_codeExists;
+        }
+        phashnode = &pNextNode->hashnode;
+        pNextNode = *phashnode;
+    }
+
+    pNew = (ERRNUMNODE*) callocMustSucceed(
+        1, sizeof(ERRNUMNODE), "errSymbolAdd");
     pNew->errNum = errNum;
     pNew->message = name;
-    ellAdd(&errnumlist, (ELLNODE*)pNew);
+    *phashnode = pNew;
+
     return 0;
 }
 

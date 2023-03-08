@@ -29,6 +29,7 @@
 #include "osiSock.h"
 #include "fdmgr.h"
 #include "epicsString.h"
+#include "errSymTbl.h"
 
 /* private between errlog.c and this test */
 LIBCOM_API
@@ -197,13 +198,53 @@ void testANSIStrip(void)
 #undef testEscape
 }
 
+static void testErrorMessageMatches(long status, const char *expected)
+{
+    const char *msg = errSymMsg(status);
+    testOk(strcmp(msg, expected) == 0,
+           "Error code %ld returns \"%s\", expected message \"%s\"", status,
+           msg, expected
+          );
+}
+
+static void testGettingExistingErrorSymbol()
+{
+    testErrorMessageMatches(S_err_invCode, "Invalid error symbol code");
+}
+
+static void testGettingNonExistingErrorSymbol()
+{
+    long invented_code = (0x7999 << 16) | 0x9998;
+    testErrorMessageMatches(invented_code, "<Unknown code>");
+}
+
+static void testAddingErrorSymbol()
+{
+    long invented_code = (0x7999 << 16) | 0x9999;
+    errSymbolAdd(invented_code, "Invented Error Message");
+    testErrorMessageMatches(invented_code, "Invented Error Message");
+}
+
+static void testAddingInvalidErrorSymbol()
+{
+    long invented_code = (500 << 16) | 0x1;
+    testOk(errSymbolAdd(invented_code, "No matter"),
+           "Adding error symbol with module code < 501 should fail");
+}
+
+static void testAddingExistingErrorSymbol()
+{
+    testOk(errSymbolAdd(S_err_invCode, "Duplicate"),
+           "Adding an error symbol with an existing error code should fail");
+}
+
 MAIN(epicsErrlogTest)
 {
     size_t mlen, i, N;
     char msg[256];
     clientPvt pvt, pvt2;
 
-    testPlan(48);
+    testPlan(53);
 
     testANSIStrip();
 
@@ -413,6 +454,12 @@ MAIN(epicsErrlogTest)
     osiSockAttach();
     testLogPrefix();
     osiSockRelease();
+
+    testGettingExistingErrorSymbol();
+    testGettingNonExistingErrorSymbol();
+    testAddingErrorSymbol();
+    testAddingInvalidErrorSymbol();
+    testAddingExistingErrorSymbol();
 
     return testDone();
 }

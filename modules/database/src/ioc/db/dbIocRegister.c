@@ -130,7 +130,8 @@ static void dbapCallFunc(const iocshArgBuf *args) { dbap(args[0].sval);}
 static const iocshArg dbsrArg0 = { "interest level",iocshArgInt};
 static const iocshArg * const dbsrArgs[1] = {&dbsrArg0};
 static const iocshFuncDef dbsrFuncDef = {"dbsr",1,dbsrArgs,
-                                         "Database Server Report.\n"};
+                                         "Database Server Report.\n"
+                                         "Print current status of server and number of connected clients\n"};
 static void dbsrCallFunc(const iocshArgBuf *args) { dbsr(args[0].ival);}
 
 /* dbcar */

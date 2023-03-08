@@ -46,7 +46,11 @@
 #endif
 
 #ifndef EPICS_MEM_CHECK
-#   define EPICS_MEM_CHECK(...)
+#   define EPICS_MEM_CHECK(freeMem, freeMemArg)
+#endif
+
+#ifndef EPICS_NON_NULL_PTR_ARGS
+#   define EPICS_NON_NULL_PTR_ARGS(...)
 #endif
 
 #ifndef EPICS_DEPRECATED

@@ -70,10 +70,13 @@
  */
 #if __GNUC__ >= 11
     #define EPICS_SIZED_MEM_CHECK(freeMem, freeMemArg, ...) __attribute__((alloc_size(__VA_ARGS__), malloc(freeMem, freeMemArg)))
+    #define EPICS_MEM_CHECK(freeMem, freeMemArg) __attribute__((malloc(freeMem, freeMemArg)))
 #elif __GNUC__ >= 4
     #define EPICS_SIZED_MEM_CHECK(freeMem, freeMemArg, ...) __attribute__((alloc_size(__VA_ARGS__), malloc))
+    #define EPICS_MEM_CHECK(freeMem, freeMemArg) __attribute__((malloc))
 #elif __GNUC__ >= 3
     #define EPICS_SIZED_MEM_CHECK(freeMem, freeMemArg, ...) __attribute__((malloc))
+    #define EPICS_MEM_CHECK(freeMem, freeMemArg) __attribute__((malloc))
 #endif
 
 
@@ -84,7 +87,7 @@
  * Any arguments passed in should be pointers, and are checked for non-null status.
  */
 #if __GNUC__
-    #define EPICS_MEM_CHECK(...)  __attribute__((malloc, nonnull(__VA_ARGS__)))
+    #define EPICS_NON_NULL_PTR_ARGS(...)  __attribute__((malloc, nonnull(__VA_ARGS__)))
 #endif
 
 #endif  /* ifndef compilerSpecific_h */

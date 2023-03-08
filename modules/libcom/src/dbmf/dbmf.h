@@ -80,7 +80,7 @@ LIBCOM_API void * dbmfMalloc(size_t bytes) EPICS_SIZED_MEM_CHECK(dbmfFree, 1, 1)
  * \param str Pointer to the null-terminated string to be copied.
  * \return A pointer to the new copy, or NULL on failure.
  */
-LIBCOM_API char * dbmfStrdup(const char *str) EPICS_MEM_CHECK(1);
+LIBCOM_API char * dbmfStrdup(const char *str) EPICS_MEM_CHECK(dbmfFree, 1) EPICS_NON_NULL_PTR_ARGS(1);
 /**
  * \brief Duplicate a string (up to len bytes).
  *
@@ -90,7 +90,7 @@ LIBCOM_API char * dbmfStrdup(const char *str) EPICS_MEM_CHECK(1);
  * \param len Max number of bytes to copy.
  * \return A pointer to the new string, or NULL on failure.
  */
-LIBCOM_API char * dbmfStrndup(const char *str, size_t len) EPICS_MEM_CHECK(1) EPICS_SIZED_MEM_CHECK(free, 1, 2);
+LIBCOM_API char * dbmfStrndup(const char *str, size_t len) EPICS_SIZED_MEM_CHECK(free, 1, 2) EPICS_NON_NULL_PTR_ARGS(1);
 /**
  * \brief Concatenate three strings.
 
@@ -102,7 +102,7 @@ LIBCOM_API char * dbmfStrndup(const char *str, size_t len) EPICS_MEM_CHECK(1) EP
  * \return A pointer to the new string, or NULL on failure.
  */
 LIBCOM_API char * dbmfStrcat3(const char *lhs, const char *mid,
-    const char *rhs) EPICS_MEM_CHECK(1, 2, 3);
+    const char *rhs) EPICS_NON_NULL_PTR_ARGS(1,2,3);
 
 /**
  * \brief Show the status of the dbmf memory pool.

@@ -72,7 +72,7 @@
     #define EPICS_SIZED_MEM_CHECK(...) __attribute__((alloc_size(__VA_ARGS__)))
     #define EPICS_MEM_CHECK(freeMem, freeMemArg) __attribute__((malloc(freeMem, freeMemArg)))
 #elif __GNUC__ >= 4
-    #define EPICS_SIZED_MEM_CHECK(freeMem, freeMemArg, ...) __attribute__((alloc_size(__VA_ARGS__)))
+    #define EPICS_SIZED_MEM_CHECK(...) __attribute__((alloc_size(__VA_ARGS__)))
     #define EPICS_MEM_CHECK(freeMem, freeMemArg) __attribute__((malloc))
 #elif __GNUC__ >= 3
     #define EPICS_MEM_CHECK(freeMem, freeMemArg) __attribute__((malloc))

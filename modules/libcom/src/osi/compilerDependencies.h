@@ -42,7 +42,7 @@
 #endif
 
 #ifndef EPICS_SIZED_MEM_CHECK
-#   define EPICS_SIZED_MEM_CHECK(freeMem, freeMemArg, ...)
+#   define EPICS_SIZED_MEM_CHECK(...)
 #endif
 
 #ifndef EPICS_MEM_CHECK

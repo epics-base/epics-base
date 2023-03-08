@@ -70,6 +70,10 @@ The possible alarm conditions for long inputs are the SCAN, READ, and limit
 alarms. The SCAN and READ alarms are called by the record or device support
 routines.
 
+The HYST field controls hysteresis to prevent alarm chattering from an input
+signal that is close to one of the limits and suffers from significant readout
+noise.
+
 The limit alarms are configured by the user in the HIHI, LOLO, HIGH, and LOW
 fields using numerical values. For each of these fields, there is a
 corresponding severity field which can be either NO_ALARM, MINOR, or MAJOR. The

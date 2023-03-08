@@ -24,6 +24,8 @@ int asyncSoftTest(void);
 int simmTest(void);
 int mbbioDirectTest(void);
 int scanEventTest(void);
+int boTest(void);
+int biTest(void);
 
 void epicsRunRecordTests(void)
 {
@@ -50,6 +52,10 @@ void epicsRunRecordTests(void)
     runTest(mbbioDirectTest);
 
     runTest(scanEventTest);
+
+    runTest(boTest);
+
+    runTest(biTest);
 
     epicsExit(0);   /* Trigger test harness */
 }

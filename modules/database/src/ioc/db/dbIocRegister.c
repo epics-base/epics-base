@@ -185,7 +185,12 @@ static const iocshArg * const dblArgs[] = {&dblArg0,&dblArg1};
 static const iocshFuncDef dblFuncDef = {"dbl",2,dblArgs,
                                         "Database list.\n"
                                         "List record/field names.\n"
-                                        "With no arguments, lists all record names.\n"};
+                                        "With no arguments, lists all record names.\n"
+                                        "If record type is given, then only the names of records maching the type are printed\n"
+                                        "If a field list is given, then their values are also printed\n\n"
+                                        "Example: dbl(\"\")\n"
+                                        "         dbl(\"ai\")\n"
+                                        "         dbl(\"ai\",\"HIGH LOW VAL PREC\")\n"};
 static void dblCallFunc(const iocshArgBuf *args)
 {
     dbl(args[0].sval,args[1].sval);
@@ -195,28 +200,33 @@ static void dblCallFunc(const iocshArgBuf *args)
 static const iocshArg dbnrArg0 = { "verbose",iocshArgInt};
 static const iocshArg * const dbnrArgs[1] = {&dbnrArg0};
 static const iocshFuncDef dbnrFuncDef = {"dbnr",1,dbnrArgs,
-                                         "List stats on record alias()s.\n"};
+                                         "List number of records and aliases by type.\n"
+                                         "If verbose, list all record types regardless of being instanced\n\n"};
 static void dbnrCallFunc(const iocshArgBuf *args) { dbnr(args[0].ival);}
 
 /* dbli */
 static const iocshArg dbliArg0 = { "pattern",iocshArgString};
 static const iocshArg * const dbliArgs[1] = {&dbliArg0};
 static const iocshFuncDef dbliFuncDef = {"dbli",1,dbliArgs,
-                                        "List info() tags with names matching pattern.\n"};
+                                         "List info() tags with names matching pattern.\n\n"
+                                         "Example: dbli(\"autosave*\")\n"};
 static void dbliCallFunc(const iocshArgBuf *args) { dbli(args[0].sval);}
 
 /* dbla */
 static const iocshArg dblaArg0 = { "pattern",iocshArgStringRecord};
 static const iocshArg * const dblaArgs[1] = {&dblaArg0};
 static const iocshFuncDef dblaFuncDef = {"dbla",1,dblaArgs,
-                                         "List record alias()s by alias name pattern.\n"};
+                                         "List record alias()s by alias name pattern.\n\n"
+                                         "Example: dbla(\"alia*\")\n"};
 static void dblaCallFunc(const iocshArgBuf *args) { dbla(args[0].sval);}
 
 /* dbgrep */
 static const iocshArg dbgrepArg0 = { "pattern",iocshArgStringRecord};
 static const iocshArg * const dbgrepArgs[1] = {&dbgrepArg0};
 static const iocshFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs,
-                                           "List record names matching pattern.\n"};
+                                           "List record names matching pattern.\n"
+                                           "The pattern can contain any characters that are legal in record names as well as \"*\", which matches 0 or more characters.\n\n"
+                                           "Example: dbgrep(\"*gpibAi*\")\n"};
 static void dbgrepCallFunc(const iocshArgBuf *args) { dbgrep(args[0].sval);}
 
 /* dbgf */
@@ -224,7 +234,9 @@ static const iocshArg dbgfArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbgfArgs[1] = {&dbgfArg0};
 static const iocshFuncDef dbgfFuncDef = {"dbgf",1,dbgfArgs,
                                          "Database Get Field.\n"
-                                         "Print current value of record field.\n"};
+                                         "Print current value of record field.\n"
+                                         "If no field name is specified, VAL is assumed.\n\n"
+                                         "Example: dbgf(\"aitest.VAL\")\n"};
 static void dbgfCallFunc(const iocshArgBuf *args) { dbgf(args[0].sval);}
 
 /* dbpf */
@@ -233,7 +245,8 @@ static const iocshArg dbpfArg1 = { "value",iocshArgString};
 static const iocshArg * const dbpfArgs[2] = {&dbpfArg0,&dbpfArg1};
 static const iocshFuncDef dbpfFuncDef = {"dbpf",2,dbpfArgs,
                                          "Database Put Field.\n"
-                                         "Change value of record field.\n"};
+                                         "Change value of record field and read it back with dbgf.\n"
+                                         "If no field is specified, VAL is assumed\n"};
 static void dbpfCallFunc(const iocshArgBuf *args)
 { dbpf(args[0].sval,args[1].sval);}
 
@@ -243,7 +256,13 @@ static const iocshArg dbprArg1 = { "interest level",iocshArgInt};
 static const iocshArg * const dbprArgs[2] = {&dbprArg0,&dbprArg1};
 static const iocshFuncDef dbprFuncDef = {"dbpr",2,dbprArgs,
                                          "Database Print Record.\n"
-                                         "Print values of record fields.\n"};
+                                         "Print values of record fields for given interest level.\n"
+                                         "interest level 0 - Fields that can be changed as a result of record processing.\n"
+                                         "               1 - Fields that do not change during record processing.\n"
+                                         "               2 - Fields of major interest to a System developer.\n"
+                                         "               3 - Fields of minor interest to a System developer.\n"
+                                         "               4 - Internal record fields.\n\n"
+                                         "Example: dbpr(\"aitest\", 3)\n"};
 static void dbprCallFunc(const iocshArgBuf *args)
 { dbpr(args[0].sval,args[1].ival);}
 

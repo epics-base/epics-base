@@ -21,7 +21,8 @@ static const iocshArg * const asSetFilenameArgs[] = {&asSetFilenameArg0};
 static const iocshFuncDef asSetFilenameFuncDef =
     {"asSetFilename",1,asSetFilenameArgs,
      "Set path+file name of ACF file.\n"
-     "No immediate effect.  Run as asInit() to (re)load.\n"};
+     "No immediate effect.  Run asInit to (re)load.\n"
+     "Example: asSetFilename /full/path/to/accessSecurityFile\n"};
 static void asSetFilenameCallFunc(const iocshArgBuf *args)
 {
     asSetFilename(args[0].sval);
@@ -33,7 +34,8 @@ static const iocshArg * const asSetSubstitutionsArgs[] = {&asSetSubstitutionsArg
 static const iocshFuncDef asSetSubstitutionsFuncDef =
     {"asSetSubstitutions",1,asSetSubstitutionsArgs,
      "Set subtitutions used when reading ACF file.\n"
-     "No immediate effect.  Run as asInit() to (re)load.\n"};
+     "No immediate effect.  Run asInit to (re)load.\n"
+     "Example: asSetSubstitutions var1=5,var2=hello\n"};
 static void asSetSubstitutionsCallFunc(const iocshArgBuf *args)
 {
     asSetSubstitutions(args[0].sval);
@@ -59,7 +61,10 @@ static void asdbdumpCallFunc(const iocshArgBuf *args)
 static const iocshArg aspuagArg0 = { "uagname",iocshArgString};
 static const iocshArg * const aspuagArgs[] = {&aspuagArg0};
 static const iocshFuncDef aspuagFuncDef = {"aspuag",1,aspuagArgs,
-                                           "Show members of User Access Group.\n"};
+                                           "Show members of the User Access Group.\n"
+                                           "If no Group is specified then the members\n"
+                                           "of all user access groups are displayed.\n"
+                                           "Example: aspuag mygroup\n"};
 static void aspuagCallFunc(const iocshArgBuf *args)
 {
     aspuag(args[0].sval);
@@ -69,7 +74,10 @@ static void aspuagCallFunc(const iocshArgBuf *args)
 static const iocshArg asphagArg0 = { "hagname",iocshArgString};
 static const iocshArg * const asphagArgs[] = {&asphagArg0};
 static const iocshFuncDef asphagFuncDef = {"asphag",1,asphagArgs,
-                                           "Show members of Host Access Group.\n"};
+                                           "Show members of the Host Access Group.\n"
+                                           "If no Group is speciﬁed then the members\n"
+                                           "of all host access groups are displayed\n"
+                                           "Example: asphag mygroup\n"};
 static void asphagCallFunc(const iocshArgBuf *args)
 {
     asphag(args[0].sval);
@@ -78,8 +86,12 @@ static void asphagCallFunc(const iocshArgBuf *args)
 /* asprules */
 static const iocshArg asprulesArg0 = { "asgname",iocshArgString};
 static const iocshArg * const asprulesArgs[] = {&asprulesArg0};
-static const iocshFuncDef asprulesFuncDef = {"asprules",1,asprulesArgs,
-                                             "List rules of an Access Security Group.\n"};
+static const iocshFuncDef asprulesFuncDef = {
+    "asprules",1,asprulesArgs,
+    "List rules of an Access Security Group.\n"
+    "If no Group is speciﬁed then list the rules for all groups\n"
+    "Example: asgname mygroup"
+};
 static void asprulesCallFunc(const iocshArgBuf *args)
 {
     asprules(args[0].sval);
@@ -89,8 +101,14 @@ static void asprulesCallFunc(const iocshArgBuf *args)
 static const iocshArg aspmemArg0 = { "asgname",iocshArgString};
 static const iocshArg aspmemArg1 = { "clients",iocshArgInt};
 static const iocshArg * const aspmemArgs[] = {&aspmemArg0,&aspmemArg1};
-static const iocshFuncDef aspmemFuncDef = {"aspmem",2,aspmemArgs,
-                                           "List members of Access Security Group.\n"};
+static const iocshFuncDef aspmemFuncDef = {
+    "aspmem",2,aspmemArgs,
+    "List members of Access Security Group.\n"
+    "If no Group is specified then print the members for all Groups.\n"
+    "If clients is (0, 1) then Channel Access clients attached to each member\n"
+    "(are not, are) shown\n"
+    "Example: asgname mygroup 1\n",
+};
 static void aspmemCallFunc(const iocshArgBuf *args)
 {
     aspmem(args[0].sval,args[1].ival);
@@ -102,7 +120,7 @@ static const iocshArg astacArg1 = { "user",iocshArgString};
 static const iocshArg astacArg2 = { "host",iocshArgString};
 static const iocshArg * const astacArgs[] = {&astacArg0,&astacArg1,&astacArg2};
 static const iocshFuncDef astacFuncDef = {"astac",3,astacArgs,
-                                          "Test Access Security privlages granted to user+host.\n"};
+                                          "Test Access Security privileges granted to user+host.\n"};
 static void astacCallFunc(const iocshArgBuf *args)
 {
     astac(args[0].sval,args[1].sval,args[2].sval);

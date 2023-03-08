@@ -84,7 +84,7 @@
  * Any arguments passed in should be pointers, and are checked for non-null status.
  */
 #if __GNUC__
-    #define EPICS_MEM_CHECK(...) __THROW __attribute_malloc__ __nonnull((__VA_ARGS__))
+    #define EPICS_MEM_CHECK(...)  __attribute__((malloc, nonnull(__VA_ARGS__)))
 #endif
 
 #endif  /* ifndef compilerSpecific_h */

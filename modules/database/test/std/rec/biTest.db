@@ -1,0 +1,6 @@
+record(bi, "test_bi_rec") {
+}
+
+record(bo, "test_bi_link_rec") {
+
+}

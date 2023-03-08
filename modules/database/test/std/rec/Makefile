@@ -100,6 +100,13 @@ testHarness_SRCS += boTest.c
 TESTFILES += ../boTest.db
 TESTS += boTest
 
+TESTPROD_HOST += biTest
+biTest_SRCS += biTest.c
+biTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += biTest.c
+TESTFILES += ../biTest.db
+TESTS += biTest
+
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
 asTestIoc_DBD += base.dbd

@@ -72,7 +72,7 @@ LIBCOM_API int dbmfInit(size_t size, int chunkItems);
  * \param bytes If bytes > size then malloc() is used to allocate the memory.
  * \return Pointer to the newly-allocated memory, or NULL on failure.
  */
-LIBCOM_API void * dbmfMalloc(size_t bytes) EPICS_SIZED_MEM_CHECK(dbmfFree, 1, 1);
+LIBCOM_API void * dbmfMalloc(size_t bytes) EPICS_SIZED_MEM_CHECK(1) EPICS_MEM_CHECK(dbmfFree, 1);
 /**
  * \brief Duplicate a string.
  *
@@ -90,7 +90,7 @@ LIBCOM_API char * dbmfStrdup(const char *str) EPICS_MEM_CHECK(dbmfFree, 1) EPICS
  * \param len Max number of bytes to copy.
  * \return A pointer to the new string, or NULL on failure.
  */
-LIBCOM_API char * dbmfStrndup(const char *str, size_t len) EPICS_SIZED_MEM_CHECK(free, 1, 2) EPICS_NON_NULL_PTR_ARGS(1);
+LIBCOM_API char * dbmfStrndup(const char *str, size_t len) EPICS_SIZED_MEM_CHECK(2) EPICS_MEM_CHECK(free, 1) EPICS_NON_NULL_PTR_ARGS(1);
 /**
  * \brief Concatenate three strings.
 

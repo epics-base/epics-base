@@ -247,8 +247,6 @@ LIBCOM_API int errlogPrintfNoConsole(const char *pformat, ...)
    EPICS_PRINTF_STYLE(1,2);
 LIBCOM_API int errlogVprintfNoConsole(const char *pformat,va_list pvar);
 
-LIBCOM_API int * arrayFunction(int size, size_t size_t) __attribute__(( alloc_size(1,2), malloc(free, 1) ));
-
 /**
  * Lookup the status code and return the string value in pBuf
  *

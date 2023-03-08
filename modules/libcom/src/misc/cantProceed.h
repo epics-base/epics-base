@@ -62,13 +62,13 @@ LIBCOM_API void cantProceed(const char *errorMessage, ...)
  * \return Pointer to zeroed allocated memory.
  */
 LIBCOM_API void * callocMustSucceed(size_t count, size_t size,
-    const char *errorMessage) EPICS_SIZED_MEM_CHECK(free, 1, 1,2);
+    const char *errorMessage) EPICS_SIZED_MEM_CHECK(1,2) EPICS_MEM_CHECK(free, 1);
 /** \brief A malloc() that never returns NULL.
  * \param size Size of block to allocate.
  * \param errorMessage What this memory is needed for.
  * \return Pointer to allocated memory.
  */
-LIBCOM_API void * mallocMustSucceed(size_t size, const char *errorMessage) EPICS_SIZED_MEM_CHECK(free, 1, 1);
+LIBCOM_API void * mallocMustSucceed(size_t size, const char *errorMessage) EPICS_SIZED_MEM_CHECK(1) EPICS_MEM_CHECK(free, 1);
 /** @} */
 
 #ifdef __cplusplus

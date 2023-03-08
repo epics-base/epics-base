@@ -138,14 +138,12 @@ static void dbsrCallFunc(const iocshArgBuf *args) { dbsr(args[0].ival);}
 static const iocshArg dbcarArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbcarArg1 = { "level",iocshArgInt};
 static const iocshArg * const dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
-static const iocshFuncDef dbcarFuncDef = {
-    "dbcar",2,dbcarArgs,
-    "Database Channel Access Report.\n"
-    "Shows status of Channel Access links (CA_LINK).\n"
-    "interest level 0 - Shows statistics for all links.\n"
-    "               1 - Shows info. of only disconnected links.\n"
-    "               2 - Shows info. for all links.\n"
-};
+static const iocshFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs,
+                                          "Database Channel Access Report.\n"
+                                          "Shows status of Channel Access links (CA_LINK).\n"
+                                          " level 0 - Shows statistics for all links.\n"
+                                          "       1 - Shows info. of only disconnected links.\n"
+                                          "       2 - Shows info. for all links.\n"};
 static void dbcarCallFunc(const iocshArgBuf *args)
 {
     dbcar(args[0].sval,args[1].ival);
@@ -366,9 +364,8 @@ static const iocshArg dbPutAttrArg1 = { "attribute name",iocshArgString};
 static const iocshArg dbPutAttrArg2 = { "value",iocshArgString};
 static const iocshArg * const dbPutAttrArgs[] =
     {&dbPutAttrArg0, &dbPutAttrArg1, &dbPutAttrArg2};
-static const iocshFuncDef dbPutAttrFuncDef =
-    {"dbPutAttribute",3,dbPutAttrArgs,
-     "Set/Create record attribute.\n"};
+static const iocshFuncDef dbPutAttrFuncDef = {"dbPutAttribute",3,dbPutAttrArgs,
+                                              "Set/Create record attribute.\n"};
 static void dbPutAttrCallFunc(const iocshArgBuf *args)
 { dbPutAttribute(args[0].sval,args[1].sval,args[2].sval);}
 
@@ -386,27 +383,24 @@ static void tpnCallFunc(const iocshArgBuf *args)
 static const iocshArg dblsrArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dblsrArg1 = { "interest level",iocshArgInt};
 static const iocshArg * const dblsrArgs[2] = {&dblsrArg0,&dblsrArg1};
-static const iocshFuncDef dblsrFuncDef = {
-    "dblsr",2,dblsrArgs,
-    "Database Lockset report.\n"
-    "Generate a report showing the lock set to which each record belongs.\n"
-    "interest level 0 - Show lock set information only.\n"
-    "               1 - Show each record in the lock set.\n"
-    "               2 - Show each record and all database links in the lock set.\n\n"
-    "Example: dblsr aitest 2\n"
-};
+static const iocshFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs,
+                                          "Database Lockset report.\n"
+                                          "Generate a report showing the lock set to which each record belongs.\n"
+                                          "interest level 0 - Show lock set information only.\n"
+                                          "               1 - Show each record in the lock set.\n"
+                                          "               2 - Show each record and all database links in the lock set.\n\n"
+                                          "Example: dblsr aitest 2\n"};
 static void dblsrCallFunc(const iocshArgBuf *args)
 { dblsr(args[0].sval,args[1].ival);}
 
 /* dbLockShowLocked */
 static const iocshArg dbLockShowLockedArg0 = { "interest level",iocshArgInt};
 static const iocshArg * const dbLockShowLockedArgs[1] = {&dbLockShowLockedArg0};
-static const iocshFuncDef dbLockShowLockedFuncDef =
-    {"dbLockShowLocked",1,dbLockShowLockedArgs,
-     "Show Locksets which are currently locked.\n"
-     "interest level argument is passed to epicsMutexShow to adjust reported\n"
-     "information.\n\n"
-     "Example: dbLockShowLocked 0\n"};
+static const iocshFuncDef dbLockShowLockedFuncDef = {"dbLockShowLocked",1,dbLockShowLockedArgs,
+                                                     "Show Locksets which are currently locked.\n"
+                                                     "interest level argument is passed to epicsMutexShow to adjust reported\n"
+                                                     "information.\n\n"
+                                                     "Example: dbLockShowLocked 0\n"};
 static void dbLockShowLockedCallFunc(const iocshArgBuf *args)
 { dbLockShowLocked(args[0].ival);}
 
@@ -414,10 +408,9 @@ static void dbLockShowLockedCallFunc(const iocshArgBuf *args)
 static const iocshArg scanOnceSetQueueSizeArg0 = { "size",iocshArgInt};
 static const iocshArg * const scanOnceSetQueueSizeArgs[1] =
     {&scanOnceSetQueueSizeArg0};
-static const iocshFuncDef scanOnceSetQueueSizeFuncDef =
-    {"scanOnceSetQueueSize",1,scanOnceSetQueueSizeArgs,
-     "Change size of Scan once queue.\n"
-     "Must be called before iocInit().\n"};
+static const iocshFuncDef scanOnceSetQueueSizeFuncDef = {"scanOnceSetQueueSize",1,scanOnceSetQueueSizeArgs,
+                                                         "Change size of Scan once queue.\n"
+                                                         "Must be called before iocInit().\n"};
 static void scanOnceSetQueueSizeCallFunc(const iocshArgBuf *args)
 {
     scanOnceSetQueueSize(args[0].ival);
@@ -427,9 +420,8 @@ static void scanOnceSetQueueSizeCallFunc(const iocshArgBuf *args)
 static const iocshArg scanOnceQueueShowArg0 = { "reset",iocshArgInt};
 static const iocshArg * const scanOnceQueueShowArgs[1] =
     {&scanOnceQueueShowArg0};
-static const iocshFuncDef scanOnceQueueShowFuncDef =
-    {"scanOnceQueueShow",1,scanOnceQueueShowArgs,
-     "Show details and statitics of scan once queue processing.\n"};
+static const iocshFuncDef scanOnceQueueShowFuncDef = {"scanOnceQueueShow",1,scanOnceQueueShowArgs,
+                                                      "Show details and statitics of scan once queue processing.\n"};
 static void scanOnceQueueShowCallFunc(const iocshArgBuf *args)
 {
     scanOnceQueueShow(args[0].ival);
@@ -439,7 +431,8 @@ static void scanOnceQueueShowCallFunc(const iocshArgBuf *args)
 static const iocshArg scanpplArg0 = { "rate",iocshArgDouble};
 static const iocshArg * const scanpplArgs[1] = {&scanpplArg0};
 static const iocshFuncDef scanpplFuncDef = {"scanppl",1,scanpplArgs,
-                                            "print periodic scan lists.\n"};
+                                            "Print info for records with periodic scan.\n"
+                                            "If rate == 0.0, all periods are shown.\n"};
 static void scanpplCallFunc(const iocshArgBuf *args)
 { scanppl(args[0].dval);}
 
@@ -471,10 +464,9 @@ static void scanpiolCallFunc(const iocshArgBuf *args) { scanpiol();}
 static const iocshArg callbackSetQueueSizeArg0 = { "bufsize",iocshArgInt};
 static const iocshArg * const callbackSetQueueSizeArgs[1] =
     {&callbackSetQueueSizeArg0};
-static const iocshFuncDef callbackSetQueueSizeFuncDef =
-    {"callbackSetQueueSize",1,callbackSetQueueSizeArgs,
-     "Change depth of queue for callback workers.\n"
-     "Must be called before iocInit().\n"};
+static const iocshFuncDef callbackSetQueueSizeFuncDef = {"callbackSetQueueSize",1,callbackSetQueueSizeArgs,
+                                                         "Change depth of queue for callback workers.\n"
+                                                         "Must be called before iocInit().\n"};
 static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
 {
     callbackSetQueueSize(args[0].ival);
@@ -484,9 +476,8 @@ static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
 static const iocshArg callbackQueueShowArg0 = { "reset", iocshArgInt};
 static const iocshArg * const callbackQueueShowArgs[1] =
     {&callbackQueueShowArg0};
-static const iocshFuncDef callbackQueueShowFuncDef =
-    {"callbackQueueShow",1,callbackQueueShowArgs,
-     "Show status of callback thread processing queue.\n"};
+static const iocshFuncDef callbackQueueShowFuncDef = {"callbackQueueShow",1,callbackQueueShowArgs,
+                                                      "Show status of callback thread processing queue.\n"};
 static void callbackQueueShowCallFunc(const iocshArgBuf *args)
 {
     callbackQueueShow(args[0].ival);
@@ -497,11 +488,10 @@ static const iocshArg callbackParallelThreadsArg0 = { "no of threads", iocshArgI
 static const iocshArg callbackParallelThreadsArg1 = { "priority", iocshArgString};
 static const iocshArg * const callbackParallelThreadsArgs[2] =
     {&callbackParallelThreadsArg0,&callbackParallelThreadsArg1};
-static const iocshFuncDef callbackParallelThreadsFuncDef =
-    {"callbackParallelThreads",2,callbackParallelThreadsArgs,
-     "Configure multiple workers for a given callback queue priority level.\n"
-     "priority may be omitted or \"*\" to act on all priorities\n"
-     "or one of LOW, MEDIUM, or HIGH.\n"};
+static const iocshFuncDef callbackParallelThreadsFuncDef = {"callbackParallelThreads",2,callbackParallelThreadsArgs,
+                                                            "Configure multiple workers for a given callback queue priority level.\n"
+                                                            "priority may be omitted or \"*\" to act on all priorities\n"
+                                                            "or one of LOW, MEDIUM, or HIGH.\n"};
 static void callbackParallelThreadsCallFunc(const iocshArgBuf *args)
 {
     callbackParallelThreads(args[0].ival, args[1].sval);
@@ -510,8 +500,8 @@ static void callbackParallelThreadsCallFunc(const iocshArgBuf *args)
 /* dbStateCreate */
 static const iocshArg dbStateArgName = { "name", iocshArgString };
 static const iocshArg * const dbStateCreateArgs[] = { &dbStateArgName };
-static const iocshFuncDef dbStateCreateFuncDef = { "dbStateCreate", 1, dbStateCreateArgs,
-                                                   "Allocate new state name for \"state\" filter.\n"};
+static const iocshFuncDef dbStateCreateFuncDef = {"dbStateCreate", 1, dbStateCreateArgs,
+                                                  "Allocate new state name for \"state\" filter.\n"};
 static void dbStateCreateCallFunc (const iocshArgBuf *args)
 {
     dbStateCreate(args[0].sval);
@@ -519,8 +509,8 @@ static void dbStateCreateCallFunc (const iocshArgBuf *args)
 
 /* dbStateSet */
 static const iocshArg * const dbStateSetArgs[] = { &dbStateArgName };
-static const iocshFuncDef dbStateSetFuncDef = { "dbStateSet", 1, dbStateSetArgs,
-                                                "Change state to set for \"state\" filter.\n"};
+static const iocshFuncDef dbStateSetFuncDef = {"dbStateSet", 1, dbStateSetArgs,
+                                              "Change state to set for \"state\" filter.\n"};
 static void dbStateSetCallFunc (const iocshArgBuf *args)
 {
     dbStateId sid = dbStateFind(args[0].sval);
@@ -531,8 +521,8 @@ static void dbStateSetCallFunc (const iocshArgBuf *args)
 
 /* dbStateClear */
 static const iocshArg * const dbStateClearArgs[] = { &dbStateArgName };
-static const iocshFuncDef dbStateClearFuncDef = { "dbStateClear", 1, dbStateClearArgs,
-                                                  "Change state to clear for \"state\" filter.\n" };
+static const iocshFuncDef dbStateClearFuncDef = {"dbStateClear", 1, dbStateClearArgs,
+                                                "Change state to clear for \"state\" filter.\n"};
 static void dbStateClearCallFunc (const iocshArgBuf *args)
 {
     dbStateId sid = dbStateFind(args[0].sval);
@@ -544,8 +534,8 @@ static void dbStateClearCallFunc (const iocshArgBuf *args)
 /* dbStateShow */
 static const iocshArg dbStateShowArg1 = { "level", iocshArgInt };
 static const iocshArg * const dbStateShowArgs[] = { &dbStateArgName, &dbStateShowArg1 };
-static const iocshFuncDef dbStateShowFuncDef = { "dbStateShow", 2, dbStateShowArgs,
-                                                 "Show set/clear status of named state. (cf. \"state\" filter)\n" };
+static const iocshFuncDef dbStateShowFuncDef = {"dbStateShow", 2, dbStateShowArgs,
+                                                "Show set/clear status of named state. (cf. \"state\" filter)\n"};
 static void dbStateShowCallFunc (const iocshArgBuf *args)
 {
     dbStateId sid = dbStateFind(args[0].sval);
@@ -557,8 +547,8 @@ static void dbStateShowCallFunc (const iocshArgBuf *args)
 /* dbStateShowAll */
 static const iocshArg dbStateShowAllArg0 = { "level", iocshArgInt };
 static const iocshArg * const dbStateShowAllArgs[] = { &dbStateShowAllArg0 };
-static const iocshFuncDef dbStateShowAllFuncDef = { "dbStateShowAll", 1, dbStateShowAllArgs,
-                                                    "Show set/clear status of all named states. (cf. \"state\" filter)\n"  };
+static const iocshFuncDef dbStateShowAllFuncDef = {"dbStateShowAll", 1, dbStateShowAllArgs,
+                                                   "Show set/clear status of all named states. (cf. \"state\" filter)\n"};
 static void dbStateShowAllCallFunc (const iocshArgBuf *args)
 {
     dbStateShowAll(args[0].ival);

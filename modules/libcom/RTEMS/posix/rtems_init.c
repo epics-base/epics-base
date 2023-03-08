@@ -240,20 +240,22 @@ epicsRtemsMountLocalFilesystem(char **argv)
 static int
 initialize_local_filesystem(char **argv)
 {
-#ifdef RTEMS_LEGACY_STACK
     extern char _DownloadLocation[] __attribute__((weak));
     extern char _FlashBase[] __attribute__((weak));
     extern char _FlashSize[]  __attribute__((weak));
-#endif
 
     argv[0] = rtems_bsdnet_bootp_boot_file_name;
     if (epicsRtemsMountLocalFilesystem(argv)==0) {
         return 1; /* FS setup successful */
 
-#ifdef RTEMS_LEGACY_STACK
     } else if (_FlashSize && (_DownloadLocation || _FlashBase)) {
+#ifdef RTEMS_LEGACY_STACK
         extern char _edata[];
         size_t flashIndex = _edata - _DownloadLocation;
+#else
+        extern char bsp_section_data_end[];
+        size_t flashIndex = bsp_section_data_end - _DownloadLocation;
+#endif
         char *header = _FlashBase + flashIndex;
 
         if (memcmp(header + 257, "ustar  ", 8) == 0) {
@@ -271,7 +273,6 @@ initialize_local_filesystem(char **argv)
             }
             printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
         }
-#endif /* only with old stack, check check libbsd dependency! */
     }
     return 0;
 }

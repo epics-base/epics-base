@@ -61,4 +61,16 @@
  */
 #define EPICS_UNUSED __attribute__((unused))
 
+/*
+ * Memory checker.
+ */
+#if __GNUC__ >= 11
+    #define EPICS_MEMORY_CHECKER(...) __attribute__((alloc_size(__VA_ARGS__), malloc(free, 1)))
+#elif __GNUC__ >= 4
+    #define EPICS_MEMORY_CHECKER(...) __attribute__((alloc_size(__VA_ARGS__), malloc))
+#elif __GNUC__ >= 3
+    #define EPICS_MEMORY_CHECKER(...) __attribute__((malloc))
+#endif
+
+
 #endif  /* ifndef compilerSpecific_h */

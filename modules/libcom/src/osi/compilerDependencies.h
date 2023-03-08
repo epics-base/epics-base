@@ -41,6 +41,10 @@
 #   define EPICS_PRINTF_STYLE(f,a)
 #endif
 
+#ifndef EPICS_MEMORY_CHECKER
+#   define EPICS_MEMORY_CHECKER(...)
+#endif
+
 #ifndef EPICS_DEPRECATED
 /*
  * No deprecation markers

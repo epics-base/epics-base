@@ -26,6 +26,7 @@ int mbbioDirectTest(void);
 int scanEventTest(void);
 int boTest(void);
 int biTest(void);
+int printfTest(void);
 
 void epicsRunRecordTests(void)
 {
@@ -56,6 +57,8 @@ void epicsRunRecordTests(void)
     runTest(boTest);
 
     runTest(biTest);
+
+    runTest(printfTest);
 
     epicsExit(0);   /* Trigger test harness */
 }

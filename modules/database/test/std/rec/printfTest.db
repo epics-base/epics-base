@@ -1,0 +1,53 @@
+record(printf, "test_printf_rec") {
+    field(SIZV, 45)
+    field(INP0, "test_printf_inp0_rec")
+    field(INP1, "test_printf_inp1_rec")
+    field(INP2, "test_printf_inp2_rec")
+    field(INP3, "test_printf_inp3_rec")
+    field(INP4, "test_printf_inp4_rec")
+    field(INP5, "test_printf_inp5_rec")
+    field(INP6, "test_printf_inp6_rec")
+    field(INP7, "test_printf_inp7_rec")
+    field(INP8, "test_printf_inp8_rec")
+    field(INP9, "test_printf_inp9_rec")
+}
+
+record(ai, "test_printf_inp0_rec") {
+    field(FLNK, "test_printf_rec")
+}
+
+record(stringin, "test_printf_inp1_rec") {
+    field(FLNK, "test_printf_rec")
+}
+
+record(int64in, "test_printf_inp2_rec") {
+    field(FLNK, "test_printf_rec")
+}
+
+record(ai, "test_printf_inp3_rec") {
+    field(FLNK, "test_printf_rec")
+}
+
+record(ai, "test_printf_inp4_rec") {
+    field(FLNK, "test_printf_rec")
+}
+
+record(ai, "test_printf_inp5_rec") {
+    field(FLNK, "test_printf_rec")
+}
+
+record(ai, "test_printf_inp6_rec") {
+    field(FLNK, "test_printf_rec")
+}
+
+record(ai, "test_printf_inp7_rec") {
+    field(FLNK, "test_printf_rec")
+}
+
+record(ai, "test_printf_inp8_rec") {
+    field(FLNK, "test_printf_rec")
+}
+
+record(ai, "test_printf_inp9_rec") {
+    field(FLNK, "test_printf_rec")
+}

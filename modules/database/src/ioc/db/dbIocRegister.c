@@ -108,13 +108,16 @@ static void dbstatCallFunc(const iocshArgBuf *args) { dbstat();}
 static const iocshArg dbpArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbpArg1 = { "interest level",iocshArgInt};
 static const iocshArg * const dbpArgs[2] = {&dbpArg0,&dbpArg1};
-static const iocshFuncDef dbpFuncDef = {"dbp",2,dbpArgs,
-                                        "Print Fields of a currently suspended record by a breakpoint.\n"
-                                        "interest level 0 - Fields of interest to an Application developer and that can be changed as a result of record processing.\n"
-                                        "               1 - Fields of interest to an Application developer and that do not change during record processing.\n"
-                                        "               2 - Fields of major interest to a System developer.\n"
-                                        "               3 - Fields of minor interest to a System developer.\n"
-                                        "               4 - Internal record fields.\n"};
+static const iocshFuncDef dbpFuncDef = {
+    "dbp",2,dbpArgs,
+    "Print Fields of a currently suspended record by a breakpoint.\n"
+    "interest level 0 - Fields of interest to an Application developer and\n"
+    "                     that can be changed as a result of record processing.\n"
+    "               1 - Fields of interest to an Application developer and\n"
+    "                     that do not change during record processing.\n"
+    "               2 - Fields of major interest to a System developer.\n"
+    "               3 - Fields of minor interest to a System developer.\n"
+    "               4 - Internal record fields.\n"};
 static void dbpCallFunc(const iocshArgBuf *args)
 { dbp(args[0].sval,args[1].ival);}
 
@@ -131,7 +134,8 @@ static const iocshArg dbsrArg0 = { "interest level",iocshArgInt};
 static const iocshArg * const dbsrArgs[1] = {&dbsrArg0};
 static const iocshFuncDef dbsrFuncDef = {"dbsr",1,dbsrArgs,
                                          "Database Server Report.\n"
-                                         "Print current status of server and number of connected clients\n"};
+                                         "Print current status of server and number of connected clients.\n"
+                                         "Level 0 prints summary information. Higher levels print more.\n"};
 static void dbsrCallFunc(const iocshArgBuf *args) { dbsr(args[0].ival);}
 
 /* dbcar */
@@ -261,15 +265,17 @@ static void dbpfCallFunc(const iocshArgBuf *args)
 static const iocshArg dbprArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg dbprArg1 = { "interest level",iocshArgInt};
 static const iocshArg * const dbprArgs[2] = {&dbprArg0,&dbprArg1};
-static const iocshFuncDef dbprFuncDef = {"dbpr",2,dbprArgs,
-                                         "Database Print Record.\n"
-                                         "Print values of record fields for given interest level.\n"
-                                         "interest level 0 - Fields that can be changed as a result of record processing.\n"
-                                         "               1 - Fields that do not change during record processing.\n"
-                                         "               2 - Fields of major interest to a System developer.\n"
-                                         "               3 - Fields of minor interest to a System developer.\n"
-                                         "               4 - Internal record fields.\n\n"
-                                         "Example: dbpr(\"aitest\", 3)\n"};
+static const iocshFuncDef dbprFuncDef = {
+    "dbpr",2,dbprArgs,
+    "Database Print Record.\n"
+    "Print values of record fields for given interest level.\n"
+    "interest level 0 - Fields that can be changed as a result of record processing.\n"
+    "               1 - Fields that do not change during record processing.\n"
+    "               2 - Fields of major interest to a System developer.\n"
+    "               3 - Fields of minor interest to a System developer.\n"
+    "               4 - Internal record fields.\n\n"
+    "Example: dbpr aitest 3\n"
+};
 static void dbprCallFunc(const iocshArgBuf *args)
 { dbpr(args[0].sval,args[1].ival);}
 
@@ -396,11 +402,13 @@ static void dblsrCallFunc(const iocshArgBuf *args)
 /* dbLockShowLocked */
 static const iocshArg dbLockShowLockedArg0 = { "interest level",iocshArgInt};
 static const iocshArg * const dbLockShowLockedArgs[1] = {&dbLockShowLockedArg0};
-static const iocshFuncDef dbLockShowLockedFuncDef = {"dbLockShowLocked",1,dbLockShowLockedArgs,
-                                                     "Show Locksets which are currently locked.\n"
-                                                     "interest level argument is passed to epicsMutexShow to adjust reported\n"
-                                                     "information.\n\n"
-                                                     "Example: dbLockShowLocked 0\n"};
+static const iocshFuncDef dbLockShowLockedFuncDef = {
+    "dbLockShowLocked",1,dbLockShowLockedArgs,
+    "Show Locksets which are currently locked.\n"
+    "interest level argument is passed to epicsMutexShow to adjust reported\n"
+    "information.\n\n"
+    "Example: dbLockShowLocked 0\n"
+};
 static void dbLockShowLockedCallFunc(const iocshArgBuf *args)
 { dbLockShowLocked(args[0].ival);}
 

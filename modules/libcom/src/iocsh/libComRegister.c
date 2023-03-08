@@ -259,9 +259,11 @@ static void eltcCallFunc(const iocshArgBuf *args)
 /* errlogInit */
 static const iocshArg errlogInitArg0 = { "bufSize",iocshArgInt};
 static const iocshArg * const errlogInitArgs[1] = {&errlogInitArg0};
-static const iocshFuncDef errlogInitFuncDef = {"errlogInit",1,errlogInitArgs,
-                                               "Initialize error log client buffer size\n"
-                                               "  bufSize - size of circular buffer (default = 1280 bytes)\n"};
+static const iocshFuncDef errlogInitFuncDef = {
+    "errlogInit",1,errlogInitArgs,
+    "Initialize error log client buffer size\n"
+    "  bufSize - size of circular buffer (default = 1280 bytes)\n"
+};
 static void errlogInitCallFunc(const iocshArgBuf *args)
 {
     errlogInit(args[0].ival);
@@ -272,10 +274,12 @@ static const iocshArg errlogInit2Arg0 = { "bufSize",iocshArgInt};
 static const iocshArg errlogInit2Arg1 = { "maxMsgSize",iocshArgInt};
 static const iocshArg * const errlogInit2Args[] =
     {&errlogInit2Arg0, &errlogInit2Arg1};
-static const iocshFuncDef errlogInit2FuncDef = {"errlogInit2", 2, errlogInit2Args,
-                                                "Initialize error log client buffer size and maximum message size\n"
-                                                "  bufSize    - size of circular buffer       (default = 1280 bytes)\n"
-                                                "  maxMsgSize - maximum size of error message (default =  256 bytes)\n"};
+static const iocshFuncDef errlogInit2FuncDef = {
+    "errlogInit2", 2, errlogInit2Args,
+    "Initialize error log client buffer size and maximum message size\n"
+    "  bufSize    - size of circular buffer       (default = 1280 bytes)\n"
+    "  maxMsgSize - maximum size of error message (default =  256 bytes)\n"
+};
 static void errlogInit2CallFunc(const iocshArgBuf *args)
 {
     errlogInit2(args[0].ival, args[1].ival);
@@ -378,10 +382,12 @@ static const iocshArg epicsMutexShowAllArg0 = { "onlyLocked",iocshArgInt};
 static const iocshArg epicsMutexShowAllArg1 = { "level",iocshArgInt};
 static const iocshArg * const epicsMutexShowAllArgs[2] =
     {&epicsMutexShowAllArg0,&epicsMutexShowAllArg1};
-static const iocshFuncDef epicsMutexShowAllFuncDef = {"epicsMutexShowAll",2,epicsMutexShowAllArgs,
-                                                      "Display information about all epicsMutex semaphores\n"
-                                                      "  onlyLocked - non-zero to show only locked semaphores\n"
-                                                      "  level      - desired information level to report\n"};
+static const iocshFuncDef epicsMutexShowAllFuncDef = {
+    "epicsMutexShowAll",2,epicsMutexShowAllArgs,
+    "Display information about all epicsMutex semaphores\n"
+    "  onlyLocked - non-zero to show only locked semaphores\n"
+    "  level      - desired information level to report\n"
+};
 static void epicsMutexShowAllCallFunc(const iocshArgBuf *args)
 {
     epicsMutexShowAll(args[0].ival,args[1].ival);

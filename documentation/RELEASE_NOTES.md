@@ -9,7 +9,14 @@ important to read more than just the first section to understand everything that
 has changed in each release.
 
 The PVA submodules each have their own individual sets of release notes which
-should also be read to understand what has changed since earlier releases.
+should also be read to understand what has changed since earlier releases:
+
+- [normativeTypes](https://github.com/epics-base/normativeTypesCPP/blob/master/documentation/RELEASE_NOTES.md)
+- [pvAccess](http://epics-base.github.io/pvAccessCPP/pvarelease_notes.html)
+- [pvData](http://epics-base.github.io/pvDataCPP/release_notes.html)
+- [pvDatabase](https://github.com/epics-base/pvDatabaseCPP/blob/master/documentation/RELEASE_NOTES.md)
+- [pva2pva](https://epics-base.github.io/pva2pva/release_notes.html)
+- [pvaClient](https://github.com/epics-base/pvaClientCPP/blob/master/documentation/RELEASE_NOTES.md)
 
 **This version of EPICS has not been released yet.**
 

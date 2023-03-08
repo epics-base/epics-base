@@ -7,7 +7,10 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*epicsConvert.h*/
+/**
+ * \file epicsConvert.h
+ * \brief Defining a function to convert a double to float..
+ */
 
 #ifndef INC_epicsConvert_H
 #define INC_epicsConvert_H

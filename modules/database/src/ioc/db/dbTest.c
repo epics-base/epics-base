@@ -506,62 +506,62 @@ long dbtgf(const char *pname)
     ret_options=0;
 
     dbr_type = DBR_STRING;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/MAX_STRING_SIZE));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/MAX_STRING_SIZE));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_CHAR;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsInt8)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsInt8))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_UCHAR;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsUInt8)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsUInt8))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_SHORT;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsInt16)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsInt16))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_USHORT;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsUInt16)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsUInt16))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_LONG;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsInt32)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsInt32))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_ULONG;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsUInt32)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsUInt32))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_INT64;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsInt64)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsInt64))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_UINT64;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsUInt64)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsUInt64))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_FLOAT;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsFloat32)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsFloat32))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_DOUBLE;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsFloat64)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsFloat64))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 
     dbr_type = DBR_ENUM;
-    no_elements = MIN(addr.no_elements,((sizeof(buffer))/sizeof(epicsEnum16)));
+    no_elements = MIN(addr.no_elements,(sizeof(buffer)/(sizeof(epicsEnum16))));
     status = dbGetField(&addr,dbr_type,pbuffer,&ret_options,&no_elements,NULL);
     printBuffer(status,dbr_type,pbuffer,0L,0L,no_elements,pMsgBuff,tab_size);
 

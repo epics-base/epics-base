@@ -405,6 +405,11 @@ and state alarms. The state alarms are configured in the below severity fields.
 These fields have the usual possible values for severity fields: NO_ALARM,
 MINOR, and MAJOR.
 
+The AFTC field sets the time constant on a low-pass filter that delays the
+reporting of limit alarms until the signal has been within the alarm range for
+that number of seconds (the default AFTC value of zero retains the previous
+behavior).
+
 The unknown state severity (UNSV) field, if set to MINOR or MAJOR, triggers an
 alarm when the record support routine cannot find a matching value in the state
 value fields for C<<< rval >>>.
@@ -420,7 +425,7 @@ for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.
 
-=fields UNSV, COSV, ZRSV, ONSV, TWSV, THSV, FRSV, FVSV, SXSV, SVSV, EISV, NISV, TESV, ELSV, TVSV, TTSV, FTSV, FFSV
+=fields UNSV, COSV, ZRSV, ONSV, TWSV, THSV, FRSV, FVSV, SXSV, SVSV, EISV, NISV, TESV, ELSV, TVSV, TTSV, FTSV, FFSV, AFTC
 
 =cut
 

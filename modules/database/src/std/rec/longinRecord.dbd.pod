@@ -74,6 +74,11 @@ The HYST field controls hysteresis to prevent alarm chattering from an input
 signal that is close to one of the limits and suffers from significant readout
 noise.
 
+The AFTC field sets the time constant on a low-pass filter that delays the
+reporting of limit alarms until the signal has been within the alarm range for
+that number of seconds (the default AFTC value of zero retains the previous
+behavior).
+
 The limit alarms are configured by the user in the HIHI, LOLO, HIGH, and LOW
 fields using numerical values. For each of these fields, there is a
 corresponding severity field which can be either NO_ALARM, MINOR, or MAJOR. The
@@ -81,7 +86,7 @@ HYST field can be used to specify a deadband around each limit.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists the fields related to
 alarms that are common to all record types.
 
-=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST
+=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, AFTC
 
 =head3 Monitor Parameters
 

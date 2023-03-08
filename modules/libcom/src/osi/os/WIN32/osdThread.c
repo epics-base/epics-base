@@ -68,7 +68,7 @@
 #elif _WIN32_WINNT >= 0x0501 /* Windows XP */
     typedef void (WINAPI *xPFLS_CALLBACK_FUNCTION) (void*);
     static
-    DWORD xFlsAlloc(xPFLS_CALLBACK_FUNCTION *dtor) {
+    DWORD xFlsAlloc(xPFLS_CALLBACK_FUNCTION dtor) {
         (void)dtor;
         return TlsAlloc();
     }
@@ -1087,7 +1087,7 @@ LIBCOM_API void epicsStdCall epicsThreadShowAll ( unsigned level )
 
 #ifdef USE_TLSALLOC_FALLBACK
     fprintf(epicsGetStdout(), "Warning: For this target, use of epicsThread* from non-EPICS threads\n"
-                              "         May leak memory.  Recommend to upgrade to >= Window Vista\n"
+                              "         May leak memory.  Recommend to upgrade to >= Window Vista\n");
 #endif
 
     if ( ! pGbl ) {

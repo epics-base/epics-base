@@ -23,6 +23,10 @@ INC += epicsNtp.h
 ifeq ($(RTEMS_QEMU_FIXUPS),YES)
 rtems_init_CPPFLAGS += -DQEMU_FIXUPS
 endif
+
+ifeq ($(EPICS_IS_QEMU),YES)
+setBootConfigFromNVRAM_CPPFLAGS += -DEPICS_IS_QEMU
+endif
 rtemsCom_SRCS += rtems_init.c
 rtemsCom_SRCS += rtems_config.c
 rtemsCom_SRCS += rtems_netconfig.c

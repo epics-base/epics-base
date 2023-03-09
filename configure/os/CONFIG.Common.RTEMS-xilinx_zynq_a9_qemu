@@ -13,7 +13,7 @@ GNU_TARGET = arm-rtems
 #ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 
 #Do not use dhcp
-ARCH_DEP_CFLAGS += -DEPICS_IS_QEMU=1
+EPICS_IS_QEMU = YES
 
 ### ??? how to define static network parameters here elegant?
 

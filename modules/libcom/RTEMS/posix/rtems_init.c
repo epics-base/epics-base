@@ -221,11 +221,13 @@ epicsRtemsMountLocalFilesystem(char **argv) __attribute__((weak));
 int
 epicsRtemsMountLocalFilesystem(char **argv)
 {
-    if(epicsRtemsFSImage==(void*)&epicsRtemsFSImage)
+    if(epicsRtemsFSImage==(void*)&epicsRtemsFSImage){
+	printf("!!!! no FS image provided !!!!!\n");
         return -1; /* no FS image provided. */
-    else if(epicsRtemsFSImage==NULL)
+    } else if(epicsRtemsFSImage==NULL){
+	printf("!!!! no FS image provided, but none is needed??? !!!!!\n");
         return 0; /* no FS image provided, but none is needed. */
-    else {
+    }else {
         printf("***** Using compiled in file data *****\n");
         if (epicsMemFsLoad(epicsRtemsFSImage) != 0) {
             printf("Can't unpack tar filesystem\n");
@@ -1072,7 +1074,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
      * Create a reasonable environment
      */
     fixup_hosts();
-    putenv ("TERM=xterm");
+    putenv ("TERM=vt100");
     putenv ("IOCSH_HISTSIZE=20");
     /*
      * Display some OS information
@@ -1244,8 +1246,21 @@ if (checkForNetInterfaces()) {
      * Run the EPICS startup script
      */
 
+#if 1
+    printf("***** Start an rtems shell before main, for debugging RTEMS system issues *****\n");
+    rtems_shell_init("SHLL", RTEMS_MINIMUM_STACK_SIZE * 4,
+                     100, "/dev/console",
+                     false, true,
+                     NULL);
+#endif
+
     printf ("***** Preparing EPICS application *****\n");
     iocshRegisterRTEMS ();
+    if(argv[1] == NULL) {
+        printf(" !!! argv[1] not set !!!\n");
+        argv[1] = "/";
+    }
+    printf ("***** Will set Directory to : %s\n", argv[1]);
     set_directory (argv[1]);
     epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
     atexit(exitHandler);
@@ -1256,14 +1271,6 @@ if (checkForNetInterfaces()) {
 #ifndef RTEMS_LEGACY_STACK
     // switch OS to async logging
     rtems_bsd_set_vprintf_handler(bsd_log_to_erl);
-#endif
-
-#if 0
-// Start an rtems shell before main, for debugging RTEMS system issues
-    rtems_shell_init("SHLL", RTEMS_MINIMUM_STACK_SIZE * 4,
-                     100, "/dev/console",
-                     false, true,
-                     NULL);
 #endif
 
     result = main ((sizeof argv / sizeof argv[0]) - 1, argv);

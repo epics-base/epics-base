@@ -13,7 +13,7 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static void test_double_percentile(void){
     const char format_string[] = "Format test string %%d";
-    const char result_string[] = "Format test string %%d";
+    const char result_string[] = "Format test string %d";
 
     /* set format string */
     testdbPutFieldOk("test_printf_rec.FMT", DBF_STRING, format_string);

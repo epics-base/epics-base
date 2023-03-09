@@ -57,15 +57,15 @@
 #  define EPICS_FUNCTION __func__
 #else
 /* Expands to a 'const char*' which describes the name of the current function scope */
-#   define EPICS_FUNCTION ("<unknown function>")
+#  define EPICS_FUNCTION ("<unknown function>")
 #endif
 #endif
 
-#ifndef EPICS_PRINTF_STYLE_ANNOTATION
+#ifndef EPICS_PRINTF_FMT
 /*
  * No format-string checking annotation
  */
-#   define EPICS_PRINTF_STYLE_ANNOTATION
+#   define EPICS_PRINTF_FMT(a) a
 #endif
 
 #endif  /* ifndef compilerDependencies_h */

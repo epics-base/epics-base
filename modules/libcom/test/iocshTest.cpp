@@ -8,6 +8,7 @@
 #include <string>
 #include <fstream>
 #include <set>
+#include <sstream>
 
 #include <osiUnistd.h>
 #include <osiFileName.h>
@@ -83,14 +84,85 @@ void assertCallFunc(const iocshArgBuf *args)
     iocshSetError(args[0].ival);
 }
 
+const iocshFuncDef testHelpFunction1Def = {"testHelpFunction1",0,0,
+                                    "Usage message of testHelpFunction1\n"};
+const iocshFuncDef testHelpFunction2Def = {"testHelpFunction2",0,0,
+                                    "Usage message of testHelpFunction2\n"};
+const iocshFuncDef testHelpFunction3Def = {"testHelpFunction3",0,0,
+                                    "Usage message of testHelpFunction3\n"};
+void doNothing(const iocshArgBuf *args)
+{
+    return;
+}
+
+std::string readFile(std::string filename)
+{
+    std::ifstream t(filename.c_str());
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    return buffer.str();
+}
+
+bool compareFiles(const std::string& p1, const std::string& p2) 
+{
+  std::ifstream f1(p1, std::ifstream::binary|std::ifstream::ate);
+  std::ifstream f2(p2, std::ifstream::binary|std::ifstream::ate);
+
+  if (f1.fail() || f2.fail()) {
+    return false; // File problem
+  }
+
+  if (f1.tellg() != f2.tellg()) {
+    return false; // Size mismatch
+  }
+
+  // Seek back to beginning and use std::equal to compare contents
+  f1.seekg(0, std::ifstream::beg);
+  f2.seekg(0, std::ifstream::beg);
+  return std::equal(std::istreambuf_iterator<char>(f1.rdbuf()),
+                    std::istreambuf_iterator<char>(),
+                    std::istreambuf_iterator<char>(f2.rdbuf()));
+}
+
+void testHelp(void)
+{
+    testDiag("iocshTest testHelp start");
+
+    // Filename to save help output to
+    const std::string filename = "testHelpOutput";
+
+    // Verify help lists expected commands
+    iocshCmd(("help > " + filename).c_str());
+    std::string contents = readFile(filename);
+    testOk1(contents.find("help") != std::string::npos);
+    testOk1(contents.find("testHelpFunction1") != std::string::npos);
+    testOk1(contents.find("testHelpFunction2") != std::string::npos);
+    testOk1(contents.find("testHelpFunction3") != std::string::npos);
+
+    // Confirm formatting of a single command
+    iocshCmd(("help testHelpFunction1 > " + filename).c_str());
+    testOk1(compareFiles(filename, "iocshTestHelpFunction1") == true);
+
+    // Confirm formatting of multiple commands
+    iocshCmd(("help testHelp* > " + filename).c_str());
+    testOk1(compareFiles(filename, "iocshTestHelpFunctions") == true);
+    
+    remove(filename.c_str());
+}
+
 } // namespace
+
+
 
 MAIN(iocshTest)
 {
-    testPlan(19);
+    testPlan(25);
     libComRegister();
     iocshRegister(&positionFuncDef, &positionCallFunc);
     iocshRegister(&assertFuncDef, &assertCallFunc);
+    iocshRegister(&testHelpFunction1Def, &doNothing);
+    iocshRegister(&testHelpFunction2Def, &doNothing);
+    iocshRegister(&testHelpFunction3Def, &doNothing);
     findTestData();
 
     testFile("iocshTestSuccess.cmd");
@@ -128,6 +200,8 @@ MAIN(iocshTest)
     testPosition("after_error", false);
     testPosition("after_error_1", false);
     reached.clear();
+
+    testHelp();
 
     // cleanup after macLib to avoid valgrind false positives
     dbmfFreeChunks();

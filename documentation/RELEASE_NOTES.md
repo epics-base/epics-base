@@ -102,6 +102,10 @@ and string formats, some of which support full nanosecond precision.
 More information is included in the filters documentation, which can be found in
 the `html/filters.html` document that is generated during the build
 
+### Allow adding new error symbols at any time
+
+`errSymbolAdd` can now be called after early initialization.
+
 ### Add conditional output (OOPT) to the longout record
 
 The longout record can now be configured using its new OOPT and OOCH fields

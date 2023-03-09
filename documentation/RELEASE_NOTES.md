@@ -206,7 +206,7 @@ Prior to this release, on POSIX and WIN32 targets, this
 allocation would not be `free()`d, resulting in a memory leak.
 
 This release fixed the leak on POSIX and WIN32 targets (excluding
-MSVC before vs2012, and the WINE runtime).
+earlier than Windows Vista and the WINE runtime).
 
 ### Fix `CHECK_RELEASE = WARN`
 

@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
- */
 /**
  * \file caeventmask.h
  * \brief event selections

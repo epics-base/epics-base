@@ -22,9 +22,10 @@ PERL_MODULES += EPICS/PodXHtml.pm
 PERL_MODULES += Pod/Markdown.pm
 PERL_MODULES += URI/Escape.pm
 
-# This goes into lib/perl, not bin/<host>
+# This also goes into lib/perl
 PERL_MODULES += EpicsHostArch.pl
 
+PERL_SCRIPTS += EpicsHostArch.pl
 PERL_SCRIPTS += assembleSnippets.pl
 PERL_SCRIPTS += convertRelease.pl
 PERL_SCRIPTS += cvsclean.pl

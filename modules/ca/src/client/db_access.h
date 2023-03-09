@@ -7,10 +7,15 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* base/include/db_access.h */
-/*      Author:          Bob Dalesio
- *      Date:            4-4-88
-*/
+
+/**
+ * \file db_access.h
+ * \brief Functions and type definitions for db access.
+ * \author  Bob Dalesio
+ * \date 04-04-88
+ * 
+ * architecture independent types. (so far this is sufficient for all archs we have ported to)
+ */
 
 #ifndef INC_db_access_H
 #define INC_db_access_H
@@ -31,25 +36,21 @@ extern "C" {
 #define MAX_ENUM_STRING_SIZE    26
 #define MAX_ENUM_STATES         16
 
-/*
- * architecture independent types
- *
- * (so far this is sufficient for all archs we have ported to)
- */
-typedef epicsOldString dbr_string_t;
-typedef epicsUInt8 dbr_char_t;
-typedef epicsInt16 dbr_short_t;
-typedef epicsUInt16     dbr_ushort_t;
-typedef epicsInt16 dbr_int_t;
-typedef epicsUInt16 dbr_enum_t;
-typedef epicsInt32 dbr_long_t;
-typedef epicsUInt32 dbr_ulong_t;
-typedef epicsFloat32 dbr_float_t;
-typedef epicsFloat64 dbr_double_t;
-typedef epicsUInt16     dbr_put_ackt_t;
-typedef epicsUInt16     dbr_put_acks_t;
-typedef epicsOldString dbr_stsack_string_t;
-typedef epicsOldString dbr_class_name_t;
+
+typedef epicsOldString dbr_string_t;           /**< \brief Channel Access Primitive Data Types - 40 character string */
+typedef epicsUInt8 dbr_char_t;                 /**< \brief Channel Access Primitive Data Types - 8 bit character */
+typedef epicsInt16 dbr_short_t;                /**< \brief Channel Access Primitive Data Typee - 16 bit integer */
+typedef epicsUInt16 dbr_ushort_t;              /**< \brief Channel Access Primitive Data Types - 16 bit unsigned integer */
+typedef epicsInt16 dbr_int_t;                  /**< \brief Channel Access Primitive Data Types - 16 bit integer */
+typedef epicsUInt16 dbr_enum_t;                /**< \brief Channel Access Primitive Data Types - 16 bit unsigned integer */
+typedef epicsInt32 dbr_long_t;                 /**< \brief Channel Access Primitive Data Types - 32 bit signed integer */
+typedef epicsUInt32 dbr_ulong_t;               /**< \brief Channel Access Primitive Data Types - 32 bit unsigned integer */
+typedef epicsFloat32 dbr_float_t;              /**< \brief Channel Access Primitive Data Types - 32 bit IEEE floating point */
+typedef epicsFloat64 dbr_double_t;             /**< \brief Channel Access Primitive Data Types - 64 bit IEEE floating point */
+typedef epicsUInt16 dbr_put_ackt_t;            /**< \brief Channel Access Primitive Data Types - 16 bit unsigned integer */
+typedef epicsUInt16 dbr_put_acks_t;            /**< \brief Channel Access Primitive Data Types - 16 bit unsigned integer */
+typedef epicsOldString dbr_stsack_string_t;    /**< \brief Channel Access Primitive Data Types - 40 character string */
+typedef epicsOldString dbr_class_name_t;       /**< \brief Channel Access Primitive Data Types - 40 character string */
 
 #ifndef db_accessHFORdb_accessC
 /* database field types */
@@ -115,14 +116,18 @@ typedef epicsOldString dbr_class_name_t;
 #define VALID_DB_REQ(x) ((x >= 0) && (x <= LAST_BUFFER_TYPE))
 #define INVALID_DB_REQ(x)       ((x < 0) || (x > LAST_BUFFER_TYPE))
 
-/*
+/**
+ * \brief Convert Epics Type to DBR Data Type
+ * 
  * The enumeration "epicsType" is an index to this array
  * of type DBR types. In some cases we select the a
  * larger type to avoid loss of information
  */
 LIBCA_API extern const int epicsTypeToDBR_XXXX [lastEpicsType+1];
 
-/*
+/**
+ * \brief Convert DBR Data Type to Epics Type
+ * 
  * The DBR_XXXX types are indices into this array
  */
 LIBCA_API extern const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
@@ -173,131 +178,131 @@ LIBCA_API extern const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
 
 /* VALUES WITH STATUS STRUCTURES */
 
-/* structure for a  string status field */
+/** \brief structure for a  string status field */
 struct dbr_sts_string {
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_string_t    value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_string_t    value;                  /**< \brief current value */
 };
 
-/* structure for a  string status and ack field */
+/** \brief structure for a  string status and ack field */
 struct dbr_stsack_string{
-        dbr_ushort_t    status;                 /* status of value */
-        dbr_ushort_t    severity;               /* severity of alarm */
-        dbr_ushort_t    ackt;                   /* ack transient? */
-        dbr_ushort_t    acks;                   /* ack severity */
-        dbr_string_t    value;                  /* current value */
+        dbr_ushort_t    status;                 /**< \brief status of value */
+        dbr_ushort_t    severity;               /**< \brief severity of alarm */
+        dbr_ushort_t    ackt;                   /**< \brief ack transient? */
+        dbr_ushort_t    acks;                   /**< \brief ack severity */
+        dbr_string_t    value;                  /**< \brief current value */
 };
-/* structure for an short status field */
+/** \brief structure for an short status field */
 struct dbr_sts_int{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_short_t     value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_short_t     value;                  /**< \brief current value */
 };
 struct dbr_sts_short{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_short_t     value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_short_t     value;                  /**< \brief current value */
 };
 
-/* structure for a  float status field */
+/** \brief structure for a  float status field */
 struct dbr_sts_float{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_float_t     value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_float_t     value;                  /**< \brief current value */
 };
 
-/* structure for a  enum status field */
+/** \brief structure for a  enum status field */
 struct dbr_sts_enum{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_enum_t      value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_enum_t      value;                  /**< \brief current value */
 };
 
-/* structure for a char status field */
+/** \brief structure for a char status field */
 struct dbr_sts_char{
-        dbr_short_t     status;         /* status of value */
-        dbr_short_t     severity;       /* severity of alarm */
-        dbr_char_t      RISC_pad;       /* RISC alignment */
-        dbr_char_t      value;          /* current value */
+        dbr_short_t     status;         /**< \brief status of value */
+        dbr_short_t     severity;       /**< \brief severity of alarm */
+        dbr_char_t      RISC_pad;       /**< \brief RISC alignment */
+        dbr_char_t      value;          /**< \brief current value */
 };
 
-/* structure for a long status field */
+/** \brief structure for a long status field */
 struct dbr_sts_long{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_long_t      value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_long_t      value;                  /**< \brief current value */
 };
 
-/* structure for a double status field */
+/** \brief structure for a double status field */
 struct dbr_sts_double{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_long_t      RISC_pad;               /* RISC alignment */
-        dbr_double_t    value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_long_t      RISC_pad;               /**< \brief RISC alignment */
+        dbr_double_t    value;                  /**< \brief current value */
 };
 
 /* VALUES WITH STATUS AND TIME STRUCTURES */
 
-/* structure for a  string time field */
+/** \brief structure for a  string time field */
 struct dbr_time_string{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        epicsTimeStamp  stamp;                  /* time stamp */
-        dbr_string_t    value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        epicsTimeStamp  stamp;                  /**< \brief time stamp */
+        dbr_string_t    value;                  /**< \brief current value */
 };
 
-/* structure for an short time field */
+/** \brief structure for an short time field */
 struct dbr_time_short{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        epicsTimeStamp  stamp;                  /* time stamp */
-        dbr_short_t     RISC_pad;               /* RISC alignment */
-        dbr_short_t     value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        epicsTimeStamp  stamp;                  /**< \brief time stamp */
+        dbr_short_t     RISC_pad;               /**< \brief RISC alignment */
+        dbr_short_t     value;                  /**< \brief current value */
 };
 
-/* structure for a  float time field */
+/** \brief structure for a  float time field */
 struct dbr_time_float{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        epicsTimeStamp  stamp;                  /* time stamp */
-        dbr_float_t     value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        epicsTimeStamp  stamp;                  /**< \brief time stamp */
+        dbr_float_t     value;                  /**< \brief current value */
 };
 
-/* structure for a  enum time field */
+/** \brief structure for a  enum time field */
 struct dbr_time_enum{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        epicsTimeStamp  stamp;                  /* time stamp */
-        dbr_short_t     RISC_pad;               /* RISC alignment */
-        dbr_enum_t      value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        epicsTimeStamp  stamp;                  /**< \brief time stamp */
+        dbr_short_t     RISC_pad;               /**< \brief RISC alignment */
+        dbr_enum_t      value;                  /**< \brief current value */
 };
 
-/* structure for a char time field */
+/** \brief structure for a char time field */
 struct dbr_time_char{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        epicsTimeStamp  stamp;                  /* time stamp */
-        dbr_short_t     RISC_pad0;              /* RISC alignment */
-        dbr_char_t      RISC_pad1;              /* RISC alignment */
-        dbr_char_t      value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        epicsTimeStamp  stamp;                  /**< \brief time stamp */
+        dbr_short_t     RISC_pad0;              /**< \brief RISC alignment */
+        dbr_char_t      RISC_pad1;              /**< \brief RISC alignment */
+        dbr_char_t      value;                  /**< \brief current value */
 };
 
-/* structure for a long time field */
+/** \brief structure for a long time field */
 struct dbr_time_long{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        epicsTimeStamp  stamp;                  /* time stamp */
-        dbr_long_t      value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        epicsTimeStamp  stamp;                  /**< \brief time stamp */
+        dbr_long_t      value;                  /**< \brief current value */
 };
 
-/* structure for a double time field */
+/** \brief structure for a double time field */
 struct dbr_time_double{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        epicsTimeStamp  stamp;                  /* time stamp */
-        dbr_long_t      RISC_pad;               /* RISC alignment */
-        dbr_double_t    value;                  /* current value */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        epicsTimeStamp  stamp;                  /**< \brief time stamp */
+        dbr_long_t      RISC_pad;               /**< \brief RISC alignment */
+        dbr_double_t    value;                  /**< \brief current value */
 };
 
 /* VALUES WITH STATUS AND GRAPHIC STRUCTURES */
@@ -305,101 +310,102 @@ struct dbr_time_double{
 /* structure for a graphic string */
         /* not implemented; use struct_dbr_sts_string */
 
-/* structure for a graphic short field */
+/** \brief structure for a graphic int field */
 struct dbr_gr_int{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_short_t     upper_disp_limit;       /* upper limit of graph */
-        dbr_short_t     lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_short_t     upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_short_t     lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_short_t     upper_alarm_limit;
         dbr_short_t     upper_warning_limit;
         dbr_short_t     lower_warning_limit;
         dbr_short_t     lower_alarm_limit;
-        dbr_short_t     value;                  /* current value */
+        dbr_short_t     value;                  /**< \brief current value */
 };
+/** \brief structure for a graphic short field */
 struct dbr_gr_short{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_short_t     upper_disp_limit;       /* upper limit of graph */
-        dbr_short_t     lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_short_t     upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_short_t     lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_short_t     upper_alarm_limit;
         dbr_short_t     upper_warning_limit;
         dbr_short_t     lower_warning_limit;
         dbr_short_t     lower_alarm_limit;
-        dbr_short_t     value;                  /* current value */
+        dbr_short_t     value;                  /**< \brief current value */
 };
 
-/* structure for a graphic floating point field */
+/** \brief structure for a graphic floating point field */
 struct dbr_gr_float{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_short_t     precision;              /* number of decimal places */
-        dbr_short_t     RISC_pad0;              /* RISC alignment */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_float_t     upper_disp_limit;       /* upper limit of graph */
-        dbr_float_t     lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_short_t     precision;              /**< \brief number of decimal places */
+        dbr_short_t     RISC_pad0;              /**< \brief RISC alignment */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_float_t     upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_float_t     lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_float_t     upper_alarm_limit;
         dbr_float_t     upper_warning_limit;
         dbr_float_t     lower_warning_limit;
         dbr_float_t     lower_alarm_limit;
-        dbr_float_t     value;                  /* current value */
+        dbr_float_t     value;                  /**< \brief current value */
 };
 
-/* structure for a graphic enumeration field */
+/** \brief structure for a graphic enumeration field */
 struct dbr_gr_enum{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_short_t     no_str;                 /* number of strings */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_short_t     no_str;                 /**< \brief number of strings */
         char            strs[MAX_ENUM_STATES][MAX_ENUM_STRING_SIZE];
-                                                /* state strings */
-        dbr_enum_t      value;                  /* current value */
+                                                /**< \brief state strings */
+        dbr_enum_t      value;                  /**< \brief current value */
 };
 
-/* structure for a graphic char field */
+/** \brief structure for a graphic char field */
 struct dbr_gr_char{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_char_t      upper_disp_limit;       /* upper limit of graph */
-        dbr_char_t      lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_char_t      upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_char_t      lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_char_t      upper_alarm_limit;
         dbr_char_t      upper_warning_limit;
         dbr_char_t      lower_warning_limit;
         dbr_char_t      lower_alarm_limit;
-        dbr_char_t      RISC_pad;               /* RISC alignment */
-        dbr_char_t      value;                  /* current value */
+        dbr_char_t      RISC_pad;               /**< \brief RISC alignment */
+        dbr_char_t      value;                  /**< \brief current value */
 };
 
-/* structure for a graphic long field */
+/** \brief structure for a graphic long field */
 struct dbr_gr_long{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_long_t      upper_disp_limit;       /* upper limit of graph */
-        dbr_long_t      lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_long_t      upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_long_t      lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_long_t      upper_alarm_limit;
         dbr_long_t      upper_warning_limit;
         dbr_long_t      lower_warning_limit;
         dbr_long_t      lower_alarm_limit;
-        dbr_long_t      value;                  /* current value */
+        dbr_long_t      value;                  /**< \brief current value */
 };
 
-/* structure for a graphic double field */
+/** \brief structure for a graphic double field */
 struct dbr_gr_double{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_short_t     precision;              /* number of decimal places */
-        dbr_short_t     RISC_pad0;              /* RISC alignment */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_double_t    upper_disp_limit;       /* upper limit of graph */
-        dbr_double_t    lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_short_t     precision;              /**< \brief number of decimal places */
+        dbr_short_t     RISC_pad0;              /**< \brief RISC alignment */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_double_t    upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_double_t    lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_double_t    upper_alarm_limit;
         dbr_double_t    upper_warning_limit;
         dbr_double_t    lower_warning_limit;
         dbr_double_t    lower_alarm_limit;
-        dbr_double_t    value;                  /* current value */
+        dbr_double_t    value;                  /**< \brief current value */
 };
 
 /* VALUES WITH STATUS, GRAPHIC and CONTROL STRUCTURES */
@@ -407,126 +413,127 @@ struct dbr_gr_double{
 /* structure for a control string */
         /* not implemented; use struct_dbr_sts_string */
 
-/* structure for a control integer */
+/** \brief structure for a control integer */
 struct dbr_ctrl_int{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_short_t     upper_disp_limit;       /* upper limit of graph */
-        dbr_short_t     lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_short_t     upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_short_t     lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_short_t     upper_alarm_limit;
         dbr_short_t     upper_warning_limit;
         dbr_short_t     lower_warning_limit;
         dbr_short_t     lower_alarm_limit;
-        dbr_short_t     upper_ctrl_limit;       /* upper control limit */
-        dbr_short_t     lower_ctrl_limit;       /* lower control limit */
-        dbr_short_t     value;                  /* current value */
+        dbr_short_t     upper_ctrl_limit;       /**< \brief upper control limit */
+        dbr_short_t     lower_ctrl_limit;       /**< \brief lower control limit */
+        dbr_short_t     value;                  /**< \brief current value */
 };
+/** \brief structure for a control short */
 struct dbr_ctrl_short{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_short_t     upper_disp_limit;       /* upper limit of graph */
-        dbr_short_t     lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_short_t     upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_short_t     lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_short_t     upper_alarm_limit;
         dbr_short_t     upper_warning_limit;
         dbr_short_t     lower_warning_limit;
         dbr_short_t     lower_alarm_limit;
-        dbr_short_t     upper_ctrl_limit;       /* upper control limit */
-        dbr_short_t     lower_ctrl_limit;       /* lower control limit */
-        dbr_short_t     value;                  /* current value */
+        dbr_short_t     upper_ctrl_limit;       /**< \brief upper control limit */
+        dbr_short_t     lower_ctrl_limit;       /**< \brief lower control limit */
+        dbr_short_t     value;                  /**< \brief current value */
 };
 
-/* structure for a control floating point field */
+/** \brief structure for a control floating point field */
 struct dbr_ctrl_float{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_short_t     precision;              /* number of decimal places */
-        dbr_short_t     RISC_pad;               /* RISC alignment */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_float_t     upper_disp_limit;       /* upper limit of graph */
-        dbr_float_t     lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_short_t     precision;              /**< \brief number of decimal places */
+        dbr_short_t     RISC_pad;               /**< \brief RISC alignment */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_float_t     upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_float_t     lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_float_t     upper_alarm_limit;
         dbr_float_t     upper_warning_limit;
         dbr_float_t     lower_warning_limit;
         dbr_float_t     lower_alarm_limit;
-        dbr_float_t     upper_ctrl_limit;       /* upper control limit */
-        dbr_float_t     lower_ctrl_limit;       /* lower control limit */
-        dbr_float_t     value;                  /* current value */
+        dbr_float_t     upper_ctrl_limit;       /**< \brief upper control limit */
+        dbr_float_t     lower_ctrl_limit;       /**< \brief lower control limit */
+        dbr_float_t     value;                  /**< \brief current value */
 };
 
-/* structure for a control enumeration field */
+/** \brief structure for a control enumeration field */
 struct dbr_ctrl_enum{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_short_t     no_str;                 /* number of strings */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_short_t     no_str;                 /**< \brief number of strings */
         char    strs[MAX_ENUM_STATES][MAX_ENUM_STRING_SIZE];
-                                        /* state strings */
-        dbr_enum_t      value;          /* current value */
+                                        /**< \brief state strings */
+        dbr_enum_t      value;          /**< \brief current value */
 };
 
-/* structure for a control char field */
+/** \brief structure for a control char field */
 struct dbr_ctrl_char{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_char_t      upper_disp_limit;       /* upper limit of graph */
-        dbr_char_t      lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_char_t      upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_char_t      lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_char_t      upper_alarm_limit;
         dbr_char_t      upper_warning_limit;
         dbr_char_t      lower_warning_limit;
         dbr_char_t      lower_alarm_limit;
-        dbr_char_t      upper_ctrl_limit;       /* upper control limit */
-        dbr_char_t      lower_ctrl_limit;       /* lower control limit */
-        dbr_char_t      RISC_pad;               /* RISC alignment */
-        dbr_char_t      value;                  /* current value */
+        dbr_char_t      upper_ctrl_limit;       /**< \brief upper control limit */
+        dbr_char_t      lower_ctrl_limit;       /**< \brief lower control limit */
+        dbr_char_t      RISC_pad;               /**< \brief RISC alignment */
+        dbr_char_t      value;                  /**< \brief current value */
 };
 
-/* structure for a control long field */
+/** \brief structure for a control long field */
 struct dbr_ctrl_long{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_long_t      upper_disp_limit;       /* upper limit of graph */
-        dbr_long_t      lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_long_t      upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_long_t      lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_long_t      upper_alarm_limit;
         dbr_long_t      upper_warning_limit;
         dbr_long_t      lower_warning_limit;
         dbr_long_t      lower_alarm_limit;
-        dbr_long_t      upper_ctrl_limit;       /* upper control limit */
-        dbr_long_t      lower_ctrl_limit;       /* lower control limit */
-        dbr_long_t      value;                  /* current value */
+        dbr_long_t      upper_ctrl_limit;       /**< \brief upper control limit */
+        dbr_long_t      lower_ctrl_limit;       /**< \brief lower control limit */
+        dbr_long_t      value;                  /**< \brief current value */
 };
 
-/* structure for a control double field */
+/** \brief structure for a control double field */
 struct dbr_ctrl_double{
-        dbr_short_t     status;                 /* status of value */
-        dbr_short_t     severity;               /* severity of alarm */
-        dbr_short_t     precision;              /* number of decimal places */
-        dbr_short_t     RISC_pad0;              /* RISC alignment */
-        char            units[MAX_UNITS_SIZE];  /* units of value */
-        dbr_double_t    upper_disp_limit;       /* upper limit of graph */
-        dbr_double_t    lower_disp_limit;       /* lower limit of graph */
+        dbr_short_t     status;                 /**< \brief status of value */
+        dbr_short_t     severity;               /**< \brief severity of alarm */
+        dbr_short_t     precision;              /**< \brief number of decimal places */
+        dbr_short_t     RISC_pad0;              /**< \brief RISC alignment */
+        char            units[MAX_UNITS_SIZE];  /**< \brief units of value */
+        dbr_double_t    upper_disp_limit;       /**< \brief upper limit of graph */
+        dbr_double_t    lower_disp_limit;       /**< \brief lower limit of graph */
         dbr_double_t    upper_alarm_limit;
         dbr_double_t    upper_warning_limit;
         dbr_double_t    lower_warning_limit;
         dbr_double_t    lower_alarm_limit;
-        dbr_double_t    upper_ctrl_limit;       /* upper control limit */
-        dbr_double_t    lower_ctrl_limit;       /* lower control limit */
-        dbr_double_t    value;                  /* current value */
+        dbr_double_t    upper_ctrl_limit;       /**< \brief upper control limit */
+        dbr_double_t    lower_ctrl_limit;       /**< \brief lower control limit */
+        dbr_double_t    value;                  /**< \brief current value */
 };
 
 #define dbr_size_n(TYPE,COUNT)\
 ((unsigned)((COUNT)<0?dbr_size[TYPE]:dbr_size[TYPE]+((COUNT)-1)*dbr_value_size[TYPE]))
 
-/* size for each type - array indexed by the DBR_ type code */
+/** \brief size for each type - array indexed by the DBR_ type code */
 LIBCA_API extern const unsigned short dbr_size[];
 
-/* size for each type's value - array indexed by the DBR_ type code */
+/** \brief size for each type's value - array indexed by the DBR_ type code */
 LIBCA_API extern const unsigned short dbr_value_size[];
 
 #ifndef db_accessHFORdb_accessC
-/* class for each type's value */
+/** \brief class for each type's value */
 enum dbr_value_class {
                 dbr_class_int,
                 dbr_class_float,
@@ -535,14 +542,12 @@ enum dbr_value_class {
 
 LIBCA_API extern const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1];
 
-/*
- * ptr to value given a pointer to the structure and the DBR type
+/** \brief ptr to value given a pointer to the structure and the DBR type
  */
 #define dbr_value_ptr(PDBR, DBR_TYPE) \
 ((void *)(((char *)PDBR)+dbr_value_offset[DBR_TYPE]))
 
-/*
- * ptr to value given a pointer to the structure and the structure declaration
+/** \brief ptr to value given a pointer to the structure and the structure declaration
  */
 #define dbr_value_ptr_from_structure(PDBR, STRUCTURE)\
 ((void *)(((char *)PDBR)+BYTE_OS(STRUCTURE, value)))
@@ -550,48 +555,48 @@ LIBCA_API extern const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1];
 LIBCA_API extern const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1];
 
 
-/* union for each fetch buffers */
+/** \brief union for each fetch buffers */
 union db_access_val{
-        dbr_string_t            strval;         /* string max size            */
-        dbr_short_t             shrtval;        /* short                      */
-        dbr_short_t             intval;         /* short                      */
-        dbr_float_t             fltval;         /* IEEE Float                 */
-        dbr_enum_t              enmval;         /* item number                */
-        dbr_char_t              charval;        /* character                  */
-        dbr_long_t              longval;        /* long                       */
-        dbr_double_t            doubleval;      /* double                     */
-        struct dbr_sts_string   sstrval;        /* string field with status   */
-        struct dbr_sts_short    sshrtval;       /* short field with status    */
-        struct dbr_sts_float    sfltval;        /* float field with status    */
-        struct dbr_sts_enum     senmval;        /* item number with status    */
-        struct dbr_sts_char     schrval;        /* char field with status     */
-        struct dbr_sts_long     slngval;        /* long field with status     */
-        struct dbr_sts_double   sdblval;        /* double field with time     */
-        struct dbr_time_string  tstrval;        /* string field with time     */
-        struct dbr_time_short   tshrtval;       /* short field with time      */
-        struct dbr_time_float   tfltval;        /* float field with time      */
-        struct dbr_time_enum    tenmval;        /* item number with time      */
-        struct dbr_time_char    tchrval;        /* char field with time       */
-        struct dbr_time_long    tlngval;        /* long field with time       */
-        struct dbr_time_double  tdblval;        /* double field with time     */
-        struct dbr_sts_string   gstrval;        /* graphic string info        */
-        struct dbr_gr_short     gshrtval;       /* graphic short info         */
-        struct dbr_gr_float     gfltval;        /* graphic float info         */
-        struct dbr_gr_enum      genmval;        /* graphic item info          */
-        struct dbr_gr_char      gchrval;        /* graphic char info          */
-        struct dbr_gr_long      glngval;        /* graphic long info          */
-        struct dbr_gr_double    gdblval;        /* graphic double info        */
-        struct dbr_sts_string   cstrval;        /* control string info        */
-        struct dbr_ctrl_short   cshrtval;       /* control short info         */
-        struct dbr_ctrl_float   cfltval;        /* control float info         */
-        struct dbr_ctrl_enum    cenmval;        /* control item info          */
-        struct dbr_ctrl_char    cchrval;        /* control char info          */
-        struct dbr_ctrl_long    clngval;        /* control long info          */
-        struct dbr_ctrl_double  cdblval;        /* control double info        */
-        dbr_put_ackt_t          putackt;        /* item number                */
-        dbr_put_acks_t          putacks;        /* item number                */
-        struct dbr_sts_string   sastrval;       /* string field with status   */
-        dbr_string_t            classname;      /* string max size            */
+        dbr_string_t            strval;         /**< \brief string max size            */
+        dbr_short_t             shrtval;        /**< \brief short                      */
+        dbr_short_t             intval;         /**< \brief short                      */
+        dbr_float_t             fltval;         /**< \brief IEEE Float                 */
+        dbr_enum_t              enmval;         /**< \brief item number                */
+        dbr_char_t              charval;        /**< \brief character                  */
+        dbr_long_t              longval;        /**< \brief long                       */
+        dbr_double_t            doubleval;      /**< \brief double                     */
+        struct dbr_sts_string   sstrval;        /**< \brief string field with status   */
+        struct dbr_sts_short    sshrtval;       /**< \brief short field with status    */
+        struct dbr_sts_float    sfltval;        /**< \brief float field with status    */
+        struct dbr_sts_enum     senmval;        /**< \brief item number with status    */
+        struct dbr_sts_char     schrval;        /**< \brief char field with status     */
+        struct dbr_sts_long     slngval;        /**< \brief long field with status     */
+        struct dbr_sts_double   sdblval;        /**< \brief double field with time     */
+        struct dbr_time_string  tstrval;        /**< \brief string field with time     */
+        struct dbr_time_short   tshrtval;       /**< \brief short field with time      */
+        struct dbr_time_float   tfltval;        /**< \brief float field with time      */
+        struct dbr_time_enum    tenmval;        /**< \brief item number with time      */
+        struct dbr_time_char    tchrval;        /**< \brief char field with time       */
+        struct dbr_time_long    tlngval;        /**< \brief long field with time       */
+        struct dbr_time_double  tdblval;        /**< \brief double field with time     */
+        struct dbr_sts_string   gstrval;        /**< \brief graphic string info        */
+        struct dbr_gr_short     gshrtval;       /**< \brief graphic short info         */
+        struct dbr_gr_float     gfltval;        /**< \brief graphic float info         */
+        struct dbr_gr_enum      genmval;        /**< \brief graphic item info          */
+        struct dbr_gr_char      gchrval;        /**< \brief graphic char info          */
+        struct dbr_gr_long      glngval;        /**< \brief graphic long info          */
+        struct dbr_gr_double    gdblval;        /**< \brief graphic double info        */
+        struct dbr_sts_string   cstrval;        /**< \brief control string info        */
+        struct dbr_ctrl_short   cshrtval;       /**< \brief control short info         */
+        struct dbr_ctrl_float   cfltval;        /**< \brief control float info         */
+        struct dbr_ctrl_enum    cenmval;        /**< \brief control item info          */
+        struct dbr_ctrl_char    cchrval;        /**< \brief control char info          */
+        struct dbr_ctrl_long    clngval;        /**< \brief control long info          */
+        struct dbr_ctrl_double  cdblval;        /**< \brief control double info        */
+        dbr_put_ackt_t          putackt;        /**< \brief item number                */
+        dbr_put_acks_t          putacks;        /**< \brief item number                */
+        struct dbr_sts_string   sastrval;       /**< \brief string field with status   */
+        dbr_string_t            classname;      /**< \brief string max size            */
 };
 
 /*----------------------------------------------------------------------------

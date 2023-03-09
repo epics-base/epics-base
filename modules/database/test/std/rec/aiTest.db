@@ -1,0 +1,20 @@
+record(ai, "test_ai_rec") {
+}
+
+record(ao, "test_ai_link_rec") {
+
+}
+
+record(ai, "test_ai_rec2") {
+}
+
+record(ao, "test_ai_link_rec2") {
+
+}
+
+record(ai, "test_ai_rec3") {
+}
+
+record(ao, "test_ai_link_rec3") {
+
+}

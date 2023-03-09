@@ -23,6 +23,11 @@ PROD_LIBS = dbRecStdTest dbRecStd dbCore ca Com
 TARGETS += $(COMMON_DIR)/recTestIoc.dbd
 DBDDEPENDS_FILES += recTestIoc.dbd$(DEP)
 recTestIoc_DBD = base.dbd
+recTestIoc_DBD += bptTypeKdegC.dbd
+recTestIoc_DBD += bptTypeKdegF.dbd
+recTestIoc_DBD += bptTypeJdegF.dbd
+recTestIoc_DBD += bptTypeJdegC.dbd
+
 TESTFILES += $(COMMON_DIR)/recTestIoc.dbd
 
 testHarness_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
@@ -113,6 +118,13 @@ printfTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += printfTest.c
 TESTFILES += ../printfTest.db
 TESTS += printfTest
+
+TESTPROD_HOST += aiTest
+aiTest_SRCS += aiTest.c
+aiTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += aiTest.c
+TESTFILES += ../aiTest.db
+TESTS += aiTest
 
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)

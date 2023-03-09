@@ -20,14 +20,19 @@
  *  505 665 1831
  *
  */
-
+/**
+ * \file cadef.h
+ * \brief CA functions and interfaces definition header file.
+ * \author Jeffrey O. Hill
+ * \note done in two ifdef steps so that we will remain compatible with traditional C
+ * 
+ * It includes many other header files (operating system specific and otherwise), and therefore
+ * the application must also specify "<EPICS base>/include/os/<arch>" in its header file search path.
+ * 
+ */
 #ifndef INC_cadef_H
 #define INC_cadef_H
 
-/*
- * done in two ifdef steps so that we will remain compatible with
- * traditional C
- */
 #ifndef CA_DONT_INCLUDE_STDARGH
 #   include <stdarg.h>
 #endif
@@ -44,15 +49,15 @@ extern "C" {
 #endif
 
 typedef struct oldChannelNotify *chid;
-typedef chid                    chanId; /* for when the structures field name is "chid" */
+typedef chid                    chanId; /**< \brief for when the structures field name is "chid" */
 typedef long                    chtype;
 typedef struct oldSubscription  *evid;
 typedef double                  ca_real;
 
-/* arguments passed to user connection handlers */
+/** \brief arguments passed to user connection handlers */
 struct  connection_handler_args {
-    chanId  chid;  /* channel id */
-    long    op;    /* one of CA_OP_CONN_UP or CA_OP_CONN_DOWN */
+    chanId  chid;  /**< \brief channel id */
+    long    op;    /**< \brief one of CA_OP_CONN_UP or CA_OP_CONN_DOWN */
 };
 
 typedef void caCh (struct connection_handler_args args);
@@ -62,19 +67,19 @@ typedef struct ca_access_rights {
     unsigned    write_access:1;
 } caar;
 
-/* arguments passed to user access rights handlers */
+/** \brief arguments passed to user access rights handlers */
 struct  access_rights_handler_args {
-    chanId  chid;   /* channel id */
-    caar    ar;     /* new access rights state */
+    chanId  chid;   /**< \brief channel id */
+    caar    ar;     /**< \brief new access rights state */
 };
 
 typedef void caArh (struct access_rights_handler_args args);
 
-/*  The conversion routine to call for each type    */
+/** \brief The conversion routine to call for each type */
 #define VALID_TYPE(TYPE)  (((unsigned short)TYPE)<=LAST_BUFFER_TYPE)
 
-/*
- * Arguments passed to event handlers and get/put call back handlers.
+/**
+ * \brief Arguments passed to event handlers and get/put call back handlers.
  *
  * The status field below is the CA ECA_XXX status of the requested
  * operation which is saved from when the operation was attempted in the
@@ -83,58 +88,58 @@ typedef void caArh (struct access_rights_handler_args args);
  * and the requested operation can not be assumed to be successful.
  */
 typedef struct event_handler_args {
-    void            *usr;   /* user argument supplied with request */
-    chanId          chid;   /* channel id */
-    long            type;   /* the type of the item returned */
-    long            count;  /* the element count of the item returned */
-    const void      *dbr;   /* a pointer to the item returned */
-    int             status; /* ECA_XXX status of the requested op from the server */
+    void            *usr;   /**< \brief user argument supplied with request */
+    chanId          chid;   /**< \brief channel id */
+    long            type;   /**< \brief the type of the item returned */
+    long            count;  /**< \brief the element count of the item returned */
+    const void      *dbr;   /**< \brief a pointer to the item returned */
+    int             status; /**< \brief ECA_XXX status of the requested op from the server */
 } evargs;
 typedef void caEventCallBackFunc (struct event_handler_args);
 
+/** \brief A built-in subscription update callback handler for debugging purposes that prints diagnostics to standard out. */
 LIBCA_API void epicsStdCall ca_test_event
 (
     struct event_handler_args
 );
 
-/* arguments passed to user exception handlers */
+/** \brief arguments passed to user exception handlers */
 struct exception_handler_args {
-    void            *usr;   /* user argument supplied when installed */
-    chanId          chid;   /* channel id (may be nill) */
-    long            type;   /* type requested */
-    long            count;  /* count requested */
-    void            *addr;  /* user's address to write results of CA_OP_GET */
-    long            stat;   /* channel access ECA_XXXX status code */
-    long            op;     /* CA_OP_GET, CA_OP_PUT, ..., CA_OP_OTHER */
-    const char      *ctx;   /* a character string containing context info */
-    const char      *pFile; /* source file name (may be NULL) */
-    unsigned        lineNo; /* source file line number (may be zero) */
+    void            *usr;   /**< \brief user argument supplied when installed */
+    chanId          chid;   /**< \brief channel id (may be nill) */
+    long            type;   /**< \brief type requested */
+    long            count;  /**< \brief count requested */
+    void            *addr;  /**< \brief user's address to write results of CA_OP_GET */
+    long            stat;   /**< \brief channel access ECA_XXXX status code */
+    long            op;     /**< \brief CA_OP_GET, CA_OP_PUT, ..., CA_OP_OTHER */
+    const char      *ctx;   /**< \brief a character string containing context info */
+    const char      *pFile; /**< \brief source file name (may be NULL) */
+    unsigned        lineNo; /**< \brief source file line number (may be zero) */
 };
 
+/** \brief Identifier for a CA Synchronous Group */
 typedef unsigned CA_SYNC_GID;
 
-/*
- *  External OP codes for CA operations
- */
+/** \brief External OP code for CA operation "GET" */
 #define CA_OP_GET             0
+/** \brief External OP code for CA operation "PUT" */
 #define CA_OP_PUT             1
+/** \brief External OP code for CA operation "CREATE CHANNEL" */
 #define CA_OP_CREATE_CHANNEL  2
+/** \brief External OP code for CA operation "ADD EVENT" */
 #define CA_OP_ADD_EVENT       3
+/** \brief External OP code for CA operation "CLEAR EVENT" */
 #define CA_OP_CLEAR_EVENT     4
+/** \brief External OP code for CA operation "OTHER" */
 #define CA_OP_OTHER           5
-
-/*
- * used with connection_handler_args
- */
+/** \brief xternal OP code for CA operation used with connection_handler_args "CONN UP" */
 #define CA_OP_CONN_UP       6
+/** \brief xternal OP code for CA operation used with connection_handler_args "CONN DOWN" */
 #define CA_OP_CONN_DOWN     7
-
-/* deprecated */
+/** \brief deprecated */
 #define CA_OP_SEARCH        2
 
-/*
- * provides efficient test and display of channel access errors
- */
+/** \brief provides efficient test and display of channel access errors */
 #define     SEVCHK(CA_ERROR_CODE, MESSAGE_STRING) \
 { \
     int ca_unique_status_name  = (CA_ERROR_CODE); \
@@ -146,8 +151,7 @@ typedef unsigned CA_SYNC_GID;
             __LINE__); \
 }
 
-
-#define TYPENOTCONN (-1) /* the channel's native type when disconnected   */
+#define TYPENOTCONN (-1) /**< \brief the channel's native type when disconnected */
 LIBCA_API short epicsStdCall ca_field_type (chid chan);
 LIBCA_API unsigned long epicsStdCall ca_element_count (chid chan);
 LIBCA_API const char * epicsStdCall ca_name (chid chan);
@@ -156,8 +160,7 @@ LIBCA_API void * epicsStdCall ca_puser (chid chan);
 LIBCA_API unsigned epicsStdCall ca_read_access (chid chan);
 LIBCA_API unsigned epicsStdCall ca_write_access (chid chan);
 
-/*
- *  cs_ - `channel state'
+/** \brief cs_ - `channel state'
  *
  *  cs_never_conn       valid chid, IOC not found
  *  cs_prev_conn        valid chid, IOC was found, but unavailable
@@ -167,24 +170,36 @@ LIBCA_API unsigned epicsStdCall ca_write_access (chid chan);
 enum channel_state {cs_never_conn, cs_prev_conn, cs_conn, cs_closed};
 LIBCA_API enum channel_state epicsStdCall ca_state (chid chan);
 
-/************************************************************************/
-/*  Perform Library Initialization                                      */
-/*                                                                      */
-/*  Must be called once before calling any of the other routines        */
-/************************************************************************/
+/** \brief Perform Task Initialization
+ * 
+ * Must be called once before calling any of the other routines
+ */
 LIBCA_API int epicsStdCall ca_task_initialize (void);
 enum ca_preemptive_callback_select
 { ca_disable_preemptive_callback, ca_enable_preemptive_callback };
+/** \brief CA context creation
+ * 
+ * This function, or ca_attach_context(), should be called once from each thread
+ * prior to making any of the other Channel Access calls. If one of the above is not
+ * called before making other CA calls then a non-preemptive context is created by default,
+ * and future attempts to create a preemptive context for the current threads will fail.
+ * 
+ * Thie select argument specifies if preemptive invocation of callback functions is allowed.
+ * If so your callback functions might be called when the thread that calls this routine is
+ * not executing in the CA client library. 
+ */
 LIBCA_API int epicsStdCall 
         ca_context_create (enum ca_preemptive_callback_select select);
 LIBCA_API void epicsStdCall ca_detach_context (); 
 
-/************************************************************************/
-/*  Remove CA facility from your task                                   */
-/*                                                                      */
-/*  Normally called automatically at task exit                          */
-/************************************************************************/
+/** \brief Call at the end of task.
+ * 
+ * Remove CA facility from your task called automatically at task exit. */
 LIBCA_API int epicsStdCall ca_task_exit (void);
+/** \brief Shut down the calling thread's channel access client context and free any resources allocated.
+ * 
+ * Also detach the calling thread from any CA client context.
+ */
 LIBCA_API void epicsStdCall ca_context_destroy (void);
 
 typedef unsigned capri;
@@ -196,119 +211,113 @@ typedef unsigned capri;
 #define CA_PRIORITY_ARCHIVE 20
 #define CA_PRIORITY_OPI 0
 
-/*
- * ca_create_channel ()
- *
- * pChanName            R   channel name string
- * pConnStateCallback   R   address of connection state change
- *                          callback function
- * pUserPrivate         R   placed in the channel's user private field
- *                          o can be fetched later by ca_puser(CHID)
- *                          o passed as void * arg to *pConnectCallback above
- * priority             R   priority level in the server 0 - 100
- * pChanID              RW  channel id written here
+/** \brief creates a CA channel.
+ * 
+ * The CA client library will attempt to establish and maintain a virtual circuit between
+ * the caller's application and a named process variable in a CA server. Each call to ca
+ * create_channel() allocates resources in the CA client library and potentially also a CA server.
+ * The function ca_clear_channel() is used to release these resources. If successful, the routine writes
+ * a channel identifier into the user's variable of type "chid". This identifier can be used
+ * with any channel access call that operates on a channel.
  */
 LIBCA_API int epicsStdCall ca_create_channel
 (
-     const char     *pChanName,
-     caCh           *pConnStateCallback,
-     void           *pUserPrivate,
-     capri          priority,
-     chid           *pChanID
+     const char     *pChanName,          /**< R - channel name string */
+     caCh           *pConnStateCallback, /**< R - address of connection state change callback function */
+     void           *pUserPrivate,       /**< R - placed in the channel's user private field, can be fetched later by ca_puser(CHID), passed as void * arg to *pConnectCallback above */
+     capri          priority,            /**< R - priority level in the server 0 - 100 */
+     chid           *pChanID             /**< RW - channel id written here */
 );
 
-/*
- * ca_change_connection_event()
- *
- * chan     R   channel identifier
- * pfunc    R   address of connection call-back function
- */
+/** \brief The change connection event */
 LIBCA_API int epicsStdCall ca_change_connection_event
 (
-     chid       chan,
-     caCh *     pfunc
+     chid       chan,  /**< R - channel identifier */
+     caCh *     pfunc  /**< R - address of connection call-back function */
 );
 
-/*
- * ca_replace_access_rights_event ()
- *
- * chan     R   channel identifier
- * pfunc    R   address of access rights call-back function
+/** \brief Install or replace the access rights state change callback handler for the specified channel.
+ * 
+ * The callback handler is called in the following situations.
+ * - whenever CA connects the channel immediately before the channel's connection handler is called
+ * - whenever CA disconnects the channel immediately after the channel's disconnect callback is called
+ * - once immediately after installation if the channel is connected.
+ * - whenever the access rights state of a connected channel changes
+ * When a channel is created no access rights handler is installed.
  */
 LIBCA_API int epicsStdCall ca_replace_access_rights_event (
-     chid   chan,
-     caArh  *pfunc
+     chid   chan,   /**< R - channel identifier */
+     caArh  *pfunc  /**< R - address of access rights call-back function */
 );
 
-/*
- * ca_add_exception_event ()
+/** \brief Replace the currently installed CA context global exception handler callback.
  *
- * replace the default exception handler
- *
- * pfunc    R   address of exception call-back function
- * pArg     R   copy of this pointer passed to exception
- *          call-back function
+ * When an error occurs in the server asynchronous to the clients thread then information about this
+ * type of error is passed from the server to the client in an exception message. When the client
+ * receives this exception message an exception handler callback is called.The default exception
+ * handler prints a diagnostic message on the client's standard out and terminates execution if
+ * the error condition is severe.
+ * \note Certain fields in "struct exception_handler_args" are not applicable in the context of some error messages.
  */
 typedef void caExceptionHandler (struct exception_handler_args);
 LIBCA_API int epicsStdCall ca_add_exception_event
 (
-     caExceptionHandler *pfunc,
-     void               *pArg
+     caExceptionHandler *pfunc, /**< R - address of exception call-back function */
+     void               *pArg   /**< R - copy of this pointer passed to exception call-back function */
 );
 
-/*
- * ca_clear_channel()
- * - deallocate resources reserved for a channel
- *
- * chanId   R   channel ID
+/** \brief Shutdown and reclaim resources associated with a channel created by ca_create_channel().
+ * 
+ * All remote operation requests such as the above are accumulated (buffered) and not forwarded to
+ * the IOC until one of ca_flush_io(), ca_pend_io(), ca_pend_event(), or ca_sg_block() are called.
+ * This allows several requests to be efficiently sent over the network in one message.
  */
 LIBCA_API int epicsStdCall ca_clear_channel
 (
-     chid   chanId
+     chid   chanId   /**< R - channel ID */
 );
 
 /************************************************************************/
 /*  Write a value to a channel                  */
 /************************************************************************/
-/*
- * ca_bput()
+/**
+ * \brief ca_bput()
  *
- * WARNING: this copies the new value from a string (dbr_string_t)
- *      (and not as an integer)
+ * \warning this copies the new value from a string (dbr_string_t, not as an integer)
  *
- * chan         R       channel identifier
- * pValue       R       new channel value string copied from this location
+ * \param chan         R - channel identifier
+ * \param pValue       R - new channel value string copied from this location
  */
 #define ca_bput(chan, pValue) \
 ca_array_put(DBR_STRING, 1u, chan, (const dbr_string_t *) (pValue))
 
-/*
- * ca_rput()
+/**
+ * \brief ca_rput()
  *
- * WARNING: this copies the new value from a dbr_float_t
+ * \warning this copies the new value from a dbr_float_t
  *
- * chan         R       channel identifier
- * pValue       R       new channel value copied from this location
+ * \param chan         R - channel identifier
+ * \param pValue       R - new channel value copied from this location
  */
 #define ca_rput(chan,pValue) \
 ca_array_put(DBR_FLOAT, 1u, chan, (const dbr_float_t *) pValue)
 
-/*
- * ca_put()
+/**
+ * \brief ca_put()
  *
- * type         R   data type from db_access.h
- * chan         R   channel identifier
- * pValue       R   new channel value copied from this location
+ * \param type         R - data type from db_access.h
+ * \param chan         R - channel identifier
+ * \param pValue       R - new channel value copied from this location
  */
 #define ca_put(type, chan, pValue) ca_array_put (type, 1u, chan, pValue)
 
-/*
- * ca_array_put()
+/**
+ * \brief ca_array_put()
  *
- * type         R   data type from db_access.h
- * count        R   array element count
- * chan         R   channel identifier
- * pValue       R       new channel value copied from this location
+ * \param type         R - data type from db_access.h
+ * \param count        R - array element count
+ * \param chan         R - channel identifier
+ * \param pValue       R - new channel value copied from this location
  */
 LIBCA_API int epicsStdCall ca_array_put
 (
@@ -318,8 +327,8 @@ LIBCA_API int epicsStdCall ca_array_put
      const void *   pValue
 );
 
-/*
- * ca_array_put_callback()
+/**
+ * \brief ca_array_put_callback()
  *
  * This routine functions identically to the original ca put request
  * with the addition of a callback to the user supplied function
@@ -327,22 +336,15 @@ LIBCA_API int epicsStdCall ca_array_put
  * to the user supplied callback function are declared in
  * the structure event_handler_args and include the pointer
  * sized user argument supplied when ca_array_put_callback() is called.
- *
- * type         R   data type from db_access.h
- * count        R   array element count
- * chan         R   channel identifier
- * pValue       R       new channel value copied from this location
- * pFunc        R   pointer to call-back function
- * pArg         R   copy of this pointer passed to pFunc
  */
 LIBCA_API int epicsStdCall ca_array_put_callback
 (
-     chtype                 type,
-     unsigned long          count,
-     chid                   chanId,
-     const void *           pValue,
-     caEventCallBackFunc *  pFunc,
-     void *                 pArg
+     chtype                 type,    /**< \brief R - data type from db_access.h */
+     unsigned long          count,   /**< \brief R - array element count */
+     chid                   chanId,  /**< \brief R - channel identifier */
+     const void *           pValue,  /**< \brief R - new channel value copied from this location */
+     caEventCallBackFunc *  pFunc,   /**< \brief R - pointer to call-back function */
+     void *                 pArg     /**< \brief R - copy of this pointer passed to pFunc */
 );
 
 #define ca_put_callback(type, chan, pValue, pFunc, pArg) \
@@ -352,45 +354,45 @@ LIBCA_API int epicsStdCall ca_array_put_callback
 /*  Read a value from a channel                                         */
 /************************************************************************/
 
-/*
- * ca_bget()
+/**
+ * \brief ca_bget()
  *
- * WARNING: this copies the new value into a string (dbr_string_t)
+ * \warning this copies the new value into a string (dbr_string_t)
  *      (and not into an integer)
  *
- * chan     R   channel identifier
- * pValue   W   channel value copied to this location
+ * \param chan     R - channel identifier
+ * \param pValue   W - channel value copied to this location
  */
 #define ca_bget(chan, pValue) \
 ca_array_get(DBR_STRING, 1u, chan, (dbr_string_t *)(pValue))
 
-/*
- * ca_rget()
+/**
+ * \brief ca_rget()
  *
- * WARNING: this copies the new value into a 32 bit float (dbr_float_t)
+ * \warning this copies the new value into a 32 bit float (dbr_float_t)
  *
- * chan     R   channel identifier
- * pValue   W   channel value copied to this location
+ * \param chan     R - channel identifier
+ * \param pValue   W - channel value copied to this location
  */
 #define ca_rget(chan, pValue) \
 ca_array_get(DBR_FLOAT, 1u, chan, (dbr_float_t *)(pValue))
 
-/*
- * ca_rget()
+/**
+ * \brief ca_rget()
  *
- * type     R   data type from db_access.h
- * chan     R   channel identifier
- * pValue   W   channel value copied to this location
+ * \param type     R - data type from db_access.h
+ * \param chan     R - channel identifier
+ * \param pValue   W - channel value copied to this location
  */
 #define ca_get(type, chan, pValue) ca_array_get(type, 1u, chan, pValue)
 
-/*
- * ca_array_get()
+/**
+ * \brief ca_array_get()
  *
- * type     R   data type from db_access.h
- * count    R   array element count
- * chan     R   channel identifier
- * pValue   W   channel value copied to this location
+ * \param type     R - data type from db_access.h
+ * \param count    R - array element count
+ * \param chan     R - channel identifier
+ * \param pValue   W - channel value copied to this location
  */
 LIBCA_API int epicsStdCall ca_array_get
 (
@@ -403,53 +405,50 @@ LIBCA_API int epicsStdCall ca_array_get
 /************************************************************************/
 /*  Read a value from a channel and run a callback when the value       */
 /*  returns                                                             */
-/*                                                                      */
-/*                                                                      */
 /************************************************************************/
-/*
- * ca_bget_callback()
+/**
+ * \brief ca_bget_callback()
  *
- * WARNING: this returns the new value as a string (dbr_string_t)
- *      (and not as an integer)
+ * \warning this returns the new value as a string (dbr_string_t, not as an integer)
  *
- * chan     R   channel identifier
- * pFunc    R   pointer to call-back function
- * pArg     R   copy of this pointer passed to pFunc
+ * \param chan     R - channel identifier
+ * \param pFunc    R - pointer to call-back function
+ * \param pArg     R - copy of this pointer passed to pFunc
  */
 #define ca_bget_callback(chan, pFunc, pArg)\
 ca_array_get_callback (DBR_STRING, 1u, chan, pFunc, pArg)
 
-/*
- * ca_rget_callback()
+/**
+ * \brief ca_rget_callback()
  *
- * WARNING: this returns the new value as a float (dbr_float_t)
+ * \warning this returns the new value as a float (dbr_float_t)
  *
- * chan     R   channel identifier
- * pFunc    R   pointer to call-back function
- * pArg     R   copy of this pointer passed to pFunc
+ * \param chan     R - channel identifier
+ * \param pFunc    R - pointer to call-back function
+ * \param pArg     R - copy of this pointer passed to pFunc
  */
 #define ca_rget_callback(chan, pFunc, pArg)\
 ca_array_get_callback (DBR_FLOAT, 1u, chan, pFunc, pArg)
 
-/*
- * ca_get_callback()
+/**
+ * \brief ca_get_callback()
  *
- * type     R   data type from db_access.h
- * chan     R   channel identifier
- * pFunc    R   pointer to call-back function
- * pArg     R   copy of this pointer passed to pFunc
+ * \param type     R - data type from db_access.h
+ * \param chan     R - channel identifier
+ * \param pFunc    R - pointer to call-back function
+ * \param pArg     R - copy of this pointer passed to pFunc
  */
 #define ca_get_callback(type, chan, pFunc, pArg)\
 ca_array_get_callback (type, 1u, chan, pFunc, pArg)
 
-/*
- * ca_array_get_callback()
+/**
+ * \brief ca_array_get_callback()
  *
- * type     R   data type from db_access.h
- * count    R   array element count
- * chan     R   channel identifier
- * pFunc    R   pointer to call-back function
- * pArg     R   copy of this pointer passed to pFunc
+ * \param type     R - data type from db_access.h
+ * \param count    R - array element count
+ * \param chan     R - channel identifier
+ * \param pFunc    R - pointer to call-back function
+ * \param pArg     R - copy of this pointer passed to pFunc
  */
 LIBCA_API int epicsStdCall ca_array_get_callback
 (
@@ -460,51 +459,41 @@ LIBCA_API int epicsStdCall ca_array_get_callback
      void *                 pArg
 );
 
-/************************************************************************/
-/*  Specify a function to be executed whenever significant changes      */
-/*  occur to a channel.                                                 */
-/*  NOTES:                                                              */
-/*  1)  Evid may be omitted by passing a NULL pointer                    */
-/*                                                                      */
-/*  2)  An array count of zero specifies the native db count            */
-/*                                                                      */
-/************************************************************************/
-
-/*
- * ca_create_subscription ()
+/**
+ * \brief Specify a function to be executed whenever significant changes occur to a channel.
  *
- * type     R   data type from db_access.h
- * count    R   array element count
- * chan     R   channel identifier
- * mask     R   event mask - one of {DBE_VALUE, DBE_ALARM, DBE_LOG}
- * pFunc    R   pointer to call-back function
- * pArg     R   copy of this pointer passed to pFunc
- * pEventID W   event id written at specified address
+ * Register a state change subscription and specify a callback function to be invoked
+ * whenever the process variable undergoes significant state changes. A significant
+ * change can be a change in the process variable's value, alarm status, or alarm severity.
+ * In the process control function block database the deadband field determines
+ * the magnitude of a significant change for the process variable's value. Each call
+ * to this function consumes resources in the client library and potentially a CA server
+ * until one of ca_clear_channel() or ca_clear_subscription() is called.
+ * \note 1)  Evid may be omitted by passing a NULL pointer
+ * \note 2)  An array count of zero specifies the native db count
  */
 LIBCA_API int epicsStdCall ca_create_subscription
 (
-     chtype                 type,
-     unsigned long          count,
-     chid                   chanId,
-     long                   mask,
-     caEventCallBackFunc *  pFunc,
-     void *                 pArg,
-     evid *                 pEventID
+     chtype                 type,     /**< \brief R - ata type from db_access.h */
+     unsigned long          count,    /**< \brief R - array element count */
+     chid                   chanId,   /**< \brief R - channel identifier */
+     long                   mask,     /**< \brief R - event mask - one of (DBE_VALUE, DBE_ALARM, DBE_LOG) */
+     caEventCallBackFunc *  pFunc,    /**< \brief R - pointer to call-back function */
+     void *                 pArg,     /**< \brief R - copy of this pointer passed to pFunc */
+     evid *                 pEventID  /**< \brief W - event id written at specified address */
 );
 
-/************************************************************************/
-/*  Remove a function from a list of those specified to run             */
-/*  whenever significant changes occur to a channel                     */
-/*                                                                      */
-/************************************************************************/
-/*
- * ca_clear_subscription()
- *
- * eventID  R   event id
+/**
+ * \brief Cancel a subscription.
+ * 
+ * All cancel-subscription requests such as the above are accumulated (buffered) and not forwarded
+ * to the server until one of ca_flush_io(), ca_pend_io(), ca_pend_event(), or ca_sg_block()
+ * are called. This allows several requests to be efficiently sent together in one message.
+ * \note This operation blocks until any user callbacks for this channel have run to completion.
  */
 LIBCA_API int epicsStdCall ca_clear_subscription
 (
-     evid eventID
+     evid eventID    /**< \brief R - event id */
 );
 
 LIBCA_API chid epicsStdCall ca_evid_to_chid ( evid id );
@@ -556,29 +545,36 @@ LIBCA_API chid epicsStdCall ca_evid_to_chid ( evid id );
 /*  without processing.                                                 */
 /************************************************************************/
 
-/*
- * ca_pend_event()
+/**
+ * \brief When invoked, the send buffer is flushed and CA background activity is processed for TIMEOUT seconds.
  *
  * timeout  R   wait for this delay in seconds
  */
 LIBCA_API int epicsStdCall ca_pend_event (ca_real timeout);
 #define ca_poll() ca_pend_event(1e-12)
 
-/*
- * ca_pend_io()
+/**
+ * \brief Flushes the send buffer and then blocks
+ * 
+ * Blocks until outstanding ca_get() requests complete, and until channels created
+ * specifying null connection handler function pointers connect for the first time.
+ * Wait for timeout but return early if all get requests (or search requests with null
+ * connection handler pointer have completed).
  *
- * timeout  R   wait for this delay in seconds but return early
- *              if all get requests (or search requests with null
- *              connection handler pointer have completed)
+ * \param timeout  R - wait for this delay in seconds
  */
 LIBCA_API int epicsStdCall ca_pend_io (ca_real timeout);
 
-/* calls ca_pend_io() if early is true otherwise ca_pend_event() is called */
+/** \brief calls ca_pend_io() if early is true otherwise ca_pend_event() is called */
 LIBCA_API int epicsStdCall ca_pend (ca_real timeout, int early);
 
-/*
- * ca_test_io()
+/**
+ * \brief Tests if all ca_get() requests are complete and channels created specifying a null connection callback function pointer are connected.
  *
+ * It will report the status of outstanding ca_get() requests issued, and channels
+ * created specifying a null connection callback function pointer, after the last
+ * call to ca_pend_io() or CA context initialization whichever is later.
+ * 
  * returns TRUE when get requests (or search requests with null
  * connection handler pointer) are outstanding
  */
@@ -587,65 +583,69 @@ LIBCA_API int epicsStdCall ca_test_io (void);
 /************************************************************************/
 /*  Send out all outstanding messages in the send queue                 */
 /************************************************************************/
-/*
- * ca_flush_io()
+/**
+ * \brief Flush outstanding IO requests to the server
+ * 
+ * This routine might be useful to users who need to flush requests prior to
+ * performing client side labor in parallel with labor performed in the server.
+ * Outstanding requests are also sent whenever the buffer which holds them becomes full.
  */
 LIBCA_API int epicsStdCall ca_flush_io (void);
 
-
-/*
- *  ca_signal()
- *
- * errorCode    R   status returned from channel access function
- * pCtxStr  R   context string included with error print out
+/**
+ * \brief Provide the error message character string associated with the supplied channel access error code and the supplied error context to diagnostics.
+ * 
+ * If the error code indicates an unsuccessful operation a stack dump is printed, if this capability
+ * is available on the local operating system, and execution is terminated.
+ * SEVCHK is a macro envelope around ca_signal() which only calls ca_signal() if the supplied error
+ * code indicates an unsuccessful operation. SEVCHK is the recommended error handler for simple applications
  */
 LIBCA_API void epicsStdCall ca_signal
 (
-     long errorCode,
-     const char *pCtxStr
+     long errorCode,      /**< \brief R - status returned from channel access function */
+     const char *pCtxStr  /**< \brief R - context string included with error print out */
 );
 
-/*
- * ca_signal_with_file_and_lineno()
- * errorCode    R   status returned from channel access function
- * pCtxStr  R   context string included with error print out
- * pFileStr R   file name string included with error print out
- * lineNo   R   line number included with error print out
- *
+/**
+ * \brief ca_signal_with_file_and_lineno()
  */
 LIBCA_API void epicsStdCall ca_signal_with_file_and_lineno
 (
-     long errorCode,
-     const char *pCtxStr,
-     const char *pFileStr,
-     int lineNo
+     long errorCode,        /**< \brief R - status returned from channel access function */
+     const char *pCtxStr,   /**< \brief R - context string included with error print out */
+     const char *pFileStr,  /**< \brief R - file name string included with error print out */
+     int lineNo             /**< \brief R - line number included with error print out */
 );
 
-/*
- * ca_signal_formated()
- * errorCode    R   status returned from channel access function
- * pFileStr     R   file name string included with error print out
- * lineNo       R   line number included with error print out
- * pFormat      R   printf dtyle format string (and optional arguments)
- *
+/**
+ * \brief ca_signal_formated()
  */
-LIBCA_API void epicsStdCall ca_signal_formated (long ca_status, const char *pfilenm, 
-                                       int lineno, const char *pFormat, ...);
+LIBCA_API void epicsStdCall ca_signal_formated
+(
+     long ca_status,       /**< \brief R - status returned from channel access function */
+     const char *pfilenm,  /**< \brief R - file name string included with error print out */
+     int lineno,           /**< \brief R - line number included with error print out */
+     const char *pFormat,  /**< \brief R - printf dtyle format string (and optional arguments */
+...);
 
-/*
- * ca_host_name_function()
+/**
+ * \brief Returns host name.
  *
  * channel  R   channel identifier
  *
- * !!!! this function is _not_ thread safe !!!!
+ * \warning this function is _not_ thread safe !!!!
  */
 LIBCA_API const char * epicsStdCall ca_host_name (chid channel);
-/* thread safe version */
+/**
+ * \brief Returns host name.
+ * 
+ * Thread safe version of ca_host_name()
+ */
 LIBCA_API unsigned epicsStdCall ca_get_host_name ( chid pChan, 
     char *pBuf, unsigned bufLength );
 
-/*
- *  CA_ADD_FD_REGISTRATION
+/**
+ * \brief CA_ADD_FD_REGISTRATION
  *
  *  call their function with their argument whenever
  *  a new fd is added or removed
@@ -653,23 +653,25 @@ LIBCA_API unsigned epicsStdCall ca_get_host_name ( chid pChan,
  *
  *  if (opened) then fd was created
  *  if (!opened) then fd was deleted
- *
  */
 typedef void CAFDHANDLER (void *parg, int fd, int opened);
 
-/*
- * ca_add_fd_registration()
- *
- * pHandler R   pointer to function which is to be called
- *                  when an fd is created or deleted
- * pArg     R   argument passed to above function
+/**
+ * \brief Adds file description manager.
+ * 
+ * For use with the services provided by a file descriptor manager (IO multiplexor) such as "fdmgr.c".
+ * A file descriptor manager is often needed when two file descriptor IO intensive libraries such as
+ * the EPICS channel access client library and the X window system client library must coexist in the
+ * same UNIX process. This function allows an application code to be notified whenever the CA client
+ * library places a new file descriptor into service and whenever the CA client library removes a
+ * file descriptor from service. Specifying USERFUNC=NULL disables file descriptor registration (this
+ * is the default).
  */
 LIBCA_API int epicsStdCall ca_add_fd_registration
 (
-     CAFDHANDLER    *pHandler,
-     void           *pArg
+     CAFDHANDLER    *pHandler,  /**< \brief R - ointer to function which is to be called when an fd is created or deleted */
+     void           *pArg       /**< \brief R - argument passed to above function */
 );
-
 
 /*
  * CA synch groups
@@ -681,64 +683,82 @@ LIBCA_API int epicsStdCall ca_add_fd_registration
  * block for IO completion within any one of the groups as needed.
  */
 
-/*
- * ca_sg_create()
+/**
+ * \brief Create a synchronous group and return an identifier for it.
  *
- * create a sync group
- *
- * pgid     W   pointer to sync group id that will be written
+ * A synchronous group can be used to guarantee that a set of channel access requests have completed.
+ * Once a synchronous group has been created then channel access get and put requests may be issued within
+ * it using ca_sg_array_get() and ca_sg_array_put() respectively. The routines ca_sg_block() and ca_sg_test()
+ * can be used to block for and test for completion respectively. The routine ca_sg_reset() is used to
+ * discard knowledge of old requests which have timed out and in all likelihood will never be satisfied.
+ * Any number of asynchronous groups can have application requested operations outstanding within them at any given time.
+ * 
+ * \param pgid     W - pointer to sync group id that will be written
  */
 LIBCA_API int epicsStdCall ca_sg_create (CA_SYNC_GID *  pgid);
 
-/*
- * ca_sg_delete()
+/**
+ * \brief Deletes a synchronous group.
  *
- * delete a sync group
- *
- * gid      R   sync group id
+ * \param gid      R - sync group id
  */
 LIBCA_API int epicsStdCall ca_sg_delete (const CA_SYNC_GID gid);
 
-/*
- * ca_sg_block()
+/**
+ * \brief Block for IO performed within a sync group to complete
+ * 
+ * Flushes the send buffer and then waits until outstanding requests complete or the specified time out expires.
+ * At this time outstanding requests include calls to ca_sg_array_get() and calls to ca_sg_array_put().
+ * If ECA_TIMEOUT is returned then failure must be assumed for all outstanding queries. Operations
+ * can be reissued followed by another ca_sg_block(). This routine will only block on outstanding
+ * queries issued after the last call to ca_sg_block(), ca_sg_reset(), or ca_sg_create() whichever
+ * occurs later in time. If no queries are outstanding then ca_sg_block() will return immediately
+ * without processing any pending channel access activities.
  *
- * block for IO performed within a sync group to complete
- *
- * gid      R   sync group id
- * timeout  R   wait for this duration prior to timing out
- *          and returning ECA_TIMEOUT
+ * \param gid      R - sync group id
+ * \param timeout  R - wait for this duration prior to timing out and returning ECA_TIMEOUT
  */
 LIBCA_API int epicsStdCall ca_sg_block (const CA_SYNC_GID gid, ca_real timeout);
 
-/*
- * ca_sg_test()
+/**
+ * \brief Test to see if all requests made within a synchronous group have completed.
  *
- * test for sync group IO operations in progress
+ * \param gid      R - sync group id
  *
- * gid      R   sync group id
- *
- * returns one of ECA_BADSYNCGRP, ECA_IOINPROGRESS, ECA_IODONE
+ * \note returns one of ECA_BADSYNCGRP, ECA_IOINPROGRESS, ECA_IODONE
  */
 LIBCA_API int epicsStdCall ca_sg_test (const CA_SYNC_GID gid);
 
-/*
- * ca_sg_reset
+/**
+ * \brief Resets the number of outstanding requests within the specified synchronous group
+ * 
+ * Reset the number of outstanding requests within the specified synchronous groupto zero so that
+ * ca_sg_test() will return ECA_IODONE and ca_sg_block() will not block unless additional
+ * subsequent requests are made.
  *
- * gid      R   sync group id
+ * \param gid      R - sync group id
  */
 LIBCA_API int epicsStdCall ca_sg_reset(const CA_SYNC_GID gid);
 
-/*
- * ca_sg_array_get()
+/**
+ * \brief initiate a get within a sync group
+ * 
+ * Read a value from a channel and increment the outstanding request count of a synchronous group.
+ * The ca_sg_get() and ca_sg_array_get() functionality is implemented using ca_array_get_callback().
+ * The values written into your program's variables by ca_sg_get() or ca_sg_array_get() should not be
+ * referenced by your program until ECA_NORMAL has been received from ca_sg_block(), or
+ * until ca_sg_test() returns ECA_IODONE.
+ * All remote operation requests such as the above are accumulated (buffered) and not
+ * forwarded to the server until one of ca_flush_io(), ca_pend_io(), ca_pend_event(),
+ * or ca_sg_block() are called. This allows several requests to be efficiently sent in one message.
+ * 
+ * \note (essentially a ca_array_get() with a sync group specified)
  *
- * initiate a get within a sync group
- * (essentially a ca_array_get() with a sync group specified)
- *
- * gid      R   sync group id
- * type     R   data type from db_access.h
- * count    R   array element count
- * chan     R   channel identifier
- * pValue   W   channel value copied to this location
+ * \param gid      R - sync group id
+ * \param type     R - data type from db_access.h
+ * \param count    R - array element count
+ * \param chan     R - channel identifier
+ * \param pValue   W - channel value copied to this location
  */
 LIBCA_API int epicsStdCall ca_sg_array_get
 (
@@ -776,47 +796,50 @@ LIBCA_API int epicsStdCall ca_sg_array_put
 #define ca_sg_put(gid, type, chan, pValue) \
 ca_sg_array_put (gid, type, 1u, chan, pValue)
 
-/*
- * ca_sg_stat()
+/**
+ * \brief print status of a sync group
  *
- * print status of a sync group
- *
- * gid      R   sync group id
+ * Write a value, or array of values, to a channel and increment the outstanding request
+ * count of a synchronous group. The ca_sg_put() and ca_sg_array_put() functionality is
+ * implemented using ca_array_put_callback().
+ * All remote operation requests such as the above are accumulated (buffered) and not
+ * forwarded to the server until one of ca_flush_io(), ca_pend_io(), ca_pend_event(),
+ * or ca_sg_block() are called. This allows several requests to be efficiently sent
+ * in one message.
+ * If a connection is lost and then resumed outstanding puts are not reissued.
+ * 
+ * \param gid      R - sync group id
  */
 LIBCA_API int epicsStdCall ca_sg_stat (CA_SYNC_GID gid);
 
 LIBCA_API void epicsStdCall ca_dump_dbr (chtype type, unsigned count, const void * pbuffer);
 
 
-/*
- * ca_v42_ok()
+/**
+ * \brief Server is on version is 4.2 or higher
+ * 
+ * Put call back is available if the CA server is on version is 4.2 or higher.
  *
- * Put call back is available if the CA server is on version is 4.2
- *  or higher.
+ * \param chan     R - channel identifier
  *
- * chan     R   channel identifier
- *
- * (returns true or false)
+ * \note (returns true or false)
  */
 LIBCA_API int epicsStdCall ca_v42_ok (chid chan);
 
-/*
- * ca_version()
- *
- * returns the CA version string
+/**
+ * \brief returns the CA version string
  */
 LIBCA_API const char * epicsStdCall ca_version (void);
 
-/*
- * ca_replace_printf_handler ()
+/**
+ * \brief Replace the default handler for formatted diagnostic message output.
+ * 
+ * The default handler uses fprintf to send messages to 'stderr'.
+ * For apps that want to change where ca formatted text output goes
  *
- * for apps that want to change where ca formatted
- * text output goes
+ * \note use two ifdef's for trad C compatibility
  *
- * use two ifdef's for trad C compatibility
- *
- * ca_printf_func   R   pointer to new function called when
- *                          CA prints an error message
+ * \param ca_printf_func   R - pointer to new function called when CA prints an error message
  */
 #ifndef CA_DONT_INCLUDE_STDARGH
 typedef int caPrintfFunc (const char *pformat, va_list args);
@@ -825,26 +848,50 @@ LIBCA_API int epicsStdCall ca_replace_printf_handler (
 );
 #endif /*CA_DONT_INCLUDE_STDARGH*/
 
-/*
- * (for testing purposes only)
- */
+/** \brief (for testing purposes only) */
 LIBCA_API unsigned epicsStdCall ca_get_ioc_connection_count (void);
+/** \brief (for testing purposes only) */
 LIBCA_API int epicsStdCall ca_preemtive_callback_is_enabled (void);
+/** \brief (for testing purposes only) */
 LIBCA_API void epicsStdCall ca_self_test (void);
+/** \brief (for testing purposes only) */
 LIBCA_API unsigned epicsStdCall ca_beacon_anomaly_count (void);
+/** \brief (for testing purposes only) */
 LIBCA_API unsigned epicsStdCall ca_search_attempts (chid chan);
+/** \brief (for testing purposes only) */
 LIBCA_API double epicsStdCall ca_beacon_period (chid chan);
+/** \brief (for testing purposes only) */
 LIBCA_API double epicsStdCall ca_receive_watchdog_delay (chid chan);
 
-/*
- * used when an auxiliary thread needs to join a CA client context started
- * by another thread
+/**
+ * \brief Returns a pointer to the current thread's CA context.
+ * 
+ * If none then null is returned.
+ * Used when an auxiliary thread needs to join a CA client context started by another thread.
  */
 LIBCA_API struct ca_client_context * epicsStdCall ca_current_context ();
+/**
+ * \brief The calling thread becomes a member of the specified CA context.
+ * 
+ * If ca_disable_preemptive_callback is specified when ca_context_create() is called 
+ * (or if ca_task_initialize() is called) then additional threads are not allowed to
+ * join the CA context because allowing other threads to join implies that CA callbacks
+ * will be called preemptively from more than one thread.
+ */
 LIBCA_API int epicsStdCall ca_attach_context ( struct ca_client_context * context );
-
-
+/**
+ * \brief Prints information about the client context
+ * 
+ * Including, at higher interest levels, status for each channel. Lacking a CA context pointer,
+ * ca_client_status() prints information about the calling threads CA context.
+ */
 LIBCA_API int epicsStdCall ca_client_status ( unsigned level );
+/**
+ * \brief Prints information about the client context
+ * 
+ * Including, at higher interest levels, status for each channel. Lacking a CA context pointer,
+ * ca_client_status() prints information about the calling threads CA context.
+ */
 LIBCA_API int epicsStdCall ca_context_status ( struct ca_client_context *, unsigned level );
 
 /*

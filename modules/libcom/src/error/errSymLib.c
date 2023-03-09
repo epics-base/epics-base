@@ -80,7 +80,7 @@ static epicsUInt16 errhash(long errNum)
 
     modnum = (unsigned short) (errNum >> 16);
     errnum = (unsigned short) (errNum & 0xffff);
-    return (((modnum - 500) * 20) + errnum) % NHASH;
+    return ((modnum - (MIN_MODULE_NUM - 1)) * 20 + errnum) % NHASH;
 }
 
 /****************************************************************
@@ -94,7 +94,7 @@ int errSymbolAdd(long errNum, const char *name)
     ERRNUMNODE *pNew = NULL;
     int modnum = (epicsUInt16) (errNum >> 16);
 
-    if (modnum < 501)
+    if (modnum < MIN_MODULE_NUM)
         return S_err_invCode;
 
     epicsUInt16 hashInd = errhash(errNum);
@@ -154,7 +154,7 @@ const char* errSymLookupInternal(long status)
     modNum = (unsigned) status;
     modNum >>= 16;
     modNum &= 0xffff;
-    if (modNum <= 500) {
+    if (modNum < MIN_MODULE_NUM) {
         const char * pStr = strerror ((int) status);
         if (pStr) {
             return pStr;
@@ -244,9 +244,10 @@ void errSymTestPrint(long errNum)
     message[0] = '\0';
     modnum = (epicsUInt16) (errNum >> 16);
     errnum = (epicsUInt16) (errNum & 0xffff);
-    if (modnum < 501) {
+    if (modnum < MIN_MODULE_NUM) {
         fprintf(stderr, "Usage:  errSymTestPrint(long errNum) \n");
-        fprintf(stderr, "errSymTestPrint: module number < 501 \n");
+        fprintf(stderr,
+                "errSymTestPrint: module number < %d\n", MIN_MODULE_NUM);
         return;
     }
     errSymLookup(errNum, message, sizeof(message));
@@ -266,7 +267,7 @@ void errSymTest(epicsUInt16 modnum, epicsUInt16 begErrNum,
     epicsUInt16  errnum;
 
     if (!initialized) errSymBld();
-    if (modnum < 501)
+    if (modnum < MIN_MODULE_NUM)
         return;
 
     /* print range of error messages */

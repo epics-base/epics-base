@@ -19,6 +19,7 @@
 #define RTN_SUCCESS(STATUS) ((STATUS)==0)
 
 /* Module numbers start above 500 for compatibility with vxWorks errnoLib */
+#define MIN_MODULE_NUM 501
 
 /* FIXME: M_xxx values could be declared as integer variables and set
  * at runtime from registration routines; the S_xxx definitions would

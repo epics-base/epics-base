@@ -195,6 +195,32 @@ void testStrTok(void)
     testTok(NULL, " \t", "bbb ", "bbb", "");
 }
 
+static
+void testEpicsStrPrintEscaped(void)
+{   
+    const char *filename = "testEpicsStrPrintEscaped";
+    // Create a file then re-open it read only
+    FILE *readOnly = fopen(filename, "a");
+    fclose(readOnly);
+    readOnly = fopen(filename, "r");
+
+    testDiag("testEpicsStrPrintEscaped()");
+
+    // Passing cases
+    testOk1(epicsStrPrintEscaped(stdout, "1234", 4) == 4);
+    testOk1(epicsStrPrintEscaped(stdout, "\a\b\f\n\r\t\v\\\'\"", 10) == 20);
+
+    //Failing cases
+    testOk1(epicsStrPrintEscaped(readOnly, "1234", 4) == -1);
+    testOk1(epicsStrPrintEscaped(NULL, "1234", 4) == -1);
+    testOk1(epicsStrPrintEscaped(stdout, NULL, 4) == 0);
+    testOk1(epicsStrPrintEscaped(stdout, "", 4) == 0);
+    testOk1(epicsStrPrintEscaped(stdout, "1234", 0) == 0);
+
+    fclose(readOnly);
+    remove(filename);
+}
+
 MAIN(epicsStringTest)
 {
     const char * const empty = "";
@@ -209,7 +235,7 @@ MAIN(epicsStringTest)
     char *s;
     int status;
 
-    testPlan(439);
+    testPlan(446);
 
     testChars();
 
@@ -407,6 +433,7 @@ MAIN(epicsStringTest)
 
     testDistance();
     testStrTok();
+    testEpicsStrPrintEscaped();
 
     return testDone();
 }

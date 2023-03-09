@@ -231,6 +231,12 @@ int epicsStrPrintEscaped(FILE *fp, const char *s, size_t len)
 {
    int nout = 0;
 
+   if (fp == NULL)
+       return -1;
+
+   if (s == NULL || strlen(s) == 0 || len == 0)
+       return 0; // No work to do
+
    while (len--) {
        char c = *s++;
        int rc = 0;

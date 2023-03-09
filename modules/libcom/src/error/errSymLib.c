@@ -23,6 +23,8 @@
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "epicsStdio.h"
+#include "epicsMutex.h"
+#include "epicsThread.h"
 #include "errMdef.h"
 #include "errSymTbl.h"
 #include "ellLib.h"
@@ -39,34 +41,43 @@ typedef struct errnumnode {
     long               pad;
 } ERRNUMNODE;
 
-static ERRNUMNODE *hashtable[NHASH];
-static int initialized = 0;
+typedef struct {
+    ERRNUMNODE *table[NHASH * sizeof(ERRNUMNODE *)];
+    epicsMutexId tableMutexId;
+} errHashTable_t;
+
+static errHashTable_t errHashTable;
+
 extern ERRSYMTAB_ID errSymTbl;
 
 /****************************************************************
  * ERRSYMBLD
  *
- * Create the normal ell LIST of sorted error messages nodes
- * Followed by linked hash lists - that link together those
- * ell nodes that have a common hash number.
+ * Populate EPICS error symbols
  *
  ***************************************************************/
 int errSymBld(void)
 {
-    ERRSYMBOL      *errArray = errSymTbl->symbols;
-    int             i;
-
-    if (initialized)
-        return(0);
-
+    ERRSYMBOL *errArray = errSymTbl->symbols;
+    int i;
     for (i = 0; i < errSymTbl->nsymbols; i++, errArray++) {
         if (errSymbolAdd(errArray->errNum, errArray->name)) {
             fprintf(stderr, "errSymBld: ERROR - errSymbolAdd() failed \n");
         }
     }
 
-    initialized = 1;
-    return(0);
+    return 0;
+}
+
+static void _initErrorHashTable(void *_unused)
+{
+    errHashTable.tableMutexId = epicsMutexMustCreate();
+}
+
+static void initErrorHashTable()
+{
+    static epicsThreadOnceId initErrSymOnceFlag = EPICS_THREAD_ONCE_INIT;
+    epicsThreadOnce(&initErrSymOnceFlag, _initErrorHashTable, NULL);
 }
 
 /****************************************************************
@@ -97,20 +108,20 @@ int errSymbolAdd(long errNum, const char *name)
     if (modnum < MIN_MODULE_NUM)
         return S_err_invCode;
 
+    initErrorHashTable();
+
     epicsUInt16 hashInd = errhash(errNum);
 
-    phashnode = (ERRNUMNODE**)&hashtable[hashInd];
+    epicsMutexLock(errHashTable.tableMutexId);
+    phashnode = (ERRNUMNODE**)&errHashTable.table[hashInd];
     pNextNode = (ERRNUMNODE*) *phashnode;
 
     /* search for last node (NULL) of hashnode linked list */
     while (pNextNode) {
         if (pNextNode->errNum == errNum) {
-            if(strcmp(name, pNextNode->message)) {
-                return S_err_codeExists;
-            }
-            else {
-                return 0;
-            }
+            int notIdentical = strcmp(name, pNextNode->message);
+            epicsMutexUnlock(errHashTable.tableMutexId);
+            return  notIdentical ? S_err_codeExists : 0;
         }
         phashnode = &pNextNode->hashnode;
         pNextNode = *phashnode;
@@ -121,7 +132,7 @@ int errSymbolAdd(long errNum, const char *name)
     pNew->errNum = errNum;
     pNew->message = name;
     *phashnode = pNew;
-
+    epicsMutexUnlock(errHashTable.tableMutexId);
     return 0;
 }
 
@@ -153,31 +164,31 @@ const char* errSymLookupInternal(long status)
     if (!status)
         return "Ok";
 
-    if (!initialized)
-        errSymBld();
+    initErrorHashTable();
 
     modNum = (unsigned) status;
     modNum >>= 16;
     modNum &= 0xffff;
     if (modNum < MIN_MODULE_NUM) {
-        const char * pStr = strerror ((int) status);
-        if (pStr) {
-            return pStr;
-        }
+        return strerror ((int) status);
     }
     else {
         unsigned hashInd = errhash(status);
-        phashnode = (ERRNUMNODE**)&hashtable[hashInd];
+        const char *result = NULL;
+        epicsMutexLock(errHashTable.tableMutexId);
+        phashnode = (ERRNUMNODE**)&errHashTable.table[hashInd];
         pNextNode = *phashnode;
         while (pNextNode) {
             if (pNextNode->errNum==status){
-                return pNextNode->message;
+                 result = pNextNode->message;
+                 break;
             }
             phashnode = &pNextNode->hashnode;
             pNextNode = *phashnode;
         }
+        epicsMutexUnlock(errHashTable.tableMutexId);
+        return result;
     }
-    return NULL;
 }
 
 const char* errSymMsg(long status)
@@ -208,12 +219,12 @@ void errSymDump(void)
     int i;
     int msgcount = 0;
 
-    if (!initialized) errSymBld();
+    initErrorHashTable();
 
     msgcount = 0;
     printf("errSymDump: number of hash slots = %d\n", NHASH);
     for (i = 0; i < NHASH; i++) {
-        ERRNUMNODE **phashnode = &hashtable[i];
+        ERRNUMNODE **phashnode = &errHashTable.table[i];
         ERRNUMNODE *pNextNode = *phashnode;
         int count = 0;
 
@@ -244,7 +255,7 @@ void errSymTestPrint(long errNum)
     epicsUInt16 modnum;
     epicsUInt16 errnum;
 
-    if (!initialized) errSymBld();
+    initErrorHashTable();
 
     message[0] = '\0';
     modnum = (epicsUInt16) (errNum >> 16);
@@ -271,9 +282,10 @@ void errSymTest(epicsUInt16 modnum, epicsUInt16 begErrNum,
     long         errNum;
     epicsUInt16  errnum;
 
-    if (!initialized) errSymBld();
     if (modnum < MIN_MODULE_NUM)
         return;
+
+    initErrorHashTable();
 
     /* print range of error messages */
     for (errnum = begErrNum; errnum <= endErrNum; errnum++) {

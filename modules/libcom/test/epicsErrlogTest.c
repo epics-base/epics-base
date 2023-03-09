@@ -238,13 +238,21 @@ static void testAddingExistingErrorSymbol()
            "Adding an error symbol with an existing error code should fail");
 }
 
+static void testAddingExistingErrorSymbolWithSameMessage()
+{
+    long invented_code = (0x7999 << 16) | 0x9997;
+    errSymbolAdd(invented_code, "Invented Error Message");
+    testOk(!errSymbolAdd(invented_code, "Invented Error Message"),
+           "Adding identical error symbol shouldn't fail");
+}
+
 MAIN(epicsErrlogTest)
 {
     size_t mlen, i, N;
     char msg[256];
     clientPvt pvt, pvt2;
 
-    testPlan(53);
+    testPlan(54);
 
     testANSIStrip();
 
@@ -460,6 +468,7 @@ MAIN(epicsErrlogTest)
     testAddingErrorSymbol();
     testAddingInvalidErrorSymbol();
     testAddingExistingErrorSymbol();
+    testAddingExistingErrorSymbolWithSameMessage();
 
     return testDone();
 }

@@ -105,7 +105,12 @@ int errSymbolAdd(long errNum, const char *name)
     /* search for last node (NULL) of hashnode linked list */
     while (pNextNode) {
         if (pNextNode->errNum == errNum) {
-            return S_err_codeExists;
+            if(strcmp(name, pNextNode->message)) {
+                return S_err_codeExists;
+            }
+            else {
+                return 0;
+            }
         }
         phashnode = &pNextNode->hashnode;
         pNextNode = *phashnode;

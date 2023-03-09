@@ -129,6 +129,7 @@ static long process(struct dbCommon *pcommon)
     sadset *pdset = (sadset *)(prec->dset);
     long           status;
     unsigned char  pact=prec->pact;
+    epicsUInt32 nord = prec->nord;
 
     if ((pdset==NULL) || (pdset->read_sa==NULL)) {
         prec->pact=TRUE;
@@ -147,6 +148,9 @@ static long process(struct dbCommon *pcommon)
     prec->udf = !!status; /* 0 or 1 */
     if (status)
         recGblSetSevr(prec, UDF_ALARM, prec->udfs);
+
+    if (nord != prec->nord)
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
 
     monitor(prec);
 

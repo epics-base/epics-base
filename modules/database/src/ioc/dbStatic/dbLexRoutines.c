@@ -159,12 +159,13 @@ static void *getLastTemp(void)
     return(ptempListNode->item);
 }
 
-const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
+const char *dbOpenFile(DBBASE **ppdbbase,const char *filename,FILE **fp)
 {
-    ELLLIST     *ppathList = (ELLLIST *)pdbbase->pathPvt;
+    ELLLIST     *ppathList;
     dbPathNode  *pdbPathNode;
     char        *fullfilename;
-
+    if (*ppdbbase == 0) *ppdbbase = dbAllocBase();
+    ppathList = (ELLLIST *)(*ppdbbase)->pathPvt;
     *fp = 0;
     if (!filename) return 0;
     if (!ppathList || ellCount(ppathList) == 0 ||
@@ -271,7 +272,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         FILE *fp1 = 0;
 
         if (pinputFile->filename)
-            pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp1);
+            pinputFile->path = dbOpenFile(&pdbbase, pinputFile->filename, &fp1);
         if (!pinputFile->filename || !fp1) {
             errPrintf(0, __FILE__, __LINE__,
                 "dbRead opening file %s\n",pinputFile->filename);
@@ -431,7 +432,7 @@ static void dbIncludeNew(char *filename)
 
     pinputFile = dbCalloc(1,sizeof(inputFile));
     pinputFile->filename = macEnvExpand(filename);
-    pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp);
+    pinputFile->path = dbOpenFile(&pdbbase, pinputFile->filename, &fp);
     if (!fp) {
         epicsPrintf("Can't open include file \"%s\"\n", filename);
         yyerror(NULL);

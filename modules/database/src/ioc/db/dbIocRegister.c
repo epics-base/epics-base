@@ -236,7 +236,9 @@ static const iocshArg dbgrepArg0 = { "pattern",iocshArgStringRecord};
 static const iocshArg * const dbgrepArgs[1] = {&dbgrepArg0};
 static const iocshFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs,
                                            "List record names matching pattern.\n"
-                                           "The pattern can contain any characters that are legal in record names as well as \"*\", which matches 0 or more characters.\n\n"
+                                           "The pattern can contain any characters that are legal in record names as well as:\n"
+                                           " - \"?\", which matches 0 or one characters.\n"
+                                           " - \"*\", which matches 0 or more characters.\n\n"
                                            "Example: dbgrep(\"*gpibAi*\")\n"};
 static void dbgrepCallFunc(const iocshArgBuf *args) { dbgrep(args[0].sval);}
 

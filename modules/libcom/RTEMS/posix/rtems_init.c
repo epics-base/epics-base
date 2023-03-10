@@ -233,7 +233,7 @@ epicsRtemsMountLocalFilesystem(char **argv)
             printf("Can't unpack tar filesystem\n");
             return -1;
         } else {
-            argv[1] = "/";
+            argv[1] = rtems_bsdnet_bootp_cmdline;
             return 0;
         }
     }

@@ -420,48 +420,29 @@ setBootConfigFromNVRAM(void)
     printf("This is Qemu (will not use DHCP)!\n");
     printf("Will set fix-adresse...\n");
 
-    //mot_script_boot = gev("mot-script-boot", nvp);
-
-    rtems_bsdnet_bootp_server_name = "1001.1001@10.0.0.1:/Volumes/Epics"; 
-    rtems_bsdnet_config.gateway = "10.0.0.1"; 
-
+    rtems_bsdnet_bootp_server_name = "1001.1001@10.0.0.3:/Volumes/Epics"; 
+    rtems_bsdnet_config.gateway = "10.0.0.3"; 
 #ifdef RTEMS_LEGACY_STACK
     rtems_bsdnet_config.ifconfig->ip_netmask = "255.0.0.0"; 
 #else
     rtems_static_ifconfig.ip_netmask = "255.0.0.0";
 #endif
-    rtems_bsdnet_config.name_server[0] = "10.0.0.1";
-    if (rtems_bsdnet_config.name_server[0] == NULL)
-        rtems_bsdnet_config.name_server[0] = rtems_bsdnet_bootp_server_name;
-
+    rtems_bsdnet_config.name_server[0] = "10.0.0.3";
     rtems_bsdnet_config.domainname = "MY_NET";
-
 #ifdef RTEMS_LEGACY_STACK
     rtems_bsdnet_config.ifconfig->ip_address = "10.0.0.42"; 
 #else
     rtems_static_ifconfig.ip_address = "10.0.0.42"; 
 #endif
-
     rtems_bsdnet_config.hostname = "MY_TARGET";
-    if (rtems_bsdnet_config.hostname == NULL)
-#ifdef RTEMS_LEGACY_STACK
-        rtems_bsdnet_config.hostname = rtems_bsdnet_config.ifconfig->ip_address;
-#else
-        rtems_bsdnet_config.hostname = rtems_static_ifconfig.ip_address;
-#endif
-
     rtems_bsdnet_bootp_boot_file_name = 
-             "/Volumes/Epics/XILINX_ZYNQ_A9_QEMU/nfsTest/bin/RTEMS-xilinx_zynq_a9_qemu/nfsTest.boot"; 
-    rtems_bsdnet_bootp_cmdline = "/Volumes/Epics/XILINX_ZYNQ_A9_QEMU/nfsTest/iocBoot/iocnfsTest/st.cmd";
+		"/bin/RTEMS-xilinx_zynq_a9_qemu/nfsTest.boot"; 
+    rtems_bsdnet_bootp_cmdline = "/iocBoot/iocexampleIOC/st.cmd";
     splitRtemsBsdnetBootpCmdline();
-    //splitNfsMountPath(gev("epics-nfsmount", nvp));
-    rtems_bsdnet_config.ntp_server[0] = "10.0.0.0";
-    if (rtems_bsdnet_config.ntp_server[0] == NULL)
-        rtems_bsdnet_config.ntp_server[0] = rtems_bsdnet_bootp_server_name;
+    rtems_bsdnet_config.ntp_server[0] = "10.0.0.3";
     epicsEnvSet("TZ", "MSZ-1");
     return(0);
 }
-
 #else
 /*
  * Placeholder for systems without NVRAM

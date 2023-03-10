@@ -390,7 +390,7 @@ static void test_aftc(void){
     // number of tests = 16
 }
 
-MAIN(biTest) {
+MAIN(aiTest) {
 
     testPlan(6+6+11+9+12+14+18+15+6+29);
 

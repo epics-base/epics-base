@@ -251,7 +251,7 @@ initialize_local_filesystem(char **argv)
         return 1; /* FS setup successful */
 
     } else if (_FlashSize && (_DownloadLocation || _FlashBase)) {
-#ifdef RTEMS_LEGACY_STACK
+#if defined(LEGACY_STACK) || defined(HAS_EDATA)
         extern char _edata[];
         size_t flashIndex = _edata - _DownloadLocation;
 #else

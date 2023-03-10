@@ -8,15 +8,48 @@ EXE = .elf
 RTEMS_BSP = mvme5500
 RTEMS_TARGET_CPU = powerpc
 GNU_TARGET = powerpc-rtems
-ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
-ARCH_DEP_CFLAGS += -DHAVE_MOTLOAD
-ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_MBUF_SPACE=2048
-ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_CLUSTER_SPACE=5120
+
+# optimization trouble in postfix.c
+ARCH_DEP_CFLAGS += -DRTEMS_HAS_ALTIVEC
+#will use bootp
+#ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+ARCH_DEP_CFLAGS += -DHAVE_MOTLOAD -DHAS_RTC
 ARCH_DEP_CFLAGS += -DBSP_NVRAM_BASE_ADDR=0xf1110000
 
+include $(CONFIG)/os/CONFIG.Common.RTEMS
+# These checks must appear after the above include
+
+ifneq ($(RTEMS_VERSION),6)
+ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_MBUF_SPACE=2048
+ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_CLUSTER_SPACE=5120
+endif
+
+ifeq ($(RTEMS_VERSION),6)
+# Which nfs version to use
+ARCH_DEP_CFLAGS += -DNET_CFG_NFS_MOUNT_OPTIONS=\"nfsv4,minorversion=1\"
+#ABI Flags etc, I have tried to read in the stuff via pkgconfig into
+# CONFIG.Common.RTEMS, but have not been able to do it due to lack of gMake knowledge.
+#ARCH_DEP_CFLAGS += -mcpu=7400
+ARCH_DEP_LDFLAGS += -B$(RTEMS_TOOLS)/powerpc-rtems6/beatnik/lib -qrtems -Wl,--gc-sections
+endif
+
 MUNCH_SUFFIX = .boot
+MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
 define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary $< $@
 endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
+
+RTEMSSYMS=$(PRODNAME:%$(EXE)=%.sym)
+RTEMSIMGS=$(PRODNAME:%$(EXE)=%.bin)
+INSTALL_RTEMSSYMS=$(RTEMSSYMS:%=$(INSTALL_BIN)/%)
+INSTALL_RTEMSIMGS=$(RTEMSIMGS:%=$(INSTALL_BIN)/%)
+
+%.sym: %$(EXE)
+	$(XSYMS) $^ $@
+
+%.bin: %$(EXE)
+	$(OBJCOPY) -Obinary $^ $@
+
+#PRODTARGETS+=$(INSTALL_RTEMSSYMS) $(INSTALL_RTEMSIMGS)

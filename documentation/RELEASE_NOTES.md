@@ -15,6 +15,33 @@ should also be read to understand what has changed since earlier releases.
 
 ## Changes made on the 7.0 branch since 7.0.7
 
+### dbEvent eventsRemaining missed on cancel
+
+In some cases, RSRV may queue a subscription update, but not flush it.
+This partially addresses this issue.
+
+### subRecord on bad INP links
+
+Previously, if a subRecord has an invalid `INP*` link, it was silently failing
+(and not running the proc function).  Now the the status code returned by the
+subroutine is returned from `dbProcess()`.
+
+### COMMANDLINE_LIBRARY fallback to GNU_DIR
+
+Fall back to the previous behavior when searching for `readline.h` with older compilers.
+
+### Search for readline installed via HomeBrew.
+
+Look for `/opt/local/include/readline` on OSX.
+
+### Always stop worker threads
+
+The SCAN and callback threads are now stopped during normal IOC shutdown.
+
+### Allow runtime bypass of free list allocator
+
+The environment variable `$EPICS_FREELIST_BYPASS` may be set to `YES` to cause the `freeListLib` functions to always call directly to `malloc()`/`free()`.  May be useful when troubleshooting some kinds of memory allocation bugs which would otherwise be "hidden".  eg. use-after-free data races.  This may also improve the results of dynamic analysis tools which are not aware of this internal free list.
+
 ### `compress` record enhancement
 
 The compress record now supports the use of partially-filled buffers when using

@@ -58,7 +58,13 @@ static void test_operator_display(void){
     testdbGetFieldEqual("test_bi_rec.NAME", DBF_STRING, "test_bi_rec");
     testdbGetFieldEqual("test_bi_rec.DESC", DBF_STRING, "DESC_TEST");
 
-    // number of tests = 7
+    /* verify conversion */
+    testdbPutFieldOk("test_bi_link_rec.VAL", DBF_SHORT, TRUE);
+    testdbGetFieldEqual("test_bi_rec.VAL", DBF_STRING, "ONAM_TEST"); 
+    testdbPutFieldOk("test_bi_link_rec.VAL", DBF_SHORT, FALSE);
+    testdbGetFieldEqual("test_bi_rec.VAL", DBF_STRING, "ZNAM_TEST"); 
+
+    // number of tests = 11
 }
 
 static void test_alarm(void){
@@ -67,7 +73,7 @@ static void test_alarm(void){
     testdbPutFieldOk("test_bi_rec.INP", DBF_STRING, "test_bi_link_rec.VAL");
     testdbPutFieldOk("test_bi_link_rec.FLNK", DBF_STRING, "test_bi_rec");
 
-    /* Set start VAL to FALSE*/
+    /* set start VAL to FALSE*/
     testdbPutFieldOk("test_bi_link_rec.VAL", DBF_SHORT, FALSE);
 
     /* set alarm parameters */
@@ -75,23 +81,26 @@ static void test_alarm(void){
     testdbPutFieldOk("test_bi_rec.OSV", DBF_SHORT, menuAlarmSevrMINOR);
     testdbPutFieldOk("test_bi_rec.COSV", DBF_SHORT, menuAlarmSevrINVALID);
     
-    /* Verify alarm status is NO_ALARM*/
+    /* verify alarm status is NO_ALARM*/
     testdbGetFieldEqual("test_bi_rec.SEVR", DBF_SHORT, menuAlarmSevrNO_ALARM);
 
-    /* Set ZSV to MAJOR and verify that SEVR is now MAJOR */
+    /* set ZSV to MAJOR and verify that SEVR is now MAJOR */
     testdbPutFieldOk("test_bi_rec.ZSV", DBF_SHORT, menuAlarmSevrMAJOR);
     testdbGetFieldEqual("test_bi_rec.SEVR", DBF_SHORT, menuAlarmSevrMAJOR);
 
-    /* Set VAL to 1 on lined record and verify that COSV now sets the SEVR to INVALID */
+    /* set VAL to 1 on linked record and verify that COSV now sets the SEVR to INVALID */
     testdbPutFieldOk("test_bi_link_rec.VAL", DBF_SHORT, TRUE);
     testdbGetFieldEqual("test_bi_rec.SEVR", DBF_SHORT, menuAlarmSevrINVALID);
+
+    /* verify LAML */
+    testdbGetFieldEqual("test_bi_rec.LALM", DBF_SHORT, TRUE);
  
-    // number of tests = 12
+    // number of tests = 13
 }
 
 MAIN(biTest) {
 
-    testPlan(6+6+7+12);
+    testPlan(6+6+11+13);
 
     testdbPrepare();   
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);

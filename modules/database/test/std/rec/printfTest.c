@@ -315,7 +315,7 @@ static void test_hash_flag(void){
     testdbPutFieldOk("test_printf_rec.FMT", DBF_STRING, format_string);
 
     /* set value on inp0 */
-    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_SHORT, 12);
+    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_SHORT, 014);
 
     /* verify that string is formatted as expected */
     testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);

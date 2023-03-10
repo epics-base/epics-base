@@ -63,7 +63,7 @@ static void test_high(void){
     diffTime = epicsTimeDiffInSeconds(&endTime, &startTime) + diffTimeTolerance;
     testOk(diffTime >= high_time, "HIGH time %lf", diffTime);
 
-    /* verfiy that both records are set back to 0 */
+    /* verify that both records are set back to 0 */
     testdbGetFieldEqual("test_bo_rec.VAL", DBF_SHORT, FALSE);
     testdbGetFieldEqual("test_bo_link_rec.VAL", DBF_SHORT, FALSE);
 
@@ -83,7 +83,13 @@ static void test_operator_display(void){
     testdbGetFieldEqual("test_bo_rec.NAME", DBF_STRING, "test_bo_rec");
     testdbGetFieldEqual("test_bo_rec.DESC", DBF_STRING, "DESC_TEST");
 
-    // number of tests = 7
+    /* verify conversion */
+    testdbPutFieldOk("test_bo_rec.VAL", DBF_SHORT, TRUE);
+    testdbGetFieldEqual("test_bo_rec.VAL", DBF_STRING, "ONAM_TEST"); 
+    testdbPutFieldOk("test_bo_rec.VAL", DBF_SHORT, FALSE);
+    testdbGetFieldEqual("test_bo_rec.VAL", DBF_STRING, "ZNAM_TEST"); 
+
+    // number of tests = 11
 }
 
 static void test_alarm(void){
@@ -114,12 +120,23 @@ static void test_alarm(void){
     testdbGetFieldEqual("test_bo_rec.SEVR", DBF_SHORT, menuAlarmSevrINVALID);
     testdbGetFieldEqual("test_bo_link_rec.VAL", DBF_SHORT, FALSE);
 
-    // number of tests = 15
+    /* verify IVOV continue normally action */
+    testdbPutFieldOk("test_bo_rec.IVOA", DBF_SHORT, menuIvoaContinue_normally);
+    testdbPutFieldOk("test_bo_rec.VAL", DBF_SHORT, TRUE);
+    testdbGetFieldEqual("test_bo_link_rec.VAL", DBF_SHORT, TRUE);
+
+    /* verify IVOV dont drive outputs action */
+    testdbPutFieldOk("test_bo_rec.VAL", DBF_SHORT, FALSE);
+    testdbPutFieldOk("test_bo_rec.IVOA", DBF_SHORT, menuIvoaDon_t_drive_outputs);
+    testdbPutFieldOk("test_bo_rec.VAL", DBF_SHORT, TRUE);
+    testdbGetFieldEqual("test_bo_link_rec.VAL", DBF_SHORT, FALSE);
+
+    // number of tests = 22
 }
 
 MAIN(boTest) {
 
-    testPlan(4+7+7+15);
+    testPlan(4+7+11+22);
 
     testdbPrepare();   
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);

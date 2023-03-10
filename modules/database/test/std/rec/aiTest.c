@@ -392,7 +392,7 @@ static void test_aftc(void){
 
 MAIN(biTest) {
 
-    testPlan(6+6+11+9+12+14+18+15+6+29+16);
+    testPlan(6+6+11+9+12+14+18+15+6+29);
 
     testdbPrepare();   
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);

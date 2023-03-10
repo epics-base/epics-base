@@ -509,6 +509,12 @@ static void test_all_inputs(void){
 }
 
 MAIN(printfTest) {
+#ifdef _WIN32
+#if (defined(_MSC_VER) && _MSC_VER < 1900) || \
+    (defined(_MINGW) && defined(_TWO_DIGIT_EXPONENT))
+    _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
+#endif
 
     testPlan(3+3+3+3+3+3+3+3+4+3+3+3+3+3+3+3+3+3+3+3+3+3+3+3+6+6+12);
 

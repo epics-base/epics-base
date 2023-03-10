@@ -527,7 +527,7 @@ char** iocsh_attempt_completion(const char* word, int start, int end)
         size_t linelen = strlen(line);
         std::vector<char> lbuf(linelen+1u);
         memcpy(&lbuf[0], line, linelen);
-        lbuf[linelen] = '\0';     
+        lbuf[linelen] = '\0';
 
         int pos = 0;
         while(isspace(lbuf[pos])) //will never be entered?

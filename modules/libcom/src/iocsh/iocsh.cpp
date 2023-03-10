@@ -888,17 +888,15 @@ static void helpCallFunc(const iocshArgBuf *args)
                 "Type 'help <command>' to see the arguments of <command>.  eg. 'help db*'\n");
     }
     else {
-        bool printSeparator = false;
+        bool firstFunction = true;
         for (int iarg = 1 ; iarg < argc ; iarg++) {
             for (pcmd = iocshCommandHead ; pcmd != NULL ; pcmd = pcmd->next) {
                 piocshFuncDef = pcmd->def.pFuncDef;
                 if (epicsStrGlobMatch(piocshFuncDef->name, argv[iarg]) != 0) {
 
-                    if (printSeparator) {
+                    if (! firstFunction) {
                         fprintf(epicsGetStdout(), 
                             ANSI_UNDERLINE("                                                            \n"));
-                    } else {
-                        printSeparator = true;
                     }
 
                     fprintf(epicsGetStdout(),
@@ -919,7 +917,10 @@ static void helpCallFunc(const iocshArgBuf *args)
                     if(piocshFuncDef->usage) {
                         fprintf(epicsGetStdout(), "\n%s", piocshFuncDef->usage);
                     }
+                    
+                    firstFunction = false;
                 }
+
             }
         }
     }

@@ -199,24 +199,24 @@ static
 void testEpicsStrPrintEscaped(void)
 {   
     const char *filename = "testEpicsStrPrintEscaped";
-    // Create a file then re-open it read only
-    FILE *readOnly = fopen(filename, "a");
-    fclose(readOnly);
-    readOnly = fopen(filename, "r");
+    // Avoid printing to stdout by redirecting everything to a file
+    FILE *testFile = fopen(filename, "a");
+    FILE *readOnly = fopen(filename, "r");
 
     testDiag("testEpicsStrPrintEscaped()");
 
     // Passing cases
-    testOk1(epicsStrPrintEscaped(stdout, "1234", 4) == 4);
-    testOk1(epicsStrPrintEscaped(stdout, "\a\b\f\n\r\t\v\\\'\"", 10) == 20);
+    testOk1(epicsStrPrintEscaped(testFile, "1234", 4) == 4);
+    testOk1(epicsStrPrintEscaped(testFile, "\a\b\f\n\r\t\v\\\'\"", 10) == 20);
 
     //Failing cases
     testOk1(epicsStrPrintEscaped(readOnly, "1234", 4) == -1);
     testOk1(epicsStrPrintEscaped(NULL, "1234", 4) == -1);
-    testOk1(epicsStrPrintEscaped(stdout, NULL, 4) == 0);
-    testOk1(epicsStrPrintEscaped(stdout, "", 4) == 0);
-    testOk1(epicsStrPrintEscaped(stdout, "1234", 0) == 0);
+    testOk1(epicsStrPrintEscaped(testFile, NULL, 4) == 0);
+    testOk1(epicsStrPrintEscaped(testFile, "", 4) == 0);
+    testOk1(epicsStrPrintEscaped(testFile, "1234", 0) == 0);
 
+    fclose(testFile);
     fclose(readOnly);
     remove(filename);
 }

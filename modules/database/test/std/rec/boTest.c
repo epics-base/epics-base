@@ -4,8 +4,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#include <unistd.h>
-
 #include "dbUnitTest.h"
 #include "testMain.h"
 #include "errlog.h"

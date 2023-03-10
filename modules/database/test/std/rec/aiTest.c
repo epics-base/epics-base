@@ -25,11 +25,11 @@ static void test_soft_input(void){
     testdbPutFieldOk("test_ai_link_rec.FLNK", DBF_STRING, "test_ai_rec");
 
     /* set VAL to on linked record */
-    testdbPutFieldOk("test_ai_link_rec.VAL", DBF_SHORT, value);
+    testdbPutFieldOk("test_ai_link_rec.VAL", DBF_DOUBLE, value);
 
     /* verify that this record VAL is updated but RVAL is not */
-    testdbGetFieldEqual("test_ai_rec.VAL", DBF_SHORT, value);
-    testdbGetFieldEqual("test_ai_rec.RVAL", DBF_SHORT, 0);
+    testdbGetFieldEqual("test_ai_rec.VAL", DBF_DOUBLE, value);
+    testdbGetFieldEqual("test_ai_rec.RVAL", DBF_DOUBLE, 0.0);
 
     // number of tests = 6
 }
@@ -43,11 +43,11 @@ static void test_raw_soft_input(void){
     testdbPutFieldOk("test_ai_link_rec.FLNK", DBF_STRING, "test_ai_rec");
 
     /* set VAL to on linked record */
-    testdbPutFieldOk("test_ai_link_rec.VAL", DBF_SHORT, value);
+    testdbPutFieldOk("test_ai_link_rec.VAL", DBF_DOUBLE, value);
 
     /* verify that this record RVAL and VAL are updated */
-    testdbGetFieldEqual("test_ai_rec.VAL", DBF_SHORT, value);
-    testdbGetFieldEqual("test_ai_rec.RVAL", DBF_SHORT, value);
+    testdbGetFieldEqual("test_ai_rec.VAL", DBF_DOUBLE, value);
+    testdbGetFieldEqual("test_ai_rec.RVAL", DBF_DOUBLE, value);
 
     // number of tests = 6
 }
@@ -390,6 +390,13 @@ static void test_aftc(void){
 
 MAIN(aiTest) {
 
+#ifdef _WIN32
+#if (defined(_MSC_VER) && _MSC_VER < 1900) || \
+    (defined(_MINGW) && defined(_TWO_DIGIT_EXPONENT))
+    _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
+#endif
+
     testPlan(6+6+11+9+12+14+18+15+6+29);
 
     testdbPrepare();   
@@ -412,8 +419,8 @@ MAIN(aiTest) {
     test_smoothing_filter();
     test_udf();
     test_alarm();
-    /* TODO: Investigate and make the AFTC test work correctly */
-    //test_aftc();
+    /* TODO: Investigate and make the AFTC test work correctly 
+    test_aftc(); */
 
     testIocShutdownOk();
     testdbCleanup();

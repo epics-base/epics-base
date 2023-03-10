@@ -386,7 +386,13 @@ static void test_hh_flag(void){
     testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_LONG, 0xffc0c1);
 
     /* verify that string is formatted as expected */
+    #ifdef __rtems__
+    testTodoBegin("Fails on UB-20 gcc-9 on RTEMS");
+    #endif
     testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);
+    #ifdef __rtems__
+    testTodoEnd();
+    #endif
 
     // number of tests = 3
 }

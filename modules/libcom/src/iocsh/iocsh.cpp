@@ -508,7 +508,6 @@ char* iocsh_complete_variable(const char* word, int notfirst)
 char** iocsh_attempt_completion(const char* word, int start, int end)
 {
     const char *line = rl_line_buffer;
-    // printf("\n%d\n", isspace(*line));
 
     if(!line || !word || start<0 || end <0 || start>end)
         return NULL; // paranoia
@@ -589,7 +588,6 @@ char** iocsh_attempt_completion(const char* word, int start, int end)
                 return iocshCompleteField(pv.c_str(), init_field.c_str());
             }
 
-            //Q: where is iocshCompleteRecord instantiated?
             if(argdef->type==iocshArgStringRecord && iocshCompleteRecord) {
                 return iocshCompleteRecord(word);
 

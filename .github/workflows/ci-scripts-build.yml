@@ -51,6 +51,25 @@ jobs:
       matrix:
         # Job names also name artifacts, character limitations apply
         include:
+          - os: ubuntu-22.04
+            cmp: gcc-12
+            name: "Ub-22 gcc-12 c++20 Werror"
+            # Turn all warnings into errors,
+            # except for those we could not fix (yet).
+            # Remove respective -Wno-error=... flag once it is fixed.
+            extra: "CMD_CXXFLAGS=-std=c++20
+                    CMD_CPPFLAGS='-fdiagnostics-color
+                                  -Werror
+                                  -Wno-error=deprecated-declarations
+                                  -Wno-error=stringop-truncation
+                                  -Wno-error=restrict
+                                  -Wno-error=sizeof-pointer-memaccess
+                                  -Wno-error=nonnull
+                                  -Wno-error=dangling-pointer
+                                  -Wno-error=format-overflow
+                                  -Wno-error=format-security
+                                  -Wno-error=stringop-overread'"
+
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default

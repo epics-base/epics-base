@@ -21,7 +21,7 @@
 # from the top of the Base tree after changing this setting.
 
 # Needs -lncurses (RHEL 5 etc.):
-#COMMANDLINE_LIBRARY = READLINE_NCURSES
+COMMANDLINE_LIBRARY = READLINE_NCURSES
 
 # Needs -lcurses (older versions)
 #COMMANDLINE_LIBRARY = READLINE_CURSES

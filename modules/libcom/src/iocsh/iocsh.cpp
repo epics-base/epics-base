@@ -16,6 +16,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <iostream>
 
 #include <stddef.h>
 #include <string.h>
@@ -24,7 +25,6 @@
 #include <errno.h>
 
 #define EPICS_PRIVATE_API
-
 #include "epicsMath.h"
 #include "errlog.h"
 #include "macLib.h"
@@ -40,6 +40,9 @@
 #include "iocsh.h"
 
 #include "epicsReadlinePvt.h"
+
+//DO NOT COMMIT THIS BIT...
+#define EPICS_COMMANDLINE_LIBRARY EPICS_COMMANDLINE_LIBRARY_READLINE
 
 #if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
 #  include <readline/readline.h>
@@ -219,6 +222,7 @@ showError (const char *filename, int lineno, const char *msg, ...)
 }
 
 char** (*iocshCompleteRecord)(const char *word) = NULL;
+char** (*iocshCompleteField)(const char * pv, const char * field_prefix);
 
 namespace {
 
@@ -507,6 +511,7 @@ char* iocsh_complete_variable(const char* word, int notfirst)
 char** iocsh_attempt_completion(const char* word, int start, int end)
 {
     const char *line = rl_line_buffer;
+    // printf("\n%d\n", isspace(*line));
 
     if(!line || !word || start<0 || end <0 || start>end)
         return NULL; // paranoia
@@ -526,10 +531,10 @@ char** iocsh_attempt_completion(const char* word, int start, int end)
         size_t linelen = strlen(line);
         std::vector<char> lbuf(linelen+1u);
         memcpy(&lbuf[0], line, linelen);
-        lbuf[linelen] = '\0';
+        lbuf[linelen] = '\0';     
 
         int pos = 0;
-        while(isspace(lbuf[pos]))
+        while(isspace(lbuf[pos])) //will never be entered?
             pos++;
 
         Tokenize tokenize;
@@ -571,8 +576,25 @@ char** iocsh_attempt_completion(const char* word, int start, int end)
             // known argument type
             rl_attempted_completion_over = 1;
 
+            //if input string has a ., we know what record it is.
+            std::string str = word;
+            std::string init_field = "";
+            std::string pv = "";
+
+            size_t dot = str.find(".");
+
+            if (dot != std::string::npos) {
+                pv = str.substr(0, dot);
+                init_field = str.substr(dot+1u, str.length());
+            }
+
+            if(!init_field.empty()) {
+                return iocshCompleteField(pv.c_str(), init_field.c_str());
+            }
+
+            //Q: where is iocshCompleteRecord instantiated?
             if(argdef->type==iocshArgStringRecord && iocshCompleteRecord) {
-                return (*iocshCompleteRecord)(word);
+                return iocshCompleteRecord(word);
 
             } else if(argdef->type==iocshArgStringPath) {
                 // use default completion (filesystem)

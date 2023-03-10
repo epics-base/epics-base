@@ -28,6 +28,7 @@
 #include "db_test.h"
 #include "dbTest.h"
 
+
 DBCORE_API extern int callbackParallelThreadsDefault;
 
 /* dbLoadDatabase */
@@ -504,6 +505,7 @@ static void dbStateShowAllCallFunc (const iocshArgBuf *args)
 void dbIocRegister(void)
 {
     iocshCompleteRecord = &dbCompleteRecord;
+    iocshCompleteField = &dbCompleteField;
 
     iocshRegister(&dbbFuncDef,dbbCallFunc);
     iocshRegister(&dbdFuncDef,dbdCallFunc);

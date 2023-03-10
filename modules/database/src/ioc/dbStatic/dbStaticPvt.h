@@ -117,6 +117,7 @@ void dbPvdFreeMem(DBBASE *pdbbase);
 
 DBCORE_API
 char** dbCompleteRecord(const char *word);
+char** dbCompleteField(const char *pv, const char *field_prefix);
 
 #ifdef __cplusplus
 }

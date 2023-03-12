@@ -140,14 +140,16 @@ char** dbCompleteRecord(const char *cword)
 
         if(!prefix.empty() || !suggestions.empty()) {
             ret = (char**)malloc(sizeof(*ret)*(2u + suggestions.size()));
-            ret[0] = prefix.dup();
-            size_t n=1u;
-            for(suggestions_t::iterator it(suggestions.begin()), end(suggestions.end());
-                it!=end; ++it)
-            {
-                ret[n++] = it->dup();
+            if(ret) {
+                ret[0] = prefix.dup();
+                size_t n=1u;
+                for(suggestions_t::iterator it(suggestions.begin()), end(suggestions.end());
+                    it!=end; ++it)
+                {
+                    ret[n++] = it->dup();
+                }
+                ret[n] = NULL;
             }
-            ret[n] = NULL;
         }
 
         return ret;

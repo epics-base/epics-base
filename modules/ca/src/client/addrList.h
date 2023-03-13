@@ -32,6 +32,9 @@ extern "C" {
 /** \brief Configures a list of addresses for use with Channel Access.
  * 
  * This function takes a pointer to an ELLLIST structure, a socket, and a port number as arguments.
+ * The function is used at iocinf.cpp and adds discovered broadcast adresses to the list, or the
+ * loopback interface address if no other addresses are found bz calling addAddrToChannelAccessAddressList function.
+ * It also ensures the port number is set correctly and calls removeDuplicateAddresses to remove duplicate addresses.
  */
 LIBCA_API void epicsStdCall configureChannelAccessAddressList
     ( struct ELLLIST *pList, SOCKET sock, unsigned short port );

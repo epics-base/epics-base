@@ -78,17 +78,20 @@ LIBCOM_API void taskwdMonitorAdd(const taskwdMonitor *funcs, void *usr);
  * the values given to taskwdMonitorAdd when originally registered. */
 LIBCOM_API void taskwdMonitorDel(const taskwdMonitor *funcs, void *usr);
 
-/** \brief Old monitoring API, deprecated */
+/** \brief Old monitoring API
+ * \deprecated */
 typedef void (*TASKWDANYFUNC)(void *usr, epicsThreadId tid);
 
-/** \brief for backwards compatibility purposes, but are now deprecated.
+/** \brief for backwards compatibility purposes
+ * \deprecated
  * 
  * The callback routine will be called whenever any of the tasks being monitored by the task watchdog
  * become suspended. key must have a unique value because the task watchdog system uses this value
  * to determine which entry to remove when taskwdAnyRemove is called. */
 LIBCOM_API void taskwdAnyInsert(void *key,
     TASKWDANYFUNC callback, void *usr);
-/** \brief for backwards compatibility purposes, but are now deprecated.
+/** \brief for backwards compatibility purposes
+ * \deprecated
  * 
  * key is the same value that was passed to taskwdAnyInsert. */
 LIBCOM_API void taskwdAnyRemove(void *key);

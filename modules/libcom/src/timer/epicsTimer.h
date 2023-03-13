@@ -50,9 +50,8 @@ public:
 
 /** \brief Defining the methods for managing a timer.
  * Its member functions include start, cancel, and destroy.
- * WARNING: A deadlock will occur if you hold a lock while
- * calling this function that you also take within the timer
- * expiration callback. */
+ * \warning A deadlock will occur if you hold a lock while calling this function that you also take within the timer expiration callback.
+ */
 class LIBCOM_API epicsTimer {
 public:
     virtual void destroy () = 0;

@@ -189,16 +189,22 @@ static void test_f_format(void){
 
 static void test_F_format(void){
     const char format_string[] = "Format test string %F";
-    const char result_string[] = "Format test string 67982.300000";
+    const char result_string[] = "Format test string 6729982.999000";
 
     /* set format string */
     testdbPutFieldOk("test_printf_rec.FMT", DBF_STRING, format_string);
 
     /* set value on inp0 */
-    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_DOUBLE, 67982.3);
-
+    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_DOUBLE, 6729982.999);
+    
     /* verify that string is formatted as expected */
+    #if defined(__GNUC__)  &&  __GNUC__ < 9
+    testTodoBegin("Fails on gcc8");
+    #endif
     testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);
+    #if defined(__GNUC__)  &&  __GNUC__ < 9
+    testTodoEnd();
+    #endif
     // number of tests = 3
 }
 

@@ -95,13 +95,14 @@ static void test_no_linr_unit_conversion(void){
     testdbPutFieldOk("test_ai_rec.ROFF", DBF_SHORT, roff);
     testdbPutFieldOk("test_ai_rec.ASLO", DBF_SHORT, aslo);
     testdbPutFieldOk("test_ai_rec.AOFF", DBF_SHORT, aoff);
+    testdbPutFieldOk("test_ai_rec.LINR", DBF_LONG, menuConvertNO_CONVERSION);
     
     /* verify conversion */
     testdbPutFieldOk("test_ai_link_rec.VAL", DBF_SHORT, rval);
     testdbGetFieldEqual("test_ai_rec.VAL", DBF_SHORT, val);
     testdbGetFieldEqual("test_ai_rec.RVAL", DBF_SHORT, rval);
 
-    // number of tests = 9
+    // number of tests = 10
 }
 
 static void test_slope_linr_unit_conversion(void){
@@ -397,7 +398,7 @@ MAIN(aiTest) {
 #endif
 #endif
 
-    testPlan(6+6+11+9+12+14+18+15+6+29);
+    testPlan(6+6+11+10+12+14+18+15+6+29);
 
     testdbPrepare();   
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);

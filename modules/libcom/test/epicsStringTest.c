@@ -209,9 +209,19 @@ void testEpicsStrPrintEscaped(void)
     testOk1(epicsStrPrintEscaped(testFile, "1234", 4) == 4);
     testOk1(epicsStrPrintEscaped(testFile, "\a\b\f\n\r\t\v\\\'\"", 10) == 20);
 
-    //Failing cases
-    testOk1(epicsStrPrintEscaped(readOnly, "1234", 4) == -1);
+    // Failing cases
     testOk1(epicsStrPrintEscaped(NULL, "1234", 4) == -1);
+    // On some platforms (specifially certain versions of MinGW-w64), fprintf
+    // is broken and does not return -1 when the write operation fails. On
+    // those platforms, epicsStrPrintEscaped cannot detect failure either, so
+    // testing that it reports failure does not make sense on those platforms.
+    // For this reason, we only test this behavior of epcisStrPrintEscaped when
+    // after checking that fprintf behaves correctly.
+    if (fprintf(readOnly, "test") == -1) {
+        testOk1(epicsStrPrintEscaped(readOnly, "1234", 4) == -1);
+    } else {
+        testSkip(1, "fprintf is broken on this system");
+    }
     testOk1(epicsStrPrintEscaped(testFile, NULL, 4) == 0);
     testOk1(epicsStrPrintEscaped(testFile, "", 4) == 0);
     testOk1(epicsStrPrintEscaped(testFile, "1234", 0) == 0);

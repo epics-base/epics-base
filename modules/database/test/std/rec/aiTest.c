@@ -162,7 +162,7 @@ static void test_linear_linr_unit_conversion(void){
     testdbPutFieldOk("test_ai_rec.AOFF", DBF_LONG, aoff);
     testdbPutFieldOk("test_ai_rec.ESLO", DBF_LONG, eslo);
     testdbPutFieldOk("test_ai_rec.EOFF", DBF_LONG, eoff);
-    /* Since our raw soft input does not support EGUL and EGUF conversion we set them to lagre values here just to check they dont break anything */
+    /* Since our raw soft input does not support EGUL and EGUF conversion we set them to lagre values here just to check they dont break anything  */
     testdbPutFieldOk("test_ai_rec.EGUL", DBF_LONG, egul);
     testdbPutFieldOk("test_ai_rec.EGUF", DBF_LONG, eguf);
     testdbPutFieldOk("test_ai_rec.LINR", DBF_LONG, menuConvertLINEAR);

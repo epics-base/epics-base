@@ -663,7 +663,7 @@ int otoi(Char *str)
 
 char *readable_form(int c)
 {
-    static char rform[10];
+    static char rform[16];
 
     if ( (c >= 0 && c < 32) || c >= 127 )
         {

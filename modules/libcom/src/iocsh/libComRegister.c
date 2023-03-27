@@ -25,6 +25,7 @@
 #include "taskwd.h"
 #include "registry.h"
 #include "epicsGeneralTime.h"
+#include "freeList.h"
 #include "libComRegister.h"
 
 /* Register the PWD environment variable when the cd IOC shell function is
@@ -98,7 +99,7 @@ static void echoCallFunc(const iocshArgBuf *args)
 }
 
 /* chdir */
-static const iocshArg chdirArg0 = { "directory name",iocshArgString};
+static const iocshArg chdirArg0 = { "directory name",iocshArgStringPath};
 static const iocshArg * const chdirArgs[1] = {&chdirArg0};
 static const iocshFuncDef chdirFuncDef = {"cd",1,chdirArgs,
                                           "Change directory to new directory provided as parameter\n"};
@@ -447,7 +448,7 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 }
 
 /* generalTimeReport */
-static const iocshArg generalTimeReportArg0 = { "interest_level", iocshArgArgv};
+static const iocshArg generalTimeReportArg0 = { "interest_level", iocshArgInt};
 static const iocshArg * const generalTimeReportArgs[1] = { &generalTimeReportArg0 };
 static const iocshFuncDef generalTimeReportFuncDef = {"generalTimeReport",1,generalTimeReportArgs,
                                                       "Display time providers and their priority levels"
@@ -467,7 +468,11 @@ static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
     installLastResortEventProvider();
 }
 
-static iocshVarDef asCheckClientIPDef[] = { { "asCheckClientIP", iocshArgInt, 0 }, { NULL, iocshArgInt, NULL } };
+static iocshVarDef comDefs[] = {
+    { "asCheckClientIP", iocshArgInt, 0 },
+    { "freeListBypass", iocshArgInt, 0 },
+    { NULL, iocshArgInt, NULL }
+};
 
 void epicsStdCall libComRegister(void)
 {
@@ -504,6 +509,7 @@ void epicsStdCall libComRegister(void)
     iocshRegister(&generalTimeReportFuncDef,generalTimeReportCallFunc);
     iocshRegister(&installLastResortEventProviderFuncDef, installLastResortEventProviderCallFunc);
 
-    asCheckClientIPDef[0].pval = &asCheckClientIP;
-    iocshRegisterVariable(asCheckClientIPDef);
+    comDefs[0].pval = &asCheckClientIP;
+    comDefs[1].pval = &freeListBypass;
+    iocshRegisterVariable(comDefs);
 }

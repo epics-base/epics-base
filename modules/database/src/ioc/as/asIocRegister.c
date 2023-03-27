@@ -16,7 +16,7 @@
 #include "asIocRegister.h"
 
 /* asSetFilename */
-static const iocshArg asSetFilenameArg0 = { "ascf",iocshArgString};
+static const iocshArg asSetFilenameArg0 = { "ascf",iocshArgStringPath};
 static const iocshArg * const asSetFilenameArgs[] = {&asSetFilenameArg0};
 static const iocshFuncDef asSetFilenameFuncDef =
     {"asSetFilename",1,asSetFilenameArgs,
@@ -97,7 +97,7 @@ static void aspmemCallFunc(const iocshArgBuf *args)
 }
 
 /* astac */
-static const iocshArg astacArg0 = { "recordname",iocshArgString};
+static const iocshArg astacArg0 = { "recordname",iocshArgStringRecord};
 static const iocshArg astacArg1 = { "user",iocshArgString};
 static const iocshArg astacArg2 = { "host",iocshArgString};
 static const iocshArg * const astacArgs[] = {&astacArg0,&astacArg1,&astacArg2};

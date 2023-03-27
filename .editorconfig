@@ -1,0 +1,8 @@
+# Documentation for this file: https://EditorConfig.org
+
+root = true
+
+# Unix-style newlines ending every file,
+# as some compilers complain about files not ending in newline
+[*]
+insert_final_newline = true

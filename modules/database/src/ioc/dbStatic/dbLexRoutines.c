@@ -111,7 +111,8 @@ typedef struct inputFile{
 static ELLLIST inputFileList = ELLLIST_INIT;
 
 static inputFile *pinputFileNow = NULL;
-static DBBASE *pdbbase = NULL;
+/* The DBBASE most recently allocated/used by dbReadCOM() */
+static DBBASE *savedPdbbase = NULL;
 
 typedef struct tempListNode {
     ELLNODE     node;
@@ -233,15 +234,15 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     }
 
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
-    pdbbase = *ppdbbase;
+    savedPdbbase = *ppdbbase;
     if(path && strlen(path)>0) {
-        dbPath(pdbbase,path);
+        dbPath(savedPdbbase,path);
     } else {
         penv = getenv("EPICS_DB_INCLUDE_PATH");
         if(penv) {
-            dbPath(pdbbase,penv);
+            dbPath(savedPdbbase,penv);
         } else {
-            dbPath(pdbbase,".");
+            dbPath(savedPdbbase,".");
         }
     }
     my_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
@@ -271,7 +272,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         FILE *fp1 = 0;
 
         if (pinputFile->filename)
-            pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp1);
+            pinputFile->path = dbOpenFile(savedPdbbase, pinputFile->filename, &fp1);
         if (!pinputFile->filename || !fp1) {
             errPrintf(0, __FILE__, __LINE__,
                 "dbRead opening file %s\n",pinputFile->filename);
@@ -297,13 +298,13 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     while (ellCount(&tempList))
         popFirstTemp(); /* Memory leak on parser failure */
 
-    dbFreePath(pdbbase);
+    dbFreePath(savedPdbbase);
     if(!status) { /*add RTYP and VERS as an attribute */
         DBENTRY dbEntry;
         DBENTRY *pdbEntry = &dbEntry;
         long    localStatus;
 
-        dbInitEntry(pdbbase,pdbEntry);
+        dbInitEntry(savedPdbbase,pdbEntry);
         localStatus = dbFirstRecordType(pdbEntry);
         while(!localStatus) {
             localStatus = dbPutRecordAttribute(pdbEntry,"RTYP",
@@ -323,7 +324,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 cleanup:
     if(dbRecordsAbcSorted) {
         ELLNODE *cur;
-        for(cur = ellFirst(&pdbbase->recordTypeList); cur; cur=ellNext(cur))
+        for(cur = ellFirst(&savedPdbbase->recordTypeList); cur; cur=ellNext(cur))
         {
             dbRecordType *rtype = CONTAINER(cur, dbRecordType, node);
 
@@ -416,12 +417,12 @@ static void dbIncludePrint(void)
 
 static void dbPathCmd(char *path)
 {
-    dbPath(pdbbase,path);
+    dbPath(savedPdbbase,path);
 }
 
 static void dbAddPathCmd(char *path)
 {
-    dbAddPath(pdbbase,path);
+    dbAddPath(savedPdbbase,path);
 }
 
 static void dbIncludeNew(char *filename)
@@ -431,7 +432,7 @@ static void dbIncludeNew(char *filename)
 
     pinputFile = dbCalloc(1,sizeof(inputFile));
     pinputFile->filename = macEnvExpand(filename);
-    pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp);
+    pinputFile->path = dbOpenFile(savedPdbbase, pinputFile->filename, &fp);
     if (!fp) {
         epicsPrintf("Can't open include file \"%s\"\n", filename);
         yyerror(NULL);
@@ -453,7 +454,7 @@ static void dbMenuHead(char *name)
         yyerrorAbort("dbMenuHead: Menu name can't be empty");
         return;
     }
-    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->menuList);
+    pgphentry = gphFind(savedPdbbase->pgpHash,name,&savedPdbbase->menuList);
     if(pgphentry) {
         duplicate = TRUE;
         return;
@@ -501,14 +502,14 @@ static void dbMenuBody(void)
     }
     if(ellCount(&tempList)) yyerrorAbort("dbMenuBody: tempList not empty");
     /* Add menu in sorted order */
-    pMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
+    pMenu = (dbMenu *)ellFirst(&savedPdbbase->menuList);
     while(pMenu && strcmp(pMenu->name,pnewMenu->name) >0 )
         pMenu = (dbMenu *)ellNext(&pMenu->node);
     if(pMenu)
-        ellInsert(&pdbbase->menuList,ellPrevious(&pMenu->node),&pnewMenu->node);
+        ellInsert(&savedPdbbase->menuList,ellPrevious(&pMenu->node),&pnewMenu->node);
     else
-        ellAdd(&pdbbase->menuList,&pnewMenu->node);
-    pgphentry = gphAdd(pdbbase->pgpHash,pnewMenu->name,&pdbbase->menuList);
+        ellAdd(&savedPdbbase->menuList,&pnewMenu->node);
+    pgphentry = gphAdd(savedPdbbase->pgpHash,pnewMenu->name,&savedPdbbase->menuList);
     if(!pgphentry) {
         yyerrorAbort("gphAdd failed");
     } else {
@@ -525,14 +526,14 @@ static void dbRecordtypeHead(char *name)
         yyerrorAbort("dbRecordtypeHead: Recordtype name can't be empty");
         return;
     }
-    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->recordTypeList);
+    pgphentry = gphFind(savedPdbbase->pgpHash,name,&savedPdbbase->recordTypeList);
     if(pgphentry) {
         duplicate = TRUE;
         return;
     }
     pdbRecordType = dbCalloc(1,sizeof(dbRecordType));
     pdbRecordType->name = epicsStrDup(name);
-    if (pdbbase->loadCdefs) ellInit(&pdbRecordType->cdefList);
+    if (savedPdbbase->loadCdefs) ellInit(&pdbRecordType->cdefList);
     if(ellCount(&tempList))
         yyerrorAbort("dbRecordtypeHead tempList not empty");
     allocTemp(pdbRecordType);
@@ -564,13 +565,13 @@ static short findOrAddGuiGroup(const char *name)
 {
     dbGuiGroup *pdbGuiGroup;
     GPHENTRY   *pgphentry;
-    pgphentry = gphFind(pdbbase->pgpHash, name, &pdbbase->guiGroupList);
+    pgphentry = gphFind(savedPdbbase->pgpHash, name, &savedPdbbase->guiGroupList);
     if (!pgphentry) {
         pdbGuiGroup = dbCalloc(1,sizeof(dbGuiGroup));
         pdbGuiGroup->name = epicsStrDup(name);
-        ellAdd(&pdbbase->guiGroupList, &pdbGuiGroup->node);
-        pdbGuiGroup->key = ellCount(&pdbbase->guiGroupList);
-        pgphentry = gphAdd(pdbbase->pgpHash, pdbGuiGroup->name, &pdbbase->guiGroupList);
+        ellAdd(&savedPdbbase->guiGroupList, &pdbGuiGroup->node);
+        pdbGuiGroup->key = ellCount(&savedPdbbase->guiGroupList);
+        pgphentry = gphAdd(savedPdbbase->pgpHash, pdbGuiGroup->name, &savedPdbbase->guiGroupList);
         pgphentry->userPvt = pdbGuiGroup;
     }
     return ((dbGuiGroup *)pgphentry->userPvt)->key;
@@ -653,8 +654,8 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         return;
     }
     if(strcmp(name,"menu")==0) {
-        pdbFldDes->ftPvt = (dbMenu *)dbFindMenu(pdbbase,value);
-        if(!pdbbase->ignoreMissingMenus && !pdbFldDes->ftPvt)
+        pdbFldDes->ftPvt = (dbMenu *)dbFindMenu(savedPdbbase,value);
+        if(!savedPdbbase->ignoreMissingMenus && !pdbFldDes->ftPvt)
             yyerrorAbort("menu not found");
         return;
     }
@@ -672,7 +673,7 @@ static void dbRecordtypeCdef(char *text) {
     tempListNode        *ptempListNode;
     dbRecordType        *pdbRecordType;
 
-    if (!pdbbase->loadCdefs || duplicate) return;
+    if (!savedPdbbase->loadCdefs || duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbRecordType = ptempListNode->item;
 
@@ -781,14 +782,14 @@ static void dbRecordtypeBody(void)
     ellInit(&pdbRecordType->attributeList);
     ellInit(&pdbRecordType->recList);
     ellInit(&pdbRecordType->devList);
-    pgphentry = gphAdd(pdbbase->pgpHash,pdbRecordType->name,
-        &pdbbase->recordTypeList);
+    pgphentry = gphAdd(savedPdbbase->pgpHash,pdbRecordType->name,
+        &savedPdbbase->recordTypeList);
     if(!pgphentry) {
         yyerrorAbort("gphAdd failed");
     } else {
         pgphentry->userPvt = pdbRecordType;
     }
-    ellAdd(&pdbbase->recordTypeList,&pdbRecordType->node);
+    ellAdd(&savedPdbbase->recordTypeList,&pdbRecordType->node);
 }
 
 static void dbDevice(char *recordtype,char *linktype,
@@ -798,7 +799,7 @@ static void dbDevice(char *recordtype,char *linktype,
     dbRecordType        *pdbRecordType;
     GPHENTRY            *pgphentry;
     int                 i,link_type;
-    pgphentry = gphFind(pdbbase->pgpHash,recordtype,&pdbbase->recordTypeList);
+    pgphentry = gphFind(savedPdbbase->pgpHash,recordtype,&savedPdbbase->recordTypeList);
     if(!pgphentry) {
         epicsPrintf("Record type \"%s\" not found for device \"%s\"\n",
                     recordtype, choicestring);
@@ -819,7 +820,7 @@ static void dbDevice(char *recordtype,char *linktype,
         return;
     }
     pdbRecordType = (dbRecordType *)pgphentry->userPvt;
-    pgphentry = gphFind(pdbbase->pgpHash,choicestring,&pdbRecordType->devList);
+    pgphentry = gphFind(savedPdbbase->pgpHash,choicestring,&pdbRecordType->devList);
     if(pgphentry) {
         return;
     }
@@ -827,7 +828,7 @@ static void dbDevice(char *recordtype,char *linktype,
     pdevSup->name = epicsStrDup(dsetname);
     pdevSup->choice = epicsStrDup(choicestring);
     pdevSup->link_type = link_type;
-    pgphentry = gphAdd(pdbbase->pgpHash,pdevSup->choice,&pdbRecordType->devList);
+    pgphentry = gphAdd(savedPdbbase->pgpHash,pdevSup->choice,&pdbRecordType->devList);
     if(!pgphentry) {
         yyerrorAbort("gphAdd failed");
     } else {
@@ -845,18 +846,18 @@ static void dbDriver(char *name)
         yyerrorAbort("dbDriver: Driver name can't be empty");
         return;
     }
-    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->drvList);
+    pgphentry = gphFind(savedPdbbase->pgpHash,name,&savedPdbbase->drvList);
     if(pgphentry) {
         return;
     }
     pdrvSup = dbCalloc(1,sizeof(drvSup));
     pdrvSup->name = epicsStrDup(name);
-    pgphentry = gphAdd(pdbbase->pgpHash,pdrvSup->name,&pdbbase->drvList);
+    pgphentry = gphAdd(savedPdbbase->pgpHash,pdrvSup->name,&savedPdbbase->drvList);
     if(!pgphentry) {
         yyerrorAbort("gphAdd failed");
     }
     pgphentry->userPvt = pdrvSup;
-    ellAdd(&pdbbase->drvList,&pdrvSup->node);
+    ellAdd(&savedPdbbase->drvList,&pdrvSup->node);
 }
 
 static void dbLinkType(char *name, char *jlif_name)
@@ -864,19 +865,19 @@ static void dbLinkType(char *name, char *jlif_name)
     linkSup *pLinkSup;
     GPHENTRY *pgphentry;
 
-    pgphentry = gphFind(pdbbase->pgpHash, name, &pdbbase->linkList);
+    pgphentry = gphFind(savedPdbbase->pgpHash, name, &savedPdbbase->linkList);
     if (pgphentry) {
         return;
     }
     pLinkSup = dbCalloc(1,sizeof(linkSup));
     pLinkSup->name = epicsStrDup(name);
     pLinkSup->jlif_name = epicsStrDup(jlif_name);
-    pgphentry = gphAdd(pdbbase->pgpHash, pLinkSup->name, &pdbbase->linkList);
+    pgphentry = gphAdd(savedPdbbase->pgpHash, pLinkSup->name, &savedPdbbase->linkList);
     if (!pgphentry) {
         yyerrorAbort("gphAdd failed");
     }
     pgphentry->userPvt = pLinkSup;
-    ellAdd(&pdbbase->linkList, &pLinkSup->node);
+    ellAdd(&savedPdbbase->linkList, &pLinkSup->node);
 }
 
 static void dbRegistrar(char *name)
@@ -888,18 +889,18 @@ static void dbRegistrar(char *name)
         yyerrorAbort("dbRegistrar: Registrar name can't be empty");
         return;
     }
-    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->registrarList);
+    pgphentry = gphFind(savedPdbbase->pgpHash,name,&savedPdbbase->registrarList);
     if(pgphentry) {
         return;
     }
     ptext = dbCalloc(1,sizeof(dbText));
     ptext->text = epicsStrDup(name);
-    pgphentry = gphAdd(pdbbase->pgpHash,ptext->text,&pdbbase->registrarList);
+    pgphentry = gphAdd(savedPdbbase->pgpHash,ptext->text,&savedPdbbase->registrarList);
     if(!pgphentry) {
         yyerrorAbort("gphAdd failed");
     }
     pgphentry->userPvt = ptext;
-    ellAdd(&pdbbase->registrarList,&ptext->node);
+    ellAdd(&savedPdbbase->registrarList,&ptext->node);
 }
 
 static void dbFunction(char *name)
@@ -911,18 +912,18 @@ static void dbFunction(char *name)
         yyerrorAbort("dbFunction: Function name can't be empty");
         return;
     }
-    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->functionList);
+    pgphentry = gphFind(savedPdbbase->pgpHash,name,&savedPdbbase->functionList);
     if(pgphentry) {
        return;
     }
     ptext = dbCalloc(1,sizeof(dbText));
     ptext->text = epicsStrDup(name);
-    pgphentry = gphAdd(pdbbase->pgpHash,ptext->text,&pdbbase->functionList);
+    pgphentry = gphAdd(savedPdbbase->pgpHash,ptext->text,&savedPdbbase->functionList);
     if(!pgphentry) {
        yyerrorAbort("gphAdd failed");
     }
     pgphentry->userPvt = ptext;
-    ellAdd(&pdbbase->functionList,&ptext->node);
+    ellAdd(&savedPdbbase->functionList,&ptext->node);
 }
 
 static void dbVariable(char *name, char *type)
@@ -934,19 +935,19 @@ static void dbVariable(char *name, char *type)
         yyerrorAbort("dbVariable: Variable name can't be empty");
         return;
     }
-    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->variableList);
+    pgphentry = gphFind(savedPdbbase->pgpHash,name,&savedPdbbase->variableList);
     if(pgphentry) {
         return;
     }
     pvar = dbCalloc(1,sizeof(dbVariableDef));
     pvar->name = epicsStrDup(name);
     pvar->type = epicsStrDup(type);
-    pgphentry = gphAdd(pdbbase->pgpHash,pvar->name,&pdbbase->variableList);
+    pgphentry = gphAdd(savedPdbbase->pgpHash,pvar->name,&savedPdbbase->variableList);
     if(!pgphentry) {
         yyerrorAbort("gphAdd failed");
     }
     pgphentry->userPvt = pvar;
-    ellAdd(&pdbbase->variableList,&pvar->node);
+    ellAdd(&savedPdbbase->variableList,&pvar->node);
 }
 
 static void dbBreakHead(char *name)
@@ -958,7 +959,7 @@ static void dbBreakHead(char *name)
         yyerrorAbort("dbBreakHead: Breaktable name can't be empty");
         return;
     }
-    pgphentry = gphFind(pdbbase->pgpHash,name,&pdbbase->bptList);
+    pgphentry = gphFind(savedPdbbase->pgpHash,name,&savedPdbbase->bptList);
     if(pgphentry) {
         duplicate = TRUE;
         return;
@@ -1042,17 +1043,17 @@ static void dbBreakBody(void)
     /* Continue with last slope beyond the final point */
     paBrkInt[number-1].slope = paBrkInt[number-2].slope;
     /* Add brkTable in sorted order */
-    pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
+    pbrkTable = (brkTable *)ellFirst(&savedPdbbase->bptList);
     while (pbrkTable) {
         if (strcmp(pbrkTable->name, pnewbrkTable->name) > 0) {
-            ellInsert(&pdbbase->bptList, ellPrevious((ELLNODE *)pbrkTable),
+            ellInsert(&savedPdbbase->bptList, ellPrevious((ELLNODE *)pbrkTable),
                 (ELLNODE *)pnewbrkTable);
             break;
         }
         pbrkTable = (brkTable *)ellNext(&pbrkTable->node);
     }
-    if (!pbrkTable) ellAdd(&pdbbase->bptList, &pnewbrkTable->node);
-    pgphentry = gphAdd(pdbbase->pgpHash,pnewbrkTable->name,&pdbbase->bptList);
+    if (!pbrkTable) ellAdd(&savedPdbbase->bptList, &pnewbrkTable->node);
+    pgphentry = gphAdd(savedPdbbase->pgpHash,pnewbrkTable->name,&savedPdbbase->bptList);
     if (!pgphentry) {
         yyerrorAbort("dbBreakBody: gphAdd failed");
         return;
@@ -1103,7 +1104,7 @@ static void dbRecordHead(char *recordType, char *name, int visible)
     if(dbRecordNameValidate(name))
         return;
 
-    pdbentry = dbAllocEntry(pdbbase);
+    pdbentry = dbAllocEntry(savedPdbbase);
     if (ellCount(&tempList))
         yyerrorAbort("dbRecordHead: tempList not empty");
     allocTemp(pdbentry);
@@ -1260,7 +1261,7 @@ static void dbAlias(char *name, char *alias)
     if(dbRecordNameValidate(alias))
         return;
 
-    dbInitEntry(pdbbase, pdbEntry);
+    dbInitEntry(savedPdbbase, pdbEntry);
     if (dbFindRecord(pdbEntry, name)) {
         epicsPrintf("Alias \"%s\" refers to unknown record \"%s\"\n",
                     alias, name);

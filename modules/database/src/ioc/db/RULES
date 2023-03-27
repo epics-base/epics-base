@@ -13,13 +13,15 @@
 
 THESE_RULES := $(IOCDIR)/db/RULES
 
-dbCommon.h$(DEP): $(COMMON_DIR)/dbCommonRecord.dbd $(THESE_RULES)
+dbCommon.h$(DEP): $(COMMON_DIR)/dbCommonRecord.dbd $(THESE_RULES) \
+    $(DBDTORECTYPEH_dep)
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D -I ../db  -I $(COMMON_DIR) -o $(COMMONDEP_TARGET) $< > $@
 
 $(COMMON_DIR)/dbCommonRecord.html: ../db/dbCommon.dbd.pod
 
-$(COMMON_DIR)/dbCommon.h: $(COMMON_DIR)/dbCommonRecord.dbd $(THESE_RULES)
+$(COMMON_DIR)/dbCommon.h: $(COMMON_DIR)/dbCommonRecord.dbd $(THESE_RULES) \
+    $(DBDTORECTYPEH_dep)
 	@$(RM) $(notdir $@)
 	$(DBTORECORDTYPEH) -I ../db  -I $(COMMON_DIR) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@

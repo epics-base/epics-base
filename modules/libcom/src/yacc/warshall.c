@@ -26,7 +26,7 @@ transitive_closure(unsigned int *R, int n)
 
         while (rowj < relend)
         {
-            if (*ccol & (1 << i))
+            if (*ccol & (1u << i))
             {
                 rp = rowi;
                 rend = rowj + rowsize;
@@ -68,7 +68,7 @@ reflexive_transitive_closure(unsigned int *R, int n)
     rp = R;
     while (rp < relend)
     {
-        *rp |= (1 << i);
+        *rp |= (1u << i);
         if (++i >= BITS_PER_WORD)
         {
             i = 0;

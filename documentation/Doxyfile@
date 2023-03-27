@@ -762,7 +762,6 @@ WARN_LOGFILE           =
 INPUT                  = ../mainpage.dox \
                          ../RELEASE_NOTES.md \
                          ../README.md \
-                         ../RecordReference.md \
                          @TOP@/include
 
 # This tag can be used to specify the character encoding of the source files

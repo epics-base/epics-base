@@ -45,5 +45,5 @@ COMMANDLINE_LIBRARY ?= READLINE
 COMMANDLINE_LIBRARY ?= EPICS
 #  endif
 #else
-COMMANDLINE_LIBRARY ?= EPICS
+COMMANDLINE_LIBRARY ?= $(strip $(if $(wildcard $(if $(GNU_DIR),$(GNU_DIR)/include/readline/readline.h)), READLINE, EPICS))
 #endif

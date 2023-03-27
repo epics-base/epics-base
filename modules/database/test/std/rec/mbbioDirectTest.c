@@ -123,7 +123,7 @@ MAIN(mbbioDirectTest)
 
     testDiag("##### clear bit 31 (0x1f) #####");
     putN("do%u.B1F", N, 0);
-    value &= ~(1<<31);
+    value &= ~(1u<<31u);
     testN("val%d", N,  value);
     testmbbioRecords(N, value);
 

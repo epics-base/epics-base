@@ -54,8 +54,8 @@ everything that has to be done since it's so easy to miss steps.</p>
     <dd>Responsible for individual operating system platforms</dd>
   <dt><strong>Application Developers</strong></dt>
     <dd>Responsible for support modules that depend on EPICS Base.</dd>
-  <dt><strong>Website Editor</strong> (Andrew Johnson)</dt>
-    <dd>Responsible for the EPICS website</dd>
+  <dt><strong>APS Website Editor</strong> (Andrew Johnson)</dt>
+    <dd>Responsible for the APS EPICS website</dd>
 </dl>
 
 <form>
@@ -180,6 +180,9 @@ everything that has to be done since it's so easy to miss steps.</p>
         <p><b>For each external submodule</b> in turn (assuming it has not been
           tagged yet):</p>
         <ol>
+          <li><tt>git grep UNRELEASED</tt> and insert the module version to any
+            doxygen annotations that have a <tt>@since UNRELEASED</tt> comment.
+            Commit (don't push yet).</li>
           <li>Check that the module's Release Notes have been updated to cover
             all changes; add items as necessary, and set the module version
             number and release date if appropriate. Convert to HTML and view in
@@ -188,7 +191,7 @@ everything that has to be done since it's so easy to miss steps.</p>
               cd base-7.0/modules/&lt;module&gt;/documentation<br />
               pandoc -f gfm -t html -o RELEASE_NOTES.html RELEASE_NOTES.md
               </tt></blockquote>
-            Commit changes (don't push yet).</li>
+            Commit changes (don't push).</li>
 
           <li>Edit the module's release version file
             <tt>configure/CONFIG_<i>module</i>_VERSION</tt> and its top-level
@@ -198,7 +201,7 @@ everything that has to be done since it's so easy to miss steps.</p>
 
           <li>Tag the module:
             <blockquote><tt>
-              git tag -m 'ANJ: Tag for EPICS 7.0.6.1' &lt;module-version&gt;
+              git tag -m 'ANJ: Tag for EPICS 7.0.7' &lt;module-version&gt;
               </tt></blockquote>
             </li>
 
@@ -267,7 +270,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for release' R7.0.6.1
+          git tag -m 'ANJ: Tagged for release' R7.0.7
           </tt></blockquote>
         <p>Don't push anything to the Launchpad repository
           yet.</p>
@@ -302,12 +305,12 @@ everything that has to be done since it's so easy to miss steps.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.6.1 ../base-7.0.6.1.tar.gz base-7.0.6.1/
+          ./.tools/make-tar.sh R7.0.7 ../base-7.0.7.tar.gz base-7.0.7/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
           cd ..<br />
-          gpg --armor --sign --detach-sig base-7.0.6.1.tar.gz
+          gpg --armor --sign --detach-sig base-7.0.7.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -372,7 +375,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Upload the tar file and its <tt>.asc</tt> signature file to the
         epics-controls web-server.
         <blockquote><tt>
-          scp base-7.0.6.1.tar.gz base-7.0.6.1.tar.gz.asc epics-controls:download/base<br />
+          scp base-7.0.7.tar.gz base-7.0.7.tar.gz.asc epics-controls:download/base<br />
           </tt></blockquote>
         </td>
       </tr>

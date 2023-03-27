@@ -1,7 +1,13 @@
-record(ai, "val") {}
+record(ai, "ai") {}
+record(waveform, "wf") {
+  field(FTVL, "DOUBLE")
+  field(NELM, "4")
+}
 record(compress, "comp") {
-  field(INP, "val NPP")
+  field(INP, "$(INP) NPP")
   field(ALG, "$(ALG)")
+  field(PBUF,"$(PBUF=NO)")
   field(BALG,"$(BALG)")
   field(NSAM,"$(NSAM)")
+  field(N,   "$(N=1)")
 }

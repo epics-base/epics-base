@@ -43,9 +43,7 @@ jobs:
     env:
       CMP: ${{ matrix.cmp }}
       BCFG: ${{ matrix.configuration }}
-      WINE: ${{ matrix.wine }}
-      RTEMS: ${{ matrix.rtems }}
-      RTEMS_TARGET: ${{ matrix.rtems_target }}
+      CI_CROSS_TARGETS: ${{ matrix.cross }}
       EXTRA: ${{ matrix.extra }}
       TEST: ${{ matrix.test }}
     strategy:
@@ -56,13 +54,13 @@ jobs:
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            wine: "64"
+            cross: "windows-x64-mingw"
             name: "Ub-20 gcc-9 + MinGW"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: static
-            wine: "64"
+            cross: "windows-x64-mingw"
             name: "Ub-20 gcc-9 + MinGW, static"
 
           - os: ubuntu-20.04
@@ -70,6 +68,12 @@ jobs:
             configuration: static
             extra: "CMD_CXXFLAGS=-std=c++11"
             name: "Ub-20 gcc-9 C++11, static"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: static
+            extra: "CMD_CFLAGS=-funsigned-char CMD_CXXFLAGS=-funsigned-char"
+            name: "Ub-20 gcc-9 unsigned char"
 
           - os: ubuntu-20.04
             cmp: clang
@@ -85,67 +89,42 @@ jobs:
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-pc686-qemu
+            cross: "RTEMS-pc686-qemu@5"
             name: "Ub-20 gcc-9 + RT-5.1 pc686"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-beatnik
+            cross: "RTEMS-beatnik@5"
             test: NO
             name: "Ub-20 gcc-9 + RT-5.1 beatnik"
-
-          # Only build one RTEMS target per CPU family
-          # unless it's running the tests
-          #
-          # - os: ubuntu-20.04
-          #   cmp: gcc
-          #   configuration: default
-          #   rtems: "5"
-          #   rtems_target: RTEMS-mvme3100
-          #   test: NO
-          #   name: "Ub-20 gcc-9 + RT-5.1 mvme3100"
-          #
-          # - os: ubuntu-20.04
-          #   cmp: gcc
-          #   configuration: default
-          #   rtems: "5"
-          #   rtems_target: RTEMS-qoriq_e500
-          #   test: NO
-          #   name: "Ub-20 gcc-9 + RT-5.1 qoriq_e500"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-xilinx_zynq_a9_qemu
+            cross: "RTEMS-xilinx_zynq_a9_qemu@5"
             test: NO
             name: "Ub-20 gcc-9 + RT-5.1 xilinx_zynq_a9_qemu"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-uC5282
+            cross: "RTEMS-uC5282@5"
             test: NO
             name: "Ub-20 gcc-9 + RT-5.1 uC5282"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "4.10"
             name: "Ub-20 gcc-9 + RT-4.10"
-            rtems_target: RTEMS-pc386-qemu
+            cross: "RTEMS-pc386-qemu@4.10"
             test: NO
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "4.9"
             name: "Ub-20 gcc-9 + RT-4.9"
-            rtems_target: RTEMS-pc386-qemu
+            cross: "RTEMS-pc386-qemu@4.9"
 
           - os: macos-latest
             cmp: clang
@@ -173,7 +152,7 @@ jobs:
             name: "Win2019 mingw"
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Automatic core dumper analysis
@@ -191,7 +170,7 @@ jobs:
       run: python .ci/cue.py -T 60M test
     - name: Upload tapfiles Artifact
       if: ${{ always() }}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: tapfiles ${{ matrix.name }}
         path: '**/O.*/*.tap'
@@ -258,7 +237,7 @@ jobs:
         # people would rather just break all existing scripts...
         [ -e /usr/bin/python ] || ln -sf python3 /usr/bin/python
         python --version
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Automatic core dumper analysis
@@ -271,7 +250,7 @@ jobs:
       run: python .ci/cue.py -T 20M test
     - name: Upload tapfiles Artifact
       if: ${{ always() }}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: tapfiles ${{ matrix.name }}
         path: '**/O.*/*.tap'

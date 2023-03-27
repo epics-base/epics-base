@@ -17,7 +17,7 @@ TEMPL_SUFFIX ?= .template
 # vpath
 
 vpath %.pm $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
-vpath %.pod $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
+vpath %.pod $(USR_VPATH) $(SRC_DIRS) .. $(dir $(DBD))
 vpath %.dbd $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
 vpath %.db $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
 vpath %.vdb $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
@@ -217,32 +217,32 @@ realclean: clean
 #---------------------------------------------------------------
 # Dependency files
 
-%Record.h$(DEP): $(COMMON_DIR)/%Record.dbd
+%Record.h$(DEP): $(COMMON_DIR)/%Record.dbd $(DBDTORECTYPEH_dep)
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-%Record.h$(DEP): %Record.dbd
+%Record.h$(DEP): %Record.dbd $(DBDTORECTYPEH_dep)
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-%Record.h$(DEP): ../%Record.dbd
+%Record.h$(DEP): ../%Record.dbd $(DBDTORECTYPEH_dep)
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-menu%.h$(DEP): $(COMMON_DIR)/menu%.dbd
+menu%.h$(DEP): $(COMMON_DIR)/menu%.dbd $(DBDTOMENUH_dep)
 	@$(RM) $@
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-menu%.h$(DEP): menu%.dbd
+menu%.h$(DEP): menu%.dbd $(DBDTOMENUH_dep)
 	@$(RM) $@
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-menu%.h$(DEP): ../menu%.dbd
+menu%.h$(DEP): ../menu%.dbd $(DBDTOMENUH_dep)
 	@$(RM) $@
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
@@ -261,7 +261,7 @@ menu%.h$(DEP): ../menu%.dbd
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-%.dbd$(DEP):
+%.dbd$(DEP): $($*_DBD)
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $($*_DBD) > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
@@ -330,32 +330,32 @@ $(INSTALL_DB)/%$(TEMPL_SUFFIX): ../%$(TEMPL_SUFFIX)
 #---------------------------------------------------------------
 # INC files
 
-$(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd
+$(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd $(DBDTORECTYPEH_dep)
 	@$(RM) $(notdir $@)
 	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%Record.h: %Record.dbd
+$(COMMON_DIR)/%Record.h: %Record.dbd $(DBDTORECTYPEH_dep)
 	@$(RM) $(notdir $@)
 	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%Record.h: ../%Record.dbd
+$(COMMON_DIR)/%Record.h: ../%Record.dbd $(DBDTORECTYPEH_dep)
 	@$(RM) $(notdir $@)
 	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
+$(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd $(DBDTOMENUH_dep)
 	@$(RM) $(notdir $@)
 	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/menu%.h: menu%.dbd
+$(COMMON_DIR)/menu%.h: menu%.dbd $(DBDTOMENUH_dep)
 	@$(RM) $(notdir $@)
 	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/menu%.h: ../menu%.dbd
+$(COMMON_DIR)/menu%.h: ../menu%.dbd $(DBDTOMENUH_dep)
 	@$(RM) $(notdir $@)
 	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
@@ -400,7 +400,7 @@ $(COMMON_DBDCATS):$(COMMON_DIR)/%.dbd:
 	$(DBDCAT_COMMAND)
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.dbd:
+$(COMMON_DIR)/%.dbd: $($*_DBD)
 	$(ECHO) "Creating dbd file $(notdir $@)"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $($*_DBD)
@@ -430,28 +430,28 @@ $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 #---------------------------------------------------------------
 # HTML files
 
-$(COMMON_DIR)/%.html: %.dbd.pod
+$(COMMON_DIR)/%.html: %.dbd.pod $(DBDTOHTML_pl)
 	@$(RM) $(notdir $@)
 	$(DBDTOHTML) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.html: %.pod
+$(COMMON_DIR)/%.html: %.pod $(PODTOHTML_dep)
 	@$(RM) $(notdir $@)
 	$(PODTOHTML) -s -s -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.html: %.pm
+$(COMMON_DIR)/%.html: %.pm $(PODTOHTML_dep)
 	@$(RM) $(notdir $@)
 	$(PODTOHTML) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.html: ../%.pm
+$(COMMON_DIR)/%.html: ../%.pm $(PODTOHTML_dep)
 	@$(RM) $(notdir $@)
 	$(PODTOHTML) -s -o $(notdir $@) $<
 	@$(MKDIR) $(dir $@)
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.html: ../%.pl
+$(COMMON_DIR)/%.html: ../%.pl $(PODTOHTML_dep)
 	@$(RM) $(notdir $@)
 	$(PODTOHTML) -s -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
@@ -527,16 +527,19 @@ $(foreach file, $(DB_INSTALLS), $(eval $(call DB_INSTALLS_template, $(file))))
 #---------------------------------------------------------------
 # register record,device,driver support
 
-%_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
+%_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd $(REGRECDEVDRV_dep)
 	@$(RM) $@
-	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOCS_APPL_TOP)
+	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ \
+            $< $(basename $@) $(IOCS_APPL_TOP)
 
-%_registerRecordDeviceDriver.cpp: %.dbd $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
+%_registerRecordDeviceDriver.cpp: %.dbd $(REGRECDEVDRV_dep)
 	@$(RM) $@
-	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOCS_APPL_TOP)
+	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ \
+            $< $(basename $@) $(IOCS_APPL_TOP)
 
-%_registerRecordDeviceDriver.cpp: ../%.dbd $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
+%_registerRecordDeviceDriver.cpp: ../%.dbd $(REGRECDEVDRV_dep)
 	@$(RM) $@
-	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOCS_APPL_TOP)
+	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ \
+            $< $(basename $@) $(IOCS_APPL_TOP)
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp

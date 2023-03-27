@@ -56,6 +56,17 @@ void onceThread(void *ctx)
     epicsMutexUnlock(lock);
 }
 
+int getRunCount(void)
+{
+    int count;
+
+    epicsMutexMustLock(lock);
+    count = runCount;
+    epicsMutexUnlock(lock);
+
+    return count;
+}
+
 
 void recurseInit(void);
 void onceRecurse(void *ctx)
@@ -77,10 +88,10 @@ void recurseThread(void *ctx)
 
 MAIN(epicsThreadOnceTest)
 {
-    int i;
+    int i, count;
     epicsThreadId tid;
 
-    testPlan(3 + NUM_ONCE_THREADS);
+    testPlan(2 + NUM_ONCE_THREADS);
 
     go = epicsEventMustCreate(epicsEventEmpty);
     done = epicsEventMustCreate(epicsEventEmpty);
@@ -94,13 +105,17 @@ MAIN(epicsThreadOnceTest)
             epicsThreadGetStackSize(epicsThreadStackSmall),
             onceThread, 0);
     }
-    epicsThreadSleep(0.1);
+    while ((count = getRunCount()) < NUM_ONCE_THREADS)
+        epicsThreadSleep(0.1);
 
-    testOk(runCount == NUM_ONCE_THREADS, "runCount = %d", runCount);
     epicsEventSignal(go); /* Use epicsEventBroadcast(go) when available */
     epicsEventMustWait(done);
 
-    testOk(doneCount == NUM_ONCE_THREADS, "doneCount = %d", doneCount);
+    epicsMutexMustLock(lock);
+    count = doneCount;
+    epicsMutexUnlock(lock);
+
+    testOk(count == NUM_ONCE_THREADS, "doneCount = %d", count);
     testDiag("init was run by %s", initBy);
 
     eltc(0);

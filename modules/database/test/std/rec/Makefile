@@ -86,6 +86,13 @@ testHarness_SRCS += seqTest.c
 TESTFILES += ../seqTest.db
 TESTS += seqTest
 
+TESTPROD_HOST += longoutTest
+longoutTest_SRCS += longoutTest.c
+longoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += longoutTest.c
+TESTFILES += ../longoutTest.db
+TESTS += longoutTest
+
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
 asTestIoc_DBD += base.dbd
@@ -159,6 +166,16 @@ asyncproctest_SRCS += asyncproctest.c
 asyncproctest_SRCS += asyncproctest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/asyncproctest.dbd ../asyncproctest.db
 TESTS += asyncproctest
+
+TARGETS += $(COMMON_DIR)/subproctest.dbd
+DBDDEPENDS_FILES += subproctest.dbd$(DEP)
+subproctest_DBD += base.dbd
+TESTPROD_HOST += subproctest
+subproctest_SRCS += subproctest.c
+subproctest_SRCS += subproctest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/subproctest.dbd ../subproctest.db
+TESTS += subproctest
+
 
 TESTPROD_HOST += linkFilterTest
 linkFilterTest_SRCS += linkFilterTest.c

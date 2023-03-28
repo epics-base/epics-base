@@ -198,12 +198,22 @@ static void test_F_format(void){
     testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_DOUBLE, 6729982.999);
     
     /* verify that string is formatted as expected */
+    // visual studio less than 2015 does not support %F
+    // mingw/gcc also fails, suspect this may be gcc version
+    // related and checking __GNUC__ could resolve but 
+    // initial attempts didn't work so excluding mingw entirely for now
     #ifdef _WIN32
-    testTodoBegin("Fails on some windows platforms");
+    #if (defined(_MSC_VER) && _MSC_VER < 1900) || defined(_MINGW)
+    testTodoBegin("Fails on windows with old visual studio versions and mingw");
     #endif
+    #endif
+    
     testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);
+    
     #ifdef _WIN32
+    #if (defined(_MSC_VER) && _MSC_VER < 1900) || defined(_MINGW)
     testTodoEnd();
+    #endif
     #endif
     // number of tests = 3
 }

@@ -105,8 +105,8 @@ std::string readFile(std::string filename)
 
 bool compareFiles(const std::string& p1, const std::string& p2) 
 {
-  std::ifstream f1(p1, std::ifstream::binary|std::ifstream::ate);
-  std::ifstream f2(p2, std::ifstream::binary|std::ifstream::ate);
+  std::ifstream f1(p1.c_str(), std::ifstream::binary|std::ifstream::ate);
+  std::ifstream f2(p2.c_str(), std::ifstream::binary|std::ifstream::ate);
 
   if (f1.fail() || f2.fail()) {
     return false; // File problem

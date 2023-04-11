@@ -436,11 +436,6 @@ int main (int argc, char *argv[])
             enumAsNr = 1;
             break;
         case 'w':               /* Set CA timeout value */
-            /*
-             * epicsScanDouble is a macro defined as epicsParseDouble,
-             * (found in modules/libcom/src/misc) which will only
-             * change caTimeout here if it finds an acceptable value.
-             */
             if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "

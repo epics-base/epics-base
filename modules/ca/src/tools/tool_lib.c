@@ -642,17 +642,7 @@ int connect_pvs (pv* pvs, int nPvs)
 }
 
 
-/*+**************************************************************************
- *
- * Function:    use_ca_timeout_env
- *
- * Description: Set the variable at the given address to the
- *              value of the CA timeout environment variable
- *
- * Arg(s) In:   timeout - Pointer to double
- *
- **************************************************************************-*/
-
+/* Set the timeout to EPICS_CLI_TIMEOUT */
 void use_ca_timeout_env ( double* timeout)
 {
     const char* tmoStr;            /* contents of environment var */

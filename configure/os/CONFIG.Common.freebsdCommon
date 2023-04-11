@@ -7,6 +7,10 @@
 
 # Include definitions common to all Unix targets
 include $(CONFIG)/os/CONFIG.Common.UnixCommon
+GNU         = NO
+CMPLR_CLASS = clang
+CC          = clang
+CCC         = clang++
 
 OS_CLASS = freebsd
 

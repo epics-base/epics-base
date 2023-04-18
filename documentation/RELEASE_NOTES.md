@@ -15,6 +15,21 @@ should also be read to understand what has changed since earlier releases.
 
 ## Changes made on the 7.0 branch since 7.0.7
 
+### Change compiler for FreeBSD to clang
+
+The default compiler for FreeBSD targets changes from GCC to clang.
+
+### Expose `dbCreateAlias` in IOC shell
+
+Add a new IOC shell command `dbCreateAlias` allow record aliases to be added.
+Intended for use before `iocInit`.  eg. to add an alias "bar" for a record "foo".
+
+```
+dbLoadRecords("some.db") # includes: record(ai, "foo") { ...
+dbCreateAlias("foo", "bar")
+iocInit()
+```
+
 ### dbEvent eventsRemaining missed on cancel
 
 In some cases, RSRV may queue a subscription update, but not flush it.

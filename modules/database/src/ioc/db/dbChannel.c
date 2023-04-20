@@ -464,7 +464,7 @@ dbChannel * dbChannelCreate(const char *name)
         static int exists_ts = -1;
 
         size_t namelen = strlen(name);
-        size_t reclen = namelen - 5; /* subtract strlen(".TIME"), MSVC won't optimize */
+        size_t reclen = namelen - sizeof(".TIME") + 1;
         int has_time = reclen > 0 && !strcmp(name + reclen, ".TIME");
 
         if (exists_ts == -1) {

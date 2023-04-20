@@ -51,6 +51,7 @@ typedef struct parseContext {
 
 static void *dbChannelFreeList;
 static void *chFilterFreeList;
+static int tsFilterRegistered;
 
 void dbChannelExit(void)
 {
@@ -67,6 +68,8 @@ void dbChannelInit (void)
     freeListInitPvt(&dbChannelFreeList,  sizeof(dbChannel), 128);
     freeListInitPvt(&chFilterFreeList,  sizeof(chFilter), 64);
     db_init_event_freelists();
+
+    tsFilterRegistered = dbFindFilter("ts", 2) != NULL;
 }
 
 static void chf_value(parseContext *parser, parse_result *presult)
@@ -461,18 +464,12 @@ dbChannel * dbChannelCreate(const char *name)
        field and replace the field with a channel filter string. */
     {
         static char const tsfilter[] = ".{\"ts\":{\"num\":\"dbl\"}}";
-        static int exists_ts = -1;
 
         size_t namelen = strlen(name);
         size_t reclen = namelen - sizeof(".TIME") + 1;
         int has_time = namelen >= sizeof(".TIME") && !strcmp(name + reclen, ".TIME");
 
-        if (exists_ts == -1) {
-            /* Only look for the filter on first use. */
-            exists_ts = dbFindFilter("ts", 2) != NULL;
-        }
-
-        if (has_time && exists_ts) {
+        if (has_time && tsFilterRegistered) {
             cname = malloc(reclen + strlen(tsfilter) + 1);
             if (!cname)
                 goto finish;
@@ -800,10 +797,16 @@ void dbRegisterFilter(const char *name, const chFilterIf *fif, void *puser)
 
 const chFilterPlugin * dbFindFilter(const char *name, size_t len)
 {
-    GPHENTRY *pgph = gphFindParse(pdbbase->pgpHash, name, len,
-            &pdbbase->filterList);
+    GPHENTRY *pgph;
+
+    if (!name || !len || !*name || !pdbbase)
+        return NULL;
+
+    pgph = gphFindParse(pdbbase->pgpHash, name, len,
+                        &pdbbase->filterList);
 
     if (!pgph)
         return NULL;
+
     return (chFilterPlugin *) pgph->userPvt;
 }

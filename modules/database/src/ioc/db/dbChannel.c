@@ -465,7 +465,7 @@ dbChannel * dbChannelCreate(const char *name)
 
         size_t namelen = strlen(name);
         size_t reclen = namelen - sizeof(".TIME") + 1;
-        int has_time = reclen > 0 && !strcmp(name + reclen, ".TIME");
+        int has_time = namelen >= sizeof(".TIME") && !strcmp(name + reclen, ".TIME");
 
         if (exists_ts == -1) {
             /* Only look for the filter on first use. */

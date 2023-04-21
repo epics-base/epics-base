@@ -28,6 +28,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "libComAPI.h"
 #include "compilerDependencies.h"
@@ -243,7 +244,7 @@ LIBCOM_API void errPrintf(long status, const char *pFileName, int lineno,
     const char *pformat, ...) EPICS_PRINTF_STYLE(4,5);
 
 LIBCOM_API int errlogPrintfNoConsole(const char *pformat, ...)
-    EPICS_PRINTF_STYLE(1,2);
+   EPICS_PRINTF_STYLE(1,2);
 LIBCOM_API int errlogVprintfNoConsole(const char *pformat,va_list pvar);
 
 /**

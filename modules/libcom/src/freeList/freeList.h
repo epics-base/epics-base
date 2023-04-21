@@ -24,6 +24,7 @@
 
 #include <stddef.h>
 #include "libComAPI.h"
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,9 +33,9 @@ extern "C" {
 LIBCOM_API extern int freeListBypass;
 
 LIBCOM_API void epicsStdCall freeListInitPvt(void **ppvt, int size, int malloc);
-LIBCOM_API void * epicsStdCall freeListCalloc(void *pvt);
-LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt);
 LIBCOM_API void epicsStdCall freeListFree(void *pvt,void*pmem);
+LIBCOM_API void * epicsStdCall freeListCalloc(void *pvt) EPICS_MEM_CHECK(freeListFree, 2) EPICS_NON_NULL_PTR_ARGS(1);
+LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt) EPICS_MEM_CHECK(freeListFree, 2) EPICS_NON_NULL_PTR_ARGS(1);
 LIBCOM_API void epicsStdCall freeListCleanup(void *pvt);
 LIBCOM_API size_t epicsStdCall freeListItemsAvail(void *pvt);
 

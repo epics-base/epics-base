@@ -37,6 +37,7 @@
 
 #include <stdlib.h>
 #include "libComAPI.h"
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,13 +54,25 @@ extern "C" {
  * \note If dbmfInit() is not called before one of the other routines then it
  * is automatically called with size=64 and chunkItems=10
  */
+
+/**
+ * \brief Free the memory allocated by dbmfMalloc.
+ * \param bytes Pointer to memory obtained from dbmfMalloc(), dbmfStrdup(),
+ * dbmfStrndup() or dbmfStrcat3().
+ */
+LIBCOM_API void dbmfFree(void *bytes);
+/**
+ * \brief Free all chunks that contain only free items.
+ */
+LIBCOM_API void dbmfFreeChunks(void);
+
 LIBCOM_API int dbmfInit(size_t size, int chunkItems);
 /**
  * \brief Allocate memory.
  * \param bytes If bytes > size then malloc() is used to allocate the memory.
  * \return Pointer to the newly-allocated memory, or NULL on failure.
  */
-LIBCOM_API void * dbmfMalloc(size_t bytes);
+LIBCOM_API void * dbmfMalloc(size_t bytes) EPICS_SIZED_MEM_CHECK(1) EPICS_MEM_CHECK(dbmfFree, 1);
 /**
  * \brief Duplicate a string.
  *
@@ -67,7 +80,7 @@ LIBCOM_API void * dbmfMalloc(size_t bytes);
  * \param str Pointer to the null-terminated string to be copied.
  * \return A pointer to the new copy, or NULL on failure.
  */
-LIBCOM_API char * dbmfStrdup(const char *str);
+LIBCOM_API char * dbmfStrdup(const char *str) EPICS_MEM_CHECK(dbmfFree, 1) EPICS_NON_NULL_PTR_ARGS(1);
 /**
  * \brief Duplicate a string (up to len bytes).
  *
@@ -77,7 +90,7 @@ LIBCOM_API char * dbmfStrdup(const char *str);
  * \param len Max number of bytes to copy.
  * \return A pointer to the new string, or NULL on failure.
  */
-LIBCOM_API char * dbmfStrndup(const char *str, size_t len);
+LIBCOM_API char * dbmfStrndup(const char *str, size_t len) EPICS_SIZED_MEM_CHECK(2) EPICS_MEM_CHECK(free, 1) EPICS_NON_NULL_PTR_ARGS(1);
 /**
  * \brief Concatenate three strings.
 
@@ -89,17 +102,8 @@ LIBCOM_API char * dbmfStrndup(const char *str, size_t len);
  * \return A pointer to the new string, or NULL on failure.
  */
 LIBCOM_API char * dbmfStrcat3(const char *lhs, const char *mid,
-    const char *rhs);
-/**
- * \brief Free the memory allocated by dbmfMalloc.
- * \param bytes Pointer to memory obtained from dbmfMalloc(), dbmfStrdup(),
- * dbmfStrndup() or dbmfStrcat3().
- */
-LIBCOM_API void dbmfFree(void *bytes);
-/**
- * \brief Free all chunks that contain only free items.
- */
-LIBCOM_API void dbmfFreeChunks(void);
+    const char *rhs) EPICS_NON_NULL_PTR_ARGS(1,2,3);
+
 /**
  * \brief Show the status of the dbmf memory pool.
  * \param level Detail level.

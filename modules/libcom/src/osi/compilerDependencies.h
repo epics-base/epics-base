@@ -41,6 +41,18 @@
 #   define EPICS_PRINTF_STYLE(f,a)
 #endif
 
+#ifndef EPICS_SIZED_MEM_CHECK
+#   define EPICS_SIZED_MEM_CHECK(...)
+#endif
+
+#ifndef EPICS_MEM_CHECK
+#   define EPICS_MEM_CHECK(freeMem, freeMemArg)
+#endif
+
+#ifndef EPICS_NON_NULL_PTR_ARGS
+#   define EPICS_NON_NULL_PTR_ARGS(...)
+#endif
+
 #ifndef EPICS_DEPRECATED
 /*
  * No deprecation markers

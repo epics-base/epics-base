@@ -90,7 +90,7 @@ static const iocshFuncDef asprulesFuncDef = {
     "asprules",1,asprulesArgs,
     "List rules of an Access Security Group.\n"
     "If no Group is speciﬁed then list the rules for all groups\n"
-    "Example: asgname mygroup"
+    "Example: asprules mygroup"
 };
 static void asprulesCallFunc(const iocshArgBuf *args)
 {
@@ -107,7 +107,7 @@ static const iocshFuncDef aspmemFuncDef = {
     "If no Group is specified then print the members for all Groups.\n"
     "If clients is (0, 1) then Channel Access clients attached to each member\n"
     "(are not, are) shown\n"
-    "Example: asgname mygroup 1\n",
+    "Example: aspmem mygroup 1\n",
 };
 static void aspmemCallFunc(const iocshArgBuf *args)
 {

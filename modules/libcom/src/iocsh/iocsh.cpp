@@ -755,6 +755,13 @@ void epicsStdCall iocshFree(void)
     iocshTableUnlock ();
 }
 
+/*
+ * Parse argument input based on the arg type specified.
+ * It is worth noting that depending on type this argument may 
+ * be defaulted if a value is not specified. For example, a 
+ * double/int with no value will default to 0 which may allow
+ * you to add optional arguments to the end of your argument list.
+ */
 static int
 cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
     const iocshArg *piocshArg)

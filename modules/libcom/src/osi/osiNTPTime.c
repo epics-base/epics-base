@@ -145,6 +145,8 @@ void NTPTime_Shutdown(void *dummy)
 
 static void NTPTimeSync(void *dummy)
 {
+    char lastSync[32] = "IOC was booted";
+
     taskwdInsert(0, NULL, NULL);
 
     for (epicsEventWaitWithTimeout(NTPTimePvt.loopEvent, NTPTimeSyncInterval);
@@ -163,8 +165,8 @@ static void NTPTimeSync(void *dummy)
         if (status) {
             if (++NTPTimePvt.syncsFailed > NTPTimeSyncRetries &&
                 NTPTimePvt.synchronized) {
-                errlogPrintf("NTPTimeSync: NTP requests failing - %s\n",
-                    strerror(errno));
+                errlogPrintf("NTPTimeSync: NTP requests failed since %s - %s\n",
+                    lastSync, strerror(errno));
                 NTPTimePvt.synchronized = 0;
             }
             continue;
@@ -185,9 +187,12 @@ static void NTPTimeSync(void *dummy)
             continue;
         }
 
+        epicsTimeToStrftime(lastSync, sizeof(lastSync),
+            "%Y-%m-%d %H:%M:%S.%06f", &NTPTimePvt.syncTime);
+
         NTPTimePvt.syncsFailed = 0;
         if (!NTPTimePvt.synchronized) {
-            errlogPrintf("NTPTimeSync: Sync recovered.\n");
+            errlogPrintf("NTPTimeSync: Sync recovered at %s\n", lastSync);
         }
 
         epicsMutexMustLock(NTPTimePvt.lock);

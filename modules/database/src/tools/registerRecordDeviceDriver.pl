@@ -46,6 +46,7 @@ if ($opt_D) {   # Output dependencies only
 }
 
 $Text::Wrap::columns = 75;
+$Text::Wrap::huge = 'overflow';
 
 # Eliminate chars not allowed in C symbol names
 my $c_bad_ident_chars = '[^0-9A-Za-z_]';
@@ -276,8 +277,15 @@ print $out (<< "END");
 /* $subname */
 static const iocshArg rrddArg0 = {"pdbbase", iocshArgPdbbase};
 static const iocshArg *rrddArgs[] = {&rrddArg0};
-static const iocshFuncDef rrddFuncDef =
-    {"$subname", 1, rrddArgs};
+static const iocshFuncDef rrddFuncDef = {
+    "$subname",
+    1,
+    rrddArgs,
+    "Register the various records, devices, for this DBD.\\n\\n"
+    "These are registered into the database given as first argument,\\n"
+    "which should always be 'pdbbase'.\\n\\n"
+    "Example: $subname pdbbase\\n",
+};
 static void rrddCallFunc(const iocshArgBuf *)
 {
     iocshSetError($subname(*iocshPpdbbase));

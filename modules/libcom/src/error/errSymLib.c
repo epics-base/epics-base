@@ -152,6 +152,9 @@ const char* errSymLookupInternal(long status)
     ERRNUMNODE *pNextNode;
     ERRNUMNODE **phashnode = NULL;
 
+    if (!status)
+        return "Ok";
+
     if (!initialized)
         errSymBld();
 

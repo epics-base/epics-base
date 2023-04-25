@@ -58,6 +58,7 @@ typedef struct cbQueueSet {
     int shutdown; // use atomic
     int threadsConfigured;
     int threadsRunning;
+    epicsThreadId *threads;
 } cbQueueSet;
 
 static cbQueueSet callbackQueue[NUM_CALLBACK_PRIORITIES];
@@ -242,10 +243,14 @@ void callbackStop(void)
 
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
         cbQueueSet *mySet = &callbackQueue[i];
+        int j;
 
         while (epicsAtomicGetIntT(&mySet->threadsRunning)) {
             epicsEventSignal(mySet->semWakeUp);
             epicsEventWaitWithTimeout(startStopEvent, 0.1);
+        }
+        for(j=0; j<mySet->threadsConfigured; j++) {
+            epicsThreadMustJoin(mySet->threads[j]);
         }
     }
 }
@@ -266,6 +271,8 @@ void callbackCleanup(void)
         mySet->semWakeUp = NULL;
         epicsRingPointerDelete(mySet->queue);
         mySet->queue = NULL;
+        free(mySet->threads);
+        mySet->threads = NULL;
     }
 
     epicsTimerQueueRelease(timerQueue);
@@ -297,17 +304,25 @@ void callbackInit(void)
             cantProceed("epicsRingPointerLockedCreate failed for %s\n",
                 threadNamePrefix[i]);
         callbackQueue[i].queueOverflow = FALSE;
+
         if (callbackQueue[i].threadsConfigured == 0)
             callbackQueue[i].threadsConfigured = callbackThreadsDefault;
 
+        callbackQueue[i].threads = callocMustSucceed(callbackQueue[i].threadsConfigured,
+                                                     sizeof(*callbackQueue[i].threads),
+                                                     "callbackInit");
+
         for (j = 0; j < callbackQueue[i].threadsConfigured; j++) {
+            epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+            opts.joinable = 1;
+            opts.priority = threadPriority[i];
+            opts.stackSize = epicsThreadStackBig;
             if (callbackQueue[i].threadsConfigured > 1 )
                 sprintf(threadName, "%s-%d", threadNamePrefix[i], j);
             else
                 strcpy(threadName, threadNamePrefix[i]);
-            tid = epicsThreadCreate(threadName, threadPriority[i],
-                epicsThreadGetStackSize(epicsThreadStackBig),
-                (EPICSTHREADFUNC)callbackTask, &priorityValue[i]);
+            callbackQueue[i].threads[j] = tid = epicsThreadCreateOpt(threadName,
+                (EPICSTHREADFUNC)callbackTask, &priorityValue[i], &opts);
             if (tid == 0) {
                 cantProceed("Failed to spawn callback thread %s\n", threadName);
             } else {

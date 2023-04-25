@@ -27,7 +27,7 @@ $(foreach file,$(MAKEFILE_LIST), \
 
 PRINT_Var = $(@:PRINT.%=%)
 PRINT.%:
-	@echo $(PRINT_Var) = '$($(PRINT_Var))'
+	@+echo $(PRINT_Var) = '$($(PRINT_Var))'
 
 .PHONY: PRINT PRINT.%
 

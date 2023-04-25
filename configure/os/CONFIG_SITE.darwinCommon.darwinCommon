@@ -3,21 +3,27 @@
 # Site specific definitions for darwin builds
 #-------------------------------------------------------
 
-# Note the dir/firstword/wildcard functions below are used
-# to avoid warnings about missing directories.
+# These settings are designed for users of Homebrew.
+# Users of other third-party package managers are welcome to
+# provide patches appropriate for their manager.
+ifneq (,$(wildcard /opt/homebrew))
+  # Default location on aarch64
+  HOMEBREW_DIR = /opt/homebrew
+else ifneq (,$(wildcard /usr/local/Homebrew))
+  # Default location on x86_64
+  HOMEBREW_DIR = /usr/local
+else ifneq (,$(wildcard /opt/local/include/readline))
+  # MacPorts
+  READLINE_DIR = /opt/local
+endif
 
-# Mix-and-match of different package systems is probably not advisable,
-# but you can try that if you like...
+# Look for Homebrew's readline
+ifneq (,$(wildcard $(HOMEBREW_DIR)/opt/readline))
+  READLINE_DIR = $(HOMEBREW_DIR)/opt/readline
+endif
 
-# Uncomment these definitions when using Homebrew packages:
-#OP_SYS_INCLUDES += -I/usr/local/include
-#OP_SYS_LDFLAGS += $(addprefix -L,$(dir $(firstword $(wildcard /usr/local/lib/*))))
-
-# Uncomment these definitions when using DarwinPorts packages:
-#OP_SYS_INCLUDES += -I/opt/local/include
-#OP_SYS_LDFLAGS += $(addprefix -L,$(dir $(firstword $(wildcard /opt/local/lib/*))))
-
-# Uncomment these definitions when using Fink packages:
-#OP_SYS_INCLUDES += -I/sw/include
-#OP_SYS_LDFLAGS += $(addprefix -L,$(dir $(firstword $(wildcard /sw/lib/*))))
-
+# Use GNU readline if it's avaiilable
+ifneq (,$(wildcard $(READLINE_DIR)/include/readline/readline.h))
+  INCLUDES_READLINE = -I$(READLINE_DIR)/include
+  LDFLAGS_READLINE = -L$(READLINE_DIR)/lib
+endif

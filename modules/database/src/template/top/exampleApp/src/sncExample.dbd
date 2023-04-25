@@ -1,1 +1,5 @@
+# The name below is derived from the name of the SNL program
+# inside the source file, not from its filename. Here the
+# program is called sncExample, but is compiled in both the
+# sncExample.stt and sncProgram.st source files.
 registrar(sncExampleRegistrar)

@@ -11,6 +11,7 @@
 /modules/Makefile.local
 O.*/
 /QtC-*
+/.qtc_*
 /.vscode/
 *.orig
 *.log

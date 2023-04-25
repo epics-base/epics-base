@@ -1,0 +1,20 @@
+# Install directories
+/bin/
+/cfg/
+/html/
+/include/
+/lib/
+
+# Local configuration files
+/configure/*.local
+
+# Build directories
+O.*/
+
+# Common files created by other tools
+/QtC-*
+/.vscode/
+*.orig
+*.log
+.*.swp
+.DS_Store

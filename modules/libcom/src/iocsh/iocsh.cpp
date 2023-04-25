@@ -13,12 +13,17 @@
 /* Adapted to C++ by Eric Norum   Date: 18DEC2000 */
 
 #include <exception>
+#include <vector>
+#include <map>
+#include <string>
 
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
+
+#define EPICS_PRIVATE_API
 
 #include "epicsMath.h"
 #include "errlog.h"
@@ -33,6 +38,27 @@
 #include "epicsReadline.h"
 #include "cantProceed.h"
 #include "iocsh.h"
+
+#include "epicsReadlinePvt.h"
+
+#if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
+#  include <readline/readline.h>
+#  define USE_READLINE
+/* libedit also provides readline.h, but isn't fully compatible with
+ * GNU readline.  It also doesn't specifically identify itself.
+ *
+ * libedit pretends to be GNU readline 4.2 (circa 2001), but lacks
+ * some definitions found in that GNU release, but has others not
+ * added until later GNU releases.
+ */
+#  if RL_READLINE_VERSION == 0x402 && !defined(RL_STATE_NONE)
+/* actual GNU readline 4.2 defines RL_STATE_NONE, but libedit.h
+ * circa libedit-39 (aka. CVS 1.33) does not.  It also does not
+ * provide rl_basic_quote_characters
+ */
+static const char *rl_basic_quote_characters;
+#  endif
+#endif
 
 extern "C" {
 
@@ -64,14 +90,36 @@ static epicsThreadPrivateId iocshContextId;
 /*
  * I/O redirection
  */
-#define NREDIRECTS   5
+namespace {
 struct iocshRedirect {
+    // pointer within the current line buffer
     const char *name;
+    // a static string constant: "a", "r", or "w"
     const char *mode;
     FILE       *fp;
     FILE       *oldFp;
-    int         mustRestore;
+    bool        mustRestore;
+
+    iocshRedirect()
+        :name(NULL)
+        ,mode(NULL)
+        ,fp(NULL)
+        ,oldFp(NULL)
+        ,mustRestore(false)
+    {}
+
+    ~iocshRedirect() {
+        close();
+    }
+
+    void close() {
+        if(fp) {
+            (void)fclose(fp);
+            fp = NULL;
+        }
+    }
 };
+} // namespace
 
 /*
  * Set up module variables
@@ -156,6 +204,458 @@ const iocshCmdDef * epicsStdCall iocshFindCommand(const char *name)
 {
     return (iocshCmdDef *) registryFind(iocshCmdID, name);
 }
+
+static void
+showError (const char *filename, int lineno, const char *msg, ...)
+{
+    va_list ap;
+
+    va_start (ap, msg);
+    if (filename)
+        fprintf(epicsGetStderr(), "%s line %d: ", filename, lineno);
+    vfprintf (epicsGetStderr(), msg, ap);
+    fputc ('\n', epicsGetStderr());
+    va_end (ap);
+}
+
+char** (*iocshCompleteRecord)(const char *word) = NULL;
+
+namespace {
+
+struct Tokenize {
+    // holds pointers to the most recently split() line buffer
+    std::vector<const char*> argv;
+    typedef  std::map<int, iocshRedirect> redirects_t;
+    redirects_t redirects;
+    iocshRedirect* redirect;
+    bool noise;
+
+    Tokenize()
+        :redirect(NULL)
+        ,noise(true)
+    {}
+
+    ~Tokenize()
+    {
+        stopRedirect();
+    }
+
+    // if split()==true then argv.size()>=1 where
+    // argv[size()-1] is always a NULL.
+    size_t size() const {
+        return argv.empty() ? 0u : argv.size()-1u;
+    }
+    bool empty() const {
+        return argv.size()<=1u;
+    }
+
+    bool is_redirected(int fd) const {
+        redirects_t::const_iterator it = redirects.find(fd);
+        return it!=redirects.end() && !!it->second.name;
+    }
+
+    /* Break line into words.
+     * Stores pointers to line buffer this->argv and this->redirects[].name
+     */
+    bool split(const char *filename, int lineno, char *line, int& icin) {
+
+        argv.clear();
+        redirects.clear();
+        redirect = NULL;
+
+        int icout = 0;
+        bool inword = false;
+        bool backslash = false;
+        char quote = 0;
+
+        for (;;) {
+            char c = line[icin++];
+            if (c == '\0')
+                break;
+
+            bool sep = !quote && !backslash && (strchr (" \t(),\r", c));
+
+            if (!quote && !backslash) {
+                int redirectFd = 1;
+                if (c == '\\') {
+                    backslash = true;
+                    continue;
+                }
+                if (c == '<') {
+                    if (redirect != NULL) {
+                        break;
+                    }
+                    redirect = &redirects[0];
+                    sep = 1;
+                    redirect->mode = "r";
+                }
+                if ((c >= '1') && (c <= '9') && (line[icin] == '>')) {
+                    redirectFd = c - '0';
+                    c = '>';
+                    icin++;
+                }
+                if (c == '>') {
+                    if (redirect != NULL)
+                        break;
+                    redirect = &redirects[redirectFd];
+                    sep = 1;
+                    if (line[icin] == '>') {
+                        icin++;
+                        redirect->mode = "a";
+                    }
+                    else {
+                        redirect->mode = "w";
+                    }
+                }
+            }
+            if (inword) {
+                if (c == quote) {
+                    quote = 0;
+                }
+                else {
+                    if (!quote && !backslash) {
+                        if (sep) {
+                            inword = false;
+                            // this "closes" a sub-string which was previously
+                            // stored in argv[] or redirects[].name
+                            line[icout++] = '\0';
+                        }
+                        else if ((c == '"') || (c == '\'')) {
+                            quote = c;
+                        }
+                        else {
+                            line[icout++] = c;
+                        }
+                    }
+                    else {
+                        line[icout++] = c;
+                    }
+                }
+            }
+            else {
+                if (!sep) {
+                    if (((c == '"') || (c == '\'')) && !backslash) {
+                        quote = c;
+                    }
+                    if (redirect != NULL) {
+                        if (redirect->name) { // double redirect?
+                            return false;
+                        }
+                        redirect->name = line + icout;
+                        redirect = NULL;
+                    }
+                    else {
+                        argv.push_back(line + icout);
+                    }
+                    if (!quote)
+                        line[icout++] = c;
+                    inword = true;
+                }
+            }
+            backslash = false;
+        }
+
+        if (inword)
+            line[icout++] = '\0';
+
+
+        if (redirect != NULL) {
+            if(noise)
+                showError(filename, lineno, "Illegal redirection.");
+            return true;
+        }
+        if (quote) {
+            if(noise)
+                showError(filename, lineno, "Unbalanced quote.");
+            return true;
+        }
+        if (backslash) {
+            if(noise)
+                showError(filename, lineno, "Trailing backslash.");
+            return true;
+        }
+
+        argv.push_back(NULL);
+
+        return false;
+    }
+
+    int openRedirect(const char *filename, int lineno)
+    {
+        for(redirects_t::iterator it = redirects.begin(), end = redirects.end();
+            it!=end; ++it)
+        {
+            iocshRedirect *redirect = &it->second;
+            if(!redirect->name)
+                continue;
+
+            redirect->fp = fopen(redirect->name, redirect->mode);
+            if (redirect->fp == NULL) {
+                int err = errno;
+                showError(filename, lineno, "Can't open \"%s\": %s.",
+                                            redirect->name, strerror(err));
+                redirect->name = NULL;
+                // caller will clear tok.redirects
+                return -1;
+            }
+            redirect->mustRestore = false;
+        }
+        return 0;
+    }
+
+    void startRedirect()
+    {
+        for(redirects_t::iterator it = redirects.begin(), end = redirects.end();
+            it!=end; ++it)
+        {
+            iocshRedirect *redirect = &it->second;
+            if(!redirect->fp)
+                continue;
+
+            switch(it->first) {
+            case 0:
+                redirect->oldFp = epicsGetThreadStdin();
+                epicsSetThreadStdin(redirect->fp);
+                redirect->mustRestore = true;
+                break;
+            case 1:
+                redirect->oldFp = epicsGetThreadStdout();
+                epicsSetThreadStdout(redirect->fp);
+                redirect->mustRestore = true;
+                break;
+            case 2:
+                redirect->oldFp = epicsGetThreadStderr();
+                epicsSetThreadStderr(redirect->fp);
+                redirect->mustRestore = true;
+                break;
+            }
+        }
+    }
+
+    void stopRedirect()
+    {
+        for(redirects_t::iterator it = redirects.begin(), end = redirects.end();
+            it!=end; ++it)
+        {
+            iocshRedirect *redirect = &it->second;
+            if(!redirect->fp)
+                continue;
+
+            if (redirect->mustRestore) {
+                switch(it->first) {
+                case 0: epicsSetThreadStdin(redirect->oldFp);  break;
+                case 1: epicsSetThreadStdout(redirect->oldFp); break;
+                case 2: epicsSetThreadStderr(redirect->oldFp); break;
+                }
+                redirect->mustRestore = false;
+            }
+
+            redirect->close();
+            redirect->name = NULL;
+        }
+    }
+};
+
+#ifdef USE_READLINE
+
+char* iocsh_complete_command(const char* word, int notfirst)
+{
+    // ick! ... readline is not re-entrant anyway
+    static const iocshCommand *next;
+
+    if(!notfirst) { // aka. first call
+        next = iocshCommandHead;
+    }
+
+    const size_t wlen = strlen(word);
+
+    while(next) {
+        const iocshCommand *cur = next;
+        next = next->next;
+
+        if(strncmp(word, cur->def.pFuncDef->name, wlen)==0) {
+            return strdup(cur->def.pFuncDef->name);
+        }
+    }
+
+    return NULL;
+}
+
+char* iocsh_complete_variable(const char* word, int notfirst)
+{
+    // ick! ... readline is not re-entrant anyway
+    static const iocshVariable *next;
+
+    if(!notfirst) { // aka. first call
+        next = iocshVariableHead;
+    }
+
+    const size_t wlen = strlen(word);
+
+    while(next) {
+        const iocshVariable *cur = next;
+        next = next->next;
+
+        if(strncmp(word, cur->pVarDef->name, wlen)==0) {
+            return strdup(cur->pVarDef->name);
+        }
+    }
+
+    return NULL;
+}
+
+char** iocsh_attempt_completion(const char* word, int start, int end)
+{
+    const char *line = rl_line_buffer;
+
+    if(!line || !word || start<0 || end <0 || start>end)
+        return NULL; // paranoia
+
+    // skip any leading space
+    while(isspace(*line)) {
+        line++;
+        start--;
+        end--;
+    }
+
+    if(start==0) { // complete command name
+        return rl_completion_matches(word, iocsh_complete_command);
+
+    } else { // complete some argument
+        // make a copy as split() will insert nils
+        size_t linelen = strlen(line);
+        std::vector<char> lbuf(linelen+1u);
+        memcpy(&lbuf[0], line, linelen);
+        lbuf[linelen] = '\0';
+
+        int pos = 0;
+        while(isspace(lbuf[pos]))
+            pos++;
+
+        Tokenize tokenize;
+        // don't complain about "Unbalanced quote when completing
+        tokenize.noise = false;
+        bool err = tokenize.split(NULL, -1, &lbuf[0], pos);
+
+        if(!err)
+            err = tokenize.empty() && tokenize.redirects.empty();
+
+        // look up command name
+        iocshCmdDef *def = NULL;
+        if(!err)
+            err = !(def = (iocshCmdDef *) registryFind(iocshCmdID, tokenize.argv[0]));
+
+        // Find out which argument 'start' is.
+        // arg is index into tokenize.argv[]
+        // argv[0] is command name, argv[1] would be first argument.
+        size_t arg;
+        if(!err) {
+            for(arg=1; arg<tokenize.size(); arg++) {
+                // BUG: does not work with eg. 'dbpr("X")' as split()
+                //      has rewritten lbuf to make this 'dbpr "X"'
+                size_t soffset = tokenize.argv[arg]-&lbuf[0];
+                size_t eoffset = soffset + strlen(tokenize.argv[arg]);
+                if(soffset >= size_t(start) && eoffset <= size_t(end)) {
+                    break;
+                }
+            }
+            err = arg-1u >= size_t(def->pFuncDef->nargs);
+        }
+
+        if(!err) {
+            // we are being asked to complete a valid command,
+            // for which we have split argument strings.
+
+            const iocshArg * argdef = def->pFuncDef->arg[arg-1u];
+
+            // known argument type
+            rl_attempted_completion_over = 1;
+
+            if(argdef->type==iocshArgStringRecord && iocshCompleteRecord) {
+                return (*iocshCompleteRecord)(word);
+
+            } else if(argdef->type==iocshArgStringPath) {
+                // use default completion (filesystem)
+                rl_attempted_completion_over = 0;
+
+            } else if(argdef->type==iocshArgPdbbase) {
+                char **ret = (char**)calloc(2, sizeof(*ret));
+                if(ret)
+                    ret[0] = strdup("pdbbase");
+                return ret;
+
+            } else if(arg==1 && strcmp(def->pFuncDef->name, "help")==0) {
+                return rl_completion_matches(word, iocsh_complete_command);
+
+            } else if(arg==1 && strcmp(def->pFuncDef->name, "var")==0) {
+                return rl_completion_matches(word, iocsh_complete_variable);
+            }
+
+        }
+
+        return NULL;
+    }
+}
+#endif
+
+struct ReadlineContext {
+    void *context;
+#ifdef USE_READLINE
+    // readline on BSD/OSX missing 'rl_completion_func_t' typedef, and 'const'
+    char* prev_rl_readline_name;
+    char* prev_rl_basic_word_break_characters;
+    char* prev_rl_completer_word_break_characters;
+    char* prev_rl_basic_quote_characters;
+    char* prev_rl_completer_quote_characters;
+    //rl_completion_func_t* prev_rl_attempted_completion_function;
+    char** (*prev_rl_attempted_completion_function)(const char* word, int start, int end);
+#endif
+
+    ReadlineContext()
+        :context(NULL)
+    {}
+
+    bool setup(FILE *fp) {
+        context = epicsReadlineBegin(fp);
+#ifdef USE_READLINE
+        if(context) {
+            prev_rl_readline_name = (char*)rl_readline_name;
+            prev_rl_basic_word_break_characters = (char*)rl_basic_word_break_characters;
+            prev_rl_completer_word_break_characters = (char*)rl_completer_word_break_characters;
+            prev_rl_basic_quote_characters = (char*)rl_basic_quote_characters;
+            prev_rl_completer_quote_characters = (char*)rl_completer_quote_characters;
+            prev_rl_attempted_completion_function = rl_attempted_completion_function;
+
+            rl_readline_name = (char*)"iocsh";
+            rl_basic_word_break_characters = (char*)"\t (),";
+            rl_completer_word_break_characters = (char*)"\t (),";
+            rl_basic_quote_characters = (char*)"\"";
+            rl_completer_quote_characters = (char*)"\"";
+            rl_attempted_completion_function = &iocsh_attempt_completion;
+            rl_bind_key('\t', rl_complete);
+        }
+#endif
+        return context;
+    }
+
+    ~ReadlineContext() {
+        if(context) {
+#ifdef USE_READLINE
+            rl_readline_name = prev_rl_readline_name;
+            rl_basic_word_break_characters = prev_rl_basic_word_break_characters;
+            rl_completer_word_break_characters = prev_rl_completer_word_break_characters;
+            rl_basic_quote_characters = prev_rl_basic_quote_characters;
+            rl_completer_quote_characters = prev_rl_completer_quote_characters;
+            rl_attempted_completion_function = prev_rl_attempted_completion_function;
+            // cf. osdReadlineBegin() in gnuReadline.c
+            rl_bind_key('\t', rl_insert);
+#endif
+            epicsReadlineEnd(context);
+        }
+    }
+};
+
+} // namespace
 
 /*
  * Register the "var" command and any variable(s)
@@ -255,22 +755,6 @@ void epicsStdCall iocshFree(void)
     iocshTableUnlock ();
 }
 
-/*
- * Report an error
- */
-static void
-showError (const char *filename, int lineno, const char *msg, ...)
-{
-    va_list ap;
-
-    va_start (ap, msg);
-    if (filename)
-        fprintf(epicsGetStderr(), "%s line %d: ", filename, lineno);
-    vfprintf (epicsGetStderr(), msg, ap);
-    fputc ('\n', epicsGetStderr());
-    va_end (ap);
-}
-
 static int
 cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
     const iocshArg *piocshArg)
@@ -315,6 +799,8 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
         break;
 
     case iocshArgString:
+    case iocshArgStringRecord:
+    case iocshArgStringPath:
         argBuf->sval = arg;
         break;
 
@@ -350,95 +836,6 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
         return 0;
     }
     return 1;
-}
-
-/*
- * Open redirected I/O
- */
-static int
-openRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
-{
-    int i;
-
-    for (i = 0 ; i < NREDIRECTS ; i++, redirect++) {
-        if (redirect->name != NULL) {
-            redirect->fp = fopen(redirect->name, redirect->mode);
-            if (redirect->fp == NULL) {
-                showError(filename, lineno, "Can't open \"%s\": %s.",
-                                            redirect->name, strerror(errno));
-                redirect->name = NULL;
-                while (i--) {
-                    redirect--;
-                    if (redirect->fp) {
-                        fclose(redirect->fp);
-                        redirect->fp = NULL;
-                    }
-                    redirect->name = NULL;
-                }
-                return -1;
-            }
-            redirect->mustRestore = 0;
-        }
-    }
-    return 0;
-}
-
-/*
- * Start I/O redirection
- */
-static void
-startRedirect(const char * /*filename*/, int /*lineno*/,
-              struct iocshRedirect *redirect)
-{
-    int i;
-
-    for (i = 0 ; i < NREDIRECTS ; i++, redirect++) {
-        if (redirect->fp != NULL) {
-            switch(i) {
-            case 0:
-                redirect->oldFp = epicsGetThreadStdin();
-                epicsSetThreadStdin(redirect->fp);
-                redirect->mustRestore = 1;
-                break;
-            case 1:
-                redirect->oldFp = epicsGetThreadStdout();
-                epicsSetThreadStdout(redirect->fp);
-                redirect->mustRestore = 1;
-                break;
-            case 2:
-                redirect->oldFp = epicsGetThreadStderr();
-                epicsSetThreadStderr(redirect->fp);
-                redirect->mustRestore = 1;
-                break;
-            }
-        }
-    }
-}
-
-/*
- * Finish up I/O redirection
- */
-static void
-stopRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
-{
-    int i;
-
-    for (i = 0 ; i < NREDIRECTS ; i++, redirect++) {
-        if (redirect->fp != NULL) {
-            if (fclose(redirect->fp) != 0)
-                showError(filename, lineno, "Error closing \"%s\": %s.",
-                                            redirect->name, strerror(errno));
-            redirect->fp = NULL;
-            if (redirect->mustRestore) {
-                switch(i) {
-                case 0: epicsSetThreadStdin(redirect->oldFp);  break;
-                case 1: epicsSetThreadStdout(redirect->oldFp); break;
-                case 2: epicsSetThreadStderr(redirect->oldFp); break;
-                }
-            }
-        }
-        redirect->name = NULL;
-    }
 }
 
 /*
@@ -563,30 +960,22 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 {
     FILE *fp = NULL;
     const char *filename = NULL;
-    int icin, icout;
+    int icin;
     char c;
-    int quote, inword, backslash;
     const char *raw = NULL;;
     char *line = NULL;
     int lineno = 0;
-    int argc;
-    char **argv = NULL;
-    int argvCapacity = 0;
-    struct iocshRedirect *redirects = NULL;
-    struct iocshRedirect *redirect = NULL;
-    int sep;
     const char *prompt = NULL;
-    const char *ifs = " \t(),\r";
-    iocshArgBuf *argBuf = NULL;
-    int argBufCapacity = 0;
+    std::vector<iocshArgBuf> argBuf;
     struct iocshCommand *found;
-    void *readlineContext = NULL;
+    ReadlineContext readline;
     int wasOkToBlock;
     static const char * pairs[] = {"", "environ", NULL, NULL};
     iocshScope scope;
     iocshContext *context;
     char ** defines = NULL;
     int ret = 0;
+    Tokenize tokenize;
 
     iocshInit();
 
@@ -617,7 +1006,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         /*
          * Create a command-line input context
          */
-        if ((readlineContext = epicsReadlineBegin(fp)) == NULL) {
+        if (!readline.setup(fp)) {
             fprintf(epicsGetStderr(), "Can't allocate command-line object.\n");
             if (fp)
                 fclose(fp);
@@ -630,22 +1019,12 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     }
 
     /*
-     * Set up redirection
-     */
-    redirects = (struct iocshRedirect *)calloc(NREDIRECTS, sizeof *redirects);
-    if (redirects == NULL) {
-        fprintf(epicsGetStderr(), "Out of memory!\n");
-        return -1;
-    }
-
-    /*
      * Parse macro definitions, this check occurs before creating the
      * macro handle to simplify cleanup.
      */
 
     if (macros) {
         if (macParseDefns(NULL, macros, &defines) < 0) {
-            free(redirects);
             return -1;
         }
     }
@@ -657,7 +1036,6 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         context = (iocshContext*)calloc(1, sizeof(*context));
         if (!context || macCreateHandle(&context->handle, pairs)) {
             errlogMessage("iocsh: macCreateHandle failed.");
-            free(redirects);
             free(context);
             return -1;
         }
@@ -711,7 +1089,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             raw = commandLine;
         }
         else {
-            if ((raw = epicsReadline(prompt, readlineContext)) == NULL)
+            if ((raw = epicsReadline(prompt, readline.context)) == NULL)
                 break;
         }
         lineno++;
@@ -771,181 +1149,62 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         /*
          * Break line into words
          */
-        icout = 0;
-        inword = 0;
-        argc = 0;
-        quote = EOF;
-        backslash = 0;
-        redirect = NULL;
-        for (;;) {
-            if (argc >= argvCapacity) {
-                int newCapacity = argvCapacity + 20;
-                char **newv = (char **)realloc (argv, newCapacity * sizeof *argv);
-                if (newv == NULL) {
-                    fprintf (epicsGetStderr(), "Out of memory!\n");
-                    argc = -1;
-                    scope.errored = true;
-                    break;
-                }
-                argv = newv;
-                argvCapacity = newCapacity;
-            }
-            c = line[icin++];
-            if (c == '\0')
-                break;
-            if ((quote == EOF) && !backslash && (strchr (ifs, c)))
-                sep = 1;
-            else
-                sep = 0;
-            if ((quote == EOF) && !backslash) {
-                int redirectFd = 1;
-                if (c == '\\') {
-                    backslash = 1;
-                    continue;
-                }
-                if (c == '<') {
-                    if (redirect != NULL) {
-                        break;
-                    }
-                    redirect = &redirects[0];
-                    sep = 1;
-                    redirect->mode = "r";
-                }
-                if ((c >= '1') && (c <= '9') && (line[icin] == '>')) {
-                    redirectFd = c - '0';
-                    c = '>';
-                    icin++;
-                }
-                if (c == '>') {
-                    if (redirect != NULL)
-                        break;
-                    if (redirectFd >= NREDIRECTS) {
-                        redirect = &redirects[1];
-                        break;
-                    }
-                    redirect = &redirects[redirectFd];
-                    sep = 1;
-                    if (line[icin] == '>') {
-                        icin++;
-                        redirect->mode = "a";
-                    }
-                    else {
-                        redirect->mode = "w";
-                    }
-                }
-            }
-            if (inword) {
-                if (c == quote) {
-                    quote = EOF;
-                }
-                else {
-                    if ((quote == EOF) && !backslash) {
-                        if (sep) {
-                            inword = 0;
-                            line[icout++] = '\0';
-                        }
-                        else if ((c == '"') || (c == '\'')) {
-                            quote = c;
-                        }
-                        else {
-                            line[icout++] = c;
-                        }
-                    }
-                    else {
-                        line[icout++] = c;
-                    }
-                }
-            }
-            else {
-                if (!sep) {
-                    if (((c == '"') || (c == '\'')) && !backslash) {
-                        quote = c;
-                    }
-                    if (redirect != NULL) {
-                        if (redirect->name != NULL) {
-                            argc = -1;
-                            break;
-                        }
-                        redirect->name = line + icout;
-                        redirect = NULL;
-                    }
-                    else {
-                        argv[argc++] = line + icout;
-                    }
-                    if (quote == EOF)
-                        line[icout++] = c;
-                    inword = 1;
-                }
-            }
-            backslash = 0;
-        }
-        if (redirect != NULL) {
-            showError(filename, lineno, "Illegal redirection.");
+        if (tokenize.split(filename, lineno, line, icin)) {
             scope.errored = true;
             continue;
-        }
-        if (argc < 0) {
+
+        } else if (tokenize.empty() && tokenize.redirects.empty()) {
             break;
         }
-        if (quote != EOF) {
-            showError(filename, lineno, "Unbalanced quote.");
-            scope.errored = true;
-            continue;
-        }
-        if (backslash) {
-            showError(filename, lineno, "Trailing backslash.");
-            scope.errored = true;
-            continue;
-        }
-        if (inword)
-            line[icout++] = '\0';
-        argv[argc] = NULL;
 
         /*
          * Special case -- Redirected input but no command
          * Treat as if 'iocsh filename'.
          */
-        if ((argc == 0) && (redirects[0].name != NULL)) {
-            const char *commandFile = redirects[0].name;
-            redirects[0].name = NULL;
-            if (openRedirect(filename, lineno, redirects) < 0)
+        if (tokenize.empty() && tokenize.is_redirected(0)) {
+            const char* commandFile = tokenize.redirects[0].name;
+            tokenize.redirects[0].name = NULL;
+            if (tokenize.openRedirect(filename, lineno) < 0)
                 continue;
-            startRedirect(filename, lineno, redirects);
+            tokenize.startRedirect();
             if(iocshBody(commandFile, NULL, macros))
                 scope.errored = true;
-            stopRedirect(filename, lineno, redirects);
+            tokenize.stopRedirect();
             continue;
         }
 
         /*
          * Special command?
          */
-        if ((argc > 0) && (strcmp(argv[0], "exit") == 0))
+        if (!tokenize.empty() && (strcmp(tokenize.argv[0], "exit") == 0))
             break;
 
         /*
          * Set up redirection
          */
-        if ((openRedirect(filename, lineno, redirects) == 0) && (argc > 0)) {
+        if ((tokenize.openRedirect(filename, lineno) == 0) && !tokenize.empty()) {
             // error unless a function is actually called.
             // handles command not-found and arg parsing errors.
             scope.errored = true;
             /*
              * Look up command
              */
-            found = (iocshCommand *)registryFind (iocshCmdID, argv[0]);
+            found = (iocshCommand *)registryFind (iocshCmdID, tokenize.argv[0]);
             if (found) {
                 /*
                  * Process arguments and call function
                  */
                 struct iocshFuncDef const *piocshFuncDef = found->def.pFuncDef;
-                for (int iarg = 0 ; ; ) {
-                    if (iarg == piocshFuncDef->nargs) {
-                        startRedirect(filename, lineno, redirects);
+                // argBuf resize() with one extra so that &argBuf[0] doesn't trigger
+                // windows debug assert.
+                argBuf.resize(size_t(piocshFuncDef->nargs)+1u);
+                for (size_t iarg = 0 ; ; ) {
+                    if (iarg == size_t(piocshFuncDef->nargs)) {
+                        tokenize.startRedirect();
                         /* execute */
                         scope.errored = false;
                         try {
-                            (*found->def.func)(argBuf);
+                            (*found->def.func)(&argBuf[0]);
                         } catch(std::exception& e){
                             fprintf(epicsGetStderr(), "c++ error: %s\n", e.what());
                             scope.errored = true;
@@ -955,40 +1214,30 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
                         }
                         break;
                     }
-                    if (iarg >= argBufCapacity) {
-                        int newCapacity = argBufCapacity + 20;
-                        void *newBuf = realloc(argBuf, newCapacity * sizeof *argBuf);
-                        if (newBuf == NULL) {
-                            fprintf (epicsGetStderr(), "Out of memory!\n");
-                            break;
-                        }
-                        argBuf = (iocshArgBuf *) newBuf;
-                        argBufCapacity = newCapacity;
-                    }
                     if (piocshFuncDef->arg[iarg]->type == iocshArgArgv) {
-                        argBuf[iarg].aval.ac = argc-iarg;
-                        argBuf[iarg].aval.av = argv+iarg;
+                        argBuf[iarg].aval.ac = tokenize.size()-iarg;
+                        argBuf[iarg].aval.av = const_cast<char**>(&tokenize.argv[iarg]);
                         iarg = piocshFuncDef->nargs;
                     }
                     else {
                         if (!cvtArg (filename, lineno,
-                                ((iarg < argc) ? argv[iarg+1] : NULL),
+                                ((iarg < tokenize.size()) ? const_cast<char*>(tokenize.argv[iarg+1]) : NULL),
                                 &argBuf[iarg], piocshFuncDef->arg[iarg]))
                             break;
                         iarg++;
                     }
                 }
-                if ((prompt != NULL) && (strcmp(argv[0], "epicsEnvSet") == 0)) {
+                if ((prompt != NULL) && (strcmp(tokenize.argv[0], "epicsEnvSet") == 0)) {
                     const char *newPrompt;
                     if ((newPrompt = envGetConfigParamPtr(&IOCSH_PS1)) != NULL)
                         prompt = newPrompt;
                 }
             }
             else {
-                showError(filename, lineno, "Command %s not found.", argv[0]);
+                showError(filename, lineno, "Command %s not found.", tokenize.argv[0]);
             }
         }
-        stopRedirect(filename, lineno, redirects);
+        tokenize.stopRedirect();
     }
     macPopScope(handle);
 
@@ -1001,16 +1250,8 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     }
     if (fp && (fp != stdin))
         fclose (fp);
-    if (redirects != NULL) {
-        stopRedirect(filename, lineno, redirects);
-        free (redirects);
-    }
     free(line);
-    free (argv);
-    free (argBuf);
     errlogFlush();
-    if (readlineContext)
-        epicsReadlineEnd(readlineContext);
     epicsThreadSetOkToBlock(wasOkToBlock);
     return ret;
 }

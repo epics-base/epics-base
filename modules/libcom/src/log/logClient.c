@@ -24,6 +24,7 @@
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "iocLog.h"
+#include "errlog.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
@@ -558,8 +559,10 @@ void epicsStdCall iocLogPrefix(const char * prefix)
      */
 
     if (logClientPrefix) {
-        printf ("iocLogPrefix: The prefix was already set to \"%s\" "
-            "and can't be changed.\n", logClientPrefix);
+        /* No error message if the new prefix is identical to the old one */
+        if (strcmp(logClientPrefix, prefix))
+            printf (ERL_WARNING " iocLogPrefix: The prefix was already set to "
+                "\"%s\" and can't be changed.\n", logClientPrefix);
         return;
     }
 

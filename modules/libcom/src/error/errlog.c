@@ -66,6 +66,8 @@ typedef struct listenerNode{
     ELLNODE node;
     errlogListener listener;
     void *pPrivate;
+    unsigned active:1;
+    unsigned removed:1;
 } listenerNode;
 
 typedef struct {
@@ -164,10 +166,13 @@ size_t msgbufCommit(size_t nchar, int localEcho)
          */
         fprintf(pvt.console, "%s", start);
 
-    } else {
+    } else if(!atExit) {
         start[0u] = ERL_STATE_READY | (localEcho ? ERL_LOCALECHO : 0);
 
         pvt.log->pos += 1u + nchar + 1u;
+
+    } else {
+        /* listeners will not see messages logged during errlog shutdown */
     }
 
     epicsMutexUnlock(pvt.msgQueueLock); /* matched in msgbufAlloc() */
@@ -439,9 +444,15 @@ int errlogRemoveListeners(errlogListener listener, void *pPrivate)
         listenerNode *pnext = (listenerNode *)ellNext(&plistenerNode->node);
 
         if (plistenerNode->listener == listener &&
-            plistenerNode->pPrivate == pPrivate) {
-            ellDelete(&pvt.listenerList, &plistenerNode->node);
-            free(plistenerNode);
+            plistenerNode->pPrivate == pPrivate)
+        {
+            if(plistenerNode->active) { /* callback removing itself */
+                plistenerNode->removed = 1;
+
+            } else {
+                ellDelete(&pvt.listenerList, &plistenerNode->node);
+                free(plistenerNode);
+            }
             ++count;
         }
         plistenerNode = pnext;
@@ -612,12 +623,15 @@ void errlogFlush(void)
 
 static void errlogThread(void)
 {
+    int wakeFlusher;
     epicsMutexMustLock(pvt.msgQueueLock);
-    while (!pvt.atExit) {
+    while (1) {
         pvt.flushSeq++;
 
         if(pvt.log->pos==0u) {
-            int wakeFlusher = pvt.nFlushers!=0;
+            if(pvt.atExit)
+                break;
+            wakeFlusher = pvt.nFlushers!=0;
             epicsMutexUnlock(pvt.msgQueueLock);
             if(wakeFlusher)
                 epicsEventMustTrigger(pvt.waitForSeq);
@@ -668,8 +682,19 @@ static void errlogThread(void)
                 epicsMutexMustLock(pvt.listenerLock);
                 plistenerNode = (listenerNode *)ellFirst(&pvt.listenerList);
                 while (plistenerNode) {
+                    listenerNode *next;
+
+                    plistenerNode->active = 1;
                     (*plistenerNode->listener)(plistenerNode->pPrivate, base+1u);
-                    plistenerNode = (listenerNode *)ellNext(&plistenerNode->node);
+                    plistenerNode->active = 0;
+
+                    next = (listenerNode *)ellNext(&plistenerNode->node);
+                    if(plistenerNode->removed) {
+                        /* listener() called errlogRemoveListeners() */
+                        ellDelete(&pvt.listenerList, &plistenerNode->node);
+                        free(plistenerNode);
+                    }
+                    plistenerNode = next;
                 }
                 epicsMutexUnlock(pvt.listenerLock);
 
@@ -689,5 +714,8 @@ static void errlogThread(void)
 
         }
     }
+    wakeFlusher = pvt.nFlushers!=0;
     epicsMutexUnlock(pvt.msgQueueLock);
+    if(wakeFlusher)
+        epicsEventMustTrigger(pvt.waitForSeq);
 }

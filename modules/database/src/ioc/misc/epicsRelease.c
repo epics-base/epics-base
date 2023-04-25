@@ -23,6 +23,7 @@ DBCORE_API int coreRelease(void)
     printf ( "############################################################################\n" );
     printf ( "## %s\n", epicsReleaseVersion );
     printf ( "## %s\n", "Rev. " EPICS_VCS_VERSION );
+    printf ( "## %s\n", "Rev. Date " EPICS_VCS_VERSION_DATE );
     printf ( "############################################################################\n" );
     return 0;
 }

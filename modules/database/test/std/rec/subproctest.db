@@ -1,0 +1,4 @@
+record(sub, "InvalidINPARec") {
+    field(SNAM, "subproc")
+    field(INPA, "nonexistent")
+}

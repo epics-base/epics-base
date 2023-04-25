@@ -17,10 +17,10 @@ dbLoadRecords "db/_APPNAME_Version.db", "user=_USER_"
 dbLoadRecords "db/dbSubExample.db", "user=_USER_"
 
 #- Set this to see messages from mySub
-#var mySubDebug 1
+#-var mySubDebug 1
 
 #- Run this to trace the stages of iocInit
-#traceIocInit
+#-traceIocInit
 
 cd "${TOP}/iocBoot/${IOC}"
 iocInit

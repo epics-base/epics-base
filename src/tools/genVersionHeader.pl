@@ -15,6 +15,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../../lib/perl";
 
 use EPICS::Getopts;
+use EPICS::Path;
 use POSIX qw(strftime);
 
 use strict;
@@ -29,7 +30,10 @@ our $opt_t = '.';
 our $opt_N = 'VCSVERSION';
 our $opt_V = $now;
 
+our $RevDate = $now;
+
 my $vcs;
+my $cv;
 
 getopts('dhivqt:N:V:') && @ARGV == 1
     or HELP_MESSAGE();
@@ -38,13 +42,19 @@ my ($outfile) = @ARGV;
 
 if ($opt_d) { exit 0 } # exit if make is run in dry-run mode
 
-if (!$vcs && -d "$opt_t/_darcs") { # Darcs
+# Save abs-path to output filename; chdir <top>
+my $absfile = AbsPath($outfile);
+chdir $opt_t or
+    die "Can't cd to $opt_t: $!\n";
+
+if (-d '_darcs') { # Darcs
     print "== Found <top>/_darcs directory\n" if $opt_v;
     # v1-4-dirty
     # is tag 'v1' plus 4 patches
     # with uncommited modifications
-    my $result = `cd "$opt_t" && echo "\$(darcs show tags | head -1)-\$((\$(darcs changes --count --from-tag .)-1))"`;
-    chomp $result;
+    my @tags = `darcs show tags`;
+    my $count = `darcs changes --count --from-tag .` - 1;
+    my $result = $tags[0] . '-' . $count;
     print "== darcs show tags, changes:\n$result\n==\n" if $opt_v;
     if (!$? && $result ne '') {
         $opt_V = $result;
@@ -53,8 +63,10 @@ if (!$vcs && -d "$opt_t/_darcs") { # Darcs
         my $hasmod = `darcs whatsnew --repodir="$opt_t" -l`;
         $opt_V .= '-dirty' unless $?;
     }
+    $cv = `darcs log --last 1`;
+    $cv =~ s/\A .* Date: \s+ ( [^\n]+ ) .* \z/$1/sx;
 }
-if (!$vcs && -d "$opt_t/.hg") { # Mercurial
+elsif (-d '.hg') { # Mercurial
     print "== Found <top>/.hg directory\n" if $opt_v;
     # v1-4-abcdef-dirty
     # is 4 commits after tag 'v1' with short hash abcdef
@@ -69,8 +81,9 @@ if (!$vcs && -d "$opt_t/.hg") { # Mercurial
         chomp $hasmod;
         $opt_V .= '-dirty' if $hasmod ne '';
     }
+    $cv = `hg log -l1 --template '{date|isodate}'`
 }
-if (!$vcs && -d "$opt_t/.git") { # Git
+elsif (-d '.git') { # Git
     print "== Found <top>/.git directory\n" if $opt_v;
     # v1-4-abcdef-dirty
     # is 4 commits after tag 'v1' with short hash abcdef
@@ -82,23 +95,25 @@ if (!$vcs && -d "$opt_t/.git") { # Git
         $opt_V = $result;
         $vcs = 'Git';
     }
+    $cv = `git show -s --format=%ci HEAD`;
 }
-if (!$vcs && -d "$opt_t/.svn") { # Subversion
+elsif (-d '.svn') { # Subversion
     print "== Found <top>/.svn directory\n" if $opt_v;
     # 12345-dirty
-    my $result = `cd "$opt_t" && svn info --non-interactive`;
+    my $result = `svn info --non-interactive`;
     chomp $result;
     print "== svn info:\n$result\n==\n" if $opt_v;
     if (!$? && $result =~ /^Revision:\s*(\d+)/m) {
         $opt_V = $1;
         $vcs = 'Subversion';
         # see if working copy has modifications, additions, removals, or missing files
-        my $hasmod = `cd "$opt_t" && svn status --non-interactive`;
+        my $hasmod = `svn status --non-interactive`;
         chomp $hasmod;
         $opt_V .= '-dirty' if $hasmod ne '';
     }
+    $cv = `svn info --show-item last-changed-date`;
 }
-if (!$vcs && -d "$opt_t/.bzr") { # Bazaar
+elsif (-d '.bzr') { # Bazaar
     print "== Found <top>/.bzr directory\n" if $opt_v;
     # 12444-anj@aps.anl.gov-20131003210403-icfd8mc37g8vctpf-dirty
     my $result = `bzr version-info -q --custom --template="{revno}-{revision_id}-{clean}"`;
@@ -108,8 +123,9 @@ if (!$vcs && -d "$opt_t/.bzr") { # Bazaar
         $opt_V = $result;
         $vcs = 'Bazaar';
     }
+    $cv = `bzr version-info -q --custom --template='{date}'`;
 }
-if (!$vcs) {
+else {
     print "== No VCS directories\n" if $opt_v;
     if ($opt_V eq '') {
         $vcs = 'build date/time';
@@ -120,6 +136,9 @@ if (!$vcs) {
     }
 }
 
+chomp $cv;
+$RevDate=$vcs . ': ' . $cv;
+
 my $output = << "__END";
 /* Generated file, do not edit! */
 
@@ -128,12 +147,16 @@ my $output = << "__END";
 #ifndef $opt_N
   #define $opt_N \"$opt_V\"
 #endif
+#ifndef ${opt_N}_DATE
+  #define ${opt_N}_DATE \"$RevDate\"
+#endif
 __END
 
 print "== Want:\n$output==\n" if $opt_v;
 
 my $DST;
-if (open($DST, '+<', $outfile)) {
+if (open($DST, '+<', $absfile)) {
+
     my $actual = join('', <$DST>);
     print "== Current:\n$actual==\n" if $opt_v;
 
@@ -162,7 +185,7 @@ if (open($DST, '+<', $outfile)) {
     print "Creating VCS header $outfile\n",
         "    $opt_N = \"$opt_V\"\n"
         unless $opt_q;
-    open($DST, '>', $outfile)
+    open($DST, '>', $absfile)
         or die "Can't create $outfile: $!\n";
 }
 
@@ -190,4 +213,3 @@ Usage:
 EOF
     exit $opt_h ? 0 : 1;
 }
-

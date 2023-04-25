@@ -240,17 +240,32 @@ static void testPair(int locked)
     epicsRingPointerDelete(ring);
 }
 
+static
+void testInThread(void *raw)
+{
+    epicsEventId stop = raw;
+    testPair(0);
+    testPair(1);
+    epicsEventMustTrigger(stop);
+}
+
 MAIN(ringPointerTest)
 {
-    int prio = epicsThreadGetPrioritySelf();
+    epicsThreadId tid;
+    epicsThreadOpts opts = EPICS_THREAD_OPTS_INIT;
+    epicsEventId stop = epicsEventMustCreate(epicsEventEmpty);
 
     testPlan(42);
     testSingle();
-    if (prio)
-        epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityScanLow);
-    testPair(0);
-    testPair(1);
-    if (prio)
-        epicsThreadSetPriority(epicsThreadGetIdSelf(), prio);
+    /* testPair() needs to run with a priority > 0.
+     * Start a new thread since main() is a "non-epics"
+     * thread, for which we can/should not change the priority
+     */
+    opts.joinable = 1;
+    opts.priority = epicsThreadPriorityScanLow;
+    tid = epicsThreadCreateOpt("RING", testInThread, stop, &opts);
+    epicsEventMustWait(stop);
+    epicsThreadMustJoin(tid);
+    epicsEventDestroy(stop);
     return testDone();
 }

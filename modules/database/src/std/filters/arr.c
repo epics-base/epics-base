@@ -109,7 +109,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
         break;
 
     case dbfl_type_ref:
-        must_lock = !pfl->u.r.dtor;
+        must_lock = !pfl->dtor;
         if (must_lock) {
             dbScanLock(dbChannelRecord(chan));
             dbChannelGetArrayInfo(chan, &pSource, &nSource, &offset);
@@ -123,9 +123,9 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
             offset = (offset + start) % pfl->no_elements;
             dbExtractArray(pSource, pTarget, pfl->field_size,
                 nTarget, pfl->no_elements, offset, my->incr);
-            if (pfl->u.r.dtor) pfl->u.r.dtor(pfl);
+            if (pfl->dtor) pfl->dtor(pfl);
             pfl->u.r.field = pTarget;
-            pfl->u.r.dtor = freeArray;
+            pfl->dtor = freeArray;
             pfl->u.r.pvt = my->arrayFreeList;
         }
         /* adjust no_elements (even if zero elements remain) */

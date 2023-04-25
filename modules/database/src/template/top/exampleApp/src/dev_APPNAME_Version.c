@@ -33,6 +33,6 @@ static long read_string(lsiRecord *prec)
 }
 
 static lsidset dev_CSAFEAPPNAME_Version = {
-    5, NULL, NULL, NULL, NULL, read_string
+	{5, NULL, NULL, NULL, NULL}, read_string
 };
 epicsExportAddress(dset,dev_CSAFEAPPNAME_Version);

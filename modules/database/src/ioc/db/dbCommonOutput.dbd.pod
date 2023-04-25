@@ -3,7 +3,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head1 Fields Common to Output Record Types
+=title Fields Common to Output Record Types
 
 This section describes fields that are found in many output record types.
 These fields usually have the same meaning whenever they are used.
@@ -237,3 +237,5 @@ If SIMM is not YES or NO, a SOFT alarm with a severity of INVALID is
 raised, and return status is set to -1.
 
 =back
+
+=cut

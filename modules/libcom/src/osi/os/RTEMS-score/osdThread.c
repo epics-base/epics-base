@@ -219,8 +219,7 @@ threadWrapper (rtems_task_argument arg)
  */
 void epicsThreadExitMain (void)
 {
-    cantProceed("epicsThreadExitMain() has been deprecated for lack of usage."
-                "  Please report if you see this message.");
+    cantProceed("epicsThreadExitMain() must no longer be used.\n");
 }
 
 static rtems_status_code
@@ -371,6 +370,9 @@ void epicsThreadMustJoin(epicsThreadId id)
 {
     rtems_id target_tid = (rtems_id)id, self_tid;
     struct taskVar *v = 0;
+
+    if(!id)
+        return;
 
     rtems_task_ident (RTEMS_SELF, 0, &self_tid);
 

@@ -1,0 +1,9 @@
+# Site Specific Configuration Information
+
+X11_LIB=/usr/lib/aarch64-linux-gnu
+X11_INC=/usr/include
+
+# OpenMotif location
+MOTIF_LIB=/usr/lib/aarch64-linux-gnu
+MOTIF_INC=/usr/include
+

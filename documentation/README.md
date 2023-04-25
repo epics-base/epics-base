@@ -387,7 +387,7 @@ install directories.
 
 EPICS executables and perl scripts are installed into the
 `$(INSTALL_LOCATION)/bin/<arch>` directories. Libraries are installed
-into $`(INSTALL_LOCATION)/lib/<arch>`. The default definition for
+into `$(INSTALL_LOCATION)/lib/<arch>`. The default definition for
 `$(INSTALL_LOCATION)` is `$(TOP)` which is the root directory in the
 distribution directory structure, `base`. Intermediate object files
 are stored in `O.<arch>` source subdirectories during the build

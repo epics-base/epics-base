@@ -82,7 +82,7 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
     const char *pStr;
     const char *pToken;
     osiSockAddr46 addr46;
-    char buf[64u]; /* large enough to hold an IP address */
+    char buf[256u]; /* large enough to hold an IP address or hostname */
     int status, ret = -1;
 
     pStr = envGetConfigParamPtr (pEnv);

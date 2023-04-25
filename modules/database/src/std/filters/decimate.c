@@ -19,6 +19,7 @@
 #include "freeList.h"
 #include "db_field_log.h"
 #include "chfPlugin.h"
+#include "epicsExit.h"
 #include "epicsExport.h"
 
 typedef struct myStruct {
@@ -102,17 +103,20 @@ static chfPluginIf pif = {
     NULL /* channel_close */
 };
 
+static void decShutdown(void *ignore)
+{
+    if (myStructFreeList)
+        freeListCleanup(myStructFreeList);
+    myStructFreeList = NULL;
+}
+
 static void decInitialize(void)
 {
-    static int firstTime = 1;
-
-    if (!firstTime) return;
-    firstTime = 0;
-
     if (!myStructFreeList)
         freeListInitPvt(&myStructFreeList, sizeof(myStruct), 64);
 
     chfPluginRegister("dec", &pif, opts);
+    epicsAtExit(decShutdown, NULL);
 }
 
 epicsExportRegistrar(decInitialize);

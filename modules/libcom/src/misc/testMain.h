@@ -9,15 +9,20 @@
 #ifndef INC_testMain_H
 #define INC_testMain_H
 
-/* This header defines a convenience macro for use by pure test programs.
+/*!
+ * \file testMain.h
+ *
+ * \brief This header defines a platform independent macro for defining a test
+ * main function, in pure test programs.
+ *
  * A pure test program cannot take any arguments since it must be fully
  * automatable.  If your program needs to use argv/argc, it may be doing
  * measurements not unit and/or regression testing.  On Host architectures
  * these programs needs to be named main and take dummy argc/argv args,
  * but on vxWorks and RTEMS they must be named as the test program.
  *
- * Use this macro as follows:
- *
+ * \section Example
+ * \code{.cpp}
  *     #include "testMain.h"
  *     #include "epicsUnitTest.h"
  *
@@ -26,8 +31,14 @@
  *         testOk(...)
  *         return testDone();
  *     }
+ * \endcode
  */
 
+/*!
+ * \def MAIN
+ * \brief Macro which defines a main function for your test program.  Some platforms will name this function main(), others prog().
+ * \param prog Name of the test program.
+ **/
 #if defined(__rtems__)
   #ifdef __cplusplus
     #define MAIN(prog) extern "C" int prog(void); extern "C" int main() __attribute__((weak, alias(#prog))); extern "C" int prog(void)

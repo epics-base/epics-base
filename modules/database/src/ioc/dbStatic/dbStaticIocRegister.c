@@ -106,7 +106,13 @@ static void dbDumpDriverCallFunc(const iocshArgBuf *args)
 
 /* dbDumpLink */
 static const iocshArg * const dbDumpLinkArgs[] = { &argPdbbase};
-static const iocshFuncDef dbDumpLinkFuncDef = {"dbDumpLink",1,dbDumpLinkArgs};
+static const iocshFuncDef dbDumpLinkFuncDef = {
+    "dbDumpLink",
+    1,
+    dbDumpLinkArgs,
+    "Dump list of registered links\n"
+    "Example: dbDumpLink pdbbase\n",
+};
 static void dbDumpLinkCallFunc(const iocshArgBuf *args)
 {
     dbDumpLink(*iocshPpdbbase);
@@ -147,7 +153,13 @@ static void dbDumpVariableCallFunc(const iocshArgBuf *args)
 static const iocshArg dbDumpBreaktableArg1 = { "tableName",iocshArgString};
 static const iocshArg * const dbDumpBreaktableArgs[] =
     {&argPdbbase,&dbDumpBreaktableArg1};
-static const iocshFuncDef dbDumpBreaktableFuncDef = {"dbDumpBreaktable",2,dbDumpBreaktableArgs};
+static const iocshFuncDef dbDumpBreaktableFuncDef = {
+    "dbDumpBreaktable",
+    2,
+    dbDumpBreaktableArgs,
+    "Dump the given break table\n"
+    "Example: dbDumpBreaktable pdbbase typeKdegC\n",
+};
 static void dbDumpBreaktableCallFunc(const iocshArgBuf *args)
 {
     dbDumpBreaktable(*iocshPpdbbase,args[1].sval);
@@ -157,7 +169,14 @@ static void dbDumpBreaktableCallFunc(const iocshArgBuf *args)
 static const iocshArg dbPvdDumpArg1 = { "verbose",iocshArgInt};
 static const iocshArg * const dbPvdDumpArgs[] = {
     &argPdbbase,&dbPvdDumpArg1};
-static const iocshFuncDef dbPvdDumpFuncDef = {"dbPvdDump",2,dbPvdDumpArgs};
+static const iocshFuncDef dbPvdDumpFuncDef = {
+    "dbPvdDump",
+    2,
+    dbPvdDumpArgs,
+    "Dump the various buckets of the process variable directory.\n"
+    "If verbose is greater than 0, also print the process variables in each bucket.\n"
+    "Example: dbPvdDump pdbbase 1\n",
+};
 static void dbPvdDumpCallFunc(const iocshArgBuf *args)
 {
     dbPvdDump(*iocshPpdbbase,args[1].ival);
@@ -167,7 +186,16 @@ static void dbPvdDumpCallFunc(const iocshArgBuf *args)
 static const iocshArg dbPvdTableSizeArg0 = { "size",iocshArgInt};
 static const iocshArg * const dbPvdTableSizeArgs[1] =
     {&dbPvdTableSizeArg0};
-static const iocshFuncDef dbPvdTableSizeFuncDef = {"dbPvdTableSize",1,dbPvdTableSizeArgs};
+static const iocshFuncDef dbPvdTableSizeFuncDef = {
+    "dbPvdTableSize",
+    1,
+    dbPvdTableSizeArgs,
+    "Change the number of buckets in the process variable directory.\n\n"
+    "The process variable directory size should be set before loading the database.\n"
+    "The size of the process variable directory can automatically grow.\n"
+    "The size must be a power of 2.\n\n"
+    "Example: dbPvdTableSize 1024\n",
+};
 static void dbPvdTableSizeCallFunc(const iocshArgBuf *args)
 {
     dbPvdTableSize(args[0].ival);
@@ -175,7 +203,15 @@ static void dbPvdTableSizeCallFunc(const iocshArgBuf *args)
 
 /* dbReportDeviceConfig */
 static const iocshArg * const dbReportDeviceConfigArgs[] = {&argPdbbase};
-static const iocshFuncDef dbReportDeviceConfigFuncDef = {"dbReportDeviceConfig",1,dbReportDeviceConfigArgs};
+static const iocshFuncDef dbReportDeviceConfigFuncDef = {
+    "dbReportDeviceConfig",
+    1,
+    dbReportDeviceConfigArgs,
+    "Print the link type, link value, device type, record name,\n"
+    "and linearisation info (if applicable),\n"
+    "for every record using a specific device type.\n\n"
+    "Example: dbReportDeviceConfig pdbbase\n",
+};
 static void dbReportDeviceConfigCallFunc(const iocshArgBuf *args)
 {
     dbReportDeviceConfig(*iocshPpdbbase,stdout);

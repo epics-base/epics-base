@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+LIBCOM_API extern int freeListBypass;
+
 LIBCOM_API void epicsStdCall freeListInitPvt(void **ppvt, int size, int malloc);
 LIBCOM_API void * epicsStdCall freeListCalloc(void *pvt);
 LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt);
@@ -41,4 +43,3 @@ LIBCOM_API size_t epicsStdCall freeListItemsAvail(void *pvt);
 #endif
 
 #endif /*INCfreeListh*/
- 

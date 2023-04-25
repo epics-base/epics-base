@@ -223,6 +223,8 @@ MAIN(syncTest)
 
     testOk(!!(plug = dbFindFilter(myname, strlen(myname))), "plugin %s registered correctly", myname);
     testOk(!!(red = dbStateCreate("red")), "state 'red' created successfully");
+    if (!plug || !red)
+        testAbort("Can't continue given above failure(s)");
 
     /* nonexisting state */
     testOk(!(pch = dbChannelCreate("x.VAL{sync:{m:'while',s:'blue'}}")),

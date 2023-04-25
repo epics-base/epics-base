@@ -119,8 +119,10 @@ static const iocshArg astacArg0 = { "recordname",iocshArgStringRecord};
 static const iocshArg astacArg1 = { "user",iocshArgString};
 static const iocshArg astacArg2 = { "host",iocshArgString};
 static const iocshArg * const astacArgs[] = {&astacArg0,&astacArg1,&astacArg2};
-static const iocshFuncDef astacFuncDef = {"astac",3,astacArgs,
-                                          "Test Access Security privileges granted to user+host.\n"};
+static const iocshFuncDef astacFuncDef = {
+    "astac",3,astacArgs,
+    "Show what read/write permissions the user:host would have when\n"
+    "accessing a certain PV.\n"};
 static void astacCallFunc(const iocshArgBuf *args)
 {
     astac(args[0].sval,args[1].sval,args[2].sval);

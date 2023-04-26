@@ -462,10 +462,11 @@ LIBCOM_API int epicsSocket46IpOnlyToDotted(const struct sockaddr *pAddr,
         gai_ecode = getnameinfo(paddr, sizeof(struct sockaddr_in6),
                                 hbuf, sizeof(hbuf), NULL, 0, flags);
         if (gai_ecode) {
-            snprintf(pBuf, bufSize, "getnameinfo error %s", gai_strerror(gai_ecode));
+            epicsSnprintf(pBuf, bufSize, "getnameinfo error %s",
+                          gai_strerror(gai_ecode));
             return (unsigned)strlen(pBuf);
         }
-        snprintf(pBuf, bufSize, "[%s]", hbuf);
+        epicsSnprintf(pBuf, bufSize, "[%s]", hbuf);
         return (unsigned)strlen(pBuf);
     } else {
         /*

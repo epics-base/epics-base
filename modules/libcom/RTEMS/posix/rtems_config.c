@@ -60,7 +60,19 @@ extern void *POSIX_Init(void *argument);
 #define CONFIGURE_APPLICATION_NEEDS_STUB_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_ZERO_DRIVER
 
-/* Max FDs cannot exceed FD_SETSIZE from newlib (64) */
+/* Note: The select() system call can only be used with the first FD_SETSIZE
+ *       File Descriptors (newlib default is 64).  Beginning RTEMS 5.1, FDs are
+ *       allocated sequentially.  So changing this CONFIGURE parameter such
+ *       that CONFIGURE_MAXIMUM_FILE_DESCRIPTORS >= FD_SETSIZE will likely
+ *       cause applications making select() calls to fault at some point.
+ *
+ *       IOC core components (libca and RSRV) do not make select() calls.
+ *
+ *       Applications and driver code using poll() or other socket
+ *       multiplexers do not share this limitation.
+ *
+ *       cf. https://github.com/epics-base/epics-base/issues/300
+ */
 #define CONFIGURE_MAXIMUM_FILE_DESCRIPTORS 64
 #define CONFIGURE_IMFS_ENABLE_MKFIFO    2
 

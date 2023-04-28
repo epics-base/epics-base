@@ -202,10 +202,10 @@ unsigned epicsStdCall ipAddrToDottedIP (
         gai_ecode = getnameinfo(paddr, sizeof(struct sockaddr_in6),
                                 hbuf, sizeof(hbuf), sbuf, sizeof(sbuf), flags);
         if (gai_ecode) {
-            snprintf(pBuf, bufSize, "getnameinfo error %s", gai_strerror(gai_ecode));
+            epicsSnprintf(pBuf, bufSize, "getnameinfo error %s", gai_strerror(gai_ecode));
             return (unsigned)strlen(pBuf);
         }
-        snprintf(pBuf, bufSize, "[%s]:%s", hbuf, sbuf);
+        epicsSnprintf(pBuf, bufSize, "[%s]:%s", hbuf, sbuf);
         return (unsigned)strlen(pBuf);
     } else {
         /*

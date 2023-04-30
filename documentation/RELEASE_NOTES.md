@@ -15,6 +15,15 @@ should also be read to understand what has changed since earlier releases.
 
 ## Changes made on the 7.0 branch since 7.0.7
 
+### Fixed leak from a non-EPICS thread on WIN32
+
+On Windows targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.  Prior to this release the allocation would not be `free()`d,
+resulting in a memory leak.
+
+A similar issue on POSIX targets was previously fixed.
+
 ### Change compiler for FreeBSD to clang
 
 The default compiler for FreeBSD targets changes from GCC to clang.
@@ -244,6 +253,32 @@ SIMM=RAW support has been added for the relevant output record types
 (ao, bo, mbbo, mbboDirect).
 RAW simulation mode will have those records do the appropriate conversion
 and write RVAL to the location pointed to by SIOL.
+
+### Fixed leak from a non-EPICS thread
+
+On some targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.
+
+Prior to this release, on POSIX and WIN32 targets, this
+struct would not be `free()`d, resulting in a memory leak.
+
+This release fixed the leak on POSIX targets.
+
+See the associated github [issue 241](https://github.com/epics-base/epics-base/issues/241)
+for WIN32 status.
+
+### Fixed leak from a non-EPICS thread
+
+On some targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.
+
+Prior to this release, on POSIX and WIN32 targets, this
+allocation would not be `free()`d, resulting in a memory leak.
+
+This release fixed the leak on POSIX and WIN32 targets (excluding
+MSVC before vs2012, and the WINE runtime).
 
 ### Fixed leak from a non-EPICS thread
 

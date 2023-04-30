@@ -72,8 +72,10 @@ extern void *POSIX_Init(void *argument);
  *       multiplexers do not share this limitation.
  *
  *       cf. https://github.com/epics-base/epics-base/issues/300
+ *
+ * Default FD_SETSIZE is overridden in POSIX_CPPFLAGS
  */
-#define CONFIGURE_MAXIMUM_FILE_DESCRIPTORS 64
+#define CONFIGURE_MAXIMUM_FILE_DESCRIPTORS FD_SETSIZE
 #define CONFIGURE_IMFS_ENABLE_MKFIFO    2
 
 #define CONFIGURE_MAXIMUM_NFS_MOUNTS 		3

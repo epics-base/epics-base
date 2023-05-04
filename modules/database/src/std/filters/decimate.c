@@ -17,6 +17,7 @@
 #include <stdio.h>
 
 #include "freeList.h"
+#include "caeventmask.h"
 #include "db_field_log.h"
 #include "chfPlugin.h"
 #include "epicsExit.h"
@@ -60,7 +61,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     myStruct *my = (myStruct*) pvt;
     epicsInt32 i = my->i;
 
-    if (pfl->ctx == dbfl_context_read)
+    if (pfl->ctx == dbfl_context_read || (pfl->mask & DBE_PROPERTY))
         return pfl;
 
     if (i++ == 0)

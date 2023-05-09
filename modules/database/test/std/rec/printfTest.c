@@ -421,16 +421,9 @@ static void test_l_flag(void){
     testdbPutFieldOk("test_printf_rec.FMT", DBF_STRING, format_string);
 
     /* set value on inp0 */
-    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_LONG, 0xba0a1c0c1);
+    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_LONG, 0xa0a1c0c1);
 
-    /* verify that string is formatted as expected */
-    #ifdef _WIN32
-    testTodoBegin("Fails on some windows platforms");
-    #endif
     testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);
-    #ifdef _WIN32
-    testTodoEnd();
-    #endif
     // number of tests = 3
 }
 

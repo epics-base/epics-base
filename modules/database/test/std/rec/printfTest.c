@@ -425,6 +425,7 @@ static void test_l_flag(void){
     
     /* verify that string is formatted as expected */
     testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);
+    
     // number of tests = 3
 }
 

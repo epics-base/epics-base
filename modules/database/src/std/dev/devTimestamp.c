@@ -22,42 +22,42 @@
 #include "stringinRecord.h"
 #include "epicsExport.h"
 
-
 /* Extended device support to allow INP field changes */
 
-static long initAllow(int pass) {
-    if (pass == 0) devExtend(&devSoft_DSXT);
+static long initAllow(int pass)
+{
+    if (pass == 0)
+        devExtend(&devSoft_DSXT);
     return 0;
 }
-
 
 /* ai record */
 
 static long read_ai(aiRecord *prec)
 {
     recGblGetTimeStamp(prec);
-    prec->val = prec->time.secPastEpoch + (double)prec->time.nsec * 1e-9;
+    prec->val = POSIX_TIME_AT_EPICS_EPOCH + prec->time.secPastEpoch + (double)prec->time.nsec * 1e-9;
     prec->udf = FALSE;
     return 2;
 }
 
 aidset devTimestampAI = {
     {6, NULL, initAllow, NULL, NULL},
-    read_ai,  NULL
-};
+    read_ai,
+    NULL};
 epicsExportAddress(dset, devTimestampAI);
-
 
 /* stringin record */
 
-static long read_stringin (stringinRecord *prec)
+static long read_stringin(stringinRecord *prec)
 {
     int len;
 
     recGblGetTimeStamp(prec);
     len = epicsTimeToStrftime(prec->val, sizeof prec->val,
                               prec->inp.value.instio.string, &prec->time);
-    if (len >= sizeof prec->val) {
+    if (len >= sizeof prec->val)
+    {
         prec->udf = TRUE;
         recGblSetSevr(prec, UDF_ALARM, prec->udfs);
         return -1;
@@ -68,6 +68,5 @@ static long read_stringin (stringinRecord *prec)
 
 stringindset devTimestampSI = {
     {5, NULL, initAllow, NULL, NULL},
-    read_stringin
-};
+    read_stringin};
 epicsExportAddress(dset, devTimestampSI);

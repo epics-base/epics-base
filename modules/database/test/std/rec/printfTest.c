@@ -415,13 +415,13 @@ static void test_hh_flag(void){
 static void test_l_flag(void){
 
     const char format_string[] = "Format test string %lx";
-    const char result_string[] = "Format test string 90a1c0c1";
+    const char result_string[] = "Format test string 70a1c0c1";
 
     /* set format string */
     testdbPutFieldOk("test_printf_rec.FMT", DBF_STRING, format_string);
 
     /* set value on inp0 */
-    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_LONG, 0x90a1c0c1);
+    testdbPutFieldOk("test_printf_inp0_rec.VAL", DBF_LONG, 0x70a1c0c1);
     
     /* verify that string is formatted as expected */
     testdbGetFieldEqual("test_printf_rec.VAL", DBF_STRING, result_string);

@@ -1,0 +1,11 @@
+# CONFIG.Common.windows-x64-clang
+#
+# Definitions for windows-x64-clang target builds
+# Sites may override these definitions in CONFIG_SITE.Common.windows-x64-clang
+#-------------------------------------------------------
+
+#Include definitions common to win32-x86-clang builds
+include $(CONFIG)/os/CONFIG.Common.win32-x86-clang
+
+# Override CONFIG.Common.win32-x86-clang settings:
+CC = clang-cl$(LLVM_SUFFIX) --target=x86_64-pc-windows-msvc

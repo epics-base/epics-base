@@ -48,6 +48,7 @@
  * Enable format-string checking if compiler supports it (if msvc is 2015 or newer)
  */
 #if _MSC_VER >= 1900
+#   include <sal.h>
 #   define EPICS_PRINTF_FMT(a) _Printf_format_string_ a
 #endif
 

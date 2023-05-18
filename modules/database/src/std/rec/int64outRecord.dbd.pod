@@ -13,6 +13,8 @@ This record type is normally used to send an integer value of up to 64 bits
 to an output device.
 The record supports alarm, drive, graphics and control limits.
 
+This record type was included in base.dbd beginning with epics-base 3.16.1 .
+
 =head2 Parameter Fields
 
 The record-specific fields are described below.

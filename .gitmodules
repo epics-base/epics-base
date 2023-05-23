@@ -1,7 +1,7 @@
 [submodule "modules/pvData"]
     path = modules/pvData
-    url = https://github.com/epics-base/pvDataCPP
-    branch = master
+    url = https://github.com/xiaoqiangwang/pvDataCPP
+    branch = fix_clang_windows
 [submodule "modules/pvAccess"]
     path = modules/pvAccess
     url = https://github.com/epics-base/pvAccessCPP

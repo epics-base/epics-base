@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/prctl.h>
 
+#include "epicsAtomic.h"
 #include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
@@ -45,11 +46,12 @@ void epicsThreadShowInfo(epicsThreadId pthreadInfo, unsigned int level)
             if (!status)
                 priority = param.sched_priority;
         }
-        fprintf(epicsGetStdout(),"%16.16s %14p %8lu    %3d%8d %8.8s\n",
+        fprintf(epicsGetStdout(),"%16.16s %14p %8lu    %3d%8d %8.8s%s\n",
              pthreadInfo->name,(void *)
              pthreadInfo,(unsigned long)pthreadInfo->lwpId,
              pthreadInfo->osiPriority,priority,
-             pthreadInfo->isSuspended ? "SUSPEND" : "OK");
+             pthreadInfo->isSuspended ? "SUSPEND" : "OK",
+             epicsAtomicGetIntT(&pthreadInfo->isRunning) ? "" : " ZOMBIE");
     }
 }
 

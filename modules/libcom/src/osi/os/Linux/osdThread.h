@@ -36,6 +36,7 @@ typedef struct epicsThreadOSD {
     int                isEpicsThread;
     int                isRealTimeScheduled;
     int                isOnThreadList;
+    int                isRunning;
     unsigned int       osiPriority;
     int                joinable;
     char               name[1];     /* actually larger */

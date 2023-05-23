@@ -12,6 +12,7 @@
 
 /* This is part of the posix implementation of epicsThread */
 
+#include "epicsAtomic.h"
 #include "epicsStdio.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
@@ -35,11 +36,12 @@ void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
             status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
             if(!status) priority = param.sched_priority;
         }
-        fprintf(epicsGetStdout(),"%16.16s %14p %12lu    %3d%8d %8.8s\n",
+        fprintf(epicsGetStdout(),"%16.16s %14p %12lu    %3d%8d %8.8s%s\n",
              pthreadInfo->name,(void *)
              pthreadInfo,(unsigned long)pthreadInfo->tid,
              pthreadInfo->osiPriority,priority,
-             pthreadInfo->isSuspended?"SUSPEND":"OK");
+             pthreadInfo->isSuspended?"SUSPEND":"OK",
+             epicsAtomicGetIntT(&pthreadInfo->isRunning) ? "" : " ZOMBIE");
     }
 }
 

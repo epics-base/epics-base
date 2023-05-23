@@ -102,6 +102,7 @@ typedef struct epicsThreadOSD {
     unsigned epicsPriority;
     char isSuspended;
     int joinable;
+    int isRunning;
     HANDLE timer; /* waitable timer */
 } win32ThreadParam;
 
@@ -519,6 +520,8 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 
     epicsExitCallAtThreadExits ();
 
+    epicsAtomicSetIntT(&pParm->isRunning, 0);
+
     /* On Windows we could omit this and rely on the callback given to FlsAlloc() to free.
      * However < vista doesn't implement FLS at all, and WINE (circa 5.0.3) doesn't
      * implement fully (dtor never runs).  So for EPICS threads, we explicitly
@@ -540,6 +543,7 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
         pParmWIN32->pName = (char *) ( pParmWIN32 + 1 );
         strcpy ( pParmWIN32->pName, pName );
         pParmWIN32->isSuspended = 0;
+        pParmWIN32->isRunning = 1;
         epicsAtomicIncrIntT(&pParmWIN32->refcnt);
 #ifdef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
         pParmWIN32->timer = CreateWaitableTimerEx(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
@@ -1044,6 +1048,8 @@ static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
             fprintf (epicsGetStdout(), " %-8p %-8p ",
                 (void *) pParm->handle, (void *) pParm->parm );
         }
+        if(!epicsAtomicGetIntT(&pParm->isRunning))
+            fprintf (epicsGetStdout(), " ZOMBIE");
     }
     else {
         fprintf (epicsGetStdout(),

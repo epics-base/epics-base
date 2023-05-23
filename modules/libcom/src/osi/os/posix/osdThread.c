@@ -173,6 +173,7 @@ static epicsThreadOSD * create_threadInfo(const char *name)
     pthreadInfo = calloc(1,sizeof(*pthreadInfo) + strlen(name));
     if(!pthreadInfo)
         return NULL;
+    pthreadInfo->isRunning = 1;
     pthreadInfo->suspendEvent = epicsEventCreate(epicsEventEmpty);
     if(!pthreadInfo->suspendEvent){
         free(pthreadInfo);
@@ -441,6 +442,8 @@ static void * start_routine(void *arg)
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
     epicsExitCallAtThreadExits ();
+
+    epicsAtomicSetIntT(&pthreadInfo->isRunning, 0);
     return(0);
 }
 

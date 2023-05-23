@@ -53,6 +53,7 @@ struct taskVar {
     rtems_id             join_barrier; /* only valid if joinable */
     int                refcnt;
     int                joinable;
+    int                isRunning;
     EPICSTHREADFUNC              funptr;
     void                *parm;
     unsigned int        threadVariableCapacity;
@@ -197,6 +198,7 @@ threadWrapper (rtems_task_argument arg)
     osdThreadHooksRun((epicsThreadId)v->id);
     (*v->funptr)(v->parm);
     epicsExitCallAtThreadExits ();
+    epicsAtomicSetIntT(&v->isRunning, 0);
     taskVarLock ();
     if (v->back)
         v->back->forw = v->forw;
@@ -239,6 +241,7 @@ setThreadInfo(rtems_id tid, const char *name, EPICSTHREADFUNC funptr,
     v->refcnt = joinable ? 2 : 1;
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
+    v->isRunning = 1;
     if (joinable) {
         char c[3];
         strncpy(c, v->name, 3);
@@ -797,7 +800,11 @@ epicsThreadShowInfo (struct taskVar *v, unsigned int level)
         fprintf(epicsGetStdout(),"+--------+-----------+--------+--------+---------------------+\n");
     } else {
         fprintf(epicsGetStdout(),"%9.8x", (int)v->id);
-        showInternalTaskInfo (v->id);
+        if(epicsAtomicGetIntT(&v->isRunning)) {
+            showInternalTaskInfo (v->id);
+        } else {
+            fprintf(epicsGetStdout(),"%-30s",  "  *** ZOMBIE task!     ***");
+        }
         fprintf(epicsGetStdout()," %s\n", v->name);
     }
 }

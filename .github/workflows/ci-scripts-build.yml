@@ -46,6 +46,7 @@ jobs:
       CI_CROSS_TARGETS: ${{ matrix.cross }}
       EXTRA: ${{ matrix.extra }}
       TEST: ${{ matrix.test }}
+      CHOCO: llvm
     strategy:
       fail-fast: false
       matrix:
@@ -152,6 +153,12 @@ jobs:
             cmp: gcc
             configuration: default
             name: "Win2019 mingw"
+
+          - os: windows-2019
+            cmp: clang+vs2019
+            configuration: default
+            name: "Win2019 clang-cl"
+            choco: ["llvm"]
 
           # Cross builds
 

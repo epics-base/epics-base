@@ -52,11 +52,133 @@ jobs:
       matrix:
         # Job names also name artifacts, character limitations apply
         include:
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            cross: "windows-x64-mingw"
+            name: "Ub-20 gcc-9 + MinGW"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: static
+            cross: "windows-x64-mingw"
+            name: "Ub-20 gcc-9 + MinGW, static"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: static
+            extra: "CMD_CXXFLAGS=-std=c++11"
+            name: "Ub-20 gcc-9 C++11, static"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: static
+            extra: "CMD_CFLAGS=-funsigned-char CMD_CXXFLAGS=-funsigned-char"
+            name: "Ub-20 gcc-9 unsigned char"
+
+          - os: ubuntu-20.04
+            cmp: clang
+            configuration: default
+            name: "Ub-20 clang-10"
+
+          - os: ubuntu-20.04
+            cmp: clang
+            configuration: default
+            extra: "CMD_CXXFLAGS=-std=c++11"
+            name: "Ub-20 clang-10 C++11"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            cross: "RTEMS-pc686-qemu@5"
+            name: "Ub-20 gcc-9 + RT-5.1 pc686"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            cross: "RTEMS-beatnik@5"
+            test: NO
+            name: "Ub-20 gcc-9 + RT-5.1 beatnik"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            cross: "RTEMS-xilinx_zynq_a9_qemu@5"
+            test: NO
+            name: "Ub-20 gcc-9 + RT-5.1 xilinx_zynq_a9_qemu"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            cross: "RTEMS-uC5282@5"
+            test: NO
+            name: "Ub-20 gcc-9 + RT-5.1 uC5282"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            name: "Ub-20 gcc-9 + RT-4.10"
+            cross: "RTEMS-pc386-qemu@4.10"
+            test: NO
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            name: "Ub-20 gcc-9 + RT-4.9"
+            cross: "RTEMS-pc386-qemu@4.9"
+
+          - os: macos-latest
+            cmp: clang
+            configuration: default
+            name: "MacOS clang-12"
+
+          - os: windows-2019
+            cmp: vs2019
+            configuration: debug
+            name: "Win2019 MSC-19"
+            extra: "CMD_CXXFLAGS=-analysis"
+
+          - os: windows-2019
+            cmp: vs2019
+            configuration: static-debug
+            name: "Win2019 MSC-19, static"
+            extra: "CMD_CXXFLAGS=-analysis"
+
+          - os: windows-2019
+            cmp: vs2019
+            configuration: debug
+            name: "Win2019 MSC-19, debug"
+
+          - os: windows-2019
+            cmp: gcc
+            configuration: default
+            name: "Win2019 mingw"
+
           - os: windows-2019
             cmp: clang+vs2019
             configuration: default
             name: "Win2019 clang-cl"
             choco: ["llvm"]
+
+          # Cross builds
+
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-aarch64"
+            cross: linux-aarch64
+
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-arm gnueabi"
+            cross: linux-arm@arm-linux-gnueabi
+
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-arm gnueabihf"
+            cross: linux-arm@arm-linux-gnueabihf
 
     steps:
     - uses: actions/checkout@v3

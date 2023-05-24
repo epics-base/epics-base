@@ -48,7 +48,7 @@ jobs:
       TEST: ${{ matrix.test }}
       CHOCO: llvm
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         # Job names also name artifacts, character limitations apply
         include:

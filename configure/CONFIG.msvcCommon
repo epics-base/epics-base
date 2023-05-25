@@ -8,9 +8,9 @@ OPT_WHOLE_PROGRAM = YES
 
 WINLINK = link
 
-RCCMD = $(LLVM_PREFIX)rc$(LLVM_SUFFIX) -l 0x409 $(INCLUDES) -fo $@ $<
+RCCMD = $(MSVC_PREFIX)rc$(MSVC_SUFFIX) -l 0x409 $(INCLUDES) -fo $@ $<
 
-ARCMD = $(LLVM_PREFIX)lib$(LLVM_SUFFIX) -nologo -verbose -out:$@ $(LIB_OPT_LDFLAGS) $(LIBRARY_LD_OBJS)
+ARCMD = $(MSVC_PREFIX)lib$(MSVC_SUFFIX) -nologo -verbose -out:$@ $(LIB_OPT_LDFLAGS) $(LIBRARY_LD_OBJS)
 
 #
 # Configure OS vendor C compiler
@@ -271,7 +271,7 @@ LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) \
 # linker created .manifest file into a library or product target.
 # useManifestTool.pl returns 0(don't use) or 1(use).
 #
-MT.exe = $(LLVM_PREFIX)mt$(LLVM_SUFFIX) -nologo -manifest $@.manifest
+MT.exe = $(MSVC_PREFIX)mt$(MSVC_SUFFIX) -nologo -manifest $@.manifest
 MT_DLL_COMMAND1 = $(MT.exe) "-outputresource:$@;\#2"
 MT_EXE_COMMAND_YES =
 MT_EXE_COMMAND_NO = $(MT.exe) "-outputresource:$@;\#1"

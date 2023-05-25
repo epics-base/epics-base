@@ -577,13 +577,16 @@ long dbChannelOpen(dbChannel *chan)
     /* Set up type probe */
     probe.type = dbfl_type_val;
     probe.ctx = dbfl_context_read;
+    probe.mask = 0;
     probe.field_type  = dbChannelExportType(chan);
     probe.no_elements = dbChannelElements(chan);
     probe.field_size  = dbChannelFieldSize(chan);
+    probe.utag = 0;
     probe.sevr = NO_ALARM;
     probe.stat = NO_ALARM;
     probe.time.secPastEpoch = 0;
     probe.time.nsec = 0;
+    probe.dtor = NULL;
 
     p = probe;
 

@@ -575,15 +575,10 @@ long dbChannelOpen(dbChannel *chan)
     }
 
     /* Set up type probe */
-    probe.type = dbfl_type_val;
-    probe.ctx = dbfl_context_read;
+    memset(&probe, 0, sizeof(probe));
     probe.field_type  = dbChannelExportType(chan);
     probe.no_elements = dbChannelElements(chan);
     probe.field_size  = dbChannelFieldSize(chan);
-    probe.sevr = NO_ALARM;
-    probe.stat = NO_ALARM;
-    probe.time.secPastEpoch = 0;
-    probe.time.nsec = 0;
 
     p = probe;
 

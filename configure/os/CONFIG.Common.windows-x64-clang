@@ -4,8 +4,15 @@
 # Sites may override these definitions in CONFIG_SITE.Common.windows-x64-clang
 #-------------------------------------------------------
 
-#Include definitions common to win32-x86-clang builds
-include $(CONFIG)/os/CONFIG.Common.win32-x86-clang
+#Include definitions common to msvc compiler
+include $(CONFIG)/CONFIG.msvcCommon
 
-# Override CONFIG.Common.win32-x86-clang settings:
+VALID_BUILDS = Ioc Host Command
+
+# Override CONFIG.msvcCommon settings:
+LLVM_PREFIX = llvm-
 CC = clang-cl$(LLVM_SUFFIX) --target=x86_64-pc-windows-msvc
+WINLINK = lld-link$(LLVM_SUFFIX)
+
+# clang-cl does not support /GL option
+OPT_WHOLE_PROGRAM = NO

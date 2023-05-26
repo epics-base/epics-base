@@ -450,7 +450,7 @@ void timeIt ( tf *pfunc, ti *pItems, unsigned iterations,
     epicsTimeStamp      end_time;
     epicsTimeStamp      start_time;
     double              delay;
-    unsigned            inlineIter;
+    unsigned            inlineIter = 0;
 
     epicsTimeGetCurrent ( &start_time );
     (*pfunc) ( pItems, iterations, &inlineIter );

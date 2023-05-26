@@ -47,6 +47,7 @@ epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
     id->id = mq_open(id->name, O_RDWR | O_CREAT | O_EXCL, 0644, &the_attr);
     if (id->id <0) {
         fprintf (stderr, "Can't create message queue: %s\n", strerror (errno));
+        free(id);
         return NULL;
     }
     return id;

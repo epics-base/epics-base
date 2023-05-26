@@ -30,6 +30,7 @@ macDefExpand(const char *str, MAC_HANDLE *macros)
     static const char * pairs[] = { "", "environ", NULL, NULL };
     long destCapacity = 128;
     char *dest = NULL;
+    char *newdest = NULL;
     int n;
 
     if (macros) {
@@ -61,8 +62,11 @@ macDefExpand(const char *str, MAC_HANDLE *macros)
     } else {
         size_t unused = destCapacity - ++n;
 
-        if (unused >= 20)
-            dest = realloc(dest, n);
+        if (unused >= 20) {
+            newdest = realloc(dest, n);
+            if (newdest)
+                dest = newdest;
+        }
     }
 
 done:

@@ -113,8 +113,8 @@ int main(void)
 
     pserver->pfdctx = (void *) fdmgr_init();
     if (!pserver->pfdctx) {
-        free(pserver);
         fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -149,6 +149,7 @@ int main(void)
         fprintf (stderr,
             "iocLogServer: a server is already installed on port %u?\n",
             (unsigned)ioc_log_port);
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -158,6 +159,7 @@ int main(void)
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf(stderr, "iocLogServer: listen err %s\n", sockErrBuf);
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -174,6 +176,7 @@ int main(void)
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf(stderr, "iocLogServer: ioctl FIONBIO err %s\n", sockErrBuf);
+        free(pserver);
         return IOCLS_ERROR;
     }
 

@@ -41,6 +41,10 @@ epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
 {
     struct mq_attr the_attr;
     epicsMessageQueueId id = (epicsMessageQueueId)calloc(1, sizeof(*id));
+    if (!id) {
+        fprintf (stderr, "Can't allocate message queue: %s\n", strerror(errno));
+        return NULL;
+    }
     sprintf(id->name, "MQ_%0d", epicsAtomicIncrIntT(&idCnt));
     the_attr.mq_maxmsg = capacity;
     the_attr.mq_msgsize = maximumMessageSize;

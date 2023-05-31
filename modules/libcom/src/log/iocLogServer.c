@@ -193,6 +193,7 @@ int main(void)
             "File access problems to `%s' because `%s'\n",
             ioc_log_file_name,
             strerror(errno));
+        free(pserver);
         return IOCLS_ERROR;
     }
 
@@ -205,6 +206,7 @@ int main(void)
     if (status < 0) {
         fprintf(stderr,
             "iocLogServer: failed to add read callback\n");
+        free(pserver);
         return IOCLS_ERROR;
     }
 

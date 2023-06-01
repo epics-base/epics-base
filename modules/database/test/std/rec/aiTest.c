@@ -363,11 +363,11 @@ static void test_aftc(void){
     testdbPutFieldOk("test_ai_rec3.LLSV", DBF_SHORT, menuAlarmSevrMAJOR);
 
     /* test AFTC using a monitor and time stamps */
-    testdbPutFieldOk("test_ai_rec3.SCAN", DBF_SHORT, menuScan_1_second);
     testdbPutFieldOk("test_ai_rec3.AFTC", DBF_DOUBLE, aftc);
-
+    testdbPutFieldOk("test_ai_rec3.SCAN", DBF_SHORT, menuScan_1_second);
+    
     /* set HIHI alarm VAL */
-    testdbPutFieldOk("test_ai_link_rec3.VAL", DBF_DOUBLE, 19998.0);
+    testdbPutFieldOk("test_ai_link_rec3.VAL", DBF_DOUBLE, 7550.0);
 
     /* Create test monitor for alarm SEVR */
     test_mon = testMonitorCreate("test_ai_rec3.VAL", DBE_ALARM, 0);
@@ -381,12 +381,28 @@ static void test_aftc(void){
 
     /* Verify that alarm status is now MAJOR */
     testdbGetFieldEqual("test_ai_rec3.SEVR", DBF_SHORT, menuAlarmSevrMAJOR);
+
+    /* set HI alarm VAL */
+    testdbPutFieldOk("test_ai_link_rec3.VAL", DBF_DOUBLE, 5550.0);
+
+    /* Create test monitor for alarm SEVR */
+    test_mon = testMonitorCreate("test_ai_rec3.VAL", DBE_ALARM, 0);
+
+    /* Get start time */
+    epicsTimeGetCurrent(&startTime);
+
+    /* wait for monitor to trigger on the new alarm status*/
+    testMonitorWait(test_mon);
+    epicsTimeGetCurrent(&endTime);
+
+    /* Verify that alarm status is now MINOR */
+    testdbGetFieldEqual("test_ai_rec3.SEVR", DBF_SHORT, menuAlarmSevrMINOR);
     
     /* Verify that time is at least equal to configured aftc */
     diffTime = epicsTimeDiffInSeconds(&endTime, &startTime);
     testOk(diffTime >= aftc, "ATFC time %lf", diffTime);
  
-    // number of tests = 16
+    // number of tests = 18
 }
 
 MAIN(aiTest) {
@@ -398,7 +414,7 @@ MAIN(aiTest) {
 #endif
 #endif
 
-    testPlan(6+6+11+10+12+14+18+15+6+29);
+    testPlan(6+6+11+10+12+14+18+15+6+29+18);
 
     testdbPrepare();   
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -420,8 +436,7 @@ MAIN(aiTest) {
     test_smoothing_filter();
     test_udf();
     test_alarm();
-    /* TODO: Investigate and make the AFTC test work correctly 
-    test_aftc(); */
+    test_aftc(); 
 
     testIocShutdownOk();
     testdbCleanup();

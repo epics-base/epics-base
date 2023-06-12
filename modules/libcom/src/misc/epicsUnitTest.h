@@ -174,7 +174,7 @@ LIBCOM_API void testPlan(int tests);
  * \param ... Any parameters required for the format string.
  * \return The value of \p pass.
  */
-LIBCOM_API int  testOk(int pass, const char *fmt, ...)
+LIBCOM_API int  testOk(int pass, EPICS_PRINTF_FMT(const char *fmt), ...)
     EPICS_PRINTF_STYLE(2, 3);
 /** \brief Test result using expression as description
  * \param cond Expression to be evaluated and displayed.
@@ -192,13 +192,13 @@ LIBCOM_API int  testOkV(int pass, const char *fmt, va_list pvar);
  * \param fmt A printf-style format string describing the test.
  * \param ... Any parameters required for the format string.
  */
-LIBCOM_API void testPass(const char *fmt, ...)
+LIBCOM_API void testPass(EPICS_PRINTF_FMT(const char *fmt), ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** \brief Failing test result with printf-style description.
  * \param fmt A printf-style format string describing the test.
  * \param ... Any parameters required for the format string.
  */
-LIBCOM_API void testFail(const char *fmt, ...)
+LIBCOM_API void testFail(EPICS_PRINTF_FMT(const char *fmt), ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** @} */
 
@@ -223,7 +223,7 @@ LIBCOM_API void testTodoEnd(void);
  * \param fmt A printf-style format string giving the reason for stopping.
  * \param ... Any parameters required for the format string.
  */
-LIBCOM_API void testAbort(const char *fmt, ...)
+LIBCOM_API void testAbort(EPICS_PRINTF_FMT(const char *fmt), ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** @} */
 
@@ -231,7 +231,7 @@ LIBCOM_API void testAbort(const char *fmt, ...)
  * \param fmt A printf-style format string containing diagnostic information.
  * \param ... Any parameters required for the format string.
  */
-LIBCOM_API int  testDiag(const char *fmt, ...)
+LIBCOM_API int  testDiag(EPICS_PRINTF_FMT(const char *fmt), ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** \brief Mark the end of testing.
  */

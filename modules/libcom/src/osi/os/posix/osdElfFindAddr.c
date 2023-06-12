@@ -639,7 +639,7 @@ epicsFindAddr(void *addr, epicsSymbol *sym_p)
 
     if ( nearest.raw && ( (idx = ARR(c,nearest,0,st_name)) < es->strMap->max ) ) {
         sym_p->s_nam = strtab + idx;
-        sym_p->s_val = (char*) ARR(c, nearest, 0, st_value) + es->addr;
+        sym_p->s_val = (char*)(uintptr_t) ARR(c, nearest, 0, st_value) + es->addr;
     }
 
     return 0;

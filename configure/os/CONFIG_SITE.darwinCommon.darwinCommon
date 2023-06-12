@@ -12,6 +12,9 @@ ifneq (,$(wildcard /opt/homebrew))
 else ifneq (,$(wildcard /usr/local/Homebrew))
   # Default location on x86_64
   HOMEBREW_DIR = /usr/local
+else ifneq (,$(wildcard /opt/local/include/readline))
+  # MacPorts
+  READLINE_DIR = /opt/local
 endif
 
 # Look for Homebrew's readline

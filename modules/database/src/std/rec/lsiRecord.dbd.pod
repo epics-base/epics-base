@@ -11,6 +11,8 @@
 The long string input record is used to retrieve an arbitrary ASCII string with
 a maximum length of 65535 characters.
 
+This record type was included in base.dbd beginning with epics-base 3.15.0.2 .
+
 =head2 Parameter Fields
 
 The record-specific fields are described below, grouped by functionality.

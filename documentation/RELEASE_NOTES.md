@@ -15,7 +15,79 @@ should also be read to understand what has changed since earlier releases.
 
 ## Changes made on the 7.0 branch since 7.0.7
 
-<!-- Insert new items immediately below here ... -->
+### Fixed leak from a non-EPICS thread on WIN32
+
+On Windows targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.  Prior to this release the allocation would not be `free()`d,
+resulting in a memory leak.
+
+A similar issue on POSIX targets was previously fixed.
+
+### Change compiler for FreeBSD to clang
+
+The default compiler for FreeBSD targets changes from GCC to clang.
+
+### Expose `dbCreateAlias` in IOC shell
+
+Add a new IOC shell command `dbCreateAlias` allow record aliases to be added.
+Intended for use before `iocInit`.  eg. to add an alias "bar" for a record "foo".
+
+```
+dbLoadRecords("some.db") # includes: record(ai, "foo") { ...
+dbCreateAlias("foo", "bar")
+iocInit()
+```
+
+### dbEvent eventsRemaining missed on cancel
+
+In some cases, RSRV may queue a subscription update, but not flush it.
+This partially addresses this issue.
+
+### subRecord on bad INP links
+
+Previously, if a subRecord has an invalid `INP*` link, it was silently failing
+(and not running the proc function).  Now the the status code returned by the
+subroutine is returned from `dbProcess()`.
+
+### COMMANDLINE_LIBRARY fallback to GNU_DIR
+
+Fall back to the previous behavior when searching for `readline.h` with older compilers.
+
+### Search for readline installed via HomeBrew.
+
+Look for `/opt/local/include/readline` on OSX.
+
+### Always stop worker threads
+
+The SCAN and callback threads are now stopped during normal IOC shutdown.
+
+### Allow runtime bypass of free list allocator
+
+The environment variable `$EPICS_FREELIST_BYPASS` may be set to `YES` to cause the `freeListLib` functions to always call directly to `malloc()`/`free()`.  May be useful when troubleshooting some kinds of memory allocation bugs which would otherwise be "hidden".  eg. use-after-free data races.  This may also improve the results of dynamic analysis tools which are not aware of this internal free list.
+
+### `compress` record enhancement
+
+The compress record now supports the use of partially-filled buffers when using
+any of the N-to-one algorithms. This is achieved by setting the new field `PBUF`
+to `YES`.
+
+### Extended timestamp channel filter
+
+The `"ts"` filter can now retrieve the record's timestamp in several numeric
+and string formats, some of which support full nanosecond precision.
+
+    Hal$ caget -a test:channel
+    test:channel                   2021-03-11 18:23:48.265386 42
+    Hal$ caget -f9 'test:channel.{"ts": {"num": "dbl"}}'
+    test:channel.{"ts": {"num": "dbl"}} 984331428.265386105
+    Hal$ caget 'test:channel.{"ts": {"str": "iso"}}'
+    test:channel.{"ts": {"str": "iso"}} 2021-03-11T18:23:48.265386+0100
+    Hal$ caget -f1 'test:channel.{"ts": {"num": "ts"}}'
+    test:channel.{"ts": {"num": "ts"}} 2 984331428.0 265386163.0
+
+More information is included in the filters documentation, which can be found in
+the `html/filters.html` document that is generated during the build
 
 ### Add conditional output (OOPT) to the longout record
 
@@ -181,6 +253,32 @@ SIMM=RAW support has been added for the relevant output record types
 (ao, bo, mbbo, mbboDirect).
 RAW simulation mode will have those records do the appropriate conversion
 and write RVAL to the location pointed to by SIOL.
+
+### Fixed leak from a non-EPICS thread
+
+On some targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.
+
+Prior to this release, on POSIX and WIN32 targets, this
+struct would not be `free()`d, resulting in a memory leak.
+
+This release fixed the leak on POSIX targets.
+
+See the associated github [issue 241](https://github.com/epics-base/epics-base/issues/241)
+for WIN32 status.
+
+### Fixed leak from a non-EPICS thread
+
+On some targets, if a thread not created by `epicsThreadCreate*()` directly
+or indirectly calls an `epicsThread*()` function, a specific tracking struct
+is allocated.
+
+Prior to this release, on POSIX and WIN32 targets, this
+allocation would not be `free()`d, resulting in a memory leak.
+
+This release fixed the leak on POSIX and WIN32 targets (excluding
+MSVC before vs2012, and the WINE runtime).
 
 ### Fixed leak from a non-EPICS thread
 

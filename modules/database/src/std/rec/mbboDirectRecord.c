@@ -271,7 +271,7 @@ static long special(DBADDR *paddr, int after)
     } else if(after==1 && fieldIndex >= mbboDirectRecordB0 && fieldIndex <= mbboDirectRecordB1F) {
         /* Adjust VAL corresponding to the bit changed */
         epicsUInt8 *pBn = (epicsUInt8 *) paddr->pfield;
-        epicsUInt32 bit = 1 << (pBn - &prec->b0);
+        epicsUInt32 bit = 1u << (pBn - &prec->b0);
 
         /* Because this is !(VAL and PP), dbPut() will always post a monitor on this B* field
          * after we return.  We must keep track of this change separately from MLST to handle

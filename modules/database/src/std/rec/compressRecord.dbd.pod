@@ -40,7 +40,7 @@ the beginning or the end of the VAL array.
 
 =head2 Parameter Fields
 
-The record-specific fields are described below.
+The record-specific fields are described below, grouped by functionality.
 
 =recordtype compress
 
@@ -59,10 +59,6 @@ menu(bufferingALG) {
 	choice(bufferingALG_LIFO, "LIFO Buffer")
 }
 recordtype(compress) {
-
-=head2 Parameter Fields
-
-The record-specific fields are described below, grouped by functionality.
 
 =head3 Scanning Parameters
 
@@ -85,7 +81,7 @@ algorithms which can be specified as follows:
 
 The following fields determine what channel to read and how to compress the data:
 
-=fields ALG, INP, NSAM, N, ILIL, IHIL, OFF, RES
+=fields ALG, INP, NSAM, N, ILIL, IHIL, OFF, RES, PBUF
 
 As stated above, the ALG field specifies which algorithm to be performed on the data.
 
@@ -166,6 +162,23 @@ Compress N to 1 samples, taking the average value.
 Compress N to 1 samples, taking the median value.
 
 =back
+
+The behaviour of the record for partially filled buffers depends on the field PBUF.
+If PBUF is set to NO, then the record will wait until the buffer is completely full
+before processing. If PBUF is set to YES, then it will start processing immediately.
+
+For example, if ALG is set to C<<< N to 1 Average >>> with NSAM equal to 4, N equal
+to 1, and PBUF set to NO, then the first three times that the compress record is
+processed it will remain in an undefined state. On the fourth process, the average
+of all four records will be calculated and placed into the VAL field.
+
+If PBUF is set to YES, then after each process the average of the first several
+elements will be calculated.
+
+Note that PBUF has no impact on the C<<< Average >>> method. If one wishes to have a
+rolling average computed, then the best way to achieve that is with two compress
+records: a C<<< Circular buffer >>> which is linked to an C<<< N to 1 Average >>>
+record with PBUF set to YES.
 
 The compression record keeps NSAM data samples.
 
@@ -393,7 +406,15 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		interest(1)
 		menu(compressALG)
 	}
- 	field(BALG,DBF_MENU) {
+	field(PBUF,DBF_MENU) {
+		prompt("Use Partial buffers")
+		promptgroup("30 - Action")
+		special(SPC_RESET)
+		interest(1)
+		menu(menuYesNo)
+		initial("NO")
+	}
+	field(BALG,DBF_MENU) {
 		prompt("Buffering Algorithm")
 		promptgroup("30 - Action")
 		special(SPC_RESET)

@@ -162,7 +162,7 @@ static long process(struct dbCommon *pcommon)
     recGblFwdLink(prec);
     prec->pact = FALSE;
 
-    return 0;
+    return status;
 }
 
 static long special(DBADDR *paddr, int after)

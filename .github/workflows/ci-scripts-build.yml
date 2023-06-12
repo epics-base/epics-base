@@ -43,11 +43,8 @@ jobs:
     env:
       CMP: ${{ matrix.cmp }}
       BCFG: ${{ matrix.configuration }}
-      WINE: ${{ matrix.wine }}
-      RTEMS: ${{ matrix.rtems }}
-      RTEMS_TARGET: ${{ matrix.rtems_target }}
+      CI_CROSS_TARGETS: ${{ matrix.cross }}
       EXTRA: ${{ matrix.extra }}
-      EXTRA1: ${{ matrix.extra1 }}
       TEST: ${{ matrix.test }}
     strategy:
       fail-fast: false
@@ -57,13 +54,13 @@ jobs:
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            wine: "64"
+            cross: "windows-x64-mingw"
             name: "Ub-20 gcc-9 + MinGW"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: static
-            wine: "64"
+            cross: "windows-x64-mingw"
             name: "Ub-20 gcc-9 + MinGW, static"
 
           - os: ubuntu-20.04
@@ -75,8 +72,7 @@ jobs:
           - os: ubuntu-20.04
             cmp: gcc
             configuration: static
-            extra: "CMD_CFLAGS=-funsigned-char"
-            extra1: "CMD_CXXFLAGS=-funsigned-char"
+            extra: "CMD_CFLAGS=-funsigned-char CMD_CXXFLAGS=-funsigned-char"
             name: "Ub-20 gcc-9 unsigned char"
 
           - os: ubuntu-20.04
@@ -93,67 +89,42 @@ jobs:
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-pc686-qemu
+            cross: "RTEMS-pc686-qemu@5"
             name: "Ub-20 gcc-9 + RT-5.1 pc686"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-beatnik
+            cross: "RTEMS-beatnik@5"
             test: NO
             name: "Ub-20 gcc-9 + RT-5.1 beatnik"
-
-          # Only build one RTEMS target per CPU family
-          # unless it's running the tests
-          #
-          # - os: ubuntu-20.04
-          #   cmp: gcc
-          #   configuration: default
-          #   rtems: "5"
-          #   rtems_target: RTEMS-mvme3100
-          #   test: NO
-          #   name: "Ub-20 gcc-9 + RT-5.1 mvme3100"
-          #
-          # - os: ubuntu-20.04
-          #   cmp: gcc
-          #   configuration: default
-          #   rtems: "5"
-          #   rtems_target: RTEMS-qoriq_e500
-          #   test: NO
-          #   name: "Ub-20 gcc-9 + RT-5.1 qoriq_e500"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-xilinx_zynq_a9_qemu
+            cross: "RTEMS-xilinx_zynq_a9_qemu@5"
             test: NO
             name: "Ub-20 gcc-9 + RT-5.1 xilinx_zynq_a9_qemu"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "5"
-            rtems_target: RTEMS-uC5282
+            cross: "RTEMS-uC5282@5"
             test: NO
             name: "Ub-20 gcc-9 + RT-5.1 uC5282"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "4.10"
             name: "Ub-20 gcc-9 + RT-4.10"
-            rtems_target: RTEMS-pc386-qemu
+            cross: "RTEMS-pc386-qemu@4.10"
             test: NO
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            rtems: "4.9"
             name: "Ub-20 gcc-9 + RT-4.9"
-            rtems_target: RTEMS-pc386-qemu
+            cross: "RTEMS-pc386-qemu@4.9"
 
           - os: macos-latest
             cmp: clang
@@ -162,13 +133,15 @@ jobs:
 
           - os: windows-2019
             cmp: vs2019
-            configuration: default
+            configuration: debug
             name: "Win2019 MSC-19"
+            extra: "CMD_CXXFLAGS=-analysis"
 
           - os: windows-2019
             cmp: vs2019
-            configuration: static
+            configuration: static-debug
             name: "Win2019 MSC-19, static"
+            extra: "CMD_CXXFLAGS=-analysis"
 
           - os: windows-2019
             cmp: vs2019
@@ -179,6 +152,26 @@ jobs:
             cmp: gcc
             configuration: default
             name: "Win2019 mingw"
+
+          # Cross builds
+
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-aarch64"
+            cross: linux-aarch64
+
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-arm gnueabi"
+            cross: linux-arm@arm-linux-gnueabi
+
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-arm gnueabihf"
+            cross: linux-arm@arm-linux-gnueabihf
 
     steps:
     - uses: actions/checkout@v3

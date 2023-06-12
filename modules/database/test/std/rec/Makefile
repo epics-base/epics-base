@@ -167,6 +167,16 @@ asyncproctest_SRCS += asyncproctest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/asyncproctest.dbd ../asyncproctest.db
 TESTS += asyncproctest
 
+TARGETS += $(COMMON_DIR)/subproctest.dbd
+DBDDEPENDS_FILES += subproctest.dbd$(DEP)
+subproctest_DBD += base.dbd
+TESTPROD_HOST += subproctest
+subproctest_SRCS += subproctest.c
+subproctest_SRCS += subproctest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/subproctest.dbd ../subproctest.db
+TESTS += subproctest
+
+
 TESTPROD_HOST += linkFilterTest
 linkFilterTest_SRCS += linkFilterTest.c
 linkFilterTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp

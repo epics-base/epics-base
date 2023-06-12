@@ -43,8 +43,9 @@ extern "C" {
  * \param errorMessage A printf-style error message describing the error.
  * \param ... Any parameters required for the error message.
  */
-LIBCOM_API void cantProceed(const char *errorMessage, ...)
-    EPICS_PRINTF_STYLE(1,2);
+LIBCOM_API void cantProceed(
+    EPICS_PRINTF_FMT(const char *errorMessage), ...
+) EPICS_PRINTF_STYLE(1,2);
 
 /** \name Memory Allocation Functions
  * These versions of calloc() and malloc() never fail, they suspend the

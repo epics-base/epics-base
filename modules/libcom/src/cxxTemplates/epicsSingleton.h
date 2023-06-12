@@ -23,6 +23,9 @@
 
 class SingletonUntyped {
 public:
+#if __cplusplus>=201103L
+    constexpr
+#endif
     SingletonUntyped () :_pInstance ( 0 ), _refCount ( 0 ) {}
 #   if 0
     ~SingletonUntyped () {
@@ -112,6 +115,9 @@ public:
         epicsSingleton * _pSingleton;
     };
     friend class reference;
+#if __cplusplus>=201103L
+    constexpr
+#endif
     epicsSingleton () {}
     // mutex lock/unlock pair overhead incurred
     // when either of these are called

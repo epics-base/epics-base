@@ -39,12 +39,17 @@ extern "C" {
  * will adjust automatically, it just compares field sizes.
  */
 union native_value {
-    epicsInt8       dbf_char;
-    epicsInt16      dbf_short;
-    epicsEnum16     dbf_enum;
-    epicsInt32      dbf_long;
-    epicsFloat32    dbf_float;
-    epicsFloat64    dbf_double;
+    epicsInt8 dbf_char;
+    epicsUInt8 dbf_uchar;
+    epicsInt16 dbf_short;
+    epicsUInt16 dbf_ushort;
+    epicsEnum16 dbf_enum;
+    epicsInt32 dbf_long;
+    epicsUInt32 dbf_ulong;
+    epicsInt64 dbf_int64;
+    epicsUInt64 dbf_uint64;
+    epicsFloat32 dbf_float;
+    epicsFloat64 dbf_double;
 #ifdef DB_EVENT_LOG_STRINGS
     char            dbf_string[MAX_STRING_SIZE];
 #endif

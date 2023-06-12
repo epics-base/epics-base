@@ -56,6 +56,7 @@ extern "C" void epicsStdCall ca_dump_dbr (
 
     if ( INVALID_DB_REQ ( type ) ) {
         printf ( "bad DBR type %ld\n", type );
+        return;
     }
 
     printf ( "%s\t", dbr_text[type] );

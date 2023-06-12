@@ -410,8 +410,21 @@ DBCORE_API long dbLoadLinkArray(struct link *, short dbrType, void *pbuffer,
 DBCORE_API long dbGetNelements(const struct link *plink, long *pnElements);
 DBCORE_API int dbIsLinkConnected(const struct link *plink); /* 0 or 1 */
 DBCORE_API int dbGetLinkDBFtype(const struct link *plink);
+/** \brief Fetch current value from link.
+ * \param dbrType Database DBR code
+ * \param pbuffer Destination buffer
+ * \param nRequest If !NULL.  Caller initializes with number of elements requested,
+ *                 On success, set to number of elements written to pbuffer.
+ * \return 0 on success
+ *
+ * When called with `nRequest==NULL`, treated as a request for one (1)
+ * element.
+ *
+ * see lset::getValue
+ */
 DBCORE_API long dbTryGetLink(struct link *, short dbrType, void *pbuffer,
         long *nRequest);
+/** see dbTryGetLink() */
 DBCORE_API long dbGetLink(struct link *, short dbrType, void *pbuffer,
         long *options, long *nRequest);
 DBCORE_API long dbGetControlLimits(const struct link *plink, double *low,

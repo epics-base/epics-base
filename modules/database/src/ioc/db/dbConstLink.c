@@ -154,7 +154,7 @@ static long dbConstLoadScalar(struct link *plink, short dbrType, void *pbuffer)
     const char *pstr = plink->value.constantStr;
     size_t len;
 
-    if (!pstr)
+    if (!pstr || !pstr[0])
         return S_db_badField;
     len = strlen(pstr);
 
@@ -181,7 +181,7 @@ static long dbConstLoadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
     const char *pstr = plink->value.constantStr;
     long status;
 
-    if (!pstr)
+    if (!pstr || !pstr[0])
         return S_db_badField;
 
     status = dbLSConvertJSON(pstr, pbuffer, size, plen);
@@ -197,7 +197,7 @@ static long dbConstLoadArray(struct link *plink, short dbrType, void *pbuffer,
     const char *pstr = plink->value.constantStr;
     long status;
 
-    if (!pstr)
+    if (!pstr || !pstr[0])
         return S_db_badField;
 
     /* Choice values must be numeric */

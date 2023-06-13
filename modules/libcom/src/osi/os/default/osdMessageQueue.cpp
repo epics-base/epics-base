@@ -40,7 +40,7 @@ struct threadNode {
     struct eventNode   *evp;
     void               *buf;
     unsigned int        size;
-    volatile bool       eventSent;
+    bool                eventSent;
 };
 
 /*
@@ -366,9 +366,10 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size,
 
     freeEventNode(pmsg, threadNode.evp, status);
 
+    bool wasSent = threadNode.eventSent;
     epicsMutexUnlock(pmsg->mutex);
 
-    if (threadNode.eventSent && (threadNode.size <= size))
+    if (wasSent && (threadNode.size <= size))
         return threadNode.size;
     return -1;
 }

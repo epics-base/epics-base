@@ -24,6 +24,11 @@
 #include "epicsTimer.h"
 #include "compilerDependencies.h"
 
+#if __cplusplus<201103L
+#  define final
+#  define override
+#endif
+
 #ifdef DEBUG
 #   define debugPrintf(ARGSINPAREN) printf ARGSINPAREN
 #else
@@ -34,12 +39,12 @@ template < class T > class epicsGuard;
 
 class timer : public epicsTimer, public tsDLNode < timer > {
 public:
-    void destroy ();
-    void start ( class epicsTimerNotify &, const epicsTime & );
-    void start ( class epicsTimerNotify &, double delaySeconds );
-    void cancel ();
-    expireInfo getExpireInfo () const;
-    void show ( unsigned int level ) const;
+    void destroy () override;
+    void start ( class epicsTimerNotify &, const epicsTime & ) override final;
+    void start ( class epicsTimerNotify &, double delaySeconds ) override final;
+    void cancel () override final;
+    expireInfo getExpireInfo () const override final;
+    void show ( unsigned int level ) const override final;
     void * operator new ( size_t size, tsFreeList < timer, 0x20 > & );
     epicsPlacementDeleteOperator (( void *, tsFreeList < timer, 0x20 > & ))
 protected:
@@ -62,9 +67,9 @@ private:
     friend class timerQueue;
 };
 
-struct epicsTimerForC : public epicsTimerNotify, public timer {
+struct epicsTimerForC final : public epicsTimerNotify, public timer {
 public:
-    void destroy ();
+    void destroy () override final;
 protected:
     epicsTimerForC ( timerQueue &, epicsTimerCallback, void *pPrivateIn );
     ~epicsTimerForC ();
@@ -73,7 +78,7 @@ protected:
 private:
     epicsTimerCallback pCallBack;
     void * pPrivate;
-    expireStatus expire ( const epicsTime & currentTime );
+    expireStatus expire ( const epicsTime & currentTime ) override final;
     epicsTimerForC & operator = ( const epicsTimerForC & );
     // Visual C++ .net appears to require operator delete if
     // placement operator delete is defined? I smell a ms rat
@@ -90,10 +95,10 @@ class timerQueue : public epicsTimerQueue {
 public:
     timerQueue ( epicsTimerQueueNotify &notify );
     virtual ~timerQueue ();
-    epicsTimer & createTimer ();
+    epicsTimer & createTimer () override final;
     epicsTimerForC & createTimerForC ( epicsTimerCallback pCallback, void *pArg );
     double process ( const epicsTime & currentTime );
-    void show ( unsigned int level ) const;
+    void show ( unsigned int level ) const override final;
 private:
     tsFreeList < timer, 0x20 > timerFreeList;
     tsFreeList < epicsTimerForC, 0x20 > timerForCFreeList;
@@ -133,9 +138,9 @@ public:
     typedef epicsSingleton < timerQueueActiveMgr > :: reference RefMgr;
     timerQueueActive ( RefMgr &, bool okToShare, unsigned priority );
     void start ();
-    epicsTimer & createTimer ();
+    epicsTimer & createTimer () override final;
     epicsTimerForC & createTimerForC ( epicsTimerCallback pCallback, void *pArg );
-    void show ( unsigned int level ) const;
+    void show ( unsigned int level ) const override final;
     bool sharingOK () const;
     unsigned threadPriority () const;
 protected:
@@ -150,9 +155,9 @@ private:
     bool okToShare;
     int exitFlag; // use atomic ops
     bool terminateFlag;
-    void run ();
-    void reschedule ();
-    double quantum ();
+    void run () override final;
+    void reschedule () override final;
+    double quantum () override final;
     void _printLastChanceExceptionMessage (
                 const char * pExceptionTypeName,
                 const char * pExceptionContext );
@@ -161,7 +166,7 @@ private:
     timerQueueActive & operator = ( const timerQueueActive & );
 };
 
-class timerQueueActiveMgr {
+class timerQueueActiveMgr final {
 public:
     typedef epicsSingleton < timerQueueActiveMgr > :: reference RefThis;
     timerQueueActiveMgr ();
@@ -181,10 +186,10 @@ extern epicsSingleton < timerQueueActiveMgr > timerQueueMgrEPICS;
 class timerQueuePassive : public epicsTimerQueuePassive {
 public:
     timerQueuePassive ( epicsTimerQueueNotify & );
-    epicsTimer & createTimer ();
+    epicsTimer & createTimer () override final;
     epicsTimerForC & createTimerForC ( epicsTimerCallback pCallback, void *pArg );
-    void show ( unsigned int level ) const;
-    double process ( const epicsTime & currentTime );
+    void show ( unsigned int level ) const override final;
+    double process ( const epicsTime & currentTime ) override final;
 protected:
     timerQueue queue;
     ~timerQueuePassive ();
@@ -193,7 +198,7 @@ protected:
     timerQueuePassive & operator = ( const timerQueuePassive & );
 };
 
-struct epicsTimerQueuePassiveForC :
+struct epicsTimerQueuePassiveForC final :
     public epicsTimerQueueNotify, public timerQueuePassive {
 public:
     epicsTimerQueuePassiveForC (
@@ -208,15 +213,15 @@ private:
     epicsTimerQueueNotifyQuantum pSleepQuantumCallback;
     void * pPrivate;
     static epicsSingleton < tsFreeList < epicsTimerQueuePassiveForC, 0x10 > > pFreeList;
-    void reschedule ();
-    double quantum ();
+    void reschedule () override final;
+    double quantum () override final;
 };
 
-struct epicsTimerQueueActiveForC : public timerQueueActive,
+struct epicsTimerQueueActiveForC final : public timerQueueActive,
     public tsDLNode < epicsTimerQueueActiveForC > {
 public:
     epicsTimerQueueActiveForC ( RefMgr &, bool okToShare, unsigned priority );
-    void release ();
+    void release () override final;
     void * operator new ( size_t );
     void operator delete ( void * );
 protected:

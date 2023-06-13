@@ -73,7 +73,7 @@ epicsExportAddress(int, dbAccessDebugPUTF);
 
 DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook = NULL;
 
-static short mapDBFToDBR[DBF_NTYPES] = {
+static const short mapDBFToDBR[DBF_NTYPES] = {
     /* DBF_STRING   => */    DBR_STRING,
     /* DBF_CHAR     => */    DBR_CHAR,
     /* DBF_UCHAR    => */    DBR_UCHAR,

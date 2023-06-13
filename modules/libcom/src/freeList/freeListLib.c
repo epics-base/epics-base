@@ -83,7 +83,6 @@ LIBCOM_API void epicsStdCall
     pfl->lock = epicsMutexMustCreate();
     *ppvt = (void *)pfl;
     VALGRIND_CREATE_MEMPOOL(pfl, REDZONE, 0);
-    return;
 }
 
 LIBCOM_API void * epicsStdCall freeListCalloc(void *pvt)

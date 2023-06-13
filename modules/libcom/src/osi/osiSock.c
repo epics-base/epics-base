@@ -25,7 +25,7 @@
 #define nDigitsDottedIP 4u
 #define chunkSize 8u
 
-#define makeMask(NBITS) ( ( 1u << ( (unsigned) NBITS) ) - 1u )
+#define makeMask(NBITS) ( ( 1u << ( (unsigned) (NBITS)) ) - 1u )
 
 /*
  * sockAddrAreIdentical()

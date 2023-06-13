@@ -275,18 +275,12 @@ void epicsThread::setPriority (unsigned int priority) throw ()
 
 bool epicsThread::priorityIsEqual (const epicsThread &otherThread) const throw ()
 {
-    if ( epicsThreadIsEqual (this->id, otherThread.id) ) {
-        return true;
-    }
-    return false;
+    return epicsThreadIsEqual (this->id, otherThread.id)!=0;
 }
 
 bool epicsThread::isSuspended () const throw ()
 {
-    if ( epicsThreadIsSuspended (this->id) ) {
-        return true;
-    }
-    return false;
+    return epicsThreadIsSuspended (this->id)!=0;
 }
 
 bool epicsThread::operator == (const epicsThread &rhs) const throw ()

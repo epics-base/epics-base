@@ -210,7 +210,7 @@ extern "C" epicsTimerQueueId epicsStdCall
         epicsSingleton < timerQueueActiveMgr > :: reference ref =
             timerQueueMgrEPICS.getReference ();
         epicsTimerQueueActiveForC & tmr =
-            ref->allocate ( ref, okToShare ? true : false, threadPriority );
+            ref->allocate ( ref, okToShare != 0, threadPriority );
         return &tmr;
     }
     catch ( ... ) {

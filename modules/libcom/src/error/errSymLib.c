@@ -260,7 +260,6 @@ void errSymTestPrint(long errNum)
     if ( message[0] == '\0' ) return;
     printf("module %hu number %hu message=\"%s\"\n",
         modnum, errnum, message);
-    return;
 }
 
 /****************************************************************

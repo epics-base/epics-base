@@ -503,7 +503,7 @@ long devUnregisterAddress(
         return S_dev_addressNotFound;
     }
 
-    if (strcmp(pOwnerName,pRange->pOwnerName)) {
+    if (strcmp(pOwnerName,pRange->pOwnerName)!=0) {
         s = S_dev_addressOverlap;
         errPrintf (
             s,

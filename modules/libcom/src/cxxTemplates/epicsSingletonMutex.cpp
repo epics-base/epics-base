@@ -25,8 +25,8 @@
 
 namespace {
 
-static epicsThreadOnceId epicsSigletonOnceFlag ( EPICS_THREAD_ONCE_INIT );
-static epicsMutex * pEPICSSigletonMutex = 0;
+epicsThreadOnceId epicsSigletonOnceFlag ( EPICS_THREAD_ONCE_INIT );
+epicsMutex * pEPICSSigletonMutex = 0;
 
 extern "C" void SingletonMutexOnce ( void * /* pParm */ )
 {

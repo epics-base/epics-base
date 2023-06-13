@@ -15,12 +15,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "dbDefs.h"
 #include "epicsTypes.h"
 #include "osiSock.h"
-
-#ifndef NELEMENTS
-#define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))
-#endif /*NELEMENTS*/
 
 /*
  * addrArrayToUL ()

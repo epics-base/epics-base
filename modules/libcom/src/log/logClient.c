@@ -559,7 +559,7 @@ void epicsStdCall iocLogPrefix(const char * prefix)
 
     if (logClientPrefix) {
         /* No error message if the new prefix is identical to the old one */
-        if (strcmp(logClientPrefix, prefix))
+        if (strcmp(logClientPrefix, prefix)!=0)
             printf (ERL_WARNING " iocLogPrefix: The prefix was already set to "
                 "\"%s\" and can't be changed.\n", logClientPrefix);
         return;

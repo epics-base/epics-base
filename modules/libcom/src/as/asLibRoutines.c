@@ -359,7 +359,6 @@ void epicsStdCall asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
     if(!asActive) return;
     if(!pasgmember) return;
     pasgmember->userPvt = userPvt;
-    return;
 }
 
 long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,

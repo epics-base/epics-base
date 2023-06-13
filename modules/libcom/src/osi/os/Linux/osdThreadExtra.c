@@ -58,7 +58,7 @@ static void thread_hook(epicsThreadId pthreadInfo)
     /* Set the name of the thread's process. Limited to 16 characters. */
     char comm[16];
 
-    if (strcmp(pthreadInfo->name, "_main_")) {
+    if (strcmp(pthreadInfo->name, "_main_") != 0) {
         snprintf(comm, sizeof(comm), "%s", pthreadInfo->name);
         prctl(PR_SET_NAME, comm, 0l, 0l, 0l);
     }

@@ -44,8 +44,9 @@ void epicsTime::throwError(int code)
 }
 
 
-epicsTime::epicsTime ( const epicsTimeStamp & replace ) {
-    ts = replace;
+epicsTime::epicsTime ( const epicsTimeStamp & replace )
+    :ts(replace)
+{
     if(ts.nsec >= nSecPerSec)
         throw std::logic_error("epicsTimeStamp has overflow in nano-seconds field");
 }

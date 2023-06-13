@@ -34,8 +34,6 @@ void ellAdd (ELLLIST *pList, ELLNODE *pNode)
 
     pList->node.previous = pNode;
     pList->count++;
-
-    return;
 }
 /****************************************************************************
  *
@@ -65,8 +63,6 @@ void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)
     pAddList->count = 0;
     pAddList->node.next = NULL;
     pAddList->node.previous = NULL;
-
-    return;
 }
 /****************************************************************************
  *
@@ -86,8 +82,6 @@ void ellDelete (ELLLIST *pList, ELLNODE *pNode)
         pNode->previous->next = pNode->next;
 
     pList->count--;
-
-    return;
 }
 /****************************************************************************
  *
@@ -136,8 +130,6 @@ void ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLL
     }
     pSrcList->count -= count;
     pDstList->count += count;
-
-    return;
 }
 /****************************************************************************
  *
@@ -194,8 +186,6 @@ void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode)
         pNode->next->previous = pNode;
 
     plist->count++;
-
-    return;
 }
 /****************************************************************************
  *

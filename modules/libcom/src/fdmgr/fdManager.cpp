@@ -206,7 +206,6 @@ LIBCOM_API void fdManager::process (double delay)
         this->pTimerQueue->process(epicsTime::getCurrent());
     }
     this->processInProg = false;
-    return;
 }
 
 //

@@ -39,8 +39,8 @@ public:
     //
     class noFunctionSpecified {};
 
-    LIBCOM_API fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType type, 
-        const bool onceOnly, fdManager &manager, pCallBackFDMgr pFunc, void *pParam);
+    LIBCOM_API fdRegForOldFdmgr (SOCKET fdIn, fdRegType type,
+        bool onceOnly, fdManager &manager, pCallBackFDMgr pFunc, void *pParam);
     LIBCOM_API ~fdRegForOldFdmgr ();
 
 private:

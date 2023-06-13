@@ -711,8 +711,6 @@ static void freeLogClient(struct iocLogClient     *pclient)
     epicsSocketDestroy ( pclient->insock );
 
     free (pclient);
-
-    return;
 }
 
 

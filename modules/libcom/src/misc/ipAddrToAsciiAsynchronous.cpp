@@ -17,6 +17,7 @@
 #include <climits>
 #include <stdexcept>
 #include <cstdio>
+#include <vector>
 
 //#define EPICS_FREELIST_DEBUG
 #define EPICS_PRIVATE_API
@@ -82,7 +83,6 @@ struct ipAddrToAsciiGlobal : public epicsThreadRunable {
 
     virtual void run ();
 
-    char nameTmp [1024];
     tsFreeList
         < ipAddrToAsciiTransactionPrivate, 0x80 >
             transactionFreeList;
@@ -297,6 +297,8 @@ ipAddrToAsciiTransaction & ipAddrToAsciiEnginePrivate::createTransaction ()
 
 void ipAddrToAsciiGlobal::run ()
 {
+    std::vector<char> nameTmp(1024);
+
     epicsGuard < epicsMutex > guard ( this->mutex );
     while ( ! this->exitFlag ) {
         {
@@ -313,14 +315,13 @@ void ipAddrToAsciiGlobal::run ()
 
             if ( this->exitFlag )
             {
-                sockAddrToDottedIP ( & addr.sa, this->nameTmp,
-                    sizeof ( this->nameTmp ) );
+                sockAddrToDottedIP ( & addr.sa, &nameTmp[0], nameTmp.size() );
             }
             else {
                 epicsGuardRelease < epicsMutex > unguard ( guard );
                 // depending on DNS configuration, this could take a very long time
                 // so we release the lock
-                sockAddrToA ( &addr.sa, this->nameTmp, sizeof ( this->nameTmp ) );
+                sockAddrToA ( &addr.sa, &nameTmp[0], nameTmp.size() );
             }
 
             // the ipAddrToAsciiTransactionPrivate destructor is allowed to
@@ -339,7 +340,7 @@ void ipAddrToAsciiGlobal::run ()
             {
                 epicsGuardRelease < epicsMutex > unguard ( guard );
                 // don't call callback with lock applied
-                pCur->pCB->transactionComplete ( this->nameTmp );
+                pCur->pCB->transactionComplete ( &nameTmp[0] );
             }
 
             this->callbackInProgress = false;

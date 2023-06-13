@@ -38,7 +38,6 @@ public:
     // exceptions
     //
     class noFunctionSpecified {};
-    class doubleDelete {};
 
     LIBCOM_API fdRegForOldFdmgr (const SOCKET fdIn, const fdRegType type, 
         const bool onceOnly, fdManager &manager, pCallBackFDMgr pFunc, void *pParam);
@@ -66,7 +65,6 @@ public:
     // exceptions
     //
     class noFunctionSpecified {};
-    class doubleDelete {};
 private:
     epicsTimer &timer;
     oldFdmgr &fdmgr;
@@ -116,11 +114,7 @@ LIBCOM_API fdRegForOldFdmgr::fdRegForOldFdmgr
 }
 
 LIBCOM_API fdRegForOldFdmgr::~fdRegForOldFdmgr ()
-{
-    if (this->pFunc==NULL) {
-        throwWithLocation ( doubleDelete () );
-    }
-}
+{}
 
 LIBCOM_API void fdRegForOldFdmgr::callBack ()
 {

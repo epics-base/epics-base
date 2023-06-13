@@ -41,6 +41,15 @@ struct threadNode {
     void               *buf;
     unsigned int        size;
     bool                eventSent;
+    inline
+    threadNode()
+        :evp(NULL)
+        ,buf(NULL)
+        ,size(0u)
+        ,eventSent(false)
+    {
+        memset(&link, 0, sizeof(link));
+    }
 };
 
 /*

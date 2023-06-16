@@ -83,8 +83,9 @@ IOCS_APPL_TOP               = $(INSTALL_ABSOLUTE)
 
 #-------------------------------------------------------
 # How to portably check the flags to make
+makeflags := $(firstword $(filter-out -,$(filter-out --%,$(MAKEFLAGS))))
 define checkflags
-  make-$1 = $(findstring $1,$(filter-out --%,$(MAKEFLAGS)))
+  make-$1 := $(findstring $1,$(makeflags))
 endef
 # This is extensible to most single letter flags:
 $(foreach flag,s q, $(eval $(call checkflags,$(flag))))

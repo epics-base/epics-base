@@ -78,8 +78,8 @@ unsigned epicsStdCall sockAddrToA (
         }
         ret = sockAddrToDottedIP ( paddr, pBuf, bufSize );
 #ifdef NETDEBUG
-        epicsBaseDebugLog ( "getnameinfo(%s) failed: %s\n",
-                        pBuf, gai_strerror(gai_ecode) );
+        epicsBaseDebugLog("NET getnameinfo(%s) failed: %s\n",
+			  pBuf, gai_strerror(gai_ecode) );
 #endif
         return ret;
     } else

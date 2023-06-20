@@ -128,7 +128,7 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
         {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-            epicsBaseDebugLog("setsockopt(%d) (IPPROTO_IPV6, IPV6_V6ONLY) status=%d %s\n",
+            epicsBaseDebugLog("NET setsockopt(%d) (IPPROTO_IPV6, IPV6_V6ONLY) status=%d %s\n",
                               (int)sock,
                               status, status < 0 ? sockErrBuf : "");
         }

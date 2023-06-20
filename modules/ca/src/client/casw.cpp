@@ -245,7 +245,7 @@ int main ( int argc, char ** argv )
                         }
                     }
 #ifdef NETDEBUG
-                    epicsBaseDebugLog("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c' %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x sizeof(pExtIPv6->m_s6_addr)=%u good_IPv6_magic_and_len=%d\n",
+                    epicsBaseDebugLog("NET CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c' %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x sizeof(pExtIPv6->m_s6_addr)=%u good_IPv6_magic_and_len=%d\n",
                                   (unsigned)ntohl(pExtIPv6->m_size),
                                   isprint(pExtIPv6->m_typ_magic[0]) ? pExtIPv6->m_typ_magic[0] : '?',
                                   isprint(pExtIPv6->m_typ_magic[1]) ? pExtIPv6->m_typ_magic[1] : '?',

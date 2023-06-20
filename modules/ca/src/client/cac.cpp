@@ -471,7 +471,7 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
     {
         char buf[64];
         addr.name ( buf, sizeof ( buf ) );
-        epicsBaseDebugLog("cac::beaconNotify addr='%s' pBHE=%p\n",
+        epicsBaseDebugLog("NET cac::beaconNotify addr='%s' pBHE=%p\n",
                           buf, pBHE);
     }
 #endif

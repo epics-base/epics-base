@@ -340,7 +340,7 @@ bool repeaterClient::verify ()
     }
 #endif
 #ifdef NETDEBUG
-    epicsBaseDebugLog ("repeaterClient::verify false port=%u\n",
+    epicsBaseDebugLog("NET repeaterClient::verify false port=%u\n",
                        this->port () );
 #endif
 
@@ -385,7 +385,7 @@ static void fanOut ( const osiSockAddr46 & from46, const void * pMsg,
         }
         if ( pclient->get_family() == AF_INET && from46.sa.sa_family != AF_INET ) {
 #ifdef NETDEBUG
-            epicsBaseDebugLog ("repeater: fanOut ignored: pclient=%p get_family=%d from46.sa.sa_family=%d\n",
+            epicsBaseDebugLog("NET repeater: fanOut ignored: pclient=%p get_family=%d from46.sa.sa_family=%d\n",
                                pclient, pclient->get_family(), from46.sa.sa_family);
 #endif
 
@@ -416,7 +416,7 @@ static void register_new_client ( osiSockAddr46 & from46,
     {
       char buf[64];
       sockAddrToDottedIP(&from46.sa, buf, sizeof(buf));
-      epicsBaseDebugLog ("repeater: register_new_client='%s'\n", buf );
+      epicsBaseDebugLog("NET repeater: register_new_client='%s'\n", buf );
     }
 #endif
     if ( ! epicsSocket46IsAF_INETorAF_INET6 ( from46.sa.sa_family ) ) {
@@ -504,7 +504,7 @@ static void register_new_client ( osiSockAddr46 & from46,
     }
 
 #ifdef NETDEBUG
-    epicsBaseDebugLog ("repeater: register_new_client pNewClient=%p\n", pNewClient );
+    epicsBaseDebugLog("NET repeater: register_new_client pNewClient=%p\n", pNewClient );
 #endif
     if ( ! pNewClient->sendConfirm () ) {
         client_list.remove ( *pNewClient );
@@ -652,7 +652,7 @@ void ca_repeater ()
             {
                 char buf[64];
                 sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
-                epicsBaseDebugLog ("repeater: node='%s'\n", buf );
+                epicsBaseDebugLog("NET repeater: node='%s'\n", buf );
             }
 #endif
 #ifdef IP_ADD_MEMBERSHIP
@@ -703,7 +703,7 @@ void ca_repeater ()
 
     debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
 #ifdef NETDEBUG
-    epicsBaseDebugLog ("repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
+    epicsBaseDebugLog("NET repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
                    pPollFds, searchDestList_count, numPollFds);
 #endif
 
@@ -716,13 +716,13 @@ void ca_repeater ()
             if ( pollres < 0 ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                epicsBaseDebugLog("repeater pollres =%d: %s\n",
+                epicsBaseDebugLog("NET repeater pollres =%d: %s\n",
                               pollres, sockErrBuf);
                 goto pollagain;
             }
             for ( unsigned idx = 0; idx < numPollFds; idx++ ) {
 #ifdef NETDEBUGXX
-                epicsBaseDebugLog ("repeater idx=%u socket=%d revents=0x%x\n",
+                epicsBaseDebugLog("NET repeater idx=%u socket=%d revents=0x%x\n",
                                idx, (int)pPollFds[idx].fd, pPollFds[idx].revents);
 #endif
                 if (pPollFds[idx].revents) {
@@ -800,7 +800,7 @@ void ca_repeater ()
                             pMsgIPv6->m_sin6_scope_id = from46.in6.sin6_scope_id;
                         } else {
 #ifdef NETDEBUG
-                            epicsBaseDebugLog("CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
+                            epicsBaseDebugLog("NET CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
                                               (unsigned)ntohl(pMsgIPv6->m_size),
                                               isprint(pMsgIPv6->m_typ_magic[0]) ? pMsgIPv6->m_typ_magic[0] : '?',
                                               isprint(pMsgIPv6->m_typ_magic[1]) ? pMsgIPv6->m_typ_magic[1] : '?',

@@ -193,7 +193,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
             {
                 char buf[64];
                 sockAddrToDottedIP(&ifaceAddr.sa, buf, sizeof(buf));
-                epicsBaseDebugLog("rsrv_grab_tcp  ifaceAddr='%s'\n", buf);
+                epicsBaseDebugLog("NET rsrv_grab_tcp  ifaceAddr='%s'\n", buf);
             }
 #endif
             tcpsock = socks[i] = epicsSocket46Create (scratch46.ia.sin_family,
@@ -440,7 +440,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-                epicsBaseDebugLog("calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
+                epicsBaseDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
                                   buf);
             }
 #endif
@@ -493,7 +493,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-                epicsBaseDebugLog("calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
+                epicsBaseDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
                               buf);
             }
 #endif
@@ -509,7 +509,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
-                epicsBaseDebugLog("rsrv_XXXX addr='%s'\n", buf);
+                epicsBaseDebugLog("NET rsrv_XXXX addr='%s'\n", buf);
             }
 #endif
             if(pNode->addr.ia.sin_port==0) {
@@ -800,7 +800,7 @@ void rsrv_init (void)
                 {
                     char buf[64];
                     sockAddrToDottedIP(&conf->udpAddr46.sa, buf, sizeof(buf));
-                    epicsBaseDebugLog("calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
+                    epicsBaseDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
                                       buf);
             }
 #endif

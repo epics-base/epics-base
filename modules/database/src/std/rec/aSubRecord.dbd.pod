@@ -42,6 +42,8 @@ value is non-zero.
 
 =back
 
+This record type was included in base.dbd beginning with epics-base 3.14.10 .
+
 =head2 Record-specific Menus
 
 =head3 Menu aSubLFLG

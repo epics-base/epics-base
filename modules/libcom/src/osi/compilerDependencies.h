@@ -61,4 +61,11 @@
 #endif
 #endif
 
+#ifndef EPICS_PRINTF_FMT
+/*
+ * No format-string checking annotation
+ */
+#   define EPICS_PRINTF_FMT(a) a
+#endif
+
 #endif  /* ifndef compilerDependencies_h */

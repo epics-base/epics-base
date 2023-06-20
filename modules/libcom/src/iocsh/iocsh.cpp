@@ -559,7 +559,17 @@ char** iocsh_attempt_completion(const char* word, int start, int end)
                     break;
                 }
             }
-            err = arg-1u >= size_t(def->pFuncDef->nargs);
+            if(arg-1u >= size_t(def->pFuncDef->nargs)) {
+                if(def->pFuncDef->arg
+                   && def->pFuncDef->nargs
+                   && def->pFuncDef->arg[def->pFuncDef->nargs-1u]->type == iocshArgArgv)
+                {
+                    // last argument is variable length
+                    arg = def->pFuncDef->nargs;
+                } else {
+                    err = true;
+                }
+            }
         }
 
         if(!err) {

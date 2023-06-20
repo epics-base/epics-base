@@ -2,6 +2,7 @@
 # Definitions for freebsd-x86_64 host - freebsd-x86_64 target builds
 # Sites may override these definitions in CONFIG_SITE.freebsd-x86_64.freebsd-x86_64
 #-------------------------------------------------------
+GNU_DIR=/usr/local
 
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon

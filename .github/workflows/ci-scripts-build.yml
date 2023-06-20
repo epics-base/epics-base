@@ -133,13 +133,15 @@ jobs:
 
           - os: windows-2019
             cmp: vs2019
-            configuration: default
+            configuration: debug
             name: "Win2019 MSC-19"
+            extra: "CMD_CXXFLAGS=-analysis"
 
           - os: windows-2019
             cmp: vs2019
-            configuration: static
+            configuration: static-debug
             name: "Win2019 MSC-19, static"
+            extra: "CMD_CXXFLAGS=-analysis"
 
           - os: windows-2019
             cmp: vs2019
@@ -150,6 +152,26 @@ jobs:
             cmp: gcc
             configuration: default
             name: "Win2019 mingw"
+
+          # Cross builds
+
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-aarch64"
+            cross: linux-aarch64
+
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-arm gnueabi"
+            cross: linux-arm@arm-linux-gnueabi
+
+          - os: ubuntu-latest
+            cmp: gcc
+            configuration: default
+            name: "Cross linux-arm gnueabihf"
+            cross: linux-arm@arm-linux-gnueabihf
 
     steps:
     - uses: actions/checkout@v3

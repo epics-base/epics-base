@@ -130,7 +130,8 @@ extern "C" {
  * output has been truncated if the return value is `size` or more.
  */
 LIBCOM_API int epicsStdCall epicsSnprintf(
-    char *str, size_t size, const char *format, ...) EPICS_PRINTF_STYLE(3,4);
+    char *str, size_t size, EPICS_PRINTF_FMT(const char *format), ...
+) EPICS_PRINTF_STYLE(3,4);
 /**
  * \brief epicsVsnprintf() is meant to have the same semantics as the C99
  * function vsnprintf()

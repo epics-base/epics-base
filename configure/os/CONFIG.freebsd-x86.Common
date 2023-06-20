@@ -5,3 +5,4 @@
 
 #Include definitions common to unix hosts
 include $(CONFIG)/os/CONFIG.UnixCommon.Common
+CMPLR_CLASS = clang

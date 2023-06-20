@@ -13,6 +13,8 @@ The histogram record is used to store frequency counts of a signal into an array
 of arbitrary length. The user can configure the range of the signal value that
 the array will store. Anything outside this range will be ignored.
 
+This record type was included in base.dbd beginning with epics-base 3.15.0.1 .
+
 =head2 Parameter Fields
 
 The record-specific fields are described below.

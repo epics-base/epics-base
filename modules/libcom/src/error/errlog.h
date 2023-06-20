@@ -97,7 +97,7 @@ LIBCOM_API extern int errVerbose;
  * that the output is sent to the errlog task. Unless configured not to, the output
  * will appear on the console as well.
  */
-LIBCOM_API int errlogPrintf(const char *pformat, ...)
+LIBCOM_API int errlogPrintf(EPICS_PRINTF_FMT(const char *pformat), ...)
     EPICS_PRINTF_STYLE(1,2);
 
 /**
@@ -118,7 +118,8 @@ LIBCOM_API int errlogVprintf(const char *pformat, va_list pvar);
  * \return int Consult printf documentation in C standard library
  */
 LIBCOM_API int errlogSevPrintf(const errlogSevEnum severity,
-    const char *pformat, ...) EPICS_PRINTF_STYLE(2,3);
+    EPICS_PRINTF_FMT(const char *pformat), ...
+) EPICS_PRINTF_STYLE(2,3);
 
 /**
  * This function is like ::errlogVprintf except that it adds the severity to the beginning
@@ -239,11 +240,14 @@ LIBCOM_API void errlogFlush(void);
  * The remaining arguments are just like the arguments to the C printf routine.
  * ::errVerbose determines if the filename and line number are shown.
  */
-LIBCOM_API void errPrintf(long status, const char *pFileName, int lineno,
-    const char *pformat, ...) EPICS_PRINTF_STYLE(4,5);
+LIBCOM_API void errPrintf(
+    long status, const char *pFileName, int lineno, 
+    EPICS_PRINTF_FMT(const char *pformat), ...
+) EPICS_PRINTF_STYLE(4,5);
 
-LIBCOM_API int errlogPrintfNoConsole(const char *pformat, ...)
-    EPICS_PRINTF_STYLE(1,2);
+LIBCOM_API int errlogPrintfNoConsole(
+    EPICS_PRINTF_FMT(const char *pformat), ...
+) EPICS_PRINTF_STYLE(1,2);
 LIBCOM_API int errlogVprintfNoConsole(const char *pformat,va_list pvar);
 
 /**

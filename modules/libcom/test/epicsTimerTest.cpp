@@ -21,6 +21,7 @@
 #include "epicsEvent.h"
 #include "epicsAssert.h"
 #include "epicsGuard.h"
+#include "epicsAtomic.h"
 #include "tsFreeList.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
@@ -84,7 +85,7 @@ private:
     delayVerify & operator = ( const delayVerify & );
 };
 
-static volatile unsigned expireCount;
+static int expireCount;
 static epicsEvent expireEvent;
 
 delayVerify::delayVerify ( double expectedDelayIn, epicsTimerQueue &queueIn ) :
@@ -128,7 +129,7 @@ inline void delayVerify::start ( const epicsTime &expireTime )
 epicsTimerNotify::expireStatus delayVerify::expire ( const epicsTime &currentTime )
 {
     this->expireStamp = currentTime;
-    if ( --expireCount == 0u ) {
+    if ( epics::atomic::decrement ( expireCount ) == 0u ) {
         expireEvent.signal ();
     }
     return noRestart;
@@ -155,7 +156,7 @@ void testAccuracy ()
     }
     testOk1 ( timerCount == nTimers );
 
-    expireCount = nTimers;
+    epics::atomic::set ( expireCount, nTimers );
     for ( i = 0u; i < nTimers; i++ ) {
         epicsTime cur = epicsTime::getCurrent ();
         pTimers[i]->setBegin ( cur );

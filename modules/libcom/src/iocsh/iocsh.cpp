@@ -87,6 +87,8 @@ static epicsMutexId iocshTableMutex;
 static epicsThreadOnceId iocshOnceId = EPICS_THREAD_ONCE_INIT;
 static epicsThreadPrivateId iocshContextId;
 
+static void iocshInit (void);
+
 /*
  * I/O redirection
  */
@@ -130,11 +132,6 @@ static void iocshOnce (void *)
     iocshContextId = epicsThreadPrivateCreate();
 }
 
-static void iocshInit (void)
-{
-    epicsThreadOnce (&iocshOnceId, iocshOnce, NULL);
-}
-
 /*
  * Lock the table mutex
  */
@@ -157,19 +154,18 @@ iocshTableUnlock (void)
 /*
  * Register a command
  */
-void epicsStdCall iocshRegister (const iocshFuncDef *piocshFuncDef,
+static
+void iocshRegisterImpl (const iocshFuncDef *piocshFuncDef,
     iocshCallFunc func)
 {
     struct iocshCommand *l, *p, *n;
     int i;
 
-    iocshTableLock ();
     for (l = NULL, p = iocshCommandHead ; p != NULL ; l = p, p = p->next) {
         i = strcmp (piocshFuncDef->name, p->def.pFuncDef->name);
         if (i == 0) {
             p->def.pFuncDef = piocshFuncDef;
             p->def.func = func;
-            iocshTableUnlock ();
             return;
         }
         if (i < 0)
@@ -179,7 +175,6 @@ void epicsStdCall iocshRegister (const iocshFuncDef *piocshFuncDef,
         "iocshRegister");
     if (!registryAdd(iocshCmdID, piocshFuncDef->name, (void *)n)) {
         free (n);
-        iocshTableUnlock ();
         errlogPrintf ("iocshRegister failed to add %s\n", piocshFuncDef->name);
         return;
     }
@@ -193,10 +188,15 @@ void epicsStdCall iocshRegister (const iocshFuncDef *piocshFuncDef,
     }
     n->def.pFuncDef = piocshFuncDef;
     n->def.func = func;
-    iocshTableUnlock ();
 }
 
-
+void epicsStdCall iocshRegister (const iocshFuncDef *piocshFuncDef,
+    iocshCallFunc func)
+{
+    iocshTableLock ();
+    iocshRegisterImpl (piocshFuncDef, func);
+    iocshTableUnlock ();
+}
 /*
  * Retrieves a previously registered function with the given name.
  */
@@ -1523,24 +1523,18 @@ static void exitCallFunc(const iocshArgBuf *)
 {
 }
 
-static void localRegister (void)
+static void iocshInit (void)
 {
-    iocshRegister(&commentFuncDef,commentCallFunc);
-    iocshRegister(&exitFuncDef,exitCallFunc);
-    iocshRegister(&helpFuncDef,helpCallFunc);
-    iocshRegister(&iocshCmdFuncDef,iocshCmdCallFunc);
-    iocshRegister(&iocshLoadFuncDef,iocshLoadCallFunc);
-    iocshRegister(&iocshRunFuncDef,iocshRunCallFunc);
-    iocshRegister(&onFuncDef, onCallFunc);
+    epicsThreadOnce (&iocshOnceId, iocshOnce, NULL);
+    epicsMutexMustLock (iocshTableMutex);
+    iocshRegisterImpl(&commentFuncDef,commentCallFunc);
+    iocshRegisterImpl(&exitFuncDef,exitCallFunc);
+    iocshRegisterImpl(&helpFuncDef,helpCallFunc);
+    iocshRegisterImpl(&iocshCmdFuncDef,iocshCmdCallFunc);
+    iocshRegisterImpl(&iocshLoadFuncDef,iocshLoadCallFunc);
+    iocshRegisterImpl(&iocshRunFuncDef,iocshRunCallFunc);
+    iocshRegisterImpl(&onFuncDef, onCallFunc);
+    iocshTableUnlock();
 }
 
 } /* extern "C" */
-
-/*
- * Register local commands on application startup
- */
-class IocshRegister {
-  public:
-    IocshRegister() { localRegister(); }
-};
-static IocshRegister iocshRegisterObj;

@@ -31,9 +31,13 @@ Status and to do of EPICS base:
     Support for IPv6 must be added.
 
 - Linux, MacOs, Windows, vxWorks, RTEMS, BSD
-  Testing on Linux and Mac looks good. Need to re-run FreeBSD.
+  Testing on Linux and Mac looks good.
   Windows: (Which "Windows" ? Visual Studio ? cygwin (seems obsolete) Mingw
   vxWorks, RTEMS: Testing needed.
+  FreeBSD: IPv6 sockets do not receive IPv4 mapped by default:
+           https://man.freebsd.org/cgi/man.cgi?query=inet6&sektion=4
+           They recommend to open a second socket
+           I tried a hot-fix, but that didn't work
 
 - pyepics (with the latest ca library)
   First tests look good ("PYEPICS_LIBCA" is your friend)

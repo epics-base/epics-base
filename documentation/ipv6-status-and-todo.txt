@@ -54,6 +54,28 @@ Other todo (unorderedd)
 - Clean up the debug printing
 - More code review
 - write automated tests
+- This is a major thing:
+  After digging more into IPv6, it feels that the "dual protocol"
+  approach should be removed. What does this mean ?
+  Today the same socket is used to handle both IPv4 and IPv6
+  on the same port. However, if an old IOC with IPv4 only is already
+  running, and the a new one with IPv6/IPv4 is started, the bind()
+  to a given port number will succeed.
+  IPv6 traffice will work, but all IPv4 traffic is routed into the
+  first IOC. And this is not a good thing.
+  In the long run, it would be much more clearer, to have 2 sockets,
+  one for IPv4 and one for IPv6 only. We may end up by using different
+  port number for IPv4 and IPv6. That is OK.
+  One example is caservertask.c, which needs to be restricted to one
+  address family. And then the working code needs to be "instanciated"
+  twice, once for IPv4 and once for IPv6, if both protocols are used.
+  We have some code here, which is hard to maintain, see foundWildcard.
+  (And there are probably bugs, since IPv6 is not really handled here.
+  Another example of re-structering is the repeater.
+  Run only one protocol at a time, meaning that we may see 2 repeaters.
+  (Or dont we need a repeater for IPv6 at all ?).
+  Last comment here: The current solution may be "good enough" to be
+  run on Linux systems for testing.
 
 
 ====================

@@ -237,7 +237,7 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
       }
     }
 #ifdef NETDEBUG
-    epicsBaseDebugLog("NET NET EPICS_CA_AUTO_ADDR_LIST='%s' addrautolistIPversion=%d\n",
+    epicsBaseDebugLog("NET EPICS_CA_AUTO_ADDR_LIST='%s' addrautolistIPversion=%d\n",
 		      pstr ? pstr : "",
 		      addrautolistIPversion);
 
@@ -264,7 +264,7 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
         {
             char buf[64];
             sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-            epicsBaseDebugLog("NET NET calling osiSockBroadcastMulticastAddresses46: sock=%d match46='%s'\n",
+            epicsBaseDebugLog("NET calling osiSockBroadcastMulticastAddresses46: sock=%d match46='%s'\n",
 			      (int)sock, buf);
         }
 #endif

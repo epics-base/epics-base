@@ -402,7 +402,7 @@ LIBCOM_API int epicsStdCall epicsSocket46portFromAddress(osiSockAddr46 *paddr)
 #endif
     }
 #ifndef NETDEBUG
-    epicsBaseDebugLog("NET NET epicsSocket46portFromAddress invalid family: %d\n",
+    epicsBaseDebugLog("NET epicsSocket46portFromAddress invalid family: %d\n",
                       paddr->ia.sin_family);
 #endif
     return -1;

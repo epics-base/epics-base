@@ -85,6 +85,8 @@
 
 #ifdef NETDEBUG
 #define SEND_FROM_REPEATER(a,b,c,d) send(a,b,c,d)
+#undef debugPrintf
+#define debugPrintf(argsInParen) ::printf argsInParen
 #else
 // Use the send() function with builtin debug print
 #define SEND_FROM_REPEATER(a,b,c,d) epicsSocket46Send(a,b,c,d)
@@ -550,12 +552,12 @@ void ca_repeater ()
 {
     tsFreeList < repeaterClient, 0x20 > freeList;
     int size;
-    SOCKET sock4;
+    SOCKET sock4 = INVALID_SOCKET;
     osiSockAddr46 from46;
     unsigned short port;
     char * pBuf;
 #ifdef AF_INET6
-    SOCKET sock6;
+    SOCKET sock6 = INVALID_SOCKET;
     struct epicsSockPollfd *pPollFds = NULL;
     unsigned numPollFds = 0;
     unsigned searchDestList_count = 0;
@@ -573,42 +575,51 @@ void ca_repeater ()
 
     if ( int sockerrno = makeSocket ( AF_INET, port, true, & sock4 ) ) {
         /*
-         * test for server was already started
+         * test for server was already started, IPv4 only
          */
         if ( sockerrno == SOCK_EADDRINUSE ) {
-            osiSockRelease ();
+            epicsSocketDestroy(sock4);
+            sock4 = INVALID_SOCKET;
+#ifdef AF_INET6
+            debugPrintf ( ( "CA Repeater: a repeater is already running for IPv4\n" ) );
+#else
             debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
-            delete [] pBuf;
-            return;
+#endif
+        } else {
+          char sockErrBuf[64];
+          epicsSocketConvertErrorToString (sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
+          fprintf ( stderr, "%s: Unable to create repeater sock4 because \"%s\" - fatal\n",
+                    __FILE__, sockErrBuf );
         }
-        char sockErrBuf[64];
-        epicsSocketConvertErrorToString (
-            sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
-        fprintf ( stderr, "%s: Unable to create repeater sock4 because \"%s\" - fatal\n",
-            __FILE__, sockErrBuf );
-        osiSockRelease ();
-        delete [] pBuf;
-        return;
     }
 #ifdef AF_INET6
     /* Create a socket for registrations via [::1] */
-    if ( int sockerrno = makeSocket ( AF_INET6, PORT_ANY, true, & sock6 ) ) {
-      char sockErrBuf[64];
-      epicsSocketConvertErrorToString ( sockErrBuf,
-                                        sizeof ( sockErrBuf ),
-                                        sockerrno );
-      fprintf ( stderr, "%s: Unable to create sock6 because \"%s\" - fatal\n",
-                __FILE__, sockErrBuf );
-      return;
-    } else {
-        osiSockAddr46 addr46;
-        memset ( (char *) &addr46, 0 , sizeof (addr46) );
-        addr46.in6.sin6_family = AF_INET6;
-        addr46.in6.sin6_addr = in6addr_loopback;
-        addr46.in6.sin6_port = htons ( port );
-        (void)epicsSocket46Bind(sock6, &addr46.sa, (osiSocklen_t)sizeof(addr46));
-    }
+    if ( int sockerrno = makeSocket ( AF_INET6, port, true, & sock6 ) ) {
+        /*
+         * test for server was already started, IPv4 only
+         */
+        if ( sockerrno == SOCK_EADDRINUSE ) {
+            epicsSocketDestroy(sock6);
+            sock6 = INVALID_SOCKET;
+            debugPrintf ( ( "CA Repeater: a repeater is already running for IPv6\n" ) );
+        } else {
+          char sockErrBuf[64];
+          epicsSocketConvertErrorToString (sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
+          fprintf ( stderr, "%s: Unable to create repeater sock6 because \"%s\" - fatal\n",
+                    __FILE__, sockErrBuf );
+        }
 #endif
+    }
+    if (sock4 == INVALID_SOCKET) {
+#ifdef AF_INET6
+      if (sock6 == INVALID_SOCKET)
+#endif
+        {
+          delete [] pBuf;
+          osiSockRelease ();
+          return;
+        }
+    }
 
     {
         ELLLIST casBeaconAddrList = ELLLIST_INIT;
@@ -638,9 +649,11 @@ void ca_repeater ()
         pPollFds[numPollFds].fd = sock6;
         pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
         numPollFds++;
-        pPollFds[numPollFds].fd = sock4;
-        pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
-        numPollFds++;
+        if (sock4 != INVALID_SOCKET) {
+          pPollFds[numPollFds].fd = sock4;
+          pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
+          numPollFds++;
+        }
 #endif
         osiSockAddrNode *pNode;
         for(pNode = (osiSockAddrNode*)ellFirst(&casBeaconAddrList);
@@ -683,19 +696,19 @@ void ca_repeater ()
 #endif
 #ifdef AF_INET6
             if (pNode->addr.sa.sa_family == AF_INET6) {
-                osiSockAddr46 addr46 = pNode->addr; // struct copy
-                unsigned int interfaceIndex = (unsigned int)addr46.in6.sin6_scope_id;
+                osiSockAddr46 addr6 = pNode->addr; // struct copy
+                unsigned int interfaceIndex = (unsigned int)addr6.in6.sin6_scope_id;
                 /*
                  * The %en0 will become the scope id, which IPV6_MULTICAST_IF needs
                  * BSD/non-Linux system need a own socket per scope_id
                  */
-                SOCKET socket46 = epicsSocket46Create ( AF_INET6, SOCK_DGRAM, IPPROTO_UDP );
-                pPollFds[numPollFds].fd = socket46;
+                SOCKET socket6 = epicsSocket46Create ( AF_INET6, SOCK_DGRAM, IPPROTO_UDP );
+                pPollFds[numPollFds].fd = socket6;
                 pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
                 numPollFds++;
-                epicsSocket46optIPv6MultiCast(socket46, interfaceIndex);
-                addr46.in6.sin6_port = htons ( port );
-                (void)epicsSocket46Bind(socket46, &addr46.sa, (osiSocklen_t)sizeof(addr46));
+                epicsSocket46optIPv6MultiCast(socket6, interfaceIndex);
+                addr6.in6.sin6_port = htons ( port );
+                (void)epicsSocket46Bind(socket6, &addr6.sa, (osiSocklen_t)sizeof(addr6));
             }
 #endif
         }
@@ -706,6 +719,15 @@ void ca_repeater ()
     epicsBaseDebugLog("NET repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
                    pPollFds, searchDestList_count, numPollFds);
 #endif
+    {
+      unsigned i;
+      epicsBaseDebugLog("NET repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
+                        pPollFds, searchDestList_count, numPollFds);
+      for (i=0; i < numPollFds; i++) {
+        epicsBaseDebugLog("NET repeater starting loop pPollFds[%u]=%ld\n",
+                          i, (long)pPollFds[i].fd);
+      }
+    }
 
     while ( true ) {
         SOCKET sock = sock4;

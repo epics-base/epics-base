@@ -615,7 +615,7 @@ void tcpRecvThread::connect (
             epicsGuardRelease < epicsMutex > unguard ( guard );
             osiSockAddr46 addr46 = this->iiu.address ();
             status = epicsSocket46Connect ( this->iiu.sock,
-                                            epicsSocket46GetDefaultAddressFamily(),
+                                            addr46.sa.sa_family,
                                             &addr46.sa, sizeof(addr46) );
         }
 
@@ -718,7 +718,7 @@ tcpiiu::tcpiiu (
     if(!pCurData)
         throw std::bad_alloc();
 
-    this->sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(),
+    this->sock = epicsSocket46Create ( addrIn.sa.sa_family,
                                        SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
         freeListFree(this->cacRef.tcpSmallRecvBufFreeList, this->pCurData);

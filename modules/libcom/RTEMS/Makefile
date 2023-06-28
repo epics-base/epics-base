@@ -32,6 +32,10 @@ ifeq ($(RTEMS_BSP), mvme5500)
 rtems_init_CPPFLAGS += -DHAS_EDATA
 endif
 
+ifeq ($(RTEMS_BSP), beatnik)
+rtems_init_CPPFLAGS += -DHAS_EDATA
+endif
+
 rtemsCom_SRCS += rtems_init.c
 rtemsCom_SRCS += rtems_config.c
 rtemsCom_SRCS += rtems_netconfig.c

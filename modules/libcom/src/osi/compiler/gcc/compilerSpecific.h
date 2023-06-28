@@ -21,10 +21,6 @@
 #   error compiler/gcc/compilerSpecific.h is only for use with the gnu compiler
 #endif
 
-#ifdef __clang__
-#   error compiler/gcc/compilerSpecific.h is not for use with the clang compiler
-#endif
-
 #define EPICS_ALWAYS_INLINE __inline__ __attribute__((always_inline))
 
 /* Expands to a 'const char*' which describes the name of the current function scope */

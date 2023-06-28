@@ -153,9 +153,8 @@ static
 SOCKET* rsrv_grab_tcp(unsigned short *port)
 {
     SOCKET *socks;
-    osiSockAddr46 scratch46;
     unsigned i;
-
+    unsigned short sin_port = *port;
     {
         ELLNODE *cur, *next;
         unsigned maxi = ellCount(&casIntfAddrList);
@@ -177,10 +176,6 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
     for(i=0; i<ellCount(&casIntfAddrList); i++)
         socks[i] = INVALID_SOCKET;
 
-    /* start with preferred port */
-    memset(&scratch46, 0, sizeof(scratch46));
-    scratch46.ia.sin_family = epicsSocket46GetDefaultAddressFamily();
-    scratch46.ia.sin_port = htons(*port);
     /*
      * the port handling below assumes that the port is on the same
      * location for both IPv4 and IPv6
@@ -210,8 +205,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                 epicsBaseDebugLog("NET rsrv_grab_tcp  ifaceAddr='%s'\n", buf);
             }
 #endif
-            family = ifaceAddr.sa.sa_family; // scratch46.ia.sin_family,
-            scratch46.ia.sin_family = family;
+            family = ifaceAddr.sa.sa_family;
             tcpsock = socks[i] = epicsSocket46Create (family, SOCK_STREAM, 0);
             if(tcpsock==INVALID_SOCKET)
                 cantProceed("rsrv ran out of sockets during initialization");
@@ -235,8 +229,8 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
 #endif
             }
 #endif
-            if(epicsSocket46Bind(tcpsock, &scratch46.sa, sizeof(scratch46))==0 && listen(tcpsock, 20)==0) {
-                if(scratch46.ia.sin_port==0) {
+            if(epicsSocket46BindLocalPort(tcpsock, family, sin_port)==0 && listen(tcpsock, 20)==0) {
+                if(sin_port==0) {
                     /* use first socket to pick a random port */
                     osiSocklen_t alen = sizeof(ifaceAddr);
                     assert(i==0);
@@ -250,8 +244,8 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                         ok = 0;
                         break;
                     }
-                    scratch46.ia.sin_port = ifaceAddr.ia.sin_port;
-                    assert(scratch46.ia.sin_port!=0);
+                    sin_port = ifaceAddr.ia.sin_port;
+                    assert(sin_port!=0);
                 }
             } else {
                 int errcode = SOCKERRNO;
@@ -259,10 +253,11 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                 if(errcode==SOCK_EADDRNOTAVAIL) {
                     /* this is not a bind()able address. */
                     int j;
+                    /*
                     char name[64];
                     sockAddrToDottedIP(&scratch46.sa, name, sizeof(name));
                     printf("Skipping %s which is not an interface address\n", name);
-
+                    */
                     for(j=0; j<=i; j++) {
                         epicsSocketDestroy(socks[j]);
                         socks[j] = INVALID_SOCKET;
@@ -278,13 +273,15 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                  */
                 if (errcode != SOCK_EADDRINUSE &&
                     errcode != SOCK_EACCES) {
-                    char name[64];
                     char sockErrBuf[64];
+                  /*
+                    char name[64];
+                    sockAddrToDottedIP(&scratch46.sa, name, sizeof(name));
+                  */
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
-                    sockAddrToDottedIP(&scratch46.sa, name, sizeof(name));
-                    cantProceed( "CAS: Socket bind %s error: %s\n",
-                        name, sockErrBuf );
+                    cantProceed( "CAS: Socket bind error: %s\n",
+                        sockErrBuf );
                 }
                 ok = 0;
                 break;
@@ -292,8 +289,8 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
         }
 
         if (ok) {
-            assert(scratch46.ia.sin_port!=0);
-            *port = ntohs(scratch46.ia.sin_port);
+            assert(sin_port!=0);
+            *port = sin_port;
 
             break;
         } else {
@@ -306,7 +303,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                 }
             }
 
-            scratch46.ia.sin_port=0; /* next iteration starts with a random port */
+            sin_port=0; /* next iteration starts with a random port */
         }
     }
 
@@ -860,7 +857,7 @@ void rsrv_init (void)
             }
 #endif
 
-#if !(defined(_WIN32) || defined(__CYGWIN__))
+#if !(defined(_WIN32) || defined(__CYGWIN__) || defined(freebsd))
             /* An oddness of BSD sockets (not winsock) is that binding to
              * INADDR_ANY will receive unicast and broadcast, but binding to
              * a specific interface address receives only unicast.  The trick
@@ -878,7 +875,7 @@ void rsrv_init (void)
                     sockAddrToDottedIP(&conf->udpAddr46.sa, buf, sizeof(buf));
                     epicsBaseDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
                                       buf);
-            }
+                }
 #endif
                 osiSockBroadcastMulticastAddresses46 (&bcastList,
                                                       conf->udp, &conf->udpAddr46); // match addr
@@ -926,7 +923,7 @@ void rsrv_init (void)
 
             epicsEventMustWait(casudp_startStopEvent);
 
-#if !(defined(_WIN32) || defined(__CYGWIN__))
+#if !(defined(_WIN32) || defined(__CYGWIN__) || defined(freebsd))
             if(conf->udpbcast != INVALID_SOCKET) {
                 conf->startbcast = 1;
 

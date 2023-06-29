@@ -36,7 +36,7 @@ ifeq ($(RTEMS_BSP), beatnik)
 rtems_init_CPPFLAGS += -DHAS_EDATA
 endif
 
-ifeq ($(RTEMS_BSP), i386)
+ifeq ($(RTEMS_BSP), pc686)
 rtems_init_CPPFLAGS += -DHAS_EDATA
 endif
 

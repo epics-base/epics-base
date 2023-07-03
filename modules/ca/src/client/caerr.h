@@ -18,7 +18,13 @@
  *  Author: Jeffrey O. Hill
  *
  */
-
+/**
+ * \file caerr.h
+ * \brief CA error handing.
+ * \author Jeffrey O. Hill
+ * 
+ * The header file defines error codes for various types of CA error.
+ */
 
 #ifndef INC_caerr_H
 #define INC_caerr_H
@@ -141,6 +147,7 @@
 extern "C" {
 #endif
 
+/** \brief return a message character string corresponding to a user specified CA status code. */
 LIBCA_API const char * epicsStdCall ca_message(long ca_status);
 
 LIBCA_API extern const char * ca_message_text [];

@@ -814,7 +814,8 @@ void epicsStdCall caRepeaterRegistrationMessageIPv6 (
  *
  *  072392 - problem solved by using SO_REUSEADDR
  */
-void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
+
+void epicsStdCall caStartRepeaterIfNotInstalled46 ( int family, unsigned repeaterPort )
 {
     bool installed = false;
     int status;
@@ -825,18 +826,18 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         return;
     }
 
-    tmpSock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM, IPPROTO_UDP );
+    tmpSock = epicsSocket46Create ( family, SOCK_DGRAM, IPPROTO_UDP );
     if ( tmpSock != INVALID_SOCKET ) {
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
-        status = epicsSocket46BindLocalPort ( tmpSock,
-                                              epicsSocket46GetDefaultAddressFamily(),
-                                              port );
+        status = epicsSocket46BindLocalPort ( tmpSock, family, port );
         if ( status < 0 ) {
             if ( SOCKERRNO == SOCK_EADDRINUSE ) {
                 installed = true;
             }
             else {
-                fprintf ( stderr, "caStartRepeaterIfNotInstalled () : bind failed\n" );
+                fprintf ( stderr, "caStartRepeaterIfNotInstalled () : bind (%s) failed \n",
+                          family == AF_INET ? "IPv4" : "IPv6"
+                        );
             }
         }
     }
@@ -870,6 +871,14 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         }
     }
 }
+void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
+{
+    caStartRepeaterIfNotInstalled46 ( AF_INET, repeaterPort );
+#ifdef AF_INET6
+    caStartRepeaterIfNotInstalled46 ( AF_INET6, repeaterPort );
+#endif
+}
+
 
 bool udpiiu::badUDPRespAction (
     const caHdr &msg, const osiSockAddr46 &netAddr, const epicsTime &currentTime )

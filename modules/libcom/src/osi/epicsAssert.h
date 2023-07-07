@@ -78,14 +78,22 @@ LIBCOM_API void epicsAssert (const char *pFile, const unsigned line,
 #if __cplusplus>=201103L
 #define STATIC_ASSERT(expr) static_assert(expr, #expr)
 #else
-#define STATIC_JOIN(x, y) STATIC_JOIN2(x, y)
-#define STATIC_JOIN2(x, y) x ## y
+
+#define STATIC_JOIN(x, y, z, w) STATIC_JOIN4(x, y, z, w)
+#define STATIC_JOIN4(x, y, z, w) x ## y ## z ## w
+
+/* Compilers that do not support __COUNTER__ (e.g. GCC 4.1) will not be able to use unique static assert typedefs */
+#ifdef __COUNTER__
+#   define STATIC_ASSERT_MSG(l) STATIC_JOIN(static_assert_, __COUNTER__, _failed_at_line_, l)
+#else
+#   define STATIC_ASSERT_MSG(l) STATIC_JOIN(static_assert_, 0, _failed_at_line_, l)
+#endif
 
 /**\brief Declare a condition that should be true at compile-time.
  * \param expr A C/C++ const-expression that should evaluate to True.
  */
 #define STATIC_ASSERT(expr) \
-    typedef int STATIC_JOIN(static_assert_failed_at_line_, __LINE__) \
+    typedef int STATIC_ASSERT_MSG(__LINE__) \
     [ (expr) ? 1 : -1 ] EPICS_UNUSED
 #endif
 

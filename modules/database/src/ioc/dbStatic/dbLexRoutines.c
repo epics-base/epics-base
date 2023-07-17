@@ -856,7 +856,9 @@ static void dbDriver(char *name)
     if(!pgphentry) {
         yyerrorAbort("gphAdd failed");
     }
-    pgphentry->userPvt = pdrvSup;
+    else {
+        pgphentry->userPvt = pdrvSup;
+    }
     ellAdd(&savedPdbbase->drvList,&pdrvSup->node);
 }
 
@@ -876,7 +878,9 @@ static void dbLinkType(char *name, char *jlif_name)
     if (!pgphentry) {
         yyerrorAbort("gphAdd failed");
     }
-    pgphentry->userPvt = pLinkSup;
+    else {
+        pgphentry->userPvt = pLinkSup;
+    }
     ellAdd(&savedPdbbase->linkList, &pLinkSup->node);
 }
 
@@ -899,7 +903,9 @@ static void dbRegistrar(char *name)
     if(!pgphentry) {
         yyerrorAbort("gphAdd failed");
     }
-    pgphentry->userPvt = ptext;
+    else {
+        pgphentry->userPvt = ptext;
+    }
     ellAdd(&savedPdbbase->registrarList,&ptext->node);
 }
 
@@ -922,7 +928,9 @@ static void dbFunction(char *name)
     if(!pgphentry) {
        yyerrorAbort("gphAdd failed");
     }
-    pgphentry->userPvt = ptext;
+    else {
+        pgphentry->userPvt = ptext;
+    }
     ellAdd(&savedPdbbase->functionList,&ptext->node);
 }
 
@@ -946,7 +954,9 @@ static void dbVariable(char *name, char *type)
     if(!pgphentry) {
         yyerrorAbort("gphAdd failed");
     }
-    pgphentry->userPvt = pvar;
+    else {
+        pgphentry->userPvt = pvar;
+    }
     ellAdd(&savedPdbbase->variableList,&pvar->node);
 }
 

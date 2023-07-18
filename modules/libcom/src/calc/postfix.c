@@ -335,6 +335,10 @@ LIBCOM_API long
             break;
 
         case SEPERATOR:
+            if (pstacktop == stack) {
+                *perror = CALC_ERR_BAD_SEPERATOR;
+                goto bad;
+            }
             /* Move operators to the output until open paren */
             while (pstacktop->name[0] != '(') {
                 if (pstacktop <= stack+1) {
@@ -353,6 +357,10 @@ LIBCOM_API long
             break;
 
         case CLOSE_PAREN:
+            if (pstacktop == stack) {
+                *perror = CALC_ERR_PAREN_NOT_OPEN;
+                goto bad;
+            }
             /* Move operators to the output until matching paren */
             while (pstacktop->name[0] != '(') {
                 if (pstacktop <= stack+1) {

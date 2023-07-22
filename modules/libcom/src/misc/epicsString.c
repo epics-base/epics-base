@@ -231,26 +231,38 @@ int epicsStrPrintEscaped(FILE *fp, const char *s, size_t len)
 {
    int nout = 0;
 
+   if (fp == NULL)
+       return -1;
+
+   if (s == NULL || strlen(s) == 0 || len == 0)
+       return 0; // No work to do
+
    while (len--) {
        char c = *s++;
+       int rc = 0;
 
        switch (c) {
-       case '\a':  nout += fprintf(fp, "\\a");  break;
-       case '\b':  nout += fprintf(fp, "\\b");  break;
-       case '\f':  nout += fprintf(fp, "\\f");  break;
-       case '\n':  nout += fprintf(fp, "\\n");  break;
-       case '\r':  nout += fprintf(fp, "\\r");  break;
-       case '\t':  nout += fprintf(fp, "\\t");  break;
-       case '\v':  nout += fprintf(fp, "\\v");  break;
-       case '\\':  nout += fprintf(fp, "\\\\"); break;
-       case '\'':  nout += fprintf(fp, "\\'");  break;
-       case '\"':  nout += fprintf(fp, "\\\"");  break;
+       case '\a':  rc = fprintf(fp, "\\a");  break;
+       case '\b':  rc = fprintf(fp, "\\b");  break;
+       case '\f':  rc = fprintf(fp, "\\f");  break;
+       case '\n':  rc = fprintf(fp, "\\n");  break;
+       case '\r':  rc = fprintf(fp, "\\r");  break;
+       case '\t':  rc = fprintf(fp, "\\t");  break;
+       case '\v':  rc = fprintf(fp, "\\v");  break;
+       case '\\':  rc = fprintf(fp, "\\\\"); break;
+       case '\'':  rc = fprintf(fp, "\\'");  break;
+       case '\"':  rc = fprintf(fp, "\\\"");  break;
        default:
            if (isprint(0xff & (int)c))
-               nout += fprintf(fp, "%c", c);
+               rc = fprintf(fp, "%c", c);
            else
-               nout += fprintf(fp, "\\x%02x", (unsigned char)c);
+               rc = fprintf(fp, "\\x%02x", (unsigned char)c);
            break;
+       }
+       if (rc < 0) {
+           return rc;
+       } else {
+           nout += rc;
        }
    }
    return nout;

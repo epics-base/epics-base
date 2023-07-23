@@ -22,6 +22,12 @@ should also be read to understand what has changed since earlier releases:
 
 ## Changes made on the 7.0 branch since 7.0.7
 
+### Add `$EPICS_CLI_TIMEOUT`
+
+Add support for CA tools timeout from environment variable `$EPICS_CLI_TIMEOUT`
+which sets the default the default timeout for `caget` et al.
+The `-w` argument continues to take precedence.
+
 ### Fixed leak from a non-EPICS thread on WIN32
 
 On Windows targets, if a thread not created by `epicsThreadCreate*()` directly

@@ -43,6 +43,8 @@ sub HostArch {
         return "cygwin-x86"     if m/^i[3-6]86-cygwin/;
         return 'solaris-sparc'  if m/^sun4-solaris/;
         return 'solaris-x86'    if m/^i86pc-solaris/;
+        return 'freebsd-x86_64' if m/^x86_64-freebsd/;
+        return 'freebsd-x86_64' if m/^amd64-freebsd/;
 
         my ($kernel, $hostname, $release, $version, $cpu) = uname;
         if (m/^darwin/) {

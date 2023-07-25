@@ -91,20 +91,25 @@ For example these rates are all valid:
  1 second
  2 Hertz
 
-The B<PINI> field specifies record processing at initialization. If it is set
-to YES during database configuration, the record is processed once at IOC
-initialization (before the normal scan tasks are started).
+The B<PINI> field specifies record processing at initialization. It can have the
+values NO, YES, RUN, RUNNING, PAUSE, and PAUSED. If it is set to YES during
+database configuration, the record is processed once at IOC initialization
+(before the normal scan tasks are started). For the other values see
+L<menuPini.dbd|menuPini> for more details.
 
-The B<PHAS> field orders the records within a specific SCAN group. This is not
-meaningful for passive records. All records of a specified phase are processed
-before those with higher phase number. It is generally better practice to use
-linked passive records to enforce the order of processing rather than a phase
-number.
+The B<PHAS> field orders the records processed within a specific SCAN group or
+PINI processing phase. All records of a specified phase are processed before
+those with higher phase number. It is generally better practice to use linked
+passive records to enforce the order of processing rather than a phase number.
+If the PINI field is set to NO, the PHAS field is not meaningful for passive
+records.
 
-The B<EVNT> field specifies an event number. This event number is used if the
-SCAN field is set to C<Event>. All records with scan type C<Event> and the
-same EVNT value will be processed when a call to post_event for EVNT is made.
-The call to post_event is: post_event(short event_number).
+The B<EVNT> field specifies an event name or number. This event identifier is
+used if the SCAN field is set to C<Event>. All records with scan type C<Event>
+and the same EVNT value will be processed when that event is signalled by other
+software running in the IOC, either by calling C<post_event(int event)> for
+numeric events, or by calling C<postEvent()> with an event handle previously
+looked up using C<eventNameToHandle()> for named events.
 
 The B<PRIO> field specifies the scheduling priority for processing records
 with SCAN=C<I/O Event> and asynchronous record completion tasks.

@@ -139,8 +139,12 @@ bswap32(epicsUInt32 value)
 /* hton* is optimized or a builtin for most compilers
  * so use it if possible
  */
+#ifndef bswap16
 #define bswap16(v) htons(v)
+#endif
+#ifndef bswap32
 #define bswap32(v) htonl(v)
+#endif
 
 #  define be_ioread16(A)    bswap16(nat_ioread16(A))
 #  define be_ioread32(A)    bswap32(nat_ioread32(A))

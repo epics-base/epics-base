@@ -12,10 +12,13 @@
 #include <stdlib.h>
 
 // execinfo.h may not be present if uclibc is configured to omit backtrace()
-#if !defined(__UCLIBC_MAJOR__) || defined(__UCLIBC_HAS_EXECINFO__)
+// some C libraries, such as musl, don't have execinfo.h at all
+#if defined(__has_include)
+#  if __has_include(<execinfo.h>)
+#    define HAS_EXECINFO 1
+#  endif
+#elif !defined(__UCLIBC_MAJOR__) || defined(__UCLIBC_HAS_EXECINFO__)
 #  define HAS_EXECINFO 1
-#else
-#  define HAS_EXECINFO 0
 #endif
 
 #if HAS_EXECINFO

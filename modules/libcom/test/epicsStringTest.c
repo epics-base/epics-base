@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "epicsUnitTest.h"
 #include "epicsString.h"
@@ -198,10 +199,22 @@ void testStrTok(void)
 static
 void testEpicsStrPrintEscaped(void)
 {   
-    const char *filename = "testEpicsStrPrintEscaped";
+    const char *filename;
+    FILE *testFile;
+    FILE *readOnly;
+
+    #ifdef __rtems__
+        /* ensure there is a writable area */
+	    mkdir( "/tmp", S_IRWXU );
+	    filename = "/tmp/testEpicsStrPrintEscaped";
+    #else
+	    filename = "testEpicsStrPrintEscaped";
+    #endif
+
+
     // Avoid printing to stdout by redirecting everything to a file
-    FILE *testFile = fopen(filename, "a");
-    FILE *readOnly = fopen(filename, "r");
+    testFile = fopen(filename, "a");
+    readOnly = fopen(filename, "r");
 
     testDiag("testEpicsStrPrintEscaped()");
 

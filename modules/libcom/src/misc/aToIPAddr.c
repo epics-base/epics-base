@@ -250,12 +250,17 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         int gai;
         epicsSnprintf(portAscii, sizeof(portAscii), "%u", defaultPort);
         memset(pAddr46, 0, sizeof(*pAddr46));
-        strncpy(hostName, pAddrString, sizeof(hostName) - 1);
+        if (pAddrString[1] == '%') {
+          /* Special case: shortish '[%eth0]' needs to become 'fe80::%eth0' */
+          epicsSnprintf(hostName, sizeof(hostName), "fe80::%s", pAddrString+1);
+        } else {
+          /* Copy the hostname, do not copy the '[' */
+          strncpy(hostName, pAddrString+1, sizeof(hostName) - 1);
+        }
         hostName[sizeof(hostName) - 1] = '\0';
         char *pClosingBracket = strchr(hostName, ']');
         if (pClosingBracket) {
             *pClosingBracket = '\0';
-            memmove(hostName, &hostName[1], sizeof(hostName) - 1);
             /* now pClosingBracket may pint to a ':', if any */
             if (*pClosingBracket == ':') {
                 pPort = pClosingBracket + 1;

@@ -677,6 +677,23 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
     return 1;
 }
 
+LIBCOM_API int epicsSocket46addrIsLinkLocal(const osiSockAddr46 *pAddr46)
+{
+#ifdef AF_INET6
+    return (( pAddr46->sa.sa_family == AF_INET6 ) &&
+            (pAddr46->in6.sin6_addr.s6_addr[0] == 0xfe) &&
+            (pAddr46->in6.sin6_addr.s6_addr[1] == 0x80) &&
+            (pAddr46->in6.sin6_addr.s6_addr[2] == 0) &&
+            (pAddr46->in6.sin6_addr.s6_addr[3] == 0) &&
+            (pAddr46->in6.sin6_addr.s6_addr[4] == 0) &&
+            (pAddr46->in6.sin6_addr.s6_addr[5] == 0) &&
+            (pAddr46->in6.sin6_addr.s6_addr[6] == 0) &&
+            (pAddr46->in6.sin6_addr.s6_addr[7] == 0));
+#else
+    return 0;
+#endif
+}
+
 /*
  * Support for poll(), which is not available on every system
  * Implement a wrapper that uses select()

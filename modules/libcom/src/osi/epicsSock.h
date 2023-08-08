@@ -185,6 +185,9 @@ LIBCOM_API int epicsSocket46addr6toMulticastOKFL(const char* filename, int linen
                                                  osiSockAddr46 *pAddrMulticast);
 #define epicsSocket46addr6toMulticastOK(a,b) epicsSocket46addr6toMulticastOKFL(__FILE__, __LINE__,a,b)
 
+
+LIBCOM_API int epicsSocket46addrIsLinkLocal(const osiSockAddr46 *pAddr46);
+
 #ifdef __cplusplus
 }
 #endif

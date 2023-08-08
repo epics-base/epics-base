@@ -66,7 +66,8 @@ static int matchMatchAddress(const osiSockAddr46 *pAddrToMatch46,
         if ( !memcmp(&pAddrToMatch46->in6.sin6_addr, &in6addr_any, sizeof(in6addr_any)) ) {
             /*
              * in6addr_any will match all interfaces/addresses
-             * TODO, may be:  match scope_id */
+             * link-local-addresses do match, if they share the same scope_id
+             */
             match_ret = 1;
         } else {
             const struct sockaddr_in6 *pInetAddr6 = &pAddrToMatch46->in6;
@@ -75,6 +76,13 @@ static int matchMatchAddress(const osiSockAddr46 *pAddrToMatch46,
                         sizeof(pInetAddr6->sin6_addr) ) ) {
                 match_ret = 1;
             } else {
+                if (epicsSocket46addrIsLinkLocal(pAddr46) &&
+                    epicsSocket46addrIsLinkLocal(pAddrToMatch46) &&
+                    pAddr46->in6.sin6_scope_id == pAddrToMatch46->in6.sin6_scope_id) {
+                    match_ret = 1;
+                }
+            }
+            if (!match_ret) {
                 ifDepenDebugPrintf ( ("%s %s:%d: '%s did not match '%s'\n",
                                       fname, __FILE__, __LINE__,
                                       buf1, buf2 ) );

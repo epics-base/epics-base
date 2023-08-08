@@ -36,7 +36,7 @@ The desired output needs to be in engineering units.
 
 The first field that determines where the desired output originates is the
 output mode select (OMSL) field, which can have two possible values:
-C<losed_loop> or C<supervisory>. If C<supervisory> is specified, the value
+C<closed_loop> or C<supervisory>. If C<supervisory> is specified, the value
 in the VAL field can be set externally via dbPuts at run-time. If
 C<closed_loop> is specified, the VAL field's value is obtained from the
 address specified in the Desired Output Link (DOL) field which can be a

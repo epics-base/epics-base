@@ -578,7 +578,6 @@ void ca_repeater ()
          * test for server was already started, IPv4 only
          */
         if ( sockerrno == SOCK_EADDRINUSE ) {
-            epicsSocketDestroy(sock4);
             sock4 = INVALID_SOCKET;
 #ifdef AF_INET6
             debugPrintf ( ( "CA Repeater: a repeater is already running for IPv4\n" ) );
@@ -599,7 +598,6 @@ void ca_repeater ()
          * test for server was already started, IPv4 only
          */
         if ( sockerrno == SOCK_EADDRINUSE ) {
-            epicsSocketDestroy(sock6);
             sock6 = INVALID_SOCKET;
             debugPrintf ( ( "CA Repeater: a repeater is already running for IPv6\n" ) );
         } else {
@@ -645,10 +643,12 @@ void ca_repeater ()
                                                        sizeof(struct epicsSockPollfd),
                                                        "ca_repeater");
 
-        /* this.socket must be added to the polling list */
-        pPollFds[numPollFds].fd = sock6;
-        pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
-        numPollFds++;
+        /* this sockets must be added to the polling list */
+        if (sock6 != INVALID_SOCKET) {
+          pPollFds[numPollFds].fd = sock6;
+          pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
+          numPollFds++;
+        }
         if (sock4 != INVALID_SOCKET) {
           pPollFds[numPollFds].fd = sock4;
           pPollFds[numPollFds].events = EPICSSOCK_POLLIN;

@@ -59,8 +59,12 @@ static void epicsSockIPv4toIPv6(const struct sockaddr *pAddrInput,
 #ifdef NETDEBUG
 LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL ( 
     const char *filename, int lineno,
+#else
+LIBCOM_API SOCKET epicsStdCall epicsSocket46Create (
+#endif
     int domain, int type, int protocol )
 {
+#ifdef NETDEBUG
     char *domain_family_str = "";
     char *type_str = "";
     if (domain == AF_INET) {
@@ -75,13 +79,34 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
     } else if (type == SOCK_STREAM) {
         type_str = "STREAM";
     }
+#endif
     SOCKET sock = epicsSocketCreate( domain, type, protocol );
+#ifdef AF_INET6
+    if ((sock != INVALID_SOCKET) && (domain == AF_INET6)) {
+        int ipv6_only = 1;
+        int status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                                (char*)&ipv6_only, sizeof(ipv6_only));
+#ifdef NETDEBUG
+        if ( status )
+        {
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsBaseDebugLog("NET setsockopt(%d) (IPPROTO_IPV6, IPV6_V6ONLY) status=%d %s\n",
+                              (int)sock, status, status < 0 ? sockErrBuf : "");
+        }
+#else
+        (void)status;
+#endif
+    }
+#endif
+#ifdef NETDEBUG
     epicsBaseDebugLogFL("NET epicsSocketCreate(%s:%d) (%s %s) socket=%d\n",
                         filename, lineno,
                         domain_family_str, type_str, (int)sock);
+#endif
     return sock;
 }
-#endif
+
 
 /*
  * Wrapper around bind()

@@ -49,7 +49,8 @@ LIBCOM_API SOCKET epicsStdCall epicsSocket46CreateFL (
     int domain, int type, int protocol );
 #define epicsSocket46Create(a,b,c) epicsSocket46CreateFL(__FILE__, __LINE__,a,b,c)
 #else
-#define epicsSocket46Create(a,b,c) epicsSocketCreate(a,b,c)
+LIBCOM_API SOCKET epicsStdCall epicsSocket46Create (
+    int domain, int type, int protocol );
 #endif
 
 #ifdef NETDEBUG

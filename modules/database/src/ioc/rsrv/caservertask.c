@@ -212,23 +212,6 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
 
             epicsSocketEnableAddressReuseDuringTimeWaitState ( tcpsock );
 
-#ifdef AF_INET6
-            if (family == AF_INET6) {
-                int ipv6_only = 0;
-                int status = setsockopt(tcpsock, IPPROTO_IPV6, IPV6_V6ONLY,
-                                        (char*)&ipv6_only, sizeof(ipv6_only));
-#ifdef NETDEBUG
-                if ( status )
-                {
-                    char sockErrBuf[64];
-                    epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                    epicsBaseDebugLog("NET setsockopt(%d) (IPPROTO_IPV6, IPV6_V6ONLY) status=%d %s\n",
-                                      (int)tcpsock,
-                                      status, status < 0 ? sockErrBuf : "");
-                }
-#endif
-            }
-#endif
             if(epicsSocket46BindLocalPort(tcpsock, family, sin_port)==0 && listen(tcpsock, 20)==0) {
                 if(sin_port==0) {
                     /* use first socket to pick a random port */
@@ -822,23 +805,6 @@ void rsrv_init (void)
             if(conf->udp==INVALID_SOCKET)
                 cantProceed("rsrv_init ran out of udp sockets");
 
-#ifdef AF_INET6
-            if (family == AF_INET6) {
-                int ipv6_only = 0;
-                int status = setsockopt(conf->udp, IPPROTO_IPV6, IPV6_V6ONLY,
-                                        (char*)&ipv6_only, sizeof(ipv6_only));
-#ifdef NETDEBUG
-                if ( status )
-                {
-                    char sockErrBuf[64];
-                    epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                    epicsBaseDebugLog("NET setsockopt(%d) (IPPROTO_IPV6, IPV6_V6ONLY) status=%d %s\n",
-                                      (int)conf->udp,
-                                      status, status < 0 ? sockErrBuf : "");
-                }
-#endif
-            }
-#endif
             epicsSocketEnableAddressUseForDatagramFanout ( conf->udp );
 
             if (epicsSocket46BindLocalPort(conf->udp, family, ca_server_port))

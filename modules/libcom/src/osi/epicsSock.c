@@ -24,32 +24,6 @@
 extern "C" {
 #endif
 
-static void epicsSockIPv4toIPv6(const struct sockaddr *pAddrInput,
-                                osiSockAddr46 *pAddr46Output)
-{
-#ifdef AF_INET6
-    if (pAddrInput->sa_family == AF_INET) {
-        const struct sockaddr_in * paddrInput4 = (const struct sockaddr_in *) pAddrInput;
-        struct sockaddr_in6 *pOut6 = (struct sockaddr_in6 *)pAddr46Output;
-
-        unsigned int ipv4addr = htonl ( paddrInput4->sin_addr.s_addr );
-        /* RFC3493: IPv4-mapped IPv6 address from RFC 2373 */
-        memset(pAddr46Output, 0, sizeof(*pAddr46Output));
-        pOut6->sin6_addr.s6_addr[10] = 0xFF;
-        pOut6->sin6_addr.s6_addr[11] = 0xFF;
-        pOut6->sin6_addr.s6_addr[12] = (ipv4addr >> 24) & 0xFF;
-        pOut6->sin6_addr.s6_addr[13] = (ipv4addr >> 16) & 0xFF;
-        pOut6->sin6_addr.s6_addr[14] = (ipv4addr >>  8) & 0xFF;
-        pOut6->sin6_addr.s6_addr[15] = ipv4addr & 0xFF;
-        pOut6->sin6_family = AF_INET6;
-        pOut6->sin6_port = paddrInput4->sin_port;
-    }
-    else
-#endif
-    {
-        memcpy(pAddr46Output, pAddrInput, sizeof(*pAddr46Output));
-    }
-}
 
 /*
  * this version sets the file control flags so that
@@ -195,38 +169,23 @@ LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lin
                                                    const struct sockaddr *pAddr,
                                                    osiSocklen_t addrlen)
 {
-    osiSockAddr46 addr46Output;
     int status;
-    memcpy(&addr46Output, pAddr, sizeof(addr46Output));
-#ifdef AF_INET6
-    /*  If needed (socket is created with AF_INET6),
-        convert an IPv4 address into a IPv4 mapped address */
-    if (sockets_family == AF_INET6 && pAddr->sa_family == AF_INET) {
-        epicsSockIPv4toIPv6(pAddr, &addr46Output);
+    if (pAddr->sa_family == AF_INET) {
+        addrlen = sizeof(struct sockaddr_in);
     }
-    if (addr46Output.sa.sa_family == AF_INET6) {
-        addrlen = sizeof(addr46Output.in6);
-    }
-#endif
-    if (addr46Output.sa.sa_family == AF_INET) {
-        addrlen = sizeof(addr46Output.ia);
-    }
-    status = connect(sock, &addr46Output.sa, addrlen);
+    status = connect(sock, pAddr, addrlen);
 
 #ifdef NETDEBUG
     {
         char bufIn[64];
-        char bufOut[64];
         char sockErrBuf[64];
         int save_errno = errno;
         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
         sockAddrToDottedIP(pAddr, bufIn, sizeof(bufIn));
-        sockAddrToDottedIP(&addr46Output.sa, bufOut, sizeof(bufOut));
-        epicsBaseDebugLogFL("NET %s:%d: connect(%d) address='%s' (%s) status=%d %s\n",
+        epicsBaseDebugLogFL("NET %s:%d: connect(%d) address='%s' status=%d %s\n",
                             filename, lineno,
                             (int)sock,
                             bufIn,
-                            pAddr->sa_family != addr46Output.sa.sa_family ? bufOut : "",
                             status, status < 0 ? sockErrBuf : "");
         errno = save_errno;
     }

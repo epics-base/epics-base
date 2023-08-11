@@ -595,7 +595,7 @@ void ca_repeater ()
     /* Create a socket for registrations via [::1] */
     if ( int sockerrno = makeSocket ( AF_INET6, port, true, & sock6 ) ) {
         /*
-         * test for server was already started, IPv4 only
+         * test for server was already started, IPv6 only
          */
         if ( sockerrno == SOCK_EADDRINUSE ) {
             sock6 = INVALID_SOCKET;

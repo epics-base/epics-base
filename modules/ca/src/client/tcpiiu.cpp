@@ -615,7 +615,6 @@ void tcpRecvThread::connect (
             epicsGuardRelease < epicsMutex > unguard ( guard );
             osiSockAddr46 addr46 = this->iiu.address ();
             status = epicsSocket46Connect ( this->iiu.sock,
-                                            addr46.sa.sa_family,
                                             &addr46.sa, sizeof(addr46) );
         }
 

@@ -165,7 +165,6 @@ LIBCOM_API int epicsStdCall epicsSocket46BindLocalPortFL(const char* filename, i
  */
 LIBCOM_API int epicsStdCall epicsSocket46ConnectFL(const char *filename, int lineno,
                                                    SOCKET sock,
-                                                   int sockets_family,
                                                    const struct sockaddr *pAddr,
                                                    osiSocklen_t addrlen)
 {

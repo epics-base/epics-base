@@ -349,6 +349,7 @@ udpiiu::udpiiu (
 #ifdef AF_INET6
     unsigned searchDestList_count = (unsigned)dest.count;
     unsigned numSocketsToPoll = searchDestList_count;
+    unsigned count = 0;
     if (this->sock4 != INVALID_SOCKET) numSocketsToPoll++;
     if (this->sock6 != INVALID_SOCKET) numSocketsToPoll++;
     pPollFds = (epicsSockPollfd*)callocMustSucceed(numSocketsToPoll,
@@ -374,17 +375,20 @@ udpiiu::udpiiu (
       {
           char buf[64];
           sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
-          epicsBaseDebugLog("NET udpiiu::udpiiu  address='%s'\n", buf);
+          epicsBaseDebugLog("NET udpiiu::udpiiu address[%u]='%s'\n",
+                            count++, buf);
       }
+#else
+      void(count);
 #endif
 #ifdef AF_INET6
       if (pNode->addr.sa.sa_family == AF_INET6) {
           unsigned int interfaceIndex = (unsigned int)pNode->addr.in6.sin6_scope_id;
           /*
-           * The user must specify the interface like this:
-           * export EPICS_CA_ADDR_LIST='[fe80::3958:418:65b8:230c%en0]'
+           * The user may specify the interface like this:
+           * export EPICS_CA_ADDR_LIST='[%en0]'
            * The %en0 will become the scope id, which IPV6_MULTICAST_IF needs
-           * BSD/non-Linux system need a own socket per scope_id
+           * We need an own socket per scope_id (at least for BSD)
            */
           socket46 = epicsSocket46Create ( AF_INET6, SOCK_DGRAM, IPPROTO_UDP );
           pPollFds[numPollFds].fd = socket46;

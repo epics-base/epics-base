@@ -76,17 +76,19 @@ static int matchMatchAddress(const osiSockAddr46 *pAddrToMatch46,
                         sizeof(pInetAddr6->sin6_addr) ) ) {
                 match_ret = 1;
             } else {
-                if (epicsSocket46addrIsLinkLocal(pAddr46) &&
-                    epicsSocket46addrIsLinkLocal(pAddrToMatch46) &&
+                if (epicsSocket46in6AddrIsLinkLocal(&pAddr46->in6) &&
                     pAddr46->in6.sin6_scope_id == pAddrToMatch46->in6.sin6_scope_id) {
-                    match_ret = 1;
+                    if (epicsSocket46in6AddrIsLinkLocal(&pAddrToMatch46->in6))
+                        match_ret = 1;
+                    else if (epicsSocket46in6AddrIsMulticast(&pAddrToMatch46->in6))
+                        match_ret = 1;
                 }
             }
-            if (!match_ret) {
-                ifDepenDebugPrintf ( ("%s %s:%d: '%s did not match '%s'\n",
-                                      fname, __FILE__, __LINE__,
-                                      buf1, buf2 ) );
-            }
+        }
+        if (!match_ret) {
+            ifDepenDebugPrintf ( ("%s %s:%d: '%s did not match '%s'\n",
+                                  fname, __FILE__, __LINE__,
+                                  buf1, buf2 ) );
         }
     }
 #endif
@@ -195,14 +197,7 @@ LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
                We only need to add one and only one address to the list.
                Since there is no broadcast in IPv6, the address will
                be changed to the multicast address anyway */
-            if ((pInetAddr6->sin6_addr.s6_addr[0] == 0xfe) &&
-                (pInetAddr6->sin6_addr.s6_addr[1] == 0x80) &&
-                (pInetAddr6->sin6_addr.s6_addr[2] == 0x00) &&
-                (pInetAddr6->sin6_addr.s6_addr[3] == 0x00) &&
-                (pInetAddr6->sin6_addr.s6_addr[4] == 0x00) &&
-                (pInetAddr6->sin6_addr.s6_addr[5] == 0x00) &&
-                (pInetAddr6->sin6_addr.s6_addr[6] == 0x00) &&
-                (pInetAddr6->sin6_addr.s6_addr[7] == 0x00)) {
+            if (epicsSocket46in6AddrIsLinkLocal(pInetAddr6)) {
                 ;
             } else {
                 ifDepenDebugPrintf ( ("%s %s:%d: net intf \"%s\" ignore a non link-local IPv6 address\n",

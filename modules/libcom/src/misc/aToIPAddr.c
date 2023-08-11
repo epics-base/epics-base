@@ -251,8 +251,8 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         epicsSnprintf(portAscii, sizeof(portAscii), "%u", defaultPort);
         memset(pAddr46, 0, sizeof(*pAddr46));
         if (pAddrString[1] == '%') {
-          /* Special case: shortish '[%eth0]' needs to become 'fe80::%eth0' */
-          epicsSnprintf(hostName, sizeof(hostName), "fe80::%s", pAddrString+1);
+          /* Special case: shortish '[%eth0]' needs to become 'ff02::1%eth0' */
+          epicsSnprintf(hostName, sizeof(hostName), "ff02::1%s", pAddrString+1);
         } else {
           /* Copy the hostname, do not copy the '[' */
           strncpy(hostName, pAddrString+1, sizeof(hostName) - 1);

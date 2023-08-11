@@ -61,21 +61,8 @@ Running IOCs:
 Further reading:
 Using clients:
       - Use both IPv6 and IPv4:
-      $ EPI
-     CS_CA_AUTO_ADDR_LIST=46  camonitor IOC:m1
-
-      - Use both IPv6 and IPv4:
-      $ EPICS_CA_AUTO_ADDR_LIST=46  camonitor IOC:m1
-      (In my test setup, you get this:)
-        CA.Client.Exception...............................................
-            Warning: "Identical process variable names on multiple servers"
-            Context: "Channel: "IOC:m1", Connecting to: 192.168.88.154:5064, Ignored: [fe80:0:0:0:cdc:863f:2e6e:b4c7%2]:5064"
-            Source File: ../cac.cpp line 1331
-            Current Time: Wed Jan 26 2022 16:42:14.093087755
-
-      - Use both IPv6 and IPv4:
         $ EPICS_CA_AUTO_ADDR_LIST=4  camonitor IOC:m1
-        (In my test setup, you get this:)
+        (In my test setup, you get something like this:)
           CA.Client.Exception...............................................
               Warning: "Identical process variable names on multiple servers"
               Context: "Channel: "IOC:m1", Connecting to: 192.168.88.154:5064, Ignored: [fe80:0:0:0:cdc:863f:2e6e:b4c7%2]:5064"
@@ -130,6 +117,9 @@ Using clients:
       - Restrict search to wireless, "wlp1s0"
       $ EPICS_CA_AUTO_ADDR_LIST=NO EPICS_CA_ADDR_LIST='[ff02::1%wlp1s0]' camonitor IOC:m1
           IOC:m1                         2022-01-26 16:42:10.382339 99.99 STATE MAJOR
+      - Or use the short form:
+      $ EPICS_CA_AUTO_ADDR_LIST=NO EPICS_CA_ADDR_LIST='[%wlp1s0]' camonitor IOC:m1
+          IOC:m1                         2022-01-26 16:42:10.382339 99.99 STATE MAJOR
       ####
       #
       # Use cainfo
@@ -156,8 +146,10 @@ Using clients:
       #
       # So what does this all mean ?
       #
-
-
+      # IPv6 uses multicast to find hosts on local networks.
+      # Because of that, we see the link local addresses with "fe80"
+      # and there is no mechanism to translate those addresses into hostnames
+      #
 
 
 

@@ -2,7 +2,7 @@ Case study, how the repeater works:
 (Compile EPICS base with NETDEBUG enabled in osiSock.h
 to see what is going on)
 
-killall caRepeater ; EPICS_CA_AUTO_ADDR_LIST=46 caRepeater -v
+killall caRepeater ; caRepeater -v
 
 We have 2 physical interfaces on this machine.
 "eno1" and "wlp1s0" which have IPv4 addresses:
@@ -27,8 +27,12 @@ Both join their multicast group, and receive beacons.
 (old) clients that register via IPv4 will not see any IPv6 beacons,
 fanout() will skip forwarding IPv6 beacons to IPv4 clients.
 
+TODO: Today the repeater listens always on IPv4 and Ipv6.
+Make it repeater configureable to listen only on IPv4 and/or IPv6
+
+
 ==================================
-The message format:
+Deep technical stuff: the message format:
 
 The channel access header looks like this:
     ca_uint16_t m_cmmd;         /* operation to be performed */
@@ -41,26 +45,26 @@ The channel access header looks like this:
 All fields are in network byte order.
 
 For an IPv4 beacon we see:
-m_cmmd           CA_PROTO_RSRV_IS_UP
-m_postsize       0 for IPv4
-m_dataType       CA_MINOR_PROTOCOL_REVISION
-m_count          ca_server_port
-m_cid            beaconCounter++
-m_available      IPv4 address of the server
+  m_cmmd           CA_PROTO_RSRV_IS_UP
+  m_postsize       0 for IPv4
+  m_dataType       CA_MINOR_PROTOCOL_REVISION
+  m_count          ca_server_port
+  m_cid            beaconCounter++
+  m_available      IPv4 address of the server
 
 For an IPv6 beacon a longer message is used:
-m_cmmd           CA_PROTO_RSRV_IS_UP
-m_postsize       IPv6 see below
-m_dataType       CA_MINOR_PROTOCOL_REVISION
-m_count          ca_server_port
-m_cid            beaconCounter++
-m_available      0
-struct ca_ext_IPv6_RSRV_IS_UP_type {
-  ca_uint32_t m_size;         /* size of this struct, net byte order */
-  ca_uint8_t  m_typ_magic[4]; /* 'I' 'P' 'v' '6' */
-  ca_uint32_t m_sin6_scope_id;/* scope id, host byte order */
-  ca_uint8_t  m_s6_addr[16];  /* IPV6 address */
-}
+  m_cmmd           CA_PROTO_RSRV_IS_UP
+  m_postsize       IPv6 see below
+  m_dataType       CA_MINOR_PROTOCOL_REVISION
+  m_count          ca_server_port
+  m_cid            beaconCounter++
+  m_available      0
+  struct ca_ext_IPv6_RSRV_IS_UP_type {
+    ca_uint32_t m_size;         /* size of this struct, net byte order */
+    ca_uint8_t  m_typ_magic[4]; /* 'I' 'P' 'v' '6' */
+    ca_uint32_t m_sin6_scope_id;/* scope id, host byte order */
+    ca_uint8_t  m_s6_addr[16];  /* IPV6 address */
+  }
 
 Bote that the "m_available" and "ca_ext_IPv6_RSRV_IS_UP_type"
 are filled in by the repeater.

@@ -8,17 +8,17 @@ Status and to do of EPICS base:
      Are send out via IPv6 link local addresses if configured
      with EPICS_CAS_AUTO_BEACON_ADDR_LIST=6 (or 46)
      The beacons use an extended message for CA_PROTO_RSRV_IS_UP
-   - Revers name resolution
+   - Reverse name resolution
      aToIPAddr does not handle IPv6 (and needs to be replaced)
      Some problems to convert interface index into a name
-     (The #%en0" part of the IPv6 address)
+     (The "%en0" part of the IPv6 address)
      Needs to be investigated (may be not thread-save ?)
    - Channel access via TCP/IPv6
      working
    - Mixed usage of IPv4 and IPv6 in the network:
      In general, this should work out of the box.
      Start the repeater like this:
-     `killall caRepeater ; EPICS_CA_AUTO_ADDR_LIST=46 caRepeater`
+     `killall caRepeater ; caRepeater`
      For IOCs and clients using IPv4, IPv6 or both see ipv6-howto.txt
 
 - pvAccess:
@@ -31,13 +31,9 @@ Status and to do of EPICS base:
     Support for IPv6 must be added.
 
 - Linux, MacOs, Windows, vxWorks, RTEMS, BSD
-  Testing on Linux and Mac looks good.
+  Testing on Linux, Mac and FreeBSD looks good.
   Windows: (Which "Windows" ? Visual Studio ? cygwin (seems obsolete) Mingw
   vxWorks, RTEMS: Testing needed.
-  FreeBSD: IPv6 sockets do not receive IPv4 mapped by default:
-           https://man.freebsd.org/cgi/man.cgi?query=inet6&sektion=4
-           They recommend to open a second socket
-           I tried a hot-fix, but that didn't work
 
 - pyepics (with the latest ca library)
   First tests look good ("PYEPICS_LIBCA" is your friend)
@@ -54,80 +50,3 @@ Other todo (unorderedd)
 - Clean up the debug printing
 - More code review
 - write automated tests
-- This is a major thing:
-  After digging more into IPv6, it feels that the "dual protocol"
-  approach should be removed. What does this mean ?
-  Today the same socket is used to handle both IPv4 and IPv6
-  on the same port. However, if an old IOC with IPv4 only is already
-  running, and the a new one with IPv6/IPv4 is started, the bind()
-  to a given port number will succeed.
-  IPv6 traffice will work, but all IPv4 traffic is routed into the
-  first IOC. And this is not a good thing.
-  In the long run, it would be much more clearer, to have 2 sockets,
-  one for IPv4 and one for IPv6 only. We may end up by using different
-  port number for IPv4 and IPv6. That is OK.
-  One example is caservertask.c, which needs to be restricted to one
-  address family. And then the working code needs to be "instanciated"
-  twice, once for IPv4 and once for IPv6, if both protocols are used.
-  We have some code here, which is hard to maintain, see foundWildcard.
-  (And there are probably bugs, since IPv6 is not really handled here.
-  Another example of re-structering is the repeater.
-  Run only one protocol at a time, meaning that we may see 2 repeaters.
-  (Or dont we need a repeater for IPv6 at all ?).
-  Last comment here: The current solution may be "good enough" to be
-  run on Linux systems for testing.
-
-
-====================
-Socket usage IPv4/IPv6
-Trying to sumarize which sockets are used in EPICS base
-(Just to be clear: socket here means either a TCP or UDP socket)
-
-IOC (server):
-ca_client_context.cpp:90 epicsSocket46GetDefaultAddressFamily(), SOCK_DGRAM
-                         _sendWakeupMsg() needs a socket, any port number.
-                         TODO: check if this could be IPv4 ?
-
-caservertask.c:334       AF_INET DGRAM
-                         socket for sending server beacons (IPv4)
-                         Also used for NIC introspection
-
-caservertask.c:538       AF_INET6 DGRAM
-                         beacons for IPv6. One socket for each interface
-
-caservertask.c:200       epicsSocket46GetDefaultAddressFamily STREAM
-                         Listening socket for rsrv.
-                         Typically [::]:5064 for IPv6 capable IOCs
-                         Otherwise 0.0.0.0:5064 for IPv4 only IOCs
-                         Additionally/as an alternative:
-                         one for each interface in EPICS_CAS_INTF_ADDR_LIST
-
-caservertask.c:732       AF_INET6 DGRAM
-                         Channel access via UDP (search requests?)
-                         Typically [::]:5064 for IPv6 capable IOCs
-
-
-caRepeater:
-repeater.cpp:574          (AF_INET DGRAM) 0.0.0.0:5065
-repeater.cpp:595          (AF_INET6 DGRAM) [::1]:5065
-
-caget:
-ca_client_context.cpp:90  (AF_INET6 DGRAM) '[::]:0
-                          (Same wakeupmsg as server)
-udpiiu.cpp:177            (AF_INET DGRAM)  this->sock4:
-                           search requests via IPv4 0.0.0.0:0
-                           send wakeup msg
-                           repeater registrations ?
-udpiiu.cpp:248            (AF_INET6 DGRAM) this->sock6: [::1]:0
-                          repeater registrations via IPv6
-udpiiu.cpp:389            (AF_INET6 DGRAM) search requests via IPv6
-                          One socket for each IPv6 interface,
-                          e.g. '[ff02::1%en0]:5064'
-udpiiu.cpp:827            (AF_INET6 DGRAM) check if the repeater is running
-                          '[::]:5065'
-
-tcpiiu.cpp:722             (AF_INET6 STREAM)
-                           Will be used to connect() after a search response
-                           Note: Since the socket is created early (and with
-                           AF_INET6) epicsSocket46Connect() is used, which
-                           can translate IPv4 into "mapped IPv6"

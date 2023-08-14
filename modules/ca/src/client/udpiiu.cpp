@@ -379,7 +379,7 @@ udpiiu::udpiiu (
                             count++, buf);
       }
 #else
-      void(count);
+      (void)count;
 #endif
 #ifdef AF_INET6
       if (pNode->addr.sa.sa_family == AF_INET6) {

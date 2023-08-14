@@ -85,9 +85,9 @@ LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
                 errlogPrintf ( "osiSockBroadcastMulticastAddresses46(): no memory available for configuration\n" );
                 return;
             }
-            pNewNode->addr46.ia.sin_family = AF_INET;
-            pNewNode->addr46.ia.sin_port = htons ( 0 );
-            pNewNode->addr46.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+            pNewNode->addr.ia.sin_family = AF_INET;
+            pNewNode->addr.ia.sin_port = htons ( 0 );
+            pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
             ellAdd ( pList, &pNewNode->node );
             return;
         }
@@ -210,7 +210,7 @@ LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
             }
             baddr.sa = pIfreqList->ifr_broadaddr;
             if (baddr.ia.sin_family==AF_INET && baddr.ia.sin_addr.s_addr != INADDR_ANY) {
-                pNewNode->addr46.sa = pIfreqList->ifr_broadaddr;
+                pNewNode->addr.sa = pIfreqList->ifr_broadaddr;
                 ifDepenDebugPrintf ( ( "found broadcast addr = %x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
             } else {
                 ifDepenDebugPrintf ( ( "Ignoring broadcast addr = %x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
@@ -226,7 +226,7 @@ LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
                 free ( pNewNode );
                 continue;
             }
-            pNewNode->addr46.sa = pIfreqList->ifr_dstaddr;
+            pNewNode->addr.sa = pIfreqList->ifr_dstaddr;
         }
 #endif
         else {

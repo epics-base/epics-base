@@ -262,8 +262,8 @@ cac::cac (
 
     epicsGuard < epicsMutex > guard ( this->mutex );
 
-    while ( osiSockAddrNode *
-        pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
+    while ( osiSockAddrNode46 *
+        pNode = reinterpret_cast < osiSockAddrNode46 * > ( ellGet ( & dest ) ) ) {
         tcpiiu * piiu = NULL;
         SearchDestTCP * pdst = new SearchDestTCP ( *this, pNode->addr );
         this->registerSearchDest ( guard, * pdst );

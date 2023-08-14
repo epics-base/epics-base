@@ -248,10 +248,35 @@ unsigned epicsStdCall ipAddrToDottedIP (
     }
 }
 
+/*
+ * The "old" osiSockDiscoverBroadcastAddresses() returning
+ * only IPv4 in the "osiSockAddrNode" style
+ */
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
+    ELLLIST list46 = ELLLIST_INIT;
     osiSockAddr46 addr46;
     addr46.ia = pMatchAddr->ia; /* struct copy */
-    return osiSockBroadcastMulticastAddresses46( pList, socket, &addr46);
+    osiSockBroadcastMulticastAddresses46(&list46, socket, &addr46);
+
+    osiSockAddrNode   *pNewNode;
+    osiSockAddrNode46 *pNode46 = (osiSockAddrNode46*)ellFirst(&list46);
+    while (pNode46) {
+#ifdef NETDEBUG
+        {
+            char buf[64];
+            sockAddrToDottedIP(&pNode46->sa, buf, sizeof(buf));
+            epicsBaseDebugLog("NET osiSockDiscoverBroadcastAddresses '%s'\n", buf );
+        }
+#endif
+        if(pNode46->addr.ia.sin_family == AF_INET) {
+            pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
+            pNewNode->addr.sa.sa_family = pNode46->addr.sa.sa_family;
+            pNewNode->addr.ia = pNode46->addr.ia; /* struct copy */
+            ellAdd (pList, &pNewNode->node );
+        }
+        pNode46 = (osiSockAddrNode46*)ellNext(&pNode46->node);
+    }
+    ellFree(&list46);
 }

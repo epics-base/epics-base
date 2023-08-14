@@ -271,7 +271,7 @@ void udpSockFanoutTestRx(void* raw)
 }
 
 static
-void udpSockFanoutTestIface(const osiSockAddr46* addr)
+void udpSockFanoutTestIface(const osiSockAddr* addr)
 {
     SOCKET sender;
     struct TInfo rx1, rx2;

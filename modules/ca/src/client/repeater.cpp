@@ -655,10 +655,10 @@ void ca_repeater ()
           numPollFds++;
         }
 #endif
-        osiSockAddrNode *pNode;
-        for(pNode = (osiSockAddrNode*)ellFirst(&casBeaconAddrList);
+        osiSockAddrNode46 *pNode;
+        for(pNode = (osiSockAddrNode46*)ellFirst(&casBeaconAddrList);
             pNode;
-            pNode = (osiSockAddrNode*)ellNext(&pNode->node))
+            pNode = (osiSockAddrNode46*)ellNext(&pNode->node))
         {
 
 #ifdef NETDEBUG

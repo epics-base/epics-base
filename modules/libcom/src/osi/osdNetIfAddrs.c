@@ -95,7 +95,7 @@ static int matchMatchAddress(const osiSockAddr46 *pAddrToMatch46,
     return match_ret;
 }
 
-static int copyRemoteAddressOK(osiSockAddrNode *pNewNode,
+static int copyRemoteAddressOK(osiSockAddrNode46 *pNewNode,
                                osiSockAddr46 *pRemoteAddr46,
                                const char* broadOrDstName)
 {
@@ -137,7 +137,7 @@ static int copyRemoteAddressOK(osiSockAddrNode *pNewNode,
 LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
      (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46)
 {
-    osiSockAddrNode *pNewNode;
+    osiSockAddrNode46 *pNewNode;
     struct ifaddrs *ifa;
 #ifdef NETDEBUG
     const static char* fname = "osiSockBroadcastMulticastAddresses46()";
@@ -152,7 +152,7 @@ LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
 #endif
     if ( pMatchAddr46->sa.sa_family == AF_INET  ) {
         if ( pMatchAddr46->ia.sin_addr.s_addr == htonl (INADDR_LOOPBACK) ) {
-            pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
+            pNewNode = (osiSockAddrNode46 *) calloc (1, sizeof (*pNewNode) );
             if ( pNewNode == NULL ) {
                 errlogPrintf ( "osiSockBroadcastMulticastAddresses46(): no memory available for configuration\n" );
                 return;
@@ -275,7 +275,7 @@ LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
              continue;
         }
 
-        pNewNode = (osiSockAddrNode *) calloc (1, sizeof (*pNewNode) );
+        pNewNode = (osiSockAddrNode46 *) calloc (1, sizeof (*pNewNode) );
         if ( pNewNode == NULL ) {
             errlogPrintf ( "osiSockDiscoverBroadcastAddresses(): no memory available for configuration\n" );
             freeifaddrs ( ifaddr );

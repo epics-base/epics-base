@@ -368,8 +368,8 @@ udpiiu::udpiiu (
         numPollFds++;
     }
 #endif
-    while ( osiSockAddrNode *
-        pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
+    while ( osiSockAddrNode46 *
+        pNode = reinterpret_cast < osiSockAddrNode46 * > ( ellGet ( & dest ) ) ) {
         SOCKET socket46 = this->sock4;
 #ifdef NETDEBUG
       {

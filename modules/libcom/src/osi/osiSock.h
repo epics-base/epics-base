@@ -347,9 +347,15 @@ typedef union osiSockAddr {
  */
 typedef struct osiSockAddrNode {
     ELLNODE node;
+    osiSockAddr addr;
+} osiSockAddrNode;
+
+
+typedef struct osiSockAddrNode46 {
+    ELLNODE node;
     osiSockAddr46 addr;
     unsigned int interfaceIndex; /* Needed for IPv6 only */
-} osiSockAddrNode;
+} osiSockAddrNode46;
 
 /*!
  * \brief Compares two osiSockAddrs

@@ -33,7 +33,7 @@ static logClientId iocLogClient;
  *  getConfig()
  *  Get Server Configuration
  */
-static int getConfig (osiSockAddr46 *pserver_addr46, unsigned short *pserver_port)
+static int getConfig (struct in_addr *pserver_addr, unsigned short *pserver_port)
 {
     long status;
     long epics_port;
@@ -54,7 +54,7 @@ static int getConfig (osiSockAddr46 *pserver_addr46, unsigned short *pserver_por
     }
     *pserver_port = (unsigned short) epics_port;
 
-    status = envGetInetAddrConfigParam46 (&EPICS_IOC_LOG_INET, pserver_addr46);
+    status = envGetInetAddrConfigParam (&EPICS_IOC_LOG_INET, pserver_addr);
     if (status<0) {
         fprintf (stderr,
             "iocLog: EPICS environment variable \"%s\" undefined\n",
@@ -100,14 +100,14 @@ static logClientId iocLogClientInit (void)
 {
     int status;
     logClientId id;
-    osiSockAddr46 addr46;
+    struct in_addr addr;
     unsigned short port;
 
-    status = getConfig (&addr46, &port);
+    status = getConfig (&addr, &port);
     if (status) {
         return NULL;
     }
-    id = logClientCreate46 (&addr46, port);
+    id = logClientCreate (addr, port);
     if (id != NULL) {
         errlogAddListener (logClientSendMessage, id);
         epicsAtExit (iocLogClientDestroy, id);

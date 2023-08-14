@@ -27,7 +27,6 @@
 #include "logClient.h"
 #include "envDefs.h"
 #include "osiSock.h"
-#include "epicsSock.h"
 #include "fdmgr.h"
 #include "epicsString.h"
 
@@ -411,9 +410,7 @@ MAIN(epicsErrlogTest)
     testOk(1 == errlogRemoveListeners(&logClient, &pvt),
         "Removed 1 listener");
 
-    osiSockAttach();
     testLogPrefix();
-    osiSockRelease();
 
     return testDone();
 }
@@ -424,10 +421,10 @@ MAIN(epicsErrlogTest)
  * This code is a reduced version of the code in iocLogServer.
  */
 static void testLogPrefix(void) {
-    osiSockAddr46 serverAddr46;
+    struct sockaddr_in serverAddr;
     int status;
     struct timeval timeout;
-    osiSockAddr46 actualServerAddr46;
+    struct sockaddr_in actualServerAddr;
     osiSocklen_t actualServerAddrSize;
     char portstring[16];
 
@@ -443,15 +440,18 @@ static void testLogPrefix(void) {
     errlogPrintfNoConsole(".");
     errlogFlush();
 
-    sock = epicsSocket46Create ( epicsSocket46GetDefaultAddressFamily(), SOCK_STREAM, 0);
+    sock = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
     if (sock == INVALID_SOCKET) {
         testAbort("epicsSocketCreate failed.");
     }
 
     /* We listen on a an available port. */
-    status = epicsSocket46BindLocalPort ( sock ,
-                                          epicsSocket46GetDefaultAddressFamily(),
-                                          0 );
+    memset((void *)&serverAddr, 0, sizeof serverAddr);
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(0);
+
+    status = bind (sock, (struct sockaddr *)&serverAddr,
+                   sizeof (serverAddr) );
     if (status < 0) {
         testAbort("bind failed; all ports in use?");
     }
@@ -462,15 +462,15 @@ static void testLogPrefix(void) {
     }
 
     /* Determine the port that the OS chose */
-    actualServerAddrSize = ( osiSocklen_t ) sizeof ( actualServerAddr46 );
-    memset((void *)&actualServerAddr46, 0, sizeof serverAddr46);
-    status = getsockname(sock, (struct sockaddr *) &actualServerAddr46,
+    actualServerAddrSize = sizeof actualServerAddr;
+    memset((void *)&actualServerAddr, 0, sizeof serverAddr);
+    status = getsockname(sock, (struct sockaddr *) &actualServerAddr,
          &actualServerAddrSize);
     if (status < 0) {
         testAbort("Can't find port number!");
     }
 
-    sprintf(portstring, "%d", ntohs(actualServerAddr46.ia.sin_port));
+    sprintf(portstring, "%d", ntohs(actualServerAddr.sin_port));
     testDiag("Listening on port %s", portstring);
 
     /* Set the EPICS environment variables for logging. */
@@ -483,7 +483,7 @@ static void testLogPrefix(void) {
     }
 
     status = fdmgr_add_callback(pfdctx, sock, fdi_read,
-        acceptNewClient, &serverAddr46);
+        acceptNewClient, &serverAddr);
 
     if (status < 0) {
         testAbort("fdmgr_add_callback failed!");
@@ -513,12 +513,13 @@ static void testPrefixLogandCompare( const char* logmessage ) {
 
 static void acceptNewClient ( void *pParam )
 {
-    osiSockAddr46 addr46;
-    osiSocklen_t  addLen = sizeof(addr46);
+    osiSocklen_t addrSize;
+    struct sockaddr_in addr;
     int status;
 
-    insock = epicsSocket46Accept ( sock, &addr46.sa, &addLen );
-    testOk(insock != INVALID_SOCKET ,
+    addrSize = sizeof ( addr );
+    insock = epicsSocketAccept ( sock, (struct sockaddr *)&addr, &addrSize );
+    testOk(insock != INVALID_SOCKET && addrSize >= sizeof (addr),
         "Accepted new client");
 
     status = fdmgr_add_callback(pfdctx, insock, fdi_read,

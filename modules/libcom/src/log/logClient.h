@@ -14,13 +14,12 @@
  *      Author:         Jeffrey O. Hill
  *      Date:           080791
  */
-
 /**
  * \file logClient.h
  *
  * \brief Client on the IOC that forwards log messages to the log server
  *
- * Together with the program iocLogServer, a log client provides generic
+ * Together with the program iocLogServer, a log client provides generic 
  * support for logging text messages from an IOC or other program to the log
  * server host machine.
  */
@@ -41,27 +40,26 @@ extern "C" {
 typedef void *logClientId;
 
 /** \brief Creates a new log client
- *
- * Starts a background thread to connect to server and returns immediately.
- * If a connection cannot be established, an error message is
- * printed on the console, but the log client will keep trying to connect in
- * the background. This thread will also periodically (every 5 seconds) flush
- * pending messages out to the server.
+ * 
+ * Starts a background thread to connect to server and returns immediately. 
+ * If a connection cannot be established, an error message is 
+ * printed on the console, but the log client will keep trying to connect in 
+ * the background. This thread will also periodically (every 5 seconds) flush 
+ * pending messages out to the server. 
  *
  * \param server_addr log server IP address
  * \param server_port log server port
  *
- * \return log client handle.
+ * \return log client handle.  
  */
-
-LIBCOM_API logClientId epicsStdCall logClientCreate46 (
-    osiSockAddr46 *pAddr46, unsigned short server_port);
+LIBCOM_API logClientId epicsStdCall logClientCreate (
+    struct in_addr server_addr, unsigned short server_port);
 
 /** \brief Log message
  *
- * Logs message to log server.  Messages are not immediately sent to the log
- * server. Instead they are sent periodically (every 5 seconds), when the cache
- * overflows, or when logClientFlush() is called. If messages can't sent, an error
+ * Logs message to log server.  Messages are not immediately sent to the log 
+ * server. Instead they are sent periodically (every 5 seconds), when the cache 
+ * overflows, or when logClientFlush() is called. If messages can't sent, an error 
  * message will be printed to stderr
  *
  * \param id log client handle
@@ -80,7 +78,7 @@ LIBCOM_API void epicsStdCall logClientSend (logClientId id, const char *message)
 LIBCOM_API void epicsStdCall logClientShow (logClientId id, unsigned level);
 
 /** \brief Flushes all outstanding messages
- *
+ * 
  * Immediately sends all outstanding messages to the server
  *
  * \param id log client handle
@@ -97,7 +95,7 @@ LIBCOM_API void epicsStdCall logClientFlush (logClientId id);
 LIBCOM_API void epicsStdCall iocLogPrefix(const char* prefix);
 
 /** \brief DEPRECATED
- * \deprecated deprecated interface; retained for backward compatibility
+ * \deprecated deprecated interface; retained for backward compatibility 
  */
 /* note: implementations are in iocLog.c, not logClient.c */
 LIBCOM_API logClientId epicsStdCall logClientInit (void);

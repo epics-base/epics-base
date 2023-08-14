@@ -48,7 +48,6 @@
 #include "envDefs.h"
 #include "epicsAssert.h"
 #include "osiSock.h"
-#include "epicsSock.h"
 
 
 /*+/subr**********************************************************************
@@ -244,23 +243,23 @@ double  *pDouble        /* O pointer to place to store value */
 *       }
 *
 *-*/
-long epicsStdCall envGetInetAddrConfigParam46(
+long epicsStdCall envGetInetAddrConfigParam(
 const ENV_PARAM *pParam,/* I pointer to config param structure */
-osiSockAddr46   *pAddr46/* O pointer to struct to receive inet addr */
+struct in_addr *pAddr   /* O pointer to struct to receive inet addr */
 )
 {
     char        text[128];
     char        *ptext;
     long        status;
-    osiSockAddr46 addr46;
+    struct sockaddr_in sin;
 
     ptext = envGetConfigParam(pParam, sizeof text, text);
     if (ptext) {
-        status = aToIPAddr46 (text, 0u, &addr46);
-        if (status == 0) {
-            *pAddr46 = addr46;
-            return 0;
-        }
+                status = aToIPAddr (text, 0u, &sin);
+                if (status == 0) {
+                        *pAddr = sin.sin_addr;
+                        return 0;
+                }
         (void)fprintf(stderr,"Unable to find an IP address or valid host name in %s=%s\n",
                                                 pParam->name, text);
     }

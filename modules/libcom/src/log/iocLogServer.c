@@ -122,8 +122,7 @@ int main(void)
      * Open the socket. Use ARPA Internet address format and stream
      * sockets. Format described in <sys/socket.h>.
      */
-    pserver->sock = epicsSocket46Create(epicsSocket46GetDefaultAddressFamily(),
-                                        SOCK_STREAM, 0);
+    pserver->sock = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
     if (pserver->sock == INVALID_SOCKET) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -135,7 +134,7 @@ int main(void)
     epicsSocketEnableAddressReuseDuringTimeWaitState ( pserver->sock );
 
     status = epicsSocket46BindLocalPort(pserver->sock,
-                                        epicsSocket46GetDefaultAddressFamily(),
+                                        AF_INET,
                                         ioc_log_port);
 
     if (status < 0) {
@@ -397,8 +396,8 @@ static void acceptNewClient ( void *pParam )
 {
     struct ioc_log_server *pserver = (struct ioc_log_server *) pParam;
     struct iocLogClient *pclient;
-    osiSockAddr46 addr46;
-    osiSocklen_t  addLen = sizeof(addr46);
+    osiSocklen_t addrSize;
+    struct sockaddr_in addr;
     int status;
     osiSockIoctl_t optval;
 
@@ -407,8 +406,9 @@ static void acceptNewClient ( void *pParam )
         return;
     }
 
-    pclient->insock = epicsSocket46Accept ( pserver->sock, &addr46.sa, &addLen );
-    if ( pclient->insock==INVALID_SOCKET ) {
+    addrSize = sizeof ( addr );
+    pclient->insock = epicsSocketAccept ( pserver->sock, (struct sockaddr *)&addr, &addrSize );
+    if ( pclient->insock==INVALID_SOCKET || addrSize < sizeof (addr) ) {
         static unsigned acceptErrCount;
         static int lastErrno;
         int thisErrno;
@@ -450,7 +450,7 @@ static void acceptNewClient ( void *pParam )
     pclient->pserver = pserver;
     pclient->nChar = 0u;
 
-    sockAddrToA (&addr46.sa, pclient->name, sizeof(pclient->name));
+    ipAddrToA (&addr, pclient->name, sizeof(pclient->name));
 
     logTime(pclient);
 

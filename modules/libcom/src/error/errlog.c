@@ -95,7 +95,6 @@ static struct {
     int          atExit;
     int          sevToLog;
     int          toConsole;
-    int          ttyConsole;
     FILE         *console;
 
     /* A loop counter maintained by errlogThread. */
@@ -164,7 +163,8 @@ size_t msgbufCommit(size_t nchar, int localEcho)
         /* errlogThread is not running, so we print directly
          * and then abandon the buffer.
          */
-        fprintf(pvt.console, "%s", start);
+        FILE* console = pvt.console ? pvt.console : stderr;
+        fprintf(console, "%s", start);
 
     } else if(!atExit) {
         start[0u] = ERL_STATE_READY | (localEcho ? ERL_LOCALECHO : 0);
@@ -476,8 +476,7 @@ int errlogSetConsole(FILE *stream)
 {
     errlogInit(0);
     epicsMutexMustLock(pvt.msgQueueLock);
-    pvt.console = stream ? stream : stderr;
-    pvt.ttyConsole = isATTY(pvt.console);
+    pvt.console = stream;
     epicsMutexUnlock(pvt.msgQueueLock);
     /* make sure worker has stopped writing to the previous stream */
     errlogSequence();
@@ -551,8 +550,7 @@ static void errlogInitPvt(void *arg)
     pvt.maxMsgSize = pconfig->maxMsgSize;
     ellInit(&pvt.listenerList);
     pvt.toConsole = TRUE;
-    pvt.console = stderr;
-    pvt.ttyConsole = isATTY(stderr);
+    pvt.console = NULL;
     pvt.waitForWork = epicsEventCreate(epicsEventEmpty);
     pvt.listenerLock = epicsMutexCreate();
     pvt.msgQueueLock = epicsMutexCreate();
@@ -641,8 +639,8 @@ static void errlogThread(void)
         } else {
             /* snapshot and swap buffers for use while unlocked */
             size_t nLost = pvt.nLost;
-            FILE *console = pvt.toConsole ? pvt.console : NULL;
-            int ttyConsole = pvt.ttyConsole;
+            FILE *console = pvt.toConsole ? pvt.console ? pvt.console : stderr : NULL;
+            int ttyConsole = console ? isATTY(console) : 0;
             size_t pos = 0u;
             buffer_t *print;
 

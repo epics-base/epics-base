@@ -31,7 +31,7 @@ extern "C" {
  * For the moment use the same code on all platforms
  */
 
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
 #define EPICSSOCK_POLLIN  0x1
 //#define POLLOUT 0x2 not implemented yet
 struct epicsSockPollfd {

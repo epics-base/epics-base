@@ -118,7 +118,7 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
     int domain, int type, int protocol )
 {
     SOCKET sock = socket ( domain, type, protocol );
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
     if (sock != INVALID_SOCKET) {
         DWORD ipv6_only = 0;
         int status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,

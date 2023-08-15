@@ -229,7 +229,7 @@ int main ( int argc, char ** argv )
                 memset ( &addr46, 0, sizeof(addr46) );
                 // keep the zeroed memory for the memcmp() below
                 int good_IPv6_magic_and_len = 0;
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
                 if (pstSize + sizeof ( *pCurMsg )  == sizeof(ca_msg_IPv6_RSRV_IS_UP_type)) {
                     ca_ext_IPv6_RSRV_IS_UP_type * pExtIPv6 = (ca_ext_IPv6_RSRV_IS_UP_type *)&pCurBuf[sizeof(caHdr)];
                     if (pExtIPv6->m_typ_magic[0] == 'I' &&

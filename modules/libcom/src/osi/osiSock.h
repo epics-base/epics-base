@@ -29,6 +29,18 @@
 /* Enable it for debugging */
 /* #define NETDEBUG */
 
+#ifdef __rtems__
+#if __RTEMS_MAJOR__ < 5 || defined (RTEMS_LEGACY_STACK)
+#if !defined (NO_AF_INET6_IPV6)
+#define NO_AF_INET6_IPV6
+#endif
+#endif
+#endif
+
+#if !defined (NO_AF_INET6_IPV6)
+#define AF_INET6_IPV6
+#endif
+
 /* Needed to compile external modules, like pcas */
 #define EPICS_BASE_HAS_OSISOCKADDR46
 
@@ -43,7 +55,7 @@ struct in_addr;
 typedef union osiSockAddr46 {
     struct sockaddr_in  ia;
     struct sockaddr     sa;
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
     struct sockaddr_in6 in6;
 #endif
 } osiSockAddr46;

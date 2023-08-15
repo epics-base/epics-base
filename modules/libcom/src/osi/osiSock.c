@@ -68,7 +68,7 @@ unsigned epicsStdCall sockAddrToA (
     if ( bufSize < 1 ) {
         return 0;
     }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
     if ( paddr->sa_family == AF_INET6 ) {
         unsigned ret;
         int gai_ecode = getnameinfo(paddr, sizeof(struct sockaddr_in6), pBuf, bufSize,
@@ -138,7 +138,7 @@ unsigned epicsStdCall sockAddrToDottedIP (
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
     if ( ( paddr->sa_family != AF_INET )
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
          && ( paddr->sa_family != AF_INET6 )
 #endif
                                               )  {
@@ -193,7 +193,7 @@ unsigned epicsStdCall ipAddrToDottedIP (
                                 pBuf, bufSize, "%u.%u.%u.%u:%hu",
                                 chunk[3], chunk[2], chunk[1], chunk[0],
                                 ntohs ( pAddr->sin_port ) );
-#if defined(AF_INET6) && defined(NI_MAXHOST) && defined(NI_MAXSERV)
+#if defined(AF_INET6_IPV6) && defined(NI_MAXHOST) && defined(NI_MAXSERV)
     } else if (pAddr->sin_family == AF_INET6) {
         const struct sockaddr * paddr = (const struct sockaddr * )pAddr;
         char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];

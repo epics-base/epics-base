@@ -238,7 +238,7 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
 #endif
         return status;
     }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
     else
     {
         char hostName[512];
@@ -287,11 +287,9 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         if (sizeof(*pAddr46) < sizeof(struct sockaddr_in6)) {
             hints.ai_socktype = AF_INET;
         }
-#ifdef AF_INET6
         else if (pClosingBracket) {
             hints.ai_family = AF_INET6;
         }
-#endif
         gai = getaddrinfo(hostName, pPort, &hints, &ai);
         if (gai) {
 #ifdef NETDEBUG

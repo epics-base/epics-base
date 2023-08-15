@@ -367,7 +367,7 @@ void rsrv_build_addr_lists(void)
         addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_INTF_ADDR_LIST, ca_udp_port, 0 );
 
         removeDuplicateAddresses(&casIntfAddrList, &temp, 0);
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
         {
             osiSockAddrNode46 *pNode, *pNext;
             for(pNode = (osiSockAddrNode46*)ellFirst(&casIntfAddrList),
@@ -397,7 +397,7 @@ void rsrv_build_addr_lists(void)
         if ( pstr ) {
             if ( !strcmp( pstr, "4" ) ) {
                 autobeaconlistIPv4 = 1;
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             } else if ( !strcmp( pstr, "6" ) ) {
                 autobeaconlistIPv4 = 0;
                 autobeaconlistIPv6 = 1;
@@ -451,7 +451,7 @@ void rsrv_build_addr_lists(void)
             } else {
                 foundInterfaceIPv4++;
             }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             if (pNode->addr.in6.sin6_family==AF_INET6) {
                 if (!(memcmp(&pNode->addr.in6.sin6_addr,
                              &in6addr_any,
@@ -461,10 +461,14 @@ void rsrv_build_addr_lists(void)
                     foundInterfaceIPv6++;
                 }
             }
+#else
+            (void)foundInterfaceIPv6;
+            (void)foundWildcard6;
+            (void)doautobeaconIPv6;
 #endif
             epicsBaseDebugLog("NET rsrv_build_addr_lists doautobeaconIPv4=%d foundInterfaceIPv4=%u foundWildcard4=%d\n",
                               doautobeaconIPv4, foundInterfaceIPv4, foundWildcard4);
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             epicsBaseDebugLog("NET rsrv_build_addr_lists doautobeaconIPv6=%d foundInterfaceIPv6=%d foundWildcard6=%u\n",
                               doautobeaconIPv6, foundInterfaceIPv6, foundWildcard6);
 #endif
@@ -482,7 +486,7 @@ void rsrv_build_addr_lists(void)
                 match46.ia.sin_port = htons(ca_beacon_port);
                 autobeaconlistIPv4 = 0;
             }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             else if (pNode->addr.ia.sin_family == AF_INET6) {
                 if (!doautobeaconIPv6)
                     continue;
@@ -517,7 +521,7 @@ void rsrv_build_addr_lists(void)
             pNode->addr.sa.sa_family = AF_INET;
             ellAdd ( &casIntfAddrList, &pNode->node );
         }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
         if (autobeaconlistIPv6) {
             /* default to wildcard [::] when interface address list is empty */
             osiSockAddrNode46 *pNode = (osiSockAddrNode46 *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
@@ -548,7 +552,7 @@ void rsrv_build_addr_lists(void)
             osiSockAddr46 match46;
             memset(&match46, 0, sizeof(match46));
             match46.ia.sin_family = AF_INET; /* This is the default */
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             if ((autobeaconlistIPv4 && autobeaconlistIPv6)) {
                 match46.ia.sin_family = AF_UNSPEC; /* Both v6 and v4 */
             } else if (autobeaconlistIPv6) {
@@ -599,9 +603,9 @@ void rsrv_build_addr_lists(void)
         /* send beacon to each interface */
         for(i=0, cur=ellFirst(&beaconAddrList); cur; i++, cur=ellNext(cur))
         {
-            osiSockAddrNode46 *pNode = CONTAINER(cur, osiSockAddrNode46, node);
             static_notify_conf.pSockets[i] = beaconSocket4; /* the default */
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
+            osiSockAddrNode46 *pNode = CONTAINER(cur, osiSockAddrNode46, node);
             if (pNode->addr.sa.sa_family == AF_INET6) {
                 SOCKET sock = epicsSocket46Create (AF_INET6, SOCK_DGRAM, 0);
                 if (sock != INVALID_SOCKET) {
@@ -783,7 +787,7 @@ void rsrv_init (void)
             conf = callocMustSucceed(1, sizeof(*conf), "rsrv_init");
 
             conf->tcpAddr46 = ((osiSockAddrNode46 *)cur)->addr;
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             if ( conf->tcpAddr46.sa.sa_family == AF_INET6 ) {
                 conf->tcpAddr46.in6.sin6_port = htons ( ca_server_port );
             }

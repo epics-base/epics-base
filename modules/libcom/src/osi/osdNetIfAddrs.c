@@ -60,7 +60,7 @@ static int matchMatchAddress(const osiSockAddr46 *pAddrToMatch46,
             }
         }
     }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
     else if ( ( pAddrToMatch46->sa.sa_family == AF_INET6 ) &&
               ( pAddr46->sa.sa_family == AF_INET6 ) ) {
         if ( !memcmp(&pAddrToMatch46->in6.sin6_addr, &in6addr_any, sizeof(in6addr_any)) ) {
@@ -111,7 +111,7 @@ static int copyRemoteAddressOK(osiSockAddrNode46 *pNewNode,
         pNewNode->addr.ia = pRemoteAddr46->ia; /* struct copy */
         ret_ok = 1;
     }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
     else if ( ( pRemoteAddr46 ) && ( pRemoteAddr46->sa.sa_family == AF_INET6 ) ) {
         pNewNode->addr.in6 = pRemoteAddr46->in6;  /* struct copy */
         ret_ok = 1;
@@ -188,7 +188,7 @@ LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
 #endif
              continue;
         }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
         if (ifa->ifa_addr->sa_family == AF_INET6) {
             const struct sockaddr_in6 *pInetAddr6 = (const struct sockaddr_in6 *)ifa->ifa_addr;
             /* rfc 4291 defines "Link-local".
@@ -237,7 +237,7 @@ LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
                  addr46.ia = *pInetAddr;
                  match_ok = matchMatchAddress(pMatchAddr46, &addr46);
             }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             else if (ifa->ifa_addr->sa_family == AF_INET6) {
                 struct sockaddr_in6 *pInetAddr6 = (struct sockaddr_in6 *) ifa->ifa_addr;
                 addr46.in6 = *pInetAddr6;
@@ -301,7 +301,7 @@ LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
                   pNewNode = NULL;
                 }
             }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             else if ( ifa->ifa_addr->sa_family == AF_INET6 )  {
               /*
                * IPv6 has no broadcast, even if IFF_BROADCAST is set

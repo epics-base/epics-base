@@ -184,7 +184,7 @@ static void  forcePort ( ELLLIST *pList, unsigned short port )
     while ( pNode ) {
         if ( pNode->addr.sa.sa_family == AF_INET ) {
             pNode->addr.ia.sin_port = htons ( port );
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
         } else if ( pNode->addr.sa.sa_family == AF_INET6 ) {
             pNode->addr.in6.sin6_port = htons ( port );
 #endif
@@ -253,7 +253,7 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
         ellInit ( &bcastList );
         memset(&match46, 0, sizeof(match46));
         match46.ia.sin_family = AF_INET; /* This is the default */
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
         if (addrautolistIPversion == 46) {
           match46.ia.sin_family = AF_UNSPEC; /* Both v6 and v4 */
         } else if (addrautolistIPversion == 6) {

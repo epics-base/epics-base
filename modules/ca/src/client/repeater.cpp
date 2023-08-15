@@ -79,7 +79,7 @@
 #include "epicsSock.h"
 
 #include "epicsBaseDebugLog.h"
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
 #include "cantProceed.h" /* callocMustSucceed */
 #endif
 
@@ -323,7 +323,7 @@ bool repeaterClient::verify ()
         fprintf ( stderr, "CA Repeater: Bind test error \"%s\"\n",
             sockErrBuf );
     }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
     sockerrno = makeSocket ( AF_INET6, this->port (), false, & tmpSock );
     if ( sockerrno == SOCK_EADDRINUSE ) {
         // Normal result, client using port
@@ -555,16 +555,13 @@ void ca_repeater ()
     SOCKET sock4 = INVALID_SOCKET;
     osiSockAddr46 from46;
     unsigned short port;
-    char * pBuf;
-#ifdef AF_INET6
+    char * pBuf = new char [MAX_UDP_RECV];
+#ifdef AF_INET6_IPV6
     SOCKET sock6 = INVALID_SOCKET;
     struct epicsSockPollfd *pPollFds = NULL;
     unsigned numPollFds = 0;
     unsigned searchDestList_count = 0;
 #endif
-
-    pBuf = new char [MAX_UDP_RECV];
-
     {
         bool success = osiSockAttach();
         assert ( success );
@@ -579,7 +576,7 @@ void ca_repeater ()
          */
         if ( sockerrno == SOCK_EADDRINUSE ) {
             sock4 = INVALID_SOCKET;
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             debugPrintf ( ( "CA Repeater: a repeater is already running for IPv4\n" ) );
 #else
             debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
@@ -591,7 +588,7 @@ void ca_repeater ()
                     __FILE__, sockErrBuf );
         }
     }
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
     /* Create a socket for registrations via [::1] */
     if ( int sockerrno = makeSocket ( AF_INET6, port, true, & sock6 ) ) {
         /*
@@ -606,14 +603,16 @@ void ca_repeater ()
           fprintf ( stderr, "%s: Unable to create repeater sock6 because \"%s\" - fatal\n",
                     __FILE__, sockErrBuf );
         }
-#endif
     }
+#endif
     if (sock4 == INVALID_SOCKET) {
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
       if (sock6 == INVALID_SOCKET)
 #endif
         {
+#ifdef AF_INET6_IPV6
           delete [] pBuf;
+#endif
           osiSockRelease ();
           return;
         }
@@ -622,7 +621,7 @@ void ca_repeater ()
     {
         ELLLIST casBeaconAddrList = ELLLIST_INIT;
         ELLLIST casMergeAddrList = ELLLIST_INIT;
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
         configureChannelAccessAddressList ( & casMergeAddrList, sock4, port);
 #endif
 
@@ -637,7 +636,7 @@ void ca_repeater ()
         /* First clean up */
         removeDuplicateAddresses(&casBeaconAddrList, &casMergeAddrList , 0);
 
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
         searchDestList_count = (unsigned)casBeaconAddrList.count;
         pPollFds = (epicsSockPollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock6 */
                                                        sizeof(struct epicsSockPollfd),
@@ -694,7 +693,7 @@ void ca_repeater ()
                 }
             }
 #endif
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
             if (pNode->addr.sa.sa_family == AF_INET6) {
                 osiSockAddr46 addr6 = pNode->addr; // struct copy
                 unsigned int interfaceIndex = (unsigned int)addr6.in6.sin6_scope_id;
@@ -719,6 +718,7 @@ void ca_repeater ()
     epicsBaseDebugLog("NET repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
                    pPollFds, searchDestList_count, numPollFds);
 #endif
+#ifdef AF_INET6_IPV6
     {
       unsigned i;
       epicsBaseDebugLog("NET repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
@@ -728,10 +728,11 @@ void ca_repeater ()
                           i, (long)pPollFds[i].fd);
       }
     }
+#endif
 
     while ( true ) {
         SOCKET sock = sock4;
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
         pollagain:
         if ( pPollFds && numPollFds >= 1 ) {
             int pollres = epicsSockPoll ( pPollFds, numPollFds, -1 );
@@ -805,7 +806,7 @@ void ca_repeater ()
                 }
             }
             else if ( AlignedWireRef < epicsUInt16 > ( pMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
-#ifdef AF_INET6
+#ifdef AF_INET6_IPV6
                 if (from46.sa.sa_family == AF_INET6 ) {
                     size_t needed_size = sizeof(ca_msg_IPv6_RSRV_IS_UP_type);
                     if ( (size_t)size >= needed_size ) {

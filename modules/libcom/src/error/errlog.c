@@ -92,10 +92,11 @@ static struct {
     epicsMutexId msgQueueLock;
 
     /* guarded by msgQueueLock */
-    int          atExit;
     int          sevToLog;
-    int          toConsole;
-    int          ttyConsole;
+    unsigned int atExit:1;
+    unsigned int toConsole:1;
+    unsigned int ttyConsole:1;
+    unsigned int closeConsole:1;
     FILE         *console;
 
     /* A loop counter maintained by errlogThread. */
@@ -466,7 +467,7 @@ int eltc(int yesno)
 {
     errlogInit(0);
     epicsMutexMustLock(pvt.msgQueueLock);
-    pvt.toConsole = yesno;
+    pvt.toConsole = yesno ? 1 : 0;
     epicsMutexUnlock(pvt.msgQueueLock);
     errlogFlush();
     return 0;
@@ -474,9 +475,30 @@ int eltc(int yesno)
 
 int errlogSetConsole(FILE *stream)
 {
+    int closeConsole = 0;
     errlogInit(0);
+    if (!stream) {
+        stream = stderr;
+    }
+#ifdef vxWorks
+    /* The stderr/stdout we get may become invalid as they are thread specific.
+     * Also, the FDs are actually maps to some "real" FDs.
+     * Thus, we clone the stream and link it with a dup of the "real" FD.
+     * The dup'ed FD will be closed when the FILE handle is fclosed. */
+    if (fileno(stream) <= 2) {
+        closeConsole = 1;
+        stream = fdopen(dup(ioTaskStdGet(0, fileno(stream))),"w");
+        if (!stream) {
+            return -1;
+        }
+    }
+#endif
     epicsMutexMustLock(pvt.msgQueueLock);
-    pvt.console = stream ? stream : stderr;
+    if (pvt.closeConsole) {
+        fclose(pvt.console);
+    }
+    pvt.closeConsole = closeConsole;
+    pvt.console = stream;
     pvt.ttyConsole = isATTY(pvt.console);
     epicsMutexUnlock(pvt.msgQueueLock);
     /* make sure worker has stopped writing to the previous stream */
@@ -551,7 +573,13 @@ static void errlogInitPvt(void *arg)
     pvt.maxMsgSize = pconfig->maxMsgSize;
     ellInit(&pvt.listenerList);
     pvt.toConsole = TRUE;
+#ifdef vxWorks
+    pvt.console = fdopen(dup(ioTaskStdGet(0, 2)),"w");
+    pvt.closeConsole = 1;
+#else
     pvt.console = stderr;
+    pvt.closeConsole = 0;
+#endif
     pvt.ttyConsole = isATTY(stderr);
     pvt.waitForWork = epicsEventCreate(epicsEventEmpty);
     pvt.listenerLock = epicsMutexCreate();

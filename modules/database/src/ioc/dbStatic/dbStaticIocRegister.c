@@ -24,7 +24,8 @@ static const iocshArg argRecType = { "recordTypeName", iocshArgString};
 /* dbDumpPath */
 static const iocshArg * const dbDumpPathArgs[] = {&argPdbbase};
 static const iocshFuncDef dbDumpPathFuncDef = {"dbDumpPath",1,dbDumpPathArgs,
-                                               "Dump .db/.dbd file search path.\n"};
+                                               "Dump .db/.dbd file search path.\n"
+                                               "Example: dbDumpPath pdbbase\n"};
 static void dbDumpPathCallFunc(const iocshArgBuf *args)
 {
     dbDumpPath(*iocshPpdbbase);
@@ -99,7 +100,8 @@ static void dbDumpDeviceCallFunc(const iocshArgBuf *args)
 static const iocshArg * const dbDumpDriverArgs[] = { &argPdbbase};
 static const iocshFuncDef dbDumpDriverFuncDef = {"dbDumpDriver",1,dbDumpDriverArgs,
                           "Dump device support information.\n"
-                          "Example: dbDumpDriver pdbbase\n"};
+                          "Example: dbDumpDriver pdbbase\n"
+                          "If the last argument(s) are missing, dump all device support information.\n",};
 static void dbDumpDriverCallFunc(const iocshArgBuf *args)
 {
     dbDumpDriver(*iocshPpdbbase);
@@ -124,7 +126,8 @@ static const iocshArg * const dbDumpRegistrarArgs[] = { &argPdbbase};
 static const iocshFuncDef dbDumpRegistrarFuncDef = {"dbDumpRegistrar",1,dbDumpRegistrarArgs,
                           "Dump list of registered functions including ones for subroutine records,\n"
                           "and ones that can be invoked from iocsh.\n"
-                          "Example: dbDumpRegistrar pdbbase\n"};
+                          "Example: dbDumpRegistrar pdbbase\n"
+                          "If last argument(s) are missing, dump all registered functions\n"};
 static void dbDumpRegistrarCallFunc(const iocshArgBuf *args)
 {
     dbDumpRegistrar(*iocshPpdbbase);
@@ -134,7 +137,8 @@ static void dbDumpRegistrarCallFunc(const iocshArgBuf *args)
 static const iocshArg * const dbDumpFunctionArgs[] = { &argPdbbase};
 static const iocshFuncDef dbDumpFunctionFuncDef = {"dbDumpFunction",1,dbDumpFunctionArgs,
                           "Dump list of registered subroutine functions.\n"
-                          "Example: dbDumpFunction pddbase\n"};
+                          "Example: dbDumpFunction pddbase\n"
+                          "If last argument(s) are missing, dump all registered subroutine functions\n"};
 static void dbDumpFunctionCallFunc(const iocshArgBuf *args)
 {
     dbDumpFunction(*iocshPpdbbase);
@@ -144,7 +148,8 @@ static void dbDumpFunctionCallFunc(const iocshArgBuf *args)
 static const iocshArg * const dbDumpVariableArgs[] = { &argPdbbase};
 static const iocshFuncDef dbDumpVariableFuncDef = {"dbDumpVariable",1,dbDumpVariableArgs,
                           "Dump list of variables used in the database.\n"
-                          "Example: dbDumpVariable pddbase\n"};
+                          "Example: dbDumpVariable pddbase\n"
+                          "If last argument(s) are missing, dump all variables.\n"};
 static void dbDumpVariableCallFunc(const iocshArgBuf *args)
 {
     dbDumpVariable(*iocshPpdbbase);
@@ -159,7 +164,8 @@ static const iocshFuncDef dbDumpBreaktableFuncDef = {
     2,
     dbDumpBreaktableArgs,
     "Dump the given break table\n"
-    "Example: dbDumpBreaktable pdbbase typeKdegC\n",
+    "Example: dbDumpBreaktable pdbbase typeKdegC\n"
+    "If last argument(s) are missing, dump all breakpoint tables.\n",
 };
 static void dbDumpBreaktableCallFunc(const iocshArgBuf *args)
 {
@@ -176,7 +182,8 @@ static const iocshFuncDef dbPvdDumpFuncDef = {
     dbPvdDumpArgs,
     "Dump the various buckets of the process variable directory.\n"
     "If verbose is greater than 0, also print the process variables in each bucket.\n"
-    "Example: dbPvdDump pdbbase 1\n",
+    "Example: dbPvdDump pdbbase 1\n"
+    "If the last argument(s) are missing, dump all buckets as though verbose is 0.\n",
 };
 static void dbPvdDumpCallFunc(const iocshArgBuf *args)
 {

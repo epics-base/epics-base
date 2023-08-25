@@ -38,7 +38,7 @@ static void iocBuildCallFunc(const iocshArgBuf *args)
 /* iocRun */
 static const iocshFuncDef iocRunFuncDef = {"iocRun",0,NULL, 
              "Bring the IOC out of its initial quiescent state to the running state.\n"
-             "See more: iocBuild, iocPause"};
+             "See more: iocBuild, iocPause\n"};
 static void iocRunCallFunc(const iocshArgBuf *args)
 {
     iocshSetError(iocRun());
@@ -47,7 +47,7 @@ static void iocRunCallFunc(const iocshArgBuf *args)
 /* iocPause */
 static const iocshFuncDef iocPauseFuncDef = {"iocPause",0,NULL,
              "Brings a running IOC to a quiescent state with all record processing frozen.\n"
-             "See more: iocBuild, iocRub, iocInit"};
+             "See more: iocBuild, iocRub, iocInit\n"};
 static void iocPauseCallFunc(const iocshArgBuf *args)
 {
     iocshSetError(iocPause());

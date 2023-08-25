@@ -57,6 +57,14 @@
     else \
         flags |= F_BADLNK
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wformat-security"
+/* Intentionally passing non-const format string to epicsSnprintf() below.
+ * Older GCC does not allow pragma GCC within function body.
+ */
+#endif
+
 static void doPrintf(printfRecord *prec)
 {
     const char *pfmt = prec->fmt;
@@ -314,6 +322,9 @@ static void doPrintf(printfRecord *prec)
     prec->len = pval - prec->val;
 }
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 
 static long init_record(struct dbCommon *pcommon, int pass)
 {

@@ -19,6 +19,8 @@
  */
 
 #define EPICS_PRIVATE_API
+#define USE_TYPED_DBEVENT
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>

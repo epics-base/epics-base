@@ -32,14 +32,21 @@ struct dbChannel;
 struct db_field_log;
 struct evSubscrip;
 
+#ifdef USE_TYPED_DBEVENT
+struct dbEventContext; // use dbEventCtx
+typedef struct evSubscrip* dbEventSubscription;
+typedef struct dbEventContext* dbEventCtx;
+#else
+typedef void * dbEventSubscription;
+typedef void * dbEventCtx;
+#endif
+
 DBCORE_API int db_event_list (
     const char *name, unsigned level);
 DBCORE_API int dbel (
     const char *name, unsigned level);
 DBCORE_API int db_post_events (
     void *pRecord, void *pField, unsigned caEventMask );
-
-typedef void * dbEventCtx;
 
 typedef void EXTRALABORFUNC (void *extralabor_arg);
 DBCORE_API dbEventCtx db_init_events (void);
@@ -63,7 +70,6 @@ DBCORE_API void db_init_event_freelists (void);
 typedef void EVENTFUNC (void *user_arg, struct dbChannel *chan,
     int eventsRemaining, struct db_field_log *pfl);
 
-typedef void * dbEventSubscription;
 DBCORE_API dbEventSubscription db_add_event (
     dbEventCtx ctx, struct dbChannel *chan,
     EVENTFUNC *user_sub, void *user_arg, unsigned select);

@@ -14,6 +14,8 @@
  *  505 665 1831
  */
 
+#define USE_TYPED_DBEVENT
+
 #include <string>
 #include <stdexcept>
 

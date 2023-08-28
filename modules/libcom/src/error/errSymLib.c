@@ -23,6 +23,7 @@
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "epicsStdio.h"
+#include "epicsTypes.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "errMdef.h"
@@ -104,13 +105,12 @@ int errSymbolAdd(long errNum, const char *name)
     ERRNUMNODE **phashnode = NULL;
     ERRNUMNODE *pNew = NULL;
     int modnum = (epicsUInt16) (errNum >> 16);
+    epicsUInt16 hashInd = errhash(errNum);
 
     if (modnum < MIN_MODULE_NUM)
         return S_err_invCode;
 
     initErrorHashTable();
-
-    epicsUInt16 hashInd = errhash(errNum);
 
     epicsMutexLock(errHashTable.tableMutexId);
     phashnode = (ERRNUMNODE**)&errHashTable.table[hashInd];

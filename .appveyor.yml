@@ -25,22 +25,6 @@ init:
 # Set clone depth (do not fetch complete history)
 clone_depth: 5
 
-# Skip commits affecting only specific files
-skip_commits:
-  files:
-    # Removed - 'documentation/*'
-    # Unfortunately Appveyor only looks at the HEAD (latest) commit, so if
-    # the last commit pushed to a PR only updates the Release Notes the whole
-    # PR build gets skipped. GitHub Actions looks at the complete list
-    # of files changed since its last build, which is much more useful.
-    - 'startup/*'
-    - '.github/*'
-    - '.tools/*'
-    - '.gitattributes'
-    - '.lgtm.yml'
-    - '**/*.html'
-    - '**/*.md'
-
 #---------------------------------#
 #   build matrix configuration    #
 #---------------------------------#

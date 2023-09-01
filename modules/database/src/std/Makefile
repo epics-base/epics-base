@@ -30,6 +30,9 @@ include $(STDDIR)/filters/Makefile
 include $(STDDIR)/link/Makefile
 include $(STDDIR)/softIoc/Makefile
 
+DOCS += ComponentReference.md
+HTMLS += ComponentReference.html
+
 include $(TOP)/configure/RULES
 
 include $(STDDIR)/rec/RULES

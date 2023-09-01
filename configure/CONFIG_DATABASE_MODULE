@@ -12,6 +12,7 @@ DBDTORECTYPEH_pl  = $(EPICS_BASE_HOST_BIN)/dbdToRecordtypeH.pl
 DBDTORECTYPEH_dep = $(DBDTORECTYPEH_pl) $(call FIND_PM,DBD/Rec*.pm)
 DBDTOMENUH_pl     = $(EPICS_BASE_HOST_BIN)/dbdToMenuH.pl
 DBDTOMENUH_dep    = $(DBDTOMENUH_pl) $(call FIND_PM,DBD/Menu.pm)
+DBDTOMD_pl        = $(EPICS_BASE_HOST_BIN)/dbdToMD.pl
 DBDTOHTML_pl      = $(EPICS_BASE_HOST_BIN)/dbdToHtml.pl
 DBDTOHTML_dep     = $(DBDTOHTML_pl) $(call FIND_PM,EPICS/Pod*Html.pm)
 REGRECDEVDRV_pl   = $(EPICS_BASE_HOST_BIN)/registerRecordDeviceDriver.pl
@@ -21,6 +22,7 @@ REGRECDEVDRV_dep  = $(REGRECDEVDRV_pl)
 DBEXPAND                   = $(PERL) $(DBDEXPAND_pl)
 DBTORECORDTYPEH            = $(PERL) $(DBDTORECTYPEH_pl)
 DBTOMENUH                  = $(PERL) $(DBDTOMENUH_pl)
+DBDTOMD                    = $(PERL) $(DBDTOMD_pl)
 DBDTOHTML                  = $(PERL) $(DBDTOHTML_pl)
 REGISTERRECORDDEVICEDRIVER = $(PERL) $(REGRECDEVDRV_pl)
 

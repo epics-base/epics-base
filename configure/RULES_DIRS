@@ -8,7 +8,7 @@
 #*************************************************************************
 
 ARCHS += $(BUILD_ARCHS)
-ACTIONS += inc build install buildInstall clean realclean archclean
+ACTIONS += inc doc build install buildInstall clean realclean archclean
 ACTIONS += runtests tapfiles clean-tests test-results junitfiles
 
 dirActionArchTargets = $(foreach dir, $(DIRS), \

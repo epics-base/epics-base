@@ -111,7 +111,7 @@ endif
 #---------------------------------------------------------------
 # Read dependency files
 
-ifneq (inc,$(strip $(MAKECMDGOALS)))
+ifneq ($(filter-out inc doc,$(strip $(MAKECMDGOALS))),)
 ifneq (,$(strip $(HDEPENDS_FILES)))
 $(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): | $(COMMON_INC)
 -include $(HDEPENDS_FILES)
@@ -166,6 +166,8 @@ build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODTARGETS) \
 
 inc: $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS) $(INSTALLS_CFG) \
 	$(INSTALL_HTMLS) $(INSTALLS_PERL_MODULES) $(INSTALL_SCRIPTS)
+
+doc: inc $(INSTALL_MARKDOWNS)
 
 buildInstall: \
 	$(INSTALL_PROD) $(INSTALL_MUNCHS) \
@@ -583,12 +585,24 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
+$(GENERATED_MARKDOWN_LOCATION)/%: $(COMMON_DIR)/%
+	$(ECHO) "Installing generated markdown $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
+$(GENERATED_MARKDOWN_LOCATION)/%: %
+	$(ECHO) "Installing markdown $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
+$(GENERATED_MARKDOWN_LOCATION)/%: ../%
+	$(ECHO) "Installing markdown $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
 include $(CONFIG)/RULES_EXPAND
 
 .PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)
 
-.PHONY: all host inc build install clean rebuild buildInstall build_clean
+.PHONY: all host inc doc build install clean rebuild buildInstall build_clean
 .PHONY: runtests run-tap-tests tapfiles junitfiles test-results tap-results
 .PHONY: clean-tests checkRelease warnRelease noCheckRelease FORCE
 

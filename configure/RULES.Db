@@ -428,6 +428,21 @@ $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 .PRECIOUS: $(COMMON_DBDS) $(COMMON_DIR)/%.dbd
 
 #---------------------------------------------------------------
+# Markdown files
+
+$(COMMON_DIR)/%.md: %.dbd.pod $(DBDTOMD_pl)
+	@$(RM) $(notdir $@)
+	$(DBDTOMD) $(DBDFLAGS) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/%.md: %.pod $(PODTOMD_pl)
+	@$(RM) $(notdir $@)
+	$(PODTOMD) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+.PRECIOUS: $(COMMON_DIR)/%.md
+
+#---------------------------------------------------------------
 # HTML files
 
 $(COMMON_DIR)/%.html: %.dbd.pod $(DBDTOHTML_pl)

@@ -6,6 +6,8 @@
 /html/
 /include/
 /templates/
+/venv/
+/_readthedocs/
 /configure/*.local
 /modules/RELEASE.*.local
 /modules/Makefile.local

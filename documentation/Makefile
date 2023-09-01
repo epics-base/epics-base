@@ -18,8 +18,10 @@ ME = documentation/O.$(T_A)/html
 GH_FILES = $(ME)/ $(ME)/.nojekyll $(ME)/*.* $(ME)/*/*.*
 
 include $(TOP)/configure/RULES
+include $(TOP)/configure/RULES_EXPAND
 
-doxygen: Doxyfile ../mainpage.dox $(INSTALL_HTMLS)
+doxygen: Doxyfile $(INSTALL_HTMLS)
+	$(DOXYGEN) -v
 	$(DOXYGEN)
 	rsync -av $(TOP)/html/ html/
 

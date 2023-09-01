@@ -39,6 +39,7 @@ PERL_SCRIPTS += makeMakefile.pl
 PERL_SCRIPTS += makeTestfile.pl
 PERL_SCRIPTS += mkmf.pl
 PERL_SCRIPTS += munch.pl
+PERL_SCRIPTS += podToMD.pl
 PERL_SCRIPTS += podToHtml.pl
 PERL_SCRIPTS += podRemove.pl
 PERL_SCRIPTS += replaceVAR.pl
@@ -57,6 +58,7 @@ HTMLS += fullPathName.html
 HTMLS += makeAPIheader.html
 HTMLS += munch.html
 HTMLS += podToHtml.html
+HTMLS += podToMD.html
 HTMLS += podRemove.html
 
 include $(TOP)/configure/RULES

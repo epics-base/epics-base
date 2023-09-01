@@ -45,6 +45,8 @@ FIND_PM = $(wildcard $(EPICS_BASE)/lib/perl/$(1))
 #---------------------------------------------------------------
 # EPICS Base build tools and tool flags
 
+PODTOMD_pl       = $(TOOLS)/podToMD.pl
+PODTOMD          = $(PERL) $(PODTOMD_pl)
 PODTOHTML_pl     = $(TOOLS)/podToHtml.pl
 PODTOHTML_dep    = $(PODTOHTML_pl) $(call FIND_PM,EPICS/PodHtml.pm)
 PODTOHTML        = $(PERL) $(PODTOHTML_pl)

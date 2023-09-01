@@ -61,4 +61,8 @@ HTMLS += podToHtml.html
 HTMLS += podToMD.html
 HTMLS += podRemove.html
 
+# The above Perl program documentation (modelled after Man pages)
+# doesn't work well in Doxygen's "Related Pages" area, the titles
+# for all doc's are "NAME", so don't convert these to Markdown.
+
 include $(TOP)/configure/RULES

@@ -28,5 +28,5 @@ PROD_HOST += makeBpt
 
 makeBpt_SRCS = makeBpt
 
+DOCS += menuConvert.md
 HTMLS += menuConvert.html
-

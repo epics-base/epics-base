@@ -197,7 +197,7 @@ endif
 # build dependancies, clean rule
 
 inc: $(COMMON_INC) $(INSTALL_INC) $(COMMON_DBDS) $(COMMON_DBDCATS) \
-	$(INSTALL_DBDS) $(INSTALL_DBD_INSTALLS)
+	$(INSTALL_DBDS) $(INSTALL_DBD_INSTALLS) $(COMMON_DOCS)
 
 build: $(COMMON_DBS) $(INSTALL_DBS) \
 	$(DBDDEPENDS_FILES) $(TARGETS) \
@@ -426,6 +426,26 @@ endef
 $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 
 .PRECIOUS: $(COMMON_DBDS) $(COMMON_DIR)/%.dbd
+
+#---------------------------------------------------------------
+# Markdown files
+
+$(COMMON_DIR)/%.md: %.dbd.pod $(DBDTOMD_pl)
+	@$(RM) $(notdir $@)
+	$(DBDTOMD) $(DBDFLAGS) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/%.md: %.pod $(PODTOMD_pl)
+	@$(RM) $(notdir $@)
+	$(PODTOMD) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/%.md: ../%.pl $(PODTOMD_pl)
+	@$(RM) $(notdir $@)
+	$(PODTOMD) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+.PRECIOUS: $(COMMON_DIR)/%.md
 
 #---------------------------------------------------------------
 # HTML files

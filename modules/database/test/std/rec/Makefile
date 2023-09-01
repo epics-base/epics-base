@@ -21,7 +21,9 @@ dbRecStdTest_LIBS += dbRecStd dbCore ca Com
 PROD_LIBS = dbRecStdTest dbRecStd dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/recTestIoc.dbd
+ifneq (inc,$(strip $(MAKECMDGOALS)))
 DBDDEPENDS_FILES += recTestIoc.dbd$(DEP)
+endif
 recTestIoc_DBD = base.dbd
 recTestIoc_DBD += bptTypeKdegC.dbd
 recTestIoc_DBD += bptTypeKdegF.dbd
@@ -174,7 +176,9 @@ TESTS += regressTest
 TARGETS += $(COMMON_DIR)/simmTest.dbd
 TARGETS += $(COMMON_DIR)/simmTest.db
 DBDDEPENDS_FILES += simmTest.dbd$(DEP)
+ifneq (inc,$(strip $(MAKECMDGOALS)))
 DBDDEPENDS_FILES += simmTest.db$(DEP)
+endif
 simmTest_DBD += base.dbd
 TESTPROD_HOST += simmTest
 simmTest_SRCS += simmTest.c

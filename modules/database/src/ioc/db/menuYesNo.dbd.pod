@@ -17,7 +17,8 @@ C<MAYBE> or C<NO WAY> would not be accepted as choices for the field.
 Also, the choices C<yes>, C<No>, and C<Yes> are not valid choices since they
 don't match the case of C<NO> or C<YES>.
 The integer values C<0> and C<1> may often be used instead however, they are
-used as an index into the choices so C<0> becomes C<NO> and C<1> becomes <YES>.
+used as an index into the choices so C<0> becomes C<NO> and C<1> becomes
+C<YES>.
 
 =menu menuYesNo
 

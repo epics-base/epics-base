@@ -8,6 +8,7 @@ EXPAND_ME += EPICS_MODIFICATION
 EXPAND_ME += EPICS_PATCH_LEVEL
 EXPAND_ME += OS_CLASS CMPLR_CLASS
 
+MARKDOWNS += ComponentReference.md
 HTMLS += ComponentReference.html
 
 TARGETS += doxygen

@@ -54,8 +54,13 @@ stdRecords_DBD = $(patsubst %,%.dbd,$(stdRecords))
 
 dbRecStd_SRCS += $(patsubst %,%.c,$(stdRecords))
 
+MARKDOWNS += $(patsubst %.dbd.pod,%.md,$(notdir $(wildcard ../rec/*Record.dbd.pod)))
 HTMLS += $(patsubst %.dbd.pod,%.html,$(notdir $(wildcard ../rec/*Record.dbd.pod)))
 
 vpath %.png $(SRC_DIRS)
+
+MARKDOWNS += image/compress-1.png
+MARKDOWNS += image/compress-2.png
+
 HTMLS += image/compress-1.png
 HTMLS += image/compress-2.png

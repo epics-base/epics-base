@@ -11,19 +11,14 @@ EXPAND_ME += OS_CLASS CMPLR_CLASS
 TARGETS += doxygen
 
 DOXYGEN = doxygen
-ME = documentation/O.$(T_A)/html
-GH_FILES = $(ME)/ $(ME)/.nojekyll $(ME)/*.* $(ME)/*/*.*
 
 include $(TOP)/configure/RULES
 
-doxygen: Doxyfile ../mainpage.dox $(INSTALL_HTMLS)
+ifndef T_A
+doxygen: all
+else
+doxygen: Doxyfile
 	$(DOXYGEN)
-	rsync -av $(TOP)/html/ html/
+endif
 
 .PHONY: doxygen
-
-commit: doxygen
-	$(TOUCH) html/.nojekyll
-	(cd $(TOP) && $(CURDIR)/../commit-gh.sh $(GH_FILES))
-
-.PHONY: commit

@@ -486,4 +486,9 @@ COMMON_INC += $(filter $(COMMON_DIR)/%, \
             $(foreach dir, $(ALL_SRC_DIRS), \
                 $(addsuffix /$(file), $(dir)))) $(COMMON_DIR)/$(file))))
 
+COMMON_DOCS += $(filter $(COMMON_DIR)/%, \
+    $(foreach file, $(DOCS), \
+        $(firstword $(wildcard $(file) \
+            $(foreach dir, $(ALL_SRC_DIRS), \
+                $(addsuffix /$(file), $(dir)))) $(COMMON_DIR)/$(file))))
 endif

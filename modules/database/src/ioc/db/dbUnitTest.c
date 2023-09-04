@@ -50,6 +50,7 @@ void testdbPrepare(void)
 {
     if(!testEvtLock)
         testEvtLock = epicsMutexMustCreate();
+    initHookAnnounce(initHookAfterPrepareDatabase);
 }
 
 void testdbReadDatabase(const char* file,
@@ -94,6 +95,7 @@ void testIocShutdownOk(void)
 
 void testdbCleanup(void)
 {
+    initHookAnnounce(initHookBeforeCleanupDatabase);
     dbFreeBase(pdbbase);
     db_cleanup_events();
     initHookFree();

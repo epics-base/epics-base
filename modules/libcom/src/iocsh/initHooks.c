@@ -139,6 +139,9 @@ const char *initHookName(int state)
         "initHookBeforeFree",
         "initHookAfterShutdown",
 
+        "initHookAfterPrepareDatabase",
+        "initHookBeforeCleanupDatabase",
+
         "initHookAfterInterruptAccept",
         "initHookAtEnd"
     };

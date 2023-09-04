@@ -71,6 +71,7 @@ extern "C" {
  * if the IOC is later paused and restarted.
  */
 typedef enum {
+
     // iocInit() begins
     initHookAtIocBuild = 0,         /**< Start of iocBuild() / iocInit() */
     initHookAtBeginning,            /**< Database sanity checks passed */
@@ -132,6 +133,17 @@ typedef enum {
      */
     initHookAfterShutdown,
     // iocShutdown() ends
+
+    /** \brief Called during testdbPrepare()
+     * Use this hook to repeat actions each time an empty test database is initialized.
+     * \since UNRELEASED Added, triggered only by unittest code.
+     */
+    initHookAfterPrepareDatabase,
+    /** \brief Called during testdbCleanup()
+     * Use this hook to perform cleanup each time before a test database is free()'d.
+     * \since UNRELEASED Added, triggered only by unittest code.
+     */
+    initHookBeforeCleanupDatabase,
 
     /* Deprecated states: */
     /** Only announced once.  Deprecated in favor of initHookAfterDatabaseRunning */

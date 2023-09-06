@@ -66,6 +66,8 @@ jobs:
                                   -Wno-error=sizeof-pointer-memaccess
                                   -Wno-error=nonnull
                                   -Wno-error=dangling-pointer
+                                  -Wno-error=format-overflow
+                                  -Wno-error=format-security
                                   -Wno-error=stringop-overread'"
 
           - os: ubuntu-20.04

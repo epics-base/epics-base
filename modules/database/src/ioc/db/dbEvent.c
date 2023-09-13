@@ -1017,6 +1017,7 @@ static int event_read ( struct event_que *ev_que )
                 notifiedRemaining = eventsRemaining;
             }
             LOCKEVQUE (ev_que);
+            /* concurrent db_cancel_event() may have free()'d pevent */
 
             /*
              * check to see if this event has been canceled each
@@ -1029,12 +1030,9 @@ static int event_read ( struct event_que *ev_que )
                 ev_que->evUser->pSuicideEvent = NULL;
             }
             else {
+                pevent->callBackInProgress = FALSE;
                 if ( pevent->user_sub==NULL && pevent->npend==0u ) {
-                    pevent->callBackInProgress = FALSE;
                     epicsEventSignal ( ev_que->evUser->pflush_sem );
-                }
-                else {
-                    pevent->callBackInProgress = FALSE;
                 }
             }
         }

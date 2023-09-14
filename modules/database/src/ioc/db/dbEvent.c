@@ -18,6 +18,7 @@
  *          Ralph Lange <Ralph.Lange@bessy.de>
  */
 
+#define EPICS_PRIVATE_API
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>

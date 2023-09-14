@@ -4,6 +4,8 @@
 * in file LICENSE that is included with this distribution.
  \*************************************************************************/
 
+#define EPICS_PRIVATE_API
+
 #include <string.h>
 
 #include <errlog.h>

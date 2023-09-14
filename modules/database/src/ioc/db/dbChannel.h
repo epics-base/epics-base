@@ -41,7 +41,12 @@ extern "C" {
 /**
  * event subscription
  */
-typedef struct evSubscrip {
+struct evSubscrip;
+
+typedef struct evSubscrip evSubscrip;
+
+#ifdef EPICS_PRIVATE_API
+struct evSubscrip {
     ELLNODE             node;
     struct dbChannel  * chan;
     EVENTFUNC         * user_sub;
@@ -54,7 +59,8 @@ typedef struct evSubscrip {
     char                useValque;
     char                callBackInProgress;
     char                enabled;
-} evSubscrip;
+};
+#endif
 
 typedef struct chFilter chFilter;
 

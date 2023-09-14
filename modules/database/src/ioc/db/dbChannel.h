@@ -49,15 +49,24 @@ typedef struct evSubscrip evSubscrip;
 struct evSubscrip {
     ELLNODE             node;
     struct dbChannel  * chan;
+    /* user_sub==NULL used to indicate db_cancel_event() */
     EVENTFUNC         * user_sub;
     void              * user_arg;
+    /* associated queue, may be shared with other evSubscrip */
     struct event_que  * ev_que;
+    /* NULL if !npend.  if npend!=0, pointer to last event added to event_que::valque */
     db_field_log     ** pLastLog;
-    unsigned long       npend;      /**< n times this event is on the queue */
-    unsigned long       nreplace;   /**< n times replacing event on the queue */
+    /* n times this event is on the queue */
+    unsigned long       npend;
+    /* n times replacing event on the queue */
+    unsigned long       nreplace;
+    /* DBE mask */
     unsigned char       select;
+    /* if set, subscription will yield dbfl_type_val */
     char                useValque;
+    /* event_task is handling this subscription */
     char                callBackInProgress;
+    /* this node added to dbCommon::mlis */
     char                enabled;
 };
 #endif

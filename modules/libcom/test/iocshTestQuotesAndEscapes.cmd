@@ -1,4 +1,3 @@
-on error break
 position 'Test single quotes'
 position "Test double quotes"
 position Test\"escapedDoubleQuotes\"inOneWord

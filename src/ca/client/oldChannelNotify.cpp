@@ -195,6 +195,16 @@ const char * epicsShareAPI ca_host_name (
 }
 
 /*
+ * ca_host_minorProtocol ()
+ */
+unsigned epicsShareAPI ca_host_minor_protocol (
+    chid pChan )
+{
+    epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
+    return pChan->io.getHostMinorProtocol( guard );
+}
+
+/*
  * ca_set_puser ()
  */
 void epicsShareAPI ca_set_puser (

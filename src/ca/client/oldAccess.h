@@ -61,6 +61,8 @@ public:
         chid pChan, char * pBuf, unsigned bufLength );
     friend const char * epicsShareAPI ca_host_name (
         chid pChan );
+    friend unsigned epicsShareAPI ca_host_minor_protocol (
+        chid pChan );
     friend const char * epicsShareAPI ca_name (
         chid pChan );
     friend void epicsShareAPI ca_set_puser (

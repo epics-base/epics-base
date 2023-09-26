@@ -83,14 +83,23 @@ void assertCallFunc(const iocshArgBuf *args)
     iocshSetError(args[0].ival);
 }
 
+const iocshArg printArg0 = {"string", iocshArgString};
+const iocshArg * const printArgs[1] = { &printArg0 };
+const iocshFuncDef printFuncDef = {"print",1,printArgs};
+void printCallFunc(const iocshArgBuf *args)
+{
+    reached.insert(args[0].sval);
+}
+
 } // namespace
 
 MAIN(iocshTest)
 {
-    testPlan(19);
+    testPlan(39);
     libComRegister();
     iocshRegister(&positionFuncDef, &positionCallFunc);
     iocshRegister(&assertFuncDef, &assertCallFunc);
+    iocshRegister(&printFuncDef, &printCallFunc);
     findTestData();
 
     testFile("iocshTestSuccess.cmd");
@@ -127,6 +136,33 @@ MAIN(iocshTest)
     testPosition("before_error");
     testPosition("after_error", false);
     testPosition("after_error_1", false);
+    reached.clear();
+
+    // test quotes and escapes
+    testCmd("position \"double quoted arg\"");
+    testPosition("double quoted arg");
+    reached.clear();
+
+    testFile("iocshTestQuotesAndEscapes.cmd");
+    // Escaping is a bit confusing as we need to escape for C too
+    // Comments show, what we really expect (as seen in the test output)
+    testPosition("Test single quotes");
+    testPosition("Test double quotes");
+    testPosition("Test\"escapedDoubleQuotes\"inOneWord");                // Test"escapedDoubleQuotes"inOneWord
+    testPosition("Test'escapedSingleQuotes'inOneWord");                  // Test'escapedSingleQuotes'inOneWord
+    testPosition("Test 'single quotes' in double quotes");               // Test 'single quotes' in double quotes
+    testPosition("Test \"double quotes\" in single quotes");             // Test "double quotes" in single quotes
+    testPosition("Test \\\"escaped double quotes\\\" in double quotes"); // Test \"escaped double quotes\" in double quotes
+    testPosition("Test \\\"escaped double quotes\\\" in single quotes"); // Test \"escaped double quotes\" in single quotes
+    testPosition("Test \\'escaped single quotes\\' in double quotes");   // Test \'escaped single quotes\' in double quotes
+    testPosition("Test \\'escaped single quotes\\' in single quotes");   // Test \'escaped single quotes\' in single quotes
+    testPosition("TestBackslash\\inOneWord");                            // TestBackslash\inOneWord
+    testPosition("TestEscapedBackslash\\\\inOneWord");                   // TestEscapedBackslash\\inOneWord
+    testPosition("Test escaped backslash \\\\ in double quotes");        // Test escaped backslash \\ in double quotes
+    testPosition("Test escaped backslash \\\\ in single quotes");        // Test escaped backslash \\ in single quotes
+    testCmd("Unbalanced \"double quote", false);
+    testCmd("Unbalanced 'single quote", false);
+    testCmd("trailing backslash\\", false);
     reached.clear();
 
     // cleanup after macLib to avoid valgrind false positives

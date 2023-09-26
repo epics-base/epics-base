@@ -299,7 +299,7 @@ struct Tokenize {
                 }
             }
             if (inword) {
-                if (c == quote) {
+                if (c == quote && !backslash) {
                     quote = 0;
                 }
                 else {
@@ -319,6 +319,10 @@ struct Tokenize {
                     }
                     else {
                         line[icout++] = c;
+                            if (c == '\\' && !backslash) {
+                                backslash = true;
+                                continue;
+                            }
                     }
                 }
             }

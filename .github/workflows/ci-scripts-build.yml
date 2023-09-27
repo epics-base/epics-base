@@ -46,8 +46,9 @@ jobs:
       CI_CROSS_TARGETS: ${{ matrix.cross }}
       EXTRA: ${{ matrix.extra }}
       TEST: ${{ matrix.test }}
+      CHOCO: llvm
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         # Job names also name artifacts, character limitations apply
         include:
@@ -148,10 +149,16 @@ jobs:
             configuration: debug
             name: "Win2019 MSC-19, debug"
 
-          - os: windows-2019
+          - os: windows-2022
             cmp: gcc
             configuration: default
-            name: "Win2019 mingw"
+            name: "Win2022 mingw"
+
+          - os: windows-2019
+            cmp: clang+vs2019
+            configuration: default
+            name: "Win2019 clang-cl"
+            choco: ["llvm"]
 
           # Cross builds
 

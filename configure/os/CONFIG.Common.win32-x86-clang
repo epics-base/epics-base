@@ -1,0 +1,18 @@
+# CONFIG.Common.win32-x86-clang
+#
+# Definitions for win32-x86-clang target build
+# Override these definitions in CONFIG_SITE.Common.win32-x86-clang
+#-------------------------------------------------------
+
+#Include definitions common to msvc compiler
+include $(CONFIG)/CONFIG.msvcCommon
+
+VALID_BUILDS = Ioc Host Command
+
+# Override CONFIG.msvcCommon settings:
+MSVC_PREFIX = llvm-
+CC = clang-cl$(MSVC_SUFFIX) --target=i686-pc-windows-msvc
+WINLINK = lld-link$(MSVC_SUFFIX)
+
+# clang-cl does not support /GL option
+OPT_WHOLE_PROGRAM = NO

@@ -310,6 +310,7 @@ LIBCOM_API extern struct dbBase **iocshPpdbbase;
 
 LIBCOM_API
 extern char** (*iocshCompleteRecord)(const char *word);
+extern char** (*iocshCompleteField)(const char * pv, const char * field_prefix);
 #endif
 
 #ifdef __cplusplus

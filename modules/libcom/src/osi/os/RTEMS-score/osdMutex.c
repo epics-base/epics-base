@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <errno.h>
 #include <rtems.h>
 #include <rtems/error.h>
 
@@ -26,97 +27,84 @@
 
 #include "epicsStdio.h"
 #include "epicsMutex.h"
+#include "epicsMutexImpl.h"
+#include "rtemsNamePvt.h"
 #include "epicsEvent.h"
 #include "errlog.h"
 
-#define RTEMS_FAST_MUTEX
-/* #define EPICS_RTEMS_SEMAPHORE_STATS */
-/*
- * Some performance tuning instrumentation
- */
-#ifdef EPICS_RTEMS_SEMAPHORE_STATS
-unsigned long semMstat[4];
-#define SEMSTAT(i)  semMstat[i]++;
-#else
-#define SEMSTAT(i)
-#endif
+uint32_t next_rtems_name(char prefix, uint32_t* counter)
+{
+    uint32_t next;
+    rtems_interrupt_level level;
+    char a, b, c;
 
-struct epicsMutexOSD *
-epicsMutexOsdCreate(void)
+    rtems_interrupt_disable (level);
+    next = *counter;
+    *counter = (next+1)%(26u*26u*26u);
+    rtems_interrupt_enable (level);
+
+    a = 'a' + (next % 26u);
+    next /= 26u;
+    b = 'a' + (next % 26u);
+    next /= 26u;
+    c = 'a' + (next % 26u); // modulo should be redundant, but ... paranoia
+
+    return rtems_build_name(prefix, a, b, c);
+}
+
+void epicsMutexOsdSetup(void)
+{
+    // TODO: use RTEMS_SYSINIT_ITEM() ?
+    if(!epicsMutexGlobalLock.osd) {
+        epicsMutexOsdPrepare(&epicsMutexGlobalLock);
+    }
+}
+
+long epicsMutexOsdPrepare(struct epicsMutexParm *mutex)
 {
     rtems_status_code sc;
     rtems_id sid;
     rtems_interrupt_level level;
-    static char c1 = 'a';
-    static char c2 = 'a';
-    static char c3 = 'a';
+    static uint32_t name;
 
-    sc = rtems_semaphore_create (rtems_build_name ('M', c3, c2, c1),
+    sc = rtems_semaphore_create (next_rtems_name ('M', &name),
         1,
         RTEMS_PRIORITY|RTEMS_BINARY_SEMAPHORE|RTEMS_INHERIT_PRIORITY|RTEMS_NO_PRIORITY_CEILING|RTEMS_LOCAL,
         0,
         &sid);
     if (sc != RTEMS_SUCCESSFUL) {
         errlogPrintf ("Can't create mutex semaphore: %s\n", rtems_status_text (sc));
-        return NULL;
+        return ENOMEM;
     }
-    rtems_interrupt_disable (level);
-    if (c1 == 'z') {
-        if (c2 == 'z') {
-            if (c3 == 'z') {
-                c3 = 'a';
-            }
-            else {
-                c3++;
-            }
-            c2 = 'a';
-        }
-        else {
-            c2++;
-        }
-        c1 = 'a';
-    }
-    else {
-        c1++;
-    }
-    rtems_interrupt_enable (level);
-#ifdef RTEMS_FAST_MUTEX
     {
-      Semaphore_Control *the_semaphore;
-      Objects_Locations  location;
+        Objects_Locations  location;
 
-      the_semaphore = _Semaphore_Get( sid, &location );
-      _Thread_Enable_dispatch();
+        mutex->osd = _Semaphore_Get( sid, &location );
+        _Thread_Enable_dispatch(); /* _Semaphore_Get() disables */
 
-      return (struct epicsMutexOSD *)the_semaphore;
+        return 0;
     }
-#endif
-    return (struct epicsMutexOSD *)sid;
 }
 
-void epicsMutexOsdDestroy(struct epicsMutexOSD * id)
+void epicsMutexOsdCleanup(struct epicsMutexParm *mutex)
 {
     rtems_status_code sc;
     rtems_id sid;
-#ifdef RTEMS_FAST_MUTEX
-    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
+    Semaphore_Control *the_semaphore = mutex->osd;
     sid = the_semaphore->Object.id;
-#else
-    sid = (rtems_id)id;
-#endif
     sc = rtems_semaphore_delete (sid);
     if (sc == RTEMS_RESOURCE_IN_USE) {
         rtems_semaphore_release (sid);
         sc = rtems_semaphore_delete (sid);
     }
     if (sc != RTEMS_SUCCESSFUL)
-        errlogPrintf ("Can't destroy semaphore %p (%lx): %s\n", id, (unsigned long)sid, rtems_status_text (sc));
+        errlogPrintf ("Can't destroy semaphore %p (%lx): %s\n",
+                      mutex, (unsigned long)sid, rtems_status_text (sc));
 }
 
-void epicsMutexOsdUnlock(struct epicsMutexOSD * id)
+void epicsMutexUnlock(struct epicsMutexParm *mutex)
 {
-#ifdef RTEMS_FAST_MUTEX
-    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
+    Semaphore_Control *the_semaphore = mutex->osd;
     _Thread_Disable_dispatch();
     _CORE_mutex_Surrender (
         &the_semaphore->Core_control.mutex,
@@ -124,18 +112,13 @@ void epicsMutexOsdUnlock(struct epicsMutexOSD * id)
         NULL
         );
     _Thread_Enable_dispatch();
-#else
-    epicsEventSignal (id);
-#endif
 
 }
 
-epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * id)
+epicsMutexLockStatus epicsMutexLock(struct epicsMutexParm *mutex)
 {
-#ifdef RTEMS_FAST_MUTEX
-    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
+    Semaphore_Control *the_semaphore = mutex->osd;
     ISR_Level level;
-    SEMSTAT(0)
     _ISR_Disable( level );
     _CORE_mutex_Seize(
         &the_semaphore->Core_control.mutex,
@@ -148,19 +131,12 @@ epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * id)
         return epicsMutexLockOK;
     else
         return epicsMutexLockError;
-#else
-    SEMSTAT(0)
-    return((epicsEventWait (id) == epicsEventWaitOK)
-        ?epicsMutexLockOK : epicsMutexLockError);
-#endif
 }
 
-epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * id)
+epicsMutexLockStatus epicsMutexTryLock(struct epicsMutexParm *mutex)
 {
-#ifdef RTEMS_FAST_MUTEX
-    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
+    Semaphore_Control *the_semaphore = mutex->osd;
     ISR_Level level;
-    SEMSTAT(2)
     _ISR_Disable( level );
     _CORE_mutex_Seize(
         &the_semaphore->Core_control.mutex,
@@ -175,25 +151,12 @@ epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * id)
         return epicsMutexLockTimeout;
     else
         return epicsMutexLockError;
-#else
-    epicsEventWaitStatus status;
-    SEMSTAT(2)
-    status = epicsEventTryWait(id);
-    return((status==epicsEventWaitOK
-        ? epicsMutexLockOK
-        : (status==epicsEventWaitTimeout)
-           ? epicsMutexLockTimeout
-           : epicsMutexLockError));
-#endif
 }
 
-LIBCOM_API void epicsMutexOsdShow(struct epicsMutexOSD * id,unsigned int level)
+LIBCOM_API void epicsMutexOsdShow(struct epicsMutexParm *mutex,unsigned int level)
 {
-#ifdef RTEMS_FAST_MUTEX
-    Semaphore_Control *the_semaphore = (Semaphore_Control *)id;
-    id = (struct epicsMutexOSD *)the_semaphore->Object.id;
-#endif
-    epicsEventShow ((epicsEventId)id,level);
+    Semaphore_Control *the_semaphore = mutex->osd;
+    epicsEventShow ((epicsEventId)the_semaphore->Object.id,level);
 }
 
 void epicsMutexOsdShowAll(void) {}

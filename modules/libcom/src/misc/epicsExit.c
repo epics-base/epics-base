@@ -35,8 +35,6 @@
 #include "cantProceed.h"
 #include "epicsExit.h"
 
-void epicsMutexCleanup(void);
-
 typedef struct exitNode {
     ELLNODE         node;
     epicsExitFunc   func;
@@ -115,8 +113,6 @@ LIBCOM_API void epicsExitCallAtExits(void)
         epicsExitCallAtExitsPvt ( pep );
         destroyExitPvt ( pep );
     }
-    /* Handle specially to avoid circular reference */
-    epicsMutexCleanup();
 }
 
 LIBCOM_API void epicsExitCallAtThreadExits(void)

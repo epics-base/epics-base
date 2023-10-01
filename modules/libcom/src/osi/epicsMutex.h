@@ -247,21 +247,6 @@ LIBCOM_API void epicsStdCall epicsMutexShow(
 LIBCOM_API void epicsStdCall epicsMutexShowAll(
     int onlyLocked,unsigned  int level);
 
-/**@privatesection
- * The following are interfaces to the OS dependent
- * implementation and should NOT be called directly by
- * user code.
- */
-struct epicsMutexOSD * epicsMutexOsdCreate(void);
-void epicsMutexOsdDestroy(struct epicsMutexOSD *);
-void epicsMutexOsdUnlock(struct epicsMutexOSD *);
-epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD *);
-epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD *);
-void epicsMutexOsdShow(struct epicsMutexOSD *,unsigned  int level);
-#ifdef EPICS_PRIVATE_API
-void epicsMutexOsdShowAll(void);
-#endif
-
 #ifdef __cplusplus
 }
 #endif

@@ -26,30 +26,23 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "dbDefs.h"
 #include "epicsStdio.h"
 #include "epicsThread.h"
-#include "valgrind/valgrind.h"
 #include "ellLib.h"
 #include "errlog.h"
 #include "epicsMutex.h"
+#include "epicsMutexImpl.h"
 #include "epicsThread.h"
+#include "cantProceed.h"
 
-static epicsThreadOnceId epicsMutexOsiOnce = EPICS_THREAD_ONCE_INIT;
-static ELLLIST mutexList;
-static ELLLIST freeList;
+static ELLLIST mutexList = ELLLIST_INIT;
 
-struct epicsMutexParm {
-    ELLNODE node;
-    epicsMutexOSD * id;
-#   ifdef LOG_LAST_OWNER
-        epicsThreadId lastOwner;
-#   endif
-    const char *pFileName;
-    int lineno;
-};
-
-static epicsMutexOSD * epicsMutexGlobalLock;
-
+/* Specially initialized to bootstrap initialization.
+ * When supported (posix and !rtems) use statically initiallized mutex.
+ * Otherwise, initialize via epicsMutexOsdSetup().
+ */
+struct epicsMutexParm epicsMutexGlobalLock = {ELLNODE_INIT, __FILE__, __LINE__};
 
 // vxWorks 5.4 gcc fails during compile when I use std::exception
 using namespace std;
@@ -76,176 +69,82 @@ const char * epicsMutex::invalidMutex::what () const throw ()
     return "epicsMutex::invalidMutex()";
 }
 
-static void epicsMutexOsiInit(void *) {
-    ellInit(&mutexList);
-    ellInit(&freeList);
-    VALGRIND_CREATE_MEMPOOL(&freeList, 0, 0);
-    epicsMutexGlobalLock = epicsMutexOsdCreate();
-}
-
 epicsMutexId epicsStdCall epicsMutexOsiCreate(
     const char *pFileName,int lineno)
 {
-    epicsMutexOSD * id;
+    epicsMutexOsdSetup();
 
-    epicsThreadOnce(&epicsMutexOsiOnce, epicsMutexOsiInit, NULL);
+    epicsMutexId ret = (epicsMutexId)calloc(1, sizeof(*ret));
+    if(ret) {
+        ret->pFileName = pFileName;
+        ret->lineno = lineno;
 
-    id = epicsMutexOsdCreate();
-    if(!id) {
-        return 0;
+        if(!epicsMutexOsdPrepare(ret)) {
+            epicsMutexMustLock(&epicsMutexGlobalLock);
+            ellAdd(&mutexList, &ret->node);
+            (void)epicsMutexUnlock(&epicsMutexGlobalLock);
+
+        } else {
+            free(ret);
+            ret = NULL;
+        }
+
     }
-    epicsMutexLockStatus lockStat =
-        epicsMutexOsdLock(epicsMutexGlobalLock);
-    assert ( lockStat == epicsMutexLockOK );
-    epicsMutexParm *pmutexNode =
-        reinterpret_cast < epicsMutexParm * > ( ellFirst(&freeList) );
-    if(pmutexNode) {
-        ellDelete(&freeList,&pmutexNode->node);
-        VALGRIND_MEMPOOL_FREE(&freeList, pmutexNode);
-    } else {
-        pmutexNode = static_cast < epicsMutexParm * > ( calloc(1,sizeof(epicsMutexParm)) );
-    }
-    VALGRIND_MEMPOOL_ALLOC(&freeList, pmutexNode, sizeof(epicsMutexParm));
-    pmutexNode->id = id;
-#   ifdef LOG_LAST_OWNER
-        pmutexNode->lastOwner = 0;
-#   endif
-    pmutexNode->pFileName = pFileName;
-    pmutexNode->lineno = lineno;
-    ellAdd(&mutexList,&pmutexNode->node);
-    epicsMutexOsdUnlock(epicsMutexGlobalLock);
-    return(pmutexNode);
+    return ret;
 }
 
 epicsMutexId epicsStdCall epicsMutexOsiMustCreate(
     const char *pFileName,int lineno)
 {
     epicsMutexId id = epicsMutexOsiCreate(pFileName,lineno);
-    assert(id);
-    return(id );
+    if(!id) {
+        cantProceed("epicsMutexOsiMustCreate() fails at %s:%d\n",
+                    pFileName, lineno);
+    }
+    return id;
 }
 
 void epicsStdCall epicsMutexDestroy(epicsMutexId pmutexNode)
 {
-    epicsMutexLockStatus lockStat =
-        epicsMutexOsdLock(epicsMutexGlobalLock);
-    assert ( lockStat == epicsMutexLockOK );
-    ellDelete(&mutexList,&pmutexNode->node);
-    epicsMutexOsdDestroy(pmutexNode->id);
-    VALGRIND_MEMPOOL_FREE(&freeList, pmutexNode);
-    VALGRIND_MEMPOOL_ALLOC(&freeList, &pmutexNode->node, sizeof(pmutexNode->node));
-    ellAdd(&freeList,&pmutexNode->node);
-    epicsMutexOsdUnlock(epicsMutexGlobalLock);
-}
-
-void epicsStdCall epicsMutexUnlock(epicsMutexId pmutexNode)
-{
-    epicsMutexOsdUnlock(pmutexNode->id);
-}
-
-epicsMutexLockStatus epicsStdCall epicsMutexLock(
-    epicsMutexId pmutexNode)
-{
-    epicsMutexLockStatus status =
-        epicsMutexOsdLock(pmutexNode->id);
-#   ifdef LOG_LAST_OWNER
-        if ( status == epicsMutexLockOK ) {
-            pmutexNode->lastOwner = epicsThreadGetIdSelf();
-        }
-#   endif
-    return status;
-}
-
-epicsMutexLockStatus epicsStdCall epicsMutexTryLock(
-    epicsMutexId pmutexNode)
-{
-    epicsMutexLockStatus status =
-        epicsMutexOsdTryLock(pmutexNode->id);
-#   ifdef LOG_LAST_OWNER
-        if ( status == epicsMutexLockOK ) {
-            pmutexNode->lastOwner = epicsThreadGetIdSelf();
-        }
-#   endif
-    return status;
-}
-
-/* Empty the freeList.
- * Called from epicsExit.c, but not via epicsAtExit()
- * to avoid the possibility of a circular reference.
- */
-extern "C"
-void epicsMutexCleanup(void)
-{
-    ELLNODE *cur;
-    epicsMutexLockStatus lockStat =
-        epicsMutexOsdLock(epicsMutexGlobalLock);
-    assert ( lockStat == epicsMutexLockOK );
-
-    while((cur=ellGet(&freeList))!=NULL) {
-        VALGRIND_MEMPOOL_FREE(&freeList, cur);
-        free(cur);
+    if(pmutexNode) {
+        epicsMutexMustLock(&epicsMutexGlobalLock);
+        ellDelete(&mutexList, &pmutexNode->node);
+        (void)epicsMutexUnlock(&epicsMutexGlobalLock);
+        epicsMutexOsdCleanup(pmutexNode);
+        free(pmutexNode);
     }
-
-    epicsMutexOsdUnlock(epicsMutexGlobalLock);
 }
 
 void epicsStdCall epicsMutexShow(
     epicsMutexId pmutexNode, unsigned  int level)
 {
-#   ifdef LOG_LAST_OWNER
-        char threadName [255];
-        if ( pmutexNode->lastOwner ) {
-#           error currently not safe to fetch name for stale thread
-            epicsThreadGetName ( pmutexNode->lastOwner,
-                threadName, sizeof ( threadName ) );
-        }
-        else {
-            strcpy ( threadName, "<not used>" );
-        }
-        printf("epicsMutexId %p last owner \"%s\" source %s line %d\n",
-            (void *)pmutexNode, threadName,
-            pmutexNode->pFileName, pmutexNode->lineno);
-#   else
-        printf("epicsMutexId %p source %s line %d\n",
-            (void *)pmutexNode, pmutexNode->pFileName,
-            pmutexNode->lineno);
-#   endif
+    printf("epicsMutexId %p source %s line %d\n",
+           (void *)pmutexNode, pmutexNode->pFileName,
+           pmutexNode->lineno);
     if ( level > 0 ) {
-        epicsMutexOsdShow(pmutexNode->id,level-1);
+        epicsMutexOsdShow(pmutexNode,level-1);
     }
 }
 
 void epicsStdCall epicsMutexShowAll(int onlyLocked,unsigned  int level)
 {
-    epicsMutexParm *pmutexNode;
+    epicsMutexOsdSetup();
 
-    if (epicsMutexOsiOnce == EPICS_THREAD_ONCE_INIT)
-        return;
-
-    printf("ellCount(&mutexList) %d ellCount(&freeList) %d\n",
-        ellCount(&mutexList),ellCount(&freeList));
+    printf("ellCount(&mutexList) %d\n", ellCount(&mutexList));
     epicsMutexOsdShowAll();
-    epicsMutexLockStatus lockStat =
-        epicsMutexOsdLock(epicsMutexGlobalLock);
-    assert ( lockStat == epicsMutexLockOK );
-    pmutexNode = reinterpret_cast < epicsMutexParm * > ( ellFirst(&mutexList) );
-    while(pmutexNode) {
+    epicsMutexMustLock(&epicsMutexGlobalLock);
+    for(ELLNODE *cur =ellFirst(&mutexList); cur; cur = ellNext(cur)) {
+        epicsMutexParm *lock = CONTAINER(cur, epicsMutexParm, node);
         if(onlyLocked) {
-            epicsMutexLockStatus status;
-            status = epicsMutexOsdTryLock(pmutexNode->id);
-            if(status==epicsMutexLockOK) {
-                epicsMutexOsdUnlock(pmutexNode->id);
-                pmutexNode =
-                    reinterpret_cast < epicsMutexParm * >
-                        ( ellNext(&pmutexNode->node) );
-                continue;
+            // cycle through to test state
+            if(epicsMutexTryLock(lock)==epicsMutexLockOK) {
+                epicsMutexUnlock(lock);
+                continue; // was not locked, skip
             }
         }
-        epicsMutexShow(pmutexNode, level);
-        pmutexNode =
-            reinterpret_cast < epicsMutexParm * > ( ellNext(&pmutexNode->node) );
+        epicsMutexShow(lock, level);
     }
-    epicsMutexOsdUnlock(epicsMutexGlobalLock);
+    epicsMutexUnlock(&epicsMutexGlobalLock);
 }
 
 #if !defined(__GNUC__) || __GNUC__<4 || (__GNUC__==4 && __GNUC_MINOR__<8)

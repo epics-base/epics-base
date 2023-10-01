@@ -13,13 +13,3 @@
 
 #include <vxWorks.h>
 #include <semLib.h>
-
-/* If the macro is replaced by inline it is necessary to say
-   static __inline__
-   but then a warning message appears everywhere osdMutex.h is included
-*/
-
-#define epicsMutexOsdUnlock(ID) semGive((SEM_ID)(ID))
-
-#define epicsMutexOsdLock(ID) \
-(semTake((SEM_ID)(ID),WAIT_FOREVER)==OK ? epicsMutexLockOK : epicsMutexLockError)

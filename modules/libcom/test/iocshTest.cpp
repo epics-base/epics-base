@@ -9,6 +9,7 @@
 #include <fstream>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 
 #include <osiUnistd.h>
 #include <osiFileName.h>
@@ -99,30 +100,62 @@ std::string readFile(std::string filename)
 {
     std::ifstream t(filename.c_str());
     std::stringstream buffer;
+
+    if (!t.is_open()) {
+        throw std::invalid_argument("Could not open filename " + filename);
+    }
+
     buffer << t.rdbuf();
     return buffer.str();
 }
 
-bool compareFiles(const std::string& p1, const std::string& p2) 
+bool compareFiles(const std::string& p1, const std::string& p2)
 {
   std::ifstream f1(p1.c_str(), std::ifstream::binary|std::ifstream::ate);
   std::ifstream f2(p2.c_str(), std::ifstream::binary|std::ifstream::ate);
 
   if (f1.fail() || f2.fail()) {
+    testDiag("One or more files failed to open");
+    testDiag("f1.fail(): %d f2.fail(): %d", f1.fail(), f2.fail());
     return false; // File problem
   }
 
   if (f1.tellg() != f2.tellg()) {
+    testDiag("File sizes did not match");
     return false; // Size mismatch
   }
 
   // Seek back to beginning and use std::equal to compare contents
   f1.seekg(0, std::ifstream::beg);
   f2.seekg(0, std::ifstream::beg);
-  return std::equal(std::istreambuf_iterator<char>(f1.rdbuf()),
-                    std::istreambuf_iterator<char>(),
-                    std::istreambuf_iterator<char>(f2.rdbuf()));
+
+  bool are_equal = std::equal(
+    std::istreambuf_iterator<char>(f1.rdbuf()),
+    std::istreambuf_iterator<char>(),
+    std::istreambuf_iterator<char>(f2.rdbuf())
+  );
+
+  if (! are_equal) {
+    testDiag("File contents did not match");
+
+    std::string line;
+    f1.seekg(0, std::ifstream::beg);
+    f2.seekg(0, std::ifstream::beg);
+
+    testDiag("File1 contents: ");
+    while(std::getline(f1, line)) {
+        testDiag("%s", line.c_str());
+    }
+
+    testDiag("File2 contents: ");
+    while(std::getline(f2, line)) {
+        testDiag("%s", line.c_str());
+    }
+  }
+
+  return are_equal;
 }
+
 
 void testHelp(void)
 {
@@ -146,7 +179,7 @@ void testHelp(void)
     // Confirm formatting of multiple commands
     iocshCmd(("help testHelp* > " + filename).c_str());
     testOk1(compareFiles(filename, "iocshTestHelpFunctions") == true);
-    
+
     remove(filename.c_str());
 }
 

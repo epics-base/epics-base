@@ -269,6 +269,7 @@ TESTPROD_HOST += iocshTest
 iocshTest_SRCS += iocshTest.cpp
 TESTS += iocshTest
 TESTFILES += $(wildcard ../iocshTest*.cmd)
+TESTFILES += ../iocshTestHelpFunction1 ../iocshTestHelpFunctions
 
 TESTPROD_HOST += epicsLoadTest
 epicsLoadTest_SRCS += epicsLoadTest.cpp

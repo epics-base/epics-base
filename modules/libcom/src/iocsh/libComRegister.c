@@ -10,6 +10,7 @@
 \*************************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "iocsh.h"
 #include "asLib.h"
@@ -124,6 +125,73 @@ static void pwdCallFunc (const iocshArgBuf *args)
         buf[sizeof(buf)-1u] = '\0';
         printf ( "%s\n", pwd );
     }
+}
+
+static const iocshArg cpArg0 = { "src",iocshArgString};
+static const iocshArg cpArg1 = { "dest",iocshArgString};
+static const iocshArg * const cpArgs[] = {&cpArg0,&cpArg1};
+static const iocshFuncDef cpFuncDef = {
+    "cp", 2, cpArgs,
+    "Copy the contents of one file.  Source may be OS, or in-memory file (\"app:///...\").\n"
+    "If provided, destination must be OS file.  If not provided, prints to stdout.\n"
+};
+
+/* provide "cat" as an alias for "cp" where destination is always (redirect) stdout. */
+static const iocshFuncDef catFuncDef = {
+    "cat", 1, cpArgs,
+    "Print the contents of one file.  May be OS, or in-memory file (\"app:///...\").\n"
+};
+
+static void cpCallFunc (const iocshArgBuf *args)
+{
+    const size_t buflen = 1024u;
+    FILE *src = NULL, *dst = NULL, *dstalloc = NULL;
+    char *buf = NULL;
+
+    if(!args[0].sval || !args[0].sval[0]) {
+        fprintf(stderr, "Usage: cp <src> [dst]\n");
+        iocshSetError(1);
+        return;
+    }
+
+    if(!args[1].sval || !args[1].sval[0]) {
+        dst = epicsGetStdout();
+    }
+
+    if(!(src = epicsFOpen(args[0].sval, "rb"))) {
+        int err = iocshSetError(errno);
+        fprintf(stderr, "%s(%d) unable to open input \"%s\"\n",
+                strerror(err), err, args[0].sval);
+
+    } else if(!dst && !(dst = dstalloc = fopen(args[1].sval, "wb"))) {
+        int err = iocshSetError(errno);
+        fprintf(stderr, "%s(%d) unable to open output \"%s\"\n",
+                strerror(err), err, args[1].sval);
+
+    } else if(!(buf = malloc(buflen))) {
+        iocshSetError(ENOMEM);
+
+    } else {
+        int ret;
+
+        do {
+            ret = fread(buf, 1, buflen, src);
+            if(ret > 0)
+                ret = fwrite(buf, 1, (size_t)ret, dst);
+
+        } while(ret > 0);
+
+        if(ret < 0) {
+            int err = iocshSetError(errno);
+            fprintf(stderr, "%s(%d) unable to copy\n", strerror(err), err);
+        }
+    }
+
+    if(src)
+        (void)fclose(src);
+    if(dstalloc)
+        (void)fclose(dstalloc);
+    free(buf);
 }
 
 /* epicsEnvSet */
@@ -482,6 +550,8 @@ void epicsStdCall libComRegister(void)
     iocshRegister(&echoFuncDef, echoCallFunc);
     iocshRegister(&chdirFuncDef, chdirCallFunc);
     iocshRegister(&pwdFuncDef, pwdCallFunc);
+    iocshRegister(&cpFuncDef, &cpCallFunc);
+    iocshRegister(&catFuncDef, &cpCallFunc); /* "cat" is an alias for "cp" */
 
     updatePWD();
 

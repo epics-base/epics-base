@@ -251,6 +251,14 @@ osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
+TESTPROD_HOST += epicsMemFileTest
+epicsMemFileTest_SRCS += epicsMemFileTest.cpp
+ifeq (YES,$(HAVE_ZLIB))
+epicsMemFileTest_CXXFLAGS += -DIMF_HAS_ZLIB
+endif
+testHarness_SRCS += epicsMemFileTest.cpp
+TESTS += epicsMemFileTest
+
 TESTPROD_HOST += testexecname
 testexecname_SRCS += testexecname.c
 # no point in including in testHarness.  Not implemented for RTEMS/vxWorks.
@@ -267,8 +275,9 @@ endif
 
 TESTPROD_HOST += iocshTest
 iocshTest_SRCS += iocshTest.cpp
+iocshTest_SRCS += iocshTest_emem.c
+iocshTest_FILES = $(wildcard ../iocshTest*.cmd)
 TESTS += iocshTest
-TESTFILES += $(wildcard ../iocshTest*.cmd)
 
 TESTPROD_HOST += epicsLoadTest
 epicsLoadTest_SRCS += epicsLoadTest.cpp
@@ -340,8 +349,8 @@ endif
 
 include $(TOP)/configure/RULES
 
-rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
-	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)
+iocshTest_emem.c: $(iocshTest_FILES) $(TOOLS)/epicsMakeMemFs.pl
+	$(PERL) $(TOOLS)/epicsMakeMemFs.pl -f imf $(EMEM_FLAGS) $@ iocshTest $(iocshTest_FILES)
 
 epicsLoadTest$(DEP): epicsInstallDir.h
 

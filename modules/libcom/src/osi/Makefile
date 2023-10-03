@@ -111,6 +111,12 @@ Com_SRCS += epicsReadline.c
 Com_SRCS += epicsTempFile.c
 Com_SRCS += epicsStdio.c
 Com_SRCS += osdStdio.c
+Com_SRCS += epicsMemFile.c
+Com_SRCS += osdMemFile.c
+
+ifeq (YES,$(HAVE_ZLIB))
+epicsMemFile_CFLAGS += -DIMF_HAS_ZLIB
+endif
 
 #POSIX thread priority scheduling flag
 THREAD_CPPFLAGS_NO += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING

@@ -28,6 +28,7 @@ int epicsErrlogTest(void);
 int epicsEventTest(void);
 int epicsExitTest(void);
 int epicsMathTest(void);
+int epicsMemFileTest(void);
 int epicsMessageQueueTest(void);
 int epicsMMIOTest(void);
 int epicsMutexTest(void);
@@ -87,6 +88,7 @@ void epicsRunLibComTests(void)
     runTest(epicsEventTest);
     runTest(epicsInlineTest);
     runTest(epicsMathTest);
+    runTest(epicsMemFileTest);
     runTest(epicsMessageQueueTest);
     runTest(epicsMMIOTest);
     runTest(epicsMutexTest);

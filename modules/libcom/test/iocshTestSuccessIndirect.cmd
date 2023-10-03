@@ -1,3 +1,3 @@
 on error break
-<iocshTestSuccess.cmd
+<app:///iocshTestSuccess.cmd
 position after_success

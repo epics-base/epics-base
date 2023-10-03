@@ -11,6 +11,8 @@
 /* Author:  Marty Kraimer Date:    13JUL95*/
 
 /*The routines in this module are serially reusable NOT reentrant*/
+#define epicsStdioStdPrintfEtc
+#define epicsStdioStdStreams
 
 #include <ctype.h>
 #include <epicsStdlib.h>
@@ -21,6 +23,7 @@
 #include "dbDefs.h"
 #include "dbmf.h"
 #include "ellLib.h"
+#include "epicsStdio.h"
 #include "epicsPrint.h"
 #include "epicsString.h"
 #include "errMdef.h"
@@ -170,7 +173,7 @@ const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
     if (!filename) return 0;
     if (!ppathList || ellCount(ppathList) == 0 ||
         strchr(filename, '/') || strchr(filename, '\\')) {
-        *fp = fopen(filename, "r");
+        *fp = epicsFOpen(filename, "r");
         if (*fp && makeDbdDepends)
             fprintf(stdout, "%s:%s \n", makeDbdDepends, filename);
         return 0;
@@ -182,7 +185,7 @@ const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
         strcpy(fullfilename, pdbPathNode->directory);
         strcat(fullfilename, "/");
         strcat(fullfilename, filename);
-        *fp = fopen(fullfilename, "r");
+        *fp = epicsFOpen(fullfilename, "r");
         if (*fp && makeDbdDepends)
             fprintf(stdout, "%s:%s \n", makeDbdDepends, fullfilename);
         free((void *)fullfilename);

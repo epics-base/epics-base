@@ -990,7 +990,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             scope.interactive = true;
         }
         else {
-            fp = fopen (pathname, "r");
+            fp = epicsFOpen (pathname, "r");
             if (fp == NULL) {
                 fprintf(epicsGetStderr(), "Can't open %s: %s\n", pathname,
                     strerror (errno));

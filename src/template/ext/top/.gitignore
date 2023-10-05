@@ -8,6 +8,9 @@
 # Local configuration files
 /configure/*.local
 
+# iocsh
+.iocsh_history
+
 # Build directories
 O.*/
 

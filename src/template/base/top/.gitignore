@@ -17,6 +17,9 @@
 /iocBoot/*ioc*/envPaths
 /iocBoot/*ioc*/relPaths.sh
 
+# iocsh
+.iocsh_history
+
 # Build directories
 O.*/
 

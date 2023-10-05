@@ -16,6 +16,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <sstream>
 
 #include <stddef.h>
 #include <string.h>
@@ -43,6 +44,7 @@
 
 #if EPICS_COMMANDLINE_LIBRARY == EPICS_COMMANDLINE_LIBRARY_READLINE
 #  include <readline/readline.h>
+#  include <readline/history.h>
 #  define USE_READLINE
 /* libedit also provides readline.h, but isn't fully compatible with
  * GNU readline.  It also doesn't specifically identify itself.
@@ -633,6 +635,15 @@ struct ReadlineContext {
             rl_completer_quote_characters = (char*)"\"";
             rl_attempted_completion_function = &iocsh_attempt_completion;
             rl_bind_key('\t', rl_complete);
+            compute_hist_file();
+            if(!hist_file.empty()) {
+                if(int err = read_history(hist_file.c_str())) {
+                    if(err!=ENOENT)
+                        fprintf(stderr, "Error %s (%d) loading '%s'\n",
+                                strerror(err), err, hist_file.c_str());
+                }
+                stifle_history(1024); // some limit...
+            }
         }
 #endif
         return context;
@@ -641,6 +652,12 @@ struct ReadlineContext {
     ~ReadlineContext() {
         if(context) {
 #ifdef USE_READLINE
+            if(!hist_file.empty()) {
+                if(int err = write_history(hist_file.c_str())) {
+                    fprintf(stderr, "Error %s (%d) writing '%s'\n",
+                            strerror(err), err, hist_file.c_str());
+                }
+            }
             rl_readline_name = prev_rl_readline_name;
             rl_basic_word_break_characters = prev_rl_basic_word_break_characters;
             rl_completer_word_break_characters = prev_rl_completer_word_break_characters;
@@ -653,6 +670,26 @@ struct ReadlineContext {
             epicsReadlineEnd(context);
         }
     }
+
+#ifdef USE_READLINE
+    std::string hist_file;
+
+    void compute_hist_file() {
+        std::string scratch;
+        if(const char *env = getenv("EPICS_IOCSH_HISTFILE")) {
+            scratch = env;
+        } else {
+            scratch = ".iocsh_history";
+        }
+        const char *home = getenv("HOME");
+        if(home && scratch.size()>=2 && scratch[0]=='~' && scratch[1]=='/') {
+            std::ostringstream strm;
+            strm<<home<<'/'<<scratch.substr(2);
+            scratch = strm.str();
+        }
+        hist_file.swap(scratch);
+    }
+#endif // USE_READLINE
 };
 
 } // namespace

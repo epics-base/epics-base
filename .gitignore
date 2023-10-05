@@ -17,3 +17,4 @@ O.*/
 *.log
 .*.swp
 .DS_Store
+.iocsh_history

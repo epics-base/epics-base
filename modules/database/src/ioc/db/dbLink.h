@@ -359,6 +359,8 @@ typedef struct lset {
      * @param   plink   the link
      * @param   rtn     routine to execute
      * @returns status value
+     *
+     * @since 3.16.1
      */
     long (*doLocked)(struct link *plink, dbLinkUserCallback rtn, void *priv);
 

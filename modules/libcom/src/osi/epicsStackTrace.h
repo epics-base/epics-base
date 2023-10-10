@@ -25,6 +25,8 @@ extern "C" {
 /** \brief Dump a stack trace
  *
  * Dump a stack trace to the errlog.
+ *
+ * \since 3.15.0.2 Added
  */
 LIBCOM_API void epicsStackTrace(void);
 

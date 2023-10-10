@@ -22,6 +22,28 @@ should also be read to understand what has changed since earlier releases:
 
 ## Changes made on the 7.0 branch since 7.0.7
 
+### Allow explicit append with `dbRecordsOnceOnly!=0`
+
+Previously setting `dbRecordsOnceOnly!=0` prevented any further changes to a record via a .db file.  eg.
+
+```
+record(ai, "myrec") {}
+```
+
+`dbRecordsOnceOnly!=0` previously disallowed appending fields with either form:
+
+```
+record("*", "myrec") {} # error
+record(ai, "myrec") {}  # error
+```
+
+Beginning with this release, `dbRecordsOnceOnly!=0` allows appending when explicitly intended (when record type is `"*"`).
+
+```
+record("*", "myrec") {} # allowed
+record(ai, "myrec") {}  # error
+```
+
 ### Add `$EPICS_CLI_TIMEOUT`
 
 Add support for CA tools timeout from environment variable `$EPICS_CLI_TIMEOUT`
@@ -63,7 +85,7 @@ Previously, if a subRecord has an invalid `INP*` link, it was silently failing
 (and not running the proc function).  Now the the status code returned by the
 subroutine is returned from `dbProcess()`.
 
-### COMMANDLINE_LIBRARY fallback to GNU_DIR
+### COMMANDLINE\_LIBRARY fallback to GNU\_DIR
 
 Fall back to the previous behavior when searching for `readline.h` with older compilers.
 
@@ -118,7 +140,9 @@ This functionality was suggested in
 be added to other output record types if the community finds it useful,
 please send feedback about the feature to tech-talk.
 
-### Tab completion for IOC shell
+### IOC Shell
+
+#### Tab completion
 
 When built with optional GNU libreadline support, the interactive IOC shell
 will perform tab completion for command names as well as for some arguments
@@ -130,13 +154,24 @@ using the new `iocshArgStringRecord` and `iocshArgStringPath` argument types.
 Both function identically to `iocshArgString` but indicate how to suggest
 completion strings.
 
-Builds on macOS (darwin-x86 or darwin-aarch64 targets) normally use Apple's
+Builds on macOS (`darwin-x86` or `darwin-aarch64` targets) normally use Apple's
 libedit library in readline compatibility mode, which doesn't support the tab
 completion API that GNU readline provides. You can use Homebrew or some other
 third-party package manager to install the GNU readline package, then edit the
-configure/os/CONFIG_SITE.darwinCommon.darwinCommon file to have EPICS use the
+`configure/os/CONFIG_SITE.darwinCommon.darwinCommon` file to have EPICS use the
 real thing to get tab completion in the IOC shell. The default settings in that
 file currently look for and use a Homebrew-installed readline if present.
+
+#### Persist history
+
+Attempt to read and write command to a file (`./.iocsh_history` by default).
+Name may be overwritten with by setting `$EPICS_IOCSH_HISTFILE` to an
+alternate path, or disabled by setting to an empty string.
+
+#### Changes to help output
+
+Rework the `help` command output to improve formatting and readability,
+and include a visual marker (a line of underlines) between different help commands.
 
 ### Add FMOD as CALC Expression
 

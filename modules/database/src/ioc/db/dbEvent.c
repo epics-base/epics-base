@@ -1008,7 +1008,6 @@ static void event_task (void *pParm)
     do {
         void (*pExtraLaborSub) (void *);
         void *pExtraLaborArg;
-        char wake;
         epicsEventMustWait(evUser->ppendsem);
 
         /*

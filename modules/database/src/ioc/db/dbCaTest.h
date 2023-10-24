@@ -12,12 +12,15 @@
 #define INC_dbCaTest_H
 
 #include "dbCoreAPI.h"
+#include "dbCommon.h"
+#include "dbStaticLib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-DBCORE_API long dbcar(char *recordname,int level);
+DBCORE_API long process_ca_record_links(DBENTRY *pdbentry, void *pvt, long (*callback)(dbCommon *, dbFldDes *, DBLINK *, void *));
+DBCORE_API long dbcar(char *recordname, int level);
 DBCORE_API void dbcaStats(int *pchans, int *pdiscon);
 
 #ifdef __cplusplus

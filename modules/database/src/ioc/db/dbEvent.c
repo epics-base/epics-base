@@ -82,9 +82,10 @@ struct event_que {
 struct event_user {
     struct event_que    firstque;       /* the first event que */
 
+    ELLLIST             waiters;        /* event_waiter::node */
+
     epicsMutexId        lock;
     epicsEventId        ppendsem;       /* Wait while empty */
-    epicsEventId        pflush_sem;     /* wait for flush */
     epicsEventId        pexitsem;       /* wait for event task to join */
 
     EXTRALABORFUNC      *extralabor_sub;/* off load to event task */
@@ -100,6 +101,11 @@ struct event_user {
     void                (*init_func)();
     epicsThreadId       init_func_arg;
 };
+
+typedef struct {
+    ELLNODE node; /* event_user::waiters */
+    epicsEventId wake;
+} event_waiter;
 
 /*
  * Reliable intertask communication requires copying the current value of the
@@ -306,9 +312,6 @@ dbEventCtx db_init_events (void)
     evUser->ppendsem = epicsEventCreate(epicsEventEmpty);
     if (!evUser->ppendsem)
         goto fail;
-    evUser->pflush_sem = epicsEventCreate(epicsEventEmpty);
-    if (!evUser->pflush_sem)
-        goto fail;
     evUser->lock = epicsMutexCreate();
     if (!evUser->lock)
         goto fail;
@@ -326,8 +329,6 @@ fail:
         epicsMutexDestroy (evUser->firstque.writelock);
     if(evUser->ppendsem)
         epicsEventDestroy (evUser->ppendsem);
-    if(evUser->pflush_sem)
-        epicsEventDestroy (evUser->pflush_sem);
     if(evUser->pexitsem)
         epicsEventDestroy (evUser->pexitsem);
     freeListFree(dbevEventUserFreeList,evUser);
@@ -391,7 +392,6 @@ void db_close_events (dbEventCtx ctx)
 
     epicsEventDestroy(evUser->pexitsem);
     epicsEventDestroy(evUser->ppendsem);
-    epicsEventDestroy(evUser->pflush_sem);
     epicsMutexDestroy(evUser->lock);
 
     epicsMutexUnlock (stopSync);
@@ -592,23 +592,33 @@ void db_cancel_event (dbEventSubscription event)
     UNLOCKEVQUE (que);
 
     if(sync) {
-        /* wait for worker to cycle */
+        /* cycle through worker */
         struct event_user *evUser = que->evUser;
         epicsUInt32 curSeq;
+        event_waiter wait;
+        wait.wake = epicsEventCreate(epicsEventEmpty); /* may fail */
+
         epicsMutexMustLock ( evUser->lock );
+        ellAdd(&evUser->waiters, &wait.node);
         /* grab current cycle counter, then wait for it to change */
         curSeq = evUser->pflush_seq;
         do {
             epicsMutexUnlock( evUser->lock );
-            epicsEventMustWait(evUser->pflush_sem);
-            /* The complexity needed to track the # of waiters does not seem
-             * worth it for the relatively rare situation of concurrent cancel.
-             * So uncondtionally re-trigger.  This will result in one spurious
-             * wakeup for each cancellation.
-             */
-            epicsEventTrigger(evUser->pflush_sem);
+            /* ensure worker will cycle at least once */
+            epicsEventMustTrigger(evUser->ppendsem);
+
+            if(wait.wake) {
+                epicsEventMustWait(wait.wake);
+            } else {
+                epicsThreadSleep(0.01); /* ick. but better than cantProceed() */
+            }
+
             epicsMutexMustLock ( evUser->lock );
         } while(curSeq == evUser->pflush_seq);
+        ellDelete(&evUser->waiters, &wait.node);
+        /* destroy under lock to ensure epicsEventMustTrigger() has returned */
+        if(wait.wake)
+            epicsEventDestroy(wait.wake);
         epicsMutexUnlock( evUser->lock );
     }
 }
@@ -1041,10 +1051,17 @@ static void event_task (void *pParm)
         pendexit = evUser->pendexit;
 
         evUser->pflush_seq++;
+        if(ellCount(&evUser->waiters)) {
+            /* hold lock throughout to avoid race between event trigger and destroy */
+            ELLNODE *cur;
+            for(cur = ellFirst(&evUser->waiters); cur; cur = ellNext(cur)) {
+                event_waiter *w = CONTAINER(cur, event_waiter, node);
+                if(w->wake)
+                    epicsEventMustTrigger(w->wake);
+            }
+        }
 
         epicsMutexUnlock ( evUser->lock );
-
-        epicsEventSignal(evUser->pflush_sem);
 
     } while( ! pendexit );
 

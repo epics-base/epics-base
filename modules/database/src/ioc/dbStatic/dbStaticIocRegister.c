@@ -10,6 +10,7 @@
 
 #include "iocsh.h"
 #include "errSymTbl.h"
+#include "errlog.h"
 
 #include "dbStaticIocRegister.h"
 #include "dbStaticLib.h"
@@ -254,7 +255,7 @@ static void dbCreateAliasCallFunc(const iocshArgBuf *args)
     }
     dbFinishEntry(&ent);
     if(status) {
-        fprintf(stderr, "Error: %ld %s\n", status, errSymMsg(status));
+        fprintf(stderr, ERL_ERROR ": %ld %s\n", status, errSymMsg(status));
         iocshSetError(1);
     }
 }

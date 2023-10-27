@@ -17,6 +17,7 @@
 
 #include <epicsStdio.h>
 #include <epicsFindSymbol.h>
+#include <errlog.h>
 #include <registryRecordType.h>
 #include <registryDeviceSupport.h>
 #include <registryDriverSupport.h>
@@ -248,7 +249,7 @@ registerAllRecordDeviceDrivers(DBBASE *pdbbase)
 
     } catch(std::exception& e) {
         dbFinishEntry(&entry);
-        fprintf(stderr, "Error: %s\n", e.what());
+        fprintf(stderr, ERL_ERROR ": %s\n", e.what());
         return 2;
     }
 }

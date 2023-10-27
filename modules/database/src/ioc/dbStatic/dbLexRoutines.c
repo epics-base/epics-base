@@ -1068,7 +1068,7 @@ int dbRecordNameValidate(const char *name)
     const char *pos = name;
 
     if (!*name) {
-        yyerrorAbort("Error: Record/Alias name can't be empty");
+        yyerrorAbort(ERL_ERROR ": Record/Alias name can't be empty");
         return 1;
     }
 

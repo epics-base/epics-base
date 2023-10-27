@@ -666,7 +666,7 @@ static void setlogmaskCallFunc(const iocshArgBuf *args)
 #endif
             return;
         }
-        printf("Error: unknown log level.\n");
+        printf(ERL_ERROR ": unknown log level.\n");
     }
 }
 static const iocshArg setlogmaskArg0 = {"level name", iocshArgString};

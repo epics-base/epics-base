@@ -89,7 +89,7 @@ static FILE *openOutstream(const char *filename)
     errno = 0;
     stream = fopen(filename,"w");
     if(!stream) {
-        fprintf(stderr,"error opening %s %s\n",filename,strerror(errno));
+        fprintf(stderr,ERL_ERROR " opening %s %s\n",filename,strerror(errno));
         return 0;
     }
     return stream;

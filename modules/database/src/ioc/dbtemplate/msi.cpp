@@ -264,7 +264,7 @@ static void addMacroReplacements(MAC_HANDLE * const macPvt,
     if (status) {
         status = macInstallMacros(macPvt, pairs);
         if (!status) {
-            fprintf(stderr, "Error from macInstallMacros\n");
+            fprintf(stderr, ERL_ERROR " from macInstallMacros\n");
             usageExit(1);
         }
         free(pairs);

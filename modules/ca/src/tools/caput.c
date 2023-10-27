@@ -35,6 +35,7 @@
 #include <epicsStdlib.h>
 
 #include <cadef.h>
+#include <errlog.h>
 #include <epicsGetopt.h>
 #include <epicsEvent.h>
 #include <epicsString.h>
@@ -549,7 +550,7 @@ int main (int argc, char *argv[])
         result = ca_array_put (dbrType, count, pvs[0].chid, pbuf);
     }
     if (result != ECA_NORMAL) {
-        fprintf(stderr, "Error from put operation: %s\n", ca_message(result));
+        fprintf(stderr, ERL_ERROR " from put operation: %s\n", ca_message(result));
         free(sbuf); free(dbuf); free(ebuf);
         return 1;
     }
@@ -570,7 +571,7 @@ int main (int argc, char *argv[])
     }
 
     if (result != ECA_NORMAL) {
-        fprintf(stderr, "Error occured writing data: %s\n", ca_message(result));
+        fprintf(stderr, ERL_ERROR " occured writing data: %s\n", ca_message(result));
         free(sbuf); free(dbuf); free(ebuf);
         return 1;
     }

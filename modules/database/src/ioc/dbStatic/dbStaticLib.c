@@ -637,7 +637,7 @@ void dbFinishEntry(DBENTRY *pdbentry)
     }
 }
 
-DBENTRY * dbCopyEntry(DBENTRY *pdbentry)
+DBENTRY * dbCopyEntry(const DBENTRY *pdbentry)
 {
     DBENTRY *pnew;
 
@@ -647,7 +647,7 @@ DBENTRY * dbCopyEntry(DBENTRY *pdbentry)
     return(pnew);
 }
 
-void dbCopyEntryContents(DBENTRY *pfrom,DBENTRY *pto)
+void dbCopyEntryContents(const DBENTRY *pfrom,DBENTRY *pto)
 {
     *pto = *pfrom;
     pto->message = NULL;

@@ -2204,11 +2204,11 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
              */
 
         } else if(dbCanSetLink(plink, &link_info, devsup)!=0) {
-            errlogPrintf("Error: %s.%s: can't initialize link type %d with \"%s\" (type %d)\n",
+            errlogPrintf(ERL_ERROR ": %s.%s: can't initialize link type %d with \"%s\" (type %d)\n",
                          prec->name, pflddes->name, plink->type, plink->text, link_info.ltype);
 
         } else if(dbSetLink(plink, &link_info, devsup)) {
-            errlogPrintf("Error: %s.%s: failed to initialize link type %d with \"%s\" (type %d)\n",
+            errlogPrintf(ERL_ERROR ": %s.%s: failed to initialize link type %d with \"%s\" (type %d)\n",
                          prec->name, pflddes->name, plink->type, plink->text, link_info.ltype);
         }
         free(plink->text);

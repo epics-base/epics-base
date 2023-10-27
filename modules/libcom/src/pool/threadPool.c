@@ -42,7 +42,7 @@ epicsThreadPool* epicsThreadPoolCreate(epicsThreadPoolConfig *opts)
 
     /* caller likely didn't initialize the options structure */
     if (opts && opts->maxThreads == 0) {
-        errlogMessage("Error: epicsThreadPoolCreate() options provided, but not initialized");
+        errlogMessage(ERL_ERROR ": epicsThreadPoolCreate() options provided, but not initialized");
         return NULL;
     }
 
@@ -78,7 +78,7 @@ epicsThreadPool* epicsThreadPoolCreate(epicsThreadPoolConfig *opts)
 
     if (pool->threadsRunning == 0 && pool->conf.initialThreads != 0) {
         epicsMutexUnlock(pool->guard);
-        errlogPrintf("Error: Unable to create any threads for thread pool\n");
+        errlogPrintf(ERL_ERROR ": Unable to create any threads for thread pool\n");
         goto cleanup;
 
     }

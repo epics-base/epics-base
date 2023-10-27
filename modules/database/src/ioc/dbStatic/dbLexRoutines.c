@@ -1086,7 +1086,7 @@ int dbRecordNameValidate(const char *name)
                          name, c);
 
         } else if(c==' ' || c=='\t' || c=='"' || c=='\'' || c=='.' || c=='$') {
-            epicsPrintf("Error: Bad character '%c' in Record/Alias name \"%s\"\n",
+            epicsPrintf(ERL_ERROR ": Bad character '%c' in Record/Alias name \"%s\"\n",
                 c, name);
             yyerrorAbort(NULL);
             return 1;

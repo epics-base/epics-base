@@ -246,7 +246,7 @@ int isATTY(FILE* fp)
     else if(fp==stderr)
         hand = GetStdHandle(STD_ERROR_HANDLE);
 #ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-    if(hand && GetConsoleMode(hand, &mode)) {
+    if(hand!=INVALID_HANDLE_VALUE && GetConsoleMode(hand, &mode)) {
         (void)SetConsoleMode(hand, mode|ENABLE_VIRTUAL_TERMINAL_PROCESSING);
         mode = 0u;
         if(GetConsoleMode(hand, &mode) && (mode&ENABLE_VIRTUAL_TERMINAL_PROCESSING))

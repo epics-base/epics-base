@@ -1167,8 +1167,28 @@ static void dbRecordField(char *name,char *value)
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
     if (status) {
-        epicsPrintf("Record \"%s\" does not have a field \"%s\"\n",
-            dbGetRecordName(pdbentry), name);
+        epicsPrintf("%s Record \"%s\" does not have a field \"%s\"\n",
+                    dbGetRecordTypeName(pdbentry), dbGetRecordName(pdbentry), name);
+        if(dbGetRecordName(pdbentry)) {
+            DBENTRY temp;
+            double bestSim = -1.0;
+            const dbFldDes *bestFld = NULL;
+            dbCopyEntryContents(pdbentry, &temp);
+            for(status = dbFirstField(&temp, 0); !status; status = dbNextField(&temp, 0)) {
+                double sim = epicsStrSimilarity(name, temp.pflddes->name);
+                if(!bestFld || sim > bestSim) {
+                    bestSim = sim;
+                    bestFld = temp.pflddes;
+                }
+            }
+            dbFinishEntry(&temp);
+            if(bestSim>0.0) {
+                epicsPrintf("    Did you mean \"%s\"?", bestFld->name);
+                if(bestFld->prompt)
+                    epicsPrintf("  (%s)", bestFld->prompt);
+                epicsPrintf("\n");
+            }
+        }
         yyerror(NULL);
         return;
     }

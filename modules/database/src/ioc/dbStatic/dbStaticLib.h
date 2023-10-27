@@ -51,9 +51,9 @@ DBCORE_API void dbInitEntry(DBBASE *pdbbase,
     DBENTRY *pdbentry);
 
 DBCORE_API void dbFinishEntry(DBENTRY *pdbentry);
-DBCORE_API DBENTRY * dbCopyEntry(DBENTRY *pdbentry);
-DBCORE_API void dbCopyEntryContents(DBENTRY *pfrom,
-    DBENTRY *pto);
+DBCORE_API DBENTRY * dbCopyEntry(const DBENTRY *pdbentry);
+DBCORE_API void dbCopyEntryContents(const DBENTRY *pfrom,
+                                    DBENTRY *pto);
 
 DBCORE_API extern int dbBptNotMonotonic;
 

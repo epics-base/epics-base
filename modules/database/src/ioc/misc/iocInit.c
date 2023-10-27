@@ -173,7 +173,7 @@ static int iocBuild_2(void)
 
     scanInit();
     if (asInit()) {
-        errlogPrintf("iocBuild: asInit Failed.\n");
+        errlogPrintf(ERL_ERROR " iocBuild: asInit Failed.\n");
         return -1;
     }
     dbProcessNotifyInit();

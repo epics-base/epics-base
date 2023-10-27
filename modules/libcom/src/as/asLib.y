@@ -209,7 +209,7 @@ static int yyerror(char *str)
     if (strlen(str))
         errlogPrintf("%s at line %d\n", str, line_num);
     else
-        errlogPrintf("Error at line %d\n", line_num);
+        errlogPrintf(ERL_ERROR " at line %d\n", line_num);
     yyFailed = TRUE;
     return 0;
 }

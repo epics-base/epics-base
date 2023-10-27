@@ -143,7 +143,7 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 
                 status = dbPutStringNum(pdbentry,pflddes->initial);
                 if(status)
-                    epicsPrintf("Error initializing %s.%s initial %s\n",
+                    epicsPrintf(ERL_ERROR " initializing %s.%s initial %s\n",
                                 pdbRecordType->name,pflddes->name,pflddes->initial);
             }
             break;

@@ -370,9 +370,9 @@ json_value: jsonNULL    { $$ = dbmfStrdup("null"); }
 static int yyerror(char *str)
 {
     if (str)
-        epicsPrintf("Error: %s\n", str);
+        epicsPrintf(ERL_ERROR ": %s\n", str);
     else
-        epicsPrintf("Error");
+        epicsPrintf(ERL_ERROR "");
     if (!yyFailed) {    /* Only print this stuff once */
         epicsPrintf(" at or before '%s'", yytext);
         dbIncludePrint();

@@ -51,6 +51,9 @@ static long readLocked(struct link *pinp, void *dummy)
 
     if (status) return status;
 
+    if (prec->mask)
+        prec->rval &= prec->mask;
+
     if (dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(pinp, &prec->time);

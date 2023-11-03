@@ -344,6 +344,10 @@ int callbackRequest(epicsCallback *pcallback)
         epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " pcallback was NULL\n");
         return S_db_notInit;
     }
+    if (!pcallback->callback) {
+        epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " pcallback->callback was NULL\n");
+        return S_db_notInit;
+    }
     priority = pcallback->priority;
     if (priority < 0 || priority >= NUM_CALLBACK_PRIORITIES) {
         epicsInterruptContextMessage("callbackRequest: " ERL_ERROR " Bad priority\n");

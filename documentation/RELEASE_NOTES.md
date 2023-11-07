@@ -22,6 +22,34 @@ should also be read to understand what has changed since earlier releases:
 
 ## Changes made on the 7.0 branch since 7.0.7
 
+### bi "Raw Soft Channel" use MASK
+
+If MASK is non-zero, The raw device support will now apply MASK to the
+value read into RVAL.
+eg. allows extraction of a bit from an input integer.
+
+```
+record(longin, "integer") {
+    field(VAL, "0xff")
+}
+record(bi, "bit1") {
+    field(DESC, "extract bit 1")
+    field(DTYP, "Raw Soft Channel")
+    field(INP , "integer")
+    field(MASK, "0x2")
+    field(ZNAM, "Clear")
+    field(ONAM, "Set")
+}
+```
+
+### ANSI escapes in stderr
+
+ANSI escape charactor sequences may now be printed to the stderr stream.
+These escapes will appear in logs captured from that stream.
+Tools which parse and/or render these logs may need to be adjusted to
+either strip out the escapes, or to translate them into markup.
+(see [ansi2html](https://pypi.org/project/ansi2html/) for example)
+
 ### Allow explicit append with `dbRecordsOnceOnly!=0`
 
 Previously setting `dbRecordsOnceOnly!=0` prevented any further changes to a record via a .db file.  eg.

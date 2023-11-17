@@ -22,7 +22,7 @@ ARCH_DEP_CFLAGS += -DRTEMS_HAS_ALTIVEC
 #OP_SYS_LDLIBS += -lbspExt #does not use posix stuff ... want to ignore
 OP_SYS_LDLIBS += -Wl,--gc-sections
 #ARCH_DEP_LDFLAGS = -mcpu=8540 -meabi -msdata=sysv -mstrict-align -mspe -mabi=spe -mfloat-gprs=double 
-ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/powerpc-rtems5/qoriq_e500/lib  
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/$(RTEMS_BSP)/lib
 
 MUNCH_SUFFIX = .img
 MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))

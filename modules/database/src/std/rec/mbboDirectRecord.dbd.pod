@@ -322,6 +322,7 @@ to alarms that are common to all record types.
     field(B0,DBF_UCHAR) {
         prompt("Bit 0")
         promptgroup("51 - Output 0-7")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -329,6 +330,7 @@ to alarms that are common to all record types.
     field(B1,DBF_UCHAR) {
         prompt("Bit 1")
         promptgroup("51 - Output 0-7")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -336,6 +338,7 @@ to alarms that are common to all record types.
     field(B2,DBF_UCHAR) {
         prompt("Bit 2")
         promptgroup("51 - Output 0-7")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -343,6 +346,7 @@ to alarms that are common to all record types.
     field(B3,DBF_UCHAR) {
         prompt("Bit 3")
         promptgroup("51 - Output 0-7")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -350,6 +354,7 @@ to alarms that are common to all record types.
     field(B4,DBF_UCHAR) {
         prompt("Bit 4")
         promptgroup("51 - Output 0-7")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -357,6 +362,7 @@ to alarms that are common to all record types.
     field(B5,DBF_UCHAR) {
         prompt("Bit 5")
         promptgroup("51 - Output 0-7")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -364,6 +370,7 @@ to alarms that are common to all record types.
     field(B6,DBF_UCHAR) {
         prompt("Bit 6")
         promptgroup("51 - Output 0-7")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -371,6 +378,7 @@ to alarms that are common to all record types.
     field(B7,DBF_UCHAR) {
         prompt("Bit 7")
         promptgroup("51 - Output 0-7")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -378,6 +386,7 @@ to alarms that are common to all record types.
     field(B8,DBF_UCHAR) {
         prompt("Bit 8")
         promptgroup("52 - Output 8-15")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -385,6 +394,7 @@ to alarms that are common to all record types.
     field(B9,DBF_UCHAR) {
         prompt("Bit 9")
         promptgroup("52 - Output 8-15")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -392,6 +402,7 @@ to alarms that are common to all record types.
     field(BA,DBF_UCHAR) {
         prompt("Bit 10")
         promptgroup("52 - Output 8-15")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -399,6 +410,7 @@ to alarms that are common to all record types.
     field(BB,DBF_UCHAR) {
         prompt("Bit 11")
         promptgroup("52 - Output 8-15")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -406,6 +418,7 @@ to alarms that are common to all record types.
     field(BC,DBF_UCHAR) {
         prompt("Bit 12")
         promptgroup("52 - Output 8-15")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -413,6 +426,7 @@ to alarms that are common to all record types.
     field(BD,DBF_UCHAR) {
         prompt("Bit 13")
         promptgroup("52 - Output 8-15")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -420,6 +434,7 @@ to alarms that are common to all record types.
     field(BE,DBF_UCHAR) {
         prompt("Bit 14")
         promptgroup("52 - Output 8-15")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -427,6 +442,7 @@ to alarms that are common to all record types.
     field(BF,DBF_UCHAR) {
         prompt("Bit 15")
         promptgroup("52 - Output 8-15")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -434,6 +450,7 @@ to alarms that are common to all record types.
     field(B10,DBF_UCHAR) {
         prompt("Bit 16")
         promptgroup("53 - Output 16-23")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -441,6 +458,7 @@ to alarms that are common to all record types.
     field(B11,DBF_UCHAR) {
         prompt("Bit 17")
         promptgroup("53 - Output 16-23")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -448,6 +466,7 @@ to alarms that are common to all record types.
     field(B12,DBF_UCHAR) {
         prompt("Bit 18")
         promptgroup("53 - Output 16-23")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -455,6 +474,7 @@ to alarms that are common to all record types.
     field(B13,DBF_UCHAR) {
         prompt("Bit 19")
         promptgroup("53 - Output 16-23")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -462,6 +482,7 @@ to alarms that are common to all record types.
     field(B14,DBF_UCHAR) {
         prompt("Bit 20")
         promptgroup("53 - Output 16-23")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -469,6 +490,7 @@ to alarms that are common to all record types.
     field(B15,DBF_UCHAR) {
         prompt("Bit 21")
         promptgroup("53 - Output 16-23")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -476,6 +498,7 @@ to alarms that are common to all record types.
     field(B16,DBF_UCHAR) {
         prompt("Bit 22")
         promptgroup("53 - Output 16-23")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -483,6 +506,7 @@ to alarms that are common to all record types.
     field(B17,DBF_UCHAR) {
         prompt("Bit 23")
         promptgroup("53 - Output 16-23")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -490,6 +514,7 @@ to alarms that are common to all record types.
     field(B18,DBF_UCHAR) {
         prompt("Bit 24")
         promptgroup("54 - Output 24-31")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -497,6 +522,7 @@ to alarms that are common to all record types.
     field(B19,DBF_UCHAR) {
         prompt("Bit 25")
         promptgroup("54 - Output 24-31")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -504,6 +530,7 @@ to alarms that are common to all record types.
     field(B1A,DBF_UCHAR) {
         prompt("Bit 26")
         promptgroup("54 - Output 24-31")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -511,6 +538,7 @@ to alarms that are common to all record types.
     field(B1B,DBF_UCHAR) {
         prompt("Bit 27")
         promptgroup("54 - Output 24-31")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -518,6 +546,7 @@ to alarms that are common to all record types.
     field(B1C,DBF_UCHAR) {
         prompt("Bit 28")
         promptgroup("54 - Output 24-31")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -525,6 +554,7 @@ to alarms that are common to all record types.
     field(B1D,DBF_UCHAR) {
         prompt("Bit 29")
         promptgroup("54 - Output 24-31")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -532,6 +562,7 @@ to alarms that are common to all record types.
     field(B1E,DBF_UCHAR) {
         prompt("Bit 30")
         promptgroup("54 - Output 24-31")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)
@@ -539,6 +570,7 @@ to alarms that are common to all record types.
     field(B1F,DBF_UCHAR) {
         prompt("Bit 31")
         promptgroup("54 - Output 24-31")
+        asl(ASL0)
         special(SPC_MOD)
         pp(TRUE)
         interest(1)

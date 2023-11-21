@@ -1,26 +1,6 @@
-# Installation Instructions {#install}
+# Installation instructions
 
 ## EPICS Base Release 7.0.x
-
------
-
-### Table of Contents
-
-  - [What is EPICS base?](#what-is-epics-base?)
-  - [What is new in this release?](#what-is-new-in-this-release?)
-  - [Copyright](#copyright)
-  - [Supported platforms](#supported-platforms)
-  - [Supported compilers](#supported-compilers)
-  - [Software requirements](#software-requirements)
-  - [Host system storage requirements](#host-system-storage-requirements)
-  - [Documentation](#documentation)
-  - [Directory Structure](#directory-structure)
-  - [Site-specific build configuration](#site-specific-build-configuration)
-  - [Building EPICS base](#building-epics-base)
-  - [Example application and extension](#example-application-and-extension)
-  - [Multiple host platforms](#multiple-host-platforms)
-
------
 
 ### What is EPICS base?
 
@@ -36,8 +16,8 @@ interfaces) of various types.
 
 ### What is new in this release?
 
-Please check the `documentation/RELEASE_NOTES.md` file for
-description of changes and release migration details.
+Please check the [release notes](RELEASE_NOTES.md)
+for description of changes and release migration details.
 
 ### Copyright
 
@@ -80,8 +60,7 @@ executable must be found through your normal search path.
 
 #### Unzip and tar (Winzip on WIN32 systems)
 
-You must have tools available to unzip and untar the EPICS base
-distribution file.
+You may need tools to unzip and untar the EPICS base distribution file.
 
 #### Target systems
 
@@ -91,7 +70,7 @@ running as processes on the host platform.
 
 #### vxWorks
 
-You must have vxWorks 6.8 or later installed if any of your target
+You must have vxWorks 6.8 or 6.9 installed if any of your target
 systems are vxWorks systems; the C++ compiler from older versions cannot
 compile recently developed code. The vxWorks installation provides the
 cross-compiler and header files needed to build for these targets. The
@@ -120,16 +99,10 @@ readline is available and will then use it. RTEMS targets may be
 configured to use `LIBTECLA` if available, and on vxWorks the OS's
 ledLib line-editing library is normally used.
 
-### Host system storage requirements
-
-The compressed tar file is approximately 3 MB in size. The
-distribution source tree takes up approximately 21 MB. A 64-bit host
-architecture may need around 610 MB to compile, while cross-compiled
-targets are somewhat smaller.
-
 ### Documentation
 
-EPICS documentation is available through the [EPICS website](https://epics.anl.gov/) at Argonne.
+EPICS documentation is available from the
+[EPICS Documentation Website](https://docs.epics-controls.org/).
 
 Release specific documentation can also be found in the
 `base/documentation` directory of the distribution.
@@ -143,8 +116,10 @@ Release specific documentation can also be found in the
     base/configure      Build rules and OS-independent config files
     base/configure/os   OS-dependent build config files
     base/documentation  Distribution documentation
-    base/src            Source code in various subdirectories
+    base/src            Source code for templates and build tools
+    base/modules        Source code for distribution submodules
     base/startup        Scripts for setting up path and environment
+    base/test           Unit tests for build tools
 ```
 
 #### Directories created by the build
@@ -158,7 +133,8 @@ configuration variable if that has been set.
     cfg               Installed build configuration files
     db                Installed database files
     dbd               Installed database definition files
-    html              Installed html documentation
+    doc               Installed Markdown documentation
+    html              Installed HTML documentation
     include           Installed header files
     include/os        Installed OS-specific header files in subdirs
     include/compiler  Installed compiler-specific header files
@@ -169,12 +145,11 @@ configuration variable if that has been set.
 
 #### `base/documentation` Directory
 
-This contains documents on how to setup, build, and install EPICS.
+This contains EPICS reference documentation.
 
 ```
     README.md           This file
     RELEASE_NOTES.md    Notes on release changes
-    KnownProblems.html  List of known problems and workarounds
 ```
 
 #### `base/startup` Directory
@@ -272,8 +247,7 @@ need C and C++ compilers in your search path. When building base you
 must have `echo` in your search path. For Unix host builds you will
 also need `cp`, `rm`, `mv`, and `mkdir` in your search path. Some Unix
 systems may also need `ar` and `ranlib`, and the C/C++ compilers may
-require `as` and `ld` in your path. On Solaris systems you need
-`uname` in your path.
+require `as` and `ld` in your path.
 
 * **`LD_LIBRARY_PATH`**
 EPICS shared libraries and executables normally contain the full path
@@ -290,7 +264,6 @@ Shared libraries are now built by default on all Unix type hosts.
 
 To configure EPICS, you may want to modify some values set in the
 following files:
->>>>>>> mirror/3.15
 
 ```
     configure/CONFIG_SITE      Build settings. Specify target archs.

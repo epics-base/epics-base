@@ -1,26 +1,6 @@
-# Installation Instructions {#install}
+# Installation instructions
 
 ## EPICS Base Release 7.0.x
-
------
-
-### Table of Contents
-
-  - [What is EPICS base?](#what-is-epics-base?)
-  - [What is new in this release?](#what-is-new-in-this-release?)
-  - [Copyright](#copyright)
-  - [Supported platforms](#supported-platforms)
-  - [Supported compilers](#supported-compilers)
-  - [Software requirements](#software-requirements)
-  - [Host system storage requirements](#host-system-storage-requirements)
-  - [Documentation](#documentation)
-  - [Directory Structure](#directory-structure)
-  - [Site-specific build configuration](#site-specific-build-configuration)
-  - [Building EPICS base](#building-epics-base)
-  - [Example application and extension](#example-application-and-extension)
-  - [Multiple host platforms](#multiple-host-platforms)
-
------
 
 ### What is EPICS base?
 
@@ -36,8 +16,8 @@ interfaces) of various types.
 
 ### What is new in this release?
 
-Please check the `documentation/RELEASE_NOTES.md` file for
-description of changes and release migration details.
+Please check the [release notes](./RELEASE_NOTES.md)
+for description of changes and release migration details.
 
 ### Copyright
 
@@ -77,6 +57,12 @@ is older but does still work.
 You must have Perl version 5.10.1 or later installed. The EPICS
 configuration files do not specify the perl full pathname, so the perl
 executable must be found through your normal search path.
+
+#### Perl Pod-Markdown
+
+If you want to compile the documentation,
+for example for offline use,
+you must have the Pod-Markdown Perl module installed.
 
 #### Unzip and tar (Winzip on WIN32 systems)
 
@@ -129,7 +115,7 @@ targets are somewhat smaller.
 
 ### Documentation
 
-EPICS documentation is available through the [EPICS website](https://epics.anl.gov/) at Argonne.
+EPICS documentation is available through the [EPICS website](https://docs.epics-controls.org/en/latest/).
 
 Release specific documentation can also be found in the
 `base/documentation` directory of the distribution.
@@ -169,12 +155,11 @@ configuration variable if that has been set.
 
 #### `base/documentation` Directory
 
-This contains documents on how to setup, build, and install EPICS.
+This contains EPICS reference documentation.
 
 ```
     README.md           This file
     RELEASE_NOTES.md    Notes on release changes
-    KnownProblems.html  List of known problems and workarounds
 ```
 
 #### `base/startup` Directory

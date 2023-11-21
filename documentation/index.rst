@@ -11,6 +11,7 @@ EPICS Document Collection
    :maxdepth: 1
    :caption: General Information
 
+   README
    RELEASE_NOTES
 
 .. toctree::

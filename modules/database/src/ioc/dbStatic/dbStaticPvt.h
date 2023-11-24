@@ -63,7 +63,7 @@ typedef struct dbLinkInfo {
      */
     char *target;
 
-    /* for PV_LINK */
+    /* pvlOpt* modifiers for PV_LINK */
     short modifiers;
 
     /* for HW links */

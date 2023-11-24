@@ -41,8 +41,9 @@
 #include "dbLink.h"
 #include "dbLock.h"
 #include "dbScan.h"
-#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 #include "devSup.h"
+#include "epicsString.h"
 #include "link.h"
 #include "recGbl.h"
 #include "recSup.h"
@@ -86,18 +87,67 @@ static void TSEL_modified(struct link *plink)
     }
 }
 
+typedef struct {
+    jlink j;
+} dummyLink;
+
+static
+void dummyJlifFree(jlink *ptr) {}
+
+static
+jlif dummyJlif = {
+    "dummy",
+    NULL,
+    &dummyJlifFree,
+};
+
+static
+void dummyLsetRemove(struct dbLocker *locker, struct link *plink) {}
+
+static
+int dummyLsetConnected(const struct link *plink)
+{
+    return 0;
+}
+
+static
+lset dummyLset = {
+    0,
+    1,
+    NULL,
+    &dummyLsetRemove,
+    NULL,
+    NULL,
+    NULL,
+    &dummyLsetConnected,
+};
+
+static
+dummyLink dummyL = {
+    {
+        &dummyJlif,
+        NULL,
+        0,
+        0,
+    }
+};
 
 /***************************** Generic Link API *****************************/
 
 long dbInitLink(struct link *plink, short dbfType)
 {
     struct dbCommon *precord = plink->precord;
+    unsigned srcMask;
 
     /* Only initialize link once */
-    if (plink->flags & DBLINK_FLAG_INITIALIZED)
+    if (plink->flags & DBLINK_FLAG_INITIALIZED) {
         return 0;
-    else
+    } else {
         plink->flags |= DBLINK_FLAG_INITIALIZED;
+        if((plink->flags & pvlOptSrcMask)==pvlOptSrcUnDef) {
+            plink->flags |= pvlOptSrcAuto; /* link field never set from any .db file */
+        }
+    }
 
     if (plink->type == CONSTANT) {
         dbConstInitLink(plink);
@@ -111,6 +161,15 @@ long dbInitLink(struct link *plink, short dbfType)
 
     if (plink->type != PV_LINK)
         return 0;
+    /* From this point, must change link type to something else on success or error */
+
+    srcMask = plink->value.pv_link.pvlMask & pvlOptSrcMask;
+
+    if(srcMask == pvlOptSrcUnDef) {
+        /* apply default from set("link:scope", ...) */
+        srcMask = plink->flags & pvlOptSrcMask;
+        assert(srcMask != pvlOptSrcUnDef); /* file scope is always defined */
+    }
 
     if (plink == &precord->tsel)
         TSEL_modified(plink);
@@ -118,8 +177,16 @@ long dbInitLink(struct link *plink, short dbfType)
     int isLocal = 0;
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
         /* Make it a DB link if possible */
-        if (!dbDbInitLink(plink, dbfType))
-            return 0;
+        if (!dbDbInitLink(plink, dbfType)) {
+            isLocal = 1;
+            if (srcMask != pvlOptSrcExt)
+                return 0;
+
+            dbRemoveLink(NULL, plink);
+            // back to PV_LINK
+            isLocal = 1;
+            // will trigger external link to local target case below
+        }
         /* non-local CA link */
 
     } else { // maybe local CA
@@ -127,6 +194,50 @@ long dbInitLink(struct link *plink, short dbfType)
         if (chan) {
             isLocal = 1;
             dbChannelDelete(chan);
+        }
+    }
+
+    if(srcMask != pvlOptSrcAuto) {
+        int allow = 1;
+
+        if(srcMask == pvlOptSrcInt && !isLocal) {
+            /* local link to non-local target */
+            DBENTRY closest;
+            const char *fldname = dbLinkFieldName(plink);
+            fprintf(stderr, "%s.%s " ERL_ERROR ": Unable to create INT link to \"" ANSI_BOLD("%s") "\".\n",
+                    precord->name, fldname, plink->value.pv_link.pvname);
+
+            dbInitEntry(pdbbase, &closest);
+            if(!dbFindRecordSimilar(&closest, plink->value.pv_link.pvname, NULL)) {
+                unsigned indent = strlen(precord->name) + strlen(fldname) + 23;
+                epicsPrintf("%*s  Did you mean \"" ANSI_BOLD("%s.%s") "\" ?\n",
+                            indent, "",
+                            closest.precnode->recordname,
+                            closest.pflddes->name);
+            }
+            dbFinishEntry(&closest);
+
+            allow = 0;
+
+        } else if(srcMask == pvlOptSrcExt && isLocal) {
+            /* external link to local target */
+            const char *fldname = dbLinkFieldName(plink);
+
+            fprintf(stderr, "%s.%s " ERL_ERROR ": Unable to create EXT link to \"" ANSI_BOLD("%s") "\".\n",
+                    precord->name, fldname, plink->value.pv_link.pvname);
+
+            allow = 0;
+        }
+
+        if(!allow) {
+            /* We must replace PV_LINK with something else to allow for correct shutdown.
+             */
+            plink->type = JSON_LINK;
+            plink->lset = &dummyLset;
+            plink->value.json.jlink = &dummyL.j;
+            plink->value.json.string = "{}";
+
+            return S_dbLib_badLink;
         }
     }
 

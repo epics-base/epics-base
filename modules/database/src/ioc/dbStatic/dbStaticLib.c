@@ -2503,6 +2503,10 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, const char *re
         else if (strstr(pstr, "MSS")) pinfo->modifiers |= pvlOptMSS;
         else if (strstr(pstr, "MS")) pinfo->modifiers |= pvlOptMS;
 
+        if (strstr(pstr, "AUTO")) pinfo->modifiers |= pvlOptSrcAuto;
+        else if (strstr(pstr, "INT")) pinfo->modifiers |= pvlOptSrcInt;
+        else if (strstr(pstr, "EXT")) pinfo->modifiers |= pvlOptSrcExt;
+
         /* filter modifiers based on link type */
         switch(ftype) {
         case DBF_INLINK: /* accept all */ break;

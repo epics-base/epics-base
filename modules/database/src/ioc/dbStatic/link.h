@@ -68,6 +68,23 @@ DBCORE_API extern const maplinkType pamaplinkType[LINK_NTYPES];
 #define pvlOptInpString  0x100  /*Input as string*/
 #define pvlOptOutNative  0x200  /*Output native*/
 #define pvlOptOutString  0x400  /*Output as string*/
+/* DB/CA link target mask.
+ * If unset, then the implied default (file scope) is used.
+ * - INT:  link must target local record
+ * - EXT:  link must not target local record
+ * - AUTO: link may target any PV
+ *
+ * Used in two places:
+ * - dbLink::flags
+ *   Reflects default if no modifier explicitly provided.  Will never be UnDef.
+ * - dbLink::value::pv_link::pvlMask
+ *   Flags parsed from link string.  May be UnDef.
+ */
+#define pvlOptSrcMask   0x3000
+#define pvlOptSrcUnDef  0x0000
+#define pvlOptSrcInt    0x1000
+#define pvlOptSrcExt    0x2000
+#define pvlOptSrcAuto   0x3000
 
 /* DBLINK Flag bits */
 #define DBLINK_FLAG_INITIALIZED    1 /* dbInitLink() called */

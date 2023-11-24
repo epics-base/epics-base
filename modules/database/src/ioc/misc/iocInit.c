@@ -539,11 +539,13 @@ static long doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     dbFldDes **papFldDes = pdbRecordType->papFldDes;
     short *link_ind = pdbRecordType->link_ind;
     int j;
+    long ret = 0;
 
     /* For all the links in the record type... */
     for (j = 0; j < pdbRecordType->no_links; j++) {
         dbFldDes *pdbFldDes = papFldDes[link_ind[j]];
         DBLINK *plink = (DBLINK*)((char*)precord + pdbFldDes->offset);
+        long status;
 
         if (ellCount(&precord->rdes->devList) > 0 && pdbFldDes->isDevLink) {
             devSup *pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
@@ -556,9 +558,11 @@ static long doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
             }
         }
 
-        dbInitLink(plink, pdbFldDes->field_type);
+        status = dbInitLink(plink, pdbFldDes->field_type);
+        if(!ret)
+            ret = status; /* latch first error */
     }
-    return 0;
+    return ret;
 }
 
 static long doInitRecord1(dbRecordType *pdbRecordType, dbCommon *precord, void *user)

@@ -89,28 +89,28 @@ static void TSEL_modified(struct link *plink)
 
 /***************************** Generic Link API *****************************/
 
-void dbInitLink(struct link *plink, short dbfType)
+long dbInitLink(struct link *plink, short dbfType)
 {
     struct dbCommon *precord = plink->precord;
 
     /* Only initialize link once */
     if (plink->flags & DBLINK_FLAG_INITIALIZED)
-        return;
+        return 0;
     else
         plink->flags |= DBLINK_FLAG_INITIALIZED;
 
     if (plink->type == CONSTANT) {
         dbConstInitLink(plink);
-        return;
+        return 0;
     }
 
     if (plink->type == JSON_LINK) {
         dbJLinkInit(plink);
-        return;
+        return 0;
     }
 
     if (plink->type != PV_LINK)
-        return;
+        return 0;
 
     if (plink == &precord->tsel)
         TSEL_modified(plink);
@@ -118,7 +118,7 @@ void dbInitLink(struct link *plink, short dbfType)
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
         /* Make it a DB link if possible */
         if (!dbDbInitLink(plink, dbfType))
-            return;
+            return 0;
     }
 
     /* Make it a CA link */
@@ -140,6 +140,8 @@ void dbInitLink(struct link *plink, short dbfType)
                 plink->value.pv_link.pvname);
         }
     }
+
+    return 0;
 }
 
 void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,

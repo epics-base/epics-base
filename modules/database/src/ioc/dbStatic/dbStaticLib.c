@@ -1531,6 +1531,132 @@ long dbFreeRecords(DBBASE *pdbbase)
     return(0);
 }
 
+long dbFindRecordSimilar(DBENTRY *pdbentry, const char * const pname, double *psimilarity)
+{
+    DBENTRY result;
+    size_t      recLen;
+    const char *pfld;
+    size_t fldLen;
+    PVDENTRY    *ppvdNode;
+    double score = 0.0;
+
+    dbInitEntry(pdbentry->pdbbase, &result);
+    result.pdbbase = pdbentry->pdbbase;
+
+    /* split out record name */
+
+    pfld = strchr(pname, '.');
+    if (!pfld) { /* no field name implies .VAL */
+        recLen = strlen(pname);
+        pfld = "VAL";
+        fldLen = 3u;
+
+    } else {
+        char ch;
+
+        recLen = (size_t) (pfld - pname);
+        pfld++; /* skip past '.' */
+        fldLen = 0;
+
+        fldLen = 0;
+        if ((ch = *pfld) &&
+            (ch == '_' || isalpha(ch))) {
+            while ((ch = pfld[++fldLen]))
+                if (!(ch == '_' || isalnum(ch))) break;
+        }
+    }
+
+    /* not validating remaining pname, aka. filter expr */
+
+    ppvdNode = dbPvdFind(pdbentry->pdbbase, pname, recLen);
+    if (ppvdNode) { /* exact match on record name */
+        /* duplicate effects of dbFindRecordPart() */
+        result.precnode = ppvdNode->precnode;
+        result.precordType = ppvdNode->precordType;
+        score = 1.0;
+
+    } else { /* no match, find best fit record name */
+        DBENTRY temp;
+        double bestScore = -1.0;
+        long status;
+
+        dbCopyEntryContents(&result, &temp);
+
+        for(status = dbFirstRecordType(&temp); !status; status = dbNextRecordType(&temp)) {
+            for(status = dbFirstRecord(&temp); !status; status = dbNextRecord(&temp)) {
+                double score = epicsStrNSimilarity(pname, recLen,
+                                                   temp.precnode->recordname,
+                                                   strlen(temp.precnode->recordname));
+                if(score > bestScore) {
+                    dbFinishEntry(&result);
+                    dbCopyEntryContents(&temp, &result);
+                    bestScore = score;
+                }
+            }
+        }
+
+        dbFinishEntry(&temp);
+        score = bestScore;
+    }
+
+    if(result.precnode) { /* have record, search for field */
+
+        long status = dbFindFieldPart(&result, &pfld);
+        if(!status) { /* exact match on field */
+            /* result now updated. */
+            score = (score + 1.0)/2.0;
+
+        } else if(status==S_dbLib_fieldNotFound) { /* search for field */
+            DBENTRY temp;
+            double bestScore = -1.0;
+            long status;
+
+            dbCopyEntryContents(&result, &temp);
+
+            for(status = dbFirstField(&temp, 0); !status; status = dbNextField(&temp, 0)) {
+                double score = epicsStrNSimilarity(pfld, fldLen,
+                                                   temp.pflddes->name,
+                                                   strlen(temp.pflddes->name));
+                if(score > bestScore) {
+                    dbFinishEntry(&result);
+                    dbCopyEntryContents(&temp, &result);
+                    bestScore = score;
+                }
+            }
+
+            dbFinishEntry(&temp);
+            score = (score + bestScore)/2.0;
+
+            if(result.pflddes) {
+                pfld = result.pflddes->name;
+                /* re-search with dbFindFieldPart() to fully update result */
+                if(dbFindFieldPart(&result, &pfld))
+                    result.pflddes = NULL; /* should never happen, spoil result if it does */
+            }
+
+        } else { /* some other error? */
+            score /= 2.0;
+        }
+    }
+
+    if(psimilarity)
+        *psimilarity = score;
+
+    if(result.precnode && result.pflddes) {
+        dbFinishEntry(pdbentry);
+        memcpy(pdbentry, &result, sizeof(result));
+        return 0;
+    }
+
+    dbFinishEntry(&result);
+
+    if(!result.precnode) {
+        return S_dbLib_recNotFound;
+    } else {
+        return S_dbLib_fieldNotFound;
+    }
+}
+
 long dbFindRecordPart(DBENTRY *pdbentry, const char **ppname)
 {
     dbBase      *pdbbase = pdbentry->pdbbase;

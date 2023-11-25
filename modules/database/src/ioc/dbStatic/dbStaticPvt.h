@@ -45,6 +45,11 @@ void dbMsgPrint(
 
 void dbPutStringSuggest(DBENTRY *pdbentry, const char *pstring);
 
+/* Find closest match for PV name.  output similarity in range [0, 1]
+ */
+DBCORE_API
+long dbFindRecordSimilar(DBENTRY *pdbentry, const char *pname, double *psimilarity);
+
 DBCORE_API
 const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp);
 

@@ -43,11 +43,11 @@ extern "C" {
 #define VXI_IO          15
 #define LINK_NTYPES 16
 typedef struct maplinkType {
-    char *strvalue;
+    const char *strvalue;
     int  value;
 } maplinkType;
 
-DBCORE_API extern maplinkType pamaplinkType[];
+DBCORE_API extern const maplinkType pamaplinkType[LINK_NTYPES];
 
 #define VXIDYNAMIC      0
 #define VXISTATIC       1

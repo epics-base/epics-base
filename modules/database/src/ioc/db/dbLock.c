@@ -869,7 +869,7 @@ nosplit:
     }
 }
 
-static char *msstring[4]={"NMS","MS","MSI","MSS"};
+static const char *msstring[4]={"NMS","MS","MSI","MSS"};
 
 long dblsr(char *recordname,int level)
 {

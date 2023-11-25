@@ -193,7 +193,7 @@ struct lset;
 struct link {
     struct dbCommon *precord;   /* Pointer to record owning link */
     short type;
-    short flags;
+    unsigned flags;
     struct lset *lset;
     char *text;             /* Raw link text */
     union value value;

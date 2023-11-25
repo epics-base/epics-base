@@ -197,6 +197,13 @@ LIBCOM_API unsigned int epicsMemHash(const char *str, size_t length,
  */
 LIBCOM_API double epicsStrSimilarity(const char *A, const char *B);
 
+/** Equivalent to epicsStrSimilarity() without nil terminated inputs.
+ *
+ *  @since EPICS UNRELEASED
+ */
+LIBCOM_API double epicsStrNSimilarity(const char *A, size_t lenA,
+                                      const char *B, size_t lenB);
+
 /** \brief DEPRECATED
  * \deprecated dbTranslateEscape is deprecated, use epicsStrnRawFromEscaped() instead 
  */

@@ -67,6 +67,27 @@ const char * dbLinkFieldName(const struct link *plink)
     return "????";
 }
 
+const char *dbLinkSrcName(const struct link* plink)
+{
+    const char *ret = "";
+
+    if(plink->type == DB_LINK || plink->type == CA_LINK || plink->type == PV_LINK) {
+        unsigned srcMask = plink->value.pv_link.pvlMask & pvlOptSrcMask;
+
+        if(srcMask == pvlOptSrcUnDef)
+            srcMask = plink->flags & pvlOptSrcMask;
+
+        ret = " INVALID"; /* should not be possible */
+        switch(srcMask) {
+        case pvlOptSrcUnDef:ret = " UNDEF"; break; /* should also not be possible */
+        case pvlOptSrcAuto: ret = ""; break;
+        case pvlOptSrcInt:  ret = " INT"; break;
+        case pvlOptSrcExt:  ret = " EXT"; break;
+        }
+    }
+    return ret;
+}
+
 /* Special TSEL handler for PV links */
 /* FIXME: Generalize for new link types... */
 static void TSEL_modified(struct link *plink)

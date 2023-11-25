@@ -2056,11 +2056,12 @@ char * dbGetString(DBENTRY *pdbentry)
             else if(pvlMask&pvlOptCP) ppind=3;
             else if(pvlMask&pvlOptCPP) ppind=4;
             else ppind=0;
-            dbMsgPrint(pdbentry, "%s%s%s%s",
+            dbMsgPrint(pdbentry, "%s%s%s%s%s",
                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
                    (plink->flags & DBLINK_FLAG_TSELisTIME) ? ".TIME" : "",
                    ppstring[ppind],
-                   msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
+                   msstring[plink->value.pv_link.pvlMask&pvlOptMsMode],
+                   dbLinkSrcName(plink));
             break;
         }
         case VME_IO:

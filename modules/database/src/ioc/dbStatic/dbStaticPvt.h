@@ -126,6 +126,7 @@ DBCORE_API
 char** dbCompleteRecord(const char *word);
 
 unsigned dbLinkScopeDefault(void);
+const char *dbLinkSrcName(const struct link* plink);
 
 #ifdef __cplusplus
 }

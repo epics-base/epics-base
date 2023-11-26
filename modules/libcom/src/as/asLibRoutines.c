@@ -176,12 +176,12 @@ long epicsStdCall asInitFile(const char *filename,const char *substitutions)
 
     fp = fopen(filename,"r");
     if(!fp) {
-        errlogPrintf("asInitFile: Can't open file '%s'\n", filename);
+        fprintf(stderr, ERL_ERROR " asInitFile: Can't open file '%s'\n", filename);
         return(S_asLib_badConfig);
     }
     status = asInitFP(fp,substitutions);
     if(fclose(fp)==EOF) {
-        errMessage(0,"asInitFile: fclose failed!");
+        fprintf(stderr, ERL_ERROR " asInitFile: fclose failed!");
         if(!status) status = S_asLib_badConfig;
     }
     return(status);

@@ -204,7 +204,7 @@ showError (const char *filename, int lineno, const char *msg, ...)
 
     va_start (ap, msg);
     if (filename)
-        fprintf(epicsGetStderr(), "%s line %d: ", filename, lineno);
+        fprintf(epicsGetStderr(), ERL_ERROR " %s line %d: ", filename, lineno);
     vfprintf (epicsGetStderr(), msg, ap);
     fputc ('\n', epicsGetStderr());
     va_end (ap);
@@ -1434,12 +1434,12 @@ static void varCallFunc(const iocshArgBuf *args)
                 found = 1;
             }
         if (!found && name != NULL)
-            fprintf(epicsGetStderr(), "No var matching %s found.\n", name);
+            fprintf(epicsGetStderr(), ANSI_RED("No var matching") " %s found.\n", name);
     }
     else {
         v = (iocshVariable *)registryFind(iocshVarID, args[0].sval);
         if (v == NULL) {
-            fprintf(epicsGetStderr(), "Var %s not found.\n", name);
+            fprintf(epicsGetStderr(), "Var %s " ANSI_RED("not found.") "\n", name);
         }
         else {
             varHandler(v->pVarDef, value);

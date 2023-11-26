@@ -522,7 +522,7 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
     }
 
     if (!fp) {
-        fprintf(stderr, "msi: Can't open file '%s'\n", filename);
+        fprintf(stderr, ERL_ERROR " msi: Can't open file '%s'\n", filename);
         inputErrPrint(pinputData);
         abortExit(1);
     }
@@ -672,7 +672,7 @@ static void substituteOpen(subInfo **ppvt, const std::string& substitutionName)
 
     fp = fopen(substitutionName.c_str(), "r");
     if (!fp) {
-        fprintf(stderr, "msi: Can't open file '%s'\n", substitutionName.c_str());
+        fprintf(stderr, ERL_ERROR " msi: Can't open file '%s'\n", substitutionName.c_str());
         abortExit(1);
     }
 

@@ -240,6 +240,7 @@ The B<SPVT> field is for internal use by the scanning system.
 	}
 	field(PROC,DBF_UCHAR) {
 		prompt("Force Processing")
+		asl(ASL0)
 		pp(TRUE)
 		interest(3)
 	}

@@ -90,7 +90,7 @@ static const iocshFuncDef asprulesFuncDef = {
     "asprules",1,asprulesArgs,
     "List rules of an Access Security Group.\n"
     "If no Group is speciﬁed then list the rules for all groups\n"
-    "Example: asprules mygroup"
+    "Example: asprules mygroup\n"
 };
 static void asprulesCallFunc(const iocshArgBuf *args)
 {

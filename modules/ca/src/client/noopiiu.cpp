@@ -133,7 +133,7 @@ void noopiiu::requestRecvProcessPostponedFlush (
     netiiu::requestRecvProcessPostponedFlush ( guard );
 }
 
-osiSockAddr noopiiu::getNetworkAddress (
+osiSockAddr46 noopiiu::getNetworkAddress (
     epicsGuard < epicsMutex > & guard ) const
 {
     return netiiu::getNetworkAddress ( guard );

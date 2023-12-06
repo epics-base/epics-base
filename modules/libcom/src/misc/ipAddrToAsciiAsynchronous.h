@@ -112,12 +112,12 @@ public:
      * \param addrIn Reference to the address to convert
      * \param cbIn Reference to the user supplied callbacks to call when the result is available
      */
-    virtual void ipAddrToAscii ( const osiSockAddr & addrIn, ipAddrToAsciiCallBack & cbIn ) = 0;
+    virtual void ipAddrToAscii ( const osiSockAddr46 &, ipAddrToAsciiCallBack & ) = 0;
 
     /** \brief Get the conversion address currently set
      * \return Get the last (or current) address converted to ascii
      */
-    virtual osiSockAddr address () const  = 0;
+    virtual osiSockAddr46 address () const  = 0;
 
     /**
      * \brief Prints the converted IP address

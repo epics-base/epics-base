@@ -32,6 +32,7 @@ include $(LIBCOM)/cvtFast/Makefile
 include $(LIBCOM)/cppStd/Makefile
 include $(LIBCOM)/cxxTemplates/Makefile
 include $(LIBCOM)/dbmf/Makefile
+include $(LIBCOM)/debuglog/Makefile
 include $(LIBCOM)/ellLib/Makefile
 include $(LIBCOM)/env/Makefile
 include $(LIBCOM)/error/Makefile

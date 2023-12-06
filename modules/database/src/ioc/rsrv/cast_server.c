@@ -44,6 +44,8 @@
 #include "errlog.h"
 #include "freeList.h"
 #include "osiSock.h"
+#include "epicsSock.h"
+#include "epicsBaseDebugLog.h"
 #include "taskwd.h"
 
 #include "rsrv.h"
@@ -119,14 +121,71 @@ void cast_server(void *pParm)
     int                 status;
     int                 count=0;
     int                 mysocket=0;
-    struct sockaddr_in  new_recv_addr;
-    osiSocklen_t        recv_addr_size;
+    osiSockAddr46       new_recv_addr46;
     osiSockIoctl_t      nchars;
     SOCKET              recv_sock, reply_sock;
     struct client      *client;
-
-    recv_addr_size = sizeof(new_recv_addr);
-
+#ifdef AF_INET6_IPV6
+    unsigned int useIPv4 = 0;
+    unsigned int useIPv6 = 0;
+    /*
+     *                            EPICS_CAS_AUTO_BEACON_ADDR_LIST
+     *  EPICS_CA_AUTO_ADDR_LIST | NO        '',4,YES  6         46
+     *   -----------------------+---------------------------------
+     *           NO             | 4         4        46         46
+     *           YES            | 4         4        46         46
+     *           4              | 4         4        46         46
+     *           6              | 6        46         6         46
+     *           46             | 46       46        46         46
+     */
+    {
+        char            addrautolistascii[32u];
+        char            addrautobeaconlistascii[32u];
+        char            *pAutoAddrList;
+        char            *pAutoBeacon;
+        memset(addrautolistascii, 0, sizeof (addrautolistascii));
+        memset(addrautobeaconlistascii, 0, sizeof (addrautobeaconlistascii));
+        /* EPICS_CA_AUTO_ADDR_LIST can enable/disable IPv4/IPv6 */
+        pAutoAddrList = envGetConfigParam ( &EPICS_CA_AUTO_ADDR_LIST,
+                                            sizeof (addrautolistascii), addrautolistascii );
+        if (!pAutoAddrList) {
+            pAutoAddrList = "";
+        }
+        pAutoBeacon = envGetConfigParam ( &EPICS_CAS_AUTO_BEACON_ADDR_LIST,
+                                          sizeof (addrautobeaconlistascii), addrautobeaconlistascii );
+        if (!pAutoBeacon) {
+            pAutoBeacon = "";
+        }
+        /* Look at EPICS_CA_AUTO_ADDR_LIST. IPv4 is the default */
+        if ( !strcmp( pAutoAddrList, "6" ) ) {
+            useIPv4 = 0;
+            useIPv6 = 1;
+        } else if ( !strcmp( pAutoAddrList, "46" ) ) {
+            useIPv4 = 1;
+            useIPv6 = 1;
+        } else if ( ( !strcmp( pAutoAddrList, "NO" ) ) ||
+                    ( !strcmp( pAutoAddrList, "no" ) ) ) {
+            useIPv4 = 0;
+            useIPv6 = 0;
+        } else {
+            useIPv4 = 1;
+            useIPv6 = 0;
+        }
+        /* Look at EPICS_CAS_AUTO_BEACON_ADDR_LIST. For each protocol that has beacons,
+           we accept connections */
+        if ( !strcmp( pAutoBeacon, "4" ) ) {
+            useIPv4 = 1;
+        }  else if ( !strcmp( pAutoBeacon, "6" ) ) {
+            useIPv6 = 1;
+        } else if ( !strcmp( pAutoBeacon, "46" ) ) {
+            useIPv4 = 1;
+            useIPv6 = 1;
+        }
+        epicsPrintf ("cast_server: EPICS_CA_AUTO_ADDR_LIST='%s' EPICS_CAS_AUTO_BEACON_ADDR_LIST='%s' useIPv4=%d useIPv6=%d\n",
+                     addrautolistascii, addrautobeaconlistascii,
+                     useIPv4, useIPv6);
+    }
+#endif
     reply_sock = conf->udp;
 
     /*
@@ -164,13 +223,13 @@ void cast_server(void *pParm)
     epicsEventSignal(casudp_startStopEvent);
 
     while (TRUE) {
-        status = recvfrom (
+        osiSocklen_t addrSize = ( osiSocklen_t ) sizeof ( new_recv_addr46 );
+        status = epicsSocket46Recvfrom (
             recv_sock,
             client->recv.buf,
             client->recv.maxstk,
             0,
-            (struct sockaddr *)&new_recv_addr,
-            &recv_addr_size);
+            &new_recv_addr46.sa, &addrSize);
         if (status < 0) {
             if (SOCKERRNO != SOCK_EINTR) {
                 char sockErrBuf[64];
@@ -183,9 +242,34 @@ void cast_server(void *pParm)
 
         } else {
             size_t idx;
-            for(idx=0; casIgnoreAddrs[idx]; idx++)
+#ifdef AF_INET6_IPV6
+            if ((new_recv_addr46.sa.sa_family == AF_INET) && !useIPv4) {
+#ifdef NETDEBUG
+                char buf[64];
+                sockAddrToDottedIP(&new_recv_addr46.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("NET cast_server ignore request from '%s'\n",
+                                  buf);
+#endif
+                continue;
+            }
+            if (new_recv_addr46.sa.sa_family == AF_INET6) {
+                int useThisIp;
+                useThisIp = (IN6_IS_ADDR_V4MAPPED(&new_recv_addr46.in6.sin6_addr)) ? useIPv4 : useIPv6;
+                if (!useThisIp)
+                {
+#ifdef NETDEBUG
+                    char buf[64];
+                    sockAddrToDottedIP(&new_recv_addr46.sa, buf, sizeof(buf));
+                    epicsBaseDebugLog("NET cast_server ignore request from '%s'\n",
+                                      buf);
+#endif
+                    continue;
+                }
+            }
+#endif
+            for(idx=0; casIgnoreAddrs46[idx].ia.sin_port; idx++)
             {
-                if(new_recv_addr.sin_addr.s_addr==casIgnoreAddrs[idx]) {
+                if (sockIPsAreIdentical46(&new_recv_addr46, &casIgnoreAddrs46[idx])) {
                     status = -1; /* ignore */
                     break;
                 }
@@ -206,24 +290,22 @@ void cast_server(void *pParm)
              * see if the next message is for this same client.
              */
             if (client->send.stk>sizeof(caHdr)) {
-                status = memcmp(&client->addr,
-                    &new_recv_addr, recv_addr_size);
-                if(status){
+                if (!(sockAddrAreIdentical46( &client->addr46, &new_recv_addr46))) {
                     /*
                      * if the address is different
                      */
                     cas_send_dg_msg(client);
-                    client->addr = new_recv_addr;
+                    client->addr46 = new_recv_addr46;
                 }
             }
             else {
-                client->addr = new_recv_addr;
+                client->addr46 = new_recv_addr46;
             }
 
             if (CASDEBUG>1) {
-                char    buf[40];
+                char    buf[64];
 
-                ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
+                sockAddrToDottedIP (&client->addr46.sa, buf, sizeof(buf));
                 errlogPrintf ("CAS: cast server msg of %d bytes from addr %s\n",
                     client->recv.cnt, buf);
             }
@@ -235,9 +317,9 @@ void cast_server(void *pParm)
             if(status == RSRV_OK){
                 if(client->recv.cnt !=
                     client->recv.stk){
-                    char buf[40];
+                    char buf[64];
 
-                    ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
+                    sockAddrToDottedIP (&client->addr46.sa, buf, sizeof(buf));
 
                     epicsPrintf ("CAS: partial (damaged?) UDP msg of %d bytes from %s ?\n",
                         client->recv.cnt - client->recv.stk, buf);
@@ -248,9 +330,9 @@ void cast_server(void *pParm)
                 }
             }
             else if (CASDEBUG>0){
-                char buf[40];
+                char buf[64];
 
-                ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
+                sockAddrToDottedIP (&client->addr46.sa, buf, sizeof(buf));
 
                 epicsPrintf ("CAS: invalid (damaged?) UDP request from %s ?\n", buf);
 

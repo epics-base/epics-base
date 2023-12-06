@@ -18,6 +18,9 @@
 #include "dbDefs.h"
 #include "epicsTypes.h"
 #include "osiSock.h"
+#include "epicsBaseDebugLog.h"
+#include "epicsStdio.h"
+#include "errlog.h"
 
 /*
  * addrArrayToUL ()
@@ -190,5 +193,133 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
         }
     }
 
+    return -1;
+}
+
+
+/*
+ * rational replacement for inet_addr()
+ * which allows the limited broadcast address
+ * 255.255.255.255, allows the user
+ * to specify a port number, and allows also a
+ * named host to be specified.
+ *
+ * Sets the port number to "defaultPort" only if
+ * "pAddrString" does not contain an address of the form
+ * "n.n.n.n:p or host:p or [IPv6]:p"
+ */
+LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
+                                        unsigned short defaultPort,
+                                        osiSockAddr46 *pAddr46)
+{
+    if (pAddrString == NULL) {
+        return -1;
+    }
+#ifdef NETDEBUG
+    epicsBaseDebugLog("NET aToIPAddr46 pAddrString='%s' defaultPort=%u\n",
+                      pAddrString, defaultPort);
+#endif
+    if (*pAddrString != '[') {
+        /* IPv4 */
+        int status;
+        memset ( pAddr46, 0, sizeof(*pAddr46) ) ;
+        pAddr46->sa.sa_family = AF_INET;
+        status = aToIPAddr( pAddrString, defaultPort, &pAddr46->ia);
+#ifdef NETDEBUG
+        {
+            char buf[64];
+            sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
+            epicsBaseDebugLog("NET aToIPAddr46 pAddrString='%s' status=%d addr46='%s'\n",
+                          pAddrString, status, buf);
+        }
+#endif
+        return status;
+    }
+#ifdef AF_INET6_IPV6
+    else
+    {
+        char hostName[512];
+        char portAscii[8];
+        char *pPort = NULL;
+        struct addrinfo hints;
+        struct addrinfo *ai, *ai_to_free;
+        osiSocklen_t socklen = 0;
+        int gai;
+        epicsSnprintf(portAscii, sizeof(portAscii), "%u", defaultPort);
+        memset(pAddr46, 0, sizeof(*pAddr46));
+        if (pAddrString[1] == '%') {
+          /* Special case: shortish '[%eth0]' needs to become 'ff02::1%eth0' */
+          epicsSnprintf(hostName, sizeof(hostName), "ff02::1%s", pAddrString+1);
+        } else {
+          /* Copy the hostname, do not copy the '[' */
+          strncpy(hostName, pAddrString+1, sizeof(hostName) - 1);
+        }
+        hostName[sizeof(hostName) - 1] = '\0';
+        char *pClosingBracket = strchr(hostName, ']');
+        if (pClosingBracket) {
+            *pClosingBracket = '\0';
+            /* now pClosingBracket may pint to a ':', if any */
+            if (*pClosingBracket == ':') {
+                pPort = pClosingBracket + 1;
+                *pClosingBracket = '\0';
+            }
+        }
+        if (!strlen(hostName) && pPort) {
+            errlogPrintf("%s:%d: aToIPAddr46 invalid, probably missing []. pAddrString='%s' hostname='' pPort='%s'\n",
+                     __FILE__, __LINE__, pAddrString, pPort ? pPort : "");
+            return -1;
+        }
+#ifdef NETDEBUG
+        epicsBaseDebugLog("NET aToIPAddr46 hostName='%s' pPort='%s' portAscii='%s'\n",
+                          hostName, pPort ? pPort : "NULL", portAscii);
+#endif
+        /* After the printout, set pPort to a valid value */
+        if (!pPort) pPort = portAscii;
+#ifdef NETDEBUG
+        epicsBaseDebugLog("NET aToIPAddr46 hostName='%s' pPort='%s'\n",
+                          hostName, pPort ? pPort : "NULL");
+#endif
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET; /* Default */
+        if (sizeof(*pAddr46) < sizeof(struct sockaddr_in6)) {
+            hints.ai_socktype = AF_INET;
+        }
+        else if (pClosingBracket) {
+            hints.ai_family = AF_INET6;
+        }
+        gai = getaddrinfo(hostName, pPort, &hints, &ai);
+        if (gai) {
+#ifdef NETDEBUG
+          epicsBaseDebugLog("NET unable to look up pAddrString '%s' '%s:%s' (%s)\n",
+                            pAddrString, hostName, pPort,
+                            gai_strerror(gai));
+#endif
+          return -1;
+        }
+        for (ai_to_free = ai; ai; ai = ai->ai_next) {
+            socklen = ai->ai_addrlen;
+            if (socklen <= sizeof(*pAddr46)) {
+                memcpy(pAddr46, ai->ai_addr, socklen);
+#ifdef NETDEBUG
+                {
+                    char buf[128];
+                    sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
+                    epicsBaseDebugLog("NET aToIPAddr46 pAddrString='%s' res=%s socklen=%u\n",
+                                      pAddrString, buf, (unsigned)socklen);
+                }
+#endif
+                freeaddrinfo(ai_to_free);
+                return socklen;
+            } else {
+                char buf[64];
+                sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
+                epicsPrintf("%s:%d: aToIPAddr46 pAddrString='%s' osiSockAddr46 too short %u/%u ignore add='%s'\n",
+                             __FILE__, __LINE__,
+                             pAddrString, (unsigned)sizeof(*pAddr46), socklen, buf);
+            }
+        }
+        freeaddrinfo(ai_to_free);
+    }
+#endif
     return -1;
 }

@@ -32,6 +32,8 @@
 #include "freeList.h"
 #include "osiPoolStatus.h"
 #include "osiSock.h"
+#include "epicsSock.h"
+#include "epicsBaseDebugLog.h"
 #include "taskwd.h"
 #include "cantProceed.h"
 
@@ -48,6 +50,8 @@
 #include "server.h"
 
 epicsThreadPrivateId rsrvCurrentClient;
+static SOCKET        beaconSocket4;
+static rsrv_online_notify_config static_notify_conf;
 
 /*
  *
@@ -72,22 +76,21 @@ static void req_server (void *pParm)
 
     while (TRUE) {
         SOCKET clientSock;
-        osiSockAddr         sockAddr;
-        osiSocklen_t        addLen = sizeof(sockAddr);
+        osiSockAddr46       sockAddr46;
+        osiSocklen_t        addLen = sizeof(sockAddr46);
 
         while (castcp_ctl == ctlPause) {
             epicsThreadSleep(0.1);
         }
 
-        clientSock = epicsSocketAccept ( IOC_sock, &sockAddr.sa, &addLen );
+        clientSock = epicsSocket46Accept ( IOC_sock, &sockAddr46.sa, &addLen );
         if ( clientSock == INVALID_SOCKET ||
-             sockAddr.sa.sa_family != AF_INET ||
-             addLen < sizeof(sockAddr.ia) ) {
+             ( !epicsSocket46IsAF_INETorAF_INET6 ( sockAddr46.sa.sa_family ) ) ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAS: Client accept " ERL_ERROR ": %s (%d)\n",
-                sockErrBuf, (int)addLen );
+            errlogPrintf("CAS: Client accept " ERL_ERROR ": %s\n",
+                sockErrBuf );
             epicsThreadSleep(15.0);
             continue;
         }
@@ -96,7 +99,7 @@ static void req_server (void *pParm)
             struct client *pClient;
 
             /* socket passed in is closed if unsuccessful here */
-            pClient = create_tcp_client ( clientSock, &sockAddr );
+            pClient = create_tcp_client ( clientSock, &sockAddr46 );
             if ( ! pClient ) {
                 epicsThreadSleep ( 15.0 );
                 continue;
@@ -123,9 +126,9 @@ static void req_server (void *pParm)
 }
 
 static
-int tryBind(SOCKET sock, const osiSockAddr* addr, const char *name)
+int tryBind(SOCKET sock, const osiSockAddr46* pAddr46, const char *name)
 {
-    if(bind(sock, (struct sockaddr *) &addr->sa, sizeof(*addr))<0) {
+    if(epicsSocket46Bind(sock, &pAddr46->sa, sizeof(*pAddr46))<0) {
         char sockErrBuf[64];
         if(SOCKERRNO!=SOCK_EADDRINUSE)
         {
@@ -150,17 +153,35 @@ static
 SOCKET* rsrv_grab_tcp(unsigned short *port)
 {
     SOCKET *socks;
-    osiSockAddr scratch;
     unsigned i;
-
+    unsigned short sin_port = *port;
+    {
+        ELLNODE *cur, *next;
+        unsigned maxi = ellCount(&casIntfAddrList);
+        for (i=0, cur=ellFirst(&casIntfAddrList), next = cur ? ellNext(cur) : NULL;
+             cur;
+             i++, cur=next, next=next ? ellNext(next) : NULL)
+        {
+#ifdef NETDEBUG
+            osiSockAddr46 ifaceAddr = ((osiSockAddrNode46 *)cur)->addr;
+            {
+                char buf[64];
+                sockAddrToDottedIP(&ifaceAddr.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("NET rsrv_grab_tcp[%u/%u] ifaceAddr='%s'\n", i, maxi, buf);
+            }
+#else
+            (void)maxi;
+#endif
+        }
+    }
     socks = mallocMustSucceed(ellCount(&casIntfAddrList)*sizeof(*socks), "rsrv_grab_tcp");
     for(i=0; i<ellCount(&casIntfAddrList); i++)
         socks[i] = INVALID_SOCKET;
 
-    /* start with preferred port */
-    memset(&scratch, 0, sizeof(scratch));
-    scratch.ia.sin_family = AF_INET;
-    scratch.ia.sin_port = htons(*port);
+    /*
+     * the port handling below assumes that the port is on the same
+     * location for both IPv4 and IPv6
+    */
 
     while(ellCount(&casIntfAddrList)>0) {
         ELLNODE *cur, *next;
@@ -177,18 +198,24 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
              i++, cur=next, next=next ? ellNext(next) : NULL)
         {
             SOCKET tcpsock;
-            osiSockAddr ifaceAddr = ((osiSockAddrNode *)cur)->addr;
-
-            scratch.ia.sin_addr = ifaceAddr.ia.sin_addr;
-
-            tcpsock = socks[i] = epicsSocketCreate (AF_INET, SOCK_STREAM, 0);
+            int family;
+            osiSockAddr46 ifaceAddr = ((osiSockAddrNode46 *)cur)->addr;
+#ifdef NETDEBUG
+            {
+                char buf[64];
+                sockAddrToDottedIP(&ifaceAddr.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("NET rsrv_grab_tcp  ifaceAddr='%s'\n", buf);
+            }
+#endif
+            family = ifaceAddr.sa.sa_family;
+            tcpsock = socks[i] = epicsSocket46Create (family, SOCK_STREAM, 0);
             if(tcpsock==INVALID_SOCKET)
                 cantProceed("rsrv ran out of sockets during initialization");
 
             epicsSocketEnableAddressReuseDuringTimeWaitState ( tcpsock );
 
-            if(bind(tcpsock, &scratch.sa, sizeof(scratch))==0 && listen(tcpsock, 20)==0) {
-                if(scratch.ia.sin_port==0) {
+            if(epicsSocket46BindLocalPort(tcpsock, family, sin_port)==0 && listen(tcpsock, 20)==0) {
+                if(sin_port==0) {
                     /* use first socket to pick a random port */
                     osiSocklen_t alen = sizeof(ifaceAddr);
                     assert(i==0);
@@ -202,8 +229,8 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                         ok = 0;
                         break;
                     }
-                    scratch.ia.sin_port = ifaceAddr.ia.sin_port;
-                    assert(scratch.ia.sin_port!=0);
+                    sin_port = ifaceAddr.ia.sin_port;
+                    assert(sin_port!=0);
                 }
             } else {
                 int errcode = SOCKERRNO;
@@ -211,10 +238,11 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                 if(errcode==SOCK_EADDRNOTAVAIL) {
                     /* this is not a bind()able address. */
                     int j;
-                    char name[40];
-                    ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
+                    /*
+                    char name[64];
+                    sockAddrToDottedIP(&scratch46.sa, name, sizeof(name));
                     printf("Skipping %s which is not an interface address\n", name);
-
+                    */
                     for(j=0; j<=i; j++) {
                         epicsSocketDestroy(socks[j]);
                         socks[j] = INVALID_SOCKET;
@@ -230,13 +258,15 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                  */
                 if (errcode != SOCK_EADDRINUSE &&
                     errcode != SOCK_EACCES) {
-                    char name[40];
                     char sockErrBuf[64];
+                  /*
+                    char name[64];
+                    sockAddrToDottedIP(&scratch46.sa, name, sizeof(name));
+                  */
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
-                    ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
-                    cantProceed( "CAS: Socket bind %s error: %s\n",
-                        name, sockErrBuf );
+                    cantProceed( "CAS: Socket bind error: %s\n",
+                        sockErrBuf );
                 }
                 ok = 0;
                 break;
@@ -244,8 +274,8 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
         }
 
         if (ok) {
-            assert(scratch.ia.sin_port!=0);
-            *port = ntohs(scratch.ia.sin_port);
+            assert(sin_port!=0);
+            *port = sin_port;
 
             break;
         } else {
@@ -258,7 +288,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                 }
             }
 
-            scratch.ia.sin_port=0; /* next iteration starts with a random port */
+            sin_port=0; /* next iteration starts with a random port */
         }
     }
 
@@ -273,13 +303,12 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
 static
 void rsrv_build_addr_lists(void)
 {
-    int autobeaconlist = 1;
+    int autobeaconlistIPv4 = 1;
+    int autobeaconlistIPv6 = 0;
 
     /* the UDP ports are known at this point, but the TCP port is not */
     assert(ca_beacon_port!=0);
     assert(ca_udp_port!=0);
-
-    envGetBoolConfigParam(&EPICS_CAS_AUTO_BEACON_ADDR_LIST, &autobeaconlist);
 
     ellInit ( &casIntfAddrList );
     ellInit ( &beaconAddrList );
@@ -289,20 +318,21 @@ void rsrv_build_addr_lists(void)
      * Also used for NIC introspection
      */
 
-    beaconSocket = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
-    if (beaconSocket==INVALID_SOCKET)
+    // The family must match the address used in rsrv/online_notify.c:88
+    beaconSocket4 = epicsSocket46Create(AF_INET, SOCK_DGRAM, 0);
+    if (beaconSocket4==INVALID_SOCKET)
         cantProceed("socket allocation failed during address list expansion");
 
     {
         int intTrue = 1;
-        if (setsockopt (beaconSocket, SOL_SOCKET, SO_BROADCAST,
+        if (setsockopt (beaconSocket4, SOL_SOCKET, SO_BROADCAST,
                         (char *)&intTrue, sizeof(intTrue))<0) {
             cantProceed("CAS: online socket set up error\n");
         }
 #ifdef IP_ADD_MEMBERSHIP
         {
             osiSockOptMcastLoop_t flag = 1;
-            if (setsockopt(beaconSocket, IPPROTO_IP, IP_MULTICAST_LOOP,
+            if (setsockopt(beaconSocket4, IPPROTO_IP, IP_MULTICAST_LOOP,
                            (char *)&flag, sizeof(flag))<0) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
@@ -320,7 +350,7 @@ void rsrv_build_addr_lists(void)
         if(envGetLongConfigParam(&EPICS_CA_MCAST_TTL, &val))
             val =1;
         ttl = val;
-        if ( setsockopt(beaconSocket, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof(ttl))) {
+        if ( setsockopt(beaconSocket4, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ttl, sizeof(ttl))) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
@@ -337,69 +367,173 @@ void rsrv_build_addr_lists(void)
         addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_INTF_ADDR_LIST, ca_udp_port, 0 );
 
         removeDuplicateAddresses(&casIntfAddrList, &temp, 0);
+#ifdef AF_INET6_IPV6
+        {
+            osiSockAddrNode46 *pNode, *pNext;
+            for(pNode = (osiSockAddrNode46*)ellFirst(&casIntfAddrList),
+                    pNext = pNode ? (osiSockAddrNode46*)ellNext(&pNode->node) : NULL;
+                pNode;
+                pNode = pNext,
+                    pNext = pNext ? (osiSockAddrNode46*)ellNext(&pNext->node) : NULL)
+                {
+                    if (pNode->addr.in6.sin6_family==AF_INET6) {
+                        /*
+                         * If we have an IPv6 interface in casIntfAddrList, assume that
+                         * we wanto to have beacons here as well.
+                         */
+                        autobeaconlistIPv6 = 1; /* May be overwritten below */
+                        break;
+                    }
+                }
+        }
+#endif
     }
 
+    {
+        char            beaconlistascii[32];
+        char            *pstr;
+        pstr = envGetConfigParam ( &EPICS_CAS_AUTO_BEACON_ADDR_LIST,
+                                   sizeof (beaconlistascii), beaconlistascii );
+        if ( pstr ) {
+            if ( !strcmp( pstr, "4" ) ) {
+                autobeaconlistIPv4 = 1;
+#ifdef AF_INET6_IPV6
+            } else if ( !strcmp( pstr, "6" ) ) {
+                autobeaconlistIPv4 = 0;
+                autobeaconlistIPv6 = 1;
+            } else if ( !strcmp( pstr, "46" ) ) {
+                autobeaconlistIPv6 = 1;
+#endif
+            } else {
+                envGetBoolConfigParam(&EPICS_CAS_AUTO_BEACON_ADDR_LIST, &autobeaconlistIPv4);
+            }
+        }
+        epicsPrintf("%s:%d:rsrv_build_addr_lists EPICS_CAS_AUTO_BEACON_ADDR_LIST='%s' autobeaconlistIPv4=%d autobeaconlistIPv6=%d\n",
+                    __FILE__, __LINE__,
+                    pstr ? pstr : "",
+                    autobeaconlistIPv4, autobeaconlistIPv6);
+    }
     /* Process the interface address list
      * Move multicast addresses to casMCastAddrList
      * Populate beacon address list (if autobeaconlist and iface list not-empty).
      */
     {
-        int foundWildcard = 0, doautobeacon = autobeaconlist;
-
-        osiSockAddrNode *pNode, *pNext;
-        for(pNode = (osiSockAddrNode*)ellFirst(&casIntfAddrList),
-            pNext = pNode ? (osiSockAddrNode*)ellNext(&pNode->node) : NULL;
+        int foundWildcard4 = 0, foundWildcard6 = 0;
+        int doautobeaconIPv4 = autobeaconlistIPv4;
+        int doautobeaconIPv6 = autobeaconlistIPv6;
+        unsigned foundInterfaceIPv4 = 0, foundInterfaceIPv6 = 0;
+        osiSockAddrNode46 *pNode, *pNext;
+        for(pNode = (osiSockAddrNode46*)ellFirst(&casIntfAddrList),
+            pNext = pNode ? (osiSockAddrNode46*)ellNext(&pNode->node) : NULL;
             pNode;
             pNode = pNext,
-            pNext = pNext ? (osiSockAddrNode*)ellNext(&pNext->node) : NULL)
+            pNext = pNext ? (osiSockAddrNode46*)ellNext(&pNext->node) : NULL)
         {
-            osiSockAddr match;
+            osiSockAddr46 match46;
             epicsUInt32 top = ntohl(pNode->addr.ia.sin_addr.s_addr)>>24;
 
+#ifdef NETDEBUG
+            {
+                char buf[64];
+                sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("NET rsrv_build_addr_lists addr='%s'\n", buf);
+            }
+#endif
             if(pNode->addr.ia.sin_family==AF_INET && pNode->addr.ia.sin_addr.s_addr==htonl(INADDR_ANY))
             {
-                foundWildcard = 1;
+                foundWildcard4 = 1;
 
             } else if(pNode->addr.ia.sin_family==AF_INET && top>=224 && top<=239) {
                 /* This is a multi-cast address */
                 ellDelete(&casIntfAddrList, &pNode->node);
                 ellAdd(&casMCastAddrList, &pNode->node);
                 continue;
+            } else {
+                foundInterfaceIPv4++;
             }
+#ifdef AF_INET6_IPV6
+            if (pNode->addr.in6.sin6_family==AF_INET6) {
+                if (!(memcmp(&pNode->addr.in6.sin6_addr,
+                             &in6addr_any,
+                             sizeof(pNode->addr.in6.sin6_addr)))) {
+                    foundWildcard6 = 1;
+                } else {
+                    foundInterfaceIPv6++;
+                }
+            }
+#else
+            (void)foundInterfaceIPv6;
+            (void)foundWildcard6;
+            (void)doautobeaconIPv6;
+#endif
+            epicsBaseDebugLog("NET rsrv_build_addr_lists doautobeaconIPv4=%d foundInterfaceIPv4=%u foundWildcard4=%d\n",
+                              doautobeaconIPv4, foundInterfaceIPv4, foundWildcard4);
+#ifdef AF_INET6_IPV6
+            epicsBaseDebugLog("NET rsrv_build_addr_lists doautobeaconIPv6=%d foundInterfaceIPv6=%d foundWildcard6=%u\n",
+                              doautobeaconIPv6, foundInterfaceIPv6, foundWildcard6);
+#endif
 
-            if(!doautobeacon)
-                continue;
             /* when given a specific interface address, auto populate with the
              * corresponding broadcast address.
              */
 
-            autobeaconlist = 0; /* prevent later population from wildcard */
-
-            memset(&match, 0, sizeof(match));
-            match.ia.sin_family = AF_INET;
-            match.ia.sin_addr.s_addr = pNode->addr.ia.sin_addr.s_addr;
-            match.ia.sin_port = htons(ca_beacon_port);
-
-            osiSockDiscoverBroadcastAddresses(&beaconAddrList, beaconSocket, &match);
+            memset(&match46, 0, sizeof(match46));
+            if(pNode->addr.ia.sin_family==AF_INET) {
+                if (!doautobeaconIPv4)
+                    continue;
+                match46.ia.sin_family = AF_INET;
+                match46.ia.sin_addr.s_addr = pNode->addr.ia.sin_addr.s_addr;
+                match46.ia.sin_port = htons(ca_beacon_port);
+                autobeaconlistIPv4 = 0;
+            }
+#ifdef AF_INET6_IPV6
+            else if (pNode->addr.ia.sin_family == AF_INET6) {
+                if (!doautobeaconIPv6)
+                    continue;
+                memcpy(&match46, &pNode->addr.sa, sizeof(match46));
+                match46.in6.sin6_port = htons(ca_beacon_port);
+                autobeaconlistIPv6 = 0;
+            }
+#endif
+#ifdef NETDEBUG
+            {
+                char buf[64];
+                sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
+                                  buf);
+                sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("NET calling osiSockBroadcastMulticastAddresses46: pNode->addr='%s'\n",
+                                  buf);
+            }
+#endif
+            osiSockBroadcastMulticastAddresses46(&beaconAddrList, beaconSocket4, &match46);
         }
 
-        if (foundWildcard && ellCount(&casIntfAddrList) != 1) {
+        if (foundWildcard4 && (foundInterfaceIPv4 != 1)) {
             cantProceed("CAS interface address list can not contain 0.0.0.0 and other interface addresses.\n");
         }
     }
 
     if (ellCount(&casIntfAddrList) == 0) {
-        /* default to wildcard 0.0.0.0 when interface address list is empty */
-        osiSockAddrNode *pNode = (osiSockAddrNode *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
-        pNode->addr.ia.sin_family = AF_INET;
-        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        pNode->addr.ia.sin_port = 0;
-        ellAdd ( &casIntfAddrList, &pNode->node );
+        if (autobeaconlistIPv4) {
+            /* default to wildcard 0.0.0.0 when interface address list is empty */
+            osiSockAddrNode46 *pNode = (osiSockAddrNode46 *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
+            pNode->addr.sa.sa_family = AF_INET;
+            ellAdd ( &casIntfAddrList, &pNode->node );
+        }
+#ifdef AF_INET6_IPV6
+        if (autobeaconlistIPv6) {
+            /* default to wildcard [::] when interface address list is empty */
+            osiSockAddrNode46 *pNode = (osiSockAddrNode46 *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
+            pNode->addr.sa.sa_family = AF_INET6;
+            ellAdd ( &casIntfAddrList, &pNode->node );
+        }
+#endif
     }
 
     {
         ELLLIST temp = ELLLIST_INIT;
-        osiSockAddrNode *pNode;
+        osiSockAddrNode46 *pNode;
 
         ellConcat(&temp, &beaconAddrList);
 
@@ -408,27 +542,51 @@ void rsrv_build_addr_lists(void)
          */
         addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_BEACON_ADDR_LIST, ca_beacon_port, 0 );
 
-        if (autobeaconlist) {
+        epicsPrintf("%s:%d:rsrv_build_addr_lists autobeaconlistIPv4=%d autobeaconlistIPv6=%d\n",
+                    __FILE__, __LINE__,  autobeaconlistIPv4, autobeaconlistIPv6);
+        if (autobeaconlistIPv4 || autobeaconlistIPv6) {
             /* auto populate with all broadcast addresses.
              * Note that autobeaconlist is zeroed above if an interface
              * address list is provided.
              */
-            osiSockAddr match;
-            memset(&match, 0, sizeof(match));
-            match.ia.sin_family = AF_INET;
-            match.ia.sin_addr.s_addr = htonl(INADDR_ANY);
-            match.ia.sin_port = htons(ca_beacon_port);
+            osiSockAddr46 match46;
+            memset(&match46, 0, sizeof(match46));
+            match46.ia.sin_family = AF_INET; /* This is the default */
+#ifdef AF_INET6_IPV6
+            if ((autobeaconlistIPv4 && autobeaconlistIPv6)) {
+                match46.ia.sin_family = AF_UNSPEC; /* Both v6 and v4 */
+            } else if (autobeaconlistIPv6) {
+                match46.ia.sin_family = AF_INET6; /* v6 only */
+            }
+#endif
+            match46.ia.sin_port = htons(ca_beacon_port);
 
-            osiSockDiscoverBroadcastAddresses(&temp, beaconSocket, &match);
+#ifdef NETDEBUG
+            {
+                char buf[64];
+                sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
+                              buf);
+            }
+#endif
+            osiSockBroadcastMulticastAddresses46(&temp, beaconSocket4, &match46);
         }
 
         /* set the port for any automatically discovered destinations. */
-        for(pNode = (osiSockAddrNode*)ellFirst(&temp);
+        for(pNode = (osiSockAddrNode46*)ellFirst(&temp);
             pNode;
-            pNode = (osiSockAddrNode*)ellNext(&pNode->node))
+            pNode = (osiSockAddrNode46*)ellNext(&pNode->node))
         {
-            if(pNode->addr.ia.sin_port==0)
+#ifdef NETDEBUG
+            {
+                char buf[64];
+                sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("NET rsrv_XXXX addr='%s'\n", buf);
+            }
+#endif
+            if(pNode->addr.ia.sin_port==0) {
                 pNode->addr.ia.sin_port = htons(ca_beacon_port);
+            }
         }
 
         removeDuplicateAddresses(&beaconAddrList, &temp, 0);
@@ -437,8 +595,31 @@ void rsrv_build_addr_lists(void)
     if (ellCount(&beaconAddrList)==0)
         fprintf(stderr, "Warning: RSRV has empty beacon address list\n");
 
+    static_notify_conf.pSockets = callocMustSucceed( ellCount(&beaconAddrList), sizeof(SOCKET), "rsrv_init" );
     {
-        osiSockAddrNode *node;
+        ELLNODE *cur;
+        unsigned i;
+
+        /* send beacon to each interface */
+        for(i=0, cur=ellFirst(&beaconAddrList); cur; i++, cur=ellNext(cur))
+        {
+            static_notify_conf.pSockets[i] = beaconSocket4; /* the default */
+#ifdef AF_INET6_IPV6
+            osiSockAddrNode46 *pNode = CONTAINER(cur, osiSockAddrNode46, node);
+            if (pNode->addr.sa.sa_family == AF_INET6) {
+                SOCKET sock = epicsSocket46Create (AF_INET6, SOCK_DGRAM, 0);
+                if (sock != INVALID_SOCKET) {
+                    unsigned int interfaceIndex = (unsigned int)pNode->addr.in6.sin6_scope_id;
+                    epicsSocket46optIPv6MultiCast(sock, interfaceIndex);
+                    static_notify_conf.pSockets[i] = sock;
+                }
+            }
+#endif
+        }
+    }
+
+    {
+        osiSockAddrNode46 *node;
         ELLLIST temp = ELLLIST_INIT,
                 temp2= ELLLIST_INIT;
         size_t idx = 0;
@@ -450,14 +631,14 @@ void rsrv_build_addr_lists(void)
          * it is short enough that using a hash table would be slower.
          * 0.0.0.0 indicates end of list
          */
-        casIgnoreAddrs = callocMustSucceed(1+ellCount(&temp2), sizeof(casIgnoreAddrs[0]), "casIgnoreAddrs");
+        casIgnoreAddrs46 = callocMustSucceed(1+ellCount(&temp2), sizeof(casIgnoreAddrs46[0]), "casIgnoreAddrs");
 
-        while((node=(osiSockAddrNode*)ellGet(&temp2))!=NULL)
+        while((node=(osiSockAddrNode46*)ellGet(&temp2))!=NULL)
         {
-            casIgnoreAddrs[idx++] = node->addr.ia.sin_addr.s_addr;
+            memcpy(&casIgnoreAddrs46[idx++], &node->addr, sizeof(casIgnoreAddrs46[idx]));
             free(node);
         }
-        casIgnoreAddrs[idx] = 0;
+        //casIgnoreAddrs46[idx] = 0; This is done by calloc above
     }
 }
 
@@ -596,6 +777,7 @@ void rsrv_init (void)
         int havesometcp = 0;
         ELLNODE *cur;
         int i;
+        int family;
 
         for (i=0, cur=ellFirst(&casIntfAddrList); cur; i++, cur=ellNext(cur))
         {
@@ -604,57 +786,66 @@ void rsrv_init (void)
 
             conf = callocMustSucceed(1, sizeof(*conf), "rsrv_init");
 
-            conf->tcpAddr = ((osiSockAddrNode *)cur)->addr;
-            conf->tcpAddr.ia.sin_port = htons(ca_server_port);
+            conf->tcpAddr46 = ((osiSockAddrNode46 *)cur)->addr;
+#ifdef AF_INET6_IPV6
+            if ( conf->tcpAddr46.sa.sa_family == AF_INET6 ) {
+                conf->tcpAddr46.in6.sin6_port = htons ( ca_server_port );
+            }
+            else
+#endif
+            {
+                conf->tcpAddr46.ia.sin_port = htons( ca_server_port );
+            }
             conf->tcp = socks[i];
             socks[i] = INVALID_SOCKET;
 
-            ipAddrToDottedIP (&conf->tcpAddr.ia, ifaceName, sizeof(ifaceName));
+            sockAddrToDottedIP (&conf->tcpAddr46.sa, ifaceName, sizeof(ifaceName));
 
             conf->udp = conf->udpbcast = INVALID_SOCKET;
 
             /* create and bind UDP name receiver socket(s) */
 
-            conf->udp = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+            conf->udpAddr46 = conf->tcpAddr46;
+            family = conf->udpAddr46.sa.sa_family;
+            conf->udp = epicsSocket46Create(family, SOCK_DGRAM, 0);
             if(conf->udp==INVALID_SOCKET)
                 cantProceed("rsrv_init ran out of udp sockets");
 
-            conf->udpAddr = conf->tcpAddr;
-            conf->udpAddr.ia.sin_port = htons(ca_udp_port);
-
             epicsSocketEnableAddressUseForDatagramFanout ( conf->udp );
 
-            if(tryBind(conf->udp, &conf->udpAddr, "UDP unicast socket"))
+            if (epicsSocket46BindLocalPort(conf->udp, family, ca_server_port))
                 goto cleanup;
 
 #ifdef IP_ADD_MEMBERSHIP
             /* join UDP socket to any multicast groups */
             {
-                osiSockAddrNode *pNode;
+                osiSockAddrNode46 *pNode;
 
-                for(pNode = (osiSockAddrNode*)ellFirst(&casMCastAddrList);
+                for(pNode = (osiSockAddrNode46*)ellFirst(&casMCastAddrList);
                     pNode;
-                    pNode = (osiSockAddrNode*)ellNext(&pNode->node))
+                    pNode = (osiSockAddrNode46*)ellNext(&pNode->node))
                 {
-                    struct ip_mreq mreq;
+                    if (pNode->addr.sa.sa_family == AF_INET) {
+                        struct ip_mreq mreq;
+                        memset(&mreq, 0, sizeof(mreq));
+                        mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
+                        mreq.imr_interface.s_addr = conf->udpAddr46.ia.sin_addr.s_addr;
 
-                    memset(&mreq, 0, sizeof(mreq));
-                    mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
-                    mreq.imr_interface.s_addr = conf->udpAddr.ia.sin_addr.s_addr;
-
-                    if (setsockopt(conf->udp, IPPROTO_IP, IP_ADD_MEMBERSHIP,
-                        (char *) &mreq, sizeof(mreq))!=0) {
-                        struct sockaddr_in temp;
-                        char name[40];
-                        char sockErrBuf[64];
-                        temp.sin_family = AF_INET;
-                        temp.sin_addr = mreq.imr_multiaddr;
-                        temp.sin_port = conf->udpAddr.ia.sin_port;
-                        epicsSocketConvertErrnoToString (
-                            sockErrBuf, sizeof ( sockErrBuf ) );
-                        ipAddrToDottedIP (&temp, name, sizeof(name));
-                        errlogPrintf("CAS: Socket mcast join %s to %s failed: %s\n",
-                            ifaceName, name, sockErrBuf );
+                        if (setsockopt(conf->udp, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                            (char *) &mreq, sizeof(mreq))!=0) {
+                            osiSockAddr46 temp46;
+                            char name[40];
+                            char sockErrBuf[64];
+                            memset(&temp46, 0, sizeof(temp46));
+                            temp46.ia.sin_family = AF_INET;
+                            temp46.ia.sin_addr = mreq.imr_multiaddr;
+                            temp46.ia.sin_port = conf->udpAddr46.ia.sin_port;
+                            epicsSocketConvertErrnoToString (
+                                sockErrBuf, sizeof ( sockErrBuf ) );
+                            sockAddrToDottedIP (&temp46.sa, name, sizeof(name));
+                            errlogPrintf("CAS: Socket mcast join %s to %s failed: %s\n",
+                                ifaceName, name, sockErrBuf );
+                        }
                     }
                 }
             }
@@ -664,40 +855,48 @@ void rsrv_init (void)
             }
 #endif
 
-#if !(defined(_WIN32) || defined(__CYGWIN__))
+#if !(defined(_WIN32) || defined(__CYGWIN__) || defined(freebsd))
             /* An oddness of BSD sockets (not winsock) is that binding to
              * INADDR_ANY will receive unicast and broadcast, but binding to
              * a specific interface address receives only unicast.  The trick
              * is to bind a second socket to the interface broadcast address,
              * which will then receive only broadcasts.
              */
-            if(conf->udpAddr.ia.sin_addr.s_addr!=htonl(INADDR_ANY)) {
+            if(conf->udpAddr46.ia.sin_addr.s_addr!=htonl(INADDR_ANY)) {
                 /* find interface broadcast address */
                 ELLLIST bcastList = ELLLIST_INIT;
-                osiSockAddrNode *pNode;
+                osiSockAddrNode46 *pNode;
 
-                osiSockDiscoverBroadcastAddresses (&bcastList,
-                                                   conf->udp, &conf->udpAddr); // match addr
+#ifdef NETDEBUG
+                {
+                    char buf[64];
+                    sockAddrToDottedIP(&conf->udpAddr46.sa, buf, sizeof(buf));
+                    epicsBaseDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
+                                      buf);
+                }
+#endif
+                osiSockBroadcastMulticastAddresses46 (&bcastList,
+                                                      conf->udp, &conf->udpAddr46); // match addr
 
                 if(ellCount(&bcastList)==0) {
                     fprintf(stderr, "Warning: Can't find broadcast address of interface %s\n"
                                     "         Name lookup may not work on this interface\n", ifaceName);
                 } else {
-                    if(ellCount(&bcastList)>1 && conf->udpAddr.ia.sin_addr.s_addr!=htonl(INADDR_ANY))
+                    if(ellCount(&bcastList)>1 && conf->udpAddr46.ia.sin_addr.s_addr!=htonl(INADDR_ANY))
                         printf("Interface %s has more than one broadcast address?\n", ifaceName);
 
-                    pNode = (osiSockAddrNode*)ellFirst(&bcastList);
+                    pNode = (osiSockAddrNode46*)ellFirst(&bcastList);
 
-                    conf->udpbcast = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+                    conf->udpbcast = epicsSocket46Create(AF_INET, SOCK_DGRAM, 0);
                     if(conf->udpbcast==INVALID_SOCKET)
                         cantProceed("rsrv_init ran out of udp sockets for bcast");
 
                     epicsSocketEnableAddressUseForDatagramFanout ( conf->udpbcast );
 
-                    conf->udpbcastAddr = conf->udpAddr;
-                    conf->udpbcastAddr.ia.sin_addr.s_addr = pNode->addr.ia.sin_addr.s_addr;
+                    conf->udpbcastAddr46 = conf->udpAddr46;
+                    conf->udpbcastAddr46.ia.sin_addr.s_addr = pNode->addr.ia.sin_addr.s_addr;
 
-                    if(tryBind(conf->udpbcast, &conf->udpbcastAddr, "UDP Socket bcast"))
+                    if(tryBind(conf->udpbcast, &conf->udpbcastAddr46, "UDP Socket bcast"))
                         goto cleanup;
                 }
 
@@ -722,7 +921,7 @@ void rsrv_init (void)
 
             epicsEventMustWait(casudp_startStopEvent);
 
-#if !(defined(_WIN32) || defined(__CYGWIN__))
+#if !(defined(_WIN32) || defined(__CYGWIN__) || defined(freebsd))
             if(conf->udpbcast != INVALID_SOCKET) {
                 conf->startbcast = 1;
 
@@ -750,11 +949,11 @@ void rsrv_init (void)
     }
 
     /* servers list is considered read-only from this point */
-
-    epicsThreadMustCreate("CAS-beacon", threadPrios[3],
-            epicsThreadGetStackSize(epicsThreadStackSmall),
-            &rsrv_online_notify_task, NULL);
-
+    {
+        epicsThreadMustCreate("CAS-beacon", threadPrios[3],
+                              epicsThreadGetStackSize(epicsThreadStackSmall),
+                              &rsrv_online_notify_task, &static_notify_conf);
+    }
     epicsEventMustWait(beacon_startStopEvent);
 }
 
@@ -816,10 +1015,10 @@ static void showChanList (
  */
 static void log_one_client (struct client *client, unsigned level)
 {
-    char clientIP[40];
+    char clientIP[64];
     int n;
 
-    ipAddrToDottedIP (&client->addr, clientIP, sizeof(clientIP));
+    sockAddrToDottedIP (&client->addr46.sa, clientIP, sizeof(clientIP));
 
     if ( client->proto == IPPROTO_UDP ) {
         printf ( "\tLast name requested by %s:\n",
@@ -935,12 +1134,12 @@ void casr (unsigned level)
     if (level>=1) {
         rsrv_iface_config *iface = (rsrv_iface_config *) ellFirst ( &servers );
         while (iface) {
-            char    buf[40];
+            char    buf[64];
 
-            ipAddrToDottedIP (&iface->tcpAddr.ia, buf, sizeof(buf));
+            sockAddrToDottedIP (&iface->tcpAddr46.sa, buf, sizeof(buf));
             printf("CAS-TCP server on %s with\n", buf);
 
-            ipAddrToDottedIP (&iface->udpAddr.ia, buf, sizeof(buf));
+            sockAddrToDottedIP (&iface->udpAddr46.sa, buf, sizeof(buf));
 #if defined(_WIN32)
             printf("    CAS-UDP name server on %s\n", buf);
             if (level >= 2)
@@ -955,7 +1154,7 @@ void casr (unsigned level)
                 printf("    CAS-UDP unicast name server on %s\n", buf);
                 if (level >= 2)
                     log_one_client(iface->client, level - 2);
-                ipAddrToDottedIP (&iface->udpbcastAddr.ia, buf, sizeof(buf));
+                sockAddrToDottedIP (&iface->udpbcastAddr46.sa, buf, sizeof(buf));
                 printf("    CAS-UDP broadcast name server on %s\n", buf);
                 if (level >= 2)
                     log_one_client(iface->bclient, level - 2);
@@ -967,18 +1166,18 @@ void casr (unsigned level)
     }
 
     if (level>=1) {
-        osiSockAddrNode * pAddr;
-        char buf[40];
+        osiSockAddrNode46 * pAddr;
+        char buf[64];
         int n = ellCount(&casMCastAddrList);
 
         if (n) {
             printf("Monitoring %d multicast address%s:\n",
                 n, n == 1 ? "" : "es");
-            for(pAddr = (osiSockAddrNode*)ellFirst(&casMCastAddrList);
+            for(pAddr = (osiSockAddrNode46*)ellFirst(&casMCastAddrList);
                 pAddr;
-                pAddr = (osiSockAddrNode*)ellNext(&pAddr->node))
+                pAddr = (osiSockAddrNode46*)ellNext(&pAddr->node))
             {
-                ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
+                sockAddrToDottedIP (&pAddr->addr.sa, buf, sizeof(buf));
                 printf("    %s\n", buf);
             }
         }
@@ -986,27 +1185,21 @@ void casr (unsigned level)
         n = ellCount(&beaconAddrList);
         printf("Sending CAS-beacons to %d address%s:\n",
             n, n == 1 ? "" : "es");
-        for(pAddr = (osiSockAddrNode*)ellFirst(&beaconAddrList);
+        for(pAddr = (osiSockAddrNode46*)ellFirst(&beaconAddrList);
             pAddr;
-            pAddr = (osiSockAddrNode*)ellNext(&pAddr->node))
+            pAddr = (osiSockAddrNode46*)ellNext(&pAddr->node))
         {
-            ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
+            sockAddrToDottedIP (&pAddr->addr.sa, buf, sizeof(buf));
             printf("    %s\n", buf);
         }
 
-        if (casIgnoreAddrs[0]) { /* 0 indicates end of array */
+        if (casIgnoreAddrs46[0].ia.sin_port) { /* port=0 indicates end of array */
             size_t i;
             printf("Ignoring UDP messages from address%s\n",
                    n == 1 ? "" : "es");
-            for(i=0; casIgnoreAddrs[i]; i++)
+            for(i=0; casIgnoreAddrs46[i].ia.sin_port; i++)
             {
-                struct sockaddr_in addr;
-                memset(&addr, 0, sizeof(addr));
-                addr.sin_family = AF_INET;
-                addr.sin_addr.s_addr = casIgnoreAddrs[i];
-                addr.sin_port = 0;
-                ipAddrToDottedIP(&addr, buf, sizeof(buf));
-                printf("    %s\n", buf);
+                epicsSocket46IpOnlyToDotted(&casIgnoreAddrs46[i].sa, buf, sizeof(buf));
             }
         }
     }
@@ -1271,7 +1464,7 @@ struct client * create_client ( SOCKET sock, int proto )
     ellInit ( & client->chanList );
     ellInit ( & client->chanPendingUpdateARList );
     ellInit ( & client->putNotifyQue );
-    memset ( (char *)&client->addr, 0, sizeof (client->addr) );
+    memset ( (char *)&client->addr46, 0, sizeof (client->addr46) );
     client->tid = 0;
 
     if ( proto == IPPROTO_TCP ) {
@@ -1404,7 +1597,7 @@ void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size )
 /*
  *  create_tcp_client ()
  */
-struct client *create_tcp_client (SOCKET sock , const osiSockAddr *peerAddr)
+struct client *create_tcp_client (SOCKET sock , const osiSockAddr46 *peerAddr46)
 {
     int                     status;
     struct client           *client;
@@ -1417,20 +1610,15 @@ struct client *create_tcp_client (SOCKET sock , const osiSockAddr *peerAddr)
         return NULL;
     }
 
-    client->addr = peerAddr->ia;
+    client->addr46 = *peerAddr46;
     if(asCheckClientIP) {
-        epicsUInt32 ip = ntohl(client->addr.sin_addr.s_addr);
-        client->pHostName = malloc(24);
+        unsigned bufLength = 64;
+        client->pHostName = malloc(bufLength);
         if(!client->pHostName) {
             destroy_client ( client );
             return NULL;
         }
-        epicsSnprintf(client->pHostName, 24,
-                      "%u.%u.%u.%u",
-                      (ip>>24)&0xff,
-                      (ip>>16)&0xff,
-                      (ip>>8)&0xff,
-                      (ip>>0)&0xff);
+        sockAddrToDottedIP(&peerAddr46->sa, client->pHostName, bufLength);
     }
 
     /*
@@ -1522,7 +1710,7 @@ struct client *create_tcp_client (SOCKET sock , const osiSockAddr *peerAddr)
 
     if ( CASDEBUG > 0 ) {
         char buf[64];
-        ipAddrToDottedIP ( &client->addr, buf, sizeof(buf) );
+        sockAddrToDottedIP ( &client->addr46.sa, buf, sizeof(buf) );
         errlogPrintf ( "CAS: conn req from %s\n", buf );
     }
 

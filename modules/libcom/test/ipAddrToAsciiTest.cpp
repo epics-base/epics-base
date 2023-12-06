@@ -82,7 +82,7 @@ void doLookup(ipAddrToAsciiEngine& engine)
 
     ipAddrToAsciiTransaction& trn(engine.createTransaction());
     CB cb("cb");
-    osiSockAddr addr;
+    osiSockAddr46 addr;
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     addr.ia.sin_port = htons(42);
@@ -110,7 +110,7 @@ void doCancel()
     testOk1(&trn1!=&trn2);
     CB cb1("cb1"), cb2("cb2");
 
-    osiSockAddr addr;
+    osiSockAddr46 addr;
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     addr.ia.sin_port = htons(42);

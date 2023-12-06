@@ -16,6 +16,7 @@
 #include <ctype.h>
 
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "epicsTypes.h"
 #include "epicsStdio.h"
 #include "dbDefs.h"
@@ -1219,10 +1220,9 @@ static long asHagAddHost(HAG *phag,const char *host)
         }
 
     } else {
-        struct sockaddr_in addr;
-        epicsUInt32 ip;
+        osiSockAddr46 addr46;
 
-        if(aToIPAddr(host, 0, &addr)) {
+        if(aToIPAddr46(host, 0, &addr46)) {
             static const char unresolved[] = "unresolved:";
 
             errlogPrintf("ACF: Unable to resolve host '%s'\n", host);
@@ -1232,14 +1232,9 @@ static long asHagAddHost(HAG *phag,const char *host)
             strcat(phagname->host, host);
 
         } else {
-            ip = ntohl(addr.sin_addr.s_addr);
-            phagname = asCalloc(1, sizeof(*phagname) + 24);
-            epicsSnprintf(phagname->host, 24,
-                          "%u.%u.%u.%u",
-                          (ip>>24)&0xff,
-                          (ip>>16)&0xff,
-                          (ip>>8)&0xff,
-                          (ip>>0)&0xff);
+            size_t buf_len = 64;
+            phagname = asCalloc(1, sizeof(*phagname) + buf_len);
+            epicsSocket46IpOnlyToDotted(&addr46.sa, phagname->host, buf_len);
         }
     }
     ellAdd(&phag->list, &phagname->node);

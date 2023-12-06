@@ -32,7 +32,7 @@
 
 #include "libCaAPI.h"
 
-union osiSockAddr;
+union osiSockAddr46;
 
 /*
  * one socket per client so we will get the ECONNREFUSED
@@ -40,20 +40,21 @@ union osiSockAddr;
  */
 class repeaterClient : public tsDLNode < repeaterClient > {
 public:
-    repeaterClient ( const osiSockAddr & from );
+    repeaterClient ( const osiSockAddr46 & from );
     ~repeaterClient ();
     bool connect ();
     bool sendConfirm ();
     bool sendMessage ( const void *pBuf, unsigned bufSize );
     bool verify ();
-    bool identicalAddress ( const osiSockAddr &from );
-    bool identicalPort ( const osiSockAddr &from );
+    bool identicalAddress ( const osiSockAddr46 &from );
+    bool identicalPort ( const osiSockAddr46 &from );
+    unsigned short get_family () const ;
     void * operator new ( size_t size,
         tsFreeList < repeaterClient, 0x20 > & );
     epicsPlacementDeleteOperator (( void *,
         tsFreeList < repeaterClient, 0x20 > & ))
 private:
-    osiSockAddr from;
+    osiSockAddr46 from46;
     SOCKET sock;
     unsigned short port () const;
     void operator delete ( void * );

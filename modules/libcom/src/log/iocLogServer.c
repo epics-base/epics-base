@@ -34,6 +34,7 @@
 #include    "fdmgr.h"
 #include    "envDefs.h"
 #include    "osiSock.h"
+#include    "epicsSock.h"
 #include    "epicsStdio.h"
 
 static unsigned short ioc_log_port;
@@ -90,7 +91,6 @@ static int sighupPipe[2];
  */
 int main(void)
 {
-    struct sockaddr_in serverAddr;  /* server's address */
     struct timeval timeout;
     int status;
     struct ioc_log_server *pserver;
@@ -133,15 +133,10 @@ int main(void)
 
     epicsSocketEnableAddressReuseDuringTimeWaitState ( pserver->sock );
 
-    /* Zero the sock_addr structure */
-    memset((void *)&serverAddr, 0, sizeof serverAddr);
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(ioc_log_port);
+    status = epicsSocket46BindLocalPort(pserver->sock,
+                                        AF_INET,
+                                        ioc_log_port);
 
-    /* get server's Internet address */
-    status = bind ( pserver->sock,
-            (struct sockaddr *)&serverAddr,
-            sizeof (serverAddr) );
     if (status < 0) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );

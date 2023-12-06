@@ -30,6 +30,7 @@
 #include "bhe.h"
 #include "udpiiu.h"
 #include "inetAddrID.h"
+#include "epicsBaseDebugLog.h"
 
 // using a wrapper class around the free list avoids
 // Tornado 2.0.1 GNU compiler bugs
@@ -62,9 +63,8 @@ int main ( int argc, char ** argv )
     epicsTime programBeginTime = epicsTime::getCurrent();
     bool validCommandLine = false;
     unsigned interest = 0u;
-    SOCKET sock;
-    osiSockAddr addr;
-    osiSocklen_t addrSize;
+    SOCKET sock4;
+    osiSockAddr46 addr46;
     char buf [0x4000];
     const char *pCurBuf;
     const caHdr *pCurMsg;
@@ -105,8 +105,8 @@ int main ( int argc, char ** argv )
 
     caStartRepeaterIfNotInstalled ( repeaterPort );
 
-    sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
-    if ( sock == INVALID_SOCKET ) {
+    sock4 = epicsSocket46Create ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    if ( sock4 == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
@@ -115,28 +115,27 @@ int main ( int argc, char ** argv )
         return -1;
     }
 
-    memset ( (char *) &addr, 0 , sizeof (addr) );
-    addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-    addr.ia.sin_port = htons ( 0 );  // any port
-    status = bind ( sock, &addr.sa, sizeof (addr) );
+    memset ( (char *) &addr46, 0 , sizeof (addr46) );
+    addr46.ia.sin_family = AF_INET;
+    /* repeaterRegistrationMessage() needs this bind() */
+    status = epicsSocket46Bind ( sock4, &addr46.sa, (osiSocklen_t)sizeof(&addr46) );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsSocketDestroy ( sock );
+        epicsSocketDestroy ( sock4 );
         errlogPrintf ( "casw: unable to bind to an unconstrained address because = \"%s\"\n",
             sockErrBuf );
         return -1;
     }
 
     osiSockIoctl_t yes = true;
-    status = socket_ioctl ( sock, FIONBIO, &yes );
+    status = socket_ioctl ( sock4, FIONBIO, &yes );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsSocketDestroy ( sock );
+        epicsSocketDestroy ( sock4 );
         errlogPrintf ( "casw: unable to set socket to nonblocking state because \"%s\"\n",
             sockErrBuf );
         return -1;
@@ -144,11 +143,12 @@ int main ( int argc, char ** argv )
 
     unsigned attemptNumber = 0u;
     while ( true ) {
-        caRepeaterRegistrationMessage ( sock, repeaterPort, attemptNumber );
+        osiSocklen_t addrSize;
+        caRepeaterRegistrationMessage4 ( sock4, repeaterPort, attemptNumber );
         epicsThreadSleep ( 0.1 );
-        addrSize = ( osiSocklen_t ) sizeof ( addr );
-        status = recvfrom ( sock, buf, sizeof ( buf ), 0,
-                            &addr.sa, &addrSize );
+        addrSize = ( osiSocklen_t ) sizeof ( addr46 );
+        status = epicsSocket46Recvfrom ( sock4, buf, sizeof ( buf ), 0,
+                                         &addr46.sa, &addrSize);
         if ( status >= static_cast <int> ( sizeof ( *pCurMsg ) ) ) {
             pCurMsg = reinterpret_cast < caHdr * > ( buf );
             epicsUInt16 cmmd = AlignedWireRef < const epicsUInt16 > ( pCurMsg->m_cmmd );
@@ -159,19 +159,19 @@ int main ( int argc, char ** argv )
 
         attemptNumber++;
         if ( attemptNumber > 100 ) {
-            epicsSocketDestroy ( sock );
+            epicsSocketDestroy ( sock4 );
             errlogPrintf ( "casw: unable to register with the CA repeater\n" );
             return -1;
         }
     }
 
     osiSockIoctl_t no = false;
-    status = socket_ioctl ( sock, FIONBIO, &no );
+    status = socket_ioctl ( sock4, FIONBIO, &no );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsSocketDestroy ( sock );
+        epicsSocketDestroy ( sock4 );
         errlogPrintf ( "casw: unable to set socket to blocking state because \"%s\"\n",
             sockErrBuf );
         return -1;
@@ -179,21 +179,20 @@ int main ( int argc, char ** argv )
 
     resTable < bhe, inetAddrID > beaconTable;
     while ( true ) {
-
-        addrSize = ( osiSocklen_t ) sizeof ( addr );
-        status = recvfrom ( sock, buf, sizeof ( buf ), 0,
-                            &addr.sa, &addrSize );
+        osiSocklen_t addrSize = ( osiSocklen_t ) sizeof ( addr46 );
+        status = epicsSocket46Recvfrom ( sock4, buf, sizeof ( buf ), 0,
+                                         &addr46.sa, &addrSize  );
         if ( status <= 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            epicsSocketDestroy ( sock );
+            epicsSocketDestroy ( sock4 );
             errlogPrintf ("casw: " ERL_ERROR " from recv was = \"%s\"\n",
                 sockErrBuf );
             return -1;
         }
 
-        if ( addr.sa.sa_family != AF_INET ) {
+        if ( ! ( epicsSocket46IsAF_INETorAF_INET6 ( addr46.sa.sa_family ) ) ) {
             continue;
         }
 
@@ -211,7 +210,7 @@ int main ( int argc, char ** argv )
             if ( cmmd == CA_PROTO_RSRV_IS_UP ) {
                 bool anomaly = false;
                 epicsTime previousTime;
-                struct sockaddr_in ina;
+                osiSockAddr46 addr46;
 
                 /*
                  * this allows a fan-out server to potentially
@@ -227,18 +226,74 @@ int main ( int argc, char ** argv )
                  * field is set to something that isn't INADDR_ANY
                  * then it is the overriding IP address of the server.
                  */
-                ina.sin_family = AF_INET;
-                ina.sin_addr.s_addr = pCurMsg->m_available;
+                memset ( &addr46, 0, sizeof(addr46) );
+                // keep the zeroed memory for the memcmp() below
+                int good_IPv6_magic_and_len = 0;
+#ifdef AF_INET6_IPV6
+                if (pstSize + sizeof ( *pCurMsg )  == sizeof(ca_msg_IPv6_RSRV_IS_UP_type)) {
+                    ca_ext_IPv6_RSRV_IS_UP_type * pExtIPv6 = (ca_ext_IPv6_RSRV_IS_UP_type *)&pCurBuf[sizeof(caHdr)];
+                    if (pExtIPv6->m_typ_magic[0] == 'I' &&
+                        pExtIPv6->m_typ_magic[1] == 'P' &&
+                        pExtIPv6->m_typ_magic[2] == 'v' &&
+                        pExtIPv6->m_typ_magic[3] == '6' &&
+                        ntohl(pExtIPv6->m_size) == sizeof(*pExtIPv6)) {
+                        good_IPv6_magic_and_len = 1;
+                        if (memcmp(&addr46.in6.sin6_addr.s6_addr,
+                                   &pExtIPv6->m_s6_addr[0],
+                                   sizeof(addr46.in6.sin6_addr.s6_addr))) {
+                            good_IPv6_magic_and_len = 2;
+                        }
+                    }
+#ifdef NETDEBUG
+                    epicsBaseDebugLog("NET CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c' %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x sizeof(pExtIPv6->m_s6_addr)=%u good_IPv6_magic_and_len=%d\n",
+                                  (unsigned)ntohl(pExtIPv6->m_size),
+                                  isprint(pExtIPv6->m_typ_magic[0]) ? pExtIPv6->m_typ_magic[0] : '?',
+                                  isprint(pExtIPv6->m_typ_magic[1]) ? pExtIPv6->m_typ_magic[1] : '?',
+                                  isprint(pExtIPv6->m_typ_magic[2]) ? pExtIPv6->m_typ_magic[2] : '?',
+                                  isprint(pExtIPv6->m_typ_magic[3]) ? pExtIPv6->m_typ_magic[3] : '?',
+                                  pExtIPv6->m_s6_addr[0],
+                                  pExtIPv6->m_s6_addr[1],
+                                  pExtIPv6->m_s6_addr[2],
+                                  pExtIPv6->m_s6_addr[3],
+                                  pExtIPv6->m_s6_addr[4],
+                                  pExtIPv6->m_s6_addr[5],
+                                  pExtIPv6->m_s6_addr[6],
+                                  pExtIPv6->m_s6_addr[7],
+                                  pExtIPv6->m_s6_addr[8],
+                                  pExtIPv6->m_s6_addr[9],
+                                  pExtIPv6->m_s6_addr[10],
+                                  pExtIPv6->m_s6_addr[11],
+                                  pExtIPv6->m_s6_addr[12],
+                                  pExtIPv6->m_s6_addr[13],
+                                  pExtIPv6->m_s6_addr[14],
+                                  pExtIPv6->m_s6_addr[15],
+                                  (unsigned)sizeof(pExtIPv6->m_s6_addr),
+                                  good_IPv6_magic_and_len);
+#endif
+
+                    if (good_IPv6_magic_and_len == 2) {
+                      addr46.ia.sin_family = AF_INET6;
+                      memcpy(&addr46.in6.sin6_addr.s6_addr,
+                             pExtIPv6->m_s6_addr,
+                             sizeof(addr46.in6.sin6_addr.s6_addr));
+                      addr46.in6.sin6_scope_id = pExtIPv6->m_sin6_scope_id;
+                    }
+                }
+#endif
+                if (good_IPv6_magic_and_len != 2) {
+                    addr46.ia.sin_family = AF_INET;
+                    addr46.ia.sin_addr.s_addr = pCurMsg->m_available;
+                }
 
                 if ( pCurMsg->m_count != 0 ) {
-                    ina.sin_port = pCurMsg->m_count;
+                    addr46.ia.sin_port = pCurMsg->m_count;
                 }
                 else {
                     /*
                      * old servers don't supply this and the
                      * default port must be assumed
                      */
-                    ina.sin_port = htons ( serverPort );
+                    addr46.ia.sin_port = htons ( serverPort );
                 }
 
                 ca_uint32_t beaconNumber = ntohl ( pCurMsg->m_cid );
@@ -249,7 +304,7 @@ int main ( int argc, char ** argv )
                 /*
                  * look for it in the hash table
                  */
-                bhe *pBHE = beaconTable.lookup ( ina );
+                bhe *pBHE = beaconTable.lookup ( addr46 );
                 if ( pBHE ) {
                     previousTime = pBHE->updateTime ( guard );
                     anomaly = pBHE->updatePeriod (
@@ -265,7 +320,7 @@ int main ( int argc, char ** argv )
                      * shortly after the program started up)
                      */
                     pBHE = new ( bheFreeList )
-                        bhe ( mutex, currentTime, beaconNumber, ina );
+                        bhe ( mutex, currentTime, beaconNumber, addr46 );
                     if ( pBHE ) {
                         if ( beaconTable.add ( *pBHE ) < 0 ) {
                             pBHE->~bhe ();
@@ -278,7 +333,7 @@ int main ( int argc, char ** argv )
                     currentTime.strftime ( date, sizeof ( date ),
                         "%Y-%m-%d %H:%M:%S.%09f");
                     char host[64];
-                    ipAddrToA ( &ina, host, sizeof ( host ) );
+                    ipAddrToA ( &addr46.ia, host, sizeof ( host ) );
                     const char * pPrefix = "";
                     if ( interest > 1 ) {
                         if ( anomaly ) {

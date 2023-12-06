@@ -75,7 +75,22 @@
 #include "udpiiu.h"
 #include "repeaterClient.h"
 #include "addrList.h"
+#include "osiSock.h"
+#include "epicsSock.h"
 
+#include "epicsBaseDebugLog.h"
+#ifdef AF_INET6_IPV6
+#include "cantProceed.h" /* callocMustSucceed */
+#endif
+
+#ifdef NETDEBUG
+#define SEND_FROM_REPEATER(a,b,c,d) send(a,b,c,d)
+#undef debugPrintf
+#define debugPrintf(argsInParen) ::printf argsInParen
+#else
+// Use the send() function with builtin debug print
+#define SEND_FROM_REPEATER(a,b,c,d) epicsSocket46Send(a,b,c,d)
+#endif
 
 /*
  *  these can be external since there is only one instance
@@ -88,9 +103,18 @@ static const unsigned short PORT_ANY = 0u;
 /*
  * makeSocket()
  */
-static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
-{
-    SOCKET sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, 0 );
+
+#ifdef NETDEBUG
+#define makeSocket(a,b,c,d) makeSocketFL(__FILE__, __LINE__, a,b,c,d)
+static int makeSocketFL (const char *filename, int lineno,
+                         int family, unsigned short port, bool reuseAddr, SOCKET * pSock )
+ {
+    SOCKET sock = epicsSocket46CreateFL( filename, lineno, family, SOCK_DGRAM, 0 );
+#else
+static int makeSocket ( int family, unsigned short port, bool reuseAddr, SOCKET * pSock )
+ {
+    SOCKET sock = epicsSocket46Create ( family, SOCK_DGRAM, 0 );
+#endif
 
     if ( sock == INVALID_SOCKET ) {
         *pSock = sock;
@@ -102,16 +126,12 @@ static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
      */
     if ( port != PORT_ANY ) {
         int status;
-        union {
-            struct sockaddr_in ia;
-            struct sockaddr sa;
-        } bd;
-
-        memset ( (char *) &bd, 0, sizeof (bd) );
-        bd.ia.sin_family = AF_INET;
-        bd.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        bd.ia.sin_port = htons ( port );
-        status = bind ( sock, &bd.sa, (int) sizeof(bd) );
+#ifdef NETDEBUG
+        status = epicsSocket46BindLocalPortFL(filename, lineno,
+                                              sock, family, port);
+#else
+        status = epicsSocket46BindLocalPort(sock, family, port);
+#endif
         if ( status < 0 ) {
             status = SOCKERRNO;
             epicsSocketDestroy ( sock );
@@ -125,8 +145,8 @@ static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
     return 0;
 }
 
-repeaterClient::repeaterClient ( const osiSockAddr &fromIn ) :
-    from ( fromIn ), sock ( INVALID_SOCKET )
+repeaterClient::repeaterClient ( const osiSockAddr46 &fromIn46 ) :
+    from46 ( fromIn46 ), sock ( INVALID_SOCKET )
 {
 #ifdef DEBUG
     unsigned port = ntohs ( from.ia.sin_port );
@@ -138,7 +158,8 @@ bool repeaterClient::connect ()
 {
     int status;
 
-    if ( int sockerrno = makeSocket ( PORT_ANY, false, & this->sock ) ) {
+    if ( int sockerrno = makeSocket ( this->from46.sa.sa_family,
+                                      PORT_ANY, false, & this->sock ) ) {
         char sockErrBuf[64];
         epicsSocketConvertErrorToString (
             sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
@@ -147,7 +168,8 @@ bool repeaterClient::connect ()
         return false;
     }
 
-    status = ::connect ( this->sock, &this->from.sa, sizeof ( this->from.sa ) );
+    status = epicsSocket46Connect ( this->sock,
+                                    &this->from46.sa, sizeof(this->from46 ));
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
@@ -167,9 +189,11 @@ bool repeaterClient::sendConfirm ()
     caHdr confirm;
     memset ( (char *) &confirm, '\0', sizeof (confirm) );
     AlignedWireRef < epicsUInt16 > ( confirm.m_cmmd ) = REPEATER_CONFIRM;
-    confirm.m_available = this->from.ia.sin_addr.s_addr;
-    status = send ( this->sock, (char *) &confirm,
-                    sizeof (confirm), 0 );
+    if ( this->from46.sa.sa_family == AF_INET ) {
+        confirm.m_available = this->from46.ia.sin_addr.s_addr;
+    }
+    status = SEND_FROM_REPEATER ( this->sock,  (char *) &confirm,
+                                 sizeof (confirm), 0 );
     if ( status >= 0 ) {
         assert ( status == sizeof ( confirm ) );
         return true;
@@ -190,11 +214,11 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize )
 {
     int status;
 
-    status = send ( this->sock, (char *) pBuf, bufSize, 0 );
+    status = SEND_FROM_REPEATER ( this->sock, (char *) pBuf, bufSize, 0 );
     if ( status >= 0 ) {
         assert ( static_cast <unsigned> ( status ) == bufSize );
 #ifdef DEBUG
-        epicsUInt16 port = ntohs ( this->from.ia.sin_port );
+        epicsUInt16 port = ntohs ( this->from46.ia.sin_port );
         debugPrintf ( ("Sent to %u\n", port ) );
 #endif
         return true;
@@ -203,7 +227,7 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize )
         int errnoCpy = SOCKERRNO;
         if ( errnoCpy == SOCK_ECONNREFUSED ) {
 #ifdef DEBUG
-            epicsUInt16 port = ntohs ( this->from.ia.sin_port );
+            epicsUInt16 port = ntohs ( this->from46.ia.sin_port );
             debugPrintf ( ("Client refused message %u\n", port ) );
 #endif
         }
@@ -222,7 +246,7 @@ repeaterClient::~repeaterClient ()
         epicsSocketDestroy ( this->sock );
     }
 #ifdef DEBUG
-    epicsUInt16 port = ntohs ( this->from.ia.sin_port );
+    epicsUInt16 port = ntohs ( this->from46.ia.sin_port );
     debugPrintf ( ( "Deleted client %u\n", port ) );
 #endif
 }
@@ -252,29 +276,28 @@ void repeaterClient::operator delete ( void *pCadaver,
 }
 #endif
 
-inline unsigned short repeaterClient::port () const
+unsigned short repeaterClient::get_family () const
 {
-    return ntohs ( this->from.ia.sin_port );
+    return this->from46.sa.sa_family;
 }
 
-inline bool repeaterClient::identicalAddress ( const osiSockAddr &fromIn )
+inline unsigned short repeaterClient::port () const
 {
-    if ( fromIn.sa.sa_family == this->from.sa.sa_family ) {
-        if ( fromIn.ia.sin_port == this->from.ia.sin_port) {
-            if ( fromIn.ia.sin_addr.s_addr == this->from.ia.sin_addr.s_addr ) {
-                return true;
-            }
-        }
+    return ntohs ( this->from46.ia.sin_port );
+}
+
+inline bool repeaterClient::identicalAddress ( const osiSockAddr46 &fromIn )
+{
+    if (sockIPsAreIdentical46 ( &fromIn, &this->from46 ) ) {
+        return true;
     }
     return false;
 }
 
-inline bool repeaterClient::identicalPort ( const osiSockAddr &fromIn )
+inline bool repeaterClient::identicalPort ( const osiSockAddr46 &fromIn )
 {
-    if ( fromIn.sa.sa_family == this->from.sa.sa_family ) {
-        if ( fromIn.ia.sin_port == this->from.ia.sin_port) {
-            return true;
-        }
+    if ( sockPortAreIdentical46 ( &fromIn, &this->from46 ) ) {
+        return true;
     }
     return false;
 }
@@ -282,7 +305,7 @@ inline bool repeaterClient::identicalPort ( const osiSockAddr &fromIn )
 bool repeaterClient::verify ()
 {
     SOCKET tmpSock;
-    int sockerrno = makeSocket ( this->port (), false, & tmpSock );
+    int sockerrno = makeSocket ( AF_INET, this->port (), false, & tmpSock );
 
     if ( sockerrno == SOCK_EADDRINUSE ) {
         // Normal result, client using port
@@ -300,6 +323,29 @@ bool repeaterClient::verify ()
         fprintf ( stderr, "CA Repeater: Bind test error \"%s\"\n",
             sockErrBuf );
     }
+#ifdef AF_INET6_IPV6
+    sockerrno = makeSocket ( AF_INET6, this->port (), false, & tmpSock );
+    if ( sockerrno == SOCK_EADDRINUSE ) {
+        // Normal result, client using port
+        return true;
+    }
+    if ( sockerrno == 0 ) {
+        // Client went away, released port
+        epicsSocketDestroy ( tmpSock );
+    }
+    else {
+        char sockErrBuf[64];
+        epicsSocketConvertErrorToString (
+            sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
+        fprintf ( stderr, "CA Repeater: Bind6 test error \"%s\"\n",
+            sockErrBuf );
+    }
+#endif
+#ifdef NETDEBUG
+    epicsBaseDebugLog("NET repeaterClient::verify false port=%u\n",
+                       this->port () );
+#endif
+
     return false;
 }
 
@@ -327,7 +373,7 @@ static void verifyClients ( tsFreeList < repeaterClient, 0x20 > & freeList )
 /*
  * fanOut()
  */
-static void fanOut ( const osiSockAddr & from, const void * pMsg,
+static void fanOut ( const osiSockAddr46 & from46, const void * pMsg,
     unsigned msgSize, tsFreeList < repeaterClient, 0x20 > & freeList )
 {
     static tsDLList < repeaterClient > theClients;
@@ -336,10 +382,17 @@ static void fanOut ( const osiSockAddr & from, const void * pMsg,
     while ( ( pclient = client_list.get () ) ) {
         theClients.add ( *pclient );
         /* Don't reflect back to sender */
-        if ( pclient->identicalAddress ( from ) ) {
+        if ( pclient->identicalAddress ( from46 ) ) {
             continue;
         }
+        if ( pclient->get_family() == AF_INET && from46.sa.sa_family != AF_INET ) {
+#ifdef NETDEBUG
+            epicsBaseDebugLog("NET repeater: fanOut ignored: pclient=%p get_family=%d from46.sa.sa_family=%d\n",
+                               pclient, pclient->get_family(), from46.sa.sa_family);
+#endif
 
+            continue;
+        }
         if ( ! pclient->sendMessage ( pMsg, msgSize ) ) {
             if ( ! pclient->verify () ) {
                 theClients.remove ( *pclient );
@@ -355,26 +408,38 @@ static void fanOut ( const osiSockAddr & from, const void * pMsg,
 /*
  * register_new_client()
  */
-static void register_new_client ( osiSockAddr & from,
+static void register_new_client ( osiSockAddr46 & from46,
             tsFreeList < repeaterClient, 0x20 > & freeList )
 {
     bool newClient = false;
     int status;
 
-    if ( from.sa.sa_family != AF_INET ) {
+#ifdef NETDEBUG
+    {
+      char buf[64];
+      sockAddrToDottedIP(&from46.sa, buf, sizeof(buf));
+      epicsBaseDebugLog("NET repeater: register_new_client='%s'\n", buf );
+    }
+#endif
+    if ( ! epicsSocket46IsAF_INETorAF_INET6 ( from46.sa.sa_family ) ) {
         return;
     }
 
     /*
      * the repeater and its clients must be on the same host
+     * If we receive a registration send to 1.2.3.4, that
+     * may be OK, if, and only if, we have 1.2.3.4 as an interface
+     * Try to bind to this interface to check this.
+     * This is IPv4 only, check this in preparation for IPv6
      */
-    if ( INADDR_LOOPBACK != ntohl ( from.ia.sin_addr.s_addr ) ) {
+    if ( ( from46.sa.sa_family == AF_INET ) &&
+         ( INADDR_LOOPBACK != ntohl ( from46.ia.sin_addr.s_addr ) ) ) {
         static SOCKET testSock = INVALID_SOCKET;
         static bool init = false;
 
         if ( ! init ) {
             SOCKET sock;
-            if ( int sockerrno = makeSocket ( PORT_ANY, true, & sock ) ) {
+            if ( int sockerrno = makeSocket ( from46.sa.sa_family, PORT_ANY, true, & sock ) ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrorToString (
                     sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
@@ -397,13 +462,13 @@ static void register_new_client ( osiSockAddr & from,
          * to current code.
          */
         if ( testSock != INVALID_SOCKET ) {
-            osiSockAddr addr;
+            osiSockAddr46 addr46;
 
-            addr = from;
-            addr.ia.sin_port = PORT_ANY;
+            addr46 = from46;
+            addr46.ia.sin_port = PORT_ANY;
 
             /* we can only bind to a local address */
-            status = bind ( testSock, &addr.sa, sizeof ( addr ) );
+            status = bind ( testSock, &addr46.sa, sizeof ( addr46.ia ) );
             if ( status ) {
                 return;
             }
@@ -415,7 +480,7 @@ static void register_new_client ( osiSockAddr & from,
 
     tsDLIter < repeaterClient > pclient = client_list.firstIter ();
     while ( pclient.valid () ) {
-        if ( pclient->identicalPort ( from ) ) {
+        if ( pclient->identicalPort ( from46 ) ) {
             break;
         }
         pclient++;
@@ -426,7 +491,7 @@ static void register_new_client ( osiSockAddr & from,
         pNewClient = pclient.pointer ();
     }
     else {
-        pNewClient = new ( freeList ) repeaterClient ( from );
+        pNewClient = new ( freeList ) repeaterClient ( from46 );
         if ( ! pNewClient ) {
             fprintf ( stderr, "%s: no memory for new client\n", __FILE__ );
             return;
@@ -440,6 +505,9 @@ static void register_new_client ( osiSockAddr & from,
         newClient = true;
     }
 
+#ifdef NETDEBUG
+    epicsBaseDebugLog("NET repeater: register_new_client pNewClient=%p\n", pNewClient );
+#endif
     if ( ! pNewClient->sendConfirm () ) {
         client_list.remove ( *pNewClient );
         pNewClient->~repeaterClient ();
@@ -458,7 +526,7 @@ static void register_new_client ( osiSockAddr & from,
     caHdr noop;
     memset ( (char *) &noop, '\0', sizeof ( noop ) );
     AlignedWireRef < epicsUInt16 > ( noop.m_cmmd ) = CA_PROTO_VERSION;
-    fanOut ( from, &noop, sizeof ( noop ), freeList );
+    fanOut ( from46, &noop, sizeof ( noop ), freeList );
 
     if ( newClient ) {
         /*
@@ -484,13 +552,16 @@ void ca_repeater ()
 {
     tsFreeList < repeaterClient, 0x20 > freeList;
     int size;
-    SOCKET sock;
-    osiSockAddr from;
+    SOCKET sock4 = INVALID_SOCKET;
+    osiSockAddr46 from46;
     unsigned short port;
-    char * pBuf;
-
-    pBuf = new char [MAX_UDP_RECV];
-
+    char * pBuf = new char [MAX_UDP_RECV];
+#ifdef AF_INET6_IPV6
+    SOCKET sock6 = INVALID_SOCKET;
+    struct epicsSockPollfd *pPollFds = NULL;
+    unsigned numPollFds = 0;
+    unsigned searchDestList_count = 0;
+#endif
     {
         bool success = osiSockAttach();
         assert ( success );
@@ -498,33 +569,61 @@ void ca_repeater ()
 
     port = envGetInetPortConfigParam ( & EPICS_CA_REPEATER_PORT,
                                        static_cast <unsigned short> (CA_REPEATER_PORT) );
-    if ( int sockerrno = makeSocket ( port, true, & sock ) ) {
+
+    if ( int sockerrno = makeSocket ( AF_INET, port, true, & sock4 ) ) {
         /*
-         * test for server was already started
+         * test for server was already started, IPv4 only
          */
         if ( sockerrno == SOCK_EADDRINUSE ) {
-            osiSockRelease ();
+            sock4 = INVALID_SOCKET;
+#ifdef AF_INET6_IPV6
+            debugPrintf ( ( "CA Repeater: a repeater is already running for IPv4\n" ) );
+#else
             debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
-            delete [] pBuf;
-            return;
+#endif
+        } else {
+          char sockErrBuf[64];
+          epicsSocketConvertErrorToString (sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
+          fprintf ( stderr, "%s: Unable to create repeater sock4 because \"%s\" - fatal\n",
+                    __FILE__, sockErrBuf );
         }
-        char sockErrBuf[64];
-        epicsSocketConvertErrorToString (
-            sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
-        fprintf ( stderr, "%s: Unable to create repeater socket because \"%s\" - fatal\n",
-            __FILE__, sockErrBuf );
-        osiSockRelease ();
-        delete [] pBuf;
-        return;
+    }
+#ifdef AF_INET6_IPV6
+    /* Create a socket for registrations via [::1] */
+    if ( int sockerrno = makeSocket ( AF_INET6, port, true, & sock6 ) ) {
+        /*
+         * test for server was already started, IPv6 only
+         */
+        if ( sockerrno == SOCK_EADDRINUSE ) {
+            sock6 = INVALID_SOCKET;
+            debugPrintf ( ( "CA Repeater: a repeater is already running for IPv6\n" ) );
+        } else {
+          char sockErrBuf[64];
+          epicsSocketConvertErrorToString (sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
+          fprintf ( stderr, "%s: Unable to create repeater sock6 because \"%s\" - fatal\n",
+                    __FILE__, sockErrBuf );
+        }
+    }
+#endif
+    if (sock4 == INVALID_SOCKET) {
+#ifdef AF_INET6_IPV6
+      if (sock6 == INVALID_SOCKET)
+#endif
+        {
+#ifdef AF_INET6_IPV6
+          delete [] pBuf;
+#endif
+          osiSockRelease ();
+          return;
+        }
     }
 
-#ifdef IP_ADD_MEMBERSHIP
-    /*
-     * join UDP socket to any multicast groups
-     */
     {
         ELLLIST casBeaconAddrList = ELLLIST_INIT;
         ELLLIST casMergeAddrList = ELLLIST_INIT;
+#ifdef AF_INET6_IPV6
+        configureChannelAccessAddressList ( & casMergeAddrList, sock4, port);
+#endif
 
         /*
          * collect user specified beacon address list;
@@ -537,12 +636,41 @@ void ca_repeater ()
         /* First clean up */
         removeDuplicateAddresses(&casBeaconAddrList, &casMergeAddrList , 0);
 
-        osiSockAddrNode *pNode;
-        for(pNode = (osiSockAddrNode*)ellFirst(&casBeaconAddrList);
+#ifdef AF_INET6_IPV6
+        searchDestList_count = (unsigned)casBeaconAddrList.count;
+        pPollFds = (epicsSockPollfd*)callocMustSucceed(searchDestList_count + 2, /* sock4 sock6 */
+                                                       sizeof(struct epicsSockPollfd),
+                                                       "ca_repeater");
+
+        /* this sockets must be added to the polling list */
+        if (sock6 != INVALID_SOCKET) {
+          pPollFds[numPollFds].fd = sock6;
+          pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
+          numPollFds++;
+        }
+        if (sock4 != INVALID_SOCKET) {
+          pPollFds[numPollFds].fd = sock4;
+          pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
+          numPollFds++;
+        }
+#endif
+        osiSockAddrNode46 *pNode;
+        for(pNode = (osiSockAddrNode46*)ellFirst(&casBeaconAddrList);
             pNode;
-            pNode = (osiSockAddrNode*)ellNext(&pNode->node))
+            pNode = (osiSockAddrNode46*)ellNext(&pNode->node))
         {
 
+#ifdef NETDEBUG
+            {
+                char buf[64];
+                sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
+                epicsBaseDebugLog("NET repeater: node='%s'\n", buf );
+            }
+#endif
+#ifdef IP_ADD_MEMBERSHIP
+            /*
+             * join UDP socket to any multicast groups
+             */
             if(pNode->addr.ia.sin_family==AF_INET) {
                 epicsUInt32 top = ntohl(pNode->addr.ia.sin_addr.s_addr)>>24;
                 if(top>=224 && top<=239) {
@@ -554,26 +682,81 @@ void ca_repeater ()
                     mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
                     mreq.imr_interface.s_addr = INADDR_ANY;
 
-                    if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                    if (setsockopt(sock4, IPPROTO_IP, IP_ADD_MEMBERSHIP,
                         (char *) &mreq, sizeof(mreq)) != 0) {
-                        char name[40];
+                        char name[64];
                         char sockErrBuf[64];
                         epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                        ipAddrToDottedIP (&pNode->addr.ia, name, sizeof(name));
+                        sockAddrToDottedIP (&pNode->addr.sa, name, sizeof(name));
                         errlogPrintf("caR: Socket mcast join to %s failed: %s\n", name, sockErrBuf );
                     }
                 }
             }
+#endif
+#ifdef AF_INET6_IPV6
+            if (pNode->addr.sa.sa_family == AF_INET6) {
+                osiSockAddr46 addr6 = pNode->addr; // struct copy
+                unsigned int interfaceIndex = (unsigned int)addr6.in6.sin6_scope_id;
+                /*
+                 * The %en0 will become the scope id, which IPV6_MULTICAST_IF needs
+                 * BSD/non-Linux system need a own socket per scope_id
+                 */
+                SOCKET socket6 = epicsSocket46Create ( AF_INET6, SOCK_DGRAM, IPPROTO_UDP );
+                pPollFds[numPollFds].fd = socket6;
+                pPollFds[numPollFds].events = EPICSSOCK_POLLIN;
+                numPollFds++;
+                epicsSocket46optIPv6MultiCast(socket6, interfaceIndex);
+                addr6.in6.sin6_port = htons ( port );
+                (void)epicsSocket46Bind(socket6, &addr6.sa, (osiSocklen_t)sizeof(addr6));
+            }
+#endif
         }
+    }
+
+    debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
+#ifdef NETDEBUG
+    epicsBaseDebugLog("NET repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
+                   pPollFds, searchDestList_count, numPollFds);
+#endif
+#ifdef AF_INET6_IPV6
+    {
+      unsigned i;
+      epicsBaseDebugLog("NET repeater pPollFds=%p searchDestList_count=%u numPollFds=%u\n",
+                        pPollFds, searchDestList_count, numPollFds);
+      for (i=0; i < numPollFds; i++) {
+        epicsBaseDebugLog("NET repeater starting loop pPollFds[%u]=%ld\n",
+                          i, (long)pPollFds[i].fd);
+      }
     }
 #endif
 
-    debugPrintf ( ( "CA Repeater: Attached and initialized\n" ) );
-
     while ( true ) {
-        osiSocklen_t from_size = sizeof ( from );
-        size = recvfrom ( sock, pBuf, MAX_UDP_RECV, 0,
-                    &from.sa, &from_size );
+        SOCKET sock = sock4;
+#ifdef AF_INET6_IPV6
+        pollagain:
+        if ( pPollFds && numPollFds >= 1 ) {
+            int pollres = epicsSockPoll ( pPollFds, numPollFds, -1 );
+            if ( pollres < 0 ) {
+                char sockErrBuf[64];
+                epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsBaseDebugLog("NET repeater pollres =%d: %s\n",
+                              pollres, sockErrBuf);
+                goto pollagain;
+            }
+            for ( unsigned idx = 0; idx < numPollFds; idx++ ) {
+#ifdef NETDEBUGXX
+                epicsBaseDebugLog("NET repeater idx=%u socket=%d revents=0x%x\n",
+                               idx, (int)pPollFds[idx].fd, pPollFds[idx].revents);
+#endif
+                if (pPollFds[idx].revents) {
+                    sock = pPollFds[idx].fd;
+                }
+            }
+        }
+#endif
+        osiSocklen_t addrSize = sizeof ( from46 );
+        size = epicsSocket46Recvfrom ( sock, pBuf, MAX_UDP_RECV, 0,
+                                       &from46.sa, &addrSize );
         if ( size < 0 ) {
             int errnoCpy = SOCKERRNO;
             // Avoid spurious ECONNREFUSED bug in linux
@@ -591,6 +774,17 @@ void ca_repeater ()
                 sockErrBuf );
             continue;
         }
+        if ( ! epicsSocket46IsAF_INETorAF_INET6 ( from46.sa.sa_family ) ) {
+#ifdef NETDEBUG
+            {
+                char buf[64];
+                sockAddrToDottedIP(&from46.sa, buf, sizeof(buf));
+                epicsPrintf ("%s:%d: CAC: CA Repeater recvfromAddr='%s' ignored\n",
+                             __FILE__, __LINE__, buf);
+             }
+#endif
+            continue;
+        }
 
         caHdr * pMsg = ( caHdr * ) pBuf;
 
@@ -600,7 +794,7 @@ void ca_repeater ()
          */
         if ( ( (size_t) size) >= sizeof (*pMsg) ) {
             if ( AlignedWireRef < epicsUInt16 > ( pMsg->m_cmmd ) == REPEATER_REGISTER ) {
-                register_new_client ( from, freeList );
+                register_new_client ( from46, freeList );
 
                 /*
                  * strip register client message
@@ -612,17 +806,49 @@ void ca_repeater ()
                 }
             }
             else if ( AlignedWireRef < epicsUInt16 > ( pMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
-                if ( pMsg->m_available == 0u ) {
-                    pMsg->m_available = from.ia.sin_addr.s_addr;
+#ifdef AF_INET6_IPV6
+                if (from46.sa.sa_family == AF_INET6 ) {
+                    size_t needed_size = sizeof(ca_msg_IPv6_RSRV_IS_UP_type);
+                    if ( (size_t)size >= needed_size ) {
+                        ca_ext_IPv6_RSRV_IS_UP_type * pMsgIPv6 = (ca_ext_IPv6_RSRV_IS_UP_type *)&pBuf[sizeof(caHdr)];
+                        if (pMsgIPv6->m_typ_magic[0] == 'I' &&
+                            pMsgIPv6->m_typ_magic[1] == 'P' &&
+                            pMsgIPv6->m_typ_magic[2] == 'v' &&
+                            pMsgIPv6->m_typ_magic[3] == '6' &&
+                            ntohl(pMsgIPv6->m_size) == sizeof(*pMsgIPv6)) {
+                            /* Copy the "from" address into the data, so that we can forward it */
+                            memcpy(&pMsgIPv6->m_s6_addr,
+                                   &from46.in6.sin6_addr.s6_addr,
+                                   sizeof(pMsgIPv6->m_s6_addr));
+                            pMsgIPv6->m_sin6_scope_id = from46.in6.sin6_scope_id;
+                        } else {
+#ifdef NETDEBUG
+                            epicsBaseDebugLog("NET CA_PROTO_RSRV_IS_UP size=%u magic='%c%c%c%c'\n",
+                                              (unsigned)ntohl(pMsgIPv6->m_size),
+                                              isprint(pMsgIPv6->m_typ_magic[0]) ? pMsgIPv6->m_typ_magic[0] : '?',
+                                              isprint(pMsgIPv6->m_typ_magic[1]) ? pMsgIPv6->m_typ_magic[1] : '?',
+                                              isprint(pMsgIPv6->m_typ_magic[2]) ? pMsgIPv6->m_typ_magic[2] : '?',
+                                              isprint(pMsgIPv6->m_typ_magic[3]) ? pMsgIPv6->m_typ_magic[3] : '?');
+#endif
+                        }
+                    }
+                } else
+#endif
+                if ( ( pMsg->m_available == 0u ) && ( from46.sa.sa_family == AF_INET ) ) {
+                    /* Shorten the message to what clients expect for IPv4 beacons */
+                    pMsg->m_postsize = 0;
+                    pMsg->m_available = from46.ia.sin_addr.s_addr;
+                    fanOut ( from46, pMsg, sizeof ( caHdr ) , freeList );
+                    continue;
                 }
             }
         }
         else if ( size == 0 ) {
-            register_new_client ( from, freeList );
+            register_new_client ( from46, freeList );
             continue;
         }
 
-        fanOut ( from, pMsg, size, freeList );
+        fanOut ( from46, pMsg, size, freeList );
     }
 }
 

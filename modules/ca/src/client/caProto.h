@@ -181,6 +181,19 @@ struct  mon_info {
     ca_uint16_t     m_pad;      /* extend to 32 bits */
 };
 
+typedef struct ca_ext_IPv6_RSRV_IS_UP_type {
+    ca_uint32_t m_size;         /* size of this struct, net byte order */
+    ca_uint8_t  m_typ_magic[4]; /* 'I' 'P' 'v' '6' */
+    ca_uint32_t m_sin6_scope_id;/* scope id, host byte order */
+    ca_uint8_t  m_s6_addr[16];  /* IPV6 address */
+} ca_ext_IPv6_RSRV_IS_UP_type;
+
+typedef struct ca_msg_IPv6_RSRV_IS_UP_type {
+    caHdr                       hdr;
+    ca_ext_IPv6_RSRV_IS_UP_type ca_ext_IPv6_RSRV_IS_UP;
+}  ca_msg_IPv6_RSRV_IS_UP_type;
+
+
 /*
  * PV names greater than this length assumed to be invalid
  */

@@ -29,6 +29,7 @@
 #include "envDefs.h"
 #include "errlog.h"
 #include "osiSock.h"
+#include "epicsSock.h"
 #include "taskwd.h"
 
 #include "server.h"
@@ -38,11 +39,13 @@
  */
 void rsrv_online_notify_task(void *pParm)
 {
+    rsrv_online_notify_config   *pConf = pParm;
     double                      delay;
     double                      maxdelay;
     long                        longStatus;
     double                      maxPeriod;
-    caHdr                       msg;
+    SOCKET                      *pSockets = pConf->pSockets;
+    struct ca_msg_IPv6_RSRV_IS_UP_type msg;
     int                         status;
     ca_uint32_t                 beaconCounter = 0;
     int *lastError;
@@ -67,9 +70,15 @@ void rsrv_online_notify_task(void *pParm)
     maxdelay = maxPeriod;
 
     memset((char *)&msg, 0, sizeof msg);
-    msg.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
-    msg.m_count = htons (ca_server_port);
-    msg.m_dataType = htons (CA_MINOR_PROTOCOL_REVISION);
+    msg.hdr.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
+    msg.hdr.m_count = htons (ca_server_port);
+    msg.hdr.m_dataType = htons (CA_MINOR_PROTOCOL_REVISION);
+    msg.hdr.m_postsize = htons((ca_uint16_t) (sizeof(msg) - sizeof(msg.hdr)));
+    msg.ca_ext_IPv6_RSRV_IS_UP.m_size = htonl((ca_uint32_t)sizeof(msg.ca_ext_IPv6_RSRV_IS_UP));
+    msg.ca_ext_IPv6_RSRV_IS_UP.m_typ_magic[0] = 'I';
+    msg.ca_ext_IPv6_RSRV_IS_UP.m_typ_magic[1] = 'P';
+    msg.ca_ext_IPv6_RSRV_IS_UP.m_typ_magic[2] = 'v';
+    msg.ca_ext_IPv6_RSRV_IS_UP.m_typ_magic[3] = '6';
 
     /* beaconAddrList should not change after rsrv_init(), which then starts this thread */
     lastError = callocMustSucceed(ellCount(&beaconAddrList), sizeof(*lastError), "rsrv_online_notify_task lastError");
@@ -84,16 +93,16 @@ void rsrv_online_notify_task(void *pParm)
         for(i=0, cur=ellFirst(&beaconAddrList); cur; i++, cur=ellNext(cur))
         {
             osiSockAddrNode *pAddr = CONTAINER(cur, osiSockAddrNode, node);
-            status = sendto (beaconSocket, (char *)&msg, sizeof(msg), 0,
-                             &pAddr->addr.sa, sizeof(pAddr->addr));
+            status = epicsSocket46Sendto (pSockets[i], (char *)&msg, sizeof(msg), 0,
+                                          &pAddr->addr.sa, sizeof(pAddr->addr) );
             if (status < 0) {
                 int err = SOCKERRNO;
                 if(err != lastError[i]) {
                     char sockErrBuf[64];
-                    char sockDipBuf[22];
+                    char sockDipBuf[64];
 
                     epicsSocketConvertErrorToString(sockErrBuf, sizeof(sockErrBuf), err);
-                    ipAddrToDottedIP(&pAddr->addr.ia, sockDipBuf, sizeof(sockDipBuf));
+                    sockAddrToDottedIP(&pAddr->addr.sa, sockDipBuf, sizeof(sockDipBuf));
                     errlogPrintf ( "CAS: CA beacon send to %s " ERL_ERROR ": %s\n",
                         sockDipBuf, sockErrBuf);
 
@@ -103,9 +112,9 @@ void rsrv_online_notify_task(void *pParm)
             else {
                 assert (status == sizeof(msg));
                 if(lastError[i]) {
-                    char sockDipBuf[22];
+                    char sockDipBuf[64];
 
-                    ipAddrToDottedIP(&pAddr->addr.ia, sockDipBuf, sizeof(sockDipBuf));
+                    sockAddrToDottedIP(&pAddr->addr.sa, sockDipBuf, sizeof(sockDipBuf));
                     errlogPrintf ( "CAS: CA beacon send to %s ok\n",
                         sockDipBuf);
                 }
@@ -121,7 +130,7 @@ void rsrv_online_notify_task(void *pParm)
             }
         }
 
-        msg.m_cid = htonl ( beaconCounter++ ); /* expected to overflow */
+        msg.hdr.m_cid = htonl ( beaconCounter++ ); /* expected to overflow */
 
         while (beacon_ctl == ctlPause) {
             epicsThreadSleep(0.1);

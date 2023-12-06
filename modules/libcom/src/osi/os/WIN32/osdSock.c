@@ -33,6 +33,7 @@
 
 #include "osiSock.h"
 #include "errlog.h"
+#include "epicsBaseDebugLog.h"
 #include "epicsVersion.h"
 
 static unsigned nAttached = 0;
@@ -116,7 +117,24 @@ LIBCOM_API void epicsStdCall osiSockRelease()
 LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
     int domain, int type, int protocol )
 {
-    return socket ( domain, type, protocol );
+    SOCKET sock = socket ( domain, type, protocol );
+#ifdef AF_INET6_IPV6
+    if (sock != INVALID_SOCKET) {
+        DWORD ipv6_only = 0;
+        int status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                                (char*)&ipv6_only, sizeof(ipv6_only));
+
+        if ( status )
+        {
+            char sockErrBuf[64];
+            epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
+            epicsBaseDebugLog("NET setsockopt(%d) (IPPROTO_IPV6, IPV6_V6ONLY) status=%d %s\n",
+                              (int)sock,
+                              status, status < 0 ? sockErrBuf : "");
+        }
+    }
+#endif
+    return sock;
 }
 
 LIBCOM_API int epicsStdCall epicsSocketAccept ( 

@@ -95,7 +95,7 @@ private:
 
 class SearchDestTCP : public SearchDest {
 public:
-    SearchDestTCP ( cac &, const osiSockAddr & );
+    SearchDestTCP ( cac &, const osiSockAddr46 & );
     void searchRequest ( epicsGuard < epicsMutex > & guard,
          const char * pbuf, size_t len );
     void show ( epicsGuard < epicsMutex > & guard, unsigned level ) const;
@@ -105,7 +105,7 @@ public:
 private:
     tcpiiu * _ptcpiiu;
     cac & _cac;
-    const osiSockAddr _addr;
+    const osiSockAddr46 _addr;
     bool _active;
 };
 
@@ -118,7 +118,7 @@ class tcpiiu :
 public:
     tcpiiu ( cac & cac, epicsMutex & mutualExclusion, epicsMutex & callbackControl,
         cacContextNotify &, double connectionTimeout, epicsTimerQueue & timerQueue,
-        const osiSockAddr & addrIn, comBufMemoryManager &, unsigned minorVersion,
+        const osiSockAddr46 & addrIn, comBufMemoryManager &, unsigned minorVersion,
         ipAddrToAsciiEngine & engineIn, const cacChannel::priLev & priorityIn,
         SearchDestTCP * pSearchDestIn = NULL);
     ~tcpiiu ();
@@ -174,7 +174,7 @@ public:
         epicsGuard < epicsMutex > & ) const;
     bool receiveThreadIsBusy (
         epicsGuard < epicsMutex > & );
-    osiSockAddr getNetworkAddress (
+    osiSockAddr46 getNetworkAddress (
         epicsGuard < epicsMutex > & ) const;
     int printFormated (
         epicsGuard < epicsMutex > & cbGuard,

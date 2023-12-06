@@ -31,7 +31,7 @@
 
 class hostNameCache : public ipAddrToAsciiCallBack {
 public:
-    hostNameCache ( const osiSockAddr & addr, ipAddrToAsciiEngine & engine );
+    hostNameCache ( const osiSockAddr46 & addr, ipAddrToAsciiEngine & engine );
     ~hostNameCache ();
     void destroy ();
     void transactionComplete ( const char * pHostName );

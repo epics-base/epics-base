@@ -1,0 +1,52 @@
+Status and to do of EPICS base:
+
+- Channel Access:
+   - Cannel name resolution:
+     working: using link-local IPv6 addresses or global IPv6 addresses.
+     todo: test with a DNS name (AAAA record)
+   - beacons:
+     Are send out via IPv6 link local addresses if configured
+     with EPICS_CAS_AUTO_BEACON_ADDR_LIST=6 (or 46)
+     The beacons use an extended message for CA_PROTO_RSRV_IS_UP
+   - Reverse name resolution
+     aToIPAddr does not handle IPv6 (and needs to be replaced)
+     Some problems to convert interface index into a name
+     (The "%en0" part of the IPv6 address)
+     Needs to be investigated (may be not thread-save ?)
+   - Channel access via TCP/IPv6
+     working
+   - Mixed usage of IPv4 and IPv6 in the network:
+     In general, this should work out of the box.
+     Start the repeater like this:
+     `killall caRepeater ; caRepeater`
+     For IOCs and clients using IPv4, IPv6 or both see ipv6-howto.txt
+
+- pvAccess:
+   It looks as if pvxs will replace pvAccess
+   https://github.com/mdavidsaver/pvxs
+
+- Other modules:
+  pcas:
+    Work ongoing. Added patches so that pcas be compiled against latest base
+    Support for IPv6 must be added.
+
+- Linux, MacOs, Windows, vxWorks, RTEMS, BSD
+  Testing on Linux, Mac and FreeBSD looks good.
+  Windows: (Which "Windows" ? Visual Studio ? cygwin (seems obsolete) Mingw
+  vxWorks, RTEMS: Testing needed.
+
+- pyepics (with the latest ca library)
+  First tests look good ("PYEPICS_LIBCA" is your friend)
+
+- pvapy: to be done
+- JCA: needed ? CSS/phoebus is working on IPv6
+- EPICS gateways: to be done
+-  asyn:
+  Prototype working.
+  It seems that asyn can support IPv6 independent of EPICS base,
+  there is not really any common code.
+
+Other todo (unorderedd)
+- Clean up the debug printing
+- More code review
+- write automated tests

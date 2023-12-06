@@ -30,7 +30,7 @@
 #include "epicsGuard.h"
 
 hostNameCache::hostNameCache (
-    const osiSockAddr & addr, ipAddrToAsciiEngine & engine ) :
+    const osiSockAddr46 & addr, ipAddrToAsciiEngine & engine ) :
     dnsTransaction ( engine.createTransaction() ), nameLength ( 0 )
 {
     sockAddrToDottedIP ( &addr.sa, hostNameBuf, sizeof ( hostNameBuf ) );
@@ -85,7 +85,7 @@ unsigned hostNameCache::getName (
         }
     }
     else {
-        osiSockAddr tmpAddr = this->dnsTransaction.address ();
+        osiSockAddr46 tmpAddr = this->dnsTransaction.address ();
         return sockAddrToDottedIP ( &tmpAddr.sa, pBuf, bufSize );
     }
 }

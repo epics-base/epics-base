@@ -26,6 +26,24 @@
 #include "osdSock.h"
 #include "ellLib.h"
 
+/* Enable it for debugging */
+/* #define NETDEBUG */
+
+#ifdef __rtems__
+#if __RTEMS_MAJOR__ < 5 || defined (RTEMS_LEGACY_STACK)
+#if !defined (NO_AF_INET6_IPV6)
+#define NO_AF_INET6_IPV6
+#endif
+#endif
+#endif
+
+#if !defined (NO_AF_INET6_IPV6)
+#define AF_INET6_IPV6
+#endif
+
+/* Needed to compile external modules, like pcas */
+#define EPICS_BASE_HAS_OSISOCKADDR46
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +51,15 @@ extern "C" {
 struct sockaddr;
 struct sockaddr_in;
 struct in_addr;
+
+typedef union osiSockAddr46 {
+    struct sockaddr_in  ia;
+    struct sockaddr     sa;
+#ifdef AF_INET6_IPV6
+    struct sockaddr_in6 in6;
+#endif
+} osiSockAddr46;
+
 
 /*!
  * \brief Create a socket object
@@ -335,6 +362,13 @@ typedef struct osiSockAddrNode {
     osiSockAddr addr;
 } osiSockAddrNode;
 
+
+typedef struct osiSockAddrNode46 {
+    ELLNODE node;
+    osiSockAddr46 addr;
+    unsigned int interfaceIndex; /* Needed for IPv6 only */
+} osiSockAddrNode46;
+
 /*!
  * \brief Compares two osiSockAddrs
  *
@@ -393,8 +427,36 @@ LIBCOM_API int epicsStdCall sockAddrAreIdentical
 LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr);
 
+/*
+ *  osiSockBroadcastMulticastAddresses46 ()
+ *  Returns the broadcast addresses of each IPv4 interface found.
+ *  Returns the multicast addresses of each IPv6 interface found.
+ *
+ *  pMatchAddr->ia.sin_family = selects if IPv4, IPv6 or both are returned:
+ *  AF_INET:      IPv4 broadcast (same as osiSockDiscoverBroadcastAddresses)
+ *  AF_INET6:     IPv6 multicast
+ *  AF_UNSPEC:    both IPv4 broadcast and IPv6 multicast
+ *
+ *  This routine is provided with the address of an ELLLIST, a socket,
+ *  a destination port number, and a match address. When the
+ *  routine returns there will be one additional entry
+ *  (an osiSockAddrNode) in the list for each network interface found that
+ *  is up and isn't a loop back interface (match addr is INADDR_ANY),
+ *  or only the interfaces that match the specified addresses (match addr
+ *  is other than INADDR_ANY). If the interface supports broadcasting
+ *  then add its broadcast address to the list. If the interface is a
+ *  point to point link then add the destination address of the point to
+ *  point link to the list.
+ *
+ *  Any mutex locking required to protect pList is applied externally.
+ *
+ */
+LIBCOM_API void epicsStdCall osiSockBroadcastMulticastAddresses46
+     (ELLLIST *pList, SOCKET socket, const osiSockAddr46 *pMatchAddr46);
+
+
 /*!
- * Returns the osiSockAddr of the first non-loopback interface found that is
+ * Returns the osiSockAddr46 of the first non-loopback interface found that is
  * operational (up flag is set). If no valid address can be located then return
  * an osiSockAddr with the address family set to unspecified (AF_UNSPEC).
  *
@@ -407,7 +469,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
  * \note After all CA repeaters have been restarted this osi interface can be
  * eliminated.
  */
-LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket);
+LIBCOM_API osiSockAddr46 epicsStdCall osiLocalAddr (SOCKET socket);
 
 #ifdef __cplusplus
 }

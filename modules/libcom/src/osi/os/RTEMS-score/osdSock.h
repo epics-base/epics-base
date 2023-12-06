@@ -105,4 +105,9 @@ typedef unsigned char osiSockOptMcastTTL_t;
  */
 #define ifreq_size(pifreq) (pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name))
 
+#if __RTEMS_MAJOR__ < 5
+/* RTEMS 4 defines AF_INET6 but has no idea what IPv6 is */
+#undef AF_INET6
+#endif
+
 #endif /*osdSockH*/

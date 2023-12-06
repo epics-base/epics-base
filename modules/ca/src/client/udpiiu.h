@@ -55,8 +55,12 @@ extern "C" void cacRecvThreadUDP ( void *pParam );
 
 LIBCA_API void epicsStdCall caStartRepeaterIfNotInstalled (
     unsigned repeaterPort );
-LIBCA_API void epicsStdCall caRepeaterRegistrationMessage (
+LIBCA_API void epicsStdCall caRepeaterRegistrationMessage4 (
     SOCKET sock, unsigned repeaterPort, unsigned attemptNumber );
+#ifdef AF_INET6_IPV6
+LIBCA_API void epicsStdCall caRepeaterRegistrationMessageIPv6 (
+    SOCKET sock6, unsigned repeaterPort);
+#endif
 extern "C" LIBCA_API void caRepeaterThread (
     void * pDummy );
 LIBCA_API void ca_repeater ( void );
@@ -120,15 +124,16 @@ private:
     class SearchDestUDP :
         public SearchDest {
     public:
-        SearchDestUDP ( const osiSockAddr &, udpiiu & );
+        SearchDestUDP ( const osiSockAddr46 &, udpiiu & , SOCKET);
         void searchRequest (
             epicsGuard < epicsMutex > &, const char * pBuf, size_t bufLen );
         void show (
             epicsGuard < epicsMutex > &, unsigned level ) const;
     private:
         int _lastError;
-        osiSockAddr _destAddr;
+        osiSockAddr46 _destAddr;
         udpiiu & _udpiiu;
+        SOCKET _sock46;
     };
     class SearchRespCallback :
         public SearchDest :: Callback {
@@ -136,7 +141,7 @@ private:
         SearchRespCallback ( udpiiu & );
         void notify (
             const caHdr &, const void * pPayload,
-            const osiSockAddr &, const epicsTime & );
+            const osiSockAddr46 &, const epicsTime & );
         void show (
             epicsGuard < epicsMutex > &, unsigned level ) const;
     private:
@@ -185,17 +190,21 @@ private:
     unsigned beaconAnomalyTimerIndex;
     ca_uint32_t sequenceNumber;
     ca_uint32_t lastReceivedSeqNo;
-    SOCKET sock;
+    SOCKET sock4;
+    SOCKET sock6;
+    struct epicsSockPollfd *pPollFds;
+    unsigned numPollFds;
     ca_uint16_t repeaterPort;
     ca_uint16_t serverPort;
-    ca_uint16_t localPort;
+    ca_uint16_t localPort4;
+    ca_uint16_t localPort6;
     bool shutdownCmd;
     bool lastReceivedSeqNoIsValid;
 
     bool wakeupMsg ();
 
     void postMsg (
-            const osiSockAddr & net_addr,
+            const osiSockAddr46 & net_addr,
             char *pInBuf, arrayElementCount blockSize,
             const epicsTime &currenTime );
 
@@ -205,7 +214,7 @@ private:
 
     typedef bool ( udpiiu::*pProtoStubUDP ) (
         const caHdr &,
-        const osiSockAddr &, const epicsTime & );
+        const osiSockAddr46 &, const epicsTime & );
 
     // UDP protocol dispatch table
     static const pProtoStubUDP udpJumpTableCAC[];
@@ -213,25 +222,25 @@ private:
     // UDP protocol stubs
     bool versionAction (
         const caHdr &,
-        const osiSockAddr &, const epicsTime & );
+        const osiSockAddr46 &, const epicsTime & );
     bool badUDPRespAction (
         const caHdr &msg,
-        const osiSockAddr &netAddr, const epicsTime & );
+        const osiSockAddr46 &netAddr, const epicsTime & );
     bool searchRespAction (
         const caHdr &msg,
-        const osiSockAddr &net_addr, const epicsTime & );
+        const osiSockAddr46 &net_addr, const epicsTime & );
     bool exceptionRespAction (
         const caHdr &msg,
-        const osiSockAddr &net_addr, const epicsTime & );
+        const osiSockAddr46 &net_addr, const epicsTime & );
     bool beaconAction (
         const caHdr &msg,
-        const osiSockAddr &net_addr, const epicsTime & );
+        const osiSockAddr46 &net_addr, const epicsTime & );
     bool notHereRespAction (
         const caHdr &msg,
-        const osiSockAddr &net_addr, const epicsTime & );
+        const osiSockAddr46 &net_addr, const epicsTime & );
     bool repeaterAckAction (
         const caHdr &msg,
-        const osiSockAddr &net_addr, const epicsTime & );
+        const osiSockAddr46 &net_addr, const epicsTime & );
 
     // netiiu stubs
     unsigned getHostName (
@@ -276,7 +285,7 @@ private:
         epicsGuard < epicsMutex > & );
     void requestRecvProcessPostponedFlush (
         epicsGuard < epicsMutex > & );
-        osiSockAddr getNetworkAddress (
+        osiSockAddr46 getNetworkAddress (
         epicsGuard < epicsMutex > & ) const;
     void uninstallChan (
         epicsGuard < epicsMutex > &, nciu & );

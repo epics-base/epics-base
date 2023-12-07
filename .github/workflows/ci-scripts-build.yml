@@ -29,6 +29,7 @@ on:
       - '.gitattributes'
       - '**/*.html'
       - '**/*.md'
+  workflow_dispatch:
 
 env:
     SETUP_PATH: .ci-local:.ci

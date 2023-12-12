@@ -1,0 +1,13 @@
+# int2ptr() craziness
+null:epicsEllTest.c
+
+# dbLocker::refs[] is actually dynamically sized, with a minimum of 2 elements
+object-size:dbLock.c
+
+# out of scope for epics-base tests
+alignment:pvData.so
+enum:pvData.so
+
+alignment:pvAccess.so
+enum:pvAccess.so
+

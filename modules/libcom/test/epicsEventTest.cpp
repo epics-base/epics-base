@@ -244,7 +244,7 @@ MAIN(epicsEventTest)
     name = (char **)calloc(nthreads, sizeof(char *));
     for(int i = 0; i < nthreads; i++) {
         name[i] = (char *)calloc(16, sizeof(char));
-        sprintf(name[i],"producer %d",i);
+        snprintf(name[i], 16, "producer %d",i);
         id[i] = epicsThreadCreate(name[i], 40, stackSize, producer, pinfo);
         epicsThreadSleep(0.1);
     }

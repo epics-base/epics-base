@@ -238,7 +238,7 @@ size_t epicsStdCall epicsTimeToStrftime (char *pBuff, size_t bufLength, const ch
                     // convert nanosecs to integer of correct range
                     frac /= div[fracWid];
                     char fracFormat[32];
-                    sprintf ( fracFormat, "%%0%lulu", fracWid );
+                    snprintf ( fracFormat, sizeof ( fracFormat ), "%%0%lulu", fracWid );
                     int status = epicsSnprintf ( pBufCur, bufLenLeft, fracFormat, frac );
                     if ( status > 0 ) {
                         unsigned long nChar = static_cast < unsigned long > ( status );

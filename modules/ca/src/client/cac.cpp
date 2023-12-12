@@ -1008,7 +1008,7 @@ bool cac::defaultExcep (
     char buf[512];
     char hostName[64];
     iiu.getHostName ( guard, hostName, sizeof ( hostName ) );
-    sprintf ( buf, "host=%s ctx=%.400s", hostName, pCtx );
+    snprintf( buf, sizeof(buf), "host=%s ctx=%.400s", hostName, pCtx );
     this->notify.exception ( guard, status, buf, 0, 0u );
     return true;
 }
@@ -1312,7 +1312,7 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     const char * pChannelName, const char * pAcc, const char * pRej )
 {
     char buf[256];
-    sprintf ( buf, "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
+    snprintf( buf, sizeof(buf), "Channel: \"%.64s\", Connecting to: %.64s, Ignored: %.64s",
             pChannelName, pAcc, pRej );
     {
         callbackManager mgr ( this->notify, this->cbMutex );

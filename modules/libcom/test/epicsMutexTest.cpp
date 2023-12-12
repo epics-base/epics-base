@@ -266,7 +266,7 @@ MAIN(epicsMutexTest)
     stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
     for(i=0; i<nthreads; i++) {
         name[i] = (char *)calloc(10,sizeof(char));
-        sprintf(name[i],"task%d",i);
+        snprintf(name[i], 10, "task%d",i);
         pinfo[i] = (info *)calloc(1,sizeof(info));
         pinfo[i]->threadnum = i;
         pinfo[i]->mutex = mutex;

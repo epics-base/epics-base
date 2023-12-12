@@ -73,7 +73,7 @@ void testMyThread()
     int startPriority = 0;
     for (int i = 0; i < ntasks; i++) {
         char name[10];
-        sprintf(name, "t%d", i);
+        snprintf(name, sizeof(name), "t%d", i);
         myThreads[i] = new myThread(i, name);
         if (i == 0)
             startPriority = myThreads[i]->thread.getPriority();

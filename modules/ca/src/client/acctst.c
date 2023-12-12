@@ -2575,7 +2575,8 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
     SEVCHK ( ca_get ( DBR_FLOAT, chan, &temp ), NULL );
     SEVCHK ( ca_pend_io ( timeoutToPendIO ), NULL );
 
-    /* printf ( "flow control bypassed %u events\n", flowCtrlCount ); */
+    if (0)
+        printf ( "flow control bypassed %u events\n", flowCtrlCount );
 
     showProgressEnd ( interestLevel );
 }

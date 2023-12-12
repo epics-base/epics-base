@@ -232,7 +232,7 @@ sender(void *arg)
     int i = 0;
 
     while (!sendExit) {
-        len = sprintf(cbuf, "%s -- %d.", epicsThreadGetNameSelf(), ++i);
+        len = snprintf(cbuf, sizeof(cbuf), "%s -- %d.", epicsThreadGetNameSelf(), ++i);
         while (q->trySend((void *)cbuf, len) < 0)
             epicsThreadSleep(0.005 * (randBelow(5)));
         epicsThreadSleep(0.005 * (randBelow(20)));
@@ -421,7 +421,7 @@ extern "C" void messageQueueTest(void *parm)
             epicsThreadPriorityHigh,
             epicsThreadPriorityHigh
         };
-        sprintf(name, "Sender %d", i+1);
+        snprintf(name, sizeof(name), "Sender %d", i+1);
         opts.priority = pri[i];
         senderId[i] = epicsThreadCreateOpt(name, sender, &q1, &opts);
         if (!senderId[i])

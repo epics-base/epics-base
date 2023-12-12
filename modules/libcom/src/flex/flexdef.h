@@ -567,8 +567,8 @@ extern int sectnum, nummt, hshcol, dfaeql, numeps, eps2, num_reallocs;
 extern int tmpuses, totnst, peakpairs, numuniq, numdup, hshsave;
 extern int num_backtracking, bol_needed;
 
-void *allocate_array(int size, int element_size);
-void *reallocate_array(void *array, int size, int element_size);
+extern void *allocate_array(int size, int element_size);
+extern void *reallocate_array(void *array, int size, int element_size);
 
 #define allocate_integer_array(size) \
     (int *) allocate_array( size, sizeof( int ) )
@@ -677,16 +677,29 @@ extern int all_upper (Char *);
 /* bubble sort an integer array */
 extern void bubble (int [], int);
 
+/* replace upper-case letter to lower-case */
+extern Char clower(int c);
+
+/* returns copy of a string */
+extern char *copy_string(char *str);
+
+/* returns copy of a (potentially) unsigned string */
+extern Char *copy_unsigned_string(Char *str);
+
 /* shell sort a character array */
 extern void cshell (Char [], int, int);
 
-extern void dataend (void);     /* finish up a block of data declarations */
+/* finish up a block of data declarations */
+extern void dataend (void);
 
 /* report an error message and terminate */
 extern void flexerror (char[]) NORETURN;
 
 /* report a fatal error message and terminate */
 extern void flexfatal (char[]);
+
+/* return current time */
+extern char *flex_gettime();
 
 /* report an error message formatted with one integer argument */
 extern void lerrif (char[], int);
@@ -700,10 +713,17 @@ extern void line_directive_out (FILE*);
 /* generate a data statment for a two-dimensional array */
 extern void mk2data (int);
 
-extern void mkdata (int);       /* generate a data statement */
+/* generate a data statement */
+extern void mkdata (int);
 
 /* return the integer represented by a string of digits */
 extern int myctoi (Char []);
+
+/* return character corresponding to escape sequence */
+extern Char myesc(Char *array);
+
+/* return the the human-readable form of a character */
+extern char *readable_form(int c);
 
 /* write out one section of the skeleton file */
 extern void skelout (void);
@@ -784,8 +804,14 @@ extern void cclinstal (Char [], int);
 /* lookup the number associated with character class */
 extern int ccllookup (Char []);
 
-extern void ndinstal (char[], Char[]);  /* install a name definition */
-extern void scinstal (char[], int);     /* make a start condition */
+/* install a name definition */
+extern void ndinstal (char[], Char[]);
+
+/* lookup a name definition */
+extern Char *ndlookup(char *nd);
+
+/* make a start condition */
+extern void scinstal (char[], int);
 
 /* lookup the number associated with a start condition */
 extern int sclookup (char[]);

@@ -34,10 +34,17 @@
 
 int pat, scnum, eps, headcnt, trailcnt, anyccl, lastchar, i, actvp, rulelen;
 int trlcontxt, xcluflg, cclsorted, varlength, variable_trail_rule;
-Char clower();
 
 static int madeany = false;  /* whether we've made the '.' character class */
 int previous_continued_action;  /* whether the previous rule's action was '|' */
+
+/* forward declarations */
+
+void build_eof_action( void );
+void synerr( char str[] );
+void format_pinpoint_message( char msg[], char arg[] );
+void pinpoint_message( char str[] );
+void yyerror( char msg[] );
 
 %}
 
@@ -626,7 +633,7 @@ string          :  string CHAR
  *                    conditions
  */
 
-void build_eof_action()
+void build_eof_action( void )
 
     {
     int i;
@@ -652,8 +659,7 @@ void build_eof_action()
 
 /* synerr - report a syntax error */
 
-void synerr( str )
-char str[];
+void synerr( char str[] )
 
     {
     syntaxerror = true;
@@ -665,8 +671,7 @@ char str[];
  *                           pinpointing its location
  */
 
-void format_pinpoint_message( msg, arg )
-char msg[], arg[];
+void format_pinpoint_message( char msg[], char arg[] )
 
     {
     char errmsg[MAXLINE];
@@ -678,8 +683,7 @@ char msg[], arg[];
 
 /* pinpoint_message - write out a message, pinpointing its location */
 
-void pinpoint_message( str )
-char str[];
+void pinpoint_message( char str[] )
 
     {
     fprintf( stderr, "\"%s\", line %d: %s\n", infilename, linenum, str );
@@ -690,8 +694,7 @@ char str[];
  *           currently, messages are ignore
  */
 
-void yyerror( msg )
-char msg[];
+void yyerror( char msg[] )
 
     {
     }

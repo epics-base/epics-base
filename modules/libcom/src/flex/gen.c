@@ -217,7 +217,6 @@ void genecs(void)
     int i, j;
     static char C_char_decl[] = "static const %s %s[%d] =\n    {   0,\n";
     int numrows;
-    Char clower();
 
     if ( numecs < csize )
         printf( C_char_decl, "YY_CHAR", "yy_ec", csize );
@@ -237,8 +236,6 @@ void genecs(void)
 
     if ( trace )
         {
-        char *readable_form();
-
         fputs( "\n\nEquivalence Classes:\n\n", stderr );
 
         numrows = csize / 8;

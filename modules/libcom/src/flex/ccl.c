@@ -132,7 +132,6 @@ void cclnegate(int cclp)
 void list_character_set(FILE *file, int cset[])
 {
     int i;
-    char *readable_form();
 
     putc( '[', file );
 

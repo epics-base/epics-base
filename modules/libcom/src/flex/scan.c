@@ -953,6 +953,7 @@ void yy_load_buffer_state ( void );
 YY_BUFFER_STATE yy_create_buffer ( FILE *file, int size );
 void yy_delete_buffer ( YY_BUFFER_STATE b );
 void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file );
+void set_input_file( char *file );
 
 #define yy_new_buffer yy_create_buffer
 
@@ -966,7 +967,7 @@ YY_DECL
     static int bracelevel, didadef;
     int i, indented_code = false, checking_used = false, new_xlation = false;
     int doing_codeblock = false;
-    Char nmdef[MAXLINE], myesc();
+    Char nmdef[MAXLINE];
 
 
     if ( yy_init )
@@ -1488,7 +1489,6 @@ case 65:
 # line 333 "scan.l"
 {
                         Char *nmdefptr;
-                        Char *ndlookup();
 
                         (void) strcpy( nmstr, (char *) yytext );
                         nmstr[yyleng - 1] = '\0';  /* chop trailing brace */
@@ -2230,8 +2230,7 @@ int yywrap()
 
 /* set_input_file - open the given file (if NULL, stdin) for scanning */
 
-void set_input_file( file )
-char *file;
+void set_input_file( char *file )
 
     {
     if ( file )

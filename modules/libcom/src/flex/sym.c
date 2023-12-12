@@ -108,8 +108,6 @@ void cclinstal(Char *ccltxt, int cclnum)
     /* we don't bother checking the return status because we are not called
      * unless the symbol is new
      */
-    Char *copy_unsigned_string();
-
     (void) addsym( (char *) copy_unsigned_string( ccltxt ), (char *) 0, cclnum,
                    ccltab, CCL_HASH_SIZE );
     }
@@ -191,9 +189,6 @@ int hashfunct(char *str, int hash_size)
 
 void ndinstal(char *nd, Char *def)
 {
-    char *copy_string();
-    Char *copy_unsigned_string();
-
     if ( addsym( copy_string( nd ), (char *) copy_unsigned_string( def ), 0,
                  ndtbl, NAME_TABLE_HASH_SIZE ) )
         synerr( "name defined twice" );
@@ -227,8 +222,6 @@ Char *ndlookup(char *nd)
 
 void scinstal(char *str, int xcluflg)
 {
-    char *copy_string();
-
     /* bit of a hack.  We know how the default start-condition is
      * declared, and don't put out a define for it, because it
      * would come out as "#define 0 1"

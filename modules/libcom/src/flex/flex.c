@@ -188,7 +188,6 @@ int main(int argc, char *argv[])
 void flexend(int status)
 {
     int tblsiz;
-    char *flex_gettime();
 
     if ( skelfile != NULL )
         {
@@ -382,7 +381,7 @@ void flexend(int status)
 void flexinit(int argc, char **argv)
 {
     int i, sawcmpflag;
-    char *arg, *flex_gettime(), *mktemp();
+    char *arg;
 
     printstats = syntaxerror = trace = spprdflt = interactive = caseins = false;
     backtrack_report = performance_report = ddebug = fulltbl = fullspd = false;

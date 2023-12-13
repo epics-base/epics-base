@@ -184,7 +184,7 @@ CEIL: Ceiling (unary)
 FLOOR: Floor (unary)
 
 =item *
-FMOD: Floating point modulo (binary)  Added in UNRELEASED
+FMOD: Floating point modulo (binary)  Added in 7.0.8
 
 =item *
 LOG: Log base 10 (unary)

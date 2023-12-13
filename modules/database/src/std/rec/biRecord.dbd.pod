@@ -61,8 +61,8 @@ this chapter for information on soft device support.
 If the record gets its values from hardware or uses the C<Raw Soft Channel>
 device support, the device support routines place the value in the RVAL
 field.
-(Since UNRELEASED) If the MASK field is non-zero, then this MASK is applied to RVAL.
-The value of RVAL is then converted using the process described in the
+(Since 7.0.8) If the MASK field is non-zero, then this MASK is applied to RVAL.
+The value from RVAL is then converted using the process described in the
 next section.
 
 =fields INP, DTYP, ZNAM, ONAM, RVAL, VAL

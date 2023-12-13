@@ -85,7 +85,7 @@ for information on the format of hardware addresses and database links.
 
 =head4 Menu longoutOOPT
 
-The OOPT field was added in EPICS UNRELEASED.
+The OOPT field was added in EPICS 7.0.8.
 
 It determines the condition that causes the output link to be
 written to. It's a menu field that has six choices:
@@ -119,7 +119,7 @@ VAL is non-zero and last value was zero.
 
 =head4 Changes in OUT field when OOPT = On Change
 
-The OOCH field was added in EPICS UNRELEASED.
+The OOCH field was added in EPICS 7.0.8.
 
 If OOCH is C<YES> (its default value) and the OOPT field is C<On Change>,
 the record will write to the device support the first time the record gets

@@ -222,7 +222,7 @@ extern "C" {
  *    - n parameter minimum value: min(a, b, ...)
  *    - Square root: sqr(a) or sqrt(a)
  *    - Floating point modulo: fmod(num, den)
- *  \since The fmod() function was added in UNRELEASED
+ *  \since The fmod() function was added in 7.0.8
  *
  * -# ***Trigonometric Functions***
  *  Standard circular trigonometric functions, with angles expressed in radians:

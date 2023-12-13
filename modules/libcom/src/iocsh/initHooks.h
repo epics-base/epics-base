@@ -111,7 +111,7 @@ typedef enum {
      */
     initHookAfterCloseLinks,
     /** \brief Scan tasks stopped.
-     *  \since UNRELEASED Triggered during normal IOC shutdown
+     *  \since 7.0.8 Triggered during normal IOC shutdown
      *  \since 7.0.3.1 Added, triggered only by unittest code.
      */
     initHookAfterStopScan,
@@ -120,7 +120,7 @@ typedef enum {
      */
     initHookAfterStopCallback,
     /** \brief CA links stopped.
-     *  \since UNRELEASED Triggered during normal IOC shutdown
+     *  \since 7.0.8 Triggered during normal IOC shutdown
      *  \since 7.0.3.1 Added, triggered only by unittest code.
      */
     initHookAfterStopLinks,
@@ -136,12 +136,12 @@ typedef enum {
 
     /** \brief Called during testdbPrepare()
      * Use this hook to repeat actions each time an empty test database is initialized.
-     * \since UNRELEASED Added, triggered only by unittest code.
+     * \since 7.0.8 Added, triggered only by unittest code.
      */
     initHookAfterPrepareDatabase,
     /** \brief Called during testdbCleanup()
      * Use this hook to perform cleanup each time before a test database is free()'d.
-     * \since UNRELEASED Added, triggered only by unittest code.
+     * \since 7.0.8 Added, triggered only by unittest code.
      */
     initHookBeforeCleanupDatabase,
 

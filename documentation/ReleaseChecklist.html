@@ -48,14 +48,14 @@ everything that has to be done since it's so easy to miss steps.</p>
 <p>The following roles are used below:</p>
 
 <dl>
-  <dt><strong>Release Manager</strong> ()</dt>
+  <dt><strong>Release Manager</strong></dt>
     <dd>Responsible for managing and tagging the release</dd>
-  <dt><strong>Platform Developers</strong> (informal)</dt>
-    <dd>Responsible for individual operating system platforms</dd>
+  <dt><strong>Core Developers</strong></dt>
+    <dd>Responsible for maintaining the EPICS software</dd>
   <dt><strong>Application Developers</strong></dt>
     <dd>Responsible for support modules that depend on EPICS Base.</dd>
-  <dt><strong>APS Website Editor</strong> (Andrew Johnson)</dt>
-    <dd>Responsible for the APS EPICS website</dd>
+  <dt><strong>Website Editors</strong></dt>
+    <dd>Responsible for the EPICS websites</dd>
 </dl>
 
 <form>
@@ -72,23 +72,22 @@ everything that has to be done since it's so easy to miss steps.</p>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Email all developers about the upcoming release and ask for a list
-        of remaining tasks that must be finished.</td>
+      <td>Notify core developers about the upcoming release and ask about any
+        remaining tasks that must be finished.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
       <td>All developers</td>
       <td>Check the bug tracker for any outstanding items and handle
-        appropriately. All bugs that have been fixed should have been marked
-        as Fix Committed.</td>
+        appropriately.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Set the Feature Freeze date, by which time all Git commits for
-        enhancements and new functionality should have been completed. After
-        this date, commits should only be made to fix problems that show up
-        during testing.</td>
+      <td>Set a Feature Freeze date, by which time all Git branches for
+        enhancements and new functionality should have been merged. After this
+        date, commits and merges should only be made to fix problems that show
+        up during testing.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
@@ -97,6 +96,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Ensure that documentation will be updated before the release date:
         <ul>
           <li>Release Notes</li>
+          <li>Doxygen annotations</li>
           <li>Other documents</li>
         </ul>
       </td>
@@ -104,13 +104,8 @@ everything that has to be done since it's so easy to miss steps.</p>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Review and update this checklist for the upcoming release.</td>
-      </tr>
-    <tr>
-      <td>&nbsp;</td>
-      <td>Release Manager</td>
-      <td>Create a release milestone on Launchpad. If a target release date is
-        known set "Date Targeted" to the expected release date.</td>
+      <td>Review and update this checklist for the upcoming release.
+        Update the release version number in the tags and messages below.</td>
       </tr>
     <tr>
       <th colspan="3">Testing</th>
@@ -118,7 +113,7 @@ everything that has to be done since it's so easy to miss steps.</p>
     <tr>
       <td>&nbsp;</td>
       <td>Platform Developers</td>
-      <td>Run the built-in test programs on all available host platforms using
+      <td>Run the internal test programs on all available host platforms using
         <blockquote><tt>
           make -s runtests
         </tt></blockquote></td>
@@ -156,6 +151,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Check that documentation has been updated:
         <ul>
           <li>Release Notes</li>
+          <li>Doxygen annotations</li>
           <li>Other documents</li>
           </ul>
         </td>
@@ -167,8 +163,8 @@ everything that has to be done since it's so easy to miss steps.</p>
     </tr>
     <tr>
       <td><input type="checkbox"></td>
-      <td>Release Manager</td>
-      <td>Obtain a positive <q>Ok to release</q> from developers.</td>
+      <td>Core Developers</td>
+      <td>Reach a consensus that the software is ready to release.</td>
       </tr>
     <tr>
       <th colspan="3">Creating the final release version</th>
@@ -191,27 +187,29 @@ everything that has to be done since it's so easy to miss steps.</p>
               cd base-7.0/modules/&lt;module&gt;/documentation<br />
               pandoc -f gfm -t html -o RELEASE_NOTES.html RELEASE_NOTES.md
               </tt></blockquote>
-            Commit changes (don't push).</li>
+            Commit these changes (don't push).</li>
 
           <li>Edit the module's release version file
-            <tt>configure/CONFIG_<i>module</i>_VERSION</tt> and its top-level
-            <tt>Doxyfile</tt>; set the <tt>DEVELOPMENT_FLAG</tt> value to 0 and
-            remove <tt>-dev</tt> from the <tt>PROJECT_NUMBER</tt> string.
-            Commit changes (don't push).</li>
+            <tt>configure/CONFIG_<i>module</i>_VERSION</tt> and the
+            <tt>Doxyfile</tt>s in the top-level and/or documentation
+            directories. In these, set <tt>DEVELOPMENT_FLAG</tt> to 0 and remove
+            <tt>-dev</tt> from the <tt>PROJECT_NUMBER</tt> string. Commit these
+            changes (don't push).</li>
 
           <li>Tag the module:
             <blockquote><tt>
-              git tag -m 'ANJ: Tag for EPICS 7.0.7' &lt;module-version&gt;
+              git tag -m 'ANJ: Tag for EPICS 7.0.8' &lt;module-version&gt;
               </tt></blockquote>
             </li>
 
           <li>Update the git submodule on the Base-7.0 branch to the
-            newly-tagged version, but don't commit yet:
+            newly-tagged version, check the module's status matches the tag:
             <blockquote><tt>
               cd base-7.0/modules<br />
               git add &lt;module&gt;<br />
               git submodule status --cached
               </tt></blockquote>
+            Don't commit the submodule updates yet.
             </li>
 
           <li>Edit the module's release version file
@@ -221,7 +219,8 @@ everything that has to be done since it's so easy to miss steps.</p>
             <tt>PROJECT_NUMBER</tt> string, appending <tt>-dev</tt> to the new
             module version number. Commit changes.</li>
 
-          <li>Push commits and the new tag to the submodule's GitHub repository:
+          <li>Push commits and the new tag to the submodule's GitHub repository
+            (assumed to be the <tt>upstream</tt> remote):
             <blockquote><tt>
               cd base-7.0/modules/&lt;module&gt;<br />
               git push --follow-tags upstream master
@@ -270,10 +269,9 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for release' R7.0.7
+          git tag -m 'ANJ: Tagged for release' R7.0.8
           </tt></blockquote>
-        <p>Don't push anything to the Launchpad repository
-          yet.</p>
+        <p>Don't push to GitHub yet.</p>
         </td>
       </tr>
     <tr>
@@ -305,12 +303,12 @@ everything that has to be done since it's so easy to miss steps.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.7 ../base-7.0.7.tar.gz base-7.0.7/
+          ./.tools/make-tar.sh R7.0.8 ../base-7.0.8.tar.gz base-7.0.8/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
           cd ..<br />
-          gpg --armor --sign --detach-sig base-7.0.7.tar.gz
+          gpg --armor --sign --detach-sig base-7.0.8.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -318,8 +316,9 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Test the tar file by extracting its contents and building it on at
-        least one supported platform. When this succeeds the commits and new git
-        tag can be pushed to the Launchpad repository:
+        least one supported platform. If this succeeds the commits and new git
+        tag can be pushed to the GitHub repository's 7.0 branch (assumed to be
+        the <tt>upstream</tt> remote):
         <blockquote><tt>
           git push --follow-tags upstream 7.0
           </tt></blockquote>
@@ -367,7 +366,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       </tr>
 
     <tr>
-      <th colspan="3">Publish to epics-controls</th>
+      <th colspan="3">Publish to epics-controls.org</th>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
@@ -375,7 +374,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Upload the tar file and its <tt>.asc</tt> signature file to the
         epics-controls web-server.
         <blockquote><tt>
-          scp base-7.0.7.tar.gz base-7.0.7.tar.gz.asc epics-controls:download/base<br />
+          scp base-7.0.8.tar.gz base-7.0.8.tar.gz.asc epics-controls:download/base<br />
           </tt></blockquote>
         </td>
       </tr>
@@ -392,22 +391,22 @@ everything that has to be done since it's so easy to miss steps.</p>
       </tr>
 
     <tr>
-      <th colspan="3">Publish to Launchpad</th>
+      <th colspan="3">Publish to GitHub</th>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
-      <td>Go to the Launchpad milestone for this release. Click the Create
-        release button and add the release date. Put a URL for the release page
-        in the Release notes box, and click the Create release button. Upload
-        the tar file and its <tt>.asc</tt> signature file to the new Launchpad
-        release page.</td>
+      <td>Go to the GitHub
+        <a href="https://github.com/epics-base/epics-base/releases/new?tag=R7.0.8">
+          Create release from tag R7.0.8</a> page.
+        Upload the tar file and its <tt>.asc</tt> signature file to the new
+        GitHub release page.</td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
-      <td>Find all Launchpad bug reports with the status Fix Committed which
-        have been fixed in this release and mark them Fix Released.</td>
+      <td>We used to close out bug reports in Launchpad at release-time, this
+        would be the time to do that if we have an equivalent on GitHub.</td>
       </tr>
 
     <tr>

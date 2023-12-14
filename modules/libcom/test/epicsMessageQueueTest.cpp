@@ -10,11 +10,11 @@
 /*
  *      Author  W. Eric Norum
  */
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
+#include "epicsStdio.h"
 #include "epicsMessageQueue.h"
 #include "epicsThread.h"
 #include "epicsExit.h"
@@ -232,7 +232,7 @@ sender(void *arg)
     int i = 0;
 
     while (!sendExit) {
-        len = snprintf(cbuf, sizeof(cbuf), "%s -- %d.", epicsThreadGetNameSelf(), ++i);
+        len = epicsSnprintf(cbuf, sizeof(cbuf), "%s -- %d.", epicsThreadGetNameSelf(), ++i);
         while (q->trySend((void *)cbuf, len) < 0)
             epicsThreadSleep(0.005 * (randBelow(5)));
         epicsThreadSleep(0.005 * (randBelow(20)));
@@ -421,7 +421,7 @@ extern "C" void messageQueueTest(void *parm)
             epicsThreadPriorityHigh,
             epicsThreadPriorityHigh
         };
-        snprintf(name, sizeof(name), "Sender %d", i+1);
+        epicsSnprintf(name, sizeof(name), "Sender %d", i+1);
         opts.priority = pri[i];
         senderId[i] = epicsThreadCreateOpt(name, sender, &q1, &opts);
         if (!senderId[i])

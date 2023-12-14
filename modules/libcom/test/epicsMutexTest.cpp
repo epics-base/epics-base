@@ -18,10 +18,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
 #include <errno.h>
 #include <time.h>
 
+#include "epicsStdio.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
@@ -266,7 +266,7 @@ MAIN(epicsMutexTest)
     stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
     for(i=0; i<nthreads; i++) {
         name[i] = (char *)calloc(10,sizeof(char));
-        snprintf(name[i], 10, "task%d",i);
+        epicsSnprintf(name[i], 10, "task%d",i);
         pinfo[i] = (info *)calloc(1,sizeof(info));
         pinfo[i]->threadnum = i;
         pinfo[i]->mutex = mutex;

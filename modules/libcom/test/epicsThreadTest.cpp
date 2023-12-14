@@ -13,11 +13,11 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
 #include <errno.h>
 #include <time.h>
 #include <math.h>
 
+#include "epicsStdio.h"
 #include "epicsThread.h"
 #include "epicsEvent.h"
 #include "epicsTime.h"
@@ -73,7 +73,7 @@ void testMyThread()
     int startPriority = 0;
     for (int i = 0; i < ntasks; i++) {
         char name[10];
-        snprintf(name, sizeof(name), "t%d", i);
+        epicsSnprintf(name, sizeof(name), "t%d", i);
         myThreads[i] = new myThread(i, name);
         if (i == 0)
             startPriority = myThreads[i]->thread.getPriority();

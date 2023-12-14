@@ -16,12 +16,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
 #include <errno.h>
 #include <time.h>
 #include <math.h>
 #include <float.h>
 
+#include "epicsStdio.h"
 #include "epicsThread.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
@@ -244,7 +244,7 @@ MAIN(epicsEventTest)
     name = (char **)calloc(nthreads, sizeof(char *));
     for(int i = 0; i < nthreads; i++) {
         name[i] = (char *)calloc(16, sizeof(char));
-        snprintf(name[i], 16, "producer %d",i);
+        epicsSnprintf(name[i], 16, "producer %d",i);
         id[i] = epicsThreadCreate(name[i], 40, stackSize, producer, pinfo);
         epicsThreadSleep(0.1);
     }

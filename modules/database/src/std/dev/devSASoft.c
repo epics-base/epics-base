@@ -93,7 +93,6 @@ static long read_sa(subArrayRecord *prec)
 {
     long status;
     struct sart rt;
-    epicsUInt32 nord = prec->nord;
 
     rt.nRequest = prec->indx + prec->nelm;
     if (rt.nRequest > prec->malm)
@@ -118,9 +117,6 @@ static long read_sa(subArrayRecord *prec)
 
     if (!status) {
         subset(prec, rt.nRequest);
-
-        if (nord != prec->nord)
-            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     }
 
     return status;

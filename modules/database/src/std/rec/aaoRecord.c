@@ -153,6 +153,7 @@ static long process(struct dbCommon *pcommon)
     aaodset *pdset = (aaodset *)(prec->dset);
     long status;
     unsigned char pact = prec->pact;
+    epicsUInt32 nord = prec->nord;
 
     if (pdset == NULL || pdset->write_aao == NULL) {
         prec->pact = TRUE;
@@ -180,6 +181,9 @@ static long process(struct dbCommon *pcommon)
         recGblGetTimeStampSimm(prec, prec->simm, NULL);
     }
 
+    if (nord != prec->nord) {
+      db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+    }
     monitor(prec);
     /* process the forward scan link record */
     recGblFwdLink(prec);

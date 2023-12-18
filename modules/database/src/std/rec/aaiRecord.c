@@ -156,8 +156,9 @@ static long process(struct dbCommon *pcommon)
 {
     struct aaiRecord *prec = (struct aaiRecord *)pcommon;
     aaidset *pdset = (aaidset *)(prec->dset);
-    long status;
     unsigned char pact = prec->pact;
+    epicsUInt32 nord = prec->nord;
+    long status;
 
     if (pdset == NULL || pdset->read_aai == NULL) {
         prec->pact = TRUE;
@@ -173,7 +174,11 @@ static long process(struct dbCommon *pcommon)
     prec->udf = FALSE;
     recGblGetTimeStampSimm(prec, prec->simm, &prec->siol);
 
+    if (nord != prec->nord) {
+        db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+    }
     monitor(prec);
+
     /* process the forward scan link record */
     recGblFwdLink(prec);
 
@@ -233,8 +238,9 @@ static long put_array_info(DBADDR *paddr, long nNew)
     if (prec->nord > prec->nelm)
         prec->nord = prec->nelm;
 
-    if (nord != prec->nord)
+    if (nord != prec->nord) {
         db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+    }
     return 0;
 }
 

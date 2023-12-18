@@ -72,7 +72,6 @@ static long read_wf(waveformRecord *prec)
 {
     long status;
     struct wfrt rt;
-    epicsUInt32 nord = prec->nord;
 
     rt.nRequest = prec->nelm;
     rt.ptime = (dbLinkIsConstant(&prec->tsel) &&
@@ -88,8 +87,6 @@ static long read_wf(waveformRecord *prec)
     if (!status) {
         prec->nord = rt.nRequest;
         prec->udf = FALSE;
-        if (nord != prec->nord)
-            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     }
 
     return status;

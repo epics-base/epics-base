@@ -17,8 +17,10 @@ DIRS += client
 DIRS += tools
 tools_DEPEND_DIRS = client
 
-DIRS += perl
-perl_DEPEND_DIRS = client
+ifneq ($(PERL_BINDINGS),NO)
+  DIRS += perl
+  perl_DEPEND_DIRS = client
+endif
 
 DIRS += template
 

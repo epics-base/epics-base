@@ -148,13 +148,18 @@ int dbChannel_get_count(
     long options;
     long i;
     long zero = 0;
+    /* we can avoid taking the record scan lock iif we have a db_field_log with all necessary info.
+     * Currently this means owned value, and only alarm+time meta.
+     */
+    int lockit = !pfl || !dbfl_has_copy((db_field_log*)pfl) || buffer_type>oldDBR_TIME_DOUBLE;
 
    /* The order of the DBR* elements in the "newSt" structures below is
     * very important and must correspond to the order of processing
     * in the dbAccess.c dbGet() and getOptions() routines.
     */
 
-    dbScanLock(dbChannelRecord(chan));
+    if(lockit)
+        dbScanLock(dbChannelRecord(chan));
 
     switch(buffer_type) {
     case(oldDBR_STRING):
@@ -798,7 +803,8 @@ int dbChannel_get_count(
         break;
     }
 
-    dbScanUnlock(dbChannelRecord(chan));
+    if(lockit)
+        dbScanUnlock(dbChannelRecord(chan));
 
     if (status) return -1;
     return 0;

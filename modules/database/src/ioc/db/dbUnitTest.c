@@ -14,6 +14,7 @@
 #include <string.h>
 
 #define EPICS_PRIVATE_API
+#define USE_TYPED_DBEVENT
 
 #include "dbmf.h"
 #include "epicsUnitTest.h"

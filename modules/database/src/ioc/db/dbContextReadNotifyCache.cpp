@@ -12,6 +12,8 @@
  * Author Jeff Hill
  */
 
+#define USE_TYPED_DBEVENT
+
 #include <stdlib.h>
 
 #include "epicsMutex.h"

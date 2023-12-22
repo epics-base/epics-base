@@ -13,6 +13,8 @@
  *  505 665 1831
  */
 
+#define USE_TYPED_DBEVENT
+
 #include <limits.h>
 
 #include "epicsMutex.h"

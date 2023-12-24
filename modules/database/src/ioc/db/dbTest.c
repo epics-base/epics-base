@@ -680,7 +680,7 @@ long dbtpf(const char *pname, const char *pvalue)
 long dbior(const char *pdrvName,int interest_level)
 {
     drvSup *pdrvSup;
-    struct drvet *pdrvet;
+    drvet *pdrvet;
     dbRecordType *pdbRecordType;
 
     if (!pdbbase) {

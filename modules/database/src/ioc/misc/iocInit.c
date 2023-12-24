@@ -388,7 +388,7 @@ static void initDrvSup(void) /* Locate all driver support entry tables */
 
     for (pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList); pdrvSup;
          pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
-        struct drvet *pdrvet = registryDriverSupportFind(pdrvSup->name);
+        drvet *pdrvet = registryDriverSupportFind(pdrvSup->name);
 
         if (!pdrvet) {
             errlogPrintf("iocInit: driver %s not found\n", pdrvSup->name);

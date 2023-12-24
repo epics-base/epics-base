@@ -18,12 +18,12 @@ static void *registryID = "driver support";
 
 
 DBCORE_API int registryDriverSupportAdd(
-    const char *name, struct drvet *pdrvet)
+    const char *name, drvet *pdrvet)
 {
     return registryAdd(registryID, name, pdrvet);
 }
 
-DBCORE_API struct drvet * registryDriverSupportFind(
+DBCORE_API drvet * registryDriverSupportFind(
     const char *name)
 {
     return registryFind(registryID, name);

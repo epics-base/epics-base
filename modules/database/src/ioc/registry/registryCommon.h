@@ -29,7 +29,7 @@ DBCORE_API void registerDevices(
     const char * const *deviceSupportNames, const dset * const *devsl);
 DBCORE_API void registerDrivers(
     DBBASE *pbase, int nDrivers,
-    const char * const *driverSupportNames, struct drvet * const *drvsl);
+    const char * const *driverSupportNames, drvet * const *drvsl);
 DBCORE_API void registerJLinks(
     DBBASE *pbase, int nDrivers, jlif * const *jlifsl);
 

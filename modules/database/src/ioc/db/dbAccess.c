@@ -112,7 +112,7 @@ void dbSpcAsRegisterCallback(SPC_ASCALLBACK func)
 
 long dbPutSpecial(DBADDR *paddr,int pass)
 {
-    long int    (*pspecial)()=NULL;
+    long int    (*pspecial)(struct dbAddr *, int)=NULL;
     rset        *prset;
     dbCommon    *precord = paddr->precord;
     long        status=0;

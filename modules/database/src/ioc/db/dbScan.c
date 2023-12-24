@@ -264,7 +264,7 @@ void scanAdd(struct dbCommon *precord)
     } else if (scan == menuScanI_O_Intr) {
         ioscan_head *piosh = NULL;
         int prio;
-        DEVSUPFUN get_ioint_info;
+        long (*get_ioint_info)(int, struct dbCommon *, IOSCANPVT*);
 
         if (precord->dset == NULL){
             recGblRecordError(-1, (void *)precord,
@@ -332,7 +332,7 @@ void scanDelete(struct dbCommon *precord)
     } else if (scan == menuScanI_O_Intr) {
         ioscan_head *piosh = NULL;
         int prio;
-        DEVSUPFUN get_ioint_info;
+        long (*get_ioint_info)(int, struct dbCommon *, IOSCANPVT*);
 
         if (precord->dset==NULL) {
             recGblRecordError(-1, (void *)precord,

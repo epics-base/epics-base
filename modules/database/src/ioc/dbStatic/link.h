@@ -188,8 +188,8 @@ union value {
     struct vxiio        vxiio;          /* vxi io */
 };
 
+struct dbCommon;
 struct lset;
-
 struct link {
     struct dbCommon *precord;   /* Pointer to record owning link */
     short type;

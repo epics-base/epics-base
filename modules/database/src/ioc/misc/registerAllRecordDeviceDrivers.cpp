@@ -36,7 +36,7 @@ struct compareLoc {
             return true;
         else if(lhs.prset>rhs.prset)
             return false;
-        return lhs.sizeOffset<rhs.sizeOffset;
+        return (char *)lhs.sizeOffset < (char *)rhs.sizeOffset;
     }
 };
 

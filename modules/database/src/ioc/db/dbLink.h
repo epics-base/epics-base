@@ -307,7 +307,7 @@ typedef struct lset {
      *
      * @param   plink       the link
      * @param   dbrType     data type code
-     * @param   pbuffer     where to put the value
+     * @param   pbuffer     where the data is
      * @param   nRequest    number of elements to send
      * @returns status value
      */
@@ -324,7 +324,7 @@ typedef struct lset {
      *
      * @param   plink       the link
      * @param   dbrType     data type code
-     * @param   pbuffer     where to put the value
+     * @param   pbuffer     where the data is
      * @param   nRequest    number of elements to send
      * @returns status value
      */

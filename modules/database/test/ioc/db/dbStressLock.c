@@ -120,6 +120,9 @@ void doMulti(workerPriv *p)
     }
     dbScanUnlockMany(locker);
 
+    if (0)
+        testDiag("sum = %d", sum);
+
     dbLockerFree(locker);
 }
 

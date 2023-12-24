@@ -83,13 +83,13 @@ long z_getval(struct link *plink, short dbrType, void *pbuffer,
         long *pnRequest)
 {
     long ret;
-    long (*pconv)(const epicsInt32 *, void *, const dbAddr *) = dbFastGetConvertRoutine[DBF_LONG][dbrType];
+    FASTCONVERTFUNC pconv = dbFastGetConvertRoutine[DBF_LONG][dbrType];
     zpriv *priv = CONTAINER(plink->value.json.jlink, zpriv, base);
 
     if(pnRequest && *pnRequest==0) return 0;
 
     epicsMutexLock(priv->lock);
-    ret = (*pconv)(&priv->value, pbuffer, NULL);
+    ret = pconv(&priv->value, pbuffer, NULL);
     epicsMutexUnlock(priv->lock);
     if(ret==0 && pnRequest) *pnRequest = 1;
     return ret;
@@ -118,18 +118,17 @@ long z_putval(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest)
 {
     long ret;
-    long (*pconv)(epicsInt32 *, const void *, const dbAddr *);
     zpriv *priv = CONTAINER(plink->value.json.jlink, zpriv, base);
 
     if(INVALID_DB_REQ(dbrType))
         return S_db_badDbrtype;
 
-    pconv = dbFastPutConvertRoutine[DBF_LONG][dbrType];
+    FASTCONVERTFUNC pconv = dbFastPutConvertRoutine[DBF_LONG][dbrType];
 
     if(nRequest==0) return 0;
 
     epicsMutexLock(priv->lock);
-    ret = (*pconv)(&priv->value, pbuffer, NULL);
+    ret = pconv(pbuffer, &priv->value, NULL);
     epicsMutexUnlock(priv->lock);
     return ret;
 }

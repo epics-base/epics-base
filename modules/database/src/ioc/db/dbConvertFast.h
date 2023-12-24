@@ -14,13 +14,16 @@
 
 #include "dbFldTypes.h"
 #include "dbCoreAPI.h"
+#include "link.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-DBCORE_API extern long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])();
-DBCORE_API extern long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])();
+/* typedef FASTCONVERTFUNC is now defined in link.h */
+
+DBCORE_API extern FASTCONVERTFUNC dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1];
+DBCORE_API extern FASTCONVERTFUNC dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1];
 
 #ifdef __cplusplus
 }

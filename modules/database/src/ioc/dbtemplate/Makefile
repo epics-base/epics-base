@@ -14,7 +14,6 @@ SRC_DIRS += $(IOCDIR)/dbtemplate
 PROD_HOST += msi
 
 msi_SRCS = msi.cpp
-msi_LIBS += Com
 HTMLS += msi.html
 
 INC += dbLoadTemplate.h

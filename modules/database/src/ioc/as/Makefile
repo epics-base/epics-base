@@ -23,4 +23,4 @@ dbCore_SRCS += asIocRegister.c
 
 PROD_HOST += ascheck
 ascheck_SRCS = ascheck.c
-ascheck_LIBS = dbCore ca Com
+ascheck_LIBS = dbCore ca

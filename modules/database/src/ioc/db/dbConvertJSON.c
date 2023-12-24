@@ -19,8 +19,6 @@
 #include "dbConvertFast.h"
 #include "dbConvertJSON.h"
 
-typedef long (*FASTCONVERT)();
-
 typedef struct parseContext {
     int depth;
     short dbrType;
@@ -42,7 +40,7 @@ static int dbcj_boolean(void *ctx, int val) {
 static int dbcj_integer(void *ctx, long long num) {
     parseContext *parser = (parseContext *) ctx;
     epicsInt64 val64 = num;
-    FASTCONVERT conv = dbFastPutConvertRoutine[DBF_INT64][parser->dbrType];
+    FASTCONVERTFUNC conv = dbFastPutConvertRoutine[DBF_INT64][parser->dbrType];
 
     if (parser->elems > 0) {
         conv(&val64, parser->pdest, NULL);
@@ -54,7 +52,7 @@ static int dbcj_integer(void *ctx, long long num) {
 
 static int dbcj_double(void *ctx, double num) {
     parseContext *parser = (parseContext *) ctx;
-    FASTCONVERT conv = dbFastPutConvertRoutine[DBF_DOUBLE][parser->dbrType];
+    FASTCONVERTFUNC conv = dbFastPutConvertRoutine[DBF_DOUBLE][parser->dbrType];
 
     if (parser->elems > 0) {
         conv(&num, parser->pdest, NULL);

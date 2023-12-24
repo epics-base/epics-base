@@ -98,8 +98,8 @@ struct event_user {
     unsigned char       extra_labor;    /* if set call extra labor func */
     unsigned char       flowCtrlMode;   /* replace existing monitor */
     unsigned char       extraLaborBusy;
-    void                (*init_func)();
-    epicsThreadId       init_func_arg;
+    void                (*init_func)(void *);
+    void                *init_func_arg;
 };
 
 typedef struct {

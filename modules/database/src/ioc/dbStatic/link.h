@@ -77,8 +77,8 @@ struct macro_link {
     char *macroStr;
 };
 
-struct dbCommon;
-typedef long (*LINKCVT)();
+struct dbAddr;
+typedef long (*LINKCVT)(const void *, void *, const struct dbAddr *);
 
 struct pv_link {
     ELLNODE     backlinknode;

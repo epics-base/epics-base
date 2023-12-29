@@ -14,9 +14,9 @@ queries:
   #      `security-extended`, plus maintainability and reliability queries
 
 query-filters:
-  - exclude:
-    id:
-      - cpp/use-of-goto
-  - exclude:
-    problem.severity:
-      - recommendation
+-
+  exclude:
+    id: cpp/use-of-goto
+-
+  exclude:
+    problem.severity: recommendation

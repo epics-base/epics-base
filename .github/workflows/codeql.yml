@@ -36,7 +36,7 @@ jobs:
       - name: Checkout Repositories
         uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: false
 
       - name: Install Packages
         run: |

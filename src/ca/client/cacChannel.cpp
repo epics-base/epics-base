@@ -134,7 +134,7 @@ unsigned cacChannel::getHostMinorProtocol (
     epicsGuard < epicsMutex > &) const throw ()
 {
     epicsThreadOnce ( & cacChannelIdOnce, cacChannelSetup, 0);
-    return 99u;
+    return 0u;
 }
 
 // the default is to assume that it is a locally hosted channel

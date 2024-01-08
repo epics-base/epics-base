@@ -23,8 +23,8 @@ pvExistReturn::pvExistReturn ( const caNetAddr & addrIn ) :
 	address ( addrIn ), status ( pverExistsHere ) {}
 
 pvExistReturn::pvExistReturn ( const caNetAddr & addrIn, ca_uint16_t minorProtoIn ) :
-  address ( addrIn ), status ( pverExistsHere ),
-  minorProtocolVersion(minorProtoIn) {}
+	address ( addrIn ), status ( pverExistsHere ),
+	minorProtocolVersion(minorProtoIn) {}
 
 pvExistReturn::~pvExistReturn ()
 { 
@@ -34,7 +34,7 @@ const pvExistReturn & pvExistReturn::operator = ( pvExistReturnEnum rhs )
 {
 	this->status = rhs;
 	this->address.clear ();
-   this->minorProtocolVersion= 0;
+	this->minorProtocolVersion= 0;
 	return * this;
 }
 
@@ -42,7 +42,7 @@ const pvExistReturn & pvExistReturn::operator = ( const caNetAddr & rhs )
 {
 	this->status = pverExistsHere;
 	this->address = rhs;
-   this->minorProtocolVersion = 0;
+	this->minorProtocolVersion = 0;
 	return * this;
 }
 

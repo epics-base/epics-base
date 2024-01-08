@@ -660,7 +660,7 @@ epicsShareFunc unsigned epicsShareAPI ca_get_host_name ( chid pChan,
  * pChan  R   channel identifier
  *
  */
-epicsShareFunc unsigned ca_host_minor_protocol (chid pChan);
+epicsShareFunc unsigned epicsShareAPI ca_host_minor_protocol (chid pChan);
 
 /*
  *  CA_ADD_FD_REGISTRATION

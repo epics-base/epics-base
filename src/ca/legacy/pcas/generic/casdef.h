@@ -130,8 +130,8 @@ public:
     unsigned getMinorProtocol() const;
 private:
     caNetAddr address;
-    ca_uint16_t minorProtocolVersion;
     pvExistReturnEnum status;
+    ca_uint16_t minorProtocolVersion;
 };
 
 //

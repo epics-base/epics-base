@@ -119,11 +119,12 @@ long z_putval(struct link *plink, short dbrType,
 {
     long ret;
     zpriv *priv = CONTAINER(plink->value.json.jlink, zpriv, base);
+    FASTCONVERTFUNC pconv;
 
     if(INVALID_DB_REQ(dbrType))
         return S_db_badDbrtype;
 
-    FASTCONVERTFUNC pconv = dbFastPutConvertRoutine[DBF_LONG][dbrType];
+    pconv = dbFastPutConvertRoutine[DBF_LONG][dbrType];
 
     if(nRequest==0) return 0;
 

@@ -59,6 +59,9 @@ static unsigned int nrecords;
 
 #define MAXLOCK 20
 
+/* Verbose output from test if you set this to 1 */
+#define MULTI_DIAG 0
+
 static dbCommon **precords;
 
 typedef struct {
@@ -120,7 +123,7 @@ void doMulti(workerPriv *p)
     }
     dbScanUnlockMany(locker);
 
-    if (0)
+    if (MULTI_DIAG)
         testDiag("sum = %d", sum);
 
     dbLockerFree(locker);

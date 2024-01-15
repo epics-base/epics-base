@@ -17,6 +17,7 @@
 
 #include <epicsGetopt.h>
 #include "registryFunction.h"
+#include "errlog.h"
 #include "epicsThread.h"
 #include "epicsExit.h"
 #include "epicsStdio.h"
@@ -273,7 +274,8 @@ int main(int argc, char *argv[])
         return 0;
 
     }catch(std::exception& e){
-        std::cerr<<"Error: "<<e.what()<<"\n";
+        errlogFlush();
+        std::cerr<<ERL_ERROR ": "<<e.what()<<"\n";
         epicsExit(2);
         return 2;
     }

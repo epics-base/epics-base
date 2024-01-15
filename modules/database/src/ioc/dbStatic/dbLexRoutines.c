@@ -225,7 +225,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     char        **macPairs;
 
     if (ellCount(&tempList)) {
-        epicsPrintf("dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
+        fprintf(stderr, ERL_WARNING ": dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
     }
 
     if (getIocState() != iocVoid) {
@@ -250,7 +250,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     if (substitutions == NULL)
         substitutions = "";
     if(macCreateHandle(&macHandle,NULL)) {
-        epicsPrintf("macCreateHandle error\n");
+        fprintf(stderr, ERL_ERROR ": macCreateHandle failed\n");
         status = -1;
         goto cleanup;
     }
@@ -294,7 +294,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     status = pvt_yy_parse();
 
     if (ellCount(&tempList) && !yyAbort)
-        epicsPrintf("dbReadCOM: Parser stack dirty w/o error. %d\n", ellCount(&tempList));
+        fprintf(stderr, ERL_WARNING ": dbReadCOM: Parser stack dirty w/o error. %d\n", ellCount(&tempList));
     while (ellCount(&tempList))
         popFirstTemp(); /* Memory leak on parser failure */
 
@@ -401,15 +401,15 @@ static void dbIncludePrint(void)
     inputFile *pinputFile = pinputFileNow;
 
     while (pinputFile) {
-        epicsPrintf(" in");
+        fprintf(stderr, " in");
         if (pinputFile->path)
-            epicsPrintf(" path \"%s\" ",pinputFile->path);
+            fprintf(stderr, " path \"%s\" ",pinputFile->path);
         if (pinputFile->filename) {
-            epicsPrintf(" file \"%s\"",pinputFile->filename);
+            fprintf(stderr, " file \"%s\"",pinputFile->filename);
         } else {
-            epicsPrintf(" standard input");
+            fprintf(stderr, " standard input");
         }
-        epicsPrintf(" line %d\n",pinputFile->line_num);
+        fprintf(stderr, " line %d\n",pinputFile->line_num);
         pinputFile = (inputFile *)ellPrevious(&pinputFile->node);
     }
     return;
@@ -434,7 +434,7 @@ static void dbIncludeNew(char *filename)
     pinputFile->filename = macEnvExpand(filename);
     pinputFile->path = dbOpenFile(savedPdbbase, pinputFile->filename, &fp);
     if (!fp) {
-        epicsPrintf("Can't open include file \"%s\"\n", filename);
+        fprintf(stderr, "Can't open include file \"%s\"\n", filename);
         yyerror(NULL);
         free((void *)pinputFile->filename);
         free((void *)pinputFile);
@@ -696,7 +696,7 @@ static void dbRecordtypeEmpty(void)
 
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbRecordType = ptempListNode->item;
-    epicsPrintf("Declaration of recordtype(%s) preceeded full definition.\n",
+    fprintf(stderr, "Declaration of recordtype(%s) preceeded full definition.\n",
         pdbRecordType->name);
     yyerrorAbort(NULL);
 }
@@ -801,7 +801,7 @@ static void dbDevice(char *recordtype,char *linktype,
     int                 i,link_type;
     pgphentry = gphFind(savedPdbbase->pgpHash,recordtype,&savedPdbbase->recordTypeList);
     if(!pgphentry) {
-        epicsPrintf("Record type \"%s\" not found for device \"%s\"\n",
+        fprintf(stderr, "Record type \"%s\" not found for device \"%s\"\n",
                     recordtype, choicestring);
         yyerror(NULL);
         return;
@@ -814,7 +814,7 @@ static void dbDevice(char *recordtype,char *linktype,
         }
     }
     if(link_type==-1) {
-        epicsPrintf("Bad link type \"%s\" for device \"%s\"\n",
+        fprintf(stderr, "Bad link type \"%s\" for device \"%s\"\n",
                     linktype, choicestring);
         yyerror(NULL);
         return;
@@ -1077,16 +1077,16 @@ int dbRecordNameValidate(const char *name)
         if(i==0) {
             /* first character restrictions */
             if(c=='-' || c=='+' || c=='[' || c=='{') {
-                errlogPrintf("Warning: Record/Alias name '%s' should not begin with '%c'\n", name, c);
+                fprintf(stderr, "Warning: Record/Alias name '%s' should not begin with '%c'\n", name, c);
             }
         }
         /* any character restrictions */
         if(c < ' ') {
-            errlogPrintf("Warning: Record/Alias name '%s' should not contain non-printable 0x%02x\n",
+            fprintf(stderr, "Warning: Record/Alias name '%s' should not contain non-printable 0x%02x\n",
                          name, c);
 
         } else if(c==' ' || c=='\t' || c=='"' || c=='\'' || c=='.' || c=='$') {
-            epicsPrintf(ERL_ERROR ": Bad character '%c' in Record/Alias name \"%s\"\n",
+            fprintf(stderr, ERL_ERROR ": Bad character '%c' in Record/Alias name \"%s\"\n",
                 c, name);
             yyerrorAbort(NULL);
             return 1;
@@ -1113,7 +1113,7 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         status = dbFindRecord(pdbentry, name);
         if (status == 0)
             return; /* done */
-        epicsPrintf(ERL_ERROR ": Record \"%s\" not found\n", name);
+        fprintf(stderr, ERL_ERROR ": Record \"%s\" not found\n", name);
         yyerror(NULL);
         duplicate = TRUE;
         return;
@@ -1121,7 +1121,7 @@ static void dbRecordHead(char *recordType, char *name, int visible)
 
     status = dbFindRecordType(pdbentry, recordType);
     if (status) {
-        epicsPrintf("Record \"%s\" is of unknown type \"%s\"\n",
+        fprintf(stderr, "Record \"%s\" is of unknown type \"%s\"\n",
                     name, recordType);
         yyerrorAbort(NULL);
         return;
@@ -1132,14 +1132,14 @@ static void dbRecordHead(char *recordType, char *name, int visible)
     status = dbCreateRecord(pdbentry,name);
     if (status == S_dbLib_recExists) {
         if (strcmp(recordType, dbGetRecordTypeName(pdbentry)) != 0) {
-            epicsPrintf(ERL_ERROR ": Record \"%s\" of type \"%s\" redefined with new type "
+            fprintf(stderr, ERL_ERROR ": Record \"%s\" of type \"%s\" redefined with new type "
                 "\"%s\"\n", name, dbGetRecordTypeName(pdbentry), recordType);
             yyerror(NULL);
             duplicate = TRUE;
             return;
         }
         else if (dbRecordsOnceOnly) {
-            epicsPrintf(ERL_ERROR ": Record \"%s\" already defined and dbRecordsOnceOnly set.\n"
+            fprintf(stderr, ERL_ERROR ": Record \"%s\" already defined and dbRecordsOnceOnly set.\n"
                         "Used record type \"*\" to append.\n",
                 name);
             yyerror(NULL);
@@ -1147,7 +1147,7 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         }
     }
     else if (status) {
-        epicsPrintf("Can't create record \"%s\" of type \"%s\"\n",
+        fprintf(stderr, "Can't create record \"%s\" of type \"%s\"\n",
                      name, recordType);
         yyerrorAbort(NULL);
     }
@@ -1167,7 +1167,7 @@ static void dbRecordField(char *name,char *value)
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
     if (status) {
-        epicsPrintf("%s Record \"%s\" does not have a field \"%s\"\n",
+        fprintf(stderr, "%s Record \"%s\" does not have a field \"%s\"\n",
                     dbGetRecordTypeName(pdbentry), dbGetRecordName(pdbentry), name);
         if(dbGetRecordName(pdbentry)) {
             DBENTRY temp;
@@ -1183,17 +1183,17 @@ static void dbRecordField(char *name,char *value)
             }
             dbFinishEntry(&temp);
             if(bestSim>0.0) {
-                epicsPrintf("    Did you mean \"%s\"?", bestFld->name);
+                fprintf(stderr, "    Did you mean \"%s\"?", bestFld->name);
                 if(bestFld->prompt)
-                    epicsPrintf("  (%s)", bestFld->prompt);
-                epicsPrintf("\n");
+                    fprintf(stderr, "  (%s)", bestFld->prompt);
+                fprintf(stderr, "\n");
             }
         }
         yyerror(NULL);
         return;
     }
     if (pdbentry->indfield == 0) {
-        epicsPrintf("Can't set \"NAME\" field of record \"%s\"\n",
+        fprintf(stderr, "Can't set \"NAME\" field of record \"%s\"\n",
             dbGetRecordName(pdbentry));
         yyerror(NULL);
         return;
@@ -1211,7 +1211,7 @@ static void dbRecordField(char *name,char *value)
         char msg[128];
 
         errSymLookup(status, msg, sizeof(msg));
-        epicsPrintf("Can't set \"%s.%s\" to \"%s\" %s : %s\n",
+        fprintf(stderr, "Can't set \"%s.%s\" to \"%s\" %s : %s\n",
             dbGetRecordName(pdbentry), name, value, pdbentry->message ? pdbentry->message : "", msg);
         dbPutStringSuggest(pdbentry, value);
         yyerror(NULL);
@@ -1242,7 +1242,7 @@ static void dbRecordInfo(char *name, char *value)
 
     status = dbPutInfo(pdbentry,name,value);
     if (status) {
-        epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\"\n",
+        fprintf(stderr, "Can't set \"%s\" info \"%s\" to \"%s\"\n",
                     dbGetRecordName(pdbentry), name, value);
         yyerror(NULL);
         return;
@@ -1263,7 +1263,7 @@ static void dbRecordAlias(char *name)
     pdbentry = ptempListNode->item;
     status = dbCreateAlias(pdbentry, name);
     if (status) {
-        epicsPrintf("Can't create alias \"%s\" for \"%s\"\n",
+        fprintf(stderr, "Can't create alias \"%s\" for \"%s\"\n",
                     name, dbGetRecordName(pdbentry));
         yyerror(NULL);
         return;
@@ -1280,12 +1280,12 @@ static void dbAlias(char *name, char *alias)
 
     dbInitEntry(savedPdbbase, pdbEntry);
     if (dbFindRecord(pdbEntry, name)) {
-        epicsPrintf("Alias \"%s\" refers to unknown record \"%s\"\n",
+        fprintf(stderr, "Alias \"%s\" refers to unknown record \"%s\"\n",
                     alias, name);
         yyerror(NULL);
     }
     else if (dbCreateAlias(pdbEntry, alias)) {
-        epicsPrintf("Can't create alias \"%s\" referring to \"%s\"\n",
+        fprintf(stderr, "Can't create alias \"%s\" referring to \"%s\"\n",
                     alias, name);
         yyerror(NULL);
     }

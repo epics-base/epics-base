@@ -1,4 +1,4 @@
-# CONFIG_SITE.linux-loongarch64.linux-loongarch64
+# CONFIG_SITE.linux-la64.linux-la64
 #
 # Site specific definitions for native linux-loongarch64 builds
 #-------------------------------------------------------

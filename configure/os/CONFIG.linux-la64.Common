@@ -1,0 +1,8 @@
+# CONFIG.linux-la64.Common
+#
+# Definitions for linux-loongarch64 host builds
+# Sites may override these definitions in CONFIG_SITE.linux-la64.Common
+#-------------------------------------------------------
+
+# Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.UnixCommon.Common

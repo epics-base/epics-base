@@ -1,4 +1,4 @@
-# CONFIG_SITE.linux-x86_64.linux-loongarch64
+# CONFIG_SITE.linux-x86_64.linux-la64
 #
 # Site specific definitions for linux-x86_64 host - linux-loongarch64 target builds
 #-------------------------------------------------------
@@ -8,7 +8,7 @@ GNU_TARGET = loongarch64-linux-gnu
 
 # Set GNU tools install path
 # Examples is the installation at the APS:
-GNU_DIR = /opt/loongson-gnu-toolchain-8.3.novec-x86_64-loongarch64-linux-gnu-rc1.1
+GNU_DIR = /opt/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.2
 
 # If cross-building shared libraries and the paths on the target machine are
 # different than on the build host, you should uncomment the lines below to
@@ -20,11 +20,11 @@ GNU_DIR = /opt/loongson-gnu-toolchain-8.3.novec-x86_64-loongarch64-linux-gnu-rc1
 #PRODDIR_RPATH_LDFLAGS_YES_NO =
 # However it is usually simpler to set STATIC_BUILD=YES here and not
 # try to use shared libraries at all when cross-building, like this:
-STATIC_BUILD=YES
-SHARED_LIBRARIES=NO
+#STATIC_BUILD=YES
+#SHARED_LIBRARIES=NO
 
 # To use libreadline, point this to its install prefix
 #READLINE_DIR = $(GNU_DIR)
-#READLINE_DIR = /tools/cross/linux-x86.linux-arm/readline
-# See CONFIG_SITE.Common.linux-arm for other COMMANDLINE_LIBRARY values
+#READLINE_DIR = /tools/cross/linux-x86.linux-la64/readline
+# See CONFIG_SITE.Common.linux-la64 for other COMMANDLINE_LIBRARY values
 #COMMANDLINE_LIBRARY = READLINE

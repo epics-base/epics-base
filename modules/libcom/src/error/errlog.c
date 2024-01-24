@@ -500,7 +500,7 @@ void errPrintf(long status, const char *pFileName, int lineno,
             errSymLookup(status, name, sizeof(name));
         }
 
-        nchar = epicsSnprintf(buf, pvt.maxMsgSize, "%s%sfilename=\"%s\" line number=%d",
+        nchar = epicsSnprintf(buf, pvt.maxMsgSize, "%s%sfilename=\"%s\" line number=%d ",
                               name, status ? " " : "", pFileName, lineno);
         if(nchar < pvt.maxMsgSize)
             nchar += epicsVsnprintf(buf + nchar, pvt.maxMsgSize - nchar, pformat, pvar);

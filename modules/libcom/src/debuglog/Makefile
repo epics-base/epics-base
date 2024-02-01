@@ -9,6 +9,6 @@
 
 SRC_DIRS += $(LIBCOM)/debuglog
 
-INC += epicsBaseDebugLog.h
+INC += epicsNetDebugLog.h
 
-Com_SRCS += epicsBaseDebugLog.c
+Com_SRCS += epicsNetDebugLog.c

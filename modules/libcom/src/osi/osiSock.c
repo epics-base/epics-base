@@ -24,7 +24,7 @@
 #include "epicsStdlib.h"
 #include "errlog.h"
 #include "osiSock.h"
-#include "epicsBaseDebugLog.h"
+#include "epicsNetDebugLog.h"
 
 #define nDigitsDottedIP 4u
 #define chunkSize 8u
@@ -78,7 +78,7 @@ unsigned epicsStdCall sockAddrToA (
         }
         ret = sockAddrToDottedIP ( paddr, pBuf, bufSize );
 #ifdef NETDEBUG
-        epicsBaseDebugLog("NET getnameinfo(%s) failed: %s\n",
+        epicsNetDebugLog("NET getnameinfo(%s) failed: %s\n",
 			  pBuf, gai_strerror(gai_ecode) );
 #endif
         return ret;
@@ -267,7 +267,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         {
             char buf[64];
             sockAddrToDottedIP(&pNode46->addr.sa, buf, sizeof(buf));
-            epicsBaseDebugLog("NET osiSockDiscoverBroadcastAddresses '%s'\n", buf );
+            epicsNetDebugLog("NET osiSockDiscoverBroadcastAddresses '%s'\n", buf );
         }
 #endif
         if(pNode46->addr.ia.sin_family == AF_INET) {

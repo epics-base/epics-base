@@ -4,8 +4,8 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#ifndef epicsBaseDebugLogh
-#define epicsBaseDebugLogh
+#ifndef epicsNetDebugLogh
+#define epicsNetDebugLogh
 
 #include  <string.h>
 #include  <epicsStdio.h>
@@ -17,9 +17,9 @@ extern "C" {
 #endif
 
 LIBCOM_API const char * epicsStdCall epicsBaseDebugStripPath(const char *file);
-LIBCOM_API void epicsStdCall epicsBaseDoDebugLog(const char *, ...) EPICS_PRINTF_STYLE(1,2);
+LIBCOM_API void epicsStdCall epicsNetDoDebugLog(const char *, ...) EPICS_PRINTF_STYLE(1,2);
 
-#define epicsBaseDebugLog(fmt, ...)                                  \
+#define epicsNetDebugLog(fmt, ...)                                  \
     {                                                                \
         epicsTimeStamp now;                                          \
         char nowText[25];                                            \
@@ -30,13 +30,13 @@ LIBCOM_API void epicsStdCall epicsBaseDoDebugLog(const char *, ...) EPICS_PRINTF
             epicsTimeToStrftime(nowText,sizeof(nowText),             \
                                 "%Y/%m/%d %H:%M:%S.%03f ",&now);     \
         }                                                            \
-        epicsBaseDoDebugLog("%s %s:%-4d " fmt,                       \
+        epicsNetDoDebugLog("%s %s:%-4d " fmt,                       \
                             nowText,                                 \
                             epicsBaseDebugStripPath(__FILE__), __LINE__, \
                             __VA_ARGS__);                            \
     }
 
-#define epicsBaseDebugLogFL(fmt, fileName, lineNo, ...)              \
+#define epicsNetDebugLogFL(fmt, fileName, lineNo, ...)              \
     {                                                                \
         epicsTimeStamp now;                                          \
         char nowText[25];                                            \
@@ -47,7 +47,7 @@ LIBCOM_API void epicsStdCall epicsBaseDoDebugLog(const char *, ...) EPICS_PRINTF
             epicsTimeToStrftime(nowText,sizeof(nowText),             \
                                 "%Y/%m/%d %H:%M:%S.%03f ",&now);     \
         }                                                            \
-        epicsBaseDoDebugLog("%s " fmt,                               \
+        epicsNetDoDebugLog("%s " fmt,                               \
                             nowText,                                 \
                             epicsBaseDebugStripPath(fileName), lineNo,  \
                             __VA_ARGS__);                            \

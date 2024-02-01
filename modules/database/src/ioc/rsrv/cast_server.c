@@ -45,7 +45,7 @@
 #include "freeList.h"
 #include "osiSock.h"
 #include "epicsSock.h"
-#include "epicsBaseDebugLog.h"
+#include "epicsNetDebugLog.h"
 #include "taskwd.h"
 
 #include "rsrv.h"
@@ -247,7 +247,7 @@ void cast_server(void *pParm)
 #ifdef NETDEBUG
                 char buf[64];
                 sockAddrToDottedIP(&new_recv_addr46.sa, buf, sizeof(buf));
-                epicsBaseDebugLog("NET cast_server ignore request from '%s'\n",
+                epicsNetDebugLog("NET cast_server ignore request from '%s'\n",
                                   buf);
 #endif
                 continue;
@@ -260,7 +260,7 @@ void cast_server(void *pParm)
 #ifdef NETDEBUG
                     char buf[64];
                     sockAddrToDottedIP(&new_recv_addr46.sa, buf, sizeof(buf));
-                    epicsBaseDebugLog("NET cast_server ignore request from '%s'\n",
+                    epicsNetDebugLog("NET cast_server ignore request from '%s'\n",
                                       buf);
 #endif
                     continue;

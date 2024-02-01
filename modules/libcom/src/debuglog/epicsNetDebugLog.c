@@ -4,8 +4,8 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#ifndef epicsBaseDebugLogh
-#define epicsBaseDebugLogh
+#ifndef epicsNetDebugLogh
+#define epicsNetDebugLogh
 
 #include  <string.h>
 #include  <epicsStdio.h>
@@ -28,7 +28,7 @@ LIBCOM_API const char * epicsStdCall epicsBaseDebugStripPath(const char *file)
     }
 
 
-LIBCOM_API void epicsStdCall epicsBaseDoDebugLog(const char *format, ...)
+LIBCOM_API void epicsStdCall epicsNetDoDebugLog(const char *format, ...)
     {
         va_list pVar;
         va_start(pVar, format);

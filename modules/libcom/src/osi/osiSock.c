@@ -266,7 +266,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
 #ifdef NETDEBUG
         {
             char buf[64];
-            sockAddrToDottedIP(&pNode46->sa, buf, sizeof(buf));
+            sockAddrToDottedIP(&pNode46->addr.sa, buf, sizeof(buf));
             epicsBaseDebugLog("NET osiSockDiscoverBroadcastAddresses '%s'\n", buf );
         }
 #endif

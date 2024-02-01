@@ -28,9 +28,9 @@ LIBCOM_API void epicsStdCall epicsNetDoDebugLog(const char *, ...) EPICS_PRINTF_
         rtn = epicsTimeGetCurrent(&now);                             \
         if (!rtn) {                                                  \
             epicsTimeToStrftime(nowText,sizeof(nowText),             \
-                                "%Y/%m/%d %H:%M:%S.%03f ",&now);     \
+                                "%Y/%m/%d %H:%M:%S.%03f",&now);      \
         }                                                            \
-        epicsNetDoDebugLog("%s %s:%-4d " fmt,                       \
+        epicsNetDoDebugLog("%s NET %s:%-4d " fmt,                    \
                             nowText,                                 \
                             epicsBaseDebugStripPath(__FILE__), __LINE__, \
                             __VA_ARGS__);                            \
@@ -45,9 +45,9 @@ LIBCOM_API void epicsStdCall epicsNetDoDebugLog(const char *, ...) EPICS_PRINTF_
         rtn = epicsTimeGetCurrent(&now);                             \
         if (!rtn) {                                                  \
             epicsTimeToStrftime(nowText,sizeof(nowText),             \
-                                "%Y/%m/%d %H:%M:%S.%03f ",&now);     \
+                                "%Y/%m/%d %H:%M:%S.%03f",&now);      \
         }                                                            \
-        epicsNetDoDebugLog("%s " fmt,                               \
+        epicsNetDoDebugLog("%s NET " fmt,                            \
                             nowText,                                 \
                             epicsBaseDebugStripPath(fileName), lineNo,  \
                             __VA_ARGS__);                            \

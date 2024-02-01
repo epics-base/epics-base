@@ -102,8 +102,8 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
 #ifdef NETDEBUG
             char buf[64];
             sockAddrToDottedIP(&addr46.sa, buf, sizeof(buf));
-            epicsNetDebugLog("NET addAddrToChannelAccessAddressList: ignore addr='%s' port=%u\n",
-			      buf, port);
+            epicsNetDebugLog("addAddrToChannelAccessAddressList: ignore addr='%s' port=%u\n",
+                             buf, port);
 #endif
             continue;
         }
@@ -111,8 +111,8 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
         {
           char buf[64];
           sockAddrToDottedIP(&addr46.sa, buf, sizeof(buf));
-          epicsNetDebugLog("NET addAddrToChannelAccessAddressList: add addr='%s'\n",
-			    buf );
+          epicsNetDebugLog("addAddrToChannelAccessAddressList: add addr='%s'\n",
+                           buf );
         }
 #endif
         pNewNode = (osiSockAddrNode46 *) calloc (1, sizeof(*pNewNode));
@@ -237,9 +237,9 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
       }
     }
 #ifdef NETDEBUG
-    epicsNetDebugLog("NET EPICS_CA_AUTO_ADDR_LIST='%s' addrautolistIPversion=%d\n",
-		      pstr ? pstr : "",
-		      addrautolistIPversion);
+    epicsNetDebugLog("EPICS_CA_AUTO_ADDR_LIST='%s' addrautolistIPversion=%d\n",
+                     pstr ? pstr : "",
+                     addrautolistIPversion);
 
 #endif
 
@@ -264,8 +264,8 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
         {
             char buf[64];
             sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-            epicsNetDebugLog("NET calling osiSockBroadcastMulticastAddresses46: sock=%d match46='%s'\n",
-			      (int)sock, buf);
+            epicsNetDebugLog("calling osiSockBroadcastMulticastAddresses46: sock=%d match46='%s'\n",
+                             (int)sock, buf);
         }
 #endif
         osiSockBroadcastMulticastAddresses46 ( &bcastList, sock, &match46 );

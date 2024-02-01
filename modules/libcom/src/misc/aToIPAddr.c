@@ -219,8 +219,8 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         return -1;
     }
 #ifdef NETDEBUG
-    epicsNetDebugLog("NET aToIPAddr46 pAddrString='%s' defaultPort=%u\n",
-                      pAddrString, defaultPort);
+    epicsNetDebugLog("aToIPAddr46 pAddrString='%s' defaultPort=%u\n",
+                     pAddrString, defaultPort);
 #endif
     if (*pAddrString != '[') {
         /* IPv4 */
@@ -232,8 +232,8 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         {
             char buf[64];
             sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-            epicsNetDebugLog("NET aToIPAddr46 pAddrString='%s' status=%d addr46='%s'\n",
-                          pAddrString, status, buf);
+            epicsNetDebugLog("aToIPAddr46 pAddrString='%s' status=%d addr46='%s'\n",
+                             pAddrString, status, buf);
         }
 #endif
         return status;
@@ -273,14 +273,14 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
             return -1;
         }
 #ifdef NETDEBUG
-        epicsNetDebugLog("NET aToIPAddr46 hostName='%s' pPort='%s' portAscii='%s'\n",
-                          hostName, pPort ? pPort : "NULL", portAscii);
+        epicsNetDebugLog("aToIPAddr46 hostName='%s' pPort='%s' portAscii='%s'\n",
+                         hostName, pPort ? pPort : "NULL", portAscii);
 #endif
         /* After the printout, set pPort to a valid value */
         if (!pPort) pPort = portAscii;
 #ifdef NETDEBUG
-        epicsNetDebugLog("NET aToIPAddr46 hostName='%s' pPort='%s'\n",
-                          hostName, pPort ? pPort : "NULL");
+        epicsNetDebugLog("aToIPAddr46 hostName='%s' pPort='%s'\n",
+                         hostName, pPort ? pPort : "NULL");
 #endif
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET; /* Default */
@@ -293,9 +293,9 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
         gai = getaddrinfo(hostName, pPort, &hints, &ai);
         if (gai) {
 #ifdef NETDEBUG
-          epicsNetDebugLog("NET unable to look up pAddrString '%s' '%s:%s' (%s)\n",
-                            pAddrString, hostName, pPort,
-                            gai_strerror(gai));
+          epicsNetDebugLog("unable to look up pAddrString '%s' '%s:%s' (%s)\n",
+                           pAddrString, hostName, pPort,
+                           gai_strerror(gai));
 #endif
           return -1;
         }
@@ -307,8 +307,8 @@ LIBCOM_API int epicsStdCall aToIPAddr46(const char *pAddrString,
                 {
                     char buf[128];
                     sockAddrToDottedIP(&pAddr46->sa, buf, sizeof(buf));
-                    epicsNetDebugLog("NET aToIPAddr46 pAddrString='%s' res=%s socklen=%u\n",
-                                      pAddrString, buf, (unsigned)socklen);
+                    epicsNetDebugLog("aToIPAddr46 pAddrString='%s' res=%s socklen=%u\n",
+                                     pAddrString, buf, (unsigned)socklen);
                 }
 #endif
                 freeaddrinfo(ai_to_free);

@@ -331,8 +331,8 @@ udpiiu::udpiiu (
         this->localPort4 = ntohs ( tmpAddr.ia.sin_port );
     }
 #ifdef NETDEBUG
-   epicsNetDebugLog("NET udpiiu::udpiiu sock4=%d sock6=%d\n",
-                     (int)this->sock4, (int)this->sock6);
+   epicsNetDebugLog("udpiiu::udpiiu sock4=%d sock6=%d\n",
+                    (int)this->sock4, (int)this->sock6);
 #endif
 
     if (this->sock4 == INVALID_SOCKET && this->sock6 == INVALID_SOCKET) {
@@ -375,8 +375,8 @@ udpiiu::udpiiu (
       {
           char buf[64];
           sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
-          epicsNetDebugLog("NET udpiiu::udpiiu address[%u]='%s'\n",
-                            count++, buf);
+          epicsNetDebugLog("udpiiu::udpiiu address[%u]='%s'\n",
+                           count++, buf);
       }
 #endif
 #ifdef AF_INET6_IPV6
@@ -525,8 +525,8 @@ void udpRecvThread::run ()
 
 #ifdef NETDEBUG
     {
-        epicsNetDebugLog("NET udpRecvThread::run this->iiu.pPollFds=%p this->iiu.numPollFds=%d\n",
-                           this->iiu.pPollFds, this->iiu.numPollFds);
+        epicsNetDebugLog("udpRecvThread::run this->iiu.pPollFds=%p this->iiu.numPollFds=%d\n",
+                         this->iiu.pPollFds, this->iiu.numPollFds);
     }
 #endif
 
@@ -539,7 +539,7 @@ void udpRecvThread::run ()
             if ( pollres < 0 ) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (sockErrBuf, sizeof ( sockErrBuf ) );
-                epicsNetDebugLog("NET udpRecvThread::run pollres =%d: %s\n",
+                epicsNetDebugLog("udpRecvThread::run pollres =%d: %s\n",
                                   pollres, sockErrBuf);
                 if ( this->iiu.shutdownCmd ) {
                     return; /* Do not end up in an endless loop */
@@ -548,7 +548,7 @@ void udpRecvThread::run ()
             }
             for ( unsigned idx = 0; idx < this->iiu.numPollFds; idx++ ) {
 #ifdef NETDEBUGXX
-                epicsNetDebugLog("NET udpRecvThread::run idx=%u socket=%d revents=0x%x\n",
+                epicsNetDebugLog("udpRecvThread::run idx=%u socket=%d revents=0x%x\n",
                                    idx, (int)this->iiu.pPollFds[idx].fd,
                                    this->iiu.pPollFds[idx].revents);
 #endif
@@ -697,7 +697,7 @@ void epicsStdCall caRepeaterRegistrationMessage4 (
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         tmpAddr.in6.sin6_port = 0;
         (void)getsockname ( sock4, &tmpAddr.sa, &saddr_length );
-        epicsNetDebugLog("NET CAC: udpiiu::caRepeaterRegistrationMessage port=%u\n",
+        epicsNetDebugLog("CAC: udpiiu::caRepeaterRegistrationMessage port=%u\n",
                           ntohs ( tmpAddr.in6.sin6_port ) );
      }
 #endif
@@ -764,7 +764,7 @@ void epicsStdCall caRepeaterRegistrationMessageIPv6 (
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
         tmpAddr.in6.sin6_port = 0;
         (void)getsockname ( sock6, &tmpAddr.sa, &saddr_length );
-        epicsNetDebugLog("NET udpiiu: sending caRepeaterRegistrationMessageIPv6 port=%u\n",
+        epicsNetDebugLog("udpiiu: sending caRepeaterRegistrationMessageIPv6 port=%u\n",
                           ntohs ( tmpAddr.in6.sin6_port ) );
      }
 #endif
@@ -920,7 +920,7 @@ bool udpiiu :: searchRespAction (
     {
         char buf[64];
         sockAddrToDottedIP(&addr.sa, buf, sizeof(buf));
-        epicsNetDebugLog("NET CAC: udpiiu::searchRespAction recvfromAddr='%s'\n",
+        epicsNetDebugLog("CAC: udpiiu::searchRespAction recvfromAddr='%s'\n",
                           buf );
     }
 #endif
@@ -977,7 +977,7 @@ bool udpiiu :: searchRespAction (
     {
         char buf[64];
         sockAddrToDottedIP(&serverAddr.sa, buf, sizeof(buf));
-        epicsNetDebugLog("NET CAC: udpiiu::searchRespAction myserverAddr='%s'\n",
+        epicsNetDebugLog("CAC: udpiiu::searchRespAction myserverAddr='%s'\n",
                           buf );
     }
 #endif
@@ -1006,7 +1006,7 @@ bool udpiiu::beaconAction (
     {
         char buf[64];
         sockAddrToDottedIP(&net_addr.sa, buf, sizeof(buf));
-        epicsNetDebugLog("NET udpiiu::beaconAction addr='%s' m_postsize=%u\n", buf, (unsigned)msg.m_postsize);
+        epicsNetDebugLog("udpiiu::beaconAction addr='%s' m_postsize=%u\n", buf, (unsigned)msg.m_postsize);
     }
 #endif
     if ( ! ( epicsSocket46IsAF_INETorAF_INET6 ( net_addr.sa.sa_family ) ) ) {
@@ -1057,7 +1057,7 @@ bool udpiiu::beaconAction (
             }
         }
 #ifdef NETDEBUG
-      epicsNetDebugLog("NET size=%u magic='%c%c%c%c' %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x sizeof(pMsgIPv6->m_s6_addr)=%u good_IPv6_magic_and_len=%d\n",
+      epicsNetDebugLog("size=%u magic='%c%c%c%c' %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x sizeof(pMsgIPv6->m_s6_addr)=%u good_IPv6_magic_and_len=%d\n",
                     (unsigned)ntohl(pExtIPv6->m_size),
                     isprint(pExtIPv6->m_typ_magic[0]) ? pExtIPv6->m_typ_magic[0] : '?',
                     isprint(pExtIPv6->m_typ_magic[1]) ? pExtIPv6->m_typ_magic[1] : '?',
@@ -1179,7 +1179,7 @@ void udpiiu::postMsg (
         pCurMsg->m_cid = AlignedWireRef < epicsUInt32 > ( pCurMsg->m_cid );
 
 #ifdef NETDEBUGXX
-        epicsNetDebugLog("NET UDP Cmd=%03d Type=%04d Count=%04d Size=%04d Avail=0x%08x Cid=%06d\n",
+        epicsNetDebugLog("UDP Cmd=%03d Type=%04d Count=%04d Size=%04d Avail=0x%08x Cid=%06d\n",
                           pCurMsg->m_cmmd,
                           pCurMsg->m_dataType,
                           pCurMsg->m_count,

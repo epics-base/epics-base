@@ -247,8 +247,7 @@ void cast_server(void *pParm)
 #ifdef NETDEBUG
                 char buf[64];
                 sockAddrToDottedIP(&new_recv_addr46.sa, buf, sizeof(buf));
-                epicsNetDebugLog("NET cast_server ignore request from '%s'\n",
-                                  buf);
+                epicsNetDebugLog("cast_server ignore request from '%s'\n", buf);
 #endif
                 continue;
             }
@@ -260,8 +259,7 @@ void cast_server(void *pParm)
 #ifdef NETDEBUG
                     char buf[64];
                     sockAddrToDottedIP(&new_recv_addr46.sa, buf, sizeof(buf));
-                    epicsNetDebugLog("NET cast_server ignore request from '%s'\n",
-                                      buf);
+                    epicsNetDebugLog("cast_server ignore request from '%s'\n", buf);
 #endif
                     continue;
                 }

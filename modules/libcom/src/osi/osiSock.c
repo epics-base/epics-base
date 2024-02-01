@@ -78,8 +78,8 @@ unsigned epicsStdCall sockAddrToA (
         }
         ret = sockAddrToDottedIP ( paddr, pBuf, bufSize );
 #ifdef NETDEBUG
-        epicsNetDebugLog("NET getnameinfo(%s) failed: %s\n",
-			  pBuf, gai_strerror(gai_ecode) );
+        epicsNetDebugLog("getnameinfo(%s) failed: %s\n",
+                         pBuf, gai_strerror(gai_ecode) );
 #endif
         return ret;
     } else
@@ -267,7 +267,7 @@ LIBCOM_API void epicsStdCall osiSockDiscoverBroadcastAddresses
         {
             char buf[64];
             sockAddrToDottedIP(&pNode46->addr.sa, buf, sizeof(buf));
-            epicsNetDebugLog("NET osiSockDiscoverBroadcastAddresses '%s'\n", buf );
+            epicsNetDebugLog("osiSockDiscoverBroadcastAddresses '%s'\n", buf );
         }
 #endif
         if(pNode46->addr.ia.sin_family == AF_INET) {

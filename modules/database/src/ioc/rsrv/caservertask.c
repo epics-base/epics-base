@@ -167,7 +167,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
             {
                 char buf[64];
                 sockAddrToDottedIP(&ifaceAddr.sa, buf, sizeof(buf));
-                epicsNetDebugLog("NET rsrv_grab_tcp[%u/%u] ifaceAddr='%s'\n", i, maxi, buf);
+                epicsNetDebugLog("rsrv_grab_tcp[%u/%u] ifaceAddr='%s'\n", i, maxi, buf);
             }
 #else
             (void)maxi;
@@ -204,7 +204,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
             {
                 char buf[64];
                 sockAddrToDottedIP(&ifaceAddr.sa, buf, sizeof(buf));
-                epicsNetDebugLog("NET rsrv_grab_tcp  ifaceAddr='%s'\n", buf);
+                epicsNetDebugLog("rsrv_grab_tcp  ifaceAddr='%s'\n", buf);
             }
 #endif
             family = ifaceAddr.sa.sa_family;
@@ -436,7 +436,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
-                epicsNetDebugLog("NET rsrv_build_addr_lists addr='%s'\n", buf);
+                epicsNetDebugLog("rsrv_build_addr_lists addr='%s'\n", buf);
             }
 #endif
             if(pNode->addr.ia.sin_family==AF_INET && pNode->addr.ia.sin_addr.s_addr==htonl(INADDR_ANY))
@@ -466,11 +466,11 @@ void rsrv_build_addr_lists(void)
             (void)foundWildcard6;
             (void)doautobeaconIPv6;
 #endif
-            epicsNetDebugLog("NET rsrv_build_addr_lists doautobeaconIPv4=%d foundInterfaceIPv4=%u foundWildcard4=%d\n",
-                              doautobeaconIPv4, foundInterfaceIPv4, foundWildcard4);
+            epicsNetDebugLog("rsrv_build_addr_lists doautobeaconIPv4=%d foundInterfaceIPv4=%u foundWildcard4=%d\n",
+                             doautobeaconIPv4, foundInterfaceIPv4, foundWildcard4);
 #ifdef AF_INET6_IPV6
-            epicsNetDebugLog("NET rsrv_build_addr_lists doautobeaconIPv6=%d foundInterfaceIPv6=%d foundWildcard6=%u\n",
-                              doautobeaconIPv6, foundInterfaceIPv6, foundWildcard6);
+            epicsNetDebugLog("rsrv_build_addr_lists doautobeaconIPv6=%d foundInterfaceIPv6=%d foundWildcard6=%u\n",
+                             doautobeaconIPv6, foundInterfaceIPv6, foundWildcard6);
 #endif
 
             /* when given a specific interface address, auto populate with the
@@ -499,10 +499,10 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-                epicsNetDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
+                epicsNetDebugLog("calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
                                   buf);
                 sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
-                epicsNetDebugLog("NET calling osiSockBroadcastMulticastAddresses46: pNode->addr='%s'\n",
+                epicsNetDebugLog("calling osiSockBroadcastMulticastAddresses46: pNode->addr='%s'\n",
                                   buf);
             }
 #endif
@@ -565,7 +565,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&match46.sa, buf, sizeof(buf));
-                epicsNetDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
+                epicsNetDebugLog("calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
                               buf);
             }
 #endif
@@ -581,7 +581,7 @@ void rsrv_build_addr_lists(void)
             {
                 char buf[64];
                 sockAddrToDottedIP(&pNode->addr.sa, buf, sizeof(buf));
-                epicsNetDebugLog("NET rsrv_XXXX addr='%s'\n", buf);
+                epicsNetDebugLog("rsrv_XXXX addr='%s'\n", buf);
             }
 #endif
             if(pNode->addr.ia.sin_port==0) {
@@ -871,7 +871,7 @@ void rsrv_init (void)
                 {
                     char buf[64];
                     sockAddrToDottedIP(&conf->udpAddr46.sa, buf, sizeof(buf));
-                    epicsNetDebugLog("NET calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
+                    epicsNetDebugLog("calling osiSockBroadcastMulticastAddresses46: match46='%s'\n",
                                       buf);
                 }
 #endif

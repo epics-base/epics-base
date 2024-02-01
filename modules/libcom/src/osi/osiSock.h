@@ -63,8 +63,8 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
  * peer address.
  * \return A new socket used for communicating with the peer just accepted, or -1 on error.
  */
-LIBCOM_API int epicsStdCall epicsSocketAccept ( 
-    int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen );
+LIBCOM_API SOCKET epicsStdCall epicsSocketAccept (
+    SOCKET sock, struct sockaddr * pAddr, osiSocklen_t * addrlen );
 /*!
  * \brief Close and free resources held by a SOCKET object.
  *

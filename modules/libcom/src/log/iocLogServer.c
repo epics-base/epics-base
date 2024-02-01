@@ -43,7 +43,7 @@ static char ioc_log_file_command[256];
 
 
 struct iocLogClient {
-    int insock;
+    SOCKET insock;
     struct ioc_log_server *pserver;
     size_t nChar;
     char recvbuf[1024];

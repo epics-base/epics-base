@@ -44,8 +44,8 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
     return sock;
 }
 
-LIBCOM_API int epicsStdCall epicsSocketAccept ( 
-    int sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
+LIBCOM_API SOCKET epicsStdCall epicsSocketAccept (
+    SOCKET sock, struct sockaddr * pAddr, osiSocklen_t * addrlen )
 {
     int newSock = accept ( sock, pAddr, addrlen );
     if ( newSock < 0 ) {

@@ -642,7 +642,12 @@ struct ReadlineContext {
                         fprintf(stderr, ERL_ERROR " %s (%d) loading '%s'\n",
                                 strerror(err), err, hist_file.c_str());
                 }
-                stifle_history(1024); // some limit...
+                // Limit history to 1024 entries, unless more (or less) is explicitly asked for via the env. values < 0 mean infinite history
+                epicsInt32 maxHistory = 1024;
+                if (const char* env = getenv("EPICS_IOCSH_HISTSIZE"))
+                    epicsParseInt32(env, &maxHistory, 10, NULL);
+                if (maxHistory >= 0)
+                    stifle_history(maxHistory); // some limit...
             }
         }
 #endif
@@ -653,9 +658,20 @@ struct ReadlineContext {
         if(context) {
 #ifdef USE_READLINE
             if(!hist_file.empty()) {
+                // Allow history file size to be limited. <0 or non-numeric value means infinite size, >=0 means truncate to that many lines
+                epicsInt32 maxLines = -1;
+                if (const char* env = getenv("EPICS_IOCSH_HISTFILESIZE"))
+                    epicsParseInt32(env, &maxLines, 10, NULL);
+
                 if(int err = write_history(hist_file.c_str())) {
                     fprintf(stderr, ERL_ERROR " %s (%d) writing '%s'\n",
                             strerror(err), err, hist_file.c_str());
+                }
+                else if (maxLines >= 0) {
+                    if (int err = history_truncate_file(hist_file.c_str(), maxLines)) {
+                        fprintf(stderr, "Error %s (%d) while truncating '%s'\n",
+                            strerror(err), err, hist_file.c_str());
+                    }
                 }
             }
             rl_readline_name = prev_rl_readline_name;

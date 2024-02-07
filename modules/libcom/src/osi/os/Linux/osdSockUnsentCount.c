@@ -4,7 +4,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#include <linux/sockios.h>
 #define EPICS_PRIVATE_API
 #include "osiSock.h"
 
@@ -14,7 +13,7 @@
  */
 int epicsSocketUnsentCount(SOCKET sock) {
     int unsent;
-    if (ioctl(sock, SIOCOUTQ, &unsent) == 0)
+    if (ioctl(sock, TIOCOUTQ, &unsent) == 0)
         return unsent;
     return -1;
 }

@@ -231,3 +231,12 @@ operations before / after passing control down to the child link.
  {trace:{state:"redBeam"}}
 
 =cut
+
+
+link(fs, lnkFSIf)
+
+=head3 File System Link C<"fs">
+
+Link to read from IOC local filesystem.
+
+=cut

@@ -500,8 +500,6 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     BOOL success;
 
     if ( pGbl )  {
-        setThreadName ( pParm->id, pParm->pName );
-
         success = FlsSetValue ( pGbl->flsIndexThreadLibraryEPICS, pParm );
         if ( success ) {
             osdThreadHooksRun ( ( epicsThreadId ) pParm );
@@ -659,6 +657,7 @@ epicsThreadId epicsThreadCreateOpt (
         pParmWIN32->id = ( DWORD ) threadId ;
     }
 
+    setThreadName ( pParmWIN32->id, pParmWIN32->pName );
     osdPriority = epicsThreadGetOsdPriorityValue (opts->priority);
     bstat = SetThreadPriority ( pParmWIN32->handle, osdPriority );
     if (!bstat) {

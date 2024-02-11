@@ -215,6 +215,7 @@ void currentTime :: startPLL ()
                 CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION,
                 & this->threadId );
         assert ( this->threadHandle );
+        setThreadName ( this->threadId, "EPICS Time PLL" );
         BOOL bstat = SetThreadPriority (
             this->threadHandle, THREAD_PRIORITY_HIGHEST );
         assert ( bstat );
@@ -496,7 +497,6 @@ static unsigned __stdcall _pllThreadEntry ( void * pCurrentTimeIn )
 {
     currentTime * pCT =
         reinterpret_cast < currentTime * > ( pCurrentTimeIn );
-    setThreadName ( pCT->threadId, "EPICS Time PLL" );
     while ( ! pCT->threadShutdownCmd ) {
         Sleep ( currentTime :: pllDelay * 1000 /* mS */ );
         pCT->updatePLL ();

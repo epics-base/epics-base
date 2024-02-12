@@ -57,6 +57,9 @@ foreach my $source (@ARGV) {
     my $temp   = "$install_dir/TEMP.$name.$$";
     my $target = "$install_dir/$name";
 
+    # Don't try to install the file if it already exists
+    next if $source eq $target;
+
     if (-f $target) {
         next if -M $target < -M $source and -C $target < -C $source;
         # Remove old target, making sure it is deletable first

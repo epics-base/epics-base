@@ -532,11 +532,11 @@ endif # LOADABLE_SHRLIB_SUFFIX
 ifneq ($(INSTALL_CONFIGS),)
 $(INSTALL_CONFIG)/%: %
 	$(ECHO) "Installing config file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $(abspath $< $(@D))
 
 $(INSTALL_CONFIG)/%: ../%
 	$(ECHO) "Installing config file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $(abspath $< $(@D))
 endif
 
 $(INSTALL_INCLUDE)/%: $(COMMON_DIR)/%

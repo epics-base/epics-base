@@ -225,8 +225,10 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
         if (!vec)
             return jlif_stop;
         str = malloc(len+1);
-        if (!str)
+        if (!str) {
+            free(vec);
             return jlif_stop;
+        }
 
         strncpy(str, val, len);
         str[len] = '\0';

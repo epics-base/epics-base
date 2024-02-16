@@ -198,9 +198,7 @@ mustMalloc(int size, const char *msg)
  *                         REMOTE FILE ACCESS                          *
  ***********************************************************************
  */
-#ifdef OMIT_NFS_SUPPORT
 # include <rtems/tftp.h>
-#endif
 
 const epicsMemFS *epicsRtemsFSImage __attribute__((weak));
 const epicsMemFS *epicsRtemsFSImage = (void*)&epicsRtemsFSImage;
@@ -292,129 +290,130 @@ nfsMount(char *uidhost, char *path, char *mntpoint)
 static void
 initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
 {
-#ifdef OMIT_NFS_SUPPORT
-    printf ("***** Initializing TFTP *****\n");
-    mount_and_make_target_path(NULL,
-                               "/TFTP",
-                               RTEMS_FILESYSTEM_TYPE_TFTPFS,
-                               RTEMS_FILESYSTEM_READ_WRITE,
-                               NULL);
-    if (!hasLocalFilesystem) {
-        char *path;
-        int pathsize = 200;
-        int l;
-
-        path = mustMalloc(pathsize, "Command path name ");
-        strcpy (path, "/TFTP/BOOTP_HOST/epics/");
-        l = strlen (path);
-        if (gethostname (&path[l], pathsize - l - 10) || (path[l] == '\0'))
-        {
-            LogFatal ("Can't get host name");
-        }
-        strcat (path, "/st.cmd");
-        argv[1] = path;
-    }
-#else
     char *server_name;
     char *server_path;
     char *mount_point;
     char *cp;
     int l = 0;
 
-    printf ("***** Initializing NFS *****\n");
-    NFS_INIT
-    if (env_nfsServer && env_nfsPath && env_nfsMountPoint) {
-        server_name = env_nfsServer;
-        server_path = env_nfsPath;
-        mount_point = env_nfsMountPoint;
-        cp = mount_point;
-        while ((cp = strchr(cp+1, '/')) != NULL) {
-            *cp = '\0';
-            if ((mkdir (mount_point, 0755) != 0)
-             && (errno != EEXIST))
-                LogFatal("Can't create directory \"%s\": %s.\n",
-                                                mount_point, strerror(errno));
-            *cp = '/';
+    /* Note: rtems_bsdnet_bootp_cmdline is "Argument File Name" in PPCBUG on
+     * the mvme2100 CPU. */
+    if (strstr(rtems_bsdnet_bootp_cmdline, "/TFTP/BOOTP_HOST:")==rtems_bsdnet_bootp_cmdline)
+      { /* use tftp */
+
+        printf ("***** Initializing TFTP *****\n");
+        mount_and_make_target_path(NULL,
+                                   "/TFTP",
+                                   RTEMS_FILESYSTEM_TYPE_TFTPFS,
+                                   RTEMS_FILESYSTEM_READ_WRITE,
+                                   NULL);
+        if (!hasLocalFilesystem) {
+            char *path;
+            int pathsize = 200;
+            int l;
+
+            path = mustMalloc(pathsize, "Command path name ");
+            strcpy(path, rtems_bsdnet_bootp_cmdline); 
+            argv[1] = path;
         }
-        argv[1] = rtems_bsdnet_bootp_cmdline;
-    }
-    else if (hasLocalFilesystem) {
-        return;
-    }
-    else {
-        /*
-         * Use first component of nvram/bootp command line pathname
-         * to set up initial NFS mount.  A "/tftpboot/" is prepended
-         * if the pathname does not begin with a '/'.  This allows
-         * NFS and TFTP to have a similar view of the remote system.
-         */
-        if (rtems_bsdnet_bootp_cmdline[0] == '/')
-            cp = rtems_bsdnet_bootp_cmdline + 1;
-        else
-            cp = rtems_bsdnet_bootp_cmdline;
-        cp = strchr(cp, '/');
-        if ((cp == NULL)
-         || ((l = cp - rtems_bsdnet_bootp_cmdline) == 0))
-            LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bsdnet_bootp_cmdline);
-        cp = mustMalloc(l + 20, "NFS mount paths");
-        server_path = cp;
-        server_name = rtems_bsdnet_bootp_server_name;
-        if (rtems_bsdnet_bootp_cmdline[0] == '/') {
-            mount_point = server_path;
-            strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
-            mount_point[l] = '\0';
-            argv[1] = rtems_bsdnet_bootp_cmdline;
-            /*
-             * Its probably common to embed the mount point in the server
-             * name so, when this is occurring, don't clobber the mount point
-             * by appending the first node from the command path. This allows
-             * the mount point to be a different path then the server's mount
-             * path.
-             *
-             * This allows for example a line similar to as follows the DHCP
-             * configuration file.
-             *
-             * server-name "159.233@192.168.0.123:/vol/vol0/bootRTEMS";
-             */
-            if ( server_name ) {
-                const size_t allocSize = strlen ( server_name ) + 2;
-                char * const pServerName = mustMalloc( allocSize,
-                                                        "NFS mount paths");
-                char * const pServerPath = mustMalloc ( allocSize,
-                                                        "NFS mount paths");
-                const int scanfStatus = sscanf (
-                                          server_name,
-                                          "%[^:] : / %s",
-                                          pServerName,
-                                          pServerPath + 1u );
-                if ( scanfStatus ==  2 ) {
-                    pServerPath[0u]= '/';
-                    server_name = pServerName;
-                    // is this a general solution?
-                    server_path = mount_point = pServerPath;
-                }
-                else {
-                    free ( pServerName );
-                    free ( pServerPath );
-                }
+      }
+    else
+      {
+
+        printf ("***** Initializing NFS *****\n");
+        NFS_INIT
+        if (env_nfsServer && env_nfsPath && env_nfsMountPoint) {
+            server_name = env_nfsServer;
+            server_path = env_nfsPath;
+            mount_point = env_nfsMountPoint;
+            cp = mount_point;
+            while ((cp = strchr(cp+1, '/')) != NULL) {
+                *cp = '\0';
+                if ((mkdir (mount_point, 0755) != 0)
+                 && (errno != EEXIST))
+                    LogFatal("Can't create directory \"%s\": %s.\n",
+                                                    mount_point, strerror(errno));
+                *cp = '/';
             }
+            argv[1] = rtems_bsdnet_bootp_cmdline;
+        }
+        else if (hasLocalFilesystem) {
+            return;
         }
         else {
-            char *abspath = mustMalloc(strlen(rtems_bsdnet_bootp_cmdline)+2,"Absolute command path");
-            strcpy(server_path, "/tftpboot/");
-            mount_point = server_path + strlen(server_path);
-            strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
-            mount_point[l] = '\0';
-            mount_point--;
-            strcpy(abspath, "/");
-            strcat(abspath, rtems_bsdnet_bootp_cmdline);
-            argv[1] = abspath;
+            /*
+             * Use first component of nvram/bootp command line pathname
+             * to set up initial NFS mount.  A "/tftpboot/" is prepended
+             * if the pathname does not begin with a '/'.  This allows
+             * NFS and TFTP to have a similar view of the remote system.
+             */
+            if (rtems_bsdnet_bootp_cmdline[0] == '/')
+                cp = rtems_bsdnet_bootp_cmdline + 1;
+            else
+                cp = rtems_bsdnet_bootp_cmdline;
+            cp = strchr(cp, '/');
+            if ((cp == NULL)
+             || ((l = cp - rtems_bsdnet_bootp_cmdline) == 0))
+                LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bsdnet_bootp_cmdline);
+            cp = mustMalloc(l + 20, "NFS mount paths");
+            server_path = cp;
+            server_name = rtems_bsdnet_bootp_server_name;
+            if (rtems_bsdnet_bootp_cmdline[0] == '/') {
+                mount_point = server_path;
+                strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
+                mount_point[l] = '\0';
+                argv[1] = rtems_bsdnet_bootp_cmdline;
+                /*
+                 * Its probably common to embed the mount point in the server
+                 * name so, when this is occurring, don't clobber the mount point
+                 * by appending the first node from the command path. This allows
+                 * the mount point to be a different path then the server's mount
+                 * path.
+                 *
+                 * This allows for example a line similar to as follows the DHCP
+                 * configuration file.
+                 *
+                 * server-name "159.233@192.168.0.123:/vol/vol0/bootRTEMS";
+                 */
+                if ( server_name ) {
+                    const size_t allocSize = strlen ( server_name ) + 2;
+                    char * const pServerName = mustMalloc( allocSize,
+                                                            "NFS mount paths");
+                    char * const pServerPath = mustMalloc ( allocSize,
+                                                            "NFS mount paths");
+                    const int scanfStatus = sscanf (
+                                              server_name,
+                                              "%[^:] : / %s",
+                                              pServerName,
+                                              pServerPath + 1u );
+                    if ( scanfStatus ==  2 ) {
+                        pServerPath[0u]= '/';
+                        server_name = pServerName;
+                        // is this a general solution?
+                        server_path = mount_point = pServerPath;
+                    }
+                    else {
+                        free ( pServerName );
+                        free ( pServerPath );
+                    }
+                }
+            }
+            else {
+                char *abspath = mustMalloc(strlen(rtems_bsdnet_bootp_cmdline)+2,"Absolute command path");
+                strcpy(server_path, "/tftpboot/");
+                mount_point = server_path + strlen(server_path);
+                strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
+                mount_point[l] = '\0';
+                mount_point--;
+                strcpy(abspath, "/");
+                strcat(abspath, rtems_bsdnet_bootp_cmdline);
+                argv[1] = abspath;
+            }
         }
-    }
-    errlogPrintf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
-                 server_name, server_path, mount_point);
-    nfsMount(server_name, server_path, mount_point);
-#endif
+        errlogPrintf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
+                     server_name, server_path, mount_point);
+        nfsMount(server_name, server_path, mount_point);
+      }
 }
 
 static

@@ -247,23 +247,23 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     }
     my_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
     freeListInitPvt(&freeListPvt,sizeof(tempListNode),100);
-    if(substitutions) {
-        if(macCreateHandle(&macHandle,NULL)) {
-            epicsPrintf("macCreateHandle error\n");
-            status = -1;
-            goto cleanup;
-        }
-        macParseDefns(macHandle,(char *)substitutions,&macPairs);
-        if(macPairs ==NULL) {
-            macDeleteHandle(macHandle);
-            macHandle = NULL;
-        } else {
-            macInstallMacros(macHandle,macPairs);
-            free((void *)macPairs);
-            mac_input_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
-        }
-        macSuppressWarning(macHandle,dbQuietMacroWarnings);
+    if (substitutions == NULL)
+        substitutions = "";
+    if(macCreateHandle(&macHandle,NULL)) {
+        epicsPrintf("macCreateHandle error\n");
+        status = -1;
+        goto cleanup;
     }
+    macParseDefns(macHandle,substitutions,&macPairs);
+    if(macPairs == NULL) {
+        macDeleteHandle(macHandle);
+        macHandle = NULL;
+    } else {
+        macInstallMacros(macHandle,macPairs);
+        free(macPairs);
+        mac_input_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
+    }
+    macSuppressWarning(macHandle,dbQuietMacroWarnings);
     pinputFile = dbCalloc(1,sizeof(inputFile));
     if (filename) {
         pinputFile->filename = macEnvExpand(filename);

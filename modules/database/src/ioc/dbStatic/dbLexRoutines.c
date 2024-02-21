@@ -1119,6 +1119,19 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         return;
     }
 
+    if (recordType[0] == '#' && recordType[1] == 0) {
+        status = dbFindRecord(pdbentry, name);
+        if (status == 0) {
+            dbDeleteRecord(pdbentry);
+            epicsPrintf(ERL_WARNING ": Record \"%s\" DELETED!\n", name);
+            return; /* done */
+        }
+        epicsPrintf(ERL_ERROR ": Record \"%s\" not found\n", name);
+        yyerror(NULL);
+        duplicate = TRUE;
+        return;
+    }
+
     status = dbFindRecordType(pdbentry, recordType);
     if (status) {
         epicsPrintf("Record \"%s\" is of unknown type \"%s\"\n",

@@ -51,6 +51,7 @@ typedef struct parseContext {
 
 static void *dbChannelFreeList;
 static void *chFilterFreeList;
+static int tsFilterRegistered;
 
 void dbChannelExit(void)
 {
@@ -67,6 +68,8 @@ void dbChannelInit (void)
     freeListInitPvt(&dbChannelFreeList,  sizeof(dbChannel), 128);
     freeListInitPvt(&chFilterFreeList,  sizeof(chFilter), 64);
     db_init_event_freelists();
+
+    tsFilterRegistered = dbFindFilter("ts", 2) != NULL;
 }
 
 static void chf_value(parseContext *parser, parse_result *presult)
@@ -450,12 +453,36 @@ dbChannel * dbChannelCreate(const char *name)
     const char *pname = name;
     DBENTRY dbEntry;
     dbChannel *chan = NULL;
-    char *cname;
+    char *cname = NULL;
     dbAddr *paddr;
     long status;
 
     if (!name || !*name || !pdbbase)
         return NULL;
+
+    /* If the timestamp filter is available, intercept requests for the TIME
+       field and replace the field with a channel filter string. */
+    {
+        static char const tsfilter[] = ".{\"ts\":{\"num\":\"dbl\"}}";
+
+        size_t namelen = strlen(name);
+        size_t reclen = namelen - sizeof(".TIME") + 1;
+        int has_time = namelen >= sizeof(".TIME") && !strcmp(name + reclen, ".TIME");
+
+        if (has_time && tsFilterRegistered) {
+            cname = malloc(reclen + strlen(tsfilter) + 1);
+            if (!cname)
+                goto finish;
+            strncpy(cname, name, reclen);
+            strcpy(cname + reclen, tsfilter);
+            pname = cname;
+        } else {
+            cname = malloc(namelen + 1);
+            if (!cname)
+                goto finish;
+            strcpy(cname, name);
+        }
+    }
 
     status = pvNameLookup(&dbEntry, &pname);
     if (status)
@@ -464,12 +491,9 @@ dbChannel * dbChannelCreate(const char *name)
     chan = freeListCalloc(dbChannelFreeList);
     if (!chan)
         goto finish;
-    cname = malloc(strlen(name) + 1);
-    if (!cname)
-        goto finish;
 
-    strcpy(cname, name);
     chan->name = cname;
+    cname = NULL;
     ellInit(&chan->filters);
     ellInit(&chan->pre_chain);
     ellInit(&chan->post_chain);
@@ -527,6 +551,8 @@ finish:
         dbChannelDelete(chan);
         chan = NULL;
     }
+    if (cname)
+        free(cname);
     dbFinishEntry(&dbEntry);
     return chan;
 }
@@ -766,10 +792,16 @@ void dbRegisterFilter(const char *name, const chFilterIf *fif, void *puser)
 
 const chFilterPlugin * dbFindFilter(const char *name, size_t len)
 {
-    GPHENTRY *pgph = gphFindParse(pdbbase->pgpHash, name, len,
-            &pdbbase->filterList);
+    GPHENTRY *pgph;
+
+    if (!name || !len || !*name || !pdbbase)
+        return NULL;
+
+    pgph = gphFindParse(pdbbase->pgpHash, name, len,
+                        &pdbbase->filterList);
 
     if (!pgph)
         return NULL;
+
     return (chFilterPlugin *) pgph->userPvt;
 }

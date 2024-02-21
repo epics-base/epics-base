@@ -1670,7 +1670,7 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
         return RSRV_ERROR;
     }
 
-    if (mp->m_dataType > LAST_BUFFER_TYPE) {
+    if ( INVALID_DB_REQ(mp->m_dataType) ) {
         log_header ("bad put notify data type", client, mp, pPayload, 0);
         putNotifyErrorReply (client, mp, ECA_BADTYPE);
         return RSRV_ERROR;
@@ -2006,71 +2006,75 @@ static int clear_channel_reply ( caHdrLargeArray *mp,
  */
 static int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
-     struct channel_in_use  *pciu;
-     struct event_ext       *pevext;
-     int                    status;
+    struct channel_in_use  *pciu;
+    struct event_ext       *pevext;
+    int                    status;
 
-     /*
-      *
-      * Verify the channel
-      *
-      */
-     pciu = MPTOPCIU(mp);
-     if (pciu?pciu->client!=client:TRUE) {
-         logBadId ( client, mp, pPayload );
-         return RSRV_ERROR;
-     }
+    if ( INVALID_DB_REQ(mp->m_dataType) ) {
+        return RSRV_ERROR;
+    }
 
-     /*
-      * search events on this channel for a match
-      * (there are usually very few monitors per channel)
-      */
-     epicsMutexMustLock(client->eventqLock);
-     for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
-            pevext; pevext = (struct event_ext *) ellNext(&pevext->node)){
+    /*
+     *
+     * Verify the channel
+     *
+     */
+    pciu = MPTOPCIU(mp);
+    if (pciu?pciu->client!=client:TRUE) {
+        logBadId ( client, mp, pPayload );
+        return RSRV_ERROR;
+    }
 
-         if (pevext->msg.m_available == mp->m_available) {
-             ellDelete(&pciu->eventq, &pevext->node);
-             break;
-         }
-     }
-     epicsMutexUnlock(client->eventqLock);
+    /*
+     * search events on this channel for a match
+     * (there are usually very few monitors per channel)
+     */
+    epicsMutexMustLock(client->eventqLock);
+    for (pevext = (struct event_ext *) ellFirst(&pciu->eventq);
+           pevext; pevext = (struct event_ext *) ellNext(&pevext->node)){
 
-     /*
-      * Not Found- return an exception event
-      */
-     if(!pevext){
-         SEND_LOCK(client);
-         send_err(mp, ECA_BADMONID, client, RECORD_NAME(pciu->dbch));
-         SEND_UNLOCK(client);
-         return RSRV_ERROR;
-     }
+        if (pevext->msg.m_available == mp->m_available) {
+            ellDelete(&pciu->eventq, &pevext->node);
+            break;
+        }
+    }
+    epicsMutexUnlock(client->eventqLock);
 
-     /*
-      * cancel monitor activity in progress
-      */
-     if (pevext->pdbev) {
-         db_cancel_event (pevext->pdbev);
-     }
+    /*
+     * Not Found- return an exception event
+     */
+    if(!pevext){
+        SEND_LOCK(client);
+        send_err(mp, ECA_BADMONID, client, RECORD_NAME(pciu->dbch));
+        SEND_UNLOCK(client);
+        return RSRV_ERROR;
+    }
 
-     /*
-      * send delete confirmed message
-      */
-     SEND_LOCK(client);
+    /*
+     * cancel monitor activity in progress
+     */
+    if (pevext->pdbev) {
+        db_cancel_event (pevext->pdbev);
+    }
 
-     status = cas_copy_in_header ( client, pevext->msg.m_cmmd,
-        0u, pevext->msg.m_dataType, pevext->msg.m_count, pevext->msg.m_cid,
-        pevext->msg.m_available, NULL );
-     if ( status != ECA_NORMAL ) {
-         SEND_UNLOCK(client);
-         return RSRV_ERROR;
-     }
-     cas_commit_msg ( client, 0 );
-     SEND_UNLOCK(client);
+    /*
+     * send delete confirmed message
+     */
+    SEND_LOCK(client);
 
-     freeListFree (rsrvEventFreeList, pevext);
+    status = cas_copy_in_header ( client, pevext->msg.m_cmmd,
+       0u, pevext->msg.m_dataType, pevext->msg.m_count, pevext->msg.m_cid,
+       pevext->msg.m_available, NULL );
+    if ( status != ECA_NORMAL ) {
+        SEND_UNLOCK(client);
+        return RSRV_ERROR;
+    }
+    cas_commit_msg ( client, 0 );
+    SEND_UNLOCK(client);
 
-     return RSRV_OK;
+    freeListFree (rsrvEventFreeList, pevext);
+
+    return RSRV_OK;
 }
 
 /*
@@ -2386,6 +2390,75 @@ static const pProtoStubUDP udpJumpTable[] =
 };
 
 /*
+ * validate_camessage()
+ *
+ * Returns zero if message header is invalid.
+ * The function accepts 16 more commands, 16 more buffer types, and 3 more
+ * minor protocol versions then what is implemented currently to accomodate
+ * newer versions of clients to access the server without being disconnected. 
+ */
+int validate_camessage ( caHdrLargeArray msg )
+{
+    if (msg.m_cmmd > CA_PROTO_LAST_CMMD + 16) {
+        return 0;
+    }
+
+    switch ( msg.m_cmmd ) {
+        case CA_PROTO_VERSION:
+        case CA_PROTO_EVENT_CANCEL:
+        case CA_PROTO_READ:
+        case CA_PROTO_EVENTS_OFF:
+        case CA_PROTO_EVENTS_ON:
+        case CA_PROTO_READ_SYNC:
+        case CA_PROTO_CLEAR_CHANNEL:
+        case CA_PROTO_READ_NOTIFY:
+        case CA_PROTO_ECHO:
+        case REPEATER_REGISTER:
+            if ( msg.m_postsize != 0 ) return 0;
+            break;
+        case CA_PROTO_EVENT_ADD:
+            if ( msg.m_postsize != 16 ) return 0;
+            break;
+        case CA_PROTO_WRITE:
+        case CA_PROTO_WRITE_NOTIFY:
+            if ( msg.m_dataType > LAST_BUFFER_TYPE + 16 ) return 0;
+            break;
+        case CA_PROTO_SEARCH:
+            // m.count is interpreted as version minor for CA_PROTO_SEARCH
+            if ( msg.m_count > CA_LAST_MINOR + 3 ) return 0;
+            break;
+        case CA_PROTO_CREATE_CHAN:
+        case CA_PROTO_CLIENT_NAME:
+        case CA_PROTO_HOST_NAME:
+            if ( msg.m_dataType != 0 ) return 0;
+            break;
+        case CA_PROTO_ERROR:
+        case CA_PROTO_RSRV_IS_UP:
+        case CA_PROTO_NOT_FOUND:
+        case REPEATER_CONFIRM:
+        case CA_PROTO_ACCESS_RIGHTS:
+        case CA_PROTO_CREATE_CH_FAIL:
+        case CA_PROTO_SERVER_DISCONN:
+            // These commands are only sent from server to client, so receiving it
+            // here may indicate a non-CA client trying to access the server.
+            return 0;
+            break;
+        // We accept deprecated commands as valids for the point of view of message
+        // header validation. These are a weakness, as a non-CA client sending a
+        // message that, by chance, corresponds to the commands below will succeed
+        // on having the message further processed.
+        case CA_PROTO_SNAPSHOT:
+        case CA_PROTO_BUILD:
+        case CA_PROTO_READ_BUILD:
+        case CA_PROTO_SIGNAL:
+            return 1;
+            break;
+    }
+
+    return 1;
+}
+
+/*
  * CAMESSAGE()
  */
 int camessage ( struct client *client )
@@ -2433,14 +2506,52 @@ int camessage ( struct client *client )
         msg.m_cid       = ntohl ( mp->m_cid );
         msg.m_available = ntohl ( mp->m_available );
 
-        if ( CA_V49(client->minor_version_number) && msg.m_postsize == 0xffff  ) {
+        /* Disconnect if a non-CA client is trying to communicate */
+        if ( ! validate_camessage(msg) ) {
+            log_header ( "CAS: Invalid channel access message rejected",
+                client, &msg, 0, nmsg );
+            status = RSRV_ERROR;
+            break;
+        }
+
+        /* Reject invalid commands */
+        if (msg.m_cmmd > CA_PROTO_LAST_CMMD) {
+            /* Log and send the error only to TCP clients. Silently ignore UDP clients */
+            if (client->proto == IPPROTO_TCP) {
+                SEND_LOCK(client);
+                send_err(&msg, ECA_NOSUPPORT, client, "CAS: Invalid command rejected");
+                SEND_UNLOCK(client);
+
+                /* By default, do not generate a log message for this type of error */
+                if (CASDEBUG > 0)
+                    log_header ( "CAS: Invalid command rejected",
+                    client, &msg, 0, nmsg );
+
+                client->recvBytesToDrain = msgsize - bytes_left;
+                client->recv.stk = client->recv.cnt;
+            }
+
+            /* Keep the connection open to avoid re-connect loops */
+            status = RSRV_OK;
+            break;
+        }
+
+        /*
+         * Calculate the message size, and update the pointer to the message payload area.
+         * Also, if the message is using the extended form, extract the correct payload size
+         * and data count from the extended message header, and update m_postsize and m_count.
+         *
+         * As the last protocol specification states, to identify extended messages,
+         * m_postsize must be set at 0xffff and m_count to zero.
+         */
+        if (CA_V49(client->minor_version_number) && msg.m_postsize==0xffff && msg.m_count==0) {
             ca_uint32_t *pLW = ( ca_uint32_t * ) ( mp + 1 );
             if ( bytes_left < sizeof(*mp) + 2 * sizeof(*pLW) ) {
                 status = RSRV_OK;
                 break;
             }
-            msg.m_postsize  = ntohl ( pLW[0] );
-            msg.m_count     = ntohl ( pLW[1] );
+            msg.m_postsize  = ntohl ( pLW[0] ); /* payload size on extended form headers */
+            msg.m_count     = ntohl ( pLW[1] ); /* Data count on extended form headers */
             msgsize = msg.m_postsize + sizeof(*mp) + 2 * sizeof ( *pLW );
             pBody = ( void * ) ( pLW + 2 );
         }

@@ -46,6 +46,7 @@
 #   define CA_V411(MINOR) ((MINOR)>=11u)  /* sequence numbers in UDP version command */
 #   define CA_V412(MINOR) ((MINOR)>=12u)  /* TCP-based search requests */
 #   define CA_V413(MINOR) ((MINOR)>=13u)  /* Allow zero length in requests. */
+#   define CA_LAST_MINOR            13u
 
 /*
  * These port numbers are only used if the CA repeater and

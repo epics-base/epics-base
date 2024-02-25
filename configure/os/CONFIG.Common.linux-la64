@@ -8,3 +8,6 @@
 include $(CONFIG)/os/CONFIG.Common.linuxCommon
 
 ARCH_CLASS = loongarch
+
+ARCH_DEP_CFLAGS = $(GNU_ARCH_CFLAGS) $(GNU_TUNE_CFLAGS)
+ARCH_DEP_CFLAGS += $(GNU_DEP_CFLAGS)

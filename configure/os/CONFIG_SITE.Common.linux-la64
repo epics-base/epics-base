@@ -30,6 +30,9 @@
 # Needs -lcurses (older versions)
 #COMMANDLINE_LIBRARY = READLINE_CURSES
 
+# Readline is broken or you don't want use it:
+#COMMANDLINE_LIBRARY = EPICS
+
 
 # WARNING: Variables that are set in $(CONFIG)/CONFIG.gnuCommon cannot be
 # overridden in this file for native builds, e.g. variables such as
@@ -37,3 +40,9 @@
 # They must be set in CONFIG_SITE.linux-la64.linux-la64 or for
 # cross-builds in CONFIG_SITE.<host-arch>.linux-la64 instead.
 
+# Tune GNU compiler output for a specific cpu-type
+# (e.g. loongarch64, la264, la364, la464 etc.)
+GNU_ARCH_CFLAGS = -march=loongarch64
+GNU_TUNE_CFLAGS = -mtune=loongarch64
+# Enable soft-float feature (e.g. none, 32, 64)
+GNU_DEP_CFLAGS = -mfpu=none

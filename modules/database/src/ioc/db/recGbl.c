@@ -62,7 +62,7 @@ void recGblRecordError(long status, void *pdbc,
     dbCommon *precord = pdbc;
     char errMsg[256] = "";
 
-    if (status)
+    if ( status>0 )
         errSymLookup(status, errMsg, sizeof(errMsg));
 
     errlogPrintf("recGblRecordError: %s %s PV: %s\n",

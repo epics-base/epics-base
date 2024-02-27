@@ -11,12 +11,12 @@
 /*
  * OS-dependent VME support
  */
-#ifndef __i386__
-#ifndef __mc68000
-#ifndef __arm__
+/*
+ * ?? Is PowerPC the only EPICS arch to support VME?
+ */
+#if !defined(__i386__) && !defined(__mc68000) && \
+    !defined(arm) && !defined(__aarch64__)
 #include <bsp/VME.h>
-#endif
-#endif
 #endif
 
 #ifdef __cplusplus

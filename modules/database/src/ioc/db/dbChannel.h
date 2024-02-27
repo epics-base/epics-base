@@ -511,6 +511,10 @@ DBCORE_API long dbChannelGet(dbChannel *chan, short type,
  * \param[in,out] nRequest Pointer to the element count.
  * \param[in] pfl Pointer to a db_field_log or NULL.
  * \returns 0, or an error status value.
+ *
+ * \since UNRELEASED If pfl is NULL and chan has filters, db_create_read_log() will be called
+ *        internally to create a temporary db_field_log which is passed to dbChannelGet()
+ *        then deallocated.
  */
 DBCORE_API long dbChannelGetField(dbChannel *chan, short type,
         void *pbuffer, long *options, long *nRequest, void *pfl);

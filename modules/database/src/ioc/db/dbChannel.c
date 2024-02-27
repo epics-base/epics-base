@@ -635,9 +635,21 @@ long dbChannelGetField(dbChannel *chan, short dbrType, void *pbuffer,
 {
     dbCommon *precord = chan->addr.precord;
     long status = 0;
+    unsigned char local_fl = 0;
 
     dbScanLock(precord);
+    if (!pfl && (ellCount(&chan->pre_chain) || ellCount(&chan->post_chain))) {
+        pfl = db_create_read_log(chan);
+        if (pfl) {
+            local_fl = 1;
+            pfl = dbChannelRunPreChain(chan, pfl);
+            pfl = dbChannelRunPostChain(chan, pfl);
+        }
+    }
     status = dbChannelGet(chan, dbrType, pbuffer, options, nRequest, pfl);
+    if (local_fl) {
+        db_delete_field_log(pfl);
+    }
     dbScanUnlock(precord);
     return status;
 }

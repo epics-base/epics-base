@@ -1,6 +1,6 @@
 # CONFIG.linux-x86_64.linux-la64
 #
-# Definitions for linux-x86_64 host - linux-loongarch64 target builds
+# Definitions for linux-x86_64 host - linux-la64 target builds
 # Sites may override these in CONFIG_SITE.linux-x86_64.linux-la64
 #-------------------------------------------------------
 

@@ -1,6 +1,6 @@
 # CONFIG.linux-la64.linux-la64
 #
-# Definitions for native linux-loongarch64 builds
+# Definitions for native linux-la64 builds
 # Override these definitions in CONFIG_SITE.linux-la64.linux-la64
 #-------------------------------------------------------
 

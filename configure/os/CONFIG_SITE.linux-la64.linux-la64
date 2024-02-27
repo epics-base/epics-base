@@ -1,6 +1,6 @@
 # CONFIG_SITE.linux-la64.linux-la64
 #
-# Site specific definitions for native linux-loongarch64 builds
+# Site specific definitions for native linux-la64 builds
 #-------------------------------------------------------
 
 # It makes sense to include debugging symbols even in optimized builds

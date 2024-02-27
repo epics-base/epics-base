@@ -1,6 +1,6 @@
 # CONFIG_SITE.Common.linux-la64
 #
-# Site Specific definitions for all linux-loongarch64 targets
+# Site Specific definitions for all linux-la64 targets
 #-------------------------------------------------------
 
 # NOTE for SHARED_LIBRARIES: In most cases if this is set to YES the

@@ -1,6 +1,6 @@
 # CONFIG.Common.linux-la64
 #
-# Definitions for linux-loongarch64 target builds
+# Definitions for linux-la64 target builds
 # Override these settings in CONFIG_SITE.Common.linux-la64
 #-------------------------------------------------------
 

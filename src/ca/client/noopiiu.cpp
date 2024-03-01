@@ -46,6 +46,12 @@ const char * noopiiu::pHostName (
     return netiiu::pHostName ( cacGuard );
 }
 
+unsigned noopiiu::getHostMinorProtocol ( 
+    epicsGuard < epicsMutex > & cacGuard ) const throw ()
+{
+    return netiiu::getHostMinorProtocol ( cacGuard );
+}
+
 bool noopiiu::ca_v42_ok (
     epicsGuard < epicsMutex > & cacGuard ) const
 {

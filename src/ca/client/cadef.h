@@ -655,6 +655,16 @@ epicsShareFunc unsigned epicsShareAPI ca_get_host_name ( chid pChan,
     char *pBuf, unsigned bufLength );
 
 /*
+ * ca_host_minor_protocol_function()
+ *
+ * pChan  R   channel identifier
+ *
+ */
+epicsShareFunc unsigned epicsShareAPI ca_host_minor_protocol (chid pChan);
+
+#define HAS_CA_HOST_MINOR_PROTOCOL
+
+/*
  *  CA_ADD_FD_REGISTRATION
  *
  *  call their function with their argument whenever 

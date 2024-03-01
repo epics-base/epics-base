@@ -36,7 +36,8 @@
 #endif
 
 #include "caNetAddr.h"
-#include "casEventMask.h"   // EPICS event select class 
+#include "casEventMask.h"   // EPICS event select class
+#include "caProto.h"
 
 typedef aitUint32 caStatus;
 
@@ -119,16 +120,21 @@ public:
     pvExistReturn ( pvExistReturnEnum s = pverDoesNotExistHere );
     // directory service server tools will use this (see caNetAddr.h)
     pvExistReturn ( const caNetAddr & );
+    pvExistReturn ( const caNetAddr &, ca_uint16_t );
     ~pvExistReturn ();
     const pvExistReturn & operator = ( pvExistReturnEnum rhs );
     const pvExistReturn & operator = ( const caNetAddr & rhs );
     pvExistReturnEnum getStatus () const;
     caNetAddr getAddr () const;
     bool addrIsValid () const;
+    unsigned getMinorProtocol() const;
 private:
     caNetAddr address;
     pvExistReturnEnum status;
+    ca_uint16_t minorProtocolVersion;
 };
+
+#define HAS_CAS_RETURN_MINOR_PROTOCOL
 
 //
 // pvAttachReturn

@@ -332,7 +332,10 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
     //
     if ( status == S_cas_success ) {
         AlignedWireRef < epicsUInt16 > tmp ( *pMinorVersion );
-        tmp = CA_MINOR_PROTOCOL_REVISION;
+        tmp = retVal.getMinorProtocol();
+        if ( tmp < 1 ) {
+          tmp = CA_MINOR_PROTOCOL_REVISION;
+        }
         this->out.commitMsg ();
     }
     

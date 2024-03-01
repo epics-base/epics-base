@@ -190,6 +190,8 @@ public:
     unsigned getHostName (
         epicsGuard < epicsMutex > &,
         char * pBuf, unsigned bufLen ) const throw ();
+    unsigned getHostMinorProtocol (
+        epicsGuard < epicsMutex > &) const throw ();
     void writeException (
         epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > &,
         int status, const char *pContext, unsigned type, arrayElementCount count );

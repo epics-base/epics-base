@@ -254,6 +254,8 @@ public:
     // !! deprecated, avoid use  !!
     virtual const char * pHostName (
         epicsGuard < epicsMutex > & guard ) const throw ();
+    virtual unsigned getHostMinorProtocol (
+        epicsGuard < epicsMutex > &) const throw () ;
 
     // exceptions
     class badString {};

@@ -35,6 +35,8 @@ public:
         unsigned bufLength ) const throw ();
     const char * pHostName (
         epicsGuard < epicsMutex > & ) const throw (); 
+    unsigned getHostMinorProtocol ( 
+        epicsGuard < epicsMutex > & ) const throw ();
     bool ca_v41_ok (
         epicsGuard < epicsMutex > & ) const;
     bool ca_v42_ok (

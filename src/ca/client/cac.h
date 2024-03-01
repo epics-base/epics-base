@@ -216,6 +216,7 @@ public:
     void destroyIIU ( tcpiiu & iiu );
 
     const char * pLocalHostName ();
+    const resTable < tcpiiu, caServerID > & getServerTable();
 
 private:
     epicsSingleton < localHostName > :: reference _refLocalHostName;
@@ -462,6 +463,12 @@ inline double cac ::
 {
     guard.assertIdenticalMutex ( this->mutex );
     return this->connTMO;
+}
+
+inline const resTable < tcpiiu, caServerID > & cac ::
+    getServerTable()
+{
+    return this->serverTable;
 }
 
 #endif // ifdef cach

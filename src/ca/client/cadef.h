@@ -662,6 +662,8 @@ epicsShareFunc unsigned epicsShareAPI ca_get_host_name ( chid pChan,
  */
 epicsShareFunc unsigned epicsShareAPI ca_host_minor_protocol (chid pChan);
 
+#define HAS_CA_HOST_MINOR_PROTOCOL
+
 /*
  *  CA_ADD_FD_REGISTRATION
  *

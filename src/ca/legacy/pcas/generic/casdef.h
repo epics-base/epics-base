@@ -134,6 +134,8 @@ private:
     ca_uint16_t minorProtocolVersion;
 };
 
+#define HAS_CAS_RETURN_MINOR_PROTOCOL
+
 //
 // pvAttachReturn
 //

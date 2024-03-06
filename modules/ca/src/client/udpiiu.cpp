@@ -681,6 +681,13 @@ bool udpiiu :: searchRespAction (
     }
 
     /*
+     * CA requires this field to be 0 in the search response
+     */
+    if (msg.m_count != 0) {
+        return true;
+    }
+
+    /*
      * Starting with CA V4.1 the minor version number
      * is appended to the end of each UDP search reply.
      * This value is ignored by earlier clients.

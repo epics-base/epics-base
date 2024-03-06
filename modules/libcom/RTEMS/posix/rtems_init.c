@@ -102,9 +102,9 @@ char bootp_server_name_init[128] = "1001.1001@10.0.5.1:/epics";
 char bootp_boot_file_name_init[128] = "/epics/myExample/bin/RTEMS-beatnik/myExample.boot";
 char bootp_cmdline_init[128] = "/epics/myExample/iocBoot/iocmyExample/st.cmd";
 
-struct in_addr rtems_bsdnet_bootp_server_address;
 /* TODO check rtems_bsdnet_bootp_cmdline */
 #ifndef RTEMS_LEGACY_STACK
+struct in_addr rtems_bsdnet_bootp_server_address;
 char *rtems_bsdnet_bootp_server_name = bootp_server_name_init;
 char *rtems_bsdnet_bootp_boot_file_name = bootp_boot_file_name_init;
 char *rtems_bsdnet_bootp_cmdline = bootp_cmdline_init;

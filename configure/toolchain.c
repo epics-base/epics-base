@@ -34,6 +34,23 @@ OS_API = posix
 #  else
 OS_API = score
 #  endif
+#  if defined(RTEMS_NETWORKING)
+     /* legacy stack circa RTEMS <= 5 and networking internal to RTEMS */
+RTEMS_LEGACY_NETWORKING = yes
+#  else
+#    if !defined(__has_include)
+       /* assume old GCC implies RTEMS < 5 with mis-configured BSP */
+#      error rebuild BSP with --enable-network
+#    elif __has_include(<machine/rtems-net-legacy.h>)
+       /* legacy stack circa RTEMS > 5 */
+RTEMS_LEGACY_NETWORKING = yes
+#    elif __has_include(<machine/rtems-bsd-version.h>)
+       /* libbsd stack */
+RTEMS_BSD_NETWORKING = yes
+#    else
+#      error Cannot determine RTEMS network configuration
+#    endif
+#  endif
 #endif
 
 #ifdef __has_include

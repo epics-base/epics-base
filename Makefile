@@ -23,3 +23,9 @@ DIRS += modules
 modules_DEPEND_DIRS = src
 
 include $(TOP)/configure/RULES_TOP
+
+readthedocs: inc doc
+	$(MAKE) -C documentation/ doxygen T_A=any
+	$(PYTHON) -m sphinx documentation _readthedocs/html
+
+.PHONY: readthedocs

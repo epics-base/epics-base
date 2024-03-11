@@ -82,6 +82,11 @@ FINAL_LOCATION              = $(INSTALL_ABSOLUTE)
 IOCS_APPL_TOP               = $(INSTALL_ABSOLUTE)
 
 #-------------------------------------------------------
+# Temporary build products
+
+GENERATED_MARKDOWN_LOCATION = $(TOP)/documentation/generated
+
+#-------------------------------------------------------
 # How to portably check the flags to make
 makeflags := $(firstword $(filter-out -,$(filter-out --%,$(MAKEFLAGS))))
 define checkflags
@@ -411,6 +416,7 @@ INSTALL_SCRIPTS = $(SCRIPTS:%= $(INSTALL_BIN)/%)
 INSTALL_OBJS = $(OBJSNAME:%= $(INSTALL_BIN)/%)
 
 INSTALL_DOCS = $(DOCS:%= $(INSTALL_DOC)/%)
+INSTALL_MARKDOWNS = $(MARKDOWNS:%= $(GENERATED_MARKDOWN_LOCATION)/%)
 INSTALL_HTMLS = $(HTMLS:%= $(INSTALL_HTML)/$(HTMLS_DIR)/%)
 
 INSTALL_TEMPLATE = $(addprefix $(INSTALL_TEMPLATES_SUBDIR)/, \

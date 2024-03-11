@@ -163,8 +163,8 @@ Database Link types, which are documented here:
 
 Corrections to these documents can be submitted as patch files to the EPICS
 core developers, or as GitHub  pull requests to the 7.0 branch of Base.
-These document sources can be found under `modules/database/src` tree, mostly
-in the `std/rec` and `ioc/db` directories in files with extension `.dbd.pod`.
+These document sources can be found under C<modules/database/src> tree, mostly
+in the C<std/rec> and C<ioc/db> directories in files with extension C<.dbd.pod>.
 The documentation source format is a combination of the EPICS DBD file format
-with an extended version of Perl's POD (plain old documentation); run `perldoc
-pod` for details of POD.
+with an extended version of Perl's POD (plain old documentation); run
+C<perldoc pod> for details of POD.

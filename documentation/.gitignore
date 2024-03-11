@@ -1,3 +1,8 @@
 *.db
+*-api.rst
 epics-base.tag
 html/
+generated/
+doxygen/
+xml/
+/Doxyfile

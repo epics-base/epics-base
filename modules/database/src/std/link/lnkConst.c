@@ -495,9 +495,11 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         }
         else {
             /* Long string conversion */
-            strncpy(pbuffer, clink->value.scalar_string, *pnReq);
-            ((char *)pbuffer)[*pnReq] = 0;
-            nElems = strlen(pbuffer) + 1;
+            if (*pnReq > 0) {
+                strncpy(pbuffer, clink->value.scalar_string, *pnReq);
+                ((char *)pbuffer)[*pnReq - 1] = 0;
+                nElems = strlen(pbuffer) + 1;
+            }
             status = 0;
         }
         break;

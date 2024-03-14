@@ -469,6 +469,38 @@ testNto1Average(void) {
     testdbCleanup();
 }
 
+void testNto2Average(void) {
+    DBADDR wfaddr, caddr;
+
+    testDiag("Test N to 1 Average, NSAM=2, N=2");
+
+    testdbPrepare();
+
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=N to 1 Average,BALG=FIFO Buffer,NSAM=2,N=2");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    fetchRecordOrDie("wf", wfaddr);
+    fetchRecordOrDie("comp", caddr);
+
+    writeToWaveform(&wfaddr, 4, 1., 2., 3., 4.);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+
+    checkArrD("comp", 2, 1.5, 3.5, 0, 0);
+    dbScanUnlock(caddr.precord);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
 void
 testNto1AveragePartial(void) {
     double buf = 0.0;
@@ -511,6 +543,36 @@ testNto1AveragePartial(void) {
         testAbort("dbGet failed on compress record");
 
     testDEq(buf, 6.0, 0.01);
+    dbScanUnlock(caddr.precord);
+
+    testIocShutdownOk();
+    testdbCleanup();
+}
+
+void
+testNtoMPartial(void) {
+    DBADDR wfaddr, caddr;
+
+    testDiag("Test Average, N to M, Partial");
+
+    testdbPrepare();
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+    testdbReadDatabase("compressTest.db", NULL, "INP=wf,ALG=N to 1 Average,BALG=FIFO Buffer,NSAM=2,N=3,PBUF=YES");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    fetchRecordOrDie("wf", wfaddr);
+    fetchRecordOrDie("comp", caddr);
+
+    writeToWaveform(&wfaddr, 4, 1., 2., 3., 4.);
+
+    dbScanLock(caddr.precord);
+    dbProcess(caddr.precord);
+
+    checkArrD("comp", 2, 2.0, 4.0, 0, 0);
     dbScanUnlock(caddr.precord);
 
     testIocShutdownOk();
@@ -634,12 +696,14 @@ testAIAveragePartial(void) {
 
 MAIN(compressTest)
 {
-    testPlan(132);
+    testPlan(134);
     testFIFOCirc();
     testLIFOCirc();
     testArrayAverage();
     testNto1Average();
+    testNto2Average();
     testNto1AveragePartial();
+    testNtoMPartial();
     testAIAveragePartial();
     testNto1LowValue();
     return testDone();

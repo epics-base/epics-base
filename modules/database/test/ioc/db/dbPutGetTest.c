@@ -245,11 +245,11 @@ void testLongLink(void)
 {
     testDiag("testLonkLink()");
 
-    testdbGetFieldEqual("lnktest.INP", DBR_STRING, "lnktarget NPP NMS");
-    testdbGetFieldEqual("lnktest.INP$", DBR_STRING, "lnktarget NPP NMS");
+    testdbGetFieldEqual("lnktest.INP", DBR_STRING, "lnktarget NPP NMS EXT");
+    testdbGetFieldEqual("lnktest.INP$", DBR_STRING, "lnktarget NPP NMS EXT");
     testDiag("dbGet() w/ nRequest==1 gets only trailing nil");
     testdbGetFieldEqual("lnktest.INP$", DBR_CHAR, '\0');
-    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 19, 18, "lnktarget NPP NMS");
+    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 23, 22, "lnktarget NPP NMS EXT");
 
     testDiag("get w/ truncation");
     testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 0, 0, NULL);
@@ -257,9 +257,9 @@ void testLongLink(void)
     testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 2, 2, "l");
     testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 3, 3, "ln");
     testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 17, 17, "lnktarget NPP NM");
-    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 18, 18, "lnktarget NPP NMS");
+    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 22, 22, "lnktarget NPP NMS EXT");
 
-    testdbGetArrFieldEqual("lnktest.INP", DBR_STRING, 2, 1, "lnktarget NPP NMS");
+    testdbGetArrFieldEqual("lnktest.INP", DBR_STRING, 2, 1, "lnktarget NPP NMS EXT");
 }
 
 static

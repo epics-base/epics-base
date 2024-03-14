@@ -44,7 +44,7 @@ static void testRetarget(void)
     testMonitorWait(lnkmon);
 
     testdbGetFieldEqual("rec:ai", DBR_DOUBLE, 0.0);
-    testdbGetFieldEqual("rec:ai.INP", DBR_STRING, "rec:src1 NPP NMS");
+    testdbGetFieldEqual("rec:ai.INP", DBR_STRING, "rec:src1 NPP NMS EXT");
 
     /* trigger a read from rec:ai.INP */
     testdbPutFieldOk("rec:ai.PROC", DBF_LONG, 0);
@@ -60,7 +60,7 @@ static void testRetarget(void)
     testMonitorWait(valmon);
 
     testdbGetFieldEqual("rec:ai", DBR_DOUBLE, 2.0);
-    testdbGetFieldEqual("rec:ai.INP", DBR_STRING, "rec:src2 CP NMS");
+    testdbGetFieldEqual("rec:ai.INP", DBR_STRING, "rec:src2 CP NMS EXT");
 
     testMonitorDestroy(lnkmon);
     testMonitorDestroy(valmon);

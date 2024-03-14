@@ -21,6 +21,7 @@
 #include "epicsExit.h"
 #include "epicsStdio.h"
 #include "epicsString.h"
+#include "errlog.h"
 #include "dbStaticLib.h"
 #include "subRecord.h"
 #include "dbAccess.h"
@@ -92,7 +93,7 @@ void usage(const char *arg0, const std::string& base_dbd) {
                "interactive IOC shell.\n"
                "\n"
                "Compiled-in path to softIoc.dbd is:\n"
-               "\t"<<base_dbd.c_str()<<"\n";
+               "\t"<<base_dbd.c_str()<<std::endl;
 }
 
 void errIf(int ret, const std::string& msg)
@@ -239,7 +240,10 @@ int main(int argc, char *argv[])
         if (loadedDb) {
             if (verbose)
                 std::cout<<"iocInit()\n";
-            iocInit();
+            if(iocInit()) {
+                std::cerr<<ERL_ERROR " during iocInit()\n"
+                         <<"      "  ANSI_BOLD("IOC not running!")<<std::endl;
+            }
             epicsThreadSleep(0.2);
         }
 

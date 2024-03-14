@@ -53,6 +53,7 @@ dbShutdownTest_SRCS += dbShutdownTest.c
 dbShutdownTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbShutdownTest.c
 TESTS += dbShutdownTest
+TESTFILES += ../dbInitLinkTest.db
 
 TESTPROD_HOST += dbPutLinkTest
 dbPutLinkTest_SRCS += dbPutLinkTest.c

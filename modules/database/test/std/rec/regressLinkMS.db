@@ -7,7 +7,7 @@ record(ai, "alarm") {
 }
 
 record(calc, "latch") {
-    field(INPA, "alarm NPP MS")
-    field(INPB, "latch NPP MS")
+    field(INPA, "alarm NPP MS EXT")
+    field(INPB, "latch NPP MS EXT")
     field(CALC, "A")
 }

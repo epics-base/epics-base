@@ -2342,7 +2342,7 @@ need a database fragment that might look something like this:
         ...
         field(FTA, "LONG")
         field(NOA, "100")
-        field(INPA, "myWaveform_1 NPP NMS")
+        field(INPA, "myWaveform_1 NPP NMS EXT")
         ...
     }
 

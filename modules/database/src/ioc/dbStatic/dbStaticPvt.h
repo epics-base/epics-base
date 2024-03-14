@@ -45,6 +45,11 @@ void dbMsgPrint(
 
 void dbPutStringSuggest(DBENTRY *pdbentry, const char *pstring);
 
+/* Find closest match for PV name.  output similarity in range [0, 1]
+ */
+DBCORE_API
+long dbFindRecordSimilar(DBENTRY *pdbentry, const char *pname, double *psimilarity);
+
 DBCORE_API
 const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp);
 
@@ -58,7 +63,7 @@ typedef struct dbLinkInfo {
      */
     char *target;
 
-    /* for PV_LINK */
+    /* pvlOpt* modifiers for PV_LINK */
     short modifiers;
 
     /* for HW links */
@@ -119,6 +124,9 @@ void dbPvdFreeMem(DBBASE *pdbbase);
 
 DBCORE_API
 char** dbCompleteRecord(const char *word);
+
+unsigned dbLinkScopeDefault(void);
+const char *dbLinkSrcName(const struct link* plink);
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,29 @@
+# implied default default is AUTO
+
+record(x, "il$(N)src0") {
+    # implied default is AUTO
+    field(INP, "no:such:pv")
+}
+
+# change implied default to INT
+set("link:scope", "INT")
+
+record(x, "il$(N)tgt") {}
+record(x, "il$(N)src1") {
+    field(INP, "il$(N)tgt EXT")
+}
+record(x, "il$(N)src2") {
+    # implied default is INT
+    field(INP, "il$(N)tgt")
+}
+record(x, "il$(N)src3") {
+    field(INP, "no:such:pv EXT")
+}
+
+set("link:scope", "AUTO")
+set("link:scope") # equivalent
+# implied default back to AUTO
+
+record(x, "il$(N)src4") {
+    field(INP, "no:such:pv")
+}

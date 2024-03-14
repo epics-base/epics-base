@@ -41,8 +41,9 @@
 #include "dbLink.h"
 #include "dbLock.h"
 #include "dbScan.h"
-#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 #include "devSup.h"
+#include "epicsString.h"
 #include "link.h"
 #include "recGbl.h"
 #include "recSup.h"
@@ -66,6 +67,26 @@ const char * dbLinkFieldName(const struct link *plink)
     return "????";
 }
 
+const char *dbLinkSrcName(const struct link* plink)
+{
+    const char *ret = "";
+
+    if(plink->type == DB_LINK || plink->type == CA_LINK || plink->type == PV_LINK) {
+        unsigned srcMask = plink->value.pv_link.pvlMask & pvlOptSrcMask;
+
+        if(srcMask == pvlOptSrcAuto)
+            srcMask = plink->flags & pvlOptSrcMask;
+
+        switch(srcMask) {
+        case pvlOptSrcAuto: ret = ""; break;
+        case pvlOptSrcInt:  ret = " INT"; break;
+        case pvlOptSrcExt:  ret = " EXT"; break;
+        default: ret = " INVALID"; break;
+        }
+    }
+    return ret;
+}
+
 /* Special TSEL handler for PV links */
 /* FIXME: Generalize for new link types... */
 static void TSEL_modified(struct link *plink)
@@ -86,31 +107,56 @@ static void TSEL_modified(struct link *plink)
     }
 }
 
-
 /***************************** Generic Link API *****************************/
 
-void dbInitLink(struct link *plink, short dbfType)
+long dbInitLink(struct link *plink, short dbfType)
 {
     struct dbCommon *precord = plink->precord;
+    unsigned srcMask;
 
     /* Only initialize link once */
     if (plink->flags & DBLINK_FLAG_INITIALIZED)
-        return;
+        return 0;
     else
         plink->flags |= DBLINK_FLAG_INITIALIZED;
 
     if (plink->type == CONSTANT) {
         dbConstInitLink(plink);
-        return;
+        return 0;
     }
 
     if (plink->type == JSON_LINK) {
         dbJLinkInit(plink);
-        return;
+        return 0;
     }
 
     if (plink->type != PV_LINK)
-        return;
+        return 0;
+
+    srcMask = plink->value.pv_link.pvlMask & pvlOptSrcMask;
+
+    if(srcMask == pvlOptSrcAuto) {
+        /* apply default from set("link:scope", ...) */
+        srcMask = plink->flags & pvlOptSrcMask;
+    }
+
+    if((srcMask == pvlOptSrcInt) && dbChannelTest(plink->value.pv_link.pvname)) {
+        DBENTRY closest;
+        const char *fldname = dbLinkFieldName(plink);
+        epicsPrintf("%s.%s " ERL_ERROR ": Unable to create INT link to \"" ANSI_BOLD("%s") "\".\n",
+                    precord->name, fldname, plink->value.pv_link.pvname);
+
+        dbInitEntry(pdbbase, &closest);
+        if(!dbFindRecordSimilar(&closest, plink->value.pv_link.pvname, NULL)) {
+            unsigned indent = strlen(precord->name) + strlen(fldname) + 23;
+            epicsPrintf("%*s  Did you mean \"" ANSI_BOLD("%s.%s") "\" ?\n",
+                        indent, "",
+                        closest.precnode->recordname,
+                        closest.pflddes->name);
+        }
+        dbFinishEntry(&closest);
+        return S_dbLib_badLink;
+    }
 
     if (plink == &precord->tsel)
         TSEL_modified(plink);
@@ -118,7 +164,7 @@ void dbInitLink(struct link *plink, short dbfType)
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
         /* Make it a DB link if possible */
         if (!dbDbInitLink(plink, dbfType))
-            return;
+            return 0;
     }
 
     /* Make it a CA link */
@@ -140,6 +186,8 @@ void dbInitLink(struct link *plink, short dbfType)
                 plink->value.pv_link.pvname);
         }
     }
+
+    return 0;
 }
 
 void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,

@@ -37,7 +37,7 @@ record(x, "recmax") {
 record(x, "lnktarget") {}
 
 record(x, "lnktest") {
-    field(INP, "lnktarget NPP NMS")
+    field(INP, "lnktarget NPP NMS EXT")
 }
 
 record(arr, "arr") {

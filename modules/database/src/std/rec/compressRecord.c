@@ -149,13 +149,16 @@ static int compare(const void *arg1, const void *arg2)
     else               return  1;
 }
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
 static int compress_array(compressRecord *prec,
     double *psource, int no_elements)
 {
-    epicsInt32 i,j;
+    epicsInt32 j;
     epicsInt32 n, nnew;
     epicsInt32 nsam = prec->nsam;
-    double value;
+    epicsUInt32 samples_written = 0;
+    double value = 0.0;
 
     /* skip out of limit data */
     if (prec->ilil < prec->ihil) {
@@ -167,61 +170,54 @@ static int compress_array(compressRecord *prec,
     }
     if (prec->n <= 0)
         prec->n = 1;
-    if (no_elements < prec->n && prec->pbuf != menuYesNoYES)
-        return 1; /*dont do anything*/
-    n = no_elements;
+    n = prec->n;
 
-    /* determine number of samples to take */
-    if (no_elements < nsam * n)
-        nnew = (no_elements / n);
-    else nnew = nsam;
+    nnew = min(no_elements, nsam * n);
 
-    /* compress according to specified algorithm */
-    switch (prec->alg){
-    case compressALG_N_to_1_Low_Value:
-        /* compress N to 1 keeping the lowest value */
-        for (i = 0; i < nnew; i++) {
+    while (nnew > 0)
+    {
+        if (nnew < n && prec->pbuf != menuYesNoYES)
+            break;
+
+        n = min(n, nnew);
+        switch (prec->alg)
+        {
+        case compressALG_N_to_1_Low_Value:
             value = *psource++;
-            for (j = 1; j < n; j++, psource++) {
+            for (j = 1; j < n; j++, psource++)
+            {
                 if (value > *psource)
                     value = *psource;
             }
-            put_value(prec, &value, 1);
-        }
-        break;
-    case compressALG_N_to_1_High_Value:
-        /* compress N to 1 keeping the highest value */
-        for (i = 0; i < nnew; i++){
+            break;
+        case compressALG_N_to_1_High_Value:
             value = *psource++;
-            for (j = 1; j < n; j++, psource++) {
+            for (j = 1; j < n; j++, psource++)
+            {
                 if (value < *psource)
                     value = *psource;
             }
-            put_value(prec, &value, 1);
-        }
-        break;
-    case compressALG_N_to_1_Average:
-        /* compress N to 1 keeping the average value */
-        for (i = 0; i < nnew; i++) {
-            value = 0;
-            for (j = 0; j < n; j++, psource++)
+            break;
+        case compressALG_N_to_1_Average:
+            value = *psource++;
+            for (j = 1; j < n; j++, psource++)
+            {
                 value += *psource;
-            value /= n;
-            put_value(prec, &value, 1);
-        }
-        break;
-
-    case compressALG_N_to_1_Median:
-        /* compress N to 1 keeping the median value */
-        /* note: sorts source array (OK; it's a work pointer) */
-        for (i = 0; i < nnew; i++, psource += nnew) {
+            }
+            value = value / n;
+            break;
+        case compressALG_N_to_1_Median:
+            /* note: sorts source array (OK; it's a work pointer) */
             qsort(psource, n, sizeof(double), compare);
             value = psource[n / 2];
-            put_value(prec, &value, 1);
+            psource += n;
+            break;
         }
-        break;
+        nnew -= n;
+        put_value(prec, &value, 1);
+        samples_written++;
     }
-    return 0;
+    return (samples_written == 0);
 }
 
 static int array_average(compressRecord *prec,

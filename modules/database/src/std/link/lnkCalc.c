@@ -36,8 +36,6 @@
 #include "epicsExport.h"
 
 
-typedef long (*FASTCONVERT)();
-
 typedef struct calc_link {
     jlink jlink;        /* embedded object */
     int nArgs;
@@ -558,7 +556,7 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
     dbCommon *prec = plink->precord;
     int i;
     long status;
-    FASTCONVERT conv;
+    FASTCONVERTFUNC conv;
 
     if(INVALID_DB_REQ(dbrType))
         return S_db_badDbrtype;
@@ -638,7 +636,7 @@ static long lnkCalc_putValue(struct link *plink, short dbrType,
     dbCommon *prec = plink->precord;
     int i;
     long status;
-    FASTCONVERT conv;
+    FASTCONVERTFUNC conv;
 
     if(INVALID_DB_REQ(dbrType))
         return S_db_badDbrtype;

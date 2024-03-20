@@ -19,8 +19,11 @@
 extern "C" {
 #endif
 
-DBCORE_API extern long (*dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])();
-DBCORE_API extern long (*dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])();
+struct dbAddr;
+typedef long (*FASTCONVERTFUNC)(const void *from, void *to, const struct dbAddr *paddr);
+
+DBCORE_API extern FASTCONVERTFUNC dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1];
+DBCORE_API extern FASTCONVERTFUNC dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1];
 
 #ifdef __cplusplus
 }

@@ -98,13 +98,10 @@ static void clean_addrq(struct client *client)
     }
     epicsMutexUnlock ( client->chanListLock );
 
-#   ifdef DEBUG
-    if(ndelete){
+    if (CASDEBUG>1 && ndelete){
         epicsPrintf ("CAS: %d CA channels have expired after %f sec\n",
             ndelete, maxdelay);
     }
-#   endif
-
 }
 
 /*

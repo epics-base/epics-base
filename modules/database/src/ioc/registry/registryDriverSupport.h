@@ -19,8 +19,8 @@ extern "C" {
 #endif
 
 DBCORE_API int registryDriverSupportAdd(
-    const char *name, struct drvet *pdrvet);
-DBCORE_API struct drvet * registryDriverSupportFind(
+    const char *name, drvet *pdrvet);
+DBCORE_API drvet * registryDriverSupportFind(
     const char *name);
 
 #ifdef __cplusplus

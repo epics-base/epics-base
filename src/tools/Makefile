@@ -19,9 +19,10 @@ PERL_MODULES += EPICS/Getopts.pm
 PERL_MODULES += EPICS/PodHtml.pm
 PERL_MODULES += EPICS/PodXHtml.pm
 
-# This goes into lib/perl, not bin/<host>
+# This also goes into lib/perl
 PERL_MODULES += EpicsHostArch.pl
 
+PERL_SCRIPTS += EpicsHostArch.pl
 PERL_SCRIPTS += assembleSnippets.pl
 PERL_SCRIPTS += convertRelease.pl
 PERL_SCRIPTS += cvsclean.pl

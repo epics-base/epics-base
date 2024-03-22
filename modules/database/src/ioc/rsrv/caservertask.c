@@ -120,6 +120,10 @@ static void req_server (void *pParm)
             }
         }
     }
+
+    /* ATM never reached, just a placeholder */
+
+    taskwdRemove(0);
 }
 
 static
@@ -748,6 +752,7 @@ void rsrv_init (void)
         if(!havesometcp)
             cantProceed("CAS: No TCP server started\n");
     }
+    free(socks);
 
     /* servers list is considered read-only from this point */
 

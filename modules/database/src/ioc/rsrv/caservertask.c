@@ -120,6 +120,10 @@ static void req_server (void *pParm)
             }
         }
     }
+
+    /* ATM never reached, just a placeholder */
+
+    taskwdRemove(0);
 }
 
 static

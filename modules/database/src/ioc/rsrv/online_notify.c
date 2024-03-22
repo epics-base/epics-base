@@ -129,7 +129,10 @@ void rsrv_online_notify_task(void *pParm)
         }
     }
 
+    /* ATM never reached, just a placeholder */
+
     free(lastError);
+    taskwdRemove(0);
 }
 
 

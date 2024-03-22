@@ -225,6 +225,11 @@ static void asCaTask(void)
         if(asCaDebug) printf("asCaTask has cleared all channels\n");
         epicsEventSignal(asCaTaskWait);
     }
+
+    /* ATM never reached, just a placeholder */
+    cantProceed("Unreachable.  Perpetual thread.");
+
+    taskwdRemove(0);
 }
 
 void asCaStart(void)

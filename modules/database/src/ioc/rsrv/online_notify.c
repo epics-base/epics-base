@@ -129,7 +129,11 @@ void rsrv_online_notify_task(void *pParm)
         }
     }
 
+    /* ATM never reached, just a placeholder */
+    cantProceed("Unreachable.  Perpetual thread.");
+
     free(lastError);
+    taskwdRemove(0);
 }
 
 

@@ -658,6 +658,7 @@ static epicsThreadOSD *createImplicit(void)
     assert(pthreadInfo);
     pthreadInfo->tid = tid;
     pthreadInfo->osiPriority = 0;
+    pthreadInfo->isOkToBlock = 1;
 
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     if(pthread_getschedparam(tid,&pthreadInfo->schedPolicy,&pthreadInfo->schedParam) == 0) {
@@ -1057,4 +1058,18 @@ LIBCOM_API int epicsThreadGetCPUs(void)
         return ret;
 #endif
     return 1;
+}
+
+int epicsStdCall epicsThreadIsOkToBlock(void)
+{
+    epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    return(pthreadInfo->isOkToBlock);
+}
+
+void epicsStdCall epicsThreadSetOkToBlock(int isOkToBlock)
+{
+    epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    pthreadInfo->isOkToBlock = !!isOkToBlock;
 }

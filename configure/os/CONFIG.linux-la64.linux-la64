@@ -1,8 +1,0 @@
-# CONFIG.linux-la64.linux-la64
-#
-# Definitions for native linux-la64 builds
-# Override these definitions in CONFIG_SITE.linux-la64.linux-la64
-#-------------------------------------------------------
-
-# Include common gnu compiler definitions
-include $(CONFIG)/CONFIG.gnuCommon

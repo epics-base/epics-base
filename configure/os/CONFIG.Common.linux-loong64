@@ -1,7 +1,7 @@
-# CONFIG.Common.linux-la64
+# CONFIG.Common.linux-loong64
 #
-# Definitions for linux-la64 target builds
-# Override these settings in CONFIG_SITE.Common.linux-la64
+# Definitions for linux-loong64 target builds
+# Override these settings in CONFIG_SITE.Common.linux-loong64
 #-------------------------------------------------------
 
 # Include definitions common to all Linux targets

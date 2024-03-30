@@ -1,7 +1,7 @@
-# CONFIG.linux-la64.Common
+# CONFIG.linux-loong64.Common
 #
-# Definitions for linux-la64 host builds
-# Sites may override these definitions in CONFIG_SITE.linux-la64.Common
+# Definitions for linux-loong64 host builds
+# Sites may override these definitions in CONFIG_SITE.linux-loong64.Common
 #-------------------------------------------------------
 
 # Include definitions common to unix hosts

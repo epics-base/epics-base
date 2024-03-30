@@ -37,7 +37,7 @@ sub HostArch {
         return 'linux-arm'      if m/^arm-linux/;
         return 'linux-aarch64'  if m/^aarch64-linux/;
         return 'linux-ppc64'    if m/^powerpc64-linux/;
-        return 'linux-la64'     if m/^loongarch64-linux/;
+        return 'linux-loong64'  if m/^loongarch64-linux/;
         return 'windows-x64'    if m/^MSWin32-x64/;
         return 'win32-x86'      if m/^MSWin32-x86/;
         return "cygwin-x86_64"  if m/^x86_64-cygwin/;

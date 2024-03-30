@@ -1,6 +1,6 @@
-# CONFIG_SITE.Common.linux-la64
+# CONFIG_SITE.Common.linux-loong64
 #
-# Site Specific definitions for all linux-la64 targets
+# Site Specific definitions for all linux-loong64 targets
 #-------------------------------------------------------
 
 # NOTE for SHARED_LIBRARIES: In most cases if this is set to YES the
@@ -37,8 +37,8 @@
 # WARNING: Variables that are set in $(CONFIG)/CONFIG.gnuCommon cannot be
 # overridden in this file for native builds, e.g. variables such as
 #    OPT_CFLAGS_YES, WARN_CFLAGS, SHRLIB_LDFLAGS
-# They must be set in CONFIG_SITE.linux-la64.linux-la64 or for
-# cross-builds in CONFIG_SITE.<host-arch>.linux-la64 instead.
+# They must be set in CONFIG_SITE.linux-loong64.linux-loong64 or for
+# cross-builds in CONFIG_SITE.<host-arch>.linux-loong64 instead.
 
 # Tune GNU compiler output for a specific cpu-type
 # (e.g. loongarch64, la264, la364, la464 etc.)

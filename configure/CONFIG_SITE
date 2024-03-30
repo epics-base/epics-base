@@ -25,7 +25,7 @@
 #	linux-arm              (GNU compiler used for host builds)
 #	linux-ppc              (GNU compiler used for host builds)
 #	linux-ppc64            (GNU compiler used for host builds)
-#	linux-la64             (GNU compiler used for host builds)
+#	linux-loong64          (GNU compiler used for host builds)
 #	linux-x86              (GNU compiler used for host builds)
 #	linux-x86_64           (GNU compiler used for host builds)
 #	solaris-sparc          (Sun compiler used for host builds)
@@ -64,7 +64,7 @@
 #       ios-386                 (darwin-x86 host)
 #       linux-arm               (linux-x86 or -x86_64 host)
 #       linux-aarch64           (linux-x86_64 host)
-#       linux-la64              (linux-x86_64 host)
+#       linux-loong64           (linux-x86_64 host)
 #       linux-microblaze
 #       linux-xscale_be
 #       vxWorks-486

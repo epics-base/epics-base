@@ -1,6 +1,6 @@
-# CONFIG_SITE.linux-x86_64.linux-la64
+# CONFIG_SITE.linux-x86_64.linux-loong64
 #
-# Site specific definitions for linux-x86_64 host - linux-la64 target builds
+# Site specific definitions for linux-x86_64 host - linux-loong64 target builds
 #-------------------------------------------------------
 
 # Set GNU crosscompiler target name
@@ -25,6 +25,6 @@ GNU_DIR = /opt/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.2
 
 # To use libreadline, point this to its install prefix
 #READLINE_DIR = $(GNU_DIR)
-#READLINE_DIR = /tools/cross/linux-x86.linux-la64/readline
-# See CONFIG_SITE.Common.linux-la64 for other COMMANDLINE_LIBRARY values
+#READLINE_DIR = /tools/cross/linux-x86.linux-loong64/readline
+# See CONFIG_SITE.Common.linux-loong64 for other COMMANDLINE_LIBRARY values
 #COMMANDLINE_LIBRARY = READLINE

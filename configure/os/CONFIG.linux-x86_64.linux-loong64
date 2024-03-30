@@ -1,7 +1,7 @@
-# CONFIG.linux-x86_64.linux-la64
+# CONFIG.linux-x86_64.linux-loong64
 #
-# Definitions for linux-x86_64 host - linux-la64 target builds
-# Sites may override these in CONFIG_SITE.linux-x86_64.linux-la64
+# Definitions for linux-x86_64 host - linux-loong64 target builds
+# Sites may override these in CONFIG_SITE.linux-x86_64.linux-loong64
 #-------------------------------------------------------
 
 VALID_BUILDS = Ioc Command

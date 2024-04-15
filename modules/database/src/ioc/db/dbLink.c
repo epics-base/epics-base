@@ -133,7 +133,7 @@ void dbInitLink(struct link *plink, short dbfType)
             plink->value.pv_link.pvlMask |= pvlOptFWD;
         }
         else {
-            errlogPrintf("Forward-link uses Channel Access "
+            errlogPrintf(ERL_WARNING ": Forward-link uses Channel Access "
                 "without pointing to PROC field\n"
                 "    %s.%s => %s\n",
                 precord->name, dbLinkFieldName(plink),

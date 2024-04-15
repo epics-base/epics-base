@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+struct dbChannel;
+
 /**
  * \brief The message passed to registered listeners.
  */
@@ -38,8 +40,13 @@ typedef struct asTrapWriteMessage {
      * server is forwarding the put requests. This pointer holds
      * the value the server provides to asTrapWriteWithData(), which
      * for RSRV is the dbChannel pointer for the target field.
+     *
+     * Valid during callback only.  Must not be access afterwards.
+     *
+     * \since UNRELEASED type changed from void* to dbChannel*
+     * \since 3.15.0.1 Storage pointed to changed from dbAddr to dbChannel
      */
-    void *serverSpecific;
+    struct dbChannel *serverSpecific;
     /** \brief A field for use by the \ref asTrapWriteListener.
      *
      * When the listener is called before the write, this has the
@@ -50,13 +57,18 @@ typedef struct asTrapWriteMessage {
     void *userPvt;
     int dbrType; /**< \brief Data type from ca/db_access.h, NOT dbFldTypes.h */
     int no_elements; /**< \brief Array length  */
-    void *data;     /**< \brief Might be NULL if no data is available */
+    const void *data;     /**< \brief Might be NULL if no data is available */
 } asTrapWriteMessage;
 
+/** \brief Type of identifier needed to unregister an listener.
+ * \since UNRELEASED Added
+ */
+struct asTrapListener;
 /**
  * \brief An identifier needed to unregister an listener.
+ * \since UNRELEASED Changed from void* to asTrapListener*
  */
-typedef void *asTrapWriteId;
+typedef struct asTrapListener *asTrapWriteId;
 
 /**
  * \brief Pointer to a listener function.

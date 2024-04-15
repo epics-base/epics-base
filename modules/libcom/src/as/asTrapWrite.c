@@ -33,11 +33,11 @@
 
 typedef struct listenerPvt {
     ELLNODE node;
-    struct listener *plistener;
+    struct asTrapListener *plistener;
     void *userPvt;
 }listenerPvt;
 
-typedef struct listener{
+typedef struct asTrapListener{
     ELLNODE node;
     asTrapWriteListener func;
 }listener;
@@ -114,7 +114,7 @@ void epicsStdCall asTrapWriteUnregisterListener(asTrapWriteId id)
 }
 
 void * epicsStdCall asTrapWriteBeforeWithData(
-    const char *userid, const char *hostid, void *addr,
+    const char *userid, const char *hostid, struct dbChannel *addr,
     int dbrType, int no_elements, void *data)
 {
     writeMessage *pwriteMessage;

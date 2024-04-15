@@ -23,6 +23,7 @@
 #include "ellLib.h"
 #include "freeList.h"
 #include "epicsStdio.h"
+#include "epicsThread.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "ellLib.h"
@@ -57,9 +58,10 @@ typedef struct asTrapWritePvt
     epicsMutexId lock;
 }asTrapWritePvt;
 
+static epicsThreadOnceId asTrapWriteOnce = EPICS_THREAD_ONCE_INIT;
 static asTrapWritePvt *pasTrapWritePvt = 0;
 
-static void asTrapWriteInit(void)
+static void asTrapWriteInit(void *unused)
 {
     pasTrapWritePvt = callocMustSucceed(1,sizeof(asTrapWritePvt),"asTrapWriteInit");
     ellInit(&pasTrapWritePvt->listenerList);
@@ -75,7 +77,7 @@ asTrapWriteId epicsStdCall asTrapWriteRegisterListener(
     asTrapWriteListener func)
 {
     listener *plistener;
-    if(pasTrapWritePvt==0) asTrapWriteInit();
+    epicsThreadOnce(&asTrapWriteOnce, &asTrapWriteInit, NULL);
     plistener = callocMustSucceed(1,sizeof(listener),"asTrapWriteRegisterListener");
     plistener->func = func;
     epicsMutexMustLock(pasTrapWritePvt->lock);

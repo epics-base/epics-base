@@ -85,6 +85,7 @@ typedef struct asTrapListener *asTrapWriteId;
  * or do anything that causes a delay.
 */
 typedef void(*asTrapWriteListener)(asTrapWriteMessage *pmessage,int after);
+typedef void(*asTrapWriteListener2)(void *pvt, const asTrapWriteMessage *pmessage,int after);
 
 /**
  * \brief Register function to be called on asTrapWriteListener.
@@ -93,6 +94,9 @@ typedef void(*asTrapWriteListener)(asTrapWriteMessage *pmessage,int after);
  */
 LIBCOM_API asTrapWriteId epicsStdCall asTrapWriteRegisterListener(
     asTrapWriteListener func);
+
+LIBCOM_API asTrapWriteId epicsStdCall asTrapWriteRegisterListener2(
+    asTrapWriteListener2 func, void *pvt);
 /**
  * \brief Unregister asTrapWriteListener.
  * \param id Listener identifier from asTrapWriteRegisterListener().

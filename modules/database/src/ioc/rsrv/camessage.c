@@ -88,7 +88,7 @@ typedef struct rsrv_put_notify {
     long nRequest;
     short dbrType;
     /* end arguments for db_put_field */
-    void            * asWritePvt;
+    asTrapWrite     * asWritePvt;
     unsigned        valueSize; /* size of block pointed to by pbuffer */
     char            busy; /* put notify in progress */
     char            onExtraLaborQueue;
@@ -756,7 +756,7 @@ static int write_action ( caHdrLargeArray *mp,
     struct channel_in_use   *pciu;
     int                     status;
     long                    dbStatus;
-    void                    *asWritePvt;
+    asTrapWrite             *asWritePvt;
 
     pciu = MPTOPCIU(mp);
     if(!pciu){

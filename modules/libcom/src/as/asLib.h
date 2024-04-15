@@ -122,11 +122,19 @@ LIBCOM_API int epicsStdCall asDumpMemFP(FILE *fp,const char *asgname,
 LIBCOM_API int epicsStdCall asDumpHash(void);
 LIBCOM_API int epicsStdCall asDumpHashFP(FILE *fp);
 
-LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithData(
+/** \brief Handle for in progress asTrapWrite
+ *
+ * Returned by asTrapWriteBeforeWithData(), must be passed to asTrapWriteAfterWrite()
+ *
+ * \since UNRELEASED Previously was void
+ */
+typedef struct asTrapWrite asTrapWrite;
+
+LIBCOM_API struct asTrapWrite * epicsStdCall asTrapWriteBeforeWithData(
     const char *userid, const char *hostid, struct dbChannel *addr,
     int dbrType, int no_elements, void *data);
 
-LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
+LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(struct asTrapWrite *pvt);
 
 #define S_asLib_clientsExist    (M_asLib| 1) /*Client Exists*/
 #define S_asLib_noUag           (M_asLib| 2) /*User Access Group does not exist*/

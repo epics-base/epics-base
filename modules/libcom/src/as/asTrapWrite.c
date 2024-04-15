@@ -44,7 +44,7 @@ typedef struct asTrapListener{
     void *pvt2;
 }listener;
 
-typedef struct writeMessage {
+typedef struct asTrapWrite {
     ELLNODE node;
     asTrapWriteMessage message;
     ELLLIST listenerPvtList;
@@ -141,7 +141,7 @@ void asTrapCallListener(const listener *plistener, asTrapWriteMessage* msg, int 
         (*plistener->func2)(plistener->pvt2, msg, after);
 }
 
-void * epicsStdCall asTrapWriteBeforeWithData(
+struct asTrapWrite * epicsStdCall asTrapWriteBeforeWithData(
     const char *userid, const char *hostid, struct dbChannel *addr,
     int dbrType, int no_elements, void *data)
 {
@@ -179,9 +179,8 @@ void * epicsStdCall asTrapWriteBeforeWithData(
     return pwriteMessage;
 }
 
-void epicsStdCall asTrapWriteAfterWrite(void *pvt)
+void epicsStdCall asTrapWriteAfterWrite(writeMessage *pwriteMessage)
 {
-    writeMessage *pwriteMessage = (writeMessage *)pvt;
     listenerPvt *plistenerPvt;
 
     if (pwriteMessage == 0 ||

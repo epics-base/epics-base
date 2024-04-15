@@ -848,7 +848,8 @@ static long getLinkValue(DBADDR *paddr, short dbrType,
     {
         const char *rtnString = dbGetString(&dbEntry);
 
-        strncpy(pbuf, rtnString, maxlen-1);
+        if (maxlen > 1)
+            strncpy(pbuf, rtnString, maxlen-1);
         pbuf[maxlen-1] = 0;
         if(dbrType!=DBR_STRING)
             nReq = strlen(pbuf)+1;

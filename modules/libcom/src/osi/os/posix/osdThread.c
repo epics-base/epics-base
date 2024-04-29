@@ -699,14 +699,22 @@ void epicsThreadMustJoin(epicsThreadId id)
         return;
     }
 
-    status = pthread_join(id->tid, &ret);
-    if(status == EDEADLK) {
-        /* Thread can't join itself (directly or indirectly)
-         * so we detach instead.
+    if(epicsThreadGetIdSelf()==id) {
+        /* Thread can't join itself, detach instead.
          */
         status = pthread_detach(id->tid);
         checkStatusOnce(status, "pthread_detach");
-    } else checkStatusOnce(status, "pthread_join");
+    } else {
+        status = pthread_join(id->tid, &ret);
+        if (status == EDEADLK) {
+            /* Thread can't join itself (indirectly)
+             * so we detach instead.
+             */
+            status = pthread_detach(id->tid);
+            checkStatusOnce(status, "pthread_detach");
+        } else checkStatusOnce(status, "pthread_join");
+    }
+
     free_threadInfo(id);
 }
 

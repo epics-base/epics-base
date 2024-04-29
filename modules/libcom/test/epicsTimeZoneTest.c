@@ -60,11 +60,11 @@ void test_gmtime(time_t T, int sec, int min, int hour,
     struct tm B;
     testDiag("test_gmtime(%ld, ...)", (long)T);
     if(epicsTime_gmtime(&T, &B)!=epicsTimeOK) {
-        testFail("epicsTime_localtime() error");
-        testSkip(9, "epicsTime_localtime() failed");
+        testFail("epicsTime_gmtime() error");
+        testSkip(9, "epicsTime_gmtime() failed");
     } else {
         B.tm_year += 1900; /* for readability */
-        testPass("epicsTime_localtime() success");
+        testPass("epicsTime_gmtime() success");
 #define TEST(FLD) testOk(B.tm_##FLD==FLD, "%s %d==%d", #FLD, B.tm_##FLD, FLD)
         TEST(sec);
         TEST(min);

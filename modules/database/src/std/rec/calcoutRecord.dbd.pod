@@ -1160,7 +1160,7 @@ See next section.
 
 =head2 C<special>
 
-This is called id CALC or OCAL is changed. C<special> calls postfix.
+This is called if CALC or OCAL is changed. C<special> calls postfix.
 
 =head2 C<get_units>
 

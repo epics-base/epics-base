@@ -22,6 +22,11 @@ should also be read to understand what has changed since earlier releases:
 
 ## Changes made on the 7.0 branch since 7.0.8
 
+### Fix issue with compress record
+
+In Base 7.0.8, an update to the compress record was added to allow for certain
+algorithms to use partially filled buffers in their computations. Unfortunately,
+this broke the behaviour of the records in certain cases. This has been fixed.
 
 -----
 

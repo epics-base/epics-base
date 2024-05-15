@@ -199,6 +199,10 @@ jobs:
         submodules: true
     - name: Automatic core dumper analysis
       uses: mdavidsaver/ci-core-dumper@master
+      if: matrix.image!='centos:7'
+    - name: Automatic core dumper analysis
+      uses: mdavidsaver/ci-core-dumper@node16
+      if: matrix.image=='centos:7'
     - name: "apt-get install"
       run: |
         sudo apt-get update

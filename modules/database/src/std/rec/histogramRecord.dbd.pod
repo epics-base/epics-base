@@ -91,10 +91,10 @@ The BPTR field contains a pointer to the unsigned long array of frequency
 values. The VAL field references this array as well. However, the BPTR field is
 not accessible at run-time.
 
-The MCNT field keeps counts the number of signal counts since the last monitor
+The MCNT field keeps the number of signal counts since the last monitor
 was invoked.
 
-The collections controls field (CMD) is a menu field with five choices:
+The collections controls field (CMD) is a menu field with four choices:
 
 =menu histogramCMD
 
@@ -110,8 +110,6 @@ array. Unlike C<Read>, it doesn't clear the array first.
 
 The C<Stop> command disables the reading of signal values into the array.
 
-The C<Setup> command waits until the C<start> or C<read> command has been issued
-to start counting.
 
 The CSTA or collections status field implements the CMD field choices by
 enabling or disabling the reading of values into the histogram array. While

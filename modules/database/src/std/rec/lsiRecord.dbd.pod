@@ -9,7 +9,7 @@
 =title Long String Input Record (lsi)
 
 The long string input record is used to retrieve an arbitrary ASCII string with
-a maximum length of 65535 characters.
+a maximum length of 32767 characters.
 
 This record type was included in base.dbd beginning with epics-base 3.15.0.2 .
 
@@ -36,7 +36,7 @@ from. It can be a database or channel access link, or a constant. If constant,
 the VAL field is initialized with the constant and can be changed via dbPuts.
 Otherwise, the string is read from the specified location each time the record
 is processed and placed in the VAL field. The maximum number of characters in
-VAL is given by SIZV, and cannot be larger than 65535. In addition, the
+VAL is given by SIZV, and cannot be larger than 32767. In addition, the
 appropriate device support module must be entered into the DTYP field.
 
 =fields VAL, OVAL, SIZV, INP, DTYP

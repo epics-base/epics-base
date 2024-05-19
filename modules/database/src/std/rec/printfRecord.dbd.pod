@@ -152,7 +152,7 @@ Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Dat
 for information on specifying links.
 
 The formatted string is written to the VAL field.  The maximum number of
-characters in VAL is given by SIZV, and cannot be larger than 65535. The LEN
+characters in VAL is given by SIZV, and cannot be larger than 32767. The LEN
 field contains the length of the formatted string in the VAL field.
 
 =fields FMT, INP0, INP1, INP2, INP3, INP4, INP5, INP6, INP7, INP8, INP9, VAL, SIZV, LEN

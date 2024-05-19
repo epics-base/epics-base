@@ -41,7 +41,7 @@ C<supervisory> is specified, DOL is ignored, the current value of VAL is
 written, and VAL can be changed externally via dbPuts at run-time.
 
 The maximum number of characters in VAL is given by SIZV, and cannot be larger
-than 65535.
+than 32767.
 
 DOL can also be a constant instead of a link, in which case VAL is initialized
 to the constant value. Most simple string constants are likely to be interpreted

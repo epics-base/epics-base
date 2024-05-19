@@ -49,6 +49,9 @@ static long init_record(struct dbCommon *pcommon, int pass)
         if (sizv < 16) {
             sizv = 16;  /* Enforce a minimum size for the VAL field */
             prec->sizv = sizv;
+        } else if (sizv > 0x7fff) {
+            sizv = 0x7fff;  /* SIZV is unsigned, but dbAddr::field_size is signed */
+            prec->sizv = sizv;
         }
 
         prec->val = callocMustSucceed(1, sizv, "lsi::init_record");

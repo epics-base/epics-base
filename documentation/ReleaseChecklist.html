@@ -198,7 +198,7 @@ everything that has to be done since it's so easy to miss steps.</p>
 
           <li>Tag the module:
             <blockquote><tt>
-              git tag -m 'ANJ: Tag for EPICS 7.0.8' &lt;module-version&gt;
+              git tag -m 'ANJ: Tag for EPICS 7.0.8.1' &lt;module-version&gt;
               </tt></blockquote>
             </li>
 
@@ -269,7 +269,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
           cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for release' R7.0.8
+          git tag -m 'ANJ: Tagged for release' R7.0.8.1
           </tt></blockquote>
         <p>Don't push to GitHub yet.</p>
         </td>
@@ -303,12 +303,12 @@ everything that has to be done since it's so easy to miss steps.</p>
         files and directories that are only used for continuous integration:
         <blockquote><tt>
           cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.8 ../base-7.0.8.tar.gz base-7.0.8/
+          ./.tools/make-tar.sh R7.0.8.1 ../base-7.0.8.1.tar.gz base-7.0.8.1/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
           cd ..<br />
-          gpg --armor --sign --detach-sig base-7.0.8.tar.gz
+          gpg --armor --sign --detach-sig base-7.0.8.1.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -374,7 +374,7 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Upload the tar file and its <tt>.asc</tt> signature file to the
         epics-controls web-server.
         <blockquote><tt>
-          scp base-7.0.8.tar.gz base-7.0.8.tar.gz.asc epics-controls:download/base<br />
+          scp base-7.0.8.1.tar.gz base-7.0.8.1.tar.gz.asc epics-controls:download/base<br />
           </tt></blockquote>
         </td>
       </tr>
@@ -397,8 +397,8 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Go to the GitHub
-        <a href="https://github.com/epics-base/epics-base/releases/new?tag=R7.0.8">
-          Create release from tag R7.0.8</a> page.
+        <a href="https://github.com/epics-base/epics-base/releases/new?tag=R7.0.8.1">
+          Create release from tag R7.0.8.1</a> page.
         Upload the tar file and its <tt>.asc</tt> signature file to the new
         GitHub release page.</td>
       </tr>

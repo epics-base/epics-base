@@ -42,12 +42,6 @@ ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 OP_SYS_CFLAGS += -isysroot $(SDK_DIR)
 OP_SYS_LDFLAGS += -isysroot $(SDK_DIR)
 
-#--------------------------------------------------
-# Always compile in debugging symbol table information
-#
-OPT_CFLAGS_YES += -g
-OPT_CXXFLAGS_YES += -g
-
 #-------------------------------------------------------
 # Compiler definitions:
 

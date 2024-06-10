@@ -27,13 +27,17 @@ RANLIB = $(GNU_BIN)/$(CMPLR_PREFIX)ranlib$(CMPLR_SUFFIX)
 ASAN_FLAGS_YES = -fsanitize=address
 ASAN_LDFLAGS_YES = $(ASAN_FLAGS_YES)
 
+# It makes sense to include debugging symbols even in optimized builds
+# in case you want to attach gdb to the process or examine a core-dump.
+# This does cost disk space, but not memory as debug symbols are not
+# loaded into RAM when the binary is loaded.
 PROF_CFLAGS_YES = -p
 GPROF_CFLAGS_YES = -pg
 CODE_CFLAGS = $(PROF_CFLAGS_$(PROFILE)) $(GPROF_CFLAGS_$(GPROF))
 CODE_CFLAGS += $(ASAN_FLAGS_$(ENABLE_ASAN))
 WARN_CFLAGS_YES = -Wall -Werror-implicit-function-declaration
 WARN_CFLAGS_NO = -w
-OPT_CFLAGS_YES = -O3
+OPT_CFLAGS_YES = -O3 -g
 OPT_CFLAGS_NO = -g
 
 PROF_CXXFLAGS_YES = -p
@@ -42,7 +46,7 @@ CODE_CXXFLAGS = $(PROF_CXXFLAGS_$(PROFILE)) $(GPROF_CXXFLAGS_$(GPROF))
 CODE_CXXFLAGS += $(ASAN_FLAGS_$(ENABLE_ASAN))
 WARN_CXXFLAGS_YES = -Wall
 WARN_CXXFLAGS_NO = -w
-OPT_CXXFLAGS_YES = -O3
+OPT_CXXFLAGS_YES = -O3 -g
 OPT_CXXFLAGS_NO = -g
 
 CODE_LDFLAGS = $(PROF_CXXFLAGS_$(PROFILE)) $(GPROF_CXXFLAGS_$(GPROF))

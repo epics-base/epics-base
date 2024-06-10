@@ -3,10 +3,3 @@
 # Site specific definitions for native linux-aarch64 builds
 #-------------------------------------------------------
 
-# It makes sense to include debugging symbols even in optimized builds
-# in case you want to attach gdb to the process or examine a core-dump.
-# This does cost disk space, but not memory as debug symbols are not
-# loaded into RAM when the binary is loaded.
-OPT_CFLAGS_YES += -g
-OPT_CXXFLAGS_YES += -g
-

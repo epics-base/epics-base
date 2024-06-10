@@ -40,12 +40,6 @@ OP_SYS_CFLAGS += -fno-common
 OP_SYS_CPPFLAGS += -Ddarwin
 
 #
-# Always compile in debugging symbol table information
-#
-OPT_CFLAGS_YES += -g
-OPT_CXXFLAGS_YES += -g
-
-#
 # Libraries for command-line editing.
 #
 LDLIBS_READLINE = -lreadline

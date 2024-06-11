@@ -114,7 +114,7 @@ int iocInit(void)
 static int iocBuild_1(void)
 {
     if (iocState != iocVoid) {
-        errlogPrintf("iocBuild: IOC can only be initialized from uninitialized or stopped state\n");
+        errlogPrintf("iocBuild: " ERL_ERROR " IOC can only be initialized from uninitialized or stopped state\n");
         return -1;
     }
     errlogInit(0);
@@ -126,7 +126,7 @@ static int iocBuild_1(void)
 
     errlogPrintf("Starting iocInit\n");
     if (checkDatabase(pdbbase)) {
-        errlogPrintf("iocBuild: Aborting, bad database definition (DBD)!\n");
+        errlogPrintf("iocBuild: " ERL_ERROR " Aborting, bad database definition (DBD)!\n");
         return -1;
     }
     epicsSignalInstallSigHupIgnore();
@@ -237,7 +237,7 @@ int iocBuildIsolated(void)
 int iocRun(void)
 {
     if (iocState != iocPaused && iocState != iocBuilt) {
-        errlogPrintf("iocRun: IOC not paused\n");
+        errlogPrintf("iocRun: " ERL_WARNING " IOC not paused\n");
         return -1;
     }
     initHookAnnounce(initHookAtIocRun);
@@ -268,7 +268,7 @@ int iocRun(void)
 int iocPause(void)
 {
     if (iocState != iocRunning) {
-        errlogPrintf("iocPause: IOC not running\n");
+        errlogPrintf("iocPause: " ERL_WARNING " IOC not running\n");
         return -1;
     }
     initHookAnnounce(initHookAtIocPause);
@@ -306,59 +306,59 @@ static int checkDatabase(dbBase *pdbbase)
     const dbMenu *pMenu;
 
     if (!pdbbase) {
-        errlogPrintf("checkDatabase: No database definitions loaded.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " No database definitions loaded.\n");
         return -1;
     }
 
     pMenu = dbFindMenu(pdbbase, "menuConvert");
     if (!pMenu) {
-        errlogPrintf("checkDatabase: menuConvert not defined.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuConvert not defined.\n");
         return -1;
     }
     if (pMenu->nChoice <= menuConvertLINEAR) {
-        errlogPrintf("checkDatabase: menuConvert has too few choices.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuConvert has too few choices.\n");
         return -1;
     }
     if (strcmp(pMenu->papChoiceName[menuConvertNO_CONVERSION],
                "menuConvertNO_CONVERSION")) {
-        errlogPrintf("checkDatabase: menuConvertNO_CONVERSION doesn't match.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuConvertNO_CONVERSION doesn't match.\n");
         return -1;
     }
     if (strcmp(pMenu->papChoiceName[menuConvertSLOPE], "menuConvertSLOPE")) {
-        errlogPrintf("checkDatabase: menuConvertSLOPE doesn't match.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuConvertSLOPE doesn't match.\n");
         return -1;
     }
     if (strcmp(pMenu->papChoiceName[menuConvertLINEAR], "menuConvertLINEAR")) {
-        errlogPrintf("checkDatabase: menuConvertLINEAR doesn't match.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuConvertLINEAR doesn't match.\n");
         return -1;
     }
 
     pMenu = dbFindMenu(pdbbase, "menuScan");
     if (!pMenu) {
-        errlogPrintf("checkDatabase: menuScan not defined.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuScan not defined.\n");
         return -1;
     }
     if (pMenu->nChoice <= menuScanI_O_Intr) {
-        errlogPrintf("checkDatabase: menuScan has too few choices.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuScan has too few choices.\n");
         return -1;
     }
     if (strcmp(pMenu->papChoiceName[menuScanPassive],
                "menuScanPassive")) {
-        errlogPrintf("checkDatabase: menuScanPassive doesn't match.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuScanPassive doesn't match.\n");
         return -1;
     }
     if (strcmp(pMenu->papChoiceName[menuScanEvent],
                "menuScanEvent")) {
-        errlogPrintf("checkDatabase: menuScanEvent doesn't match.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuScanEvent doesn't match.\n");
         return -1;
     }
     if (strcmp(pMenu->papChoiceName[menuScanI_O_Intr],
                "menuScanI_O_Intr")) {
-        errlogPrintf("checkDatabase: menuScanI_O_Intr doesn't match.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuScanI_O_Intr doesn't match.\n");
         return -1;
     }
     if (pMenu->nChoice <= SCAN_1ST_PERIODIC) {
-        errlogPrintf("checkDatabase: menuScan has no periodic choices.\n");
+        errlogPrintf("checkDatabase: " ERL_ERROR " menuScan has no periodic choices.\n");
         return -1;
     }
 

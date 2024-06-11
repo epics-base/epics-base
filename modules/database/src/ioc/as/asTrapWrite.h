@@ -20,7 +20,7 @@
 #ifndef INCasTrapWriteh
 #define INCasTrapWriteh
 
-#include "libComAPI.h"
+#include "dbCoreAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,14 +79,45 @@ typedef void(*asTrapWriteListener)(asTrapWriteMessage *pmessage,int after);
  * \param func The listener function to be called.
  * \return A listener identifier for unregistering this listener.
  */
-LIBCOM_API asTrapWriteId epicsStdCall asTrapWriteRegisterListener(
+DBCORE_API
+asTrapWriteId epicsStdCall asTrapWriteRegisterListener(
     asTrapWriteListener func);
 /**
  * \brief Unregister asTrapWriteListener.
  * \param id Listener identifier from asTrapWriteRegisterListener().
  */
-LIBCOM_API void epicsStdCall asTrapWriteUnregisterListener(
+DBCORE_API
+void epicsStdCall asTrapWriteUnregisterListener(
     asTrapWriteId id);
+
+DBCORE_API
+void * epicsStdCall asTrapWriteBeforeWithData(
+    const char *userid, const char *hostid, void *addr,
+    int dbrType, int no_elements, void *data);
+
+DBCORE_API
+void epicsStdCall asTrapWriteAfterWrite(void *pvt);
+
+/* More convenience macros
+void *asTrapWriteWithData(ASCLIENTPVT asClientPvt,
+     const char *userid, const char *hostid, void *addr,
+     int dbrType, int no_elements, void *data);
+void asTrapWriteAfter(ASCLIENTPVT asClientPvt);
+*/
+#define asTrapWriteWithData(asClientPvt, user, host, addr, type, count, data) \
+    ((asActive && (asClientPvt)->trapMask) \
+    ? asTrapWriteBeforeWithData((user), (host), (addr), (type), (count), (data)) \
+    : 0)
+#define asTrapWriteAfter(pvt) \
+    if (pvt) asTrapWriteAfterWrite(pvt)
+
+/* This macro is for backwards compatibility, upgrade any code
+   calling it to use asTrapWriteWithData() instead ASAP:
+void *asTrapWriteBefore(ASCLIENTPVT asClientPvt,
+     const char *userid, const char *hostid, void *addr);
+*/
+#define asTrapWriteBefore(asClientPvt, user, host, addr) \
+    asTrapWriteWithData(asClientPvt, user, host, addr, 0, 0, NULL)
 
 #ifdef __cplusplus
 }

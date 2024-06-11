@@ -16,6 +16,7 @@
 
 #include "callback.h"
 #include "dbCoreAPI.h"
+#include "asTrapWrite.h"
 
 typedef struct {
     epicsCallback   callback;

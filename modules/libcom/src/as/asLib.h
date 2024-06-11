@@ -46,27 +46,6 @@ long asCheckPut(ASCLIENTPVT asClientPvt);
 #define asCheckPut(asClientPvt) \
     (!asActive || ((asClientPvt)->access >= asWRITE))
 
-/* More convenience macros
-void *asTrapWriteWithData(ASCLIENTPVT asClientPvt,
-     const char *userid, const char *hostid, void *addr,
-     int dbrType, int no_elements, void *data);
-void asTrapWriteAfter(ASCLIENTPVT asClientPvt);
-*/
-#define asTrapWriteWithData(asClientPvt, user, host, addr, type, count, data) \
-    ((asActive && (asClientPvt)->trapMask) \
-    ? asTrapWriteBeforeWithData((user), (host), (addr), (type), (count), (data)) \
-    : 0)
-#define asTrapWriteAfter(pvt) \
-    if (pvt) asTrapWriteAfterWrite(pvt)
-
-/* This macro is for backwards compatibility, upgrade any code
-   calling it to use asTrapWriteWithData() instead ASAP:
-void *asTrapWriteBefore(ASCLIENTPVT asClientPvt,
-     const char *userid, const char *hostid, void *addr);
-*/
-#define asTrapWriteBefore(asClientPvt, user, host, addr) \
-    asTrapWriteWithData(asClientPvt, user, host, addr, 0, 0, NULL)
-
 
 LIBCOM_API long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction);
 LIBCOM_API long epicsStdCall asInitFile(
@@ -119,12 +98,6 @@ LIBCOM_API int epicsStdCall asDumpMemFP(FILE *fp,const char *asgname,
     void (*memcallback)(ASMEMBERPVT,FILE *),int clients);
 LIBCOM_API int epicsStdCall asDumpHash(void);
 LIBCOM_API int epicsStdCall asDumpHashFP(FILE *fp);
-
-LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithData(
-    const char *userid, const char *hostid, void *addr,
-    int dbrType, int no_elements, void *data);
-
-LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
 
 #define S_asLib_clientsExist    (M_asLib| 1) /*Client Exists*/
 #define S_asLib_noUag           (M_asLib| 2) /*User Access Group does not exist*/

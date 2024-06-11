@@ -16,10 +16,12 @@ SRC_DIRS += $(IOCDIR)/as
 INC += asDbLib.h
 INC += asCa.h
 INC += asIocRegister.h
+INC += asTrapWrite.h
 
 dbCore_SRCS += asDbLib.c
 dbCore_SRCS += asCa.c
 dbCore_SRCS += asIocRegister.c
+dbCore_SRCS += asTrapWrite.c
 
 PROD_HOST += ascheck
 ascheck_SRCS = ascheck.c

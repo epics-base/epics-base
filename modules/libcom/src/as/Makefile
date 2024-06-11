@@ -14,9 +14,7 @@
 SRC_DIRS += $(LIBCOM)/as
 
 INC += asLib.h
-INC += asTrapWrite.h
 
 Com_SRCS += asLib.c
-Com_SRCS += asTrapWrite.c
 
 CLEANS += asLib.c asLib_lex.c

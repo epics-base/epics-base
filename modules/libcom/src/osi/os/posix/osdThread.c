@@ -615,6 +615,10 @@ epicsThreadCreateOpt(const char * name,
         start_routine, pthreadInfo);
     if (status==EPERM) {
         /* Try again without SCHED_FIFO*/
+        if (pthreadInfo->joinable) {
+            int cnt = epicsAtomicDecrIntT(&pthreadInfo->refcnt);
+            assert(cnt==1);
+        }
         free_threadInfo(pthreadInfo);
 
         pthreadInfo = init_threadInfo(name, opts->priority, stackSize,
@@ -630,12 +634,15 @@ epicsThreadCreateOpt(const char * name,
     if (status) {
         if (pthreadInfo->joinable) {
             /* release extra ref which would have been for epicsThreadMustJoin() */
-            epicsAtomicDecrIntT(&pthreadInfo->refcnt);
+            int cnt = epicsAtomicDecrIntT(&pthreadInfo->refcnt);
+            assert(cnt==1);
         }
-
         free_threadInfo(pthreadInfo);
         return 0;
     }
+    /* New thread starting and is now responsible for one free_threadInfo().
+     * If joinable, then caller responsible for arranging one epicsThreadMustJoin()
+     */
 
     status = pthread_sigmask(SIG_SETMASK, &oldSig, NULL);
     checkStatusOnce(status, "pthread_sigmask");

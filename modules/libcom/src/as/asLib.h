@@ -17,6 +17,9 @@
 #include "ellLib.h"
 #include "errMdef.h"
 #include "errlog.h"
+#ifndef BUILDING_libCom_API
+#  include <asTrapWrite.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

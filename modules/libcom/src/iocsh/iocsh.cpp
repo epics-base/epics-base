@@ -1433,13 +1433,16 @@ static void varCallFunc(const iocshArgBuf *args)
                 varHandler(v->pVarDef, NULL);
                 found = 1;
             }
-        if (!found && name != NULL)
+        if (!found && name != NULL) {
             fprintf(epicsGetStderr(), ANSI_RED("No var matching") " %s found.\n", name);
+            iocshSetError(1);
+        }
     }
     else {
         v = (iocshVariable *)registryFind(iocshVarID, args[0].sval);
         if (v == NULL) {
             fprintf(epicsGetStderr(), "Var %s " ANSI_RED("not found.") "\n", name);
+            iocshSetError(1);
         }
         else {
             varHandler(v->pVarDef, value);
@@ -1456,7 +1459,7 @@ static const iocshFuncDef iocshCmdFuncDef = {"iocshCmd",1,iocshCmdArgs,
                                              "    from vxWorks or RTEMS startup script (or command line)\n"};
 static void iocshCmdCallFunc(const iocshArgBuf *args)
 {
-    iocshCmd(args[0].sval);
+    iocshSetError(iocshCmd(args[0].sval));
 }
 
 /* iocshLoad */
@@ -1468,7 +1471,7 @@ static const iocshFuncDef iocshLoadFuncDef = {"iocshLoad",2,iocshLoadArgs,
                                               "  * (optional) replace macros within the file with provided values\n"};
 static void iocshLoadCallFunc(const iocshArgBuf *args)
 {
-    iocshLoad(args[0].sval, args[1].sval);
+    iocshSetError(iocshLoad(args[0].sval, args[1].sval));
 }
 
 /* iocshRun */
@@ -1481,7 +1484,7 @@ static const iocshFuncDef iocshRunFuncDef = {"iocshRun",2,iocshRunArgs,
                                              "    from vxWorks or RTEMS startup script (or command line)\n"};
 static void iocshRunCallFunc(const iocshArgBuf *args)
 {
-    iocshRun(args[0].sval, args[1].sval);
+    iocshSetError(iocshRun(args[0].sval, args[1].sval));
 }
 
 /* on */

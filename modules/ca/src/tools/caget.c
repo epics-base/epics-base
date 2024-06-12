@@ -382,15 +382,6 @@ static void complainIfNotPlainAndSet (OutputT *current, const OutputT requested)
                 "('caget -h' for help.)\n");
     *current = requested;
 }
-/*
-void test(void* thread_data_void) {
-printf("called\n");
-    //t_thread_data* thread_data = (t_thread_data*)thread_data_void;
-    //epicsSpinLock(thread_data->spin);
-    //epicsMutexUnlock(thread_data->printMutex_lock_main);
-printf("End of test\n");
-}
-*/
 
 // Create a thread name based on the PV index in the order sent as argument for caget
 void thread_name (int pv_num, char* th_name) {

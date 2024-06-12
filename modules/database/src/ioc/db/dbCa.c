@@ -225,6 +225,7 @@ void testdbCaWaitForEvent(DBLINK *plink, unsigned long cnt, enum testEvent event
 
     assert(plink->type==CA_LINK);
     pca = (caLink *)plink->value.pv_link.pvt;
+    caLinkInc(pca);
 
     epicsMutexMustLock(pca->lock);
     assert(!pca->monitor && !pca->connect && !pca->userPvt);
@@ -239,6 +240,8 @@ void testdbCaWaitForEvent(DBLINK *plink, unsigned long cnt, enum testEvent event
         dbScanUnlock(plink->precord);
 
         epicsEventMustWait(evt);
+        /* ensure worker has finished executing */
+        dbCaSync();
 
         dbScanLock(plink->precord);
         epicsMutexMustLock(pca->lock);
@@ -250,6 +253,7 @@ void testdbCaWaitForEvent(DBLINK *plink, unsigned long cnt, enum testEvent event
 
     epicsEventDestroy(evt);
     epicsMutexUnlock(pca->lock);
+    caLinkDec(pca);
     dbScanUnlock(plink->precord);
 }
 
@@ -287,16 +291,15 @@ void dbCaSync(void)
 
     epicsEventMustWait(wake);
     /* Worker holds workListLock when calling epicsEventMustTrigger()
-     * we cycle through workListLock to ensure worker call to
+     * we hold workListLock to ensure worker call to
      * epicsEventMustTrigger() returns before we destroy the event.
      */
     epicsMutexMustLock(workListLock);
-    epicsMutexUnlock(workListLock);
-
     assert(templink.refcount==1);
 
     epicsMutexDestroy(templink.lock);
     epicsEventDestroy(wake);
+    epicsMutexUnlock(workListLock);
 }
 
 void dbCaCallbackProcess(void *userPvt)

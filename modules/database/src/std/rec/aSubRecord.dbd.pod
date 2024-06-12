@@ -16,7 +16,7 @@ has a number of additional features:
 
 =item *
 
-It provides 20 different input and output fields which can hold array or
+It provides 21 different input and output fields which can hold array or
 scalar values.
 The types and array capacities of these are user configurable, and they all
 have an associated input or output link.

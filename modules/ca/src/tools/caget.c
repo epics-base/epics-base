@@ -36,6 +36,9 @@
 #include <cadef.h>
 #include <epicsGetopt.h>
 #include "epicsVersion.h"
+#include "epicsMutex.h"
+#include "epicsExit.h"
+#include "epicsSpin.h"
 
 #include "tool_lib.h"
 
@@ -48,11 +51,23 @@ typedef enum { plain, terse, all, specifiedDbr } OutputT;
 /* Different request types */
 typedef enum { get, callback } RequestT;
 
+// Struct to hold data used by caget threads
+typedef struct
+{
+    pv pv_data;
+    RequestT request;
+    OutputT format;
+    chtype dbrType;
+    unsigned long reqElems;
+    epicsMutexId printMutex;
+    epicsMutexId resultMutex;
+} t_thread_data;
+
 static int nConn = 0;           /* Number of connected PVs */
 static int nRead = 0;           /* Number of channels that were read */
 static int floatAsString = 0;   /* Flag: fetch floats as string */
+static int pvs_with_trouble = 0; /* Counter for PVs with result not zero */
 
-
 static void usage (void)
 {
     fprintf (stderr, "\nUsage: caget [options] <PV name> ...\n\n"
@@ -107,7 +122,6 @@ static void usage (void)
 }
 
 
-
 /*+**************************************************************************
  *
  * Function:    event_handler
@@ -135,7 +149,6 @@ static void event_handler (evargs args)
 }
 
 
-
 /*+**************************************************************************
  *
  * Function:    caget
@@ -143,92 +156,100 @@ static void event_handler (evargs args)
  * Description: Issue read requests, wait for incoming data
  *              and print the data according to the selected format
  *
- * Arg(s) In:   pvs       -  Pointer to an array of pv structures
- *              nPvs      -  Number of elements in the pvs array
+ * Arg(s) In:   pv_data   -  pv structure
  *              request   -  Request type
  *              format    -  Output format
  *              dbrType   -  Requested dbr type
  *              reqElems  -  Requested number of (array) elements
+ *              printMutex     -  Mutex to avoid commingling of outputs from several PVs
  *
  * Return(s):   Error code: 0 = OK, 1 = Error
  *
  **************************************************************************-*/
 
-static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
-           chtype dbrType, unsigned long reqElems)
+static int caget (pv pv_data, RequestT request, OutputT format,
+           chtype dbrType, unsigned long reqElems, epicsMutexId printMutex)
 {
     unsigned int i;
     int n, result;
 
-    for (n = 0; n < nPvs; n++) {
-        unsigned long nElems;
+    unsigned long nElems;
 
-                                /* Set up pvs structure */
-                                /* -------------------- */
+                        /* Set up pv_data structure */
+                        /* -------------------- */
 
-                                /* Get natural type and array count */
-        nElems         = ca_element_count(pvs[n].chid);
-        pvs[n].dbfType = ca_field_type(pvs[n].chid);
-        pvs[n].dbrType = dbrType;
+    /* Get natural type and array count */
+    nElems         = ca_element_count(pv_data.chid);
+    pv_data.dbfType = ca_field_type(pv_data.chid);
+    pv_data.dbrType = dbrType;
 
-                                /* Set up value structures */
-        if (format != specifiedDbr)
+    /* Set up value structures */
+    if (format != specifiedDbr)
+    {
+        pv_data.dbrType = dbf_type_to_DBR_TIME(pv_data.dbfType); /* Use native type */
+        if (dbr_type_is_ENUM(pv_data.dbrType))                  /* Enums honour -n option */
         {
-            pvs[n].dbrType = dbf_type_to_DBR_TIME(pvs[n].dbfType); /* Use native type */
-            if (dbr_type_is_ENUM(pvs[n].dbrType))                  /* Enums honour -n option */
-            {
-                if (enumAsNr) pvs[n].dbrType = DBR_TIME_INT;
-                else          pvs[n].dbrType = DBR_TIME_STRING;
-            }
-            else if (floatAsString &&
-                     (dbr_type_is_FLOAT(pvs[n].dbrType) || dbr_type_is_DOUBLE(pvs[n].dbrType)))
-            {
-                pvs[n].dbrType = DBR_TIME_STRING;
-            }
+            if (enumAsNr) pv_data.dbrType = DBR_TIME_INT;
+            else          pv_data.dbrType = DBR_TIME_STRING;
         }
-
-                                /* Issue CA request */
-                                /* ---------------- */
-
-        if (ca_state(pvs[n].chid) == cs_conn)
+        else if (floatAsString &&
+                 (dbr_type_is_FLOAT(pv_data.dbrType) || dbr_type_is_DOUBLE(pv_data.dbrType)))
         {
-            nConn++;
-            pvs[n].onceConnected = 1;
-            if (request == callback)
-            {
-                /* Event handler will allocate value and set nElems */
-                pvs[n].reqElems = reqElems > nElems ? nElems : reqElems;
-                result = ca_array_get_callback(pvs[n].dbrType,
-                                               pvs[n].reqElems,
-                                               pvs[n].chid,
-                                               event_handler,
-                                               (void*)&pvs[n]);
-            } else {
-                /* We allocate value structure and set nElems */
-                pvs[n].nElems = reqElems && reqElems < nElems ? reqElems : nElems;
-                pvs[n].value = calloc(1, dbr_size_n(pvs[n].dbrType, pvs[n].nElems));
-                if (!pvs[n].value) {
-                    fprintf(stderr,"Memory allocation failed\n");
-                    return 1;
-                }
-                result = ca_array_get(pvs[n].dbrType,
-                                      pvs[n].nElems,
-                                      pvs[n].chid,
-                                      pvs[n].value);
-            }
-            pvs[n].status = result;
-        } else {
-            pvs[n].status = ECA_DISCONN;
+            pv_data.dbrType = DBR_TIME_STRING;
         }
     }
+
+                        /* Issue CA request */
+                        /* ---------------- */
+
+    if (ca_state(pv_data.chid) == cs_conn)
+    {
+        nConn++;
+        pv_data.onceConnected = 1;
+        if (request == callback)
+        {
+            /* Event handler will allocate value and set nElems */
+            pv_data.reqElems = reqElems > nElems ? nElems : reqElems;
+            result = ca_array_get_callback(pv_data.dbrType,
+                                           pv_data.reqElems,
+                                           pv_data.chid,
+                                           event_handler,
+                                           (void*)&pv_data);
+        } else {
+            /* We allocate value structure and set nElems */
+            pv_data.nElems = reqElems && reqElems < nElems ? reqElems : nElems;
+            pv_data.value = calloc(1, dbr_size_n(pv_data.dbrType, pv_data.nElems));
+            if (!pv_data.value) {
+                // Lock printMutex before printing to avoid having multiple
+                // threads printing at the same time
+                epicsMutexLock(printMutex);
+                fprintf(stderr,"Memory allocation failed\n");
+                epicsMutexUnlock(printMutex);
+                return 1;
+            }
+            result = ca_array_get(pv_data.dbrType,
+                                  pv_data.nElems,
+                                  pv_data.chid,
+                                  pv_data.value);
+        }
+        pv_data.status = result;
+    } else {
+        pv_data.status = ECA_DISCONN;
+    }
+
     if (!nConn) return 1;              /* No connection? We're done. */
 
                                 /* Wait for completion */
                                 /* ------------------- */
 
     result = ca_pend_io(caTimeout);
-    if (result == ECA_TIMEOUT)
+    if (result == ECA_TIMEOUT) {
+        // Lock printMutex before printing to avoid having multiple
+        // threads printing at the same time
+        epicsMutexLock(printMutex);
         fprintf(stderr, "Read operation timed out: some PV data was not read.\n");
+        epicsMutexUnlock(printMutex);
+    }
 
     if (request == callback)    /* Also wait for callbacks */
     {
@@ -240,8 +261,13 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                 ca_pend_event(slice);
                 if (nRead >= nConn) break;
             }
-            if (nRead < nConn)
+            if (nRead < nConn) {
+                // Lock printMutex before printing to avoid having multiple
+                // threads printing at the same time
+                epicsMutexLock(printMutex);
                 fprintf(stderr, "Read operation timed out: some PV data was not read.\n");
+                epicsMutexUnlock(printMutex);
+            }
         } else {
             /* For 0 timeout keep waiting until all are done */
             while (nRead < nConn) {
@@ -250,29 +276,76 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
         }
     }
 
-                                /* Print the data */
-                                /* -------------- */
+                            /* Print the data */
+                            /* -------------- */
 
-    for (n = 0; n < nPvs; n++) {
-
-        switch (format) {
-        case plain:             /* Emulate old caget behavior */
-            if (pvs[n].nElems <= 1 && fieldSeparator == ' ') printf("%-30s", pvs[n].name);
-            else                                               printf("%s", pvs[n].name);
-            printf("%c", fieldSeparator);
-        case terse:
-            if (pvs[n].status == ECA_DISCONN)
-                printf("*** not connected\n");
-            else if (pvs[n].status == ECA_NORDACCESS)
-                printf("*** no read access\n");
-            else if (pvs[n].status != ECA_NORMAL)
-                printf("*** CA error %s\n", ca_message(pvs[n].status));
-            else if (pvs[n].value == 0)
-                printf("*** no data available (timeout)\n");
-            else
-            {
-                if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].nElems > 1)) {
-                    dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType);
+    // Lock printMutex before printing to avoid having multiple
+    // threads printing at the same time
+    epicsMutexLock(printMutex);
+    switch (format) {
+    case plain:             /* Emulate old caget behavior */
+        if (pv_data.nElems <= 1 && fieldSeparator == ' ') printf("%-30s", pv_data.name);
+        else                                               printf("%s", pv_data.name);
+        printf("%c", fieldSeparator);
+    case terse:
+        if (pv_data.status == ECA_DISCONN)
+            printf("*** not connected\n");
+        else if (pv_data.status == ECA_NORDACCESS)
+            printf("*** no read access\n");
+        else if (pv_data.status != ECA_NORMAL)
+            printf("*** CA error %s\n", ca_message(pv_data.status));
+        else if (pv_data.value == 0)
+            printf("*** no data available (timeout)\n");
+        else
+        {
+            if (charArrAsStr && dbr_type_is_CHAR(pv_data.dbrType) && (reqElems || pv_data.nElems > 1)) {
+                dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pv_data.value, pv_data.dbrType);
+                int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
+                char *d = calloc(dlen+1, sizeof(char));
+                if(d) {
+                    epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));
+                    printf("%s", d);
+                    free(d);
+                } else {
+                    fprintf(stderr,"Failed to allocate space for escaped string\n");
+                }
+            } else {
+                if (reqElems || pv_data.nElems > 1) printf("%lu%c", pv_data.nElems, fieldSeparator);
+                for (i=0; i<pv_data.nElems; ++i) {
+                    if (i) printf ("%c", fieldSeparator);
+                    printf("%s", val2str(pv_data.value, pv_data.dbrType, i));
+                }
+            }
+            printf("\n");
+        }
+        break;
+    case all:
+        print_time_val_sts(&pv_data, reqElems);
+        break;
+    case specifiedDbr:
+        printf("%s\n", pv_data.name);
+        if (pv_data.status == ECA_DISCONN)
+            printf("    *** not connected\n");
+        else if (pv_data.status == ECA_NORDACCESS)
+            printf("    *** no read access\n");
+        else if (pv_data.status != ECA_NORMAL)
+            printf("    *** CA error %s\n", ca_message(pv_data.status));
+        else
+        {
+            printf("    Native data type: %s\n",
+                   dbf_type_to_text(pv_data.dbfType));
+            printf("    Request type:     %s\n",
+                   dbr_type_to_text(pv_data.dbrType));
+            if (pv_data.dbrType == DBR_CLASS_NAME)
+                printf("    Class Name:       %s\n",
+                       *((dbr_string_t*)dbr_value_ptr(pv_data.value,
+                                                      pv_data.dbrType)));
+            else {
+                printf("    Element count:    %lu\n"
+                       "    Value:            ",
+                       pv_data.nElems);
+                if (charArrAsStr && dbr_type_is_CHAR(pv_data.dbrType) && (reqElems || pv_data.nElems > 1)) {
+                    dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pv_data.value, pv_data.dbrType);
                     int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
                     char *d = calloc(dlen+1, sizeof(char));
                     if(d) {
@@ -283,73 +356,85 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                         fprintf(stderr,"Failed to allocate space for escaped string\n");
                     }
                 } else {
-                    if (reqElems || pvs[n].nElems > 1) printf("%lu%c", pvs[n].nElems, fieldSeparator);
-                    for (i=0; i<pvs[n].nElems; ++i) {
+                    for (i=0; i<pv_data.nElems; ++i) {
                         if (i) printf ("%c", fieldSeparator);
-                        printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
+                        printf("%s", val2str(pv_data.value, pv_data.dbrType, i));
                     }
                 }
                 printf("\n");
+                if (pv_data.dbrType > DBR_DOUBLE) /* Extended type extra info */
+                    printf("%s\n", dbr2str(pv_data.value, pv_data.dbrType));
             }
-            break;
-        case all:
-            print_time_val_sts(&pvs[n], reqElems);
-            break;
-        case specifiedDbr:
-            printf("%s\n", pvs[n].name);
-            if (pvs[n].status == ECA_DISCONN)
-                printf("    *** not connected\n");
-            else if (pvs[n].status == ECA_NORDACCESS)
-                printf("    *** no read access\n");
-            else if (pvs[n].status != ECA_NORMAL)
-                printf("    *** CA error %s\n", ca_message(pvs[n].status));
-            else
-            {
-                printf("    Native data type: %s\n",
-                       dbf_type_to_text(pvs[n].dbfType));
-                printf("    Request type:     %s\n",
-                       dbr_type_to_text(pvs[n].dbrType));
-                if (pvs[n].dbrType == DBR_CLASS_NAME)
-                    printf("    Class Name:       %s\n",
-                           *((dbr_string_t*)dbr_value_ptr(pvs[n].value,
-                                                          pvs[n].dbrType)));
-                else {
-                    printf("    Element count:    %lu\n"
-                           "    Value:            ",
-                           pvs[n].nElems);
-                    if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].nElems > 1)) {
-                        dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType);
-                        int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
-                        char *d = calloc(dlen+1, sizeof(char));
-                        if(d) {
-                            epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));
-                            printf("%s", d);
-                            free(d);
-                        } else {
-                            fprintf(stderr,"Failed to allocate space for escaped string\n");
-                        }
-                    } else {
-                        for (i=0; i<pvs[n].nElems; ++i) {
-                            if (i) printf ("%c", fieldSeparator);
-                            printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
-                        }
-                    }
-                    printf("\n");
-                    if (pvs[n].dbrType > DBR_DOUBLE) /* Extended type extra info */
-                        printf("%s\n", dbr2str(pvs[n].value, pvs[n].dbrType));
-                }
-            }
-            break;
-        default :
-            break;
         }
+        break;
+    default :
+        break;
     }
+
+    epicsMutexUnlock(printMutex);
+
     return 0;
 }
 
+static void complainIfNotPlainAndSet (OutputT *current, const OutputT requested)
+{
+    if (*current != plain)
+        fprintf(stderr,
+                "Options t,d,a are mutually exclusive. "
+                "('caget -h' for help.)\n");
+    *current = requested;
+}
+/*
+void test(void* thread_data_void) {
+printf("called\n");
+    //t_thread_data* thread_data = (t_thread_data*)thread_data_void;
+    //epicsSpinLock(thread_data->spin);
+    //epicsMutexUnlock(thread_data->printMutex_lock_main);
+printf("End of test\n");
+}
+*/
 
-
-/*+**************************************************************************
+// Create a thread name based on the PV index in the order sent as argument for caget
+void thread_name (int pv_num, char* th_name) {
+    // Threads will be named caget0, caget1, ..., caget42, ...
+    char pv_num_str[3];
+    sprintf(pv_num_str, "%d", pv_num);
+    strcpy(th_name, "caget");
+    strcat(th_name, pv_num_str);
+}
+
+// Function that runs inside each thread, calling the caget function
+void caget_caller (void* thread_data_void)
+{
+    int result;                 /* CA result */
+    t_thread_data* thread_data = (t_thread_data*)thread_data_void;
+    result = connect_pvs(&thread_data->pv_data, 1);
+
+                                /* Read and print data */
+    if (!result)
+        result = caget(thread_data->pv_data, thread_data->request, thread_data->format, thread_data->dbrType, thread_data->reqElems, thread_data->printMutex);
+
+    epicsMutexLock(thread_data->resultMutex);
+    pvs_with_trouble += result;
+    epicsMutexUnlock(thread_data->resultMutex);
+
+    free(thread_data);
+}
+
+// Creates one thread per PV called with caget
+void thread_builder (t_thread_data* thread_data, int pv_num)
+{
+    char th_name[9];
+    thread_name(pv_num, th_name);
+    epicsThreadOpts thread_opts = EPICS_THREAD_OPTS_INIT;
+    // Must be joinable so the main thread can wait for all the threads to
+    // complete their job.
+    thread_opts.joinable = 1;
+    epicsThreadCreateOpt(th_name, &caget_caller, thread_data, &thread_opts);
+}
+
+
+/***************************************************************************
  *
  * Function:    main
  *
@@ -361,18 +446,10 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
  *
  * Arg(s) Out:  none
  *
- * Return(s):   Standard return code (0=success, 1=error)
+ * Return(s):   Return code = number of PVs that couldn't be reached
+ *              (0=success, !0=error)
  *
  **************************************************************************-*/
-
-static void complainIfNotPlainAndSet (OutputT *current, const OutputT requested)
-{
-    if (*current != plain)
-        fprintf(stderr,
-                "Options t,d,a are mutually exclusive. "
-                "('caget -h' for help.)\n");
-    *current = requested;
-}
 
 int main (int argc, char *argv[])
 {
@@ -549,14 +626,36 @@ int main (int argc, char *argv[])
     for (n = 0; optind < argc; n++, optind++)
         pvs[n].name = argv[optind] ;       /* Copy PV names from command line */
 
-    result = connect_pvs(pvs, nPvs);
+    // Mutex to avoid commingling of text output by several threads
+    epicsMutexId printMutex = epicsMutexCreate();
+    // Mutex to access result counter
+    epicsMutexId resultMutex = epicsMutexCreate();
+    for (int iii=0; iii<nPvs; ++iii) {
+        t_thread_data* thread_data;
+        thread_data = malloc(sizeof(t_thread_data));
+        thread_data->pv_data = pvs[iii];
+        thread_data->request = request;
+        thread_data->format = format;
+        thread_data->dbrType = type;
+        thread_data->reqElems = count;
+        thread_data->printMutex = printMutex;
+        thread_data->resultMutex = resultMutex;
+        thread_builder(thread_data, iii);
+    }
 
-                                /* Read and print data */
-    if (!result)
-        result = caget(pvs, nPvs, request, format, type, count);
+    epicsThreadId thread_id;
+    char th_name[9];
 
-                                /* Shut down Channel Access */
+    // Wait for all threads to finish their business before ending the main thread
+    for (int iii=0; iii<nPvs; ++iii) {
+        thread_name(iii, th_name);
+        thread_id = epicsThreadGetId(th_name);
+        epicsThreadMustJoin(thread_id);
+    }
+
     ca_context_destroy();
+    epicsMutexDestroy(printMutex);
+    epicsMutexDestroy(resultMutex);
 
-    return result;
+    return pvs_with_trouble;
 }

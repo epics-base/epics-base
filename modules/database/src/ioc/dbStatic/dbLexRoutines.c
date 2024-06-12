@@ -1119,6 +1119,19 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         return;
     }
 
+    if (recordType[0] == '#' && recordType[1] == 0) {
+        status = dbFindRecord(pdbentry, name);
+        if (status == 0) {
+            dbDeleteRecord(pdbentry);
+            fprintf(stderr, ERL_WARNING ": Record \"%s\" DELETED!\n", name);
+            return; /* done */
+        }
+        fprintf(stderr, ERL_ERROR ": Record \"%s\" not found\n", name);
+        yyerror(NULL);
+        duplicate = TRUE;
+        return;
+    }
+
     status = dbFindRecordType(pdbentry, recordType);
     if (status) {
         fprintf(stderr, "Record \"%s\" is of unknown type \"%s\"\n",

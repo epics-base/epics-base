@@ -22,6 +22,21 @@ should also be read to understand what has changed since earlier releases:
 
 ## Changes made on the 7.0 branch since 7.0.8.1
 
+### Allow users to delete previously created records from the database
+
+From this release, record instances and aliases that have already been loaded
+by an IOC can be removed from the database again before the call to iocInit
+by loading a second instance of the named records but using `"#"` in place of
+the record type. Values for the fields are not required or advised, just use
+an empty record body { }. This is useful when a template defines records that
+are not wanted in some IOCs, without having to split or duplicate the original
+template.
+
+For example this will remove the record named "unwanted":
+
+```
+record("#", "unwanted") { }
+```
 
 -----
 

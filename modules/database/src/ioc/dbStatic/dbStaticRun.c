@@ -118,11 +118,13 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
         switch(pflddes->field_type) {
         case DBF_STRING:
             if(pflddes->initial)  {
-                if(strlen(pflddes->initial) >= pflddes->size) {
+                size_t initial_len = strlen(pflddes->initial);
+                if(initial_len >= pflddes->size) {
                     epicsPrintf("initial size > size for %s.%s\n",
                                 pdbRecordType->name,pflddes->name);
                 } else {
-                    strcpy(pfield,pflddes->initial);
+                    memcpy(pfield, pflddes->initial, initial_len);
+                    pfield[initial_len] = '\0';
                 }
             }
             break;

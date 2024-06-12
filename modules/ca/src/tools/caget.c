@@ -37,8 +37,6 @@
 #include <epicsGetopt.h>
 #include "epicsVersion.h"
 #include "epicsMutex.h"
-#include "epicsExit.h"
-#include "epicsSpin.h"
 
 #include "tool_lib.h"
 

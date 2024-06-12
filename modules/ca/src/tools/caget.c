@@ -444,7 +444,9 @@ void thread_builder (t_thread_data* thread_data, int pv_num)
  *
  * Arg(s) Out:  none
  *
- * Return(s):   Return code = number of PVs that couldn't be reached
+ * Return(s):   Return code = number of PVs that couldn't be reached or
+ *              -1 if an error happened before we could start searching
+ *              for the PVs.
  *              (0=success, !0=error)
  *
  **************************************************************************-*/
@@ -584,15 +586,15 @@ int main (int argc, char *argv[])
             fprintf(stderr,
                     "Unrecognized option: '-%c'. ('caget -h' for help.)\n",
                     optopt);
-            return 1;
+            return -1;
         case ':':
             fprintf(stderr,
                     "Option '-%c' requires an argument. ('caget -h' for help.)\n",
                     optopt);
-            return 1;
+            return -1;
         default :
             usage();
-            return 1;
+            return -1;
         }
     }
 
@@ -601,7 +603,7 @@ int main (int argc, char *argv[])
     if (nPvs < 1)
     {
         fprintf(stderr, "No pv name specified. ('caget -h' for help.)\n");
-        return 1;
+        return -1;
     }
                                 /* Start up Channel Access */
 
@@ -609,7 +611,7 @@ int main (int argc, char *argv[])
     if (result != ECA_NORMAL) {
         fprintf(stderr, "CA error %s occurred while trying "
                 "to start channel access.\n", ca_message(result));
-        return 1;
+        return -1;
     }
                                 /* Allocate PV structure array */
 
@@ -617,7 +619,7 @@ int main (int argc, char *argv[])
     if (!pvs)
     {
         fprintf(stderr, "Memory allocation for channel structures failed.\n");
-        return 1;
+        return -1;
     }
                                 /* Connect channels */
 

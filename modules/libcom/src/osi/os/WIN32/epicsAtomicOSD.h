@@ -19,27 +19,50 @@
 
 #define EPICS_ATOMIC_OS_NAME "WIN32"
 
-#ifdef VC_EXTRALEAN
-#   define VC_EXTRALEAN_DETECTED_epicsAtomicOSD_h
-#else
-#   define VC_EXTRALEAN
-#endif
+/* Disable extra declarations that we don't need here (i.e. winsock1, rpc, etc.) */
+#pragma push_macro("WIN32_LEAN_AND_MEAN")
+#undef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 
-#ifdef STRICT
-#   define STRICT_DETECTED_epicsAtomicOSD_h
-#else
-#   define STRICT
-#endif
+#pragma push_macro("STRICT")
+#undef STRICT
+#define STRICT
+
+/* Disable min/max macros from windows.h. These macros can cause issues with headers such as <algorithm> that declare or use std::min/max */
+#pragma push_macro("NOMINMAX")
+#undef NOMINMAX
+#define NOMINMAX
+
+/* Disable 'service controller' includes */
+#pragma push_macro("NOSERVICE")
+#undef NOSERVICE
+#define NOSERVICE
+
+/* Disable 'input management engine' includes */
+#pragma push_macro("NOIME")
+#undef NOIME
+#define NOIME
+
+/* Disable 'modem configuration extensions' includes */
+#pragma push_macro("NOMCX")
+#undef NOMCX
+#define NOMCX
+
+/* Disable GDI includes */
+#pragma push_macro("NOGDI")
+#undef NOGDI
+#define NOGDI
 
 #include "windows.h"
 
-#ifndef VC_EXTRALEAN_DETECTED_epicsAtomicOSD_h
-#   undef VC_EXTRALEAN
-#endif
-
-#ifndef STRICT_DETECTED_epicsAtomicOSD_h
-#   undef STRICT
-#endif
+/* Restore previous macro values */
+#pragma pop_macro("WIN32_LEAN_AND_MEAN")
+#pragma pop_macro("STRICT")
+#pragma pop_macro("NOMINMAX")
+#pragma pop_macro("NOSERVICE")
+#pragma pop_macro("NOIME")
+#pragma pop_macro("NOMCX")
+#pragma pop_macro("NOGDI")
 
 #if defined ( _WIN64 )
 #    define MS_ATOMIC_64

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2000 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 #
 # Site Specific Configuration Information
 # Only the local epics system manager should modify this file

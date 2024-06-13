@@ -1,5 +1,9 @@
 #!../../bin/_ARCH_/_APPNAME_
 
+#- SPDX-FileCopyrightText: 2000 Argonne National Laboratory
+#-
+#- SPDX-License-Identifier: EPICS
+
 #- You may have to change _APPNAME_ to something else
 #- everywhere it appears in this file
 

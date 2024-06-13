@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 1998 Argonne National Laboratory
+//
+// SPDX-License-Identifier: EPICS
+
 /* xxxRecord.c */
 /* Example record support module */
 

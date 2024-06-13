@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2006 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 # Example substitutions file
 
 file "db/circle.db" {

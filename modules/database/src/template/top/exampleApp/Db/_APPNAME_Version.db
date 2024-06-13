@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2015 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 record(lsi, "$(user):_APPNAME_:version") {
     field(DTYP, "_APPNAME_ version")
     field(DESC, "Version string")

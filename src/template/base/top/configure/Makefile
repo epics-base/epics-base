@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 1999 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 TOP=..
 
 include $(TOP)/configure/CONFIG

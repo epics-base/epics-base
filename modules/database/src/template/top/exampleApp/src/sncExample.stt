@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 1998 Argonne National Laboratory
+//
+// SPDX-License-Identifier: EPICS
+
 program sncExample
 double v;
 assign v to "{user}:aiExample";

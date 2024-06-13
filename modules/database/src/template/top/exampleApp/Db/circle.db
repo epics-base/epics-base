@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2017 ITER Organization
+#
+# SPDX-License-Identifier: EPICS
+
 record(ao, "$(user):circle:step") {
   field(VAL , "1.0")
   field(DRVL, "0.0")

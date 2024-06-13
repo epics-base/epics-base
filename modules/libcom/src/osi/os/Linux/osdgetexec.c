@@ -10,10 +10,7 @@
 #include <limits.h>
 
 #include <osiFileName.h>
-
-#ifndef PATH_MAX
-#  define PATH_MAX 100
-#endif
+#include <epicsLimits.h>
 
 char *epicsGetExecName(void)
 {

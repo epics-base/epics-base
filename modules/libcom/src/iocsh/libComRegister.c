@@ -18,6 +18,7 @@
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
+#include "epicsLimits.h"
 #include "envDefs.h"
 #include "osiUnistd.h"
 #include "logClient.h"
@@ -33,7 +34,7 @@
  */
 static void updatePWD() {
     static int lasterror;
-    char buf[1024];
+    char buf[PATH_MAX];
     char *pwd = getcwd(buf, sizeof(buf));
     if (pwd) {
         pwd[sizeof(buf) - 1] = '\0';

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 1997 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 # RELEASE - Location of external support modules
 #
 # IF YOU CHANGE ANY PATHS in this file or make API changes to

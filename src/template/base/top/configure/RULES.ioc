@@ -1,2 +1,6 @@
+# SPDX-FileCopyrightText: 1999 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 #RULES.ioc
 include $(CONFIG)/RULES.ioc

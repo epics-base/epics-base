@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2002 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 record(sub,"$(user):subExample")
 {
     field(INAM,"mySubInit")

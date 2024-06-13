@@ -1,1 +1,5 @@
+# SPDX-FileCopyrightText: 2015 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 device(lsi,INST_IO,dev_CSAFEAPPNAME_Version,"_APPNAME_ version")

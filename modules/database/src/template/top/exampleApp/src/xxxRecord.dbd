@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 1998 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 recordtype(xxx) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {

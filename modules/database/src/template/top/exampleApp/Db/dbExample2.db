@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 1998 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 record(calc, "$(user):calcExample$(no)")
 {
 	alias("$(user):calc$(no)")

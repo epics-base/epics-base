@@ -1,1 +1,5 @@
+# SPDX-FileCopyrightText: 2005 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 registrar(helloRegister)

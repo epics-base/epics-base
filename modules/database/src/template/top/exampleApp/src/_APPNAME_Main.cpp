@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2000 Argonne National Laboratory
+//
+// SPDX-License-Identifier: EPICS
+
 /* _APPNAME_Main.cpp */
 /* Author:  Marty Kraimer Date:    17MAR2000 */
 

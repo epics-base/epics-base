@@ -1110,6 +1110,8 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 
     macPushScope(handle);
     macInstallMacros(handle, defines);
+    if (pathname)
+        macPutValue(handle, "IOCSH_STARTUP_SCRIPT", pathname);
 
     wasOkToBlock = epicsThreadIsOkToBlock();
     epicsThreadSetOkToBlock(1);
@@ -1327,6 +1329,8 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 int epicsStdCall
 iocsh (const char *pathname)
 {
+    if (pathname && !getenv("IOCSH_STARTUP_SCRIPT"))
+        osdEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
     return iocshLoad(pathname, NULL);
 }
 
@@ -1339,8 +1343,6 @@ iocshCmd (const char *cmd)
 int epicsStdCall
 iocshLoad(const char *pathname, const char *macros)
 {
-    if (pathname && !getenv("IOCSH_STARTUP_SCRIPT"))
-        epicsEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
     return iocshBody(pathname, NULL, macros);
 }
 
@@ -1502,6 +1504,64 @@ static void iocshLoadCallFunc(const iocshArgBuf *args)
     iocshSetError(iocshLoad(args[0].sval, args[1].sval));
 }
 
+/* set */
+struct setShowCtx {
+    char *match;
+    int none;
+};
+static long setShow(void *user, const char *name, const char *value)
+{
+    setShowCtx *shUsr = (setShowCtx *) user;
+
+    if (shUsr->match && !epicsStrGlobMatch(name, shUsr->match)) {
+        return 0;
+    }
+    shUsr->none = 0;
+    printf("  %s = \"%s\"\n", name, value);
+    return 0;
+}
+
+static const iocshArg iocshSetArg0 = { "name",iocshArgString};
+static const iocshArg iocshSetArg1 = { "value", iocshArgString};
+static const iocshArg *iocshSetArgs[2] = {&iocshSetArg0, &iocshSetArg1};
+static const iocshFuncDef iocshSetFuncDef = {"set",2,iocshSetArgs,
+    ANSI_BOLD("set") " -name\n\n"
+    ANSI_BOLD("set") " name/pattern\n\n"
+    ANSI_BOLD("set") "\n\n"
+    "Set, delete or show ioc shell variables\n"};
+static void iocshSetCallFunc(const iocshArgBuf *args)
+{
+    iocshContext *context;
+
+    if (!iocshContextId) return;
+    context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
+
+    if (!context) return;
+
+    if (!args[0].sval) {
+        setShowCtx shCtx = {NULL, 1};
+
+        macIterateMacros(context->handle, setShow, &shCtx);
+        if (shCtx.none)
+            printf("No shell variables set.\n");
+    }
+    else if (!args[1].sval) {
+        if (args[0].sval[0] == '-') {
+            macPutValue(context->handle, args[0].sval + 1, NULL);
+        }
+        else {
+            setShowCtx shCtx = {args[0].sval, 1};
+
+            macIterateMacros(context->handle, setShow, &shCtx);
+            if (shCtx.none)
+                printf("No shell variables matched.\n");
+        }
+    }
+    else {
+        macPutValue(context->handle, args[0].sval, args[1].sval);
+    }
+}
+
 /* iocshRun */
 static const iocshArg iocshRunArg0 = { "command",iocshArgString};
 static const iocshArg iocshRunArg1 = { "macros", iocshArgString};
@@ -1610,6 +1670,7 @@ static void iocshOnce (void *)
     iocshRegisterImpl(&helpFuncDef,helpCallFunc);
     iocshRegisterImpl(&iocshCmdFuncDef,iocshCmdCallFunc);
     iocshRegisterImpl(&iocshLoadFuncDef,iocshLoadCallFunc);
+    iocshRegisterImpl(&iocshSetFuncDef,iocshSetCallFunc);
     iocshRegisterImpl(&iocshRunFuncDef,iocshRunCallFunc);
     iocshRegisterImpl(&onFuncDef, onCallFunc);
     iocshTableUnlock();

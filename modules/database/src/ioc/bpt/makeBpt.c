@@ -224,6 +224,8 @@ got_header:
     fprintf(outFile,"}\n");
     fclose(inFile);
     fclose(outFile);
+    free(outFilename);
+    free(pname);
     return(0);
 }
 

@@ -207,7 +207,7 @@ static const iocshFuncDef dbPvdTableSizeFuncDef = {
 };
 static void dbPvdTableSizeCallFunc(const iocshArgBuf *args)
 {
-    dbPvdTableSize(args[0].ival);
+    iocshSetError(dbPvdTableSize(args[0].ival));
 }
 
 /* dbReportDeviceConfig */

@@ -75,21 +75,21 @@ static const iocshFuncDef dbbFuncDef = {"dbb",1,dbbArgs,
                                         "Set Breakpoint on a record\n"
                                         "This command spawns one breakpoint continuation task per lockset,"
                                         " in which further record execution is run\n"};
-static void dbbCallFunc(const iocshArgBuf *args) { dbb(args[0].sval);}
+static void dbbCallFunc(const iocshArgBuf *args) { iocshSetError(dbb(args[0].sval));}
 
 /* dbd */
 static const iocshArg dbdArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbdArgs[1] = {&dbdArg0};
 static const iocshFuncDef dbdFuncDef = {"dbd",1,dbdArgs,
                                         "Remove breakpoint from a record.\n"};
-static void dbdCallFunc(const iocshArgBuf *args) { dbd(args[0].sval);}
+static void dbdCallFunc(const iocshArgBuf *args) { iocshSetError(dbd(args[0].sval));}
 
 /* dbc */
 static const iocshArg dbcArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbcArgs[1] = {&dbcArg0};
 static const iocshFuncDef dbcFuncDef = {"dbc",1,dbcArgs,
                                         "Continue processing in a lockset until next breakpoint is found.\n"};
-static void dbcCallFunc(const iocshArgBuf *args) { dbc(args[0].sval);}
+static void dbcCallFunc(const iocshArgBuf *args) { iocshSetError(dbc(args[0].sval));}
 
 /* dbs */
 static const iocshArg dbsArg0 = { "record name",iocshArgStringRecord};
@@ -97,12 +97,12 @@ static const iocshArg * const dbsArgs[1] = {&dbsArg0};
 static const iocshFuncDef dbsFuncDef = {"dbs",1,dbsArgs,
                                         "Step through record processing within a lockset.\n"
                                         "If called without an argument, automatically steps with the last breakpoint.\n"};
-static void dbsCallFunc(const iocshArgBuf *args) { dbs(args[0].sval);}
+static void dbsCallFunc(const iocshArgBuf *args) { iocshSetError(dbs(args[0].sval));}
 
 /* dbstat */
 static const iocshFuncDef dbstatFuncDef = {"dbstat",0,0,
                                            "Print list of suspended records, and breakpoints set in locksets.\n"};
-static void dbstatCallFunc(const iocshArgBuf *args) { dbstat();}
+static void dbstatCallFunc(const iocshArgBuf *args) { iocshSetError(dbstat());}
 
 /* dbp */
 static const iocshArg dbpArg0 = { "record name",iocshArgStringRecord};
@@ -119,7 +119,9 @@ static const iocshFuncDef dbpFuncDef = {
     "               3 - Fields of minor interest to a System developer.\n"
     "               4 - Internal record fields.\n"};
 static void dbpCallFunc(const iocshArgBuf *args)
-{ dbp(args[0].sval,args[1].ival);}
+{
+    iocshSetError(dbp(args[0].sval,args[1].ival));
+}
 
 /* dbap */
 static const iocshArg dbapArg0 = { "record name",iocshArgStringRecord};
@@ -127,7 +129,7 @@ static const iocshArg * const dbapArgs[1] = {&dbapArg0};
 static const iocshFuncDef dbapFuncDef = {"dbap",1,dbapArgs,
                                          "Auto Print.\n"
                                          "Toggle automatic printing after processing a record that has a breakpoint.\n"};
-static void dbapCallFunc(const iocshArgBuf *args) { dbap(args[0].sval);}
+static void dbapCallFunc(const iocshArgBuf *args) { iocshSetError(dbap(args[0].sval));}
 
 /* dbsr */
 static const iocshArg dbsrArg0 = { "interest level",iocshArgInt};
@@ -150,7 +152,7 @@ static const iocshFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs,
                                           "       2 - Shows info. for all links.\n"};
 static void dbcarCallFunc(const iocshArgBuf *args)
 {
-    dbcar(args[0].sval,args[1].ival);
+    iocshSetError(dbcar(args[0].sval,args[1].ival));
 }
 
 /* dbjlr */
@@ -162,7 +164,7 @@ static const iocshFuncDef dbjlrFuncDef = {"dbjlr",2,dbjlrArgs,
                                           "List all JSON links in a record. If no record is specified, print for all\n"};
 static void dbjlrCallFunc(const iocshArgBuf *args)
 {
-    dbjlr(args[0].sval,args[1].ival);
+    iocshSetError(dbjlr(args[0].sval,args[1].ival));
 }
 
 /* dbel */
@@ -176,7 +178,7 @@ static const iocshFuncDef dbelFuncDef = {"dbel",2,dbelArgs,
                                          "Example: dbel aitest 2\n"};
 static void dbelCallFunc(const iocshArgBuf *args)
 {
-    dbel(args[0].sval, args[1].ival);
+    iocshSetError(dbel(args[0].sval, args[1].ival));
 }
 
 /* dba */
@@ -187,7 +189,7 @@ static const iocshFuncDef dbaFuncDef = {"dba",1,dbaArgs,
                                         "Print information in the dbAddr structure for a specific field.\n"
                                         "If no field is specified, VAL is assumed.\n\n"
                                         "Example: dba(\"aitest.HIGH\")\n"};
-static void dbaCallFunc(const iocshArgBuf *args) { dba(args[0].sval);}
+static void dbaCallFunc(const iocshArgBuf *args) { iocshSetError(dba(args[0].sval));}
 
 /* dbl */
 static const iocshArg dblArg0 = { "record type",iocshArgString};
@@ -204,7 +206,7 @@ static const iocshFuncDef dblFuncDef = {"dbl",2,dblArgs,
                                         "         dbl(\"ai\",\"HIGH LOW VAL PREC\")\n"};
 static void dblCallFunc(const iocshArgBuf *args)
 {
-    dbl(args[0].sval,args[1].sval);
+    iocshSetError(dbl(args[0].sval,args[1].sval));
 }
 
 /* dbnr */
@@ -213,7 +215,7 @@ static const iocshArg * const dbnrArgs[1] = {&dbnrArg0};
 static const iocshFuncDef dbnrFuncDef = {"dbnr",1,dbnrArgs,
                                          "List number of records and aliases by type.\n"
                                          "If verbose, list all record types regardless of being instanced\n"};
-static void dbnrCallFunc(const iocshArgBuf *args) { dbnr(args[0].ival);}
+static void dbnrCallFunc(const iocshArgBuf *args) { iocshSetError(dbnr(args[0].ival));}
 
 /* dbli */
 static const iocshArg dbliArg0 = { "pattern",iocshArgString};
@@ -221,7 +223,7 @@ static const iocshArg * const dbliArgs[1] = {&dbliArg0};
 static const iocshFuncDef dbliFuncDef = {"dbli",1,dbliArgs,
                                          "List info() tags with names matching pattern.\n\n"
                                          "Example: dbli(\"autosave*\")\n"};
-static void dbliCallFunc(const iocshArgBuf *args) { dbli(args[0].sval);}
+static void dbliCallFunc(const iocshArgBuf *args) { iocshSetError(dbli(args[0].sval));}
 
 /* dbla */
 static const iocshArg dblaArg0 = { "pattern",iocshArgStringRecord};
@@ -229,7 +231,7 @@ static const iocshArg * const dblaArgs[1] = {&dblaArg0};
 static const iocshFuncDef dblaFuncDef = {"dbla",1,dblaArgs,
                                          "List record alias()s by alias name pattern.\n\n"
                                          "Example: dbla(\"alia*\")\n"};
-static void dblaCallFunc(const iocshArgBuf *args) { dbla(args[0].sval);}
+static void dblaCallFunc(const iocshArgBuf *args) { iocshSetError(dbla(args[0].sval));}
 
 /* dbgrep */
 static const iocshArg dbgrepArg0 = { "pattern",iocshArgStringRecord};
@@ -240,7 +242,7 @@ static const iocshFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs,
                                            " - \"?\", which matches 0 or one characters.\n"
                                            " - \"*\", which matches 0 or more characters.\n\n"
                                            "Example: dbgrep(\"*gpibAi*\")\n"};
-static void dbgrepCallFunc(const iocshArgBuf *args) { dbgrep(args[0].sval);}
+static void dbgrepCallFunc(const iocshArgBuf *args) { iocshSetError(dbgrep(args[0].sval));}
 
 /* dbgf */
 static const iocshArg dbgfArg0 = { "record name",iocshArgStringRecord};
@@ -250,7 +252,7 @@ static const iocshFuncDef dbgfFuncDef = {"dbgf",1,dbgfArgs,
                                          "Print current value of record field.\n"
                                          "If no field name is specified, VAL is assumed.\n\n"
                                          "Example: dbgf(\"aitest.VAL\")\n"};
-static void dbgfCallFunc(const iocshArgBuf *args) { dbgf(args[0].sval);}
+static void dbgfCallFunc(const iocshArgBuf *args) { iocshSetError(dbgf(args[0].sval));}
 
 /* dbpf */
 static const iocshArg dbpfArg0 = { "record name",iocshArgStringRecord};
@@ -261,7 +263,7 @@ static const iocshFuncDef dbpfFuncDef = {"dbpf",2,dbpfArgs,
                                          "Change value of record field and read it back with dbgf.\n"
                                          "If no field is specified, VAL is assumed\n"};
 static void dbpfCallFunc(const iocshArgBuf *args)
-{ dbpf(args[0].sval,args[1].sval);}
+{ iocshSetError(dbpf(args[0].sval,args[1].sval));}
 
 /* dbpr */
 static const iocshArg dbprArg0 = { "record name",iocshArgStringRecord};
@@ -279,14 +281,14 @@ static const iocshFuncDef dbprFuncDef = {
     "Example: dbpr aitest 3\n"
 };
 static void dbprCallFunc(const iocshArgBuf *args)
-{ dbpr(args[0].sval,args[1].ival);}
+{ iocshSetError(dbpr(args[0].sval,args[1].ival));}
 
 /* dbtr */
 static const iocshArg dbtrArg0 = { "record name",iocshArgStringRecord};
 static const iocshArg * const dbtrArgs[1] = {&dbtrArg0};
 static const iocshFuncDef dbtrFuncDef = {"dbtr",1,dbtrArgs,
                                          "Process record and then some fields.\n"};
-static void dbtrCallFunc(const iocshArgBuf *args) { dbtr(args[0].sval);}
+static void dbtrCallFunc(const iocshArgBuf *args) { iocshSetError(dbtr(args[0].sval));}
 
 /* dbtgf */
 static const iocshArg dbtgfArg0 = { "record name",iocshArgStringRecord};
@@ -296,7 +298,7 @@ static const iocshFuncDef dbtgfFuncDef = {"dbtgf",1,dbtgfArgs,
                                           "Get and print the specified field with all possible DBR_* types\n"
                                           "Example: dbtgf aitest\n"
                                           "Example: dbtgf aitest.VAL\n"};
-static void dbtgfCallFunc(const iocshArgBuf *args) { dbtgf(args[0].sval);}
+static void dbtgfCallFunc(const iocshArgBuf *args) { iocshSetError(dbtgf(args[0].sval));}
 
 /* dbtpf */
 static const iocshArg dbtpfArg0 = { "record name",iocshArgStringRecord};
@@ -308,7 +310,7 @@ static const iocshFuncDef dbtpfFuncDef = {"dbtpf",2,dbtpfArgs,
                                           "for all possible DBR_* types\n\n"
                                           "Example: dbtpf aitest 5.0\n"};
 static void dbtpfCallFunc(const iocshArgBuf *args)
-{ dbtpf(args[0].sval,args[1].sval);}
+{ iocshSetError(dbtpf(args[0].sval,args[1].sval));}
 
 /* dbior */
 static const iocshArg dbiorArg0 = { "driver name",iocshArgString};
@@ -317,7 +319,7 @@ static const iocshArg * const dbiorArgs[] = {&dbiorArg0,&dbiorArg1};
 static const iocshFuncDef dbiorFuncDef = {"dbior",2,dbiorArgs,
                                           "Driver Report.\n"};
 static void dbiorCallFunc(const iocshArgBuf *args)
-{ dbior(args[0].sval,args[1].ival);}
+{ iocshSetError(dbior(args[0].sval,args[1].ival));}
 
 /* dbhcr */
 static const iocshFuncDef dbhcrFuncDef = {"dbhcr",0,0,
@@ -327,7 +329,7 @@ static const iocshFuncDef dbhcrFuncDef = {"dbhcr",0,0,
                                           "Use the UNIX sort command:\n"
                                           "dbhcr > report\n"
                                           "sort report > report.sorted\n"};
-static void dbhcrCallFunc(const iocshArgBuf *args) { dbhcr();}
+static void dbhcrCallFunc(const iocshArgBuf *args) { iocshSetError(dbhcr());}
 
 /* gft */
 static const iocshArg gftArg0 = { "record name",iocshArgStringRecord};
@@ -336,7 +338,7 @@ static const iocshFuncDef gftFuncDef = {"gft",1,gftArgs,
                                         "Report dbChannel info and value.\n"
                                         "Example: gft aitest\n"
                                         "Example: gft aitest.VAL\n"};
-static void gftCallFunc(const iocshArgBuf *args) { gft(args[0].sval);}
+static void gftCallFunc(const iocshArgBuf *args) { iocshSetError(gft(args[0].sval));}
 
 /* pft */
 static const iocshArg pftArg0 = { "record name",iocshArgStringRecord};
@@ -346,7 +348,7 @@ static const iocshFuncDef pftFuncDef = {"pft",2,pftArgs,
                                         "dbChannel put value.\n"
                                         "Example: pft aitest 5.0\n"};
 static void pftCallFunc(const iocshArgBuf *args)
-{ pft(args[0].sval,args[1].sval);}
+{ iocshSetError(pft(args[0].sval,args[1].sval));}
 
 /* dbtpn */
 static const iocshArg dbtpnArg0 = { "record name",iocshArgStringRecord};
@@ -359,12 +361,12 @@ static const iocshFuncDef dbtpnFuncDef = {"dbtpn",2,dbtpnArgs,
                                           "Example: dbtpn aitest\n"
                                           "Example: dbtpn aitest 5.0\n"};
 static void dbtpnCallFunc(const iocshArgBuf *args)
-{ dbtpn(args[0].sval,args[1].sval);}
+{ iocshSetError(dbtpn(args[0].sval,args[1].sval));}
 
 /* dbNotifyDump */
 static const iocshFuncDef dbNotifyDumpFuncDef = {"dbNotifyDump",0,0,
                                                  "Report status of any active async processing with completion notification.\n"};
-static void dbNotifyDumpCallFunc(const iocshArgBuf *args) { dbNotifyDump();}
+static void dbNotifyDumpCallFunc(const iocshArgBuf *args) { iocshSetError(dbNotifyDump());}
 
 /* dbPutAttribute */
 static const iocshArg dbPutAttrArg0 = { "record type",iocshArgString};
@@ -375,7 +377,7 @@ static const iocshArg * const dbPutAttrArgs[] =
 static const iocshFuncDef dbPutAttrFuncDef = {"dbPutAttribute",3,dbPutAttrArgs,
                                               "Set/Create record attribute.\n"};
 static void dbPutAttrCallFunc(const iocshArgBuf *args)
-{ dbPutAttribute(args[0].sval,args[1].sval,args[2].sval);}
+{ iocshSetError(dbPutAttribute(args[0].sval,args[1].sval,args[2].sval));}
 
 /* tpn */
 static const iocshArg tpnArg0 = { "record name",iocshArgStringRecord};
@@ -385,7 +387,7 @@ static const iocshFuncDef tpnFuncDef = {"tpn",2,tpnArgs,
                                         "Test Process Notify.\n\n"
                                         "Example: tpn aitest 5.0\n"};
 static void tpnCallFunc(const iocshArgBuf *args)
-{ tpn(args[0].sval,args[1].sval);}
+{ iocshSetError(tpn(args[0].sval,args[1].sval));}
 
 /* dblsr */
 static const iocshArg dblsrArg0 = { "record name",iocshArgStringRecord};
@@ -399,7 +401,7 @@ static const iocshFuncDef dblsrFuncDef = {"dblsr",2,dblsrArgs,
                                           "               2 - Show each record and all database links in the lock set.\n\n"
                                           "Example: dblsr aitest 2\n"};
 static void dblsrCallFunc(const iocshArgBuf *args)
-{ dblsr(args[0].sval,args[1].ival);}
+{ iocshSetError(dblsr(args[0].sval,args[1].ival));}
 
 /* dbLockShowLocked */
 static const iocshArg dbLockShowLockedArg0 = { "interest level",iocshArgInt};
@@ -412,7 +414,7 @@ static const iocshFuncDef dbLockShowLockedFuncDef = {
     "Example: dbLockShowLocked 0\n"
 };
 static void dbLockShowLockedCallFunc(const iocshArgBuf *args)
-{ dbLockShowLocked(args[0].ival);}
+{ iocshSetError(dbLockShowLocked(args[0].ival));}
 
 /* scanOnceSetQueueSize */
 static const iocshArg scanOnceSetQueueSizeArg0 = { "size",iocshArgInt};
@@ -423,7 +425,7 @@ static const iocshFuncDef scanOnceSetQueueSizeFuncDef = {"scanOnceSetQueueSize",
                                                          "Must be called before iocInit().\n"};
 static void scanOnceSetQueueSizeCallFunc(const iocshArgBuf *args)
 {
-    scanOnceSetQueueSize(args[0].ival);
+    iocshSetError(scanOnceSetQueueSize(args[0].ival));
 }
 
 /* scanOnceQueueShow */
@@ -444,7 +446,7 @@ static const iocshFuncDef scanpplFuncDef = {"scanppl",1,scanpplArgs,
                                             "Print info for records with periodic scan.\n"
                                             "If rate == 0.0, all periods are shown.\n"};
 static void scanpplCallFunc(const iocshArgBuf *args)
-{ scanppl(args[0].dval);}
+{ iocshSetError(scanppl(args[0].dval));}
 
 /* scanpel */
 static const iocshArg scanpelArg0 = { "event name",iocshArgString};
@@ -452,7 +454,7 @@ static const iocshArg * const scanpelArgs[1] = {&scanpelArg0};
 static const iocshFuncDef scanpelFuncDef = {"scanpel",1,scanpelArgs,
                                             "Print info for records with SCAN = \"Event\".\n"};
 static void scanpelCallFunc(const iocshArgBuf *args)
-{ scanpel(args[0].sval);}
+{ iocshSetError(scanpel(args[0].sval));}
 
 /* postEvent */
 static const iocshArg postEventArg0 = { "event name",iocshArgString};
@@ -468,7 +470,7 @@ static void postEventCallFunc(const iocshArgBuf *args)
 /* scanpiol */
 static const iocshFuncDef scanpiolFuncDef = {"scanpiol",0,0,
                                              "Print info for records with SCAN = \"I/O Intr\".\n"};
-static void scanpiolCallFunc(const iocshArgBuf *args) { scanpiol();}
+static void scanpiolCallFunc(const iocshArgBuf *args) { iocshSetError(scanpiol());}
 
 /* callbackSetQueueSize */
 static const iocshArg callbackSetQueueSizeArg0 = { "bufsize",iocshArgInt};
@@ -479,7 +481,7 @@ static const iocshFuncDef callbackSetQueueSizeFuncDef = {"callbackSetQueueSize",
                                                          "Must be called before iocInit().\n"};
 static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
 {
-    callbackSetQueueSize(args[0].ival);
+    iocshSetError(callbackSetQueueSize(args[0].ival));
 }
 
 /* callbackQueueShow */
@@ -504,7 +506,7 @@ static const iocshFuncDef callbackParallelThreadsFuncDef = {"callbackParallelThr
                                                             "or one of LOW, MEDIUM, or HIGH.\n"};
 static void callbackParallelThreadsCallFunc(const iocshArgBuf *args)
 {
-    callbackParallelThreads(args[0].ival, args[1].sval);
+    iocshSetError(callbackParallelThreads(args[0].ival, args[1].sval));
 }
 
 /* dbStateCreate */
@@ -514,7 +516,8 @@ static const iocshFuncDef dbStateCreateFuncDef = {"dbStateCreate", 1, dbStateCre
                                                   "Allocate new state name for \"state\" filter.\n"};
 static void dbStateCreateCallFunc (const iocshArgBuf *args)
 {
-    dbStateCreate(args[0].sval);
+    if (!dbStateCreate(args[0].sval))
+        iocshSetError(-1);
 }
 
 /* dbStateSet */
@@ -527,6 +530,8 @@ static void dbStateSetCallFunc (const iocshArgBuf *args)
 
     if (sid)
         dbStateSet(sid);
+    else
+        iocshSetError(-1);
 }
 
 /* dbStateClear */
@@ -539,6 +544,8 @@ static void dbStateClearCallFunc (const iocshArgBuf *args)
 
     if (sid)
         dbStateClear(sid);
+    else
+        iocshSetError(-1);
 }
 
 /* dbStateShow */
@@ -552,6 +559,8 @@ static void dbStateShowCallFunc (const iocshArgBuf *args)
 
     if (sid)
         dbStateShow(sid, args[1].ival);
+    else
+        iocshSetError(-1);
 }
 
 /* dbStateShowAll */

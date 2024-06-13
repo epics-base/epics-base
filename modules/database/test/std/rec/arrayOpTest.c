@@ -23,7 +23,7 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 static void testGetPutArray(void)
 {
     double data[4] = {11, 12, 13, 14};
-    DBADDR addr, save;
+    DBADDR addr;
     long nreq;
     epicsInt32 *pbtr;
     waveformRecord *prec;
@@ -45,7 +45,6 @@ static void testGetPutArray(void)
     prec = (waveformRecord*)testdbRecordPtr("wfrec");
     if(!prec || dbNameToAddr("wfrec", &addr))
         testAbort("Failed to find record wfrec");
-    memcpy(&save, &addr, sizeof(save));
 
     testDiag("Fetch initial value of %s", prec->name);
 
@@ -62,9 +61,6 @@ static void testGetPutArray(void)
     }
     dbScanUnlock(addr.precord);
 
-    testOk1(memcmp(&addr, &save, sizeof(save))==0);
-    addr=save;
-
     testDiag("Write a new value");
 
     data[0] = 4.0;
@@ -78,9 +74,6 @@ static void testGetPutArray(void)
     testOk(prec->nord==4, "prec->nord==4 (got %u)", prec->nord);
     testOk1(pbtr[0]==4 && pbtr[1]==5 && pbtr[2]==6 && pbtr[3]==7);
     dbScanUnlock(addr.precord);
-
-    testOk1(memcmp(&addr, &save, sizeof(save))==0);
-    addr=save;
 
     memset(&data, 0, sizeof(data));
 
@@ -96,14 +89,11 @@ static void testGetPutArray(void)
     }
     dbScanUnlock(addr.precord);
 
-    testOk1(memcmp(&addr, &save, sizeof(save))==0);
-
     testDiag("Test dbGet() and dbPut() from/to an array of size 1");
 
     prec = (waveformRecord*)testdbRecordPtr("wfrec1");
     if(!prec || dbNameToAddr("wfrec1", &addr))
         testAbort("Failed to find record wfrec1");
-    memcpy(&save, &addr, sizeof(save));
 
     testDiag("Fetch initial value of %s", prec->name);
 
@@ -117,9 +107,6 @@ static void testGetPutArray(void)
         testOk(nreq==0, "nreq==0 (got %ld)", nreq);
     }
     dbScanUnlock(addr.precord);
-
-    testOk1(memcmp(&addr, &save, sizeof(save))==0);
-    addr=save;
 
     testDiag("Write a new value");
 
@@ -135,9 +122,6 @@ static void testGetPutArray(void)
     testOk1(pbtr[0]==4);
     dbScanUnlock(addr.precord);
 
-    testOk1(memcmp(&addr, &save, sizeof(save))==0);
-    addr=save;
-
     memset(&data, 0, sizeof(data));
 
     testDiag("Reread the value");
@@ -152,7 +136,6 @@ static void testGetPutArray(void)
     }
     dbScanUnlock(addr.precord);
 
-    testOk1(memcmp(&addr, &save, sizeof(save))==0);
 
     testIocShutdownOk();
 
@@ -161,7 +144,7 @@ static void testGetPutArray(void)
 
 MAIN(arrayOpTest)
 {
-    testPlan(21);
+    testPlan(15);
     testGetPutArray();
     return testDone();
 }

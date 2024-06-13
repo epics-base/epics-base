@@ -1100,7 +1100,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 
     macPushScope(handle);
     macInstallMacros(handle, defines);
-     if (pathname)
+    if (pathname)
         macPutValue(handle, "IOCSH_STARTUP_SCRIPT", pathname);
 
     wasOkToBlock = epicsThreadIsOkToBlock();

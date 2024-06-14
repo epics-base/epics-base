@@ -155,7 +155,7 @@ void scanStop(void)
 {
     int i;
 
-    if (scanCtl == ctlExit) return;
+    if (scanCtl == ctlInit || scanCtl == ctlExit) return;
     scanCtl = ctlExit;
 
     interruptAccept = FALSE;

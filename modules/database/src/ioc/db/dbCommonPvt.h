@@ -15,13 +15,21 @@ typedef struct dbCommonPvt {
     /* Thread which is currently processing this record */
     struct epicsThreadOSD* procThread;
 
-    struct dbCommon common;
+    /* actually followed by:
+     * struct dbCommon common;
+     */
 } dbCommonPvt;
 
 static EPICS_ALWAYS_INLINE
 dbCommonPvt* dbRec2Pvt(struct dbCommon *prec)
 {
-    return CONTAINER(prec, dbCommonPvt, common);
+    return (dbCommonPvt*)((char*)prec - sizeof(dbCommonPvt));
+}
+
+static EPICS_ALWAYS_INLINE
+dbCommon* dbPvt2Rec(struct dbCommonPvt *pvt)
+{
+    return (dbCommon*)&pvt[1];
 }
 
 #endif // DBCOMMONPVT_H

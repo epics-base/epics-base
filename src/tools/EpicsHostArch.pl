@@ -53,11 +53,11 @@ sub HostArch {
             die "$0: macOS CPU type '$cpu' not recognized\n";
         }
         # mingw64 has 32bit and 64bit build shells which give same arch result
-        if (m/^x86_64-msys/ or m/^i686-msys/) {
-            die "$0: Architecture '$arch' ambiguous.\n".
-                "Rerun after typing one of the following:\n".
-                "    export EPICS_HOST_ARCH=windows-x64-mingw   # for 64bit build\n".
-                "    export EPICS_HOST_ARCH=win32-x86-mingw     # for 32bit build\n";
+        if (m/^(x86_64|i686)-msys/) {
+            die "$0: Architecture '$arch' is unclear,\n".
+                "try again after explicitly setting the EPICS_HOST_ARCH environment variable.\n".
+                "Use  EPICS_HOST_ARCH=windows-x64-mingw  for a 64bit MinGW build, or\n".
+                "EPICS_HOST_ARCH=win32-x86-mingw  for a 32bit MinGW build.\n"
         }
         die "$0: Architecture '$arch' not recognized\n";
     }

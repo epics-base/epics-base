@@ -1315,6 +1315,8 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 int epicsStdCall
 iocsh (const char *pathname)
 {
+    if (pathname && !getenv("IOCSH_STARTUP_SCRIPT"))
+        epicsEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
     return iocshLoad(pathname, NULL);
 }
 

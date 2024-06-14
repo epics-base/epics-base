@@ -189,7 +189,7 @@ void testHelp(void)
 
 MAIN(iocshTest)
 {
-    testPlan(25);
+    testPlan(28);
     libComRegister();
     iocshRegister(&positionFuncDef, &positionCallFunc);
     iocshRegister(&assertFuncDef, &assertCallFunc);
@@ -235,6 +235,11 @@ MAIN(iocshTest)
     reached.clear();
 
     testHelp();
+
+    testFile("iocshTestShellNoVarSet.cmd", false);
+    testFile("iocshTestShellVarSet.cmd");
+    testPosition("var_set");
+    reached.clear();
 
     // cleanup after macLib to avoid valgrind false positives
     dbmfFreeChunks();

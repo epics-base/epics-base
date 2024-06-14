@@ -590,8 +590,7 @@ void rsrv_init (void)
             errlogPrintf ( "cas " ERL_WARNING ": reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
         }
 
-        epicsSnprintf(buf, sizeof(buf)-1u, "%u", ca_server_port);
-        buf[sizeof(buf)-1u] = '\0';
+        epicsSnprintf(buf, sizeof(buf), "%u", ca_server_port);
         epicsEnvSet("RSRV_SERVER_PORT", buf);
     }
 

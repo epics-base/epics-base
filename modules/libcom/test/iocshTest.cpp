@@ -189,7 +189,7 @@ void testHelp(void)
 
 MAIN(iocshTest)
 {
-    testPlan(28);
+    testPlan(29);
     libComRegister();
     iocshRegister(&positionFuncDef, &positionCallFunc);
     iocshRegister(&assertFuncDef, &assertCallFunc);
@@ -237,8 +237,9 @@ MAIN(iocshTest)
     testHelp();
 
     testFile("iocshTestShellNoVarSet.cmd", false);
-    testFile("iocshTestShellVarSet.cmd");
+    testPosition("after_set");
     testPosition("var_set");
+    testPosition("var_new_set");
     reached.clear();
 
     // cleanup after macLib to avoid valgrind false positives

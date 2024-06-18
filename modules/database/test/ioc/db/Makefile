@@ -183,6 +183,7 @@ testHarness_SRCS += dbStaticTest.c
 TESTFILES += ../dbStaticTest.db
 TESTFILES += ../dbStaticTestAlias1.db
 TESTFILES += ../dbStaticTestAlias2.db
+TESTFILES += ../dbStaticTestRemove.db
 TESTS += dbStaticTest
 
 # This runs all the test programs in a known working order:

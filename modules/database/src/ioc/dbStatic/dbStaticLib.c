@@ -1519,7 +1519,6 @@ long dbDeleteRecord(DBENTRY *pdbentry)
     dbBase          *pdbbase = pdbentry->pdbbase;
     dbRecordType    *precordType = pdbentry->precordType;
     dbRecordNode    *precnode = pdbentry->precnode;
-    struct dbCommon *prec = pdbentry->precnode->precord;
     ELLLIST         *preclist;
     long            status;
 
@@ -1530,7 +1529,7 @@ long dbDeleteRecord(DBENTRY *pdbentry)
     preclist = &precordType->recList;
     ellDelete(preclist, &precnode->node);
     dbPvdDelete(pdbbase, precnode);
-    dbDeleteRecordLinks(precordType, prec);
+    dbDeleteRecordLinks(precordType, precnode->precord);
     while (!dbFirstInfo(pdbentry)) {
         dbDeleteInfo(pdbentry);
     }

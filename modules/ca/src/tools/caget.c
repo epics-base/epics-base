@@ -388,7 +388,7 @@ int main (int argc, char *argv[])
     int digits = 0;             /* getopt() no. of float digits */
 
     int nPvs;                   /* Number of PVs */
-    pv* pvs;                    /* Array of PV structures */
+    pv* pvs = NULL;             /* Array of PV structures */
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
@@ -556,6 +556,7 @@ int main (int argc, char *argv[])
         result = caget(pvs, nPvs, request, format, type, count);
 
                                 /* Shut down Channel Access */
+    free(pvs);
     ca_context_destroy();
 
     return result;

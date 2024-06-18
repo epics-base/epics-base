@@ -343,6 +343,7 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
         default :
             break;
         }
+        free(pvs[n].value);
     }
     return 0;
 }

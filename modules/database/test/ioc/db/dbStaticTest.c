@@ -14,6 +14,35 @@
 #include <dbUnitTest.h>
 #include <testMain.h>
 
+
+static void testEntryRemoved(const char *pv)
+{
+    DBENTRY entry;
+
+    testDiag("testEntryRemoved(\"%s\")", pv);
+
+    dbInitEntry(pdbbase, &entry);
+
+    testOk(dbFindRecord(&entry, pv)==S_dbLib_recNotFound,
+        "Record '%s' not present", pv);
+
+    dbFinishEntry(&entry);
+}
+
+static void testEntryPresent(const char *pv)
+{
+    DBENTRY entry;
+
+    testDiag("testEntryPresent(\"%s\")", pv);
+
+    dbInitEntry(pdbbase, &entry);
+
+    testOk(dbFindRecord(&entry, pv)==0,
+        "Record '%s' present", pv);
+
+    dbFinishEntry(&entry);
+}
+
 static void testEntry(const char *pv)
 {
     DBENTRY entry;
@@ -310,7 +339,7 @@ MAIN(dbStaticTest)
     const char *ldir;
     FILE *fp = NULL;
 
-    testPlan(312);
+    testPlan(338);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -322,6 +351,16 @@ MAIN(dbStaticTest)
     }
     if(dbReadDatabaseFP(&pdbbase, fp, NULL, NULL)) {
         testAbort("Unable to load %s%sdbStaticTest.db",
+                  ldir, OSI_PATH_LIST_SEPARATOR);
+    }
+
+    dbPath(pdbbase,"." OSI_PATH_LIST_SEPARATOR "..");
+    ldir = dbOpenFile(pdbbase, "dbStaticTestRemove.db", &fp);
+    if(!fp) {
+        testAbort("Unable to read dbStaticTestRemove.db");
+    }
+    if(dbReadDatabaseFP(&pdbbase, fp, NULL, NULL)) {
+        testAbort("Unable to load %s%sdbStaticTestRemove.db",
                   ldir, OSI_PATH_LIST_SEPARATOR);
     }
 
@@ -341,6 +380,20 @@ MAIN(dbStaticTest)
     testRec2Entry("testalias2");
     testRec2Entry("testalias3");
 
+    testEntryPresent("testdelrec");
+    testEntryPresent("testdelrec6");
+    testEntryPresent("testdelalias66");
+    testEntryRemoved("testdelrec1");
+    testEntryRemoved("testdelrec2");
+    testEntryRemoved("testdelrec3");
+    testEntryRemoved("testdelrec4");
+    testEntryRemoved("testdelrec5");
+    testEntryRemoved("testdelalias6");
+    testEntryRemoved("testdelrec7");
+    testEntryRemoved("testdelalias7");
+    testEntryRemoved("testdelalias77");
+    testEntryRemoved("testdelrec8");
+
     eltc(0);
     testIocInitOk();
     eltc(1);
@@ -357,6 +410,20 @@ MAIN(dbStaticTest)
     testRec2Entry("testalias");
     testRec2Entry("testalias2");
     testRec2Entry("testalias3");
+
+    testEntryPresent("testdelrec");
+    testEntryPresent("testdelrec6");
+    testEntryPresent("testdelalias66");
+    testEntryRemoved("testdelrec1");
+    testEntryRemoved("testdelrec2");
+    testEntryRemoved("testdelrec3");
+    testEntryRemoved("testdelrec4");
+    testEntryRemoved("testdelrec5");
+    testEntryRemoved("testdelalias6");
+    testEntryRemoved("testdelrec7");
+    testEntryRemoved("testdelalias7");
+    testEntryRemoved("testdelalias77");
+    testEntryRemoved("testdelrec8");
 
     testDbVerify("testrec");
 

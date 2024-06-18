@@ -21,6 +21,8 @@
 #include <epicsUnitTest.h>
 #include <testMain.h>
 
+#include <cstring>
+
 namespace {
 void findTestData()
 {
@@ -236,10 +238,10 @@ MAIN(iocshTest)
 
     testHelp();
 
-    testFile("iocshTestShellNoVarSet.cmd", false);
-    testPosition("after_set");
-    testPosition("var_set");
-    testPosition("var_new_set");
+    testFile("iocshTestLocal1.cmd");
+    testOk1(getenv("innerA") && strcmp(getenv("innerA"), "A outer")==0);
+    testOk1(getenv("innerB") && strcmp(getenv("innerB"), "B inner")==0);
+    testOk1(getenv("outerB") && strcmp(getenv("outerB"), "B outer")==0);
     reached.clear();
 
     // cleanup after macLib to avoid valgrind false positives

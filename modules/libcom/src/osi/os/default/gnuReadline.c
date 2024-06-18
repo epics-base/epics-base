@@ -109,7 +109,7 @@ osdReadline (const char *prompt, struct readlineContext *context)
             line[linelen] = '\0';
     }
     context->line = line;
-    if (line && *line)
+    if (line && *line && !context->in)
         add_history(line);
     return line;
 }

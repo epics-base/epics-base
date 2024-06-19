@@ -1478,40 +1478,15 @@ long dbDeleteAliases(DBENTRY *pdbentry)
     return 0;
 }
 
-static long dbDeleteRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
+static void dbDeleteRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
 {
     short i;
 
     for (i=0; i<rtyp->no_links; i++) {
         dbFldDes *pflddes = rtyp->papFldDes[rtyp->link_ind[i]];
         DBLINK *plink = (DBLINK *)(((char *)prec) + pflddes->offset);
-
-        // TODO: How to handle different link types?
-
-        // switch (plink->type) {
-        // /* constantStr is allowed to remain NULL if plink->text==NULL
-        //  * constantStr==NULL has special meaning in recGblInitConstantLink()
-        //  */
-        // case CONSTANT: plink->value.constantStr = NULL; break;
-        // case PV_LINK:  plink->value.pv_link.pvname = callocMustSucceed(1, 1, "init PV_LINK"); break;
-        // case JSON_LINK: plink->value.json.string = pNullString; break;
-        // case VME_IO: plink->value.vmeio.parm = pNullString; break;
-        // case CAMAC_IO: plink->value.camacio.parm = pNullString; break;
-        // case AB_IO: plink->value.abio.parm = pNullString; break;
-        // case GPIB_IO: plink->value.gpibio.parm = pNullString; break;
-        // case BITBUS_IO: plink->value.bitbusio.parm = pNullString; break;
-        // case INST_IO: plink->value.instio.string = pNullString; break;
-        // case BBGPIB_IO: plink->value.bbgpibio.parm = pNullString; break;
-        // case VXI_IO: plink->value.vxiio.parm = pNullString; break;
-        // }
-
-        if(!plink->text)
-            continue;
-
-        free(plink->text);
-        plink->text = NULL;
+        dbFreeLinkContents(plink);
     }
-    return 0;
 }
 
 long dbDeleteRecord(DBENTRY *pdbentry)

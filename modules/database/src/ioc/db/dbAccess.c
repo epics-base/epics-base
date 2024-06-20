@@ -145,63 +145,66 @@ long dbPutSpecial(DBADDR *paddr,int pass)
 }
 
 static void get_enum_strs(DBADDR *paddr, char **ppbuffer,
-    rset *prset,long    *options)
+                          rset *prset, long *options)
 {
-        short           field_type=paddr->field_type;
-        dbFldDes        *pdbFldDes = paddr->pfldDes;
-        dbMenu          *pdbMenu;
-        dbDeviceMenu    *pdbDeviceMenu;
-        char            **papChoice;
-        unsigned long   no_str;
-        char            *ptemp;
-        struct dbr_enumStrs *pdbr_enumStrs=(struct dbr_enumStrs*)(*ppbuffer);
-    unsigned int i;
+    struct dbr_enumStrs *penum=(struct dbr_enumStrs*)(*ppbuffer);
+    /* advance output buffer on success or failure for next option */
+    *ppbuffer = dbr_enumStrs_size + (char*)penum;
 
-        memset(pdbr_enumStrs,'\0',dbr_enumStrs_size);
-        switch(field_type) {
-                case DBF_ENUM:
-                    if( prset && prset->get_enum_strs ) {
-                        (*prset->get_enum_strs)(paddr,pdbr_enumStrs);
-                    } else {
-                        *options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
-                    }
-                    break;
-                case DBF_MENU:
-                    pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
-                    no_str = pdbMenu->nChoice;
-                    papChoice= pdbMenu->papChoiceValue;
-                    goto choice_common;
-                case DBF_DEVICE:
-                    pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
-                    if(!pdbDeviceMenu) {
-                        *options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
-                        break;
-                    }
-                    no_str = pdbDeviceMenu->nChoice;
-                    papChoice = pdbDeviceMenu->papChoice;
-                    goto choice_common;
-choice_common:
-                    i = sizeof(pdbr_enumStrs->strs)/
-                        sizeof(pdbr_enumStrs->strs[0]);
-                    if(i<no_str) no_str = i;
-                    pdbr_enumStrs->no_str = no_str;
-                    ptemp = &(pdbr_enumStrs->strs[0][0]);
-                    for (i=0; i<no_str; i++) {
-                        if(papChoice[i]==NULL) *ptemp=0;
-                        else {
-                            strncpy(ptemp,papChoice[i],
-                                sizeof(pdbr_enumStrs->strs[0]));
-                            *(ptemp+sizeof(pdbr_enumStrs->strs[0])-1) = 0;
-                        }
-                        ptemp += sizeof(pdbr_enumStrs->strs[0]);
-                    }
-                    break;
-                default:
-                    *options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
-                    break;
+    memset(penum, 0, dbr_enumStrs_size);
+
+    /* from this point
+     * on success, return early
+     * on failure, jump or fall through to clear *options bit.
+     */
+
+    if(paddr->field_type == DBF_ENUM) {
+        if( prset && prset->get_enum_strs ) {
+            (*prset->get_enum_strs)(paddr,penum);
+            return;
         }
-        *ppbuffer = ((char *)*ppbuffer) + dbr_enumStrs_size;
+
+    } else if(paddr->field_type == DBF_MENU || paddr->field_type == DBF_DEVICE) {
+        char **ppchoices;
+        epicsUInt32 i, nchoices = 0;
+
+        if(paddr->field_type == DBF_MENU) {
+            dbMenu *pmenu = paddr->pfldDes->ftPvt;
+            nchoices = pmenu->nChoice;
+            ppchoices= pmenu->papChoiceValue;
+
+        } else if(paddr->field_type == DBF_DEVICE) {
+            dbDeviceMenu *pdevs = paddr->pfldDes->ftPvt;
+            if(!pdevs)
+                goto nostrs;
+
+            nchoices = pdevs->nChoice;
+            ppchoices = pdevs->papChoice;
+        }
+
+        if(nchoices > NELEMENTS(penum->strs))
+            nchoices = NELEMENTS(penum->strs); /* availible > capacity, truncated list */
+
+        penum->no_str = nchoices;
+
+        for(i=0; i<nchoices; i++) {
+            if(ppchoices[i]) {
+                strncpy(penum->strs[i], ppchoices[i],
+                        sizeof(penum->strs[i]));
+                /* strs[i][] allowed to omit trailing nil */
+            } else {
+                penum->strs[i][0] = '\0';
+            }
+        }
         return;
+
+    } else {
+        /* other DBF_* fall through to error */
+    }
+
+nostrs:
+    /* indicate option data not available.  distinct from no_str==0 */
+    *options = (*options)^DBR_ENUM_STRS;
 }
 
 static void get_graphics(DBADDR *paddr, char **ppbuffer,

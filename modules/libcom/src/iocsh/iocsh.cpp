@@ -1482,7 +1482,9 @@ static const iocshArg iocshSetArg1 = { "value", iocshArgString};
 static const iocshArg *iocshSetArgs[2] = {&iocshSetArg0, &iocshSetArg1};
 static const iocshFuncDef iocshSetFuncDef = {"set",2,iocshSetArgs,
                                               "Takes name and value\n"
-                                              "Sets ioc shell variable to value\n"};
+                                              "Sets ioc shell variable to value\n"
+                                              "If no value is given, unsets the variable\n"
+                                              "set without parameters reports all ioc shell variables\n"};
 static void iocshSetCallFunc(const iocshArgBuf *args)
 {
     iocshContext *context;
@@ -1491,27 +1493,15 @@ static void iocshSetCallFunc(const iocshArgBuf *args)
         context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
 
         if (context != NULL) {
-            macPutValue(context->handle, args[0].sval, args[1].sval);
-        }
-    }
-}
-
-/* show */
-static const iocshFuncDef iocshShowFuncDef = {"show",0,NULL,
-                                              "Shows all ioc shell variables\n"};
-static void iocshShowCallFunc(const iocshArgBuf *args)
-{
-    iocshContext *context;
-
-    if (iocshContextId) {
-        context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
-
-        if (context != NULL) {
+            if(args[0].sval !=0){
+                macPutValue(context->handle, args[0].sval, args[1].sval);
+            }
+        else {
             macReportMacros(context->handle);
         }
+        }
     }
 }
-
 
 /* iocshRun */
 static const iocshArg iocshRunArg0 = { "command",iocshArgString};
@@ -1617,7 +1607,6 @@ static void iocshOnce (void *)
     iocshRegisterImpl(&iocshCmdFuncDef,iocshCmdCallFunc);
     iocshRegisterImpl(&iocshLoadFuncDef,iocshLoadCallFunc);
     iocshRegisterImpl(&iocshSetFuncDef,iocshSetCallFunc);
-    iocshRegisterImpl(&iocshShowFuncDef,iocshShowCallFunc);
     iocshRegisterImpl(&iocshRunFuncDef,iocshRunCallFunc);
     iocshRegisterImpl(&onFuncDef, onCallFunc);
     iocshTableUnlock();

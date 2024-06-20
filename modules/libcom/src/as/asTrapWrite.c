@@ -23,6 +23,7 @@
 #include "ellLib.h"
 #include "freeList.h"
 #include "epicsStdio.h"
+#include "epicsThread.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "ellLib.h"
@@ -32,16 +33,18 @@
 
 typedef struct listenerPvt {
     ELLNODE node;
-    struct listener *plistener;
+    struct asTrapListener *plistener;
     void *userPvt;
 }listenerPvt;
 
-typedef struct listener{
+typedef struct asTrapListener{
     ELLNODE node;
     asTrapWriteListener func;
+    asTrapWriteListener2 func2;
+    void *pvt2;
 }listener;
 
-typedef struct writeMessage {
+typedef struct asTrapWrite {
     ELLNODE node;
     asTrapWriteMessage message;
     ELLLIST listenerPvtList;
@@ -57,9 +60,10 @@ typedef struct asTrapWritePvt
     epicsMutexId lock;
 }asTrapWritePvt;
 
+static epicsThreadOnceId asTrapWriteOnce = EPICS_THREAD_ONCE_INIT;
 static asTrapWritePvt *pasTrapWritePvt = 0;
 
-static void asTrapWriteInit(void)
+static void asTrapWriteInit(void *unused)
 {
     pasTrapWritePvt = callocMustSucceed(1,sizeof(asTrapWritePvt),"asTrapWriteInit");
     ellInit(&pasTrapWritePvt->listenerList);
@@ -71,17 +75,34 @@ static void asTrapWriteInit(void)
     pasTrapWritePvt->lock = epicsMutexMustCreate();
 }
 
-asTrapWriteId epicsStdCall asTrapWriteRegisterListener(
-    asTrapWriteListener func)
+static
+asTrapWriteId asTrapWriteRegisterInternal(
+        asTrapWriteListener func,
+        asTrapWriteListener2 func2,
+        void *pvt2)
 {
     listener *plistener;
-    if(pasTrapWritePvt==0) asTrapWriteInit();
+    epicsThreadOnce(&asTrapWriteOnce, &asTrapWriteInit, NULL);
     plistener = callocMustSucceed(1,sizeof(listener),"asTrapWriteRegisterListener");
     plistener->func = func;
+    plistener->func2 = func2;
+    plistener->pvt2 = pvt2;
     epicsMutexMustLock(pasTrapWritePvt->lock);
     ellAdd(&pasTrapWritePvt->listenerList,&plistener->node);
     epicsMutexUnlock(pasTrapWritePvt->lock);
     return((asTrapWriteId)plistener);
+}
+
+asTrapWriteId epicsStdCall asTrapWriteRegisterListener(
+    asTrapWriteListener func)
+{
+    return asTrapWriteRegisterInternal(func, NULL, NULL);
+}
+
+asTrapWriteId epicsStdCall asTrapWriteRegisterListener2(
+        asTrapWriteListener2 func, void *pvt)
+{
+    return asTrapWriteRegisterInternal(NULL, func, pvt);
 }
 
 void epicsStdCall asTrapWriteUnregisterListener(asTrapWriteId id)
@@ -111,8 +132,17 @@ void epicsStdCall asTrapWriteUnregisterListener(asTrapWriteId id)
     epicsMutexUnlock(pasTrapWritePvt->lock);
 }
 
-void * epicsStdCall asTrapWriteBeforeWithData(
-    const char *userid, const char *hostid, void *addr,
+static
+void asTrapCallListener(const listener *plistener, asTrapWriteMessage* msg, int after)
+{
+    if(plistener->func)
+        (*plistener->func)(msg, after);
+    else if(plistener->func2)
+        (*plistener->func2)(plistener->pvt2, msg, after);
+}
+
+struct asTrapWrite * epicsStdCall asTrapWriteBeforeWithData(
+    const char *userid, const char *hostid, struct dbChannel *addr,
     int dbrType, int no_elements, void *data)
 {
     writeMessage *pwriteMessage;
@@ -140,7 +170,7 @@ void * epicsStdCall asTrapWriteBeforeWithData(
 
         plistenerPvt->plistener = plistener;
         pwriteMessage->message.userPvt = 0;
-        plistener->func(&pwriteMessage->message, 0);
+        asTrapCallListener(plistener, &pwriteMessage->message, 0);
         plistenerPvt->userPvt = pwriteMessage->message.userPvt;
         ellAdd(&pwriteMessage->listenerPvtList, &plistenerPvt->node);
         plistener = (listener *)ellNext(&plistener->node);
@@ -149,9 +179,8 @@ void * epicsStdCall asTrapWriteBeforeWithData(
     return pwriteMessage;
 }
 
-void epicsStdCall asTrapWriteAfterWrite(void *pvt)
+void epicsStdCall asTrapWriteAfterWrite(writeMessage *pwriteMessage)
 {
-    writeMessage *pwriteMessage = (writeMessage *)pvt;
     listenerPvt *plistenerPvt;
 
     if (pwriteMessage == 0 ||
@@ -164,7 +193,7 @@ void epicsStdCall asTrapWriteAfterWrite(void *pvt)
         listener *plistener = plistenerPvt->plistener;
 
         pwriteMessage->message.userPvt = plistenerPvt->userPvt;
-        plistener->func(&pwriteMessage->message, 1);
+        asTrapCallListener(plistener, &pwriteMessage->message, 1);
         ellDelete(&pwriteMessage->listenerPvtList, &plistenerPvt->node);
         freeListFree(pasTrapWritePvt->freeListListenerPvt, plistenerPvt);
         plistenerPvt = pnext;

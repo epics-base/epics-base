@@ -1496,9 +1496,9 @@ static void iocshSetCallFunc(const iocshArgBuf *args)
             if(args[0].sval !=0){
                 macPutValue(context->handle, args[0].sval, args[1].sval);
             }
-        else {
-            macReportMacros(context->handle);
-        }
+            else {
+                printf("    'set' with no parameters is still being implemented\n");
+            }
         }
     }
 }

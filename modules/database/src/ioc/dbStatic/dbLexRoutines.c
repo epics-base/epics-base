@@ -1123,15 +1123,12 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         status = dbFindRecord(pdbentry, name);
         if (status == 0) {
             dbDeleteRecord(pdbentry);
-            fprintf(stderr, ERL_WARNING ": Record \"%s\" DELETED!\n", name);
-            return; /* done */
+            popFirstTemp();
+            dbFreeEntry(pdbentry);
+            duplicate = TRUE;
         }
-        fprintf(stderr, ERL_ERROR ": Record \"%s\" not found\n", name);
-        yyerror(NULL);
-        duplicate = TRUE;
         return;
     }
-
     status = dbFindRecordType(pdbentry, recordType);
     if (status) {
         fprintf(stderr, "Record \"%s\" is of unknown type \"%s\"\n",

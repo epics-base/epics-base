@@ -393,6 +393,7 @@ MAIN(dbStaticTest)
     testEntryRemoved("testdelalias7");
     testEntryRemoved("testdelalias77");
     testEntryRemoved("testdelrec8");
+    testEntryRemoved("testdelrec11");
 
     eltc(0);
     testIocInitOk();
@@ -424,6 +425,7 @@ MAIN(dbStaticTest)
     testEntryRemoved("testdelalias7");
     testEntryRemoved("testdelalias77");
     testEntryRemoved("testdelrec8");
+    testEntryRemoved("testdelrec11");
 
     testDbVerify("testrec");
 

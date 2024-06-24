@@ -35,11 +35,16 @@ record(x, "testdelrec8") {
 }
 
 record("#", "testdelrec1") { }
-record("#", "testdelrec2") { }
-record("#", "testdelrec3") { }
+record("#", "testdelrec2") {
+    field("INP", "foobar2")
+}
+record("#", "testdelrec3") {
+    field("INP", "foobar2")
+    field("VAL", "1")
+}
 record("#", "testdelrec4") { }
 record("#", "testdelrec5") { }
 record("#", "testdelalias6") { }
 record("#", "testdelrec7") { }
 record("#", "testdelrec8") { }
-
+record("#", "testdelrec11") { }

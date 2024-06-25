@@ -339,7 +339,7 @@ MAIN(dbStaticTest)
     const char *ldir;
     FILE *fp = NULL;
 
-    testPlan(338);
+    testPlan(340);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);

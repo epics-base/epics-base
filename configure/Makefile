@@ -34,5 +34,9 @@ CFG += TOOLCHAIN.$(EPICS_HOST_ARCH).$(T_A)
 
 include $(TOP)/configure/RULES
 
+ifeq ($(GNU),YES)
+  # Pass compiler flags to preprocessor to enable _FORTIFY_SOURCE
+  TOOLCHAIN.$(EPICS_HOST_ARCH).$(T_A): CPPFLAGS += $(CFLAGS)
+endif
 TOOLCHAIN.$(EPICS_HOST_ARCH).$(T_A): toolchain.c
 	$(PREPROCESS.cpp)

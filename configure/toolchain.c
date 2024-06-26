@@ -47,3 +47,8 @@ COMMANDLINE_LIBRARY ?= EPICS
 #else
 COMMANDLINE_LIBRARY ?= $(strip $(if $(wildcard $(if $(GNU_DIR),$(GNU_DIR)/include/readline/readline.h)), READLINE, EPICS))
 #endif
+
+#if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE>2
+OP_SYS_CPPFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
+#endif
+

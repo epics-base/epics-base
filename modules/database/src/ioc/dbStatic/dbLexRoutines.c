@@ -1126,6 +1126,8 @@ static void dbRecordHead(char *recordType, char *name, int visible)
             popFirstTemp();
             dbFreeEntry(pdbentry);
             duplicate = TRUE;
+        } else {
+            fprintf(stderr, ERL_WARNING ": Record \"%s\" not found\n", name);
         }
         return;
     }

@@ -119,7 +119,7 @@ typedef struct dbRecordNode {
     ELLLIST         infoList;       /*LIST head of info nodes*/
     int             flags;
     /** Parse order of this record()
-     *  @since UNRELEASED
+     *  @since 7.0.8.1
      */
     unsigned        order;
     struct dbRecordNode *aliasedRecnode; /* NULL unless flags|DBRN_FLAGS_ISALIAS */
@@ -189,7 +189,7 @@ typedef struct dbBase {
     short           ignoreMissingMenus;
     short           loadCdefs;
     /** Total number of records.
-     *  @since UNRELEASED
+     *  @since 7.0.8.1
      */
     unsigned        no_records;
 }dbBase;

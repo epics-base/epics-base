@@ -1,9 +1,11 @@
-.ci/          export-ignore
-.tools/       export-ignore
-.github/      export-ignore
-.appveyor/    export-ignore
-.appveyor.yml export-ignore
-README        export-subst
+.appveyor.yml       export-ignore
+.appveyor/          export-ignore
+.ci/                export-ignore
+.github/            export-ignore
+.gitmodules         export-ignore
+.readthedocs.yml    export-ignore
+.tools/             export-ignore
+README              export-subst
 
 #Which files need CRLF handling
 # default to automatic

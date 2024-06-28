@@ -136,19 +136,20 @@ sed -i -e 's|^\./||' "$TDIR"/list.1
 
 # Exclude files
 sed \
-  -e '/\/\.ci\//d' \
+  -e '/\/\.appveyor\.yml$/d' \
+  -e '/\/\.appveyor\//d' \
   -e '/\/\.ci-local\//d' \
-  -e '/\/\.tools\//d' \
-  -e '/\/jenkins\//d' \
+  -e '/\/\.ci\//d' \
+  -e '/\/\.cproject$/d' \
   -e '/\/\.github\//d' \
   -e '/\/\.gitmodules$/d' \
   -e '/\/\.hgtags$/d' \
-  -e '/\/\.cproject$/d' \
-  -e '/\/\.project$/d' \
   -e '/\/\.lgtm\.yml$/d' \
-  -e '/\/\.travis\.yml$/d' \
-  -e '/\/\.appveyor\.yml$/d' \
+  -e '/\/\.project$/d' \
   -e '/\/\.readthedocs\.yml$/d' \
+  -e '/\/\.tools\//d' \
+  -e '/\/\.travis\.yml$/d' \
+  -e '/\/jenkins\//d' \
   "$TDIR"/list.1 > "$TDIR"/list.2
 
 if ! diff -U 0 "$TDIR"/list.1 "$TDIR"/list.2

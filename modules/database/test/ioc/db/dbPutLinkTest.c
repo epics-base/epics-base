@@ -248,6 +248,62 @@ static void testCADBSet(void)
     testdbCleanup();
 }
 
+static
+void testInitLocalLink(const char *name, unsigned fileScope, unsigned linkScope)
+{
+    dbCommon *prec = testdbRecordPtr(name);
+    DBLINK *plink = dbGetDevLink(prec);
+    if(plink->type != DB_LINK && plink->type != CA_LINK) {
+        testFail("%s not a PV link (%d)", name, plink->type);
+    } else {
+        unsigned fileActual = plink->flags & pvlOptSrcMask;
+        unsigned linkActual = plink->value.pv_link.pvlMask & pvlOptSrcMask;
+        testOk(fileScope==fileActual && linkScope==linkActual,
+               "%s link scopes file %u == %u, link %u == %u",
+               name, fileActual, fileScope, linkActual, linkScope);
+    }
+}
+
+static
+void testInitLocal()
+{
+    testDiag("testInitLocal()");
+
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("dbInitLinkTest.db", NULL, "N=1");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    testdbGetFieldEqual("il1src0.INP", DBF_STRING, "no:such:pv NPP NMS");
+    testdbGetFieldEqual("il1src1.INP", DBF_STRING, "il1tgt NPP NMS INT");
+    testdbGetFieldEqual("il1src2.INP", DBF_STRING, "il1tgt NPP NMS INT");
+    testdbGetFieldEqual("il1src3.INP", DBF_STRING, "il1tgt NPP NMS");
+    testdbGetFieldEqual("il1src4.INP", DBF_STRING, "no:such:pv NPP NMS EXT");
+    testdbGetFieldEqual("il1src5.INP", DBF_STRING, "no:such:pv NPP NMS");
+
+    testInitLocalLink("il1src0", pvlOptSrcAuto, pvlOptSrcUnDef);
+    testInitLocalLink("il1src1", pvlOptSrcInt, pvlOptSrcInt );
+    testInitLocalLink("il1src2", pvlOptSrcInt, pvlOptSrcUnDef);
+    testInitLocalLink("il1src3", pvlOptSrcInt, pvlOptSrcAuto);
+    testInitLocalLink("il1src4", pvlOptSrcInt, pvlOptSrcExt);
+    testInitLocalLink("il1src5", pvlOptSrcAuto, pvlOptSrcUnDef);
+
+    /* INT not enforced for runtime changes */
+    testdbPutFieldOk("il1src1.INP", DBF_STRING, "not:a:pv");
+    testdbPutFieldOk("il1src1.INP", DBF_STRING, "not:a:pv EXT");
+    testdbPutFieldOk("il1src1.INP", DBF_STRING, "il1tgt EXT");
+    testdbPutFieldOk("il1src1.INP", DBF_STRING, "il1tgt");
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+}
+
 typedef struct {
     const char * const recname;
     short ltype;
@@ -701,10 +757,11 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(348);
+    testPlan(364);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();
+    testInitLocal();
     testHWInitSet();
     testHWMod();
     testLinkInitFail();

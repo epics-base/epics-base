@@ -17,6 +17,8 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <list>
+#include <string>
 
 #include <stddef.h>
 #include <string.h>
@@ -38,6 +40,7 @@
 #include "registry.h"
 #include "epicsReadline.h"
 #include "cantProceed.h"
+#include "osiUnistd.h"
 #include "iocsh.h"
 
 #include "epicsReadlinePvt.h"
@@ -988,9 +991,24 @@ struct iocshScope {
 
 // per thread executing iocshBody()
 struct iocshContext {
+    iocshContext() :
+        handle(NULL),
+        scope(NULL)
+    {
+    }
+
     MAC_HANDLE *handle;
     iocshScope *scope;
+    std::list<std::string> dirStack;
 };
+
+static iocshContext* iocshContextGet()
+{
+    iocshContext* ctxt = NULL;
+    if (iocshContextId)
+        ctxt = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
+    return ctxt;
+}
 
 int iocshSetError(int err)
 {
@@ -1084,10 +1102,10 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     context = (iocshContext *) epicsThreadPrivateGet(iocshContextId);
 
     if (!context) {
-        context = (iocshContext*)calloc(1, sizeof(*context));
+        context = new (std::nothrow) iocshContext;
         if (!context || macCreateHandle(&context->handle, pairs)) {
             errlogMessage("iocsh: macCreateHandle failed.");
-            free(context);
+            delete context;
             return -1;
         }
 
@@ -1294,7 +1312,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 
     if (!scope.outer) {
         macDeleteHandle(handle);
-        free(context);
+        delete context;
         epicsThreadPrivateSet(iocshContextId, NULL);
     } else {
         context->scope = scope.outer;
@@ -1545,6 +1563,94 @@ static void onCallFunc(const iocshArgBuf *args)
 #undef USAGE
 }
 
+
+/* pushd */
+static const iocshArg pushdArg0 = {"dir", iocshArgString};
+static const iocshArg* const pushdArgs[1] = {&pushdArg0};
+static const iocshFuncDef pushdFuncDef = {"pushd", 1, pushdArgs,
+                                         "Pushes the current directory to the directory stack and changes to the specified directory"};
+
+static void pushdCallFunc(const iocshArgBuf* args)
+{
+    if (!args[0].sval) {
+        iocshSetError(-1);
+        fprintf(stderr, "Invalid directory path\n");
+        return;
+    }
+
+    iocshContext* ctxt = iocshContextGet();
+    if (!ctxt) {
+        iocshSetError(-1);
+        return;
+    }
+
+    char cwd[PATH_MAX+1];
+    if (!getcwd(cwd, sizeof(cwd))) {
+        iocshSetError(errno);
+        perror("getcwd failed");
+        return;
+    }
+
+    if (iocshSetError(chdir(args[0].sval)) != 0) {
+        fprintf(stderr, "Invalid directory path\n");
+        iocshSetError(-1);
+
+    }
+    else {
+        ctxt->dirStack.push_front(cwd);
+    }
+}
+
+/* popd */
+static const iocshFuncDef popdFuncDef = {"popd", 0, NULL,
+                                         "Pops the top off of the directory stack and changes to that directory"};
+
+static void popdCallFunc(const iocshArgBuf* args)
+{
+    iocshContext* ctxt = iocshContextGet();
+    if (!ctxt) {
+        iocshSetError(-1);
+        return;
+    }
+
+    if (ctxt->dirStack.size() <= 0) {
+        fprintf(stderr, "Directory stack is empty.\n");
+        return;
+    }
+
+    if (iocshSetError(chdir(ctxt->dirStack.front().c_str())) != 0) {
+        fprintf(stderr, "Invalid directory path\n");
+        iocshSetError(-1);
+    }
+    ctxt->dirStack.pop_front();
+}
+
+/* dirs */
+static const iocshFuncDef dirsFuncDef = {"dirs", 0, NULL,
+                                         "Displays the contents of the directory stack, including current directory on top"};
+
+static void dirsCallFunc(const iocshArgBuf* args)
+{
+    iocshContext* ctxt = iocshContextGet();
+    if (!ctxt) {
+        iocshSetError(-EFAULT);
+        return;
+    }
+
+    char cwd[PATH_MAX+1];
+    if (!getcwd(cwd, sizeof(cwd))) {
+        iocshSetError(errno);
+        perror("getcwd failed");
+    }
+    else {
+        puts(cwd);
+    }
+
+    for (std::list<std::string>::iterator it = ctxt->dirStack.begin(); it != ctxt->dirStack.end(); ++it) {
+        puts(it->c_str());
+    }
+}
+
 /*
  * Dummy internal commands -- register and install in command table
  * so they show up in the help display
@@ -1579,6 +1685,9 @@ static void iocshOnce (void *)
     iocshRegisterImpl(&iocshLoadFuncDef,iocshLoadCallFunc);
     iocshRegisterImpl(&iocshRunFuncDef,iocshRunCallFunc);
     iocshRegisterImpl(&onFuncDef, onCallFunc);
+    iocshRegisterImpl(&pushdFuncDef, pushdCallFunc);
+    iocshRegisterImpl(&popdFuncDef, popdCallFunc);
+    iocshRegisterImpl(&dirsFuncDef, dirsCallFunc);
     iocshTableUnlock();
 }
 

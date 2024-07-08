@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: 1998 Argonne National Laboratory
-//
-// SPDX-License-Identifier: EPICS
+/* SPDX-FileCopyrightText: 1998 Argonne National Laboratory */
+
+/* SPDX-License-Identifier: EPICS */
 
 /* devXxxSoft.c */
 /* Example device support module */

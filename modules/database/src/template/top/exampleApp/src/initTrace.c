@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: 2008 Argonne National Laboratory
-//
-// SPDX-License-Identifier: EPICS
+/* SPDX-FileCopyrightText: 2008 Argonne National Laboratory */
+
+/* SPDX-License-Identifier: EPICS */
 
 /* initTrace.c */
 

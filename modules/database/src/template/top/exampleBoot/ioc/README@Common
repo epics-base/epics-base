@@ -10,6 +10,4 @@ st.cmd's dbLoadDatabase() command before starting the ioc.
 
 
 SPDX-FileCopyrightText: 2001 Argonne National Laboratory
-
 SPDX-License-Identifier: EPICS
-

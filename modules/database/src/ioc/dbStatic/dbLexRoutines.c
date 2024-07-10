@@ -1127,7 +1127,9 @@ static void dbRecordHead(char *recordType, char *name, int visible)
             dbFreeEntry(pdbentry);
             duplicate = TRUE;
         } else {
-            fprintf(stderr, ERL_WARNING ": Record \"%s\" not found\n", name);
+            fprintf(stderr, ERL_WARNING ": Unable to delete record \"%s\".  Not found.\n"
+                    "  at file %s line %d\n",
+                    name, pinputFileNow->filename, pinputFileNow->line_num);
         }
         return;
     }

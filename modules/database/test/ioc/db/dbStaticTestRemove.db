@@ -34,6 +34,11 @@ record(x, "testdelrec8") {
     field("INP", "{z:{good:1}}")
 }
 
+record("#", "no:such:record") { }
+record("#", "also:non:existant") {
+    field(FOO, "5")
+}
+
 record("#", "testdelrec1") { }
 record("#", "testdelrec2") {
     field("INP", "foobar2")

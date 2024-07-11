@@ -1639,7 +1639,7 @@ static long cvt_device_st(const void *f, void *t, const dbAddr *paddr)
  *  NULL implies the conversion is not supported.
  */
 
-FASTCONVERTFUNC dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1] = {
+FASTCONVERTFUNC const dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1] = {
 
  /* Convert DBF_STRING to ... */
 { cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_q, cvt_st_uq, cvt_st_f, cvt_st_d, cvt_st_e },
@@ -1695,7 +1695,7 @@ FASTCONVERTFUNC dbFastGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1] = {
  *  NULL implies the conversion is not supported.
  */
 
-FASTCONVERTFUNC dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1] = {
+FASTCONVERTFUNC const dbFastPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1] = {
 
  /* Convert DBR_STRING to ... */
 { cvt_st_st, cvt_st_c, cvt_st_uc, cvt_st_s, cvt_st_us, cvt_st_l, cvt_st_ul, cvt_st_q, cvt_st_uq, cvt_st_f, cvt_st_d, cvt_st_e, cvt_st_menu, cvt_st_device},

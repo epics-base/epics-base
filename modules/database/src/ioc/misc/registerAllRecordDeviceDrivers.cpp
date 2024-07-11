@@ -32,11 +32,12 @@ namespace {
 struct compareLoc {
     bool operator()(const recordTypeLocation& lhs, const recordTypeLocation& rhs) const
     {
-        if(lhs.prset<rhs.prset)
+        if (lhs.prset < rhs.prset)
             return true;
-        else if(lhs.prset>rhs.prset)
+        if (lhs.prset > rhs.prset)
             return false;
-        return (char *)lhs.sizeOffset < (char *)rhs.sizeOffset;
+        return reinterpret_cast<char *>(lhs.sizeOffset)
+             < reinterpret_cast<char *>(rhs.sizeOffset);
     }
 };
 

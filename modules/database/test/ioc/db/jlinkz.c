@@ -124,13 +124,14 @@ long z_putval(struct link *plink, short dbrType,
     if(INVALID_DB_REQ(dbrType))
         return S_db_badDbrtype;
 
-    pconv = dbFastPutConvertRoutine[DBF_LONG][dbrType];
+    pconv = dbFastPutConvertRoutine[dbrType][DBF_LONG];
 
     if(nRequest==0) return 0;
 
     epicsMutexLock(priv->lock);
     ret = pconv(pbuffer, &priv->value, NULL);
     epicsMutexUnlock(priv->lock);
+    plink->precord->phas = priv->value;
     return ret;
 }
 

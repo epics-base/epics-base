@@ -237,10 +237,10 @@ jobs:
       matrix:
         # Job names also name artifacts, character limitations apply
         include:
-          - name: "CentOS-7"
-            image: centos:7
-            cmp: gcc
-            configuration: default
+          #- name: "CentOS-7"
+          #  image: centos:7
+          #  cmp: gcc
+          #  configuration: default
 
           - name: "Fedora-33"
             image: fedora:33

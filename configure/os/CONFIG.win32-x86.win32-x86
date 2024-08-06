@@ -16,7 +16,7 @@ OPT_WHOLE_PROGRAM = YES
 
 WINLINK = link
 
-RCCMD = rc -l 0x409 $(INCLUDES) -fo $@ $<
+RCCMD = rc -nologo -l 0x409 $(INCLUDES) -fo $@ $<
 
 ARCMD = lib -nologo -verbose -out:$@ $(LIB_OPT_LDFLAGS) $(LIBRARY_LD_OBJS)
 

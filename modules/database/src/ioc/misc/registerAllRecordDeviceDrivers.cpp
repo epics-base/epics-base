@@ -36,8 +36,8 @@ struct compareLoc {
             return true;
         if (lhs.prset > rhs.prset)
             return false;
-        return reinterpret_cast<char *>(lhs.sizeOffset)
-             < reinterpret_cast<char *>(rhs.sizeOffset);
+        return reinterpret_cast<uintptr_t>(lhs.sizeOffset)
+             < reinterpret_cast<uintptr_t>(rhs.sizeOffset);
     }
 };
 

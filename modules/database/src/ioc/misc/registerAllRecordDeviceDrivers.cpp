@@ -9,6 +9,7 @@
 #include <set>
 #include <map>
 
+#include <stdint.h>
 #include <string.h>
 
 #define EPICS_PRIVATE_API

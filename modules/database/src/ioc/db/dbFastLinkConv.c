@@ -181,7 +181,7 @@ static long cvt_st_ul(const void *f, void *t, const dbAddr *paddr)
         status = epicsParseFloat64(from, &dval, &end);
         if (!status &&
             dval >=0 &&
-            dval <= ULONG_MAX)
+            dval <= UINT_MAX)
             *to = dval;
     }
     return status;

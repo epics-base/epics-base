@@ -676,7 +676,7 @@ union db_access_val{
                  (type)%(LAST_TYPE+1) == DBR_DOUBLE)
 
 #define dbf_type_to_text(type)   \
-    (  ((type) >= -1 && (type) < dbf_text_dim-2) ? \
+    (  ((type+1) >= 0 && (type) < dbf_text_dim-2) ? \
         dbf_text[type+1] : dbf_text_invalid  )
 
 #define dbf_text_to_type(text, type)   \

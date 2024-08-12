@@ -93,7 +93,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    dbLoadTemplate(argv[1], NULL);
+    dbLoadTemplate(argv[1], NULL, NULL);
 
     free(output_buffer);
     free(input_buffer);

@@ -15,23 +15,24 @@
 /* dbLoadTemplate */
 static const iocshArg dbLoadTemplateArg0 = {"filename", iocshArgStringPath};
 static const iocshArg dbLoadTemplateArg1 = {"var1=value1,var2=value2", iocshArgString};
-static const iocshArg * const dbLoadTemplateArgs[2] = {
-    &dbLoadTemplateArg0, &dbLoadTemplateArg1
-};
+static const iocshArg dbLoadTemplateArg2 = {"path1:path2:...", iocshArgString};
+static const iocshArg *const dbLoadTemplateArgs[3] = {
+    &dbLoadTemplateArg0, &dbLoadTemplateArg1, &dbLoadTemplateArg2};
 static const iocshFuncDef dbLoadTemplateFuncDef = {
     "dbLoadTemplate",
-    2,
+    3,
     dbLoadTemplateArgs,
     "Load the substitution file given as first argument, apply the substitutions\n"
     "for each template in the substitution file, and load them using 'dbLoadRecords'.\n\n"
     "The second argument provides extra variables to substitute in the\n"
-    "template files (not the substitution file).\n\n"
+    "template files (not the substitution file). The third argument provides\n"
+    "a list of paths to search through for the subsitutions file.\n\n"
     "See 'help dbLoadRecords' for more information.\n\n"
-    "Example: dbLoadTemplate db/my.substitutions 'user=myself,host=myhost'\n",
+    "Example: dbLoadTemplate db/my.substitutions 'user=myself,host=myhost' 'path/to/subst:path2/to2/subst2'\n",
 };
 static void dbLoadTemplateCallFunc(const iocshArgBuf *args)
 {
-    iocshSetError(dbLoadTemplate(args[0].sval, args[1].sval));
+    iocshSetError(dbLoadTemplate(args[0].sval, args[1].sval, args[2].sval));
 }
 
 

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <errno.h>
 
 #include "osiUnistd.h"
 #include "macLib.h"
@@ -20,7 +21,10 @@
 
 #include "epicsExport.h"
 #include "dbAccess.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 #include "dbLoadTemplate.h"
+#include "osiFileName.h"
 
 static int line_num;
 static int yyerror(char* str);
@@ -335,7 +339,7 @@ static int yyerror(char* str)
 
 static int is_not_inited = 1;
 
-int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
+int dbLoadTemplate(const char *sub_file, const char *cmd_collect, const char *path)
 {
     FILE *fp;
     int i;
@@ -356,8 +360,16 @@ int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
     }
 
     fp = fopen(sub_file, "r");
+    // If the file does not exist locally, and it is not an absolute path...
+    if (!fp && sub_file[0] != OSI_PATH_SEPARATOR[0]) {
+        if (!path || !*path) {
+            path = getenv("EPICS_DB_INCLUDE_PATH");
+        }
+        dbPath(pdbbase, path);
+        dbOpenFile(pdbbase, sub_file, &fp);
+    }
     if (!fp) {
-        fprintf(stderr, "dbLoadTemplate: error opening sub file %s\n", sub_file);
+        fprintf(stderr, "dbLoadTemplate: error opening sub file %s: %s\n", sub_file, strerror(errno));
         return -1;
     }
 

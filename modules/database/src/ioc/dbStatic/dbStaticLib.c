@@ -1219,7 +1219,9 @@ long dbNextRecordType(DBENTRY *pdbentry)
 
 char * dbGetRecordTypeName(DBENTRY *pdbentry)
 {
-    return(pdbentry->precordType->name);
+    dbRecordType *pdbRecordType = pdbentry->precordType;
+    if(!pdbRecordType) return NULL;
+    return(pdbRecordType->name);
 }
 
 int dbGetNRecordTypes(DBENTRY *pdbentry)

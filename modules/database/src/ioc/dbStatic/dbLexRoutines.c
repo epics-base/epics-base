@@ -1123,14 +1123,14 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         status = dbFindRecord(pdbentry, name);
         if (status == 0) {
             dbDeleteRecord(pdbentry);
-            popFirstTemp();
-            dbFreeEntry(pdbentry);
-            duplicate = TRUE;
         } else {
             fprintf(stderr, ERL_WARNING ": Unable to delete record \"%s\".  Not found.\n"
                     "  at file %s line %d\n",
                     name, pinputFileNow->filename, pinputFileNow->line_num);
         }
+        popFirstTemp();
+        dbFreeEntry(pdbentry);
+        duplicate = TRUE;
         return;
     }
     status = dbFindRecordType(pdbentry, recordType);

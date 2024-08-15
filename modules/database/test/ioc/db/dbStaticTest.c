@@ -13,6 +13,7 @@
 #include <dbStaticPvt.h>
 #include <dbUnitTest.h>
 #include <testMain.h>
+#include <epicsString.h>
 
 
 static void testEntryRemoved(const char *pv)
@@ -337,6 +338,7 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 MAIN(dbStaticTest)
 {
     const char *ldir;
+    char *ldirDup;
     FILE *fp = NULL;
 
     testPlan(340);
@@ -349,20 +351,24 @@ MAIN(dbStaticTest)
     if(!fp) {
         testAbort("Unable to read dbStaticTest.db");
     }
+    ldirDup = epicsStrDup(ldir);
     if(dbReadDatabaseFP(&pdbbase, fp, NULL, NULL)) {
         testAbort("Unable to load %s%sdbStaticTest.db",
-                  ldir, OSI_PATH_LIST_SEPARATOR);
+                  ldirDup, OSI_PATH_LIST_SEPARATOR);
     }
+    free(ldirDup);
 
     dbPath(pdbbase,"." OSI_PATH_LIST_SEPARATOR "..");
     ldir = dbOpenFile(pdbbase, "dbStaticTestRemove.db", &fp);
     if(!fp) {
         testAbort("Unable to read dbStaticTestRemove.db");
     }
+    ldirDup = epicsStrDup(ldir);
     if(dbReadDatabaseFP(&pdbbase, fp, NULL, NULL)) {
         testAbort("Unable to load %s%sdbStaticTestRemove.db",
-                  ldir, OSI_PATH_LIST_SEPARATOR);
+                  ldirDup, OSI_PATH_LIST_SEPARATOR);
     }
+    free(ldirDup);
 
     testWrongAliasRecord("dbStaticTestAlias1.db");
     testWrongAliasRecord("dbStaticTestAlias2.db");

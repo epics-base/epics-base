@@ -1263,24 +1263,50 @@ static void dbRecordInfo(char *name, char *value)
     }
 }
 
+static long createAlias(DBENTRY *pdbentry, const char *alias)
+{
+    DBENTRY tempEntry;
+    long status;
+    dbRecordNode *precnode = pdbentry->precnode;
+
+    if (precnode->aliasedRecnode) precnode = precnode->aliasedRecnode;
+    dbInitEntry(pdbentry->pdbbase, &tempEntry);
+    status = dbFindRecord(&tempEntry, alias);
+    if (status == 0) {
+        if (tempEntry.precnode->aliasedRecnode != precnode) {
+            if (tempEntry.precnode->aliasedRecnode)
+                fprintf(stderr, ERL_ERROR ": Alias \"%s\" for \"%s\": name already used by an alias for \"%s\"\n",
+                            alias, dbGetRecordName(pdbentry),
+                            tempEntry.precnode->aliasedRecnode->recordname);
+            else
+                fprintf(stderr, ERL_ERROR ": Alias \"%s\" for \"%s\": name already used by a record\n",
+                            alias, dbGetRecordName(pdbentry));
+            status = S_dbLib_recExists;
+        } else if (dbRecordsOnceOnly) {
+            fprintf(stderr, ERL_ERROR ": Alias \"%s\" already defined and dbRecordsOnceOnly set.\n",
+                alias);
+            status = S_dbLib_recExists;
+        }
+    } else {
+        status = dbCreateAlias(pdbentry, alias);
+    }
+    dbFinishEntry(&tempEntry);
+    return status;
+}
+
 static void dbRecordAlias(char *name)
 {
     DBENTRY *pdbentry;
     tempListNode *ptempListNode;
-    long status;
-
     if(dbRecordNameValidate(name))
         return;
 
     if (duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbentry = ptempListNode->item;
-    status = dbCreateAlias(pdbentry, name);
-    if (status) {
-        fprintf(stderr, "Can't create alias \"%s\" for \"%s\"\n",
-                    name, dbGetRecordName(pdbentry));
+
+    if (createAlias(pdbentry, name) != 0) {
         yyerror(NULL);
-        return;
     }
 }
 
@@ -1298,9 +1324,7 @@ static void dbAlias(char *name, char *alias)
                     alias, name);
         yyerror(NULL);
     }
-    else if (dbCreateAlias(pdbEntry, alias)) {
-        fprintf(stderr, "Can't create alias \"%s\" referring to \"%s\"\n",
-                    alias, name);
+    else if (createAlias(pdbEntry, alias) != 0) {
         yyerror(NULL);
     }
     dbFinishEntry(pdbEntry);

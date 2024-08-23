@@ -36,6 +36,7 @@ dbTestIoc_DBD += xLink.dbd
 dbTestIoc_DBD += devx.dbd
 dbTestIoc_DBD += jlinkz.dbd
 dbTestIoc_DBD += dbLinkdset.dbd
+dbTestIoc_DBD += dbCore.dbd
 TESTFILES += $(COMMON_DIR)/dbTestIoc.dbd ../xRecord.db
 
 testHarness_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
@@ -183,6 +184,11 @@ testHarness_SRCS += dbStaticTest.c
 TESTFILES += ../dbStaticTest.db
 TESTFILES += ../dbStaticTestAlias1.db
 TESTFILES += ../dbStaticTestAlias2.db
+TESTFILES += ../dbStaticTestAliasAgain1.db
+TESTFILES += ../dbStaticTestAliasAgain2.db
+TESTFILES += ../dbStaticTestAliasAgain3.db
+TESTFILES += ../dbStaticTestAliasAgainError1.db
+TESTFILES += ../dbStaticTestAliasAgainError2.db
 TESTFILES += ../dbStaticTestRemove.db
 TESTS += dbStaticTest
 

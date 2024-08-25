@@ -77,14 +77,14 @@ struct macro_link {
     char *macroStr;
 };
 
-struct dbCommon;
-typedef long (*LINKCVT)();
+struct dbAddr;
+typedef long (*FASTCONVERTFUNC)(const void *from, void *to, const struct dbAddr *paddr);
 
 struct pv_link {
     ELLNODE     backlinknode;
     char        *pvname;        /* pvname link points to */
     void        *pvt;           /* CA or DB private */
-    LINKCVT     getCvt;         /* input conversion function */
+    FASTCONVERTFUNC getCvt;     /* input conversion function */
     short       pvlMask;        /* Options mask */
     short       lastGetdbrType; /* last dbrType for DB or CA get */
 };
@@ -188,8 +188,8 @@ union value {
     struct vxiio        vxiio;          /* vxi io */
 };
 
+struct dbCommon;
 struct lset;
-
 struct link {
     struct dbCommon *precord;   /* Pointer to record owning link */
     short type;

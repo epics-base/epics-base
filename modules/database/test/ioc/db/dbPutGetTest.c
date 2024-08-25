@@ -82,12 +82,12 @@ void checkDoubleGet(dbChannel *chan, db_field_log* pfl)
     testOk1(meta.status==UDF_ALARM);
     testOk1(meta.acks==MAJOR_ALARM);
     testOk1(meta.ackt==1);
-    testOk1(strncmp(meta.amsg, "oops", DB_UNITS_SIZE)==0);
+    testOk1(strncmp(meta.amsg, "oops", sizeof(meta.amsg))==0);
     testOk1(meta.time.secPastEpoch==0x12345678);
     testOk1(meta.time.nsec==0x90abcdef);
     testOk1(meta.utag==0x10203040);
     testOk1(meta.precision.dp==0x12345678);
-    testOk1(strncmp(meta.units, "arbitrary", DB_UNITS_SIZE)==0);
+    testOk1(strncmp(meta.units, "arbitrary", sizeof(meta.units))==0);
 #define limitEq(UL, FL, VAL) testOk(meta.UL ## _ ## FL ## _limit == (VAL), #UL "_" #FL "_limit (%f) == %f", meta.UL ## _ ## FL ## _limit, VAL)
     limitEq(lower, disp, 10000000.0-1.0);
     limitEq(upper, disp, 10000000.0+1.0);
@@ -113,6 +113,8 @@ void testdbMetaDoubleGet(void)
 
     STATIC_ASSERT(sizeof(meta.amsg)==sizeof(prec->amsg));
     STATIC_ASSERT(sizeof(meta.amsg)==sizeof(pfl->amsg));
+
+    testDiag("testdbMetaDoubleGet");
 
     if(!chan)
         testAbort("Missing recmeta OTST");
@@ -163,6 +165,8 @@ typedef struct {
     DBRenumStrs
 } dbMetaEnum;
 
+enum {dbMetaMetaMask = DBR_STATUS | DBR_AMSG | DBR_ENUM_STRS | DBR_TIME | DBR_UTAG};
+
 static
 void testdbMetaEnumSizes(void)
 {
@@ -187,6 +191,66 @@ void testdbMetaEnumSizes(void)
     testOffset(strs);
 #undef testOffset
     testOk(sizeof(dbMetaEnum)==pos, "sizeof(dbMetaEnum), %u == %u", (unsigned)sizeof(dbMetaEnum), (unsigned)pos);
+}
+
+static
+void checkEnumGet(dbChannel *chan, db_field_log* pfl)
+{
+    dbMetaEnum meta;
+    long options = (long)dbMetaMetaMask;
+    long nReq = 0;
+    long status;
+
+    /* spoil */
+    meta.no_str = -1;
+    meta.strs[0][0] = '!';
+
+    status=dbChannelGet(chan, DBF_DOUBLE, &meta, &options, &nReq, pfl);
+    testOk(status==0, "dbGet OTST : %ld", status);
+
+    testOk1(meta.severity==INVALID_ALARM);
+    testOk1(meta.status==UDF_ALARM);
+    testOk1(meta.acks==MAJOR_ALARM);
+    testOk1(meta.ackt==1);
+    testOk1(strncmp(meta.amsg, "oops", sizeof(meta.amsg))==0);
+    testOk1(meta.time.secPastEpoch==0x12345678);
+    testOk1(meta.time.nsec==0x90abcdef);
+    testOk1(meta.utag==0x10203040);
+    if(testOk1(meta.no_str==3)) {
+        testOk1(strncmp(meta.strs[0], "Before", sizeof(meta.strs[0]))==0);
+        testOk1(strncmp(meta.strs[1], "After", sizeof(meta.strs[0]))==0);
+        testOk1(strncmp(meta.strs[2], "None", sizeof(meta.strs[0]))==0);
+    }
+}
+
+void testdbMetaEnumGet(void)
+{
+    long status;
+    xRecord* prec = (xRecord*)testdbRecordPtr("recmeta");
+    dbChannel *chan = dbChannelCreate("recmeta.SFX");
+
+    testDiag("testdbMetaEnumGet");
+
+    if(!chan)
+        testAbort("Missing recmeta SFX");
+    if((status=dbChannelOpen(chan))!=0)
+        testAbort("can't open recmeta SFX : %ld", status);
+
+    dbScanLock((dbCommon*)prec);
+    /* ensure that all meta-data has different non-zero values */
+    prec->otst = 10000000.0;
+    prec->sevr = INVALID_ALARM;
+    prec->stat = UDF_ALARM;
+    strcpy(prec->amsg, "oops");
+    prec->acks = MAJOR_ALARM;
+    prec->time.secPastEpoch = 0x12345678;
+    prec->time.nsec = 0x90abcdef;
+    prec->utag = 0x10203040;
+
+    testDiag("dbGet directly from record");
+    checkEnumGet(chan, NULL);
+
+    dbScanUnlock((dbCommon*)prec);
 }
 
 static
@@ -347,7 +411,7 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
 {
-    testPlan(124);
+    testPlan(137);
     testdbPrepare();
 
     testdbMetaDoubleSizes();
@@ -366,6 +430,7 @@ MAIN(dbPutGet)
     eltc(1);
 
     testdbMetaDoubleGet();
+    testdbMetaEnumGet();
 
     testLongLink();
     testLongAttr();

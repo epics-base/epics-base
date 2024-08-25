@@ -34,8 +34,6 @@
 #include "epicsExport.h"
 
 
-typedef long (*FASTCONVERT)();
-
 typedef struct state_link {
     jlink jlink;        /* embedded object */
     char *name;
@@ -143,7 +141,7 @@ static long lnkState_getValue(struct link *plink, short dbrType, void *pbuffer,
 {
     state_link *slink = CONTAINER(plink->value.json.jlink,
         struct state_link, jlink);
-    FASTCONVERT conv;
+    FASTCONVERTFUNC conv;
 
     if(INVALID_DB_REQ(dbrType))
         return S_db_badDbrtype;

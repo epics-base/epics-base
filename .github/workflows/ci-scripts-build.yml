@@ -60,7 +60,10 @@ jobs:
             # Remove respective -Wno-error=... flag once it is fixed.
             extra: "CMD_CXXFLAGS=-std=c++20
                     CMD_CPPFLAGS='-fdiagnostics-color
+                                  -fstack-protector-strong
+                                  -Wformat
                                   -Werror
+                                  -Werror=format-security
                                   -Wno-error=deprecated-declarations
                                   -Wno-error=stringop-truncation
                                   -Wno-error=restrict
@@ -68,8 +71,9 @@ jobs:
                                   -Wno-error=nonnull
                                   -Wno-error=dangling-pointer
                                   -Wno-error=format-overflow
-                                  -Wno-error=format-security
-                                  -Wno-error=stringop-overread'"
+                                  -Wno-error=stringop-overread
+                                  -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3'
+                    CMD_LDFLAGS=-Wl,-z,relro"
 
           - os: ubuntu-20.04
             cmp: gcc
@@ -237,10 +241,10 @@ jobs:
       matrix:
         # Job names also name artifacts, character limitations apply
         include:
-          - name: "CentOS-7"
-            image: centos:7
-            cmp: gcc
-            configuration: default
+          #- name: "CentOS-7"
+          #  image: centos:7
+          #  cmp: gcc
+          #  configuration: default
 
           - name: "Fedora-33"
             image: fedora:33

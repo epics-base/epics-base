@@ -71,6 +71,7 @@ static long process(struct dbCommon *pcommon)
         ret = (*xset->process)(prec);
     monitor(prec);
     recGblGetTimeStamp(prec);
+    dbPutLink(&prec->outp, DBR_LONG, &prec->val, 1);
     recGblFwdLink(prec);
     prec->pact = FALSE;
     return ret;

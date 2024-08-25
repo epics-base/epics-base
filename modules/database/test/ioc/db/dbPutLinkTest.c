@@ -597,8 +597,12 @@ void testJLink(void)
     testNumZ(6);
 
     testdbPutFieldOk("j1.INP", DBF_STRING, "{\"z\":{\"good\":4}}");
+    testdbPutFieldOk("j1.PHAS", DBF_LONG, 0);
+    testdbPutFieldOk("j1.OUTP", DBF_STRING, "{z:{good:99}}");
     testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
     testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
+    testdbGetFieldEqual("j1.PHAS", DBF_LONG, 4);
+    testdbPutFieldOk("j1.OUTP", DBF_STRING, "");
 
     testdbPutFieldOk("j2.TSEL", DBF_STRING, "{'z':{good:0}}");
     testdbPutFieldOk("j2.PROC", DBF_LONG, 1);
@@ -701,7 +705,7 @@ void testTSEL(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(348);
+    testPlan(352);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

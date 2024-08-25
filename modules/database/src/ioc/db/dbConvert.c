@@ -302,7 +302,7 @@ static long getStringUlong(const dbAddr *paddr,
                 epicsFloat64 dval;
 
                 status = epicsParseFloat64(psrc, &dval, &end);
-                if (!status && 0 <= dval && dval <= ULONG_MAX)
+                if (!status && 0 <= dval && dval <= UINT_MAX)
                     *pdst = dval;
             }
             if (status)
@@ -1052,7 +1052,7 @@ static long putStringUlong(dbAddr *paddr,
             epicsFloat64 dval;
 
             status = epicsParseFloat64(psrc, &dval, &end);
-            if (!status && 0 <= dval && dval <= ULONG_MAX)
+            if (!status && 0 <= dval && dval <= UINT_MAX)
                 *pdst = dval;
         }
         if (status)

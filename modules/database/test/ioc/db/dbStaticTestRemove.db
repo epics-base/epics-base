@@ -1,0 +1,55 @@
+record(x, "testdelrec") { }
+
+record(x, "testdelrec1") { }
+
+record(x, "testdelrec2") {
+    field("INP", "foobar")
+}
+
+record(x, "testdelrec3") {
+    info("foo", "bar")
+}
+
+record(x, "testdelrec4") {
+    field("INP", "testdelrec.VAL")
+}
+
+record(x, "testdelrec5") {
+    field("FLNK", "testdelrec.VAL")
+}
+
+record(x, "testdelrec6") { }
+
+alias("testdelrec6", "testdelalias6")
+alias("testdelrec6", "testdelalias66")
+
+
+record(x, "testdelrec7") { }
+
+alias("testdelrec7", "testdelalias7")
+alias("testdelrec7", "testdelalias77")
+
+
+record(x, "testdelrec8") {
+    field("INP", "{z:{good:1}}")
+}
+
+record("#", "no:such:record") { }
+record("#", "also:non:existant") {
+    field(FOO, "5")
+}
+
+record("#", "testdelrec1") { }
+record("#", "testdelrec2") {
+    field("INP", "foobar2")
+}
+record("#", "testdelrec3") {
+    field("INP", "foobar2")
+    field("VAL", "1")
+}
+record("#", "testdelrec4") { }
+record("#", "testdelrec5") { }
+record("#", "testdelalias6") { }
+record("#", "testdelrec7") { }
+record("#", "testdelrec8") { }
+record("#", "testdelrec11") { }

@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 %{
-static int yyerror();
+static int yyerror(char *str);
 static int yy_start;
 static long pvt_yy_parse(void);
 static int yyFailed = 0;
@@ -378,6 +378,7 @@ static int yyerror(char *str)
         dbIncludePrint();
         yyFailed = TRUE;
     }
+    fprintf(stderr, "\n %d | %s\n", pinputFileNow->line_num, my_buffer);
     return(0);
 }
 static long pvt_yy_parse(void)

@@ -65,7 +65,7 @@ void registerDevices(DBBASE *pbase, int nDevices,
 }
 
 void registerDrivers(DBBASE *pbase, int nDrivers,
-    const char * const * driverSupportNames, struct drvet * const *drvsl)
+    const char * const * driverSupportNames, drvet * const *drvsl)
 {
     int i;
     for (i = 0; i < nDrivers; i++) {

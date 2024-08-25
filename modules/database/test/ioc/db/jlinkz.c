@@ -35,7 +35,6 @@ void z_open(struct link *plink)
     if(priv->isopen)
         testDiag("lsetZ re-open");
     priv->isopen = 1;
-    testDiag("Open jlinkz %p", priv);
 }
 
 static
@@ -49,8 +48,6 @@ void z_remove(struct dbLocker *locker, struct link *plink)
         testDiag("lsetZ remove without open");
 
     epicsMutexUnlock(priv->lock);
-
-    testDiag("Remove/free jlinkz %p", priv);
 
     epicsAtomicDecrIntT(&numzalloc);
 
@@ -83,13 +80,13 @@ long z_getval(struct link *plink, short dbrType, void *pbuffer,
         long *pnRequest)
 {
     long ret;
-    long (*pconv)(const epicsInt32 *, void *, const dbAddr *) = dbFastGetConvertRoutine[DBF_LONG][dbrType];
+    FASTCONVERTFUNC pconv = dbFastGetConvertRoutine[DBF_LONG][dbrType];
     zpriv *priv = CONTAINER(plink->value.json.jlink, zpriv, base);
 
     if(pnRequest && *pnRequest==0) return 0;
 
     epicsMutexLock(priv->lock);
-    ret = (*pconv)(&priv->value, pbuffer, NULL);
+    ret = pconv(&priv->value, pbuffer, NULL);
     epicsMutexUnlock(priv->lock);
     if(ret==0 && pnRequest) *pnRequest = 1;
     return ret;
@@ -118,19 +115,20 @@ long z_putval(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest)
 {
     long ret;
-    long (*pconv)(epicsInt32 *, const void *, const dbAddr *);
     zpriv *priv = CONTAINER(plink->value.json.jlink, zpriv, base);
+    FASTCONVERTFUNC pconv;
 
     if(INVALID_DB_REQ(dbrType))
         return S_db_badDbrtype;
 
-    pconv = dbFastPutConvertRoutine[DBF_LONG][dbrType];
+    pconv = dbFastPutConvertRoutine[dbrType][DBF_LONG];
 
     if(nRequest==0) return 0;
 
     epicsMutexLock(priv->lock);
-    ret = (*pconv)(&priv->value, pbuffer, NULL);
+    ret = pconv(pbuffer, &priv->value, NULL);
     epicsMutexUnlock(priv->lock);
+    plink->precord->phas = priv->value;
     return ret;
 }
 
@@ -168,8 +166,6 @@ jlink* z_alloc(short dbfType)
 
     epicsAtomicIncrIntT(&numzalloc);
 
-    testDiag("Alloc jlinkz %p", priv);
-
     return &priv->base;
 fail:
     if(priv && priv->lock) epicsMutexDestroy(priv->lock);
@@ -184,8 +180,6 @@ void z_free(jlink *pj)
 
     if(priv->isopen)
         testDiag("lsetZ jlink free after open()");
-
-    testDiag("Free jlinkz %p", priv);
 
     epicsAtomicDecrIntT(&numzalloc);
 

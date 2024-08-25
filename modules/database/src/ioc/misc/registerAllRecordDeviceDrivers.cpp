@@ -9,6 +9,7 @@
 #include <set>
 #include <map>
 
+#include <stdint.h>
 #include <string.h>
 
 #define EPICS_PRIVATE_API
@@ -32,11 +33,12 @@ namespace {
 struct compareLoc {
     bool operator()(const recordTypeLocation& lhs, const recordTypeLocation& rhs) const
     {
-        if(lhs.prset<rhs.prset)
+        if (lhs.prset < rhs.prset)
             return true;
-        else if(lhs.prset>rhs.prset)
+        if (lhs.prset > rhs.prset)
             return false;
-        return lhs.sizeOffset<rhs.sizeOffset;
+        return reinterpret_cast<uintptr_t>(lhs.sizeOffset)
+             < reinterpret_cast<uintptr_t>(rhs.sizeOffset);
     }
 };
 

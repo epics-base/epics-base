@@ -1,11 +1,11 @@
-EPICS Document Collection
-=========================
+EPICS Base Documentation
+========================
 
 
 .. toctree::
    :hidden:
 
-   Back <https://docs.epics-controls.org/en/latest/>
+   EPICS Documentation Index <https://docs.epics-controls.org/en/latest/>
 
 .. toctree::
    :maxdepth: 1

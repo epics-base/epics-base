@@ -134,7 +134,7 @@ HEADER_RST_FILES = $(foreach t, $(HEADER_TYPES), \
     $(addsuffix _h.rst, $($t_HEADERS)))
 API_RST_FILES = $(addsuffix -api.rst, $(HEADER_TYPES))
 
-RTD_SRC = rtd-src
+RTD_SRC = $(COMMON_DIR)/rtd-src
 
 DOCS += README.md
 DOCS += RELEASE_NOTES.md
@@ -152,7 +152,7 @@ $(API_RST_FILES): %-api.rst: ../%-API.rst
 	    echo "   $h_h.rst" >> $@;)
 
 ifndef T_A
-doxygen rtd: inc
+doxygen rtd sphinx: inc
 	$(MAKE) -C O.$(EPICS_HOST_ARCH) $@
 else
 
@@ -165,7 +165,10 @@ rtd: doxygen $(API_RST_FILES) $(HEADER_RST_FILES)
 	rsync -av $(HEADER_RST_FILES) $(RTD_SRC)/
 	rsync -av $(API_RST_FILES) $(RTD_SRC)/
 	rsync -av ../index.rst ../conf.py $(RTD_SRC)/
-	$(PYTHON) -m sphinx rtd-src _readthedocs/html
+
+sphinx: rtd
+	cd $(COMMON_DIR); $(PYTHON) -m sphinx rtd-src readthedocs
+	rsync -av $(COMMON_DIR)/readthedocs $(INSTALL_HTML)/
 endif
 
-.PHONY: doxygen rtd
+.PHONY: doxygen rtd sphinx

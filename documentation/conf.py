@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.abspath("."))
 
 # -- Project information -----------------------------------------------------
 
-project = "EPICS base documentation"
+project = "EPICS Base Documentation"
 copyright = "EPICS Controls"
-author = "EPICS"
+author = "The EPICS Collaboration"
 
 # -- General configuration ---------------------------------------------------
 
@@ -50,7 +50,7 @@ primary_domain = "cpp"
 highlight_language = "cpp"
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["../modules/libcom/src/cxxTemplates"]
+# templates_path = ()
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

@@ -17,9 +17,9 @@ build:
       - make inc
       - make -C documentation rtd
 
-# Build documentation in the documentation/ directory with Sphinx
+# Build documentation in the documentation/O.Common directory with Sphinx
 sphinx:
-  configuration: documentation/conf.py
+  configuration: documentation/O.Common/rtd-src/conf.py
 
 # Build documentation with MkDocs
 #mkdocs:

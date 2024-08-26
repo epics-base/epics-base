@@ -86,7 +86,7 @@ elsif (-d '.hg') { # Mercurial
     }
     $cv = `hg log -l1 --template '{date|isodate}'`
 }
-elsif (-d '.git') { # Git
+elsif (-d '.git' || -f '.git') { # Git
     print "== Found <top>/.git directory\n" if $opt_v;
     # v1-4-abcdef-dirty
     # is 4 commits after tag 'v1' with short hash abcdef

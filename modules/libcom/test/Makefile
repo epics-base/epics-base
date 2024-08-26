@@ -238,6 +238,9 @@ else
 epicsStackTraceTest_CFLAGS_WIN32 += -Zi
 epicsStackTraceTest_LDFLAGS_WIN32 += -DEBUG
 endif
+# test fully statically linked?
+epicsStackTraceTest_CPPFLAGS_STATIC_FULL_YES = -DLINKING_STATIC_FULL
+epicsStackTraceTest_CPPFLAGS += $(epicsStackTraceTest_CPPFLAGS_STATIC_FULL_$(FULL_STATIC_BUILD))
 testHarness_SRCS += epicsStackTraceTest.c
 TESTS += epicsStackTraceTest
 

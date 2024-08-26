@@ -279,6 +279,9 @@ epicsLoadTest_CPPFLAGS += $(epicsLoadTest_CPPFLAGS_STATIC_$(STATIC_BUILD))
 # are dynamic libraries built?
 epicsLoadTest_CPPFLAGS_SHARED_YES = -DBUILDING_SHARED_LIBRARIES
 epicsLoadTest_CPPFLAGS += $(epicsLoadTest_CPPFLAGS_SHARED_$(SHARED_LIBRARIES))
+# test fully statically linked?
+epicsLoadTest_CPPFLAGS_STATIC_FULL_YES = -DLINKING_STATIC_FULL
+epicsLoadTest_CPPFLAGS += $(epicsLoadTest_CPPFLAGS_STATIC_FULL_$(FULL_STATIC_BUILD))
 TESTS += epicsLoadTest
 
 # The testHarness runs all the test programs in a known working order.

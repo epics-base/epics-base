@@ -43,7 +43,8 @@ extern "C" {
  * \param errorMessage A printf-style error message describing the error.
  * \param ... Any parameters required for the error message.
  */
-LIBCOM_API void cantProceed(
+LIBCOM_API EPICS_NORETURN
+void cantProceed(
     EPICS_PRINTF_FMT(const char *errorMessage), ...
 ) EPICS_PRINTF_STYLE(1,2);
 

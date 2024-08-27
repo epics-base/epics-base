@@ -23,6 +23,7 @@
 #ifndef epicsExith
 #define epicsExith
 #include <libComAPI.h>
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +39,8 @@ typedef void (*epicsExitFunc)(void *arg);
  * \brief Calls epicsExitCallAtExits(), then the OS exit() routine.
  * \param status Passed to exit()
  */
-LIBCOM_API void epicsExit(int status);
+LIBCOM_API EPICS_NORETURN
+void epicsExit(int status);
 /**
  * \brief Arrange to call epicsExit() later from a low priority thread.
  *

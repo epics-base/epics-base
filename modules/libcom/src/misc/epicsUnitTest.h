@@ -223,7 +223,8 @@ LIBCOM_API void testTodoEnd(void);
  * \param fmt A printf-style format string giving the reason for stopping.
  * \param ... Any parameters required for the format string.
  */
-LIBCOM_API void testAbort(EPICS_PRINTF_FMT(const char *fmt), ...)
+LIBCOM_API EPICS_NORETURN
+void testAbort(EPICS_PRINTF_FMT(const char *fmt), ...)
     EPICS_PRINTF_STYLE(1, 2);
 /** @} */
 

@@ -58,4 +58,9 @@
  */
 #define EPICS_UNUSED __attribute__((unused))
 
+/*
+ * No return marker
+ */
+#define EPICS_NORETURN __attribute__((noreturn))
+
 #endif  /* ifndef compilerSpecific_h */

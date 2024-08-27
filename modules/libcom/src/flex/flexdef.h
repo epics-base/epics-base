@@ -696,16 +696,16 @@ extern void dataend (void);
 extern void flexerror (char[]) NORETURN;
 
 /* report a fatal error message and terminate */
-extern void flexfatal (char[]);
+extern void flexfatal (char[]) NORETURN;
 
 /* return current time */
 extern char *flex_gettime();
 
 /* report an error message formatted with one integer argument */
-extern void lerrif (char[], int);
+extern void lerrif (char[], int) NORETURN;
 
 /* report an error message formatted with one string argument */
-extern void lerrsf (char[], char[]);
+extern void lerrsf (char[], char[]) NORETURN;
 
 /* spit out a "# line" statement */
 extern void line_directive_out (FILE*);

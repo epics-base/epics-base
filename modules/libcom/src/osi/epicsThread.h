@@ -437,9 +437,9 @@ private:
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
     friend void epicsThreadCallEntryPoint ( void * );
-    void printLastChanceExceptionMessage (
+    void EPICS_NORETURN(printLastChanceExceptionMessage (
         const char * pExceptionTypeName,
-        const char * pExceptionContext );
+        const char * pExceptionContext ));
     /* exceptions */
     class exitException {};
 };

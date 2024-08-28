@@ -130,8 +130,8 @@ menu_HEADERS += menuYesNo
 
 HEADER_TYPES = libcom database record menu
 
-HEADER_RST_FILES = $(foreach t, $(HEADER_TYPES), \
-    $(addsuffix _h.rst, $($t_HEADERS)))
+HEADER_MD_FILES = $(foreach t, $(HEADER_TYPES), \
+    $(addsuffix _h.md, $($t_HEADERS)))
 API_RST_FILES = $(addsuffix -api.rst, $(HEADER_TYPES))
 
 RTD_SRC = $(COMMON_DIR)/rtd-src
@@ -141,7 +141,7 @@ DOCS += RELEASE_NOTES.md
 
 include $(TOP)/configure/RULES
 
-$(HEADER_RST_FILES): %_h.rst: ../HEADER_h.rst
+$(HEADER_MD_FILES): %_h.md: ../HEADER_h.md
 	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -DHEADER=$* $< $@
 
 $(API_RST_FILES): %-api.rst: ../%-API.rst
@@ -160,9 +160,9 @@ doxygen: Doxyfile
 	@$(MKDIR) $(RTD_SRC)
 	$(DOXYGEN)
 
-rtd: doxygen $(API_RST_FILES) $(HEADER_RST_FILES)
+rtd: doxygen $(API_RST_FILES) $(HEADER_MD_FILES)
 	rsync -av $(INSTALL_DOC)/ $(RTD_SRC)/
-	rsync -av $(HEADER_RST_FILES) $(RTD_SRC)/
+	rsync -av $(HEADER_MD_FILES) $(RTD_SRC)/
 	rsync -av $(API_RST_FILES) $(RTD_SRC)/
 	rsync -av ../index.rst ../conf.py $(RTD_SRC)/
 

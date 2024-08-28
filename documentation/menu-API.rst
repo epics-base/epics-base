@@ -1,5 +1,5 @@
 C/C++ Headers from Menus
-=======================
+========================
 
 .. toctree::
    :maxdepth: 1

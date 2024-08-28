@@ -38,8 +38,6 @@ For example this will remove the record named "unwanted":
 record("#", "unwanted") { }
 ```
 
------
-
 ## EPICS Release 7.0.8.1
 
 ### Limit to `_FORTIFY_SOURCE=2`

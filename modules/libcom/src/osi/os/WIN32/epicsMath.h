@@ -19,6 +19,14 @@
 #define finite(D) _finite(D)
 #endif
 
+#ifndef __cplusplus
+
+/* these are macros in C but inline functions in C++
+ * so ifndef does not work as a check in c++
+ * and in a recent VS2022 update causes a conflict and
+ * compile time error
+ */
+
 #ifndef isnan
 #define isnan(D) _isnan(D)
 #endif
@@ -26,6 +34,8 @@
 #ifndef isinf
 #define isinf(D) ( !_finite(D) && !_isnan(D) )
 #endif
+
+#endif /* ifndef __cplusplus */
 
 #ifdef __cplusplus
 extern "C" {

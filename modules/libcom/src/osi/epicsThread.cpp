@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <float.h>
 #include <string.h>
 
@@ -78,10 +79,8 @@ void epicsThread :: printLastChanceExceptionMessage (
         "with type \"%s\" in thread \"%s\" at %s\n",
         pExceptionContext, pExceptionTypeName, name, date );
     errlogFlush ();
-    // This behavior matches the C++ implementation when an exception
-    // isn't handled by the thread code. Users can install their own
-    // application-specific unexpected handler if preferred.
-    std::unexpected ();
+
+    abort();
 }
 
 extern "C" void epicsThreadCallEntryPoint ( void * pPvt )

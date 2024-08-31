@@ -1,0 +1,14 @@
+#  CONFIG.linux-ppc64.linux-ppc64
+#
+# Definitions for linux-ppc64 host - linux-ppc64 target builds
+# Sites may override these definitions in CONFIG_SITE.linux-ppc64.linux-ppc64
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+STATIC_LDFLAGS_YES= -Wl,-Bstatic
+STATIC_LDFLAGS_NO=
+STATIC_LDLIBS_YES= -Wl,-Bdynamic
+STATIC_LDLIBS_NO=
+

@@ -1390,6 +1390,11 @@ long dbPut(DBADDR *paddr, short dbrType,
         }
     }
 
+    /* Post property updates before second dbPutSpecial */
+    /* which may post DBE_VALUE and/or DBE_LOG events */
+    if (propertyUpdate && !status)
+        db_post_events(precord, NULL, DBE_PROPERTY);
+
     /* Always do special processing if needed */
     if (special) {
         long status2 = dbPutSpecial(paddr, 1);
@@ -1406,8 +1411,6 @@ long dbPut(DBADDR *paddr, short dbrType,
     if (precord->mlis.count &&
         !(isValueField && pfldDes->process_passive))
         db_post_events(precord, pfieldsave, DBE_VALUE | DBE_LOG);
-    if (propertyUpdate)
-        db_post_events(precord, NULL, DBE_PROPERTY);
 done:
     paddr->pfield = pfieldsave;
     return status;

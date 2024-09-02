@@ -276,6 +276,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(ONST,DBF_STRING) {
 		prompt("One String")
@@ -284,6 +285,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(TWST,DBF_STRING) {
 		prompt("Two String")
@@ -292,6 +294,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(THST,DBF_STRING) {
 		prompt("Three String")
@@ -300,6 +303,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(FRST,DBF_STRING) {
 		prompt("Four String")
@@ -308,6 +312,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(FVST,DBF_STRING) {
 		prompt("Five String")
@@ -316,6 +321,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(SXST,DBF_STRING) {
 		prompt("Six String")
@@ -324,6 +330,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(SVST,DBF_STRING) {
 		prompt("Seven String")
@@ -332,6 +339,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(EIST,DBF_STRING) {
 		prompt("Eight String")
@@ -340,6 +348,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(NIST,DBF_STRING) {
 		prompt("Nine String")
@@ -348,6 +357,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(TEST,DBF_STRING) {
 		prompt("Ten String")
@@ -356,6 +366,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(ELST,DBF_STRING) {
 		prompt("Eleven String")
@@ -364,6 +375,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(TVST,DBF_STRING) {
 		prompt("Twelve String")
@@ -372,6 +384,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(TTST,DBF_STRING) {
 		prompt("Thirteen String")
@@ -380,6 +393,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(FTST,DBF_STRING) {
 		prompt("Fourteen String")
@@ -388,6 +402,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(FFST,DBF_STRING) {
 		prompt("Fifteen String")
@@ -396,6 +411,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 
 =head3 Alarm Parameters

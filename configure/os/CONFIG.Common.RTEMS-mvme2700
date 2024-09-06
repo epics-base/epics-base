@@ -23,7 +23,7 @@ endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
 
-ifeq ($(RTEMS_VERSION), $(word 1, $(sort 5 $(RTEMS_VERSION))))
+ifeq ($(shell test $(RTEMS_VERSION) -ge 5; echo $$?),0)
 RTEMS_BSP = mvme2700
 else
 RTEMS_BSP = mvme2307

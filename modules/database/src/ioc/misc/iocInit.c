@@ -14,7 +14,7 @@
  *      Date:            06-01-91
  */
 
-
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -98,17 +98,24 @@ static void iterateRecords(recIterFunc func, void *user);
 int dbThreadRealtimeLock = 1;
 epicsExportAddress(int, dbThreadRealtimeLock);
 
-enum iocStateEnum getIocState(void)
+enum iocStateEnum diode_getIocState(void)
 {
     return iocState;
 }
 
+int diode_iocBuild(void);
+int diode_iocRun(void);
+
+/* from devdiode.h */
+int diode_assign_fields();
+
 /*
  *  Initialize EPICS on the IOC.
  */
-int iocInit(void)
+int diode_iocInit(void)
 {
-    return iocBuild() || iocRun();
+    errlogPrintf("diode_iocInit: Using diode IOC initialization.\n");
+    return diode_iocBuild() || diode_assign_fields() || diode_iocRun();
 }
 
 static int iocBuild_1(void)
@@ -171,16 +178,16 @@ static int iocBuild_2(void)
     finishDevSup();
     initHookAnnounce(initHookAfterFinishDevSup);
 
-    scanInit();
+    /* diode disable scanInit(); */
     if (asInit()) {
-        errlogPrintf(ERL_ERROR " iocBuild: asInit Failed.\n");
+        errlogPrintf("iocBuild: asInit Failed.\n");
         return -1;
     }
     dbProcessNotifyInit();
     epicsThreadSleep(.5);
     initHookAnnounce(initHookAfterScanInit);
 
-    initialProcess();
+    /* diode disabled initialProcess(); */
     initHookAnnounce(initHookAfterInitialProcess);
     return 0;
 }
@@ -194,14 +201,14 @@ static int iocBuild_3(void)
     return 0;
 }
 
-int iocBuild(void)
+int diode_iocBuild(void)
 {
     int status;
 
     status = iocBuild_1();
     if (status) return status;
 
-    dbCaLinkInit();
+    /* diode disable dbCaLinkInit(); */
 
     status = iocBuild_2();
     if (status) return status;
@@ -217,7 +224,7 @@ int iocBuild(void)
     return status;
 }
 
-int iocBuildIsolated(void)
+int diode_iocBuildIsolated(void)
 {
     int status;
 
@@ -234,7 +241,7 @@ int iocBuildIsolated(void)
     return status;
 }
 
-int iocRun(void)
+int diode_iocRun(void)
 {
     if (iocState != iocPaused && iocState != iocBuilt) {
         errlogPrintf("iocRun: " ERL_WARNING " IOC not paused\n");
@@ -243,8 +250,8 @@ int iocRun(void)
     initHookAnnounce(initHookAtIocRun);
 
    /* Enable scan tasks and some driver support functions.  */
-    scanRun();
-    dbCaRun();
+    /* diode disabled scanRun(); */
+    /* diode disabled dbCaRun(); */
     initHookAnnounce(initHookAfterDatabaseRunning);
     if (iocState == iocBuilt)
         initHookAnnounce(initHookAfterInterruptAccept);
@@ -265,7 +272,7 @@ int iocRun(void)
     return 0;
 }
 
-int iocPause(void)
+int diode_iocPause(void)
 {
     if (iocState != iocRunning) {
         errlogPrintf("iocPause: " ERL_WARNING " IOC not running\n");
@@ -278,8 +285,8 @@ int iocPause(void)
         initHookAnnounce(initHookAfterCaServerPaused);
     }
 
-    dbCaPause();
-    scanPause();
+    /* diode disable dbCaPause(); */
+    /* diode disable scanPause(); */
     initHookAnnounce(initHookAfterDatabasePaused);
 
     iocState = iocPaused;
@@ -381,7 +388,7 @@ static void checkGeneralTime(void)
     epicsTimeGetEvent(&ts, 1);  /* Prime gtPvt.lastEventProvider for ISRs */
 }
 
-
+
 static void initDrvSup(void) /* Locate all driver support entry tables */
 {
     drvSup *pdrvSup;
@@ -491,7 +498,7 @@ static void iterateRecords(recIterFunc func, void *user)
     }
     return;
 }
-
+
 static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
@@ -517,6 +524,12 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
 
     if (prset->init_record)
         prset->init_record(precord, 0);
+
+    /* diode addition for records w/ dset support */
+    /* assumes this is true for dset.number == 4 */
+    if (precord->dset && precord->dset->number == 4) {
+        precord->dset->init_record(precord);
+    }
 }
 
 static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
@@ -559,15 +572,15 @@ static void doInitRecord1(dbRecordType *pdbRecordType, dbCommon *precord,
 
 static void initDatabase(void)
 {
-    dbChannelInit();
+    dbChannelInit(); /* diode this must be called for rsrv not to crash */
     iterateRecords(doInitRecord0, NULL);
-    iterateRecords(doResolveLinks, NULL);
+    /* diode disable iterateRecords(doResolveLinks, NULL); */
     iterateRecords(doInitRecord1, NULL);
 
     epicsAtExit(exitDatabase, NULL);
     return;
 }
-
+
 /*
  *  Process database records at initialization ordered by phase
  *     if their pini (process at init) field is set.
@@ -644,7 +657,7 @@ static void initialProcess(void)
     piniProcess(menuPiniYES);
 }
 
-
+
 /*
  * set DB_LINK and CA_LINK to PV_LINK
  * Delete record scans
@@ -707,32 +720,32 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
     free(precord->ppnr); /* may be allocated in dbNotify.c */
 }
 
-int iocShutdown(void)
+int diode_iocShutdown(void)
 {
     if (iocState == iocVoid) return 0;
 
     initHookAnnounce(initHookAtShutdown);
 
-    iterateRecords(doCloseLinks, NULL);
+    /* diode disable iterateRecords(doCloseLinks, NULL); */
     initHookAnnounce(initHookAfterCloseLinks);
 
-    /* stop and "join" threads */
-    scanStop();
-    initHookAnnounce(initHookAfterStopScan);
-    callbackStop();
-    initHookAnnounce(initHookAfterStopCallback);
-
-    if (iocBuildMode != buildIsolated) {
+    if (iocBuildMode == buildIsolated) {
+        /* stop and "join" threads */
+        /* diode disable scanStop(); */
+        initHookAnnounce(initHookAfterStopScan);
+        callbackStop();
+        initHookAnnounce(initHookAfterStopCallback);
+    } else {
         dbStopServers();
     }
 
-    dbCaShutdown(); /* must be before dbFreeRecord and dbChannelExit */
+    /* diode disable dbCaShutdown(); must be before dbFreeRecord and dbChannelExit */
     initHookAnnounce(initHookAfterStopLinks);
 
     if (iocBuildMode == buildIsolated) {
         /* free resources */
         initHookAnnounce(initHookBeforeFree);
-        scanCleanup();
+        /* diode disable scanCleanup(); */
         callbackCleanup();
 
         iterateRecords(doFreeRecord, NULL);
@@ -753,5 +766,61 @@ int iocShutdown(void)
 
 static void exitDatabase(void *dummy)
 {
-    iocShutdown();
+    diode_iocShutdown();
 }
+
+
+
+
+/* iocInit */
+static const iocshFuncDef iocInitFuncDef = {"diodeIocInit",0,NULL,
+             "Initializes the various epics components and starts the IOC running.\n"};
+static void iocInitCallFunc(const iocshArgBuf *args)
+{
+    iocshSetError(diode_iocInit());
+}
+
+/* iocBuild */
+static const iocshFuncDef iocBuildFuncDef = {"diodeIocBuild",0,NULL,
+             "First step of the IOC initialization, puts the IOC into a ready-to-run (quiescent) state.\n"
+             "Needs iocRun() to make the IOC live.\n"};
+static void iocBuildCallFunc(const iocshArgBuf *args)
+{
+    iocshSetError(diode_iocBuild());
+}
+
+/* iocRun */
+static const iocshFuncDef iocRunFuncDef = {"diodeIocRun",0,NULL, 
+             "Bring the IOC out of its initial quiescent state to the running state.\n"
+             "See more: iocBuild, iocPause"};
+static void iocRunCallFunc(const iocshArgBuf *args)
+{
+    iocshSetError(diode_iocRun());
+}
+
+/* iocPause */
+static const iocshFuncDef iocPauseFuncDef = {"diodeIocPause",0,NULL,
+             "Brings a running IOC to a quiescent state with all record processing frozen.\n"
+             "See more: iocBuild, iocRub, iocInit"};
+static void iocPauseCallFunc(const iocshArgBuf *args)
+{
+    iocshSetError(diode_iocPause());
+}
+
+
+void diode_IocRegister(void)
+{
+    iocshRegister(&iocInitFuncDef, iocInitCallFunc);
+    iocshRegister(&iocBuildFuncDef, iocBuildCallFunc);
+    iocshRegister(&iocRunFuncDef, iocRunCallFunc);
+    iocshRegister(&iocPauseFuncDef, iocPauseCallFunc);
+
+    /* We want to do minimal changes to this file 
+     * (we do not want to remove these methods),
+     * and we take compiler warning seriously.
+     * Using the following noop lines, we supress unused functions. */
+    (void)&doCloseLinks;
+    (void)&initialProcess;
+    (void)&doResolveLinks;
+}
+

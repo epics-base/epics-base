@@ -1,7 +1,7 @@
-# CONFIG.Common.linux-x86_64
+# CONFIG.Common.linux-riscv64
 #
-# Definitions for linux-x86_64 target builds
-# Sites may override these definitions in CONFIG_SITE.Common.linux-x86_64
+# Definitions for linux-riscv64 target builds
+# Sites may override these definitions in CONFIG_SITE.Common.linux-riscv64
 #-------------------------------------------------------
 
 # Include definitions common to all linux targets
@@ -10,12 +10,11 @@ include $(CONFIG)/os/CONFIG.Common.linuxCommon
 ARCH_CLASS = riscv64
 
 ARCH_DEP_CFLAGS = $(GNU_TUNE_CFLAGS)
-ARCH_DEP_CPPFLAGS += -D_RISCV64_
 
 OP_SYS_CFLAGS +=
 OP_SYS_LDFLAGS +=
 
 # If your crosscompiler name has a GNU target prefix like <gnutarget>-gcc,
-# e.g. x86_64-redhat-linux-gcc, put a GNU_TARGET definition in
-# CONFIG_SITE.<host>.linux-x86_64 file, e.g. GNU_TARGET=x86_64-redhat-linux
+# e.g. riscv64-redhat-linux-gcc, put a GNU_TARGET definition in
+# CONFIG_SITE.<host>.linux-riscv64 file, e.g. GNU_TARGET=riscv64-redhat-linux
 

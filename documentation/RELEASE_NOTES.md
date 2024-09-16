@@ -92,6 +92,12 @@ This limit has been removed.
 
 ## EPICS Release 7.0.8
 
+### PROC field changed to ASL0
+
+The PROC field has been changed from access security level ASL1 to ASL0.
+This allows users to trigger processing a record without having the rights
+to reconfigure the records.
+
 ### bi "Raw Soft Channel" use MASK
 
 If MASK is non-zero, The raw device support will now apply MASK to the

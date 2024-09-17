@@ -54,6 +54,7 @@ struct taskVar {
     int                refcnt;
     int                joinable;
     int                isRunning;
+    int                isOkToBlock;
     EPICSTHREADFUNC              funptr;
     void                *parm;
     unsigned int        threadVariableCapacity;
@@ -226,7 +227,7 @@ void epicsThreadExitMain (void)
 
 static rtems_status_code
 setThreadInfo(rtems_id tid, const char *name, EPICSTHREADFUNC funptr,
-    void *parm, int joinable)
+    void *parm, int joinable, int isOkToBlock)
 {
     struct taskVar *v;
     uint32_t note;
@@ -242,6 +243,7 @@ setThreadInfo(rtems_id tid, const char *name, EPICSTHREADFUNC funptr,
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
     v->isRunning = 1;
+    v->isOkToBlock = isOkToBlock;
     if (joinable) {
         char c[3];
         strncpy(c, v->name, 3);
@@ -293,7 +295,7 @@ epicsThreadInit (void)
         if (!onceMutex || !taskVarMutex)
             cantProceed("epicsThreadInit() can't create global mutexes\n");
         rtems_task_ident (RTEMS_SELF, 0, &tid);
-        if(setThreadInfo (tid, "_main_", NULL, NULL, 0) != RTEMS_SUCCESSFUL)
+        if(setThreadInfo (tid, "_main_", NULL, NULL, 0, 1) != RTEMS_SUCCESSFUL)
             cantProceed("epicsThreadInit() unable to setup _main_");
         osdThreadHooksRunMain((epicsThreadId)tid);
         initialized = 1;
@@ -347,7 +349,7 @@ epicsThreadCreateOpt (
             name, rtems_status_text(sc));
         return 0;
     }
-    sc = setThreadInfo (tid, name, funptr, parm, opts->joinable);
+    sc = setThreadInfo (tid, name, funptr, parm, opts->joinable, 0);
     if (sc != RTEMS_SUCCESSFUL) {
         errlogPrintf ("epicsThreadCreate create failure during setup for %s: %s\n",
             name, rtems_status_text(sc));
@@ -878,4 +880,28 @@ LIBCOM_API int epicsThreadGetCPUs(void)
 #else
     return 1;
 #endif
+}
+
+
+int epicsStdCall epicsThreadIsOkToBlock(void)
+{
+    uint32_t note = 0;
+    struct taskVar *v;
+
+    rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
+    v = (void *)note;
+
+    return v && v->isOkToBlock;
+}
+
+void epicsStdCall epicsThreadSetOkToBlock(int isOkToBlock)
+{
+    uint32_t note = 0;
+    struct taskVar *v;
+
+    rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
+    v = (void *)note;
+
+    if(v)
+        v->isOkToBlock = !!isOkToBlock;
 }

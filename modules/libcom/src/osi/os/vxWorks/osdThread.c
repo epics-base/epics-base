@@ -127,7 +127,8 @@ static void epicsThreadInit(void)
         taskIdListSize = ID_LIST_CHUNK;
         atRebootRegister();
         ALLOT_JOIN(0);
-        done = 1;
+        done = 1; /* avoids recursive call */
+        epicsThreadSetOkToBlock(1);
     }
     lock = 0;
 }
@@ -576,4 +577,31 @@ double epicsThreadSleepQuantum ()
 LIBCOM_API int epicsThreadGetCPUs(void)
 {
     return 1;
+}
+
+
+static epicsThreadOnceId okToBlockOnce = EPICS_THREAD_ONCE_INIT;
+static epicsThreadPrivateId okToBlockPrivate;
+static const int okToBlockNo = 0;
+static const int okToBlockYes = 1;
+
+static void epicsThreadOnceIdInit(void *not_used)
+{
+    okToBlockPrivate = epicsThreadPrivateCreate();
+}
+
+int epicsStdCall epicsThreadIsOkToBlock(void)
+{
+    const int *pokToBlock;
+    epicsThreadOnce(&okToBlockOnce, epicsThreadOnceIdInit, NULL);
+    pokToBlock = (int *) epicsThreadPrivateGet(okToBlockPrivate);
+    return (pokToBlock ? *pokToBlock : 0);
+}
+
+void epicsStdCall epicsThreadSetOkToBlock(int isOkToBlock)
+{
+    const int *pokToBlock;
+    epicsThreadOnce(&okToBlockOnce, epicsThreadOnceIdInit, NULL);
+    pokToBlock = (isOkToBlock) ? &okToBlockYes : &okToBlockNo;
+    epicsThreadPrivateSet(okToBlockPrivate, (void *)pokToBlock);
 }

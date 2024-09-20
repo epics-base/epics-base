@@ -1325,7 +1325,7 @@ iocshCmd (const char *cmd)
 int epicsStdCall
 iocshLoad(const char *pathname, const char *macros)
 {
-    if (pathname)
+    if (pathname && !getenv("IOCSH_STARTUP_SCRIPT"))
         epicsEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
     return iocshBody(pathname, NULL, macros);
 }

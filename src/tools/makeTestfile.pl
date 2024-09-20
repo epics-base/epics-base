@@ -156,6 +156,9 @@ if (\$pid) {
     alarm \$timeout;
     waitpid \$pid, 0;
     alarm 0;
+    if ($? & 127) {
+        exit 1;
+    }
     exit \$? >> 8;
 }
 else {

@@ -25,17 +25,23 @@ use Text::Wrap;
 
 my $tool = basename($0);
 
-our ($opt_h, $opt_q, $opt_t, $opt_s, $opt_c);
+our ($opt_h, $opt_q, $opt_t, $opt_s, $opt_c, $opt_e);
 our $opt_o = 'envData.c';
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 $Text::Wrap::columns = 75;
 
-HELP_MESSAGE() unless getopts('ho:qt:s:c:') && @ARGV == 1;
+HELP_MESSAGE() unless getopts('ho:qt:s:c:e:') && @ARGV == 1;
 HELP_MESSAGE() if $opt_h;
 
 my $config   = AbsPath(shift);
-my $env_defs = AbsPath('../env/envDefs.h');
+my $env_defs;
+if ($opt_e) {
+    $env_defs = $opt_e
+}
+else {
+    $env_defs = AbsPath('../env/envDefs.h');
+}
 
 # Parse the ENV_PARAM declarations in envDefs.h
 # to get the param names we are interested in
@@ -134,6 +140,7 @@ sub HELP_MESSAGE {
         "  -t arch  Target architecture \$(T_A) name\n",
         "  -s os    Operating system \$(OS_CLASS)\n",
         "  -c comp  Compiler class \$(CMPLR_CLASS)\n",
+        "  -e file  Path to envDefs.h file\n",
         "\n";
 
     exit 1;

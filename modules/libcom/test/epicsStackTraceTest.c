@@ -172,6 +172,14 @@ MAIN(epicsStackTraceTest)
               "epicsStackTraceGetFeatures() obtains features") )
         testAbort("epicsStackTraceGetFeatures() not working as expected");
 
+#if defined(LINKING_STATIC_FULL)
+    /* epicsFindAddrGetFeatures() for POSIX always returns all features;
+     * to avoid having to hook into that function, we override the return
+     * value here instead */
+    testDiag("overriding features for fully static binaries");
+    features &= EPICS_STACKTRACE_ADDRESSES;
+#endif
+
     testData.pos = 0;
 
     testDiag("calling a few nested routines and eventually dump a stack trace");

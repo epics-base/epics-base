@@ -93,6 +93,18 @@ jobs:
             extra: "CMD_CXXFLAGS=-std=c++11"
             name: "Ub-20 gcc-9 C++11, static"
 
+          - os: ubuntu-22.04
+            cmp: gcc-12
+            configuration: static
+            extra: "CMD_CXXFLAGS=-std=c++11
+                    STATIC_BUILD=YES
+                    FULL_STATIC_BUILD=YES
+                    SHARED_LIBRARIES=NO
+                    PROD_LDFLAGS=-static
+                    COMMANDLINE_LIBRARY=''
+                    PERL_BINDINGS=NO"
+            name: "Ub-22 gcc-12 C++11, fully static"
+
           - os: ubuntu-20.04
             cmp: gcc
             configuration: static

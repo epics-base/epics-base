@@ -107,6 +107,12 @@ jobs:
           - os: ubuntu-20.04
             cmp: clang
             configuration: default
+            extra: "CMD_CFLAGS=-fsanitize=undefined CMD_CXXFLAGS=-fsanitize=undefined CMD_LDFLAGS=-fsanitize=undefined"
+            name: "Ub-20 clang-10 sanitize=undefined"
+
+          - os: ubuntu-20.04
+            cmp: clang
+            configuration: default
             extra: "CMD_CXXFLAGS=-std=c++11"
             name: "Ub-20 clang-10 C++11"
 
@@ -208,6 +214,8 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
       if: runner.os == 'Linux'
+    - name: Setup UBSAN_OPTIONS
+      run: echo "UBSAN_OPTIONS=log_path=$PWD/UBSAN:suppressions=$PWD/.ci-local/ubsan.supp:print_stacktrace=1" >> $GITHUB_ENV 
     - name: Prepare and compile dependencies
       run: python .ci/cue.py prepare
     - name: Build main module
@@ -224,6 +232,18 @@ jobs:
     - name: Collect and show test results
       if: ${{ always() }}
       run: python .ci/cue.py -T 5M test-results
+    - name: Show UBSAN logs
+      shell: bash
+      if: ${{ always() }}
+      run: |
+        ret=0
+        for ff in `find . -name 'UBSAN*'`
+        do
+          echo "==== $ff ===="
+          cat "$ff"
+          ret=1
+        done
+        exit $ret
 
   docker:
     name: ${{ matrix.name }}

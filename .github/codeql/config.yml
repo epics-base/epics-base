@@ -1,0 +1,22 @@
+name: "CodeQL Config"
+
+# Queries and the suites they belong to are documented at
+#    https://codeql.github.com/codeql-query-help/cpp/
+
+queries:
+  - uses: security-and-quality
+  # Choose the above from 3 query suites:
+  #   default
+  #      The default set of queries
+  #   security-extended
+  #      `default` suite plus lower severity and precision queries
+  #   security-and-quality
+  #      `security-extended`, plus maintainability and reliability queries
+
+query-filters:
+-
+  exclude:
+    id: cpp/use-of-goto
+-
+  exclude:
+    problem.severity: recommendation

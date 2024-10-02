@@ -2,13 +2,23 @@
 # Definitions for freebsd-x86_64 host - freebsd-x86_64 target builds
 # Sites may override these definitions in CONFIG_SITE.freebsd-x86_64.freebsd-x86_64
 #-------------------------------------------------------
-GNU_DIR=/usr/local
+GNU_DIR=/usr
 
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
+
+GNU_BIN = $(GNU_DIR)/bin
+GNU_LIB = $(GNU_DIR)/lib
+
+CMPLR_CLASS = clang
+
+CC = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
+CCC = $(GNU_BIN)/$(CMPLR_PREFIX)c++$(CMPLR_SUFFIX)
+CPP = $(CC) -x c -E
+
+GNU_LDLIBS_YES =
 
 STATIC_LDFLAGS_YES= -Wl,-Bstatic
 STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Wl,-Bdynamic
 STATIC_LDLIBS_NO=
-

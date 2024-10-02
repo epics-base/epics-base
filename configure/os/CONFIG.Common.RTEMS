@@ -65,7 +65,7 @@ CXXFLAGS = $($(BUILD_CLASS)_CXXFLAGS) $(POSIX_CXXFLAGS) $(OPT_CXXFLAGS)\
  $(USR_CXXFLAGS) $(CMD_CXXFLAGS) $(ARCH_DEP_CXXFLAGS) $(CODE_CXXFLAGS)\
  $(STATIC_CXXFLAGS) $(OP_SYS_CXXFLAGS) $(LIBRARY_SRC_CFLAGS)
 
-LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(CMD_LDFLAGS)\
+LDFLAGS += $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(CMD_LDFLAGS)\
  $(POSIX_LDFLAGS) $(ARCH_DEP_LDFLAGS) $(DEBUG_LDFLAGS) $(OP_SYS_LDFLAGS)\
  $($(BUILD_CLASS)_LDFLAGS) $(RUNTIME_LDFLAGS) $(CODE_LDFLAGS)
 
@@ -102,15 +102,47 @@ OS_CLASS = RTEMS
 # Operating system compile & link flags
 OP_SYS_CFLAGS += -D__LINUX_ERRNO_EXTENSIONS__
 
-OP_SYS_CFLAGS_NET_yes = -DRTEMS_LEGACY_STACK
-OP_SYS_CFLAGS += $(OP_SYS_CFLAGS_NET_$(RTEMS_HAS_NETWORKING))
-
-ifeq ($(RTEMS_HAS_POSIX_API),yes)
-POSIX_CPPFLAGS = -D_GNU_SOURCE -D_DEFAULT_SOURCE
+# Has RTEMS been built with the internal legacy stack?
+ifeq ($(RTEMS_LEGACY_NETWORKING_INTERNAL),yes)
+RTEMS_HAS_NETWORKING = yes
+RTEMS_NETWORKING = legacy_internal
 endif
 
-OP_SYS_LDLIBS_posix_NET_yes = -ltftpfs -lnfs -lz -ltelnetd
-OP_SYS_LDLIBS_posix_NET_no = -ltftpfs -lbsd -lz
+# Has RTEMS been built with the legacy stack as a separate package?
+ifeq ($(RTEMS_LEGACY_NETWORKING),yes)
+RTEMS_HAS_NETWORKING = yes
+RTEMS_NETWORKING = legacy
+endif
+
+# Has RTEMS been built with the libbsd stack as a separate package?
+ifeq ($(RTEMS_BSD_NETWORKING),yes)
+RTEMS_HAS_NETWORKING = yes
+RTEMS_NETWORKING = bsd
+endif
+
+RTEMS_LEGACY_NET_LIB_no=
+
+# Legacy network with RTEMS 5 and earlier
+RTEMS_NET_LIB_legacy_internal=-lnfs
+OP_SYS_CFLAGS_NET_legacy_internal = -DRTEMS_LEGACY_STACK
+
+# Legacy network with RTEMS 6 is a separate package and library
+RTEMS_NET_LIB_legacy=-lnfs -lnetworking -lnfs
+OP_SYS_CFLAGS_NET_legacy = -DRTEMS_LEGACY_STACK
+
+# LibBSD network with RTEMS 5 and 6 is a separate package and library
+RTEMS_NET_LIB_bsd=-lbsd
+OP_SYS_CFLAGS_NET_bsd = -DRTEMS_LIBBSD_STACK
+
+# Set the networking flags
+OP_SYS_CFLAGS += $(OP_SYS_CFLAGS_NET_$(RTEMS_NETWORKING))
+
+POSIX_CPPFLAGS_posix = -D_GNU_SOURCE -D_DEFAULT_SOURCE
+POSIX_CPPFLAGS = $(POSIX_CPPFLAGS_$(OS_API))
+
+OP_SYS_LDLIBS_posix_NET_yes = -ltftpfs -lz -ltelnetd
+OP_SYS_LDLIBS_posix_NET_yes += $(RTEMS_NET_LIB_$(RTEMS_NETWORKING))
+OP_SYS_LDLIBS_posix_NET_no = -ltftpfs -lz
 OP_SYS_LDLIBS_score_NET_yes = -lnfs
 OP_SYS_LDLIBS_score_NET_no = -lnfs
 OP_SYS_LDLIBS += -lrtemsCom -lCom

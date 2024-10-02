@@ -109,7 +109,11 @@ ifeq ($(RTEMS_HAS_POSIX_API),yes)
 POSIX_CPPFLAGS = -D_GNU_SOURCE -D_DEFAULT_SOURCE
 endif
 
-OP_SYS_LDLIBS_posix_NET_yes = -ltftpfs -lnfs -lz -ltelnetd
+ifneq ($(RTEMS_VERSION),5)
+LDLIBS_posix_NET_ntp = -lntp
+endif
+
+OP_SYS_LDLIBS_posix_NET_yes = -ltftpfs -lnfs -lz -ltelnetd $(LDLIBS_posix_NET_ntp)
 OP_SYS_LDLIBS_posix_NET_no = -ltftpfs -lbsd -lz
 OP_SYS_LDLIBS_score_NET_yes = -lnfs
 OP_SYS_LDLIBS_score_NET_no = -lnfs

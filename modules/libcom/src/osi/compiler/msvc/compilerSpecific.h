@@ -51,4 +51,9 @@
 #   define EPICS_PRINTF_FMT(a) _Printf_format_string_ a
 #endif
 
+/*
+ * No return marker
+ */
+#define EPICS_NORETURN(f) __declspec(noreturn) f
+
 #endif  /* ifndef compilerSpecific_h */

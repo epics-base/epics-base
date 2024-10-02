@@ -3549,8 +3549,6 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     printf ( "\nTest Complete\n" );
 
     epicsExit ( EXIT_SUCCESS );
-
-    return 0;
 }
 
 

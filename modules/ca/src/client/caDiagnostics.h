@@ -20,9 +20,9 @@ extern "C" {
 enum appendNumberFlag {appendNumber, dontAppendNumber};
 int catime ( const char *channelName, unsigned channelCount, enum appendNumberFlag appNF );
 
-int acctst ( const char *pname, unsigned logggingInterestLevel,
+int EPICS_NORETURN(acctst ( const char *pname, unsigned logggingInterestLevel,
             unsigned channelCount, unsigned repetitionCount,
-            enum ca_preemptive_callback_select select );
+            enum ca_preemptive_callback_select select ));
 
 #define CATIME_OK 0
 #define CATIME_ERROR -1

@@ -297,7 +297,7 @@ extern void tokenized_start(char *s) NORETURN;
 extern void retyped_warning(char *s);
 extern void reprec_warning(char *s);
 extern void revalued_warning(char *s);
-extern void terminal_start(char *s);
+extern void terminal_start(char *s) NORETURN;
 extern void restarted_warning(void);
 extern void no_grammar(void) NORETURN;
 extern void terminal_lhs(int s_lineno) NORETURN;

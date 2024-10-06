@@ -31,6 +31,7 @@
 #include "epicsStdio.h"
 #include "errlog.h"
 #include "epicsMutex.h"
+#include "epicsMutexImpl.h"
 #include "epicsString.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
@@ -59,7 +60,7 @@ struct taskVar {
     unsigned int        threadVariableCapacity;
     void                **threadVariables;
 };
-static struct epicsMutexOSD *taskVarMutex;
+static struct epicsMutexParm taskVarMutex = {ELLNODE_INIT, __FILE__, __LINE__};
 static struct taskVar *taskVarHead;
 #define RTEMS_NOTEPAD_TASKVAR       11
 
@@ -67,15 +68,7 @@ static struct taskVar *taskVarHead;
  * Support for `once-only' execution
  */
 static volatile int initialized = 0; /* strictly speaking 'volatile' is not enough here, but it shouldn't hurt */
-static struct epicsMutexOSD *onceMutex;
-
-static
-void epicsMutexOsdMustLock(struct epicsMutexOSD * L)
-{
-    while(epicsMutexOsdLock(L)!=epicsMutexLockOK) {
-        cantProceed("epicsThreadOnce() mutex error");
-    }
-}
+static struct epicsMutexParm onceMutex = {ELLNODE_INIT, __FILE__, __LINE__};
 
 /*
  * Just map osi 0 to 99 into RTEMS 199 to 100
@@ -161,13 +154,13 @@ epicsThreadGetStackSize (epicsThreadStackSizeClass size)
 static void
 taskVarLock (void)
 {
-    epicsMutexOsdMustLock (taskVarMutex);
+    epicsMutexMustLock (&taskVarMutex);
 }
 
 static void
 taskVarUnlock (void)
 {
-    epicsMutexOsdUnlock (taskVarMutex);
+    epicsMutexUnlock (&taskVarMutex);
 }
 
 static
@@ -243,7 +236,7 @@ setThreadInfo(rtems_id tid, const char *name, EPICSTHREADFUNC funptr,
     v->threadVariables = NULL;
     v->isRunning = 1;
     if (joinable) {
-        char c[3];
+        char c[3] = {0,0,0};
         strncpy(c, v->name, 3);
         sc = rtems_barrier_create(rtems_build_name('~', c[0], c[1], c[2]),
                 RTEMS_BARRIER_AUTOMATIC_RELEASE | RTEMS_LOCAL,
@@ -288,10 +281,8 @@ epicsThreadInit (void)
         rtems_task_priority old;
 
         rtems_task_set_priority (RTEMS_SELF, epicsThreadGetOssPriorityValue(99), &old);
-        onceMutex = epicsMutexOsdCreate();
-        taskVarMutex = epicsMutexOsdCreate();
-        if (!onceMutex || !taskVarMutex)
-            cantProceed("epicsThreadInit() can't create global mutexes\n");
+        epicsMutexOsdPrepare(&taskVarMutex);
+        epicsMutexOsdPrepare(&onceMutex);
         rtems_task_ident (RTEMS_SELF, 0, &tid);
         if(setThreadInfo (tid, "_main_", NULL, NULL, 0) != RTEMS_SUCCESSFUL)
             cantProceed("epicsThreadInit() unable to setup _main_");
@@ -317,7 +308,7 @@ epicsThreadCreateOpt (
     unsigned int stackSize;
     rtems_id tid;
     rtems_status_code sc;
-    char c[4];
+    char c[4] = {0,0,0,0};
 
     if (!initialized)
         epicsThreadInit();
@@ -612,26 +603,26 @@ void epicsThreadOnce(epicsThreadOnceId *id, void(*func)(void *), void *arg)
     #define EPICS_THREAD_ONCE_DONE (epicsThreadId) 1
 
     if (!initialized) epicsThreadInit();
-    epicsMutexOsdMustLock(onceMutex);
+    epicsMutexMustLock(&onceMutex);
     if (*id != EPICS_THREAD_ONCE_DONE) {
         if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
             *id = epicsThreadGetIdSelf();    /* mark active */
-            epicsMutexOsdUnlock(onceMutex);
+            epicsMutexUnlock(&onceMutex);
             func(arg);
-            epicsMutexOsdMustLock(onceMutex);
+            epicsMutexMustLock(&onceMutex);
             *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
         } else if (*id == epicsThreadGetIdSelf()) {
-            epicsMutexOsdUnlock(onceMutex);
+            epicsMutexUnlock(&onceMutex);
             cantProceed("Recursive epicsThreadOnce() initialization\n");
         } else
             while (*id != EPICS_THREAD_ONCE_DONE) {
                 /* Another thread is in the above func(arg) call. */
-                epicsMutexOsdUnlock(onceMutex);
+                epicsMutexUnlock(&onceMutex);
                 epicsThreadSleep(epicsThreadSleepQuantum());
-                epicsMutexOsdMustLock(onceMutex);
+                epicsMutexMustLock(&onceMutex);
             }
     }
-    epicsMutexOsdUnlock(onceMutex);
+    epicsMutexUnlock(&onceMutex);
 }
 
 /*

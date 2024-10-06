@@ -20,147 +20,59 @@
 #include <stdio.h>
 #include <limits.h>
 
-#define VC_EXTRALEAN
-#define STRICT
-#include <windows.h>
-#if _WIN32_WINNT < 0x0501
-#   error Minimum supported is Windows XP
-#endif
-
 #define EPICS_PRIVATE_API
 
 #include "libComAPI.h"
 #include "epicsMutex.h"
+#include "epicsMutexImpl.h"
+#include "epicsThread.h"
 #include "epicsAssert.h"
 #include "epicsStdio.h"
 
-typedef struct epicsMutexOSD {
-    union {
-        HANDLE mutex;
-        CRITICAL_SECTION criticalSection;
-    } os;
-} epicsMutexOSD;
-
-static BOOL thisIsNT = FALSE;
-static LONG weHaveInitialized = 0;
-
-/*
- * epicsMutexCreate ()
- */
-epicsMutexOSD * epicsMutexOsdCreate ( void )
+static epicsThreadOnceId epicsMutexOsdOnce = EPICS_THREAD_ONCE_INIT;
+static void epicsMutexOsdInit(void* unused)
 {
-    epicsMutexOSD * pSem;
-
-    if ( ! weHaveInitialized ) {
-        BOOL status;
-        OSVERSIONINFO osInfo;
-        osInfo.dwOSVersionInfoSize = sizeof ( OSVERSIONINFO );
-        status = GetVersionEx ( & osInfo );
-        thisIsNT = status && ( osInfo.dwPlatformId == VER_PLATFORM_WIN32_NT );
-        weHaveInitialized = 1;
-    }
-
-    pSem = malloc ( sizeof (*pSem) );
-    if ( pSem ) {
-        if ( thisIsNT ) {
-            InitializeCriticalSection ( &pSem->os.criticalSection );
-        }
-        else {
-            pSem->os.mutex = CreateMutex ( NULL, FALSE, NULL );
-            if ( pSem->os.mutex == 0 ) {
-                free ( pSem );
-                pSem = 0;
-            }
-        }
-    }
-    return pSem;
+    (void)unused;
+    InitializeCriticalSection(&epicsMutexGlobalLock.osd);
 }
 
-/*
- * epicsMutexOsdDestroy ()
- */
-void epicsMutexOsdDestroy ( epicsMutexOSD * pSem )
+void epicsMutexOsdSetup()
 {
-    if ( thisIsNT ) {
-        DeleteCriticalSection  ( &pSem->os.criticalSection );
-    }
-    else {
-        CloseHandle ( pSem->os.mutex );
-    }
-    free ( pSem );
+    epicsThreadOnce(&epicsMutexOsdOnce, &epicsMutexOsdInit, NULL);
 }
 
-/*
- * epicsMutexOsdUnlock ()
- */
-void epicsMutexOsdUnlock ( epicsMutexOSD * pSem )
+long epicsMutexOsdPrepare(struct epicsMutexParm *mutex)
 {
-    if ( thisIsNT ) {
-        LeaveCriticalSection ( &pSem->os.criticalSection );
-    }
-    else {
-        BOOL success = ReleaseMutex ( pSem->os.mutex );
-        assert ( success );
-    }
+    InitializeCriticalSection(&mutex->osd);
+    return 0;
 }
 
-/*
- * epicsMutexOsdLock ()
- */
-epicsMutexLockStatus epicsMutexOsdLock ( epicsMutexOSD * pSem )
+void epicsMutexOsdCleanup(struct epicsMutexParm *mutex)
 {
-    if ( thisIsNT ) {
-        EnterCriticalSection ( &pSem->os.criticalSection );
-    }
-    else {
-        DWORD status = WaitForSingleObject ( pSem->os.mutex, INFINITE );
-        if ( status != WAIT_OBJECT_0 ) {
-            return epicsMutexLockError;
-        }
-    }
+    DeleteCriticalSection(&mutex->osd);
+}
+
+void epicsStdCall epicsMutexUnlock ( struct epicsMutexParm *mutex )
+{
+    LeaveCriticalSection ( &mutex->osd );
+}
+
+epicsMutexLockStatus epicsStdCall epicsMutexLock ( struct epicsMutexParm *mutex )
+{
+    EnterCriticalSection ( &mutex->osd );
     return epicsMutexLockOK;
 }
 
-/*
- * epicsMutexOsdTryLock ()
- */
-epicsMutexLockStatus epicsMutexOsdTryLock ( epicsMutexOSD * pSem )
+epicsMutexLockStatus epicsStdCall epicsMutexTryLock ( struct epicsMutexParm *mutex )
 {
-    if ( thisIsNT ) {
-        if ( TryEnterCriticalSection ( &pSem->os.criticalSection ) ) {
-            return epicsMutexLockOK;
-        }
-        else {
-            return epicsMutexLockTimeout;
-        }
-    }
-    else {
-        DWORD status = WaitForSingleObject ( pSem->os.mutex, 0 );
-        if ( status != WAIT_OBJECT_0 ) {
-            if (status == WAIT_TIMEOUT) {
-                return epicsMutexLockTimeout;
-            }
-            else {
-                return epicsMutexLockError;
-            }
-        }
-    }
-    return epicsMutexLockOK;
+    return TryEnterCriticalSection ( &mutex->osd ) ? epicsMutexLockOK : epicsMutexLockTimeout;
 }
 
-/*
- * epicsMutexOsdShow ()
- */
-void epicsMutexOsdShow ( epicsMutexOSD * pSem, unsigned level )
+void epicsMutexOsdShow ( struct epicsMutexParm *mutex, unsigned level )
 {
-    if ( thisIsNT ) {
-        printf ("epicsMutex: win32 critical section at %p\n",
-            (void * ) & pSem->os.criticalSection );
-    }
-    else {
-        printf ( "epicsMutex: win32 mutex at %p\n",
-            ( void * ) pSem->os.mutex );
-    }
+    (void)level;
+    printf ("epicsMutex: win32 critical section at %p\n",
+        (void * ) & mutex->osd );
 }
 
 void epicsMutexOsdShowAll(void) {}

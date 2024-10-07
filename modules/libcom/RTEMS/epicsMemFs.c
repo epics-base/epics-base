@@ -14,11 +14,8 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
+#include "epicsLimits.h"
 #include "epicsMemFs.h"
-
-#ifndef PATH_MAX
-#  define PATH_MAX 100
-#endif
 
 int epicsMemFsLoad(const epicsMemFS *fs)
 {

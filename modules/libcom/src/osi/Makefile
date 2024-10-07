@@ -57,6 +57,7 @@ INC += epicsStdioRedirect.h
 INC += epicsTempFile.h
 INC += epicsGetopt.h
 INC += epicsStackTrace.h
+INC += epicsLimits.h
 
 INC += devLib.h
 INC += devLibVME.h

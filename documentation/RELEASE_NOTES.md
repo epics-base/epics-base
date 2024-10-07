@@ -86,6 +86,14 @@ Before this release, the CA client library only handled hostnames in address
 list environment variables up to 255 characters long.
 This limit has been removed.
 
+### Reduce symbol and macro pollution from epicsAtomic.h on WIN32
+
+`epicsAtomic.h` no longer pulls in as many unneeded declarations and macros from
+`windows.h`. Prior to this change, including `epicsAtomic.h` at the wrong time
+could result in unexpected compiler errors. Due to the nature of `windows.h`,
+some unneeded declarations are still pulled in, however the number is greatly reduced.
+Code that needs these declarations should explicitly include `windows.h` before `epicsAtomic.h`.
+
 -----
 
 ## EPICS Release 7.0.8

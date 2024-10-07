@@ -22,6 +22,11 @@ should also be read to understand what has changed since earlier releases:
 
 ## Changes made on the 7.0 branch since 7.0.8.1
 
+### DBE_PROPERTY event rate changed
+
+Updating property fields now only post DBE_PROPERTY events if the
+field actually changed.
+
 ### Allow users to delete previously created records from the database
 
 From this release, record instances and aliases that have already been loaded

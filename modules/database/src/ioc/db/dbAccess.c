@@ -1325,6 +1325,7 @@ long dbPut(DBADDR *paddr, short dbrType,
     long status = 0;
     dbFldDes *pfldDes;
     int isValueField;
+    int propertyUpdate = paddr->pfldDes->prop && precord->mlis.count;
 
     if (special == SPC_ATTRIBUTE)
         return S_db_noMod;
@@ -1369,11 +1370,30 @@ long dbPut(DBADDR *paddr, short dbrType,
         if (nRequest < 1) {
             recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
         } else {
-            status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
-                paddr->pfield, paddr);
+            if (propertyUpdate && paddr->field_size <= MAX_STRING_SIZE) {
+                char propBuffer[MAX_STRING_SIZE];
+                status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
+                    &propBuffer, paddr);
+                if (!status) {
+                    if (memcmp(paddr->pfield, &propBuffer, paddr->field_size) != 0) {
+                        memcpy(paddr->pfield, &propBuffer, paddr->field_size);
+                    } else {
+                        /* suppress DBE_PROPERTY event if property did not change */
+                        propertyUpdate = 0;
+                    }
+                }
+            } else {
+                status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
+                    paddr->pfield, paddr);
+            }
             nRequest = 1;
         }
     }
+
+    /* Post property updates before second dbPutSpecial */
+    /* which may post DBE_VALUE and/or DBE_LOG events */
+    if (propertyUpdate && !status)
+        db_post_events(precord, NULL, DBE_PROPERTY);
 
     /* Always do special processing if needed */
     if (special) {
@@ -1391,12 +1411,6 @@ long dbPut(DBADDR *paddr, short dbrType,
     if (precord->mlis.count &&
         !(isValueField && pfldDes->process_passive))
         db_post_events(precord, pfieldsave, DBE_VALUE | DBE_LOG);
-    /* If this field is a property (metadata) field,
-     * then post a property change event (even if the field
-     * didn't change).
-     */
-    if (precord->mlis.count && pfldDes->prop)
-        db_post_events(precord, NULL, DBE_PROPERTY);
 done:
     paddr->pfield = pfieldsave;
     return status;

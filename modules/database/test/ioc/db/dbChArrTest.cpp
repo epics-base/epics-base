@@ -130,9 +130,11 @@ static void check(short dbr_type) {
     off = Offset; req = 10; \
     memset(buf, 0, sizeof(buf)); \
     (void) dbPutField(&offaddr, DBR_LONG, &off, 1); \
+    dbScanLock(dbChannelRecord(pch)); \
     pfl = db_create_read_log(pch); \
     testOk(pfl && pfl->type == dbfl_type_ref, "Valid pfl, type = ref"); \
-    testOk(!dbChannelGetField(pch, DBR_LONG, buf, NULL, &req, pfl), "Got Field value"); \
+    testOk(!dbChannelGet(pch, DBR_LONG, buf, NULL, &req, pfl), "Got Field value"); \
+    dbScanUnlock(dbChannelRecord(pch)); \
     testOk(req == Size, "Got %ld elements (expected %d)", req, Size); \
     if (!testOk(!memcmp(buf, Expected, sizeof(Expected)), "Data correct")) \
         for (i=0; i<Size; i++) \
@@ -174,6 +176,7 @@ static void check(short dbr_type) {
     off = Offset; req = 15; \
     memset(buf, 0, sizeof(buf)); \
     (void) dbPutField(&offaddr, DBR_LONG, &off, 1); \
+    dbScanLock(dbChannelRecord(pch)); \
     pfl = db_create_read_log(pch); \
     pfl->type = dbfl_type_ref; \
     pfl->field_type = DBF_CHAR; \
@@ -181,7 +184,8 @@ static void check(short dbr_type) {
     pfl->no_elements = 26; \
     pfl->dtor = freeArray; \
     pfl->u.r.field = epicsStrDup("abcdefghijklmnopqrsstuvwxyz"); \
-    testOk(!dbChannelGetField(pch, DBR_LONG, buf, NULL, &req, pfl), "Got Field value"); \
+    testOk(!dbChannelGet(pch, DBR_LONG, buf, NULL, &req, pfl), "Got Field value"); \
+    dbScanUnlock(dbChannelRecord(pch)); \
     testOk(req == Size, "Got %ld elements (expected %d)", req, Size); \
     if (!testOk(!memcmp(buf, Expected, sizeof(Expected)), "Data correct")) \
         for (i=0; i<Size; i++) \

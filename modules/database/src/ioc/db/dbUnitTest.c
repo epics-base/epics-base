@@ -202,7 +202,6 @@ void testdbGetFieldEqual(const char* pv, int dbrType, ...)
 void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
 {
     dbChannel *chan = dbChannelCreate(pv);
-    db_field_log *pfl = NULL;
     long nReq = 1;
     union anybuf pod;
     long status = S_dbLib_recNotFound;
@@ -212,18 +211,7 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
         goto done;
     }
 
-    if(ellCount(&chan->filters)) {
-        pfl = db_create_read_log(chan);
-        if (!pfl) {
-            testFail("can't db_create_read_log w/ %s", pv);
-            goto done;
-        }
-
-        pfl = dbChannelRunPreChain(chan, pfl);
-        pfl = dbChannelRunPostChain(chan, pfl);
-    }
-
-    status = dbChannelGetField(chan, dbrType, pod.bytes, NULL, &nReq, pfl);
+    status = dbChannelGetField(chan, dbrType, pod.bytes, NULL, &nReq, NULL);
     if (status) {
         testFail("dbGetField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, status, errSymMsg(status));
         goto done;
@@ -261,7 +249,6 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     }
 
 done:
-    db_delete_field_log(pfl);
     if(chan)
         dbChannelDelete(chan);
 }
@@ -288,7 +275,6 @@ done:
 void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long cnt, const void *pbufraw)
 {
     dbChannel *chan = dbChannelCreate(pv);
-    db_field_log *pfl = NULL;
     const long vSize = dbValueSize(dbfType);
     const long nStore = vSize * nRequest;
     long status = S_dbLib_recNotFound;
@@ -300,24 +286,13 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
         goto done;
     }
 
-    if(ellCount(&chan->filters)) {
-        pfl = db_create_read_log(chan);
-        if (!pfl) {
-            testFail("can't db_create_read_log w/ %s", pv);
-            goto done;
-        }
-
-        pfl = dbChannelRunPreChain(chan, pfl);
-        pfl = dbChannelRunPostChain(chan, pfl);
-    }
-
     gbuf = gstore = malloc(nStore);
     if(!gbuf && nStore!=0) { /* note that malloc(0) is allowed to return NULL on success */
         testFail("Allocation failed esize=%ld total=%ld", vSize, nStore);
         return;
     }
 
-    status = dbChannelGetField(chan, dbfType, gbuf, NULL, &nRequest, pfl);
+    status = dbChannelGetField(chan, dbfType, gbuf, NULL, &nRequest, NULL);
     if (status) {
         testFail("dbGetField(\"%s\", %d, ...) -> %#lx", pv, dbfType, status);
 

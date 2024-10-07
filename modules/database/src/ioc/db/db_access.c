@@ -148,6 +148,7 @@ int dbChannel_get_count(
     long options;
     long i;
     long zero = 0;
+    unsigned char local_fl = 0;
 
    /* The order of the DBR* elements in the "newSt" structures below is
     * very important and must correspond to the order of processing
@@ -155,6 +156,16 @@ int dbChannel_get_count(
     */
 
     dbScanLock(dbChannelRecord(chan));
+
+    /* If filters are involved in a read, create field log and run filters */
+    if (!pfl && (ellCount(&chan->pre_chain) || ellCount(&chan->post_chain))) {
+        pfl = db_create_read_log(chan);
+        if (pfl) {
+            local_fl = 1;
+            pfl = dbChannelRunPreChain(chan, pfl);
+            pfl = dbChannelRunPostChain(chan, pfl);
+        }
+    }
 
     switch(buffer_type) {
     case(oldDBR_STRING):
@@ -799,6 +810,8 @@ int dbChannel_get_count(
     }
 
     dbScanUnlock(dbChannelRecord(chan));
+
+    if (local_fl) db_delete_field_log(pfl);
 
     if (status) return -1;
     return 0;

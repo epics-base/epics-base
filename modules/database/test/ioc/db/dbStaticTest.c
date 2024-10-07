@@ -14,6 +14,7 @@
 #include <dbUnitTest.h>
 #include <testMain.h>
 #include <epicsString.h>
+#include <iocsh.h>
 
 
 static void testEntryRemoved(const char *pv)
@@ -321,16 +322,19 @@ static void testDbVerify(const char *record)
     dbFinishEntry(&entry);
 }
 
-static void testWrongAliasRecord(const char *filename)
+static void testReadDatabase(const char *filename, int expectToFail)
 {
     FILE *fp = NULL;
+    long status;
     dbPath(pdbbase,"." OSI_PATH_LIST_SEPARATOR "..");
     dbOpenFile(pdbbase, filename, &fp);
     if(!fp) {
-        testAbort("Unable to read %s", filename);
+        testAbort("Unable to open %s", filename);
     }
-    testOk(dbReadDatabaseFP(&pdbbase, fp, NULL, NULL) != 0,
-           "Wrong alias record in %s is expected to fail", filename);
+    status = dbReadDatabaseFP(&pdbbase, fp, NULL, NULL);
+    testOk(!status == !expectToFail,
+            "Reading %s%s", filename,
+            expectToFail ? " is expected to fail" : "");
 }
 
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
@@ -341,7 +345,7 @@ MAIN(dbStaticTest)
     char *ldirDup;
     FILE *fp = NULL;
 
-    testPlan(340);
+    testPlan(350);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -370,8 +374,21 @@ MAIN(dbStaticTest)
     }
     free(ldirDup);
 
-    testWrongAliasRecord("dbStaticTestAlias1.db");
-    testWrongAliasRecord("dbStaticTestAlias2.db");
+    testReadDatabase("dbStaticTestAlias1.db", 1);
+    testReadDatabase("dbStaticTestAlias2.db", 1);
+
+    /* Test re-defining aliases */
+    testReadDatabase("dbStaticTestAliasAgain1.db", 0);
+    testReadDatabase("dbStaticTestAliasAgain1.db", 0);
+    testReadDatabase("dbStaticTestAliasAgain2.db", 0);
+    testReadDatabase("dbStaticTestAliasAgain2.db", 0);
+    testReadDatabase("dbStaticTestAliasAgain3.db", 0);
+    testReadDatabase("dbStaticTestAliasAgain3.db", 0);
+    testReadDatabase("dbStaticTestAliasAgainError1.db", 1);
+    testReadDatabase("dbStaticTestAliasAgainError2.db", 1);
+    iocshCmd("var dbRecordsOnceOnly 1");
+    testReadDatabase("dbStaticTestAliasAgain2.db", 1);
+    testReadDatabase("dbStaticTestAliasAgain3.db", 1);
 
     testEntry("testrec.VAL");
     testEntry("testalias.VAL");

@@ -1,0 +1,2 @@
+# ERROR: alias using name of exising record fails
+alias("testrecAgain", "testrec")

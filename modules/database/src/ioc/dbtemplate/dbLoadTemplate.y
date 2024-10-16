@@ -41,6 +41,17 @@ static int var_count, sub_count;
 int dbTemplateMaxVars = 100;
 epicsExportAddress(int, dbTemplateMaxVars);
 
+static
+int msiLoadRecords(const char *fname, const char *subs)
+{
+    int ret = dbLoadRecords(fname, subs);
+    if(ret) {
+        fprintf(stderr, "dbLoadRecords(\"%s\", %s)\n", fname, subs);
+        yyerror("Error while reading included file");
+    }
+    return ret;
+}
+
 %}
 
 %start substitution_file
@@ -167,7 +178,7 @@ pattern_definition: global_definitions
         fprintf(stderr, "pattern_definition: pattern_values empty\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
     }
     | O_BRACE pattern_values C_BRACE
     {
@@ -175,7 +186,7 @@ pattern_definition: global_definitions
         fprintf(stderr, "pattern_definition:\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
         *sub_locals = '\0';
         sub_count = 0;
     }
@@ -190,7 +201,7 @@ pattern_definition: global_definitions
         fprintf(stderr, "pattern_definition:\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
         dbmfFree($1);
         *sub_locals = '\0';
         sub_count = 0;
@@ -250,7 +261,7 @@ variable_substitution: global_definitions
         fprintf(stderr, "variable_substitution: variable_definitions empty\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
     }
     | O_BRACE variable_definitions C_BRACE
     {
@@ -258,7 +269,7 @@ variable_substitution: global_definitions
         fprintf(stderr, "variable_substitution:\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
         *sub_locals = '\0';
     }
     | WORD O_BRACE variable_definitions C_BRACE
@@ -272,7 +283,7 @@ variable_substitution: global_definitions
         fprintf(stderr, "variable_substitution:\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
         dbmfFree($1);
         *sub_locals = '\0';
     }
@@ -328,6 +339,7 @@ int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
 {
     FILE *fp;
     int i;
+    int err;
 
     line_num = 1;
 
@@ -377,7 +389,7 @@ int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
         yyrestart(fp);
     }
 
-    yyparse();
+    err = yyparse();
 
     for (i = 0; i < var_count; i++) {
         dbmfFree(vars[i]);
@@ -390,5 +402,5 @@ int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
         dbmfFree(db_file_name);
         db_file_name = NULL;
     }
-    return 0;
+    return err;
 }

@@ -19,9 +19,12 @@
 O.*/
 
 # Common files created by other tools
+# Before adding patterns here, please read the gitignore
+# documentation at https://git-scm.com/docs/gitignore
 /QtC-*
 /.vscode/
 *.orig
 *.log
 .*.swp
 .DS_Store
+compile_commands.json

@@ -18,6 +18,7 @@ DBD += softIoc.dbd
 
 softIoc_DBD += base.dbd
 softIoc_DBD += dlload.dbd
+softIoc_DBD += afterInit.dbd
 softIoc_DBD += system.dbd
 
 softIoc_SRCS += softIoc_registerRecordDeviceDriver.cpp
@@ -29,4 +30,3 @@ softIoc_LIBS = $(EPICS_BASE_IOC_LIBS)
 DB += softIocExit.db
 
 CLEANS += epicsInstallDir.h
-

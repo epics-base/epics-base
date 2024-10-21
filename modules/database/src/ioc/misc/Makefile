@@ -11,9 +11,14 @@
 
 SRC_DIRS += $(IOCDIR)/misc
 
+# Include afterInit module with afterInit=YES
+ifeq ($(afterInit),YES)
+DBD += afterInit.dbd
+dbCore_SRCS += afterInit.c
+endif
+
 DBD += system.dbd
 DBD += dlload.dbd
-DBD += afterInit.dbd
 DBD += dbCore.dbd
 
 INC += epicsRelease.h
@@ -26,7 +31,6 @@ dbCore_SRCS += iocInit.c
 dbCore_SRCS += miscIocRegister.c
 dbCore_SRCS += dlload.c
 dbCore_SRCS += iocshRegisterCommon.c
-dbCore_SRCS += afterInit.c
 dbCore_SRCS += registerAllRecordDeviceDrivers.cpp
 
 miscIocRegister_CFLAGS_iOS = -DSYSTEM_UNAVAILABLE

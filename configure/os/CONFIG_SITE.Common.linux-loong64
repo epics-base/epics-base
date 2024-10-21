@@ -1,0 +1,48 @@
+# CONFIG_SITE.Common.linux-loong64
+#
+# Site Specific definitions for all linux-loong64 targets
+#-------------------------------------------------------
+
+# NOTE for SHARED_LIBRARIES: In most cases if this is set to YES the
+# shared libraries will be found automatically.  However if the .so
+# files are installed at a different path to their compile-time path
+# then in order to be found at runtime do one of these:
+# a) LD_LIBRARY_PATH must include the full absolute pathname to
+#    $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when invoking base
+#    executables.
+# b) Add the runtime path to SHRLIB_DEPLIB_DIRS and PROD_DEPLIB_DIRS, which 
+#    will add the named directory to the list contained in the executables.
+# c) Add the runtime path to /etc/ld.so.conf and run ldconfig
+#    to inform the system of the shared library location.
+
+# Depending on your version of Linux you'll want one of the following
+# lines to enable command-line editing and history in iocsh.  If you're
+# not sure which, start with the top one and work downwards until the
+# build doesn't fail to link the readline library.  If none of them work,
+# comment them all out to build without readline support.
+
+# No other libraries needed (recent Fedora, Ubuntu etc.):
+#COMMANDLINE_LIBRARY = READLINE
+
+# Needs -lncurses (RHEL 5 etc.):
+#COMMANDLINE_LIBRARY = READLINE_NCURSES
+
+# Needs -lcurses (older versions)
+#COMMANDLINE_LIBRARY = READLINE_CURSES
+
+# Readline is broken or you don't want use it:
+#COMMANDLINE_LIBRARY = EPICS
+
+
+# WARNING: Variables that are set in $(CONFIG)/CONFIG.gnuCommon cannot be
+# overridden in this file for native builds, e.g. variables such as
+#    OPT_CFLAGS_YES, WARN_CFLAGS, SHRLIB_LDFLAGS
+# They must be set in CONFIG_SITE.linux-loong64.linux-loong64 or for
+# cross-builds in CONFIG_SITE.<host-arch>.linux-loong64 instead.
+
+# Tune GNU compiler output for a specific cpu-type
+# (e.g. loongarch64, la264, la364, la464 etc.)
+GNU_ARCH_CFLAGS = -march=loongarch64
+GNU_TUNE_CFLAGS = -mtune=loongarch64
+# Enable soft-float feature (e.g. none, 32, 64)
+GNU_DEP_CFLAGS = -mfpu=none

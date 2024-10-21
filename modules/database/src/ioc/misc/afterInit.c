@@ -1,5 +1,5 @@
 /* Copyright (C) 2020 Dirk Zimoch */
-/* Copyright (C) 2020-2023 European Spallation Source, ERIC */
+/* Copyright (C) 2020-2024 European Spallation Source, ERIC */
 
 #include <dbAccess.h>
 #include <epicsExport.h>
@@ -12,23 +12,36 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct cmditem {
+// Version within the message
+static const char helpMessage[] =
+  "afterInit version 1.0.1\n"
+  "Allows you to define commands to be run after the iocInit\n"
+  "Example commands:\n"
+  "  afterInit \"dbpf <PV> <VAL>\"\n"
+  "  afterInit \"date\"\n";
+
+struct cmditem
+{
   struct cmditem *next;
   char *cmd;
 };
 
-struct cmditem *cmdlist, **cmdlast = &cmdlist;
+static struct cmditem *cmdlist, **cmdlast = &cmdlist;
 
-void afterInitHook(initHookState state) {
-  if (state != initHookAfterIocRunning) return;
+static void afterInitHook(initHookState state)
+{
+  if(state != initHookAfterIocRunning)
+    return;
 
   struct cmditem *item = cmdlist;
   struct cmditem *next = NULL;
-  while (item) {
-    printf("%s\n", item->cmd);
-    if (iocshCmd(item->cmd)) {
-      errlogPrintf("afterInit: Command '%s' failed to run\n", item->cmd);
-    };
+  while(item)
+  {
+    epicsStdoutPrintf("%s\n", item->cmd);
+
+    if(iocshCmd(item->cmd))
+      errlogPrintf("ERROR afterInit command '%s' failed to run\n", item->cmd);
+
     next = item->next;
     free(item->cmd);
     free(item);
@@ -36,56 +49,78 @@ void afterInitHook(initHookState state) {
   }
 }
 
-static struct cmditem *newItem(char *cmd) {
-  struct cmditem *item;
-  item = malloc(sizeof(struct cmditem));
-  if (item == NULL) {
+static struct cmditem *newItem(char *cmd)
+{
+  struct cmditem *item = malloc(sizeof(struct cmditem));
+
+  if(item == NULL)
+  {
+    errno = ENOMEM;
     return NULL;
   }
-  item->cmd = epicsStrDup(cmd);
-  item->next = NULL;
 
+  item->cmd = epicsStrDup(cmd);
+
+  if(item->cmd == NULL)
+  {
+    free(item);
+    errno = ENOMEM;
+    return NULL;
+  }
+
+  item->next = NULL;
   *cmdlast = item;
   cmdlast = &item->next;
   return item;
 }
 
 static const iocshFuncDef afterInitDef = {
-    "afterInit", 1,
-    (const iocshArg *[]){
-        &(iocshArg){"commandline", iocshArgString},
-    }};
+  "afterInit",
+  1,
+  (const iocshArg *[]){&(iocshArg){"command (before iocInit)", iocshArgString}},
+  helpMessage};
 
-static void afterInitFunc(const iocshArgBuf *args) {
+static void afterInitFunc(const iocshArgBuf *args)
+{
   static int first_time = 1;
-  char *cmd;
+  char *cmd = args[0].sval;
 
-  if (first_time) {
+  if(interruptAccept)
+  {
+    errlogPrintf("WARNING afterInit can only be used before iocInit (check help)\n");
+    return;
+  }
+
+  if(!cmd || !cmd[0])
+  {
+    errlogPrintf("WARNING afterInit received an empty argument (check help)\n");
+    return;
+  }
+
+  if(first_time)
+  {
     first_time = 0;
-    initHookRegister(afterInitHook);
-  }
-  if (interruptAccept) {
-    errlogPrintf("afterInit can only be used before iocInit\n");
-    return;
+    if(initHookRegister(afterInitHook) < 0)
+    {
+      errno = ENOMEM;
+      errlogPrintf("ERROR initHookRegister memory allocation failure %s\n", strerror(errno));
+    }
   }
 
-  cmd = args[0].sval;
-  if (!cmd || !cmd[0]) {
-    errlogPrintf("Usage: afterInit \"command\"\n");
-    return;
-  }
   struct cmditem *item = newItem(cmd);
 
-  if (!item)
-    errlogPrintf("afterInit: error adding command %s; %s", cmd,
-                 strerror(errno));
+  if(!item)
+    errlogPrintf("ERROR afterInit failed to add the command '%s' %s\n", cmd, strerror(errno));
 }
 
-static void afterInitRegister(void) {
-  static int firstTime = 1;
-  if (firstTime) {
-    firstTime = 0;
+static void afterInitRegister(void)
+{
+  static int first_time = 1;
+  if(first_time)
+  {
+    first_time = 0;
     iocshRegister(&afterInitDef, afterInitFunc);
   }
 }
+
 epicsExportRegistrar(afterInitRegister);

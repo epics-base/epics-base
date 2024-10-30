@@ -90,6 +90,10 @@ static epicsThreadPrivateId iocshContextId;
 
 static void iocshInit (void);
 
+/* These are defined in osi/os/.../osdEnv.c */
+extern void osdEnvSet(const char *name, const char *value);
+extern void osdEnvUnset (const char *name);
+
 /*
  * I/O redirection
  */
@@ -1349,19 +1353,13 @@ iocshRun(const char *cmd, const char *macros)
 }
 
 /*
- * Needed to work around the necessary limitations of macLib and
- * environment variables. In every other case of macro expansion
- * it is the expected outcome that defined macros override any
- * environment variables.
+ * Environment variables are global, so setting one should clear any
+ * iocsh variables (macros) with the same name. However we do allow
+ * local iocsh variables to hide environment variables in this context
+ * or child iocsh contexts created for scripts run using iocshLoad.
  *
- * iocshLoad/Run turn this on its head as it is very likely that
- * an epicsEnvSet command may be run within the context of their
- * calls. Thus, it would be expected that the new value would be
- * returned in any future macro expansion.
- *
- * To do so, the epicsEnvSet command needs to be able to access
- * and update the shared MAC_HANDLE that the iocsh uses. Which is
- * what this function is provided for.
+ * To implement that, epicsEnvSet and epicsEnvUnset clear local macros
+ * by calling iocshEnvClear.
  */
 void epicsStdCall
 iocshEnvClear(const char *name)
@@ -1376,6 +1374,21 @@ iocshEnvClear(const char *name)
         }
     }
 }
+
+void epicsStdCall
+epicsEnvSet (const char *name, const char *value)
+{
+    iocshEnvClear(name);
+    osdEnvSet(name, value);
+}
+
+void epicsStdCall
+epicsEnvUnset (const char *name)
+{
+    iocshEnvClear(name);
+    osdEnvUnset(name);
+}
+
 
 /*
  * Internal commands

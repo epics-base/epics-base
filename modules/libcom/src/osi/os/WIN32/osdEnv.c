@@ -24,7 +24,6 @@
 #include "envDefs.h"
 #include "osiUnistd.h"
 #include "epicsFindSymbol.h"
-#include "iocsh.h"
 
 static
 void setEnv(const char *name, const char *value)
@@ -39,9 +38,8 @@ void setEnv(const char *name, const char *value)
  * Leaks memory, but the assumption is that this routine won't be
  * called often enough for the leak to be a problem.
  */
-LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
+void osdEnvSet (const char *name, const char *value)
 {
-    iocshEnvClear(name);
     setEnv(name, value);
 }
 
@@ -50,9 +48,8 @@ LIBCOM_API void epicsStdCall epicsEnvSet (const char *name, const char *value)
  * Using putenv with a an existing name plus "=" (without value) deletes
  */
 
-LIBCOM_API void epicsStdCall epicsEnvUnset (const char *name)
+void osdEnvUnset (const char *name)
 {
-    iocshEnvClear(name);
     setEnv(name, "");
 }
 

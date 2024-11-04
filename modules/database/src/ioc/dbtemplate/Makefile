@@ -14,6 +14,7 @@ SRC_DIRS += $(IOCDIR)/dbtemplate
 PROD_HOST += msi
 
 msi_SRCS = msi.cpp
+msi_SYS_LIBS_WIN32 = shlwapi
 DOCS += msi.md
 
 INC += dbLoadTemplate.h

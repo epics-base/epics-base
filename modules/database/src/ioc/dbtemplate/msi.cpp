@@ -27,6 +27,10 @@
 #include <osiFileName.h>
 #include <osiUnistd.h>
 
+#ifdef _WIN32
+#include <shlwapi.h>
+#endif
+
 #define MAX_BUFFER_SIZE 4096
 #define MAX_DEPS 1024
 
@@ -493,6 +497,14 @@ static void inputErrPrint(const inputData *const pinputData)
     EXIT;
 }
 
+static int isPathRelative(const char * const path) {
+#ifdef _WIN32
+    return path && PathIsRelativeA(path);
+#else
+    return path && path[0] != '/';
+#endif
+}
+
 static void inputOpenFile(inputData *pinputData, const char * const filename)
 {
     std::list<std::string>& pathList = pinputData->pathList;
@@ -505,7 +517,7 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
         STEP("Using stdin");
         fp = stdin;
     }
-    else if (pathList.empty() || strchr(filename, '/')){
+    else if (pathList.empty() || !isPathRelative(filename)){
         STEPS("Opening ", filename);
         fp = fopen(filename, "r");
     }

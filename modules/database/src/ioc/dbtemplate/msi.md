@@ -60,6 +60,18 @@ Switches have the following meanings:
      2. . (the current directory)
      3. .. (the parent of the current directory)
 
+    Note that relative path searching is handled as
+    
+        $ cat foo.substitutions
+        file rel/path/bar.template {
+          # contents
+        }
+        $ msi -I . -I /some/path foo.substitutions
+    
+    which will try to find `bar.template` at the path `./rel/path/` followed by
+    `/some/path/rel/path`.
+
+
 - **-M _substitutions_**
 
     This parameter specifies macro values for the template instance.

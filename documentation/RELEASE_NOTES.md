@@ -27,6 +27,30 @@ should also be read to understand what has changed since earlier releases:
 Updating property fields now only post DBE_PROPERTY events if the
 field actually changed.
 
+### Changes to msi related to include paths
+
+There are two changes to `msi` included here.
+
+`msi` now treats files included by .template or .substutiions files in a more
+consistent way: for relative paths, it will always look relative to the current
+working directory if no `-I` flags are passed, and if they are passed then it
+will search for the _relative_ path from each of those flags. That is, the
+following will now find the file `bar.template` located at
+`/some/path/rel/path/bar.template`
+```
+$ cat foo.substitutions
+file rel/path/bar.template {
+ # contents
+}
+$ msi -I /some/path foo.substitutions
+```
+
+Note that this does provide one change from previous behaviour: when opening a
+file from the command line, `msi` will not use the `-I`-specified paths to
+search for the file, but will only work relative to the current working
+directory, consistent with most commandline utilities.
+
+
 ### Allow users to delete previously created records from the database
 
 From this release, record instances and aliases that have already been loaded

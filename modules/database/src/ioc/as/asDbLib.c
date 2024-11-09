@@ -226,8 +226,8 @@ static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
 
     recordname = (char *)asGetClientPvt(clientPvt);
     printf("astac callback %s: status=%d",recordname,status);
-    printf(" get %s put %s\n",(asCheckGet(clientPvt) ? "Yes" : "No"),
-        (asCheckPut(clientPvt) ? "Yes" : "No"));
+    printf(" get %s put %s rpc %s\n",(asCheckGet(clientPvt) ? "Yes" : "No"),
+        (asCheckPut(clientPvt) ? "Yes" : "No"), (asCheckRPC(clientPvt) ? "Yes" : "No"));
 }
 
 int astac(const char *pname,const char *user,const char *location)

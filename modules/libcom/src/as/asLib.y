@@ -17,14 +17,28 @@ static UAG *yyUag=NULL;
 static HAG *yyHag=NULL;
 static ASG *yyAsg=NULL;
 static ASGRULE *yyAsgRule=NULL;
+static int yyInp=0;
 %}
 
 %start asconfig
 
 %token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC
-%token <Str> tokenINP
+%token tokenMETHOD tokenAUTHORITY
+%token tokenREAD tokenWRITE tokenRPC tokenNONE
+%token <Int> tokenINP
 %token <Int> tokenINTEGER
 %token <Str> tokenSTRING
+
+%token tokenYAML_START
+%token tokenYAML_USERS tokenYAML_HOSTS tokenYAML_LINKS tokenYAML_RULES
+%token tokenYAML_TRAPWRITE
+%token <Int> tokenYAML_LEVEL
+%token <Str> tokenYAML_NAME
+%token <Str> tokenYAML_VERSION
+%token <Int> tokenYAML_ACCESS
+%token <Str> tokenYAML_CALC
+%token <Str> tokenYAML_INP
+%type  <Int> access_right
 
 %union
 {
@@ -34,10 +48,18 @@ static ASGRULE *yyAsgRule=NULL;
 
 %%
 
-asconfig:   asconfig asconfig_item
-    |   asconfig_item
+asconfig: yaml_config
+    |    legacy_config
+    ;
 
-asconfig_item:  tokenUAG uag_head uag_body
+yaml_config: tokenYAML_START yaml_content
+    ;
+
+legacy_config: legacy_config legacy_item
+    |   legacy_item
+    ;
+
+legacy_item:  tokenUAG uag_head uag_body
     |   tokenUAG uag_head
     |   tokenHAG hag_head hag_body
     |   tokenHAG hag_head
@@ -114,7 +136,7 @@ asg_body_item:  inp_config | rule_config
 
 inp_config: tokenINP '(' tokenSTRING ')'
     {
-        if (asAsgAddInp(yyAsg,$3,$<Int>1))
+        if (asAsgAddInp(yyAsg,$3,$1))
             yyerror("");
         free((void *)$3);
     }
@@ -125,23 +147,17 @@ rule_config:    tokenRULE rule_head rule_body
 
 rule_head: rule_head_manditory rule_head_options
 
-rule_head_manditory:    '(' tokenINTEGER ',' tokenSTRING
-    {
-        asAccessRights  rights;
 
-        if((strcmp($4,"NONE")==0)) {
-            rights=asNOACCESS;
-        } else if((strcmp($4,"READ")==0)) {
-            rights=asREAD;
-        } else if((strcmp($4,"WRITE")==0)) {
-            rights=asWRITE;
-        } else {
-            yyerror("Access rights must be NONE, READ or WRITE");
-            rights = asNOACCESS;
-        }
-        yyAsgRule = asAsgAddRule(yyAsg,rights,$2);
-        free((void *)$4);
+rule_head_manditory:    '(' tokenINTEGER ',' access_right
+    {
+        yyAsgRule = asAsgAddRule(yyAsg,$4,$2);
     }
+    ;
+
+access_right: tokenREAD    { $$ = asREAD; }
+    |         tokenWRITE   { $$ = asWRITE; }
+    |         tokenRPC     { $$ = asRPC; }
+    |         tokenNONE    { $$ = asNOACCESS; }
     ;
 
 rule_head_options: ')'
@@ -175,6 +191,8 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
             yyerror("");
         free((void *)$3);
     }
+    |   tokenMETHOD '(' rule_method_list ')'
+    |   tokenAUTHORITY '(' rule_authority_list ')'
     ;
 
 rule_uag_list:  rule_uag_list ',' rule_uag_list_name
@@ -200,6 +218,277 @@ rule_hag_list_name: tokenSTRING
         free((void *)$1);
     }
     ;
+
+rule_method_list: rule_method_list ',' rule_method_list_name
+    |   rule_method_list_name
+    ;
+
+rule_method_list_name: tokenSTRING
+    {
+        if (asAsgRuleMethodAdd(yyAsgRule, $1))
+            yyerror("");
+        free((void *)$1);
+    }
+    ;
+
+rule_authority_list: rule_authority_list ',' rule_authority_list_name
+    |   rule_authority_list_name
+    ;
+
+rule_authority_list_name: tokenSTRING
+    {
+        if (asAsgRuleAuthorityAdd(yyAsgRule, $1))
+            yyerror("");
+        free((void *)$1);
+    }
+    ;
+
+/* YAML Content processing rules */
+
+yaml_content: tokenYAML_VERSION yaml_versioned_content
+    {
+        if(strcmp($1, "1.0") != 0) {
+            yyerror("Unsupported YAML version");
+        }
+        free((void *)$1);
+    }
+    ;
+
+
+yaml_versioned_content: yaml_versioned_content yaml_content_item
+    |   yaml_content_item
+    ;
+
+yaml_content_item: yaml_uags
+    |   yaml_hags
+    |   yaml_asgs
+    ;
+
+
+yaml_uags: tokenUAG yaml_uag_list
+    ;
+
+yaml_hags: tokenHAG yaml_hag_list
+    ;
+
+yaml_asgs: tokenASG yaml_asg_list
+    ;
+
+
+yaml_uag_list: yaml_uag_list yaml_uag_item
+    |   yaml_uag_item
+    ;
+
+yaml_hag_list: yaml_hag_list yaml_hag_item
+    |   yaml_hag_item
+    ;
+
+yaml_asg_list: yaml_asg_list yaml_asg_item
+    |   yaml_asg_item
+    ;
+
+
+yaml_uag_item: yaml_uag_name yaml_uag_users
+    ;
+
+yaml_hag_item: yaml_hag_name yaml_hag_hosts
+    ;
+
+yaml_asg_item: yaml_asg_name yaml_asg_configuration
+    ;
+
+
+yaml_asg_configuration: yaml_asg_configuration yaml_asg_configuration_item
+    |   yaml_asg_configuration_item
+    ;
+
+yaml_asg_configuration_item: yaml_asg_links
+    |   yaml_asg_rules
+    ;
+
+
+yaml_uag_name: tokenYAML_NAME
+    {
+        yyUag = asUagAdd($1);
+        if(!yyUag) yyerror("Unable to add UAG");
+        free((void *)$1);
+    }
+    ;
+
+yaml_hag_name: tokenYAML_NAME
+    {
+        yyHag = asHagAdd($1);
+        if(!yyHag) yyerror("Unable to add HAG");
+        free((void *)$1);
+    }
+    ;
+
+yaml_asg_name: tokenYAML_NAME
+    {
+        yyAsg = asAsgAdd($1);
+        if(!yyAsg) yyerror("Unable to add ASG");
+        free((void *)$1);
+    }
+    ;
+
+
+yaml_uag_users: tokenYAML_USERS yaml_uag_users_list
+    ;
+
+yaml_hag_hosts: tokenYAML_HOSTS yaml_hag_hosts_list
+    ;
+
+yaml_asg_links: tokenYAML_LINKS yaml_asg_links_list
+    ;
+
+yaml_asg_rules: tokenYAML_RULES yaml_asg_rules_list
+    ;
+
+
+yaml_uag_users_list: yaml_uag_users_list yaml_user_item
+    |   yaml_user_item
+    ;
+
+yaml_hag_hosts_list: yaml_hag_hosts_list yaml_host_item
+    |   yaml_host_item
+    ;
+
+yaml_asg_links_list: yaml_asg_links_list yaml_link
+    |   yaml_link
+    ;
+
+yaml_asg_rules_list: yaml_asg_rules_list yaml_rule
+    |   yaml_rule
+    ;
+
+
+yaml_user_item: tokenSTRING
+    {
+        if (asUagAddUser(yyUag, $1))
+            yyerror("Unable to add user to UAG");
+        free((void *)$1);
+    }
+    ;
+
+yaml_host_item: tokenSTRING
+    {
+        if (asHagAddHost(yyHag, $1))
+            yyerror("Unable to add host to HAG");
+        free((void *)$1);
+    }
+    ;
+
+yaml_link: tokenYAML_INP
+    {
+        if (asAsgAddInp(yyAsg,$1,yyInp))
+            yyerror("Unable to add link to ASG");
+        free((void *)$1);
+    }
+    ;
+
+yaml_rule: yaml_rule_head yaml_rule_trap_option yaml_rule_body
+    |   yaml_rule_head yaml_rule_body
+    |   yaml_rule_head
+    ;
+
+yaml_rule_head: tokenYAML_LEVEL tokenYAML_ACCESS
+    {
+        yyAsgRule = asAsgAddRule(yyAsg, $2, $1);
+        if (!yyAsgRule) {
+            yyerror("Failed to add rule");
+            }
+    }
+    ;
+
+yaml_rule_trap_option: tokenYAML_TRAPWRITE
+    {
+        if (asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE))
+            yyerror("Unable to add trapwrite option to the ASG rule");
+    }
+    ;
+
+yaml_rule_body: yaml_rule_body yaml_rule_item
+    |   yaml_rule_item
+    ;
+
+yaml_rule_item: yaml_rule_calc
+    |   yaml_rule_uags
+    |   yaml_rule_hags
+    |   yaml_rule_methods
+    |   yaml_rule_authoritys
+    ;
+
+yaml_rule_calc: tokenYAML_CALC
+    {
+        if (asAsgRuleCalc(yyAsgRule,$1))
+            yyerror("Unable to add calc to the ASG rule");
+        free((void *)$1);
+    }
+    ;
+
+yaml_rule_uags:  tokenUAG yaml_rule_uag_list
+    ;
+
+yaml_rule_hags:  tokenHAG yaml_rule_hag_list
+    ;
+
+yaml_rule_methods:  tokenMETHOD yaml_rule_method_list
+    ;
+
+yaml_rule_authoritys:  tokenAUTHORITY yaml_rule_authority_list
+    ;
+
+
+
+yaml_rule_uag_list: yaml_rule_uag_list yaml_rule_uag_item
+    |   yaml_rule_uag_item
+    ;
+
+yaml_rule_hag_list: yaml_rule_hag_list yaml_rule_hag_item
+    |   yaml_rule_hag_item
+    ;
+
+yaml_rule_method_list: yaml_rule_method_list yaml_rule_method_item
+    |   yaml_rule_method_item
+    ;
+
+yaml_rule_authority_list: yaml_rule_authority_list yaml_rule_authority_item
+    |   yaml_rule_authority_item
+    ;
+
+
+yaml_rule_uag_item: tokenSTRING
+    {
+        if (asAsgRuleUagAdd(yyAsgRule,$1))
+            yyerror("Unable to add UAG constraint to the ASG rule");
+        free((void *)$1);
+    }
+    ;
+
+yaml_rule_hag_item: tokenSTRING
+    {
+        if (asAsgRuleHagAdd(yyAsgRule,$1))
+            yyerror("Unable to add HAG constraint to the ASG rule");
+        free((void *)$1);
+    }
+    ;
+
+yaml_rule_method_item: tokenSTRING
+    {
+        if (asAsgRuleMethodAdd(yyAsgRule,$1))
+            yyerror("Unable to add authentication method constraint to the ASG rule");
+        free((void *)$1);
+    }
+    ;
+
+yaml_rule_authority_item: tokenSTRING
+    {
+        if (asAsgRuleAuthorityAdd(yyAsgRule,$1))
+            yyerror("Unable to add authentication authority constraint to the ASG rule");
+        free((void *)$1);
+    }
+    ;
+
 %%
 
 #include "asLib_lex.c"

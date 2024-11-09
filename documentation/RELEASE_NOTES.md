@@ -96,6 +96,119 @@ For example this will remove the record named "unwanted":
 record("#", "unwanted") {}
 ```
 
+### Access Security: Certificate-based Authorization
+
+Added two new fields to `ASG(){RULE() {<new_fields>}}`, and added a new access type, `RPC`, to ASG(){RULE(<new_type>)}.  Three new API functions were also added to the `libcom` library to support these new features.  The ability to provide ACF files in EPICS YAML format has been added.
+
+There are no external dependencies for these features.
+
+#### New Fields
+- `METHOD("type"[,...])` - Controls PV access authorization based on the connection method (e.g. "x509", "ca", "anonymous").  True if any match.  "x509" is for connections that have been established by and identity authenticated with an X509 certificate.
+- `AUTHORITY("common_name"[,...])` - Controls PV access authorization based on the Common Name of the Certificate Authority that signed the client's certificate.  True if any match.  Only applies to connections that have been established by an identity authenticated with an X509 certificate.
+
+These fields accept comma-separated lists and work with Secure PVAccess connections. Multiple entries in each field act as a logical OR. For example to mandate Stanford National Laboratory or Stanford University issued certificate-based authentication use the following rule:
+
+```
+ASG(secure) {
+    RULE(1, WRITE) {
+        METHOD("x509")
+        AUTHORITY("SLAC.STANFORD.EDU CA", "STANFORD.EDU CA")
+    }
+}
+```
+
+This allows fine-grained access control based on both how clients connect and who issued their certificates.  "x509" is for connections that have been
+established by and identity authenticated with an X509 certificate. 
+
+The new `METHOD` and `AUTHORITY` fields are not compatible with previous versions EPICS, and will cause syntax errors when parsed.  Only use these fields with servers compiled with release. Older clients will provide `METHOD` as "ca" or "anonymous" and will always send a blank `AUTHORITY` field.  For such clients you can provide rules as follows which will be triggered for all legacy connections:
+
+```
+ASG(secure) {
+    RULE(1, READ) {
+        METHOD("ca", "anonymous")
+    }
+}
+```
+#### New Access Type
+- `RPC` - Access type to control access to PVs by RPC
+
+A new RULE access name `RPC` has been added to control allow access to RPC connections.  However, the implementation of actual control to PVs via RPS has not yet been implemented, so RPC will operate as if it were `WRITE`. Multiple entries in each field act as a logical OR.  e.g.
+
+```
+ASG(rpc) {
+    RULE(1, RPC) {
+        METHOD("ca", "anonymous")
+    }
+}
+```
+
+#### API Functions
+
+Three new API functions `asAddClientX()`, `asChangeClientX()`, and `asTrapWriteBeforeWithDataX()` were added to the `libcom` module to support these new features.  They are corollaries to the existing `asAddClient()`, `asChangeClient()`, and `asTrapWriteBeforeWithData()` functions, but with the addition of the new `method` and `authority` parameters.
+
+```c++
+LIBCOM_API long epicsStdCall asAddClientX(ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt, int asl,const char *user,char *method,char *authority,char *host);
+LIBCOM_API long epicsStdCall asChangeClientX(ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority,char *host);
+LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithDataX(
+    const char *userid, const char *method, const char *authority, const char *hostid, struct dbChannel *addr,
+    int dbrType, int no_elements, void *data);
+```
+
+New API functions have been added to preserve backwards compatibility with existing clients, and because neither function overloading nor default parameters are supported in the version of C++ used for this release.
+
+#### EPICS YAML format for ACF files
+ACF Files can be specified in YAML format as of this release.  Any ACF file that contains a line that starts with `# EPICS YAML` will introduce yaml processing from that point forwards.  The yaml must include a version number entry.  For the moment only version 1.0 EPICS YAML is supported. For example:
+
+```yaml
+# EPICS YAML
+version: 1.0
+
+# user access groups
+uags:
+  - name: bar
+    users:
+      - boss
+  - name: foo
+    users:
+      - testing
+  - name: ops
+    users:
+      - geek
+
+# host access groups
+hags:
+  - name: local
+    hosts:
+      - 127.0.0.1
+      - localhost
+      - 192.168.0.11
+  - name: admin
+    hosts:
+      - admin.intranet.com
+
+# Access security group definitions
+asgs:
+  # read write access for foo with a secure connection authenticated by Epics Org CA 
+  - name: rw        
+    links:
+      - INPA: PVX
+      - INPB: PVY
+    rules:
+      - level: 0
+        access: NONE
+        trapwrite: false
+      - level: 1
+        access: WRITE
+        trapwrite: true
+        calc: A+B
+        uags:
+          - foo
+        methods:
+          - x509
+        authorities:
+          - Epics Org CA
+```
+
 ### Only keep readline history for interactive sessions
 
 Previously, all IOCsh commands were persisited in the libreadline history
@@ -130,11 +243,9 @@ The override introduced in 7.0.8.1 has been removed.
 The pvDatabase module was updated to version 4.7.2:
 
 * Resolved issue with changed field set in the case where the top level (master)
-field ("_") is not requested by the client, but the master field callback causes
-all fields to be marked as updated, rather than only those fields that have
-actually been modified.
-
------
+  field ("_") is not requested by the client, but the master field callback causes
+  all fields to be marked as updated, rather than only those fields that have
+  actually been modified.
 
 ## EPICS Release 7.0.8.1
 

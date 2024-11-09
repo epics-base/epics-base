@@ -807,10 +807,11 @@ static void showChanList (
     while ( pciu ){
         dbChannelShow ( pciu->dbch, level, 8 );
         if ( level >= 1u )
-            printf( "%12s# on eventq=%d, access=%c%c\n", "",
+            printf( "%12s# on eventq=%d, access=%c%c%c\n", "",
                 ellCount ( &pciu->eventq ),
                 asCheckGet ( pciu->asClientPVT ) ? 'r': '-',
-                rsrvCheckPut ( pciu ) ? 'w': '-' );
+                rsrvCheckPut ( pciu ) ? 'w': '-',
+                rsrvCheckCall ( pciu ) ? 'x': '-' );
         pciu = ( struct channel_in_use * ) ellNext ( &pciu->node );
     }
     epicsMutexUnlock ( client->chanListLock );
@@ -848,6 +849,10 @@ static void log_one_client (struct client *client, unsigned level)
         client->minor_version_number,
         client->priority,
         n, n == 1 ? "" : "s" );
+
+    printf ( "\tMethod '%s', Authority '%s', \n",
+        client->pMethod?client->pMethod:"",
+        client->pAuthority?client->pAuthority:"");
 
     if ( level >= 3u ) {
         double         send_delay;
@@ -1133,6 +1138,14 @@ void destroy_client ( struct client *client )
         free ( client->pUserName );
     }
 
+    if ( client->pMethod ) {
+        free ( client->pMethod );
+    }
+
+    if ( client->pAuthority ) {
+        free ( client->pAuthority );
+    }
+
     if ( client->pHostName ) {
         free ( client->pHostName );
     }
@@ -1272,6 +1285,8 @@ struct client * create_client ( SOCKET sock, int proto )
     }
 
     client->pUserName = NULL;
+    client->pMethod = NULL;
+    client->pAuthority = NULL;
     client->pHostName = NULL;
     ellInit ( & client->chanList );
     ellInit ( & client->chanPendingUpdateARList );

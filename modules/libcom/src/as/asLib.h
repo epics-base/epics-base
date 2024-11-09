@@ -42,21 +42,28 @@ typedef void (*ASCLIENTCALLBACK) (ASCLIENTPVT,asClientStatus);
 /* The following  routines are macros with the following syntax
 long asCheckGet(ASCLIENTPVT asClientPvt);
 long asCheckPut(ASCLIENTPVT asClientPvt);
+long asCheckRPC(ASCLIENTPVT asClientPvt);
 */
 #define asCheckGet(asClientPvt) \
     (!asActive || ((asClientPvt)->access >= asREAD))
 #define asCheckPut(asClientPvt) \
     (!asActive || ((asClientPvt)->access >= asWRITE))
+#define asCheckRPC(asClientPvt) \
+    (!asActive || ((asClientPvt)->access >= asRPC))
 
 /* More convenience macros
 void *asTrapWriteWithData(ASCLIENTPVT asClientPvt,
-     const char *userid, const char *hostid, void *addr,
+     const char *userid, char *method, char *authority, const char *hostid, void *addr,
      int dbrType, int no_elements, void *data);
 void asTrapWriteAfter(ASCLIENTPVT asClientPvt);
 */
 #define asTrapWriteWithData(asClientPvt, user, host, addr, type, count, data) \
     ((asActive && (asClientPvt)->trapMask) \
-    ? asTrapWriteBeforeWithData((user), (host), (addr), (type), (count), (data)) \
+    ? asTrapWriteBeforeWithDataX((user), "ca", NULL, (host), (addr), (type), (count), (data)) \
+    : 0)
+#define asTrapWriteWithDataX(asClientPvt, user, method, authority, host, addr, type, count, data) \
+    ((asActive && (asClientPvt)->trapMask) \
+    ? asTrapWriteBeforeWithDataX((user), (method), (authority), (host), (addr), (type), (count), (data)) \
     : 0)
 #define asTrapWriteAfter(pvt) \
     if (pvt) asTrapWriteAfterWrite(pvt)
@@ -92,6 +99,13 @@ LIBCOM_API long epicsStdCall asAddClient(
 /*client must provide permanent storage for user and host*/
 LIBCOM_API long epicsStdCall asChangeClient(
     ASCLIENTPVT asClientPvt,int asl,const char *user,char *host);
+/*client must provide permanent storage for user, host, method, and authority */
+LIBCOM_API long epicsStdCall asAddClientX(
+    ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
+    int asl,const char *user,char *method,char *authority,char *host);
+/*client must provide permanent storage for user, host, method, and authority */
+LIBCOM_API long epicsStdCall asChangeClientX(
+    ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority,char *host);
 LIBCOM_API long epicsStdCall asRemoveClient(ASCLIENTPVT *asClientPvt);
 LIBCOM_API void * epicsStdCall asGetClientPvt(ASCLIENTPVT asClientPvt);
 LIBCOM_API void epicsStdCall asPutClientPvt(
@@ -126,6 +140,10 @@ LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithData(
     const char *userid, const char *hostid, struct dbChannel *addr,
     int dbrType, int no_elements, void *data);
 
+LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithDataX(
+    const char *userid, const char *method, const char *authority, const char *hostid, struct dbChannel *addr,
+    int dbrType, int no_elements, void *data);
+
 LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
 
 #define S_asLib_clientsExist    (M_asLib| 1) /*Client Exists*/
@@ -142,12 +160,14 @@ LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
 #define S_asLib_badClient       (M_asLib|12) /*access security: bad ASCLIENTPVT*/
 #define S_asLib_badAsg          (M_asLib|13) /*access security: bad ASG*/
 #define S_asLib_noMemory        (M_asLib|14) /*access security: no Memory */
+#define S_asLib_dupAuthority    (M_asLib|15) /*access security: Duplicate Authority*/
+#define S_asLib_dupMethod       (M_asLib|16) /*access security: Duplicate Method */
 
 /*Private declarations */
 LIBCOM_API extern int asActive;
 
 /* definition of access rights*/
-typedef enum{asNOACCESS,asREAD,asWRITE} asAccessRights;
+typedef enum{asNOACCESS,asREAD,asWRITE,asRPC} asAccessRights;
 
 struct gphPvt;
 
@@ -181,6 +201,16 @@ typedef struct hag{
     char            *name;
     ELLLIST         list;   /*list of HAGNAME*/
 } HAG;
+/*Defs for Methods*/
+typedef struct{
+    ELLNODE         node;
+    char            *name;
+} METHOD;
+/*Defs for Authorities*/
+typedef struct{
+    ELLNODE         node;
+    char            *name;
+} AUTHORITY;
 /*Defs for Access SecurityGroups*/
 typedef struct {
     ELLNODE         node;
@@ -190,6 +220,14 @@ typedef struct {
     ELLNODE         node;
     HAG             *phag;
 }ASGHAG;
+typedef struct asgmethod {
+    ELLNODE node;
+    METHOD *pmethod;
+} ASGMETHOD;
+typedef struct asgauthority {
+    ELLNODE node;
+    AUTHORITY *pauthority;
+} ASGAUTHORITY;
 #define AS_TRAP_WRITE 1
 typedef struct{
     ELLNODE         node;
@@ -201,6 +239,8 @@ typedef struct{
     void            *rpcl;
     ELLLIST         uagList; /*List of ASGUAG*/
     ELLLIST         hagList; /*List of ASGHAG*/
+    ELLLIST         methodList; /*List of ASGMETHOD*/
+    ELLLIST         authList;   /*List of ASGAUTHORITY*/
     int             trapMask;
 } ASGRULE;
 typedef struct{
@@ -234,6 +274,8 @@ typedef struct asgClient {
     ASGMEMBER       *pasgMember;
     const char      *user;
     char            *host;
+    char            *method;
+    char            *authority;
     void            *userPvt;
     ASCLIENTCALLBACK pcallback;
     int             level;

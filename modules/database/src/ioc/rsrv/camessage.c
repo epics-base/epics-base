@@ -791,8 +791,10 @@ static int write_action ( caHdrLargeArray *mp,
         return RSRV_ERROR;
     }
 
-    asWritePvt = asTrapWriteWithData ( pciu->asClientPVT,
+    asWritePvt = asTrapWriteWithDataX ( pciu->asClientPVT,
         pciu->client->pUserName ? pciu->client->pUserName : "",
+        pciu->client->pMethod ? pciu->client->pMethod : "",
+        pciu->client->pAuthority ? pciu->client->pAuthority : "",
         pciu->client->pHostName ? pciu->client->pHostName : "",
         pciu->dbch, mp->m_dataType, mp->m_count, pPayload );
 
@@ -1149,6 +1151,9 @@ static void access_rights_reply ( struct channel_in_use * pciu )
     if ( rsrvCheckPut ( pciu ) ) {
         ar |= CA_PROTO_ACCESS_RIGHT_WRITE;
     }
+    if ( rsrvCheckCall ( pciu ) ) {
+        ar |= CA_PROTO_ACCESS_RIGHT_CALL;
+    }
 
     SEND_LOCK ( pciu->client );
     status = cas_copy_in_header (
@@ -1268,12 +1273,15 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
     /*
      * set up access security for this channel
      */
-    status = asAddClient(
+    status = (int)asAddClientX(
             &pciu->asClientPVT,
             asDbGetMemberPvt(pciu->dbch),
             asDbGetAsl(pciu->dbch),
             client->pUserName ? client->pUserName : "",
-            client->pHostName ? client->pHostName : "");
+            client->pHostName ? client->pHostName : "",
+            client->pMethod ? client->pMethod : "",
+            client->pAuthority ? client->pAuthority : ""
+            );
     if(status != 0 && status != S_asLib_asNotActive){
         log_header ("No room for security table",
             client, mp, pPayload, 0);
@@ -1768,9 +1776,11 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
 
     pciu->pPutNotify->dbrType = mp->m_dataType;
 
-    pciu->pPutNotify->asWritePvt = asTrapWriteWithData (
+    pciu->pPutNotify->asWritePvt = asTrapWriteWithDataX (
         pciu->asClientPVT,
         pciu->client->pUserName ? pciu->client->pUserName : "",
+        pciu->client->pMethod ? pciu->client->pMethod : "",
+        pciu->client->pAuthority ? pciu->client->pAuthority : "",
         pciu->client->pHostName ? pciu->client->pHostName : "",
         pciu->dbch, mp->m_dataType, mp->m_count,
         pciu->pPutNotify->pbuffer );
@@ -2573,5 +2583,21 @@ int rsrvCheckPut (const struct channel_in_use *pciu)
     }
     else {
         return asCheckPut (pciu->asClientPVT);
+    }
+}
+
+/*
+ * rsrvCheckCall ()
+ */
+int rsrvCheckCall (const struct channel_in_use *pciu)
+{
+    /*
+     * SPC_NOMOD fields are always uncallable
+     */
+    if (dbChannelSpecial(pciu->dbch) == SPC_NOMOD) {
+        return 0;
+    }
+    else {
+        return asCheckRPC (pciu->asClientPVT);
     }
 }

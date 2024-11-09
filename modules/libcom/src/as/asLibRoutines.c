@@ -66,19 +66,23 @@ static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask);
 static long asAsgRuleUagAdd(ASGRULE *pasgrule,const char *name);
 static long asAsgRuleHagAdd(ASGRULE *pasgrule,const char *name);
 static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc);
+static long asAsgRuleMethodAdd(ASGRULE *pasgrule, const char *name);
+static long asAsgRuleAuthorityAdd(ASGRULE *pasgrule, const char *name);
 
-/*
-  asInitialize can be called while access security is already active.
-  This is accomplished by doing the following:
-
-  The version pointed to by pasbase is kept as is but locked against changes
-  A new version is created and pointed to by pasbasenew
-  If anything goes wrong. The original version is kept. This results is some
-  wasted space but at least things still work.
-  If the new access security configuration is successfully read then:
-     the old memberList is moved from old to new.
-     the old structures are freed.
-*/
+/**
+ * @brief Initialize the Access Security
+ * This can be called while access security is already active.
+ * This is accomplished by doing the following:
+ *  - The version pointed to by pasbase is kept as is but locked against changes
+ *  - A new version is created and pointed to by pasbasenew
+ *  - If anything goes wrong. The original version is kept. This results is some
+ *    wasted space but at least things still work.
+ *  - If the new access security configuration is successfully read then:
+ *    * the old memberList is moved from old to new.
+ *    * the old structures are freed.
+ *
+ * @param arg Argument (not used)
+ */
 static void asInitializeOnce(void *arg)
 {
     osiSockAttach();
@@ -361,8 +365,51 @@ void epicsStdCall asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
     pasgmember->userPvt = userPvt;
 }
 
+/**
+ * @brief Add a client to an existing ASG
+ * This function adds a client to an existing ASG.
+ * A client is defined by a user, method, authority, and host all of which can
+ * be NULL.
+ * It is the responsibility of the caller to free the client structure when it is no longer needed.
+ *
+ * @param pasClientPvt Pointer to the client structure
+ * @param asMemberPvt Pointer to the member structure
+ * @param asl Access level
+ * @param user User name
+ * @param host Host name
+ * @return Status code
+ *          `S_asLib_asNotActive` if access security is not active,
+ *          `S_asLib_badMember` if the member is not provided,
+ *          `S_asLib_noMemory` if there is not enough memory to allocate the client structure,
+ *          or the status from `asComputePvt` which will be 0 if the client is successfully added
+ */
 long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
-        int asl,const char *user,char *host)
+                              int asl,const char *user, char *host){
+    return asAddClientX(pasClientPvt, asMemberPvt, asl, user, "ca", NULL, host);
+}
+
+/**
+ * @brief Add a client to an existing ASG
+ * This function adds a client to an existing ASG.
+ * A client is defined by a user, method, authority, and host all of which can
+ * be NULL.
+ * It is the responsibility of the caller to free the client structure when it is no longer needed.
+ *
+ * @param pasClientPvt Pointer to the client structure
+ * @param asMemberPvt Pointer to the member structure
+ * @param asl Access level
+ * @param user User name
+ * @param method Method name
+ * @param authority Authority name
+ * @param host Host name
+ * @return Status code
+ *          `S_asLib_asNotActive` if access security is not active,
+ *          `S_asLib_badMember` if the member is not provided,
+ *          `S_asLib_noMemory` if there is not enough memory to allocate the client structure,
+ *          or the status from `asComputePvt` which will be 0 if the client is successfully added
+ */
+long epicsStdCall asAddClientX(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
+        int asl,const char *user, char *method,char *authority, char *host)
 {
     ASGMEMBER   *pasgmember = asMemberPvt;
     ASGCLIENT   *pasgclient;
@@ -373,14 +420,18 @@ long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
     if(!pasgmember) return(S_asLib_badMember);
     pasgclient = freeListCalloc(freeListPvt);
     if(!pasgclient) return(S_asLib_noMemory);
-    len = strlen(host);
-    for (i = 0; i < len; i++) {
-        host[i] = (char)tolower((int)host[i]);
+    if ( host ) {
+        len = strlen(host);
+        for (i = 0; i < len; i++) {
+            host[i] = (char)tolower((int)host[i]);
+        }
     }
     *pasClientPvt = pasgclient;
     pasgclient->pasgMember = asMemberPvt;
     pasgclient->level = asl;
     pasgclient->user = user;
+    pasgclient->method = method;
+    pasgclient->authority = authority;
     pasgclient->host = host;
     LOCK;
     ellAdd(&pasgmember->clientList,&pasgclient->node);
@@ -389,8 +440,31 @@ long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
     return(status);
 }
 
+/**
+ * @brief Change a client's attributes
+ * @param asClientPvt Pointer to the client structure
+ * @param asl Access level
+ * @param user User name
+ * @param host Host name
+ * @return Status code
+ */
 long epicsStdCall asChangeClient(
-    ASCLIENTPVT asClientPvt,int asl,const char *user,char *host)
+    ASCLIENTPVT asClientPvt,int asl,const char *user,char *host) {
+    return asChangeClientX(asClientPvt, asl, user, "ca", NULL, host);
+}
+
+/**
+ * @brief Change a client's attributes
+ * @param asClientPvt Pointer to the client structure
+ * @param asl Access level
+ * @param user User name
+ * @param method Method name
+ * @param authority Authority name
+ * @param host Host name
+ * @return Status code
+ */
+long epicsStdCall asChangeClientX(
+    ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority,char *host)
 {
     ASGCLIENT   *pasgclient = asClientPvt;
     long        status;
@@ -405,6 +479,8 @@ long epicsStdCall asChangeClient(
     LOCK;
     pasgclient->level = asl;
     pasgclient->user = user;
+    pasgclient->method = method;
+    pasgclient->authority = authority;
     pasgclient->host = host;
     status = asComputePvt(pasgclient);
     UNLOCK;
@@ -500,7 +576,7 @@ long epicsStdCall asCompute(ASCLIENTPVT asClientPvt)
 
 /*The dump routines do not lock. Thus they may get inconsistent data.*/
 /*HOWEVER if they did lock and a user interrupts one of then then BAD BAD*/
-static const char *asAccessName[] = {"NONE","READ","WRITE"};
+static const char *asAccessName[] = {"NONE","READ","WRITE","RPC"};
 static const char *asTrapOption[] = {"NOTRAPWRITE","TRAPWRITE"};
 static const char *asLevelName[] = {"ASL0","ASL1"};
 int epicsStdCall asDump(
@@ -511,6 +587,18 @@ int epicsStdCall asDump(
     return asDumpFP(stdout,memcallback,clientcallback,verbose);
 }
 
+/**
+ * @brief Dump the ASG to a file
+ * This function dumps the ASG to a normalized ACF file.
+ * It calls the member callback for each member and
+ * the client callback for each client within each member if they are provided.
+ *
+ * @param fp File pointer
+ * @param memcallback Callback function for members
+ * @param clientcallback Callback function for clients
+ * @param verbose Verbosity level
+ * @return Status code
+ */
 int epicsStdCall asDumpFP(
         FILE *fp,
         void (*memcallback)(struct asgMember *,FILE *),
@@ -528,6 +616,8 @@ int epicsStdCall asDumpFP(
     ASGUAG      *pasguag;
     ASGMEMBER   *pasgmember;
     ASGCLIENT   *pasgclient;
+    ASGMETHOD   *pasgmethod;
+    ASGAUTHORITY *pasgauthority;
 
     if(!asActive) return(0);
     puag = (UAG *)ellFirst(&pasbase->uagList);
@@ -544,7 +634,6 @@ int epicsStdCall asDumpFP(
         puag = (UAG *)ellNext(&puag->node);
     }
     phag = (HAG *)ellFirst(&pasbase->hagList);
-    if(!phag) fprintf(fp,"No HAGs\n");
     while(phag) {
         fprintf(fp,"HAG(%s)",phag->name);
         phagname = (HAGNAME *)ellFirst(&phag->list);
@@ -592,7 +681,9 @@ int epicsStdCall asDumpFP(
                 asTrapOption[pasgrule->trapMask]);
             pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
             pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
-            if(pasguag || pasghag || pasgrule->calc) {
+            pasgmethod = (ASGMETHOD *)ellFirst(&pasgrule->methodList);
+            pasgauthority = (ASGAUTHORITY *)ellFirst(&pasgrule->authList);
+            if(pasguag || pasghag|| pasgmethod|| pasgauthority || pasgrule->calc) {
                 fprintf(fp," {\n");
                 print_end_brace = TRUE;
             } else {
@@ -605,12 +696,23 @@ int epicsStdCall asDumpFP(
                 pasguag = (ASGUAG *)ellNext(&pasguag->node);
                 if(pasguag) fprintf(fp,","); else fprintf(fp,")\n");
             }
-            pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
             if(pasghag) fprintf(fp,"\t\tHAG(");
             while(pasghag) {
                 fprintf(fp,"%s",pasghag->phag->name);
                 pasghag = (ASGHAG *)ellNext(&pasghag->node);
                 if(pasghag) fprintf(fp,","); else fprintf(fp,")\n");
+            }
+            if(pasgmethod) fprintf(fp,"\t\tMETHOD(");
+            while(pasgmethod) {
+                fprintf(fp,"\"%s\"",pasgmethod->pmethod->name);
+                pasgmethod = (ASGMETHOD *)ellNext(&pasgmethod->node);
+                if(pasgmethod) fprintf(fp,","); else fprintf(fp,")\n");
+            }
+            if(pasgauthority) fprintf(fp,"\t\tAUTHORITY(");
+            while(pasgauthority) {
+                fprintf(fp,"\"%s\"",pasgauthority->pauthority->name);
+                pasgauthority = (ASGAUTHORITY *)ellNext(&pasgauthority->node);
+                if(pasgauthority) fprintf(fp,","); else fprintf(fp,")\n");
             }
             if(pasgrule->calc) {
                 fprintf(fp,"\t\tCALC(\"%s\")",pasgrule->calc);
@@ -699,7 +801,6 @@ int epicsStdCall asDumpHagFP(FILE *fp,const char *hagname)
 
     if(!asActive) return(0);
     phag = (HAG *)ellFirst(&pasbase->hagList);
-    if(!phag) fprintf(fp,"No HAGs\n");
     while(phag) {
         if(hagname && strcmp(hagname,phag->name)!=0) {
             phag = (HAG *)ellNext(&phag->node);
@@ -723,6 +824,14 @@ int epicsStdCall asDumpRules(const char *asgname)
     return asDumpRulesFP(stdout,asgname);
 }
 
+/**
+ * @brief Dump the rules for an ASG to a file
+ * This function dumps the rules for an ASG to normalized ACF file
+ *
+ * @param fp File pointer
+ * @param asgname ASG name
+ * @return Status code (0 if successful)
+ */
 int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
 {
     ASG         *pasg;
@@ -730,6 +839,8 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
     ASGRULE     *pasgrule;
     ASGHAG      *pasghag;
     ASGUAG      *pasguag;
+    ASGMETHOD   *pasgmethod;
+    ASGAUTHORITY *pasgauthority;
 
     if(!asActive) return(0);
     pasg = (ASG *)ellFirst(&pasbase->asgList);
@@ -761,19 +872,21 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
             pasginp = (ASGINP *)ellNext(&pasginp->node);
         }
         while(pasgrule) {
-            int print_end_brace;
+            int print_rule_end_brace;
 
             fprintf(fp,"\tRULE(%d,%s,%s)",
                 pasgrule->level,asAccessName[pasgrule->access],
                 asTrapOption[pasgrule->trapMask]);
             pasguag = (ASGUAG *)ellFirst(&pasgrule->uagList);
             pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
-            if(pasguag || pasghag || pasgrule->calc) {
+            pasgmethod = (ASGMETHOD *) ellFirst(&pasgrule->methodList);
+            pasgauthority = (ASGAUTHORITY *) ellFirst(&pasgrule->authList);
+            if(pasguag || pasghag || pasgmethod || pasgauthority || pasgrule->calc) {
                 fprintf(fp," {\n");
-                print_end_brace = TRUE;
+                print_rule_end_brace = TRUE;
             } else {
                 fprintf(fp,"\n");
-                print_end_brace = FALSE;
+                print_rule_end_brace = FALSE;
             }
             if(pasguag) fprintf(fp,"\t\tUAG(");
             while(pasguag) {
@@ -781,19 +894,34 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
                 pasguag = (ASGUAG *)ellNext(&pasguag->node);
                 if(pasguag) fprintf(fp,","); else fprintf(fp,")\n");
             }
-            pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
             if(pasghag) fprintf(fp,"\t\tHAG(");
             while(pasghag) {
                 fprintf(fp,"%s",pasghag->phag->name);
                 pasghag = (ASGHAG *)ellNext(&pasghag->node);
                 if(pasghag) fprintf(fp,","); else fprintf(fp,")\n");
             }
+            if(pasgmethod) {
+                fprintf(fp,"\t\tMETHOD(");
+                while(pasgmethod) {
+                    fprintf(fp,"\"%s\"",pasgmethod->pmethod->name);
+                    pasgmethod = (ASGMETHOD *)ellNext(&pasgmethod->node);
+                    if(pasgmethod) fprintf(fp,","); else fprintf(fp,")\n");
+                }
+            }
+            if(pasgauthority) {
+                fprintf(fp,"\t\tAUTHORITY(");
+                while(pasgauthority) {
+                    fprintf(fp,"\"%s\"",pasgauthority->pauthority->name);
+                    pasgauthority = (ASGAUTHORITY *)ellNext(&pasgauthority->node);
+                    if(pasgauthority) fprintf(fp,","); else fprintf(fp,")\n");
+                }
+            }
             if(pasgrule->calc) {
                 fprintf(fp,"\t\tCALC(\"%s\")",pasgrule->calc);
                 fprintf(fp," result=%s",(pasgrule->result==1 ? "TRUE" : "FALSE"));
                 fprintf(fp,"\n");
             }
-            if(print_end_brace) fprintf(fp,"\t}\n");
+            if(print_rule_end_brace) fprintf(fp,"\t}\n");
             pasgrule = (ASGRULE *)ellNext(&pasgrule->node);
         }
         if(print_end_brace) fprintf(fp,"}\n");
@@ -974,7 +1102,17 @@ static long asComputeAsgPvt(ASG *pasg)
     }
     return(0);
 }
-
+
+/**
+ * @brief Compute the access and trap mask for a client
+ *
+ * The access and trap mask are computed based on the rules for the client's ASG.
+ * They are then stored in the client structure in the access and trapMask fields.
+ * If the access has changed, the client callback is called.
+ *
+ * @param asClientPvt Pointer to the client structure
+ * @return Status code
+ */
 static long asComputePvt(ASCLIENTPVT asClientPvt)
 {
     asAccessRights      access=asNOACCESS;
@@ -994,8 +1132,9 @@ static long asComputePvt(ASCLIENTPVT asClientPvt)
     if(!pasg) return(S_asLib_badAsg);
     oldaccess=pasgclient->access;
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
+    // Find the highest access that this client has
     while(pasgrule) {
-        if(access == asWRITE) break;
+        if(access == asRPC) break; // Already the highest then stop
         if(access>=pasgrule->access) goto next_rule;
         if(pasgclient->level > pasgrule->level) goto next_rule;
         /*if uagList is empty then no need to check uag*/
@@ -1023,12 +1162,49 @@ check_hag:
             while(pasghag) {
                 if((phag = pasghag->phag)) {
                     pgphentry=gphFind(pasbase->phash,pasgclient->host,phag);
-                    if(pgphentry) goto check_calc;
+                    if(pgphentry) goto check_method;
                 }
                 pasghag = (ASGHAG *)ellNext(&pasghag->node);
             }
             goto next_rule;
         }
+check_method:
+    if(ellCount(&pasgrule->methodList)>0) {
+        ASGMETHOD *pasgmethod;
+
+        if (!pasgclient->method) {
+            goto next_rule;
+        }
+
+        // Directly check if method matches any in the rule's list
+        pasgmethod = (ASGMETHOD *)ellFirst(&pasgrule->methodList);
+        while(pasgmethod) {
+            if(strcmp(pasgmethod->pmethod->name, pasgclient->method) == 0) {
+                goto check_authority;
+            }
+            pasgmethod = (ASGMETHOD *)ellNext(&pasgmethod->node);
+        }
+        goto next_rule;
+    }
+
+check_authority:
+    if(ellCount(&pasgrule->authList)>0) {
+        ASGAUTHORITY *pasgauthority;
+
+        if (!pasgclient->authority) {
+            goto next_rule;
+        }
+
+        // Directly check if authority matches any in the rule's list
+        pasgauthority = (ASGAUTHORITY *)ellFirst(&pasgrule->authList);
+        while(pasgauthority) {
+            if(strcmp(pasgauthority->pauthority->name, pasgclient->authority) == 0) {
+                goto check_calc;
+            }
+            pasgauthority = (ASGAUTHORITY *)ellNext(&pasgauthority->node);
+        }
+        goto next_rule;
+    }
 check_calc:
         if(!pasgrule->calc
         || (!(pasg->inpBad & pasgrule->inpUsed) && (pasgrule->result==1))) {
@@ -1045,7 +1221,12 @@ next_rule:
     }
     return(0);
 }
-
+
+/**
+ * @brief Free all the memory allocated for the access security system
+ *
+ * @param pasbase Pointer to the base structure
+ */
 void asFreeAll(ASBASE *pasbase)
 {
     UAG         *puag;
@@ -1057,6 +1238,8 @@ void asFreeAll(ASBASE *pasbase)
     ASGRULE     *pasgrule;
     ASGHAG      *pasghag;
     ASGUAG      *pasguag;
+    ASGMETHOD   *pasgmethod;
+    ASGAUTHORITY *pasgauthority;
     void        *pnext;
 
     puag = (UAG *)ellFirst(&pasbase->uagList);
@@ -1115,6 +1298,23 @@ void asFreeAll(ASBASE *pasbase)
                 free(pasghag);
                 pasghag = pnext;
             }
+            pasgmethod = (ASGMETHOD *)ellFirst(&pasgrule->methodList);
+            while(pasgmethod) {
+                pnext = ellNext(&pasgmethod->node);
+                ellDelete(&pasgrule->methodList,&pasgmethod->node);
+                free(pasgmethod->pmethod);
+                free(pasgmethod);
+                pasgmethod = pnext;
+            }
+
+            pasgauthority = (ASGAUTHORITY *)ellFirst(&pasgrule->authList);
+            while(pasgauthority) {
+                pnext = ellNext(&pasgauthority->node);
+                ellDelete(&pasgrule->authList,&pasgauthority->node);
+                free(pasgauthority->pauthority);
+                free(pasgauthority);
+                pasgauthority = pnext;
+            }
             pnext = ellNext(&pasgrule->node);
             ellDelete(&pasg->ruleList,&pasgrule->node);
             free(pasgrule);
@@ -1128,7 +1328,7 @@ void asFreeAll(ASBASE *pasbase)
     gphFreeMem(pasbase->phash);
     free(pasbase);
 }
-
+
 /*Beginning of routines called by lex code*/
 static UAG *asUagAdd(const char *uagName)
 {
@@ -1173,7 +1373,7 @@ static long asUagAddUser(UAG *puag,const char *user)
     ellAdd(&puag->list,&puagname->node);
     return(0);
 }
-
+
 static HAG *asHagAdd(const char *hagName)
 {
     HAG         *pprev;
@@ -1245,7 +1445,7 @@ static long asHagAddHost(HAG *phag,const char *host)
     ellAdd(&phag->list, &phagname->node);
     return 0;
 }
-
+
 static ASG *asAsgAdd(const char *asgName)
 {
     ASG         *pprev;
@@ -1298,7 +1498,15 @@ static long asAsgAddInp(ASG *pasg,const char *inp,int inpIndex)
     ellAdd(&pasg->inpList,&pasginp->node);
     return(0);
 }
-
+
+/**
+ * @brief Add a rule to an access security group
+ *
+ * @param pasg Pointer to the access security group
+ * @param access Access rights
+ * @param level Access level
+ * @return Pointer to the rule or NULL if there is no memory to allocate the rule
+ */
 static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level)
 {
     ASGRULE     *pasgrule;
@@ -1310,6 +1518,8 @@ static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level)
     pasgrule->level = level;
     ellInit(&pasgrule->uagList);
     ellInit(&pasgrule->hagList);
+    ellInit(&pasgrule->authList);
+    ellInit(&pasgrule->methodList);
     ellAdd(&pasg->ruleList,&pasgrule->node);
     return(pasgrule);
 }
@@ -1346,7 +1556,7 @@ static long asAsgRuleUagAdd(ASGRULE *pasgrule, const char *name)
     ellAdd(&pasgrule->uagList, &pasguag->node);
     return 0;
 }
-
+
 static long asAsgRuleHagAdd(ASGRULE *pasgrule, const char *name)
 {
     ASGHAG      *pasghag;
@@ -1370,6 +1580,72 @@ static long asAsgRuleHagAdd(ASGRULE *pasgrule, const char *name)
     pasghag = asCalloc(1, sizeof(ASGHAG));
     pasghag->phag = phag;
     ellAdd(&pasgrule->hagList, &pasghag->node);
+    return 0;
+}
+
+/**
+ * @brief Add a method to a rule
+ *
+ * @param pasgrule Pointer to the rule
+ * @param name Name of the method
+ * @return 0 if successful, S_asLib_dupMethod if the method is already in the rule
+ */
+static long asAsgRuleMethodAdd(ASGRULE *pasgrule, const char *name)
+{
+    ASGMETHOD *pasgmethod;
+    METHOD    *pmethod;
+
+    if(!pasgrule) return 0;
+
+    pasgmethod = (ASGMETHOD *)ellFirst(&pasgrule->methodList);
+    while(pasgmethod) {
+        if(strcmp(pasgmethod->pmethod->name, name) == 0) {
+            errlogPrintf("Duplicate method '%s' in rule\n", name);
+            return S_asLib_dupMethod;
+        }
+        pasgmethod = (ASGMETHOD *)ellNext(&pasgmethod->node);
+    }
+
+    pmethod = asCalloc(1, sizeof(METHOD)+strlen(name)+1);
+    pmethod->name = (char *)(pmethod+1);
+    strcpy(pmethod->name, name);
+
+    pasgmethod = asCalloc(1,sizeof(ASGMETHOD));
+    pasgmethod->pmethod = pmethod;
+    ellAdd(&pasgrule->methodList,&pasgmethod->node);
+    return 0;
+}
+
+/**
+ * @brief Add an authority to a rule
+ *
+ * @param pasgrule Pointer to the rule
+ * @param name Name of the authority
+ * @return 0 if successful, S_asLib_dupAuthority if the authority is already in the rule
+ */
+static long asAsgRuleAuthorityAdd(ASGRULE *pasgrule, const char *name)
+{
+    ASGAUTHORITY *pasgauthority;
+    AUTHORITY    *pauthority;
+
+    if(!pasgrule) return 0;
+
+    pasgauthority = (ASGAUTHORITY *)ellFirst(&pasgrule->authList);
+    while(pasgauthority) {
+        if(strcmp(pasgauthority->pauthority->name, name) == 0) {
+            errlogPrintf("Duplicate authority '%s' in rule\n", name);
+            return S_asLib_dupAuthority;
+        }
+        pasgauthority = (ASGAUTHORITY *)ellNext(&pasgauthority->node);
+    }
+
+    pauthority = asCalloc(1, sizeof(AUTHORITY)+strlen(name)+1);
+    pauthority->name = (char *)(pauthority+1);
+    strcpy(pauthority->name, name);
+
+    pasgauthority = asCalloc(1,sizeof(ASGAUTHORITY));
+    pasgauthority->pauthority = pauthority;
+    ellAdd(&pasgrule->authList,&pasgauthority->node);
     return 0;
 }
 

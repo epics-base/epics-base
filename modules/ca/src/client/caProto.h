@@ -146,6 +146,7 @@ typedef ca_uint32_t     caResId;
  */
 #define CA_PROTO_ACCESS_RIGHT_READ  (1u<<0u)
 #define CA_PROTO_ACCESS_RIGHT_WRITE (1u<<1u)
+#define CA_PROTO_ACCESS_RIGHT_CALL (1u<<2u)
 
 /*
  * All structures passed in the protocol must have individual

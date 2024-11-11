@@ -52,12 +52,14 @@ static unsigned char *asSkipIndent(unsigned char *str) {
 }
 
 static unsigned char *asSkipToValue(unsigned char *str) {
-    while (*str != ':') str++;
+    while (*str != ':' && *str) str++;
+    if ( !*str ) return str;
     return str+2;
 }
 
 static unsigned char *asDupQuotedString(unsigned char *str) {
-    while (*str != '"') str++;
+    while (*str != '"' && *str) str++;
+    if ( !*str ) return asStrdup(str);
     str=(unsigned char *)asStrdup(str+1);
     str[strlen((char *)str)-1] = '\0';
     return str;

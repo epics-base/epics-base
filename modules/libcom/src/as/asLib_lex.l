@@ -80,6 +80,7 @@ static unsigned char *asExtractInp(unsigned char *str) {
 }
 
 <YAML_MODE>^(version|VERSION):[ ]{version}               { yylval.Str=asStrdup(yytext+9); return(tokenYAML_VERSION); }
+<YAML_MODE>^\$schema:[ ]*\"[^\"]*\"                      ; /* Ignore schema declaration */
 
 <YAML_MODE>^(uags|UAGS):                                 { return tokenUAG; }
 <YAML_MODE>^(hags|HAGS):                                 { return tokenHAG; }

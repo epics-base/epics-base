@@ -1,0 +1,130 @@
+# Schema for EPICS Access Security Configuration
+# Filename: epics-access-security-schema.yaml
+
+$schema: https://json-schema.org/draft/2020-12/schema
+title: EPICS Access Security Configuration
+type: object
+
+oneOf:
+  - required: ['version', 'asgs']
+  - required: ['VERSION', 'ASGS']
+
+patternProperties:
+  "^(version|VERSION)$":
+    type: number
+    enum: [1.0]
+
+  "^(uags|UAGS)$":
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      oneOf:
+        - required: ["name", "users"]
+        - required: ["NAME", "USERS"]
+        - required: ["name", "USERS"]
+        - required: ["NAME", "users"]
+      patternProperties:
+        "^(name|NAME)$":
+          type: string
+          pattern: '^[a-z0-9_\-]+$'
+        "^(users|USERS)$":
+          type: array
+          items:
+            type: string
+            pattern: '^[a-z0-9_\-]+$'
+
+  "^(hags|HAGS)$":
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      oneOf:
+        - required: ["name", "hosts"]
+        - required: ["NAME", "HOSTS"]
+        - required: ["name", "HOSTS"]
+        - required: ["NAME", "hosts"]
+      patternProperties:
+        "^(name|NAME)$":
+          type: string
+          pattern: '^[a-z0-9_\-]+$'
+        "^(hosts|HOSTS)$":
+          type: array
+          items:
+            type: string
+            pattern: '^[a-z0-9\.-:]+$'
+
+
+  "^(asgs|ASGS)$":
+    type: array
+    items:
+      type: object
+      oneOf:
+        - required: ["name", "rules"]
+        - required: ["NAME", "RULES"]
+        - required: ["name", "RULES"]
+        - required: ["NAME", "rules"]
+      additionalProperties: false
+      patternProperties:
+        "^(name|NAME)$":
+          type: string
+          pattern: '^[a-zA-Z0-9_\-]+$'
+        "^(links|LINKS)$":
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            patternProperties:
+              "^(inp|INP)[a-lA-L]$":
+                type: string
+        "^(rules|RULES)$":
+          type: array
+          items:
+            type: object
+            oneOf:
+              - required: ["level", "access"]
+              - required: ["LEVEL", "ACCESS"]
+              - required: ["level", "ACCESS"]
+              - required: ["LEVEL", "access"]
+            additionalProperties: false
+            patternProperties:
+              "^(level|LEVEL)$":
+                type: integer
+                minimum: 0
+              "^(access|ACCESS)$":
+                oneOf:
+                  - enum: ['none', 'read', 'write', 'rpc']
+                  - enum: ['NONE', 'READ', 'WRITE', 'RPC']
+              "^(trapwrite|TRAPWRITE)$":
+                type: boolean
+              "^(calc|CALC)$":
+                type: string
+              "^(uags|UAGS)$":
+                type: array
+                items:
+                  type: string
+                  pattern: '^[a-z0-9_\-]+$'
+              "^(hags|HAGS)$":
+                type: array
+                items:
+                  type: string
+                  pattern: '^[a-z0-9_\-]+$'
+              "^(methods|METHODS)$":
+                type: array
+                items:
+                  type: string
+              "^(authorities|AUTHORITIES)$":
+                type: array
+                items:
+                  type: string
+
+
+# Property definitions
+properties:
+  $schema:
+    type: string
+    pattern: '^https://json-schema\.org/draft/2020-12/schema$'
+
+
+# Additional constraints
+additionalProperties: false

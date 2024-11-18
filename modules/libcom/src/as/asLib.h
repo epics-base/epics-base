@@ -57,13 +57,13 @@ void *asTrapWriteWithData(ASCLIENTPVT asClientPvt,
      int dbrType, int no_elements, void *data);
 void asTrapWriteAfter(ASCLIENTPVT asClientPvt);
 */
-#define asTrapWriteWithData(asClientPvt, user, host, addr, type, count, data) \
+#define asTrapWriteWithData(asClientPvt, user, host, isTLS, addr, type, count, data) \
     ((asActive && (asClientPvt)->trapMask) \
-    ? asTrapWriteBeforeWithDataX((user), "ca", NULL, (host), (addr), (type), (count), (data)) \
+    ? asTrapWriteBeforeWithDataX((user), "ca", NULL, (host), (isTLS), (addr), (type), (count), (data)) \
     : 0)
-#define asTrapWriteWithDataX(asClientPvt, user, method, authority, host, addr, type, count, data) \
+#define asTrapWriteWithDataX(asClientPvt, user, method, authority, host, isTLS, addr, type, count, data) \
     ((asActive && (asClientPvt)->trapMask) \
-    ? asTrapWriteBeforeWithDataX((user), (method), (authority), (host), (addr), (type), (count), (data)) \
+    ? asTrapWriteBeforeWithDataX((user), (method), (authority), (host), (isTLS), (addr), (type), (count), (data)) \
     : 0)
 #define asTrapWriteAfter(pvt) \
     if (pvt) asTrapWriteAfterWrite(pvt)
@@ -102,10 +102,10 @@ LIBCOM_API long epicsStdCall asChangeClient(
 /*client must provide permanent storage for user, host, method, and authority */
 LIBCOM_API long epicsStdCall asAddClientX(
     ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
-    int asl,const char *user,char *method,char *authority,char *host);
+    int asl,const char *user,char *method,char *authority,char *host, int isTLS);
 /*client must provide permanent storage for user, host, method, and authority */
 LIBCOM_API long epicsStdCall asChangeClientX(
-    ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority,char *host);
+    ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority, char *host, int isTLS);
 LIBCOM_API long epicsStdCall asRemoveClient(ASCLIENTPVT *asClientPvt);
 LIBCOM_API void * epicsStdCall asGetClientPvt(ASCLIENTPVT asClientPvt);
 LIBCOM_API void epicsStdCall asPutClientPvt(
@@ -141,7 +141,7 @@ LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithData(
     int dbrType, int no_elements, void *data);
 
 LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithDataX(
-    const char *userid, const char *method, const char *authority, const char *hostid, struct dbChannel *addr,
+    const char *userid, const char *method, const char *authority, const char *hostid, int isTLS, struct dbChannel *addr,
     int dbrType, int no_elements, void *data);
 
 LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
@@ -242,6 +242,7 @@ typedef struct{
     ELLLIST         methodList; /*List of ASGMETHOD*/
     ELLLIST         authList;   /*List of ASGAUTHORITY*/
     int             trapMask;
+    int             isTLS; // -1 not set, 0 false, 1 = true
 } ASGRULE;
 typedef struct{
     ELLNODE         node;
@@ -281,6 +282,7 @@ typedef struct asgClient {
     int             level;
     asAccessRights  access;
     int             trapMask;
+    int             isTLS;
 } ASGCLIENT;
 
 LIBCOM_API long epicsStdCall asComputeAsg(ASG *pasg);

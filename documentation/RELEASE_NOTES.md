@@ -98,9 +98,44 @@ record("#", "unwanted") {}
 
 ### Access Security: Certificate-based Authorization
 
-Added two new fields to `ASG(){RULE() {<new_fields>}}`, and added a new access type, `RPC`, to ASG(){RULE(<new_type>)}.  Three new API functions were also added to the `libcom` library to support these new features.  The ability to provide ACF files in EPICS YAML format has been added.
+Added a new option and two new fields to `ASG(){RULE(...,<new_option>) {<new_fields>}}`, and added a new access type, `RPC`, to ASG(){RULE(<new_type>)}.  Three new API functions were also added to the `libcom` library to support these new features.  The ability to provide ACF files in EPICS YAML format has been added.
 
 There are no external dependencies for these features.
+
+#### New Option
+- `ISTLS` - Controls PV access authorization based on whether the connection is using TLS.  If present then the connection must be using TLS.  If absent the connection type is ignored unless specifically set to false using a yaml configuration.
+
+```
+ASG(ENCRYPTED) {
+    RULE(1, WRITE, ISTLS)
+}
+```
+
+In yaml you have more control over the `isTLS` option.  You can mandate that the connection be TLS or that it not be TLS:
+
+```yaml
+# EPICS YAML
+version: 1.0
+asgs:
+  # Write access with a secure connection
+  - name: ENCRYPTED
+    rules:
+      - level: 1
+        access: WRITE
+        isTLS: true
+```
+
+```yaml
+# EPICS YAML
+version: 1.0
+asgs:
+  # Read access with a non-secure connection
+  - name: ENCRYPTED
+    rules:
+      - level: 1
+        access: READ
+        isTLS: false
+```
 
 #### New Fields
 - `METHOD("type"[,...])` - Controls PV access authorization based on the connection method (e.g. "x509", "ca", "anonymous").  True if any match.  "x509" is for connections that have been established by and identity authenticated with an X509 certificate.
@@ -147,10 +182,10 @@ ASG(rpc) {
 Three new API functions `asAddClientX()`, `asChangeClientX()`, and `asTrapWriteBeforeWithDataX()` were added to the `libcom` module to support these new features.  They are corollaries to the existing `asAddClient()`, `asChangeClient()`, and `asTrapWriteBeforeWithData()` functions, but with the addition of the new `method` and `authority` parameters.
 
 ```c++
-LIBCOM_API long epicsStdCall asAddClientX(ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt, int asl,const char *user,char *method,char *authority,char *host);
-LIBCOM_API long epicsStdCall asChangeClientX(ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority,char *host);
+LIBCOM_API long epicsStdCall asAddClientX(ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt, int asl,const char *user,char *method,char *authority,char *host, int isTLS);
+LIBCOM_API long epicsStdCall asChangeClientX(ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority,char *host, int isTLS);
 LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithDataX(
-    const char *userid, const char *method, const char *authority, const char *hostid, struct dbChannel *addr,
+    const char *userid, const char *method, const char *authority, const char *hostid, int isTLS, struct dbChannel *addr,
     int dbrType, int no_elements, void *data);
 ```
 
@@ -200,6 +235,7 @@ asgs:
       - level: 1
         access: WRITE
         trapwrite: true
+        isTLS: true
         calc: A+B
         uags:
           - foo

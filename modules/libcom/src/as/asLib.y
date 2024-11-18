@@ -31,7 +31,7 @@ static int yyInp=0;
 
 %token tokenYAML_START
 %token tokenYAML_USERS tokenYAML_HOSTS tokenYAML_LINKS tokenYAML_RULES
-%token tokenYAML_TRAPWRITE
+%token tokenYAML_TRAPWRITE tokenYAML_ISTLS tokenYAML_ISNOTTLS
 %token <Int> tokenYAML_LEVEL
 %token <Str> tokenYAML_NAME
 %token <Str> tokenYAML_VERSION
@@ -169,10 +169,41 @@ rule_log_options:  ',' tokenSTRING ')'
             long status;
             status = asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE);
             if(status) yyerror("");
+        } else if((strcmp($2,"ISTLS")==0)) {
+            long status;
+            status = asAsgAddRuleTLSOption(yyAsgRule,1);
+            if(status) yyerror("");
         } else if((strcmp($2,"NOTRAPWRITE")!=0)) {
             yyerror("Log options must be TRAPWRITE or NOTRAPWRITE");
         }
         free((void *)$2);
+    }
+    |   ',' tokenSTRING ',' tokenSTRING ')'
+    {
+        if((strcmp($2,"TRAPWRITE")==0)) {
+            long status;
+            status = asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE);
+            if(status) yyerror("");
+        } else if((strcmp($2,"ISTLS")==0)) {
+            long status;
+            status = asAsgAddRuleTLSOption(yyAsgRule,1);
+            if(status) yyerror("");
+        } else if((strcmp($2,"NOTRAPWRITE")!=0)) {
+            yyerror("Log options must be TRAPWRITE or NOTRAPWRITE");
+        }
+        free((void *)$2);
+        if((strcmp($4,"TRAPWRITE")==0)) {
+            long status;
+            status = asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE);
+            if(status) yyerror("");
+        } else if((strcmp($4,"ISTLS")==0)) {
+            long status;
+            status = asAsgAddRuleTLSOption(yyAsgRule,1);
+            if(status) yyerror("");
+        } else if((strcmp($4,"NOTRAPWRITE")!=0)) {
+            yyerror("Log options must be TRAPWRITE or NOTRAPWRITE");
+        }
+        free((void *)$4);
     }
     ;
 
@@ -386,7 +417,7 @@ yaml_link: tokenYAML_INP
     }
     ;
 
-yaml_rule: yaml_rule_head yaml_rule_trap_option yaml_rule_body
+yaml_rule: yaml_rule_head yaml_rule_option yaml_rule_body
     |   yaml_rule_head yaml_rule_body
     |   yaml_rule_head
     ;
@@ -400,10 +431,35 @@ yaml_rule_head: tokenYAML_LEVEL tokenYAML_ACCESS
     }
     ;
 
-yaml_rule_trap_option: tokenYAML_TRAPWRITE
+yaml_rule_option: yaml_rule_option tokenYAML_TRAPWRITE
     {
         if (asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE))
             yyerror("Unable to add trapwrite option to the ASG rule");
+    } 
+    |   yaml_rule_option tokenYAML_ISTLS
+    {
+        if (asAsgAddRuleTLSOption(yyAsgRule,1))
+            yyerror("Unable to add isTLS option to the ASG rule");
+    }
+    |   yaml_rule_option tokenYAML_ISNOTTLS
+    {
+        if (asAsgAddRuleTLSOption(yyAsgRule,0))
+            yyerror("Unable to add isTLS option to the ASG rule");
+    }
+    |   tokenYAML_TRAPWRITE
+    {
+        if (asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE))
+            yyerror("Unable to add trapwrite option to the ASG rule");
+    } 
+    |   tokenYAML_ISTLS
+    {
+        if (asAsgAddRuleTLSOption(yyAsgRule,1))
+            yyerror("Unable to add isTLS option to the ASG rule");
+    }
+    |   tokenYAML_ISNOTTLS
+    {
+        if (asAsgAddRuleTLSOption(yyAsgRule,0))
+            yyerror("Unable to add isTLS option to the ASG rule");
     }
     ;
 

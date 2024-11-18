@@ -63,6 +63,7 @@ static ASG *asAsgAdd(const char *asgName);
 static long asAsgAddInp(ASG *pasg,const char *inp,int inpIndex);
 static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level);
 static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask);
+static long asAsgAddRuleTLSOption(ASGRULE *pasgrule,int isTLS);
 static long asAsgRuleUagAdd(ASGRULE *pasgrule,const char *name);
 static long asAsgRuleHagAdd(ASGRULE *pasgrule,const char *name);
 static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc);
@@ -385,7 +386,7 @@ void epicsStdCall asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
  */
 long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
                               int asl,const char *user, char *host){
-    return asAddClientX(pasClientPvt, asMemberPvt, asl, user, "ca", NULL, host);
+    return asAddClientX(pasClientPvt, asMemberPvt, asl, user, "ca", NULL, host, 0);
 }
 
 /**
@@ -402,6 +403,7 @@ long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
  * @param method Method name
  * @param authority Authority name
  * @param host Host name
+ * @param isTLS is the connection is TLS
  * @return Status code
  *          `S_asLib_asNotActive` if access security is not active,
  *          `S_asLib_badMember` if the member is not provided,
@@ -409,7 +411,7 @@ long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
  *          or the status from `asComputePvt` which will be 0 if the client is successfully added
  */
 long epicsStdCall asAddClientX(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
-        int asl,const char *user, char *method,char *authority, char *host)
+        int asl,const char *user, char *method,char *authority, char *host, int isTLS)
 {
     ASGMEMBER   *pasgmember = asMemberPvt;
     ASGCLIENT   *pasgclient;
@@ -433,6 +435,7 @@ long epicsStdCall asAddClientX(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
     pasgclient->method = method;
     pasgclient->authority = authority;
     pasgclient->host = host;
+    pasgclient->isTLS = isTLS;
     LOCK;
     ellAdd(&pasgmember->clientList,&pasgclient->node);
     status = asComputePvt(pasgclient);
@@ -450,7 +453,7 @@ long epicsStdCall asAddClientX(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
  */
 long epicsStdCall asChangeClient(
     ASCLIENTPVT asClientPvt,int asl,const char *user,char *host) {
-    return asChangeClientX(asClientPvt, asl, user, "ca", NULL, host);
+    return asChangeClientX(asClientPvt, asl, user, "ca", NULL, host, 0);
 }
 
 /**
@@ -461,10 +464,11 @@ long epicsStdCall asChangeClient(
  * @param method Method name
  * @param authority Authority name
  * @param host Host name
+ * @param isTLS is the connection is TLS
  * @return Status code
  */
 long epicsStdCall asChangeClientX(
-    ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority,char *host)
+    ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority, char *host, int isTLS)
 {
     ASGCLIENT   *pasgclient = asClientPvt;
     long        status;
@@ -482,6 +486,7 @@ long epicsStdCall asChangeClientX(
     pasgclient->method = method;
     pasgclient->authority = authority;
     pasgclient->host = host;
+    pasgclient->isTLS = isTLS;
     status = asComputePvt(pasgclient);
     UNLOCK;
     return(status);
@@ -1137,6 +1142,7 @@ static long asComputePvt(ASCLIENTPVT asClientPvt)
         if(access == asRPC) break; // Already the highest then stop
         if(access>=pasgrule->access) goto next_rule;
         if(pasgclient->level > pasgrule->level) goto next_rule;
+        if ( (pasgrule->isTLS != -1) && pasgrule->isTLS != asClientPvt->isTLS ) goto next_rule;
         /*if uagList is empty then no need to check uag*/
         if(ellCount(&pasgrule->uagList)>0){
             ASGUAG      *pasguag;
@@ -1516,6 +1522,7 @@ static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level)
     pasgrule->access = access;
     pasgrule->trapMask = 0;
     pasgrule->level = level;
+    pasgrule->isTLS = -1;
     ellInit(&pasgrule->uagList);
     ellInit(&pasgrule->hagList);
     ellInit(&pasgrule->authList);
@@ -1528,6 +1535,13 @@ static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask)
 {
     if(!pasgrule) return(0);
     pasgrule->trapMask = trapMask;
+    return(0);
+}
+
+static long asAsgAddRuleTLSOption(ASGRULE *pasgrule,int isTLS)
+{
+    if(!pasgrule) return(0);
+    pasgrule->isTLS = isTLS;
     return(0);
 }
 

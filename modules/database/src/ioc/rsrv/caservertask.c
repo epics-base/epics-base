@@ -850,7 +850,8 @@ static void log_one_client (struct client *client, unsigned level)
         client->priority,
         n, n == 1 ? "" : "s" );
 
-    printf ( "\tMethod '%s', Authority '%s', \n",
+    printf ( "\tIsTLS '%s', Method '%s', Authority '%s', \n",
+        client->isTLS?(client->isTLS==-1?"not set":"true"):"false",
         client->pMethod?client->pMethod:"",
         client->pAuthority?client->pAuthority:"");
 
@@ -1287,6 +1288,7 @@ struct client * create_client ( SOCKET sock, int proto )
     client->pUserName = NULL;
     client->pMethod = NULL;
     client->pAuthority = NULL;
+    client->isTLS = -1; // not set
     client->pHostName = NULL;
     ellInit ( & client->chanList );
     ellInit ( & client->chanPendingUpdateARList );

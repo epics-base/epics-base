@@ -86,6 +86,7 @@ typedef struct client {
   char                  *pHostName;
   char                  *pMethod;
   char                  *pAuthority;
+  int                   isTLS;
   epicsEventId          blockSem; /* used whenever the client blocks */
   SOCKET                sock, udpRecv;
   int                   proto;

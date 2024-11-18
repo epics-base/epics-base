@@ -104,6 +104,8 @@ static unsigned char *asExtractInp(unsigned char *str) {
 <YAML_MODE>{L2}(access|ACCESS):[ ]{rpc}                  { yylval.Int = asRPC; return tokenYAML_ACCESS; }
 <YAML_MODE>{L2}(access|ACCESS):[ ]{none}                 { yylval.Int = asNOACCESS; return tokenYAML_ACCESS; }
 <YAML_MODE>{L2}(calc|CALC):[ ]{stringchar}+              { yylval.Str=asStrdup(asSkipToValue(yytext)); return tokenYAML_CALC; }
+<YAML_MODE>{L2}(isTLS|ISTLS):[ ]{true}                   { return tokenYAML_ISTLS; }
+<YAML_MODE>{L2}(isTLS|ISTLS):[ ]{false}                  { return tokenYAML_ISNOTTLS; }
 <YAML_MODE>{L2}(trapwrite|TRAPWRITE):[ ]{true}           { return tokenYAML_TRAPWRITE; }
 <YAML_MODE>{L2}(trapwrite|TRAPWRITE):[ ]{false}          ;
 

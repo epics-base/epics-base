@@ -795,7 +795,7 @@ static int write_action ( caHdrLargeArray *mp,
         pciu->client->pUserName ? pciu->client->pUserName : "",
         pciu->client->pMethod ? pciu->client->pMethod : "",
         pciu->client->pAuthority ? pciu->client->pAuthority : "",
-        pciu->client->pHostName ? pciu->client->pHostName : "",
+        pciu->client->pHostName ? pciu->client->pHostName : "", pciu->client->isTLS,
         pciu->dbch, mp->m_dataType, mp->m_count, pPayload );
 
     dbStatus = dbChannel_put(
@@ -1278,9 +1278,10 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
             asDbGetMemberPvt(pciu->dbch),
             asDbGetAsl(pciu->dbch),
             client->pUserName ? client->pUserName : "",
-            client->pHostName ? client->pHostName : "",
             client->pMethod ? client->pMethod : "",
-            client->pAuthority ? client->pAuthority : ""
+            client->pAuthority ? client->pAuthority : "",
+            client->pHostName ? client->pHostName : "",
+            client->isTLS
             );
     if(status != 0 && status != S_asLib_asNotActive){
         log_header ("No room for security table",
@@ -1781,7 +1782,7 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
         pciu->client->pUserName ? pciu->client->pUserName : "",
         pciu->client->pMethod ? pciu->client->pMethod : "",
         pciu->client->pAuthority ? pciu->client->pAuthority : "",
-        pciu->client->pHostName ? pciu->client->pHostName : "",
+        pciu->client->pHostName ? pciu->client->pHostName : "", pciu->client->isTLS,
         pciu->dbch, mp->m_dataType, mp->m_count,
         pciu->pPutNotify->pbuffer );
 

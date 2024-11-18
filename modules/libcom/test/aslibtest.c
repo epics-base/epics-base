@@ -22,6 +22,7 @@ static char *asUser,
             *asHost,
             *asMethod,
             *asAuthority;
+int asIsTLS=0;
 static int asAsl;
 
 static void setUser(const char *name)
@@ -48,6 +49,11 @@ static void setAuthority(const char *name)
     asAuthority = epicsStrDup(name);
 }
 
+static void setIsTLS(int isTLS)
+{
+    asIsTLS = isTLS;
+}
+
 static void testAccess(const char *asg, unsigned mask)
 {
     ASMEMBERPVT asp = 0; /* aka dbCommon::asp */
@@ -56,21 +62,21 @@ static void testAccess(const char *asg, unsigned mask)
 
     ret = asAddMember(&asp, asg);
     if(ret) {
-        testFail("testAccess(ASG:%s, USER:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, ASL:%d) -> asAddMember error: %s",
-                 asg, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, asAsl, errSymMsg(ret));
+        testFail("testAccess(ASG:%s, USER:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, isTLS:%s, ASL:%d) -> asAddMember error: %s",
+                 asg, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, (asIsTLS!=-1?(asIsTLS ? "true":"false"): "not set"), asAsl, errSymMsg(ret));
     } else {
-        ret = asAddClientX(&client, asp, asAsl, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost);
+        ret = asAddClientX(&client, asp, asAsl, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, asIsTLS);
     }
     if(ret) {
-        testFail("testAccess(ASG:%s, USER:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, ASL:%d) -> asAddClient error: %s",
-                 asg, asUser, asHost, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asAsl, errSymMsg(ret));
+        testFail("testAccess(ASG:%s, USER:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, isTLS:%s, ASL:%d) -> asAddClient error: %s",
+                 asg, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, (asIsTLS!=-1?(asIsTLS ? "true":"false"): "not set"), asAsl, errSymMsg(ret));
     } else {
         unsigned actual = 0;
         actual |= asCheckGet(client) ? 1 : 0;
         actual |= asCheckPut(client) ? 2 : 0;
         actual |= asCheckRPC(client) ? 4 : 0;
-        testOk(actual==mask, "testAccess(ASG:%s, USER:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, ASL:%d) -> %x == %x",
-               asg, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, asAsl, actual, mask);
+        testOk(actual==mask, "testAccess(ASG:%s, USER:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, isTLS:%s, ASL:%d) -> %x == %x",
+               asg, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, (asIsTLS!=-1?(asIsTLS ? "true":"false"): "not set"), asAsl, actual, mask);
     }
     if(client) asRemoveClient(&client);
     if(asp) asRemoveMember(&asp);
@@ -157,8 +163,8 @@ static const char method_auth_config[] = ""
         "UAG(ops) {\"geek\"}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
         "ASG(ro) {RULE(0, NONE) RULE(1, READ) {UAG(foo) UAG(ops) METHOD(\"ca\")}}\n"
-        "ASG(rw) {RULE(0, NONE) RULE(1, WRITE, TRAPWRITE) {UAG(foo) METHOD(\"x509\") AUTHORITY(\"Epics Org CA\")}}\n"
-        "ASG(rwx) {RULE(0, NONE) RULE(1, RPC) {UAG(bar) METHOD(\"x509\", \"ignored\") METHOD(\"ignored_too\") AUTHORITY(\"Epics Org CA\", \"ignored\") AUTHORITY(\"ORNL Org CA\")}}\n"
+        "ASG(rw) {RULE(0, NONE) RULE(1, WRITE, TRAPWRITE, ISTLS) {UAG(foo) METHOD(\"x509\") AUTHORITY(\"Epics Org CA\")}}\n"
+        "ASG(rwx) {RULE(0, NONE) RULE(1, RPC, ISTLS) {UAG(bar) METHOD(\"x509\", \"ignored\") METHOD(\"ignored_too\") AUTHORITY(\"Epics Org CA\", \"ignored\") AUTHORITY(\"ORNL Org CA\")}}\n"
         ;
 
 static void testMethodAndAuth(void)
@@ -192,6 +198,7 @@ static void testMethodAndAuth(void)
     testAccess("rwx", 0);
 
     setAuthority("Epics Org CA");
+    setIsTLS(1);
 
     testAccess("ro", 0);
     testAccess("rw", 3);
@@ -282,6 +289,7 @@ static const char method_auth_config_yaml[] = ""
 "      - level: 1\n"
 "        access: RPC\n"
 "        trapwrite: true\n"
+"        isTLS: true\n"
 "        uags:\n"
 "          - bar\n"
 "        hags:\n"
@@ -324,6 +332,7 @@ static void testMethodAndAuthYaml(void)
     testAccess("rwx", 0);
 
     setAuthority("Epics Org CA");
+    setIsTLS(1);
 
     testAccess("ro", 0);
     testAccess("rw", 3);

@@ -807,11 +807,10 @@ static void showChanList (
     while ( pciu ){
         dbChannelShow ( pciu->dbch, level, 8 );
         if ( level >= 1u )
-            printf( "%12s# on eventq=%d, access=%c%c%c\n", "",
+            printf( "%12s# on eventq=%d, access=%c%c\n", "",
                 ellCount ( &pciu->eventq ),
                 asCheckGet ( pciu->asClientPVT ) ? 'r': '-',
-                rsrvCheckPut ( pciu ) ? 'w': '-',
-                rsrvCheckCall ( pciu ) ? 'x': '-' );
+                rsrvCheckPut ( pciu ) ? 'w': '-' );
         pciu = ( struct channel_in_use * ) ellNext ( &pciu->node );
     }
     epicsMutexUnlock ( client->chanListLock );

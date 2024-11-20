@@ -235,7 +235,6 @@ void casAttachThreadToClient ( struct client * );
 int camessage ( struct client *client );
 void rsrv_extra_labor ( void * pArg );
 int rsrvCheckPut ( const struct channel_in_use *pciu );
-int rsrvCheckCall ( const struct channel_in_use *pciu );
 int rsrv_version_reply ( struct client *client );
 void rsrvFreePutNotify ( struct client *pClient,
                         struct rsrv_put_notify *pNotify );

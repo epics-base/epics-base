@@ -181,16 +181,6 @@ ASG(rpc) {
 
 Three new API functions `asAddClientX()`, `asChangeClientX()`, and `asTrapWriteBeforeWithDataX()` were added to the `libcom` module to support these new features.  They are corollaries to the existing `asAddClient()`, `asChangeClient()`, and `asTrapWriteBeforeWithData()` functions, but with the addition of the new `method` and `authority` parameters.
 
-```c++
-LIBCOM_API long epicsStdCall asAddClientX(ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt, int asl,const char *user,char *method,char *authority,char *host, int isTLS);
-LIBCOM_API long epicsStdCall asChangeClientX(ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority,char *host, int isTLS);
-LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithDataX(
-    const char *userid, const char *method, const char *authority, const char *hostid, int isTLS, struct dbChannel *addr,
-    int dbrType, int no_elements, void *data);
-```
-
-New API functions have been added to preserve backwards compatibility with existing clients, and because neither function overloading nor default parameters are supported in the version of C++ used for this release.
-
 #### EPICS YAML format for ACF files
 ACF Files can be specified in YAML format as of this release.  Any ACF file that contains a line that starts with `# EPICS YAML` will introduce yaml processing from that point forwards.  The yaml must include a version number entry.  For the moment only version 1.0 EPICS YAML is supported. For example:
 

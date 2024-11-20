@@ -53,13 +53,13 @@ long asCheckRPC(ASCLIENTPVT asClientPvt);
 
 /* More convenience macros
 void *asTrapWriteWithData(ASCLIENTPVT asClientPvt,
-     const char *userid, char *method, char *authority, const char *hostid, void *addr,
+     const char *userid, const char *hostid, void *addr,
      int dbrType, int no_elements, void *data);
 void asTrapWriteAfter(ASCLIENTPVT asClientPvt);
 */
-#define asTrapWriteWithData(asClientPvt, user, host, isTLS, addr, type, count, data) \
+#define asTrapWriteWithData(asClientPvt, user, host, addr, type, count, data) \
     ((asActive && (asClientPvt)->trapMask) \
-    ? asTrapWriteBeforeWithDataX((user), "ca", NULL, (host), (isTLS), (addr), (type), (count), (data)) \
+    ? asTrapWriteBeforeWithDataX((user), "ca", NULL, (host), 0, (addr), (type), (count), (data)) \
     : 0)
 #define asTrapWriteWithDataX(asClientPvt, user, method, authority, host, isTLS, addr, type, count, data) \
     ((asActive && (asClientPvt)->trapMask) \
@@ -243,6 +243,18 @@ typedef struct{
     ELLLIST         authList;   /*List of ASGAUTHORITY*/
     int             trapMask;
     int             isTLS; // -1 not set, 0 false, 1 = true
+                           // isTLS captures the use case where a server is configured to accept
+                           // TLS connections from peers that don't have client certificates.
+                           // That ability is controlled by the `EPICS_PVAS_TLS_OPTIONS` option
+                           // `client_cert=require|optional`.
+                           // In this case we'll have a TLS connection but with,
+                           // `method` = `ca` or `anonymous`, `authority` = <blank>
+                           // and an arbitrary name.
+                           // This flag allows you to set permissions based on whether the server
+                           // has been authenticated correctly with a certificate and both the client
+                           // and server have authenticated that fact.
+                           // This can be used to make sure that data fed to a control screen is authentic
+                           // even if the control screen client does not have its own certificate.
 } ASGRULE;
 typedef struct{
     ELLNODE         node;

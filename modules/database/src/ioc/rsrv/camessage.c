@@ -1151,9 +1151,6 @@ static void access_rights_reply ( struct channel_in_use * pciu )
     if ( rsrvCheckPut ( pciu ) ) {
         ar |= CA_PROTO_ACCESS_RIGHT_WRITE;
     }
-    if ( rsrvCheckCall ( pciu ) ) {
-        ar |= CA_PROTO_ACCESS_RIGHT_CALL;
-    }
 
     SEND_LOCK ( pciu->client );
     status = cas_copy_in_header (
@@ -2584,21 +2581,5 @@ int rsrvCheckPut (const struct channel_in_use *pciu)
     }
     else {
         return asCheckPut (pciu->asClientPVT);
-    }
-}
-
-/*
- * rsrvCheckCall ()
- */
-int rsrvCheckCall (const struct channel_in_use *pciu)
-{
-    /*
-     * SPC_NOMOD fields are always uncallable
-     */
-    if (dbChannelSpecial(pciu->dbch) == SPC_NOMOD) {
-        return 0;
-    }
-    else {
-        return asCheckRPC (pciu->asClientPVT);
     }
 }

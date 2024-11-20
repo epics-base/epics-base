@@ -8,6 +8,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <io.h>
+#include <windows.h>
+#define close _close
+#define unlink _unlink
+#else
+#include <unistd.h>
+#endif
+
 #include <testMain.h>
 #include <epicsUnitTest.h>
 
@@ -383,21 +392,41 @@ static void testDumpOutput(void)
     testDiag("testDumpOutput()");
     testOk1(asInitMem(method_auth_config, NULL)==0);
 
-    char *buf = NULL;
-    size_t size = 0;
-    FILE *fp = open_memstream(&buf, &size);
+    // Create temporary file in current directory
+    char temp_filename[] = "aslib_test_XXXXXX";
+    int fd = mkstemp(temp_filename);
+    testOk(fd != -1, "Created temporary file");
+    if (fd == -1) return;
 
-    testOk(fp != NULL, "Created memory stream");
-    if (!fp) return;
+    FILE *fp = fdopen(fd, "w+");
+    testOk(fp != NULL, "Opened temporary file stream");
+    if (!fp) {
+        close(fd);
+        unlink(temp_filename);
+        return;
+    }
 
+    // Write dump to temporary file
     asDumpFP(fp, NULL, NULL, 0);
-    fclose(fp);
+    fflush(fp);
+    rewind(fp);
 
-    testOk(strcmp(expected_method_auth_config, buf) == 0,
+    // Read the entire dump into a buffer
+    char *buf = malloc(1024);
+    size_t size = 0;
+    if (buf) {
+        size = fread(buf, 1, 1024, fp);
+        buf[size] = '\0';
+    }
+
+    testOk(buf != NULL && strcmp(expected_method_auth_config, buf) == 0,
            "asDumpFP output matches expected\nExpected:\n%s\nGot:\n%s",
-           expected_method_auth_config, buf);
+           expected_method_auth_config, buf ? buf : "NULL");
 
+    // Clean up
     free(buf);
+    fclose(fp);
+    unlink(temp_filename);  // Delete temporary file
 }
 static const char *expected_DEFAULT_rules_config =
   "ASG(DEFAULT) {\n"
@@ -521,7 +550,7 @@ static void testUseIP(void)
 
 MAIN(aslibtest)
 {
-    testPlan(78);
+    testPlan(79);
     testSyntaxErrors();
     testHostNames();
     testMethodAndAuth();

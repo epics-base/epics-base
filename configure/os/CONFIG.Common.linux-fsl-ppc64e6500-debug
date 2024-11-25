@@ -1,0 +1,8 @@
+# Definitions for the linux-fsl-ppc64e6500-debug target builds
+# Override these settings in CONFIG_SITE
+
+# Include definitions common to all powerpc64-fsl-linux
+include $(CONFIG)/os/CONFIG.Common.linux-fsl-ppc64e6500
+-include $(CONFIG)/os/CONFIG.Common.linux-fsl-ppc64e6500
+
+CROSS_OPT = NO

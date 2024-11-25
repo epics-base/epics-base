@@ -1,0 +1,13 @@
+#*************************************************************************
+# Default definitions for all linux-poky-corei7_64 targets
+#*************************************************************************
+include $(CONFIG)/os/CONFIG.Common.linux-x86_64
+include $(CONFIG)/os/CONFIG.yoctoCommon.Common
+
+GNU_TARGET = x86_64-poky-linux
+OECORE_SYSROOT ?= /opt/cct/default/sysroots
+OECORE_NATIVE_SYSROOT ?= $(OECORE_SYSROOT)/x86_64-pokysdk-linux
+OECORE_TARGET_SYSROOT ?= $(OECORE_SYSROOT)/corei7-64-poky-linux
+
+# Add site specific configuration
+-include $(CONFIG)/os/CONFIG_SITE.yoctoCommon.linux-poky-corei7_64

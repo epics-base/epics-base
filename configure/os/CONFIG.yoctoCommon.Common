@@ -1,0 +1,40 @@
+#*************************************************************************
+# Yocto toolchain based builds - default definitions.
+#*************************************************************************
+#   author		  	: Jeong Han Lee
+#   							: Jerzy Jamroz
+#		date					: 13.10.2024
+#*************************************************************************
+# Control variables:
+## OECORE_SYSROOT - Toolchain directory
+## OECORE_TARGET_SYSROOT - Target sysroot directory
+## OECORE_NATIVE_SYSROOT - SDK toolchain directory
+## GNU_TARGET - Define if T_A not equal GNU_TARGET
+#*************************************************************************
+
+ARCH_DEP_CPPFLAGS += --sysroot=$(OECORE_TARGET_SYSROOT)
+ARCH_DEP_CPPFLAGS += -pipe -feliminate-unused-debug-types
+ARCH_DEP_CXXFLAGS += -std=c++17
+
+ARCH_DEP_LDFLAGS += --sysroot=$(OECORE_TARGET_SYSROOT)
+ARCH_DEP_LDFLAGS += -Wl,--as-needed
+# Extra performance flags
+ARCH_DEP_LDFLAGS += -Wl,-O3
+ARCH_DEP_LDFLAGS += -Wl,--hash-style=gnu
+ARCH_DEP_LDFLAGS += -Wl,-z,relro -Wl,-z,now
+ARCH_DEP_LDFLAGS += -Wl,--gc-sections
+ARCH_DEP_LDFLAGS += -Wl,--sort-common
+ARCH_DEP_LDFLAGS += -Wl,-Bsymbolic
+# Use ld.gold instead of ld
+ARCH_DEP_LDFLAGS += -Wl,-fuse-ld=gold
+ARCH_DEP_LDFLAGS += -Wl,--icf=all
+
+GNU_TARGET ?= $(subst -debug,,$(T_A))
+GNU_DIR = $(OECORE_NATIVE_SYSROOT)/usr
+#Toolchain has the GNU_TARGET after bin
+GNU_BIN = $(GNU_DIR)/bin/$(GNU_TARGET)
+
+COMMANDLINE_LIBRARY ?= READLINE
+
+# Add site specific configurations
+-include $(CONFIG)/os/CONFIG_SITE.yoctoCommon.Common

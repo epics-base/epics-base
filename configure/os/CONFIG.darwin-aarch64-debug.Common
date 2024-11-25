@@ -1,0 +1,11 @@
+# CONFIG.darwin-aarch64-debug.Common
+#
+# Definitions for darwin-aarch64-debug host builds - darwin-aarch64 target build with debug compiler flags
+# Sites may override these definitions in CONFIG_SITE.darwin-aarch64-debug.Common
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.darwin-aarch64.Common
+
+# Removes -O optimization and adds -g compile option
+HOST_OPT=NO
+

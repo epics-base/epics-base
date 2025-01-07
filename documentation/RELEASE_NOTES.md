@@ -22,6 +22,12 @@ should also be read to understand what has changed since earlier releases:
 
 ## Changes made on the 7.0 branch since 7.0.8.1
 
+### Use SHRLIB_INSTALLS to install shared libraries
+
+Analog to BIN_INSTALLS and LIB_INSTALLS,
+a Makefile mechanism to install shared libraries was added,
+using the apropriate file permissions and install location.
+
 ### The AMSG error message propagates through MSS links
 
 A database link with the MSS attribute will now propagate not only SEVR and

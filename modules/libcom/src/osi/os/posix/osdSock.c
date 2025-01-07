@@ -151,6 +151,31 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketAccept (
     return newSock;
 }
 
+#ifdef HAS_SOCK_RENUMBER
+LIBCOM_API SOCKET epicsStdCall epicsSocketRenumber ( SOCKET sock )
+{
+    int newSock;
+
+    if ( sock < 0 || sock >= FD_SETSIZE) {
+        return sock;
+    }
+
+    newSock = fcntl ( sock, F_DUPFD_CLOEXEC, FD_SETSIZE );
+    if ( newSock < 0 ) {
+        char buf [ 64 ];
+        epicsSocketConvertErrnoToString ( buf, sizeof ( buf ) );
+        errlogPrintf (
+            "epicsSocketRenumber: fcntl FD_DUPFD_CLOEXEC failed "
+            "because \"%s\"\n",
+            buf );
+        return sock;
+    }
+
+    close ( sock ); /* Closes the original fd, not the socket */
+    return newSock;
+}
+#endif
+
 LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
 {
     int status = close ( s );

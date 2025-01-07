@@ -347,8 +347,8 @@ fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn,
     onceOnly (onceOnlyIn), manager (managerIn)
 {
     if (!FD_IN_FDSET(fdIn)) {
-        fprintf (stderr, "%s: fd > FD_SETSIZE ignored\n",
-            __FILE__);
+        fprintf (stderr, "%s: fd %d > FD_SETSIZE, ignored\n",
+            __FILE__, (int) fdIn);
         return;
     }
     this->manager.installReg (*this);

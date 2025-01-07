@@ -38,14 +38,34 @@ struct in_addr;
  * \brief Create a socket object
  *
  * Ask the operating system to create a socket and return its file descriptor.
+ * This fd will have FD_CLOEXEC set.
  *
  * \param domain The socket domain, e.g. PF_INET
  * \param type The type of socket, e.g. SOCK_STREAM (tcp) or SOCK_DGRAM (udp)
  * \param protocol Typically unused and set to 0.
- * \return A file descriptor referring to the socket, or -1 on error.
+ * \return A file descriptor referring to the socket, or INVALID_SOCKET (-1)
+ * on error.
  */
-LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
     int domain, int type, int protocol );
+
+#ifdef HAS_SOCK_RENUMBER
+/*!
+ * \brief Renumber a socket fd that won't be used with select()
+ *
+ * Ask the operating system to create a new file descriptor and close the
+ * given one if the given fd is less than FD_SETSIZE.
+ * The new fd will have FD_CLOEXEC set.
+ * On Posix systems the new file descriptor value should be FD_SETSIZE or
+ * greater, or INVALID_SOCKET.
+ *
+ * \param sock A socket file descriptor, or INVALID_SOCKET.
+ * \return A new fd for the socket, the original fd, or INVALID_SOCKET (-1)
+ * on error.
+ */
+LIBCOM_API SOCKET epicsStdCall
+    epicsSocketRenumber ( SOCKET sock );
+#endif
 
 /*!
  * \brief Accept a connection on a listening stream socket.

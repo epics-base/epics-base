@@ -827,15 +827,6 @@ default_network_on_exit(int exit_code, void *arg)
 }
 
 static void
-default_network_set_self_prio(rtems_task_priority prio)
-{
-        rtems_status_code sc;
-
-        sc = rtems_task_set_priority(RTEMS_SELF, prio, &prio);
-        assert(sc == RTEMS_SUCCESSFUL);
-}
-
-static void
 default_network_dhcpcd(void)
 {
     static const char default_cfg[] = "clientid test client\n";
@@ -950,6 +941,20 @@ POSIX_Init ( void *argument __attribute__((unused)))
     struct timespec  	now;
     char timeBuff[100];
 
+    /*
+     * If RTEMS is used with the POSIX API, the init task
+     * 'POSIX_Init()' is unfortunately given the priority '2'. This
+     * corresponds to the second lowest POSIX prio (RTEMS pthread
+     * prio 256). This task shoud have IOCsh prio.
+     */
+
+    /* PosixMaxPrio == 100 */
+    rtems_task_priority mainPrio = RTEMS_MAXIMUM_PRIORITY - RTEMS_MAXIMUM_PRIORITY * epicsThreadPriorityIocsh / 100;
+    rtems_task_priority old;
+    sc = rtems_task_set_priority (RTEMS_SELF, mainPrio, &old);
+    assert(sc == RTEMS_SUCCESSFUL);
+    printf("Priority changed from %d -> %d\n", old, mainPrio);
+
     initConsole ();
 
     /*
@@ -996,10 +1001,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
     if (epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPostSetBootConfigFromNVRAM");
 #endif
-    /*
-     * Override RTEMS Posix configuration, it gets started with posix prio 2
-     */
-    epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityIocsh);
 
     /*
      * Create a reasonable environment
@@ -1035,7 +1036,9 @@ POSIX_Init ( void *argument __attribute__((unused)))
     on_exit(default_network_on_exit, NULL);
 
     /* Let other tasks run to complete background work */
-    default_network_set_self_prio(RTEMS_MAXIMUM_PRIORITY - 1U);
+    sc = rtems_task_set_priority (RTEMS_SELF, RTEMS_MAXIMUM_PRIORITY/2, &old);
+    assert(sc == RTEMS_SUCCESSFUL);
+    printf("Priority changed from %d -> %d\n", old, RTEMS_MAXIMUM_PRIORITY/2);
 
     sc = rtems_bsd_initialize();
     assert(sc == RTEMS_SUCCESSFUL);
@@ -1098,6 +1101,11 @@ POSIX_Init ( void *argument __attribute__((unused)))
         printf("time from ntp : %s.%09ld UTC\n", timeBuff, now.tv_nsec);
       }
     }
+
+    sc = rtems_task_set_priority (RTEMS_SELF, mainPrio, &old);
+    assert(sc == RTEMS_SUCCESSFUL);
+    printf("Priority changed at end of network init from %d -> %d\n", old, mainPrio);
+
 #else // Legacy stack, old network initialization
     char *cp;
     if ((cp = getenv("EPICS_TS_NTP_INET")) != NULL)
@@ -1111,12 +1119,14 @@ POSIX_Init ( void *argument __attribute__((unused)))
     {
         unsigned int p;
         if (epicsThreadHighestPriorityLevelBelow(epicsThreadPriorityScanLow, &p)
-                                            == epicsThreadBooleanStatusSuccess)
+                                            != epicsThreadBooleanStatusSuccess)
         {
-            rtems_bsdnet_config.network_task_priority = p;
+            p = RTEMS_MAXIMUM_PRIORITY - RTEMS_MAXIMUM_PRIORITY * epicsThreadPriorityScanLow / 100;
         }
+        printf(" This is network task prio (RTEMS) : %d , OSI Prio %d\n", p, epicsThreadPriorityScanLow);
+        rtems_bsdnet_config.network_task_priority = p;
     }
-    printf("\n***** Initializing network (Legacy Stack)  *****\n");
+    printf("\n***** Initializing network (Legacy Stack) with prio %d  *****\n", rtems_bsdnet_config.network_task_priority);
     rtems_bsdnet_initialize_network();
     printf("\n***** Network Status  *****\n");
     rtems_netstat(3);

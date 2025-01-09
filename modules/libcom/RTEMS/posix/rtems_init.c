@@ -949,7 +949,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
      */
 
     /* PosixMaxPrio == 100 */
-    rtems_task_priority mainPrio = RTEMS_MAXIMUM_PRIORITY - RTEMS_MAXIMUM_PRIORITY * epicsThreadPriorityIocsh / 100;
+    rtems_task_priority mainPrio = RTEMS_MAXIMUM_PRIORITY - ( RTEMS_MAXIMUM_PRIORITY - RTEMS_MAXIMUM_PRIORITY) * epicsThreadPriorityIocsh / 100;
     rtems_task_priority old;
     sc = rtems_task_set_priority (RTEMS_SELF, mainPrio, &old);
     assert(sc == RTEMS_SUCCESSFUL);

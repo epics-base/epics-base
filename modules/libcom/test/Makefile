@@ -209,6 +209,11 @@ aslibtest_SRCS += aslibtest.c
 testHarness_SRCS += aslibtest.c
 TESTS += aslibtest
 
+TESTPROD_HOST += fdManagerTest
+fdManagerTest_SRCS += fdManagerTest.cpp
+testHarness_SRCS += fdManagerTest.cpp
+TESTS += fdManagerTest
+
 # Perl module tests:
 TESTS += macLib
 

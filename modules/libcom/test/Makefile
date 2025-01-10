@@ -315,11 +315,6 @@ TESTPROD_HOST += buckTest
 buckTest_SRCS += buckTest.c
 testHarness_SRCS += buckTest.c
 
-#TESTPROD_HOST += fdmgrTest
-fdmgrTest_SRCS += fdmgrTest.c
-fdmgrTest_LIBS += ca
-# FIXME: program never exits.
-
 TESTPROD_HOST += epicsAtomicPerform
 epicsAtomicPerform_SRCS += epicsAtomicPerform.cpp
 testHarness_SRCS += epicsAtomicPerform.cpp

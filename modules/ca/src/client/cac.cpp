@@ -385,6 +385,21 @@ unsigned cac::highestPriorityLevelBelow ( unsigned priority )
     return belowPriority;
 }
 
+SOCKET cac::SocketCreate (
+    int domain,
+    int type,
+    int protocol )
+{
+    SOCKET sock = epicsSocketCreate ( domain, type, protocol );
+#ifdef HAS_SOCK_RENUMBER
+    static bool renumber = getenv ( "EPICS_CAC_AVOID_LOW_FDS" );
+    if ( renumber ) {
+        sock = epicsSocketRenumber ( sock );
+    }
+#endif
+    return sock;
+}
+
 //
 // set the push pending flag on all virtual circuits
 //

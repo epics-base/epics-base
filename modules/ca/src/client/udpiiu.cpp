@@ -168,7 +168,7 @@ udpiiu::udpiiu (
         envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT,
                                     static_cast <unsigned short> (CA_REPEATER_PORT) );
 
-    this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    this->sock = cac::SocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
@@ -594,7 +594,7 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
         return;
     }
 
-    tmpSock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    tmpSock = cac::SocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( tmpSock != INVALID_SOCKET ) {
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
         memset ( (char *) &bd, 0, sizeof ( bd ) );

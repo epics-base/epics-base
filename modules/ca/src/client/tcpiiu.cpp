@@ -717,7 +717,7 @@ tcpiiu::tcpiiu (
     if(!pCurData)
         throw std::bad_alloc();
 
-    this->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
+    this->sock = cac::SocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
         freeListFree(this->cacRef.tcpSmallRecvBufFreeList, this->pCurData);
         char sockErrBuf[64];

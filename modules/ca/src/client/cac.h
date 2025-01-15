@@ -204,6 +204,8 @@ public:
 
     const char * pLocalHostName ();
 
+    static SOCKET SocketCreate ( int domain, int type, int protocol );
+
 private:
     epicsSingleton < localHostName > :: reference _refLocalHostName;
     chronIntIdResTable < nciu > chanTable;

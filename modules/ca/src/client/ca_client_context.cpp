@@ -87,7 +87,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         }
     }
 
-    this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+    this->sock = cac::SocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );

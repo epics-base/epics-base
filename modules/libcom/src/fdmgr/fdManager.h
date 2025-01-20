@@ -19,6 +19,18 @@
 #ifndef fdManagerH_included
 #define fdManagerH_included
 
+#if !defined(FDMGR_USE_POLL) && !defined(FDMGR_USE_SELECT)
+#if defined(__linux__)
+#define FDMGR_USE_POLL
+#else
+#define FDMGR_USE_SELECT
+#endif
+#endif
+
+#ifdef FDMGR_USE_POLL
+#include <poll.h>
+#endif
+
 #include "libComAPI.h" // reset share lib defines
 #include "tsDLList.h"
 #include "resourceLib.h"
@@ -91,10 +103,20 @@ private:
     tsDLList < fdReg > activeList;
     resTable < fdReg, fdRegId > fdTbl;
     const double sleepQuantum;
-    fd_set * fdSetsPtr;
     epicsTimerQueuePassive * pTimerQueue;
-    SOCKET maxFD;
     bool processInProg;
+
+#ifdef FDMGR_USE_POLL
+    int nfds;
+    int pollfdsCap;
+    struct pollfd *pollfds;
+#endif
+
+#ifdef FDMGR_USE_SELECT
+    fd_set * fdSetsPtr;
+    SOCKET maxFD;
+#endif
+
     //
     // Set to fdreg when in call back
     // and nill otherwise

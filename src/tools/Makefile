@@ -37,6 +37,7 @@ PERL_SCRIPTS += fullPathName.pl
 PERL_SCRIPTS += installEpics.pl
 PERL_SCRIPTS += makeAPIheader.pl
 PERL_SCRIPTS += makeMakefile.pl
+PERL_SCRIPTS += makeRPath.pl
 PERL_SCRIPTS += makeTestfile.pl
 PERL_SCRIPTS += mkmf.pl
 PERL_SCRIPTS += munch.pl
@@ -49,14 +50,13 @@ PERL_SCRIPTS += testFailures.pl
 PERL_SCRIPTS += useManifestTool.pl
 PERL_SCRIPTS += genVersionHeader.pl
 
-PERL_SCRIPTS += makeRPath.py
-
 HTMLS = style.css
 HTMLS += EPICS/Getopts.html
 HTMLS += EPICS/Path.html
 HTMLS += EPICS/Readfile.html
 HTMLS += fullPathName.html
 HTMLS += makeAPIheader.html
+HTMLS += makeRPath.html
 HTMLS += munch.html
 HTMLS += podToHtml.html
 HTMLS += podToMD.html

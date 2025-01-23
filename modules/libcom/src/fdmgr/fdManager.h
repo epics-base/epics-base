@@ -19,24 +19,24 @@
 #ifndef fdManagerH_included
 #define fdManagerH_included
 
-#if !defined(FDMGR_USE_POLL) && !defined(FDMGR_USE_SELECT)
-#if defined(__linux__)
-#define FDMGR_USE_POLL
-#else
-#define FDMGR_USE_SELECT
-#endif
-#endif
-
-#ifdef FDMGR_USE_POLL
-#include <poll.h>
-#endif
-
 #include "libComAPI.h" // reset share lib defines
 #include "tsDLList.h"
 #include "resourceLib.h"
 #include "epicsTime.h"
 #include "osiSock.h"
 #include "epicsTimer.h"
+
+#if !defined(FDMGR_USE_POLL) && !defined(FDMGR_USE_SELECT)
+#if defined(__linux__) || _WIN32_WINNT >= 0x600 || (defined(__rtems__) && !defined(RTEMS_LEGACY_STACK))
+#define FDMGR_USE_POLL
+#else
+#define FDMGR_USE_SELECT
+#endif
+#endif
+
+#if defined(FDMGR_USE_POLL) && !defined(_WIN32)
+#include <poll.h>
+#endif
 
 enum fdRegType {fdrRead, fdrWrite, fdrException, fdrNEnums};
 

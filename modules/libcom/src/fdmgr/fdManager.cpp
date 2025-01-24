@@ -30,7 +30,7 @@
 #define poll WSAPoll
 #endif
 
-static const int PollEvents[] = { // must match fdRegType 
+static const short PollEvents[] = { // must match fdRegType
     POLLRDNORM | POLLRDBAND | POLLIN | POLLHUP | POLLERR,
     POLLWRBAND | POLLWRNORM | POLLOUT | POLLERR,
     POLLPRI};
@@ -55,9 +55,6 @@ static const unsigned uSecPerSec = 1000u * mSecPerSec;
 LIBCOM_API fdManager::fdManager () :
     sleepQuantum ( epicsThreadSleepQuantum () ),
     pTimerQueue ( 0 ), processInProg ( false ),
-#ifdef FDMGR_USE_POLL
-    nfds ( 0 ), pollfdsCap ( 0 ), pollfds ( 0 ),
-#endif
 #ifdef FDMGR_USE_SELECT
     fdSetsPtr ( new fd_set [fdrNEnums] ), maxFD ( 0 ),
 #endif
@@ -89,9 +86,6 @@ LIBCOM_API fdManager::~fdManager()
         pReg->destroy();
     }
     delete this->pTimerQueue;
-#ifdef FDMGR_USE_POLL
-    delete [] this->pollfds;
-#endif
 #ifdef FDMGR_USE_SELECT
     delete [] this->fdSetsPtr;
 #endif
@@ -126,17 +120,30 @@ LIBCOM_API void fdManager::process (double delay)
         minDelay = delay;
     }
 
+#ifdef FDMGR_USE_POLL
+    pollfds.clear();
+#endif
+
     int ioPending = 0;
     tsDLIter < fdReg > iter = this->regList.firstIter ();
     while ( iter.valid () ) {
+        ++ioPending;
+
 #ifdef FDMGR_USE_POLL
-        pollfds[ioPending].fd = iter->getFD();
-        pollfds[ioPending].events = PollEvents[iter->getType()];
+#if __cplusplus >= 201100L
+        pollfds.emplace_back(pollfd{.fd = iter->getFD(), .events = PollEvents[iter->getType()]});
+#else
+        struct pollfd pollfd;
+        pollfd.fd = iter->getFD();
+        pollfd.events = PollEvents[iter->getType()];
+        pollfd.revents = 0;
+        pollfds.push_back(pollfd);
 #endif
+#endif
+
 #ifdef FDMGR_USE_SELECT
         FD_SET(iter->getFD(), &this->fdSetsPtr[iter->getType()]);
 #endif
-        ++ioPending;
         ++iter;
     }
 
@@ -145,7 +152,8 @@ LIBCOM_API void fdManager::process (double delay)
         if (minDelay * mSecPerSec > INT_MAX)
             minDelay = INT_MAX / mSecPerSec;
 
-        int status = poll(pollfds, ioPending, static_cast<int>(minDelay * mSecPerSec));
+        int status = poll(&pollfds.front(), // ancient C++ has no vector.data()
+                    ioPending, static_cast<int>(minDelay * mSecPerSec));
         int i = 0;
 #endif
 
@@ -341,17 +349,6 @@ void fdManager::installReg (fdReg &reg)
     if ( status != 0 ) {
         throwWithLocation ( fdInterestSubscriptionAlreadyExits () );
     }
-#ifdef FDMGR_USE_POLL
-    // keep enough event slots for all fds to become available at once
-    if (++nfds > pollfdsCap) {
-        if (pollfdsCap == 0)
-            pollfdsCap = 16;
-        else
-            pollfdsCap *= 2;
-        delete[] pollfds;
-        pollfds = new struct pollfd[pollfdsCap];
-    }
-#endif
 }
 
 //
@@ -396,9 +393,6 @@ void fdManager::removeReg (fdReg &regIn)
     FD_CLR(regIn.getFD(), &this->fdSetsPtr[regIn.getType()]);
 #endif
 
-#ifdef FDMGR_USE_POLL
-    nfds--;
-#endif
 }
 
 //

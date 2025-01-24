@@ -34,8 +34,11 @@
 #endif
 #endif
 
-#if defined(FDMGR_USE_POLL) && !defined(_WIN32)
+#if defined(FDMGR_USE_POLL)
+#include <vector>
+#if !defined(_WIN32)
 #include <poll.h>
+#endif
 #endif
 
 enum fdRegType {fdrRead, fdrWrite, fdrException, fdrNEnums};
@@ -107,9 +110,7 @@ private:
     bool processInProg;
 
 #ifdef FDMGR_USE_POLL
-    int nfds;
-    int pollfdsCap;
-    struct pollfd *pollfds;
+    std::vector<struct pollfd> pollfds;
 #endif
 
 #ifdef FDMGR_USE_SELECT

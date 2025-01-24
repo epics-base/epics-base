@@ -945,11 +945,13 @@ POSIX_Init ( void *argument __attribute__((unused)))
      * If RTEMS is used with the POSIX API, the init task
      * 'POSIX_Init()' is unfortunately given the priority '2'. This
      * corresponds to the second lowest POSIX prio (RTEMS pthread
-     * prio 256). This task shoud have IOCsh prio.
+     * prio 254). This task shoud have IOCsh prio.
      */
 
     /* PosixMaxPrio == 100 */
-    rtems_task_priority mainPrio = RTEMS_MAXIMUM_PRIORITY - ( RTEMS_MAXIMUM_PRIORITY - RTEMS_MAXIMUM_PRIORITY) * epicsThreadPriorityIocsh / 100;
+    rtems_task_priority mainPrio = RTEMS_MAXIMUM_PRIORITY
+                                 - (RTEMS_MAXIMUM_PRIORITY - RTEMS_MINIMUM_PRIORITY)
+                                 * epicsThreadPriorityIocsh / 100;
     rtems_task_priority old;
     sc = rtems_task_set_priority (RTEMS_SELF, mainPrio, &old);
     assert(sc == RTEMS_SUCCESSFUL);
@@ -1121,7 +1123,8 @@ POSIX_Init ( void *argument __attribute__((unused)))
         if (epicsThreadHighestPriorityLevelBelow(epicsThreadPriorityScanLow, &p)
                                             != epicsThreadBooleanStatusSuccess)
         {
-            p = RTEMS_MAXIMUM_PRIORITY - RTEMS_MAXIMUM_PRIORITY * epicsThreadPriorityScanLow / 100;
+            p = RTEMS_MAXIMUM_PRIORITY
+              - (RTEMS_MAXIMUM_PRIORITY - RTEMS_MINIMUM_PRIORITY) * epicsThreadPriorityScanLow / 100;
         }
         printf(" This is network task prio (RTEMS) : %d , OSI Prio %d\n", p, epicsThreadPriorityScanLow);
         rtems_bsdnet_config.network_task_priority = p;

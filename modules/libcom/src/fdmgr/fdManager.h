@@ -26,21 +26,6 @@
 #include "osiSock.h"
 #include "epicsTimer.h"
 
-#if !defined(FDMGR_USE_POLL) && !defined(FDMGR_USE_SELECT)
-#if defined(__linux__) || _WIN32_WINNT >= 0x600 || (defined(__rtems__) && !defined(RTEMS_LEGACY_STACK))
-#define FDMGR_USE_POLL
-#else
-#define FDMGR_USE_SELECT
-#endif
-#endif
-
-#if defined(FDMGR_USE_POLL)
-#include <vector>
-#if !defined(_WIN32)
-#include <poll.h>
-#endif
-#endif
-
 enum fdRegType {fdrRead, fdrWrite, fdrException, fdrNEnums};
 
 //
@@ -85,49 +70,29 @@ private:
 //
 // file descriptor manager
 //
-class fdManager : public epicsTimerQueueNotify {
+class LIBCOM_API fdManager : public epicsTimerQueueNotify {
 public:
     //
     // exceptions
     //
     class fdInterestSubscriptionAlreadyExits {};
 
-    LIBCOM_API fdManager ();
-    LIBCOM_API virtual ~fdManager ();
-    LIBCOM_API void process ( double delay ); // delay parameter is in seconds
+    fdManager ();
+    virtual ~fdManager ();
+    void process ( double delay ); // delay parameter is in seconds
 
     // returns NULL if the fd is unknown
-    LIBCOM_API class fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
+    class fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
 
     epicsTimer & createTimer ();
 
 private:
-    tsDLList < fdReg > regList;
-    tsDLList < fdReg > activeList;
-    resTable < fdReg, fdRegId > fdTbl;
-    const double sleepQuantum;
-    epicsTimerQueuePassive * pTimerQueue;
-    bool processInProg;
+    struct fdManagerPrivate* priv;
 
-#ifdef FDMGR_USE_POLL
-    std::vector<struct pollfd> pollfds;
-#endif
-
-#ifdef FDMGR_USE_SELECT
-    fd_set * fdSetsPtr;
-    SOCKET maxFD;
-#endif
-
-    //
-    // Set to fdreg when in call back
-    // and nill otherwise
-    //
-    fdReg * pCBReg;
     void reschedule ();
     double quantum ();
     void installReg (fdReg &reg);
     void removeReg (fdReg &reg);
-    void lazyInitTimerQueue ();
     fdManager ( const fdManager & );
     fdManager & operator = ( const fdManager & );
     friend class fdReg;
@@ -208,19 +173,6 @@ inline resTableIndex fdRegId::hash () const
     // proper size after it is returned to the resource class
     //
     return hashid;
-}
-
-inline void fdManager::lazyInitTimerQueue ()
-{
-    if ( ! this->pTimerQueue ) {
-        this->pTimerQueue = & epicsTimerQueuePassive::create ( *this );
-    }
-}
-
-inline epicsTimer & fdManager::createTimer ()
-{
-    this->lazyInitTimerQueue ();
-    return this->pTimerQueue->createTimer ();
 }
 
 #endif // fdManagerH_included

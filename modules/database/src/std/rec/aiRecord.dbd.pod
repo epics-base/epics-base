@@ -33,7 +33,7 @@ These fields control where the record will read data from when it is processed:
 The DTYP field selects which device support layer should be responsible for
 providing input data to the record.
 The ai device support layers provided by EPICS Base are documented in the
-L<Device Support|devSoft> section.
+L<Device Support|Device Support Interface> section.
 External support modules may provide additional device support for this record
 type.
 If not set explicitly, the DTYP value defaults to the first device support that

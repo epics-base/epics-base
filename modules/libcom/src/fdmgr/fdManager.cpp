@@ -26,7 +26,7 @@
 #include "locationException.h"
 
 #if !defined(FDMGR_USE_POLL) && !defined(FDMGR_USE_SELECT)
-#if defined(__linux__) || _WIN32_WINNT >= 0x600 || (defined(__rtems__) && !defined(RTEMS_LEGACY_STACK))
+#if defined(__linux__) || defined(darwin) || _WIN32_WINNT >= 0x600 || (defined(__rtems__) && !defined(RTEMS_LEGACY_STACK))
 #define FDMGR_USE_POLL
 #else
 #define FDMGR_USE_SELECT

@@ -19,6 +19,16 @@
 #ifndef fdManagerH_included
 #define fdManagerH_included
 
+#include <memory>
+namespace epics {
+#if __cplusplus>=201103L
+template<typename T>
+using auto_ptr = std::unique_ptr<T>;
+#else
+using std::auto_ptr;
+#endif
+}
+
 #include "libComAPI.h" // reset share lib defines
 #include "tsDLList.h"
 #include "resourceLib.h"
@@ -87,7 +97,7 @@ public:
     epicsTimer & createTimer ();
 
 private:
-    struct fdManagerPrivate* priv;
+    epics::auto_ptr <struct fdManagerPrivate> priv;
 
     void reschedule ();
     double quantum ();

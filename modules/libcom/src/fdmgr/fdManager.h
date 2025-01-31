@@ -47,27 +47,27 @@ class LIBCOM_API fdRegId
 {
 public:
 
-    fdRegId (const SOCKET fdIn, const fdRegType typeIn) :
+    fdRegId(const SOCKET fdIn, const fdRegType typeIn) :
         fd(fdIn), type(typeIn) {}
 
-    SOCKET getFD () const
+    SOCKET getFD() const
     {
-        return this->fd;
+        return fd;
     }
 
-    fdRegType getType () const
+    fdRegType getType() const
     {
-        return this->type;
+        return type;
     }
 
-    bool operator == (const fdRegId &idIn) const
+    bool operator == (const fdRegId& idIn) const
     {
-        return this->fd == idIn.fd && this->type==idIn.type;
+        return fd == idIn.fd && type == idIn.type;
     }
 
-    resTableIndex hash () const;
+    resTableIndex hash() const;
 
-    virtual void show (unsigned level) const;
+    virtual void show(unsigned level) const;
 
     virtual ~fdRegId() {}
 private:
@@ -87,24 +87,24 @@ public:
     //
     class fdInterestSubscriptionAlreadyExits {};
 
-    fdManager ();
-    virtual ~fdManager ();
-    void process ( double delay ); // delay parameter is in seconds
+    fdManager();
+    virtual ~fdManager();
+    void process(double delay); // delay parameter is in seconds
 
     // returns NULL if the fd is unknown
-    class fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
+    class fdReg* lookUpFD(const SOCKET fd, const fdRegType type);
 
-    epicsTimer & createTimer ();
+    epicsTimer& createTimer();
 
 private:
     epics::auto_ptr <struct fdManagerPrivate> priv;
 
-    void reschedule ();
-    double quantum ();
-    void installReg (fdReg &reg);
-    void removeReg (fdReg &reg);
-    fdManager ( const fdManager & );
-    fdManager & operator = ( const fdManager & );
+    void reschedule();
+    double quantum();
+    void installReg(fdReg& reg);
+    void removeReg(fdReg& reg);
+    fdManager(const fdManager&);
+    fdManager& operator = (const fdManager&);
     friend class fdReg;
 };
 
@@ -124,11 +124,11 @@ class LIBCOM_API fdReg :
 
 public:
 
-    fdReg (const SOCKET fdIn, const fdRegType type,
-        const bool onceOnly=false, fdManager &manager = fileDescriptorManager);
-    virtual ~fdReg ();
+    fdReg(const SOCKET fdIn, const fdRegType type,
+        const bool onceOnly=false, fdManager& manager = fileDescriptorManager);
+    virtual ~fdReg();
 
-    virtual void show (unsigned level) const;
+    virtual void show(unsigned level) const;
 
     //
     // Called by the file descriptor manager:
@@ -139,7 +139,7 @@ public:
     //
     // fdReg::destroy() does a "delete this"
     //
-    virtual void destroy ();
+    virtual void destroy();
 
 private:
     enum state {active, pending, limbo};
@@ -151,32 +151,32 @@ private:
     // lifetime of a fdReg object if the constructor
     // specified "onceOnly"
     //
-    virtual void callBack ()=0;
+    virtual void callBack() = 0;
 
     unsigned char state; // state enums go here
     unsigned char onceOnly;
-    fdManager &manager;
+    fdManager& manager;
 
-    fdReg ( const fdReg & );
-    fdReg & operator = ( const fdReg & );
+    fdReg(const fdReg&);
+    fdReg& operator = (const fdReg&);
 };
 
 //
 // fdRegId::hash()
 //
-inline resTableIndex fdRegId::hash () const
+inline resTableIndex fdRegId::hash() const
 {
     const unsigned fdManagerHashTableMinIndexBits = 8;
-    const unsigned fdManagerHashTableMaxIndexBits = sizeof(SOCKET)*CHAR_BIT;
+    const unsigned fdManagerHashTableMaxIndexBits = sizeof(SOCKET) * CHAR_BIT;
     resTableIndex hashid;
 
-    hashid = integerHash ( fdManagerHashTableMinIndexBits,
-        fdManagerHashTableMaxIndexBits, this->fd );
+    hashid = integerHash(fdManagerHashTableMinIndexBits,
+        fdManagerHashTableMaxIndexBits, fd);
 
     //
     // also evenly distribute based on the type of fdRegType
     //
-    hashid ^= this->type;
+    hashid ^= type;
 
     //
     // the result here is always masked to the

@@ -42,7 +42,7 @@
 static const short PollEvents[] = { // must match fdRegType
     POLLRDNORM | POLLRDBAND | POLLIN | POLLHUP | POLLERR,
     POLLWRBAND | POLLWRNORM | POLLOUT | POLLERR,
-    POLLPRI};
+    POLLPRI };
 
 #if defined(_WIN32)
 #define poll WSAPoll
@@ -59,11 +59,11 @@ static const short PollEvents[] = { // must match fdRegType
 #endif
 
 struct fdManagerPrivate {
-    tsDLList < fdReg > regList;
-    tsDLList < fdReg > activeList;
-    resTable < fdReg, fdRegId > fdTbl;
+    tsDLList<fdReg> regList;
+    tsDLList<fdReg> activeList;
+    resTable<fdReg, fdRegId> fdTbl;
     const double sleepQuantum;
-    epics::auto_ptr <epicsTimerQueuePassive> pTimerQueue;
+    epics::auto_ptr<epicsTimerQueuePassive> pTimerQueue;
     bool processInProg;
 
 #ifdef FDMGR_USE_POLL
@@ -79,27 +79,27 @@ struct fdManagerPrivate {
     // Set to fdreg when in call back
     // and nill otherwise
     //
-    volatile fdReg * pCBReg;
-    fdManager & owner;
+    volatile fdReg* pCBReg;
+    fdManager& owner;
 
-    explicit fdManagerPrivate(fdManager & owner);
+    explicit fdManagerPrivate(fdManager& owner);
     void lazyInitTimerQueue();
 };
 
-fdManagerPrivate::fdManagerPrivate(fdManager & owner) :
+fdManagerPrivate::fdManagerPrivate(fdManager& owner) :
     sleepQuantum(epicsThreadSleepQuantum()),
     processInProg(false),
     pCBReg(NULL), owner(owner)
 {}
 
-inline void fdManagerPrivate::lazyInitTimerQueue ()
+inline void fdManagerPrivate::lazyInitTimerQueue()
 {
     if (!pTimerQueue.get()) {
         pTimerQueue.reset(&epicsTimerQueuePassive::create(owner));
     }
 }
 
-epicsTimer & fdManager::createTimer()
+epicsTimer& fdManager::createTimer()
 {
     priv->lazyInitTimerQueue();
     return priv->pTimerQueue->createTimer();
@@ -118,15 +118,15 @@ static const unsigned uSecPerSec = 1000u * mSecPerSec;
 // hopefully its a reasonable guess that poll()/select() and epicsThreadSleep()
 // will have the same sleep quantum
 //
-LIBCOM_API fdManager::fdManager () :
+LIBCOM_API fdManager::fdManager() :
     priv(new fdManagerPrivate(*this))
 {
-    int status = osiSockAttach ();
-    assert (status);
+    int status = osiSockAttach();
+    assert(status);
 
 #ifdef FDMGR_USE_SELECT
     priv->maxFD = 0;
-    for ( size_t i = 0u; i < fdrNEnums; i++ ) {
+    for (size_t i = 0u; i < fdrNEnums; i++) {
         FD_ZERO(&priv->fdSets[i]);
     }
 #endif
@@ -137,7 +137,7 @@ LIBCOM_API fdManager::fdManager () :
 //
 LIBCOM_API fdManager::~fdManager()
 {
-    fdReg   *pReg;
+    fdReg* pReg;
 
     while ((pReg = priv->regList.get())) {
         pReg->state = fdReg::limbo;
@@ -153,9 +153,9 @@ LIBCOM_API fdManager::~fdManager()
 //
 // fdManager::process()
 //
-LIBCOM_API void fdManager::process (double delay)
+LIBCOM_API void fdManager::process(double delay)
 {
-    priv->lazyInitTimerQueue ();
+    priv->lazyInitTimerQueue();
 
     //
     // no recursion
@@ -173,7 +173,7 @@ LIBCOM_API void fdManager::process (double delay)
     //
     double minDelay = priv->pTimerQueue->process(epicsTime::getCurrent());
 
-    if ( minDelay >= delay ) {
+    if (minDelay >= delay) {
         minDelay = delay;
     }
 
@@ -183,7 +183,7 @@ LIBCOM_API void fdManager::process (double delay)
 
     int ioPending = 0;
     tsDLIter<fdReg> iter = priv->regList.firstIter();
-    while ( iter.valid () ) {
+    while (iter.valid()) {
         ++ioPending;
 
 #ifdef FDMGR_USE_POLL
@@ -207,20 +207,20 @@ LIBCOM_API void fdManager::process (double delay)
         ++iter;
     }
 
-    if ( ioPending ) {
+    if (ioPending) {
 #ifdef FDMGR_USE_POLL
         if (minDelay * mSecPerSec > INT_MAX)
             minDelay = INT_MAX / mSecPerSec;
 
-        int status = poll(&priv->pollfds.front(), // ancient C++ has no vector.data()
+        int status = poll(&priv->pollfds[0], // ancient C++ has no vector.data()
                     ioPending, static_cast<int>(minDelay * mSecPerSec));
         int i = 0;
 #endif
 
 #ifdef FDMGR_USE_SELECT
         struct timeval tv;
-        tv.tv_sec = static_cast<time_t> ( minDelay );
-        tv.tv_usec = static_cast<long> ( (minDelay-tv.tv_sec) * uSecPerSec );
+        tv.tv_sec = static_cast<time_t>(minDelay);
+        tv.tv_usec = static_cast<long>((minDelay-tv.tv_sec) * uSecPerSec);
 
         int status = select(priv->maxFD,
                 &priv->fdSets[fdrRead],
@@ -230,14 +230,14 @@ LIBCOM_API void fdManager::process (double delay)
 
         priv->pTimerQueue->process(epicsTime::getCurrent());
 
-        if ( status > 0 ) {
+        if (status > 0) {
 
             //
             // Look for activity
             //
-            iter = priv->regList.firstIter ();
-            while ( iter.valid () && status > 0 ) {
-                tsDLIter < fdReg > tmp = iter;
+            iter = priv->regList.firstIter();
+            while (iter.valid() && status > 0) {
+                tsDLIter<fdReg> tmp = iter;
                 tmp++;
 
 #ifdef FDMGR_USE_POLL
@@ -279,7 +279,7 @@ LIBCOM_API void fdManager::process (double delay)
             // I am careful to prevent problems if they access the
             // above list while in a "callBack()" routine
             //
-            fdReg * pReg;
+            fdReg* pReg;
             while ((pReg = priv->activeList.get())) {
                 pReg->state = fdReg::limbo;
 
@@ -308,13 +308,13 @@ LIBCOM_API void fdManager::process (double delay)
                 }
             }
         }
-        else if ( status < 0 ) {
+        else if (status < 0) {
             int errnoCpy = SOCKERRNO;
 
 #ifdef FDMGR_USE_SELECT
             // don't depend on flags being properly set if
             // an error is returned from select
-            for ( size_t i = 0u; i < fdrNEnums; i++ ) {
+            for (size_t i = 0u; i < fdrNEnums; i++) {
                 FD_ZERO(&priv->fdSets[i]);
             }
 #endif
@@ -322,10 +322,10 @@ LIBCOM_API void fdManager::process (double delay)
             //
             // print a message if it's an unexpected error
             //
-            if ( errnoCpy != SOCK_EINTR ) {
+            if (errnoCpy != SOCK_EINTR) {
                 char sockErrBuf[64];
-                epicsSocketConvertErrnoToString (
-                    sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsSocketConvertErrnoToString(
+                    sockErrBuf, sizeof(sockErrBuf));
                 errlogPrintf("fdManager: "
 #ifdef FDMGR_USE_POLL
                     "poll()"
@@ -364,7 +364,7 @@ void fdReg::destroy()
 //
 fdReg::~fdReg()
 {
-    this->manager.removeReg(*this);
+    manager.removeReg(*this);
 }
 
 //
@@ -372,31 +372,34 @@ fdReg::~fdReg()
 //
 void fdReg::show(unsigned level) const
 {
-    printf ("fdReg at %p\n", (void *) this);
-    if (level>1u) {
-        printf ("\tstate = %d, onceOnly = %d\n",
-            this->state, this->onceOnly);
+    printf("fdReg at %p\n", this);
+    if (level > 1u) {
+        printf("\tstate = %d, onceOnly = %d\n",
+            state, onceOnly);
     }
-    this->fdRegId::show(level);
+    fdRegId::show(level);
 }
 
 //
 // fdRegId::show()
 //
-void fdRegId::show ( unsigned level ) const
+void fdRegId::show(unsigned level) const
 {
-    printf ( "fdRegId at %p\n",
-        static_cast <const void *> ( this ) );
-    if ( level > 1u ) {
-        printf ( "\tfd = %d, type = %d\n",
-            int(this->fd), this->type );
+    printf("fdRegId at %p\n", this);
+    if (level > 1u) {
+        printf("\tfd = %"
+#if defined(_WIN32)
+            "I"
+#endif
+        "d, type = %d\n",
+            fd, type);
     }
 }
 
 //
-// fdManager::installReg ()
+// fdManager::installReg()
 //
-void fdManager::installReg (fdReg &reg)
+void fdManager::installReg(fdReg &reg)
 {
 #ifdef FDMGR_USE_SELECT
     priv->maxFD = std::max(priv->maxFD, reg.getFD()+1);
@@ -409,21 +412,21 @@ void fdManager::installReg (fdReg &reg)
     reg.state = fdReg::pending;
 
     int status = priv->fdTbl.add(reg);
-    if ( status != 0 ) {
-        throwWithLocation ( fdInterestSubscriptionAlreadyExits () );
+    if (status != 0) {
+        throwWithLocation(fdInterestSubscriptionAlreadyExits());
     }
 //    errlogPrintf("fdManager::adding fd %d\n", reg.getFD());
 }
 
 //
-// fdManager::removeReg ()
+// fdManager::removeReg()
 //
-void fdManager::removeReg (fdReg &regIn)
+void fdManager::removeReg(fdReg &regIn)
 {
-    fdReg *pItemFound;
+    fdReg* pItemFound;
 
     pItemFound = priv->fdTbl.remove(regIn);
-    if (pItemFound!=&regIn) {
+    if (pItemFound != &regIn) {
         errlogPrintf("fdManager::removeReg() bad fd registration object\n");
         return;
     }
@@ -461,15 +464,15 @@ void fdManager::removeReg (fdReg &regIn)
 }
 
 //
-// fdManager::reschedule ()
+// fdManager::reschedule()
 // NOOP - this only runs single threaded, and therefore they can only
 // add a new timer from places that will always end up in a reschedule
 //
-void fdManager::reschedule ()
+void fdManager::reschedule()
 {
 }
 
-double fdManager::quantum ()
+double fdManager::quantum()
 {
     return priv->sleepQuantum;
 }
@@ -477,22 +480,22 @@ double fdManager::quantum ()
 //
 // lookUpFD()
 //
-LIBCOM_API fdReg *fdManager::lookUpFD (const SOCKET fd, const fdRegType type)
+LIBCOM_API fdReg* fdManager::lookUpFD(const SOCKET fd, const fdRegType type)
 {
-    if (fd<0) {
+    if (fd < 0) {
         return NULL;
     }
-    fdRegId id (fd,type);
+    fdRegId id(fd,type);
     return priv->fdTbl.lookup(id);
 }
 
 //
 // fdReg::fdReg()
 //
-fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn,
+fdReg::fdReg(const SOCKET fdIn, const fdRegType typIn,
         const bool onceOnlyIn, fdManager &managerIn) :
-    fdRegId (fdIn,typIn), state (limbo),
-    onceOnly (onceOnlyIn), manager (managerIn)
+    fdRegId(fdIn,typIn), state(limbo),
+    onceOnly(onceOnlyIn), manager(managerIn)
 {
 #ifdef FDMGR_USE_SELECT
     if (!FD_IN_FDSET(fdIn)) {
@@ -501,7 +504,7 @@ fdReg::fdReg (const SOCKET fdIn, const fdRegType typIn,
         return;
     }
 #endif
-    this->manager.installReg (*this);
+    manager.installReg(*this);
 }
 
 template class resTable<fdReg, fdRegId>;

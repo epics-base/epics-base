@@ -947,15 +947,20 @@ POSIX_Init ( void *argument __attribute__((unused)))
      * corresponds to the second lowest POSIX prio (RTEMS pthread
      * prio 254). This task shoud have IOCsh prio.
      */
-
-    /* PosixMaxPrio == 100 */
-    rtems_task_priority mainPrio = RTEMS_MAXIMUM_PRIORITY
-                                 - (RTEMS_MAXIMUM_PRIORITY - RTEMS_MINIMUM_PRIORITY)
-                                 * epicsThreadPriorityIocsh / 100;
-    rtems_task_priority old;
-    sc = rtems_task_set_priority (RTEMS_SELF, mainPrio, &old);
+    pthread_attr_t attr;
+    struct sched_param  param;
+    int policy;
+    sc  = pthread_attr_init(&attr);
     assert(sc == RTEMS_SUCCESSFUL);
-    printf("Priority changed from %d -> %d\n", old, mainPrio);
+    sc = pthread_attr_getschedpolicy(&attr, &policy);
+    assert(sc == RTEMS_SUCCESSFUL);
+
+    param.sched_priority = (sched_get_priority_max(policy)
+                            - sched_get_priority_min(policy))
+                         * epicsThreadPriorityIocsh / 100;
+
+    sc = pthread_setschedparam(pthread_self(), policy, &param);
+    assert(sc == RTEMS_SUCCESSFUL);
 
     initConsole ();
 
@@ -1037,11 +1042,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
     rtems_bsd_setlogpriority("debug");
     on_exit(default_network_on_exit, NULL);
 
-    /* Let other tasks run to complete background work */
-    sc = rtems_task_set_priority (RTEMS_SELF, RTEMS_MAXIMUM_PRIORITY/2, &old);
-    assert(sc == RTEMS_SUCCESSFUL);
-    printf("Priority changed from %d -> %d\n", old, RTEMS_MAXIMUM_PRIORITY/2);
-
     sc = rtems_bsd_initialize();
     assert(sc == RTEMS_SUCCESSFUL);
 
@@ -1103,10 +1103,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
         printf("time from ntp : %s.%09ld UTC\n", timeBuff, now.tv_nsec);
       }
     }
-
-    sc = rtems_task_set_priority (RTEMS_SELF, mainPrio, &old);
-    assert(sc == RTEMS_SUCCESSFUL);
-    printf("Priority changed at end of network init from %d -> %d\n", old, mainPrio);
 
 #else // Legacy stack, old network initialization
     char *cp;

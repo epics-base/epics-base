@@ -11,10 +11,10 @@
 
 SRC_DIRS += $(IOCDIR)/misc
 
-# Include afterInit module with afterInit=YES
-ifeq ($(afterInit),YES)
-DBD += afterInit.dbd
-dbCore_SRCS += afterInit.c
+# Include atInit module with atInit=YES
+ifeq ($(atInit),YES)
+DBD += atInit.dbd
+dbCore_SRCS += atInit.c
 endif
 
 DBD += system.dbd

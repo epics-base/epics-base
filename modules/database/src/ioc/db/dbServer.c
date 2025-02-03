@@ -131,7 +131,7 @@ int dbServerStats(const char *name, unsigned *channels, unsigned *clients)
 {
     dbServer *psrv = (dbServer *)ellFirst(&serverList);
 
-    if (state != running || !psrv)
+    if (!name || state != running || !psrv)
         return -1;
 
     while (psrv) {

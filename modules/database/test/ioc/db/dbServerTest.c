@@ -40,6 +40,8 @@ void oneReport(unsigned level)
 void oneStats(unsigned *channels, unsigned *clients)
 {
     oneState = STATS_CALLED;
+    *channels = 2;
+    *clients = 1;
 }
 
 int oneClient(char *pbuf, size_t len)
@@ -128,8 +130,9 @@ MAIN(dbServerTest)
     char name[16];
     char *theName = "The One";
     int status;
+    unsigned ch=0, cl=0;
 
-    testPlan(25);
+    testPlan(29);
 
     /* Prove that we handle substring names properly */
     epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none ones");
@@ -163,7 +166,12 @@ MAIN(dbServerTest)
 
     testDiag("Checking server methods called");
     dbsr(0);
-    testOk(oneState == REPORT_CALLED, "dbsr called report()");
+    testOk(oneState == REPORT_CALLED, "dbsr called one::report()");
+    testOk(dbServerStats("none", &ch, &cl) != 0, "Stats: unknown name rejected");
+    testOk(dbServerStats("no-routines", &ch, &cl) != 0, "Stats: no-routine rejected");
+    testOk(dbServerStats("one", &ch, &cl) == 0 && oneState == STATS_CALLED,
+        "dbServerStats('one') called one::stats()");
+    testOk(ch == 2 && cl == 1, "Stats: counts returned as expected");
 
     oneSim = NULL;
     name[0] = 0;

@@ -142,6 +142,11 @@ DBCORE_API void dbsr(unsigned level);
  */
 DBCORE_API int dbServerClient(char *pBuf, size_t bufSize);
 
+/** @brief CPP Macro indicating the dbServerStats() routine exists.
+ * @since UNRELEASED
+ */
+#define HAS_DBSERVER_STATS
+
 /** @brief Fetch statistics from named server.
  *
  * This is an API for iocStats and similar to fetch the number of channels
@@ -151,6 +156,8 @@ DBCORE_API int dbServerClient(char *pBuf, size_t bufSize);
  * @param clients Where to return the client count
  * @returns 0 on success; -1 if IOC isn't running, no such named server,
  *  or that server doesn't implement the stats method.
+ *
+ * @since UNRELEASED
  */
 DBCORE_API int dbServerStats(const char *name, unsigned *channels, unsigned *clients);
 

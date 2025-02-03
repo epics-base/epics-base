@@ -18,6 +18,13 @@ __This version of EPICS has not been released yet.__
 
 __Add new items below here__
 
+### New `dbServerStats()` API for iocStats
+
+A new routine provides the ability to request channel and client counts from
+name server layers that implement the `stats()` method. A preprocessor macro
+`HAS_DBSERVER_STATS` macro is defined in the `dbServer.h` header file to
+simplify code that needs to support older versions of Base as well.
+
 -----
 
 ## EPICS Release 7.0.9

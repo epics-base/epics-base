@@ -127,6 +127,26 @@ int dbServerClient(char *pBuf, size_t bufSize)
     return -1;
 }
 
+int dbServerStats(const char *name, unsigned *channels, unsigned *clients)
+{
+    dbServer *psrv = (dbServer *)ellFirst(&serverList);
+
+    if (state != running || !psrv)
+        return -1;
+
+    while (psrv) {
+        if (strcmp(name, psrv->name) == 0) {
+            if (!psrv->stats)
+                return -1;
+
+            psrv->stats(channels, clients);
+            return 0;
+        }
+        psrv = (dbServer *)ellNext(&psrv->node);
+    }
+    return -1;
+}
+
 #define STARTSTOP(routine, method, newState) \
 void routine(void) \
 { \

@@ -17,9 +17,6 @@
  * the dbServer interface provides allow the IOC to start, pause and stop
  * the servers together, and to provide status and debugging information
  * to the IOC user/developer through a common set of commands.
- *
- * @todo No API is provided yet for calling stats() methods.
- * Nothing in the IOC calls dbStopServers(), not sure where it should go.
  */
 
 #ifndef INC_dbServer_H
@@ -144,6 +141,18 @@ DBCORE_API void dbsr(unsigned level);
  *  the record is subsequently processed.
  */
 DBCORE_API int dbServerClient(char *pBuf, size_t bufSize);
+
+/** @brief Fetch statistics from named server.
+ *
+ * This is an API for iocStats and similar to fetch the number of channels
+ *  and clients connected to the named server layer.
+ * @param name Server name
+ * @param channels Where to return the channel count
+ * @param clients Where to return the client count
+ * @returns 0 on success; -1 if IOC isn't running, no such named server,
+ *  or that server doesn't implement the stats method.
+ */
+DBCORE_API int dbServerStats(const char *name, unsigned *channels, unsigned *clients);
 
 /** @brief Initialize all registered servers.
  *

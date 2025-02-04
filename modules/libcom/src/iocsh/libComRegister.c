@@ -27,7 +27,7 @@
 #include "epicsGeneralTime.h"
 #include "freeList.h"
 #include "libComRegister.h"
-
+#include "atInit.h"
 /* Register the PWD environment variable when the cd IOC shell function is
  * registered. This variable contains the current directory path.
  */
@@ -511,6 +511,8 @@ void epicsStdCall libComRegister(void)
 
     iocshRegister(&generalTimeReportFuncDef,generalTimeReportCallFunc);
     iocshRegister(&installLastResortEventProviderFuncDef, installLastResortEventProviderCallFunc);
+
+    atInitRegister();
 
     comDefs[0].pval = &asCheckClientIP;
     comDefs[1].pval = &freeListBypass;

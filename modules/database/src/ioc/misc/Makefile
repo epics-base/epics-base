@@ -11,10 +11,6 @@
 
 SRC_DIRS += $(IOCDIR)/misc
 
-# Include atInit module
-DBD += atInit.dbd
-dbCore_SRCS += atInit.c
-
 DBD += system.dbd
 DBD += dlload.dbd
 DBD += dbCore.dbd

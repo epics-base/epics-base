@@ -1,24 +1,24 @@
 /* Copyright (C) 2020 Dirk Zimoch */
-/* Copyright (C) 2020-2025 European Spallation Source, ERIC */
+/* Copyright (C) 2020-2025 European Spallation Source, ERIC
+ * Maintainer: Jerzy Jamroz
+ */
 
 #include <cantProceed.h>
-#include <dbAccess.h>
 #include <ellLib.h>
-#include <epicsExport.h>
 #include <epicsStdio.h>
-#include <epicsString.h>
 #include <errlog.h>
 #include <errno.h>
 #include <initHooks.h>
 #include <iocsh.h>
-#include <stdlib.h>
 #include <string.h>
+
+#include "atInit.h"
 
 #define __AT_INIT_LOG(svr) svr " atInit: "
 
 // Version within the message
 static const char helpMessage[] =
-  "atInit version 2.0.1\n"
+  "atInit version 2.1.1\n"
   "Allows you to define commands to be run after the iocInit\n"
   "Example commands:\n"
   "  atInit \"dbpf <PV> <VAL>\"\n"
@@ -30,7 +30,8 @@ struct cmditem
   char* cmd;
 };
 
-static ELLLIST cmdlist;
+static ELLLIST s_cmdlist = {};
+static int s_initendflag = 0; // Defines the end of the initialization
 
 static void atInitHook(initHookState state)
 {
@@ -39,7 +40,7 @@ static void atInitHook(initHookState state)
 
   struct cmditem* item = NULL;
 
-  while(item = (struct cmditem*)ellGet(&cmdlist))
+  while(item = (struct cmditem*)ellGet(&s_cmdlist))
   {
     epicsStdoutPrintf("%s\n", item->cmd);
 
@@ -48,6 +49,8 @@ static void atInitHook(initHookState state)
 
     free(item);
   }
+
+  s_initendflag = 1;
 }
 
 static struct cmditem* newItem(char* cmd)
@@ -64,7 +67,7 @@ static struct cmditem* newItem(char* cmd)
     return NULL;
   }
 
-  ellAdd(&cmdlist, &item->node);
+  ellAdd(&s_cmdlist, &item->node);
 
   return item;
 }
@@ -80,7 +83,7 @@ static void atInitFunc(const iocshArgBuf* args)
   static int first_time = 1;
   char* cmd = args[0].sval;
 
-  if(interruptAccept)
+  if(s_initendflag)
   {
     epicsStdoutPrintf(__AT_INIT_LOG(ERL_WARNING) "can only be used before iocInit (check help)\n");
     return;
@@ -108,7 +111,7 @@ static void atInitFunc(const iocshArgBuf* args)
     epicsStdoutPrintf(__AT_INIT_LOG(ERL_ERROR) "failed to add the command '%s' %s\n", cmd, strerror(errno));
 }
 
-static void atInitRegister(void)
+void atInitRegister(void)
 {
   static int first_time = 1;
   if(first_time)
@@ -119,5 +122,3 @@ static void atInitRegister(void)
 }
 
 #undef __AT_INIT_LOG
-
-epicsExportRegistrar(atInitRegister);

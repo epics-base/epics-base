@@ -51,9 +51,9 @@ static void atInitHook(initHookState state)
 
 static struct cmditem* newItem(char* cmd)
 {
-  struct cmditem* item = mallocMustSucceed(sizeof(struct cmditem), "ERROR Failed to allocate memory for cmditem");
-
-  item->cmd = epicsStrDup(cmd);
+  struct cmditem* item = mallocMustSucceed(sizeof(struct cmditem) + strlen(cmd) + 1, "ERROR Failed to allocate memory for cmditem");
+  item->cmd = (char*)(item + 1);
+  strcpy(item->cmd, cmd);
 
   if(item->cmd == NULL)
   {

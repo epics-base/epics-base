@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define __AT_INIT_LOG(svr) svr " atInit: "
+
 // Version within the message
 static const char helpMessage[] =
   "atInit version 2.0.1\n"
@@ -42,7 +44,7 @@ static void atInitHook(initHookState state)
     epicsStdoutPrintf("%s\n", item->cmd);
 
     if(iocshCmd(item->cmd))
-      epicsStdoutPrintf("ERROR atInit command '%s' failed to run\n", item->cmd);
+      epicsStdoutPrintf(__AT_INIT_LOG(ERL_ERROR) "command '%s' failed to run\n", item->cmd);
 
     free(item->cmd);
     free(item);
@@ -51,7 +53,8 @@ static void atInitHook(initHookState state)
 
 static struct cmditem* newItem(char* cmd)
 {
-  struct cmditem* item = mallocMustSucceed(sizeof(struct cmditem) + strlen(cmd) + 1, "ERROR Failed to allocate memory for cmditem");
+  struct cmditem* item = mallocMustSucceed(sizeof(struct cmditem) + strlen(cmd) + 1,
+                                           __AT_INIT_LOG(ERL_ERROR) "failed to allocate memory for cmditem");
   item->cmd = (char*)(item + 1);
   strcpy(item->cmd, cmd);
 
@@ -80,13 +83,13 @@ static void atInitFunc(const iocshArgBuf* args)
 
   if(interruptAccept)
   {
-    epicsStdoutPrintf("WARNING atInit can only be used before iocInit (check help)\n");
+    epicsStdoutPrintf(__AT_INIT_LOG(ERL_WARNING) "can only be used before iocInit (check help)\n");
     return;
   }
 
   if(!cmd || !cmd[0])
   {
-    epicsStdoutPrintf("WARNING atInit received an empty argument (check help)\n");
+    epicsStdoutPrintf(__AT_INIT_LOG(ERL_WARNING) "received an empty argument (check help)\n");
     return;
   }
 
@@ -96,14 +99,14 @@ static void atInitFunc(const iocshArgBuf* args)
     if(initHookRegister(atInitHook) < 0)
     {
       errno = ENOMEM;
-      epicsStdoutPrintf("ERROR initHookRegister memory allocation failure %s\n", strerror(errno));
+      epicsStdoutPrintf(__AT_INIT_LOG(ERL_ERROR) "initHookRegister memory allocation failure %s\n", strerror(errno));
     }
   }
 
   struct cmditem* item = newItem(cmd);
 
   if(!item)
-    epicsStdoutPrintf("ERROR atInit failed to add the command '%s' %s\n", cmd, strerror(errno));
+    epicsStdoutPrintf(__AT_INIT_LOG(ERL_ERROR) "failed to add the command '%s' %s\n", cmd, strerror(errno));
 }
 
 static void atInitRegister(void)
@@ -115,5 +118,7 @@ static void atInitRegister(void)
     iocshRegister(&atInitDef, atInitFunc);
   }
 }
+
+#undef __AT_INIT_LOG
 
 epicsExportRegistrar(atInitRegister);

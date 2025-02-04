@@ -58,7 +58,7 @@ static struct cmditem* newItem(char* cmd)
   struct cmditem* item = mallocMustSucceed(sizeof(struct cmditem) + strlen(cmd) + 1,
                                            __AT_INIT_LOG(ERL_ERROR) "failed to allocate memory for cmditem");
   item->cmd = (char*)(item + 1);
-  strcpy(item->cmd, cmd);
+  memcpy(item->cmd, cmd, strlen(cmd) + 1);
 
   if(item->cmd == NULL)
   {

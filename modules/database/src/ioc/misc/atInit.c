@@ -46,7 +46,6 @@ static void atInitHook(initHookState state)
     if(iocshCmd(item->cmd))
       epicsStdoutPrintf(__AT_INIT_LOG(ERL_ERROR) "command '%s' failed to run\n", item->cmd);
 
-    free(item->cmd);
     free(item);
   }
 }

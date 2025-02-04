@@ -19,9 +19,8 @@ DBD += softIoc.dbd
 softIoc_DBD += base.dbd
 softIoc_DBD += dlload.dbd
 softIoc_DBD += system.dbd
-ifeq ($(atInit),YES)
+# Include atInit module
 softIoc_DBD += atInit.dbd
-endif
 
 softIoc_SRCS += softIoc_registerRecordDeviceDriver.cpp
 softIoc_SRCS_DEFAULT += softMain.cpp

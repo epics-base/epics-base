@@ -9,14 +9,12 @@
 #include <cantProceed.h>
 #include <ellLib.h>
 #include <errlog.h>
-#include <errno.h>
 #include <initHooks.h>
 #include <iocsh.h>
 #include <string.h>
 
 #include "atInit.h"
 
-// Version within the message
 static const char helpMessage[] =
     "Allows you to define commands to be run after the iocInit\n"
     "Example commands:\n"
@@ -93,12 +91,7 @@ static void atInitFunc(const iocshArgBuf* args)
         initHookRegister(atInitHook);
     }
 
-    struct cmditem* item = newItem(cmd);
-
-    if (!item)
-        printf(ERL_ERROR " atInit: "
-                         "failed to add the command '%s' %s\n",
-               cmd, strerror(errno));
+    newItem(cmd);
 }
 
 void atInitRegister(void)

@@ -5,7 +5,6 @@
 
 #include <cantProceed.h>
 #include <ellLib.h>
-#include <epicsStdio.h>
 #include <errlog.h>
 #include <errno.h>
 #include <initHooks.h>

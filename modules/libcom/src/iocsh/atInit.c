@@ -58,13 +58,7 @@ static struct cmditem* newItem(char* cmd)
                                              ERL_ERROR " atInit: "
                                                        "failed to allocate memory for cmditem");
     item->cmd = (char*)(item + 1);
-    memcpy(item->cmd, cmd, strlen(cmd) + 1);
-
-    if (item->cmd == NULL) {
-        free(item);
-        errno = ENOMEM;
-        return NULL;
-    }
+    strlcpy(item->cmd, cmd, strlen(cmd) + 1);
 
     ellAdd(&s_cmdlist, &item->node);
 

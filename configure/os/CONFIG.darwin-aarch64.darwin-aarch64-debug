@@ -6,7 +6,7 @@
 
 -include $(CONFIG)/os/CONFIG.Common.darwin-aarch64
 -include $(CONFIG)/os/CONFIG.darwin-aarch64.darwin-aarch64
--include $(CONFIG)/os/CONFIG_SITE.Common.darwin-aarch46
+-include $(CONFIG)/os/CONFIG_SITE.Common.darwin-aarch64
 -include $(CONFIG)/os/CONFIG_SITE.darwin-aarch64.darwin-aarch64
 
 

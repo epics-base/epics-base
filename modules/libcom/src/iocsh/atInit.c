@@ -90,12 +90,7 @@ static void atInitFunc(const iocshArgBuf* args)
 
     if (first_time) {
         first_time = 0;
-        if (initHookRegister(atInitHook) < 0) {
-            errno = ENOMEM;
-            printf(ERL_ERROR " atInit: "
-                             "initHookRegister memory allocation failure %s\n",
-                   strerror(errno));
-        }
+        initHookRegister(atInitHook);
     }
 
     struct cmditem* item = newItem(cmd);

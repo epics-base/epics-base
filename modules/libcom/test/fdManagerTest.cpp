@@ -7,6 +7,8 @@
 
 #include <algorithm>
 
+#include <string.h>
+
 #include <osiSock.h>
 #include <fdManager.h>
 #include <epicsTime.h>
@@ -35,11 +37,13 @@ void set_non_blocking(SOCKET sd)
 // RAII for epicsTimer
 struct ScopedTimer {
     epicsTimer& timer;
+    explicit
     ScopedTimer(epicsTimer& t) :timer(t) {}
     ~ScopedTimer() { timer.destroy(); }
 };
 struct ScopedFDReg {
     fdReg * const reg;
+    explicit
     ScopedFDReg(fdReg* reg) :reg(reg) {}
     ~ScopedFDReg() { reg->destroy(); }
 };
@@ -67,19 +71,19 @@ public:
     void swap(Socket& o) {
         std::swap(sd, o.sd);
     }
-    sockaddr_in bind()
+    osiSockAddr bind()
     {
-        sockaddr_in addr;
+        osiSockAddr addr;
         memset(&addr, 0, sizeof(addr));
-        addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        addr.ia.sin_family = AF_INET;
+        addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-        if(::bind(sd, (sockaddr*)&addr, sizeof(addr)))
+        if(::bind(sd, &addr.sa, sizeof(addr)))
             testAbort("Unable to bind lo : %d", SOCKERRNO);
 
-        sockaddr_in ret;
+        osiSockAddr ret;
         osiSocklen_t addrlen = sizeof(ret);
-        if(getsockname(sd, (sockaddr*)&ret, &addrlen))
+        if(getsockname(sd, &ret.sa, &addrlen))
             testAbort("Unable to getsockname : %d", SOCKERRNO);
         (void)addrlen;
 
@@ -92,14 +96,14 @@ public:
 
 struct DoConnect final : public epicsThreadRunable {
     const SOCKET sd;
-    sockaddr_in to;
-    DoConnect(SOCKET sd, const sockaddr_in& to)
+    osiSockAddr to;
+    DoConnect(SOCKET sd, const osiSockAddr& to)
         :sd(sd)
         ,to(to)
     {}
 
     void run() override final {
-        int err = connect(sd, (sockaddr*)&to, sizeof(to));
+        int err = connect(sd, &to.sa, sizeof(to));
         testOk(err==0, "connect() %d %d", err, SOCKERRNO);
     }
 };
@@ -107,11 +111,12 @@ struct DoConnect final : public epicsThreadRunable {
 struct DoAccept final : public epicsThreadRunable {
     const SOCKET sd;
     Socket peer;
-    sockaddr_in peer_addr;
+    osiSockAddr peer_addr;
+    explicit
     DoAccept(SOCKET sd) :sd(sd) {}
     void run() override final {
         osiSocklen_t len(sizeof(peer_addr));
-        Socket temp(accept(sd, (sockaddr*)&peer_addr, &len));
+        Socket temp(accept(sd, &peer_addr.sa, &len));
         if(temp.sd==INVALID_SOCKET)
             testFail("accept() -> %d", SOCKERRNO);
         temp.swap(peer);
@@ -120,12 +125,12 @@ struct DoAccept final : public epicsThreadRunable {
 
 struct DoRead final : public epicsThreadRunable {
     const SOCKET sd;
-    void* buf;
+    char* buf;
     unsigned buflen;
     int n;
-    DoRead(SOCKET sd, void* buf, unsigned buflen): sd(sd), buf(buf), buflen(buflen), n(0) {}
+    DoRead(SOCKET sd, char* buf, unsigned buflen): sd(sd), buf(buf), buflen(buflen), n(0) {}
     void run() override final {
-        n = recv(sd, (char*)buf, buflen, 0);
+        n = recv(sd, buf, buflen, 0);
         if(n<0)
             testFail("read() -> %d, %d", n, SOCKERRNO);
     }
@@ -133,13 +138,13 @@ struct DoRead final : public epicsThreadRunable {
 
 struct DoWriteAll final : public epicsThreadRunable {
     const SOCKET sd;
-    const void* buf;
+    const char* buf;
     unsigned buflen;
-    DoWriteAll(SOCKET sd, const void* buf, unsigned buflen): sd(sd), buf(buf), buflen(buflen) {}
+    DoWriteAll(SOCKET sd, const char* buf, unsigned buflen): sd(sd), buf(buf), buflen(buflen) {}
     void run() override final {
         unsigned nsent = 0;
         while(nsent<buflen) {
-            int n = send(sd, nsent+(char*)buf, buflen-nsent, 0);
+            int n = send(sd, nsent+buf, buflen-nsent, 0);
             if(n<0) {
                 testFail("send() -> %d, %d", n, SOCKERRNO);
                 break;
@@ -222,7 +227,7 @@ void testSockIO()
     fdManager mgr;
     Socket listener(AF_INET, SOCK_STREAM);
     set_non_blocking(listener.sd);
-    sockaddr_in servAddr(listener.bind());
+    osiSockAddr servAddr(listener.bind());
 
     Socket client(AF_INET, SOCK_STREAM);
     Socket server;

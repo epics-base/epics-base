@@ -26,7 +26,7 @@ struct cmditem {
     char* cmd;
 };
 
-static ELLLIST s_cmdlist = {};
+static ELLLIST s_cmdlist = ELLLIST_INIT;
 static int s_initendflag = 0; // Defines the end of the initialization
 
 static void atInitHook(initHookState state)

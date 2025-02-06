@@ -54,9 +54,9 @@ static struct cmditem* newItem(char* cmd)
 {
     struct cmditem* item = mallocMustSucceed(sizeof(struct cmditem) + strlen(cmd) + 1,
                                              ERL_ERROR " atInit: "
-                                                       "failed to allocate memory for cmditem");
+                                                       "failed to allocate memory for cmditem\n");
     item->cmd = (char*)(item + 1);
-    strlcpy(item->cmd, cmd, strlen(cmd) + 1);
+    strncpy(item->cmd, cmd, strlen(cmd) + 1);
 
     ellAdd(&s_cmdlist, &item->node);
 
@@ -71,7 +71,6 @@ static const iocshFuncDef atInitDef = {
 
 static void atInitFunc(const iocshArgBuf* args)
 {
-    static int first_time = 1;
     char* cmd = args[0].sval;
 
     if (s_initendflag) {
@@ -86,11 +85,6 @@ static void atInitFunc(const iocshArgBuf* args)
         return;
     }
 
-    if (first_time) {
-        first_time = 0;
-        initHookRegister(atInitHook);
-    }
-
     newItem(cmd);
 }
 
@@ -100,5 +94,6 @@ void atInitRegister(void)
     if (first_time) {
         first_time = 0;
         iocshRegister(&atInitDef, atInitFunc);
+        initHookRegister(atInitHook);
     }
 }

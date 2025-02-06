@@ -36,7 +36,7 @@ static void atInitHook(initHookState state)
 
     struct cmditem* item = NULL;
 
-    while (item = (struct cmditem*)ellGet(&s_cmdlist)) {
+    while ((item = (struct cmditem*)ellGet(&s_cmdlist))) {
         printf("%s\n", item->cmd);
 
         if (iocshCmd(item->cmd))

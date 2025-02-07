@@ -52,11 +52,13 @@ static void atInitHook(initHookState state)
 
 static struct cmditem* newItem(char* cmd)
 {
-    struct cmditem* item = mallocMustSucceed(sizeof(struct cmditem) + strlen(cmd) + 1,
+    size_t cmd_len = strlen(cmd) + 1;
+
+    struct cmditem* item = mallocMustSucceed(sizeof(struct cmditem) + cmd_len,
                                              ERL_ERROR " atInit: "
                                                        "failed to allocate memory for cmditem\n");
     item->cmd = (char*)(item + 1);
-    strncpy(item->cmd, cmd, strlen(cmd) + 1);
+    strncpy(item->cmd, cmd, cmd_len);
 
     ellAdd(&s_cmdlist, &item->node);
 

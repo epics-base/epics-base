@@ -221,6 +221,34 @@ testHarness_SRCS += linkFilterTest.c
 TESTFILES += ../linkFilterTest.db
 TESTS += linkFilterTest
 
+TARGETS += $(COMMON_DIR)/epicsExportTestIoc.dbd
+DBDDEPENDS_FILES += epicsExportTestIoc.dbd$(DEP)
+epicsExportTestIoc_DBD += base.dbd
+epicsExportTestIoc_DBD += epicsExportTest.dbd
+TESTFILES += $(COMMON_DIR)/epicsExportTestIoc.dbd ../epicsExportTest.db
+
+TESTLIBRARY += epicsExportTestLib
+epicsExportTestLib_SRCS += epicsExportTest.c
+epicsExportTestLib_LIBS += dbCore Com
+
+TESTPROD_HOST += epicsExportTest
+TESTS += epicsExportTest
+TARGETS += epicsExportTest$(OBJ)
+epicsExportTest_SRCS += epicsExportTestMain.c
+epicsExportTest_SRCS += epicsExportTestIoc_registerRecordDeviceDriver.cpp
+epicsExportTest_LIBS = epicsExportTestLib
+
+TESTLIBRARY += epicsExportTestxxLib
+epicsExportTestxxLib_SRCS += epicsExportTestxx.cpp
+epicsExportTestxxLib_LIBS += dbCore Com
+
+TESTPROD_HOST += epicsExportTestxx
+TESTS += epicsExportTestxx
+TARGETS += epicsExportTestxx$(OBJ)
+epicsExportTestxx_SRCS += epicsExportTestMain.c
+epicsExportTestxx_SRCS += epicsExportTestIoc_registerRecordDeviceDriver.cpp
+epicsExportTestxx_LIBS = epicsExportTestxxLib
+
 # These are compile-time tests, no need to link or run
 TARGETS += dbHeaderTest$(OBJ)
 TARGET_SRCS += dbHeaderTest.cpp

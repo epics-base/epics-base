@@ -18,6 +18,11 @@ __This version of EPICS has not been released yet.__
 
 __Add new items below here__
 
+### epicsExport simplifications
+
+`epicsExportAddress()`, `epicsExportRegistrar()` and `epicsRegisterFunction()`
+no longer require to be wrapped in `extern "C" { }` in C++ code.
+
 ### New `dbServerStats()` API for iocStats
 
 A new routine provides the ability to request channel and client counts from

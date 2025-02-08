@@ -1,0 +1,24 @@
+record(longin, "li1") {
+  field(DTYP, "dset1")
+  field(VAL, "-1")
+}
+record(longin, "li2") {
+  field(DTYP, "dset2")
+  field(VAL, "-2")
+}
+record(aSub, "asub1") {
+  field(FTA, "LONG")
+  field(FTB, "LONG")
+  field(INPA, "-1")
+  field(INPB, "-2")
+  field(INAM, "aSubInit1")
+  field(SNAM, "aSubProc1")
+}
+record(aSub, "asub2") {
+  field(FTA, "LONG")
+  field(FTB, "LONG")
+  field(INPA, "-3")
+  field(INPB, "-4")
+  field(INAM, "aSubInit2")
+  field(SNAM, "aSubProc2")
+}

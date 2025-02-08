@@ -41,6 +41,10 @@ extern "C" {
 
 typedef void (*REGISTRAR)(void);
 
+#ifdef __cplusplus
+}
+#endif
+
 #define EPICS_EXPORT_POBJ(typ, obj) pvar_ ## typ ## _ ## obj
 #define EPICS_EXPORT_PFUNC(fun) EPICS_EXPORT_POBJ(func, fun)
 
@@ -75,12 +79,16 @@ typedef void (*REGISTRAR)(void);
  *
  * \param typ Object's data type.
  * \param obj Object's name.
- *
- * \note C++ code needs to wrap with @code extern "C" { } @endcode
  */
+#ifdef __cplusplus
+#define epicsExportAddress(typ, obj) \
+    extern "C" { epicsShareExtern typ *EPICS_EXPORT_POBJ(typ,obj); } \
+    epicsShareDef typ *EPICS_EXPORT_POBJ(typ, obj) = (typ *) (char *) &obj
+#else
 #define epicsExportAddress(typ, obj) \
     epicsShareExtern typ *EPICS_EXPORT_POBJ(typ,obj); \
     epicsShareDef typ *EPICS_EXPORT_POBJ(typ, obj) = (typ *) (char *) &obj
+#endif
 
 /** \brief Declare a registrar function for exporting.
  *
@@ -94,11 +102,15 @@ typedef void (*REGISTRAR)(void);
  \endcode
  *
  * \param fun Registrar function's name.
- *
- * \note C++ code needs to wrap with @code extern "C" { } @endcode
  */
+#ifdef __cplusplus
+#define epicsExportRegistrar(fun) \
+    extern "C" { extern epicsShareFunc REGISTRAR EPICS_EXPORT_PFUNC(fun); } \
+    REGISTRAR EPICS_EXPORT_PFUNC(fun) = reinterpret_cast<REGISTRAR>(&fun)
+#else
 #define epicsExportRegistrar(fun) \
     epicsShareFunc REGISTRAR EPICS_EXPORT_PFUNC(fun) = (REGISTRAR) &fun
+#endif
 
 /** \brief Declare and register a function for exporting.
  *
@@ -111,18 +123,21 @@ typedef void (*REGISTRAR)(void);
  \endcode
 *
  * \param fun Function's name
- *
- * \note C++ code needs to wrap with @code extern "C" { } @endcode
  */
+#ifdef __cplusplus
+#define epicsRegisterFunction(fun) \
+    static void register_func_ ## fun(void) \
+    { \
+        registryFunctionAdd(#fun, reinterpret_cast<REGISTRYFUNCTION>(fun)); \
+    } \
+    epicsExportRegistrar(register_func_ ## fun)
+#else
 #define epicsRegisterFunction(fun) \
     static void register_func_ ## fun(void) \
     { \
         registryFunctionAdd(#fun, (REGISTRYFUNCTION) fun); \
     } \
     epicsExportRegistrar(register_func_ ## fun)
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* INC_epicsExport_H */

@@ -23,7 +23,7 @@ static const char helpMessage[] =
 
 struct cmditem {
     ELLNODE node;
-    char* cmd;
+    char *cmd;
 };
 
 static ELLLIST s_cmdlist = ELLLIST_INIT;
@@ -34,9 +34,9 @@ static void atInitHook(initHookState state)
     if (state != initHookAfterIocRunning)
         return;
 
-    struct cmditem* item = NULL;
+    struct cmditem *item = NULL;
 
-    while ((item = (struct cmditem*)ellGet(&s_cmdlist))) {
+    while ((item = (struct cmditem *)ellGet(&s_cmdlist))) {
         printf("%s\n", item->cmd);
 
         if (iocshCmd(item->cmd))
@@ -50,15 +50,13 @@ static void atInitHook(initHookState state)
     s_initendflag = 1;
 }
 
-static struct cmditem* newItem(char* cmd)
+static struct cmditem *newItem(const char *cmd)
 {
-    size_t cmd_len = strlen(cmd) + 1;
+    const size_t cmd_len = strlen(cmd) + 1;
 
-    struct cmditem* item = mallocMustSucceed(sizeof(struct cmditem) + cmd_len,
-                                             ERL_ERROR " atInit: "
-                                                       "failed to allocate memory for cmditem\n");
-    item->cmd = (char*)(item + 1);
-    strncpy(item->cmd, cmd, cmd_len);
+    struct cmditem *item = mallocMustSucceed(sizeof(struct cmditem) + cmd_len, "atInit");
+    item->cmd = (char *)(item + 1);
+    memcpy(item->cmd, cmd, cmd_len);
 
     ellAdd(&s_cmdlist, &item->node);
 
@@ -68,12 +66,12 @@ static struct cmditem* newItem(char* cmd)
 static const iocshFuncDef atInitDef = {
     "atInit",
     1,
-    (const iocshArg*[]){&(iocshArg){"command (before iocInit)", iocshArgString}},
+    (const iocshArg *[]){&(iocshArg){"command (before iocInit)", iocshArgString}},
     helpMessage};
 
-static void atInitFunc(const iocshArgBuf* args)
+static void atInitFunc(const iocshArgBuf *args)
 {
-    char* cmd = args[0].sval;
+    char *cmd = args[0].sval;
 
     if (s_initendflag) {
         printf(ERL_WARNING " atInit: "

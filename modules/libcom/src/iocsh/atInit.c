@@ -31,10 +31,10 @@ static int s_initendflag = 0; // Defines the end of the initialization
 
 static void atInitHook(initHookState state)
 {
+    struct cmditem *item = NULL;
+
     if (state != initHookAfterIocRunning)
         return;
-
-    struct cmditem *item = NULL;
 
     while ((item = (struct cmditem *)ellGet(&s_cmdlist))) {
         printf("%s\n", item->cmd);

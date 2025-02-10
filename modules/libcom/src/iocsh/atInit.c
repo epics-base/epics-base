@@ -12,6 +12,7 @@
 #include <initHooks.h>
 #include <iocsh.h>
 #include <string.h>
+#include <epicsTypes.h>
 
 #include "atInit.h"
 
@@ -52,7 +53,7 @@ static void atInitHook(initHookState state)
 
 static struct cmditem *newItem(const char *cmd)
 {
-    const size_t cmd_len = strlen(cmd) + 1;
+    const size_t cmd_len = strnlen(cmd, MAX_STRING_SIZE - 1) + 1;
 
     struct cmditem *item = mallocMustSucceed(sizeof(struct cmditem) + cmd_len, "atInit");
     item->cmd = (char *)(item + 1);

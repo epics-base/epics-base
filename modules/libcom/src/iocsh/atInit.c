@@ -64,10 +64,12 @@ static struct cmditem *newItem(const char *cmd)
     return item;
 }
 
+static const iocshArg atInitArg0 = {"command (before iocInit)", iocshArgString};
+static const iocshArg *const atInitArgs[] = {&atInitArg0};
 static const iocshFuncDef atInitDef = {
     "atInit",
     1,
-    (const iocshArg *[]){&(iocshArg){"command (before iocInit)", iocshArgString}},
+    atInitArgs,
     helpMessage};
 
 static void atInitFunc(const iocshArgBuf *args)

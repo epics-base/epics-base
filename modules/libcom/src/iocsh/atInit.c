@@ -12,32 +12,36 @@
 #include <initHooks.h>
 #include <iocsh.h>
 #include <string.h>
-#include <epicsTypes.h>
 
 #include "atInit.h"
 
-static const char helpMessage[] =
+static const iocshArg atInitArg0 = {"command (before iocInit)", iocshArgString};
+static const iocshArg *const atInitArgs[] = {&atInitArg0};
+static const iocshFuncDef atInitDef = {
+    "atInit",
+    1,
+    atInitArgs,
     "Allows you to define commands to be run after the iocInit\n"
     "Example commands:\n"
     "  atInit \"dbpf <PV> <VAL>\"\n"
-    "  atInit \"date\"\n";
+    "  atInit \"date\"\n"};
 
 struct cmditem {
     ELLNODE node;
     char *cmd;
 };
 
-static ELLLIST s_cmdlist = ELLLIST_INIT;
-static int s_initendflag = 0; // Defines the end of the initialization
+static ELLLIST cmdList = ELLLIST_INIT;
+static int initEndFlag = 0; // Defines the end of the initialization
 
-static void atInitHook(initHookState state)
+static void atInitHook(const initHookState state)
 {
     struct cmditem *item = NULL;
 
     if (state != initHookAfterIocRunning)
         return;
 
-    while ((item = (struct cmditem *)ellGet(&s_cmdlist))) {
+    while ((item = (struct cmditem *)ellGet(&cmdList))) {
         printf("%s\n", item->cmd);
 
         if (iocshCmd(item->cmd))
@@ -48,35 +52,26 @@ static void atInitHook(initHookState state)
         free(item);
     }
 
-    s_initendflag = 1;
+    initEndFlag = 1;
 }
 
 static struct cmditem *newItem(const char *cmd)
 {
-    const size_t cmd_len = strnlen(cmd, MAX_STRING_SIZE - 1) + 1;
-
-    struct cmditem *item = mallocMustSucceed(sizeof(struct cmditem) + cmd_len, "atInit");
+    const size_t cmd_len = strnlen(cmd, 32768 - 1) + 1;
+    struct cmditem *const item = mallocMustSucceed(sizeof(struct cmditem) + cmd_len, "atInit");
     item->cmd = (char *)(item + 1);
     memcpy(item->cmd, cmd, cmd_len);
 
-    ellAdd(&s_cmdlist, &item->node);
+    ellAdd(&cmdList, &item->node);
 
     return item;
 }
 
-static const iocshArg atInitArg0 = {"command (before iocInit)", iocshArgString};
-static const iocshArg *const atInitArgs[] = {&atInitArg0};
-static const iocshFuncDef atInitDef = {
-    "atInit",
-    1,
-    atInitArgs,
-    helpMessage};
-
 static void atInitFunc(const iocshArgBuf *args)
 {
-    char *cmd = args[0].sval;
+    const char *const cmd = args[0].sval;
 
-    if (s_initendflag) {
+    if (initEndFlag) {
         printf(ERL_WARNING " atInit: "
                            "can only be used before iocInit (check help)\n");
         return;

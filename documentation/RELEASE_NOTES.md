@@ -22,6 +22,24 @@ should also be read to understand what has changed since earlier releases:
 
 ## Changes made on the 7.0 branch since 7.0.8.1
 
+### Build system `$(PYTHON)` default changed
+
+The default value of the build system's `$(PYTHON)` variable has changed from
+`python` to `python3`, in line with many recent OS installations' removal of
+the `python` binary after Python 2 support ended.
+This change may affect EPICS support modules which run Python scripts at
+build-time that haven't yet been converted to Python 3.
+If needed, the value can be overridden in a `configure/CONFIG_SITE.local` file,
+either in Base or in the specific module.
+
+This variable was added in EPICS 7.0.3.1 and only used by Base when configured
+with `LINKER_USE_RPATH=ORIGIN`.
+That configuration now runs a Perl translation of the original script, so
+Python is not required to build Base.
+
+EPICS developers working on documentation may need to point `PYTHON` to a
+Pythons venv that has the additional packages needed to run Sphinx.
+
 ### Post monitors from compress record when it's reset
 
 Writing into a compress record's `RES` field now posts a monitor event instead

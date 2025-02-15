@@ -53,6 +53,21 @@
 #undef NOGDI
 #define NOGDI
 
+/* Disable crypto stuff */
+#pragma push_macro("NOCRYPT")
+#undef NOCRYPT
+#define NOCRYPT
+
+/* Disable sound driver routines */
+#pragma push_macro("NOSOUND")
+#undef NOSOUND
+#define NOSOUND
+
+/* Disable Kanji writing system support */
+#pragma push_macro("NOKANJI")
+#undef NOKANJI
+#define NOKANJI
+
 #include "windows.h"
 
 /* Restore previous macro values */
@@ -63,6 +78,9 @@
 #pragma pop_macro("NOIME")
 #pragma pop_macro("NOMCX")
 #pragma pop_macro("NOGDI")
+#pragma pop_macro("NOCRYPT")
+#pragma pop_macro("NOSOUND")
+#pragma pop_macro("NOKANJI")
 
 #if defined ( _WIN64 )
 #    define MS_ATOMIC_64

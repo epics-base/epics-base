@@ -42,7 +42,7 @@ static void atInitHook(const initHookState state)
         return;
 
     while ((item = (struct cmditem *)ellGet(&cmdList))) {
-        printf("%s\n", item->cmd);
+        printf(ANSI_GREEN("atInit:") " %s\n", item->cmd);
 
         if (iocshCmd(item->cmd))
             printf(ERL_ERROR " atInit: "
@@ -73,13 +73,13 @@ static void atInitFunc(const iocshArgBuf *args)
 
     if (initEndFlag) {
         printf(ERL_WARNING " atInit: "
-                           "can only be used before iocInit (check help)\n");
+                           "can only be used before 'iocInit'\n");
         return;
     }
 
     if (!cmd || !cmd[0]) {
-        printf(ERL_WARNING " atInit: "
-                           "received an empty argument (check help)\n");
+        printf(ERL_ERROR " atInit: "
+                         "received an empty 'command' argument\n");
         return;
     }
 

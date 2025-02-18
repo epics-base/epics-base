@@ -130,11 +130,23 @@ int dbServerClient(char *pBuf, size_t bufSize)
 int dbServerStats(const char *name, unsigned *channels, unsigned *clients)
 {
     dbServer *psrv = (dbServer *)ellFirst(&serverList);
+    unsigned tch, tcl;
 
-    if (!name || state != running || !psrv)
+    if (state != running || !psrv)
         return -1;
 
-    while (psrv) {
+    for (tch = 0, tcl = 0; psrv;
+         psrv = (dbServer *)ellNext(&psrv->node)) {
+        if (!name) {
+            if (psrv->stats) {
+                unsigned lch, lcl;
+
+                psrv->stats(&lch, &lcl);
+                tch += lch;
+                tcl += lcl;
+            }
+            continue;
+        }
         if (strcmp(name, psrv->name) == 0) {
             if (!psrv->stats)
                 return -1;
@@ -142,7 +154,11 @@ int dbServerStats(const char *name, unsigned *channels, unsigned *clients)
             psrv->stats(channels, clients);
             return 0;
         }
-        psrv = (dbServer *)ellNext(&psrv->node);
+    }
+    if (!name) {
+        if (channels) *channels = tch;
+        if (clients) *clients = tcl;
+        return 0;
     }
     return -1;
 }

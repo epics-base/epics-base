@@ -151,9 +151,11 @@ DBCORE_API int dbServerClient(char *pBuf, size_t bufSize);
  *
  * This is an API for iocStats and similar to fetch the number of channels
  *  and clients connected to the named server layer.
+ *  If the name given is NULL the statistics returned are the totals for
+ *  all the registered server layers.
  * @param name Server name
- * @param channels Where to return the channel count
- * @param clients Where to return the client count
+ * @param channels NULL, or where to return the channel count
+ * @param clients NULL or where to return the client count
  * @returns 0 on success; -1 if IOC isn't running, no such named server,
  *  or that server doesn't implement the stats method.
  *

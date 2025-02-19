@@ -84,7 +84,9 @@ osdReadline (const char *prompt, struct readlineContext *context)
             fputs(prompt, stdout);
             fflush(stdout);
         }
-        while ((c = getc(context->in)) !=  '\n') {
+        int backslash_seen = 0;
+        do {
+            c = getc(context->in);
             if (c == EOF) {
                 free(line);
                 line = NULL;
@@ -103,8 +105,26 @@ osdReadline (const char *prompt, struct readlineContext *context)
                 }
                 line = cp;
             }
-            line[linelen++] = c;
-        }
+            if (backslash_seen) {
+                /* try to handle multi-line string */
+                backslash_seen = 0;
+                if (c == '\n') {
+                    linelen--;              /* overwrite the '\' */
+                    c = getc(context->in);  /* skip current '\n' and get the next char */
+                    if (c == EOF) {
+                        free(line);
+                        line = NULL;
+                        break;
+                    }
+                }
+            }
+            if (c == '\\') {
+                backslash_seen = 1;
+            }
+            if (c != '\n') {
+                line[linelen++] = c;
+            }
+        } while (c != '\n');
         if (line)
             line[linelen] = '\0';
     }

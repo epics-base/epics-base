@@ -34,11 +34,11 @@ CROSS2 = $(CROSS_COMPILER_TARGET_ARCHS$(filter-out 1,$(words $(filter $(EPICS_HO
 BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 
 #-------------------------------------------------------
-# Defaults for Perl and Python assume they're on $PATH.
-# Python (now python3) is only needed by developers, when building docs.
-# Override these in os/CONFIG_SITE.<host_arch>.Common or CONFIG_SITE.local
+# Default for perl if it's on the PATH,
+# otherwise override this in os/CONFIG_SITE.<host_arch>.Common
 PERL = perl -CSD
-PYTHON = python3
+
+PYTHON = python
 
 #-------------------------------------------------------
 # Check configure/RELEASE file for consistency

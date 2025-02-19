@@ -54,7 +54,8 @@ CONVERTRELEASE   = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FILTERMAKEFLAGS  = $(PERL) $(call FIND_TOOL,filterMakeflags.pl)
 FULLPATHNAME     = $(PERL) $(TOOLS)/fullPathName.pl
 GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG) $(QUESTION_FLAG)
-MAKERPATH        = $(PERL) $(TOOLS)/makeRPath.pl
+
+MAKERPATH = $(PYTHON) $(TOOLS)/makeRPath.py
 
 #---------------------------------------------------------------
 # tools for installing libraries and products

@@ -50,9 +50,9 @@ jobs:
       matrix:
         # Job names also name artifacts, character limitations apply
         include:
-          - os: ubuntu-22.04
-            cmp: gcc-12
-            name: "Ub-22 gcc-12 c++20 Werror"
+          - os: ubuntu-24.04
+            cmp: gcc
+            name: "Ub-24 gcc-13 c++20 Werror"
             # Turn all warnings into errors,
             # except for those we could not fix (yet).
             # Remove respective -Wno-error=... flag once it is fixed.
@@ -73,79 +73,79 @@ jobs:
                                   -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3'
                     CMD_LDFLAGS=-Wl,-z,relro"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: default
             cross: "windows-x64-mingw"
-            name: "Ub-20 gcc + MinGW"
+            name: "Ub-22 gcc + MinGW"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: static
             cross: "windows-x64-mingw"
-            name: "Ub-20 gcc + MinGW, static"
+            name: "Ub-22 gcc + MinGW, static"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: static
             extra: "CMD_CXXFLAGS=-std=c++11"
-            name: "Ub-20 gcc C++11, static"
+            name: "Ub-22 gcc C++11, static"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: static
             extra: "CMD_CFLAGS=-funsigned-char CMD_CXXFLAGS=-funsigned-char"
-            name: "Ub-20 gcc unsigned char"
+            name: "Ub-22 gcc unsigned char"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: clang
             configuration: default
-            name: "Ub-20 clang"
+            name: "Ub-22 clang"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: clang
             configuration: default
             extra: "CMD_CXXFLAGS=-std=c++11"
-            name: "Ub-20 clang C++11"
+            name: "Ub-22 clang C++11"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: default
             cross: "RTEMS-pc686-qemu@5"
-            name: "Ub-20 gcc + RT-5.1 pc686"
+            name: "Ub-22 gcc + RT-5.1 pc686"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: default
             cross: "RTEMS-beatnik@5"
             test: NO
-            name: "Ub-20 gcc + RT-5.1 beatnik"
+            name: "Ub-22 gcc + RT-5.1 beatnik"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: default
             cross: "RTEMS-xilinx_zynq_a9_qemu@5"
             test: NO
-            name: "Ub-20 gcc + RT-5.1 xilinx_zynq_a9_qemu"
+            name: "Ub-22 gcc + RT-5.1 xilinx_zynq_a9_qemu"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: default
             cross: "RTEMS-uC5282@5"
             test: NO
-            name: "Ub-20 gcc + RT-5.1 uC5282"
+            name: "Ub-22 gcc + RT-5.1 uC5282"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: default
-            name: "Ub-20 gcc + RT-4.10"
+            name: "Ub-22 gcc + RT-4.10"
             cross: "RTEMS-pc386-qemu@4.10"
             test: NO
 
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             cmp: gcc
             configuration: default
-            name: "Ub-20 gcc + RT-4.9"
+            name: "Ub-22 gcc + RT-4.9"
             cross: "RTEMS-pc386-qemu@4.9"
 
           - os: macos-latest

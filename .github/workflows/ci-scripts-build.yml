@@ -239,10 +239,6 @@ jobs:
       matrix:
         # Job names also name artifacts, character limitations apply
         include:
-          #- name: "CentOS-7"
-          #  image: centos:7
-          #  cmp: gcc
-          #  configuration: default
 
           - name: "Fedora-33"
             image: fedora:33
@@ -255,47 +251,22 @@ jobs:
             configuration: default
 
     steps:
-    - name: "Build newer Git"
-      # actions/checkout@v2 wants git >=2.18
-      # centos:7 has 1.8
-      if: matrix.image=='centos:7'
-      run: |
-        yum -y install curl make gcc curl-devel expat-devel gettext-devel openssl-devel zlib-devel perl-ExtUtils-MakeMaker
-        curl https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.29.0.tar.gz | tar -xz
-        cd git-*
-        make -j2 prefix=/usr/local all
-        make prefix=/usr/local install
-        cd ..
-        rm -rf git-*
-        type -a git
-        git --version
     - name: "Redhat setup"
       run: |
-        dnfyum() {
-            dnf -y "$@" || yum -y "$@"
-            return $?
-        }
-        dnfyum install python3 gdb make perl gcc-c++ glibc-devel readline-devel ncurses-devel perl-devel perl-Test-Simple
-        git --version || dnfyum install git
-        # rather than just bite the bullet and link python3 -> python,
-        # people would rather just break all existing scripts...
-        [ -e /usr/bin/python ] || ln -sf python3 /usr/bin/python
-        python --version
+        dnf -y install python3 gdb make perl gcc-c++ glibc-devel readline-devel ncurses-devel perl-devel perl-Test-Simple
+        git --version || dnf -y install git
+        python3 --version
     - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Automatic core dumper analysis
       uses: mdavidsaver/ci-core-dumper@master
-      if: matrix.image!='centos:7'
-    - name: Automatic core dumper analysis
-      uses: mdavidsaver/ci-core-dumper@node16
-      if: matrix.image=='centos:7'
     - name: Prepare and compile dependencies
-      run: python .ci/cue.py prepare
+      run: python3 .ci/cue.py prepare
     - name: Build main module
-      run: python .ci/cue.py build
+      run: python3 .ci/cue.py build
     - name: Run main module tests
-      run: python .ci/cue.py -T 20M test
+      run: python3 .ci/cue.py -T 20M test
     - name: Upload tapfiles Artifact
       if: ${{ always() }}
       uses: actions/upload-artifact@v4
@@ -305,4 +276,55 @@ jobs:
         if-no-files-found: ignore
     - name: Collect and show test results
       if: ${{ always() }}
-      run: python .ci/cue.py -T 5M test-results
+      run: python3 .ci/cue.py -T 5M test-results
+
+  build-docker:
+    name: Docker CentOS-7
+    runs-on: ubuntu-latest
+    env:
+      CMP: gcc
+      BCFG: default
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    
+    - name: Run...
+      run: |
+        env > env.list
+        cat <<EOF > runit.sh
+        #!/bin/sh
+        set -e -x
+        cd /io
+        id
+
+        sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo
+        sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/*.repo
+        sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/*.repo
+        yum -y install epel-release
+        yum -y install \
+          curl make gcc curl-devel expat-devel gettext-devel openssl-devel zlib-devel perl-ExtUtils-MakeMaker \
+          python3 gdb make perl gcc-c++ glibc-devel readline-devel ncurses-devel perl-devel perl-Test-Simple \
+          libevent-devel sudo re2c
+        [ -e /usr/bin/python ] || ln -sf /usr/bin/python3 /usr/bin/python
+
+        # fake out cue.py
+        ln -s /bin/true /usr/bin/apt-get
+
+        # quiet warnings spam from perl
+        export LANG=C
+
+        python --version
+        python .ci/cue.py prepare
+        python .ci/cue.py build
+        python .ci/cue.py -T 15M test
+        python .ci/cue.py test-results
+        EOF
+        chmod +x runit.sh
+        docker run --rm --quiet \
+          --pull=always \
+          --env-file env.list \
+          -v `pwd`:/io \
+          centos:7 \
+          /io/runit.sh

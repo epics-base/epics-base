@@ -1,0 +1,33 @@
+# this is a comment; comments are ignored and so are empty lines
+1 not a multiline string
+
+2 first multiline \
+string
+
+3 second multiline \
+string \
+with more lines
+
+4 several lines .. \
+next line is empty: \
+\
+next has only a space:\
+ \
+next line has 3 spaces:\
+   \
+END
+
+5 it is fine to sp\
+it words, or really \
+c\
+h\
+o\
+p\
+ them up!
+
+
+
+
+
+# keep this one last
+99 this one will not appear 'cause of no newline

@@ -339,6 +339,18 @@ TESTS += nonEpicsThreadPriorityTest
 endif
 endif
 
+# HK: improve detection of valid command line libraries
+ifeq ($(COMMANDLINE_LIBRARY),READLINE)
+TESTPROD_HOST += readlineTest
+readlineTest_SRCS += readlineTest.c
+TESTS += readlineTest
+endif
+ifeq ($(COMMANDLINE_LIBRARY),EPICS)
+TESTPROD_HOST += readlineTest
+readlineTest_SRCS += readlineTest.c
+TESTS += readlineTest
+endif
+
 include $(TOP)/configure/RULES
 
 rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl

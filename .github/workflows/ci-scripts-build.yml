@@ -239,6 +239,15 @@ jobs:
       matrix:
         # Job names also name artifacts, character limitations apply
         include:
+          - name: "CentOS-8"
+            image: centos:8
+            cmp: gcc
+            configuration: default
+
+          - name: "Rocky-9"
+            image: rockylinux:9
+            cmp: gcc
+            configuration: default
 
           - name: "Fedora-33"
             image: fedora:33
@@ -251,6 +260,13 @@ jobs:
             configuration: default
 
     steps:
+    - name: "Fix repo URLs on CentOS-8"
+      # centos:8 is frozen, repos are in the vault
+      if: matrix.image=='centos:8'
+      run: |
+        sed -i -e "s|mirrorlist=|#mirrorlist=|" \
+        -e "s|#baseurl=http://mirror|baseurl=http://vault|" \
+        /etc/yum.repos.d/CentOS-Linux-{BaseOS,AppStream,Extras,Plus}.repo
     - name: "Redhat setup"
       run: |
         dnf -y install python3 gdb make perl gcc-c++ glibc-devel readline-devel ncurses-devel perl-devel perl-Test-Simple

@@ -63,6 +63,7 @@ epicsReadline (const char *prompt, void *context)
     int c;      /* char is unsigned on some archs, EOF is -ve */
     int linelen = 0;
     int linesize = 50;
+    int backslash_seen = 0;
 
     if (rc->osd)
         return osdReadline(prompt, rc);
@@ -81,7 +82,6 @@ epicsReadline (const char *prompt, void *context)
         printf("Out of memory!\n");
         return NULL;
     }
-    int backslash_seen = 0;
     do {
         c = getc(in);
         if (c == EOF) {

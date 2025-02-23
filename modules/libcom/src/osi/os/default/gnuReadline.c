@@ -74,6 +74,7 @@ osdReadline (const char *prompt, struct readlineContext *context)
         int c;      /* char is unsigned on some archs; EOF is -ve */
         int linelen = 0;
         int linesize = 50;
+        int backslash_seen = 0;
 
         line = malloc(linesize);
         if (line == NULL) {
@@ -84,7 +85,6 @@ osdReadline (const char *prompt, struct readlineContext *context)
             fputs(prompt, stdout);
             fflush(stdout);
         }
-        int backslash_seen = 0;
         do {
             c = getc(context->in);
             if (c == EOF) {

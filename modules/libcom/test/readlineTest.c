@@ -60,7 +60,9 @@ MAIN(readlineTest)
         
         do {
             // expected strings are always single line strings
-            fgets(line_expect, 499, fp_expect);
+            if (! fgets(line_expect, 499, fp_expect)) {
+                testAbort("failed to read an expected line");
+            }
             icin = 0;
             while ((c = line_expect[icin]) && isspace(c)) {
                 icin++;

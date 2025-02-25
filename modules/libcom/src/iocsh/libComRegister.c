@@ -9,10 +9,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#include <stdlib.h>
-
+#include <stdint.h>
 #include "iocsh.h"
 #include "asLib.h"
+#include "epicsStdlib.h"
 #include "epicsStdioRedirect.h"
 #include "epicsString.h"
 #include "epicsTime.h"
@@ -337,7 +337,6 @@ static void threadCallFunc(const iocshArgBuf *args)
     int level = 0;
     const char *cp;
     epicsThreadId tid;
-    unsigned long ltmp;
     int argc = args[0].aval.ac;
     char **argv = args[0].aval.av;
     char *endp;
@@ -352,7 +351,7 @@ static void threadCallFunc(const iocshArgBuf *args)
     }
     for ( ; i < argc ; i++) {
         cp = argv[i];
-        ltmp = strtoul (cp, &endp, 0);
+        tid = (epicsThreadId) (uintptr_t) strtoull(cp, &endp, 0);
         if (*endp) {
             tid = epicsThreadGetId (cp);
             if (!tid) {
@@ -360,9 +359,6 @@ static void threadCallFunc(const iocshArgBuf *args)
                 iocshSetError(-1);
                 continue;
             }
-        }
-        else {
-            tid = (epicsThreadId)ltmp;
         }
         if (first) {
             epicsThreadShow (0, level);
@@ -420,7 +416,6 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
     int i;
     const char *cp;
     epicsThreadId tid;
-    unsigned long ltmp;
     char nameBuf[64];
     int argc = args[0].aval.ac;
     char **argv = args[0].aval.av;
@@ -428,7 +423,7 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 
     for (i = 1 ; i < argc ; i++) {
         cp = argv[i];
-        ltmp = strtoul(cp, &endp, 0);
+        tid = (epicsThreadId) (uintptr_t) strtoull(cp, &endp, 0);
         if (*endp) {
             tid = epicsThreadGetId(cp);
             if (!tid) {
@@ -438,7 +433,6 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
             }
         }
         else {
-            tid =(epicsThreadId)ltmp;
             epicsThreadGetName(tid, nameBuf, sizeof nameBuf);
             if (nameBuf[0] == '\0') {
                 fprintf(stderr, "'%s' is not a valid thread id\n", cp);

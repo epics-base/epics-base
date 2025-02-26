@@ -56,8 +56,8 @@ typedef struct dbServer {
 
     /** @brief Get number of channels and clients currently connected.
      *
-     * @param channels NULL or pointer for returning channel count.
-     * @param clients NULL or pointer for returning client count.
+     * @param channels @c NULL or pointer for returning channel count.
+     * @param clients @c NULL or pointer for returning client count.
      */
     void (* stats) (unsigned *channels, unsigned *clients);
 
@@ -147,21 +147,24 @@ DBCORE_API int dbServerClient(char *pBuf, size_t bufSize);
  */
 #define HAS_DBSERVER_STATS
 
-/** @brief Fetch statistics from named server.
+/** @brief Fetch statistics from server layers.
  *
  * This is an API for iocStats and similar to fetch the number of channels
- *  and clients connected to the named server layer.
- *  If the name given is NULL the statistics returned are the totals for
- *  all the registered server layers.
+ *  and clients connected to the registered server layers.
+ *  If the name given is NULL the statistics returned are the totals from
+ *  all registered server layers, otherwise just from the named server.
  * @param name Server name
  * @param channels NULL, or where to return the channel count
  * @param clients NULL or where to return the client count
- * @returns 0 on success; -1 if IOC isn't running, no such named server,
- *  or that server doesn't implement the stats method.
+ * @returns -1 if the IOC isn't running or no servers are registered, without
+ *  writing to the statistics variables. Otherwise it writes to the statistics
+ *  variables and returns the number of dbServer::stats() methods called,
+ *  0 if a named server wasn't found or doesn't have a stats() method.
  *
  * @since UNRELEASED
  */
-DBCORE_API int dbServerStats(const char *name, unsigned *channels, unsigned *clients);
+DBCORE_API int dbServerStats(const char *name, unsigned *channels,
+    unsigned *clients);
 
 /** @brief Initialize all registered servers.
  *

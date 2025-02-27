@@ -7,8 +7,8 @@ use base 'Pod::Simple::XHTML';
 
 BEGIN {
     if ($Pod::Simple::XHTML::VERSION < '3.16') {
-        # encode_entities() wasn't a method, add it
-        our *encode_entities = sub {
+        # Add encode_entities() as a method
+        sub encode_entities {
             my ($self, $str) = @_;
             my %entities = (
                 q{>} => 'gt',
@@ -35,6 +35,25 @@ sub resolve_pod_page_link {
         if defined $section;
 
     return $ret;
+}
+
+sub _end_head {
+    my $h = delete $_[0]{in_head};
+
+    my $add = $_[0]->html_h_level;
+    $add = 1 unless defined $add;
+    $h += $add - 1;
+
+    my $id = $_[0]->idify($_[0]{htext});
+    my $text = $_[0]{scratch};
+    my $hid = qq{<h$h id="$id">};
+    my $link = qq{ <a class='sect' href="#$id">&sect;</a>};
+    $_[0]{'scratch'} = $_[0]->backlink && ($h - $add == 0)
+                         # backlinks enabled && =head1
+                         ? qq{$hid<a href="#_podtop_">$text</a> $link</h$h>}
+                         : qq{$hid$text $link</h$h>};
+    $_[0]->emit;
+    push @{ $_[0]{'to_index'} }, [$h, $id, delete $_[0]{'htext'}];
 }
 
 1;

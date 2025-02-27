@@ -344,11 +344,13 @@ ifeq ($(COMMANDLINE_LIBRARY),READLINE)
 TESTPROD_HOST += readlineTest
 readlineTest_SRCS += readlineTest.c
 TESTS += readlineTest
+TESTFILES += ../multiline-input.txt ../multiline-expect.txt
 endif
 ifeq ($(COMMANDLINE_LIBRARY),EPICS)
 TESTPROD_HOST += readlineTest
 readlineTest_SRCS += readlineTest.c
 TESTS += readlineTest
+TESTFILES += ../multiline-input.txt ../multiline-expect.txt
 endif
 
 include $(TOP)/configure/RULES

@@ -235,15 +235,15 @@ static void dblaCallFunc(const iocshArgBuf *args) { iocshSetError(dbla(args[0].s
 
 /* dbgrep */
 static const iocshArg dbgrepArg0 = { "pattern",iocshArgStringRecord};
-static const iocshArg dbgrepArg1 = { "field",iocshArgStringRecord};
+static const iocshArg dbgrepArg1 = { "fields",iocshArgString};
 static const iocshArg * const dbgrepArgs[2] = {&dbgrepArg0,&dbgrepArg1};
 static const iocshFuncDef dbgrepFuncDef = {"dbgrep",2,dbgrepArgs,
-                                           "List record names matching pattern and optionally print a field value. \n"
+                                           "List record names matching pattern and optionally print field values. \n"
                                            "The pattern can contain any characters that are legal in record names as well as:\n"
                                            " - \"?\", which matches 0 or one characters.\n"
                                            " - \"*\", which matches 0 or more characters.\n\n"
                                            "Example: dbgrep(\"*gpibAi*\")\n"
-                                           "         dbgrep(\"*gpibAi*\",\"VAL\")\n"};
+                                           "         dbgrep(\"*gpibAi*\",\"VAL DESC\")\n"};
 static void dbgrepCallFunc(const iocshArgBuf *args) { iocshSetError(dbgrep(args[0].sval,args[1].sval));}
 
 /* dbgf */

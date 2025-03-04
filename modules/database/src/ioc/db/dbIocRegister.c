@@ -235,14 +235,16 @@ static void dblaCallFunc(const iocshArgBuf *args) { iocshSetError(dbla(args[0].s
 
 /* dbgrep */
 static const iocshArg dbgrepArg0 = { "pattern",iocshArgStringRecord};
-static const iocshArg * const dbgrepArgs[1] = {&dbgrepArg0};
-static const iocshFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs,
-                                           "List record names matching pattern.\n"
+static const iocshArg dbgrepArg1 = { "field",iocshArgStringRecord};
+static const iocshArg * const dbgrepArgs[2] = {&dbgrepArg0,&dbgrepArg1};
+static const iocshFuncDef dbgrepFuncDef = {"dbgrep",2,dbgrepArgs,
+                                           "List record names matching pattern and optionally print a field value. \n"
                                            "The pattern can contain any characters that are legal in record names as well as:\n"
                                            " - \"?\", which matches 0 or one characters.\n"
                                            " - \"*\", which matches 0 or more characters.\n\n"
-                                           "Example: dbgrep(\"*gpibAi*\")\n"};
-static void dbgrepCallFunc(const iocshArgBuf *args) { iocshSetError(dbgrep(args[0].sval));}
+                                           "Example: dbgrep(\"*gpibAi*\")\n"
+                                           "         dbgrep(\"*gpibAi*\",\"VAL\")\n"};
+static void dbgrepCallFunc(const iocshArgBuf *args) { iocshSetError(dbgrep(args[0].sval,args[1].sval));}
 
 /* dbgf */
 static const iocshArg dbgfArg0 = { "record name",iocshArgStringRecord};

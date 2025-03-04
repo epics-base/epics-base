@@ -283,14 +283,15 @@ long dbli(const char *pattern)
     return 0;
 }
 
-long dbgrep(const char *pmask)
+long dbgrep(const char *pmask,const char *field)
 {
     DBENTRY dbentry;
     DBENTRY *pdbentry = &dbentry;
     long status;
+    long field_chars = (field && *field); /* non zero length field? */
 
     if (!pmask || !*pmask) {
-        printf("Usage: dbgrep \"pattern\"\n");
+        printf("Usage: dbgrep \"pattern\" \"field\"\n");
         return 1;
     }
 
@@ -305,8 +306,25 @@ long dbgrep(const char *pmask)
         status = dbFirstRecord(pdbentry);
         while (!status) {
             char *pname = dbGetRecordName(pdbentry);
-            if (epicsStrGlobMatch(pname, pmask))
-                puts(pname);
+            if (epicsStrGlobMatch(pname, pmask)) {
+                if (field == NULL) {
+                    puts(pname);
+                }
+                else {
+                    const char *pvalue = "<field not present>";
+                    status = dbFindField(pdbentry, field);
+                    if (status) {
+                        if (!strcmp(field, "recordType")) {
+                            pvalue = dbGetRecordTypeName(pdbentry);
+                        }
+                    }
+                    else {
+                        pvalue = dbGetString(pdbentry);
+                    }
+                    printf("%s%s%s \"%s\"\n", pname,
+                              (field_chars ? "." : ""), field, pvalue);
+                }
+            }
             status = dbNextRecord(pdbentry);
         }
         status = dbNextRecordType(pdbentry);

@@ -309,7 +309,7 @@ long dbgrep(const char *pmask,const char *fields)
     char **papfields = 0;
 
     if (!pmask || !*pmask) {
-        printf("Usage: dbgrep \"pattern\" \"field\"\n");
+        printf("Usage: dbgrep \"pattern\" \"fields\"\n");
         return 1;
     }
 

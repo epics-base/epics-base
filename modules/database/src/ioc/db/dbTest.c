@@ -130,10 +130,9 @@ static int splitFieldsList(char *fieldnames, char ***ppapfields)
 static void printFieldsList(DBENTRY *pdbentry, char** papfields, int nfields)
 {
     int ifield;
-    long status;
     for (ifield = 0; ifield < nfields; ifield++) {
         char *pvalue;
-        status = dbFindField(pdbentry, papfields[ifield]);
+        long status = dbFindField(pdbentry, papfields[ifield]);
         if (status) {
             if (!strcmp(papfields[ifield], "recordType")) {
                 pvalue = dbGetRecordTypeName(pdbentry);

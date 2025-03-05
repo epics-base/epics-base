@@ -108,21 +108,18 @@ long dba(const char*pname)
 static int splitFieldsList(char *fieldnames, char ***ppapfields)
 {
     char *pnext = fieldnames;
-    int nfields = 1;
-    int ifield;
-    while (*pnext && (pnext = strchr(pnext,' '))) {
-        nfields++;
+    int nfields = 0, maxfields = 1;
+    char* saveptr = NULL;
+    /* this may overcount real fields e.g. " VAL " hence maxfields */
+    while (*pnext && (pnext = strchr(pnext, ' '))) {
+        maxfields++;
         while (*pnext == ' ') pnext++;
     }
-    *ppapfields = dbCalloc(nfields,sizeof(char *));
-    pnext = fieldnames;
-    for (ifield = 0; ifield < nfields; ifield++) {
-        (*ppapfields)[ifield] = pnext;
-        if (ifield < nfields - 1) {
-            pnext = strchr(pnext, ' ');
-            *pnext++ = 0;
-            while (*pnext == ' ') pnext++;
-        }
+    *ppapfields = dbCalloc(maxfields, sizeof(char *));
+    pnext = epicsStrtok_r(fieldnames, " ", &saveptr);
+    while(pnext != NULL) {
+        (*ppapfields)[nfields++] = pnext;
+        pnext = epicsStrtok_r(NULL, " ", &saveptr);
     }
     return nfields;
 }

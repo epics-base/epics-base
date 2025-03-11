@@ -57,7 +57,7 @@ static void atInitHook(const initHookState state)
 
 static struct cmditem *newItem(const char *cmd)
 {
-    const size_t cmd_len = strnlen(cmd, 32768 - 1) + 1;
+    const size_t cmd_len = strlen(cmd) + 1;
     struct cmditem *const item = mallocMustSucceed(sizeof(struct cmditem) + cmd_len, "atInit");
     item->cmd = (char *)(item + 1);
     memcpy(item->cmd, cmd, cmd_len);

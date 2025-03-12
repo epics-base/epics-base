@@ -60,6 +60,9 @@
 /*
  * No return marker
  */
+#ifndef vxWorks
+// VxWorks does not mark abort() or exit() noreturn!
 #define EPICS_NORETURN __attribute__((noreturn))
+#endif
 
 #endif  /* ifndef compilerSpecific_h */

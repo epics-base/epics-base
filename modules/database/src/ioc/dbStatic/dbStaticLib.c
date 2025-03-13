@@ -2214,7 +2214,7 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
         if(!plink->text)
             continue;
 
-        if(dbParseLink(plink->text, pflddes->field_type, &link_info)!=0) {
+        if(dbParseLink(plink->text, pflddes->field_type, &link_info, prec->name)!=0) {
             /* This was already parsed once when ->text was set.
              * Any syntax error messages were printed at that time.
              */
@@ -2243,7 +2243,7 @@ void dbFreeLinkInfo(dbLinkInfo *pinfo)
     pinfo->target = NULL;
 }
 
-long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
+long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo, const char *recname)
 {
     char *pstr;
     size_t len;
@@ -2382,11 +2382,11 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
         case DBF_INLINK: /* accept all */ break;
         case DBF_OUTLINK:
             if(pinfo->modifiers & (pvlOptCPP|pvlOptCP)){
-                errlogPrintf("Warning: dbParseLink: Output link to %s was specified with \n\
+                errlogPrintf("Warning: Output link from %s to %s was specified with \n\
                 CP/CPP, which has no effect. \n\
                 Only CA affects local output links. \n\
                 Remote output link behavior is governed by the target record.\n",
-                pinfo->target);
+                recname, pinfo->target);
             }
             pinfo->modifiers &= ~(pvlOptCPP|pvlOptCP);
             break;
@@ -2627,7 +2627,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
             dbLinkInfo link_info;
             DBLINK *plink = (DBLINK *)pfield;
 
-            status = dbParseLink(pstring, pflddes->field_type, &link_info);
+            status = dbParseLink(pstring, pflddes->field_type, &link_info, dbGetRecordName(pdbentry));
             if (status) break;
 
             if (plink->type==CONSTANT && plink->value.constantStr==NULL) {
@@ -3609,7 +3609,7 @@ void  dbReportDeviceConfig(dbBase *pdbbase, FILE *report)
                 if (plink->text) {  /* Not yet parsed */
                     dbLinkInfo linfo;
 
-                    if (dbParseLink(plink->text, pdbentry->pflddes->field_type, &linfo))
+                    if (dbParseLink(plink->text, pdbentry->pflddes->field_type, &linfo, dbGetRecordName(pdbentry)))
                         continue;
 
                     linkType = linfo.ltype;

@@ -39,8 +39,8 @@ jobs:
       - name: Build and push epics-base
         uses: docker/build-push-action@v5
         with:
-          context: epics-base
-          file: ../pvxs/example/docker/epics-base/Dockerfile
+          context: .
+          file: pvxs/example/docker/epics-base/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |

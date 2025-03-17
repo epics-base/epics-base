@@ -28,6 +28,7 @@ jobs:
           repository: george-mcintyre/pvxs
           ref: tls
           path: pvxs
+          submodules: recursive
 
       - name: Checkout EPICS base code
         uses: actions/checkout@v4
@@ -35,6 +36,14 @@ jobs:
           repository: george-mcintyre/epics-base
           ref: 7.0-method_and_authority
           path: epics-base
+          submodules: recursive
+
+      - name: Debug directory content
+        run: |
+          echo "Contents of epics-base:"
+          ls -la epics-base/
+          echo "Looking for Makefile:"
+          find epics-base/ -name Makefile
 
       - name: Build and push epics-base
         uses: docker/build-push-action@v5

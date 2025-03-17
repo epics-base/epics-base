@@ -1,0 +1,40 @@
+name: docker multi-platform epics-base build
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    vars:
+      DOCKER_USERNAME:
+        required: true
+    secrets:
+      DOCKER_TOKEN:
+        required: true
+
+jobs:
+  build-epics-base:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PVXS repo for Dockerfile
+        uses: actions/checkout@v4
+        with:
+          repository: george-mcintyre/pvxs
+          ref: tls
+          path: pvxs
+
+      - name: Checkout EPICS base code
+        uses: actions/checkout@v4
+        with:
+          repository: george-mcintyre/epics-base
+          ref: 7.0_method_and_authority
+          path: epics-base
+
+      - name: Build and push epics-base
+        uses: docker/build-push-action@v5
+        with:
+          context: epics-base
+          dockerfile: pvxs/example/docker/epics-base/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            DOCKER_USERNAME=${{ vars.DOCKER_USERNAME }}
+          tags: ${{ vars.DOCKER_USERNAME }}/epics-base:latest

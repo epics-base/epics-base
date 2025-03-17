@@ -40,7 +40,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: epics-base
-          dockerfile: pvxs/example/docker/epics-base/Dockerfile
+          dockerfile: ../pvxs/example/docker/epics-base/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |

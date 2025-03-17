@@ -3,10 +3,9 @@ name: docker multi-platform epics-base build
 on:
   workflow_dispatch:
   workflow_call:
-    vars:
+    secrets:
       DOCKER_USERNAME:
         required: true
-    secrets:
       DOCKER_TOKEN:
         required: true
 

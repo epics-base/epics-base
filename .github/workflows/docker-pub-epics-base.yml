@@ -8,6 +8,9 @@ on:
         required: true
       DOCKER_TOKEN:
         required: true
+  push:
+    branches:
+      - '7.0-method_and_authority'
 
 jobs:
   build-epics-base:

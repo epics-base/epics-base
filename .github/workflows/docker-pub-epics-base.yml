@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: george-mcintyre/epics-base
-          ref: 7.0_method_and_authority
+          ref: 7.0-method_and_authority
           path: epics-base
 
       - name: Build and push epics-base

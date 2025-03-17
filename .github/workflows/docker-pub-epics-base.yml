@@ -3,10 +3,9 @@ name: docker multi-platform epics-base build
 on:
   workflow_dispatch:
   workflow_call:
-    vars:
+    secrets:
       DOCKER_USERNAME:
         required: true
-    secrets:
       DOCKER_TOKEN:
         required: true
 
@@ -14,6 +13,15 @@ jobs:
   build-epics-base:
     runs-on: ubuntu-latest
     steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
       - name: Checkout PVXS repo for Dockerfile
         uses: actions/checkout@v4
         with:
@@ -36,5 +44,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            DOCKER_USERNAME=${{ vars.DOCKER_USERNAME }}
-          tags: ${{ vars.DOCKER_USERNAME }}/epics-base:latest
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/epics-base:latest

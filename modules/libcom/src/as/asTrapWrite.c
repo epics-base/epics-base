@@ -113,6 +113,11 @@ void epicsStdCall asTrapWriteUnregisterListener(asTrapWriteId id)
 
 void * epicsStdCall asTrapWriteBeforeWithData(
     const char *userid, const char *hostid, dbChannel *chan,
+    int dbrType, int no_elements, void *data) {
+    return asTrapWriteBeforeWithDataX(userid, "ca", NULL, hostid, 0, chan, dbrType, no_elements, data);
+}
+void * epicsStdCall asTrapWriteBeforeWithDataX(
+    const char *userid, const char *method, const char *authority, const char *hostid, int isTLS, dbChannel *chan,
     int dbrType, int no_elements, void *data)
 {
     writeMessage *pwriteMessage;
@@ -125,6 +130,9 @@ void * epicsStdCall asTrapWriteBeforeWithData(
     pwriteMessage = (writeMessage *)freeListCalloc(
         pasTrapWritePvt->freeListWriteMessage);
     pwriteMessage->message.userid = userid;
+    pwriteMessage->message.method = method;
+    pwriteMessage->message.authority = authority;
+    pwriteMessage->message.isTLS = isTLS;
     pwriteMessage->message.hostid = hostid;
     pwriteMessage->message.serverSpecific = chan;
     pwriteMessage->message.dbrType = dbrType;

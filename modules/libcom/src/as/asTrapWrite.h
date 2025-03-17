@@ -33,7 +33,10 @@ struct dbChannel;
  */
 typedef struct asTrapWriteMessage {
     const char *userid; /**< \brief Userid of whoever originated the request. */
+    const char *method; /**< \brief Method of the request (ca, anonymous, or x509. */
+    const char *authority; /**< \brief Authority of the request (common name of the root certificate authority). */
     const char *hostid; /**< \brief Hostid of whoever originated the request. */
+    int isTLS; /**< \brief the connection is TLS encapsulated. */
     /** \brief A field for use by the server.
      *
      * Any listener that uses this field must know what type of

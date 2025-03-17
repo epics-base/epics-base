@@ -8,6 +8,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <io.h>
+#include <windows.h>
+#define close _close
+#define unlink _unlink
+#else
+#include <unistd.h>
+#endif
+
 #include <testMain.h>
 #include <epicsUnitTest.h>
 
@@ -19,7 +28,10 @@
 #include <asLib.h>
 
 static char *asUser,
-            *asHost;
+            *asHost,
+            *asMethod,
+            *asAuthority;
+int asIsTLS=0;
 static int asAsl;
 
 static void setUser(const char *name)
@@ -34,6 +46,23 @@ static void setHost(const char *name)
     asHost = epicsStrDup(name);
 }
 
+static void setMethod(const char *name)
+{
+    free(asMethod);
+    asMethod = epicsStrDup(name);
+}
+
+static void setAuthority(const char *name)
+{
+    free(asAuthority);
+    asAuthority = epicsStrDup(name);
+}
+
+static void setIsTLS(int isTLS)
+{
+    asIsTLS = isTLS;
+}
+
 static void testAccess(const char *asg, unsigned mask)
 {
     ASMEMBERPVT asp = 0; /* aka dbCommon::asp */
@@ -42,20 +71,21 @@ static void testAccess(const char *asg, unsigned mask)
 
     ret = asAddMember(&asp, asg);
     if(ret) {
-        testFail("testAccess(ASG:%s, USER:%s, HOST:%s, ASL:%d) -> asAddMember error: %s",
-                 asg, asUser, asHost, asAsl, errSymMsg(ret));
+        testFail("testAccess(ASG:%s, USER:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, isTLS:%s, ASL:%d) -> asAddMember error: %s",
+                 asg, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, (asIsTLS!=-1?(asIsTLS ? "true":"false"): "not set"), asAsl, errSymMsg(ret));
     } else {
-        ret = asAddClient(&client, asp, asAsl, asUser, asHost);
+        ret = asAddClientX(&client, asp, asAsl, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, asIsTLS);
     }
     if(ret) {
-        testFail("testAccess(ASG:%s, USER:%s, HOST:%s, ASL:%d) -> asAddClient error: %s",
-                 asg, asUser, asHost, asAsl, errSymMsg(ret));
+        testFail("testAccess(ASG:%s, USER:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, isTLS:%s, ASL:%d) -> asAddClient error: %s",
+                 asg, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, (asIsTLS!=-1?(asIsTLS ? "true":"false"): "not set"), asAsl, errSymMsg(ret));
     } else {
         unsigned actual = 0;
         actual |= asCheckGet(client) ? 1 : 0;
         actual |= asCheckPut(client) ? 2 : 0;
-        testOk(actual==mask, "testAccess(ASG:%s, USER:%s, HOST:%s, ASL:%d) -> %x == %x",
-               asg, asUser, asHost, asAsl, actual, mask);
+        actual |= asCheckRPC(client) ? 4 : 0;
+        testOk(actual==mask, "testAccess(ASG:%s, USER:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, isTLS:%s, ASL:%d) -> %x == %x",
+               asg, asUser, (asMethod?asMethod:""), (asAuthority?asAuthority:""), asHost, (asIsTLS!=-1?(asIsTLS ? "true":"false"): "not set"), asAsl, actual, mask);
     }
     if(client) asRemoveClient(&client);
     if(asp) asRemoveMember(&asp);
@@ -63,7 +93,13 @@ static void testAccess(const char *asg, unsigned mask)
 
 static void testSyntaxErrors(void)
 {
-    static const char empty[] = "\n#almost empty file\n\n";
+    static const char empty[]                         = "\n#almost empty file\n\n";
+    static const char duplicateMethod[]               = "\nASG(foo) {RULE(0, NONE) {METHOD   (\"x509\"        )  METHOD   (\"x509\"        )}}\n\n";
+    static const char duplicateAuthority[]            = "\nASG(foo) {RULE(0, NONE) {AUTHORITY(\"Epics Org CA\")  AUTHORITY(\"Epics Org CA\")}}\n\n";
+    static const char notDuplicateMethod[]            = "\nASG(foo) {RULE(0, NONE) {METHOD   (\"x509\"        )} RULE(1, RPC            ) {METHOD   (\"x509\"        )}}\n\n";
+    static const char notDuplicateAuthority[]         = "\nASG(foo) {RULE(0, NONE) {AUTHORITY(\"Epics Org CA\")} RULE(1, WRITE,TRAPWRITE) {AUTHORITY(\"Epics Org CA\")}}\n\n";
+    static const char anotherNotDuplicatedMethod[]    = "\nASG(foo) {RULE(0, NONE) {METHOD   (\"x509\"        )  METHOD   (\"ca\"          )}}\n\n";
+    static const char anotherNotDuplicatedAuthority[] = "\nASG(foo) {RULE(0, NONE) {AUTHORITY(\"Epics Org CA\")  AUTHORITY(\"ORNL CA\"     )}}\n\n";
     long ret;
 
     testDiag("testSyntaxErrors()");
@@ -71,8 +107,27 @@ static void testSyntaxErrors(void)
     eltc(0);
     ret = asInitMem(empty, NULL);
     testOk(ret==S_asLib_badConfig, "load \"empty\" config -> %s", errSymMsg(ret));
+
+    ret = asInitMem(duplicateMethod, NULL);
+    testOk(ret==S_asLib_badConfig, "load \"duplicate method rule\" config -> %s", errSymMsg(ret));
+
+    ret = asInitMem(duplicateAuthority, NULL);
+    testOk(ret==S_asLib_badConfig, "load \"duplicate authority rule\" config -> %s", errSymMsg(ret));
+
+    ret = asInitMem(notDuplicateMethod, NULL);
+    testOk(ret==0, "load non \"duplicate method rule\" config -> %s", errSymMsg(ret));
+
+    ret = asInitMem(notDuplicateAuthority, NULL);
+    testOk(ret==0, "load non \"duplicate authority rule\" config -> %s", errSymMsg(ret));
+
+    ret = asInitMem(anotherNotDuplicatedMethod, NULL);
+    testOk(ret==0, "load another non \"duplicate method rule\" config -> %s", errSymMsg(ret));
+
+    ret = asInitMem(anotherNotDuplicatedAuthority, NULL);
+    testOk(ret==0, "load another non \"duplicate authority rule\" config -> %s", errSymMsg(ret));
     eltc(1);
 }
+
 static const char hostname_config[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
@@ -111,6 +166,220 @@ static void testHostNames(void)
     testAccess("rw", 0);
 }
 
+static const char method_auth_config[] = ""
+        "UAG(foo) {\"testing\"}\n"
+        "UAG(bar) {\"boss\"}\n"
+        "UAG(ops) {\"geek\"}\n"
+        "ASG(DEFAULT) {RULE(0, NONE)}\n"
+        "ASG(ro) {RULE(0, NONE) RULE(1, READ) {UAG(foo) UAG(ops) METHOD(\"ca\")}}\n"
+        "ASG(rw) {RULE(0, NONE) RULE(1, WRITE, TRAPWRITE, ISTLS) {UAG(foo) METHOD(\"x509\") AUTHORITY(\"Epics Org CA\")}}\n"
+        "ASG(rwx) {RULE(0, NONE) RULE(1, RPC, ISTLS) {UAG(bar) METHOD(\"x509\", \"ignored\") METHOD(\"ignored_too\") AUTHORITY(\"Epics Org CA\", \"ignored\") AUTHORITY(\"ORNL Org CA\")}}\n"
+        ;
+
+static void testMethodAndAuth(void)
+{
+    testDiag("testMethodAndAuth()");
+    asCheckClientIP = 0;
+
+    testOk1(asInitMem(method_auth_config, NULL)==0);
+
+    asAsl = 0;
+    testAccess("DEFAULT", 0);
+
+    setHost("localhost");
+    setUser("boss");
+    setMethod("ca");
+
+    testAccess("ro", 0);
+    testAccess("rw", 0);
+    testAccess("rwx", 0);
+
+    setUser("testing");
+
+    testAccess("ro", 1);
+    testAccess("rw", 0);
+    testAccess("rwx", 0);
+
+    setMethod("x509");
+
+    testAccess("ro", 0);
+    testAccess("rw", 0);
+    testAccess("rwx", 0);
+
+    setAuthority("Epics Org CA");
+    setIsTLS(1);
+
+    testAccess("ro", 0);
+    testAccess("rw", 3);
+    testAccess("rwx", 0);
+
+    setAuthority("ORNL Org CA");
+    testAccess("ro", 0);
+    testAccess("rw", 0);
+
+    setUser("boss");
+    testAccess("rwx", 7);
+}
+
+static const char *expected_method_auth_config =
+  "UAG(bar) {boss}\n"
+  "UAG(foo) {testing}\n"
+  "UAG(ops) {geek}\n"
+  "ASG(DEFAULT) {\n"
+  "\tRULE(0,NONE,NOTRAPWRITE)\n"
+  "}\n"
+  "ASG(ro) {\n"
+  "\tRULE(0,NONE,NOTRAPWRITE)\n"
+  "\tRULE(1,READ,NOTRAPWRITE) {\n"
+  "\t\tUAG(foo,ops)\n"
+  "\t\tMETHOD(\"ca\")\n"
+  "\t}\n"
+  "}\n"
+  "ASG(rw) {\n"
+  "\tRULE(0,NONE,NOTRAPWRITE)\n"
+  "\tRULE(1,WRITE,TRAPWRITE) {\n"
+  "\t\tUAG(foo)\n"
+  "\t\tMETHOD(\"x509\")\n"
+  "\t\tAUTHORITY(\"Epics Org CA\")\n"
+  "\t}\n"
+  "}\n"
+  "ASG(rwx) {\n"
+  "\tRULE(0,NONE,NOTRAPWRITE)\n"
+  "\tRULE(1,RPC,NOTRAPWRITE) {\n"
+  "\t\tUAG(bar)\n"
+  "\t\tMETHOD(\"x509\",\"ignored\",\"ignored_too\")\n"
+  "\t\tAUTHORITY(\"Epics Org CA\",\"ignored\",\"ORNL Org CA\")\n"
+  "\t}\n"
+  "}\n";
+
+static void testDumpOutput(void)
+{
+    testDiag("testDumpOutput()");
+    testOk1(asInitMem(method_auth_config, NULL)==0);
+
+    // Create temporary file in current directory
+    char temp_filename[] = "aslib_test_XXXXXX";
+    int fd = mkstemp(temp_filename);
+    testOk(fd != -1, "Created temporary file");
+    if (fd == -1) return;
+
+    FILE *fp = fdopen(fd, "w+");
+    testOk(fp != NULL, "Opened temporary file stream");
+    if (!fp) {
+        close(fd);
+        unlink(temp_filename);
+        return;
+    }
+
+    // Write dump to temporary file
+    asDumpFP(fp, NULL, NULL, 0);
+    fflush(fp);
+    rewind(fp);
+
+    // Read the entire dump into a buffer
+    char *buf = malloc(1024);
+    size_t size = 0;
+    if (buf) {
+        size = fread(buf, 1, 1024, fp);
+        buf[size] = '\0';
+    }
+
+    testOk(buf != NULL && strcmp(expected_method_auth_config, buf) == 0,
+           "asDumpFP output matches expected\nExpected:\n%s\nGot:\n%s",
+           expected_method_auth_config, buf ? buf : "NULL");
+
+    // Clean up
+    free(buf);
+    fclose(fp);
+    unlink(temp_filename);  // Delete temporary file
+}
+static const char *expected_DEFAULT_rules_config =
+  "ASG(DEFAULT) {\n"
+  "\tRULE(0,NONE,NOTRAPWRITE)\n"
+  "}\n";
+
+static const char *expected_ro_rules_config =
+  "ASG(ro) {\n"
+  "\tRULE(0,NONE,NOTRAPWRITE)\n"
+  "\tRULE(1,READ,NOTRAPWRITE) {\n"
+  "\t\tUAG(foo,ops)\n"
+  "\t\tMETHOD(\"ca\")\n"
+  "\t}\n"
+  "}\n";
+
+static const char *expected_rw_rules_config =
+  "ASG(rw) {\n"
+  "\tRULE(0,NONE,NOTRAPWRITE)\n"
+  "\tRULE(1,WRITE,TRAPWRITE) {\n"
+  "\t\tUAG(foo)\n"
+  "\t\tMETHOD(\"x509\")\n"
+  "\t\tAUTHORITY(\"Epics Org CA\")\n"
+  "\t}\n"
+  "}\n";
+
+static const char *expected_rwx_rules_config =
+  "ASG(rwx) {\n"
+  "\tRULE(0,NONE,NOTRAPWRITE)\n"
+  "\tRULE(1,RPC,NOTRAPWRITE) {\n"
+  "\t\tUAG(bar)\n"
+  "\t\tMETHOD(\"x509\",\"ignored\",\"ignored_too\")\n"
+  "\t\tAUTHORITY(\"Epics Org CA\",\"ignored\",\"ORNL Org CA\")\n"
+  "\t}\n"
+  "}\n";
+
+static void testRulesDumpOutput(void)
+{
+    testDiag("testRulesDumpOutput()");
+    testOk1(asInitMem(method_auth_config, NULL)==0);
+
+    char *buf = NULL;
+    size_t size = 0;
+
+    // DEFAULT
+    FILE *fp = open_memstream(&buf, &size);
+    testOk(fp != NULL, "Created DEFAULT memory stream");
+    if (!fp) return;
+    asDumpRulesFP(fp, "DEFAULT");
+    fclose(fp);
+    testOk(strcmp(expected_DEFAULT_rules_config, buf) == 0,
+           "asDumpFP DEFAULT output matches expected\nExpected:\n%s\nGot:\n%s",
+           expected_DEFAULT_rules_config, buf);
+    free(buf);
+
+    // ro
+    fp = open_memstream(&buf, &size);
+    testOk(fp != NULL, "Created ro memory stream");
+    if (!fp) return;
+    asDumpRulesFP(fp, "ro");
+    fclose(fp);
+    testOk(strcmp(expected_ro_rules_config, buf) == 0,
+           "asDumpFP ro output matches expected\nExpected:\n%s\nGot:\n%s",
+           expected_ro_rules_config, buf);
+    free(buf);
+
+    // rw
+    fp = open_memstream(&buf, &size);
+    testOk(fp != NULL, "Created rw memory stream");
+    if (!fp) return;
+    asDumpRulesFP(fp, "rw");
+    fclose(fp);
+    testOk(strcmp(expected_rw_rules_config, buf) == 0,
+           "asDumpFP rw output matches expected\nExpected:\n%s\nGot:\n%s",
+           expected_rw_rules_config, buf);
+    free(buf);
+
+    // rwx
+    fp = open_memstream(&buf, &size);
+    testOk(fp != NULL, "Created rwx memory stream");
+    if (!fp) return;
+    asDumpRulesFP(fp, "rwx");
+    fclose(fp);
+    testOk(strcmp(expected_rwx_rules_config, buf) == 0,
+           "asDumpFP rwx output matches expected\nExpected:\n%s\nGot:\n%s",
+           expected_rwx_rules_config, buf);
+    free(buf);
+}
+
 static void testUseIP(void)
 {
     testDiag("testUseIP()");
@@ -146,9 +415,12 @@ static void testUseIP(void)
 
 MAIN(aslibtest)
 {
-    testPlan(27);
+    testPlan(63);
     testSyntaxErrors();
     testHostNames();
+    testMethodAndAuth();
+    testDumpOutput();
+    testRulesDumpOutput();
     testUseIP();
     errlogFlush();
     return testDone();

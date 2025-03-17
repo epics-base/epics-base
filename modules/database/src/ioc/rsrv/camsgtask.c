@@ -172,8 +172,8 @@ int casClientInitiatingCurrentThread ( char * pBuf, size_t bufSize )
         return RSRV_ERROR;
 
     if ( pBuf && bufSize ) {
-        epicsSnprintf(pBuf, bufSize, "ca:%s@%s",
-            pClient->pUserName, pClient->pHostName);
+        epicsSnprintf(pBuf, bufSize, "%s:%s@%s",
+            pClient->pMethod?pClient->pMethod:"", pClient->pUserName, pClient->pHostName);
     }
     return RSRV_OK;
 }

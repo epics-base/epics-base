@@ -104,6 +104,65 @@ For example this will remove the record named "unwanted":
 record("#", "unwanted") {}
 ```
 
+### Access Security: Certificate-based Authorization
+
+Added a new option and two new fields to `ASG(){RULE(...,<new_option>) {<new_fields>}}`, and added a new access type, `RPC`, to ASG(){RULE(<new_type>)}.  Three new API functions were also added to the `libcom` library to support these new features.
+
+There are no external dependencies for these features.
+
+#### New Option
+- `ISTLS` - Controls PV access authorization based on whether the connection is using TLS.  If present then the connection must be using TLS.  If absent the connection type is ignored.
+
+```
+ASG(ENCRYPTED) {
+    RULE(1, WRITE, ISTLS)
+}
+```
+
+#### New Fields
+- `METHOD("type"[,...])` - Controls PV access authorization based on the connection method (e.g. "x509", "ca", "anonymous").  True if any match.  "x509" is for connections that have been established by and identity authenticated with an X509 certificate.
+- `AUTHORITY("common_name"[,...])` - Controls PV access authorization based on the Common Name of the Certificate Authority that signed the client's certificate.  True if any match.  Only applies to connections that have been established by an identity authenticated with an X509 certificate.
+
+These fields accept comma-separated lists and work with Secure PVAccess connections. Multiple entries in each field act as a logical OR. For example to mandate Stanford National Laboratory or Stanford University issued certificate-based authentication use the following rule:
+
+```
+ASG(secure) {
+    RULE(1, WRITE) {
+        METHOD("x509")
+        AUTHORITY("SLAC.STANFORD.EDU CA", "STANFORD.EDU CA")
+    }
+}
+```
+
+This allows fine-grained access control based on both how clients connect and who issued their certificates.  "x509" is for connections that have been
+established by and identity authenticated with an X509 certificate. 
+
+The new `METHOD` and `AUTHORITY` fields are not compatible with previous versions EPICS, and will cause syntax errors when parsed.  Only use these fields with servers compiled with release. Older clients will provide `METHOD` as "ca" or "anonymous" and will always send a blank `AUTHORITY` field.  For such clients you can provide rules as follows which will be triggered for all legacy connections:
+
+```
+ASG(secure) {
+    RULE(1, READ) {
+        METHOD("ca", "anonymous")
+    }
+}
+```
+#### New Access Type
+- `RPC` - Access type to control access to PVs by RPC
+
+A new RULE access name `RPC` has been added to control allow access to RPC connections.  However, the implementation of actual control to PVs via RPS has not yet been implemented, so RPC will operate as if it were `WRITE`. Multiple entries in each field act as a logical OR.  e.g.
+
+```
+ASG(rpc) {
+    RULE(1, RPC) {
+        METHOD("ca", "anonymous")
+    }
+}
+```
+
+#### API Functions
+
+Three new API functions `asAddClientX()`, `asChangeClientX()`, and `asTrapWriteBeforeWithDataX()` were added to the `libcom` module to support these new features.  They are corollaries to the existing `asAddClient()`, `asChangeClient()`, and `asTrapWriteBeforeWithData()` functions, but with the addition of the new `method` and `authority` parameters.
+
 ### Only keep readline history for interactive sessions
 
 Previously, all IOCsh commands were persisited in the libreadline history

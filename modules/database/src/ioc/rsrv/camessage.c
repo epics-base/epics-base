@@ -791,9 +791,11 @@ static int write_action ( caHdrLargeArray *mp,
         return RSRV_ERROR;
     }
 
-    asWritePvt = asTrapWriteWithData ( pciu->asClientPVT,
+    asWritePvt = asTrapWriteWithDataX ( pciu->asClientPVT,
         pciu->client->pUserName ? pciu->client->pUserName : "",
-        pciu->client->pHostName ? pciu->client->pHostName : "",
+        pciu->client->pMethod ? pciu->client->pMethod : "",
+        pciu->client->pAuthority ? pciu->client->pAuthority : "",
+        pciu->client->pHostName ? pciu->client->pHostName : "", pciu->client->isTLS,
         pciu->dbch, mp->m_dataType, mp->m_count, pPayload );
 
     dbStatus = dbChannel_put(
@@ -1268,12 +1270,16 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
     /*
      * set up access security for this channel
      */
-    status = asAddClient(
+    status = (int)asAddClientX(
             &pciu->asClientPVT,
             asDbGetMemberPvt(pciu->dbch),
             asDbGetAsl(pciu->dbch),
             client->pUserName ? client->pUserName : "",
-            client->pHostName ? client->pHostName : "");
+            client->pMethod ? client->pMethod : "",
+            client->pAuthority ? client->pAuthority : "",
+            client->pHostName ? client->pHostName : "",
+            client->isTLS
+            );
     if(status != 0 && status != S_asLib_asNotActive){
         log_header ("No room for security table",
             client, mp, pPayload, 0);
@@ -1768,10 +1774,12 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
 
     pciu->pPutNotify->dbrType = mp->m_dataType;
 
-    pciu->pPutNotify->asWritePvt = asTrapWriteWithData (
+    pciu->pPutNotify->asWritePvt = asTrapWriteWithDataX (
         pciu->asClientPVT,
         pciu->client->pUserName ? pciu->client->pUserName : "",
-        pciu->client->pHostName ? pciu->client->pHostName : "",
+        pciu->client->pMethod ? pciu->client->pMethod : "",
+        pciu->client->pAuthority ? pciu->client->pAuthority : "",
+        pciu->client->pHostName ? pciu->client->pHostName : "", pciu->client->isTLS,
         pciu->dbch, mp->m_dataType, mp->m_count,
         pciu->pPutNotify->pbuffer );
 

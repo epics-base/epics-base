@@ -36,14 +36,20 @@ static int yyreset(void)
 
 %%
 
-UAG     { return(tokenUAG);     }
-HAG     { return(tokenHAG);     }
-ASG     { return(tokenASG);     }
-RULE    { return(tokenRULE);    }
-CALC    { return(tokenCALC);    }
+ASG       { return(tokenASG);       }
+AUTHORITY { return(tokenAUTHORITY); }
+CALC      { return(tokenCALC);      }
+RPC       { return(tokenRPC);       }
+HAG       { return(tokenHAG);       }
+METHOD    { return(tokenMETHOD);    }
+NONE      { return(tokenNONE);      }
+READ      { return(tokenREAD);      }
+RULE      { return(tokenRULE);      }
+UAG       { return(tokenUAG);       }
+WRITE     { return(tokenWRITE);     }
 
 INP{link} {
-        yylval.Int = (unsigned char)yytext[3];
+        yylval.Int = yytext[3];
         yylval.Int -= 'A';
         return(tokenINP);
 }

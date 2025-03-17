@@ -17,14 +17,18 @@ static UAG *yyUag=NULL;
 static HAG *yyHag=NULL;
 static ASG *yyAsg=NULL;
 static ASGRULE *yyAsgRule=NULL;
+static int yyInp=0;
 %}
 
 %start asconfig
 
 %token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC
-%token <Str> tokenINP
+%token tokenMETHOD tokenAUTHORITY
+%token tokenREAD tokenWRITE tokenRPC tokenNONE
+%token <Int> tokenINP
 %token <Int> tokenINTEGER
 %token <Str> tokenSTRING
+%type  <Int> access_right
 
 %union
 {
@@ -114,7 +118,7 @@ asg_body_item:  inp_config | rule_config
 
 inp_config: tokenINP '(' tokenSTRING ')'
     {
-        if (asAsgAddInp(yyAsg,$3,$<Int>1))
+        if (asAsgAddInp(yyAsg,$3,$1))
             yyerror("");
         free((void *)$3);
     }
@@ -125,23 +129,17 @@ rule_config:    tokenRULE rule_head rule_body
 
 rule_head: rule_head_manditory rule_head_options
 
-rule_head_manditory:    '(' tokenINTEGER ',' tokenSTRING
-    {
-        asAccessRights  rights;
 
-        if((strcmp($4,"NONE")==0)) {
-            rights=asNOACCESS;
-        } else if((strcmp($4,"READ")==0)) {
-            rights=asREAD;
-        } else if((strcmp($4,"WRITE")==0)) {
-            rights=asWRITE;
-        } else {
-            yyerror("Access rights must be NONE, READ or WRITE");
-            rights = asNOACCESS;
-        }
-        yyAsgRule = asAsgAddRule(yyAsg,rights,$2);
-        free((void *)$4);
+rule_head_manditory:    '(' tokenINTEGER ',' access_right
+    {
+        yyAsgRule = asAsgAddRule(yyAsg,$4,$2);
     }
+    ;
+
+access_right: tokenREAD    { $$ = asREAD; }
+    |         tokenWRITE   { $$ = asWRITE; }
+    |         tokenRPC     { $$ = asRPC; }
+    |         tokenNONE    { $$ = asNOACCESS; }
     ;
 
 rule_head_options: ')'
@@ -153,10 +151,41 @@ rule_log_options:  ',' tokenSTRING ')'
             long status;
             status = asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE);
             if(status) yyerror("");
+        } else if((strcmp($2,"ISTLS")==0)) {
+            long status;
+            status = asAsgAddRuleTLSOption(yyAsgRule,1);
+            if(status) yyerror("");
         } else if((strcmp($2,"NOTRAPWRITE")!=0)) {
             yyerror("Log options must be TRAPWRITE or NOTRAPWRITE");
         }
         free((void *)$2);
+    }
+    |   ',' tokenSTRING ',' tokenSTRING ')'
+    {
+        if((strcmp($2,"TRAPWRITE")==0)) {
+            long status;
+            status = asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE);
+            if(status) yyerror("");
+        } else if((strcmp($2,"ISTLS")==0)) {
+            long status;
+            status = asAsgAddRuleTLSOption(yyAsgRule,1);
+            if(status) yyerror("");
+        } else if((strcmp($2,"NOTRAPWRITE")!=0)) {
+            yyerror("Log options must be TRAPWRITE or NOTRAPWRITE");
+        }
+        free((void *)$2);
+        if((strcmp($4,"TRAPWRITE")==0)) {
+            long status;
+            status = asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE);
+            if(status) yyerror("");
+        } else if((strcmp($4,"ISTLS")==0)) {
+            long status;
+            status = asAsgAddRuleTLSOption(yyAsgRule,1);
+            if(status) yyerror("");
+        } else if((strcmp($4,"NOTRAPWRITE")!=0)) {
+            yyerror("Log options must be TRAPWRITE or NOTRAPWRITE");
+        }
+        free((void *)$4);
     }
     ;
 
@@ -175,6 +204,8 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
             yyerror("");
         free((void *)$3);
     }
+    |   tokenMETHOD '(' rule_method_list ')'
+    |   tokenAUTHORITY '(' rule_authority_list ')'
     ;
 
 rule_uag_list:  rule_uag_list ',' rule_uag_list_name
@@ -200,6 +231,31 @@ rule_hag_list_name: tokenSTRING
         free((void *)$1);
     }
     ;
+
+rule_method_list: rule_method_list ',' rule_method_list_name
+    |   rule_method_list_name
+    ;
+
+rule_method_list_name: tokenSTRING
+    {
+        if (asAsgRuleMethodAdd(yyAsgRule, $1))
+            yyerror("");
+        free((void *)$1);
+    }
+    ;
+
+rule_authority_list: rule_authority_list ',' rule_authority_list_name
+    |   rule_authority_list_name
+    ;
+
+rule_authority_list_name: tokenSTRING
+    {
+        if (asAsgRuleAuthorityAdd(yyAsgRule, $1))
+            yyerror("");
+        free((void *)$1);
+    }
+    ;
+
 %%
 
 #include "asLib_lex.c"

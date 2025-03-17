@@ -35,5 +35,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            DOCKER_USERNAME=${{ vars.DOCKER_USERNAME }}
-          tags: ${{ vars.DOCKER_USERNAME }}/epics-base:latest
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/epics-base:latest

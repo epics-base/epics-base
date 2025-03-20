@@ -92,18 +92,78 @@ LIBCOM_API long epicsStdCall asChangeGroup(
 LIBCOM_API void * epicsStdCall asGetMemberPvt(ASMEMBERPVT asMemberPvt);
 LIBCOM_API void epicsStdCall asPutMemberPvt(
     ASMEMBERPVT asMemberPvt,void *userPvt);
-/*client must provide permanent storage for user and host*/
+/**
+ * @brief Add a client to an existing ASG
+ * This function adds a client to an existing ASG.
+ * A client is defined by a user, method, authority, and host all of which can
+ * be NULL.
+ * It is the responsibility of the caller to free the client structure when it is no longer needed.
+ *
+ * @note: client must provide permanent storage for user and host
+ *
+ * @param asClientPvt Pointer to the client structure
+ * @param asMemberPvt Pointer to the member structure
+ * @param asl Access level
+ * @param user User name
+ * @param host Host name
+ * @return Status code
+ *          `S_asLib_asNotActive` if access security is not active,
+ *          `S_asLib_badMember` if the member is not provided,
+ *          `S_asLib_noMemory` if there is not enough memory to allocate the client structure,
+ *          or the status from `asComputePvt` which will be 0 if the client is successfully added
+ */
 LIBCOM_API long epicsStdCall asAddClient(
     ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
     int asl,const char *user,char *host);
-/*client must provide permanent storage for user and host*/
+/**
+ * @brief Change a client's attributes
+ * @note: client must provide permanent storage for user and host
+ * @param asClientPvt Pointer to the client structure
+ * @param asl Access level
+ * @param user User name
+ * @param host Host name
+ * @return Status code
+ */
 LIBCOM_API long epicsStdCall asChangeClient(
     ASCLIENTPVT asClientPvt,int asl,const char *user,char *host);
-/*client must provide permanent storage for user, host, method, and authority */
+/**
+ * @brief Add a client to an existing ASG
+ * This function adds a client to an existing ASG.
+ * A client is defined by a user, method, authority, and host all of which can
+ * be NULL.
+ * It is the responsibility of the caller to free the client structure when it is no longer needed.
+ *
+ * @note: client must provide permanent storage for user, host, method, and authority
+ *
+ * @param asClientPvt Pointer to the client structure
+ * @param asMemberPvt Pointer to the member structure
+ * @param asl Access level
+ * @param user User name
+ * @param method Method name
+ * @param authority Authority name
+ * @param host Host name
+ * @param isTLS is the connection is TLS
+ * @return Status code
+ *          `S_asLib_asNotActive` if access security is not active,
+ *          `S_asLib_badMember` if the member is not provided,
+ *          `S_asLib_noMemory` if there is not enough memory to allocate the client structure,
+ *          or the status from `asComputePvt` which will be 0 if the client is successfully added
+ */
 LIBCOM_API long epicsStdCall asAddClientX(
     ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
     int asl,const char *user,char *method,char *authority,char *host, int isTLS);
-/*client must provide permanent storage for user, host, method, and authority */
+/**
+ * @brief Change a client's attributes
+ * @note: client must provide permanent storage for user, host, method, and authority
+ * @param asClientPvt Pointer to the client structure
+ * @param asl Access level
+ * @param user User name
+ * @param method Method name
+ * @param authority Authority name
+ * @param host Host name
+ * @param isTLS is the connection is TLS
+ * @return Status code
+ */
 LIBCOM_API long epicsStdCall asChangeClientX(
     ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority, char *host, int isTLS);
 LIBCOM_API long epicsStdCall asRemoveClient(ASCLIENTPVT *asClientPvt);
@@ -120,6 +180,18 @@ LIBCOM_API long epicsStdCall asCompute(ASCLIENTPVT asClientPvt);
 LIBCOM_API int epicsStdCall asDump(
     void (*memcallback)(ASMEMBERPVT,FILE *),
     void (*clientcallback)(ASCLIENTPVT,FILE *),int verbose);
+/**
+ * @brief Dump the ASG to a file
+ * This function dumps the ASG to a normalized ACF file.
+ * It calls the member callback for each member and
+ * the client callback for each client within each member if they are provided.
+ *
+ * @param fp File pointer
+ * @param memcallback Callback function for members
+ * @param clientcallback Callback function for clients
+ * @param verbose Verbosity level
+ * @return Status code
+ */
 LIBCOM_API int epicsStdCall asDumpFP(FILE *fp,
     void (*memcallback)(ASMEMBERPVT,FILE *),
     void (*clientcallback)(ASCLIENTPVT,FILE *),int verbose);
@@ -128,6 +200,14 @@ LIBCOM_API int epicsStdCall asDumpUagFP(FILE *fp,const char *uagname);
 LIBCOM_API int epicsStdCall asDumpHag(const char *hagname);
 LIBCOM_API int epicsStdCall asDumpHagFP(FILE *fp,const char *hagname);
 LIBCOM_API int epicsStdCall asDumpRules(const char *asgname);
+/**
+ * @brief Dump the rules for an ASG to a file
+ * This function dumps the rules for an ASG to normalized ACF file
+ *
+ * @param fp File pointer
+ * @param asgname ASG name
+ * @return Status code (0 if successful)
+ */
 LIBCOM_API int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname);
 LIBCOM_API int epicsStdCall asDumpMem(const char *asgname,
     void (*memcallback)(ASMEMBERPVT,FILE *),int clients);

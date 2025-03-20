@@ -365,51 +365,12 @@ void epicsStdCall asPutMemberPvt(ASMEMBERPVT asMemberPvt,void *userPvt)
     if(!pasgmember) return;
     pasgmember->userPvt = userPvt;
 }
-
-/**
- * @brief Add a client to an existing ASG
- * This function adds a client to an existing ASG.
- * A client is defined by a user, method, authority, and host all of which can
- * be NULL.
- * It is the responsibility of the caller to free the client structure when it is no longer needed.
- *
- * @param pasClientPvt Pointer to the client structure
- * @param asMemberPvt Pointer to the member structure
- * @param asl Access level
- * @param user User name
- * @param host Host name
- * @return Status code
- *          `S_asLib_asNotActive` if access security is not active,
- *          `S_asLib_badMember` if the member is not provided,
- *          `S_asLib_noMemory` if there is not enough memory to allocate the client structure,
- *          or the status from `asComputePvt` which will be 0 if the client is successfully added
- */
+
 long epicsStdCall asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
                               int asl,const char *user, char *host){
     return asAddClientX(pasClientPvt, asMemberPvt, asl, user, "ca", NULL, host, 0);
 }
 
-/**
- * @brief Add a client to an existing ASG
- * This function adds a client to an existing ASG.
- * A client is defined by a user, method, authority, and host all of which can
- * be NULL.
- * It is the responsibility of the caller to free the client structure when it is no longer needed.
- *
- * @param pasClientPvt Pointer to the client structure
- * @param asMemberPvt Pointer to the member structure
- * @param asl Access level
- * @param user User name
- * @param method Method name
- * @param authority Authority name
- * @param host Host name
- * @param isTLS is the connection is TLS
- * @return Status code
- *          `S_asLib_asNotActive` if access security is not active,
- *          `S_asLib_badMember` if the member is not provided,
- *          `S_asLib_noMemory` if there is not enough memory to allocate the client structure,
- *          or the status from `asComputePvt` which will be 0 if the client is successfully added
- */
 long epicsStdCall asAddClientX(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt,
         int asl,const char *user, char *method,char *authority, char *host, int isTLS)
 {
@@ -443,30 +404,11 @@ long epicsStdCall asAddClientX(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
     return(status);
 }
 
-/**
- * @brief Change a client's attributes
- * @param asClientPvt Pointer to the client structure
- * @param asl Access level
- * @param user User name
- * @param host Host name
- * @return Status code
- */
 long epicsStdCall asChangeClient(
     ASCLIENTPVT asClientPvt,int asl,const char *user,char *host) {
     return asChangeClientX(asClientPvt, asl, user, "ca", NULL, host, 0);
 }
 
-/**
- * @brief Change a client's attributes
- * @param asClientPvt Pointer to the client structure
- * @param asl Access level
- * @param user User name
- * @param method Method name
- * @param authority Authority name
- * @param host Host name
- * @param isTLS is the connection is TLS
- * @return Status code
- */
 long epicsStdCall asChangeClientX(
     ASCLIENTPVT asClientPvt,int asl,const char *user,char *method,char *authority, char *host, int isTLS)
 {
@@ -592,18 +534,6 @@ int epicsStdCall asDump(
     return asDumpFP(stdout,memcallback,clientcallback,verbose);
 }
 
-/**
- * @brief Dump the ASG to a file
- * This function dumps the ASG to a normalized ACF file.
- * It calls the member callback for each member and
- * the client callback for each client within each member if they are provided.
- *
- * @param fp File pointer
- * @param memcallback Callback function for members
- * @param clientcallback Callback function for clients
- * @param verbose Verbosity level
- * @return Status code
- */
 int epicsStdCall asDumpFP(
         FILE *fp,
         void (*memcallback)(struct asgMember *,FILE *),
@@ -829,14 +759,6 @@ int epicsStdCall asDumpRules(const char *asgname)
     return asDumpRulesFP(stdout,asgname);
 }
 
-/**
- * @brief Dump the rules for an ASG to a file
- * This function dumps the rules for an ASG to normalized ACF file
- *
- * @param fp File pointer
- * @param asgname ASG name
- * @return Status code (0 if successful)
- */
 int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
 {
     ASG         *pasg;

@@ -34,6 +34,49 @@ static char *asUser,
 int asIsTLS=0;
 static int asAsl;
 
+static char* readFile(const char *filename) {
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        perror("fopen");
+        return NULL;
+    }
+
+    // Seek to the end to determine file size.
+    if (fseek(file, 0, SEEK_END) != 0) {
+        perror("fseek");
+        fclose(file);
+        return NULL;
+    }
+    long filesize = ftell(file);
+    if (filesize < 0) {
+        perror("ftell");
+        fclose(file);
+        return NULL;
+    }
+    rewind(file);
+
+    // Allocate a buffer for the file contents plus a null terminator.
+    char *buffer = malloc(filesize + 1);
+    if (!buffer) {
+        perror("malloc");
+        fclose(file);
+        return NULL;
+    }
+
+    // Read the file into the buffer.
+    size_t read_size = fread(buffer, 1, filesize, file);
+    if (read_size != (size_t)filesize) {
+        perror("fread");
+        free(buffer);
+        fclose(file);
+        return NULL;
+    }
+    buffer[filesize] = '\0';  // Null-terminate the string.
+
+    fclose(file);
+    return buffer;
+}
+
 static void setUser(const char *name)
 {
     free(asUser);
@@ -327,57 +370,33 @@ static const char *expected_rwx_rules_config =
   "\t}\n"
   "}\n";
 
+static void runRestDumpRules(const char *rule, const char *expected_config)
+{
+    static char temp_filename[] = "aslib_test_XXXXXX";
+    int fd = mkstemp(temp_filename);
+    FILE *fp = fdopen(fd, "w+");
+    testOk(fp != NULL, "Opened temporary file for rule %s", rule);
+    if (!fp) return;
+    asDumpRulesFP(fp, rule);
+    fclose(fp);
+    char *buf = readFile(temp_filename);
+    unlink(temp_filename);
+    testOk(strcmp(expected_config, buf) == 0,
+           "asDumpFP %s output matches expected\nExpected:\n%s\nGot:\n%s",
+           rule, expected_config, buf);
+    free(buf);
+    strcpy(temp_filename, "aslib_test_XXXXXX");
+}
+
 static void testRulesDumpOutput(void)
 {
     testDiag("testRulesDumpOutput()");
     testOk1(asInitMem(method_auth_config, NULL)==0);
 
-    char *buf = NULL;
-    size_t size = 0;
-
-    // DEFAULT
-    FILE *fp = open_memstream(&buf, &size);
-    testOk(fp != NULL, "Created DEFAULT memory stream");
-    if (!fp) return;
-    asDumpRulesFP(fp, "DEFAULT");
-    fclose(fp);
-    testOk(strcmp(expected_DEFAULT_rules_config, buf) == 0,
-           "asDumpFP DEFAULT output matches expected\nExpected:\n%s\nGot:\n%s",
-           expected_DEFAULT_rules_config, buf);
-    free(buf);
-
-    // ro
-    fp = open_memstream(&buf, &size);
-    testOk(fp != NULL, "Created ro memory stream");
-    if (!fp) return;
-    asDumpRulesFP(fp, "ro");
-    fclose(fp);
-    testOk(strcmp(expected_ro_rules_config, buf) == 0,
-           "asDumpFP ro output matches expected\nExpected:\n%s\nGot:\n%s",
-           expected_ro_rules_config, buf);
-    free(buf);
-
-    // rw
-    fp = open_memstream(&buf, &size);
-    testOk(fp != NULL, "Created rw memory stream");
-    if (!fp) return;
-    asDumpRulesFP(fp, "rw");
-    fclose(fp);
-    testOk(strcmp(expected_rw_rules_config, buf) == 0,
-           "asDumpFP rw output matches expected\nExpected:\n%s\nGot:\n%s",
-           expected_rw_rules_config, buf);
-    free(buf);
-
-    // rwx
-    fp = open_memstream(&buf, &size);
-    testOk(fp != NULL, "Created rwx memory stream");
-    if (!fp) return;
-    asDumpRulesFP(fp, "rwx");
-    fclose(fp);
-    testOk(strcmp(expected_rwx_rules_config, buf) == 0,
-           "asDumpFP rwx output matches expected\nExpected:\n%s\nGot:\n%s",
-           expected_rwx_rules_config, buf);
-    free(buf);
+    runRestDumpRules("DEFAULT",  expected_DEFAULT_rules_config);
+    runRestDumpRules("ro",  expected_ro_rules_config);
+    runRestDumpRules("rw",  expected_rw_rules_config);
+    runRestDumpRules("rwx", expected_rwx_rules_config);
 }
 
 static void testUseIP(void)

@@ -93,14 +93,8 @@ LIBCOM_API void * epicsStdCall asGetMemberPvt(ASMEMBERPVT asMemberPvt);
 LIBCOM_API void epicsStdCall asPutMemberPvt(
     ASMEMBERPVT asMemberPvt,void *userPvt);
 /**
- * @brief Add a client to an existing ASG
- * This function adds a client to an existing ASG.
- * A client is defined by a user, method, authority, and host all of which can
- * be NULL.
- * It is the responsibility of the caller to free the client structure when it is no longer needed.
- *
- * @note: client must provide permanent storage for user and host
- *
+ * @brief Shorthand for "ca" version of `asAdClientX`
+ * Shorthand for `asAdClientX` with `method="ca"` for legacy clients.
  * @param asClientPvt Pointer to the client structure
  * @param asMemberPvt Pointer to the member structure
  * @param asl Access level
@@ -111,21 +105,12 @@ LIBCOM_API void epicsStdCall asPutMemberPvt(
  *          `S_asLib_badMember` if the member is not provided,
  *          `S_asLib_noMemory` if there is not enough memory to allocate the client structure,
  *          or the status from `asComputePvt` which will be 0 if the client is successfully added
+ * @see asAddClientX
  */
 LIBCOM_API long epicsStdCall asAddClient(
     ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
     int asl,const char *user,char *host);
-/**
- * @brief Change a client's attributes
- * @note: client must provide permanent storage for user and host
- * @param asClientPvt Pointer to the client structure
- * @param asl Access level
- * @param user User name
- * @param host Host name
- * @return Status code
- */
-LIBCOM_API long epicsStdCall asChangeClient(
-    ASCLIENTPVT asClientPvt,int asl,const char *user,char *host);
+
 /**
  * @brief Add a client to an existing ASG
  * This function adds a client to an existing ASG.
@@ -134,6 +119,7 @@ LIBCOM_API long epicsStdCall asChangeClient(
  * It is the responsibility of the caller to free the client structure when it is no longer needed.
  *
  * @note: client must provide permanent storage for user, host, method, and authority
+ * @see asAddClient for legacy "ca" functionality
  *
  * @param asClientPvt Pointer to the client structure
  * @param asMemberPvt Pointer to the member structure
@@ -152,9 +138,24 @@ LIBCOM_API long epicsStdCall asChangeClient(
 LIBCOM_API long epicsStdCall asAddClientX(
     ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
     int asl,const char *user,char *method,char *authority,char *host, int isTLS);
+
+/**
+ * @brief Shorthand for "ca" version of `asChangeClientX`
+ * Shorthand for `asChangeClientX` with `method="ca"` for legacy clients.
+ * @param asClientPvt Pointer to the client structure
+ * @param asl Access level
+ * @param user User name
+ * @param host Host name
+ * @return Status code
+ * @see asChangeClientX
+ */
+LIBCOM_API long epicsStdCall asChangeClient(
+    ASCLIENTPVT asClientPvt,int asl,const char *user,char *host);
+
 /**
  * @brief Change a client's attributes
  * @note: client must provide permanent storage for user, host, method, and authority
+ * @see asChangeClient for legacy "ca" functionality
  * @param asClientPvt Pointer to the client structure
  * @param asl Access level
  * @param user User name

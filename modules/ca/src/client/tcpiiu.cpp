@@ -2186,6 +2186,11 @@ void SearchDestTCP :: show (
     :: printf ( "tcpiiu :: SearchDestTCP\n" );
 }
 
+void SearchDestTCP :: getAddr ( osiSockAddr & addr ) const
+{
+    memcpy(&addr, &_addr, sizeof(osiSockAddr));
+}
+
 void tcpiiu :: versionRespNotify ( const caHdrLargeArray & msg )
 {
     this->minorProtocolVersion = msg.m_count;

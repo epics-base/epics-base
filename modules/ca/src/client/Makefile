@@ -120,6 +120,10 @@ PROD_HOST += ca_test
 ca_test_SRCS = ca_test_main.c ca_test.c
 ca_test_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
+ifdef MIN_IOC_CA_VER_WHEN_REDIRECT
+udpiiu_CPPFLAGS += -DMIN_IOC_CA_VER_WHEN_REDIRECT=$(MIN_IOC_CA_VER_WHEN_REDIRECT)
+endif
+
 OBJS_vxWorks += ca_test
 
 # shared library ABI version.

@@ -34,6 +34,7 @@ struct SearchDest :
     virtual void searchRequest ( epicsGuard < epicsMutex > &,
         const char * pbuf, size_t len ) = 0;
     virtual void show ( epicsGuard < epicsMutex > &, unsigned level ) const = 0;
+    virtual void getAddr( osiSockAddr & addr ) const = 0;
 };
 
 #endif // ifndef INC_SearchDest_H

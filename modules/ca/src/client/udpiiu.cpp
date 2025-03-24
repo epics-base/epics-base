@@ -725,6 +725,33 @@ bool udpiiu :: searchRespAction (
         serverAddr.ia.sin_addr = addr.ia.sin_addr;
     }
 
+#ifdef MIN_IOC_CA_VER_WHEN_REDIRECT
+    // Try to detect the nameserver redirecting us to a different IP
+    if (memcmp(&addr.ia.sin_addr, &serverAddr.ia.sin_addr, sizeof(struct in_addr)) != 0) {
+
+        // Additional check: nameserver should be explicitly defined in the search list
+        tsDLIter < SearchDest > iter ( _searchDestList.firstIter () );
+        while ( iter.valid () )
+        {
+            osiSockAddr tmpAddr;
+            iter->getAddr(tmpAddr);
+            if (memcmp(&addr.ia.sin_addr, &tmpAddr.ia.sin_addr, sizeof(struct in_addr)) != 0 &&
+                addr.ia.sin_port == tmpAddr.ia.sin_port) {
+
+                char from[64];
+                char to[64];
+                ipAddrToDottedIP(&addr.ia, from, sizeof(from));
+                ipAddrToDottedIP(&serverAddr.ia, to, sizeof(to));
+                printf("Redirected to %s, nameserver %s version %u, min IOC version %u\n", to, from, minorVersion, MIN_IOC_CA_VER_WHEN_REDIRECT);
+
+                minorVersion = MIN_IOC_CA_VER_WHEN_REDIRECT;
+                break;
+            }
+            iter++;
+        }
+    }
+#endif
+
     if ( CA_V42 ( minorVersion ) ) {
        cacRef.transferChanToVirtCircuit
             ( msg.m_available, msg.m_cid, 0xffff,
@@ -1032,6 +1059,11 @@ void udpiiu :: SearchDestUDP :: show (
     char buf[64];
     sockAddrToDottedIP ( &_destAddr.sa, buf, sizeof ( buf ) );
     :: printf ( "UDP Search destination \"%s\"\n", buf );
+}
+
+void udpiiu :: SearchDestUDP :: getAddr ( osiSockAddr & addr ) const
+{
+    memcpy(&addr, &_destAddr, sizeof(osiSockAddr));
 }
 
 udpiiu :: SearchRespCallback :: SearchRespCallback ( udpiiu & udpiiuIn ) :

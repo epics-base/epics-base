@@ -102,6 +102,7 @@ public:
     void setCircuit ( tcpiiu * );
     void disable ();
     void enable ();
+    void getAddr ( osiSockAddr & ) const;
 private:
     tcpiiu * _ptcpiiu;
     cac & _cac;

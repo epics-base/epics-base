@@ -726,23 +726,19 @@ bool udpiiu :: searchRespAction (
     }
 
 #ifdef MIN_IOC_CA_VER_WHEN_REDIRECT
-    // Try to detect the nameserver redirecting us to a different IP
-    if (memcmp(&addr.ia.sin_addr, &serverAddr.ia.sin_addr, sizeof(struct in_addr)) != 0) {
+    // Try to detect the nameserver redirecting us to a different IP.
+    // This is not a guaranteed nameserver determination, ie. on multi-IP
+    // system the UDP response may come from a second IP.
+    if ( memcmp(&addr.ia.sin_addr, &serverAddr.ia.sin_addr, sizeof(struct in_addr)) != 0 ) {
 
         // Additional check: nameserver should be explicitly defined in the search list
         tsDLIter < SearchDest > iter ( _searchDestList.firstIter () );
-        while ( iter.valid () )
-        {
+        while ( iter.valid () ) {
+
             osiSockAddr tmpAddr;
             iter->getAddr(tmpAddr);
-            if (memcmp(&addr.ia.sin_addr, &tmpAddr.ia.sin_addr, sizeof(struct in_addr)) != 0 &&
-                addr.ia.sin_port == tmpAddr.ia.sin_port) {
-
-                char from[64];
-                char to[64];
-                ipAddrToDottedIP(&addr.ia, from, sizeof(from));
-                ipAddrToDottedIP(&serverAddr.ia, to, sizeof(to));
-                printf("Redirected to %s, nameserver %s version %u, min IOC version %u\n", to, from, minorVersion, MIN_IOC_CA_VER_WHEN_REDIRECT);
+            if ( memcmp(&addr.ia.sin_addr, &tmpAddr.ia.sin_addr, sizeof(struct in_addr)) == 0 &&
+                 addr.ia.sin_port == tmpAddr.ia.sin_port ) {
 
                 minorVersion = MIN_IOC_CA_VER_WHEN_REDIRECT;
                 break;

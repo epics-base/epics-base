@@ -233,18 +233,26 @@ static const iocshFuncDef dblaFuncDef = {"dbla",1,dblaArgs,
                                          "Example: dbla(\"alia*\")\n"};
 static void dblaCallFunc(const iocshArgBuf *args) { iocshSetError(dbla(args[0].sval));}
 
+/* dbglob */
+static const iocshArg dbglobArg0 = { "pattern",iocshArgStringRecord};
+static const iocshArg dbglobArg1 = { "fields",iocshArgString};
+static const iocshArg * const dbglobArgs[2] = {&dbglobArg0,&dbglobArg1};
+static const iocshFuncDef dbglobFuncDef = {"dbglob",2,dbglobArgs,
+                                           "List record names matching pattern and optionally print field values. \n"
+                                           "The pattern can contain any characters that are legal in record names as well as:\n"
+                                           " - \"?\", which matches 0 or one characters.\n"
+                                           " - \"*\", which matches 0 or more characters.\n\n"
+                                           "Example: dbglob(\"*gpibAi*\")\n"
+                                           "         dbglob(\"*gpibAi*\",\"VAL DESC\")\n"};
+static void dbglobCallFunc(const iocshArgBuf *args) { iocshSetError(dbglob(args[0].sval,args[1].sval));}
+
 /* dbgrep */
 static const iocshArg dbgrepArg0 = { "pattern",iocshArgStringRecord};
 static const iocshArg dbgrepArg1 = { "fields",iocshArgString};
 static const iocshArg * const dbgrepArgs[2] = {&dbgrepArg0,&dbgrepArg1};
 static const iocshFuncDef dbgrepFuncDef = {"dbgrep",2,dbgrepArgs,
-                                           "List record names matching pattern and optionally print field values. \n"
-                                           "The pattern can contain any characters that are legal in record names as well as:\n"
-                                           " - \"?\", which matches 0 or one characters.\n"
-                                           " - \"*\", which matches 0 or more characters.\n\n"
-                                           "Example: dbgrep(\"*gpibAi*\")\n"
-                                           "         dbgrep(\"*gpibAi*\",\"VAL DESC\")\n"};
-static void dbgrepCallFunc(const iocshArgBuf *args) { iocshSetError(dbgrep(args[0].sval,args[1].sval));}
+                                           "See dbglob.\n"};
+static void dbgrepCallFunc(const iocshArgBuf *args) { iocshSetError(dbglob(args[0].sval,args[1].sval));}
 
 /* dbgf */
 static const iocshArg dbgfArg0 = { "record name",iocshArgStringRecord};
@@ -600,6 +608,7 @@ void dbIocRegister(void)
     iocshRegister(&dbnrFuncDef,dbnrCallFunc);
     iocshRegister(&dblaFuncDef,dblaCallFunc);
     iocshRegister(&dbliFuncDef,dbliCallFunc);
+    iocshRegister(&dbglobFuncDef,dbglobCallFunc);
     iocshRegister(&dbgrepFuncDef,dbgrepCallFunc);
     iocshRegister(&dbgfFuncDef,dbgfCallFunc);
     iocshRegister(&dbpfFuncDef,dbpfCallFunc);

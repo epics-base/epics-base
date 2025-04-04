@@ -295,7 +295,7 @@ long dbli(const char *pattern)
     return 0;
 }
 
-long dbgrep(const char *pmask,const char *fields)
+long dbglob(const char *pmask,const char *fields)
 {
     DBENTRY dbentry;
     DBENTRY *pdbentry = &dbentry;
@@ -305,7 +305,7 @@ long dbgrep(const char *pmask,const char *fields)
     char **papfields = 0;
 
     if (!pmask || !*pmask) {
-        printf("Usage: dbgrep \"pattern\" \"fields\"\n");
+        printf("Usage: dbglob \"pattern\" \"fields\"\n");
         return 1;
     }
 
@@ -340,7 +340,11 @@ long dbgrep(const char *pmask,const char *fields)
     dbFinishEntry(pdbentry);
     return 0;
 }
-
+
+long dbgrep(const char *pname, const char *fields) {
+    return dbglob(pname, fields);
+}
+
 long dbgf(const char *pname)
 {
     /* declare buffer long just to ensure correct alignment */

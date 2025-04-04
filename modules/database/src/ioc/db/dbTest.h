@@ -29,6 +29,8 @@ DBCORE_API long dbla(const char *pmask);
 /* list infos */
 DBCORE_API long dbli(const char *patern);
 /*list records with mask*/
+DBCORE_API long dbglob(const char *pmask,const char *fields);
+/*list records with mask; alias for dbglob*/
 DBCORE_API long dbgrep(const char *pmask,const char *fields);
 /*get field value*/
 DBCORE_API long dbgf(const char *pname);

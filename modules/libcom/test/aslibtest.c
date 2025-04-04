@@ -144,10 +144,55 @@ static void testUseIP(void)
     testAccess("rw", 0);
 }
 
+static const char unsupported_config[] = ""
+        "HAG(foo) {localhost}\n"
+        "ASG(DEFAULT) {RULE(0, NONE)}\n"
+        "UNSUPPORTED(test) {SOMETHING(1)}\n"
+        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
+        ;
+
+static const char unsupported_config_with_pragma[] = ""
+        "#pragma disable-strict-parsing\n"
+        "HAG(foo) {localhost}\n"
+        "ASG(DEFAULT) {RULE(0, NONE)}\n"
+        "UNSUPPORTED(test) {SOMETHING(1)}\n"
+        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
+        ;
+
+static void testStrictParsing(void)
+{
+    long ret;
+
+    testDiag("testStrictParsing()");
+
+    /* Test with strict parsing (default) */
+    eltc(0);  /* Suppress error messages during test */
+    ret = asInitMem(unsupported_config, NULL);
+    testOk(ret==S_asLib_badConfig, "strict parsing rejects unsupported elements -> %s", errSymMsg(ret));
+
+    /* Test with strict parsing disabled via pragma */
+    ret = asInitMem(unsupported_config_with_pragma, NULL);
+    testOk(ret==0, "pragma disables strict parsing and allows unsupported elements -> %s", errSymMsg(ret));
+
+    /* Verify the rest of the config was processed correctly with pragma */
+    setUser("testing");
+    setHost("localhost");
+    asAsl = 0;
+
+    testAccess("DEFAULT", 0);
+    testAccess("ro", 1);
+
+    /* Verify strict mode is restored for next parse */
+    ret = asInitMem(unsupported_config, NULL);
+    testOk(ret==S_asLib_badConfig, "strict parsing is restored after pragma -> %s", errSymMsg(ret));
+    eltc(1);
+}
+
 MAIN(aslibtest)
 {
-    testPlan(27);
+    testPlan(32);
     testSyntaxErrors();
+    testStrictParsing();
     testHostNames();
     testUseIP();
     errlogFlush();

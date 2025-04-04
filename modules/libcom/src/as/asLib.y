@@ -13,6 +13,7 @@ static int yy_start;
 #include "asLibRoutines.c"
 static int yyFailed = FALSE;
 static int line_num=1;
+int strictParsing = TRUE;
 static UAG *yyUag=NULL;
 static HAG *yyHag=NULL;
 static ASG *yyAsg=NULL;
@@ -43,6 +44,68 @@ asconfig_item:  tokenUAG uag_head uag_body
     |   tokenHAG hag_head
     |   tokenASG asg_head asg_body
     |   tokenASG asg_head
+    |   unsupported_element
+    ;
+
+keyword: tokenUAG
+    | tokenHAG
+    | tokenASG
+    | tokenRULE
+    | tokenCALC
+    | tokenINP
+    ;
+
+unsupported_element: tokenSTRING unsupported_head unsupported_block
+    {
+        if (strictParsing) {
+            char msg[128];
+            sprintf(msg, "Unsupported configuration element '%s' in strict mode", $1);
+            yyerror(msg);
+        }
+        free((void *)$1);
+    }
+    |   tokenSTRING unsupported_head
+    {
+        if (strictParsing) {
+            char msg[128];
+            sprintf(msg, "Unsupported configuration element '%s' in strict mode", $1);
+            yyerror(msg);
+        }
+        free((void *)$1);
+    }
+    ;
+
+unsupported_head:   '(' unsupported_param_list ')'
+    ;
+
+unsupported_param_list:  unsupported_param_list ',' unsupported_param
+    |   unsupported_param
+    ;
+
+unsupported_param:  keyword
+    |   tokenSTRING
+    {
+        free((void *)$1);
+    }
+    |   tokenINTEGER
+    ;
+
+unsupported_block:   '{' unsupported_block_elem_list '}'
+    ;
+
+unsupported_block_elem_list:  unsupported_block_elem_list unsupported_block_elem
+    |   unsupported_block_elem
+    ;
+
+unsupported_block_elem: unsupported_block_elem_name unsupported_head unsupported_block
+    |   unsupported_block_elem_name unsupported_head
+    ;
+
+unsupported_block_elem_name:  keyword
+    |   tokenSTRING
+    {
+        free((void *)$1);
+    }
     ;
 
 uag_head:   '(' tokenSTRING ')'
@@ -219,6 +282,8 @@ static int myParse(ASINPUTFUNCPTR inputfunction)
     int         rtnval;
 
     my_yyinput = &inputfunction;
+    strictParsing = TRUE;
+
     if (!FirstFlag) {
         line_num=1;
         yyFailed = FALSE;

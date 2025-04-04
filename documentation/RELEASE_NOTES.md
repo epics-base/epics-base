@@ -39,6 +39,10 @@ of the counts from all registered server layers. A preprocessor macro
 `HAS_DBSERVER_STATS` macro is defined in the `dbServer.h` header file to
 simplify code that needs to support older versions of Base as well.
 
+### Other
+
+- `dbgrep` now takes an optional second argument of field names e.g. `dbgrep("*PRESSURE*","VAL DESC")`
+
 -----
 
 ## EPICS Release 7.0.9

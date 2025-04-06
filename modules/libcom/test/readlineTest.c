@@ -20,7 +20,7 @@ MAIN(readlineTest)
     const char *input = ".." OSI_PATH_SEPARATOR "multiline-input.txt";
     const char *expect = ".." OSI_PATH_SEPARATOR "multiline-expect.txt";
 
-    testPlan(9);
+    testPlan(8);
 
     testDiag("open input file \"%s\"", input);
     FILE *fp_input = fopen(input, "r");

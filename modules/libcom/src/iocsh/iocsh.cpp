@@ -852,12 +852,13 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
 
     case iocshArgPersistentString:
         if (arg != NULL) {
-            argBuf->sval = (char *) malloc(strlen(arg) + 1);
+            size_t slen = strlen(arg);
+            argBuf->sval = (char *) malloc(slen + 1);
             if (argBuf->sval == NULL) {
                 showError(filename, lineno, ANSI_RED("Out of memory!"));
                 return 0;
             }
-            strcpy(argBuf->sval, arg);
+            strncpy(argBuf->sval, arg, slen);
         } else {
           argBuf->sval = NULL;
         }

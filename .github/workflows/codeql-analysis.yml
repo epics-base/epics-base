@@ -2,10 +2,10 @@ name: "CodeQL"
 
 on:
   push:
-    branches: 7.0
+    branches: multiline-string
     tags: 'R7.0.*'
   pull_request:
-    branches: 7.0
+    branches: multiline-string
     paths-ignore:
       - '.appveyor/*'
       - '.tools/*'

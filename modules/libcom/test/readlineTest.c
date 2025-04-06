@@ -20,7 +20,7 @@ MAIN(readlineTest)
     const char *input = ".." OSI_PATH_SEPARATOR "multiline-input.txt";
     const char *expect = ".." OSI_PATH_SEPARATOR "multiline-expect.txt";
 
-    testPlan(5);
+    testPlan(9);
 
     testDiag("open input file \"%s\"", input);
     FILE *fp_input = fopen(input, "r");
@@ -79,10 +79,13 @@ MAIN(readlineTest)
         size_t len_input = strlen(line_input);
 
         if (len_input != len_expect) {
-            testAbort("lines are not of same length: input %ld, expected %ld", len_input, len_expect);
+            testAbort("lines are not of same length:\n"
+                "input len %ld :\n\"%s\"\nexpected len %ld : \n\"%s\"",
+                len_input, line_input, len_expect, line_expect);
         }
         if (strncmp(line_input, line_expect, len_expect)) {
-            testAbort("lines are not the same:\ninput:\"%s\"\nexpected: \"%s\"", line_input, line_expect);
+            testAbort("lines are not the same:\ninput:\"%s\"\nexpected: \"%s\"",
+                line_input, line_expect);
         }
         testOk(1, "line \"%s\"", line_input);
     }

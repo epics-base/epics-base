@@ -25,9 +25,13 @@ o\
 p\
  them up!
 
+\
+6 start with backslash , fine with me but why?
 
-
-
+# if there is a trailing char after the backslash that does not count as
+# a multiline string
+7 have a trailing space after backslash \ 
+8 not part of the string no. 7
 
 # keep this one last
-99 this one will not appear 'cause of no newline
+99 will not get to this line 'cause input file line has no newline

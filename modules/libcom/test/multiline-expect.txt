@@ -8,9 +8,11 @@
 
 5 it is fine to spit words, or really chop them up!
 
+6 start with backslash , fine with me but why?
 
+7 have a trailing space after backslash \ 
 
-
+8 not part of the string no. 7
 
 # keep this one last
 99 will not get to this line 'cause input file line has no newline

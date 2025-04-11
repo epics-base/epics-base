@@ -8,7 +8,7 @@
 #-------------------------------------------------------
 
 # Unix valid build types
-VALID_BUILDS = Host Ioc Command
+VALID_BUILDS = $(HOST_ARCH_BUILDS)
 
 #-------------------------------------------------------
 # Unix prefix and suffix definitions

@@ -93,6 +93,12 @@
 #       win32-x86-mingw         (linux-x86 or -x86_64 host)
 #
 
+# What program types should be built for the host architecture?
+#  This list must include Host; Command and Ioc are optional.
+#  Definitions in configure/os/CONFIG_SITE.Common.<host>
+#  may override this setting.
+HOST_ARCH_BUILDS=Host Ioc Command
+
 # Which target architectures to cross-compile for.
 #  Definitions in configure/os/CONFIG_SITE.<host>.Common
 #  may override this setting.

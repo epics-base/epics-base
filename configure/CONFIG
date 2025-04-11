@@ -102,6 +102,11 @@ ifdef T_A
 
 endif # ifdef T_A
 
+ifeq ($(EPICS_HOST_ARCH),$(T_A))
+  ifneq ($(filter Host,$(VALID_BUILDS)),Host)
+    $(error 'Host' missing from VALID_BUILDS: $(VALID_BUILDS))
+  endif
+endif
 
 # Include <top>/cfg/CONFIG* definitions from tops defined in RELEASE* files
 #

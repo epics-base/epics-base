@@ -20,10 +20,22 @@ API_RST_FILES = $(addsuffix -api.rst, $(HEADER_TYPES))
 RTD_SRC = $(COMMON_DIR)/rtd-src
 
 DOCS += README.md
-DOCS += RELEASE_NOTES.md
 DOCS += ca-cli.md
 
+OLD_NOTES = $(wildcard ../RELEASE-*.md)
+DOCS += $(OLD_NOTES:../%=%)
+
+DOCS += RELEASE_NOTES.md
+NEW_DIR = ../new-notes
+NEW_NOTES = $(wildcard $(NEW_DIR)/*)
+
 include $(TOP)/configure/RULES
+
+MAKENOTES = ../make-notes.pl
+$(COMMON_DIR)/RELEASE_NOTES.md: $(NEW_NOTES) $(MAKENOTES)
+	@$(RM) $@
+	$(PERL) $(MAKENOTES) -o $@ $(EPICS_DEV_SNAPSHOT) \
+	    -V $(EPICS_SHORT_VERSION) -d $(abspath $(NEW_DIR))
 
 $(HEADER_MD_FILES): %_h.md: ../HEADER_h.md
 	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -DHEADER=$* $< $@

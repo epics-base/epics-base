@@ -15,7 +15,7 @@ include $(TOP)/configure/CONFIG
 USR_CPPFLAGS += -I $(CURDIR)/../../../src/ioc/db
 USR_CPPFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
 
-TESTLIBRARY = dbTestIoc
+TESTLIBRARY_IOC = dbTestIoc
 
 dbTestIoc_SRCS += arrRecord.c
 dbTestIoc_SRCS += xRecord.c
@@ -43,33 +43,33 @@ testHarness_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 
 PROD_LIBS = dbTestIoc dbCore ca Com
 
-TESTPROD_HOST += dbScanTest
+TESTPROD_IOC += dbScanTest
 dbScanTest_SRCS += dbScanTest.c
 dbScanTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbScanTest.c
 TESTS += dbScanTest
 
-TESTPROD_HOST += dbShutdownTest
+TESTPROD_IOC += dbShutdownTest
 dbShutdownTest_SRCS += dbShutdownTest.c
 dbShutdownTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbShutdownTest.c
 TESTS += dbShutdownTest
 
-TESTPROD_HOST += dbPutLinkTest
+TESTPROD_IOC += dbPutLinkTest
 dbPutLinkTest_SRCS += dbPutLinkTest.c
 dbPutLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbPutLinkTest.c
 TESTS += dbPutLinkTest
 TESTFILES += ../dbPutLinkTest.db ../dbPutLinkTestJ.db ../dbBadLink.db
 
-TESTPROD_HOST += dbLockTest
+TESTPROD_IOC += dbLockTest
 dbLockTest_SRCS += dbLockTest.c
 dbLockTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbLockTest.c
 TESTS += dbLockTest
 TESTFILES += ../dbLockTest.db
 
-TESTPROD_HOST += dbStressTest
+TESTPROD_IOC += dbStressTest
 dbStressTest_SRCS += dbStressLock.c
 dbStressTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 dbStressTest_SYS_LIBS_solaris += rt
@@ -77,39 +77,39 @@ dbStressTest_SYS_LIBS_Linux += rt
 TESTS += dbStressTest
 TESTFILES += ../dbStressLock.db
 
-TESTPROD_HOST += testdbConvert
+TESTPROD_IOC += testdbConvert
 testdbConvert_SRCS += testdbConvert.c
 testHarness_SRCS += testdbConvert.c
 TESTS += testdbConvert
 
-TESTPROD_HOST += callbackTest
+TESTPROD_IOC += callbackTest
 callbackTest_SRCS += callbackTest.c
 testHarness_SRCS += callbackTest.c
 TESTS += callbackTest
 
-TESTPROD_HOST += callbackParallelTest
+TESTPROD_IOC += callbackParallelTest
 callbackParallelTest_SRCS += callbackParallelTest.c
 testHarness_SRCS += callbackParallelTest.c
 TESTS += callbackParallelTest
 
-TESTPROD_HOST += dbStateTest
+TESTPROD_IOC += dbStateTest
 dbStateTest_SRCS += dbStateTest.c
 testHarness_SRCS += dbStateTest.c
 TESTS += dbStateTest
 
-TESTPROD_HOST += dbServerTest
+TESTPROD_IOC += dbServerTest
 dbServerTest_SRCS += dbServerTest.c
 testHarness_SRCS += dbServerTest.c
 TESTS += dbServerTest
 
-TESTPROD_HOST += dbCaStatsTest
+TESTPROD_IOC += dbCaStatsTest
 dbCaStatsTest_SRCS += dbCaStatsTest.c
 dbCaStatsTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbCaStatsTest.c
 TESTS += dbCaStatsTest
 TESTFILES += ../dbCaStats.db
 
-TESTPROD_HOST += dbCaLinkTest
+TESTPROD_IOC += dbCaLinkTest
 dbCaLinkTest_SRCS += dbCaLinkTest.c
 dbCaLinkTest_SRCS += dbCACTest.cpp
 dbCaLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
@@ -118,21 +118,21 @@ testHarness_SRCS += dbCACTest.cpp
 TESTS += dbCaLinkTest
 TESTFILES += ../dbCaLinkTest1.db ../dbCaLinkTest2.db ../dbCaLinkTest3.db
 
-TESTPROD_HOST += dbDbLinkTest
+TESTPROD_IOC += dbDbLinkTest
 dbDbLinkTest_SRCS += dbDbLinkTest.c
 dbDbLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbDbLinkTest.c
 TESTS += dbDbLinkTest
 TESTFILES += ../dbDbLinkTest.db
 
-TESTPROD_HOST += scanIoTest
+TESTPROD_IOC += scanIoTest
 scanIoTest_SRCS += scanIoTest.c
 scanIoTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += scanIoTest.c
 TESTFILES += ../scanIoTest.db
 TESTS += scanIoTest
 
-TESTPROD_HOST += dbChannelTest
+TESTPROD_IOC += dbChannelTest
 dbChannelTest_SRCS += dbChannelTest.c
 dbChannelTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbChannelTest.c
@@ -141,7 +141,7 @@ TESTS += dbChannelTest
 TARGETS += $(COMMON_DIR)/dbChArrTest.dbd
 DBDDEPENDS_FILES += dbChArrTest.dbd$(DEP)
 dbChArrTest_DBD += arrRecord.dbd
-TESTPROD_HOST += dbChArrTest
+TESTPROD_IOC += dbChArrTest
 dbChArrTest_SRCS += dbChArrTest.cpp
 dbChArrTest_SRCS += dbChArrTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbChArrTest.cpp
@@ -149,35 +149,35 @@ testHarness_SRCS += dbChArrTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/dbChArrTest.dbd ../dbChArrTest.db
 TESTS += dbChArrTest
 
-TESTPROD_HOST += chfPluginTest
+TESTPROD_IOC += chfPluginTest
 chfPluginTest_SRCS += chfPluginTest.c
 chfPluginTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += chfPluginTest.c
 TESTS += chfPluginTest
 
-TESTPROD_HOST += arrShorthandTest
+TESTPROD_IOC += arrShorthandTest
 arrShorthandTest_SRCS += arrShorthandTest.c
 arrShorthandTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += arrShorthandTest.c
 TESTS += arrShorthandTest
 
-TESTPROD_HOST += benchdbConvert
+TESTPROD_IOC += benchdbConvert
 benchdbConvert_SRCS += benchdbConvert.c
 
-TESTPROD_HOST += recGblCheckDeadbandTest
+TESTPROD_IOC += recGblCheckDeadbandTest
 recGblCheckDeadbandTest_SRCS += recGblCheckDeadbandTest.c
 recGblCheckDeadbandTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += recGblCheckDeadbandTest.c
 TESTS += recGblCheckDeadbandTest
 
-TESTPROD_HOST += testPutGetTest
+TESTPROD_IOC += testPutGetTest
 testPutGetTest_SRCS += dbPutGetTest.c
 testPutGetTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbPutGetTest.c
 TESTFILES += ../dbPutGetTest.db
 TESTS += testPutGetTest
 
-TESTPROD_HOST += dbStaticTest
+TESTPROD_IOC += dbStaticTest
 dbStaticTest_SRCS += dbStaticTest.c
 dbStaticTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbStaticTest.c
@@ -206,10 +206,8 @@ PROD_RTEMS = dbTestHarness
 TESTSPEC_vxWorks = dbTestHarness.munch; epicsRunDbTests
 TESTSPEC_RTEMS = dbTestHarness.boot; epicsRunDbTests
 
-TESTSCRIPTS_HOST += $(TESTS:%=%.t)
-ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD += $(TESTPROD_HOST)
-TESTSCRIPTS += $(TESTS:%=%.t)
+ifneq ($(filter $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)),)
+TESTSCRIPTS_IOC += $(TESTS:%=%.t)
 endif
 
 include $(TOP)/configure/RULES

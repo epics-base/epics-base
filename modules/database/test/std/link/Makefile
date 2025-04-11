@@ -10,7 +10,7 @@ include $(TOP)/configure/CONFIG
 
 USR_CPPFLAGS += -DUSE_TYPED_RSET
 
-TESTLIBRARY = Recs
+TESTLIBRARY_IOC = Recs
 
 Recs_SRCS += ioRecord.c
 Recs_LIBS += dbCore ca Com
@@ -29,13 +29,13 @@ TESTFILES += ../ioRecord.db
 
 testHarness_SRCS += linkTest_registerRecordDeviceDriver.cpp
 
-TESTPROD_HOST += lnkStateTest
+TESTPROD_IOC += lnkStateTest
 lnkStateTest_SRCS += lnkStateTest.c
 lnkStateTest_SRCS += linkTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += lnkStateTest.c
 TESTS += lnkStateTest
 
-TESTPROD_HOST += lnkCalcTest
+TESTPROD_IOC += lnkCalcTest
 lnkCalcTest_SRCS += lnkCalcTest.c
 lnkCalcTest_SRCS += linkTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += lnkCalcTest.c
@@ -55,10 +55,8 @@ PROD_RTEMS = linkTestHarness
 TESTSPEC_vxWorks = linkTestHarness.munch; epicsRunLinkTests
 TESTSPEC_RTEMS = linkTestHarness.boot; epicsRunLinkTests
 
-TESTSCRIPTS_HOST += $(TESTS:%=%.t)
-ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-  TESTPROD += $(TESTPROD_HOST)
-  TESTSCRIPTS += $(TESTS:%=%.t)
+ifneq ($(filter $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)),)
+  TESTSCRIPTS_IOC += $(TESTS:%=%.t)
 endif
 
 include $(TOP)/configure/RULES

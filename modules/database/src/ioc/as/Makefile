@@ -21,6 +21,9 @@ dbCore_SRCS += asDbLib.c
 dbCore_SRCS += asCa.c
 dbCore_SRCS += asIocRegister.c
 
-PROD_HOST += ascheck
-ascheck_SRCS = ascheck.c
-ascheck_LIBS = dbCore ca
+ifeq ($(filter Ioc,$(VALID_BUILDS)),Ioc)
+  # Only when both Ioc and Command are built
+  PROD_CMD += ascheck
+  ascheck_SRCS = ascheck.c
+  ascheck_LIBS = dbCore ca
+endif

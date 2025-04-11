@@ -21,8 +21,7 @@ ifeq ($(EPICS_HOST_ARCH),$(T_A))
 
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c
-# Not much point running this on vxWorks or RTEMS...
-TESTS += epicsUnitTestTest
+TESTS_HOSTONLY += epicsUnitTestTest
 
 endif
 
@@ -266,13 +265,11 @@ testexecname_SRCS += testexecname.c
 # no point in including in testHarness.  Not implemented for RTEMS/vxWorks.
 TESTS += testexecname
 
-ifeq ($(BUILD_CLASS),HOST)
 ifneq ($(OS_CLASS),WIN32)
 # This test can only be run on a build host, and is broken on Windows
 TESTPROD_HOST += yajl_test
 yajl_test_SRCS += yajl_test.c
-TESTS += yajlTest
-endif
+TESTS_HOSTONLY += yajlTest
 endif
 
 TESTPROD_HOST += iocshTest
@@ -303,10 +300,10 @@ PROD_RTEMS += libComTestHarness
 TESTSPEC_vxWorks = libComTestHarness.munch; epicsRunLibComTests
 TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
-TESTSCRIPTS_HOST += $(TESTS:%=%.t)
+TESTSCRIPTS_HOST += $(TESTS_HOSTONLY:%=%.t) $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
 TESTPROD += $(TESTPROD_HOST)
-TESTSCRIPTS += $(filter-out epicsUnitTestTest.t, $(TESTS:%=%.t))
+TESTSCRIPTS += $(TESTS:%=%.t)
 endif
 
 

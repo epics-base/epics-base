@@ -13,7 +13,7 @@ include $(TOP)/configure/CONFIG
 USR_CPPFLAGS += -DUSE_TYPED_RSET
 USR_CPPFLAGS += -DUSE_TYPED_DSET
 
-TESTLIBRARY = dbRecStdTest
+TESTLIBRARY_IOC = dbRecStdTest
 
 dbRecStdTest_SRCS += asTestLib.c
 dbRecStdTest_LIBS += dbRecStd dbCore ca Com
@@ -35,14 +35,14 @@ TESTFILES += $(COMMON_DIR)/recTestIoc.dbd
 testHarness_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += asTestIoc_registerRecordDeviceDriver.cpp
 
-TESTPROD_HOST += arrayOpTest
+TESTPROD_IOC += arrayOpTest
 arrayOpTest_SRCS += arrayOpTest.c
 arrayOpTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += arrayOpTest.c
 TESTFILES += ../arrayOpTest.db
 TESTS += arrayOpTest
 
-TESTPROD_HOST += recMiscTest
+TESTPROD_IOC += recMiscTest
 recMiscTest_SRCS += recMiscTest.c
 recMiscTest_CFLAGS_NO = -DLINK_DYNAMIC
 recMiscTest_CFLAGS += $(recMiscTest_CFLAGS_$(STATIC_BUILD))
@@ -51,77 +51,77 @@ testHarness_SRCS += recMiscTest.c
 TESTFILES += ../recMiscTest.db
 TESTS += recMiscTest
 
-TESTPROD_HOST += linkRetargetLinkTest
+TESTPROD_IOC += linkRetargetLinkTest
 linkRetargetLinkTest_SRCS += linkRetargetLinkTest.c
 linkRetargetLinkTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += linkRetargetLinkTest.c
 TESTFILES += ../linkRetargetLink.db
 TESTS += linkRetargetLinkTest
 
-TESTPROD_HOST += linkInitTest
+TESTPROD_IOC += linkInitTest
 linkInitTest_SRCS += linkInitTest.c
 linkInitTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += linkInitTest.c
 TESTFILES += ../linkInitTest.db
 TESTS += linkInitTest
 
-TESTPROD_HOST += compressTest
+TESTPROD_IOC += compressTest
 compressTest_SRCS += compressTest.c
 compressTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += compressTest.c
 TESTFILES += ../compressTest.db
 TESTS += compressTest
 
-TESTPROD_HOST += asyncSoftTest
+TESTPROD_IOC += asyncSoftTest
 asyncSoftTest_SRCS += asyncSoftTest.c
 asyncSoftTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += asyncSoftTest.c
 TESTFILES += ../asyncSoftTest.db
 TESTS += asyncSoftTest
 
-TESTPROD_HOST += softTest
+TESTPROD_IOC += softTest
 softTest_SRCS += softTest.c
 softTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += softTest.c
 TESTFILES += ../softTest.db
 TESTS += softTest
 
-TESTPROD_HOST += seqTest
+TESTPROD_IOC += seqTest
 seqTest_SRCS += seqTest.c
 seqTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += seqTest.c
 TESTFILES += ../seqTest.db
 TESTS += seqTest
 
-TESTPROD_HOST += longoutTest
+TESTPROD_IOC += longoutTest
 longoutTest_SRCS += longoutTest.c
 longoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += longoutTest.c
 TESTFILES += ../longoutTest.db
 TESTS += longoutTest
 
-TESTPROD_HOST += boTest
+TESTPROD_IOC += boTest
 boTest_SRCS += boTest.c
 boTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += boTest.c
 TESTFILES += ../boTest.db
 TESTS += boTest
 
-TESTPROD_HOST += biTest
+TESTPROD_IOC += biTest
 biTest_SRCS += biTest.c
 biTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += biTest.c
 TESTFILES += ../biTest.db
 TESTS += biTest
 
-TESTPROD_HOST += printfTest
+TESTPROD_IOC += printfTest
 printfTest_SRCS += printfTest.c
 printfTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += printfTest.c
 TESTFILES += ../printfTest.db
 TESTS += printfTest
 
-TESTPROD_HOST += aiTest
+TESTPROD_IOC += aiTest
 aiTest_SRCS += aiTest.c
 aiTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += aiTest.c
@@ -132,7 +132,7 @@ TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
 asTestIoc_DBD += base.dbd
 asTestIoc_DBD += asTest.dbd
-TESTPROD_HOST += asTest
+TESTPROD_IOC += asTest
 asTest_SRCS += asTest.c
 asTest_SRCS += asTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += asTest.c
@@ -142,7 +142,7 @@ TESTS += asTest
 TARGETS += $(COMMON_DIR)/analogMonitorTest.dbd
 DBDDEPENDS_FILES += analogMonitorTest.dbd$(DEP)
 analogMonitorTest_DBD += base.dbd
-TESTPROD_HOST += analogMonitorTest
+TESTPROD_IOC += analogMonitorTest
 analogMonitorTest_SRCS += analogMonitorTest.c
 analogMonitorTest_SRCS += analogMonitorTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += analogMonitorTest.c
@@ -153,7 +153,7 @@ TESTS += analogMonitorTest
 TARGETS += $(COMMON_DIR)/scanEventTest.dbd
 DBDDEPENDS_FILES += scanEventTest.dbd$(DEP)
 scanEventTest_DBD += base.dbd
-TESTPROD_HOST += scanEventTest
+TESTPROD_IOC += scanEventTest
 scanEventTest_SRCS += scanEventTest.c
 scanEventTest_SRCS += scanEventTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += scanEventTest.c
@@ -164,7 +164,7 @@ TESTS += scanEventTest
 TARGETS += $(COMMON_DIR)/regressTest.dbd
 DBDDEPENDS_FILES += regressTest.dbd$(DEP)
 regressTest_DBD += base.dbd
-TESTPROD_HOST += regressTest
+TESTPROD_IOC += regressTest
 regressTest_SRCS += regressTest.c
 regressTest_SRCS += regressTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db ../regressHex.db ../regressLinkMS.db
@@ -180,7 +180,7 @@ ifneq (inc,$(strip $(MAKECMDGOALS)))
 DBDDEPENDS_FILES += simmTest.db$(DEP)
 endif
 simmTest_DBD += base.dbd
-TESTPROD_HOST += simmTest
+TESTPROD_IOC += simmTest
 simmTest_SRCS += simmTest.c
 simmTest_SRCS += simmTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += simmTest.c
@@ -188,7 +188,7 @@ testHarness_SRCS += simmTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/simmTest.dbd $(COMMON_DIR)/simmTest.db
 TESTS += simmTest
 
-TESTPROD_HOST += mbbioDirectTest
+TESTPROD_IOC += mbbioDirectTest
 mbbioDirectTest_SRCS += mbbioDirectTest.c
 mbbioDirectTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += mbbioDirectTest.c
@@ -198,7 +198,7 @@ TESTS += mbbioDirectTest
 TARGETS += $(COMMON_DIR)/asyncproctest.dbd
 DBDDEPENDS_FILES += asyncproctest.dbd$(DEP)
 asyncproctest_DBD += base.dbd
-TESTPROD_HOST += asyncproctest
+TESTPROD_IOC += asyncproctest
 asyncproctest_SRCS += asyncproctest.c
 asyncproctest_SRCS += asyncproctest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/asyncproctest.dbd ../asyncproctest.db
@@ -207,14 +207,14 @@ TESTS += asyncproctest
 TARGETS += $(COMMON_DIR)/subproctest.dbd
 DBDDEPENDS_FILES += subproctest.dbd$(DEP)
 subproctest_DBD += base.dbd
-TESTPROD_HOST += subproctest
+TESTPROD_IOC += subproctest
 subproctest_SRCS += subproctest.c
 subproctest_SRCS += subproctest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/subproctest.dbd ../subproctest.db
 TESTS += subproctest
 
 
-TESTPROD_HOST += linkFilterTest
+TESTPROD_IOC += linkFilterTest
 linkFilterTest_SRCS += linkFilterTest.c
 linkFilterTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += linkFilterTest.c
@@ -227,22 +227,22 @@ epicsExportTestIoc_DBD += base.dbd
 epicsExportTestIoc_DBD += epicsExportTest.dbd
 TESTFILES += $(COMMON_DIR)/epicsExportTestIoc.dbd ../epicsExportTest.db
 
-TESTLIBRARY += epicsExportTestLib
+TESTLIBRARY_IOC += epicsExportTestLib
 epicsExportTestLib_SRCS += epicsExportTest.c
 epicsExportTestLib_LIBS += dbCore Com
 
-TESTPROD_HOST += epicsExportTest
+TESTPROD_IOC += epicsExportTest
 TESTS += epicsExportTest
 TARGETS += epicsExportTest$(OBJ)
 epicsExportTest_SRCS += epicsExportTestMain.c
 epicsExportTest_SRCS += epicsExportTestIoc_registerRecordDeviceDriver.cpp
 epicsExportTest_LIBS = epicsExportTestLib
 
-TESTLIBRARY += epicsExportTestxxLib
+TESTLIBRARY_IOC += epicsExportTestxxLib
 epicsExportTestxxLib_SRCS += epicsExportTestxx.cpp
 epicsExportTestxxLib_LIBS += dbCore Com
 
-TESTPROD_HOST += epicsExportTestxx
+TESTPROD_IOC += epicsExportTestxx
 TESTS += epicsExportTestxx
 TARGETS += epicsExportTestxx$(OBJ)
 epicsExportTestxx_SRCS += epicsExportTestMain.c
@@ -277,10 +277,8 @@ PROD_RTEMS = recordTestHarness
 TESTSPEC_vxWorks = recordTestHarness.munch; epicsRunRecordTests
 TESTSPEC_RTEMS = recordTestHarness.boot; epicsRunRecordTests
 
-TESTSCRIPTS_HOST += $(TESTS:%=%.t)
-ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD += $(TESTPROD_HOST)
-TESTSCRIPTS += $(TESTS:%=%.t)
+ifneq ($(filter $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)),)
+TESTSCRIPTS_IOC += $(TESTS:%=%.t)
 endif
 
 include $(TOP)/configure/RULES

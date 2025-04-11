@@ -417,12 +417,24 @@ int main (int argc, char *argv[])
                                 /* Argument (type) may be text or number */
             if (sscanf(optarg, "%d", &type) != 1)
             {
-                dbr_text_to_type(optarg, type);
+                const char *typeStr = optarg;
+                size_t len = strlen(typeStr);
+                char intToShortStr[30];
+                if (len >= 3 && len < (sizeof intToShortStr) - 2)                /* There's room to replace INT with SHORT (2 extra chars) */
+                {
+                    if (strcmp(typeStr + len - 3, "INT") == 0)                /* Replace INT with SHORT */
+                    {
+                        strcpy(intToShortStr, typeStr);
+                        strcpy(intToShortStr + len - 3, "SHORT");
+                        typeStr = intToShortStr;
+                    }
+                }
+                dbr_text_to_type(typeStr, type);
                 if (type == -1)                   /* Invalid? Try prefix DBR_ */
                 {
-                    char str[30] = "DBR_";
-                    strncat(str, optarg, 25);
-                    dbr_text_to_type(str, type);
+                    char dbrStr[30] = "DBR_";
+                    strncat(dbrStr, typeStr, 25);
+                    dbr_text_to_type(dbrStr, type);
                 }
             }
             if (type < DBR_STRING       || type > DBR_CLASS_NAME

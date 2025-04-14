@@ -198,17 +198,17 @@ void testStrTok(void)
 
 static
 void testEpicsStrPrintEscaped(void)
-{   
+{
     const char *filename;
     FILE *testFile;
     FILE *readOnly;
 
     #ifdef __rtems__
         /* ensure there is a writable area */
-	    mkdir( "/tmp", S_IRWXU );
-	    filename = "/tmp/testEpicsStrPrintEscaped";
+        mkdir( "/tmp", S_IRWXU );
+        filename = "/tmp/testEpicsStrPrintEscaped";
     #else
-	    filename = "testEpicsStrPrintEscaped";
+        filename = "testEpicsStrPrintEscaped";
     #endif
 
 

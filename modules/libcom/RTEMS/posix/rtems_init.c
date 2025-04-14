@@ -90,7 +90,7 @@
 #ifndef RTEMS_LEGACY_STACK
 // setup own ntp-client to get time
 #include "epicsNtp.h"
-epicsEventId 	dhcpDone;
+epicsEventId dhcpDone;
 #endif
 
 /* these settings are needed by the rtems startup
@@ -507,11 +507,11 @@ static void rtshellCallFunc(const iocshArgBuf *args)
 {
     rtems_shell_cmd_t *cmd = rtems_shell_lookup_cmd(args[0].sval);
     int ret;
-    
+
     if (!cmd) {
         fprintf(stderr, "ERR: No such command\n");
         iocshSetError(-1);
-    
+
     } else {
         fflush(stdout);
         fflush(stderr);
@@ -768,7 +768,7 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
     printf("\n");
     for (;NULL != *env;++env) {
         printf("dhcpcd ---> '%s'\n", *env);
-        
+
         for(const struct dhcp_vars_t* var = dhcp_vars; var->name; var++) {
             size_t namelen = strlen(var->name);
 
@@ -811,8 +811,8 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
 }
 
 static rtems_dhcpcd_hook dhcpcd_hook = {
-	.name = "ioc boot",
-	.handler = dhcpcd_hook_handler
+    .name = "ioc boot",
+    .handler = dhcpcd_hook_handler
 };
 
 static void
@@ -869,7 +869,7 @@ default_network_dhcpcd(void)
         rv = close(fd);
         assert(rv == 0);
     }
-    
+
     sc = rtems_dhcpcd_start(NULL);
     assert(sc == RTEMS_SUCCESSFUL);
 }
@@ -944,10 +944,10 @@ rtems_telnetd_config_table rtems_telnetd_config = {
 void *
 POSIX_Init ( void *argument __attribute__((unused)))
 {
-    int                	result;
-    char               	*argv[3]         = { NULL, NULL, NULL };
-    rtems_status_code  	sc;
-    struct timespec  	now;
+    int                 result;
+    char                *argv[3]         = { NULL, NULL, NULL };
+    rtems_status_code   sc;
+    struct timespec     now;
     char timeBuff[100];
 
     initConsole ();
@@ -1004,7 +1004,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
     /*
      * Create a reasonable environment
      */
-    
+
     putenv ("TERM=xterm");
     putenv ("IOCSH_HISTSIZE=20");
 
@@ -1063,13 +1063,13 @@ POSIX_Init ( void *argument __attribute__((unused)))
     // wait for dhcp done ... should be if SYNCDHCP is used
     epicsEventWaitStatus stat;
     printf("\n ---- Waiting for DHCP ...\n");
-    stat = epicsEventWaitWithTimeout(dhcpDone, 600); 
+    stat = epicsEventWaitWithTimeout(dhcpDone, 600);
     if (stat == epicsEventOK)
-    	epicsEventDestroy(dhcpDone);
+        epicsEventDestroy(dhcpDone);
     else if (stat == epicsEventWaitTimeout)
         printf("\n ---- DHCP timed out!\n");
     else
-	printf("\n ---- dhcpDone Event Unknown state %d\n", stat);
+        printf("\n ---- dhcpDone Event Unknown state %d\n", stat);
 
     const char* ifconfg_args[] = {
         "ifconfig", NULL

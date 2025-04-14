@@ -37,7 +37,7 @@ epicsExportAddress(dset, devMbbiSoftRaw);
 
 static long init_record(dbCommon *pcommon)
 {
-	mbbiRecord *prec = (mbbiRecord *)pcommon;
+    mbbiRecord *prec = (mbbiRecord *)pcommon;
 
     recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
 

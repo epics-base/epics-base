@@ -23,7 +23,7 @@
 
 static long init_record(dbCommon *pcommon)
 {
-	mbboDirectRecord *prec = (mbboDirectRecord *)pcommon;
+    mbboDirectRecord *prec = (mbboDirectRecord *)pcommon;
 
     if (prec->nobt == 0)
         prec->mask = 0xffffffff;

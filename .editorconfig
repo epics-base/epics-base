@@ -10,3 +10,7 @@ insert_final_newline = true
 # Part of readline test that needs file without final newline
 [modules/libcom/test/multiline-input.txt]
 insert_final_newline = false
+
+# Enforce consistent space indent style in source code
+[*.{c,cc,cpp,h,hpp,pl,py,yml}]
+indent_style = space

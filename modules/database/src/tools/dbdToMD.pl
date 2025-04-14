@@ -102,16 +102,16 @@ $SIG{__DIE__} = sub {
 };
 
 sub make_fragment {
-	my $fragment = $_[1];
-	$fragment =~ s/\W+/-/g;
-	$fragment = lc($fragment);
-	$_[1] = $fragment;
+    my $fragment = $_[1];
+    $fragment =~ s/\W+/-/g;
+    $fragment = lc($fragment);
+    $_[1] = $fragment;
 }
 
 my $podRst = EPICS::PodMD->new(
-	perldoc_url_prefix => '',
-	perldoc_fragment_format => make_fragment,
-	markdown_fragment_format => make_fragment,
+    perldoc_url_prefix => '',
+    perldoc_fragment_format => make_fragment,
+    markdown_fragment_format => make_fragment,
 );
 
 # Parse the Pod text from the root DBD object

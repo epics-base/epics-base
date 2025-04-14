@@ -119,7 +119,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     if (pdset->common.init_record) {
-	long status = pdset->common.init_record(pcommon);
+        long status = pdset->common.init_record(pcommon);
         if (prec->linr == menuConvertSLOPE) {
             prec->eoff = eoff;
             prec->eslo = eslo;

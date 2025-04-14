@@ -272,13 +272,13 @@ LIBCA_API unsigned epicsStdCall ca_write_access (chid chan);
  */
 enum channel_state {
     /// valid chid, IOC not found or unavailable
-	cs_never_conn,
+        cs_never_conn,
     /// valid chid, IOC was found, but unavailable (previously connected to server)
-	cs_prev_conn,
+        cs_prev_conn,
     /// valid chid, IOC was found, still available
-	cs_conn,
+        cs_conn,
     /// channel deleted by user
-	cs_closed
+        cs_closed
 };
 
 /** \brief Returns an enumerated type indicating the current state of the specified IO channel.

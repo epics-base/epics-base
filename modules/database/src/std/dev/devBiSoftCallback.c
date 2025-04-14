@@ -154,7 +154,7 @@ static long init(int pass)
 
 static long init_record(dbCommon *pcommon)
 {
-	biRecord *prec = (biRecord *)pcommon;
+    biRecord *prec = (biRecord *)pcommon;
 
     if (recGblInitConstantLink(&prec->inp, DBR_ENUM, &prec->val))
         prec->udf = FALSE;

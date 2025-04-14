@@ -111,7 +111,7 @@ static long init_record(dbCommon *pcommon, int pass)
         return(S_dev_missingSup);
     }
     if (pdset->common.init_record) {
-	if ((status = pdset->common.init_record(pcommon))) return status;
+        if ((status = pdset->common.init_record(pcommon))) return status;
     }
     prec->mlst = prec->val;
     prec->alst = prec->val;
@@ -122,7 +122,7 @@ static long init_record(dbCommon *pcommon, int pass)
 static long process(dbCommon *pcommon)
 {
     int64inRecord *prec = (int64inRecord*)pcommon;
-	int64indset	*pdset = (int64indset *)(prec->dset);
+    int64indset *pdset = (int64indset *)(prec->dset);
     long                status;
     unsigned char       pact=prec->pact;
     epicsTimeStamp      timeLast;

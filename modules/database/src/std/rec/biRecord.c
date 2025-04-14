@@ -76,7 +76,7 @@ rset biRSET={
     put_enum_str,
     get_graphic_double,
     get_control_double,
-	get_alarm_double
+    get_alarm_double
 };
 epicsExportAddress(rset,biRSET);
 
@@ -105,7 +105,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return(S_dev_missingSup);
     }
     if( pdset->common.init_record ) {
-	if((status=(*pdset->common.init_record)(pcommon))) return(status);
+        if((status=(*pdset->common.init_record)(pcommon))) return(status);
     }
     prec->mlst = prec->val;
     prec->lalm = prec->val;

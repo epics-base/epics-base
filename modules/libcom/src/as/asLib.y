@@ -12,6 +12,7 @@ static int yyerror(char *);
 static int yy_start;
 #include "asLibRoutines.c"
 static int yyFailed = FALSE;
+static int yyWarned = FALSE;
 static int line_num=1;
 int strictParsing = TRUE;
 static UAG *yyUag=NULL;
@@ -59,14 +60,17 @@ keyword: tokenUAG
 
 generic_item: tokenSTRING generic_head generic_list_block
     {
+        yywarn("Ignoring unsupported top level ACF element", $1);
         free((void *)$1);
     }
     |   tokenSTRING generic_head generic_block
     {
+        yywarn("Ignoring unsupported top level ACF element", $1);
         free((void *)$1);
     }
     |   tokenSTRING generic_head
     {
+        yywarn("Ignoring unsupported top level ACF element", $1);
         free((void *)$1);
     }
     ;
@@ -203,6 +207,8 @@ rule_head_manditory:    tokenINTEGER ',' tokenSTRING
             yyAsgRule = asAsgAddRule(yyAsg,asREAD,$1);
         } else if((strcmp($3,"WRITE")==0)) {
             yyAsgRule = asAsgAddRule(yyAsg,asWRITE,$1);
+        } else {
+            yywarn("Ignoring RULE with unsupported RULE PERMISSION", $3);
         }
         free((void *)$3);
     }
@@ -238,6 +244,7 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
     }
     | generic_block_elem
     {
+        yywarn("Ignoring RULE containing unsupported RULE CONDITION", "?");
         if (asAsgRuleDisable(yyAsgRule))
             yyerror("");
     }
@@ -279,6 +286,13 @@ static int yyerror(char *str)
     yyFailed = TRUE;
     return 0;
 }
+static int yywarn(char *str, char *token)
+{
+    if (!yyWarned && strlen(str) && strlen(token))
+        errlogPrintf("%s: %s at line %d\n", token, str, line_num);
+    yyWarned = TRUE;
+    return 0;
+}
 static int myParse(ASINPUTFUNCPTR inputfunction)
 {
     static int  FirstFlag = 1;
@@ -290,6 +304,7 @@ static int myParse(ASINPUTFUNCPTR inputfunction)
     if (!FirstFlag) {
         line_num=1;
         yyFailed = FALSE;
+        yyWarned = FALSE;
         yyreset();
         yyrestart(NULL);
     }

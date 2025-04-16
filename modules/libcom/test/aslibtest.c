@@ -56,7 +56,7 @@ static const char supported_config_1[] = ""
 static const char supported_config_2[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC(WELL,FORMED,ARG,LIST) {WELL,FORMED,LIST}\n"
+        "SIMPLE(WELL,FORMED,ARG,LIST) {WELL,FORMED,LIST}\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -71,7 +71,7 @@ static const char supported_config_2[] = ""
 static const char supported_config_3[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC ( 1, WELL , \"FORMED\" , ARG , LIST ) { ALSO_GENERIC ( WELL , FORMED , ARG , LIST, 2.0 ) }\n"
+        "COMPLEX_ARGUMENTS ( 1, WELL , \"FORMED\" , ARG , LIST ) { ALSO_GENERIC ( WELL , FORMED , ARG , LIST, 2.0 ) }\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -86,7 +86,7 @@ static const char supported_config_3[] = ""
 static const char supported_config_4[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC ( 1.0, ARGS ) { ALSO_GENERIC () { AND_BODY } }\n"
+        "SUB_BLOCKS ( 1.0, ARGS ) { ALSO_GENERIC () { AND_BODY } }\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -101,7 +101,7 @@ static const char supported_config_4[] = ""
 static const char supported_config_5[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC ( 1.0, ARGS ) { ALSO_GENERIC () { AND_RECURSIVE( FOO) { LIST, LIST} } }\n"
+        "RECURSIVE_SUB_BLOCKS ( 1.0, ARGS ) { ALSO_GENERIC () { AND_RECURSIVE( FOO) { LIST, LIST} } }\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -115,7 +115,7 @@ static const char supported_config_5[] = ""
 static const char supported_config_6[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC ( UAG, RULE ) { ASG ( HAL, IMP, CALC ) }\n"
+        "WITH_KEYWORDS ( UAG, RULE ) { ASG ( HAL, IMP, CALC ) }\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -449,6 +449,8 @@ static void testFutureProofParser(void)
     testOk(ret==S_asLib_badConfig, "parsing rejects unexpected recursive body in UAG element body -> %s", errSymMsg(ret));
 
 
+    eltc(1);
+
     /* Test supported for known elements containing unsupported elements, well-formed and ignored */
     setUser("testing");
     setHost("localhost");
@@ -471,14 +473,6 @@ static void testFutureProofParser(void)
 
     ret = asInitMem(supported_config_3, NULL);
     testOk(ret==0, "unknown elements with string and double args and a body, ignored -> %s", errSymMsg(ret));
-    if (!ret) {
-        asAsl = 0;
-        testAccess("DEFAULT", 0);
-        testAccess("ro", 1);
-    }
-
-    ret = asInitMem(supported_config_4, NULL);
-    testOk(ret==0, "unknown elements with recursive body ignored -> %s", errSymMsg(ret));
     if (!ret) {
         asAsl = 0;
         testAccess("DEFAULT", 0);
@@ -524,13 +518,11 @@ static void testFutureProofParser(void)
         testAccess("DEFAULT", 0);
         testAccess("ro", 0);
     }
-
-    eltc(1);
 }
 
 MAIN(aslibtest)
 {
-    testPlan(65);
+    testPlan(62);
     testSyntaxErrors();
     testFutureProofParser();
     testHostNames();

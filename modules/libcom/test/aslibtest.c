@@ -37,13 +37,13 @@ static const char hostname_config[] = ""
  * The unsupported element should be silently ignored, but the rest of the config is processed.
  *
  * top-unknown-keyword(WELL,FORMED,LIST)
- * - valid top level keyword with well formed arg list
+ * - valid top level keyword with well-formed arg list
  */
 static const char supported_config_1[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "UNSUPPORTED(WELL,FORMED,ARG,LIST)\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
+        "GENERIC(WELL,FORMED,ARG,LIST)\n"
+        "ASG(ro) {RULE(0, NONE) RULE(1, READ) {HAG(foo)}}\n"
         ;
 
 /**
@@ -51,12 +51,12 @@ static const char supported_config_1[] = ""
  * The unsupported element should be silently ignored, but the rest of the config is processed.
  *
  * top-unknown-keyword(WELL,FORMED,LIST) { WELL,FORMED,LIST }
- * - valid top level keyword with well formed arg list and valid arg list body
+ * - valid top level keyword with well-formed arg list and valid arg list body
  */
 static const char supported_config_2[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "UNSUPPORTED(WELL,FORMED,ARG,LIST) {WELL,FORMED,LIST}\n"
+        "GENERIC(WELL,FORMED,ARG,LIST) {WELL,FORMED,LIST}\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -65,13 +65,13 @@ static const char supported_config_2[] = ""
  * The unsupported element should be silently ignored, but the rest of the config is processed.
  *
  * top-unknown-keyword(WELL,FORMED,LIST) { recursive-body-keyword(WELL,FORMED,LIST) }
- * - valid top level keyword with well formed arg list and valid recursive body
+ * - valid top level keyword with well-formed arg list and valid recursive body
  * - includes quoted strings, integers, and floating point numbers
  */
 static const char supported_config_3[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "UNSUPPORTED ( 1, WELL , \"FORMED\" , ARG , LIST ) { ALSO_UNSUPPORTED ( WELL , FORMED , ARG , LIST, 2.0 ) }\n"
+        "GENERIC ( 1, WELL , \"FORMED\" , ARG , LIST ) { ALSO_GENERIC ( WELL , FORMED , ARG , LIST, 2.0 ) }\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -80,13 +80,28 @@ static const char supported_config_3[] = ""
  * The unsupported element should be silently ignored, but the rest of the config is processed.
  *
  * top-unknown-keyword(WELL,FORMED,LIST) { recursive-body-keyword(WELL,FORMED,LIST) { AND_BODY } }
- * - valid top level keyword with well formed arg list and valid recursive body, with a nested body
+ * - valid top level keyword with well-formed arg list and valid recursive body, with a nested body
  * - includes floating point numbers, and an empty arg list
  */
 static const char supported_config_4[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "UNSUPPORTED ( 1.0, ARGS ) { ALSO_UNSUPPORTED () { AND_BODY } }\n"
+        "GENERIC ( 1.0, ARGS ) { ALSO_GENERIC () { AND_BODY } }\n"
+        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
+        ;
+
+/**
+ * Test data with unsupported elements.
+ * The unsupported element should be silently ignored, but the rest of the config is processed.
+ *
+ * top-unknown-keyword(WELL,FORMED,LIST) { recursive-body-keyword(WELL,FORMED,LIST) { AND_RECURSIVE_BODY() {LIST, LIST } }
+ * - valid top level keyword with well-formed arg list and valid recursive body, with a nested recursion
+ * - includes floating point numbers, and an empty arg list
+ */
+static const char supported_config_5[] = ""
+        "HAG(foo) {localhost}\n"
+        "ASG(DEFAULT) {RULE(0, NONE)}\n"
+        "GENERIC ( 1.0, ARGS ) { ALSO_GENERIC () { AND_RECURSIVE( FOO) { LIST, LIST} } }\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -97,10 +112,10 @@ static const char supported_config_4[] = ""
  * top-unknown-keyword(KEYWORD) { KEYWORD(KEYWORD) }
  * - valid top level keyword with keyword for args, recursive body name, and arg list
  */
-static const char supported_config_5[] = ""
+static const char supported_config_6[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "UNSUPPORTED ( UAG, RULE ) { ASG ( HAL, IMP, CALC ) }\n"
+        "GENERIC ( UAG, RULE ) { ASG ( HAL, IMP, CALC ) }\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -111,7 +126,7 @@ static const char supported_config_5[] = ""
  *
  * - RULE contains unsupported elements
  */
-static const char supported_config_6[] = ""
+static const char supported_config_7[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
         "ASG(ro) {RULE(0, NONE) RULE(1, READ) {HAG(foo) METHOD(\"x509\") AUTHORITY(\"EPICS Certificate Authority\")}}\n"
@@ -122,7 +137,7 @@ static const char supported_config_6[] = ""
  *
  * - unexpected permission name in arg list for RULE element ignored
  */
-static const char supported_config_7[] = ""
+static const char supported_config_8[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
         "ASG(ro) {RULE(0, NONE) RULE(1, RPC) {HAG(foo)}}\n"
@@ -138,7 +153,7 @@ static const char supported_config_7[] = ""
 static const char unsupported_config_1[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "UNSUPPORTED(not well formed arg list)\n"
+        "GENERIC(not well-formed arg list)\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -152,7 +167,7 @@ static const char unsupported_config_1[] = ""
 static const char unsupported_config_2[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "UNSUPPORTED(WELL,FORMED,ARG,LIST) {not well formed body}\n"
+        "GENERIC(WELL,FORMED,ARG,LIST) {not well-formed body}\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -166,7 +181,7 @@ static const char unsupported_config_2[] = ""
 static const char unsupported_config_3[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "UNSUPPORTED {WELL,FORMED,BODY}\n"
+        "GENERIC {WELL,FORMED,BODY}\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -180,7 +195,7 @@ static const char unsupported_config_3[] = ""
 static const char unsupported_config_4[] = ""
         "HAG(foo) {localhost}\n"
         "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "UNSUPPORTED(WELL,FORMED,ARG,LIST) { GOOD, BODY(bad arg list) }\n"
+        "GENERIC(WELL,FORMED,ARG,LIST) { GOOD, BODY(bad arg list) }\n"
         "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
         ;
 
@@ -470,8 +485,16 @@ static void testFutureProofParser(void)
         testAccess("ro", 1);
     }
 
+    ret = asInitMem(supported_config_4, NULL);
+    testOk(ret==0, "unknown elements with recursive body ignored -> %s", errSymMsg(ret));
+    if (!ret) {
+        asAsl = 0;
+        testAccess("DEFAULT", 0);
+        testAccess("ro", 1);
+    }
+
     ret = asInitMem(supported_config_5, NULL);
-    testOk(ret==0, "unknown elements with keywords arguments and body names ignored -> %s", errSymMsg(ret));
+    testOk(ret==0, "unknown elements with recursive body with recursion ignored -> %s", errSymMsg(ret));
     if (!ret) {
         asAsl = 0;
         testAccess("DEFAULT", 0);
@@ -479,7 +502,7 @@ static void testFutureProofParser(void)
     }
 
     ret = asInitMem(supported_config_6, NULL);
-    testOk(ret==0, "rules with unknown elements ignored -> %s", errSymMsg(ret));
+    testOk(ret==0, "unknown elements with keywords arguments and body names ignored -> %s", errSymMsg(ret));
     if (!ret) {
         asAsl = 0;
         testAccess("DEFAULT", 0);
@@ -487,11 +510,19 @@ static void testFutureProofParser(void)
     }
 
     ret = asInitMem(supported_config_7, NULL);
+    testOk(ret==0, "rules with unknown elements ignored -> %s", errSymMsg(ret));
+    if (!ret) {
+        asAsl = 0;
+        testAccess("DEFAULT", 0);
+        testAccess("ro", 0);
+    }
+
+    ret = asInitMem(supported_config_8, NULL);
     testOk(ret==0, "rules with unknown permission names ignored -> %s", errSymMsg(ret));
     if (!ret) {
         asAsl = 0;
         testAccess("DEFAULT", 0);
-        testAccess("ro", 1);
+        testAccess("ro", 0);
     }
 
     eltc(1);
@@ -499,7 +530,7 @@ static void testFutureProofParser(void)
 
 MAIN(aslibtest)
 {
-    testPlan(73);
+    testPlan(65);
     testSyntaxErrors();
     testFutureProofParser();
     testHostNames();

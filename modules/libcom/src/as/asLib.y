@@ -25,11 +25,13 @@ static ASGRULE *yyAsgRule=NULL;
 %token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC
 %token <Str> tokenINP
 %token <Int> tokenINTEGER
+%token <Float> tokenFLOAT
 %token <Str> tokenSTRING
 
 %union
 {
     int Int;
+    double Float;
     char *Str;
 }
 
@@ -44,7 +46,7 @@ asconfig_item:  tokenUAG uag_head uag_body
     |   tokenHAG hag_head
     |   tokenASG asg_head asg_body
     |   tokenASG asg_head
-    |   unsupported_element
+    |   generic_item
     ;
 
 keyword: tokenUAG
@@ -55,53 +57,53 @@ keyword: tokenUAG
     | tokenINP
     ;
 
-unsupported_element: tokenSTRING unsupported_head unsupported_block
+generic_item: tokenSTRING generic_head generic_list_block
     {
-        if (strictParsing) {
-            char msg[128];
-            sprintf(msg, "Unsupported configuration element '%s' in strict mode", $1);
-            yyerror(msg);
-        }
         free((void *)$1);
     }
-    |   tokenSTRING unsupported_head
+    |   tokenSTRING generic_head generic_block
     {
-        if (strictParsing) {
-            char msg[128];
-            sprintf(msg, "Unsupported configuration element '%s' in strict mode", $1);
-            yyerror(msg);
-        }
+        free((void *)$1);
+    }
+    |   tokenSTRING generic_head
+    {
         free((void *)$1);
     }
     ;
 
-unsupported_head:   '(' unsupported_param_list ')'
+generic_head:   '(' generic_list ')'
+    | '(' ')'
     ;
 
-unsupported_param_list:  unsupported_param_list ',' unsupported_param
-    |   unsupported_param
+generic_list_block:   '{' generic_list '}'
     ;
 
-unsupported_param:  keyword
+generic_list:  generic_list ',' generic_element
+    |   generic_element
+    ;
+
+generic_element:  keyword
     |   tokenSTRING
     {
         free((void *)$1);
     }
     |   tokenINTEGER
+    |   tokenFLOAT
     ;
 
-unsupported_block:   '{' unsupported_block_elem_list '}'
+generic_block:   '{' generic_block_elem_list '}'
     ;
 
-unsupported_block_elem_list:  unsupported_block_elem_list unsupported_block_elem
-    |   unsupported_block_elem
+generic_block_elem_list:  generic_block_elem_list generic_block_elem
+    |   generic_block_elem
+    |   generic_list
     ;
 
-unsupported_block_elem: unsupported_block_elem_name unsupported_head unsupported_block
-    |   unsupported_block_elem_name unsupported_head
+generic_block_elem: generic_block_elem_name generic_head generic_block
+    |   generic_block_elem_name generic_head
     ;
 
-unsupported_block_elem_name:  keyword
+generic_block_elem_name:  keyword
     |   tokenSTRING
     {
         free((void *)$1);
@@ -186,40 +188,36 @@ inp_config: tokenINP '(' tokenSTRING ')'
 rule_config:    tokenRULE rule_head rule_body
     |   tokenRULE rule_head
 
-rule_head: rule_head_manditory rule_head_options
+rule_head: '(' rule_head_manditory ',' rule_log_option ')'
+    | '(' rule_head_manditory  ')'
+    ;
 
-rule_head_manditory:    '(' tokenINTEGER ',' tokenSTRING
+
+rule_head_manditory:    tokenINTEGER ',' tokenSTRING
     {
         asAccessRights  rights;
 
-        if((strcmp($4,"NONE")==0)) {
-            rights=asNOACCESS;
-        } else if((strcmp($4,"READ")==0)) {
-            rights=asREAD;
-        } else if((strcmp($4,"WRITE")==0)) {
-            rights=asWRITE;
-        } else {
-            yyerror("Access rights must be NONE, READ or WRITE");
-            rights = asNOACCESS;
+        if((strcmp($3,"NONE")==0)) {
+            yyAsgRule = asAsgAddRule(yyAsg,asNOACCESS,$1);
+        } else if((strcmp($3,"READ")==0)) {
+            yyAsgRule = asAsgAddRule(yyAsg,asREAD,$1);
+        } else if((strcmp($3,"WRITE")==0)) {
+            yyAsgRule = asAsgAddRule(yyAsg,asWRITE,$1);
         }
-        yyAsgRule = asAsgAddRule(yyAsg,rights,$2);
-        free((void *)$4);
+        free((void *)$3);
     }
     ;
 
-rule_head_options: ')'
-        |          rule_log_options
-
-rule_log_options:  ',' tokenSTRING ')'
+rule_log_option:  tokenSTRING
     {
-        if((strcmp($2,"TRAPWRITE")==0)) {
+        if((strcmp($1,"TRAPWRITE")==0)) {
             long status;
             status = asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE);
             if(status) yyerror("");
-        } else if((strcmp($2,"NOTRAPWRITE")!=0)) {
+        } else if((strcmp($1,"NOTRAPWRITE")!=0)) {
             yyerror("Log options must be TRAPWRITE or NOTRAPWRITE");
         }
-        free((void *)$2);
+        free((void *)$1);
     }
     ;
 
@@ -237,6 +235,11 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
         if (asAsgRuleCalc(yyAsgRule,$3))
             yyerror("");
         free((void *)$3);
+    }
+    | generic_block_elem
+    {
+        if (asAsgRuleDisable(yyAsgRule))
+            yyerror("");
     }
     ;
 

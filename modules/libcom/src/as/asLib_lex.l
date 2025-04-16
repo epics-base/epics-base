@@ -50,6 +50,11 @@ INP{link} {
         return(tokenINP);
 }
 
+{digit}*\.{digit}+([eE][-+]?{digit}+)? {
+    yylval.Float = atof((char *)yytext);
+    return(tokenFLOAT);
+}
+
 {digit}+ { /*integer*/
         yylval.Int = atoi((char *)yytext);
         return(tokenINTEGER);

@@ -66,6 +66,7 @@ static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask);
 static long asAsgRuleUagAdd(ASGRULE *pasgrule,const char *name);
 static long asAsgRuleHagAdd(ASGRULE *pasgrule,const char *name);
 static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc);
+static long asAsgRuleDisable(ASGRULE *pasgrule);
 
 /*
   asInitialize can be called while access security is already active.
@@ -586,7 +587,7 @@ int epicsStdCall asDumpFP(
         }
         while(pasgrule) {
             int print_end_brace;
-
+            if ( pasgrule->ignore) goto next_rule;
             fprintf(fp,"\tRULE(%d,%s,%s)",
                 pasgrule->level,asAccessName[pasgrule->access],
                 asTrapOption[pasgrule->trapMask]);
@@ -618,6 +619,7 @@ int epicsStdCall asDumpFP(
                     fprintf(fp," result=%s",(pasgrule->result==1 ? "TRUE" : "FALSE"));
                 fprintf(fp,"\n");
             }
+next_rule:
             if(print_end_brace) fprintf(fp,"\t}\n");
             pasgrule = (ASGRULE *)ellNext(&pasgrule->node);
         }
@@ -762,7 +764,7 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
         }
         while(pasgrule) {
             int print_end_brace;
-
+            if ( pasgrule->ignore) goto next_rule;
             fprintf(fp,"\tRULE(%d,%s,%s)",
                 pasgrule->level,asAccessName[pasgrule->access],
                 asTrapOption[pasgrule->trapMask]);
@@ -793,6 +795,7 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
                 fprintf(fp," result=%s",(pasgrule->result==1 ? "TRUE" : "FALSE"));
                 fprintf(fp,"\n");
             }
+next_rule:
             if(print_end_brace) fprintf(fp,"\t}\n");
             pasgrule = (ASGRULE *)ellNext(&pasgrule->node);
         }
@@ -948,6 +951,7 @@ static long asComputeAsgPvt(ASG *pasg)
     if(!asActive) return(S_asLib_asNotActive);
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
     while(pasgrule) {
+        if ( pasgrule->ignore) goto next_rule;
         double  result = pasgrule->result;  /* set for VAL */
         long    status;
 
@@ -960,6 +964,8 @@ static long asComputeAsgPvt(ASG *pasg)
                 pasgrule->result = ((result>.99) && (result<1.01)) ? 1 : 0;
             }
         }
+
+next_rule:
         pasgrule = (ASGRULE *)ellNext(&pasgrule->node);
     }
     pasg->inpChanged = FALSE;
@@ -995,6 +1001,7 @@ static long asComputePvt(ASCLIENTPVT asClientPvt)
     oldaccess=pasgclient->access;
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
     while(pasgrule) {
+        if (pasgrule->ignore) goto next_rule;
         if(access == asWRITE) break;
         if(access>=pasgrule->access) goto next_rule;
         if(pasgclient->level > pasgrule->level) goto next_rule;
@@ -1370,6 +1377,12 @@ static long asAsgRuleHagAdd(ASGRULE *pasgrule, const char *name)
     pasghag = asCalloc(1, sizeof(ASGHAG));
     pasghag->phag = phag;
     ellAdd(&pasgrule->hagList, &pasghag->node);
+    return 0;
+}
+
+static long asAsgRuleDisable(ASGRULE *pasgrule) {
+    if (!pasgrule) return 1;
+    pasgrule->ignore = 1;
     return 0;
 }
 

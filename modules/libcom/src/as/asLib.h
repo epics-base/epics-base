@@ -202,6 +202,7 @@ typedef struct{
     ELLLIST         uagList; /*List of ASGUAG*/
     ELLLIST         hagList; /*List of ASGHAG*/
     int             trapMask;
+    int             ignore; // 1 if rule to be ignored because of unknown elements
 } ASGRULE;
 typedef struct{
     ELLNODE         node;

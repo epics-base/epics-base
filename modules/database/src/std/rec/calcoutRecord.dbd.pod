@@ -111,10 +111,10 @@ parentheses and commas, and the question mark or '?:' operator.
 Standard double precision floating point numbers
 
 =item *
-Inf: Infinity
+C<Inf>: Infinity
 
 =item *
-Nan: Not a Number
+C<NaN>: Not a Number
 
 =back
 
@@ -123,14 +123,14 @@ Nan: Not a Number
 =over
 
 =item *
-PI: returns the mathematical constant E<pi>
+C<PI>: returns the mathematical constant E<pi>
 
 =item *
-D2R: evaluates to E<pi>/180 which, when used as a multiplier, converts an
+C<D2R>: evaluates to E<pi>/180 which, when used as a multiplier, converts an
 angle from degrees to radians
 
 =item *
-R2D: evaluates to 180/E<pi> which, when used as a multiplier, converts an
+C<R2D>: evaluates to 180/E<pi> which, when used as a multiplier, converts an
 angle from radians to degrees
 
 =back
@@ -158,69 +158,69 @@ I<not> be the result from the last time the expression was evaluated).
 =over 1
 
 =item *
-ABS: Absolute value (unary)
+C<ABS>: Absolute value (unary)
 
 =item *
-SQR: Square root (unary)
+C<SQR>: Square root (unary)
 
 =item *
-MIN: Minimum (any number of args)
+C<MIN>: Minimum (any number of args)
 
 =item *
-MAX: Maximum (any number of args)
+C<MAX>: Maximum (any number of args)
 
 =item *
-FINITE: returns non-zero if none of the arguments are NaN or Inf (any
+C<FINITE>: returns non-zero if none of the arguments are NaN or Inf (any
 number of args)
 
 =item *
-ISNAN: returns non-zero if any of the arguments is NaN or Inf (any number
+C<ISNAN>: returns non-zero if any of the arguments is NaN or Inf (any number
 of args)
 
 =item *
-CEIL: Ceiling (unary)
+C<CEIL>: Ceiling (unary)
 
 =item *
-FLOOR: Floor (unary)
+C<FLOOR>: Floor (unary)
 
 =item *
-FMOD: Floating point modulo (binary)  Added in 7.0.8
+C<FMOD>: Floating point modulo (binary)  **Added in 7.0.8**
 
 =item *
-LOG: Log base 10 (unary)
+C<LOG>: Log base 10 (unary)
 
 =item *
-LOGE: Natural log (unary)
+C<LOGE>: Natural log (unary)
 
 =item *
-LN: Natural log (unary)
+C<LN>: Natural log (unary)
 
 =item *
-EXP: Exponential function (unary)
+C<EXP>: Exponential function (unary)
 
 =item *
-^ : Exponential (binary)
+C<^> : Exponential (binary)
 
 =item *
-** : Exponential (binary)
+C<**> : Exponential (binary)
 
 =item *
-+ : Addition (binary)
+C<+> : Addition (binary)
 
 =item *
-- : Subtraction (binary)
+C<-> : Subtraction (binary)
 
 =item *
-* : Multiplication (binary)
+C<*> : Multiplication (binary)
 
 =item *
-/ : Division (binary)
+C</> : Division (binary)
 
 =item *
-% : Modulo (binary)
+C<%> : Modulo (binary)
 
 =item *
-NOT: Negate (unary)
+C<NOT>: Negate (unary)
 
 =back
 
@@ -229,31 +229,31 @@ NOT: Negate (unary)
 =over 1
 
 =item *
-SIN: Sine
+C<SIN>: Sine
 
 =item *
-SINH: Hyperbolic sine
+C<SINH>: Hyperbolic sine
 
 =item *
-ASIN: Arc sine
+C<ASIN>: Arc sine
 
 =item *
-COS: Cosine
+C<COS>: Cosine
 
 =item *
-COSH: Hyperbolic cosine
+C<COSH>: Hyperbolic cosine
 
 =item *
-ACOS: Arc cosine
+C<ACOS>: Arc cosine
 
 =item *
-TAN: Tangent
+C<TAN>: Tangent
 
 =item *
-TANH: Hyperbolic tangent
+C<TANH>: Hyperbolic tangent
 
 =item *
-ATAN: Arc tangent
+C<ATAN>: Arc tangent
 
 =back
 
@@ -286,13 +286,13 @@ C<<< = >>> : Equal to
 =over 1
 
 =item *
-&& : And
+C< && >: And
 
 =item *
-|| : Or
+C<||> : Or
 
 =item *
-! : Not
+C<!> : Not
 
 =back
 
@@ -307,13 +307,13 @@ C<|> : Bitwise Or
 C<&> : Bitwise And
 
 =item *
-OR : Bitwise Or
+C<OR> : Bitwise Or
 
 =item *
-AND : Bitwise And
+C<AND> : Bitwise And
 
 =item *
-XOR : Bitwise Exclusive Or
+C<XOR> : Bitwise Exclusive Or
 
 =item *
 C<~> : One's Complement
@@ -399,18 +399,18 @@ Result is C<F + L + 10> if C<<< (A + B) >= (C + D) >>>
 Prior to Base 3.14.9 it was legal to omit the : and the second (else) part
 of the conditional, like this:
 
-C<(A + B)<(C + D) ? E>
+C<<< (A + B)<(C + D) ? E >>>
 
 =over 1
 
-=item
-Result is E if (A + B)<(C + D)
+=item *
+Result is E if C<<< (A + B)<(C + D) >>>
 
-=item
-Result is unchanged if (A + B)>=(C + D)
+=item *
+Result is unchanged if C<<< (A + B)>=(C + D) >>>
 
 From 3.14.9 onwards, this expression must be written as
-C<(A + B) < (C + D) ? E : VAL>
+C<<< (A + B) < (C + D) ? E : VAL >>>
 
 =back
 
@@ -432,7 +432,7 @@ Convert A to integer
 Convert B to integer
 
 =item *
-Bitwise And A and B
+Bitwise A C<and> B
 
 =item *
 Convert result to floating point
@@ -1209,26 +1209,31 @@ The C<process()> routine implements the following algorithm:
 =over
 
 =item 1.
+
 Fetch all arguments.
 
 =item 2.
+
 Call routine C<calcPerform()>, which calculates VAL from the prefix version
 of the expression given in CALC. If C<calcPerform()> returns success, UDF
 is set to FALSE.
 
 =item 3.
+
 Check alarms. This routine checks to see if the new VAL causes the alarm
 status and severity to change. If so, NSEV, NSTA and LALM are set. If also
 honors the alarm hysteresis factor (HYST). Thus the value must change by at
 least HYST before the alarm status and severity changes.
 
 =item 4.
+
 Determine if the Output Execution Option (OOPT) is met. If met, either
 execute the output link (and output event) immediately (if ODLY = 0), or
 schedule a callback after the specified interval. See the explanation for
 the C<execOutput()> routine below.
 
 =item 5.
+
 Check to see if monitors should be invoked.
 
 =over
@@ -1249,6 +1254,7 @@ NSEV and NSTA are reset to 0
 =back
 
 =item 6.
+
 If no output delay was specified, scan forward link if necessary, set PACT
 FALSE, and return.
 
@@ -1259,19 +1265,23 @@ FALSE, and return.
 =over
 
 =item 1.
+
 If DOPT field specifies the use of OCAL, call the routine C<calcPerform()>
 for the postfix version of the expression in OCAL. Otherwise, use VAL.
 
 =item 2.
+
 If the Alarm Severity is INVALID, follow the option as designated by the
 field IVOA.
 
 =item 3.
+
 The Alarm Severity is not INVALID or IVOA specifies "Continue Normally",
 put the value of OVAL to the OUT link and post the event in OEVT (if
 non-zero).
 
 =item 4.
+
 If an output delay was implemented, process the forward link.
 
 =back

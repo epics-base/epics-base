@@ -67,23 +67,29 @@ converted into engineering units and placed in the VAL field as follows:
 =over
 
 =item 1.
+
 RVAL is converted to a double and ROFF is added to it.
 
 =item 2.
+
 If ASLO is non-zero the value is multiplied by ASLO.
 
 =item 3.
+
 AOFF is added.
 
 =item 4.
+
 If LINR is C<NO CONVERSION> the units conversion is finished after the above
 steps.
 
 =item 5.
+
 If LINR is C<LINEAR> or C<SLOPE>, the value from step 3 above is multiplied by
 ESLO and EOFF is added to complete the units conversion process.
 
 =item 6.
+
 Any other value for LINR selects a particular breakpoint table to be used on the
 value from step 3 above.
 

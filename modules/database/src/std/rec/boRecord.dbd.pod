@@ -418,18 +418,18 @@ Checks if string matches ZNAM or ONAM, and if it does, sets VAL.
 
 Routine process implements the following algorithm:
 
-=over 1
+=over
 
 =item 1.
+
 Check to see that the appropriate device support module exists. If it
 doesn't, an error message is issued and processing is terminated with
 the PACT field still set to TRUE. This ensures that processes will no
 longer be called for this record. Thus error storms will not occur.
 
 =item 2.
-If PACT is FALSE
 
-=back
+If PACT is FALSE
 
 =over
 
@@ -464,29 +464,30 @@ else set RVAL = MASK
 
 =back
 
-=over
-
 =item 3.
+
 Check alarms: This routine checks to see if the new VAL causes the alarm
 status and severity to change. If so, NSEV, NSTA, and LALM are set.
 
 =item 4.
+
 Check severity and write the new value. See L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>
 for more information on how INVALID alarms affect output.
 
 =item 5.
+
 If PACT has been changed to TRUE, the device support write output routine
 has started but has not completed writing the new value. in this case, the
 processing routine merely returns, leaving PACT TRUE.
 
 =item 6.
+
 Check WAIT. If VAL is 1 and WAIT is greater than 0, process again with a
 VAL=0 after WAIT seconds.
 
 =item 7.
-Check to see if monitors should be invoked.
 
-=back
+Check to see if monitors should be invoked.
 
 =over 1
 
@@ -505,9 +506,8 @@ NSEV and NSTA are reset to 0.
 
 =back
 
-=over
-
 =item 8
+
 Scan forward link if necessary, set PACT FALSE, and return
 
 =back

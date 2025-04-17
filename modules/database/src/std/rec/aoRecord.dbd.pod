@@ -689,13 +689,17 @@ Routine process implements the following algorithm:
 
 =over
 
-=item 1. Check to see that the appropriate device support module
+=item 1. 
+
+Check to see that the appropriate device support module
 exists. If it doesn't, an error message is issued and processing is
 terminated with the PACT field set to TRUE. This ensures that processes
 will no longer be called for this record. Thus error storms will not
 occur.
 
-=item 2. Check PACT: If PACT is FALSE call fetch_values and convert
+=item 2. 
+
+Check PACT: If PACT is FALSE call fetch_values and convert
 which perform the following steps:
 
 =over
@@ -742,20 +746,28 @@ calculated in, using the formula RVAL = (RVAL -AOFF) / ASLO - ROFF.
 
 =back
 
-=item 3. Check alarms: This routine checks to see if the new VAL causes
+=item 3. 
+
+Check alarms: This routine checks to see if the new VAL causes
 the alarm status and severity to change. If so, NSEV, NSTA and y are
 set. It also honors the alarm hysteresis factor (HYST). Thus the value
 must change by at least HYST before the alarm status and severity is
 reduced.
 
-=item 4. Check severity and write the new value. See Invalid Alarm
+=item 4. 
+
+Check severity and write the new value. See Invalid Alarm
 Output Action for details on how invalid alarms affect output records.
 
-=item 5. If PACT has been changed to TRUE, the device support write
+=item 5. 
+
+If PACT has been changed to TRUE, the device support write
 output routine has started but has not completed writing the new value.
 In this case, the processing routine merely returns, leaving PACT TRUE.
 
-=item 6. Check to see if monitors should be invoked:
+=item 6. 
+
+Check to see if monitors should be invoked:
 
 =over
 
@@ -772,7 +784,9 @@ monitors are invoked.
 
 =back
 
-=item 7. Scan forward link if necessary, set PACT and INIT FALSE, and
+=item 7. 
+
+Scan forward link if necessary, set PACT and INIT FALSE, and
 return.
 
 =back

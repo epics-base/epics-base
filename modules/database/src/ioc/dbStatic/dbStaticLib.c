@@ -3456,7 +3456,7 @@ void  dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
                     " - get_ioint_info()"
                 };
                 int i, n = pdevSup->pdset->number;
-                DEVSUPFUN *pfunc = (DEVSUPFUN*) &pdevSup->pdset->report;
+                long (**pfunc)(int) = &pdevSup->pdset->report;
 
                 printf("\t    number: %d\n", n);
                 for (i = 0; i < n; ++i, ++pfunc) {

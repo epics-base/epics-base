@@ -25,9 +25,14 @@ DOCS += ca-cli.md
 OLD_NOTES = $(wildcard ../RELEASE-*.md)
 DOCS += $(OLD_NOTES:../%=%)
 
-DOCS += RELEASE_NOTES.md
+ifneq ($(EPICS_DEV_SNAPSHOT),)
+    DOCS += RELEASE_NOTES.md
+else
+    NOTES_DOC = ../RELEASE-$(EPICS_SHORT_VERSION).md
+endif
+
 NEW_DIR = ../new-notes
-NEW_NOTES = $(wildcard $(NEW_DIR)/*)
+NEW_NOTES = $(wildcard $(NEW_DIR)/*.md)
 
 include $(TOP)/configure/RULES
 
@@ -37,6 +42,14 @@ $(COMMON_DIR)/RELEASE_NOTES.md: $(NEW_NOTES) $(MAKENOTES)
 	$(PERL) $(MAKENOTES) -o $@ -D -V $(EPICS_SHORT_VERSION) \
 	    -d $(abspath $(NEW_DIR))
 
+ifdef NOTES_DOC
+$(NOTES_DOC): $(NEW_NOTES) $(MAKENOTES)
+	@$(RM) $@
+	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) \
+	    -d $(abspath $(NEW_DIR))
+	@echo git add $@
+	@echo git rm $(NEW_NOTES)
+endif
 
 $(HEADER_MD_FILES): %_h.md: ../HEADER_h.md
 	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -DHEADER=$* $< $@
@@ -49,9 +62,11 @@ $(API_RST_FILES): %-api.rst: ../%-API.rst
 	    echo "   $h_h.rst" >> $@;)
 
 ifndef T_A
-doxygen rtd sphinx: inc
+release doxygen rtd sphinx: inc
 	$(MAKE) -C O.$(EPICS_HOST_ARCH) $@
 else
+
+release: $(NOTES_DOC)
 
 doxygen: Doxyfile
 	@$(MKDIR) $(RTD_SRC)

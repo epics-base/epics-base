@@ -25,7 +25,7 @@ sub HELP_MESSAGE {
 }
 
 HELP_MESSAGE()
-    if !getopts('hd:o:D:V:') || $opt_h || @ARGV > 0;
+    if !getopts('hd:o:DV:') || $opt_h || @ARGV > 0;
 
 die "$tool: Directory from '-d' option doesn't exist\n"
     unless -d $opt_d;
@@ -38,6 +38,9 @@ $SIG{__DIE__} = sub {
     close $out;
     unlink $opt_o;
 };
+
+my $REL_VERS = $opt_V;
+$REL_VERS .= '-DEV' if $opt_D;
 
 # Directory handle for scanning the new-notes directory
 opendir my $dh, $opt_d or
@@ -74,7 +77,7 @@ in future releases.
 
 __REL_INTRO__
 
-print $out "## EPICS Release $opt_V\n\n";
+print $out "## EPICS Release $REL_VERS\n\n";
 
 print $out <<__NEW_INTRO__ if $opt_D;
 __This version of EPICS has not been released yet.__

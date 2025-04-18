@@ -34,8 +34,9 @@ include $(TOP)/configure/RULES
 MAKENOTES = ../make-notes.pl
 $(COMMON_DIR)/RELEASE_NOTES.md: $(NEW_NOTES) $(MAKENOTES)
 	@$(RM) $@
-	$(PERL) $(MAKENOTES) -o $@ $(EPICS_DEV_SNAPSHOT) \
-	    -V $(EPICS_SHORT_VERSION) -d $(abspath $(NEW_DIR))
+	$(PERL) $(MAKENOTES) -o $@ -D -V $(EPICS_SHORT_VERSION) \
+	    -d $(abspath $(NEW_DIR))
+
 
 $(HEADER_MD_FILES): %_h.md: ../HEADER_h.md
 	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -DHEADER=$* $< $@

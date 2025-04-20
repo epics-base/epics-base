@@ -23,14 +23,30 @@ static char *asUser,
 static int asAsl;
 
 /**
- * Test data with Host Access Groups (HAG)
+ * @brief Test data with Host Access Groups (HAG)
+ *
+ * This includes a host access group (HAG) for localhost and a default Access Security Group (ASG)
+ * with rules for read and write access to the HAG.
  */
 static const char hostname_config[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        "ASG(rw) {RULE(1, WRITE) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n"
+
+    "ASG(rw) {\n"
+    "\tRULE(1, WRITE) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Test data with unsupported elements.
@@ -40,11 +56,20 @@ static const char hostname_config[] = ""
  * - valid top level keyword with well-formed arg list
  */
 static const char supported_config_1[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC(WELL,FORMED,ARG,LIST)\n"
-        "ASG(ro) {RULE(0, NONE) RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "GENERIC(WELL, FORMED, ARG, LIST)\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Test data with unsupported elements.
@@ -54,11 +79,22 @@ static const char supported_config_1[] = ""
  * - valid top level keyword with well-formed arg list and valid arg list body
  */
 static const char supported_config_2[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "SIMPLE(WELL,FORMED,ARG,LIST) {WELL,FORMED,LIST}\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "SIMPLE(WELL, FORMED, ARG, LIST) {\n"
+    "\tWELL, FORMED, LIST\n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Test data with unsupported elements.
@@ -69,11 +105,22 @@ static const char supported_config_2[] = ""
  * - includes quoted strings, integers, and floating point numbers
  */
 static const char supported_config_3[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "COMPLEX_ARGUMENTS ( 1, WELL , \"FORMED\" , ARG , LIST ) { ALSO_GENERIC ( WELL , FORMED , ARG , LIST, 2.0 ) }\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "COMPLEX_ARGUMENTS(1, WELL, \"FORMED\", ARG, LIST) {\n"
+    "\tALSO_GENERIC(WELL, FORMED, ARG, LIST, 2.0) \n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Test data with unsupported elements.
@@ -84,11 +131,27 @@ static const char supported_config_3[] = ""
  * - includes floating point numbers, and an empty arg list
  */
 static const char supported_config_4[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "SUB_BLOCKS ( 1.0, ARGS ) { ALSO_GENERIC () { AND_BODY } }\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+"HAG(foo) {localhost}\n"
+
+"SUB_BLOCKS(1.0, ARGS) {\n"
+"\tALSO_GENERIC() {\n"
+"\t\tAND_LIST_BODY\n"
+"\t}\n"
+"\tANOTHER_GENERIC() {\n"
+"\t\tBIGGER, LIST, BODY\n"
+"\t}\n"
+"}\n"
+
+"ASG(DEFAULT) {\n"
+"\tRULE(0, NONE)\n"
+"}\n"
+
+"ASG(ro) {\n"
+"\tRULE(0, NONE)\n"
+"\tRULE(1, READ) {\n"
+"\t\tHAG(foo)\n"
+"\t}\n"
+"}\n";
 
 /**
  * Test data with unsupported elements.
@@ -99,11 +162,26 @@ static const char supported_config_4[] = ""
  * - includes floating point numbers, and an empty arg list
  */
 static const char supported_config_5[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "RECURSIVE_SUB_BLOCKS ( 1.0, ARGS ) { ALSO_GENERIC () { AND_RECURSIVE( FOO) { LIST, LIST} } }\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "RECURSIVE_SUB_BLOCKS(1.0, ARGS) {\n"
+    "\tALSO_GENERIC() {\n"
+    "\t\tAND_RECURSIVE(FOO) {\n"
+    "\t\t\tLIST, BODY\n"
+    "\t\t}\n"
+    "\t}\n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Test data with unsupported elements.
@@ -113,11 +191,25 @@ static const char supported_config_5[] = ""
  * - valid top level keyword with keyword for args, recursive body name, and arg list
  */
 static const char supported_config_6[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "WITH_KEYWORDS ( UAG, RULE ) { ASG ( HAL, IMP, CALC ) }\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "WITH_KEYWORDS(UAG, RULE) {\n"
+    "\tASG(HAL, IMP, CALC)\n"
+    "\tHAL(USG, MAL) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Test data with unsupported elements.
@@ -127,20 +219,41 @@ static const char supported_config_6[] = ""
  * - RULE contains unsupported elements
  */
 static const char supported_config_7[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro) {RULE(0, NONE) RULE(1, READ) {HAG(foo) METHOD(\"x509\") AUTHORITY(\"EPICS Certificate Authority\")}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t\tBAD_PREDICATE(\"x509\")\n"
+    "\t\tBAD_PREDICATE_AS_WELL(\"EPICS Certificate Authority\")\n"
+    "\t}\n"
+    "}\n";
 
 /**
- * The modification to a well known element should cause an error.
+ * Test data with unsupported elements.
+ * The unsupported elements should be silently ignored, and the rule will not match,
+ * but the rest of the config is processed.
  *
  * - unexpected permission name in arg list for RULE element ignored
  */
 static const char supported_config_8[] = ""
         "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro) {RULE(0, NONE) RULE(1, RPC) {HAG(foo)}}\n"
+
+        "ASG(DEFAULT) {\n"
+        "\tRULE(0, NONE)\n"
+        "}\n"
+
+        "ASG(ro) {\n"
+        "\tRULE(0, NONE)\n"
+        "\tRULE(1, ADDITIONAL_PERMISSION) {\n"
+        "\t\tHAG(foo)\n"
+        "\t}\n"
+        "}\n"
         ;
 
 /**
@@ -151,11 +264,20 @@ static const char supported_config_8[] = ""
  * - invalid arg list missing commas
  */
 static const char unsupported_config_1[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC(not well-formed arg list)\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "GENERIC(not well-formed arg list)\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Test data with unsupported elements.
@@ -165,11 +287,22 @@ static const char unsupported_config_1[] = ""
  * - invalid string list
  */
 static const char unsupported_config_2[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC(WELL,FORMED,ARG,LIST) {not well-formed body}\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "GENERIC(WELL, FORMED, ARG, LIST) {\n"
+    "\tNOT WELL-FORMED BODY\n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Test data with unsupported elements.
@@ -179,11 +312,22 @@ static const char unsupported_config_2[] = ""
  * - missing parameters (must have at least an empty arg list)
  */
 static const char unsupported_config_3[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC {WELL,FORMED,BODY}\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "GENERIC {\n"
+    "\tWELL, FORMED, LIST, BODY\n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Test data with unsupported elements.
@@ -193,11 +337,48 @@ static const char unsupported_config_3[] = ""
  * - bad arg list for recursive body
  */
 static const char unsupported_config_4[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "GENERIC(WELL,FORMED,ARG,LIST) { GOOD, BODY(bad arg list) }\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "GENERIC(WELL, FORMED, ARG, LIST) {\n"
+    "\tBODY(BAD ARG LIST)\n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
+
+/**
+ * Test data with unsupported elements.
+ * The unsupported element should cause an error as the format is invalid.
+ *
+ * top-unknown-keyword(WELL,FORMED,LIST) { X, Y(a b c) }
+ * - mix of list and recursive type bodies
+ */
+static const char unsupported_config_5[] = ""
+    "HAG(foo) {localhost}\n"
+
+    "GENERIC(WELL, FORMED, ARG, LIST) {\n"
+    "\tLIST, BODY, MIXED, WITH,\n"
+    "\tRECURSIVE_BODY(ARG, LIST)\n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * The modification to a well known element should cause an error.
@@ -205,10 +386,18 @@ static const char unsupported_config_4[] = ""
  * - bad arg list for ASG element
  */
 static const char unsupported_mod_1[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro BAD ARG LIST) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro BAD ARG LIST) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * The modification to a well known element should cause an error.
@@ -216,10 +405,18 @@ static const char unsupported_mod_1[] = ""
  * - bad arg list for HAG element
  */
 static const char unsupported_mod_2[] = ""
-        "HAG(foo BAD ARG LIST) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro) {RULE(0, NONE)RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(BAD ARG LIST) {localhost}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * The modification to a well known element should cause an error.
@@ -227,10 +424,18 @@ static const char unsupported_mod_2[] = ""
  * - bad arg list for RULE element
  */
 static const char unsupported_mod_3[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro) {RULE(0 BAD ARG LIST) RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0 BAD ARG LIST)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * The modification to a well known element should cause an error.
@@ -238,10 +443,18 @@ static const char unsupported_mod_3[] = ""
  * - bad arg count for ASG element
  */
 static const char unsupported_mod_4[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro, foo) {RULE(0, NONE) RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro, UNKNOWN_PERMISSION) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * The modification to a well known element should cause an error.
@@ -249,32 +462,62 @@ static const char unsupported_mod_4[] = ""
  * - unexpected name in arg list for RULE element
  */
 static const char unsupported_mod_5[] = ""
-        "HAG(foo) {localhost}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro) {RULE(0, NONE, foo) RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {localhost}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE, UNKNOWN_FLAG)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * The modification to a well known element should cause an error.
  *
- * - unexpected recursive body in HAG element body
+ * - unexpected recursive body mixed in with HAG string list body
  */
 static const char unsupported_mod_6[] = ""
-        "HAG(foo) {localhost, NETWORK(\"127.0.0.1\")}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro) {RULE(0, NONE) RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "HAG(foo) {\n"
+    "\tlocalhost,\n"
+    "\tNETWORK(\"127.0.0.1\")\n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * The modification to a well known element should cause an error.
  *
- * - unexpected recursive body in UAG element body
+ * - unexpected recursive body mixed in with UAG string list body
  */
 static const char unsupported_mod_7[] = ""
-        "UAG(foo) {alice, GROUP(admin)}\n"
-        "ASG(DEFAULT) {RULE(0, NONE)}\n"
-        "ASG(ro) {RULE(0, NONE) RULE(1, READ) {HAG(foo)}}\n"
-        ;
+    "UAG(foo) {\n"
+    "\talice,\n"
+    "\tGROUP(admin)\n"
+    "}\n"
+
+    "ASG(DEFAULT) {\n"
+    "\tRULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "\tRULE(0, NONE)\n"
+    "\tRULE(1, READ) {\n"
+    "\t\tHAG(foo)\n"
+    "\t}\n"
+    "}\n";
 
 /**
  * Set the username for the authorization tests
@@ -333,6 +576,7 @@ static void testSyntaxErrors(void)
     long ret;
 
     testDiag("testSyntaxErrors()");
+    asCheckClientIP = 0;
 
     eltc(0);
     ret = asInitMem(empty, NULL);
@@ -409,6 +653,7 @@ static void testFutureProofParser(void)
     long ret;
 
     testDiag("testFutureProofParser()");
+    asCheckClientIP = 0;
 
     eltc(0);  /* Suppress error messages during test */
 
@@ -424,6 +669,9 @@ static void testFutureProofParser(void)
 
     ret = asInitMem(unsupported_config_4, NULL);
     testOk(ret==S_asLib_badConfig, "parsing rejects bad arg list for recursive body -> %s", errSymMsg(ret));
+
+    ret = asInitMem(unsupported_config_5, NULL);
+    testOk(ret==S_asLib_badConfig, "parsing rejects mix of list and recursive type bodies -> %s", errSymMsg(ret));
 
 
     /* Test supported elements badly modified should be rejected */
@@ -522,7 +770,7 @@ static void testFutureProofParser(void)
 
 MAIN(aslibtest)
 {
-    testPlan(62);
+    testPlan(63);
     testSyntaxErrors();
     testFutureProofParser();
     testHostNames();

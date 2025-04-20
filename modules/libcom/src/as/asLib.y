@@ -14,7 +14,6 @@ static int yy_start;
 static int yyFailed = FALSE;
 static int yyWarned = FALSE;
 static int line_num=1;
-int strictParsing = TRUE;
 static UAG *yyUag=NULL;
 static HAG *yyHag=NULL;
 static ASG *yyAsg=NULL;
@@ -35,6 +34,10 @@ static ASGRULE *yyAsgRule=NULL;
     double Float;
     char *Str;
 }
+
+%type <Str> generic_block_elem_name
+%type <Str> generic_block_elem
+%type <Str> keyword
 
 %%
 
@@ -60,17 +63,17 @@ keyword: tokenUAG
 
 generic_item: tokenSTRING generic_head generic_list_block
     {
-        yywarn("Ignoring unsupported top level ACF element", $1);
+        yywarn("Ignoring unsupported TOP LEVEL Access Control Definition", $1);
         free((void *)$1);
     }
     |   tokenSTRING generic_head generic_block
     {
-        yywarn("Ignoring unsupported top level ACF element", $1);
+        yywarn("Ignoring unsupported TOP LEVEL Access Control Definition", $1);
         free((void *)$1);
     }
     |   tokenSTRING generic_head
     {
-        yywarn("Ignoring unsupported top level ACF element", $1);
+        yywarn("Ignoring unsupported TOP LEVEL Access Control Definition", $1);
         free((void *)$1);
     }
     ;
@@ -99,18 +102,34 @@ generic_block:   '{' generic_block_elem_list '}'
     ;
 
 generic_block_elem_list:  generic_block_elem_list generic_block_elem
+    {
+        free((void *)$2);
+    }
     |   generic_block_elem
+    {
+        free((void *)$1);
+    }
     |   generic_list
     ;
 
 generic_block_elem: generic_block_elem_name generic_head generic_block
+    {
+        $$ = $1;
+    }
     |   generic_block_elem_name generic_head
+    {
+        $$ = $1;
+    }
     ;
 
 generic_block_elem_name:  keyword
+    {
+        $$ = strdup($1);
+        if (!$$) yyerror("Out of memory");
+    }
     |   tokenSTRING
     {
-        free((void *)$1);
+        $$ = $1;
     }
     ;
 
@@ -199,8 +218,6 @@ rule_head: '(' rule_head_manditory ',' rule_log_option ')'
 
 rule_head_manditory:    tokenINTEGER ',' tokenSTRING
     {
-        asAccessRights  rights;
-
         if((strcmp($3,"NONE")==0)) {
             yyAsgRule = asAsgAddRule(yyAsg,asNOACCESS,$1);
         } else if((strcmp($3,"READ")==0)) {
@@ -208,7 +225,7 @@ rule_head_manditory:    tokenINTEGER ',' tokenSTRING
         } else if((strcmp($3,"WRITE")==0)) {
             yyAsgRule = asAsgAddRule(yyAsg,asWRITE,$1);
         } else {
-            yywarn("Ignoring RULE with unsupported RULE PERMISSION", $3);
+            yywarn("Ignoring RULE with unsupported PERMISSION", $3);
         }
         free((void *)$3);
     }
@@ -244,7 +261,8 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
     }
     | generic_block_elem
     {
-        yywarn("Ignoring RULE containing unsupported RULE CONDITION", "?");
+        yywarn("Ignoring RULE containing unsupported PREDICATE", $1);
+        free((void *)$1);
         if (asAsgRuleDisable(yyAsgRule))
             yyerror("");
     }
@@ -289,7 +307,7 @@ static int yyerror(char *str)
 static int yywarn(char *str, char *token)
 {
     if (!yyWarned && strlen(str) && strlen(token))
-        errlogPrintf("%s: %s at line %d\n", token, str, line_num);
+        errlogPrintf("%s at line %d: %s\n", str, line_num, token);
     yyWarned = TRUE;
     return 0;
 }
@@ -299,8 +317,6 @@ static int myParse(ASINPUTFUNCPTR inputfunction)
     int         rtnval;
 
     my_yyinput = &inputfunction;
-    strictParsing = TRUE;
-
     if (!FirstFlag) {
         line_num=1;
         yyFailed = FALSE;

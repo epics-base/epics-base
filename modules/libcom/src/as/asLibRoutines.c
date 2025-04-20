@@ -545,7 +545,6 @@ int epicsStdCall asDumpFP(
         puag = (UAG *)ellNext(&puag->node);
     }
     phag = (HAG *)ellFirst(&pasbase->hagList);
-    if(!phag) fprintf(fp,"No HAGs\n");
     while(phag) {
         fprintf(fp,"HAG(%s)",phag->name);
         phagname = (HAGNAME *)ellFirst(&phag->list);
@@ -586,8 +585,8 @@ int epicsStdCall asDumpFP(
             pasginp = (ASGINP *)ellNext(&pasginp->node);
         }
         while(pasgrule) {
-            int print_end_brace;
-            if ( pasgrule->ignore) goto next_rule;
+            int print_rule_end_brace = FALSE;
+            if (pasgrule->ignore) goto next_rule;
             fprintf(fp,"\tRULE(%d,%s,%s)",
                 pasgrule->level,asAccessName[pasgrule->access],
                 asTrapOption[pasgrule->trapMask]);
@@ -595,10 +594,10 @@ int epicsStdCall asDumpFP(
             pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
             if(pasguag || pasghag || pasgrule->calc) {
                 fprintf(fp," {\n");
-                print_end_brace = TRUE;
+                print_rule_end_brace = TRUE;
             } else {
                 fprintf(fp,"\n");
-                print_end_brace = FALSE;
+                print_rule_end_brace = FALSE;
             }
             if(pasguag) fprintf(fp,"\t\tUAG(");
             while(pasguag) {
@@ -606,7 +605,6 @@ int epicsStdCall asDumpFP(
                 pasguag = (ASGUAG *)ellNext(&pasguag->node);
                 if(pasguag) fprintf(fp,","); else fprintf(fp,")\n");
             }
-            pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
             if(pasghag) fprintf(fp,"\t\tHAG(");
             while(pasghag) {
                 fprintf(fp,"%s",pasghag->phag->name);
@@ -620,7 +618,7 @@ int epicsStdCall asDumpFP(
                 fprintf(fp,"\n");
             }
 next_rule:
-            if(print_end_brace) fprintf(fp,"\t}\n");
+            if(print_rule_end_brace) fprintf(fp,"\t}\n");
             pasgrule = (ASGRULE *)ellNext(&pasgrule->node);
         }
         pasgmember = (ASGMEMBER *)ellFirst(&pasg->memberList);
@@ -1380,12 +1378,6 @@ static long asAsgRuleHagAdd(ASGRULE *pasgrule, const char *name)
     return 0;
 }
 
-static long asAsgRuleDisable(ASGRULE *pasgrule) {
-    if (!pasgrule) return 1;
-    pasgrule->ignore = 1;
-    return 0;
-}
-
 static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc)
 {
     short err;
@@ -1420,4 +1412,15 @@ static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc)
                      calc);
     }
     return(status);
+}
+
+/**
+ * @brief Disable a rule if it contains unsupported elements
+ * @param pasgrule the rule to disable
+ * @return Non-zero if rule was not disabled
+ */
+static long asAsgRuleDisable(ASGRULE *pasgrule) {
+    if (!pasgrule) return 1;
+    pasgrule->ignore = 1;
+    return 0;
 }

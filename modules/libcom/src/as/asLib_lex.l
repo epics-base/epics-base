@@ -25,8 +25,6 @@ static ASINPUTFUNCPTR *my_yyinput;
 #undef YY_INPUT
 #define YY_INPUT(b,r,ms) (r=(*my_yyinput)((char *)b,ms))
 
-extern int strictParsing;
-
 static int yyreset(void)
 {
         line_num=1;
@@ -79,7 +77,6 @@ INP{link} {
 
 {newline}       { line_num++; }
 
-{comment}"pragma"{whitespace}+"disable-strict-parsing" { strictParsing = FALSE; }
 {comment}.*     ;
 {whitespace}    ;
 

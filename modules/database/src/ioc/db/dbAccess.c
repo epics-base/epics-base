@@ -1095,7 +1095,7 @@ static long dbPutFieldLink(DBADDR *paddr,
         return S_db_badDbrtype;
     }
 
-    status = dbParseLink(pstring, pfldDes->field_type, &link_info, precord->name);
+    status = dbParseLink(pstring, pfldDes->field_type, &link_info, precord->name, pfldDes->name);
     if (status)
         return status;
 

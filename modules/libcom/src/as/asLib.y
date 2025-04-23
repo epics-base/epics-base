@@ -211,12 +211,12 @@ inp_config: tokenINP '(' tokenSTRING ')'
 rule_config:    tokenRULE rule_head rule_body
     |   tokenRULE rule_head
 
-rule_head: '(' rule_head_manditory ',' rule_log_option ')'
-    | '(' rule_head_manditory  ')'
+rule_head: '(' rule_head_mandatory ',' rule_log_option ')'
+    | '(' rule_head_mandatory  ')'
     ;
 
 
-rule_head_manditory:    tokenINTEGER ',' tokenSTRING
+rule_head_mandatory:    tokenINTEGER ',' tokenSTRING
     {
         if((strcmp($3,"NONE")==0)) {
             yyAsgRule = asAsgAddRule(yyAsg,asNOACCESS,$1);

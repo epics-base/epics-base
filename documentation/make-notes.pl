@@ -14,21 +14,25 @@ use warnings;
 
 use File::Basename;
 use Getopt::Std;
+use version;
 
 my $tool = basename($0);
 
 our ($opt_d, $opt_h, $opt_o, $opt_D, $opt_V);
 
 sub HELP_MESSAGE {
-    print STDERR "Usage: $tool -d new-notes -o outfile.md -D -V 7.0.10\n";
+    print STDERR "Usage: $tool -d new-notes -o outfile.md -D " .
+        "-V 7.0.10 RELEASE-7.0.9.md ...\n";
     exit 2;
 }
 
 HELP_MESSAGE()
-    if !getopts('hd:o:DV:') || $opt_h || @ARGV > 0;
+    if !getopts('hd:o:DV:') || $opt_h || (!$opt_D && @ARGV > 0);
 
 die "$tool: Directory from '-d' option doesn't exist\n"
     unless -d $opt_d;
+die "$tool: Output filename is '$opt_o' but must end with '.md'"
+    unless $opt_o =~ m/\.md$/;
 
 open my $out, '>:encoding(UTF-8)', $opt_o or
     die "$tool: Can't create $opt_o: $!\n";
@@ -61,34 +65,51 @@ foreach my $fn ( sort grep !/^\.\.?$/, readdir $dh ) {
 }
 close $dh;
 
-print $out <<__REL_INTRO__;
+sub relVers {
+    $_ = shift;
+    m/RELEASE-([0-9.]+)\.md/;
+    return $1;
+}
+
+# Reverse sort of the RELEASE-<version>.md filenames
+my @OLD_RELS = sort {
+    version->parse(relVers($b)) <=> version->parse(relVers($a));
+} @ARGV;
+
+print $out <<"__REL_INTRO__";
 # Release Notes
 
-This document describes the changes that have been made in this release of
+This document describes changes that have been included in this release of
 EPICS.
-Notes from earlier EPICS releases are now provided in a separate document for
-each version in the EPICS 7 series to date.
+Notes from earlier EPICS releases are now provided in separate documents for
+each version in the EPICS 7 series to date, linked below.
 Release documents are also included for the older Base 3.15 and 3.16 series.
 
-The external PVA submodules continue to have their own release notes files as
-before, but the entries describing changes in those submodules have been copied
-into the appropriate EPICS release files since version 7.0.5 and will be added
-in future releases.
+The external PVA submodules continue to maintain their own release notes files
+as before, but older entries describing changes in those submodules since
+version 7.0.5 have been copied into the appropriate release notes files linked
+below, and will be added to new EPICS Release Notes published in the future.
 
 __REL_INTRO__
 
-print $out "## EPICS Release $REL_VERS\n\n";
+print $out <<"__NEW_INTRO__" if $opt_D && scalar @notes;
 
-print $out <<__NEW_INTRO__ if $opt_D;
+## EPICS Release $REL_VERS
+
 __This version of EPICS has not been released yet.__
-__The version number shown above may be different to the version number
-that these changes eventually get released under.__
+__When the changes described below get released, the version number used may be
+different to the one given above.__
 
-## Changes merged since the last release
+The changes below have been merged into EPICS since the last published release.
 
 __NEW_INTRO__
 
-print $out map { "$_\n" } @notes;
+print $out map { "$_\n" } @notes, "-----\n\n";
+
+print $out map {
+    my $v = relVers($_);
+    "## [EPICS Release $v](RELEASE-$v.md)\n\n";
+} @OLD_RELS;
 
 close $out;
 

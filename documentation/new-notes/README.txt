@@ -11,16 +11,18 @@ This README.txt file is the only other file that should appear here.
 Generating RELEASE_NOTES.md
 ---------------------------
 
-Running 'make' inside the Base documentation directory will generate a
-file RELEASE_NOTES.md and install it into the top-level doc directory.
-The contents of the generated file are assembled by lexically sorting the
-filenames of the other files in this new-notes directory and concatenating
-the file contents in order, separated by an extra newline character.
+Running 'make' inside the Base documentation directory now generates a
+file RELEASE_NOTES.md and installs it into the top-level doc directory.
 
-The file gets a level-1 Markdown header and an explanation, followed by a
-level-2 header giving the Release version number. If the software is still
-a release snapshot, some extra lines are added explaining that before the
-concatenated note entries.
+The file starts with a level-1 Markdown header and some introductory text.
+If any new-notes files are present a level-2 header is added with a Release
+version number and a -DEV suffix, followed by some notes explaining their
+unreleased status. The new-notes filenames are lexically sorted and their
+contents added in order, separated by an extra newline character.
+
+Finally a series of links are added to all the older RELEASE-<version>.md
+files present in the documentation directory, sorted in version order with
+the newest first.
 
 
 Writing a Release Notes entry

@@ -21,13 +21,12 @@ RTD_SRC = $(COMMON_DIR)/rtd-src
 
 DOCS += README.md
 DOCS += ca-cli.md
+DOCS += RELEASE_NOTES.md
 
 OLD_NOTES = $(wildcard ../RELEASE-*.md)
 DOCS += $(OLD_NOTES:../%=%)
 
-ifneq ($(EPICS_DEV_SNAPSHOT),)
-    DOCS += RELEASE_NOTES.md
-else
+ifeq ($(EPICS_DEV_SNAPSHOT),)
     NOTES_DOC = ../RELEASE-$(EPICS_SHORT_VERSION).md
 endif
 
@@ -37,10 +36,10 @@ NEW_NOTES = $(wildcard $(NEW_DIR)/*.md)
 include $(TOP)/configure/RULES
 
 MAKENOTES = ../make-notes.pl
-$(COMMON_DIR)/RELEASE_NOTES.md: $(NEW_NOTES) $(MAKENOTES)
+$(COMMON_DIR)/RELEASE_NOTES.md: $(NEW_NOTES) $(NOTES_DOC) $(MAKENOTES)
 	@$(RM) $@
 	$(PERL) $(MAKENOTES) -o $@ -D -V $(EPICS_SHORT_VERSION) \
-	    -d $(abspath $(NEW_DIR))
+	    -d $(abspath $(NEW_DIR)) $(OLD_NOTES)
 
 ifdef NOTES_DOC
 $(NOTES_DOC): $(NEW_NOTES) $(MAKENOTES)

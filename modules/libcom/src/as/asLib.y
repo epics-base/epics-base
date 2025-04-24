@@ -22,16 +22,14 @@ static ASGRULE *yyAsgRule=NULL;
 
 %start asconfig
 
-%token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC
-%token <Str> tokenINP
-%token <Int> tokenINTEGER
-%token <Float> tokenFLOAT
-%token <Str> tokenSTRING
+%token <Str> tokenUAG tokenHAG tokenASG tokenRULE tokenCALC tokenINP tokenSTRING
+%token <Int64> tokenINT64
+%token <Float64> tokenFLOAT64
 
 %union
 {
-    int Int;
-    double Float;
+    epicsInt64 Int64;
+    epicsFloat64 Float64;
     char *Str;
 }
 
@@ -94,8 +92,8 @@ generic_element:  keyword
     {
         free((void *)$1);
     }
-    |   tokenINTEGER
-    |   tokenFLOAT
+    |   tokenINT64
+    |   tokenFLOAT64
     ;
 
 generic_block:   '{' generic_block_elem_list '}'
@@ -202,7 +200,7 @@ asg_body_item:  inp_config | rule_config
 
 inp_config: tokenINP '(' tokenSTRING ')'
     {
-        if (asAsgAddInp(yyAsg,$3,$<Int>1))
+        if (asAsgAddInp(yyAsg,$3,(int)$<Int64>1))
             yyerror("");
         free((void *)$3);
     }
@@ -216,14 +214,18 @@ rule_head: '(' rule_head_mandatory ',' rule_log_option ')'
     ;
 
 
-rule_head_mandatory:    tokenINTEGER ',' tokenSTRING
+rule_head_mandatory:    tokenINT64 ',' tokenSTRING
     {
-        if((strcmp($3,"NONE")==0)) {
-            yyAsgRule = asAsgAddRule(yyAsg,asNOACCESS,$1);
+        if ($1 < 0) {
+            char message[40];
+            sprintf(message, "RULE: LEVEL must be positive: %lld", $1);
+            yyerror(message);
+        } else if((strcmp($3,"NONE")==0)) {
+            yyAsgRule = asAsgAddRule(yyAsg,asNOACCESS,(int)$1);
         } else if((strcmp($3,"READ")==0)) {
-            yyAsgRule = asAsgAddRule(yyAsg,asREAD,$1);
+            yyAsgRule = asAsgAddRule(yyAsg,asREAD,(int)$1);
         } else if((strcmp($3,"WRITE")==0)) {
-            yyAsgRule = asAsgAddRule(yyAsg,asWRITE,$1);
+            yyAsgRule = asAsgAddRule(yyAsg,asWRITE,(int)$1);
         } else {
             yywarn("Ignoring RULE with unsupported PERMISSION", $3);
         }
@@ -298,16 +300,16 @@ rule_hag_list_name: tokenSTRING
 static int yyerror(char *str)
 {
     if (strlen(str))
-        errlogPrintf("%s at line %d\n", str, line_num);
+        fprintf(stderr, ERL_ERROR " %s at line %d\n", str, line_num);
     else
-        errlogPrintf(ERL_ERROR " at line %d\n", line_num);
+        fprintf(stderr, ERL_ERROR " at line %d\n", line_num);
     yyFailed = TRUE;
     return 0;
 }
 static int yywarn(char *str, char *token)
 {
     if (!yyWarned && strlen(str) && strlen(token))
-        errlogPrintf("%s at line %d: %s\n", str, line_num, token);
+        fprintf(stderr, ERL_WARNING " %s at line %d: %s\n", str, line_num, token);
     yyWarned = TRUE;
     return 0;
 }

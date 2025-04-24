@@ -32,20 +32,20 @@ static const char hostname_config[] = ""
     "HAG(foo) {localhost}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n"
 
     "ASG(rw) {\n"
-    "\tRULE(1, WRITE) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(1, WRITE) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -61,14 +61,14 @@ static const char supported_config_1[] = ""
     "GENERIC(WELL, FORMED, ARG, LIST)\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -82,18 +82,18 @@ static const char supported_config_2[] = ""
     "HAG(foo) {localhost}\n"
 
     "SIMPLE(WELL, FORMED, ARG, LIST) {\n"
-    "\tWELL, FORMED, LIST\n"
+    "    WELL, FORMED, LIST\n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -108,18 +108,18 @@ static const char supported_config_3[] = ""
     "HAG(foo) {localhost}\n"
 
     "COMPLEX_ARGUMENTS(1, WELL, \"FORMED\", ARG, LIST) {\n"
-    "\tALSO_GENERIC(WELL, FORMED, ARG, LIST, 2.0) \n"
+    "    ALSO_GENERIC(WELL, FORMED, ARG, LIST, 2.0) \n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -134,23 +134,23 @@ static const char supported_config_4[] = ""
 "HAG(foo) {localhost}\n"
 
 "SUB_BLOCKS(1.0, ARGS) {\n"
-"\tALSO_GENERIC() {\n"
-"\t\tAND_LIST_BODY\n"
-"\t}\n"
-"\tANOTHER_GENERIC() {\n"
-"\t\tBIGGER, LIST, BODY\n"
-"\t}\n"
+"    ALSO_GENERIC() {\n"
+"        AND_LIST_BODY\n"
+"    }\n"
+"    ANOTHER_GENERIC() {\n"
+"        BIGGER, LIST, BODY\n"
+"    }\n"
 "}\n"
 
 "ASG(DEFAULT) {\n"
-"\tRULE(0, NONE)\n"
+"    RULE(0, NONE)\n"
 "}\n"
 
 "ASG(ro) {\n"
-"\tRULE(0, NONE)\n"
-"\tRULE(1, READ) {\n"
-"\t\tHAG(foo)\n"
-"\t}\n"
+"    RULE(0, NONE)\n"
+"    RULE(1, READ) {\n"
+"        HAG(foo)\n"
+"    }\n"
 "}\n";
 
 /**
@@ -164,23 +164,23 @@ static const char supported_config_4[] = ""
 static const char supported_config_5[] = ""
     "HAG(foo) {localhost}\n"
 
-    "RECURSIVE_SUB_BLOCKS(1.0, ARGS) {\n"
-    "\tALSO_GENERIC() {\n"
-    "\t\tAND_RECURSIVE(FOO) {\n"
-    "\t\t\tLIST, BODY\n"
-    "\t\t}\n"
-    "\t}\n"
+    "RECURSIVE_SUB_BLOCKS(1.0, -2.3, +4.5, ARGS, +2.71828E-23, -2.71828e+23, +12, -13, +-14) {\n"
+    "    ALSO_GENERIC() {\n"
+    "        AND_RECURSIVE(FOO) {\n"
+    "            LIST, BODY\n"
+    "        }\n"
+    "    }\n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(+1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -189,26 +189,37 @@ static const char supported_config_5[] = ""
  *
  * top-unknown-keyword(KEYWORD) { KEYWORD(KEYWORD) }
  * - valid top level keyword with keyword for args, recursive body name, and arg list
+ * - top level generic items referenced in RULES, then RULES are ignored
  */
 static const char supported_config_6[] = ""
     "HAG(foo) {localhost}\n"
 
-    "WITH_KEYWORDS(UAG, RULE) {\n"
-    "\tASG(HAL, IMP, CALC)\n"
-    "\tHAL(USG, MAL) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "WITH_KEYWORDS(UAG) {\n"
+    "    ASG(HAL, IMP, CALC, RULE)\n"
+    "    HAL(USG, MAL) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ignored) {\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        WITH_KEYWORDS(UAG)\n"
+    "    }\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
+    "    RULE(2, WRITE) {\n"
+    "        WITH_KEYWORDS(UAG)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -222,16 +233,16 @@ static const char supported_config_7[] = ""
     "HAG(foo) {localhost}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t\tBAD_PREDICATE(\"x509\")\n"
-    "\t\tBAD_PREDICATE_AS_WELL(\"EPICS Certificate Authority\")\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "        BAD_PREDICATE(\"x509\")\n"
+    "        BAD_PREDICATE_AS_WELL(\"EPICS Certificate Authority\")\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -245,14 +256,14 @@ static const char supported_config_8[] = ""
         "HAG(foo) {localhost}\n"
 
         "ASG(DEFAULT) {\n"
-        "\tRULE(0, NONE)\n"
+        "    RULE(0, NONE)\n"
         "}\n"
 
         "ASG(ro) {\n"
-        "\tRULE(0, NONE)\n"
-        "\tRULE(1, ADDITIONAL_PERMISSION) {\n"
-        "\t\tHAG(foo)\n"
-        "\t}\n"
+        "    RULE(0, NONE)\n"
+        "    RULE(1, ADDITIONAL_PERMISSION) {\n"
+        "        HAG(foo)\n"
+        "    }\n"
         "}\n"
         ;
 
@@ -269,14 +280,14 @@ static const char unsupported_config_1[] = ""
     "GENERIC(not well-formed arg list)\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -290,18 +301,18 @@ static const char unsupported_config_2[] = ""
     "HAG(foo) {localhost}\n"
 
     "GENERIC(WELL, FORMED, ARG, LIST) {\n"
-    "\tNOT WELL-FORMED BODY\n"
+    "    NOT WELL-FORMED BODY\n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -315,18 +326,18 @@ static const char unsupported_config_3[] = ""
     "HAG(foo) {localhost}\n"
 
     "GENERIC {\n"
-    "\tWELL, FORMED, LIST, BODY\n"
+    "    WELL, FORMED, LIST, BODY\n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -340,18 +351,18 @@ static const char unsupported_config_4[] = ""
     "HAG(foo) {localhost}\n"
 
     "GENERIC(WELL, FORMED, ARG, LIST) {\n"
-    "\tBODY(BAD ARG LIST)\n"
+    "    BODY(BAD ARG LIST)\n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -365,19 +376,19 @@ static const char unsupported_config_5[] = ""
     "HAG(foo) {localhost}\n"
 
     "GENERIC(WELL, FORMED, ARG, LIST) {\n"
-    "\tLIST, BODY, MIXED, WITH,\n"
-    "\tRECURSIVE_BODY(ARG, LIST)\n"
+    "    LIST, BODY, MIXED, WITH,\n"
+    "    RECURSIVE_BODY(ARG, LIST)\n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -389,14 +400,14 @@ static const char unsupported_mod_1[] = ""
     "HAG(foo) {localhost}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro BAD ARG LIST) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -408,14 +419,14 @@ static const char unsupported_mod_2[] = ""
     "HAG(BAD ARG LIST) {localhost}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -427,14 +438,14 @@ static const char unsupported_mod_3[] = ""
     "HAG(foo) {localhost}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0 BAD ARG LIST)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0 BAD ARG LIST)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -446,14 +457,14 @@ static const char unsupported_mod_4[] = ""
     "HAG(foo) {localhost}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro, UNKNOWN_PERMISSION) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -465,14 +476,14 @@ static const char unsupported_mod_5[] = ""
     "HAG(foo) {localhost}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE, UNKNOWN_FLAG)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE, UNKNOWN_FLAG)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -482,19 +493,19 @@ static const char unsupported_mod_5[] = ""
  */
 static const char unsupported_mod_6[] = ""
     "HAG(foo) {\n"
-    "\tlocalhost,\n"
-    "\tNETWORK(\"127.0.0.1\")\n"
+    "    localhost,\n"
+    "    NETWORK(\"127.0.0.1\")\n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -504,19 +515,19 @@ static const char unsupported_mod_6[] = ""
  */
 static const char unsupported_mod_7[] = ""
     "UAG(foo) {\n"
-    "\talice,\n"
-    "\tGROUP(admin)\n"
+    "    alice,\n"
+    "    GROUP(admin)\n"
     "}\n"
 
     "ASG(DEFAULT) {\n"
-    "\tRULE(0, NONE)\n"
+    "    RULE(0, NONE)\n"
     "}\n"
 
     "ASG(ro) {\n"
-    "\tRULE(0, NONE)\n"
-    "\tRULE(1, READ) {\n"
-    "\t\tHAG(foo)\n"
-    "\t}\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
     "}\n";
 
 /**
@@ -748,6 +759,7 @@ static void testFutureProofParser(void)
     if (!ret) {
         asAsl = 0;
         testAccess("DEFAULT", 0);
+        testAccess("ignored", 0);
         testAccess("ro", 1);
     }
 
@@ -770,7 +782,7 @@ static void testFutureProofParser(void)
 
 MAIN(aslibtest)
 {
-    testPlan(63);
+    testPlan(64);
     testSyntaxErrors();
     testFutureProofParser();
     testHostNames();

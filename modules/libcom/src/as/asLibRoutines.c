@@ -735,7 +735,7 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
     pasg = (ASG *)ellFirst(&pasbase->asgList);
     if(!pasg) fprintf(fp,"No ASGs\n");
     while(pasg) {
-        int print_end_brace;
+        int print_end_brace = FALSE;
 
         if(asgname && strcmp(asgname,pasg->name)!=0) {
             pasg = (ASG *)ellNext(&pasg->node);
@@ -761,7 +761,7 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
             pasginp = (ASGINP *)ellNext(&pasginp->node);
         }
         while(pasgrule) {
-            int print_end_brace;
+            int print_rule_end_brace = FALSE;
             if ( pasgrule->ignore) goto next_rule;
             fprintf(fp,"\tRULE(%d,%s,%s)",
                 pasgrule->level,asAccessName[pasgrule->access],
@@ -770,10 +770,10 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
             pasghag = (ASGHAG *)ellFirst(&pasgrule->hagList);
             if(pasguag || pasghag || pasgrule->calc) {
                 fprintf(fp," {\n");
-                print_end_brace = TRUE;
+                print_rule_end_brace = TRUE;
             } else {
                 fprintf(fp,"\n");
-                print_end_brace = FALSE;
+                print_rule_end_brace = FALSE;
             }
             if(pasguag) fprintf(fp,"\t\tUAG(");
             while(pasguag) {
@@ -794,7 +794,7 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
                 fprintf(fp,"\n");
             }
 next_rule:
-            if(print_end_brace) fprintf(fp,"\t}\n");
+            if(print_rule_end_brace) fprintf(fp,"\t}\n");
             pasgrule = (ASGRULE *)ellNext(&pasgrule->node);
         }
         if(print_end_brace) fprintf(fp,"}\n");

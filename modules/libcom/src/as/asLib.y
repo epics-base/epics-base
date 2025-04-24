@@ -33,6 +33,7 @@ static ASGRULE *yyAsgRule=NULL;
     char *Str;
 }
 
+%type <Str> non_rule_keyword
 %type <Str> generic_block_elem_name
 %type <Str> generic_block_elem
 %type <Str> keyword
@@ -53,9 +54,12 @@ asconfig_item:  tokenUAG uag_head uag_body
 
 keyword: tokenUAG
     | tokenHAG
-    | tokenASG
-    | tokenRULE
     | tokenCALC
+    | non_rule_keyword
+    ;
+
+non_rule_keyword: tokenASG
+    | tokenRULE
     | tokenINP
     ;
 

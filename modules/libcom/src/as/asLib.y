@@ -36,6 +36,8 @@ static ASGRULE *yyAsgRule=NULL;
 %type <Str> non_rule_keyword
 %type <Str> generic_block_elem_name
 %type <Str> generic_block_elem
+%type <Str> rule_generic_block_elem
+%type <Str> rule_generic_block_elem_name
 %type <Str> keyword
 
 %%
@@ -125,6 +127,27 @@ generic_block_elem: generic_block_elem_name generic_head generic_block
     ;
 
 generic_block_elem_name:  keyword
+    {
+        $$ = strdup($1);
+        if (!$$) yyerror("Out of memory");
+    }
+    |   tokenSTRING
+    {
+        $$ = $1;
+    }
+    ;
+
+rule_generic_block_elem: rule_generic_block_elem_name generic_head generic_block
+    {
+        $$ = $1;
+    }
+    |   rule_generic_block_elem_name generic_head
+    {
+        $$ = $1;
+    }
+    ;
+
+rule_generic_block_elem_name:  non_rule_keyword
     {
         $$ = strdup($1);
         if (!$$) yyerror("Out of memory");
@@ -265,7 +288,7 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
             yyerror("");
         free((void *)$3);
     }
-    | generic_block_elem
+    | rule_generic_block_elem
     {
         yywarn("Ignoring RULE containing unsupported PREDICATE", $1);
         free((void *)$1);

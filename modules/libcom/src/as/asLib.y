@@ -82,15 +82,17 @@ generic_item: tokenSTRING generic_head generic_list_block
     }
     ;
 
-generic_head:   '(' generic_list ')'
-    | '(' ')'
+generic_head:   '(' ')'
+    | '(' generic_element ')'
+    | '(' generic_list ')'
     ;
 
-generic_list_block:   '{' generic_list '}'
+generic_list_block:   '{' generic_element '}'
+    '{' generic_list '}'
     ;
 
 generic_list:  generic_list ',' generic_element
-    |   generic_element
+    |   generic_element ',' generic_element
     ;
 
 generic_element:  keyword
@@ -102,10 +104,12 @@ generic_element:  keyword
     |   tokenFLOAT64
     ;
 
-generic_block:   '{' generic_block_elem_list '}'
+generic_block:   '{' generic_element '}'
+    |   '{' generic_list '}'
+    |   '{' generic_block_list '}'
     ;
 
-generic_block_elem_list:  generic_block_elem_list generic_block_elem
+generic_block_list:  generic_block_list generic_block_elem
     {
         free((void *)$2);
     }
@@ -113,7 +117,6 @@ generic_block_elem_list:  generic_block_elem_list generic_block_elem
     {
         free((void *)$1);
     }
-    |   generic_list
     ;
 
 generic_block_elem: generic_block_elem_name generic_head generic_block

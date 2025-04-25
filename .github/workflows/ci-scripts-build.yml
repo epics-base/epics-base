@@ -322,7 +322,7 @@ jobs:
         yum -y install \
           curl make gcc curl-devel expat-devel gettext-devel openssl-devel zlib-devel perl-ExtUtils-MakeMaker \
           python3 gdb make perl gcc-c++ glibc-devel readline-devel ncurses-devel perl-devel perl-Test-Simple \
-          libevent-devel sudo re2c
+          libevent-devel sudo re2c perl-version
         [ -e /usr/bin/python ] || ln -sf /usr/bin/python3 /usr/bin/python
 
         # fake out cue.py

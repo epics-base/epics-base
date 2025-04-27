@@ -69,16 +69,38 @@ my (%values, @dummy);
 readRelease($_, \%values, \@dummy) foreach @configs;
 expandRelease(\%values);
 
-# Get values from the command-line
+# Get values given on the command-line
 #
 $values{EPICS_BUILD_COMPILER_CLASS} = $opt_c if $opt_c;
 $values{EPICS_BUILD_OS_CLASS} = $opt_s if $opt_s;
 $values{EPICS_BUILD_TARGET_ARCH} = $opt_t if $opt_t;
 
-# Warn about vars with no configured value
-#
-my @undefs = grep {!exists $values{$_}} @vars;
-warn "$tool: No value given for $_\n" foreach @undefs;
+# Regex's for checking parameter values
+my $qstr = qr/ " [^"]* " /x;
+my $quoted_str = qr/ $qstr (?: \s+ $qstr )* /x;
+
+my $ansi_colors = qr/(?:RED|GREEN|YELLOW|BLUE|MAGENTA|CYAN|BOLD|UNDERLINE)/;
+my $color_esc = qr/ ANSI_ESC_ (?: $ansi_colors | RESET ) /x;
+my $color_macro = qr/ ANSI_ $ansi_colors \s* \( \s* $quoted_str \) /x;
+my $color_or_str = qr/ $quoted_str | $color_esc | $color_macro /x;
+my $colored_str = qr/ $color_or_str (?: \s+ $color_or_str )* /x;
+
+foreach my $var (@vars) {
+    if (exists $values{$var}) {
+        my $valid_str = $var eq 'IOCSH_PS1' ? $colored_str : $quoted_str;
+        if ($values{$var} !~ m/^ $valid_str $/x) {
+            my $quoted = qq("$values{$var}");
+            die "$tool: Value set for parameter '$var' is invalid:\n",
+                "    $values{$var}\n"
+                unless $quoted =~ m/^ $valid_str $/x;
+            $values{$var} = $quoted;
+        }
+    }
+    else {
+        warn "$tool: No value given for parameter '$var'\n";
+        $values{$var} = '""';
+    }
+}
 
 print "Generating $opt_o\n" unless $opt_q;
 
@@ -99,32 +121,24 @@ $sources
 #include <stddef.h>
 #define epicsExportSharedSymbols
 #include "envDefs.h"
+#include "errlog.h"
 
 END
 
 # Define a default value for each named parameter
 #
-foreach my $var (@vars) {
-    my $default = $values{$var};
-    if (defined $default) {
-        $default =~ s/^"//;
-        $default =~ s/"$//;
-    }
-    else {
-        $default = '';
-    }
+printf OUT "const ENV_PARAM %s =\n".
+      "              {\"%s\", %s};\n",
+      $_, $_, $values{$_} foreach @vars;
 
-    print OUT "const ENV_PARAM $var =\n",
-              "    {\"$var\", \"$default\"};\n";
-}
-
-# Also provide a list of all defined parameters
+# Also generate the list of all defined parameters
 #
 print OUT "\n",
     "const ENV_PARAM* env_param_list[] = {\n",
     wrap('    ', '    ', join(', ', map("&$_", @vars), 'NULL')),
     "\n};\n";
-close OUT;
+close OUT
+    or die "$tool: Can't close $opt_o: $!\n";
 
 sub HELP_MESSAGE {
     print STDERR "Usage: $tool [options] configure\n",

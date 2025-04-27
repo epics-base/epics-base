@@ -71,7 +71,7 @@ EPICS_TS_NTP_INET=
 #	Number of lines of command history to keep.
 # IOCSH_HISTEDIT_DISABLE
 # 	Prevents use of readline or equivalent if defined.
-IOCSH_PS1="epics> "
+IOCSH_PS1=ANSI_GREEN("epics> ")
 IOCSH_HISTSIZE=50
 IOCSH_HISTEDIT_DISABLE=
 

@@ -172,7 +172,6 @@ int main(int argc, char *argv[])
                 epicsExit(2);
                 return 2;
             case 'a':
-                lazy_dbd(dbd_file);
                 if (!macros.empty()) {
                     verbose_out(CMD, std::string("asSetSubstitutions(\"")
                         + macros + "\")");

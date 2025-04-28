@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "dbDefs.h"
 #include "dbmf.h"
@@ -38,7 +39,8 @@
 #include "iocInit.h"
 
 /* This file is included from dbYacc.y
- * Duplicate some declarations to avoid warnings from analysis tools which don't know about this.
+ * Duplicate some declarations to avoid warnings
+ * from analysis tools that don't know about this.
  */
 static int yyerror(char *str);
 static long pvt_yy_parse(void);
@@ -199,8 +201,9 @@ static void freeInputFileList(void)
 
     while((pinputFileNow=(inputFile *)ellFirst(&inputFileList))) {
         if(fclose(pinputFileNow->fp))
-            errPrintf(0,__FILE__, __LINE__,
-                        "Closing file %s",pinputFileNow->filename);
+            fprintf(stderr, ERL_WARNING
+                ": Error closing file '%s': %s\n",
+                pinputFileNow->filename, strerror(errno));
         free((void *)pinputFileNow->filename);
         ellDelete(&inputFileList,(ELLNODE *)pinputFileNow);
         free((void *)pinputFileNow);
@@ -225,7 +228,8 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     char        **macPairs;
 
     if (ellCount(&tempList)) {
-        fprintf(stderr, ERL_WARNING ": dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
+        fprintf(stderr, ERL_WARNING
+            ": dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
     }
 
     if (getIocState() != iocVoid) {
@@ -274,8 +278,8 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         if (pinputFile->filename)
             pinputFile->path = dbOpenFile(savedPdbbase, pinputFile->filename, &fp1);
         if (!pinputFile->filename || !fp1) {
-            errPrintf(0, __FILE__, __LINE__,
-                "dbRead opening file %s\n",pinputFile->filename);
+            fprintf(stderr, ERL_ERROR
+                ": Can't open file '%s'\n", pinputFile->filename);
             free((char*)pinputFile->filename);
             free(pinputFile);
             status = -1;
@@ -294,7 +298,9 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     status = pvt_yy_parse();
 
     if (ellCount(&tempList) && !yyAbort)
-        fprintf(stderr, ERL_WARNING ": dbReadCOM: Parser stack dirty w/o error. %d\n", ellCount(&tempList));
+        fprintf(stderr, ERL_WARNING
+            ": dbReadCOM: Parser stack dirty w/o error. %d\n",
+            ellCount(&tempList));
     while (ellCount(&tempList))
         popFirstTemp(); /* Memory leak on parser failure */
 
@@ -368,7 +374,8 @@ static int db_yyinput(char *buf, int max_size)
                     int exp = macExpandString(macHandle,mac_input_buffer,
                         my_buffer,MY_BUFFER_SIZE);
                     if (exp < 0) {
-                        fprintf(stderr, "Warning: '%s' line %d has undefined macros\n",
+                        fprintf(stderr, ERL_WARNING
+                            ": '%s' line %d has undefined macros\n",
                             pinputFileNow->filename, pinputFileNow->line_num+1);
                     }
                 }
@@ -377,8 +384,9 @@ static int db_yyinput(char *buf, int max_size)
             }
             if(fgetsRtn) break;
             if(fclose(pinputFileNow->fp))
-                errPrintf(0,__FILE__, __LINE__,
-                        "Closing file %s",pinputFileNow->filename);
+                fprintf(stderr, ERL_WARNING
+                    ": Error closing file '%s': %s\n",
+                    pinputFileNow->filename, strerror(errno));
             free((void *)pinputFileNow->filename);
             ellDelete(&inputFileList,(ELLNODE *)pinputFileNow);
             free((void *)pinputFileNow);
@@ -434,7 +442,7 @@ static void dbIncludeNew(char *filename)
     pinputFile->filename = macEnvExpand(filename);
     pinputFile->path = dbOpenFile(savedPdbbase, pinputFile->filename, &fp);
     if (!fp) {
-        fprintf(stderr, "Can't open include file \"%s\"\n", filename);
+        fprintf(stderr, ERL_ERROR ": Can't open include file '%s'\n", filename);
         yyerror(NULL);
         free((void *)pinputFile->filename);
         free((void *)pinputFile);
@@ -696,7 +704,8 @@ static void dbRecordtypeEmpty(void)
 
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbRecordType = ptempListNode->item;
-    fprintf(stderr, "Declaration of recordtype(%s) preceeded full definition.\n",
+    fprintf(stderr, ERL_ERROR
+        ": Declaration of recordtype(%s) preceeded full definition.\n",
         pdbRecordType->name);
     yyerrorAbort(NULL);
 }
@@ -737,10 +746,12 @@ static void dbRecordtypeBody(void)
         field_type = pdbFldDes->field_type;
         if((field_type>=DBF_INLINK) && (field_type<=DBF_FWDLINK))no_links++;
         if((field_type==DBF_STRING) && (pdbFldDes->size==0))
-            fprintf(stderr,"recordtype(%s).%s size not specified\n",
+            fprintf(stderr, ERL_ERROR
+                ": recordtype(%s).%s size not specified\n",
                 pdbRecordType->name,pdbFldDes->name);
         if((field_type==DBF_NOACCESS) && (pdbFldDes->extra==0))
-            fprintf(stderr,"recordtype(%s).%s extra not specified\n",
+            fprintf(stderr, ERL_ERROR
+                ": recordtype(%s).%s extra not specified\n",
                 pdbRecordType->name,pdbFldDes->name);
     }
     if (ellCount(&tempList))
@@ -801,8 +812,9 @@ static void dbDevice(char *recordtype,char *linktype,
     int                 i,link_type;
     pgphentry = gphFind(savedPdbbase->pgpHash,recordtype,&savedPdbbase->recordTypeList);
     if(!pgphentry) {
-        fprintf(stderr, "Record type \"%s\" not found for device \"%s\"\n",
-                    recordtype, choicestring);
+        fprintf(stderr, ERL_ERROR
+            ": Record type '%s' not found for device '%s'\n",
+            recordtype, choicestring);
         yyerror(NULL);
         return;
     }
@@ -814,8 +826,9 @@ static void dbDevice(char *recordtype,char *linktype,
         }
     }
     if(link_type==-1) {
-        fprintf(stderr, "Bad link type \"%s\" for device \"%s\"\n",
-                    linktype, choicestring);
+        fprintf(stderr, ERL_ERROR
+            ": Bad link type '%s' for device '%s'\n",
+            linktype, choicestring);
         yyerror(NULL);
         return;
     }
@@ -1077,16 +1090,20 @@ int dbRecordNameValidate(const char *name)
         if(i==0) {
             /* first character restrictions */
             if(c=='-' || c=='+' || c=='[' || c=='{') {
-                fprintf(stderr, "Warning: Record/Alias name '%s' should not begin with '%c'\n", name, c);
+                fprintf(stderr, ERL_WARNING
+                    ": Record/Alias name '%s' should not begin with '%c'\n",
+                    name, c);
             }
         }
         /* any character restrictions */
         if(c < ' ') {
-            fprintf(stderr, "Warning: Record/Alias name '%s' should not contain non-printable 0x%02x\n",
-                         name, c);
+            fprintf(stderr, ERL_WARNING
+                ": Record/Alias name '%s' contains non-printable 0x%02x\n",
+                 name, c);
 
         } else if(c==' ' || c=='\t' || c=='"' || c=='\'' || c=='.' || c=='$') {
-            fprintf(stderr, ERL_ERROR ": Bad character '%c' in Record/Alias name \"%s\"\n",
+            fprintf(stderr, ERL_ERROR
+                ": Bad character '%c' in Record/Alias name \"%s\"\n",
                 c, name);
             yyerrorAbort(NULL);
             return 1;
@@ -1113,7 +1130,7 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         status = dbFindRecord(pdbentry, name);
         if (status == 0)
             return; /* done */
-        fprintf(stderr, ERL_ERROR ": Record \"%s\" not found\n", name);
+        fprintf(stderr, ERL_ERROR ": Record '%s' not found\n", name);
         yyerror(NULL);
         duplicate = TRUE;
         return;
@@ -1124,9 +1141,10 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         if (status == 0) {
             dbDeleteRecord(pdbentry);
         } else {
-            fprintf(stderr, ERL_WARNING ": Unable to delete record \"%s\".  Not found.\n"
-                    "  at file %s line %d\n",
-                    name, pinputFileNow->filename, pinputFileNow->line_num);
+            fprintf(stderr, ERL_WARNING
+                ": Record '%s' not found, can't delete\n"
+                "  at file '%s', line %d\n",
+                name, pinputFileNow->filename, pinputFileNow->line_num);
         }
         popFirstTemp();
         dbFreeEntry(pdbentry);
@@ -1135,8 +1153,9 @@ static void dbRecordHead(char *recordType, char *name, int visible)
     }
     status = dbFindRecordType(pdbentry, recordType);
     if (status) {
-        fprintf(stderr, "Record \"%s\" is of unknown type \"%s\"\n",
-                    name, recordType);
+        fprintf(stderr, ERL_ERROR
+            ": Record type '%s' for record '%s' not found\n",
+            recordType, name);
         yyerrorAbort(NULL);
         return;
     }
@@ -1146,23 +1165,24 @@ static void dbRecordHead(char *recordType, char *name, int visible)
     status = dbCreateRecord(pdbentry,name);
     if (status == S_dbLib_recExists) {
         if (strcmp(recordType, dbGetRecordTypeName(pdbentry)) != 0) {
-            fprintf(stderr, ERL_ERROR ": Record \"%s\" of type \"%s\" redefined with new type "
-                "\"%s\"\n", name, dbGetRecordTypeName(pdbentry), recordType);
+            fprintf(stderr, ERL_ERROR
+                ": %s record '%s' already exists, can't load %s record\n",
+                recordType, name, dbGetRecordTypeName(pdbentry));
             yyerror(NULL);
-            duplicate = TRUE;
             return;
         }
         else if (dbRecordsOnceOnly) {
-            fprintf(stderr, ERL_ERROR ": Record \"%s\" already defined and dbRecordsOnceOnly set.\n"
-                        "Used record type \"*\" to append.\n",
-                name);
+            fprintf(stderr, ERL_ERROR
+                ": Record '%s' already defined; dbRecordsOnceOnly is set,\n"
+                "  so can't modify record.\n", name);
             yyerror(NULL);
             duplicate = TRUE;
         }
     }
     else if (status) {
-        fprintf(stderr, "Can't create record \"%s\" of type \"%s\"\n",
-                     name, recordType);
+        fprintf(stderr, ERL_ERROR
+            ": Can't create %s record '%s'\n",
+            recordType, name);
         yyerrorAbort(NULL);
     }
 
@@ -1181,8 +1201,9 @@ static void dbRecordField(char *name,char *value)
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
     if (status) {
-        fprintf(stderr, "%s Record \"%s\" does not have a field \"%s\"\n",
-                    dbGetRecordTypeName(pdbentry), dbGetRecordName(pdbentry), name);
+        fprintf(stderr, ERL_ERROR
+            ": %s record '%s' doesn't have a field '%s'\n",
+            dbGetRecordTypeName(pdbentry), dbGetRecordName(pdbentry), name);
         if(dbGetRecordName(pdbentry)) {
             DBENTRY temp;
             double bestSim = -1.0;
@@ -1207,7 +1228,8 @@ static void dbRecordField(char *name,char *value)
         return;
     }
     if (pdbentry->indfield == 0) {
-        fprintf(stderr, "Can't set \"NAME\" field of record \"%s\"\n",
+        fprintf(stderr, ERL_ERROR
+            ": Can't set 'NAME' field of record '%s'\n",
             dbGetRecordName(pdbentry));
         yyerror(NULL);
         return;
@@ -1225,8 +1247,10 @@ static void dbRecordField(char *name,char *value)
         char msg[128];
 
         errSymLookup(status, msg, sizeof(msg));
-        fprintf(stderr, "Can't set \"%s.%s\" to \"%s\" %s : %s\n",
-            dbGetRecordName(pdbentry), name, value, pdbentry->message ? pdbentry->message : "", msg);
+        fprintf(stderr, ERL_ERROR
+            ": Can't set '%s.%s' to '%s' %s : %s\n",
+            dbGetRecordName(pdbentry), name, value,
+            pdbentry->message ? pdbentry->message : "", msg);
         dbPutStringSuggest(pdbentry, value);
         yyerror(NULL);
         return;
@@ -1256,8 +1280,9 @@ static void dbRecordInfo(char *name, char *value)
 
     status = dbPutInfo(pdbentry,name,value);
     if (status) {
-        fprintf(stderr, "Can't set \"%s\" info \"%s\" to \"%s\"\n",
-                    dbGetRecordName(pdbentry), name, value);
+        fprintf(stderr, ERL_ERROR
+            ": Can't set '%s' info(\"%s\") to '%s'\n",
+            dbGetRecordName(pdbentry), name, value);
         yyerror(NULL);
         return;
     }
@@ -1275,15 +1300,18 @@ static long createAlias(DBENTRY *pdbentry, const char *alias)
     if (status == 0) {
         if (tempEntry.precnode->aliasedRecnode != precnode) {
             if (tempEntry.precnode->aliasedRecnode)
-                fprintf(stderr, ERL_ERROR ": Alias \"%s\" for \"%s\": name already used by an alias for \"%s\"\n",
-                            alias, dbGetRecordName(pdbentry),
-                            tempEntry.precnode->aliasedRecnode->recordname);
+                fprintf(stderr, ERL_ERROR
+                    ": Alias '%s' for record '%s' already aliases '%s'\n",
+                    alias, dbGetRecordName(pdbentry),
+                    tempEntry.precnode->aliasedRecnode->recordname);
             else
-                fprintf(stderr, ERL_ERROR ": Alias \"%s\" for \"%s\": name already used by a record\n",
-                            alias, dbGetRecordName(pdbentry));
+                fprintf(stderr, ERL_ERROR
+                    ": Alias '%s' for record '%s' is already a record name.\n",
+                    alias, dbGetRecordName(pdbentry));
             status = S_dbLib_recExists;
         } else if (dbRecordsOnceOnly) {
-            fprintf(stderr, ERL_ERROR ": Alias \"%s\" already defined and dbRecordsOnceOnly set.\n",
+            fprintf(stderr, ERL_ERROR
+                ": Alias '%s' already defined; dbRecordsOnceOnly is set.\n",
                 alias);
             status = S_dbLib_recExists;
         }
@@ -1320,8 +1348,9 @@ static void dbAlias(char *name, char *alias)
 
     dbInitEntry(savedPdbbase, pdbEntry);
     if (dbFindRecord(pdbEntry, name)) {
-        fprintf(stderr, "Alias \"%s\" refers to unknown record \"%s\"\n",
-                    alias, name);
+        fprintf(stderr, ERL_ERROR
+            ": Alias '%s' names an unknown record '%s'\n",
+            alias, name);
         yyerror(NULL);
     }
     else if (createAlias(pdbEntry, alias) != 0) {

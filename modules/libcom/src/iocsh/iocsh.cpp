@@ -1166,7 +1166,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         if (c == '#') {
             if ((prompt == NULL) && (commandLine == NULL))
                 if (raw[icin + 1] != '-') {
-                    printf(ANSI_CYAN("%s") "\n", raw);
+                    printf(ANSI_BLUE("%s") "\n", raw);
                 }
             continue;
         }

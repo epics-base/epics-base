@@ -51,6 +51,14 @@ namespace {
 
 bool verbose = false;
 
+enum coloration {NONE, CMD, REM};
+
+void verbose_out(coloration color, const std::string& message) {
+    if (!verbose) return;
+    const char *ansi[] = {ANSI_ESC_RESET, ANSI_ESC_BOLD, ANSI_ESC_BLUE};
+    std::cout << ansi[color] << message << ansi[NONE] << std::endl;
+}
+
 static void exitSubroutine(subRecord *precord) {
     epicsExitLater((precord->a == 0.0) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
@@ -109,13 +117,11 @@ void lazy_dbd(const std::string& dbd_file) {
     if(lazy_dbd_loaded) return;
     lazy_dbd_loaded = true;
 
-    if (verbose)
-        std::cout<<"dbLoadDatabase(\""<<dbd_file<<"\")\n";
+    verbose_out(CMD, std::string("dbLoadDatabase(\"") + dbd_file + "\")");
     errIf(dbLoadDatabase(dbd_file.c_str(), NULL, NULL),
           std::string("Failed to load DBD file: ")+dbd_file);
 
-    if (verbose)
-        std::cout<<"softIoc_registerRecordDeviceDriver(pdbbase)\n";
+    verbose_out(CMD, "softIoc_registerRecordDeviceDriver(pdbbase)");
     errIf(softIoc_registerRecordDeviceDriver(pdbbase),
           "Failed to initialize database");
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
@@ -168,13 +174,13 @@ int main(int argc, char *argv[])
             case 'a':
                 lazy_dbd(dbd_file);
                 if (!macros.empty()) {
-                    if (verbose)
-                        std::cout<<"asSetSubstitutions(\""<<macros<<"\")\n";
+                    verbose_out(CMD, std::string("asSetSubstitutions(\"")
+                        + macros + "\")");
                     if(asSetSubstitutions(macros.c_str()))
                         throw std::bad_alloc();
                 }
-                if (verbose)
-                    std::cout<<"asSetFilename(\""<<optarg<<"\")\n";
+                verbose_out(CMD, std::string("asSetFilename(\"")
+                    + optarg + "\")");
                 if(asSetFilename(optarg))
                     throw std::bad_alloc();
                 break;
@@ -186,12 +192,10 @@ int main(int argc, char *argv[])
                 break;
             case 'd':
                 lazy_dbd(dbd_file);
-                if (verbose) {
-                    std::cout<<"dbLoadRecords(\""<<optarg<<"\"";
-                    if(!macros.empty())
-                        std::cout<<", \""<<macros<<"\"";
-                    std::cout<<")\n";
-                }
+                verbose_out(CMD, std::string("dbLoadRecords(\"")
+                    + optarg + "\"" + ( !macros.empty() ?
+                        (std::string(", \"") + macros + "\"") : std::string() )
+                    + ")");
                 errIf(dbLoadRecords(optarg, macros.c_str()),
                       std::string("Failed to load: ")+optarg);
                 loadedDb = true;
@@ -211,9 +215,8 @@ int main(int argc, char *argv[])
                 lazy_dbd(dbd_file);
                 xmacro  = "IOC=";
                 xmacro += optarg;
-                if (verbose) {
-                    std::cout<<"dbLoadRecords(\""<<exit_file<<"\", \""<<xmacro<<"\")\n";
-                }
+                verbose_out(CMD, std::string("dbLoadRecords(\"")
+                    + exit_file + "\", \"" + xmacro + "\")");
                 errIf(dbLoadRecords(exit_file.c_str(), xmacro.c_str()),
                       std::string("Failed to load: ")+exit_file);
                 loadedDb = true;
@@ -227,20 +230,17 @@ int main(int argc, char *argv[])
             // run script
             // ignore any extra positional args (historical)
 
-            if (verbose)
-                std::cout<<"# Begin "<<argv[optind]<<"\n";
+            verbose_out(REM, std::string("# Begin ") + argv[optind]);
             errIf(iocsh(argv[optind]),
                         std::string("Error in ")+argv[optind]);
-            if (verbose)
-                std::cout<<"# End "<<argv[optind]<<"\n";
+            verbose_out(REM, std::string("# End ") + argv[optind]);
 
             epicsThreadSleep(0.2);
             ranScript = true;    /* Assume the script has done any necessary initialization */
         }
 
         if (loadedDb) {
-            if (verbose)
-                std::cout<<"iocInit()\n";
+            verbose_out(CMD, "iocInit()");
             if(iocInit()) {
                 std::cerr<<ERL_ERROR " during iocInit()"<<std::endl;
             }

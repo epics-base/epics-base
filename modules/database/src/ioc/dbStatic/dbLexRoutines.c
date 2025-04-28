@@ -565,7 +565,7 @@ static void dbRecordtypeFieldHead(char *name,char *type)
             strcmp(pdbFldDes->name, "OUT")==0;
     i = dbFindFieldType(type);
     if (i < 0)
-        yyerrorAbort("Illegal Field Type");
+        yyerrorAbort("Invalid Field Type");
     pdbFldDes->field_type = i;
 }
 
@@ -597,7 +597,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         } else if(strcmp(value,"ASL1")==0) {
             pdbFldDes->as_level = ASL1;
         } else {
-            yyerror("Illegal Access Security value: Must be ASL0 or ASL1");
+            yyerror("Invalid 'asl' value, must be ASL0 or ASL1");
         }
         return;
     }
@@ -624,7 +624,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         if(sscanf(value,"%hd",&pdbFldDes->special)==1) {
             return;
         }
-        yyerror("Illegal 'special' value.");
+        yyerror("Invalid 'special' value.");
         return;
     }
     if(strcmp(name,"pp")==0) {
@@ -633,13 +633,13 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         } else if((strcmp(value,"NO")==0) || (strcmp(value,"FALSE")==0)) {
             pdbFldDes->process_passive = FALSE;
         } else {
-            yyerror("Illegal 'pp' value, must be YES/NO/TRUE/FALSE");
+            yyerror("Invalid 'pp' value, must be YES/NO/TRUE/FALSE");
         }
         return;
     }
     if(strcmp(name,"interest")==0) {
         if(sscanf(value,"%hd",&pdbFldDes->interest)!=1)
-            yyerror("Illegal 'interest' value, must be integer");
+            yyerror("Invalid 'interest' value, must be integer");
         return;
     }
     if(strcmp(name,"base")==0) {
@@ -648,13 +648,13 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         } else if(strcmp(value,"HEX")==0) {
             pdbFldDes->base = CT_HEX;
         } else {
-            yyerror("Illegal 'base' value, must be DECIMAL/HEX");
+            yyerror("Invalid 'base' value, must be DECIMAL/HEX");
         }
         return;
     }
     if(strcmp(name,"size")==0) {
         if(sscanf(value,"%hd",&pdbFldDes->size)!=1)
-            yyerror("Illegal 'size' value, must be integer");
+            yyerror("Invalid 'size' value, must be integer");
         return;
     }
     if(strcmp(name,"extra")==0) {

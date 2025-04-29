@@ -41,7 +41,7 @@ RELEASE.host: $(RELEASE_LOCAL)
 
 $(RELEASE_LOCAL): Makefile $(CONFIG)/CONFIG_SITE \
     $(wildcard $(CONFIG)/CONFIG_SITE.local)
-	$(ECHO) Creating $@ with
+	$(ECHO) "Creating $@ with"
 	$(ECHO) "    $(PARENT_MODULE) = $(INSTALL_ABSOLUTE)"
 	@echo $(PARENT_MODULE) = $(INSTALL_ABSOLUTE)> $@
 

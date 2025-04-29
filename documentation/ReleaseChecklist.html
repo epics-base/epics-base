@@ -52,8 +52,6 @@ everything that has to be done since it's so easy to miss steps.</p>
     <dd>Responsible for managing and tagging the release</dd>
   <dt><strong>Core Developers</strong></dt>
     <dd>Responsible for maintaining the EPICS software</dd>
-  <dt><strong>Application Developers</strong></dt>
-    <dd>Responsible for support modules that depend on EPICS Base.</dd>
   <dt><strong>Website Editors</strong></dt>
     <dd>Responsible for the EPICS websites</dd>
 </dl>
@@ -91,13 +89,16 @@ everything that has to be done since it's so easy to miss steps.</p>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Release Manager<br />
+      <td>Release Manager<br>
         &amp; all developers</td>
-      <td>Ensure that documentation will be updated before the release date:
+      <td>Request that documentation be updated and information about new
+        features be added before the release date:
         <ul>
           <li>Release Notes</li>
           <li>Doxygen annotations</li>
-          <li>Other documents</li>
+          <li>Other documents on
+            <a href="https://docs.epics-controls.org/en/latest/">
+              docs.epics-controls.org</a></li>
         </ul>
       </td>
       </tr>
@@ -113,16 +114,7 @@ everything that has to be done since it's so easy to miss steps.</p>
     <tr>
       <td>&nbsp;</td>
       <td>Platform Developers</td>
-      <td>Run the internal test programs on all available host platforms using
-        <blockquote><tt>
-          make -s runtests
-        </tt></blockquote></td>
-      </tr>
-    <tr>
-      <td>&nbsp;</td>
-      <td>Platform Developers</td>
-      <td>Run the CA client side regression tests on all available host
-        platforms.</td>
+      <td>Run the internal test programs on all appropriate platforms.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
@@ -134,25 +126,14 @@ everything that has to be done since it's so easy to miss steps.</p>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Platform Developers</td>
-      <td>Build the SNL Sequencer against this version of Base, and check that
-        the makeBaseApp example builds and runs correctly with it.</td>
-      </tr>
-    <tr>
-      <td>&nbsp;</td>
-      <td>Application Developers</td>
-      <td>Build external applications against this version of Base on all
-        available platforms and test as appropriate. Application code changes
-        may be necessary where the EPICS Base APIs have been modified.</td>
-      </tr>
-    <tr>
-      <td>&nbsp;</td>
       <td>Release Manager</td>
       <td>Check that documentation has been updated:
         <ul>
           <li>Release Notes</li>
           <li>Doxygen annotations</li>
-          <li>Other documents</li>
+          <li>Other documents on
+            <a href="https://docs.epics-controls.org/en/latest/">
+              docs.epics-controls.org</a></li>
           </ul>
         </td>
       </tr>
@@ -173,59 +154,53 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>
-        <p><b>For each external submodule</b> in turn (assuming it has not been
-          tagged yet):</p>
+        <h4>For each external submodule to be tagged</h4>
         <ol>
-          <li><tt>git grep UNRELEASED</tt> and insert the module version to any
-            doxygen annotations that have a <tt>@since UNRELEASED</tt> comment.
+          <li><tt>cd base-7.0/modules/&lt;module&gt;; git grep UNRELEASED</tt>
+            and insert the submodule's version number into any doxygen
+            annotations that have a <tt>@since&nbsp;UNRELEASED</tt> comment.
             Commit (don't push yet).</li>
 
-          <li>Check that the module's Release Notes have been updated to cover
-            all changes; add items as necessary, and set the module version
-            number and release date if appropriate.
-            Commit these changes (don't push).</li>
+          <li>Check that the submodule's Release Notes have been updated to
+            cover all changes; add missing items as necessary, and set the
+            module version number and release date if appropriate.<br>
+            Commit the changes to the submodule's Notes file (don't push).</li>
+
+          <li>Copy the new submodule version number and Release Notes entries
+            into a new file named <tt><i>module</i>-<i>release</i></tt> in the
+            <tt>base-7.0/documentation/new-notes</tt> directory.</li>
 
           <li>Edit the module's release version file
             <tt>configure/CONFIG_<i>module</i>_VERSION</tt> and the
             <tt>Doxyfile</tt>s in the top-level and/or documentation
-            directories. In these, set <tt>DEVELOPMENT_FLAG</tt> to 0 and remove
+            directories. In these, set <tt>DEVELOPMENT_FLAG=0</tt> and remove
             <tt>-dev</tt> from the <tt>PROJECT_NUMBER</tt> string. Commit these
             changes (don't push):
             <blockquote><tt>
-              git ci -m 'Final commit for &lt;module-version&gt;'
+              git commit -m 'Final commit for &lt;submodule-version&gt;'
               </tt></blockquote>
             </li>
 
-          <li>Tag the module:
+          <li>Tag the submodule:
             <blockquote><tt>
-              git tag -m 'ANJ: Tag for EPICS 7.0.8.2' &lt;module-version&gt;
+              git tag -m 'ANJ: Tag for EPICS 7.0.9.1' &lt;submodule-version&gt;
               </tt></blockquote>
             </li>
 
-          <li>Generate documentation or Release Notes using one of these:
-            <ul>
-              <li>For older modules with a RELEASE_NOTES.md file convert it to
-                HTML and view in a browser to check the formatting as follows:
-                <blockquote><tt>
-                  cd base-7.0/modules/&lt;module&gt;/documentation<br />
-                  pandoc -f gfm -t html -o RELEASE_NOTES.html RELEASE_NOTES.md
-                  </tt></blockquote>
+          <li>Generate documentation for modules with <tt>release_notes.dox</tt>
+            files. Prepare to update the github-pages website as follows:
+            <blockquote><tt>
+              cd base-7.0/modules/&lt;module&gt;/documentation<br>
+              make commit<br>
+              git push --force upstream gh-pages
+              </tt></blockquote>
+            <i>Q: Delay this <tt>git push</tt> until later?</i></li>
 
-              <li>For newer modules with release_notes.dox file, generate the
-                new github-pages website as follows:
-                <blockquote><tt>
-                  cd base-7.0/modules/&lt;module&gt;/documentation<br />
-                  make commit
-                  git push --force upstream gh-pages
-                  </tt></blockquote>
-                <i>Q: Delay this <tt>git push</tt> until later?</i></li>
-              </ul></li>
-
-          <li>Update the git submodule on the Base-7.0 branch to the
+          <li>Update the Git submodule on the Base-7.0 branch to the
             newly-tagged version, check the module's status matches the tag:
             <blockquote><tt>
-              cd base-7.0/modules<br />
-              git add &lt;module&gt;<br />
+              cd base-7.0/modules<br>
+              git add &lt;module&gt;<br>
               git submodule status --cached
               </tt></blockquote>
             Don't commit the submodule updates yet.
@@ -241,18 +216,41 @@ everything that has to be done since it's so easy to miss steps.</p>
           <li>Push commits and the new tag to the submodule's GitHub repository
             (assumed to be the <tt>upstream</tt> remote):
             <blockquote><tt>
-              cd base-7.0/modules/&lt;module&gt;<br />
+              cd base-7.0/modules/&lt;module&gt;<br>
               git push --follow-tags upstream master
               </tt></blockquote>
             </li>
 
+          </ol></td>
+      </tr>
+    <tr>
+      <td><input type="checkbox"></td>
+      <td>Release Manager</td>
+      <td>
+        <h4>After all submodules have been updated:</h4>
+        <ol>
+
+          <li> Commit the submodule updates which were added for each submodule
+            in step 7 above to the 7.0 branch (don't push):
+            <blockquote><tt>
+              cd base-7.0/modules<br>
+              git commit -m "Update git submodules for release"
+              </tt></blockquote></li>
+
+          <li>Make sure that the output from
+            <tt>git submodule status --cached</tt> only shows the appropriate
+            version tags in the right-most parenthesized column with no
+            <tt>-<i>n</i>-g<i>xxxxxxx</i></tt> suffix.</li>
+
+          <li>Add and commit the new Release Note entry files that were created
+            for each submodule in step 3 above (don't push):
+            <blockquote><tt>
+              cd base-7.0/documentation<br>
+              git add new-notes<br>
+              git commit -m "Add submodule release note entries"
+              </tt></blockquote></li>
+
           </ol>
-        <p><b>After all submodules complete</b> commit the submodule updates
-          which were added for each submodule in step 4 above to the 7.0 branch
-          (don't push). After committing, make sure that the output from
-          <tt>git submodule status --cached</tt> only shows the appropriate
-          version tags in the right-most parenthesized column with no
-          <tt>-<i>n</t>-g<i>xxxxxxx</i></tt> suffix.</p>
         </td>
       </tr>
     <tr>
@@ -260,35 +258,62 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Release Manager</td>
 
       <td>
-        <p><tt>git grep UNRELEASED</tt> and insert the release version to any
-          doxygen annotations that have a <tt>@since UNRELEASED</tt> comment.
-          Commit (don't push).</p>
-        <p>Edit the main EPICS Base version file and the built-in module version
-        files:</p>
-        <ul>
-          <li><tt>configure/CONFIG_BASE_VERSION</tt></li>
-          <li><tt>configure/CONFIG_LIBCOM_VERSION</tt></li>
-          <li><tt>configure/CONFIG_CA_VERSION</tt></li>
-          <li><tt>configure/CONFIG_DATABASE_VERSION</tt></li>
-          </ul>
-        <p>Version numbers should be set according to the level of changes made
-          since the last release. Note that the <tt>MAINTENANCE_VERSION</tt> or
-          <tt>PATCH_LEVEL</tt> value should have been incremented after the
-          previous release tag was applied. Set all <tt>DEVELOPMENT_FLAG</tt>
-          values to 0 and <tt>EPICS_DEV_SNAPSHOT</tt> to the empty string.</p>
-        <p>Edit the headings in the Release Notes to show the appropriate
-          version number and remove the warning about this being an unreleased
-          version of EPICS.</p>
-        <p>Commit these changes (don't push).</p>
+        <h4>In the main epics-base repository</h4>
+        <ol>
+          <li><tt>cd base-7.0; git grep UNRELEASED</tt> and insert the release
+            version to any doxygen annotations that have a
+            <tt>@since&nbsp;UNRELEASED</tt> comment. Commit (don't push).<p></p>
+
+          </li><li>Edit the main EPICS Base version file and the built-in module
+            version files:</li>
+          <ul>
+            <li><tt>configure/CONFIG_BASE_VERSION</tt></li>
+            <li><tt>configure/CONFIG_LIBCOM_VERSION</tt></li>
+            <li><tt>configure/CONFIG_CA_VERSION</tt></li>
+            <li><tt>configure/CONFIG_DATABASE_VERSION</tt></li>
+            </ul>
+
+          <li>Version numbers should be set according to the level of changes
+            made since the last release. Note that the
+            <tt>MAINTENANCE_VERSION</tt> or <tt>PATCH_LEVEL</tt> value will have
+            been incremented immediately after the previous release tag was
+            applied. Set all <tt>DEVELOPMENT_FLAG</tt> values to 0 and
+            <tt>EPICS_DEV_SNAPSHOT</tt> to the empty string.</li>
+
+          <li>Commit the above changes (don't push):
+            <blockquote><tt>
+              cd base-7.0<br>
+              git add configure/CONFIG_*_VERSION<br>
+              git commit -m "Set core version numbers for release"
+              </tt></blockquote>
+
+          </li><li>Run these commands to generate the <tt>RELEASE-7.0.9.1.md</tt>
+            file and remove the individual release note entry files from
+            <tt>documentation/new-notes</tt>:
+            <blockquote><tt>
+              cd base-7.0/documentation<br>
+              make release
+              </tt></blockquote>
+            The make recipe adds and removes files from the Git index but
+            doesn't commit the changes itself. Run these commands to confirm
+            that it succeeded and commit the result:
+            <blockquote><tt>
+              git status<br>
+              git diff --staged<br>
+              git commit -m "Generate RELEASE-7.0.9.1.md"
+              </tt></blockquote>
+            </li>
+          </ol>
         </td>
       </tr>
+
     <tr>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Tag the epics-base module in Git:
         <blockquote><tt>
-          cd base-7.0<br />
-          git tag -m 'ANJ: Tagged for release' R7.0.8.2
+          cd base-7.0<br>
+          git tag -m 'ANJ: Tagged for release' R7.0.9.1
           </tt></blockquote>
         <p>Don't push to GitHub yet.</p>
         </td>
@@ -296,7 +321,8 @@ everything that has to be done since it's so easy to miss steps.</p>
     <tr>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
-      <td>Edit the main EPICS Base version file and the built-in module version
+      <td><h4>After tagging the release</h4>
+        Edit the main EPICS Base version file and the built-in module version
         files:
         <ul>
           <li><tt>configure/CONFIG_BASE_VERSION</tt></li>
@@ -321,13 +347,13 @@ everything that has to be done since it's so easy to miss steps.</p>
         script generates a gzipped tarfile directly from the tag, excluding the
         files and directories that are only used for continuous integration:
         <blockquote><tt>
-          cd base-7.0<br />
-          ./.tools/make-tar.sh R7.0.8.2 ../base-7.0.8.2.tar.gz base-7.0.8.2/
+          cd base-7.0<br>
+          ./.tools/make-tar.sh R7.0.9.1 ../base-7.0.9.1.tar.gz base-7.0.9.1/
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          cd ..<br />
-          gpg --armor --sign --detach-sig base-7.0.8.2.tar.gz
+          cd ..<br>
+          gpg --armor --sign --detach-sig base-7.0.9.1.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -355,21 +381,21 @@ everything that has to be done since it's so easy to miss steps.</p>
     <tr>
       <td><input type="checkbox"></td>
       <td>Website Editor</td>
-      <td>Update the website subdirectory that holds the release
-        documentation, and copy in the files from the base/documentation
-        directory of the tarfile.</td>
+      <td>Add the new release tar file to the website Base download index
+        page.</td>
+      </tr>
+    <tr>
+      <td><input type="checkbox"></td>
+      <td>Website Editor</td>
+      <td>Create or update the website subdirectory that holds the release
+        documentation, and copy in the files to be published with this
+        release version.</td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
       <td>Website Editor</td>
       <td>Update the webpage for the new release with links to the release
         documents and tar file.</td>
-      </tr>
-    <tr>
-      <td><input type="checkbox"></td>
-      <td>Website Editor</td>
-      <td>Add the new release tar file to the website Base download index
-        page.</td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
@@ -393,20 +419,23 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td>Upload the tar file and its <tt>.asc</tt> signature file to the
         epics-controls web-server.
         <blockquote><tt>
-          scp base-7.0.8.2.tar.gz base-7.0.8.2.tar.gz.asc epics-controls:download/base<br />
+          scp base-7.0.9.1.tar.gz base-7.0.9.1.tar.gz.asc epics-controls:download/base<br>
           </tt></blockquote>
         </td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>
       <td>Website Editor</td>
-      <td>Follow instructions on
+      <td><p>Follow instructions on
         <a href="https://epics-controls.org/resources-and-support/documents/epics-website-documentation/adding-a-page-for-a-new-release/">
         Add a page for a new release</a> to create a new release webpage (not
         required for a patch release, just edit the existing page). Update the
         TablePress "Point Releases" table and add the new download, and adjust
-        the XYZ Html Snippet for the series download.
-        </td>
+        the Html Snippet for the series download.</p>
+        <p>Not covered in those instructions: Go to Posts, find a previous
+        release and use "Duplicate Post", then edit the result and publish it.
+        This generates the News item.
+        </p></td>
       </tr>
 
     <tr>
@@ -416,10 +445,11 @@ everything that has to be done since it's so easy to miss steps.</p>
       <td><input type="checkbox"></td>
       <td>Release Manager</td>
       <td>Go to the GitHub
-        <a href="https://github.com/epics-base/epics-base/releases/new?tag=R7.0.8.2">
-          Create release from tag R7.0.8.2</a> page.
+        <a href="https://github.com/epics-base/epics-base/releases/new?tag=R7.0.9.1">
+          Create release from tag R7.0.9.1</a> page.
         Upload the tar file and its <tt>.asc</tt> signature file to the new
-        GitHub release page.</td>
+        GitHub release page, or just drag-n-drop them into the page.
+        Copy/paste the text from the previous release and edit. Submit.</td>
       </tr>
     <tr>
       <td><input type="checkbox"></td>

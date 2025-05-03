@@ -27,27 +27,21 @@
 #include "epicsGeneralTime.h"
 #include "freeList.h"
 #include "libComRegister.h"
+#include "osiFileName.h"
 
 /* Register the PWD environment variable when the cd IOC shell function is
  * registered. This variable contains the current directory path.
  */
 static void updatePWD() {
     static int lasterror;
-    char buf[1024];
-    char *pwd = getcwd(buf, sizeof(buf));
+    char *pwd = epicsGetCwd();
     if (pwd) {
-        pwd[sizeof(buf) - 1] = '\0';
         lasterror = 0;
-        epicsEnvSet("PWD", buf);
+        epicsEnvSet("PWD", pwd);
     } else {
         if(lasterror!=errno) {
             lasterror = errno;
-            if (errno == ERANGE) {
-                fprintf(stderr, "Warning: Current path exceeds %u characters\n",
-                                                              (unsigned)sizeof(buf));
-            } else {
-                perror("getcwd");
-            }
+            perror("getcwd");
             fprintf(stderr, "Warning: Unable to update $PWD\n");
         }
     }
@@ -118,12 +112,10 @@ static const iocshFuncDef pwdFuncDef = {"pwd", 0, 0,
                                         "Print name of current/working directory\n"};
 static void pwdCallFunc (const iocshArgBuf *args)
 {
-    char buf[1024];
-    char *pwd = getcwd ( buf, sizeof(buf) );
-    if ( pwd ) {
-        buf[sizeof(buf)-1u] = '\0';
-        printf ( "%s\n", pwd );
-    }
+    char *pwd = epicsGetCwd();
+    if ( pwd )
+        puts(pwd);
+    free(pwd);
 }
 
 /* epicsEnvSet */

@@ -68,6 +68,12 @@ Documentation site.
 Writing into a compress record's `RES` field now posts a monitor event instead
 of only changing `VAL`. Monitor clients will therefore receive an empty array.
 
+### Use SHRLIB_INSTALLS to install shared libraries
+
+Analog to BIN_INSTALLS and LIB_INSTALLS,
+a Makefile mechanism to install shared libraries was added,
+using the apropriate file permissions and install location.
+
 ### The AMSG error message propagates through MSS links
 
 A database link with the MSS attribute will now propagate not only SEVR and

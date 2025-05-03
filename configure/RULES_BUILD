@@ -196,8 +196,8 @@ endif
 $(sort $(DIRECTORY_TARGETS)):
 	$(MKDIR) $@
 
-# Install LIB_INSTALLS libraries before linking executables
-$(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIB_INSTALLS)
+# Install LIB_INSTALLS and SHRLIB_INSTALLS libraries before linking executables
+$(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIB_INSTALLS) $(INSTALL_SHRLIB_INSTALLS)
 
 # Install built libraries too, unless Makefile says to wait
 ifneq ($(DELAY_INSTALL_LIBS),YES)
@@ -454,7 +454,7 @@ $(COMMON_DIR)/$(GENVERSION): FORCE
 endif
 
 #---------------------------------------------------------------
-# Install rules for BIN_INSTALLS and LIB_INSTALLS
+# Install rules for BIN_INSTALLS, LIB_INSTALLS and SHRLIB_INSTALLS
 
 define  BIN_INSTALLS_template
 $$(INSTALL_BIN)/$$(notdir $(1)): $(1)
@@ -469,6 +469,13 @@ $$(INSTALL_LIB)/$$(notdir $(1)): $(1)
 	@$$(INSTALL) -d -m $$(LIB_PERMISSIONS) $$^ $$(INSTALL_LIB)
 endef
 $(foreach file, $(LIB_INSTALLS), $(eval $(call LIB_INSTALLS_template, $(file))))
+
+define  SHRLIB_INSTALLS_template
+$$(INSTALL_SHRLIB)/$$(notdir $(1)): $(1)
+        $(ECHO) "Installing $$(<F)"
+        @$$(INSTALL) -d -m $$(SHRLIB_PERMISSIONS) $$^ $$(INSTALL_SHRLIB)
+endef
+$(foreach file, $(SHRLIB_INSTALLS), $(eval $(call SHRLIB_INSTALLS_template, $(file))))
 
 #---------------------------------------------------------------
 

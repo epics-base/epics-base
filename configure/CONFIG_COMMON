@@ -402,6 +402,7 @@ INSTALL_CONFIGS = $(CONFIGS:%= $(INSTALL_CONFIG)/%)
 
 INSTALL_BIN_INSTALLS = $(addprefix $(INSTALL_BIN)/,$(notdir $(BIN_INSTALLS)))
 INSTALL_LIB_INSTALLS = $(addprefix $(INSTALL_LIB)/,$(notdir $(LIB_INSTALLS)))
+INSTALL_SHRLIB_INSTALLS = $(addprefix $(INSTALL_SHRLIB)/,$(notdir $(SHRLIB_INSTALLS)))
 
 #---------------------------------------------------------------
 # Installed file permissions

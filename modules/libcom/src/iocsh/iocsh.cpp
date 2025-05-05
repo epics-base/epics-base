@@ -931,8 +931,8 @@ static void helpCallFunc(const iocshArgBuf *args)
         iocshTableUnlock ();
 
         fprintf(epicsGetStdout(), "\n"
-            "Type 'help <command>' to see the arguments of <command>, "
-            "eg. 'help db*'\n");
+            "Type 'help <glob>' for information about commands matching\n"
+            "the name or pattern <glob>, e.g. 'help db*'\n");
     }
     else {
         bool firstFunction = true;

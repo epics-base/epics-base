@@ -165,7 +165,8 @@ MOD_SYS_LDFLAGS += $(CPU_CFLAGS) -Wl,-r -nostdlib
 GESYS_LIBS += -lgcc
 GESYS_LIBS += -lc -lm -lrtemscpu -lrtemsbsp -lrtems++
 GESYS_LIBS += -lcexp -ltecla_r -lspencer_regexp -lpmelf -lpmbfd
-GESYS_LIBS += -lnfs -ltelnetd -lrtems-gdb-stub
+GESYS_LIBS += -lnfs -ltelnetd -lrtems-gdb-stub -lbsd -ltftpfs -lz
+GESYS_LIBS += -lnetworking
 
 # While not part of the Generic Image it provides symbols which
 # would conflict.

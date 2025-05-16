@@ -12,6 +12,7 @@
 #include <epicsUnitTest.h>
 #include <dbUnitTest.h>
 #include <testMain.h>
+#include <errlog.h>
 #include <dbAccess.h>
 #include <iocsh.h>
 #include <epicsExport.h>
@@ -51,7 +52,9 @@ MAIN(epicsExportTest)
 
     testDiag("Testing if dsets and functions are found");
     testdbReadDatabase("epicsExportTest.db", 0, 0);
+    eltc(0);
     testIocInitOk();
+    eltc(1);
 
     testDiag("Testing if dsets work correctly");
     testdbGetFieldEqual("li1", DBF_LONG, -1);

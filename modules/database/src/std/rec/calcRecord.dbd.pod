@@ -367,7 +367,7 @@ C<:=> : assigns a value (right hand side) to a variable (i.e. field)
 
 =back
 
-=head3 Parantheses, Comma, and Semicolon
+=head3 Parentheses, Comma, and Semicolon
 
 The open C<(> and close parentheses C<)> are supported to override precedence
 rules in a sub-expression.

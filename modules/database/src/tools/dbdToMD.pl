@@ -149,15 +149,15 @@ close $out;
 sub menuToMD {
     my ($menu) = @_;
     my $index = 0;
-    return "| Index | Identifier | Choice String |",
-           "| ----- | ---------- | ------------- |",
+    return "| Index | Identifier                             | Choice String          |",
+           "| ----- | -------------------------------------- | ---------------------- |",
         map({choiceTableRow($_, $index++)} $menu->choices);
 }
 
 sub choiceTableRow {
     my ($ch, $index) = @_;
     my ($id, $name) = @{$ch};
-    return "| $index | $id | $name |";
+    return sprintf("| %5d | %-*s | %-22s |", $index, 38-( () = $id =~ /_/g), $id, $name);
 }
 
 sub rtypeToMD {
@@ -174,8 +174,8 @@ sub rtypeToMD {
                     $field;
                 } @names;
             # Generate Pod for the table
-            "| Field | Summary | Type | DCT | Default | Read | Write | CA PP |",
-            "| ----- | ------- | ---- | --- | ------- | ---- | ----- | ----- |",
+            "| Field | Summary                    | Type          | DCT | Default | Read | Write | CA PP |",
+            "| ----- | -------------------------- | ------------- | --- | ------- | ---- | ----- | ----- |",
             map({fieldTableRow($_, $dbd)} @fields);
         }
         # Handle a 'menu' Pod directive
@@ -196,11 +196,11 @@ sub rtypeToMD {
 sub fieldTableRow {
     my ($fld, $dbd) = @_;
     my @md;
-    push @md, $fld->name, $fld->attribute('prompt');
+    push @md, sprintf("%-5s", $fld->name), sprintf("%-26s", $fld->attribute('prompt'));
 
     my $type = $fld->public_type;
     if ($type eq 'STRING') {
-        $type .= ' [' . $fld->attribute('size') . ']';
+        $type .= sprintf("%-5s", ' [' . $fld->attribute('size') . ']');
     } elsif ($type eq 'MENU') {
         my $mn = $fld->attribute('menu');
         my $menu = $dbd->menu($mn);
@@ -208,14 +208,16 @@ sub fieldTableRow {
         my $url = $menu ? "/menu-$mnl" : "${mn}.md";
         #just pass a L directive for the parser
         $type .= " L<$mn|$url>";
+    } else {
+        $type = sprintf("%-13s", $type);
     }
     push @md, $type;
 
-    push @md, $fld->attribute('promptgroup') ? 'Yes' : 'No';
-    push @md, $fld->attribute('initial') || ' ';
-    push @md, $fld->readable;
-    push @md, $fld->writable;
-    push @md, $fld->attribute('pp') eq 'TRUE' ? 'Yes' : 'No';
+    push @md, sprintf("%-3s", $fld->attribute('promptgroup') ? 'Yes' : 'No');
+    push @md, sprintf("%7s", $fld->attribute('initial') || ' ');
+    push @md, sprintf("%-4s",$fld->readable);
+    push @md, sprintf("%-5s",$fld->writable);
+    push @md, sprintf("%-5s",$fld->attribute('pp') eq 'TRUE' ? 'Yes' : 'No');
     return '| ' . join(' | ', @md) . ' |';
 }
 

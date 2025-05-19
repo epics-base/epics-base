@@ -1,0 +1,16 @@
+#
+# CONFIG.Common.RTEMS-xilinx_zynq_microzed
+# Author: Chris Johns <chris@contemporary.software>
+#
+# All RTEMS targets use the same Makefile fragment
+#
+#EXE = .elf
+RTEMS_BSP = xilinx_zynq_microzed
+RTEMS_TARGET_CPU = arm
+GNU_TARGET = arm-rtems
+
+OP_SYS_LDLIBS += -Wl,--gc-sections
+ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/xilinx_zynq_microzed/lib/
+
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS

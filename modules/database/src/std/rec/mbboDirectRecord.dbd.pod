@@ -81,7 +81,7 @@ initialization if the record is still undefined (UDF) after DOL has been read
 and the device support initialized but at least one of the B0-B1F fields is
 non-zero, the VAL field will be set from those fields and UDF will be cleared.
 
-=fields B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, BA, BB, BC, BD, BE, BF, B10, B11, B12, B13, B14, B15, B16, B17, B18, B19, B1A, B1B, B1C, B1D, B1E, B1F
+=fields B0 - B9, BA - BF, B10 - B1F
 
 =head3 Convert and Write Parameters
 

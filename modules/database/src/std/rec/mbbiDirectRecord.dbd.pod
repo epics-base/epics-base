@@ -68,7 +68,7 @@ determine VAL as follows:
 
 Each of the fields, B0-BF and B10-B1F, represents one bit of the word.
 
-=fields VAL, INP, RVAL, SHFT, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, BA, BB, BC, BD, BE, BF, B10, B11, B12, B13, B14, B15, B16, B17, B18, B19, B1A, B1B, B1C, B1D, B1E, B1F
+=fields VAL, INP, RVAL, SHFT, B0 - B9, BA - BF, B10 - B1F
 
 =head3 Operator Display Parameters
 

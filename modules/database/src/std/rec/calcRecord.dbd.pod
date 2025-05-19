@@ -45,7 +45,7 @@ See L<Address
 Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
 for information on how to specify database links.
 
-=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL
+=fields INPA -INPL
 
 =head3 Expression
 
@@ -121,7 +121,7 @@ the expression which will operate on their respective values, as in A+B.
 Also, the RNDM nullary function can be included as an operand in the
 expression in order to generate a random number between 0 and 1.
 
-=fields A, B, C, D, E, F, G, H, I, J, K, L
+=fields A - L
 
 The keyword VAL returns the current contents of the VAL field (which can be
 written to by a CA put, so it might I<not> be the result from the last time
@@ -497,7 +497,7 @@ corresponding fields. For instance, if LA does not equal the value A,
 monitors for A are triggered. The MLST and ALST fields are used in the same
 manner for the VAL field.
 
-=fields LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
+=fields LALM, ALST, MLST, LA - LL
 
 =cut
 

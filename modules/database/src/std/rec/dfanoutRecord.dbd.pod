@@ -88,7 +88,7 @@ If SELM is C<Mask>, then SELN will be treated as a bit mask. If bit zero
 OUTB will be written to, and so on. Thus when SELN==5, both OUTC and OUTA
 will be written to.
 
-=fields SELL, SELM, SELN, OUTA, OUTB, OUTC, OUTD, OUTE, OUTF, OUTG, OUTH
+=fields SELL, SELM, SELN, OUTA - OUTH
 
 =head3 Operator Display Parameters
 

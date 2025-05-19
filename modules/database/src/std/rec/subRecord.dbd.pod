@@ -40,7 +40,7 @@ the constant value and the field's value can be changed at run-time via dbPuts.
 Otherwise, the values for (A-F) are fetched from the input links when the record
 is processed.
 
-=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL, A, B, C, D, E, F, G, H, I, J, K, L
+=fields INPA - INPL, A - L
 
 =head3 Subroutine Connection
 
@@ -119,7 +119,7 @@ The rest of these fields--LALM, ALST, MLST, and the LA-LL fields--are used to
 implement the monitors. For example, when LA is not equal to A, the value-change
 monitors are called for that field.
 
-=fields VAL, SADR, LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
+=fields VAL, SADR, LALM, ALST, MLST, LA - LL
 
 =head2 Record Support
 

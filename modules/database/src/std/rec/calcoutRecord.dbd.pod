@@ -68,7 +68,7 @@ example, whether or not the specified PV was found and a link to it
 established. See L<Operator Display Parameters> for an explanation of these
 fields.
 
-=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL
+=fields INPA - INPL
 
 =head3 Expression
 
@@ -146,7 +146,7 @@ the values obtained from the INPB link is stored in the field B. The names
 can be included in the expression will operate on their respective values,
 as in A+B.
 
-=fields A, B, C, D, E, F, G, H, I, J, K, L
+=fields A - L
 
 The keyword VAL returns the current contents of the expression's result
 field, i.e. the VAL field for the CALC expression and the OVAL field for
@@ -579,7 +579,7 @@ The DLYA field is set to one during the delay specified in ODLY.
 See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
 Parameters> for more on the record name (NAME) and description (DESC) fields.
 
-=fields EGU, PREC, HOPR, LOPR, INAV, INBV, INCV, INDV, INEV, INFV, INGV, INHV, INIV, INJV, INKV, INLV, OUTV, CLCV, OCLV, DLYA, NAME, DESC
+=fields EGU, PREC, HOPR, LOPR, INAV - INLV, OUTV, CLCV, OCLV, DLYA, NAME, DESC
 
 =head3 Alarm Parameters
 
@@ -628,7 +628,7 @@ corresponding fields. For instance, if LA does not equal the value for A,
 monitors for A are triggered. The MLST and ALST fields are used in the same
 manner for the VAL field.
 
-=fields LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
+=fields LALM, ALST, MLST, LA - LL
 
 =cut
 

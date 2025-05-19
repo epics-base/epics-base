@@ -58,11 +58,11 @@ constant value, and may subsequently be changed via dbPuts.
 
 =head4 Desired Output Link Fields
 
-=fields DOL0, DOL1, DOL2, DOL3, DOL4, DOL5, DOL6, DOL7, DOL8, DOL9, DOLA, DOLB, DOLC, DOLD, DOLE, DOLF
+=fields DOL0 - DOL9, DOLA - DOLF
 
 =head4 Desired Output Value Fields
 
-=fields DO0, DO1, DO2, DO3, DO4, DO5, DO6, DO7, DO8, DO9, DOA, DOB, DOC, DOD, DOE, DOF
+=fields DO0 - DO9, DOA - DOF
 
 =head3 Output Parameters
 
@@ -72,7 +72,7 @@ output link (LNK0-LNKF). These output links can be database links or channel
 access links; they cannot be device addresses. There are sixteen output links, one
 for each desired output link. Only those that are defined are used.
 
-=fields LNK0, LNK1, LNK2, LNK3, LNK4, LNK5, LNK6, LNK7, LNK8, LNK9, LNKA, LNKB, LNKC, LNKD, LNKE, LNKF
+=fields LNK0 - LNK9, LNKA - LNKF
 
 =head3 Selection Algorithm Parameters
 
@@ -178,7 +178,7 @@ DOL1, DOV1, and LNK1 fields for three seconds. That is, the desired output value
 will not be fetched and written to the output link until three seconds have
 lapsed.
 
-=fields DLY0, DLY1, DLY2, DLY3, DLY4, DLY5, DLY6, DLY7, DLY8, DLY9, DLYA, DLYB, DLYC, DLYD, DLYE, DLYF
+=fields DLY0 - DLY9, DLYA - DLYF
 
 =head3 Operator Display Parameters
 

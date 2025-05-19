@@ -54,7 +54,7 @@ NaN to another value in order to define the link and its field. Note that all
 undefined links must be recognized as such if the selection algorithm is to work
 as expected.
 
-=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL, A, B, C, D, E, F, G, H, I, J, K, L
+=fields INPA - INPL, A - L
 
 =head3 Select Parameters
 
@@ -156,7 +156,7 @@ The LA-LL fields are used to implement the monitors for each of the value
 fields, A-L. They represent previous input values. For example, unless LA is not
 equal to A, no monitor is invoked for A.
 
-=fields VAL, LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
+=fields VAL, LALM, ALST, MLST, LA - LL
 
 =head2 Record Support
 

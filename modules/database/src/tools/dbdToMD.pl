@@ -135,7 +135,13 @@ my $pod = join "\n",
         }
         elsif (m/^ =title \s+ (.*)/x) {
             $title = $1;
-            "=head1 $title";
+            "=head1 $title\n\n=encoding utf8\n";
+        }
+        elsif (m/^ =encoding \s+ (.*)/x) {
+            my $enc = $1;
+            die "Encoding '$enc' conflicts with 'utf8' in $infile POD directive\n"
+                unless $enc =~ m/^ utf-?8 $/ix;
+            # ignore, we already have =encoding utf8
         }
         else {
             $_;
@@ -196,7 +202,7 @@ sub rtypeToMD {
 sub fieldTableRow {
     my ($fld, $dbd) = @_;
     if ($fld eq '-') {
-        return "| \x{22EE}".(" " x 83)."||||||||";
+        return "| \N{VERTICAL ELLIPSIS}".(" " x 82)."||||||||";
     }
     my @md;
     push @md, sprintf("%-5s", $fld->name), sprintf("%-26s", $fld->attribute('prompt'));

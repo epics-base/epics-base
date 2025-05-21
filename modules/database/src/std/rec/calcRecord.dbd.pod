@@ -45,7 +45,7 @@ See L<Address
 Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
 for information on how to specify database links.
 
-=fields INPA -INPL
+=fields INPA - INPL
 
 =head3 Expression
 

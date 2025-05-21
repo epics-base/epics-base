@@ -246,11 +246,8 @@ static const iocshFuncDef dbglobFuncDef = {"dbglob",2,dbglobArgs,
                                            "         dbglob(\"*gpibAi*\",\"VAL DESC\")\n"};
 static void dbglobCallFunc(const iocshArgBuf *args) { iocshSetError(dbglob(args[0].sval,args[1].sval));}
 
-/* dbgrep */
-static const iocshArg dbgrepArg0 = { "pattern",iocshArgStringRecord};
-static const iocshArg dbgrepArg1 = { "fields",iocshArgString};
-static const iocshArg * const dbgrepArgs[2] = {&dbgrepArg0,&dbgrepArg1};
-static const iocshFuncDef dbgrepFuncDef = {"dbgrep",2,dbgrepArgs,
+/* dbgrep; alias for dbglob, so it should have the same arguments */
+static const iocshFuncDef dbgrepFuncDef = {"dbgrep",2,dbglobArgs,
                                            "See dbglob.\n"};
 static void dbgrepCallFunc(const iocshArgBuf *args) { iocshSetError(dbglob(args[0].sval,args[1].sval));}
 

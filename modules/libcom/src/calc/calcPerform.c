@@ -86,6 +86,15 @@ LIBCOM_API long
         case FETCH_J:
         case FETCH_K:
         case FETCH_L:
+        case FETCH_M:
+        case FETCH_N:
+        case FETCH_O:
+        case FETCH_P:
+        case FETCH_Q:
+        case FETCH_R:
+        case FETCH_S:
+        case FETCH_T:
+        case FETCH_U:
             *++ptop = parg[op - FETCH_A];
             break;
 
@@ -101,6 +110,15 @@ LIBCOM_API long
         case STORE_J:
         case STORE_K:
         case STORE_L:
+        case STORE_M:
+        case STORE_N:
+        case STORE_O:
+        case STORE_P:
+        case STORE_Q:
+        case STORE_R:
+        case STORE_S:
+        case STORE_T:
+        case STORE_U:
             parg[op - STORE_A] = *ptop--;
             break;
 
@@ -441,6 +459,15 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
         case FETCH_J:
         case FETCH_K:
         case FETCH_L:
+        case FETCH_M:
+        case FETCH_N:
+        case FETCH_O:
+        case FETCH_P:
+        case FETCH_Q:
+        case FETCH_R:
+        case FETCH_S:
+        case FETCH_T:
+        case FETCH_U:
             /* Don't claim to use an arg we already stored to */
             inputs |= (1 << (op - FETCH_A)) & ~stores;
             break;
@@ -457,6 +484,15 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
         case STORE_J:
         case STORE_K:
         case STORE_L:
+        case STORE_M:
+        case STORE_N:
+        case STORE_O:
+        case STORE_P:
+        case STORE_Q:
+        case STORE_R:
+        case STORE_S:
+        case STORE_T:
+        case STORE_U:
             stores |= (1 << (op - STORE_A));
             break;
 

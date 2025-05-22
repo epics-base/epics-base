@@ -18,7 +18,7 @@ stringchar  [^"\n\\]
 name        [a-zA-Z0-9_\-+:.\[\]<>;]
 digit       [0-9]
 punctuation [(){},]
-link        [A-L]
+link        [A-U]
 
 %{
 static ASINPUTFUNCPTR *my_yyinput;

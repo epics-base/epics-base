@@ -14,6 +14,8 @@ and logical operations on values retrieved from other records. The result
 of its operations can then be accessed by another record so that it can
 then be used.
 
+Since UNRELEASED the number of inputs has been increased from 12 to 21.
+
 =head2 Parameter Fields
 
 The record-specific fields are described below, grouped by functionality.
@@ -34,9 +36,9 @@ These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read Parameters
 
-The read parameters for the Calc record consist of 12 input links INPA,
-INPB, ... INPL. The fields can be database links, channel access links, or
-constants. If they are links, they must specify another record's field or a
+The read parameters for the Calc record consist of 21 input links INPA -
+INPU. The fields can be database links, channel access links, or constants.
+If they are links, they must specify another record's field or a
 channel access link. If they are constants, they will be initialized with
 the value they are configured with and can be changed via C<dbPuts>. They
 cannot be hardware addresses.
@@ -45,7 +47,7 @@ See L<Address
 Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on how to specify database links.
 
-=fields INPA - INPL
+=fields INPA - INPU
 
 =head3 Expression
 
@@ -117,7 +119,7 @@ radians to degrees
 
 The expression uses the values retrieved from the INPx links as operands,
 though constants can be used as operands too. These values retrieved from
-the input links are stored in the A-L fields. The values to be used in the
+the input links are stored in the A-U fields. The values to be used in the
 expression are simply referenced by the field letter. For instance, the
 value obtained from INPA link is stored in the field A, and the value
 obtained from INPB is stored in field B. The field names can be included in
@@ -125,7 +127,7 @@ the expression which will operate on their respective values, as in A+B.
 Also, the RNDM nullary function can be included as an operand in the
 expression in order to generate a random number between 0 and 1.
 
-=fields A - L
+=fields A - U
 
 The keyword VAL returns the current contents of the VAL field (which can be
 written to by a CA put, so it might I<not> be the result from the last time
@@ -549,12 +551,12 @@ modifiable at run-time. They are used to process the record.
 The LALM field is used to implement the hysteresis factor for the alarm
 limits.
 
-The LA-LL fields are used to decide when to trigger monitors for the
+The LA-LU fields are used to decide when to trigger monitors for the
 corresponding fields. For instance, if LA does not equal the value A,
 monitors for A are triggered. The MLST and ALST fields are used in the same
 manner for the VAL field.
 
-=fields LALM, ALST, MLST, LA - LL
+=fields LALM, ALST, MLST, LA - LU
 
 =cut
 
@@ -569,7 +571,7 @@ manner for the VAL field.
 		promptgroup("30 - Action")
 		special(SPC_CALC)
 		pp(TRUE)
-		size(80)
+		size(160)
 		initial("0")
 	}
 	field(INPA,DBF_INLINK) {
@@ -630,6 +632,60 @@ manner for the VAL field.
 	field(INPL,DBF_INLINK) {
 		prompt("Input L")
 		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPM,DBF_INLINK) {
+		prompt("Input M")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPN,DBF_INLINK) {
+		prompt("Input N")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPO,DBF_INLINK) {
+		prompt("Input O")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPP,DBF_INLINK) {
+		prompt("Input P")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPQ,DBF_INLINK) {
+		prompt("Input Q")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPR,DBF_INLINK) {
+		prompt("Input R")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPS,DBF_INLINK) {
+		prompt("Input S")
+		special(SPC_MOD)
+		promptgroup("44 - Input S-U")
+		interest(1)
+	}
+	field(INPT,DBF_INLINK) {
+		prompt("Input T")
+		special(SPC_MOD)
+		promptgroup("44 - Input S-U")
+		interest(1)
+	}
+	field(INPU,DBF_INLINK) {
+		prompt("Input U")
+		special(SPC_MOD)
+		promptgroup("44 - Input S-U")
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {
@@ -790,6 +846,42 @@ manner for the VAL field.
 		prompt("Value of Input L")
 		pp(TRUE)
 	}
+	field(M,DBF_DOUBLE) {
+		prompt("Value of Input M")
+		pp(TRUE)
+	}
+	field(N,DBF_DOUBLE) {
+		prompt("Value of Input N")
+		pp(TRUE)
+	}
+	field(O,DBF_DOUBLE) {
+		prompt("Value of Input O")
+		pp(TRUE)
+	}
+	field(P,DBF_DOUBLE) {
+		prompt("Value of Input P")
+		pp(TRUE)
+	}
+	field(Q,DBF_DOUBLE) {
+		prompt("Value of Input Q")
+		pp(TRUE)
+	}
+	field(R,DBF_DOUBLE) {
+		prompt("Value of Input R")
+		pp(TRUE)
+	}
+	field(S,DBF_DOUBLE) {
+		prompt("Value of Input S")
+		pp(TRUE)
+	}
+	field(T,DBF_DOUBLE) {
+		prompt("Value of Input T")
+		pp(TRUE)
+	}
+	field(U,DBF_DOUBLE) {
+		prompt("Value of Input U")
+		pp(TRUE)
+	}
 	field(LA,DBF_DOUBLE) {
 		prompt("Prev Value of A")
 		special(SPC_NOMOD)
@@ -850,6 +942,51 @@ manner for the VAL field.
 		special(SPC_NOMOD)
 		interest(3)
 	}
+	field(LM,DBF_DOUBLE) {
+		prompt("Prev Value of M")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LN,DBF_DOUBLE) {
+		prompt("Prev Value of N")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LO,DBF_DOUBLE) {
+		prompt("Prev Value of O")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LP,DBF_DOUBLE) {
+		prompt("Prev Value of P")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LQ,DBF_DOUBLE) {
+		prompt("Prev Value of Q")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LR,DBF_DOUBLE) {
+		prompt("Prev Value of R")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LS,DBF_DOUBLE) {
+		prompt("Prev Value of S")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LT,DBF_DOUBLE) {
+		prompt("Prev Value of T")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LU,DBF_DOUBLE) {
+		prompt("Prev Value of U")
+		special(SPC_NOMOD)
+		interest(3)
+	}
 	field(LALM,DBF_DOUBLE) {
 		prompt("Last Value Alarmed")
 		special(SPC_NOMOD)
@@ -870,7 +1007,7 @@ manner for the VAL field.
 		prompt("Reverse Polish Calc")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(80)]")
+		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(160)]")
 	}
 
 =head2 Record Support
@@ -970,7 +1107,7 @@ Archive and values change monitors are invoked if ADEL and MDEL conditions
 are met.
 
 =item *
-Monitors for A-L are checked whenever other monitors are invoked.
+Monitors for A-U are checked whenever other monitors are invoked.
 
 =item *
 NSEV and NSTA are reset to 0.

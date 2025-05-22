@@ -12,6 +12,8 @@
 The subroutine record is used to call a C initialization routine and a recurring
 scan routine. There is no device support for this record.
 
+Since UNRELEASED the number of inputs has been increased from 12 to 21.
+
 =recordtype sub
 
 =cut
@@ -30,17 +32,17 @@ These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read Parameters
 
-The subroutine record has twelve input links (INPA-INPL), each of which has a
-corresponding value field (A-L). These fields are used to retrieve and store
+The subroutine record has 21 input links INPA - INPU, each of which has a
+corresponding value field A - U. These fields are used to retrieve and store
 values that can be passed to the subroutine that the record calls.
 
 The input links can be either channel access or database links, or constants.
 When constants, the corresponding value field for the link is initialized with
 the constant value and the field's value can be changed at run-time via dbPuts.
-Otherwise, the values for (A-F) are fetched from the input links when the record
-is processed.
+Otherwise, the values for A - U are fetched from the input links when the
+record is processed.
 
-=fields INPA - INPL, A - L
+=fields INPA - INPU, A - U
 
 =head3 Subroutine Connection
 
@@ -115,11 +117,11 @@ processing routines or the monitors.
 VAL should be set by the subroutine. SADR holds the subroutine address and is
 set by the record processing routine.
 
-The rest of these fields--LALM, ALST, MLST, and the LA-LL fields--are used to
+The rest of these fields--LALM, ALST, MLST, and the LA-LU fields--are used to
 implement the monitors. For example, when LA is not equal to A, the value-change
 monitors are called for that field.
 
-=fields VAL, SADR, LALM, ALST, MLST, LA - LL
+=fields VAL, SADR, LALM, ALST, MLST, LA - LU
 
 =head2 Record Support
 
@@ -161,7 +163,7 @@ recGblGetPrec() >>>.
   long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p)
 
 Sets the upper display and lower display limits for a field. If the field is
-VAL, A-L, LA-LL, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR,
+VAL, A-U, LA-LU, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR,
 else if the field has upper and lower limits defined they will be used, else the
 upper and lower maximum values for the field type will be used.
 
@@ -170,7 +172,7 @@ upper and lower maximum values for the field type will be used.
   long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p)
 
 Sets the upper control and the lower control limits for a field. If the field is
-VAL, A-L, LA-LL, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR,
+VAL, A-U, LA-LU, HIHI, HIGH, LOW, or LOLO, the limits are set to HOPR and LOPR,
 else if the field has upper and lower limits defined they will be used, else the
 upper and lower maximum values for the field type will be used.
 
@@ -241,7 +243,7 @@ met.
 
 =item *
 
-Monitors for A-L are invoked if value has changed.
+Monitors for A-U are invoked if value has changed.
 
 =item *
 
@@ -500,6 +502,51 @@ processing.
 		promptgroup("42 - Input G-L")
 		interest(1)
 	}
+	field(INPM,DBF_INLINK) {
+		prompt("Input M")
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPN,DBF_INLINK) {
+		prompt("Input N")
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPO,DBF_INLINK) {
+		prompt("Input O")
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPP,DBF_INLINK) {
+		prompt("Input P")
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPQ,DBF_INLINK) {
+		prompt("Input Q")
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPR,DBF_INLINK) {
+		prompt("Input R")
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPS,DBF_INLINK) {
+		prompt("Input S")
+		promptgroup("44 - Input S-U")
+		interest(1)
+	}
+	field(INPT,DBF_INLINK) {
+		prompt("Input T")
+		promptgroup("44 - Input S-U")
+		interest(1)
+	}
+	field(INPU,DBF_INLINK) {
+		prompt("Input U")
+		promptgroup("44 - Input S-U")
+		interest(1)
+	}
 	field(EGU,DBF_STRING) {
 		prompt("Engineering Units")
 		promptgroup("80 - Display")
@@ -655,6 +702,42 @@ processing.
 		prompt("Value of Input L")
 		pp(TRUE)
 	}
+	field(M,DBF_DOUBLE) {
+		prompt("Value of Input M")
+		pp(TRUE)
+	}
+	field(N,DBF_DOUBLE) {
+		prompt("Value of Input N")
+		pp(TRUE)
+	}
+	field(O,DBF_DOUBLE) {
+		prompt("Value of Input O")
+		pp(TRUE)
+	}
+	field(P,DBF_DOUBLE) {
+		prompt("Value of Input P")
+		pp(TRUE)
+	}
+	field(Q,DBF_DOUBLE) {
+		prompt("Value of Input Q")
+		pp(TRUE)
+	}
+	field(R,DBF_DOUBLE) {
+		prompt("Value of Input R")
+		pp(TRUE)
+	}
+	field(S,DBF_DOUBLE) {
+		prompt("Value of Input S")
+		pp(TRUE)
+	}
+	field(T,DBF_DOUBLE) {
+		prompt("Value of Input T")
+		pp(TRUE)
+	}
+	field(U,DBF_DOUBLE) {
+		prompt("Value of Input U")
+		pp(TRUE)
+	}
 	field(LA,DBF_DOUBLE) {
 		prompt("Prev Value of A")
 		special(SPC_NOMOD)
@@ -712,6 +795,51 @@ processing.
 	}
 	field(LL,DBF_DOUBLE) {
 		prompt("Prev Value of L")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LM,DBF_DOUBLE) {
+		prompt("Prev Value of M")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LN,DBF_DOUBLE) {
+		prompt("Prev Value of N")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LO,DBF_DOUBLE) {
+		prompt("Prev Value of O")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LP,DBF_DOUBLE) {
+		prompt("Prev Value of P")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LQ,DBF_DOUBLE) {
+		prompt("Prev Value of Q")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LR,DBF_DOUBLE) {
+		prompt("Prev Value of R")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LS,DBF_DOUBLE) {
+		prompt("Prev Value of S")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LT,DBF_DOUBLE) {
+		prompt("Prev Value of T")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LU,DBF_DOUBLE) {
+		prompt("Prev Value of U")
 		special(SPC_NOMOD)
 		interest(3)
 	}

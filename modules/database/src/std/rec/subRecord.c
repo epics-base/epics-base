@@ -86,7 +86,7 @@ static long do_sub(subRecord *);
 static long fetch_values(subRecord *);
 static void monitor(subRecord *);
 
-#define INP_ARG_MAX 12
+#define INP_ARG_MAX 21
 
 static long init_record(struct dbCommon *pcommon, int pass)
 {
@@ -196,9 +196,9 @@ static long special(DBADDR *paddr, int after)
 #define indexof(field) subRecord##field
 
 static long get_linkNumber(int fieldIndex) {
-    if (fieldIndex >= indexof(A) && fieldIndex <= indexof(L))
+    if (fieldIndex >= indexof(A) && fieldIndex < indexof(A) + INP_ARG_MAX)
         return fieldIndex - indexof(A);
-    if (fieldIndex >= indexof(LA) && fieldIndex <= indexof(LL))
+    if (fieldIndex >= indexof(LA) && fieldIndex < indexof(LA) + INP_ARG_MAX)
         return fieldIndex - indexof(LA);
     return -1;
 }

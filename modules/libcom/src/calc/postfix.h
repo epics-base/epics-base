@@ -22,8 +22,11 @@
 
 #include "libComAPI.h"
 
-/** \brief Number of input arguments to a calc expression (A-L) */
-#define CALCPERFORM_NARGS 12
+/** \brief Number of input arguments to a calc expression (A-U)
+  *
+  * Since UNRELEASED the number of inputs has been increased from 12 to 21.
+  */
+#define CALCPERFORM_NARGS 21
 /** \brief Size of the internal partial result stack */
 #define CALCPERFORM_STACK 80
 
@@ -61,7 +64,7 @@
  *
  * This is not a hard limit, just the default size for the database
  */
-#define MAX_INFIX_SIZE 100
+#define MAX_INFIX_SIZE 160
 /**
  * \brief Size of a "standard" postfix buffer.
  *
@@ -161,13 +164,13 @@ extern "C" {
  *      angle from radians to degrees.
  *
  * -# **Variables** are used to provide inputs to an expression, and are
- *  named using the single letters \c A through \c L inclusive or the
+ *  named using the single letters \c A through \c U inclusive or the
  *  keyword \c VAL which refers to the previous result of this
  *  calculation.
  *  The software that makes use of the expression evaluation code should
  *  document how the individual variables are given values.
  *  For the calc and calcout record types the input links \c INPA through
- *  \c INPL can be used to obtain values from other record fields, and \c
+ *  \c INPU can be used to obtain values from other record fields, and \c
  *  VAL refers to the the VAL field (which can be overwritten from
  *  outside the record via Channel Access or a database link).
  *
@@ -323,7 +326,7 @@ LIBCOM_API long
  * Evaluates the postfix expression against a set ot input values.
  *
  * \param parg Pointer to an array of double values for the arguments
- * \c A-L that can appear in the expression.
+ * \c A-U that can appear in the expression.
  * Note that the argument values may be modified if the expression uses
  * the assignment operator.
  * \param presult Where to put the calculated result, which may be a NaN
@@ -345,8 +348,8 @@ LIBCOM_API long
  * for either of these pointers is legal if only the other is needed.
  *
  * The least significant bit (bit 0) of the bitmap at \c *pinputs will be set
- * if the expression depends on the argument A, and so on through bit 11 for
- * the argument L. An argument that is not used until after a value has been
+ * if the expression depends on the argument A, and so on through bit 20 for
+ * the argument U. An argument that is not used until after a value has been
  * assigned to it will not be set in the pinputs bitmap, thus the bits can
  * be used to determine whether a value needs to be supplied for their
  * associated argument or not for the purposes of evaluating the expression.

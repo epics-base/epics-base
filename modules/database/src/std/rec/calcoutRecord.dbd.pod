@@ -20,6 +20,8 @@ rather than the DBF_STRING fields used in the Wait record. For new
 databases, it is recommended that the Calcout record be used instead of the
 Wait record.
 
+Since UNRELEASED the number of inputs has been increased from 12 to 21.
+
 =head2 Parameter Fields
 
 The record-specific fields are described below, grouped by functionality.
@@ -57,18 +59,18 @@ These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read Parameters
 
-The read parameters for the Calcout record consists of 12 input links INPA,
-INPB, ... INPL. The fields can be database links, channel access links, or
-constants. If they are links, they must specify another record's field. If
+The read parameters for the Calcout record consists of 21 input links INPA -
+INPU. The fields can be database links, channel access links, or constants.
+If they are links, they must specify another record's field. If
 they are constants, they will be initialized with the value they are
 configured with and can be changed via C<dbPuts>. These fields cannot be
-hardware addresses. In addition, the Calcout record contains the INAV,
-INBV, ... INLV fields which indicate the status of the link fields, for
+hardware addresses. In addition, the Calcout record contains the INAV -
+INUV fields which indicate the status of the link fields, for
 example, whether or not the specified PV was found and a link to it
 established. See L<Operator Display Parameters> for an explanation of these
 fields.
 
-=fields INPA - INPL
+=fields INPA - INPU
 
 =head3 Expressions
 
@@ -146,14 +148,14 @@ angle from radians to degrees
 
 The expression can use the values retrieved from the INPx links as
 operands, though constants can be used as operands too. These values
-retrieved from the input links are stored in the A-L fields. The values to
+retrieved from the input links are stored in the A-U fields. The values to
 be used in the expression are simple references by the field letter. For
 instance, the value obtained from the INPA link is stored in field A, and
 the values obtained from the INPB link is stored in the field B. The names
 can be included in the expression will operate on their respective values,
 as in A+B.
 
-=fields A - L
+=fields A - U
 
 The keyword VAL returns the current contents of the expression's result
 field, i.e. the VAL field for the CALC expression and the OVAL field for
@@ -604,8 +606,8 @@ LOW, and LOLO fields. PREC controls the precision of the VAL field.
 
 =head4 Menu calcoutINAV
 
-The INAV-INLV fields indicate the status of the link to the PVs specified
-in the INPA-INPL fields respectively. These fields can have four possible
+The INAV-INUV fields indicate the status of the link to the PVs specified
+in the INPA-INPU fields respectively. These fields can have four possible
 values:
 
 =menu calcoutINAV
@@ -629,7 +631,7 @@ C<Constant> -- the corresponding link field is a constant.
 =back
 
 The OUTV field indicates the status of the OUT link. If has the same
-possible values as the INAV-INLV fields.
+possible values as the INAV-INUV fields.
 
 The CLCV and OLCV fields indicate the validity of the expression in the
 CALC and OCAL fields respectively. If the expression in invalid, the field
@@ -640,7 +642,7 @@ The DLYA field is set to one during the delay specified in ODLY.
 See L<Fields Common to All Record Types|dbCommonRecord/Operator Display
 Parameters> for more on the record name (NAME) and description (DESC) fields.
 
-=fields EGU, PREC, HOPR, LOPR, INAV - INLV, OUTV, CLCV, OCLV, DLYA, NAME, DESC
+=fields EGU, PREC, HOPR, LOPR, INAV - INUV, OUTV, CLCV, OCLV, DLYA, NAME, DESC
 
 =head3 Alarm Parameters
 
@@ -684,12 +686,12 @@ modifiable at run-time. They are used to process the record.
 The LALM field is used to implement the hysteresis factor for the alarm
 limits.
 
-The LA-LL fields are used to decide when to trigger monitors for the
+The LA-LU fields are used to decide when to trigger monitors for the
 corresponding fields. For instance, if LA does not equal the value for A,
 monitors for A are triggered. The MLST and ALST fields are used in the same
 manner for the VAL field.
 
-=fields LALM, ALST, MLST, LA - LL
+=fields LALM, ALST, MLST, LA - LU
 
 =cut
 
@@ -721,7 +723,7 @@ manner for the VAL field.
 		promptgroup("30 - Action")
 		special(SPC_CALC)
 		pp(TRUE)
-		size(80)
+		size(160)
 		initial("0")
 	}
 	field(CLCV,DBF_LONG) {
@@ -798,6 +800,60 @@ manner for the VAL field.
 		prompt("Input L")
 		special(SPC_MOD)
 		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPM,DBF_INLINK) {
+		prompt("Input M")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPN,DBF_INLINK) {
+		prompt("Input N")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPO,DBF_INLINK) {
+		prompt("Input O")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPP,DBF_INLINK) {
+		prompt("Input P")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPQ,DBF_INLINK) {
+		prompt("Input Q")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPR,DBF_INLINK) {
+		prompt("Input R")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPS,DBF_INLINK) {
+		prompt("Input S")
+		special(SPC_MOD)
+		promptgroup("44 - Input S-U")
+		interest(1)
+	}
+	field(INPT,DBF_INLINK) {
+		prompt("Input T")
+		special(SPC_MOD)
+		promptgroup("44 - Input S-U")
+		interest(1)
+	}
+	field(INPU,DBF_INLINK) {
+		prompt("Input U")
+		special(SPC_MOD)
+		promptgroup("44 - Input S-U")
 		interest(1)
 	}
 	field(OUT,DBF_OUTLINK) {
@@ -890,6 +946,69 @@ manner for the VAL field.
 		menu(calcoutINAV)
 		initial("1")
 	}
+	field(INMV,DBF_MENU) {
+		prompt("INPM PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INNV,DBF_MENU) {
+		prompt("INPN PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INOV,DBF_MENU) {
+		prompt("INPO PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INPV,DBF_MENU) {
+		prompt("INPP PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INQV,DBF_MENU) {
+		prompt("INPQ PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INRV,DBF_MENU) {
+		prompt("INPR PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INSV,DBF_MENU) {
+		prompt("INPS PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INTV,DBF_MENU) {
+		prompt("INPT PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INUV,DBF_MENU) {
+		prompt("INPU PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
 	field(OUTV,DBF_MENU) {
 		prompt("OUT PV Status")
 		special(SPC_NOMOD)
@@ -924,7 +1043,7 @@ manner for the VAL field.
 		promptgroup("30 - Action")
 		special(SPC_CALC)
 		pp(TRUE)
-		size(80)
+		size(160)
 		initial("0")
 	}
 	field(OCLV,DBF_LONG) {
@@ -1104,6 +1223,42 @@ manner for the VAL field.
 		prompt("Value of Input L")
 		pp(TRUE)
 	}
+	field(M,DBF_DOUBLE) {
+		prompt("Value of Input M")
+		pp(TRUE)
+	}
+	field(N,DBF_DOUBLE) {
+		prompt("Value of Input N")
+		pp(TRUE)
+	}
+	field(O,DBF_DOUBLE) {
+		prompt("Value of Input O")
+		pp(TRUE)
+	}
+	field(P,DBF_DOUBLE) {
+		prompt("Value of Input P")
+		pp(TRUE)
+	}
+	field(Q,DBF_DOUBLE) {
+		prompt("Value of Input Q")
+		pp(TRUE)
+	}
+	field(R,DBF_DOUBLE) {
+		prompt("Value of Input R")
+		pp(TRUE)
+	}
+	field(S,DBF_DOUBLE) {
+		prompt("Value of Input S")
+		pp(TRUE)
+	}
+	field(T,DBF_DOUBLE) {
+		prompt("Value of Input T")
+		pp(TRUE)
+	}
+	field(U,DBF_DOUBLE) {
+		prompt("Value of Input U")
+		pp(TRUE)
+	}
 	field(OVAL,DBF_DOUBLE) {
 		prompt("Output Value")
 		asl(ASL0)
@@ -1168,6 +1323,51 @@ manner for the VAL field.
 		special(SPC_NOMOD)
 		interest(3)
 	}
+	field(LM,DBF_DOUBLE) {
+		prompt("Prev Value of M")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LN,DBF_DOUBLE) {
+		prompt("Prev Value of N")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LO,DBF_DOUBLE) {
+		prompt("Prev Value of O")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LP,DBF_DOUBLE) {
+		prompt("Prev Value of P")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LQ,DBF_DOUBLE) {
+		prompt("Prev Value of Q")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LR,DBF_DOUBLE) {
+		prompt("Prev Value of R")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LS,DBF_DOUBLE) {
+		prompt("Prev Value of S")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LT,DBF_DOUBLE) {
+		prompt("Prev Value of T")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LU,DBF_DOUBLE) {
+		prompt("Prev Value of U")
+		special(SPC_NOMOD)
+		interest(3)
+	}
 	field(POVL,DBF_DOUBLE) {
 		prompt("Prev Value of OVAL")
 		asl(ASL0)
@@ -1192,13 +1392,13 @@ manner for the VAL field.
 		prompt("Reverse Polish Calc")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(80)]")
+		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(160)]")
 	}
 	field(ORPC,DBF_NOACCESS) {
 		prompt("Reverse Polish OCalc")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("char	orpc[INFIX_TO_POSTFIX_SIZE(80)]")
+		extra("char	orpc[INFIX_TO_POSTFIX_SIZE(160)]")
 	}
 
 =head2 Record Support
@@ -1307,7 +1507,7 @@ Archive and value change monitors are invoked if ADEL and MDEL conditions
 are met.
 
 =item *
-Monitors for A-L are checked whenever other monitors are invoked.
+Monitors for A-U are checked whenever other monitors are invoked.
 
 =item *
 NSEV and NSTA are reset to 0

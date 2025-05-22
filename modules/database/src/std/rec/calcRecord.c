@@ -159,9 +159,9 @@ static long special(DBADDR *paddr, int after)
 #define indexof(field) calcRecord##field
 
 static long get_linkNumber(int fieldIndex) {
-    if (fieldIndex >= indexof(A) && fieldIndex <= indexof(L))
+    if (fieldIndex >= indexof(A) && fieldIndex < indexof(A) + CALCPERFORM_NARGS)
         return fieldIndex - indexof(A);
-    if (fieldIndex >= indexof(LA) && fieldIndex <= indexof(LL))
+    if (fieldIndex >= indexof(LA) && fieldIndex < indexof(LA) + CALCPERFORM_NARGS)
         return fieldIndex - indexof(LA);
     return -1;
 }

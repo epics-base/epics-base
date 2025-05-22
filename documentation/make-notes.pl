@@ -106,10 +106,9 @@ __NEW_INTRO__
 
 print $out map { "$_\n" } @notes, "-----\n\n";
 
-print $out map {
-    my $v = relVers($_);
-    "## [EPICS Release $v](RELEASE-$v.md)\n\n";
-} @OLD_RELS;
+print $out "```{toctree}\n",
+    map( sprintf("RELEASE-%s.md\n", relVers($_)), @OLD_RELS),
+    "```\n\n";
 
 close $out;
 

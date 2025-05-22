@@ -47,7 +47,7 @@ LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigne
     return osiGetUserNameSuccess;
 }
 
-LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess 
+LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
     ( const char *pProcessName, const char *pBaseExecutableName )
 {
     BOOL silent = pProcessName && pProcessName[0]=='!';

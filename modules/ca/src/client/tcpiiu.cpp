@@ -1804,9 +1804,9 @@ const char * tcpiiu::pHostName (
     return this->hostNameCacheInstance.pointer ();
 }
 
-unsigned tcpiiu::getHostMinorProtocol ( 
+unsigned tcpiiu::getHostMinorProtocol (
     epicsGuard < epicsMutex > & guard) const throw ()
-{   
+{
     guard.assertIdenticalMutex ( this->mutex );
     return this->minorProtocolVersion;
 }

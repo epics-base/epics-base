@@ -19,7 +19,7 @@
 #include "osiSock.h"
 #include "errlog.h"
 
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsSocketEnableAddressReuseDuringTimeWaitState ( SOCKET s )
 {
 #ifdef _WIN32

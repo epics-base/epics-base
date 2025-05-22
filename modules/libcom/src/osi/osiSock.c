@@ -31,7 +31,7 @@
  * sockAddrAreIdentical()
  * (returns true if addresses are identical)
  */
-int epicsStdCall sockAddrAreIdentical 
+int epicsStdCall sockAddrAreIdentical
             ( const osiSockAddr *plhs, const osiSockAddr *prhs )
 {
     int match;
@@ -58,7 +58,7 @@ int epicsStdCall sockAddrAreIdentical
  * sockAddrToA()
  * (convert socket address to ASCII host name)
  */
-unsigned epicsStdCall sockAddrToA ( 
+unsigned epicsStdCall sockAddrToA (
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
     if ( bufSize < 1 ) {
@@ -89,7 +89,7 @@ unsigned epicsStdCall sockAddrToA (
  * ipAddrToA()
  * (convert IP address to ASCII host name)
  */
-unsigned epicsStdCall ipAddrToA ( 
+unsigned epicsStdCall ipAddrToA (
     const struct sockaddr_in * paddr, char * pBuf, unsigned bufSize )
 {
     unsigned len = ipAddrToHostName (
@@ -115,7 +115,7 @@ unsigned epicsStdCall ipAddrToA (
 /*
  * sockAddrToDottedIP ()
  */
-unsigned epicsStdCall sockAddrToDottedIP ( 
+unsigned epicsStdCall sockAddrToDottedIP (
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize )
 {
     if ( paddr->sa_family != AF_INET ) {
@@ -141,7 +141,7 @@ unsigned epicsStdCall sockAddrToDottedIP (
 /*
  * ipAddrToDottedIP ()
  */
-unsigned epicsStdCall ipAddrToDottedIP ( 
+unsigned epicsStdCall ipAddrToDottedIP (
     const struct sockaddr_in *paddr, char *pBuf, unsigned bufSize )
 {
     static const char * pErrStr = "<IPA>";

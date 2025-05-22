@@ -352,7 +352,7 @@ enum ca_preemptive_callback_select
  *
  * \sa ca_context_destroy()
  */
-LIBCA_API int epicsStdCall 
+LIBCA_API int epicsStdCall
         ca_context_create (enum ca_preemptive_callback_select select);
 
 /** \brief Detach from any CA context currently attached to the calling thread.
@@ -1433,7 +1433,7 @@ LIBCA_API void epicsStdCall ca_signal_with_file_and_lineno
  * pFormat      R   printf dtyle format string (and optional arguments)
  *
  */
-LIBCA_API void epicsStdCall ca_signal_formated (long ca_status, const char *pfilenm, 
+LIBCA_API void epicsStdCall ca_signal_formated (long ca_status, const char *pfilenm,
                                        int lineno, const char *pFormat, ...);
 
 /** \brief Return a character string which contains the name of the host
@@ -1457,11 +1457,11 @@ LIBCA_API const char * epicsStdCall ca_host_name (chid channel);
  * \param[out] bufLength The size of the pBuf buffer.
  * \returns The effective size of the written host name.
  */
-LIBCA_API unsigned epicsStdCall ca_get_host_name ( chid pChan, 
+LIBCA_API unsigned epicsStdCall ca_get_host_name ( chid pChan,
     char *pBuf, unsigned bufLength );
 
 /** \brief Return the minor protocol version number used by the host to
- *  which a channel is currently connected.   
+ *  which a channel is currently connected.
  *
  * \param[in] pChan channel identifier
  * \returns The minor protocol version number.

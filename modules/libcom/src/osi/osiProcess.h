@@ -38,11 +38,11 @@ typedef enum osiGetUserNameReturn {
  * and copy the name into the provided buffer
  *
  * \param pBuf buffer where user name is copied into
- * \param bufSize size of input buffer. 
+ * \param bufSize size of input buffer.
  *
  * \return return failed if unable to get user name or user name is too large
  * to fit in buffer.  Otherwise return success
- */    
+ */
 LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigned bufSize);
 
  /** Return code for osiSpawnDetachedProcess() */
@@ -55,13 +55,13 @@ typedef enum osiSpawnDetachedProcessReturn {
  /** \brief Spawn detached process
   *
   * Spawn detached process with named executable.
-  * 
+  *
   * \param pProcessName  process name to be displayed. Not used in all OSs
   * \param pBaseExecutableName path to executable
   *
   * \return return code indicating success or failure
   */
-LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess 
+LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
     (const char *pProcessName, const char *pBaseExecutableName);
 
 #ifdef __cplusplus

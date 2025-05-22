@@ -62,12 +62,12 @@ LIBCOM_API void epicsStdCall epicsMessageQueueDestroy(
 {
   int rv;
   rv = mq_close(id->id);
-  if( rv ) { 
+  if( rv ) {
     fprintf(stderr, "epicsMessageQueueDestroy mq_close failed: %s\n",
                          strerror(rv));
   }
   rv = mq_unlink(id->name);
-  if( rv ) { 
+  if( rv ) {
     fprintf(stderr,"epicsMessageQueueDestroy mq_unlink %s failed: %s\n",
                          id->name, strerror(rv));
   }

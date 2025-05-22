@@ -31,26 +31,26 @@ extern "C" {
 #endif
 
 /** \brief Converts C-style escape sequences to their binary form
- * 
- * Copies characters from string to an output buffer and converts C-style escape sequences to 
- * their binary form.  Since the output string can never be longer than the source, it is legal for 
+ *
+ * Copies characters from string to an output buffer and converts C-style escape sequences to
+ * their binary form.  Since the output string can never be longer than the source, it is legal for
  * \p inbuf and \p outbuf to point to the same buffer and \p outsize and \p inlen
  * be equal, thus performing the character translation in-place.
- * 
- * \param outbuf  buffer to copy string to. The resulting string will be zero-terminated as long as 
- *                \p outsize is non-zero. 
- * \param outsize length of output buffer not including the null-terminator. 
+ *
+ * \param outbuf  buffer to copy string to. The resulting string will be zero-terminated as long as
+ *                \p outsize is non-zero.
+ * \param outsize length of output buffer not including the null-terminator.
  * \param inbuf   buffer to copy from. Null byte terminates the string.
  * \param inlen   maximum number of characters to copy from input buffer.
  *
- * \return  number of characters that were written into output buffer, not counting the null terminator. 
+ * \return  number of characters that were written into output buffer, not counting the null terminator.
 **/
 LIBCOM_API int epicsStrnRawFromEscaped(char *outbuf,      size_t outsize,
                                            const char *inbuf, size_t inlen);
 
 /** \brief Converts non-printable characters into C-style escape sequences
  *
- * Copies characters from the string into a output buffer converting non-printable characters into C-style 
+ * Copies characters from the string into a output buffer converting non-printable characters into C-style
  * escape sequences.   In-place translations are not allowed since the escaped results will usually be larger
  * than the input string.
  *
@@ -59,14 +59,14 @@ LIBCOM_API int epicsStrnRawFromEscaped(char *outbuf,      size_t outsize,
  * All other non-printable characters appear in form `\xHH` where HH are two hex digits.
  * Non-printable characters are determined by the C runtime library’s isprint() function.
  *
- * \param outbuf  buffer to copy string to. The resulting string will be zero-terminated as long as 
- *                @p outsize is non-zero. 
+ * \param outbuf  buffer to copy string to. The resulting string will be zero-terminated as long as
+ *                @p outsize is non-zero.
  * \param outsize length of output buffer not including the null-terminator.
  * \param inbuf   buffer to copy from. Null byte will not terminates the string.
  * \param inlen   Number of characters to copy from input buffer.
  *
- * \return number of characters that would have been stored in the output buffer if it were large enough, 
- * or a negative value if \p outbuf == \p inbuf. 
+ * \return number of characters that would have been stored in the output buffer if it were large enough,
+ * or a negative value if \p outbuf == \p inbuf.
  *
  */
 LIBCOM_API int epicsStrnEscapedFromRaw(char *outbuf,      size_t outsize,
@@ -74,16 +74,16 @@ LIBCOM_API int epicsStrnEscapedFromRaw(char *outbuf,      size_t outsize,
 
 /** \brief Scans string and returns size of output buffer needed to escape that string
  *
- * Scans up to \p len characters of the string that may contain non-printable characters, and returns 
- * the size of the output buffer that would be needed to escape that string. 
- * This routine is faster than calling epicsStrnEscapedFromRaw() with a zero length output buffer; both 
+ * Scans up to \p len characters of the string that may contain non-printable characters, and returns
+ * the size of the output buffer that would be needed to escape that string.
+ * This routine is faster than calling epicsStrnEscapedFromRaw() with a zero length output buffer; both
  * should return the same result.
  *
  *\param buf string to scan
  *\param len length of input string
  *
- *\return size of the output buffer that would be needed for converting to escape characters, not 
- *        including the null terminator. 
+ *\return size of the output buffer that would be needed for converting to escape characters, not
+ *        including the null terminator.
  */
 LIBCOM_API size_t epicsStrnEscapedFromRawSize(const char *buf, size_t len);
 
@@ -113,7 +113,7 @@ LIBCOM_API char * epicsStrnDup(const char *s, size_t len);
 
 /** \brief Prints escaped version of string
  *
- * Prints the contents of its input buffer to given file descriptor,  substituting escape sequences 
+ * Prints the contents of its input buffer to given file descriptor,  substituting escape sequences
  * for non-printable characters.
  *
  * \param fp  File descriptor to print to
@@ -121,12 +121,12 @@ LIBCOM_API char * epicsStrnDup(const char *s, size_t len);
  * \param n   Length of string
  */
 LIBCOM_API int epicsStrPrintEscaped(FILE *fp, const char *s, size_t n);
-    
+
 #define epicsStrSnPrintEscaped epicsStrnEscapedFromRaw
 
 /** \brief Calculates length of string
  *
- * Implements strnlen from the C standard library.    
+ * Implements strnlen from the C standard library.
  */
 LIBCOM_API size_t epicsStrnLen(const char *s, size_t maxlen);
 
@@ -154,14 +154,14 @@ LIBCOM_API int epicsStrGlobMatch(const char *str, const char *pattern);
 LIBCOM_API int epicsStrnGlobMatch(const char *str, size_t len, const char *pattern);
 
  /** \brief Extract tokens from string
-  * 
+  *
   * Implements strtok_r from the C standard library
   */
 LIBCOM_API char * epicsStrtok_r(char *s, const char *delim, char **lasts);
 
 /** \brief Calculates a hash of a null-terminated string
  *
- * Calculates a hash of a null-terminated string.  Initial seed may be provided which 
+ * Calculates a hash of a null-terminated string.  Initial seed may be provided which
  * permits multiple strings to be combined into a single hash result.
  *
  *\param str  null-terminated string
@@ -169,12 +169,12 @@ LIBCOM_API char * epicsStrtok_r(char *s, const char *delim, char **lasts);
  *            set to 0.
  *
  *\return Hash value for string
- */    
+ */
 LIBCOM_API unsigned int epicsStrHash(const char *str, unsigned int seed);
 
  /** \brief Calculates a hash of a memory buffer
   *
-  * Calculates a hash of a memory buffer that may contain null values.  Initial seed may be provided which 
+  * Calculates a hash of a memory buffer that may contain null values.  Initial seed may be provided which
   * permits multiple buffers to be combined into a single hash result.
   *
   *\param str    buffer
@@ -183,7 +183,7 @@ LIBCOM_API unsigned int epicsStrHash(const char *str, unsigned int seed);
   *            set to 0.
   *
   *\return Hash value for buffer
-  */    
+  */
 LIBCOM_API unsigned int epicsMemHash(const char *str, size_t length,
                                          unsigned int seed);
 /** \brief Compare two strings and return a number in the range [0.0, 1.0] or -1.0 on error.
@@ -198,7 +198,7 @@ LIBCOM_API unsigned int epicsMemHash(const char *str, size_t length,
 LIBCOM_API double epicsStrSimilarity(const char *A, const char *B);
 
 /** \brief DEPRECATED
- * \deprecated dbTranslateEscape is deprecated, use epicsStrnRawFromEscaped() instead 
+ * \deprecated dbTranslateEscape is deprecated, use epicsStrnRawFromEscaped() instead
  */
 LIBCOM_API int dbTranslateEscape(char *s, const char *ct);
 

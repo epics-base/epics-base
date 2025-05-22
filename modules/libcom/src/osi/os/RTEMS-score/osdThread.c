@@ -104,7 +104,7 @@ int epicsThreadGetOssPriorityValue(unsigned int osiPriority)
 /*
  * epicsThreadLowestPriorityLevelAbove ()
  */
-LIBCOM_API epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove 
+LIBCOM_API epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove
             (unsigned int priority, unsigned *pPriorityJustAbove)
 {
     unsigned newPriority = priority + 1;
@@ -120,7 +120,7 @@ LIBCOM_API epicsThreadBooleanStatus epicsThreadLowestPriorityLevelAbove
 /*
  * epicsThreadHighestPriorityLevelBelow ()
  */
-LIBCOM_API epicsThreadBooleanStatus epicsThreadHighestPriorityLevelBelow 
+LIBCOM_API epicsThreadBooleanStatus epicsThreadHighestPriorityLevelBelow
             (unsigned int priority, unsigned *pPriorityJustBelow)
 {
     unsigned newPriority = priority - 1;

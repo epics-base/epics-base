@@ -51,16 +51,16 @@ static void test_operator_display(void){
     testdbPutFieldOk("test_bi_rec.DESC", DBF_STRING, "DESC_TEST");
 
     /* verify operator display parameters */
-    testdbGetFieldEqual("test_bi_rec.ZNAM", DBF_STRING, "ZNAM_TEST");   
-    testdbGetFieldEqual("test_bi_rec.ONAM", DBF_STRING, "ONAM_TEST"); 
+    testdbGetFieldEqual("test_bi_rec.ZNAM", DBF_STRING, "ZNAM_TEST");
+    testdbGetFieldEqual("test_bi_rec.ONAM", DBF_STRING, "ONAM_TEST");
     testdbGetFieldEqual("test_bi_rec.NAME", DBF_STRING, "test_bi_rec");
     testdbGetFieldEqual("test_bi_rec.DESC", DBF_STRING, "DESC_TEST");
 
     /* verify conversion */
     testdbPutFieldOk("test_bi_link_rec.VAL", DBF_SHORT, TRUE);
-    testdbGetFieldEqual("test_bi_rec.VAL", DBF_STRING, "ONAM_TEST"); 
+    testdbGetFieldEqual("test_bi_rec.VAL", DBF_STRING, "ONAM_TEST");
     testdbPutFieldOk("test_bi_link_rec.VAL", DBF_SHORT, FALSE);
-    testdbGetFieldEqual("test_bi_rec.VAL", DBF_STRING, "ZNAM_TEST"); 
+    testdbGetFieldEqual("test_bi_rec.VAL", DBF_STRING, "ZNAM_TEST");
 
     // number of tests = 11
 }
@@ -78,7 +78,7 @@ static void test_alarm(void){
     testdbPutFieldOk("test_bi_rec.ZSV", DBF_SHORT, menuAlarmSevrNO_ALARM);
     testdbPutFieldOk("test_bi_rec.OSV", DBF_SHORT, menuAlarmSevrMINOR);
     testdbPutFieldOk("test_bi_rec.COSV", DBF_SHORT, menuAlarmSevrINVALID);
-    
+
     /* verify alarm status is NO_ALARM*/
     testdbGetFieldEqual("test_bi_rec.SEVR", DBF_SHORT, menuAlarmSevrNO_ALARM);
 
@@ -92,7 +92,7 @@ static void test_alarm(void){
 
     /* verify LAML */
     testdbGetFieldEqual("test_bi_rec.LALM", DBF_SHORT, TRUE);
- 
+
     // number of tests = 13
 }
 
@@ -100,12 +100,12 @@ MAIN(biTest) {
 
     testPlan(6+6+11+13);
 
-    testdbPrepare();   
+    testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
     recTestIoc_registerRecordDeviceDriver(pdbbase);
 
     testdbReadDatabase("biTest.db", NULL, NULL);
-    
+
     eltc(0);
     testIocInitOk();
     eltc(1);

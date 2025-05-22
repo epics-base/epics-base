@@ -462,7 +462,7 @@ void udpiiu :: M_repeaterTimerNotify :: repeaterRegistrationMessage ( unsigned a
  *
  *  register with the repeater
  */
-void epicsStdCall caRepeaterRegistrationMessage ( 
+void epicsStdCall caRepeaterRegistrationMessage (
            SOCKET sock, unsigned repeaterPort, unsigned attemptNumber )
 {
     osiSockAddr saddr;
@@ -1342,7 +1342,7 @@ const char * udpiiu::pHostName (
     return netiiu::pHostName ( cacGuard );
 }
 
-unsigned udpiiu::getHostMinorProtocol ( 
+unsigned udpiiu::getHostMinorProtocol (
     epicsGuard < epicsMutex > & cacGuard ) const throw ()
 {
     return netiiu::getHostMinorProtocol ( cacGuard );

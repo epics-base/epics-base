@@ -6,7 +6,7 @@
 \*************************************************************************/
 
 /* Compile and link test for epicsExport.h
-* 
+*
 * Test if macros eppicsExportAddr, epicsExportRegistrar and epicsRegisterFunction
 * expand to valid C and C++ code, in the latter case regardless if
 * wrapped with extern "C" {} or not.

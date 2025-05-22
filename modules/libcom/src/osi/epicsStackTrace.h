@@ -44,13 +44,13 @@ LIBCOM_API void epicsStackTrace(void);
 /** Bit mask to check if stack trace is able to lookup local symbols   */
 #define EPICS_STACKTRACE_LCL_SYMBOLS (1<<3)
 
-/** \brief Get supported stacktrace features 
+/** \brief Get supported stacktrace features
  *
- * Returns an ORed bitset of supported features.  Use the EPICS_STACKTRACE_ masks to 
+ * Returns an ORed bitset of supported features.  Use the EPICS_STACKTRACE_ masks to
  * check if a feature is supported.
  *
  * \return 0 if getting the stack trace is unsupported.  Otherwise
- * returns an ORed bitset of supported features. 
+ * returns an ORed bitset of supported features.
  */
 LIBCOM_API int epicsStackTraceGetFeatures(void);
 

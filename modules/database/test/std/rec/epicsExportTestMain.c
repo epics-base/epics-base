@@ -6,7 +6,7 @@
 \*************************************************************************/
 
 /* Compile and link test for epicsExport.h
-* 
+*
 */
 
 #include <epicsUnitTest.h>

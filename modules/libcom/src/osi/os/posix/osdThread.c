@@ -31,7 +31,7 @@
 #endif
 
 #if USE_MEMLOCK
-#include <sys/mman.h> 
+#include <sys/mman.h>
 #endif
 
 /* epicsStdio uses epicsThreadOnce(), require explicit use to avoid unexpected recursion */

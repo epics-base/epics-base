@@ -76,16 +76,16 @@ static void test_operator_display(void){
     testdbPutFieldOk("test_bo_rec.DESC", DBF_STRING, "DESC_TEST");
 
     /* verify operator display parameters */
-    testdbGetFieldEqual("test_bo_rec.ZNAM", DBF_STRING, "ZNAM_TEST");   
-    testdbGetFieldEqual("test_bo_rec.ONAM", DBF_STRING, "ONAM_TEST"); 
+    testdbGetFieldEqual("test_bo_rec.ZNAM", DBF_STRING, "ZNAM_TEST");
+    testdbGetFieldEqual("test_bo_rec.ONAM", DBF_STRING, "ONAM_TEST");
     testdbGetFieldEqual("test_bo_rec.NAME", DBF_STRING, "test_bo_rec");
     testdbGetFieldEqual("test_bo_rec.DESC", DBF_STRING, "DESC_TEST");
 
     /* verify conversion */
     testdbPutFieldOk("test_bo_rec.VAL", DBF_SHORT, TRUE);
-    testdbGetFieldEqual("test_bo_rec.VAL", DBF_STRING, "ONAM_TEST"); 
+    testdbGetFieldEqual("test_bo_rec.VAL", DBF_STRING, "ONAM_TEST");
     testdbPutFieldOk("test_bo_rec.VAL", DBF_SHORT, FALSE);
-    testdbGetFieldEqual("test_bo_rec.VAL", DBF_STRING, "ZNAM_TEST"); 
+    testdbGetFieldEqual("test_bo_rec.VAL", DBF_STRING, "ZNAM_TEST");
 
     // number of tests = 11
 }
@@ -104,7 +104,7 @@ static void test_alarm(void){
     testdbPutFieldOk("test_bo_rec.COSV", DBF_SHORT, menuAlarmSevrINVALID);
     testdbPutFieldOk("test_bo_rec.IVOA", DBF_SHORT, menuIvoaSet_output_to_IVOV);
     testdbPutFieldOk("test_bo_rec.IVOV", DBF_SHORT, FALSE);
-    
+
     /* Verify alarm status is NO_ALARM*/
     testdbGetFieldEqual("test_bo_rec.SEVR", DBF_SHORT, menuAlarmSevrNO_ALARM);
 
@@ -136,12 +136,12 @@ MAIN(boTest) {
 
     testPlan(4+7+11+22);
 
-    testdbPrepare();   
+    testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
     recTestIoc_registerRecordDeviceDriver(pdbbase);
 
     testdbReadDatabase("boTest.db", NULL, NULL);
-    
+
     eltc(0);
     testIocInitOk();
     eltc(1);

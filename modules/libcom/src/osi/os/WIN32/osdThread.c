@@ -39,7 +39,7 @@
 
 /* Windows Vista and higher supports fibre functions, but the
  * prototypes only appear in the windows SDK 8 and above.
- * VS2010 supplies sdk 7, but can be upgraded to later SDK 
+ * VS2010 supplies sdk 7, but can be upgraded to later SDK
 
  * To accommodate this we supply prototypes on, for XP
  * fall back to Tls*() which will build and run
@@ -407,7 +407,7 @@ static unsigned epicsThreadGetOsiPriorityValue ( int osdPriority )
 /*
  * epicsThreadLowestPriorityLevelAbove ()
  */
-LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadLowestPriorityLevelAbove 
+LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadLowestPriorityLevelAbove
             ( unsigned int priority, unsigned * pPriorityJustAbove )
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
@@ -437,7 +437,7 @@ LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadLowestPriorityLevelA
 /*
  * epicsThreadHighestPriorityLevelBelow ()
  */
-LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadHighestPriorityLevelBelow 
+LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadHighestPriorityLevelBelow
             ( unsigned int priority, unsigned * pPriorityJustBelow )
 {
     const DWORD priorityClass = GetPriorityClass ( GetCurrentProcess () );
@@ -467,7 +467,7 @@ LIBCOM_API epicsThreadBooleanStatus epicsStdCall epicsThreadHighestPriorityLevel
 /*
  * epicsThreadGetStackSize ()
  */
-LIBCOM_API unsigned int epicsStdCall 
+LIBCOM_API unsigned int epicsStdCall
     epicsThreadGetStackSize ( epicsThreadStackSizeClass stackSizeClass )
 {
     #define STACK_SIZE(f) (f * 0x10000 * sizeof(void *))
@@ -778,7 +778,7 @@ LIBCOM_API void epicsStdCall epicsThreadResume ( epicsThreadId id )
 /*
  * epicsThreadGetPriority ()
  */
-LIBCOM_API unsigned epicsStdCall epicsThreadGetPriority (epicsThreadId id) 
+LIBCOM_API unsigned epicsStdCall epicsThreadGetPriority (epicsThreadId id)
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     return pParm->epicsPriority;
@@ -787,8 +787,8 @@ LIBCOM_API unsigned epicsStdCall epicsThreadGetPriority (epicsThreadId id)
 /*
  * epicsThreadGetPrioritySelf ()
  */
-LIBCOM_API unsigned epicsStdCall epicsThreadGetPrioritySelf () 
-{ 
+LIBCOM_API unsigned epicsStdCall epicsThreadGetPrioritySelf ()
+{
     win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
 
     if ( pParm ) {
@@ -805,7 +805,7 @@ LIBCOM_API unsigned epicsStdCall epicsThreadGetPrioritySelf ()
 /*
  * epicsThreadSetPriority ()
  */
-LIBCOM_API void epicsStdCall epicsThreadSetPriority ( epicsThreadId id, unsigned priority ) 
+LIBCOM_API void epicsStdCall epicsThreadSetPriority ( epicsThreadId id, unsigned priority )
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
     BOOL stat = SetThreadPriority ( pParm->handle, epicsThreadGetOsdPriorityValue (priority) );
@@ -815,7 +815,7 @@ LIBCOM_API void epicsStdCall epicsThreadSetPriority ( epicsThreadId id, unsigned
 /*
  * epicsThreadIsEqual ()
  */
-LIBCOM_API int epicsStdCall epicsThreadIsEqual ( epicsThreadId id1, epicsThreadId id2 ) 
+LIBCOM_API int epicsStdCall epicsThreadIsEqual ( epicsThreadId id1, epicsThreadId id2 )
 {
     win32ThreadParam * pParm1 = ( win32ThreadParam * ) id1;
     win32ThreadParam * pParm2 = ( win32ThreadParam * ) id2;
@@ -825,7 +825,7 @@ LIBCOM_API int epicsStdCall epicsThreadIsEqual ( epicsThreadId id1, epicsThreadI
 /*
  * epicsThreadIsSuspended ()
  */
-LIBCOM_API int epicsStdCall epicsThreadIsSuspended ( epicsThreadId id ) 
+LIBCOM_API int epicsStdCall epicsThreadIsSuspended ( epicsThreadId id )
 {
     win32ThreadParam *pParm = ( win32ThreadParam * ) id;
     DWORD exitCode;
@@ -874,9 +874,9 @@ LIBCOM_API void epicsStdCall epicsThreadSleep ( double seconds )
     if ( seconds <= 0.0 ) {
         tmo.QuadPart = 0u;
     }
-    else if ( seconds >= INFINITE / mSecPerSec  ) { 
+    else if ( seconds >= INFINITE / mSecPerSec  ) {
         /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
-           to be compatible with previous WaitForSingleObject() implementation */    
+           to be compatible with previous WaitForSingleObject() implementation */
         nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
         tmo.QuadPart = -nIvals; /* negative value means a relative time offset for timer */
     }
@@ -935,7 +935,7 @@ double epicsStdCall epicsThreadSleepQuantum ()
 /*
  * epicsThreadGetIdSelf ()
  */
-LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetIdSelf (void) 
+LIBCOM_API epicsThreadId epicsStdCall epicsThreadGetIdSelf (void)
 {
     win32ThreadParam * pParm = getMyWin32ThreadParam ( NULL );
     assert ( pParm ); /* Don't return a NULL thread id */
@@ -988,7 +988,7 @@ LIBCOM_API const char * epicsStdCall epicsThreadGetNameSelf (void)
 /*
  * epicsThreadGetName ()
  */
-LIBCOM_API void epicsStdCall epicsThreadGetName ( 
+LIBCOM_API void epicsStdCall epicsThreadGetName (
     epicsThreadId id, char * pName, size_t size )
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;

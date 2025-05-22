@@ -109,7 +109,7 @@ void epicsTimerQueuePassiveForC::destroy ()
     delete this;
 }
 
-LIBCOM_API epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) : 
+LIBCOM_API epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) :
     delay ( - DBL_MAX )
 {
     if ( restart != noRestart ) {
@@ -118,7 +118,7 @@ LIBCOM_API epicsTimerNotify::expireStatus::expireStatus ( restart_t restart ) :
     }
 }
 
-LIBCOM_API epicsTimerNotify::expireStatus::expireStatus 
+LIBCOM_API epicsTimerNotify::expireStatus::expireStatus
     ( restart_t restartIn, const double & expireDelaySec ) :
     delay ( expireDelaySec )
 {
@@ -163,13 +163,13 @@ extern "C" epicsTimerQueuePassiveId epicsStdCall
     }
 }
 
-extern "C" void epicsStdCall 
+extern "C" void epicsStdCall
     epicsTimerQueuePassiveDestroy ( epicsTimerQueuePassiveId pQueue )
 {
     pQueue->destroy ();
 }
 
-extern "C" double epicsStdCall 
+extern "C" double epicsStdCall
     epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId pQueue )
 {
     try {
@@ -191,7 +191,7 @@ extern "C" epicsTimerId epicsStdCall epicsTimerQueuePassiveCreateTimer (
     }
 }
 
-extern "C" LIBCOM_API void epicsStdCall epicsTimerQueuePassiveDestroyTimer ( 
+extern "C" LIBCOM_API void epicsStdCall epicsTimerQueuePassiveDestroyTimer (
     epicsTimerQueuePassiveId /* pQueue */, epicsTimerId pTmr )
 {
     pTmr->destroy ();
@@ -240,7 +240,7 @@ extern "C" void  epicsStdCall epicsTimerQueueShow (
     pQueue->show ( level );
 }
 
-extern "C" void epicsStdCall epicsTimerQueueDestroyTimer ( 
+extern "C" void epicsStdCall epicsTimerQueueDestroyTimer (
     epicsTimerQueueId /* pQueue */, epicsTimerId pTmr )
 {
     pTmr->destroy ();

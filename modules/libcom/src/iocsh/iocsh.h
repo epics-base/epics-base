@@ -68,28 +68,28 @@ extern "C" {
  * ```
  */
 typedef enum {
-	/** The argument is converted to an integer value. */
+    /** The argument is converted to an integer value. */
     iocshArgInt,
-	/** The argument is converted to a double-precision floating point value. */
+    /** The argument is converted to a double-precision floating point value. */
     iocshArgDouble,
-	/** The argument is left as a string.
-	 *
-	 * The memory used to hold the string is "owned" by iocsh
-	 * and will be reused once the handler function returns.
-	 */
+    /** The argument is left as a string.
+     *
+     * The memory used to hold the string is "owned" by iocsh
+     * and will be reused once the handler function returns.
+     */
     iocshArgString,
-	/** The argument must be pdbbase. */
+    /** The argument must be pdbbase. */
     iocshArgPdbbase,
-	/** An arbitrary number of arguments is expected.
-	 *
-	 * Subsequent iocshArg structures will be ignored.
-	 */
+    /** An arbitrary number of arguments is expected.
+     *
+     * Subsequent iocshArg structures will be ignored.
+     */
     iocshArgArgv,
-	/** A copy of the argument will be made and a pointer to the copy will be passed to the handler.
-	 *
-	 * The called function should eventually release this copy
-	 * by using the pointer as an argument to free().
-	 */
+    /** A copy of the argument will be made and a pointer to the copy will be passed to the handler.
+     *
+     * The called function should eventually release this copy
+     * by using the pointer as an argument to free().
+     */
     iocshArgPersistentString,
     /**
      * Equivalent to iocshArgString with a hint for tab completion that the
@@ -118,41 +118,41 @@ typedef enum {
  * ```
  */
 typedef union iocshArgBuf {
-	/** The value as an integer.
-	 *
-	 * Corresponds to the @ref iocshArgInt type.
-	 */
+    /** The value as an integer.
+     *
+     * Corresponds to the @ref iocshArgInt type.
+     */
     int    ival;
-	/** The value as a double-precision floating point.
-	 *
-	 * Corresponds to the @ref iocshArgDouble type.
-	 */
+    /** The value as a double-precision floating point.
+     *
+     * Corresponds to the @ref iocshArgDouble type.
+     */
     double dval;
-	/** The value as a string.
-	 *
-	 * Corresponds to the @ref iocshArgString and related types.
-	 */
+    /** The value as a string.
+     *
+     * Corresponds to the @ref iocshArgString and related types.
+     */
     char  *sval;
-	/** The value as an untyped pointer.
-	 *
-	 * Can be used with the @ref iocshArgPdbbase type.
-	 */
+    /** The value as an untyped pointer.
+     *
+     * Can be used with the @ref iocshArgPdbbase type.
+     */
     void  *vval;
-	/** The variadic arguments, for the @ref iocshArgArgv type. */
+    /** The variadic arguments, for the @ref iocshArgArgv type. */
     struct {
-	  /** Number of arguments passed to the IOC shell command.
-	   *
-	   * Provides the number of elements of the `av` array.
-	   */
+      /** Number of arguments passed to the IOC shell command.
+       *
+       * Provides the number of elements of the `av` array.
+       */
       int    ac;
-	  /** The arguments, as an array of strings. */
+      /** The arguments, as an array of strings. */
       char **av;
     }aval;
 }iocshArgBuf;
 
 /**
  * @struct iocshVarDef
- * 
+ *
  * This struct is used with the function iocshRegisterVariable. Each
  * instance includes a name, a data type (see iocshArgType), and a
  * pointer to the value.
@@ -187,9 +187,9 @@ typedef struct iocshVarDef {
  * ```
  */
 typedef struct iocshArg {
-	/** Used by the `help` command to print a synopsis for the command. */
+    /** Used by the `help` command to print a synopsis for the command. */
     const char *name;
-	/** Data type of the argument. */
+    /** Data type of the argument. */
     iocshArgType type;
 }iocshArg;
 
@@ -211,19 +211,19 @@ typedef struct iocshArg {
  * ```
  */
 typedef struct iocshFuncDef {
-	/** Name of the command or function. */
+    /** Name of the command or function. */
     const char *name;
- 	/** Number of entries in the array of pointers to argument descriptions.
-	 *
-	 * If 0, `arg` can be `NULL`.
-	 */
+    /** Number of entries in the array of pointers to argument descriptions.
+     *
+     * If 0, `arg` can be `NULL`.
+     */
     int nargs;
-	/** Array of pointers to structs of type iocshArg.
-	 *
-	 * Can be `NULL` if `nargs` is 0.
-	 */
+    /** Array of pointers to structs of type iocshArg.
+     *
+     * Can be `NULL` if `nargs` is 0.
+     */
     const iocshArg * const *arg;
-	/** Text displayed when using running `help <command>`. */
+    /** Text displayed when using running `help <command>`. */
     const char* usage;
 }iocshFuncDef;
 #define IOCSHFUNCDEF_HAS_USAGE
@@ -248,7 +248,7 @@ typedef void (*iocshCallFunc)(const iocshArgBuf *argBuf);
 
 /**
  * @struct
- * 
+ *
  * This struct is used as a return value for the function iocshFindCommand.
  */
 typedef struct iocshCmdDef {
@@ -268,10 +268,10 @@ LIBCOM_API void epicsStdCall iocshRegister(
     const iocshFuncDef *piocshFuncDef, iocshCallFunc func);
 
 /**
- * @brief 
- * 
- * @param piocshVarDef 
- * @return void 
+ * @brief
+ *
+ * @param piocshVarDef
+ * @return void
  */
 LIBCOM_API void epicsStdCall iocshRegisterVariable (
     const iocshVarDef *piocshVarDef);
@@ -280,8 +280,8 @@ LIBCOM_API void epicsStdCall iocshRegisterVariable (
  * @brief Returns a struct of type iocshCmdDef whose element values are determined
  * by the name parameter.  This function calls the function registryFind, defined in
  * Registry.h
- * 
- * @param name 
+ *
+ * @param name
  * @return const iocshCmdDef*
  */
 LIBCOM_API const iocshCmdDef * epicsStdCall iocshFindCommand(
@@ -291,8 +291,8 @@ LIBCOM_API const iocshCmdDef * epicsStdCall iocshFindCommand(
  * @brief Returns a struct of type iocshVarDef whose element values are determined
  * by the name parameter.  This function calls the function registryFind, defined in
  * Registry.h
- * 
- * @param name 
+ *
+ * @param name
  * @return const iocshVarDef*
  */
 LIBCOM_API const iocshVarDef * epicsStdCall iocshFindVariable(
@@ -302,8 +302,8 @@ LIBCOM_API const iocshVarDef * epicsStdCall iocshFindVariable(
 /* This should only be called when iocsh is no longer needed*/
 /**
  * @brief Frees all memory allocated to registered commands and variables.
- * 
- * @return void 
+ *
+ * @return void
  */
 LIBCOM_API void epicsStdCall iocshFree(void);
 
@@ -345,7 +345,7 @@ LIBCOM_API int epicsStdCall iocshCmd(const char *cmd);
  *     If `NULL`, commands are read from the standard input.
  * @param[in] macros
  *     `NULL` or a comma separated list of macro definitions.
- * 	   eg. `"VAR1=x,VAR2=y"`
+ *     eg. `"VAR1=x,VAR2=y"`
  *
  * @retval 0 on success
  * @retval non-zero on error
@@ -377,7 +377,7 @@ LIBCOM_API int epicsStdCall iocshLoad(const char *pathname, const char* macros);
  */
 LIBCOM_API int epicsStdCall iocshRun(const char *cmd, const char* macros);
 
-/** 
+/**
  * @brief Signal error from an IOC shell function.
  *
  * @param err 0 - success (no op), !=0 - error
@@ -389,11 +389,11 @@ LIBCOM_API int iocshSetError(int err);
 /* Makes macros that shadow environment variables work correctly with epicsEnvSet */
 /**
  * @brief Unsets macro values.
- * 
- * This function sets the values of all macros passed to either iocshLoad or 
+ *
+ * This function sets the values of all macros passed to either iocshLoad or
  * iocshRun to NULL.
- * 
- * @param name 
+ *
+ * @param name
  * @return void
  */
 LIBCOM_API void epicsStdCall iocshEnvClear(const char *name);

@@ -168,7 +168,7 @@ public:
     unsigned getHostName (
         epicsGuard < epicsMutex > &,
         char *pBuf, unsigned bufLength ) const throw ();
-    unsigned getHostMinorProtocol ( 
+    unsigned getHostMinorProtocol (
         epicsGuard < epicsMutex > &) const throw ();
     bool alive (
         epicsGuard < epicsMutex > & ) const;

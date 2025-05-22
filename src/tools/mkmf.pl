@@ -7,7 +7,7 @@
 #     Operator of Los Alamos National Laboratory.
 # SPDX-License-Identifier: EPICS
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 #-----------------------------------------------------------------------
 # mkmf.pl: Perl script to create #include file dependencies
@@ -72,9 +72,9 @@ print "\n ALL DONE \n\n" if $debug;
 
 #----------------------------------------
 sub printList{
-   my $depFile = shift; 
-   my $objFile = shift; 
-   my $file; 
+   my $depFile = shift;
+   my $objFile = shift;
+   my $file;
 
    unlink($depFile) or die "Can't delete $depFile: $!\n" if -f $depFile;
 
@@ -103,7 +103,7 @@ sub scanFile {
    foreach $line ( <FILE> ) {
       $incfile = findNextIncName($line,$file=~/\.substitutions$/);
       next if !$incfile;
-      next if $output{$incfile};   
+      next if $output{$incfile};
       push @includes,$incfile;
       $output{$incfile} = 1;
    }

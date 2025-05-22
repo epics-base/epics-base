@@ -310,7 +310,7 @@ typedef struct chFilterIf {
 } chFilterIf;
 
 /** \brief Filter plugin data
- * 
+ *
  * A chFilterPlugin object holds data about a filter plugin.
  */
 typedef struct chFilterPlugin {

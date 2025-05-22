@@ -59,7 +59,7 @@ LIBCOM_API osiGetUserNameReturn epicsStdCall osiGetUserName (char *pBuf, unsigne
     }
 }
 
-LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess 
+LIBCOM_API osiSpawnDetachedProcessReturn epicsStdCall osiSpawnDetachedProcess
     (const char *pProcessName, const char *pBaseExecutableName)
 {
     int status;

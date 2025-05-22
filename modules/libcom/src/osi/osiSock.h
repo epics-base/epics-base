@@ -44,7 +44,7 @@ struct in_addr;
  * \param protocol Typically unused and set to 0.
  * \return A file descriptor referring to the socket, or -1 on error.
  */
-LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
     int domain, int type, int protocol );
 
 /*!
@@ -70,7 +70,7 @@ LIBCOM_API SOCKET epicsStdCall epicsSocketAccept (
  *
  * Close and free resources held by a SOCKET object.
  */
-LIBCOM_API void epicsStdCall epicsSocketDestroy ( 
+LIBCOM_API void epicsStdCall epicsSocketDestroy (
     SOCKET );
 /*!
  * \brief Allows a socket to bind ignoring other sockets in TIME_WAIT state.
@@ -88,7 +88,7 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy (
  *
  * \param s The socket to ignore other TIME_WAIT sockets when binding
  */
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsSocketEnableAddressReuseDuringTimeWaitState ( SOCKET s );
 /*!
  * \brief Allows multiple sockets to use the same family, local address, and local
@@ -106,7 +106,7 @@ LIBCOM_API void epicsStdCall
  *
  * \param s The socket to put in "Fanout" mode (aka REUSEPORT mode)
  */
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     epicsSocketEnableAddressUseForDatagramFanout ( SOCKET s );
 
 /*!
@@ -138,7 +138,7 @@ enum epicsSocketSystemCallInterruptMechanismQueryInfo {
  * \return enum representing whether to call close() or shutdown(RW) to
  * interrupt blocking socket syscalls.
  */
-LIBCOM_API enum epicsSocketSystemCallInterruptMechanismQueryInfo 
+LIBCOM_API enum epicsSocketSystemCallInterruptMechanismQueryInfo
         epicsSocketSystemCallInterruptMechanismQuery ();
 
 #ifdef EPICS_PRIVATE_API
@@ -206,7 +206,7 @@ LIBCOM_API unsigned epicsStdCall ipAddrToA (
  * null termination, but always writes at least a null terminator in the string
  * (if bufSize >= 1)
  */
-LIBCOM_API unsigned epicsStdCall sockAddrToDottedIP ( 
+LIBCOM_API unsigned epicsStdCall sockAddrToDottedIP (
     const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
 
 /*!
@@ -222,7 +222,7 @@ LIBCOM_API unsigned epicsStdCall sockAddrToDottedIP (
  * null termination, but always writes at least a null terminator in the string
  * (if bufSize >= 1)
  */
-LIBCOM_API unsigned epicsStdCall ipAddrToDottedIP ( 
+LIBCOM_API unsigned epicsStdCall ipAddrToDottedIP (
     const struct sockaddr_in * paddr, char * pBuf, unsigned bufSize );
 
 /*!
@@ -266,7 +266,7 @@ LIBCOM_API int epicsStdCall aToIPAddr
  * \param[out] pIPA Pointer to the in_addr structure where the hostname information will be stored
  * \return 0 on success, negative on error.
  */
-LIBCOM_API int epicsStdCall hostToIPAddr 
+LIBCOM_API int epicsStdCall hostToIPAddr
     (const char *pHostName, struct in_addr *pIPA);
 /*!
  * \brief attach to BSD socket library
@@ -342,7 +342,7 @@ typedef struct osiSockAddrNode {
  *
  * \return true if addresses are identical, false otherwise.
  */
-LIBCOM_API int epicsStdCall sockAddrAreIdentical 
+LIBCOM_API int epicsStdCall sockAddrAreIdentical
     ( const osiSockAddr * plhs, const osiSockAddr * prhs );
 
 /*!

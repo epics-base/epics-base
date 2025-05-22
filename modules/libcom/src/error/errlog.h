@@ -241,7 +241,7 @@ LIBCOM_API void errlogFlush(void);
  * ::errVerbose determines if the filename and line number are shown.
  */
 LIBCOM_API void errPrintf(
-    long status, const char *pFileName, int lineno, 
+    long status, const char *pFileName, int lineno,
     EPICS_PRINTF_FMT(const char *pformat), ...
 ) EPICS_PRINTF_STYLE(4,5);
 

@@ -1,5 +1,5 @@
 
-//  (C) Copyright John Maddock 2005.  
+//  (C) Copyright John Maddock 2005.
 //  Use, modification and distribution are subject to the Boost Software License,
 //  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt).
@@ -69,10 +69,10 @@ struct is_signed_select_helper<false>
 template <class T>
 struct is_signed_imp
 {
-   typedef is_signed_select_helper< 
+   typedef is_signed_select_helper<
       ::boost::type_traits::ice_or<
          ::boost::is_integral<T>::value,
-         ::boost::is_enum<T>::value>::value 
+         ::boost::is_enum<T>::value>::value
    > selector;
    typedef typename selector::template rebind<T> binder;
    typedef typename binder::type type;

@@ -1217,7 +1217,7 @@ static long cvt_f_st(const void *f, void *t, const dbAddr *paddr)
 {
     const epicsFloat32 *from = (const epicsFloat32 *) f;
     char *to = (char *) t;
-    
+
     rset *prset = 0;
     long status = 0;
     long precision = 6;

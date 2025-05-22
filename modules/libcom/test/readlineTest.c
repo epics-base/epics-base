@@ -57,7 +57,7 @@ MAIN(readlineTest)
         if (!c || c == '#') {
             continue;
         }
-        
+
         do {
             // expected strings are always single line strings
             if (! fgets(line_expect, 499, fp_expect)) {

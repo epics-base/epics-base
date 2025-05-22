@@ -129,7 +129,7 @@ unsigned cacChannel::getHostName (
     return 0u;
 }
 
-unsigned cacChannel::getHostMinorProtocol ( 
+unsigned cacChannel::getHostMinorProtocol (
     epicsGuard < epicsMutex > &) const throw ()
 {
     epicsThreadOnce ( & cacChannelIdOnce, cacChannelSetup, 0);

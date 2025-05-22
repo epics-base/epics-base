@@ -125,7 +125,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     prec->lalm = prec->val;
     prec->pval = prec->val;
     prec->outpvt = EXEC_OUTPUT;
-    
+
     return 0;
 }
 
@@ -450,14 +450,14 @@ static long conditional_write(longoutRecord *prec)
     long status = 0;
     int doDevSupWrite = 0;
 
-    switch (prec->oopt) 
+    switch (prec->oopt)
     {
     case longoutOOPT_On_Change:
         /* Forces a write op if a change in the OUT field is detected OR is first process */
         if (prec->outpvt == EXEC_OUTPUT) {
             doDevSupWrite = 1;
         } else {
-            /* Only write if value is different from the previous one */ 
+            /* Only write if value is different from the previous one */
             doDevSupWrite = (prec->val != prec->pval);
         }
         break;
@@ -479,7 +479,7 @@ static long conditional_write(longoutRecord *prec)
         break;
 
     case longoutOOPT_Transition_To_Non_zero:
-        doDevSupWrite = ((prec->val != 0)&&(prec->pval == 0));      
+        doDevSupWrite = ((prec->val != 0)&&(prec->pval == 0));
         break;
 
     default:

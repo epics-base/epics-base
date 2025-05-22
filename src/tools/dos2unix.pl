@@ -6,7 +6,7 @@
 #     Operator of Los Alamos National Laboratory.
 # SPDX-License-Identifier: EPICS
 # EPICS Base is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 # Converts text file in DOS CR/LF format to unix ISO format

@@ -36,7 +36,7 @@ static void iocBuildCallFunc(const iocshArgBuf *args)
 }
 
 /* iocRun */
-static const iocshFuncDef iocRunFuncDef = {"iocRun",0,NULL, 
+static const iocshFuncDef iocRunFuncDef = {"iocRun",0,NULL,
              "Bring the IOC out of its initial quiescent state to the running state.\n"
              "See more: iocBuild, iocPause\n"};
 static void iocRunCallFunc(const iocshArgBuf *args)
@@ -85,7 +85,7 @@ static const iocshArg * const systemArgs[] = {&systemArg0};
 static const iocshFuncDef systemFuncDef = {"system",1,systemArgs,
              "Send command string to the system command interpreter for execution.\n"
              "Not available on all OSs.\n"
-             "To enable this command, add registrar(iocshSystemCommand) to an application dbd file,\n" 
+             "To enable this command, add registrar(iocshSystemCommand) to an application dbd file,\n"
              "or include system.dbd\n"};
 static void systemCallFunc(const iocshArgBuf *args)
 {

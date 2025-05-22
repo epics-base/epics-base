@@ -77,7 +77,7 @@ static const iocshArg * const dbDumpFieldArgs[] =
 static const iocshFuncDef dbDumpFieldFuncDef = {"dbDumpField",3,dbDumpFieldArgs,
                           "Dump information about the fieldName in the recordTypeName.\n"
                           "Example: dbDumpField  pdbbase calcout A\n"
-                          "If last argument(s) are missing, dump information\n" 
+                          "If last argument(s) are missing, dump information\n"
                           "about all fieldName in all recordTypeName in the database.\n"};
 static void dbDumpFieldCallFunc(const iocshArgBuf *args)
 {

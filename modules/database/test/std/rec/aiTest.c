@@ -65,14 +65,14 @@ static void test_operator_display(void){
     testdbPutFieldOk("test_ai_rec.HOPR", DBF_SHORT, hopr);
     testdbPutFieldOk("test_ai_rec.LOPR", DBF_SHORT, lopr);
     testdbPutFieldOk("test_ai_rec.PREC", DBF_SHORT, prec);
-    
+
     /* verify operator display parameters read back */
     testdbGetFieldEqual("test_ai_rec.NAME", DBF_STRING, "test_ai_rec");
-    testdbGetFieldEqual("test_ai_rec.EGU", DBF_STRING, egu);   
+    testdbGetFieldEqual("test_ai_rec.EGU", DBF_STRING, egu);
     testdbGetFieldEqual("test_ai_rec.DESC", DBF_STRING, desc);
     testdbGetFieldEqual("test_ai_rec.HOPR", DBF_SHORT, hopr);
     testdbGetFieldEqual("test_ai_rec.LOPR", DBF_SHORT, lopr);
-    testdbGetFieldEqual("test_ai_rec.PREC", DBF_SHORT, prec); 
+    testdbGetFieldEqual("test_ai_rec.PREC", DBF_SHORT, prec);
 
     // number of tests = 7
 }
@@ -96,7 +96,7 @@ static void test_no_linr_unit_conversion(void){
     testdbPutFieldOk("test_ai_rec.ASLO", DBF_SHORT, aslo);
     testdbPutFieldOk("test_ai_rec.AOFF", DBF_SHORT, aoff);
     testdbPutFieldOk("test_ai_rec.LINR", DBF_LONG, menuConvertNO_CONVERSION);
-    
+
     /* verify conversion */
     testdbPutFieldOk("test_ai_link_rec.VAL", DBF_SHORT, rval);
     testdbGetFieldEqual("test_ai_rec.VAL", DBF_SHORT, val);
@@ -128,7 +128,7 @@ static void test_slope_linr_unit_conversion(void){
     testdbPutFieldOk("test_ai_rec.ESLO", DBF_LONG, eslo);
     testdbPutFieldOk("test_ai_rec.EOFF", DBF_LONG, eoff);
     testdbPutFieldOk("test_ai_rec.LINR", DBF_LONG, menuConvertSLOPE);
-    
+
     /* verify conversion */
     testdbPutFieldOk("test_ai_link_rec.VAL", DBF_LONG, rval);
     testdbGetFieldEqual("test_ai_rec.VAL", DBF_LONG, val);
@@ -166,7 +166,7 @@ static void test_linear_linr_unit_conversion(void){
     testdbPutFieldOk("test_ai_rec.EGUL", DBF_LONG, egul);
     testdbPutFieldOk("test_ai_rec.EGUF", DBF_LONG, eguf);
     testdbPutFieldOk("test_ai_rec.LINR", DBF_LONG, menuConvertLINEAR);
-    
+
     /* verify conversion */
     testdbPutFieldOk("test_ai_link_rec.VAL", DBF_LONG, rval);
     testdbGetFieldEqual("test_ai_rec.VAL", DBF_LONG, val);
@@ -249,7 +249,7 @@ static void test_smoothing_filter(void){
     /* set well known starting point (without smmothing) */
     testdbPutFieldOk("test_ai_link_rec.VAL", DBF_SHORT, rval1);
     testdbGetFieldEqual("test_ai_rec.VAL", DBF_SHORT, val1);
-    
+
     /* set SMOO */
     testdbPutFieldOk("test_ai_rec.SMOO", DBF_DOUBLE, smoo);
 
@@ -365,7 +365,7 @@ static void test_aftc(void){
     /* test AFTC using a monitor and time stamps */
     testdbPutFieldOk("test_ai_rec3.AFTC", DBF_DOUBLE, aftc);
     testdbPutFieldOk("test_ai_rec3.SCAN", DBF_SHORT, menuScan_1_second);
-    
+
     /* set HIHI alarm VAL */
     testdbPutFieldOk("test_ai_link_rec3.VAL", DBF_DOUBLE, 7550.0);
 
@@ -397,11 +397,11 @@ static void test_aftc(void){
 
     /* Verify that alarm status is now MINOR */
     testdbGetFieldEqual("test_ai_rec3.SEVR", DBF_SHORT, menuAlarmSevrMINOR);
-    
+
     /* Verify that time is at least equal to configured aftc */
     diffTime = epicsTimeDiffInSeconds(&endTime, &startTime);
     testOk(diffTime >= aftc, "ATFC time %lf", diffTime);
- 
+
     // number of tests = 18
 }
 
@@ -416,12 +416,12 @@ MAIN(aiTest) {
 
     testPlan(6+6+11+10+12+14+18+15+6+29+18);
 
-    testdbPrepare();   
+    testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
     recTestIoc_registerRecordDeviceDriver(pdbbase);
 
     testdbReadDatabase("aiTest.db", NULL, NULL);
-    
+
     eltc(0);
     testIocInitOk();
     eltc(1);
@@ -436,7 +436,7 @@ MAIN(aiTest) {
     test_smoothing_filter();
     test_udf();
     test_alarm();
-    test_aftc(); 
+    test_aftc();
 
     testIocShutdownOk();
     testdbCleanup();

@@ -12,5 +12,7 @@ insert_final_newline = true
 insert_final_newline = false
 
 # Enforce consistent space indent style in source code
+# and remove all trailing spaces
 [*.{c,cc,cpp,h,hpp,pl,py,yml}]
 indent_style = space
+trim_trailing_whitespace = true

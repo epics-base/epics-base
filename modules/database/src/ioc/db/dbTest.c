@@ -145,7 +145,7 @@ static void printFieldsList(DBENTRY *pdbentry, char** papfields, int nfields)
         printf(", \"%s\"", (pvalue ? pvalue : ""));
     }
     printf("\n");
-}    
+}
 
 long dbl(const char *precordTypename, const char *fields)
 {

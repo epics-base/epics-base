@@ -54,7 +54,7 @@ typedef struct {
     epicsMutexId lock;
 }FREELISTPVT;
 
-LIBCOM_API void epicsStdCall 
+LIBCOM_API void epicsStdCall
     freeListInitPvt(void **ppvt,int size,int nmalloc)
 {
     FREELISTPVT *pfl;

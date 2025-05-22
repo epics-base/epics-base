@@ -103,7 +103,7 @@ extern "C" int epicsStdCall addAddrToChannelAccessAddressList
 /*
  * removeDuplicateAddresses ()
  */
-extern "C" void epicsStdCall removeDuplicateAddresses 
+extern "C" void epicsStdCall removeDuplicateAddresses
     ( ELLLIST *pDestList, ELLLIST *pSrcList, int silent )
 {
     ELLNODE *pRawNode;
@@ -163,7 +163,7 @@ static void  forcePort ( ELLLIST *pList, unsigned short port )
 /*
  * configureChannelAccessAddressList ()
  */
-extern "C" void epicsStdCall configureChannelAccessAddressList 
+extern "C" void epicsStdCall configureChannelAccessAddressList
         ( ELLLIST *pList, SOCKET sock, unsigned short port )
 {
     ELLLIST         tmpList;

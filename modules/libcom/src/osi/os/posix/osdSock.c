@@ -87,7 +87,7 @@ void osiSockRelease()
  * the socket will be closed if the user uses exec()
  * as is the case with third party tools such as TCL/TK
  */
-LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
     int domain, int type, int protocol )
 {
     static unsigned char warnAttached;
@@ -177,7 +177,7 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
  * On many systems, gethostbyaddr must be protected by a
  * mutex since the routine is not thread-safe.
  */
-LIBCOM_API unsigned epicsStdCall ipAddrToHostName 
+LIBCOM_API unsigned epicsStdCall ipAddrToHostName
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
     struct hostent *ent;
@@ -203,7 +203,7 @@ LIBCOM_API unsigned epicsStdCall ipAddrToHostName
  * On many systems, gethostbyname must be protected by a
  * mutex since the routine is not thread-safe.
  */
-LIBCOM_API int epicsStdCall hostToIPAddr 
+LIBCOM_API int epicsStdCall hostToIPAddr
                 (const char *pHostName, struct in_addr *pIPA)
 {
     struct hostent *phe;

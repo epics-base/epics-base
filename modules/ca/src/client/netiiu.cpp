@@ -116,7 +116,7 @@ const char * netiiu::pHostName (
     return pHostNameNetIIU;
 }
 
-unsigned netiiu::getHostMinorProtocol ( 
+unsigned netiiu::getHostMinorProtocol (
     epicsGuard < epicsMutex > & ) const throw ()
 {
   return CA_UKN_MINOR_VERSION;

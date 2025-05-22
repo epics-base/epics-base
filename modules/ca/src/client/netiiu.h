@@ -43,7 +43,7 @@ public:
         unsigned bufLength ) const throw () = 0;
     virtual const char * pHostName (
         epicsGuard < epicsMutex > & ) const throw () = 0;
-    virtual unsigned getHostMinorProtocol ( 
+    virtual unsigned getHostMinorProtocol (
         epicsGuard < epicsMutex > & ) const throw ();
     virtual bool ca_v41_ok (
         epicsGuard < epicsMutex > & ) const = 0;

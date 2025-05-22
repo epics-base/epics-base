@@ -6,7 +6,7 @@
 # Operator of Los Alamos National Laboratory.
 # SPDX-License-Identifier: EPICS
 # EPICS Base is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 
 # Find and delete cvs .#* and editor backup *~

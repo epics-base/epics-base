@@ -55,7 +55,7 @@ LIBCOM_API epicsEventId epicsEventCreate (
 /*
  * epicsEventDestroy ()
  */
-LIBCOM_API void epicsEventDestroy ( epicsEventId pSem ) 
+LIBCOM_API void epicsEventDestroy ( epicsEventId pSem )
 {
     CloseHandle ( pSem->handle );
     free ( pSem );
@@ -64,7 +64,7 @@ LIBCOM_API void epicsEventDestroy ( epicsEventId pSem )
 /*
  * epicsEventTrigger ()
  */
-LIBCOM_API epicsEventStatus epicsEventTrigger ( epicsEventId pSem ) 
+LIBCOM_API epicsEventStatus epicsEventTrigger ( epicsEventId pSem )
 {
     BOOL status;
     status = SetEvent ( pSem->handle );
@@ -74,7 +74,7 @@ LIBCOM_API epicsEventStatus epicsEventTrigger ( epicsEventId pSem )
 /*
  * epicsEventWait ()
  */
-LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem ) 
+LIBCOM_API epicsEventStatus epicsEventWait ( epicsEventId pSem )
 {
     DWORD status;
     status = WaitForSingleObject (pSem->handle, INFINITE);
@@ -106,7 +106,7 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
     }
     else if ( timeout >= INFINITE / mSecPerSec  ) {
         /* we need to apply a maximum wait time to stop an overflow. We choose (INFINITE - 1) milliseconds,
-           to be compatible with previous WaitForSingleObject() implementation */    
+           to be compatible with previous WaitForSingleObject() implementation */
         nIvals = (LONGLONG)(INFINITE - 1) * (ivalPerSec / mSecPerSec);
         tmo.QuadPart = -nIvals;  /* negative value means a relative time offset for timer */
     }
@@ -143,7 +143,7 @@ LIBCOM_API epicsEventStatus epicsEventWaitWithTimeout (
 /*
  * epicsEventTryWait ()
  */
-LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem ) 
+LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem )
 {
     DWORD status;
 
@@ -162,6 +162,6 @@ LIBCOM_API epicsEventStatus epicsEventTryWait ( epicsEventId pSem )
 /*
  * epicsEventShow ()
  */
-LIBCOM_API void epicsEventShow ( epicsEventId id, unsigned level ) 
+LIBCOM_API void epicsEventShow ( epicsEventId id, unsigned level )
 {
 }

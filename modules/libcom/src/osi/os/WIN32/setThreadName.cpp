@@ -60,7 +60,7 @@ static void setThreadNameVS( DWORD dwThreadID, LPCSTR szThreadName )
 #if _MSC_VER >= 1300 && defined ( _DEBUG )
 // This was copied directly from an MSDN example
 // It sets the thread name by throwing a special exception that is caught by Visual Sudio
-// It requires the debugger to be already attached to the process 
+// It requires the debugger to be already attached to the process
 // when the exception is thrown for the name to be registered
     static const DWORD MS_VC_EXCEPTION = 0x406D1388;
 #pragma pack(push,8)

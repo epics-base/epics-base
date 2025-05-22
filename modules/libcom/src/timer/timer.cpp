@@ -132,7 +132,7 @@ void timer::privateStart ( epicsTimerNotify & notify, const epicsTime & expire )
 
     debugPrintf ( ("Start of \"%s\" with delay %f at %p preempting %u\n",
         typeid ( this->pNotify ).name (),
-        expire - epicsTime::getCurrent (), 
+        expire - epicsTime::getCurrent (),
         this, preemptCount ) );
 }
 

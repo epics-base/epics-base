@@ -9,8 +9,8 @@
 #include <cstddef>
 
 #if (defined(__GNUC__) && !(defined(linux) || defined(__linux) || defined(__linux__))) \
-   || (!defined(_AIX) && defined(__IBMCPP__)  && (__IBMCPP__ >= 800)) 
-   // Disable use of #include_next on Linux as typically we are installed in a 
+   || (!defined(_AIX) && defined(__IBMCPP__)  && (__IBMCPP__ >= 800))
+   // Disable use of #include_next on Linux as typically we are installed in a
    // directory that is searched *after* the std lib include path.
 #if !defined(BOOST_HAS_INCLUDE_NEXT)
 #  define BOOST_HAS_INCLUDE_NEXT

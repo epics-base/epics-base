@@ -146,7 +146,7 @@ static void test_oopt_when_transition_nonzero(void){
 
     /* write a transition to non-zero */
     testdbPutFieldOk("longout_rec.VAL", DBF_LONG, 18);
-    
+
     /* Test if the counter_a was processed */
     testdbGetFieldEqual("counter_a", DBF_DOUBLE, 1.0);
 
@@ -156,7 +156,7 @@ static void test_oopt_when_transition_nonzero(void){
 static void test_changing_out_field(void){
     /* change OOPT to On Change */
     testdbPutFieldOk("longout_rec.OOPT", DBF_ENUM, longoutOOPT_On_Change);
-    
+
     /* write an initial value */
     testdbPutFieldOk("longout_rec.VAL", DBF_LONG, 16);
 
@@ -225,7 +225,7 @@ static void test_changing_out_field(void){
     /* reset rec processing counters */
     testdbPutFieldOk("counter_a.VAL", DBF_DOUBLE, 0.0);
 
-    /* test if record with OOPT == On Change will 
+    /* test if record with OOPT == On Change will
        write to output at its first process */
     testdbPutFieldOk("longout_rec2.VAL", DBF_LONG, 16);
 
@@ -250,7 +250,7 @@ MAIN(longoutTest) {
     recTestIoc_registerRecordDeviceDriver(pdbbase);
 
     testdbReadDatabase("longoutTest.db", NULL, NULL);
-    
+
     eltc(0);
     testIocInitOk();
     eltc(1);

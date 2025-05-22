@@ -57,7 +57,7 @@ will display it (neither has an effect when --puretap is specified).
  Pod::Usage
  TAP::Parser
  Time::HiRes
- XML::Generator 
+ XML::Generator
 
 =head1 BUGS
 
@@ -194,7 +194,7 @@ exit;
 
 sub _get_junit_xml {
   my ( $xmlgen, $properties, $test_results ) = @_;
-  my $xml = "<?xml version='1.0' encoding='UTF-8' ?>\n" . 
+  my $xml = "<?xml version='1.0' encoding='UTF-8' ?>\n" .
           $xmlgen->testsuites({
               name => $suite_name,
             }, @$test_results);
@@ -439,13 +439,13 @@ sub _parse_tests {
         push @{$ctx->{test_cases}}, $xmlgen->testcase($test_case);
       }
     }
-      
+
     $ctx->{sysout} .= $s."\n";
   }
 
   if (scalar(@{$ctx->{test_cases}}) == 0 &&
       scalar(@{$ctx->{testsuites}}) == 0)
-  { 
+  {
     # no tests found! create a <testsuite> block containing *something* at least
     $ctx->{case_tests}++;
     my $test_case = {

@@ -49,7 +49,7 @@ MAIN(subproctest)
      * the testdbPutField call above goes through, so we get a partial
      * result of the PROC field being left as 1. */
     testdbGetFieldEqual("InvalidINPARec.PROC", DBF_LONG, 1);
-    
+
     testIocShutdownOk();
 
     testdbCleanup();

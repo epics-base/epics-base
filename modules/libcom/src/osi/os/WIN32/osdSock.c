@@ -113,7 +113,7 @@ LIBCOM_API void epicsStdCall osiSockRelease()
     }
 }
 
-LIBCOM_API SOCKET epicsStdCall epicsSocketCreate ( 
+LIBCOM_API SOCKET epicsStdCall epicsSocketCreate (
     int domain, int type, int protocol )
 {
     return socket ( domain, type, protocol );
@@ -140,7 +140,7 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
 /*
  * ipAddrToHostName
  */
-LIBCOM_API unsigned epicsStdCall ipAddrToHostName 
+LIBCOM_API unsigned epicsStdCall ipAddrToHostName
             (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
 {
     struct hostent  *ent;
@@ -161,7 +161,7 @@ LIBCOM_API unsigned epicsStdCall ipAddrToHostName
 /*
  * hostToIPAddr ()
  */
-LIBCOM_API int epicsStdCall hostToIPAddr 
+LIBCOM_API int epicsStdCall hostToIPAddr
                 (const char *pHostName, struct in_addr *pIPA)
 {
     struct hostent *phe;

@@ -13,19 +13,19 @@
  *
  * \brief OS independent interface to perform atomic operations
  *
- * This is an operating system and compiler independent interface to an operating system and or compiler 
+ * This is an operating system and compiler independent interface to an operating system and or compiler
  * dependent implementation of several atomic primitives.
  *
- * These primitives can be safely used in a multithreaded programs on symmetric multiprocessing (SMP) 
- * systems. Where possible the primitives are implemented with compiler intrinsic wrappers for architecture 
+ * These primitives can be safely used in a multithreaded programs on symmetric multiprocessing (SMP)
+ * systems. Where possible the primitives are implemented with compiler intrinsic wrappers for architecture
  * speciﬁc instructions. Otherwise they are implemented with OS speciﬁc functions and otherwise, when lacking
- *  a suﬃcently capable OS speciﬁc interface, then in some rare situations a mutual exclusion primitive is 
+ *  a suﬃcently capable OS speciﬁc interface, then in some rare situations a mutual exclusion primitive is
  * used for synchronization.
  *
- * In operating systems environments which allow C code to run at interrupt level the implementation must 
+ * In operating systems environments which allow C code to run at interrupt level the implementation must
  * use interrupt level invocable CPU instruction primitives.
  *
- * All C++ functions are implemented in the namespace atomics which is nested inside of namespace epics. 
+ * All C++ functions are implemented in the namespace atomics which is nested inside of namespace epics.
  */
 /*
  *  Author Jeffrey O. Hill
@@ -48,15 +48,15 @@ extern "C" {
 /** Argument type for atomic operations on pointers*/
 typedef void * EpicsAtomicPtrT;
 
-/** \brief load target into cache  
+/** \brief load target into cache
  *
- * load target into cache  
+ * load target into cache
  **/
 EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void);
 
-/** \brief push cache version of target into target 
+/** \brief push cache version of target into target
  *
- * push cache version of target into target 
+ * push cache version of target into target
  */
 EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void);
 
@@ -121,7 +121,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicDecrIntT ( int * pTarget );
   *
   * \param pTarget pointer to target
   * \param delta value to add to target
-  * 
+  *
   * \return New value of target
   */
 EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta );
@@ -135,7 +135,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta 
  *
  * \param pTarget pointer to target
  * \param delta value to subtract from target
- * 
+ *
  * \return New value of target
  */
 EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta );
@@ -149,7 +149,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
  *
  * \param pTarget pointer to target
  * \param delta value to add to target
- * 
+ *
  * \return New value of target
  */
 EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta );
@@ -181,32 +181,32 @@ EPICS_ATOMIC_INLINE void epicsAtomicSetIntT ( int * pTarget, int newValue );
   */
 EPICS_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newValue );
 
-/** \brief atomically load and return size_t value  
+/** \brief atomically load and return size_t value
  *
  * fetch target into cache, return new value of target
  *
  * \param pTarget pointer to target
- * 
+ *
  * \return value of target
  */
 EPICS_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget );
 
-/** \brief atomically load and return int value  
+/** \brief atomically load and return int value
  *
  * fetch target into cache, return new value of target
  *
  * \param pTarget pointer to target
- * 
+ *
  * \return value of target
  */
 EPICS_ATOMIC_INLINE int epicsAtomicGetIntT ( const int * pTarget );
 
-/** \brief atomically load and return pointer value  
+/** \brief atomically load and return pointer value
  *
  * fetch target into cache, return new value of target
  *
  * \param pTarget pointer to target
- * 
+ *
  * \return value of target
  */
 EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget );
@@ -286,7 +286,7 @@ namespace atomic {
 
 /** \brief C++ API for atomic size_t increment
  *
- * C++ API for atomic size_t increment. 
+ * C++ API for atomic size_t increment.
  *
  * \param v variable to increment
  *
@@ -469,7 +469,7 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT get ( const EpicsAtomicPtrT & v )
 
 /** \brief C++ API for atomic size_t compare-and-swap
  *
- * C++ API for atomic size_t compare-and-swap. Atomic operation that compares \p v with \p oldVal 
+ * C++ API for atomic size_t compare-and-swap. Atomic operation that compares \p v with \p oldVal
  * and if \p v == \v oldVal, sets \p v to \v newVal
  *
  * \param v variable to compare and swap
@@ -486,7 +486,7 @@ EPICS_ATOMIC_INLINE size_t compareAndSwap ( size_t & v,
 
 /** \brief C++ API for atomic int compare-and-swap
  *
- * C++ API for atomic size_t compare-and-swap. Atomic operation that compares \p v with \p oldVal 
+ * C++ API for atomic size_t compare-and-swap. Atomic operation that compares \p v with \p oldVal
  * and if \p v == \v oldVal, sets \p v to \v newVal
  *
  * \param v variable to compare and swap
@@ -502,7 +502,7 @@ EPICS_ATOMIC_INLINE int compareAndSwap ( int & v, int oldVal, int newVal )
 
 /** \brief C++ API for atomic pointer compare-and-swap
  *
- * C++ API for atomic size_t compare-and-swap. Atomic operation that compares \p v with \p oldVal 
+ * C++ API for atomic size_t compare-and-swap. Atomic operation that compares \p v with \p oldVal
  * and if \p v == \v oldVal, sets \p v to \v newVal
  *
  * \param v variable to compare and swap

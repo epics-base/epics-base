@@ -97,7 +97,7 @@ foreach $ext ( @ARGV ) {
         next;
     }
     print "Creating template structure "
-        . "for $extname (of type $exttypename)\n" if $Debug; 
+        . "for $extname (of type $exttypename)\n" if $Debug;
     find(\&FCopyTree, "$top/$exttypename/");
     if ($note) {
         print "\nNOTE: You must add the line \"DIRS += $extname\" to src/Makefile.\n\n";
@@ -146,7 +146,7 @@ sub get_commandline_opts { #no args
         }
         close IN;
     }
-    if("$top" eq "") { 
+    if("$top" eq "") {
         if ($eTOP) {            # third choice is $ENV{EPICS_MBE_TEMPL_TOP}
             $top = UnixPath($eTOP);
         } else {                        # use templates from EPICS base
@@ -163,7 +163,7 @@ sub get_commandline_opts { #no args
 
 # Extension template type
     if ($opt_t) { # first choice is -t type
-        $exttype = $opt_t; 
+        $exttype = $opt_t;
     } elsif ($eEXTTYPE) { # second choice is $ENV{EPICS_DEFAULT_EXT_TYPE}
         $exttype = $eEXTTYPE;
     } elsif (-r "$top/defaultExt") {# third choice is (a link) in the $top dir
@@ -276,7 +276,7 @@ EPICS_MBE_DEF_EXT_TYPE  Ext type you want to use as default
 EPICS_MBE_TEMPLATE_TOP  Template top directory
 EPICS_MBE_BASE          Location of EPICS base
 
-Example: Create example extension 
+Example: Create example extension
 
 <base>/bin/<arch>/makeBaseExt.pl -t example example
 

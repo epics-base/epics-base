@@ -1,3 +1,11 @@
+# Release Notes
+
+This document describes changes that were included in the release of
+EPICS listed below.
+Notes from earlier EPICS releases are now provided in a separate document for
+each version in the EPICS 7 series to date.
+Release documents are also included for the older Base 3.15 and 3.16 series.
+
 ## EPICS Release 7.0.2
 
 ### Launchpad Bugs

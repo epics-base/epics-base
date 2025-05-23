@@ -1,3 +1,5 @@
+# Changes incorporated from the 3.16 branch
+
 ## Changes made between 3.16.1 and 3.16.2
 
 ### Launchpad Bugs

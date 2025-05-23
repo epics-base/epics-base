@@ -1,6 +1,5 @@
 # Changes incorporated from the 3.15 branch
 
-
 ## Changes from the 3.15 branch since 3.15.9
 
 ### Support for Apple M1/M2 (arm64) Processors

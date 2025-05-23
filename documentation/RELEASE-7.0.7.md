@@ -1,3 +1,16 @@
+# Release Notes
+
+This document describes changes that were included in the release of
+EPICS listed below.
+Notes from earlier EPICS releases are now provided in a separate document for
+each version in the EPICS 7 series to date.
+Release documents are also included for the older Base 3.15 and 3.16 series.
+
+The external PVA submodules continue to maintain their own release notes files
+as before, but the entries describing changes in those submodules since version
+7.0.5 have been copied into the associated EPICS Release Notes files, and will
+be added to new EPICS Release Notes published in the future.
+
 ## EPICS Release 7.0.7
 
 ### Doxygen Annotations

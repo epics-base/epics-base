@@ -79,16 +79,16 @@ my @OLD_RELS = sort {
 print $out <<"__REL_INTRO__";
 # Release Notes
 
-This document describes changes that have been included in this release of
-EPICS.
-Notes from earlier EPICS releases are now provided in separate documents for
-each version in the EPICS 7 series to date, linked below.
+This document describes changes that were included in the release of
+EPICS listed below.
+Notes from earlier EPICS releases are now provided in a separate document for
+each version in the EPICS 7 series to date.
 Release documents are also included for the older Base 3.15 and 3.16 series.
 
 The external PVA submodules continue to maintain their own release notes files
-as before, but older entries describing changes in those submodules since
-version 7.0.5 have been copied into the appropriate release notes files linked
-below, and will be added to new EPICS Release Notes published in the future.
+as before, but the entries describing changes in those submodules since version
+7.0.5 have been copied into the associated EPICS Release Notes files, and will
+be added to new EPICS Release Notes published in the future.
 
 __REL_INTRO__
 
@@ -107,6 +107,8 @@ __NEW_INTRO__
 print $out map { "$_\n" } @notes, "-----\n\n";
 
 print $out "```{toctree}\n",
+    ":caption: Previous Releases\n",
+    ":titlesonly:\n",
     map( sprintf("RELEASE-%s.md\n", relVers($_)), @OLD_RELS),
     "```\n\n";
 

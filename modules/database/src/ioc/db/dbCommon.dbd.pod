@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=head3 Operator Display Parameters
+=head2 Operator Display Parameters
 
 The B<NAME> field contains the record name which must be unique within an
 EPICS Channel Access name space. The name is supplied by the application
@@ -43,7 +43,7 @@ record's purpose. Maximum length is 40 characters.
 		size(29)
 	}
 
-=head3 Scan Fields
+=head2 Scan Fields
 
 These fields contain information related to how and when a record processes. A
 few records have unique fields that also affect how they process. These
@@ -244,7 +244,7 @@ The B<SPVT> field is for internal use by the scanning system.
 		interest(3)
 	}
 
-=head3 Alarm Fields
+=head2 Alarm Fields
 
 Alarm fields indicate the status and severity of record alarms, or determine
 how and when alarms are triggered. Of course, many records have alarm-related
@@ -391,7 +391,7 @@ initial severity of the record being undefined after the IOC boots.
 		extra("struct scan_element *spvt")
 	}
 
-=head3 Device Fields
+=head2 Device Fields
 
 The B<RSET> field contains the address of the Record Support Entry Table. See
 the Application Developers Guide for details on usage.
@@ -445,7 +445,7 @@ The B<DPVT> field is is for private use of the device support modules.
 		menu(menuPriority)
 	}
 
-=head3 Debugging Fields
+=head2 Debugging Fields
 
 The B<TPRO> field can be used to trace record processing. When this field is
 non-zero and the record is processed, a trace message will be be printed for
@@ -460,7 +460,7 @@ database processing can be supported using this.
 =fields TPRO, BKPT
 
 
-=head3 Miscellaneous Fields
+=head2 Miscellaneous Fields
 
 The B<ASG> string field sets the name of the access security group used for this
 record. If left empty, the record is placed in group C<DEFAULT>.

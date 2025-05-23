@@ -21,7 +21,7 @@ the HIGH field is configured.
 
 recordtype(bo) {
 
-=head3 Scan Parameters
+=head2 Scan Parameters
 
 The binary output record has the standard fields for specifying under what
 circumstances the record will be processed.
@@ -29,7 +29,7 @@ These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =fields SCAN, PHAS, EVNT, PRIO, PINI
 
-=head3 Desired Output Parameters
+=head2 Desired Output Parameters
 
 The binary output record must specify where its desired output originates.
 The desired output needs to be in engineering units.
@@ -50,7 +50,7 @@ for information on hardware addresses and links.
 
 =fields DOL, OMSL
 
-=head3 Convert and Write Parameters
+=head2 Convert and Write Parameters
 
 These parameters are used to determine where the binary output writes to
 and how to convert the engineering units to a raw signal. After VAL is set
@@ -76,7 +76,7 @@ device back to 0 after I<N> number of seconds.
 
 =fields DTYP, OUT, VAL, RVAL, HIGH, ZNAM, ONAM
 
-=head3 Conversion Parameters
+=head2 Conversion Parameters
 
 The ZNAM field has the string that corresponds to the 0 state, and the ONAM
 field holds the string that corresponds to the 1 state. These fields, other
@@ -98,7 +98,7 @@ the device or link to 1, then changes it back to 0 after I<N> number of seconds.
 
 =fields ZNAM, ONAM, HIGH
 
-=head3 Output Specification
+=head2 Output Specification
 
 The OUT field specifies where the binary output record writes its output.
 It must specify the address of an I/O card if the record sends its output
@@ -116,7 +116,7 @@ for information on the format of the database and channel access addresses.
 Also, see L<Device Support For Soft Records> in this chapter for more on output
 to other records.
 
-=head3 Operator Display Parameters
+=head2 Operator Display Parameters
 
 These parameters are used to present meaningful data to the operator, The
 C<get_enum_str()> record support routine can retrieve the state string
@@ -129,7 +129,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =fields ZNAM, ONAM, NAME, DESC
 
-=head3 Alarm Parameters
+=head2 Alarm Parameters
 
 These parameters are used to determine the binary output's alarm condition
 and to determine the severity of that condition. The possible alarm
@@ -147,7 +147,7 @@ common to all record types.
 
 =fields ZSV, OSV, COSV, IVOA, IVOV
 
-=head3 Run-Time Parameters
+=head2 Run-Time Parameters
 
 These parameters are used by the run-time code for processiong the binary
 output. They are not configurable using a configuration tool. They
@@ -178,7 +178,7 @@ The WPDT field is a private field for honoring seconds to hold HIGH.
 
 =fields ORAW, MASK, RBV, ORBV, LALM, MLST, RPVT, WDPT
 
-=head3 Simulation Mode Parameters
+=head2 Simulation Mode Parameters
 
 The following fields are used to operate the record in simulation mode.
 
@@ -376,11 +376,9 @@ for more information on simulation mode and its fields.
 	}
 
 
-=head2 Record Support
+=head2 Record Support Routines
 
-=head3 Record Support Routines
-
-=head2 C<init_record>
+=head3 C<init_record>
 
 This routine initializes SIMM if SIML is a constant or creates a channel
 access link if SIML is PV_LINK. If SIOL is a PV_LINK a channel access link
@@ -398,19 +396,19 @@ or initialzed to 0 if DOL is zero, and UDF is set to FALSE.
 If device support includes C<init_record()>, it is called. VAL is set using
 RVAL, and UDF is set to FALSE.
 
-=head2 C<process>
+=head3 C<process>
 
 See next section.
 
-=head2 C<get_enum_str>
+=head3 C<get_enum_str>
 
 Retrieves ASCII string corresponding to VAL.
 
-=head2 C<get_enum_strs>
+=head3 C<get_enum_strs>
 
 Retrieves ASCII strings for ZNAM and ONAM.
 
-=head2 C<put_enum_str>
+=head3 C<put_enum_str>
 
 Checks if string matches ZNAM or ONAM, and if it does, sets VAL.
 
@@ -434,30 +432,37 @@ If PACT is FALSE
 =over
 
 =item *
+
 If DOL holds a link and OMSL is C<closed_loop>
 
 =over
 
 =item *
+
 get values from DOL
 
 =item *
+
 check for link alarm
 
 =item *
+
 force VAL to be 0 or 1
 
 =item *
+
 if MASK is defined
 
 =over
 
 =item *
+
 if VAL is 0 set RVAL = 0
 
 =back
 
 =item *
+
 else set RVAL = MASK
 
 =back
@@ -489,24 +494,28 @@ VAL=0 after WAIT seconds.
 
 Check to see if monitors should be invoked.
 
-=over 1
+=over
 
 =item *
+
 Alarm monitors are invoked if the alarm status or severity has changed.
 
 =item *
+
 Archive and value change monitors are invoked if MLST is not equal to VAL.
 
 =item *
+
 Monitors for RVAL and for RBV are checked whenever other monitors are
 invoked.
 
 =item *
+
 NSEV and NSTA are reset to 0.
 
 =back
 
-=item 8
+=item 8.
 
 Scan forward link if necessary, set PACT FALSE, and return
 
@@ -527,7 +536,7 @@ are primarily interested in the following fields:
 
 Device support consists of the following routines:
 
-=head4 long report(int level)
+=head4 C<long report(int level)>
 
 This optional routine is called by the IOC command C<dbior> and is passed the
 report level that was requested by the user.
@@ -537,7 +546,7 @@ information at higher levels, or to select different types of information with
 different levels.
 Level zero should print no more than a small summary.
 
-=head4 long init(int after)
+=head4 C<long init(int after)>
 
 This optional routine is called twice at IOC initialization time.
 The first call happens before any of the C<init_record()> calls are made, with
@@ -545,41 +554,46 @@ the integer parameter C<after> set to 0.
 The second call happens after all of the C<init_record()> calls have been made,
 with C<after> set to 1.
 
-=head2 C<init_record(precord)>
+=head4 C<init_record(precord)>
 
-This routine is optional. If provided, it is called by record support
+This routine is optional. If provided, it is called by the record support's
 C<init_record()> routine. It should determine MASK if it is needed.
 
 =over
 
 =item *
+
 0: Success. RVAL modified (VAL will be set accordingly)
 
 =item *
+
 2: Success. VAL modified
 
 =item *
+
 other: Error
 
 =back
 
-=head2 C<get_ioint_info(int cmd, struct dbCommon *precord, IOSCANPVT *ppvt)>
+=head4 C<get_ioint_info(int cmd, struct dbCommon *precord, IOSCANPVT *ppvt)>
 
 This routine is called by the ioEventScan system each time the record is
 added or deleted from an I/O event scan list. C<cmd> has the value (0,1) if
 the record is being (added to, deleted from) an I/O event list. It must be
 provided for any device type that can use the ioEvent scanner.
 
-=head2 C<write_bo(precord)>
+=head4 C<write_bo(precord)>
 
 This routine must output a new value. It returns the following values:
 
 =over
 
 =item *
+
 0: Success
 
 =item *
+
 other: Error.
 
 =back

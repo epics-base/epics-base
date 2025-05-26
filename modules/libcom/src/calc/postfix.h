@@ -41,20 +41,18 @@
  * few bytes smaller for some sizes.
  *
  * The maximum expansion from infix to postfix is for the sub-expression
- \code
-        .1?.1:
-\endcode
- * which is 6 characters long and results in 21 bytes of postfix:
-\code
+ * <tt>.1?.1:</tt> which is 6 characters long and results in 21 bytes of
+ * postfix:
+\verbatim
         .1 => LITERAL_DOUBLE + 8 byte value
         ?  => COND_IF
         .1 => LITERAL_DOUBLE + 8 byte value
         :  => COND_ELSE
         ...
            => COND_END
-\endcode
+\endverbatim
  * For other short expressions the factor 21/6 always gives a big enough
- * postfix buffer (proven by hand, look at '1+' and '.1+' as well).
+ * postfix buffer (proven by hand, look at \c 1+ and <tt>.1+</tt> as well).
  */
 #define INFIX_TO_POSTFIX_SIZE(n) ((n)*21/6)
 
@@ -115,193 +113,207 @@ extern "C" {
 
 /** \brief Compile an infix expression into postfix byte-code
  *
- * Converts an expression from an infix string to postfix byte-code
+ * Converts an expression from an infix string to postfix byte-code.
  *
  * \param pinfix Pointer to the infix string
  * \param ppostfix Pointer to the postfix buffer
  * \param perror Place to return an error code
  * \return Non-zero value in event of error
  *
- * It is the caller's responsibility to ensure that \c ppostfix points
- * to sufficient storage to hold the postfix expression. The macro
- * INFIX_TO_POSTFIX_SIZE(n) can be used to calculate an appropriate
- * postfix buffer size from the length of the infix buffer.
+ * It is the caller's responsibility to ensure that \p ppostfix points to
+ * sufficient storage to hold the postfix expression.
+ * The macro INFIX_TO_POSTFIX_SIZE(n) can be used to calculate an
+ * appropriate postfix buffer size from the length of the infix buffer.
+ * The macro's parameter \p n must count the terminating nil byte too.
  *
- * \note "n" must count the terminating nil byte too.
+ * -# The **infix expressions** that can be used are very similar to the
+ *  C expression syntax, but with some additions and subtle differences in
+ *  operator meaning and precedence.
+ *  The expression string may contain a series of expressions separated by
+ *  a semi-colon character <tt>;</tt> any one of which may actually provide
+ *  the calculation result.
+ *  However all of the other expressions included must assign their result
+ *  to a variable.
+ *  All alphabetic elements described below are case independent, so upper
+ *  and lower case letters may be used and mixed in the variable and
+ *  function names as desired.
+ *  Spaces may be used anywhere within an expression except between the
+ *  characters that make up a single expression element.
+
+ * -# The simplest expression element is a **numeric literal,** any
+ *  (positive) number expressed using the standard floating point syntax
+ *  that can be stored as a double precision value.
+ *  This now includes the values Infinity and NaN (not a number).
+ *  Note that negative numbers will be encoded as a positive literal, to
+ *  which the unary negate operator is applied.
  *
- * -# The **infix expressions** that can be used are very similar
- * to the C expression syntax, but with some additions and subtle
- * differences in operator meaning and precedence. The string may
- * contain a series of expressions separated by a semi-colon character ';'
- * any one of which may actually provide the calculation result; however
- * all of the other expressions included must assign their result to
- * a variable. All alphabetic elements described below are case independent,
- * so upper and lower case letters may be used and mixed in the variable
- * and function names as desired. Spaces may be used anywhere within an
- * expression except between the characters that make up a single expression element.
+ *  Examples:
+ *    - \c 1
+ *    - \c 2.718281828459
+ *    - \c Inf
  *
- * -# ***Numeric Literals***
- *  The simplest expression element is a numeric literal, any (positive)
- *  number expressed using the standard floating point syntax that can be stored
- *  as a double precision value. This now includes the values Infinity and
- *  NaN (not a number). Note that negative numbers will be encoded as a
- *  positive literal to which the unary negate operator is applied.
- *
- *  - Examples:
- *    - 1
- *    - 2.718281828459
- *    - Inf
- *
- * -# ***Constants***
- *  There are three trigonometric constants available to any expression
+ * -# There are three **trigonometric constants** available to any expression
  *  which return a value:
- *    - pi returns the value of the mathematical constant pi.
- *    - D2R evaluates to pi/180 which, when used as a multiplier,
- *    converts an angle from degrees to radians.
- *    - R2D evaluates to 180/pi which as a multiplier converts an angle
- *    from radians to degrees.
+ *    - \c pi returns the value of the mathematical constant pi.
+ *    - \c D2R evaluates to pi/180 which, when used as a multiplier,
+ *      converts an angle from degrees to radians.
+ *    - \c R2D evaluates to 180/pi which as a multiplier converts an
+ *      angle from radians to degrees.
  *
- * -# ***Variables***
- *  Variables are used to provide inputs to an expression, and are named
- *  using the single letters A through L inclusive or the keyword VAL which
- *  refers to the previous result of this calculation. The software that
- *  makes use of the expression evaluation code should document how the
- *  individual variables are given values; for the calc record type the input
- *  links INPA through INPL can be used to obtain these from other record fields,
- *  and VAL refers to the the VAL field (which can be overwritten from outside
- *  the record via Channel Access or a database link).
+ * -# **Variables** are used to provide inputs to an expression, and are
+ *  named using the single letters \c A through \c L inclusive or the
+ *  keyword \c VAL which refers to the previous result of this
+ *  calculation.
+ *  The software that makes use of the expression evaluation code should
+ *  document how the individual variables are given values.
+ *  For the calc and calcout record types the input links \c INPA through
+ *  \c INPL can be used to obtain values from other record fields, and \c
+ *  VAL refers to the the VAL field (which can be overwritten from
+ *  outside the record via Channel Access or a database link).
  *
- * -# ***Variable Assignment Operator***
- *  Recently added is the ability to assign the result of a sub-expression to
- *  any of the single letter variables, which can then be used in another
- *  sub-expression. The variable assignment operator is the character pair
- *  := and must immediately follow the name of the variable to receive the
- *  expression value. Since the infix string must return exactly one value, every
+ * -# The **Variable Assignment Operator** was added in 3.14.9 and
+ *  provides the ability to assign the result of a sub-expression to any
+ *  of the single letter variables, which can then be used in later
+ *  sub-expressions.
+ *  The variable assignment operator is the character pair <tt>:=</tt> and
+ *  must immediately follow the name of the variable to receive the
+ *  expression value.
+ *  Since the infix string must return exactly one value, every
  *  expression string must have exactly one sub-expression that is not an
- *  assignment, which can appear anywhere in the string. Sub-expressions within
- *  the string are separated by a semi-colon character.
+ *  assignment, which can appear anywhere in the string.
+ *  Sub-expressions within the string are separated by a semi-colon
+ *  character <tt>;</tt> .
  *
- *    - Examples:
- *      - B; B:=A
- *      - i:=i+1; a*sin(i*D2R)
+ *  Examples:
+ *    - <tt>B; B:=A</tt>
+ *    - <tt>i:=i+1; a*sin(i*D2R)</tt>
  *
- * -# ***Arithmetic Operators***
- *  The usual binary arithmetic operators are provided: + - * and / with their
- *  usual relative precedence and left-to-right associativity, and - may also
- *  be used as a unary negate operator where it has a higher precedence and
- *  associates from right to left. There is no unary plus operator, so numeric
- *  literals cannot begin with a + sign.
+ * -# The standard binary **Arithmetic Operators** are provided: <tt>+ -
+ *  *</tt> and \c / with their usual relative precedence and
+ *  left-to-right associativity.
+ *  A minus sign \c - may also be used as a unary negate operator where
+ *  it has a higher precedence and associates from right to left.
+ *  There is no unary plus operator, so numeric literals cannot begin
+ *  with a plus sign \c + .
  *
- *    - Examples:
- *      - a*b + c
- *      - a/-4 - b
+ *  Examples:
+ *       - <tt>a*b + c</tt>
+ *       - <tt>a/-4 - b</tt>
  *
- *  Three other binary operators are also provided: % is the integer modulo operator,
- *  while the synonymous operators ** and ^ raise their left operand to the power of
- *  the right operand. % has the same precedence and associativity as * and /, while
- *  the power operators associate left-to-right and have a precedence in between * and
- *  unary minus.
+ *  Three other binary operators are also provided:
+ *  \c % is the integer modulo operator, while the synonymous operators
+ *  \c ** and \c ^ raise their left operand to the power of the right
+ *  operand.
+ *  \c % has the same precedence and associativity as \c * and \c /,
+ *  while the power operators associate left-to-right and have a
+ *  precedence in between \c * and unary minus \c - .
  *
- *    - Examples:
- *      - e:=a%10
- *      - d:=a/10%10
- *      - c:=a/100%10
- *      - b:=a/1000%10
- *      - b*4096+c*256+d*16+e
- *      - sqrt(a**2 + b**2)
+ *  Examples:
+ *      - <tt>e:=a%10</tt>
+ *      - <tt>d:=a/10%10</tt>
+ *      - <tt>c:=a/100%10</tt>
+ *      - <tt>b:=a/1000%10</tt>
+ *      - <tt>b*4096+c*256+d*16+e</tt>
+ *      - <tt>sqrt(a**2 + b**2)</tt>
  *
- * -# ***Algebraic Functions***
- *  Various algebraic functions are available which take parameters inside
- *  parentheses. The parameter separator is a comma.
+ * -# Various **Algebraic Functions** are available which take parameters
+ *  inside parentheses.
+ *  The parameter separator is a comma <tt>,</tt> .
  *
- *    - Absolute value: abs(a)
- *    - Exponential ea: exp(a)
- *    - Logarithm, base 10: log(a)
- *    - Natural logarithm (base e): ln(a) or loge(a)
- *    - n parameter maximum value: max(a, b, ...)
- *    - n parameter minimum value: min(a, b, ...)
- *    - Square root: sqr(a) or sqrt(a)
- *    - Floating point modulo: fmod(num, den)
- *  \since The fmod() function was added in 7.0.8
+ *    - Absolute value: \c abs(a)
+ *    - Exponential ea: \c exp(a)
+ *    - Logarithm, base 10: \c log(a)
+ *    - Natural logarithm (base e): \c ln(a) or \c loge(a)
+ *    - n parameter maximum value: <tt>max(a, b, ...)</tt>
+ *    - n parameter minimum value: <tt>min(a, b, ...)</tt>
+ *    - Square root: \c sqr(a) or \c sqrt(a)
+ *    - Floating point modulo: <tt>fmod(num, den)</tt>
+ *      <br>The \c fmod() function was added in 7.0.8
  *
- * -# ***Trigonometric Functions***
- *  Standard circular trigonometric functions, with angles expressed in radians:
- *    - Sine: sin(a)
- *    - Cosine: cos(a)
- *    - Tangent: tan(a)
- *    - Arcsine: asin(a)
- *    - Arccosine: acos(a)
- *    - Arctangent: atan(a)
- *    - 2 parameter arctangent: atan2(a, b)
- *  \note  Note that these arguments are the reverse of the ANSI C function,
- *  so while C would return arctan(a/b) the calc expression engine returns arctan(b/a)
+ * -# Standard circular **Trigonometric Functions** exist with angles
+ *  expressed in radians:
  *
- * -# ***Hyperbolic Trigonometry***
- *  The basic hyperbolic functions are provided, but no inverse functions
- *  (which are not provided by the ANSI C math library either).
- *     - Hyperbolic sine: sinh(a)
- *     - Hyperbolic cosine: cosh(a)
- *     - Hyperbolic tangent: tanh(a)
+ *    - Sine: \c sin(a)
+ *    - Cosine: \c cos(a)
+ *    - Tangent: \c tan(a)
+ *    - Arcsine: \c asin(a)
+ *    - Arccosine: \c acos(a)
+ *    - Arctangent: \c atan(a)
+ *    - 2 parameter arctangent: <tt>atan2(a, b)</tt>
+ *      <br>Note that the \c atan2 arguments are the reverse of the ANSI C
+ *      function, so while C would return \c arctan(a/b) the calc
+ *      expression engine returns \c arctan(b/a)
  *
- * -# ***Numeric Functions***
- *  The numeric functions perform operations related to the floating point
- *  numeric representation and truncation or rounding.
- *    - Round up to next integer: ceil(a)
- *    - Round down to next integer: floor(a)
- *    - Round to nearest integer: nint(a)
- *    - Test for infinite result: isinf(a)
- *    - Test for any non-numeric values: isnan(a, ...)
- *    - Test for all finite, numeric values: finite(a, ...)
- *    - Random number between 0 and 1: rndm
+ * -# The basic **Hyperbolic Trigonometry** functions are provided, but
+ *  no inverse functions (which aren't provided by the ANSI C math
+ *  library either).
  *
- * -# ***Boolean Operators***
- *  These operators regard their arguments as true or false, where 0.0 is
- *  false and any other value is true.
+ *     - Hyperbolic sine: \c sinh(a)
+ *     - Hyperbolic cosine: \c cosh(a)
+ *     - Hyperbolic tangent: \c tanh(a)
  *
- *    - Boolean and: a && b
- *    - Boolean or: a || b
- *    - Boolean not: !a
+ * -# These **Numeric Functions** perform operations related to the
+ *  floating point numeric representation and truncation or rounding.
  *
- * -# ***Bitwise Operators***
- * Most bitwise operators convert their arguments to 32-bit signed integer (by
- * truncation), perform the appropriate bitwise operation, then convert back
- * to a floating point value. The arithmetic right shift operator >> thus
- * retains the sign bit of the left-hand argument. The logical right shift
- * operator >>> is performed on an unsigned integer though, so injects zeros
- * while shifting. The right-hand shift argument is masked so only the lower
- * 5 bits are used. Unlike in C, ^ is not a bitwise exclusive-or operator.
+ *     - Round up to next integer: \c ceil(a)
+ *     - Round down to next integer: \c floor(a)
+ *     - Round to nearest integer: \c nint(a)
+ *     - Test for infinite result: \c isinf(a)
+ *     - Test for any non-numeric values: <tt>isnan(a, ...)</tt>
+ *     - Test for all finite, numeric values: <tt>finite(a, ...)</tt>
+ *     - Random number between 0 and 1: \c rndm
  *
- *    - Bitwise and: a & b or a and b
- *    - Bitwise or: a | b or a or b
- *    - Bitwise exclusive or: a xor b
- *    - Bitwise not (ones complement): ~a or not a
- *    - Arithmetic left shift: a << b
- *    - Arithmetic right shift: a >> b
- *    - Logical right shift: a >>> b
+ * -# The **Boolean Operators** evaluate their arguments as true or
+ *  false, where \c 0.0 is false and any other value is true.
  *
- * -# ***Relational Operators***
- *  Standard numeric comparisons between two values:
+ *     - Boolean and: <tt>a && b</tt>
+ *     - Boolean or: <tt>a || b</tt>
+ *     - Boolean not: \c !a
  *
- *    - Less than: a < b
- *    - Less than or equal to: a <= b
- *    - Equal to: a = b or a == b
- *    - Greater than or equal to: a >= b
- *    - Greater than: a > b
- *    - Not equal to: a != b or a # b
+ * -# Most **Bitwise Operators** convert their arguments to 32-bit signed
+ *  integer (by truncation), perform the appropriate bitwise operation,
+ *  then convert back to a floating point value.
+ *  The arithmetic right shift operator \c >> thus retains the sign bit of
+ *  the left-hand argument.
+ *  The logical right shift operator \c >>> is performed on an unsigned
+ *  integer though, so it injects zeros while shifting.
+ *  The right-hand shift argument is masked so only the lower 5 bits are
+ *  used.
+ *  Unlike in C, \c ^ is not a bitwise exclusive-or operator.
  *
- * -# ***Conditional Operator***
- *  Expressions can use the C conditional operator, which has a lower
- *  precedence than all of the other operators except for the assignment operator.
+ *     - Bitwise and: <tt>a & b</tt> or <tt>a and b</tt>
+ *     - Bitwise or: <tt>a | b</tt> or <tt>a or b</tt>
+ *     - Bitwise exclusive or: <tt>a xor b</tt>
+ *     - Bitwise not (ones complement): <tt>~a</tt> or <tt>not a</tt>
+ *     - Arithmetic left shift: <tt>a << b</tt>
+ *     - Arithmetic right shift: <tt>a >> b</tt>
+ *     - Logical right shift: <tt>a >>> b</tt>
  *
- *    - condition ? true result : false result
- *      - Example:
- *        - a < 360 ? a+1 : 0
+ * -# The **Relational Operators** perform numeric comparisons between
+ *  two double-precision values:
  *
- * -# ***Parentheses***
- * Sub-expressions can be placed within parentheses to override operator presence rules.
- * Parentheses can be nested to any depth, but the intermediate value stack used by
- * the expression evaluation engine is limited to 80 results (which require an
- * expression at least 321 characters long to reach).
+ *     - Less than: <tt>a < b</tt>
+ *     - Less than or equal to: <tt>a <= b</tt>
+ *     - Equal to: <tt>a = b</tt> or <tt>a == b</tt>
+ *     - Greater than or equal to: <tt>a >= b</tt>
+ *     - Greater than: <tt>a > b</tt>
+ *     - Not equal to: <tt>a != b</tt> or <tt>a # b</tt>
+ *
+ * -# Expressions can use the C **Conditional Operator**, which has a
+ *  lower precedence than all of the other operators except for the
+ *  assignment operator.
+ *
+ *     - \a condition <tt>?</tt> \a true-expression <tt>:</tt>
+ *       \a false-expression
+ *     - Example:
+ *        <tt>a < 360 ? a+1 : 0</tt>
+ *
+ * -# Sub-expressions can be placed within **Parentheses** <tt>()</tt>
+ *  to override operator presence rules.
+ *  Parentheses can be nested to any depth, but the intermediate value
+ *  stack used by the expression evaluation engine is limited to 80
+ *  results (which takes an expression at least 321 characters long to
+ *  reach).
  */
 LIBCOM_API long
     postfix(const char *pinfix, char *ppostfix, short *perror);
@@ -310,10 +322,12 @@ LIBCOM_API long
  *
  * Evaluates the postfix expression against a set ot input values.
  *
- * \param parg Pointer to an array of double values for the arguments A-L
- * that can appear in the expression. Note that the argument values may be
- * modified if the expression uses the assignment operator.
- * \param presult Where to put the calculated result, which may be a NaN or Infinity.
+ * \param parg Pointer to an array of double values for the arguments
+ * \c A-L that can appear in the expression.
+ * Note that the argument values may be modified if the expression uses
+ * the assignment operator.
+ * \param presult Where to put the calculated result, which may be a NaN
+ * or Infinity.
  * \param ppostfix The postfix expression created by postfix().
  * \return Status value 0 for OK, or non-zero if an error is discovered
  * during the evaluation process.

@@ -49,31 +49,35 @@ for information on how to specify database links.
 
 =head3 Expression
 
-At the core of the Calc record lies the CALC and RPCL fields. The CALC field
-contains the infix expresion which the record routine will use when it
-processes the record. The resulting value is placed in the VAL field and
-can be accessed from there. The CALC expression is actually converted to
-opcode and stored as Reverse Polish Notation in the RPCL field. It is this
-expression which is actually used to calculate VAL. The Reverse Polish
-expression is evaluated more efficiently during run-time than an infix
-expression. CALC can be changed at run-time, and a special record routine
-calls a function to convert it to Reverse Polish Notation.
+At the core of the Calc record lies the CALC and RPCL fields.
+The CALC field holds an infix expression to be evaluated whenever the record is
+processed.
+The calculated value is placed in the VAL field and can be accessed from there.
+
+The CALC expression gets compiled into a stream of Reverse Polish Notation (RPN)
+opcodes for a stack-based machine, and stored in the RPCL field.
+The RPN opcodes are used to calculate VAL at run-time, and are more efficient
+than evaluating the infix expression.
+The CALC expression can be replaced at run-time, triggering a special record
+routine to compile the new expression into Reverse Polish Notation.
 
 The infix expressions that can be used are very similar to the C expression
-syntax, but with some additions and subtle differences in operator meaning
-and precedence. The string may contain a series of expressions separated by
-a semi-colon character ";" any one of which may actually provide the
-calculation result; however, all of the other expressions included must
-assign their result to a variable. All alphabetic elements described below
-are case independent, so upper and lower case letters may be used and mixed
-in the variable and function names as desired. Spaces may be used anywhere
-within an expression except between characters that make up a single
-expression element.
+syntax, but with some additions and subtle differences in operator meaning and
+precedence.
+The string may contain a series of expressions separated by a semi-colon
+character C<;>, any one of which may provide the calculation result.
+All other expressions included in the string must assign their result to a
+variable.
+All alphabetic elements described below are case independent, so upper and lower
+case letters may be used and mixed in the variable and function names as
+desired.
+Spaces may be used anywhere within an expression except between characters that
+make up a single expression element.
 
-The range of expressions supported by the calculation record are separated
-into literals, constants, operands, algebraic operators, trigonometric operators,
-relational operators, logical operators, the assignment operator,
-parentheses and commas, and the question mark or '?:' operator.
+The range of expressions supported by the calculation record are separated into
+literals, constants, operands, algebraic operators, trigonometric operators,
+relational operators, logical operators, the assignment operator, parentheses
+and commas, and the question mark colon or C<?:> operator.
 
 =fields CALC, RPCL
 
@@ -127,111 +131,204 @@ The keyword VAL returns the current contents of the VAL field (which can be
 written to by a CA put, so it might I<not> be the result from the last time
 the expression was evaluated).
 
-=head3 Algebraic Operators
+=head3 Arithmetic Operators
+
+Except for unary minus these are infix binary operators.
 
 =over 1
 
 =item *
-C<ABS>: Absolute value (unary)
+C<+> : Addition
 
 =item *
-C<SQR>: Square root (unary)
+C<-> : Subtraction
 
 =item *
-C<MIN>: Minimum (any number of args)
+C<-> : Minus (unary)
 
 =item *
-C<MAX>: Maximum (any number of args)
+C<*> : Multiplication
 
 =item *
-C<FINITE>: returns non-zero if none of the arguments are NaN or Inf (any
-number of args)
+C</> : Division
 
 =item *
-C<ISNAN>: returns non-zero if any of the arguments is NaN or Inf (any number
-of args)
+C<%> : Modulo
 
 =item *
-C<CEIL>: Ceiling (unary)
+C<^> : Exponential
 
 =item *
-C<FLOOR>: Floor (unary)
-
-=item *
-C<FMOD>: Floating point modulo (binary)  Added in 7.0.8
-
-=item *
-C<LOG>: Log base 10 (unary)
-
-=item *
-C<LOGE>: Natural log (unary)
-
-=item *
-C<LN>: Natural log (unary)
-
-=item *
-C<EXP>: Exponential function (unary)
-
-=item *
-C<^> : Exponential (binary)
-
-=item *
-C<**> : Exponential (binary)
-
-=item *
-C<+> : Addition (binary)
-
-=item *
-C<-> : Subtraction (binary)
-
-=item *
-C<*> : Multiplication (binary)
-
-=item *
-C</> : Division (binary)
-
-=item *
-C<%> : Modulo (binary)
-
-=item *
-C<NOT>: Negate (unary)
+C<**> : Exponential
 
 =back
 
-=head3 Trigonometric Operators
+=head3 Algebraic Functions
+
+When functions take more than one argument, a comma separator must appear
+between them.
 
 =over 1
 
 =item *
-C<SIN>: Sine
+C<ABS (arg)> : Absolute value
 
 =item *
-C<SINH>: Hyperbolic sine
+C<EXP (arg)> : Exponential function
 
 =item *
-C<ASIN>: Arc sine
+C<FMOD (num, den)> : Floating point modulo. Added in 7.0.8
 
 =item *
-C<COS>: Cosine
+C<LN (arg)> : Natural log
 
 =item *
-C<COSH>: Hyperbolic cosine
+C<LOG (arg)> : Log base 10
 
 =item *
-C<ACOS>: Arc cosine
+C<LOGE (arg)> : Natural log
 
 =item *
-C<TAN>: Tangent
+C<MIN (any number of args)> : Minimum
 
 =item *
-C<TANH>: Hyperbolic tangent
+C<MAX (any number of args)> : Maximum
 
 =item *
-C<ATAN>: Arc tangent
+C<SQR (arg)> : Square root
+
+=item *
+C<SQRT (arg)> : Square root
+
+=back
+
+=head3 Trigonometric Functions
+
+=over 1
+
+=item *
+C<SIN (arg)> : Sine
+
+=item *
+C<ASIN (arg)> : Arc sine
+
+=item *
+C<COS (arg)> : Cosine
+
+=item *
+C<ACOS (arg)> : Arc cosine
+
+=item *
+C<TAN (arg)> : Tangent
+
+=item *
+C<ATAN (arg)> : Arc tangent
+
+=item *
+C<ATAN2 (den, num)> : 2-parameter Arc tangent. Arg's are reversed to ANSI C
+
+=back
+
+=head3 Hyperbolic Trigonometry Functions
+
+=over 1
+
+=item *
+C<SINH (arg)> : Hyperbolic sine
+
+=item *
+C<COSH (arg)> : Hyperbolic cosine
+
+=item *
+C<TANH (arg)> : Hyperbolic tangent
+
+=back
+
+=head3 Numeric Functions
+
+=over 1
+
+=item *
+C<CEIL (arg)> : Ceiling
+
+=item *
+C<FLOOR (arg)> : Floor
+
+=item *
+C<NINT (arg)> : Round to nearest integer
+
+=item *
+C<ISINF (arg)> : returns non-zero if any argument is Inf
+
+=item *
+C<ISNAN (any number of args)> : returns non-zero (true) if any argument is NaN
+or Inf
+
+=item *
+C<FINITE (any number of args)> : returns non-zero (true) if none of the
+arguments are NaN or Inf
+
+=back
+
+=head3 Boolean/Logical Operators
+
+These operators use their arguments as a true (non-zero) or false (zero) value.
+
+=over 1
+
+=item *
+C<&&> : And, infix binary
+
+=item *
+C<||> : Or, infix binary
+
+=item *
+C<!> : Not, unary prefix
+
+=back
+
+=head3 Bitwise Operators
+
+Mostly infix binary, the arguments are converted to a 32-bit integer, the
+operator is applied, and the result converted back into a double.
+
+=over 1
+
+=item *
+C<&> : Bitwise and
+
+=item *
+C<|> : Bitwise or
+
+=item *
+C<~> : Bitwise not or one's complement, unary prefix
+
+=item *
+C<<< << >>> : Arithmetic shift left
+
+=item *
+C<<< >> >>> : Arithmetic shift right
+
+=item *
+C<<<< >>> >>>> : Logical shift right
+
+=item *
+C<AND> : Bitwise and
+
+=item *
+C<OR> : Bitwise or
+
+=item *
+C<XOR> : Bitwise exclusive or
+
+=item *
+C<NOT> : Bitwise not or one's complement, unary prefix
 
 =back
 
 =head3 Relational Operators
+
+These are all infix binary operators.
 
 =over 1
 
@@ -248,58 +345,16 @@ C<<< <= >>> : Less than or equal to
 C<<< < >>> : Less than
 
 =item *
+C<<< != >>> : Not equal to
+
+=item *
 C<<< # >>> : Not equal to
 
 =item *
-C<<< = >>> : Equal to
-
-=back
-
-=head3 Logical Operators
-
-=over 1
+C<<< == >>> : Equal to
 
 =item *
-C<&&> : And
-
-=item *
-C<||> : Or
-
-=item *
-C<!> : Not
-
-=back
-
-=head3 Bitwise Operators
-
-=over 1
-
-=item *
-C<|> : Bitwise Or
-
-=item *
-C<&> : Bitwise And
-
-=item *
-C<OR> : Bitwise Or
-
-=item *
-C<AND> : Bitwise And
-
-=item *
-C<XOR> : Bitwise Exclusive Or
-
-=item *
-C<~> : One's Complement
-
-=item *
-C<<< << >>> : Arithmetic Left Shift
-
-=item *
-C<<< >> >>> : Arithmetic Right Shift
-
-=item *
-C<<<< >>> >>>> : Logical Right Shift
+C<<< = >>> : Equal to (not assignment)
 
 =back
 
@@ -314,22 +369,24 @@ C<:=> : assigns a value (right hand side) to a variable (i.e. field)
 
 =head3 Parantheses, Comma, and Semicolon
 
-The open and close parentheses are supported. Nested parentheses are
-supported.
+The open C<(> and close parentheses C<)> are supported to override precedence
+rules in a sub-expression.
+Nested parentheses are supported to significant depth.
 
-The comma is supported when used to separate the arguments of a binary
-function.
+The comma C<,> is required to separate the arguments of a function.
 
-The semicolon is used to separate expressions. Although only one
-traditional calculation expression is allowed, multiple assignment
-expressions are allowed.
+The semicolon C<;> is used to value separate expressions.
+Exactly one value expression must be present, but multiple assignment
+expressions may be included before and/or after the value expression.
 
-=head3 Conditional Expression
+=head3 Conditional Operator
 
-The C language's question mark operator is supported. The format is:
-C<condition ? True result : False result>
+The C language's question mark colon C<?:> ternary operator is supported.
+The format is:
 
-=head3 Expression Examples
+I<condition> C<?> I<true-expression> C<:> I<false-expression>
+
+=head2 Expression Examples
 
 =head3 Algebraic
 
@@ -370,8 +427,8 @@ Result is C<F + L + 10> if C<<< (A + B) >= (C + D) >>>
 
 =back
 
-Prior to Base 3.14.9 it was legal to omit the : and the second (else) part
-of the conditional, like this:
+Prior to Base 3.14.9 it was legal to omit the colon C<:> and the second (else)
+part of the conditional, like this:
 
 C<<< (A + B)<(C + D) ? E >>>
 

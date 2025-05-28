@@ -89,9 +89,42 @@ static void test_selm_specified() {
 
 }
 
+static void test_selm_mask() {
+
+    /* Resetting values */
+    testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "All");
+    testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 0);
+    test_all(0, -1);
+
+    /* Resets values. Tests if fields in bitmask have been set */
+    for (int mask = 0; mask <= 0b11111111; ++mask) {
+
+        testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "All"); //Resetting all values to 0
+        testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 0);
+        SLEEP
+
+        testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "Mask");
+        testdbPutFieldOk("test_dfanout_record.SELN", DBF_LONG, mask);
+        testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 9);
+        SLEEP
+
+        for (int item = 0; item < 8; ++item) {
+
+            if ( mask & (1 << item) ) { // If i represents a set bit in the bitmask
+                testdbGetFieldEqual(dfanout_receivers[item], DBF_LONG, 9);
+            } else {
+                testdbGetFieldEqual(dfanout_receivers[item], DBF_LONG, 0);
+            }
+
+        }
+
+    }
+
+}
+
 MAIN(dfanoutTest) {
 
-    testPlan(117);
+    testPlan(3455);
 
     testdbPrepare();   
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -105,6 +138,7 @@ MAIN(dfanoutTest) {
 
     test_all_output();
     test_selm_specified();
+    test_selm_mask();
 
     testIocShutdownOk();
     testdbCleanup();

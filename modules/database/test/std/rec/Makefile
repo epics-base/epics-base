@@ -128,6 +128,20 @@ testHarness_SRCS += aiTest.c
 TESTFILES += ../aiTest.db
 TESTS += aiTest
 
+TESTPROD_HOST += calcTest
+calcTest_SRCS += calcTest.c
+calcTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += calcTest.c
+TESTFILES += ../calcTest.db
+TESTS += calcTest
+
+TESTPROD_HOST += calcoutTest
+calcoutTest_SRCS += calcoutTest.c
+calcoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += calcoutTest.c
+TESTFILES += ../calcoutTest.db
+TESTS += calcoutTest
+
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
 asTestIoc_DBD += base.dbd

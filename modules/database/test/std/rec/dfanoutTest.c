@@ -14,7 +14,7 @@
 
 #include "dfanoutRecord.h"
 
-#define SLEEP_TIME 0.1
+#define SLEEP_TIME 0.01
 #define SLEEP epicsThreadSleep(SLEEP_TIME);
 
 char dfanout_OUT_pvs[8][25] = {{"test_dfanout_record.OUTA\0"}, {"test_dfanout_record.OUTB\0"},

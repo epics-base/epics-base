@@ -107,6 +107,13 @@ testHarness_SRCS += boTest.c
 TESTFILES += ../boTest.db
 TESTS += boTest
 
+TESTPROD_HOST += dfanoutTest
+dfanoutTest_SRCS += dfanoutTest.c
+dfanoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dfanoutTest.c
+TESTFILES += ../dfanoutTest.db
+TESTS += dfanoutTest
+
 TESTPROD_HOST += biTest
 biTest_SRCS += biTest.c
 biTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp

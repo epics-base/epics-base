@@ -128,6 +128,13 @@ testHarness_SRCS += aiTest.c
 TESTFILES += ../aiTest.db
 TESTS += aiTest
 
+TESTPROD_HOST += stringoutTest
+stringoutTest_SRCS += stringoutTest.c
+stringoutTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += stringoutTest.c
+TESTFILES += ../stringoutTest.db
+TESTS += stringoutTest
+
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
 asTestIoc_DBD += base.dbd

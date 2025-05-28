@@ -10,8 +10,6 @@
 #include "dbAccess.h"
 #include "menuIvoa.h"
 #include "epicsThread.h"
-#include <stdlib.h>
-
 #include "dfanoutRecord.h"
 
 #define SLEEP_TIME 0.01

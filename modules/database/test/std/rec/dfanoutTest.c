@@ -31,7 +31,7 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static void test_all(int val, int exception){
 
-    SLEEP
+    SLEEP // Needed, unfortunately :(
 
     // if i < 0 or > 8 then it tests all.
     for (uint i = 0; i < 8; ++i) {
@@ -58,6 +58,7 @@ static void test_all_output(void){
 
 static void test_selm_specified() {
 
+    /* Resetting values */
     testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 0);
     test_all(0, -1);
 
@@ -76,9 +77,9 @@ static void test_selm_specified() {
         int not_seln_val;
         for (int not_seln = 0; not_seln < 8; ++not_seln) {
             if (not_seln == val) continue;
-            if (not_seln < val) {
+            if (not_seln < val) { // If record has already been tested, expected value is index + 1
                 not_seln_val = not_seln + 1;
-            }  else {
+            }  else { // If record hasn't been tested yet, expected value is 0
                 not_seln_val = 0;
             }
             testdbGetFieldEqual(dfanout_receivers[not_seln], DBF_LONG, not_seln_val);

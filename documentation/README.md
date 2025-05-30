@@ -232,14 +232,16 @@ required path and other environment variables.
 * **`EPICS_HOST_ARCH`**
 
 Some host builds of EPICS require that the environment variable
-`EPICS_HOST_ARCH` be defined. The perl script `EpicsHostArch.pl` in the
-`base/startup` directory prints the value which the build will use if
-the variable is not set before the build starts. Architecture names
-start with the operating system followed by a dash and the host CPU
-architecture, e.g. `linux-x86_64`. Some architecture names have another
-dash followed by another keyword, for example when building for Windows
-but using the MinGW compiler the name must be `windows-x64-mingw`. See
-`configure/CONFIG_SITE` for a list of supported host architecture names.
+`EPICS_HOST_ARCH` be defined. The shell script `EpicsHostArch` in the
+`base/startup` directory (which finds and calls the perl script 
+`EpicsHostArch.pl` in the `base/src/tools` directory) prints the 
+value which the build will use if the variable is not set before 
+the build starts. Architecture names start with the operating system 
+followed by a dash and the host CPU architecture, e.g. `linux-x86_64`. 
+Some architecture names have another dash followed by another keyword, 
+for example when building for Windows but using the MinGW compiler the 
+name must be `windows-x64-mingw`. See `configure/CONFIG_SITE` for a 
+list of supported host architecture names.
 
 * **`PATH`**
 As already mentioned, you must have the `perl` executable and you may

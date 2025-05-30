@@ -12,9 +12,6 @@
 #include "epicsThread.h"
 #include "dfanoutRecord.h"
 
-#define SLEEP_TIME 0.001
-#define SLEEP epicsThreadSleep(SLEEP_TIME);
-
 static const char *dfanout_OUT_pvs[] = {"test_dfanout_record.OUTA", "test_dfanout_record.OUTB",
     "test_dfanout_record.OUTC", "test_dfanout_record.OUTD",
     "test_dfanout_record.OUTE", "test_dfanout_record.OUTF",
@@ -25,12 +22,13 @@ static const char *dfanout_receivers[] = {"test_dfanout_outa", "test_dfanout_out
     "test_dfanout_oute", "test_dfanout_outf",
     "test_dfanout_outg", "test_dfanout_outh"};
 
+static testMonitor *monitor;
+
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static void test_all(int val, int exception){
 
-    SLEEP // Needed, unfortunately :(
-
+    testMonitorWait(monitor);
     // if i < 0 or > 8 then it tests all.
     for (uint i = 0; i < NELEMENTS(dfanout_receivers); ++i) {
         if ( i == exception) continue;
@@ -68,7 +66,7 @@ static void test_selm_specified() {
     for (int val = 0; val < NELEMENTS(dfanout_receivers); ++val) {
         testdbPutFieldOk("test_dfanout_record.SELN", DBF_LONG, val + 1);
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, val + 1);
-        SLEEP
+        testMonitorWait(monitor);
 
         testdbGetFieldEqual(dfanout_receivers[val], DBF_LONG, val + 1);
         
@@ -97,21 +95,21 @@ static void test_selm_mask() {
     /* Resets values. Tests if fields in bitmask have been set */
     for (int mask = 0; mask <= 0b11111111; ++mask) {
 
-        testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "All"); //Resetting all values to 0
-        testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 0);
-        SLEEP
+        testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "All"); //Setting all values to 1 so we know what to compare with.
+        testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 1);
+        testMonitorWait(monitor);
 
         testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "Mask");
         testdbPutFieldOk("test_dfanout_record.SELN", DBF_LONG, mask);
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 9);
-        SLEEP
+        testMonitorWait(monitor);
 
         for (int item = 0; item < NELEMENTS(dfanout_receivers); ++item) {
 
             if ( mask & (1 << item) ) { // If i represents a set bit in the bitmask
                 testdbGetFieldEqual(dfanout_receivers[item], DBF_LONG, 9);
             } else {
-                testdbGetFieldEqual(dfanout_receivers[item], DBF_LONG, 0);
+                testdbGetFieldEqual(dfanout_receivers[item], DBF_LONG, 1);
             }
 
         }
@@ -134,9 +132,11 @@ MAIN(dfanoutTest) {
     testIocInitOk();
     eltc(1);
 
+    monitor = testMonitorCreate("test_dfanout_record", DBE_VALUE, 0);
     test_all_output();
     test_selm_specified();
     test_selm_mask();
+    testMonitorDestroy(monitor);
 
     testIocShutdownOk();
     testdbCleanup();

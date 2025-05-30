@@ -15,15 +15,15 @@
 #define SLEEP_TIME 0.001
 #define SLEEP epicsThreadSleep(SLEEP_TIME);
 
-char dfanout_OUT_pvs[8][25] = {{"test_dfanout_record.OUTA\0"}, {"test_dfanout_record.OUTB\0"},
-                           {"test_dfanout_record.OUTC\0"}, {"test_dfanout_record.OUTD\0"},
-                           {"test_dfanout_record.OUTE\0"}, {"test_dfanout_record.OUTF\0"},
-                           {"test_dfanout_record.OUTG\0"}, {"test_dfanout_record.OUTH\0"}};
+static const char *dfanout_OUT_pvs[] = {{"test_dfanout_record.OUTA"}, {"test_dfanout_record.OUTB"},
+    {"test_dfanout_record.OUTC"}, {"test_dfanout_record.OUTD"},
+    {"test_dfanout_record.OUTE"}, {"test_dfanout_record.OUTF"},
+    {"test_dfanout_record.OUTG"}, {"test_dfanout_record.OUTH"}};
 
-char dfanout_receivers[8][18] = {{"test_dfanout_outa\0"}, {"test_dfanout_outb\0"},
-                                 {"test_dfanout_outc\0"}, {"test_dfanout_outd\0"},
-                                 {"test_dfanout_oute\0"}, {"test_dfanout_outf\0"},
-                                 {"test_dfanout_outg\0"}, {"test_dfanout_outh\0"}};
+static const char *dfanout_receivers[] = {{"test_dfanout_outa"}, {"test_dfanout_outb"},
+    {"test_dfanout_outc"}, {"test_dfanout_outd"},
+    {"test_dfanout_oute"}, {"test_dfanout_outf"},
+    {"test_dfanout_outg"}, {"test_dfanout_outh"}};
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 

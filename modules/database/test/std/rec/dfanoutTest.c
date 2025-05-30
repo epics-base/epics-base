@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2023 Karl Vestin
+* Copyright (c) 2023 Marco Montevechi Filho
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/

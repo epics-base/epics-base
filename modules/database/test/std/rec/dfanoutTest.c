@@ -15,15 +15,15 @@
 #define SLEEP_TIME 0.001
 #define SLEEP epicsThreadSleep(SLEEP_TIME);
 
-static const char *dfanout_OUT_pvs[] = {{"test_dfanout_record.OUTA"}, {"test_dfanout_record.OUTB"},
-    {"test_dfanout_record.OUTC"}, {"test_dfanout_record.OUTD"},
-    {"test_dfanout_record.OUTE"}, {"test_dfanout_record.OUTF"},
-    {"test_dfanout_record.OUTG"}, {"test_dfanout_record.OUTH"}};
+static const char *dfanout_OUT_pvs[] = {"test_dfanout_record.OUTA", "test_dfanout_record.OUTB",
+    "test_dfanout_record.OUTC", "test_dfanout_record.OUTD",
+    "test_dfanout_record.OUTE", "test_dfanout_record.OUTF",
+    "test_dfanout_record.OUTG", "test_dfanout_record.OUTH"};
 
-static const char *dfanout_receivers[] = {{"test_dfanout_outa"}, {"test_dfanout_outb"},
-    {"test_dfanout_outc"}, {"test_dfanout_outd"},
-    {"test_dfanout_oute"}, {"test_dfanout_outf"},
-    {"test_dfanout_outg"}, {"test_dfanout_outh"}};
+static const char *dfanout_receivers[] = {"test_dfanout_outa", "test_dfanout_outb",
+    "test_dfanout_outc", "test_dfanout_outd",
+    "test_dfanout_oute", "test_dfanout_outf",
+    "test_dfanout_outg", "test_dfanout_outh"};
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 

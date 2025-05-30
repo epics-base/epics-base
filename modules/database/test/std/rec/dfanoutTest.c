@@ -32,7 +32,7 @@ static void test_all(int val, int exception){
     SLEEP // Needed, unfortunately :(
 
     // if i < 0 or > 8 then it tests all.
-    for (uint i = 0; i < 8; ++i) {
+    for (uint i = 0; i < NELEMENTS(dfanout_receivers); ++i) {
         if ( i == exception) continue;
         testdbGetFieldEqual(dfanout_receivers[i], DBF_LONG, val);
     }
@@ -42,7 +42,7 @@ static void test_all(int val, int exception){
 static void test_all_output(void){
     
     /* set output fields */
-    for (uint i = 0; i < 8; ++i) {
+    for (uint i = 0; i < NELEMENTS(dfanout_OUT_pvs); ++i) {
         testdbPutFieldOk(dfanout_OUT_pvs[i], DBF_STRING, dfanout_receivers[i]);
     }
 
@@ -65,7 +65,7 @@ static void test_selm_specified() {
     testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 10);
     test_all(0, -1);
 
-    for (int val = 0; val < 8; ++val) {
+    for (int val = 0; val < NELEMENTS(dfanout_receivers); ++val) {
         testdbPutFieldOk("test_dfanout_record.SELN", DBF_LONG, val + 1);
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, val + 1);
         SLEEP
@@ -73,7 +73,7 @@ static void test_selm_specified() {
         testdbGetFieldEqual(dfanout_receivers[val], DBF_LONG, val + 1);
         
         int not_seln_val;
-        for (int not_seln = 0; not_seln < 8; ++not_seln) {
+        for (int not_seln = 0; not_seln < NELEMENTS(dfanout_receivers); ++not_seln) {
             if (not_seln == val) continue;
             if (not_seln < val) { // If record has already been tested, expected value is index + 1
                 not_seln_val = not_seln + 1;
@@ -106,7 +106,7 @@ static void test_selm_mask() {
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 9);
         SLEEP
 
-        for (int item = 0; item < 8; ++item) {
+        for (int item = 0; item < NELEMENTS(dfanout_receivers); ++item) {
 
             if ( mask & (1 << item) ) { // If i represents a set bit in the bitmask
                 testdbGetFieldEqual(dfanout_receivers[item], DBF_LONG, 9);

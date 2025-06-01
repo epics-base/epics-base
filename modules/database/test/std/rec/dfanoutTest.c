@@ -30,7 +30,7 @@ static void test_all(int val, int exception){
 
     testMonitorWait(monitor);
     // if i < 0 or > 8 then it tests all.
-    for (uint i = 0; i < NELEMENTS(dfanout_receivers); ++i) {
+    for (int i = 0; i < NELEMENTS(dfanout_receivers); ++i) {
         if ( i == exception) continue;
         testdbGetFieldEqual(dfanout_receivers[i], DBF_LONG, val);
     }
@@ -40,7 +40,7 @@ static void test_all(int val, int exception){
 static void test_all_output(void){
     
     /* set output fields */
-    for (uint i = 0; i < NELEMENTS(dfanout_OUT_pvs); ++i) {
+    for (int i = 0; i < NELEMENTS(dfanout_OUT_pvs); ++i) {
         testdbPutFieldOk(dfanout_OUT_pvs[i], DBF_STRING, dfanout_receivers[i]);
     }
 

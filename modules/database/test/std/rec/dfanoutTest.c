@@ -93,7 +93,7 @@ static void test_selm_mask() {
     test_all(0, -1);
 
     /* Resets values. Tests if fields in bitmask have been set */
-    for (int mask = 0; mask <= 0b11111111; ++mask) {
+    for (int mask = 0; mask <= 255; ++mask) {
 
         testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "All"); //Setting all values to 1 so we know what to compare with.
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 1);

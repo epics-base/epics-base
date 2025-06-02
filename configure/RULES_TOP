@@ -69,7 +69,10 @@ ifndef DISABLE_TOP_RULES
 	fi
 
 	@lcov --capture --directory . --output-file coverage/coverage.info --ignore-errors gcov,source
-	@genhtml coverage/coverage.info \
+	@lcov --remove coverage/coverage.info \
+		'/usr/*' '*/O.*' '*/include/*' \
+		--output-file coverage/coverage.cleaned.info
+	@genhtml coverage/coverage.cleaned.info \
 		--output-directory coverage/html \
 		--ignore-errors source \
 		--prefix $(realpath .)

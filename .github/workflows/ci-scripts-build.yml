@@ -45,6 +45,7 @@ jobs:
       CI_CROSS_TARGETS: ${{ matrix.cross }}
       EXTRA: ${{ matrix.extra }}
       TEST: ${{ matrix.test }}
+      COVERAGE: ${{ matrix.coverage }}
     strategy:
       fail-fast: false
       matrix:
@@ -72,6 +73,15 @@ jobs:
                                   -Wno-error=stringop-overread
                                   -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3'
                     CMD_LDFLAGS=-Wl,-z,relro"
+
+          - os: ubuntu-22.04
+            cmp: gcc
+            configuration: default
+            coverage: true
+            extra: "CMD_CXXFLAGS=--coverage
+                    CMD_CFLAGS=--coverage
+                    CMD_LDFLAGS=--coverage"
+            name: "Ub-22 gcc coverage"
 
           - os: ubuntu-22.04
             cmp: gcc
@@ -204,7 +214,7 @@ jobs:
     - name: "apt-get install"
       run: |
         sudo apt-get update
-        sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
+        sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb lcov
       if: runner.os == 'Linux'
     - name: Prepare and compile dependencies
       run: python .ci/cue.py prepare
@@ -212,6 +222,19 @@ jobs:
       run: python .ci/cue.py build
     - name: Run main module tests
       run: python .ci/cue.py -T 60M test
+    - name: Generate coverage report
+      if: env.COVERAGE == 'true'
+      run: make coverage
+    - name: Print coverage summary
+      if: env.COVERAGE == 'true'
+      run: lcov --list coverage/coverage.cleaned.info | tee coverage/summary.txt
+    - name: Upload coverage artifacts
+      if: env.COVERAGE == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage ${{ matrix.name }}
+        path: coverage
+        if-no-files-found: error
     - name: Upload tapfiles Artifact
       if: ${{ always() }}
       uses: actions/upload-artifact@v4

@@ -61,6 +61,21 @@ ifndef DISABLE_TOP_RULES
   runtests test-results:
 	@$(SHOWTESTFAILURES)
 
+  coverage:
+	@mkdir -p coverage
+	@if ! find . -name '*.gcda' | grep -q .; then \
+	  echo "No .gcda files found! Did you build with coverage flags?"; \
+	  exit 2; \
+	fi
+
+	@lcov --capture --directory . --output-file coverage/coverage.info --ignore-errors gcov,source
+	@genhtml coverage/coverage.info \
+		--output-directory coverage/html \
+		--ignore-errors source \
+		--prefix $(realpath .)
+
+	@echo "Coverage HTML report in coverage/html/index.html"
+
 else
   #
   # Using a disabled rule aborts
@@ -95,6 +110,9 @@ help:
 	@echo "     tapfiles       - Run self-tests, save to O.<arch>/*.tap files"
 	@echo "     test-results   - Summarize all O.<arch>/*.tap files"
 	@echo "     clean-tests    - Removes all O.<arch>/*.tap files"
+	@echo "     coverage       - Produce coverage report"
+	@echo "                    - Requires that the build was done with coverage flags"
+	@echo "                    - and that the tests were run"
 	@echo "\"Partial\" build targets supported by Makefiles:"
 	@echo "     host           - Builds and installs $(EPICS_HOST_ARCH) only."
 	@echo "     inc$(DIVIDER)<arch>     - Installs <arch> only header files."

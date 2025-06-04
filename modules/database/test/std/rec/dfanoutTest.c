@@ -29,8 +29,9 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 static void test_all(int val, int exception){
 
     testMonitorWait(monitor);
-    // if i < 0 or > 8 then it tests all.
-    for (int i = 0; i < NELEMENTS(dfanout_receivers); ++i) {
+    // if exception < 0 or > 8 then it tests all.
+    int i;
+    for (i = 0; i < NELEMENTS(dfanout_receivers); ++i) {
         if ( i == exception) continue;
         testdbGetFieldEqual(dfanout_receivers[i], DBF_LONG, val);
     }
@@ -40,7 +41,8 @@ static void test_all(int val, int exception){
 static void test_all_output(void){
     
     /* set output fields */
-    for (int i = 0; i < NELEMENTS(dfanout_OUT_pvs); ++i) {
+    int i;
+    for (i = 0; i < NELEMENTS(dfanout_OUT_pvs); ++i) {
         testdbPutFieldOk(dfanout_OUT_pvs[i], DBF_STRING, dfanout_receivers[i]);
     }
 
@@ -63,15 +65,16 @@ static void test_selm_specified() {
     testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 10);
     test_all(0, -1);
 
-    for (int val = 0; val < NELEMENTS(dfanout_receivers); ++val) {
+    int val;
+    for (val = 0; val < NELEMENTS(dfanout_receivers); ++val) {
         testdbPutFieldOk("test_dfanout_record.SELN", DBF_LONG, val + 1);
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, val + 1);
         testMonitorWait(monitor);
 
         testdbGetFieldEqual(dfanout_receivers[val], DBF_LONG, val + 1);
         
-        int not_seln_val;
-        for (int not_seln = 0; not_seln < NELEMENTS(dfanout_receivers); ++not_seln) {
+        int not_seln, not_seln_val;
+        for (not_seln = 0; not_seln < NELEMENTS(dfanout_receivers); ++not_seln) {
             if (not_seln == val) continue;
             if (not_seln < val) { // If record has already been tested, expected value is index + 1
                 not_seln_val = not_seln + 1;
@@ -93,7 +96,8 @@ static void test_selm_mask() {
     test_all(0, -1);
 
     /* Resets values. Tests if fields in bitmask have been set */
-    for (int mask = 0; mask <= 255; ++mask) {
+    int mask;
+    for (mask = 0; mask <= 255; ++mask) {
 
         testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "All"); //Setting all values to 1 so we know what to compare with.
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 1);
@@ -104,7 +108,8 @@ static void test_selm_mask() {
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 9);
         testMonitorWait(monitor);
 
-        for (int item = 0; item < NELEMENTS(dfanout_receivers); ++item) {
+        int item;
+        for (item = 0; item < NELEMENTS(dfanout_receivers); ++item) {
 
             if ( mask & (1 << item) ) { // If i represents a set bit in the bitmask
                 testdbGetFieldEqual(dfanout_receivers[item], DBF_LONG, 9);

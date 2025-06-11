@@ -7,7 +7,7 @@
 #include <string.h>
 #include <testMain.h>
 
-void atInitTestEnv(const char *varName, const char *varValue)
+void testOkEnv(const char *varName, const char *varValue)
 {
     const char *val = getenv(varName);
     testOk(val && strcmp(val, varValue) == 0,
@@ -26,9 +26,9 @@ MAIN(atInitTest)
     iocshCmd("epicsEnvSet \"ATINIT_TEST_VAR_TWO\" \"BeforeIocInit\"");
 
     printf("Test if the variables are 'BeforeIocInit'.\n");
-    atInitTestEnv("ATINIT_TEST_VAR", "BeforeIocInit");
-    atInitTestEnv("ATINIT_TEST_VAR_ONE", "BeforeIocInit");
-    atInitTestEnv("ATINIT_TEST_VAR_TWO", "BeforeIocInit");
+    testOkEnv("ATINIT_TEST_VAR", "BeforeIocInit");
+    testOkEnv("ATINIT_TEST_VAR_ONE", "BeforeIocInit");
+    testOkEnv("ATINIT_TEST_VAR_TWO", "BeforeIocInit");
 
     // Basic test
     iocshCmd("atInit \"epicsEnvSet ATINIT_TEST_VAR AfterIocInit\"");
@@ -43,9 +43,9 @@ MAIN(atInitTest)
     iocshCmd("atInit \"   \""); // only spaces
 
     printf("Test if the variables are 'BeforeIocInit' after execution 'atInit'.\n");
-    atInitTestEnv("ATINIT_TEST_VAR", "BeforeIocInit");
-    atInitTestEnv("ATINIT_TEST_VAR_ONE", "BeforeIocInit");
-    atInitTestEnv("ATINIT_TEST_VAR_TWO", "BeforeIocInit");
+    testOkEnv("ATINIT_TEST_VAR", "BeforeIocInit");
+    testOkEnv("ATINIT_TEST_VAR_ONE", "BeforeIocInit");
+    testOkEnv("ATINIT_TEST_VAR_TWO", "BeforeIocInit");
 
     // Simulate iocInit
     initHookAnnounce(initHookAfterIocRunning);
@@ -54,9 +54,9 @@ MAIN(atInitTest)
 
     // Verify the results
     printf("Test if the variables are 'AfterIocInit' after 'iocInit'.\n");
-    atInitTestEnv("ATINIT_TEST_VAR", "AfterIocInit");
-    atInitTestEnv("ATINIT_TEST_VAR_ONE", "AfterIocInit");
-    atInitTestEnv("ATINIT_TEST_VAR_TWO", "AfterIocInit");
+    testOkEnv("ATINIT_TEST_VAR", "AfterIocInit");
+    testOkEnv("ATINIT_TEST_VAR_ONE", "AfterIocInit");
+    testOkEnv("ATINIT_TEST_VAR_TWO", "AfterIocInit");
     testPass("Command 'date' executed");
 
     testPass("Invalid command did not crash IOC");

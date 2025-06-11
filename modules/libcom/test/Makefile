@@ -256,6 +256,11 @@ osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
+TESTPROD_HOST += atInitTest
+atInitTest_SRCS += atInitTest.cpp
+TESTS += atInitTest
+testHarness_SRCS += atInitTest.cpp
+
 TESTPROD_HOST += testexecname
 testexecname_SRCS += testexecname.c
 # no point in including in testHarness.  Not implemented for RTEMS/vxWorks.

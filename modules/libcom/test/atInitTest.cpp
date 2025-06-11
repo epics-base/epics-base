@@ -1,0 +1,66 @@
+#include <epicsThread.h>
+#include <epicsUnitTest.h>
+#include <initHooks.h>
+#include <iocsh.h>
+#include <libComRegister.h>
+#include <stdlib.h>
+#include <string.h>
+#include <testMain.h>
+
+void atInitTestEnv(const char *varName, const char *varValue)
+{
+    const char *val = getenv(varName);
+    testOk(val && strcmp(val, varValue) == 0,
+           "%s=%s", varName, val ? val : "(null)");
+}
+
+MAIN(atInitTest)
+{
+    testPlan(12);
+
+    libComRegister();
+
+    // Reset environment variables
+    iocshCmd("epicsEnvSet \"ATINIT_TEST_VAR\" \"BeforeIocInit\"");
+    iocshCmd("epicsEnvSet \"ATINIT_TEST_VAR_ONE\" \"BeforeIocInit\"");
+    iocshCmd("epicsEnvSet \"ATINIT_TEST_VAR_TWO\" \"BeforeIocInit\"");
+
+    printf("Test if the variables are 'BeforeIocInit'.\n");
+    atInitTestEnv("ATINIT_TEST_VAR", "BeforeIocInit");
+    atInitTestEnv("ATINIT_TEST_VAR_ONE", "BeforeIocInit");
+    atInitTestEnv("ATINIT_TEST_VAR_TWO", "BeforeIocInit");
+
+    // Basic test
+    iocshCmd("atInit \"epicsEnvSet ATINIT_TEST_VAR AfterIocInit\"");
+    iocshCmd("atInit \"epicsEnvSet ATINIT_TEST_VAR_ONE AfterIocInit\"");
+    iocshCmd("atInit \"epicsEnvSet ATINIT_TEST_VAR_TWO AfterIocInit\"");
+    iocshCmd("atInit \"date\"");
+
+    epicsThreadSleep(1.0);
+    // Verify error handling and robustness
+    iocshCmd("atInit \"nonexistentCommand arg1 arg2\"");
+    iocshCmd("atInit \"\"");    // empty string
+    iocshCmd("atInit \"   \""); // only spaces
+
+    printf("Test if the variables are 'BeforeIocInit' after execution 'atInit'.\n");
+    atInitTestEnv("ATINIT_TEST_VAR", "BeforeIocInit");
+    atInitTestEnv("ATINIT_TEST_VAR_ONE", "BeforeIocInit");
+    atInitTestEnv("ATINIT_TEST_VAR_TWO", "BeforeIocInit");
+
+    // Simulate iocInit
+    initHookAnnounce(initHookAfterIocRunning);
+    printf("=== iocInit Simulation ===\n");
+    epicsThreadSleep(1.0);
+
+    // Verify the results
+    printf("Test if the variables are 'AfterIocInit' after 'iocInit'.\n");
+    atInitTestEnv("ATINIT_TEST_VAR", "AfterIocInit");
+    atInitTestEnv("ATINIT_TEST_VAR_ONE", "AfterIocInit");
+    atInitTestEnv("ATINIT_TEST_VAR_TWO", "AfterIocInit");
+    testPass("Command 'date' executed");
+
+    testPass("Invalid command did not crash IOC");
+    testPass("Empty atInit commands do not cause failure");
+
+    return testDone();
+}

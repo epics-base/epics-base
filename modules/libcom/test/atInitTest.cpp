@@ -23,17 +23,17 @@ MAIN(atInitTest)
     // Reset environment variables
     iocshCmd("epicsEnvSet \"ATINIT_TEST_VAR\" \"BeforeIocInit\"");
     iocshCmd("epicsEnvSet \"ATINIT_TEST_VAR_ONE\" \"BeforeIocInit\"");
-    iocshCmd("epicsEnvSet \"ATINIT_TEST_VAR_TWO\" \"BeforeIocInit\"");
+    iocshCmd("epicsEnvSet 'ATINIT_TEST_VAR_SPACES' 'Before Ioc Init'");
 
-    printf("Test if the variables are 'BeforeIocInit'.\n");
+    printf("Test whether the variables are initialized correctly.\n");
     testOkEnv("ATINIT_TEST_VAR", "BeforeIocInit");
     testOkEnv("ATINIT_TEST_VAR_ONE", "BeforeIocInit");
-    testOkEnv("ATINIT_TEST_VAR_TWO", "BeforeIocInit");
+    testOkEnv("ATINIT_TEST_VAR_SPACES", "Before Ioc Init");
 
     // Basic test
     iocshCmd("atInit \"epicsEnvSet ATINIT_TEST_VAR AfterIocInit\"");
     iocshCmd("atInit \"epicsEnvSet ATINIT_TEST_VAR_ONE AfterIocInit\"");
-    iocshCmd("atInit \"epicsEnvSet ATINIT_TEST_VAR_TWO AfterIocInit\"");
+    iocshCmd("atInit \"epicsEnvSet ATINIT_TEST_VAR_SPACES 'After Ioc Init'\"");
     iocshCmd("atInit \"date\"");
 
     epicsThreadSleep(1.0);
@@ -42,10 +42,10 @@ MAIN(atInitTest)
     iocshCmd("atInit \"\"");    // empty string
     iocshCmd("atInit \"   \""); // only spaces
 
-    printf("Test if the variables are 'BeforeIocInit' after execution 'atInit'.\n");
+    printf("Test whether the variables remain unchanged after 'atInit' and before 'iocInit'.\n");
     testOkEnv("ATINIT_TEST_VAR", "BeforeIocInit");
     testOkEnv("ATINIT_TEST_VAR_ONE", "BeforeIocInit");
-    testOkEnv("ATINIT_TEST_VAR_TWO", "BeforeIocInit");
+    testOkEnv("ATINIT_TEST_VAR_SPACES", "Before Ioc Init");
 
     // Simulate iocInit
     initHookAnnounce(initHookAfterIocRunning);
@@ -53,10 +53,10 @@ MAIN(atInitTest)
     epicsThreadSleep(1.0);
 
     // Verify the results
-    printf("Test if the variables are 'AfterIocInit' after 'iocInit'.\n");
+    printf("Test whether the variables are correctly initialized after 'iocInit'.\n");
     testOkEnv("ATINIT_TEST_VAR", "AfterIocInit");
     testOkEnv("ATINIT_TEST_VAR_ONE", "AfterIocInit");
-    testOkEnv("ATINIT_TEST_VAR_TWO", "AfterIocInit");
+    testOkEnv("ATINIT_TEST_VAR_SPACES", "After Ioc Init");
     testPass("Command 'date' executed");
 
     testPass("Invalid command did not crash IOC");

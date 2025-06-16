@@ -70,14 +70,18 @@ release: $(NOTES_DOC)
 doxygen: Doxyfile
 	@$(MKDIR) $(RTD_SRC)
 	$(DOXYGEN)
+DOX = doxygen
 
-rtd: doxygen $(API_RST_FILES) $(HEADER_MD_FILES)
+# Use "make sphinx DOX=" to skip running doxygen
+rtd: $(DOX) $(API_RST_FILES) $(HEADER_MD_FILES)
 	rsync -av --exclude=RELEASE-*.md $(INSTALL_DOC)/ $(RTD_SRC)/
 	rsync -av $(HEADER_MD_FILES) $(RTD_SRC)/
 	rsync -av $(API_RST_FILES) $(RTD_SRC)/
 	rsync -av ../index.rst ../conf.py $(RTD_SRC)/
+RTD = rtd
 
-sphinx: rtd
+# Use "make sphinx RTD=" to skip earlier steps
+sphinx: $(RTD)
 	cd $(COMMON_DIR); $(PYTHON) -m sphinx rtd-src readthedocs
 	rsync -av $(COMMON_DIR)/readthedocs $(INSTALL_HTML)/
 endif

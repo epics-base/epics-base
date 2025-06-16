@@ -1992,6 +1992,9 @@ PREDEFINED             = __cplusplus \
                          LIBCA_API \
                          DBRECSTD_API \
                          EPICS_ALWAYS_INLINE \
+                         EPICS_NORETURN \
+                         EPICS_PRINTF_FMT(x)=x \
+                         EPICS_PRINTF_STYLE(a,b)= \
                          epicsShareExtern \
                          epicsShareClass \
                          epicsShareFunc \

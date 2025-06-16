@@ -72,7 +72,7 @@ doxygen: Doxyfile
 	$(DOXYGEN)
 
 rtd: doxygen $(API_RST_FILES) $(HEADER_MD_FILES)
-	rsync -av $(INSTALL_DOC)/ $(RTD_SRC)/
+	rsync -av --exclude=RELEASE-*.md $(INSTALL_DOC)/ $(RTD_SRC)/
 	rsync -av $(HEADER_MD_FILES) $(RTD_SRC)/
 	rsync -av $(API_RST_FILES) $(RTD_SRC)/
 	rsync -av ../index.rst ../conf.py $(RTD_SRC)/

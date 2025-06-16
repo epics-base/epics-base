@@ -72,23 +72,23 @@ sub relVers {
 }
 
 # Reverse sort of the RELEASE-<version>.md filenames
-my @OLD_RELS = sort {
+my @OLD_REL_FILES = sort {
     version->parse(relVers($b)) <=> version->parse(relVers($a));
 } @ARGV;
 
 print $out <<"__REL_INTRO__";
 # Release Notes
 
-This document describes changes that were included in the release of
-EPICS listed below.
-Notes from earlier EPICS releases are now provided in a separate document for
-each version in the EPICS 7 series to date.
-Release documents are also included for the older Base 3.15 and 3.16 series.
+This document describes the changes that were included in the release of EPICS
+noted below. Release entries are now provided in a separate document for each
+version in the EPICS 7 series, but all are combined into a single page for
+publishing on the EPICS website. Separate release documents are also included
+from the older Base 3.15 and 3.16 series.
 
 The external PVA submodules continue to maintain their own release notes files
 as before, but the entries describing changes in those submodules since version
-7.0.5 have been copied into the associated EPICS Release Notes files, and will
-be added to new EPICS Release Notes published in the future.
+7.0.5 have been copied into the associated EPICS Release Notes files; they will
+also be manually added to new EPICS Release Notes published in the future.
 
 __REL_INTRO__
 
@@ -104,13 +104,35 @@ The changes below have been merged into EPICS since the last published release.
 
 __NEW_INTRO__
 
-print $out map { "$_\n" } @notes, "-----\n\n";
+# Include the text from all the new entries
+print $out map { "$_\n" } @notes;
 
-print $out "```{toctree}\n",
-    ":caption: Previous Releases\n",
-    ":titlesonly:\n",
-    map( sprintf("RELEASE-%s.md\n", relVers($_)), @OLD_RELS),
-    "```\n\n";
+# Add myst include directives to incorporate older release files
+foreach my $rfile (@OLD_REL_FILES) {
+    my $ver = relVers($rfile);
+    if ($ver =~ m/^7\./) {
+        print $out <<"__OLD_RELEASE_7__";
+-----
+
+## EPICS Release $ver
+
+```{include} ../$rfile
+:start-after: EPICS Release $ver
+```
+
+__OLD_RELEASE_7__
+    }
+    elsif ($ver =~ m/^3\.1[56]/) {
+        print $out <<"__OLD_RELEASE_3__";
+-----
+
+```{include} ../$rfile
+:heading-offset: 1
+```
+
+__OLD_RELEASE_3__
+    }
+}
 
 close $out;
 

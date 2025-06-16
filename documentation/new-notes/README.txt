@@ -20,9 +20,9 @@ version number and a -DEV suffix, followed by some notes explaining their
 unreleased status. The new-notes filenames are lexically sorted and their
 contents added in order, separated by an extra newline character.
 
-Finally a series of links are added to all the older RELEASE-<version>.md
-files present in the documentation directory, sorted in version order with
-the newest first.
+Finally a series of myst Markdown directives are added which will include all
+the older RELEASE-<version>.md files present in the documentation directory
+into the published HTML version, sorted in version order with the newest first.
 
 
 Writing a Release Notes entry
@@ -42,10 +42,10 @@ The file should start with a level-3 Markdown title for the entry, like this:
 
  * The three '#' characters of the title start in the left-most column.
  * The title should provide a short summary, and not end in a period.
- * The link to the GitHub pull-request should follow if appropriate, as its
-   own paragraph.
- * A blank line must follow, then as many paragraphs of text and code-blocks
-   as are needed to describe the change, without going into too much detail.
+ * A link to the GitHub pull-request may follow if desired as shown above
+   (followed by a blank line to separate it from the next paragraph), or a
+   link to the PR may be integrated into the text that follows.
+ * Use blank lines between paragraphs of text, and code-blocks for examples.
 
 Release note entries are not intended to provide full documentation of major
 features. For small features or changes though, they may provide all the

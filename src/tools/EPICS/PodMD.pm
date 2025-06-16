@@ -8,7 +8,7 @@ use warnings;
 use base 'Pod::Markdown';
 
 # Translate L<link text|filename/Section name>
-# into <a href="filename.md#Section-name">link text</a>#
+# into <a href="filename.md#section-name">link text</a>#
 # This is for Sphinx processing on Readthedocs. Sphinx converts
 # links to .md into .html automatically in the processing.
 
@@ -50,6 +50,8 @@ sub format_perldoc_url {
       # Set topic to enable code refs to be simple.
       local $_ = $section;
       $section = $self->$method($section);
+
+      $section = lc($section) if $url;
     }
 
     $url .= '#' . $section;

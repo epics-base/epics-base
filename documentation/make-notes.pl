@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# Tool to combine release note entries into a single markdown file.
+# Tool to combine release note entries
 
 use strict;
 use warnings;
@@ -21,18 +21,24 @@ my $tool = basename($0);
 our ($opt_d, $opt_h, $opt_o, $opt_D, $opt_V);
 
 sub HELP_MESSAGE {
-    print STDERR "Usage: $tool -d new-notes -o outfile.md -D " .
-        "-V 7.0.10 RELEASE-7.0.9.md ...\n";
+    print STDERR "Usage: $tool -o outfile.md -V 7.0.10 [-d new-notes] [-D] " .
+        "RELEASE-*.md\n";
     exit 2;
 }
 
 HELP_MESSAGE()
-    if !getopts('hd:o:DV:') || $opt_h || (!$opt_D && @ARGV > 0);
+    if !getopts('hd:o:DV:') || $opt_h;
 
-die "$tool: Directory from '-d' option doesn't exist\n"
-    unless -d $opt_d;
-die "$tool: Output filename is '$opt_o' but must end with '.md'"
-    unless $opt_o =~ m/\.md$/;
+die "$tool: Release version '-V' option required\n"
+    unless defined $opt_V;
+die "$tool: Version string '$opt_V' not legal\n"
+    unless $opt_V =~ m/^ (0 | [1-9][0-9]*) (\. [0-9]{1,3}){0,3} $/x;
+die "$tool: Output filename '-o' required\n"
+    unless defined $opt_o;
+die "$tool: Output filename '-o $opt_o' must end with '.md'\n"
+    unless $opt_o =~ m/\.md $/x;
+die "$tool: New notes directory '-d $opt_d' doesn't exist\n"
+    if defined $opt_d && !-d $opt_d;
 
 open my $out, '>:encoding(UTF-8)', $opt_o or
     die "$tool: Can't create $opt_o: $!\n";
@@ -46,24 +52,26 @@ $SIG{__DIE__} = sub {
 my $REL_VERS = $opt_V;
 $REL_VERS .= '-DEV' if $opt_D;
 
-# Directory handle for scanning the new-notes directory
-opendir my $dh, $opt_d or
-    die "$tool: Can't open '-d' directory: $!\n";
-
 my @notes;
-foreach my $fn ( sort grep !/^\.\.?$/, readdir $dh ) {
-    next if $fn eq 'README.txt';
-    die "$tool: Not markdown? File '$fn' lacks '.md' extension\n"
-        unless $fn =~ m/\.md$/;
-    local $/;
-    my $file = "$opt_d/$fn";
-    push @notes, do {
-        open my $fh, '<:encoding(UTF-8)', $file or
-            die "$tool: Can't open file $file: $!\n";
-        <$fh>;
-    };
+if ($opt_d) {
+    # Directory handle for scanning the new-notes directory
+    opendir my $dh, $opt_d or
+        die "$tool: Can't open '-d' directory: $!\n";
+
+    foreach my $fn (sort grep !m/^ \. \.? $/x, readdir $dh) {
+        next if $fn eq 'README.txt';
+        die "$tool: Not markdown? File '$fn' lacks '.md' extension\n"
+            unless $fn =~ m/\.md$/;
+        local $/;
+        my $file = "$opt_d/$fn";
+        push @notes, do {
+            open my $fh, '<:encoding(UTF-8)', $file or
+                die "$tool: Can't open file $file: $!\n";
+            <$fh>;
+        };
+    }
+    close $dh;
 }
-close $dh;
 
 sub relVers {
     $_ = shift;
@@ -90,12 +98,12 @@ as before, but the entries describing changes in those submodules since version
 7.0.5 have been copied into the associated EPICS Release Notes files; they will
 also be manually added to new EPICS Release Notes published in the future.
 
-__REL_INTRO__
-
-print $out <<"__NEW_INTRO__" if $opt_D && scalar @notes;
 
 ## EPICS Release $REL_VERS
 
+__REL_INTRO__
+
+print $out <<"__NEW_INTRO__" if $opt_D && scalar @notes;
 __This version of EPICS has not been released yet.__
 __When the changes described below get released, the version number used may be
 different to the one given above.__

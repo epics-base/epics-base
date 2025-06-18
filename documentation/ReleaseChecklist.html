@@ -262,47 +262,66 @@ everything that has to be done since it's so easy to miss steps.</p>
         <ol>
           <li><tt>cd base-7.0; git grep UNRELEASED</tt> and insert the release
             version to any doxygen annotations that have a
-            <tt>@since&nbsp;UNRELEASED</tt> comment. Commit (don't push).<p></p>
+            <tt>@since&nbsp;UNRELEASED</tt> comment. Commit (don't push).</li>
 
-          </li><li>Edit the main EPICS Base version file and the built-in module
-            version files:</li>
-          <ul>
-            <li><tt>configure/CONFIG_BASE_VERSION</tt></li>
-            <li><tt>configure/CONFIG_LIBCOM_VERSION</tt></li>
-            <li><tt>configure/CONFIG_CA_VERSION</tt></li>
-            <li><tt>configure/CONFIG_DATABASE_VERSION</tt></li>
-            </ul>
+          <li>Edit the main EPICS Base version file and the built-in module
+            version files:
+            <ul>
+              <li><tt>configure/CONFIG_BASE_VERSION</tt></li>
+              <li><tt>configure/CONFIG_LIBCOM_VERSION</tt></li>
+              <li><tt>configure/CONFIG_CA_VERSION</tt></li>
+              <li><tt>configure/CONFIG_DATABASE_VERSION</tt></li>
+              </ul>
+            </li>
 
           <li>Version numbers should be set according to the level of changes
             made since the last release. Note that the
             <tt>MAINTENANCE_VERSION</tt> or <tt>PATCH_LEVEL</tt> value will have
             been incremented immediately after the previous release tag was
-            applied. Set all <tt>DEVELOPMENT_FLAG</tt> values to 0 and
-            <tt>EPICS_DEV_SNAPSHOT</tt> to the empty string.</li>
+            applied, so don't double-increment them. Set all
+            <tt>DEVELOPMENT_FLAG</tt> values to 0 and set the
+            <tt>EPICS_DEV_SNAPSHOT</tt> to an empty string (no quotes).</li>
 
           <li>Commit the above changes (don't push):
             <blockquote><tt>
               cd base-7.0<br>
               git add configure/CONFIG_*_VERSION<br>
               git commit -m "Set core version numbers for release"
-              </tt></blockquote>
+              </tt></blockquote></li>
 
-          </li><li>Run these commands to generate the <tt>RELEASE-7.0.9.1.md</tt>
-            file and remove the individual release note entry files from
-            <tt>documentation/new-notes</tt>:
+          <li><p>When <tt>EPICS_DEV_SNAPSHOT</tt> is empty because a release is
+            being created, the <tt>documentation/Makefile</tt> supports a build
+            target <tt>release</tt> for creating a new release notes file
+            <tt>documentation/RELEASE-<i>version</i>.md</tt> from the Markdown
+            files in the <tt>documentation/new-notes</tt> directory. When run,
+            it copies the notes entries from all the <tt>new-notes/*.md</tt>
+            files, then deletes the files and prepares a Git commit to apply
+            those changes permanently to the repository.</p>
+
+            <p>Run these commands to generate the <tt>RELEASE-7.0.9.1.md</tt>
+            file and remove the individual release note entry files:</p>
+
             <blockquote><tt>
               cd base-7.0/documentation<br>
-              make release
-              </tt></blockquote>
-            The make recipe adds and removes files from the Git index but
-            doesn't commit the changes itself. Run these commands to confirm
-            that it succeeded and commit the result:
+              make
+              </tt></blockquote></li>
+
+          <li>The <tt>make release</tt> command add some changes into the Git
+            index but didn't commit them. These commands let you check what
+            was done and commit the result (don't push yet!):
+
             <blockquote><tt>
               git status<br>
               git diff --staged<br>
-              git commit -m "Generate RELEASE-7.0.9.1.md"
+              git commit -m "Generate RELEASE-7.0.9.1.md notes file"
               </tt></blockquote>
-            </li>
+
+            To undo those Git actions and confirm that happened, run these:
+
+            <blockquote><tt>
+              make unrelease<br>
+              git status
+              </tt></blockquote></li>
           </ol>
         </td>
       </tr>

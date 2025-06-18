@@ -92,7 +92,7 @@ support module.
 
 The address format differs according to the card type  used. See
 L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses and specifying links.
 
 For soft records, the INP field can be a constant, a database link, or a channel

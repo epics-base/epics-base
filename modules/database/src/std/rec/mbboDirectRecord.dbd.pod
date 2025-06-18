@@ -89,7 +89,7 @@ For records that are to write values to hardware devices, the OUT output link
 must contain the address of the I/O card, and the DTYP field must specify
 the proper device support module. Be aware that the address format differs
 according to the I/O bus used. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses.
 
 During record processing VAL is converted into RVAL, which is the actual 32-bit
@@ -298,7 +298,7 @@ the IVOV field to the output.
 See L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>
 for more information about IVOA and IVOV.
 
-See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#alarm-specification>
 for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.

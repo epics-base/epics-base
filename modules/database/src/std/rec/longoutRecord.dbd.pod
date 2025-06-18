@@ -78,7 +78,7 @@ channel access link. If the link is a constant, the result is no output. The
 DTYP field must then specify the C<<< Soft Channel >>> device support routine.
 
 See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses and database links.
 
 =fields OUT, DTYP, OOPT, OOCH
@@ -233,7 +233,7 @@ The HYST field sets an alarm deadband around each limit alarm.
 For an explanation of the IVOA and IVOV fields, see
 L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>.
 
-See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#alarm-specification>
 for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.

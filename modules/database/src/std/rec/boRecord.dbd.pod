@@ -45,7 +45,7 @@ continuous control, a database link to a control algorithm record should be
 entered in the DOL field.
 
 See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on hardware addresses and links.
 
 =fields DOL, OMSL
@@ -105,13 +105,13 @@ It must specify the address of an I/O card if the record sends its output
 to hardware, and the DTYP field must contain the corresponding device
 support module. Be aware that the address format differs according to the
 I/O bus used. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses.
 
 Otherwise, if the record is configured to use the soft device support modules,
 then it can be either a database link, a channel access link, or a constant. Be
 aware that nothing will be written when OUT is a constant. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of the database and channel access addresses.
 Also, see L<Device Support For Soft Records> in this chapter for more on output
 to other records.

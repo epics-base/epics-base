@@ -14,9 +14,9 @@ documentation is now being published.
 
 =over
 
-=item * L<Introduction to EPICS|https://docs.epics-controls.org/en/latest/guides/EPICS_Intro.html>
+=item * L<Introduction to EPICS|https://docs.epics-controls.org/en/latest/getting-started/EPICS_Intro.html>
 
-=item * L<Process Database Concepts|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html>
+=item * L<Process Database Concepts|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html>
 
 =back
 

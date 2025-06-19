@@ -339,14 +339,7 @@ TESTS += nonEpicsThreadPriorityTest
 endif
 endif
 
-# HK: improve detection of valid command line libraries
-ifeq ($(COMMANDLINE_LIBRARY),READLINE)
-TESTPROD_HOST += readlineTest
-readlineTest_SRCS += readlineTest.c
-TESTS += readlineTest
-TESTFILES += ../multiline-input.txt ../multiline-expect.txt
-endif
-ifeq ($(COMMANDLINE_LIBRARY),EPICS)
+ifneq ($(filter READLINE EPICS,$(COMMANDLINE_LIBRARY)),)
 TESTPROD_HOST += readlineTest
 readlineTest_SRCS += readlineTest.c
 TESTS += readlineTest

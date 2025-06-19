@@ -28,7 +28,7 @@ static void iocshCmdDebug(const char *cmd)
 
 MAIN(afterIocRunningTest)
 {
-    testPlan(12);
+    testPlan(14);
 
     libComRegister();
 
@@ -43,11 +43,15 @@ MAIN(afterIocRunningTest)
     testOkEnv("TEST_VAR_SPACES", "Before Ioc Init");
     printf("===================\n");
     epicsThreadSleep(1.0);
+    iocshCmdDebug("help afterIocRunning");
+    testPass("help message correct");
+    printf("===================\n");
     // Basic test
     iocshCmdDebug("afterIocRunning \"epicsEnvSet TEST_VAR AfterIocInit\"");
     iocshCmdDebug("afterIocRunning \"epicsEnvSet TEST_VAR_ONE 'After(Ioc)Init'\"");
     iocshCmdDebug("afterIocRunning \"epicsEnvSet TEST_VAR_SPACES 'After Ioc Init'\"");
     iocshCmdDebug("afterIocRunning \"date\"");
+    iocshCmdDebug("afterIocRunning \"pwd\"");
     // Verify error handling and robustness
     iocshCmdDebug("afterIocRunning \"nonexistentCommand arg1 arg2\"");
     iocshCmdDebug("afterIocRunning \"\"");    // empty string
@@ -73,6 +77,7 @@ MAIN(afterIocRunningTest)
     testOkEnv("TEST_VAR_ONE", "After(Ioc)Init");
     testOkEnv("TEST_VAR_SPACES", "After Ioc Init");
     testPass("Command 'date' executed");
+    testPass("Command 'pwd' executed");
     testPass("Invalid command did not crash IOC");
     testPass("Empty afterIocRunning commands do not cause failure");
 

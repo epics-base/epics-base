@@ -13,18 +13,20 @@
 #include <iocsh.h>
 #include <string.h>
 
-#include "atInit.h"
+#include "afterIocRunning.h"
 
-static const iocshArg atInitArg0 = {"command (before iocInit)", iocshArgString};
-static const iocshArg *const atInitArgs[] = {&atInitArg0};
-static const iocshFuncDef atInitDef = {
-    "atInit",
+static const iocshArg afterIocRunningArg0 = {"command (before iocInit)", iocshArgString};
+static const iocshArg *const afterIocRunningArgs[] = {&afterIocRunningArg0};
+static const iocshFuncDef afterIocRunningDef = {
+    "afterIocRunning",
     1,
-    atInitArgs,
+    afterIocRunningArgs,
     "Allows you to define commands to be run after the iocInit\n"
     "Example commands:\n"
-    "  atInit \"dbpf <PV> <VAL>\"\n"
-    "  atInit \"date\"\n"};
+    "  afterIocRunning \"dbpf <PV> <VAL>\"\n"
+    "  afterIocRunning \"date\"\n"
+    "  afterIocRunning \"dbpf $(P)EvtClkSource-Sel 'Upstream (fanout)'\"\n"
+    "  afterIocRunning \"dbpf $(P)Enable-Sel Enabled\"\n"};
 
 struct cmditem {
     ELLNODE node;
@@ -34,7 +36,7 @@ struct cmditem {
 static ELLLIST cmdList = ELLLIST_INIT;
 static int initEndFlag = 0; // Defines the end of the initialization
 
-static void atInitHook(const initHookState state)
+static void afterIocRunningHook(const initHookState state)
 {
     struct cmditem *item = NULL;
 
@@ -42,10 +44,10 @@ static void atInitHook(const initHookState state)
         return;
 
     while ((item = (struct cmditem *)ellGet(&cmdList))) {
-        printf(ANSI_GREEN("atInit:") " %s\n", item->cmd);
+        printf(ANSI_GREEN("afterIocRunning:") " %s\n", item->cmd);
 
         if (iocshCmd(item->cmd))
-            printf(ERL_ERROR " atInit: "
+            printf(ERL_ERROR " afterIocRunning: "
                              "command '%s' failed to run\n",
                    item->cmd);
 
@@ -58,7 +60,7 @@ static void atInitHook(const initHookState state)
 static struct cmditem *newItem(const char *cmd)
 {
     const size_t cmd_len = strlen(cmd) + 1;
-    struct cmditem *const item = mallocMustSucceed(sizeof(struct cmditem) + cmd_len, "atInit");
+    struct cmditem *const item = mallocMustSucceed(sizeof(struct cmditem) + cmd_len, "afterIocRunning");
     item->cmd = (char *)(item + 1);
     memcpy(item->cmd, cmd, cmd_len);
 
@@ -67,18 +69,18 @@ static struct cmditem *newItem(const char *cmd)
     return item;
 }
 
-static void atInitFunc(const iocshArgBuf *args)
+static void afterIocRunningFunc(const iocshArgBuf *args)
 {
     const char *const cmd = args[0].sval;
 
     if (initEndFlag) {
-        printf(ERL_WARNING " atInit: "
+        printf(ERL_WARNING " afterIocRunning: "
                            "can only be used before 'iocInit'\n");
         return;
     }
 
     if (!cmd || !cmd[0]) {
-        printf(ERL_ERROR " atInit: "
+        printf(ERL_ERROR " afterIocRunning: "
                          "received an empty 'command' argument\n");
         return;
     }
@@ -86,12 +88,12 @@ static void atInitFunc(const iocshArgBuf *args)
     newItem(cmd);
 }
 
-void atInitRegister(void)
+void afterIocRunningRegister(void)
 {
     static int first_time = 1;
     if (first_time) {
         first_time = 0;
-        iocshRegister(&atInitDef, atInitFunc);
-        initHookRegister(atInitHook);
+        iocshRegister(&afterIocRunningDef, afterIocRunningFunc);
+        initHookRegister(afterIocRunningHook);
     }
 }

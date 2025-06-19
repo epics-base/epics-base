@@ -256,10 +256,10 @@ osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
 
-TESTPROD_HOST += atInitTest
-atInitTest_SRCS += atInitTest.cpp
-TESTS += atInitTest
-testHarness_SRCS += atInitTest.cpp
+TESTPROD_HOST += afterIocRunningTest
+afterIocRunningTest_SRCS += afterIocRunningTest.cpp
+TESTS += afterIocRunningTest
+testHarness_SRCS += afterIocRunningTest.cpp
 
 TESTPROD_HOST += testexecname
 testexecname_SRCS += testexecname.c

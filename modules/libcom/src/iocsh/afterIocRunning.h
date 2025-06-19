@@ -6,9 +6,9 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#ifndef INC_atInit_H
-#define INC_atInit_H
+#ifndef INC_afterIocRunning_H
+#define INC_afterIocRunning_H
 
-void atInitRegister(void);
+void afterIocRunningRegister(void);
 
-#endif /* INC_atInit_H */
+#endif /* INC_afterIocRunning_H */

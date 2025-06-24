@@ -10,4 +10,4 @@ OECORE_NATIVE_SYSROOT ?= $(OECORE_SYSROOT)/x86_64-fslsdk-linux
 OECORE_TARGET_SYSROOT ?= $(OECORE_SYSROOT)/ppc64e6500-fsl-linux
 
 # Add site specific configuration
--include $(CONFIG)/os/CONFIG_SITE.yoctoCommon.linux-fsl-ppc64e6500
+-include $(CONFIG)/os/CONFIG_SITE.yoctoCommon.linux-fsl-powerpc64

@@ -25,9 +25,6 @@ ARCH_DEP_LDFLAGS += -Wl,-z,relro -Wl,-z,now
 ARCH_DEP_LDFLAGS += -Wl,--gc-sections
 ARCH_DEP_LDFLAGS += -Wl,--sort-common
 ARCH_DEP_LDFLAGS += -Wl,-Bsymbolic
-# Use ld.gold instead of ld
-ARCH_DEP_LDFLAGS += -Wl,-fuse-ld=gold
-ARCH_DEP_LDFLAGS += -Wl,--icf=all
 
 GNU_TARGET ?= $(subst -debug,,$(T_A))
 GNU_DIR = $(OECORE_NATIVE_SYSROOT)/usr

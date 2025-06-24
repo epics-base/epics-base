@@ -4,7 +4,8 @@
 # Include dependency
 include $(CONFIG)/os/CONFIG.yoctoCommon.linux-poky-x86_64
 
-OECORE_TARGET_SYSROOT = $(OECORE_SYSROOT)/corei7-64-poky-linux
+# If your sysroot is different than default
+## OECORE_TARGET_SYSROOT = $(OECORE_SYSROOT)/corei7-64-poky-linux
 
 ARCH_DEP_CPPFLAGS += -mtune=generic
 # -mfpmath=sse : enables use of XMM registers in floating point instructions (instead of stack in x87 mode)

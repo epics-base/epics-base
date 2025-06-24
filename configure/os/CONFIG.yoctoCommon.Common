@@ -1,15 +1,17 @@
 #*************************************************************************
 # Yocto toolchain based builds - default definitions.
 #*************************************************************************
-#   author		  	: Jeong Han Lee
-#   							: Jerzy Jamroz
-#		date					: 13.10.2024
+# Author(s):	  Jeong Han Lee
+#   						Jerzy Jamroz
+#	Testing:			Gabriel Fedel
+#								Joao Paulo Martins
+#	Date:					13.10.2024
 #*************************************************************************
 # Control variables:
-## OECORE_SYSROOT - Toolchain directory
-## OECORE_TARGET_SYSROOT - Target sysroot directory
-## OECORE_NATIVE_SYSROOT - SDK toolchain directory
-## GNU_TARGET - Define if T_A not equal GNU_TARGET
+#		OECORE_SYSROOT 					- Toolchain directory
+#		OECORE_TARGET_SYSROOT		- Target sysroot directory
+#		OECORE_NATIVE_SYSROOT		- SDK toolchain directory
+#		GNU_TARGET 							- Define if T_A not equal GNU_TARGET
 #*************************************************************************
 
 ARCH_DEP_CPPFLAGS += --sysroot=$(OECORE_TARGET_SYSROOT)

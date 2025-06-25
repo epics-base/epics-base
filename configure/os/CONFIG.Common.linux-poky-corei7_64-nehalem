@@ -1,0 +1,11 @@
+# Definitions for the linux-poky-corei7_64 target builds
+# Override these settings in CONFIG_SITE
+
+# Include dependency
+include $(CONFIG)/os/CONFIG.Common.linux-poky-x86_64
+
+# If your sysroot is different than default
+## OECORE_TARGET_SYSROOT = $(OECORE_SYSROOT)/corei7-64-poky-linux
+
+# The 45nm processors is Nehalem
+ARCH_DEP_CPPFLAGS += -march=nehalem

@@ -1,0 +1,8 @@
+# Definitions for the linux-poky-corei7_64-debug target builds
+# Override these settings in CONFIG_SITE
+
+# Include dependency
+include $(CONFIG)/os/CONFIG.Common.linux-poky-corei7_64-nehalem
+-include $(CONFIG)/os/CONFIG_SITE.Common.linux-poky-corei7_64-nehalem
+
+CROSS_OPT = NO

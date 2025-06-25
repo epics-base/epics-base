@@ -2,7 +2,7 @@
 # Override these settings in CONFIG_SITE
 
 # Include dependency
-include $(CONFIG)/os/CONFIG.yoctoCommon.linux-fsl-powerpc64
+include $(CONFIG)/os/CONFIG.Common.linux-fsl-powerpc64
 
 # If your sysroot is different than default
 ## OECORE_TARGET_SYSROOT = $(OECORE_SYSROOT)/ppc64e6500-fsl-linux

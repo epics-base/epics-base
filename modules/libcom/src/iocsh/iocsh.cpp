@@ -24,6 +24,11 @@
 #include <ctype.h>
 #include <errno.h>
 
+#if defined(__unix__) || defined(darwin)
+#include <signal.h>
+#define HANDLE_SIGNALS
+#endif
+
 #define EPICS_PRIVATE_API
 
 #include "epicsMath.h"
@@ -34,6 +39,7 @@
 #include "epicsStdlib.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
+#include "epicsExit.h"
 #include "envDefs.h"
 #include "registry.h"
 #include "epicsReadline.h"
@@ -1587,8 +1593,34 @@ static void exitCallFunc(const iocshArgBuf *)
 {
 }
 
+#ifdef HANDLE_SIGNALS
+static void exitOnSignal(void* arg)
+{
+    sigset_t* psigset = reinterpret_cast<sigset_t*>(arg);
+    int sig;
+
+    sigwait(psigset, &sig);
+    epicsExit(128+sig);
+}
+
+static void initExitOnSignal(void) {
+    static sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGTERM);
+    sigaddset(&sigset, SIGINT); /* Ctrl-C */
+    epicsThreadMustCreate("exitOnSignal",
+                      epicsThreadPriorityMax,
+                      epicsThreadGetStackSize(epicsThreadStackSmall),
+                      &exitOnSignal, &sigset);
+    pthread_sigmask(SIG_BLOCK, &sigset, NULL);
+}
+#endif
+
 static void iocshOnce (void *)
 {
+#ifdef HANDLE_SIGNALS
+    initExitOnSignal();
+#endif
     iocshTableMutex = epicsMutexMustCreate ();
     iocshContextId = epicsThreadPrivateCreate();
     epicsMutexMustLock (iocshTableMutex);

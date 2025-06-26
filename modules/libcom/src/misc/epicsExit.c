@@ -96,6 +96,8 @@ static void epicsExitCallAtExitsPvt(exitPvt *pep)
         ellDelete ( & pep->list, & pexitNode->node );
         free ( pexitNode );
     }
+    if(atExitDebug)
+        fprintf(stderr, "atExit done.\n");
 }
 
 LIBCOM_API void epicsExitCallAtExits(void)

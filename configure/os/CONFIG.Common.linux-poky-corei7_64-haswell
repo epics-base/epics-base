@@ -11,5 +11,5 @@ include $(CONFIG)/os/CONFIG.Common.linux-poky-x86_64
 ARCH_DEP_CPPFLAGS += -march=core-avx2 -mtune=core-avx2 -O3 -mavx2 -mfma -funroll-loops -ffast-math -falign-functions=32 -fopenmp
 
 # [OPTIONAL] Link Time Optimization
-#ARCH_DEP_CPPFLAGS += -flto
-#ARCH_DEP_LDFLAGS += -Wl,-flto
+ARCH_DEP_CPPFLAGS += -flto
+ARCH_DEP_LDFLAGS += -Wl,-flto

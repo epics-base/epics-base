@@ -26,6 +26,7 @@
 
 #if defined(__unix__) || defined(darwin)
 #include <signal.h>
+#include <unistd.h>
 #define HANDLE_SIGNALS
 #endif
 
@@ -1594,12 +1595,25 @@ static void exitCallFunc(const iocshArgBuf *)
 }
 
 #ifdef HANDLE_SIGNALS
+
+static void sighandler(int sig) {
+    // Last resort: don't run remaining exit handlers
+    exit(128+sig);
+}
+
 static void exitOnSignal(void* arg)
 {
     sigset_t* psigset = reinterpret_cast<sigset_t*>(arg);
     int sig;
 
     sigwait(psigset, &sig);
+    pthread_sigmask(SIG_UNBLOCK, psigset, NULL);
+    // Allow second signal in case an exit handler hangs
+    signal(SIGTERM, sighandler);
+    signal(SIGINT, sighandler);
+    // Prevent any further commands while running exit handlers
+    // Also prevent realine from getting the terminal
+    close(STDIN_FILENO);
     epicsExit(128+sig);
 }
 

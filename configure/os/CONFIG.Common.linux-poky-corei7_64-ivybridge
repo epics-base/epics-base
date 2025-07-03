@@ -1,0 +1,24 @@
+# Definitions for the linux-poky-corei7_64-ivybridge target builds
+# Override these settings in CONFIG_SITE
+
+# ---------------------------------------------------------------------
+# NOTE: This build is optimized for Intel Ivy Bridge (3rd gen Core)
+#       - Example CPU: Intel Core i7-3555LE, i5-3xxx, i7-3xxx, Xeon E3-12xx v2
+#       - Architecture: ivybridge (core-avx-i), released ~2012
+#       - Key features: AVX, F16C, SSE4.2, AES, SSSE3, POPCNT, but NOT AVX2/FMA3
+# ---------------------------------------------------------------------
+
+# Include dependency
+include $(CONFIG)/os/CONFIG.Common.linux-poky-x86_64
+
+OECORE_TARGET_SYSROOT = $(OECORE_SYSROOT)/corei7-64-poky-linux
+
+# Targets the Ivy Bridge Intel processors
+ARCH_DEP_CPPFLAGS += -march=ivybridge -mtune=ivybridge -O3 -funroll-loops -ffast-math -falign-functions=32 -fopenmp
+
+# Extra performance boost
+ARCH_DEP_CPPFLAGS += -fomit-frame-pointer -fprefetch-loop-arrays -falign-loops=32
+
+# Link Time Optimization:
+ARCH_DEP_CPPFLAGS += -flto
+ARCH_DEP_LDFLAGS  += -Wl,-flto

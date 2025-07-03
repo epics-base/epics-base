@@ -1,6 +1,14 @@
 # Definitions for the linux-poky-corei7_64-skylake target builds
 # Override these settings in CONFIG_SITE
 
+# ---------------------------------------------------------------------
+# NOTE: This build is optimized for Intel Skylake (6th gen Core and newer)
+#       - Example CPUs: Intel Core i7-6xxx, i5-6xxx, Xeon E3-15xx v5/v6,
+#         some newer i7/i5/i3 (7th/8th gen share microarchitecture)
+#       - Architecture: skylake, released ~2015
+#       - Key features: AVX2, FMA3, BMI1/2, SSE4.2, AES, SHA, MPX, SGX, etc.
+# ---------------------------------------------------------------------
+
 # Include dependency
 include $(CONFIG)/os/CONFIG.Common.linux-poky-x86_64
 
@@ -8,8 +16,10 @@ OECORE_TARGET_SYSROOT = $(OECORE_SYSROOT)/corei7-64-poky-linux
 
 # Targets the skylake Intel i7 processors
 ARCH_DEP_CPPFLAGS += -march=skylake -mtune=skylake -O3 -funroll-loops -ffast-math -falign-functions=32 -fopenmp
+
 # Extra pefrormance boost
 ARCH_DEP_CPPFLAGS += -fomit-frame-pointer -fprefetch-loop-arrays -falign-loops=32
-# [OPTIONAL] Link Time Optimization
+
+# Link Time Optimization
 ARCH_DEP_CPPFLAGS += -flto
 ARCH_DEP_LDFLAGS += -Wl,-flto

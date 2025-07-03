@@ -7,6 +7,7 @@ include $(CONFIG)/os/CONFIG.yoctoCommon.Common
 GNU_TARGET = powerpc64-fsl-linux
 OECORE_SYSROOT ?= /opt/ifc14xx/default/sysroots
 OECORE_NATIVE_SYSROOT ?= $(OECORE_SYSROOT)/x86_64-fslsdk-linux
+# Select target sysroot
 OECORE_TARGET_SYSROOT ?= $(OECORE_SYSROOT)/ppc64e6500-fsl-linux
 
 # Add site specific configuration

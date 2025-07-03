@@ -7,6 +7,7 @@ include $(CONFIG)/os/CONFIG.yoctoCommon.Common
 GNU_TARGET = x86_64-poky-linux
 OECORE_SYSROOT ?= /opt/cct/default/sysroots
 OECORE_NATIVE_SYSROOT ?= $(OECORE_SYSROOT)/x86_64-pokysdk-linux
+# Select target sysroot
 OECORE_TARGET_SYSROOT ?= $(OECORE_SYSROOT)/corei7-64-poky-linux
 
 # [OPTIONAL] Use ld.gold instead of ld

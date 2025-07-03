@@ -4,8 +4,7 @@
 # Include dependency
 include $(CONFIG)/os/CONFIG.Common.linux-poky-x86_64
 
-# If your sysroot is different than default
-## OECORE_TARGET_SYSROOT = $(OECORE_SYSROOT)/corei7-64-poky-linux
+OECORE_TARGET_SYSROOT = $(OECORE_SYSROOT)/corei7-64-poky-linux
 
 # Targets the Haswell (4th Gen or later) Intel i7 processors with avx2 (Advanced Vector Extensions) support.
 ARCH_DEP_CPPFLAGS += -march=core-avx2 -mtune=core-avx2 -O3 -mavx2 -mfma -funroll-loops -ffast-math -falign-functions=32 -fopenmp

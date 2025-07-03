@@ -1,5 +1,5 @@
 #*************************************************************************
-# Default definitions for all linux-fsl-ppc64e6500 targets
+# Default definitions for all linux-fsl-powerpc64 targets
 #*************************************************************************
 include $(CONFIG)/os/CONFIG.Common.linux-ppc64
 include $(CONFIG)/os/CONFIG.yoctoCommon.Common

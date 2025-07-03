@@ -1,4 +1,4 @@
-# Definitions for the linux-poky-corei7_64-debug target builds
+# Definitions for the linux-poky-corei7_64-nehalem-debug target builds
 # Override these settings in CONFIG_SITE
 
 # Include dependency

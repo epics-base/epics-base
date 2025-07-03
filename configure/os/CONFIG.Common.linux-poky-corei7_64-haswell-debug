@@ -1,8 +1,0 @@
-# Definitions for the linux-poky-corei7_64-debug target builds
-# Override these settings in CONFIG_SITE
-
-# Include dependency
-include $(CONFIG)/os/CONFIG.Common.linux-poky-corei7_64-haswell
--include $(CONFIG)/os/CONFIG_SITE.Common.linux-poky-corei7_64-haswell
-
-CROSS_OPT = NO

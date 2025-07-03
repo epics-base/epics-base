@@ -1,0 +1,11 @@
+# Definitions for the linux-poky-corei7_64-skylake-debug target builds
+# Override these settings in CONFIG_SITE
+
+# Include dependency
+include $(CONFIG)/os/CONFIG.Common.linux-poky-corei7_64-skylake
+-include $(CONFIG)/os/CONFIG_SITE.Common.linux-poky-corei7_64-skylake
+
+CROSS_OPT = NO
+# Improve debugging
+ARCH_DEP_CPPFLAGS := $(subst -fomit-frame-pointer,,$(ARCH_DEP_CPPFLAGS))
+ARCH_DEP_CPPFLAGS := $(subst -ffast-math,,$(ARCH_DEP_CPPFLAGS))

@@ -1,6 +1,14 @@
 #*************************************************************************
 # Default definitions for all linux-fsl-powerpc64 targets
 #*************************************************************************
+
+# ---------------------------------------------------------------------
+# NOTE: This build targets generic 64-bit PowerPC (powerpc64) architecture
+#       - Compatible with Freescale/NXP platforms and most ppc64 CPUs
+#       - Default: build system (toolchain) configuration
+#       - Suitable for portable binaries and maximum compatibility
+# ---------------------------------------------------------------------
+
 include $(CONFIG)/os/CONFIG.Common.linux-ppc64
 include $(CONFIG)/os/CONFIG.yoctoCommon.Common
 

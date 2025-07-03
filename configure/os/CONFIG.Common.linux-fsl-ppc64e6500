@@ -1,6 +1,12 @@
 # Definitions for the linux-fsl-ppc64e6500 target builds
 # Override these settings in CONFIG_SITE
 
+# ---------------------------------------------------------------------
+# NOTE: This build targets Freescale/NXP e6500 64-bit PowerPC architecture
+#       - Example CPUs: QorIQ T4 series, T2080, T4240, etc.
+#       - Suitable for Freescale/NXP embedded/networking platforms
+# ---------------------------------------------------------------------
+
 # Include dependency
 include $(CONFIG)/os/CONFIG.Common.linux-fsl-powerpc64
 

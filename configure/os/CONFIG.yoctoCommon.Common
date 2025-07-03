@@ -14,6 +14,13 @@
 #		GNU_TARGET 							- Define if T_A not equal GNU_TARGET
 #*************************************************************************
 
+# ---------------------------------------------------------------------
+# NOTE: This is the base configuration file for all Yocto toolchain builds.
+#       - Provides default flags and variables for cross-compilation,
+#       - Compatible with a wide range of architectures (x86_64, ppc64, etc.)
+#       - Intended to be included in all architecture-specific build configs
+# ---------------------------------------------------------------------
+
 ARCH_DEP_CPPFLAGS += --sysroot=$(OECORE_TARGET_SYSROOT)
 ARCH_DEP_CPPFLAGS += -pipe -feliminate-unused-debug-types
 ARCH_DEP_CXXFLAGS += -std=c++17

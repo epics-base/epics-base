@@ -1,6 +1,14 @@
 #*************************************************************************
 # Default definitions for all linux-poky-x86_64 targets
 #*************************************************************************
+
+# ---------------------------------------------------------------------
+# NOTE: This build targets a generic 64-bit x86 architecture (x86_64)
+#       - Compatible with most modern Intel and AMD CPUs (Core 2 Duo or newer)
+#       - Default: build system (toolchain) configuration
+#       - Suitable for portable binaries and maximum compatibility
+# ---------------------------------------------------------------------
+
 include $(CONFIG)/os/CONFIG.Common.linux-x86_64
 include $(CONFIG)/os/CONFIG.yoctoCommon.Common
 

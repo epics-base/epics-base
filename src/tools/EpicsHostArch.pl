@@ -29,9 +29,26 @@ use POSIX;
 
 print join('-', HostArch(), @ARGV), "\n";
 
+sub get_osrelease {
+    my $osrelease = '';
+    if (open my $fh, '<', '/etc/os-release') {
+        local $/;  # set $/ to undef locally in this block
+        $osrelease = <$fh>; # read everything from $fh at once
+        close $fh;
+    }
+    return $osrelease;
+}
+
 sub HostArch {
     my $arch = $Config{archname};
     for ($arch) {
+        my $osrelease = get_osrelease();
+        # detect yocto based architectures
+        if ($osrelease =~ /(kirkstone|scarthgap)/i) {
+            return "linux-poky-x86_64"   if m/^x86_64-linux/;
+            return "linux-fsl-powerpc64" if m/^powerpc64-linux/;
+        }
+
         return 'linux-x86_64'   if m/^x86_64-linux/;
         return 'linux-x86'      if m/^i[3-6]86-linux/;
         return 'linux-arm'      if m/^arm-linux/;

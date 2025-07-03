@@ -319,6 +319,7 @@ INP is expected to point to an array field of a waveform record or similar.
     %    long (*read_sa)(struct subArrayRecord *prec); /*returns: (-1,0)=>(failure,success)*/
     %} sadset;
     %#define HAS_sadset
+	%#define SA_POSTS_NORD
     %
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")

@@ -303,6 +303,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
     %    long (*read_aai)(struct aaiRecord *prec); /*returns: (-1,0)=>(failure,success)*/
     %} aaidset;
     %#define HAS_aaidset
+	%#define AAI_POSTS_NORD
 	%#define AAI_DEVINIT_PASS1 2
     %
 	field(VAL,DBF_NOACCESS) {

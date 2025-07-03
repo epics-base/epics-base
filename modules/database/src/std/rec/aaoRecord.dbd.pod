@@ -326,6 +326,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
     %    long (*write_aao)(struct aaoRecord *prec); /*returns: (-1,0)=>(failure,success)*/
     %} aaodset;
     %#define HAS_aaodset
+	%#define AAO_POSTS_NORD
     %
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")

@@ -45,7 +45,11 @@
 /*
  * Enable format-string checking if possible
  */
+#if __USE_MINGW_ANSI_STDIO
+#define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__gnu_printf__,f,a)))
+#else
 #define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__printf__,f,a)))
+#endif
 
 /*
  * Deprecation marker

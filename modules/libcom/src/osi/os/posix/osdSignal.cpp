@@ -16,7 +16,10 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
+#include "epicsExit.h"
+#include "epicsThread.h"
 #include "epicsSignal.h"
 
 static void ignoreIfDefault(int signum, const char *name)
@@ -55,3 +58,50 @@ LIBCOM_API void epicsStdCall epicsSignalInstallSigPipeIgnore (void)
 LIBCOM_API void epicsStdCall epicsSignalInstallSigAlarmIgnore ( void ) {}
 LIBCOM_API void epicsStdCall epicsSignalRaiseSigAlarm 
                                   ( struct epicsThreadOSD * /* threadId */ ) {}
+
+/*
+ * epicsSignalInstallRunAtExitHandlers ()
+ */
+
+
+static void exitOnSignal(void* arg)
+{
+    sigset_t* psigmask = static_cast<sigset_t*>(arg);
+    int sig;
+
+    sigwait(psigmask, &sig);
+    // Allow second signal in case an exit handler hangs
+     pthread_sigmask(SIG_UNBLOCK, psigmask, NULL);
+    // Prevent any further commands while running exit handlers
+    // Also interrupt functions waiting for input
+    close(STDIN_FILENO);
+    epicsExit(128+sig);
+}
+
+static void initExitOnSignal(void* arg) {
+    sigset_t* psigmask = static_cast<sigset_t*>(arg);
+
+    sigemptyset(psigmask);
+    epicsThreadMustCreate("exitOnSignal",
+                      epicsThreadPriorityMax,
+                      epicsThreadGetStackSize(epicsThreadStackSmall),
+                      &exitOnSignal, psigmask);
+}
+
+LIBCOM_API void epicsStdCall epicsSignalInstallRunExitHandlers (int signal)
+{
+    static sigset_t sigmask;
+
+    static epicsThreadOnceId initExitOnSignalOnceId = EPICS_THREAD_ONCE_INIT;
+    epicsThreadOnce (&initExitOnSignalOnceId, initExitOnSignal, &sigmask);
+    sigaddset(&sigmask, signal);
+    pthread_sigmask(SIG_BLOCK, &sigmask, NULL);
+}
+
+/*
+ * epicsSignalSetAlarm ()
+ */
+LIBCOM_API void epicsStdCall epicsSignalSetAlarm (int seconds)
+{
+    alarm(seconds);
+}

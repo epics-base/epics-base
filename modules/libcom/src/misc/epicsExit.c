@@ -28,20 +28,13 @@
 #include <errno.h>
 #include <string.h>
 
-#if defined(UNIX) || defined(darwin)
-#define HANDLE_SIGNALS
-#endif
-
-#ifdef HANDLE_SIGNALS
-#include <unistd.h>
-#endif
-
 #include "ellLib.h"
 #include "errlog.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "cantProceed.h"
 #include "envDefs.h"
+#include "epicsSignal.h"
 #include "epicsExit.h"
 
 typedef struct exitNode {
@@ -96,14 +89,12 @@ static void epicsExitCallAtExitsPvt(exitPvt *pep)
 {
     exitNode *pexitNode;
 
-#ifdef HANDLE_SIGNALS
     /* Set a timeout on running exit handlers */
     long timeout;
     if (envGetLongConfigParam(&EPICS_EXIT_TIMEOUT, &timeout) == 0
             && timeout > 0) {
-        alarm(timeout);
+        epicsSignalSetAlarm(timeout);
     }
-#endif
 
     while ( ( pexitNode = (exitNode *) ellLast ( & pep->list ) ) ) {
         if (atExitDebug && pexitNode->name[0])

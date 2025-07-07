@@ -11,9 +11,11 @@
 #include "epicsSignal.h"
 
 /*
- * NOOP
+ * All NOOPs if the os isn't POSIX
  */
 LIBCOM_API void epicsStdCall epicsSignalInstallSigHupIgnore ( void ) {}
 LIBCOM_API void epicsStdCall epicsSignalInstallSigPipeIgnore ( void ) {}
 LIBCOM_API void epicsStdCall epicsSignalInstallSigAlarmIgnore ( void ) {}
 LIBCOM_API void epicsStdCall epicsSignalRaiseSigAlarm ( struct epicsThreadOSD * /* threadId */ ) {}
+LIBCOM_API void epicsStdCall epicsSignalInstallRunExitHandlers (int signal) {}
+LIBCOM_API void epicsStdCall epicsSignalSetAlarm (int seconds) {}

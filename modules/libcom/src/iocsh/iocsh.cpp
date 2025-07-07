@@ -24,12 +24,6 @@
 #include <ctype.h>
 #include <errno.h>
 
-#if defined(__unix__) || defined(darwin)
-#include <signal.h>
-#include <unistd.h>
-#define HANDLE_SIGNALS
-#endif
-
 #define EPICS_PRIVATE_API
 
 #include "epicsMath.h"
@@ -40,7 +34,7 @@
 #include "epicsStdlib.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
-#include "epicsExit.h"
+#include "epicsSignal.h"
 #include "envDefs.h"
 #include "registry.h"
 #include "epicsReadline.h"
@@ -1594,47 +1588,10 @@ static void exitCallFunc(const iocshArgBuf *)
 {
 }
 
-#ifdef HANDLE_SIGNALS
-
-static void sighandler(int sig) {
-    // Last resort: don't run remaining exit handlers
-    exit(128+sig);
-}
-
-static void exitOnSignal(void* arg)
-{
-    sigset_t* psigset = reinterpret_cast<sigset_t*>(arg);
-    int sig;
-
-    sigwait(psigset, &sig);
-    pthread_sigmask(SIG_UNBLOCK, psigset, NULL);
-    // Allow second signal in case an exit handler hangs
-    signal(SIGTERM, sighandler);
-    signal(SIGINT, sighandler);
-    // Prevent any further commands while running exit handlers
-    // Also prevent realine from getting the terminal
-    close(STDIN_FILENO);
-    epicsExit(128+sig);
-}
-
-static void initExitOnSignal(void) {
-    static sigset_t sigset;
-    sigemptyset(&sigset);
-    sigaddset(&sigset, SIGTERM);
-    sigaddset(&sigset, SIGINT); /* Ctrl-C */
-    epicsThreadMustCreate("exitOnSignal",
-                      epicsThreadPriorityMax,
-                      epicsThreadGetStackSize(epicsThreadStackSmall),
-                      &exitOnSignal, &sigset);
-    pthread_sigmask(SIG_BLOCK, &sigset, NULL);
-}
-#endif
-
 static void iocshOnce (void *)
 {
-#ifdef HANDLE_SIGNALS
-    initExitOnSignal();
-#endif
+    epicsSignalInstallRunExitHandlers(SIGTERM);
+    epicsSignalInstallRunExitHandlers(SIGINT); /* Ctrl-C */
     iocshTableMutex = epicsMutexMustCreate ();
     iocshContextId = epicsThreadPrivateCreate();
     epicsMutexMustLock (iocshTableMutex);

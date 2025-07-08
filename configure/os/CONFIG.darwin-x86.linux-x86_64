@@ -1,0 +1,33 @@
+# CONFIG.darwin-x86.linux-x86_64
+#------------------------------------------------------------------------------
+# Definitions for darwin-x86 host - linux-x86_64 target builds
+# Sites may override these definitions in CONFIG_SITE
+#------------------------------------------------------------------------------
+# To make this configuration work "out of the box", you need to install
+# the Linux cross toolchain using Homebrew:
+#
+#       brew install x86_64-unknown-linux-gnu
+#
+# Author:
+#   Jerzy Jamróz, 2024
+#
+#------------------------------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.Common.linux-x86_64
+
+GNU_DIR = /usr/local/opt/x86_64-unknown-linux-gnu/toolchain
+GNU_TARGET = x86_64-linux-gnu
+
+COMMANDLINE_LIBRARY ?= READLINE
+
+ARCH_DEP_CPPFLAGS += -pipe
+ARCH_DEP_CXXFLAGS += -std=c++17
+
+ARCH_DEP_LDFLAGS += -Wl,--as-needed
+ARCH_DEP_LDFLAGS += -Wl,--hash-style=gnu
+
+# Expand "ARCH DEPENDENT" flags for your target
+## ARCH_DEP_CPPFLAGS += -mtune=corei7
+
+# Optional debug information
+## ARCH_DEP_LDFLAGS += -Wl,--verbose

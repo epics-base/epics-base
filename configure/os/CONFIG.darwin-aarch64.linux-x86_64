@@ -1,6 +1,6 @@
-# CONFIG.darwin-x86.linux-x86_64
+# CONFIG.darwin-aarch64.linux-x86_64
 #------------------------------------------------------------------------------
-# Definitions for darwin-x86 host - linux-x86_64 target builds
+# Definitions for darwin-aarch64 host - linux-x86_64 target builds
 # Sites may override these definitions in CONFIG_SITE
 #------------------------------------------------------------------------------
 

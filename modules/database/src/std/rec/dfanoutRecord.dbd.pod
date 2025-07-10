@@ -14,6 +14,8 @@ eight other records. It's similar to the fanout record except that the
 capability to forward data has been added to it. If has no associated
 device support.
 
+Since UNRELEASED the data fanout record has IVOA and IVOV fields.
+
 =head2 Parameter Fields
 
 The record-specific fields are described below, grouped by functionality.
@@ -128,7 +130,12 @@ Parameters> for more about the record name (NAME) and description (DESC) fields.
 
 The possible alarm conditions for data fanouts are the SCAN, READ, INVALID,
 and limit alarms. The SCAN and READ alarms are called by the record
-routines. The limit alarms are configured by the user in the HIHI, LOLO,
+routines. The IVOA field specifies the action to take in this case.
+
+For an explanation of the IVOA and IVOV fields, see
+L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>.
+
+The limit alarms are configured by the user in the HIHI, LOLO,
 HIGH, and LOW fields using floating point values. The limit alarms apply 
 only to the VAL field. The severity for each of these limits is specified
 in the corresponding field (HHSV, LLSV, HSV, LSV) and can be either
@@ -140,7 +147,7 @@ for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.
 
-=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST
+=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, IVOA, IVOV
 
 =head3 Monitor Parameters
 
@@ -353,6 +360,17 @@ hysteresis factors for monitor callbacks.
 		special(SPC_NOMOD)
 		interest(3)
 	}
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID output action")
+		promptgroup("50 - Output")
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_LONG) {
+		prompt("INVALID output value")
+		promptgroup("50 - Output")
+		interest(2)
+	}
 
 =head2 Record Support
 
@@ -411,32 +429,37 @@ is called.
 =over
 
 =item 1.
-The C<process()> routine first checks that DOL is not a constant link and
-that OMSL is set to "closed_loop". If so, it retrieves a value through DOL
-and places it into VAL. If no errors occur, UDF is set to FALSE.
+
+If OMSL is "closed_loop" and DOL is not a constant link read the new value
+of VAL from DOL. If no errors occur, UDF is set to FALSE.
 
 =item 2.
-PACT is set TRUE, and the record's timestamp is set.
+
+PACT is set TRUE and the record's timestamp is set.
 
 =item 3.
+
 A value is fetched from SELL and placed into SELN.
 
 =item 4.
+
 Alarms ranges are checked against the contents of the VAL field.
 
 =item 5.
-VAL is then sent through the OUTA-OUTH links by calling C<dbPutLink()> for
-each link, conditional on the setting of SELM and the value in SELN.
+
+Check severity and then send the value through the OUTA-OUTH links, depending
+on the setting of SELM and the value in SELN.
+See L<Invalid Output Action Fields|dbCommonOutput/Invalid Output Action Fields>
+for information on how INVALID alarms affect output records.
 
 =item 6.
+
 Value and archive monitors are posted on the VAL field if appropriate based on
 the settings of MDEL and ADEL respectively.
 
 =item 7.
-The data fanout's forward link FLNK is processed.
 
-=item 6.
-PACT is set FALSE, and the C<process()> routine returns.
+Scan forward link if necessary, set PACT FALSE, and return.
 
 =back
 

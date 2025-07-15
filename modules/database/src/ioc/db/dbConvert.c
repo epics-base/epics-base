@@ -171,7 +171,7 @@ static long getStringChar(const dbAddr *paddr,
             *pdst++ = 0;
         else {
             char *end;
-            long status = epicsParseInt8(psrc, pdst++, 10, &end);
+            long status = epicsParseInt8(psrc, pdst++, 0, &end);
 
             if (status)
                 return status;
@@ -195,7 +195,7 @@ static long getStringUchar(const dbAddr *paddr,
             *pdst++ = 0;
         else {
             char *end;
-            long status = epicsParseUInt8(psrc, pdst++, 10, &end);
+            long status = epicsParseUInt8(psrc, pdst++, 0, &end);
 
             if (status)
                 return status;
@@ -219,7 +219,7 @@ static long getStringShort(const dbAddr *paddr,
             *pdst++ = 0;
         else {
             char *end;
-            long status = epicsParseInt16(psrc, pdst++, 10, &end);
+            long status = epicsParseInt16(psrc, pdst++, 0, &end);
 
             if (status)
                 return status;
@@ -243,7 +243,7 @@ static long getStringUshort(const dbAddr *paddr,
             *pdst++ = 0;
         else {
             char *end;
-            long status = epicsParseUInt16(psrc, pdst++, 10, &end);
+            long status = epicsParseUInt16(psrc, pdst++, 0, &end);
 
             if (status)
                 return status;
@@ -267,7 +267,7 @@ static long getStringLong(const dbAddr *paddr,
             *pdst++ = 0;
         else {
             char *end;
-            long status = epicsParseInt32(psrc, pdst++, 10, &end);
+            long status = epicsParseInt32(psrc, pdst++, 0, &end);
 
             if (status)
                 return status;
@@ -291,7 +291,7 @@ static long getStringUlong(const dbAddr *paddr,
             *pdst++ = 0;
         else {
             char *end;
-            long status = epicsParseUInt32(psrc, pdst, 10, &end);
+            long status = epicsParseUInt32(psrc, pdst, 0, &end);
 
             if (status == S_stdlib_noConversion ||
                 (!status && (*end == '.' || *end == 'e' || *end == 'E'))) {
@@ -328,7 +328,7 @@ static long getStringInt64(const dbAddr *paddr,
             *pdst++ = 0;
         else {
             char *end;
-            long status = epicsParseInt64(psrc, pdst++, 10, &end);
+            long status = epicsParseInt64(psrc, pdst++, 0, &end);
 
             if (status)
                 return status;
@@ -946,7 +946,7 @@ static long putStringChar(dbAddr *paddr,
 
     while (nRequest--) {
         char *end;
-        long status = epicsParseInt8(psrc, pdst++, 10, &end);
+        long status = epicsParseInt8(psrc, pdst++, 0, &end);
 
         if (status)
             return status;
@@ -965,7 +965,7 @@ static long putStringUchar(dbAddr *paddr,
 
     while (nRequest--) {
         char *end;
-        long status = epicsParseUInt8(psrc, pdst++, 10, &end);
+        long status = epicsParseUInt8(psrc, pdst++, 0, &end);
 
         if (status)
             return status;
@@ -984,7 +984,7 @@ static long putStringShort(dbAddr *paddr,
 
     while (nRequest--) {
         char *end;
-        long status = epicsParseInt16(psrc, pdst++, 10, &end);
+        long status = epicsParseInt16(psrc, pdst++, 0, &end);
 
         if (status)
             return status;
@@ -1003,7 +1003,7 @@ static long putStringUshort(dbAddr *paddr,
 
     while (nRequest--) {
         char *end;
-        long status = epicsParseUInt16(psrc, pdst++, 10, &end);
+        long status = epicsParseUInt16(psrc, pdst++, 0, &end);
 
         if (status)
             return status;
@@ -1022,7 +1022,7 @@ static long putStringLong(dbAddr *paddr,
 
     while (nRequest--) {
         char *end;
-        long status = epicsParseInt32(psrc, pdst++, 10, &end);
+        long status = epicsParseInt32(psrc, pdst++, 0, &end);
 
         if (status)
             return status;
@@ -1041,7 +1041,7 @@ static long putStringUlong(dbAddr *paddr,
 
     while (nRequest--) {
         char *end;
-        long status = epicsParseUInt32(psrc, pdst, 10, &end);
+        long status = epicsParseUInt32(psrc, pdst, 0, &end);
 
         if (status == S_stdlib_noConversion ||
             (!status && (*end == '.' || *end == 'e' || *end == 'E'))) {
@@ -1074,7 +1074,7 @@ static long putStringInt64(dbAddr *paddr,
 
     while (nRequest--) {
         char *end;
-        long status = epicsParseInt64(psrc, pdst++, 10, &end);
+        long status = epicsParseInt64(psrc, pdst++, 0, &end);
 
         if (status)
             return status;
@@ -1178,7 +1178,7 @@ static long putStringEnum(dbAddr *paddr,
         epicsEnum16 val;
         char *end;
 
-        status = epicsParseUInt16(pfrom, &val, 10, &end);
+        status = epicsParseUInt16(pfrom, &val, 0, &end);
         if (!status && val < enumStrs.no_str) {
             *pfield = val;
             return 0;
@@ -1219,7 +1219,7 @@ static long putStringMenu(dbAddr *paddr,
             }
         }
 
-        if (!epicsParseUInt16(pfrom, &val, 10, NULL)
+        if (!epicsParseUInt16(pfrom, &val, 0, NULL)
             && val < nChoice) {
             *pfield = val;
             return 0;
@@ -1258,7 +1258,7 @@ static long putStringDevice(dbAddr *paddr,
             }
         }
 
-        if (!epicsParseUInt16(pfrom, &val, 10, NULL) && val < nChoice) {
+        if (!epicsParseUInt16(pfrom, &val, 0, NULL) && val < nChoice) {
             *pfield = val;
             return 0;
         }

@@ -49,8 +49,8 @@ typedef struct {
     epicsEventId        stateChangeNotify;
     epicsEventId        shutdownNotify;
     unsigned            connectCount;
-    unsigned            nextMsgIndex;
-    unsigned            backlog;
+    size_t              nextMsgIndex;
+    size_t              backlog;
     unsigned            connected;
     unsigned            shutdown;
     unsigned            shutdownConfirm;
@@ -244,8 +244,15 @@ void epicsStdCall logClientSend ( logClientId id, const char * message )
 
 void epicsStdCall logClientFlush ( logClientId id )
 {
-    unsigned nSent;
+    size_t nSent;
+#ifdef WIN32
+    /* Windows send() expects and returns int */
     int status = 0;
+#define LIMITED_LEN(len) (int)(len <= INT_MAX ? len : INT_MAX)
+#else
+    ssize_t status = 0;
+#define LIMITED_LEN(len) len
+#endif
 
     logClient * pClient = ( logClient * ) id;
 
@@ -258,7 +265,7 @@ void epicsStdCall logClientFlush ( logClientId id )
     nSent = pClient->backlog;
     while ( nSent < pClient->nextMsgIndex && pClient->connected ) {
         status = send ( pClient->sock, pClient->msgBuf + nSent,
-            pClient->nextMsgIndex - nSent, 0 );
+            LIMITED_LEN(pClient->nextMsgIndex - nSent), 0 );
         if ( status < 0 ) break;
         nSent += status;
     }
@@ -561,7 +568,7 @@ void epicsStdCall logClientShow (logClientId id, unsigned level)
             pClient->connectCount);
     }
     if (level>1) {
-        printf ("log client: %u bytes in buffer\n", pClient->nextMsgIndex);
+        printf ("log client: %zu bytes in buffer\n", pClient->nextMsgIndex);
         if (pClient->nextMsgIndex)
             printf("-------------------------\n"
                 "%.*s-------------------------\n",
@@ -590,7 +597,7 @@ void epicsStdCall iocLogPrefix(const char * prefix)
     }
 
     if (prefix) {
-        unsigned prefixLen = strlen(prefix);
+        size_t prefixLen = strlen(prefix);
         if (prefixLen > 0) {
             char * localCopy = malloc(prefixLen+1);
             strcpy(localCopy, prefix);

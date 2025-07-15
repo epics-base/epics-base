@@ -291,8 +291,12 @@ static void errlogInit2CallFunc(const iocshArgBuf *args)
 }
 
 /* errlog */
-IOCSH_STATIC_FUNC void errlog(const char *message)
+IOCSH_STATIC_FUNC void errlog(char *message)
 {
+    if (message)
+        dbTranslateEscape(message, message); /* in-place is safe */
+    else
+        message = "";
     errlogPrintfNoConsole("%s\n", message);
 }
 

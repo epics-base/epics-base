@@ -168,12 +168,9 @@ static void logClientDestroy (logClientId id)
 /*
  * This method requires the pClient->mutex be owned already.
  */
-static void sendMessageChunk(logClient * pClient, const char * message) {
-    unsigned strSize;
-
-    strSize = strlen ( message );
+static void sendMessageChunk(logClient * pClient, const char * message, size_t strSize) {
     while ( strSize ) {
-        unsigned msgBufBytesLeft =
+        size_t msgBufBytesLeft =
             sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
 
         if ( msgBufBytesLeft < strSize && pClient->nextMsgIndex != 0u && pClient->connected)
@@ -202,17 +199,44 @@ static void sendMessageChunk(logClient * pClient, const char * message) {
 void epicsStdCall logClientSend ( logClientId id, const char * message )
 {
     logClient * pClient = ( logClient * ) id;
+    size_t prefixLength;
 
     if ( ! pClient || ! message ) {
+        return;
+    }
+    while (*message == '\n') {
+        message++; /* skip initial newlines */
+    }
+    if (!*message) {
         return;
     }
 
     epicsMutexMustLock ( pClient->mutex );
 
     if (logClientPrefix) {
-        sendMessageChunk(pClient, logClientPrefix);
+        prefixLength = strlen(logClientPrefix);
+    } else {
+        prefixLength = 0;
     }
-    sendMessageChunk(pClient, message);
+    do {
+        /* apply logClientPrefix to each line */
+        size_t lineLength;
+        char* lineEnd = strchr(message, '\n');
+        if (lineEnd) {
+            lineLength = lineEnd + 1 - message;
+        } else {
+            lineLength = strlen(message);
+        }
+        if (prefixLength) {
+            sendMessageChunk(pClient, logClientPrefix, prefixLength);
+        }
+        sendMessageChunk(pClient, message, lineLength);
+        if (!lineEnd) {
+            /* terminate last line if necessary */
+            sendMessageChunk(pClient, "\n", 1);
+        }
+        message += lineLength;
+    } while (*message);
 
     epicsMutexUnlock (pClient->mutex);
 }

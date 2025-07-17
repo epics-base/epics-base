@@ -957,7 +957,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
 
     param.sched_priority = (sched_get_priority_max(policy)
                             - sched_get_priority_min(policy))
-                         * epicsThreadPriorityIocsh / 100
+                         * epicsThreadPriorityIocsh / (epicsThreadPriorityMax - epicsThreadPriorityMin) 
                          + sched_get_priority_min(policy);
 
     sc = pthread_setschedparam(pthread_self(), policy, &param);

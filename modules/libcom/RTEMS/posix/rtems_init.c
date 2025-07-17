@@ -1116,14 +1116,9 @@ POSIX_Init ( void *argument __attribute__((unused)))
 
     if (rtems_bsdnet_config.network_task_priority == 0)
     {
-        unsigned int p;
-        if (epicsThreadHighestPriorityLevelBelow(epicsThreadPriorityScanLow, &p)
-                                            != epicsThreadBooleanStatusSuccess)
-        {
-            p = RTEMS_MAXIMUM_PRIORITY
-              - (RTEMS_MAXIMUM_PRIORITY - RTEMS_MINIMUM_PRIORITY) * epicsThreadPriorityScanLow / 100;
-        }
-        printf(" This is network task prio (RTEMS) : %d , OSI Prio %d\n", p, epicsThreadPriorityScanLow);
+        p = RTEMS_MAXIMUM_PRIORITY
+          - (RTEMS_MAXIMUM_PRIORITY - RTEMS_MINIMUM_PRIORITY) 
+          * epicsThreadPriorityScanLow / (epicsThreadPriorityMax - epicsThreadPriorityMin);
         rtems_bsdnet_config.network_task_priority = p;
     }
     printf("\n***** Initializing network (Legacy Stack) with prio %d  *****\n", rtems_bsdnet_config.network_task_priority);

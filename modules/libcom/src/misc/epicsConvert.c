@@ -33,3 +33,5 @@ LIBCOM_API float epicsConvertDoubleToFloat(double value)
 
     return (float) value;
 }
+
+int dbConvertBase = 0;

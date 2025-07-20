@@ -61,6 +61,9 @@ epicsExportAddress(int,dbQuietMacroWarnings);
 int dbRecordsAbcSorted=0;
 epicsExportAddress(int,dbRecordsAbcSorted);
 
+int dbLinkDefaultINT=0;
+epicsExportAddress(int,dbLinkDefaultINT);
+
 /*private routines */
 static void yyerrorAbort(char *str);
 static void allocTemp(void *pvoid);
@@ -110,6 +113,7 @@ typedef struct inputFile{
     const char  *filename;
     FILE        *fp;
     int         line_num;
+    unsigned linkDefLoc;
 }inputFile;
 static ELLLIST inputFileList = ELLLIST_INIT;
 
@@ -293,6 +297,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         pinputFile->fp = fp;
         fp = NULL;
     }
+    pinputFile->linkDefLoc = dbLinkDefaultINT ? pvlOptSrcInt : pvlOptSrcAuto;
     pinputFile->line_num = 0;
     pinputFileNow = pinputFile;
     my_buffer[0] = '\0';
@@ -1527,7 +1532,26 @@ static void warnSetUnknown(const char *name)
 
 static void dbSet(const char *name)
 {
-    warnSetUnknown(name);
+    if(strcmp(name, "link:scope")==0) {
+        char* val = popFirstTemp();
+
+        if(!val || strcmp(val, "AUTO")==0) {
+            pinputFileNow->linkDefLoc = pvlOptSrcAuto;
+
+        } else if(strcmp(val, "EXT")==0) {
+            pinputFileNow->linkDefLoc = pvlOptSrcExt;
+
+        } else if(strcmp(val, "INT")==0) {
+            pinputFileNow->linkDefLoc = pvlOptSrcInt;
+
+        } else {
+            fprintf(stderr, ERL_WARNING " Invalid value in set(\"%s\", \"%s\")\n", name, val);
+        }
+        dbmfFree(val);
+
+    } else {
+        warnSetUnknown(name);
+    }
 
     /* clean up unused arguments */
     while(ellCount(&tempList))
@@ -1536,7 +1560,7 @@ static void dbSet(const char *name)
 
 unsigned dbLinkScopeDefault(void)
 {
-    int ret = pvlOptSrcAuto;
+    int ret = dbLinkDefaultINT ? pvlOptSrcInt : pvlOptSrcAuto;
     if(pinputFileNow)
         ret = pinputFileNow->linkDefLoc;
     return ret;

@@ -13,15 +13,7 @@ this distribution.
 
 ---------------------------------------------------------
 
-Installation and release information can be found in the
-various files in the documentation subdirectory.
-
-Additional information about EPICS including mailing list
-archives and subscription instructions, documentation and
-training materials, additional components, links to other
-websites etc. is available on the EPICS home page at
-	https://epics.anl.gov/
+For more information, see the README.md file.
 
 $Format:%cD$
 $Format:%H$
-https://code.launchpad.net/epics-base

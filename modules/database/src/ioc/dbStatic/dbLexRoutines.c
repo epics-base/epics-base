@@ -1209,7 +1209,15 @@ static void dbRecordField(char *name,char *value)
             double bestSim = -1.0;
             const dbFldDes *bestFld = NULL;
             dbCopyEntryContents(pdbentry, &temp);
+            const char* guess =
+                strcmp(name, "OUT") == 0 ? "INP" :
+                strcmp(name, "INP") == 0 ? "OUT" :
+                NULL;
             for(status = dbFirstField(&temp, 0); !status; status = dbNextField(&temp, 0)) {
+                if (guess && strcmp(temp.pflddes->name, guess) == 0) {
+                    bestFld = temp.pflddes;
+                    break;
+                }
                 double sim = epicsStrSimilarity(name, temp.pflddes->name);
                 if(!bestFld || sim > bestSim) {
                     bestSim = sim;

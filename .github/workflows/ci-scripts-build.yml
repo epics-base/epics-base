@@ -83,7 +83,7 @@ jobs:
             cmp: gcc
             configuration: static
             cross: "windows-x64-mingw"
-            extra: "HOST_ARCH_BUILDS=Host"
+            host-builds: Host
             name: "Ub-22 X- MinGW, static"
 
           - os: ubuntu-22.04
@@ -113,14 +113,14 @@ jobs:
             cmp: gcc
             configuration: default
             cross: "RTEMS-pc686-qemu@5"
-            extra: "HOST_ARCH_BUILDS=Host"
+            host-builds: Host
             name: "Ub-22 X- RT-5.1 pc686"
 
           - os: ubuntu-22.04
             cmp: gcc
             configuration: default
             cross: "RTEMS-beatnik@5"
-            extra: "HOST_ARCH_BUILDS=Host"
+            host-builds: Host
             test: NO
             name: "Ub-22 X- RT-5.1 beatnik"
 
@@ -128,7 +128,7 @@ jobs:
             cmp: gcc
             configuration: default
             cross: "RTEMS-xilinx_zynq_a9_qemu@5"
-            extra: "HOST_ARCH_BUILDS=Host"
+            host-builds: Host
             test: NO
             name: "Ub-22 X- RT-5.1 xilinx_zynq_a9_qemu"
 
@@ -136,7 +136,7 @@ jobs:
             cmp: gcc
             configuration: default
             cross: "RTEMS-uC5282@5"
-            extra: "HOST_ARCH_BUILDS=Host"
+            host-builds: Host
             test: NO
             name: "Ub-22 X- RT-5.1 uC5282"
 
@@ -144,7 +144,7 @@ jobs:
             cmp: gcc
             configuration: default
             cross: "RTEMS-pc386-qemu@4.10"
-            extra: "HOST_ARCH_BUILDS=Host"
+            host-builds: Host
             test: NO
             name: "Ub-22 X- RT-4.10 pc386"
 
@@ -152,7 +152,7 @@ jobs:
             cmp: gcc
             configuration: default
             cross: "RTEMS-pc386-qemu@4.9"
-            extra: "HOST_ARCH_BUILDS=Host"
+            host-builds: Host
             name: "Ub-22 X- RT-4.9 pc386"
 
           - os: macos-latest
@@ -188,27 +188,30 @@ jobs:
             cmp: gcc
             configuration: default
             cross: linux-aarch64
-            extra: "HOST_ARCH_BUILDS=Host"
+            host-builds: Host
             name: "Ub X- linux-aarch64"
 
           - os: ubuntu-latest
             cmp: gcc
             configuration: default
             cross: linux-arm@arm-linux-gnueabi
-            extra: "HOST_ARCH_BUILDS=Host"
+            host-builds: Host
             name: "Ub X- linux-arm gnueabi"
 
           - os: ubuntu-latest
             cmp: gcc
             configuration: default
             cross: linux-arm@arm-linux-gnueabihf
-            extra: "HOST_ARCH_BUILDS=Host Cmd"
+            host-builds: "Host Cmd"
             name: "Ub Xc linux-arm gnueabihf"
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: true
+      # with:
+      #   submodules: true
+    - name: Init the .ci submodule
+      run: git submodule update --init --recursive .ci
+
     - name: Automatic core dumper analysis
       uses: mdavidsaver/ci-core-dumper@master
     - name: "apt-get install"
@@ -218,6 +221,9 @@ jobs:
       if: runner.os == 'Linux'
     - name: Prepare and compile dependencies
       run: python .ci/cue.py prepare
+    - name: Create CONFIG_SITE.local
+      run: echo "HOST_ARCH_BUILDS = ${{ matrix.host-builds }}" > configure/CONFIG_SITE.local
+      if: ${{ matrix.host-builds }}
     - name: Build main module
       run: python .ci/cue.py build
     - name: Run main module tests
@@ -234,7 +240,7 @@ jobs:
       run: python .ci/cue.py -T 5M test-results
 
   docker:
-    name: ${{ matrix.name }}
+    name: Docker ${{ matrix.name }}
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.image }}
@@ -283,8 +289,13 @@ jobs:
         git --version || dnf -y install git
         python3 --version
     - uses: actions/checkout@v4
-      with:
-        submodules: true
+      # with:
+      #   submodules: true
+    - name: Init the .ci submodule
+      run: |
+        git config --global --add safe.directory /__w/epics-base/epics-base
+        git submodule update --init --recursive .ci
+
     - name: Automatic core dumper analysis
       uses: mdavidsaver/ci-core-dumper@master
     - name: Prepare and compile dependencies
@@ -313,8 +324,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: true
+      # with:
+      #   submodules: true
+    - name: Init the .ci submodule
+      run: git submodule update --init --recursive .ci
     
     - name: Run...
       run: |

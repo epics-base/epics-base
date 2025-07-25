@@ -1190,6 +1190,17 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         dbVisibleRecord(pdbentry);
 }
 
+static const char* dbFieldConfusionMap [] = {
+    "INP","OUT",
+    "DOL","INP",
+    "ZNAM","ZRST",
+    "ONAM","ONST",
+    "INPA-J","DOL0-9",
+    "INPK-P","DOLA-F",
+    "INP0-9","INPA-J",
+    NULL
+};
+
 static void dbRecordField(char *name,char *value)
 {
     DBENTRY *pdbentry;
@@ -1208,24 +1219,106 @@ static void dbRecordField(char *name,char *value)
             DBENTRY temp;
             double bestSim = -1.0;
             const dbFldDes *bestFld = NULL;
+            int i;
+            const char* fld;
             dbCopyEntryContents(pdbentry, &temp);
-            const char* guess =
-                strcmp(name, "OUT") == 0 ? "INP" :
-                strcmp(name, "INP") == 0 ? "OUT" :
-                NULL;
-            for(status = dbFirstField(&temp, 0); !status; status = dbNextField(&temp, 0)) {
-                if (guess && strcmp(temp.pflddes->name, guess) == 0) {
+            for(i = 0; (fld = dbFieldConfusionMap[i]) != NULL; i++) {
+                char buf[10];
+                const char* guess = NULL;
+                size_t l = strlen(fld);
+                if (l >= 3 && fld[l-2] == '-' &&
+                    strncmp(name, fld, l-3) == 0 &&
+                    name[l-3] >= fld[l-3] &&
+                    name[l-3] <= fld[l-1])
+                {
+                    /* range map */
+                    size_t l2 = strlen(dbFieldConfusionMap[i^1]);
+                    memset(buf, 0, sizeof(buf));
+                    strncpy(buf, dbFieldConfusionMap[i^1], sizeof(buf)-1);
+                    buf[l2-3] += name[l-3] - fld[l-3];
+                    buf[l2-2] = 0;
+                    guess = buf;
+                } else if (strcmp(name, fld) == 0) {
+                    /* simple map */
+                    guess = dbFieldConfusionMap[i^1];
+                }
+                if (guess && dbFindFieldPart(&temp, &guess) == 0) {
+                    /* guessed field exists */
                     bestFld = temp.pflddes;
                     break;
                 }
-                double sim = epicsStrSimilarity(name, temp.pflddes->name);
-                if(!bestFld || sim > bestSim) {
-                    bestSim = sim;
-                    bestFld = temp.pflddes;
+            }
+            if (!bestFld) {
+                /* no map found, use weighted lexical similarity */
+                char quote = 0;
+                if (*value == '"' || *value == '\'') {
+                    quote = *value++;
+                }
+                for (status = dbFirstField(&temp, 0); !status; status = dbNextField(&temp, 0)) {
+                    if (temp.pflddes->special == SPC_NOMOD ||
+                        temp.pflddes->special == SPC_DBADDR) /* cannot be configured */
+                        continue;
+                    double sim = epicsStrSimilarity(name, temp.pflddes->name);
+                    if (!temp.pflddes->promptgroup)
+                        sim *= 0.5; /* no prompt: unlikely */
+                    if (temp.pflddes->interest)
+                        sim *= 1.0 - 0.1 * temp.pflddes->interest; /* 10% less likely per interest level */
+
+                    long status = 0;
+                    char* end = &quote;
+                    if (*value != quote) {
+                        /* value given, check match to field type */
+                        switch (temp.pflddes->field_type) {
+                            epicsAny dummy;
+                            case DBF_CHAR:
+                                status = epicsParseInt8(value, &dummy.int8, 0, &end);
+                                break;
+                            case DBF_UCHAR:
+                                status = epicsParseUInt8(value, &dummy.uInt8, 0, &end);
+                                break;
+                            case DBF_SHORT:
+                                status = epicsParseInt16(value, &dummy.int16, 0, &end);
+                                break;
+                            case DBF_USHORT:
+                                status = epicsParseUInt16(value, &dummy.uInt16, 0, &end);
+                                break;
+                            case DBF_LONG:
+                                status = epicsParseInt32(value, &dummy.int32, 0, &end);
+                                break;
+                            case DBF_ULONG:
+                                status = epicsParseUInt32(value, &dummy.uInt32, 0, &end);
+                                break;
+                            case DBF_INT64:
+                                status = epicsParseInt64(value, &dummy.int64, 0, &end);
+                                break;
+                            case DBF_UINT64:
+                                status = epicsParseUInt64(value, &dummy.uInt64, 0, &end);
+                                break;
+                            case DBF_FLOAT:
+                                status = epicsParseFloat(value, &dummy.float32, &end);
+                                break;
+                            case DBF_DOUBLE:
+                                status = epicsParseDouble(value, &dummy.float64, &end);
+                                break;
+                            case DBF_ENUM:
+                            case DBF_MENU:
+                            case DBF_DEVICE:
+                                /* TODO */
+                            default:
+                                break;
+                        }
+                        if (status || *end != quote) {
+                            sim *= 0.1; /* value type does not match field type: unlikely */
+                        }
+                    }
+                    if (sim > bestSim) {
+                        bestSim = sim;
+                        bestFld = temp.pflddes;
+                    }
                 }
             }
             dbFinishEntry(&temp);
-            if(bestSim>0.0) {
+            if (bestFld) {
                 fprintf(stderr, "    Did you mean \"%s\"?", bestFld->name);
                 if(bestFld->prompt)
                     fprintf(stderr, "  (%s)", bestFld->prompt);

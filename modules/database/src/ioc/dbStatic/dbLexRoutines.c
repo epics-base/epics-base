@@ -1233,7 +1233,6 @@ static void dbRecordField(char *name,char *value)
                 {
                     /* range map */
                     size_t l2 = strlen(dbFieldConfusionMap[i^1]);
-                    memset(buf, 0, sizeof(buf));
                     strncpy(buf, dbFieldConfusionMap[i^1], sizeof(buf)-1);
                     buf[l2-3] += name[l-3] - fld[l-3];
                     buf[l2-2] = 0;
@@ -1264,10 +1263,10 @@ static void dbRecordField(char *name,char *value)
                     if (temp.pflddes->interest)
                         sim *= 1.0 - 0.1 * temp.pflddes->interest; /* 10% less likely per interest level */
 
-                    long status = 0;
-                    char* end = &quote;
                     if (*value != quote) {
                         /* value given, check match to field type */
+                        long status = 0;
+                        char* end = &quote;
                         switch (temp.pflddes->field_type) {
                             epicsAny dummy;
                             case DBF_CHAR:

@@ -89,7 +89,7 @@ matrix:
 #---------------------------------#
 
 install:
-  - cmd: git submodule update --init --recursive
+  - cmd: git submodule update --init --recursive .ci
   - cmd: pip install git+https://github.com/mdavidsaver/ci-core-dumper#egg=ci-core-dumper
   - cmd: python .ci/cue.py prepare
 

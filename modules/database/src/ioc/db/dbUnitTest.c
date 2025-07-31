@@ -35,6 +35,8 @@
 #include "errSymTbl.h"
 #include "iocshRegisterCommon.h"
 
+#define DBR_NAME(dbrType) (VALID_DB_REQ(dbrType) ? pamapdbfType[dbrType].strvalue+3 : "???")
+
 static dbEventCtx testEvtCtx;
 static epicsMutexId testEvtLock;
 static ELLLIST testEvtList; /* holds testMonitor::node */
@@ -153,8 +155,8 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
     OP(DBR_ENUM, int, enum16);
 #undef OP
     default:
-        testFail("invalid DBR: dbPutField(\"%s\", %d, ...)",
-                  dbChannelName(chan), dbrType);
+        testFail("invalid DBR: dbPutField(\"%s\", DBR%s, ...)",
+                  dbChannelName(chan), DBR_NAME(dbrType));
         ret = S_db_badDbrtype;
         break;
     }
@@ -174,7 +176,8 @@ void testdbPutFieldOk(const char* pv, int dbrType, ...)
     ret = testdbVPutField(pv, dbrType, ap);
     va_end(ap);
 
-    testOk(ret==0, "dbPutField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, ret, errSymMsg(ret));
+    testOk(ret==0, "dbPutField(\"%s\", DBR%s, ...) -> %#lx (%s)",
+        pv, DBR_NAME(dbrType), ret, errSymMsg(ret));
 }
 
 void testdbPutFieldFail(long status, const char* pv, int dbrType, ...)
@@ -186,8 +189,8 @@ void testdbPutFieldFail(long status, const char* pv, int dbrType, ...)
     ret = testdbVPutField(pv, dbrType, ap);
     va_end(ap);
 
-    testOk(ret==status, "dbPutField(\"%s\", %d, ...) -> %#lx (%s) == %#lx (%s)",
-           pv, dbrType, status, errSymMsg(status), ret, errSymMsg(ret));
+    testOk(ret==status, "dbPutField(\"%s\", DBR%s, ...) -> %#lx (%s) == %#lx (%s)",
+           pv, DBR_NAME(dbrType), status, errSymMsg(status), ret, errSymMsg(ret));
 }
 
 void testdbGetFieldEqual(const char* pv, int dbrType, ...)
@@ -213,10 +216,12 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
 
     status = dbChannelGetField(chan, dbrType, pod.bytes, NULL, &nReq, NULL);
     if (status) {
-        testFail("dbGetField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, status, errSymMsg(status));
+        testFail("dbGetField(\"%s\", DBR%s, ...) -> %#lx (%s)",
+            pv, DBR_NAME(dbrType), status, errSymMsg(status));
         goto done;
     } else if(nReq==0) {
-        testFail("dbGetField(\"%s\", %d, ...) -> zero length", pv, dbrType);
+        testFail("dbGetField(\"%s\", DBR%s, ...) -> zero length",
+            pv, DBR_NAME(dbrType));
         goto done;
     }
 
@@ -224,13 +229,14 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     case DBR_STRING: {
         const char *expect = va_arg(ap, char*);
         testOk(strcmp(expect, pod.valStr)==0,
-               "dbGetField(\"%s\", %d) -> \"%s\" == \"%s\"",
-               pv, dbrType, expect, pod.valStr);
+               "dbGetField(\"%s\", DBR%s) -> \"%s\" == \"%s\"",
+               pv, DBR_NAME(dbrType), expect, pod.valStr);
         break;
     }
 #define OP(DBR,Type,mem,pat) case DBR: {Type expect = va_arg(ap,Type); \
-    testOk(expect==pod.val.mem, "dbGetField(\"%s\", %d) -> " pat " == " pat, \
-        pv, dbrType, expect, (Type)pod.val.mem); break;}
+    testOk(expect==pod.val.mem||((expect!=expect)&&(pod.val.mem!=pod.val.mem)), \
+        "dbGetField(\"%s\", DBR%s) -> " pat " == " pat, \
+        pv, DBR_NAME(dbrType), expect, (Type)pod.val.mem); break;}
 
     OP(DBR_CHAR, int, int8, "%d");
     OP(DBR_UCHAR, int, uInt8, "%d");
@@ -240,12 +246,12 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     OP(DBR_ULONG, unsigned int, uInt32, "%u");
     OP(DBR_INT64, long long, int64, "%lld");
     OP(DBR_UINT64, unsigned long long, uInt64, "%llu");
-    OP(DBR_FLOAT, double, float32, "%e");
-    OP(DBR_DOUBLE, double, float64, "%e");
     OP(DBR_ENUM, int, enum16, "%d");
+    OP(DBR_FLOAT, double, float32, "%g");
+    OP(DBR_DOUBLE, double, float64, "%g");
 #undef OP
     default:
-        testFail("dbGetField(\"%s\", %d) -> unsupported dbf", pv, dbrType);
+        testFail("dbGetField(\"%s\", DBR%s) -> unsupported dbf", pv, DBR_NAME(dbrType));
     }
 
 done:
@@ -265,7 +271,7 @@ void testdbPutArrFieldOk(const char* pv, short dbrType, unsigned long count, con
 
     status = dbChannelPutField(chan, dbrType, pbuf, count);
 
-    testOk(status==0, "dbPutField(\"%s\", dbr=%d, count=%lu, ...) -> %ld", pv, dbrType, count, status);
+    testOk(status==0, "dbPutField(\"%s\", DBR%s, count=%lu, ...) -> %ld", pv, DBR_NAME(dbrType), count, status);
 
 done:
     if(chan)
@@ -294,7 +300,7 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
 
     status = dbChannelGetField(chan, dbfType, gbuf, NULL, &nRequest, NULL);
     if (status) {
-        testFail("dbGetField(\"%s\", %d, ...) -> %#lx", pv, dbfType, status);
+        testFail("dbGetField(\"%s\", DBR%s, ...) -> %#lx", pv, DBR_NAME(dbfType), status);
 
     } else {
         unsigned match = nRequest==cnt;
@@ -327,14 +333,14 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
             OP(DBR_ULONG, unsigned int, "%u");
             OP(DBR_INT64, long long, "%lld");
             OP(DBR_UINT64, unsigned long long, "%llu");
-            OP(DBR_FLOAT, float, "%e");
-            OP(DBR_DOUBLE, double, "%e");
+            OP(DBR_FLOAT, float, "%g");
+            OP(DBR_DOUBLE, double, "%g");
             OP(DBR_ENUM, int, "%d");
 #undef OP
             }
         }
 
-        testOk(match, "dbGetField(\"%s\", dbrType=%d, nRequest=%ld ...) match", pv, dbfType, nRequest);
+        testOk(match, "dbGetField(\"%s\", DBR%s, nRequest=%ld ...) match", pv, DBR_NAME(dbfType), nRequest);
     }
 
 done:

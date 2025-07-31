@@ -31,3 +31,26 @@ record(ai, "test_dfanout_outg") {
 record(ai, "test_dfanout_outh") {
 }
 
+record(ai, "test_dfanout_outi") {
+}
+
+record(ai, "test_dfanout_outj") {
+}
+
+record(ai, "test_dfanout_outk") {
+}
+
+record(ai, "test_dfanout_outl") {
+}
+
+record(ai, "test_dfanout_outm") {
+}
+
+record(ai, "test_dfanout_outn") {
+}
+
+record(ai, "test_dfanout_outo") {
+}
+
+record(ai, "test_dfanout_outp") {
+}

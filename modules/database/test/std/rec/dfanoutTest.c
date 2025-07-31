@@ -12,27 +12,36 @@
 #include "epicsThread.h"
 #include "dfanoutRecord.h"
 
-static const char *dfanout_OUT_pvs[] = {"test_dfanout_record.OUTA", "test_dfanout_record.OUTB",
+static const char *dfanout_OUT_pvs[] = {
+    "test_dfanout_record.OUTA", "test_dfanout_record.OUTB",
     "test_dfanout_record.OUTC", "test_dfanout_record.OUTD",
     "test_dfanout_record.OUTE", "test_dfanout_record.OUTF",
-    "test_dfanout_record.OUTG", "test_dfanout_record.OUTH"};
+    "test_dfanout_record.OUTG", "test_dfanout_record.OUTH",
+    "test_dfanout_record.OUTI", "test_dfanout_record.OUTJ",
+    "test_dfanout_record.OUTK", "test_dfanout_record.OUTL",
+    "test_dfanout_record.OUTM", "test_dfanout_record.OUTN",
+    "test_dfanout_record.OUTO", "test_dfanout_record.OUTP"};
 
-static const char *dfanout_receivers[] = {"test_dfanout_outa", "test_dfanout_outb",
+static const char *dfanout_receivers[] = {
+    "test_dfanout_outa", "test_dfanout_outb",
     "test_dfanout_outc", "test_dfanout_outd",
     "test_dfanout_oute", "test_dfanout_outf",
-    "test_dfanout_outg", "test_dfanout_outh"};
+    "test_dfanout_outg", "test_dfanout_outh",
+    "test_dfanout_outi", "test_dfanout_outj",
+    "test_dfanout_outk", "test_dfanout_outl",
+    "test_dfanout_outm", "test_dfanout_outn",
+    "test_dfanout_outo", "test_dfanout_outp"};
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static void test_all(int val, int exception){
 
-    // if exception < 0 or > 8 then it tests all.
+    // if mask == -1 then it tests all.
     int i;
     for (i = 0; i < NELEMENTS(dfanout_receivers); ++i) {
         if ( i == exception) continue;
         testdbGetFieldEqual(dfanout_receivers[i], DBF_LONG, val);
     }
-
 }
 
 static void test_all_output(void){
@@ -54,6 +63,7 @@ static void test_all_output(void){
 static void test_selm_specified() {
 
     /* Resetting values */
+    testDiag("Testing Specified");
     testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 0);
     test_all(0, -1);
 
@@ -91,10 +101,11 @@ static void test_selm_mask() {
     testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 0);
     test_all(0, -1);
 
-    /* Resets values. Tests if fields in bitmask have been set */
-    int mask;
-    for (mask = 0; mask <= 255; ++mask) {
-
+    /* Testing all 65535 possible masks seems a bit excessive -- just test some patterns */
+    epicsUInt32 mask = 0x100055aa;
+    while (1) {
+        testDiag("Testing mask 0x%04x", mask);
+        /* Resets values. Tests if fields in bitmask have been set */
         testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "All"); //Setting all values to 1 so we know what to compare with.
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 1);
 
@@ -112,14 +123,15 @@ static void test_selm_mask() {
             }
 
         }
-
+        if (!mask) break;
+        mask >>= 1;
     }
 
 }
 
 MAIN(dfanoutTest) {
 
-    testPlan(3455);
+    testPlan(1005);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);

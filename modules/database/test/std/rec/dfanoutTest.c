@@ -10,6 +10,7 @@
 #include "dbAccess.h"
 #include "menuIvoa.h"
 #include "epicsThread.h"
+#include "epicsMath.h"
 #include "dfanoutRecord.h"
 
 static const char *dfanout_OUT_pvs[] = {
@@ -34,13 +35,13 @@ static const char *dfanout_receivers[] = {
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
-static void test_all(int val, int exception){
+static void test_all(double val, int exception){
 
     // if mask == -1 then it tests all.
     int i;
     for (i = 0; i < NELEMENTS(dfanout_receivers); ++i) {
         if ( i == exception) continue;
-        testdbGetFieldEqual(dfanout_receivers[i], DBF_LONG, val);
+        testdbGetFieldEqual(dfanout_receivers[i], DBF_DOUBLE, val);
     }
 }
 
@@ -126,12 +127,38 @@ static void test_selm_mask() {
         if (!mask) break;
         mask >>= 1;
     }
+}
 
+static void test_ivoa() {
+
+
+    testDiag("Testing IVOA = Continue normally");
+    testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 1);
+    testdbPutFieldOk("test_dfanout_record.IVOA", DBF_STRING, "Continue normally");
+    testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "All");
+    testdbPutFieldOk("test_dfanout_src.VAL", DBF_DOUBLE, epicsNAN);
+    test_all(epicsNAN, -1);
+    testdbGetFieldEqual("test_dfanout_record.VAL", DBF_DOUBLE, epicsNAN);
+
+    testDiag("Testing IVOA = Don't drive outputs");
+    testdbPutFieldOk("test_dfanout_record.IVOA", DBF_STRING, "Don't drive outputs");
+    testdbPutFieldOk("test_dfanout_src.VAL", DBF_DOUBLE, 1.2345);
+    testdbPutFieldOk("test_dfanout_src.VAL", DBF_DOUBLE, epicsNAN);
+    test_all(1.2345, -1);
+    testdbGetFieldEqual("test_dfanout_record.VAL", DBF_DOUBLE, epicsNAN);
+
+    testDiag("Testing IVOA = Set output to IVOV");
+    testdbPutFieldOk("test_dfanout_record.IVOA", DBF_STRING, "Set output to IVOV");
+    testdbPutFieldOk("test_dfanout_record.IVOV", DBF_DOUBLE, 3.1415);
+    testdbPutFieldOk("test_dfanout_src.VAL", DBF_DOUBLE, 42);
+    testdbPutFieldOk("test_dfanout_src.VAL", DBF_DOUBLE, epicsNAN);
+    test_all(3.1415, -1);
+    testdbGetFieldEqual("test_dfanout_record.VAL", DBF_DOUBLE, 3.1415);
 }
 
 MAIN(dfanoutTest) {
 
-    testPlan(1005);
+    testPlan(1067);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -146,6 +173,7 @@ MAIN(dfanoutTest) {
     test_all_output();
     test_selm_specified();
     test_selm_mask();
+    test_ivoa();
 
     testIocShutdownOk();
     testdbCleanup();

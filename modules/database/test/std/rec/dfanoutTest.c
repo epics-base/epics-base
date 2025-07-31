@@ -22,13 +22,10 @@ static const char *dfanout_receivers[] = {"test_dfanout_outa", "test_dfanout_out
     "test_dfanout_oute", "test_dfanout_outf",
     "test_dfanout_outg", "test_dfanout_outh"};
 
-static testMonitor *monitor;
-
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static void test_all(int val, int exception){
 
-    testMonitorWait(monitor);
     // if exception < 0 or > 8 then it tests all.
     int i;
     for (i = 0; i < NELEMENTS(dfanout_receivers); ++i) {
@@ -39,7 +36,7 @@ static void test_all(int val, int exception){
 }
 
 static void test_all_output(void){
-    
+
     /* set output fields */
     int i;
     for (i = 0; i < NELEMENTS(dfanout_OUT_pvs); ++i) {
@@ -69,10 +66,9 @@ static void test_selm_specified() {
     for (val = 0; val < NELEMENTS(dfanout_receivers); ++val) {
         testdbPutFieldOk("test_dfanout_record.SELN", DBF_LONG, val + 1);
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, val + 1);
-        testMonitorWait(monitor);
 
         testdbGetFieldEqual(dfanout_receivers[val], DBF_LONG, val + 1);
-        
+
         int not_seln, not_seln_val;
         for (not_seln = 0; not_seln < NELEMENTS(dfanout_receivers); ++not_seln) {
             if (not_seln == val) continue;
@@ -101,12 +97,10 @@ static void test_selm_mask() {
 
         testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "All"); //Setting all values to 1 so we know what to compare with.
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 1);
-        testMonitorWait(monitor);
 
         testdbPutFieldOk("test_dfanout_record.SELM", DBF_STRING, "Mask");
         testdbPutFieldOk("test_dfanout_record.SELN", DBF_LONG, mask);
         testdbPutFieldOk("test_dfanout_src.VAL", DBF_LONG, 9);
-        testMonitorWait(monitor);
 
         int item;
         for (item = 0; item < NELEMENTS(dfanout_receivers); ++item) {
@@ -127,21 +121,19 @@ MAIN(dfanoutTest) {
 
     testPlan(3455);
 
-    testdbPrepare();   
+    testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
     recTestIoc_registerRecordDeviceDriver(pdbbase);
 
     testdbReadDatabase("dfanoutTest.db", NULL, NULL);
-    
+
     eltc(0);
     testIocInitOk();
     eltc(1);
 
-    monitor = testMonitorCreate("test_dfanout_record", DBE_VALUE, 0);
     test_all_output();
     test_selm_specified();
     test_selm_mask();
-    testMonitorDestroy(monitor);
 
     testIocShutdownOk();
     testdbCleanup();

@@ -1,10 +1,10 @@
 record(ao, "test_dfanout_src") {
-
+    field(FLNK, "test_dfanout_record")
 }
 
 record(dfanout, "test_dfanout_record") {
     field(OMSL, "closed_loop")
-    field(DOL, "test_dfanout_src CP")
+    field(DOL, "test_dfanout_src")
 }
 
 record(ai, "test_dfanout_outa") {

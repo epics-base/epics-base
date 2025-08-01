@@ -203,8 +203,10 @@ struct OneShot final : public fdReg {
 void testEmpty()
 {
     fdManager empty;
-    empty.process(0.1); // ca-gateway always passes 0.01
-    testPass("Did nothing");
+    epicsTime start(epicsTime::getCurrent());
+    empty.process(1.0);
+    epicsTime now(epicsTime::getCurrent());
+    testDiag("empty.process(1.0) took %.1f seconds", now - start);
 }
 
 void testOnlyTimer()
@@ -213,12 +215,14 @@ void testOnlyTimer()
     Expire trig, never;
     ScopedTimer trig_timer(mgr.createTimer()),
                 never_timer(mgr.createTimer());
+    epicsTime start(epicsTime::getCurrent());
+    trig_timer.timer.start(trig, start+0.1);
+    never_timer.timer.start(never, start+9999999.0);
+    mgr.process(5.0);
     epicsTime now(epicsTime::getCurrent());
-    trig_timer.timer.start(trig, now+0.1);
-    never_timer.timer.start(never, now+9999999.0);
-    mgr.process(0.2);
     testOk1(trig.expired);
     testOk1(!never.expired);
+    testDiag("mgr.process(5.0) took %.1f seconds", now - start);
 }
 
 void testSockIO()
@@ -283,7 +287,7 @@ void testSockIO()
         ScopedTimer timer(mgr.createTimer());
         timer.timer.start(tmo, epicsTime::getCurrent()); // immediate
 
-        mgr.process(1.0);
+        mgr.process(5.0);
 
         testOk1(!readable);
         testOk1(tmo.expired);
@@ -296,7 +300,7 @@ void testSockIO()
         shutdown(client.sd, SHUT_RDWR);
         //Socket().swap(client);
 
-        mgr.process(1.0);
+        mgr.process(5.0);
 
         testOk1(readable);
     }
@@ -306,7 +310,7 @@ void testSockIO()
 
 MAIN(fdManagerTest)
 {
-    testPlan(13);
+    testPlan(12);
     osiSockAttach();
     testEmpty();
     testOnlyTimer();

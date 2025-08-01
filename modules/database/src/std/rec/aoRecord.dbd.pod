@@ -328,7 +328,7 @@ for more information on simulation mode and its fields.
         prompt("Display Precision")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_precision
     }
     field(LINR,DBF_MENU) {
         prompt("Linearization")
@@ -357,7 +357,7 @@ for more information on simulation mode and its fields.
         promptgroup("80 - Display")
         interest(1)
         size(16)
-        prop(YES)
+        prop(YES)       # get_units
     }
     field(ROFF,DBF_ULONG) {
         prompt("Raw Offset")
@@ -382,26 +382,26 @@ for more information on simulation mode and its fields.
         promptgroup("30 - Action")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_control_double
     }
     field(DRVL,DBF_DOUBLE) {
         prompt("Drive Low Limit")
         promptgroup("30 - Action")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_control_double
     }
     field(HOPR,DBF_DOUBLE) {
         prompt("High Operating Range")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_graphic_double
     }
     field(LOPR,DBF_DOUBLE) {
         prompt("Low Operating Range")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_graphic_double
     }
     field(AOFF,DBF_DOUBLE) {
         prompt("Adjustment Offset")
@@ -420,35 +420,35 @@ for more information on simulation mode and its fields.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
     }
     field(LOLO,DBF_DOUBLE) {
         prompt("Lolo Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
     }
     field(HIGH,DBF_DOUBLE) {
         prompt("High Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
     }
     field(LOW,DBF_DOUBLE) {
         prompt("Low Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
     }
     field(HHSV,DBF_MENU) {
         prompt("Hihi Severity")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
         menu(menuAlarmSevr)
     }
     field(LLSV,DBF_MENU) {
@@ -456,7 +456,7 @@ for more information on simulation mode and its fields.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
         menu(menuAlarmSevr)
     }
     field(HSV,DBF_MENU) {
@@ -464,7 +464,7 @@ for more information on simulation mode and its fields.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
         menu(menuAlarmSevr)
     }
     field(LSV,DBF_MENU) {
@@ -472,7 +472,7 @@ for more information on simulation mode and its fields.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       #get_alarm_double
         menu(menuAlarmSevr)
     }
     field(HYST,DBF_DOUBLE) {

@@ -449,26 +449,26 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		prompt("High Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_precision
 	}
 	field(EGU,DBF_STRING) {
 		prompt("Engineering Units")
 		promptgroup("80 - Display")
 		interest(1)
 		size(16)
-		prop(YES)
+		prop(YES)		# get_units
 	}
 	field(OFF,DBF_ULONG) {
 		prompt("Offset")

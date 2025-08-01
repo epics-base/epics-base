@@ -198,7 +198,7 @@ Except when it doesn't.
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_precision
 	}
 
 =head3 Output Event Flag

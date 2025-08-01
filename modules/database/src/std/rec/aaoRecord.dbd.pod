@@ -341,7 +341,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		prompt("Display Precision")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_precision
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
@@ -364,19 +364,19 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		promptgroup("80 - Display")
 		interest(1)
 		size(16)
-		prop(YES)
+		prop(YES)		# get_units
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup("80 - Display")
 		interest(1)
-		prop(YES)
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(NELM,DBF_ULONG) {
 		prompt("Number of Elements")
@@ -384,6 +384,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
+		prop(YES)		# get_graphic_double, get_control_double
 	}
 	field(FTVL,DBF_MENU) {
 		prompt("Field Type of Value")

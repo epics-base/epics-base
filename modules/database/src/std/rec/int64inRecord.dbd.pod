@@ -135,47 +135,47 @@ monitoring deadband functionality.
         promptgroup("80 - Display")
         interest(1)
         size(16)
-        prop(YES)
+        prop(YES)       # get_units
     }
     field(HOPR,DBF_INT64) {
         prompt("High Operating Range")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_graphic_double, get_control_double
     }
     field(LOPR,DBF_INT64) {
         prompt("Low Operating Range")
         promptgroup("80 - Display")
         interest(1)
-        prop(YES)
+        prop(YES)       # get_graphic_double, get_control_double
     }
     field(HIHI,DBF_INT64) {
         prompt("Hihi Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
     }
     field(LOLO,DBF_INT64) {
         prompt("Lolo Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
     }
     field(HIGH,DBF_INT64) {
         prompt("High Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
     }
     field(LOW,DBF_INT64) {
         prompt("Low Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-        prop(YES)
+        prop(YES)       # get_alarm_double
     }
     field(HHSV,DBF_MENU) {
         prompt("Hihi Severity")

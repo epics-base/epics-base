@@ -102,6 +102,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
         promptgroup("40 - Input")
         special(SPC_NOMOD)
         interest(1)
+        prop(YES)       # get_precision
     }
     field(INP,DBF_INLINK) {
         prompt("Input Specification")

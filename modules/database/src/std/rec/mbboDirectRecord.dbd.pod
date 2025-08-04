@@ -152,6 +152,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
         promptgroup("50 - Output")
         special(SPC_NOMOD)
         interest(1)
+        prop(YES)       # get_precision
     }
     field(DOL,DBF_INLINK) {
         prompt("Desired Output Link")

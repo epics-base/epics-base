@@ -34,6 +34,7 @@
 #include "epicsStdlib.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
+#include "epicsSignal.h"
 #include "envDefs.h"
 #include "registry.h"
 #include "epicsReadline.h"
@@ -1589,6 +1590,8 @@ static void exitCallFunc(const iocshArgBuf *)
 
 static void iocshOnce (void *)
 {
+    epicsSignalInstallRunExitHandlers(SIGTERM);
+    epicsSignalInstallRunExitHandlers(SIGINT); /* Ctrl-C */
     iocshTableMutex = epicsMutexMustCreate ();
     iocshContextId = epicsThreadPrivateCreate();
     epicsMutexMustLock (iocshTableMutex);

@@ -11,6 +11,8 @@
 #ifndef INC_epicsSignal_H
 #define INC_epicsSignal_H
 
+#include <signal.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,6 +47,12 @@ LIBCOM_API void epicsStdCall epicsSignalInstallSigPipeIgnore ( void );
 LIBCOM_API void epicsStdCall epicsSignalInstallSigAlarmIgnore ( void );
 /** Raise a SIGALRM signal to a specific epicsThread */
 LIBCOM_API void epicsStdCall epicsSignalRaiseSigAlarm ( struct epicsThreadOSD * );
+
+/** Run exit handlers and then exit on reception of signal */
+LIBCOM_API void epicsStdCall epicsSignalInstallRunExitHandlers (int signal);
+
+/** Raise a SIGALRM signal after timeout */
+LIBCOM_API void epicsStdCall epicsSignalSetAlarm (int seconds);
 
 #ifdef __cplusplus
 }

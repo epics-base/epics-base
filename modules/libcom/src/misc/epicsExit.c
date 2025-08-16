@@ -33,6 +33,8 @@
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "cantProceed.h"
+#include "envDefs.h"
+#include "epicsSignal.h"
 #include "epicsExit.h"
 
 typedef struct exitNode {
@@ -87,6 +89,13 @@ static void epicsExitCallAtExitsPvt(exitPvt *pep)
 {
     exitNode *pexitNode;
 
+    /* Set a timeout on running exit handlers */
+    long timeout;
+    if (envGetLongConfigParam(&EPICS_EXIT_TIMEOUT, &timeout) == 0
+            && timeout > 0) {
+        epicsSignalSetAlarm(timeout);
+    }
+
     while ( ( pexitNode = (exitNode *) ellLast ( & pep->list ) ) ) {
         if (atExitDebug && pexitNode->name[0])
             fprintf(stderr, "atExit %s(%p)\n", pexitNode->name, pexitNode->arg);
@@ -96,6 +105,8 @@ static void epicsExitCallAtExitsPvt(exitPvt *pep)
         ellDelete ( & pep->list, & pexitNode->node );
         free ( pexitNode );
     }
+    if(atExitDebug)
+        fprintf(stderr, "atExit done.\n");
 }
 
 LIBCOM_API void epicsExitCallAtExits(void)

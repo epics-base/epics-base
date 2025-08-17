@@ -52,6 +52,10 @@
 #   define EPICS_UNUSED
 #endif
 
+#ifndef EPICS_NORETURN
+#   define EPICS_NORETURN
+#endif
+
 #ifndef EPICS_FUNCTION
 #if (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)) || (defined(__cplusplus) && __cplusplus>=201103L)
 #  define EPICS_FUNCTION __func__

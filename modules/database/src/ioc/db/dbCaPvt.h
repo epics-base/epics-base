@@ -31,6 +31,7 @@
 #define CA_MONITOR_STRING       0x20
 #define CA_GET_ATTRIBUTES       0x40
 #define CA_SYNC                 0x1000
+#define CA_DBPROCESS            0x2000
 /* write type */
 #define CA_PUT          0x1
 #define CA_PUT_CALLBACK 0x2

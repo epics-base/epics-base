@@ -483,18 +483,27 @@ static void nfsMountCallFunc(const iocshArgBuf *args)
         }
         *cp = '/';
     }
-    nfsMount(args[0].sval, args[1].sval, args[2].sval);
+    iocshSetError(nfsMount(args[0].sval, args[1].sval, args[2].sval));
 }
 #endif
 
 
-void zoneset(const char *zone)
+int zoneset(const char *zone)
 {
-    if(zone)
-        setenv("TZ", zone, 1);
-    else
-        unsetenv("TZ");
+    int ret;
+    if(zone) {
+        if ((ret = setenv("TZ", zone, 1)) < 0)
+            return ret;
+    }
+    #if defined( __NEWLIB_MINOR__ ) /* Added in newlib 2.2.0 */
+        else if ((ret = unsetenv("TZ")) < 0)
+            return ret;
+    #else
+        else
+            unsetenv("TZ");
+    #endif
     tzset();
+    return 0;
 }
 
 static const iocshArg zonesetArg0 = {"zone string", iocshArgString};
@@ -502,7 +511,7 @@ static const iocshArg * const zonesetArgs[1] = {&zonesetArg0};
 static const iocshFuncDef zonesetFuncDef = {"zoneset",1,zonesetArgs};
 static void zonesetCallFunc(const iocshArgBuf *args)
 {
-    zoneset(args[0].sval);
+    iocshSetError(zoneset(args[0].sval));
 }
 
 

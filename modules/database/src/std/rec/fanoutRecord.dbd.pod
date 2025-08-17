@@ -99,7 +99,7 @@ via dbPuts.
 The Fanout record also has the standard scanning fields common to all records.
 These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
-=fields SELM, SELN, SELL, OFFS, SHFT, LNK0, LNK1, LNK2, LNK3, LNK4, LNK5, LNK6, LNK7, LNK8, LNK9, LNKA, LNKB, LNKC, LNKD, LNKE, LNKF
+=fields SELM, SELN, SELL, OFFS, SHFT, LNK0 - LNK9, LNKA - LNKF
 
 =cut
 

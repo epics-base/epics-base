@@ -54,6 +54,8 @@ include $(LIBCOM)/yajl/Makefile
 # Generate library API header file
 API_HEADER = libComAPI.h
 Com_API = libCom
+# Generate early to allow a sneak peak at dbChannel.h
+API_HEADER += dbCoreAPI.h
 
 # Library to build:
 LIBRARY=Com

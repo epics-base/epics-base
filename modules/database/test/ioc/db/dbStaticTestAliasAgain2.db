@@ -1,0 +1,2 @@
+# Test re-load alias for record
+alias("testrecAgain", "testaliasAgain2")

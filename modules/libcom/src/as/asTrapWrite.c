@@ -22,10 +22,10 @@
 
 #include "ellLib.h"
 #include "freeList.h"
-#include "epicsStdio.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "ellLib.h"
+#include <dbChannel.h>
 
 #include "asLib.h"
 #include "asTrapWrite.h"
@@ -112,11 +112,12 @@ void epicsStdCall asTrapWriteUnregisterListener(asTrapWriteId id)
 }
 
 void * epicsStdCall asTrapWriteBeforeWithData(
-    const char *userid, const char *hostid, void *addr,
+    const char *userid, const char *hostid, dbChannel *chan,
     int dbrType, int no_elements, void *data)
 {
     writeMessage *pwriteMessage;
     listener *plistener;
+    void *pfieldsave;
 
     if (pasTrapWritePvt == 0 ||
         ellCount(&pasTrapWritePvt->listenerList) <= 0) return 0;
@@ -125,13 +126,14 @@ void * epicsStdCall asTrapWriteBeforeWithData(
         pasTrapWritePvt->freeListWriteMessage);
     pwriteMessage->message.userid = userid;
     pwriteMessage->message.hostid = hostid;
-    pwriteMessage->message.serverSpecific = addr;
+    pwriteMessage->message.serverSpecific = chan;
     pwriteMessage->message.dbrType = dbrType;
     pwriteMessage->message.no_elements = no_elements;
     pwriteMessage->message.data = data;
     ellInit(&pwriteMessage->listenerPvtList);
 
     epicsMutexMustLock(pasTrapWritePvt->lock);
+    pfieldsave = chan->addr.pfield;
     ellAdd(&pasTrapWritePvt->writeMessageList, &pwriteMessage->node);
     plistener = (listener *)ellFirst(&pasTrapWritePvt->listenerList);
     while (plistener) {
@@ -141,6 +143,7 @@ void * epicsStdCall asTrapWriteBeforeWithData(
         plistenerPvt->plistener = plistener;
         pwriteMessage->message.userPvt = 0;
         plistener->func(&pwriteMessage->message, 0);
+        chan->addr.pfield = pfieldsave;
         plistenerPvt->userPvt = pwriteMessage->message.userPvt;
         ellAdd(&pwriteMessage->listenerPvtList, &plistenerPvt->node);
         plistener = (listener *)ellNext(&plistener->node);
@@ -153,11 +156,15 @@ void epicsStdCall asTrapWriteAfterWrite(void *pvt)
 {
     writeMessage *pwriteMessage = (writeMessage *)pvt;
     listenerPvt *plistenerPvt;
+    dbChannel *chan;
+    void *pfieldsave;
 
     if (pwriteMessage == 0 ||
         pasTrapWritePvt == 0) return;
 
     epicsMutexMustLock(pasTrapWritePvt->lock);
+    chan = pwriteMessage->message.serverSpecific;
+    pfieldsave = chan->addr.pfield;
     plistenerPvt = (listenerPvt *)ellFirst(&pwriteMessage->listenerPvtList);
     while (plistenerPvt) {
         listenerPvt *pnext = (listenerPvt *)ellNext(&plistenerPvt->node);
@@ -165,6 +172,7 @@ void epicsStdCall asTrapWriteAfterWrite(void *pvt)
 
         pwriteMessage->message.userPvt = plistenerPvt->userPvt;
         plistener->func(&pwriteMessage->message, 1);
+        chan->addr.pfield = pfieldsave;
         ellDelete(&pwriteMessage->listenerPvtList, &plistenerPvt->node);
         freeListFree(pasTrapWritePvt->freeListListenerPvt, plistenerPvt);
         plistenerPvt = pnext;

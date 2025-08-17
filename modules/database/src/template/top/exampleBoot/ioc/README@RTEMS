@@ -4,3 +4,7 @@ contents to
 
 Then load the executable into the IOC (floppy disk, network boot, debugger,
 etc.) and start it.
+
+
+SPDX-FileCopyrightText: 2001 Argonne National Laboratory
+SPDX-License-Identifier: EPICS

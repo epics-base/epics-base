@@ -117,20 +117,29 @@ static const ELEMENT operands[] = {
 {"LN",          7, 8,   0,      UNARY_OPERATOR, LOG_E},
 {"LOG",         7, 8,   0,      UNARY_OPERATOR, LOG_10},
 {"LOGE",        7, 8,   0,      UNARY_OPERATOR, LOG_E},
+{"M",           0, 0,   1,      OPERAND,        FETCH_M},
 {"MAX",         7, 8,   0,      VARARG_OPERATOR,MAX},
 {"MIN",         7, 8,   0,      VARARG_OPERATOR,MIN},
+{"N",           0, 0,   1,      OPERAND,        FETCH_N},
 {"NINT",        7, 8,   0,      UNARY_OPERATOR, NINT},
 {"NAN",         0, 0,   1,      LITERAL_OPERAND,LITERAL_DOUBLE},
 {"NOT",         7, 8,   0,      UNARY_OPERATOR, BIT_NOT},
+{"O",           0, 0,   1,      OPERAND,        FETCH_O},
+{"P",           0, 0,   1,      OPERAND,        FETCH_P},
 {"PI",          0, 0,   1,      OPERAND,        CONST_PI},
+{"Q",           0, 0,   1,      OPERAND,        FETCH_Q},
+{"R",           0, 0,   1,      OPERAND,        FETCH_R},
 {"R2D",         0, 0,   1,      OPERAND,        CONST_R2D},
 {"RNDM",        0, 0,   1,      OPERAND,        RANDOM},
+{"S",           0, 0,   1,      OPERAND,        FETCH_S},
 {"SIN",         7, 8,   0,      UNARY_OPERATOR, SIN},
 {"SINH",        7, 8,   0,      UNARY_OPERATOR, SINH},
 {"SQR",         7, 8,   0,      UNARY_OPERATOR, SQU_RT},
 {"SQRT",        7, 8,   0,      UNARY_OPERATOR, SQU_RT},
+{"T",           0, 0,   1,      OPERAND,        FETCH_T},
 {"TAN",         7, 8,   0,      UNARY_OPERATOR, TAN},
 {"TANH",        7, 8,   0,      UNARY_OPERATOR, TANH},
+{"U",           0, 0,   1,      OPERAND,        FETCH_U},
 {"VAL",         0, 0,   1,      OPERAND,        FETCH_VAL},
 {"~",           7, 8,   0,      UNARY_OPERATOR, BIT_NOT},
 };
@@ -286,7 +295,7 @@ LIBCOM_API long
 
         case STORE_OPERATOR:
             if (pout == pdest || pstacktop > stack ||
-                *--pout < FETCH_A || *pout > FETCH_L) {
+                *--pout < FETCH_A || *pout >= FETCH_A + CALCPERFORM_NARGS) {
                 *perror = CALC_ERR_BAD_ASSIGNMENT;
                 goto bad;
             }
@@ -542,9 +551,13 @@ LIBCOM_API void
         "LITERAL_DOUBLE", "LITERAL_INT", "VAL",
         "FETCH_A", "FETCH_B", "FETCH_C", "FETCH_D", "FETCH_E", "FETCH_F",
         "FETCH_G", "FETCH_H", "FETCH_I", "FETCH_J", "FETCH_K", "FETCH_L",
+        "FETCH_M", "FETCH_N", "FETCH_O", "FETCH_P", "FETCH_Q", "FETCH_R",
+        "FETCH_S", "FETCH_T", "FETCH_U",
     /* Assignment */
         "STORE_A", "STORE_B", "STORE_C", "STORE_D", "STORE_E", "STORE_F",
         "STORE_G", "STORE_H", "STORE_I", "STORE_J", "STORE_K", "STORE_L",
+        "STORE_M", "STORE_N", "STORE_O", "STORE_P", "STORE_Q", "STORE_R",
+        "STORE_S", "STORE_T", "STORE_U",
     /* Trigonometry Constants */
         "CONST_PI",
         "CONST_D2R",

@@ -1,0 +1,56 @@
+record(ao, "test_dfanout_src") {
+    field(FLNK, "test_dfanout_record")
+}
+
+record(dfanout, "test_dfanout_record") {
+    field(OMSL, "closed_loop")
+    field(DOL, "test_dfanout_src")
+}
+
+record(ai, "test_dfanout_outa") {
+}
+
+record(ai, "test_dfanout_outb") {
+}
+
+record(ai, "test_dfanout_outc") {
+}
+
+record(ai, "test_dfanout_outd") {
+}
+
+record(ai, "test_dfanout_oute") {
+}
+
+record(ai, "test_dfanout_outf") {
+}
+
+record(ai, "test_dfanout_outg") {
+}
+
+record(ai, "test_dfanout_outh") {
+}
+
+record(ai, "test_dfanout_outi") {
+}
+
+record(ai, "test_dfanout_outj") {
+}
+
+record(ai, "test_dfanout_outk") {
+}
+
+record(ai, "test_dfanout_outl") {
+}
+
+record(ai, "test_dfanout_outm") {
+}
+
+record(ai, "test_dfanout_outn") {
+}
+
+record(ai, "test_dfanout_outo") {
+}
+
+record(ai, "test_dfanout_outp") {
+}

@@ -516,13 +516,40 @@ struct dbr_ctrl_double{
         dbr_double_t    value;                  /* current value */
 };
 
+/** \brief Returns the size in bytes for a `DBR_XXXX` type with `COUNT` elements.
+ *
+ * If the DBR type is a structure then the value field is the last field in the
+ * structure. If `COUNT` is greater than one then `COUNT-1` elements are
+ * appended to the end of the structure so that they can be addressed as an
+ * array through a pointer to the value field.
+ *
+ * \sa dbr_size, dbr_value_size
+ *
+ * \param[in] TYPE The data type.
+ * \param[in] COUNT The element count.
+ * \returns The size in bytes of the specified type
+ * with the specified number of elements.
+ */
 #define dbr_size_n(TYPE,COUNT)\
 ((unsigned)((COUNT)<0?dbr_size[TYPE]:dbr_size[TYPE]+((COUNT)-1)*dbr_value_size[TYPE]))
 
-/* size for each type - array indexed by the DBR_ type code */
+/** \brief Size in bytes for each `DBR_XXXX` type.
+ *
+ * Array indexed by the `DBR_XXXX` type code.
+ *
+ * \sa dbr_size_n()
+ */
 LIBCA_API extern const unsigned short dbr_size[];
 
-/* size for each type's value - array indexed by the DBR_ type code */
+/** \brief Size in bytes for each type's value.
+ *
+ * Array indexed by the `DBR_XXXX` type code.
+ *
+ * If the type is a structure the size of the value field is returned otherwise
+ * the size of the type is returned.
+ *
+ * \sa dbr_size_n()
+ */
 LIBCA_API extern const unsigned short dbr_value_size[];
 
 #ifndef db_accessHFORdb_accessC
@@ -685,6 +712,14 @@ union db_access_val{
         break; \
     }
 
+/** \brief Returns a constant null terminated string
+ * corresponding to the specified dbr type.
+ *
+ * \param[in] type The data type code.
+ * A member of the set of `DBR_XXXX` in `db_access.h`.
+ *
+ * \returns The const string corresponding to the `DBR_XXXX` type.
+ */
 #define dbr_type_to_text(type)   \
     (  ((type) >= 0 && (type) < dbr_text_dim) ? \
         dbr_text[(type)] : dbr_text_invalid  )

@@ -25,13 +25,14 @@ long link_test_init(int pass)
 }
 
 static
-long link_test_noop(void *junk)
+long link_test_init_rec(struct dbCommon *prec)
 { return 0; }
 
 
 
 #define DEFDSET(LTYPE) \
-    static dset devxLTest ## LTYPE = {4, NULL, &link_test_init, &link_test_noop, &link_test_noop}; \
+    static dset devxLTest ## LTYPE = {4, NULL, \
+        &link_test_init, &link_test_init_rec, NULL}; \
     epicsExportAddress(dset, devxLTest ## LTYPE);
 
 DEFDSET(JSON_LINK)

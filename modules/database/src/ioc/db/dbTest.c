@@ -100,13 +100,59 @@ long dba(const char*pname)
     return 0;
 }
 
+/* split a space separated list of field names and return the number of
+   fields with each field an element of papfields. These elements
+   point to within the fieldnames variable which is modified
+   by the function. memory is allocated for *ppapfields and needs
+   to be freed later by the calling routine */
+static int splitFieldsList(char *fieldnames, char ***ppapfields)
+{
+    char *pnext = fieldnames;
+    int nfields = 0, maxfields = 1;
+    char* saveptr = NULL;
+    /* this may overcount real fields e.g. " VAL " hence maxfields */
+    while (*pnext && (pnext = strchr(pnext, ' '))) {
+        maxfields++;
+        while (*pnext == ' ') pnext++;
+    }
+    *ppapfields = dbCalloc(maxfields, sizeof(char *));
+    pnext = epicsStrtok_r(fieldnames, " ", &saveptr);
+    while(pnext != NULL) {
+        (*ppapfields)[nfields++] = pnext;
+        pnext = epicsStrtok_r(NULL, " ", &saveptr);
+    }
+    return nfields;
+}
+
+static void printFieldsList(DBENTRY *pdbentry, char** papfields, int nfields)
+{
+    int ifield;
+    for (ifield = 0; ifield < nfields; ifield++) {
+        char *pvalue;
+        long status = dbFindField(pdbentry, papfields[ifield]);
+        if (status) {
+            if (!strcmp(papfields[ifield], "recordType")) {
+                pvalue = dbGetRecordTypeName(pdbentry);
+            }
+            else {
+                printf(", ");
+                continue;
+            }
+        }
+        else {
+            pvalue = dbGetString(pdbentry);
+        }
+        printf(", \"%s\"", (pvalue ? pvalue : ""));
+    }
+    printf("\n");
+}    
+
 long dbl(const char *precordTypename, const char *fields)
 {
     DBENTRY dbentry;
     DBENTRY *pdbentry=&dbentry;
     long status;
     int nfields = 0;
-    int ifield;
     char *fieldnames = 0;
     char **papfields = 0;
 
@@ -121,25 +167,8 @@ long dbl(const char *precordTypename, const char *fields)
     if (fields && (*fields == '\0'))
         fields = NULL;
     if (fields) {
-        char *pnext;
-
         fieldnames = epicsStrDup(fields);
-        nfields = 1;
-        pnext = fieldnames;
-        while (*pnext && (pnext = strchr(pnext,' '))) {
-            nfields++;
-            while (*pnext == ' ') pnext++;
-        }
-        papfields = dbCalloc(nfields,sizeof(char *));
-        pnext = fieldnames;
-        for (ifield = 0; ifield < nfields; ifield++) {
-            papfields[ifield] = pnext;
-            if (ifield < nfields - 1) {
-                pnext = strchr(pnext, ' ');
-                *pnext++ = 0;
-                while (*pnext == ' ') pnext++;
-            }
-        }
+        nfields = splitFieldsList(fieldnames, &papfields);
     }
     dbInitEntry(pdbbase, pdbentry);
     if (!precordTypename)
@@ -154,24 +183,7 @@ long dbl(const char *precordTypename, const char *fields)
         status = dbFirstRecord(pdbentry);
         while (!status) {
             printf("%s", dbGetRecordName(pdbentry));
-            for (ifield = 0; ifield < nfields; ifield++) {
-                char *pvalue;
-                status = dbFindField(pdbentry, papfields[ifield]);
-                if (status) {
-                    if (!strcmp(papfields[ifield], "recordType")) {
-                        pvalue = dbGetRecordTypeName(pdbentry);
-                    }
-                    else {
-                        printf(", ");
-                        continue;
-                    }
-                }
-                else {
-                    pvalue = dbGetString(pdbentry);
-                }
-                printf(", \"%s\"", pvalue ? pvalue : "");
-            }
-            printf("\n");
+            printFieldsList(pdbentry, papfields, nfields);
             status = dbNextRecord(pdbentry);
         }
         if (precordTypename)
@@ -283,14 +295,17 @@ long dbli(const char *pattern)
     return 0;
 }
 
-long dbgrep(const char *pmask)
+long dbglob(const char *pmask,const char *fields)
 {
     DBENTRY dbentry;
     DBENTRY *pdbentry = &dbentry;
     long status;
+    int nfields = 0;
+    char *fieldnames = 0;
+    char **papfields = 0;
 
     if (!pmask || !*pmask) {
-        printf("Usage: dbgrep \"pattern\"\n");
+        printf("Usage: dbglob \"pattern\" \"fields\"\n");
         return 1;
     }
 
@@ -298,24 +313,38 @@ long dbgrep(const char *pmask)
         printf("No database loaded\n");
         return 0;
     }
-
+    if (fields && (*fields == '\0'))
+        fields = NULL;
+    if (fields) {
+        fieldnames = epicsStrDup(fields);
+        nfields = splitFieldsList(fieldnames, &papfields);
+    }
     dbInitEntry(pdbbase, pdbentry);
     status = dbFirstRecordType(pdbentry);
     while (!status) {
         status = dbFirstRecord(pdbentry);
         while (!status) {
             char *pname = dbGetRecordName(pdbentry);
-            if (epicsStrGlobMatch(pname, pmask))
-                puts(pname);
+            if (epicsStrGlobMatch(pname, pmask)) {
+                printf("%s", pname);
+                printFieldsList(pdbentry, papfields, nfields);
+            }
             status = dbNextRecord(pdbentry);
         }
         status = dbNextRecordType(pdbentry);
     }
-
+    if (nfields > 0) {
+        free((void *)papfields);
+        free((void *)fieldnames);
+    }
     dbFinishEntry(pdbentry);
     return 0;
 }
-
+
+long dbgrep(const char *pname, const char *fields) {
+    return dbglob(pname, fields);
+}
+
 long dbgf(const char *pname)
 {
     /* declare buffer long just to ensure correct alignment */

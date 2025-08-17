@@ -1,3 +1,7 @@
+/* SPDX-FileCopyrightText: 2002 Argonne National Laboratory */
+
+/* SPDX-License-Identifier: EPICS */
+
 #include <stdio.h>
 
 #include <dbDefs.h>

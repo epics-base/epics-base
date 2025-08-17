@@ -163,10 +163,10 @@ setBootConfigFromNVRAM(void)
 {
     char *cp;
     const char *mot_script_boot;
-    char *nvp;
+    volatile char *nvp;
 
 # if defined(BSP_NVRAM_BASE_ADDR)
-    nvp = (volatile unsigned char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
+    nvp = (volatile char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
 # elif defined(BSP_I2C_VPD_EEPROM_DEV_NAME)
     char gev_buf[3592];
     int fd;

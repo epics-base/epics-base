@@ -74,6 +74,7 @@ osdReadline (const char *prompt, struct readlineContext *context)
         int c;      /* char is unsigned on some archs; EOF is -ve */
         int linelen = 0;
         int linesize = 50;
+        int backslash_seen = 0;
 
         line = malloc(linesize);
         if (line == NULL) {
@@ -84,7 +85,8 @@ osdReadline (const char *prompt, struct readlineContext *context)
             fputs(prompt, stdout);
             fflush(stdout);
         }
-        while ((c = getc(context->in)) !=  '\n') {
+        do {
+            c = getc(context->in);
             if (c == EOF) {
                 free(line);
                 line = NULL;
@@ -93,7 +95,7 @@ osdReadline (const char *prompt, struct readlineContext *context)
             if ((linelen + 1) >= linesize) {
                 char *cp;
 
-                linesize += 50;
+                linesize = linelen + 50;
                 cp = (char *)realloc(line, linesize);
                 if (cp == NULL) {
                     printf ("Out of memory!\n");
@@ -103,8 +105,26 @@ osdReadline (const char *prompt, struct readlineContext *context)
                 }
                 line = cp;
             }
-            line[linelen++] = c;
-        }
+            if (backslash_seen) {
+                /* try to handle multi-line string */
+                backslash_seen = 0;
+                if (c == '\n') {
+                    linelen--;              /* overwrite the '\' */
+                    c = getc(context->in);  /* skip current '\n' and get the next char */
+                    if (c == EOF) {
+                        free(line);
+                        line = NULL;
+                        break;
+                    }
+                }
+            }
+            if (c == '\\') {
+                backslash_seen = 1;
+            }
+            if (c != '\n') {
+                line[linelen++] = c;
+            }
+        } while (c != '\n');
         if (line)
             line[linelen] = '\0';
     }

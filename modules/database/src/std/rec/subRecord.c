@@ -86,7 +86,7 @@ static long do_sub(subRecord *);
 static long fetch_values(subRecord *);
 static void monitor(subRecord *);
 
-#define INP_ARG_MAX 12
+#define INP_ARG_MAX 21
 
 static long init_record(struct dbCommon *pcommon, int pass)
 {
@@ -108,7 +108,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
         /* convert the initialization subroutine name  */
         psubroutine = (SUBFUNCPTR)registryFunctionFind(prec->inam);
         if (psubroutine == 0) {
-            recGblRecordError(S_db_BadSub, (void *)prec, "Init subroutine (INAM)");
+            fprintf(stderr, "%s.INAM " ERL_ERROR " function '%s' not found\n",
+                    prec->name, prec->inam);
             return S_db_BadSub;
         }
         /* invoke the initialization subroutine */
@@ -122,7 +123,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
     prec->sadr = (SUBFUNCPTR)registryFunctionFind(prec->snam);
     if (prec->sadr == NULL) {
-        recGblRecordError(S_db_BadSub, (void *)prec, "Proc subroutine (SNAM)");
+        fprintf(stderr, "%s.SNAM " ERL_ERROR " function '%s' not found\n",
+                prec->name, prec->snam);
         return S_db_BadSub;
     }
     prec->mlst = prec->val;
@@ -186,17 +188,17 @@ static long special(DBADDR *paddr, int after)
     prec->sadr = (SUBFUNCPTR)registryFunctionFind(prec->snam);
     if (prec->sadr) return 0;
 
-    recGblRecordError(S_db_BadSub, (void *)prec,
-            "subRecord(special) registryFunctionFind failed");
+    fprintf(stderr, "%s " ERL_ERROR " subRecord::special - SNAM = '%s' not found\n",
+            prec->name, prec->snam);
     return S_db_BadSub;
 }
 
 #define indexof(field) subRecord##field
 
 static long get_linkNumber(int fieldIndex) {
-    if (fieldIndex >= indexof(A) && fieldIndex <= indexof(L))
+    if (fieldIndex >= indexof(A) && fieldIndex < indexof(A) + INP_ARG_MAX)
         return fieldIndex - indexof(A);
-    if (fieldIndex >= indexof(LA) && fieldIndex <= indexof(LL))
+    if (fieldIndex >= indexof(LA) && fieldIndex < indexof(LA) + INP_ARG_MAX)
         return fieldIndex - indexof(LA);
     return -1;
 }

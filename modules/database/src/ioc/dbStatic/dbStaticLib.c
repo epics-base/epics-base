@@ -2220,12 +2220,12 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
              */
 
         } else if(dbCanSetLink(plink, &link_info, devsup)!=0) {
-            errlogPrintf(ERL_ERROR ": %s.%s: can't initialize link type %d with \"%s\" (type %d)\n",
-                         prec->name, pflddes->name, plink->type, plink->text, link_info.ltype);
+            errlogPrintf(ERL_ERROR ": %s.%s: can't initialize link type %s with \"%s\" (type %s)\n",
+                         prec->name, pflddes->name, pamaplinkType[plink->type].strvalue, plink->text, pamaplinkType[link_info.ltype].strvalue);
 
         } else if(dbSetLink(plink, &link_info, devsup)) {
-            errlogPrintf(ERL_ERROR ": %s.%s: failed to initialize link type %d with \"%s\" (type %d)\n",
-                         prec->name, pflddes->name, plink->type, plink->text, link_info.ltype);
+            errlogPrintf(ERL_ERROR ": %s.%s: failed to initialize link type %s with \"%s\" (type %s)\n",
+                         prec->name, pflddes->name, pamaplinkType[plink->type].strvalue, plink->text, pamaplinkType[link_info.ltype].strvalue);
         }
         free(plink->text);
         plink->text = NULL;
@@ -2637,7 +2637,9 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
             }
         }
         break;
-
+    case DBF_NOACCESS:
+        dbMsgPrint(pdbentry, "Can't set array field before iocInit()");
+        /* fall through */
     default:
         return S_dbLib_badField;
     }
@@ -3456,7 +3458,7 @@ void  dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
                     " - get_ioint_info()"
                 };
                 int i, n = pdevSup->pdset->number;
-                DEVSUPFUN *pfunc = &pdevSup->pdset->report;
+                DEVSUPFUN *pfunc = (DEVSUPFUN*) &pdevSup->pdset->report;
 
                 printf("\t    number: %d\n", n);
                 for (i = 0; i < n; ++i, ++pfunc) {

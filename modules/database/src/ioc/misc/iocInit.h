@@ -22,6 +22,9 @@ enum iocStateEnum {
 extern "C" {
 #endif
 
+/** Query present IOC run state
+ *  @since 3.15.8
+ */
 DBCORE_API enum iocStateEnum getIocState(void);
 DBCORE_API int iocInit(void);
 DBCORE_API int iocBuild(void);

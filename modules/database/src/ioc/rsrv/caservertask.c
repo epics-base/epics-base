@@ -1536,6 +1536,13 @@ struct client *create_tcp_client (SOCKET sock , const osiSockAddr *peerAddr)
 
 void casStatsFetch ( unsigned *pChanCount, unsigned *pCircuitCount )
 {
+    if(!clientQlock) { /* not yet initialized, or disabled via dbServer */
+        if(pChanCount)
+            *pChanCount = 0;
+        if(pCircuitCount)
+            *pCircuitCount = 0;
+        return;
+    }
     LOCK_CLIENTQ;
     {
         int circuitCount = ellCount ( &clientQ );

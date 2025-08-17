@@ -24,6 +24,7 @@
 #include "chfPlugin.h"
 #include "iocInit.h"
 #include "testMain.h"
+#include "errlog.h"
 #include "epicsExport.h"
 
 /* Test parameters */
@@ -168,7 +169,9 @@ MAIN(analogMonitorTest)
         testAbort("Error reading test database 'analogMonitorTest.db'");
 
     /* Start the core IOC (no CA) */
+    eltc(0);
     iocBuildIsolated();
+    eltc(1);
 
     evtctx = db_init_events();
     chfPluginRegister(test, &pif, NULL);

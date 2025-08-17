@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2000 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 # Makefile at the top of an extensions tree
 
 TOP = .

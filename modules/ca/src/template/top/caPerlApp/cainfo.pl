@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+# SPDX-FileCopyrightText: 2008 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 use strict;
 
 # This construct sets @INC to search lib/perl of all RELEASE entries

@@ -9,10 +9,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-#include <stdlib.h>
-
+#include <stdint.h>
 #include "iocsh.h"
 #include "asLib.h"
+#include "epicsStdlib.h"
 #include "epicsStdioRedirect.h"
 #include "epicsString.h"
 #include "epicsTime.h"
@@ -27,6 +27,7 @@
 #include "epicsGeneralTime.h"
 #include "freeList.h"
 #include "libComRegister.h"
+#include "afterIocRunning.h"
 
 /* Register the PWD environment variable when the cd IOC shell function is
  * registered. This variable contains the current directory path.
@@ -139,10 +140,12 @@ static void epicsEnvSetCallFunc(const iocshArgBuf *args)
 
     if (name == NULL) {
         fprintf(stderr, "Missing environment variable name argument.\n");
+        iocshSetError(-1);
         return;
     }
     if (value == NULL) {
         fprintf(stderr, "Missing environment variable value argument.\n");
+        iocshSetError(-1);
         return;
     }
     epicsEnvSet (name, value);
@@ -159,6 +162,7 @@ static void epicsEnvUnsetCallFunc(const iocshArgBuf *args)
 
     if (name == NULL) {
         fprintf(stderr, "Missing environment variable name argument.\n");
+        iocshSetError(-1);
         return;
     }
     epicsEnvUnset (name);
@@ -215,7 +219,7 @@ static const iocshFuncDef iocLogInitFuncDef = {"iocLogInit",0,0,
                                                "       see 'setIocLogDisable' command\n"};
 static void iocLogInitCallFunc(const iocshArgBuf *args)
 {
-    iocLogInit ();
+    iocshSetError(iocLogInit ());
 }
 
 /* iocLogDisable */
@@ -334,7 +338,6 @@ static void threadCallFunc(const iocshArgBuf *args)
     int level = 0;
     const char *cp;
     epicsThreadId tid;
-    unsigned long ltmp;
     int argc = args[0].aval.ac;
     char **argv = args[0].aval.av;
     char *endp;
@@ -349,16 +352,14 @@ static void threadCallFunc(const iocshArgBuf *args)
     }
     for ( ; i < argc ; i++) {
         cp = argv[i];
-        ltmp = strtoul (cp, &endp, 0);
+        tid = (epicsThreadId) (uintptr_t) strtoull(cp, &endp, 0);
         if (*endp) {
             tid = epicsThreadGetId (cp);
             if (!tid) {
                 fprintf(stderr, "\t'%s' is not a known thread name\n", cp);
+                iocshSetError(-1);
                 continue;
             }
-        }
-        else {
-            tid = (epicsThreadId)ltmp;
         }
         if (first) {
             epicsThreadShow (0, level);
@@ -416,7 +417,6 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
     int i;
     const char *cp;
     epicsThreadId tid;
-    unsigned long ltmp;
     char nameBuf[64];
     int argc = args[0].aval.ac;
     char **argv = args[0].aval.av;
@@ -424,25 +424,27 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 
     for (i = 1 ; i < argc ; i++) {
         cp = argv[i];
-        ltmp = strtoul(cp, &endp, 0);
+        tid = (epicsThreadId) (uintptr_t) strtoull(cp, &endp, 0);
         if (*endp) {
             tid = epicsThreadGetId(cp);
             if (!tid) {
                 fprintf(stderr, "'%s' is not a valid thread name\n", cp);
+                iocshSetError(-1);
                 continue;
             }
         }
         else {
-            tid =(epicsThreadId)ltmp;
             epicsThreadGetName(tid, nameBuf, sizeof nameBuf);
             if (nameBuf[0] == '\0') {
                 fprintf(stderr, "'%s' is not a valid thread id\n", cp);
+                iocshSetError(-1);
                 continue;
             }
 
         }
         if (!epicsThreadIsSuspended(tid)) {
             fprintf(stderr, "Thread %s is not suspended\n", cp);
+            iocshSetError(-1);
             continue;
         }
         epicsThreadResume(tid);
@@ -458,7 +460,7 @@ static const iocshFuncDef generalTimeReportFuncDef = {"generalTimeReport",1,gene
                                                       "               1 - Additionally show current time obtained from each provider.\n"};
 static void generalTimeReportCallFunc(const iocshArgBuf *args)
 {
-    generalTimeReport(args[0].ival);
+    iocshSetError(generalTimeReport(args[0].ival));
 }
 
 /* installLastResortEventProvider */
@@ -467,7 +469,7 @@ static const iocshFuncDef installLastResortEventProviderFuncDef = {"installLastR
                                                                    "which returns the current time for every event number\n"};
 static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
 {
-    installLastResortEventProvider();
+    iocshSetError(installLastResortEventProvider());
 }
 
 static iocshVarDef comDefs[] = {
@@ -510,6 +512,8 @@ void epicsStdCall libComRegister(void)
 
     iocshRegister(&generalTimeReportFuncDef,generalTimeReportCallFunc);
     iocshRegister(&installLastResortEventProviderFuncDef, installLastResortEventProviderCallFunc);
+
+    afterIocRunningRegister();
 
     comDefs[0].pval = &asCheckClientIP;
     comDefs[1].pval = &freeListBypass;

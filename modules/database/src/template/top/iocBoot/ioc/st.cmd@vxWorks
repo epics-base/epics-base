@@ -1,3 +1,7 @@
+#- SPDX-FileCopyrightText: 1998 Argonne National Laboratory
+#-
+#- SPDX-License-Identifier: EPICS
+
 #- Example vxWorks startup file
 
 #- The following is needed if your board support package doesn't at boot time

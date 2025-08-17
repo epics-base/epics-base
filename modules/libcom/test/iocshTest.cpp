@@ -120,40 +120,42 @@ bool compareFiles(const std::string& p1, const std::string& p2)
     return false; // File problem
   }
 
+  bool different = false;
   if (f1.tellg() != f2.tellg()) {
-    testDiag("File sizes did not match");
-    return false; // Size mismatch
+    testDiag("Help text size is different");
+    different = true;
+  }
+  else {
+    // Seek back to beginning and use std::equal to compare contents
+    f1.seekg(0, std::ifstream::beg);
+    f2.seekg(0, std::ifstream::beg);
+
+    different = !std::equal(
+      std::istreambuf_iterator<char>(f1.rdbuf()),
+      std::istreambuf_iterator<char>(),
+      std::istreambuf_iterator<char>(f2.rdbuf())
+    );
+    if (different)
+      testDiag("Help text output is different");
   }
 
-  // Seek back to beginning and use std::equal to compare contents
-  f1.seekg(0, std::ifstream::beg);
-  f2.seekg(0, std::ifstream::beg);
-
-  bool are_equal = std::equal(
-    std::istreambuf_iterator<char>(f1.rdbuf()),
-    std::istreambuf_iterator<char>(),
-    std::istreambuf_iterator<char>(f2.rdbuf())
-  );
-
-  if (! are_equal) {
-    testDiag("File contents did not match");
-
+  if (different) {
     std::string line;
     f1.seekg(0, std::ifstream::beg);
     f2.seekg(0, std::ifstream::beg);
 
-    testDiag("File1 contents: ");
+    testDiag("Expected output:");
     while(std::getline(f1, line)) {
-        testDiag("%s", line.c_str());
+        testDiag("  < %s", line.c_str());
     }
 
-    testDiag("File2 contents: ");
+    testDiag("Received output:");
     while(std::getline(f2, line)) {
-        testDiag("%s", line.c_str());
+        testDiag("  > %s", line.c_str());
     }
   }
 
-  return are_equal;
+  return !different;
 }
 
 
@@ -167,18 +169,24 @@ void testHelp(void)
     // Verify help lists expected commands
     iocshCmd(("help > " + filename).c_str());
     std::string contents = readFile(filename);
-    testOk1(contents.find("help") != std::string::npos);
-    testOk1(contents.find("testHelpFunction1") != std::string::npos);
-    testOk1(contents.find("testHelpFunction2") != std::string::npos);
-    testOk1(contents.find("testHelpFunction3") != std::string::npos);
+    testOk(contents.find("help") != std::string::npos,
+        "Found 'help' in help output");
+    testOk(contents.find("testHelpFunction1") != std::string::npos,
+        "Found 'testHelpFunction1' in help output");
+    testOk(contents.find("testHelpFunction2") != std::string::npos,
+        "Found 'testHelpFunction2' in help output");
+    testOk(contents.find("testHelpFunction3") != std::string::npos,
+        "Found 'testHelpFunction3' in help output");
 
     // Confirm formatting of a single command
     iocshCmd(("help testHelpFunction1 > " + filename).c_str());
-    testOk1(compareFiles(filename, "iocshTestHelpFunction1") == true);
+    testOk(compareFiles(filename, "iocshTestHelpFunction1"),
+        "'help testHelpFunction1' matches file iocshTestHelpFunction1");
 
     // Confirm formatting of multiple commands
     iocshCmd(("help testHelp* > " + filename).c_str());
-    testOk1(compareFiles(filename, "iocshTestHelpFunctions") == true);
+    testOk(compareFiles(filename, "iocshTestHelpFunctions"),
+        "'help testHelp*' matches file iocshTestHelpFunctions");
 
     remove(filename.c_str());
 }

@@ -1,3 +1,7 @@
+#- SPDX-FileCopyrightText: 2001 Argonne National Laboratory
+#-
+#- SPDX-License-Identifier: EPICS
+
 #- Example RTEMS startup script
 
 #- You may have to change _APPNAME_ to something else

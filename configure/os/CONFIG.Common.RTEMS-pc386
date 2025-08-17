@@ -25,7 +25,7 @@ include $(CONFIG)/os/CONFIG.Common.RTEMS
 OP_SYS_LDFLAGS += -Wl,-Ttext,0x100000
 
 # This check must appear after the above include
-ifeq ($(RTEMS_VERSION),5)
+ifeq ($(shell test $(RTEMS_VERSION) -ge 5; echo $$?),0)
   $(info *** This target is not compatible with the configured RTEMS version.)
   $(info *** Build the RTEMS-pc686 (-qemu) target for RTEMS 5.x)
   $(error Can't continue)

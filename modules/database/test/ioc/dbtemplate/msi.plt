@@ -12,7 +12,7 @@
 use strict;
 use Test;
 
-BEGIN {plan tests => 12}
+BEGIN {plan tests => 14}
 
 # Check include/substitute command model
 ok(msi('-I .. ../t1-template.txt'),             slurp('../t1-result.txt'));
@@ -55,6 +55,12 @@ my %envs = (TEST_NO => 12, PREFIX => 't');
 @ENV{ keys %envs } = values %envs;
 ok(msi('-I. -I.. -S ../t12-substitute.txt'), slurp('../t12-result.txt'));
 delete @ENV{ keys %envs };  # Not really needed
+
+# Substitution file, relative path includes
+ok(msi('-I @TOP@/modules -S ../t13-substitute.txt'), slurp('../t13-result.txt'));
+
+# Template file, relative path includes
+ok(msi('-I @TOP@/modules ../t14-template.txt'), slurp('../t14-result.txt'));
 
 # Test support routines
 

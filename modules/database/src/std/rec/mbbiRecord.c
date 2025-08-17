@@ -220,12 +220,9 @@ static long special(DBADDR *paddr, int after)
             return 0;
         init_common(prec);
         /* Note: ZRVL..FFVL are also SPC_MOD */
-        if (fieldIndex >= mbbiRecordZRST && fieldIndex <= mbbiRecordFFST) {
-            int event = DBE_PROPERTY;
-
-            if (prec->val == fieldIndex - mbbiRecordZRST)
-                event |= DBE_VALUE | DBE_LOG;
-            db_post_events(prec, &prec->val, event);
+        if (fieldIndex >= mbbiRecordZRST && fieldIndex <= mbbiRecordFFST
+                && prec->val == fieldIndex - mbbiRecordZRST) {
+            db_post_events(prec, &prec->val, DBE_VALUE | DBE_LOG);
         }
         return 0;
 

@@ -329,7 +329,7 @@ public:
 
     /** \brief The default constructor sets the time to the EPICS epoch. */
 #if __cplusplus>=201103L
-    constexpr epicsTime() :ts{} {}
+    constexpr epicsTime() :ts{0, 0} {}
 #else
     epicsTime () {
         ts.secPastEpoch = ts.nsec = 0u;

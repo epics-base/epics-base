@@ -1,0 +1,3 @@
+file database/test/ioc/dbtemplate/t13-template.txt {
+    { a=foo }
+}

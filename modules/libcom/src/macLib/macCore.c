@@ -895,7 +895,7 @@ static void refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
         entry->error = TRUE;
         errval = ",undefined)";
         if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
-            errlogPrintf( "macLib: macro %s is undefined (expanding %s %s)\n",
+            errlogPrintf( "macLib: macro %s is " ANSI_MAGENTA("undefined") " (expanding %s %s)\n",
                         refname, entry->type, entry->name );
         }
     }

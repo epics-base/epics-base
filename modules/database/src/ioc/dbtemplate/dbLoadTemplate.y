@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <errno.h>
 
 #include "osiUnistd.h"
 #include "macLib.h"
@@ -20,7 +21,10 @@
 
 #include "epicsExport.h"
 #include "dbAccess.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 #include "dbLoadTemplate.h"
+#include "osiFileName.h"
 
 static int line_num;
 static int yyerror(char* str);
@@ -40,6 +44,17 @@ static int var_count, sub_count;
 
 int dbTemplateMaxVars = 100;
 epicsExportAddress(int, dbTemplateMaxVars);
+
+static
+int msiLoadRecords(const char *fname, const char *subs)
+{
+    int ret = dbLoadRecords(fname, subs);
+    if(ret) {
+        fprintf(stderr, "dbLoadRecords(\"%s\", %s)\n", fname, subs);
+        yyerror("Error while reading included file");
+    }
+    return ret;
+}
 
 %}
 
@@ -167,7 +182,7 @@ pattern_definition: global_definitions
         fprintf(stderr, "pattern_definition: pattern_values empty\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
     }
     | O_BRACE pattern_values C_BRACE
     {
@@ -175,7 +190,7 @@ pattern_definition: global_definitions
         fprintf(stderr, "pattern_definition:\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
         *sub_locals = '\0';
         sub_count = 0;
     }
@@ -190,7 +205,7 @@ pattern_definition: global_definitions
         fprintf(stderr, "pattern_definition:\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
         dbmfFree($1);
         *sub_locals = '\0';
         sub_count = 0;
@@ -250,7 +265,7 @@ variable_substitution: global_definitions
         fprintf(stderr, "variable_substitution: variable_definitions empty\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
     }
     | O_BRACE variable_definitions C_BRACE
     {
@@ -258,7 +273,7 @@ variable_substitution: global_definitions
         fprintf(stderr, "variable_substitution:\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
         *sub_locals = '\0';
     }
     | WORD O_BRACE variable_definitions C_BRACE
@@ -272,7 +287,7 @@ variable_substitution: global_definitions
         fprintf(stderr, "variable_substitution:\n");
         fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
     #endif
-        dbLoadRecords(db_file_name, sub_collect+1);
+        if(msiLoadRecords(db_file_name, sub_collect+1)) YYABORT;
         dbmfFree($1);
         *sub_locals = '\0';
     }
@@ -324,10 +339,11 @@ static int yyerror(char* str)
 
 static int is_not_inited = 1;
 
-int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
+int dbLoadTemplate(const char *sub_file, const char *cmd_collect, const char *path)
 {
     FILE *fp;
     int i;
+    int err;
 
     line_num = 1;
 
@@ -344,8 +360,16 @@ int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
     }
 
     fp = fopen(sub_file, "r");
+    // If the file does not exist locally, and it is not an absolute path...
+    if (!fp && sub_file[0] != OSI_PATH_SEPARATOR[0]) {
+        if (!path || !*path) {
+            path = getenv("EPICS_DB_INCLUDE_PATH");
+        }
+        dbPath(pdbbase, path);
+        dbOpenFile(pdbbase, sub_file, &fp);
+    }
     if (!fp) {
-        fprintf(stderr, "dbLoadTemplate: error opening sub file %s\n", sub_file);
+        fprintf(stderr, "dbLoadTemplate: error opening sub file %s: %s\n", sub_file, strerror(errno));
         return -1;
     }
 
@@ -377,7 +401,7 @@ int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
         yyrestart(fp);
     }
 
-    yyparse();
+    err = yyparse();
 
     for (i = 0; i < var_count; i++) {
         dbmfFree(vars[i]);
@@ -390,5 +414,5 @@ int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
         dbmfFree(db_file_name);
         db_file_name = NULL;
     }
-    return 0;
+    return err;
 }

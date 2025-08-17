@@ -48,11 +48,11 @@ EPICS_VERSION = 7
 EPICS_REVISION = 0
 
 # EPICS_MODIFICATION must be a number >=0 and <256
-EPICS_MODIFICATION = 8
+EPICS_MODIFICATION = 9
 
 # EPICS_PATCH_LEVEL must be a number (win32 resource file requirement)
 # Not included in the official EPICS version number if zero
-EPICS_PATCH_LEVEL = 2
+EPICS_PATCH_LEVEL = 1
 
 # Immediately after an official release the EPICS_PATCH_LEVEL is incremented
 # and the -DEV suffix is added (similar to the Maven -SNAPSHOT versions)
@@ -71,6 +71,3 @@ endif
 EPICS_SHORT_VERSION=$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)$(EPICS_PATCH_VSTRING)
 EPICS_VERSION_NUMBER=$(EPICS_SHORT_VERSION)$(EPICS_DEV_SNAPSHOT)$(EPICS_SITE_VSTRING)
 EPICS_VERSION_STRING="EPICS Version $(EPICS_VERSION_NUMBER)"
-
-# Provide this in case anyone is still using the old name
-COMMIT_DATE="-no-date-"

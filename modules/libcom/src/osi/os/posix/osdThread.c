@@ -615,6 +615,10 @@ epicsThreadCreateOpt(const char * name,
         start_routine, pthreadInfo);
     if (status==EPERM) {
         /* Try again without SCHED_FIFO*/
+        if (pthreadInfo->joinable) {
+            int cnt = epicsAtomicDecrIntT(&pthreadInfo->refcnt);
+            assert(cnt==1);
+        }
         free_threadInfo(pthreadInfo);
 
         pthreadInfo = init_threadInfo(name, opts->priority, stackSize,
@@ -630,12 +634,15 @@ epicsThreadCreateOpt(const char * name,
     if (status) {
         if (pthreadInfo->joinable) {
             /* release extra ref which would have been for epicsThreadMustJoin() */
-            epicsAtomicDecrIntT(&pthreadInfo->refcnt);
+            int cnt = epicsAtomicDecrIntT(&pthreadInfo->refcnt);
+            assert(cnt==1);
         }
-
         free_threadInfo(pthreadInfo);
         return 0;
     }
+    /* New thread starting and is now responsible for one free_threadInfo().
+     * If joinable, then caller responsible for arranging one epicsThreadMustJoin()
+     */
 
     status = pthread_sigmask(SIG_SETMASK, &oldSig, NULL);
     checkStatusOnce(status, "pthread_sigmask");
@@ -658,6 +665,7 @@ static epicsThreadOSD *createImplicit(void)
     assert(pthreadInfo);
     pthreadInfo->tid = tid;
     pthreadInfo->osiPriority = 0;
+    pthreadInfo->isOkToBlock = 1;
 
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     if(pthread_getschedparam(tid,&pthreadInfo->schedPolicy,&pthreadInfo->schedParam) == 0) {
@@ -680,34 +688,54 @@ static epicsThreadOSD *createImplicit(void)
 
 void epicsThreadMustJoin(epicsThreadId id)
 {
-    void *ret = NULL;
     int status;
+    int prev;
+    epicsThreadId self;
 
-    if(!id) {
+    if(!id)
         return;
-    } else if(epicsAtomicCmpAndSwapIntT(&id->joinable, 1, 0)!=1) {
-        if(epicsThreadGetIdSelf()==id) {
-            errlogPrintf("Warning: %s thread self-join of unjoinable\n", id->name);
+
+    prev = epicsAtomicCmpAndSwapIntT(&id->joinable, 1, 0);
+    self = epicsThreadGetIdSelf();
+
+    if(prev==0) {
+        /* join of unjoinable */
+        if(self==id) {
+            errlogPrintf(ERL_WARNING ": %s thread self-join of unjoinable\n", id->name);
+            return;
 
         } else {
             /* try to error nicely, however in all likelihood de-ref of
              * 'id' has already caused SIGSEGV as we are racing thread exit,
              * which free's 'id'.
              */
-            cantProceed("Error: %s thread not joinable.\n", id->name);
+            cantProceed(ERL_ERROR ": %s can't join unjoinable %s\n", self->name, id->name);
         }
-        return;
+
+    } else if(prev!=1) { /* also not 0, the only other allowed value. */
+        cantProceed(ERL_ERROR ": %s joins corrupt thread handle\n", self->name);
     }
 
-    status = pthread_join(id->tid, &ret);
-    if(status == EDEADLK) {
-        /* Thread can't join itself (directly or indirectly)
-         * so we detach instead.
+    /* from this point, we are responsible to either detach or join (or leak memory) */
+
+    if(self!=id) {
+        status = pthread_join(id->tid, NULL);
+        checkStatusOnce(status, "pthread_join");
+        /* on error, continue and attempt to detach */
+
+    } else {
+        /* Thread self pthread_join() isn't portable.
+         * We choose to allow, and treat as detach.
          */
+        status = EDEADLK;
+    }
+
+    if(status) {
         status = pthread_detach(id->tid);
         checkStatusOnce(status, "pthread_detach");
-    } else checkStatusOnce(status, "pthread_join");
-    free_threadInfo(id);
+    }
+
+    free_threadInfo(id); /* release joinable reference */
 }
 
 LIBCOM_API void epicsStdCall epicsThreadSuspendSelf(void)
@@ -1057,4 +1085,18 @@ LIBCOM_API int epicsThreadGetCPUs(void)
         return ret;
 #endif
     return 1;
+}
+
+int epicsStdCall epicsThreadIsOkToBlock(void)
+{
+    epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    return(pthreadInfo->isOkToBlock);
+}
+
+void epicsStdCall epicsThreadSetOkToBlock(int isOkToBlock)
+{
+    epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    pthreadInfo->isOkToBlock = !!isOkToBlock;
 }

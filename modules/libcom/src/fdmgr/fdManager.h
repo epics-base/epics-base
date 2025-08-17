@@ -19,6 +19,16 @@
 #ifndef fdManagerH_included
 #define fdManagerH_included
 
+#include <memory>
+namespace epics {
+#if __cplusplus>=201103L
+template<typename T>
+using auto_ptr = std::unique_ptr<T>;
+#else
+using std::auto_ptr;
+#endif
+}
+
 #include "libComAPI.h" // reset share lib defines
 #include "tsDLList.h"
 #include "resourceLib.h"
@@ -37,27 +47,27 @@ class LIBCOM_API fdRegId
 {
 public:
 
-    fdRegId (const SOCKET fdIn, const fdRegType typeIn) :
+    fdRegId(const SOCKET fdIn, const fdRegType typeIn) :
         fd(fdIn), type(typeIn) {}
 
-    SOCKET getFD () const
+    SOCKET getFD() const
     {
-        return this->fd;
+        return fd;
     }
 
-    fdRegType getType () const
+    fdRegType getType() const
     {
-        return this->type;
+        return type;
     }
 
-    bool operator == (const fdRegId &idIn) const
+    bool operator == (const fdRegId& idIn) const
     {
-        return this->fd == idIn.fd && this->type==idIn.type;
+        return fd == idIn.fd && type == idIn.type;
     }
 
-    resTableIndex hash () const;
+    resTableIndex hash() const;
 
-    virtual void show (unsigned level) const;
+    virtual void show(unsigned level) const;
 
     virtual ~fdRegId() {}
 private:
@@ -70,43 +80,31 @@ private:
 //
 // file descriptor manager
 //
-class fdManager : public epicsTimerQueueNotify {
+class LIBCOM_API fdManager : public epicsTimerQueueNotify {
 public:
     //
     // exceptions
     //
     class fdInterestSubscriptionAlreadyExits {};
 
-    LIBCOM_API fdManager ();
-    LIBCOM_API virtual ~fdManager ();
-    LIBCOM_API void process ( double delay ); // delay parameter is in seconds
+    fdManager();
+    virtual ~fdManager();
+    void process(double delay); // delay parameter is in seconds
 
     // returns NULL if the fd is unknown
-    LIBCOM_API class fdReg *lookUpFD (const SOCKET fd, const fdRegType type);
+    class fdReg* lookUpFD(const SOCKET fd, const fdRegType type);
 
-    epicsTimer & createTimer ();
+    epicsTimer& createTimer();
 
 private:
-    tsDLList < fdReg > regList;
-    tsDLList < fdReg > activeList;
-    resTable < fdReg, fdRegId > fdTbl;
-    const double sleepQuantum;
-    fd_set * fdSetsPtr;
-    epicsTimerQueuePassive * pTimerQueue;
-    SOCKET maxFD;
-    bool processInProg;
-    //
-    // Set to fdreg when in call back
-    // and nill otherwise
-    //
-    fdReg * pCBReg;
-    void reschedule ();
-    double quantum ();
-    void installReg (fdReg &reg);
-    void removeReg (fdReg &reg);
-    void lazyInitTimerQueue ();
-    fdManager ( const fdManager & );
-    fdManager & operator = ( const fdManager & );
+    epics::auto_ptr <struct fdManagerPrivate> priv;
+
+    void reschedule();
+    double quantum();
+    void installReg(fdReg& reg);
+    void removeReg(fdReg& reg);
+    fdManager(const fdManager&);
+    fdManager& operator = (const fdManager&);
     friend class fdReg;
 };
 
@@ -126,11 +124,11 @@ class LIBCOM_API fdReg :
 
 public:
 
-    fdReg (const SOCKET fdIn, const fdRegType type,
-        const bool onceOnly=false, fdManager &manager = fileDescriptorManager);
-    virtual ~fdReg ();
+    fdReg(const SOCKET fdIn, const fdRegType type,
+        const bool onceOnly=false, fdManager& manager = fileDescriptorManager);
+    virtual ~fdReg();
 
-    virtual void show (unsigned level) const;
+    virtual void show(unsigned level) const;
 
     //
     // Called by the file descriptor manager:
@@ -141,7 +139,7 @@ public:
     //
     // fdReg::destroy() does a "delete this"
     //
-    virtual void destroy ();
+    virtual void destroy();
 
 private:
     enum state {active, pending, limbo};
@@ -153,51 +151,38 @@ private:
     // lifetime of a fdReg object if the constructor
     // specified "onceOnly"
     //
-    virtual void callBack ()=0;
+    virtual void callBack() = 0;
 
     unsigned char state; // state enums go here
     unsigned char onceOnly;
-    fdManager &manager;
+    fdManager& manager;
 
-    fdReg ( const fdReg & );
-    fdReg & operator = ( const fdReg & );
+    fdReg(const fdReg&);
+    fdReg& operator = (const fdReg&);
 };
 
 //
 // fdRegId::hash()
 //
-inline resTableIndex fdRegId::hash () const
+inline resTableIndex fdRegId::hash() const
 {
     const unsigned fdManagerHashTableMinIndexBits = 8;
-    const unsigned fdManagerHashTableMaxIndexBits = sizeof(SOCKET)*CHAR_BIT;
+    const unsigned fdManagerHashTableMaxIndexBits = sizeof(SOCKET) * CHAR_BIT;
     resTableIndex hashid;
 
-    hashid = integerHash ( fdManagerHashTableMinIndexBits,
-        fdManagerHashTableMaxIndexBits, this->fd );
+    hashid = integerHash(fdManagerHashTableMinIndexBits,
+        fdManagerHashTableMaxIndexBits, fd);
 
     //
     // also evenly distribute based on the type of fdRegType
     //
-    hashid ^= this->type;
+    hashid ^= type;
 
     //
     // the result here is always masked to the
     // proper size after it is returned to the resource class
     //
     return hashid;
-}
-
-inline void fdManager::lazyInitTimerQueue ()
-{
-    if ( ! this->pTimerQueue ) {
-        this->pTimerQueue = & epicsTimerQueuePassive::create ( *this );
-    }
-}
-
-inline epicsTimer & fdManager::createTimer ()
-{
-    this->lazyInitTimerQueue ();
-    return this->pTimerQueue->createTimer ();
 }
 
 #endif // fdManagerH_included

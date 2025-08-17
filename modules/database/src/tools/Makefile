@@ -34,6 +34,7 @@ PERL_SCRIPTS += dbdToRecordtypeH.pl
 PERL_SCRIPTS += dbdExpand.pl
 PERL_SCRIPTS += dbExpand.pl
 PERL_SCRIPTS += dbdToHtml.pl
+PERL_SCRIPTS += dbdToMD.pl
 PERL_SCRIPTS += registerRecordDeviceDriver.pl
 
 HTMLS += dbdToHtml.html

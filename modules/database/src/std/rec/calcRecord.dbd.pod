@@ -14,6 +14,8 @@ and logical operations on values retrieved from other records. The result
 of its operations can then be accessed by another record so that it can
 then be used.
 
+Since UNRELEASED the number of inputs has been increased from 12 to 21.
+
 =head2 Parameter Fields
 
 The record-specific fields are described below, grouped by functionality.
@@ -34,46 +36,50 @@ These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read Parameters
 
-The read parameters for the Calc record consist of 12 input links INPA,
-INPB, ... INPL. The fields can be database links, channel access links, or
-constants. If they are links, they must specify another record's field or a
+The read parameters for the Calc record consist of 21 input links INPA -
+INPU. The fields can be database links, channel access links, or constants.
+If they are links, they must specify another record's field or a
 channel access link. If they are constants, they will be initialized with
 the value they are configured with and can be changed via C<dbPuts>. They
 cannot be hardware addresses.
 
 See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on how to specify database links.
 
-=fields INPA, INPB, INPC, INPD, INPE, INPF, INPG, INPH, INPI, INPJ, INPK, INPL
+=fields INPA - INPU
 
 =head3 Expression
 
-At the core of the Calc record lies the CALC and RPCL fields. The CALC field
-contains the infix expresion which the record routine will use when it
-processes the record. The resulting value is placed in the VAL field and
-can be accessed from there. The CALC expression is actually converted to
-opcode and stored as Reverse Polish Notation in the RPCL field. It is this
-expression which is actually used to calculate VAL. The Reverse Polish
-expression is evaluated more efficiently during run-time than an infix
-expression. CALC can be changed at run-time, and a special record routine
-calls a function to convert it to Reverse Polish Notation.
+At the core of the Calc record lies the CALC and RPCL fields.
+The CALC field holds an infix expression to be evaluated whenever the record is
+processed.
+The calculated value is placed in the VAL field and can be accessed from there.
+
+The CALC expression gets compiled into a stream of Reverse Polish Notation (RPN)
+opcodes for a stack-based machine, and stored in the RPCL field.
+The RPN opcodes are used to calculate VAL at run-time, and are more efficient
+than evaluating the infix expression.
+The CALC expression can be replaced at run-time, triggering a special record
+routine to compile the new expression into Reverse Polish Notation.
 
 The infix expressions that can be used are very similar to the C expression
-syntax, but with some additions and subtle differences in operator meaning
-and precedence. The string may contain a series of expressions separated by
-a semi-colon character ";" any one of which may actually provide the
-calculation result; however, all of the other expressions included must
-assign their result to a variable. All alphabetic elements described below
-are case independent, so upper and lower case letters may be used and mixed
-in the variable and function names as desired. Spaces may be used anywhere
-within an expression except between characters that make up a single
-expression element.
+syntax, but with some additions and subtle differences in operator meaning and
+precedence.
+The string may contain a series of expressions separated by a semi-colon
+character C<;>, any one of which may provide the calculation result.
+All other expressions included in the string must assign their result to a
+variable.
+All alphabetic elements described below are case independent, so upper and lower
+case letters may be used and mixed in the variable and function names as
+desired.
+Spaces may be used anywhere within an expression except between characters that
+make up a single expression element.
 
-The range of expressions supported by the calculation record are separated
-into literals, constants, operands, algebraic operators, trigonometric operators,
-relational operators, logical operators, the assignment operator,
-parentheses and commas, and the question mark or '?:' operator.
+The range of expressions supported by the calculation record are separated into
+literals, constants, operands, algebraic operators, trigonometric operators,
+relational operators, logical operators, the assignment operator, parentheses
+and commas, and the question mark colon or C<?:> operator.
 
 =fields CALC, RPCL
 
@@ -85,10 +91,10 @@ parentheses and commas, and the question mark or '?:' operator.
 Standard double precision floating point numbers
 
 =item *
-Inf: Infinity
+C<Inf>: Infinity
 
 =item *
-Nan: Not a Number
+C<NaN>: Not a Number
 
 =back
 
@@ -97,14 +103,14 @@ Nan: Not a Number
 =over 1
 
 =item *
-PI: returns the mathematical constant E<pi>
+C<PI>: returns the mathematical constant E<pi>
 
 =item *
-D2R: evaluates to E<pi>/180 which, when used as a multiplier, converts an
+C<D2R>: evaluates to E<pi>/180 which, when used as a multiplier, converts an
 angle from degrees to radians
 
 =item *
-R2D: evaluates to 180/E<pi> which as a multiplier converts an angle from
+C<R2D>: evaluates to 180/E<pi> which as a multiplier converts an angle from
 radians to degrees
 
 =back
@@ -113,7 +119,7 @@ radians to degrees
 
 The expression uses the values retrieved from the INPx links as operands,
 though constants can be used as operands too. These values retrieved from
-the input links are stored in the A-L fields. The values to be used in the
+the input links are stored in the A-U fields. The values to be used in the
 expression are simply referenced by the field letter. For instance, the
 value obtained from INPA link is stored in the field A, and the value
 obtained from INPB is stored in field B. The field names can be included in
@@ -121,117 +127,210 @@ the expression which will operate on their respective values, as in A+B.
 Also, the RNDM nullary function can be included as an operand in the
 expression in order to generate a random number between 0 and 1.
 
-=fields A, B, C, D, E, F, G, H, I, J, K, L
+=fields A - U
 
 The keyword VAL returns the current contents of the VAL field (which can be
 written to by a CA put, so it might I<not> be the result from the last time
 the expression was evaluated).
 
-=head3 Algebraic Operators
+=head3 Arithmetic Operators
+
+Except for unary minus these are infix binary operators.
 
 =over 1
 
 =item *
-ABS: Absolute value (unary)
+C<+> : Addition
 
 =item *
-SQR: Square root (unary)
+C<-> : Subtraction
 
 =item *
-MIN: Minimum (any number of args)
+C<-> : Minus (unary)
 
 =item *
-MAX: Maximum (any number of args)
+C<*> : Multiplication
 
 =item *
-FINITE: returns non-zero if none of the arguments are NaN or Inf (any
-number of args)
+C</> : Division
 
 =item *
-ISNAN: returns non-zero if any of the arguments is NaN or Inf (any number
-of args)
+C<%> : Modulo
 
 =item *
-CEIL: Ceiling (unary)
+C<^> : Exponential
 
 =item *
-FLOOR: Floor (unary)
-
-=item *
-FMOD: Floating point modulo (binary)  Added in 7.0.8
-
-=item *
-LOG: Log base 10 (unary)
-
-=item *
-LOGE: Natural log (unary)
-
-=item *
-LN: Natural log (unary)
-
-=item *
-EXP: Exponential function (unary)
-
-=item *
-^ : Exponential (binary)
-
-=item *
-** : Exponential (binary)
-
-=item *
-+ : Addition (binary)
-
-=item *
-- : Subtraction (binary)
-
-=item *
-* : Multiplication (binary)
-
-=item *
-/ : Division (binary)
-
-=item *
-% : Modulo (binary)
-
-=item *
-NOT: Negate (unary)
+C<**> : Exponential
 
 =back
 
-=head3 Trigonometric Operators
+=head3 Algebraic Functions
+
+When functions take more than one argument, a comma separator must appear
+between them.
 
 =over 1
 
 =item *
-SIN: Sine
+C<ABS (arg)> : Absolute value
 
 =item *
-SINH: Hyperbolic sine
+C<EXP (arg)> : Exponential function
 
 =item *
-ASIN: Arc sine
+C<FMOD (num, den)> : Floating point modulo. Added in 7.0.8
 
 =item *
-COS: Cosine
+C<LN (arg)> : Natural log
 
 =item *
-COSH: Hyperbolic cosine
+C<LOG (arg)> : Log base 10
 
 =item *
-ACOS: Arc cosine
+C<LOGE (arg)> : Natural log
 
 =item *
-TAN: Tangent
+C<MIN (any number of args)> : Minimum
 
 =item *
-TANH: Hyperbolic tangent
+C<MAX (any number of args)> : Maximum
 
 =item *
-ATAN: Arc tangent
+C<SQR (arg)> : Square root
+
+=item *
+C<SQRT (arg)> : Square root
+
+=back
+
+=head3 Trigonometric Functions
+
+=over 1
+
+=item *
+C<SIN (arg)> : Sine
+
+=item *
+C<ASIN (arg)> : Arc sine
+
+=item *
+C<COS (arg)> : Cosine
+
+=item *
+C<ACOS (arg)> : Arc cosine
+
+=item *
+C<TAN (arg)> : Tangent
+
+=item *
+C<ATAN (arg)> : Arc tangent
+
+=item *
+C<ATAN2 (den, num)> : 2-parameter Arc tangent. Arg's are reversed to ANSI C
+
+=back
+
+=head3 Hyperbolic Trigonometry Functions
+
+=over 1
+
+=item *
+C<SINH (arg)> : Hyperbolic sine
+
+=item *
+C<COSH (arg)> : Hyperbolic cosine
+
+=item *
+C<TANH (arg)> : Hyperbolic tangent
+
+=back
+
+=head3 Numeric Functions
+
+=over 1
+
+=item *
+C<CEIL (arg)> : Ceiling
+
+=item *
+C<FLOOR (arg)> : Floor
+
+=item *
+C<NINT (arg)> : Round to nearest integer
+
+=item *
+C<ISINF (arg)> : returns non-zero if any argument is Inf
+
+=item *
+C<ISNAN (any number of args)> : returns non-zero (true) if any argument is NaN
+or Inf
+
+=item *
+C<FINITE (any number of args)> : returns non-zero (true) if none of the
+arguments are NaN or Inf
+
+=back
+
+=head3 Boolean/Logical Operators
+
+These operators use their arguments as a true (non-zero) or false (zero) value.
+
+=over 1
+
+=item *
+C<&&> : And, infix binary
+
+=item *
+C<||> : Or, infix binary
+
+=item *
+C<!> : Not, unary prefix
+
+=back
+
+=head3 Bitwise Operators
+
+Mostly infix binary, the arguments are converted to a 32-bit integer, the
+operator is applied, and the result converted back into a double.
+
+=over 1
+
+=item *
+C<&> : Bitwise and
+
+=item *
+C<|> : Bitwise or
+
+=item *
+C<~> : Bitwise not or one's complement, unary prefix
+
+=item *
+C<<< << >>> : Arithmetic shift left
+
+=item *
+C<<< >> >>> : Arithmetic shift right
+
+=item *
+C<<<< >>> >>>> : Logical shift right
+
+=item *
+C<AND> : Bitwise and
+
+=item *
+C<OR> : Bitwise or
+
+=item *
+C<XOR> : Bitwise exclusive or
+
+=item *
+C<NOT> : Bitwise not or one's complement, unary prefix
 
 =back
 
 =head3 Relational Operators
+
+These are all infix binary operators.
 
 =over 1
 
@@ -248,58 +347,16 @@ C<<< <= >>> : Less than or equal to
 C<<< < >>> : Less than
 
 =item *
+C<<< != >>> : Not equal to
+
+=item *
 C<<< # >>> : Not equal to
 
 =item *
-C<<< = >>> : Equal to
-
-=back
-
-=head3 Logical Operators
-
-=over 1
+C<<< == >>> : Equal to
 
 =item *
-C<&&> : And
-
-=item *
-C<||> : Or
-
-=item *
-C<!> : Not
-
-=back
-
-=head3 Bitwise Operators
-
-=over 1
-
-=item *
-C<|> : Bitwise Or
-
-=item *
-C<&> : Bitwise And
-
-=item *
-OR : Bitwise Or
-
-=item *
-AND : Bitwise And
-
-=item *
-XOR : Bitwise Exclusive Or
-
-=item *
-C<~> : One's Complement
-
-=item *
-C<<< << >>> : Arithmetic Left Shift
-
-=item *
-C<<< >> >>> : Arithmetic Right Shift
-
-=item *
-C<<<< >>> >>>> : Logical Right Shift
+C<<< = >>> : Equal to (not assignment)
 
 =back
 
@@ -312,24 +369,26 @@ C<:=> : assigns a value (right hand side) to a variable (i.e. field)
 
 =back
 
-=head3 Parantheses, Comma, and Semicolon
+=head3 Parentheses, Comma, and Semicolon
 
-The open and close parentheses are supported. Nested parentheses are
-supported.
+The open C<(> and close parentheses C<)> are supported to override precedence
+rules in a sub-expression.
+Nested parentheses are supported to significant depth.
 
-The comma is supported when used to separate the arguments of a binary
-function.
+The comma C<,> is required to separate the arguments of a function.
 
-The semicolon is used to separate expressions. Although only one
-traditional calculation expression is allowed, multiple assignment
-expressions are allowed.
+The semicolon C<;> is used to value separate expressions.
+Exactly one value expression must be present, but multiple assignment
+expressions may be included before and/or after the value expression.
 
-=head3 Conditional Expression
+=head3 Conditional Operator
 
-The C language's question mark operator is supported. The format is:
-C<condition ? True result : False result>
+The C language's question mark colon C<?:> ternary operator is supported.
+The format is:
 
-=head3 Expression Examples
+I<condition> C<?> I<true-expression> C<:> I<false-expression>
+
+=head2 Expression Examples
 
 =head3 Algebraic
 
@@ -370,21 +429,21 @@ Result is C<F + L + 10> if C<<< (A + B) >= (C + D) >>>
 
 =back
 
-Prior to Base 3.14.9 it was legal to omit the : and the second (else) part
-of the conditional, like this:
+Prior to Base 3.14.9 it was legal to omit the colon C<:> and the second (else)
+part of the conditional, like this:
 
-C<(A + B)<(C + D) ? E>
+C<<< (A + B)<(C + D) ? E >>>
 
 =over 1
 
-=item
-Result is E if (A + B)<(C + D)
+=item *
+Result is C<E> if C<<< (A + B)<(C + D) >>>
 
-=item
-Result is unchanged if (A + B)>=(C + D)
+=item *
+Result is unchanged if C<<< (A + B)>=(C + D) >>>
 
 From 3.14.9 onwards, this expresion must be written as
-C<(A + B) < (C + D) ? E : VAL>
+C<<< (A + B) < (C + D) ? E : VAL >>>
 
 =back
 
@@ -406,7 +465,7 @@ Convert A to integer
 Convert B to integer
 
 =item *
-Bitwise And A and B
+Bitwise A C<and> B
 
 =item *
 Convert result to floating point
@@ -465,7 +524,7 @@ reporting of limit alarms until the signal has been within the alarm range for
 that number of seconds (the default AFTC value of zero retains the previous
 behavior).
 
-See L<Alarm Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#alarm-specification>
+See L<Alarm Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#alarm-specification>
 for a complete explanation of record alarms and of the standard fields.
 L<Alarm Fields|dbCommonRecord/Alarm Fields> lists other fields related
 to alarms that are common to all record types.
@@ -492,12 +551,12 @@ modifiable at run-time. They are used to process the record.
 The LALM field is used to implement the hysteresis factor for the alarm
 limits.
 
-The LA-LL fields are used to decide when to trigger monitors for the
+The LA-LU fields are used to decide when to trigger monitors for the
 corresponding fields. For instance, if LA does not equal the value A,
 monitors for A are triggered. The MLST and ALST fields are used in the same
 manner for the VAL field.
 
-=fields LALM, ALST, MLST, LA, LB, LC, LD, LE, LF, LG, LH, LI, LJ, LK, LL
+=fields LALM, ALST, MLST, LA - LU
 
 =cut
 
@@ -512,7 +571,7 @@ manner for the VAL field.
 		promptgroup("30 - Action")
 		special(SPC_CALC)
 		pp(TRUE)
-		size(80)
+		size(160)
 		initial("0")
 	}
 	field(INPA,DBF_INLINK) {
@@ -573,6 +632,60 @@ manner for the VAL field.
 	field(INPL,DBF_INLINK) {
 		prompt("Input L")
 		promptgroup("42 - Input G-L")
+		interest(1)
+	}
+	field(INPM,DBF_INLINK) {
+		prompt("Input M")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPN,DBF_INLINK) {
+		prompt("Input N")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPO,DBF_INLINK) {
+		prompt("Input O")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPP,DBF_INLINK) {
+		prompt("Input P")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPQ,DBF_INLINK) {
+		prompt("Input Q")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPR,DBF_INLINK) {
+		prompt("Input R")
+		special(SPC_MOD)
+		promptgroup("43 - Input M-R")
+		interest(1)
+	}
+	field(INPS,DBF_INLINK) {
+		prompt("Input S")
+		special(SPC_MOD)
+		promptgroup("44 - Input S-U")
+		interest(1)
+	}
+	field(INPT,DBF_INLINK) {
+		prompt("Input T")
+		special(SPC_MOD)
+		promptgroup("44 - Input S-U")
+		interest(1)
+	}
+	field(INPU,DBF_INLINK) {
+		prompt("Input U")
+		special(SPC_MOD)
+		promptgroup("44 - Input S-U")
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {
@@ -733,6 +846,42 @@ manner for the VAL field.
 		prompt("Value of Input L")
 		pp(TRUE)
 	}
+	field(M,DBF_DOUBLE) {
+		prompt("Value of Input M")
+		pp(TRUE)
+	}
+	field(N,DBF_DOUBLE) {
+		prompt("Value of Input N")
+		pp(TRUE)
+	}
+	field(O,DBF_DOUBLE) {
+		prompt("Value of Input O")
+		pp(TRUE)
+	}
+	field(P,DBF_DOUBLE) {
+		prompt("Value of Input P")
+		pp(TRUE)
+	}
+	field(Q,DBF_DOUBLE) {
+		prompt("Value of Input Q")
+		pp(TRUE)
+	}
+	field(R,DBF_DOUBLE) {
+		prompt("Value of Input R")
+		pp(TRUE)
+	}
+	field(S,DBF_DOUBLE) {
+		prompt("Value of Input S")
+		pp(TRUE)
+	}
+	field(T,DBF_DOUBLE) {
+		prompt("Value of Input T")
+		pp(TRUE)
+	}
+	field(U,DBF_DOUBLE) {
+		prompt("Value of Input U")
+		pp(TRUE)
+	}
 	field(LA,DBF_DOUBLE) {
 		prompt("Prev Value of A")
 		special(SPC_NOMOD)
@@ -793,6 +942,51 @@ manner for the VAL field.
 		special(SPC_NOMOD)
 		interest(3)
 	}
+	field(LM,DBF_DOUBLE) {
+		prompt("Prev Value of M")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LN,DBF_DOUBLE) {
+		prompt("Prev Value of N")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LO,DBF_DOUBLE) {
+		prompt("Prev Value of O")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LP,DBF_DOUBLE) {
+		prompt("Prev Value of P")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LQ,DBF_DOUBLE) {
+		prompt("Prev Value of Q")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LR,DBF_DOUBLE) {
+		prompt("Prev Value of R")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LS,DBF_DOUBLE) {
+		prompt("Prev Value of S")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LT,DBF_DOUBLE) {
+		prompt("Prev Value of T")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(LU,DBF_DOUBLE) {
+		prompt("Prev Value of U")
+		special(SPC_NOMOD)
+		interest(3)
+	}
 	field(LALM,DBF_DOUBLE) {
 		prompt("Last Value Alarmed")
 		special(SPC_NOMOD)
@@ -813,7 +1007,7 @@ manner for the VAL field.
 		prompt("Reverse Polish Calc")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(80)]")
+		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(160)]")
 	}
 
 =head2 Record Support
@@ -883,23 +1077,25 @@ Routine process implements the following algorithm:
 =over 1
 
 =item 1.
+
 Fetch all arguments.
 
 =item 2.
+
 Call routine C<calcPerform>, which calculates VAL from the postfix version of
 the expression given in CALC. If C<calcPerform> returns success UDF is set to
 FALSE.
 
 =item 3.
+
 Check alarms. This routine checks to see if the new VAL causes the alarm
 status and severity to change. If so, NSEV, NSTA, and LALM are set. It also
 honors the alarm hysteresis factor (HYST). Thus the value must change by
 at least HYST before the alarm status and severity changes.
 
 =item 4.
-Check to see if monitors should be invoked.
 
-=back
+Check to see if monitors should be invoked.
 
 =over 1
 
@@ -911,16 +1107,15 @@ Archive and values change monitors are invoked if ADEL and MDEL conditions
 are met.
 
 =item *
-Monitors for A-L are checked whenever other monitors are invoked.
+Monitors for A-U are checked whenever other monitors are invoked.
 
 =item *
 NSEV and NSTA are reset to 0.
 
 =back
 
-=over
-
 =item 5.
+
 Scan forward link if necessary, set PACT FALSE, and return.
 
 =back

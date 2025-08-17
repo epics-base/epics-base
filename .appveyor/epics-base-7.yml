@@ -59,8 +59,6 @@ environment:
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
   - CMP: vs2015
   - CMP: vs2013
-  - CMP: vs2012
-  - CMP: vs2010
   - CMP: gcc
     APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     # TODO: static linking w/ readline isn't working.  Bypass auto-detect
@@ -74,11 +72,6 @@ platform:
 # Matrix configuration: exclude sets of jobs
 matrix:
   exclude:
-  # VS2012 and older installs don't have the 64 bit compiler
-  - platform: x64
-    CMP: vs2012
-  - platform: x64
-    CMP: vs2010
   # Exclude more jobs to reduce build time
   # Skip 32-bit for "middle-aged" compilers
   - platform: x86

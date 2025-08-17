@@ -3396,7 +3396,7 @@ void verifyContextRundownChanStillExist (
     showProgressEnd ( interestLevel );
 }
 
-int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
+void acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
             unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
     chid chan;
@@ -3549,8 +3549,6 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     printf ( "\nTest Complete\n" );
 
     epicsExit ( EXIT_SUCCESS );
-
-    return 0;
 }
 
 

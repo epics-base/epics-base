@@ -61,6 +61,12 @@ DBDINC += menuScan
 DBDINC += dbCommon
 
 dbMenusPod = $(notdir $(wildcard ../db/menu*.dbd.pod))
+
+DOCS += $(patsubst %.dbd.pod,%.md,$(dbMenusPod))
+DOCS += dbCommonRecord.md
+DOCS += dbCommonInput.md
+DOCS += dbCommonOutput.md
+
 HTMLS += $(patsubst %.dbd.pod,%.html,$(dbMenusPod))
 HTMLS += dbCommonRecord.html
 HTMLS += dbCommonInput.html

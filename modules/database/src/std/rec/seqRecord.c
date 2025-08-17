@@ -282,10 +282,10 @@ static void processCallback(epicsCallback *arg)
 static long get_units(DBADDR *paddr, char *units)
 {
     seqRecord *prec = (seqRecord *) paddr->precord;
-    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY0);
 
     if (fieldOffset >= 0)
-        switch (fieldOffset & 2) {
+        switch (fieldOffset & 3) {
         case 0: /* DLYn */
             strcpy(units, "s");
             break;
@@ -299,11 +299,11 @@ static long get_units(DBADDR *paddr, char *units)
 static long get_precision(const DBADDR *paddr, long *pprecision)
 {
     seqRecord *prec = (seqRecord *) paddr->precord;
-    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY0);
     short precision;
 
     if (fieldOffset >= 0)
-        switch (fieldOffset & 2) {
+        switch (fieldOffset & 3) {
         case 0: /* DLYn */
             *pprecision = seqDLYprecision;
             return 0;
@@ -321,10 +321,10 @@ static long get_precision(const DBADDR *paddr, long *pprecision)
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
     seqRecord *prec = (seqRecord *) paddr->precord;
-    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY0);
 
     if (fieldOffset >= 0)
-        switch (fieldOffset & 2) {
+        switch (fieldOffset & 3) {
         case 0: /* DLYn */
             pgd->lower_disp_limit = 0.0;
             pgd->lower_disp_limit = 10.0;
@@ -341,9 +341,9 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY0);
 
-    if (fieldOffset >= 0 && (fieldOffset & 2) == 0) { /* DLYn */
+    if (fieldOffset >= 0 && (fieldOffset & 3) == 0) { /* DLYn */
         pcd->lower_ctrl_limit = 0.0;
         pcd->upper_ctrl_limit = seqDLYlimit;
     }
@@ -355,9 +355,9 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
     seqRecord *prec = (seqRecord *) paddr->precord;
-    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY0);
 
-    if (fieldOffset >= 0 && (fieldOffset & 2) == 2)  /* DOn */
+    if (fieldOffset >= 0 && (fieldOffset & 3) == 2)  /* DOn */
         dbGetAlarmLimits(get_dol(prec, fieldOffset),
             &pad->lower_alarm_limit,   &pad->lower_warning_limit,
             &pad->upper_warning_limit, &pad->upper_alarm_limit);

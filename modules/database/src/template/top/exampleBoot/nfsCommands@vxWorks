@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 1997 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 #- Instructions for creating and using a real nfsCommands file
 #- 
 #- in order to use nfs do the following:

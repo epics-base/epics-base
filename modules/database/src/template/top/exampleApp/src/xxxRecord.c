@@ -1,3 +1,7 @@
+/* SPDX-FileCopyrightText: 1998 Argonne National Laboratory */
+
+/* SPDX-License-Identifier: EPICS */
+
 /* xxxRecord.c */
 /* Example record support module */
 
@@ -63,15 +67,6 @@ rset xxxRSET={
 };
 epicsExportAddress(rset,xxxRSET);
 
-typedef struct xxxset { /* xxx input dset */
-    long        number;
-    DEVSUPFUN   dev_report;
-    DEVSUPFUN   init;
-    DEVSUPFUN   init_record; /*returns: (-1,0)=>(failure,success)*/
-    DEVSUPFUN   get_ioint_info;
-    DEVSUPFUN   read_xxx;
-}xxxdset;
-
 static void checkAlarms(xxxRecord *prec);
 static void monitor(xxxRecord *prec);
 
@@ -88,13 +83,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return(S_dev_noDSET);
     }
     /* must have read_xxx function defined */
-    if( (pdset->number < 5) || (pdset->read_xxx == NULL) ) {
+    if( (pdset->common.number < 5) || (pdset->read_xxx == NULL) ) {
         recGblRecordError(S_dev_missingSup,(void *)prec,"xxx: init_record");
         return(S_dev_missingSup);
     }
 
-    if( pdset->init_record ) {
-        if((status=(*pdset->init_record)(prec))) return(status);
+    if( pdset->common.init_record ) {
+        if((status=(*pdset->common.init_record)(pcommon))) return(status);
     }
     return(0);
 }

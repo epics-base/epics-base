@@ -209,6 +209,11 @@ aslibtest_SRCS += aslibtest.c
 testHarness_SRCS += aslibtest.c
 TESTS += aslibtest
 
+TESTPROD_HOST += fdManagerTest
+fdManagerTest_SRCS += fdManagerTest.cpp
+testHarness_SRCS += fdManagerTest.cpp
+TESTS += fdManagerTest
+
 # Perl module tests:
 TESTS += macLib
 
@@ -250,6 +255,11 @@ TESTPROD_HOST += osiSockTest
 osiSockTest_SRCS += osiSockTest.c
 testHarness_SRCS += osiSockTest.c
 TESTS += osiSockTest
+
+TESTPROD_HOST += afterIocRunningTest
+afterIocRunningTest_SRCS += afterIocRunningTest.cpp
+TESTS += afterIocRunningTest
+testHarness_SRCS += afterIocRunningTest.cpp
 
 TESTPROD_HOST += testexecname
 testexecname_SRCS += testexecname.c
@@ -295,7 +305,7 @@ TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD = $(TESTPROD_HOST)
+TESTPROD += $(TESTPROD_HOST)
 TESTSCRIPTS += $(filter-out epicsUnitTestTest.t, $(TESTS:%=%.t))
 endif
 
@@ -315,11 +325,6 @@ TESTPROD_HOST += buckTest
 buckTest_SRCS += buckTest.c
 testHarness_SRCS += buckTest.c
 
-#TESTPROD_HOST += fdmgrTest
-fdmgrTest_SRCS += fdmgrTest.c
-fdmgrTest_LIBS += ca
-# FIXME: program never exits.
-
 TESTPROD_HOST += epicsAtomicPerform
 epicsAtomicPerform_SRCS += epicsAtomicPerform.cpp
 testHarness_SRCS += epicsAtomicPerform.cpp
@@ -337,6 +342,13 @@ testHarness_SRCS += nonEpicsThreadPriorityTest.cpp
 epicsRunLibComTests_CFLAGS += -DHAVE_PTHREAD_PRIORITY_SCHEDULING
 TESTS += nonEpicsThreadPriorityTest
 endif
+endif
+
+ifneq ($(filter READLINE EPICS,$(COMMANDLINE_LIBRARY)),)
+TESTPROD_HOST += readlineTest
+readlineTest_SRCS += readlineTest.c
+TESTS += readlineTest
+TESTFILES += ../multiline-input.txt ../multiline-expect.txt
 endif
 
 include $(TOP)/configure/RULES

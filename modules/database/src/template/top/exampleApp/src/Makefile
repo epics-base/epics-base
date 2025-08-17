@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 1998 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 TOP=../..
 
 include $(TOP)/configure/CONFIG
@@ -5,7 +9,7 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS BELOW HERE
 
 # Use typed rset structure (see 3.16.1 release notes)
-USR_CPPFLAGS += -DUSE_TYPED_RSET
+USR_CPPFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
 
 # xxxRecord.h will be created from xxxRecord.dbd
 DBDINC += xxxRecord

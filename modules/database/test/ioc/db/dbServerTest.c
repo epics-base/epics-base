@@ -40,6 +40,8 @@ void oneReport(unsigned level)
 void oneStats(unsigned *channels, unsigned *clients)
 {
     oneState = STATS_CALLED;
+    if (channels) *channels = 2;
+    if (clients)  *clients = 1;
 }
 
 int oneClient(char *pbuf, size_t len)
@@ -128,8 +130,9 @@ MAIN(dbServerTest)
     char name[16];
     char *theName = "The One";
     int status;
+    unsigned ch=0, cl=0;
 
-    testPlan(25);
+    testPlan(35);
 
     /* Prove that we handle substring names properly */
     epicsEnvSet("EPICS_IOC_IGNORE_SERVERS", "none ones");
@@ -151,6 +154,9 @@ MAIN(dbServerTest)
     testDiag("Registering dbServer 'disabled'");
     testOk(dbRegisterServer(&disabled) == 0, "Registration accepted");
 
+    testOk(dbServerStats("one", &ch, &cl) == -1 && oneState == NOTHING_CALLED,
+            "dbServerStats returns error before IOC running");
+
     testDiag("Changing server state");
     dbInitServers();
     testOk(oneState == INIT_CALLED, "dbInitServers");
@@ -163,8 +169,26 @@ MAIN(dbServerTest)
 
     testDiag("Checking server methods called");
     dbsr(0);
-    testOk(oneState == REPORT_CALLED, "dbsr called report()");
+    testOk(oneState == REPORT_CALLED, "dbsr called one::report()");
 
+    testDiag("Checking stats functionality");
+    testOk(dbServerStats("none", &ch, &cl) == 0, "Stats: unknown name ignored");
+    testOk(dbServerStats("one", &ch, &cl) == 1 && oneState == STATS_CALLED,
+        "dbServerStats('one') called one::stats()");
+    testOk(ch == 2 && cl == 1, "Stats: ch==%d, cl==%d (expected 2, 1)", ch, cl);
+
+    testOk(dbServerStats("no-routines", &ch, &cl) == 0,
+        "dbServerStats('no-routines') layer not counted");
+    testOk(ch == 0 && cl == 0, "Stats: ch==%d, cl==%d (expected 0, 0)", ch, cl);
+
+    ch = 10; cl = 10; oneState = NOTHING_CALLED;
+    testOk(dbServerStats(NULL, NULL, &cl) == 1 && oneState == STATS_CALLED,
+        "dbServerStats(NULL, &cl) called one::stats()");
+    testOk(dbServerStats(NULL, &ch, NULL) == 1 && oneState == STATS_CALLED,
+        "dbServerStats(NULL, &ch) called one::stats()");
+    testOk(ch == 2 && cl == 1, "Stats: ch==%d, cl==%d (expected 2, 1)", ch, cl);
+
+    testDiag("Checking client identification");
     oneSim = NULL;
     name[0] = 0;
     status = dbServerClient(name, sizeof(name));
@@ -187,6 +211,9 @@ MAIN(dbServerTest)
 
     status = dbServerClient(name, sizeof(name));
     testOk(oneState != CLIENT_CALLED_KNOWN, "No call to client() when paused");
+
+    testOk(dbServerStats("one", &ch, &cl) == -1 && oneState != STATS_CALLED,
+        "No call to stats() when paused");
 
     dbStopServers();
     testOk(oneState == STOP_CALLED, "dbStopServers");

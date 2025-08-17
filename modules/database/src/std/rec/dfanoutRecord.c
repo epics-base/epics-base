@@ -37,6 +37,7 @@
 #include "recGbl.h"
 #include "special.h"
 #include "menuOmsl.h"
+#include "menuIvoa.h"
 
 #define GEN_SIZE_OFFSET
 #include "dfanoutRecord.h"
@@ -89,7 +90,7 @@ static void checkAlarms(dfanoutRecord *);
 static void monitor(dfanoutRecord *);
 static void push_values(dfanoutRecord *);
 
-#define OUT_ARG_MAX 8
+#define OUT_ARG_MAX 16
 
 
 static long init_record(struct dbCommon *pcommon, int pass)
@@ -124,7 +125,25 @@ static long process(struct dbCommon *pcommon)
     /* Push out the data to all the forward links */
     dbGetLink(&(prec->sell),DBR_USHORT,&(prec->seln),0,0);
     checkAlarms(prec);
-    push_values(prec);
+    if (prec->nsev < INVALID_ALARM)
+        push_values(prec);
+    else {
+        switch (prec->ivoa) {
+            case menuIvoaContinue_normally:
+                push_values(prec);
+                break;
+            case menuIvoaDon_t_drive_outputs:
+                break;
+            case menuIvoaSet_output_to_IVOV:
+                prec->val=prec->ivov;
+                push_values(prec);
+                break;
+            default :
+                status=-1;
+                recGblRecordError(S_db_badField,(void *)prec,
+                        "dfanout:process Illegal IVOA field");
+        }
+    }
     monitor(prec);
     recGblFwdLink(prec);
     prec->pact=FALSE;
@@ -284,7 +303,7 @@ static void push_values(dfanoutRecord *prec)
     struct link     *plink; /* structure of the link field  */
     int             i;
     long            status;
-    unsigned short  state;
+    epicsUInt16     state;
 
     switch (prec->selm){
     case (dfanoutSELM_All):

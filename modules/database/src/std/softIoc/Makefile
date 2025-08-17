@@ -29,4 +29,3 @@ softIoc_LIBS = $(EPICS_BASE_IOC_LIBS)
 DB += softIocExit.db
 
 CLEANS += epicsInstallDir.h
-

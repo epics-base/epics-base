@@ -1,0 +1,36 @@
+# .readthedocs.yml
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# Required
+version: 2
+
+build:
+  os: ubuntu-22.04
+  tools:
+      python: "3.9"
+  apt_packages:
+    - graphviz
+    - rsync
+  jobs:
+    pre_build:
+      - make inc
+      - make -C documentation rtd
+
+# Build documentation in the documentation/O.Common directory with Sphinx
+sphinx:
+  configuration: documentation/O.Common/rtd-src/conf.py
+
+# Build documentation with MkDocs
+#mkdocs:
+#  configuration: mkdocs.yml
+
+# Optionally build your docs in additional formats such as PDF and ePub
+#formats: []
+
+submodules:
+    exclude: all
+
+python:
+   install:
+      - requirements: documentation/requirements.txt

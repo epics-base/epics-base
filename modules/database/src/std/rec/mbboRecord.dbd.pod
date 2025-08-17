@@ -354,6 +354,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(ONST,DBF_STRING) {
 		prompt("One String")
@@ -362,6 +363,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(TWST,DBF_STRING) {
 		prompt("Two String")
@@ -370,6 +372,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(THST,DBF_STRING) {
 		prompt("Three String")
@@ -378,6 +381,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(FRST,DBF_STRING) {
 		prompt("Four String")
@@ -386,6 +390,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(FVST,DBF_STRING) {
 		prompt("Five String")
@@ -394,6 +399,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(SXST,DBF_STRING) {
 		prompt("Six String")
@@ -402,6 +408,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(SVST,DBF_STRING) {
 		prompt("Seven String")
@@ -410,6 +417,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(EIST,DBF_STRING) {
 		prompt("Eight String")
@@ -418,6 +426,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(NIST,DBF_STRING) {
 		prompt("Nine String")
@@ -426,6 +435,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(TEST,DBF_STRING) {
 		prompt("Ten String")
@@ -434,6 +444,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(ELST,DBF_STRING) {
 		prompt("Eleven String")
@@ -442,6 +453,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(TVST,DBF_STRING) {
 		prompt("Twelve String")
@@ -450,6 +462,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(TTST,DBF_STRING) {
 		prompt("Thirteen String")
@@ -458,6 +471,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(FTST,DBF_STRING) {
 		prompt("Fourteen String")
@@ -466,6 +480,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(FFST,DBF_STRING) {
 		prompt("Fifteen String")
@@ -474,6 +489,7 @@ for more information on simulation mode and its fields.
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(ZRSV,DBF_MENU) {
 		prompt("State Zero Severity")

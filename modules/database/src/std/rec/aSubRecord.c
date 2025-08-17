@@ -21,6 +21,7 @@
 
 #include "alarm.h"
 #include "cantProceed.h"
+#include "epicsStdio.h"
 #include "dbDefs.h"
 #include "dbEvent.h"
 #include "dbAccess.h"
@@ -141,8 +142,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
         if (pfunc) {
             pfunc(prec);
         } else {
-            recGblRecordError(S_db_BadSub, (void *)prec,
-                "aSubRecord::init_record - INAM subr not found");
+            fprintf(stderr, "%s.INAM " ERL_ERROR " function '%s' not found\n",
+                    prec->name, prec->inam);
             return S_db_BadSub;
         }
     }
@@ -153,8 +154,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
         if (pfunc)
             prec->sadr = pfunc;
         else {
-            recGblRecordError(S_db_BadSub, (void *)prec,
-                "aSubRecord::init_record - SNAM subr not found");
+            fprintf(stderr, "%s.SNAM " ERL_ERROR " function '%s' not found\n",
+                    prec->name, prec->snam);
             return S_db_BadSub;
         }
     }

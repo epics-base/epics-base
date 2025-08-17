@@ -103,6 +103,7 @@ typedef struct epicsThreadOSD {
     char isSuspended;
     int joinable;
     int isRunning;
+    int isOkToBlock;
     HANDLE timer; /* waitable timer */
 } win32ThreadParam;
 
@@ -586,6 +587,7 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
 
         pParm->handle = handle;
         pParm->id = id;
+        pParm->isOkToBlock = 1;
         win32ThreadPriority = GetThreadPriority ( pParm->handle );
         assert ( win32ThreadPriority != THREAD_PRIORITY_ERROR_RETURN );
         pParm->epicsPriority = epicsThreadGetOsiPriorityValue ( win32ThreadPriority );
@@ -1224,3 +1226,17 @@ void testPriorityMapping ()
     return 0;
 }
 #endif
+
+int epicsStdCall epicsThreadIsOkToBlock(void)
+{
+    struct epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    return(pthreadInfo->isOkToBlock);
+}
+
+void epicsStdCall epicsThreadSetOkToBlock(int isOkToBlock)
+{
+    struct epicsThreadOSD *pthreadInfo = epicsThreadGetIdSelf();
+
+    pthreadInfo->isOkToBlock = !!isOkToBlock;
+}

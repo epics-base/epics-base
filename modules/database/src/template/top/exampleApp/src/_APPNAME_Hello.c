@@ -1,3 +1,7 @@
+/* SPDX-FileCopyrightText: 2005 Argonne National Laboratory */
+
+/* SPDX-License-Identifier: EPICS */
+
 /* Example showing how to register a new command with iocsh */
 
 #include <stdio.h>

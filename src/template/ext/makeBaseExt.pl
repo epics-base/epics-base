@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+# SPDX-FileCopyrightText: 2000 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 # Authors: Ralph Lange, Marty Kraimer, Andrew Johnson and Janet Anderson
 
 use Cwd;

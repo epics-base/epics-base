@@ -1,0 +1,4 @@
+# Test re-load alias in record
+record(x, "testrecAgain") {
+    alias("testaliasAgain1")
+}

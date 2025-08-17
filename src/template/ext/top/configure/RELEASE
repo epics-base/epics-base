@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2000 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 # RELEASE Locations of external modules
 #
 # NOTE: The build does not check dependancies on files

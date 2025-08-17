@@ -13,7 +13,7 @@ include $(TOP)/configure/CONFIG
 
 # Allow access to private headers in db/
 USR_CPPFLAGS += -I $(CURDIR)/../../../src/ioc/db
-USR_CPPFLAGS += -DUSE_TYPED_RSET
+USR_CPPFLAGS += -DUSE_TYPED_RSET -DUSE_TYPED_DSET
 
 TESTLIBRARY = dbTestIoc
 
@@ -36,6 +36,7 @@ dbTestIoc_DBD += xLink.dbd
 dbTestIoc_DBD += devx.dbd
 dbTestIoc_DBD += jlinkz.dbd
 dbTestIoc_DBD += dbLinkdset.dbd
+dbTestIoc_DBD += dbCore.dbd
 TESTFILES += $(COMMON_DIR)/dbTestIoc.dbd ../xRecord.db
 
 testHarness_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
@@ -183,6 +184,11 @@ testHarness_SRCS += dbStaticTest.c
 TESTFILES += ../dbStaticTest.db
 TESTFILES += ../dbStaticTestAlias1.db
 TESTFILES += ../dbStaticTestAlias2.db
+TESTFILES += ../dbStaticTestAliasAgain1.db
+TESTFILES += ../dbStaticTestAliasAgain2.db
+TESTFILES += ../dbStaticTestAliasAgain3.db
+TESTFILES += ../dbStaticTestAliasAgainError1.db
+TESTFILES += ../dbStaticTestAliasAgainError2.db
 TESTFILES += ../dbStaticTestRemove.db
 TESTS += dbStaticTest
 
@@ -202,8 +208,8 @@ TESTSPEC_RTEMS = dbTestHarness.boot; epicsRunDbTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 ifneq ($(filter $(T_A),$(CROSS_COMPILER_RUNTEST_ARCHS)),)
-TESTPROD_RTEMS = $(TESTPROD_HOST)
-TESTSCRIPTS_RTEMS += $(TESTS:%=%.t)
+TESTPROD += $(TESTPROD_HOST)
+TESTSCRIPTS += $(TESTS:%=%.t)
 endif
 
 include $(TOP)/configure/RULES

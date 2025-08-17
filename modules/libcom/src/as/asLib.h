@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+struct dbChannel;
+
 /* 0 - Use (unverified) client provided host name string.
  * 1 - Use actual client IP address.  HAG() are resolved to IPs at ACF load time.
  */
@@ -121,7 +123,7 @@ LIBCOM_API int epicsStdCall asDumpHash(void);
 LIBCOM_API int epicsStdCall asDumpHashFP(FILE *fp);
 
 LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithData(
-    const char *userid, const char *hostid, void *addr,
+    const char *userid, const char *hostid, struct dbChannel *addr,
     int dbrType, int no_elements, void *data);
 
 LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);

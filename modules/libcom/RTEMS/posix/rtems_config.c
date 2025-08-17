@@ -2,7 +2,7 @@
 * Copyright (c) 2002 The University of Saskatchewan
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * RTEMS configuration for EPICS
@@ -26,7 +26,14 @@ extern void *POSIX_Init(void *argument);
 #define CONFIGURE_POSIX_INIT_THREAD_STACK_SIZE  (64*1024)
 
 #define CONFIGURE_MAXIMUM_PERIODS 	5
+/*
+ * Override in configure/CONFIG_SITE.local with:
+ *
+ * OP_SYS_CFLAGS += -DCONFIGURE_MICROSECONDS_PER_TICK=1000
+ */
+#ifndef CONFIGURE_MICROSECONDS_PER_TICK
 #define CONFIGURE_MICROSECONDS_PER_TICK 10000
+#endif
 #define CONFIGURE_MALLOC_STATISTICS     1
 /* MINIMUM_STACK_SIZE == 8K */
 #define CONFIGURE_EXTRA_TASK_STACKS         (4000 * RTEMS_MINIMUM_STACK_SIZE)
@@ -121,16 +128,17 @@ extern void *POSIX_Init(void *argument);
   &rtems_shell_SYSCTL_Command
 #else // LEGACY_STACK:
 #define CONFIGURE_SHELL_USER_COMMANDS \
-  &bsp_interrupt_shell_command, \
-  &rtems_shell_PING_Command, \
-  &rtems_shell_ROUTE_Command, \
-  &rtems_shell_IFCONFIG_Command
-#endif
+  &bsp_interrupt_shell_command
+#endif // not LEGACY_STACK
 
 #define CONFIGURE_SHELL_COMMAND_CPUUSE
 #define CONFIGURE_SHELL_COMMAND_PERIODUSE
 #define CONFIGURE_SHELL_COMMAND_STACKUSE
 #define CONFIGURE_SHELL_COMMAND_PROFREPORT
+#define CONFIGURE_SHELL_COMMAND_TOP
+#define CONFIGURE_SHELL_COMMAND_RTEMS
+
+#define CONFIGURE_SHELL_COMMANDS_ALL_NETWORKING
 
 #define CONFIGURE_SHELL_COMMAND_CP
 #define CONFIGURE_SHELL_COMMAND_PWD
@@ -148,14 +156,15 @@ extern void *POSIX_Init(void *argument);
 #define CONFIGURE_SHELL_COMMAND_SHUTDOWN
 
 #include <rtems/shellconfig.h>
+
 #define RTEMS_BSD_CONFIG_BSP_CONFIG
 #define RTEMS_BSD_CONFIG_SERVICE_TELNETD
 #define RTEMS_BSD_CONFIG_TELNETD_STACK_SIZE (16 * 1024)
 #define RTEMS_BSD_CONFIG_SERVICE_FTPD
 #define RTEMS_BSD_CONFIG_FIREWALL_PF
-#else
+#else // __RTEMS_MAJOR__ > 4
 #include <rtems/shellconfig.h>
-#endif // not LEGACY_STACK
+#endif // __RTEMS_MAJOR__ > 4
 
 #if __RTEMS_MAJOR__ < 5 // still needed in Version 4?
 #define CONFIGURE_MAXIMUM_TASKS             rtems_resource_unlimited(30)

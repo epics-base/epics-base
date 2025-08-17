@@ -163,7 +163,11 @@ typedef void (*initHookFunction)(initHookState state);
  *
  * Registers \p func for initHook notifications
  * \param func Pointer to application's notification function.
- * \return 0 if Ok, -1 on error (memory allocation failure).
+ * \return Always zero.  (before UNRELEASED could return -1 on allocation failure)
+ *
+ * \since UNRELEASED initHookRegister is idempotent.
+ *        Previously, repeated registrations would result
+ *        in duplicate calls to the hook function.
  */
 LIBCOM_API int initHookRegister(initHookFunction func);
 

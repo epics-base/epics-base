@@ -45,10 +45,13 @@ FIND_PM = $(wildcard $(EPICS_BASE)/lib/perl/$(1))
 #---------------------------------------------------------------
 # EPICS Base build tools and tool flags
 
+PODTOMD_pl       = $(TOOLS)/podToMD.pl
+PODTOMD          = $(PERL) $(PODTOMD_pl)
 PODTOHTML_pl     = $(TOOLS)/podToHtml.pl
 PODTOHTML_dep    = $(PODTOHTML_pl) $(call FIND_PM,EPICS/PodHtml.pm)
 PODTOHTML        = $(PERL) $(PODTOHTML_pl)
 CONVERTRELEASE   = $(PERL) $(call FIND_TOOL,convertRelease.pl)
+FILTERMAKEFLAGS  = $(PERL) $(call FIND_TOOL,filterMakeflags.pl)
 FULLPATHNAME     = $(PERL) $(TOOLS)/fullPathName.pl
 GENVERSIONHEADER = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG) $(QUESTION_FLAG)
 
@@ -64,6 +67,24 @@ INSTALL_LIBRARY = $(INSTALL)
 # tools for making header dependencies and variable replacement
 MKMF       = $(PERL) $(TOOLS)/mkmf.pl
 REPLACEVAR = $(PERL) $(TOOLS)/replaceVAR.pl
+
+#---------------------------------------------------------------
+# How to portably check the flags to make
+# GNUmake versions before 4.0 gave different values
+makeflags := $(shell $(FILTERMAKEFLAGS) $(MAKEFLAGS))
+define checkflags
+  make-$1 := $(findstring $1,$(makeflags))
+endef
+# This is extensible to most single letter flags:
+$(foreach flag,s q, $(eval $(call checkflags,$(flag))))
+
+# Silent builds - suppress messages during 'make -s'
+NOP = :
+ECHO = @$(if $(make-s),$(NOP),echo)
+QUIET_FLAG := $(if $(make-s),-q,)
+
+# Convert 'make -q' flag into '-i' for genVersionHeader.pl
+QUESTION_FLAG := $(if $(make-q),-i,)
 
 #---------------------------------------------------------------
 # tools for cleaning out unwanted files

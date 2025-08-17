@@ -190,6 +190,7 @@ unsigned short recGblResetAlarms(void *precord)
 
     if(strcmp(pdbc->namsg, pdbc->amsg)!=0) {
         strcpy(pdbc->amsg, pdbc->namsg);
+        pdbc->namsg[0] = '\0';
         stat_mask = DBE_ALARM;
     }
 
@@ -259,8 +260,8 @@ int recGblSetSevr(void *precord, epicsEnum16 new_stat, epicsEnum16 new_sevr)
     return recGblSetSevrMsg(precord, new_stat, new_sevr, NULL);
 }
 
-void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
-    epicsEnum16 sevr)
+void recGblInheritSevrMsg(int msMode, void *precord, epicsEnum16 stat,
+    epicsEnum16 sevr, const char *msg)
 {
     switch (msMode) {
     case pvlOptNMS:
@@ -273,11 +274,17 @@ void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
         recGblSetSevr(precord, LINK_ALARM, sevr);
         break;
     case pvlOptMSS:
-        recGblSetSevr(precord, stat, sevr);
+        /* Only MSS inherits msg */
+        recGblSetSevrMsg(precord, stat, sevr, "%s", msg);
         break;
     }
 }
 
+void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
+    epicsEnum16 sevr)
+{
+    recGblInheritSevrMsg(msMode, precord, stat, sevr, NULL);
+}
 
 void recGblFwdLink(void *precord)
 {

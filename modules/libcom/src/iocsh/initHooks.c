@@ -21,6 +21,7 @@
 #include "ellLib.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
+#include "cantProceed.h"
 
 #include "initHooks.h"
 
@@ -52,19 +53,26 @@ static void initHookInit(void)
 int initHookRegister(initHookFunction func)
 {
     initHookLink *newHook;
+    ELLNODE *cur;
 
     if (!func) return 0;
 
     initHookInit();
 
-    newHook = (initHookLink *)malloc(sizeof(initHookLink));
-    if (!newHook) {
-        printf("Cannot malloc a new initHookLink\n");
-        return -1;
+    epicsMutexMustLock(listLock);
+
+    for(cur = ellFirst(&functionList); cur; cur = ellNext(cur)) {
+        const initHookLink *fn = CONTAINER(cur, initHookLink, node);
+        if(fn->func==func) {
+            /* silently ignore duplicate */
+            epicsMutexUnlock(listLock);
+            return 0;
+        }
     }
+
+    newHook = (initHookLink *)mallocMustSucceed(sizeof(initHookLink), "initHookRegister");
     newHook->func = func;
 
-    epicsMutexMustLock(listLock);
     ellAdd(&functionList, &newHook->node);
     epicsMutexUnlock(listLock);
     return 0;

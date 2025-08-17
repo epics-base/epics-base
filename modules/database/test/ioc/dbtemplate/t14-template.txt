@@ -1,0 +1,5 @@
+This is t14-template.txt
+
+include "database/test/ioc/dbtemplate/t14-include.txt"
+
+End of t14-template.txt

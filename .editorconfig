@@ -6,3 +6,7 @@ root = true
 # as some compilers complain about files not ending in newline
 [*]
 insert_final_newline = true
+
+# Part of readline test that needs file without final newline
+[modules/libcom/test/multiline-input.txt]
+insert_final_newline = false

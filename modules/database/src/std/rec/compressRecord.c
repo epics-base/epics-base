@@ -384,6 +384,7 @@ static long special(DBADDR *paddr, int after)
 
     if (special_type == SPC_RESET) {
         reset(prec);
+        monitor(prec);
         return 0;
     }
 

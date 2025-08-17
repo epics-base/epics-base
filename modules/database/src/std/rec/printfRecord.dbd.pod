@@ -148,7 +148,7 @@ which type of the data is requested through the appropriate input link. As with
 C<printf()> a C<*> character may be used in the format to specify width and/or
 precision instead of numeric literals, in which case additional input links are
 used to provide the necessary integer parameter or parameters. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on specifying links.
 
 The formatted string is written to the VAL field.  The maximum number of

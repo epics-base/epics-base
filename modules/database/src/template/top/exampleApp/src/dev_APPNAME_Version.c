@@ -1,3 +1,7 @@
+/* SPDX-FileCopyrightText: 2015 Argonne National Laboratory */
+
+/* SPDX-License-Identifier: EPICS */
+
 /* dev_APPNAME_Version.c */
 /* Example device support for the lsi (long string input) record
  * providing the module version string as the value

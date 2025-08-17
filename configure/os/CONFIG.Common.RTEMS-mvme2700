@@ -1,7 +1,6 @@
 #
 # Author: Matt Rippa
 #
-RTEMS_BSP = mvme2307
 RTEMS_TARGET_CPU = powerpc
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
@@ -23,3 +22,9 @@ define MUNCH_CMD
 endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
+
+ifeq ($(shell test $(RTEMS_VERSION) -ge 5; echo $$?),0)
+RTEMS_BSP = mvme2700
+else
+RTEMS_BSP = mvme2307
+endif

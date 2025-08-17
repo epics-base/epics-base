@@ -26,6 +26,7 @@
 
 #include "epicsEvent.h"
 #include "epicsThread.h"
+#include "rtemsNamePvt.h"
 #include "errlog.h"
 
 /* #define EPICS_RTEMS_SEMAPHORE_STATS */
@@ -47,12 +48,9 @@ epicsEventCreate(epicsEventInitialState initialState)
 {
     rtems_status_code sc;
     rtems_id sid;
-    rtems_interrupt_level level;
-    static char c1 = 'a';
-    static char c2 = 'a';
-    static char c3 = 'a';
+    static uint32_t name;
 
-    sc = rtems_semaphore_create (rtems_build_name ('B', c3, c2, c1),
+    sc = rtems_semaphore_create (next_rtems_name ('B', &name),
         initialState,
         RTEMS_FIFO | RTEMS_SIMPLE_BINARY_SEMAPHORE |
             RTEMS_NO_INHERIT_PRIORITY | RTEMS_NO_PRIORITY_CEILING | RTEMS_LOCAL,
@@ -62,26 +60,6 @@ epicsEventCreate(epicsEventInitialState initialState)
         errlogPrintf ("Can't create binary semaphore: %s\n", rtems_status_text (sc));
         return NULL;
     }
-    rtems_interrupt_disable (level);
-    if (c1 == 'z') {
-        if (c2 == 'z') {
-            if (c3 == 'z') {
-                c3 = 'a';
-            }
-            else {
-                c3++;
-            }
-            c2 = 'a';
-        }
-        else {
-            c2++;
-        }
-        c1 = 'a';
-    }
-    else {
-        c1++;
-    }
-    rtems_interrupt_enable (level);
     return (epicsEventId)sid;
 }
 

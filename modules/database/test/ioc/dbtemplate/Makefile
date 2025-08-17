@@ -9,11 +9,6 @@ TOP = ../../../../..
 
 include $(TOP)/configure/CONFIG
 
-TESTPROD_HOST_DEFAULT = dbltExpand
-TESTPROD_HOST_WIN32 = -nil-
-dbltExpand_SRCS += dbltExpand.c
-dbltExpand_LIBS += dbCore ca Com
-
 TESTS += msi
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)

@@ -1,3 +1,7 @@
+/* SPDX-FileCopyrightText: 2000 Argonne National Laboratory */
+
+/* SPDX-License-Identifier: EPICS */
+
 /*caMonitor.c*/
 
 /* This example accepts the name of a file containing a list of pvs to monitor.

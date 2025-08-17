@@ -43,7 +43,8 @@ extern "C" {
  * \param errorMessage A printf-style error message describing the error.
  * \param ... Any parameters required for the error message.
  */
-LIBCOM_API void cantProceed(
+LIBCOM_API EPICS_NORETURN
+void cantProceed(
     EPICS_PRINTF_FMT(const char *errorMessage), ...
 ) EPICS_PRINTF_STYLE(1,2);
 
@@ -56,18 +57,24 @@ LIBCOM_API void cantProceed(
  * gracefully when memory runs out.
  */
 /** @{ */
-/** \brief A calloc() that never returns NULL.
+/** \brief A calloc() which suspends on error.
  * \param count Number of objects.
  * \param size Size of each object.
- * \param errorMessage What this memory is needed for.
- * \return Pointer to zeroed allocated memory.
+ * \param errorMessage Context added to logged error message
+ * \return Pointer to zeroed allocated memory.  Should later be free() d
+ *
+ * Will always return NULL for a zero length allocation.
+ * Will never return NULL otherwise.
  */
 LIBCOM_API void * callocMustSucceed(size_t count, size_t size,
     const char *errorMessage);
-/** \brief A malloc() that never returns NULL.
+/** \brief A malloc() which suspends on error.
  * \param size Size of block to allocate.
- * \param errorMessage What this memory is needed for.
- * \return Pointer to allocated memory.
+ * \param errorMessage Context added to logged error message
+ * \return Pointer to allocated memory.  Should later be free() d
+ *
+ * Will always return NULL for a zero length allocation.
+ * Will never return NULL otherwise.
  */
 LIBCOM_API void * mallocMustSucceed(size_t size, const char *errorMessage);
 /** @} */

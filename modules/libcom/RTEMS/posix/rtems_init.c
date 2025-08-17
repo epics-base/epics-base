@@ -102,9 +102,9 @@ char bootp_server_name_init[128] = "1001.1001@10.0.5.1:/epics";
 char bootp_boot_file_name_init[128] = "/epics/myExample/bin/RTEMS-beatnik/myExample.boot";
 char bootp_cmdline_init[128] = "/epics/myExample/iocBoot/iocmyExample/st.cmd";
 
-struct in_addr rtems_bsdnet_bootp_server_address;
 /* TODO check rtems_bsdnet_bootp_cmdline */
 #ifndef RTEMS_LEGACY_STACK
+struct in_addr rtems_bsdnet_bootp_server_address;
 char *rtems_bsdnet_bootp_server_name = bootp_server_name_init;
 char *rtems_bsdnet_bootp_boot_file_name = bootp_boot_file_name_init;
 char *rtems_bsdnet_bootp_cmdline = bootp_cmdline_init;
@@ -510,6 +510,7 @@ static void rtshellCallFunc(const iocshArgBuf *args)
     
     if (!cmd) {
         fprintf(stderr, "ERR: No such command\n");
+        iocshSetError(-1);
     
     } else {
         fflush(stdout);
@@ -517,6 +518,7 @@ static void rtshellCallFunc(const iocshArgBuf *args)
         ret = (*cmd->command)(args[1].aval.ac,args[1].aval.av);
         fflush(stdout);
         fflush(stderr);
+        iocshSetError(ret);
         if(ret)
             fprintf(stderr, "ERR: %d\n",ret);
     }
@@ -611,18 +613,27 @@ static void nfsMountCallFunc(const iocshArgBuf *args)
         }
         *cp = '/';
     }
-    nfsMount(args[0].sval, args[1].sval, args[2].sval);
+    iocshSetError(nfsMount(args[0].sval, args[1].sval, args[2].sval));
 }
 #endif
 
 
-void zoneset(const char *zone)
+int zoneset(const char *zone)
 {
-    if(zone)
-        setenv("TZ", zone, 1);
-    else
-        unsetenv("TZ");
+    int ret;
+    if(zone) {
+        if ((ret = setenv("TZ", zone, 1)) < 0)
+            return ret;
+    }
+    #if defined( __NEWLIB_MINOR__ ) /* Added in newlib 2.2.0 */
+        else if ((ret = unsetenv("TZ")) < 0)
+            return ret;
+    #else
+        else
+            unsetenv("TZ");
+    #endif
     tzset();
+    return 0;
 }
 
 static const iocshArg zonesetArg0 = {"zone string", iocshArgString};
@@ -634,7 +645,7 @@ static const iocshFuncDef zonesetFuncDef = {"zoneset",1,zonesetArgs
                                            };
 static void zonesetCallFunc(const iocshArgBuf *args)
 {
-    zoneset(args[0].sval);
+    iocshSetError(zoneset(args[0].sval));
 }
 
 #ifndef RTEMS_LEGACY_STACK
@@ -667,6 +678,7 @@ static void setlogmaskCallFunc(const iocshArgBuf *args)
             return;
         }
         printf("Error: unknown log level.\n");
+        iocshSetError(-1);
     }
 }
 static const iocshArg setlogmaskArg0 = {"level name", iocshArgString};

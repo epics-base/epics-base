@@ -45,7 +45,7 @@ its output. It can be a hardware address, a channel access or database link, or
 a constant. Only in records that use soft device support can the OUT field be a
 channel access link, a database link, or a constant. Otherwise, the OUT field
 must be a hardware address. See L<Address
-Specification|https://docs.epics-controls.org/en/latest/guides/EPICS_Process_Database_Concepts.html#address-specification>
+Specification|https://docs.epics-controls.org/en/latest/process-database/EPICS_Process_Database_Concepts.html#address-specification>
 for information on the format of hardware addresses and database links.
 
 =head4 Fields related to array writing

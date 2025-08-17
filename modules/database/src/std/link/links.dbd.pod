@@ -81,10 +81,12 @@ link(calc, lnkCalcIf)
 =head3 Calculation Link C<"calc">
 
 A calculation link is an input link that can evaluate mathematical expressions
-on scalar (double-precision floating-point) values obtained from up to 12 child
+on scalar (double-precision floating-point) values obtained from up to 21 child
 input links, and returns a double-precision floating-point result. The
 expression is evaluated by the EPICS Calc engine, and the result is returned as
 the value of the link.
+
+Since UNRELEASED the number of inputs has been increased from 12 to 21.
 
 Two additional expressions may also be provided and are evaluated to determine
 whether the record owning the link should be placed in alarm state. In both
@@ -95,7 +97,7 @@ record will be placed in C<LINK/MAJOR> alarm. If not and the C<minor> expression
 evaluates to non-zero the record will be placed in C<LINK/MINOR> alarm state.
 
 A calculation link can also be an output link, with the scalar output value
-being converted to a double and provided to the expression as C<VAL>. Up to 12
+being converted to a double and provided to the expression as C<VAL>. Up to 21
 additional input links can also be read and provided to the expression as above.
 The result of the calculation is forwarded to a child output link specified in
 the link's C<out> parameter.
@@ -126,8 +128,8 @@ An optional expression that returns non-zero to raise a minor alarm.
 
 =item args
 
-A JSON list of up to 12 input arguments for the expression, which are assigned
-to the inputs C<A>, C<B>, C<C>, ... C<L>. Each input argument may be either a
+A JSON list of up to 24 input arguments for the expression, which are assigned
+to the inputs C<A>, C<B>, C<C>, ... C<U>. Each input argument may be either a
 numeric literal or an embedded JSON link inside C<{}> braces. The same input
 values are provided to the two alarm expressions as to the primary expression.
 
@@ -149,7 +151,7 @@ result should be displayed. Equivalent to the C<PREC> field of a record.
 
 =item time
 
-An optional string containing a single upper or lower-case letter C<A> ... C<L>
+An optional string containing a single upper or lower-case letter C<A> ... C<U>
 which must correspond to an input provided in the C<args> parameter. When the
 record containing such a link has C<TSEL> set to -2 (epicsTimeEventDeviceTime)
 the record's timestamp field C<TIME> will be read from the indicated input link

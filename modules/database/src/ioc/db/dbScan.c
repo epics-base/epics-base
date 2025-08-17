@@ -680,7 +680,9 @@ int scanOnceCallback(struct dbCommon *precord, once_complete cb, void *usr)
     pushOK = epicsRingBytesPut(onceQ, (void*)&ent, sizeof(ent));
 
     if (!pushOK) {
-        if (newOverflow) errlogPrintf("scanOnce: Ring buffer overflow\n");
+        if (newOverflow)
+            errlogPrintf("%s : " ERL_WARNING " scanOnce: Ring buffer overflow\n",
+                         precord->name);
         newOverflow = FALSE;
         epicsAtomicIncrIntT(&onceQOverruns);
     } else {

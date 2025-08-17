@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 # Site Specific Configuration Information
 
 X11_LIB=/usr/lib/aarch64-linux-gnu

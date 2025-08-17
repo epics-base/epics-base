@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+struct dbChannel;
+
 /**
  * \brief The message passed to registered listeners.
  */
@@ -39,7 +41,7 @@ typedef struct asTrapWriteMessage {
      * the value the server provides to asTrapWriteWithData(), which
      * for RSRV is the dbChannel pointer for the target field.
      */
-    void *serverSpecific;
+    struct dbChannel *serverSpecific;
     /** \brief A field for use by the \ref asTrapWriteListener.
      *
      * When the listener is called before the write, this has the

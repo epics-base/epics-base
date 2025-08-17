@@ -27,6 +27,10 @@
 #include <osiFileName.h>
 #include <osiUnistd.h>
 
+#ifdef _WIN32
+#include <shlwapi.h>
+#endif
+
 #define MAX_BUFFER_SIZE 4096
 #define MAX_DEPS 1024
 
@@ -61,7 +65,7 @@ typedef struct inputData inputData;
 static void inputConstruct(inputData **ppvt);
 static void inputDestruct(inputData * const pvt);
 static void inputAddPath(inputData * const pvt, const char * const pval);
-static void inputBegin(inputData * const pvt, const char * const fileName);
+static void inputBegin(inputData * const pvt, const char * const fileName, bool fromCmdLine);
 static char *inputNextLine(inputData * const pvt);
 static void inputNewIncludeFile(inputData * const pvt, const char * const name);
 static void inputErrPrint(const inputData * const pvt);
@@ -83,7 +87,8 @@ static void addMacroReplacements(MAC_HANDLE * const macPvt,
                                  const char * const pval);
 static void makeSubstitutions(inputData * const inputPvt,
                               MAC_HANDLE * const macPvt,
-                              const char * const templateName);
+                              const char * const templateName,
+                              bool fromCmdLine);
 
 /*Global variables */
 static int opt_V = 0;
@@ -171,7 +176,7 @@ int main(int argc,char **argv)
 
     if (substitutionName.empty()) {
         STEP("Single template+substitutions file");
-        makeSubstitutions(inputPvt, macPvt, templateName);
+        makeSubstitutions(inputPvt, macPvt, templateName, true);
     }
     else {
         subInfo *substitutePvt;
@@ -203,7 +208,7 @@ int main(int argc,char **argv)
                         macPushScope(macPvt);
 
                     addMacroReplacements(macPvt, macStr);
-                    makeSubstitutions(inputPvt, macPvt, filename);
+                    makeSubstitutions(inputPvt, macPvt, filename, false);
 
                     if (localScope)
                         macPopScope(macPvt);
@@ -276,14 +281,15 @@ static const char *cmdNames[] = {"include","substitute"};
 
 static void makeSubstitutions(inputData * const inputPvt,
                               MAC_HANDLE * const macPvt,
-                              const char * const templateName)
+                              const char * const templateName,
+                              bool fromCmdLine)
 {
     char *input;
     static char buffer[MAX_BUFFER_SIZE];
     int  n;
 
     ENTER;
-    inputBegin(inputPvt, templateName);
+    inputBegin(inputPvt, templateName, fromCmdLine);
     while ((input = inputNextLine(inputPvt))) {
         int     expand=1;
         char    *p;
@@ -378,7 +384,7 @@ struct inputData {
     inputData() { memset(inputBuffer, 0, sizeof(inputBuffer) * sizeof(inputBuffer[0])); };
 };
 
-static void inputOpenFile(inputData *pinputData, const char * const filename);
+static void inputOpenFile(inputData *pinputData, const char * const filename, bool fromCmdLine);
 static void inputCloseFile(inputData *pinputData);
 static void inputCloseAllFiles(inputData *pinputData);
 
@@ -431,11 +437,11 @@ static void inputAddPath(inputData * const pinputData, const char * const path)
     EXIT;
 }
 
-static void inputBegin(inputData * const pinputData, const char * const fileName)
+static void inputBegin(inputData * const pinputData, const char * const fileName, bool fromCmdLine)
 {
     ENTER;
     inputCloseAllFiles(pinputData);
-    inputOpenFile(pinputData, fileName);
+    inputOpenFile(pinputData, fileName, fromCmdLine);
     EXIT;
 }
 
@@ -462,7 +468,7 @@ static void inputNewIncludeFile(inputData * const pinputData,
                                 const char * const name)
 {
     ENTER;
-    inputOpenFile(pinputData,name);
+    inputOpenFile(pinputData, name, false);
     EXIT;
 }
 
@@ -493,7 +499,15 @@ static void inputErrPrint(const inputData *const pinputData)
     EXIT;
 }
 
-static void inputOpenFile(inputData *pinputData, const char * const filename)
+static int isPathRelative(const char * const path) {
+#ifdef _WIN32
+    return path && PathIsRelativeA(path);
+#else
+    return path && path[0] != '/';
+#endif
+}
+
+static void inputOpenFile(inputData *pinputData, const char * const filename, bool fromCmdLine)
 {
     std::list<std::string>& pathList = pinputData->pathList;
     std::list<std::string>::iterator pathIt = pathList.end();
@@ -505,7 +519,7 @@ static void inputOpenFile(inputData *pinputData, const char * const filename)
         STEP("Using stdin");
         fp = stdin;
     }
-    else if (pathList.empty() || strchr(filename, '/')){
+    else if (fromCmdLine || pathList.empty() || !isPathRelative(filename)){
         STEPS("Opening ", filename);
         fp = fopen(filename, "r");
     }

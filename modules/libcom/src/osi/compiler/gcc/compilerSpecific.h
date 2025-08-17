@@ -45,7 +45,11 @@
 /*
  * Enable format-string checking if possible
  */
+#if __GNUC__ * 100 + __GNUC_MINOR__  >= 404
+#define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__gnu_printf__,f,a)))
+#else
 #define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__printf__,f,a)))
+#endif
 
 /*
  * Deprecation marker
@@ -56,5 +60,13 @@
  * Unused marker
  */
 #define EPICS_UNUSED __attribute__((unused))
+
+/*
+ * No return marker
+ */
+#ifndef vxWorks
+// VxWorks does not mark abort() or exit() noreturn!
+#define EPICS_NORETURN __attribute__((noreturn))
+#endif
 
 #endif  /* ifndef compilerSpecific_h */

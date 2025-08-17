@@ -20,12 +20,14 @@
 #include "epicsTime.h"
 #include "cantProceed.h"
 #include "epicsStackTrace.h"
+#include "envDefs.h"
 
 
 void epicsAssert (const char *pFile, const unsigned line,
     const char *pExp, const char *pAuthorName)
 {
     epicsTimeStamp current;
+    int shouldAbort = 0;
 
     errlogPrintf("\n\n\n"
         "A call to 'assert(%s)'\n"
@@ -50,6 +52,13 @@ void epicsAssert (const char *pFile, const unsigned line,
     errlogPrintf("Please E-mail this message to %s or to tech-talk@aps.anl.gov\n",
         pAuthorName);
 
-    errlogPrintf("Calling epicsThreadSuspendSelf()\n");
-    epicsThreadSuspendSelf ();
+    if (envGetBoolConfigParam(&EPICS_ABORT_ON_ASSERT, &shouldAbort) == 0 && shouldAbort) {
+        errlogPrintf("Calling abort()\n");
+        errlogFlush();
+        abort();
+    }
+    else {
+        errlogPrintf("Calling epicsThreadSuspendSelf()\n");
+        epicsThreadSuspendSelf ();
+    }
 }

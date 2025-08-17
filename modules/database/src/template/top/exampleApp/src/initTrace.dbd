@@ -1,1 +1,5 @@
+# SPDX-FileCopyrightText: 2008 Argonne National Laboratory
+#
+# SPDX-License-Identifier: EPICS
+
 registrar(initTraceRegister)

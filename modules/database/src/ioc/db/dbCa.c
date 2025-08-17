@@ -115,10 +115,9 @@ static int dbca_chan_count;
  * During link modification or IOC shutdown the pca->plink pointer (guarded by caLink.lock)
  * is used as a flag to indicate that a link is no longer active.
  *
- * References to the struct caLink are owned by the dbCaTask, and any scanOnceCallback()
- * which is in progress.
+ * References to the struct caLink are owned by the dbCaTask.
  *
- * The libca and scanOnceCallback callbacks take no action if pca->plink==NULL.
+ * The libca callbacks take no action if pca->plink==NULL.
  *
  *   dbCaPutLinkCallback causes an additional complication because
  *   when dbCaRemoveLink is called the callback may not have occured.
@@ -788,38 +787,6 @@ static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
     return status;
 }
 
-static void scanComplete(void *raw, dbCommon *prec)
-{
-    caLink *pca = raw;
-    epicsMutexMustLock(pca->lock);
-    if(!pca->plink) {
-        /* IOC shutdown or link re-targeted.  Do nothing. */
-    } else if(pca->scanningOnce==0) {
-        errlogPrintf("dbCa.c complete callback w/ scanningOnce==0\n");
-    } else if(--pca->scanningOnce){
-        /* another scan is queued */
-        if(scanOnceCallback(prec, scanComplete, raw)) {
-            errlogPrintf("dbCa.c failed to re-queue scanOnce\n");
-        } else
-            caLinkInc(pca);
-    }
-    epicsMutexUnlock(pca->lock);
-    caLinkDec(pca);
-}
-
-/* must be called with pca->lock held */
-static void scanLinkOnce(dbCommon *prec, caLink *pca) {
-    if(pca->scanningOnce==0) {
-        if(scanOnceCallback(prec, scanComplete, pca)) {
-            errlogPrintf("dbCa.c failed to queue scanOnce\n");
-        } else
-            caLinkInc(pca);
-    }
-    if(pca->scanningOnce<5)
-        pca->scanningOnce++;
-    /* else too many scans queued */
-}
-
 static lset dbCa_lset = {
     0, 1, /* not Constant, Volatile */
     NULL, dbCaRemoveLink,
@@ -856,7 +823,9 @@ static void connectionCallback(struct connection_handler_args arg)
         if (precord &&
             ((ppv_link->pvlMask & pvlOptCP) ||
              ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0)))
-            scanLinkOnce(precord, pca);
+        {
+            link_action |= CA_DBPROCESS;
+        }
         goto done;
     }
     pca->hasReadAccess = ca_read_access(arg.chid);
@@ -988,7 +957,9 @@ static void eventCallback(struct event_handler_args arg)
 
         if ((ppv_link->pvlMask & pvlOptCP) ||
             ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0))
-        scanLinkOnce(precord, pca);
+        {
+            addAction(pca, CA_DBPROCESS);
+        }
     }
 done:
     epicsMutexUnlock(pca->lock);
@@ -1061,7 +1032,9 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
     if (precord &&
         ((ppv_link->pvlMask & pvlOptCP) ||
          ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0)))
-        scanLinkOnce(precord, pca);
+    {
+        addAction(pca, CA_DBPROCESS);
+    }
 done:
     epicsMutexUnlock(pca->lock);
 }
@@ -1272,6 +1245,15 @@ static void dbCaTask(void *arg)
                         ca_message(status));
                     printLinks(pca);
                 }
+            }
+            if (link_action & CA_DBPROCESS) {
+                dbCommon *prec;
+                epicsMutexMustLock(pca->lock);
+                prec = pca->plink->precord;
+                epicsMutexUnlock(pca->lock);
+                dbScanLock(prec);
+                db_process(prec);
+                dbScanUnlock(prec);
             }
         }
         SEVCHK(ca_flush_io(), "dbCaTask");

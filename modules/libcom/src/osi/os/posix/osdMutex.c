@@ -25,14 +25,15 @@
 #include <pthread.h>
 
 #define EPICS_PRIVATE_API
+#define epicsStdioStdStreams
+#define epicsStdioStdPrintfEtc
 
 #include "epicsMutex.h"
+#include "epicsMutexImpl.h"
 #include "osdPosixMutexPriv.h"
 #include "cantProceed.h"
-#include "epicsTime.h"
 #include "errlog.h"
 #include "epicsStdio.h"
-#include "epicsAssert.h"
 
 #define checkStatus(status,message) \
     if((status)) { \
@@ -119,62 +120,62 @@ static int mutexLock(pthread_mutex_t *id)
     return status;
 }
 
-typedef struct epicsMutexOSD {
-    pthread_mutex_t     lock;
-} epicsMutexOSD;
+/* used if OS does not support statically allocated mutex */
+static pthread_once_t epicsMutexOsdOnce = PTHREAD_ONCE_INIT;
 
-epicsMutexOSD * epicsMutexOsdCreate(void) {
-    epicsMutexOSD *pmutex;
-    int status;
-
-    pmutex = calloc(1, sizeof(*pmutex));
-    if(!pmutex)
-        return NULL;
-
-    status = osdPosixMutexInit(&pmutex->lock, PTHREAD_MUTEX_RECURSIVE);
-    if (!status)
-        return pmutex;
-
-    free(pmutex);
-    return NULL;
+static void epicsMutexOsdInit(void)
+{
+    int ret = pthread_mutex_init(&epicsMutexGlobalLock.osd, NULL);
+    if(ret) {
+        /* something has gone wrong early.  Not much can be done...*/
+        fprintf(stderr, "osdMutex early init failure %d.\n", ret);
+        abort();
+    }
 }
 
-void epicsMutexOsdDestroy(struct epicsMutexOSD * pmutex)
+void epicsMutexOsdSetup()
 {
-    int status;
+    int ret = pthread_once(&epicsMutexOsdOnce, &epicsMutexOsdInit);
+    if(ret) {
+        /* ditto...*/
+        fprintf(stderr, "osdMutex early once failure %d.\n", ret);
+        abort();
+    }
+}
 
-    status = pthread_mutex_destroy(&pmutex->lock);
+long epicsMutexOsdPrepare(struct epicsMutexParm *pmutex) {
+    return osdPosixMutexInit(&pmutex->osd, PTHREAD_MUTEX_RECURSIVE);
+}
+
+void epicsMutexOsdCleanup(struct epicsMutexParm *pmutex)
+{
+    int status = pthread_mutex_destroy(&pmutex->osd);
     checkStatus(status, "pthread_mutex_destroy");
-    free(pmutex);
 }
 
-void epicsMutexOsdUnlock(struct epicsMutexOSD * pmutex)
+void epicsMutexUnlock(struct epicsMutexParm * pmutex)
 {
-    int status;
-
-    status = pthread_mutex_unlock(&pmutex->lock);
+    int status = pthread_mutex_unlock(&pmutex->osd);
     checkStatus(status, "pthread_mutex_unlock epicsMutexOsdUnlock");
 }
 
-epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * pmutex)
+epicsMutexLockStatus epicsMutexLock(struct epicsMutexParm * pmutex)
 {
-    int status;
-
-    status = mutexLock(&pmutex->lock);
+    int status = mutexLock(&pmutex->osd);
     if (status == EINVAL) return epicsMutexLockError;
     if(status) {
-        errlogMessage("epicsMutex pthread_mutex_lock failed: error epicsMutexOsdLock\n");
+        errlogMessage("epicsMutex pthread_mutex_lock failed: error epicsMutexLock\n");
         return epicsMutexLockError;
     }
     return epicsMutexLockOK;
 }
 
-epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
+epicsMutexLockStatus epicsMutexTryLock(struct epicsMutexParm * pmutex)
 {
     int status;
 
     if (!pmutex) return epicsMutexLockError;
-    status = pthread_mutex_trylock(&pmutex->lock);
+    status = pthread_mutex_trylock(&pmutex->osd);
     if (status == EINVAL) return epicsMutexLockError;
     if (status == EBUSY) return epicsMutexLockTimeout;
     if(status) {
@@ -184,12 +185,13 @@ epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
     return epicsMutexLockOK;
 }
 
-void epicsMutexOsdShow(struct epicsMutexOSD * pmutex, unsigned int level)
+void epicsMutexOsdShow(struct epicsMutexParm * pmutex, unsigned int level)
 {
+    (void)level;
     /* GLIBC w/ NTPL is passing the &lock.__data.__lock as the first argument (UADDR)
      * of the futex() syscall.  __lock is at offset 0 of the enclosing structures.
      */
-    printf("    pthread_mutex_t* uaddr=%p\n", &pmutex->lock);
+    epicsStdoutPrintf("    pthread_mutex_t* uaddr=%p\n", &pmutex->osd);
 }
 
 void epicsMutexOsdShowAll(void)
@@ -198,11 +200,11 @@ void epicsMutexOsdShowAll(void)
     int proto = -1;
     int ret = pthread_mutexattr_getprotocol(&globalAttrRecursive, &proto);
     if(ret) {
-        printf("PI maybe not enabled: %d\n", ret);
+        epicsStdoutPrintf("PI maybe not enabled: %d\n", ret);
     } else {
-        printf("PI is%s enabled\n", proto==PTHREAD_PRIO_INHERIT ? "" : " not");
+        epicsStdoutPrintf("PI is%s enabled\n", proto==PTHREAD_PRIO_INHERIT ? "" : " not");
     }
 #else
-    printf("PI not supported\n");
+    epicsStdoutPrintf("PI not supported\n");
 #endif
 }

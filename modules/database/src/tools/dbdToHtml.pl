@@ -222,11 +222,11 @@ sub rtypeToPod {
     my ($rtyp, $dbd) = @_;
     return map {
         # Handle a 'fields' Pod directive
-        if (m/^ =fields \s+ (\w+ (?:\s* , \s* \w+ )* )/x) {
-            my @names = split /\s*,\s*/, $1;
+        if (m/^ =fields \s+ (\w+ (?:\s* [,-] \s* \w+ )* )/x) {
+            my @names = split /\s*,\s*|\s*(?=-)|(?<=-)\s*/, $1;
             # Look up the named fields
             my @fields = map {
-                    my $field = $rtyp->field($_);
+                    my $field = $_ eq '-' ? $_ : $rtyp->field($_);
                     die "Unknown field name '$_' in $infile POD\n"
                         unless $field;
                     $field;
@@ -256,6 +256,9 @@ sub rtypeToPod {
 
 sub fieldTableRow {
     my ($fld, $dbd) = @_;
+    if ($fld eq '-') {
+        return '<tr><td class="cell" colspan=8>&vellip;</td></tr>'."\n";
+    }
     my $html = '<tr><td class="cell">';
     $html .= $fld->name;
     $html .= '</td><td class="cell">';

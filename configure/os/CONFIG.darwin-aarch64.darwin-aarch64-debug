@@ -1,0 +1,14 @@
+# CONFIG.darwin-aarch64.darwin-aarch64-debug
+#
+# Definitions for darwin-aarch64 host - darwin-aarch64-debug target build with debug compiler flags
+# Sites may override these definitions in CONFIG_SITE.darwin-aarch64.darwin-aarch64-debug
+#-------------------------------------------------------
+
+-include $(CONFIG)/os/CONFIG.Common.darwin-aarch64
+-include $(CONFIG)/os/CONFIG.darwin-aarch64.darwin-aarch64
+-include $(CONFIG)/os/CONFIG_SITE.Common.darwin-aarch64
+-include $(CONFIG)/os/CONFIG_SITE.darwin-aarch64.darwin-aarch64
+
+
+BUILD_CLASS=HOST
+HOST_OPT = NO

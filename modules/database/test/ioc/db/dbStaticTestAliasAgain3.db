@@ -1,0 +1,2 @@
+# Test re-load alias for alias
+alias("testaliasAgain2", "testaliasAgain3")

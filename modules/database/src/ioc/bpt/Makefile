@@ -20,7 +20,7 @@ BPT_DBD += bptTypeJdegF.dbd
 BPT_DBD += bptTypeKdegC.dbd
 BPT_DBD += bptTypeKdegF.dbd
 
-ifneq (inc,$(strip $(MAKECMDGOALS)))
+ifneq ($(filter-out inc,$(strip $(MAKECMDGOALS))),)
 DBD += $(BPT_DBD)
 endif
 
@@ -28,5 +28,5 @@ PROD_HOST += makeBpt
 
 makeBpt_SRCS = makeBpt
 
+DOCS += menuConvert.md
 HTMLS += menuConvert.html
-

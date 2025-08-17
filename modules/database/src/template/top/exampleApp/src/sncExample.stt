@@ -20,3 +20,9 @@ ss ss1 {
         } state low
     }
 }
+
+/*
+SPDX-FileCopyrightText: 1998 Argonne National Laboratory
+
+SPDX-License-Identifier: EPICS
+*/

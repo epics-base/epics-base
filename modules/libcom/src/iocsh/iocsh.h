@@ -12,23 +12,23 @@
 
 /**
  * @file iocsh.h
- * 
+ *
  * @brief C and C++ definitions of functions for IOC shell programming.
- * 
+ *
  * @details
  * The iocsh API provides an interface for running commands in the shell
  * of the IOC, as well as registering commands and variables for use in the shell.
  * It consists of 4 functions for the former and 2 functions for the latter.
- * 
+ *
  * @par Command functions:
- *     int iocsh (const char *pathname)@n 
- *     int iocshLoad (const char *pathname, const char *macros)@n 
- *     int iocshCmd (const char *cmd)@n 
- *     int iocshRun (const char *cmd, const char *macros)
- * 
+ *     - iocsh()
+ *     - iocshLoad()
+ *     - iocshCmd()
+ *     - iocshRun()
+ *
  * @par Registration functions:
- *     void iocshRegister (const iocshFuncDef * piocshFuncDef, iocshCallFunc func)@n 
- *     void epicsStdCall iocshRegisterVariable (const iocshVarDef *piocshVarDef)
+ *     - iocshRegister()
+ *     - iocshRegisterVariable()
  */
 
 #ifndef INCiocshH
@@ -49,22 +49,47 @@ extern "C" {
 #endif
 
 /**
- * @enum iocshArgType
- *
  * This typedef lists the values that can be used as argument data types
- * when building the piocshFuncDef parameter of iocshRegister().
- * 
- * @code {.cpp}
- * static const iocshArg AsynGenericConfigArg0 = {"Port Name", iocshArgString};
- * static const iocshArg AsynGenericConfigArg1 = {"Number Devices", iocshArgInt};
- * @endcode
+ * when building the first parameter of iocshRegister().
+ *
+ * ```
+ * static const iocshArg AsynGenericConfigArg0 = {
+ *     // name
+ *     "Port Name",
+ *     // type
+ *     iocshArgString,
+ * };
+ * static const iocshArg AsynGenericConfigArg1 = {
+ *     // name
+ *     "Number Devices",
+ *     // type
+ *     iocshArgInt,
+ * };
+ * ```
  */
 typedef enum {
+	/** The argument is converted to an integer value. */
     iocshArgInt,
+	/** The argument is converted to a double-precision floating point value. */
     iocshArgDouble,
+	/** The argument is left as a string.
+	 *
+	 * The memory used to hold the string is "owned" by iocsh
+	 * and will be reused once the handler function returns.
+	 */
     iocshArgString,
+	/** The argument must be pdbbase. */
     iocshArgPdbbase,
+	/** An arbitrary number of arguments is expected.
+	 *
+	 * Subsequent iocshArg structures will be ignored.
+	 */
     iocshArgArgv,
+	/** A copy of the argument will be made and a pointer to the copy will be passed to the handler.
+	 *
+	 * The called function should eventually release this copy
+	 * by using the pointer as an argument to free().
+	 */
     iocshArgPersistentString,
     /**
      * Equivalent to iocshArgString with a hint for tab completion that the
@@ -81,26 +106,46 @@ typedef enum {
 }iocshArgType;
 
 /**
- * @union iocshArgBuf
- * 
  * This union is used when building the func parameter of iocshRegister().
- * Each use should match the parameter type of the parameters of the
+ * Each use should match the parameter iocshArgType of the parameters of the
  * function being registered
- * 
- * @code {.cpp}
+ *
+ * ```
  * static void AsynGenericConfigCallFunc (const iocshArgBuf *args)
  * {
  *     AsynGenericConfig (args[0].sval, args[1].ival);
  * }
- * @endcode
+ * ```
  */
 typedef union iocshArgBuf {
+	/** The value as an integer.
+	 *
+	 * Corresponds to the @ref iocshArgInt type.
+	 */
     int    ival;
+	/** The value as a double-precision floating point.
+	 *
+	 * Corresponds to the @ref iocshArgDouble type.
+	 */
     double dval;
+	/** The value as a string.
+	 *
+	 * Corresponds to the @ref iocshArgString and related types.
+	 */
     char  *sval;
+	/** The value as an untyped pointer.
+	 *
+	 * Can be used with the @ref iocshArgPdbbase type.
+	 */
     void  *vval;
+	/** The variadic arguments, for the @ref iocshArgArgv type. */
     struct {
+	  /** Number of arguments passed to the IOC shell command.
+	   *
+	   * Provides the number of elements of the `av` array.
+	   */
       int    ac;
+	  /** The arguments, as an array of strings. */
       char **av;
     }aval;
 }iocshArgBuf;
@@ -119,67 +164,85 @@ typedef struct iocshVarDef {
 }iocshVarDef;
 
 /**
- * @struct iocshArg
- * 
- * This struct is used to indicate data types of function parameters
- * for iocshRegister().  The name element is used by the help command to print
- * a synopsis for the command.  The type element describes the data type of
- * the argument and takes a value from iocshArgType.
- * 
- * @code {.cpp}
- * static const iocshArg AsynGenericConfigArg0 = {"Port Name", iocshArgString};
- * static const iocshArg AsynGenericConfigArg1 = {"Number Devices", iocshArgInt};
- * static const iocshArg* const AsynGenericConfigArgs[]
-    = { &AsynAXEConfigArg0, &AsynAXEConfigArg1 };
-
- * @endcode
+ * Data types of function parameters for iocshRegister().
+ *
+ * @par Example:
+ * ```
+ * static const iocshArg AsynGenericConfigArg0 = {
+ *     // name
+ *     "Port Name",
+ *     // type
+ *     iocshArgString,
+ * };
+ * static const iocshArg AsynGenericConfigArg1 = {
+ *     // name
+ *     "Number Devices",
+ *     // type
+ *     iocshArgInt,
+ * };
+ * static const iocshArg* const AsynGenericConfigArgs[] = {
+ *     &AsynGenericConfigArg0,
+ *     &AsynGenericConfigArg1,
+ * };
+ * ```
  */
 typedef struct iocshArg {
+	/** Used by the `help` command to print a synopsis for the command. */
     const char *name;
+	/** Data type of the argument. */
     iocshArgType type;
 }iocshArg;
 
 /**
- * @struct iocshFuncDef
- * 
- * This struct is used with iocshRegister to define the function that
- * is being registered.
- * 
- * name - the name of the command or function@n 
- * nargs - the number of entries in the array of pointers to argument descriptions@n 
- * arg - an array of pointers to structs of type iocshArg@n 
- * 
- * @code {.cpp}
- * static const iocshFuncDef AsynGenericConfigFuncDef
- *  = { "AsynGenericConfig", 2, AsynGenericConfigArgs };
- * @endcode
- * 
+ * Used with iocshRegister() to define the function that is being registered.
+ *
+ * @par Example:
+ * ```
+ * static const iocshFuncDef AsynGenericConfigFuncDef = {
+ *     // name
+ *     "AsynGenericConfig",
+ *     // nargs
+ *     2,
+ *     // arg
+ *     AsynGenericConfigArgs,
+ *     // usage
+ *     "Helpful message describing the command",
+ * };
+ * ```
  */
 typedef struct iocshFuncDef {
+	/** Name of the command or function. */
     const char *name;
+ 	/** Number of entries in the array of pointers to argument descriptions.
+	 *
+	 * If 0, `arg` can be `NULL`.
+	 */
     int nargs;
+	/** Array of pointers to structs of type iocshArg.
+	 *
+	 * Can be `NULL` if `nargs` is 0.
+	 */
     const iocshArg * const *arg;
+	/** Text displayed when using running `help <command>`. */
     const char* usage;
 }iocshFuncDef;
 #define IOCSHFUNCDEF_HAS_USAGE
 
 /**
- * @typedef 
- * 
- * This typedef defines a function that is used as the *piocshFuncDef
- * parameter of iocshRegister().
- * 
- * @code {.cpp}
+ * This typedef defines a function that is used
+ * as the first parameter of iocshRegister().
+ *
+ * ```
  * static void AsynGenericConfigCallFunc (const iocshArgBuf *args)
  * {
  *     AsynGenericConfig (args[0].sval, args[1].ival);
  * }
- * 
+ *
  * static void AsynGenericRegister(void)
  * {
  *     iocshRegister(&AsynGenericConfigFuncDef, AsynGenericConfigCallFunc);
  * }
- * @endcode
+ * ```
  */
 typedef void (*iocshCallFunc)(const iocshArgBuf *argBuf);
 
@@ -194,11 +257,12 @@ typedef struct iocshCmdDef {
 }iocshCmdDef;
 
 /**
- * @brief This function is used to register a command with the IOC shell
- * 
- * @param piocshFuncDef A pointer to a data structure that describes the command and its arguments.
- * @param func A pointer to a function which is called by iocsh() when the command is encountered.
- * @return void
+ * @brief Register a command with the IOC shell.
+ *
+ * @param[in] piocshFuncDef
+ *     A pointer to a data structure that describes the command and its arguments.
+ *     See the IOC Shell section of the Application Developer's Guide for more information.
+ * @param[in] func A pointer to a function which is called by iocsh() when the command is encountered.
  */
 LIBCOM_API void epicsStdCall iocshRegister(
     const iocshFuncDef *piocshFuncDef, iocshCallFunc func);
@@ -243,46 +307,73 @@ LIBCOM_API const iocshVarDef * epicsStdCall iocshFindVariable(
  */
 LIBCOM_API void epicsStdCall iocshFree(void);
 
-/**  
- * @brief This function is used to execute IOC shell commands from a file.
- * 
- * Commands are read from the file until and exit command is encountered or the 
- * end-of-file character is reached.
- * 
- * @param pathname A string that represents the path to a file from which commands are read.
- * @return 0 on success, non-zero on error
- * 
+/**
+ * @brief Read and evaluate IOC shell commands from the given file.
+ *
  * Equivalent to:
- *  @code iocshLoad(pathname, NULL) @endcode */
+ * @code iocshLoad(pathname, NULL) @endcode
+ *
+ * @see iocshLoad()
+ */
 LIBCOM_API int epicsStdCall iocsh(const char *pathname);
 
 /**
- * @brief This function is used to execute a single IOC shell command.
- * 
- * @param cmd A string that represents the command to be executed.
- * @return 0 on success, non-zero on error
- *  
+ * @brief Run a single IOC shell command.
+ *
  * Equivalent to:
- * @code iocshRun(cmd, NULL) @endcode */
+ * @code iocshRun(cmd, NULL) @endcode
+ *
+ * @see iocshRun()
+ */
 LIBCOM_API int epicsStdCall iocshCmd(const char *cmd);
-/**  
- * @brief Read and evaluate IOC shell commands from the given file.  A list of macros
- * can be supplied as a parameter.  These macros are treated as environment variables during
- * execution of the file's commands.
- * 
- * @param pathname A string that represents the path to a file from which commands are read.
- * @param macros NULL or a comma separated list of macro definitions.  eg. "VAR1=x,VAR2=y"
- * @return 0 on success, non-zero on error
+
+/**
+ * @brief Read and evaluate IOC shell commands from the given file.
+ *
+ * Commands are read from the file
+ * until an `exit` command is encountered
+ * or end-of-file is reached.
+ *
+ * A list of macros can be supplied as a parameter.
+ * These macros are treated as environment variables
+ * during execution of the file's commands.
+ *
+ * @sa iocsh()
+ *
+ * @param[in] pathname
+ *     A string that represents the path to a file from which commands are read.
+ *     If `NULL`, commands are read from the standard input.
+ * @param[in] macros
+ *     `NULL` or a comma separated list of macro definitions.
+ * 	   eg. `"VAR1=x,VAR2=y"`
+ *
+ * @retval 0 on success
+ * @retval non-zero on error
+ * @retval -1 if the specified file can't be opened
  */
 LIBCOM_API int epicsStdCall iocshLoad(const char *pathname, const char* macros);
-/** 
- * @brief Evaluate a single IOC shell command. A list of macros can be supplied
- * as a parameter.  These macros are treated as environment variables during
- * execution of the command.
- * 
- * @param cmd Command string.  eg. "echo \"something or other\""
- * @param macros NULL or a comma separated list of macro definitions.  eg. "VAR1=x,VAR2=y"
- * @return 0 on success, non-zero on error
+
+/**
+ * @brief Run a single IOC shell command.
+ *
+ * A list of macros can be supplied as a parameter.
+ * These macros are treated as environment variables
+ * during execution of the command.
+ *
+ * This function may be run from any thread,
+ * but many IOC shell commands may not be thread-safe.
+ *
+ * @sa iocshCmd()
+ *
+ * @param[in] cmd
+ *     Command string.
+ *     eg. `"echo \"something or other\""`
+ * @param[in] macros
+ *     `NULL` or a comma separated list of macro definitions.
+ *     eg. `"VAR1=x,VAR2=y"`
+ *
+ * @retval 0 on success
+ * @retval non-zero on error
  */
 LIBCOM_API int epicsStdCall iocshRun(const char *cmd, const char* macros);
 

@@ -103,8 +103,13 @@ static void test_monitor_params(void) {
     /* post monitors only on value change */
     testdbPutFieldOk("test_stringout_rec.MPST", DBF_SHORT, stringoutPOST_OnChange);
 
-    /* reset the monitor counter */
-    testMonitorCount(test_mon, 1);
+    /* reset the monitor counter and make sure it did indeed reset */
+    /* This loop will continuously reset the monitor counter until the previous
+     * count value returned is zero, which means that the counter has been
+     * reset successfully.
+     * This fixes some timing related flakiness of this test.
+     */
+    while(testMonitorCount(test_mon, 1) != 0);
 
     /* put the same value again */
     testdbPutFieldOk("test_stringout_rec.VAL", DBF_STRING, test_str1);

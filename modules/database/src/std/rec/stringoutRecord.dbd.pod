@@ -10,7 +10,8 @@
 =title String Output Record (stringout)
 
 The stringout record is used to write an arbitrary ASCII string of up to 40
-characters to other records or software variables.
+bytes (39 characters plus trailing zero byte) to other records or software
+variables.
 
 =recordtype stringout
 

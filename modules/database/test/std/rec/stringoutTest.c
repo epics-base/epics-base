@@ -40,7 +40,6 @@ static void test_truncation(void) {
     testdbPutFieldOk("test_stringout_rec.OUT", DBF_STRING, "test_link_rec");
 
     const char* test_str = "01234567890123456789012345678901234567890123456789";
-    // the documentation is wrong, the string is truncated to 39 chars
     const char* trunc_39 = "012345678901234567890123456789012345678";
 
     /* set VAL to a string longer than stringout record limit */

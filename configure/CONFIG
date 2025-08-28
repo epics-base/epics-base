@@ -50,6 +50,9 @@ endif
 include $(CONFIG)/CONFIG_COMMON
 include $(CONFIG)/CONFIG_FILE_TYPE
 
+# Fetch the module-specific CFGS before overwriting INSTALL_LOCATION in order to load them later
+TOP_CFG_CONFIGS := $(wildcard $(INSTALL_CFG)/CONFIG*)
+
 #  Base-specific build options
 #
 include $(CONFIG)/CONFIG_BASE
@@ -117,7 +120,6 @@ endif
 
 # Include $(INSTALL_CFG)/CONFIG* definitions
 #
-TOP_CFG_CONFIGS = $(wildcard $(INSTALL_CFG)/CONFIG*)
 ifneq ($(TOP_CFG_CONFIGS),)
   include $(TOP_CFG_CONFIGS)
 endif

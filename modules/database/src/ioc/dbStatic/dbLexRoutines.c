@@ -34,6 +34,7 @@
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "epicsExport.h"
+#include "epicsAssert.h"
 #include "link.h"
 #include "special.h"
 #include "iocInit.h"
@@ -1190,16 +1191,36 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         dbVisibleRecord(pdbentry);
 }
 
-static const char* dbFieldConfusionMap [] = {
+/* For better suggestions for wrong field names
+   the following array contains pairs of often
+   confused fields. Thus, the number of elements
+   must be even.
+   For the last character, ranges like A-F are
+   allowed as a shortcut. Pairs must have matching
+   range size.
+   If extending this map, please add only field names
+   found in record types from base.
+   Each array element (i.e. both sides of a pair)
+   is tested against the faulty field name.
+   The first match (considering ranges) where the
+   other side of the pair is an existing field name
+   (after adjusting for ranges) will be suggested
+   as a replacement.
+   If no such match is found, the suggestion falls
+   back to weighted lexical similarity with existing
+   field names.
+*/
+
+static const char* const dbFieldConfusionMap [] = {
     "INP","OUT",
     "DOL","INP",
     "ZNAM","ZRST",
     "ONAM","ONST",
     "INPA-J","DOL0-9",
     "INPK-P","DOLA-F",
-    "INP0-9","INPA-J",
-    NULL
+    "INP0-9","INPA-J"
 };
+STATIC_ASSERT(NELEMENTS(dbFieldConfusionMap)%2==0);
 
 static void dbRecordField(char *name,char *value)
 {
@@ -1220,26 +1241,27 @@ static void dbRecordField(char *name,char *value)
             double bestSim = -1.0;
             const dbFldDes *bestFld = NULL;
             int i;
-            const char* fld;
             dbCopyEntryContents(pdbentry, &temp);
-            for(i = 0; (fld = dbFieldConfusionMap[i]) != NULL; i++) {
-                char buf[10];
+            for(i = 0; i < NELEMENTS(dbFieldConfusionMap); i++) {
+                const char* fieldname = dbFieldConfusionMap[i];
+                const char* replacement = dbFieldConfusionMap[i^1]; /* swap even with odd indices */
                 const char* guess = NULL;
-                size_t l = strlen(fld);
-                if (l >= 3 && fld[l-2] == '-' &&
-                    strncmp(name, fld, l-3) == 0 &&
-                    name[l-3] >= fld[l-3] &&
-                    name[l-3] <= fld[l-1])
+                char buf[8]; /* no field name is so long */
+                size_t l = strlen(fieldname);
+                if (l >= 3 && fieldname[l-2] == '-' &&
+                    strncmp(name, fieldname, l-3) == 0 &&
+                    name[l-3] >= fieldname[l-3] &&
+                    name[l-3] <= fieldname[l-1])
                 {
-                    /* range map */
-                    size_t l2 = strlen(dbFieldConfusionMap[i^1]);
-                    strncpy(buf, dbFieldConfusionMap[i^1], sizeof(buf)-1);
-                    buf[l2-3] += name[l-3] - fld[l-3];
+                    /* range map (like XXXA-Z) */
+                    size_t l2 = strlen(replacement);
+                    strncpy(buf, replacement, sizeof(buf)-1);
+                    buf[l2-3] += name[l-3] - fieldname[l-3];
                     buf[l2-2] = 0;
                     guess = buf;
-                } else if (strcmp(name, fld) == 0) {
+                } else if (strcmp(name, fieldname) == 0) {
                     /* simple map */
-                    guess = dbFieldConfusionMap[i^1];
+                    guess = replacement;
                 }
                 if (guess && dbFindFieldPart(&temp, &guess) == 0) {
                     /* guessed field exists */
@@ -1248,7 +1270,8 @@ static void dbRecordField(char *name,char *value)
                 }
             }
             if (!bestFld) {
-                /* no map found, use weighted lexical similarity */
+                /* no map found, use weighted lexical similarity
+                   the weights are a bit arbitrary */
                 char quote = 0;
                 if (*value == '"' || *value == '\'') {
                     quote = *value++;

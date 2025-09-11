@@ -119,7 +119,7 @@ const char * netiiu::pHostName (
 unsigned netiiu::getHostMinorProtocol ( 
     epicsGuard < epicsMutex > & ) const throw ()
 {
-    return 0u;
+  return CA_UKN_MINOR_VERSION;
 }
 
 osiSockAddr netiiu::getNetworkAddress (

@@ -1465,6 +1465,7 @@ LIBCA_API unsigned epicsStdCall ca_get_host_name ( chid pChan,
  *
  * \param[in] pChan channel identifier
  * \returns The minor protocol version number.
+ * If the channel is disconnected CA_UKN_MINOR_VERSION is returned.
  */
 LIBCA_API unsigned epicsStdCall ca_host_minor_protocol (chid pChan);
 

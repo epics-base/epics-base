@@ -1342,6 +1342,12 @@ const char * udpiiu::pHostName (
     return netiiu::pHostName ( cacGuard );
 }
 
+unsigned udpiiu::getHostMinorProtocol ( 
+    epicsGuard < epicsMutex > & cacGuard ) const throw ()
+{
+    return netiiu::getHostMinorProtocol ( cacGuard );
+}
+
 bool udpiiu::ca_v42_ok (
     epicsGuard < epicsMutex > & cacGuard ) const
 {

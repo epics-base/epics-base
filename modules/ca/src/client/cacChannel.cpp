@@ -129,6 +129,13 @@ unsigned cacChannel::getHostName (
     return 0u;
 }
 
+unsigned cacChannel::getHostMinorProtocol ( 
+    epicsGuard < epicsMutex > &) const throw ()
+{
+    epicsThreadOnce ( & cacChannelIdOnce, cacChannelSetup, 0);
+    return 0u;
+}
+
 // the default is to assume that it is a locally hosted channel
 const char * cacChannel::pHostName (
     epicsGuard < epicsMutex > & ) const throw ()

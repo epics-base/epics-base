@@ -1460,6 +1460,16 @@ LIBCA_API const char * epicsStdCall ca_host_name (chid channel);
 LIBCA_API unsigned epicsStdCall ca_get_host_name ( chid pChan, 
     char *pBuf, unsigned bufLength );
 
+/** \brief Return the minor protocol version number used by the host to
+ *  which a channel is cuurently connected.   
+ *
+ * \param[in] pChan channel identifier
+ * \returns The minor protocol version number.
+ */
+LIBCA_API unsigned epicsStdCall ca_host_minor_protocol (chid pChan);
+
+#define HAS_CA_HOST_MINOR_PROTOCOL
+
 /** \brief Call their function with their argument whenever
  *  a new fd is added or removed.
  *

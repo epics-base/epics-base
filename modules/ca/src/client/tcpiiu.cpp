@@ -1804,6 +1804,13 @@ const char * tcpiiu::pHostName (
     return this->hostNameCacheInstance.pointer ();
 }
 
+unsigned tcpiiu::getHostMinorProtocol ( 
+    epicsGuard < epicsMutex > & guard) const throw ()
+{   
+    guard.assertIdenticalMutex ( this->mutex );
+    return this->minorProtocolVersion;
+}
+
 void tcpiiu::disconnectAllChannels (
     epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard,

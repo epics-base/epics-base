@@ -64,6 +64,8 @@ public:
         chid pChan, char * pBuf, unsigned bufLength );
     friend const char * epicsStdCall ca_host_name (
         chid pChan );
+    friend unsigned epicsStdCall ca_host_minor_protocol (
+        chid pChan );
     friend const char * epicsStdCall ca_name (
         chid pChan );
     friend void epicsStdCall ca_set_puser (

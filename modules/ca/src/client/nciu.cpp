@@ -410,6 +410,13 @@ const char * nciu::pHostName (
     return this->piiu->pHostName ( guard );
 }
 
+unsigned nciu::getHostMinorProtocol (
+    epicsGuard < epicsMutex > & guard) const throw ()
+{
+    return this->piiu->getHostMinorProtocol (
+        guard );
+}
+
 bool nciu::ca_v42_ok (
     epicsGuard < epicsMutex > & guard ) const
 {

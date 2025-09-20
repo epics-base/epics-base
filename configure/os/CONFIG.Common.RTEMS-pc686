@@ -20,7 +20,6 @@ define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< $@ 
 endef
 
-OP_SYS_LDLIBS += -Wl,--gc-sections
 ARCH_DEP_LDFLAGS = -L$(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/pc686/lib/
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
@@ -28,7 +27,7 @@ include $(CONFIG)/os/CONFIG.Common.RTEMS
 #
 # Put text segment where it will work with etherboot
 #
-OP_SYS_LDFLAGS += -Wl,-Ttext,0x100000
+OP_SYS_LDFLAGS += -Wl,-Ttext,0x100000 -Wl,--gc-sections
 
 
 # This check must appear after the above include

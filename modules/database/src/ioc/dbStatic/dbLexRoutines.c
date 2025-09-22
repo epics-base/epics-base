@@ -1238,7 +1238,6 @@ static void dbRecordField(char *name,char *value)
             dbGetRecordTypeName(pdbentry), dbGetRecordName(pdbentry), name);
         if(dbGetRecordName(pdbentry)) {
             DBENTRY temp;
-            double bestSim = -1.0;
             const dbFldDes *bestFld = NULL;
             int i;
             dbCopyEntryContents(pdbentry, &temp);
@@ -1272,10 +1271,10 @@ static void dbRecordField(char *name,char *value)
             if (!bestFld) {
                 /* no map found, use weighted lexical similarity
                    the weights are a bit arbitrary */
+                double bestSim = -1.0;
                 char quote = 0;
-                if (*value == '"' || *value == '\'') {
+                if (*value == '"' || *value == '\'')
                     quote = *value++;
-                }
                 for (status = dbFirstField(&temp, 0); !status; status = dbNextField(&temp, 0)) {
                     if (temp.pflddes->special == SPC_NOMOD ||
                         temp.pflddes->special == SPC_DBADDR) /* cannot be configured */
@@ -1285,11 +1284,13 @@ static void dbRecordField(char *name,char *value)
                         sim *= 0.5; /* no prompt: unlikely */
                     if (temp.pflddes->interest)
                         sim *= 1.0 - 0.1 * temp.pflddes->interest; /* 10% less likely per interest level */
-
+                    if (sim == 0)
+                        continue;
                     if (*value != quote) {
                         /* value given, check match to field type */
                         long status = 0;
                         char* end = &quote;
+
                         switch (temp.pflddes->field_type) {
                             epicsAny dummy;
                             case DBF_CHAR:
@@ -1302,6 +1303,7 @@ static void dbRecordField(char *name,char *value)
                                 status = epicsParseInt16(value, &dummy.int16, 0, &end);
                                 break;
                             case DBF_USHORT:
+                            case DBF_ENUM:
                                 status = epicsParseUInt16(value, &dummy.uInt16, 0, &end);
                                 break;
                             case DBF_LONG:
@@ -1322,16 +1324,45 @@ static void dbRecordField(char *name,char *value)
                             case DBF_DOUBLE:
                                 status = epicsParseDouble(value, &dummy.float64, &end);
                                 break;
-                            case DBF_ENUM:
                             case DBF_MENU:
-                            case DBF_DEVICE:
-                                /* TODO */
+                            case DBF_DEVICE: {
+                                char** choices;
+                                int nChoice;
+                                int choice;
+
+                                if (temp.pflddes->field_type == DBF_MENU) {
+                                    dbMenu* menu = (dbMenu*)temp.pflddes->ftPvt;
+                                    choices = menu->papChoiceValue;
+                                    nChoice = menu->nChoice;
+                                } else {
+                                    dbDeviceMenu* menu = (dbDeviceMenu*)temp.pflddes->ftPvt;
+                                    choices = menu->papChoice;
+                                    nChoice = menu->nChoice;
+                                }
+                                status = epicsParseUInt16(value, &dummy.uInt16, 0, &end);
+                                if (!status && *end == quote && dummy.uInt16 < nChoice) {
+                                    if (temp.pflddes->field_type == DBF_DEVICE)
+                                        sim *= 0.5; /* numeric device type index is uncommon */
+                                    break;
+                                }
+                                for (choice = 0; choice < nChoice; choice++) {
+                                    size_t len = strlen(choices[choice]);
+                                    end = value + len;
+                                    if (strncmp(value, choices[choice], len) == 0 && *end == quote) {
+                                        sim *= 1.5; /* boost for matching choice string */
+                                        status = 0;
+                                        break;
+                                    }
+                                }
+                                if (choice == nChoice)
+                                    status = S_stdlib_noConversion;
+                                break;
+                            }
                             default:
                                 break;
                         }
-                        if (status || *end != quote) {
+                        if (status || *end != quote)
                             sim *= 0.1; /* value type does not match field type: unlikely */
-                        }
                     }
                     if (sim > bestSim) {
                         bestSim = sim;

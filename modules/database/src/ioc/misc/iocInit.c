@@ -31,6 +31,7 @@
 #include "epicsPrint.h"
 #include "epicsSignal.h"
 #include "epicsThread.h"
+#include "epicsString.h"
 #include "errMdef.h"
 #include "iocsh.h"
 #include "taskwd.h"
@@ -132,10 +133,10 @@ static int iocBuild_1(void)
     }
 
     {
-        /* fall back to "old" decimal-only conversion if EPICS_DB_CONVERT_DECIMAL_ONLY
-           is set and does not look like meaning no/false/0 */
+        /* fall back to "old" decimal-only conversion if
+           EPICS_DB_CONVERT_DECIMAL_ONLY is YES (case insensitive). */
         const char* dec_only = getenv("EPICS_DB_CONVERT_DECIMAL_ONLY");
-        if (dec_only && *dec_only && !strchr("nNfF0", *dec_only)) {
+        if (dec_only && epicsStrCaseCmp(dec_only, "YES") == 0) {
             dbConvertBase = 10;
         }
     }

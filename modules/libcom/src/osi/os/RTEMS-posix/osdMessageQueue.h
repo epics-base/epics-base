@@ -23,6 +23,4 @@ struct epicsMessageQueueOSD {
     mqd_t   id;
     char    name[24];
 };
-#define epicsMessageQueueSend(q,m,l) (mq_send((q)->id, (const char*)(m), (l), 0))
-#define epicsMessageQueueReceive(q,m,s) (mq_receive((q)->id, (char*)(m), (s), NULL))
 

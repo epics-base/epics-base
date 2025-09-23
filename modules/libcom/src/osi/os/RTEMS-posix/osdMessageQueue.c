@@ -74,6 +74,22 @@ LIBCOM_API void epicsStdCall epicsMessageQueueDestroy(
   free(id);
 }
 
+LIBCOM_API int epicsStdCall epicsMessageQueueSend(
+        epicsMessageQueueId id,
+        void *message,
+        unsigned int messageSize)
+{
+    return mq_send(id->id, (const char*)message, messageSize, 0);
+}
+
+LIBCOM_API int epicsStdCall epicsMessageQueueReceive(
+        epicsMessageQueueId id,
+        void *message,
+        unsigned int messageSize)
+{
+    return mq_receive(id->id, (char*)message, messageSize, NULL);
+}
+
 
 LIBCOM_API int epicsStdCall epicsMessageQueueTrySend(
     epicsMessageQueueId id,

@@ -130,8 +130,9 @@ An optional expression that returns non-zero to raise a minor alarm.
 
 A JSON list of up to 24 input arguments for the expression, which are assigned
 to the inputs C<A>, C<B>, C<C>, ... C<U>. Each input argument may be either a
-numeric literal or an embedded JSON link inside C<{}> braces. The same input
-values are provided to the two alarm expressions as to the primary expression.
+numeric literal or an embedded JSON link inside C<{}> braces. Only C<pva> links
+are currently supported. The same input values are provided to the two alarm
+expressions as to the primary expression.
 
 =item out
 

@@ -19,3 +19,4 @@ O.*/
 .*.swp
 .DS_Store
 .iocsh_history
+coverage/

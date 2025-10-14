@@ -189,7 +189,7 @@ LIBCOM_API epicsEventStatus epicsEventWait(
  */
 LIBCOM_API void epicsEventMustWait(epicsEventId id);
 
-/**\brief Wait an the event or until the specified timeout period is over.
+/**\brief Wait for the event or until the specified timeout period is over.
  * \note Blocks until full or timeout.
  * \param id The event identifier.
  * \param timeout The timeout delay in seconds. A timeout of zero is

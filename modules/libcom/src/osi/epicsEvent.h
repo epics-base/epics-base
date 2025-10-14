@@ -99,7 +99,7 @@ public:
      **/
     void wait ();
     /**\brief Wait for the event or until the specified timeout.
-     * \param timeout The timeout delay in seconds. A timeout of zero is
+     * \param timeout The timeout delay in seconds. A timeout of zero or less is
      * equivalent to calling tryWait(); NaN or any value too large to be
      * represented to the target OS is equivalent to no timeout.
      * \return True if the event was triggered, False if it timed out.
@@ -192,7 +192,7 @@ LIBCOM_API void epicsEventMustWait(epicsEventId id);
 /**\brief Wait for the event or until the specified timeout period is over.
  * \note Blocks until full or timeout.
  * \param id The event identifier.
- * \param timeout The timeout delay in seconds. A timeout of zero is
+ * \param timeout The timeout delay in seconds. A timeout of zero or less is
  * equivalent to calling epicsEventTryWait(); NaN or any value too large
  * to be represented to the target OS is equivalent to no timeout.
  * \return Status indicator.

@@ -69,9 +69,13 @@ output value PVAL is added to it.
 
 =head4 Drive Limits
 
-The output value is now clipped to the range DRVL to DRVH inclusive, provided
-that DRVH E<gt> DRVL.
-The result is copied into both the VAL and PVAL fields.
+The VAL field's value will be clipped within limits specified in the fields DRVH
+and DRVL if these have been configured by the database designer:
+
+  DRVL <= VAL <= DRVH
+
+Note: These limits are only enforced as long as DRVH E<gt> DRVL. If they are not
+set or DRVH E<lt>= DRVL they will not be used.
 
 =head4 Limit Rate of Change
 
@@ -689,7 +693,7 @@ Routine process implements the following algorithm:
 
 =over
 
-=item 1. 
+=item 1.
 
 Check to see that the appropriate device support module
 exists. If it doesn't, an error message is issued and processing is
@@ -697,7 +701,7 @@ terminated with the PACT field set to TRUE. This ensures that processes
 will no longer be called for this record. Thus error storms will not
 occur.
 
-=item 2. 
+=item 2.
 
 Check PACT: If PACT is FALSE call fetch_values and convert
 which perform the following steps:
@@ -746,7 +750,7 @@ calculated in, using the formula RVAL = (RVAL -AOFF) / ASLO - ROFF.
 
 =back
 
-=item 3. 
+=item 3.
 
 Check alarms: This routine checks to see if the new VAL causes
 the alarm status and severity to change. If so, NSEV, NSTA and y are
@@ -754,18 +758,18 @@ set. It also honors the alarm hysteresis factor (HYST). Thus the value
 must change by at least HYST before the alarm status and severity is
 reduced.
 
-=item 4. 
+=item 4.
 
 Check severity and write the new value. See Invalid Alarm
 Output Action for details on how invalid alarms affect output records.
 
-=item 5. 
+=item 5.
 
 If PACT has been changed to TRUE, the device support write
 output routine has started but has not completed writing the new value.
 In this case, the processing routine merely returns, leaving PACT TRUE.
 
-=item 6. 
+=item 6.
 
 Check to see if monitors should be invoked:
 
@@ -784,7 +788,7 @@ monitors are invoked.
 
 =back
 
-=item 7. 
+=item 7.
 
 Scan forward link if necessary, set PACT and INIT FALSE, and
 return.

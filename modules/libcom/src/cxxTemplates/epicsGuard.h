@@ -169,6 +169,12 @@ inline epicsGuardRelease < T > ::
     // runs and an epicsGuardRelease is still referencing
     // the guard will be detected.
     _guard._pTargetMutex = 0;
+#ifdef __GNUC__
+    // Prevent some strange gcc warning "this pointer is null"
+    // When epicsGuardRelease and epicsGuard go out of scope
+    // directly one after the other
+    asm volatile ("" ::: "memory");
+#endif
     _pTargetMutex->unlock ();
 }
 

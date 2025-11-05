@@ -171,19 +171,6 @@ jobs:
             name: "Win-22 MSC-22 c++17"
             extra: "CMD_CXXFLAGS='-analyze -Zc:__cplusplus -std:c++17'"
 
-# pvData does not build with MVSC c++20
-#          - os: windows-2022
-#            cmp: vs2022
-#            configuration: debug
-#            name: "Win-22 MSC-22 c++20"
-#            extra: "CMD_CXXFLAGS='-analyze -Zc:__cplusplus -std:c++20'"
-#
-#          - os: windows-2022
-#            cmp: vs2022
-#            configuration: debug
-#            name: "Win-22 MSC-22 c++latest"
-#            extra: "CMD_CXXFLAGS='-analyze -Zc:__cplusplus -std:c++latest'"
-
           - os: windows-2022
             cmp: vs2022
             configuration: static-debug

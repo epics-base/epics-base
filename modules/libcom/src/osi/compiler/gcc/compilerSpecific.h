@@ -69,4 +69,13 @@
 #define EPICS_NORETURN __attribute__((noreturn))
 #endif
 
+/*
+ * malloc marker takes 1 or 2 args: (index of size) or (index of count, index of element size)
+ */
+#if __GNUC__ * 100 + __GNUC_MINOR__  >= 403
+#define EPICS_MALLOC(...) __attribute__((__malloc__, __alloc_size__(__VA_ARGS__)))
+#else
+#define EPICS_MALLOC(...) __attribute__((__malloc__))
+#endif
+
 #endif  /* ifndef compilerSpecific_h */

@@ -365,13 +365,14 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         }
         if( (*options) & DBR_AMSG ) {
             if (!pfl) {
-                STATIC_ASSERT(sizeof(pcommon->amsg)==sizeof(pfl->amsg));
-                strncpy(pbuffer, pcommon->amsg, sizeof(pcommon->amsg)-1);
+                STATIC_ASSERT(sizeof(pcommon->amsg)==DB_AMSG_SIZE);
+                strncpy(pbuffer, pcommon->amsg, DB_AMSG_SIZE);
             } else {
-                strncpy(pbuffer, pfl->amsg,sizeof(pfl->amsg)-1);
+                STATIC_ASSERT(sizeof(pfl->amsg)==DB_AMSG_SIZE);
+                strncpy(pbuffer, pfl->amsg, DB_AMSG_SIZE);
             }
-            pbuffer[sizeof(pcommon->amsg)-1] = '\0';
-            pbuffer += sizeof(pcommon->amsg);
+            pbuffer[DB_AMSG_SIZE-1] = '\0';
+            pbuffer += DB_AMSG_SIZE;
         }
         if( (*options) & DBR_UNITS ) {
             memset(pbuffer,'\0',dbr_units_size);
@@ -851,7 +852,7 @@ static long getLinkValue(DBADDR *paddr, short dbrType,
     {
         const char *rtnString = dbGetString(&dbEntry);
 
-        strncpy(pbuf, rtnString, maxlen-1);
+        strncpy(pbuf, rtnString, maxlen);
         pbuf[maxlen-1] = 0;
         if(dbrType!=DBR_STRING)
             nReq = strlen(pbuf)+1;

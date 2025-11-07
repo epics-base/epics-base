@@ -743,8 +743,8 @@ static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length)
     ppathList = (ELLLIST *)pdbbase->pathPvt;
 
     pdbPathNode = (dbPathNode *)dbCalloc(1, sizeof(dbPathNode));
-    pdbPathNode->directory = (char *)dbCalloc(length+1, sizeof(char));
-    strncpy(pdbPathNode->directory, path, length);
+    pdbPathNode->directory = (char *)dbMalloc(length+1);
+    memcpy(pdbPathNode->directory, path, length);
     pdbPathNode->directory[length] = '\0';
     ellAdd(ppathList, &pdbPathNode->node);
     return 0;

@@ -73,7 +73,7 @@ unsigned epicsStdCall sockAddrToA (
             return len;
         }
         else {
-            strncpy ( pBuf, "<Ukn Addr Type>", bufSize-1 );
+            memcpy ( pBuf, pErrStr, bufSize-1 );
             pBuf[bufSize-1] = '\0';
             return bufSize-1;
         }

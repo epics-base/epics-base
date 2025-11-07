@@ -863,7 +863,7 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf,
                 showError(filename, lineno, ANSI_RED("Out of memory!"));
                 return 0;
             }
-            strncpy(argBuf->sval, arg, slen);
+            memcpy(argBuf->sval, arg, slen + 1);
         } else {
           argBuf->sval = NULL;
         }

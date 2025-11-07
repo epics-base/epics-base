@@ -93,7 +93,7 @@ static void logClient(void *ptr, const char *msg)
 
     if ( sz > mx )
         sz = mx;
-    strncpy( td->buf+td->pos, msg, sz );
+    memcpy( td->buf+td->pos, msg, sz );
     td->pos += sz;
 }
 

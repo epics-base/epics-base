@@ -613,6 +613,7 @@ void CA_put(SV *ca_ref, SV *val, ...) {
                 break;
             case DBF_STRING:
                 strncpy(data.dbr_string, SvPV_nolen(val), MAX_STRING_SIZE);
+                data.dbr_string[MAX_STRING_SIZE-1] = 0;
                 break;
             }
             status = ca_put(type, pch->chan, &data);
@@ -705,6 +706,7 @@ void CA_put_callback(SV *ca_ref, SV *sub, SV *val, ...) {
                 break;
             case DBF_STRING:
                 strncpy(data.dbr_string, SvPV_nolen(val), MAX_STRING_SIZE);
+                data.dbr_string[MAX_STRING_SIZE-1] = 0;
                 break;
             }
 

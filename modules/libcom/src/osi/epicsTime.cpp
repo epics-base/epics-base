@@ -256,7 +256,7 @@ size_t epicsStdCall epicsTimeToStrftime (char *pBuff, size_t bufLength, const ch
                     if ( tmpLen >= bufLenLeft ) {
                         tmpLen = bufLenLeft - 1;
                     }
-                    strncpy ( pBufCur, pOVF, tmpLen );
+                    memcpy ( pBufCur, pOVF, tmpLen );
                     pBufCur[tmpLen] = '\0';
                     pBufCur += tmpLen;
                     bufLenLeft -= tmpLen;
@@ -268,7 +268,7 @@ size_t epicsStdCall epicsTimeToStrftime (char *pBuff, size_t bufLength, const ch
                 if ( tmpLen >= bufLenLeft ) {
                     tmpLen = bufLenLeft - 1;
                 }
-                strncpy ( pBufCur, pDoesntFit, tmpLen );
+                memcpy ( pBufCur, pDoesntFit, tmpLen );
                 pBufCur[tmpLen] = '\0';
                 pBufCur += tmpLen;
                 bufLenLeft -= tmpLen;

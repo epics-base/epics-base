@@ -50,6 +50,7 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 #include "epicsAtomic.h"
+#include "envDefs.h"
 
 LIBCOM_API void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level);
 LIBCOM_API void osdThreadHooksRun(epicsThreadId id);
@@ -93,6 +94,7 @@ static pthread_mutex_t listLock;
 static ELLLIST pthreadList = ELLLIST_INIT;
 static commonAttr *pcommonAttr = 0;
 static int epicsThreadOnceCalled = 0;
+static int wantPrioScheduling = 0;
 
 static epicsThreadOSD *createImplicit(void);
 
@@ -384,6 +386,7 @@ static void once(void)
     checkStatusOnce(status,"pthread_attr_getschedparam");
 
     findPriorityRange(pcommonAttr);
+    envGetBoolConfigParam(&EPICS_ALLOW_POSIX_THREAD_PRIORITY_SCHEDULING, &wantPrioScheduling);
 
     if(pcommonAttr->maxPriority == -1) {
         pcommonAttr->maxPriority = pcommonAttr->schedParam.sched_priority;
@@ -604,8 +607,10 @@ epicsThreadCreateOpt(const char * name,
         return 0;
 
     pthreadInfo->isEpicsThread = 1;
-    setSchedulingPolicy(pthreadInfo, SCHED_FIFO);
-    pthreadInfo->isRealTimeScheduled = 1;
+    if (wantPrioScheduling) {
+        setSchedulingPolicy(pthreadInfo, SCHED_FIFO);
+        pthreadInfo->isRealTimeScheduled = 1;
+    }
 
     if (pthreadInfo->joinable) {
         /* extra ref for epicsThreadMustJoin() */

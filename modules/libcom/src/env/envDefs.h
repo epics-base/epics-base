@@ -77,6 +77,7 @@ LIBCOM_API extern const ENV_PARAM IOCSH_PS1;
 LIBCOM_API extern const ENV_PARAM IOCSH_HISTSIZE;
 LIBCOM_API extern const ENV_PARAM IOCSH_HISTEDIT_DISABLE;
 LIBCOM_API extern const ENV_PARAM EPICS_ABORT_ON_ASSERT;
+LIBCOM_API extern const ENV_PARAM EPICS_ALLOW_POSIX_THREAD_PRIORITY_SCHEDULING;
 /** @brief List of all parameters.
  *
  * A NULL terminated array of all ENV_PARAM known to EPICS Base.

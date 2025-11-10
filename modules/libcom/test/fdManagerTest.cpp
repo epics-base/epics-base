@@ -73,7 +73,7 @@ public:
     }
     osiSockAddr bind()
     {
-        osiSockAddr addr = {0};
+        osiSockAddr addr = {{0}};
         addr.ia.sin_family = AF_INET;
         addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 

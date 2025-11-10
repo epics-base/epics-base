@@ -466,7 +466,7 @@ void epicsThreadRealtimeLock(void)
     mlocked = 0;
 #if USE_MEMLOCK
 #ifndef RTEMS_LEGACY_STACK // seems to be part of libbsd?
-    if (pcommonAttr->maxPriority > pcommonAttr->minPriority) {
+    if (pcommonAttr->maxPriority > pcommonAttr->minPriority && wantPrioScheduling) {
         int status = mlockall(MCL_CURRENT | MCL_FUTURE);
 
         if (status) {

@@ -382,7 +382,7 @@ void fdRegId::show(unsigned level) const
     if (level > 1u) {
         printf("\tfd = %"
 #if defined(_WIN32)
-            "I"
+            "ll"
 #endif
         "d, type = %d\n",
             fd, type);

@@ -16,8 +16,21 @@ ACTIONS += install
 ACTIONS += buildInstall
 ACTIONS += runtests tapfiles clean-tests test-results junitfiles
 
+# Force host build for EPICS base and associated modules
+ifeq ($(BASE_TOP),YES)
+HOST_BUILD=YES
+endif
+ifeq ($(PARENT_MODULE),EPICS_BASE)
+HOST_BUILD=YES
+endif
+
+ifeq ($(HOST_BUILD),NO)
+BUILD_ARCHS := $(filter-out $(EPICS_HOST_ARCH),$(BUILD_ARCHS))
+endif
+
 actionArchTargets = $(foreach action, $(ACTIONS), \
     $(addprefix $(action)$(DIVIDER), $(BUILD_ARCHS)))
+
 
 cleanArchTargets = $(addprefix clean$(DIVIDER), $(BUILD_ARCHS))
 
@@ -38,10 +51,18 @@ endif
 
 CROSS_ARCHS += $(CROSS1) $(CROSS2)
 
+ifeq ($(HOST_BUILD),NO)
+define DEP_template
+  $(2) :
+  $(1)$(DIVIDER)$(2) : O.$(2)
+endef
+else
 define DEP_template
   $(2) : $(EPICS_HOST_ARCH)
   $(1)$(DIVIDER)$(2) : $(1)$(DIVIDER)$(EPICS_HOST_ARCH) O.$(2)
 endef
+endif
+
 $(foreach action, $(ACTIONS), \
     $(foreach arch, $(CROSS_ARCHS), \
         $(eval $(call DEP_template,$(action),$(arch)))))

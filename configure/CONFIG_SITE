@@ -139,6 +139,11 @@ HOST_WARN=YES
 #  Must be either YES or NO.
 CROSS_WARN=YES
 
+# Always build for the host architecture in addition to cross targets.
+# This will be forced on for EPICS base to ensure that host tools (i.e. msi) are available.
+#  Must be either YES or NO.
+HOST_BUILD=YES
+
 # Installation directory, if you want Base to be installed into a
 #  different location then uncomment and set this.
 #INSTALL_LOCATION=<fullpathname>

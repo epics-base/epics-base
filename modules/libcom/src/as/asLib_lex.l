@@ -79,7 +79,7 @@ INP{link} {
 
 {doublequote}({stringchar}|{escape})*{doublequote} { /* quoted string */
         yylval.Str=asStrdup(yytext+1);
-        yylval.Str[strlen(yylval.Str)-1] = '\0';
+        yylval.Str[strlen(yylval.Str)-1] = '\0'; /* overwrite trailing '"' */
         return(tokenSTRING);
 }
 

@@ -18,12 +18,22 @@ static UAG *yyUag=NULL;
 static HAG *yyHag=NULL;
 static ASG *yyAsg=NULL;
 static ASGRULE *yyAsgRule=NULL;
+
+static
+char* yystrdup(const char *inp) {
+    char* ret = strdup(inp);
+    if(!ret)
+        yyerror("MALLOC");
+    return ret;
+}
+
 %}
 
 %start asconfig
 
-%token <Str> tokenUAG tokenHAG tokenASG tokenRULE tokenCALC tokenINP tokenSTRING
-%token <Int64> tokenINT64
+%token tokenUAG tokenHAG tokenASG tokenRULE tokenCALC
+%token <Str> tokenSTRING
+%token <Int64> tokenINT64 tokenINP
 %token <Float64> tokenFLOAT64
 
 %union
@@ -54,30 +64,40 @@ asconfig_item:  tokenUAG uag_head uag_body
     |   generic_item
     ;
 
+/* uniformally yield a string for use in warning messages */
 keyword: tokenUAG
+    { $$ = yystrdup("UAG"); }
     | tokenHAG
+    { $$ = yystrdup("HAG"); }
     | tokenCALC
+    { $$ = yystrdup("CALC"); }
     | non_rule_keyword
     ;
 
 non_rule_keyword: tokenASG
+    { $$ = yystrdup("ASG"); }
     | tokenRULE
+    { $$ = yystrdup("RULE"); }
     | tokenINP
+    {
+        $$ = yystrdup("INPA");
+        $$[3] += $1; /* 'A' + input number */
+    }
     ;
 
 generic_item: tokenSTRING generic_head generic_list_block
     {
-        yywarn("Ignoring unsupported TOP LEVEL Access Control Definition", $1);
+        yywarn("Ignoring unsupported TOP LEVEL nested block", $1);
         free((void *)$1);
     }
     |   tokenSTRING generic_head generic_block
     {
-        yywarn("Ignoring unsupported TOP LEVEL Access Control Definition", $1);
+        yywarn("Ignoring unsupported TOP LEVEL block", $1);
         free((void *)$1);
     }
     |   tokenSTRING generic_head
     {
-        yywarn("Ignoring unsupported TOP LEVEL Access Control Definition", $1);
+        yywarn("Ignoring unsupported TOP LEVEL bare block", $1);
         free((void *)$1);
     }
     ;
@@ -130,14 +150,7 @@ generic_block_elem: generic_block_elem_name generic_head generic_block
     ;
 
 generic_block_elem_name:  keyword
-    {
-        $$ = strdup($1);
-        if (!$$) yyerror("Out of memory");
-    }
     |   tokenSTRING
-    {
-        $$ = $1;
-    }
     ;
 
 rule_generic_block_elem: rule_generic_block_elem_name generic_head generic_block
@@ -151,14 +164,7 @@ rule_generic_block_elem: rule_generic_block_elem_name generic_head generic_block
     ;
 
 rule_generic_block_elem_name:  non_rule_keyword
-    {
-        $$ = strdup($1);
-        if (!$$) yyerror("Out of memory");
-    }
     |   tokenSTRING
-    {
-        $$ = $1;
-    }
     ;
 
 uag_head:   '(' tokenSTRING ')'
@@ -247,7 +253,7 @@ rule_head: '(' rule_head_mandatory ',' rule_log_option ')'
 rule_head_mandatory:    tokenINT64 ',' tokenSTRING
     {
         if ($1 < 0) {
-            char message[40];
+            char message[60];
             sprintf(message, "RULE: LEVEL must be positive: %lld", $1);
             yyerror(message);
         } else if((strcmp($3,"NONE")==0)) {

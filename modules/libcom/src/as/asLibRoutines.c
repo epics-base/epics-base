@@ -1064,6 +1064,9 @@ void asFreeAll(ASBASE *pasbase)
     ASGUAG      *pasguag;
     void        *pnext;
 
+    if(!pasbase)
+        return;
+
     puag = (UAG *)ellFirst(&pasbase->uagList);
     while(puag) {
         puagname = (UAGNAME *)ellFirst(&puag->list);

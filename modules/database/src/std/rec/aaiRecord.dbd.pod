@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=title Array Analog Input (aai)
+=title Array Input (aai)
 
 The array input record type is used to read array data. The array data can
 contain any of the supported data types. The record is in many ways similar to the

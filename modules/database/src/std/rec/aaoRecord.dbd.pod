@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-=title Array Analog Output (aao)
+=title Array Output (aao)
 
 The array output record type is used to write array data. The array data
 can contain any of the supported data types. The record is in many ways similar

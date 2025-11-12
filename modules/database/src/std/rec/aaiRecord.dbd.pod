@@ -9,7 +9,7 @@
 
 =title Array Analog Input (aai)
 
-The array analog input record type is used to read array data. The array data can
+The array input record type is used to read array data. The array data can
 contain any of the supported data types. The record is in many ways similar to the
 waveform record. It allows, however, the device support to allocate the array
 storage.
@@ -31,14 +31,14 @@ The record-specific fields are described below, grouped by functionality.
 
 =head3 Scan Parameters
 
-The array analog input record has the standard fields for specifying under what
+The array input record has the standard fields for specifying under what
 circumstances the record will be processed.
 These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 
 =head3 Read Parameters
 
 These fields are configurable by the user to specify how and from where the record
-reads its data. The INP field determines from where the array analog input gets
+reads its data. The INP field determines from where the array input gets
 its input. It can be a hardware address, a channel access or database link, or a
 constant. Only in records that use soft device support can the INP field be a
 channel access link, a database link, or a constant. Otherwise, the INP field must
@@ -83,7 +83,7 @@ Parameters> for more on the record name (NAME) and description (DESC) fields.
 
 =head3 Alarm Parameters
 
-The array analog input record has the alarm parameters common to all record types.
+The array input record has the alarm parameters common to all record types.
 
 =head3 Monitor Parameters
 
@@ -108,11 +108,11 @@ These are the possible choices for the C<APST> and C<MPST> fields:
 
 =head3 Run-time Parameters
 
-These parameters are used by the run-time code for processing the array analog
+These parameters are used by the run-time code for processing the array
 input record. They are not configured using a configuration tool. Only the VAL
 field is modifiable at run-time.
 
-VAL references the array where the array analog input record stores its data. The
+VAL references the array where the array input record stores its data. The
 BPTR field holds the address of the array.
 
 The NORD field holds a counter of the number of elements that have been read
@@ -439,7 +439,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 =head3 Fields Of Interest To Device Support
 
-Each array analog input record record must have an associated set of device
+Each array input record record must have an associated set of device
 support routines. The primary responsibility of the device support routines is to
 obtain a new array value whenever C<read_aai()> is called. The device support
 routines are primarily interested in the following fields:

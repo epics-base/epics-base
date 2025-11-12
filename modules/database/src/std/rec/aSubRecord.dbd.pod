@@ -1161,7 +1161,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vala")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVA
+		#=type Set by FTVA[NOVA]
 	}
 	field(VALB,DBF_NOACCESS) {
 		prompt("Output value B")
@@ -1171,7 +1171,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valb")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVB
+		#=type Set by FTVB[NOVB]
 	}
 	field(VALC,DBF_NOACCESS) {
 		prompt("Output value C")
@@ -1181,7 +1181,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valc")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVC
+		#=type Set by FTVC[NOVC]
 	}
 	field(VALD,DBF_NOACCESS) {
 		prompt("Output value D")
@@ -1191,7 +1191,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vald")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVD
+		#=type Set by FTVD[NOVD]
 	}
 	field(VALE,DBF_NOACCESS) {
 		prompt("Output value E")
@@ -1201,7 +1201,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vale")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVE
+		#=type Set by FTVE[NOVE]
 	}
 	field(VALF,DBF_NOACCESS) {
 		prompt("Output value F")
@@ -1211,7 +1211,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valf")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVF
+		#=type Set by FTVF[NOVF]
 	}
 	field(VALG,DBF_NOACCESS) {
 		prompt("Output value G")
@@ -1221,7 +1221,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valg")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVG
+		#=type Set by FTVG[NOVG]
 	}
 	field(VALH,DBF_NOACCESS) {
 		prompt("Output value H")
@@ -1231,7 +1231,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valh")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVH
+		#=type Set by FTVH[NOVH]
 	}
 	field(VALI,DBF_NOACCESS) {
 		prompt("Output value I")
@@ -1241,7 +1241,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vali")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVI
+		#=type Set by FTVI[NOVI]
 	}
 	field(VALJ,DBF_NOACCESS) {
 		prompt("Output value J")
@@ -1251,7 +1251,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valj")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVJ
+		#=type Set by FTVJ[NOVJ]
 	}
 	field(VALK,DBF_NOACCESS) {
 		prompt("Output value K")
@@ -1261,7 +1261,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valk")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVK
+		#=type Set by FTVK[NOVK]
 	}
 	field(VALL,DBF_NOACCESS) {
 		prompt("Output value L")
@@ -1271,7 +1271,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vall")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVL
+		#=type Set by FTVL[NOVL]
 	}
 	field(VALM,DBF_NOACCESS) {
 		prompt("Output value M")
@@ -1281,7 +1281,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valm")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVM
+		#=type Set by FTVM[NOVM]
 	}
 	field(VALN,DBF_NOACCESS) {
 		prompt("Output value N")
@@ -1291,7 +1291,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valn")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVN
+		#=type Set by FTVN[NOVN]
 	}
 	field(VALO,DBF_NOACCESS) {
 		prompt("Output value O")
@@ -1301,7 +1301,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valo")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVO
+		#=type Set by FTVO[NOVO]
 	}
 	field(VALP,DBF_NOACCESS) {
 		prompt("Output value P")
@@ -1311,7 +1311,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valp")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVP
+		#=type Set by FTVP[NOVP]
 	}
 	field(VALQ,DBF_NOACCESS) {
 		prompt("Output value Q")
@@ -1321,7 +1321,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valq")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVQ
+		#=type Set by FTVQ[NOVQ]
 	}
 	field(VALR,DBF_NOACCESS) {
 		prompt("Output value R")
@@ -1331,7 +1331,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valr")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVR
+		#=type Set by FTVR[NOVR]
 	}
 	field(VALS,DBF_NOACCESS) {
 		prompt("Output value S")
@@ -1341,7 +1341,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *vals")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVS
+		#=type Set by FTVS[NOVS]
 	}
 	field(VALT,DBF_NOACCESS) {
 		prompt("Output value T")
@@ -1351,7 +1351,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valt")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVT
+		#=type Set by FTVT[NOVT]
 	}
 	field(VALU,DBF_NOACCESS) {
 		prompt("Output value U")
@@ -1361,7 +1361,7 @@ be sent through the OUTA ... OUTU links during record processing.
 		extra("void *valu")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTVU
+		#=type Set by FTVU[NOVU]
 	}
 
 =head3 Old Value Fields

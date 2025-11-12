@@ -403,7 +403,7 @@ routine and NORD is also set at that time.
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
-		#=type Set by FTVL
+		#=type Set by FTVL[NELM]
 		#=read Yes
 		#=write Yes
 	}

@@ -353,7 +353,7 @@ INPA,...,INPU.
 		extra("void *a")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTA
+		#=type Set by FTA[NOA]
 	}
 	field(B,DBF_NOACCESS) {
 		prompt("Input value B")
@@ -363,7 +363,7 @@ INPA,...,INPU.
 		extra("void *b")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTB
+		#=type Set by FTB[NOB]
 	}
 	field(C,DBF_NOACCESS) {
 		prompt("Input value C")
@@ -373,7 +373,7 @@ INPA,...,INPU.
 		extra("void *c")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTC
+		#=type Set by FTC[NOC]
 	}
 	field(D,DBF_NOACCESS) {
 		prompt("Input value D")
@@ -383,7 +383,7 @@ INPA,...,INPU.
 		extra("void *d")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTD
+		#=type Set by FTD[NOD]
 	}
 	field(E,DBF_NOACCESS) {
 		prompt("Input value E")
@@ -393,7 +393,7 @@ INPA,...,INPU.
 		extra("void *e")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTE
+		#=type Set by FTE[NOE]
 	}
 	field(F,DBF_NOACCESS) {
 		prompt("Input value F")
@@ -403,7 +403,7 @@ INPA,...,INPU.
 		extra("void *f")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTF
+		#=type Set by FTF[NOF]
 	}
 	field(G,DBF_NOACCESS) {
 		prompt("Input value G")
@@ -413,7 +413,7 @@ INPA,...,INPU.
 		extra("void *g")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTG
+		#=type Set by FTG[NOG]
 	}
 	field(H,DBF_NOACCESS) {
 		prompt("Input value H")
@@ -423,7 +423,7 @@ INPA,...,INPU.
 		extra("void *h")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTH
+		#=type Set by FTH[NOH]
 	}
 	field(I,DBF_NOACCESS) {
 		prompt("Input value I")
@@ -433,7 +433,7 @@ INPA,...,INPU.
 		extra("void *i")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTI
+		#=type Set by FTI[NOI]
 	}
 	field(J,DBF_NOACCESS) {
 		prompt("Input value J")
@@ -443,7 +443,7 @@ INPA,...,INPU.
 		extra("void *j")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTJ
+		#=type Set by FTJ[NOJ]
 	}
 	field(K,DBF_NOACCESS) {
 		prompt("Input value K")
@@ -453,7 +453,7 @@ INPA,...,INPU.
 		extra("void *k")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTK
+		#=type Set by FTK[NOK]
 	}
 	field(L,DBF_NOACCESS) {
 		prompt("Input value L")
@@ -463,7 +463,7 @@ INPA,...,INPU.
 		extra("void *l")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTL
+		#=type Set by FTL[NOL]
 	}
 	field(M,DBF_NOACCESS) {
 		prompt("Input value M")
@@ -473,7 +473,7 @@ INPA,...,INPU.
 		extra("void *m")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTM
+		#=type Set by FTM[NOM]
 	}
 	field(N,DBF_NOACCESS) {
 		prompt("Input value N")
@@ -483,7 +483,7 @@ INPA,...,INPU.
 		extra("void *n")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTN
+		#=type Set by FTN[NON]
 	}
 	field(O,DBF_NOACCESS) {
 		prompt("Input value O")
@@ -493,7 +493,7 @@ INPA,...,INPU.
 		extra("void *o")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTO
+		#=type Set by FTO[NOO]
 	}
 	field(P,DBF_NOACCESS) {
 		prompt("Input value P")
@@ -503,7 +503,7 @@ INPA,...,INPU.
 		extra("void *p")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTP
+		#=type Set by FTP[NOP]
 	}
 	field(Q,DBF_NOACCESS) {
 		prompt("Input value Q")
@@ -513,7 +513,7 @@ INPA,...,INPU.
 		extra("void *q")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTQ
+		#=type Set by FTQ[NOQ]
 	}
 	field(R,DBF_NOACCESS) {
 		prompt("Input value R")
@@ -523,7 +523,7 @@ INPA,...,INPU.
 		extra("void *r")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTR
+		#=type Set by FTR[NOR]
 	}
 	field(S,DBF_NOACCESS) {
 		prompt("Input value S")
@@ -533,7 +533,7 @@ INPA,...,INPU.
 		extra("void *s")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTS
+		#=type Set by FTS[NOS]
 	}
 	field(T,DBF_NOACCESS) {
 		prompt("Input value T")
@@ -543,7 +543,7 @@ INPA,...,INPU.
 		extra("void *t")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTT
+		#=type Set by FTT[NOT]
 	}
 	field(U,DBF_NOACCESS) {
 		prompt("Input value U")
@@ -553,7 +553,7 @@ INPA,...,INPU.
 		extra("void *u")
 		#=read Yes
 		#=write Yes
-		#=type Set by FTU
+		#=type Set by FTU[NOU]
 	}
 
 =head3 Input Value Data Types
@@ -2378,7 +2378,7 @@ record can locate them.  The simplest way is as follows:
 
     #include <registryFunction.h>
     #include <epicsExport.h>
-    
+
     static long my_asub_routine(aSubRecord *prec) {
         ...
     }

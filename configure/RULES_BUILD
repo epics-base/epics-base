@@ -197,7 +197,7 @@ $(sort $(DIRECTORY_TARGETS)):
 	$(MKDIR) $@
 
 # Install LIB_INSTALLS libraries before linking executables
-$(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIB_INSTALLS)
+$(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIB_INSTALLS) $(TESTSHRLIBNAME)
 
 # Install built libraries too, unless Makefile says to wait
 ifneq ($(DELAY_INSTALL_LIBS),YES)

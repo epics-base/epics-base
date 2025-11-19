@@ -545,6 +545,7 @@ int epicsStdCall asDumpFP(
         puag = (UAG *)ellNext(&puag->node);
     }
     phag = (HAG *)ellFirst(&pasbase->hagList);
+    if(!phag) fprintf(fp,"No HAGs\n");
     while(phag) {
         fprintf(fp,"HAG(%s)",phag->name);
         phagname = (HAGNAME *)ellFirst(&phag->list);

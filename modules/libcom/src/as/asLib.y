@@ -263,7 +263,7 @@ rule_head_mandatory:    tokenINT64 ',' tokenSTRING
         } else if((strcmp($3,"WRITE")==0)) {
             yyAsgRule = asAsgAddRule(yyAsg,asWRITE,(int)$1);
         } else {
-            yywarn("Ignoring rule that contains an unsupported keyword", $3);
+            yywarn("Ignoring RULE that contains an unsupported keyword", $3);
         }
         free($3);
     }
@@ -299,7 +299,7 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
     }
     | rule_generic_block_elem
     {
-        yywarn("Ignoring rule that contains an unsupported keyword", $1);
+        yywarn("Ignoring RULE that contains an unsupported keyword", $1);
         free($1);
         if (asAsgRuleDisable(yyAsgRule))
             yyerror("");

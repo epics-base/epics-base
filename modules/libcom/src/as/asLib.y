@@ -88,17 +88,17 @@ non_rule_keyword: tokenASG
 generic_item: tokenSTRING generic_head generic_list_block
     {
         yywarn("Ignoring unsupported TOP LEVEL nested block", $1);
-        free((void *)$1);
+        free($1);
     }
     |   tokenSTRING generic_head generic_block
     {
         yywarn("Ignoring unsupported TOP LEVEL block", $1);
-        free((void *)$1);
+        free($1);
     }
     |   tokenSTRING generic_head
     {
         yywarn("Ignoring unsupported TOP LEVEL bare block", $1);
-        free((void *)$1);
+        free($1);
     }
     ;
 
@@ -118,7 +118,7 @@ generic_list:  generic_list ',' generic_element
 generic_element:  keyword
     |   tokenSTRING
     {
-        free((void *)$1);
+        free($1);
     }
     |   tokenINT64
     |   tokenFLOAT64
@@ -131,11 +131,11 @@ generic_block:   '{' generic_element '}'
 
 generic_block_list:  generic_block_list generic_block_elem
     {
-        free((void *)$2);
+        free($2);
     }
     |   generic_block_elem
     {
-        free((void *)$1);
+        free($1);
     }
     ;
 
@@ -171,7 +171,7 @@ uag_head:   '(' tokenSTRING ')'
     {
         yyUag = asUagAdd($2);
         if(!yyUag) yyerror("");
-        free((void *)$2);
+        free($2);
     }
     ;
 
@@ -189,7 +189,7 @@ uag_user_list_name: tokenSTRING
     {
         if (asUagAddUser(yyUag,$1))
             yyerror("");
-        free((void *)$1);
+        free($1);
     }
     ;
 
@@ -197,7 +197,7 @@ hag_head:   '(' tokenSTRING ')'
     {
         yyHag = asHagAdd($2);
         if(!yyHag) yyerror("");
-        free((void *)$2);
+        free($2);
     }
     ;
 
@@ -212,7 +212,7 @@ hag_host_list_name: tokenSTRING
     {
         if (asHagAddHost(yyHag,$1))
             yyerror("");
-        free((void *)$1);
+        free($1);
     }
     ;
 
@@ -220,7 +220,7 @@ asg_head:   '(' tokenSTRING ')'
     {
         yyAsg = asAsgAdd($2);
         if(!yyAsg) yyerror("");
-        free((void *)$2);
+        free($2);
     }
     ;
 
@@ -238,7 +238,7 @@ inp_config: tokenINP '(' tokenSTRING ')'
     {
         if (asAsgAddInp(yyAsg,$3,(int)$<Int64>1))
             yyerror("");
-        free((void *)$3);
+        free($3);
     }
     ;
 
@@ -265,7 +265,7 @@ rule_head_mandatory:    tokenINT64 ',' tokenSTRING
         } else {
             yywarn("Ignoring RULE with unsupported PERMISSION", $3);
         }
-        free((void *)$3);
+        free($3);
     }
     ;
 
@@ -278,7 +278,7 @@ rule_log_option:  tokenSTRING
         } else if((strcmp($1,"NOTRAPWRITE")!=0)) {
             yyerror("Log options must be TRAPWRITE or NOTRAPWRITE");
         }
-        free((void *)$1);
+        free($1);
     }
     ;
 
@@ -295,12 +295,12 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
     {
         if (asAsgRuleCalc(yyAsgRule,$3))
             yyerror("");
-        free((void *)$3);
+        free($3);
     }
     | rule_generic_block_elem
     {
         yywarn("Ignoring RULE containing unsupported PREDICATE", $1);
-        free((void *)$1);
+        free($1);
         if (asAsgRuleDisable(yyAsgRule))
             yyerror("");
     }
@@ -314,7 +314,7 @@ rule_uag_list_name: tokenSTRING
     {
         if (asAsgRuleUagAdd(yyAsgRule,$1))
             yyerror("");
-        free((void *)$1);
+        free($1);
     }
     ;
 
@@ -326,7 +326,7 @@ rule_hag_list_name: tokenSTRING
     {
         if (asAsgRuleHagAdd(yyAsgRule,$1))
             yyerror("");
-        free((void *)$1);
+        free($1);
     }
     ;
 %%

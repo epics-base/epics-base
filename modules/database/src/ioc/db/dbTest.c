@@ -192,8 +192,8 @@ long dbl(const char *precordTypename, const char *fields)
         status = dbNextRecordType(pdbentry);
     }
     if (nfields > 0) {
-        free((void *)papfields);
-        free((void *)fieldnames);
+        free(papfields);
+        free(fieldnames);
     }
     dbFinishEntry(pdbentry);
     return 0;
@@ -334,8 +334,8 @@ long dbglob(const char *pmask,const char *fields)
         status = dbNextRecordType(pdbentry);
     }
     if (nfields > 0) {
-        free((void *)papfields);
-        free((void *)fieldnames);
+        free(papfields);
+        free(fieldnames);
     }
     dbFinishEntry(pdbentry);
     return 0;
@@ -826,7 +826,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_STATUS) {
         if (retOptions & DBR_STATUS) {
-            struct dbr_status *pdbr_status = (void *)pbuffer;
+            struct dbr_status *pdbr_status = pbuffer;
 
             printf("status = %u, severity = %u\n",
                 pdbr_status->status,
@@ -840,7 +840,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_UNITS) {
         if (retOptions & DBR_UNITS) {
-            struct dbr_units *pdbr_units = (void *)pbuffer;
+            struct dbr_units *pdbr_units = pbuffer;
 
             printf("units = \"%s\"\n",
                 pdbr_units->units);
@@ -853,7 +853,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_PRECISION) {
         if (retOptions & DBR_PRECISION){
-            struct dbr_precision *pdbr_precision = (void *)pbuffer;
+            struct dbr_precision *pdbr_precision = pbuffer;
 
             printf("precision = %ld\n",
                 pdbr_precision->precision.dp);
@@ -866,7 +866,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_TIME) {
         if (retOptions & DBR_TIME) {
-            struct dbr_time *pdbr_time = (void *)pbuffer;
+            struct dbr_time *pdbr_time = pbuffer;
             char time_buf[40];
             epicsTimeToStrftime(time_buf, 40, "%Y-%m-%d %H:%M:%S.%09f",
                 &pdbr_time->time);
@@ -880,7 +880,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_ENUM_STRS) {
         if (retOptions & DBR_ENUM_STRS) {
-            struct dbr_enumStrs *pdbr_enumStrs = (void *)pbuffer;
+            struct dbr_enumStrs *pdbr_enumStrs = pbuffer;
 
             printf("no_strs = %u:\n",
                 pdbr_enumStrs->no_str);
@@ -895,7 +895,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_GR_LONG) {
         if (retOptions & DBR_GR_LONG) {
-            struct dbr_grLong *pdbr_grLong = (void *)pbuffer;
+            struct dbr_grLong *pdbr_grLong = pbuffer;
 
             printf("grLong: %d .. %d\n",
                 pdbr_grLong->lower_disp_limit,
@@ -909,7 +909,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_GR_DOUBLE) {
         if (retOptions & DBR_GR_DOUBLE) {
-            struct dbr_grDouble *pdbr_grDouble = (void *)pbuffer;
+            struct dbr_grDouble *pdbr_grDouble = pbuffer;
 
             printf("grDouble: %g .. %g\n",
                 pdbr_grDouble->lower_disp_limit,
@@ -923,7 +923,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_CTRL_LONG) {
         if (retOptions & DBR_CTRL_LONG){
-            struct dbr_ctrlLong *pdbr_ctrlLong = (void *)pbuffer;
+            struct dbr_ctrlLong *pdbr_ctrlLong = pbuffer;
 
             printf("ctrlLong: %d .. %d\n",
                 pdbr_ctrlLong->lower_ctrl_limit,
@@ -937,7 +937,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_CTRL_DOUBLE) {
         if (retOptions & DBR_CTRL_DOUBLE) {
-            struct dbr_ctrlDouble *pdbr_ctrlDouble = (void *)pbuffer;
+            struct dbr_ctrlDouble *pdbr_ctrlDouble = pbuffer;
 
             printf("ctrlDouble: %g .. %g\n",
                 pdbr_ctrlDouble->lower_ctrl_limit,
@@ -951,7 +951,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_AL_LONG) {
         if (retOptions & DBR_AL_LONG) {
-            struct dbr_alLong *pdbr_alLong = (void *)pbuffer;
+            struct dbr_alLong *pdbr_alLong = pbuffer;
 
             printf("alLong: %d < %d .. %d < %d\n",
                 pdbr_alLong->lower_alarm_limit,
@@ -967,7 +967,7 @@ static void printBuffer(
 
     if (reqOptions & DBR_AL_DOUBLE) {
         if (retOptions & DBR_AL_DOUBLE) {
-            struct dbr_alDouble *pdbr_alDouble = (void *)pbuffer;
+            struct dbr_alDouble *pdbr_alDouble = pbuffer;
 
             printf("alDouble: %g < %g .. %g < %g\n",
                 pdbr_alDouble->lower_alarm_limit,
@@ -1224,7 +1224,7 @@ static int dbpr_report(
             break;
 
         case DBF_NOACCESS:
-            if (pfield == (void *)&paddr->precord->time) {
+            if (pfield == &paddr->precord->time) {
                 /* Special for the TIME field, make it human-readable */
                 char time_buf[40];
                 epicsTimeToStrftime(time_buf, 40, "%Y-%m-%d %H:%M:%S.%09f",

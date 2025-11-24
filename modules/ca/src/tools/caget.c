@@ -202,7 +202,7 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                                                pvs[n].reqElems,
                                                pvs[n].chid,
                                                event_handler,
-                                               (void*)&pvs[n]);
+                                               &pvs[n]);
             } else {
                 /* We allocate value structure and set nElems */
                 pvs[n].nElems = reqElems && reqElems < nElems ? reqElems : nElems;

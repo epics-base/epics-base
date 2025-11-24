@@ -207,7 +207,7 @@ static void osiLocalAddrOnce (void *raw)
         "osiLocalAddr(): only loopback found\n");
     /* fallback to loopback */
     osiSockAddr addr;
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    memset ( &addr, '\0', sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     osiLocalAddrResult = addr;

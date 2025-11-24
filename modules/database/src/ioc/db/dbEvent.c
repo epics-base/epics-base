@@ -200,19 +200,19 @@ int dbel ( const char *pname, unsigned level )
                 const void * taskId;
                 LOCKEVQUE(pevent->ev_que);
                 nEntriesFree = ringSpace ( pevent->ev_que );
-                taskId = ( void * ) pevent->ev_que->evUser->taskid;
+                taskId = pevent->ev_que->evUser->taskid;
                 UNLOCKEVQUE(pevent->ev_que);
                 if ( nEntriesFree == 0u ) {
                     printf ( ", thread=%p, queue full",
-                        (void *) taskId );
+                        taskId );
                 }
                 else if ( nEntriesFree == EVENTQUESIZE ) {
                     printf ( ", thread=%p, queue empty",
-                        (void *) taskId );
+                        taskId );
                 }
                 else {
                     printf ( ", thread=%p, unused entries=%u",
-                        (void *) taskId, nEntriesFree );
+                        taskId, nEntriesFree );
                 }
             }
 
@@ -234,9 +234,9 @@ int dbel ( const char *pname, unsigned level )
 
             if ( level > 3 ) {
                 printf ( ", ev %p, ev que %p, ev user %p",
-                    ( void * ) pevent,
-                    ( void * ) pevent->ev_que,
-                    ( void * ) pevent->ev_que->evUser );
+                    pevent,
+                    pevent->ev_que,
+                    pevent->ev_que->evUser );
             }
 
             printf( "\n" );
@@ -893,7 +893,7 @@ unsigned int    caEventMask
          * Only send event msg if they are waiting on the field which
          * changed or pval==NULL, and are waiting on matching event
          */
-        if ( (dbChannelField(pevent->chan) == (void *)pField || pField==NULL) &&
+        if ( (dbChannelField(pevent->chan) == pField || pField==NULL) &&
             (caEventMask & pevent->select)) {
             db_field_log *pLog = db_create_event_log(pevent);
             if(pLog)
@@ -1135,7 +1135,7 @@ int db_start_events (
          taskname = EVENT_PEND_NAME;
      }
      evUser->taskid = epicsThreadCreateOpt (
-         taskname, event_task, (void *)evUser, &opts);
+         taskname, event_task, evUser, &opts);
      if (!evUser->taskid) {
          epicsMutexUnlock ( evUser->lock );
          return DB_EVENT_ERROR;

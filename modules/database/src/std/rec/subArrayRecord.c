@@ -107,13 +107,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     /* must have dset defined */
     if (!(pdset = (sadset *)(prec->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)prec,"sa: init_record");
+        recGblRecordError(S_dev_noDSET, prec, "sa: init_record");
         return S_dev_noDSET;
     }
 
     /* must have read_sa function defined */
     if ( (pdset->common.number < 5) || (pdset->read_sa == NULL) ) {
-        recGblRecordError(S_dev_missingSup,(void *)prec,"sa: init_record");
+        recGblRecordError(S_dev_missingSup, prec, "sa: init_record");
         return S_dev_missingSup;
     }
 
@@ -132,7 +132,7 @@ static long process(struct dbCommon *pcommon)
 
     if ((pdset==NULL) || (pdset->read_sa==NULL)) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup, (void *)prec, "read_sa");
+        recGblRecordError(S_dev_missingSup, prec, "read_sa");
         return S_dev_missingSup;
     }
 
@@ -293,7 +293,7 @@ static void monitor(subArrayRecord *prec)
     monitor_mask = recGblResetAlarms(prec);
     monitor_mask |= (DBE_LOG|DBE_VALUE);
 
-    db_post_events(prec, (void*)&prec->val, monitor_mask);
+    db_post_events(prec, &prec->val, monitor_mask);
 
     return;
 }

@@ -54,7 +54,7 @@ typedef struct yajl_bytestack_t
     if (((obs).size - (obs).used) == 0) {               \
         (obs).size += YAJL_BS_INC;                      \
         (obs).stack = (obs).yaf->realloc((obs).yaf->ctx,\
-                                         (void *) (obs).stack, (obs).size);\
+                               (obs).stack, (obs).size);\
     }                                                   \
     (obs).stack[((obs).used)++] = (byte);               \
 }

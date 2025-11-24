@@ -150,14 +150,14 @@ static long get_precision(const DBADDR *paddr, long *precision)
     int i;
 
     *precision = prec->prec;
-    if(paddr->pfield==(void *)&prec->val){
+    if(paddr->pfield==&prec->val){
         return(0);
     }
     pvalue = &prec->a;
     plvalue = &prec->la;
     for(i=0; i<SEL_MAX; i++, pvalue++, plvalue++) {
-        if(paddr->pfield==(void *)&pvalue
-        || paddr->pfield==(void *)&plvalue){
+        if(paddr->pfield==&pvalue
+        || paddr->pfield==&plvalue){
             return(0);
         }
     }

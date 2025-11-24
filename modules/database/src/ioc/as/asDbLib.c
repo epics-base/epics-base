@@ -90,7 +90,7 @@ int asSetFilename(const char *acf)
 
 int asSetSubstitutions(const char *substitutions)
 {
-    if(psubstitutions) free ((void *)psubstitutions);
+    if(psubstitutions) free (psubstitutions);
     if(substitutions) {
         psubstitutions = calloc(1,strlen(substitutions)+1);
         if(!psubstitutions) {
@@ -123,7 +123,7 @@ static long asInitCommon(void)
     static epicsThreadOnceId asInitCommonOnceFlag = EPICS_THREAD_ONCE_INIT;
 
 
-    epicsThreadOnce(&asInitCommonOnceFlag,asInitCommonOnce,(void *)&firstTime);
+    epicsThreadOnce(&asInitCommonOnceFlag, asInitCommonOnce, &firstTime);
     if(wasFirstTime) {
         if(!pacf) return(0); /*access security will NEVER be turned on*/
     } else {
@@ -174,7 +174,7 @@ static void asInitTask(ASDBCALLBACK *pcallback)
 {
     long status;
 
-    taskwdInsert(epicsThreadGetIdSelf(), wdCallback, (void *)pcallback);
+    taskwdInsert(epicsThreadGetIdSelf(), wdCallback, pcallback);
     status = asInitCommon();
     taskwdRemove(epicsThreadGetIdSelf());
     asInitTheadId = 0;
@@ -198,7 +198,7 @@ int asInitAsyn(ASDBCALLBACK *pcallback)
     asInitTheadId = epicsThreadCreate("asInitTask",
         (epicsThreadPriorityCAServerHigh + 1),
         epicsThreadGetStackSize(epicsThreadStackBig),
-        (EPICSTHREADFUNC)asInitTask,(void *)pcallback);
+        (EPICSTHREADFUNC)asInitTask, pcallback);
     if(asInitTheadId==0) {
         errMessage(0,"asInit: epicsThreadCreate Error");
         if(pcallback) {
@@ -264,7 +264,7 @@ int astac(const char *pname,const char *user,const char *location)
         errMessage(status,"asAddClient error");
         return(1);
     } else {
-        asPutClientPvt(*pasclientpvt,(void *)precord->name);
+        asPutClientPvt(*pasclientpvt, precord->name);
         asRegisterClientCallback(*pasclientpvt,astacCallback);
     }
     return(0);

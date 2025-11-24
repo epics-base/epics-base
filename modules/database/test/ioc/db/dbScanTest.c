@@ -29,7 +29,7 @@ static dbCommon *prec;
 
 static void onceComp(void *junk, dbCommon *prec)
 {
-    testOk1(junk==(void*)&waiter);
+    testOk1(junk==&waiter);
     testOk1(strcmp(prec->name, "reca")==0);
     called = 1;
     epicsEventMustTrigger(waiter);

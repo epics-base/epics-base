@@ -57,7 +57,7 @@ static void osiLocalAddrOnce ( void *raw )
     DWORD               numifs;
     DWORD               cbBytesReturned;
 
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    memset ( &addr, '\0', sizeof ( addr ) );
     addr.sa.sa_family = AF_UNSPEC;
 
     /* only valid for winsock 2 and above */
@@ -114,7 +114,7 @@ static void osiLocalAddrOnce ( void *raw )
                 "osiLocalAddr(): only loopback found\n");
 fail:
     /* fallback to loopback */
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    memset ( &addr, '\0', sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     osiLocalAddrResult = addr;
@@ -124,7 +124,7 @@ fail:
 
 LIBCOM_API osiSockAddr epicsStdCall osiLocalAddr (SOCKET socket)
 {
-    epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, (void*)&socket);
+    epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, &socket);
     return osiLocalAddrResult;
 }
 

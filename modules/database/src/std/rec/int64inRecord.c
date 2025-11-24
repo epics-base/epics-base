@@ -102,12 +102,12 @@ static long init_record(dbCommon *pcommon, int pass)
     recGblInitConstantLink(&prec->siol, DBF_INT64, &prec->sval);
 
     if(!(pdset = (int64indset *)(prec->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)prec,"int64in: init_record");
+        recGblRecordError(S_dev_noDSET, prec, "int64in: init_record");
         return(S_dev_noDSET);
     }
     /* must have read_int64in function defined */
     if ((pdset->common.number < 5) || (pdset->read_int64in == NULL)) {
-        recGblRecordError(S_dev_missingSup,(void *)prec,"int64in: init_record");
+        recGblRecordError(S_dev_missingSup, prec, "int64in: init_record");
         return(S_dev_missingSup);
     }
     if (pdset->common.init_record) {
@@ -129,7 +129,7 @@ static long process(dbCommon *pcommon)
 
     if( (pdset==NULL) || (pdset->read_int64in==NULL) ) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"read_int64in");
+        recGblRecordError(S_dev_missingSup, prec, "read_int64in");
         return(S_dev_missingSup);
     }
     timeLast = prec->time;

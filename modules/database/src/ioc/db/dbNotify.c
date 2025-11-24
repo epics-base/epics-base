@@ -233,7 +233,7 @@ static void processNotifyCommon(processNotify *ppn, dbCommon *precord, int first
     if (ppn->requestType == putProcessRequest ||
         ppn->requestType == putProcessGetRequest) {
         /* Check if puts disabled */
-        if (precord->disp && (dbChannelField(ppn->chan) != (void *) &precord->disp)) {
+        if (precord->disp && (dbChannelField(ppn->chan) != &precord->disp)) {
             ppn->putCallback(ppn, putDisabledType);
         } else {
             didPut = ppn->putCallback(ppn, putType);
@@ -241,7 +241,7 @@ static void processNotifyCommon(processNotify *ppn, dbCommon *precord, int first
     }
     /* Check if dbProcess should be called */
     if (didPut &&
-        ((dbChannelField(ppn->chan) == (void *) &precord->proc) ||
+        ((dbChannelField(ppn->chan) == &precord->proc) ||
         (dbChannelFldDes(ppn->chan)->process_passive && precord->scan == 0)))
        doProcess = 1;
     else
@@ -338,7 +338,7 @@ void dbProcessNotify(processNotify *ppn)
         if (ppn->requestType == putProcessRequest ||
             ppn->requestType == putProcessGetRequest) {
             /* Check if puts disabled */
-            if (precord->disp && (dbChannelField(ppn->chan) != (void *) &precord->disp)) {
+            if (precord->disp && (dbChannelField(ppn->chan) != &precord->disp)) {
                 ppn->putCallback(ppn, putDisabledType);
             } else {
                 ppn->putCallback(ppn, putFieldType);
@@ -661,7 +661,7 @@ int dbNotifyDump(void)
 
             pnotifyPvt = (notifyPvt *) ppn->pnotifyPvt;
             printf("%s state %d ppn %p\n  waitList\n",
-                precord->name, pnotifyPvt->state, (void*) ppn);
+                precord->name, pnotifyPvt->state, ppn);
             ppnr = (processNotifyRecord *) ellFirst(&pnotifyPvt->waitList);
             while (ppnr) {
                 printf("    %s pact %d\n",

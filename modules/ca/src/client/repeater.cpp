@@ -107,7 +107,7 @@ static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
             struct sockaddr sa;
         } bd;
 
-        memset ( (char *) &bd, 0, sizeof (bd) );
+        memset ( &bd, 0, sizeof (bd) );
         bd.ia.sin_family = AF_INET;
         bd.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         bd.ia.sin_port = htons ( port );
@@ -165,7 +165,7 @@ bool repeaterClient::sendConfirm ()
     int status;
 
     caHdr confirm;
-    memset ( (char *) &confirm, '\0', sizeof (confirm) );
+    memset ( &confirm, '\0', sizeof (confirm) );
     AlignedWireRef < epicsUInt16 > ( confirm.m_cmmd ) = REPEATER_CONFIRM;
     confirm.m_available = this->from.ia.sin_addr.s_addr;
     status = send ( this->sock, (char *) &confirm,
@@ -456,7 +456,7 @@ static void register_new_client ( osiSockAddr & from,
      * accumulate sockets when there are no beacons
      */
     caHdr noop;
-    memset ( (char *) &noop, '\0', sizeof ( noop ) );
+    memset ( &noop, '\0', sizeof ( noop ) );
     AlignedWireRef < epicsUInt16 > ( noop.m_cmmd ) = CA_PROTO_VERSION;
     fanOut ( from, &noop, sizeof ( noop ), freeList );
 

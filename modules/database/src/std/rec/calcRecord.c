@@ -103,7 +103,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
     }
     if (postfix(prec->calc, prec->rpcl, &error_number)) {
-        recGblRecordError(S_db_badField, (void *)prec,
+        recGblRecordError(S_db_badField, prec,
                           "calc: init_record: Illegal CALC field");
         errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
                      prec->name, calcErrorStr(error_number), prec->calc);
@@ -144,7 +144,7 @@ static long special(DBADDR *paddr, int after)
     if (!after) return 0;
     if (paddr->special == SPC_CALC) {
         if (postfix(prec->calc, prec->rpcl, &error_number)) {
-            recGblRecordError(S_db_badField, (void *)prec,
+            recGblRecordError(S_db_badField, prec,
                               "calc: Illegal CALC field");
             errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
                          prec->name, calcErrorStr(error_number), prec->calc);

@@ -77,9 +77,9 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
         localAddr.field_type = pfl->field_type;
         localAddr.field_size = pfl->field_size;
         localAddr.no_elements = pfl->no_elements;
-        localAddr.pfield = (char *) &pfl->u.v.field;
+        localAddr.pfield = &pfl->u.v.field;
         status = dbFastGetConvertRoutine[pfl->field_type][DBR_DOUBLE]
-                 (localAddr.pfield, (void*) &val, &localAddr);
+                 (localAddr.pfield, &val, &localAddr);
         if (!status) {
             send = pfl->mask & ~(DBE_VALUE|DBE_LOG);
             recGblCheckDeadband(&my->last, val, my->hyst, &send, pfl->mask & (DBE_VALUE|DBE_LOG));

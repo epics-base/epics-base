@@ -212,7 +212,7 @@ got_header:
         pdata[n] = pnext->value;
         pdataList = pnext;
         pnext = pnext->next;
-        free((void *)pdataList);
+        free(pdataList);
     }
     brkCreateInfo.pTable = pdata;
     if(create_break(&brkCreateInfo,&brkint[0],MAX_BREAKS,&nBreak))

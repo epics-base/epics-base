@@ -260,7 +260,7 @@ static void osiLocalAddrOnce (void *raw)
     struct ifreq            *pIfreqListEnd;
     struct ifreq            *pnextifreq;
 
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    memset ( &addr, '\0', sizeof ( addr ) );
     addr.sa.sa_family = AF_UNSPEC;
 
     pIfreqList = (struct ifreq *) calloc ( nelem, sizeof(*pIfreqList) );
@@ -336,7 +336,7 @@ static void osiLocalAddrOnce (void *raw)
         "osiLocalAddr(): only loopback found\n");
 fail:
     /* fallback to loopback */
-    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    memset ( &addr, '\0', sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     osiLocalAddrResult = addr;

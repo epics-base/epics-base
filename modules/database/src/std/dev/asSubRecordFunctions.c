@@ -58,7 +58,7 @@ long asSubInit(subRecord *precord,void *process)
 
     pcallback = (ASDBCALLBACK *)callocMustSucceed(
         1,sizeof(ASDBCALLBACK),"asSubInit");
-    precord->dpvt = (void *)pcallback;
+    precord->dpvt = pcallback;
     callbackSetCallback(myCallback,&pcallback->callback);
     callbackSetUser(precord,&pcallback->callback);
     return(0);

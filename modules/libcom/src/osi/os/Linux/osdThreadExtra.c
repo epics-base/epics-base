@@ -47,7 +47,7 @@ void epicsThreadShowInfo(epicsThreadId pthreadInfo, unsigned int level)
                 priority = param.sched_priority;
         }
         fprintf(epicsGetStdout(),"%16.16s %14p %8lu    %3d%8d %8.8s%s\n",
-             pthreadInfo->name,(void *)
+             pthreadInfo->name,
              pthreadInfo,(unsigned long)pthreadInfo->lwpId,
              pthreadInfo->osiPriority,priority,
              pthreadInfo->isSuspended ? "SUSPEND" : "OK",

@@ -563,7 +563,7 @@ static long special(DBADDR *paddr, int after)
             pfunc = (GENFUNCPTR)registryFunctionFind(prec->snam);
             if (!pfunc) {
                 status = S_db_BadSub;
-                recGblRecordError(status, (void *)prec, prec->snam);
+                recGblRecordError(status, prec, prec->snam);
             }
         }
 

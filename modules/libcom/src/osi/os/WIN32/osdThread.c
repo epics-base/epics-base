@@ -1042,12 +1042,12 @@ static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
     if ( pParm ) {
         unsigned long idForFormat = pParm->id;
         fprintf ( epicsGetStdout(), "%-15s %-8p %-8lx %-9u %-9s %-7s", pParm->pName,
-            (void *) pParm, idForFormat, pParm->epicsPriority,
+            pParm, idForFormat, pParm->epicsPriority,
             epics_GetThreadPriorityAsString ( pParm->handle ),
             epicsThreadIsSuspended ( id ) ? "suspend" : "ok" );
         if ( level ) {
             fprintf (epicsGetStdout(), " %-8p %-8p ",
-                (void *) pParm->handle, (void *) pParm->parm );
+                pParm->handle, pParm->parm );
         }
         if(!epicsAtomicGetIntT(&pParm->isRunning))
             fprintf (epicsGetStdout(), " ZOMBIE");
@@ -1187,7 +1187,7 @@ LIBCOM_API void epicsStdCall epicsThreadPrivateDelete ( epicsThreadPrivateId p )
  */
 LIBCOM_API void epicsStdCall epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, void *pVal )
 {
-    BOOL stat = TlsSetValue ( pPvt->key, (void *) pVal );
+    BOOL stat = TlsSetValue ( pPvt->key, pVal );
     assert (stat);
 }
 
@@ -1196,7 +1196,7 @@ LIBCOM_API void epicsStdCall epicsThreadPrivateSet ( epicsThreadPrivateId pPvt, 
  */
 LIBCOM_API void * epicsStdCall epicsThreadPrivateGet ( epicsThreadPrivateId pPvt )
 {
-    return ( void * ) TlsGetValue ( pPvt->key );
+    return TlsGetValue ( pPvt->key );
 }
 
 /*

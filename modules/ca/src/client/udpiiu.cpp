@@ -242,7 +242,7 @@ udpiiu::udpiiu (
     // the local port number below
     static const unsigned short PORT_ANY = 0u;
     osiSockAddr addr;
-    memset ( (char *)&addr, 0 , sizeof (addr) );
+    memset ( &addr, 0 , sizeof (addr) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
     addr.ia.sin_port = htons ( PORT_ANY );
@@ -514,7 +514,7 @@ void epicsStdCall caRepeaterRegistrationMessage (
         saddr.ia.sin_port = htons ( port );
     }
 
-    memset ( (char *) &msg, 0, sizeof (msg) );
+    memset ( &msg, 0, sizeof (msg) );
     AlignedWireRef < epicsUInt16 > ( msg.m_cmmd ) = REPEATER_REGISTER;
     msg.m_available = saddr.ia.sin_addr.s_addr;
 
@@ -597,7 +597,7 @@ void epicsStdCall caStartRepeaterIfNotInstalled ( unsigned repeaterPort )
     tmpSock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( tmpSock != INVALID_SOCKET ) {
         ca_uint16_t port = static_cast < ca_uint16_t > ( repeaterPort );
-        memset ( (char *) &bd, 0, sizeof ( bd ) );
+        memset ( &bd, 0, sizeof ( bd ) );
         bd.ia.sin_family = AF_INET;
         bd.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         bd.ia.sin_port = htons ( port );

@@ -492,7 +492,7 @@ static void testLogPrefix(void) {
     timeout.tv_sec = 5; /* in seconds */
     timeout.tv_usec = 0;
 
-    memset((void*)prefixmsgbuffer, 0, sizeof prefixmsgbuffer);
+    memset(prefixmsgbuffer, 0, sizeof prefixmsgbuffer);
 
     /* Clear "errlog: <n> messages were discarded" status */
     errlogPrintfNoConsole(".");
@@ -504,7 +504,7 @@ static void testLogPrefix(void) {
     }
 
     /* We listen on a an available port. */
-    memset((void *)&serverAddr, 0, sizeof serverAddr);
+    memset(&serverAddr, 0, sizeof serverAddr);
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(0);
 
@@ -521,7 +521,7 @@ static void testLogPrefix(void) {
 
     /* Determine the port that the OS chose */
     actualServerAddrSize = sizeof actualServerAddr;
-    memset((void *)&actualServerAddr, 0, sizeof serverAddr);
+    memset(&actualServerAddr, 0, sizeof serverAddr);
     status = getsockname(sock, (struct sockaddr *) &actualServerAddr,
          &actualServerAddrSize);
     if (status < 0) {
@@ -535,7 +535,7 @@ static void testLogPrefix(void) {
     epicsEnvSet ( "EPICS_IOC_LOG_INET", "localhost" );
     epicsEnvSet ( "EPICS_IOC_LOG_PORT", portstring );
 
-    pfdctx = (void *) fdmgr_init();
+    pfdctx = fdmgr_init();
     if (status < 0) {
         testAbort("fdmgr_init failed!");
     }

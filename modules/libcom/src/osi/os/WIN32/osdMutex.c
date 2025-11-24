@@ -72,7 +72,7 @@ void epicsMutexOsdShow ( struct epicsMutexParm *mutex, unsigned level )
 {
     (void)level;
     printf ("epicsMutex: win32 critical section at %p\n",
-        (void * ) & mutex->osd );
+        & mutex->osd );
 }
 
 void epicsMutexOsdShowAll(void) {}

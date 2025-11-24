@@ -112,7 +112,7 @@ static void twdTask(void *arg)
                         char tName[40];
                         epicsThreadGetName(pt->tid, tName, sizeof(tName));
                         errlogPrintf("Thread %s (%p) suspended\n",
-                                    tName, (void *)pt->tid);
+                                    tName, pt->tid);
                         if (pt->callback) {
                             pt->callback(pt->usr);
                         }
@@ -200,7 +200,7 @@ void taskwdInsert(epicsThreadId tid, TASKWDFUNC callback, void *usr)
     epicsMutexUnlock(mLock);
 
     epicsMutexMustLock(tLock);
-    ellAdd(&tList, (void *)pt);
+    ellAdd(&tList, &pt->node);
     epicsMutexUnlock(tLock);
 }
 
@@ -219,7 +219,7 @@ void taskwdRemove(epicsThreadId tid)
     pt = (struct tNode *)ellFirst(&tList);
     while (pt != NULL) {
         if (tid == pt->tid) {
-            ellDelete(&tList, (void *)pt);
+            ellDelete(&tList, &pt->node);
             epicsMutexUnlock(tLock);
             freeNode((union twdNode *)pt);
 
@@ -240,7 +240,7 @@ void taskwdRemove(epicsThreadId tid)
 
     epicsThreadGetName(tid, tName, sizeof(tName));
     errlogPrintf("taskwdRemove: Thread %s (%p) not registered!\n",
-        tName, (void *)tid);
+        tName, tid);
 }
 
 
@@ -259,7 +259,7 @@ void taskwdMonitorAdd(const taskwdMonitor *funcs, void *usr)
     pm->usr = usr;
 
     epicsMutexMustLock(mLock);
-    ellAdd(&mList, (void *)pm);
+    ellAdd(&mList, &pm->node);
     epicsMutexUnlock(mLock);
 }
 
@@ -275,7 +275,7 @@ void taskwdMonitorDel(const taskwdMonitor *funcs, void *usr)
     pm = (struct mNode *)ellFirst(&mList);
     while (pm) {
         if (pm->funcs == funcs && pm->usr == usr) {
-            ellDelete(&mList, (void *)pm);
+            ellDelete(&mList, &pm->node);
             freeNode((union twdNode *)pm);
             epicsMutexUnlock(mLock);
             return;
@@ -322,7 +322,7 @@ void taskwdAnyInsert(void *key, TASKWDANYFUNC callback, void *usr)
     pm->usr = pa;
 
     epicsMutexMustLock(mLock);
-    ellAdd(&mList, (void *)pm);
+    ellAdd(&mList, &pm->node);
     epicsMutexUnlock(mLock);
 }
 
@@ -339,7 +339,7 @@ void taskwdAnyRemove(void *key)
         if (pm->funcs == &anyFuncs) {
             pa = (struct aNode *)pm->usr;
             if (pa->key == key) {
-                ellDelete(&mList, (void *)pm);
+                ellDelete(&mList, &pm->node);
                 freeNode((union twdNode *)pa);
                 freeNode((union twdNode *)pm);
                 epicsMutexUnlock(mLock);
@@ -382,7 +382,7 @@ LIBCOM_API void taskwdShow(int level)
             epicsThreadGetName(pt->tid, tName, sizeof(tName));
             printf("%16.16s %9s %12p %12p %12p\n",
                 tName, pt->suspended ? "Suspended" : "Ok ",
-                (void *)pt->tid, (void *)pt->callback, pt->usr);
+                pt->tid, pt->callback, pt->usr);
             pt = (struct tNode *)ellNext(&pt->node);
         }
     }
@@ -425,6 +425,6 @@ static void freeNode(union twdNode *pn)
     VALGRIND_MEMPOOL_FREE(&fList, pn);
     VALGRIND_MEMPOOL_ALLOC(&fList, pn, sizeof(ELLNODE));
     epicsMutexMustLock(fLock);
-    ellAdd(&fList, (void *)pn);
+    ellAdd(&fList, &pn->t.node);
     epicsMutexUnlock(fLock);
 }

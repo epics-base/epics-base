@@ -384,7 +384,7 @@ static long dbDbPutValue(struct link *plink, short dbrType,
     if (status)
         return status;
 
-    if (dbChannelField(chan) == (void *) &pdest->proc ||
+    if (dbChannelField(chan) == &pdest->proc ||
         (ppv_link->pvlMask & pvlOptPP && pdest->scan == 0)) {
         status = processTarget(psrce, pdest);
     }

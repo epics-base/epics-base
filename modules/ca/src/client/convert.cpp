@@ -517,7 +517,7 @@ arrayElementCount   num         /* number of values     */
     if (num == 1)
         pDest->value = pSrc->value;
     else {
-        memcpy((char *)&pDest->value, (char *)&pSrc->value, num);
+        memcpy(&pDest->value, &pSrc->value, num);
     }
 }
 
@@ -584,7 +584,7 @@ arrayElementCount   num         /* number of values     */
     pDest->severity         = dbr_ntohs(pSrc->severity);
     pDest->no_str           = dbr_ntohs(pSrc->no_str);
     if ( s != d ) {
-        memcpy((void *)pDest->strs,(void *)pSrc->strs,sizeof(pSrc->strs));
+        memcpy(pDest->strs, pSrc->strs, sizeof(pSrc->strs));
     }
 
     if (num == 1)   /* single value */
@@ -845,7 +845,7 @@ arrayElementCount   num         /* number of values     */
     if (num == 1)
         pDest->value = pSrc->value;
     else {
-        memcpy((void *)&pDest->value, (void *)&pSrc->value, num);
+        memcpy(&pDest->value, &pSrc->value, num);
     }
 }
 
@@ -1004,7 +1004,7 @@ arrayElementCount   num         /* number of values     */
     pDest->severity         = dbr_ntohs(pSrc->severity);
     pDest->no_str           = dbr_ntohs(pSrc->no_str);
     if ( s != d ) {
-        memcpy((void *)pDest->strs,(void *)pSrc->strs,sizeof(pSrc->strs));
+        memcpy(pDest->strs, pSrc->strs, sizeof(pSrc->strs));
     }
 
     if (num == 1)   /* single value */
@@ -1049,7 +1049,7 @@ arrayElementCount   num         /* number of values     */
         pDest->value = pSrc->value;
     else        /* array chan-- multiple pts */
     {
-        memcpy((void *)&pDest->value, (void *)&pSrc->value, num);
+        memcpy(&pDest->value, &pSrc->value, num);
     }
 }
 
@@ -1268,7 +1268,7 @@ arrayElementCount   num         /* number of values     */
         pDest->value = pSrc->value;
     else        /* array chan-- multiple pts */
     {
-        memcpy((void *)&pDest->value, (void *)&pSrc->value, num);
+        memcpy(&pDest->value, &pSrc->value, num);
     }
 }
 /****************************************************************************

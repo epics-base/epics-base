@@ -111,7 +111,7 @@ static void wdogCallback(epicsCallback *arg)
     if (prec->mcnt > 0){
         dbScanLock((struct dbCommon *)prec);
         recGblGetTimeStamp(prec);
-        db_post_events(prec, (void*)&prec->val, DBE_VALUE | DBE_LOG);
+        db_post_events(prec, &prec->val, DBE_VALUE | DBE_LOG);
         prec->mcnt = 0;
         dbScanUnlock((struct dbCommon *)prec);
     }
@@ -291,7 +291,7 @@ static void monitor(histogramRecord *prec)
     }
     /* send out monitors connected to the value field */
     if (monitor_mask)
-        db_post_events(prec, (void*)&prec->val, monitor_mask);
+        db_post_events(prec, &prec->val, monitor_mask);
 
     return;
 }

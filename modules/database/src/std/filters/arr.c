@@ -48,7 +48,7 @@ static void * allocPvt(void)
     my->start = 0;
     my->incr = 1;
     my->end = -1;
-    return (void *) my;
+    return my;
 }
 
 static void freePvt(void *pvt)

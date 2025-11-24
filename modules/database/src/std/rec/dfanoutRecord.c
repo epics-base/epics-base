@@ -140,7 +140,7 @@ static long process(struct dbCommon *pcommon)
                 break;
             default :
                 status=-1;
-                recGblRecordError(S_db_badField,(void *)prec,
+                recGblRecordError(S_db_badField, prec,
                         "dfanout:process Illegal IVOA field");
         }
     }

@@ -105,7 +105,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
     recGblInitSimm(pcommon, &prec->sscn, &prec->oldsimm, &prec->simm, &prec->siml);
 
     if(!(pdset = (aodset *)(prec->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)prec,"ao: init_record");
+        recGblRecordError(S_dev_noDSET, prec, "ao: init_record");
         return(S_dev_noDSET);
     }
     /* get the initial value if dol is a constant*/
@@ -114,7 +114,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     /* must have write_ao function defined */
     if ((pdset->common.number < 6) || (pdset->write_ao ==NULL)) {
-        recGblRecordError(S_dev_missingSup,(void *)prec,"ao: init_record");
+        recGblRecordError(S_dev_missingSup, prec, "ao: init_record");
         return(S_dev_missingSup);
     }
     prec->init = TRUE;
@@ -141,7 +141,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
                 value = value*prec->eslo + prec->eoff;
             }else{
                 if(cvtRawToEngBpt(&value,prec->linr,prec->init,
-                        (void *)&prec->pbrk,&prec->lbrk)!=0) break;
+                        &prec->pbrk, &prec->lbrk)!=0) break;
             }
             prec->val = value;
             prec->udf = isnan(value);
@@ -149,7 +149,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         case(2): /* no convert */
         break;
         default:
-             recGblRecordError(S_dev_badInitRet,(void *)prec,"ao: init_record");
+             recGblRecordError(S_dev_badInitRet, prec, "ao: init_record");
              return(S_dev_badInitRet);
         }
     }
@@ -172,7 +172,7 @@ static long process(struct dbCommon *pcommon)
 
     if ((pdset==NULL) || (pdset->write_ao==NULL)) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"write_ao");
+        recGblRecordError(S_dev_missingSup, prec, "write_ao");
         return(S_dev_missingSup);
     }
 
@@ -214,7 +214,7 @@ static long process(struct dbCommon *pcommon)
                 break;
             default :
                 status=-1;
-                recGblRecordError(S_db_badField,(void *)prec,
+                recGblRecordError(S_db_badField, prec,
                         "ao:process Illegal IVOA field");
         }
     }
@@ -493,7 +493,7 @@ static void convert(aoRecord *prec, double value)
             break;
         default:
             if (cvtEngToRawBpt(&value, prec->linr, prec->init,
-                (void *)&prec->pbrk, &prec->lbrk) != 0) {
+                &prec->pbrk, &prec->lbrk) != 0) {
                 recGblSetSevr(prec, SOFT_ALARM, MAJOR_ALARM);
                 return;
             }

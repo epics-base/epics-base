@@ -57,7 +57,7 @@ static long init_ai(dbCommon *pcommon)
     int i;
 
     if (prec->inp.type != INST_IO) {
-        recGblRecordError(S_db_badField, (void *)prec,
+        recGblRecordError(S_db_badField, prec,
                           "devAiGeneralTime::init_ai: Illegal INP field");
         prec->pact = TRUE;
         return S_db_badField;
@@ -71,7 +71,7 @@ static long init_ai(dbCommon *pcommon)
         }
     }
 
-    recGblRecordError(S_db_badField, (void *)prec,
+    recGblRecordError(S_db_badField, prec,
                       "devAiGeneralTime::init_ai: Bad parm");
     prec->pact = TRUE;
     prec->dpvt = NULL;
@@ -119,7 +119,7 @@ static long init_bo(dbCommon *pcommon)
     int i;
 
     if (prec->out.type != INST_IO) {
-        recGblRecordError(S_db_badField, (void *)prec,
+        recGblRecordError(S_db_badField, prec,
                           "devAiGeneralTime::init_ai: Illegal INP field");
         prec->pact = TRUE;
         return S_db_badField;
@@ -134,7 +134,7 @@ static long init_bo(dbCommon *pcommon)
         }
     }
 
-    recGblRecordError(S_db_badField, (void *)prec,
+    recGblRecordError(S_db_badField, prec,
                       "devBoGeneralTime::init_bo: Bad parm");
     prec->pact = TRUE;
     prec->dpvt = NULL;
@@ -178,7 +178,7 @@ static long init_li(dbCommon *pcommon)
     int i;
 
     if (prec->inp.type != INST_IO) {
-        recGblRecordError(S_db_badField, (void *)prec,
+        recGblRecordError(S_db_badField, prec,
                           "devLiGeneralTime::init_li: Illegal INP field");
         prec->pact = TRUE;
         return S_db_badField;
@@ -192,7 +192,7 @@ static long init_li(dbCommon *pcommon)
         }
     }
 
-    recGblRecordError(S_db_badField, (void *)prec,
+    recGblRecordError(S_db_badField, prec,
                       "devLiGeneralTime::init_li: Bad parm");
     prec->pact = TRUE;
     prec->dpvt = NULL;
@@ -247,7 +247,7 @@ static long init_si(dbCommon *pcommon)
     int i;
 
     if (prec->inp.type != INST_IO) {
-        recGblRecordError(S_db_badField, (void *)prec,
+        recGblRecordError(S_db_badField, prec,
                           "devSiGeneralTime::init_si: Illegal INP field");
         prec->pact = TRUE;
         return S_db_badField;
@@ -261,7 +261,7 @@ static long init_si(dbCommon *pcommon)
         }
     }
 
-    recGblRecordError(S_db_badField, (void *)prec,
+    recGblRecordError(S_db_badField, prec,
                       "devSiGeneralTime::init_si: Bad parm");
     prec->pact = TRUE;
     prec->dpvt = NULL;

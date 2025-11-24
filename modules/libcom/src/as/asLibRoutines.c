@@ -97,7 +97,7 @@ long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
     HAGNAME     *phagname;
     static epicsThreadOnceId asInitializeOnceFlag = EPICS_THREAD_ONCE_INIT;
 
-    epicsThreadOnce(&asInitializeOnceFlag,asInitializeOnce,(void *)0);
+    epicsThreadOnce(&asInitializeOnceFlag,asInitializeOnce,NULL);
     LOCK;
     pasbasenew = asCalloc(1,sizeof(ASBASE));
     if(!freeListPvt) freeListInitPvt(&freeListPvt,sizeof(ASGCLIENT),20);

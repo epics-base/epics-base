@@ -303,7 +303,7 @@ int cas_copy_in_header (
         pMsg->m_postsize = htons(((ca_uint16_t) alignedPayloadSize));
         pMsg->m_count = htons(((ca_uint16_t) nElem));
         if (ppPayload)
-            *ppPayload = (void *) (pMsg + 1);
+            *ppPayload = pMsg + 1;
     }
     else {
         ca_uint32_t *pW32 = (ca_uint32_t *) (pMsg + 1);
@@ -312,7 +312,7 @@ int cas_copy_in_header (
         pW32[0] = htonl(alignedPayloadSize);
         pW32[1] = htonl(nElem);
         if (ppPayload)
-            *ppPayload = (void *) (pW32 + 2);
+            *ppPayload = pW32 + 2;
     }
 
     /* zero out pad bytes */

@@ -293,7 +293,7 @@ static void log_header (
         hostName, mp->m_cmmd, mp->m_cid, mp->m_dataType, mp->m_count, mp->m_postsize);
 
     epicsPrintf ( "CAS: Request from %s =>   available=0x%x \tN=%u paddr=%p\n",
-        hostName, mp->m_available, mnum, (pciu ? (void *)&pciu->dbch : NULL));
+        hostName, mp->m_available, mnum, (pciu ? &pciu->dbch : NULL));
 
     if (mp->m_cmmd==CA_PROTO_WRITE && mp->m_dataType==DBF_STRING && pPayLoad ) {
         epicsPrintf ( "CAS: Request from %s =>   Wrote string \"%s\"\n",
@@ -2416,11 +2416,11 @@ int camessage ( struct client *client )
             msg.m_postsize  = ntohl ( pLW[0] );
             msg.m_count     = ntohl ( pLW[1] );
             msgsize = msg.m_postsize + sizeof(*mp) + 2 * sizeof ( *pLW );
-            pBody = ( void * ) ( pLW + 2 );
+            pBody = pLW + 2;
         }
         else {
             msgsize = msg.m_postsize + sizeof(*mp);
-            pBody = ( void * ) ( mp + 1 );
+            pBody = mp + 1;
         }
 
         /* ignore deprecated clients, but let newer clients identify themselves. */

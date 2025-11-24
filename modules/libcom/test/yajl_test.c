@@ -197,10 +197,10 @@ main(int argc, char ** argv)
         yajlTestMalloc,
         yajlTestRealloc,
         yajlTestFree,
-        (void *) NULL
+        NULL
     };
 
-    allocFuncs.ctx = (void *) &memCtx;
+    allocFuncs.ctx = &memCtx;
 
     /* allocate the parser */
     hand = yajl_alloc(&callbacks, &allocFuncs, NULL);
@@ -263,7 +263,7 @@ main(int argc, char ** argv)
         file = stdin;
     }
     for (;;) {
-        rd = fread((void *) fileData, 1, bufSize, file);
+        rd = fread(fileData, 1, bufSize, file);
 
         if (rd == 0) {
             if (!feof(file)) {

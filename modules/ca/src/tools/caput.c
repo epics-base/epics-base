@@ -544,7 +544,7 @@ int main (int argc, char *argv[])
         /* Use callback version of put */
         pvs[0].status = ECA_NORMAL;   /* All ok at the moment */
         result = ca_array_put_callback (
-            dbrType, count, pvs[0].chid, pbuf, put_event_handler, (void *) pvs);
+            dbrType, count, pvs[0].chid, pbuf, put_event_handler, pvs);
     } else {
         /* Use standard put with defined timeout */
         result = ca_array_put (dbrType, count, pvs[0].chid, pbuf);

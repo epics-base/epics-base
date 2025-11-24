@@ -95,7 +95,7 @@ typedef struct callbackQueueStats {
     ( (PRIORITY) = (PCALLBACK)->priority )
 /** Assigns callbackPvt::user */
 #define callbackSetUser(USER, PCALLBACK) \
-    ( (PCALLBACK)->user = (void *) (USER) )
+    ( (PCALLBACK)->user = (USER) )
 /** Read and return callbackPvt::user */
 #define callbackGetUser(USER, PCALLBACK) \
     ( (USER) = (PCALLBACK)->user )

@@ -1106,7 +1106,7 @@ stringId::stringId (const char * idIn, allocationType typeIn) :
     if (typeIn==copyString) {
         unsigned nChars = strlen (idIn) + 1u;
         this->pStr = new char [nChars];
-        memcpy ( (void *) this->pStr, idIn, nChars );
+        memcpy ( const_cast<char*>(this->pStr), idIn, nChars );
     }
     else {
         this->pStr = idIn;

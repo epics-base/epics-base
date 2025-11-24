@@ -860,7 +860,7 @@ static void log_one_client (struct client *client, unsigned level)
         recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
 
         printf ("\tTask Id = %p, Socket FD = %d\n",
-            (void *) client->tid, (int)client->sock);
+            client->tid, (int)client->sock);
         printf(
         "\t%.2f secs since last send, %.2f secs since last receive\n",
             send_delay, recv_delay);
@@ -1276,7 +1276,7 @@ struct client * create_client ( SOCKET sock, int proto )
     ellInit ( & client->chanList );
     ellInit ( & client->chanPendingUpdateARList );
     ellInit ( & client->putNotifyQue );
-    memset ( (char *)&client->addr, 0, sizeof (client->addr) );
+    memset ( &client->addr, 0, sizeof (client->addr) );
     client->tid = 0;
 
     if ( proto == IPPROTO_TCP ) {

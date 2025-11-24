@@ -487,7 +487,7 @@ long dbCaGetLink(struct link *plink, short dbrType, void *pdest,
             ntoget = pca->usedelements;
         *nelements = ntoget;
 
-        memset((void *)&dbAddr, 0, sizeof(dbAddr));
+        memset(&dbAddr, 0, sizeof(dbAddr));
         dbAddr.pfield = pca->pgetNative;
         /*Following will only be used for pca->dbrType == DBR_STRING*/
         dbAddr.field_size = MAX_STRING_SIZE;
@@ -568,7 +568,7 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
             long (*aConvert)(struct dbAddr *paddr, const void *from, long nreq, long nfrom, long off);
 
             aConvert = dbPutConvertRoutine[dbrType][newType];
-            memset((void *)&dbAddr, 0, sizeof(dbAddr));
+            memset(&dbAddr, 0, sizeof(dbAddr));
             dbAddr.pfield = pca->pputNative;
             /*Following only used for DBF_STRING*/
             dbAddr.field_size = MAX_STRING_SIZE;
@@ -1139,7 +1139,7 @@ static void dbCaTask(void *arg)
             }
             if (link_action & CA_CONNECT) {
                 status = ca_create_channel(
-                      pca->pvname,connectionCallback,(void *)pca,
+                      pca->pvname, connectionCallback, pca,
                       CA_PRIORITY_DB_LINKS, &(pca->chid));
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_create_channel %s\n",

@@ -66,7 +66,7 @@ void rsrv_online_notify_task(void *pParm)
     delay = 0.02; /* initial beacon period in sec */
     maxdelay = maxPeriod;
 
-    memset((char *)&msg, 0, sizeof msg);
+    memset(&msg, 0, sizeof msg);
     msg.m_cmmd = htons (CA_PROTO_RSRV_IS_UP);
     msg.m_count = htons (ca_server_port);
     msg.m_dataType = htons (CA_MINOR_PROTOCOL_REVISION);

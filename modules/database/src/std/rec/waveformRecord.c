@@ -105,12 +105,12 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     /* must have dset defined */
     if (!(pdset = (wfdset *)(prec->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)prec,"wf: init_record");
+        recGblRecordError(S_dev_noDSET, prec, "wf: init_record");
         return S_dev_noDSET;
     }
     /* must have read_wf function defined */
     if ((pdset->common.number < 5) || (pdset->read_wf == NULL)) {
-        recGblRecordError(S_dev_missingSup,(void *)prec,"wf: init_record");
+        recGblRecordError(S_dev_missingSup, prec, "wf: init_record");
         return S_dev_missingSup;
     }
     if (!pdset->common.init_record)
@@ -129,7 +129,7 @@ static long process(struct dbCommon *pcommon)
 
     if ((pdset==NULL) || (pdset->read_wf==NULL)) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup, (void *)prec, "read_wf");
+        recGblRecordError(S_dev_missingSup, prec, "read_wf");
         return S_dev_missingSup;
     }
 
@@ -303,7 +303,7 @@ static void monitor(waveformRecord *prec)
     /* Calculate hash if we are interested in OnChange events. */
     if ((prec->mpst == waveformPOST_OnChange) ||
         (prec->apst == waveformPOST_OnChange)) {
-        hash = epicsMemHash((char *)prec->bptr,
+        hash = epicsMemHash(prec->bptr,
             prec->nord * dbValueSize(prec->ftvl), 0);
 
         /* Only post OnChange values if the hash is different. */

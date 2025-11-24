@@ -377,7 +377,7 @@ processing.
   {
       struct callback *pcallback;
       pcallback = (struct callback *)(calloc(1,sizeof(struct callback)));
-      psub->dpvt = (void *)pcallback;
+      psub->dpvt = pcallback;
       callbackSetCallback(myCallback,pcallback);
       pcallback->precord = (struct dbCommon *)psub;
       pcallback->wd_id = wdCreate();

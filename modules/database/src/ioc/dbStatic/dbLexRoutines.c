@@ -188,7 +188,7 @@ const char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
         *fp = fopen(fullfilename, "r");
         if (*fp && makeDbdDepends)
             fprintf(stdout, "%s:%s \n", makeDbdDepends, fullfilename);
-        free((void *)fullfilename);
+        free(fullfilename);
         if (*fp) return pdbPathNode->directory;
         pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);
     }
@@ -207,7 +207,7 @@ static void freeInputFileList(void)
                 pinputFileNow->filename, strerror(errno));
         free((void *)pinputFileNow->filename);
         ellDelete(&inputFileList,(ELLNODE *)pinputFileNow);
-        free((void *)pinputFileNow);
+        free(pinputFileNow);
     }
 }
 
@@ -342,11 +342,11 @@ cleanup:
     }
     if(macHandle) macDeleteHandle(macHandle);
     macHandle = NULL;
-    if(mac_input_buffer) free((void *)mac_input_buffer);
+    if(mac_input_buffer) free(mac_input_buffer);
     mac_input_buffer = NULL;
     if(freeListPvt) freeListCleanup(freeListPvt);
     freeListPvt = NULL;
-    if(my_buffer) free((void *)my_buffer);
+    if(my_buffer) free(my_buffer);
     my_buffer = NULL;
     freeInputFileList();
     if(fp)
@@ -396,7 +396,7 @@ static int db_yyinput(char *buf, int max_size)
                     pinputFileNow->filename, strerror(errno));
             free((void *)pinputFileNow->filename);
             ellDelete(&inputFileList,(ELLNODE *)pinputFileNow);
-            free((void *)pinputFileNow);
+            free(pinputFileNow);
             pinputFileNow = (inputFile *)ellLast(&inputFileList);
             if(!pinputFileNow) return(0);
         }
@@ -452,7 +452,7 @@ static void dbIncludeNew(char *filename)
         fprintf(stderr, ERL_ERROR ": Can't open include file '%s'\n", filename);
         yyerror(NULL);
         free((void *)pinputFile->filename);
-        free((void *)pinputFile);
+        free(pinputFile);
         return;
     }
     pinputFile->fp = fp;

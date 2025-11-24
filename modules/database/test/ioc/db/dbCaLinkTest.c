@@ -144,13 +144,13 @@ static void testNativeLink(void)
 
     nReq = 1;
     temp = 0x0f0f0f0f;
-    testOk1(dbGetLink(psrclnk, DBR_LONG, (void*)&temp, NULL, &nReq)==0);
+    testOk1(dbGetLink(psrclnk, DBR_LONG, &temp, NULL, &nReq)==0);
     testOp("%d",temp,==,42);
     dbScanUnlock((dbCommon*)psrc);
 
     temp = 1010;
     nReq = 1;
-    putLink(psrclnk, DBR_LONG, (void*)&temp, nReq);
+    putLink(psrclnk, DBR_LONG, &temp, nReq);
 
     dbScanLock((dbCommon*)ptarg);
     testOk1(ptarg->val==1010);
@@ -226,12 +226,12 @@ static void testStringLink(void)
 
     nReq = 1;
     memset(temp, '!', sizeof(temp));
-    testOk1(dbGetLink(psrclnk, DBR_STRING, (void*)&temp, NULL, &nReq)==0);
+    testOk1(dbGetLink(psrclnk, DBR_STRING, &temp, NULL, &nReq)==0);
     testOk(strcmp(temp, "hello")==0, "%s == hello", temp);
     dbScanUnlock((dbCommon*)psrc);
 
     strcpy(temp, "world");
-    putLink(psrclnk, DBR_STRING, (void*)&temp, nReq);
+    putLink(psrclnk, DBR_STRING, &temp, nReq);
 
     dbScanLock((dbCommon*)ptarg);
     testOk(strcmp(ptarg->desc, "world")==0, "%s == world", ptarg->desc);

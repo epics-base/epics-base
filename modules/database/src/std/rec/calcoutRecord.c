@@ -142,13 +142,13 @@ static long init_record(struct dbCommon *pcommon, int pass)
     }
 
     if (!(pcalcoutDSET = (calcoutdset *)prec->dset)) {
-        recGblRecordError(S_dev_noDSET, (void *)prec, "calcout:init_record");
+        recGblRecordError(S_dev_noDSET, prec, "calcout:init_record");
         return S_dev_noDSET;
     }
 
     /* must have write defined */
     if ((pcalcoutDSET->common.number < 5) || (pcalcoutDSET->write ==NULL)) {
-        recGblRecordError(S_dev_missingSup, (void *)prec, "calcout:init_record");
+        recGblRecordError(S_dev_missingSup, prec, "calcout:init_record");
         return S_dev_missingSup;
     }
 
@@ -190,7 +190,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     prec->clcv = postfix(prec->calc, prec->rpcl, &error_number);
     if (prec->clcv){
-        recGblRecordError(S_db_badField, (void *)prec,
+        recGblRecordError(S_db_badField, prec,
                           "calcout: init_record: Illegal CALC field");
         errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
                      prec->name, calcErrorStr(error_number), prec->calc);
@@ -198,7 +198,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
 
     prec->oclv = postfix(prec->ocal, prec->orpc, &error_number);
     if (prec->dopt == calcoutDOPT_Use_OVAL && prec->oclv){
-        recGblRecordError(S_db_badField, (void *)prec,
+        recGblRecordError(S_db_badField, prec,
                           "calcout: init_record: Illegal OCAL field");
         errlogPrintf("%s.OCAL: %s in expression \"%s\"\n",
                      prec->name, calcErrorStr(error_number), prec->ocal);
@@ -325,7 +325,7 @@ static long special(DBADDR *paddr, int after)
       case(calcoutRecordCALC):
         prec->clcv = postfix(prec->calc, prec->rpcl, &error_number);
         if (prec->clcv){
-            recGblRecordError(S_db_badField, (void *)prec,
+            recGblRecordError(S_db_badField, prec,
                       "calcout: special(): Illegal CALC field");
             errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
                          prec->name, calcErrorStr(error_number), prec->calc);
@@ -336,7 +336,7 @@ static long special(DBADDR *paddr, int after)
       case(calcoutRecordOCAL):
         prec->oclv = postfix(prec->ocal, prec->orpc, &error_number);
         if (prec->dopt == calcoutDOPT_Use_OVAL && prec->oclv){
-            recGblRecordError(S_db_badField, (void *)prec,
+            recGblRecordError(S_db_badField, prec,
                     "calcout: special(): Illegal OCAL field");
             errlogPrintf("%s.OCAL: %s in expression \"%s\"\n",
                          prec->name, calcErrorStr(error_number), prec->ocal);
@@ -650,7 +650,7 @@ static void execOutput(calcoutRecord *prec)
             if (prec->epvt) postEvent(prec->epvt);
             break;
         default:
-            recGblRecordError(S_db_badField, (void *)prec,
+            recGblRecordError(S_db_badField, prec,
                               "calcout:process Illegal IVOA field");
     }
 }

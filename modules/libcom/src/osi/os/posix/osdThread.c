@@ -405,7 +405,7 @@ static void once(void)
 
     pthreadInfo = init_threadInfo("_main_",0,epicsThreadGetStackSize(epicsThreadStackSmall),0,0,0);
     assert(pthreadInfo!=NULL);
-    status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
+    status = pthread_setspecific(getpthreadInfo,pthreadInfo);
     checkStatusOnceQuit(status,"pthread_setspecific","epicsThreadInit");
     status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadInit");
@@ -721,7 +721,7 @@ static epicsThreadOSD *createImplicit(void)
     }
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 
-    status = pthread_setspecific(getpthreadInfo,(void *)pthreadInfo);
+    status = pthread_setspecific(getpthreadInfo,pthreadInfo);
     checkStatus(status,"pthread_setspecific createImplicit");
     if(status){
         free_threadInfo(pthreadInfo);
@@ -1088,7 +1088,7 @@ LIBCOM_API void epicsStdCall epicsThreadPrivateDelete(epicsThreadPrivateId id)
     assert(epicsThreadOnceCalled);
     status = pthread_key_delete(*key);
     checkStatusQuit(status,"pthread_key_delete","epicsThreadPrivateDelete");
-    free((void *)key);
+    free(key);
 }
 
 LIBCOM_API void epicsStdCall epicsThreadPrivateSet (epicsThreadPrivateId id, void *value)

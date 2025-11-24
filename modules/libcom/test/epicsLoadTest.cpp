@@ -37,9 +37,9 @@ void loadCom()
 #endif
 
     void* ptr = epicsFindSymbol("epicsThreadGetCPUs");
-    testOk(ptr==(void*)&epicsThreadGetCPUs,
+    testOk(ptr==&epicsThreadGetCPUs,
            "%p == %p (epicsThreadGetCPUs) : %s",
-           ptr, (void*)&epicsThreadGetCPUs,
+           ptr, &epicsThreadGetCPUs,
            epicsLoadError());
 
     testTodoEnd();

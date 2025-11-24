@@ -196,7 +196,7 @@ int epicsStdCall ca_context_create (
             return ECA_ALLOCMEM;
         }
 
-        epicsThreadPrivateSet ( caClientContextId, (void *) pcac );
+        epicsThreadPrivateSet ( caClientContextId, pcac );
     }
     catch ( ... ) {
         return ECA_ALLOCMEM;

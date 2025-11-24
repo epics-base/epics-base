@@ -67,7 +67,7 @@ yajl_alloc(const yajl_callbacks * callbacks,
     }
 
     /* copy in pointers to allocation routines */
-    memcpy((void *) &(hand->alloc), (void *) afs, sizeof(yajl_alloc_funcs));
+    memcpy(&(hand->alloc), afs, sizeof(yajl_alloc_funcs));
 
     hand->callbacks = callbacks;
     hand->ctx = ctx;

@@ -132,7 +132,7 @@ static long process(struct dbCommon *pcommon)
 
     if( (pdset==NULL) || (pdset->write_stringout==NULL) ) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"write_stringout");
+        recGblRecordError(S_dev_missingSup, prec, "write_stringout");
         return(S_dev_missingSup);
     }
     if (!prec->pact &&
@@ -168,7 +168,7 @@ static long process(struct dbCommon *pcommon)
                 break;
             default :
                 status=-1;
-                recGblRecordError(S_db_badField,(void *)prec,
+                recGblRecordError(S_db_badField, prec,
                         "stringout:process Illegal IVOA field");
         }
     }

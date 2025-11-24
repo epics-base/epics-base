@@ -574,7 +574,7 @@ extern void *reallocate_array(void *array, int size, int element_size);
     (int *) allocate_array( size, sizeof( int ) )
 
 #define reallocate_integer_array(array,size) \
-    (int *) reallocate_array( (void *) array, size, sizeof( int ) )
+    (int *) reallocate_array( array, size, sizeof( int ) )
 
 #define allocate_int_ptr_array(size) \
     (int **) allocate_array( size, sizeof( int * ) )
@@ -587,20 +587,20 @@ extern void *reallocate_array(void *array, int size, int element_size);
         allocate_array( size, sizeof( union dfaacc_union ) )
 
 #define reallocate_int_ptr_array(array,size) \
-    (int **) reallocate_array( (void *) array, size, sizeof( int * ) )
+    (int **) reallocate_array( array, size, sizeof( int * ) )
 
 #define reallocate_char_ptr_array(array,size) \
-    (char **) reallocate_array( (void *) array, size, sizeof( char * ) )
+    (char **) reallocate_array( array, size, sizeof( char * ) )
 
 #define reallocate_dfaacc_union(array, size) \
     (union dfaacc_union *) \
-        reallocate_array( (void *) array, size, sizeof( union dfaacc_union ) )
+        reallocate_array( array, size, sizeof( union dfaacc_union ) )
 
 #define allocate_character_array(size) \
     (Char *) allocate_array( size, sizeof( Char ) )
 
 #define reallocate_character_array(array,size) \
-    (Char *) reallocate_array( (void *) array, size, sizeof( Char ) )
+    (Char *) reallocate_array( array, size, sizeof( Char ) )
 
 #if 0 /* JRW this might cause trouble... but not for IOC usage */
 /* used to communicate between scanner and parser.  The type should really

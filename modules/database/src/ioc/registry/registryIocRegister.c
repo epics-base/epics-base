@@ -28,7 +28,7 @@ static const iocshFuncDef registryRecordTypeFindFuncDef = {
     "Example: registryRecordTypeFind ai\n",
 };
 static void registryRecordTypeFindCallFunc(const iocshArgBuf *args) {
-    printf("%p\n", (void*) registryRecordTypeFind(args[0].sval));
+    printf("%p\n", registryRecordTypeFind(args[0].sval));
 }
 
 /* registryDeviceSupportFind */
@@ -40,7 +40,7 @@ static const iocshFuncDef registryDeviceSupportFindFuncDef = {
     "Example: registryDeviceSupportFind devAaiSoft\n",
 };
 static void registryDeviceSupportFindCallFunc(const iocshArgBuf *args) {
-    printf("%p\n", (void*) registryDeviceSupportFind(args[0].sval));
+    printf("%p\n", registryDeviceSupportFind(args[0].sval));
 }
 
 /* registryDriverSupportFind */
@@ -52,7 +52,7 @@ static const iocshFuncDef registryDriverSupportFindFuncDef = {
     "Example: registryDriverSupportFind stream\n",
 };
 static void registryDriverSupportFindCallFunc(const iocshArgBuf *args) {
-    printf("%p\n", (void*) registryDriverSupportFind(args[0].sval));
+    printf("%p\n", registryDriverSupportFind(args[0].sval));
 }
 
 /* registryFunctionFind */
@@ -64,7 +64,7 @@ static const iocshFuncDef registryFunctionFindFuncDef = {
     "Example: registryFunctionFind registryFunctionFind\n",
 };
 static void registryFunctionFindCallFunc(const iocshArgBuf *args) {
-    printf("%p\n", (void*) registryFunctionFind(args[0].sval));
+    printf("%p\n", registryFunctionFind(args[0].sval));
 }
 
 void registryIocRegister(void)

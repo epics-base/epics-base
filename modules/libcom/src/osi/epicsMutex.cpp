@@ -119,7 +119,7 @@ void epicsStdCall epicsMutexShow(
     epicsMutexId pmutexNode, unsigned  int level)
 {
     printf("epicsMutexId %p source %s line %d\n",
-           (void *)pmutexNode, pmutexNode->pFileName,
+           pmutexNode, pmutexNode->pFileName,
            pmutexNode->lineno);
     if ( level > 0 ) {
         epicsMutexOsdShow(pmutexNode,level-1);

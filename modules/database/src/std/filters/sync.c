@@ -70,7 +70,7 @@ chfPluginArgDef opts[] = {
 static void * allocPvt(void)
 {
     myStruct *my = (myStruct*) freeListCalloc(myStructFreeList);
-    return (void *) my;
+    return my;
 }
 
 static void freePvt(void *pvt)

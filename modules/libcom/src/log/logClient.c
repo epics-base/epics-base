@@ -479,7 +479,7 @@ logClientId epicsStdCall logClientCreate (
     pClient->shutdown = 0;
     pClient->shutdownConfirm = 0;
 
-    epicsAtExit (logClientDestroy, (void*) pClient);
+    epicsAtExit (logClientDestroy, pClient);
 
     pClient->stateChangeNotify = epicsEventCreate (epicsEventEmpty);
     if ( ! pClient->stateChangeNotify ) {
@@ -509,7 +509,7 @@ logClientId epicsStdCall logClientCreate (
         return NULL;
     }
 
-    return (void *) pClient;
+    return pClient;
 }
 
 /*

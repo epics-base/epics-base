@@ -61,7 +61,7 @@ static void runBench(size_t nelem, size_t niter, size_t nrep)
     tdat.addr.field_type = DBF_SHORT;
     tdat.addr.field_size = nelem*sizeof(*tdat.input);
     tdat.addr.no_elements = nelem;
-    tdat.addr.pfield = (void*)tdat.input;
+    tdat.addr.pfield = tdat.input;
 
     for(i=0; i<nelem; i++)
         tdat.input[i] = (short)i;

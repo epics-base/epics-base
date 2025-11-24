@@ -171,7 +171,7 @@ static long vxDevConnectInterruptVME (
         return S_dev_vectorInUse;
     }
     status = intConnect(
-            (void *)INUM_TO_IVEC(vectorNumber),
+            INUM_TO_IVEC(vectorNumber),
             pFunction,
             (int) parameter);
     if (status<0) {
@@ -214,7 +214,7 @@ static long vxDevDisconnectInterruptVME (
     }
 
     status = intConnect(
-            (void *)INUM_TO_IVEC(vectorNumber),
+            INUM_TO_IVEC(vectorNumber),
             unsolicitedHandlerEPICS,
             (int) vectorNumber);
     if(status<0){

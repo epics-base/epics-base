@@ -81,7 +81,7 @@ LIBCOM_API void epicsStdCall
     pfl->mallochead = NULL;
     pfl->nBlocksAvailable = 0u;
     pfl->lock = epicsMutexMustCreate();
-    *ppvt = (void *)pfl;
+    *ppvt = pfl;
     VALGRIND_CREATE_MEMPOOL(pfl, REDZONE, 0);
 }
 
@@ -118,7 +118,7 @@ LIBCOM_API void * epicsStdCall freeListMalloc(void *pvt)
          * | RED | size0 ------ | RED | size1 | ... | RED |
          * |     | next | ----- |
          */
-        ptemp = (void *)malloc(pfl->nmalloc*(pfl->size+REDZONE)+REDZONE);
+        ptemp = malloc(pfl->nmalloc*(pfl->size+REDZONE)+REDZONE);
         if(ptemp==0) {
             epicsMutexUnlock(pfl->lock);
             return(0);

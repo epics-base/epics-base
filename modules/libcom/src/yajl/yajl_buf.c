@@ -60,7 +60,7 @@ yajl_buf yajl_buf_alloc(yajl_alloc_funcs * alloc)
         return NULL;
     }
 
-    memset((void *) b, 0, sizeof(struct yajl_buf_t));
+    memset(b, 0, sizeof(struct yajl_buf_t));
     b->alloc = alloc;
     return b;
 }

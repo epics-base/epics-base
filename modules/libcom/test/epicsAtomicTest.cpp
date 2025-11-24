@@ -368,14 +368,14 @@ void testBasic()
 
     set(Int, -42);
     set(Sizet, 42);
-    set(voidp, (void*)&voidp);
+    set(voidp, &voidp);
 
     increment(Int);
     increment(Sizet);
 
     testOk1(get(Int)==-41);
     testOk1(get(Sizet)==43);
-    testOk1(get(voidp)==(void*)&voidp);
+    testOk1(get(voidp)==&voidp);
 
     decrement(Int);
     decrement(Sizet);
@@ -391,19 +391,19 @@ void testBasic()
 
     testOk1(compareAndSwap(Int, -34, -10)==-44);
     testOk1(compareAndSwap(Sizet, 34, 10)==40);
-    testOk1(compareAndSwap(voidp, NULL, (void*)&Sizet)==(void*)&voidp);
+    testOk1(compareAndSwap(voidp, NULL, &Sizet)==&voidp);
 
     testOk1(get(Int)==-44);
     testOk1(get(Sizet)==40);
-    testOk1(get(voidp)==(void*)&voidp);
+    testOk1(get(voidp)==&voidp);
 
     testOk1(compareAndSwap(Int, -44, -10)==-44);
     testOk1(compareAndSwap(Sizet, 40, 10)==40);
-    testOk1(compareAndSwap(voidp, (void*)&voidp, (void*)&Sizet)==(void*)&voidp);
+    testOk1(compareAndSwap(voidp, &voidp, &Sizet)==&voidp);
 
     testOk1(get(Int)==-10);
     testOk1(get(Sizet)==10);
-    testOk1(get(voidp)==(void*)&Sizet);
+    testOk1(get(voidp)==&Sizet);
 }
 
 } // namespace

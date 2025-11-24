@@ -96,12 +96,12 @@ static long init_record(struct dbCommon *pcommon, int pass)
     recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
 
     if(!(pdset = (bidset *)(prec->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)prec,"bi: init_record");
+        recGblRecordError(S_dev_noDSET, prec, "bi: init_record");
         return(S_dev_noDSET);
     }
     /* must have read_bi function defined */
     if( (pdset->common.number < 5) || (pdset->read_bi == NULL) ) {
-        recGblRecordError(S_dev_missingSup,(void *)prec,"bi: init_record");
+        recGblRecordError(S_dev_missingSup, prec, "bi: init_record");
         return(S_dev_missingSup);
     }
     if( pdset->common.init_record ) {
@@ -122,7 +122,7 @@ static long process(struct dbCommon *pcommon)
 
     if( (pdset==NULL) || (pdset->read_bi==NULL) ) {
         prec->pact=TRUE;
-        recGblRecordError(S_dev_missingSup,(void *)prec,"read_bi");
+        recGblRecordError(S_dev_missingSup, prec, "read_bi");
         return(S_dev_missingSup);
     }
 

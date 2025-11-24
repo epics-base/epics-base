@@ -226,7 +226,7 @@ epicsStdCall macParseDefns(
     /* free workspace */
     free( ( void * ) ptr );
     free( ( void * ) end );
-    free( ( char * ) del );
+    free( del );
 
     /* debug output */
     if ( handle != NULL && handle->debug & 1 )
@@ -240,7 +240,7 @@ error:
     errlogPrintf( "macParseDefns: failed to allocate memory\n" );
     if ( ptr != NULL ) free( ( void * ) ptr );
     if ( end != NULL ) free( ( void * ) end );
-    if ( del != NULL ) free( ( char * ) del );
+    if ( del != NULL ) free( del );
     *pairs = NULL;
     return -1;
 }

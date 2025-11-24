@@ -27,7 +27,7 @@ LIBCOM_API void * callocMustSucceed(size_t count, size_t size, const char *msg)
             errlogPrintf("%s: callocMustSucceed(%lu, %lu) - " ERL_ERROR " calloc failed\n",
                     msg, (unsigned long)count, (unsigned long)size);
             errlogPrintf("Thread %s (%p) suspending.\n",
-                    epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
+                    epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
             errlogFlush();
             epicsThreadSuspendSelf();
         }
@@ -43,7 +43,7 @@ LIBCOM_API void * mallocMustSucceed(size_t size, const char *msg)
             errlogPrintf("%s: mallocMustSucceed(%lu) - " ERL_ERROR " malloc failed\n",
                 msg, (unsigned long)size);
             errlogPrintf("Thread %s (%p) suspending.\n",
-                    epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
+                    epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
             errlogFlush();
             epicsThreadSuspendSelf();
         }
@@ -60,7 +60,7 @@ LIBCOM_API void cantProceed(const char *msg, ...)
     va_end(pvar);
 
     errlogPrintf(ANSI_RED("CRITICAL ERROR") " Thread %s (%p) can't proceed, suspending.\n",
-            epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
+            epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
 
     epicsStackTrace();
 

@@ -168,7 +168,7 @@ void iocshRegisterImpl (const iocshFuncDef *piocshFuncDef,
     }
     n = (struct iocshCommand *) callocMustSucceed (1, sizeof *n,
         "iocshRegister");
-    if (!registryAdd(iocshCmdID, piocshFuncDef->name, (void *)n)) {
+    if (!registryAdd(iocshCmdID, piocshFuncDef->name, n)) {
         free (n);
         errlogPrintf ("iocshRegister failed to add %s\n", piocshFuncDef->name);
         return;
@@ -742,7 +742,7 @@ void epicsStdCall iocshRegisterVariable (const iocshVarDef *piocshVarDef)
         if (!found) {
             n = (struct iocshVariable *) callocMustSucceed(1, sizeof *n,
                 "iocshRegisterVariable");
-            if (!registryAdd(iocshVarID, piocshVarDef->name, (void *)n)) {
+            if (!registryAdd(iocshVarID, piocshVarDef->name, n)) {
                 free(n);
                 iocshTableUnlock();
                 errlogPrintf("iocshRegisterVariable failed to add %s.\n",
@@ -1102,7 +1102,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             return -1;
         }
 
-        epicsThreadPrivateSet(iocshContextId, (void *) context);
+        epicsThreadPrivateSet(iocshContextId, context);
     }
     MAC_HANDLE *handle = context->handle;
 

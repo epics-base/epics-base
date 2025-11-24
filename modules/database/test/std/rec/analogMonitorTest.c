@@ -214,18 +214,18 @@ MAIN(analogMonitorTest)
             /* Loop over all tested deadband values */
             for (idbnd = 0; idbnd < NO_OF_DEADBANDS; idbnd++) {
                 testDiag("Test %s%s = %g", t_Record[irec], t_DbndType[ityp], t_Deadband[idbnd]);
-                dbPutField(&daddr, DBR_DOUBLE, (void*) &t_Deadband[idbnd], 1);
+                dbPutField(&daddr, DBR_DOUBLE, &t_Deadband[idbnd], 1);
                 memset(t_ReceivedUpdates, 0, sizeof(t_ReceivedUpdates));
 
                 /* Loop over all test patterns */
                 for (itest = 0; itest < NO_OF_PATTERNS; itest++) {
                     iseq = -1;
                     val = 0.0;
-                    dbPutField(&vaddr, DBR_DOUBLE, (void*) &val, 1);
+                    dbPutField(&vaddr, DBR_DOUBLE, &val, 1);
 
                     /* Loop over the test sequence */
                     for (iseq = 0; iseq < NO_OF_VALUES_PER_SEQUENCE; iseq++) {
-                        dbPutField(&vaddr, DBR_DOUBLE, (void*) &t_SetValues[itest][iseq], 1);
+                        dbPutField(&vaddr, DBR_DOUBLE, &t_SetValues[itest][iseq], 1);
                     }
                     /* Check expected vs. actual monitors */
                     testOk( (t_ExpectedUpdates[idbnd][itest][0] == t_ReceivedUpdates[itest][0]) &&

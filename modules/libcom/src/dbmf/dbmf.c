@@ -126,7 +126,7 @@ void* dbmfMalloc(size_t size)
             pitemHeader = (itemHeader *)pmem;
             pitemHeader->pchunkNode = pchunkNode;
             pnextFree = &pitemHeader->pnextFree;
-            *pnextFree = *pfreeList; *pfreeList = (void *)pmem;
+            *pnextFree = *pfreeList; *pfreeList = pmem;
             pdbmfPvt->nFree++;
             pmem += pdbmfPvt->allocSize;
         }
@@ -154,7 +154,7 @@ void* dbmfMalloc(size_t size)
     epicsMutexUnlock(pdbmfPvt->lock);
     pmem += sizeof(itemHeader) + REDZONE;
     VALGRIND_MEMPOOL_ALLOC(pdbmfPvt, pmem, size);
-    return((void *)pmem);
+    return pmem;
 }
 
 char * dbmfStrdup(const char *str)
@@ -190,7 +190,7 @@ void dbmfFree(void* mem)
     pitemHeader = (itemHeader *)pmem;
     if(!pitemHeader->pchunkNode) {
         if(dbmfDebug) printf("dbmfGree: mem %p\n",pmem);
-        free((void *)pmem); pdbmfPvt->nAlloc--;
+        free(pmem); pdbmfPvt->nAlloc--;
     }else {
         void **pfreeList = &pdbmfPvt->freeList;
         void **pnextFree = &pitemHeader->pnextFree;
@@ -221,7 +221,7 @@ int dbmfShow(int level)
         pchunkNode = (chunkNode *)ellFirst(&pdbmfPvt->chunkList);
         while(pchunkNode) {
             printf("pchunkNode %p nNotFree %d\n",
-                (void*)pchunkNode,pchunkNode->nNotFree);
+                pchunkNode,pchunkNode->nNotFree);
             pchunkNode = (chunkNode *)ellNext(&pchunkNode->node);
         }
     }
@@ -229,10 +229,10 @@ int dbmfShow(int level)
         void **pnextFree;;
 
         epicsMutexMustLock(pdbmfPvt->lock);
-        pnextFree = (void**)pdbmfPvt->freeList;
+        pnextFree = pdbmfPvt->freeList;
         while(pnextFree) {
             printf("%p\n",*pnextFree);
-            pnextFree = (void**)*pnextFree;
+            pnextFree = *pnextFree;
         }
         epicsMutexUnlock(pdbmfPvt->lock);
     }

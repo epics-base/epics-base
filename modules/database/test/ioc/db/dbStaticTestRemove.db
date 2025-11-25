@@ -35,7 +35,7 @@ record(x, "testdelrec8") {
 }
 
 record("#", "no:such:record") { }
-record("#", "also:non:existant") {
+record("#", "also:non:existent") {
     field(FOO, "5")
 }
 

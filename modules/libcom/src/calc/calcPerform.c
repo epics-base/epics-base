@@ -40,7 +40,7 @@ static int cond_search(const char **ppinst, int match);
 
 /* calcPerform
  *
- * Evalutate the postfix expression
+ * Evaluate the postfix expression
  */
 LIBCOM_API long
     calcPerform(double *parg, double *presult, const char *pinst)

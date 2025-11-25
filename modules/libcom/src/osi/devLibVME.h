@@ -11,7 +11,7 @@
 /**
  * \file devLibVME.h
  * \author Marty Kraimer, Jeff Hill
- * \brief API for accessing hardware devices, mosty over VMEbus.
+ * \brief API for accessing hardware devices, mostly over VMEbus.
  *
  * API for accessing hardware devices. The original APIs here were for
  * written for use with VMEbus but additional routines were added for

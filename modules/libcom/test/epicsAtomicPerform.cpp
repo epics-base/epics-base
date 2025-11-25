@@ -237,7 +237,7 @@ private:
 // function and also increment an integer word. The
 // epicsInterruptIsInterruptContext function is an
 // out-of-line function implemented in a shareable library
-// so hopefully it wont be optimized away.
+// so hopefully it won't be optimized away.
 template < class T >
 inline void OrdinaryIncr < T > :: run ()
 {

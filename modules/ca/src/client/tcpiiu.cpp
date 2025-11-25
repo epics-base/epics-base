@@ -1824,7 +1824,7 @@ void tcpiiu::disconnectAllChannels (
     }
 
     while ( nciu * pChan = this->createRespPend.get () ) {
-        // we don't yet know the server's id so we cant
+        // we don't yet know the server's id so we can't
         // send a channel delete request and will instead
         // trust that the server can do the proper cleanup
         // when the circuit disconnects
@@ -1890,7 +1890,7 @@ void tcpiiu::unlinkAllChannels (
     while ( nciu * pChan = this->createRespPend.get () ) {
         pChan->channelNode::listMember =
             channelNode::cs_none;
-        // we don't yet know the server's id so we cant
+        // we don't yet know the server's id so we can't
         // send a channel delete request and will instead
         // trust that the server can do the proper cleanup
         // when the circuit disconnects

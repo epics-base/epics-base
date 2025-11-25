@@ -98,7 +98,7 @@ static void testLinkParse(void)
         if (td->info.target && info.target)
             testStrcmp(0, info.target, td->info.target);
         else if(!!td->info.target ^ !!info.target)
-            testFail("info target NULL mis-match %s %s", info.target, td->info.target);
+            testFail("info target NULL mismatch %s %s", info.target, td->info.target);
         else
             testPass("info target NULL as expected");
         if (info.ltype == td->info.ltype) {

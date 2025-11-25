@@ -26,7 +26,7 @@ static const iocshFuncDef dbLoadTemplateFuncDef = {
     "for each template in the substitution file, and load them using 'dbLoadRecords'.\n\n"
     "The second argument provides extra variables to substitute in the\n"
     "template files (not the substitution file). The third argument provides\n"
-    "a list of paths to search through for the subsitution and template files.\n\n"
+    "a list of paths to search through for the substitution and template files.\n\n"
     "See 'help dbLoadRecords' for more information.\n\n"
     "Example: dbLoadTemplate db/my.substitutions 'user=myself,host=myhost' 'path/to/subst:path2/to2/subst2'\n",
 };

@@ -99,7 +99,7 @@ These parameters are used to determine if the binary input is in alarm
 condition and to determine the severity of that condition. The possible
 alarm conditions for binary inputs are the SCAN, READ state alarms, and the
 change of state alarm. The SCAN and READ alarms are called by the device
-supprt routines.
+support routines.
 
 The user can choose the severity of each state in the ZSV and OSV fields.
 The possible values for these fields are C<NO_ALARM>, C<MINOR>, and
@@ -126,7 +126,7 @@ MASK is given a value by ithe device support routines. This value is used to
 manipulate the record's value, but is only the concern of the hardware device
 support routines.
 
-The LALM fields holds the value of the last occurence of the change of
+The LALM fields holds the value of the last occurrence of the change of
 state alarm. It is used to implement the change of state alarm, and thus
 only has meaning if COSV is MAJOR or MINOR.
 
@@ -407,7 +407,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 =head3 Fields of Interest to Device Support
 
 Each binary input record must have an associated set of device support
-routines. The primary resposibility of the device support routines is to
+routines. The primary responsibility of the device support routines is to
 obtain a new raw input value whenever C<read_bi()> is called. The device
 support routines are primarily interested in the following fields:
 

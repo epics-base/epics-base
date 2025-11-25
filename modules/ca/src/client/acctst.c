@@ -844,7 +844,7 @@ void verifyBlockInPendIO ( chid chan, unsigned interestLevel  )
             }
         }
         else if ( resp != -100 ) {
-            printf ( "CA didnt block for get to return?\n" );
+            printf ( "CA didn't block for get to return?\n" );
         }
 
         req = 1;
@@ -1739,7 +1739,7 @@ void arrayEventExceptionNotify ( struct event_handler_args args )
     if ( args.status == ECA_NORMAL ) {
         printf (
             "arrayEventExceptionNotify: expected "
-            "exception but didnt receive one against \"%s\" \n",
+            "exception but didn't receive one against \"%s\" \n",
             ca_name ( args.chid ) );
     }
     else {
@@ -3233,7 +3233,7 @@ void verifyDisconnect (
 
     /*
      * if its a local channel and will never disconnect
-     * then skip the portions of this test that cant be
+     * then skip the portions of this test that can't be
      * completed.
      */
     if ( ca_get_ioc_connection_count () == 0 ) {
@@ -3307,7 +3307,7 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
 
             status = ca_create_channel  ( pName, 0, 0, 0, & chan );
             /*
-             * currently in-memory channels cant be used with this test
+             * currently in-memory channels can't be used with this test
              * !!!! FIX ME, FIX ME, FIX ME, FIX ME !!!!
              */
             if ( status != ECA_UNAVAILINSERV ) {
@@ -3335,7 +3335,7 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
             status = ca_create_channel  ( pName, 0, 0, 0, & chan );
             SEVCHK ( status, NULL );
             /*
-             * currently in-memory channels cant be used with this test
+             * currently in-memory channels can't be used with this test
              * !!!! FIX ME, FIX ME, FIX ME, FIX ME !!!!
              */
             if ( status != ECA_UNAVAILINSERV ) {
@@ -3379,7 +3379,7 @@ void verifyContextRundownChanStillExist (
     for ( i = 0; i < NELEMENTS ( chan ); i++ ) {
         status = ca_create_channel  ( pName, 0, 0, 0, & chan[i] );
         /*
-         * currently in-memory channels cant be used with this test
+         * currently in-memory channels can't be used with this test
          * !!!! FIX ME, FIX ME, FIX ME, FIX ME !!!!
          */
         if ( status == ECA_UNAVAILINSERV ) {

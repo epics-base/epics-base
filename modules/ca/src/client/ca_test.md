@@ -7,4 +7,4 @@
 If a value is specified it is written to the PV. Next, the current value
 of the PV is converted to each of the many external data type that can
 be specified at the CA client library interface, and each of these is
-formated and then output to the console.
+formatted and then output to the console.

@@ -36,7 +36,7 @@ These fields are described in L<Scan Fields|dbCommonRecord/Scan Fields>.
 The printf record must specify the desired output string with embedded format
 specifiers in the FMT field. Plain characters are copied directly to the output
 string. A pair of percent characters 'C<%%>' are converted into a single percent
-character in the output string. A single precent character 'C<%>' introduces a
+character in the output string. A single percent character 'C<%>' introduces a
 format specifier and is followed by zero or more of the standard C<printf()>
 format flags and modifiers:
 

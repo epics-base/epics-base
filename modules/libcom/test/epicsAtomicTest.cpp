@@ -360,7 +360,7 @@ void testBasic()
     using epics::atomic::subtract;
     using epics::atomic::compareAndSwap;
 
-    testDiag("Test basic operation symantics");
+    testDiag("Test basic operation semantics");
 
     int Int = 0;
     size_t Sizet = 0;

@@ -442,7 +442,7 @@ Result is C<E> if C<<< (A + B)<(C + D) >>>
 =item *
 Result is unchanged if C<<< (A + B)>=(C + D) >>>
 
-From 3.14.9 onwards, this expresion must be written as
+From 3.14.9 onwards, this expression must be written as
 C<<< (A + B) < (C + D) ? E : VAL >>>
 
 =back
@@ -537,8 +537,8 @@ These paramaeters are used to determine when to send monitors for the value
 fields. These monitors are sent when the value field exceeds the last
 monitored field by the appropriate deadband, the ADEL for archiver monitors
 and the MDEL field for all other types of monitors. If these fields have a
-value of zero, everytime the value changes, monitors are triggered; if they have a
-value of -1, everytime the record is scanned, monitors are triggered. See
+value of zero, every time the value changes, monitors are triggered; if they have a
+value of -1, every time the record is scanned, monitors are triggered. See
 L<Monitor Specification> for a complete explanation of monitors.
 
 =fields ADEL, MDEL

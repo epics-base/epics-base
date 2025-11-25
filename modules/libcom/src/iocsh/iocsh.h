@@ -13,7 +13,7 @@
 /**
  * @file iocsh.h
  * 
- * @brief C and C++ defintions of functions for IOC shell programming.
+ * @brief C and C++ definitions of functions for IOC shell programming.
  * 
  * @details
  * The iocsh API provides an interface for running commands in the shell
@@ -83,7 +83,7 @@ typedef enum {
 /**
  * @union iocshArgBuf
  * 
- * This union is used when building the func paramter of iocshRegister().
+ * This union is used when building the func parameter of iocshRegister().
  * Each use should match the parameter type of the parameters of the
  * function being registered
  * 
@@ -257,7 +257,7 @@ LIBCOM_API void epicsStdCall iocshFree(void);
 LIBCOM_API int epicsStdCall iocsh(const char *pathname);
 
 /**
- * @brief This function is used to exectute a single IOC shell command.
+ * @brief This function is used to execute a single IOC shell command.
  * 
  * @param cmd A string that represents the command to be executed.
  * @return 0 on success, non-zero on error
@@ -268,7 +268,7 @@ LIBCOM_API int epicsStdCall iocshCmd(const char *cmd);
 /**  
  * @brief Read and evaluate IOC shell commands from the given file.  A list of macros
  * can be supplied as a parameter.  These macros are treated as environment variables during
- * exectution of the file's commands.
+ * execution of the file's commands.
  * 
  * @param pathname A string that represents the path to a file from which commands are read.
  * @param macros NULL or a comma separated list of macro definitions.  eg. "VAR1=x,VAR2=y"
@@ -278,7 +278,7 @@ LIBCOM_API int epicsStdCall iocshLoad(const char *pathname, const char* macros);
 /** 
  * @brief Evaluate a single IOC shell command. A list of macros can be supplied
  * as a parameter.  These macros are treated as environment variables during
- * exectution of the command.
+ * execution of the command.
  * 
  * @param cmd Command string.  eg. "echo \"something or other\""
  * @param macros NULL or a comma separated list of macro definitions.  eg. "VAR1=x,VAR2=y"

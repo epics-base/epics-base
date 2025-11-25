@@ -13,7 +13,7 @@
 /*
  * NOTES:
  * 1) LOG_LAST_OWNER feature is normally commented out because
- * it slows down the system at run time, anfd because its not
+ * it slows down the system at run time, and because it's not
  * currently safe to convert a thread id to a thread name because
  * the thread may have exited making the thread id invalid.
  */

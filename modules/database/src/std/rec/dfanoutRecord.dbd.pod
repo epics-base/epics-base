@@ -42,7 +42,7 @@ These fields are listed in L<Scan Fields|dbCommonRecord/Scan Fields>.
 =head3 Desired Output Parameters
 
 The data fanout record must specify where the desired output value
-originates, i.e., the data which is to be fowarded to the records in its
+originates, i.e., the data which is to be forwarded to the records in its
 output links. The output mode select (OMSL) field determines whether the
 output originates from another record or from run-time database access.
 When set to C<closed_loop>, the desired output is retrieved from the link
@@ -156,8 +156,8 @@ These parameters are used to determine when to send monitors placed on the
 VAL field. These monitors are sent when the value field exceeds the last
 monitored fields by the specified deadband, ADEL for archivers monitors and
 MDEL for all other types of monitors. If these fields have a value of zero,
-everytime the value changes, a monitor will be triggered; if they have a
-value of -1, everytime the record is scanned, monitors are triggered. See
+every time the value changes, a monitor will be triggered; if they have a
+value of -1, every time the record is scanned, monitors are triggered. See
 L<Monitor Specification> for a complete explanation of monitors.
 
 =fields ADEL, MDEL
@@ -165,7 +165,7 @@ L<Monitor Specification> for a complete explanation of monitors.
 =head3 Run-Time Parameters and Simulation Mode Parameters
 
 These parameters are used by the run-time code for processing the data
-fanout record. Ther are not configurable. They are used to implement the
+fanout record. They are not configurable. They are used to implement the
 hysteresis factors for monitor callbacks.
 
 =fields LALM, ALST, MLST

@@ -40,7 +40,7 @@ link(const, lnkConstIf)
 
 =head3 Constant Link C<"const">
 
-Constant links are input links that provide literal values at link initalization
+Constant links are input links that provide literal values at link initialization
 time, but do not return any data when their C<getValue()> routine is called.
 Most record types support the use of constant links on their input links by
 calling C<recGblInitConstantLink()> at record initialization, which results in

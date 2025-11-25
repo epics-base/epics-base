@@ -118,7 +118,7 @@ static long init_record(struct dbCommon *pcommon, int pass)
         return(S_dev_missingSup);
     }
     prec->init = TRUE;
-    /*The following is for old device support that doesnt know about eoff*/
+    /*The following is for old device support that doesn't know about eoff*/
     if ((prec->eslo==1.0) && (prec->eoff==0.0)) {
         prec->eoff = prec->egul;
     }

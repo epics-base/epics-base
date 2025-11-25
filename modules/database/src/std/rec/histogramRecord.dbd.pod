@@ -70,7 +70,7 @@ alarms that are common to all record types.
 
 The MDEL field implements the monitor count deadband. Only when MCNT is greater
 than the value given to MDEL are monitors triggered, MCNT being the number of
-counts since the last time the record was processed. If MDEL is -1, everytime
+counts since the last time the record was processed. If MDEL is -1, every time
 the record is processed, a monitor is triggered regardless.
 
 If SDEL is greater than 0, it causes a callback routine to be called. The number

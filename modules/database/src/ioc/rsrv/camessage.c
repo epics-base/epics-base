@@ -1452,7 +1452,7 @@ static void sendAllUpdateAS ( struct client *client )
         }
         else {
             errlogPrintf (
-            "%s at %d: corrupt channel state detected durring AR update\n",
+            "%s at %d: corrupt channel state detected during AR update\n",
                 __FILE__, __LINE__);
         }
         pciu->state = rsrvCS_inService;
@@ -1493,7 +1493,7 @@ static void putNotifyErrorReply ( struct client *client, caHdrLargeArray *mp, in
         mp->m_available, 0 );
     if ( status != ECA_NORMAL ) {
         SEND_UNLOCK ( client );
-        errlogPrintf ("%s at %d: should always get sufficent space for put notify error reply\n",
+        errlogPrintf ("%s at %d: should always get sufficient space for put notify error reply\n",
             __FILE__, __LINE__);
         return;
     }
@@ -1835,7 +1835,7 @@ static int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client 
      * the monitors and I could get deadlocked.
      * The client is blocked sending and the server
      * task for the client is blocked sending in
-     * this case. I cant check the recv part of the
+     * this case. I can't check the recv part of the
      * socket in the client since I am still handling an
      * outstanding recv ( they must be processed in order).
      * I handle this problem in the server by using
@@ -2080,7 +2080,7 @@ static void search_fail_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
         0u, mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available, NULL );
     if ( status != ECA_NORMAL ) {
         SEND_UNLOCK ( client );
-        errlogPrintf ( "%s at %d: should always get sufficent space for search fail reply?\n",
+        errlogPrintf ( "%s at %d: should always get sufficient space for search fail reply?\n",
             __FILE__, __LINE__ );
         return;
     }

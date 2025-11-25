@@ -1461,7 +1461,7 @@ LIBCA_API unsigned epicsStdCall ca_get_host_name ( chid pChan,
     char *pBuf, unsigned bufLength );
 
 /** \brief Return the minor protocol version number used by the host to
- *  which a channel is cuurently connected.   
+ *  which a channel is currently connected.   
  *
  * \param[in] pChan channel identifier
  * \returns The minor protocol version number.

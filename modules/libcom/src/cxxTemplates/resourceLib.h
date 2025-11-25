@@ -423,7 +423,7 @@ void resTable<T,ID>::show ( unsigned level ) const
             mean, stdDev, maxEntries );
         printf("%u empty buckets\n", empty);
         if ( X != this->nInUse ) {
-            printf ("this->nInUse didnt match items counted which was %f????\n", X );
+            printf ("this->nInUse didn't match items counted which was %f????\n", X );
         }
     }
 }
@@ -1140,7 +1140,7 @@ stringId::~stringId()
             //
             // the HP-UX compiler gives us a warning on
             // each cast away of const, but in this case
-            // it cant be avoided.
+            // it can't be avoided.
             //
             // The DEC compiler complains that const isn't
             // really significant in a cast if it is present.

@@ -14,7 +14,7 @@ to stdout.
 
 The {option}`-s` option allows to specify an interest level for calling Channel
 Access' internal report function `ca_client_status()`, that prints lots
-of internal informations on stdout, including environment settings, used
+of internal information on stdout, including environment settings, used
 CA ports etc.
 
 ## Options

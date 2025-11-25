@@ -406,7 +406,7 @@ static int vxDevInterruptInUseVME (unsigned vectorNumber)
         psub = isrFetch (vectorNumber);
 
         /*
-         * its a C routine. Does it match a default handler?
+         * it's a C routine. Does it match a default handler?
          */
         for (i=0; i<NELEMENTS(defaultHandlerAddr); i++) {
             if (defaultHandlerAddr[i] == psub) {

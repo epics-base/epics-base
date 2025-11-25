@@ -120,7 +120,7 @@ static int dbca_chan_count;
  * The libca callbacks take no action if pca->plink==NULL.
  *
  *   dbCaPutLinkCallback causes an additional complication because
- *   when dbCaRemoveLink is called the callback may not have occured.
+ *   when dbCaRemoveLink is called the callback may not have occurred.
  *   If putComplete sees plink==0 it will not call the user's code.
  *   If pca->putCallback is non-zero, dbCaTask will call the
  *   user's callback AFTER it has called ca_clear_channel.

@@ -147,7 +147,7 @@ This also fixes [lauchpad bug #1714455](https://bugs.launchpad.net/bugs/1714455)
   declared in epicsString.h no longer accept octal escaped characters such as
   `\123` or `\41`.
 - The routine `epicsStrnEscapedFromRaw()` now generates hex
-  excaped characters for unprintable characters such as `\x1f`.
+  escaped characters for unprintable characters such as `\x1f`.
 - Hex escape character sequences `\xXX` must now contain exactly 2 hex digits.
 - An escape sequence `\0` now generates a zero byte in the raw string, but the
   other digits `1-9` should not appear after a back-slash.

@@ -323,7 +323,7 @@ LIBCOM_API long
 
 /** \brief Run the calculation engine
  *
- * Evaluates the postfix expression against a set ot input values.
+ * Evaluates the postfix expression against a set of input values.
  *
  * \param parg Pointer to an array of double values for the arguments
  * \c A-U that can appear in the expression.

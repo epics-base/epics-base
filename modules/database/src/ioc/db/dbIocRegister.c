@@ -199,7 +199,7 @@ static const iocshFuncDef dblFuncDef = {"dbl",2,dblArgs,
                                         "Database list.\n"
                                         "List record/field names.\n"
                                         "With no arguments, lists all record names.\n"
-                                        "If record type is given, then only the names of records maching the type are printed\n"
+                                        "If record type is given, then only the names of records matching the type are printed\n"
                                         "If a field list is given, then their values are also printed\n\n"
                                         "Example: dbl(\"\")\n"
                                         "         dbl(\"ai\")\n"
@@ -440,7 +440,7 @@ static const iocshArg scanOnceQueueShowArg0 = { "reset",iocshArgInt};
 static const iocshArg * const scanOnceQueueShowArgs[1] =
     {&scanOnceQueueShowArg0};
 static const iocshFuncDef scanOnceQueueShowFuncDef = {"scanOnceQueueShow",1,scanOnceQueueShowArgs,
-                                                      "Show details and statitics of scan once queue processing.\n"};
+                                                      "Show details and statistics of scan once queue processing.\n"};
 static void scanOnceQueueShowCallFunc(const iocshArgBuf *args)
 {
     scanOnceQueueShow(args[0].ival);

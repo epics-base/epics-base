@@ -170,7 +170,7 @@ DBCORE_API void testMonitorWait(testMonitor*);
  * @since UNRELEASED
  */
 DBCORE_API void testMonitorSync(testMonitor*);
-/** Return the number of monitor events which have occured since create,
+/** Return the number of monitor events which have occurred since create,
  * or a previous reset (called reset=1).
  * Calling w/ reset=0 only returns the count.
  * Calling w/ reset=1 resets the count to zero and ensures that the next

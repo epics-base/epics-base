@@ -413,7 +413,7 @@ sub _build_markdown_head {
 # * I don't actually see anything that curly braces are used for.
 # * Escaping square brackets is enough to avoid accidentally
 # creating links and images (so we don't need to escape plain parentheses
-# or exclamation points as that would generate a lot of unnecesary noise).
+# or exclamation points as that would generate a lot of unnecessary noise).
 # Parentheses will be escaped in urls (&end_L) to avoid premature termination.
 # * We don't need a backslash for every hash mark or every hyphen found mid-word,
 # just the ones that start a line (likewise for plus and dot).
@@ -542,7 +542,7 @@ sub _process_escapes {
   # The patterns below are taken from Markdown.pl 1.0.1 _EncodeAmpsAndAngles().
   # In this case we only want to encode the ones that Markdown won't.
   # This is overkill but produces nicer looking text (less escaped entities).
-  # If it proves insufficent then we'll just encode them all.
+  # If it proves insufficient then we'll just encode them all.
 
   # $1: If the escape was in a code sequence, simply replace the original.
   # $2: If the unescaped value would be followed by characters
@@ -1007,8 +1007,8 @@ sub   end_L {
   # Backslash escapes do not work for the space and quotes.
   # URL-encoding the space is not sufficient
   # (the quotes confuse some parsers and produce invalid html).
-  # I've arbitratily chosen HTML encoding to hide them from markdown
-  # while mangling the url as litle as possible.
+  # I've arbitrarily chosen HTML encoding to hide them from markdown
+  # while mangling the url as little as possible.
   $url =~ s/([ '"])/sprintf '&#x%x;', ord($1)/ge;
 
   # We also need to double any backslashes that may be present

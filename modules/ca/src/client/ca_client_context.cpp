@@ -775,11 +775,11 @@ LIBCA_API int epicsStdCall ca_clear_subscription ( evid pMon )
     }
     else {
       //
-      // we will definately stall out here if all of the
+      // we will definitely stall out here if all of the
       // following are true
       //
       // o user creates non-preemptive mode client library context
-      // o user doesnt periodically call a ca function
+      // o user doesn't periodically call a ca function
       // o user calls this function from an auxiliary thread
       //
       CallbackGuard cbGuard ( cac.cbMutex );

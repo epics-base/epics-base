@@ -120,7 +120,7 @@ LIBCOM_API int epicsTimeGetMonotonic ( epicsTimeStamp * pDest );
 /** \name ISR-callable
  * These routines may be called from an Interrupt Service Routine, and
  * will return a value from the last current time or event time provider
- * that sucessfully returned a result from the equivalent non-ISR routine.
+ * that successfully returned a result from the equivalent non-ISR routine.
  * @{
  */
 /** \brief Get current time into \p *pDest (ISR-safe) */

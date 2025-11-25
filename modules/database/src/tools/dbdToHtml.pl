@@ -405,7 +405,7 @@ field tables that refer to a locally-defined menu will generate a link to a
 document section which must be titled "Menu [menuName]".
 
 The "title" keyword should only appear once in each file, it sets the document
-title as well as generating a "head1" heading with "EPICS Reference:" pre-pended
+title as well as generating a "head1" heading with "EPICS Reference:" prepended
 to the text.
 
 =cut

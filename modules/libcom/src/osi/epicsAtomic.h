@@ -18,12 +18,12 @@
  *
  * These primitives can be safely used in a multithreaded programs on symmetric multiprocessing (SMP) 
  * systems. Where possible the primitives are implemented with compiler intrinsic wrappers for architecture 
- * speciﬁc instructions. Otherwise they are implemeted with OS speciﬁc functions and otherwise, when lacking
+ * speciﬁc instructions. Otherwise they are implemented with OS speciﬁc functions and otherwise, when lacking
  *  a suﬃcently capable OS speciﬁc interface, then in some rare situations a mutual exclusion primitive is 
  * used for synchronization.
  *
  * In operating systems environments which allow C code to run at interrupt level the implementation must 
- * use interrupt level invokable CPU instruction primitives.
+ * use interrupt level invocable CPU instruction primitives.
  *
  * All C++ functions are implemented in the namespace atomics which is nested inside of namespace epics. 
  */

@@ -147,7 +147,7 @@ CMPLR_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
 ALL_SRC_DIRS = $(CMPLR_SRC_DIRS) $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 
 #--------------------------------------------------
-# Directory for OS independant build created files
+# Directory for OS independent build created files
 COMMON_DIR = ../O.Common
 
 # compile line include directories

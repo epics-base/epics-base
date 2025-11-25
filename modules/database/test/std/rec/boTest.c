@@ -53,7 +53,7 @@ static void test_high(void){
     /* set VAL to process record */
     testdbPutFieldOk("test_bo_rec.VAL", DBF_SHORT, TRUE);
 
-    /* wait and verfiy time */
+    /* wait and verify time */
     testMonitorWait(test_mon);
     epicsTimeGetCurrent(&endTime);
 

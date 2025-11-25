@@ -346,7 +346,7 @@ DBCORE_API void dbChannelInit(void);
 /** \brief Cleanup the dbChannel subsystem. */
 DBCORE_API void dbChannelExit(void);
 
-/** \brief Test the given PV name for existance.
+/** \brief Test the given PV name for existence.
  *
  * This routine looks up the given record and field name, but does not check
  * whether any field modifiers given after the field name are correct.

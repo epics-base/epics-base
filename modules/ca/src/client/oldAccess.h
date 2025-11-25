@@ -597,11 +597,11 @@ void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO (
         epicsGuardRelease < epicsMutex > guardRelease ( guard );
         {
             //
-            // we will definately stall out here if all of the
+            // we will definitely stall out here if all of the
             // following are true
             //
             // o user creates non-preemptive mode client library context
-            // o user doesnt periodically call a ca function
+            // o user doesn't periodically call a ca function
             // o user calls this function from an auxiliary thread
             //
             CallbackGuard cbGuard ( this->cbMutex );

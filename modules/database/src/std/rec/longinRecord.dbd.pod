@@ -93,8 +93,8 @@ alarms that are common to all record types.
 These parameters are used to determine when to send monitors placed on the value
 field. The monitors are sent when the value field exceeds the last monitored
 field (see the next section) by the appropriate deadband. If these fields have a
-value of zero, everytime the value changes, a monitor will be triggered; if they
-have a value of -1, everytime the record is scanned, monitors are triggered. The
+value of zero, every time the value changes, a monitor will be triggered; if they
+have a value of -1, every time the record is scanned, monitors are triggered. The
 ADEL field is used by archive monitors and the MDEL field for all other types of
 monitors.
 

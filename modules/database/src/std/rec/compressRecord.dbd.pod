@@ -121,7 +121,7 @@ holds the average of the first element of INP over N samples, VAL[1] holds the
 average of the next element of INP over N samples, and so on. The following
 shows the equation:
 
-=for comment Latex form of equation bellow : VAL[i] \leftarrow \frac{1}{N}\sum_{n=1}^NINP_{n}[i]
+=for comment Latex form of equation below : VAL[i] \leftarrow \frac{1}{N}\sum_{n=1}^NINP_{n}[i]
 
 =begin html
 

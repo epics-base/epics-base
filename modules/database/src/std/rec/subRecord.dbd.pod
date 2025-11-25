@@ -100,8 +100,8 @@ field. The appropriate monitors are invoked when VAL differs from the values in
 the ALST and MLST run-time fields, i.e., when the value of VAL changes by more
 than the deadband specified in these fields. The ADEL and MDEL fields specify a
 minimum delta which the change must surpass before the value-change monitors are
-invoked. If these fields have a value of zero, everytime the value changes, a
-monitor will be triggered; if they have a value of -1, everytime the record is
+invoked. If these fields have a value of zero, every time the value changes, a
+monitor will be triggered; if they have a value of -1, every time the record is
 processed, monitors are triggered. The ADEL field is used by archive monitors
 and the MDEL field for all other types of monitors.
 
@@ -290,7 +290,7 @@ This example for a VxWorks IOC shows an asynchronous subroutine. It uses
 (actually misuses) fields A and B. Field A is taken as the number of seconds
 until asynchronous completion. Field B is a flag to decide if messages should be
 printed. Lets assume A E<gt> 0 and B = 1. The following sequence of actions will
-occcur:
+occur:
 
 =over
 

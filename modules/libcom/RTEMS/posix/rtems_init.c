@@ -1018,7 +1018,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
 #if defined(QEMU_FIXUPS) && defined(__i386__)
     // glorious hack to stub out useless EEPROM check
     // which takes sooooo longggg w/ QEMU
-    // Writes a 'ret' instruction to immediatly return to the caller
+    // Writes a 'ret' instruction to immediately return to the caller
     extern void _bsd_e1000_validate_nvm_checksum(void);
     *(char*)&_bsd_e1000_validate_nvm_checksum = 0xc3;
 #endif

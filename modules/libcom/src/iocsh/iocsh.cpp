@@ -1513,7 +1513,7 @@ static const iocshArg *onArgs[1] = {&onArg0};
 static const iocshFuncDef onFuncDef = {"on", 1, onArgs,
                                        "Change IOC shell error handling.\n"
                                        "  continue (default) - Ignores error and continue with next commands.\n"
-                                       "  break - Return to caller without executing futher commands.\n"
+                                       "  break - Return to caller without executing further commands.\n"
                                        "  halt - Suspend process.\n"
                                        "  wait - stall process for <delay> seconds, then continue.\n"};
 static void onCallFunc(const iocshArgBuf *args)

@@ -119,7 +119,7 @@ static void threadSleepQuantumTest ()
             "The epicsThreadSleepQuantum() call returns %f sec.\n",
                 quantum );
         printf (
-            "This doesnt match the quantum estimate "
+            "This doesn't match the quantum estimate "
             "of %f sec within %s.\n",
                 quantumEstimate, pTol );
     }

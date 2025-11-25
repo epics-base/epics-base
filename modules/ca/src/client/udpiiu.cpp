@@ -83,7 +83,7 @@ double getMaxPeriod()
             }
         }
         else {
-            epicsPrintf ( "EPICS \"%s\" wasnt a real number\n",
+            epicsPrintf ( "EPICS \"%s\" wasn't a real number\n",
                             EPICS_CA_MAX_SEARCH_PERIOD.name );
             epicsPrintf ( "Setting \"%s\" = %f seconds\n",
                 EPICS_CA_MAX_SEARCH_PERIOD.name, maxPeriod );

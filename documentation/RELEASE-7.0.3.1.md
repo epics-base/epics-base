@@ -56,7 +56,7 @@ A suggested form for IOC shell commands is:
 
 ### Relocatable Builds
 
-Allows built trees to be copied or moved without invalidating RPATH entires.
+Allows built trees to be copied or moved without invalidating RPATH entries.
 
 The `LINKER_USE_RPATH` Makefile variable (see `configure/CONFIG_SITE`) may be
 set to `YES`, `NO`, and a new third option `ORIGIN`.  This is limited to

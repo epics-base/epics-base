@@ -661,7 +661,7 @@ the `DB_OPT` build configuration variable.
 
 The compressRecord has a new field `BALG` which can select between FIFO
 (append) and LIFO (prepend) ordering for insertion of new elements. FIFO
-ordering is the default, matching the behviour of previous versions.
+ordering is the default, matching the behaviour of previous versions.
 
 ### Valgrind Instrumentation
 

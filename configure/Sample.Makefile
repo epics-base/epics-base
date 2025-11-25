@@ -82,7 +82,7 @@ INC         = file.h
 #	Platform specific files can also be put in
 #	separate os/OS_CLASS directories!
 #
-#	For almost every file the seach order is:
+#	For almost every file the search order is:
 #	./os/OS_CLASS
 #	./os/generic
 #	.
@@ -136,11 +136,11 @@ PROD_SRCS = ppp.c qqq.c
 a_file_SRCS = aa.c bb.c
 
 #
-#	EPICS libs needed to link PROD, TESTPROD and sharable library
+#	EPICS libs needed to link PROD, TESTPROD and shareable library
 #
 #	note that DLL_LIBS (the libraries needed to link a shareable
 #	library) is created by default from the PROD/SYS libraries specified 
-#	below minus the name of the sharable library (LIBRARY)
+#	below minus the name of the shareable library (LIBRARY)
 #	
 #
 # ----------  libraries for a specific product pppp
@@ -169,7 +169,7 @@ USR_LIBS_DEFAULT = foolib
 USR_LIBS_WIN32   = -nil-
 foolib_DIR = $(FOO_LIB)
 
-#	system libs needed to link PROD, TESTPROD and sharable library
+#	system libs needed to link PROD, TESTPROD and shareable library
 #
 # ---------- system libraries for all products
 # for all systems:

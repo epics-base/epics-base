@@ -103,7 +103,7 @@ in the file LICENSE that is included with this distribution.</span></p>
     <ul>
       <li><a href="#Broadcast">Client and Server Broadcast Addresses Don't
         Match</a></li>
-      <li><a href="#Client">Client Isnt Configured to Use the Server's
+      <li><a href="#Client">Client Isn't Configured to Use the Server's
       Port</a></li>
       <li><a href="#Unicast">Unicast Addresses in the EPICS_CA_ADDR_LIST Does
         not Reliably Contact Servers Sharing the Same UDP Port on the Same
@@ -759,7 +759,7 @@ to respect the EPICS_CA_MAX_ARRAY_BYTES setting as described below instead.</p>
 <p>Starting with version R3.14 the environment variable
 EPICS_CA_MAX_ARRAY_BYTES determines the size of the largest array that may pass
 through CA. Prior to this version only arrays smaller than 16k bytes could be
-transfered. The CA libraries maintains a free list of 16384 byte network
+transferred. The CA libraries maintains a free list of 16384 byte network
 buffers that are used for ordinary communication. If EPICS_CA_MAX_ARRAY_BYTES
 is larger than 16384 then a second free list of larger data buffers is
 established and used only after a client send its first large array request.</p>
@@ -1085,7 +1085,7 @@ to standard out.</p>
 
 <p>If a value is specified it is written to the PV. Next, the current value of
 the PV is converted to each of the many external data type that can be
-specified at the CA client library interface, and each of these is formated and
+specified at the CA client library interface, and each of these is formatted and
 then output to the console.</p>
 <hr>
 
@@ -1631,7 +1631,7 @@ stdout.</p>
 
 <p>The -s option allows to specify an interest level for calling Channel
 Access' internal report function <code>ca_client_status()</code>, that prints lots of
-internal informations on stdout, including environment settings, used CA ports
+internal information on stdout, including environment settings, used CA ports
 etc.</p>
 
 <table border="1">
@@ -1969,7 +1969,7 @@ that the request is sent call <code>ca_flush_io()</code> followed by
 
 <h3><a name="Problems">ENOBUFS Messages</a></h3>
 
-<p>Many Berkley UNIX derived Internet Protocol (IP) kernels use a memory
+<p>Many Berkeley UNIX derived Internet Protocol (IP) kernels use a memory
 management scheme with a fixed sized low level memory allocation quantum called
 an "mbuf". Messages about "ENOBUFS" are an indication that your IP kernel is
 running low on mbuf buffers. An IP kernel mbuf starvation situation may lead to

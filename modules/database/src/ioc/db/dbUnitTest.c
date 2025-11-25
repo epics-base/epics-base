@@ -307,7 +307,7 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
         long n, N = nRequest < cnt ? nRequest : cnt;
 
         if(!match)
-            testDiag("Length mis-match.  expected=%lu actual=%lu", cnt, nRequest);
+            testDiag("Length mismatch.  expected=%lu actual=%lu", cnt, nRequest);
 
         for(n=0; n<N; n++, gbuf+=vSize, pbuf+=vSize) {
 

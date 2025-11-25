@@ -71,7 +71,7 @@ LIBCOM_API fdctx * epicsStdCall fdmgr_init(void);
  * Specify a function to be called with a specified parameter
  * after a specified delay relative to the current time
  *
- * Returns fdmgrNoAlarm (zero) if alarm cant be created
+ * Returns fdmgrNoAlarm (zero) if alarm can't be created
  */
 #define fdmgrNoAlarm 0
 LIBCOM_API fdmgrAlarmId epicsStdCall fdmgr_add_timeout(

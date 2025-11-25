@@ -23,7 +23,7 @@ ifdef T_A
 # Special settings for Darwin:
 ifeq ($(OS_CLASS),Darwin)
   # Use hdepends command (not GNU compiler flags)
-  # to generate header file dependancies for Darwin.
+  # to generate header file dependencies for Darwin.
   # Darwin has multiple -arch compiler flags.
   HDEPENDS_METHOD = MKMF
 

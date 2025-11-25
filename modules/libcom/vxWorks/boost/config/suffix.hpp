@@ -474,7 +474,7 @@ namespace std {
 #endif
 
 // long long workaround ------------------------------------------//
-// On gcc (and maybe other compilers?) long long is alway supported
+// On gcc (and maybe other compilers?) long long is always supported
 // but it's use may generate either warnings (with -ansi), or errors
 // (with -pedantic -ansi) unless it's use is prefixed by __extension__
 //

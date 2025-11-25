@@ -391,7 +391,7 @@ If either device support or the device support write routine does not
 exist, and error message is issued and processing is terminated.
 
 If DOL is a constant, then VAL is initialized to 1 if its value is nonzero
-or initialzed to 0 if DOL is zero, and UDF is set to FALSE.
+or initialized to 0 if DOL is zero, and UDF is set to FALSE.
 
 If device support includes C<init_record()>, it is called. VAL is set using
 RVAL, and UDF is set to FALSE.

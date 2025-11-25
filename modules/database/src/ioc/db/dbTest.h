@@ -27,7 +27,7 @@ DBCORE_API long dbnr(int verbose);
 /* list aliases */
 DBCORE_API long dbla(const char *pmask);
 /* list infos */
-DBCORE_API long dbli(const char *patern);
+DBCORE_API long dbli(const char *pattern);
 /*list records filtered by glob pattern*/
 DBCORE_API long dbglob(const char *ppattern,const char *fields);
 /*list records filtered by glob pattern; alias for dbglob*/

@@ -712,7 +712,7 @@ static void dbRecordtypeEmpty(void)
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbRecordType = ptempListNode->item;
     fprintf(stderr, ERL_ERROR
-        ": Declaration of recordtype(%s) preceeded full definition.\n",
+        ": Declaration of recordtype(%s) preceded full definition.\n",
         pdbRecordType->name);
     yyerrorAbort(NULL);
 }

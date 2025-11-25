@@ -42,7 +42,7 @@ typedef enum {
         UNARY_OPERATOR,
         VARARG_OPERATOR,
         BINARY_OPERATOR,
-        SEPERATOR,
+        SEPARATOR,
         CLOSE_PAREN,
         CONDITIONAL,
         EXPR_TERMINATOR,
@@ -155,7 +155,7 @@ static const ELEMENT operators[] = {
 {"*",           5, 5,   -1,     BINARY_OPERATOR,MULT},
 {"**",          6, 6,   -1,     BINARY_OPERATOR,POWER},
 {"+",           4, 4,   -1,     BINARY_OPERATOR,ADD},
-{",",           0, 0,   0,      SEPERATOR,      NOT_GENERATED},
+{",",           0, 0,   0,      SEPARATOR,      NOT_GENERATED},
 {"-",           4, 4,   -1,     BINARY_OPERATOR,SUB},
 {"/",           5, 5,   -1,     BINARY_OPERATOR,DIV},
 {":",           0, 0,   -1,     CONDITIONAL,    COND_ELSE},
@@ -343,7 +343,7 @@ LIBCOM_API long
             operand_needed = TRUE;
             break;
 
-        case SEPERATOR:
+        case SEPARATOR:
             if (pstacktop == stack) {
                 *perror = CALC_ERR_BAD_SEPERATOR;
                 goto bad;

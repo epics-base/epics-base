@@ -59,7 +59,7 @@ that an unknown option was given. The getopts() function returns true unless an
 invalid option was found.
 
 Note that, if your code is running under the recommended C<use strict 'vars'>
-pragma, you will need to declare the necesary package variables with "our"
+pragma, you will need to declare the necessary package variables with "our"
 before the call to getopts:
 
     our($opt_v, $opt_o, @opt_I);

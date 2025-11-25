@@ -55,7 +55,7 @@ DBD += $(foreach type, $(CROSS_TARGET_OS_TYPES), $(DBD_$(type)))
 # DBD_solaris += abcSolaris.dbd
 #
 # ---------------------------------------------------
-# DBD concatination files
+# DBD concatenation files
 
 COMMON_DBDCATS += $(addprefix $(COMMON_DIR)/,$(DBDCAT))
 DBDCAT_SOURCES += $(foreach file, $($*_DBD), $(DBDCAT_SOURCE) )
@@ -194,7 +194,7 @@ ifneq (,$(strip $(DBDDEPENDS_FILES)))
 endif
 
 #---------------------------------------------------------------
-# build dependancies, clean rule
+# build dependencies, clean rule
 
 inc: $(COMMON_INC) $(INSTALL_INC) $(COMMON_DBDS) $(COMMON_DBDCATS) \
 	$(INSTALL_DBDS) $(INSTALL_DBD_INSTALLS) $(COMMON_DOCS)

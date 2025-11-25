@@ -112,7 +112,7 @@ DBCORE_API void scanIoInit(IOSCANPVT *ppios);
  * @return
  */
 DBCORE_API unsigned int scanIoRequest(IOSCANPVT pios);
-/** @brief Process all records on the scan list for the specificed priority.
+/** @brief Process all records on the scan list for the specified priority.
  *
  * Also executes the callback set by scanIoSetComplete()
  *

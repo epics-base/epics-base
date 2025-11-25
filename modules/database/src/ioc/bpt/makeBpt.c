@@ -360,7 +360,7 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
         if (inc < 1)
             inc = 1;
         valid = TRUE;
-        /* keep trying intervals until cant do better */
+        /* keep trying intervals until can't do better */
         expanding = TRUE;       /* originally we are trying larger and larger
                                  * intervals */
         while (valid) {

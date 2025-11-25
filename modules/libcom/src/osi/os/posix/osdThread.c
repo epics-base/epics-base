@@ -121,7 +121,7 @@ if((status))  {\
 if(status) { \
     fprintf(stderr,"%s  error %s",(message),strerror((status))); \
     fprintf(stderr," %s\n",method); \
-    fprintf(stderr,"epicsThreadInit cant proceed. Program exiting\n"); \
+    fprintf(stderr,"epicsThreadInit can't proceed. Program exiting\n"); \
     exit(-1);\
 }
 

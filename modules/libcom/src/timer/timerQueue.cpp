@@ -148,7 +148,7 @@ double timerQueue::process ( const epicsTime & currentTime )
         }
 
         //
-        // only restart if they didnt cancel() the timer
+        // only restart if they didn't cancel() the timer
         // while the call back was running
         //
         if ( this->cancelPending ) {

@@ -24,7 +24,7 @@
 #    These rules apply to these Makefile-variables:
 #    USR_CFLAGS    C flags
 #    USR_CXXFLAGS  C++ flags
-#    USR_CPPFLAGS  c preprocesser flags
+#    USR_CPPFLAGS  c preprocessor flags
 #    SRCS          source files for building libraries and prods
 #    USR_SRCS      source files for building libraries and prods
 #    PROD_SRCS     source files for building prods

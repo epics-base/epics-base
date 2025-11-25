@@ -410,7 +410,7 @@ sub _parse_tests {
       if ($s =~ /(?:not |)\S+ (\d+)/) { $ntest = $1+0; }
 
       if ($ntest > $ctx->{plan_ntests}) {
-        # jump in test numbers, more than planned; this is probably TAP::Parser's wierdness.
+        # jump in test numbers, more than planned; this is probably TAP::Parser's weirdness.
         # (when it sees the "ok" line at the end of a test case with no number,
         # it outputs the current total number of tests so far.)
         next;

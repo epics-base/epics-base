@@ -602,7 +602,7 @@ extern void *reallocate_array(void *array, int size, int element_size);
 #define reallocate_character_array(array,size) \
     (Char *) reallocate_array( (void *) array, size, sizeof( Char ) )
 
-#if 0 /* JRW this might couse trouble... but not for IOC usage */
+#if 0 /* JRW this might cause trouble... but not for IOC usage */
 /* used to communicate between scanner and parser.  The type should really
  * be YYSTYPE, but we can't easily get our hands on it.
  */
@@ -710,7 +710,7 @@ extern void lerrsf (char[], char[]) NORETURN;
 /* spit out a "# line" statement */
 extern void line_directive_out (FILE*);
 
-/* generate a data statment for a two-dimensional array */
+/* generate a data statement for a two-dimensional array */
 extern void mk2data (int);
 
 /* generate a data statement */

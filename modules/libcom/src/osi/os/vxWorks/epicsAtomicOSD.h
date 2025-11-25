@@ -87,8 +87,8 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
  * is the same as UINT_MAX then sizeof ( atomic_t )
  * will be the same as sizeof ( size_t )
  *
- * if ULONG_MAX != UINT_MAX then its 64 bit vxWorks and
- * WRS doesnt not supply at this time the atomic interface
+ * if ULONG_MAX != UINT_MAX then it's 64 bit vxWorks and
+ * WRS does not supply at this time the atomic interface
  * for 8 byte integers that is needed - so that architecture
  * receives the lock synchronized version
  */
@@ -153,7 +153,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta 
 #else /* ULONG_MAX == UINT_MAX */
 
 /*
- * if its 64 bit SMP vxWorks and the compiler doesnt
+ * if it's 64 bit SMP vxWorks and the compiler doesn't
  * have an intrinsic then maybe there isn't any way to
  * implement these without using a global lock because
  * size_t is maybe bigger than atomic_t

@@ -167,7 +167,7 @@ void netiiu::uninstallChanDueToSuccessfulSearchResponse (
     epicsGuard < epicsMutex > &, nciu &, const epicsTime & )
 {
     throw std::runtime_error (
-        "search response occured when not attached to udpiiu?" );
+        "search response occurred when not attached to udpiiu?" );
 }
 
 bool netiiu::searchMsg (

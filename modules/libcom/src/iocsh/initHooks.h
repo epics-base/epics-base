@@ -83,7 +83,7 @@ typedef enum {
     initHookAfterInitDatabase,      /**< Records and locksets init  (also autosave pass 1) */
     initHookAfterFinishDevSup,      /**< Device support init pass 1 */
     initHookAfterScanInit,          /**< Scan, AS, ProcessNotify init */
-    initHookAfterInitialProcess,    /**< Records with PINI = YES processsed */
+    initHookAfterInitialProcess,    /**< Records with PINI = YES processed */
     initHookAfterCaServerInit,      /**< RSRV init */
     initHookAfterIocBuilt,          /**< End of iocBuild() */
 
@@ -154,7 +154,7 @@ typedef enum {
 
 /** \brief Type for application callback functions
  *
- * Application callback functions must match this typdef.
+ * Application callback functions must match this typedef.
  * \param state initHook enumeration value
  */
 typedef void (*initHookFunction)(initHookState state);

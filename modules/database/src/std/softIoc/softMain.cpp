@@ -72,7 +72,7 @@ void usage(const char *arg0, const std::string& base_dbd) {
                "    -D <dbd>  If used, must come first. Specify the path to the softIoc.dbdfile."
                "        The compile-time install location is saved in the binary as a default.\n"
                "\n"
-               "    -h  Print this mesage and exit.\n"
+               "    -h  Print this message and exit.\n"
                "\n"
                "    -S  Prevents an interactive shell being started.\n"
                "\n"

@@ -192,7 +192,7 @@ bool bhe::updatePeriod (
         this->beaconAnomalyNotify ( guard );
 
         /*
-         * this is the 2nd beacon seen. We cant tell about
+         * this is the 2nd beacon seen. We can't tell about
          * the change in period at this point so we just
          * initialize the average period and return.
          */

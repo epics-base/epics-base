@@ -35,7 +35,7 @@ record(bi, "bit1") {
 
 ### ANSI escapes in stderr
 
-ANSI escape charactor sequences may now be printed to the stderr stream.
+ANSI escape character sequences may now be printed to the stderr stream.
 These escapes will appear in logs captured from that stream.
 Tools which parse and/or render these logs may need to be adjusted to
 either strip out the escapes, or to translate them into markup.
@@ -227,7 +227,7 @@ The pvDatabase module was updated to version 4.7.1:
 
   `_[distributor=group:<group id>;set:<set_id>;trigger:<field_name>;updates:<n_updates>;mode:<update_mode>]`
 
-  The plugin parameters are optional and are described bellow:
+  The plugin parameters are optional and are described below:
 
   - group: this parameter indicates a group that client application belongs to (default value: "default"); groups of clients are completely independent of each other
 

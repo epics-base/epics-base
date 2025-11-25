@@ -224,7 +224,7 @@ void testEpicsStrPrintEscaped(void)
 
     // Failing cases
     testOk1(epicsStrPrintEscaped(NULL, "1234", 4) == -1);
-    // On some platforms (specifially certain versions of MinGW-w64), fprintf
+    // On some platforms (specifically certain versions of MinGW-w64), fprintf
     // is broken and does not return -1 when the write operation fails. On
     // those platforms, epicsStrPrintEscaped cannot detect failure either, so
     // testing that it reports failure does not make sense on those platforms.

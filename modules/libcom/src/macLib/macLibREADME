@@ -28,7 +28,7 @@ a) long macCreateHandle( MAC_HANDLE **handle, char *pairs[] );
    routine.
 
    macSuppressWarning can be called to suppress the marning message
-   when macExpandString cant expand a macro. A non zero value will
+   when macExpandString can't expand a macro. A non zero value will
    suppress the messages.
 
 
@@ -125,7 +125,7 @@ a) macParseDefns( MAC_HANDLE  *handle, char *defns, char **pairs[] );
    significant within values but ignored elsewhere (i.e. surrounding "="
    and "," characters).
 
-   Probably noone will ever want to, but the special meanings of "$",
+   Probably no one will ever want to, but the special meanings of "$",
    "{", "}", "(", ")", "=" and "," can all be changed via macPutXxxx()
    calls.  This routine does not have a handle argument, so they must be
    changed globally for it to use the new definitions. Should it have a

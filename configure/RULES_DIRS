@@ -44,7 +44,7 @@ $(foreach dir, $(DIRS), $(dir)$(DIVIDER)install): \
 rebuild: $(foreach dir, $(DIRS), $(dir)$(DIVIDER)install)
 endif
 
-# Create directory dependancies lines for GNU make -j option
+# Create directory dependencies lines for GNU make -j option
 # Only works with GNU make 3.81 or later (uses eval function)
 define DEP_template1
 $(1): $$($(1)_DEPEND_DIRS)

@@ -41,7 +41,7 @@ Changes between 2.3 Patch #2 (02Aug90) and original 2.3 release:
 	  Reordered #ifdef maze in the scanner skeleton in the hope of
 	  getting the declarations right for cfront and g++, too.
 
-	- Note that this patch supercedes patch #1 for release 2.3,
+	- Note that this patch supersedes patch #1 for release 2.3,
 	  which was never announced but was available briefly for
 	  anonymous ftp.
 
@@ -56,7 +56,7 @@ Changes between 2.3 (full) release of 28Jun90 and 2.2 (alpha) release:
 	  given.  To specify an end-of-file action for just the initial
 	  state, use <INITIAL><<EOF>>.
 
-	- -d debug output is now contigent on the global yy_flex_debug
+	- -d debug output is now contingent on the global yy_flex_debug
 	  being set to a non-zero value, which it is by default.
 
 	- A new macro, YY_USER_INIT, is provided for the user to specify
@@ -99,7 +99,7 @@ Changes between 2.3 (full) release of 28Jun90 and 2.2 (alpha) release:
 	- yy_switch_to_buffer() can be used in the yywrap() macro/routine.
 
 	- flex scanners do not use stdio for their input, and hence when
-	  writing an interactive scanner one must explictly call fflush()
+	  writing an interactive scanner one must explicitly call fflush()
 	  after writing out a prompt.
 
 	- flex scanner can be made reentrant (after a fashion) by using

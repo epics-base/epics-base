@@ -521,7 +521,7 @@ hardware.
 
 =item *
 
-Positive values (normally between 1-255) get the time of the last occurance of
+Positive values (normally between 1-255) get the time of the last occurrence of
 the numbered generalTime event.
 
 =back

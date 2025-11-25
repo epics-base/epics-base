@@ -133,8 +133,8 @@ alarms that are common to all record types.
 These fields are configurable by the user. They are used as deadbands for the
 archiver and monitor calls for the VAL field. Unless, VAL changes by more than
 the value specified by each, then the respective monitors will not be called. If
-these fields have a value of zero, everytime the VAL changes, monitors are
-triggered; if they have a value of -1, everytime the record is processed,
+these fields have a value of zero, every time the VAL changes, monitors are
+triggered; if they have a value of -1, every time the record is processed,
 monitors are triggered.
 
 =fields ADEL, MDEL

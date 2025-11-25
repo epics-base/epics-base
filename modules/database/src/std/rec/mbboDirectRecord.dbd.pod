@@ -16,7 +16,7 @@ It can accept boolean values in its 32 bit fields (B0-B9, BA-BF, B10-B19 and
 B1A-B1F), and converts them to a 32-bit signed integer in VAL which is provided
 to the device support. A zero value in a bit field becomes a zero bit in VAL, a
 non-zero value in a bit field becomes a one bit in VAL, with B0 being the least
-signficant bit and B1F the MSB/sign bit.
+significant bit and B1F the MSB/sign bit.
 
 =recordtype mbboDirect
 
@@ -47,7 +47,7 @@ placed into the VAL field.
 
 When OMSL is set to C<<< supervisory >>>, the DOL field is ignored during
 processing and the contents of VAL are used. A value to be output may thus be
-written direcly into the VAL field from elsewhere as long as the record is in
+written directly into the VAL field from elsewhere as long as the record is in
 C<<< supervisory >>> mode.
 
 =fields OMSL, DOL, VAL

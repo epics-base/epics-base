@@ -82,7 +82,7 @@ LIBCOM_API extern const ENV_PARAM EPICS_ALLOW_POSIX_THREAD_PRIORITY_SCHEDULING;
  *
  * A NULL terminated array of all ENV_PARAM known to EPICS Base.
  * This array is assembled during the EPICS Base build, and
- * contains at least the preceeding parameters.
+ * contains at least the preceding parameters.
  */
 LIBCOM_API extern const ENV_PARAM *env_param_list[];
 

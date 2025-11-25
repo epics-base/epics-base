@@ -215,7 +215,7 @@ static void registryDumpCallFunc(const iocshArgBuf *args)
 static const iocshFuncDef iocLogInitFuncDef = {"iocLogInit",0,0,
                                                "Initialize IOC logging\n"
                                                "  * EPICS environment variable 'EPICS_IOC_LOG_INET' has to be defined\n"
-                                               "  * Logging controled via 'iocLogDisable' variable\n"
+                                               "  * Logging controlled via 'iocLogDisable' variable\n"
                                                "       see 'setIocLogDisable' command\n"};
 static void iocLogInitCallFunc(const iocshArgBuf *args)
 {

@@ -59,7 +59,7 @@ been split into 4 separate Git repositories. External modules should build
 against this new structure with little or no changes needed, except that some
 allowance may be needed for the merging of the V4 modules.
 
-There should be rather more description and documantation of these changes
+There should be rather more description and documentation of these changes
 than is currently available, but as developers we generally much prefer to
 write code than documentation. Send questions to the tech-talk mailing list
 and we'll be happy to try and answer them!

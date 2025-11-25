@@ -71,7 +71,7 @@ epicsStdCall macCreateHandle(
 /**
  * \brief Disable or enable warning messages.
  *
- * The macExpandString() routine prints warnings when it cant expand a macro.
+ * The macExpandString() routine prints warnings when it can't expand a macro.
  * This routine can be used to silence those warnings. A non zero value will
  * suppress the warning messages from subsequent library routines given the
  * same \c handle.

@@ -108,7 +108,7 @@
 #define ECA_STRTOBIG        DEFMSG(CA_K_WARNING,   12) /* defunct */
 /// The request was ignored because the specified channel is disconnected
 #define ECA_DISCONNCHID     DEFMSG(CA_K_ERROR,     13) /* defunct */
-/// The data type specifed is invalid
+/// The data type specified is invalid
 #define ECA_BADTYPE         DEFMSG(CA_K_ERROR,     14)
 /// Remote Channel not found
 #define ECA_CHIDNOTFND      DEFMSG(CA_K_INFO,      15) /* defunct */
@@ -146,7 +146,7 @@
 #define ECA_NEWADDR         DEFMSG(CA_K_WARNING,   31) /* defunct */
 /// New or resumed network connection
 #define ECA_NEWCONN         DEFMSG(CA_K_INFO,      32) /* defunct */
-/// Specified task isnt a member of a CA context
+/// Specified task isn't a member of a CA context
 #define ECA_NOCACTX         DEFMSG(CA_K_WARNING,   33) /* defunct */
 /// Attempt to use defunct CA feature failed
 #define ECA_DEFUNCT         DEFMSG(CA_K_FATAL,     34) /* defunct */
@@ -156,7 +156,7 @@
 #define ECA_NOREPEATER      DEFMSG(CA_K_WARNING,   36) /* defunct */
 /// No channel id match for search reply- search reply ignored
 #define ECA_NOCHANMSG       DEFMSG(CA_K_WARNING,   37) /* defunct */
-/// Reseting dead connection- will try to reconnect
+/// Resetting dead connection- will try to reconnect
 #define ECA_DLCKREST        DEFMSG(CA_K_WARNING,   38) /* defunct */
 /// Server (IOC) has fallen behind or is not responding- still waiting
 #define ECA_SERVBEHIND      DEFMSG(CA_K_WARNING,   39) /* defunct */

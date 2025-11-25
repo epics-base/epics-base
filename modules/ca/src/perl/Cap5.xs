@@ -64,7 +64,7 @@ const char * get_error_msg(int status) {
         "ECA_NOSUPPORT - Sorry, that feature is planned but not supported at this time",
         "ECA_STRTOBIG - The supplied string is unusually large",
         "ECA_DISCONNCHID - The request was ignored because the specified channel is disconnected",
-        "ECA_BADTYPE - The data type specifed is invalid",
+        "ECA_BADTYPE - The data type specified is invalid",
         "ECA_CHIDNOTFND - Remote Channel not found",
         "ECA_CHIDRETRY - Unable to locate all user specified channels",
         "ECA_INTERNAL - Channel Access Internal Failure",
@@ -83,12 +83,12 @@ const char * get_error_msg(int status) {
         "ECA_BADMONID - Bad event subscription (monitor) identifier",
         "ECA_NEWADDR - Remote channel has new network address",
         "ECA_NEWCONN - New or resumed network connection",
-        "ECA_NOCACTX - Specified task isnt a member of a CA context",
+        "ECA_NOCACTX - Specified task isn't a member of a CA context",
         "ECA_DEFUNCT - Attempt to use defunct CA feature failed",
         "ECA_EMPTYSTR - The supplied string is empty",
         "ECA_NOREPEATER - Unable to spawn the CA repeater thread- auto reconnect will fail",
         "ECA_NOCHANMSG - No channel id match for search reply- search reply ignored",
-        "ECA_DLCKREST - Reseting dead connection- will try to reconnect",
+        "ECA_DLCKREST - Resetting dead connection- will try to reconnect",
         "ECA_SERVBEHIND - Server (IOC) has fallen behind or is not responding- still waiting",
         "ECA_NOCAST - No internet interface with broadcast available",
         "ECA_BADMASK - Invalid event selection mask",
@@ -886,7 +886,7 @@ void CA_get_callback(SV *ca_ref, SV *sub, ...) {
     while (items > i
         && SvOK(ST(i))) {
         if (SvIOK(ST(i))) {
-            /* Interger => Count arg, zero means current size */
+            /* Integer => Count arg, zero means current size */
             count = SvIV(ST(i));
             if (count < 0 || count > ca_element_count(pch->chan)) {
                 croak_msg = "Requested array size is out of range";
@@ -962,7 +962,7 @@ SV * CA_create_subscription(SV *ca_ref, const char *mask_str, SV *sub, ...) {
     while (items > i
         && SvOK(ST(i))) {
         if (SvIOK(ST(i))) {
-            /* Interger => Count arg, zero means current size */
+            /* Integer => Count arg, zero means current size */
             count = SvIV(ST(i));
             if (count < 0 || count > ca_element_count(pch->chan)) {
                 croak_msg = "Requested array size is out of range";

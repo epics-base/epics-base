@@ -4,7 +4,7 @@
 # Fixed menus
 include "menuGlobal.dbd"
 
-# Modifyable menus
+# Modifiable menus
 include "menuConvert.dbd"
 include "menuScan.dbd"
 

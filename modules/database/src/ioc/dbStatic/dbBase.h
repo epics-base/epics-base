@@ -126,7 +126,7 @@ typedef struct dbRecordNode {
     struct dbRecordNode *aliasedRecnode; /* NULL unless flags|DBRN_FLAGS_ISALIAS */
 }dbRecordNode;
 
-/*dbRecordAttribute is for "psuedo" fields */
+/*dbRecordAttribute is for "pseudo" fields */
 /*pdbFldDes is so that other access routines work correctly*/
 /*Until base supports char * value MUST be fixed length string*/
 typedef struct dbRecordAttribute {

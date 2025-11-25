@@ -312,9 +312,9 @@ to alarms that are common to all record types.
 
 These parameters are used to determine when to send monitors placed on the value
 field. The monitors are sent when the value field exceeds the last monitored
-field by the appropriate delta. If these fields have a value of zero, everytime
+field by the appropriate delta. If these fields have a value of zero, every time
 the value changes, a monitor will be triggered; if they have a value of -1,
-everytime the record is scanned, monitors are triggered. The ADEL field is the
+every time the record is scanned, monitors are triggered. The ADEL field is the
 delta for archive monitors, and the MDEL field is the delta for all other types
 of monitors. See L<Monitor Specification> for a complete explanation of
 monitors.

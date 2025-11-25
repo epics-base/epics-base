@@ -56,7 +56,7 @@ inline void WireGet < epicsFloat64 > (
 {
     // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
-    // b) doesnt preclude extra copy operation being optimized away
+    // b) doesn't preclude extra copy operation being optimized away
     union {
         epicsFloat64 _f;
         epicsUInt32 _u[2];
@@ -94,7 +94,7 @@ inline void WireSet < epicsFloat64 > (
 {
     // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
-    // b) doesnt preclude extra copy operation being optimized away
+    // b) doesn't preclude extra copy operation being optimized away
     union {
         epicsFloat64 _f;
         epicsUInt32 _u[2];
@@ -158,7 +158,7 @@ inline void AlignedWireGet < epicsFloat64 > (
 {
     // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
-    // b) doesnt preclude extra copy operation being optimized away
+    // b) doesn't preclude extra copy operation being optimized away
     union Swapper {
         epicsUInt32 _u[2];
         epicsFloat64 _f;
@@ -214,7 +214,7 @@ inline void AlignedWireSet < epicsFloat64 > (
 {
     // copy through union here
     // a) prevents over-aggressive optimization under strict aliasing rules
-    // b) doesnt preclude extra copy operation being optimized away
+    // b) doesn't preclude extra copy operation being optimized away
     union Swapper {
         epicsUInt32 _u[2];
         epicsFloat64 _f;

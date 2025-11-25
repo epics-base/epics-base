@@ -183,7 +183,7 @@ static void get_enum_strs(DBADDR *paddr, char **ppbuffer,
         }
 
         if(nchoices > NELEMENTS(penum->strs))
-            nchoices = NELEMENTS(penum->strs); /* availible > capacity, truncated list */
+            nchoices = NELEMENTS(penum->strs); /* available > capacity, truncated list */
 
         penum->no_str = nchoices;
 
@@ -1130,7 +1130,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     }
 
     if (dbCanSetLink(plink, &link_info, new_devsup)) {
-        /* link type mis-match prevents assignment */
+        /* link type mismatch prevents assignment */
         status = S_dbLib_badField;
         goto unlock;
     }

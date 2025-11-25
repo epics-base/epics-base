@@ -224,8 +224,8 @@ alarms that are common to all record types.
 These parameters are used to specify deadbands for monitors on the VAL
 field. The monitors are sent when the value field exceeds the last
 monitored field by the specified deadband. If these fields have a value
-of zero, everytime the value changes, a monitor will be triggered; if
-they have a value of -1, everytime the record is processed, monitors
+of zero, every time the value changes, a monitor will be triggered; if
+they have a value of -1, every time the record is processed, monitors
 are triggered. ADEL is the deadband for archive monitors, and MDEL the
 deadband for all other types of monitors. See Monitor Specification for
 a complete explanation of monitors.

@@ -86,7 +86,7 @@ private:
     bool threadHasExited;
     void updatePLL ();
     static const int pllDelay; /* integer seconds */
-    // cant be static because of diff btw __stdcall and __cdecl
+    // can't be static because of diff btw __stdcall and __cdecl
     friend unsigned __stdcall _pllThreadEntry ( void * pCurrentTimeIn );
 };
 

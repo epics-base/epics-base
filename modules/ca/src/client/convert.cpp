@@ -17,7 +17,7 @@
  *
  *  1) All routines in this file have an encode argument which
  *  determines if we are converting from the standard format to
- *  the local format or vise versa. To date only float and double data
+ *  the local format or vice versa. To date only float and double data
  *  types must be converted differently depending on the encode
  *  argument - joh
  *

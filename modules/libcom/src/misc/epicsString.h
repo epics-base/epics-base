@@ -93,7 +93,7 @@ LIBCOM_API size_t epicsStrnEscapedFromRawSize(const char *buf, size_t len);
  */
 LIBCOM_API int epicsStrCaseCmp(const char *s1, const char *s2);
 
-/** \brief Does case-insensitive comparision of two strings
+/** \brief Does case-insensitive comparison of two strings
  *
  * Implements strncmp from the C standard library, except is case insensitive
  */

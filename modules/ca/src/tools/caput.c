@@ -68,7 +68,7 @@ void usage (void)
     "  -c: Asynchronous put (use ca_put_callback and wait for completion)\n"
     "  -p <prio>: CA priority (0-%u, default 0=lowest)\n"
     "Format options:\n"
-    "  -t: Terse mode - print only sucessfully written value, without name\n"
+    "  -t: Terse mode - print only successfully written value, without name\n"
     "  -l: Long mode \"name timestamp value stat sevr\" (read PVs as DBR_TIME_xxx)\n"
     "Enum format:\n"
     "  Default: Auto - try value as ENUM string, then as index number\n"
@@ -571,7 +571,7 @@ int main (int argc, char *argv[])
     }
 
     if (result != ECA_NORMAL) {
-        fprintf(stderr, ERL_ERROR " occured writing data: %s\n", ca_message(result));
+        fprintf(stderr, ERL_ERROR " occurred writing data: %s\n", ca_message(result));
         free(sbuf); free(dbuf); free(ebuf);
         return 1;
     }

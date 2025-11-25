@@ -25,7 +25,7 @@ $extname = "@ARGV";
 #
 # Declare two default callback routines for file copy plus two
 # hook routines to add conversions
-# These may be overriden within $top/$exttypename/Replace.pl
+# These may be overridden within $top/$exttypename/Replace.pl
 
 # First: the hooks
 sub ReplaceFilenameHook { return $_[0]; }
@@ -93,7 +93,7 @@ foreach $ext ( @ARGV ) {
     ($extname = $ext) =~ s/Ext$//;
     $extdir  = $extname;
     if (-d "src/$extdir") {
-	print "Extention $extname is already there!\n";
+	print "Extension $extname is already there!\n";
 	next;
     }
     print "Creating template structure "
@@ -161,7 +161,7 @@ sub get_commandline_opts { #no args
 	exit 0;			# finished for -l command
     }
 
-# Extention template type
+# Extension template type
     if ($opt_t) { # first choice is -t type
 	$exttype = $opt_t; 
     } elsif ($eEXTTYPE) { # second choice is $ENV{EPICS_DEFAULT_EXT_TYPE}

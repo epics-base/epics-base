@@ -78,7 +78,7 @@ int dbmfInit(size_t size, int chunkItems)
     pdbmfPvt = &dbmfPvt;
     ellInit(&pdbmfPvt->chunkList);
     pdbmfPvt->lock = epicsMutexMustCreate();
-    /*allign to at least a double*/
+    /*align to at least a double*/
     pdbmfPvt->size = size + size%sizeof(double);
     /* layout is
      * | itemHeader | REDZONE | size | REDZONE |

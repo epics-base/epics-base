@@ -222,7 +222,7 @@ INSTALL_SHRLIB = $(INSTALL_BIN)
 
 
 #--------------------------------------------------
-# Products dependancy definitions
+# Products dependency definitions
 
 PROD_DEPLIBS = $(foreach lib, $(PROD_LIBS) $(USR_LIBS), \
   $(firstword $(wildcard \
@@ -247,10 +247,10 @@ PROD_LDLIBS += $(STATIC_LDLIBS) \
       $(LDLIBS_SHARED_$(SHARED_LIBRARIES))))
 
 #--------------------------------------------------
-# Libraries dependancy definitions
+# Libraries dependency definitions
 
 #   libs that we need to link the DLL with
-#   (it isnt necessary to rebuild the dll if these change)
+#   (it isn't necessary to rebuild the dll if these change)
 
 SHRLIB_DEPLIBS = $(foreach lib, $(LIB_LIBS) $(USR_LIBS), \
   $(firstword $(wildcard \

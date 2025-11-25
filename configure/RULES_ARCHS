@@ -32,7 +32,7 @@ ifneq ($(RELEASE_CFG_DIR_RULES),)
   include $(RELEASE_CFG_DIR_RULES)
 endif
 
-# Create EPICS_HOST_ARCH dependancies for GNU make -j option.
+# Create EPICS_HOST_ARCH dependencies for GNU make -j option.
 # Needed in dirs where EPICS_HOST_ARCH build creates a tool used in 
 # cross arch builds
 

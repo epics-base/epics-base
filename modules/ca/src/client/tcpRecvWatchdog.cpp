@@ -97,7 +97,7 @@ void tcpRecvWatchdog::beaconArrivalNotify (
     guard.assertIdenticalMutex ( this->mutex );
     if ( ! ( this->shuttingDown || this->beaconAnomaly || this->probeResponsePending ) ) {
         this->timer.start ( *this, this->period );
-        debugPrintf ( ("saw a normal beacon - reseting circuit receive watchdog\n") );
+        debugPrintf ( ("saw a normal beacon - resetting circuit receive watchdog\n") );
     }
 }
 
@@ -124,7 +124,7 @@ void tcpRecvWatchdog::messageArrivalNotify (
     if ( ! ( this->shuttingDown || this->probeResponsePending ) ) {
         this->beaconAnomaly = false;
         this->timer.start ( *this, this->period );
-        debugPrintf ( ("received a message - reseting circuit recv watchdog\n") );
+        debugPrintf ( ("received a message - resetting circuit recv watchdog\n") );
     }
 }
 
@@ -182,7 +182,7 @@ void tcpRecvWatchdog::sendBacklogProgressNotify (
     // receive at least one message from the server.
     if ( this->probeResponsePending && ! this->shuttingDown ) {
         this->timer.start ( *this, CA_ECHO_TIMEOUT );
-        debugPrintf ( ("saw heavy send backlog - reseting circuit recv watchdog\n") );
+        debugPrintf ( ("saw heavy send backlog - resetting circuit recv watchdog\n") );
     }
 }
 

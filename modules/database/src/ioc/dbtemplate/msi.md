@@ -49,7 +49,7 @@ discouraged.
 :::
 
 ::: {option} -o <file>
-Output will be written to the specifed \<file\> rather than to the
+Output will be written to the specified \<file\> rather than to the
 standard output.
 :::
 
@@ -166,7 +166,7 @@ expanded properly.
 However neither back-slash characters nor quotes of either variety are
 removed when generating the output file, so depending on what is being
 output the single quote behaviour may not be useful and may even be a
-hinderance. It cannot be disabled in the current version of msi.
+hindrance. It cannot be disabled in the current version of msi.
 
 
 ### Template file commands

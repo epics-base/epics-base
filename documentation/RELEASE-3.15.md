@@ -191,7 +191,7 @@ parameter with one called `EPICS_TZ` and a routine for VxWorks that calculates
 the `TIMEZONE` environment variable from the current `TZ` value. This routine
 will be run once at start-up, when the EPICS clock has synchronized to its NTP
 server. The calculations it contains were worked out and donated to EPICS by
-Larry Hoff in 2009; it is unforunate that it has taken 10 years for them to be
+Larry Hoff in 2009; it is unfortunate that it has taken 10 years for them to be
 integrated into Base.
 
 The default value for the `EPICS_TZ` environment parameter is set in the Base
@@ -521,7 +521,7 @@ a Windows system and an IOC or PCAS server is started, the IOC's attempt to
 bind a TCP socket to the CA server port number fails, but Windows returns a
 different error status value than the IOC is expecting in that circumstance
 (because the National Instruments code requests exclusive use of that port,
-unlike the EPICS code) so the IOC fails to start properly. The relevent EPICS
+unlike the EPICS code) so the IOC fails to start properly. The relevant EPICS
 bind() checks have now been updated so the IOC will request that a dynamic port
 number be allocated for this TCP socket instead when this happens.
 
@@ -619,7 +619,7 @@ static versions of the compiler support libraries have now been moved into the
 The `iocInit` code now performs a sanity check of the current time
 returned by the generalTime subsystem and will print a warning if the wall-clock
 time returned has not been initialized yet. This is just a warning message; when
-a time provider does synchonize the IOC will subsequently pick up and use the
+a time provider does synchronize the IOC will subsequently pick up and use the
 correct time. This check code also primes the registered event system provider
 if there is one so the `epicsTimeGetEventInt()` routine will work on IOCs
 that ask for event time within an interrupt service routine.
@@ -642,7 +642,7 @@ change will not cause the IOC to see time going backwards.
 ### Microsoft Visual Studio builds
 
 The build configuration files for builds using the Microsoft compilers have been
-updated, although there should be no noticable difference at most sites. One
+updated, although there should be no noticeable difference at most sites. One
 extra compiler warning is now being suppressed for C++ code, `C4344: behavior
 change: use of explicit template arguments results in ...` which is gratuitous
 and was appearing frequently in builds of the EPICS V4 modules.

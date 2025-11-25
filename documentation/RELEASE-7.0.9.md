@@ -25,7 +25,7 @@ although it doesn't currently cover the new processes added to epics-base.
 Much of the documentation generated from .dbd.pod files at build time is now
 also being converted into MarkDown (.md) files and installed into the top-level
 `doc` directory. Some users might find it quicker to look up information about a
-record type by opening these files in a text editor intead of opening a browser
+record type by opening these files in a text editor instead of opening a browser
 and loading the HTML versions or finding and opening the files from the EPICS
 Documentation site.
 
@@ -97,7 +97,7 @@ record("#", "unwanted") {}
 
 ### Only keep readline history for interactive sessions
 
-Previously, all IOCsh commands were persisited in the libreadline history
+Previously, all IOCsh commands were persisted in the libreadline history
 (when readline support is included).
 Going forward, only interactive commands are saved.
 
@@ -111,7 +111,7 @@ already be conditionally casting to/from the appropriate type.
 
 ### Fix issues with `_FORTIFY_SOURCE=3`
 
-This release fixes the false positives failures whhen building with `_FORTIFY_SOURCE` level 3.
+This release fixes the false positives failures when building with `_FORTIFY_SOURCE` level 3.
 The override introduced in 7.0.8.1 has been removed.
 
 ### Other

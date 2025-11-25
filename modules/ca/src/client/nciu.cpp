@@ -154,7 +154,7 @@ void nciu::connect ( unsigned nativeType,
     // the callback lock is also taken when a channel
     // disconnects to prevent a race condition with the
     // code below - ie we hold the callback lock here
-    // so a channel cant be destroyed out from under us.
+    // so a channel can't be destroyed out from under us.
     this->notify().connectNotify ( guard );
 }
 
@@ -625,7 +625,7 @@ unsigned channelNode::getSearchTimerIndex (
     }
     else {
         throw std::runtime_error (
-            "channel was expected to be in a search timer, but wasnt" );;
+            "channel was expected to be in a search timer, but wasn't" );;
     }
     return index;
 }

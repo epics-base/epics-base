@@ -338,7 +338,7 @@ during record processing.
 
 =head3 Input Value Fields
 
-Thse fields hold the scalar or array values fetched through the input links
+These fields hold the scalar or array values fetched through the input links
 INPA,...,INPU.
 
 =fields A - U

@@ -161,7 +161,7 @@ static void usage(const char * progname)
 {
     fprintf(stderr,
             "usage:  %s [options]\n"
-            "Parse input from stdin as JSON and ouput parsing details "
+            "Parse input from stdin as JSON and output parsing details "
                                                           "to stdout\n"
             "   -5  allow JSON5\n"
             "   -b  set the read buffer size\n"

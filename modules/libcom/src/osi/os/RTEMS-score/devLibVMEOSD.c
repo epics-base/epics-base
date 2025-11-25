@@ -362,7 +362,7 @@ static int rtemsDevInterruptInUseVME (unsigned vectorNumber)
         return FALSE;
 
     /*
-     * its a C routine. Does it match a default handler?
+     * it's a C routine. Does it match a default handler?
      */
     for (i=0; i<NELEMENTS(defaultHandlerAddr); i++) {
         if (defaultHandlerAddr[i] == psub) {

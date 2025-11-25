@@ -45,7 +45,7 @@ extern "C" {
  *
  * Handles EPICS message codes, and "errno" codes.
  *
- * Copies in a mesage for any status code.  Unknown status codes
+ * Copies in a message for any status code.  Unknown status codes
  * are printed numerically.
  */
 LIBCOM_API void errSymLookup(long status, char *pBuf, size_t bufLength);
@@ -65,7 +65,7 @@ LIBCOM_API void errSymTest(epicsUInt16 modnum, epicsUInt16 begErrNum,
 LIBCOM_API void errSymTestPrint(long errNum);
 LIBCOM_API int errSymBld(void);
 /** @brief Define new custom error code and associate message string.
- *  @param errNum New error code.  Caller is reponsible for avoiding reuse of existing codes.
+ *  @param errNum New error code.  Caller is responsible for avoiding reuse of existing codes.
  *  @param message New message.  Pointer stored.  Caller must not free pointed storage.
  *  @return 0 on success
  */

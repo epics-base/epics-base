@@ -10,7 +10,7 @@
 my $MVAR = qr/[A-Za-z_] [A-Za-z_0-9-]*/x;
 
 #
-# Parse all relevent configure/RELEASE* files and includes
+# Parse all relevant configure/RELEASE* files and includes
 #
 sub readReleaseFiles {
     my ($relfile, $Rmacros, $Rapps, $arch) = @_;

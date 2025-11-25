@@ -31,7 +31,7 @@ GetUser();		# Ensure we know who's in charge
 #
 # Declare two default callback routines for file copy plus two
 # hook routines to add conversions
-# These may be overriden within $top/$apptypename/Replace.pl
+# These may be overridden within $top/$apptypename/Replace.pl
 
 # First: the hooks
 sub ReplaceFilenameHook { return $_[0]; }

@@ -33,7 +33,7 @@ static const iocshArg asSetSubstitutionsArg0 = { "substitutions",iocshArgString}
 static const iocshArg * const asSetSubstitutionsArgs[] = {&asSetSubstitutionsArg0};
 static const iocshFuncDef asSetSubstitutionsFuncDef =
     {"asSetSubstitutions",1,asSetSubstitutionsArgs,
-     "Set subtitutions used when reading ACF file.\n"
+     "Set substitutions used when reading ACF file.\n"
      "No immediate effect.  Run asInit to (re)load.\n"
      "Example: asSetSubstitutions var1=5,var2=hello\n"};
 static void asSetSubstitutionsCallFunc(const iocshArgBuf *args)

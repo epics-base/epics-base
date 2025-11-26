@@ -76,7 +76,7 @@ void *allocate_array(int size, int element_size)
     if ( element_size * size <= 0 )
         flexfatal( "request for < 1 byte in allocate_array()" );
 
-    mem = malloc( element_size * size );
+    mem = malloc( (size_t) element_size * size );
 
     if ( mem == NULL )
         flexfatal( "memory allocation failed in allocate_array()" );
@@ -705,7 +705,7 @@ void *reallocate_array(void *array, int size, int element_size)
         flexfatal( "attempt to increase array size by less than 1 byte" );
 
     new_array =
-        realloc( array, size * element_size );
+        realloc( array, (size_t) size * element_size );
 
     if ( new_array == NULL )
         flexfatal( "attempt to increase array size failed" );

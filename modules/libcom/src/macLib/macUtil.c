@@ -78,7 +78,7 @@ epicsStdCall macParseDefns(
     del[0] = FALSE;
     quote  = 0;
     state  = preName;
-    for ( c = (const char *) defns; *c != '\0'; c++ ) {
+    for ( c = defns; *c != '\0'; c++ ) {
 
         /* handle quotes */
         if ( quote )
@@ -184,7 +184,7 @@ epicsStdCall macParseDefns(
             *memCpp++ = memCp;
 
         /* copy value regardless of the above */
-        strncpy( memCp, (const char *) ptr[i], end[i] - ptr[i] );
+        strncpy( memCp, ptr[i], end[i] - ptr[i] );
         memCp += end[i] - ptr[i];
         *memCp++ = '\0';
     }

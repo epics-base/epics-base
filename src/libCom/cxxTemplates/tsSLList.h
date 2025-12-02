@@ -311,13 +311,13 @@ inline bool tsSLIterConst<T>::valid () const
 template < class T >
 inline bool tsSLIterConst<T>::operator == ( const tsSLIterConst<T> &rhs ) const
 {
-    return this->pEntry == rhs.pConstEntry;
+    return this->pEntry == rhs.pEntry;
 }
 
 template < class T >
 inline bool tsSLIterConst<T>::operator != (const tsSLIterConst<T> &rhs) const
 {
-    return this->pEntry != rhs.pConstEntry;
+    return this->pEntry != rhs.pEntry;
 }
 
 template < class T >

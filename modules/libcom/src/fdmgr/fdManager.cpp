@@ -19,6 +19,8 @@
 // 1) This library is not thread safe
 //
 
+#include <iostream>
+
 #define instantiateRecourceLib
 #include "epicsAssert.h"
 #include "epicsThread.h"
@@ -365,11 +367,15 @@ fdReg::~fdReg()
 //
 void fdReg::show(unsigned level) const
 {
-    printf("fdReg at %p\n", this);
-    if (level > 1u) {
-        printf("\tstate = %d, onceOnly = %d\n",
-            state, onceOnly);
-    }
+    std::cout << "fdReg at " << this << "\n";
+    if (level > 1)
+        std::cout << "\tstate = " << (
+                        state == active ? "active" :
+                        state == pending ? "pending" :
+                        state == limbo ? "limbo" :
+                        "invalid")
+                  << ", onceOnly = " << (onceOnly ? "true" : "false")
+                  << "\n";
     fdRegId::show(level);
 }
 
@@ -378,15 +384,17 @@ void fdReg::show(unsigned level) const
 //
 void fdRegId::show(unsigned level) const
 {
-    printf("fdRegId at %p\n", this);
-    if (level > 1u) {
-        printf("\tfd = %"
-#if defined(_WIN32)
-            "ll"
-#endif
-        "d, type = %d\n",
-            fd, type);
+    std::cout << "fdRegId at " << this << "\n";
+    if (level > 1) {
+        std::cout << "\tfd = " << fd
+                  << ", type = " << (
+                        type == fdrRead ? "fdrRead" :
+                        type == fdrWrite ? "fdrWrite" :
+                        type == fdrException ? "fdrException" :
+                        "invalid")
+                  << "\n";
     }
+    std::cout << std::flush;
 }
 
 //

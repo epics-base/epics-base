@@ -18,6 +18,7 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
+#include <rtems.h>
 #include <pthread.h>
 
 void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
@@ -33,7 +34,7 @@ void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
         if(pthreadInfo->tid) {
             int status;
             status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
-            if(!status) priority = param.sched_priority;
+            if(!status) priority = RTEMS_MAXIMUM_PRIORITY - param.sched_priority;
         }
         fprintf(epicsGetStdout(),"%16.16s %14p %12lu    %3d%8d %8.8s\n",
              pthreadInfo->name,(void *)

@@ -760,6 +760,11 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
         DEFVAR("new_tftp_server_name", bootp_server_name_init),
         DEFVAR("new_bootfile_name", bootp_boot_file_name_init),
         DEFVAR("new_rtems_cmdline", bootp_cmdline_init),
+  /* Our new dhcp-server does not react correctly to client requests
+   and option 129 (rtems_cmd_line) is not transmitted. So as a
+   workaround I now use option 77 (user_class) to transmit the cmd string
+   */
+        DEFVAR("new_user_class", bootp_cmdline_init),
 #undef DEFVAR
         {NULL}
     };
@@ -846,29 +851,35 @@ default_network_dhcpcd(void)
     struct stat statbuf;
 
     if (ENOENT == stat("/etc/dhcpcd.conf", &statbuf)) {
-        fd = open("/etc/dhcpcd.conf", O_CREAT | O_WRONLY,
-                  S_IRWXU | S_IRWXG | S_IRWXO);
-        assert(fd >= 0);
+        printf("/etc/dhcpcd.conf exists, will be overwritten ...\n");
+    }
+    fd = open("/etc/dhcpcd.conf", O_CREAT | O_TRUNC | O_WRONLY,
+               S_IRWXU | S_IRWXG | S_IRWXO);
+    assert(fd >= 0);
 
-        n = write(fd, default_cfg, sizeof(default_cfg) - 1);
-        assert(n == (ssize_t) sizeof(default_cfg) - 1);
+    n = write(fd, default_cfg, sizeof(default_cfg) - 1);
+    assert(n == (ssize_t) sizeof(default_cfg) - 1);
 
-        static const char fhi_cfg[] =
+    static const char fhi_cfg[] =
+            "define 129 string rtems_cmdline\n"
+            "vendorclassid udhcp-rtems\n"
             "nodhcp6\n"
             "ipv4only\n"
             "option ntp-servers\n"
             "option rtems_cmdline\n"
-            "option tftp-server-name\n"
             "option bootfile-name\n"
-            "define 129 string rtems_cmdline\n"
+            "option tftp-server-name\n"
+            "option domain_name\n"
+            "option domain_name_servers\n"
+            "option user_class\n"
+            "option posix_timezone\n"
             "timeout 0";
 
-        n = write(fd, fhi_cfg, sizeof(fhi_cfg) - 1);
-        assert(n == (ssize_t) sizeof(fhi_cfg) - 1);
+    n = write(fd, fhi_cfg, sizeof(fhi_cfg) - 1);
+    assert(n == (ssize_t) sizeof(fhi_cfg) - 1);
 
-        rv = close(fd);
-        assert(rv == 0);
-    }
+    rv = close(fd);
+    assert(rv == 0);
     
     sc = rtems_dhcpcd_start(NULL);
     assert(sc == RTEMS_SUCCESSFUL);

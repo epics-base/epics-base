@@ -2,6 +2,8 @@
 * (C) 2014 David Lettier.
 * http://www.lettier.com/
 * SPDX-License-Identifier: BSD-3-Clause
+* 
+* use of UDP funktions and implement timeout, HPJ 15.12.2025
 \*************************************************************************/
 
 #include <unistd.h>
@@ -20,7 +22,6 @@
 
 int epicsNtpGetTime(char *ntpIp, struct timespec *now)
 {
-
   int sockfd, n; // Socket file descriptor and the n return result from writing/reading from the socket.
   int portno = 123; // NTP UDP port number.
 
@@ -30,34 +31,31 @@ int epicsNtpGetTime(char *ntpIp, struct timespec *now)
   // Set the first byte's bits to 00,011,011 for li = 0, vn = 3, and mode = 3. The rest will be left set to zero.
   *( ( char * ) &packet + 0 ) = 0x1b; // Represents 27 in base 10 or 00011011 in base 2.
 
-  // Create a UDP socket, convert the host-name to an IP address, set the port number,
-  // connect to the server, send the packet, and then read in the return packet.
-  struct sockaddr_in serv_addr; // Server address data structure.
+  /* Create an UDP socket, use IP address of given nameserver, set the port number
+     struct sockaddr_in serv_addr; // Server address data structure.
+     add timout of 2 seconds 
+   */
+  struct sockaddr_in serv_addr = {
+    .sin_family = AF_INET,
+    .sin_addr.s_addr = inet_addr(ntpIp),
+    .sin_port = htons( portno ),
+  };
 
-  sockfd = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP ); // Create a UDP socket.
-
+  sockfd = socket( AF_INET, SOCK_DGRAM, 0 );
   if ( sockfd < 0 ) {
     perror( "epicsNtpGetTime creating socket" );
     return -1;
   }
 
-  // Zero out the server address structure.
-  memset( ( char* ) &serv_addr, 0, sizeof( serv_addr ) );
-
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_addr.s_addr = inet_addr(ntpIp);
-
-  serv_addr.sin_port = htons( portno );
-
-  // Call up the server using its IP address and port number.
-  if ( connect( sockfd, ( struct sockaddr * ) &serv_addr, sizeof( serv_addr) ) < 0 ) {
-    perror( "epicsNtpGetTime connecting socket" );
-    close( sockfd );
+  /* Set receive timeout to 2 seconds */
+  struct timeval tv = { .tv_sec = 2, .tv_usec = 0 };
+  if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+    perror("setsockopt");
     return -1;
   }
 
   // Send it the NTP packet it wants. If n == -1, it failed.
-  n = write( sockfd, ( char* ) &packet, sizeof( ntp_packet ) );
+  n = sendto(sockfd, ( char* ) &packet, sizeof( ntp_packet ), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
   if ( n < 0 ) {
     perror( "epicsNtpGetTime sending NTP request" );
     close( sockfd );
@@ -65,13 +63,18 @@ int epicsNtpGetTime(char *ntpIp, struct timespec *now)
   }
 
   // Wait and receive the packet back from the server. If n == -1, it failed.
-  n = read( sockfd, ( char* ) &packet, sizeof( ntp_packet ) );
-  if ( n < 0 ) {
-    perror( "epicsNtpGetTime reading NTP reply" );
+  n = recvfrom(sockfd, ( char* ) &packet, sizeof( ntp_packet ), 0, NULL, NULL);
+  if (n < 0) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      printf("Timeout - no response\n");
+    } else {
+      perror( "epicsNtpGetTime reading NTP reply" );
+    }
     close( sockfd );
     return -1;
+  } else {
+      printf("Received %zd bytes\n", n);
   }
-
   close( sockfd );
 
   // These two fields contain the time-stamp seconds as the packet left the NTP server.

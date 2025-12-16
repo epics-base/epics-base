@@ -759,12 +759,18 @@ dhcpcd_hook_handler(rtems_dhcpcd_hook *hook, char *const *env)
         DEFVAR("new_ntp_servers", rtemsInit_NTP_server_ip),
         DEFVAR("new_tftp_server_name", bootp_server_name_init),
         DEFVAR("new_bootfile_name", bootp_boot_file_name_init),
-        DEFVAR("new_rtems_cmdline", bootp_cmdline_init),
+
   /* Our new dhcp-server does not react correctly to client requests
    and option 129 (rtems_cmd_line) is not transmitted. So as a
    workaround I now use option 77 (user_class) to transmit the cmd string
+
+   e.g. DHCP_WITHOUT_CMD129 can be defined in CONFIG_SITE.local 
    */
+#ifdef DHCP_WITHOUT_CMD129
         DEFVAR("new_user_class", bootp_cmdline_init),
+#else
+        DEFVAR("new_rtems_cmdline", bootp_cmdline_init),
+#endif
 #undef DEFVAR
         {NULL}
     };
@@ -861,18 +867,23 @@ default_network_dhcpcd(void)
     assert(n == (ssize_t) sizeof(default_cfg) - 1);
 
     static const char fhi_cfg[] =
+#ifndef DHCP_WITHOUT_CMD129
             "define 129 string rtems_cmdline\n"
+#endif
             "vendorclassid udhcp-rtems\n"
             "nodhcp6\n"
             "ipv4only\n"
             "option ntp-servers\n"
-            "option rtems_cmdline\n"
             "option bootfile-name\n"
             "option tftp-server-name\n"
             "option domain_name\n"
             "option domain_name_servers\n"
-            "option user_class\n"
             "option posix_timezone\n"
+#ifdef DHCP_WITHOUT_CMD129
+            "option user_class\n"
+#else
+            "option rtems_cmdline\n"
+#endif
             "timeout 0";
 
     n = write(fd, fhi_cfg, sizeof(fhi_cfg) - 1);

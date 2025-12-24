@@ -21,107 +21,131 @@ RTD_SRC = $(COMMON_DIR)/rtd-src
 
 DOCS += README.md
 DOCS += ca-cli.md
+DOCS += RELEASE_NOTES.md
 DOCS += ReleaseChecklist.md
 
 OLD_NOTES = $(wildcard ../RELEASE-*.md)
 DOCS += $(OLD_NOTES:../%=%)
 
-ifneq ($(EPICS_DEV_SNAPSHOT),)
-  # Between releases the release target is disabled
-  DOCS += RELEASE_NOTES.md
-  REASON = EPICS_DEV_SNAPSHOT not empty
+NOTES_FILE = RELEASE-$(EPICS_SHORT_VERSION).md
+# NOTES_PATH works in both source and build directories
+ifdef T_A
+  NOTES_PATH = ../$(NOTES_FILE)
 else
-  # Not a snapshot, user may be creating a new release
-  ifdef T_A
-    DOC = ../
-  endif
-  # Could we be in the middle of anything?
-  NOTES_FILE = RELEASE-$(EPICS_SHORT_VERSION).md
-  NOTES_PATH = $(DOC)$(NOTES_FILE)
-  NOTES_GIT := $(firstword $(shell git status --porcelain $(NOTES_PATH)))
-  ifeq ($(NOTES_GIT),A)
+  NOTES_PATH = $(NOTES_FILE)
+endif
+
+ifneq ($(EPICS_DEV_SNAPSHOT),)
+  # Between releases, our special release targets are disabled
+  REASON = EPICS_DEV_SNAPSHOT not empty
+  NOTES_PATH =
+else
+  # Not a snapshot. User could be creating a new release,
+  # or this is a build of an already-tagged release.
+
+  # Are we in the process of releasing?
+  NOTES_STAT := $(firstword $(shell git status --porcelain $(NOTES_PATH)))
+  ifeq ($(NOTES_STAT),A)
     # New file was added to the Git index; allow unrelease
-  else ifeq ($(NOTES_GIT),AD)
+  else ifeq ($(NOTES_STAT),AD)
     # File was added to the Git index but deleted; allow unrelease
   else ifeq ($(wildcard $(NOTES_PATH)),)
-    # No file yet, allow release
-  else
-    # File exists but isn't in Git
-    REASON := $(NOTES_FILE) exists but isn't in Git
-    NOTES_FILE =
+    # No file yet, "make release" creates it
+  else ifeq ($(NOTES_STAT),)
+    # File in repo, unchanged
+    REASON := $(NOTES_FILE) exists in Git repo
     NOTES_PATH =
   endif
 endif
 
-NEW_DIR = ../new-notes
-NEW_NOTES = $(wildcard $(NEW_DIR)/*.md)
-
 include $(TOP)/configure/RULES
 
+help:
+	@echo "Makefile targets for documentation:"
+	@echo "    all       - install some files (default)"
+	@echo "    help      - Print this list of make targets"
+	@echo "    release   - Create RELEASE-<ver>.md, add to git"
+	@echo "    unrelease - Undo 'make release'"
+	@echo "    doxygen   - Generate Doxygen HTML output"
+	@echo "    rtd       - Install files used by read-the-docs"
+	@echo "    sphinx    - Run Sphinx for all release docs"
+
 ifndef T_A
+  # Run these rules in the O.$(T_A) build directory
   release unrelease doxygen rtd sphinx: inc
 	$(MAKE) -C O.$(EPICS_HOST_ARCH) $@
+
 else
+  NEW_DIR = ../new-notes
+  NEW_NOTES = $(wildcard $(NEW_DIR)/*.md)
 
-MAKENOTES = ../make-notes.pl
+  MAKENOTES = ../make-notes.pl
 
-ifneq ($(NOTES_PATH),)
-  $(NOTES_PATH): $(NEW_NOTES) $(MAKENOTES)
+  ifneq ($(NOTES_PATH),)
+    $(NOTES_PATH): $(NEW_NOTES) $(MAKENOTES)
 	@$(RM) $@
 	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) \
 	    -d $(abspath $(NEW_DIR))
-  release-git: $(NOTES_PATH)
+    release-git: $(NOTES_PATH)
 	$(if $(NEW_NOTES), \
 	    git rm -q $(NEW_NOTES))
 	git add $<
-  release: $(INSTALL_DOC)/RELEASE_NOTES.md $(INSTALL_DOC)/$(NOTES_FILE)
+    release: $(INSTALL_DOC)/RELEASE_NOTES.md $(INSTALL_DOC)/$(NOTES_FILE)
 
-  unrelease:
+    unrelease:
 	$(if $(wildcard $(NOTES_PATH)), \
 	    git restore --staged $(NOTES_PATH); \
 	    $(RM) $(NOTES_PATH))
 	git restore --staged $(NEW_DIR)
 	git restore $(NEW_DIR)
 
-  REL_DEP = release-git $(NOTES_PATH)
-else
-  REL_DEV = -D
-  release unrelease:
+    REL_DEPS = release-git $(NOTES_PATH)
+  else
+    DEV_FLAG = -D
+    release unrelease:
 	$(error "make $@" not available, $(REASON))
-endif
+  endif
 
-$(COMMON_DIR)/RELEASE_NOTES.md: $(REL_DEP) $(NEW_NOTES) $(MAKENOTES)
+  ifneq ($(wildcard ../$(NOTES_FILE)),)
+    # RELEASE-<ver>.md exists, we're building a tagged version
+    $(COMMON_DIR)/RELEASE_NOTES.md: ../$(NOTES_FILE)
 	@$(RM) $@
-	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) $(REL_DEV) \
+	$(CP) $< $@
+  else
+    # No RELEASE-<ver>.md file, run "make-notes.pl" to create RELEASE_NOTES.md
+    $(COMMON_DIR)/RELEASE_NOTES.md: $(REL_DEPS) $(NEW_NOTES) $(MAKENOTES)
+	@$(RM) $@
+	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) $(DEV_FLAG) \
 	    -d $(abspath $(NEW_DIR)) $(OLD_NOTES) $(NOTES_PATH)
+  endif
 
-$(HEADER_MD_FILES): %_h.md: ../HEADER_h.md
+  $(HEADER_MD_FILES): %_h.md: ../HEADER_h.md
 	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -DHEADER=$* $< $@
 
-$(API_RST_FILES): %-api.rst: ../%-API.rst
+  $(API_RST_FILES): %-api.rst: ../%-API.rst
 	@$(RM) $@
 	@$(ECHO) Creating $@
 	@$(CP) $< $@
 	@$(foreach h, $($*_HEADERS), \
 	    echo "   $h_h.rst" >> $@;)
 
-doxygen: Doxyfile
+  DOX = doxygen
+  doxygen: Doxyfile
 	@$(MKDIR) $(RTD_SRC)
 	$(DOXYGEN)
-DOX = doxygen
 
-# Use "make sphinx DOX=" to skip running doxygen
-rtd: $(DOX) $(API_RST_FILES) $(HEADER_MD_FILES)
+  # Use "make sphinx DOX=" to skip running doxygen
+  RTD = rtd
+  rtd: $(DOX) $(API_RST_FILES) $(HEADER_MD_FILES)
 	rsync -av --exclude=RELEASE-*.md $(INSTALL_DOC)/ $(RTD_SRC)/
 	rsync -av $(HEADER_MD_FILES) $(RTD_SRC)/
 	rsync -av $(API_RST_FILES) $(RTD_SRC)/
 	rsync -av ../index.rst ../conf.py $(RTD_SRC)/
-RTD = rtd
 
-# Use "make sphinx RTD=" to skip earlier steps
-sphinx: $(RTD)
+  # Use "make sphinx RTD=" to skip earlier steps
+  sphinx: $(RTD)
 	cd $(COMMON_DIR); $(PYTHON) -m sphinx rtd-src readthedocs
 	rsync -av $(COMMON_DIR)/readthedocs $(INSTALL_HTML)/
 endif
 
-.PHONY: release release-git unrelease doxygen rtd sphinx
+.PHONY: release help release-git unrelease doxygen rtd sphinx

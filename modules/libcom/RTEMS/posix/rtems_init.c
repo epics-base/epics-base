@@ -990,8 +990,8 @@ POSIX_Init ( void *argument __attribute__((unused)))
     if (epicsRtemsInitPreSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPreSetBootConfigFromNVRAM");
     if (rtems_bsdnet_config.bootp == NULL) {
-        extern void setBootConfigFromNVRAM(void);
-        setBootConfigFromNVRAM();
+        extern int setBootConfigFromNVRAM(char *, size_t);
+        setBootConfigFromNVRAM(NULL, 0);
     }
     if (epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
         delayedPanic("epicsRtemsInitPostSetBootConfigFromNVRAM");
@@ -1047,14 +1047,23 @@ POSIX_Init ( void *argument __attribute__((unused)))
     printf("\n***** ifconfig lo0 *****\n");
     rtems_bsd_ifconfig_lo0();
 
-    printf("\n***** add dhcpcd hook *****\n");
-    dhcpDone = epicsEventMustCreate(epicsEventEmpty);
-    rtems_dhcpcd_add_hook(&dhcpcd_hook);
+    /* Check whether global environment static network config exists.
+     * If so, use that, else, fall back to DHCP. */
+    extern int setBootConfigFromNVRAM(char *, size_t);
+    int status = setBootConfigFromNVRAM(rtemsInit_NTP_server_ip,
+                                             sizeof(rtemsInit_NTP_server_ip));
+    bool try_dhcp = status != 0;
 
-    printf("\n***** Start default network dhcpcd *****\n");
-    // if MY_BOOTP???
-    default_network_dhcpcd();
+    if (try_dhcp) {
+        printf("\n***** add dhcpcd hook *****\n");
+        dhcpDone = epicsEventMustCreate(epicsEventEmpty);
+        rtems_dhcpcd_add_hook(&dhcpcd_hook);
 
+        printf("\n***** Start default network dhcpcd *****\n");
+        // if MY_BOOTP???
+        default_network_dhcpcd();
+    }
+    
     /* this seems to be hard coded in the BSP -> Sebastian Huber ? */
     printf("\n--Info (hpj)-- bsd task prio IRQS: %d  -----\n", rtems_bsd_get_task_priority("IRQS"));
     printf("\n--Info (hpj)-- bsd task prio TIME: %d  -----\n", rtems_bsd_get_task_priority("TIME"));

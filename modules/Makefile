@@ -17,7 +17,7 @@ database_DEPEND_DIRS = ca
 
 # Submodules for bundle build
 SUBMODULES += pvData
-pvData_DEPEND_DIRS = libcom
+pvData_DEPEND_DIRS = libcom database
 
 SUBMODULES += pvAccess
 pvAccess_DEPEND_DIRS = pvData database

@@ -149,3 +149,4 @@ else
 endif
 
 .PHONY: release help release-git unrelease doxygen rtd sphinx
+.NOTPARALLEL: release unrelease doxygen rtd sphinx

@@ -43,6 +43,9 @@ HAG     { return(tokenHAG);     }
 ASG     { return(tokenASG);     }
 RULE    { return(tokenRULE);    }
 CALC    { return(tokenCALC);    }
+METHOD  { return(tokenMETHOD);  }
+AUTHORITY { return(tokenAUTHORITY); }
+PROTOCOL { return(tokenPROTOCOL);   }
 
 INP{link} {
         yylval.Int64 = (unsigned char)yytext[3];

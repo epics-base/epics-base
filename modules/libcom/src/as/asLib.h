@@ -18,6 +18,11 @@
 #include "errMdef.h"
 #include "errlog.h"
 
+/** Identifies added API associated with asAddClientIdentity()
+ * @since UNRELEASED
+ */
+#define EPICS_ASLIB_HAS_IDENTITY
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,6 +34,8 @@ struct dbChannel;
  */
 LIBCOM_API extern int asCheckClientIP;
 
+typedef struct asIdentity *ASIDENTITYPVT;
+typedef struct asIdentity ASIDENTITY;
 typedef struct asgMember *ASMEMBERPVT;
 typedef struct asgClient *ASCLIENTPVT;
 typedef int (*ASINPUTFUNCPTR)(char *buf,int max_size);
@@ -47,6 +54,8 @@ long asCheckPut(ASCLIENTPVT asClientPvt);
     (!asActive || ((asClientPvt)->access >= asREAD))
 #define asCheckPut(asClientPvt) \
     (!asActive || ((asClientPvt)->access >= asWRITE))
+#define asCheckRPC(asClientPvt) \
+    (!asActive || ((asClientPvt)->access >= asRPC))
 
 /* More convenience macros
 void *asTrapWriteWithData(ASCLIENTPVT asClientPvt,
@@ -54,9 +63,16 @@ void *asTrapWriteWithData(ASCLIENTPVT asClientPvt,
      int dbrType, int no_elements, void *data);
 void asTrapWriteAfter(ASCLIENTPVT asClientPvt);
 */
+
+/* Adapter function for backward compatibility */
+LIBCOM_API void * epicsStdCall asTrapWriteWithDataCompat(
+    ASCLIENTPVT asClientPvt,
+    const char *user, const char *host, struct dbChannel *addr,
+    int dbrType, int no_elements, void *data);
+
 #define asTrapWriteWithData(asClientPvt, user, host, addr, type, count, data) \
     ((asActive && (asClientPvt)->trapMask) \
-    ? asTrapWriteBeforeWithData((user), (host), (addr), (type), (count), (data)) \
+    ? asTrapWriteWithDataCompat((asClientPvt), (user), (host), (addr), (type), (count), (data)) \
     : 0)
 #define asTrapWriteAfter(pvt) \
     if (pvt) asTrapWriteAfterWrite(pvt)
@@ -89,9 +105,14 @@ LIBCOM_API void epicsStdCall asPutMemberPvt(
 LIBCOM_API long epicsStdCall asAddClient(
     ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
     int asl,const char *user,char *host);
+LIBCOM_API long epicsStdCall asAddClientIdentity(
+    ASCLIENTPVT *asClientPvt,ASMEMBERPVT asMemberPvt,
+    int asl, ASIDENTITY identity);
 /*client must provide permanent storage for user and host*/
 LIBCOM_API long epicsStdCall asChangeClient(
     ASCLIENTPVT asClientPvt,int asl,const char *user,char *host);
+LIBCOM_API long epicsStdCall asChangeClientIdentity(
+    ASCLIENTPVT asClientPvt,int asl, ASIDENTITY identity);
 LIBCOM_API long epicsStdCall asRemoveClient(ASCLIENTPVT *asClientPvt);
 LIBCOM_API void * epicsStdCall asGetClientPvt(ASCLIENTPVT asClientPvt);
 LIBCOM_API void epicsStdCall asPutClientPvt(
@@ -125,6 +146,9 @@ LIBCOM_API int epicsStdCall asDumpHashFP(FILE *fp);
 LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithData(
     const char *userid, const char *hostid, struct dbChannel *addr,
     int dbrType, int no_elements, void *data);
+LIBCOM_API void * epicsStdCall asTrapWriteBeforeWithIdentityData(
+    ASIDENTITY identity, struct dbChannel *addr,
+    int dbrType, int no_elements, void *data);
 
 LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
 
@@ -142,12 +166,14 @@ LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
 #define S_asLib_badClient       (M_asLib|12) /*access security: bad ASCLIENTPVT*/
 #define S_asLib_badAsg          (M_asLib|13) /*access security: bad ASG*/
 #define S_asLib_noMemory        (M_asLib|14) /*access security: no Memory */
-
+#define S_asLib_dupMethod       (M_asLib|15) /* Duplicate method name in rule */
+#define S_asLib_dupAuthority    (M_asLib|16) /* Duplicate authority name in rule */
+
 /*Private declarations */
 LIBCOM_API extern int asActive;
 
 /* definition of access rights*/
-typedef enum{asNOACCESS,asREAD,asWRITE} asAccessRights;
+typedef enum{asNOACCESS,asREAD,asWRITE,asRPC} asAccessRights;
 
 struct gphPvt;
 
@@ -155,6 +181,7 @@ struct gphPvt;
 typedef struct asBase{
     ELLLIST         uagList;
     ELLLIST         hagList;
+    ELLLIST         authList;
     ELLLIST         asgList;
     struct gphPvt   *phash;
 } ASBASE;
@@ -181,6 +208,13 @@ typedef struct hag{
     char            *name;
     ELLLIST         list;   /*list of HAGNAME*/
 } HAG;
+// Defs for Authority Chains
+typedef struct authchain {
+    ELLNODE         node;
+    char *          name;       /* Authority chain ID */
+    char *          chain;      /* Authority Chain: Common Name or newline-separated Chain of Common Names (root to issuer) */
+    ELLLIST         list;       /* List of named Authority definitions (pointer to this list) */
+} AUTHCHAIN;
 /*Defs for Access SecurityGroups*/
 typedef struct {
     ELLNODE         node;
@@ -190,7 +224,23 @@ typedef struct {
     ELLNODE         node;
     HAG             *phag;
 }ASGHAG;
+typedef struct {
+    ELLNODE         node;
+    struct method   *pmethod;
+} ASGMETHOD;
+typedef struct {
+    ELLNODE         node;
+    struct authority *pauthority;
+} ASGAUTHORITY;
+
 #define AS_TRAP_WRITE 1
+
+enum AsProtocol {
+    AS_PROTOCOL_NOT_SET = -1,
+    AS_PROTOCOL_TCP = 0,
+    AS_PROTOCOL_TLS = 1
+};
+
 typedef struct{
     ELLNODE         node;
     asAccessRights  access;
@@ -203,6 +253,9 @@ typedef struct{
     ELLLIST         hagList; /*List of ASGHAG*/
     int             trapMask;
     int             ignore; // 1 if rule to be ignored because of unknown elements
+    enum AsProtocol protocol; /* -1: ignore, AS_PROTOCOL_TCP: not TLS, AS_PROTOCOL_TLS: TLS */
+    ELLLIST         methodList; /*List of ASGMETHOD*/
+    ELLLIST         authList; /*List of ASGAUTHORITY*/
 } ASGRULE;
 typedef struct{
     ELLNODE         node;
@@ -230,11 +283,18 @@ typedef struct asgMember {
     void            *userPvt;
 } ASGMEMBER;
 
+typedef struct asIdentity {
+    const char *user;
+    char *host;
+    const char *method;
+    const char *authority;
+    enum AsProtocol protocol;
+} ASGIDENTITY;
+
 typedef struct asgClient {
     ELLNODE         node;
     ASGMEMBER       *pasgMember;
-    const char      *user;
-    char            *host;
+    ASIDENTITY      identity;
     void            *userPvt;
     ASCLIENTCALLBACK pcallback;
     int             level;
@@ -242,11 +302,25 @@ typedef struct asgClient {
     int             trapMask;
 } ASGCLIENT;
 
+/* Define METHOD and AUTHORITY structures here for use in ASGRULE */
+typedef struct method{
+    char            *name;
+} METHOD;
+
+typedef struct authority{
+    char            *name;
+} AUTHORITY;
+
 LIBCOM_API long epicsStdCall asComputeAsg(ASG *pasg);
 /*following is "friend" function*/
 LIBCOM_API void * epicsStdCall asCalloc(size_t nobj,size_t size);
 LIBCOM_API char * epicsStdCall asStrdup(unsigned char *str);
 LIBCOM_API void asFreeAll(ASBASE *pasbase);
+
+// The maximum length of the Authority string that can be processed
+// by the EPICS Authorization system.  Set as large as you like to handle the longest string you think will be provided.
+// Holds the concatenated common names of the chain of authority all the way back to the root certificate.
+#define MAX_AUTH_CHAIN_STRING 2048
 #ifdef __cplusplus
 }
 #endif

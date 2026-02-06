@@ -1123,6 +1123,12 @@ LIBCOM_API double epicsStdCall epicsThreadSleepQuantum ()
 LIBCOM_API int epicsThreadGetCPUs(void)
 {
     long ret;
+#ifdef CPU_COUNT
+    cpu_set_t mask;
+    ret = sched_getaffinity(0, sizeof(mask), &mask);
+    if (ret == 0)
+        return CPU_COUNT(&mask);
+#endif
 #ifdef _SC_NPROCESSORS_ONLN
     ret = sysconf(_SC_NPROCESSORS_ONLN);
     if (ret > 0)

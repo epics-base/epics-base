@@ -422,8 +422,10 @@ long dbpf(const char *pname,const char *pvalue)
                 return -1;
             }
             status = dbPutConvertJSON(pvalue, dbrType, array, &n);
-            if (status)
+            if (status) {
+                free(array);
                 return status;
+            }
             pvalue = array;
         }
     }

@@ -10,6 +10,8 @@
 
 #define EPICS_PRIVATE_API
 
+#include <string.h>
+
 #include "iocsh.h"
 
 #include "callback.h"
@@ -27,6 +29,9 @@
 #include "dbState.h"
 #include "db_test.h"
 #include "dbTest.h"
+#include "epicsStdlib.h"
+#include "epicsStdio.h"
+#include "errlog.h"
 
 DBCORE_API extern int callbackParallelThreadsDefault;
 
@@ -503,7 +508,7 @@ static void callbackQueueShowCallFunc(const iocshArgBuf *args)
 }
 
 /* callbackParallelThreads */
-static const iocshArg callbackParallelThreadsArg0 = { "no of threads", iocshArgInt};
+static const iocshArg callbackParallelThreadsArg0 = { "no of threads", iocshArgString};
 static const iocshArg callbackParallelThreadsArg1 = { "priority", iocshArgString};
 static const iocshArg * const callbackParallelThreadsArgs[2] =
     {&callbackParallelThreadsArg0,&callbackParallelThreadsArg1};
@@ -513,7 +518,25 @@ static const iocshFuncDef callbackParallelThreadsFuncDef = {"callbackParallelThr
                                                             "or one of LOW, MEDIUM, or HIGH.\n"};
 static void callbackParallelThreadsCallFunc(const iocshArgBuf *args)
 {
-    iocshSetError(callbackParallelThreads(args[0].ival, args[1].sval));
+    epicsInt32 num = 0;
+    if (args[0].sval) {
+        char* end;
+        long status = epicsParseInt32(args[0].sval, &num, 10, &end);
+        if (status || (end[0] && strcmp(end, "%") != 0))
+        {
+            fprintf(epicsGetStderr(),
+                ANSI_RED("Invalid integer '%s'.\n"), args[0].sval);
+            iocshSetError(-1);
+            return;
+        }
+        if (end[0] == '%') {
+            /* round down, min 1 */
+            if (num < 0) num += 100;
+            if (num > 0) num = num * epicsThreadGetCPUs() / 100;
+            if (num <= 0) num = 1;
+        }
+    }
+    iocshSetError(callbackParallelThreads(num, args[1].sval));
 }
 
 /* dbStateCreate */

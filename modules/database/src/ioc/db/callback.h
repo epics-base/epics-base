@@ -199,7 +199,10 @@ DBCORE_API void callbackQueueShow(const int reset);
  * Calling with count<0 computes the count based on the number of CPU cores
  * currently available to the calling thread,
  * eg. Passing -2 on an 8 core system will start 6 worker threads.
- * In all cases, at least one worker thread will always run.
+ * The iocsh wrapper also accepts positive or negative percentages for count,
+ * which allows to refer to a fraction of the currently available CPU cores,
+ * always rounding the number of created threads down.
+ * In any case, at least one worker thread will always run.
  *
  * An empty prio name or the special value "*" will modify all priorities.
  * Otherwise, only the named priority is modified.

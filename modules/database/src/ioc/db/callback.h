@@ -193,18 +193,21 @@ DBCORE_API void callbackQueueShow(const int reset);
  * By default, only one thread is run for each priority (3 in total).
  *
  * Calling with count==0 will take the count from the callbackParallelThreadsDefault
- * global variable (default default is 2).
+ * global variable (initialized to the number of CPU cores initially available to
+ * the main thread).
  * Calling with count>0 sets the number of worker threads directly.
- * Calling with count<0 computes the count based on the number of CPU cores on the host.
+ * Calling with count<0 computes the count based on the number of CPU cores
+ * currently available to the calling thread,
  * eg. Passing -2 on an 8 core system will start 6 worker threads.
  * In all cases, at least one worker thread will always run.
  *
- * A special prio name of "*" will modify all priorities.
+ * An empty prio name or the special value "*" will modify all priorities.
  * Otherwise, only the named priority is modified.
+ * The prio names are case insensitive.
  *
  * @param count If zero, reset to default (callbackParallelThreadsDefault global/iocsh variable).
  *              If positive, exact number of worker threads to create.
- *              If negative, number of worker threads less than core count.
+ *              If negative, reserve this many CPUs to _not_ run parallel callback threads.
  * @param prio Priority name.  eg. "*", "LOW", "MEDIUM" or "HIGH".
  * @return zero on success, non-zero if called after iocInit() or with invalid arguments.
  *

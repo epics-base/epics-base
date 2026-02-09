@@ -338,7 +338,7 @@ LIBCOM_API epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *opts
         opts = &defopts;
     }
     /* shared pools must have a minimum allowed number of workers.
-     * Use the number of CPU cores
+     * Use the number of CPU cores currently available to the calling thread.
      */
     if (opts->maxThreads < N)
         opts->maxThreads = N;

@@ -98,17 +98,23 @@ as before, but the entries describing changes in those submodules since version
 7.0.5 have been copied into the associated EPICS Release Notes files; they will
 also be manually added to new EPICS Release Notes published in the future.
 
-
-## EPICS Release $REL_VERS
-
 __REL_INTRO__
 
-print $out <<"__NEW_INTRO__" if $opt_D && scalar @notes;
-__This version of EPICS has not been released yet.__
-__When the changes described below get released, the version number used may be
-different to the one given above.__
+print $out <<"__REL_VERS__" if $opt_d;
+## EPICS Release $REL_VERS
 
-The changes below have been merged into EPICS since the last published release.
+__REL_VERS__
+
+print $out <<"__NEW_VERS__" if $opt_D;
+__This version of EPICS has not been released yet.__
+__The version number used for the next release may be
+different to the one shown above.__
+
+__NEW_VERS__
+
+print $out <<"__NEW_INTRO__" if scalar @notes;
+The changes described below have been merged into EPICS
+since the last published release.
 
 __NEW_INTRO__
 

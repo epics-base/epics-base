@@ -44,7 +44,8 @@ else
   # or this is a build of an already-tagged release.
 
   # Are we in the process of releasing?
-  NOTES_STAT := $(firstword $(shell git status --porcelain $(NOTES_PATH)))
+  NOTES_STAT := $(and $(wildcard $(TOP)/.git), $(shell which git), \
+      $(firstword $(shell git status --porcelain $(NOTES_PATH))))
   ifeq ($(NOTES_STAT),A)
     # New file was added to the Git index; allow unrelease
   else ifeq ($(NOTES_STAT),AD)
@@ -53,7 +54,7 @@ else
     # No file yet, "make release" creates it
   else ifeq ($(NOTES_STAT),)
     # File in repo, unchanged
-    REASON := $(NOTES_FILE) exists in Git repo
+    REASON := file $(NOTES_FILE) exists
     NOTES_PATH =
   endif
 endif
@@ -71,21 +72,21 @@ help:
 	@echo "    sphinx    - Run Sphinx for all release docs"
 
 ifndef T_A
-  # Run these rules in the O.$(T_A) build directory
+  # Delegate these targets to the O.$(T_A) build directory
   release unrelease doxygen rtd sphinx: inc
 	$(MAKE) -C O.$(EPICS_HOST_ARCH) $@
 
 else
+  # Special release target rules
+  MAKENOTES = ../make-notes.pl
   NEW_DIR = ../new-notes
   NEW_NOTES = $(wildcard $(NEW_DIR)/*.md)
-
-  MAKENOTES = ../make-notes.pl
 
   ifneq ($(NOTES_PATH),)
     $(NOTES_PATH): $(NEW_NOTES) $(MAKENOTES)
 	@$(RM) $@
 	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) \
-	    -d $(abspath $(NEW_DIR))
+	    -d $(abspath $(NEW_DIR)) $(OLD_NOTES)
     release-git: $(NOTES_PATH)
 	$(if $(NEW_NOTES), \
 	    git rm -q $(NEW_NOTES))
@@ -106,17 +107,18 @@ else
 	$(error "make $@" not available, $(REASON))
   endif
 
-  ifneq ($(wildcard ../$(NOTES_FILE)),)
-    # RELEASE-<ver>.md exists, we're building a tagged version
-    $(COMMON_DIR)/RELEASE_NOTES.md: ../$(NOTES_FILE)
-	@$(RM) $@
-	$(CP) $< $@
-  else
-    # No RELEASE-<ver>.md file, run "make-notes.pl" to create RELEASE_NOTES.md
+  # Rules to create RELEASE_NOTES.md
+  ifeq ($(wildcard ../$(NOTES_FILE)),)
+    # No RELEASE-<ver>.md file, add new-notes to RELEASE_NOTES.md
     $(COMMON_DIR)/RELEASE_NOTES.md: $(REL_DEPS) $(NEW_NOTES) $(MAKENOTES)
 	@$(RM) $@
 	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) $(DEV_FLAG) \
 	    -d $(abspath $(NEW_DIR)) $(OLD_NOTES) $(NOTES_PATH)
+  else
+    # RELEASE-<ver>.md exists, we're building a tagged version
+    $(COMMON_DIR)/RELEASE_NOTES.md: ../$(NOTES_FILE)
+	@$(RM) $@
+	$(PERL) $(MAKENOTES) -o $@ -V $(EPICS_SHORT_VERSION) $(OLD_NOTES)
   endif
 
   $(HEADER_MD_FILES): %_h.md: ../HEADER_h.md

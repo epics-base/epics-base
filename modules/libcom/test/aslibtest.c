@@ -19,6 +19,15 @@
 
 #include <asLib.h>
 
+/* Portable thread-local storage helper for tests */
+#ifdef _MSC_VER
+#  define STORE static __declspec( thread )
+#elif __GNUC__
+#  define STORE static __thread
+#else
+#  define STORE static
+#endif
+
 // The maximum number of links in a chain of authority we will provide in test data.  Increase as needed
 #define MAX_CERT_AUTH_CHAIN_LENGTH 10
 
@@ -1070,7 +1079,7 @@ static void testAccess(const char *asg, unsigned mask)
     ASMEMBERPVT asp = 0; /* aka dbCommon::asp */
     ASCLIENTPVT client = 0;
 
-    static __thread char formattedCertAuthChain[MAX_AUTH_CHAIN_STRING];
+    STORE char formattedCertAuthChain[MAX_AUTH_CHAIN_STRING];
     parseCertAuthChain(&formattedCertAuthChain[0]);
 
     long ret = asAddMember(&asp, asg);
@@ -1078,7 +1087,13 @@ static void testAccess(const char *asg, unsigned mask)
         testFail("testAccess(ASG:%s, ID:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, PROTOCOL:%s, ASL:%d) -> asAddMember error: %s",
                  asg, asUser, asMethod?asMethod:"", asAuthority?formattedCertAuthChain:"", asHost, protocol ? "true":"false", asAsl, errSymMsg(ret));
     } else {
-        ret = asAddClientIdentity(&client, asp, asAsl, (ASIDENTITY){ .user = asUser, .host = asHost, .method = asMethod, .authority = asAuthority, .protocol = protocol });
+        ASIDENTITY id;
+        id.user = asUser;
+        id.host = asHost;
+        id.method = asMethod;
+        id.authority = asAuthority;
+        id.protocol = protocol;
+        ret = asAddClientIdentity(&client, asp, asAsl, id);
     }
     if(ret) {
         testFail("testAccess(ASG:%s, ID:%s, METHOD:%s, AUTHORITY:%s, HOST:%s, PROTOCOL:%s, ASL:%d) -> asAddClient error: %s",

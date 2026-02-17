@@ -164,6 +164,13 @@ EPICS_SITE_VERSION =
 #  Must be either YES or NO
 GCC_PIPE = NO
 
+# Set site-specific language defaults. Specify for example
+#  SITE_LANG_C = C23
+#  SITE_LANG_CXX = CXX23
+# in order to set default compiler flags.
+#SITE_LANG_C =
+#SITE_LANG_CXX =
+
 # Set RPATH when linking executables and libraries.
 #  Must be either YES, NO, or ORIGIN.  If you set this to NO you must also provide a
 #  way for Base executables to find their shared libraries when they are

@@ -67,6 +67,9 @@ include $(CONFIG)/CONFIG_BASE_VERSION
 include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).Common
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
 
+#  Compiler language specific definitions
+include $(CONFIG)/CONFIG_LANG
+
 # Parse configure/RELEASE to find all upstream modules
 RELEASE_TOPS := $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops)
 

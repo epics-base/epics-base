@@ -1,0 +1,32 @@
+ifneq ($(strip $(CMPLR_CLASS)),msvc)
+
+# From the latest version of gcc
+SUPPORTED_CXX_STDS = 98 03 11 14 17 20 23
+SUPPORTED_C_STDS = 89 90 99 11 17 18 23
+
+define compiler_std_template
+LANG_$(1)_$(2)$(4) = -std=$(3)$(4)
+endef
+
+$(foreach std,$(SUPPORTED_CXX_STDS),$(eval $(call compiler_std_template,CXX,CXX,c++,$(std))))
+$(foreach std,$(SUPPORTED_CXX_STDS),$(eval $(call compiler_std_template,CXX,GNUXX,gnu++,$(std))))
+$(foreach std,$(SUPPORTED_C_STDS),$(eval $(call compiler_std_template,C,C,c,$(std))))
+$(foreach std,$(SUPPORTED_C_STDS),$(eval $(call compiler_std_template,C,GNU,gnu,$(std))))
+
+LANG_CXX_latest = $(LANG_CXX_CXX$(lastword $(SUPPORTED_CXX_STDS)))
+LANG_C_latest = $(LANG_C_C$(lastword $(SUPPORTED_C_STDS)))
+
+else
+# MSVC definitions
+
+LANG_CXX_C14    = /std:c++14
+LANG_CXX_C17    = /std:c++17
+LANG_CXX_C20    = /std:c++20
+LANG_CXX_C23    = /std:c++23preview
+LANG_CXX_latest = /std:c++latest
+
+LANG_C_C11    = /std:c11
+LANG_C_C17    = /std:c17
+LANG_C_latest = /std:clatest
+
+endif

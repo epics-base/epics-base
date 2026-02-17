@@ -11,6 +11,7 @@
 static int yyerror(char *);
 static int yy_start;
 #include "asLibRoutines.c"
+#include "epicsString.h"
 static int yyFailed = FALSE;
 static int yyWarned = FALSE;
 static int line_num=1;
@@ -362,10 +363,10 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
     |   tokenAUTHORITY '(' rule_authority_list ')'
     |   tokenPROTOCOL '(' tokenSTRING ')'
     {
-        if((strcasecmp($3,"TLS")==0)) {
+        if((epicsStrCaseCmp($3,"TLS")==0)) {
             if (asAsgAddProtocolAdd(yyAsgRule,AS_PROTOCOL_TLS))
                 yyerror("");
-        } else if((strcasecmp($3,"TCP")==0)) {
+        } else if((epicsStrCaseCmp($3,"TCP")==0)) {
             if (asAsgAddProtocolAdd(yyAsgRule,AS_PROTOCOL_TCP))
                 yyerror("");
         } else {

@@ -5,13 +5,13 @@ SUPPORTED_CXX_STDS = 98 03 11 14 17 20 23
 SUPPORTED_C_STDS = 89 90 99 11 17 18 23
 
 define compiler_std_template
-LANG_$(1)_$(2)$(4) = -std=$(3)$(4)
+LANG_$(1)_$(2)$(3) = -std=$(2)$(3)
 endef
 
-$(foreach std,$(SUPPORTED_CXX_STDS),$(eval $(call compiler_std_template,CXX,CXX,c++,$(std))))
-$(foreach std,$(SUPPORTED_CXX_STDS),$(eval $(call compiler_std_template,CXX,GNUXX,gnu++,$(std))))
-$(foreach std,$(SUPPORTED_C_STDS),$(eval $(call compiler_std_template,C,C,c,$(std))))
-$(foreach std,$(SUPPORTED_C_STDS),$(eval $(call compiler_std_template,C,GNU,gnu,$(std))))
+$(foreach std,$(SUPPORTED_CXX_STDS),$(eval $(call compiler_std_template,CXX,c++,$(std))))
+$(foreach std,$(SUPPORTED_CXX_STDS),$(eval $(call compiler_std_template,CXX,gnu++,$(std))))
+$(foreach std,$(SUPPORTED_C_STDS),$(eval $(call compiler_std_template,C,c,$(std))))
+$(foreach std,$(SUPPORTED_C_STDS),$(eval $(call compiler_std_template,C,gnu,$(std))))
 
 LANG_CXX_latest = $(LANG_CXX_CXX$(lastword $(SUPPORTED_CXX_STDS)))
 LANG_C_latest = $(LANG_C_C$(lastword $(SUPPORTED_C_STDS)))

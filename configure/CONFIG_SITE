@@ -165,8 +165,8 @@ EPICS_SITE_VERSION =
 GCC_PIPE = NO
 
 # Set site-specific language defaults. Specify for example
-#  SITE_LANG_C = C23
-#  SITE_LANG_CXX = CXX23
+#  SITE_LANG_C = c23
+#  SITE_LANG_CXX = c++23
 # in order to set default compiler flags.
 #SITE_LANG_C =
 #SITE_LANG_CXX =

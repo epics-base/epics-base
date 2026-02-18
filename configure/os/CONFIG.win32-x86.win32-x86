@@ -287,3 +287,14 @@ MT_EXE_COMMAND_NO = $(MT.exe) "-outputresource:$@;\#1"
 MT_EXE_COMMAND1 = $(MT_EXE_COMMAND_$(STATIC_BUILD))
 MT_DLL_COMMAND = $(MT_DLL_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))
 MT_EXE_COMMAND = $(MT_EXE_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))
+
+# Define supported language standards
+LANG_CXX_C14    = /std:c++14
+LANG_CXX_C17    = /std:c++17
+LANG_CXX_C20    = /std:c++20
+LANG_CXX_C23    = /std:c++23preview
+LANG_CXX_latest = /std:c++latest
+
+LANG_C_C11    = /std:c11
+LANG_C_C17    = /std:c17
+LANG_C_latest = /std:clatest

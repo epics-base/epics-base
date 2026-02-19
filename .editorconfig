@@ -15,4 +15,5 @@ insert_final_newline = false
 # and remove all trailing spaces
 [*.{c,cc,cpp,h,hpp,pl,py,yml}]
 indent_style = space
+indent_size = 1
 trim_trailing_whitespace = true

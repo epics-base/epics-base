@@ -1,15 +1,10 @@
 # Contribution guidelines
 
-Changes should always be made against the head of the relevant branch,
-not against the release tags.
-
 For bug fixes check out the branch where the bug appears first.
 The fix will be merged into newer EPICS versions by the core developer team.
 
-For new features better announce your idea on the <core-talk@aps.anl.gov> mailing list 
-and ask which branch is most appropriate.
-For revolutionary new features it is probably the EPICS 7 master branch,
-or the branch of the relevant submodule (EPICS 7 is structured as submodules; see `.gitmodules`).
+For new features, please register an issue or discuss the idea on mailing lists
+or in Matrix beforehand.
 
 ## Maintaining Compatibility
 
@@ -26,11 +21,11 @@ Choose the one appropriate for the test.
 Keep in mind that some tests may run before all parts of Base are built.
 Details vary depending on the EPICS Base version.
 
-EPICS Base comes with a testing framework which allows to run IOCs, 
+EPICS Base comes with a testing framework which allows to run IOCs,
 set and read/compare values and more.
 
 To add a test, you will typically create a xxxTest.c
-and probably some records in a xxxTest.db file. 
+and probably some records in a xxxTest.db file.
 (Choose a suitable name.)
 Also you need to edit the Makefile in the test directory
 as well as a file with a name like "epicsRun*Tests.c" to include your new test.
@@ -40,10 +35,10 @@ Here is a basic example of a test code (xxxTest.c):
 ```c
 #include "dbAccess.h"
 #include "dbUnitTest.h"
-#include "testMain.h"      
+#include "testMain.h"
 MAIN(xxxTest) {
     epicsUInt32 value;
-    
+
     /* Announce how many test will be done, see comments below. */
     testPlan(total_number_of_tests);
 
@@ -69,7 +64,7 @@ MAIN(xxxTest) {
     * Make sure that DBF type matches your variable
     */
     testdbPutFieldOk("record.FIELD", DBF_ULONG, value);
-    
+
     /* Get value and compare with expected result. Counts as 1 test.
     * Make sure that DBF type matches your variable
     */
@@ -77,10 +72,10 @@ MAIN(xxxTest) {
 
     /* Do some arbitrary test. Counts as 1 test. */
     testOk(condition, formatstring, ...);
-        
+
     /* The same without your own message. Counts as 1 test. */
     testOk1(condition);
-        
+
     /* Finish */
     testIocShutdownOk();
     testdbCleanup();
@@ -88,19 +83,19 @@ MAIN(xxxTest) {
 }
 ```
 
-Your test should run (and succeed) when you execute
+Your test should run (and succeed) when you execute:
 
 ```bash
 make runtests
 ```
 
+CI will run these tests automatically. All checks must pass before a
+pull request can be merged.
+
 ## Review Process
 
-The core developer team will review your changes,
-suggest changes, highlight issues
-or merge your code into EPICS base.
-You can push updates at any time,
-even after making a pull request.
+The core developer team will review your changes, suggest changes, highlight
+issues or merge your code into EPICS base.
+You can push updates at any time, even after making a pull request.
 The updates will automatically be part of the pull request.
-Do **not** create a new pull request,
-if you want to update your contribution.
+Do **not** create a new pull request, if you want to update your contribution.

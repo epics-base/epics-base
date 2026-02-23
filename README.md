@@ -54,8 +54,12 @@ Run the `dbl` command to list the records it provides:
 epics> dbl
 first:BaseVersion
 first:exit
-epics> 
+epics>
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 

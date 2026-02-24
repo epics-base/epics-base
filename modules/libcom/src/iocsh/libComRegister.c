@@ -304,7 +304,7 @@ static const iocshFuncDef errlogBufResizeFuncDef = {
 };
 static void errlogBufResizeCallFunc(const iocshArgBuf *args)
 {
-    errlogBufResize(args[0].ival, args[1].ival);
+    iocshSetError(errlogBufResize(args[0].ival, args[1].ival));
 }
 
 /* errlogShow */

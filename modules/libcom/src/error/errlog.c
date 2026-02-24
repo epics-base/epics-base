@@ -615,27 +615,43 @@ int errlogInit(int bufsize)
     return errlogInit2(bufsize, DEFAULT_MAX_MSG_SIZE);
 }
 
-void errlogBufResize(int bufsize, int maxMsgSize)
+int errlogBufResize(int bufsize, int maxMsgSize)
 {
+    char* logbuf = NULL;
+    char* printbuf = NULL;
+
+    epicsMutexMustLock(pvt.bufSizeLock);
+
+    // Only increasing the buffer size is allowed!
+    if (bufsize < pvt.bufSize) {
+        epicsMutexUnlock(pvt.bufSizeLock);
+        fprintf(stderr, "Shrinking the errorlog buffer is not allowed.\n");
+        return -1;
+    }
+
     if (bufsize < MIN_BUFFER_SIZE)
         bufsize = MIN_BUFFER_SIZE;
+
     if (maxMsgSize < MIN_MESSAGE_SIZE)
         maxMsgSize = MIN_MESSAGE_SIZE;
     else if (maxMsgSize > MAX_MESSAGE_SIZE)
         maxMsgSize = MAX_MESSAGE_SIZE;
 
-    errlogFlush();
+    logbuf = calloc(1, bufsize);
+    printbuf = calloc(1, bufsize);
 
-    epicsMutexMustLock(pvt.bufSizeLock);
     epicsMutexMustLock(pvt.msgQueueLock);
+
+    memcpy(logbuf, pvt.log->base, pvt.bufSize);
+    free(pvt.log->base);
+    pvt.log->base = logbuf;
+
+    memcpy(printbuf, &pvt.print->base, pvt.bufSize);
+    free(pvt.print->base);
+    pvt.print->base = printbuf;
 
     pvt.bufSize = bufsize;
     pvt.maxMsgSize = maxMsgSize;
-
-    free(pvt.log->base);
-    pvt.log->base = callocMustSucceed(1, pvt.bufSize, "Failed to allocate memory for errorlog buffer");
-    free(pvt.print->base);
-    pvt.print->base = callocMustSucceed(1, pvt.bufSize, "Failed to allocate memory for errorlog buffer");
 
     epicsMutexUnlock(pvt.msgQueueLock);
     epicsMutexUnlock(pvt.bufSizeLock);

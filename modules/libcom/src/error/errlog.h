@@ -224,6 +224,15 @@ LIBCOM_API int errlogInit(int bufsize);
  */
 LIBCOM_API int errlogInit2(int bufsize, int maxMsgSize);
 
+/**
+ * errlogBufResize can be used to reinitialize the error logging system with a larger buffer and maximum message size.
+ * The default buffer size is 1280 bytes, and the default maximum message size is 256.
+ *
+ * \param bufsize The desired buffer size
+ * \param maxMsgSize The desired max message size
+ */
+LIBCOM_API int errlogBufResize(int bufsize, int maxMsgSize);
+
 /** Wakes up the errlog task and then waits until all messages are flushed from the queue. */
 LIBCOM_API void errlogFlush(void);
 

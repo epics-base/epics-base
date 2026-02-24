@@ -44,7 +44,7 @@
 #define MIN_BUFFER_SIZE 2560
 #define DEFAULT_MAX_MSG_SIZE 512
 #define MIN_MESSAGE_SIZE 256
-#define MAX_MESSAGE_SIZE 0x00ffffff
+#define MAX_MESSAGE_SIZE(bufsize) ((bufsize) / 5)
 
 /* errlog buffers contain null terminated strings, each prefixed
  * with a 1 byte header containing flags.
@@ -596,10 +596,10 @@ int errlogInit2(int bufsize, int maxMsgSize)
         bufsize = MIN_BUFFER_SIZE;
     config.bufsize = bufsize;
 
+    if (maxMsgSize > MAX_MESSAGE_SIZE(bufsize))
+        maxMsgSize = MAX_MESSAGE_SIZE(bufsize);
     if (maxMsgSize < MIN_MESSAGE_SIZE)
         maxMsgSize = MIN_MESSAGE_SIZE;
-    else if (maxMsgSize > MAX_MESSAGE_SIZE)
-        maxMsgSize = MAX_MESSAGE_SIZE;
     config.maxMsgSize = maxMsgSize;
 
     epicsThreadOnce(&errlogOnceFlag, errlogInitPvt, &config);
@@ -632,10 +632,10 @@ int errlogBufResize(int bufsize, int maxMsgSize)
     if (bufsize < MIN_BUFFER_SIZE)
         bufsize = MIN_BUFFER_SIZE;
 
+    if (maxMsgSize > MAX_MESSAGE_SIZE(bufsize))
+        maxMsgSize = MAX_MESSAGE_SIZE(bufsize);
     if (maxMsgSize < MIN_MESSAGE_SIZE)
         maxMsgSize = MIN_MESSAGE_SIZE;
-    else if (maxMsgSize > MAX_MESSAGE_SIZE)
-        maxMsgSize = MAX_MESSAGE_SIZE;
 
     logbuf = calloc(1, bufsize);
     printbuf = calloc(1, bufsize);

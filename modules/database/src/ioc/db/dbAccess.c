@@ -131,6 +131,11 @@ long dbPutSpecial(DBADDR *paddr,int pass)
                 scanAdd(precord);
         }else if((special==SPC_AS) && (pass==1)) {
             if(spcAsCallback) (*spcAsCallback)(precord);
+        }else if(special==SPC_TOUT) {
+            if(pass==0)
+                dbProcessTimeoutCancel(precord);
+            else
+                dbProcessTimeoutStart(precord);
         }
     }else {
         if( prset && (pspecial = (prset->special))) {
@@ -473,6 +478,48 @@ int dbGetFieldIndex(const struct dbAddr *paddr)
     return paddr->pfldDes->indRecordType;
 }
 
+static void dbProcessTimeoutCallback(void* arg)
+{
+    dbCommon *precord = (dbCommon *)arg;
+    unsigned short monitor_mask;
+
+    recGblSetSevrMsg(precord, TIMEOUT_ALARM, INVALID_ALARM, "dbProcessTimeout");
+    monitor_mask = recGblResetAlarms(precord);
+    monitor_mask |= DBE_VALUE|DBE_LOG;
+    db_post_events(precord,
+        ((char *)precord) + precord->rdes->pvalFldDes->offset,
+        monitor_mask);
+}
+
+static void dbProcessTimeoutCallbackQueueInit(void* arg)
+{
+    epicsTimerQueueId* pqueue = (epicsTimerQueueId*)arg;
+    *pqueue = epicsTimerQueueAllocate(1, epicsThreadPriorityScanLow);
+}
+
+void dbProcessTimeoutStart(dbCommon *precord)
+{
+    static epicsThreadOnceId dbProcessTimeoutQueueOnceId = EPICS_THREAD_ONCE_INIT;
+    static epicsTimerQueueId dbProcessTimeoutQueue = NULL;
+
+    if (precord->tout <= 0)
+        return;
+
+    epicsThreadOnce(&dbProcessTimeoutQueueOnceId, dbProcessTimeoutCallbackQueueInit, &dbProcessTimeoutQueue);
+
+    if (!precord->toid) {
+        precord->toid = epicsTimerQueueCreateTimer(dbProcessTimeoutQueue,
+            dbProcessTimeoutCallback, precord);
+    }
+    epicsTimerStartDelay(precord->toid, precord->tout);
+}
+
+void dbProcessTimeoutCancel(dbCommon *precord)
+{
+    if (precord->toid)
+        epicsTimerCancel(precord->toid);
+}
+
 /*
  *   Process the record.
  *     1.  Check for breakpoints.
@@ -493,6 +540,9 @@ long dbProcess(dbCommon *precord)
     int set_trace = FALSE;
     dbFldDes *pdbFldDes;
     int callNotifyCompletion = FALSE;
+
+    if (precord->toid)
+        dbProcessTimeoutCancel(precord);
 
     ptrace = dbLockSetAddrTrace(precord);
     /*
@@ -622,6 +672,8 @@ all_done:
     if (callNotifyCompletion && precord->ppn)
         dbNotifyCompletion(precord);
 
+    if (precord->tout > 0)
+        dbProcessTimeoutStart(precord);
     return status;
 }
 

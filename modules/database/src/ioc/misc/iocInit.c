@@ -246,6 +246,20 @@ int iocBuildIsolated(void)
     return status;
 }
 
+static void doProcessTimoutStart(dbRecordType *pdbRecordType, dbCommon *precord,
+    void *user)
+{
+    if (precord->tout > 0)
+        dbProcessTimeoutStart(precord);
+}
+
+static void doProcessTimoutCancel(dbRecordType *pdbRecordType, dbCommon *precord,
+    void *user)
+{
+    if (precord->tout > 0)
+        dbProcessTimeoutCancel(precord);
+}
+
 int iocRun(void)
 {
     if (iocState != iocPaused && iocState != iocBuilt) {
@@ -253,6 +267,8 @@ int iocRun(void)
         return -1;
     }
     initHookAnnounce(initHookAtIocRun);
+
+    iterateRecords(doProcessTimoutStart, NULL);
 
    /* Enable scan tasks and some driver support functions.  */
     scanRun();
@@ -283,6 +299,9 @@ int iocPause(void)
         errlogPrintf("iocPause: " ERL_WARNING " IOC not running\n");
         return -1;
     }
+
+    iterateRecords(doProcessTimoutCancel, NULL);
+
     initHookAnnounce(initHookAtIocPause);
 
     if (iocBuildMode == buildServers) {
@@ -722,6 +741,8 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
 int iocShutdown(void)
 {
     if (iocState == iocVoid) return 0;
+
+    iterateRecords(doProcessTimoutCancel, NULL);
 
     initHookAnnounce(initHookAtShutdown);
 

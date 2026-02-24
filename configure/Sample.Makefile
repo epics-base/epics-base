@@ -185,7 +185,6 @@ PROD         = prod
 PROD_DEFAULT = product_for_rest
 PROD_WIN32   = product_only_for_WIN32
 PROD_Linux   = product_only_for_Linux
-PROD_solaris = product_only_for_solaris
 
 PROD_HOST    = product_only_for_host_type_systems
 PROD_IOC     = product_only_for_ioc_type_systems

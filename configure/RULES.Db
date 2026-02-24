@@ -52,7 +52,6 @@ DBD += $(foreach type, $(CROSS_TARGET_OS_TYPES), $(DBD_$(type)))
 #
 # DBD_vxWorks += abcVx.dbd
 # DBD_RTEMS += abcRTEMS.dbd
-# DBD_solaris += abcSolaris.dbd
 #
 # ---------------------------------------------------
 # DBD concatenation files

@@ -77,6 +77,7 @@ typedef struct {
 } buffer_t;
 
 static struct {
+    epicsMutexId bufSizeLock;
     /* const after errlogInit() */
     size_t maxMsgSize;
     /* alloc size of both buffer_t::base */
@@ -548,6 +549,7 @@ static void errlogInitPvt(void *arg)
      */
 
     pvt.errlogInitFailed = TRUE;
+    pvt.bufSizeLock = epicsMutexCreate();
     pvt.bufSize = pconfig->bufsize;
     pvt.maxMsgSize = pconfig->maxMsgSize;
     ellInit(&pvt.listenerList);
@@ -566,6 +568,7 @@ static void errlogInitPvt(void *arg)
     errSymBld();    /* Better not to do this lazily... */
 
     if(pvt.waitForWork
+            && pvt.bufSizeLock
             && pvt.listenerLock
             && pvt.msgQueueLock
             && pvt.waitForSeq
@@ -610,6 +613,32 @@ int errlogInit2(int bufsize, int maxMsgSize)
 int errlogInit(int bufsize)
 {
     return errlogInit2(bufsize, DEFAULT_MAX_MSG_SIZE);
+}
+
+void errlogBufResize(int bufsize, int maxMsgSize)
+{
+    if (bufsize < MIN_BUFFER_SIZE)
+        bufsize = MIN_BUFFER_SIZE;
+    if (maxMsgSize < MIN_MESSAGE_SIZE)
+        maxMsgSize = MIN_MESSAGE_SIZE;
+    else if (maxMsgSize > MAX_MESSAGE_SIZE)
+        maxMsgSize = MAX_MESSAGE_SIZE;
+
+    errlogFlush();
+
+    epicsMutexMustLock(pvt.bufSizeLock);
+    epicsMutexMustLock(pvt.msgQueueLock);
+
+    pvt.bufSize = bufsize;
+    pvt.maxMsgSize = maxMsgSize;
+
+    free(pvt.log->base);
+    pvt.log->base = callocMustSucceed(1, pvt.bufSize, "Failed to allocate memory for errorlog buffer");
+    free(pvt.print->base);
+    pvt.print->base = callocMustSucceed(1, pvt.bufSize, "Failed to allocate memory for errorlog buffer");
+
+    epicsMutexUnlock(pvt.msgQueueLock);
+    epicsMutexUnlock(pvt.bufSizeLock);
 }
 
 void errlogFlush(void)

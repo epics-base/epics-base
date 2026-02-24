@@ -27,4 +27,8 @@
 #include "dbCommon.h"
 #include "db_field_log.h"
 
+/** @file dbAccess.h
+ *  @brief Interface definition for the run time database access library
+ */
+
 #endif /*INCdbAccessh*/

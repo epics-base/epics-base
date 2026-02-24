@@ -295,6 +295,9 @@ LANG_CXX_c++20    = /std:c++20
 LANG_CXX_c++23    = /std:c++23preview
 LANG_CXX_latest   = /std:c++latest
 
+# Define the __cplusplus macro correctly
+LANG_CXXFLAGS += /Zc:__cplusplus 
+
 LANG_C_c11    = /std:c11
 LANG_C_c17    = /std:c17
 LANG_C_latest = /std:clatest

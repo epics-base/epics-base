@@ -30,8 +30,7 @@
 #include "errlog.h"
 #include "dbmf.h"
 #include "macLib.h"
-
-
+#include "macArith.h"
 /*** Local structure definitions ***/
 
 /*
@@ -214,7 +213,7 @@ epicsStdCall macExpandString(
     d  = dest;
     *d = '\0';
     trans( handle, &entry, 0, "", &s, &d, d + capacity - 1 );
-
+    d = macArithPostprocess(dest, capacity);
     /* return +/- #chars copied depending on successful expansion */
     length = d - dest;
     length = ( entry.error ) ? -length : length;
@@ -949,4 +948,3 @@ static char *Strdup(const char *string )
 
     return copy;
 }
-

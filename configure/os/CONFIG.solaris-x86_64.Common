@@ -1,9 +1,0 @@
-# CONFIG.solaris-x86_64.Common
-#
-# Definitions for solaris-x86_64 Sun compiler host builds
-# Sites may override these definitions in CONFIG_SITE.solaris-x86_64.Common
-#-------------------------------------------------------
-
-#Include definitions common to solaris-sparc hosts
-include $(CONFIG)/os/CONFIG.solaris-x86.Common
-

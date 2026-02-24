@@ -90,11 +90,6 @@
 #else
 #define __IBMCPP___WORKAROUND_GUARD 0
 #endif
-#ifndef __SUNPRO_CC
-#define __SUNPRO_CC_WORKAROUND_GUARD 1
-#else
-#define __SUNPRO_CC_WORKAROUND_GUARD 0
-#endif
 #ifndef __DECCXX_VER
 #define __DECCXX_VER_WORKAROUND_GUARD 1
 #else

@@ -16,11 +16,7 @@
 #ifndef osdWireFormat
 #define osdWireFormat
 
-#ifdef __SUNPRO_CC
-#    include <string.h>
-#else
-#    include <cstring>
-#endif
+#include <cstring>
 
 #include "epicsEndian.h"
 

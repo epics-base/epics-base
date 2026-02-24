@@ -21,10 +21,6 @@
 // BSD:
 #  define BOOST_PLATFORM_CONFIG "boost/config/platform/bsd.hpp"
 
-#elif defined(sun) || defined(__sun)
-// solaris:
-#  define BOOST_PLATFORM_CONFIG "boost/config/platform/solaris.hpp"
-
 #elif defined(__sgi)
 // SGI Irix:
 #  define BOOST_PLATFORM_CONFIG "boost/config/platform/irix.hpp"

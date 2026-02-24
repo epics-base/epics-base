@@ -28,7 +28,6 @@ author = "The EPICS Collaboration"
 # ones.
 
 extensions = [
-    "hoverxref.extension",
     "breathe",
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",
@@ -62,23 +61,6 @@ intersphinx_mapping = {
     "epics": ("https://docs.epics-controls.org/en/latest/", None),
 }
 intersphinx_disabled_reftypes = ["*"]
-hoverxref_role_types = {
-    "hoverxref": "tooltip",
-    "ref": "modal",
-    "confval": "tooltip",
-    "mod": "modal",
-    "class": "modal",
-    "obj": "tooltip",
-}
-
-hoverxref_intersphinx_types = {
-    "readthedocs": "modal",
-    "sphinx": "tooltip",
-}
-
-hoverxref_domains = [
-    "py",
-]
 
 # Enabled Markdown extensions.
 # See here for what they do:

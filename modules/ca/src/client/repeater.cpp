@@ -44,8 +44,8 @@
 
 /* verifyClients() Mechanism
  *
- * This is required because Solaris and HPUX have half baked versions
- * of sockets.
+ * This is required because HPUX (and previously also Solaris) has a half 
+ * baked version of sockets.
  *
  * As written, the repeater should be robust against situations where the
  * IP kernel doesn't implement UDP disconnect on receiving ICMP port
@@ -462,9 +462,9 @@ static void register_new_client ( osiSockAddr & from,
 
     if ( newClient ) {
         /*
-         * For HPUX and Solaris we need to verify that the clients
-         * have not gone away - because an ICMP error return does not
-         * get through to send(), which returns no error code.
+         * For HPUX we need to verify that the clients have not 
+         * gone away - because an ICMP error return does not get 
+         * through to send(), which returns no error code.
          *
          * This is done each time that a new client is created.
          * See also the note in the file header.

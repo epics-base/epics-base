@@ -973,18 +973,6 @@ build lines are shown below, but this information may be out of date.</p>
 -Wl,-rpath,/home/user/epics/base-3.15/lib/linux-x86
 acctstMain.o acctst.o -lca -lCom</code></p>
 
-<h4>Typical Solaris Build Options</h4>
-
-<p><code>/opt/SUNWspro/bin/cc -c -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500
--DOSITHREAD_USE_DEFAULT_STACK -DUNIX -DSOLARIS=9 -mt -D__EXTENSIONS__ -Xc -v
--xO4 -I. -I.. -I../../../../include/compiler/solStudio
--I../../../../include/os/solaris -I../../../../include ../acctst.c</code></p>
-
-<p><code>/opt/SUNWspro/bin/CC -o acctst
--L/home/user/epics/base-3.15/lib/solaris-sparc/ -mt -z ignore -z combreloc
--z lazyload -R/home/user/epics/base-3.15/lib/solaris-sparc acctstMain.o
-acctst.o -lca -lCom</code></p>
-
 <h4>Typical Windows Build Options</h4>
 
 <p><code>cl -c /nologo /D__STDC__=0 /Ox /GL /W3 /w44355 /MD -I. -I..

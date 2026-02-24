@@ -441,11 +441,6 @@ void udpRecvThread::run ()
     } while ( ! this->iiu.shutdownCmd );
 }
 
-/* for sunpro compiler */
-udpiiu::M_repeaterTimerNotify::~M_repeaterTimerNotify ()
-{
-}
-
 /*
  *  udpiiu::M_repeaterTimerNotify::repeaterRegistrationMessage ()
  *

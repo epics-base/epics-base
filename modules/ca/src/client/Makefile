@@ -111,8 +111,6 @@ caEventRate_SRCS = caEventRateMain.cpp caEventRate.cpp
 casw_SRCS = casw.cpp
 caConnTest_SRCS = caConnTestMain.cpp caConnTest.cpp
 
-casw_SYS_LIBS_solaris = socket
-
 SCRIPTS_HOST = S99caRepeater
 SCRIPTS_Linux = caRepeater.service
 

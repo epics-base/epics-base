@@ -22,6 +22,7 @@
 #include "osiUnistd.h"
 #include "logClient.h"
 #include "errlog.h"
+#include "errlogPvt.h"
 #include "taskwd.h"
 #include "registry.h"
 #include "epicsGeneralTime.h"
@@ -306,6 +307,21 @@ static void errlogBufResizeCallFunc(const iocshArgBuf *args)
     errlogBufResize(args[0].ival, args[1].ival);
 }
 
+/* errlogShow */
+static const iocshArg errlogShowArg0 = { "level",iocshArgInt};
+static const iocshArg * const errlogShowArgs[1] = {&errlogShowArg0};
+static const iocshFuncDef errlogShowFuncDef = {
+    "errlogShow",1,errlogShowArgs,
+    "Show the contents of the error log private data\n"
+    "level 0 - Show the size of the buffers and max message size\n"
+    "      1 - Show the number of listeners\n"
+    "      2 - Show the contents of the buffer\n"
+};
+static void errlogShowCallFunc(const iocshArgBuf *args)
+{
+    errlogShow(args[0].ival);
+}
+
 /* errlog */
 IOCSH_STATIC_FUNC void errlog(const char *message)
 {
@@ -517,6 +533,7 @@ void epicsStdCall libComRegister(void)
     iocshRegister(&errlogInitFuncDef,errlogInitCallFunc);
     iocshRegister(&errlogInit2FuncDef,errlogInit2CallFunc);
     iocshRegister(&errlogBufResizeFuncDef,errlogBufResizeCallFunc);
+    iocshRegister(&errlogShowFuncDef,errlogShowCallFunc);
     iocshRegister(&errlogFuncDef, errlogCallFunc);
     iocshRegister(&iocLogPrefixFuncDef, iocLogPrefixCallFunc);
 

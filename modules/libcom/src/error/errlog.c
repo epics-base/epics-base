@@ -641,6 +641,34 @@ void errlogBufResize(int bufsize, int maxMsgSize)
     epicsMutexUnlock(pvt.bufSizeLock);
 }
 
+void errlogShow(int level)
+{
+    epicsMutexMustLock(pvt.bufSizeLock);
+    printf("Error log:\n");
+    printf("  buffer size: %zu\n", pvt.bufSize);
+    printf("  max message size: %zu\n", pvt.maxMsgSize);
+    epicsMutexUnlock(pvt.bufSizeLock);
+
+    if (level > 0)
+    {
+        epicsMutexMustLock(pvt.listenerLock);
+        printf("  number of listeners: %u\n", pvt.listenerList.count);
+        epicsMutexUnlock(pvt.listenerLock);
+    }
+
+    if (level > 1)
+    {
+        epicsMutexMustLock(pvt.msgQueueLock);
+        printf("  buffer(log) contents:\n");
+        printf("%s\n", pvt.log->base);
+        printf("%*s^\n", (int)pvt.log->pos, "");
+        printf("  buffer(print) contents:\n");
+        printf("%s\n", pvt.print->base);
+        printf("%*s^\n", (int)pvt.print->pos, "");
+        epicsMutexUnlock(pvt.msgQueueLock);
+    }
+}
+
 void errlogFlush(void)
 {
     /* wait for both buffers to be handled to know that all currently

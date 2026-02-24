@@ -1,9 +1,8 @@
 # Contribution Guidelines
 
 For bug fixes, please create new pull requests against the default (7.0)
-branch, unless the bug only affects an older release branch.
-These fixes will then be forward-ported to newer EPICS versions by the core
-developer team.
+branch. If the bug only affects a specific older release branch, target that
+branch instead.
 
 For new features, please open an issue or discuss the idea on mailing lists
 or in Matrix beforehand.

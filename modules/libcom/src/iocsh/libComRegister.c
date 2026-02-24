@@ -267,7 +267,7 @@ static const iocshArg * const errlogInitArgs[1] = {&errlogInitArg0};
 static const iocshFuncDef errlogInitFuncDef = {
     "errlogInit",1,errlogInitArgs,
     "Initialize error log client buffer size\n"
-    "  bufSize - size of circular buffer (default = 1280 bytes)\n"
+    "  bufSize - size of circular buffer (default = 2560 bytes)\n"
 };
 static void errlogInitCallFunc(const iocshArgBuf *args)
 {
@@ -282,8 +282,8 @@ static const iocshArg * const errlogInit2Args[] =
 static const iocshFuncDef errlogInit2FuncDef = {
     "errlogInit2", 2, errlogInit2Args,
     "Initialize error log client buffer size and maximum message size\n"
-    "  bufSize    - size of circular buffer       (default = 1280 bytes)\n"
-    "  maxMsgSize - maximum size of error message (default =  256 bytes)\n"
+    "  bufSize    - size of circular buffer       (default = 2560 bytes)\n"
+    "  maxMsgSize - maximum size of error message (default =  512 bytes)\n"
 };
 static void errlogInit2CallFunc(const iocshArgBuf *args)
 {

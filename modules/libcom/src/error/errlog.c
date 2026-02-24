@@ -41,7 +41,8 @@
 #include "osiUnistd.h"
 
 
-#define MIN_BUFFER_SIZE 1280
+#define MIN_BUFFER_SIZE 2560
+#define DEFAULT_MAX_MSG_SIZE 512
 #define MIN_MESSAGE_SIZE 256
 #define MAX_MESSAGE_SIZE 0x00ffffff
 
@@ -608,7 +609,7 @@ int errlogInit2(int bufsize, int maxMsgSize)
 
 int errlogInit(int bufsize)
 {
-    return errlogInit2(bufsize, MIN_MESSAGE_SIZE);
+    return errlogInit2(bufsize, DEFAULT_MAX_MSG_SIZE);
 }
 
 void errlogFlush(void)

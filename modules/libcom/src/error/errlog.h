@@ -205,18 +205,22 @@ LIBCOM_API int eltc(int yesno);
 LIBCOM_API int errlogSetConsole(FILE *stream);
 
 /**
- * Can be used to initialize the error logging system with a larger buffer. The default buffer size is 1280 bytes.
+ * Can be used to initialize the error logging system with a larger buffer. The default buffer size is 2560 bytes.
  *
  * \param bufsize The desired buffer size
+ *
+ * \since UNRELEASED the default buffer size is 2560.
  */
 LIBCOM_API int errlogInit(int bufsize);
 
 /**
  * errlogInit2 can be used to initialize the error logging system with a larger buffer and maximum message size.
- * The default buffer size is 1280 bytes, and the default maximum message size is 256.
+ * The default buffer size is 2560 bytes, and the default maximum message size is 512.
  *
  * \param bufsize The desired buffer size
  * \param maxMsgSize The desired max message size
+ *
+ * \since UNRELEASED The default buffer size is 2560 and the default maximum message size is 512.
  */
 LIBCOM_API int errlogInit2(int bufsize, int maxMsgSize);
 

@@ -368,8 +368,7 @@ static int caget (pv pv_data, RequestT request, OutputT format,
     default :
         break;
     }
-    free(pvs_data.value);
-    }
+    free(pv_data.value);
 
     epicsMutexUnlock(printMutex);
 

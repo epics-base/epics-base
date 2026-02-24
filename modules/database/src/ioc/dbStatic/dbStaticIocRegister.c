@@ -260,6 +260,26 @@ static void dbCreateAliasCallFunc(const iocshArgBuf *args)
     }
 }
 
+static const iocshArg dbCreateRecordArg0 = { "recordType", iocshArgString};
+static const iocshArg dbCreateRecordArg1 = { "recordName", iocshArgString};
+static const iocshArg * const dbCreateRecordArgs[] = {&argPdbbase, &dbCreateRecordArg0, &dbCreateRecordArg1};
+static const iocshFuncDef dbCreateRecordFuncDef = {
+    "dbCreateRecord",
+    3,
+    dbCreateRecordArgs,
+    "Add a new record to the database.\n"
+    "\n"
+    "Example: dbCreateRecord pdbbase ai record:name\n",
+};
+
+static void dbCreateRecordCallFunc(const iocshArgBuf *args)
+{
+    DBENTRY ent;
+    long status;
+    
+    
+}
+
 void dbStaticIocRegister(void)
 {
     iocshRegister(&dbDumpPathFuncDef, dbDumpPathCallFunc);
@@ -278,4 +298,5 @@ void dbStaticIocRegister(void)
     iocshRegister(&dbPvdTableSizeFuncDef,dbPvdTableSizeCallFunc);
     iocshRegister(&dbReportDeviceConfigFuncDef, dbReportDeviceConfigCallFunc);
     iocshRegister(&dbCreateAliasFuncDef, dbCreateAliasCallFunc);
+    iocshRegister(&dbCreateRecordFuncDef, dbCreateRecordCallFunc);
 }

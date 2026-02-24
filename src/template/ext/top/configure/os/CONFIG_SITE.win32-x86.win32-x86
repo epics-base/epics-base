@@ -61,8 +61,6 @@ ARCH_DEP_LDFLAGS_ML += /NODEFAULTLIB:"libcmtd.lib"
 ARCH_DEP_LDFLAGS += $(ARCH_DEP_LDFLAGS_$(WIN32_RUNTIME))
 
 IDL = /usr/local/idl
-#  IDL=$(IDL)/external/rpc is the sun4 version
-IDLRPC = $(IDL)/external/rpc.solaris
 
 # Define XRTGRAPH_EXTENSIONS = YES only if using XRT/graph 3.x
 #   and you want the extensions for MEDM

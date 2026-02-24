@@ -381,7 +381,9 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         }
         if( (*options) & DBR_UNITS ) {
             memset(pbuffer,'\0',dbr_units_size);
-            if( prset && prset->get_units ){
+            if (paddr->special == SPC_TOUT) {
+                pbuffer[0] = 's';
+            } else if (prset && prset->get_units) {
                 (*prset->get_units)(paddr, pbuffer);
                 pbuffer[DB_UNITS_SIZE-1] = '\0';
             } else {

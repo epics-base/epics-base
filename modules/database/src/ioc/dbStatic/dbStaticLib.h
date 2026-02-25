@@ -266,6 +266,7 @@ extern int dbConvertStrict;
 #define S_dbLib_noSizeOffset (M_dbLib|23)      /* Missing SizeOffset Routine - No record support? */
 #define S_dbLib_outMem (M_dbLib|27)            /* Out of memory */
 #define S_dbLib_infoNotFound (M_dbLib|29)      /* Info item Not Found */
+#define S_dbLib_iocNotStarted (M_dbLib|31)     /* IOC has not been started */
 
 #ifdef __cplusplus
 }

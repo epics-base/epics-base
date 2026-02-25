@@ -9,6 +9,7 @@
 \*************************************************************************/
 
 #include "iocsh.h"
+#include "iocInit.h"
 #include "errSymTbl.h"
 #include "errlog.h"
 
@@ -272,12 +273,40 @@ static const iocshFuncDef dbCreateRecordFuncDef = {
     "Example: dbCreateRecord pdbbase ai record:name\n",
 };
 
+/**
+ * @brief Call function for dbCreateRecord iocsh command.
+ *        Creates a new record in the database with the specified record type and record name.
+ * @param args The arguments passed from iocsh, where args[0] is the pointer to the database,
+ *             args[1] is the record type name, and args[2] is the record name.
+ */
 static void dbCreateRecordCallFunc(const iocshArgBuf *args)
 {
     DBENTRY ent;
     long status;
-    
-    
+    enum iocStateEnum iocState;
+
+    iocState = getIocState();
+    if(iocState != iocVoid) {
+        status = S_dbLib_iocNotStarted;
+    }
+    else {
+        dbInitEntry(*iocshPpdbbase, &ent);
+        if(!args[1].sval) { // record type is required
+            status = S_dbLib_recordTypeNotFound;
+        } else if(!args[2].sval) { // record name is required
+            status = S_dbLib_recNotFound;
+        } else {
+            status = dbFindRecordType(&ent, args[1].sval);
+            if(!status) {
+                status = dbCreateRecord(&ent, args[2].sval);
+            }
+        }
+        dbFinishEntry(&ent);
+    }
+    if(status) {
+        fprintf(stderr, ERL_ERROR ": %ld %s\n", status, errSymMsg(status));
+        iocshSetError(1);
+    }
 }
 
 void dbStaticIocRegister(void)

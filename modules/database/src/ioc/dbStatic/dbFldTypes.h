@@ -19,13 +19,14 @@
  *  Changing the possible field types is a fundamental change 
  *  to the IOC software, because many IOC software components 
  *  are aware of the field types. Field types of `DBF_STRING...
- *  DBF_DOUBLE` can be a scalar or an array and corresopond to 
+ *  DBF_DOUBLE` can be a scalar or an array and correspond to 
  *  standard C data types
  *
- *  `DBR_*` are database request types that correspond exactly to 
- *  the database field types (`DBF_*`). When `dbPutField` or 
- *  `dbGetField` are called one of the arguments is a database 
- *  request type.
+ *  `DBF_*` (database field types) describe in-memory storage of a 
+ *  record type, or "data at rest". 
+ *  `DBR_*` (database request types) on the other hand are requests to start
+ *  "data in motion" and are used by functions like `dbGet()` and `dbPut()` to 
+ *  interact with a field of a record.
  *
  *  The field types `DBF_ENUM`, `DBF_MENU`, and `DBF_DEVICE` all 
  *  have an associated set of ASCII strings defining the choices. 
@@ -33,33 +34,19 @@
  *  thus are not available for static database access. The database 
  *  access routines locate the choice strings for the other types.
  *
- * `DBF_INLINK` and `DBF_OUTLINK` specify link ﬁelds. A link ﬁield 
- * can refer to a signal located in a hardware module, to a ﬁeld 
- * located in a database record in the same IOC, or to a ﬁeld located 
- * in a record in another IOC. A `DBF_FWDLINK` can only refer to a record 
- * in the same IOC. Link ﬁelds are described in a later chapter.
+ *  `DBF_INLINK` and `DBF_OUTLINK` specify link ﬁelds. A link ﬁield 
+ *  can refer to a signal located in a hardware module, to a ﬁeld 
+ *  located in a database record in the same IOC, or to a ﬁeld located 
+ *  in a record in another IOC. A `DBF_FWDLINK` can only refer to a record 
+ *  in the same IOC. Link ﬁelds are described in a later chapter.
  *
- * `DBF_INLINK` (input), `DBF_OUTLINK` (output), and `DBF_FWDLINK` 
- * (forward) specify that the ﬁeld is a link structure as deﬁned in link.h. 
- * There are three classes of links:
+ *  `DBF_INLINK` (input), `DBF_OUTLINK` (output), and `DBF_FWDLINK` 
+ *  (forward) specify that the ﬁeld is a link structure as deﬁned in `link.h`.
  *
- *  1. Constant - The value associated with the ﬁeld is a ﬂoating point 
- *  value initialized with a constant value. This is somewhat of a misnomer 
- *  because constant link ﬁelds can be modiﬁed via `dbPutField` or `dbPutLink`.
- *  2. Hardware links - The link contains a data structure which describes a 
- *  signal connected to a particular hardware bus. See link.h for a description 
- *  of the bus types currently supported.
- *  3.  Process Variable Links - This is one of three types:
-
- *      - PV_LINK: The process variable name.
- *      - DB_LINK: A reference to a process variable in the same IOC.
- *      - CA_LINK: A reference to a variable located in another IOC. 
-
- * When ﬁrst loaded the ﬁeld is always creates as a PV_LINK. When the IOC is 
- * initialized each PV_LINK is converted either to a DB_LINK or a CA_LINK.
  *
- * `DBF_NOACCESS` ﬁelds are for private use by record processing routines. 
- */
+ *  `DBF_NOACCESS` ﬁelds are for private use by record processing routines. 
+ *  
+ *  More information can be found at https://docs.epics-controls.org/en/latest/appdevguide/databaseDefinition.html */
 
 #ifndef INCdbFldTypesh
 #define INCdbFldTypesh 1
@@ -71,9 +58,11 @@ extern "C" {
 #endif
 
 /* field types */
+/** Most field types map to a specific C storage type (e.g. `DBF_CHAR`
+ * fields will be `epicsInt8` typedef from `epicsTypes.h`).*/
 typedef enum {
     DBF_STRING, /*!< 40 character, NULL terminated ASCII string */
-    DBF_CHAR, /*!< Signed character */
+    DBF_CHAR, /*!< Signed character*/
     DBF_UCHAR, /*!< Unsigned character */
     DBF_SHORT, /*!< Signed short */
     DBF_USHORT, /*!< Unsigned short */
@@ -84,12 +73,17 @@ typedef enum {
     DBF_FLOAT, /*!< Floating point number */
     DBF_DOUBLE, /*!< Double precision float */
     DBF_ENUM, /*!< An enumerated field, analgous to C language enumeration */
-    DBF_MENU, /*!< A meu choice field */
+    DBF_MENU, /*!< A menu choice field */
     DBF_DEVICE, /*!< A device choice field */
     DBF_INLINK, /*!< Input link */
     DBF_OUTLINK, /*!< Output link */
     DBF_FWDLINK, /*!< Forward link */
-    DBF_NOACCESS /*!< A private field for use by record access routines*/
+    DBF_NOACCESS 
+   /*!< A private field for fields using a storage type not mapped to one of the 
+    * primitive types. Cannot be accessed via functions like `dbGet()` as 
+    * straightforwardly as other types. However `SPC_DBADDR` modifier can be used 
+    * to enable special access through `rset::cvt_dbaddr()` record support function
+    * (e.g. waveform records can do this) */
 }dbfType;
 #define DBF_NTYPES DBF_NOACCESS+1
 

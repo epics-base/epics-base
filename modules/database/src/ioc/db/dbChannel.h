@@ -206,7 +206,7 @@ typedef struct chFilterIf {
      *
      * Optional.
      * \param filter Pointer to instance data.
-     * \param stringVal Value, not zero-terminated.
+     * \param stringVal Value, not null terminated.
      * \param stringLen Number of chars in \p stringVal.
      * \returns \p parse_stop on error, or \p parse_continue
      */
@@ -226,7 +226,7 @@ typedef struct chFilterIf {
      *
      * Optional.
      * \param filter Pointer to instance data.
-     * \param key Value not zero-terminated.
+     * \param key Value not null terminated.
      * \param stringLen Number of chars in \p key
      * \returns \p parse_stop on error, or \p parse_continue
      */

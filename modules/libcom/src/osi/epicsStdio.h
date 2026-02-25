@@ -125,7 +125,7 @@ extern "C" {
  * correctly return the number of characters that would have been written when
  * the output gets truncated, it is not worth trying to fix this as long as
  * they return `size-1` instead; the resulting string must always be correctly
- * terminated with a zero byte.
+ * null terminated.
  *
  * In some scenarios the epicsSnprintf() implementation may not provide the
  * correct C99 semantics for the return value when `size` is given as zero.

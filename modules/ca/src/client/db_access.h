@@ -128,7 +128,7 @@ LIBCA_API extern const int epicsTypeToDBR_XXXX [lastEpicsType+1];
 LIBCA_API extern const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
 
 /* values returned for each field type
- *      DBR_STRING      returns a NULL terminated string
+ *      DBR_STRING      returns a null terminated string
  *      DBR_SHORT       returns an unsigned short
  *      DBR_INT         returns an unsigned short
  *      DBR_FLOAT       returns an IEEE floating point value

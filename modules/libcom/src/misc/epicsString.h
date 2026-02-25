@@ -37,7 +37,7 @@ extern "C" {
  * \p inbuf and \p outbuf to point to the same buffer and \p outsize and \p inlen
  * be equal, thus performing the character translation in-place.
  *
- * \param outbuf  buffer to copy string to. The resulting string will be zero-terminated as long as
+ * \param outbuf  buffer to copy string to. The resulting string will be null terminated as long as
  *                \p outsize is non-zero.
  * \param outsize length of output buffer not including the null-terminator.
  * \param inbuf   buffer to copy from. Null byte terminates the string.
@@ -59,7 +59,7 @@ LIBCOM_API int epicsStrnRawFromEscaped(char *outbuf,      size_t outsize,
  * All other non-printable characters appear in form `\xHH` where HH are two hex digits.
  * Non-printable characters are determined by the C runtime library’s isprint() function.
  *
- * \param outbuf  buffer to copy string to. The resulting string will be zero-terminated as long as
+ * \param outbuf  buffer to copy string to. The resulting string will be null terminated as long as
  *                @p outsize is non-zero.
  * \param outsize length of output buffer not including the null-terminator.
  * \param inbuf   buffer to copy from. Null byte will not terminates the string.

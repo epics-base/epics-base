@@ -465,7 +465,7 @@ typedef unsigned capri;
  *
  * See `caExample.c` in the example application created by `makeBaseApp.pl`.
  *
- * \param[in] pChanName A nil terminated process variable name string.
+ * \param[in] pChanName A null terminated process variable name string.
  * \parblock
  *  EPICS process control * function block database variable names are of the
  *  form `<record name>.<field name>`. If the field name and the period

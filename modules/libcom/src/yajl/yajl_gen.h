@@ -196,7 +196,7 @@ extern "C" {
     /** Finish generating a JSON array. */
     YAJL_API yajl_gen_status yajl_gen_array_close(yajl_gen hand);
 
-    /** Access the zero-terminated generator buffer. If incrementally
+    /** Access the null terminated generator buffer. If incrementally
      *  outputting JSON, one should call yajl_gen_clear() to clear the
      *  buffer. This allows stream generation. */
     YAJL_API yajl_gen_status yajl_gen_get_buf(yajl_gen hand,

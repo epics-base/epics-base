@@ -111,7 +111,7 @@ typedef struct lset {
     /** @brief  load constant long string from link type
      *
      * Usually called during IOC initialization, constant link types must copy a
-     * nil-terminated string up to size characters long to the buffer provided,
+     * null terminated string up to size characters long to the buffer provided,
      * and write the length of that string to the plen location. A non-constant
      * link type can use this as an early hint that subsequent calls to
      * dbGetLink() will request long string data, although this might change.

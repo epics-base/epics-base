@@ -126,7 +126,7 @@ epicsStdCall macPutValue(
  * \brief Returns the value of a macro
  * \return Returns the length of the value string, <0 if undefined
  *
- * \c value will be zero-terminated if the length of the value is less than
+ * \c value will be null terminated if the length of the value is less than
  * \c capacity. The return value is the number of characters copied to
  * \c value (see below for behavior if the macro is undefined). If \c capacity
  * is zero, no characters will be copied to \c value (which may be NULL)

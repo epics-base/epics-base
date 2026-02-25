@@ -104,7 +104,7 @@ struct in_addr;
  * \return Pointer to the environment variable value string, or
  * NULL if no parameter value and default value was empty.
  *
- * \post A terminating nil will be written to pBuf.
+ * \post A terminating '\0' will be written to pBuf to ensure it is null terminated.
  */
 LIBCOM_API char * epicsStdCall
     envGetConfigParam(const ENV_PARAM *pParam, int bufDim, char *pBuf);

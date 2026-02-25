@@ -36,7 +36,7 @@ c) long macGetValue ( MAC_HANDLE *handle, char *name,
                       char *value, long maxlen );
 
    Returns up to maxlen characters of the value of macro "name". "value"
-   will be zero-terminated if the length of the value is less than
+   will be null terminated if the length of the value is less than
    maxlen. The function value will be the number of characters copied to
    "value" (see below for behavior if the macro is undefined). If maxlen
    is zero, no characters will be copied to "value" (which can be NULL)

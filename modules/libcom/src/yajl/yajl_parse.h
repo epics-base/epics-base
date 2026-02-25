@@ -79,7 +79,7 @@ extern "C" {
                             size_t numberLen);
 
         /** Strings are returned as pointers into the JSON text when
-         * possible. As a result they are _not_ zero-terminated. */
+         * possible. As a result they are _not_ null terminated. */
         int (* yajl_string)(void * ctx, const unsigned char * stringVal,
                             size_t stringLen);
 

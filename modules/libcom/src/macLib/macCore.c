@@ -794,7 +794,7 @@ static void refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
     r++;
 
     /* translate name (may contain macro references); truncated
-       quietly if too long but always guaranteed zero-terminated */
+       quietly if too long but always guaranteed to be null terminated */
     trans( handle, entry, level + 1, macEnd, &r, &rn, rn + MAC_SIZE );
     refname[MAC_SIZE] = '\0';
 

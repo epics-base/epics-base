@@ -68,6 +68,7 @@ ca_HEADERS += db_access
 
 database_HEADERS += callback
 database_HEADERS += chfPlugin
+database_HEADERS += dbBase
 database_HEADERS += dbChannel
 database_HEADERS += dbCommon
 database_HEADERS += dbDefs

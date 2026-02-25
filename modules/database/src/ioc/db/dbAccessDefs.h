@@ -12,6 +12,11 @@
 #ifndef INCdbAccessDefsh
 #define INCdbAccessDefsh
 
+/** \file dbAccessDefs.h
+ *
+ * \brief Database access definitions
+ */
+
 #include "epicsTypes.h"
 #include "epicsTime.h"
 
@@ -174,35 +179,35 @@ struct dbr_alDouble     {DBRalDouble};
 
 #include "errMdef.h"
 
-#define S_db_notFound   (M_dbAccess| 1) /*Process Variable Not Found*/
-#define S_db_badDbrtype (M_dbAccess| 3) /*Illegal Database Request Type*/
-#define S_db_noMod      (M_dbAccess| 5) /*Attempt to modify noMod field*/
-#define S_db_badLset    (M_dbAccess| 7) /*Illegal Lock Set*/
-#define S_db_precision  (M_dbAccess| 9) /*get precision failed */
-#define S_db_onlyOne    (M_dbAccess|11) /*Only one element allowed*/
-#define S_db_badChoice  (M_dbAccess|13) /*Illegal choice*/
-#define S_db_badField   (M_dbAccess|15) /*Illegal field value*/
-#define S_db_lsetLogic  (M_dbAccess|17) /*Logic error generating lock sets*/
-#define S_db_noLSET     (M_dbAccess|21) /*No link support table or entry*/
-#define S_db_noRSET     (M_dbAccess|31) /*missing record support entry table*/
-#define S_db_noSupport  (M_dbAccess|33) /*RSET or DSXT routine not defined*/
-#define S_db_BadSub     (M_dbAccess|35) /*Subroutine not found*/
-/*!!!! Do not change next line without changing src/rsrv/server.h!!!!!!!!*/
-#define S_db_Pending    (M_dbAccess|37) /*Request is pending*/
+#define S_db_notFound    (M_dbAccess| 1) /**< \brief Process Variable Not Found*/
+#define S_db_badDbrtype  (M_dbAccess| 3) /**< \brief Illegal Database Request Type*/
+#define S_db_noMod       (M_dbAccess| 5) /**< \brief Attempt to modify noMod field*/
+#define S_db_badLset     (M_dbAccess| 7) /**< \brief Illegal Lock Set*/
+#define S_db_precision   (M_dbAccess| 9) /**< \brief get precision failed */
+#define S_db_onlyOne     (M_dbAccess|11) /**< \brief Only one element allowed*/
+#define S_db_badChoice   (M_dbAccess|13) /**< \brief Illegal choice*/
+#define S_db_badField    (M_dbAccess|15) /**< \brief Illegal field value*/
+#define S_db_lsetLogic   (M_dbAccess|17) /**< \brief Logic error generating lock sets*/
+#define S_db_noLSET      (M_dbAccess|21) /**< \brief No link support table or entry*/
+#define S_db_noRSET      (M_dbAccess|31) /**< \brief missing record support entry table*/
+#define S_db_noSupport   (M_dbAccess|33) /**< \brief RSET or DSXT routine not defined*/
+#define S_db_BadSub      (M_dbAccess|35) /**< \brief Subroutine not found*/
+/* !!!! Do not change next line without changing src/rsrv/server.h!!!!!!!! */
+#define S_db_Pending     (M_dbAccess|37) /**< \brief Request is pending*/
 
-#define S_db_Blocked    (M_dbAccess|39) /*Request is Blocked*/
-#define S_db_putDisabled (M_dbAccess|41) /*putFields are disabled*/
-#define S_db_badHWaddr  (M_dbAccess|43) /*Hardware link type not on INP/OUT*/
-#define S_db_bkptSet    (M_dbAccess|53) /*Breakpoint already set*/
-#define S_db_bkptNotSet (M_dbAccess|55) /*No breakpoint set in record*/
-#define S_db_notStopped (M_dbAccess|57) /*Record not stopped*/
-#define S_db_errArg     (M_dbAccess|59) /*Error in argument*/
-#define S_db_bkptLogic  (M_dbAccess|61) /*Logic error in breakpoint routine*/
-#define S_db_cntSpwn    (M_dbAccess|63) /*Cannot spawn dbContTask*/
-#define S_db_cntCont    (M_dbAccess|65) /*Cannot resume dbContTask*/
-#define S_db_noMemory   (M_dbAccess|66) /*unable to allocate data structure from pool*/
-#define S_db_notInit    (M_dbAccess|67) /*Not initialized*/
-#define S_db_bufFull    (M_dbAccess|68) /*Buffer full*/
+#define S_db_Blocked     (M_dbAccess|39) /**< \brief Request is Blocked*/
+#define S_db_putDisabled (M_dbAccess|41) /**< \brief putFields are disabled*/
+#define S_db_badHWaddr   (M_dbAccess|43) /**< \brief Hardware link type not on INP/OUT*/
+#define S_db_bkptSet     (M_dbAccess|53) /**< \brief Breakpoint already set*/
+#define S_db_bkptNotSet  (M_dbAccess|55) /**< \brief No breakpoint set in record*/
+#define S_db_notStopped  (M_dbAccess|57) /**< \brief Record not stopped*/
+#define S_db_errArg      (M_dbAccess|59) /**< \brief Error in argument*/
+#define S_db_bkptLogic   (M_dbAccess|61) /**< \brief Logic error in breakpoint routine*/
+#define S_db_cntSpwn     (M_dbAccess|63) /**< \brief Cannot spawn dbContTask*/
+#define S_db_cntCont     (M_dbAccess|65) /**< \brief Cannot resume dbContTask*/
+#define S_db_noMemory    (M_dbAccess|66) /**< \brief unable to allocate data structure from pool*/
+#define S_db_notInit     (M_dbAccess|67) /**< \brief Not initialized*/
+#define S_db_bufFull     (M_dbAccess|68) /**< \brief Buffer full*/
 
 struct dbEntry;
 

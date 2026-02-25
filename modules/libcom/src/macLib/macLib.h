@@ -277,7 +277,7 @@ epicsStdCall macInstallMacros(
  * environment variables. It parses the string looking for such
  * references and passes them to macGetValue() for translation. It uses
  * malloc() to allocate space for the expanded string and returns a
- * pointer to this null-terminated string. It returns NULL if the source
+ * pointer to this null terminated string. It returns NULL if the source
  * string contains any undefined references.
  */
 LIBCOM_API char *

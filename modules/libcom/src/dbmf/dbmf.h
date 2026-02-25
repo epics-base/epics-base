@@ -64,7 +64,7 @@ LIBCOM_API void * dbmfMalloc(size_t bytes);
  * \brief Duplicate a string.
  *
  * Create a copy of the input string.
- * \param str Pointer to the null-terminated string to be copied.
+ * \param str Pointer to the null terminated string to be copied.
  * \return A pointer to the new copy, or NULL on failure.
  */
 LIBCOM_API char * dbmfStrdup(const char *str);
@@ -73,7 +73,7 @@ LIBCOM_API char * dbmfStrdup(const char *str);
  *
  * Copy at most len bytes of the input string into a new buffer. If no nil
  * terminator is seen in the first \c len bytes a nil terminator is added.
- * \param str Pointer to the null-terminated string to be copied.
+ * \param str Pointer to the null terminated string to be copied.
  * \param len Max number of bytes to copy.
  * \return A pointer to the new string, or NULL on failure.
  */
@@ -81,7 +81,7 @@ LIBCOM_API char * dbmfStrndup(const char *str, size_t len);
 /**
  * \brief Concatenate three strings.
 
- * Returns a pointer to a null-terminated string made by concatenating the
+ * Returns a pointer to a null terminated string made by concatenating the
  * three input strings.
  * \param lhs Start string to which the others get concatenated to (left part).
  * \param mid Next string to be concatenated to the lhs (mid part).

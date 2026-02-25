@@ -159,12 +159,12 @@ LIBCOM_API int epicsStrnGlobMatch(const char *str, size_t len, const char *patte
   */
 LIBCOM_API char * epicsStrtok_r(char *s, const char *delim, char **lasts);
 
-/** \brief Calculates a hash of a null-terminated string
+/** \brief Calculates a hash of a null terminated string
  *
- * Calculates a hash of a null-terminated string.  Initial seed may be provided which
+ * Calculates a hash of a null terminated string.  Initial seed may be provided which
  * permits multiple strings to be combined into a single hash result.
  *
- *\param str  null-terminated string
+ *\param str  null terminated string
  *\param seed Optionally provide seed to combine multiple strings in a single hash.  Otherwise
  *            set to 0.
  *

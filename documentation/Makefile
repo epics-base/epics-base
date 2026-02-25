@@ -23,6 +23,7 @@ DOCS += README.md
 DOCS += ca-cli.md
 DOCS += RELEASE_NOTES.md
 DOCS += ReleaseChecklist.md
+DOCS += build-docs.md
 
 OLD_NOTES = $(wildcard ../RELEASE-*.md)
 DOCS += $(OLD_NOTES:../%=%)

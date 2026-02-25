@@ -9,6 +9,7 @@
 #include "errlog.h"
 #include "dbAccess.h"
 #include "menuAlarmSevr.h"
+#include "menuScan.h"
 
 void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
@@ -96,9 +97,71 @@ static void test_alarm(void){
     // number of tests = 13
 }
 
+static void test_aftc(void){
+    const double aftc = 3.0;
+    testMonitor* test_mon = NULL;
+    epicsTimeStamp startTime;
+    epicsTimeStamp endTime;
+    double diffTime = 0;
+
+    /* set soft channel */
+    testdbPutFieldOk("test_bi_rec2.DTYP", DBF_STRING, "Soft Channel");
+    testdbPutFieldOk("test_bi_rec2.INP", DBF_STRING, "test_bi_link_rec2.VAL");
+    testdbPutFieldOk("test_bi_link_rec2.FLNK", DBF_STRING, "test_bi_rec2");
+
+    /* set alarm parameters */
+    testdbPutFieldOk("test_bi_rec2.ZSV", DBF_SHORT, menuAlarmSevrMINOR);
+    testdbPutFieldOk("test_bi_rec2.OSV", DBF_SHORT, menuAlarmSevrMAJOR);
+
+    /* set start VAL to FALSE (NO_ALARM) */
+    testdbPutFieldOk("test_bi_link_rec2.VAL", DBF_SHORT, FALSE);
+
+    /* test AFTC using a monitor and time stamps */
+    testdbPutFieldOk("test_bi_rec2.AFTC", DBF_DOUBLE, aftc);
+    testdbPutFieldOk("test_bi_rec2.SCAN", DBF_SHORT, menuScan_1_second);
+
+    /* set VAL to TRUE (MAJOR alarm) */
+    testdbPutFieldOk("test_bi_link_rec2.VAL", DBF_SHORT, TRUE);
+
+    /* Create test monitor for alarm SEVR */
+    test_mon = testMonitorCreate("test_bi_rec2.VAL", DBE_ALARM, 0);
+
+    /* Get start time */
+    epicsTimeGetCurrent(&startTime);
+
+    /* wait for monitor to trigger on the new alarm status */
+    testMonitorWait(test_mon);
+    epicsTimeGetCurrent(&endTime);
+
+    /* Verify that alarm status is now MAJOR */
+    testdbGetFieldEqual("test_bi_rec2.SEVR", DBF_SHORT, menuAlarmSevrMAJOR);
+
+    /* set VAL back to FALSE (NO_ALARM) */
+    testdbPutFieldOk("test_bi_link_rec2.VAL", DBF_SHORT, FALSE);
+
+    /* Create test monitor for alarm SEVR */
+    test_mon = testMonitorCreate("test_bi_rec2.VAL", DBE_ALARM, 0);
+
+    /* Get start time */
+    epicsTimeGetCurrent(&startTime);
+
+    /* wait for monitor to trigger on the new alarm status */
+    testMonitorWait(test_mon);
+    epicsTimeGetCurrent(&endTime);
+
+    /* Verify that alarm status is now NO_ALARM */
+    testdbGetFieldEqual("test_bi_rec2.SEVR", DBF_SHORT, menuAlarmSevrMINOR);
+
+    /* Verify that time is at least equal to configured aftc */
+    diffTime = epicsTimeDiffInSeconds(&endTime, &startTime);
+    testOk(diffTime >= aftc, "AFTC time %lf", diffTime);
+
+    // number of tests = 13
+}
+
 MAIN(biTest) {
 
-    testPlan(6+6+11+13);
+    testPlan(6+6+11+13+13);
 
     testdbPrepare();
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
@@ -114,6 +177,7 @@ MAIN(biTest) {
     test_raw_soft_input();
     test_operator_display();
     test_alarm();
+    test_aftc();
 
     testIocShutdownOk();
     testdbCleanup();

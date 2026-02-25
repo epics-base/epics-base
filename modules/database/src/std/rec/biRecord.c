@@ -23,6 +23,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsMath.h"
 #include "alarm.h"
 #include "callback.h"
 #include "dbAccess.h"
@@ -39,6 +40,9 @@
 #include "biRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
+
+/* Hysteresis for alarm filtering: 1-1/e */
+#define THRESHOLD 0.6321
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
@@ -80,7 +84,7 @@ rset biRSET={
 };
 epicsExportAddress(rset,biRSET);
 
-static void checkAlarms(biRecord *);
+static void checkAlarms(biRecord *, epicsTimeStamp *);
 static void monitor(biRecord *);
 static long readValue(biRecord *);
 
@@ -119,12 +123,15 @@ static long process(struct dbCommon *pcommon)
     bidset  *pdset = (bidset *)(prec->dset);
     long            status;
     unsigned char   pact=prec->pact;
+    epicsTimeStamp timeLast;
 
     if( (pdset==NULL) || (pdset->read_bi==NULL) ) {
         prec->pact=TRUE;
         recGblRecordError(S_dev_missingSup, prec, "read_bi");
         return(S_dev_missingSup);
     }
+
+    timeLast = prec->time;
 
     status=readValue(prec); /* read the new value */
     /* check if device support set pact */
@@ -140,7 +147,7 @@ static long process(struct dbCommon *pcommon)
     }
     else if(status==2) status=0;
     /* check for alarms */
-    checkAlarms(prec);
+    checkAlarms(prec, &timeLast);
     /* check event list */
     monitor(prec);
     /* process the forward scan link record */
@@ -217,10 +224,12 @@ static long put_enum_str(const DBADDR *paddr, const char *pstring)
 }
 
 
-static void checkAlarms(biRecord *prec)
+static void checkAlarms(biRecord *prec, epicsTimeStamp *timeLast)
 {
+    double aftc, afvl;
+    unsigned short alarm;
+    epicsEnum16 asev;
     unsigned short val = prec->val;
-
 
     if(prec->udf == TRUE){
             recGblSetSevr(prec,UDF_ALARM,prec->udfs);
@@ -228,12 +237,37 @@ static void checkAlarms(biRecord *prec)
     }
 
     if(val>1)return;
-    /* check for  state alarm */
-    if (val == 0){
-        recGblSetSevr(prec,STATE_ALARM,prec->zsv);
-    }else{
-        recGblSetSevr(prec,STATE_ALARM,prec->osv);
+    
+    if (val == 0) {
+        asev = prec->zsv;
+    } else {
+        asev = prec->osv;
     }
+
+    alarm = asev;  /* Initialize alarm with current state severity */
+    aftc = prec->aftc;
+    afvl = 0;
+
+    if (aftc > 0) {
+        afvl = prec->afvl;
+        if (afvl == 0) {
+            afvl = (double) alarm;
+        } else {
+            double t = epicsTimeDiffInSeconds(&prec->time, timeLast);
+            double alpha = aftc / (t + aftc);
+
+            afvl = alpha * afvl +
+                ((afvl > 0) ? (1.0 - alpha) : (alpha - 1.0)) * alarm;
+            if (afvl - floor(afvl) > THRESHOLD)
+                afvl = -afvl;
+
+            alarm = abs((int)floor(afvl));
+        }
+    }
+    prec->afvl = afvl;
+
+    asev = alarm;
+    recGblSetSevr(prec,STATE_ALARM,asev);
 
         /* check for cos alarm */
     if(val == prec->lalm) return;

@@ -332,10 +332,10 @@ static void checkAlarms(mbbiRecord *prec, epicsTimeStamp *timeLast)
                 ((afvl > 0) ? (1.0 - alpha) : (alpha - 1.0)) * alarm;
             if (afvl - floor(afvl) > THRESHOLD)
                 afvl = -afvl;
-
-            alarm = abs((int)floor(afvl));
         }
     }
+
+    alarm = abs((int)floor(afvl));
 
     asev = alarm;
     recGblSetSevr(prec, STATE_ALARM, asev);

@@ -74,7 +74,7 @@ static long asAsgRuleDisable(ASGRULE *pasgrule);
 
   The version pointed to by pasbase is kept as is but locked against changes
   A new version is created and pointed to by pasbasenew
-  If anything goes wrong. The original version is kept. This results is some
+  If anything goes wrong. The original version is kept. This results in some
   wasted space but at least things still work.
   If the new access security configuration is successfully read then:
      the old memberList is moved from old to new.
@@ -159,7 +159,11 @@ long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
                 pnextoldmem = (ASGMEMBER *)ellNext(&poldmem->node);
                 ellDelete(&poldasg->memberList,&poldmem->node);
                 status = asAddMemberPvt(&poldmem,poldmem->asgName);
-                poldmem = pnextoldmem;
+		if (!status) {
+		  poldmem = pnextoldmem;
+		} else {
+		  fprintf(stderr, ERL_ERROR " asInitialize: Failed asAddMemberPvt\n");
+		}
             }
             poldasg = (ASG *)ellNext(&poldasg->node);
         }

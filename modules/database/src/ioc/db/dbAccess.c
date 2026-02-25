@@ -506,23 +506,27 @@ void dbProcessTimeoutStart(dbCommon *precord)
 {
     static epicsThreadOnceId dbProcessTimeoutQueueOnceId = EPICS_THREAD_ONCE_INIT;
     static epicsTimerQueueId dbProcessTimeoutQueue = NULL;
+    dbCommonPvt* pvt;
 
     if (precord->tout <= 0)
         return;
 
     epicsThreadOnce(&dbProcessTimeoutQueueOnceId, dbProcessTimeoutCallbackQueueInit, &dbProcessTimeoutQueue);
 
-    if (!precord->toid) {
-        precord->toid = epicsTimerQueueCreateTimer(dbProcessTimeoutQueue,
+    pvt = dbRec2Pvt(precord);
+
+    if (!pvt->inactivityTimeout) {
+        pvt->inactivityTimeout = epicsTimerQueueCreateTimer(dbProcessTimeoutQueue,
             dbProcessTimeoutCallback, precord);
     }
-    epicsTimerStartDelay(precord->toid, precord->tout);
+    epicsTimerStartDelay(pvt->inactivityTimeout, precord->tout);
 }
 
 void dbProcessTimeoutCancel(dbCommon *precord)
 {
-    if (precord->toid)
-        epicsTimerCancel(precord->toid);
+    dbCommonPvt* pvt = dbRec2Pvt(precord);
+    if (pvt->inactivityTimeout)
+        epicsTimerCancel(pvt->inactivityTimeout);
 }
 
 /*
@@ -546,8 +550,7 @@ long dbProcess(dbCommon *precord)
     dbFldDes *pdbFldDes;
     int callNotifyCompletion = FALSE;
 
-    if (precord->toid)
-        dbProcessTimeoutCancel(precord);
+    dbProcessTimeoutCancel(precord);
 
     ptrace = dbLockSetAddrTrace(precord);
     /*

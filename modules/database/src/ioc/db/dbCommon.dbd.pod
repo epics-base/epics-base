@@ -570,13 +570,6 @@ seconds, the record will raise an C<INVALID/TIMEOUT> alarm.
 		special(SPC_TOUT)
 		interest(1)
 	}
-	%#include "epicsTimer.h"
-	field(TOID,DBF_NOACCESS) {
-		prompt("Timout Timer ID")
-		special(SPC_NOMOD)
-		interest(4)
-		extra("epicsTimerId        toid")
-	}
 	%#include "epicsTime.h"
 	field(TIME,DBF_NOACCESS) {
 		prompt("Time")

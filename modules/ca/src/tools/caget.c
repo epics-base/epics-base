@@ -64,8 +64,6 @@ typedef struct
     epicsMutexId printMutex;
     epicsMutexId resultMutex;
     epicsMessageQueueId queueId;
-    // Make sure we print the results in the same order that caget was called
-    int pvOderIndex;
     int totalNumberOfPvs;
 } t_thread_data;
 
@@ -669,7 +667,6 @@ int main (int argc, char *argv[])
         thread_data->printMutex = printMutex;
         thread_data->resultMutex = resultMutex;
         thread_data->queueId = queueId;
-        thread_data->pvOderIndex = iii;
         thread_data->totalNumberOfPvs = nPvs;
         epicsMessageQueueSend(queueId, thread_data, sizeof(t_thread_data));
     }

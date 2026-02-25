@@ -483,16 +483,18 @@ int dbGetFieldIndex(const struct dbAddr *paddr)
 static void dbProcessTimeoutCallback(void* arg)
 {
     dbCommon *precord = (dbCommon *)arg;
-    unsigned short monitor_mask;
 
     dbScanLock(precord);
-    epicsTimeGetCurrent(&precord->time);
-    recGblSetSevrMsg(precord, TIMEOUT_ALARM, INVALID_ALARM, "dbProcessTimeout");
-    monitor_mask = recGblResetAlarms(precord);
-    monitor_mask |= DBE_VALUE|DBE_LOG;
-    db_post_events(precord,
-        ((char *)precord) + precord->rdes->pvalFldDes->offset,
-        monitor_mask);
+    if (!precord->pact && precord->stat != DISABLE_ALARM) {
+        unsigned short monitor_mask;
+        epicsTimeGetCurrent(&precord->time);
+        recGblSetSevrMsg(precord, TIMEOUT_ALARM, INVALID_ALARM, "dbProcessTimeout");
+        monitor_mask = recGblResetAlarms(precord);
+        monitor_mask |= DBE_VALUE|DBE_LOG;
+        db_post_events(precord,
+            ((char *)precord) + precord->rdes->pvalFldDes->offset,
+            monitor_mask);
+    }
     dbScanUnlock(precord);
 }
 
@@ -508,7 +510,7 @@ void dbProcessTimeoutStart(dbCommon *precord)
     static epicsTimerQueueId dbProcessTimeoutQueue = NULL;
     dbCommonPvt* pvt;
 
-    if (precord->tout <= 0)
+    if (precord->pact || precord->stat == DISABLE_ALARM || precord->tout <= 0)
         return;
 
     epicsThreadOnce(&dbProcessTimeoutQueueOnceId, dbProcessTimeoutCallbackQueueInit, &dbProcessTimeoutQueue);
@@ -674,14 +676,15 @@ long dbProcess(dbCommon *precord)
         dbPrint(precord);
     }
 
+    /* restart inactivity timeout */
+    if (precord->tout > 0)
+        dbProcessTimeoutStart(precord);
 all_done:
     if (set_trace)
         *ptrace = 0;
     if (callNotifyCompletion && precord->ppn)
         dbNotifyCompletion(precord);
 
-    if (precord->tout > 0)
-        dbProcessTimeoutStart(precord);
     return status;
 }
 

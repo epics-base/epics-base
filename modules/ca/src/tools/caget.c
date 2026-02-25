@@ -230,7 +230,7 @@ static int caget (pv pv_data, RequestT request, OutputT format,
                 epicsMutexLock(printMutex);
                 fprintf(stderr,"Memory allocation failed\n");
                 epicsMutexUnlock(printMutex);
-                return 1;
+                return 3;
             }
             result = ca_array_get(pv_data.dbrType,
                                   pv_data.nElems,
@@ -242,7 +242,7 @@ static int caget (pv pv_data, RequestT request, OutputT format,
         pv_data.status = ECA_DISCONN;
     }
 
-    if (!nConn) return 1;              /* No connection? We're done. */
+    if (!nConn) return 3;              /* No connection? We're done. */
 
                                 /* Wait for completion */
                                 /* ------------------- */
@@ -598,15 +598,15 @@ int main (int argc, char *argv[])
             fprintf(stderr,
                     "Unrecognized option: '-%c'. ('caget -h' for help.)\n",
                     optopt);
-            return -1;
+            return 3;
         case ':':
             fprintf(stderr,
                     "Option '-%c' requires an argument. ('caget -h' for help.)\n",
                     optopt);
-            return -1;
+            return 3;
         default :
             usage();
-            return -1;
+            return 3;
         }
     }
 
@@ -615,7 +615,7 @@ int main (int argc, char *argv[])
     if (nPvs < 1)
     {
         fprintf(stderr, "No pv name specified. ('caget -h' for help.)\n");
-        return -1;
+        return 3;
     }
                                 /* Start up Channel Access */
 
@@ -623,7 +623,7 @@ int main (int argc, char *argv[])
     if (result != ECA_NORMAL) {
         fprintf(stderr, "CA error %s occurred while trying "
                 "to start channel access.\n", ca_message(result));
-        return -1;
+        return 3;
     }
                                 /* Allocate PV structure array */
 
@@ -631,7 +631,7 @@ int main (int argc, char *argv[])
     if (!pvs)
     {
         fprintf(stderr, "Memory allocation for channel structures failed.\n");
-        return -1;
+        return 3;
     }
                                 /* Connect channels */
 
@@ -674,7 +674,12 @@ int main (int argc, char *argv[])
     epicsThreadId thread_id;
     char th_name[9];
 
-    // Wait for all threads to finish their business before ending the main thread
+    // Wait for all threads to consume the queue before ending the main thread
+    while (epicsMessageQueuePending(queueId)) {
+        epicsThreadSleep(0.1);
+    }
+
+    // Make sure the threads ended up their processing
     for (int iii=0; iii<number_of_threads; ++iii) {
         thread_name(iii, th_name);
         thread_id = epicsThreadGetId(th_name);
@@ -688,5 +693,18 @@ int main (int argc, char *argv[])
     epicsMutexDestroy(resultMutex);
     epicsMessageQueueDestroy(queueId);
 
-    return pvs_with_trouble;
+    /*
+    0: success
+    1: some channels not found
+    2: all channels not found
+    3: other error
+    */
+
+    if (pvs_with_trouble == nPvs)
+        return 2;
+
+    if (pvs_with_trouble != 0)
+        return 1;
+
+    return 0;
 }

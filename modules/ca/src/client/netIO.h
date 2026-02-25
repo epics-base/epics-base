@@ -28,11 +28,6 @@
 #include "nciu.h"
 #include "compilerDependencies.h"
 
-// we get warnings (and potential problems) if we don't 
-// make the baseNMIU destructor virtual.
-#define NETIO_VIRTUAL_DESTRUCTOR virtual
-
-
 class privateInterfaceForIO;
 
 class baseNMIU : public tsDLNode < baseNMIU >,
@@ -62,7 +57,7 @@ public:
         epicsGuard < epicsMutex > &,
         unsigned level ) const = 0;
 protected:
-    NETIO_VIRTUAL_DESTRUCTOR ~baseNMIU ();
+    virtual ~baseNMIU ();
 };
 
 class netSubscription : public baseNMIU  {

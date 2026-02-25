@@ -583,6 +583,33 @@ static void errlogInitPvt(void *arg)
     }
 }
 
+static
+int errlogClampConfig(struct initArgs *config, int bufsize, int maxMsgSize)
+{
+    int clamped = 0;
+
+    if (bufsize < MIN_BUFFER_SIZE)
+    {
+        // This is to deal with the fact that errlogInit() is often called with arg 0
+        clamped = bufsize == 0 ? 0 : 1;
+        bufsize = MIN_BUFFER_SIZE;
+    }
+    config->bufsize = bufsize;
+
+    if (maxMsgSize > MAX_MESSAGE_SIZE(bufsize))
+    {
+        clamped = 1;
+        maxMsgSize = MAX_MESSAGE_SIZE(bufsize);
+    }
+    if (maxMsgSize < MIN_MESSAGE_SIZE)
+    {
+        clamped = 1;
+        maxMsgSize = MIN_MESSAGE_SIZE;
+    }
+    config->maxMsgSize = maxMsgSize;
+
+    return clamped;
+}
 
 int errlogInit2(int bufsize, int maxMsgSize)
 {
@@ -592,15 +619,9 @@ int errlogInit2(int bufsize, int maxMsgSize)
     if (pvt.atExit)
         return 0;
 
-    if (bufsize < MIN_BUFFER_SIZE)
-        bufsize = MIN_BUFFER_SIZE;
-    config.bufsize = bufsize;
-
-    if (maxMsgSize > MAX_MESSAGE_SIZE(bufsize))
-        maxMsgSize = MAX_MESSAGE_SIZE(bufsize);
-    if (maxMsgSize < MIN_MESSAGE_SIZE)
-        maxMsgSize = MIN_MESSAGE_SIZE;
-    config.maxMsgSize = maxMsgSize;
+    if (errlogClampConfig(&config, bufsize, maxMsgSize)) {
+        fprintf(stderr, "Warning: errlog config clamped from (%zu, %zu) to (%zu, %zu)\n", bufsize, maxMsgSize, config.bufsize, config.maxMsgSize);
+    }
 
     epicsThreadOnce(&errlogOnceFlag, errlogInitPvt, &config);
     if (pvt.errlogInitFailed) {
@@ -619,6 +640,7 @@ int errlogBufResize(int bufsize, int maxMsgSize)
 {
     char* logbuf = NULL;
     char* printbuf = NULL;
+    struct initArgs config;
 
     epicsMutexMustLock(pvt.bufSizeLock);
 
@@ -629,16 +651,12 @@ int errlogBufResize(int bufsize, int maxMsgSize)
         return -1;
     }
 
-    if (bufsize < MIN_BUFFER_SIZE)
-        bufsize = MIN_BUFFER_SIZE;
+    if (errlogClampConfig(&config, bufsize, maxMsgSize)) {
+        fprintf(stderr, "Warning: errlog config clamped from (%zu, %zu) to (%zu, %zu)\n", bufsize, maxMsgSize, config.bufsize, config.maxMsgSize);
+    }
 
-    if (maxMsgSize > MAX_MESSAGE_SIZE(bufsize))
-        maxMsgSize = MAX_MESSAGE_SIZE(bufsize);
-    if (maxMsgSize < MIN_MESSAGE_SIZE)
-        maxMsgSize = MIN_MESSAGE_SIZE;
-
-    logbuf = calloc(1, bufsize);
-    printbuf = calloc(1, bufsize);
+    logbuf = calloc(1, config.bufsize);
+    printbuf = calloc(1, config.bufsize);
 
     epicsMutexMustLock(pvt.msgQueueLock);
 
@@ -650,8 +668,8 @@ int errlogBufResize(int bufsize, int maxMsgSize)
     free(pvt.print->base);
     pvt.print->base = printbuf;
 
-    pvt.bufSize = bufsize;
-    pvt.maxMsgSize = maxMsgSize;
+    pvt.bufSize = config.bufsize;
+    pvt.maxMsgSize = config.maxMsgSize;
 
     epicsMutexUnlock(pvt.msgQueueLock);
     epicsMutexUnlock(pvt.bufSizeLock);

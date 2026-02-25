@@ -1000,10 +1000,8 @@ inline void chronIntIdRes<ITEM>::setId (unsigned newId)
 //
 // intId::intId
 //
-// (not inline as SUN PRO would botch the template instantiation 
-// when it was supported)
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::intId (const T &idIn)
+inline intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::intId (const T &idIn)
     : id (idIn) {}
 
 //

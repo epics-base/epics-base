@@ -313,13 +313,13 @@ MAIN(epicsStringTest)
     memset(result, 'x', sizeof(result));
     status = epicsStrnEscapedFromRaw(result, 1, ABCD, 4);
     testOk(status == 4,      "epicsStrnEscapedFromRaw(out, 1) -> %d (exp. 4)", status);
-    testOk(result[0] == 0,   "  0-terminated");
+    testOk(result[0] == 0,   "  null terminated");
     testOk(result[1] == 'x', "  No overrun");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 1, ABCD, 4);
     testOk(status == 0,      "epicsStrnRawFromEscaped(out, 1) -> %d (exp. 0)", status);
-    testOk(result[0] == 0,   "  0-terminated");
+    testOk(result[0] == 0,   "  null terminated");
     testOk(result[1] == 'x', "  No overrun");
 
     testDiag("Testing size = epicsStrnEscapedFromRawSize");
@@ -336,19 +336,19 @@ MAIN(epicsStringTest)
     memset(result, 'x', sizeof(result));
     status = epicsStrnEscapedFromRaw(result, 4, ABCD, 3);
     testOk(status == 3,      "esc(\"ABCD\", 3) -> %d (exp. 3)", status);
-    testOk(result[3] == 0,   "  0-terminated");
+    testOk(result[3] == 0,   "  null terminated");
     testOk(result[4] == 'x', "  No overrun");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnEscapedFromRaw(result, 4, ABCD, 4);
     testOk(status == 4,      "esc(\"ABCD\", 4) -> %d (exp. 4)", status);
-    testOk(result[3] == 0,   "  0-terminated");
+    testOk(result[3] == 0,   "  null terminated");
     testOk(result[4] == 'x', "  No overrun");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnEscapedFromRaw(result, 4, ABCD, 5);
     testOk(status == 6,      "esc(\"ABCD\", 5) -> %d (exp. 8)", status);
-    testOk(result[3] == 0,   "  0-terminated");
+    testOk(result[3] == 0,   "  null terminated");
     testOk(result[4] == 'x', "  No overrun");
 
     testDiag("Testing raw = epicsStrnRawFromEscaped(out, 4, ...)");
@@ -356,20 +356,20 @@ MAIN(epicsStringTest)
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, ABCD, 0);
     testOk(status == 0,      "raw(\"ABCD\", 0) -> %d (exp. 0)", status);
-    testOk(result[0] == 0, "  0-terminated");
+    testOk(result[0] == 0, "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, ABCD, 1);
     testOk(status == 1,      "raw(\"ABCD\", 1) -> %d (exp. 1)", status);
     testOk(result[0] == 'A', "  Char '%c' (exp. 'A')", result[0]);
-    testOk(result[1] == 0,   "  0-terminated");
+    testOk(result[1] == 0,   "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, ABCD, 2);
     testOk(status == 2,      "raw(\"ABCD\", 2) -> %d (exp. 2)", status);
     testOk(result[0] == 'A', "  Char '%c' (exp. 'A')", result[0]);
     testOk(result[1] == 'B', "  Char '%c' (exp. 'B')", result[1]);
-    testOk(result[2] == 0,   "  0-terminated");
+    testOk(result[2] == 0,   "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, ABCD, 3);
@@ -377,7 +377,7 @@ MAIN(epicsStringTest)
     testOk(result[0] == 'A', "  Char '%c' (exp. 'A')", result[0]);
     testOk(result[1] == 'B', "  Char '%c' (exp. 'B')", result[1]);
     testOk(result[2] == 'C', "  Char '%c' (exp. 'C')", result[2]);
-    testOk(result[3] == 0,   "  0-terminated");
+    testOk(result[3] == 0,   "  null terminated");
     testOk(result[4] == 'x', "  No write outside buffer");
 
     memset(result, 'x', sizeof(result));
@@ -386,7 +386,7 @@ MAIN(epicsStringTest)
     testOk(result[0] == 'A', "  Char '%c' (exp. 'A')", result[0]);
     testOk(result[1] == 'B', "  Char '%c' (exp. 'B')", result[1]);
     testOk(result[2] == 'C', "  Char '%c' (exp. 'C')", result[2]);
-    testOk(result[3] == 0,   "  0-terminated");
+    testOk(result[3] == 0,   "  null terminated");
     testOk(result[4] == 'x', "  No write outside buffer");
 
     memset(result, 'x', sizeof(result));
@@ -395,49 +395,49 @@ MAIN(epicsStringTest)
     testOk(result[0] == 'A', "  Char '%c' (exp. 'A')", result[0]);
     testOk(result[1] == 'B', "  Char '%c' (exp. 'B')", result[1]);
     testOk(result[2] == 'C', "  Char '%c' (exp. 'C')", result[2]);
-    testOk(result[3] == 0,   "  0-terminated");
+    testOk(result[3] == 0,   "  null terminated");
     testOk(result[4] == 'x', "  No write outside buffer");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "A", 2);
     testOk(status == 1,      "raw(\"A\", 2) -> %d (exp. 1)", status);
     testOk(result[0] == 'A', "  Char '%c' (exp. 'A')", result[0]);
-    testOk(result[status] == 0, "  0-terminated");
+    testOk(result[status] == 0, "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x12", 1);
     testOk(status == 0,      "raw(\"\\x12\", 1) -> %d (exp. 0)", status);
-    testOk(result[status] == 0, "  0-terminated");
+    testOk(result[status] == 0, "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x12", 2);
     testOk(status == 0,      "raw(\"\\x12\", 2) -> %d (exp. 0)", status);
-    testOk(result[status] == 0, "  0-terminated");
+    testOk(result[status] == 0, "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x12", 3);
     testOk(status == 1,      "raw(\"\\x12\", 3) -> %d (exp. 1)", status);
     testOk(result[0] == 1,   "  Hex escape (got \\x%x)", result[0]);
-    testOk(result[status] == 0, "  0-terminated");
+    testOk(result[status] == 0, "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x12", 4);
     testOk(status == 1,      "raw(\"\\x12\", 4) -> %d (exp. 1)", status);
     testOk(result[0] == 0x12,"  Hex escape (got \\x%x)", result[0]);
-    testOk(result[status] == 0, "  0-terminated");
+    testOk(result[status] == 0, "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\xaF", 4);
     testOk(status == 1,      "raw(\"\\xaF\", 4) -> %d (exp. 1)", status);
     testOk(result[0] == '\xaF',"  Hex escape (got \\x%x)", result[0] & 0xFF);
-    testOk(result[status] == 0, "  0-terminated");
+    testOk(result[status] == 0, "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x012", 5);
     testOk(status == 2,      "raw(\"\\x012\", 5) -> %d (exp. 2)", status);
     testOk(result[0] == 0x1,"  Hex escape (got \\x%x)", result[0]);
     testOk(result[1] == '2', "  Terminator char got '%c'", result[1]);
-    testOk(result[status] == 0, "  0-terminated");
+    testOk(result[status] == 0, "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x0012", 6);
@@ -445,14 +445,14 @@ MAIN(epicsStringTest)
     testOk(result[0] == 0,"  Hex escape (got \\x%x)", result[0]);
     testOk(result[1] == '1', "  Terminator char got '%c'", result[1]);
     testOk(result[2] == '2', "  Following char got '%c'", result[2]);
-    testOk(result[status] == 0, "  0-terminated");
+    testOk(result[status] == 0, "  null terminated");
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnRawFromEscaped(result, 4, "\\x1g", 4);
     testOk(status == 2,      "raw(\"\\x1g\", 4) -> %d (exp. 2)", status);
     testOk(result[0] == 1, "  Hex escape (got \\x%x)", result[0]);
     testOk(result[1] == 'g', "  Terminator char got '%c'", result[1]);
-    testOk(result[status] == 0, "  0-terminated");
+    testOk(result[status] == 0, "  null terminated");
 
     testDistance();
     testStrTok();

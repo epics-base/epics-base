@@ -28,9 +28,11 @@
  */
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <epicsStdlib.h>
 #include <epicsString.h>
+#include <epicsMessageQueue.h>
 
 #include <alarm.h>
 #include <cadef.h>
@@ -42,6 +44,8 @@
 
 #define VALID_DOUBLE_DIGITS 18  /* Max usable precision for a double */
 #define PEND_EVENT_SLICES 5     /* No. of pend_event slices for callback requests */
+#define NUMBER_OF_THREADS 5
+#define QUEUE_CAPACITY 100
 
 /* Different output formats */
 typedef enum { plain, terse, all, specifiedDbr } OutputT;
@@ -59,12 +63,17 @@ typedef struct
     unsigned long reqElems;
     epicsMutexId printMutex;
     epicsMutexId resultMutex;
+    epicsMessageQueueId queueId;
+    // Make sure we print the results in the same order that caget was called
+    int pvOderIndex;
+    int totalNumberOfPvs;
 } t_thread_data;
 
 static int nConn = 0;           /* Number of connected PVs */
 static int nRead = 0;           /* Number of channels that were read */
 static int floatAsString = 0;   /* Flag: fetch floats as string */
 static int pvs_with_trouble = 0; /* Counter for PVs with result not zero */
+static int completedPVs = 0;
 
 static void usage (void)
 {
@@ -384,43 +393,56 @@ static void complainIfNotPlainAndSet (OutputT *current, const OutputT requested)
     *current = requested;
 }
 
-// Create a thread name based on the PV index in the order sent as argument for caget
-void thread_name (int pv_num, char* th_name) {
-    // Threads will be named caget0, caget1, ..., caget42, ...
-    char pv_num_str[3];
-    sprintf(pv_num_str, "%d", pv_num);
+// Create a thread name based on the thread index
+void thread_name (int index, char* th_name) {
+    // Threads will be named caget0, caget1, caget2, etc
+    char index_str[2];
+    sprintf(index_str, "%d", index);
     strcpy(th_name, "caget");
-    strcat(th_name, pv_num_str);
+    strcat(th_name, index_str);
 }
 
 // Function that runs inside each thread, calling the caget function
-void caget_caller (void* thread_data_void)
+void caget_caller (void* queueId_void)
 {
     int result;                 /* CA result */
-    t_thread_data* thread_data = (t_thread_data*)thread_data_void;
-    result = connect_pvs(&thread_data->pv_data, 1);
+    t_thread_data thread_data;
 
-                                /* Read and print data */
-    if (!result)
-        result = caget(thread_data->pv_data, thread_data->request, thread_data->format, thread_data->dbrType, thread_data->reqElems, thread_data->printMutex);
+    epicsMessageQueueId queueId = (epicsMessageQueueId) queueId_void;
 
-    epicsMutexLock(thread_data->resultMutex);
-    pvs_with_trouble += result;
-    epicsMutexUnlock(thread_data->resultMutex);
+    while(true) {
+        if (epicsMessageQueueReceiveWithTimeout(queueId, &thread_data, sizeof(t_thread_data), 0.1) > 0) {
+            //t_thread_data* thread_data = (t_thread_data*)thread_data_void;
+            result = connect_pvs(&thread_data.pv_data, 1);
 
-    free(thread_data);
+                                        /* Read and print data */
+            if (!result)
+                result = caget(thread_data.pv_data, thread_data.request, thread_data.format, thread_data.dbrType, thread_data.reqElems, thread_data.printMutex);
+
+            epicsMutexLock(thread_data.resultMutex);
+            pvs_with_trouble += result;
+            ++completedPVs;
+            epicsMutexUnlock(thread_data.resultMutex);
+        }
+
+        if (completedPVs >= thread_data.totalNumberOfPvs) {
+            break;
+        }
+    }
+
+    //free(thread_data);
 }
 
-// Creates one thread per PV called with caget
-void thread_builder (t_thread_data* thread_data, int pv_num)
+// Creates the threads that will read from the message queue
+void thread_builder (epicsMessageQueueId queueId, int index)
 {
     char th_name[9];
-    thread_name(pv_num, th_name);
+    thread_name(index, th_name);
     epicsThreadOpts thread_opts = EPICS_THREAD_OPTS_INIT;
     // Must be joinable so the main thread can wait for all the threads to
     // complete their job.
     thread_opts.joinable = 1;
-    epicsThreadCreateOpt(th_name, &caget_caller, thread_data, &thread_opts);
+    epicsThreadCreateOpt(th_name, &caget_caller, queueId, &thread_opts);
 }
 
 
@@ -622,6 +644,20 @@ int main (int argc, char *argv[])
     epicsMutexId printMutex = epicsMutexCreate();
     // Mutex to access result counter
     epicsMutexId resultMutex = epicsMutexCreate();
+
+    epicsMessageQueueId queueId = epicsMessageQueueCreate(QUEUE_CAPACITY, sizeof(t_thread_data));
+
+    int number_of_threads;
+    if (nPvs > NUMBER_OF_THREADS) {
+        number_of_threads = NUMBER_OF_THREADS;
+    } else {
+        number_of_threads = nPvs;
+    }
+
+    for (int iii=0; iii<number_of_threads; ++iii) {
+        thread_builder(queueId, iii);
+    }
+
     for (int iii=0; iii<nPvs; ++iii) {
         t_thread_data* thread_data;
         thread_data = malloc(sizeof(t_thread_data));
@@ -632,14 +668,17 @@ int main (int argc, char *argv[])
         thread_data->reqElems = count;
         thread_data->printMutex = printMutex;
         thread_data->resultMutex = resultMutex;
-        thread_builder(thread_data, iii);
+        thread_data->queueId = queueId;
+        thread_data->pvOderIndex = iii;
+        thread_data->totalNumberOfPvs = nPvs;
+        epicsMessageQueueSend(queueId, thread_data, sizeof(t_thread_data));
     }
 
     epicsThreadId thread_id;
     char th_name[9];
 
     // Wait for all threads to finish their business before ending the main thread
-    for (int iii=0; iii<nPvs; ++iii) {
+    for (int iii=0; iii<number_of_threads; ++iii) {
         thread_name(iii, th_name);
         thread_id = epicsThreadGetId(th_name);
         epicsThreadMustJoin(thread_id);
@@ -650,6 +689,7 @@ int main (int argc, char *argv[])
     ca_context_destroy();
     epicsMutexDestroy(printMutex);
     epicsMutexDestroy(resultMutex);
+    epicsMessageQueueDestroy(queueId);
 
     return pvs_with_trouble;
 }

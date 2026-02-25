@@ -34,7 +34,8 @@ DBCORE_API int iocInit(void);
 
 /** @brief Puts the IOC into a quiescent state without allowing the various internal threads it starts to actually run */
 DBCORE_API int iocBuild(void);
-
+/** @brief Allows to start an IOC without its Channel Access parts. It can then be shutdown cleanly using iocShutdown. 
+ * Feature only intended to be used for test programs, not production IOCs. */
 DBCORE_API int iocBuildIsolated(void);
 /** @brief Brings the IOC online after iocBuild or iocPause*/
 DBCORE_API int iocRun(void);

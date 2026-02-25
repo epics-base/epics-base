@@ -81,6 +81,7 @@ database_HEADERS += dbUnitTest
 database_HEADERS += devSup
 database_HEADERS += drvSup
 database_HEADERS += initHooks
+database_HEADERS += iocInit
 
 record_HEADERS += aaiRecord
 record_HEADERS += aaoRecord
@@ -130,4 +131,3 @@ menu_HEADERS += menuScan
 menu_HEADERS += menuSimm
 menu_HEADERS += menuYesNo
 
-misc_HEADERS += iocInit

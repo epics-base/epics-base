@@ -534,9 +534,37 @@ struct initArgs {
     size_t maxMsgSize;
 };
 
+static
+int errlogClampConfig(struct initArgs *config)
+{
+    int clamped = 0;
+
+    if (config->bufsize < MIN_BUFFER_SIZE)
+    {
+        clamped = 1;
+        config->bufsize = MIN_BUFFER_SIZE;
+    }
+
+    if (config->maxMsgSize > MAX_MESSAGE_SIZE(config->bufsize))
+    {
+        clamped = 1;
+        config->maxMsgSize = MAX_MESSAGE_SIZE(config->bufsize);
+    }
+    if (config->maxMsgSize < MIN_MESSAGE_SIZE)
+    {
+        clamped = 1;
+        config->maxMsgSize = MIN_MESSAGE_SIZE;
+    }
+
+    return clamped;
+}
+
 static void errlogInitPvt(void *arg)
 {
     struct initArgs *pconfig = (struct initArgs *) arg;
+
+    errlogClampConfig(pconfig);
+
     epicsThreadId tid = NULL;
     epicsThreadOpts topts = EPICS_THREAD_OPTS_INIT;
 
@@ -583,80 +611,32 @@ static void errlogInitPvt(void *arg)
     }
 }
 
+// This function must be called with pvt.bufSizeLock held
 static
-int errlogClampConfig(struct initArgs *config, int bufsize, int maxMsgSize)
+void errlogBufResize(struct initArgs config)
 {
-    int clamped = 0;
-
-    if (bufsize < MIN_BUFFER_SIZE)
-    {
-        // This is to deal with the fact that errlogInit() is often called with arg 0
-        clamped = bufsize == 0 ? 0 : 1;
-        bufsize = MIN_BUFFER_SIZE;
+    if (config.bufsize < pvt.bufSize) {
+        fprintf(stderr, "Warning: Cannot shrink buffer size.\n");
+        return;
     }
-    config->bufsize = bufsize;
 
-    if (maxMsgSize > MAX_MESSAGE_SIZE(bufsize))
-    {
-        clamped = 1;
-        maxMsgSize = MAX_MESSAGE_SIZE(bufsize);
-    }
-    if (maxMsgSize < MIN_MESSAGE_SIZE)
-    {
-        clamped = 1;
-        maxMsgSize = MIN_MESSAGE_SIZE;
-    }
-    config->maxMsgSize = maxMsgSize;
-
-    return clamped;
-}
-
-int errlogInit2(int bufsize, int maxMsgSize)
-{
-    static epicsThreadOnceId errlogOnceFlag = EPICS_THREAD_ONCE_INIT;
-    struct initArgs config;
-
-    if (pvt.atExit)
-        return 0;
-
-    if (errlogClampConfig(&config, bufsize, maxMsgSize)) {
+    size_t bufsize = config.bufsize;
+    size_t maxMsgSize = config.maxMsgSize;
+    if (errlogClampConfig(&config)) {
         fprintf(stderr, "Warning: errlog config clamped from (%zu, %zu) to (%zu, %zu)\n", bufsize, maxMsgSize, config.bufsize, config.maxMsgSize);
     }
 
-    epicsThreadOnce(&errlogOnceFlag, errlogInitPvt, &config);
-    if (pvt.errlogInitFailed) {
-        fprintf(stderr,"errlogInit failed\n");
-        exit(1);
+    char *logbuf = calloc(1, config.bufsize);
+    if (!logbuf) {
+        fprintf(stderr, ERL_ERROR ": Failed to allocated errlog log buffer.\n");
+        return;
     }
-    return 0;
-}
-
-int errlogInit(int bufsize)
-{
-    return errlogInit2(bufsize, DEFAULT_MAX_MSG_SIZE);
-}
-
-int errlogBufResize(int bufsize, int maxMsgSize)
-{
-    char* logbuf = NULL;
-    char* printbuf = NULL;
-    struct initArgs config;
-
-    epicsMutexMustLock(pvt.bufSizeLock);
-
-    // Only increasing the buffer size is allowed!
-    if (bufsize < pvt.bufSize) {
-        epicsMutexUnlock(pvt.bufSizeLock);
-        fprintf(stderr, "Shrinking the errorlog buffer is not allowed.\n");
-        return -1;
+    char *printbuf = calloc(1, config.bufsize);
+    if (!printbuf) {
+        free(logbuf);
+        fprintf(stderr, ERL_ERROR ": Failed to allocated errlog print buffer.\n");
+        return;
     }
-
-    if (errlogClampConfig(&config, bufsize, maxMsgSize)) {
-        fprintf(stderr, "Warning: errlog config clamped from (%zu, %zu) to (%zu, %zu)\n", bufsize, maxMsgSize, config.bufsize, config.maxMsgSize);
-    }
-
-    logbuf = calloc(1, config.bufsize);
-    printbuf = calloc(1, config.bufsize);
 
     epicsMutexMustLock(pvt.msgQueueLock);
 
@@ -672,7 +652,37 @@ int errlogBufResize(int bufsize, int maxMsgSize)
     pvt.maxMsgSize = config.maxMsgSize;
 
     epicsMutexUnlock(pvt.msgQueueLock);
+}
+
+int errlogInit2(int bufsize, int maxMsgSize)
+{
+    static epicsThreadOnceId errlogOnceFlag = EPICS_THREAD_ONCE_INIT;
+    struct initArgs config = {bufsize, maxMsgSize};
+
+    if (pvt.atExit)
+        return 0;
+
+    epicsThreadOnce(&errlogOnceFlag, errlogInitPvt, &config);
+    if (pvt.errlogInitFailed) {
+        fprintf(stderr,"errlogInit failed\n");
+        exit(1);
+    }
+
+    // Don't resize the buffer for any of the calls to errlogInit(0)
+    if (bufsize == 0) return 0;
+
+    epicsMutexMustLock(pvt.bufSizeLock);
+    if (pvt.bufSize != config.bufsize || pvt.maxMsgSize != config.maxMsgSize) {
+        // We are resizing the buffer after initialisation
+        errlogBufResize(config);
+    }
     epicsMutexUnlock(pvt.bufSizeLock);
+    return 0;
+}
+
+int errlogInit(int bufsize)
+{
+    return errlogInit2(bufsize, DEFAULT_MAX_MSG_SIZE);
 }
 
 void errlogShow(int level)

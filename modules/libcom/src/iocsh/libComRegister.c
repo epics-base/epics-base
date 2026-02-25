@@ -291,22 +291,6 @@ static void errlogInit2CallFunc(const iocshArgBuf *args)
     errlogInit2(args[0].ival, args[1].ival);
 }
 
-/* errlogBufResize */
-static const iocshArg errlogBufResizeArg0 = { "bufSize",iocshArgInt};
-static const iocshArg errlogBufResizeArg1 = { "maxMsgSize",iocshArgInt};
-static const iocshArg * const errlogBufResizeArgs[] =
-    {&errlogBufResizeArg0, &errlogBufResizeArg1};
-static const iocshFuncDef errlogBufResizeFuncDef = {
-    "errlogBufResize", 2, errlogBufResizeArgs,
-    "Reinitialize error log client buffer size and maximum message size\n"
-    "  bufSize    - size of circular buffer       (default = 1280 bytes)\n"
-    "  maxMsgSize - maximum size of error message (default =  256 bytes)\n"
-};
-static void errlogBufResizeCallFunc(const iocshArgBuf *args)
-{
-    iocshSetError(errlogBufResize(args[0].ival, args[1].ival));
-}
-
 /* errlogShow */
 static const iocshArg errlogShowArg0 = { "level",iocshArgInt};
 static const iocshArg * const errlogShowArgs[1] = {&errlogShowArg0};
@@ -532,7 +516,6 @@ void epicsStdCall libComRegister(void)
     iocshRegister(&eltcFuncDef, eltcCallFunc);
     iocshRegister(&errlogInitFuncDef,errlogInitCallFunc);
     iocshRegister(&errlogInit2FuncDef,errlogInit2CallFunc);
-    iocshRegister(&errlogBufResizeFuncDef,errlogBufResizeCallFunc);
     iocshRegister(&errlogShowFuncDef,errlogShowCallFunc);
     iocshRegister(&errlogFuncDef, errlogCallFunc);
     iocshRegister(&iocLogPrefixFuncDef, iocLogPrefixCallFunc);

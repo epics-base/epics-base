@@ -486,6 +486,7 @@ static void dbProcessTimeoutCallback(void* arg)
     unsigned short monitor_mask;
 
     dbScanLock(precord);
+    epicsTimeGetCurrent(&precord->time);
     recGblSetSevrMsg(precord, TIMEOUT_ALARM, INVALID_ALARM, "dbProcessTimeout");
     monitor_mask = recGblResetAlarms(precord);
     monitor_mask |= DBE_VALUE|DBE_LOG;

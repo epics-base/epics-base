@@ -485,12 +485,14 @@ static void dbProcessTimeoutCallback(void* arg)
     dbCommon *precord = (dbCommon *)arg;
     unsigned short monitor_mask;
 
+    dbScanLock(precord);
     recGblSetSevrMsg(precord, TIMEOUT_ALARM, INVALID_ALARM, "dbProcessTimeout");
     monitor_mask = recGblResetAlarms(precord);
     monitor_mask |= DBE_VALUE|DBE_LOG;
     db_post_events(precord,
         ((char *)precord) + precord->rdes->pvalFldDes->offset,
         monitor_mask);
+    dbScanUnlock(precord);
 }
 
 static void dbProcessTimeoutCallbackQueueInit(void* arg)

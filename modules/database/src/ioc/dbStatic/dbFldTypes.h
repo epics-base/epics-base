@@ -11,6 +11,14 @@
  *      Author:          Marty Kraimer
  *      Date:            6-1-90
  */
+
+/** @file dbFldTypes.h
+ *  @brief Defines possible field types
+ *
+ *  A field's type is perhaps its most important attribute. Changing the possible field types is a fundamental change to the IOC software, because many IOC software components are aware of the field types. Field types of `DBF_STRING...DBF_DOUBLE` can be a scalar or an array and corresopond to standard C data types
+ *
+ *  `DBR_*` are database request types that correspond exactly to the database field types (`DBF_*`). When `dbPutField` or `dbGetField` are called one of the arguments is a database request type.
+ */
 #ifndef INCdbFldTypesh
 #define INCdbFldTypesh 1
 
@@ -22,24 +30,24 @@ extern "C" {
 
 /* field types */
 typedef enum {
-    DBF_STRING,
-    DBF_CHAR,
-    DBF_UCHAR,
-    DBF_SHORT,
-    DBF_USHORT,
-    DBF_LONG,
-    DBF_ULONG,
-    DBF_INT64,
-    DBF_UINT64,
-    DBF_FLOAT,
-    DBF_DOUBLE,
-    DBF_ENUM,
-    DBF_MENU,
-    DBF_DEVICE,
-    DBF_INLINK,
-    DBF_OUTLINK,
-    DBF_FWDLINK,
-    DBF_NOACCESS
+    DBF_STRING, /*!< 40 character, NULL terminated ASCII string */
+    DBF_CHAR, /*!< Signed character */
+    DBF_UCHAR, /*!< Unsigned character */
+    DBF_SHORT, /*!< Signed short */
+    DBF_USHORT, /*!< Unsigned short */
+    DBF_LONG, /*!< Signed long */
+    DBF_ULONG, /*!< Unsigned long */
+    DBF_INT64, /*!< 64 bit signed integer */
+    DBF_UINT64, /*!< 64 bit unsigned integer */
+    DBF_FLOAT, /*!< Floating point number */
+    DBF_DOUBLE, /*!< Double precision float */
+    DBF_ENUM, /*!< An enumerated field, analgous to C language enumeration */
+    DBF_MENU, /*!< A meu choice field */
+    DBF_DEVICE, /*!< A device choice field */
+    DBF_INLINK, /*!< Input link */
+    DBF_OUTLINK, /*!< Output link */
+    DBF_FWDLINK, /*!< Forward link */
+    DBF_NOACCESS /*!< A private field for use by record access routines*/
 }dbfType;
 #define DBF_NTYPES DBF_NOACCESS+1
 
@@ -72,7 +80,6 @@ mapdbfType pamapdbfType[DBF_NTYPES] = {
 };
 #endif /*DBFLDTYPES_GBLSOURCE*/
 
-/* data request buffer types */
 #define DBR_STRING      DBF_STRING
 #define DBR_CHAR        DBF_CHAR
 #define DBR_UCHAR       DBF_UCHAR
@@ -85,8 +92,8 @@ mapdbfType pamapdbfType[DBF_NTYPES] = {
 #define DBR_FLOAT       DBF_FLOAT
 #define DBR_DOUBLE      DBF_DOUBLE
 #define DBR_ENUM        DBF_ENUM
-#define DBR_PUT_ACKT    DBR_ENUM+1
-#define DBR_PUT_ACKS    DBR_PUT_ACKT+1
+#define DBR_PUT_ACKT    DBR_ENUM+1 /*!< Value is an unsigned short for setting the ACKT (transient alarm acknowledgment)*/
+#define DBR_PUT_ACKS    DBR_PUT_ACKT+1 /*!< Value is an unsigned short for ACKS (global alarm acknowledgment)*/
 #define DBR_NOACCESS    DBF_NOACCESS
 #define VALID_DB_REQ(x) ((x >= 0) && (x <= DBR_ENUM))
 #define INVALID_DB_REQ(x)       ((x < 0) || (x > DBR_ENUM))

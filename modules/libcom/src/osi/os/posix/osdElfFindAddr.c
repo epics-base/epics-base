@@ -536,6 +536,12 @@ epicsFindAddr(void *addr, epicsSymbol *sym_p)
 
     sym_p->f_nam = inf.dli_fname;
 
+    if ( (sym_p->s_nam = inf.dli_sname) ) {
+        sym_p->s_val = inf.dli_saddr;
+        /* Have a symbol name - just use it and be done */
+        return 0;
+    }
+
     /* No symbol info; try to access ELF file and ready symbol table from there */
 
     elfsLockWrite();

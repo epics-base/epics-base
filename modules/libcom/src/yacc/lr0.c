@@ -166,7 +166,7 @@ get_state(int symbol)
     short *iend;
     core *sp;
     int found;
-    int n;
+    ptrdiff_t n;
 
 #ifdef  TRACE
     fprintf(stderr, "Entering get_state(%d)\n", symbol);
@@ -287,7 +287,7 @@ new_itemsets(void)
 static core *
 new_state(int symbol)
 {
-    int n;
+    ptrdiff_t n;
     core *p;
     short *isp1;
     short *isp2;

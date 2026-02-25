@@ -329,7 +329,7 @@ int errlogVprintf(const char *pFormat,va_list pvar)
 
     if(buf) {
         nchar = epicsVsnprintf(buf, pvt.maxMsgSize, pFormat, pvar);
-        nchar = msgbufCommit(nchar, pvt.toConsole);
+        nchar = (int)msgbufCommit(nchar, pvt.toConsole);
     }
     return nchar;
 }
@@ -357,7 +357,7 @@ int errlogVprintfNoConsole(const char *pFormat, va_list pvar)
 
     if(buf) {
         nchar = epicsVsnprintf(buf, pvt.maxMsgSize, pFormat, pvar);
-        nchar = msgbufCommit(nchar, 0);
+        nchar = (int)msgbufCommit(nchar, 0);
     }
     return nchar;
 }
@@ -382,7 +382,7 @@ int errlogSevVprintf(errlogSevEnum severity, const char *pFormat, va_list pvar)
         nchar = sprintf(buf, "sevr=%s ", errlogGetSevEnumString(severity));
         if(nchar < pvt.maxMsgSize)
             nchar += epicsVsnprintf(buf + nchar, pvt.maxMsgSize - nchar, pFormat, pvar);
-        nchar = msgbufCommit(nchar, pvt.toConsole);
+        nchar = (int)msgbufCommit(nchar, pvt.toConsole);
     }
     return nchar;
 }

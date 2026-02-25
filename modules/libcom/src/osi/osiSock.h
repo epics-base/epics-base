@@ -172,8 +172,8 @@ LIBCOM_API int epicsSocketUnsentCount(SOCKET sock);
  * including the null termination, but always writes at least a
  * null terminator in the string (if bufSize >= 1)
  */
-LIBCOM_API unsigned epicsStdCall sockAddrToA (
-    const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
+LIBCOM_API size_t epicsStdCall sockAddrToA (
+    const struct sockaddr * paddr, char * pBuf, size_t bufSize );
 
 /*!
  * \brief Convert IP address to ASCII
@@ -189,8 +189,8 @@ LIBCOM_API unsigned epicsStdCall sockAddrToA (
  * null termination, but always writes at least a null terminator in the string
  * (if bufSize >= 1)
  */
-LIBCOM_API unsigned epicsStdCall ipAddrToA (
-    const struct sockaddr_in * pInetAddr, char * pBuf, unsigned bufSize );
+LIBCOM_API size_t epicsStdCall ipAddrToA (
+    const struct sockaddr_in * pInetAddr, char * pBuf, size_t bufSize );
 
 /*!
  * \brief Convert to raw dotted IP address with trailing port
@@ -206,8 +206,8 @@ LIBCOM_API unsigned epicsStdCall ipAddrToA (
  * null termination, but always writes at least a null terminator in the string
  * (if bufSize >= 1)
  */
-LIBCOM_API unsigned epicsStdCall sockAddrToDottedIP (
-    const struct sockaddr * paddr, char * pBuf, unsigned bufSize );
+LIBCOM_API size_t epicsStdCall sockAddrToDottedIP (
+    const struct sockaddr * paddr, char * pBuf, size_t bufSize );
 
 /*!
  * \brief Convert to raw dotted IP address with trailing port
@@ -222,8 +222,8 @@ LIBCOM_API unsigned epicsStdCall sockAddrToDottedIP (
  * null termination, but always writes at least a null terminator in the string
  * (if bufSize >= 1)
  */
-LIBCOM_API unsigned epicsStdCall ipAddrToDottedIP (
-    const struct sockaddr_in * paddr, char * pBuf, unsigned bufSize );
+LIBCOM_API size_t epicsStdCall ipAddrToDottedIP (
+    const struct sockaddr_in * paddr, char * pBuf, size_t bufSize );
 
 /*!
  * \brief Convert inet address to a host name string
@@ -237,8 +237,8 @@ LIBCOM_API unsigned epicsStdCall ipAddrToDottedIP (
  * \return the number of character elements stored in buffer not including the
  * null termination. This will be zero if a matching host name can't be found.
  */
-LIBCOM_API unsigned epicsStdCall ipAddrToHostName (
-    const struct in_addr * pAddr, char * pBuf, unsigned bufSize );
+LIBCOM_API size_t epicsStdCall ipAddrToHostName (
+    const struct in_addr * pAddr, char * pBuf, size_t bufSize );
 
 /*!
  * \brief Attempt to convert ASCII string to an IP address
@@ -298,7 +298,7 @@ LIBCOM_API void epicsStdCall osiSockRelease (void);
  * \param error The error number to describe in string form
  */
 LIBCOM_API void epicsSocketConvertErrorToString (
-        char * pBuf, unsigned bufSize, int error );
+        char * pBuf, size_t bufSize, int error );
 
 /*!
  * \brief Convert the currently set errno to a string
@@ -311,7 +311,7 @@ LIBCOM_API void epicsSocketConvertErrorToString (
  * \param bufSize Length of the array pointed to by pBuf
  */
 LIBCOM_API void epicsSocketConvertErrnoToString (
-        char * pBuf, unsigned bufSize );
+        char * pBuf, size_t bufSize );
 
 /*!
  * \brief Union to switch between sockaddr_in and sockaddr

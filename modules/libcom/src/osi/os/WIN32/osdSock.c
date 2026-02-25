@@ -140,8 +140,8 @@ LIBCOM_API void epicsStdCall epicsSocketDestroy ( SOCKET s )
 /*
  * ipAddrToHostName
  */
-LIBCOM_API unsigned epicsStdCall ipAddrToHostName
-            (const struct in_addr *pAddr, char *pBuf, unsigned bufSize)
+LIBCOM_API size_t epicsStdCall ipAddrToHostName
+            (const struct in_addr *pAddr, char *pBuf, size_t bufSize)
 {
     struct hostent  *ent;
 

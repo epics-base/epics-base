@@ -909,7 +909,7 @@ static void helpCallFunc(const iocshArgBuf *args)
     struct iocshCommand *pcmd;
 
     if (argc == 1) {
-        int l, col = 0;
+        size_t l, col = 0;
 
         iocshTableLock ();
         for (pcmd = iocshCommandHead ; pcmd != NULL ; pcmd = pcmd->next) {
@@ -1280,7 +1280,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
                         break;
                     }
                     if (piocshFuncDef->arg[iarg]->type == iocshArgArgv) {
-                        argBuf[iarg].aval.ac = tokenize.size()-iarg;
+                        argBuf[iarg].aval.ac = static_cast<int>(tokenize.size()-iarg);
                         argBuf[iarg].aval.av = const_cast<char**>(&tokenize.argv[iarg]);
                         iarg = piocshFuncDef->nargs;
                     }

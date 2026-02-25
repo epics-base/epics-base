@@ -408,7 +408,7 @@ LIBCOM_API int epicsStdCall
 epicsMessageQueuePending(epicsMessageQueueId pmsg)
 {
     char *myInPtr, *myOutPtr;
-    int nmsg;
+    int64_t nmsg;
 
     epicsMutexMustLock(pmsg->mutex);
     myInPtr = (char *)pmsg->inPtr;
@@ -420,7 +420,7 @@ epicsMessageQueuePending(epicsMessageQueueId pmsg)
     else
         nmsg = pmsg->capacity  - (myOutPtr - myInPtr) / pmsg->slotSize;
     epicsMutexUnlock(pmsg->mutex);
-    return nmsg;
+    return static_cast<int>(nmsg);
 }
 
 LIBCOM_API void epicsStdCall

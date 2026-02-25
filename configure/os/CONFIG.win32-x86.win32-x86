@@ -99,7 +99,7 @@ CCC = cl -EHsc -GR
 #   because MS uses:   if __STDC__ ... disable many nice things
 #
 CODE_CPPFLAGS += -nologo -FC -D__STDC__=0
-CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
+CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_WINSOCK_DEPRECATED_NO_WARNINGS
 
 
 # Compiler flags for C++ files

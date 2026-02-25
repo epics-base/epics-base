@@ -331,7 +331,16 @@ rule_hag_list_name: tokenSTRING
     ;
 %%
 
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable:4244 )
+#endif
+
 #include "asLib_lex.c"
+
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
 
 static int yyerror(char *str)
 {

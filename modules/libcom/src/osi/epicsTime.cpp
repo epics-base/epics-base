@@ -241,7 +241,7 @@ size_t epicsStdCall epicsTimeToStrftime (char *pBuff, size_t bufLength, const ch
                     epicsSnprintf ( fracFormat, sizeof ( fracFormat ), "%%0%lulu", fracWid );
                     int status = epicsSnprintf ( pBufCur, bufLenLeft, fracFormat, frac );
                     if ( status > 0 ) {
-                        unsigned long nChar = static_cast < unsigned long > ( status );
+                        size_t nChar = static_cast < size_t > ( status );
                         if  ( nChar >= bufLenLeft ) {
                             nChar = bufLenLeft - 1;
                         }
@@ -304,7 +304,7 @@ int epicsStdCall epicsTimeToTime_t (time_t *pDest, const epicsTimeStamp *pSrc)
 
 int epicsStdCall epicsTimeFromTime_t (epicsTimeStamp *pDest, time_t src)
 {
-    pDest->secPastEpoch = epicsInt64(src) - POSIX_TIME_AT_EPICS_EPOCH;
+    pDest->secPastEpoch = static_cast<epicsUInt32>(epicsInt64(src) - POSIX_TIME_AT_EPICS_EPOCH);
     pDest->nsec = 0;
     return epicsTimeOK;
 }
@@ -400,7 +400,11 @@ int epicsStdCall epicsTimeToTimeval (struct timeval *pDest, const epicsTimeStamp
     time_t temp;
     int err = epicsTimeToTime_t(&temp, pSrc);
     if(!err) {
-        pDest->tv_sec = temp; // tv_sec is not time_t on windows
+#ifdef _WIN32
+        pDest->tv_sec = static_cast<long>(temp); // tv_sec is not time_t on windows
+#else
+        pDest->tv_sec = temp;
+#endif
         pDest->tv_usec = pSrc->nsec/1000u;
     }
     return err;
@@ -437,7 +441,7 @@ void epicsStdCall epicsTimeAddSeconds (epicsTimeStamp *pDest, double seconds)
     nsec *= nSecPerSec;
     nsec += epicsInt64(pDest->nsec);
     nsec += epicsInt64(seconds*1e9 + (seconds>=0.0 ? 0.5 : -0.5));
-    pDest->secPastEpoch = nsec/nSecPerSec;
+    pDest->secPastEpoch = static_cast<epicsUInt32>(nsec/nSecPerSec);
     pDest->nsec         = (nsec>=0 ? nsec : -nsec)%nSecPerSec;
 }
 

@@ -25,10 +25,6 @@
 // SGI Irix:
 #  define BOOST_PLATFORM_CONFIG "boost/config/platform/irix.hpp"
 
-#elif defined(__hpux)
-// hp unix:
-#  define BOOST_PLATFORM_CONFIG "boost/config/platform/hpux.hpp"
-
 #elif defined(__CYGWIN__)
 // cygwin is not win32:
 #  define BOOST_PLATFORM_CONFIG "boost/config/platform/cygwin.hpp"

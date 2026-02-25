@@ -993,10 +993,6 @@ void tcpiiu::initiateAbortShutdown (
                 }
             }
             break;
-        case esscimqi_socketSigAlarmRequired:
-            this->recvThread.interruptSocketRecv ();
-            this->sendThread.interruptSocketSend ();
-            break;
         default:
             break;
         };
@@ -2083,27 +2079,6 @@ double tcpiiu::receiveWatchdogDelay (
     epicsGuard < epicsMutex > & ) const
 {
     return this->recvDog.delay ();
-}
-
-/*
- * Certain OS, such as HPUX, do not unblock a socket system call
- * when another thread asynchronously calls both shutdown() and
- * close(). To solve this problem we need to employ OS specific
- * mechanisms.
- */
-void tcpRecvThread::interruptSocketRecv ()
-{
-    epicsThreadId threadId = this->thread.getId ();
-    if ( threadId ) {
-        epicsSignalRaiseSigAlarm ( threadId );
-    }
-}
-void tcpSendThread::interruptSocketSend ()
-{
-    epicsThreadId threadId = this->thread.getId ();
-    if ( threadId ) {
-        epicsSignalRaiseSigAlarm ( threadId );
-    }
 }
 
 void tcpiiu::operator delete ( void * /* pCadaver */ )

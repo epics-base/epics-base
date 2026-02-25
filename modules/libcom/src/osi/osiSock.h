@@ -124,9 +124,6 @@ enum epicsSocketSystemCallInterruptMechanismQueryInfo {
 
     //! calling shutdown() for both read and write required to interrupt
     esscimqi_socketBothShutdownRequired,
-
-    //! NO LONGER USED/SUPPORTED
-    esscimqi_socketSigAlarmRequired
 };
 
 /*!

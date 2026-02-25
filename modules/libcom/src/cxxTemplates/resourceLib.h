@@ -1136,10 +1136,6 @@ stringId::~stringId()
             // the microsoft compiler will not allow a
             // pointer to "const char" to be deleted.
             //
-            // the HP-UX compiler gives us a warning on
-            // each cast away of const, but in this case
-            // it can't be avoided.
-            //
             // The DEC compiler complains that const isn't
             // really significant in a cast if it is present.
             //

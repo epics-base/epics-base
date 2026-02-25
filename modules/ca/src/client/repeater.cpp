@@ -42,21 +42,6 @@
  *   to the broadcast address
  */
 
-/* verifyClients() Mechanism
- *
- * This is required because HPUX (and previously also Solaris) has a half 
- * baked version of sockets.
- *
- * As written, the repeater should be robust against situations where the
- * IP kernel doesn't implement UDP disconnect on receiving ICMP port
- * unreachable errors from the destination process. As I recall, this
- * change was required in the repeater code when we ported from sunos4 to
- * Solaris. To avoid unreasonable overhead, I decided at the time to check
- * the validity of all existing connections only when a new client
- * registers with the repeater (and not when fanning out each beacon
- * received).                                           -- Jeff
- */
-
 #include <string>
 #include <stdexcept>
 #include <stdio.h>
@@ -303,27 +288,6 @@ bool repeaterClient::verify ()
     return false;
 }
 
-
-/*
- * verifyClients()
- */
-static void verifyClients ( tsFreeList < repeaterClient, 0x20 > & freeList )
-{
-    static tsDLList < repeaterClient > theClients;
-    repeaterClient *pclient;
-
-    while ( ( pclient = client_list.get () ) ) {
-        if ( pclient->verify () ) {
-            theClients.add ( *pclient );
-        }
-        else {
-            pclient->~repeaterClient ();
-            freeList.release ( pclient );
-        }
-    }
-    client_list.add ( theClients );
-}
-
 /*
  * fanOut()
  */
@@ -459,21 +423,6 @@ static void register_new_client ( osiSockAddr & from,
     memset ( &noop, '\0', sizeof ( noop ) );
     AlignedWireRef < epicsUInt16 > ( noop.m_cmmd ) = CA_PROTO_VERSION;
     fanOut ( from, &noop, sizeof ( noop ), freeList );
-
-    if ( newClient ) {
-        /*
-         * For HPUX we need to verify that the clients have not 
-         * gone away - because an ICMP error return does not get 
-         * through to send(), which returns no error code.
-         *
-         * This is done each time that a new client is created.
-         * See also the note in the file header.
-         *
-         * This is done here in order to avoid deleting a client
-         * prior to sending its confirm message.
-         */
-        verifyClients ( freeList );
-    }
 }
 
 

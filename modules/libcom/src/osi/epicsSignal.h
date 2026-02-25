@@ -43,8 +43,6 @@ LIBCOM_API void epicsStdCall epicsSignalInstallSigPipeIgnore ( void );
  * a socket system call
  */
 LIBCOM_API void epicsStdCall epicsSignalInstallSigAlarmIgnore ( void );
-/** Raise a SIGALRM signal to a specific epicsThread */
-LIBCOM_API void epicsStdCall epicsSignalRaiseSigAlarm ( struct epicsThreadOSD * );
 
 #ifdef __cplusplus
 }

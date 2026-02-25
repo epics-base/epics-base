@@ -272,7 +272,7 @@ extern short final_state;
 #ifdef __GNUC__
 #define NORETURN __attribute__((noreturn))
 #elif defined(_MSC_VER)
-#define NORETURN _declspec(noreturn)
+#define NORETURN __declspec(noreturn)
 #else
 #define NORETURN
 #endif
@@ -282,36 +282,36 @@ NORETURN extern void done(int k);
 extern char *allocate(unsigned int n);
 
 /* error.c */
-NORETURN extern void no_space(void) ;
-NORETURN extern void fatal(char *msg) ;
-NORETURN extern void open_error(char *filename) ;
-NORETURN extern void unexpected_EOF(void) ;
-NORETURN extern void syntax_error(int st_lineno, char *st_line, char *st_cptr) ;
-NORETURN extern void unterminated_comment(int c_lineno, char *c_line, char *c_cptr) ;
-NORETURN extern void unterminated_string(int s_lineno, char *s_line, char *s_cptr) ;
-NORETURN extern void unterminated_text(int t_lineno, char *t_line, char *t_cptr) ;
-NORETURN extern void unterminated_union(int u_lineno, char *u_line, char *u_cptr) ;
-NORETURN extern void over_unionized(char *u_cptr) ;
-NORETURN extern void illegal_tag(int t_lineno, char *t_line, char *t_cptr) ;
-NORETURN extern void illegal_character(char *c_cptr) ;
-NORETURN extern void used_reserved(char *s) ;
-NORETURN extern void tokenized_start(char *s) ;
+NORETURN extern void no_space(void);
+NORETURN extern void fatal(char *msg);
+NORETURN extern void open_error(char *filename);
+NORETURN extern void unexpected_EOF(void);
+NORETURN extern void syntax_error(int st_lineno, char *st_line, char *st_cptr);
+NORETURN extern void unterminated_comment(int c_lineno, char *c_line, char *c_cptr);
+NORETURN extern void unterminated_string(int s_lineno, char *s_line, char *s_cptr);
+NORETURN extern void unterminated_text(int t_lineno, char *t_line, char *t_cptr);
+NORETURN extern void unterminated_union(int u_lineno, char *u_line, char *u_cptr);
+NORETURN extern void over_unionized(char *u_cptr);
+NORETURN extern void illegal_tag(int t_lineno, char *t_line, char *t_cptr);
+NORETURN extern void illegal_character(char *c_cptr);
+NORETURN extern void used_reserved(char *s);
+NORETURN extern void tokenized_start(char *s);
 extern void retyped_warning(char *s);
 extern void reprec_warning(char *s);
 extern void revalued_warning(char *s);
-NORETURN extern void terminal_start(char *s) ;
+NORETURN extern void terminal_start(char *s);
 extern void restarted_warning(void);
-NORETURN extern void no_grammar(void) ;
-NORETURN extern void terminal_lhs(int s_lineno) ;
+NORETURN extern void no_grammar(void);
+NORETURN extern void terminal_lhs(int s_lineno);
 extern void prec_redeclared(void);
-NORETURN extern void unterminated_action(int a_lineno, char *a_line, char *a_cptr) ;
+NORETURN extern void unterminated_action(int a_lineno, char *a_line, char *a_cptr);
 extern void dollar_warning(int a_lineno, int i);
-NORETURN extern void dollar_error(int a_lineno, char *a_line, char *a_cptr) ;
-NORETURN extern void untyped_lhs(void) ;
-NORETURN extern void untyped_rhs(int i, char *s) ;
-NORETURN extern void unknown_rhs(int i) ;
+NORETURN extern void dollar_error(int a_lineno, char *a_line, char *a_cptr);
+NORETURN extern void untyped_lhs(void);
+NORETURN extern void untyped_rhs(int i, char *s);
+NORETURN extern void unknown_rhs(int i);
 extern void default_action_warning(void);
-NORETURN extern void undefined_goal(char *s) ;
+NORETURN extern void undefined_goal(char *s);
 extern void undefined_symbol_warning(char *s);
 
 /* symtab.c */

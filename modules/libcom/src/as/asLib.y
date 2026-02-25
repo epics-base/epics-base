@@ -81,7 +81,7 @@ non_rule_keyword: tokenASG
     | tokenINP
     {
         if(!!($$ = yystrdup("INPA")))
-            $$[3] += $1; /* 'A' + input number */
+            $$[3] += (char)$1; /* 'A' + input number */
     }
     ;
 

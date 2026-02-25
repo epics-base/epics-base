@@ -218,7 +218,7 @@ static int myInputFunction(char *buf, int max_size)
         if(fgetsRtn==NULL) return(0);
         my_buffer_ptr = my_buffer;
     }
-    l = strlen(my_buffer_ptr);
+    l = (int)strlen(my_buffer_ptr);
     n = (l<=max_size ? l : max_size);
     memcpy(buf,my_buffer_ptr,n);
     my_buffer_ptr += n;

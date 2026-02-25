@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "defs.h"
 
 extern short *itemset;

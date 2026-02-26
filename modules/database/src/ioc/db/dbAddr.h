@@ -11,7 +11,7 @@
 
 /**
  * @file dbAddr.h 
- * @brief defines structure describing a field
+ * @brief defines structure referencing a field
  *
  * Allows the process variable to be accessed directly
  */
@@ -23,14 +23,15 @@ struct dbCommon;
 struct dbFldDes;
 
 typedef struct dbAddr {
-        struct dbCommon *precord;   /*!< address of record                     */
-        void    *pfield;            /*!< address of field                      */
-        struct dbFldDes *pfldDes;   /*!< address of struct fldDes              */
+        struct dbCommon *precord;   /*!< pointer to record                     */
+        void    *pfield;            /*!< pointer to field                      */
+        struct dbFldDes *pfldDes;   /*!< pointer to struct fldDes              */
         long    no_elements;        /*!< number of elements (arrays)           */
         short   field_type;         /*!< type of database field                */
         short   field_size;         /*!< size of the field being accessed      */
         short   special;            /*!< special processing                    */
-        short   dbr_field_type;     /*!< field type as seen by database request \n
+        short   dbr_field_type;     /*!< field type as seen by database request
+
                                     * DBR_STRING,...,DBR_ENUM,DBR_NOACCESS  */
 } dbAddr;
 

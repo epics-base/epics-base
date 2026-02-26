@@ -31,7 +31,6 @@ typedef struct dbAddr {
         short   field_size;         /*!< size of the field being accessed      */
         short   special;            /*!< special processing                    */
         short   dbr_field_type;     /*!< field type as seen by database request
-
                                     * DBR_STRING,...,DBR_ENUM,DBR_NOACCESS  */
 } dbAddr;
 

@@ -217,10 +217,10 @@ LIBCOM_API void fdManager::process(double delay)
         tv.tv_sec = static_cast<time_t>(minDelay);
         tv.tv_usec = static_cast<long>((minDelay-tv.tv_sec) * uSecPerSec);
 
-        int status = select(priv->maxFD,
-                &priv->fdSets[fdrRead],
-                &priv->fdSets[fdrWrite],
-                &priv->fdSets[fdrException], &tv);
+        fd_set * pReadSet = & priv->fdSetsPtr[fdrRead];
+        fd_set * pWriteSet = & priv->fdSetsPtr[fdrWrite];
+        fd_set * pExceptSet = & priv->fdSetsPtr[fdrException];
+        int status = select ((int)priv->maxFD, pReadSet, pWriteSet, pExceptSet, &tv);
 #endif
 
         priv->pTimerQueue->process(epicsTime::getCurrent());

@@ -555,8 +555,8 @@ static void readFromClient(void *pParam)
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
                 fprintf(stderr,
-        "%s:%d socket=%d size=%d read error=%s\n",
-                    __FILE__, __LINE__, (int)pclient->insock,
+        "%s:%d socket=%" PRISOCK " size=%d read error=%s\n",
+                    __FILE__, __LINE__, pclient->insock,
                     size, sockErrBuf);
             }
         }

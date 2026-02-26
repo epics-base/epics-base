@@ -26,6 +26,11 @@
 #include "osdSock.h"
 #include "ellLib.h"
 
+/* printf format for SOCKET type */
+#ifndef PRISOCK
+#define PRISOCK "d"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

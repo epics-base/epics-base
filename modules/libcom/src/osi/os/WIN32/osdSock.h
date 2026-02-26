@@ -24,6 +24,9 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+/* printf format for SOCKET type */
+#define PRISOCK "Id"
+
 #define SOCKERRNO WSAGetLastError()
 
 #define socket_ioctl(A,B,C) ioctlsocket(A,B,C)

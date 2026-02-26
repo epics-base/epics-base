@@ -179,7 +179,6 @@ jobs:
             os: windows-2022
             cmp: vs2022
             configuration: default
-            extra: "CMD_CXXFLAGS=-analyze"
 
           - name: "Win-22 MSC-22, static"
             os: windows-2022
@@ -191,6 +190,7 @@ jobs:
             os: windows-2022
             cmp: vs2022
             configuration: debug
+            extra: "CMD_CXXFLAGS=-analyze"
 
           - name: "Win-22 MSC-22 c++14, debug"
             os: windows-2022

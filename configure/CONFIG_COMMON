@@ -195,8 +195,8 @@ LIBRARY_LD_RESS = $(TARGET_RESS) $(LIBRARY_RESS)
 # C preprocessor, compiler, and linker flag defaults
 
 # C/C++ standard specification
-LANG_CFLAGS = $(LANG_C_$(SITE_LANG_C)) $(LANG_C_$(USR_LANG_C)) $(LANG_C_$($(basename $@)_LANG_C))
-LANG_CXXFLAGS = $(LANG_CXX_$(SITE_LANG_CXX)) $(LANG_CXX_$(USR_LANG_CXX)) $(LANG_CXX_$($(basename $@)_LANG_CXX))
+LANG_CFLAGS = $(LANG_C_$(DEFAULT_LANG_C)) $(LANG_C_$(USR_LANG_C)) $(LANG_C_$($(basename $@)_LANG_C))
+LANG_CXXFLAGS = $(LANG_CXX_$(DEFAULT_LANG_CXX)) $(LANG_CXX_$(USR_LANG_CXX)) $(LANG_CXX_$($(basename $@)_LANG_CXX))
 
 # Target architecture specific flags
 ARCH_DEP_CPPFLAGS =

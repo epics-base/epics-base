@@ -178,7 +178,7 @@ jobs:
           - name: "Win-22 MSC-22"
             os: windows-2022
             cmp: vs2022
-            configuration: debug
+            configuration: default
             extra: "CMD_CXXFLAGS=-analyze"
 
           - name: "Win-22 MSC-22, static"

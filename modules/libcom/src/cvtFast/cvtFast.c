@@ -309,7 +309,7 @@ static size_t
     for (i = 0; val; i++) {
         epicsUInt64 tenth = val / 10;
 
-        digit[i] = (char)(val - tenth * 10 + '0');
+        digit[i] = '0' + (char)(val - tenth * 10);
         val = tenth;
     }
 

@@ -1164,7 +1164,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
     set_directory (argv[1]);
     epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
     atexit(exitHandler);
-    errlogFlush();
     printf ("***** Starting EPICS application *****\n");
 
 

@@ -266,7 +266,7 @@ MAIN(cvtFastTest)
     tryFString(Float, 1.0500001F, 1, 3);
     tryFString(Float, 1.1F,       1, 3);
     tryFString(Float, 1.1499999F, 1, 3);
-    tryFString(Float, 9.5000001F, 0, 2);
+    tryFString(Float, 9.5000001, 0, 2);
     tryFString(Float, 10, 0, 2);
     tryFString(Float, 10, 1, 4);
     tryFString(Float, 10, 8, 11);
@@ -300,7 +300,7 @@ MAIN(cvtFastTest)
     tryFString(Float, -1.0500001F, 1, 4);
     tryFString(Float, -1.1F,       1, 4);
     tryFString(Float, -1.1499999F, 1, 4);
-    tryFString(Float, -9.5000001F, 0, 3);
+    tryFString(Float, -9.5000001, 0, 3);
     tryFString(Float, -10, 0, 3);
     tryFString(Float, -10, 1, 5);
     tryFString(Float, -10, 8, 12);

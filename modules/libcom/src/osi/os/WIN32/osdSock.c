@@ -60,7 +60,7 @@ LIBCOM_API int epicsStdCall osiSockAttach()
     if (AllocConsole())
     {
         char title[256];
-        DWORD titleLength = GetConsoleTitle(title, sizeof(title));
+        size_t titleLength = GetConsoleTitle(title, sizeof(title));
         if (titleLength) {
             titleLength = strlen (title);
             strncat (title, " " EPICS_VERSION_STRING, sizeof(title)-1);

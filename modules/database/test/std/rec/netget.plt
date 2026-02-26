@@ -30,7 +30,7 @@ $ENV{EPICS_PVA_BROADCAST_PORT} = 55076;
 $ENV{EPICS_PVAS_INTF_ADDR_LIST} = 'localhost';
 
 my $bin = '@TOP@/bin/@ARCH@';
-my $exe = ($^O =~ m/^(MSWin32|cygwin)$/x) ? '.exe' : '';
+my $exe = ($^O =~ m/^(MSWin32)$/x) ? '.exe' : '';
 my $prefix = "test-$$";
 
 my $ioc = EPICS::IOC->new();

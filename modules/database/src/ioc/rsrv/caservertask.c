@@ -667,7 +667,7 @@ void rsrv_init (void)
             }
 #endif
 
-#if !(defined(_WIN32) || defined(__CYGWIN__))
+#if !(defined(_WIN32))
             /* An oddness of BSD sockets (not winsock) is that binding to
              * INADDR_ANY will receive unicast and broadcast, but binding to
              * a specific interface address receives only unicast.  The trick
@@ -707,7 +707,7 @@ void rsrv_init (void)
                 ellFree(&bcastList);
             }
 
-#endif /* !(defined(_WIN32) || defined(__CYGWIN__)) */
+#endif /* !(defined(_WIN32)) */
 
             ellAdd(&servers, &conf->node);
 
@@ -725,7 +725,7 @@ void rsrv_init (void)
 
             epicsEventMustWait(casudp_startStopEvent);
 
-#if !(defined(_WIN32) || defined(__CYGWIN__))
+#if !(defined(_WIN32))
             if(conf->udpbcast != INVALID_SOCKET) {
                 conf->startbcast = 1;
 
@@ -737,7 +737,7 @@ void rsrv_init (void)
 
                 conf->startbcast = 0;
             }
-#endif /* !(defined(_WIN32) || defined(__CYGWIN__)) */
+#endif /* !(defined(_WIN32)) */
 
             havesometcp = 1;
             continue;

@@ -101,11 +101,23 @@ ledLib line-editing library is normally used.
 
 ### Documentation
 
-EPICS documentation is available from the
+The general EPICS documentation is available from the
 [EPICS Documentation Website](https://docs.epics-controls.org/).
+This is based on the [EPICS Docs Github project](https://github.com/epics-docs/epics-docs).
 
-Release specific documentation can also be found in the
+The documentation for EPICS base is included into the general documentation,
+but is specifically available from the [EPICS Documentation Base Project](https://docs.epics-controls.org/projects/base/).
+
+The source files for EPICS base documentation can be found in the
 `base/documentation` directory of the distribution.
+
+#### Documentation Build Pipeline
+
+The documentation of EPICS base is automatically built via ReadTheDocs.
+The configuration is defined in `base/.readthedocs.yaml`.
+Any commit triggers a webhook for the [EPICS Base ReadTheDocs project](https://app.readthedocs.org/projects/epics-base/).
+
+More information on how to locally build the documentation can be found in the {doc}`build-docs` section.
 
 ### Directory Structure
 
@@ -304,7 +316,7 @@ file to be overridden except with `CONFIG` in the name changed to
     configure/os/CONFIG_SITE.<host>.<target>  Host-target overrides
 ```
 
-#### Build EPICS base
+#### Build
 
 After configuring the build you should be able to build EPICS base
 by issuing the following commands in the distribution's root

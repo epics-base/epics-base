@@ -126,10 +126,10 @@ logReset (void)
     if (fp) {
         char buf[80];
         fp(buf, sizeof buf);
-        errlogPrintf ("Startup after %s.\n", buf);
+        printf ("Startup after %s.\n", buf);
     }
     else {
-        errlogPrintf ("Startup.\n");
+        printf ("Startup.\n");
     }
 }
 
@@ -169,7 +169,7 @@ LogFatal (const char *msg, ...)
 void
 LogRtemsFatal (const char *msg, rtems_status_code sc)
 {
-    errlogPrintf ("%s: %s\n", msg, rtems_status_text (sc));
+    printf ("%s: %s\n", msg, rtems_status_text (sc));
     delayedPanic (msg);
 }
 
@@ -179,7 +179,7 @@ LogRtemsFatal (const char *msg, rtems_status_code sc)
 void
 LogNetFatal (const char *msg, int err)
 {
-    errlogPrintf ("%s: %d\n", msg, err);
+    printf ("%s: %d\n", msg, err);
     delayedPanic (msg);
 }
 
@@ -411,7 +411,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             argv[1] = abspath;
         }
     }
-    errlogPrintf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
+    printf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
                  server_name, server_path, mount_point);
     nfsMount(server_name, server_path, mount_point);
 #endif
@@ -484,7 +484,7 @@ set_directory (const char *commandline)
     if (chdir (directoryPath) < 0)
         LogFatal ("Can't set initial directory(%s): %s\n", directoryPath, strerror(errno));
     else
-        errlogPrintf("chdir(\"%s\")\n", directoryPath);
+        printf("chdir(\"%s\")\n", directoryPath);
     free(directoryPath);
 }
 

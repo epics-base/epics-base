@@ -336,6 +336,7 @@ static void checkAlarms(mbbiRecord *prec, epicsTimeStamp *timeLast)
             alarm = abs((int)floor(afvl));
         }
     }
+    prec->afvl = afvl;
 
     asev = alarm;
     recGblSetSevr(prec, STATE_ALARM, asev);

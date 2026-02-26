@@ -107,6 +107,7 @@ C<MAJOR>. The ZSV field holds the severity for the zero state; OSV, for
 the one state.  COSV causes an alarm whenever the state changes between
 0 and 1 and the severity is configured as MINOR or MAJOR.
 
+Since UNRELEASED, the alarm filter time constant (AFTC) is available for the bi record.
 The AFTC field sets the time constant on a low-pass filter that delays the
 reporting of limit alarms until the signal has been within the alarm range for
 that number of seconds (the default AFTC value of zero retains the previous

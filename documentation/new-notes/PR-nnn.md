@@ -1,0 +1,9 @@
+### AFTC for bi record
+
+The bi record now also supports the AFTC parameter.
+The AFTC field sets the time constant on a low-pass filter that delays the
+reporting of limit alarms until the signal has been within the alarm range for
+that number of seconds (the default AFTC value of zero retains the previous
+behavior). One has to make sure that the bi record is processed at a reasonably fast rate 
+when using AFTC, so that the record can respond to changes in the input signal
+within the time constant.

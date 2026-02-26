@@ -24,6 +24,9 @@
  *     Added field separators
  *  2009/04/01 Ralph Lange (HZB/BESSY)
  *     Added support for long strings (array of char) and quoting of nonprintable characters
+ *  2026/02/26 Marcio Donadio (SLAC)
+ *     caget now operates wiht more threads and retrieves values or "PV not found" messages
+ *     for all PVs in the argument list instead of failing after the first PV is not found.
  *
  */
 
@@ -53,7 +56,8 @@ typedef enum { plain, terse, all, specifiedDbr } OutputT;
 /* Different request types */
 typedef enum { get, callback } RequestT;
 
-// Struct to hold data used by caget threads
+// Struct to hold data used by caget threads.
+// This is sent via the EPICS message queue mechanism.
 typedef struct
 {
     pv pv_data;
@@ -63,15 +67,24 @@ typedef struct
     unsigned long reqElems;
     epicsMutexId printMutex;
     epicsMutexId resultMutex;
-    epicsMessageQueueId queueId;
     int totalNumberOfPvs;
 } t_thread_data;
+
+// Struct to hold data used only during thread initialization
+typedef struct
+{
+    epicsMessageQueueId queueId;
+    struct ca_client_context* ca_context;
+
+} t_init_thread;
 
 static int nConn = 0;           /* Number of connected PVs */
 static int nRead = 0;           /* Number of channels that were read */
 static int floatAsString = 0;   /* Flag: fetch floats as string */
 static int pvs_with_trouble = 0; /* Counter for PVs with result not zero */
-static int completedPVs = 0;
+static int completedPVs = 0; /* Number of PVs already processed */
+static epicsMessageQueueId queueId; /* Transfers PV data from one producer to several consumer threads */
+static struct ca_client_context* ca_context; /* Unique CA context for all threads */
 
 static void usage (void)
 {
@@ -401,16 +414,27 @@ void thread_name (int index, char* th_name) {
 }
 
 // Function that runs inside each thread, calling the caget function
-void caget_caller (void* queueId_void)
+void caget_caller (void* init_thread_void)
 {
     int result;                 /* CA result */
     t_thread_data thread_data;
+    t_init_thread* init_thread = (t_init_thread*) init_thread_void;
 
-    epicsMessageQueueId queueId = (epicsMessageQueueId) queueId_void;
+    // Attach to the CA context created by the main thread
+    //struct ca_client_context* ca_context = malloc(sizeof(struct ca_client_context*)); 
+    //memcpy (ca_context, init_thread->ca_context, sizeof(struct ca_client_context));
+    //ca_context_status(ca_context, 1);
+    result = ca_attach_context(ca_context);
+    if (result != ECA_NORMAL) {
+        fprintf(stderr, "CA error %s occurred while trying "
+                "to attach to channel access context.\n", ca_message(result));
+        return;
+    }
+
+    //epicsMessageQueueId queueId = (epicsMessageQueueId) queueId_void;
 
     while(true) {
         if (epicsMessageQueueReceiveWithTimeout(queueId, &thread_data, sizeof(t_thread_data), 0.1) > 0) {
-            //t_thread_data* thread_data = (t_thread_data*)thread_data_void;
             result = connect_pvs(&thread_data.pv_data, 1);
 
                                         /* Read and print data */
@@ -418,21 +442,21 @@ void caget_caller (void* queueId_void)
                 result = caget(thread_data.pv_data, thread_data.request, thread_data.format, thread_data.dbrType, thread_data.reqElems, thread_data.printMutex);
 
             epicsMutexLock(thread_data.resultMutex);
-            pvs_with_trouble += result;
+            pvs_with_trouble += result ? 1 : 0;
             ++completedPVs;
             epicsMutexUnlock(thread_data.resultMutex);
         }
 
+        // All PVs processed; there's nothing else expected to arrive in the queue
         if (completedPVs >= thread_data.totalNumberOfPvs) {
+            //ca_detach_context();
             break;
         }
     }
-
-    //free(thread_data);
 }
 
 // Creates the threads that will read from the message queue
-void thread_builder (epicsMessageQueueId queueId, int index)
+void thread_builder (t_init_thread init_thread, int index)
 {
     char th_name[9];
     thread_name(index, th_name);
@@ -440,7 +464,7 @@ void thread_builder (epicsMessageQueueId queueId, int index)
     // Must be joinable so the main thread can wait for all the threads to
     // complete their job.
     thread_opts.joinable = 1;
-    epicsThreadCreateOpt(th_name, &caget_caller, queueId, &thread_opts);
+    epicsThreadCreateOpt(th_name, &caget_caller, &init_thread, &thread_opts);
 }
 
 
@@ -617,14 +641,16 @@ int main (int argc, char *argv[])
         fprintf(stderr, "No pv name specified. ('caget -h' for help.)\n");
         return 3;
     }
-                                /* Start up Channel Access */
+                                /* sTart up Channel Access */
 
-    result = ca_context_create(ca_disable_preemptive_callback);
+    result = ca_context_create(ca_enable_preemptive_callback);
     if (result != ECA_NORMAL) {
         fprintf(stderr, "CA error %s occurred while trying "
                 "to start channel access.\n", ca_message(result));
         return 3;
     }
+    // Global variable to be used by all threads
+    ca_context = ca_current_context();
                                 /* Allocate PV structure array */
 
     pvs = calloc (nPvs, sizeof(pv));
@@ -642,9 +668,10 @@ int main (int argc, char *argv[])
     epicsMutexId printMutex = epicsMutexCreate();
     // Mutex to access result counter
     epicsMutexId resultMutex = epicsMutexCreate();
+    // Global variable
+    queueId = epicsMessageQueueCreate(QUEUE_CAPACITY, sizeof(t_thread_data));
 
-    epicsMessageQueueId queueId = epicsMessageQueueCreate(QUEUE_CAPACITY, sizeof(t_thread_data));
-
+    // We use up to NUMBER_OF_THREADS threads
     int number_of_threads;
     if (nPvs > NUMBER_OF_THREADS) {
         number_of_threads = NUMBER_OF_THREADS;
@@ -652,10 +679,17 @@ int main (int argc, char *argv[])
         number_of_threads = nPvs;
     }
 
+    // Prepare data used during thread initialization
+    t_init_thread init_thread;
+    //init_thread.queueId = queueId;
+
+    // Build and start all threads that will consume the message queue
     for (int iii=0; iii<number_of_threads; ++iii) {
-        thread_builder(queueId, iii);
+        thread_builder(init_thread, iii);
     }
 
+    // Fill the message queue with thread_data messages.
+    // Blocks if maximum capacity of queue is achieved.
     for (int iii=0; iii<nPvs; ++iii) {
         t_thread_data* thread_data;
         thread_data = malloc(sizeof(t_thread_data));
@@ -666,19 +700,17 @@ int main (int argc, char *argv[])
         thread_data->reqElems = count;
         thread_data->printMutex = printMutex;
         thread_data->resultMutex = resultMutex;
-        thread_data->queueId = queueId;
         thread_data->totalNumberOfPvs = nPvs;
         epicsMessageQueueSend(queueId, thread_data, sizeof(t_thread_data));
     }
-
-    epicsThreadId thread_id;
-    char th_name[9];
 
     // Wait for all threads to consume the queue before ending the main thread
     while (epicsMessageQueuePending(queueId)) {
         epicsThreadSleep(0.1);
     }
 
+    epicsThreadId thread_id;
+    char th_name[9];
     // Make sure the threads ended up their processing
     for (int iii=0; iii<number_of_threads; ++iii) {
         thread_name(iii, th_name);

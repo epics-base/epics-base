@@ -175,8 +175,8 @@ static BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
     hashid = (BUCKETID)src;
     src = src >> pb->hashIdNBits;
     while(src){
-        hashid = (BUCKETID)(hashid ^ src);
-        src = src >> pb->hashIdNBits;
+        hashid ^= src;
+        src >>= pb->hashIdNBits;
     }
     hashid = hashid & pb->hashIdMask;
 

@@ -501,7 +501,9 @@ static void dbProcessTimeoutCallback(void* arg)
 static void dbProcessTimeoutCallbackQueueInit(void* arg)
 {
     epicsTimerQueueId* pqueue = (epicsTimerQueueId*)arg;
-    *pqueue = epicsTimerQueueAllocate(1, epicsThreadPriorityScanLow);
+    unsigned int priority;
+    epicsThreadLowestPriorityLevelAbove(epicsThreadPriorityScanHigh, &priority);
+    *pqueue = epicsTimerQueueAllocate(1, priority);
 }
 
 void dbProcessTimeoutStart(dbCommon *precord)

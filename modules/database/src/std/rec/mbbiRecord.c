@@ -342,10 +342,9 @@ static void checkAlarms(mbbiRecord *prec, epicsTimeStamp *timeLast)
     recGblSetSevr(prec, STATE_ALARM, asev);
 
     /* Check for COS alarm */
-    if (val == prec->lalm ||
-        recGblSetSevr(prec, COS_ALARM, prec->cosv))
+    if (val == prec->lalm)
         return;
-
+    recGblSetSevr(prec, COS_ALARM, prec->cosv);
     prec->lalm = val;
 }
 

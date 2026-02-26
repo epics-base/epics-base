@@ -195,6 +195,13 @@ testHarness_SRCS += simmTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/simmTest.dbd $(COMMON_DIR)/simmTest.db
 TESTS += simmTest
 
+TESTPROD_HOST += mbbiTest
+mbbiTest_SRCS += mbbiTest.c
+mbbiTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += mbbiTest.c
+TESTFILES += ../mbbiTest.db
+TESTS += mbbiTest
+
 TESTPROD_HOST += mbbioDirectTest
 mbbioDirectTest_SRCS += mbbioDirectTest.c
 mbbioDirectTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp

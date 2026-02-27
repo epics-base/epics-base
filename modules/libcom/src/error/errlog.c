@@ -563,8 +563,6 @@ static void errlogInitPvt(void *arg)
 {
     struct initArgs *pconfig = (struct initArgs *) arg;
 
-    errlogClampConfig(pconfig);
-
     epicsThreadId tid = NULL;
     epicsThreadOpts topts = EPICS_THREAD_OPTS_INIT;
 
@@ -620,12 +618,6 @@ void errlogBufResize(struct initArgs config)
         return;
     }
 
-    size_t bufsize = config.bufsize;
-    size_t maxMsgSize = config.maxMsgSize;
-    if (errlogClampConfig(&config)) {
-        fprintf(stderr, "Warning: errlog config clamped from (%zu, %zu) to (%zu, %zu)\n", bufsize, maxMsgSize, config.bufsize, config.maxMsgSize);
-    }
-
     char *logbuf = calloc(1, config.bufsize);
     if (!logbuf) {
         fprintf(stderr, ERL_ERROR ": Failed to allocated errlog log buffer.\n");
@@ -664,6 +656,11 @@ int errlogInit2(int bufsize, int maxMsgSize)
 
     if (pvt.atExit)
         return 0;
+
+    if (errlogClampConfig(&config) && (bufsize != 0)) {
+        // No sense warning for every call to errlogInit(0)
+        fprintf(stderr, "Warning: errlog config clamped from (%d, %d) to (%zu, %zu)\n", bufsize, maxMsgSize, config.bufsize, config.maxMsgSize);
+    }
 
     epicsThreadOnce(&errlogOnceFlag, errlogInitPvt, &config);
     if (pvt.errlogInitFailed) {

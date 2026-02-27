@@ -639,19 +639,22 @@ void errlogBufResize(struct initArgs config)
     }
 
     epicsMutexMustLock(pvt.msgQueueLock);
+    char *oldlogbuf = pvt.log->base;
+    char *oldprintbuf = pvt.print->base;
 
     memcpy(logbuf, pvt.log->base, pvt.bufSize);
-    free(pvt.log->base);
     pvt.log->base = logbuf;
 
     memcpy(printbuf, &pvt.print->base, pvt.bufSize);
-    free(pvt.print->base);
     pvt.print->base = printbuf;
 
     pvt.bufSize = config.bufsize;
     pvt.maxMsgSize = config.maxMsgSize;
 
     epicsMutexUnlock(pvt.msgQueueLock);
+
+    free(oldlogbuf);
+    free(oldprintbuf);
 }
 
 int errlogInit2(int bufsize, int maxMsgSize)

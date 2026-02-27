@@ -26,4 +26,16 @@ LIBCOM_API extern const float epicsINF;
 }
 #endif
 
+static inline long long epicsLlround(double x)
+{
+    if(!isfinite(x)) return 0;
+    return (x >= 0.0)
+        ? (long long)floor(x + 0.5)
+        : -(long long)floor(-x + 0.5);
+}
+
+#ifndef __cplusplus
+#  define llround(x) epicsLlround((double)(x))
+#endif
+
 #endif /* epicsMathh */

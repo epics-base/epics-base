@@ -217,9 +217,9 @@ LIBCOM_API void fdManager::process(double delay)
         tv.tv_sec = static_cast<time_t>(minDelay);
         tv.tv_usec = static_cast<long>((minDelay-tv.tv_sec) * uSecPerSec);
 
-        fd_set * pReadSet = & priv->fdSetsPtr[fdrRead];
-        fd_set * pWriteSet = & priv->fdSetsPtr[fdrWrite];
-        fd_set * pExceptSet = & priv->fdSetsPtr[fdrException];
+        fd_set * pReadSet = & priv->fdSets[fdrRead];
+        fd_set * pWriteSet = & priv->fdSets[fdrWrite];
+        fd_set * pExceptSet = & priv->fdSets[fdrException];
         int status = select ((int)priv->maxFD, pReadSet, pWriteSet, pExceptSet, &tv);
 #endif
 

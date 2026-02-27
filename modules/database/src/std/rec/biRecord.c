@@ -237,7 +237,7 @@ static void checkAlarms(biRecord *prec, epicsTimeStamp *timeLast)
     }
 
     if(val>1)return;
-    
+
     if (val == 0) {
         asev = prec->zsv;
     } else {

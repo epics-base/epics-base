@@ -110,7 +110,7 @@ static void postjobs(unsigned icnt, unsigned mcnt, int cork)
         epicsThreadPoolConfig conf;
         epicsThreadPoolConfigDefaults(&conf);
         conf.initialThreads=icnt;
-        conf.maxThreads=mcnt; 
+        conf.maxThreads=mcnt;
 
         testOk1((pool=epicsThreadPoolCreate(&conf))!=NULL);
         if(!pool)

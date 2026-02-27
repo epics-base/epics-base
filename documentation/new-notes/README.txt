@@ -7,6 +7,9 @@ Files here must be written in Markdown (see below) and have the extension
 '.md' at the end of their filename.
 This README.txt file is the only other file that should appear here.
 
+Do not add new notes by editing the RELEASE-<version>.md files in the Base
+documentation directory or the O.Common/RELEASE_NOTES.md file that running
+'make' generates.
 
 Generating RELEASE_NOTES.md
 ---------------------------

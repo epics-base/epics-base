@@ -267,6 +267,7 @@ extern int dbConvertStrict;
 #define S_dbLib_outMem (M_dbLib|27)              /* Out of memory */
 #define S_dbLib_infoNotFound (M_dbLib|29)        /* Info item Not Found */
 #define S_dbLib_postInitRecRegister (M_dbLib|31) /* IOC already initialized - No new records can be added */
+#define S_dbLib_recordNameMissing (M_dbLib|33)   /* Record name is required */
 
 #ifdef __cplusplus
 }

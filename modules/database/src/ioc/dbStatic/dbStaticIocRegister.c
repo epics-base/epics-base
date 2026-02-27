@@ -291,10 +291,10 @@ static void dbCreateRecordCallFunc(const iocshArgBuf *args)
     }
     else {
         dbInitEntry(*iocshPpdbbase, &ent);
-        if(!args[1].sval) { // record type is required
+        if(!args[2].sval || (args[2].sval[0] == '\0')) {
+            status = S_dbLib_recordNameMissing;
+        } else if(!args[1].sval) {
             status = S_dbLib_recordTypeNotFound;
-        } else if(!args[2].sval) { // record name is required
-            status = S_dbLib_recNotFound;
         } else {
             status = dbFindRecordType(&ent, args[1].sval);
             if(!status) {

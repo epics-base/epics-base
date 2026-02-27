@@ -30,7 +30,8 @@ struct dbBase;
  *
  * Locking is required to prevent corruption of record fields due to concurrent 
  * access by different threads.
- * A dbLocker allows a caller to lock a single record or simultaneously 
+ */
+ /** @brief A dbLocker allows a caller to lock a single record or simultaneously 
  * lock multiple records. 
  * The list of records is provided to dbLockerAlloc(). And the resulting 
  * dbLocker can be locked/unlocked repeatedly.

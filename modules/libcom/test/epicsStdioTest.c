@@ -53,14 +53,14 @@ static void testEpicsSnprintf(void) {
 
     for (size = 1; size < strlen(expected) + 5; ++size) {
         rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
-        testOk(rtn <= rlen-1, "epicsSnprintf(size=%d) = %d", size, rtn);
+        testOk(rtn <= rlen-1, "epicsSnprintf(size=%lu) = %d", (unsigned long)size, rtn);
         if (rtn != rlen-1)
             testDiag("Return value does not indicate buffer size needed");
         testOk(strncmp(buffer, expected, size - 1) == 0,
             "buffer = '%s'", buffer);
         blen = strlen(buffer);
         testOk(blen == (size < rlen ? size : rlen) - 1,
-            "length = %u", (unsigned)blen);       /* can we use %zu ? */
+            "length = %lu", (unsigned long)blen);
     }
 }
 

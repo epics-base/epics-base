@@ -309,8 +309,7 @@ int epicsStdCall ca_create_channel (
             }
         }
         if ( pFunc ) {
-            // modify CAFDHANDLER to take SOCKET ?
-            ( *pFunc ) ( pArg, static_cast<int>(pcac->sock), true );
+            ( *pFunc ) ( pArg, pcac->sock, true );
         }
     }
 

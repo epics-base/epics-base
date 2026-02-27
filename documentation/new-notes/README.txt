@@ -11,23 +11,6 @@ Do not add new notes by editing the RELEASE-<version>.md files in the Base
 documentation directory or the O.Common/RELEASE_NOTES.md file that running
 'make' generates.
 
-Generating RELEASE_NOTES.md
----------------------------
-
-Running 'make' inside the Base documentation directory now generates a
-file RELEASE_NOTES.md and installs it into the top-level doc directory.
-
-The file starts with a level-1 Markdown header and some introductory text.
-If any new-notes files are present a level-2 header is added with a Release
-version number and a -DEV suffix, followed by some notes explaining their
-unreleased status. The new-notes filenames are lexically sorted and their
-contents added in order, separated by an extra newline character.
-
-Finally a series of myst Markdown directives are added which will include all
-the older RELEASE-<version>.md files present in the documentation directory
-into the published HTML version, sorted in version order with the newest first.
-
-
 Writing a Release Notes entry
 -----------------------------
 
@@ -56,3 +39,19 @@ The file *must* start with a level-3 Markdown title for the entry, like this:
 Release note entries are not intended to provide full documentation of major
 features. For small features or changes though, they may provide all the
 information needed to understand and use the feature.
+
+Generating RELEASE_NOTES.md
+---------------------------
+
+Running 'make' inside the Base documentation directory now generates a
+file RELEASE_NOTES.md and installs it into the top-level doc directory.
+
+The file starts with a level-1 Markdown header and some introductory text.
+If any new-notes files are present a level-2 header is added with a Release
+version number and a -DEV suffix, followed by some notes explaining their
+unreleased status. The new-notes filenames are lexically sorted and their
+contents added in order, separated by an extra newline character.
+
+Finally a series of myst Markdown directives are added which will include all
+the older RELEASE-<version>.md files present in the documentation directory
+into the published HTML version, sorted in version order with the newest first.

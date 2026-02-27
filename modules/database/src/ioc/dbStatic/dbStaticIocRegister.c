@@ -287,7 +287,7 @@ static void dbCreateRecordCallFunc(const iocshArgBuf *args)
 
     iocState = getIocState();
     if(iocState != iocVoid) {
-        status = S_dbLib_iocNotStarted;
+        status = S_dbLib_postInitRecRegister;
     }
     else {
         dbInitEntry(*iocshPpdbbase, &ent);

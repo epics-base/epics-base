@@ -290,11 +290,13 @@ void testInitLocal()
     eltc(1);
 
     testdbGetFieldEqual("il1src0.INP", DBF_STRING, "no:such:pv NPP NMS");
-    testdbGetFieldEqual("il1src1.INP", DBF_STRING, "il1tgt NPP NMS INT");
-    testdbGetFieldEqual("il1src2.INP", DBF_STRING, "il1tgt NPP NMS INT");
     testdbGetFieldEqual("il1src3.INP", DBF_STRING, "il1tgt NPP NMS");
-    testdbGetFieldEqual("il1src4.INP", DBF_STRING, "no:such:pv NPP NMS EXT");
     testdbGetFieldEqual("il1src5.INP", DBF_STRING, "no:such:pv NPP NMS");
+
+    /* INT and EXT are suppressed in string representation */
+    testdbGetFieldEqual("il1src1.INP", DBF_STRING, "il1tgt NPP NMS");
+    testdbGetFieldEqual("il1src2.INP", DBF_STRING, "il1tgt NPP NMS");
+    testdbGetFieldEqual("il1src4.INP", DBF_STRING, "no:such:pv NPP NMS");
 
     testInitLocalLink("il1src0", pvlOptSrcAuto, pvlOptSrcUnDef);
     testInitLocalLink("il1src1", pvlOptSrcInt, pvlOptSrcInt );

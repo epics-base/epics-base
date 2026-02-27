@@ -1110,6 +1110,13 @@ static long dbPutFieldLink(DBADDR *paddr,
         return status;
 
     if (link_info.ltype == PV_LINK &&
+        (link_info.modifiers & (pvlOptSrcInt | pvlOptSrcExt | pvlOptSrcAuto)) != 0) {
+        errlogPrintf(ERL_ERROR ": dbPutFieldLink %s.%s=%s: INT, EXT, AUTO modifiers not allowed at runtime\n",
+            precord->name, pfldDes->name, link_info.target);
+        goto cleanup;
+    }
+
+    if (link_info.ltype == PV_LINK &&
         (link_info.modifiers & (pvlOptCA | pvlOptCP | pvlOptCPP)) == 0) {
         chan = dbChannelCreate(link_info.target);
         if (chan && (status = dbChannelOpen(chan)) != 0) {

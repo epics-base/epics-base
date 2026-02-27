@@ -81,8 +81,11 @@ const char *dbLinkSrcName(const struct link* plink)
         switch(srcMask) {
         case pvlOptSrcUnDef:ret = " UNDEF"; break; /* should also not be possible */
         case pvlOptSrcAuto: ret = ""; break;
-        case pvlOptSrcInt:  ret = " INT"; break;
-        case pvlOptSrcExt:  ret = " EXT"; break;
+
+        /* Suppress these. Currently, these modifiers can only be used in db
+           files, not at runtime. */
+        case pvlOptSrcInt:  ret = ""; break;
+        case pvlOptSrcExt:  ret = ""; break;
         }
     }
     return ret;

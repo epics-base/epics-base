@@ -26,6 +26,8 @@ extern "C" {
  * @file dbExtractArray.h
  *
  * @brief Make a copy of parts of an array.
+ */
+/** @brief Make a copy of parts of an array
  *
  * The source array may or may not be a record field.
  *

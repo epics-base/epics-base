@@ -555,6 +555,10 @@ static void testLogPrefix(void) {
     iocLogPrefix(prefixstring);
     testPrefixLogandCompare(prefixactualmsg[1]);
     testPrefixLogandCompare(prefixactualmsg[2]);
+    status = fdmgr_clear_callback (pfdctx, sock, fdi_read);
+    if (status < 0) {
+        testAbort("fdmgr_clear_callback failed!");
+    }
     epicsSocketDestroy(sock);
 }
 

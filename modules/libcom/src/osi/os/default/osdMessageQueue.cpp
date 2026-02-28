@@ -409,7 +409,7 @@ LIBCOM_API int epicsStdCall
 epicsMessageQueuePending(epicsMessageQueueId pmsg)
 {
     char *myInPtr, *myOutPtr;
-    int64_t nmsg;
+    ptrdiff_t nmsg;
 
     epicsMutexMustLock(pmsg->mutex);
     myInPtr = (char *)pmsg->inPtr;

@@ -168,17 +168,17 @@ static BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
 static BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
 {
     void * const    *ppId = (void * const *) pId;
-    uintptr_t      src;
+    size_t      src;
     BUCKETID    hashid;
 
-    src = (uintptr_t)*ppId;
+    src = (size_t)*ppId;
     hashid = (BUCKETID)src;
-    src = src >> pb->hashIdNBits;
+    src >>= pb->hashIdNBits;
     while(src){
         hashid ^= src;
         src >>= pb->hashIdNBits;
     }
-    hashid = hashid & pb->hashIdMask;
+    hashid &= pb->hashIdMask;
 
     return hashid;
 }

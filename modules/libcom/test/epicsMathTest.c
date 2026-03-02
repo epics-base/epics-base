@@ -22,7 +22,7 @@ MAIN(epicsMathTest)
     double tiny = 1e-300;
     double c;
 
-    testPlan(35);
+    testPlan(44);
 
     testOk1(!isnan(0.0));
     testOk1(!isinf(0.0));
@@ -91,6 +91,17 @@ MAIN(epicsMathTest)
     testOk(!isnan(c), "!isnan(1e-300 / 1e-300)");
     testOk(!isinf(c), "!isinf(1e-300 / 1e-300)");
     testOk(c == 1.0, "1e300 / 1e-300 == 1.0");
+
+    /* llround() test */
+    testOk(llround(0.0)  == 0LL,  "llround(0.0) == 0");
+    testOk(llround(0.5)  == 1LL,  "llround(0.5) == 1");
+    testOk(llround(1.5)  == 2LL,  "llround(1.5) == 2");
+    testOk(llround(2.3)  == 2LL,  "llround(2.3) == 2");
+    testOk(llround(2.7)  == 3LL,  "llround(2.7) == 3");
+    testOk(llround(-0.5) == -1LL, "llround(-0.5) == -1");
+    testOk(llround(-1.5) == -2LL, "llround(-1.5) == -2");
+    testOk(llround(-2.3) == -2LL, "llround(-2.3) == -2");
+    testOk(llround(-2.7) == -3LL, "llround(-2.7) == -3");
 
     return testDone();
 }

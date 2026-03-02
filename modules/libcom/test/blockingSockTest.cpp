@@ -238,7 +238,8 @@ static const char *mechName(int mech)
     } mechs[] = {
         {-1, "Unknown shutdown mechanism" },
         {esscimqi_socketCloseRequired, "esscimqi_socketCloseRequired" },
-        {esscimqi_socketBothShutdownRequired, "esscimqi_socketBothShutdownRequired" }
+        {esscimqi_socketBothShutdownRequired, "esscimqi_socketBothShutdownRequired" },
+        {esscimqi_socketSigAlarmRequired, "esscimqi_socketSigAlarmRequired" }
     };
 
     for (unsigned i=0; i < (sizeof(mechs) / sizeof(mechs[0])); ++i) {

@@ -53,3 +53,5 @@ LIBCOM_API void epicsStdCall epicsSignalInstallSigPipeIgnore (void)
 
 /* Disabled */
 LIBCOM_API void epicsStdCall epicsSignalInstallSigAlarmIgnore ( void ) {}
+LIBCOM_API void epicsStdCall epicsSignalRaiseSigAlarm
+                                  ( struct epicsThreadOSD * /* threadId */ ) {}

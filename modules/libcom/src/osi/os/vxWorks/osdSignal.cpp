@@ -16,3 +16,4 @@
 LIBCOM_API void epicsStdCall epicsSignalInstallSigHupIgnore ( void ) {}
 LIBCOM_API void epicsStdCall epicsSignalInstallSigPipeIgnore ( void ) {}
 LIBCOM_API void epicsStdCall epicsSignalInstallSigAlarmIgnore ( void ) {}
+LIBCOM_API void epicsStdCall epicsSignalRaiseSigAlarm ( struct epicsThreadOSD * /* threadId */ ) {}

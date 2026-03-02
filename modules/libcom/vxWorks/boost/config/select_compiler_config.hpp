@@ -77,6 +77,10 @@
 //  Metrowerks CodeWarrior
 #   define BOOST_COMPILER_CONFIG "boost/config/compiler/metrowerks.hpp"
 
+#elif defined  __SUNPRO_CC
+//  Sun Workshop Compiler C++
+#   define BOOST_COMPILER_CONFIG "boost/config/compiler/sunpro_cc.hpp"
+
 #elif defined __HP_aCC
 //  HP aCC
 #   define BOOST_COMPILER_CONFIG "boost/config/compiler/hp_acc.hpp"

@@ -21,9 +21,17 @@
 // BSD:
 #  define BOOST_PLATFORM_CONFIG "boost/config/platform/bsd.hpp"
 
+#elif defined(sun) || defined(__sun)
+// solaris:
+#  define BOOST_PLATFORM_CONFIG "boost/config/platform/solaris.hpp"
+
 #elif defined(__sgi)
 // SGI Irix:
 #  define BOOST_PLATFORM_CONFIG "boost/config/platform/irix.hpp"
+
+#elif defined(__hpux)
+// hp unix:
+#  define BOOST_PLATFORM_CONFIG "boost/config/platform/hpux.hpp"
 
 #elif defined(__CYGWIN__)
 // cygwin is not win32:

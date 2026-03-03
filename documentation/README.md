@@ -115,7 +115,7 @@ The source files for EPICS base documentation can be found in the
 
 The documentation of EPICS base is automatically built via ReadTheDocs.
 The configuration is defined in `base/.readthedocs.yaml`.
-Any commit triggers a webhook for the [EPICS Base ReadTheDocs project](https://app.readthedocs.org/projects/epics-base/).
+Any commit on the main branch, and opening pull requests triggers a build of the [EPICS Base ReadTheDocs project](https://app.readthedocs.org/projects/epics-base/).
 
 More information on how to locally build the documentation can be found in the {doc}`build-docs` section.
 

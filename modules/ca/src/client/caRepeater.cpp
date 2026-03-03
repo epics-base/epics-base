@@ -47,19 +47,21 @@
 
 static void usage(char* argv[])
 {
-    fprintf(stderr, "Usage: %s -hv\n"
+    fprintf(stderr, "Usage: %s -hdv\n"
             "\n"
             " -h - Print this message\n"
-            " -v - Do not replace stdin/out/err with /dev/null\n",
+            " -d - Increment debug level and set verbose\n"
+            " -v - Verbose, don't suppress messages\n",
             argv[0]);
 }
 
 int main(int argc, char* argv[])
 {
+    int debug = 0;
     bool detachinout = true;
 
     int opt;
-    while ((opt = getopt(argc, argv, "hv")) != -1) {
+    while ((opt = getopt(argc, argv, "dhv")) != -1) {
         switch (opt) {
         default:
             usage(argv);
@@ -68,6 +70,9 @@ int main(int argc, char* argv[])
         case 'h':
             usage(argv);
             return 0;
+        case 'd':
+            debug++;
+            // Fall through
         case 'v':
             detachinout = false;
             break;
@@ -91,7 +96,7 @@ int main(int argc, char* argv[])
 #endif
 
     (void)! chdir ( "/" );
-    ca_repeater ();
+    ca_repeater ( debug );
     return ( 0 );
 }
 

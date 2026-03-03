@@ -70,6 +70,7 @@
 #include "taskwd.h"
 #include "errlog.h"
 
+#define DEBUG // Tell iocinf.h to define debugPrint
 #include "iocinf.h"
 #include "caProto.h"
 #include "udpiiu.h"
@@ -84,6 +85,8 @@
 static tsDLList < repeaterClient > client_list;
 
 static const unsigned short PORT_ANY = 0u;
+
+static int debug = 0;
 
 /*
  * makeSocket()
@@ -128,10 +131,10 @@ static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
 repeaterClient::repeaterClient ( const osiSockAddr &fromIn ) :
     from ( fromIn ), sock ( INVALID_SOCKET )
 {
-#ifdef DEBUG
-    unsigned port = ntohs ( from.ia.sin_port );
-    debugPrintf ( ( "new client %u\n", port ) );
-#endif
+    if ( debug ) {
+        unsigned port = ntohs ( from.ia.sin_port );
+        debugPrintf ( ( "New client on port %u\n", port ) );
+    }
 }
 
 bool repeaterClient::connect ()
@@ -193,19 +196,19 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize )
     status = send ( this->sock, (char *) pBuf, bufSize, 0 );
     if ( status >= 0 ) {
         assert ( static_cast <unsigned> ( status ) == bufSize );
-#ifdef DEBUG
-        epicsUInt16 port = ntohs ( this->from.ia.sin_port );
-        debugPrintf ( ("Sent to %u\n", port ) );
-#endif
+        if ( debug > 1 ) {
+            epicsUInt16 port = ntohs ( this->from.ia.sin_port );
+            debugPrintf ( ("Sent to port %u\n", port ) );
+        }
         return true;
     }
     else {
         int errnoCpy = SOCKERRNO;
         if ( errnoCpy == SOCK_ECONNREFUSED ) {
-#ifdef DEBUG
-            epicsUInt16 port = ntohs ( this->from.ia.sin_port );
-            debugPrintf ( ("Client refused message %u\n", port ) );
-#endif
+            if ( debug ) {
+                epicsUInt16 port = ntohs ( this->from.ia.sin_port );
+                debugPrintf ( ("Client on port %u refused message\n", port ) );
+            }
         }
         else {
             char sockErrBuf[64];
@@ -221,10 +224,10 @@ repeaterClient::~repeaterClient ()
     if ( this->sock != INVALID_SOCKET ) {
         epicsSocketDestroy ( this->sock );
     }
-#ifdef DEBUG
-    epicsUInt16 port = ntohs ( this->from.ia.sin_port );
-    debugPrintf ( ( "Deleted client %u\n", port ) );
-#endif
+    if ( debug ) {
+        epicsUInt16 port = ntohs ( this->from.ia.sin_port );
+        debugPrintf ( ( "Deleted client on port %u\n", port ) );
+    }
 }
 
 void repeaterClient::operator delete ( void * )
@@ -286,6 +289,10 @@ bool repeaterClient::verify ()
 
     if ( sockerrno == SOCK_EADDRINUSE ) {
         // Normal result, client using port
+        if ( debug > 1 ) {
+            epicsUInt16 port = ntohs ( this->from.ia.sin_port );
+            debugPrintf ( ("Client on port %u is alive\n", port ) );
+        }
         return true;
     }
 
@@ -320,6 +327,9 @@ static void verifyClients ( tsFreeList < repeaterClient, 0x20 > & freeList )
             pclient->~repeaterClient ();
             freeList.release ( pclient );
         }
+    }
+    if ( debug ) {
+        debugPrintf ( ( "Verified %u active clients\n", theClients.count() ) );
     }
     client_list.add ( theClients );
 }
@@ -444,11 +454,11 @@ static void register_new_client ( osiSockAddr & from,
         client_list.remove ( *pNewClient );
         pNewClient->~repeaterClient ();
         freeList.release ( pNewClient );
-#       ifdef DEBUG
+        if ( debug ) {
             epicsUInt16 port = ntohs ( from.ia.sin_port );
-            debugPrintf ( ( "Deleted repeater client=%u (error while sending ack)\n",
+            debugPrintf ( ( "Deleted repeater client on port %u, error sending ack\n",
                         port ) );
-#       endif
+        }
     }
 
     /*
@@ -480,7 +490,7 @@ static void register_new_client ( osiSockAddr & from,
 /*
  *  ca_repeater ()
  */
-void ca_repeater ()
+void ca_repeater ( int setDebug )
 {
     tsFreeList < repeaterClient, 0x20 > freeList;
     int size;
@@ -488,6 +498,8 @@ void ca_repeater ()
     osiSockAddr from;
     unsigned short port;
     char * pBuf;
+
+    debug = setDebug;
 
     pBuf = new char [MAX_UDP_RECV];
 
@@ -504,7 +516,7 @@ void ca_repeater ()
          */
         if ( sockerrno == SOCK_EADDRINUSE ) {
             osiSockRelease ();
-            debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
+            debugPrintf ( ( "CA Repeater: Exiting, a repeater is already running\n" ) );
             delete [] pBuf;
             return;
         }

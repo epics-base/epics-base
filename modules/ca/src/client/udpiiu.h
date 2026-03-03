@@ -59,7 +59,7 @@ LIBCA_API void epicsStdCall caRepeaterRegistrationMessage (
     SOCKET sock, unsigned repeaterPort, unsigned attemptNumber );
 extern "C" LIBCA_API void caRepeaterThread (
     void * pDummy );
-LIBCA_API void ca_repeater ( void );
+LIBCA_API void ca_repeater ( int setDebug = 0 );
 
 class cac;
 class cacContextNotify;

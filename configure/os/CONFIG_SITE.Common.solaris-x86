@@ -1,9 +1,0 @@
-# CONFIG_SITE.Common.solaris-x86
-#
-# Site Specific definitions for solaris-x86 targets
-# Only the local epics system manager should modify this file
-
-# location of the Solaris Studio (was SunPro) compilers
-SPARCWORKS = /opt/SUNWspro
-#SPARCWORKS = /opt/solarisstudio12.3
-

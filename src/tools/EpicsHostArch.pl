@@ -114,8 +114,6 @@ sub toEpicsArch {
         return 'win32-x86'      if m/^MSWin32-x86/;
         return "cygwin-x86_64"  if m/^x86_64-cygwin/;
         return "cygwin-x86"     if m/^i[3-6]86-cygwin/;
-        return 'solaris-sparc'  if m/^sun4-solaris/;
-        return 'solaris-x86'    if m/^i86pc-solaris/;
         return 'freebsd-x86_64' if m/^x86_64-freebsd/;
         return 'freebsd-x86_64' if m/^amd64-freebsd/;
         return 'darwin-x86'     if m/^x86(_64)?-darwin/;

@@ -27,14 +27,6 @@
 #	linux-ppc64            (GNU compiler used for host builds)
 #	linux-x86              (GNU compiler used for host builds)
 #	linux-x86_64           (GNU compiler used for host builds)
-#	solaris-sparc          (Sun compiler used for host builds)
-#	solaris-sparc-gnu      (GNU compiler used for host builds)
-#	solaris-sparc64        (Sun compiler used for host builds)
-#	solaris-sparc64-gnu    (GNU compiler used for host builds)
-#	solaris-x86            (Sun compiler used for host builds)
-#	solaris-x86-gnu        (GNU compiler used for host builds)
-#	solaris-x86_64         (Sun compiler used for host builds)
-#	solaris-x86_64-gnu     (GNU compiler used for host builds)
 #	win32-x86              (MS Visual C++ compiler used for host builds)
 #	win32-x86-mingw        (MinGW compiler used for host builds)
 #	win32-x86-static       (MS Visual C++ compiler used for host builds)
@@ -46,7 +38,6 @@
 #	linux-arm-debug        (GNU compiler used for host builds)
 #	linux-x86-debug        (GNU compiler with -g option for host builds)
 #	linux-x86_64-debug     (GNU compiler with -g option for host builds)
-#	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
 #	win32-x86-debug        (MS Visual C++ compiler with debug option for host builds)
 #	windows-x64-debug      (MS Visual C++ compiler with debug option for host builds)
 
@@ -168,7 +159,7 @@ GCC_PIPE = NO
 #  Must be either YES, NO, or ORIGIN.  If you set this to NO you must also provide a
 #  way for Base executables to find their shared libraries when they are
 #  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
-#  ORIGIN is a feature of the ELF executable format used by Linux, freebsd, and solaris.
+#  ORIGIN is a feature of the ELF executable format used by Linux, and freebsd.
 LINKER_USE_RPATH = YES
 
 # Only used when LINKER_USE_RPATH=ORIGIN

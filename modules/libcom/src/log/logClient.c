@@ -126,9 +126,6 @@ static void logClientDestroy (logClientId id)
     case esscimqi_socketBothShutdownRequired:
         shutdown ( pClient->sock, SHUT_WR );
         break;
-    case esscimqi_socketSigAlarmRequired:
-        epicsSignalRaiseSigAlarm ( pClient->restartThreadId );
-        break;
     default:
         break;
     };

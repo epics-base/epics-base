@@ -37,8 +37,7 @@ LIBCOM_API extern void ClockTime_GetProgramStart(epicsTimeStamp *pDest);
 #define FIND_ADDR_DEBUG 0
 
 /*
- * On some systems (linux, solaris) dladdr doesn't find local symbols
- * or symbols in the main executable.
+ * On linux dladdr doesn't find local symbols or symbols in the main executable.
  * Hence, we want to use dladdr() to find the file name
  * where a symbol is defined and if not more information is available
  * then proceed to lookup symbols in the ELF symbol tables.
@@ -537,14 +536,11 @@ epicsFindAddr(void *addr, epicsSymbol *sym_p)
 
     sym_p->f_nam = inf.dli_fname;
 
-    /* If the symbol is in the main executable then solaris' dladdr returns bogus info */
-#ifndef __sun
     if ( (sym_p->s_nam = inf.dli_sname) ) {
         sym_p->s_val = inf.dli_saddr;
         /* Have a symbol name - just use it and be done */
         return 0;
     }
-#endif
 
     /* No symbol info; try to access ELF file and ready symbol table from there */
 

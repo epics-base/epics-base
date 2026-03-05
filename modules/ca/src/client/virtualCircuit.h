@@ -62,7 +62,6 @@ public:
     void start ();
     void exitWait ();
     bool exitWait ( double delay );
-    void interruptSocketRecv ();
     void show ( unsigned level ) const;
 private:
     epicsThread thread;
@@ -85,7 +84,6 @@ public:
     virtual ~tcpSendThread ();
     void start ();
     void exitWait ();
-    void interruptSocketSend ();
     void show ( unsigned level ) const;
 private:
     epicsThread thread;

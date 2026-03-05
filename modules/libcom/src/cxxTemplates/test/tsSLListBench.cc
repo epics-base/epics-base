@@ -15,12 +15,6 @@
 #include <stdio.h>
 #include <time.h>
 
-/*
- * gnuc does not provide this under sunos4
- */
-#if !defined(CLOCKS_PER_SEC) && defined(SUNOS4)
-#   define CLOCKS_PER_SEC 1000000
-#endif
 
 class fred : public tsSLNode<fred> {
 public:

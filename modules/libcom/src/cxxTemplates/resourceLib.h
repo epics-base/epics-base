@@ -1000,9 +1000,8 @@ inline void chronIntIdRes<ITEM>::setId (unsigned newId)
 //
 // intId::intId
 //
-// (if this is inline SUN PRO botches the template instantiation)
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::intId (const T &idIn)
+inline intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::intId (const T &idIn)
     : id (idIn) {}
 
 //
@@ -1134,20 +1133,15 @@ stringId::~stringId()
     if (this->allocType==copyString) {
         if (this->pStr!=NULL) {
             //
-            // the microsoft and solaris compilers will
-            // not allow a pointer to "const char"
-            // to be deleted
-            //
-            // the HP-UX compiler gives us a warning on
-            // each cast away of const, but in this case
-            // it can't be avoided.
+            // the microsoft compiler will not allow a
+            // pointer to "const char" to be deleted.
             //
             // The DEC compiler complains that const isn't
             // really significant in a cast if it is present.
             //
             // I hope that deleting a pointer to "char"
             // is the same as deleting a pointer to
-            // "const char" on all compilers
+            // "const char" on all compilers.
             //
             delete [] const_cast<char *>(this->pStr);
         }

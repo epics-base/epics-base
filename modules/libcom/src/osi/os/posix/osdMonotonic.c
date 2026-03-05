@@ -18,9 +18,6 @@ void osdMonotonicInit(void)
 {
     unsigned i;
 clockid_t ids[] = {
-#ifdef CLOCK_HIGHRES
-        CLOCK_HIGHRES, /* solaris specific */
-#endif
 #ifdef CLOCK_MONOTONIC
         CLOCK_MONOTONIC, /* Linux, RTEMS, and probably others */
 #endif

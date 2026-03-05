@@ -144,9 +144,6 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
                         }
                     }
                     break;
-                case esscimqi_socketSigAlarmRequired:
-                    epicsSignalRaiseSigAlarm ( pclient->tid );
-                    break;
                 default:
                     break;
                 };

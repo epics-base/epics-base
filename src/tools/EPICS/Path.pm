@@ -75,8 +75,7 @@ put into a file.  It converts paths from the Unix form that Perl understands to
 any necessary external representation, and also removes automounter prefixes to
 put the path into its canonical form.
 
-Before Leopard, the Mac OS X automounter inserted a verbose prefix, and in case
-anyone is still using SunOS (pre-Solaris) it added its own prefix as well.
+Before Leopard, the Mac OS X automounter inserted a verbose prefix.
 
 =cut
 
@@ -85,9 +84,6 @@ sub LocalPath {
     if ($^O eq 'darwin') {
         # Darwin automounter
         $newpath =~ s{^/private/var/auto\.}{/};
-    } elsif ($^O eq 'sunos') {
-        # SunOS automounter
-        $newpath =~ s{^/tmp_mnt/}{/};
     }
     return $newpath;
 }

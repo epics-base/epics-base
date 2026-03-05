@@ -15,7 +15,6 @@ USR_CPPFLAGS += -I$(TOP)/modules/libcom/src
 
 PROD_LIBS += Com
 PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
-PROD_SYS_LIBS_solaris += socket nsl
 
 PROD_SRCS_RTEMS += rtemsTestData.c
 

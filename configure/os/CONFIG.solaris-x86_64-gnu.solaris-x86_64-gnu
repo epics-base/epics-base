@@ -1,9 +1,0 @@
-# CONFIG.solaris-x86_64-gnu.solaris-x86_64-gnu
-#
-# Definitions for solaris-x86_64 gnu compiler host - solaris-sx86_64 gnu compiler target builds
-# Sites may override these definitions in CONFIG_SITE.solaris-x86_64-gnu.solaris-x86_64-gnu
-#-------------------------------------------------------
-
-# Include common solaris-x86-gnu definitions
-include $(CONFIG)/os/CONFIG.solaris-x86-gnu.solaris-x86-gnu
-

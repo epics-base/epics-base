@@ -78,10 +78,10 @@ typedef struct {
 
 static struct {
     epicsMutexId bufSizeLock;
-    /* const after errlogInit() */
+    /* guarded by bufSizeLock, allowing them to be resized after initialisation */
     size_t maxMsgSize;
-    /* alloc size of both buffer_t::base */
     size_t bufSize;
+
     int    errlogInitFailed;
 
     epicsMutexId listenerLock;
@@ -726,6 +726,7 @@ void errlogFlush(void)
 static void errlogThread(void)
 {
     int wakeFlusher;
+    epicsMutexMustLock(pvt.bufSizeLock);
     epicsMutexMustLock(pvt.msgQueueLock);
     while (1) {
         pvt.flushSeq++;
@@ -735,9 +736,17 @@ static void errlogThread(void)
                 break;
             wakeFlusher = pvt.nFlushers!=0;
             epicsMutexUnlock(pvt.msgQueueLock);
+            // Allow the buffer size to be modified only at this point
+            epicsMutexUnlock(pvt.bufSizeLock);
+
             if(wakeFlusher)
                 epicsEventMustTrigger(pvt.waitForSeq);
+
             epicsEventMustWait(pvt.waitForWork);
+
+            // Block resizing the buffer size
+            epicsMutexMustLock(pvt.bufSizeLock);
+
             epicsMutexMustLock(pvt.msgQueueLock);
 
         } else {
@@ -755,6 +764,8 @@ static void errlogThread(void)
             }
 
             pvt.nLost = 0u;
+            // Note that we are intentionally still holding the buffer size lock
+            // here. The buffer can only be resized when this thread is idle.
             epicsMutexUnlock(pvt.msgQueueLock);
 
             while(pos < print->pos) {
@@ -818,6 +829,7 @@ static void errlogThread(void)
     }
     wakeFlusher = pvt.nFlushers!=0;
     epicsMutexUnlock(pvt.msgQueueLock);
+    epicsMutexUnlock(pvt.bufSizeLock);
     if(wakeFlusher)
         epicsEventMustTrigger(pvt.waitForSeq);
 }

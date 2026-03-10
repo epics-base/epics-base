@@ -24,7 +24,7 @@ extern "C" {
  * \param capacity Total size of \a buf in bytes, including the terminating
  *                 NUL character.
  */
-char *macArithPostprocess(char *buf, const size_t capacity);
+char *macArithExpandExpressions(char *buf, const size_t capacity);
 
 #ifdef __cplusplus
 }

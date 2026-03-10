@@ -213,7 +213,7 @@ epicsStdCall macExpandString(
     d  = dest;
     *d = '\0';
     trans( handle, &entry, 0, "", &s, &d, d + capacity - 1 );
-    d = macArithPostprocess(dest, capacity);
+    d = macArithExpandExpressions(dest, capacity);
     /* return +/- #chars copied depending on successful expansion */
     length = d - dest;
     length = ( entry.error ) ? -length : length;

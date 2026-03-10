@@ -148,7 +148,7 @@ static int evalMacroExpression(const char * const begin, const char * const end,
 }
 
 /* Replace $(...) arithmetic expressions in the buffer with their evaluated values. */
-char *macArithPostprocess(char *buf, const size_t capacity)
+char *macArithExpandExpressions(char *buf, const size_t capacity)
 {
     const char *r;
     char *w;

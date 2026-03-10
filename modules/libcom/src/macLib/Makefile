@@ -8,7 +8,7 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 SRC_DIRS += $(LIBCOM)/macLib
-INC += macLib.h macArith.h
+INC += macLib.h
 Com_SRCS += macCore.c
 Com_SRCS += macEnv.c
 Com_SRCS += macUtil.c

@@ -8,10 +8,10 @@ extern "C" {
 #endif
 
 /**
- * \brief Replace valid $(...) arithmetic expressions in a string buffer.
+ * \brief Replace valid $[...] arithmetic expressions in a string buffer.
  * \return Pointer to the terminating NUL character in the output buffer.
  *
- * Scans the buffer for fragments of the form $(...) and evaluates each
+ * Scans the buffer for fragments of the form $[...] and evaluates each
  * fragment as an integer arithmetic expression. Supported syntax includes
  * whitespace, parentheses, leading '+' and '-', and the binary operators
  * '+', '-', '*', '/', and '%'.

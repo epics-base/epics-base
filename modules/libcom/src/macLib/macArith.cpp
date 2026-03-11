@@ -1,49 +1,47 @@
 #include "macArith.h"
 
+#include <ctype.h>
+
 #include <epicsStdio.h>
 #include <epicsStdlib.h>
 #include <epicsString.h>
 
-/* Skip spaces and tabs at the current parse position. */
-static void skipBlankSpaces(const char *&p)
+/* Skip whitespace at the current parse position. */
+static void skipWhitespace(const char *&p)
 {
-    while (*p && (*p == ' ' || *p == '\t'))
+    unsigned char c;
+    while ((c = *p) && isspace(c))
         ++p;
 }
 
 static int parseAddSub(const char *&p, long &out);
 
-/* Parse an integer literal from the current parse position using strtol() base auto-detection. */
+/* Parse an integer literal. */
 static int parseNumber(const char *&p, long &out)
 {
     char *end = NULL;
-    long value;
 
-    skipBlankSpaces(p);
-    value = strtol(p, &end, 0);
-
-    if (end == p)
+    if (epicsParseLong(p, &out, 0, &end))
         return 0;
 
-    out = value;
     p = end;
     return 1;
 }
 
-/* Parse a unary operand: optional '+'/'-', a number, or a parenthesized expression. */
+/* Parse a unary operand: leading '+'/'-', a number, or a parenthesized expression. */
 static int parseUnary(const char *&p, long &out)
 {
     int negate = 0;
 
-    skipBlankSpaces(p);
+    skipWhitespace(p);
 
     if (*p == '+') {
         ++p;
-        skipBlankSpaces(p);
+        skipWhitespace(p);
     } else if (*p == '-') {
         ++p;
         negate = 1;
-        skipBlankSpaces(p);
+        skipWhitespace(p);
     }
 
     if (*p == '(') {
@@ -52,7 +50,7 @@ static int parseUnary(const char *&p, long &out)
         if (!parseAddSub(p, out))
             return 0;
 
-        skipBlankSpaces(p);
+        skipWhitespace(p);
         if (*p != ')')
             return 0;
 
@@ -78,7 +76,7 @@ static int parseMulDivMod(const char *&p, long &out)
         return 0;
 
     for (;;) {
-        skipBlankSpaces(p);
+        skipWhitespace(p);
         op = *p;
 
         if (op != '*' && op != '/' && op != '%')
@@ -115,7 +113,7 @@ static int parseAddSub(const char *&p, long &out)
         return 0;
 
     for (;;) {
-        skipBlankSpaces(p);
+        skipWhitespace(p);
         op = *p;
 
         if (op != '+' && op != '-')
@@ -143,11 +141,11 @@ static int evalMacroExpression(const char * const begin, const char * const end,
     if (!parseAddSub(p, result))
         return 0;
 
-    skipBlankSpaces(p);
+    skipWhitespace(p);
     return p == end;
 }
 
-/* Replace $(...) arithmetic expressions in the buffer with their evaluated values. */
+/* Replace $[...] arithmetic expressions in the buffer with their evaluated values. */
 char *macArithExpandExpressions(char *buf, const size_t capacity)
 {
     const char *r;
@@ -162,22 +160,16 @@ char *macArithExpandExpressions(char *buf, const size_t capacity)
     w = buf;
 
     while (*r && w < wend) {
-        if (r[0] == '$' && r[1] == '(') {
+        if (r[0] == '$' && r[1] == '[') {
             const char * const exprBegin = r + 2;
             const char *p = exprBegin;
-            int depth = 1;
             long value;
 
-            while (*p && depth > 0) {
-                if (*p == '(')
-                    ++depth;
-                else if (*p == ')')
-                    --depth;
+            while (*p && *p != ']')
                 ++p;
-            }
 
-            if (depth == 0) {
-                const char * const exprEnd = p - 1;
+            if (*p == ']') {
+                const char * const exprEnd = p;
 
                 if (evalMacroExpression(exprBegin, exprEnd, value)) {
                     int n = epicsSnprintf(w, (size_t)(wend - w + 1), "%ld", value);
@@ -186,7 +178,7 @@ char *macArithExpandExpressions(char *buf, const size_t capacity)
                         break;
 
                     w += n;
-                    r = p;
+                    r = p + 1;
                     continue;
                 }
             }

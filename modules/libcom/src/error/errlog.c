@@ -77,6 +77,7 @@ typedef struct {
 } buffer_t;
 
 static struct {
+    epicsThreadId tid;
     epicsMutexId bufSizeLock;
     /* guarded by bufSizeLock, allowing them to be resized after initialisation */
     size_t maxMsgSize;
@@ -563,7 +564,6 @@ static void errlogInitPvt(void *arg)
 {
     struct initArgs *pconfig = (struct initArgs *) arg;
 
-    epicsThreadId tid = NULL;
     epicsThreadOpts topts = EPICS_THREAD_OPTS_INIT;
 
     topts.priority = epicsThreadPriorityLow;
@@ -574,6 +574,7 @@ static void errlogInitPvt(void *arg)
      * cantProceed() calls us.
      */
 
+    pvt.tid = NULL;
     pvt.errlogInitFailed = TRUE;
     pvt.bufSizeLock = epicsMutexCreate();
     pvt.bufSize = pconfig->bufsize;
@@ -601,11 +602,11 @@ static void errlogInitPvt(void *arg)
             && pvt.log->base
             && pvt.print->base
             ) {
-        tid = epicsThreadCreateOpt("errlog", (EPICSTHREADFUNC)errlogThread, 0, &topts);
+        pvt.tid = epicsThreadCreateOpt("errlog", (EPICSTHREADFUNC)errlogThread, 0, &topts);
     }
-    if (tid) {
+    if (pvt.tid) {
         pvt.errlogInitFailed = FALSE;
-        epicsAtExit(errlogExitHandler, tid);
+        epicsAtExit(errlogExitHandler, pvt.tid);
     }
 }
 
@@ -670,6 +671,11 @@ int errlogInit2(int bufsize, int maxMsgSize)
 
     // Don't resize the buffer for any of the calls to errlogInit(0)
     if (bufsize == 0) return 0;
+
+    if (epicsThreadGetIdSelf() == pvt.tid) {
+        fprintf(stderr, "Cannot resize buffer from callback function.\n");
+        return -1;
+    }
 
     epicsMutexMustLock(pvt.bufSizeLock);
     if (pvt.bufSize != config.bufsize || pvt.maxMsgSize != config.maxMsgSize) {

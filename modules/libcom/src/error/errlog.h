@@ -208,6 +208,7 @@ LIBCOM_API int errlogSetConsole(FILE *stream);
  * Can be used to initialize the error logging system with a larger buffer. The default buffer size is 2560 bytes.
  *
  * \param bufsize The desired buffer size
+ * \return 0 if successful, -1 if called from callback function
  *
  * \since UNRELEASED the default buffer size is 2560.
  */
@@ -219,6 +220,7 @@ LIBCOM_API int errlogInit(int bufsize);
  *
  * \param bufsize The desired buffer size
  * \param maxMsgSize The desired max message size
+ * \return 0 if successful, -1 if called from callback function
  *
  * \since UNRELEASED The default buffer size is 2560 and the default maximum message size is 512.
  */

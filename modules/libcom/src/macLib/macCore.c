@@ -897,7 +897,8 @@ static void refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
         entry->error = TRUE;
         errval = ",recursive)";
         if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
-            errlogPrintf( "macLib: %s %s is recursive (expanding %s %s)\n",
+            errlogPrintf( "macLib: %s %s is " ANSI_MAGENTA("recursive")
+                          " (expanding %s %s)\n",
                           entry->type, entry->name,
                           refentry->type, refentry->name );
         }
@@ -911,8 +912,9 @@ static void refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
         entry->error = TRUE;
         errval = ",undefined)";
         if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
-            errlogPrintf( "macLib: macro %s is " ANSI_MAGENTA("undefined") " (expanding %s %s)\n",
-                        refname, entry->type, entry->name );
+            errlogPrintf( "macLib: macro %s is " ANSI_MAGENTA("undefined")
+                          " (expanding %s %s)\n",
+                          refname, entry->type, entry->name );
         }
     }
 

@@ -17,10 +17,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "dbDefs.h"
 #include "errlog.h"
 #include "macLib.h"
+#include "epicsString.h"
 
 /*
  * Parse macros definitions in "a=xxx,b=yyy" format and convert them to
@@ -62,8 +64,11 @@ epicsStdCall macParseDefns(
         printf( "macParseDefns( %s )\n", defns );
 
     /* allocate temporary pointer arrays; in worst case they need to have
-       as many entries as the length of the defns string */
-    numMax = strlen( defns );
+       as many entries as the length of the defns string + 2
+       for defns="1,3,5" give 3 pairs so num will be 6 (strlen(defns)+1)
+       but as num is used as an index e.g. del[num] we need
+       numMax to be strlen(defns) + 2 */
+    numMax = epicsStrnLen( defns, INT_MAX ) + 2;
     if ( numMax < altNumMax )
         numMax = altNumMax;
     ptr = (const char **) calloc( numMax, sizeof( char * ) );

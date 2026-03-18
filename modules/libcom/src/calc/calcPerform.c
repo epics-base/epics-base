@@ -20,6 +20,7 @@
 #include "osiUnistd.h"
 #include "dbDefs.h"
 #include "epicsMath.h"
+#include "epicsTime.h"
 #include "epicsTypes.h"
 #include "errlog.h"
 #include "postfix.h"
@@ -505,22 +506,18 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
     return 0;
 }
 
-/* Generate a random number between 0 and 1 using the algorithm
- * seed = (multy * seed) + addy         Random Number Generator by Knuth
- *                                              SemiNumerical Algorithms
- *                                              Chapter 1
- * randy = seed / 65535.0          To normalize the number between 0 - 1
- */
-static unsigned short seed = 0xa3bf;
-static unsigned short multy = 191 * 8 + 5;  /* 191 % 8 == 5 */
-static unsigned short addy = 0x3141;
-
 static double calcRandom(void)
 {
-    seed = (seed * multy) + addy;
-
+    static int seeded = 0;
+    static struct epicsTimeStamp ts;
+    if(!seeded)
+    {
+        epicsTimeGetMonotonic(&ts);
+        srand((unsigned) ts.nsec);
+        seeded = 1;
+    }
     /* between 0 - 1 */
-    return (double) seed / 65535.0;
+    return (double) rand() / RAND_MAX;
 }
 
 /* Search the instruction stream for a matching operator, skipping any

@@ -615,7 +615,7 @@ static
 void errlogBufResize(struct initArgs config)
 {
     if (config.bufsize < pvt.bufSize) {
-        fprintf(stderr, "Warning: Cannot shrink buffer size.\n");
+        fprintf(stderr, ERL_WARNING ": Cannot shrink buffer size.\n");
         return;
     }
 
@@ -660,12 +660,12 @@ int errlogInit2(int bufsize, int maxMsgSize)
 
     if (errlogClampConfig(&config) && (bufsize != 0)) {
         // No sense warning for every call to errlogInit(0)
-        fprintf(stderr, "Warning: errlog config clamped from (%d, %d) to (%zu, %zu)\n", bufsize, maxMsgSize, config.bufsize, config.maxMsgSize);
+        fprintf(stderr, ERL_WARNING ": errlog config clamped from (%d, %d) to (%zu, %zu)\n", bufsize, maxMsgSize, config.bufsize, config.maxMsgSize);
     }
 
     epicsThreadOnce(&errlogOnceFlag, errlogInitPvt, &config);
     if (pvt.errlogInitFailed) {
-        fprintf(stderr,"errlogInit failed\n");
+        fprintf(stderr, ERL_ERROR ": errlogInit failed\n");
         exit(1);
     }
 
@@ -673,7 +673,7 @@ int errlogInit2(int bufsize, int maxMsgSize)
     if (bufsize == 0) return 0;
 
     if (epicsThreadGetIdSelf() == pvt.tid) {
-        fprintf(stderr, "Cannot resize buffer from callback function.\n");
+        fprintf(stderr, ERL_ERROR ": Cannot resize buffer from callback function.\n");
         return -1;
     }
 
@@ -781,7 +781,7 @@ static void errlogThread(void)
                 int stripped = 0;
 
                 if((base[0]&ERL_STATE_MASK) != ERL_STATE_READY || mlen>=pvt.bufSize - pos) {
-                    fprintf(stderr, "Logic Error: errlog buffer corruption. %02x, %zu\n",
+                    fprintf(stderr, ERL_ERROR ": errlog buffer corruption. %02x, %zu\n",
                             (unsigned)base[0], mlen);
                     /* try to reset and recover */
                     break;

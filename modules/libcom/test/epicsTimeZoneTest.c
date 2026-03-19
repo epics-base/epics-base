@@ -89,10 +89,10 @@ MAIN(epicsTimeZoneTest)
      *  Mon Oct 19 13:00:16 2015 UTC
      */
     testDiag("POSIX 1445259616");
-    setTZ("EST5EDT");
+    setTZ("EST5EDT,M3.2.0/2,M11.1.0/2");
     test_localtime(1445259616ul, 16, 0, 9,  19, 9, 2015, 1, 291, 1);
     test_gmtime   (1445259616ul, 16, 0, 13, 19, 9, 2015, 1, 291, 0);
-    setTZ("CST6CDT");
+    setTZ("CST6CDT,M3.2.0/2,M11.1.0/2");
     test_localtime(1445259616ul, 16, 0, 8,  19, 9, 2015, 1, 291, 1);
     test_gmtime   (1445259616ul, 16, 0, 13, 19, 9, 2015, 1, 291, 0);
 #if defined(__rtems__)
@@ -112,10 +112,10 @@ MAIN(epicsTimeZoneTest)
      *  Wed Jan 14 14:15:31 2015 UTC
      */
     testDiag("POSIX 1421244931");
-    setTZ("EST5EDT");
+    setTZ("EST5EDT,M3.2.0/2,M11.1.0/2");
     test_localtime(1421244931ul, 31, 15,  9, 14, 0, 2015, 3, 13, 0);
     test_gmtime   (1421244931ul, 31, 15, 14, 14, 0, 2015, 3, 13, 0);
-    setTZ("CST6CDT");
+    setTZ("CST6CDT,M3.2.0/2,M11.1.0/2");
     test_localtime(1421244931ul, 31, 15,  8, 14, 0, 2015, 3, 13, 0);
     test_gmtime   (1421244931ul, 31, 15, 14, 14, 0, 2015, 3, 13, 0);
 #if defined(__rtems__)

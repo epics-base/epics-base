@@ -226,8 +226,6 @@ static long put_enum_str(const DBADDR *paddr, const char *pstring)
 
 static void checkAlarms(biRecord *prec, epicsTimeStamp *timeLast)
 {
-    double aftc, afvl;
-    unsigned short alarm;
     epicsEnum16 asev;
     unsigned short val = prec->val;
 
@@ -244,9 +242,9 @@ static void checkAlarms(biRecord *prec, epicsTimeStamp *timeLast)
         asev = prec->osv;
     }
 
-    alarm = asev;  /* Initialize alarm with current state severity */
-    aftc = prec->aftc;
-    afvl = 0;
+    unsigned short alarm = asev;  /* Initialize alarm with current state severity */
+    double aftc = prec->aftc;
+    double afvl = 0;
 
     if (aftc > 0) {
         afvl = prec->afvl;
@@ -269,9 +267,9 @@ static void checkAlarms(biRecord *prec, epicsTimeStamp *timeLast)
     asev = alarm;
     recGblSetSevr(prec,STATE_ALARM,asev);
 
-        /* check for cos alarm */
+    /* check for cos alarm */
     if(val == prec->lalm) return;
-        recGblSetSevr(prec,COS_ALARM,prec->cosv);
+    recGblSetSevr(prec,COS_ALARM,prec->cosv);
     prec->lalm = val;
     return;
 }

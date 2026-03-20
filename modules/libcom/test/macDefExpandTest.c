@@ -62,6 +62,27 @@ static void macEnvScope(void)
     checkMac(handle, "F", NULL);
 
     {
+        /* test worst case for short definitions
+         * https://github.com/epics-base/epics-base/pull/838
+         */
+        macParseDefns(NULL, "1,3,5", &defines); /* smoke */
+
+#define CASE(I,V) \
+        testOk(defines[I] && strcmp(defines[I], V)==0, "defines[%u] \"%s\" == \"" V "\"", I, defines[I])
+        CASE(0,"1");
+        testOk1(defines[1]==NULL);
+        CASE(2,"3");
+        testOk1(defines[3]==NULL);
+        CASE(4,"5");
+        testOk1(defines[5]==NULL);
+        testOk1(defines[6]==NULL);
+#undef CASE
+
+        free(defines);
+        defines = NULL;
+    }
+
+    {
         macPushScope(handle);
 
         macParseDefns(NULL, "A=11,C=13,D=14,G=7", &defines);

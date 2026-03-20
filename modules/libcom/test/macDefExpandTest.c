@@ -169,7 +169,7 @@ static void check(const char *str, const char *macros, const char *expect)
 MAIN(macDefExpandTest)
 {
     eltc(0);
-    testPlan(97);
+    testPlan(104);
 
     check("FOO", "", "FOO");
 

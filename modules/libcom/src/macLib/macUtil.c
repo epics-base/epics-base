@@ -66,7 +66,7 @@ epicsStdCall macParseDefns(
        for defns="1,3,5" give 3 pairs so num will be 6 (strlen(defns)+1)
        but as num is used as an index e.g. del[num] we need
        numMax to be strlen(defns) + 2 */
-    numMax = strlen( defns ) + 2;
+    numMax = strlen( defns ) + 2; /* Flawfinder: ignore */
     if ( numMax < altNumMax )
         numMax = altNumMax;
     ptr = (const char **) calloc( numMax, sizeof( char * ) );

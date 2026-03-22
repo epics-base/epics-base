@@ -239,14 +239,17 @@ $(TESTPRODNAME) $(PRODNAME): %$(EXE): | $(INSTALL_LIB)
 %$(DEP):%.c
 	$(RM) $@
 	$(HDEPENDS.c) $<
+	echo $@: $*$(OBJ) >> $@
 
 %$(DEP):%.cc
 	$(RM) $@
 	$(HDEPENDS.cpp) $<
+	echo $@: $*$(OBJ) >> $@
 
 %$(DEP):%.cpp
 	$(RM) $@
 	$(HDEPENDS.cpp) $<
+	echo $@: $*$(OBJ) >> $@
 
 # Cancel GNUMake's built-in rules, which don't have our _INC
 # dependencies so could get used in some circumstances (gdd)

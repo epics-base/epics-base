@@ -61,7 +61,8 @@ const char longmsg[]="A0123456789abcdef"
 STATIC_ASSERT(NELEMENTS(longmsg)==324);
 
 static
-const char truncmsg[]="A0123456789abcdef"
+const char truncmsg256[]=
+                      "A0123456789abcdef"
                       "B0123456789abcdef"
                       "C0123456789abcdef"
                       "D0123456789abcdef"
@@ -77,7 +78,28 @@ const char truncmsg[]="A0123456789abcdef"
                       "N0123456789abcdef"
                       "O01<<TRUNCATED>>\n"
                       ;
-STATIC_ASSERT(NELEMENTS(truncmsg)==256);
+STATIC_ASSERT(NELEMENTS(truncmsg256)==256);
+
+static
+const char truncmsg273[]=
+                      "A0123456789abcdef"
+                      "B0123456789abcdef"
+                      "C0123456789abcdef"
+                      "D0123456789abcdef"
+                      "E0123456789abcdef"
+                      "F0123456789abcdef"
+                      "G0123456789abcdef"
+                      "H0123456789abcdef"
+                      "I0123456789abcdef"
+                      "J0123456789abcdef"
+                      "K0123456789abcdef"
+                      "L0123456789abcdef"
+                      "M0123456789abcdef"
+                      "N0123456789abcdef"
+                      "O0123456789abcdef"
+                      "P01<<TRUNCATED>>\n"
+                      ;
+STATIC_ASSERT(NELEMENTS(truncmsg273)==273);
 
 typedef struct {
     unsigned int count;
@@ -198,67 +220,42 @@ void testANSIStrip(void)
 #undef testEscape
 }
 
-static void testErrorMessageMatches(long status, const char *expected)
+static void testLogSizeTrunc(int bufsize, int maxMsgSize, const char *truncmsg)
 {
-    const char *msg = errSymMsg(status);
-    testOk(strcmp(msg, expected) == 0,
-           "Error code %ld returns \"%s\", expected message \"%s\"", status,
-           msg, expected
-          );
-}
-
-static void testGettingExistingErrorSymbol()
-{
-    testErrorMessageMatches(S_err_invCode, "Invalid error symbol code");
-}
-
-static void testGettingNonExistingErrorSymbol()
-{
-    long invented_code = (0x7999 << 16) | 0x9998;
-    testErrorMessageMatches(invented_code, "<Unknown code>");
-}
-
-static void testAddingErrorSymbol()
-{
-    long invented_code = (0x7999 << 16) | 0x9999;
-    errSymbolAdd(invented_code, "Invented Error Message");
-    testErrorMessageMatches(invented_code, "Invented Error Message");
-}
-
-static void testAddingInvalidErrorSymbol()
-{
-    long invented_code = (500 << 16) | 0x1;
-    testOk(errSymbolAdd(invented_code, "No matter"),
-           "Adding error symbol with module code < 501 should fail");
-}
-
-static void testAddingExistingErrorSymbol()
-{
-    testOk(errSymbolAdd(S_err_invCode, "Duplicate"),
-           "Adding an error symbol with an existing error code should fail");
-}
-
-static void testAddingExistingErrorSymbolWithSameMessage()
-{
-    long invented_code = (0x7999 << 16) | 0x9997;
-    errSymbolAdd(invented_code, "Invented Error Message");
-    testOk(!errSymbolAdd(invented_code, "Invented Error Message"),
-           "Adding identical error symbol shouldn't fail");
-}
-
-MAIN(epicsErrlogTest)
-{
-    size_t mlen, i, N;
-    char msg[256];
-    clientPvt pvt, pvt2;
-
-    testPlan(54);
-
-    testANSIStrip();
-
+    char msg[324];
+    clientPvt pvt;
     strcpy(msg, truncmsg);
 
-    errlogInit2(LOGBUFSIZE, 256);
+    errlogInit2(bufsize, maxMsgSize);
+
+    errlogAddListener(&logClient, &pvt);
+
+    testDiag("Check truncation");
+
+    pvt.count = 0;
+    pvt.jam = 0;
+    pvt.jammer = epicsEventMustCreate(epicsEventEmpty);
+    pvt.done = epicsEventMustCreate(epicsEventEmpty);
+
+    pvt.expect = truncmsg;
+    pvt.checkLen = maxMsgSize - 1;
+
+    errlogPrintfNoConsole("%s", longmsg);
+    errlogFlush();
+
+    epicsEventMustWait(pvt.done);
+
+    testEqInt(pvt.count, 1);
+
+    /* Clean up */
+    testOk(1 == errlogRemoveListeners(&logClient, &pvt), "Removed one listener");
+
+    epicsEventDestroy(pvt.jammer);
+    epicsEventDestroy(pvt.done);
+}
+
+static void testLogListeners() {
+    clientPvt pvt, pvt2;
 
     pvt.count = 0;
     pvt2.count = 0;
@@ -337,39 +334,47 @@ MAIN(epicsErrlogTest)
     testEqInt(pvt.count, 2);
     testEqInt(pvt2.count, 2);
 
-    /* Re-add one listener */
-    errlogAddListener(&logClient, &pvt);
+    testOk(0 == errlogRemoveListeners(&logClient, &pvt),
+        "No listener 1 to remove");
 
-    testDiag("Check truncation");
+    epicsEventDestroy(pvt.jammer);
+    epicsEventDestroy(pvt.done);
+    epicsEventDestroy(pvt2.jammer);
+    epicsEventDestroy(pvt2.done);
+}
 
-    pvt.expect = truncmsg;
-    pvt.checkLen = 255;
+static void testLogJammed() {
+    size_t mlen, i, N;
+    char msg[324];
+    clientPvt pvt;
+    strcpy(msg, longmsg);
 
-    errlogPrintfNoConsole("%s", longmsg);
-    errlogFlush();
-
-    epicsEventMustWait(pvt.done);
-    testEqInt(pvt.count, 3);
-
+    pvt.count = 0;
     pvt.expect = NULL;
-
-    testDiag("Check priority");
+    pvt.checkLen = 0;
     /* For the following tests it is important that
      * the buffer should not flush until we request it
      */
     pvt.jam = 1;
+    pvt.jammer = epicsEventMustCreate(epicsEventEmpty);
+    pvt.done = epicsEventMustCreate(epicsEventEmpty);
+
+    /* Re-add one listener */
+    errlogAddListener(&logClient, &pvt);
+
+    testDiag("Check priority");
 
     errlogPrintfNoConsole("%s", longmsg);
 
     testOk(epicsEventWaitWithTimeout(pvt.done, 0.5) == epicsEventWaitTimeout,
         "%d: Listener 1 didn't run", __LINE__);
-    testEqInt(pvt.count, 3);
+    testEqInt(pvt.count, 0);
 
     epicsEventSignal(pvt.jammer);
     errlogFlush();
 
     epicsEventMustWait(pvt.done);
-    testEqInt(pvt.count, 4);
+    testEqInt(pvt.count, 1);
 
     testDiag("Find buffer capacity (%u theoretical)",LOGBUFSIZE);
 
@@ -458,6 +463,70 @@ MAIN(epicsErrlogTest)
     /* Clean up */
     testOk(1 == errlogRemoveListeners(&logClient, &pvt),
         "Removed 1 listener");
+
+    epicsEventDestroy(pvt.jammer);
+    epicsEventDestroy(pvt.done);
+}
+
+static void testErrorMessageMatches(long status, const char *expected)
+{
+    const char *msg = errSymMsg(status);
+    testOk(strcmp(msg, expected) == 0,
+           "Error code %ld returns \"%s\", expected message \"%s\"", status,
+           msg, expected
+          );
+}
+
+static void testGettingExistingErrorSymbol()
+{
+    testErrorMessageMatches(S_err_invCode, "Invalid error symbol code");
+}
+
+static void testGettingNonExistingErrorSymbol()
+{
+    long invented_code = (0x7999 << 16) | 0x9998;
+    testErrorMessageMatches(invented_code, "<Unknown code>");
+}
+
+static void testAddingErrorSymbol()
+{
+    long invented_code = (0x7999 << 16) | 0x9999;
+    errSymbolAdd(invented_code, "Invented Error Message");
+    testErrorMessageMatches(invented_code, "Invented Error Message");
+}
+
+static void testAddingInvalidErrorSymbol()
+{
+    long invented_code = (500 << 16) | 0x1;
+    testOk(errSymbolAdd(invented_code, "No matter"),
+           "Adding error symbol with module code < 501 should fail");
+}
+
+static void testAddingExistingErrorSymbol()
+{
+    testOk(errSymbolAdd(S_err_invCode, "Duplicate"),
+           "Adding an error symbol with an existing error code should fail");
+}
+
+static void testAddingExistingErrorSymbolWithSameMessage()
+{
+    long invented_code = (0x7999 << 16) | 0x9997;
+    errSymbolAdd(invented_code, "Invented Error Message");
+    testOk(!errSymbolAdd(invented_code, "Invented Error Message"),
+           "Adding identical error symbol shouldn't fail");
+}
+
+MAIN(epicsErrlogTest)
+{
+    testPlan(59);
+    errlogInit(0);
+
+    testANSIStrip();
+
+    testLogListeners();
+    testLogSizeTrunc(LOGBUFSIZE, 256, truncmsg256);
+    testLogSizeTrunc(LOGBUFSIZE, 273, truncmsg273);
+    testLogJammed();
 
     osiSockAttach();
     testLogPrefix();

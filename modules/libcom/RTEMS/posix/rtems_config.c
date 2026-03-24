@@ -49,7 +49,11 @@ extern void *POSIX_Init(void *argument);
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 /*
  * Configure LibBSD.
+ * Note: bsp.h must be included before rtems-bsd-config.h so that
+ * BSP-specific macros (e.g., LIBBSP_POWERPC_MVME3100_BSP_H) are
+ * defined when nexus-devices.h selects the appropriate drivers.
  */
+#include <bsp.h>
 //#define RTEMS_BSD_CONFIG_NET_PF_UNIX
 //#define RTEMS_BSD_CONFIG_NET_IF_BRIDGE
 //#define RTEMS_BSD_CONFIG_NET_IF_LAGG
@@ -66,6 +70,7 @@ extern void *POSIX_Init(void *argument);
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_STUB_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_ZERO_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_LIBI2C_DRIVER
 
 /* Note: The select() system call can only be used with the first FD_SETSIZE
  *       File Descriptors (newlib default is 64).  Beginning RTEMS 5.1, FDs are

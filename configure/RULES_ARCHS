@@ -64,6 +64,9 @@ $(BUILD_ARCHS) : % : O.% O.Common
 $(ACTIONS) : % : $(foreach arch, $(BUILD_ARCHS), %$(DIVIDER)$(arch))
 
 $(buildDirs):
+	$(if $(wildcard $(CONFIG)/os/CONFIG.Common.$(archPart) \
+	        $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).$(archPart)),, \
+	    $(error Base not configured to build target $(archPart)))
 	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)/..
 
 O.Common:

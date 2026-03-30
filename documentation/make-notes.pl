@@ -58,7 +58,15 @@ if ($opt_d) {
     opendir my $dh, $opt_d or
         die "$tool: Can't open '-d' directory: $!\n";
 
-    foreach my $fn (sort grep !m/^ \. \.? $/x, readdir $dh) {
+    # Get filenames, exclude dot-files, sort <alpha><num><alpha>
+    my @files = sort {
+        my $rx = qr/^ (\D+) (\d+) (.*) $/x;
+        my @a = ($a =~ m/$rx/);
+        my @b = ($b =~ m/$rx/);
+        $a[0] cmp $b[0] || $a[1] <=> $b[1] || $a[2] cmp $b[2];
+    } grep !m/^ \. \.? $/x, readdir $dh;
+
+    foreach my $fn (@files) {
         next if $fn eq 'README.txt';
         die "$tool: Not markdown? File '$fn' lacks '.md' extension\n"
             unless $fn =~ m/\.md$/;

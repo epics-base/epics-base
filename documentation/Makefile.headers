@@ -71,7 +71,6 @@ database_HEADERS += chfPlugin
 database_HEADERS += dbBase
 database_HEADERS += dbChannel
 database_HEADERS += dbCommon
-database_HEADERS += dbDefs
 database_HEADERS += dbEvent
 database_HEADERS += dbExtractArray
 database_HEADERS += dbLink

@@ -120,7 +120,7 @@ static long init_bo(dbCommon *pcommon)
 
     if (prec->out.type != INST_IO) {
         recGblRecordError(S_db_badField, prec,
-                          "devAiGeneralTime::init_ai: Illegal INP field");
+                          "devBoGeneralTime::init_bo: Illegal OUT field");
         prec->pact = TRUE;
         return S_db_badField;
     }

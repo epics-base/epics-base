@@ -185,7 +185,8 @@ static int iocBuild_2(void)
 
     scanInit();
     if (asInit()) {
-        errlogPrintf(ERL_ERROR " iocBuild: asInit Failed.\n");
+        errlogPrintf(ERL_ERROR " iocBuild: asInit Failed.\n"
+            ANSI_MAGENTA(" The IOC has not been started.") "\n");
         return -1;
     }
     dbProcessNotifyInit();

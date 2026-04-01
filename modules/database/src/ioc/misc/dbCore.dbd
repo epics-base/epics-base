@@ -21,6 +21,7 @@ variable(dbRecordsAbcSorted,int)
 variable(dbBptNotMonotonic,int)
 variable(dbQuietMacroWarnings,int)
 variable(dbConvertStrict,int)
+variable(dbLinkDefaultINT,int)
 
 # PUTF/RPRO tracing; set TPRO on records to trace
 variable(dbAccessDebugPUTF,int)

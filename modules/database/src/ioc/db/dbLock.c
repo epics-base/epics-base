@@ -32,7 +32,7 @@
 #include "dbCommon.h"
 #include "dbFldTypes.h"
 #include "dbLockPvt.h"
-#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 #include "link.h"
 
 typedef struct dbScanLockNode dbScanLockNode;
@@ -927,9 +927,10 @@ long dblsr(char *recordname,int level)
                 } else if(pdbFldDes->field_type==DBF_FWDLINK) {
                     printf("\tFWDLINK");
                 }
-                printf(" %s %s",
+                printf(" %s %s%s",
                     ((plink->value.pv_link.pvlMask&pvlOptPP)?" PP":"NPP"),
-                    msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
+                    msstring[plink->value.pv_link.pvlMask&pvlOptMsMode],
+                    dbLinkSrcName(plink));
                 printf(" %s\n",pdbAddr->precord->name);
             }
         }

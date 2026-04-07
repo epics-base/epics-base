@@ -830,6 +830,27 @@ static lset dbCa_lset = {
     scanForward, doLocked
 };
 
+/* Check if all deferred init work for a local CA link is complete.
+ * Must be called with pca->lock held.
+ *
+ * During connectionCallback, CA_INIT_READY may be deferred to both
+ * eventCallback (for native/string data) and getAttribEventCallback
+ * (for attributes). Each callback independently re-adds CA_INIT_READY,
+ * but only the first to be processed by the worker thread takes effect.
+ * This check ensures CA_INIT_READY is only signaled once ALL deferred
+ * work is complete.
+ */
+static int dbCaLinkInitComplete(caLink *pca, struct link *plink)
+{
+    if ((plink->value.pv_link.pvlMask & pvlOptInpNative) && !pca->gotInNative)
+        return 0;
+    if ((plink->value.pv_link.pvlMask & pvlOptInpString) && !pca->gotInString)
+        return 0;
+    if (pca->dbrType != DBR_STRING && !pca->gotAttributes)
+        return 0;
+    return 1;
+}
+
 static void connectionCallback(struct connection_handler_args arg)
 {
     caLink *pca;
@@ -996,7 +1017,8 @@ static void eventCallback(struct event_handler_args arg)
             link_action |= CA_DBPROCESS;
         }
     }
-    if (pca->flags & DBCA_CALLBACK_INIT_WAIT)
+    if ((pca->flags & DBCA_CALLBACK_INIT_WAIT) &&
+            dbCaLinkInitComplete(pca, plink))
         link_action |= CA_INIT_READY;
 done:
     if (link_action) addAction(pca, link_action);
@@ -1123,7 +1145,8 @@ static void getAttribEventCallback(struct event_handler_args arg)
     pca->alarmLimits[3] = pdbr->upper_alarm_limit;
     pca->precision = pdbr->precision;
     memcpy(pca->units, pdbr->units, MAX_UNITS_SIZE);
-    if (pca->flags & DBCA_CALLBACK_INIT_WAIT)
+    if ((pca->flags & DBCA_CALLBACK_INIT_WAIT) &&
+            dbCaLinkInitComplete(pca, plink))
         addAction(pca, CA_INIT_READY);
     epicsMutexUnlock(pca->lock);
     if (getAttributes) getAttributes(getAttributesPvt);

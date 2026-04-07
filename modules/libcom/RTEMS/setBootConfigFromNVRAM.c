@@ -33,6 +33,8 @@ char *env_nfsServer;
 char *env_nfsPath;
 char *env_nfsMountPoint;
 
+#if defined(HAVE_MOTLOAD) || defined(HAVE_PPCBUG) || defined(__mcf528x__)
+
 extern char* rtems_bsdnet_bootp_cmdline;
 /*
  * Split argument string of form nfs_server:nfs_export:<path>
@@ -71,6 +73,7 @@ splitRtemsBsdnetBootpCmdline(void)
     }
 }
 
+#if defined(HAVE_MOTLOAD) || defined(__mcf528x__)
 /*
  * Split NFS mount information of the form nfs_server:host_path:local_path
  */
@@ -96,6 +99,7 @@ splitNfsMountPath(char *nfsString)
         }
     }
 }
+#endif /* HAVE_MOTLOAD || __mcf528x__ */
 
 struct boot_net_config {
     char *ip_address;
@@ -166,6 +170,8 @@ applyNetConfig(const struct boot_net_config *cfg,
     return 0;
 }
 #endif
+
+#endif /* HAVE_MOTLOAD || HAVE_PPCBUG || __mcf528x__ */
 
 #if defined(HAVE_MOTLOAD)
 

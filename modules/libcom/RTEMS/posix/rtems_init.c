@@ -36,7 +36,6 @@
 #include <sys/syslog.h>
 #include <net/route.h>
 #include <net/if_dl.h>
-#include <rtems/bsd/iface.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
@@ -1001,8 +1000,6 @@ POSIX_Init ( void *argument __attribute__((unused)))
 
     initConsole ();
     
-    printf("epics-base build date %s, %s\n", __DATE__, __TIME__);
-    
     /*
      * Use BSP-supplied time of day if available otherwise supply default time.
      * It is very likely that other time synchronization facilities in EPICS
@@ -1246,7 +1243,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
    // printf (" telnetd initialized with result %d\n", result);
 #endif
 
-#if 1
+#if 0
 // Start an rtems shell before main, for debugging RTEMS system issues
     rtems_shell_init("SHLL", RTEMS_MINIMUM_STACK_SIZE * 4,
                      100, "/dev/console",

@@ -47,13 +47,7 @@ extern void *POSIX_Init(void *argument);
 
 #ifndef RTEMS_LEGACY_STACK
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
-/*
- * Configure LibBSD.
- * Note: bsp.h must be included before rtems-bsd-config.h so that
- * BSP-specific macros (e.g., LIBBSP_POWERPC_MVME3100_BSP_H) are
- * defined when nexus-devices.h selects the appropriate drivers.
- */
-#include <bsp.h>
+
 //#define RTEMS_BSD_CONFIG_NET_PF_UNIX
 //#define RTEMS_BSD_CONFIG_NET_IF_BRIDGE
 //#define RTEMS_BSD_CONFIG_NET_IF_LAGG

@@ -102,23 +102,27 @@ splitNfsMountPath(char *nfsString)
 #endif /* HAVE_MOTLOAD || __mcf528x__ */
 
 struct boot_net_config {
-    char *ip_address;
-    char *netmask;
-    char *gateway;
-    char *server;        /* boot server; used as NTP/DNS fallback */
-    char *ntp_server;
-    char *hostname;
-    char *dns_server;
-    char *domainname;
-    char *bootp_boot_file;
+    char *ip_address;           /* static IP address of this device */
+    char *netmask;              /* subnet mask */
+    char *gateway;              /* default gateway */
+    char *server;               /* boot server; used as NTP/DNS fallback if not overridden */
+    char *ntp_server;           /* NTP server (falls back to server if NULL) */
+    char *hostname;             /* this device's hostname */
+    char *dns_server;           /* DNS resolver (falls back to server if NULL) */
+    char *domainname;           /* DNS domain name */
+    char *bootp_boot_file;      /* boot filename reported via BOOTP */
     uint32_t bootp_server_addr; /* server IPv4 address as stored in PPCBUG NVRAM */
 };
 
-#ifdef RTEMS_LEGACY_STACK
+/* Configure network from boot_net_config.
+ * RTEMS_LEGACY_STACK: populate rtems_bsdnet_config fields.
+ * libbsd: configure the first hardware interface (index 1) with a static IP.
+ * Returns 0 on success, -1 on failure. */
 static int
 applyNetConfig(const struct boot_net_config *cfg,
                char *ntp_server_ip, size_t ntp_server_ip_size)
 {
+#ifdef RTEMS_LEGACY_STACK
     (void)ntp_server_ip;
     (void)ntp_server_ip_size;
     rtems_bsdnet_bootp_server_name           = cfg->server;
@@ -134,16 +138,7 @@ applyNetConfig(const struct boot_net_config *cfg,
         rtems_bsdnet_bootp_boot_file_name = cfg->bootp_boot_file;
     if (cfg->bootp_server_addr)
         rtems_bsdnet_bootp_server_address.s_addr = cfg->bootp_server_addr;
-    return 0;
-}
 #else
-/* Configure the first hardware network interface with a static IP.
- * Assumes loopback is at index 0 and the first hardware device at index 1.
- * Returns 0 on success, -1 on failure. */
-static int
-applyNetConfig(const struct boot_net_config *cfg,
-               char *ntp_server_ip, size_t ntp_server_ip_size)
-{
     char ifnamebuf[IF_NAMESIZE];
     char *ifname = if_indextoname(1, ifnamebuf);
     if (ifname == NULL) {
@@ -156,7 +151,7 @@ applyNetConfig(const struct boot_net_config *cfg,
            cfg->gateway    ? cfg->gateway    : "NULL");
     if (cfg->ip_address && cfg->netmask) {
         int exit_code = rtems_bsd_ifconfig(ifname, cfg->ip_address,
-                                            cfg->netmask, cfg->gateway);
+                                           cfg->netmask, cfg->gateway);
         if (exit_code != EX_OK) {
             printf("rtems_bsd_ifconfig failed (exit code %d)\n", exit_code);
             return -1;
@@ -167,9 +162,9 @@ applyNetConfig(const struct boot_net_config *cfg,
     }
     if (ntp_server_ip != NULL && ntp_server_ip_size > 0 && cfg->ntp_server != NULL)
         snprintf(ntp_server_ip, ntp_server_ip_size, "%s", cfg->ntp_server);
+#endif
     return 0;
 }
-#endif
 
 #endif /* HAVE_MOTLOAD || HAVE_PPCBUG || __mcf528x__ */
 
@@ -275,14 +270,14 @@ setBootConfigFromNVRAM(char *ntp_server_ip, size_t ntp_server_ip_size)
     if ((cfg.ip_address = gev("mot-/dev/enet0-cipa", nvp)) == NULL) {
         cfg.ip_address = motScriptParm(mot_script_boot, 'c');
     }
-    
+
     if ((cfg.netmask = gev("mot-/dev/enet0-snma", nvp)) == NULL) {
         cfg.netmask = motScriptParm(mot_script_boot, 'm');
     }
     if ((cfg.gateway = gev("mot-/dev/enet0-gipa", nvp)) == NULL) {
         cfg.gateway = motScriptParm(mot_script_boot, 'g');
     }
-    
+
     if ((cfg.server = gev("mot-/dev/enet0-sipa", nvp)) == NULL) {
         cfg.server = motScriptParm(mot_script_boot, 's');
     }

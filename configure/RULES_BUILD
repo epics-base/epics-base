@@ -180,7 +180,7 @@ clean: build_clean
 
 build_clean:
 	$(ECHO) "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a \
+	$(RM) *.i *$(OBJ) *.a \
 	$(LIBNAME) $(TESTLIBNAME) $(SHRLIBNAME) $(TESTSHRLIBNAME) \
 	$(DLLSTUB_LIBNAME) $(TESTDLLSTUB_LIBNAME) \
 	$(LOADABLE_SHRLIBNAME) \
@@ -189,7 +189,7 @@ build_clean:
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTPRODTARGETS) \
 	$(TESTSCRIPTS) $(TAPFILES) $(JUNITFILES)
 ifdef RES
-	@$(RM) *$(RES)
+	$(RM) *$(RES)
 endif
 
 # Sort directories to remove duplicates & make parents first
@@ -228,24 +228,24 @@ $(LOADABLE_SHRLIBNAME): FINAL_DIR=$(INSTALL_SHRLIB)
 $(TESTPRODNAME) $(PRODNAME): $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 
 $(TESTPRODNAME) $(PRODNAME): %$(EXE): | $(INSTALL_LIB)
-	@$(RM) $@
+	$(RM) $@
 	$(LINK.cpp)
 	$(MT_EXE_COMMAND)
 
 %_ctdt$(OBJ): %_ctdt.c
-	@$(RM) $@
+	$(RM) $@
 	$(COMPILE.ctdt) $<
 
 %$(DEP):%.c
-	@$(RM) $@
+	$(RM) $@
 	$(HDEPENDS.c) $<
 
 %$(DEP):%.cc
-	@$(RM) $@
+	$(RM) $@
 	$(HDEPENDS.cpp) $<
 
 %$(DEP):%.cpp
-	@$(RM) $@
+	$(RM) $@
 	$(HDEPENDS.cpp) $<
 
 # Cancel GNUMake's built-in rules, which don't have our _INC
@@ -256,20 +256,20 @@ $(TESTPRODNAME) $(PRODNAME): %$(EXE): | $(INSTALL_LIB)
 
 # Include files are order-only prerequisites for compilation:
 %$(OBJ): %.c | $(COMMON_INC) $(INSTALL_INC)
-	@$(RM) $@
+	$(RM) $@
 	$(COMPILE.c) -c $<
 
 %$(OBJ): %.cc | $(COMMON_INC) $(INSTALL_INC)
-	@$(RM) $@
+	$(RM) $@
 	$(COMPILE.cpp) -c $<
 
 %$(OBJ): %.cpp | $(COMMON_INC) $(INSTALL_INC)
-	@$(RM) $@
+	$(RM) $@
 	$(COMPILE.cpp) -c $<
 
 # Windows resource compiler
 %$(RES): %.rc
-	@$(RM) $@
+	$(RM) $@
 	$(RCCMD)
 
 YACCOPT ?= $($*_YACCOPT)
@@ -278,8 +278,8 @@ YACCOPT ?= $($*_YACCOPT)
 # are creating it
 #
 %.c: %.y
-	@$(RM) $*.tab.c
-	@$(RM) $*.tab.h
+	$(RM) $*.tab.c
+	$(RM) $*.tab.h
 	$(YACC) -b$* $(YACCOPT) $<
 	$(MV) $*.tab.c $*.c
 	$(if $(findstring -d, $(YACCOPT)),$(MV) $*.tab.h $*.h,)
@@ -289,7 +289,7 @@ YACCOPT ?= $($*_YACCOPT)
 %.h: %.c %.y
 
 %.c: %.l
-	@$(RM) $@
+	$(RM) $@
 	$(LEX) $(LEXOPT) -o$@ $<
 
 #---------------------------------------------------------------
@@ -298,7 +298,7 @@ YACCOPT ?= $($*_YACCOPT)
 $(LIBNAME) $(TESTLIBNAME): $(LIBRARY_OBJS)
 
 $(filter-out $(DLLSTUB_LIBNAME) $(TESTDLLSTUB_LIBNAME), $(LIBNAME) $(TESTLIBNAME)): $(LIB_PREFIX)%$(LIB_SUFFIX):
-	@$(RM) $@
+	$(RM) $@
 	$(ARCMD)
 ifneq ($(strip $(RANLIB)),)
 	$(RANLIB) $@
@@ -313,26 +313,26 @@ $(SHRLIBNAME) $(DLLSTUB_LIBNAME) $(TESTSHRLIBNAME) $(TESTDLLSTUB_LIBNAME): \
 # the target requires a separate stub library file.
 $(DLLSTUB_LIBNAME): | $(SHRLIBNAME);
 $(SHRLIBNAME): $(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
-	@$(RM) $@
+	$(RM) $@
 	$(LINK.shrlib)
 	$(MT_DLL_COMMAND)
 
 $(TESTDLLSTUB_LIBNAME): | $(TESTSHRLIBNAME);
 $(TESTSHRLIBNAME): $(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
-	@$(RM) $@
+	$(RM) $@
 	$(LINK.shrlib)
 	$(MT_DLL_COMMAND)
 
 $(LOADABLE_SHRLIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
 
 $(LOADABLE_SHRLIBNAME): $(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX):
-	@$(RM) $@
+	$(RM) $@
 	$(LINK.shrlib)
 	$(MT_DLL_COMMAND)
 
 $(LIBNAME) $(SHRLIBNAME) $(LOADABLE_SHRLIBNAME): | $(INSTALL_LIB)
 $(INSTALL_LIB):
-	@$(MKDIR) $@
+	$(MKDIR) $@
 
 #---------------------------------------------------------------
 # C++ munching for VxWorks
@@ -342,33 +342,33 @@ $(INSTALL_LIB):
 	$(MV) $@.stdout $@
 
 %.nm: %$(OBJ)
-	@$(RM) $@
+	$(RM) $@
 	$(NM) $< > $@.stdout
 	$(MV) $@.stdout $@
 
 %_ctdt.c: %.nm $(TOOLS)/munch.pl
-	@$(RM) $@
+	$(RM) $@
 	$(PERL) $(TOOLS)/munch.pl -o $@ $<
 
 $(MUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
-	@$(RM) $@
+	$(RM) $@
 	$(MUNCH_CMD)
 
 $(TESTMUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
-	@$(RM) $@
+	$(RM) $@
 	$(MUNCH_CMD)
 
 #---------------------------------------------------------------
 # GeSys modules for RTEMS
 $(MODNAME): %$(MODEXT): %$(EXE)
 	@echo "Building module $@"
-	@$(RM) $@
+	$(RM) $@
 	$(LINK.mod)
 
 #---------------------------------------------------------------
 # Generate Perl include path module
 %ModuleDirs.pm: $(wildcard $(TOP)/configure/RELEASE*)
-	@$(MKDIR) $(dir $@)
+	$(MKDIR) $(dir $@)
 	$(CONVERTRELEASE) -T $(TOP) $@
 
 #---------------------------------------------------------------
@@ -379,7 +379,7 @@ run-tap-tests: | build
 ifneq ($(TESTSCRIPTS.t),)
 ifdef RUNTESTS_ENABLED
 	$(ECHO) "$(PROVE) $(TESTSCRIPTS.t)"
-	@$(PROVE) $(TESTSCRIPTS.t) || $(PROVE_FAILURE)
+	$(PROVE) $(TESTSCRIPTS.t) || $(PROVE_FAILURE)
 endif
 endif
 
@@ -393,7 +393,7 @@ tap-results: $(TAPFILES)
 ifneq ($(strip $(TAPFILES)),)
 ifdef RUNTESTS_ENABLED
 	$(ECHO) "$(PROVE.tap) $(TAPFILES)"
-	@$(PROVE.tap) $(TAPFILES) || $(PROVE_FAILURE)
+	$(PROVE.tap) $(TAPFILES) || $(PROVE_FAILURE)
 endif
 
 CURRENT_TAPFILES := $(wildcard $(TAPFILES))
@@ -412,7 +412,7 @@ endif
 $(TAPFILES.t): %.tap: %.t | build
 ifdef RUNTESTS_ENABLED
 	$(ECHO) "$(PERL) $< -tap > $@"
-	@$(PERL) $< -tap > $@ || $(TAPFILE_FAILURE)
+	$(PERL) $< -tap > $@ || $(TAPFILE_FAILURE)
 endif
 
 $(JUNITFILES.t): %-results.xml: %.tap
@@ -420,13 +420,13 @@ $(JUNITFILES.t): %-results.xml: %.tap
 
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt
-	@$(RM) $@
+	$(RM) $@
 	$(EXPAND_TOOL) -t $(INSTALL_LOCATION) -a $(T_A) $< $@
 
 # Test programs (.t files) must be written in Perl.
 # Generate a perl program to exec the real test binary.
 %.t: %$(EXE) $(TOOLS)/makeTestfile.pl
-	@$(RM) $@
+	$(RM) $@
 	$(PERL) $(TOOLS)/makeTestfile.pl $(T_A) $(EPICS_HOST_ARCH) $@ $<
 
 #---------------------------------------------------------------
@@ -443,7 +443,7 @@ $(filter-out $(INSTALL_API_HEADERS), $(INSTALL_INC)) $(HDEPENDS_FILES): \
 
 # How to make one
 $(COMMON_DIR)/%API.h: $(TOOLS)/makeAPIheader.pl
-	@$(RM) $@
+	$(RM) $@
 	$(PERL) $(TOOLS)/makeAPIheader.pl -o $@ $(@:$(COMMON_DIR)/%API.h=%)
 endif
 
@@ -460,14 +460,14 @@ endif
 define  BIN_INSTALLS_template
 $$(INSTALL_BIN)/$$(notdir $(1)): $(1)
 	$(ECHO) "Installing $$(<F)"
-	@$$(INSTALL) -d -m $$(BIN_PERMISSIONS) $$^ $$(INSTALL_BIN)
+	$$(INSTALL) -d -m $$(BIN_PERMISSIONS) $$^ $$(INSTALL_BIN)
 endef
 $(foreach file, $(BIN_INSTALLS), $(eval $(call BIN_INSTALLS_template, $(file))))
 
 define  LIB_INSTALLS_template
 $$(INSTALL_LIB)/$$(notdir $(1)): $(1)
 	$(ECHO) "Installing $$(<F)"
-	@$$(INSTALL) -d -m $$(LIB_PERMISSIONS) $$^ $$(INSTALL_LIB)
+	$$(INSTALL) -d -m $$(LIB_PERMISSIONS) $$^ $$(INSTALL_LIB)
 endef
 $(foreach file, $(LIB_INSTALLS), $(eval $(call LIB_INSTALLS_template, $(file))))
 
@@ -475,32 +475,32 @@ $(foreach file, $(LIB_INSTALLS), $(eval $(call LIB_INSTALLS_template, $(file))))
 
 $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 	$(ECHO) "Installing os-specific script $@"
-	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
+	$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: %
 	$(ECHO) "Installing created executable $@"
-	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
+	$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: ../%
 	$(ECHO) "Installing script $@"
-	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
+	$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
 $(INSTALL_LIB)/%$(LIB_SUFFIX): %$(LIB_SUFFIX)
 	$(ECHO) "Installing library $@"
-	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
+	$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
 
 ifneq ($(LIB_SUFFIX),$(DLLSTUB_SUFFIX))
 $(INSTALL_LIB)/%$(DLLSTUB_SUFFIX): %$(DLLSTUB_SUFFIX)
 	$(ECHO) "Installing DLL stub library $@"
-	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
+	$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
 endif # SUFFIX
 
 $(INSTALL_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	$(ECHO) "Installing shared library $@"
-	@$(INSTALL_LIBRARY) -d -m $(SHRLIB_PERMISSIONS) $< $(INSTALL_SHRLIB)
+	$(INSTALL_LIBRARY) -d -m $(SHRLIB_PERMISSIONS) $< $(INSTALL_SHRLIB)
 ifneq ($(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE))
 ifneq (,$(strip $(SHRLIB_VERSION)))
-	@$(RM) $(subst $(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
+	$(RM) $(subst $(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
 	ln -s $< $(subst $(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
 endif # SHRLIB_VERSION
 endif # SHRLIB_SUFFIX
@@ -508,11 +508,11 @@ endif # SHRLIB_SUFFIX
 ifneq ($(INSTALL_TCLLIB),$(INSTALL_BIN))
 $(INSTALL_TCLLIB)/%: %
 	$(ECHO) "Installing Tcl library $@"
-	@$(INSTALL) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_TCLLIB)
+	$(INSTALL) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_TCLLIB)
 
 $(INSTALL_TCLLIB)/%: ../%
 	$(ECHO) "Installing Tcl library $@"
-	@$(INSTALL) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_TCLLIB)
+	$(INSTALL) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_TCLLIB)
 endif
 
 ifneq ($(TCLINDEX),)
@@ -523,10 +523,10 @@ endif
 
 $(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	$(ECHO) "Installing loadable shared library $@"
-	@$(INSTALL_LIBRARY) -d -m $(SHRLIB_PERMISSIONS) $< $(INSTALL_SHRLIB)
+	$(INSTALL_LIBRARY) -d -m $(SHRLIB_PERMISSIONS) $< $(INSTALL_SHRLIB)
 ifneq ($(LOADABLE_SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE))
 ifneq (,$(strip $(LOADABLE_SHRLIB_VERSION)))
-	@$(RM) $(subst $(LOADABLE_SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
+	$(RM) $(subst $(LOADABLE_SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
 	ln -s $< $(subst $(LOADABLE_SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
 endif # LOADABLE_SHRLIB_VERSION
 endif # LOADABLE_SHRLIB_SUFFIX
@@ -534,60 +534,60 @@ endif # LOADABLE_SHRLIB_SUFFIX
 ifneq ($(INSTALL_CONFIGS),)
 $(INSTALL_CONFIG)/%: %
 	$(ECHO) "Installing config file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $(abspath $< $(@D))
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $(abspath $< $(@D))
 
 $(INSTALL_CONFIG)/%: ../%
 	$(ECHO) "Installing config file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $(abspath $< $(@D))
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $(abspath $< $(@D))
 endif
 
 $(INSTALL_INCLUDE)/%: $(COMMON_DIR)/%
 	$(ECHO) "Installing generated generic include file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_INCLUDE)/%: %
 	$(ECHO) "Installing generic include file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_INCLUDE)/os/$(OS_CLASS)/%: %
 	$(ECHO) "Installing OS dependent include file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS)/%: %
 	$(ECHO) "Installing compiler dependent include file $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DOC)/%: $(COMMON_DIR)/%
 	$(ECHO) "Installing generated doc $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DOC)/%: %
 	$(ECHO) "Installing doc $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DOC)/%: ../%
 	$(ECHO) "Installing doc $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: $(COMMON_DIR)/%
 	$(ECHO) "Installing generated html $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: %
 	$(ECHO) "Installing html $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
 	$(ECHO) "Installing html $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_TEMPLATES_SUBDIR)/%: ../%
 	$(ECHO) "Installing $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_TEMPLATES_SUBDIR)/%: %
 	$(ECHO) "Installing $@"
-	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 include $(CONFIG)/RULES_EXPAND
 

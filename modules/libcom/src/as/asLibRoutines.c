@@ -29,6 +29,7 @@
 #include "epicsThread.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
+#include "epicsString.h"
 #include "errlog.h"
 #include "gpHash.h"
 #include "freeList.h"
@@ -53,6 +54,7 @@ static void         *freeListPvt = NULL;
 
 
 #define DEFAULT "DEFAULT"
+#define AS_HAG_HOST_MAX 512u
 #define AS_HAG_DNS_TTL_FALLBACK 300u
 #define AS_HAG_DNS_RETRY 60u
 
@@ -99,10 +101,10 @@ static void asInitializeOnce(void *arg)
 
 static char *asStrdupConst(const char *str)
 {
-    size_t len = strlen(str);
+    size_t len = epicsStrnLen(str, AS_HAG_HOST_MAX);
     char *buf = asCalloc(1, len + 1);
 
-    strcpy(buf, str);
+    memcpy(buf, str, len);
     return buf;
 }
 
@@ -123,16 +125,20 @@ static char *asIPAddrString(const struct sockaddr_in *addr)
 static char *asUnresolvedHostString(const char *host)
 {
     static const char unresolved[] = "unresolved:";
-    char *buf = asCalloc(1, sizeof(unresolved) + strlen(host));
+    size_t prefixLen = sizeof(unresolved) - 1;
+    size_t hostLen = epicsStrnLen(host, AS_HAG_HOST_MAX);
+    char *buf = asCalloc(1, prefixLen + hostLen + 1);
 
-    strcpy(buf, unresolved);
-    strcat(buf, host);
+    memcpy(buf, unresolved, prefixLen);
+    memcpy(buf + prefixLen, host, hostLen);
     return buf;
 }
 
 static int asSetIPAddr(epicsUInt32 rawAddr, struct sockaddr_in *pIP)
 {
-    memset(pIP, 0, sizeof(*pIP));
+    static const struct sockaddr_in emptyAddr;
+
+    *pIP = emptyAddr;
     pIP->sin_family = AF_INET;
     pIP->sin_addr.s_addr = htonl(rawAddr);
     return 0;
@@ -192,10 +198,10 @@ static void asHagSetHost(HAGNAME *phagname, char *host, int resolved)
     phagname->resolved = !!resolved;
 }
 
+#ifdef AS_USE_DNS_TTL
 static int asHagDnsTTL(const char *host, const struct in_addr *addr,
     unsigned *ttl)
 {
-#ifdef AS_USE_DNS_TTL
     unsigned char answer[4096];
     ns_msg handle;
     int len;
@@ -229,9 +235,9 @@ static int asHagDnsTTL(const char *host, const struct in_addr *addr,
         *ttl = best;
         return 0;
     }
-#endif
     return -1;
 }
+#endif
 
 static void asHagResolveHost(HAGNAME *phagname, const char *host, time_t now)
 {
@@ -245,8 +251,10 @@ static void asHagResolveHost(HAGNAME *phagname, const char *host, time_t now)
         return;
     }
 
+#ifdef AS_USE_DNS_TTL
     if(asHagDnsTTL(host, &addr.sin_addr, &ttl))
         ttl = AS_HAG_DNS_TTL_FALLBACK;
+#endif
 
     asHagSetHost(phagname, asIPAddrString(&addr), 1);
     phagname->expires = now + ttl;

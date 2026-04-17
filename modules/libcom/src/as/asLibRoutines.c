@@ -136,7 +136,7 @@ static char *asUnresolvedHostString(const char *host)
 
 static int asSetIPAddr(epicsUInt32 rawAddr, struct sockaddr_in *pIP)
 {
-    static const struct sockaddr_in emptyAddr;
+    static const struct sockaddr_in emptyAddr = {0};
 
     *pIP = emptyAddr;
     pIP->sin_family = AF_INET;

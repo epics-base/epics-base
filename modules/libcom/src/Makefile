@@ -61,6 +61,10 @@ API_HEADER += dbCoreAPI.h
 LIBRARY=Com
 
 Com_SYS_LIBS_WIN32 = ws2_32 advapi32 user32 dbghelp
+Com_SYS_LIBS_Darwin += resolv
+Com_SYS_LIBS_Linux += resolv
+Com_SYS_LIBS_freebsd += resolv
+Com_SYS_LIBS_solaris += resolv
 
 Com_RCS = Com.rc
 

@@ -13,6 +13,8 @@
 #ifndef INCasLibh
 #define INCasLibh
 
+#include <time.h>
+
 #include "libComAPI.h"
 #include "ellLib.h"
 #include "errMdef.h"
@@ -25,7 +27,7 @@ extern "C" {
 struct dbChannel;
 
 /* 0 - Use (unverified) client provided host name string.
- * 1 - Use actual client IP address.  HAG() are resolved to IPs at ACF load time.
+ * 1 - Use actual client IP address.  HAG() host names are resolved to IPs.
  */
 LIBCOM_API extern int asCheckClientIP;
 
@@ -174,7 +176,11 @@ typedef struct uag{
 /*Defs for Host Access Groups*/
 typedef struct{
     ELLNODE         node;
-    char            host[1];
+    char            *host;      /* Current host name or resolved IP string */
+    char            *source;    /* Original HAG host name for refresh, or NULL */
+    time_t          expires;    /* DNS cache expiry for source */
+    unsigned char   resolved;
+    unsigned char   hashAdded;
 } HAGNAME;
 typedef struct hag{
     ELLNODE         node;

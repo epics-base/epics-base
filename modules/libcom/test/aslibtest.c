@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <testMain.h>
 #include <epicsUnitTest.h>
@@ -44,6 +45,34 @@ static const char hostname_config[] = ""
 
     "ASG(rw) {\n"
     "    RULE(1, WRITE) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
+    "}\n";
+
+static const char numeric_config[] = ""
+    "HAG(foo) {127.0.0.1}\n"
+
+    "ASG(DEFAULT) {\n"
+    "    RULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
+    "        HAG(foo)\n"
+    "    }\n"
+    "}\n";
+
+static const char unresolved_config[] = ""
+    "HAG(foo) {guaranteed.invalid.}\n"
+
+    "ASG(DEFAULT) {\n"
+    "    RULE(0, NONE)\n"
+    "}\n"
+
+    "ASG(ro) {\n"
+    "    RULE(0, NONE)\n"
+    "    RULE(1, READ) {\n"
     "        HAG(foo)\n"
     "    }\n"
     "}\n";
@@ -582,6 +611,19 @@ static void testAccess(const char *asg, unsigned mask)
     if(asp) asRemoveMember(&asp);
 }
 
+static HAGNAME *firstHagName(void)
+{
+    ASBASE *base = (ASBASE *)pasbase;
+    HAG *phag;
+
+    if(!base)
+        return NULL;
+    phag = (HAG *)ellFirst(&base->hagList);
+    if(!phag)
+        return NULL;
+    return (HAGNAME *)ellFirst(&phag->list);
+}
+
 static void testSyntaxErrors(void)
 {
     static const char empty[] = "\n#almost empty file\n\n";
@@ -658,6 +700,57 @@ static void testUseIP(void)
     testAccess("DEFAULT", 0);
     testAccess("ro", 0);
     testAccess("rw", 0);
+}
+
+static void testUseIPCache(void)
+{
+    HAGNAME *phagname;
+    long ret;
+
+    testDiag("testUseIPCache()");
+    asCheckClientIP = 1;
+    asAsl = 0;
+    setUser("testing");
+
+    testOk1(asInitMem(numeric_config, NULL)==0);
+    phagname = firstHagName();
+    testOk(phagname && !phagname->source && phagname->resolved,
+        "numeric HAG entries are static");
+    setHost("127.0.0.1");
+    testAccess("ro", 1);
+    setHost("127.0.0.2");
+    testAccess("ro", 0);
+
+    eltc(0);
+    ret = asInitMem(unresolved_config, NULL);
+    eltc(1);
+    testOk(ret==0, "unresolved HAG host does not fail ACF load -> %s",
+        errSymMsg(ret));
+    phagname = firstHagName();
+    testOk(phagname && phagname->source && !phagname->resolved &&
+        phagname->expires > time(NULL),
+        "unresolved HAG entries are retained for retry");
+    setHost("127.0.0.1");
+    testAccess("ro", 0);
+    if(phagname)
+        phagname->expires = 0;
+    eltc(0);
+    testAccess("ro", 0);
+    eltc(1);
+
+    testOk1(asInitMem(hostname_config, NULL)==0);
+    phagname = firstHagName();
+    testOk(phagname && phagname->source && phagname->resolved,
+        "resolved HAG hostnames keep their source for refresh");
+    if(phagname && phagname->source) {
+        free(phagname->source);
+        phagname->source = epicsStrDup("127.0.0.2");
+        phagname->expires = 0;
+    }
+    setHost("127.0.0.2");
+    testAccess("ro", 1);
+    setHost("127.0.0.1");
+    testAccess("ro", 0);
 }
 
 static void testFutureProofParser(void)
@@ -783,11 +876,12 @@ static void testFutureProofParser(void)
 
 MAIN(aslibtest)
 {
-    testPlan(64);
+    testPlan(76);
     testSyntaxErrors();
     testFutureProofParser();
     testHostNames();
     testUseIP();
+    testUseIPCache();
     errlogFlush();
     return testDone();
 }

@@ -176,10 +176,16 @@ typedef struct uag{
 /*Defs for Host Access Groups*/
 typedef struct{
     ELLNODE         node;
+    /* Private cache state used from asLibRoutines.c; Codacy checks this header alone. */
+    /* cppcheck-suppress unusedStructMember */
     char            *host;      /* Current host name or resolved IP string */
+    /* cppcheck-suppress unusedStructMember */
     char            *source;    /* Original HAG host name for refresh, or NULL */
+    /* cppcheck-suppress unusedStructMember */
     time_t          expires;    /* DNS cache expiry for source */
+    /* cppcheck-suppress unusedStructMember */
     unsigned char   resolved;
+    /* cppcheck-suppress unusedStructMember */
     unsigned char   hashAdded;
 } HAGNAME;
 typedef struct hag{

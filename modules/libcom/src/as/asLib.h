@@ -159,6 +159,8 @@ typedef struct asBase{
     ELLLIST         hagList;
     ELLLIST         asgList;
     struct gphPvt   *phash;
+    /* Private cache state used from asLibRoutines.c; Codacy checks this header alone. */
+    /* cppcheck-suppress unusedStructMember */
     time_t          hagExpires; /* Earliest refreshable HAG DNS expiry, or 0 */
 } ASBASE;
 

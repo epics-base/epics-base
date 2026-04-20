@@ -23,6 +23,8 @@
 #   pragma warning(disable:4355)
 #endif
 
+#include <vector>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "envDefs.h"
@@ -282,14 +284,30 @@ udpiiu::udpiiu (
      * broadcast address list
      */
     ELLLIST dest;
+    std::vector < osiSockAddr > seen;
+    std::vector < caStatefulAddr > statefulDest;
+    std::vector < caStatefulAddr > :: const_iterator statefulIter;
     ellInit ( & dest );
-    configureChannelAccessAddressList ( & dest, this->sock, this->serverPort );
+    caConfigureChannelAccessAutoAddressList ( & dest, this->sock, this->serverPort );
     while ( osiSockAddrNode *
         pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
         SearchDestUDP & searchDest = *
             new SearchDestUDP ( pNode->addr, *this );
         _searchDestList.add ( searchDest );
+        caSockAddrSeen ( seen, pNode->addr );
         free ( pNode );
+    }
+    caParseStatefulAddrList ( statefulDest, & EPICS_CA_ADDR_LIST,
+        this->serverPort, false );
+    for ( statefulIter = statefulDest.begin ();
+          statefulIter != statefulDest.end (); ++statefulIter ) {
+        if ( statefulIter->resolved () &&
+             caSockAddrSeen ( seen, statefulIter->addr () ) ) {
+            continue;
+        }
+        SearchDestUDP & searchDest = *
+            new SearchDestUDP ( *statefulIter, *this );
+        _searchDestList.add ( searchDest );
     }
 
     /* add list of tcp name service addresses */
@@ -958,7 +976,17 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
 
 udpiiu :: SearchDestUDP :: SearchDestUDP (
     const osiSockAddr & destAddr, udpiiu & udpiiuIn ) :
-    _lastError (0u), _destAddr ( destAddr ), _udpiiu ( udpiiuIn )
+    _lastError (0u), _stateful ( false ),
+    _destAddr ( destAddr ), _udpiiu ( udpiiuIn )
+{
+}
+
+udpiiu :: SearchDestUDP :: SearchDestUDP (
+    const caStatefulAddr & destAddr, udpiiu & udpiiuIn ) :
+    _statefulAddr ( destAddr ),
+    _lastError (0u), _stateful ( true ),
+    _destAddr ( destAddr.resolved () ? destAddr.addr () : osiSockAddr () ),
+    _udpiiu ( udpiiuIn )
 {
 }
 
@@ -966,6 +994,13 @@ void udpiiu :: SearchDestUDP :: searchRequest (
             epicsGuard < epicsMutex > & guard, const char * pBuf, size_t bufSize )
 {
     guard.assertIdenticalMutex ( _udpiiu.cacMutex );
+    if ( _stateful ) {
+        _statefulAddr.refreshIfDue ();
+        if ( ! _statefulAddr.resolved () ) {
+            return;
+        }
+        _destAddr = _statefulAddr.addr ();
+    }
     assert ( bufSize <= INT_MAX );
     int bufSizeAsInt = static_cast < int > ( bufSize );
     while ( true ) {
@@ -1453,4 +1488,3 @@ ca_uint32_t udpiiu::datagramSeqNumber (
 {
     return this->sequenceNumber;
 }
-

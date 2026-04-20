@@ -48,6 +48,7 @@ LIBSRCS += cacWriteNotify.cpp
 LIBSRCS += cacStateNotify.cpp
 LIBSRCS += access.cpp
 LIBSRCS += iocinf.cpp
+LIBSRCS += caStatefulAddr.cpp
 LIBSRCS += convert.cpp
 LIBSRCS += test_event.cpp
 LIBSRCS += repeater.cpp
@@ -94,6 +95,10 @@ ca_RCS = ca.rc
 ca_LIBS = Com
 
 ca_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
+ca_SYS_LIBS_Darwin += resolv
+ca_SYS_LIBS_Linux += resolv
+ca_SYS_LIBS_freebsd += resolv
+ca_SYS_LIBS_solaris += resolv
 
 #   libs needed for PROD and TESTPRODUCT
 PROD_LIBS = ca Com
@@ -121,6 +126,10 @@ EXPAND += caRepeater.service@
 EXPAND_VARS = INSTALL_BIN=$(FINAL_LOCATION)/bin/$(T_A)
 
 SRC_DIRS += $(CURDIR)/test
+TESTPROD_HOST += caStatefulAddrTest
+caStatefulAddrTest_SRCS = caStatefulAddrTest.cpp
+TESTSCRIPTS_HOST += caStatefulAddrTest.t
+
 PROD_HOST += ca_test
 ca_test_SRCS = ca_test_main.c ca_test.c
 ca_test_SYS_LIBS_WIN32 = ws2_32 advapi32 user32

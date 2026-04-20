@@ -37,6 +37,7 @@
 #include "osiWireFormat.h"
 
 #include "addrList.h"
+#include "caStatefulAddr.h"
 #include "iocinf.h"
 
 /*
@@ -160,23 +161,12 @@ static void  forcePort ( ELLLIST *pList, unsigned short port )
 }
 
 
-/*
- * configureChannelAccessAddressList ()
- */
-extern "C" void epicsStdCall configureChannelAccessAddressList
+void caConfigureChannelAccessAutoAddressList
         ( ELLLIST *pList, SOCKET sock, unsigned short port )
 {
-    ELLLIST         tmpList;
     char            *pstr;
     char            yesno[32u];
     int             yes;
-
-    /*
-     * don't load the list twice
-     */
-    assert ( ellCount (pList) == 0 );
-
-    ellInit ( &tmpList );
 
     /*
      * Check to see if the user has disabled
@@ -203,8 +193,8 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
         addr.ia.sin_family = AF_UNSPEC;
         osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &addr );
         forcePort ( &bcastList, port );
-        removeDuplicateAddresses ( &tmpList, &bcastList, 1 );
-        if ( ellCount ( &tmpList ) == 0 ) {
+        removeDuplicateAddresses ( pList, &bcastList, 1 );
+        if ( ellCount ( pList ) == 0 ) {
             osiSockAddrNode *pNewNode;
             pNewNode = (osiSockAddrNode *) calloc ( 1, sizeof (*pNewNode) );
             if ( pNewNode ) {
@@ -215,13 +205,31 @@ extern "C" void epicsStdCall configureChannelAccessAddressList
                 pNewNode->addr.ia.sin_family = AF_INET;
                 pNewNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
                 pNewNode->addr.ia.sin_port = htons ( port );
-                ellAdd ( &tmpList, &pNewNode->node );
+                ellAdd ( pList, &pNewNode->node );
             }
             else {
                 errlogPrintf ( "configureChannelAccessAddressList(): no memory available for configuration\n" );
             }
         }
     }
+}
+
+
+/*
+ * configureChannelAccessAddressList ()
+ */
+extern "C" void epicsStdCall configureChannelAccessAddressList
+        ( ELLLIST *pList, SOCKET sock, unsigned short port )
+{
+    ELLLIST         tmpList;
+
+    /*
+     * don't load the list twice
+     */
+    assert ( ellCount (pList) == 0 );
+
+    ellInit ( &tmpList );
+    caConfigureChannelAccessAutoAddressList ( &tmpList, sock, port );
     addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_ADDR_LIST, port, false );
 
     removeDuplicateAddresses ( pList, &tmpList, 0 );

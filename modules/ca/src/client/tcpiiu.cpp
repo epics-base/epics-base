@@ -2145,6 +2145,18 @@ SearchDestTCP :: SearchDestTCP (
     _ptcpiiu ( NULL ),
     _cac ( cacIn ),
     _addr ( addrIn ),
+    _stateful ( false ),
+    _active ( false )
+{
+}
+
+SearchDestTCP :: SearchDestTCP (
+    cac & cacIn, const caStatefulAddr & addrIn ) :
+    _statefulAddr ( addrIn ),
+    _ptcpiiu ( NULL ),
+    _cac ( cacIn ),
+    _addr ( addrIn.resolved () ? addrIn.addr () : osiSockAddr () ),
+    _stateful ( true ),
     _active ( false )
 {
 }
@@ -2164,6 +2176,22 @@ void SearchDestTCP :: searchRequest (
     epicsGuard < epicsMutex > & guard,
         const char * pBuf, size_t len  )
 {
+    if ( _stateful ) {
+        bool changed = _statefulAddr.refreshIfDue ();
+
+        if ( changed && _ptcpiiu ) {
+            _ptcpiiu->initiateAbortShutdown ( guard );
+            _ptcpiiu = NULL;
+            _active = false;
+        }
+        if ( ! _statefulAddr.resolved () ) {
+            return;
+        }
+        if ( changed || _addr.sa.sa_family == AF_UNSPEC ) {
+            _addr = _statefulAddr.addr ();
+        }
+    }
+
     // restart circuit if it was shut down
     if ( ! _ptcpiiu ) {
         tcpiiu * piiu = NULL;

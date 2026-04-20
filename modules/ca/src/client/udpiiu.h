@@ -39,6 +39,7 @@
 #include "disconnectGovernorTimer.h"
 #include "repeaterSubscribeTimer.h"
 #include "SearchDest.h"
+#include "caStatefulAddr.h"
 
 namespace ca {
 #if __cplusplus>=201103L
@@ -121,12 +122,15 @@ private:
         public SearchDest {
     public:
         SearchDestUDP ( const osiSockAddr &, udpiiu & );
+        SearchDestUDP ( const caStatefulAddr &, udpiiu & );
         void searchRequest (
             epicsGuard < epicsMutex > &, const char * pBuf, size_t bufLen );
         void show (
             epicsGuard < epicsMutex > &, unsigned level ) const;
     private:
+        caStatefulAddr _statefulAddr;
         int _lastError;
+        bool _stateful;
         osiSockAddr _destAddr;
         udpiiu & _udpiiu;
     };

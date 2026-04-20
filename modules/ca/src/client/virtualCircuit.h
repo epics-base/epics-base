@@ -37,6 +37,7 @@
 #include "tcpSendWatchdog.h"
 #include "hostNameCache.h"
 #include "SearchDest.h"
+#include "caStatefulAddr.h"
 #include "compilerDependencies.h"
 
 class callbackManager;
@@ -96,6 +97,7 @@ private:
 class SearchDestTCP : public SearchDest {
 public:
     SearchDestTCP ( cac &, const osiSockAddr & );
+    SearchDestTCP ( cac &, const caStatefulAddr & );
     void searchRequest ( epicsGuard < epicsMutex > & guard,
          const char * pbuf, size_t len );
     void show ( epicsGuard < epicsMutex > & guard, unsigned level ) const;
@@ -103,9 +105,11 @@ public:
     void disable ();
     void enable ();
 private:
+    caStatefulAddr _statefulAddr;
     tcpiiu * _ptcpiiu;
     cac & _cac;
-    const osiSockAddr _addr;
+    osiSockAddr _addr;
+    bool _stateful;
     bool _active;
 };
 

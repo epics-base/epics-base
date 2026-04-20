@@ -24,6 +24,7 @@
 #include <new>
 #include <stdexcept>
 #include <string> // vxWorks 6.0 requires this include
+#include <vector>
 
 #include "epicsStdio.h"
 #include "dbDefs.h"
@@ -37,6 +38,7 @@
 #include "epicsExport.h"
 
 #include "addrList.h"
+#include "caStatefulAddr.h"
 #include "iocinf.h"
 #include "cac.h"
 #include "inetAddrID.h"
@@ -251,30 +253,37 @@ cac::cac (
      * load user configured tcp name server address list,
      * create virtual circuits, and add them to server table
      */
-    ELLLIST dest, tmpList;
+    std::vector < caStatefulAddr > nameServers;
+    std::vector < caStatefulAddr > :: const_iterator nameServerIter;
+    std::vector < osiSockAddr > seenNameServers;
 
-    ellInit ( & dest );
-    ellInit ( & tmpList );
-
-    addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_NAME_SERVERS, this->_serverPort, false );
-    removeDuplicateAddresses ( &dest, &tmpList, 0 );
+    caParseStatefulAddrList ( nameServers, &EPICS_CA_NAME_SERVERS,
+        this->_serverPort, false );
 
     epicsGuard < epicsMutex > guard ( this->mutex );
 
-    while ( osiSockAddrNode *
-        pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
+    for ( nameServerIter = nameServers.begin ();
+          nameServerIter != nameServers.end (); ++nameServerIter ) {
         tcpiiu * piiu = NULL;
-        SearchDestTCP * pdst = new SearchDestTCP ( *this, pNode->addr );
+        SearchDestTCP * pdst;
+
+        if ( nameServerIter->resolved () &&
+             caSockAddrSeen ( seenNameServers, nameServerIter->addr () ) ) {
+            continue;
+        }
+        pdst = new SearchDestTCP ( *this, *nameServerIter );
         this->registerSearchDest ( guard, * pdst );
+        if ( ! nameServerIter->resolved () ) {
+            continue;
+        }
         /* Initially assume that servers listed in EPICS_CA_NAME_SERVERS support at least minor
          * version 11.  This causes tcpiiu to send the user and host name authentication
          * messages.  When the actual Version message is received from the server it will
          * be overwrite this assumption.
          */
         bool newIIU = findOrCreateVirtCircuit (
-            guard, pNode->addr, cacChannel::priorityDefault,
+            guard, nameServerIter->addr (), cacChannel::priorityDefault,
             piiu, 11, pdst );
-        free ( pNode );
         if ( newIIU ) {
             piiu->start ( guard );
         }

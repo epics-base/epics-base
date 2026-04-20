@@ -127,7 +127,8 @@ EXPAND_VARS = INSTALL_BIN=$(FINAL_LOCATION)/bin/$(T_A)
 
 SRC_DIRS += $(CURDIR)/test
 TESTPROD_HOST += caStatefulAddrTest
-caStatefulAddrTest_SRCS = caStatefulAddrTest.cpp
+caStatefulAddrTest_SRCS = caStatefulAddrTest.cpp caStatefulAddr.cpp
+caStatefulAddrTest_LIBS = Com
 TESTSCRIPTS_HOST += caStatefulAddrTest.t
 
 PROD_HOST += ca_test

@@ -27,6 +27,7 @@
 
 #define CA_DNS_TTL_FALLBACK 300u
 #define CA_DNS_RETRY 60u
+#define CA_ADDR_LIST_ENV_MAX 65536u
 
 static caStatefulAddr::Resolver caResolverForTest = NULL;
 
@@ -180,9 +181,9 @@ caStatefulAddr::caStatefulAddr() :
     _resolved(false),
     _ignored(false),
     _staticAddr(false),
-    _expires(0)
+    _expires(0),
+    _addr()
 {
-    memset(&_addr, 0, sizeof(_addr));
 }
 
 caStatefulAddr::caStatefulAddr(const std::string &token,
@@ -193,9 +194,9 @@ caStatefulAddr::caStatefulAddr(const std::string &token,
     _resolved(false),
     _ignored(false),
     _staticAddr(false),
-    _expires(0)
+    _expires(0),
+    _addr()
 {
-    memset(&_addr, 0, sizeof(_addr));
     refreshIfDue();
 }
 
@@ -210,7 +211,7 @@ bool caStatefulAddr::refreshIfDue()
 
 bool caStatefulAddr::refresh(time_t now)
 {
-    caStatefulAddr::ResolveResult result;
+    caStatefulAddr::ResolveResult result = {};
     caStatefulAddr::Resolver resolver = caResolverForTest;
     bool oldResolved;
     osiSockAddr oldAddr;
@@ -221,7 +222,6 @@ bool caStatefulAddr::refresh(time_t now)
     if(_expires && difftime(now, _expires) < 0.0)
         return false;
 
-    memset(&result, 0, sizeof(result));
     oldResolved = _resolved;
     oldAddr = _addr;
     if(!resolver)
@@ -290,9 +290,19 @@ void caParseStatefulAddrList(std::vector<caStatefulAddr> &out,
         return;
 
     try {
-        std::vector<char> scratch(pStr, pStr+strlen(pStr)+1);
+        size_t len = epicsStrnLen(pStr, CA_ADDR_LIST_ENV_MAX);
+        std::vector<char> scratch;
         char *save = NULL;
         const char *pToken;
+
+        if(len == CA_ADDR_LIST_ENV_MAX) {
+            errlogPrintf("CAC: address list '%s' exceeds %u bytes\n",
+                pEnv->name, (unsigned)CA_ADDR_LIST_ENV_MAX);
+            return;
+        }
+
+        scratch.resize(len + 1u, '\0');
+        memcpy(&scratch[0], pStr, len);
 
         for(pToken = epicsStrtok_r(&scratch[0], " \t\n\r", &save);
             pToken;

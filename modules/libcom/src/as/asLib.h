@@ -38,6 +38,7 @@ typedef enum{
     asClientCOAR        /*Change of access rights*/
     /*For now this is all*/
 } asClientStatus;
+typedef enum{asNOACCESS,asREAD,asWRITE} asAccessRights;
 
 typedef void (*ASCLIENTCALLBACK) (ASCLIENTPVT,asClientStatus);
 
@@ -46,9 +47,9 @@ long asCheckGet(ASCLIENTPVT asClientPvt);
 long asCheckPut(ASCLIENTPVT asClientPvt);
 */
 #define asCheckGet(asClientPvt) \
-    (!asActive || ((asClientPvt)->access >= asREAD))
+    asCheckClientAccess((asClientPvt), asREAD)
 #define asCheckPut(asClientPvt) \
-    (!asActive || ((asClientPvt)->access >= asWRITE))
+    asCheckClientAccess((asClientPvt), asWRITE)
 
 /* More convenience macros
 void *asTrapWriteWithData(ASCLIENTPVT asClientPvt,
@@ -105,6 +106,8 @@ LIBCOM_API long epicsStdCall asComputeAllAsg(void);
 LIBCOM_API long epicsStdCall asComputeAsg(ASG *pasg);
 */
 LIBCOM_API long epicsStdCall asCompute(ASCLIENTPVT asClientPvt);
+LIBCOM_API long epicsStdCall asCheckClientAccess(
+    ASCLIENTPVT asClientPvt, asAccessRights access);
 LIBCOM_API int epicsStdCall asDump(
     void (*memcallback)(ASMEMBERPVT,FILE *),
     void (*clientcallback)(ASCLIENTPVT,FILE *),int verbose);
@@ -148,9 +151,6 @@ LIBCOM_API void epicsStdCall asTrapWriteAfterWrite(void *pvt);
 /*Private declarations */
 LIBCOM_API extern int asActive;
 
-/* definition of access rights*/
-typedef enum{asNOACCESS,asREAD,asWRITE} asAccessRights;
-
 struct gphPvt;
 
 /*Base pointers for access security*/
@@ -159,6 +159,7 @@ typedef struct asBase{
     ELLLIST         hagList;
     ELLLIST         asgList;
     struct gphPvt   *phash;
+    time_t          hagExpires; /* Earliest refreshable HAG DNS expiry, or 0 */
 } ASBASE;
 
 LIBCOM_API extern volatile ASBASE *pasbase;

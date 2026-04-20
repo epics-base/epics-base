@@ -51,6 +51,8 @@ static ASBASE *pasbasenew=NULL;
 int   asActive = FALSE;
 
 static void         *freeListPvt = NULL;
+static unsigned     asHagRefreshActive = 0;
+static unsigned     asComputeActive = 0;
 
 
 #define DEFAULT "DEFAULT"
@@ -66,12 +68,14 @@ static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,const char *asgName);
 static long asComputeAllAsgPvt(void);
 static long asComputeAsgPvt(ASG *pasg);
 static long asComputePvt(ASCLIENTPVT asClientPvt);
+static long asComputePvtNoRefresh(ASCLIENTPVT asClientPvt);
 static UAG *asUagAdd(const char *uagName);
 static long asUagAddUser(UAG *puag,const char *user);
 static HAG *asHagAdd(const char *hagName);
 static long asHagAddHost(HAG *phag,const char *host);
 static void asHagAddHashEntries(ASBASE *pasbase);
-static void asHagRefreshExpired(ASBASE *pasbase);
+static int asHagRefreshExpired(ASBASE *pasbase);
+static int asHagRefreshAndComputeAll(ASBASE *pasbase);
 static ASG *asAsgAdd(const char *asgName);
 static long asAsgAddInp(ASG *pasg,const char *inp,int inpIndex);
 static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level);
@@ -302,19 +306,50 @@ static void asHagAddHashEntries(ASBASE *pasbase)
     }
 }
 
-static void asHagRefreshExpired(ASBASE *pasbase)
+static void asHagScheduleNextExpiry(ASBASE *pasbase)
+{
+    HAG *phag;
+    time_t next = 0;
+    int found = 0;
+
+    if(!pasbase) return;
+    phag = (HAG *)ellFirst(&pasbase->hagList);
+    while(phag) {
+        HAGNAME *phagname = (HAGNAME *)ellFirst(&phag->list);
+
+        while(phagname) {
+            if(phagname->source) {
+                time_t expires = phagname->expires;
+
+                if(expires <= 0)
+                    expires = 1;
+                if(!found || difftime(expires, next) < 0.0) {
+                    next = expires;
+                    found = 1;
+                }
+            }
+            phagname = (HAGNAME *)ellNext(&phagname->node);
+        }
+        phag = (HAG *)ellNext(&phag->node);
+    }
+    pasbase->hagExpires = found ? next : 0;
+}
+
+static int asHagRefreshExpired(ASBASE *pasbase)
 {
     HAG *phag;
     HAGNAME *phagname;
     time_t now;
     int expired = 0;
 
-    if(!asCheckClientIP || !pasbase)
-        return;
+    if(!asCheckClientIP || !pasbase || !pasbase->hagExpires)
+        return 0;
 
     now = time(NULL);
     if(now == (time_t)-1)
-        return;
+        return 0;
+    if(difftime(now, pasbase->hagExpires) < 0.0)
+        return 0;
 
     phag = (HAG *)ellFirst(&pasbase->hagList);
     while(phag && !expired) {
@@ -328,8 +363,10 @@ static void asHagRefreshExpired(ASBASE *pasbase)
         }
         phag = (HAG *)ellNext(&phag->node);
     }
-    if(!expired)
-        return;
+    if(!expired) {
+        asHagScheduleNextExpiry(pasbase);
+        return 0;
+    }
 
     asHagDeleteHashEntries(pasbase);
     phag = (HAG *)ellFirst(&pasbase->hagList);
@@ -343,6 +380,22 @@ static void asHagRefreshExpired(ASBASE *pasbase)
         phag = (HAG *)ellNext(&phag->node);
     }
     asHagAddHashEntries(pasbase);
+    asHagScheduleNextExpiry(pasbase);
+    return 1;
+}
+
+static int asHagRefreshAndComputeAll(ASBASE *pasbase)
+{
+    int refreshed;
+
+    if(asHagRefreshActive || asComputeActive)
+        return 0;
+    asHagRefreshActive = 1;
+    refreshed = asHagRefreshExpired(pasbase);
+    if(refreshed)
+        asComputeAllAsgPvt();
+    asHagRefreshActive = 0;
+    return refreshed;
 }
 
 long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
@@ -391,6 +444,7 @@ long epicsStdCall asInitialize(ASINPUTFUNCPTR inputfunction)
         puag = (UAG *)ellNext(&puag->node);
     }
     asHagAddHashEntries(pasbasenew);
+    asHagScheduleNextExpiry(pasbasenew);
     pasbaseold = (ASBASE *)pasbase;
     pasbase = (ASBASE volatile *)pasbasenew;
     if(pasbaseold) {
@@ -718,6 +772,7 @@ long epicsStdCall asComputeAllAsg(void)
 
     if(!asActive) return(S_asLib_asNotActive);
     LOCK;
+    asHagRefreshAndComputeAll((ASBASE *)pasbase);
     status = asComputeAllAsgPvt();
     UNLOCK;
     return(status);
@@ -729,6 +784,7 @@ long epicsStdCall asComputeAsg(ASG *pasg)
 
     if(!asActive) return(S_asLib_asNotActive);
     LOCK;
+    asHagRefreshAndComputeAll((ASBASE *)pasbase);
     status = asComputeAsgPvt(pasg);
     UNLOCK;
     return(status);
@@ -743,6 +799,21 @@ long epicsStdCall asCompute(ASCLIENTPVT asClientPvt)
     status = asComputePvt(asClientPvt);
     UNLOCK;
     return(status);
+}
+
+long epicsStdCall asCheckClientAccess(
+    ASCLIENTPVT asClientPvt, asAccessRights access)
+{
+    ASGCLIENT *pasgclient = asClientPvt;
+    long result;
+
+    if(!asActive) return(TRUE);
+    if(!pasgclient) return(FALSE);
+    LOCK;
+    asHagRefreshAndComputeAll((ASBASE *)pasbase);
+    result = (pasgclient->access >= access);
+    UNLOCK;
+    return(result);
 }
 
 /*The dump routines do not lock. Thus they may get inconsistent data.*/
@@ -1168,7 +1239,7 @@ got_it:
     ellAdd(&pgroup->memberList,&pasgmember->node);
     pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
     while(pasgclient) {
-        asComputePvt((ASCLIENTPVT)pasgclient);
+        asComputePvtNoRefresh((ASCLIENTPVT)pasgclient);
         pasgclient = (ASGCLIENT *)ellNext(&pasgclient->node);
     }
     return(0);
@@ -1218,7 +1289,7 @@ next_rule:
     while(pasgmember) {
         pasgclient = (ASGCLIENT *)ellFirst(&pasgmember->clientList);
         while(pasgclient) {
-            asComputePvt((ASCLIENTPVT)pasgclient);
+            asComputePvtNoRefresh((ASCLIENTPVT)pasgclient);
             pasgclient = (ASGCLIENT *)ellNext(&pasgclient->node);
         }
         pasgmember = (ASGMEMBER *)ellNext(&pasgmember->node);
@@ -1227,6 +1298,12 @@ next_rule:
 }
 
 static long asComputePvt(ASCLIENTPVT asClientPvt)
+{
+    asHagRefreshAndComputeAll((ASBASE *)pasbase);
+    return asComputePvtNoRefresh(asClientPvt);
+}
+
+static long asComputePvtNoRefresh(ASCLIENTPVT asClientPvt)
 {
     asAccessRights      access=asNOACCESS;
     int                 trapMask=0;
@@ -1243,7 +1320,7 @@ static long asComputePvt(ASCLIENTPVT asClientPvt)
     if(!pasgMember) return(S_asLib_badMember);
     pasg = pasgMember->pasg;
     if(!pasg) return(S_asLib_badAsg);
-    asHagRefreshExpired((ASBASE *)pasbase);
+    asComputeActive++;
     oldaccess=pasgclient->access;
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
     while(pasgrule) {
@@ -1296,6 +1373,7 @@ next_rule:
     if(pasgclient->pcallback && oldaccess!=access) {
         (*pasgclient->pcallback)(pasgclient,asClientCOAR);
     }
+    asComputeActive--;
     return(0);
 }
 

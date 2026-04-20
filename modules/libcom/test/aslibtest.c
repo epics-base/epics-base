@@ -624,6 +624,23 @@ static HAGNAME *firstHagName(void)
     return (HAGNAME *)ellFirst(&phag->list);
 }
 
+static void forceHagExpiry(HAGNAME *phagname)
+{
+    if(!phagname)
+        return;
+    phagname->expires = 0;
+    ((ASBASE *)pasbase)->hagExpires = 1;
+}
+
+static void countAccessCallback(ASCLIENTPVT client, asClientStatus status)
+{
+    unsigned *count = asGetClientPvt(client);
+
+    if(status==asClientCOAR && count)
+        (*count)++;
+    (void)asCheckGet(client);
+}
+
 static void testSyntaxErrors(void)
 {
     static const char empty[] = "\n#almost empty file\n\n";
@@ -732,8 +749,7 @@ static void testUseIPCache(void)
         "unresolved HAG entries are retained for retry");
     setHost("127.0.0.1");
     testAccess("ro", 0);
-    if(phagname)
-        phagname->expires = 0;
+    forceHagExpiry(phagname);
     eltc(0);
     testAccess("ro", 0);
     eltc(1);
@@ -745,12 +761,75 @@ static void testUseIPCache(void)
     if(phagname && phagname->source) {
         free(phagname->source);
         phagname->source = epicsStrDup("127.0.0.2");
-        phagname->expires = 0;
+        forceHagExpiry(phagname);
     }
     setHost("127.0.0.2");
     testAccess("ro", 1);
     setHost("127.0.0.1");
     testAccess("ro", 0);
+}
+
+static void testUseIPCachePersistentClients(void)
+{
+    ASMEMBERPVT asp = 0;
+    ASCLIENTPVT oldClient = 0;
+    ASCLIENTPVT newClient = 0;
+    HAGNAME *phagname;
+    unsigned oldCallbackCount = 0;
+    unsigned newCallbackCount = 0;
+    char oldHost[] = "127.0.0.1";
+    char newHost[] = "127.0.0.2";
+    long ret;
+
+    testDiag("testUseIPCachePersistentClients()");
+    asCheckClientIP = 1;
+    asAsl = 0;
+
+    testOk1(asInitMem(hostname_config, NULL)==0);
+    phagname = firstHagName();
+    testOk(phagname && phagname->source && phagname->resolved,
+        "resolved HAG hostname is refreshable for persistent clients");
+
+    ret = asAddMember(&asp, "ro");
+    testOk(ret==0, "add persistent member -> %s", errSymMsg(ret));
+    ret = asAddClient(&oldClient, asp, asAsl, "testing", oldHost);
+    testOk(ret==0, "add original-address client -> %s", errSymMsg(ret));
+    ret = asAddClient(&newClient, asp, asAsl, "testing", newHost);
+    testOk(ret==0, "add later-address client -> %s", errSymMsg(ret));
+
+    asPutClientPvt(oldClient, &oldCallbackCount);
+    ret = asRegisterClientCallback(oldClient, countAccessCallback);
+    testOk(ret==0 && oldCallbackCount==1,
+        "original-address callback registered and called once -> %s",
+        errSymMsg(ret));
+    asPutClientPvt(newClient, &newCallbackCount);
+    ret = asRegisterClientCallback(newClient, countAccessCallback);
+    testOk(ret==0 && newCallbackCount==1,
+        "later-address callback registered and called once -> %s",
+        errSymMsg(ret));
+
+    testOk(asCheckGet(oldClient) && !asCheckPut(oldClient),
+        "original-address client initially has read-only access");
+    testOk(!asCheckGet(newClient) && !asCheckPut(newClient),
+        "later-address client initially has no access");
+
+    if(phagname && phagname->source) {
+        free(phagname->source);
+        phagname->source = epicsStrDup("127.0.0.2");
+        forceHagExpiry(phagname);
+    }
+
+    (void)asCheckGet(oldClient);
+    testOk(!asCheckGet(oldClient) && !asCheckPut(oldClient),
+        "original-address client loses access after check-driven HAG refresh");
+    testOk(asCheckGet(newClient) && !asCheckPut(newClient),
+        "later-address client gains read-only access after check-driven HAG refresh");
+    testOk(oldCallbackCount==2 && newCallbackCount==2,
+        "callbacks fire once per persistent client access transition");
+
+    if(oldClient) asRemoveClient(&oldClient);
+    if(newClient) asRemoveClient(&newClient);
+    if(asp) asRemoveMember(&asp);
 }
 
 static void testFutureProofParser(void)
@@ -876,12 +955,13 @@ static void testFutureProofParser(void)
 
 MAIN(aslibtest)
 {
-    testPlan(76);
+    testPlan(88);
     testSyntaxErrors();
     testFutureProofParser();
     testHostNames();
     testUseIP();
     testUseIPCache();
+    testUseIPCachePersistentClients();
     errlogFlush();
     return testDone();
 }

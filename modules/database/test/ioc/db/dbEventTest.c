@@ -26,9 +26,11 @@
 
 #include <string.h>
 
+#include "alarm.h"
 #include "dbAccess.h"
 #include "dbChannel.h"
 #include "dbEvent.h"
+#include "dbLock.h"
 #include "dbUnitTest.h"
 #include "errlog.h"
 #include "iocInit.h"
@@ -191,9 +193,90 @@ static void testMultiSubscription(void)
 #undef NSUBS
 }
 
+/*
+ * Test 3: Duplicate reference events must preserve new metadata
+ *
+ * When both the queued event and a new event are reference-type field
+ * logs (both point to the same record field), db_queue_event_log()
+ * detects a duplicate and keeps only one.  The survivor must carry
+ * the most recent alarm status/severity/timestamp, since those are
+ * copied into the field log at creation time from the record and
+ * may have changed between the two posts.
+ *
+ * Use the DESC field (DBF_STRING, fieldSize=41 > sizeof(union native_value))
+ * so that useValque=FALSE and field logs are dbfl_type_ref.
+ */
+static void testRefEventMetadata(void)
+{
+    dbEventCtx ctx;
+    dbChannel *chan;
+    dbEventSubscription sub;
+    struct dbCommon *prec;
+    db_field_log *pfl;
+
+    testDiag("---- reference event metadata update ----");
+
+    ctx = db_init_events();
+    if (!ctx)
+        testAbort("db_init_events failed");
+
+    chan = dbChannelCreate("x.DESC");
+    if (!chan)
+        testAbort("dbChannelCreate(\"x.DESC\") failed");
+    if (dbChannelOpen(chan))
+        testAbort("dbChannelOpen failed");
+
+    sub = db_add_event(ctx, chan, noop_cb, NULL, DBE_VALUE | DBE_ALARM);
+    if (!sub)
+        testAbort("db_add_event failed");
+    db_event_enable(sub);
+
+    testOk(!sub->useValque, "DESC subscription uses reference-type logs");
+
+    prec = dbChannelRecord(chan);
+
+    /* Post first event with no alarm */
+    dbScanLock(prec);
+    prec->stat = 0;
+    prec->sevr = 0;
+    dbScanUnlock(prec);
+    db_post_single_event(sub);
+
+    testOk(sub->npend == 1, "one event pending after first post (got %lu)",
+        sub->npend);
+
+    /* Change alarm state on the record */
+    dbScanLock(prec);
+    prec->stat = HIHI_ALARM;
+    prec->sevr = MAJOR_ALARM;
+    dbScanUnlock(prec);
+
+    /* Post second event — triggers the duplicate reference check */
+    db_post_single_event(sub);
+
+    testOk(sub->npend == 1,
+        "still one event pending after duplicate (got %lu)", sub->npend);
+
+    /*
+     * The queued field log must carry the NEWER alarm metadata.
+     *
+     * Bug: the old code at line 797 deletes the new field log and
+     * keeps the old one, losing the updated alarm status/severity.
+     */
+    pfl = *sub->pLastLog;
+    testOk(pfl->sevr == MAJOR_ALARM,
+        "queued event has new severity %d (expected %d)",
+        pfl->sevr, MAJOR_ALARM);
+    testOk(pfl->stat == HIHI_ALARM,
+        "queued event has new alarm status %d (expected %d)",
+        pfl->stat, HIHI_ALARM);
+
+    /* Cleanup skipped, see comment in testSingleSubscription() */
+}
+
 MAIN(dbEventTest)
 {
-    testPlan(7);
+    testPlan(12);
 
     testdbPrepare();
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -206,6 +289,7 @@ MAIN(dbEventTest)
 
     testSingleSubscription();
     testMultiSubscription();
+    testRefEventMetadata();
 
     return testDone();
 }

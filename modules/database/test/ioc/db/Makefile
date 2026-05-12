@@ -43,6 +43,12 @@ testHarness_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 
 PROD_LIBS = dbTestIoc dbCore ca Com
 
+TESTPROD_HOST += dbEventTest
+dbEventTest_SRCS += dbEventTest.c
+dbEventTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbEventTest.c
+TESTS += dbEventTest
+
 TESTPROD_HOST += dbScanTest
 dbScanTest_SRCS += dbScanTest.c
 dbScanTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp

@@ -114,10 +114,11 @@ gev(const char *parm, volatile char *nvp)
                 val = (char *)nvp;
                 while (*nvp++ != '\0')
                     continue;
-                ret = malloc(nvp - val);
+                size_t len = nvp - val;
+                ret = malloc(len);
                 if (ret == NULL)
                     return NULL;
-                strcpy(ret, val);
+                memcpy(ret, val, len);
                 return ret;
             }
             if (c != *name++) {
@@ -149,7 +150,7 @@ motScriptParm(const char *mot_script_boot, char parm)
             ret = malloc(l+1);
             if (ret == NULL)
                 return NULL;
-            strncpy(ret, cp, l);
+            memcpy(ret, cp, l);
             *(ret+l) = '\0';
             return ret;
          }

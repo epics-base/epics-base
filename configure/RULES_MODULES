@@ -25,10 +25,19 @@
 # Add checked-out submodules to DIRS, unless INSTALL_LOCATION is empty
 LIVE_SUBMODULES = $(subst /Makefile,, \
     $(wildcard $(addsuffix /Makefile, $(SUBMODULES))))
-live = $(if $(wildcard $(INSTALL_CONFIG)/RULES_TOP),LIVE,DEAD)
+live := $(if $(wildcard $(INSTALL_CONFIG)/RULES_TOP),LIVE,DEAD)
 DIRS += $($(live)_SUBMODULES)
 
 include $(CONFIG)/RULES_DIRS
+
+ifeq ($(live),DEAD)
+ifneq ($(filter $(ACTIONS),$(MAKECMDGOALS)),)
+  $(info *** WARNING: The install directory $(INSTALL_LOCATION))
+  $(info ***   is absent or empty. The "make $(MAKECMDGOALS)" rule)
+  $(info ***   cannot recurse into these external modules as a result:)
+  $(info ***     $(LIVE_SUBMODULES))
+endif
+endif
 
 RELEASE_LOCAL := RELEASE.$(EPICS_HOST_ARCH).local
 

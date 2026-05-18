@@ -956,7 +956,9 @@ long dbGet(DBADDR *paddr, short dbrType,
     if (INVALID_DB_REQ(dbrType) || field_type > DBF_DEVICE) {
         char message[80];
 
-        sprintf(message, "dbGet: Request type is %d\n", dbrType);
+        sprintf(message, "dbGet: dbrType = %d, field_type = %.12s (%d).",
+                dbrType, dbGetFieldTypeString(field_type), field_type);
+
         recGblDbaddrError(S_db_badDbrtype, paddr, message);
         status = S_db_badDbrtype;
         goto done;
@@ -1338,7 +1340,9 @@ long dbPut(DBADDR *paddr, short dbrType,
     } else if (INVALID_DB_REQ(dbrType) || field_type > DBF_DEVICE) {
         char message[80];
 
-        sprintf(message, "dbPut: Request type is %d", dbrType);
+        sprintf(message, "dbPut: dbrType = %d, field_type = %.12s (%d).",
+                dbrType, dbGetFieldTypeString(field_type), field_type);
+
         recGblDbaddrError(S_db_badDbrtype, paddr, message);
         return S_db_badDbrtype;
     }

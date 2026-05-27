@@ -34,19 +34,64 @@ GNU_TARGET ?= $(RTEMS_TARGET_CPU)-rtems
 
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
+# Makefile.inc is installed under the BSP name including an alised name.
 include $(RTEMS_BASE)/$(GNU_TARGET)$(RTEMS_VERSION)/$(RTEMS_BSP)/Makefile.inc
 include $(RTEMS_CUSTOM)
 include $(CONFIG.CC)
 
 #-------------------------------------------------------
-# RTEMS cross-development tools
-CC = $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET) $(GCCSPECS) -fasm
-CCC = $(RTEMS_TOOLS)/bin/$(CXX)
-CPP = $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET) -x c -E $(GCCSPECS)
-AR = $(RTEMS_TOOLS)/bin/$(AR_FOR_TARGET)
-LD = $(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -r
+# Find RTEMS cross-development tools
+#
+# Look in the install prefix for the BSP or let the
+# tools be found in the path. Using a PATH lets you
+# separate the tools from the BSP when working with
+# RTEMS and EPICS changes at the same time.
+#
+# CC
+ifneq (,$(wildcard $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET)))
+  RTEMS_CC_FOR_TARGET := $(RTEMS_TOOLS)/bin/$(CC_FOR_TARGET)
+else
+  RTEMS_CC_FOR_TARGET := $(CC_FOR_TARGET)
+endif
+# C++
+ifneq (,$(wildcard $(RTEMS_TOOLS)/bin/$(CXX)))
+  RTEMS_CXX := $(RTEMS_TOOLS)/bin/$(CXX)
+else
+  RTEMS_CXX := $(CXX)
+endif
+# AR
+ifneq (,$(wildcard $(RTEMS_TOOLS)/bin/$(AR_FOR_TARGET)))
+  RTEMS_AR_FOR_TARGET := $(RTEMS_TOOLS)/bin/$(AR_FOR_TARGET)
+else
+  RTEMS_AR_FOR_TARGET := $(AR_FOR_TARGET)
+endif
+# LD
+ifneq (,$(wildcard $(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET)))
+  RTEMS_LD_FOR_TARGET := $(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET)
+else
+  RTEMS_LD_FOR_TARGET := $(LD_FOR_TARGET)
+endif
+# Ranlib
+ifneq (,$(wildcard $(RTEMS_TOOLS)/bin/$(RANLIB)))
+  RTEMS_RANLIB := $(RTEMS_TOOLS)/bin/$(RANLIB)
+else
+  RTEMS_RANLIB := $(RANLIB)
+endif
+# Objcopy
+ifneq (,$(wildcard $(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET)))
+  RTEMS_OBJCOPY_FOR_TARGET := $(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET)
+else
+  RTEMS_OBJCOPY_FOR_TARGET := $(OBJCOPY_FOR_TARGET)
+endif
 
-RANLIB := $(RTEMS_TOOLS)/bin/$(RANLIB)
+#-------------------------------------------------------
+# RTEMS cross-development tools
+CC = $(RTEMS_CC_FOR_TARGET) $(GCCSPECS) -fasm
+CCC = $(RTEMS_CXX)
+CPP = $(RTEMS_CC_FOR_TARGET) -x c -E $(GCCSPECS)
+AR = $(RTEMS_AR_FOR_TARGET)
+LD = $(RTEMS_LD_FOR_TARGET) -r
+RANLIB := $(RTEMS_RANLIB)
 
 #-------------------------------------------------------
 # Build types

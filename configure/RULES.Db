@@ -223,60 +223,60 @@ realclean: clean
 %Record.h$(DEP): $(COMMON_DIR)/%Record.dbd $(DBDTORECTYPEH_dep)
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@.stdout
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile >> $@.stdout
 	@$(MV) $@.stdout $@
 
 %Record.h$(DEP): %Record.dbd $(DBDTORECTYPEH_dep)
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@.stdout
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile >> $@.stdout
 	@$(MV) $@.stdout $@
 
 %Record.h$(DEP): ../%Record.dbd $(DBDTORECTYPEH_dep)
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@.stdout
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile >> $@.stdout
 	@$(MV) $@.stdout $@
 
 menu%.h$(DEP): $(COMMON_DIR)/menu%.dbd $(DBDTOMENUH_dep)
 	@$(RM) $@
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@.stdout
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile >> $@.stdout
 	@$(MV) $@.stdout $@
 
 menu%.h$(DEP): menu%.dbd $(DBDTOMENUH_dep)
 	@$(RM) $@
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@.stdout
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile >> $@.stdout
 	@$(MV) $@.stdout $@
 
 menu%.h$(DEP): ../menu%.dbd $(DBDTOMENUH_dep)
 	@$(RM) $@
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@.stdout
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile >> $@.stdout
 	@$(MV) $@.stdout $@
 
 %.dbd$(DEP): %.dbd.pod
 	@$(RM) $@
-	@echo "$(COMMONDEP_TARGET): ../Makefile" > $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile > $@.stdout
 	@$(MV) $@.stdout $@
 
 %.dbd$(DEP): %Include.dbd
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@.stdout
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile >> $@.stdout
 	@$(MV) $@.stdout $@
 
 %.dbd$(DEP): ../%Include.dbd
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@.stdout
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile >> $@.stdout
 	@$(MV) $@.stdout $@
 
 %.dbd$(DEP): $($*_DBD)
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $($*_DBD) > $@.stdout
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@.stdout
+	@echo $(COMMONDEP_TARGET): ../Makefile >> $@.stdout
 	@$(MV) $@.stdout $@
 
 %.db$(DEP): %$(SUBST_SUFFIX)

@@ -386,7 +386,7 @@ static void once(void)
     checkStatusOnce(status,"pthread_attr_getschedparam");
 
     findPriorityRange(pcommonAttr);
-    envGetBoolConfigParam(&EPICS_ALLOW_POSIX_THREAD_PRIORITY_SCHEDULING, &wantPrioScheduling);
+    envGetBoolConfigParam(&EPICS_ALLOW_PTHREAD_PRIO_SCHED, &wantPrioScheduling);
 
     if(pcommonAttr->maxPriority == -1) {
         pcommonAttr->maxPriority = pcommonAttr->schedParam.sched_priority;

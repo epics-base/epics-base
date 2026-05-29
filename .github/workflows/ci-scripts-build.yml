@@ -175,10 +175,11 @@ jobs:
 
           # Windows builds
 
-          - name: "Win-22 MSC-22"
+          - name: "Win-22 MSC-22 (cmd shell)"
             os: windows-2022
             cmp: vs2022
             configuration: default
+            extra: "SHELL=cmd"
 
           - name: "Win-22 MSC-22, static"
             os: windows-2022

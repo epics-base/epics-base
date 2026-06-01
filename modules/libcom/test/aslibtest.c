@@ -14,19 +14,12 @@
 
 #include <errSymTbl.h>
 #include <epicsString.h>
+#include <epicsThread.h>
 #include <osiFileName.h>
 #include <errlog.h>
+#include <cantProceed.h>
 
 #include <asLib.h>
-
-/* Portable thread-local storage helper for tests */
-#ifdef _MSC_VER
-#  define STORE static __declspec( thread )
-#elif __GNUC__
-#  define STORE static __thread
-#else
-#  define STORE static
-#endif
 
 // The maximum number of links in a chain of authority we will provide in test data.  Increase as needed
 #define MAX_CERT_AUTH_CHAIN_LENGTH 10
@@ -38,6 +31,14 @@ static char *asUser,
             *asAuthority;
 static enum AsProtocol protocol=AS_PROTOCOL_TCP;
 static int asAsl;
+
+/* Per-thread buffer for the formatted certificate authority chain. */
+static epicsThreadPrivateId certAuthChainPvtId;
+
+static void certAuthChainOnce(void *unused)
+{
+    certAuthChainPvtId = epicsThreadPrivateCreate();
+}
 
 /**
  * @brief Test data with Host Access Groups (HAG)
@@ -1079,8 +1080,17 @@ static void testAccess(const char *asg, unsigned mask)
     ASMEMBERPVT asp = 0; /* aka dbCommon::asp */
     ASCLIENTPVT client = 0;
 
-    STORE char formattedCertAuthChain[MAX_AUTH_CHAIN_STRING];
-    parseCertAuthChain(&formattedCertAuthChain[0]);
+    static epicsThreadOnceId certAuthChainOnceId = EPICS_THREAD_ONCE_INIT;
+    epicsThreadOnce(&certAuthChainOnceId, certAuthChainOnce, NULL);
+
+    char *formattedCertAuthChain = epicsThreadPrivateGet(certAuthChainPvtId);
+    if (!formattedCertAuthChain) {
+        formattedCertAuthChain = calloc(1, MAX_AUTH_CHAIN_STRING);
+        if (!formattedCertAuthChain)
+            cantProceed("aslibtest: out of memory for formattedCertAuthChain\n");
+        epicsThreadPrivateSet(certAuthChainPvtId, formattedCertAuthChain);
+    }
+    parseCertAuthChain(formattedCertAuthChain);
 
     long ret = asAddMember(&asp, asg);
     if(ret) {

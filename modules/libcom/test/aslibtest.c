@@ -1695,12 +1695,12 @@ static void testDumpOutput(void)
     char temp_filename[] = "aslib_test_XXXXXX";
 #ifdef _WIN32
     _mktemp(temp_filename);
-    FILE *fp = fopen(temp_filename, "w+");
+    FILE *fp = fopen(temp_filename, "wb+");
 #else
     int fd = mkstemp(temp_filename);
     testOk(fd != -1, "Created temporary file");
     if (fd == -1) return;
-    FILE *fp = fdopen(fd, "w+");
+    FILE *fp = fdopen(fd, "wb+");
 #endif
     testOk(fp != NULL, "Opened temporary file stream");
     if (!fp) {
@@ -1734,10 +1734,10 @@ static void runRestDumpRules(const char *rule, const char *expected_config)
     static char temp_filename[] = "aslib_test_XXXXXX";
 #ifdef _WIN32
     _mktemp(temp_filename);
-    FILE *fp = fopen(temp_filename, "w+");
+    FILE *fp = fopen(temp_filename, "wb+");
 #else
     int fd = mkstemp(temp_filename);
-    FILE *fp = fdopen(fd, "w+");
+    FILE *fp = fdopen(fd, "wb+");
 #endif
     testOk(fp != NULL, "Opened temporary file for rule %s", rule);
     if (!fp) return;

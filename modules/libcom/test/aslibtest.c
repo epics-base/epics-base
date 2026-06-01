@@ -1694,7 +1694,9 @@ static void testDumpOutput(void)
     // Create temporary file in current directory
     char temp_filename[] = "aslib_test_XXXXXX";
 #ifdef _WIN32
-    _mktemp(temp_filename);
+    char *tmpres = _mktemp(temp_filename);
+    testOk(tmpres != NULL, "Created temporary file");
+    if (tmpres == NULL) return;
     FILE *fp = fopen(temp_filename, "wb+");
 #else
     int fd = mkstemp(temp_filename);

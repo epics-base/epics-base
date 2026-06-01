@@ -1,0 +1,14 @@
+# CONFIG.windows-aarch64-debug.windows-aarch64-debug
+#
+# Definitions for windows-aarch64-debug host - windows-aarch64-debug target build
+# Override these definitions in CONFIG_SITE.windows-aarch64-debug.windows-aarch64-debug
+#-------------------------------------------------------
+
+#Include definitions common to windows-aarch64 builds
+include $(CONFIG)/os/CONFIG.windows-aarch64.windows-aarch64
+
+# Override CONFIG.CrossCommon settings:
+BUILD_CLASS = HOST
+
+# Override CONFIG_SITE settings:
+HOST_OPT=NO

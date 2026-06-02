@@ -35,6 +35,7 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
+#include "epicsTypes.h"
 
 #define GEN_SIZE_OFFSET
 #include "biRecord.h"
@@ -188,10 +189,10 @@ static long get_enum_str(const DBADDR *paddr, char *pstring)
     if(index!=biRecordVAL) {
         strcpy(pstring,"Illegal_Value");
     } else if(*pfield==0) {
-        strncpy(pstring,prec->znam,sizeof(prec->znam));
+        snprintf(pstring, MAX_STRING_SIZE, "%s", prec->znam);
         pstring[sizeof(prec->znam)] = 0;
     } else if(*pfield==1) {
-        strncpy(pstring,prec->onam,sizeof(prec->onam));
+        snprintf(pstring, MAX_STRING_SIZE, "%s", prec->onam);
         pstring[sizeof(prec->onam)] = 0;
     } else {
         strcpy(pstring,"Illegal_Value");
@@ -205,9 +206,9 @@ static long get_enum_strs(const DBADDR *paddr,struct dbr_enumStrs *pes)
 
     pes->no_str = 2;
     memset(pes->strs,'\0',sizeof(pes->strs));
-    strncpy(pes->strs[0],prec->znam,sizeof(prec->znam));
+    snprintf(pes->strs[0], MAX_STRING_SIZE, "%s", prec->znam);
     if(*prec->znam!=0) pes->no_str=1;
-    strncpy(pes->strs[1],prec->onam,sizeof(prec->onam));
+    snprintf(pes->strs[1], MAX_STRING_SIZE, "%s", prec->onam);
     if(*prec->onam!=0) pes->no_str=2;
     return(0);
 }

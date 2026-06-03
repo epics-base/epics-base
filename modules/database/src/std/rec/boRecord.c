@@ -325,31 +325,36 @@ static long get_enum_str(const DBADDR *paddr, char *pstring)
 
 
     index = dbGetFieldIndex(paddr);
-    if(index!=indexof(VAL)) {
-        strcpy(pstring,"Illegal_Value");
-    } else if(*pfield==0) {
-        snprintf(pstring, MAX_STRING_SIZE, "%s", prec->znam);
+    if(index != indexof(VAL)) {
+        strcpy(pstring, "Illegal_Value");
+    } else if(*pfield == 0) {
+        memcpy(pstring, prec->znam, sizeof(prec->znam));
         pstring[sizeof(prec->znam)] = 0;
-    } else if(*pfield==1) {
-        snprintf(pstring, MAX_STRING_SIZE, "%s", prec->onam);
+    } else if(*pfield == 1) {
+        memcpy(pstring, prec->onam, sizeof(prec->onam));
         pstring[sizeof(prec->onam)] = 0;
     } else {
-        strcpy(pstring,"Illegal_Value");
+        strcpy(pstring, "Illegal_Value");
     }
     return(0);
 }
 
 static long get_enum_strs(const DBADDR *paddr,struct dbr_enumStrs *pes)
 {
-    boRecord    *prec=(boRecord *)paddr->precord;
+    boRecord    *prec = (boRecord *)paddr->precord;
 
     /*SETTING no_str=0 breaks channel access clients*/
     pes->no_str = 2;
     memset(pes->strs,'\0',sizeof(pes->strs));
-    snprintf(pes->strs[0], MAX_STRING_SIZE, "%s", prec->znam);
-    if(*prec->znam!=0) pes->no_str=1;
-    snprintf(pes->strs[1], MAX_STRING_SIZE, "%s", prec->onam);
-    if(*prec->onam!=0) pes->no_str=2;
+
+    STATIC_ASSERT(sizeof(prec->znam) <= sizeof(pes->strs[0]));
+    memcpy(pes->strs[0], prec->znam, sizeof(pes->strs[0]));
+    if(*prec->znam != 0) pes->no_str = 1;
+
+    STATIC_ASSERT(sizeof(prec->onam) <= sizeof(pes->strs[1]));
+    memcpy(pes->strs[1], prec->onam, sizeof(pes->strs[1]));
+    if(*prec->onam != 0) pes->no_str = 2;
+
     return(0);
 }
 static long put_enum_str(const DBADDR *paddr, const char *pstring)

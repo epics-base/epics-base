@@ -37,3 +37,9 @@ EPICS Base Documentation
    database-api
    record-api
    menu-api
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Contributing
+
+   build-docs

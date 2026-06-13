@@ -44,6 +44,7 @@ targets. You may need the C and C++ compilers to be in your search
 path to do EPICS builds; check the definitions of CC and CCC in
 `base/configure/os/CONFIG.<host>.<host>` if you have problems.
 
+(software-requirements)=
 ### Software requirements
 
 #### GNU make

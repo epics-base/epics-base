@@ -64,7 +64,6 @@ extern void *POSIX_Init(void *argument);
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_STUB_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_ZERO_DRIVER
-#define CONFIGURE_APPLICATION_NEEDS_LIBI2C_DRIVER
 
 /* Note: The select() system call can only be used with the first FD_SETSIZE
  *       File Descriptors (newlib default is 64).  Beginning RTEMS 5.1, FDs are

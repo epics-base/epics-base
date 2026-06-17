@@ -86,11 +86,13 @@ menuYesNo
 ## Other Components
 
 EPICS Base also comes with extensible sets of server Channel Filters and IOC
-Database Link types, which are documented here:
+Database Link types, plus a collection of built-in device support layers,
+which are documented here:
 
 ```{toctree}
 :titlesonly:
 
 filters
 links
+devSoft
 ```

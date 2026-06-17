@@ -148,13 +148,16 @@ here for the global menus that are used by multiple record types:
 =head2 Other Components
 
 EPICS Base also comes with extensible sets of server Channel Filters and IOC
-Database Link types, which are documented here:
+Database Link types, plus a collection of built-in device support layers,
+which are documented here:
 
 =over
 
 =item * L<Channel Filters|filters>
 
 =item * L<IOC Database Link Types|links>
+
+=item * L<Built-in Device Support|devSoft>
 
 =back
 

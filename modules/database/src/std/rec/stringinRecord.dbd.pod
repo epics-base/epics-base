@@ -354,14 +354,41 @@ Other: Error.
 
 =back
 
-=head3 Device Support for Soft Records
+=head3 Device Support For Soft Records
 
-The C<<< Soft Channel >>> module reads a value directly into VAL.
+Five device support modules are provided for reading string values
+into records that are not attached to actual hardware.
 
-Device support for DTYP C<getenv> is provided for retrieving strings from
-environment variables.
-C<INST_IO> addressing C<<< @<environment variable> >>> is used in the INP
-link field to select the desired environment variable.
+=head3 Soft Channel
+
+The C<Soft Channel> module reads a value directly into VAL through
+the record's INP link. The INP link is a CONSTANT, DB_LINK, PV_LINK,
+or CA_LINK.
+
+=head3 Async Soft Channel
+
+This module is like the previous except that it reads the value using
+asynchronous processing that does not complete until the INP target
+record's processing has completed.
+
+=head3 Soft Timestamp
+
+This module reads the record's own timestamp formatted by C<strftime>.
+The C<INST_IO> INP parameter is the format string. See L<Built-in
+Device Support|devSoft/Soft Timestamp> for details.
+
+=head3 General Time
+
+This module exposes properties of the EPICS C<generalTime> framework
+(provider names). The C<INST_IO> INP parameter selects which property.
+See L<Built-in Device Support|devSoft/General Time> for details.
+
+=head3 getenv
+
+This module reads the named operating-system environment variable
+into VAL on each process event. The C<INST_IO> INP parameter is the
+environment variable name. See L<Built-in Device Support|devSoft/getenv>
+for details.
 
 =cut
 

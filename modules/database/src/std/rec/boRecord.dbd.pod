@@ -598,7 +598,7 @@ other: Error.
 
 =back
 
-=head2 Device Support For Soft Records
+=head3 Device Support For Soft Records
 
 Two soft device support modules C<Soft Channel> and C<Raw Soft Channel> are
 provided for output records not related to actual hardware devices. The OUT
@@ -618,6 +618,12 @@ for details.
 
 This module is like the previous except that it writes the current value of
 RVAL
+
+=head3 Async Soft Channel
+
+This module is like C<Soft Channel> except that it writes the value
+using asynchronous processing that does not complete until the OUT
+target record's processing has completed.
 
 =cut
 }

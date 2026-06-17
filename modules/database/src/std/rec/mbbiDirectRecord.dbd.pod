@@ -572,33 +572,41 @@ Other: Error.
 
 =head3 Device Support For Soft Records
 
-Two soft device support modules, C<<< Soft Channel >>> and C<<< Raw Soft Channel
->>>, are provided for multi-bit binary input direct records not related to
-actual hardware devices. The INP link type must be either CONSTANT, DB_LINK, or
-CA_LINK.
+Three soft device support modules, C<Soft Channel>, C<Raw Soft
+Channel>, and C<Async Soft Channel>, are provided for multi-bit binary
+input direct records not related to actual hardware devices. The INP
+link type must be either CONSTANT, DB_LINK, or CA_LINK.
 
-=head4 Soft Channel
+=head3 Soft Channel
 
-For this module, read_mbbiDirect always returns a value of 2, which means that
-no conversion is performed.
+For this module, read_mbbiDirect always returns a value of 2, which
+means that no conversion is performed.
 
-If the INP link type is constant, then the constant value is stored into VAL by
-C<init_record()>, and UDF is set to FALSE. VAL can be changed via dbPut
-requests. If the INP link type is PV_LINK, then dbCaAddInlink is called by
-C<init_record()>.
+If the INP link type is constant, then the constant value is stored
+into VAL by C<init_record()>, and UDF is set to FALSE. VAL can be
+changed via dbPut requests. If the INP link type is PV_LINK, then
+dbCaAddInlink is called by C<init_record()>.
 
-read_mbbiDirect calls recGblGetLinkValue to read the current value of VAL.
+read_mbbiDirect calls recGblGetLinkValue to read the current value of
+VAL.
 
 See L<Input Records> for a further explanation.
 
-If the return status of recGblGetLinkValue is zero, then read_mbbi sets UDF to
-FALSE. The status of recGblGetLinkValue is returned.
+If the return status of recGblGetLinkValue is zero, then read_mbbi
+sets UDF to FALSE. The status of recGblGetLinkValue is returned.
 
-=head4 Raw Soft Channel
+=head3 Raw Soft Channel
 
-This module is like the previous except that values are read into RVAL, VAL is
-computed from RVAL, and read_mbbiDirect returns a value of 0. Thus the record
-processing routine will determine VAL in the normal way.
+This module is like the previous except that values are read into
+RVAL, VAL is computed from RVAL, and read_mbbiDirect returns a value
+of 0. Thus the record processing routine will determine VAL in the
+normal way.
+
+=head3 Async Soft Channel
+
+This module is like C<Soft Channel> except that it reads the value
+using asynchronous processing that does not complete until the INP
+target record's processing has completed.
 
 =cut
 

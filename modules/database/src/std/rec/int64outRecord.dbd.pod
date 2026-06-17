@@ -601,9 +601,9 @@ error occurred.
 
 =cut
 
-=head2 Device Support For Soft Records
+=head3 Device Support For Soft Records
 
-Two soft device support modules, Soft Channel and Soft Callback Channel, are
+Two soft device support modules, Soft Channel and Async Soft Channel, are
 provided for output records not related to actual hardware devices. The
 OUT link type must be either a CONSTANT, DB_LINK, or CA_LINK.
 
@@ -613,7 +613,7 @@ This module writes the current value using the record's VAL field.
 
 C<write_int64out> calls C<dbPutLink> to write the current value.
 
-=head3 Soft Callback Channel
+=head3 Async Soft Channel
 
 This module is like the previous except that it writes the current value
 using asynchronous processing that will not complete until an asynchronous

@@ -543,12 +543,17 @@ Other: Error.
 
 =head3 Device Support For Soft Records
 
-The C<<< Soft Channel >>> device support module is provided to write values to
-other records and store them in arrays. If OUT is a constant link, then
-C<write_aao()> does nothing. In this case, the record can be used to hold arrays
-written via dbPuts. If OUT is a database or channel access link, the array value
-is written to the link. NORD is set to the number of items in the array.
+A single soft device support module is provided for writing array
+values from records that are not attached to actual hardware.
 
+=head3 Soft Channel
+
+The C<Soft Channel> device support module is provided to write values
+to other records and store them in arrays. If OUT is a constant link,
+then C<write_aao()> does nothing. In this case, the record can be used
+to hold arrays written via dbPuts. If OUT is a database or channel
+access link, the array value is written to the link. NORD is set to
+the number of items in the array.
 
 If the OUT link type is constant, then NORD is set to zero.
 

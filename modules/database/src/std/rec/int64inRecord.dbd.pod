@@ -549,9 +549,9 @@ error occurred.
 
 =cut
 
-=head2 Device Support For Soft Records
+=head3 Device Support For Soft Records
 
-Two soft device support modules, Soft Channel and Soft Callback Channel, are
+Two soft device support modules, Soft Channel and Async Soft Channel, are
 provided for input records not related to actual hardware devices. The
 INP link type must be either a CONSTANT, DB_LINK, or CA_LINK.
 
@@ -561,7 +561,7 @@ This module reads the value using the record's INP link.
 
 C<read_int64in> calls C<dbGetLink> to read the value.
 
-=head3 Soft Callback Channel
+=head3 Async Soft Channel
 
 This module is like the previous except that it reads the value
 using asynchronous processing that will not complete until an asynchronous

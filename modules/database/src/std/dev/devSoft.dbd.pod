@@ -1,0 +1,373 @@
+# devSoft.dbd
+include "stdRecords.dbd"
+=title Built-in Device Support
+
+EPICS Base provides a collection of device support modules that record
+instances can use without any external hardware or driver involvement.
+Some of these are documented with the record types they support; the
+others are described here.
+
+This page covers the device support layers declared in F<devSoft.dbd>:
+
+=over
+
+=item * The L<Soft Channel|/Soft Channel>, L<Raw Soft Channel|/Raw
+Soft Channel>, and L<Async Soft Channel|/Async Soft Channel> families
+provide CONSTANT, DB_LINK, or CA_LINK access to other records or
+constants. Per-record details (which fields are read or written, return
+codes, conversion behavior) are documented in the matching
+C<I<rec>Record> reference pages.
+
+=item * L<Soft Timestamp|/Soft Timestamp>, L<General Time|/General
+Time>, L<stdio|/stdio>, L<getenv|/getenv>, and L<Db State|/Db State>
+are INST_IO device supports built on top of facilities from C<libCom>
+and the IOC core.
+
+=back
+
+=head2 Soft Channel
+
+The C<Soft Channel> device support reads or writes the record's value
+through the INP or OUT link, with no hardware involvement. It is the
+default DTYP for most record types and is used both for records whose
+value comes from another database link or constant, and as a building
+block for software-only records (calculations, sequencing, logging).
+
+The INP/OUT link is a CONSTANT, DB_LINK, PV_LINK, or CA_LINK. The link
+target's value is read (for input records) or the record's value is
+written (for output records) on each scan or processing event.
+
+Per-record behavior, including which fields are touched and the return
+code conventions, is documented in the record reference pages listed
+below.
+
+Supported record types:
+
+=over
+
+=item * L<aaiRecord|aaiRecord/Soft Channel>, L<aaoRecord|aaoRecord/Soft Channel>
+(array I/O)
+
+=item * L<aiRecord|aiRecord/Soft Channel>, L<aoRecord|aoRecord/Soft Channel>
+(analog I/O)
+
+=item * L<biRecord|biRecord/Soft Channel>, L<boRecord|boRecord/Soft Channel>,
+L<mbbiRecord|mbbiRecord/Soft Channel>, L<mbboRecord|mbboRecord/Soft Channel>,
+L<mbbiDirectRecord|mbbiDirectRecord/Soft Channel>,
+L<mbboDirectRecord|mbboDirectRecord/Soft Channel> (digital I/O)
+
+=item * L<calcoutRecord|calcoutRecord/Soft Channel>,
+L<eventRecord|eventRecord/Soft Channel>,
+L<histogramRecord|histogramRecord/Soft Channel>,
+L<subArrayRecord|subArrayRecord/Soft Channel>,
+L<waveformRecord|waveformRecord/Soft Channel> (specialty)
+
+=item * L<int64inRecord|int64inRecord/Soft Channel>,
+L<int64outRecord|int64outRecord/Soft Channel>,
+L<longinRecord|longinRecord/Soft Channel>,
+L<longoutRecord|longoutRecord/Soft Channel> (integer I/O)
+
+=item * L<lsiRecord|lsiRecord/Soft Channel>,
+L<lsoRecord|lsoRecord/Soft Channel>,
+L<printfRecord|printfRecord/Soft Channel>,
+L<stringinRecord|stringinRecord/Soft Channel>,
+L<stringoutRecord|stringoutRecord/Soft Channel> (string I/O)
+
+=back
+
+Example:
+
+    record(ai, "$(P):readback") {
+        field(DTYP, "Soft Channel")
+        field(INP,  "$(P):setpoint CP")
+    }
+
+=cut
+
+device(aai,CONSTANT,devAaiSoft,"Soft Channel")
+device(aao,CONSTANT,devAaoSoft,"Soft Channel")
+device(ai,CONSTANT,devAiSoft,"Soft Channel")
+device(ao,CONSTANT,devAoSoft,"Soft Channel")
+device(bi,CONSTANT,devBiSoft,"Soft Channel")
+device(bo,CONSTANT,devBoSoft,"Soft Channel")
+device(calcout,CONSTANT,devCalcoutSoft,"Soft Channel")
+device(event,CONSTANT,devEventSoft,"Soft Channel")
+device(histogram,CONSTANT,devHistogramSoft,"Soft Channel")
+device(int64in,CONSTANT,devI64inSoft,"Soft Channel")
+device(int64out,CONSTANT,devI64outSoft,"Soft Channel")
+device(longin,CONSTANT,devLiSoft,"Soft Channel")
+device(longout,CONSTANT,devLoSoft,"Soft Channel")
+device(lsi,CONSTANT,devLsiSoft,"Soft Channel")
+device(lso,CONSTANT,devLsoSoft,"Soft Channel")
+device(mbbi,CONSTANT,devMbbiSoft,"Soft Channel")
+device(mbbiDirect,CONSTANT,devMbbiDirectSoft,"Soft Channel")
+device(mbbo,CONSTANT,devMbboSoft,"Soft Channel")
+device(mbboDirect,CONSTANT,devMbboDirectSoft,"Soft Channel")
+device(printf,CONSTANT,devPrintfSoft,"Soft Channel")
+device(stringin,CONSTANT,devSiSoft,"Soft Channel")
+device(stringout,CONSTANT,devSoSoft,"Soft Channel")
+device(subArray,CONSTANT,devSASoft,"Soft Channel")
+device(waveform,CONSTANT,devWfSoft,"Soft Channel")
+
+=head2 Raw Soft Channel
+
+The C<Raw Soft Channel> device support is the same as L<Soft
+Channel|/Soft Channel> except that it reads into or writes from the
+record's RVAL field instead of VAL, allowing the record's conversion
+stage (typically the linear or breakpoint table conversion of
+analog records, or the bit shifting of multi-bit binary records) to
+run. It is mainly useful for testing record processing logic that
+expects a hardware-format raw value.
+
+The INP/OUT link is a CONSTANT, DB_LINK, PV_LINK, or CA_LINK, exactly
+as for L<Soft Channel|/Soft Channel>.
+
+Supported record types:
+L<aiRecord|aiRecord/Raw Soft Channel>,
+L<aoRecord|aoRecord/Raw Soft Channel>,
+L<biRecord|biRecord/Raw Soft Channel>,
+L<boRecord|boRecord/Raw Soft Channel>,
+L<mbbiRecord|mbbiRecord/Raw Soft Channel>,
+L<mbboRecord|mbboRecord/Raw Soft Channel>,
+L<mbbiDirectRecord|mbbiDirectRecord/Raw Soft Channel>,
+L<mbboDirectRecord|mbboDirectRecord/Raw Soft Channel>.
+
+=cut
+device(ai,CONSTANT,devAiSoftRaw,"Raw Soft Channel")
+device(ao,CONSTANT,devAoSoftRaw,"Raw Soft Channel")
+device(bi,CONSTANT,devBiSoftRaw,"Raw Soft Channel")
+device(bo,CONSTANT,devBoSoftRaw,"Raw Soft Channel")
+device(mbbi,CONSTANT,devMbbiSoftRaw,"Raw Soft Channel")
+device(mbbiDirect,CONSTANT,devMbbiDirectSoftRaw,"Raw Soft Channel")
+device(mbbo,CONSTANT,devMbboSoftRaw,"Raw Soft Channel")
+device(mbboDirect,CONSTANT,devMbboDirectSoftRaw,"Raw Soft Channel")
+
+=head2 Async Soft Channel
+
+The C<Async Soft Channel> device support behaves like L<Soft
+Channel|/Soft Channel> but waits for the linked target record to
+finish processing before the local record's processing completes. Use
+it when an output record must block until a downstream record's
+processing chain finishes, or when an input record must reflect a
+value produced by another record's asynchronous processing.
+
+The INP/OUT link is a CONSTANT, DB_LINK, PV_LINK, or CA_LINK.
+
+Supported record types:
+L<aiRecord|aiRecord/Async Soft Channel>,
+L<aoRecord|aoRecord/Async Soft Channel>,
+L<biRecord|biRecord/Async Soft Channel>,
+L<boRecord|boRecord/Async Soft Channel>,
+L<calcoutRecord|calcoutRecord/Async Soft Channel>,
+L<int64inRecord|int64inRecord/Async Soft Channel>,
+L<int64outRecord|int64outRecord/Async Soft Channel>,
+L<longinRecord|longinRecord/Async Soft Channel>,
+L<longoutRecord|longoutRecord/Async Soft Channel>,
+L<lsoRecord|lsoRecord/Async Soft Channel>,
+L<mbbiRecord|mbbiRecord/Async Soft Channel>,
+L<mbboRecord|mbboRecord/Async Soft Channel>,
+L<mbbiDirectRecord|mbbiDirectRecord/Async Soft Channel>,
+L<mbboDirectRecord|mbboDirectRecord/Async Soft Channel>,
+L<printfRecord|printfRecord/Async Soft Channel>,
+L<stringinRecord|stringinRecord/Async Soft Channel>,
+L<stringoutRecord|stringoutRecord/Async Soft Channel>.
+
+=cut
+device(ai,CONSTANT,devAiSoftCallback,"Async Soft Channel")
+device(ao,CONSTANT,devAoSoftCallback,"Async Soft Channel")
+device(bi,CONSTANT,devBiSoftCallback,"Async Soft Channel")
+device(bo,CONSTANT,devBoSoftCallback,"Async Soft Channel")
+device(calcout,CONSTANT,devCalcoutSoftCallback,"Async Soft Channel")
+device(int64in,CONSTANT,devI64inSoftCallback,"Async Soft Channel")
+device(int64out,CONSTANT,devI64outSoftCallback,"Async Soft Channel")
+device(longin,CONSTANT,devLiSoftCallback,"Async Soft Channel")
+device(longout,CONSTANT,devLoSoftCallback,"Async Soft Channel")
+device(lso,CONSTANT,devLsoSoftCallback,"Async Soft Channel")
+device(mbbi,CONSTANT,devMbbiSoftCallback,"Async Soft Channel")
+device(mbbiDirect,CONSTANT,devMbbiDirectSoftCallback,"Async Soft Channel")
+device(mbbo,CONSTANT,devMbboSoftCallback,"Async Soft Channel")
+device(mbboDirect,CONSTANT,devMbboDirectSoftCallback,"Async Soft Channel")
+device(printf,CONSTANT,devPrintfSoftCallback,"Async Soft Channel")
+device(stringin,CONSTANT,devSiSoftCallback,"Async Soft Channel")
+device(stringout,CONSTANT,devSoSoftCallback,"Async Soft Channel")
+
+=head2 Soft Timestamp
+
+The C<Soft Timestamp> device support copies the record's own
+timestamp (as set by C<recGblGetTimeStamp()>) into the record's value
+on every read. It is useful for publishing the IOC's current time, or
+for stamping a record at a known scan rate.
+
+The INP link type is INST_IO.
+
+For B<ai> records, the C<@parm> string is unused; reading the record
+returns seconds since the POSIX epoch with fractional nanoseconds.
+
+For B<stringin> records, the C<@parm> string is a C<strftime(3)>
+format string used to format the timestamp into the record's VAL.
+
+Example:
+
+    record(ai, "$(P):now") {
+        field(DTYP, "Soft Timestamp")
+        field(INP,  "@")
+        field(SCAN, "1 second")
+    }
+
+    record(stringin, "$(P):now-text") {
+        field(DTYP, "Soft Timestamp")
+        field(INP,  "@%Y-%m-%d %H:%M:%S.%06f")
+        field(SCAN, "1 second")
+    }
+
+=cut
+device(ai,      INST_IO,devTimestampAI,"Soft Timestamp")
+device(stringin,INST_IO,devTimestampSI,"Soft Timestamp")
+
+=head2 General Time
+
+The C<General Time> device support exposes the EPICS C<generalTime>
+framework that arbitrates between multiple time providers in priority
+order. See F<epicsGeneralTime.h> for the underlying API.
+
+The INP/OUT link type is INST_IO and the C<@parm> string selects which
+property to read or which action to take:
+
+=over
+
+=item B<ai> with INP C<@TIME> reads the current best time as seconds
+since the POSIX epoch with fractional nanoseconds.
+
+=item B<bo> with OUT C<@RSTERRCNT> clears the counter of detected
+time-provider anomalies.
+
+=item B<longin> with INP C<@GETERRCNT> reads the current value of the
+time-provider anomaly counter.
+
+=item B<stringin> with INP C<@BESTTCP> reads the name of the time
+provider that supplied the most recent best current time;
+C<@TOPTCP> reads the name of the highest-priority registered current
+time provider; C<@BESTTEP> reads the name of the most recent best
+event time provider.
+
+=back
+
+The parameter string is matched case-insensitively.
+
+Example:
+
+    record(ai, "$(P):time:now") {
+        field(DTYP, "General Time")
+        field(INP,  "@TIME")
+        field(SCAN, "1 second")
+    }
+
+=cut
+device(ai,      INST_IO,devAiGeneralTime,"General Time")
+device(bo,      INST_IO,devBoGeneralTime,"General Time")
+device(longin,  INST_IO,devLiGeneralTime,"General Time")
+device(stringin,INST_IO,devSiGeneralTime,"General Time")
+
+=head2 stdio
+
+The C<stdio> device support writes the record's string value to a
+process-wide output stream, appending a newline. It is useful for
+quick diagnostics and for routing record processing events to the
+IOC's log.
+
+Supported records: B<lso>, B<printf>, B<stringout>.
+
+The OUT link type is INST_IO and the C<@parm> string selects the
+destination stream:
+
+=over
+
+=item * C<@stdout> writes to the standard output stream via
+C<printf()>.
+
+=item * C<@stderr> writes to the standard error stream via
+C<fprintf(stderr,...)>.
+
+=item * C<@errlog> writes through C<errlogVprintf()>, so the message
+participates in the normal IOC error-log routing.
+
+=back
+
+Example:
+
+    record(stringout, "$(P):message") {
+        field(DTYP, "stdio")
+        field(OUT,  "@errlog")
+    }
+
+=cut
+device(lso,INST_IO,devLsoStdio,"stdio")
+device(printf,INST_IO,devPrintfStdio,"stdio")
+device(stringout,INST_IO,devSoStdio,"stdio")
+
+=head2 getenv
+
+The C<getenv> device support reads the value of an operating-system
+environment variable into the record's VAL field at every process
+event. Supported records: B<lsi> and B<stringin>.
+
+The INP link type is INST_IO and the C<@parm> string is the
+environment variable's name. If the variable is not set, the record
+is marked C<UDF> and an alarm is raised with severity from C<UDFS> and
+message C<"No such ENV">.
+
+For B<lsi> records the value is copied subject to the SIZV limit;
+for B<stringin> records the standard 40-character VAL limit applies.
+
+Example:
+
+    record(stringin, "$(P):host") {
+        field(DTYP, "getenv")
+        field(INP,  "@HOSTNAME")
+        field(PINI, "YES")
+    }
+
+=cut
+device(lsi,INST_IO,devLsiEnviron,"getenv")
+device(stringin,INST_IO,devSiEnviron,"getenv")
+
+=head2 Db State
+
+The C<Db State> device support reads or writes a named flag in the
+C<dbState> registry. The registry is a process-wide set of binary
+state variables that lets records, drivers, and IOC components
+coordinate without depending on each other's record names. See
+F<dbState.h> for the underlying API.
+
+The INP/OUT link type is INST_IO and the C<@parm> string is the state
+name. If no state with that name exists when the record is
+initialized, one is created on the fly and an C<errlogInfo> message is
+logged. Multiple records may share a state name to read or update the
+same flag.
+
+=over
+
+=item * A B<bi> record reads the state: VAL is set to 0 or 1 from the
+named state on every process event.
+
+=item * A B<bo> record writes the state: VAL=1 sets the state and
+VAL=0 clears it.
+
+=back
+
+Example:
+
+    record(bo, "$(P):ready") {
+        field(DTYP, "Db State")
+        field(OUT,  "@IOC_Ready")
+    }
+
+    record(bi, "$(P):ready:rb") {
+        field(DTYP, "Db State")
+        field(INP,  "@IOC_Ready")
+        field(SCAN, "1 second")
+    }
+
+=cut
+device(bi, INST_IO, devBiDbState, "Db State")
+device(bo, INST_IO, devBoDbState, "Db State")

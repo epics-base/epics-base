@@ -13,6 +13,9 @@ SRC_DIRS += $(STDDIR)/dev
 
 DBD += devSoft.dbd
 
+DOCS += devSoft.md
+HTMLS += devSoft.html
+
 dbRecStd_SRCS += devAaiSoft.c
 dbRecStd_SRCS += devAaoSoft.c
 dbRecStd_SRCS += devAiSoft.c

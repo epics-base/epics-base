@@ -983,9 +983,14 @@ Other: Error.
 
 =head3 Device Support For Soft Records
 
-=head4 Soft Channel
+Three soft device support modules, C<Soft Channel>, C<Raw Soft
+Channel>, and C<Async Soft Channel>, are provided for multi-bit binary
+output records not related to actual hardware devices. The OUT link
+type must be a CONSTANT, DB_LINK, PV_LINK, or CA_LINK.
 
-The C<<< Soft Channel >>> module writes the current value of VAL.
+=head3 Soft Channel
+
+The C<Soft Channel> module writes the current value of VAL.
 
 If the OUT link type is PV_LINK, then dbCaAddInlink is called by
 C<init_record()>.
@@ -993,10 +998,16 @@ C<init_record()>.
 C<write_mbbo()> calls C<dbPutLink()> to write the current value of VAL. See
 L<Soft Output> for more information.
 
-=head4 Raw Soft Channel
+=head3 Raw Soft Channel
 
 This module writes RVAL to the location specified in the output link. It returns
 a 0.
+
+=head3 Async Soft Channel
+
+This module is like C<Soft Channel> except that it writes the value
+using asynchronous processing that does not complete until the OUT
+target record's processing has completed.
 
 =cut
 }

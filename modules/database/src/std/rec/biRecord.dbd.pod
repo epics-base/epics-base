@@ -512,5 +512,11 @@ This module is like the previous except that values are read into RVAL.
 C<read_bi()> returns a value of 0. Thus the record processing routine will
 force VAL to be 0 or 1.
 
+=head3 Async Soft Channel
+
+This module is like C<Soft Channel> except that it reads the value
+using asynchronous processing that does not complete until the INP
+target record's processing has completed.
+
 =cut
 }

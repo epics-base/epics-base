@@ -415,13 +415,30 @@ This routine must output a new value. It returns the following values:
 
 =back
 
-=head3 Device Support for Soft Records
+=head3 Device Support For Soft Records
 
-The C<<< Soft Channel >>> device support module writes the current value of VAL.
+Three device support modules are provided for writing values from
+records that are not attached to actual hardware.
 
-Device support for DTYP C<stdio> is provided for writing values to the stdout,
-stderr, or errlog streams. C<INST_IO> addressing C<@stdout>, C<@stderr> or
-C<@errlog> is used on the OUT link field to select the desired stream.
+=head3 Soft Channel
+
+The C<Soft Channel> device support module writes the current value of
+VAL through the record's OUT link. The OUT link is a CONSTANT,
+DB_LINK, PV_LINK, or CA_LINK.
+
+=head3 Async Soft Channel
+
+This module is like the previous except that it writes the value
+using asynchronous processing that does not complete until the OUT
+target record's processing has completed.
+
+=head3 stdio
+
+This module writes the record's VAL field, followed by a newline, to
+the standard output, standard error, or IOC error log. C<INST_IO>
+addressing C<@stdout>, C<@stderr>, or C<@errlog> is used on the OUT
+link to select the destination. See L<Built-in Device Support|devSoft/stdio>
+for details.
 
 =cut
 

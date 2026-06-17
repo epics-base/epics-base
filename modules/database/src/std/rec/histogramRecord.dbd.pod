@@ -441,13 +441,14 @@ SVL from SGNL.
 
 =head3 Device Support For Soft Records
 
-Only the device support module C<Soft Channel> is currently provided, though
-other device support modules may be provided at the user's site.
+Only the device support module C<Soft Channel> is currently provided,
+though other device support modules may be provided at the user's
+site.
 
-=head4 Soft Channel
+=head3 Soft Channel
 
-The C<Soft Channel> device support routine retrieves a value from SGNL. SGNL
-must be CONSTANT, PV_LINK, DB_LINK, or CA_LINK.
+The C<Soft Channel> device support routine retrieves a value from
+SGNL. SGNL must be CONSTANT, PV_LINK, DB_LINK, or CA_LINK.
 
 =cut
 

@@ -20,7 +20,7 @@ the current state (VAL is given a value between 0 and 15). Device support
 modules may optionally read a value directly into VAL.
 
 Soft device modules are provided to obtain input via database or channel access
-links or via dbPutField or dbPutLink requests. Two soft device support modules
+links or via C<dbPutField()> or C<dbPutLink()> requests. Two soft device support modules
 are provided: C<<< Soft Channel >>> allows VAL to be an arbitrary unsigned short
 integer. C<<< Raw Soft Channel >>> reads the value into RVAL just like normal
 device support modules.
@@ -57,7 +57,7 @@ upon which the normal conversion process is undergone. C<<< Soft Channel >>>
 reads any unsigned integer directly into VAL. For a soft mbbi record, the INP
 field can be a constant, a database, or a channel access link. If INP is a
 constant, then the VAL is initialized to the constant value but can be changed
-at run-time via dbPutField or dbPutLink.
+at run-time via C<dbPutField()> or C<dbPutLink()>.
 
 MASK is used by the raw soft channel read routine, and by typical device support
 read routines, to select only the desired bits when reading the hardware
@@ -866,7 +866,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 Each input record must have an associated set of device support routines.
 
 The primary responsibility of the device support routines is to obtain a new raw
-input value whenever read_mbbi is called. The device support routines are
+input value whenever C<read_mbbi()> is called. The device support routines are
 primarily interested in the following fields:
 
 =fields PACT, DPVT, UDF, NSEV, NSTA, NOBT, VAL, INP, RVAL, MASK, SHFT
@@ -938,30 +938,31 @@ Other: Error.
 Three soft device support modules, C<Soft Channel>, C<Raw Soft
 Channel>, and C<Async Soft Channel>, are provided for multi-bit binary
 input records not related to actual hardware devices. The INP link
-type must be either CONSTANT, DB_LINK, or CA_LINK.
+must be a standard input link.
 
 =head3 Soft Channel
 
-read_mbbi always returns a value of 2, which means that no conversion
-is performed.
+C<read_mbbi()> always returns a value of 2, which means that no
+conversion is performed.
 
 If the INP link type is constant, then the constant value is stored
 into VAL by C<init_record()>, and UDF is set to FALSE. VAL can be
-changed via dbPut requests. If the INP link type is PV_LINK, then
-dbCaAddInlink is called by C<init_record()>.
+changed via C<dbPut()> requests. If the INP link type is PV_LINK, then
+C<dbCaAddInlink()> is called by C<init_record()>.
 
-read_mbbi calls recGblGetLinkValue to read the current value of VAL.
-See L<Soft Input>.
+C<read_mbbi()> calls C<recGblGetLinkValue()> to read the current value
+of VAL. See L<Soft Input>.
 
-If the return status of recGblGetLinkValue is zero, then read_mbbi
-sets UDF to FALSE. The status of recGblGetLinkValue is returned.
+If the return status of C<recGblGetLinkValue()> is zero, then
+C<read_mbbi()> sets UDF to FALSE. The status of
+C<recGblGetLinkValue()> is returned.
 
 =head3 Raw Soft Channel
 
 This module is like the previous except that values are read into
-RVAL, VAL is computed from RVAL, and read_mbbi returns a value of 0.
-Thus the record processing routine will determine VAL in the normal
-way.
+RVAL, VAL is computed from RVAL, and C<read_mbbi()> returns a value
+of 0. Thus the record processing routine will determine VAL in the
+normal way.
 
 =head3 Async Soft Channel
 

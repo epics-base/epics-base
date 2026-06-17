@@ -681,8 +681,8 @@ which is a very common case (when I<RVAL_min> is zero).
 
 Three soft device support modules, C<Soft Channel>, C<Raw Soft
 Channel>, and C<Async Soft Channel>, are provided for analog input
-records not related to actual hardware devices. The INP link type
-must be either CONSTANT, DB_LINK, or CA_LINK.
+records not related to actual hardware devices. The INP link must be
+a standard input link.
 
 =head3 Soft Channel
 

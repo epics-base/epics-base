@@ -85,7 +85,7 @@ menuYesNo
 
 ## Other Components
 
-EPICS Base also comes with extensible sets of server Channel Filters and IOC
+EPICS Base also comes with extensible sets of server-side Channel Filters and IOC
 Database Link types, plus a collection of built-in device support layers,
 which are documented here:
 

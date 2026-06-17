@@ -602,7 +602,7 @@ other: Error.
 
 Two soft device support modules C<Soft Channel> and C<Raw Soft Channel> are
 provided for output records not related to actual hardware devices. The OUT
-link type must be either CONSTANT, DB_LINK, or CA_LINK.
+link must be a standard output link.
 
 =head3 Soft Channel
 

@@ -860,7 +860,7 @@ If VAL out of range, set RVAL = undefined
 
 =item *
 
-Status = write_mbbo
+Status = C<write_mbbo()>
 
 =back
 
@@ -919,7 +919,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 Each mbbo record must have an associated set of device support routines. The
 primary responsibility of the device support routines is to obtain a new raw
-mbbo value whenever write_mbbo is called. The device support routines are
+mbbo value whenever C<write_mbbo()> is called. The device support routines are
 primarily interested in the following fields:
 
 =fields PACT, DPVT, NSEV, NSTA, NOBT, OUT, RVAL, RBV, MASK, SHFT
@@ -986,13 +986,13 @@ Other: Error.
 Three soft device support modules, C<Soft Channel>, C<Raw Soft
 Channel>, and C<Async Soft Channel>, are provided for multi-bit binary
 output records not related to actual hardware devices. The OUT link
-type must be a CONSTANT, DB_LINK, PV_LINK, or CA_LINK.
+must be a standard output link.
 
 =head3 Soft Channel
 
 The C<Soft Channel> module writes the current value of VAL.
 
-If the OUT link type is PV_LINK, then dbCaAddInlink is called by
+If the OUT link type is PV_LINK, then C<dbCaAddInlink()> is called by
 C<init_record()>.
 
 C<write_mbbo()> calls C<dbPutLink()> to write the current value of VAL. See

@@ -1551,7 +1551,7 @@ If an output delay was implemented, process the forward link.
 
 Two soft device support modules are provided for writing the output
 of records not related to actual hardware devices. The OUT link must
-be a CONSTANT, DB_LINK, PV_LINK, or CA_LINK.
+be a standard output link.
 
 =head3 Soft Channel
 

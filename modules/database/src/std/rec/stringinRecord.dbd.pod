@@ -289,7 +289,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 Each stringin input record must have an associated set of device support
 routines. The primary responsibility of the device support routines is to obtain
-a new ASCII string value whenever read_stringin is called. The device support
+a new ASCII string value whenever C<read_stringin()> is called. The device support
 routines are primarily interested in the following fields:
 
 =fields PACT, DPVT, UDF, VAL, INP
@@ -362,8 +362,7 @@ into records that are not attached to actual hardware.
 =head3 Soft Channel
 
 The C<Soft Channel> module reads a value directly into VAL through
-the record's INP link. The INP link is a CONSTANT, DB_LINK, PV_LINK,
-or CA_LINK.
+the record's INP link. The INP link is a standard input link.
 
 =head3 Async Soft Channel
 

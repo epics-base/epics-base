@@ -289,8 +289,8 @@ records that have no hardware-specific device support attached.
 This module writes the current value of VAL through the record's OUT
 link.
 
-C<write_lso> calls C<dbPutLink> to write the value. The OUT link is a
-CONSTANT, DB_LINK, PV_LINK, or CA_LINK.
+C<write_lso()> calls C<dbPutLink()> to write the value. The OUT link
+is a standard output link.
 
 =head3 Async Soft Channel
 

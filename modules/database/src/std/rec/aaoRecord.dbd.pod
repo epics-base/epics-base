@@ -272,7 +272,7 @@ record. Thus error storms will not occur.
 
 =item 2.
 
-Call device support write routine C<write_aao>.
+Call device support write routine C<write_aao()>.
 
 =item 3.
 

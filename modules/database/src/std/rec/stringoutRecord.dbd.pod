@@ -272,7 +272,7 @@ message is issued and processing is terminated.
 
 If DOL is a constant, then the type double constant, if non-zero, is converted
 to a string and stored into VAL and UDF is set to FALSE. If DOL type is a
-PV_LINK then dbCaAddInlink is called to create a channel access link.
+PV_LINK then C<dbCaAddInlink()> is called to create a channel access link.
 
 If device support includes C<init_record()>, it is called.
 
@@ -297,9 +297,9 @@ record. Thus error storms will not occur.
 
 =item 2.
 
-If PACT is FALSE and OMSL is CLOSED_LOOP, recGblGetLinkValue is called to read
+If PACT is FALSE and OMSL is CLOSED_LOOP, C<recGblGetLinkValue()> is called to read
 the current value of VAL. See L<Soft Output>.
-If the return status of recGblGetLinkValue is zero then UDF is set to FALSE.
+If the return status of C<recGblGetLinkValue()> is zero then UDF is set to FALSE.
 
 =item 3.
 
@@ -354,7 +354,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 Each stringout output record must have an associated set of device support
 routines. The primary responsibility of the device support routines is to write
-a new value whenever write_stringout is called. The device support routines are
+a new value whenever C<write_stringout()> is called. The device support routines are
 primarily interested in the following fields:
 
 =fields PACT, DPVT, NSEV, NSTA, VAL, OUT
@@ -423,8 +423,8 @@ records that are not attached to actual hardware.
 =head3 Soft Channel
 
 The C<Soft Channel> device support module writes the current value of
-VAL through the record's OUT link. The OUT link is a CONSTANT,
-DB_LINK, PV_LINK, or CA_LINK.
+VAL through the record's OUT link. The OUT link is a standard output
+link.
 
 =head3 Async Soft Channel
 

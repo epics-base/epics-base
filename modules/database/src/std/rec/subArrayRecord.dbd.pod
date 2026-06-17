@@ -307,7 +307,7 @@ Only the device support module C<Soft Channel> is currently provided.
 =head3 Soft Channel
 
 INP is expected to point to an array field of a waveform record or
-similar. The INP link is a CONSTANT, DB_LINK, PV_LINK, or CA_LINK.
+similar. The INP link is a standard input link.
 
 =cut
 

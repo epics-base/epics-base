@@ -326,8 +326,7 @@ from records not attached to actual hardware.
 =head3 Soft Channel
 
 The C<Soft Channel> device support uses the INP link to fetch the
-soft-event name. The INP link is a CONSTANT, DB_LINK, PV_LINK, or
-CA_LINK.
+soft-event name. The INP link is a standard input link.
 
 The C<read_event()> routine reads a string through INP and stores it
 in VAL, then looks up the named soft-event handle and sets EPVT.

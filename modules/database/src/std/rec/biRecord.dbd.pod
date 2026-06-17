@@ -16,7 +16,7 @@ not 0). Device support modules may optionally read a value directly from
 VAL.
 
 Soft device modules are provided to obtain input via database or channel
-access links via dbPutField or dbPutLink requests. Two soft device support
+access links via C<dbPutField()> or C<dbPutLink()> requests. Two soft device support
 modules are provided: C<Soft Channel> and C<Raw Soft Channel>. The first
 allows VAL to be an arbitrary unsigned short integer. The second reads the
 value into RVAL just like normal hardware modules.
@@ -371,7 +371,7 @@ Convert.
 =over
 
 =item *
-status = read_bi
+status = C<read_bi()>
 
 =item *
 PACT = TRUE
@@ -487,7 +487,7 @@ Error.
 
 Two soft device support modules, Soft Channel and Raw Soft Channel, are
 provided for input records not related to actual hardware devices. The INP
-link type must be either CONSTANT, DB_LINK, or CA_LINK.
+link must be a standard input link.
 
 =head3 Soft Channel
 
@@ -499,7 +499,7 @@ by C<init_record()>, and the UDF is set to FALSE. VAL can be changed via
 C<dbPut()> requests. If the INP link type is PV_LINK, the C<dbCaAddInlink()> is
 called by C<init_record()>.
 
-C<read_bi()> calls C<dbGetLinkValue> to read the current value of VAL.
+C<read_bi()> calls C<dbGetLinkValue()> to read the current value of VAL.
 See L<Soft Input> for details.
 
 If the return status of C<dbGetLinkValue()> is zero, then C<read_bi()> sets

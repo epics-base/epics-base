@@ -308,7 +308,7 @@ Scan forward link if necessary, set PACT FALSE, and return.
 
 Each waveform record must have an associated set of device support routines. The
 primary responsibility of the device support routines is to obtain a new array
-value whenever read_wf is called. The device support routines are primarily
+value whenever C<read_wf()> is called. The device support routines are primarily
 interested in the following fields:
 
 =fields PACT, DPVT, NSEV, NSTA, INP, NELM, FTVL, RARM, BPTR, NORD, BUSY

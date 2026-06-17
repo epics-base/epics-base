@@ -801,7 +801,7 @@ return.
 
 Each analog output record must have an associated set of device support
 routines. The primary responsibility of the device support routines is
-to output a new value whenever write_ao is called. The device support
+to output a new value whenever C<write_ao()> is called. The device support
 routines are primarily interested in the following fields:
 
 =over
@@ -974,18 +974,18 @@ which is a very common case (I<RVAL_min> is zero).
 
 Two soft device support modules Soft Channel and Raw Soft Channel are
 provided for output records not related to actual hardware devices. The
-OUT link type must be either a CONSTANT, DB_LINK, or CA_LINK.
+OUT link must be a standard output link.
 
 =head3 Soft Channel
 
 This module writes the current value of OVAL.
 
-If the OUT link type is PV_LINK, then dbCaAddInlink is called by
+If the OUT link type is PV_LINK, then C<dbCaAddInlink()> is called by
 C<init_record()>. C<init_record()> always returns a value of 2, which means that
 no conversion will ever be attempted.
 
-write_ao calls recGblPutLinkValue to write the current value of VAL.
-See Soft Output for details.
+C<write_ao()> calls C<recGblPutLinkValue()> to write the current value of VAL.
+See L<Soft Output> for details.
 
 =head3 Raw Soft Channel
 

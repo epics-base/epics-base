@@ -759,17 +759,17 @@ This routine must output a new value. It returns the following values:
 Three soft device support modules, C<Soft Channel>, C<Raw Soft
 Channel>, and C<Async Soft Channel>, are provided for multi-bit binary
 output direct records not related to actual hardware devices. The OUT
-link type must be a CONSTANT, DB_LINK, PV_LINK, or CA_LINK.
+link must be a standard output link.
 
 =head3 Soft Channel
 
 The C<Soft Channel> module writes the current value of VAL.
 
-If the OUT link type is PV_LINK, then dbCaAddInlink is called by
+If the OUT link type is PV_LINK, then C<dbCaAddInlink()> is called by
 C<init_record()>.
 
-write_mbboDirect calls recGblPutLinkValue to write the current value
-of VAL.
+C<write_mbboDirect()> calls C<recGblPutLinkValue()> to write the
+current value of VAL.
 
 See L<Soft Output|Soft_Output>.
 

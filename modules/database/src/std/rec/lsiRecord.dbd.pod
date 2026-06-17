@@ -238,10 +238,10 @@ records that have no hardware-specific device support attached.
 
 This module reads the value using the record's INP link.
 
-C<read_lsi> calls C<dbGetLink> to read the value into VAL, truncating
-at SIZV characters.
+C<read_lsi()> calls C<dbGetLink()> to read the value into VAL,
+truncating at SIZV characters.
 
-The INP link is a CONSTANT, DB_LINK, PV_LINK, or CA_LINK.
+The INP link is a standard input link.
 
 =head3 getenv
 

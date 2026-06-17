@@ -406,14 +406,14 @@ This routine first initializes the simulation mode mechanism by setting SIMM
 if SIML is a constant.
 
 It then checks if the device support and the device support's
-C<write_int64out> routine are defined.
+C<write_int64out()> routine are defined.
 If either one does not exist, an error message is issued
 and processing is terminated.
 
 If DOL is a constant, then VAL is initialized with its value and UDF is
 set to FALSE.
 
-If device support includes C<init_record>, it is called.
+If device support includes C<init_record()>, it is called.
 
 Finally, the deadband mechanisms for monitors and level alarms are
 initialized.
@@ -431,7 +431,7 @@ Routine C<process> implements the following algorithm:
 =item 1.
 
 Check to see that the appropriate device support module and its
-C<write_int64out> routine are defined.
+C<write_int64out()> routine are defined.
 If either one does not exist, an error message is issued and processing is
 terminated with the PACT field set to TRUE, effectively blocking the record
 to avoid error storms.
@@ -467,7 +467,7 @@ for details on how invalid alarms affect output records.
 =item 5.
 
 If PACT has been changed to TRUE, the device support signals asynchronous
-processing: its C<write_int64out> output routine has started, but not
+processing: its C<write_int64out()> output routine has started, but not
 completed writing the new value.
 In this case, the processing routine merely returns, leaving PACT TRUE.
 
@@ -605,13 +605,13 @@ error occurred.
 
 Two soft device support modules, Soft Channel and Async Soft Channel, are
 provided for output records not related to actual hardware devices. The
-OUT link type must be either a CONSTANT, DB_LINK, or CA_LINK.
+OUT link must be a standard output link.
 
 =head3 Soft Channel
 
 This module writes the current value using the record's VAL field.
 
-C<write_int64out> calls C<dbPutLink> to write the current value.
+C<write_int64out()> calls C<dbPutLink()> to write the current value.
 
 =head3 Async Soft Channel
 

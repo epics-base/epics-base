@@ -13,10 +13,10 @@ This page covers the device support layers declared in F<devSoft.dbd>:
 
 =item * The L<Soft Channel|/Soft Channel>, L<Raw Soft Channel|/Raw
 Soft Channel>, and L<Async Soft Channel|/Async Soft Channel> families
-provide CONSTANT, DB_LINK, or CA_LINK access to other records or
-constants. Per-record details (which fields are read or written, return
-codes, conversion behavior) are documented in the matching
-C<I<rec>Record> reference pages.
+provide standard record link access to other records or constants.
+Per-record details (which fields are read or written, return codes,
+conversion behavior) are documented in the matching C<I<rec>Record>
+reference pages.
 
 =item * L<Soft Timestamp|/Soft Timestamp>, L<General Time|/General
 Time>, L<stdio|/stdio>, L<getenv|/getenv>, and L<Db State|/Db State>
@@ -33,9 +33,9 @@ default DTYP for most record types and is used both for records whose
 value comes from another database link or constant, and as a building
 block for software-only records (calculations, sequencing, logging).
 
-The INP/OUT link is a CONSTANT, DB_LINK, PV_LINK, or CA_LINK. The link
-target's value is read (for input records) or the record's value is
-written (for output records) on each scan or processing event.
+The INP/OUT link is a standard record link. The link target's value
+is read (for input records) or the record's value is written (for
+output records) on each scan or processing event.
 
 Per-record behavior, including which fields are touched and the return
 code conventions, is documented in the record reference pages listed
@@ -119,8 +119,8 @@ analog records, or the bit shifting of multi-bit binary records) to
 run. It is mainly useful for testing record processing logic that
 expects a hardware-format raw value.
 
-The INP/OUT link is a CONSTANT, DB_LINK, PV_LINK, or CA_LINK, exactly
-as for L<Soft Channel|/Soft Channel>.
+The INP/OUT link is a standard record link, exactly as for L<Soft
+Channel|/Soft Channel>.
 
 Supported record types:
 L<aiRecord|aiRecord/Raw Soft Channel>,
@@ -151,7 +151,7 @@ it when an output record must block until a downstream record's
 processing chain finishes, or when an input record must reflect a
 value produced by another record's asynchronous processing.
 
-The INP/OUT link is a CONSTANT, DB_LINK, PV_LINK, or CA_LINK.
+The INP/OUT link is a standard record link.
 
 Supported record types:
 L<aiRecord|aiRecord/Async Soft Channel>,

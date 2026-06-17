@@ -15,8 +15,8 @@ This page covers the device support layers declared in F<devSoft.dbd>:
 Soft Channel>, and L<Async Soft Channel|/Async Soft Channel> families
 provide standard record link access to other records or constants.
 Per-record details (which fields are read or written, return codes,
-conversion behavior) are documented in the matching C<I<rec>Record>
-reference pages.
+conversion behavior) are documented in the matching Record Reference
+pages.
 
 =item * L<Soft Timestamp|/Soft Timestamp>, L<General Time|/General
 Time>, L<stdio|/stdio>, L<getenv|/getenv>, and L<Db State|/Db State>
@@ -116,8 +116,10 @@ Channel|/Soft Channel> except that it reads into or writes from the
 record's RVAL field instead of VAL, allowing the record's conversion
 stage (typically the linear or breakpoint table conversion of
 analog records, or the bit shifting of multi-bit binary records) to
-run. It is mainly useful for testing record processing logic that
-expects a hardware-format raw value.
+run. The RVAL fields have always been 32-bit integers (DBF_LONG or
+DBF_ULONG) so fractional values or values outside that range cannot
+be transported by these support layers without loss.
+
 
 The INP/OUT link is a standard record link, exactly as for L<Soft
 Channel|/Soft Channel>.
@@ -193,10 +195,12 @@ device(stringout,CONSTANT,devSoSoftCallback,"Async Soft Channel")
 
 =head2 Soft Timestamp
 
-The C<Soft Timestamp> device support copies the record's own
-timestamp (as set by C<recGblGetTimeStamp()>) into the record's value
-on every read. It is useful for publishing the IOC's current time, or
-for stamping a record at a known scan rate.
+The C<Soft Timestamp> device support copies data from the record's own
+timestamp (as set by C<recGblGetTimeStamp()>) into the record's VAL
+field on every read. It is useful for publishing the IOC's current time,
+or for converting a timestamp copied from another record through the
+TSEL link, which must be pointed at the C<.TIME> field of the source
+record.
 
 The INP link type is INST_IO.
 
@@ -288,8 +292,9 @@ C<printf()>.
 =item * C<@stderr> writes to the standard error stream via
 C<fprintf(stderr,...)>.
 
-=item * C<@errlog> writes through C<errlogVprintf()>, so the message
-participates in the normal IOC error-log routing.
+=item * C<@errlog> writes through C<errlogPrintf()>, so the message
+will be sent to the IOC error-log and might also appear on the
+console..
 
 =back
 

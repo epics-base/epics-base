@@ -1122,9 +1122,7 @@ POSIX_Init ( void *argument __attribute__((unused)))
         rtems_dhcpcd_add_hook(&dhcpcd_hook);
 
         printf("\n***** Start default network dhcpcd *****\n");
-        // if MY_BOOTP???
         default_network_dhcpcd();
-
 
         /* this seems to be hard coded in the BSP -> Sebastian Huber ? */
         printf("\n--Info (hpj)-- bsd task prio IRQS: %d  -----\n", rtems_bsd_get_task_priority("IRQS"));

@@ -322,7 +322,7 @@ DBCORE_API void testGlobalUnlock(void);
  * epicsMutex, ...) and use of epicsThreadMustJoin() is impractical.
  *
  * For example.  The following has a subtle race where the event may be
- * destroyed (free()'d) before the call to epicsEventMustSignal() has
+ * destroyed (free()'d) before the call to epicsEventMustTrigger() has
  * returned.  On some targets this leads to a use after free() error.
  *
  * @code
@@ -335,7 +335,7 @@ DBCORE_API void testGlobalUnlock(void);
  * }
  * // ...
  * void thread2() {
- *   epicsEventMustSignal(evt); // <- Racer
+ *   epicsEventMustTrigger(evt); // <- Racer
  * }
  * @endcode
  *
@@ -356,12 +356,12 @@ DBCORE_API void testGlobalUnlock(void);
  *     epicsEventDestroy(evt);
  * }
  * void thread2() {
- *   epicsEventMustSignal(evt);
+ *   epicsEventMustTrigger(evt);
  * }
  * @endcode
  *
  * Another way to avoid this race is to use a global mutex to ensure
- * that epicsEventMustSignal() has returned before destroying the event.
+ * that epicsEventMustTrigger() has returned before destroying the event.
  * testGlobalLock() and testGlobalUnlock() provide access to such a mutex.
  *
  * @code{.c}
@@ -377,7 +377,7 @@ DBCORE_API void testGlobalUnlock(void);
  * // ...
  * void thread2() {
  *   testGlobalLock();   // <-- added
- *   epicsEventMustSignal(evt);
+ *   epicsEventMustTrigger(evt);
  *   testGlobalUnlock(); // <-- added
  * }
  * @endcode

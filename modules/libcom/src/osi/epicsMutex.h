@@ -213,12 +213,12 @@ LIBCOM_API epicsMutexLockStatus epicsStdCall epicsMutexLock(
  * This routine does not return if the identifier is invalid.
  * \param ID The mutex identifier.
  **/
-#define epicsMutexMustLock(ID) {                            \
-    epicsMutexLockStatus status = epicsMutexLock(ID);       \
-    if(status != epicsMutexLockOK) {                        \
-        cantProceed("epicsMutexMustLock() failed at %s:%d", \
-            __FILE__, __LINE__);                            \
-    }                                                       \
+#define epicsMutexMustLock(ID) {                                \
+    epicsMutexLockStatus status = epicsMutexLock(ID);           \
+    if(status != epicsMutexLockOK) {                            \
+        cantProceed("epicsMutexMustLock() failed at %s:%d\n",   \
+            __FILE__, __LINE__);                                \
+    }                                                           \
 }
 
 /**\brief Similar to epicsMutexLock() except that the call returns immediately,

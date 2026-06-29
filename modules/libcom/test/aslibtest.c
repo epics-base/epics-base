@@ -24,6 +24,9 @@
 // The maximum number of links in a chain of authority we will provide in test data.  Increase as needed
 #define MAX_CERT_AUTH_CHAIN_LENGTH 10
 
+// The maximum length of the formatted authority chain string used by test helpers
+#define MAX_AUTH_CHAIN_STRING 2048
+
 // For tests these are the values of the client that are being tested against the given Access Security Group
 static char *asUser,
             *asHost,

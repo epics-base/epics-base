@@ -48,6 +48,10 @@ static void         *freeListPvt = NULL;
 
 #define DEFAULT "DEFAULT"
 
+/* Maximum length of the concatenated authority chain string (root to issuer)
+ * that asDumpFP() will copy for tokenizing. Large enough for any realistic chain. */
+#define MAX_AUTH_CHAIN_STRING 2048
+
 /* Defined in asLib.y */
 static int myParse(ASINPUTFUNCPTR inputfunction);
 

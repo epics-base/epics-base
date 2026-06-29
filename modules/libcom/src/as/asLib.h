@@ -226,11 +226,11 @@ typedef struct {
 }ASGHAG;
 typedef struct {
     ELLNODE         node;
-    struct method   *pmethod;
+    const char      *name;
 } ASGMETHOD;
 typedef struct {
     ELLNODE         node;
-    struct authority *pauthority;
+    const char      *name;
 } ASGAUTHORITY;
 
 #define AS_TRAP_WRITE 1
@@ -301,15 +301,6 @@ typedef struct asgClient {
     asAccessRights  access;
     int             trapMask;
 } ASGCLIENT;
-
-/* Define METHOD and AUTHORITY structures here for use in ASGRULE */
-typedef struct method{
-    char            *name;
-} METHOD;
-
-typedef struct authority{
-    char            *name;
-} AUTHORITY;
 
 LIBCOM_API long epicsStdCall asComputeAsg(ASG *pasg);
 /*following is "friend" function*/

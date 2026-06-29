@@ -714,13 +714,13 @@ int epicsStdCall asDumpFP(
             }
             if(pasgmethod) fprintf(fp,"\t\tMETHOD(");
             while(pasgmethod) {
-                fprintf(fp,"\"%s\"",pasgmethod->pmethod->name);
+                fprintf(fp,"\"%s\"",pasgmethod->name);
                 pasgmethod = (ASGMETHOD *)ellNext(&pasgmethod->node);
                 if(pasgmethod) fprintf(fp,","); else fprintf(fp,")\n");
             }
             if(pasgauthority) fprintf(fp,"\t\tAUTHORITY(");
             while(pasgauthority) {
-                fprintf(fp,"%s",pasgauthority->pauthority->name);
+                fprintf(fp,"%s",pasgauthority->name);
                 pasgauthority = (ASGAUTHORITY *)ellNext(&pasgauthority->node);
                 if(pasgauthority) fprintf(fp,","); else fprintf(fp,")\n");
             }
@@ -912,7 +912,7 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
             if(pasgmethod) {
                 fprintf(fp,"\t\tMETHOD(");
                 while(pasgmethod) {
-                    fprintf(fp,"\"%s\"",pasgmethod->pmethod->name);
+                    fprintf(fp,"\"%s\"",pasgmethod->name);
                     pasgmethod = (ASGMETHOD *)ellNext(&pasgmethod->node);
                     if(pasgmethod) fprintf(fp,","); else fprintf(fp,")\n");
                 }
@@ -920,7 +920,7 @@ int epicsStdCall asDumpRulesFP(FILE *fp,const char *asgname)
             if(pasgauthority) {
                 fprintf(fp,"\t\tAUTHORITY(");
                 while(pasgauthority) {
-                    fprintf(fp,"%s",pasgauthority->pauthority->name);
+                    fprintf(fp,"%s",pasgauthority->name);
                     pasgauthority = (ASGAUTHORITY *)ellNext(&pasgauthority->node);
                     if(pasgauthority) fprintf(fp,","); else fprintf(fp,")\n");
                 }
@@ -1202,7 +1202,7 @@ check_method:
         // Directly check if method matches any in the rule's list
         pasgmethod = (ASGMETHOD *)ellFirst(&pasgrule->methodList);
         while(pasgmethod) {
-           if (epicsStrCaseCmp(pasgmethod->pmethod->name, pasgclient->identity.method) == 0) {
+           if (epicsStrCaseCmp(pasgmethod->name, pasgclient->identity.method) == 0) {
                 goto check_authority;
             }
             pasgmethod = (ASGMETHOD *)ellNext(&pasgmethod->node);
@@ -1221,7 +1221,7 @@ check_authority:
         // Directly check if authority matches any in the rule's list
         pasgauthority = (ASGAUTHORITY *)ellFirst(&pasgrule->authList);
         while(pasgauthority) {
-            const char * rule_authority = asGetAuthority(pasgauthority->pauthority->name);
+            const char * rule_authority = asGetAuthority(pasgauthority->name);
             if ( !rule_authority ) {
                 goto next_rule;
             }
@@ -1329,7 +1329,6 @@ void asFreeAll(ASBASE *pasbase)
             while(pasgmethod) {
                 pnext = ellNext(&pasgmethod->node);
                 ellDelete(&pasgrule->methodList,&pasgmethod->node);
-                free(pasgmethod->pmethod);
                 free(pasgmethod);
                 pasgmethod = pnext;
             }
@@ -1337,7 +1336,6 @@ void asFreeAll(ASBASE *pasbase)
             while(pasgauthority) {
                 pnext = ellNext(&pasgauthority->node);
                 ellDelete(&pasgrule->authList,&pasgauthority->node);
-                free(pasgauthority->pauthority);
                 free(pasgauthority);
                 pasgauthority = pnext;
             }
@@ -1713,13 +1711,13 @@ static long asAsgRuleHagAdd(ASGRULE *pasgrule, const char *name)
 static long asAsgRuleMethodAdd(ASGRULE *pasgrule, const char *name)
 {
     ASGMETHOD *pasgmethod;
-    METHOD    *pmethod;
+    char      *pname;
 
     if(!pasgrule) return 0;
 
     pasgmethod = (ASGMETHOD *)ellFirst(&pasgrule->methodList);
     while(pasgmethod) {
-        if(strcmp(pasgmethod->pmethod->name, name) == 0) {
+        if(strcmp(pasgmethod->name, name) == 0) {
             errlogPrintf("Duplicate method '%s' in rule\n", name);
             return S_asLib_dupMethod;
         }
@@ -1727,12 +1725,10 @@ static long asAsgRuleMethodAdd(ASGRULE *pasgrule, const char *name)
     }
 
     const size_t method_name_len = strlen(name);
-    pmethod = asCalloc(1, sizeof(METHOD)+method_name_len+1);
-    pmethod->name = (char *)(pmethod+1);
-    memcpy(pmethod->name, name, method_name_len+1);
-
-    pasgmethod = asCalloc(1,sizeof(ASGMETHOD));
-    pasgmethod->pmethod = pmethod;
+    pasgmethod = asCalloc(1, sizeof(ASGMETHOD)+method_name_len+1);
+    pname = (char *)(pasgmethod+1);
+    memcpy(pname, name, method_name_len+1);
+    pasgmethod->name = pname;
     ellAdd(&pasgrule->methodList,&pasgmethod->node);
     return 0;
 }
@@ -1747,13 +1743,13 @@ static long asAsgRuleMethodAdd(ASGRULE *pasgrule, const char *name)
 static long asAsgRuleAuthorityAdd(ASGRULE *pasgrule, const char *name)
 {
     ASGAUTHORITY *pasgauthority;
-    AUTHORITY    *pauthority;
+    char         *pname;
 
     if(!pasgrule) return 0;
 
     pasgauthority = (ASGAUTHORITY *)ellFirst(&pasgrule->authList);
     while(pasgauthority) {
-        if(strcmp(pasgauthority->pauthority->name, name) == 0) {
+        if(strcmp(pasgauthority->name, name) == 0) {
             errlogPrintf("Duplicate authority '%s' in rule\n", name);
             return S_asLib_dupAuthority;
         }
@@ -1761,12 +1757,10 @@ static long asAsgRuleAuthorityAdd(ASGRULE *pasgrule, const char *name)
     }
 
     const size_t auth_name_len = strlen(name);
-    pauthority = asCalloc(1, sizeof(AUTHORITY)+auth_name_len+1);
-    pauthority->name = (char *)(pauthority+1);
-    memcpy(pauthority->name, name, auth_name_len+1);
-
-    pasgauthority = asCalloc(1,sizeof(ASGAUTHORITY));
-    pasgauthority->pauthority = pauthority;
+    pasgauthority = asCalloc(1, sizeof(ASGAUTHORITY)+auth_name_len+1);
+    pname = (char *)(pasgauthority+1);
+    memcpy(pname, name, auth_name_len+1);
+    pasgauthority->name = pname;
     ellAdd(&pasgrule->authList,&pasgauthority->node);
     return 0;
 }

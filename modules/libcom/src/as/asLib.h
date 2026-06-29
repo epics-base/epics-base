@@ -211,8 +211,8 @@ typedef struct hag{
 // Defs for Authority Chains
 typedef struct authchain {
     ELLNODE         node;
-    char *          name;       /* Authority chain ID */
-    char *          chain;      /* Authority Chain: Common Name or newline-separated Chain of Common Names (root to issuer) */
+    const char *    name;       /* Authority chain ID */
+    const char *    chain;      /* Authority Chain: Common Name or newline-separated Chain of Common Names (root to issuer) */
     ELLLIST         list;       /* List of named Authority definitions (pointer to this list) */
 } AUTHCHAIN;
 /*Defs for Access SecurityGroups*/

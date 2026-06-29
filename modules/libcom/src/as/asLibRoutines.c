@@ -1502,10 +1502,12 @@ AUTHCHAIN *asAddAuthority(const char *name, const char *chain) {
     const size_t chain_len = strlen(chain);
     pauth = asCalloc(1,sizeof(AUTHCHAIN)+name_len+chain_len+2);
     ellInit(&pauth->list);
-    pauth->name = (char *)(pauth+1);
-    memcpy(pauth->name, name, name_len+1);
-    pauth->chain = (pauth->name+name_len+1);
-    memcpy(pauth->chain, chain, chain_len+1);
+    char *pname = (char *)(pauth+1);
+    char *pchain = pname+name_len+1;
+    memcpy(pname, name, name_len+1);
+    memcpy(pchain, chain, chain_len+1);
+    pauth->name = pname;
+    pauth->chain = pchain;
     if(pnext==NULL) { /*Add to end of list*/
         ellAdd(&pasbase->authList,&pauth->node);
     } else {

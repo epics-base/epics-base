@@ -1593,21 +1593,26 @@ const char *asGetAuthority(const char *id) {
     }
     if(!pauth->chain) {
         size_t depth = 0, total = 1; /* nul terminator */
-        for(AUTHORITY *p = pauth; p; p = p->parent) {
+        char *chain;
+        char *out;
+        AUTHORITY **anc;
+        AUTHORITY *p;
+        size_t i;
+        for(p = pauth; p; p = p->parent) {
             total += strlen(p->commonName);
             depth++;
         }
         total += depth - 1; /* newline separators between levels */
-        char *chain = asCalloc(1, total);
-        char *out = chain;
+        chain = asCalloc(1, total);
+        out = chain;
         /* parent links run issuer->root, so collect into an array and emit
          * in reverse to produce root->issuer order */
-        AUTHORITY **anc = asCalloc(depth, sizeof(*anc));
-        size_t i = depth;
-        for(AUTHORITY *p = pauth; p; p = p->parent) anc[--i] = p;
+        anc = asCalloc(depth, sizeof(*anc));
+        i = depth;
+        for(p = pauth; p; p = p->parent) anc[--i] = p;
         for(i = 0; i < depth; i++) {
+            size_t cn = strlen(anc[i]->commonName);
             if(i) *out++ = '\n';
-            const size_t cn = strlen(anc[i]->commonName);
             memcpy(out, anc[i]->commonName, cn);
             out += cn;
         }

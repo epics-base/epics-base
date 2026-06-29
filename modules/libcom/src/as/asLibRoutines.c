@@ -1159,7 +1159,7 @@ static long asComputePvt(ASCLIENTPVT asClientPvt)
         if(access >= asWRITE) break; // Already the highest then stop
         if(access>=pasgrule->access) goto next_rule; // Already higher access than this rule, try next rule
         if(pasgclient->level > pasgrule->level) goto next_rule; // Skip if the client's security group level is greater than this rule's level
-        if (pasgrule->protocol != AS_PROTOCOL_NOT_SET && pasgrule->protocol != asClientPvt->identity.protocol ) goto next_rule;
+        if (pasgrule->protocol != AS_PROTOCOL_ANY && pasgrule->protocol != asClientPvt->identity.protocol ) goto next_rule;
         /*if uagList is empty then no need to check uag*/
         if(ellCount(&pasgrule->uagList)>0){
             ASGUAG      *pasguag;
@@ -1628,7 +1628,7 @@ static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level)
     pasgrule->access = access;
     pasgrule->trapMask = 0;
     pasgrule->level = level;
-    pasgrule->protocol = AS_PROTOCOL_NOT_SET;
+    pasgrule->protocol = AS_PROTOCOL_ANY;
     ellInit(&pasgrule->uagList);
     ellInit(&pasgrule->hagList);
     ellInit(&pasgrule->authList);

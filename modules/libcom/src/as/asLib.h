@@ -236,7 +236,7 @@ typedef struct {
 #define AS_TRAP_WRITE 1
 
 enum AsProtocol {
-    AS_PROTOCOL_NOT_SET = -1,
+    AS_PROTOCOL_ANY = -1,
     AS_PROTOCOL_TCP = 0,
     AS_PROTOCOL_TLS = 1
 };
@@ -253,7 +253,7 @@ typedef struct{
     ELLLIST         hagList; /*List of ASGHAG*/
     int             trapMask;
     int             ignore; // 1 if rule to be ignored because of unknown elements
-    enum AsProtocol protocol; /* -1: ignore, AS_PROTOCOL_TCP: not TLS, AS_PROTOCOL_TLS: TLS */
+    enum AsProtocol protocol; /* AS_PROTOCOL_ANY: any protocol, AS_PROTOCOL_TCP: not TLS, AS_PROTOCOL_TLS: TLS */
     ELLLIST         methodList; /*List of ASGMETHOD*/
     ELLLIST         authList; /*List of ASGAUTHORITY*/
 } ASGRULE;
